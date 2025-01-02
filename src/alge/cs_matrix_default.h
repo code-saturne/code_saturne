@@ -31,13 +31,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_field.h"
-#include "cs_halo.h"
-#include "cs_matrix.h"
-#include "cs_numbering.h"
-#include "cs_halo_perio.h"
+#include "base/cs_field.h"
+#include "base/cs_halo.h"
+#include "alge/cs_matrix.h"
+#include "base/cs_numbering.h"
+#include "base/cs_halo_perio.h"
 
 /*----------------------------------------------------------------------------*/
 

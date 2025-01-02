@@ -35,9 +35,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_coal.h"
-#include "cs_zone.h"
+#include "base/cs_defs.h"
+#include "comb/cs_coal.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -29,8 +29,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_meg_prototypes.h"
-#include "cs_meg_xdef_wrapper.h"
+#include "meg/cs_meg_prototypes.h"
+#include "meg/cs_meg_xdef_wrapper.h"
 
 /*----------------------------------------------------------------------------*/
 

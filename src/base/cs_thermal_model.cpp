@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,33 +42,33 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_air_props.h"
-#include "cs_array.h"
-#include "cs_dispatch.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_location.h"
-#include "cs_parall.h"
-#include "cs_physical_constants.h"
+#include "atmo/cs_air_props.h"
+#include "base/cs_array.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parall.h"
+#include "base/cs_physical_constants.h"
 
 
-#include "cs_xdef.h"
-#include "cs_cf_model.h"
+#include "cdo/cs_xdef.h"
+#include "cfbl/cs_cf_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_thermal_model.h"
+#include "base/cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------*/
 

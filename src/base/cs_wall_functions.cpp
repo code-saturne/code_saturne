@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -47,24 +47,24 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_turbulence_model.h"
-#include "cs_domain.h"
-#include "cs_field.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_field_default.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "turb/cs_turbulence_model.h"
+#include "cdo/cs_domain.h"
+#include "base/cs_field.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_field_default.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_wall_functions.h"
+#include "base/cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------*/
 

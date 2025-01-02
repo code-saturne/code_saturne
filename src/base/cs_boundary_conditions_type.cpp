@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -36,32 +36,32 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_atmo.h"
-#include "cs_boundary_conditions.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_intprf.h"
-#include "cs_lagr.h"
-#include "cs_mesh.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_prototypes.h"
-#include "cs_sat_coupling.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_model.h"
-#include "cs_velocity_pressure.h"
+#include "base/cs_array.h"
+#include "atmo/cs_atmo.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_field_operator.h"
+#include "atmo/cs_intprf.h"
+#include "lagr/cs_lagr.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_sat_coupling.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_boundary_conditions_type.h"
+#include "base/cs_boundary_conditions_type.h"
 
 /*----------------------------------------------------------------------------*/
 

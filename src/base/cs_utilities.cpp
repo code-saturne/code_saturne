@@ -28,7 +28,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,21 +44,21 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_medcoupling_intersector.h"
-#include "cs_medcoupling_postprocess.h"
-#include "cs_medcoupling_remapper.h"
-#include "cs_medcoupling_utils.h"
-#include "cs_stl.h"
+#include "base/cs_medcoupling_intersector.h"
+#include "base/cs_medcoupling_postprocess.h"
+#include "base/cs_medcoupling_remapper.h"
+#include "base/cs_medcoupling_utils.h"
+#include "mesh/cs_stl.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_utilities.h"
+#include "base/cs_utilities.h"
 
 /*----------------------------------------------------------------------------*/
 

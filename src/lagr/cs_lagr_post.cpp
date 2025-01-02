@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,26 +41,26 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_mesh_location.h"
+#include "base/cs_base.h"
+#include "mesh/cs_mesh_location.h"
 
-#include "cs_parameters.h"
-#include "cs_time_step.h"
-#include "cs_parall.h"
-#include "cs_post.h"
+#include "base/cs_parameters.h"
+#include "base/cs_time_step.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_particle.h"
-#include "cs_lagr_stat.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_particle.h"
+#include "lagr/cs_lagr_stat.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_post.h"
+#include "lagr/cs_lagr_post.h"
 
 /*----------------------------------------------------------------------------*/
 

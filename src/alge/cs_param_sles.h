@@ -31,9 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_param_amg.h"
-#include "cs_param_mumps.h"
-#include "cs_param_types.h"
+#include "alge/cs_param_amg.h"
+#include "alge/cs_param_mumps.h"
+#include "base/cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
 

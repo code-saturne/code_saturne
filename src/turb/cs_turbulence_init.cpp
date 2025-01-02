@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,31 +42,31 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_assert.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_gradient.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_parall.h"
-#include "cs_mesh_location.h"
+#include "base/cs_array.h"
+#include "base/cs_assert.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_parall.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_turbulence_ke.h"
-#include "cs_turbulence_model.h"
-#include "cs_turbulence_rij.h"
+#include "turb/cs_turbulence_ke.h"
+#include "turb/cs_turbulence_model.h"
+#include "turb/cs_turbulence_rij.h"
 
-#include "cs_turbulence_init.h"
-#include "cs_log_iteration.h"
+#include "turb/cs_turbulence_init.h"
+#include "base/cs_log_iteration.h"
 
 /*----------------------------------------------------------------------------*/
 

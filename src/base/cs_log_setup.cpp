@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,47 +41,47 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_ale.h"
-#include "cs_atmo.h"
-#include "cs_base.h"
-#include "cs_boundary.h"
-#include "cs_boundary_zone.h"
-#include "cs_cf_model.h"
-#include "cs_ctwr.h"
-#include "cs_coal.h"
-#include "cs_combustion_gas.h"
-#include "cs_domain.h"
-#include "cs_fan.h"
-#include "cs_field.h"
-#include "cs_function.h"
-#include "cs_log.h"
-#include "cs_log_iteration.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mobile_structures.h"
-#include "cs_notebook.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_restart.h"
-#include "cs_sles.h"
-#include "cs_sles_default.h"
-#include "cs_syr_coupling.h"
-#include "cs_thermal_model.h"
-#include "cs_time_moment.h"
-#include "cs_turbomachinery.h"
-#include "cs_rad_transfer_options.h"
-#include "cs_rotation.h"
-#include "cs_turbulence_model.h"
-#include "cs_lagr_log.h"
-#include "cs_velocity_pressure.h"
-#include "cs_vof.h"
-#include "cs_volume_zone.h"
-#include "cs_wall_distance.h"
+#include "base/cs_ale.h"
+#include "atmo/cs_atmo.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary.h"
+#include "base/cs_boundary_zone.h"
+#include "cfbl/cs_cf_model.h"
+#include "ctwr/cs_ctwr.h"
+#include "comb/cs_coal.h"
+#include "cogz/cs_combustion_gas.h"
+#include "cdo/cs_domain.h"
+#include "base/cs_fan.h"
+#include "base/cs_field.h"
+#include "base/cs_function.h"
+#include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_mobile_structures.h"
+#include "base/cs_notebook.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_restart.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_default.h"
+#include "base/cs_syr_coupling.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_time_moment.h"
+#include "base/cs_turbomachinery.h"
+#include "rayt/cs_rad_transfer_options.h"
+#include "base/cs_rotation.h"
+#include "turb/cs_turbulence_model.h"
+#include "lagr/cs_lagr_log.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_vof.h"
+#include "base/cs_volume_zone.h"
+#include "base/cs_wall_distance.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_log_setup.h"
+#include "base/cs_log_setup.h"
 
 /*----------------------------------------------------------------------------*/
 

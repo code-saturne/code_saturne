@@ -31,10 +31,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_equation_param.h"
-#include "cs_field.h"
-#include "cs_zone.h"
+#include "base/cs_base.h"
+#include "cdo/cs_equation_param.h"
+#include "base/cs_field.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

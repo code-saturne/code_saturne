@@ -29,13 +29,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cf_energy.h"
-#include "cs_cf_model.h"
-#include "cs_cf_thermo.h"
+#include "cfbl/cs_cf_energy.h"
+#include "cfbl/cs_cf_model.h"
+#include "cfbl/cs_cf_thermo.h"
 
-#include "cs_hgn_phase_thermo.h"
-#include "cs_hgn_source_terms_step.h"
-#include "cs_hgn_thermo.h"
+#include "cfbl/cs_hgn_phase_thermo.h"
+#include "cfbl/cs_hgn_source_terms_step.h"
+#include "cfbl/cs_hgn_thermo.h"
 
 /*----------------------------------------------------------------------------*/
 

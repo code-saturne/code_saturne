@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -48,40 +48,40 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_balance.h"
-#include "cs_blas.h"
-#include "cs_convection_diffusion.h"
-#include "cs_dispatch.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_halo.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_gradient.h"
-#include "cs_mesh_quantities.h"
-#include "cs_multigrid.h"
-#include "cs_parameters.h"
-#include "cs_porous_model.h"
-#include "cs_prototypes.h"
-#include "cs_timer.h"
-#include "cs_parall.h"
-#include "cs_matrix_building.h"
-#include "cs_matrix_default.h"
-#include "cs_sles.h"
-#include "cs_sles_default.h"
+#include "base/cs_array.h"
+#include "alge/cs_balance.h"
+#include "alge/cs_blas.h"
+#include "alge/cs_convection_diffusion.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_halo.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_field.h"
+#include "alge/cs_gradient.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "alge/cs_multigrid.h"
+#include "base/cs_parameters.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_timer.h"
+#include "base/cs_parall.h"
+#include "alge/cs_matrix_building.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_default.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation_iterative_solve.h"
+#include "base/cs_equation_iterative_solve.h"
 
 /*----------------------------------------------------------------------------*/
 

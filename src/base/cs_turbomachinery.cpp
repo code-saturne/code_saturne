@@ -23,7 +23,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,55 +37,55 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_selector.h"
+#include "fvm/fvm_selector.h"
 
-#include "cs_interface.h"
+#include "base/cs_interface.h"
 
-#include "cs_base.h"
-#include "cs_boundary_zone.h"
-#include "cs_coupling.h"
-#include "cs_cell_to_vertex.h"
-#include "cs_ext_neighborhood.h"
-#include "cs_field.h"
-#include "cs_function.h"
-#include "cs_gradient.h"
-#include "cs_gui.h"
-#include "cs_gui_mesh.h"
-#include "cs_gui_output.h"
-#include "cs_gradient.h"
-#include "cs_join.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_matrix_default.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_coherency.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mesh_to_builder.h"
-#include "cs_multigrid.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_preprocess.h"
-#include "cs_prototypes.h"
-#include "cs_renumber.h"
-#include "cs_rotation.h"
-#include "cs_time_step.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
-#include "cs_restart.h"
-#include "cs_sat_coupling.h"
-#include "cs_preprocessor_data.h"
-#include "cs_volume_zone.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_coupling.h"
+#include "alge/cs_cell_to_vertex.h"
+#include "base/cs_ext_neighborhood.h"
+#include "base/cs_field.h"
+#include "base/cs_function.h"
+#include "alge/cs_gradient.h"
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_mesh.h"
+#include "gui/cs_gui_output.h"
+#include "alge/cs_gradient.h"
+#include "mesh/cs_join.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "alge/cs_matrix_default.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_coherency.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_to_builder.h"
+#include "alge/cs_multigrid.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_preprocess.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_renumber.h"
+#include "base/cs_rotation.h"
+#include "base/cs_time_step.h"
+#include "base/cs_timer.h"
+#include "base/cs_timer_stats.h"
+#include "base/cs_restart.h"
+#include "base/cs_sat_coupling.h"
+#include "base/cs_preprocessor_data.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_turbomachinery.h"
+#include "base/cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------*/
 

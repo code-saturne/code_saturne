@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,18 +40,18 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_air_props.h"
-#include "cs_base.h"
-#include "cs_math.h"
-#include "cs_physical_constants.h"
+#include "atmo/cs_air_props.h"
+#include "base/cs_base.h"
+#include "base/cs_math.h"
+#include "base/cs_physical_constants.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_intprf.h"
+#include "atmo/cs_intprf.h"
 
 /*----------------------------------------------------------------------------*/
 

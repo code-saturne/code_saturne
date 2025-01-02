@@ -32,14 +32,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
-#include "cs_gwf_param.h"
-#include "cs_gwf_hydraulic_model.h"
-#include "cs_mesh.h"
-#include "cs_property.h"
-#include "cs_volume_zone.h"
+#include "base/cs_base.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "gwf/cs_gwf_param.h"
+#include "gwf/cs_gwf_hydraulic_model.h"
+#include "mesh/cs_mesh.h"
+#include "cdo/cs_property.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

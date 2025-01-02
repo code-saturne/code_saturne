@@ -25,14 +25,15 @@
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(MPI_CPPFLAGS)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+csbft_includedir=$(pkgincludedir)/bft
+csbft_include_HEADERS = \
 bft_backtrace.h \
 bft_error.h \
 bft_mem.h \
@@ -56,5 +57,5 @@ clean-local:
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif

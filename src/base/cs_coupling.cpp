@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -47,14 +47,14 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_time_step.h"
-#include "fvm_nodal_extract.h"
-#include "fvm_point_location.h"
+#include "base/cs_time_step.h"
+#include "fvm/fvm_nodal_extract.h"
+#include "fvm/fvm_point_location.h"
 
-#include "cs_coupling.h"
+#include "base/cs_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 

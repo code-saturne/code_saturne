@@ -30,7 +30,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -47,37 +47,37 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_ale.h"
-#include "cs_array.h"
-#include "cs_atmo.h"
-#include "cs_boundary_conditions.h"
-#include "cs_coal.h"
-#include "cs_combustion_gas.h"
-#include "cs_elec_model.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_mobile_structures.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_model.h"
-#include "cs_turbomachinery.h"
-#include "cs_velocity_pressure.h"
-#include "cs_vof.h"
-#include "cs_wall_condensation.h"
-#include "cs_wall_condensation_1d_thermal.h"
+#include "base/cs_ale.h"
+#include "base/cs_array.h"
+#include "atmo/cs_atmo.h"
+#include "base/cs_boundary_conditions.h"
+#include "comb/cs_coal.h"
+#include "cogz/cs_combustion_gas.h"
+#include "elec/cs_elec_model.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "base/cs_mobile_structures.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_time_moment.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_turbomachinery.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_vof.h"
+#include "base/cs_wall_condensation.h"
+#include "base/cs_wall_condensation_1d_thermal.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_restart_main_and_aux.h"
+#include "base/cs_restart_main_and_aux.h"
 
 /*----------------------------------------------------------------------------*/
 

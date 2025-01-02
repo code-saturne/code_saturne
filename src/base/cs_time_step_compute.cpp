@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,31 +45,31 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_cf_compute.h"
-#include "cs_coupling.h"
-#include "cs_face_viscosity.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_log_iteration.h"
-#include "cs_matrix_building.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_vof.h"
+#include "base/cs_array.h"
+#include "cfbl/cs_cf_compute.h"
+#include "base/cs_coupling.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log_iteration.h"
+#include "alge/cs_matrix_building.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_vof.h"
 
-#include "cs_cf_model.h"
+#include "cfbl/cs_cf_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_time_step_compute.h"
+#include "base/cs_time_step_compute.h"
 
 /*----------------------------------------------------------------------------*/
 

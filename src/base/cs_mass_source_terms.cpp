@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,16 +40,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_array.h"
-#include "cs_base.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_mass_source_terms.h"
+#include "base/cs_mass_source_terms.h"
 
 /*----------------------------------------------------------------------------*/
 

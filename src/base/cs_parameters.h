@@ -37,10 +37,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_equation_param.h"
-#include "cs_field.h"
-#include "cs_tree.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_equation_param.h"
+#include "base/cs_field.h"
+#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------*/
 

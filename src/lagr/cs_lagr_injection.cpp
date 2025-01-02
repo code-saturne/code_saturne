@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,41 +44,41 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_base.h"
-#include "cs_math.h"
+#include "base/cs_base.h"
+#include "base/cs_math.h"
 
-#include "cs_boundary_zone.h"
-#include "cs_volume_zone.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_volume_zone.h"
 
-#include "cs_coal.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_physical_model.h"
-#include "cs_physical_constants.h"
-#include "cs_prototypes.h"
-#include "cs_time_step.h"
+#include "comb/cs_coal.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_time_step.h"
 
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_random.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_random.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_new.h"
-#include "cs_lagr_precipitation_model.h"
-#include "cs_lagr_prototypes.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_new.h"
+#include "lagr/cs_lagr_precipitation_model.h"
+#include "lagr/cs_lagr_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_injection.h"
+#include "lagr/cs_lagr_injection.h"
 
 /*----------------------------------------------------------------------------*/
 

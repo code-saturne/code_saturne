@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,27 +41,27 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_equation_bc.h"
-#include "cs_gwf_soil.h"
-#include "cs_log.h"
-#include "cs_mesh_location.h"
-#include "cs_parall.h"
-#include "cs_param_types.h"
-#include "cs_post.h"
+#include "base/cs_array.h"
+#include "cdo/cs_equation_bc.h"
+#include "gwf/cs_gwf_soil.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parall.h"
+#include "base/cs_param_types.h"
+#include "base/cs_post.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gwf_uspf.h"
+#include "gwf/cs_gwf_uspf.h"
 
 /*----------------------------------------------------------------------------*/
 

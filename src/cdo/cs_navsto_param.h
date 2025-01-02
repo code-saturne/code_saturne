@@ -29,13 +29,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_boundary.h"
-#include "cs_cdo_turbulence.h"
-#include "cs_equation_param.h"
-#include "cs_iter_algo.h"
-#include "cs_math.h"
-#include "cs_param_sles.h"
-#include "cs_physical_constants.h"
+#include "base/cs_boundary.h"
+#include "cdo/cs_cdo_turbulence.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_iter_algo.h"
+#include "base/cs_math.h"
+#include "alge/cs_param_sles.h"
+#include "base/cs_physical_constants.h"
 
 /*----------------------------------------------------------------------------*/
 

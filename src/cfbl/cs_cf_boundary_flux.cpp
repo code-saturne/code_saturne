@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -46,21 +46,21 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
 
-#include "cs_cf_boundary_conditions.h"
-#include "cs_cf_thermo.h"
-#include "cs_field_pointer.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "cfbl/cs_cf_boundary_conditions.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cf_boundary_flux.h"
+#include "cfbl/cs_cf_boundary_flux.h"
 
 /*----------------------------------------------------------------------------*/
 

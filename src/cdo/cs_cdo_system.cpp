@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,23 +37,23 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_flag.h"
-#include "cs_matrix_priv.h"
-#include "cs_param_cdo.h"
+#include "base/cs_array.h"
+#include "cdo/cs_flag.h"
+#include "alge/cs_matrix_priv.h"
+#include "cdo/cs_param_cdo.h"
 
 #if defined(HAVE_HYPRE)
-#include "cs_matrix_hypre.h"
+#include "alge/cs_matrix_hypre.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_system.h"
+#include "cdo/cs_cdo_system.h"
 
 /*----------------------------------------------------------------------------*/
 

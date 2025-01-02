@@ -31,16 +31,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_connect.h"
-#include "cs_cdo_local.h"
-#include "cs_cdo_quantities.h"
-#include "cs_field.h"
-#include "cs_macfb_builder.h"
-#include "cs_mesh_location.h"
-#include "cs_param_types.h"
-#include "cs_property.h"
-#include "cs_xdef.h"
-#include "cs_xdef_eval.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "base/cs_field.h"
+#include "cdo/cs_macfb_builder.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_param_types.h"
+#include "cdo/cs_property.h"
+#include "cdo/cs_xdef.h"
+#include "cdo/cs_xdef_eval.h"
 
 /*----------------------------------------------------------------------------*/
 

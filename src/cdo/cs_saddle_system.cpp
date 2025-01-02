@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -36,17 +36,17 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_math.h"
+#include "base/cs_array.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_saddle_system.h"
+#include "cdo/cs_saddle_system.h"
 
 /*----------------------------------------------------------------------------*/
 BEGIN_C_DECLS

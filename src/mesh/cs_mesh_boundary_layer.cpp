@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,29 +45,29 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_boundary_zone.h"
-#include "cs_cdo_main.h"
-#include "cs_domain.h"
-#include "cs_equation.h"
+#include "base/cs_boundary_zone.h"
+#include "cdo/cs_cdo_main.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_equation.h"
 
-#include "cs_log.h"
-#include "cs_interface.h"
-#include "cs_mesh_builder.h"
-#include "cs_mesh_deform.h"
-#include "cs_mesh_extrude.h"
-#include "cs_mesh_group.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
+#include "base/cs_log.h"
+#include "base/cs_interface.h"
+#include "mesh/cs_mesh_builder.h"
+#include "cdo/cs_mesh_deform.h"
+#include "mesh/cs_mesh_extrude.h"
+#include "mesh/cs_mesh_group.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh_boundary_layer.h"
+#include "mesh/cs_mesh_boundary_layer.h"
 
 /*----------------------------------------------------------------------------*/
 

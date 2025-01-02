@@ -9,12 +9,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_halo.h"
-#include "cs_numbering.h"
+#include "base/cs_halo.h"
+#include "base/cs_numbering.h"
 
-#include "cs_matrix.h"
+#include "alge/cs_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 

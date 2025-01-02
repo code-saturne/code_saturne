@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #if defined(HAVE_CUDA)
 
@@ -41,8 +41,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base_accel.h"
-#include "cs_log.h"
+#include "base/cs_base_accel.h"
+#include "base/cs_log.h"
 
 /*=============================================================================
  * Macro definitions

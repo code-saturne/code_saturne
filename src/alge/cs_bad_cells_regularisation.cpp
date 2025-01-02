@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,25 +39,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_blas.h"
-#include "cs_boundary_conditions.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_mesh.h"
-#include "cs_mesh_bad_cells.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_sles_default.h"
+#include "alge/cs_blas.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_bad_cells.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "alge/cs_sles_default.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_bad_cells_regularisation.h"
+#include "alge/cs_bad_cells_regularisation.h"
 
 /*----------------------------------------------------------------------------*/
 

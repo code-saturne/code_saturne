@@ -32,9 +32,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
+#include "base/cs_base.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 

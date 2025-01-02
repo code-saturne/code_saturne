@@ -31,16 +31,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "fvm_group.h"
-#include "fvm_selector.h"
-#include "fvm_periodicity.h"
+#include "fvm/fvm_group.h"
+#include "fvm/fvm_selector.h"
+#include "fvm/fvm_periodicity.h"
 
-#include "cs_base.h"
+#include "base/cs_base.h"
 
-#include "cs_mesh.h"
-#include "cs_mesh_builder.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_builder.h"
 
 /*----------------------------------------------------------------------------*/
 

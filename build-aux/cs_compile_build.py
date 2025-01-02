@@ -93,22 +93,6 @@ def dest_subdir(destdir, d):
 
     return os.path.join(destdir, t)
 
-#-------------------------------------------------------------------------------
-
-def src_include_dirs(srcdir):
-    """
-    Return include directories in a given source directory.
-    """
-    include_dirs = []
-
-    if srcdir:
-        for f in os.listdir(os.path.join(srcdir, 'src')):
-            p = os.path.join(srcdir, 'src', f)
-            if os.path.isdir(p):
-                include_dirs.append(p)
-
-    return include_dirs
-
 #===============================================================================
 # Class used to manage compilation in build directory
 #===============================================================================
@@ -125,7 +109,8 @@ class compile_build(cs_compile):
         self.srcdir = srcdir
 
         top_builddir = os.getcwd()
-        while not os.path.isfile(os.path.join(top_builddir, "cs_config.h")):
+        while not os.path.isfile(os.path.join(top_builddir,
+                                              "src", "base", "cs_config.h")):
             ds = os.path.split(top_builddir)
             if ds[1]:
                 top_builddir = ds[0]
@@ -170,9 +155,7 @@ class compile_build(cs_compile):
                 flags.append('-I' + os.path.join(top_builddir, 'libple'))
                 flags.append('-I' + os.path.join(self.srcdir, 'libple', 'src'))
             flags.append('-I' + top_builddir)
-            include_dirs = src_include_dirs(self.srcdir)
-            for d in include_dirs:
-                flags.append('-I' + d)
+            flags.append('-I' + os.path.join(self.srcdir, 'src'))
 
         elif flag == 'ldflags':
             tsd = os.path.join(top_builddir, 'src')

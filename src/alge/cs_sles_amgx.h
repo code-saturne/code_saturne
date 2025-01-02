@@ -31,9 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_matrix.h"
-#include "cs_sles.h"
+#include "base/cs_base.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_sles.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -46,18 +46,18 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_parall.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sles_it.h"
-#include "cs_sles_it_priv.h"
+#include "alge/cs_sles_it.h"
+#include "alge/cs_sles_it_priv.h"
 
 #if defined(HAVE_CUDA)
-#include "cs_base_cuda.h"
-#include "cs_sles_it_cuda.h"
+#include "base/cs_base_cuda.h"
+#include "alge/cs_sles_it_cuda.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

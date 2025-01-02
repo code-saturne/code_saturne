@@ -31,9 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_thermal_model.h"
+#include "base/cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------*/
 

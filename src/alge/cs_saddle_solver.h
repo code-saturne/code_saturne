@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,11 +37,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_blas.h"
-#include "cs_cdo_system.h"
-#include "cs_iter_algo.h"
-#include "cs_param_saddle.h"
-#include "cs_sles.h"
+#include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdo_system.h"
+#include "cdo/cs_iter_algo.h"
+#include "alge/cs_param_saddle.h"
+#include "alge/cs_sles.h"
 
 /*----------------------------------------------------------------------------*/
 

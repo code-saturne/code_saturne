@@ -25,9 +25,7 @@
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(MPI_CPPFLAGS)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 AM_LDFLAGS = $(CCM_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) \
@@ -36,19 +34,16 @@ $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 # Conditionally compiled extensions
 
 libfvm_cgns_a_CPPFLAGS =\
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CGNS_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_med_a_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(MPI_CPPFLAGS)
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+csfvm_includedir=$(pkgincludedir)/fvm
+csfvm_include_HEADERS = \
 fvm_defs.h \
 fvm_group.h \
 fvm_headers.h \
@@ -144,9 +139,7 @@ fvm_writer_helper.cpp
 if HAVE_CCM
 noinst_LIBRARIES += libfvm_ccm.a
 libfvm_ccm_a_CPPFLAGS =\
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CFLAGS_DBG) $(CFLAGS_OPT) \
 $(CCM_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_ccm_a_SOURCES = fvm_to_ccm.cpp
@@ -168,9 +161,7 @@ endif
 if HAVE_MEDCOUPLING
 
 libfvm_medcoupling_a_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_medcoupling_a_CXXFLAGS = \
 $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
@@ -205,9 +196,7 @@ endif
 if HAVE_CATALYST
 
 libfvm_catalyst_a_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_catalyst_a_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
@@ -243,9 +232,7 @@ endif
 if HAVE_MELISSA
 
 libfvm_melissa_a_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(MELISSA_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_melissa_a_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
@@ -278,7 +265,7 @@ endif
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/fvm -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
 
 # Additional rules

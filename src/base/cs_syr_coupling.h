@@ -35,10 +35,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_defs.h"
+#include "fvm/fvm_defs.h"
 
-#include "cs_base.h"
-#include "cs_zone.h"
+#include "base/cs_base.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

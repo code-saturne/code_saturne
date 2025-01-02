@@ -29,10 +29,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_field.h"
-#include "cs_zone.h"
+#include "base/cs_field.h"
+#include "base/cs_zone.h"
 
 /*============================================================================
  * Structure definitions

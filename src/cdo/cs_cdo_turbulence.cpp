@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,17 +42,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_post.h"
-#include "cs_turbulence_model.h"
-#include "cs_reco.h"
+#include "base/cs_post.h"
+#include "turb/cs_turbulence_model.h"
+#include "cdo/cs_reco.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_turbulence.h"
+#include "cdo/cs_cdo_turbulence.h"
 
 /*----------------------------------------------------------------------------*/
 

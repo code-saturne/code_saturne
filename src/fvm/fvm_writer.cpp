@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,41 +44,41 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_nodal.h"
-#include "fvm_nodal_priv.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_priv.h"
 
-#include "cs_base.h"
-#include "cs_file.h"
-#include "cs_fp_exception.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_file.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_writer.h"
-#include "fvm_writer_priv.h"
+#include "fvm/fvm_writer.h"
+#include "fvm/fvm_writer_priv.h"
 
 /* Headers for available writers (could be replaced by plugin system) */
 
-#include "fvm_to_ccm.h"
-#include "fvm_to_cgns.h"
-#include "fvm_to_med.h"
-#include "fvm_to_ensight.h"
-#include "fvm_to_histogram.h"
-#include "fvm_to_plot.h"
-#include "fvm_to_time_plot.h"
+#include "fvm/fvm_to_ccm.h"
+#include "fvm/fvm_to_cgns.h"
+#include "fvm/fvm_to_med.h"
+#include "fvm/fvm_to_ensight.h"
+#include "fvm/fvm_to_histogram.h"
+#include "fvm/fvm_to_plot.h"
+#include "fvm/fvm_to_time_plot.h"
 
 #if defined(HAVE_CATALYST) && !defined(HAVE_PLUGIN_CATALYST)
-#include "fvm_to_catalyst.h"
+#include "fvm/fvm_to_catalyst.h"
 #endif
 
 #if defined(HAVE_MELISSA) && !defined(HAVE_PLUGIN_MELISSA)
-#include "fvm_to_melissa.h"
+#include "fvm/fvm_to_melissa.h"
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -827,7 +827,7 @@ _find_or_add_format_writer(fvm_writer_t        *this_writer,
 }
 
 /*============================================================================
- * Semi-private function definitions (prototypes in fvm_writer_priv.h)
+ * Semi-private function definitions (prototypes in "fvm/fvm_writer_priv.h)
  *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

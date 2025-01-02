@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,20 +40,20 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_block_dist.h"
-#include "cs_crystal_router.h"
-#include "cs_log.h"
-#include "cs_order.h"
-#include "cs_timer.h"
+#include "base/cs_block_dist.h"
+#include "base/cs_crystal_router.h"
+#include "base/cs_log.h"
+#include "base/cs_order.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_rank_neighbors.h"
+#include "base/cs_rank_neighbors.h"
 
 /*----------------------------------------------------------------------------*/
 

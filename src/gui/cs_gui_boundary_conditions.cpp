@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,54 +42,54 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_selector.h"
+#include "fvm/fvm_selector.h"
 
-#include "cs_ale.h"
-#include "cs_atmo.h"
-#include "cs_base.h"
-#include "cs_boundary.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_conditions_priv.h"
-#include "cs_boundary_zone.h"
-#include "cs_cf_thermo.h"
-#include "cs_coal_boundary_conditions.h"
-#include "cs_combustion_boundary_conditions.h"
-#include "cs_combustion_model.h"
-#include "cs_equation_param.h"
-#include "cs_parameters.h"
-#include "cs_gui_util.h"
-#include "cs_gui.h"
-#include "cs_gui_specific_physics.h"
-#include "cs_ht_convert.h"
-#include "cs_meg_prototypes.h"
-#include "cs_meg_xdef_wrapper.h"
-#include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_physical_model.h"
-#include "cs_thermal_model.h"
-#include "cs_thermal_system.h"
-#include "cs_timer.h"
-#include "cs_tree.h"
-#include "cs_turbulence_bc.h"
-#include "cs_turbulence_model.h"
-#include "cs_parall.h"
-#include "cs_elec_model.h"
-#include "cs_physical_model.h"
-#include "cs_vof.h"
-#include "cs_wall_functions.h"
+#include "base/cs_ale.h"
+#include "atmo/cs_atmo.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_conditions_priv.h"
+#include "base/cs_boundary_zone.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "comb/cs_coal_boundary_conditions.h"
+#include "cogz/cs_combustion_boundary_conditions.h"
+#include "pprt/cs_combustion_model.h"
+#include "cdo/cs_equation_param.h"
+#include "base/cs_parameters.h"
+#include "gui/cs_gui_util.h"
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_specific_physics.h"
+#include "base/cs_ht_convert.h"
+#include "meg/cs_meg_prototypes.h"
+#include "meg/cs_meg_xdef_wrapper.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_thermal_model.h"
+#include "cdo/cs_thermal_system.h"
+#include "base/cs_timer.h"
+#include "base/cs_tree.h"
+#include "turb/cs_turbulence_bc.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_parall.h"
+#include "elec/cs_elec_model.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_vof.h"
+#include "base/cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gui_boundary_conditions.h"
+#include "gui/cs_gui_boundary_conditions.h"
 
 /*----------------------------------------------------------------------------*/
 

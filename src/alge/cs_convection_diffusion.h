@@ -27,20 +27,20 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_base.h"
-#include "cs_dispatch.h"
-#include "cs_halo.h"
-#include "cs_math.h"
-#include "cs_mesh_quantities.h"
-#include "cs_equation_param.h"
+#include "base/cs_base.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_halo.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------*/
 

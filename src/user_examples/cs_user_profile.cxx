@@ -27,7 +27,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -47,7 +47,7 @@
 
 /* User header */
 
-#include "cs_user_profile.h"
+#include "user_examples/cs_user_profile.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
@@ -55,8 +55,8 @@
 
 #if defined(HAVE_MEDCOUPLING)
 
-#include "cs_medcoupling_intersector.h"
-#include "cs_medcoupling_mesh.hxx"
+#include "base/cs_medcoupling_intersector.h"
+#include "base/cs_medcoupling_mesh.hxx"
 
 #include <MEDCoupling_version.h>
 

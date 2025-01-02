@@ -24,8 +24,8 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_config.h"
-#include "cs_defs.h"
+#include "base/cs_config.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,25 +40,25 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_hgn_thermo.h"
-#include "cs_prototypes.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "cfbl/cs_hgn_thermo.h"
+#include "base/cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_hgn_source_terms_step.h"
+#include "cfbl/cs_hgn_source_terms_step.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -28,7 +28,7 @@
  * Functions dealing with LES balance
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -47,41 +47,41 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_file.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_conditions_set_coeffs.h"
-#include "cs_divergence.h"
-#include "cs_face_viscosity.h"
-#include "cs_convection_diffusion.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_geom.h"
-#include "cs_gradient.h"
-#include "cs_halo.h"
-#include "cs_math.h"
-#include "cs_parall.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_properties.h"
-#include "cs_prototypes.h"
-#include "cs_restart.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_model.h"
+#include "base/cs_base.h"
+#include "base/cs_file.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "alge/cs_divergence.h"
+#include "alge/cs_face_viscosity.h"
+#include "alge/cs_convection_diffusion.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "mesh/cs_geom.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_halo.h"
+#include "base/cs_math.h"
+#include "base/cs_parall.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_physical_properties.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_restart.h"
+#include "base/cs_time_moment.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_les_balance.h"
+#include "turb/cs_les_balance.h"
 
 /*----------------------------------------------------------------------------*/
 

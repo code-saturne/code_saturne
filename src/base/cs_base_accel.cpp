@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,18 +48,18 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "cs_mem.h"
+#include "bft/bft_error.h"
+#include "base/cs_mem.h"
 
 #if defined(HAVE_CUDA)
-#include "cs_base_cuda.h"
+#include "base/cs_base_cuda.h"
 #endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_base_accel.h"
+#include "base/cs_base_accel.h"
 
 /*----------------------------------------------------------------------------*/
 

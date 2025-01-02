@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -47,49 +47,49 @@
 
 #include <ple_locator.h>
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_ale.h"
-#include "cs_base.h"
-#include "cs_base_accel.h"
-#include "cs_blas.h"
-#include "cs_boundary.h"
-#include "cs_cf_thermo.h"
-#include "cs_coupling.h"
-#include "cs_equation.h"
-#include "cs_function.h"
-#include "cs_gradient.h"
-#include "cs_gui_util.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_flag_check.h"
-#include "cs_halo.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_connect.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_physical_model.h"
-#include "cs_prototypes.h"
-#include "cs_post.h"
-#include "cs_time_control.h"
-#include "cs_turbulence_bc.h"
-#include "cs_turbulence_model.h"
-#include "cs_xdef_eval_at_zone.h"
+#include "base/cs_ale.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
+#include "alge/cs_blas.h"
+#include "base/cs_boundary.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "base/cs_coupling.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_function.h"
+#include "alge/cs_gradient.h"
+#include "gui/cs_gui_util.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_flag_check.h"
+#include "base/cs_halo.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_post.h"
+#include "base/cs_time_control.h"
+#include "turb/cs_turbulence_bc.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_xdef_eval_at_zone.h"
 
-#include "fvm_nodal.h"
+#include "fvm/fvm_nodal.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_conditions_priv.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_conditions_priv.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,30 +42,30 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_cdofb_ac.h"
-#include "cs_cdofb_monolithic.h"
-#include "cs_cdofb_monolithic_sles.h"
-#include "cs_cdofb_navsto.h"
-#include "cs_cdofb_predco.h"
-#include "cs_evaluate.h"
-#include "cs_flag.h"
-#include "cs_hho_stokes.h"
-#include "cs_log.h"
-#include "cs_macfb_monolithic.h"
-#include "cs_macfb_monolithic_sles.h"
-#include "cs_macfb_navsto.h"
-#include "cs_navsto_coupling.h"
-#include "cs_post.h"
-#include "cs_volume_zone.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdofb_ac.h"
+#include "cdo/cs_cdofb_monolithic.h"
+#include "cdo/cs_cdofb_monolithic_sles.h"
+#include "cdo/cs_cdofb_navsto.h"
+#include "cdo/cs_cdofb_predco.h"
+#include "cdo/cs_evaluate.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_hho_stokes.h"
+#include "base/cs_log.h"
+#include "cdo/cs_macfb_monolithic.h"
+#include "cdo/cs_macfb_monolithic_sles.h"
+#include "cdo/cs_macfb_navsto.h"
+#include "cdo/cs_navsto_coupling.h"
+#include "base/cs_post.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_navsto_system.h"
+#include "cdo/cs_navsto_system.h"
 
 /*----------------------------------------------------------------------------*/
 

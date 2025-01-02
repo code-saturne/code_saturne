@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,19 +41,19 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-#include "cs_log.h"
-#include "cs_timer.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
+#include "base/cs_log.h"
+#include "base/cs_timer.h"
 
-#include "cs_property.h"
+#include "cdo/cs_property.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_physical_properties.h"
+#include "base/cs_physical_properties.h"
 #if defined(HAVE_EOS)
 #include "cs_eos.hxx"
 #endif

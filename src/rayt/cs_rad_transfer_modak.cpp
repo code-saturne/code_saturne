@@ -22,8 +22,8 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_math.h"
+#include "base/cs_defs.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,18 +45,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_parameters.h"
-#include "cs_mesh.h"
+#include "base/cs_parameters.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_rad_transfer_modak.h"
+#include "rayt/cs_rad_transfer_modak.h"
 
 /*----------------------------------------------------------------------------*/
 

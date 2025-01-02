@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include <assert.h>
 #include <math.h>
@@ -33,13 +33,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_rank_neighbors.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_rank_neighbors.h"
+#include "base/cs_timer.h"
 
 /*---------------------------------------------------------------------------*/
 

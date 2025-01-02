@@ -31,7 +31,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,30 +48,30 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_blas.h"
-#include "cs_file.h"
-#include "cs_log.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
-#include "cs_matrix.h"
-#include "cs_matrix_default.h"
-#include "cs_matrix_util.h"
-#include "cs_post.h"
-#include "cs_timer.h"
-#include "cs_time_plot.h"
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
+#include "base/cs_file.h"
+#include "base/cs_log.h"
+#include "base/cs_halo.h"
+#include "mesh/cs_mesh.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix_util.h"
+#include "base/cs_post.h"
+#include "base/cs_timer.h"
+#include "base/cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sles.h"
-#include "cs_sles_it.h"
-#include "cs_sles_pc.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_it.h"
+#include "alge/cs_sles_pc.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -28,9 +28,9 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "bft_error.h"
-#include "bft_mem_usage.h"
-#include "bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_mem.h"
 
 static void
 bft_mem_error_handler_test(const char     *const file_name,

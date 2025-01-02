@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,33 +42,33 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_ale.h"
-#include "cs_ast_coupling.h"
-#include "cs_base.h"
-#include "cs_boundary.h"
-#include "cs_boundary_zone.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_gui.h"
-#include "cs_gui_util.h"
-#include "cs_gui_boundary_conditions.h"
-#include "cs_meg_prototypes.h"
-#include "cs_mesh.h"
-#include "cs_mobile_structures.h"
-#include "cs_parameters.h"
-#include "cs_timer.h"
-#include "cs_time_step.h"
-#include "cs_volume_zone.h"
+#include "base/cs_ale.h"
+#include "base/cs_ast_coupling.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_util.h"
+#include "gui/cs_gui_boundary_conditions.h"
+#include "meg/cs_meg_prototypes.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_mobile_structures.h"
+#include "base/cs_parameters.h"
+#include "base/cs_timer.h"
+#include "base/cs_time_step.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gui_mobile_mesh.h"
+#include "gui/cs_gui_mobile_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 

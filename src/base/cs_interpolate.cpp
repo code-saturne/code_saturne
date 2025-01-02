@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -41,24 +41,24 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_field_default.h"
-#include "cs_gradient.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
+#include "base/cs_array.h"
+#include "base/cs_field_default.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_halo.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_interpolate.h"
+#include "base/cs_interpolate.h"
 
 /*----------------------------------------------------------------------------*/
 

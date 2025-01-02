@@ -31,15 +31,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_domain.h"
-#include "cs_field.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells.h"
-#include "cs_probe.h"
-#include "cs_time_control.h"
-#include "cs_volume_zone.h"
+#include "base/cs_base.h"
+#include "cdo/cs_domain.h"
+#include "base/cs_field.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_bad_cells.h"
+#include "base/cs_probe.h"
+#include "base/cs_time_control.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

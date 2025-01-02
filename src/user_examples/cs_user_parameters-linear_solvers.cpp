@@ -26,7 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -75,7 +75,7 @@
 #include "cs_headers.h"
 
 #if defined(HAVE_PETSC)
-#include "cs_sles_petsc.h"
+#include "alge/cs_sles_petsc.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

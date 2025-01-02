@@ -31,10 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
+#include "fvm/fvm_nodal.h"
 
-#include "cs_base.h"
-#include "cs_mesh.h"
+#include "base/cs_base.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 

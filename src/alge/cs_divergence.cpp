@@ -22,7 +22,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,19 +44,19 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_dispatch.h"
-#include "cs_porous_model.h"
-#include "cs_timer.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_divergence.h"
+#include "alge/cs_divergence.h"
 
 /*----------------------------------------------------------------------------*/
 

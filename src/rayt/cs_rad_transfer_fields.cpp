@@ -22,8 +22,8 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_math.h"
+#include "base/cs_defs.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,30 +45,30 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
 
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_gui_output.h"
-#include "cs_gui_radiative_transfer.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "gui/cs_gui_output.h"
+#include "gui/cs_gui_radiative_transfer.h"
 
-#include "cs_parameters.h"
-#include "cs_parameters_check.h"
-#include "cs_post.h"
-#include "cs_prototypes.h"
-#include "cs_thermal_model.h"
+#include "base/cs_parameters.h"
+#include "base/cs_parameters_check.h"
+#include "base/cs_post.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_thermal_model.h"
 
-#include "cs_rad_transfer.h"
+#include "rayt/cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_rad_transfer_fields.h"
-#include "cs_physical_model.h"
+#include "rayt/cs_rad_transfer_fields.h"
+#include "pprt/cs_physical_model.h"
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS

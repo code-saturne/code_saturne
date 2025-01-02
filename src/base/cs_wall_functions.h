@@ -31,10 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "cs_base.h"
-#include "cs_math.h"
-#include "cs_turbulence_model.h"
+#include "bft/bft_printf.h"
+#include "base/cs_base.h"
+#include "base/cs_math.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------*/
 

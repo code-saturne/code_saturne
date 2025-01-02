@@ -27,16 +27,16 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_math.h"
-#include "cs_parameters.h"  // for BC types
+#include "base/cs_math.h"
+#include "base/cs_parameters.h"  // for BC types
 
-#include "cs_convection_diffusion.h"
+#include "alge/cs_convection_diffusion.h"
 
 /*=============================================================================
  * Macro definitions

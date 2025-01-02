@@ -31,12 +31,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_equation.h"
-#include "cs_gwf_param.h"
-#include "cs_gwf_priv.h"
-#include "cs_gwf_soil.h"
-#include "cs_gwf_tracer.h"
+#include "base/cs_base.h"
+#include "cdo/cs_equation.h"
+#include "gwf/cs_gwf_param.h"
+#include "gwf/cs_gwf_priv.h"
+#include "gwf/cs_gwf_soil.h"
+#include "gwf/cs_gwf_tracer.h"
 
 /*----------------------------------------------------------------------------*/
 

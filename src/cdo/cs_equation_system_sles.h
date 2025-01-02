@@ -30,8 +30,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation.h"
-#include "cs_equation_system_param.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_equation_system_param.h"
 
 /*----------------------------------------------------------------------------*/
 

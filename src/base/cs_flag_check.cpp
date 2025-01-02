@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -47,24 +47,24 @@
 
 #include <ple_locator.h>
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_post.h"
+#include "base/cs_base.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_flag_check.h"
+#include "base/cs_flag_check.h"
 
 /*----------------------------------------------------------------------------*/
 

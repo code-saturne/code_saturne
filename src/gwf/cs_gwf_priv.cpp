@@ -26,7 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,20 +40,20 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_advection_field.h"
-#include "cs_array.h"
-#include "cs_evaluate.h"
-#include "cs_parall.h"
-#include "cs_physical_constants.h"
-#include "cs_reco.h"
+#include "cdo/cs_advection_field.h"
+#include "base/cs_array.h"
+#include "cdo/cs_evaluate.h"
+#include "base/cs_parall.h"
+#include "base/cs_physical_constants.h"
+#include "cdo/cs_reco.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gwf_priv.h"
+#include "gwf/cs_gwf_priv.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -27,16 +27,16 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include "assert.h"
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_restart.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_restart.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_event.h"
-#include "cs_lagr_particle.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_event.h"
+#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------*/
 

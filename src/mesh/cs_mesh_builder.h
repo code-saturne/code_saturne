@@ -31,13 +31,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "fvm_periodicity.h"
+#include "fvm/fvm_periodicity.h"
 
-#include "cs_base.h"
-#include "cs_block_dist.h"
-#include "cs_interface.h"
+#include "base/cs_base.h"
+#include "base/cs_block_dist.h"
+#include "base/cs_interface.h"
 
 /*----------------------------------------------------------------------------*/
 

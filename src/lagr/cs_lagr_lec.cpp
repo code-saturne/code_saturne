@@ -28,7 +28,7 @@
  * Functions dealing with restart reading
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,32 +48,32 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_log.h"
+#include "base/cs_log.h"
 
-#include "cs_field.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_parameters_check.h"
-#include "cs_physical_model.h"
-#include "cs_restart.h"
-#include "cs_restart_default.h"
-#include "cs_turbulence_model.h"
+#include "base/cs_field.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parameters_check.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_default.h"
+#include "turb/cs_turbulence_model.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_post.h"
-#include "cs_lagr_stat.h"
-#include "cs_lagr_restart.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_post.h"
+#include "lagr/cs_lagr_stat.h"
+#include "lagr/cs_lagr_restart.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_lec.h"
+#include "lagr/cs_lagr_lec.h"
 
 BEGIN_C_DECLS
 

@@ -37,17 +37,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_log.h"
-#include "cs_matrix_util.h"
+#include "base/cs_log.h"
+#include "alge/cs_matrix_util.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 
 /*----------------------------------------------------------------------------*/
 BEGIN_C_DECLS

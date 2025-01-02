@@ -36,14 +36,14 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_file.h"
+#include "base/cs_base.h"
+#include "base/cs_file.h"
 
-#include "cs_file_csv_parser.h"
+#include "base/cs_file_csv_parser.h"
 
 /*----------------------------------------------------------------------------*/
 

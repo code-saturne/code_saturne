@@ -35,9 +35,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_combustion_gas.h"
+#include "cogz/cs_combustion_gas.h"
 
 /*----------------------------------------------------------------------------*/
 

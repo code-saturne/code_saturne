@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,17 +37,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_math.h"
-#include "cs_scheme_geometry.h"
+#include "base/cs_array.h"
+#include "base/cs_math.h"
+#include "cdo/cs_scheme_geometry.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_reco.h"
+#include "cdo/cs_reco.h"
 
 /*----------------------------------------------------------------------------*/
 

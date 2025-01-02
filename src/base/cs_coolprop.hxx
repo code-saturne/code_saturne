@@ -35,9 +35,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_physical_properties.h"
+#include "base/cs_physical_properties.h"
 
-#include "cs_base.h"
+#include "base/cs_base.h"
 
 /*----------------------------------------------------------------------------*/
 

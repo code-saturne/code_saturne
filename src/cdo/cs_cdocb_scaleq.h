@@ -29,7 +29,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,14 +39,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdocb_priv.h"
-#include "cs_cdo_quantities.h"
-#include "cs_equation.h"
-#include "cs_mesh.h"
-#include "cs_time_step.h"
-#include "cs_domain.h"
+#include "base/cs_base.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdocb_priv.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_equation.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_domain.h"
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS

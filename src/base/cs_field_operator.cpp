@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,32 +42,32 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_gradient.h"
-#include "cs_gradient_boundary.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_mesh.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_parameters.h"
-#include "cs_parall.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_internal_coupling.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_gradient_boundary.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "base/cs_parameters.h"
+#include "base/cs_parall.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_internal_coupling.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_field_operator.h"
+#include "base/cs_field_operator.h"
 
 /*----------------------------------------------------------------------------*/
 

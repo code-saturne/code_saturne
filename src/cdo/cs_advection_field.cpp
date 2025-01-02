@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,27 +41,27 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_boundary_zone.h"
-#include "cs_cdo_toolbox.h"
-#include "cs_evaluate.h"
-#include "cs_field.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
-#include "cs_param_cdo.h"
-#include "cs_reco.h"
-#include "cs_volume_zone.h"
-#include "cs_xdef.h"
-#include "cs_zone.h"
+#include "base/cs_array.h"
+#include "base/cs_boundary_zone.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_evaluate.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_location.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_reco.h"
+#include "base/cs_volume_zone.h"
+#include "cdo/cs_xdef.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_advection_field.h"
+#include "cdo/cs_advection_field.h"
 
 /*----------------------------------------------------------------------------*/
 

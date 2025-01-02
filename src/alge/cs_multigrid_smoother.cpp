@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -49,12 +49,12 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sles_it.h"
-#include "cs_sles_it_priv.h"
-#include "cs_multigrid_smoother.h"
+#include "alge/cs_sles_it.h"
+#include "alge/cs_sles_it_priv.h"
+#include "alge/cs_multigrid_smoother.h"
 
 #if (HAVE_CUDA)
-#include "cs_sles_it_cuda.h"
+#include "alge/cs_sles_it_cuda.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

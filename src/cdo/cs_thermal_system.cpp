@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,20 +38,20 @@
 #include <mpi.h>
 #endif
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_field_default.h"
-#include "cs_physical_model.h"
-#include "cs_reco.h"
-#include "cs_syr_coupling.h"
+#include "base/cs_array.h"
+#include "base/cs_field_default.h"
+#include "pprt/cs_physical_model.h"
+#include "cdo/cs_reco.h"
+#include "base/cs_syr_coupling.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_thermal_system.h"
+#include "cdo/cs_thermal_system.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,26 +41,26 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
 
-#include "cs_coal_ht_convert.h"
-#include "cs_combustion_ht_convert.h"
-#include "cs_elec_model.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_mesh_location.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_prototypes.h"
-#include "cs_volume_zone.h"
+#include "comb/cs_coal_ht_convert.h"
+#include "cogz/cs_combustion_ht_convert.h"
+#include "elec/cs_elec_model.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_ht_convert.h"
+#include "base/cs_ht_convert.h"
 
 /*----------------------------------------------------------------------------*/
 

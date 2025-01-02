@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include "math.h"
 #include "stdlib.h"
@@ -35,9 +35,9 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_base_accel.h"
+#include "base/cs_base_accel.h"
 
-#include "cs_dispatch.h"
+#include "base/cs_dispatch.h"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

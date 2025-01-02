@@ -26,7 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -47,7 +47,7 @@
 #include "cs_headers.h"
 
 /*!< [user_poro_cad_proto] */
-#include "cs_cad_intersect.h"
+#include "user_examples/cs_cad_intersect.h"
 /*!< [user_poro_cad_proto] */
 
 /*----------------------------------------------------------------------------*/

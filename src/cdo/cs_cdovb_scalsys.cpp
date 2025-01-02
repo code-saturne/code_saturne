@@ -26,7 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,26 +42,26 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_cdo_assembly.h"
-#include "cs_cdo_system.h"
-#include "cs_cdovb_priv.h"
-#include "cs_cdovb_scaleq.h"
-#include "cs_matrix.h"
-#include "cs_parameters.h"
-#include "cs_sles.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdo_assembly.h"
+#include "cdo/cs_cdo_system.h"
+#include "cdo/cs_cdovb_priv.h"
+#include "cdo/cs_cdovb_scaleq.h"
+#include "alge/cs_matrix.h"
+#include "base/cs_parameters.h"
+#include "alge/cs_sles.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdovb_scalsys.h"
+#include "cdo/cs_cdovb_scalsys.h"
 
 /*----------------------------------------------------------------------------*/
 

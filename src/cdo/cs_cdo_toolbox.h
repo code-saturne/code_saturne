@@ -29,9 +29,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_connect.h"
-#include "cs_flag.h"
-#include "cs_xdef.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

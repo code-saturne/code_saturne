@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,20 +40,20 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_convert_array.h"
-#include "fvm_nodal.h"
-#include "fvm_nodal_priv.h"
+#include "fvm/fvm_convert_array.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_priv.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_writer.h"
-#include "fvm_writer_helper.h"
+#include "fvm/fvm_writer.h"
+#include "fvm/fvm_writer_helper.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -1171,7 +1171,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
 }
 
 /*============================================================================
- * Semi-private function definitions (prototypes in fvm_writer_helper.h)
+ * Semi-private function definitions (prototypes in "fvm/fvm_writer_helper.h)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------

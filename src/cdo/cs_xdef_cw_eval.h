@@ -31,12 +31,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_connect.h"
-#include "cs_cdo_local.h"
-#include "cs_cdo_quantities.h"
-#include "cs_mesh.h"
-#include "cs_quadrature.h"
-#include "cs_xdef.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "mesh/cs_mesh.h"
+#include "cdo/cs_quadrature.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

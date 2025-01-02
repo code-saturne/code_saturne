@@ -46,6 +46,11 @@ noinst_LIBRARIES = libcsmodules.a
 
 if HAVE_BACKEND
 
+# Public header files (to be installed)
+
+pkginclude_HEADERS = \
+cs_headers.h
+
 libcsmodules_a_SOURCES = \
 base/paramx.f90 \
 base/mesh.f90 \
@@ -131,6 +136,7 @@ clean-local:
 install-exec-local: $(libcsmodules_a_SOURCES)
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgincludedir)" || $(MKDIR_P) "$(DESTDIR)$(pkgincludedir)"
+	test -h $(DESTDIR)$(pkgincludedir)/cs_defs.h || ln -s base/cs_defs.h $(DESTDIR)$(pkgincludedir)/cs_defs.h; \
 	@list='$(libcsmodules_a_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
 	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
 	files=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
@@ -145,6 +151,7 @@ install-exec-local: $(libcsmodules_a_SOURCES)
 
 uninstall-local:
 	@$(NORMAL_UNINSTALL)
+	rm -f $(DESTDIR)$(pkgincludedir)/cs_defs.h; \
 	@list='$(libcsmodules_a_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
 	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
 	lcfiles=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \

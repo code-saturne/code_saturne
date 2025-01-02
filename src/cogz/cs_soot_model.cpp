@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,26 +40,26 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-#include "cs_array.h"
-#include "cs_combustion_model.h"
-#include "cs_cogz_headers.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
+#include "base/cs_array.h"
+#include "pprt/cs_combustion_model.h"
+#include "cogz/cs_cogz_headers.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_soot_model.h"
+#include "cogz/cs_soot_model.h"
 
 /*----------------------------------------------------------------------------*/
 

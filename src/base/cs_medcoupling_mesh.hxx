@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <string>
 
-#include "cs_mesh.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers

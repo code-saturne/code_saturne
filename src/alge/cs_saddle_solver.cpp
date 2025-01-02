@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -46,29 +46,29 @@
  *  BFT headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_array.h"
-#include "cs_blas.h"
-#include "cs_cdo_solve.h"
-#include "cs_log.h"
-#include "cs_parameters.h"
-#include "cs_saddle_system.h"
+#include "base/cs_array.h"
+#include "alge/cs_blas.h"
+#include "cdo/cs_cdo_solve.h"
+#include "base/cs_log.h"
+#include "base/cs_parameters.h"
+#include "cdo/cs_saddle_system.h"
 
 
 #if 0  /* Set to 1 if systems have to be exported into a binary file */
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_saddle_solver.h"
+#include "alge/cs_saddle_solver.h"
 
 /*----------------------------------------------------------------------------*/
 

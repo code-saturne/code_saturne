@@ -26,7 +26,7 @@
 
 #define CS_IGNORE_MPI 1  /* No MPI for this application */
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*
   Force LARGEFILE_SOURCE if large files enabled under 32-bit Linux or Blue Gene

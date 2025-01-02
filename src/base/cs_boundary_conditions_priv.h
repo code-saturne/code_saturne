@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,11 +37,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_function.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
-#include "cs_time_control.h"
-#include "cs_zone.h"
+#include "base/cs_function.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_time_control.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

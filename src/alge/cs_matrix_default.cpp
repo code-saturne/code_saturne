@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard library headers
@@ -45,46 +45,46 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_blas.h"
-#include "cs_field.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_internal_coupling.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_numbering.h"
-#include "cs_prototypes.h"
-#include "cs_range_set.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
+#include "base/cs_field.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_internal_coupling.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "base/cs_numbering.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_range_set.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_matrix.h"
+#include "alge/cs_matrix.h"
 
 #if defined(HAVE_HYPRE)
-#include "cs_matrix_hypre.h"
+#include "alge/cs_matrix_hypre.h"
 #endif
 
 #if defined(HAVE_PETSC)
-#include "cs_matrix_petsc.h"
+#include "alge/cs_matrix_petsc.h"
 #endif
 
 #if defined(HAVE_CUDA)
-#include "cs_matrix_spmv_cuda.h"
+#include "alge/cs_matrix_spmv_cuda.h"
 #endif
 
-#include "cs_matrix_priv.h"
-#include "cs_matrix_tuning.h"
+#include "alge/cs_matrix_priv.h"
+#include "alge/cs_matrix_tuning.h"
 
-#include "cs_matrix_default.h"
+#include "alge/cs_matrix_default.h"
 
 /*----------------------------------------------------------------------------*/
 

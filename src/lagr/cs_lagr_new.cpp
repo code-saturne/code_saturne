@@ -28,7 +28,7 @@
  * Functions dealing with particle tracking
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,46 +48,46 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_atmo.h"
-#include "cs_base.h"
-#include "cs_coal.h"
-#include "cs_halo.h"
-#include "cs_ht_convert.h"
-#include "cs_log.h"
-#include "cs_interface.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_quantities.h"
-#include "cs_order.h"
-#include "cs_parall.h"
-#include "cs_physical_model.h"
-#include "cs_physical_constants.h"
-#include "cs_random.h"
-#include "cs_search.h"
-#include "cs_thermal_model.h"
-#include "cs_timer_stats.h"
+#include "atmo/cs_atmo.h"
+#include "base/cs_base.h"
+#include "comb/cs_coal.h"
+#include "base/cs_halo.h"
+#include "base/cs_ht_convert.h"
+#include "base/cs_log.h"
+#include "base/cs_interface.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_random.h"
+#include "base/cs_search.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_timer_stats.h"
 
-#include "cs_field.h"
-#include "cs_field_pointer.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
 
-#include "cs_lagr_clogging.h"
-#include "cs_lagr_deposition_model.h"
-#include "cs_lagr_roughness.h"
-#include "cs_lagr_dlvo.h"
-#include "cs_lagr_stat.h"
-#include "cs_lagr.h"
-#include "cs_lagr_tracking.h"
+#include "lagr/cs_lagr_clogging.h"
+#include "lagr/cs_lagr_deposition_model.h"
+#include "lagr/cs_lagr_roughness.h"
+#include "lagr/cs_lagr_dlvo.h"
+#include "lagr/cs_lagr_stat.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_new.h"
+#include "lagr/cs_lagr_new.h"
 
 /*----------------------------------------------------------------------------*/
 

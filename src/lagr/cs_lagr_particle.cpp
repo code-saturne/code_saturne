@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,30 +44,30 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "fvm_periodicity.h"
+#include "fvm/fvm_periodicity.h"
 
-#include "cs_base.h"
-#include "cs_math.h"
-#include "cs_order.h"
-#include "cs_parall.h"
-#include "cs_random.h"
-#include "cs_timer_stats.h"
+#include "base/cs_base.h"
+#include "base/cs_math.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
+#include "base/cs_random.h"
+#include "base/cs_timer_stats.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_post.h"
-#include "cs_lagr_clogging.h"
-#include "cs_lagr_roughness.h"
-#include "cs_lagr_dlvo.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_post.h"
+#include "lagr/cs_lagr_clogging.h"
+#include "lagr/cs_lagr_roughness.h"
+#include "lagr/cs_lagr_dlvo.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_particle.h"
+#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------*/
 

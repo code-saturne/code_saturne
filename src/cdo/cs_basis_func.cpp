@@ -35,17 +35,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_log.h"
-#include "cs_quadrature.h"
-#include "cs_scheme_geometry.h"
+#include "base/cs_log.h"
+#include "cdo/cs_quadrature.h"
+#include "cdo/cs_scheme_geometry.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_basis_func.h"
+#include "cdo/cs_basis_func.h"
 
 /*----------------------------------------------------------------------------*/
 

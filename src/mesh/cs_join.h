@@ -31,9 +31,9 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_join_util.h"
-#include "cs_mesh.h"
+#include "base/cs_base.h"
+#include "mesh/cs_join_util.h"
+#include "mesh/cs_mesh.h"
 
 /*---------------------------------------------------------------------------*/
 

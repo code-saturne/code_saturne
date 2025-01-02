@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,18 +44,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_equation.h"
-#include "cs_log.h"
+#include "base/cs_base.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_navsto_param.h"
+#include "cdo/cs_navsto_param.h"
 
 /*----------------------------------------------------------------------------*/
 

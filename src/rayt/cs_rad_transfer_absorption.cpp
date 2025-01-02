@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,35 +41,35 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-#include "cs_assert.h"
-#include "cs_base.h"
-#include "cs_coal.h"
-#include "cs_combustion_gas.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_combustion_model.h"
-#include "cs_physical_model.h"
-#include "cs_time_step.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
+#include "base/cs_assert.h"
+#include "base/cs_base.h"
+#include "comb/cs_coal.h"
+#include "cogz/cs_combustion_gas.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "pprt/cs_combustion_model.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_time_step.h"
 
-#include "cs_rad_transfer.h"
-#include "cs_rad_transfer_modak.h"
-#include "cs_rad_transfer_adf_models.h"
-#include "cs_rad_transfer_fsck.h"
-#include "cs_rad_transfer_rcfsk.h"
+#include "rayt/cs_rad_transfer.h"
+#include "rayt/cs_rad_transfer_modak.h"
+#include "rayt/cs_rad_transfer_adf_models.h"
+#include "rayt/cs_rad_transfer_fsck.h"
+#include "rayt/cs_rad_transfer_rcfsk.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_rad_transfer_absorption.h"
+#include "rayt/cs_rad_transfer_absorption.h"
 
 /*----------------------------------------------------------------------------*/
 

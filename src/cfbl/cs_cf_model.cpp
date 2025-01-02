@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,28 +38,28 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "cs_array.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_parameters_check.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_physical_properties.h"
-#include "cs_prototypes.h"   // for cs_add_model_thermal_field_indexes
-#include "cs_restart_default.h"
-#include "cs_velocity_pressure.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "base/cs_array.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parameters_check.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_physical_properties.h"
+#include "base/cs_prototypes.h"   // for cs_add_model_thermal_field_indexes
+#include "base/cs_restart_default.h"
+#include "base/cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cf_model.h"
-#include "cs_cf_thermo.h"
+#include "cfbl/cs_cf_model.h"
+#include "cfbl/cs_cf_thermo.h"
 
 /*----------------------------------------------------------------------------*/
 

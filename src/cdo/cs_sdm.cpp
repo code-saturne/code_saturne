@@ -37,19 +37,19 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_blas.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_parall.h"
-#include "cs_sort.h"
+#include "alge/cs_blas.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_parall.h"
+#include "base/cs_sort.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sdm.h"
+#include "cdo/cs_sdm.h"
 
 /*----------------------------------------------------------------------------*/
 BEGIN_C_DECLS

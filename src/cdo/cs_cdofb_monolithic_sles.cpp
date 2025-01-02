@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -43,37 +43,32 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  BFT headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_array.h"
-#include "cs_blas.h"
-#include "cs_cdo_blas.h"
-#include "cs_cdo_solve.h"
-#include "cs_equation.h"
-#include "cs_fp_exception.h"
-#include "cs_matrix_default.h"
-#include "cs_parall.h"
-#include "cs_param_sles_setup.h"
-#include "cs_saddle_solver_setup.h"
-#include "cs_saddle_system.h"
-#include "cs_timer.h"
+#include "base/cs_array.h"
+#include "bft/bft_mem.h"
+#include "alge/cs_blas.h"
+#include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_fp_exception.h"
+#include "alge/cs_matrix_default.h"
+#include "base/cs_parall.h"
+#include "alge/cs_param_sles_setup.h"
+#include "alge/cs_saddle_solver_setup.h"
+#include "cdo/cs_saddle_system.h"
+#include "base/cs_timer.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdofb_monolithic_sles.h"
+#include "cdo/cs_cdofb_monolithic_sles.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -33,7 +33,7 @@
 #  define _GNU_SOURCE
 #endif
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard library headers
@@ -64,19 +64,19 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem_usage.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_CUDA)
-#include "cs_mem_cuda_priv.h"
+#include "base/cs_mem_cuda_priv.h"
 #endif
 
-#include "cs_mem.h"
+#include "base/cs_mem.h"
 
 /*=============================================================================
  * Additional doxygen documentation

@@ -19,7 +19,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,47 +48,47 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_nodal.h"
-#include "fvm_nodal_extract.h"
-#include "fvm_point_location.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_extract.h"
+#include "fvm/fvm_point_location.h"
 
-#include "cs_base.h"
-#include "cs_boundary_conditions_set_coeffs.h"
-#include "cs_boundary_zone.h"
-#include "cs_coupling.h"
-#include "cs_domain.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_file_csv_parser.h"
-#include "cs_geom.h"
-#include "cs_halo.h"
-#include "cs_io.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_connect.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_porous_model.h"
-#include "cs_equation_iterative_solve.h"
-#include "cs_physical_constants.h"
-#include "cs_post.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_coupling.h"
+#include "cdo/cs_domain.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_file_csv_parser.h"
+#include "mesh/cs_geom.h"
+#include "base/cs_halo.h"
+#include "base/cs_io.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_post.h"
+#include "base/cs_timer.h"
 
-#include "cs_volume_zone.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_porosity_from_scan.h"
+#include "base/cs_porosity_from_scan.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -35,10 +35,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
+#include "base/cs_base.h"
 
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 

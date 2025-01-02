@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,20 +39,20 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_defs.h"
-#include "fvm_nodal.h"
-#include "fvm_nodal_priv.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_priv.h"
 
-#include "cs_order.h"
+#include "base/cs_order.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal_order.h"
+#include "fvm/fvm_nodal_order.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -26,7 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,30 +44,30 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_equation_bc.h"
-#include "cs_field.h"
-#include "cs_gwf_priv.h"
-#include "cs_gwf_sspf.h"
-#include "cs_gwf_tpf.h"
-#include "cs_gwf_uspf.h"
-#include "cs_log.h"
-#include "cs_parall.h"
-#include "cs_param_types.h"
-#include "cs_physical_model.h"
-#include "cs_post.h"
+#include "base/cs_array.h"
+#include "cdo/cs_equation_bc.h"
+#include "base/cs_field.h"
+#include "gwf/cs_gwf_priv.h"
+#include "gwf/cs_gwf_sspf.h"
+#include "gwf/cs_gwf_tpf.h"
+#include "gwf/cs_gwf_uspf.h"
+#include "base/cs_log.h"
+#include "base/cs_parall.h"
+#include "base/cs_param_types.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_post.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gwf.h"
+#include "gwf/cs_gwf.h"
 
 /*----------------------------------------------------------------------------*/
 

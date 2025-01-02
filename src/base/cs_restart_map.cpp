@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,31 +45,31 @@
 
 #include "ple_locator.h"
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-#include "cs_array.h"
-#include "cs_assert.h"
-#include "cs_base.h"
-#include "cs_coupling.h"
-#include "cs_io.h"
-#include "cs_mesh.h"
-#include "cs_mesh_connect.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_preprocessor_data.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
-#include "fvm_nodal.h"
-#include "fvm_interpolate.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
+#include "base/cs_array.h"
+#include "base/cs_assert.h"
+#include "base/cs_base.h"
+#include "base/cs_coupling.h"
+#include "base/cs_io.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_preprocessor_data.h"
+#include "base/cs_timer.h"
+#include "base/cs_timer_stats.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_interpolate.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_restart.h"
-#include "cs_restart_map.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_map.h"
 
 /*----------------------------------------------------------------------------*/
 

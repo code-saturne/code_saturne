@@ -38,9 +38,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_matrix_petsc.h"
+#include "alge/cs_matrix_petsc.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -29,13 +29,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_coal.h"
-#include "cs_coal_boundary_conditions.h"
-#include "cs_coal_ht_convert.h"
-#include "cs_coal_initialize.h"
-#include "cs_coal_physical_properties.h"
-#include "cs_coal_read_data.h"
-#include "cs_coal_source_terms.h"
+#include "comb/cs_coal.h"
+#include "comb/cs_coal_boundary_conditions.h"
+#include "comb/cs_coal_ht_convert.h"
+#include "comb/cs_coal_initialize.h"
+#include "comb/cs_coal_physical_properties.h"
+#include "comb/cs_coal_read_data.h"
+#include "comb/cs_coal_source_terms.h"
 
 /*----------------------------------------------------------------------------*/
 

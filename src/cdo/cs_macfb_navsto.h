@@ -28,7 +28,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,19 +38,19 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
-#include "cs_cdofb_navsto.h"
-#include "cs_field.h"
-#include "cs_iter_algo.h"
-#include "cs_math.h"
-#include "cs_matrix.h"
-#include "cs_mesh.h"
-#include "cs_navsto_param.h"
-#include "cs_sdm.h"
-#include "cs_time_plot.h"
-#include "cs_time_step.h"
+#include "base/cs_base.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdofb_navsto.h"
+#include "base/cs_field.h"
+#include "cdo/cs_iter_algo.h"
+#include "base/cs_math.h"
+#include "alge/cs_matrix.h"
+#include "mesh/cs_mesh.h"
+#include "cdo/cs_navsto_param.h"
+#include "cdo/cs_sdm.h"
+#include "base/cs_time_plot.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 

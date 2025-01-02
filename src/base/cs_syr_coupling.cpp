@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -53,41 +53,41 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_nodal.h"
-#include "fvm_nodal_extract.h"
-#include "fvm_nodal_project.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_extract.h"
+#include "fvm/fvm_nodal_project.h"
 
 #if defined(HAVE_MPI)
-#include "cs_coupling.h"
+#include "base/cs_coupling.h"
 #endif
 
-#include "cs_cf_thermo.h"
-#include "cs_coupling.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_ht_convert.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_mesh_connect.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_physical_model.h"
-#include "cs_selector.h"
-#include "cs_thermal_model.h"
-#include "cs_thermal_system.h"
-#include "cs_timer_stats.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "base/cs_coupling.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_ht_convert.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_connect.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_parameters.h"
+#include "base/cs_prototypes.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_selector.h"
+#include "base/cs_thermal_model.h"
+#include "cdo/cs_thermal_system.h"
+#include "base/cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_syr_coupling.h"
+#include "base/cs_syr_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C and C++ library headers
@@ -42,27 +42,27 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_coal.h"
-#include "cs_dispatch.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mesh_location.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_thermal_model.h"
+#include "base/cs_array.h"
+#include "comb/cs_coal.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_coal_physical_properties.h"
+#include "comb/cs_coal_physical_properties.h"
 
 /*----------------------------------------------------------------------------*/
 

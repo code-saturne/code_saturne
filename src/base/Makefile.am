@@ -33,24 +33,7 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/cfbl \
--I$(top_srcdir)/src/ctwr \
--I$(top_srcdir)/src/cogz \
--I$(top_srcdir)/src/comb \
--I$(top_srcdir)/src/elec \
--I$(top_srcdir)/src/gwf \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/meg \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/gui \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/rayt \
--I$(top_srcdir)/src/turb \
--I$(top_srcdir)/src/atmo \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -59,18 +42,6 @@ AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
-$(FCMODINCLUDE)$(top_builddir)/src/alge \
-$(FCMODINCLUDE)$(top_builddir)/src/atmo \
-$(FCMODINCLUDE)$(top_builddir)/src/cfbl \
-$(FCMODINCLUDE)$(top_builddir)/src/cogz \
-$(FCMODINCLUDE)$(top_builddir)/src/comb \
-$(FCMODINCLUDE)$(top_builddir)/src/ctwr \
-$(FCMODINCLUDE)$(top_builddir)/src/elec \
-$(FCMODINCLUDE)$(top_builddir)/src/lagr \
-$(FCMODINCLUDE)$(top_builddir)/src/pprt \
-$(FCMODINCLUDE)$(top_builddir)/src/rayt \
-$(FCMODINCLUDE)$(top_builddir)/src/turb \
-$(FCMODINCLUDE)$(top_builddir)/src/user \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
@@ -85,7 +56,8 @@ cs_version.h.in
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+csbase_includedir=$(pkgincludedir)/base
+csbase_include_HEADERS = \
 cs_1d_wall_thermal.h \
 cs_1d_wall_thermal_check.h \
 cs_ale.h \
@@ -224,15 +196,14 @@ cs_wall_distance.h \
 cs_wall_functions.h \
 cs_xdef_eval_at_zone.h \
 cs_zone.h \
-cs_base_headers.h \
-cs_headers.h
+cs_base_headers.h
 
 noinst_HEADERS = \
 cs_boundary_conditions_priv.h \
 cs_mem_cuda_priv.h
 
 if HAVE_CUDA
-pkginclude_HEADERS += \
+csbase_include_HEADERS += \
 cs_base_cuda.h \
 cs_math_cuda.cuh \
 cs_array_cuda.h \
@@ -438,7 +409,7 @@ pkglib_LIBRARIES =
 
 # MEDCoupling wrappers, plugin or linked-in.
 
-pkginclude_HEADERS += \
+csbase_include_HEADERS += \
 cs_medcoupling_mesh.hxx \
 cs_medcoupling_utils.h \
 cs_medcoupling_remapper.h \
@@ -448,11 +419,7 @@ cs_paramedmem_coupling.h \
 cs_paramedmem_remapper.h
 
 libcs_medcoupling_a_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MEDCOUPLING_CPPFLAGS) \
 $(MED_CPPFLAGS) \
@@ -502,13 +469,10 @@ endif
 if HAVE_EOS
 
 libcs_eos_a_CPPFLAGS = \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(EOS_CPPFLAGS) $(MPI_CPPFLAGS)
 
-pkginclude_HEADERS += cs_eos.hxx
+csbase_include_HEADERS += cs_eos.hxx
 noinst_LIBRARIES += libcs_eos.a
 libcs_eos_a_SOURCES = cs_eos.cxx
 
@@ -538,12 +502,9 @@ endif
 if HAVE_COOLPROP
 
 cs_coolprop_CPPFLAGS = \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(COOLPROP_CPPFLAGS) $(MPI_CPPFLAGS)
-pkginclude_HEADERS += cs_coolprop.hxx
+csbase_include_HEADERS += cs_coolprop.hxx
 
 cs_coolprop = $(top_srcdir)/src/base/cs_coolprop.cxx
 cs_coolprop.$(OBJEXT): $(cs_coolprop)
@@ -575,11 +536,11 @@ endif
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
 
 .cu.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
 
 # Additional rules
 

@@ -31,9 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_field.h"
-#include "cs_gradient.h"
+#include "base/cs_defs.h"
+#include "base/cs_field.h"
+#include "alge/cs_gradient.h"
 
 /*----------------------------------------------------------------------------*/
 

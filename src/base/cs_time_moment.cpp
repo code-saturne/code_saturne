@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,30 +41,30 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array_reduce.h"
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_parall.h"
-#include "cs_restart.h"
-#include "cs_restart_default.h"
-#include "cs_prototypes.h"
-#include "cs_time_step.h"
+#include "base/cs_array_reduce.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parall.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_default.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_time_moment.h"
+#include "base/cs_time_moment.h"
 
 /*----------------------------------------------------------------------------*/
 

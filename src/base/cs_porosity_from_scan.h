@@ -37,12 +37,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
+#include "fvm/fvm_nodal.h"
 
-#include "cs_base.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_base.h"
+#include "base/cs_halo.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 

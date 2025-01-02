@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,18 +38,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_boundary_zone.h"
-#include "cs_cdo_local.h"
-#include "cs_log.h"
-#include "cs_macfb_builder.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_xdef_eval.h"
+#include "base/cs_boundary_zone.h"
+#include "cdo/cs_cdo_local.h"
+#include "base/cs_log.h"
+#include "cdo/cs_macfb_builder.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "cdo/cs_xdef_eval.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -58,7 +58,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_toolbox.h"
+#include "cdo/cs_cdo_toolbox.h"
 
 /*----------------------------------------------------------------------------*/
 

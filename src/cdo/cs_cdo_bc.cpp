@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,17 +38,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_boundary_zone.h"
-#include "cs_mesh_location.h"
+#include "base/cs_array.h"
+#include "base/cs_boundary_zone.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_bc.h"
+#include "cdo/cs_cdo_bc.h"
 
 /*----------------------------------------------------------------------------*/
 

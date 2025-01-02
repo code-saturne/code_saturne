@@ -20,7 +20,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -47,18 +47,17 @@
 
 #endif
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_mem_usage.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_printf.h"
 
-#include "cs_system_info.h"
+#include "base/cs_system_info.h"
 
-#include "cs_blas.h"
-#include "cs_defs.h"
-#include "cs_math.h"
-#include "cs_parall.h"
-#include "cs_timer.h"
+#include "alge/cs_blas.h"
+#include "base/cs_math.h"
+#include "base/cs_parall.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
 

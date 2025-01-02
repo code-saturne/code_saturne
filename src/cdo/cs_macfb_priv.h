@@ -29,10 +29,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation_bc.h"
-#include "cs_equation_builder.h"
-#include "cs_hodge.h"
-#include "cs_macfb_advection.h"
+#include "cdo/cs_equation_bc.h"
+#include "cdo/cs_equation_builder.h"
+#include "cdo/cs_hodge.h"
+#include "cdo/cs_macfb_advection.h"
 
 /*----------------------------------------------------------------------------*/
 

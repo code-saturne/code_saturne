@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,22 +39,22 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_math.h"
-#include "cs_hgn_phase_thermo.h"
+#include "base/cs_math.h"
+#include "cfbl/cs_hgn_phase_thermo.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_hgn_thermo.h"
+#include "cfbl/cs_hgn_thermo.h"
 
 /*----------------------------------------------------------------------------*/
 

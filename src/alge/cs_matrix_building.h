@@ -27,16 +27,16 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_math.h"
-#include "cs_parameters.h"  // for BC types
+#include "base/cs_defs.h"
+#include "base/cs_math.h"
+#include "base/cs_parameters.h"  // for BC types
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_halo.h"
+#include "base/cs_base.h"
+#include "base/cs_halo.h"
 
 /*----------------------------------------------------------------------------*/
 

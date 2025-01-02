@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,15 +37,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
-#include "fvm_writer.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_writer.h"
 
-#include "cs_base.h"
-#include "cs_function.h"
-#include "cs_interpolate.h"
-#include "cs_probe.h"
-#include "cs_time_step.h"
-#include "cs_time_control.h"
+#include "base/cs_base.h"
+#include "base/cs_function.h"
+#include "base/cs_interpolate.h"
+#include "base/cs_probe.h"
+#include "base/cs_time_step.h"
+#include "base/cs_time_control.h"
 
 /*----------------------------------------------------------------------------*/
 

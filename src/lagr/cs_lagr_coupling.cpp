@@ -28,7 +28,7 @@
  * Functions dealing with Lagrangian coupling
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,27 +48,27 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_array.h"
-#include "cs_base.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
-#include "bft_mem.h"
-#include "bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
 
-#include "cs_physical_constants.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_model.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_model.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_particle.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_coupling.h"
+#include "lagr/cs_lagr_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 

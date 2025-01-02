@@ -29,11 +29,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_cdo_quantities.h"
-#include "cs_param_types.h"
-#include "cs_time_step.h"
-#include "cs_xdef.h"
+#include "base/cs_base.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "base/cs_param_types.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

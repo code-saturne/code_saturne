@@ -33,8 +33,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_defs.h"
-#include "fvm_periodicity.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------*/
 

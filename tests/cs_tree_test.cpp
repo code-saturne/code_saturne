@@ -29,12 +29,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "base/cs_defs.h"
 
-#include "cs_base.h"
-#include "cs_defs.h"
-#include "cs_tree.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+
+#include "base/cs_base.h"
+#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------*/
 

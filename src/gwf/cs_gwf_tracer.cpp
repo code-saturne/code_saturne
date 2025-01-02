@@ -41,26 +41,26 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_field.h"
-#include "cs_gwf_soil.h"
-#include "cs_hodge.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_reco.h"
-#include "cs_sles_it.h"
+#include "base/cs_array.h"
+#include "base/cs_field.h"
+#include "gwf/cs_gwf_soil.h"
+#include "cdo/cs_hodge.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "cdo/cs_reco.h"
+#include "alge/cs_sles_it.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gwf_tracer.h"
+#include "gwf/cs_gwf_tracer.h"
 
 /*----------------------------------------------------------------------------*/
 

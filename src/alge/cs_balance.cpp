@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -48,35 +48,35 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_blas.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_convection_diffusion.h"
-#include "cs_field.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_gradient.h"
-#include "cs_ext_neighborhood.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
-#include "cs_velocity_pressure.h"
+#include "alge/cs_blas.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "alge/cs_convection_diffusion.h"
+#include "base/cs_field.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_ext_neighborhood.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_timer.h"
+#include "base/cs_timer_stats.h"
+#include "base/cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_balance.h"
+#include "alge/cs_balance.h"
 
 /*----------------------------------------------------------------------------*/
 

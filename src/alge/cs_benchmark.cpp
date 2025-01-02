@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C and C++ library headers
@@ -54,45 +54,45 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "base/cs_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_base_accel.h"
-#include "cs_blas.h"
-#include "cs_dispatch.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_mem.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_quantities.h"
-#include "cs_matrix.h"
-#include "cs_matrix_assembler.h"
-#include "cs_matrix_default.h"
-#include "cs_matrix_tuning.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
+#include "alge/cs_blas.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_log.h"
+#include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_assembler.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix_tuning.h"
+#include "base/cs_timer.h"
 
 #if defined(HAVE_HYPRE)
-#include "cs_matrix_hypre.h"
-#include "cs_sles_hypre.h"
+#include "alge/cs_matrix_hypre.h"
+#include "alge/cs_sles_hypre.h"
 #endif
 
 #if defined(HAVE_PETSC)
-#include "cs_matrix_petsc.h"
+#include "alge/cs_matrix_petsc.h"
 #endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_benchmark.h"
-#include "cs_benchmark_matrix.h"
+#include "alge/cs_benchmark.h"
+#include "alge/cs_benchmark_matrix.h"
 
 #if defined(HAVE_CUDA)
-#include "cs_benchmark_cuda.h"
+#include "alge/cs_benchmark_cuda.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

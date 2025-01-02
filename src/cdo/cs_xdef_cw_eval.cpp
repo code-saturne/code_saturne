@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,19 +41,19 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_defs.h"
-#include "cs_field.h"
-#include "cs_mesh_location.h"
-#include "cs_reco.h"
-#include "cs_reco_cw.h"
+#include "base/cs_defs.h"
+#include "base/cs_field.h"
+#include "mesh/cs_mesh_location.h"
+#include "cdo/cs_reco.h"
+#include "cdo/cs_reco_cw.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_xdef_cw_eval.h"
+#include "cdo/cs_xdef_cw_eval.h"
 
 /*----------------------------------------------------------------------------*/
 

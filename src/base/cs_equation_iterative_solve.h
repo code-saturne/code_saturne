@@ -31,8 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_parameters.h"
+#include "base/cs_defs.h"
+#include "base/cs_parameters.h"
 
 BEGIN_C_DECLS
 

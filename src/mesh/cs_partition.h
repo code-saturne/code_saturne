@@ -31,13 +31,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_base.h"
-#include "cs_log.h"
+#include "base/cs_base.h"
+#include "base/cs_log.h"
 
-#include "cs_mesh.h"
-#include "cs_mesh_builder.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_builder.h"
 
 /*----------------------------------------------------------------------------*/
 

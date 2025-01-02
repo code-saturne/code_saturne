@@ -29,11 +29,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_equation_system.h"
-#include "cs_gwf_priv.h"
-#include "cs_param_sles.h"
+#include "cdo/cs_equation_system.h"
+#include "gwf/cs_gwf_priv.h"
+#include "alge/cs_param_sles.h"
 
 /*----------------------------------------------------------------------------*/
 

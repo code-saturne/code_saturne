@@ -37,11 +37,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_base_accel.h"
+#include "base/cs_defs.h"
+#include "base/cs_base_accel.h"
 #if defined (__NVCC__)
-#include "cs_array_cuda.h"
-#include "cs_base_cuda.h"
+#include "base/cs_array_cuda.h"
+#include "base/cs_base_cuda.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,10 +39,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_field.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
 
-#include "cs_lagr_injection.h"
+#include "lagr/cs_lagr_injection.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -28,17 +28,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "cs_array.h"
-#include "cs_base.h"
-#include "cs_mem.h"
-#include "cs_meg_prototypes.h"
+#include "bft/bft_error.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "base/cs_mem.h"
+#include "meg/cs_meg_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_meg_xdef_wrapper.h"
+#include "meg/cs_meg_xdef_wrapper.h"
 
 BEGIN_C_DECLS
 

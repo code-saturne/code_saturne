@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,17 +39,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_cdo_bc.h"
-#include "cs_parall.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdo_bc.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_enforcement.h"
+#include "cdo/cs_enforcement.h"
 
 /*----------------------------------------------------------------------------*/
 

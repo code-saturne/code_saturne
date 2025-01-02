@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,27 +39,27 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_gui.h"
-#include "cs_gui_util.h"
-#include "cs_gui_boundary_conditions.h"
+#include "base/cs_base.h"
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_util.h"
+#include "gui/cs_gui_boundary_conditions.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_post.h"
-#include "cs_lagr_stat.h"
-#include "cs_lagr_tracking.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_post.h"
+#include "lagr/cs_lagr_stat.h"
+#include "lagr/cs_lagr_tracking.h"
 
-#include "cs_parameters.h"
+#include "base/cs_parameters.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gui_particles.h"
+#include "gui/cs_gui_particles.h"
 
 /*----------------------------------------------------------------------------*/
 

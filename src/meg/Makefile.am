@@ -33,28 +33,10 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/cfbl \
--I$(top_srcdir)/src/cogz \
--I$(top_srcdir)/src/comb \
--I$(top_srcdir)/src/ctwr \
--I$(top_srcdir)/src/elec \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/gui \
--I$(top_srcdir)/src/gwf \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/rayt \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_LDFLAGS =
@@ -65,7 +47,8 @@ EXTRA_DIST =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+csmeg_includedir=$(pkgincludedir)/meg
+csmeg_include_HEADERS = \
 cs_meg_prototypes.h \
 cs_meg_xdef_wrapper.h \
 cs_meg_headers.h

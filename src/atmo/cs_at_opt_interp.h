@@ -35,10 +35,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_field.h"
-#include "cs_measures_util.h"
+#include "base/cs_field.h"
+#include "base/cs_measures_util.h"
 
 /*----------------------------------------------------------------------------*/
 

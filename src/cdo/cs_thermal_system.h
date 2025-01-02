@@ -29,14 +29,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_advection_field.h"
-#include "cs_equation.h"
-#include "cs_field.h"
-#include "cs_property.h"
-#include "cs_mesh.h"
-#include "cs_source_term.h"
-#include "cs_time_step.h"
-#include "cs_xdef.h"
+#include "cdo/cs_advection_field.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_field.h"
+#include "cdo/cs_property.h"
+#include "mesh/cs_mesh.h"
+#include "cdo/cs_source_term.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

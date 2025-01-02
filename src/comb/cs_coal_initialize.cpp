@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,27 +40,27 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_field.h"
-#include "cs_math.h"
-#include "cs_mem.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_restart.h"
-#include "cs_thermal_model.h"
+#include "base/cs_array.h"
+#include "base/cs_field.h"
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_restart.h"
+#include "base/cs_thermal_model.h"
 
-#include "cs_coal.h"
-#include "cs_coal_ht_convert.h"
+#include "comb/cs_coal.h"
+#include "comb/cs_coal_ht_convert.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_coal_initialize.h"
+#include "comb/cs_coal_initialize.h"
 
 /*----------------------------------------------------------------------------*/
 

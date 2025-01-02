@@ -32,10 +32,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_advection_field.h"
-#include "cs_base.h"
-#include "cs_equation.h"
-#include "cs_gwf_param.h"
+#include "cdo/cs_advection_field.h"
+#include "base/cs_base.h"
+#include "cdo/cs_equation.h"
+#include "gwf/cs_gwf_param.h"
 
 /*----------------------------------------------------------------------------*/
 

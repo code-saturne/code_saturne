@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,23 +42,23 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_gui_util.h"
-#include "cs_gui_boundary_conditions.h"
-#include "cs_mesh.h"
-#include "cs_parameters.h"
-#include "cs_syr_coupling.h"
-#include "cs_tree.h"
+#include "base/cs_base.h"
+#include "gui/cs_gui_util.h"
+#include "gui/cs_gui_boundary_conditions.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_parameters.h"
+#include "base/cs_syr_coupling.h"
+#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gui_conjugate_heat_transfer.h"
+#include "gui/cs_gui_conjugate_heat_transfer.h"
 
 /*----------------------------------------------------------------------------*/
 

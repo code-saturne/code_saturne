@@ -22,7 +22,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -35,15 +35,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_blas.h"
-#include "cs_math.h"
-#include "cs_parall.h"
+#include "alge/cs_blas.h"
+#include "base/cs_math.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_blas.h"
+#include "cdo/cs_cdo_blas.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -35,12 +35,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
-#include "fvm_writer.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_writer.h"
 
-#include "cs_join_mesh.h"
-#include "cs_join_util.h"
-#include "cs_mesh.h"
+#include "mesh/cs_join_mesh.h"
+#include "mesh/cs_join_util.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 

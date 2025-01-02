@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*-----------------------------------------------------------------------------*/
 
@@ -42,7 +42,7 @@
  * Optional library and BFT headers
  */
 
-#include "bft_printf.h"
+#include "bft/bft_printf.h"
 
 /*-----------------------------------------------------------------------------*/
 
@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *-----------------------------------------------------------------------------*/
 
-/* Associated typedef documentation (for bft_printf.h) */
+/* Associated typedef documentation (for "bft/bft_printf.h) */
 
 /*!
  * \typedef bft_printf_proxy_t

@@ -32,17 +32,7 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/gui \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -53,7 +43,8 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+csturb_includedir=$(pkgincludedir)/turb
+csturb_include_HEADERS = \
 cs_turbulence_rotation.h \
 cs_les_balance.h \
 cs_les_filter.h \
@@ -100,7 +91,7 @@ cs_turbulence_htles.cpp
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
 
 # Additional rules

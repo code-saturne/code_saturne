@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -43,46 +43,46 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_balance.h"
-#include "cs_blas.h"
-#include "cs_halo.h"
-#include "cs_base.h"
-#include "cs_dispatch.h"
-#include "cs_equation.h"
-#include "cs_equation_iterative_solve.h"
-#include "cs_face_viscosity.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_gradient.h"
-#include "cs_lagr.h"
-#include "cs_log.h"
-#include "cs_log_iteration.h"
-#include "cs_mass_source_terms.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_physical_constants.h"
-#include "cs_porous_model.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_thermal_model.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_model.h"
-#include "cs_turbulence_rotation.h"
-#include "cs_volume_mass_injection.h"
-#include "cs_velocity_pressure.h"
-#include "cs_wall_functions.h"
+#include "base/cs_array.h"
+#include "alge/cs_balance.h"
+#include "alge/cs_blas.h"
+#include "base/cs_halo.h"
+#include "base/cs_base.h"
+#include "base/cs_dispatch.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_field_operator.h"
+#include "alge/cs_gradient.h"
+#include "lagr/cs_lagr.h"
+#include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
+#include "base/cs_mass_source_terms.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_rotation.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_model.h"
+#include "turb/cs_turbulence_rotation.h"
+#include "base/cs_volume_mass_injection.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_turbulence_kw.h"
+#include "turb/cs_turbulence_kw.h"
 
 /*----------------------------------------------------------------------------*/
 

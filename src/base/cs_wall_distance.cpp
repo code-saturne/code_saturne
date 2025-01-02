@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -48,26 +48,26 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "cs_array.h"
-#include "cs_blas.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_conditions_set_coeffs.h"
-#include "cs_convection_diffusion.h"
-#include "cs_equation_iterative_solve.h"
-#include "cs_face_viscosity.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_turbulence_model.h"
+#include "bft/bft_printf.h"
+#include "base/cs_array.h"
+#include "alge/cs_blas.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "alge/cs_convection_diffusion.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_wall_distance.h"
+#include "base/cs_wall_distance.h"
 
 /*----------------------------------------------------------------------------*/
 

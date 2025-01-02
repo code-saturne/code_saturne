@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard library headers
@@ -49,25 +49,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_base_cuda.h"
-#include "cs_cuda_contrib.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_base_cuda.h"
+#include "base/cs_cuda_contrib.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_log.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_matrix.h"
-#include "cs_matrix_priv.h"
-#include "cs_matrix_spmv.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_priv.h"
+#include "alge/cs_matrix_spmv.h"
 
 /*----------------------------------------------------------------------------*/
 /*! \file cs_matrix_spmv_cuda.c

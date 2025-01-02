@@ -26,7 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,22 +44,22 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_cdo_bc.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_property.h"
-#include "cs_time_step.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdo_bc.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "cdo/cs_property.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_macfb_builder.h"
+#include "cdo/cs_macfb_builder.h"
 
 /*----------------------------------------------------------------------------*/
 

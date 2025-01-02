@@ -28,7 +28,7 @@
  * Functions dealing with particle statistics
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -46,35 +46,35 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_base.h"
-#include "cs_file.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_order.h"
-#include "cs_parall.h"
-#include "cs_restart_default.h"
-#include "cs_timer_stats.h"
-#include "cs_time_step.h"
+#include "base/cs_base.h"
+#include "base/cs_file.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
+#include "base/cs_restart_default.h"
+#include "base/cs_timer_stats.h"
+#include "base/cs_time_step.h"
 
-#include "cs_log.h"
-#include "cs_array_reduce.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "base/cs_array_reduce.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
 
-#include "cs_lagr_tracking.h"
-#include "cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_stat.h"
+#include "lagr/cs_lagr_stat.h"
 
 BEGIN_C_DECLS
 

@@ -28,16 +28,16 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_defs.h"
-#include "fvm_nodal.h"
-#include "fvm_writer.h"
-#include "fvm_to_histogram.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_writer.h"
+#include "fvm/fvm_to_histogram.h"
 
 /*----------------------------------------------------------------------------*/
 

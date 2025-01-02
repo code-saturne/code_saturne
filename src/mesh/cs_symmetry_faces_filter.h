@@ -27,21 +27,21 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_base.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_symmetry_faces_filter.h"
+#include "mesh/cs_symmetry_faces_filter.h"
 
 /*----------------------------------------------------------------------------*/
 

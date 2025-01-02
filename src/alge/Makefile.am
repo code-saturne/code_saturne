@@ -33,13 +33,7 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
@@ -50,43 +44,27 @@ AM_LDFLAGS =
 # Conditionally compiled extensions
 
 libcsalge_extension_a_CPPFLAGS =\
--I$(top_srcdir)/src/bft  \
--I$(top_srcdir)/src/fvm  \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(PETSC_CPPFLAGS) $(MUMPS_CPPFLAGS) $(HYPRE_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
 libcsalge_petsc_a_CPPFLAGS =\
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
 
 if HAVE_MUMPS
   libcsalge_mumps_a_CPPFLAGS =\
-  -I$(top_srcdir)/src/base \
-  -I$(top_srcdir)/src/bft \
-  -I$(top_srcdir)/src/fvm \
-  -I$(top_srcdir)/src/mesh \
+  -I$(top_srcdir)/src -I$(top_builddir)/src \
   $(MUMPS_CPPFLAGS) $(MPI_CPPFLAGS)
 endif
 
 libcsalge_amgx_a_CPPFLAGS =\
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(AMGX_CPPFLAGS) $(MPI_CPPFLAGS)
 
 libcsalge_hypre_a_CPPFLAGS =\
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
 
 noinst_HEADERS = \
@@ -94,7 +72,8 @@ cs_convection_diffusion_priv.h
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+csalge_includedir=$(pkgincludedir)/alge
+csalge_include_HEADERS = \
 cs_alge_headers.h \
 cs_bad_cells_regularisation.h \
 cs_balance.h \
@@ -138,7 +117,7 @@ cs_sles_pc_priv.h \
 cs_vertex_to_cell.h
 
 if HAVE_CUDA
-pkginclude_HEADERS += \
+csalge_include_HEADERS += \
 cs_benchmark_cuda.h \
 cs_blas_cuda.h \
 cs_matrix_spmv_cuda.h \
@@ -147,25 +126,25 @@ cs_sles_pc_cuda.h
 endif
 
 if HAVE_PETSC
-pkginclude_HEADERS += \
+csalge_include_HEADERS += \
 cs_matrix_petsc.h \
 cs_matrix_petsc_priv.h \
 cs_sles_petsc.h
 endif
 
 if HAVE_MUMPS
-pkginclude_HEADERS += cs_sles_mumps.h
+csalge_include_HEADERS += cs_sles_mumps.h
 endif
 
 if HAVE_HYPRE
-pkginclude_HEADERS += \
+csalge_include_HEADERS += \
 cs_matrix_hypre.h \
 cs_matrix_hypre_priv.h \
 cs_sles_hypre.h
 endif
 
 if HAVE_AMGX
-pkginclude_HEADERS += cs_sles_amgx.h
+csalge_include_HEADERS += cs_sles_amgx.h
 endif
 
 # Library source files
@@ -266,8 +245,8 @@ clean-local:
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
 
 .cu.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<

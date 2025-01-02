@@ -22,8 +22,8 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_math.h"
+#include "base/cs_defs.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,36 +45,36 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_conditions_set_coeffs.h"
-#include "cs_boundary_zone.h"
-#include "cs_log.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_ht_convert.h"
-#include "cs_internal_coupling.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_thermal_model.h"
-#include "cs_physical_constants.h"
+#include "base/cs_array.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_log.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_ht_convert.h"
+#include "base/cs_internal_coupling.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_physical_constants.h"
 
-#include "cs_gui_radiative_transfer.h"
-#include "cs_rad_transfer.h"
-#include "cs_rad_transfer_wall_flux.h"
+#include "gui/cs_gui_radiative_transfer.h"
+#include "rayt/cs_rad_transfer.h"
+#include "rayt/cs_rad_transfer_wall_flux.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_rad_transfer_bcs.h"
+#include "rayt/cs_rad_transfer_bcs.h"
 
 /*----------------------------------------------------------------------------*/
 

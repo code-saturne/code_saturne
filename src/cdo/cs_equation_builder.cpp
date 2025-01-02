@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,13 +39,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_log.h"
-#include "cs_parall.h"
+#include "base/cs_log.h"
+#include "base/cs_parall.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -54,7 +54,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation_builder.h"
+#include "cdo/cs_equation_builder.h"
 
 /*----------------------------------------------------------------------------*/
 

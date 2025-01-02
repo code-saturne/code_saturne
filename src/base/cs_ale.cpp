@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -34,46 +34,46 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_base.h"
-#include "cs_boundary.h"
-#include "cs_boundary_conditions_set_coeffs.h"
-#include "cs_boundary_zone.h"
-#include "cs_cell_to_vertex.h"
-#include "cs_cdo_quantities.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_main.h"
-#include "cs_domain.h"
-#include "cs_domain_setup.h"
-#include "cs_equation.h"
-#include "cs_equation_iterative_solve.h"
-#include "cs_face_viscosity.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_gui_mobile_mesh.h"
-#include "cs_interface.h"
-#include "cs_log.h"
-#include "cs_physical_constants.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_restart.h"
-#include "cs_restart_default.h"
-#include "cs_time_step.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "base/cs_boundary_zone.h"
+#include "alge/cs_cell_to_vertex.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_main.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_domain_setup.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_field_operator.h"
+#include "gui/cs_gui_mobile_mesh.h"
+#include "base/cs_interface.h"
+#include "base/cs_log.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_bad_cells.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_default.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_ale.h"
+#include "base/cs_ale.h"
 
 /*----------------------------------------------------------------------------*/
 

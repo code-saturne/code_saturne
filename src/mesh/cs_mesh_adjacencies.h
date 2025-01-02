@@ -31,10 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_base_accel.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
+#include "base/cs_halo.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 

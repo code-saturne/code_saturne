@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,29 +42,29 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_lagr.h"
-#include "cs_lagr_extract.h"
-#include "cs_lagr_tracking.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_parall.h"
-#include "cs_physical_constants.h"
-#include "cs_prototypes.h"
-#include "cs_mesh_location.h"
-#include "cs_restart.h"
-#include "cs_thermal_model.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_extract.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "base/cs_parall.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_prototypes.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_restart.h"
+#include "base/cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_restart.h"
+#include "lagr/cs_lagr_restart.h"
 
 /*----------------------------------------------------------------------------*/
 

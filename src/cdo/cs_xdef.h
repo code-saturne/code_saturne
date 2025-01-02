@@ -37,13 +37,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_boundary_zone.h"
-#include "cs_field.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_param_types.h"
-#include "cs_quadrature.h"
-#include "cs_volume_zone.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_field.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "base/cs_param_types.h"
+#include "cdo/cs_quadrature.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

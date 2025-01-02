@@ -33,15 +33,7 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/cogz \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -51,7 +43,8 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+cscomb_includedir=$(pkgincludedir)/comb
+cscomb_include_HEADERS = \
 cs_coal.h \
 cs_coal_boundary_conditions.h \
 cs_coal_ht_convert.h \
@@ -79,7 +72,7 @@ cs_coal_source_terms.cpp
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
 
 # Additional rules

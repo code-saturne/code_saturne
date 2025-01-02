@@ -31,13 +31,13 @@
 
 #include <float.h>
 
-#include "cs_base.h"
-#include "cs_cdo_bc.h"
-#include "cs_cdo_local.h"
-#include "cs_defs.h"
-#include "cs_equation_param.h"
-#include "cs_math.h"
-#include "cs_matrix.h"
+#include "base/cs_base.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_local.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_equation_param.h"
+#include "base/cs_math.h"
+#include "alge/cs_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 

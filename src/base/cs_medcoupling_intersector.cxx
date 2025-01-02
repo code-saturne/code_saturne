@@ -43,30 +43,30 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_file.h"
-#include "cs_mesh.h"
-#include "cs_mesh_connect.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_selector.h"
-#include "cs_timer.h"
+#include "base/cs_file.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_connect.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_rotation.h"
+#include "base/cs_selector.h"
+#include "base/cs_timer.h"
 
-#include "fvm_writer.h"
-#include "fvm_nodal.h"
-#include "fvm_nodal_append.h"
+#include "fvm/fvm_writer.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_append.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_mesh.hxx"
-#include "cs_medcoupling_intersector.h"
+#include "base/cs_medcoupling_intersector.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers

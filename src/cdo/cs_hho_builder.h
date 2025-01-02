@@ -31,12 +31,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_basis_func.h"
-#include "cs_cdo_connect.h"
-#include "cs_property.h"
-#include "cs_sdm.h"
-#include "cs_xdef.h"
+#include "base/cs_base.h"
+#include "cdo/cs_basis_func.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_property.h"
+#include "cdo/cs_sdm.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C and C++ library headers
@@ -35,19 +35,19 @@
  *----------------------------------------------------------------------------*/
 
 #include "assert.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_log.h"
-#include "cs_mem.h"
-#include "cs_mem_cuda_priv.h"
+#include "base/cs_base.h"
+#include "base/cs_log.h"
+#include "base/cs_mem.h"
+#include "base/cs_mem_cuda_priv.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_base_cuda.h"
+#include "base/cs_base_cuda.h"
 
 /*----------------------------------------------------------------------------*/
 

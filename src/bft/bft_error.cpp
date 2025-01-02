@@ -24,7 +24,7 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*-----------------------------------------------------------------------------*/
 
@@ -42,8 +42,8 @@
  * Optional library and BFT headers
  */
 
-#include "bft_printf.h"
-#include "bft_error.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
 
 /*-----------------------------------------------------------------------------*/
 
@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *-----------------------------------------------------------------------------*/
 
-/* Associated typedef documentation (for bft_error.h) */
+/* Associated typedef documentation (for "bft/bft_error.h) */
 
 /*!
  * \typedef bft_error_handler_t

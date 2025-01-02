@@ -35,9 +35,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_domain.h"
-#include "cs_restart.h"
+#include "base/cs_base.h"
+#include "cdo/cs_domain.h"
+#include "base/cs_restart.h"
 
 /*----------------------------------------------------------------------------*/
 

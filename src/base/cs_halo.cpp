@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,31 +38,31 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_base_accel.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
 #if defined(HAVE_CUDA)
-#include "cs_base_cuda.h"
+#include "base/cs_base_cuda.h"
 #endif
-#include "cs_order.h"
+#include "base/cs_order.h"
 
-#include "cs_interface.h"
-#include "cs_rank_neighbors.h"
+#include "base/cs_interface.h"
+#include "base/cs_rank_neighbors.h"
 
-#include "fvm_periodicity.h"
+#include "fvm/fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
 
 #if defined(HAVE_CUDA)
-#include "cs_halo_cuda.h"
+#include "base/cs_halo_cuda.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

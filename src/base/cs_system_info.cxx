@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -64,19 +64,19 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "cs_log.h"
+#include "bft/bft_printf.h"
+#include "base/cs_log.h"
 
 #if defined(HAVE_ACCEL)
-#include "cs_base_accel.h"
+#include "base/cs_base_accel.h"
 #endif
 #if defined(HAVE_CUDA)
-#include "cs_base_cuda.h"
+#include "base/cs_base_cuda.h"
 #endif
 
 #if defined(HAVE_PETSC)
 #if 0
-#include "cs_sles_petsc.h"
+#include "alge/cs_sles_petsc.h"
 #else
 /* Duplicate prototype here to avoid requiring PETSc headers */
 void
@@ -85,18 +85,18 @@ cs_sles_petsc_library_info(cs_log_t  log_type);
 #endif
 
 #if defined(HAVE_HYPRE)
-#include "cs_sles_hypre.h"
+#include "alge/cs_sles_hypre.h"
 #endif
 
 #if defined(HAVE_AMGX)
-#include "cs_sles_amgx.h"
+#include "alge/cs_sles_amgx.h"
 #endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_system_info.h"
+#include "base/cs_system_info.h"
 
 /*----------------------------------------------------------------------------*/
 

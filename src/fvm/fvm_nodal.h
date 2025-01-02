@@ -27,16 +27,16 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh.h"
-#include "fvm_defs.h"
-#include "fvm_group.h"
-#include "fvm_io_num.h"
+#include "mesh/cs_mesh.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_group.h"
+#include "fvm/fvm_io_num.h"
 
 /*----------------------------------------------------------------------------*/
 

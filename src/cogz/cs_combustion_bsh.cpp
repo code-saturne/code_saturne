@@ -37,9 +37,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
-#include "cs_combustion_bsh.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
+#include "cogz/cs_combustion_bsh.h"
 
 BEGIN_C_DECLS
 

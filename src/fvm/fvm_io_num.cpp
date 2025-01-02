@@ -37,7 +37,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -53,22 +53,22 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_hilbert.h"
-#include "fvm_morton.h"
+#include "fvm/fvm_hilbert.h"
+#include "fvm/fvm_morton.h"
 
-#include "cs_all_to_all.h"
-#include "cs_order.h"
-#include "cs_parall.h"
-#include "cs_sort_partition.h"
+#include "base/cs_all_to_all.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
+#include "base/cs_sort_partition.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_io_num.h"
+#include "fvm/fvm_io_num.h"
 
 /*----------------------------------------------------------------------------*/
 

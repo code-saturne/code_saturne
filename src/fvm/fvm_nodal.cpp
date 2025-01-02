@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,22 +39,22 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
-#include "cs_mesh.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
+#include "mesh/cs_mesh.h"
 
-#include "fvm_defs.h"
-#include "fvm_io_num.h"
-#include "fvm_tesselation.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_io_num.h"
+#include "fvm/fvm_tesselation.h"
 
-#include "cs_parall.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
-#include "fvm_nodal_priv.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_priv.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -769,7 +769,7 @@ _remove_global_vertex_labels(fvm_nodal_t  *this_nodal)
 }
 
 /*============================================================================
- * Semi-private function definitions (prototypes in fvm_nodal_priv.h)
+ * Semi-private function definitions (prototypes in "fvm/fvm_nodal_priv.h)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------

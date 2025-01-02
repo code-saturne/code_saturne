@@ -33,25 +33,7 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/cfbl \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/cogz \
--I$(top_srcdir)/src/comb \
--I$(top_srcdir)/src/ctwr \
--I$(top_srcdir)/src/elec \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/meg \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/gui \
--I$(top_srcdir)/src/gwf \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/rayt \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(PETSC_CPPFLAGS) \
 $(HYPRE_CPPFLAGS) \
@@ -65,15 +47,6 @@ AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
-$(FCMODINCLUDE)$(top_builddir)/src/atmo \
-$(FCMODINCLUDE)$(top_builddir)/src/cfbl \
-$(FCMODINCLUDE)$(top_builddir)/src/cogz \
-$(FCMODINCLUDE)$(top_builddir)/src/comb \
-$(FCMODINCLUDE)$(top_builddir)/src/ctwr \
-$(FCMODINCLUDE)$(top_builddir)/src/elec \
-$(FCMODINCLUDE)$(top_builddir)/src/lagr \
-$(FCMODINCLUDE)$(top_builddir)/src/pprt \
-$(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
@@ -202,12 +175,11 @@ exampledir = $(pkgdatadir)/user_sources/EXAMPLES
 example_DATA = $(examplefiles)
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
 	-rm -rf .deps
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/user_examples -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
 
 # Finish example files installation
@@ -224,13 +196,4 @@ install-data-hook:
 	for f in $${h_user_files}; do \
 	  file=`basename "$${f}"` && \
 	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
-	done ; \
-	cd $(DESTDIR)$(exampledir) && \
-	f90_user_examples=`ls *.f90 2>/dev/null`; \
-	stubvers="^\!VERS\n"; \
-	version1="\!                      code_saturne version $(cs_version_short)\n"; \
-	version2="\!                      ------------------------"; \
-	for file in $${f90_user_examples}; do \
-	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" > "$${file}.tmp" && \
-	  mv "$${file}.tmp" "$${file}"; \
 	done

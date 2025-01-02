@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -41,33 +41,33 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_writer.h"
+#include "fvm/fvm_writer.h"
 
-#include "cs_array.h"
-#include "cs_cell_to_vertex.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_medcoupling_intersector.h"
-#include "cs_meg_prototypes.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_parameters.h"
-#include "cs_post.h"
-#include "cs_prototypes.h"
-#include "cs_stl.h"
-#include "cs_turbomachinery.h"
-#include "cs_velocity_pressure.h"
-#include "cs_vertex_to_cell.h"
-#include "cs_zone.h"
+#include "base/cs_array.h"
+#include "alge/cs_cell_to_vertex.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_medcoupling_intersector.h"
+#include "meg/cs_meg_prototypes.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "base/cs_parameters.h"
+#include "base/cs_post.h"
+#include "base/cs_prototypes.h"
+#include "mesh/cs_stl.h"
+#include "base/cs_turbomachinery.h"
+#include "base/cs_velocity_pressure.h"
+#include "alge/cs_vertex_to_cell.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_ibm.h"
+#include "base/cs_ibm.h"
 
 /*----------------------------------------------------------------------------*/
 

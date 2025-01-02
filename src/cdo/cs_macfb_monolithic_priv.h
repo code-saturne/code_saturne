@@ -29,7 +29,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,22 +39,22 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_assembly.h"
-#include "cs_cdo_bc.h"
-#include "cs_cdo_system.h"
-#include "cs_cdofb_monolithic_sles.h"
-#include "cs_cdofb_navsto.h"
-#include "cs_equation_bc.h"
-#include "cs_equation_priv.h"
-#include "cs_iter_algo.h"
-#include "cs_macfb_navsto.h"
-#include "cs_macfb_priv.h"
-#include "cs_macfb_vecteq.h"
-#include "cs_navsto_coupling.h"
-#include "cs_navsto_param.h"
-#include "cs_sles.h"
-#include "cs_static_condensation.h"
-#include "cs_timer.h"
+#include "cdo/cs_cdo_assembly.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_system.h"
+#include "cdo/cs_cdofb_monolithic_sles.h"
+#include "cdo/cs_cdofb_navsto.h"
+#include "cdo/cs_equation_bc.h"
+#include "cdo/cs_equation_priv.h"
+#include "cdo/cs_iter_algo.h"
+#include "cdo/cs_macfb_navsto.h"
+#include "cdo/cs_macfb_priv.h"
+#include "cdo/cs_macfb_vecteq.h"
+#include "cdo/cs_navsto_coupling.h"
+#include "cdo/cs_navsto_param.h"
+#include "alge/cs_sles.h"
+#include "cdo/cs_static_condensation.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
 

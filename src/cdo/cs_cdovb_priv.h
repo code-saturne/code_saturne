@@ -29,11 +29,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_hodge.h"
-#include "cs_cdo_advection.h"
-#include "cs_equation_bc.h"
-#include "cs_equation_builder.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_hodge.h"
+#include "cdo/cs_cdo_advection.h"
+#include "cdo/cs_equation_bc.h"
+#include "cdo/cs_equation_builder.h"
 
 /*----------------------------------------------------------------------------*/
 

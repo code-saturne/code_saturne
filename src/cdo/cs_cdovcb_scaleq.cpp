@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,43 +41,43 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_cdo_advection.h"
-#include "cs_cdo_assembly.h"
-#include "cs_cdo_bc.h"
-#include "cs_cdo_diffusion.h"
-#include "cs_cdo_local.h"
-#include "cs_cdo_solve.h"
-#include "cs_cdo_system.h"
-#include "cs_cdo_toolbox.h"
-#include "cs_equation_bc.h"
-#include "cs_equation_builder.h"
-#include "cs_evaluate.h"
-#include "cs_hodge.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
-#include "cs_post.h"
-#include "cs_quadrature.h"
-#include "cs_reco.h"
-#include "cs_reco_cw.h"
-#include "cs_scheme_geometry.h"
-#include "cs_sles.h"
-#include "cs_source_term.h"
-#include "cs_static_condensation.h"
-#include "cs_timer.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdo_advection.h"
+#include "cdo/cs_cdo_assembly.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_diffusion.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_cdo_system.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_equation_bc.h"
+#include "cdo/cs_equation_builder.h"
+#include "cdo/cs_evaluate.h"
+#include "cdo/cs_hodge.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_post.h"
+#include "cdo/cs_quadrature.h"
+#include "cdo/cs_reco.h"
+#include "cdo/cs_reco_cw.h"
+#include "cdo/cs_scheme_geometry.h"
+#include "alge/cs_sles.h"
+#include "cdo/cs_source_term.h"
+#include "cdo/cs_static_condensation.h"
+#include "base/cs_timer.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdovcb_scaleq.h"
+#include "cdo/cs_cdovcb_scaleq.h"
 
 /*----------------------------------------------------------------------------*/
 

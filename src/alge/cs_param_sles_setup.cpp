@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -58,32 +58,32 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_error.h>
-#include <bft_mem.h>
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_fp_exception.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_multigrid.h"
-#include "cs_sles.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "alge/cs_multigrid.h"
+#include "alge/cs_sles.h"
 
 #if defined(HAVE_MUMPS)
-#include "cs_sles_mumps.h"
+#include "alge/cs_sles_mumps.h"
 #endif
 
 #if defined(HAVE_PETSC)
-#include "cs_sles_petsc.h"
+#include "alge/cs_sles_petsc.h"
 #endif
 
 #if defined(HAVE_HYPRE)
-#include "cs_sles_hypre.h"
+#include "alge/cs_sles_hypre.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_param_sles_setup.h"
+#include "alge/cs_param_sles_setup.h"
 
 /*----------------------------------------------------------------------------*/
 

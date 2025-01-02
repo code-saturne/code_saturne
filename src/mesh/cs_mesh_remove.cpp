@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,29 +42,29 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_io_num.h"
+#include "fvm/fvm_io_num.h"
 
-#include "cs_base.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_interface.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_mesh_boundary.h"
-#include "cs_mesh_halo.h"
-#include "cs_mesh_group.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_interface.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_boundary.h"
+#include "mesh/cs_mesh_halo.h"
+#include "mesh/cs_mesh_group.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh_remove.h"
+#include "mesh/cs_mesh_remove.h"
 
 /*----------------------------------------------------------------------------*/
 

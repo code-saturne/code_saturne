@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C and C++ library headers
@@ -48,26 +48,26 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_base_accel.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
 
-#include "cs_base_cuda.h"
-// #include "cs_cuda_contrib.h"
+#include "base/cs_base_cuda.h"
+// #include "base/cs_cuda_contrib.h"
 
-#include "cs_log.h"
-#include "cs_matrix.h"
-#include "cs_matrix_priv.h"
-#include "cs_numbering.h"
+#include "base/cs_log.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_priv.h"
+#include "base/cs_numbering.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_benchmark_cuda.h"
+#include "alge/cs_benchmark_cuda.h"
 
 /*============================================================================
  * Local macro definitions

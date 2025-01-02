@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,38 +42,38 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_selector.h"
+#include "fvm/fvm_selector.h"
 
-#include "cs_atmo.h"
-#include "cs_base.h"
-#include "cs_cf_model.h"
-#include "cs_coal.h"
-#include "cs_combustion_gas.h"
-#include "cs_gui_util.h"
-#include "cs_gui.h"
-#include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_param_cdo.h"
-#include "cs_parameters.h"
-#include "cs_physical_model.h"
-#include "cs_selector.h"
-#include "cs_physical_properties.h"
-#include "cs_physical_constants.h"
-#include "cs_rad_transfer.h"
-#include "cs_thermal_system.h"
-#include "cs_elec_model.h"
-#include "cs_vof.h"
+#include "atmo/cs_atmo.h"
+#include "base/cs_base.h"
+#include "cfbl/cs_cf_model.h"
+#include "comb/cs_coal.h"
+#include "cogz/cs_combustion_gas.h"
+#include "gui/cs_gui_util.h"
+#include "gui/cs_gui.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "cdo/cs_param_cdo.h"
+#include "base/cs_parameters.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_selector.h"
+#include "base/cs_physical_properties.h"
+#include "base/cs_physical_constants.h"
+#include "rayt/cs_rad_transfer.h"
+#include "cdo/cs_thermal_system.h"
+#include "elec/cs_elec_model.h"
+#include "base/cs_vof.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gui_specific_physics.h"
+#include "gui/cs_gui_specific_physics.h"
 
 /*----------------------------------------------------------------------------*/
 

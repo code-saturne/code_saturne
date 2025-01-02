@@ -30,7 +30,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,12 +40,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_assembly.h"
-#include "cs_cdo_connect.h"
-#include "cs_param_types.h"
-#include "cs_matrix.h"
-#include "cs_matrix_assembler.h"
-#include "cs_range_set.h"
+#include "cdo/cs_cdo_assembly.h"
+#include "cdo/cs_cdo_connect.h"
+#include "base/cs_param_types.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_assembler.h"
+#include "base/cs_range_set.h"
 
 /*----------------------------------------------------------------------------*/
 

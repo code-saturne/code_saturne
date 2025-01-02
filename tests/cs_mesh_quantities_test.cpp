@@ -24,18 +24,18 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_math.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*---------------------------------------------------------------------------*/
 

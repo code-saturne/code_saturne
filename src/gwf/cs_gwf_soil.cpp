@@ -41,24 +41,24 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_field.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_parall.h"
-#include "cs_param_types.h"
-#include "cs_post.h"
-#include "cs_reco.h"
-#include "cs_volume_zone.h"
+#include "base/cs_array.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_parall.h"
+#include "base/cs_param_types.h"
+#include "base/cs_post.h"
+#include "cdo/cs_reco.h"
+#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gwf_soil.h"
+#include "gwf/cs_gwf_soil.h"
 
 /*----------------------------------------------------------------------------*/
 

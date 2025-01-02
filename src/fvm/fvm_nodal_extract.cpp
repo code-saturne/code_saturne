@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,19 +40,19 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_defs.h"
-#include "fvm_io_num.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_io_num.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
-#include "fvm_nodal_priv.h"
-#include "fvm_nodal_extract.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_priv.h"
+#include "fvm/fvm_nodal_extract.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -836,7 +836,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 }
 
 /*============================================================================
- * Semi-private function definitions (prototypes in fvm_nodal_priv.h)
+ * Semi-private function definitions (prototypes in "fvm/fvm_nodal_priv.h)
  *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

@@ -29,19 +29,19 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_advection_field.h"
-#include "cs_cdo_turbulence.h"
-#include "cs_equation.h"
-#include "cs_field.h"
-#include "cs_param_types.h"
-#include "cs_property.h"
-#include "cs_maxwell.h"
-#include "cs_mesh.h"
-#include "cs_navsto_param.h"
-#include "cs_time_plot.h"
-#include "cs_time_step.h"
-#include "cs_thermal_system.h"
-#include "cs_xdef.h"
+#include "cdo/cs_advection_field.h"
+#include "cdo/cs_cdo_turbulence.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_field.h"
+#include "base/cs_param_types.h"
+#include "cdo/cs_property.h"
+#include "cdo/cs_maxwell.h"
+#include "mesh/cs_mesh.h"
+#include "cdo/cs_navsto_param.h"
+#include "base/cs_time_plot.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_thermal_system.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

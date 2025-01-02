@@ -29,13 +29,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_boundary.h"
-#include "cs_equation.h"
-#include "cs_iter_algo.h"
-#include "cs_navsto_param.h"
-#include "cs_time_plot.h"
-#include "cs_time_step.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_iter_algo.h"
+#include "cdo/cs_navsto_param.h"
+#include "base/cs_time_plot.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,12 +37,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_log.h"
-#include "cs_rank_neighbors.h"
-#include "cs_timer.h"
+#include "base/cs_defs.h"
+#include "base/cs_log.h"
+#include "base/cs_rank_neighbors.h"
+#include "base/cs_timer.h"
 
-#include "cs_matrix.h"
+#include "alge/cs_matrix.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

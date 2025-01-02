@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -48,23 +48,23 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_balance.h"
-#include "cs_face_viscosity.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_mesh.h"
-#include "cs_physical_constants.h"
-#include "cs_time_step.h"
+#include "base/cs_array.h"
+#include "alge/cs_balance.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_dilatable_scalar_diff_st.h"
+#include "base/cs_dilatable_scalar_diff_st.h"
 
 /*----------------------------------------------------------------------------*/
 

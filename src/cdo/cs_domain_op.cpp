@@ -27,7 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,32 +40,32 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_advection_field.h"
-#include "cs_array_reduce.h"
-#include "cs_cdo_quantities.h"
-#include "cs_equation.h"
-#include "cs_equation_param.h"
-#include "cs_gwf.h"
-#include "cs_log.h"
-#include "cs_log_iteration.h"
-#include "cs_maxwell.h"
-#include "cs_navsto_system.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_property.h"
-#include "cs_prototypes.h"
-#include "cs_restart.h"
-#include "cs_restart_default.h"
-#include "cs_solidification.h"
-#include "cs_walldistance.h"
+#include "cdo/cs_advection_field.h"
+#include "base/cs_array_reduce.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_equation_param.h"
+#include "gwf/cs_gwf.h"
+#include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
+#include "cdo/cs_maxwell.h"
+#include "cdo/cs_navsto_system.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "cdo/cs_property.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_default.h"
+#include "cdo/cs_solidification.h"
+#include "cdo/cs_walldistance.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_domain_op.h"
+#include "cdo/cs_domain_op.h"
 
 /*----------------------------------------------------------------------------*/
 

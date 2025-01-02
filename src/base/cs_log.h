@@ -31,8 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_timer.h"
+#include "base/cs_defs.h"
+#include "base/cs_timer.h"
 #include "stdarg.h"
 
 /*----------------------------------------------------------------------------*/

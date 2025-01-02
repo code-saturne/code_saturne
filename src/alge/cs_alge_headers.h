@@ -29,54 +29,54 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_bad_cells_regularisation.h"
-#include "cs_balance_by_zone.h"
-#include "cs_balance.h"
-#include "cs_benchmark.h"
-#include "cs_blas.h"
-#include "cs_bw_time_diff.h"
-#include "cs_cell_to_vertex.h"
-#include "cs_convection_diffusion.h"
-#include "cs_divergence.h"
-#include "cs_face_viscosity.h"
-#include "cs_gradient.h"
-#include "cs_gradient_boundary.h"
-#include "cs_grid.h"
-#include "cs_matrix_assembler.h"
-#include "cs_matrix_building.h"
-#include "cs_matrix_default.h"
-#include "cs_matrix.h"
-#include "cs_matrix_tuning.h"
-#include "cs_matrix_util.h"
-#include "cs_multigrid.h"
-#include "cs_multigrid_smoother.h"
-#include "cs_param_amg.h"
-#include "cs_param_mumps.h"
-#include "cs_param_saddle.h"
-#include "cs_param_sles.h"
-#include "cs_param_sles_setup.h"
-#include "cs_saddle_solver.h"
-#include "cs_saddle_solver_setup.h"
-#include "cs_sles_default.h"
-#include "cs_sles.h"
-#include "cs_sles_it.h"
-#include "cs_sles_pc.h"
-#include "cs_vertex_to_cell.h"
+#include "alge/cs_bad_cells_regularisation.h"
+#include "alge/cs_balance_by_zone.h"
+#include "alge/cs_balance.h"
+#include "alge/cs_benchmark.h"
+#include "alge/cs_blas.h"
+#include "alge/cs_bw_time_diff.h"
+#include "alge/cs_cell_to_vertex.h"
+#include "alge/cs_convection_diffusion.h"
+#include "alge/cs_divergence.h"
+#include "alge/cs_face_viscosity.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_gradient_boundary.h"
+#include "alge/cs_grid.h"
+#include "alge/cs_matrix_assembler.h"
+#include "alge/cs_matrix_building.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_tuning.h"
+#include "alge/cs_matrix_util.h"
+#include "alge/cs_multigrid.h"
+#include "alge/cs_multigrid_smoother.h"
+#include "alge/cs_param_amg.h"
+#include "alge/cs_param_mumps.h"
+#include "alge/cs_param_saddle.h"
+#include "alge/cs_param_sles.h"
+#include "alge/cs_param_sles_setup.h"
+#include "alge/cs_saddle_solver.h"
+#include "alge/cs_saddle_solver_setup.h"
+#include "alge/cs_sles_default.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_it.h"
+#include "alge/cs_sles_pc.h"
+#include "alge/cs_vertex_to_cell.h"
 
 #if defined(HAVE_HYPRE)
-#include "cs_sles_hypre.h"
+#include "alge/cs_sles_hypre.h"
 #endif
 
 #if defined(HAVE_MUMPS)
-#include "cs_sles_mumps.h"
+#include "alge/cs_sles_mumps.h"
 #endif
 
 #if defined(HAVE_PETSC)
-#include "cs_sles_petsc.h"
+#include "alge/cs_sles_petsc.h"
 #endif
 
 #if defined(HAVE_AMGX)
-#include "cs_sles_amgx.h"
+#include "alge/cs_sles_amgx.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

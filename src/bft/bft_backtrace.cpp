@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*-----------------------------------------------------------------------------*/
 
@@ -55,7 +55,7 @@
  * Optional library and BFT headers
  */
 
-#include "bft_backtrace.h"
+#include "bft/bft_backtrace.h"
 
 /*-----------------------------------------------------------------------------*/
 
@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *----------------------------------------------------------------------------*/
 
-/* Associated typedef documentation (for bft_backtrace.h) */
+/* Associated typedef documentation (for "bft/bft_backtrace.h) */
 
 /*!
  * \typedef bft_backtrace_print_t

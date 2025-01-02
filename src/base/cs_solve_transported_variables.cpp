@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,34 +42,34 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_atmo.h"
-#include "cs_atmo_aerosol.h"
-#include "cs_base.h"
-#include "cs_boundary_conditions_set_coeffs.h"
-#include "cs_cf_energy.h"
-#include "cs_cf_model.h"
-#include "cs_coal.h"
-#include "cs_elec_model.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_hgn_source_terms_step.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_restart.h"
-#include "cs_solve_equation.h"
-#include "cs_time_step.h"
+#include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_aerosol.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "cfbl/cs_cf_energy.h"
+#include "cfbl/cs_cf_model.h"
+#include "comb/cs_coal.h"
+#include "elec/cs_elec_model.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "cfbl/cs_hgn_source_terms_step.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_restart.h"
+#include "base/cs_solve_equation.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_solve_transported_variables.h"
+#include "base/cs_solve_transported_variables.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -31,7 +31,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C++ library headers
@@ -47,11 +47,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_assert.h"
+#include "base/cs_assert.h"
 
 #ifdef __NVCC__
-#include "cs_base_cuda.h"
-#include "cs_blas_cuda.h"
+#include "base/cs_base_cuda.h"
+#include "alge/cs_blas_cuda.h"
 #include "cs_math_cuda.cuh"
 #endif
 

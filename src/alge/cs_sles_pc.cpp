@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,29 +45,29 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
 
-#include "cs_base.h"
-#include "cs_blas.h"
-#include "cs_dispatch.h"
-#include "cs_field.h"
-#include "cs_log.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
-#include "cs_matrix.h"
-#include "cs_matrix_default.h"
-#include "cs_matrix_util.h"
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_halo.h"
+#include "mesh/cs_mesh.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix_util.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sles_pc.h"
-#include "cs_sles_pc_priv.h"
+#include "alge/cs_sles_pc.h"
+#include "alge/cs_sles_pc_priv.h"
 
 #if defined(HAVE_CUDA)
-#include "cs_sles_pc_cuda.h"
+#include "alge/cs_sles_pc_cuda.h"
 #endif
 
 /*----------------------------------------------------------------------------*/

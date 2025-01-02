@@ -28,7 +28,7 @@
  * Functions dealing with particle tracking
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,26 +48,26 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_boundary_conditions_set_coeffs.h"
-#include "cs_equation_iterative_solve.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
-#include "cs_gradient.h"
-#include "cs_face_viscosity.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_face_viscosity.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_stat.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_stat.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_poisson.h"
+#include "lagr/cs_lagr_poisson.h"
 
 /*----------------------------------------------------------------------------*/
 

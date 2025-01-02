@@ -27,14 +27,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_sdm.h"
-#include "cs_timer.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "cdo/cs_sdm.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
 

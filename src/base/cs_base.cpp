@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -69,25 +69,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_mem.h"
-#include "bft_backtrace.h"
-#include "bft_mem.h"
-#include "bft_mem_usage.h"
-#include "bft_printf.h"
+#include "base/cs_mem.h"
+#include "bft/bft_backtrace.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_printf.h"
 
-#include "cs_execution_context.h"
-#include "cs_file.h"
-#include "cs_fp_exception.h"
-#include "cs_mem.h"
-#include "cs_log.h"
-#include "cs_timer.h"
-#include "cs_version.h"
+#include "base/cs_execution_context.h"
+#include "base/cs_file.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_mem.h"
+#include "base/cs_log.h"
+#include "base/cs_timer.h"
+#include "base/cs_version.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
+#include "base/cs_base.h"
 
 /*----------------------------------------------------------------------------*/
 

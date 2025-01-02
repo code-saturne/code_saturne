@@ -33,21 +33,21 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_defs.h"
-#include "cs_function.h"
-#include "cs_halo.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_array.h"
+#include "base/cs_defs.h"
+#include "base/cs_function.h"
+#include "base/cs_halo.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
-#include "cs_medcoupling_utils.h"
+#include "base/cs_medcoupling_utils.h"
 #include "cs_medcoupling_mesh.hxx"
-#include "cs_post.h"
+#include "base/cs_post.h"
 
 #if defined(HAVE_MEDCOUPLING)
 #include <MEDCoupling_version.h>
@@ -58,7 +58,7 @@
 using namespace MEDCoupling;
 #endif
 
-#include "cs_medcoupling_postprocess.h"
+#include "base/cs_medcoupling_postprocess.h"
 
 /*----------------------------------------------------------------------------*/
 /* Internal structures */

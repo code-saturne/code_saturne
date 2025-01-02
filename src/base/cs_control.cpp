@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -56,25 +56,25 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_file.h"
-#include "cs_log.h"
-#include "cs_notebook.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_resource.h"
-#include "cs_restart.h"
-#include "cs_time_plot.h"
-#include "cs_time_stepping.h"
-#include "cs_timer.h"
+#include "base/cs_file.h"
+#include "base/cs_log.h"
+#include "base/cs_notebook.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_resource.h"
+#include "base/cs_restart.h"
+#include "base/cs_time_plot.h"
+#include "base/cs_time_stepping.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_control.h"
+#include "base/cs_control.h"
 
 BEGIN_C_DECLS
 

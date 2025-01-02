@@ -35,10 +35,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_io_num.h"
+#include "fvm/fvm_io_num.h"
 
-#include "cs_base.h"
-#include "cs_mesh.h"
+#include "base/cs_base.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 

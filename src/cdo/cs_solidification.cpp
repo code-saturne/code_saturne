@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,22 +37,22 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_error.h>
-#include <bft_mem.h>
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_cdofb_scaleq.h"
-#include "cs_navsto_system.h"
-#include "cs_parall.h"
-#include "cs_physical_model.h"
-#include "cs_post.h"
-#include "cs_solid_selection.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdofb_scaleq.h"
+#include "cdo/cs_navsto_system.h"
+#include "base/cs_parall.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_post.h"
+#include "cdo/cs_solid_selection.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_solidification.h"
+#include "cdo/cs_solidification.h"
 
 /*----------------------------------------------------------------------------*/
 

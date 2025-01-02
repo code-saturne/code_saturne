@@ -83,15 +83,16 @@ config/code_saturne_build.cfg.in.in
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += extras m4 patches
 
-nodist_pkginclude_HEADERS = \
-cs_config.h \
-cs_version.h
+csbase_includedir=$(pkgincludedir)/base
+nodist_csbase_include_HEADERS = \
+src/base/cs_config.h \
+src/base/cs_version.h
 
 DISTCLEANFILES = \
 bin/code_saturne \
 lib/code_saturne_build.cfg \
-cs_config.h \
-cs_version.h \
+src/base/cs_config.h \
+src/base/cs_version.h \
 libtool_cuda
 
 ACLOCAL_AMFLAGS = -I m4
@@ -173,8 +174,8 @@ endif
 
 bin/code_saturne: $(srcdir)/bin/code_saturne.$(LAUNCHER_EXT).in
 
-cs_version.h: Makefile $(top_srcdir)/src/base/cs_version.h.in
-	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in cs_version.h
+src/base/cs_version.h: Makefile $(top_srcdir)/src/base/cs_version.h.in
+	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in src/base/cs_version.h
 
 lib/code_saturne_build.cfg: Makefile config/code_saturne_build.cfg.in
 	rm -f $@ $@.tmp
@@ -185,7 +186,7 @@ lib/code_saturne_build.cfg: Makefile config/code_saturne_build.cfg.in
 	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace $@ $@
 
 BUILT_SOURCES = \
-cs_version.h \
+src/base/cs_version.h \
 lib/code_saturne_build.cfg
 
 CLEANFILES = $(edit_scripts)
@@ -308,7 +309,7 @@ dist-hook:
 # Additional local targets
 
 all-local:
-	@$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in cs_version.h
+	@$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in src/base/cs_version.h
 	@if test -f bin/cs_package.py; then \
 	  $(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace bin/cs_package.py bin/cs_package.py; \
 	fi

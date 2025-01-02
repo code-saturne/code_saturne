@@ -29,14 +29,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
-#include "cs_equation.h"
-#include "cs_field.h"
-#include "cs_mesh.h"
-#include "cs_property.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_model.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_field.h"
+#include "mesh/cs_mesh.h"
+#include "cdo/cs_property.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------*/
 

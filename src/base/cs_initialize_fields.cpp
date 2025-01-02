@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,50 +40,50 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_ale.h"
-#include "cs_array.h"
-#include "cs_array_reduce.h"
-#include "cs_assert.h"
-#include "cs_cf_model.h"
-#include "cs_cf_thermo.h"
-#include "cs_coal_initialize.h"
-#include "cs_ctwr_initialize.h"
-#include "cs_dispatch.h"
-#include "cs_elec_model.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_gas_mix.h"
-#include "cs_gui.h"
-#include "cs_gui_mobile_mesh.h"
-#include "cs_ibm.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
-#include "cs_parameters_check.h"
-#include "cs_parall.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_porous_model.h"
-#include "cs_porosity_from_scan.h"
-#include "cs_prototypes.h"
-#include "cs_scalar_clipping.h"
-#include "cs_solve_navier_stokes.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_init.h"
-#include "cs_velocity_pressure.h"
-#include "cs_vof.h"
+#include "base/cs_ale.h"
+#include "base/cs_array.h"
+#include "base/cs_array_reduce.h"
+#include "base/cs_assert.h"
+#include "cfbl/cs_cf_model.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "comb/cs_coal_initialize.h"
+#include "ctwr/cs_ctwr_initialize.h"
+#include "base/cs_dispatch.h"
+#include "elec/cs_elec_model.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_gas_mix.h"
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_mobile_mesh.h"
+#include "base/cs_ibm.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "base/cs_parameters_check.h"
+#include "base/cs_parall.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_porosity_from_scan.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_scalar_clipping.h"
+#include "base/cs_solve_navier_stokes.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_init.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_vof.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_initialize_fields.h"
+#include "base/cs_initialize_fields.h"
 
 /*----------------------------------------------------------------------------*/
 

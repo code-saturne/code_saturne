@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,18 +44,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_error.h>
-#include <bft_mem.h>
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_base.h"
-#include "cs_log.h"
-#include "cs_param_cdo.h"
+#include "base/cs_base.h"
+#include "base/cs_log.h"
+#include "cdo/cs_param_cdo.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_param_sles.h"
+#include "alge/cs_param_sles.h"
 
 /*----------------------------------------------------------------------------*/
 

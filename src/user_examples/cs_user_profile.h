@@ -33,7 +33,6 @@
 #define CS_USER_PROFILE_H
 
 #include "cs_headers.h"
-#include "cs_stl.h"
 
 /* Set this define to 0 if OpenTunrs not linked to code saturne
    set this define to 1 if OpenTurns linked to CS (histogramp output) */

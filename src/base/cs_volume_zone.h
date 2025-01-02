@@ -35,9 +35,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_mesh_location.h"
-#include "cs_zone.h"
+#include "base/cs_base.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

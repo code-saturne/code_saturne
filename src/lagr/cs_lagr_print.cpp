@@ -28,7 +28,7 @@
  * Functions dealing with file printing
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,18 +48,18 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_parall.h"
-#include "cs_time_step.h"
+#include "base/cs_parall.h"
+#include "base/cs_time_step.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_particle.h"
-#include "cs_lagr_tracking.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_particle.h"
+#include "lagr/cs_lagr_tracking.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_print.h"
+#include "lagr/cs_lagr_print.h"
 
 /*----------------------------------------------------------------------------*/
 

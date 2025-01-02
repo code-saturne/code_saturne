@@ -29,7 +29,7 @@
  * Functions dealing with head losses due to particle deposit
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -49,31 +49,31 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_field.h"
-#include "cs_field_operator.h"
-#include "cs_gradient.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
-#include "cs_parameters_check.h"
-#include "cs_parall.h"
-#include "cs_prototypes.h"
+#include "base/cs_field.h"
+#include "base/cs_field_operator.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "base/cs_parameters_check.h"
+#include "base/cs_parall.h"
+#include "base/cs_prototypes.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_stat.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_stat.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_head_losses.h"
+#include "lagr/cs_lagr_head_losses.h"
 
 /*----------------------------------------------------------------------------*/
 

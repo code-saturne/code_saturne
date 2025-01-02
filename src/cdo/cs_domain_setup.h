@@ -31,10 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_domain.h"
-#include "cs_param_types.h"
+#include "cdo/cs_domain.h"
+#include "base/cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
 

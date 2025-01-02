@@ -31,10 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_field.h"
-#include "cs_map.h"
-#include "cs_restart.h"
+#include "base/cs_defs.h"
+#include "base/cs_field.h"
+#include "base/cs_map.h"
+#include "base/cs_restart.h"
 
 /*----------------------------------------------------------------------------*/
 

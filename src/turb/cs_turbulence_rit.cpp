@@ -22,7 +22,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,42 +41,42 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_base.h"
-#include "cs_divergence.h"
-#include "cs_equation_iterative_solve.h"
-#include "cs_equation_param.h"
-#include "cs_face_viscosity.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_log_iteration.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_physical_constants.h"
-#include "cs_prototypes.h"
-#include "cs_thermal_model.h"
-#include "cs_solid_zone.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_bc.h"
-#include "cs_turbulence_model.h"
-#include "cs_velocity_pressure.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "alge/cs_divergence.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "cdo/cs_equation_param.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log_iteration.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_solid_zone.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_bc.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_velocity_pressure.h"
 
-#include "cs_turbulence_rij.h"
+#include "turb/cs_turbulence_rij.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_turbulence_rit.h"
+#include "turb/cs_turbulence_rit.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -27,7 +27,7 @@
  * Functions dealing with Lagrangian module options
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,32 +41,32 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_file.h"
-#include "cs_gui_particles.h"
-#include "cs_gui_util.h"
-#include "cs_mesh_location.h"
-#include "cs_parameters.h"
-#include "cs_parameters_check.h"
-#include "cs_physical_model.h"
-#include "cs_turbulence_model.h"
-#include "cs_volume_zone.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_file.h"
+#include "gui/cs_gui_particles.h"
+#include "gui/cs_gui_util.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parameters.h"
+#include "base/cs_parameters_check.h"
+#include "pprt/cs_physical_model.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_volume_zone.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_event.h"
-#include "cs_lagr_particle.h"
-#include "cs_lagr_post.h"
-#include "cs_lagr_prototypes.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_event.h"
+#include "lagr/cs_lagr_particle.h"
+#include "lagr/cs_lagr_post.h"
+#include "lagr/cs_lagr_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_options.h"
+#include "lagr/cs_lagr_options.h"
 
 /*----------------------------------------------------------------------------*/
 

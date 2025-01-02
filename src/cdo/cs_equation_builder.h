@@ -29,16 +29,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_bc.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_local.h"
-#include "cs_cdo_quantities.h"
-#include "cs_cdo_system.h"
-#include "cs_enforcement.h"
-#include "cs_equation_param.h"
-#include "cs_flag.h"
-#include "cs_matrix.h"
-#include "cs_source_term.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdo_system.h"
+#include "cdo/cs_enforcement.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "alge/cs_matrix.h"
+#include "cdo/cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
 

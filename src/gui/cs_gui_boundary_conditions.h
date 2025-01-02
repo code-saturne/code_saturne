@@ -31,9 +31,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_boundary.h"
-#include "cs_zone.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 

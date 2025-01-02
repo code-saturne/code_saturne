@@ -22,7 +22,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,49 +44,49 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_atmo.h"
-#include "cs_blas.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_zone.h"
-#include "cs_coal.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_gui_util.h"
-#include "cs_ht_convert.h"
-#include "cs_internal_coupling.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_parameters_check.h"
-#include "cs_thermal_model.h"
-#include "cs_equation_iterative_solve.h"
-#include "cs_gradient.h"
-#include "cs_face_viscosity.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_prototypes.h"
-#include "cs_sles.h"
-#include "cs_sles_it.h"
-#include "cs_time_step.h"
+#include "atmo/cs_atmo.h"
+#include "alge/cs_blas.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_zone.h"
+#include "comb/cs_coal.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "gui/cs_gui_util.h"
+#include "base/cs_ht_convert.h"
+#include "base/cs_internal_coupling.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_parameters_check.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_it.h"
+#include "base/cs_time_step.h"
 
-#include "cs_gui_radiative_transfer.h"
-#include "cs_rad_transfer.h"
-#include "cs_rad_transfer_absorption.h"
-#include "cs_rad_transfer_pun.h"
-#include "cs_rad_transfer_bcs.h"
+#include "gui/cs_gui_radiative_transfer.h"
+#include "rayt/cs_rad_transfer.h"
+#include "rayt/cs_rad_transfer_absorption.h"
+#include "rayt/cs_rad_transfer_pun.h"
+#include "rayt/cs_rad_transfer_bcs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_rad_transfer_solve.h"
+#include "rayt/cs_rad_transfer_solve.h"
 
 /*----------------------------------------------------------------------------*/
 

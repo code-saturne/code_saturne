@@ -22,7 +22,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,32 +41,32 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_atmo.h"
-#include "cs_air_props.h"
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_thermal_model.h"
-#include "cs_time_step.h"
-#include "cs_turbulence_model.h"
-#include "cs_velocity_pressure.h"
+#include "atmo/cs_atmo.h"
+#include "atmo/cs_air_props.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_time_step.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_velocity_pressure.h"
 
-#include "cs_atmo_profile_std.h"
-#include "cs_intprf.h"
+#include "atmo/cs_atmo_profile_std.h"
+#include "atmo/cs_intprf.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_atprke.h"
+#include "atmo/cs_atprke.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -36,15 +36,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_boundary.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_param_cdo.h"
-#include "cs_time_step.h"
-#include "cs_timer.h"
-#include "cs_xdef.h"
+#include "base/cs_boundary.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "cdo/cs_param_cdo.h"
+#include "base/cs_time_step.h"
+#include "base/cs_timer.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

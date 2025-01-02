@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,29 +42,29 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_gui_util.h"
-#include "cs_gui_boundary_conditions.h"
-#include "cs_join.h"
-#include "cs_join_perio.h"
-#include "cs_mesh.h"
-#include "cs_mesh_cartesian.h"
-#include "cs_mesh_warping.h"
-#include "cs_mesh_smoother.h"
-#include "cs_mesh_boundary.h"
-#include "cs_mesh_extrude.h"
-#include "cs_parameters.h"
-#include "cs_preprocessor_data.h"
+#include "base/cs_base.h"
+#include "gui/cs_gui_util.h"
+#include "gui/cs_gui_boundary_conditions.h"
+#include "mesh/cs_join.h"
+#include "mesh/cs_join_perio.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_cartesian.h"
+#include "mesh/cs_mesh_warping.h"
+#include "mesh/cs_mesh_smoother.h"
+#include "mesh/cs_mesh_boundary.h"
+#include "mesh/cs_mesh_extrude.h"
+#include "base/cs_parameters.h"
+#include "base/cs_preprocessor_data.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gui_mesh.h"
+#include "gui/cs_gui_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 

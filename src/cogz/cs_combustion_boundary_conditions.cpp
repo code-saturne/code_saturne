@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,25 +40,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_boundary.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_zone.h"
-#include "cs_combustion_gas.h"
-#include "cs_combustion_model.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
-#include "cs_parameters_check.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_prototypes.h"
+#include "base/cs_boundary.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_zone.h"
+#include "cogz/cs_combustion_gas.h"
+#include "pprt/cs_combustion_model.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "base/cs_parameters_check.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
 
 /* Prototypes for Fortran functions */
 
@@ -69,7 +69,7 @@ cs_f_flamelet_rho_idx(void);
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_combustion_boundary_conditions.h"
+#include "cogz/cs_combustion_boundary_conditions.h"
 
 /*----------------------------------------------------------------------------*/
 

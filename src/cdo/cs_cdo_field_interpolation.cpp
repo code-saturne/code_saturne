@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,20 +40,20 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_cdofb_scaleq.h"
-#include "cs_cdovcb_scaleq.h"
-#include "cs_equation.h"
-#include "cs_equation_priv.h"
-#include "cs_timer_stats.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdofb_scaleq.h"
+#include "cdo/cs_cdovcb_scaleq.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_equation_priv.h"
+#include "base/cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_field_interpolation.h"
+#include "cdo/cs_cdo_field_interpolation.h"
 
 /*----------------------------------------------------------------------------*/
 

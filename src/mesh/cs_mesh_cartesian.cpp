@@ -34,16 +34,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_block_dist.h"
-#include "cs_math.h"
+#include "base/cs_block_dist.h"
+#include "base/cs_math.h"
 
-#include "cs_mesh.h"
-#include "cs_mesh_builder.h"
-#include "cs_mesh_cartesian.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_builder.h"
+#include "mesh/cs_mesh_cartesian.h"
 
 BEGIN_C_DECLS
 

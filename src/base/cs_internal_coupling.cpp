@@ -43,40 +43,40 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
-#include "bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
 
-#include "fvm_defs.h"
-#include "fvm_selector.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_selector.h"
 
-#include "cs_defs.h"
-#include "cs_math.h"
-#include "cs_sort.h"
-#include "cs_search.h"
-#include "cs_mesh_connect.h"
-#include "cs_mesh_location.h"
-#include "cs_coupling.h"
-#include "cs_gradient_boundary.h"
-#include "cs_halo.h"
-#include "cs_matrix.h"
-#include "cs_mesh.h"
-#include "cs_mesh_boundary.h"
-#include "cs_mesh_group.h"
-#include "cs_mesh_quantities.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_selector.h"
-#include "cs_parall.h"
-#include "cs_prototypes.h"
-#include "cs_velocity_pressure.h"
+#include "base/cs_defs.h"
+#include "base/cs_math.h"
+#include "base/cs_sort.h"
+#include "base/cs_search.h"
+#include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_coupling.h"
+#include "alge/cs_gradient_boundary.h"
+#include "base/cs_halo.h"
+#include "alge/cs_matrix.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_boundary.h"
+#include "mesh/cs_mesh_group.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_selector.h"
+#include "base/cs_parall.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_internal_coupling.h"
+#include "base/cs_internal_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 

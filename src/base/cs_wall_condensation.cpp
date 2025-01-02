@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,35 +40,35 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_base.h"
-#include "cs_1d_wall_thermal.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_gas_mix.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_physical_constants.h"
-#include "cs_prototypes.h"
-#include "cs_restart.h"
-#include "cs_thermal_model.h"
-#include "cs_time_step.h"
-#include "cs_velocity_pressure.h"
-#include "cs_wall_condensation_1d_thermal.h"
-#include "cs_wall_functions.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "base/cs_1d_wall_thermal.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_gas_mix.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_restart.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_time_step.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_wall_condensation_1d_thermal.h"
+#include "base/cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_wall_condensation.h"
+#include "base/cs_wall_condensation.h"
 
 /*----------------------------------------------------------------------------*/
 

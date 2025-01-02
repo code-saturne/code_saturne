@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,25 +40,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_hodge.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_property.h"
-#include "cs_reco.h"
-#include "cs_reco_cw.h"
-#include "cs_scheme_geometry.h"
+#include "cdo/cs_hodge.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "cdo/cs_property.h"
+#include "cdo/cs_reco.h"
+#include "cdo/cs_reco_cw.h"
+#include "cdo/cs_scheme_geometry.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_diffusion.h"
+#include "cdo/cs_cdo_diffusion.h"
 
 /*----------------------------------------------------------------------------*/
 

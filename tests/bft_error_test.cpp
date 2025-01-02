@@ -28,7 +28,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "bft_error.h"
+#include "bft/bft_error.h"
 
 static void
 bft_error_handler_test(const char  *const file_name,

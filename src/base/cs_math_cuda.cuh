@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C/C++/CUDA library headers
@@ -39,7 +39,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base_cuda.h"
+#include "base/cs_base_cuda.h"
 
 /*=============================================================================
  * Semi-private inline functions

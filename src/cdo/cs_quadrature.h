@@ -29,13 +29,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_error.h>
+#include "bft/bft_error.h"
 
-#include "cs_base.h"
-#include "cs_defs.h"
-#include "cs_flag.h"
-#include "cs_math.h"
-#include "cs_param_types.h"
+#include "base/cs_base.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_flag.h"
+#include "base/cs_math.h"
+#include "base/cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -36,15 +36,7 @@ LIBS_PLE = $(PLE_LIBS)
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/ctwr \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -158,9 +150,7 @@ cs_blas_test_SOURCES  = \
 cs_blas_test.cpp \
 cs_blas.cpp
 cs_blas_test_CPPFLAGS  = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src \
  $(BLAS_CPPFLAGS) $(MPI_CPPFLAGS)
 cs_blas_test_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_HOT)
 cs_blas_test_LDFLAGS  = $(BLAS_LDFLAGS) $(LDFLAGS_CS_TESTS)

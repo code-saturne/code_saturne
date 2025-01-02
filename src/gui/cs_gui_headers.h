@@ -29,16 +29,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_gui.h"
-#include "cs_gui_boundary_conditions.h"
-#include "cs_gui_conjugate_heat_transfer.h"
-#include "cs_gui_mesh.h"
-#include "cs_gui_mobile_mesh.h"
-#include "cs_gui_output.h"
-#include "cs_gui_particles.h"
-#include "cs_gui_radiative_transfer.h"
-#include "cs_gui_specific_physics.h"
-#include "cs_gui_util.h"
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_boundary_conditions.h"
+#include "gui/cs_gui_conjugate_heat_transfer.h"
+#include "gui/cs_gui_mesh.h"
+#include "gui/cs_gui_mobile_mesh.h"
+#include "gui/cs_gui_output.h"
+#include "gui/cs_gui_particles.h"
+#include "gui/cs_gui_radiative_transfer.h"
+#include "gui/cs_gui_specific_physics.h"
+#include "gui/cs_gui_util.h"
 
 /*----------------------------------------------------------------------------*/
 

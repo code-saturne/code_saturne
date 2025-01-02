@@ -29,7 +29,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -49,25 +49,25 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_boundary_zone.h"
-#include "cs_coupling.h"
-#include "cs_log.h"
-#include "cs_log_iteration.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
-#include "cs_property.h"
-#include "cs_prototypes.h"
-#include "cs_quadrature.h"
-#include "cs_restart.h"
-#include "cs_time_step.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_coupling.h"
+#include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_location.h"
+#include "cdo/cs_property.h"
+#include "base/cs_prototypes.h"
+#include "cdo/cs_quadrature.h"
+#include "base/cs_restart.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_domain.h"
+#include "cdo/cs_domain.h"
 
 /*----------------------------------------------------------------------------*/
 

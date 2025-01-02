@@ -30,10 +30,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation.h"
-#include "cs_equation_priv.h"
-#include "cs_equation_system_param.h"
-#include "cs_param_types.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_equation_priv.h"
+#include "cdo/cs_equation_system_param.h"
+#include "base/cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -25,7 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_CONFIG_H)
-#  include "cs_config.h"
+#  include "base/cs_config.h"
 #endif
 
 #if defined(HAVE_CLOCK_GETTIME)
@@ -36,7 +36,7 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -50,18 +50,18 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_map.h"
-#include "cs_timer.h"
-#include "cs_time_plot.h"
+#include "base/cs_map.h"
+#include "base/cs_timer.h"
+#include "base/cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_timer_stats.h"
+#include "base/cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -22,7 +22,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -46,35 +46,35 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_blas.h"
-#include "cs_dispatch.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_matrix.h"
-#include "cs_matrix_default.h"
-#include "cs_mesh.h"
-#include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_gradient.h"
-#include "cs_ext_neighborhood.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
-#include "cs_porous_model.h"
-#include "cs_prototypes.h"
-#include "cs_timer.h"
+#include "alge/cs_blas.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_log.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_field.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_ext_neighborhood.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_timer.h"
 
-#include "cs_parall.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_matrix_building.h"
+#include "alge/cs_matrix_building.h"
 
 /*----------------------------------------------------------------------------*/
 

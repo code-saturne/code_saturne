@@ -32,7 +32,7 @@
  *============================================================================*/
 
 #if defined(HAVE_CONFIG_H)
-#  include "cs_config.h"
+#  include "base/cs_config.h"
 #endif
 
 #ifdef __cplusplus

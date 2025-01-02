@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -66,28 +66,28 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_base_accel.h"
-#include "cs_dispatch.h"
-#include "cs_log.h"
-#include "cs_fp_exception.h"
-#include "cs_halo.h"
-#include "cs_matrix.h"
-#include "cs_matrix_default.h"
-#include "cs_matrix_hypre.h"
-#include "cs_matrix_hypre_priv.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_log.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_halo.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix_hypre.h"
+#include "alge/cs_matrix_hypre_priv.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sles.h"
-#include "cs_sles_hypre.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_hypre.h"
 
 /*----------------------------------------------------------------------------*/
 

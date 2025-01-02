@@ -22,7 +22,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,23 +38,23 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_array_reduce.h"
-#include "cs_halo.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_parall.h"
-#include "cs_range_set.h"
-#include "cs_volume_zone.h"
-#include "cs_quadrature.h"
+#include "base/cs_array.h"
+#include "base/cs_array_reduce.h"
+#include "base/cs_halo.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_parall.h"
+#include "base/cs_range_set.h"
+#include "base/cs_volume_zone.h"
+#include "cdo/cs_quadrature.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_evaluate.h"
+#include "cdo/cs_evaluate.h"
 
 /*----------------------------------------------------------------------------*/
 

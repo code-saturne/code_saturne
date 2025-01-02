@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,31 +42,31 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_defs.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_mesh_location.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_time_step.h"
-#include "cs_wall_functions.h"
+#include "base/cs_defs.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_time_step.h"
+#include "base/cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_array.h"
-#include "cs_base.h"
-#include "cs_log_iteration.h"
-#include "cs_math.h"
-#include "cs_wall_condensation.h" // not great...
-#include "cs_wall_condensation_1d_thermal.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "base/cs_log_iteration.h"
+#include "base/cs_math.h"
+#include "base/cs_wall_condensation.h" // not great...
+#include "base/cs_wall_condensation_1d_thermal.h"
 
 /*----------------------------------------------------------------------------*/
 

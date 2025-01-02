@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard library headers
@@ -49,41 +49,41 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_array_reduce.h"
-#include "cs_bad_cells_regularisation.h"
-#include "cs_blas.h"
-#include "cs_boundary_conditions.h"
-#include "cs_cell_to_vertex.h"
-#include "cs_dispatch.h"
-#include "cs_ext_neighborhood.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_gradient_boundary.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_internal_coupling.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_porous_model.h"
-#include "cs_prototypes.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
+#include "base/cs_array.h"
+#include "base/cs_array_reduce.h"
+#include "alge/cs_bad_cells_regularisation.h"
+#include "alge/cs_blas.h"
+#include "base/cs_boundary_conditions.h"
+#include "alge/cs_cell_to_vertex.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_ext_neighborhood.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "alge/cs_gradient_boundary.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_internal_coupling.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_timer.h"
+#include "base/cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_gradient.h"
-#include "cs_gradient_priv.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_gradient_priv.h"
 
 /*----------------------------------------------------------------------------*/
 

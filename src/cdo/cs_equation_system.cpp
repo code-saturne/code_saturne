@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -36,18 +36,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_cdovb_scalsys.h"
-#include "cs_equation_system_sles.h"
-#include "cs_equation_param.h"
-#include "cs_timer_stats.h"
+#include "cdo/cs_cdovb_scalsys.h"
+#include "cdo/cs_equation_system_sles.h"
+#include "cdo/cs_equation_param.h"
+#include "base/cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation_system.h"
+#include "cdo/cs_equation_system.h"
 
 /*----------------------------------------------------------------------------*/
 

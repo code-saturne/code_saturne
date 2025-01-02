@@ -26,7 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -43,24 +43,24 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_array.h"
-#include "cs_cdo_diffusion.h"
-#include "cs_cdo_toolbox.h"
-#include "cs_cdo_solve.h"
-#include "cs_evaluate.h"
-#include "cs_reco.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdo_diffusion.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_evaluate.h"
+#include "cdo/cs_reco.h"
 
-#include "cs_cdoeb_vecteq.h"
+#include "cdo/cs_cdoeb_vecteq.h"
 
 /*----------------------------------------------------------------------------*/
 

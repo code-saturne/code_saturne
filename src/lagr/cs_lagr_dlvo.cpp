@@ -28,7 +28,7 @@
  * Functions dealing with the DLVO forces
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,28 +44,28 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "fvm_periodicity.h"
+#include "fvm/fvm_periodicity.h"
 
-#include "cs_base.h"
-#include "cs_interface.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_search.h"
-#include "cs_halo.h"
+#include "base/cs_base.h"
+#include "base/cs_interface.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_search.h"
+#include "base/cs_halo.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_roughness.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_roughness.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_dlvo.h"
+#include "lagr/cs_lagr_dlvo.h"
 
 /*----------------------------------------------------------------------------*/
 

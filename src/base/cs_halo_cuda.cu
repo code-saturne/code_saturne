@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,20 +37,20 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_base_accel.h"
-#include "cs_base_cuda.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
+#include "base/cs_base_cuda.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_halo.h"
-#include "cs_halo_cuda.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_cuda.h"
 
 /*----------------------------------------------------------------------------*/
 

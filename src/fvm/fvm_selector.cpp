@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,21 +40,21 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_timer.h"
+#include "base/cs_timer.h"
 
-#include "fvm_defs.h"
-#include "fvm_group.h"
-#include "fvm_selector_postfix.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_group.h"
+#include "fvm/fvm_selector_postfix.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_selector.h"
+#include "fvm/fvm_selector.h"
 
 /*----------------------------------------------------------------------------*/
 

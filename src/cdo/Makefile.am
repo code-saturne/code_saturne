@@ -33,19 +33,9 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/bft  \
--I$(top_srcdir)/src/fvm  \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/gui  \
--I$(top_srcdir)/src/gwf  \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_LDFLAGS =
@@ -53,20 +43,15 @@ AM_LDFLAGS =
 # Conditionally compiled files relying on PETSc/MUMPS libraries
 
 libcscdo_extension_a_CPPFLAGS =\
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/bft  \
--I$(top_srcdir)/src/fvm  \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/gwf  \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(PETSC_CPPFLAGS) $(MUMPS_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+cscdo_includedir=$(pkgincludedir)/cdo
+cscdo_include_HEADERS = \
 cs_advection_field.h \
 cs_basis_func.h \
 cs_cdo_advection.h \
@@ -250,7 +235,7 @@ libcscdo_extension_a-cs_equation_system_sles.$(OBJEXT)
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
 
 clean-local:

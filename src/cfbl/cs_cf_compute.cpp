@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,38 +45,38 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array.h"
-#include "cs_balance.h"
-#include "cs_blas.h"
-#include "cs_boundary_conditions_set_coeffs.h"
-#include "cs_cf_boundary_conditions.h"
-#include "cs_cf_thermo.h"
-#include "cs_convection_diffusion.h"
-#include "cs_divergence.h"
-#include "cs_equation_iterative_solve.h"
-#include "cs_face_viscosity.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_volume_mass_injection.h"
-#include "cs_mass_source_terms.h"
-#include "cs_matrix_building.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_physical_model.h"
-#include "cs_porous_model.h"
-#include "cs_prototypes.h"
-#include "cs_turbulence_model.h"
-#include "cs_velocity_pressure.h"
+#include "base/cs_array.h"
+#include "alge/cs_balance.h"
+#include "alge/cs_blas.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "cfbl/cs_cf_boundary_conditions.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "alge/cs_convection_diffusion.h"
+#include "alge/cs_divergence.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_volume_mass_injection.h"
+#include "base/cs_mass_source_terms.h"
+#include "alge/cs_matrix_building.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_prototypes.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cf_compute.h"
+#include "cfbl/cs_cf_compute.h"
 
 /*----------------------------------------------------------------------------*/
 

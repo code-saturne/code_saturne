@@ -28,7 +28,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "bft_printf.h"
+#include "bft/bft_printf.h"
 
 static int
 bft_printf_test(const char  *const format,

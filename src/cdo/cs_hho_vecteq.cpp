@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,35 +42,35 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_boundary_zone.h"
-#include "cs_cdo_advection.h"
-#include "cs_cdo_assembly.h"
-#include "cs_cdo_bc.h"
-#include "cs_cdo_diffusion.h"
-#include "cs_hho_builder.h"
-#include "cs_hodge.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
-#include "cs_post.h"
-#include "cs_quadrature.h"
-#include "cs_reco.h"
-#include "cs_scheme_geometry.h"
-#include "cs_search.h"
-#include "cs_sdm.h"
-#include "cs_source_term.h"
+#include "base/cs_boundary_zone.h"
+#include "cdo/cs_cdo_advection.h"
+#include "cdo/cs_cdo_assembly.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_diffusion.h"
+#include "cdo/cs_hho_builder.h"
+#include "cdo/cs_hodge.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_post.h"
+#include "cdo/cs_quadrature.h"
+#include "cdo/cs_reco.h"
+#include "cdo/cs_scheme_geometry.h"
+#include "base/cs_search.h"
+#include "cdo/cs_sdm.h"
+#include "cdo/cs_source_term.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_hho_vecteq.h"
+#include "cdo/cs_hho_vecteq.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -28,7 +28,7 @@
  * Functions dealing with particle tracking
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,26 +44,26 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "cs_base.h"
-#include "cs_halo.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_porous_model.h"
+#include "base/cs_base.h"
+#include "base/cs_halo.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_porous_model.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_particle.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_porosity.h"
+#include "lagr/cs_lagr_porosity.h"
 
 /*----------------------------------------------------------------------------*/
 

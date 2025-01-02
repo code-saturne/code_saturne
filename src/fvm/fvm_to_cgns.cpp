@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -50,28 +50,28 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "fvm_defs.h"
-#include "fvm_convert_array.h"
-#include "fvm_io_num.h"
-#include "fvm_nodal.h"
-#include "fvm_nodal_priv.h"
-#include "fvm_writer_helper.h"
-#include "fvm_writer_priv.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_convert_array.h"
+#include "fvm/fvm_io_num.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_priv.h"
+#include "fvm/fvm_writer_helper.h"
+#include "fvm/fvm_writer_priv.h"
 
-#include "cs_block_dist.h"
-#include "cs_file.h"
-#include "cs_map.h"
-#include "cs_parall.h"
-#include "cs_part_to_block.h"
+#include "base/cs_block_dist.h"
+#include "base/cs_file.h"
+#include "base/cs_map.h"
+#include "base/cs_parall.h"
+#include "base/cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_to_cgns.h"
+#include "fvm/fvm_to_cgns.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,17 +40,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
 
-#include "cs_all_to_all.h"
-#include "cs_block_dist.h"
+#include "base/cs_all_to_all.h"
+#include "base/cs_block_dist.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_part_to_block.h"
+#include "base/cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------*/
 

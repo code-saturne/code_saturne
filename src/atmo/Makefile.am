@@ -33,15 +33,7 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/rayt \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -50,15 +42,14 @@ AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
-$(FCMODINCLUDE)$(top_builddir)/src/base \
-$(FCMODINCLUDE)$(top_builddir)/src/user \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+csatmo_includedir=$(pkgincludedir)/atmo
+csatmo_include_HEADERS = \
 cs_air_props.h \
 cs_at_opt_interp.h \
 cs_at_data_assim.h \
@@ -114,5 +105,5 @@ clean-local:
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/atmo -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif

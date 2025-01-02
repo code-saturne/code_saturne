@@ -28,7 +28,7 @@
  * Functions dealing with lagrangian resuspension
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,31 +48,31 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_base.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
-#include "bft_mem.h"
-#include "bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
 
-#include "cs_physical_constants.h"
-#include "cs_prototypes.h"
-#include "cs_random.h"
-#include "cs_thermal_model.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_random.h"
+#include "base/cs_thermal_model.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_stat.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_roughness.h"
-#include "cs_lagr_adh.h"
-#include "cs_lagr_event.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_stat.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_roughness.h"
+#include "lagr/cs_lagr_adh.h"
+#include "lagr/cs_lagr_event.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_resuspension.h"
+#include "lagr/cs_lagr_resuspension.h"
 
 /*----------------------------------------------------------------------------*/
 

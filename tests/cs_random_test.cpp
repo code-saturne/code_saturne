@@ -24,19 +24,19 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <bft_error.h>
-#include <bft_printf.h>
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_timer.h"
+#include "base/cs_timer.h"
 
-#include "cs_random.h"
+#include "base/cs_random.h"
 
 /*---------------------------------------------------------------------------*/
 

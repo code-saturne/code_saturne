@@ -30,18 +30,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_time_step.h"
-#include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_local.h"
-#include "cs_cdo_quantities.h"
-#include "cs_equation_param.h"
-#include "cs_hho_builder.h"
-#include "cs_matrix.h"
-#include "cs_matrix_assembler.h"
-#include "cs_source_term.h"
+#include "base/cs_base.h"
+#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_field.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_hho_builder.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_assembler.h"
+#include "cdo/cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
 

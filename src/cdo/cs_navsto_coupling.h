@@ -33,9 +33,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation.h"
-#include "cs_field.h"
-#include "cs_navsto_param.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_field.h"
+#include "cdo/cs_navsto_param.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -29,13 +29,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_ctwr.h"
-#include "cs_ctwr_boundary_conditions.h"
-#include "cs_ctwr_variables.h"
-#include "cs_ctwr_initialize.h"
-#include "cs_ctwr_source_terms.h"
-#include "cs_ctwr_physical_properties.h"
-#include "cs_air_props.h"
+#include "ctwr/cs_ctwr.h"
+#include "ctwr/cs_ctwr_boundary_conditions.h"
+#include "ctwr/cs_ctwr_variables.h"
+#include "ctwr/cs_ctwr_initialize.h"
+#include "ctwr/cs_ctwr_source_terms.h"
+#include "ctwr/cs_ctwr_physical_properties.h"
+#include "atmo/cs_air_props.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,42 +38,42 @@
  *  BFT headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_array.h"
-#include "cs_blas.h"
-#include "cs_cdo_blas.h"
-#include "cs_cdo_solve.h"
-#include "cs_equation.h"
-#include "cs_cdocb_scaleq.h"
-#include "cs_fp_exception.h"
-#include "cs_matrix_default.h"
-#include "cs_parall.h"
-#include "cs_saddle_solver.h"
-#include "cs_saddle_system.h"
-#include "cs_timer.h"
+#include "base/cs_array.h"
+#include "alge/cs_blas.h"
+#include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_cdocb_scaleq.h"
+#include "base/cs_fp_exception.h"
+#include "alge/cs_matrix_default.h"
+#include "base/cs_parall.h"
+#include "alge/cs_saddle_solver.h"
+#include "cdo/cs_saddle_system.h"
+#include "base/cs_timer.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 #if defined(HAVE_MUMPS)
-#include "cs_sles_mumps.h"
+#include "alge/cs_sles_mumps.h"
 #endif
 
 #if defined(HAVE_PETSC)
-#include "cs_sles_petsc.h"
+#include "alge/cs_sles_petsc.h"
 #endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdocb_scaleq_sles.h"
+#include "cdo/cs_cdocb_scaleq_sles.h"
 
 /*----------------------------------------------------------------------------*/
 

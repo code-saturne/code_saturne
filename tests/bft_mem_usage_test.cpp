@@ -28,8 +28,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "bft_error.h"
-#include "bft_mem_usage.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem_usage.h"
 
 int
 main (int argc, char *argv[])

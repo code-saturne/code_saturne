@@ -28,7 +28,7 @@
  * Functions dealing with auxiliary mean fluid quantities
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,29 +48,29 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "cs_array.h"
-#include "cs_balance.h"
-#include "cs_face_viscosity.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_lagr.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_stat.h"
-#include "cs_mesh.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_turbulence_model.h"
-#include "cs_velocity_pressure.h"
+#include "bft/bft_mem.h"
+#include "base/cs_array.h"
+#include "alge/cs_balance.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_stat.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_aux_mean_fluid_quantities.h"
+#include "lagr/cs_lagr_aux_mean_fluid_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 

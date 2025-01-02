@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,44 +42,44 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_at_opt_interp.h"
-#include "cs_ale.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_gradient.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_mesh_location.h"
-#include "cs_post.h"
-#include "cs_parall.h"
-#include "cs_parameters_check.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_restart.h"
-#include "cs_restart_default.h"
-#include "cs_rad_transfer_fields.h"
-#include "cs_syr_coupling.h"
-#include "cs_turbulence_model.h"
-#include "cs_time_moment.h"
-#include "cs_thermal_model.h"
-#include "cs_cf_model.h"
-#include "cs_sat_coupling.h"
-#include "cs_tree.h"
-#include "cs_turbomachinery.h"
-#include "cs_velocity_pressure.h"
-#include "cs_vof.h"
-#include "cs_wall_functions.h"
+#include "atmo/cs_at_opt_interp.h"
+#include "base/cs_ale.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_post.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters_check.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_default.h"
+#include "rayt/cs_rad_transfer_fields.h"
+#include "base/cs_syr_coupling.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_time_moment.h"
+#include "base/cs_thermal_model.h"
+#include "cfbl/cs_cf_model.h"
+#include "base/cs_sat_coupling.h"
+#include "base/cs_tree.h"
+#include "base/cs_turbomachinery.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_vof.h"
+#include "base/cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_parameters.h"
+#include "base/cs_parameters.h"
 
 /*----------------------------------------------------------------------------*/
 

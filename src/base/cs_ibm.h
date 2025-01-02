@@ -31,11 +31,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-#include "cs_mesh_quantities.h"
-#include "cs_medcoupling_intersector.h"
-#include "cs_stl.h"
-#include "cs_xdef.h"
+#include "base/cs_defs.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_medcoupling_intersector.h"
+#include "mesh/cs_stl.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

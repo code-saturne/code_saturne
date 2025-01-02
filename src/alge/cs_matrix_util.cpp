@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,32 +45,32 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_io_num.h"
+#include "fvm/fvm_io_num.h"
 
-#include "cs_base.h"
-#include "cs_blas.h"
-#include "cs_file.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_numbering.h"
-#include "cs_order.h"
-#include "cs_parall.h"
-#include "cs_part_to_block.h"
-#include "cs_prototypes.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
+#include "base/cs_file.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_log.h"
+#include "base/cs_numbering.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
+#include "base/cs_part_to_block.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_matrix_util.h"
+#include "alge/cs_matrix_util.h"
 
-#include "cs_matrix_priv.h"
+#include "alge/cs_matrix_priv.h"
 
 /*----------------------------------------------------------------------------*/
 

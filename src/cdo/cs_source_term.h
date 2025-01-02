@@ -31,12 +31,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_cdo_quantities.h"
-#include "cs_cdo_local.h"
-#include "cs_param_types.h"
-#include "cs_quadrature.h"
-#include "cs_xdef.h"
+#include "base/cs_base.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdo_local.h"
+#include "base/cs_param_types.h"
+#include "cdo/cs_quadrature.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

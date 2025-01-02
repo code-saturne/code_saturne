@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,43 +45,43 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_grid.h"
-#include "cs_halo.h"
-#include "cs_internal_coupling.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_quantities.h"
-#include "cs_matrix.h"
-#include "cs_matrix_default.h"
-#include "cs_matrix_util.h"
-#include "cs_multigrid.h"
-#include "cs_parameters.h"
-#include "cs_sles.h"
-#include "cs_sles_it.h"
-#include "cs_sles_pc.h"
-#include "cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "alge/cs_grid.h"
+#include "base/cs_halo.h"
+#include "base/cs_internal_coupling.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix_util.h"
+#include "alge/cs_multigrid.h"
+#include "base/cs_parameters.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_it.h"
+#include "alge/cs_sles_pc.h"
+#include "base/cs_timer.h"
 
 #if defined(HAVE_HYPRE)
-#include "cs_sles_hypre.h"
+#include "alge/cs_sles_hypre.h"
 #endif
 
 #if defined(HAVE_PETSC)
-#include "cs_sles_petsc.h"
+#include "alge/cs_sles_petsc.h"
 #endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sles_default.h"
+#include "alge/cs_sles_default.h"
 
 /*----------------------------------------------------------------------------*/
 

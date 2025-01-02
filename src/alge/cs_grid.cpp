@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C and C++ library headers
@@ -58,31 +58,31 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_dispatch.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_matrix.h"
-#include "cs_matrix_default.h"
-#include "cs_matrix_tuning.h"
-#include "cs_matrix_util.h"
-#include "cs_order.h"
-#include "cs_prototypes.h"
-#include "cs_sles.h"
-#include "cs_sort.h"
+#include "base/cs_base.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_log.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix_tuning.h"
+#include "alge/cs_matrix_util.h"
+#include "base/cs_order.h"
+#include "base/cs_prototypes.h"
+#include "alge/cs_sles.h"
+#include "base/cs_sort.h"
 
-#include "fvm_defs.h"
+#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_grid.h"
+#include "alge/cs_grid.h"
 
 /*----------------------------------------------------------------------------*/
 

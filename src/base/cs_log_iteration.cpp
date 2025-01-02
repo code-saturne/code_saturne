@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,39 +41,39 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_array_reduce.h"
-#include "cs_base.h"
-#include "cs_blas.h"
-#include "cs_ctwr.h"
-#include "cs_fan.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_function.h"
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_notebook.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_physical_model.h"
-#include "cs_prototypes.h"
-#include "cs_range_set.h"
-#include "cs_time_moment.h"
-#include "cs_time_plot.h"
-#include "cs_time_step.h"
-#include "cs_lagr_stat.h"
-#include "cs_lagr_log.h"
-#include "fvm_convert_array.h"
+#include "base/cs_array_reduce.h"
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
+#include "ctwr/cs_ctwr.h"
+#include "base/cs_fan.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_function.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_notebook.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_range_set.h"
+#include "base/cs_time_moment.h"
+#include "base/cs_time_plot.h"
+#include "base/cs_time_step.h"
+#include "lagr/cs_lagr_stat.h"
+#include "lagr/cs_lagr_log.h"
+#include "fvm/fvm_convert_array.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_log_iteration.h"
+#include "base/cs_log_iteration.h"
 
 /*----------------------------------------------------------------------------*/
 

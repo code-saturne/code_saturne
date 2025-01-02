@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,24 +40,24 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_cdo_bc.h"
-#include "cs_flag.h"
-#include "cs_property.h"
-#include "cs_math.h"
-#include "cs_scheme_geometry.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_property.h"
+#include "base/cs_math.h"
+#include "cdo/cs_scheme_geometry.h"
 
 #if defined(DEBUG) && !defined(NDEBUG) /* For debugging purpose */
-#include "cs_dbg.h"
-#include "cs_log.h"
+#include "cdo/cs_dbg.h"
+#include "base/cs_log.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_advection.h"
+#include "cdo/cs_cdo_advection.h"
 
 /*----------------------------------------------------------------------------*/
 

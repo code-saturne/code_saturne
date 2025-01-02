@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,48 +40,48 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_1d_wall_thermal.h"
-#include "cs_ale.h"
-#include "cs_base.h"
-#include "cs_cf_model.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_ibm.h"
-#include "cs_lagr.h"
-#include "cs_les_balance.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
-#include "cs_parall.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_porous_model.h"
-#include "cs_porosity_from_scan.h"
-#include "cs_rad_transfer.h"
-#include "cs_restart_default.h"
-#include "cs_thermal_model.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_turbulence_model.h"
-#include "cs_syr_coupling.h"
-#include "cs_wall_functions.h"
-#include "cs_convection_diffusion.h"
-#include "cs_thermal_model.h"
-#include "cs_velocity_pressure.h"
-#include "cs_wall_distance.h"
-#include "cs_vof.h"
-#include "cs_mobile_structures.h"
+#include "base/cs_1d_wall_thermal.h"
+#include "base/cs_ale.h"
+#include "base/cs_base.h"
+#include "cfbl/cs_cf_model.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_ibm.h"
+#include "lagr/cs_lagr.h"
+#include "turb/cs_les_balance.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "base/cs_parall.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_porosity_from_scan.h"
+#include "rayt/cs_rad_transfer.h"
+#include "base/cs_restart_default.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_time_step.h"
+#include "base/cs_turbomachinery.h"
+#include "turb/cs_turbulence_model.h"
+#include "base/cs_syr_coupling.h"
+#include "base/cs_wall_functions.h"
+#include "alge/cs_convection_diffusion.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_wall_distance.h"
+#include "base/cs_vof.h"
+#include "base/cs_mobile_structures.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_parameters_check.h"
+#include "base/cs_parameters_check.h"
 
 /*----------------------------------------------------------------------------*/
 

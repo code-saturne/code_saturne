@@ -31,11 +31,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_log.h"
-#include "cs_halo_perio.h"
-#include "cs_matrix.h"
-#include "cs_matrix.h"
+#include "base/cs_base.h"
+#include "base/cs_log.h"
+#include "base/cs_halo_perio.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 

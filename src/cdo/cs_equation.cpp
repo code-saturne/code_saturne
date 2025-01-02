@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,42 +45,42 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_cdo_toolbox.h"
-#include "cs_cdocb_scaleq.h"
-#include "cs_cdoeb_vecteq.h"
-#include "cs_cdofb_scaleq.h"
-#include "cs_cdofb_vecteq.h"
-#include "cs_cdovb_scaleq.h"
-#include "cs_cdovb_vecteq.h"
-#include "cs_cdovcb_scaleq.h"
-#include "cs_equation_bc.h"
-#include "cs_equation_priv.h"
-#include "cs_evaluate.h"
-#include "cs_field_default.h"
-#include "cs_hho_scaleq.h"
-#include "cs_hho_vecteq.h"
-#include "cs_log.h"
-#include "cs_macfb_vecteq.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_post.h"
-#include "cs_prototypes.h"
-#include "cs_range_set.h"
-#include "cs_sles.h"
-#include "cs_timer_stats.h"
+#include "base/cs_array.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_cdocb_scaleq.h"
+#include "cdo/cs_cdoeb_vecteq.h"
+#include "cdo/cs_cdofb_scaleq.h"
+#include "cdo/cs_cdofb_vecteq.h"
+#include "cdo/cs_cdovb_scaleq.h"
+#include "cdo/cs_cdovb_vecteq.h"
+#include "cdo/cs_cdovcb_scaleq.h"
+#include "cdo/cs_equation_bc.h"
+#include "cdo/cs_equation_priv.h"
+#include "cdo/cs_evaluate.h"
+#include "base/cs_field_default.h"
+#include "cdo/cs_hho_scaleq.h"
+#include "cdo/cs_hho_vecteq.h"
+#include "base/cs_log.h"
+#include "cdo/cs_macfb_vecteq.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_post.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_range_set.h"
+#include "alge/cs_sles.h"
+#include "base/cs_timer_stats.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation.h"
+#include "cdo/cs_equation.h"
 
 /*----------------------------------------------------------------------------*/
 

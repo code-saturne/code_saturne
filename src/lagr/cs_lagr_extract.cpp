@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,24 +40,24 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_parall.h"
-#include "cs_lagr_tracking.h"
-#include "cs_selector.h"
-#include "cs_timer.h"
-#include "cs_time_step.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_parall.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "base/cs_selector.h"
+#include "base/cs_timer.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_extract.h"
+#include "lagr/cs_lagr_extract.h"
 
 /*----------------------------------------------------------------------------*/
 

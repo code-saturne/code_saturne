@@ -29,9 +29,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_time_step.h"
-#include "cs_equation.h"
+#include "base/cs_base.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_equation.h"
 
 /*----------------------------------------------------------------------------*/
 

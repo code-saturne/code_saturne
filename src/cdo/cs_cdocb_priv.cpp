@@ -32,15 +32,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "cs_param_saddle.h"
-#include "cs_param_sles.h"
+#include "bft/bft_mem.h"
+#include "alge/cs_param_saddle.h"
+#include "alge/cs_param_sles.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdocb_priv.h"
+#include "cdo/cs_cdocb_priv.h"
 
 /*----------------------------------------------------------------------------*/
 

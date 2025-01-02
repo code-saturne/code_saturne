@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,27 +40,27 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_io_num.h"
-#include "fvm_periodicity.h"
+#include "fvm/fvm_io_num.h"
+#include "fvm/fvm_periodicity.h"
 
-#include "cs_all_to_all.h"
-#include "cs_order.h"
-#include "cs_search.h"
-#include "cs_sort.h"
-#include "cs_join_perio.h"
-#include "cs_join_post.h"
-#include "cs_join_util.h"
-#include "cs_mesh_group.h"
+#include "base/cs_all_to_all.h"
+#include "base/cs_order.h"
+#include "base/cs_search.h"
+#include "base/cs_sort.h"
+#include "mesh/cs_join_perio.h"
+#include "mesh/cs_join_post.h"
+#include "mesh/cs_join_util.h"
+#include "mesh/cs_mesh_group.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *---------------------------------------------------------------------------*/
 
-#include "cs_join_update.h"
+#include "mesh/cs_join_update.h"
 
 /*---------------------------------------------------------------------------*/
 

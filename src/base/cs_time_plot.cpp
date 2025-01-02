@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,18 +41,18 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
 
-#include "cs_base.h"
-#include "cs_timer.h"
-#include "cs_time_step.h"
+#include "base/cs_base.h"
+#include "base/cs_timer.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_time_plot.h"
+#include "base/cs_time_plot.h"
 
 /*----------------------------------------------------------------------------*/
 

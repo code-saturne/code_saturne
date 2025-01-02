@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,21 +39,21 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_restart.h"
-#include "cs_1d_wall_thermal.h"
+#include "base/cs_base.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_restart.h"
+#include "base/cs_1d_wall_thermal.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_1d_wall_thermal_check.h"
+#include "base/cs_1d_wall_thermal_check.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -37,16 +37,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_base.h"
-#include "cs_log.h"
+#include "base/cs_base.h"
+#include "base/cs_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_param_types.h"
+#include "base/cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
 

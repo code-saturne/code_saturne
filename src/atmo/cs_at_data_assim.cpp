@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,27 +41,27 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "cs_at_opt_interp.h"
-#include "cs_ext_neighborhood.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_measures_util.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_math.h"
-#include "cs_time_step.h"
-#include "cs_restart_default.h"
+#include "atmo/cs_at_opt_interp.h"
+#include "base/cs_ext_neighborhood.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_measures_util.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_math.h"
+#include "base/cs_time_step.h"
+#include "base/cs_restart_default.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_at_data_assim.h"
+#include "atmo/cs_at_data_assim.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -46,29 +46,29 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem_usage.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-#include "bft_mem.h"
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_mem.h"
 
-#include "fvm_nodal.h"
-#include "fvm_point_location.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_point_location.h"
 
-#include "cs_base.h"
-#include "cs_selector.h"
-#include "cs_mesh_connect.h"
-#include "cs_post.h"
-#include "cs_prototypes.h"
+#include "base/cs_base.h"
+#include "base/cs_selector.h"
+#include "mesh/cs_mesh_connect.h"
+#include "base/cs_post.h"
+#include "base/cs_prototypes.h"
 
-#include "cs_log.h"
-#include "cs_map.h"
-#include "cs_parall.h"
-#include "cs_mesh_location.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "base/cs_parall.h"
+#include "mesh/cs_mesh_location.h"
 
-#include "cs_mesh.h"
-#include "cs_measures_util.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_measures_util.h"
 
-#include "cs_field.h"
+#include "base/cs_field.h"
 
 /*----------------------------------------------------------------------------*/
 

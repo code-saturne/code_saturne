@@ -29,10 +29,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_matrix.h"
-#include "cs_param_sles.h"
-#include "cs_range_set.h"
-#include "cs_sles.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_param_sles.h"
+#include "base/cs_range_set.h"
+#include "alge/cs_sles.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -20,7 +20,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include <assert.h>
 #include <math.h>
@@ -32,23 +32,22 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_mem_usage.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_printf.h"
 
-#include "cs_system_info.h"
+#include "base/cs_system_info.h"
 
-#include "cs_blas.h"
-#include "cs_defs.h"
-#include "cs_timer.h"
+#include "alge/cs_blas.h"
+#include "base/cs_timer.h"
 
-#include "cs_matrix.h"
-#include "cs_matrix_priv.h"
-#include "cs_matrix_assembler.h"
-#include "cs_matrix_util.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_priv.h"
+#include "alge/cs_matrix_assembler.h"
+#include "alge/cs_matrix_util.h"
 
-#include "cs_range_set.h"
+#include "base/cs_range_set.h"
 
 /*----------------------------------------------------------------------------*/
 

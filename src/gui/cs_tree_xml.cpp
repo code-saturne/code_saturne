@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -44,21 +44,21 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_base.h"
-#include "cs_file.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_tree.h"
+#include "base/cs_base.h"
+#include "base/cs_file.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_tree_xml.h"
+#include "gui/cs_tree_xml.h"
 
 /*----------------------------------------------------------------------------*/
 

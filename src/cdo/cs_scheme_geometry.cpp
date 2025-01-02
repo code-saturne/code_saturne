@@ -23,7 +23,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -36,13 +36,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_quadrature.h"
+#include "cdo/cs_quadrature.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_scheme_geometry.h"
+#include "cdo/cs_scheme_geometry.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -37,19 +37,19 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_array.h"
-#include "cs_field.h"
-#include "cs_flag.h"
-#include "cs_log.h"
-#include "cs_mesh_location.h"
+#include "base/cs_array.h"
+#include "base/cs_field.h"
+#include "cdo/cs_flag.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_xdef.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -29,15 +29,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
-#include "cs_cdo_toolbox.h"
-#include "cs_equation_builder.h"
-#include "cs_equation_param.h"
-#include "cs_field.h"
-#include "cs_mesh.h"
-#include "cs_restart.h"
-#include "cs_time_step.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_equation_builder.h"
+#include "cdo/cs_equation_param.h"
+#include "base/cs_field.h"
+#include "mesh/cs_mesh.h"
+#include "base/cs_restart.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 

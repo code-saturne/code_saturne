@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,38 +40,38 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "cs_air_props.h"
-#include "cs_atmo.h"
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
-#include "cs_field_operator.h"
-#include "cs_field_pointer.h"
-#include "cs_halo.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_post.h"
-#include "cs_prototypes.h"
-#include "cs_thermal_model.h"
-#include "cs_velocity_pressure.h"
-#include "cs_volume_zone.h"
+#include "atmo/cs_air_props.h"
+#include "atmo/cs_atmo.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_halo.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_post.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_volume_zone.h"
 
-#include "cs_ctwr.h"
+#include "ctwr/cs_ctwr.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_ctwr_variables.h"
+#include "ctwr/cs_ctwr_variables.h"
 
 /*----------------------------------------------------------------------------*/
 

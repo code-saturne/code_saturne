@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -47,19 +47,19 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "cs_ale.h"
-#include "cs_boundary_conditions.h"
-#include "cs_field_pointer.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_turbulence_model.h"
+#include "bft/bft_printf.h"
+#include "base/cs_ale.h"
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_boundary_conditions_check.h"
+#include "base/cs_boundary_conditions_check.h"
 
 /*----------------------------------------------------------------------------*/
 

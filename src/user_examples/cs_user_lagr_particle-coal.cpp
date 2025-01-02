@@ -28,7 +28,7 @@
  * Functions dealing with particle tracking
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers

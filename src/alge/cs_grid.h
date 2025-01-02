@@ -32,11 +32,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
+#include "base/cs_base.h"
 
-#include "cs_dispatch.h"
-#include "cs_halo.h"
-#include "cs_matrix.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_halo.h"
+#include "alge/cs_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 

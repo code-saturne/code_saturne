@@ -29,14 +29,14 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_gwf.h"
-#include "cs_gwf_param.h"
-#include "cs_gwf_soil.h"
-#include "cs_gwf_sspf.h"
-#include "cs_gwf_toolbox.h"
-#include "cs_gwf_tpf.h"
-#include "cs_gwf_tracer.h"
-#include "cs_gwf_uspf.h"
+#include "gwf/cs_gwf.h"
+#include "gwf/cs_gwf_param.h"
+#include "gwf/cs_gwf_soil.h"
+#include "gwf/cs_gwf_sspf.h"
+#include "gwf/cs_gwf_toolbox.h"
+#include "gwf/cs_gwf_tpf.h"
+#include "gwf/cs_gwf_tracer.h"
+#include "gwf/cs_gwf_uspf.h"
 
 /*----------------------------------------------------------------------------*/
 

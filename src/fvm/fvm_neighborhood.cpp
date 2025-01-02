@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -39,23 +39,23 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_box.h"
-#include "fvm_box_tree.h"
+#include "fvm/fvm_box.h"
+#include "fvm/fvm_box_tree.h"
 
-#include "cs_order.h"
-#include "cs_part_to_block.h"
-#include "cs_timer.h"
+#include "base/cs_order.h"
+#include "base/cs_part_to_block.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "fvm_neighborhood.h"
+#include "fvm/fvm_neighborhood.h"
 
-#include "cs_all_to_all.h"
+#include "base/cs_all_to_all.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -31,8 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_local.h"
-#include "cs_quadrature.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_quadrature.h"
 
 /*----------------------------------------------------------------------------*/
 

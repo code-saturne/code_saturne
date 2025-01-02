@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -52,34 +52,34 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_io_num.h"
-#include "fvm_nodal.h"
-#include "fvm_nodal_extract.h"
+#include "fvm/fvm_io_num.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_extract.h"
 
-#include "cs_all_to_all.h"
-#include "cs_array.h"
-#include "cs_blas.h"
-#include "cs_calcium.h"
-#include "cs_coupling.h"
-#include "cs_interface.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
-#include "cs_mesh_connect.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_paramedmem_coupling.h"
-#include "cs_part_to_block.h"
-#include "cs_post.h"
+#include "base/cs_all_to_all.h"
+#include "base/cs_array.h"
+#include "alge/cs_blas.h"
+#include "base/cs_calcium.h"
+#include "base/cs_coupling.h"
+#include "base/cs_interface.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_paramedmem_coupling.h"
+#include "base/cs_part_to_block.h"
+#include "base/cs_post.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_ast_coupling.h"
+#include "base/cs_ast_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 

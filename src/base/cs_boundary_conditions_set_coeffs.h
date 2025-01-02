@@ -31,11 +31,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "bft_error.h"
-#include "cs_field.h"
-#include "cs_math.h"
+#include "bft/bft_error.h"
+#include "base/cs_field.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------*/
 

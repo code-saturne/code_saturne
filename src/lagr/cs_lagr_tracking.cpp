@@ -28,7 +28,7 @@
  * Functions dealing with particle tracking
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,52 +48,52 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
 
-#include "fvm_periodicity.h"
+#include "fvm/fvm_periodicity.h"
 
-#include "cs_base.h"
-#include "cs_boundary_zone.h"
-#include "cs_physical_constants.h"
-#include "cs_geom.h"
-#include "cs_halo.h"
-#include "cs_interface.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_quantities.h"
-#include "cs_order.h"
-#include "cs_parall.h"
-#include "cs_porous_model.h"
-#include "cs_random.h"
-#include "cs_rotation.h"
-#include "cs_search.h"
-#include "cs_timer_stats.h"
-#include "cs_turbomachinery.h"
-#include "cs_turbulence_model.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_physical_constants.h"
+#include "mesh/cs_geom.h"
+#include "base/cs_halo.h"
+#include "base/cs_interface.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_random.h"
+#include "base/cs_rotation.h"
+#include "base/cs_search.h"
+#include "base/cs_timer_stats.h"
+#include "base/cs_turbomachinery.h"
+#include "turb/cs_turbulence_model.h"
 
-#include "cs_field.h"
-#include "cs_field_pointer.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_deposition_model.h"
-#include "cs_lagr_event.h"
-#include "cs_lagr_particle.h"
-#include "cs_lagr_porosity.h"
-#include "cs_lagr_prototypes.h"
-#include "cs_lagr_post.h"
-#include "cs_lagr_clogging.h"
-#include "cs_lagr_roughness.h"
-#include "cs_lagr_dlvo.h"
-#include "cs_lagr_stat.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_deposition_model.h"
+#include "lagr/cs_lagr_event.h"
+#include "lagr/cs_lagr_particle.h"
+#include "lagr/cs_lagr_porosity.h"
+#include "lagr/cs_lagr_prototypes.h"
+#include "lagr/cs_lagr_post.h"
+#include "lagr/cs_lagr_clogging.h"
+#include "lagr/cs_lagr_roughness.h"
+#include "lagr/cs_lagr_dlvo.h"
+#include "lagr/cs_lagr_stat.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_tracking.h"
+#include "lagr/cs_lagr_tracking.h"
 
 /*----------------------------------------------------------------------------*/
 

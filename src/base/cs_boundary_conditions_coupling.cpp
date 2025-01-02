@@ -37,26 +37,26 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_1d_wall_thermal.h"
-#include "cs_1d_wall_thermal_check.h"
-#include "cs_boundary_conditions.h"
-#include "cs_cf_thermo.h"
-#include "cs_field_default.h"
-#include "cs_field_pointer.h"
-#include "cs_ht_convert.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_rad_transfer.h"
-#include "cs_thermal_model.h"
-#include "cs_wall_condensation.h"
+#include "base/cs_1d_wall_thermal.h"
+#include "base/cs_1d_wall_thermal_check.h"
+#include "base/cs_boundary_conditions.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_ht_convert.h"
+#include "base/cs_parameters.h"
+#include "base/cs_prototypes.h"
+#include "rayt/cs_rad_transfer.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_wall_condensation.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_boundary_conditions_coupling.h"
+#include "base/cs_boundary_conditions_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 

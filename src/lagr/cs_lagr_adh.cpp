@@ -28,7 +28,7 @@
  * Functions dealing with lagrangian adhesion forces
  *============================================================================*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -48,25 +48,25 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_math.h"
+#include "base/cs_base.h"
+#include "base/cs_math.h"
 
-#include "bft_mem.h"
-#include "bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
 
-#include "cs_physical_constants.h"
-#include "cs_random.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_random.h"
 
-#include "cs_lagr.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_roughness.h"
-#include "cs_lagr_clogging.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_roughness.h"
+#include "lagr/cs_lagr_clogging.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_adh.h"
+#include "lagr/cs_lagr_adh.h"
 
 /*----------------------------------------------------------------------------*/
 

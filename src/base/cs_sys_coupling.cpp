@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -53,25 +53,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
 #if defined(HAVE_MPI)
-#include "cs_coupling.h"
+#include "base/cs_coupling.h"
 #endif
 
-#include "cs_base.h"
-#include "cs_field_pointer.h"
-#include "cs_prototypes.h"
-#include "cs_thermal_model.h"
-#include "cs_zone.h"
+#include "base/cs_base.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sys_coupling.h"
+#include "base/cs_sys_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 

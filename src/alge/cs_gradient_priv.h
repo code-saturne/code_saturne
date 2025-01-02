@@ -30,11 +30,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_base_accel.h"
-#include "cs_halo_perio.h"
-#include "cs_mesh_adjacencies.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
+#include "base/cs_halo_perio.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 

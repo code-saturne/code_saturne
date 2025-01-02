@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard library headers
@@ -64,24 +64,24 @@ namespace cg = cooperative_groups;
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "cs_base.h"
-#include "cs_base_accel.h"
-#include "cs_blas_cuda.h"
-#include "cs_log.h"
-#include "cs_matrix.h"
-#include "cs_matrix_priv.h"
-#include "cs_matrix_spmv_cuda.h"
-#include "cs_mem.h"
-#include "cs_sles_it.h"
-#include "cs_sles_pc.h"
-#include "cs_sles_it_priv.h"
+#include "bft/bft_error.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
+#include "alge/cs_blas_cuda.h"
+#include "base/cs_log.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_priv.h"
+#include "alge/cs_matrix_spmv_cuda.h"
+#include "base/cs_mem.h"
+#include "alge/cs_sles_it.h"
+#include "alge/cs_sles_pc.h"
+#include "alge/cs_sles_it_priv.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_sles_it_cuda.h"
+#include "alge/cs_sles_it_cuda.h"
 
 /*=============================================================================
  * Local Macro Definitions

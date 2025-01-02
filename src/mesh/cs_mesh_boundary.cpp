@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -45,23 +45,23 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_io_num.h"
+#include "fvm/fvm_io_num.h"
 
-#include "cs_mesh_builder.h"
-#include "cs_mesh_connect.h"
-#include "cs_mesh_group.h"
-#include "cs_parall.h"
-#include "cs_sort.h"
+#include "mesh/cs_mesh_builder.h"
+#include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_mesh_group.h"
+#include "base/cs_parall.h"
+#include "base/cs_sort.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh_boundary.h"
+#include "mesh/cs_mesh_boundary.h"
 
 /*----------------------------------------------------------------------------*/
 

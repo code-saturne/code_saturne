@@ -33,43 +33,22 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
-$(FCMODINCLUDE)$(top_builddir)/src/alge \
-$(FCMODINCLUDE)$(top_builddir)/src/atmo \
-$(FCMODINCLUDE)$(top_builddir)/src/base \
-$(FCMODINCLUDE)$(top_builddir)/src/cdo \
-$(FCMODINCLUDE)$(top_builddir)/src/cfbl \
-$(FCMODINCLUDE)$(top_builddir)/src/cogz \
-$(FCMODINCLUDE)$(top_builddir)/src/comb \
-$(FCMODINCLUDE)$(top_builddir)/src/elec \
-$(FCMODINCLUDE)$(top_builddir)/src/lagr \
-$(FCMODINCLUDE)$(top_builddir)/src/pprt \
-$(FCMODINCLUDE)$(top_builddir)/src/rayt \
-$(FCMODINCLUDE)$(top_builddir)/src/turb \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
+csctwr_includedir=$(pkgincludedir)/ctwr
+csctwr_include_HEADERS = \
 cs_ctwr.h \
 cs_ctwr_boundary_conditions.h \
 cs_ctwr_variables.h \
@@ -93,7 +72,7 @@ cs_ctwr_physical_properties.cpp
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
 
 # Additional rules

@@ -29,21 +29,21 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_rad_transfer.h"
-#include "cs_rad_transfer_absorption.h"
-#include "cs_rad_transfer_adf_models.h"
-#include "cs_rad_transfer_bcs.h"
-#include "cs_rad_transfer_dir.h"
-#include "cs_rad_transfer_fields.h"
-#include "cs_rad_transfer_fsck.h"
-#include "cs_rad_transfer_rcfsk.h"
-#include "cs_rad_transfer_modak.h"
-#include "cs_rad_transfer_options.h"
-#include "cs_rad_transfer_pun.h"
-#include "cs_rad_transfer_restart.h"
-#include "cs_rad_transfer_solve.h"
-#include "cs_rad_transfer_source_terms.h"
-#include "cs_rad_transfer_wall_flux.h"
+#include "rayt/cs_rad_transfer.h"
+#include "rayt/cs_rad_transfer_absorption.h"
+#include "rayt/cs_rad_transfer_adf_models.h"
+#include "rayt/cs_rad_transfer_bcs.h"
+#include "rayt/cs_rad_transfer_dir.h"
+#include "rayt/cs_rad_transfer_fields.h"
+#include "rayt/cs_rad_transfer_fsck.h"
+#include "rayt/cs_rad_transfer_rcfsk.h"
+#include "rayt/cs_rad_transfer_modak.h"
+#include "rayt/cs_rad_transfer_options.h"
+#include "rayt/cs_rad_transfer_pun.h"
+#include "rayt/cs_rad_transfer_restart.h"
+#include "rayt/cs_rad_transfer_solve.h"
+#include "rayt/cs_rad_transfer_source_terms.h"
+#include "rayt/cs_rad_transfer_wall_flux.h"
 
 /*----------------------------------------------------------------------------*/
 

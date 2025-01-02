@@ -29,8 +29,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_combustion_model.h"
-#include "cs_physical_model.h"
+#include "pprt/cs_combustion_model.h"
+#include "pprt/cs_physical_model.h"
 
 /*----------------------------------------------------------------------------*/
 

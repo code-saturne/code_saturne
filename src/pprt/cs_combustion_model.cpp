@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,25 +42,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-#include "cs_base.h"
-#include "cs_file.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
+#include "base/cs_base.h"
+#include "base/cs_file.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_coal.h"
-#include "cs_combustion_bsh.h"
-#include "cs_combustion_gas.h"
+#include "comb/cs_coal.h"
+#include "cogz/cs_combustion_bsh.h"
+#include "cogz/cs_combustion_gas.h"
 
-#include "cs_combustion_model.h"
+#include "pprt/cs_combustion_model.h"
 
 /*----------------------------------------------------------------------------*/
 

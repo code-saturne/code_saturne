@@ -25,7 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,33 +42,33 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft/bft_mem.h"
 
-#include "cs_blas.h"
-#include "cs_cdo_bc.h"
-#include "cs_cdo_blas.h"
-#include "cs_cdo_toolbox.h"
+#include "alge/cs_blas.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdo_toolbox.h"
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
+#include "cdo/cs_dbg.h"
 #endif
-#include "cs_equation_bc.h"
-#include "cs_equation_priv.h"
-#include "cs_evaluate.h"
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_navsto_coupling.h"
-#include "cs_navsto_param.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_reco.h"
-#include "cs_sdm.h"
-#include "cs_timer.h"
+#include "cdo/cs_equation_bc.h"
+#include "cdo/cs_equation_priv.h"
+#include "cdo/cs_evaluate.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "cdo/cs_navsto_coupling.h"
+#include "cdo/cs_navsto_param.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "cdo/cs_reco.h"
+#include "cdo/cs_sdm.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdofb_navsto.h"
+#include "cdo/cs_cdofb_navsto.h"
 
 /*----------------------------------------------------------------------------*/
 

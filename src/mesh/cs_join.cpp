@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -42,34 +42,34 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "fvm_periodicity.h"
+#include "fvm/fvm_periodicity.h"
 
-#include "cs_all_to_all.h"
-#include "cs_block_dist.h"
-#include "cs_join_intersect.h"
-#include "cs_join_merge.h"
-#include "cs_join_mesh.h"
-#include "cs_join_post.h"
-#include "cs_join_perio.h"
-#include "cs_join_set.h"
-#include "cs_join_split.h"
-#include "cs_join_update.h"
-#include "cs_join_util.h"
-#include "cs_log.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_timer.h"
+#include "base/cs_all_to_all.h"
+#include "base/cs_block_dist.h"
+#include "mesh/cs_join_intersect.h"
+#include "mesh/cs_join_merge.h"
+#include "mesh/cs_join_mesh.h"
+#include "mesh/cs_join_post.h"
+#include "mesh/cs_join_perio.h"
+#include "mesh/cs_join_set.h"
+#include "mesh/cs_join_split.h"
+#include "mesh/cs_join_update.h"
+#include "mesh/cs_join_util.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *---------------------------------------------------------------------------*/
 
-#include "cs_join.h"
+#include "mesh/cs_join.h"
 
 /*---------------------------------------------------------------------------*/
 

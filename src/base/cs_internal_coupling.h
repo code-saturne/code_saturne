@@ -37,14 +37,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_matrix_assembler.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_parameters.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "alge/cs_matrix_assembler.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
 
 /*----------------------------------------------------------------------------*/
 

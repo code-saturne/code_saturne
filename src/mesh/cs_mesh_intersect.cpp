@@ -23,7 +23,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -37,22 +37,22 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "bft/bft_mem.h"
 
-#include "cs_base.h"
-#include "cs_geom.h"
-#include "fvm_nodal.h"
-#include "fvm_point_location.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_connect.h"
-#include "cs_mesh_quantities.h"
+#include "base/cs_base.h"
+#include "mesh/cs_geom.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_point_location.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh_intersect.h"
+#include "mesh/cs_mesh_intersect.h"
 
 /*----------------------------------------------------------------------------*/
 

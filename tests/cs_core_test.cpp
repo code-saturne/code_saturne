@@ -28,13 +28,13 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "bft_error.h"
-#include "bft_mem_usage.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem_usage.h"
 
-#include "cs_system_info.h"
+#include "base/cs_system_info.h"
 
-#include "cs_defs.h"
-#include "cs_timer.h"
+#include "base/cs_defs.h"
+#include "base/cs_timer.h"
 
 #if defined(__MINGW32__)
 #define sleep Sleep

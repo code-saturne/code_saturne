@@ -37,13 +37,13 @@
 
 #include <ple_locator.h>
 
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_function.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
-#include "cs_time_control.h"
-#include "cs_zone.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_function.h"
+#include "base/cs_math.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_time_control.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
