@@ -57,7 +57,6 @@ use ppthch
 use coincl
 use ppincl
 use atincl
-use pointe, only: izfppp
 use cs_c_bindings
 use mesh
 
@@ -69,8 +68,6 @@ implicit none
 
 ! Local variables
 
-integer          ifac, izone
-
 integer, pointer, dimension(:,:) :: icodcl
 double precision, pointer, dimension(:,:,:) :: rcodcl
 
@@ -79,32 +76,6 @@ double precision, pointer, dimension(:,:,:) :: rcodcl
 !===============================================================================
 
 call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
-
-! ---> Combustion gaz USEBUC
-!      Flamme de diffusion : chimie 3 points
-
-if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
-
-  do ifac = 1, nfabor
-    izfppp(ifac) = 0
-  enddo
-
-! ---> Combustion gaz USEBUC
-!      Flamme de premelange : modele EBU
-
-elseif ( ippmod(icoebu).ge.0 ) then
-
-  do izone = 1, nozppm
-    icalke(izone) = 0
-    dh(izone)     = zero
-    xintur(izone) = zero
-  enddo
-
-  do ifac = 1, nfabor
-    izfppp(ifac) = 0
-  enddo
-
-endif
 
 !----
 ! FORMATS

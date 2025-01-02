@@ -107,19 +107,6 @@ typedef struct {
    *  according to their boundary condition type \c bc_type */
   int  *itrifb;
 
-  /*! Turbulence inlet type:
-    * - 0: given by the user
-    * - 1: automatic, from hydraulic diameter and input velocity performed.
-    * - 2: automatic, from turbulent intensity and input velocity performed.
-    */
-  int   icalke[CS_MAX_BC_PM_ZONE_NUM+1];
-
-  /*! hydraulic diameter */
-  cs_real_t  dh[CS_MAX_BC_PM_ZONE_NUM+1];
-
-  /*! turbulent intensity */
-  cs_real_t  xintur[CS_MAX_BC_PM_ZONE_NUM+1];
-
   /*! atmospheric flows: auto inlet/outlet flag */
   int *iautom;
 

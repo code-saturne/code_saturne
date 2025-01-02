@@ -177,11 +177,6 @@ void
 cs_f_boundary_conditions_get_pointers(int  **itypfb,
                                       int  **izfppp);
 
-void
-cs_f_boundary_conditions_get_ppincl_pointers(int     **icalke,
-                                             double  **xintur,
-                                             double  **dh);
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1321,23 +1316,6 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
 {
   const cs_time_step_t *ts = cs_glob_time_step;
 
-  /* Update legacy BC arrays, as they are reset at each time step */
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
-    int zone_num = c->bc_pm_zone_num;
-    if (c->turb_compute == CS_BC_TURB_BY_HYDRAULIC_DIAMETER) {
-      bc_pm_info->icalke[zone_num] = 1;
-      bc_pm_info->dh[zone_num] = c->hyd_diameter;
-      bc_pm_info->xintur[zone_num] = c->turb_intensity;
-    }
-    else if (c->turb_compute == CS_BC_TURB_BY_TURBULENT_INTENSITY) {
-      bc_pm_info->icalke[zone_num] = 2;
-      bc_pm_info->dh[zone_num] = c->hyd_diameter;
-      bc_pm_info->xintur[zone_num] = c->turb_intensity;
-    }
-  }
-
   /* At the first time step, always update (we do not assume that in case
      of a restarted computation, data is handled using restart data info
      in general);
@@ -1522,18 +1500,6 @@ cs_f_boundary_conditions_get_pointers(int **itypfb,
   *itypfb = _bc_type;
 
   *izfppp = cs_glob_bc_pm_info->izfppp;
-}
-
-void
-cs_f_boundary_conditions_get_ppincl_pointers(int     **icalke,
-                                             double  **xintur,
-                                             double  **dh)
-{
-  /* Shift by 1 to compensate for Fortran 1-based access */
-
-  *icalke = cs_glob_bc_pm_info->icalke + 1;
-  *xintur = cs_glob_bc_pm_info->xintur + 1;
-  *dh     = cs_glob_bc_pm_info->dh     + 1;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2262,11 +2228,6 @@ cs_boundary_conditions_create_legacy_zone_data(void)
   cs_glob_bc_pm_info->itrifb = nullptr;
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
-    bc_pm_info->icalke[i] = 0;
-    bc_pm_info->dh[i]     = 0.;
-    bc_pm_info->xintur[i] = 0.;
-  }
 
   bc_pm_info->iautom = nullptr;
 }
@@ -3376,14 +3337,6 @@ cs_boundary_conditions_inlet_set_turbulence_hyd_diam(const  cs_zone_t  *zone,
   c->turb_compute = CS_BC_TURB_BY_HYDRAULIC_DIAMETER;
   c->hyd_diameter = hd;
   c->turb_intensity = -1;
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
-    int zone_num = c->bc_pm_zone_num;
-    bc_pm_info->icalke[zone_num] = 1;
-    bc_pm_info->dh[zone_num] = c->hyd_diameter;
-    bc_pm_info->xintur[zone_num] = c->turb_intensity;
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3405,14 +3358,6 @@ cs_boundary_conditions_inlet_set_turbulence_intensity(const  cs_zone_t  *zone,
 
   c->turb_compute = CS_BC_TURB_BY_TURBULENT_INTENSITY;
   c->turb_intensity = ti;
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
-    int zone_num = c->bc_pm_zone_num;
-    bc_pm_info->icalke[zone_num] = 2;
-    bc_pm_info->dh[zone_num] = c->hyd_diameter;
-    bc_pm_info->xintur[zone_num] = c->turb_intensity;
-  }
 }
 
 /*----------------------------------------------------------------------------*/

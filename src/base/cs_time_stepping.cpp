@@ -147,9 +147,6 @@ cs_f_finalize_chemistry(void);
 void
 cs_f_finalize_steady_laminar_flamelet_library(void);
 
-void
-cs_f_pp_models_bc_map(void);
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -463,9 +460,6 @@ cs_time_stepping(void)
   /* Initializations (user and additional)
      dt rom romb viscl visct viscls (tpucou with periodicity)
      -------------------------------------------------------- */
-
-  /* BC mappings for specific physical models (deprecated) */
-  cs_f_pp_models_bc_map();
 
   cs_initialize_fields_stage_1();
 
