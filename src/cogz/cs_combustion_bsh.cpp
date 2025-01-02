@@ -74,13 +74,12 @@ BEGIN_C_DECLS
 #define N_XR 5
 #define N_ZVAR 10
 #define N_VAR_BSH 7
-#define NVAR_TURB 10
 
 /*! Burke Schumann combustion model variables */
 
 cs_real_t        coeff_therm[7][2][5];
 static cs_real_t bsh_lib[N_XR][N_Z][N_VAR_BSH];
-static cs_real_t turb_bsh_lib[NVAR_TURB][N_XR][N_ZVAR][N_Z];
+static cs_real_t turb_bsh_lib[CS_BSH_NVAR_TURB][N_XR][N_ZVAR][N_Z];
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -398,13 +397,13 @@ void
 cs_compute_burke_schumann_properties(cs_real_t z_m_0,
                                      cs_real_t zvar_0,
                                      cs_real_t xr_m_0,
-                                     cs_real_t phi_t[NVAR_TURB])
+                                     cs_real_t phi_t[CS_BSH_NVAR_TURB])
 {
   cs_real_t  xdata[N_Z];  // largest of NZ, N_ZVAR, N_XR;
   assert(N_Z >= N_ZVAR && N_Z >= N_XR);
 
-  cs_real_t  phi_4[NVAR_TURB][N_XR][N_ZVAR];
-  cs_real_t  phi_3[NVAR_TURB][N_XR];
+  cs_real_t  phi_4[CS_BSH_NVAR_TURB][N_XR][N_ZVAR];
+  cs_real_t  phi_3[CS_BSH_NVAR_TURB][N_XR];
   cs_real_t  weight_z_m, weight_z_var, weight_xr_m;
   cs_lnum_t  i, j, k, dataindex;
 
@@ -422,7 +421,7 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
     weight_z_m = (z_m_0 - xdata[dataindex - 1])
                  / (xdata[dataindex] - xdata[dataindex - 1]);
 
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       for (j = 0; j < N_XR; j++) {
         for (k = 0; k < N_ZVAR; k++) {
           phi_4[i][j][k]
@@ -434,7 +433,7 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
   }
 
   if (xdata[0] >= z_m_0) {
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       for (j = 0; j < N_XR; j++) {
         for (k = 0; k < N_ZVAR; k++) {
           phi_4[i][j][k] = turb_bsh_lib[i][j][k][0];
@@ -444,7 +443,7 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
   }
 
   if (xdata[N_Z - 1] <= z_m_0) {
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       for (j = 0; j < N_XR; j++) {
         for (k = 0; k < N_ZVAR; k++) {
           phi_4[i][j][k] = turb_bsh_lib[i][j][k][N_Z - 1];
@@ -466,7 +465,7 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
   if (dataindex > 0) {
     weight_z_var = (zvar_0 - xdata[dataindex - 1])
                    / (xdata[dataindex] - xdata[dataindex - 1]);
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       for (j = 0; j < N_XR; j++) {
         phi_3[i][j] = (1.0 - weight_z_var) * phi_4[i][j][dataindex - 1]
                       + weight_z_var * phi_4[i][j][dataindex];
@@ -475,7 +474,7 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
   }
 
   if (xdata[0] >= zvar_0) {
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       for (j = 0; j < N_XR; j++) {
         phi_3[i][j] = phi_4[i][j][0];
       }
@@ -483,7 +482,7 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
   }
 
   if (xdata[N_ZVAR - 1] <= zvar_0) {
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       for (j = 0; j < N_XR; j++) {
         phi_3[i][j] = phi_4[i][j][N_ZVAR - 1];
       }
@@ -503,20 +502,20 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
   if (dataindex > 0) {
     weight_xr_m = (xr_m_0 - xdata[dataindex - 1])
                   / (xdata[dataindex] - xdata[dataindex - 1]);
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       phi_t[i] = (1.0 - weight_xr_m) * phi_3[i][dataindex - 1]
                  + weight_xr_m * phi_3[i][dataindex];
     }
   }
 
   if (xdata[0] >= xr_m_0) {
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       phi_t[i] = phi_3[i][0];
     }
   }
 
   if (xdata[N_XR - 1] <= xr_m_0) {
-    for (i = 0; i < NVAR_TURB; i++) {
+    for (i = 0; i < CS_BSH_NVAR_TURB; i++) {
       phi_t[i] = phi_3[i][N_XR - 1];
     }
   }
@@ -684,7 +683,7 @@ cs_burke_schumann(void)
     }
   }
 
-  for (ii = 0; ii < NVAR_TURB; ii++) {
+  for (ii = 0; ii < CS_BSH_NVAR_TURB; ii++) {
     for (jj = 0; jj < N_XR; jj++) {
       for (kk = 0; kk < N_ZVAR; kk++) {
         for (ll = 0; ll < N_Z; ll++) {
@@ -729,7 +728,7 @@ cs_burke_schumann(void)
                            phi,
                            z_m[ii],
                            zvar[ii * N_ZVAR + jj],
-                           &turb_bsh_lib[NVAR_TURB - 2][nn][jj][ii],
+                           &turb_bsh_lib[CS_BSH_NVAR_TURB - 2][nn][jj][ii],
                            N_Z);
 
         // T^4 calculation for the radiative emission
@@ -740,7 +739,7 @@ cs_burke_schumann(void)
                            phi,
                            z_m[ii],
                            zvar[ii * N_ZVAR + jj],
-                           &turb_bsh_lib[NVAR_TURB - 1][nn][jj][ii],
+                           &turb_bsh_lib[CS_BSH_NVAR_TURB - 1][nn][jj][ii],
                            N_Z);
       }
     }

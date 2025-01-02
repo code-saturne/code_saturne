@@ -32,6 +32,7 @@
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_boundary_conditions.h"
 #include "cogz/cs_combustion_ht_convert.h"
+#include "cogz/cs_combustion_physical_properties.h"
 #include "cogz/cs_soot_model.h"
 
 /*----------------------------------------------------------------------------*/

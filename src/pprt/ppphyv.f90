@@ -92,6 +92,16 @@ integer(c_int) ::  mbrom
 
 ! Local variables
 
+interface
+
+  subroutine cs_combustion_physical_properties_update_d3p()  &
+    bind(C, name='cs_combustion_physical_properties_update_d3p')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_combustion_physical_properties_update_d3p
+
+end interface
+
 !===============================================================================
 ! 1. Fill properties depending on the model
 !===============================================================================
@@ -99,7 +109,7 @@ integer(c_int) ::  mbrom
 ! ---> Flamme de diffusion chimie 3 points
 
 if (ippmod(icod3p).ge.0) then
-  call d3pphy()
+  call cs_combustion_physical_properties_update_d3p()
   mbrom = 1
 endif
 

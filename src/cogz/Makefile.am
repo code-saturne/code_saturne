@@ -53,6 +53,7 @@ cs_combustion_boundary_conditions.h \
 cs_combustion_bsh.h \
 cs_combustion_gas.h \
 cs_combustion_ht_convert.h \
+cs_combustion_physical_properties.h \
 cs_soot_model.h \
 cs_steady_laminar_flamelet_source_terms.h \
 cs_cogz_headers.h
@@ -65,6 +66,7 @@ cs_combustion_boundary_conditions.cpp \
 cs_combustion_bsh.cpp \
 cs_combustion_gas.cpp \
 cs_combustion_ht_convert.cpp \
+cs_combustion_physical_properties.cpp \
 cs_soot_model.cpp \
 cs_steady_laminar_flamelet_source_terms.cpp \
 coini1.f90 \
@@ -75,7 +77,6 @@ covarp.f90 \
 d3phst.f90 \
 d3pini.f90 \
 d3pint.f90 \
-d3pphy.f90 \
 d3pver.f90 \
 ebuini.f90 \
 ebuphy.f90 \

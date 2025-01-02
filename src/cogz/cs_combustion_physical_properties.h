@@ -1,8 +1,8 @@
-#ifndef __CS_COMBUSTION_BSH_HEADERS_H__
-#define __CS_COMBUSTION_BSH_HEADERS_H__
+#ifndef CS_COMBUSTION_PHYSICAL_PROPERTIES_H
+#define CS_COMBUSTION_PHYSICAL_PROPERTIES_H
 
 /*============================================================================
- * Burke Schumann combustion model.
+ * Gas combustion model: physical properties computation
  *============================================================================*/
 
 /*
@@ -37,67 +37,40 @@
 
 #include "base/cs_defs.h"
 
-#include "cogz/cs_combustion_gas.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
+/*============================================================================
  * Macro definitions
  *============================================================================*/
 
-#define CS_BSH_NVAR_TURB 10
-
 /*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/*=============================================================================
  * Global variables
  *============================================================================*/
 
-/*! Burke Schumann combustion model thermal coefficients */
-
-extern cs_real_t coeff_therm[7][2][5];
-
-/*=============================================================================
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the fluid properties from the Burke-Schumann combustion model.
+/*
+ * \brief Compute physical properties for the 3-point chemistry
+ *        combustion model.
+ *
+ * \param[in, out]   mbrom    filling indicator of romb
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_compute_burke_schumann_properties(cs_real_t  z_m_0,
-                                     cs_real_t  zvar_0,
-                                     cs_real_t  xr_m_0,
-                                     cs_real_t  phi_t[CS_BSH_NVAR_TURB]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the parameters needed for the Burke-Schumann combustion
- * model.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_burke_schumann(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Calculate enthalpy using the Burke-Schumann model.
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_compute_burke_schumann_enthalpy
-(
-  cs_real_t t,
-  cs_real_t yspec[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS]
-);
+cs_combustion_physical_properties_update_d3p(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_COMBUSTION_BSH_HEADERS_H__ */
+#endif /* CS_COMBUSTION_PHYSICAL_PROPERTIES */
