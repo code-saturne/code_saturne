@@ -147,7 +147,6 @@ module coincl
   !                        pour premelange frais et dilution
   !       TGBAD        --> Temperature adiabatique gaz brules en K
 
-  real(c_double), pointer, save :: qimp(:), fment(:), tkent(:)
   real(c_double), pointer, save :: frmel, tgf
   double precision, save :: cebu, hgf, tgbad
 
@@ -339,18 +338,6 @@ module coincl
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function retrieving BC zone array pointers
-
-    subroutine cs_f_boundary_conditions_get_coincl_pointers(p_tkent,  p_fment,  &
-                                                            p_qimp) &
-      bind(C, name='cs_f_boundary_conditions_get_coincl_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: p_tkent,  p_fment, p_qimp
-    end subroutine cs_f_boundary_conditions_get_coincl_pointers
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function retrieving pointers to members of the
     ! global combustion model flags
 
@@ -434,27 +421,6 @@ contains
     call c_f_pointer(c_frmel, frmel);
 
   end subroutine co_models_init
-
-  !> \brief Map Fortran physical models boundary condition info.
-  !> This maps Fortran pointers to global C variables.
-
-  subroutine co_models_bc_map() &
-    bind(C, name='cs_f_combustion_models_boundary_conditions_map')
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: p_tkent,  p_fment,  p_qimp
-
-    call cs_f_boundary_conditions_get_coincl_pointers(p_tkent,  p_fment,  &
-                                                      p_qimp)
-    call c_f_pointer(p_tkent,  tkent,  [nozppm])
-    call c_f_pointer(p_fment,  fment,  [nozppm])
-    call c_f_pointer(p_qimp,   qimp,   [nozppm])
-
-  end subroutine co_models_bc_map
 
   !=============================================================================
 

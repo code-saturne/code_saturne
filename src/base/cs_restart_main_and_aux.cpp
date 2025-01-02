@@ -668,30 +668,6 @@ _write_auxiliary_checkpoint(void)
     dummy_real = cm->frmel;
     _WRITE_REAL_VAL("frmel_ebu");
 
-    // numéro des zones
-    cs_restart_write_section(r,
-                             "num_zone_fb_ebu",
-                             3,
-                             1,
-                             CS_TYPE_cs_real_t,
-                             cs_glob_bc_pm_info->izfppp);
-
-    // FMENT (si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "fment_zone_bord_ebu",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->fment + 1);
-
-    // TKENT (si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "tkent_zone_bord_ebu",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->tkent + 1);
-
     cs_log_printf(CS_LOG_DEFAULT,
                   " End writing the combustion information (EBU)\n");
   }
@@ -711,30 +687,6 @@ _write_auxiliary_checkpoint(void)
 
     dummy_real = cm->hmax_lwc;
     _WRITE_REAL_VAL("hmax_lwc");
-
-    // numéro des zones
-    cs_restart_write_section(r,
-                             "num_zone_fb_lwc",
-                             3,
-                             1,
-                             CS_TYPE_cs_real_t,
-                             cs_glob_bc_pm_info->izfppp);
-
-    // FMENT (si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "fment_zone_bord_lwc",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->fment + 1);
-
-    // TKENT (si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "tkent_zone_bord_lwc",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->tkent + 1);
 
     cs_log_printf(CS_LOG_DEFAULT, " End writing combustion information (LWC)\n");
   }
@@ -1236,36 +1188,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     retval = _READ_REAL_VAL("frmel_ebu");
     if (retval == CS_RESTART_SUCCESS)
       cm->frmel = dummy_real;
-
-    if (match_b_face) {
-      // numéro des zones
-      retval = cs_restart_read_section(r,
-                                       "num_zone_fb_ebu",
-                                       3,
-                                       1,
-                                       CS_TYPE_int,
-                                       cs_glob_bc_pm_info->izfppp);
-
-      // fment
-      retval += cs_restart_read_section(r,
-                                        "fment_zone_bord_ebu",
-                                        0,
-                                        CS_MAX_BC_PM_ZONE_NUM,
-                                        CS_TYPE_int,
-                                        cs_glob_bc_pm_info->fment + 1);
-      // tkent
-      retval += cs_restart_read_section(r,
-                                        "tkent_zone_bord_ebu",
-                                        0,
-                                        CS_MAX_BC_PM_ZONE_NUM,
-                                        CS_TYPE_int,
-                                        cs_glob_bc_pm_info->tkent + 1);
-
-      if (retval != CS_RESTART_SUCCESS) {
-        for (cs_lnum_t f_id = 0; f_id < cs_glob_mesh->n_b_faces; f_id++)
-          cs_glob_bc_pm_info->izfppp[f_id] = 0;
-      }
-    }
   }
 
   /* LWC */
@@ -1287,36 +1209,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     retval = _READ_REAL_VAL("hmax_lwc");
     if (retval == CS_RESTART_SUCCESS)
       cm->hmax_lwc = dummy_real;
-
-    if (match_b_face) {
-      // numéro des zones
-      retval = cs_restart_read_section(r,
-                                       "num_zone_fb_lwc",
-                                       3,
-                                       1,
-                                       CS_TYPE_cs_real_t,
-                                       cs_glob_bc_pm_info->izfppp);
-
-      // fment
-      retval += cs_restart_read_section(r,
-                                        "fment_zone_bord_lwc",
-                                        0,
-                                        CS_MAX_BC_PM_ZONE_NUM,
-                                        CS_TYPE_int,
-                                        cs_glob_bc_pm_info->fment + 1);
-      // tkent
-      retval += cs_restart_read_section(r,
-                                        "tkent_zone_bord_lwc",
-                                        0,
-                                        CS_MAX_BC_PM_ZONE_NUM,
-                                        CS_TYPE_int,
-                                        cs_glob_bc_pm_info->tkent + 1);
-
-      if (retval != CS_RESTART_SUCCESS) {
-        for (cs_lnum_t f_id = 0; f_id < cs_glob_mesh->n_b_faces; f_id++)
-          cs_glob_bc_pm_info->izfppp[f_id] = 0;
-      }
-    }
   }
 
   /* Pulverized coal */

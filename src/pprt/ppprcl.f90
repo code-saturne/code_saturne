@@ -85,11 +85,6 @@ call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
 
-  do izone = 1, nozppm
-    qimp(izone)   = zero
-    iqimp(izone)  = 0
-  enddo
-
   do ifac = 1, nfabor
     izfppp(ifac) = 0
   enddo
@@ -100,13 +95,9 @@ if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
 elseif ( ippmod(icoebu).ge.0 ) then
 
   do izone = 1, nozppm
-    iqimp(izone)  = 0
-    qimp(izone)   = zero
     icalke(izone) = 0
     dh(izone)     = zero
     xintur(izone) = zero
-    fment(izone)  = zero
-    tkent(izone)  = zero
   enddo
 
   do ifac = 1, nfabor

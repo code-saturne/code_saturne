@@ -83,7 +83,7 @@ implicit none
 ! Local variables
 
 character(len=80) :: chaine
-integer          iel, igg, izone
+integer          iel, igg
 integer          iscal, ivar, ii
 double precision hinit, coefg(ngazgm), hair, tinitk
 double precision sommqf, sommqt, sommq, tentm, fmelm
@@ -250,11 +250,12 @@ if ( isuite.eq.0 ) then
     sommqf = zero
     sommq  = zero
     sommqt = zero
-    do izone = 1, nozapm
-      sommqf = sommqf + qimp(izone)*fment(izone)
-      sommqt = sommqt + qimp(izone)*tkent(izone)
-      sommq  = sommq  + qimp(izone)
-    enddo
+    ! FIXME: restore this when migrating to C, using inlet zone info
+    !do izone = 1, nozapm
+    !  sommqf = sommqf + qimp(izone)*fment(izone)
+    !  sommqt = sommqt + qimp(izone)*tkent(izone)
+    !  sommq  = sommq  + qimp(izone)
+    !enddo
 
     if(abs(sommq).gt.epzero) then
       fmelm = sommqf / sommq

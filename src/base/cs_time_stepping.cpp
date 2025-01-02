@@ -130,9 +130,6 @@ void
 cs_f_init_chemistry_reacnum(void);
 
 void
-cs_f_combustion_models_boundary_conditions_map(void);
-
-void
 cs_f_atmsol(void);
 
 void
@@ -469,12 +466,6 @@ cs_time_stepping(void)
 
   /* BC mappings for specific physical models (deprecated) */
   cs_f_pp_models_bc_map();
-
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
-      || cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0
-      || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
-      || cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0)
-    cs_f_combustion_models_boundary_conditions_map();
 
   cs_initialize_fields_stage_1();
 

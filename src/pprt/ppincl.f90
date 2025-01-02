@@ -298,17 +298,6 @@ module ppincl
   !> \addtogroup boundary_conditions
   !> \{
 
-  !> imposed flow zone indicator
-  !> in a way which is similar to the process described in the framework of the EBU module,
-  !> the user chooses for every inlet face to impose the mass flow or not
-  !> (\ref iqimp "iqimp"(izone)=1 or 0). If the mass flow is imposed, the user
-  !> must set the air mass flow value \ref coincl::qimp "qimp"(izone) ant its direction
-  !> in \ref rcodcl "rcodcl"(ifac,\ref iu), \ref rcodcl "rcodcl"(ifac,\ref iv)
-  !> and \ref rcodcl "rcodcl"(ifac,\ref iw).
-  !> If the velocity is imposed, he has to set  \ref rcodcl "rcodcl"(ifac,\ref iu),
-  !> \ref rcodcl "rcodcl"(ifac,\ref iv), and \ref rcodcl "rcodcl"(ifac,\ref iw).
-  integer(c_int), pointer, save :: iqimp(:)
-
   !> condition type turbulence indicator
   !>  - 0 : given by the user
   !>  - 1 : automatic, from hydraulic diameter and input velocity performed.
@@ -395,12 +384,12 @@ module ppincl
 
     ! Interface to C function retrieving BC zone array pointers
 
-    subroutine cs_f_boundary_conditions_get_ppincl_pointers(p_iqimp, p_icalke,  &
+    subroutine cs_f_boundary_conditions_get_ppincl_pointers(p_icalke,           &
                                                             p_xintur, p_dh)     &
       bind(C, name='cs_f_boundary_conditions_get_ppincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_iqimp, p_icalke, p_xintur, p_dh
+      type(c_ptr), intent(out) :: p_icalke, p_xintur, p_dh
     end subroutine cs_f_boundary_conditions_get_ppincl_pointers
 
     !---------------------------------------------------------------------------
@@ -455,12 +444,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_iqimp, p_icalke, p_xintur, p_dh
+    type(c_ptr) :: p_icalke, p_xintur, p_dh
 
-    call cs_f_boundary_conditions_get_ppincl_pointers(p_iqimp, p_icalke,  &
+    call cs_f_boundary_conditions_get_ppincl_pointers(p_icalke,  &
                                                       p_xintur, p_dh)
 
-    call c_f_pointer(p_iqimp, iqimp, [nozppm])
     call c_f_pointer(p_icalke, icalke, [nozppm])
     call c_f_pointer(p_xintur, xintur, [nozppm])
     call c_f_pointer(p_dh, dh, [nozppm])

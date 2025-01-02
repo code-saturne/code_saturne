@@ -107,14 +107,6 @@ typedef struct {
    *  according to their boundary condition type \c bc_type */
   int  *itrifb;
 
-  /*! Imposed flow zone indicator (for inlet zones).
-   * If the mass flow is imposed (\c iqimp(z_id) = 1), the matching
-   * \c qimp value must be set, and the defined velocity boundary condition
-   * will be rescaled so as to match the given mass flow (i.e. only its original
-   * direction is used. Otherwise, the given velocity boundary condition
-   * given by \c rcodcl1 is unchanged. */
-  int   iqimp[CS_MAX_BC_PM_ZONE_NUM+1];
-
   /*! Turbulence inlet type:
     * - 0: given by the user
     * - 1: automatic, from hydraulic diameter and input velocity performed.
@@ -122,25 +114,11 @@ typedef struct {
     */
   int   icalke[CS_MAX_BC_PM_ZONE_NUM+1];
 
-  /*! Imposed flow value (for inlet zones).
-   * If the mass flow is imposed (\c iqimp(z_num - 1) = 1), the matching \c qimp
-   * value must be set, and the defined velocity boundary condition will be
-   * rescaled so as to match the given mass flow (i.e. only its original
-   * direction is used. Otherwise, the given velocity boundary condition
-   * given by \c rcodcl1 is unchanged. */
-  cs_real_t  qimp[CS_MAX_BC_PM_ZONE_NUM+1];
-
   /*! hydraulic diameter */
   cs_real_t  dh[CS_MAX_BC_PM_ZONE_NUM+1];
 
   /*! turbulent intensity */
   cs_real_t  xintur[CS_MAX_BC_PM_ZONE_NUM+1];
-
-  /*! inlet temperature (gas combustion) */
-  double tkent[CS_MAX_BC_PM_ZONE_NUM+1];
-
-  /*! Mean Mixture Fraction at Inlet (gas combustion) */
-  double fment[CS_MAX_BC_PM_ZONE_NUM+1];
 
   /*! atmospheric flows: auto inlet/outlet flag */
   int *iautom;

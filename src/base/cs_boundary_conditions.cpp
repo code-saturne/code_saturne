@@ -178,15 +178,9 @@ cs_f_boundary_conditions_get_pointers(int  **itypfb,
                                       int  **izfppp);
 
 void
-cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
-                                             int     **icalke,
+cs_f_boundary_conditions_get_ppincl_pointers(int     **icalke,
                                              double  **xintur,
                                              double  **dh);
-
-void
-cs_f_boundary_conditions_get_coincl_pointers(double  **tkent,
-                                             double  **fment,
-                                             double  **qimp);
 
 /*============================================================================
  * Private function definitions
@@ -1332,10 +1326,6 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
     int zone_num = c->bc_pm_zone_num;
-    if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE) {
-      bc_pm_info->iqimp[zone_num] = 1;
-      bc_pm_info->qimp[zone_num] = c->vel_values[3];
-    }
     if (c->turb_compute == CS_BC_TURB_BY_HYDRAULIC_DIAMETER) {
       bc_pm_info->icalke[zone_num] = 1;
       bc_pm_info->dh[zone_num] = c->hyd_diameter;
@@ -1436,14 +1426,6 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
                   c->scale_func_input,
                   c->vel_buffer);
   }
-
-  /* Also update legacy boundary condition structures */
-
-  if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
-    int zone_num = c->bc_pm_zone_num;
-    if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE)
-      bc_pm_info->qimp[zone_num] = c->vel_values[3];
-  }
 }
 
 /*============================================================================
@@ -1543,29 +1525,15 @@ cs_f_boundary_conditions_get_pointers(int **itypfb,
 }
 
 void
-cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
-                                             int     **icalke,
+cs_f_boundary_conditions_get_ppincl_pointers(int     **icalke,
                                              double  **xintur,
                                              double  **dh)
 {
   /* Shift by 1 to compensate for Fortran 1-based access */
 
-  *iqimp  = cs_glob_bc_pm_info->iqimp  + 1;
   *icalke = cs_glob_bc_pm_info->icalke + 1;
   *xintur = cs_glob_bc_pm_info->xintur + 1;
   *dh     = cs_glob_bc_pm_info->dh     + 1;
-}
-
-void
-cs_f_boundary_conditions_get_coincl_pointers(double  **tkent,
-                                             double  **fment,
-                                             double  **qimp)
-{
-  /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
-
-  *tkent  = cs_glob_bc_pm_info->tkent  + 1;
-  *fment  = cs_glob_bc_pm_info->fment  + 1;
-  *qimp   = cs_glob_bc_pm_info->qimp   + 1;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2295,15 +2263,9 @@ cs_boundary_conditions_create_legacy_zone_data(void)
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   for (int i = 0; i < CS_MAX_BC_PM_ZONE_NUM+1; i++) {
-    bc_pm_info->iqimp[i]  = 0;
     bc_pm_info->icalke[i] = 0;
-    bc_pm_info->qimp[i]   = 0.;
     bc_pm_info->dh[i]     = 0.;
     bc_pm_info->xintur[i] = 0.;
-
-    /* Gas combustion */
-    bc_pm_info->tkent[i]  = 0.;
-    bc_pm_info->fment[i]  = 0.;
   }
 
   bc_pm_info->iautom = nullptr;
@@ -2993,14 +2955,6 @@ cs_boundary_conditions_open_set_velocity_by_normal_value(const  cs_zone_t  *z,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
                                  c);
-
-  /* Also update legacy boundary condition structures */
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
-    int zone_num = c->bc_pm_zone_num;
-    bc_pm_info->iqimp[zone_num] = 0;
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3048,14 +3002,6 @@ cs_boundary_conditions_open_set_velocity_by_func(const  cs_zone_t       *z,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
                                  c);
-
-  /* Also update legacy boundary condition structures */
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
-    int zone_num = c->bc_pm_zone_num;
-    bc_pm_info->iqimp[zone_num] = 1;
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3171,15 +3117,6 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
                                  c);
-
-  /* Also update legacy boundary condition structures */
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
-    int zone_num = c->bc_pm_zone_num;
-    bc_pm_info->iqimp[zone_num] = 1;
-    bc_pm_info->qimp[zone_num] = c->vel_values[3];
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3269,14 +3206,6 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_func
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
                                  c);
-
-  /* Also update legacy boundary condition structures */
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr && c->bc_pm_zone_num > 0) {
-    int zone_num = c->bc_pm_zone_num;
-    bc_pm_info->iqimp[zone_num] = 1;
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3342,14 +3271,6 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
                                  c);
-
-  /* Also update legacy boundary condition structures */
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr) {
-    int zone_num = z->id - 1;
-    bc_pm_info->iqimp[zone_num] = 0;
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3433,14 +3354,6 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_func
                                  cs_flag_boundary_face,  // location flag
                                  c->dof_func,
                                  c);
-
-  /* Also update legacy boundary condition structures */
-
-  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
-  if (bc_pm_info != nullptr) {
-    int zone_num = z->id - 1;
-    bc_pm_info->iqimp[zone_num] = 0;
-  }
 }
 
 /*----------------------------------------------------------------------------*/

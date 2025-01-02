@@ -87,7 +87,7 @@ implicit none
 ! Local variables
 
 character(len=80) :: chaine
-integer          iel, igg, izone
+integer          iel, igg
 integer          iscal, ivar, ii
 double precision hinit, coefg(ngazgm), hair, tinitk
 double precision sommqf, sommqt, sommq, tentm, fmelm
@@ -244,11 +244,12 @@ if ( isuite.eq.0 ) then
     sommqf = zero
     sommq  = zero
     sommqt = zero
-    do izone = 1, nozapm
-      sommqf = sommqf + qimp(izone)*fment(izone)
-      sommqt = sommqt + qimp(izone)*tkent(izone)
-      sommq  = sommq  + qimp(izone)
-    enddo
+    ! FIXME: restore this when migrating to C, using inlet zone info
+    !do izone = 1, nozapm
+    !  sommqf = sommqf + qimp(izone)*fment(izone)
+    !  sommqt = sommqt + qimp(izone)*tkent(izone)
+    !  sommq  = sommq  + qimp(izone)
+    !enddo
 
     if(abs(sommq).gt.epzero) then
       fmelm = sommqf / sommq
@@ -291,14 +292,11 @@ if ( isuite.eq.0 ) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(cvar_ygfm)
-      !==========
       if ( ippmod(icoebu).eq.2 .or. ippmod(icoebu).eq.3 ) then
         call synsca(cvar_fm)
-        !==========
       endif
       if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
         call synsca(cvar_scalt)
-        !==========
       endif
     endif
 
@@ -319,9 +317,7 @@ if ( isuite.eq.0 ) then
       call field_get_label(ivarfl(ivar), chaine)
       if (irangp.ge.0) then
         call parmin(valmin)
-        !==========
         call parmax(valmax)
-        !==========
       endif
       write(nfecra,2010)chaine(1:8),valmin,valmax
     enddo
