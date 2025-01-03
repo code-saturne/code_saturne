@@ -126,9 +126,6 @@ void
 cs_f_usipes(int *nmodpp);
 
 void
-cs_f_impini(void);
-
-void
 cs_f_indsui(void);
 
 void
@@ -3498,6 +3495,55 @@ _additional_fields_stage_4(void)
   } /* End of loop on fields */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create additional fields based on user options.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_log_variable_counts(void)
+{
+  const int keysca = cs_field_key_id("scalar_id");
+
+  const int n_fields = cs_field_n_fields();
+
+  int n_var = 0, n_var_dims = 0, n_scal_user = 0, n_scal_model = 0;
+  int n_cdo = 0;
+
+  for (int fld_id = 0; fld_id < n_fields; fld_id++) {
+    cs_field_t *f = cs_field_by_id(fld_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    n_var += 1;
+    n_var_dims += f->dim;
+    if (f->type & CS_FIELD_CDO)
+      n_cdo++;
+    if (cs_field_get_key_int(f, keysca) <= 0)
+      continue;
+    if (f->type & CS_FIELD_USER)
+      n_scal_user++;
+    else
+      n_scal_model++;
+  }
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Solved variables\n"
+                  "----------------\n\n"));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Total variables:   %2d\n"
+                  "  Total dimensions:  %2d (nvar)\n"
+                  "  User quantities:   %2d (nscaus)\n"
+                  "  Model quantities:  %2d (nscapp)\n"),
+                n_var, n_var_dims, n_scal_user, n_scal_model);
+
+  if (n_cdo > 0)
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  CDO variables:     %d\n"), n_cdo);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -3598,8 +3644,8 @@ cs_setup(void)
                 "\n"
                 "No error detected during the data verification.\n");
 
-  /* Print output */
-  cs_f_impini();
+  /* Log output */
+  _log_variable_counts();
 }
 
 /*-----------------------------------------------------------------------------*/

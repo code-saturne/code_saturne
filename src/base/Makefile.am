@@ -390,7 +390,6 @@ csinit.f90 \
 findpt.f90 \
 fldprp.f90 \
 fldvar.f90 \
-impini.f90 \
 iniini.f90 \
 majgeo.f90
 
