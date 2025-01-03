@@ -84,7 +84,7 @@ implicit none
 
 character(len=80) :: chaine
 integer          iel, igg
-integer          iscal, ivar, ii
+integer          f_id, ii
 double precision hinit, coefg(ngazgm), hair, tinitk
 double precision tentm, fmelm
 double precision valmax, valmin
@@ -125,14 +125,14 @@ do igg = 1, ngazgm
   coefg(igg) = zero
 enddo
 
-call field_get_val_s(ivarfl(isca(iyfm)), cvar_yfm)
-call field_get_val_s(ivarfl(isca(iyfp2m)), cvar_yfp2m)
-call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
-call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
-if (ippmod(icolwc).ge.2) call field_get_val_s(ivarfl(isca(icoyfp)), cvar_coyfp)
+call field_get_val_s(iyfm, cvar_yfm)
+call field_get_val_s(iyfp2m, cvar_yfp2m)
+call field_get_val_s(ifm, cvar_fm)
+call field_get_val_s(ifp2m, cvar_fp2m)
+if (ippmod(icolwc).ge.2) call field_get_val_s(icoyfp, cvar_coyfp)
 if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.      &
     ippmod(icolwc).eq.5) then
-  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+  call field_get_val_s(ihm, cvar_scalt)
 endif
 
 !===============================================================================
@@ -230,16 +230,15 @@ if ( isuite.eq.0 ) then
     write(nfecra,2000)
 
     do ii  = 1, nscapp
-      iscal = iscapp(ii)
-      ivar  = isca(iscal)
-      call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
+      f_id = ivarfl(isca(iscapp(ii)))
+      call field_get_val_s(f_id, cvar_scal)
       valmax = -grand
       valmin =  grand
       do iel = 1, ncel
         valmax = max(valmax,cvar_scal(iel))
         valmin = min(valmin,cvar_scal(iel))
       enddo
-      call field_get_label(ivarfl(ivar), chaine)
+      call field_get_label(f_id, chaine)
       if (irangp.ge.0) then
         call parmin(valmin)
         call parmax(valmax)

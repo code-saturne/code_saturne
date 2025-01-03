@@ -21,10 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine ebutss &
-!================
-
- ( iscal  ,                                                       &
-   smbrs  , rovsdt )
+ (f_id, smbrs, rovsdt)
 
 !===============================================================================
 ! FONCTION :
@@ -65,7 +62,7 @@ subroutine ebutss &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iscal            ! i  ! <-- ! scalar number                                  !
+! f_id             ! i  ! <-- ! field id (scalar variable)                     !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -100,14 +97,14 @@ implicit none
 
 ! Arguments
 
-integer          iscal
+integer          f_id
 
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 character(len=80) :: chaine
-integer          ivar, iel
+integer          iel
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, dimension(:), pointer ::  crom
@@ -118,27 +115,20 @@ double precision, dimension(:), pointer :: cvara_scal
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
-!===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
 
 ! Allocate temporary arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
-
-! --- Numero du scalaire a traiter : ISCAL
-
-! --- Numero de la variable associee au scalaire a traiter ISCAL
-ivar = isca(iscal)
-
-! --- Nom de la variable associee au scalaire a traiter ISCAL
-call field_get_label(ivarfl(ivar), chaine)
+! --- Nom de la variable associee au scalaire a traiter
+call field_get_label(f_id, chaine)
 
 ! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
 call field_get_val_s(icrom, crom)
 
-if ( ivar.eq.isca(iygfm) ) then
-  call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
+if (f_id.eq.iygfm) then
+  call field_get_val_prev_s(f_id, cvara_scal)
 endif
 
 if (itytur.eq.2.or.iturb.eq.50) then
@@ -152,13 +142,13 @@ elseif (iturb.eq.60) then
   call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
 endif
 
-call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES
 !===============================================================================
 
-if ( ivar.eq.isca(iygfm) ) then
+if (f_id.eq.iygfm) then
 
 ! ---> Terme source pour la fraction massique moyenne de gaz frais
 

@@ -142,9 +142,9 @@ bb2 = 0.d0
 
 ipass = ipass + 1
 
-if (ippmod(icod3p).eq.1) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
-call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
+if (ippmod(icod3p).eq.1) call field_get_val_s(ihm, cvar_scalt)
+call field_get_val_s(ifm, cvar_fm)
+call field_get_val_s(ifp2m, cvar_fp2m)
 
 !===============================================================================
 ! 1. INTEGRATION DES NGAZG FRACTIONS MASSIQUES D'ESPECES GLOBALES
@@ -277,8 +277,8 @@ if (idilat.ge.4) then
   call field_get_val_s_by_name("mixture_fraction_dila_st", cpro_tsfm)
   call field_get_val_s_by_name("mixture_fraction_variance_dila_st", cpro_tsfp2m)
 
-  if (iscalt.ge.0) then
-    call field_get_name(ivarfl(isca(iscalt)), th_name)
+  if (ihm.gt.-1) then
+    call field_get_name(ihm, th_name)
     th_st_name  = trim(th_name) // '_dila_st'
     call field_get_val_s_by_name(th_st_name, cpro_tsscalt)
   endif

@@ -178,8 +178,8 @@ cs_soot_production(int        f_id,
     bft_printf("Soot production calculation.\n");
 
   /*--- Moss et al.:
-    zeta_s (isca(ifsm)) soot mass fraction zeta_s = (rho_s/rho).f_v
-    zeta_n (isca(inpm)) precursor density  zeta_n = n / (rho.No)
+    zeta_s (ifsm) soot mass fraction zeta_s = (rho_s/rho).f_v
+    zeta_n (inpm) precursor density  zeta_n = n / (rho.No)
     ----------------------------------------------------------------*/
 
   if (isoot == 1) {

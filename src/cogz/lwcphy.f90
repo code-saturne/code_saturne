@@ -109,11 +109,11 @@ enddo
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
-call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
-call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
-call field_get_val_s(ivarfl(isca(iyfm)), cvar_yfm)
-call field_get_val_s(ivarfl(isca(iyfp2m)), cvar_yfp2m)
-if (ippmod(icolwc).ge.2) call field_get_val_s(ivarfl(isca(icoyfp)), cvar_coyfp)
+call field_get_val_s(ifm, cvar_fm)
+call field_get_val_s(ifp2m, cvar_fp2m)
+call field_get_val_s(iyfm, cvar_yfm)
+call field_get_val_s(iyfp2m, cvar_yfp2m)
+if (ippmod(icolwc).ge.2) call field_get_val_s(icoyfp, cvar_coyfp)
 
 !===============================================================================
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES MOYENNES

@@ -96,16 +96,16 @@ double precision, dimension(:), pointer :: cvar_npm, cvar_fsm
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
 
-call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
-call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
+call field_get_val_s(ifm, cvar_fm)
+call field_get_val_s(ifp2m, cvar_fp2m)
 
 if (ippmod(icod3p).eq.1) then
-  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+  call field_get_val_s(ihm, cvar_scalt)
 endif
 
 if (isoot.ge.1) then
-  call field_get_val_s(ivarfl(isca(inpm)), cvar_npm)
-  call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
+  call field_get_val_s(inpm, cvar_npm)
+  call field_get_val_s(ifsm, cvar_fsm)
 endif
 
 do igg = 1, ngazgm

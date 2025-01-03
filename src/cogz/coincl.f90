@@ -194,45 +194,29 @@ module coincl
 
   ! ---- Variables transportees
 
-  !> pointer to specify the mixing rate in isca(ifm)
-  integer, save :: ifm
+  !> id of mixing rate field
+  integer, save :: ifm = -1
 
-  !> pointer to specify the variance of the mixing rate in isca(ifp2m)
-  integer, save :: ifp2m
+  !> id of mixing rate variance field
+  integer, save :: ifp2m = -1
 
-  !> pointer to specify the second moment of the mixing rate in isca(ifsqm):
-  integer, save :: ifsqm
+  !> id of field specifying the second moment of the mixing rate:
+  integer, save :: ifsqm = -1
 
-  !> pointer to specify the transported progress variable ippmod(islfm) >= 2:
-  integer, save :: ipvm
+  !> id of transported progress variable field (for ippmod(islfm) >= 2)
+  integer, save :: ipvm = -1
 
-  !> pointer to specify the fresh gas mass fraction in isca(iygfm)
-  integer, save :: iygfm
+  !> id of fresh gas mass fraction field
+  integer, save :: iygfm = -1
 
-  !> the intersection computation mode. If its value is:
-  !> - 1 (default), the original algorithm is used. Care should be taken to clip
-  !> the intersection on an extremity.
-  !> - 2, a new intersection algorithm is used. Caution should be used to avoid to clip
-  !> the intersection on an extremity.
-  integer, save :: icm
+  !> id of mass fraction field
+  integer, save :: iyfm = -1
 
-  ! TODO
-  !> transported variable
-  integer, save :: icp2m
+  !> id of mass fraction variance field
+  integer, save :: iyfp2m = -1
 
-  ! TODO
-  !> transported variable
-  integer, save :: ifpcpm
-
-  ! TODO
-  !> transported variable
-  integer, save :: iyfm
-  ! TODO
-  !> transported variable
-  integer, save :: iyfp2m
-  ! TODO
-  !> transported variable
-  integer, save :: icoyfp
+  !> id of mass fraction covariance field
+  integer, save :: icoyfp = -1
 
   ! ---- Variables d'etat
 
@@ -245,46 +229,46 @@ module coincl
   integer, save :: ibym(ngazgm)
 
   !> state variable (temperature)
-  integer, save :: itemp
+  integer, save :: itemp = -1
   !> state variable
   integer, save :: ifmin
   !> state variable
   integer, save :: ifmax
 
   !> state variable: Pointer to the reconstructed variance in case of mode_fp2m = 1
-  integer, save :: irecvr
+  integer, save :: irecvr = -1
 
   !> state variable: Pointer to the total scalar dissipation rate
-  integer, save :: itotki
+  integer, save :: itotki = -1
 
   !> state variable: Pointer to volumetric heat release rate
-  integer, save :: ihrr
+  integer, save :: ihrr = -1
 
   !> state variable: Pointer to enthalpy defect
-  integer, save :: ixr
+  integer, save :: ixr = -1
 
   !> state variable: Pointer to enthalpy defect
-  integer, save :: iomgc
+  integer, save :: iomgc = -1
 
   !> state variable: absorption coefficient, when the radiation modelling is activated
-  integer, save :: ickabs
+  integer, save :: ickabs = -1
 
   !> state variable:  \f$T^2\f$ term
-  integer, save :: it2m
+  integer, save :: it2m = -1
   !> state variable:  \f$T^3\f$ term, when the radiation modelling is activated
-  integer, save :: it3m
+  integer, save :: it3m = -1
   !> state variable:  \f$T^4\f$ term, when the radiation modelling is activated
-  integer, save :: it4m
+  integer, save :: it4m = -1
 
   ! pointer for source term in combustion
   ! TODO
-  integer, save :: itsc
+  integer, save :: itsc = -1
 
   !> pointer for soot precursor number in isca (isoot = 1)
-  integer, save :: inpm
+  integer, save :: inpm = -1
 
   !> pointer for soot mass fraction in isca (isoot = 1)
-  integer, save :: ifsm
+  integer, save :: ifsm = -1
 
   !> Burke Schumann combustion model constants
   integer, parameter :: n_z = 80, n_xr = 5, n_zvar = 10

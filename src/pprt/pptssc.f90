@@ -100,7 +100,7 @@ real(c_double) :: smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer           ivar, f_id
+integer   f_id
 
 !===============================================================================
 ! Interfaces
@@ -139,10 +139,9 @@ endif
 if (     ippmod(icod3p).ge.0 .or. ippmod(icolwc).ge.0  &
     .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
   if (isoot.ge.1) then
-    ivar = isca(iscal)
-    if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
+    f_id = ivarfl(isca(iscal))
+    if (f_id.eq.ifsm .or. f_id.eq.inpm) then
       ! Scalar f_id
-      f_id = ivarfl(ivar)
       call cs_soot_production(f_id, smbrs, rovsdt)
     endif
   endif
@@ -151,30 +150,28 @@ endif
 ! ---> Flamme de premelange : Modele EBU
 
 if (ippmod(icoebu).ge.0) then
-  call ebutss(iscal, smbrs, rovsdt)
+  f_id = ivarfl(isca(iscal))
+  call ebutss(f_id, smbrs, rovsdt)
 endif
-
-! ---> Flamme de premelange : Modele BML
-
-!      IF ( IPPMOD(ICOBML).GE.0 )
-!           CALL BMLTSS
 
 ! ---> Flamme de premelange : Modele LWC
 
 if (ippmod(icolwc).ge.0) then
-  call lwctss(iscal, smbrs, rovsdt)
+  f_id = ivarfl(isca(iscal))
+  call lwctss(f_id, smbrs, rovsdt)
 endif
 
 ! ---> Flamme charbon pulverise
 
 if (ippmod(iccoal).ge.0) then
-  call cs_coal_source_terms_scalar(ivarfl(isca(iscal)), smbrs, rovsdt)
+  f_id = ivarfl(isca(iscal))
+  call cs_coal_source_terms_scalar(f_id, smbrs, rovsdt)
 endif
 
 ! ---> Atmospheric version
 
 if (ippmod(iatmos).ge.0) then
-  call attssc(iscal,smbrs)
+  call attssc(iscal, smbrs)
 endif
 
 !----

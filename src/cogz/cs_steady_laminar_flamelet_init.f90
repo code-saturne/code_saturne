@@ -94,26 +94,26 @@ double precision, dimension(:), pointer :: cvar_npm, cvar_fsm
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
 
-call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ifm, cvar_fm)
 
 if (mode_fp2m.eq.0) then
-  call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
+  call field_get_val_s(ifp2m, cvar_fp2m)
 else if(mode_fp2m.eq.1) then
-  call field_get_val_s(ivarfl(isca(ifsqm)), cvar_fsqm)
+  call field_get_val_s(ifsqm, cvar_fsqm)
 endif
 
 if ( ippmod(islfm).ge.2 ) then
-  call field_get_val_s(ivarfl(isca(ipvm)), cvar_prog)
+  call field_get_val_s(ipvm, cvar_prog)
   call field_get_val_s(iym(ngazgm), cpro_prog)
 endif
 
 if (ippmod(islfm).eq.1 .or. ippmod(islfm).eq.3) then
-  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+  call field_get_val_s(ihm, cvar_scalt)
 endif
 
 if (isoot.eq.1) then
-  call field_get_val_s(ivarfl(isca(inpm)), cvar_npm)
-  call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
+  call field_get_val_s(inpm, cvar_npm)
+  call field_get_val_s(ifsm, cvar_fsm)
 endif
 
 !===============================================================================

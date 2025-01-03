@@ -70,49 +70,21 @@ call pp_models_init
 !                INCLUDE GENERAL PROPRE A LA PHYSIQUE PARTICULIERE
 !===============================================================================
 
-ihm = 0 ! enthalpy, common to many models
-
 ! ---> Initialisation pour la combustion gaz
-!       Variables transportees
-ifm    = 0
-ifp2m  = 0
-ifsqm  = 0
-ipvm   = 0
-iygfm  = 0
-icm    = 0
-icp2m  = 0
-ifpcpm = 0
-iyfm   = 0
-iyfp2m = 0
-icoyfp = 0
 !       Variables algebriques ou d'etat
-itemp  = 0
-irecvr = 0
-itotki = 0
-ihrr   = 0
-ixr    = 0
-iomgc  = 0
 do igg = 1, ngazgm
-  iym(igg) = 0
+  iym(igg) = -1
   ibym(igg) = -1
 enddo
-ickabs = 0
-it2m   = 0
-it4m   = 0
-it3m   = 0
 do idirac = 1, ndracm
-  irhol (idirac) = 0
-  iteml (idirac) = 0
-  ifmel (idirac) = 0
-  ifmal (idirac) = 0
-  iampl (idirac) = 0
-  itscl (idirac) = 0
-  imaml (idirac) = 0
+  irhol (idirac) = -1
+  iteml (idirac) = -1
+  ifmel (idirac) = -1
+  ifmal (idirac) = -1
+  iampl (idirac) = -1
+  itscl (idirac) = -1
+  imaml (idirac) = -1
 enddo
-
-! ---> Initialisation for soot model
-inpm = 0
-ifsm = 0
 
 !===============================================================================
 ! 2. REMPLISSAGE ppthch.90 (THERMOCHIMIE)
@@ -186,8 +158,6 @@ coeff3 = zero
 !===============================================================================
 ! 6. Global variables for atmospheric flows (module atincl.f90)
 !===============================================================================
-
-! Space and time reference of the run:
 
 ! ------------------------------------
 ! 1d radiative transfer model:

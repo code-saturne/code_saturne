@@ -71,7 +71,7 @@ implicit none
 ! Local variables
 
 integer          jj, iok
-integer          isc, iclvfl, kclvfl
+integer          isc, iclvfl, kclvfl, f_id
 double precision wmolme, turb_schmidt
 
 !===============================================================================
@@ -111,9 +111,9 @@ if (ippmod(icod3p).ge.0) then
   !iclvfl = 1
   iclvfl = 2
   call field_get_key_id("variance_clipping", kclvfl)
-  call field_set_key_int(ivarfl(isca(ifp2m)), kclvfl, iclvfl)
-  !        scamin(ifp2m) = 0.d0
-  !        scamax(ifp2m) = 0.25D0
+  call field_set_key_int(ifp2m, kclvfl, iclvfl)
+  ! call field_set_key_id(ifp2m, kscmin, 0.d0)
+  ! call field_set_key_id(ifp2m, kscmax, 0.25d0)
 
 endif
 
@@ -131,9 +131,9 @@ if (ippmod(islfm).ge.0) then
   if (mode_fp2m .eq. 0) then
     iclvfl = 1
     call field_get_key_id("variance_clipping", kclvfl)
-    call field_set_key_int(ivarfl(isca(ifp2m)), kclvfl, iclvfl)
-    !        scamin(ifp2m) = 0.d0
-    !        scamax(ifp2m) = 0.25D0
+    call field_set_key_int(ifp2m, kclvfl, iclvfl)
+    ! call field_set_key_id(ifp2m, kscmin, 0.d0)
+    ! call field_set_key_id(ifp2m, kscmax, 0.25d0)
   endif
 endif
 
@@ -142,10 +142,10 @@ endif
 if (ippmod(icolwc).ge.0) then
   iclvfl = 0
   call field_get_key_id("variance_clipping", kclvfl)
-  call field_set_key_int(ivarfl(isca(ifp2m)), kclvfl, iclvfl)
+  call field_set_key_int(ifp2m, kclvfl, iclvfl)
   iclvfl = 0
   call field_get_key_id("variance_clipping", kclvfl)
-  call field_set_key_int(ivarfl(isca(iyfp2m)), kclvfl, iclvfl)
+  call field_set_key_int(iyfp2m, kclvfl, iclvfl)
 endif
 
 ! 1.4 Donnees physiques ou numeriques propres aux scalaires COMBUSTION
@@ -155,19 +155,21 @@ do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if (jj .ne. iscalt .and. iscavr(jj).le.0) then
+  f_id = ivarfl(isca(jj))
+
+  if (f_id.ne.ihm .and. iscavr(jj).le.0) then
 
     ! ---- En combustion on considere que la viscosite turbulente domine
     !      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
-    call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
+    call field_set_key_double(f_id, kvisl0, viscl0)
 
   endif
 
   ! Schmidt ou Prandtl turbulent
 
   turb_schmidt = 0.7d0
-  call field_set_key_double(ivarfl(isca(jj)), ksigmas, turb_schmidt)
+  call field_set_key_double(f_id, ksigmas, turb_schmidt)
 
 enddo
 

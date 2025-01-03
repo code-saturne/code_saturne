@@ -132,10 +132,10 @@ ntcabs_prev = ntcabs
 ! 1. Map the pointers for fields
 !===============================================================================
 
-call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ifm, cvar_fm)
 
 if(mode_fp2m.eq.0) then
-  call field_get_val_s(ivarfl(isca(ifp2m)), fp2m)
+  call field_get_val_s(ifp2m, fp2m)
 elseif(mode_fp2m.eq.1) then
   call field_get_val_s(irecvr, fp2m)
   iprev = 0
@@ -143,7 +143,7 @@ elseif(mode_fp2m.eq.1) then
 endif
 
 if (ippmod(islfm).eq.1 .or. ippmod(islfm).eq.3)  then
-  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+  call field_get_val_s(ihm, cvar_scalt)
   call field_get_val_s(ixr, cpro_xr)
   do iel =1,ncel
     had = cvar_fm(iel) * hinfue + (1.d0-cvar_fm(iel))*hinoxy
@@ -155,7 +155,7 @@ else
 endif
 
 if (ippmod(islfm).ge.2) then
-  call field_get_val_s(ivarfl(isca(ipvm)), cvar_progvar)
+  call field_get_val_s(ipvm, cvar_progvar)
   call field_get_val_s(iomgc, cpro_omegac)
 
   ! Clip the progress variable here, Not in cs_scalar_clipping
@@ -1056,15 +1056,15 @@ double precision, dimension(:), pointer :: cpro_rhoa
 !===================================================================
 
 call field_get_val_prev_s(icrom, cpro_rhoa)
-call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ifm, cvar_fm)
 
 if (mode_fp2m.eq.0) then
-  call field_get_val_s(ivarfl(isca(ifp2m)), fp2m)
+  call field_get_val_s(ifp2m, fp2m)
 else if (mode_fp2m.eq.1) then
   call field_get_val_s(irecvr, fp2m)
 endif
 
-call field_get_key_int(ivarfl(isca(ifm)), kivisl, ifcvsl)
+call field_get_key_int(ifm, kivisl, ifcvsl)
 if (ifcvsl.ge.0) then
   call field_get_val_s(ifcvsl, cpro_viscls)
 endif
@@ -1072,7 +1072,7 @@ endif
 call field_get_val_s(itotki, cpro_totki)
 
 call field_get_key_id("turbulent_diffusivity_id", key_turb_diff)
-call field_get_key_int(ivarfl(isca(ifm)), key_turb_diff, t_dif_id)
+call field_get_key_int(ifm, key_turb_diff, t_dif_id)
 
 if (t_dif_id .ge. 0) call field_get_val_s(t_dif_id, cpro_turb_diff)
 
@@ -1132,11 +1132,11 @@ double precision, pointer, dimension(:) :: fm, fp2m, fsqm
 call field_get_val_s(irecvr, fp2m)
 
 if(iprev .eq. 0) then
-  call field_get_val_s(ivarfl(isca(ifm)), fm)
-  call field_get_val_s(ivarfl(isca(ifsqm)), fsqm)
+  call field_get_val_s(ifm, fm)
+  call field_get_val_s(ifsqm, fsqm)
 else
-  call field_get_val_prev_s(ivarfl(isca(ifm)), fm)
-  call field_get_val_prev_s(ivarfl(isca(ifsqm)), fsqm)
+  call field_get_val_prev_s(ifm, fm)
+  call field_get_val_prev_s(ifsqm, fsqm)
 endif
 
 do iel = 1, ncel

@@ -1021,7 +1021,7 @@ subroutine cs_c_add_model_thermal_field_indexes(f_id) &
 
   iscalt = iscal0
 
-  if (itherm .eq. 2) ihm = iscal0
+  if (itherm .eq. 2) ihm = f_id
 
 end subroutine cs_c_add_model_thermal_field_indexes
 

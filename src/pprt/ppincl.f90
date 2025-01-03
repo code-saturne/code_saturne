@@ -285,7 +285,7 @@ module ppincl
   !> \{
 
   !> enthalpy, if transported or if deduced
-  integer, save :: ihm
+  integer, save :: ihm = -1
 
   !> sub-relaxation coefficient for the density
   real(c_double), pointer, save :: srrom

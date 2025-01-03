@@ -145,12 +145,12 @@ if ( iirayo.gt.0 ) then
   call field_get_val_s(it3m, cpro_t3m)
 endif
 
-call field_get_val_s(ivarfl(isca(iygfm)), cvar_ygfm)
+call field_get_val_s(iygfm, cvar_ygfm)
 if ( ippmod(icoebu).ne.0 .and. ippmod(icoebu).ne.1 ) then
-  call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+  call field_get_val_s(ifm, cvar_fm)
 endif
 if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+  call field_get_val_s(ihm, cvar_scalt)
 endif
 
 !===============================================================================

@@ -110,23 +110,25 @@ if (ippmod(icod3p).ge.0) then
 
   ! Mixture fraction and its variance
 
-  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
-  f_id = ivarfl(isca(ifm))
+  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', isc)
+  f_id = ivarfl(isca(isc))
+  ifm = f_id
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
 
-  call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
-  f_id = ivarfl(isca(ifp2m))
-  call field_set_key_int(f_id, kscavr, ivarfl(isca(ifm)))
+  call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', isc)
+  f_id = ivarfl(isca(isc))
+  ifp2m = f_id
+  call field_set_key_int(f_id, kscavr, ifm)
 
   ! Enthalpy
 
   if (ippmod(icod3p).eq.1) then
     itherm = 2
-    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
-    iscalt = ihm
+    call add_model_scalar_field('enthalpy', 'Enthalpy', iscalt)
     ! Set min and max clipping
     f_id = ivarfl(isca(iscalt))
+    ihm = f_id
     call field_set_key_double(f_id, kscmin, -grand)
     call field_set_key_double(f_id, kscmax, grand)
   endif
@@ -134,13 +136,15 @@ if (ippmod(icod3p).ge.0) then
   ! Soot mass fraction and precursor number
   if (isoot.ge.1) then
 
-    call add_model_scalar_field('soot_mass_fraction', 'Fra_Soot', ifsm)
-    f_id = ivarfl(isca(ifsm))
+    call add_model_scalar_field('soot_mass_fraction', 'Fra_Soot', isc)
+    f_id = ivarfl(isca(isc))
+    ifsm = f_id
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, 1.d0)
 
-    call add_model_scalar_field('soot_precursor_number', 'NPr_Soot', inpm)
-    f_id = ivarfl(isca(inpm))
+    call add_model_scalar_field('soot_precursor_number', 'NPr_Soot', isc)
+    f_id = ivarfl(isca(isc))
+    inpm = f_id
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, 1.d0)
 
@@ -159,9 +163,9 @@ if (ippmod(islfm).ge.0) then
   call field_get_key_id("turbulent_diffusivity_id", key_turb_diff)
   call field_get_key_id("sgs_scalar_flux_coef_id", key_sgs_sca_coef)
 
-  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
-
-  f_id = ivarfl(isca(ifm))
+  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', isc)
+  f_id = ivarfl(isca(isc))
+  ifm = f_id
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
   call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
@@ -173,16 +177,17 @@ if (ippmod(islfm).ge.0) then
   endif
 
   if (mode_fp2m .eq. 0) then
-    call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
-
-    f_id = ivarfl(isca(ifp2m))
-    call field_set_key_int(f_id, kscavr, ivarfl(isca(ifm)))
+    call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', isc)
+    f_id = ivarfl(isca(isc))
+    ifp2m = f_id
+    call field_set_key_int(f_id, kscavr, ifm)
     call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
 
   else if(mode_fp2m .eq. 1) then
     call add_model_scalar_field('mixture_fraction_2nd_moment', &
-                                '2nd_Moment_FrMe', ifsqm)
-    f_id = ivarfl(isca(ifsqm))
+                                '2nd_Moment_FrMe', isc)
+    f_id = ivarfl(isca(isc))
+    ifsqm = f_id
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, 1.d0)
     call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
@@ -198,11 +203,10 @@ if (ippmod(islfm).ge.0) then
   ! Enthalpy
   if (ippmod(islfm).eq.1 .or. ippmod(islfm).eq.3) then
     itherm = 2
-    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
-    iscalt = ihm
+    call add_model_scalar_field('enthalpy', 'Enthalpy', iscalt)
     ! Set min and max clipping
     f_id = ivarfl(isca(iscalt))
-
+    ihm = f_id
     call field_set_key_double(f_id, kscmin, -grand)
     call field_set_key_double(f_id, kscmax, grand)
     call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
@@ -217,9 +221,9 @@ if (ippmod(islfm).ge.0) then
 
   ! Flamelet/Progress variable model
   if (ippmod(islfm).ge.2) then
-    call add_model_scalar_field('progress_variable', 'Prog_Var', ipvm)
-
-    f_id = ivarfl(isca(ipvm))
+    call add_model_scalar_field('progress_variable', 'Prog_Var', isc)
+    f_id = ivarfl(isca(isc))
+    ipvm = f_id
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, grand)
     call field_set_key_int(f_id, key_coupled_with_vel_p, 1)
@@ -235,13 +239,15 @@ if (ippmod(islfm).ge.0) then
   ! Soot mass fraction and precursor number
   if (isoot.ge.1) then
 
-    call add_model_scalar_field('soot_mass_fraction', 'Fra_Soot', ifsm)
-    f_id = ivarfl(isca(ifsm))
+    call add_model_scalar_field('soot_mass_fraction', 'Fra_Soot', isc)
+    f_id = ivarfl(isca(isc))
+    ifsm = f_id
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, 1.d0)
 
-    call add_model_scalar_field('soot_precursor_number', 'NPr_Soot', inpm)
-    f_id = ivarfl(isca(inpm))
+    call add_model_scalar_field('soot_precursor_number', 'NPr_Soot', isc)
+    f_id = ivarfl(isca(isc))
+    inpm = f_id
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, 1.d0)
 
@@ -255,24 +261,25 @@ endif
 if (ippmod(icoebu).ge.0) then
 
   ! Fraction massique des gaz frais
-  call add_model_scalar_field('fresh_gas_fraction', 'Fra_GF', iygfm)
-
-  f_id = ivarfl(isca(iygfm))
+  call add_model_scalar_field('fresh_gas_fraction', 'Fra_GF', isc)
+  f_id = ivarfl(isca(isc))
+  iygfm = f_id
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   if (ippmod(icoebu).eq.2 .or.ippmod(icoebu).eq.3) then
     ! Taux de melange
-    call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
-    f_id = ivarfl(isca(ifm))
+    call add_model_scalar_field('mixture_fraction', 'Fra_MEL', isc)
+    f_id = ivarfl(isca(isc))
+    ifm = f_id
     call field_set_key_double(f_id, kscmin, 0.d0)
     call field_set_key_double(f_id, kscmax, 1.d0)
   endif
   if (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3) then
     itherm = 2
-    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
-    iscalt = ihm
+    call add_model_scalar_field('enthalpy', 'Enthalpy', iscalt)
     f_id = ivarfl(isca(iscalt))
+    ihm = f_id
     call field_set_key_double(f_id, kscmin, -grand)
     call field_set_key_double(f_id, kscmax,  grand)
   endif
@@ -286,28 +293,32 @@ endif
 
 if (ippmod(icolwc).ge.0 ) then
 
-  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
-  f_id = ivarfl(isca(ifm))
+  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', isc)
+  f_id = ivarfl(isca(isc))
+  ifm = f_id
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
 
-  call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
-  f_id = ivarfl(isca(ifp2m))
-  call field_set_key_int(f_id, kscavr, ivarfl(isca(ifm)))
+  call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', isc)
+  f_id = ivarfl(isca(isc))
+  ifp2m = f_id
+  call field_set_key_int(f_id, kscavr, ifm)
 
-
-  call add_model_scalar_field('mass_fraction', 'Fra_Mas', iyfm)
-  f_id = ivarfl(isca(iyfm))
+  call add_model_scalar_field('mass_fraction', 'Fra_Mas', isc)
+  f_id = ivarfl(isca(isc))
+  iyfm = f_id
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
 
-  call add_model_scalar_field('mass_fraction_variance', 'Var_FMa', iyfp2m)
-  f_id = ivarfl(isca(iyfp2m))
-  call field_set_key_int(f_id, kscavr, ivarfl(isca(iyfm)))
+  call add_model_scalar_field('mass_fraction_variance', 'Var_FMa', isc)
+  f_id = ivarfl(isca(isc))
+  iyfp2m = f_id
+  call field_set_key_int(f_id, kscavr, iyfm)
 
   if (ippmod(icolwc).ge.2 ) then
-    call add_model_scalar_field('mass_fraction_covariance', 'COYF_PP4', icoyfp)
-    f_id = ivarfl(isca(icoyfp))
+    call add_model_scalar_field('mass_fraction_covariance', 'COYF_PP4', isc)
+    f_id = ivarfl(isca(isc))
+    isc = f_id
     call field_set_key_double(f_id, kscmin, -0.25d0)
     call field_set_key_double(f_id, kscmax, 0.25d0)
   endif
@@ -316,8 +327,8 @@ if (ippmod(icolwc).ge.0 ) then
       ippmod(icolwc).eq.3 .or. &
       ippmod(icolwc).eq.5) then
     itherm = 2
-    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
-    iscalt = ihm
+    call add_model_scalar_field('enthalpy', 'Enthalpy', iscalt)
+    ihm = ivarfl(isca(iscalt))
   endif
 
 endif

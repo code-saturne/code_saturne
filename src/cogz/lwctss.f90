@@ -21,10 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine lwctss &
-!================
-
- ( iscal  ,                                                       &
-   smbrs  , rovsdt )
+ (f_id, smbrs, rovsdt)
 
 !===============================================================================
 ! FONCTION :
@@ -65,7 +62,7 @@ subroutine lwctss &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iscal            ! i  ! <-- ! scalar number                                  !
+! f_id             ! i  ! <-- ! field id (scalar variable)                     !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -103,15 +100,15 @@ implicit none
 
 ! Arguments
 
-integer          iscal
+integer          f_id
 
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer          ivar, iel, idirac
+integer          iel, idirac
 integer          inc , iprev
-integer          ii  , krvarfl
+integer          krvarfl
 
 double precision sum, epsi
 double precision tsgrad, tschim, tsdiss
@@ -136,20 +133,16 @@ type(pmapper_double_r1), dimension(:), pointer :: cpro_tscl, cpro_rhol
 
 epsi   = 1.0d-10
 
-! --- Numero du scalaire a traiter : ISCAL
-
-! --- Numero de la variable associee au scalaire a traiter ISCAL
-ivar = isca(iscal)
 call field_get_key_id("variance_dissipation", krvarfl)
-call field_get_key_double(ivarfl(ivar), krvarfl, rvarfl)
+call field_get_key_double(f_id, krvarfl, rvarfl)
 
 ! ---
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ivisct, visct)
 
-call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
-call field_get_val_prev_s(ivarfl(isca(iyfm)), cvara_yfm)
-call field_get_val_prev_s(ivarfl(isca(ifm)), cvara_fm)
+call field_get_val_prev_s(f_id, cvara_scal)
+call field_get_val_prev_s(iyfm, cvara_yfm)
+call field_get_val_prev_s(ifm, cvara_fm)
 
 if (itytur.eq.2.or.iturb.eq.50) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -178,7 +171,7 @@ enddo
 ! 2. PRISE EN COMPTE DES TERMES SOURCES
 !===============================================================================
 
-if (ivar.eq.isca(iyfm)) then
+if (f_id.eq.iyfm) then
 
 ! ---> Terme source pour la fraction massique moyenne de fuel
 
@@ -205,7 +198,7 @@ endif
 
 ! ---> Terme source pour la variance de la fraction massique moyenne de fuel
 
-if (ivar.eq.isca(iyfp2m)) then
+if (f_id.eq.iyfp2m) then
 
   do iel = 1, ncel
     sum = zero
@@ -221,7 +214,7 @@ endif
 
 ! ---> Terme source pour la covariance
 
-if (ivar.eq.isca(icoyfp)) then
+if (f_id.eq.icoyfp) then
 
   ! Allocate a temporary array for gradient computation
   allocate(gradf(3,ncelet), grady(3,ncelet))
@@ -232,7 +225,6 @@ if (ivar.eq.isca(icoyfp)) then
 ! --- Calcul du gradient de F
 !     =======================
 
-  ii = isca(ifm)
   do iel = 1, ncel
     w10(iel) = cvara_fm(iel)
   enddo
@@ -240,12 +232,11 @@ if (ivar.eq.isca(icoyfp)) then
   iprev = 1
   inc = 1
 
-  call field_gradient_scalar(ivarfl(ii), iprev, inc, gradf)
+  call field_gradient_scalar(ifm, iprev, inc, gradf)
 
 ! --- Calcul du gradient de Yfuel
 !     ===========================
 
-  ii = isca(iyfm)
   do iel = 1, ncel
     w11(iel) = cvara_yfm(iel)
   enddo
@@ -253,14 +244,12 @@ if (ivar.eq.isca(icoyfp)) then
   iprev = 1
   inc = 1
 
-  call field_gradient_scalar(ivarfl(ii), iprev, inc, grady)
+  call field_gradient_scalar(iyfm, iprev, inc, grady)
 
 ! --- Calcul du terme source
 !     ======================
 
-
 ! ---> Calcul de K et Epsilon en fonction du modele de turbulence
-
 
 ! ---- TURBULENCE
 
@@ -296,7 +285,7 @@ if (ivar.eq.isca(icoyfp)) then
 
   endif
 
-  call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+  call field_get_key_double(f_id, ksigmas, turb_schmidt)
 
   do iel=1,ncel
 
@@ -330,10 +319,10 @@ if (ivar.eq.isca(icoyfp)) then
 
     tschim = zero
     do idirac = 1, ndirac
-      tschim =   tschim                                           &
-           + (cpro_tscl(idirac)%p(iel)                          &
-           *(cpro_fmel(idirac)%p(iel)-cvara_fm(iel))      &
-           *volume(iel))*cpro_rhol(idirac)%p(iel)
+      tschim =   tschim                                         &
+               + (cpro_tscl(idirac)%p(iel)                      &
+                 *(cpro_fmel(idirac)%p(iel)-cvara_fm(iel))      &
+                  *volume(iel))*cpro_rhol(idirac)%p(iel)
     enddo
 
 ! --> Somme des termes
