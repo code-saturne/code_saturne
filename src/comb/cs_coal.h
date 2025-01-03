@@ -135,11 +135,6 @@ typedef struct {
   /*! temperature in K */
   double  th[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS];
 
-  /*! massic enthalpy (J/kg) of the i-th elementary gas component
-    at temperature  th[j] */
-  double ehgaze[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS]
-               [CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
-
   /* Members specific to the coal combustion model
      --------------------------------------------- */
 
@@ -190,6 +185,11 @@ typedef struct {
 
   /*! number of classes per coal */
   int     n_classes_per_coal[CS_COMBUSTION_MAX_COALS];
+
+  /*! massic enthalpy (J/kg) of the i-th elementary gas component
+    at temperature  th[j] */
+  double ehgaze[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS]
+               [CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
 
   /* Properties of dry coal
      ---------------------- */

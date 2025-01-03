@@ -86,6 +86,9 @@ double precision :: ehgaze(ngazem,npot)
 double precision, dimension(:,:), allocatable :: aa
 double precision, dimension(:), allocatable :: bb, xx
 
+character(len=12) ::  nomcoe(ngazem)  ! name of elementary species
+character(len=150) :: nomcog(ngazgm)  ! name of global species
+
 character(len=64) :: ficfpp
 integer(c_int) :: c_name_max, c_name_len
 type(c_ptr) :: c_name_p
@@ -727,11 +730,55 @@ if (use_janaf.eqv..true.) then
 
 endif
 
+!==================================================================
+! Logging
+!==================================================================
+
+if (ippmod(icod3p).ne.-1) then
+  write(nfecra,2010)
+  write(nfecra,2020) ippmod(icod3p)
+  write(nfecra,2070) namgas, pcigas
+  write(nfecra,2080) trim(nomcog(igfuel(1))), &
+    -nreact(igoxy(1)), trim(nomcog(igoxy(1))), trim(nomcog(igprod(1)))
+  write(nfecra,'(a20,10(1x,a14))')  &
+    "Mass composition", "Fuel", "Oxydizer", "Products"
+  write(nfecra,'(a20,10(1x,a14))')  &
+    "----------------", "----", "--------", "--------"
+  do ige = 1, ngaze
+    write(nfecra,'(a20,10(1x,f14.5))') &
+      trim(nomcoe(ige)), (coefeg(ige,igg), igg=1, ngazg)
+  enddo
+  write(nfecra, *)
+  write(nfecra,'(a20,10(1x,a14))') &
+    "Molar composition", "Fuel", "Oxydizer", "Products"
+  write(nfecra,'(a20,10(1x,a14))') &
+    "-----------------", "----", "--------", "--------"
+  do ige = 1, ngaze
+    write(nfecra,'(a20,10(1x,f14.5))') &
+      trim(nomcoe(ige)), (compog(ige,igg), igg=1, ngazg)
+  enddo
+endif
+
+ 2010 format(                                                     &
+                                                                /,&
+' ** SPECIFIC PHYSICS:',                                        /,&
+'    ----------------',                                         /)
+ 2020 format(                                                     &
+' --- Diffusion Flame: 3 Point Chemistry',                      /,&
+'       OPTION = ',4x,i10                                       /)
+ 2070 format(                                                     &
+' --- Combustible characteristics',                             /,&
+'       Combustible : ',4x,a,                                   /,&
+'       PCI = ',4x,e14.5,  ' J/kg',                             /)
+ 2080 format(                                                     &
+" --- Chemical reaction: ",                                     /,&
+"       ", a," + ",f6.3," (",a,") --> ",a,                      /)
+
 return
 
-!============================
-! 3. SORTIE EN ERREUR
-!============================
+!==============
+! Exit on error
+!==============
 
   99  continue
 write(nfecra, 9992)

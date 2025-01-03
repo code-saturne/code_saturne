@@ -62,11 +62,6 @@ module ppthch
   integer    iatc, iath, iato, iatn , iats
   parameter( iatc = 1, iath = 2, iato = 3, iatn = 4 , iats = 5 )
 
-  !> name of global species
-  character(len=150) :: nomcog(ngazgm)
-  !> name of elementary species
-  character(len=12) :: nomcoe(ngazem)
-
   !> number of tabulation points
   integer, pointer, save :: npo
 

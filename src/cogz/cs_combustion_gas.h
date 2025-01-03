@@ -142,7 +142,7 @@ typedef struct {
 
   /* Generic members
      ---------------
-     (keep aligned with gas combustion, so that we can
+     (keep aligned with coal combustion, so that we can
      move to an object inheritance model in the future) */
 
   int     n_gas_el_comp;             /*!< number of elementary gas components */
@@ -166,16 +166,16 @@ typedef struct {
   double  wmolat[CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES];
 
   /*! composition of N2 oxidants */
-  double oxyn2[CS_COMBUSTION_GAS_MAX_OXYDANTS];
+  double  oxyn2[CS_COMBUSTION_GAS_MAX_OXYDANTS];
 
   /*! composition of H2O oxidants */
-  double oxyh2o[CS_COMBUSTION_GAS_MAX_OXYDANTS];
+  double  oxyh2o[CS_COMBUSTION_GAS_MAX_OXYDANTS];
 
   /*! composition of CO2 oxidants */
-  double oxyco2[CS_COMBUSTION_GAS_MAX_OXYDANTS];
+  double  oxyco2[CS_COMBUSTION_GAS_MAX_OXYDANTS];
 
   /*! temperature in K */
-  double th[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS];
+  double  th[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS];
 
   /* Members specific to the gas combustion model
      -------------------------------------------- */

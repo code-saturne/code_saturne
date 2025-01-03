@@ -43,17 +43,10 @@ subroutine impini () &
 !===============================================================================
 
 use paramx
-use cstnum
 use dimens
 use numvar
 use optcal
-use cstphy
 use entsor
-use ppppar
-use ppthch
-use coincl
-use ppincl
-use field
 use cs_c_bindings
 
 !===============================================================================
@@ -62,35 +55,13 @@ implicit none
 
 ! Arguments
 
-
 ! Local variables
-
-integer          igg, ige
 
 !===============================================================================
 ! 1. Introduction
 !===============================================================================
 
 write(nfecra,1000)
-
-if (ippmod(icod3p).ne.-1) then
-  write(nfecra,1010)
-  write(nfecra,1020) ippmod(icod3p)
-  write(nfecra,1070) namgas, pcigas
-  write(nfecra,1080) trim(nomcog(igfuel(1))), &
-  -nreact(igoxy(1)), trim(nomcog(igoxy(1))), trim(nomcog(igprod(1)))
-  write(nfecra,'(a20,10(1x,a14))') "Mass composition", "Fuel", "Oxydizer", "Products"
-  write(nfecra,'(a20,10(1x,a14))') "----------------", "----", "--------", "--------"
-  do ige = 1, ngaze
-    write(nfecra,'(a15,10(1x,f14.5))') trim(nomcoe(ige)), (coefeg(ige,igg), igg=1, ngazg)
-  enddo
-  write(nfecra,1000)
-  write(nfecra,'(a20,10(1x,a14))') "Molar composition", "Fuel", "Oxydizer", "Products"
-  write(nfecra,'(a20,10(1x,a14))') "-----------------", "----", "--------", "--------"
-  do ige = 1, ngaze
-    write(nfecra,'(a15,10(1x,f14.5))') trim(nomcoe(ige)), (compog(ige,igg), igg=1, ngazg)
-  enddo
-endif
 
  1000 format(                                                     &
                                                                 /,&
@@ -104,20 +75,6 @@ endif
  9900 format(                                                     &
                                                                 /,&
 ' -----------------------------------------------------------', /)
- 1010 format(                                                     &
-                                                                /,&
-' ** SPECIFIC PHYSICS:',                                        /,&
-'    ----------------',                                         /)
- 1020 format(                                                     &
-' --- Diffusion Flame: 3 Point Chemistry',                      /,&
-'       OPTION = ',4x,i10                                       /)
- 1070 format(                                                     &
-' --- Combustible characteristics',                             /,&
-'       Combustible : ',4x,a,                                   /,&
-'       PCI = ',4x,e14.5,  ' J/kg',                             /)
- 1080 format(                                                     &
-" --- Chemical reaction: ",                                     /,&
-"       ", a," + ",f6.3," (",a,") --> ",a,                      /)
 
 !===============================================================================
 ! DEFINITION GENERALE DU CAS
