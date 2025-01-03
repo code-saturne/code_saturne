@@ -2948,7 +2948,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                            const cs_mesh_quantities_t     *fvq,
                            cs_halo_type_t                  halo_type,
