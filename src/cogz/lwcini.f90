@@ -86,12 +86,9 @@ character(len=80) :: chaine
 integer          iel, igg
 integer          iscal, ivar, ii
 double precision hinit, coefg(ngazgm), hair, tinitk
-double precision sommqf, sommqt, sommq, tentm, fmelm
-double precision valmax, valmin, xkent, xeent, d2s3
+double precision tentm, fmelm
+double precision valmax, valmin
 
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
-double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
-double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_yfm, cvar_yfp2m
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
 double precision, dimension(:), pointer :: cvar_coyfp
@@ -106,6 +103,18 @@ save             ipass
 
 !===============================================================================
 
+interface
+
+  subroutine cs_combustion_boundary_conditions_mean_inlet_ebu_lw  &
+    (fmm, tkm)                                                           &
+    bind(C, name='cs_combustion_boundary_conditions_mean_inlet_ebu_lw')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), intent(out) :: fmm, tkm
+  end subroutine cs_combustion_boundary_conditions_mean_inlet_ebu_lw
+
+end interface
+
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
@@ -116,8 +125,6 @@ do igg = 1, ngazgm
   coefg(igg) = zero
 enddo
 
-d2s3 = 2.d0/3.d0
-
 call field_get_val_s(ivarfl(isca(iyfm)), cvar_yfm)
 call field_get_val_s(ivarfl(isca(iyfp2m)), cvar_yfp2m)
 call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
@@ -126,24 +133,6 @@ if (ippmod(icolwc).ge.2) call field_get_val_s(ivarfl(isca(icoyfp)), cvar_coyfp)
 if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.      &
     ippmod(icolwc).eq.5) then
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-endif
-
-if (itytur.eq.2) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-elseif (itytur.eq.3) then
-  call field_get_val_v(ivarfl(irij), cvar_rij)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-elseif (iturb.eq.50) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-  call field_get_val_s(ivarfl(iphi), cvar_phi)
-  call field_get_val_s(ivarfl(ifb), cvar_fb)
-elseif (iturb.eq.60) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iomg), cvar_omg)
-elseif (iturb.eq.70) then
-  call field_get_val_s(ivarfl(inusa), cvar_nusa)
 endif
 
 !===============================================================================
@@ -176,47 +165,7 @@ if ( isuite.eq.0 ) then
     frmel = zero
     tgf   = 300.d0
 
-! ---- Initialisation de k et epsilon
-
-    xkent = 1.d-10
-    xeent = 1.d-10
-
     do iel = 1, ncel
-
-! ---- TURBULENCE
-
-      if (itytur.eq.2) then
-
-        cvar_k(iel)  = xkent
-        cvar_ep(iel) = xeent
-
-      elseif (itytur.eq.3) then
-
-        cvar_rij(1,iel) = d2s3*xkent
-        cvar_rij(2,iel) = d2s3*xkent
-        cvar_rij(3,iel) = d2s3*xkent
-        cvar_rij(4,iel) = 0.d0
-        cvar_rij(5,iel) = 0.d0
-        cvar_rij(6,iel) = 0.d0
-        cvar_ep(iel)  = xeent
-
-      elseif (iturb.eq.50) then
-
-        cvar_k(iel)   = xkent
-        cvar_ep(iel)  = xeent
-        cvar_phi(iel) = d2s3
-        cvar_fb(iel)  = 0.d0
-
-      elseif (iturb.eq.60) then
-
-        cvar_k(iel)   = xkent
-        cvar_omg(iel) = xeent/cmu/xkent
-
-      elseif (iturb.eq.70) then
-
-        cvar_nusa(iel) = cmu*xkent**2/xeent
-
-      endif
 
 ! ----- Fraction massique de fuel et sa variance
 
@@ -245,25 +194,7 @@ if ( isuite.eq.0 ) then
 
   else if ( ipass.eq.2 ) then
 
-! ----- Calculs preliminaires : Fraction de melange, T, H
-!     (la valeur NOZAPM est utilisee pour inclure les aspects parall)
-    sommqf = zero
-    sommq  = zero
-    sommqt = zero
-    ! FIXME: restore this when migrating to C, using inlet zone info
-    !do izone = 1, nozapm
-    !  sommqf = sommqf + qimp(izone)*fment(izone)
-    !  sommqt = sommqt + qimp(izone)*tkent(izone)
-    !  sommq  = sommq  + qimp(izone)
-    !enddo
-
-    if(abs(sommq).gt.epzero) then
-      fmelm = sommqf / sommq
-      tentm = sommqt / sommq
-    else
-      fmelm = zero
-      tentm = t0
-    endif
+    call cs_combustion_boundary_conditions_mean_inlet_ebu_lw(fmelm, tentm)
 
 ! ----- Enthalpie du melange HINIT
     if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.        &

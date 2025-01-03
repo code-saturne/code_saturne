@@ -784,5 +784,52 @@ cs_combustion_boundary_conditions_density_ebu_lw(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute mean inlet enthalpy at boundary for
+ *        EBU and Libby-Williams models.
+ *
+ * \param[out]  fmm  mean inlet mixture fraction
+ * \param[out]  tkm  mean inlet mixture temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_boundary_conditions_mean_inlet_ebu_lw(cs_real_t  *fmm,
+                                                    cs_real_t  *tkm)
+{
+  assert(cs_glob_boundaries != NULL);
+
+  cs_real_t zsum[3] = {0, 0, 0};
+
+  /* loop on boundary zones, ignore non-inlet zones */
+
+  const cs_boundary_t *bdy = cs_glob_boundaries;
+  for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
+    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
+      continue;
+
+    const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
+    auto ci = reinterpret_cast<cs_combustion_bc_inlet_t *>
+                (cs_boundary_conditions_get_model_inlet(z));
+
+    const cs_real_t qimp = cs_boundary_conditions_open_get_mass_flow_rate(z);
+
+    zsum[0] += qimp * ci->fment;
+    zsum[1] += qimp * ci->tkent;
+    zsum[2] += qimp;
+  }
+  cs_parall_sum(3, CS_REAL_TYPE, zsum);
+
+  if (zsum[2] > cs_math_epzero) {
+    *fmm = zsum[0] / zsum[2];
+    *tkm = zsum[1] / zsum[2];
+  }
+  else {
+    *fmm = 0;
+    *tkm = cs_glob_fluid_properties->t0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

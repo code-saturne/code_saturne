@@ -153,6 +153,20 @@ void
 cs_combustion_boundary_conditions_density_ebu_lw(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute mean inlet enthalpy at boundary for
+ *        EBU and Libby-Williams models.
+ *
+ * \param[out]  fmm  mean inlet mixture fraction
+ * \param[out]  tkm  mean inlet mixture temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_boundary_conditions_mean_inlet_ebu_lw(cs_real_t  *fmm,
+                                                    cs_real_t  *tkm);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
