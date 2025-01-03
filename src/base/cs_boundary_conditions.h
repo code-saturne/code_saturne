@@ -100,12 +100,7 @@ extern const int  *cs_glob_bc_type;
 typedef struct {
 
   /*! Legacy physical model zone id per boundary face */
-
   int  *izfppp;
-
-  /*! indirection array allowing to sort the boundary faces
-   *  according to their boundary condition type \c bc_type */
-  int  *itrifb;
 
   /*! atmospheric flows: auto inlet/outlet flag */
   int *iautom;

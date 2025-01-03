@@ -2225,7 +2225,6 @@ cs_boundary_conditions_create_legacy_zone_data(void)
 
   BFT_MALLOC(cs_glob_bc_pm_info, 1, cs_boundary_condition_pm_info_t);
   cs_glob_bc_pm_info->izfppp = nullptr;
-  cs_glob_bc_pm_info->itrifb = nullptr;
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
 
@@ -2270,10 +2269,8 @@ cs_boundary_conditions_create(void)
   assert(bc_pm_info != nullptr);
 
   BFT_MALLOC(bc_pm_info->izfppp, n_b_faces, int);
-  BFT_MALLOC(bc_pm_info->itrifb, n_b_faces, int);
   for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
     cs_glob_bc_pm_info->izfppp[ii] = 0;
-    cs_glob_bc_pm_info->itrifb[ii] = 0;
   }
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
@@ -2322,7 +2319,6 @@ cs_boundary_conditions_free(void)
   if (cs_glob_bc_pm_info != nullptr) {
     BFT_FREE(cs_glob_bc_pm_info->iautom);
     BFT_FREE(cs_glob_bc_pm_info->izfppp);
-    BFT_FREE(cs_glob_bc_pm_info->itrifb);
     BFT_FREE(cs_glob_bc_pm_info);
   }
 

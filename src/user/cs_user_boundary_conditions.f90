@@ -94,7 +94,7 @@ implicit none
 integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor), itypfb(nfabor)
+integer          itrifb(*), itypfb(nfabor)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet)

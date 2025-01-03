@@ -36,14 +36,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_array.h"
 #include "atmo/cs_atmo.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
+#include "base/cs_mem.h"
 #include "atmo/cs_intprf.h"
 #include "lagr/cs_lagr.h"
 #include "mesh/cs_mesh.h"
@@ -117,7 +116,6 @@ _n_bc_faces(int        bc_type,
  *
  * \param[in]      init      partial treatment (before time loop) if true
  * \param[in,out]  bc_type   type per boundary face
- * \param[out]     itrifb    indirection for faces ordering
  * \param[out]     isostd    standard output indicator + reference face number
  */
 /*----------------------------------------------------------------------------*/
@@ -125,7 +123,6 @@ _n_bc_faces(int        bc_type,
 void
 cs_boundary_conditions_type(bool  init,
                             int   bc_type[],
-                            int   itrifb[],
                             int   isostd[])
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
@@ -204,10 +201,11 @@ cs_boundary_conditions_type(bool  init,
 
   /* Allocate temporary arrays */
   cs_real_t *pripb = nullptr;
-  BFT_MALLOC(pripb, n_b_faces, cs_real_t);
+  CS_MALLOC(pripb, n_b_faces, cs_real_t);
 
-  cs_lnum_t *bc_type_idx = nullptr;
-  BFT_MALLOC(bc_type_idx, CS_MAX_BC_TYPE+1, cs_lnum_t);
+  cs_lnum_t *bc_type_idx, *bc_type_faces;
+  CS_MALLOC(bc_type_idx, CS_MAX_BC_TYPE+1, cs_lnum_t);
+  CS_MALLOC(bc_type_faces, n_b_faces, cs_lnum_t);
 
   /* Initialize variables to avoid compiler warnings */
   cs_array_real_fill_zero(n_b_faces, pripb);
@@ -257,21 +255,21 @@ cs_boundary_conditions_type(bool  init,
     for (int i = 0; i < CS_MAX_BC_TYPE; i++)
       bc_type_idx[i+1] += bc_type_idx[i];
 
-    /* Build list of face ids sorted by bc type: itrifb */
+    /* Build list of face ids sorted by bc type: bc_type_faces */
 
     cs_lnum_t *bc_type_count = nullptr;
-    BFT_MALLOC(bc_type_count, CS_MAX_BC_TYPE, cs_lnum_t);
+    CS_MALLOC(bc_type_count, CS_MAX_BC_TYPE, cs_lnum_t);
     for (int j = 0; j < CS_MAX_BC_TYPE; j++)
       bc_type_count[j] = 0;
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       const int bc_type_id = bc_type[f_id] - 1;
       const int k = bc_type_idx[bc_type_id] + bc_type_count[bc_type_id];
-      itrifb[k] = f_id;
+      bc_type_faces[k] = f_id;
       bc_type_count[bc_type_id] += 1;
     }
 
-    BFT_FREE(bc_type_count);
+    CS_FREE(bc_type_count);
 
     /* Number of boundary faces classified by type */
 
@@ -403,7 +401,7 @@ cs_boundary_conditions_type(bool  init,
     int inlet_types[5] = {CS_ESICF, CS_SSPCF, CS_SOPCF, CS_EPHCF, CS_EQHCF};
 
     short *outflow_type;
-    BFT_MALLOC(outflow_type, n_b_faces, short);
+    CS_MALLOC(outflow_type, n_b_faces, short);
     {
       for (int type_idx = 0; type_idx < 5; type_idx++) {
 
@@ -412,7 +410,7 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t e_id = bc_type_idx[inlet_bc_type];
 
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-          const cs_lnum_t f_id = itrifb[ii];
+          const cs_lnum_t f_id = bc_type_faces[ii];
           outflow_type[f_id] = 0;
           if (inlet_bc_type != CS_SSPCF) {
             cs_real_t vel_bc[3] = {rcodcl1_vel[f_id],
@@ -453,7 +451,7 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t e_id = bc_type_idx[inlet_bc_type];
 
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-          const cs_lnum_t f_id = itrifb[ii];
+          const cs_lnum_t f_id = bc_type_faces[ii];
 
           if (outflow_type[f_id] == 1) {
             icodcl[f_id] = 3;
@@ -470,7 +468,7 @@ cs_boundary_conditions_type(bool  init,
 
     } /* End of loop on fields */
 
-    BFT_FREE(outflow_type);
+    CS_FREE(outflow_type);
 
   }
 
@@ -528,7 +526,7 @@ cs_boundary_conditions_type(bool  init,
       cs_lnum_t s_id = bc_type_idx[o_type_id[jj]];
       cs_lnum_t e_id = bc_type_idx[o_type_id[jj] + 1];
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
         if (icodcl_p[f_id] == 0) {
           const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
                                                          b_face_cog[f_id]);
@@ -852,7 +850,7 @@ cs_boundary_conditions_type(bool  init,
       cs_lnum_t e_id = bc_type_idx[i_type_id[jj] + 1];
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
         if (icodcl_p[f_id] == 0) {
           icodcl_p[f_id] = 3;
           rcodcl1_p[f_id] = 0.;
@@ -881,7 +879,7 @@ cs_boundary_conditions_type(bool  init,
     if (CS_F_(p) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
         if (icodcl_p[f_id] == 0) {
           icodcl_p[f_id] = 1;
           rcodcl1_p[f_id] = pripb[f_id] - pref;
@@ -902,7 +900,7 @@ cs_boundary_conditions_type(bool  init,
       cs_field_t *f_inout = cs_field_by_name_try("algo:b_velocity_inout");
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
         const cs_lnum_t c_id = b_face_cells[f_id];
 
         if (icodcl_vel[f_id] == 0) {
@@ -964,7 +962,7 @@ cs_boundary_conditions_type(bool  init,
     if (CS_F_(p) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
 
         if (icodcl_p[f_id] == 0) {
 
@@ -987,7 +985,7 @@ cs_boundary_conditions_type(bool  init,
     if (CS_F_(vel) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
         /* Homogeneous Neumann */
         if (icodcl_vel[f_id] == 0) {
           icodcl_vel[f_id] = 3;
@@ -1013,7 +1011,7 @@ cs_boundary_conditions_type(bool  init,
     if (CS_F_(p) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
         if (icodcl_p[f_id] == 0) {
           icodcl_p[f_id] = 1;
           rcodcl1_p[f_id]
@@ -1030,7 +1028,7 @@ cs_boundary_conditions_type(bool  init,
     if (CS_F_(vel) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
         /* Homogeneous Neumann */
         if (icodcl_vel[f_id] == 0) {
           icodcl_vel[f_id] = 3;
@@ -1047,7 +1045,7 @@ cs_boundary_conditions_type(bool  init,
   }
 
   /* Free memory */
-  BFT_FREE(pripb);
+  CS_FREE(pripb);
 
   /* Symmetry
      -------- */
@@ -1081,7 +1079,7 @@ cs_boundary_conditions_type(bool  init,
 
       /* Loop over faces */
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
 
         /* Special treatment for uncoupled version of Rij models */
         if (icodcl[f_id] == 0 && is_uncoupled_rij) {
@@ -1152,7 +1150,7 @@ cs_boundary_conditions_type(bool  init,
 
       if (f == CS_F_(vel)) {
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-          const cs_lnum_t f_id = itrifb[ii];
+          const cs_lnum_t f_id = bc_type_faces[ii];
           if (icodcl[f_id] == 0) {
             icodcl[f_id] = wall_bc_code;
 
@@ -1172,7 +1170,7 @@ cs_boundary_conditions_type(bool  init,
 
         if (f->dim == 1) {
           for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-            const cs_lnum_t f_id = itrifb[ii];
+            const cs_lnum_t f_id = bc_type_faces[ii];
             if (icodcl[f_id] == 0) {
               icodcl[f_id] = wall_bc_code;
               rcodcl1[f_id] = 0.;
@@ -1183,7 +1181,7 @@ cs_boundary_conditions_type(bool  init,
         }
         else {
           for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-            const cs_lnum_t f_id = itrifb[ii];
+            const cs_lnum_t f_id = bc_type_faces[ii];
             if (icodcl[f_id] == 0) {
               icodcl[f_id] = wall_bc_code ;
               for (cs_lnum_t k = 0; k < f->dim; k++) {
@@ -1200,7 +1198,7 @@ cs_boundary_conditions_type(bool  init,
       /* Homogeneous Neumann on the pressure */
       else if (f == CS_F_(p)) {
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-          const cs_lnum_t f_id = itrifb[ii];
+          const cs_lnum_t f_id = bc_type_faces[ii];
           if (icodcl[f_id] == 0) {
             icodcl[f_id] = 3;
             rcodcl1[f_id] = 0.;
@@ -1228,7 +1226,7 @@ cs_boundary_conditions_type(bool  init,
         cs_real_t *rcodcl1_tf = f_tf->bc_coeffs->rcodcl1;
 
         for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
-          const cs_lnum_t f_id = itrifb[jj];
+          const cs_lnum_t f_id = bc_type_faces[jj];
           if (icodcl_tf[f_id] == 0) {
             icodcl_tf[f_id] = wall_bc_code ;
             for (cs_lnum_t k = 0; k < f_tf->dim; k++)
@@ -1248,7 +1246,7 @@ cs_boundary_conditions_type(bool  init,
         cs_real_t *rcodcl1_al = f_al->bc_coeffs->rcodcl1;
 
         for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
-          const cs_lnum_t f_id = itrifb[jj];
+          const cs_lnum_t f_id = bc_type_faces[jj];
           if (icodcl_al[f_id] == 0) {
             icodcl_al[f_id] = wall_bc_code ;
             rcodcl1_al[f_id] = 0.;
@@ -1264,7 +1262,7 @@ cs_boundary_conditions_type(bool  init,
   /*  When called before time loop, some values are not yet available. */
 
   if (init) {
-    BFT_FREE(bc_type_idx);
+    CS_FREE(bc_type_idx);
     return;
   }
 
@@ -1323,7 +1321,7 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t e_id = bc_type_idx[inlet_bc_type];
 
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-          const cs_lnum_t f_id = itrifb[ii];
+          const cs_lnum_t f_id = bc_type_faces[ii];
 
           if (icodcl[f_id] == 0) {
 
@@ -1478,7 +1476,7 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t e_id = bc_type_idx[f_bc_type];
 
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-          const cs_lnum_t f_id = itrifb[ii];
+          const cs_lnum_t f_id = bc_type_faces[ii];
 
           if (icodcl[f_id] == 0) {
 
@@ -1537,7 +1535,7 @@ cs_boundary_conditions_type(bool  init,
       cs_real_t *rcodcl3 = f->bc_coeffs->rcodcl3;
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = itrifb[ii];
+        const cs_lnum_t f_id = bc_type_faces[ii];
 
         if (icodcl[f_id] == 0) {
           icodcl[f_id] = 3;
@@ -1652,8 +1650,8 @@ cs_boundary_conditions_type(bool  init,
   {
     int **ndircl_p;
     cs_gnum_t *ndircl;
-    BFT_MALLOC(ndircl_p, n_fields, int *);
-    BFT_MALLOC(ndircl, n_fields, cs_gnum_t);
+    CS_MALLOC(ndircl_p, n_fields, int *);
+    CS_MALLOC(ndircl, n_fields, cs_gnum_t);
 
     int n_vars = 0;
 
@@ -1690,8 +1688,8 @@ cs_boundary_conditions_type(bool  init,
       *(ndircl_p[i]) = ndircl[i];
     }
 
-    BFT_FREE(ndircl_p);
-    BFT_FREE(ndircl);
+    CS_FREE(ndircl_p);
+    CS_FREE(ndircl);
   }
 
   /* Compute and log the mass flow at the different types of faces.
@@ -1727,7 +1725,7 @@ cs_boundary_conditions_type(bool  init,
            "      ------------------------------\n\n"));
 
       cs_real_t *flumty = nullptr;
-      BFT_MALLOC(flumty, CS_MAX_BC_TYPE, cs_real_t);
+      CS_MALLOC(flumty, CS_MAX_BC_TYPE, cs_real_t);
       for (int i = 0; i < CS_MAX_BC_TYPE; i++)
         flumty[i] = 0;
 
@@ -1740,7 +1738,7 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t e_id = bc_type_idx[ii+1];
 
         for (int jj = s_id; jj < e_id; jj++) {
-          const cs_lnum_t f_id = itrifb[jj];
+          const cs_lnum_t f_id = bc_type_faces[jj];
           flumty[ii] = flumty[ii] + b_massflux[f_id];
         }
       }
@@ -1814,13 +1812,14 @@ cs_boundary_conditions_type(bool  init,
                         (unsigned long long)inb_user, flumty[ii]);
       }
 
-      BFT_FREE(flumty);
+      CS_FREE(flumty);
       cs_log_separator(CS_LOG_DEFAULT);
 
     } /* Test on logging (modntl) */
   }
 
-  BFT_FREE(bc_type_idx);
+  CS_FREE(bc_type_faces);
+  CS_FREE(bc_type_idx);
 }
 
 /*----------------------------------------------------------------------------*/

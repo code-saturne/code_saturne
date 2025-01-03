@@ -68,15 +68,11 @@ BEGIN_C_DECLS
  *
  * \f[ \mu_T = \rho (\kappa L)^2 \cdot \sqrt{2 S_{ij} S_{ij}} \f]
  * \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
- *
- * Edge face types are available at previous time step (except at the first time
- * step, when the itypfb and itrifb tables have not been filled).
- !*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_ml_mu_t(void)
-
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;

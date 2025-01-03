@@ -902,8 +902,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   cs_field_t *f_th = cs_thermal_model_field();
 
-  const int *izfppp = cs_glob_bc_pm_info->izfppp;
-  int *itrifb = cs_glob_bc_pm_info->itrifb;
   int *bc_type = cs_f_boundary_conditions_get_bc_type();
 
   int *impale = cs_glob_ale_data->impale;
@@ -938,7 +936,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   /* User-defined functions
      ---------------------- */
 
-  cs_f_user_boundary_conditions_wrapper(bc_type, izfppp, dt);
+  cs_f_user_boundary_conditions_wrapper
+    (bc_type, cs_glob_bc_pm_info->izfppp, dt);
 
   cs_user_boundary_conditions(cs_glob_domain, bc_type);
 
@@ -1153,7 +1152,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
     cs_boundary_conditions_type(false,
                                 bc_type,
-                                itrifb,
                                 isostd);
   }
 
@@ -3716,8 +3714,6 @@ cs_boundary_conditions_set_coeffs_init(void)
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
 
   int *bc_type = cs_f_boundary_conditions_get_bc_type();
-  int *itrifb = cs_glob_bc_pm_info->itrifb;
-  const int *izfppp = cs_glob_bc_pm_info->izfppp;
   cs_real_t *dt = CS_F_(dt)->val;
 
   const cs_lnum_t nt_cur  = cs_glob_time_step->nt_cur;
@@ -3747,7 +3743,8 @@ cs_boundary_conditions_set_coeffs_init(void)
 
   /* User-defined function settings */
 
-  cs_f_user_boundary_conditions_wrapper(bc_type, izfppp, dt);
+  cs_f_user_boundary_conditions_wrapper
+    (bc_type, cs_glob_bc_pm_info->izfppp, dt);
 
   cs_user_boundary_conditions(cs_glob_domain, bc_type);
 
@@ -3830,7 +3827,6 @@ cs_boundary_conditions_set_coeffs_init(void)
 
   cs_boundary_conditions_type(true,
                               bc_type,
-                              itrifb,
                               isostd);
 
   BFT_FREE(isostd);
