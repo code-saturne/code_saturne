@@ -151,7 +151,8 @@ cs_f_coincl_get_pointers(int     **isoot,
                          double  **hmin_lwc,
                          double  **hmax_lwc,
                          double  **tgf,
-                         double  **frmel);
+                         double  **frmel,
+                         double  **cebu);
 
 void
 cs_f_ppcpfu_get_pointers(double  **oxyo2,
@@ -207,12 +208,12 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **th,
                          double  **cpgazg)
 {
-  *npo = NULL;
-  *wmolg  = NULL;
-  *th = NULL;
-  *cpgazg = NULL;
+  *npo = nullptr;
+  *wmolg  = nullptr;
+  *th = nullptr;
+  *cpgazg = nullptr;
 
-  if (cs_glob_combustion_gas_model != NULL) {
+  if (cs_glob_combustion_gas_model != nullptr) {
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
@@ -234,7 +235,7 @@ cs_f_ppthch_get_pointers(int     **ngaze,
     *cpgazg = (double *)cm->cpgazg;
 
   }
-  else if (cs_glob_coal_model != NULL) {
+  else if (cs_glob_coal_model != nullptr) {
 
     cs_coal_model_t  *cm = cs_glob_coal_model;
 
@@ -288,36 +289,38 @@ cs_f_coincl_get_pointers(int     **isoot,
                          double  **hmin_lwc,
                          double  **hmax_lwc,
                          double  **tgf,
-                         double  **frmel)
+                         double  **frmel,
+                         double  **cebu)
 {
-  *isoot  = NULL;
-  *ngazfl = NULL;
-  *nki = NULL;
-  *nxr = NULL;
-  *nzm = NULL;
-  *nzvar = NULL;
-  *nlibvar = NULL;
-  *ikimid = NULL;
-  *mode_fp2m = NULL;
-  *use_janaf = NULL;
-  *coefeg = NULL;
-  *compog = NULL;
-  *xsoot  = NULL;
-  *rosoot = NULL;
-  *lsp_fuel = NULL;
-  *hinfue = NULL;
-  *tinfue = NULL;
-  *hinoxy = NULL;
-  *tinoxy = NULL;
-  *pcigas = NULL;
-  *fmin_lwc = NULL;
-  *fmax_lwc = NULL;
-  *hmin_lwc = NULL;
-  *hmax_lwc = NULL;
-  *tgf = NULL;
-  *frmel = NULL;
+  *isoot  = nullptr;
+  *ngazfl = nullptr;
+  *nki = nullptr;
+  *nxr = nullptr;
+  *nzm = nullptr;
+  *nzvar = nullptr;
+  *nlibvar = nullptr;
+  *ikimid = nullptr;
+  *mode_fp2m = nullptr;
+  *use_janaf = nullptr;
+  *coefeg = nullptr;
+  *compog = nullptr;
+  *xsoot  = nullptr;
+  *rosoot = nullptr;
+  *lsp_fuel = nullptr;
+  *hinfue = nullptr;
+  *tinfue = nullptr;
+  *hinoxy = nullptr;
+  *tinoxy = nullptr;
+  *pcigas = nullptr;
+  *fmin_lwc = nullptr;
+  *fmax_lwc = nullptr;
+  *hmin_lwc = nullptr;
+  *hmax_lwc = nullptr;
+  *tgf = nullptr;
+  *frmel = nullptr;
+  *cebu = nullptr;
 
-  if (cs_glob_combustion_gas_model != NULL) {
+  if (cs_glob_combustion_gas_model != nullptr) {
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
@@ -347,9 +350,10 @@ cs_f_coincl_get_pointers(int     **isoot,
     *hmax_lwc = &(cm->hmax_lwc);
     *tgf = &(cm->tgf);
     *frmel = &(cm->frmel);
+    *cebu = &(cm->cebu);
 
   }
-  else if (cs_glob_coal_model != NULL) {
+  else if (cs_glob_coal_model != nullptr) {
 
     cs_coal_model_t  *cm = cs_glob_coal_model;
 
@@ -378,17 +382,17 @@ cs_f_ppcpfu_get_pointers(double  **oxyo2,
                          double  **oxyh2o,
                          double  **oxyco2)
 {
-  if (cs_glob_combustion_gas_model != NULL) {
+  if (cs_glob_combustion_gas_model != nullptr) {
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
-    *oxyo2 = NULL;
+    *oxyo2 = nullptr;
     *oxyn2 =  cm->oxyn2;
     *oxyh2o = cm->oxyh2o;
     *oxyco2 = cm->oxyco2;
 
   }
-  else if (cs_glob_coal_model != NULL) {
+  else if (cs_glob_coal_model != nullptr) {
 
     cs_coal_model_t  *cm = cs_glob_coal_model;
 
@@ -410,14 +414,14 @@ cs_f_ppcpfu_get_pointers(double  **oxyo2,
 void
 cs_f_combustion_model_get_pointers(double  **srrom)
 {
-  if (cs_glob_combustion_gas_model != NULL) {
+  if (cs_glob_combustion_gas_model != nullptr) {
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
     *srrom = &(cm->srrom);
 
   }
-  else if (cs_glob_coal_model != NULL) {
+  else if (cs_glob_coal_model != nullptr) {
 
     cs_coal_model_t  *cm = cs_glob_coal_model;
 

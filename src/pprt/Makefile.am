@@ -59,7 +59,6 @@ noinst_LIBRARIES = libcspprt.a
 libcspprt_a_SOURCES = \
 cs_combustion_model.cpp \
 cs_physical_model.cpp \
-ppini1.f90 \
 ppinii.f90 \
 ppiniv.f90 \
 ppinv2.f90 \

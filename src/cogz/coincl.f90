@@ -133,9 +133,6 @@ module coincl
 
   ! ---- Grandeurs fournies par l'utilisateur dans usebuc.f90
 
-  !       QIMP         --> Debit impose en kg/s
-  !       FMENT        --> Taux de melange par type de facette d'entree
-  !       TKENT        --> Temperature en K par type de facette d'entree
   !       FRMEL        --> Taux de melange constant pour modeles 0 et 1
   !       TGF          --> Temperature gaz frais en K identique
   !                        pour premelange frais et dilution
@@ -147,8 +144,8 @@ module coincl
   !                        pour premelange frais et dilution
   !       TGBAD        --> Temperature adiabatique gaz brules en K
 
-  real(c_double), pointer, save :: frmel, tgf
-  double precision, save :: cebu, hgf, tgbad
+  real(c_double), pointer, save :: frmel, tgf, cebu
+  double precision, save :: hgf, tgbad
 
   !--> MODELE DE FLAMME DE PREMELANGE LWC
 
@@ -322,7 +319,8 @@ module coincl
                                         p_tinoxy,              &
                                         p_fmin, p_fmax,        &
                                         p_hmin, p_hmax,        &
-                                        p_tgf, p_frmel)        &
+                                        p_tgf, p_frmel,        &
+                                        p_cebu)                &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -333,7 +331,7 @@ module coincl
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
       type(c_ptr), intent(out) :: p_tinoxy
       type(c_ptr), intent(out) :: p_fmin, p_fmax, p_hmin, p_hmax
-      type(c_ptr), intent(out) :: p_tgf, p_frmel
+      type(c_ptr), intent(out) :: p_tgf, p_frmel, p_cebu
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -379,7 +377,7 @@ contains
                    c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,   &
                    c_pcigas, c_tinfue, c_tinoxy,               &
                    c_fmin, c_fmax, c_hmin, c_hmax,             &
-                   c_tgf, c_frmel
+                   c_tgf, c_frmel, c_cebu
 
     call cs_f_coincl_get_pointers(c_isoot, c_ngazfl, c_nki,       &
                                   c_nxr, c_nzm, c_nzvar,          &
@@ -391,7 +389,7 @@ contains
                                   c_hinfue, c_hinoxy,             &
                                   c_pcigas, c_tinfue, c_tinoxy,   &
                                   c_fmin, c_fmax, c_hmin, c_hmax, &
-                                  c_tgf, c_frmel)
+                                  c_tgf, c_frmel, c_cebu)
 
     call c_f_pointer(c_isoot, isoot)
     call c_f_pointer(c_ngazfl, ngazfl)
@@ -419,6 +417,7 @@ contains
     call c_f_pointer(c_hmax, hmax)
     call c_f_pointer(c_tgf, tgf);
     call c_f_pointer(c_frmel, frmel);
+    call c_f_pointer(c_cebu, cebu);
 
   end subroutine co_models_init
 

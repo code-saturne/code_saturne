@@ -150,7 +150,8 @@ end subroutine atini1
 !> \brief Finalize initialisation of variable options for the atmospheric module
 !>       after usipsu/cs_user_parameters functions
 
-subroutine atini2
+subroutine atini2 () &
+ bind(C, name='cs_f_atini2')
 
 !===============================================================================
 ! Module files

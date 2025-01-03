@@ -47,11 +47,14 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
-#include "pprt/cs_combustion_model.h"
+#include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+
+#include "pprt/cs_combustion_model.h"
+#include "pprt/cs_physical_model.h"
+#include "rayt/cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -104,6 +107,9 @@ cs_combustion_gas_model_t  *cs_glob_combustion_gas_model = NULL;
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
+
+void
+cs_f_coini1(void);
 
 void
 cs_f_co_models_init(void);
@@ -318,6 +324,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   cm->frmel = 0.;
   cm->tgf = 300.;
+  cm->cebu = 2.5;
 
   for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
     cm->wmolg[i] = 0;
@@ -406,58 +413,77 @@ cs_combustion_gas_set_thermochemical_data_file(const char  *file_name)
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Compute molar and mass fractions of
- *         elementary species Ye, Xe (fuel, O2, CO2, H2O, N2) from
- *         global species Yg (fuel, oxidant, products)
- *
- * \param[in]     yg            global mass fraction
- * \param[out]    ye            elementary mass fraction
- * \param[out]    xe            elementary molar fraction
+/*!
+ * \brief Specific setup operations for gas combustion models.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_gas_yg2xye(const cs_real_t  yg[],
-                         cs_real_t        ye[],
-                         cs_real_t        xe[])
+cs_combustion_gas_setup(void)
 {
-  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-  const int n_gas_e = cm->n_gas_el_comp;
-  const int n_gas_g = cm->n_gas_species;
+  if (cs_glob_combustion_gas_model == NULL)
+    return;
 
-  /* Yg -> Ye conversion */
+  cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
-  for (int i = 0; i < n_gas_e; i++) {
-    ye[i] = 0;
-    for (int j = 0; j < n_gas_g; j++)
-      ye[i] += cm->coefeg[j][i] * yg[j];
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  if (pm_flag[CS_COMBUSTION_3PT] != -1) {
+  }
+  else if (pm_flag[CS_COMBUSTION_SLFM] != -1) {
+  }
+  else if (pm_flag[CS_COMBUSTION_EBU] != -1) {
   }
 
-  /* Verification */
+  cs_f_coini1();
 
-  cs_real_t ytot = 0;
-  for (int i = 0; i < n_gas_e; i++)
-    ytot += ye[i];
+  /* Parameter checks
+     ---------------- */
 
-  if (ytot < 0 || (1-ytot) < -cs_math_epzero)
-    bft_printf(_(" Warning:\n"
-                 " --------\n"
-                 "   %s; mass fraction sum outside [0, 1] bounds\n"
-                 "   sum_1=1,%d Yi = %g\n\n"),
-               __func__, n_gas_e, ytot);
+  const char section_name[] = N_("Gas combustion model setup");
 
-  /* Molar mass mixture */
-
-  cs_real_t mm = 0;
-  for (int i = 0; i < n_gas_e; i++) {
-    mm += ye[i] / cm->wmole[i];
+  if (pm_flag[CS_COMBUSTION_3PT] != -1) {
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED, _(section_name),
+                                    "tinfue", cm->tinfue, 0.);
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED, _(section_name),
+                                    "tinoxy", cm->tinoxy, 0.);
   }
-  mm = 1 / mm;
 
-  /* Ye -> Xe conversion */
-  for (int i = 0; i < n_gas_e; i++) {
-    xe[i] = ye[i] * mm / cm->wmole[i];
+  else if (pm_flag[CS_COMBUSTION_SLFM] != -1) {
+    if (cm->hinfue < - cs_math_big_r)
+      cs_parameters_error
+        (CS_ABORT_DELAYED, _(section_name),
+         _("hinfue must be set by the user, and not remain at %g.\n"),
+         cm->hinfue);
+    if (cm->hinoxy < - cs_math_big_r)
+      cs_parameters_error
+        (CS_ABORT_DELAYED, _(section_name),
+         _("hinoxy must be set by the user, and not remain at %g.\n"),
+         cm->hinoxy);
+
+    /* TODO migrate remainder of cs_steady_laminar_flamelet_verify here */
   }
+
+  else if (pm_flag[CS_COMBUSTION_EBU] != -1) {
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                    _("Gas combustion model setup (EBU)"),
+                                    "cebu", cm->cebu, 0.);
+  }
+
+  if (   cm->isoot
+      && cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_NONE) {
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _(section_name),
+       _("Soot model (isoot = %d) used with no active radiation model.\n"
+         "This has no use\n"),
+       cm->isoot);
+  }
+
+  cs_parameters_is_in_range_double(CS_ABORT_IMMEDIATE, _(section_name),
+                                   "srrom", cm->srrom, 0., 1.);
+
+  cs_parameters_error_barrier();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -476,8 +502,8 @@ cs_combustion_gas_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
-                  "Combustion module options\n"
-                    "-------------------------\n\n"));
+                  "Gas combustion module options\n"
+                  "-----------------------------\n\n"));
 
   const char *janaf_value_str[]
     = {N_("false (user enthalpy/temperature tabulation)"),
@@ -543,6 +569,86 @@ cs_combustion_gas_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("    ipthrm:    %s\n\n"),
                 _(ipthrm_value_str[cs_glob_fluid_properties->ipthrm]));
+
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  if (pm_flag[CS_COMBUSTION_3PT] != -1) {
+  }
+  else if (pm_flag[CS_COMBUSTION_SLFM] != -1) {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Diffusion Flame: Steady laminar flamelet model\n"
+                    "    option: %d\n\n"),
+                  pm_flag[CS_COMBUSTION_SLFM]);
+  }
+  else if (pm_flag[CS_COMBUSTION_EBU] != -1) {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Premixed flame: EBU model\n"
+                    "    option: %d\n"
+                    "    cebu: %14.5e\n\n"),
+                  pm_flag[CS_COMBUSTION_EBU],
+                  cm->cebu);
+  }
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Time stepping relaxation coefficient\n"
+                  "    rho(n+1) = srrom*rho(n) + (1-srrom)*rho(n+1)\n"
+                  "    srrom: %14.5e\n"),
+                cm->srrom);
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Compute molar and mass fractions of
+ *         elementary species Ye, Xe (fuel, O2, CO2, H2O, N2) from
+ *         global species Yg (fuel, oxidant, products)
+ *
+ * \param[in]     yg            global mass fraction
+ * \param[out]    ye            elementary mass fraction
+ * \param[out]    xe            elementary molar fraction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_yg2xye(const cs_real_t  yg[],
+                         cs_real_t        ye[],
+                         cs_real_t        xe[])
+{
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+  const int n_gas_e = cm->n_gas_el_comp;
+  const int n_gas_g = cm->n_gas_species;
+
+  /* Yg -> Ye conversion */
+
+  for (int i = 0; i < n_gas_e; i++) {
+    ye[i] = 0;
+    for (int j = 0; j < n_gas_g; j++)
+      ye[i] += cm->coefeg[j][i] * yg[j];
+  }
+
+  /* Verification */
+
+  cs_real_t ytot = 0;
+  for (int i = 0; i < n_gas_e; i++)
+    ytot += ye[i];
+
+  if (ytot < 0 || (1-ytot) < -cs_math_epzero)
+    bft_printf(_(" Warning:\n"
+                 " --------\n"
+                 "   %s; mass fraction sum outside [0, 1] bounds\n"
+                 "   sum_1=1,%d Yi = %g\n\n"),
+               __func__, n_gas_e, ytot);
+
+  /* Molar mass mixture */
+
+  cs_real_t mm = 0;
+  for (int i = 0; i < n_gas_e; i++) {
+    mm += ye[i] / cm->wmole[i];
+  }
+  mm = 1 / mm;
+
+  /* Ye -> Xe conversion */
+  for (int i = 0; i < n_gas_e; i++) {
+    xe[i] = ye[i] * mm / cm->wmole[i];
+  }
 }
 
 /*----------------------------------------------------------------------------*/

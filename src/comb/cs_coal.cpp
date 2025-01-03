@@ -550,6 +550,32 @@ cs_coal_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Print pulverized combustion module options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_coal_log_setup(void)
+{
+  cs_coal_model_t *cm = cs_glob_coal_model;
+
+  if (cm == nullptr)
+    return;
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Pulverized coal combustion module options\n"
+                  "-----------------------------------------\n\n"));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Time stepping relaxation coefficient\n"
+                  "    rho(n+1) = srrom*rho(n) + (1-srrom)*rho(n+1)\n"
+                  "    srrom: %14.5e\n"),
+                cm->srrom);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add variable fields for pulverized coal combustion model.
  */
 /*----------------------------------------------------------------------------*/

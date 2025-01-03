@@ -77,11 +77,9 @@ covarp.f90 \
 d3phst.f90 \
 d3pini.f90 \
 d3pint.f90 \
-d3pver.f90 \
 ebuini.f90 \
 ebuphy.f90 \
 ebutss.f90 \
-ebuver.f90 \
 gauss.f90 \
 lwcgfu.f90 \
 lwcini.f90 \

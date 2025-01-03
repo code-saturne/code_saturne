@@ -205,6 +205,7 @@ typedef struct {
 
   double  frmel;                /*!< constant mixture fraction (EBU only) */
   double  tgf;                  /*!< fresh gas temperature (EBU and LW only) */
+  double  cebu;                 /*!< Eddy-break-up constant (EBU) */
 
   /*! molar mass of global species */
   double  wmolg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
@@ -297,6 +298,24 @@ void
 cs_combustion_gas_set_thermochemical_data_file(const char  *file_name);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Specific setup operations for gas combustion models.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Print the gas combustion module options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
 /*
  * \brief Compute molar and mass fractions of
  *        elementary species Ye, Xe (fuel, O2, CO2, H2O, N2) from
@@ -312,15 +331,6 @@ void
 cs_combustion_gas_yg2xye(const cs_real_t  yg[],
                          cs_real_t        ye[],
                          cs_real_t        xe[]);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Print the gas combustion module options to setup.log.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_combustion_gas_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 

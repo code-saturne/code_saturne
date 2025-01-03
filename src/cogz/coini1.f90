@@ -20,9 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine coini1
-!================
-
+subroutine coini1 () &
+  bind(C, name='cs_f_coini1')
 
 !===============================================================================
 !  FONCTION  :
@@ -72,7 +71,7 @@ implicit none
 ! Local variables
 
 integer          jj, iok
-integer          isc, iclvfl, kclvfl, krvarfl
+integer          isc, iclvfl, kclvfl
 double precision wmolme, turb_schmidt
 
 !===============================================================================
@@ -98,8 +97,6 @@ end interface
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
-
-call field_get_key_id("variance_dissipation", krvarfl)
 
 ! 1.1 Definition des scamin et des scamax des variables transportees
 ! ==================================================================
@@ -139,7 +136,6 @@ if (ippmod(islfm).ge.0) then
     !        scamax(ifp2m) = 0.25D0
   endif
 endif
-
 
 ! --> Flamme de premelange : modele LWC
 
@@ -192,9 +188,6 @@ else if (ippmod(islfm).ne.-1) then
   roref = ro0
 endif
 
-! --> Constante modele EBU par defaut
-cebu   =-grand
-
 ! --> Constantes modele LWC par defaut
 vref  =-grand
 lref  =-grand
@@ -221,9 +214,7 @@ irovar = 1
 ! GUI
 call cs_gui_combustion_gas_model
 
-if (ippmod(icoebu).ge.0) then
-  cebu   = 2.5d0
-else if (ippmod(icod3p).ge.0) then
+if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
   call cs_gui_combustion_gas_model_temperatures
 endif
 
@@ -232,26 +223,8 @@ endif
 !===============================================================================
 
 iok = 0
-if (ippmod(icoebu).ge.0) then
 
-  call ebuver(iok)
-  if (iok.gt.0) then
-    write(nfecra,9999)iok
-    call csexit(1)
-  else
-    write(nfecra,9998)
-  endif
-
-else if (ippmod(icod3p).ge.0) then
-  call d3pver(iok)
-  if (iok.gt.0) then
-    write(nfecra,9991)iok
-    call csexit(1)
-  else
-    write(nfecra,9990)
-  endif
-
-else if (ippmod(islfm).ge.0) then
+if (ippmod(islfm).ge.0) then
   call cs_steady_laminar_flamelet_verify(iok)
   if (iok.gt.0) then
     write(nfecra,9991)iok
@@ -271,28 +244,6 @@ else if (ippmod(icolwc).ge.0) then
 
 endif
 
- 9998 format(                                                     &
-'                                                             ',/,&
-' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                                    (usebu1).',/)
- 9999 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute (',I10,' erreurs).          ',/,&
-'@                                                            ',/,&
-'@  Se reporter aux impressions precedentes pour plus de      ',/,&
-'@    renseignements.                                         ',/,&
-'@  Verifier usebu1.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9990 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees  .',/)
@@ -335,7 +286,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
 
 return
 end subroutine

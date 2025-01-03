@@ -42,15 +42,6 @@
 
 #include "bft/bft_printf.h"
 #include "base/cs_ale.h"
-#include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo.h"
-#include "atmo/cs_atmo_variables.h"
-#include "cfbl/cs_cf_thermo.h"
-#include "comb/cs_coal_read_data.h"
-#include "ctwr/cs_ctwr.h"
-#include "ctwr/cs_ctwr_variables.h"
-#include "cdo/cs_domain_setup.h"
-#include "elec/cs_elec_model.h"
 #include "base/cs_fan.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
@@ -58,42 +49,53 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_function_default.h"
 #include "base/cs_gas_mix.h"
-#include "gui/cs_gui.h"
-#include "gui/cs_gui_boundary_conditions.h"
-#include "gui/cs_gui_mobile_mesh.h"
-#include "gui/cs_gui_output.h"
-#include "gui/cs_gui_radiative_transfer.h"
-#include "gui/cs_gui_specific_physics.h"
-#include "gwf/cs_gwf.h"
 #include "base/cs_ibm.h"
 #include "base/cs_internal_coupling.h"
-#include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_options.h"
-#include "mesh/cs_mesh_location.h"
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_physical_properties.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_porosity_from_scan.h"
 #include "base/cs_post.h"
 #include "base/cs_pressure_correction.h"
 #include "base/cs_prototypes.h"
-#include "rayt/cs_rad_transfer.h"
-#include "rayt/cs_rad_transfer_fields.h"
-#include "rayt/cs_rad_transfer_options.h"
 #include "base/cs_restart.h"
 #include "base/cs_runaway_check.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_turbomachinery.h"
-#include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_distance.h"
 #include "base/cs_wall_functions.h"
+#include "cdo/cs_domain_setup.h"
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_boundary_conditions.h"
+#include "gui/cs_gui_mobile_mesh.h"
+#include "gui/cs_gui_output.h"
+#include "gui/cs_gui_radiative_transfer.h"
+#include "gui/cs_gui_specific_physics.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_options.h"
+#include "mesh/cs_mesh_location.h"
+#include "rayt/cs_rad_transfer.h"
+#include "rayt/cs_rad_transfer_fields.h"
+#include "rayt/cs_rad_transfer_options.h"
+#include "turb/cs_turbulence_model.h"
+
+#include "pprt/cs_physical_model.h"
+#include "atmo/cs_at_data_assim.h"
+#include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_variables.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "cogz/cs_combustion_gas.h"
+#include "comb/cs_coal_read_data.h"
+#include "ctwr/cs_ctwr.h"
+#include "ctwr/cs_ctwr_variables.h"
+#include "elec/cs_elec_model.h"
+#include "gwf/cs_gwf.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -148,6 +150,9 @@ void
 cs_f_atini1(void);
 
 void
+cs_f_atini2(void);
+
+void
 cs_f_solcat(int iappel);
 
 void
@@ -164,9 +169,6 @@ cs_f_iniini(void);
 
 void
 cs_f_ppinii(void);
-
-void
-cs_f_ppini1(void);
 
 /*============================================================================
  * Private function definitions
@@ -2847,12 +2849,19 @@ _init_physical_models_1(void)
     }
   }
 
-  cs_f_ppini1(); // Calls not converted to C++ yet.
-
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0)
-    cs_coal_setup();
-
   /* Specific physical models initializations */
+
+  if (pm_flag[CS_ATMOSPHERIC] != -1)
+    cs_f_atini2();
+
+  if (   pm_flag[CS_COMBUSTION_3PT] != -1
+      || pm_flag[CS_COMBUSTION_SLFM] != -1
+      || pm_flag[CS_COMBUSTION_EBU] != -1
+      || pm_flag[CS_COMBUSTION_LW] != -1)
+    cs_combustion_gas_setup();
+
+  if (pm_flag[CS_COMBUSTION_COAL] >= 0)
+    cs_coal_setup();
 
   if (pm_flag[CS_COMPRESSIBLE] >= 0)
     cs_cf_setup();

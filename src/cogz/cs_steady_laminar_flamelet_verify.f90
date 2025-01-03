@@ -74,39 +74,8 @@ integer          iok
 ! Local variables
 
 !===============================================================================
-
-!===============================================================================
-! 1. OPTIONS DU CALCUL : TABLEAUX DE ppincl.h : formats 2000
-!===============================================================================
-
-! --> Coefficient de relaxation de la masse volumique
-
-if( srrom.lt.0d0 .or. srrom.ge.1d0) then
-  WRITE(NFECRA,2000)'SRROM ', SRROM
-  iok = iok + 1
-endif
-
-!===============================================================================
 ! 2. Physical constants
 !===============================================================================
-
-! --> Masse volumique
-
-if( ro0.lt.0d0) then
-  WRITE(NFECRA,3000)'RO0   ', RO0
-  iok = iok + 1
-endif
-
-! --> Fuel and oxydant reference entalpie
-
-if (hinfue.le.-grand) then
-  write(nfecra,3000)'hinfue', hinfue
-  iok = iok + 1
-endif
-if (hinoxy.le.-grand) then
-  write(nfecra,3000)'hinoxy', hinoxy
-  iok = iok + 1
-endif
 
 if (ngazfl.gt.ngazgm - 1) then
   write(nfecra,3001)'ngazfl',  ngazgm, ngazfl
@@ -141,49 +110,9 @@ else
 endif
 
 !===============================================================================
-! 3. Working array of coincl.h (Soot)
-!===============================================================================
-
-if (isoot.ge.1.and.iirayo.eq.0) then
-  write(nfecra,4000) isoot,iirayo
-  iok = iok + 1
-endif
-
-!===============================================================================
 ! 4. FORMATS VERIFICATION
 !===============================================================================
 
- 2000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,                            ' DOIT ETRE UN REEL    ',/,&
-'@    SUPERIEUR OU EGAL A ZERO ET INFERIEUR STRICTEMENT A 1   ',/,&
-'@    IL VAUT ICI ',E14.5                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier usd3p1.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' DOIT ETRE RENGEIGNEE PAR L''UTILISATEUR          ',/,&
-'@    IL VAUT ICI ',E14.5                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier uppmod.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  3001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -258,22 +187,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ISOOT EST POSITIONNE A ',I8,'                           ',/,&
-'@    SANS MODELE DE RAYONNEMENT (iirayo = ',i8,')            ',/,&
-'@                                                            ',/,&
-'@  Ce calcul sans interet ne sera pas execute.               ',/,&
-'@                                                            ',/,&
-'@  Verifier usppmo et usray1.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
 
 !===============================================================================
 ! 6. SORTIE

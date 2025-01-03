@@ -757,6 +757,15 @@ void
 cs_coal_setup(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print pulverized combustion module options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_coal_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
 /*
  * \brief Add variable fields for pulverized coal combustion model.
  */

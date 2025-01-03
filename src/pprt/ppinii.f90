@@ -114,20 +114,9 @@ enddo
 inpm = 0
 ifsm = 0
 
-! Initialization for compressible module
-
-! Standard compressible module scalars
-ienerg = 0
-itempk = 0
-
 !===============================================================================
-! 2. REMPLISSAGE INCLUDE ppthch.h
-!                INCLUDE THERMOCHIMIE POUR LA PHYSIQUE PARTICULIERE
+! 2. REMPLISSAGE ppthch.90 (THERMOCHIMIE)
 !===============================================================================
-
-! ---> Initialisation Common / TCHPPR /
-
-! TODO : passer en c ?
 
 do igg = 1, ngazgm
   do it = 1, npot
@@ -140,9 +129,7 @@ do igg = 1, ngazgm
 enddo
 
 !===============================================================================
-! 3. REMPLISSAGE INCLUDE coincl.h
-!                INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF A
-!                LA COMBUSTION GAZ
+! 3. REMPLISSAGE coincl.f90 POUR LA COMBUSTION GAZ
 !===============================================================================
 
 ! ---> Modele de flamme de diffusion (chimie 3 points)
@@ -185,7 +172,6 @@ flamelet_omg_c = -1
 !        Cette valeur ne sert que lors du premier appel a ebuphy
 !          (ensuite, la valeur imposee dans les CL prend le pas)
 
-cebu  = 2.5d0
 vref  = zero
 lref  = zero
 ta    = zero

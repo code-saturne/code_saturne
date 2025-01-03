@@ -49,12 +49,10 @@ use numvar
 use optcal
 use cstphy
 use entsor
-use parall
 use ppppar
 use ppthch
 use coincl
 use ppincl
-use radiat
 use field
 use cs_c_bindings
 
@@ -92,14 +90,7 @@ if (ippmod(icod3p).ne.-1) then
   do ige = 1, ngaze
     write(nfecra,'(a15,10(1x,f14.5))') trim(nomcoe(ige)), (compog(ige,igg), igg=1, ngazg)
   enddo
-else if (ippmod(islfm).ne.-1) then
-  write(nfecra,1010)
-  write(nfecra,1040) ippmod(islfm)
-else if (ippmod(icoebu).ne.-1) then
-  write(nfecra,1010)
-  write(nfecra,1030) ippmod(icoebu), cebu
 endif
-
 
  1000 format(                                                     &
                                                                 /,&
@@ -120,13 +111,6 @@ endif
  1020 format(                                                     &
 ' --- Diffusion Flame: 3 Point Chemistry',                      /,&
 '       OPTION = ',4x,i10                                       /)
- 1030 format(                                                     &
-' --- Premixed Flame: EBU Model',                               /,&
-'       OPTION = ',4x,i10,                                      /,&
-'       CEBU   = ',e14.5                                        /)
- 1040 format(                                                     &
-' --- Diffusion Flame: Steady laminar flamelet model',          /,&
-'       OPTION = ',4x,i10,                                      /)
  1070 format(                                                     &
 ' --- Combustible characteristics',                             /,&
 '       Combustible : ',4x,a,                                   /,&
@@ -156,36 +140,6 @@ write(nfecra,9900)
 '       NSCAL  = ',4x,i10,    ' (Nb scalars                  )',/,&
 '       NSCAUS = ',4x,i10,    ' (Nb user scalars             )',/,&
 '       NSCAPP = ',4x,i10,    ' (Nb specific physics scalars )',/)
-
-!===============================================================================
-! DISCRETISATION DES EQUATIONS
-!===============================================================================
-
-! --- Marche en temps
-
-if (idtvar.ge.0) then
-
-  ! Coefficient de relaxation de la masse volumique
-
-  if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0 .or. &
-      ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0 .or. &
-      ippmod(iccoal).ge.0) then
-    write(nfecra,3000)
-    write(nfecra,3050) srrom
-    write(nfecra,9900)
-
-  endif
-
-endif
-
- 3000 format(                                                     &
-                                                                /,&
-' ** TIME STEPPING',                                            /,&
-'    -------------',                                            /)
- 3050 format(                                                     &
-'--- Relaxation coefficient',                                   /,&
-'    RHO(n+1)=SRROM*RHO(n)+(1-SRROM)*RHO(n+1)',                 /,&
-'       SRROM  = ',e14.5,                                       /)
 
 return
 end subroutine

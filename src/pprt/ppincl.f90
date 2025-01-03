@@ -262,10 +262,10 @@ module ppincl
   !> \{
 
   !> specific total energy for compressible algorithm
-  integer, save :: ienerg
+  integer, save :: ienerg = 0
 
   !> temperature deduced from the specific total energy
-  integer, save :: itempk
+  integer, save :: itempk = 0
 
   !> \}
 

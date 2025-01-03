@@ -219,6 +219,7 @@ _log_global_model_options(void)
   /* Combustion */
 
   cs_combustion_gas_log_setup();
+  cs_combustion_coal_log_setup();
 
   /* TODO: iroext, etc... */
 
