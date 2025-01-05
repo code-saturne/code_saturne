@@ -5463,11 +5463,11 @@ cs_mesh_quantities_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
        ("\n"
-        "   Mesh quantity corrections:\n"));
+        "  Mesh quantity corrections:\n"));
 
     for (int i = 0; i < 8; i++) {
       if (cs_glob_mesh_quantities_flag & (1 << i))
-        cs_log_printf(CS_LOG_SETUP, "      %s\n", correction_name[i]);
+        cs_log_printf(CS_LOG_SETUP, "    %s\n", correction_name[i]);
     }
 
   }
