@@ -141,6 +141,24 @@ typedef enum {
 
 } cs_combustion_gas_model_type_t;
 
+/*! Combustion model parameters specific to Libby Williams (premixed flame) */
+
+typedef struct {
+
+  double vref;   /*!< reference velocity */
+  double lref;   /*!< reference length */
+  double ta;     /*!< activation temperature */
+  double tstar;  /*!< crossover temperature */
+  double fmin;
+  double fmax;
+  double hmin;
+  double hmax;
+  double coeff1;
+  double coeff2;
+  double coeff3;
+
+} cs_libby_williams_params_t;
+
 /*! Gas combustion model parameters structure */
 /*--------------------------------------------*/
 
@@ -226,13 +244,20 @@ typedef struct {
   double  compog[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES]
                 [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
 
-  /*! Mixing rate at the stoichiometry */
+  /*! mixing rate at the stoichiometry */
   double fs[CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS];
 
   /*! cpgazg[j][i] is the massic calorific capacity
       (J/kg/K) of the i-th global species at temperature */
   double cpgazg[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
                [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+
+  /*! massic enthalpy (J/kg) of the i-th global secies at temperature  th(j) */
+  double ehgazg[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
+               [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+
+  /*! absorption coefficient of global species */
+  double  ckabsg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
 
   /* Numerical parameters
      -------------------- */
@@ -242,10 +267,8 @@ typedef struct {
                    (hence, with a zero value, there is no sub-relaxation) */
 
   /*! Libby Williams parameters */
-  double fmin_lwc;
-  double fmax_lwc;
-  double hmin_lwc;
-  double hmax_lwc;
+
+  cs_libby_williams_params_t  lw;
 
   /*! Steady flamelet model parameters */
 

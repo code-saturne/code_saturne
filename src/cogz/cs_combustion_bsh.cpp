@@ -533,16 +533,14 @@ cs_burke_schumann(void)
   cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
   // Variables of the Burke Schumann model
-  cs_lnum_t       ii, kk, ll, nn, mm, igg;
   const cs_lnum_t N_Z_left  = 30;
   const cs_lnum_t N_Z_right = N_Z - N_Z_left;
   cs_real_t       z[N_Z], dz_left, dz_right;
 
   // Space discretization of the defect enthalpy
-  // const cs_lnum_t ngazgm    = CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES;
-  const cs_lnum_t ngazem    = CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS;
-  const cs_real_t xr1[N_XR] = { 0.0, 0.2, 0.4, 0.6, 0.8 };
-  const cs_real_t q         = 0.5;
+  const int ngazem = CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS;
+  const cs_real_t xr1[N_XR] = {0.0, 0.2, 0.4, 0.6, 0.8};
+  const cs_real_t q = 0.5;
 
   cs_real_t hunburnt, had;
   cs_real_t yspecg[N_Z][CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
@@ -558,16 +556,16 @@ cs_burke_schumann(void)
   dz_left  = pow(cm->fs[0], q) / (cs_real_t)(N_Z_left - 1);
   dz_right = pow(1.0 - cm->fs[0], q) / (cs_real_t)N_Z_right;
 
-  for (ii = 1; ii < N_Z_left; ii++) {
+  for (int ii = 1; ii < N_Z_left; ii++) {
     z[N_Z_left - ii - 1] = z[N_Z_left - 1] - pow(ii * dz_left, 1.0 / q);
   }
 
-  for (ii = 1; ii <= N_Z_right; ii++) {
+  for (int ii = 1; ii <= N_Z_right; ii++) {
     z[N_Z_left + ii - 1] = z[N_Z_left - 1] + pow(ii * dz_right, 1.0 / q);
   }
 
   // Calculation of the mass fraction of species
-  for (ii = 0; ii < N_Z; ii++) {
+  for (int ii = 0; ii < N_Z; ii++) {
     if (z[ii] <= cm->fs[0]) {
       // Oxidiser side
       yspecg[ii][0] = 0.0;
@@ -582,18 +580,18 @@ cs_burke_schumann(void)
     }
   }
 
-  for (ii = 0; ii < N_Z; ii++) {
-    for (nn = 0; nn < cm->n_gas_el_comp - 1; nn++) {
+  for (int ii = 0; ii < N_Z; ii++) {
+    for (int nn = 0; nn < cm->n_gas_el_comp - 1; nn++) {
       yspece[ii][nn] = 0.0;
-      for (igg = 0; igg < cm->n_gas_species; igg++) {
+      for (int igg = 0; igg < cm->n_gas_species; igg++) {
         yspece[ii][nn] += cm->coefeg[igg][nn] * yspecg[ii][igg];
       }
     }
   }
 
-  for (ii = 0; ii < N_Z; ii++) {
+  for (int ii = 0; ii < N_Z; ii++) {
     ytot = 0.0;
-    for (nn = 0; nn < cm->n_gas_el_comp - 1; nn++) {
+    for (int nn = 0; nn < cm->n_gas_el_comp - 1; nn++) {
       ytot += yspece[ii][nn];
     }
     yspece[ii][cm->n_gas_el_comp - 1] = 1.0 - ytot;
@@ -601,7 +599,7 @@ cs_burke_schumann(void)
 
   // Calculation of the enthalpy
 
-  for (ii = 0; ii < ngazem; ii++)
+  for (int ii = 0; ii < ngazem; ii++)
     yspec[ii] = 0;
 
   yspec[0]   = yspece[N_Z - 1][0];
@@ -612,26 +610,26 @@ cs_burke_schumann(void)
   yspec[4]   = yspece[0][cm->n_gas_el_comp - 1];
   cm->hinoxy = cs_compute_burke_schumann_enthalpy(cm->tinoxy, yspec);
 
-  for (ii = 0; ii < N_Z; ii++) {
+  for (int ii = 0; ii < N_Z; ii++) {
     had = z[ii] * cm->hinfue + (1.0 - z[ii]) * cm->hinoxy;
 
-    for (nn = 0; nn < cm->n_gas_el_comp; nn++) {
+    for (int nn = 0; nn < cm->n_gas_el_comp; nn++) {
       yspec[nn] = yspece[ii][nn];
     }
 
     hunburnt = cs_compute_burke_schumann_enthalpy(cm->tinoxy, yspec);
 
-    for (mm = 0; mm < N_XR; mm++) {
+    for (int mm = 0; mm < N_XR; mm++) {
       h[ii][mm] = xr1[mm] * (hunburnt - had) + had;
     }
-    for (mm = 0; mm < N_XR; mm++) {
+    for (int mm = 0; mm < N_XR; mm++) {
       xr[ii][mm] = -(h[ii][mm] - had);
     }
   }
 
   // Calculation of temperature
-  for (ii = 0; ii < N_Z; ii++) {
-    for (mm = 0; mm < N_XR; mm++) {
+  for (int ii = 0; ii < N_Z; ii++) {
+    for (int mm = 0; mm < N_XR; mm++) {
       t[ii][mm] = cm->tinoxy;
     }
   }
@@ -640,8 +638,8 @@ cs_burke_schumann(void)
   // Calculation of density
   _compute_density(rho, t, yspece);
 
-  for (mm = 0; mm < N_XR; mm++) {
-    for (ii = 0; ii < N_Z; ii++) {
+  for (int mm = 0; mm < N_XR; mm++) {
+    for (int ii = 0; ii < N_Z; ii++) {
       bsh_lib[mm][ii][0] = z[ii];
       bsh_lib[mm][ii][1] = xr[ii][mm];
       bsh_lib[mm][ii][2] = rho[ii][mm];
@@ -652,17 +650,17 @@ cs_burke_schumann(void)
     }
   }
 
-  cs_lnum_t jj, idx, k;
+  cs_lnum_t idx, k;
   cs_real_t zvarmin, zvarmax, dzvar;
   cs_real_t zvar[N_Z * N_ZVAR], phi[N_Z], z_m[N_Z];
 
   // Initialize z array from bsh_lib
-  for (ii = 0; ii < N_Z; ii++) {
+  for (int ii = 0; ii < N_Z; ii++) {
     z[ii] = bsh_lib[0][ii][0];
   }
 
   // Discretization on z_m
-  for (ii = 0; ii < N_Z; ii++) {
+  for (int ii = 0; ii < N_Z; ii++) {
     z_m[ii] = z[ii];
   }
 
@@ -670,23 +668,23 @@ cs_burke_schumann(void)
   z_m[N_Z - 1] = z[N_Z - 1] - 1.0e-6;
 
   // Discretization on zvar
-  for (ii = 0; ii < N_Z; ii++) {
+  for (int ii = 0; ii < N_Z; ii++) {
 
     zvarmin = 1.0e-7;
     zvarmax = z_m[ii] * (1.0 - z_m[ii]) * 0.999999;
     dzvar   = sqrt(zvarmax - zvarmin) / (cs_real_t)(N_ZVAR - 1);
 
     zvar[ii * N_ZVAR] = zvarmin;
-    for (jj = 1; jj < N_ZVAR; jj++) {
+    for (int jj = 1; jj < N_ZVAR; jj++) {
       zvar[ii * N_ZVAR + jj]
         = zvar[ii * N_ZVAR] + (cs_real_t)(jj * dzvar * jj * dzvar);
     }
   }
 
-  for (ii = 0; ii < CS_BSH_NVAR_TURB; ii++) {
-    for (jj = 0; jj < N_XR; jj++) {
-      for (kk = 0; kk < N_ZVAR; kk++) {
-        for (ll = 0; ll < N_Z; ll++) {
+  for (int ii = 0; ii < CS_BSH_NVAR_TURB; ii++) {
+    for (int jj = 0; jj < N_XR; jj++) {
+      for (int kk = 0; kk < N_ZVAR; kk++) {
+        for (int ll = 0; ll < N_Z; ll++) {
           turb_bsh_lib[ii][jj][kk][ll] = 0.0;
         }
       }
@@ -694,9 +692,9 @@ cs_burke_schumann(void)
   }
 
   // Laminar base
-  for (ii = 0; ii < N_Z; ii++) {      // Loop on the mixture fraction
-    for (jj = 0; jj < N_ZVAR; jj++) { // Loop on the variance
-      for (nn = 0; nn < N_XR; nn++) { // Loop on the defect enthalpy
+  for (int ii = 0; ii < N_Z; ii++) {      // Loop on the mixture fraction
+    for (int jj = 0; jj < N_ZVAR; jj++) { // Loop on the variance
+      for (int nn = 0; nn < N_XR; nn++) { // Loop on the defect enthalpy
 
         turb_bsh_lib[0][nn][jj][ii] = z_m[ii];
         turb_bsh_lib[1][nn][jj][ii] = zvar[ii * N_ZVAR + jj];

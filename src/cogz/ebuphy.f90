@@ -74,6 +74,9 @@ double precision coefg(ngazgm), ygfm, ygbm, epsi
 double precision nbmol , temsmm , fmel , ckabgf, ckabgb
 double precision masmgb, hgb, tgb, masmgf
 
+! Enthalpie massique gaz frais identique pour premelange frais et dilution
+double precision hgf
+
 double precision, allocatable, dimension(:) :: yfuegf, yoxygf, yprogf
 double precision, allocatable, dimension(:) :: yfuegb, yoxygb, yprogb
 double precision, allocatable, dimension(:) :: temp, masmel
@@ -275,11 +278,6 @@ do iel = 1, ncel
   endif
 
   tgb = cs_gas_combustion_h_to_t(coefg, hgb)
-
-  if ( ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2 ) then
-! ---- EBU Standard et modifie en conditions adiabatiques (sans H)
-    tgbad = tgb
-  endif
 
 ! ---> Temperature du melange
 !      Rq PPl : Il serait plus judicieux de ponderer par les CP (GF et GB)

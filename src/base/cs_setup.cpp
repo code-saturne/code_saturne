@@ -86,11 +86,12 @@
 #include "turb/cs_turbulence_model.h"
 
 #include "pprt/cs_physical_model.h"
-#include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_variables.h"
+#include "atmo/cs_at_data_assim.h"
 #include "cfbl/cs_cf_thermo.h"
 #include "cogz/cs_combustion_gas.h"
+#include "cogz/cs_combustion_read_data.h"
 #include "comb/cs_coal_read_data.h"
 #include "ctwr/cs_ctwr.h"
 #include "ctwr/cs_ctwr_variables.h"
@@ -127,9 +128,6 @@ cs_f_usipes(int *nmodpp);
 
 void
 cs_f_indsui(void);
-
-void
-cs_f_colecd(void);
 
 void
 cs_f_usppmo(void);
@@ -2565,7 +2563,7 @@ _read_specific_physics_data(void)
   if (   pm_flag[CS_COMBUSTION_3PT] != -1
       || pm_flag[CS_COMBUSTION_EBU] != -1
       || pm_flag[CS_COMBUSTION_LW] != -1)
-    cs_f_colecd();
+    cs_combustion_read_data();
 
   /* Diffusion flame - steady laminar flamelet approach */
   if (pm_flag[CS_COMBUSTION_SLFM] != -1)

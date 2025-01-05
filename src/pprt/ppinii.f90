@@ -56,7 +56,7 @@ implicit none
 
 ! Local variables
 
-integer         igg, it, ir, ih, if
+integer         igg, ih, if
 integer         idirac
 
 !===============================================================================
@@ -87,21 +87,7 @@ do idirac = 1, ndracm
 enddo
 
 !===============================================================================
-! 2. REMPLISSAGE ppthch.90 (THERMOCHIMIE)
-!===============================================================================
-
-do igg = 1, ngazgm
-  do it = 1, npot
-    ehgazg(igg,it) = zero
-  enddo
-  do ir = 1, nrgazm
-    stoeg(igg,ir) = zero
-  enddo
-  ckabsg(igg)= zero
-enddo
-
-!===============================================================================
-! 3. REMPLISSAGE coincl.f90 POUR LA COMBUSTION GAZ
+! 2. REMPLISSAGE coincl.f90 POUR LA COMBUSTION GAZ
 !===============================================================================
 
 ! ---> Modele de flamme de diffusion (chimie 3 points)
@@ -138,25 +124,8 @@ flamelet_species_name(:)  = ' '
 flamelet_c     = -1
 flamelet_omg_c = -1
 
-! ---> Modele de flamme de premelange (modele EBU et LWC)
-!      On prend 300K pour temperature des gaz frais.
-!        En suite de calcul c'est ecrase par le fichier suite
-!        Cette valeur ne sert que lors du premier appel a ebuphy
-!          (ensuite, la valeur imposee dans les CL prend le pas)
-
-vref  = zero
-lref  = zero
-ta    = zero
-tstar = zero
-hgf   = zero
-tgbad = zero
-
-coeff1 = zero
-coeff2 = zero
-coeff3 = zero
-
 !===============================================================================
-! 6. Global variables for atmospheric flows (module atincl.f90)
+! 3. Global variables for atmospheric flows (module atincl.f90)
 !===============================================================================
 
 ! ------------------------------------

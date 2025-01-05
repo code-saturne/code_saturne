@@ -138,7 +138,7 @@ _physical_properties_update_bsh(const cs_combustion_gas_model_t  *cm)
   cs_real_t *cpro_oxyd = cs_field_by_name("ym_oxyd")->val;
   cs_real_t *cpro_prod = cs_field_by_name("ym_prod")->val;
 
-  // Compute enthalpy defect, Kir
+  // Compute defect enthalpy, Kir
 
   cs_host_context ctx;
 

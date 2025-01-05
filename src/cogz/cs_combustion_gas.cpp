@@ -335,6 +335,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cs_combustion_gas_model_t  *cm;
 
   BFT_MALLOC(cm, 1, cs_combustion_gas_model_t);
+  memset(cm, 0, sizeof(cs_combustion_gas_model_t));
 
   cs_glob_combustion_gas_model = cm;
 
@@ -418,10 +419,16 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->srrom = 0.95;
 
   /* Libby Williams model */
-  cm->fmin_lwc = 0.;
-  cm->fmax_lwc = 1.;
-  cm->hmin_lwc = 0.;
-  cm->hmax_lwc = 0.;
+  cm->lw.vref = 0.;
+  cm->lw.lref = 0.;
+  cm->lw.ta = 0.;
+  cm->lw.fmin = 0.;
+  cm->lw.fmax = 1.;
+  cm->lw.hmin = 0.;
+  cm->lw.hmax = 0.;
+  cm->lw.coeff1 = 0.;
+  cm->lw.coeff2 = 0.;
+  cm->lw.coeff3 = 0.;
 
   /*! Steady flamelet model */
 

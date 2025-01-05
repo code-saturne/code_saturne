@@ -125,7 +125,9 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **xh2o,
                          double  **fs,
                          double  **th,
-                         double  **cpgazg);
+                         double  **cpgazg,
+                         double  **ehgazg,
+                         double  **ckabsg);
 
 void
 cs_f_coincl_get_pointers(int     **model_type,
@@ -149,10 +151,17 @@ cs_f_coincl_get_pointers(int     **model_type,
                          double  **pcigas,
                          double  **tinfue,
                          double  **tinoxy,
-                         double  **fmin_lwc,
-                         double  **fmax_lwc,
-                         double  **hmin_lwc,
-                         double  **hmax_lwc,
+                         double  **vref,
+                         double  **lref,
+                         double  **ta,
+                         double  **tstar,
+                         double  **fmin,
+                         double  **fmax,
+                         double  **hmin,
+                         double  **hmax,
+                         double  **coeff1,
+                         double  **coeff2,
+                         double  **coeff3,
                          double  **tgf,
                          double  **frmel,
                          double  **cebu);
@@ -179,18 +188,6 @@ cs_f_combustion_model_get_pointers(double  **srrom);
  *
  * This function is intended for use by Fortran wrappers, and
  * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ngaze  --> pointer to number of elementary species
- *   ngazg  --> pointer to number of global species
- *   nato   --> pointer to number of atomic species
- *   iic    --> pointer to rank of C in gas composition
- *   wmole  --> pointer to molar mass of elementary gas components
- *   wmolg  --> pointer to molar mass of global species
- *   wmolat --> pointer to molar mass of atomic species
- *   xco2   --> pointer to molar coefficient of co2
- *   xh2o   --> pointer to molar coefficient of h2o
- *   fs     --> pointer to mixing rate at the stoichiometry
  *----------------------------------------------------------------------------*/
 
 void
@@ -209,12 +206,16 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          double  **xh2o,
                          double  **fs,
                          double  **th,
-                         double  **cpgazg)
+                         double  **cpgazg,
+                         double  **ehgazg,
+                         double  **ckabsg)
 {
   *npo = nullptr;
   *wmolg  = nullptr;
   *th = nullptr;
   *cpgazg = nullptr;
+  *ehgazg = nullptr;
+  *ckabsg = nullptr;
 
   if (cs_glob_combustion_gas_model != nullptr) {
 
@@ -236,6 +237,8 @@ cs_f_ppthch_get_pointers(int     **ngaze,
     *fs     = cm->fs;
     *th     = cm->th;
     *cpgazg = (double *)cm->cpgazg;
+    *ehgazg = (double *)cm->ehgazg;
+    *ckabsg = (double *)cm->ckabsg;
 
   }
   else if (cs_glob_coal_model != nullptr) {
@@ -288,10 +291,17 @@ cs_f_coincl_get_pointers(int     **model_type,
                          double  **pcigas,
                          double  **tinfue,
                          double  **tinoxy,
-                         double  **fmin_lwc,
-                         double  **fmax_lwc,
-                         double  **hmin_lwc,
-                         double  **hmax_lwc,
+                         double  **vref,
+                         double  **lref,
+                         double  **ta,
+                         double  **tstar,
+                         double  **fmin,
+                         double  **fmax,
+                         double  **hmin,
+                         double  **hmax,
+                         double  **coeff1,
+                         double  **coeff2,
+                         double  **coeff3,
                          double  **tgf,
                          double  **frmel,
                          double  **cebu)
@@ -317,10 +327,17 @@ cs_f_coincl_get_pointers(int     **model_type,
   *hinoxy = nullptr;
   *tinoxy = nullptr;
   *pcigas = nullptr;
-  *fmin_lwc = nullptr;
-  *fmax_lwc = nullptr;
-  *hmin_lwc = nullptr;
-  *hmax_lwc = nullptr;
+  *vref = nullptr;
+  *lref = nullptr;
+  *ta = nullptr;
+  *tstar = nullptr;
+  *fmin = nullptr;
+  *fmax = nullptr;
+  *hmin = nullptr;
+  *hmax = nullptr;
+  *coeff1 = nullptr;
+  *coeff2 = nullptr;
+  *coeff3 = nullptr;
   *tgf = nullptr;
   *frmel = nullptr;
   *cebu = nullptr;
@@ -350,10 +367,17 @@ cs_f_coincl_get_pointers(int     **model_type,
     *hinoxy = &(cm->hinoxy);
     *tinoxy = &(cm->tinoxy);
     *pcigas = &(cm->pcigas);
-    *fmin_lwc = &(cm->fmin_lwc);
-    *fmax_lwc = &(cm->fmax_lwc);
-    *hmin_lwc = &(cm->hmin_lwc);
-    *hmax_lwc = &(cm->hmax_lwc);
+    *vref = &(cm->lw.vref);
+    *lref = &(cm->lw.lref);
+    *ta = &(cm->lw.ta);
+    *tstar = &(cm->lw.tstar);
+    *fmin = &(cm->lw.fmin);
+    *fmax = &(cm->lw.fmax);
+    *hmin = &(cm->lw.hmin);
+    *hmax = &(cm->lw.hmax);
+    *coeff1 = &(cm->lw.coeff1);
+    *coeff2 = &(cm->lw.coeff2);
+    *coeff3 = &(cm->lw.coeff3);
     *tgf = &(cm->tgf);
     *frmel = &(cm->frmel);
     *cebu = &(cm->cebu);

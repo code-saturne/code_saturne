@@ -152,7 +152,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   /* Gas combustion:
      - diffusion flame
-     - premis flame (EBU model) */
+     - premixed flame (EBU model) */
 
   if (   pm_flag[CS_COMBUSTION_3PT] >= 0
       || pm_flag[CS_COMBUSTION_SLFM] >= 0

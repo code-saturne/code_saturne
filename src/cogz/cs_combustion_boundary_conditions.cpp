@@ -589,10 +589,10 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
   cs_parall_min_loc_vals(1, &fm_min, & h_min);
   cs_parall_max_loc_vals(1, &fm_max, & h_max);
 
-  cm->fmin_lwc = fm_min;
-  cm->fmax_lwc = fm_max;
-  cm->hmin_lwc = h_min;
-  cm->hmax_lwc = h_max;
+  cm->lw.fmin = fm_min;
+  cm->lw.fmax = fm_max;
+  cm->lw.hmin = h_min;
+  cm->lw.hmax = h_max;
 }
 
 /*----------------------------------------------------------------------------*/

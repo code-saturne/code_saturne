@@ -77,31 +77,17 @@ module ppthch
 
   !> rank of O2 in gas composition
   integer, pointer, save ::  iio2
-  !> rank of H2O in gas composition
-  integer, save ::           iih2o
   !> rank of CO2 in gas composition
   integer, pointer, save ::  iico2
-  !> rank of CO in gas composition
-  integer, save ::           iico
   !> rank of C in gas composition
   integer, pointer, save ::  iic
-
-  !> rank of fuel in the r-th reaction
-  integer, save ::           igfuel(nrgazm)
-  !> rank of oxydiser in the r-th reaction
-  integer, save ::           igoxy(nrgazm)
-  !> rank of products in the r-th reaction
-  integer, save ::           igprod(nrgazm)
-
-  !> stoechiometric coefficient of global species
-  double precision, save ::  nreact(ngazgm)
 
   !> temperature (in K)
   real(c_double), pointer, save :: th(:)
 
   !> massic enthalpy (J/kg) of the i-th global secies
   !> at temperature  th(j)
-  double precision, save ::  ehgazg(ngazgm,npot)
+  real(c_double), pointer, save ::  ehgazg(:,:)
 
   !> cpgazg(ij) is the massic calorific capacity (J/kg/K) of the i-th global secies
   !> at temperature  th(j)
@@ -116,15 +102,11 @@ module ppthch
   !> molar mass of atoms
   real(c_double), pointer, save ::  wmolat(:)
 
-  !> Stoichiometry in reaction global species.  Negative for the reactants,
-  !> and positive for the products
-  double precision, save ::  stoeg(ngazgm,nrgazm)
-
   !> Mixing rate at the stoichiometry
   real(c_double), pointer, save ::  fs(:)
 
   !> Absorption coefficient of global species
-  double precision, save ::  ckabsg(ngazgm)
+  real(c_double), pointer, save ::  ckabsg(:)
 
   !> Molar coefficient of CO2
   real(c_double), pointer, save ::  xco2
@@ -152,7 +134,7 @@ module ppthch
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
          p_iic, p_iico2, p_iio2, p_npo,                                        &
          p_wmole, p_wmolg, p_wmolat,                                           &
-         p_xco2, p_xh2o, p_fs, p_th,p_cpgazg)                                  &
+         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg, p_ehgazg, p_ckabsg)             &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -160,7 +142,7 @@ module ppthch
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
          p_iic, p_iico2, p_iio2, p_npo,                                        &
          p_wmole, p_wmolg, p_wmolat,                                           &
-         p_xco2, p_xh2o, p_fs, p_th,p_cpgazg
+         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg, p_ehgazg, p_ckabsg
     end subroutine cs_f_ppthch_get_pointers
 
     !---------------------------------------------------------------------------
@@ -192,13 +174,13 @@ contains
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
          p_iic, p_iico2, p_iio2, p_npo,                                        &
          p_wmole,p_wmolg, p_wmolat,                                            &
-         p_xco2, p_xh2o, p_fs, p_th,p_cpgazg
+         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg, p_ehgazg, p_ckabsg
 
     call cs_f_ppthch_get_pointers(                                             &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
          p_iic, p_iico2, p_iio2, p_npo,                                        &
          p_wmole, p_wmolg, p_wmolat,                                           &
-         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg)
+         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg, p_ehgazg, p_ckabsg)
 
     call c_f_pointer(p_ngaze, ngaze)
     call c_f_pointer(p_ngazg, ngazg)
@@ -216,6 +198,8 @@ contains
     call c_f_pointer(p_th, th, [npot])
     call c_f_pointer(p_npo, npo)
     call c_f_pointer(p_cpgazg, cpgazg, [ngazgm, npot])
+    call c_f_pointer(p_ehgazg, ehgazg, [ngazgm, npot])
+    call c_f_pointer(p_ckabsg, ckabsg, [ngazgm])
 
   end subroutine thch_models_init
 

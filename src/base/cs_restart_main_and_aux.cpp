@@ -676,17 +676,17 @@ _write_auxiliary_checkpoint(void)
   if (cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0) {
     const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
-    cs_real_t dummy_real = cm->fmin_lwc;
-    _WRITE_REAL_VAL("fmin_lwc");
+    cs_real_t dummy_real = cm->lw.fmin;
+    _WRITE_REAL_VAL("lw.fmin");
 
-    dummy_real = cm->fmax_lwc;
-    _WRITE_REAL_VAL("fmax_lwc");
+    dummy_real = cm->lw.fmax;
+    _WRITE_REAL_VAL("lw.fmax");
 
-    dummy_real = cm->hmin_lwc;
-    _WRITE_REAL_VAL("hmin_lwc");
+    dummy_real = cm->lw.hmin;
+    _WRITE_REAL_VAL("lw.hmin");
 
-    dummy_real = cm->hmax_lwc;
-    _WRITE_REAL_VAL("hmax_lwc");
+    dummy_real = cm->lw.hmax;
+    _WRITE_REAL_VAL("lw.hmax");
 
     cs_log_printf(CS_LOG_DEFAULT, " End writing combustion information (LWC)\n");
   }
@@ -1194,21 +1194,21 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   if (cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0) {
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
-    retval = _READ_REAL_VAL("fmin_lwc");
+    retval = _READ_REAL_VAL("fmin_lw");
     if (retval == CS_RESTART_SUCCESS)
-      cm->fmin_lwc = dummy_real;
+      cm->lw.fmin = dummy_real;
 
-    retval = _READ_REAL_VAL("fmax_lwc");
+    retval = _READ_REAL_VAL("fmax_lw");
     if (retval == CS_RESTART_SUCCESS)
-      cm->fmax_lwc = dummy_real;
+      cm->lw.fmax = dummy_real;
 
-    retval = _READ_REAL_VAL("hmin_lwc");
+    retval = _READ_REAL_VAL("hmin_lw");
     if (retval == CS_RESTART_SUCCESS)
-      cm->hmin_lwc = dummy_real;
+      cm->lw.hmin = dummy_real;
 
-    retval = _READ_REAL_VAL("hmax_lwc");
+    retval = _READ_REAL_VAL("hmax_lw");
     if (retval == CS_RESTART_SUCCESS)
-      cm->hmax_lwc = dummy_real;
+      cm->lw.hmax = dummy_real;
   }
 
   /* Pulverized coal */

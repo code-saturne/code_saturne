@@ -140,14 +140,7 @@ module coincl
   !                        pour premelange frais et dilution
   !       CEBU         --> Constante Eddy break-Up
 
-  ! ---- Grandeurs deduites
-
-  !       HGF          --> Enthalpie massique gaz frais identique
-  !                        pour premelange frais et dilution
-  !       TGBAD        --> Temperature adiabatique gaz brules en K
-
   real(c_double), pointer, save :: frmel, tgf, cebu
-  double precision, save :: hgf, tgbad
 
   !--> MODELE DE FLAMME DE PREMELANGE LWC
 
@@ -170,9 +163,9 @@ module coincl
   integer, save :: ifmal(ndracm), iampl(ndracm), itscl(ndracm)
   integer, save :: imaml(ndracm), ihhhh(ndracm), imam
 
-  double precision, save :: vref, lref, ta, tstar
+  real(c_double), pointer, save :: vref, lref, ta, tstar
   real(c_double), pointer, save :: fmin, fmax, hmin, hmax
-  double precision, save :: coeff1, coeff2, coeff3
+  real(c_double), pointer, save :: coeff1, coeff2, coeff3
 
   ! --- Soot model
 
@@ -246,10 +239,10 @@ module coincl
   !> state variable: Pointer to volumetric heat release rate
   integer, save :: ihrr = -1
 
-  !> state variable: Pointer to enthalpy defect
+  !> state variable: Pointer to defect enthalpy
   integer, save :: ixr = -1
 
-  !> state variable: Pointer to enthalpy defect
+  !> state variable: Pointer to Omega C
   integer, save :: iomgc = -1
 
   !> state variable: absorption coefficient, when the radiation modelling is activated
@@ -303,8 +296,12 @@ module coincl
                                         p_hinfue, p_hinoxy,    &
                                         p_pcigas, p_tinfue,    &
                                         p_tinoxy,              &
+                                        p_vref, p_lref,        &
+                                        p_ta, p_tstar,         &
                                         p_fmin, p_fmax,        &
                                         p_hmin, p_hmax,        &
+                                        p_coeff1, p_coeff2,    &
+                                        p_coeff3,              &
                                         p_tgf, p_frmel,        &
                                         p_cebu)                &
       bind(C, name='cs_f_coincl_get_pointers')
@@ -315,8 +312,9 @@ module coincl
       type(c_ptr), intent(out) :: p_use_janaf
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot, p_lsp_fuel
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
-      type(c_ptr), intent(out) :: p_tinoxy
+      type(c_ptr), intent(out) :: p_tinoxy, p_vref, p_lref, p_ta, p_tstar
       type(c_ptr), intent(out) :: p_fmin, p_fmax, p_hmin, p_hmax
+      type(c_ptr), intent(out) :: p_coeff1, p_coeff2, p_coeff3
       type(c_ptr), intent(out) :: p_tgf, p_frmel, p_cebu
     end subroutine cs_f_coincl_get_pointers
 
@@ -362,7 +360,9 @@ contains
                    c_use_janaf, c_coefeg, c_compog, c_xsoot,           &
                    c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,           &
                    c_pcigas, c_tinfue, c_tinoxy,                       &
+                   c_vref, c_lref, c_ta, c_tstar,                      &
                    c_fmin, c_fmax, c_hmin, c_hmax,                     &
+                   c_coeff1, c_coeff2, c_coeff3,                       &
                    c_tgf, c_frmel, c_cebu
 
     call cs_f_coincl_get_pointers(c_cmtype, c_isoot, c_ngazfl, c_nki,  &
@@ -374,7 +374,9 @@ contains
                                   c_lsp_fuel,                          &
                                   c_hinfue, c_hinoxy,                  &
                                   c_pcigas, c_tinfue, c_tinoxy,        &
+                                  c_vref, c_lref, c_ta, c_tstar,       &
                                   c_fmin, c_fmax, c_hmin, c_hmax,      &
+                                  c_coeff1, c_coeff2, c_coeff3,        &
                                   c_tgf, c_frmel, c_cebu)
 
     call c_f_pointer(c_cmtype, cmtype)
@@ -398,10 +400,17 @@ contains
     call c_f_pointer(c_pcigas, pcigas)
     call c_f_pointer(c_tinfue, tinfue)
     call c_f_pointer(c_tinoxy, tinoxy)
+    call c_f_pointer(c_vref, vref)
+    call c_f_pointer(c_lref, lref)
+    call c_f_pointer(c_ta, ta)
+    call c_f_pointer(c_tstar, tstar)
     call c_f_pointer(c_fmin, fmin)
     call c_f_pointer(c_fmax, fmax)
     call c_f_pointer(c_hmin, hmin)
     call c_f_pointer(c_hmax, hmax)
+    call c_f_pointer(c_coeff1, coeff1)
+    call c_f_pointer(c_coeff2, coeff2)
+    call c_f_pointer(c_coeff3, coeff3)
     call c_f_pointer(c_tgf, tgf);
     call c_f_pointer(c_frmel, frmel);
     call c_f_pointer(c_cebu, cebu);
