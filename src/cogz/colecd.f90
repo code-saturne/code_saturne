@@ -240,24 +240,6 @@ if (use_janaf.eqv..true.) then
 
   1010 format(a150)
 
-  ! ---- Rayonnement
-
-  ! FIXME ce test n'a plus sa place ici, iirayo n'est plus fixe
-  ! dans le fichier de thermochimie
-
-  ! Le rayonnement n'est autorise qu'avec des modeles permeatiques,
-  ! car en adiabatique l'enthalpie est une grandeur algebrique qui
-  ! ne prend pas en compte les pertes par rayonnement.
-
-  if ( iirayo.gt.0 .and. ippmod(icod3p).ne.1                      &
-       .and. ippmod(icoebu).ne.1 .and. ippmod(icoebu).ne.3        &
-       .and. ippmod(icolwc).ne.1 .and. ippmod(icolwc).ne.3        &
-       .and. ippmod(icolwc).ne.5 ) then
-    write(nfecra,9982)                                            &
-         iirayo,ippmod(icod3p),ippmod(icoebu),ippmod(icolwc)
-    call csexit (1)
-  endif
-
   ! ---- Coefficient d'absorption des especes courantes
 
   read(impfpp, *, err=999, end=999) (kabse(ige), ige = 1, ngaze)
@@ -815,26 +797,6 @@ call csexit(1)
 '@',                                                            /,&
 '@  The number of tabulation points is limited to ', i10,       /,&
 '@   Its value is ', i10, ' in the parameters file.',           /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 9982 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
-'@    =====',                                                   /,&
-'@             GAS COMBUSTION',                                 /,&
-'@',                                                            /,&
-'@  The radiation model can only be activated with a',          /,&
-'@   combustion model in permeatic conditions.',                /,&
-'@',                                                            /,&
-'@  A radiation model was specified:',                          /,&
-'@   iirayo = ', i10,                                           /,&
-'@  But we have:',                                              /,&
-'@   ippmod(icod3p) = ', i10,                                   /,&
-'@   ippmod(icoebu) = ', i10,                                   /,&
-'@   ippmod(icolwc) = ', i10,                                   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

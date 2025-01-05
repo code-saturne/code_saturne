@@ -91,6 +91,61 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+static const char *
+_model_name(cs_combustion_gas_model_type_t  model_type)
+{
+  switch(model_type) {
+  case 100:
+    return "CS_COMBUSTION_3PT_ADIABATIC";
+    break;
+  case 101:
+    return "CS_COMBUSTION_3PT_PERMEATIC";
+    break;
+  case 200:
+    return "CS_COMBUSTION_SLFM_STEADY_ADIABATIC";
+    break;
+  case 201:
+    return "CS_COMBUSTION_SLFM_STEADY_PERMEATIC";
+    break;
+  case 203:
+    return "CS_COMBUSTION_SLFM_PROGRESS_PERMEATIC";
+    break;
+  case 300:
+    return "CS_COMBUSTION_EBU_CONSTANT_ADIABATIC";
+    break;
+  case 301:
+    return "CS_COMBUSTION_EBU_CONSTANT_PERMEATIC";
+    break;
+  case 302:
+    return "CS_COMBUSTION_EBU_VARIABLE_ADIABATIC";
+    break;
+  case 303:
+    return "CS_COMBUSTION_EBU_VARIABLE_PERMEATIC";
+    break;
+  case 400:
+    return "CS_COMBUSTION_LW_2PEAK_ADIABATIC";
+    break;
+  case 401:
+    return "CS_COMBUSTION_LW_2PEAK_PERMEATIC";
+    break;
+  case 402:
+    return "CS_COMBUSTION_LW_3PEAK_ADIABATIC";
+    break;
+  case 403:
+    return "CS_COMBUSTION_LW_3PEAK_PERMEATIC";
+    break;
+  case 404:
+    return "CS_COMBUSTION_LW_4PEAK_ADIABATIC";
+    break;
+  case 405:
+    return "CS_COMBUSTION_LW_4PEAK_PERMEATIC";
+    break;
+  default:
+    break;
+  }
+  return "?";
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -470,8 +525,12 @@ cs_combustion_gas_setup(void)
                                     "cebu", cm->cebu, 0.);
   }
 
-  if (   cm->isoot
-      && cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_NONE) {
+  cs_parameters_is_in_range_double(CS_ABORT_IMMEDIATE, _(section_name),
+                                   "srrom", cm->srrom, 0., 1.);
+
+  cs_rad_transfer_model_t rt_model_type = cs_glob_rad_transfer_params->type;
+
+  if (cm->isoot && rt_model_type == CS_RAD_TRANSFER_NONE) {
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _(section_name),
@@ -480,8 +539,19 @@ cs_combustion_gas_setup(void)
        cm->isoot);
   }
 
-  cs_parameters_is_in_range_double(CS_ABORT_IMMEDIATE, _(section_name),
-                                   "srrom", cm->srrom, 0., 1.);
+  if (   (cs_glob_combustion_gas_model->type)%2 == 0
+      && rt_model_type != CS_RAD_TRANSFER_NONE) {
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _(section_name),
+       _("Combustion models in adiabatic conditions are not compatible\n"
+         "with a radiative model.\n"
+         "  Active combustion model: %s\n"
+         "  Active radiation model: %d\n\n"
+         "You must use a permeatic conditions variant\n"
+         "of the combustion model or deactive the radiation model.\n"),
+       _model_name(cm->type), (int)rt_model_type);
+  }
 
   cs_parameters_error_barrier();
 }
@@ -504,6 +574,10 @@ cs_combustion_gas_log_setup(void)
                 _("\n"
                   "Gas combustion module options\n"
                   "-----------------------------\n\n"));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Model type: %s\n\n"),
+                _model_name(cm->type));
 
   const char *janaf_value_str[]
     = {N_("false (user enthalpy/temperature tabulation)"),
