@@ -1092,8 +1092,8 @@ cs_parameters_define_field_keys(void)
   /* TODO merge with previous key word */
   cs_field_define_key_int("source_term_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("slope_test_upwind_id", -1, CS_FIELD_VARIABLE);
-  cs_field_define_key_int("clipping_id", -1, CS_FIELD_VARIABLE);
-  cs_field_define_key_int("is_clipped", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("clipping_id", -1, 0);
+  cs_field_define_key_int("is_clipped", -1, 0);
 
   cs_field_define_key_int("boundary_value_id", -1, 0);
 
@@ -2193,16 +2193,20 @@ cs_parameters_eqp_complete(void)
     cs_field_t *f_rij = CS_F_(rij);
     cs_field_t *f_eps = CS_F_(eps);
     cs_equation_param_t *eqp_rij = cs_field_get_equation_param(f_rij);
-    cs_equation_param_t *eqp_eps = cs_field_get_equation_param(f_eps);
+    cs_equation_param_t *eqp_eps = nullptr;
+    if (f_eps->type & CS_FIELD_VARIABLE)
+      eqp_eps = cs_field_get_equation_param(f_eps);
     /* Daly harlow (GGDH) on Rij and epsilon by default */
     if (cs_glob_turb_rans_model->idirsm != 0) {
       eqp_rij->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
-      eqp_eps->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
+      if (eqp_eps != nullptr)
+        eqp_eps->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
       /* Scalar diffusivity (Shir model) elsewhere (idirsm = 0) */
     }
     else {
       eqp_rij->idften = CS_ISOTROPIC_DIFFUSION;
-      eqp_eps->idften = CS_ISOTROPIC_DIFFUSION;
+      if (eqp_eps != nullptr)
+        eqp_eps->idften = CS_ISOTROPIC_DIFFUSION;
     }
   }
 

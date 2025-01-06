@@ -1959,7 +1959,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     f_rij = CS_F_(rij);
     if (model == CS_TURB_RIJ_EPSILON_EBRSM)
       f_alpha = CS_F_(alp_bl);
-    eqp_eps = cs_field_get_equation_param(f_eps);
+    if (f_eps->type & CS_FIELD_VARIABLE)
+      eqp_eps = cs_field_get_equation_param(f_eps);
     eqp_rij = cs_field_get_equation_param(f_rij);
   }
   else if (model == CS_TURB_K_OMEGA) {
@@ -1973,9 +1974,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   const cs_real_t sigmak = (f_k != nullptr) ?
     cs_field_get_key_double(f_k, ksigmas) : 0;
-  const cs_real_t sigmae = (f_eps != nullptr) ?
-    cs_field_get_key_double(f_eps, ksigmas) : 0;
-
+  cs_real_t sigmae = 0.;
+  if (f_eps != nullptr)
+    if(f_eps->type & CS_FIELD_VARIABLE)
+      sigmae = cs_field_get_key_double(f_eps, ksigmas);
   if (f_eps != nullptr) {
     if (    (f_eps->type & CS_FIELD_VARIABLE)
         && !(f_eps->type & CS_FIELD_CDO)) {
@@ -3168,108 +3170,111 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Epsilon
          NB: no reconstruction, possibility of partial implicitation */
 
-      /* Symmetric tensor diffusivity (Daly Harlow -- GGDH) */
-      if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
+      if (eqp_eps != nullptr) {
+        /* Symmetric tensor diffusivity (Daly Harlow -- GGDH) */
+        if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
 
-        visci[0][0] = visclc + visten[c_id][0] / sigmae;
-        visci[1][1] = visclc + visten[c_id][1] / sigmae;
-        visci[2][2] = visclc + visten[c_id][2] / sigmae;
-        visci[0][1] =          visten[c_id][3] / sigmae;
-        visci[1][0] =          visten[c_id][3] / sigmae;
-        visci[1][2] =          visten[c_id][4] / sigmae;
-        visci[2][1] =          visten[c_id][4] / sigmae;
-        visci[0][2] =          visten[c_id][5] / sigmae;
-        visci[2][0] =          visten[c_id][5] / sigmae;
+          visci[0][0] = visclc + visten[c_id][0] / sigmae;
+          visci[1][1] = visclc + visten[c_id][1] / sigmae;
+          visci[2][2] = visclc + visten[c_id][2] / sigmae;
+          visci[0][1] =          visten[c_id][3] / sigmae;
+          visci[1][0] =          visten[c_id][3] / sigmae;
+          visci[1][2] =          visten[c_id][4] / sigmae;
+          visci[2][1] =          visten[c_id][4] / sigmae;
+          visci[0][2] =          visten[c_id][5] / sigmae;
+          visci[2][0] =          visten[c_id][5] / sigmae;
 
-        /* ||Ki.S||^2 */
-        const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
-                                              + visci[1][0]*n[1]
-                                              + visci[2][0]*n[2])
-                               + cs_math_pow2(  visci[0][1]*n[0]
-                                              + visci[1][1]*n[1]
-                                              + visci[2][1]*n[2])
-                               + cs_math_pow2(  visci[0][2]*n[0]
-                                              + visci[1][2]*n[1]
-                                              + visci[2][2]*n[2]);
+          /* ||Ki.S||^2 */
+          const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
+                                                + visci[1][0]*n[1]
+                                                + visci[2][0]*n[2])
+                                 + cs_math_pow2(  visci[0][1]*n[0]
+                                                + visci[1][1]*n[1]
+                                                + visci[2][1]*n[2])
+                                 + cs_math_pow2(  visci[0][2]*n[0]
+                                                + visci[1][2]*n[1]
+                                                + visci[2][2]*n[2]);
 
-        /* if.ki.s */
-        cs_real_t fikis
-          = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
-             + cs_math_3_dot_product(dist, visci[1]) * n[1]
-             + cs_math_3_dot_product(dist, visci[2]) * n[2]);
+          /* if.ki.s */
+          cs_real_t fikis
+            = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
+               + cs_math_3_dot_product(dist, visci[1]) * n[1]
+               + cs_math_3_dot_product(dist, visci[2]) * n[2]);
 
-        /* take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
-             nb: eps =1.d-1 must be consistent
-             with `cs_face_anisotropic_viscosity_scalar`. */
-          fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distbf);
+          /* take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
+               nb: eps =1.d-1 must be consistent
+               with `cs_face_anisotropic_viscosity_scalar`. */
+            fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distbf);
 
-          hint = viscis / fikis;
-      }
+            hint = viscis / fikis;
+        }
 
-      /* Scalar diffusivity */
-      else {
-        hint = (visclc + visctc / sigmae) / distbf;
-      }
+        /* Scalar diffusivity */
+        else {
+          hint = (visclc + visctc / sigmae) / distbf;
+        }
 
-      if (model == CS_TURB_RIJ_EPSILON_LRR || model == CS_TURB_RIJ_EPSILON_SSG
-          || (order == CS_TURB_SECOND_ORDER && icodcl_vel[f_id] == 6)) {
+        if (model == CS_TURB_RIJ_EPSILON_LRR || model == CS_TURB_RIJ_EPSILON_SSG
+            || (order == CS_TURB_SECOND_ORDER && icodcl_vel[f_id] == 6)) {
 
-        /* Si yplus=0, on met coefa a 0 directement pour eviter une division
-           par 0 */
-        /* Compute pimp for smooth wall */
-        cs_real_t pimp = 0.;
-        if (yplus > cs_math_epzero && iuntur == 1)
-          pimp =   distbf * 4 * pow(uk, 5)
-                 / (xkappa * xnuii * xnuii * cs_math_pow2(yplus + 2*dplus));
-        else
-          pimp = 0.;
+          /* Si yplus=0, on met coefa a 0 directement pour eviter une division
+             par 0 */
+          /* Compute pimp for smooth wall */
+          cs_real_t pimp = 0.;
+          if (yplus > cs_math_epzero && iuntur == 1)
+            pimp =   distbf * 4 * pow(uk, 5)
+                   / (xkappa * xnuii * xnuii * cs_math_pow2(yplus + 2*dplus));
+          else
+            pimp = 0.;
 
-        /* Neumann Boundary Condition
-           -------------------------- */
+          /* Neumann Boundary Condition
+             -------------------------- */
 
-        if (cs_glob_turb_rans_model->iclptr == 1 || icodcl_vel[f_id] == 6) {
-          /* TODO not available for k-eps */
+          if (cs_glob_turb_rans_model->iclptr == 1 || icodcl_vel[f_id] == 6) {
+            /* TODO not available for k-eps */
 
-          /* TODO transform it, it is only to be fully equivalent */
-          cs_real_t qimp = - pimp * hint;
-          pimp = pimp * cfnne;
+            /* TODO transform it, it is only to be fully equivalent */
+            cs_real_t qimp = - pimp * hint;
+            pimp = pimp * cfnne;
 
-          if (icodcl_vel[f_id] == 6) {
-            pimp = cs_math_pow3(uk)/(xkappa*ydep*ydep)*distbf*cfnne;
+            if (icodcl_vel[f_id] == 6) {
+              pimp = cs_math_pow3(uk)/(xkappa*ydep*ydep)*distbf*cfnne;
 
-            /* TODO transform it to use d eps / d y directly */
-            qimp = - pimp * hint;
+              /* TODO transform it to use d eps / d y directly */
+              qimp = - pimp * hint;
+            }
+
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                                                      f_eps->bc_coeffs,
+                                                      qimp,
+                                                      hint);
+
           }
 
-          cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                    f_eps->bc_coeffs,
-                                                    qimp,
-                                                    hint);
+          /* Dirichlet Boundary Condition
+             ---------------------------- */
 
-        }
+          else { /* Only for smooth wall */
 
-        /* Dirichlet Boundary Condition
-           ---------------------------- */
+            const cs_real_t *cvar_ep = (const cs_real_t *)f_eps->val;
 
-        else { /* Only for smooth wall */
+            pimp = pimp + cvar_ep[c_id];
+            pimp = pimp * cfnne;
 
-          const cs_real_t *cvar_ep = (const cs_real_t *)f_eps->val;
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        f_eps->bc_coeffs,
+                                                        pimp,
+                                                        hint,
+                                                        cs_math_infinite_r);
 
-          pimp = pimp + cvar_ep[c_id];
-          pimp = pimp * cfnne;
-
-          cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                      f_eps->bc_coeffs,
-                                                      pimp,
-                                                      hint,
-                                                      cs_math_infinite_r);
-
-        }
+          }
+        } /* End on epsilon */
 
         /* If defined set Dirichlet condition for the Lagrangian time scale */
 
         if (f_tlag != nullptr) {
 
+          cs_real_t pimp = 0.;
           if (cs_glob_wall_functions->iwallf == 0) {
             /* No wall functions forced by user */
             pimp = 0.;

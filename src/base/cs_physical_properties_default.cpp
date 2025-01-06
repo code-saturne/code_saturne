@@ -252,7 +252,8 @@ _compute_turbulence_mu(const cs_lnum_t  n_cells)
   else if (cs_glob_turb_model->itytur == 2)
     cs_turbulence_ke_mu_t(-1);
 
-  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
+  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
+      && cs_glob_turb_model->type == CS_TURB_RANS)
     cs_turbulence_rij_mu_t(-1);
 
   // LES (Smagorinsky, dynamic Smagorinsky, or Wale)
@@ -263,6 +264,10 @@ _compute_turbulence_mu(const cs_lnum_t  n_cells)
       cs_les_mu_t_smago_dyn();
     else if (cs_glob_turb_model->model == CS_TURB_LES_WALE)
       cs_les_mu_t_wale();
+    else if (cs_glob_turb_model->model == CS_TURB_LES_KSGS)
+      cs_les_mu_t_ksgs();
+    else if (cs_glob_turb_model->model == CS_TURB_LES_TAUSGS)
+      cs_les_mu_t_tausgs();
   }
 
   // v2f (phi-model and BL-v2/k)

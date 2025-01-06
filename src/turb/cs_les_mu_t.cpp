@@ -896,6 +896,72 @@ cs_les_mu_t_wale(void)
   BFT_FREE(gradv);
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Calculation of turbulent viscosity for
+ *        a k-SGS LES model
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_mu_t_ksgs(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  /* Initialization
+   * ============== */
+
+  cs_real_t *visct =  CS_F_(mu_t)->val;
+  const cs_real_t *crom  = CS_F_(rho)->val;
+  cs_real_t *cvar_k = CS_F_(k)->val;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+    /* Calculation of (dynamic) viscosity */
+
+    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                 cs_turb_bles);
+    visct[c_id] = crom[c_id] * cs_turb_csmago * delta * sqrt(cvar_k[c_id]);
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Calculation of turbulent viscosity for
+ *        a tau-SGS LES model
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_mu_t_tausgs(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  /* Initialization
+   * ============== */
+
+  cs_real_t *visct =  CS_F_(mu_t)->val;
+  const cs_real_t *crom  = CS_F_(rho)->val;
+  cs_real_6_t *cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+    /* Calculation of (dynamic) viscosity */
+
+    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+                                                 cs_turb_bles);
+    cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+    visct[c_id] = crom[c_id] * cs_turb_csmago * delta * sqrt(tke);
+  }
+
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

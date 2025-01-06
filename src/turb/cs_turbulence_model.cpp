@@ -1326,6 +1326,12 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
   case CS_TURB_LES_WALE:
     s = "CS_TURB_LES_WALE";
     break;
+  case CS_TURB_LES_KSGS:
+    s = "CS_TURB_LES_KSGS";
+    break;
+  case CS_TURB_LES_TAUSGS:
+    s = "CS_TURB_LES_TAUSGS";
+    break;
   case CS_TURB_V2F_PHI:
     s = "CS_TURB_V2F_PHI";
     break;
@@ -1392,7 +1398,14 @@ cs_turbulence_init_models(void)
     _turb_model.type = CS_TURB_LES;
     _turb_model.order = CS_TURB_ALGEBRAIC;
   }
-
+  else if (   _turb_model.model == CS_TURB_LES_KSGS) {
+    _turb_model.type = CS_TURB_LES;
+    _turb_model.order = CS_TURB_FIRST_ORDER;
+  }
+  else if (   _turb_model.model == CS_TURB_LES_TAUSGS) {
+    _turb_model.type = CS_TURB_LES;
+    _turb_model.order = CS_TURB_SECOND_ORDER;
+  }
   else {
     _turb_model.model = 0;
     _turb_model.itytur = CS_TURB_TYPE_NONE;
@@ -1653,6 +1666,12 @@ cs_turbulence_model_name(cs_turb_model_type_t  id)
     break;
   case CS_TURB_LES_WALE:
     s = _("LES (WALE)");
+    break;
+  case CS_TURB_LES_KSGS:
+    s = _("LES (k SGS)");
+    break;
+  case CS_TURB_LES_TAUSGS:
+    s = _("LES (tau SGS)");
     break;
   case CS_TURB_V2F_PHI:
     s = _("v2f phi-model");

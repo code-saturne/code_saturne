@@ -666,6 +666,9 @@ _solve_turbulence(cs_lnum_t   n_cells,
       && (   cs_glob_turb_model->itytur == 2
           || cs_glob_turb_model->itytur == 3
           || cs_glob_turb_model->itytur == 5
+          || cs_glob_turb_model->model == CS_TURB_LES_TAUSGS
+          || cs_glob_turb_model->model == CS_TURB_LES_KSGS
+          || cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS
           || cs_glob_turb_model->model == CS_TURB_K_OMEGA)) {
     bft_printf
       (_(" ------------------------------------------------------------\n\n"
@@ -709,7 +712,7 @@ _solve_turbulence(cs_lnum_t   n_cells,
       cs_turbulence_htles();
 
   }
-  else if (cs_glob_turb_model->itytur == 3) {
+  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
     if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
       cs_turbulence_rij_solve_alpha(CS_F_(alp_bl)->id, -1, cs_turb_xcl);
     cs_turbulence_rij(-1);

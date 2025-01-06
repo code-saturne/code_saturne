@@ -2203,137 +2203,138 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       }
 
       /* epsilon */
+      if (CS_F_(eps)->type & CS_FIELD_VARIABLE) {
+        cs_field_t *eps = CS_F_(eps);
 
-      cs_field_t *eps = CS_F_(eps);
+        int *icodcl_eps = eps->bc_coeffs->icodcl;
+        cs_real_t *rcodcl1_eps = eps->bc_coeffs->rcodcl1;
+        cs_real_t *rcodcl2_eps = eps->bc_coeffs->rcodcl2;
+        cs_real_t *rcodcl3_eps = eps->bc_coeffs->rcodcl3;
 
-      int *icodcl_eps = eps->bc_coeffs->icodcl;
-      cs_real_t *rcodcl1_eps = eps->bc_coeffs->rcodcl1;
-      cs_real_t *rcodcl2_eps = eps->bc_coeffs->rcodcl2;
-      cs_real_t *rcodcl3_eps = eps->bc_coeffs->rcodcl3;
+        cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
 
-      cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
+        cs_equation_param_t *eqp_eps = cs_field_get_equation_param(eps);
+        f_a_t_visc = nullptr, visten = nullptr;
 
-      cs_equation_param_t *eqp_eps = cs_field_get_equation_param(eps);
-      f_a_t_visc = nullptr, visten = nullptr;
-
-      if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
-        f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
-        visten = (cs_real_6_t *)f_a_t_visc->val;
-      }
-
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-
-        const cs_lnum_t c_id = b_face_cells[f_id];
-        const cs_real_t surf = b_face_surf[f_id];
-
-        /* --- Physical Properties */
-        const cs_real_t visclc = viscl[c_id];
-        const cs_real_t visctc = visct[c_id];
-        cs_real_t hint = 0.;
-
-        /* Geometric quantities */
-        const cs_real_t distfi = b_dist[f_id];
-        cs_real_t visci[3][3], dist[3];
-        const cs_real_t *n = b_face_normal[f_id];
-
-        dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
-        dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
-        dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
-
-        /* Symmetric tensor diffusivity (Daly Harlow - GGDH) */
         if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
-
-          visci[0][0] = visclc + visten[c_id][0]/sigmae;
-          visci[1][1] = visclc + visten[c_id][1]/sigmae;
-          visci[2][2] = visclc + visten[c_id][2]/sigmae;
-          visci[0][1] =          visten[c_id][3]/sigmae;
-          visci[1][0] =          visten[c_id][3]/sigmae;
-          visci[1][2] =          visten[c_id][4]/sigmae;
-          visci[2][1] =          visten[c_id][4]/sigmae;
-          visci[0][2] =          visten[c_id][5]/sigmae;
-          visci[2][0] =          visten[c_id][5]/sigmae;
-
-          /* ||Ki.S||^2 */
-          const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
-                                                + visci[1][0]*n[1]
-                                                + visci[2][0]*n[2])
-                                 + cs_math_pow2(  visci[0][1]*n[0]
-                                                + visci[1][1]*n[1]
-                                                + visci[2][1]*n[2])
-                                 + cs_math_pow2(  visci[0][2]*n[0]
-                                                + visci[1][2]*n[1]
-                                                + visci[2][2]*n[2]);
-
-          /* IF.Ki.S */
-          cs_real_t fikis
-            = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
-               + cs_math_3_dot_product(dist, visci[1]) * n[1]
-               + cs_math_3_dot_product(dist, visci[2]) * n[2]);
-
-          /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-             NB: eps =1.d-1 must be consistent
-             with `cs_face_anisotropic_viscosity_scalar`. */
-          fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distfi);
-
-          hint = viscis / surf / fikis;
+          f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
+          visten = (cs_real_6_t *)f_a_t_visc->val;
         }
 
-        /* Scalar diffusivity */
+        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-        else
-          hint = (visclc + visctc / sigmae) / distfi;
+          const cs_lnum_t c_id = b_face_cells[f_id];
+          const cs_real_t surf = b_face_surf[f_id];
 
-        /* Dirichlet Boundary Condition
-           ---------------------------- */
+          /* --- Physical Properties */
+          const cs_real_t visclc = viscl[c_id];
+          const cs_real_t visctc = visct[c_id];
+          cs_real_t hint = 0.;
 
-        if (icodcl_eps[f_id] == 1) {
+          /* Geometric quantities */
+          const cs_real_t distfi = b_dist[f_id];
+          cs_real_t visci[3][3], dist[3];
+          const cs_real_t *n = b_face_normal[f_id];
 
-          const cs_real_t pimp = rcodcl1_eps[f_id];
-          const cs_real_t hext = rcodcl2_eps[f_id];
+          dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
+          dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
+          dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
 
-          cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                      eps->bc_coeffs,
-                                                      pimp,
-                                                      hint,
-                                                      hext);
-        }
+          /* Symmetric tensor diffusivity (Daly Harlow - GGDH) */
+          if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
 
-        /* Neumann Boundary Condition
-           -------------------------- */
+            visci[0][0] = visclc + visten[c_id][0]/sigmae;
+            visci[1][1] = visclc + visten[c_id][1]/sigmae;
+            visci[2][2] = visclc + visten[c_id][2]/sigmae;
+            visci[0][1] =          visten[c_id][3]/sigmae;
+            visci[1][0] =          visten[c_id][3]/sigmae;
+            visci[1][2] =          visten[c_id][4]/sigmae;
+            visci[2][1] =          visten[c_id][4]/sigmae;
+            visci[0][2] =          visten[c_id][5]/sigmae;
+            visci[2][0] =          visten[c_id][5]/sigmae;
 
-        else if (icodcl_eps[f_id] == 3) {
+            /* ||Ki.S||^2 */
+            const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
+                + visci[1][0]*n[1]
+                + visci[2][0]*n[2])
+              + cs_math_pow2(  visci[0][1]*n[0]
+                  + visci[1][1]*n[1]
+                  + visci[2][1]*n[2])
+              + cs_math_pow2(  visci[0][2]*n[0]
+                  + visci[1][2]*n[1]
+                  + visci[2][2]*n[2]);
 
-          const cs_real_t dimp = rcodcl3_eps[f_id];
+            /* IF.Ki.S */
+            cs_real_t fikis
+              = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
+                  + cs_math_3_dot_product(dist, visci[1]) * n[1]
+                  + cs_math_3_dot_product(dist, visci[2]) * n[2]);
 
-          cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                    eps->bc_coeffs,
-                                                    dimp,
-                                                    hint);
-        }
+            /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+NB: eps =1.d-1 must be consistent
+with `cs_face_anisotropic_viscosity_scalar`. */
+            fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distfi);
 
-        /* Convective Boundary Condition
-           ----------------------------- */
+            hint = viscis / surf / fikis;
+          }
 
-        else if (icodcl_eps[f_id] == 2) {
+          /* Scalar diffusivity */
 
-          const cs_real_t pimp = rcodcl1_eps[f_id];
-          const cs_real_t cfl =  rcodcl2_eps[f_id];
+          else
+            hint = (visclc + visctc / sigmae) / distfi;
 
-          cs_boundary_conditions_set_convective_outlet_scalar
-            (f_id, eps->bc_coeffs, pimp, cfl, hint);
-        }
+          /* Dirichlet Boundary Condition
+             ---------------------------- */
 
-        /* Imposed value for the convection operator,
-           imposed flux for diffusion
-           ----------------------------------------- */
+          if (icodcl_eps[f_id] == 1) {
 
-        else if (icodcl_eps[f_id] == 13) {
+            const cs_real_t pimp = rcodcl1_eps[f_id];
+            const cs_real_t hext = rcodcl2_eps[f_id];
 
-          const cs_real_t pimp = rcodcl1_eps[f_id];
-          const cs_real_t dimp = rcodcl3_eps[f_id];
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                eps->bc_coeffs,
+                pimp,
+                hint,
+                hext);
+          }
 
-          cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-            (f_id, eps->bc_coeffs, pimp, dimp);
+          /* Neumann Boundary Condition
+             -------------------------- */
+
+          else if (icodcl_eps[f_id] == 3) {
+
+            const cs_real_t dimp = rcodcl3_eps[f_id];
+
+            cs_boundary_conditions_set_neumann_scalar(f_id,
+                eps->bc_coeffs,
+                dimp,
+                hint);
+          }
+
+          /* Convective Boundary Condition
+             ----------------------------- */
+
+          else if (icodcl_eps[f_id] == 2) {
+
+            const cs_real_t pimp = rcodcl1_eps[f_id];
+            const cs_real_t cfl =  rcodcl2_eps[f_id];
+
+            cs_boundary_conditions_set_convective_outlet_scalar
+              (f_id, eps->bc_coeffs, pimp, cfl, hint);
+          }
+
+          /* Imposed value for the convection operator,
+             imposed flux for diffusion
+             ----------------------------------------- */
+
+          else if (icodcl_eps[f_id] == 13) {
+
+            const cs_real_t pimp = rcodcl1_eps[f_id];
+            const cs_real_t dimp = rcodcl3_eps[f_id];
+
+            cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
+              (f_id, eps->bc_coeffs, pimp, dimp);
+          }
         }
       }
 

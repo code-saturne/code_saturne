@@ -368,7 +368,7 @@ cs_turbulence_init_clip_and_verify(void)
            "    Maximum value of epsilon = %g\n\n"
            "  Check user-defined initialization, restart data,\n"
            "  and value of reference velocity (uref)\n"),
-         v_min[0], v_min[1], v_min[3], v_min[3]);
+         v_min[0], v_min[1], v_min[2], v_min[3]);
     }
 
     if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {

@@ -578,8 +578,10 @@ _create_variable_fields(void)
                          _add_variable_field("rij", "Rij", 6));
     cs_field_set_key_int(CS_F_(rij), keycpl, 1);
 
-    cs_field_pointer_map(CS_ENUMF_(eps),
-                         _add_variable_field("epsilon", "Turb Dissipation", 1));
+    /* epsilon given by an algebraic relation in LES with transport of tau_SGS */
+    if (model != CS_TURB_LES_TAUSGS)
+      cs_field_pointer_map(CS_ENUMF_(eps),
+                           _add_variable_field("epsilon", "Turb Dissipation", 1));
 
     if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_pointer_map(CS_ENUMF_(alp_bl),
@@ -798,7 +800,13 @@ _create_property_fields(void)
     if (turb_model->model == CS_TURB_NONE)
       _hide_field(f);
   }
-
+  if (turb_model->model == CS_TURB_LES_TAUSGS
+      || turb_model->model == CS_TURB_LES_KSGS)
+  {
+    f = _add_property_field("epsilon", "Epsilon SGS",
+                            1, true);
+    cs_field_pointer_map(CS_ENUMF_(eps), f);
+  }
   /* Hybrid RANS/LES function f_d is stored for Post Processing in hybrid_blend.
      If the hybrid spatial scheme is activated for the velocity (ischcv=3)
      create field hybrid_blend which contains the local blending factor. */
@@ -2144,7 +2152,9 @@ _additional_fields_stage_2(void)
 
   /* Van Driest damping */
   if (cs_glob_turb_les_model->idries == -1) {
-    if (cs_glob_turb_model->model == 40)
+    if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_CONST
+        || cs_glob_turb_model->model == CS_TURB_LES_KSGS
+        || cs_glob_turb_model->model == CS_TURB_LES_TAUSGS)
       turb_les_param->idries = 1;
     else if (   cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN
              || cs_glob_turb_model->model == CS_TURB_LES_WALE)

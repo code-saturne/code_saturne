@@ -3361,7 +3361,8 @@ cs_turbulence_rij(int phase_id)
   CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
   CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
-  if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR) {
+  if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR
+      || turb_model->model == CS_TURB_LES_TAUSGS) {
     if (turb_rans_model->irijco == 1)
       _pre_solve_lrr(f_rij, phase_id, gradv,
                      produc, up_rhop, grav,
@@ -3480,6 +3481,7 @@ cs_turbulence_rij(int phase_id)
   /* Solve Epsilon
    * ------------- */
 
+  if (turb_model->model != CS_TURB_LES_TAUSGS)
   {
     cs_real_t *_rhs, *_fimp;
     CS_MALLOC_HD(_rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -3497,6 +3499,18 @@ cs_turbulence_rij(int phase_id)
 
     CS_FREE_HD(_fimp);
     CS_FREE_HD(_rhs);
+  }
+  else {
+    const cs_real_t *cell_vol = fvq->cell_vol;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+
+      /* Calculation of epsilon */
+
+      const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
+          cs_turb_bles);
+      cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+      cvar_ep[c_id] = pow(tke, 1.5) / delta; //TODO: ajouter constante ?
+    }
   }
 
   /* Clipping

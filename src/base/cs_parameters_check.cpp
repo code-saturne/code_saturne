@@ -2178,7 +2178,7 @@ cs_parameters_check(void)
   /* Turbulence */
 
   /* Model */
-  const int iturb_vals[16] = {CS_TURB_NONE,   /* laminar */
+  const int iturb_vals[18] = {CS_TURB_NONE,   /* laminar */
                               CS_TURB_MIXING_LENGTH,
                               CS_TURB_K_EPSILON,
                               CS_TURB_K_EPSILON_LIN_PROD,
@@ -2190,6 +2190,8 @@ cs_parameters_check(void)
                               CS_TURB_LES_SMAGO_CONST,
                               CS_TURB_LES_SMAGO_DYN,
                               CS_TURB_LES_WALE,
+                              CS_TURB_LES_KSGS,
+                              CS_TURB_LES_TAUSGS,
                               CS_TURB_V2F_PHI,
                               CS_TURB_V2F_BL_V2K,
                               CS_TURB_K_OMEGA,
