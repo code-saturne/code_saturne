@@ -2254,15 +2254,15 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             visci[2][0] =          visten[c_id][5]/sigmae;
 
             /* ||Ki.S||^2 */
-            const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
-                + visci[1][0]*n[1]
-                + visci[2][0]*n[2])
-              + cs_math_pow2(  visci[0][1]*n[0]
-                  + visci[1][1]*n[1]
-                  + visci[2][1]*n[2])
-              + cs_math_pow2(  visci[0][2]*n[0]
-                  + visci[1][2]*n[1]
-                  + visci[2][2]*n[2]);
+            const cs_real_t viscis =   cs_math_pow2(  visci[0][0]*n[0]
+                                                    + visci[1][0]*n[1]
+                                                    + visci[2][0]*n[2])
+                                     + cs_math_pow2(  visci[0][1]*n[0]
+                                                    + visci[1][1]*n[1]
+                                                    + visci[2][1]*n[2])
+                                     + cs_math_pow2(  visci[0][2]*n[0]
+                                                    + visci[1][2]*n[1]
+                                                    + visci[2][2]*n[2]);
 
             /* IF.Ki.S */
             cs_real_t fikis
@@ -2271,8 +2271,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                   + cs_math_3_dot_product(dist, visci[2]) * n[2]);
 
             /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-NB: eps =1.d-1 must be consistent
-with `cs_face_anisotropic_viscosity_scalar`. */
+               NB: eps =1.d-1 must be consistent
+               with `cs_face_anisotropic_viscosity_scalar`. */
             fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distfi);
 
             hint = viscis / surf / fikis;
