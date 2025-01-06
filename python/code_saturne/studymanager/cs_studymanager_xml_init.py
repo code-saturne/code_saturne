@@ -127,6 +127,11 @@ class smgr_xml_init(BaseXmlInit):
                 except Exception:
                     pass
 
+        # Remove compute, compare and post tags to case node
+        for o_attr in ['compare', 'compute', 'post']:
+            for node in self.case.xmlGetNodeList('case', o_attr):
+                val = node.xmlGetAttribute(o_attr)
+                node.xmlDelAttribute(o_attr)
 
     def countPreproNodes(self):
         """

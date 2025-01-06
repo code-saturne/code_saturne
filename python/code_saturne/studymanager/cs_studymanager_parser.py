@@ -234,7 +234,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on'>
-                <case label='CASE' status='on' compute="on" post="on"/>
+                <case label='CASE' status='on'/>
             </study>
 
         @rtype: C{List} of C{String}
@@ -259,7 +259,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on'>
-                <case label='CASE' status='on' compute="on" post="on"/>
+                <case label='CASE' status='on'/>
             </study>
 
         @type l: C{String}
@@ -288,7 +288,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on' tags='coarse, test'>
-                <case label='CASE' status='on' compute="on" post="on"/>
+                <case label='CASE' status='on'/>
             </study>
 
         @type studyNode: C{DOM Element}
@@ -314,7 +314,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on' keywords='laminar, 2D'>
-                <case label='CASE' status='on' compute="on" post="on"/>
+                <case label='CASE' status='on'/>
             </study>
 
         @type studyNode: C{DOM Element}
@@ -338,13 +338,13 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on'>
-                <case label='CASE' status='on' compute="on" post="on"/>
+                <case label='CASE' status='on'/>
             </study>
 
         @type l: C{String}
         @param l: label of a study
         @type attr: C{String}
-        @param attr: attribute I{compute} or I{post}
+        @param attr: attribute I{run_id} or I{tags} or I{other}
         @rtype: C{List} of C{String}
         @return: list of cases for study I{l}
         """
@@ -440,8 +440,8 @@ class Parser(object):
         """
         Read N_PROCS and USER_INPUT_FILES in:
             <study label='STUDY' status='on'>
-                <case label='CASE1' run_id ="Grid 1" status='on' compute="on" post="on"/>
-                <case label='CASE2' status='on' compute="on" post="on" compare="on"/>
+                <case label='CASE1' run_id ="Grid 1" status='on'/>
+                <case label='CASE2' status='on'/>
             </study>
         @type l: C{String}
         @param l: label of a study
@@ -450,6 +450,7 @@ class Parser(object):
         """
         data = []
         list_case = {}
+        deprecated_option = False
 
         setup_filter_keys = ("notebook", "parametric", "kw_args")
 
@@ -457,10 +458,16 @@ class Parser(object):
             if str(node.attributes["status"].value) == 'on':
 
                 d = {}
-                d['node']    = node
-                d['label']   = str(node.attributes["label"].value)
-                d['compute'] = str(node.attributes["compute"].value)
-                d['post']    = str(node.attributes["post"].value)
+                d['node']  = node
+                d['label'] = str(node.attributes["label"].value)
+
+                # Deprecated compute, compare and post options
+                try:
+                    if node.attributes["compute"] or node.attributes["post"] or node.attributes["compare"]:
+                        deprecated_option = True
+                except:
+                    # no deprecated option
+                    pass
 
                 # dictionary used to set missing run_id
                 if d['label'] in list(list_case.keys()):
@@ -475,11 +482,6 @@ class Parser(object):
                         d['run_id'] = "run" + str(list_case[d['label']])
                 except:
                     d['run_id'] = "run" + str(list_case[d['label']])
-
-                try:
-                    d['compare'] = str(node.attributes["compare"].value)
-                except:
-                    d['compare'] = "on"
 
                 try:
                     d['n_procs'] = str(node.attributes["n_procs"].value)
@@ -530,6 +532,12 @@ class Parser(object):
 
                 data.append(d)
 
+        if deprecated_option:
+            msg = "\n WARNING: deprecated options (compute, compare or post)" + \
+                  " are found in the smgr xml file.\n Please update it with" + \
+                  " --update-smgr.\n"
+            print(msg)
+
         return data
 
     #---------------------------------------------------------------------------
@@ -538,17 +546,17 @@ class Parser(object):
         """
         Change:
             <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="on" post="on"/>
+                <case label='CASE1' status='on' run_id=''/>
             </study>
         To:
             <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="off" post="on"/>
+                <case label='CASE1' status='on' run_id='COARSE'/>
             </study>
 
         @type l: C{DOM Element}
         @param l: node of the I{attribute} to change
         @type attr: C{String}
-        @param attr: attribute I{compute} or I{post}
+        @param attr: attribute I{run_id} or I{other}
         @type v: C{String}
         @param v: value of the attribute
         """
@@ -565,7 +573,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="on" post="on">
+                <case label='CASE1' status='on'>
                     <compare repo="" dest="" args='--section Pressure --threshold 1e-2' status="on"/>
                 </case>
             </study>
@@ -604,7 +612,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="on" post="on">
+                <case label='CASE1' status='on'>
                     <prepro label="script_pre.py" args="" status="on"/>
                 </case>
             </study>
@@ -634,7 +642,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="on" post="on">
+                <case label='CASE1' status='on'>
                     <script label="script_post.py" args="" dest="20110216-2147" status="on"/>
                 </case>
             </study>
@@ -672,7 +680,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="on" post="on">
+                <case label='CASE1' status='on'>
                     <depends args="STUDY/CASE/run_id"/>
                 </case>
             </study>
@@ -799,7 +807,7 @@ class Parser(object):
         """
         Read:
             <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="on" post="on"/>
+                <case label='CASE1' status='on'/>
                 <postpro label="script_post.py" args="" status="on">
                     <data file="profile.dat">
                         <plot fig="1" xcol="1" ycol="2" legend="Grid 1"/>

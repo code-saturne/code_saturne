@@ -124,8 +124,6 @@ def init_xml_file_with_study(smgr, studyp, pkg):
     for case in cases:
         c_node = st_node.xmlInitChildNode("case", label = case)
         c_node['status']  = "on"
-        c_node['compute'] = "on"
-        c_node['post']    = "on"
 
     smgr.xmlSaveDocument()
 
@@ -188,6 +186,7 @@ class Case(object):
                  diff,
                  parser,
                  study,
+                 smgr_cmd,
                  data,
                  repo,
                  dest,
@@ -208,24 +207,22 @@ class Case(object):
 
         self.node          = data['node']
         self.label         = data['label']
-        self.compute       = data['compute']
-        self.plot          = data['post']
         self.run_id        = data['run_id']
-        self.compare       = data['compare']
         self.n_procs       = data['n_procs']
         self.depends       = data['depends']
         self.expected_time = data['expected_time']
-
         self.parametric    = data['parametric']
         self.notebook      = data['notebook']
         self.kw_args       = data['kw_args']
 
+        # Driven by smgr command line options but can be modified later
+        self.compute       = smgr_cmd['compute']
+        self.compare       = smgr_cmd['compare']
+        self.plot          = smgr_cmd['post']
+
         self.is_compiled   = "not done"
-        self.is_run        = "not done"
         self.is_time       = None
         self.is_plot       = "not done"
-        self.is_compare    = "not done"
-        self.disabled      = False
         self.no_restart    = False
         self.threshold     = "default"
         self.diff_value    = [] # list of differences (in case of comparison)
@@ -444,6 +441,9 @@ class Case(object):
                 else:
                     # restart cannot be used
                     self.no_restart = True
+                    self.compute = False
+                    self.compare = False
+                    self.plot = False
                     return depends
             else:
                 # keep dependency
@@ -563,12 +563,10 @@ class Case(object):
                     fail_info = 'SKIPPED (already present)'
             log_lines += ['      * prepare run folder: {0} --> {1} ({2} s)'.format(self.title, fail_info, str(t))]
 
-            # we set to off all steps except in case of already prepared run
+            # we set to off computation except in case of already prepared run
             if not have_status_prepared:
                 log_lines += ['        - see ' + log_path]
-                self.compute = "off"
-                self.post = "off"
-                self.compare = "off"
+                self.compute = False
 
         os.chdir(home)
         return log_lines
@@ -788,10 +786,9 @@ class Case(object):
                 mem_log_leak = True
                 error -= mem_log_leak_code
 
-        if not error:
-            self.is_run = "OK"
-        else:
-            self.is_run = "KO"
+        if error:
+            self.compare = False
+            self.plot = False
 
         os.chdir(home)
 
@@ -1010,15 +1007,6 @@ class Case(object):
 
         return msg
 
-    #---------------------------------------------------------------------------
-
-    def disable(self):
-
-        self.disabled = True
-        msg = "    - Case %s --> DISABLED" %(self.title)
-
-        return msg
-
 #===============================================================================
 # Study class
 #===============================================================================
@@ -1027,27 +1015,35 @@ class Study(object):
     """
     Create, run and compare all cases for a given study.
     """
-    def __init__(self, pkg, parser, study, exe, dif, rlog, n_procs=None,
-                 with_tags=None, without_tags=None, resource_config=None):
+    def __init__(self,
+                 pkg,
+                 parser,
+                 study,
+                 exe,
+                 dif,
+                 smgr_cmd,
+                 rlog,
+                 n_procs=None,
+                 with_tags=None,
+                 without_tags=None,
+                 resource_config=None):
         """
         Constructor.
           1. initialize attributes,
           2. build the list of the cases,
           3. build the list of the keywords from the case
-        @type parser: C{Parser}
-        @param parser: instance of the parser
-        @type study: C{String}
-        @param study: label of the current study
-        @type exe: C{String}
-        @param exe: name of the solver executable: C{code_saturne} or C{neptune_cfd}.
-        @type dif: C{String}
-        @param dif: name of the diff executable: C{cs_io_dump -d}.
-        @n_procs: C{int}
-        @param n_procs: number of requested processes
-        @type with_tags: C{List}
-        @param with_tags: list of tags given at the command line
-        @type without_tags: C{List}
-        @param without_tags: list of tags given at the command line
+        @param pkg: information on the solver executable: C{pkg}
+        @param parser: instance of the parser: C{Parser}
+        @param study: label of the current study: C{String}
+        @param exe: name of the solver executable: C{code_saturne} or
+        @    C{neptune_cfd}: C{String}
+        @param dif: name of the diff executable: C{cs_io_dump -d}: C{String}
+        @param smgr_cmd: smgr command option (compute, compare and post):
+        @    C{list}
+        @param rlog: log file: C{file}
+        @param n_procs: number of requested processes: C{int}
+        @param with_tags: list of tags given at the command line: C{List}
+        @param without_tags: list of tags given at the command line: C{List}
         @param resource_config: name of the compute resource: C{String}
         """
         # Initialize attributes
@@ -1116,6 +1112,7 @@ class Study(object):
                              self.__diff,
                              self.__parser,
                              self.label,
+                             smgr_cmd,
                              data,
                              self.__repo,
                              self.__dest,
@@ -1130,9 +1127,8 @@ class Study(object):
         list_dir   = []
 
         for case in self.cases:
-            if case.is_run != "KO":
-                list_cases.append(case.label)
-                list_dir.append(case.run_dir)
+            list_cases.append(case.label)
+            list_dir.append(case.run_dir)
 
         return " ".join(list_cases), " ".join(list_dir)
 
@@ -1147,12 +1143,12 @@ class Study(object):
         needs = self.matplotlib_figures or self.input_figures
 
         for case in self.cases:
-            if case.is_compare == "done":
+            if case.compare:
                 needs = True
                 break
 
             # handle the input nodes that are inside case nodes
-            if case.plot == "on" and case.is_run != "KO":
+            if case.plot:
                 nodes = self.__parser.getChildren(case.node, "input")
                 if nodes:
                     needs = True
@@ -1225,7 +1221,6 @@ class Studies(object):
         # Use the provided resoure if forced
         self.__resource_name     = options.resource_name
         self.__quiet             = options.quiet
-        self.__running           = options.runcase
         self.__n_iter            = options.n_iterations
         self.__compare           = options.compare
         self.__ref               = options.reference
@@ -1262,6 +1257,11 @@ class Studies(object):
         resource_config['resource_n_procs'] = exec_env.resources.n_procs
         if not resource_config['resource_n_procs']:
             resource_config['resource_n_procs'] = 1
+
+        # Store smgr command options
+        smgr_cmd = {"compute" : options.runcase,
+                    "compare" : options.compare,
+                    "post"    : options.post}
 
         # Default expected time in minutes
         resource_config['resource_exp_time'] = 180
@@ -1461,24 +1461,19 @@ class Studies(object):
         self.n_study = len(self.labels)
         self.studies = []
         for l in self.labels:
-            self.studies.append( [l, Study(self.__pkg, self.__parser, l, \
-                                           exe, dif, self.__log_file, \
+            self.studies.append( [l, Study(self.__pkg, \
+                                           self.__parser, \
+                                           l, \
+                                           exe, \
+                                           dif, \
+                                           smgr_cmd, \
+                                           self.__log_file, \
                                            options.n_procs, \
                                            self.__with_tags, \
-                                           self.__without_tags,
+                                           self.__without_tags, \
                                            resource_config=resource_config)] )
             if options.debug:
                 self.reporting(" Append study:" + l, report=False)
-
-        # in case of restart
-
-        iok = 0
-        for l, s in self.studies:
-            for case in s.cases:
-                if case.compute == 'on':
-                   iok+=1
-        if not iok:
-            self.__running = False
 
         # Handle relative paths:
         if self.__ref:
@@ -1741,7 +1736,7 @@ class Studies(object):
         global_graph = dependency_graph()
         for l, s in self.studies:
             for case in s.cases:
-                if case.compute == "on":
+                if case.compute:
                     msg = global_graph.add_node(case)
                     if msg:
                         self.reporting("Warning in global graph: " + msg)
@@ -1796,7 +1791,7 @@ class Studies(object):
                 # build case dir. (in repo.)
                 study_path = os.path.join(self.__repo, case.study)
 
-                if case.compute == 'on':
+                if case.compute:
 
                     # test compilation
                     is_compiled = case.test_compilation(study_path,
@@ -1859,48 +1854,47 @@ class Studies(object):
         for case in self.graph.graph_dict:
 
             self.check_prepro(case)
-            if self.__running:
-                if case.compute == 'on' and case.is_compiled != "KO":
+            if case.compute and case.is_compiled != "KO":
 
-                    if self.__n_iter is not None:
-                        case.add_control_file(self.__n_iter)
+                if self.__n_iter is not None:
+                    case.add_control_file(self.__n_iter)
 
-                    self.reporting('    - running %s ...' % case.title,
-                                   stdout=True, report=False, status=True)
+                self.reporting('    - running %s ...' % case.title,
+                               stdout=True, report=False, status=True)
 
-                    error, mem_log_leak = case.run(resource_name = self.__resource_name,
-                                          mem_log = self.__mem_log)
-                    if case.is_time:
-                        is_time = "%s s" % case.is_time
-                    else:
-                        is_time = "existed already"
+                error, mem_log_leak = case.run(resource_name = self.__resource_name,
+                                      mem_log = self.__mem_log)
+                if case.is_time:
+                    is_time = "%s s" % case.is_time
+                else:
+                    is_time = "existed already"
 
-                    if not error:
-                        self.reporting('    - run %s --> OK (%s)' \
-                                       % (case.title, is_time))
+                if not error:
+                    self.reporting('    - run %s --> OK (%s)' \
+                                   % (case.title, is_time))
 
-                        # update dest="" attribute
-                        n1 = self.__parser.getChildren(case.node, "compare")
-                        n2 = self.__parser.getChildren(case.node, "script")
-                        n3 = self.__parser.getChildren(case.node, "data")
-                        n4 = self.__parser.getChildren(case.node, "probe")
-                        n5 = self.__parser.getChildren(case.node, "resu")
-                        n6 = self.__parser.getChildren(case.node, "input")
-                        for n in n1 + n2 + n3 + n4 + n5 + n6:
-                            if self.__parser.getAttribute(n, "dest") == "":
-                                self.__parser.setAttribute(n, "dest", case.run_id)
-                    else:
-                        self.reporting('    - run %s --> FAILED (%s)' \
-                                       % (case.title, is_time))
-                        self.reporting('      * see run_case.log in ' + \
-                                       case.run_dir)
+                    # update dest="" attribute
+                    n1 = self.__parser.getChildren(case.node, "compare")
+                    n2 = self.__parser.getChildren(case.node, "script")
+                    n3 = self.__parser.getChildren(case.node, "data")
+                    n4 = self.__parser.getChildren(case.node, "probe")
+                    n5 = self.__parser.getChildren(case.node, "resu")
+                    n6 = self.__parser.getChildren(case.node, "input")
+                    for n in n1 + n2 + n3 + n4 + n5 + n6:
+                        if self.__parser.getAttribute(n, "dest") == "":
+                            self.__parser.setAttribute(n, "dest", case.run_id)
+                else:
+                    self.reporting('    - run %s --> FAILED (%s)' \
+                                   % (case.title, is_time))
+                    self.reporting('      * see run_case.log in ' + \
+                                   case.run_dir)
 
-                    if self.__mem_log and mem_log_leak:
-                        self.reporting('    - run %s --> Leaks in memory logs' \
-                                       % (case.title))
-                        self.reporting('      * see cs_mem.log(.N) in %s' \
-                                       % (case.run_dir))
-                    self.__log_file.flush()
+                if self.__mem_log and mem_log_leak:
+                    self.reporting('    - run %s --> Leaks in memory logs' \
+                                   % (case.title))
+                    self.reporting('      * see cs_mem.log(.N) in %s' \
+                                   % (case.run_dir))
+                self.__log_file.flush()
 
         self.reporting('')
 
@@ -1985,106 +1979,105 @@ class Studies(object):
                 for case in self.graph.extract_sub_graph(level,nproc+1).graph_dict:
 
                     self.check_prepro(case)
-                    if self.__running:
-                        if case.compute == 'on' and case.is_compiled != "KO":
+                    if case.compute and case.is_compiled != "KO":
 
-                            if self.__n_iter is not None:
-                                case.add_control_file(self.__n_iter)
+                        if self.__n_iter is not None:
+                            case.add_control_file(self.__n_iter)
 
-                            # check future submission total time and submit previous batch if not empty
-                            submit_prev = False
-                            if (cur_batch_size == 0) or (batch_total_time + \
-                               float(case.expected_time) < self.__slurm_batch_wtime):
-                                # append content of batch command with run of the case
-                                batch_cmd += case.build_run_batch(mem_log=self.__mem_log)
-                                cur_batch_size += 1
-                                batch_total_time += float(case.expected_time)
-                                cases_list.append(case)
-                                if level > 0:
-                                    depend_id = self.graph.graph_dict[case].job_id
-                                    if depend_id not in dep_job_id_list:
-                                        dep_job_id_list.append(depend_id)
+                        # check future submission total time and submit previous batch if not empty
+                        submit_prev = False
+                        if (cur_batch_size == 0) or (batch_total_time + \
+                           float(case.expected_time) < self.__slurm_batch_wtime):
+                            # append content of batch command with run of the case
+                            batch_cmd += case.build_run_batch(mem_log=self.__mem_log)
+                            cur_batch_size += 1
+                            batch_total_time += float(case.expected_time)
+                            cases_list.append(case)
+                            if level > 0:
+                                depend_id = self.graph.graph_dict[case].job_id
+                                if depend_id not in dep_job_id_list:
+                                    dep_job_id_list.append(depend_id)
+                        else:
+                            submit_prev = True
+
+                        # submit once batch size or wall time is reached
+                        if cur_batch_size >= self.__slurm_batch_size or submit_prev or \
+                           batch_total_time >= self.__slurm_batch_wtime:
+                            slurm_batch_name = "slurm_batch_file_" + \
+                                               str(cur_batch_id) + ".sh"
+                            slurm_batch_file = open(slurm_batch_name, mode='w')
+
+                            # fill file with template
+                            hh, mm = divmod(batch_total_time, 60)
+                            cmd = slurm_batch_template.format(nproc+1,
+                                                              math.ceil(hh),
+                                                              math.ceil(mm),
+                                                              cur_batch_id)
+
+                            # add exclusive option to batch template for
+                            # computation with at least 6 processes
+                            if nproc+1 > 5:
+                                cmd += "#SBATCH --exclusive\n"
+
+                            # add user defined options if needed
+                            if self.__slurm_batch_args:
+                                for _p in self.__slurm_batch_args:
+                                    cmd += "#SBATCH " + _p + "\n"
+
+                            cmd += "\n"
+                            slurm_batch_file.write(cmd)
+
+                            # fill file with batch command for several cases
+                            slurm_batch_file.write(batch_cmd)
+                            slurm_batch_file.flush()
+
+                            # submit batch
+                            if level < 1:
+                                output = subprocess.check_output(['sbatch',
+                                         slurm_batch_name])
                             else:
-                                submit_prev = True
-
-                            # submit once batch size or wall time is reached
-                            if cur_batch_size >= self.__slurm_batch_size or submit_prev or \
-                               batch_total_time >= self.__slurm_batch_wtime:
-                                slurm_batch_name = "slurm_batch_file_" + \
-                                                   str(cur_batch_id) + ".sh"
-                                slurm_batch_file = open(slurm_batch_name, mode='w')
-
-                                # fill file with template
-                                hh, mm = divmod(batch_total_time, 60)
-                                cmd = slurm_batch_template.format(nproc+1,
-                                                                  math.ceil(hh),
-                                                                  math.ceil(mm),
-                                                                  cur_batch_id)
-
-                                # add exclusive option to batch template for
-                                # computation with at least 6 processes
-                                if nproc+1 > 5:
-                                    cmd += "#SBATCH --exclusive\n"
-
-                                # add user defined options if needed
-                                if self.__slurm_batch_args:
-                                    for _p in self.__slurm_batch_args:
-                                        cmd += "#SBATCH " + _p + "\n"
-
-                                cmd += "\n"
-                                slurm_batch_file.write(cmd)
-
-                                # fill file with batch command for several cases
-                                slurm_batch_file.write(batch_cmd)
-                                slurm_batch_file.flush()
-
-                                # submit batch
-                                if level < 1:
+                                # list of dependency id should be in the
+                                # :id1:id2:id3 format
+                                list_id = ""
+                                for item in dep_job_id_list:
+                                    list_id += ":" + str(item)
+                                if len(list_id) > 0:
+                                    output = subprocess.check_output(['sbatch',
+                                             "--dependency=afterany"
+                                             + list_id, slurm_batch_name])
+                                else:
+                                    # empty list can occur with existing runs in study
                                     output = subprocess.check_output(['sbatch',
                                              slurm_batch_name])
-                                else:
-                                    # list of dependency id should be in the
-                                    # :id1:id2:id3 format
-                                    list_id = ""
-                                    for item in dep_job_id_list:
-                                        list_id += ":" + str(item)
-                                    if len(list_id) > 0:
-                                        output = subprocess.check_output(['sbatch',
-                                                 "--dependency=afterany"
-                                                 + list_id, slurm_batch_name])
-                                    else:
-                                        # empty list can occur with existing runs in study
-                                        output = subprocess.check_output(['sbatch',
-                                                 slurm_batch_name])
 
-                                # find job id with regex and store it
-                                msg = output.decode('utf-8').strip()
-                                match = re.search('\d{8}', msg)
-                                job_id = match.group()
-                                tot_job_id_list.append(job_id)
-                                self.reporting('    - %s ...' % msg)
-                                for item in cases_list:
-                                    item.job_id = job_id
+                            # find job id with regex and store it
+                            msg = output.decode('utf-8').strip()
+                            match = re.search('\d{8}', msg)
+                            job_id = match.group()
+                            tot_job_id_list.append(job_id)
+                            self.reporting('    - %s ...' % msg)
+                            for item in cases_list:
+                                item.job_id = job_id
 
-                                batch_cmd = ""
-                                cur_batch_id += 1
-                                cur_batch_size = 0
-                                batch_total_time = 0
-                                dep_job_id_list = []
-                                cases_list = []
-                                slurm_batch_file.close()
+                            batch_cmd = ""
+                            cur_batch_id += 1
+                            cur_batch_size = 0
+                            batch_total_time = 0
+                            dep_job_id_list = []
+                            cases_list = []
+                            slurm_batch_file.close()
 
-                            # complete batch info as previous one was submitted
-                            if submit_prev:
-                                # append content of batch command with run of the case
-                                batch_cmd += case.build_run_batch(mem_log=self.__mem_log)
-                                cur_batch_size += 1
-                                batch_total_time += float(case.expected_time)
-                                cases_list.append(case)
-                                if level > 0:
-                                    depend_id = self.graph.graph_dict[case].job_id
-                                    if depend_id not in cur_job_id_list:
-                                        cur_job_id_list.append(depend_id)
+                        # complete batch info as previous one was submitted
+                        if submit_prev:
+                            # append content of batch command with run of the case
+                            batch_cmd += case.build_run_batch(mem_log=self.__mem_log)
+                            cur_batch_size += 1
+                            batch_total_time += float(case.expected_time)
+                            cases_list.append(case)
+                            if level > 0:
+                                depend_id = self.graph.graph_dict[case].job_id
+                                if depend_id not in cur_job_id_list:
+                                    cur_job_id_list.append(depend_id)
 
                 if cur_batch_size > 0:
                     slurm_batch_name = "slurm_batch_file_" + \
@@ -2407,12 +2400,12 @@ class Studies(object):
                 ref = os.path.join(self.__ref, case.study)
             cases_to_disable = []
 
-            if case.compare == 'on' and case.is_run != "KO":
-                compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
-                if compare:
+            if case.compare:
+                status, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
+                if status:
                     is_checked = False
                     for i in range(len(nodes)):
-                        if compare[i]:
+                        if status[i]:
                             is_checked = True
                             if destination == False:
                                 dest[i]= None
@@ -2421,19 +2414,9 @@ class Studies(object):
                                 self.reporting(msg)
                                 cases_to_disable.append(case)
 
-                if not compare or not is_checked:
-                    node = None
-                    repo = ""
-                    dest = ""
-                    if destination == False:
-                        dest = None
-                    msg = case.check_dirs(node, repo, dest, reference=ref)
-                    if msg:
-                        self.reporting(msg)
-                        cases_to_disable.append(case)
-
             for case in cases_to_disable:
-                msg = case.disable()
+                case.compare = False
+                msg = "    - Case %s --> COMPARISON DISABLED" %(case.title)
                 self.reporting(msg)
 
         self.reporting('')
@@ -2445,9 +2428,8 @@ class Studies(object):
         """
         Compare the results for one computation and report
         """
-        case.is_compare = "done"
 
-        if not case.disabled:
+        if case.compare:
             diff_value, m_size_eq = case.runCompare(self,
                                                     repo, dest,
                                                     threshold, args,
@@ -2455,23 +2437,20 @@ class Studies(object):
             case.diff_value += diff_value
             case.m_size_eq = case.m_size_eq and m_size_eq
 
-        if args:
-            s_args = 'with args: %s' % args
-        else:
-            s_args = 'default mode'
+            if args:
+                s_args = 'with args: %s' % args
+            else:
+                s_args = 'default mode'
 
-        if case.disabled:
-            self.reporting('    - compare %s (%s) --> DISABLED'
-                           %(case.title, s_args))
-        elif not m_size_eq:
-            self.reporting('    - compare %s (%s) --> DIFFERENT MESH SIZES FOUND'
-                           %(case.title, s_args))
-        elif diff_value:
-            self.reporting('    - compare %s (%s) --> DIFFERENCES FOUND'
-                           %(case.title, s_args))
-        else:
-            self.reporting('    - compare %s (%s) --> NO DIFFERENCES FOUND'
-                           %(case.title, s_args))
+            if not m_size_eq:
+                self.reporting('    - compare %s (%s) --> DIFFERENT MESH SIZES FOUND'
+                               %(case.title, s_args))
+            elif diff_value:
+                self.reporting('    - compare %s (%s) --> DIFFERENCES FOUND'
+                               %(case.title, s_args))
+            else:
+                self.reporting('    - compare %s (%s) --> NO DIFFERENCES FOUND'
+                               %(case.title, s_args))
 
 
     #---------------------------------------------------------------------------
@@ -2481,8 +2460,8 @@ class Studies(object):
         Compare the results of the new computations with those from the
         Repository.
         """
-        if self.__compare:
-            for case in self.graph.graph_dict:
+        for case in self.graph.graph_dict:
+            if case.compare:
                 self.reporting('  o Compare case: ' + case.title)
                 # reference directory passed in studymanager command line
                 # overwrites destination in all cases (even if compare is
@@ -2490,29 +2469,17 @@ class Studies(object):
                 ref = None
                 if self.__ref:
                     ref = os.path.join(self.__ref, case.study)
-                if case.compare == 'on' and case.is_run != "KO":
-                    is_compare, nodes, repo, dest, t, args = \
-                                         self.__parser.getCompare(case.node)
-                    if is_compare:
-                        for i in range(len(nodes)):
-                            if is_compare[i]:
-                                self.compare_case_and_report(case,
-                                                             repo[i],
-                                                             dest[i],
-                                                             t[i],
-                                                             args[i],
-                                                             reference=ref)
-                    if not is_compare or case.is_compare != "done":
-                        repo = ""
-                        dest = ""
-                        t    = None
-                        args = None
-                        self.compare_case_and_report(case,
-                                                     repo,
-                                                     dest,
-                                                     t,
-                                                     args,
-                                                     reference=ref)
+                status, nodes, repo, dest, t, args = \
+                                     self.__parser.getCompare(case.node)
+                if status:
+                    for i in range(len(nodes)):
+                        if status[i]:
+                            self.compare_case_and_report(case,
+                                                         repo[i],
+                                                         dest[i],
+                                                         t[i],
+                                                         args[i],
+                                                         reference=ref)
 
         self.reporting('')
 
@@ -2545,10 +2512,10 @@ class Studies(object):
 
             cases_to_disable = []
             for case in s.cases:
-                script, label, nodes, args, repo, dest = \
+                status, label, nodes, args, repo, dest = \
                     self.__parser.getScript(case.node)
                 for i in range(len(nodes)):
-                    if script[i] and case.is_run != "KO":
+                    if status[i]:
                         if destination == False:
                             dest[i] = None
                         msg = case.check_dirs(nodes[i], repo[i], dest[i])
@@ -2557,7 +2524,8 @@ class Studies(object):
                             cases_to_disable.append(case)
 
             for case in cases_to_disable:
-                msg = case.disable()
+                case.plot = False
+                msg = "    - Case %s --> POST DISABLED" %(case.title)
                 self.reporting(msg)
 
         if scripts_checked:
@@ -2576,9 +2544,9 @@ class Studies(object):
         for l, s in self.studies:
             self.reporting("  o Run scripts of study: " + l)
             for case in s.cases:
-                script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
+                status, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(label)):
-                    if script[i] and case.is_run != "KO":
+                    if status[i] and case.plot:
                         cmd = os.path.join(self.__dest, l, "POST", label[i])
                         if os.path.isfile(cmd):
                             sc_name = os.path.basename(cmd)
@@ -2732,7 +2700,7 @@ class Studies(object):
 
             cases_to_disable = []
             for case in s.cases:
-                if case.plot == "on" and case.is_run != "KO":
+                if case.plot:
 
                     if not self.check_data(case, destination):
                         cases_to_disable.append(case)
@@ -2747,7 +2715,8 @@ class Studies(object):
                         continue
 
             for case in cases_to_disable:
-                msg = case.disable()
+                case.plot = False
+                msg = "    - Case %s --> POST DISABLED" %(case.title)
                 self.reporting(msg)
 
         self.reporting('')
@@ -2876,7 +2845,7 @@ class Studies(object):
             for case in s.cases:
 
                 # handle the input nodes that are inside case nodes
-                if case.plot == "on" and case.is_run != "KO":
+                if case.plot:
                     nodes = self.__parser.getChildren(case.node, "input")
                     if nodes:
                         doc.appendLine("\\subsection{Results for "
