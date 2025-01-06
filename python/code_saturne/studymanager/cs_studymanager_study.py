@@ -2158,7 +2158,7 @@ class Studies(object):
         hh, mm = divmod(self.n_study*5, 60)
         cmd = slurm_batch_template.format(1,
                                           math.ceil(hh),
-                                          math.ceil(mm), 
+                                          math.ceil(mm),
                                           cur_batch_id)
 
         # add user defined options if needed
