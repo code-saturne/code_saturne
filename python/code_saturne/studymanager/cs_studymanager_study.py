@@ -1867,11 +1867,6 @@ class Studies(object):
                     self.reporting('    - run %s --> OK (%s)' \
                                    % (case.title, is_time))
 
-                    # update dest="" attribute
-                    n1 = self.__parser.getChildren(case.node, "compare")
-                    for n in n1:
-                        if self.__parser.getAttribute(n, "dest") == "":
-                            self.__parser.setAttribute(n, "dest", case.run_id)
                 else:
                     self.reporting('    - run %s --> FAILED (%s)' \
                                    % (case.title, is_time))
@@ -2370,14 +2365,14 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def check_compare(self, destination=True):
+    def check_compare(self):
         """
         Check coherency between xml file of parameters and repository.
         Stop if you try to make a comparison with a file which does not exist.
         """
+        check_msg = "  o Check compare of cases"
+        self.reporting(check_msg)
         for case in self.graph.graph_dict:
-            check_msg = "  o Check compare of case: " + case.title
-            self.report_action_location(check_msg, destination)
 
             # reference directory passed in studymanager command line overwrites
             # destination in all cases (even if compare is defined by a compare
@@ -2386,28 +2381,16 @@ class Studies(object):
             ref = None
             if self.__ref:
                 ref = os.path.join(self.__ref, case.study)
-            cases_to_disable = []
 
-            if case.compare:
-                status, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
-                if status:
-                    is_checked = False
-                    for i in range(len(nodes)):
-                        if status[i]:
-                            is_checked = True
-                            if destination == False:
-                                dest[i]= None
-                            msg = case.check_dirs(nodes[i], repo[i], dest[i], reference=ref)
-                            if msg:
-                                self.reporting(msg)
-                                cases_to_disable.append(case)
-
-            for case in cases_to_disable:
-                case.compare = False
-                msg = "    - Case %s --> COMPARISON DISABLED" %(case.title)
-                self.reporting(msg)
-
-        self.reporting('')
+            status, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
+            for i in range(len(nodes)):
+                if status[i] and case.compare:
+                    msg = case.check_dirs(nodes[i], repo[i], dest[i], reference=ref)
+                    if msg:
+                        self.reporting(msg)
+                        case.compare = False
+                        msg2 = "    - Case %s --> COMPARISON DISABLED" %(case.title)
+                        self.reporting(msg2)
 
     #---------------------------------------------------------------------------
 
@@ -2448,26 +2431,37 @@ class Studies(object):
         Compare the results of the new computations with those from the
         Repository.
         """
+        self.reporting('  o Compare cases')
         for case in self.graph.graph_dict:
-            if case.compare:
-                self.reporting('  o Compare case: ' + case.title)
-                # reference directory passed in studymanager command line
-                # overwrites destination in all cases (even if compare is
-                # defined by a compare markup with a non empty destination)
-                ref = None
-                if self.__ref:
-                    ref = os.path.join(self.__ref, case.study)
-                status, nodes, repo, dest, t, args = \
-                                     self.__parser.getCompare(case.node)
-                if status:
-                    for i in range(len(nodes)):
-                        if status[i]:
-                            self.compare_case_and_report(case,
-                                                         repo[i],
-                                                         dest[i],
-                                                         t[i],
-                                                         args[i],
-                                                         reference=ref)
+            # reference directory passed in studymanager command line
+            # overwrites destination in all cases (even if compare is
+            # defined by a compare markup with a non empty destination)
+            ref = None
+            if self.__ref:
+                ref = os.path.join(self.__ref, case.study)
+            status, nodes, repo, dest, t, args = \
+                                 self.__parser.getCompare(case.node)
+
+            if status:
+                for i in range(len(nodes)):
+                    if status[i] and case.compare:
+                        self.compare_case_and_report(case,
+                                                     repo[i],
+                                                     dest[i],
+                                                     t[i],
+                                                     args[i],
+                                                     reference=ref)
+            elif case.compare:
+                 repo = ""
+                 dest = ""
+                 t    = None
+                 args = None
+                 self.compare_case_and_report(case,
+                                              repo,
+                                              dest,
+                                              t,
+                                              args,
+                                              reference=ref)
 
         self.reporting('')
 

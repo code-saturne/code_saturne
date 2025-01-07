@@ -542,33 +542,6 @@ class Parser(object):
 
     #---------------------------------------------------------------------------
 
-    def setAttribute(self, node, attr, v):
-        """
-        Change:
-            <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' run_id=''/>
-            </study>
-        To:
-            <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' run_id='COARSE'/>
-            </study>
-
-        @type l: C{DOM Element}
-        @param l: node of the I{attribute} to change
-        @type attr: C{String}
-        @param attr: attribute I{run_id} or I{other}
-        @type v: C{String}
-        @param v: value of the attribute
-        """
-        node.attributes[attr].value = v
-
-        f = os.path.join(self.getDestination(), self.filename)
-        writer = open(f, mode="w" )
-        self.doc.writexml(writer)
-        writer.close()
-
-    #---------------------------------------------------------------------------
-
     def getCompare(self, caseNode):
         """
         Read:

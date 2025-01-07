@@ -435,11 +435,6 @@ def run_studymanager(pkg, options):
         # Move to destination destination
         os.chdir(studies.getDestination())
 
-    # Check if xml for result directories in the repository are OK
-
-    if options.compare:
-        studies.check_compare(destination=False)
-
     # Create all studies and all cases
 
     if options.runcase or options.post or options.sheet:
