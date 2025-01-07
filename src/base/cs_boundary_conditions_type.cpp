@@ -1263,6 +1263,7 @@ cs_boundary_conditions_type(bool  init,
 
   if (init) {
     CS_FREE(bc_type_idx);
+    CS_FREE(bc_type_faces);
     return;
   }
 
