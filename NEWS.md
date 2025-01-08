@@ -97,6 +97,15 @@ Release 8.3.0 (2024-12-20)
   run.cfg file of a given case. Specific resources can also be specified in the
   run.cfg file using the run_id `[<resource>/run_id=<run_id>]`.
 
+- The default smgr file name is smgr.xml so the option `-f smgr.xml` can be
+  omitted when using this name.
+
+- Script, plot and report functions now use the graph of cases. These functions
+  can now process several studies (usefull when launched with launch_vnv).
+
+- Compute, compare and post keywords are no longer read in smgr xml file. Smgr
+  option --update-smgr remove them in the smgr xml file of the repository.
+
 ### Architectural changes:
 
 - GPU: add device memory pool to avoid costly memory frees.

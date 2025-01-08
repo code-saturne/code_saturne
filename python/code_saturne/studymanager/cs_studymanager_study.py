@@ -1148,40 +1148,6 @@ class Study(object):
 
         return " ".join(list_cases), " ".join(list_dir)
 
-    #---------------------------------------------------------------------------
-
-    def needs_report_detailed(self, postpro):
-        """
-        check if study needs a section in the detailed report
-        (for figures, comparison or input)
-        """
-        # study has figures or input figures
-        needs = self.matplotlib_figures or self.input_figures
-
-        for case in self.cases:
-            if case.compare:
-                needs = True
-                break
-
-            # handle the input nodes that are inside case nodes
-            if case.plot:
-                nodes = self.__parser.getChildren(case.node, "input")
-                if nodes:
-                    needs = True
-                    break
-
-        # handle the input nodes that are inside postpro nodes
-        if postpro:
-            script, label, nodes, args = self.__parser.getPostPro(self.label)
-            for i in range(len(label)):
-                if script[i]:
-                    input_nodes = self.__parser.getChildren(nodes[i], "input")
-                    if input_nodes:
-                        needs = True
-                        break
-
-        return needs
-
 #===============================================================================
 # Studies class
 #===============================================================================
@@ -2755,7 +2721,7 @@ class Studies(object):
                 ff = os.path.join(fd, d, f)
 
             if not os.path.isfile(ff):
-                self.reporting("\n Warning: this file does not exist: %s\n" %ff)
+                self.reporting("    Warning: this file does not exist: %s" %ff)
             elif ff[-4:] in ('.png', '.jpg', '.pdf') or ff[-5:] == '.jpeg':
                 doc.addFigure(ff)
             elif tex == 'on':
@@ -2811,53 +2777,55 @@ class Studies(object):
                      report_fig,
                      self.__pdflatex)
 
-        for l, s in self.studies:
-            if not s.needs_report_detailed(self.__postpro):
-                continue
+        previous_study_name = None
+        for case in self.graph.graph_dict:
 
-            doc.appendLine("\\section{%s}" % l)
+            # detect new study
+            if case.study is not previous_study_name:
+                # retrieve study_object from index
+                study_label, study_object = self.studies[case.study_index]
+                previous_study_name = study_label
+                doc.appendLine("\\section{%s}" % case.study)
 
-            if s.matplotlib_figures or s.input_figures:
-                doc.appendLine("\\subsection{Graphical results}")
-                for g in s.matplotlib_figures:
-                    doc.addFigure(g)
-                for g in s.input_figures:
-                    doc.addFigure(g)
+                # handle figures and inputs
+                if study_object.matplotlib_figures or study_object.input_figures:
+                    doc.appendLine("\\subsection{Graphical results}")
+                    for g in study_object.matplotlib_figures:
+                        doc.addFigure(g)
+                    for g in study_object.input_figures:
+                        doc.addFigure(g)
 
-            for case in s.cases:
+                # handle the input nodes that are inside postpro nodes
+                script, label, nodes, args = self.__parser.getPostPro(case.study)
 
-                # handle the input nodes that are inside case nodes
-                if case.plot:
-                    nodes = self.__parser.getChildren(case.node, "input")
-                    if nodes:
-                        doc.appendLine("\\subsection{Results for "
-                                       "case %s}" % case.label)
-                        self.report_input(doc, nodes, l, case.label, case.resu)
-                        # copy input in POST
-                        self.copy_input(nodes, l, case.label)
-
-            # handle the input nodes that are inside postpro nodes
-
-            script, label, nodes, args = self.__parser.getPostPro(l)
-
-            needs_pp_input = False
-            for i in range(len(label)):
-                if script[i]:
-                    input_nodes = \
-                        self.__parser.getChildren(nodes[i], "input")
-                    if input_nodes:
-                        needs_pp_input = True
-                        break
-
-            if needs_pp_input:
-                doc.appendLine("\\subsection{Results for "
-                               "post-processing cases}")
+                needs_pp_input = False
                 for i in range(len(label)):
                     if script[i]:
                         input_nodes = \
                             self.__parser.getChildren(nodes[i], "input")
                         if input_nodes:
-                            self.report_input(doc, input_nodes, l)
+                            needs_pp_input = True
+                            break
+
+                if needs_pp_input:
+                    doc.appendLine("\\subsection{Results for "
+                               "post-processing cases}")
+                    for i in range(len(label)):
+                        if script[i]:
+                            input_nodes = \
+                                self.__parser.getChildren(nodes[i], "input")
+                            if input_nodes:
+                                self.report_input(doc, input_nodes, case.study)
+
+            # handle input nodes that are inside case nodes
+            if case.plot:
+                nodes = self.__parser.getChildren(case.node, "input")
+                if nodes:
+                    doc.appendLine("\\subsection{Results for "
+                                   "case %s}" % case.label)
+                    self.report_input(doc, nodes, case.study, case.label, case.resu)
+                    # copy input in POST (TODO: should be moved)
+                    self.copy_input(nodes, case.study, case.label)
 
         attached_files.append(doc.close())
 
@@ -2876,30 +2844,35 @@ class Studies(object):
 
         self.reporting('  o Generation of V&V description report')
 
-        for l, s in self.studies:
+        previous_study_name = None
+        for case in self.graph.graph_dict:
 
-            # change directory to make report pdf file
-            make_dir = os.path.join(self.__dest, l, "REPORT")
-            if os.path.isdir(make_dir):
-                os.chdir(make_dir)
+            # detect new study
+            if case.study is not previous_study_name:
+                previous_study_name = case.study
 
-                log_pdf = open("make_pdf.log", mode='w')
-                cmd = "make pdf"
-                pdf_retval, t = run_studymanager_command(cmd, log_pdf)
-                log_pdf.close()
+                # change directory to make report pdf file
+                make_dir = os.path.join(self.__dest, case.study, "REPORT")
+                if os.path.isdir(make_dir):
+                    os.chdir(make_dir)
 
-                report_pdf = "write-up.pdf"
-                if os.path.isfile(report_pdf):
-                    self.reporting('    - write-up.pdf file was generated ' + \
-                                   'in ' + l + "/REPORT folder.")
+                    log_pdf = open("make_pdf.log", mode='w')
+                    cmd = "make pdf"
+                    pdf_retval, t = run_studymanager_command(cmd, log_pdf)
+                    log_pdf.close()
+
+                    report_pdf = "write-up.pdf"
+                    if os.path.isfile(report_pdf):
+                        self.reporting('    - write-up.pdf file was generated ' + \
+                                       'in ' + case.study + "/REPORT folder.")
+                    else:
+                        self.reporting('    - ERROR: write-up.pdf file was not ' + \
+                                       'generated. See write-up.log and ' + \
+                                       'make_pdf.log in REPORT folder.')
+
                 else:
-                    self.reporting('    - ERROR: write-up.pdf file was not ' + \
-                                   'generated. See write-up.log and ' + \
-                                   'make_pdf.log in REPORT folder.')
-
-            else:
-                self.reporting('    - No REPORT folder: generation of ' + \
-                               'description file is aborted.')
+                    self.reporting('    - No REPORT folder: generation of ' + \
+                                   'description file is aborted.')
 
         # move to initial location
         os.chdir(save_dir)
