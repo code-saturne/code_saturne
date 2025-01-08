@@ -527,6 +527,98 @@ _smoothe(const cs_mesh_t              *m,
   CS_FREE_HD(smbdp);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Contact angle based correction for the boundary condition.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_contact_angle_correction
+(
+  cs_real_3_t                *surf_norm, /*!<[in,out] */
+  const cs_mesh_t            *mesh,      /*!<[in] pointer to mesh structure */
+  const cs_mesh_quantities_t *mq         /*!<[in] pointer to mesh quantities */
+)
+{
+  /* Get values or local pointers */
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+  const cs_real_t *b_face_u_normal = (const cs_real_t *)mq->b_face_u_normal;
+  cs_real_t *restrict volume = mq->cell_vol;
+
+  const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
+  const cs_real_t mu1 = _vof_parameters.mu1;
+
+  const cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+
+  cs_real_t *alpha_g = CS_F_(void_f)->val;
+
+  //FIXME: Needed ?
+  bool static_contact = false;
+
+  // D. Legendre, Computers & Fluids 113 (2015) 2–13 (for these two values)
+  constexpr cs_real_t slip_length = 1.e-9;
+  constexpr cs_real_t angle = 60.;
+
+  const cs_real_t pi_inv = 180. / cs_math_pi;
+  const cs_real_t theta_micro = cs_math_pi * angle / 180.;
+
+  /* Static contact angle only depends on theta_micro, hence we compute it
+   * outside of the loop on boundary faces.
+   */
+  const cs_real_t static_contact_angle
+    = (cs_math_pow3(theta_micro) / 9.)
+    - 0.00183985 * pow(theta_micro, 4.5)
+    + 1.845823e-06 * pow(theta_micro, 12.258487);
+
+// To review later: (for internal solid faces)
+//CK : Is the pragma needed here ? Should be using dispatch...
+//# pragma omp parallel for if(mesh->n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+    if (   cs_glob_bc_type[face_id] == CS_SMOOTHWALL
+        || cs_glob_bc_type[face_id] == CS_ROUGHWALL)
+    {
+      cs_lnum_t cell_id = b_face_cells[face_id];
+
+      if ((1. - alpha_g[cell_id]) * alpha_g[cell_id] > 0.01) {
+
+        cs_real_t *nw = (cs_real_t *)b_face_u_normal + 3 * face_id;
+        cs_real_t apparent_length = pow(volume[cell_id], cs_math_1ov3) / 2.0;
+
+        // Tangential velocity (tangential projection to the wall)
+        cs_real_3_t nt;
+        cs_math_3_orthogonal_projection(nw,
+                                        vel[cell_id],
+                                        nt);
+
+        cs_real_t utau = cs_math_3_norm(nt);
+
+        cs_real_t capillary_number = mu1 * utau / cpro_surftens;
+
+        cs_real_t theta_macro = static_contact_angle
+                              + capillary_number
+                              * log(apparent_length / slip_length);
+
+        //CK: Always false ?
+        //cs_real_t theta = (static_contact) ? theta_micro : _g_dyn(theta_macro);
+        cs_real_t theta = ( pow(9.0 * theta_macro, cs_math_1ov3)
+                          + 0.0727387 * theta_macro
+                          - 0.0515388 * cs_math_pow2(theta_macro)
+                          + 0.00341336 * cs_math_pow3(theta_macro) ) * pi_inv;
+
+        cs_math_3_normalize(nt, nt);
+
+        cs_real_t ctheta = cos(theta);
+        cs_real_t stheta = sin(theta);
+        for (int i = 0; i < 3; i++)
+          surf_norm[cell_id][i] = - nw[i] * ctheta + nt[i] * stheta;
+      }
+    }
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1203,6 +1295,9 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   });
 
   ctx.wait();
+
+  /* Correction of surfxyz_norm at walls (Contact angle) */
+  _contact_angle_correction(surfxyz_norm, m, mq);
 
   /* Curvature Computation */
   cs_real_33_t *gradnxyz;
