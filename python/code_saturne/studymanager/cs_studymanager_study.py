@@ -269,8 +269,8 @@ class Case(object):
             self.run_dir = os.path.join(self.__dest, self.label, self.resu,
                                         self.run_id)
 
-            self.title = self.study + "/" + self.label + "/" +  self.resu + "/" \
-                   + self.run_id
+            self.title = self.study + "/" + self.label + "/" +  self.resu \
+                       + "/" + self.run_id
 
         self.exe = os.path.join(pkg.get_dir('bindir'),
                                 pkg.name + pkg.config.shext)
@@ -2683,13 +2683,39 @@ class Studies(object):
         """
         Plot data.
         """
-        if self.__plotter:
-            for l, s in self.studies:
-                if s.cases:
-                    self.reporting('  o Plot study: ' + l)
-                    self.__plotter.plot_study(l, s,
+
+        previous_study_name = None
+        previous_study_object = None
+        list_cases = []
+        for case in self.graph.graph_dict:
+
+            # detect new study
+            if case.study is not previous_study_name:
+
+                # submit previous study
+                if previous_study_name and list_cases:
+                    self.reporting('  o Plot study: ' + previous_study_name)
+                    self.__plotter.plot_study(previous_study_object,
+                                              list_cases,
                                               self.__dis_tex,
                                               self.__default_fmt)
+                    list_cases = []
+
+                # store actual study name and object
+                study_label, study_object = self.studies[case.study_index]
+                previous_study_name = study_label
+                previous_study_object = study_object
+
+            # add case in list
+            list_cases.append(case)
+
+        # final study
+        if previous_study_name and list_cases:
+            self.reporting('  o Plot study: ' + previous_study_name)
+            self.__plotter.plot_study(previous_study_object,
+                                      list_cases,
+                                      self.__dis_tex,
+                                      self.__default_fmt)
 
         self.reporting('')
 

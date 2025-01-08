@@ -588,15 +588,19 @@ class Plotter(object):
 
     #---------------------------------------------------------------------------
 
-    def plot_study(self, study_label, study_object, disable_tex, default_fmt):
+    def plot_study(self, study_object, list_cases, disable_tex, default_fmt):
         """
-        Method used to plot all plots from a I{study_label} (all cases).
-        @type study_label: C{String}
-        @param study_label: label of a study
+        Method used to plot all plots from a I{study} (all cases).
+        @param study_object: study object: C{Study}
+        @param list_cases: list of cases of a study: C{list}
+        @param disable_tex,: option to disable latex: C{boolean}
+        @param default_fmt: default format: C{String}
 
         """
         # initialization necessary in case of several studies
         self.curves = []
+
+        study_label = study_object.label
 
         # disable tex in Matplotlib (use Mathtext instead)
         rcParams['text.usetex'] = not disable_tex
@@ -612,61 +616,37 @@ class Plotter(object):
                 self.curves.append(curve)
 
         # Read the files for probes
-        for case in study_object.cases:
+        for case in list_cases:
             if case.plot:
+
+                # Read the files for probes
                 for node in self.parser.getChildren(case.node, "probes"):
                     file_name, dest, fig = self.parser.getProbes(node)
 
-                    f = os.path.join(self.parser.getDestination(),
-                                     study_label,
-                                     case.label, case.resu,
-                                     case.run_id, "monitoring", file_name)
+                    f = os.path.join(case.run_dir, "monitoring", dest, file_name)
                     if not os.path.isfile(f):
-                        print("\n\nThis file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
+                        print("    This probes file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
 
                     else:
                         for ycol in range(2, self.__number_of_column(f) + 1):
                             curve = Probes(f, fig, ycol)
                             self.curves.append(curve)
 
-        # Read the files of results of cases
-        for case in study_object.cases:
-            if case.plot:
+                # Read the files of results of cases
                 for node in self.parser.getChildren(case.node, "data"):
                     plots, file_name, dest, repo = self.parser.getResult(node)
 
-                    d = case.run_id
-                    dd = self.parser.getDestination()
-                    if dest:
-                        d = case.run_id + "/" + dest
-                    elif repo:
-                        d = repo
-                        dd = self.parser.getRepository()
-
-                    if case.subdomains:
-                        dom_list = case.subdomains
-                    else:
-                        dom_list = [""]
-
                     iok = False
-                    for ddd in dom_list:
+                    for sd in (".", "monitoring", "profiles"):
 
-                        for sd in (".", "monitoring", "profiles"):
+                        f = os.path.join(case.run_dir, sd, dest, file_name)
 
-                            f = os.path.join(dd,
-                                             study_label,
-                                             case.label, case.resu,
-                                             d, ddd, sd, file_name)
-
-                            if os.path.isfile(f):
-                                iok = True
-                                break
-
-                        if iok:
+                        if os.path.isfile(f):
+                            iok = True
                             break
 
                     if not iok:
-                        print("\n\nThis file does not exist: %s\n"
+                        print("\nThis file does not exist: %s\n"
                               "(last call with path: %s)\n" % (file_name, f))
 
                     else:
@@ -686,7 +666,7 @@ class Plotter(object):
                     f = os.path.join(dd, study_label, "POST", file_name)
 
                     if not os.path.isfile(f):
-                        raise ValueError("\n\nThis file does not exist: %s\n"
+                        raise ValueError("\nThis file does not exist: %s\n"
                                          " (call with path: %s)\n" % (file_name, f))
 
                     for nn in plots:
