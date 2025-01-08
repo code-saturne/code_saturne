@@ -44,17 +44,17 @@
 #include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
+#include "alge/cs_saddle_solver_setup.h"
+#include "alge/cs_param_sles_setup.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_log.h"
+#include "base/cs_volume_zone.h"
 #include "cdo/cs_cdo_advection.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdocb_priv.h"
 #include "cdo/cs_hodge.h"
-#include "base/cs_log.h"
-#include "mesh/cs_mesh_location.h"
-#include "alge/cs_saddle_solver_setup.h"
-#include "alge/cs_param_sles_setup.h"
 #include "cdo/cs_source_term.h"
-#include "base/cs_volume_zone.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -3002,7 +3002,7 @@ cs_equation_remove_ic(cs_equation_param_t *eqp,
       z_id = z->id;
   }
 
-  /* Search for given BC */
+  /* Search for given IC */
 
   int j = -1;
   for (int i = 0; i < eqp->n_ic_defs; i++) {

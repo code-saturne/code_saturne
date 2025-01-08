@@ -61,14 +61,14 @@
 #include "bft/bft_error.h"
 #include "bft/bft_mem.h"
 
-#include "cdo/cs_equation.h"
-#include "base/cs_fp_exception.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
 #include "alge/cs_multigrid.h"
 #include "alge/cs_param_sles_setup.h"
 #include "alge/cs_saddle_solver.h"
 #include "alge/cs_sles.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "cdo/cs_equation.h"
 
 #if defined(HAVE_MUMPS)
 #include "alge/cs_sles_mumps.h"

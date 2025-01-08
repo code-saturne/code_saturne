@@ -30,13 +30,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_param_saddle.h"
+#include "alge/cs_param_sles.h"
 #include "cdo/cs_advection_field.h"
 #include "cdo/cs_enforcement.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_iter_algo.h"
 #include "cdo/cs_param_cdo.h"
-#include "alge/cs_param_saddle.h"
-#include "alge/cs_param_sles.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_xdef.h"
 

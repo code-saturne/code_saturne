@@ -422,16 +422,16 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the value of the time step.
+ * \brief Define the value of the time step.
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- * \param[in]        dt        value of the constant time step
+ * \param[in, out] domain  pointer to a cs_domain_t structure
+ * \param[in]      dt      value of the constant time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_def_time_step_by_value(cs_domain_t   *domain,
-                                 double         dt)
+cs_domain_def_time_step_by_value(cs_domain_t *domain,
+                                 double       dt)
 {
   if (domain == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);

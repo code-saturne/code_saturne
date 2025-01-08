@@ -40,10 +40,10 @@
 #include "base/cs_base.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_field.h"
-#include "mesh/cs_mesh_adjacencies.h"
 #include "base/cs_param_types.h"
-#include "cdo/cs_quadrature.h"
 #include "base/cs_volume_zone.h"
+#include "cdo/cs_quadrature.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -399,18 +399,18 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the value associated to the given definition.
- *         This should be a definition by value and the dimension should be
- *         equal to one.
+ * \brief Retrieve the value associated to the given definition.
+ *        This should be a definition by value and the dimension should be
+ *        equal to one.
  *
- * \param[in]  def    pointer to a cs_xdef_t structure
+ * \param[in] def  pointer to a cs_xdef_t structure
  *
  * \return the value of the definition
  */
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-cs_xdef_get_scalar_value(cs_xdef_t     *def)
+cs_xdef_get_scalar_value(cs_xdef_t *def)
 {
   assert(def != NULL);
   assert(def->dim == 1);

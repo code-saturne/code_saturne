@@ -39,9 +39,9 @@
 
 #include "bft/bft_mem.h"
 
-#include "cdo/cs_equation_param.h"
-#include "base/cs_fp_exception.h"
 #include "alge/cs_param_sles.h"
+#include "base/cs_fp_exception.h"
+#include "cdo/cs_equation_param.h"
 
 #if defined(HAVE_MUMPS)
 #include "alge/cs_sles_mumps.h"
@@ -135,20 +135,19 @@ _mumps_hook(void     *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the SLES associated to a system of equation
+ * \brief Set the SLES associated to a system of equation
  *
- * \param[in]  n_eqs     number of equations in the system to solve
- * \param[in]  sysp      set of paremeters for the system of equations
- * \param[in]  blocks    array of the core members for an equation
+ * \param[in] n_eqs   number of equations in the system to solve
+ * \param[in] sysp    set of paremeters for the system of equations
+ * \param[in] blocks  array of the core members for an equation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_sles_init(int                            n_eqs,
-                             cs_equation_system_param_t    *sysp,
-                             cs_equation_core_t           **blocks)
+cs_equation_system_sles_init(int                          n_eqs,
+                             cs_equation_system_param_t  *sysp,
+                             cs_equation_core_t         **blocks)
 {
-  CS_UNUSED(n_eqs);
   assert(sysp != nullptr);
 
   cs_param_sles_t  *sys_slesp = sysp->sles_param;
@@ -157,11 +156,11 @@ cs_equation_system_sles_init(int                            n_eqs,
 
   case CS_EQUATION_SYSTEM_SLES_MUMPS:
     {
-    cs_param_mumps_t *mumpsp
-      = static_cast<cs_param_mumps_t *>(sys_slesp->context_param);
+      cs_param_mumps_t *mumpsp
+        = static_cast<cs_param_mumps_t *>(sys_slesp->context_param);
 
-    if (mumpsp == nullptr) /* Define a context by default */
-      cs_param_sles_mumps_reset(sys_slesp);
+      if (mumpsp == nullptr) /* Define a context by default */
+        cs_param_sles_mumps_reset(sys_slesp);
 
 #if defined(HAVE_MUMPS)
       /* Propagate the settings to all blocks (only to get a consistent log) */
@@ -179,8 +178,11 @@ cs_equation_system_sles_init(int                            n_eqs,
           slesp->field_id = field_id;
 
           if (i == 0 && j == 0)
-            cs_sles_mumps_define(
-              -1, sysp->name, sys_slesp, cs_user_sles_mumps_hook, nullptr);
+            cs_sles_mumps_define(-1, sysp->name,
+                                 sys_slesp,
+                                 cs_user_sles_mumps_hook,
+                                 nullptr);
+
         }
       }
 #else

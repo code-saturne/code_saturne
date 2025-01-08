@@ -40,39 +40,39 @@
 
 #include "fvm/fvm_defs.h"
 
+#include "alge/cs_saddle_solver.h"
+#include "alge/cs_saddle_solver_setup.h"
 #include "base/cs_ale.h"
 #include "base/cs_base.h"
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_control.h"
+#include "base/cs_defs.h"
+#include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_pressure_correction.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_timer.h"
+#include "base/cs_timer_stats.h"
+#include "base/cs_volume_zone.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_toolbox.h"
 #include "cdo/cs_cdo_system.h"
-#include "base/cs_control.h"
-#include "base/cs_defs.h"
 #include "cdo/cs_domain.h"
 #include "cdo/cs_domain_op.h"
 #include "cdo/cs_domain_setup.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_equation_system.h"
-#include "gui/cs_gui.h"
-#include "gwf/cs_gwf.h"
-#include "base/cs_log.h"
-#include "base/cs_log_iteration.h"
 #include "cdo/cs_maxwell.h"
 #include "cdo/cs_navsto_system.h"
-#include "base/cs_parall.h"
-#include "base/cs_post.h"
-#include "base/cs_pressure_correction.h"
-#include "base/cs_prototypes.h"
-#include "alge/cs_saddle_solver.h"
-#include "alge/cs_saddle_solver_setup.h"
 #include "cdo/cs_solid_selection.h"
 #include "cdo/cs_solidification.h"
 #include "cdo/cs_thermal_system.h"
-#include "base/cs_timer.h"
-#include "base/cs_timer_stats.h"
-#include "base/cs_volume_zone.h"
 #include "cdo/cs_walldistance.h"
+#include "gui/cs_gui.h"
+#include "gwf/cs_gwf.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -413,12 +413,11 @@ _initialize_time_step(cs_time_step_t         *ts,
                       cs_time_step_options_t *ts_opt)
 {
   assert(cs_dt_pty != nullptr);
-  assert(cs_property_is_uniform(cs_dt_pty)); // Up to now one considers thaht
+  assert(cs_property_is_uniform(cs_dt_pty)); // Up to now one considers that
                                              // the same time step is used in
                                              // all cells
 
   const double t_cur = ts->t_cur;
-
   const double dt_init = cs_property_get_cell_value(0,  // cell_id
                                                     t_cur,
                                                     cs_dt_pty);
@@ -432,8 +431,8 @@ _initialize_time_step(cs_time_step_t         *ts,
 
     /* Update time_options */
 
-    double  dtmin = CS_MIN(ts_opt->dtmin, dt_init);
-    double  dtmax = CS_MAX(ts_opt->dtmax, dt_init);
+    double dtmin = CS_MIN(ts_opt->dtmin, dt_init);
+    double dtmax = CS_MAX(ts_opt->dtmax, dt_init);
 
     ts_opt->dtmin = dtmin;
     ts_opt->dtmax = dtmax;
@@ -848,6 +847,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
     if (cs_dt_pty != nullptr)
       if (cs_dt_pty->n_definitions == 0)
         cs_property_def_iso_by_value(cs_dt_pty, nullptr, cs_dt_pty->ref_value);
+
   }
   else { /* Setup the time step if not already done */
 

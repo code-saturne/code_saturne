@@ -235,10 +235,10 @@ _vector_v2c(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Apply 1/|dual_vol| to a synchronized array of DoF vertices
- *         Parallel synchronization is done inside this function:
- *         1) A parallel sum reduction is done on the vtx_values
- *         2) Apply 1/|dual_vol| to each entry
+ * \brief Apply 1/|dual_vol| to a synchronized array of DoF vertices
+ *        Parallel synchronization is done inside this function:
+ *        1) A parallel sum reduction is done on the vtx_values
+ *        2) Apply 1/|dual_vol| to each entry
  *
  *  \param[in]      connect    pointer to additional connectivities for CDO
  *  \param[in]      quant      pointer to additional quantities for CDO
@@ -249,11 +249,11 @@ _vector_v2c(cs_lnum_t                    c_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_dual_vol_weight_reduction(const cs_cdo_connect_t       *connect,
-                                  const cs_cdo_quantities_t    *quant,
-                                  int                           stride,
-                                  bool                          interlace,
-                                  cs_real_t                    *array)
+cs_reco_dual_vol_weight_reduction(const cs_cdo_connect_t    *connect,
+                                  const cs_cdo_quantities_t *quant,
+                                  int                        stride,
+                                  bool                       interlace,
+                                  cs_real_t                 *array)
 {
   if (array == nullptr)
     return;
@@ -281,6 +281,7 @@ cs_reco_dual_vol_weight_reduction(const cs_cdo_connect_t       *connect,
 
     cs_cdo_quantities_compute_dual_volumes(quant, connect, &build_dual_vol);
     dual_vol = build_dual_vol;
+
   }
   else
     dual_vol = quant->dual_vol;
@@ -289,24 +290,26 @@ cs_reco_dual_vol_weight_reduction(const cs_cdo_connect_t       *connect,
 
   if (stride == 1) {
 
-#pragma omp parallel for if (n_vertices > CS_THR_MIN)
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
       array[v_id] /= dual_vol[v_id];
+
   }
   else {
 
     if (interlace) {
 
-#pragma omp parallel for if (n_vertices > CS_THR_MIN)
+#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
       for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
         const cs_real_t invvol = 1. / dual_vol[v_id];
         for (int k = 0; k < stride; k++)
           array[stride * v_id + k] *= invvol;
       }
+
     }
     else { /* not interlace */
 
-#pragma omp parallel for if (n_vertices > CS_THR_MIN)
+#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
       for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
         const cs_real_t invvol = 1. / dual_vol[v_id];
         for (int k = 0; k < stride; k++)

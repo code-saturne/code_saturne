@@ -43,9 +43,9 @@
 #include "bft/bft_error.h"
 #include "bft/bft_mem.h"
 
+#include "alge/cs_sles.h"
 #include "base/cs_base.h"
 #include "base/cs_log.h"
-#include "alge/cs_sles.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1127,8 +1127,8 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_FGMRES;
     saddlep->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
 
-    cs_param_solver_class_t  ret_class =
-      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+    cs_param_solver_class_t  ret_class
+      = cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
     if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
       return 2;
 
@@ -1137,7 +1137,7 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     ctxp->augmentation_scaling = 0.;
     ctxp->n_stored_directions = 30;    /* default value */
-    ctxp->xtra_sles_param = nullptr;      /* It should remain to nullptr */
+    ctxp->xtra_sles_param = nullptr;   /* It should remain to nullptr */
 
     saddlep->context = ctxp;
 

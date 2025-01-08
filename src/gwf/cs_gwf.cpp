@@ -47,17 +47,17 @@
 #include "bft/bft_mem.h"
 
 #include "base/cs_array.h"
-#include "cdo/cs_equation_bc.h"
 #include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_parall.h"
+#include "base/cs_param_types.h"
+#include "base/cs_post.h"
+#include "cdo/cs_equation_bc.h"
 #include "gwf/cs_gwf_priv.h"
 #include "gwf/cs_gwf_sspf.h"
 #include "gwf/cs_gwf_tpf.h"
 #include "gwf/cs_gwf_uspf.h"
-#include "base/cs_log.h"
-#include "base/cs_parall.h"
-#include "base/cs_param_types.h"
 #include "pprt/cs_physical_model.h"
-#include "base/cs_post.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"

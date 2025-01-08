@@ -38,10 +38,10 @@
 
 #include "bft/bft_mem.h"
 
+#include "base/cs_timer_stats.h"
 #include "cdo/cs_cdovb_scalsys.h"
 #include "cdo/cs_equation_system_sles.h"
 #include "cdo/cs_equation_param.h"
-#include "base/cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
