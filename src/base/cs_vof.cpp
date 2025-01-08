@@ -251,6 +251,9 @@ static cs_cavitation_parameters_t  _cavit_parameters =
   .itscvi =  1
 };
 
+/* Contact angle choice */
+static cs_vof_contact_angle_t _contact_angle_choice = CS_VOF_CONTACT_ANGLE_OFF;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -526,6 +529,113 @@ _smoothe(const cs_mesh_t              *m,
   CS_FREE_HD(dam);
   CS_FREE_HD(smbdp);
 }
+
+END_C_DECLS // Temporary used here for the templated function
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Contact angle based correction for the boundary condition.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_vof_contact_angle_t choice>
+static void
+_contact_angle_correction
+(
+  const cs_mesh_t            *m,         /*!<[in] pointer to mesh structure */
+  const cs_mesh_quantities_t *mq,        /*!<[in] pointer to mesh quantities */
+  cs_dispatch_context        &ctx,       /*!<[in] reference to dispatch context */
+  cs_real_3_t                *surf_norm  /*!<[in,out] Corrected norm of grad(alpha_diffu) */
+)
+{
+  /* Sanity check */
+  if (choice < CS_VOF_CONTACT_ANGLE_STATIC)
+    return;
+
+  /* Get values or local pointers */
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+  cs_real_3_t *b_face_u_normal = mq->b_face_u_normal;
+  cs_real_t *restrict volume = mq->cell_vol;
+
+  const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
+  const cs_real_t mu1 = _vof_parameters.mu1;
+
+  const cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+
+  cs_real_t *alpha_g = CS_F_(void_f)->val;
+
+  // D. Legendre, Computers & Fluids 113 (2015) 2–13 (for these two values)
+  constexpr cs_real_t slip_length = 1.e-9;
+  constexpr cs_real_t angle = 60.;
+
+  const cs_real_t pi_inv = 180. / cs_math_pi;
+  const cs_real_t theta_micro = cs_math_pi * angle / 180.;
+
+  /* Static contact angle only depends on theta_micro, hence we compute it
+   * outside of the loop on boundary faces.
+   */
+  const cs_real_t static_contact_angle
+    = (cs_math_pow3(theta_micro) / 9.)
+    - 0.00183985 * pow(theta_micro, 4.5)
+    + 1.845823e-06 * pow(theta_micro, 12.258487);
+
+  const int *bc_type = cs_glob_bc_type;
+
+  /* Dispatch class */
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+    if (   bc_type[face_id] == CS_SMOOTHWALL
+        || bc_type[face_id] == CS_ROUGHWALL)
+    {
+      cs_lnum_t cell_id = b_face_cells[face_id];
+
+      if ((1. - alpha_g[cell_id]) * alpha_g[cell_id] > 0.01) {
+
+        // Tangential velocity (tangential projection to the wall)
+        cs_real_3_t nt;
+        cs_math_3_orthogonal_projection(b_face_u_normal[face_id],
+                                        vel[cell_id],
+                                        nt);
+
+        /* Compute theta depending on the chosen model. */
+        cs_real_t theta = theta_micro;
+
+        if (choice == CS_VOF_CONTACT_ANGLE_DYN) {
+          cs_real_t utau = cs_math_3_norm(nt);
+
+          cs_real_t capillary_number = mu1 * utau / cpro_surftens;
+
+          cs_real_t apparent_length = cbrt(volume[cell_id]) / 2.0;
+
+          cs_real_t theta_macro =  static_contact_angle
+                                 + capillary_number
+                                 * log(apparent_length / slip_length);
+
+          theta = (  cbrt(9.0 * theta_macro)
+                   + 0.0727387 * theta_macro
+                   - 0.0515388 * cs_math_pow2(theta_macro)
+                   + 0.00341336 * cs_math_pow3(theta_macro)) * pi_inv;
+        }
+
+        cs_math_3_normalize(nt, nt);
+
+        cs_real_t ctheta = cos(theta);
+        cs_real_t stheta = sin(theta);
+        for (int i = 0; i < 3; i++)
+          cs_dispatch_sum(&surf_norm[cell_id][i],
+                          - b_face_u_normal[face_id][i] * ctheta + nt[i] * stheta,
+                          b_sum_type);
+      }
+    }
+  });
+
+  ctx.wait();
+}
+
+BEGIN_C_DECLS
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1203,6 +1313,20 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   });
 
   ctx.wait();
+
+  /* Correction of surfxyz_norm at walls (Contact angle) */
+  if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_STATIC) {
+    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_STATIC>(m,
+                                                           mq,
+                                                           ctx,
+                                                           surfxyz_norm);
+  }
+  else if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_DYN) {
+    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_DYN>(m,
+                                                        mq,
+                                                        ctx,
+                                                        surfxyz_norm);
+  }
 
   /* Curvature Computation */
   cs_real_33_t *gradnxyz;
@@ -2082,6 +2206,24 @@ cs_cavitation_compute_source_term(const cs_real_t  pressure[],
   });
 
   ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the contact angle mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_contact_angle_set
+(
+  const cs_vof_contact_angle_t choice /*!<[in] Contact angle model to set. */
+)
+{
+  /* Sanity check */
+  assert(choice < CS_VOF_N_CONTACT_ANGLE_TYPES);
+
+  _contact_angle_choice = choice;
 }
 
 /*----------------------------------------------------------------------------*/
