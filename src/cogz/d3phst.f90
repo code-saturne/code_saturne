@@ -37,7 +37,6 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     ncel          number of cells
-!> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     indpdf        indicator for pdf integration or mean value
 !> \param[in]     dirmin        Dirac's peak value at \f$ f_{min} \f$
 !> \param[in]     dirmax        Dirac's peak value at \f$ f_{max} \f$
@@ -50,12 +49,9 @@
 !_______________________________________________________________________________
 
 subroutine d3phst &
- ( ncelet , ncel   , indpdf ,                                     &
+ ( ncel   , indpdf ,                                              &
    dirmin , dirmax , fdeb   , ffin   , hrec   ,                   &
-   fm     , hm     ,                                              &
-   hstoe  )
-
-!===============================================================================
+   fm     , hm     , hstoe  )
 
 !===============================================================================
 ! Module files
@@ -80,12 +76,11 @@ implicit none
 
 ! Arguments
 
-integer          ncelet, ncel
-integer          indpdf(ncelet)
-double precision dirmin(ncelet), dirmax(ncelet)
-double precision fdeb(ncelet), ffin(ncelet), hrec(ncelet)
-double precision fm(ncelet), hm(ncelet), hstoe(ncelet)
-
+integer          ncel
+integer          indpdf(ncel)
+double precision dirmin(ncel), dirmax(ncel)
+double precision fdeb(ncel), ffin(ncel), hrec(ncel)
+double precision fm(ncel), hm(ncel), hstoe(ncel)
 
 ! Local variables
 
@@ -116,7 +111,7 @@ log_active = cs_log_default_is_active()
 
 do iel = 1, ncel
 
-  if ( indpdf(iel) .eq. 0 ) then
+  if (indpdf(iel) .eq. 0) then
 
 !===============================================================================
 ! 1. DETERMINATION DE HSTOE SANS INTEGRATION

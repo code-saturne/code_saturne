@@ -20,8 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine coprop
-!================
+subroutine coprop () &
+ bind(C, name='cs_f_coprop')
 
 !===============================================================================
 ! Purpose:
@@ -80,7 +80,7 @@ character(len=80) :: f_name, f_label
 if (ippmod(icod3p).ge.0) then
 
   call add_property_field_1d('temperature', 'Temperature', itemp)
-  call add_property_field_1d('temperature_2', 'Temperature_2', it2m)
+  !call add_property_field_1d('temperature_2', 'Temperature_2', it2m)
 
   call add_property_field_1d('ym_fuel', 'Ym_Fuel', iym(1))
   call add_property_field_1d('ym_oxyd', 'Ym_Oxyd', iym(2))

@@ -87,6 +87,46 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
                                          const double  th[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute rectangle-Dirac pdf parameters.
+ *
+ * From P. Plion & A. Escaich
+ *
+ * \param[in]       n_cells       number of cells
+ * \param[out]      indpdf        indicator for pdf integration or mean value
+ * \param[out]      tpdf          indicator for pdf shape:
+ *                               - 0: Dirac at mean value
+ *                               - 1: rectangle
+ *                               - 2: Dirac's peak at \f$ f_{min} \f$
+ *                               - 3: Dirac's peak at \f$ f_{max} \f$
+ *                               - 4: rectangle and 2 Dirac's pics
+ * \param[in]       fm            mean mixture fraction at cell centers
+ * \param[in, out]  fp2m          mean mixture fraction variance at cell centers
+ * \param[in, out]  fmini         mixture fraction low boundary
+ * \param[in]       fmaxi         mixture fraction high boundary
+ * \param[out]      dirmin        Dirac's peak value at \f$ f_{min} \f$
+ * \param[out]      dirmax        Dirac's peak value at \f$ f_{max} \f$
+ * \param[out]      fdeb          abscissa of rectangle low boundary
+ * \param[out]      ffin          abscissa of rectangle high boundary
+ * \param[out]      hrec          rectangle height
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_dirac_pdf(cs_lnum_t         n_cells,
+                        int               indpdf[],
+                        cs_real_t         tpdf[],
+                        const cs_real_t   fm[],
+                        cs_real_t         fp2m[],
+                        const cs_real_t   fmini[],
+                        const cs_real_t   fmaxi[],
+                        cs_real_t         dirmin[],
+                        cs_real_t         dirmax[],
+                        cs_real_t         fdeb[],
+                        cs_real_t         ffin[],
+                        cs_real_t         hrec[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

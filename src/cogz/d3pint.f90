@@ -56,7 +56,8 @@
 subroutine d3pint &
  ( indpdf ,                                                       &
    dirmin , dirmax , fdeb   , ffin   , hrec   , tpdf ,            &
-   w1      )
+   w1      )                                                      &
+  bind(C, name='cs_f_d3pint')
 
 !===============================================================================
 
@@ -119,9 +120,6 @@ character(len=80) :: th_name, th_st_name
 integer       ipass
 data          ipass /0/
 save          ipass
-
-
-!===============================================================================
 
 !===============================================================================
 ! 0. ON COMPTE LES PASSAGES
@@ -247,16 +245,9 @@ do iel = 1, ncel
 enddo
 
 if (ippmod(icod3p).eq.1) then
-
-  call d3phst                                                     &
-  !==========
-  ( ncelet , ncel    , indpdf ,                                   &
-    dirmin , dirmax  , fdeb   , ffin   , hrec   ,                 &
-    cvar_fm          , cvar_scalt      ,                          &
-    w1      )
-
+  call d3phst(ncel, indpdf, dirmin, dirmax, fdeb, ffin, hrec,   &
+              cvar_fm, cvar_scalt, w1)
 endif
-
 
 !===============================================================================
 ! 3. INTEGRATION a) DE LA TEMPERATURE
@@ -264,7 +255,6 @@ endif
 !                c) DES TERME T^4 et T^3 si rayonnement
 !                d) DE LA MASSE VOLUMIQUE
 !===============================================================================
-
 
 ! ---> Positions des variables, coefficients
 

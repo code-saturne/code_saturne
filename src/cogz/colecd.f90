@@ -704,11 +704,111 @@ if (use_janaf.eqv..true.) then
 
   enddo
 
-!==================================================================
-! Burke Schumann Relationships
-!==================================================================
+  ! Burke Schumann Relationships
+  !=============================
 
-  call cs_burke_schumann()
+  if (cmtype.eq.102 .or. cmtype.eq.103) then
+    call cs_burke_schumann()
+  endif
+
+!===============================================================================
+! -2. UTILISATION D'UNE TABULATION ENTHALPIE-TEMPERATURE
+!===============================================================================
+
+else
+
+  open (unit=impfpp, file=ficfpp, status='old', form='formatted',  &
+        access='sequential', iostat=ios, err=99)
+  rewind (unit=impfpp, err=99)
+
+  ! Nb de points de tabulation ENTH-TEMP
+
+  read(impfpp, *, err=999, end=999) npo
+  if (npo.gt.npot) then
+    write(nfecra, 9981) npot, npo
+    call csexit (1)
+  endif
+
+  ! Tabulation ENTH-TEMP pour les especes globales
+
+  do it = 1, npo
+    read(impfpp, *, err=999, end=999) th(it),                       &
+                 ehgazg(1,it),ehgazg(2,it),ehgazg(3,it)
+  enddo
+
+  ! On ne considere qu'UNE SEULE REACTION GLOBALE
+  ! NGAZG = NCGM = 3 par consequent (F, O, P)
+  ngazg = 3
+
+  ! On ne considere qu'UNE SEULE REACTION GLOBALE
+  nrgaz = 1
+
+  ! Masses molaires pour les especes globales
+
+  read (impfpp,*,err=999,end=999) wmolg(1),wmolg(2),wmolg(3)
+
+  ! Fraction de melange a la stoechiometrie
+
+  read (impfpp,*,err=999,end=999) fs(1)
+
+  ! Coefficients d'absorption des especes globales
+
+  read (impfpp,*,err=999,end=999) ckabsg(1),ckabsg(2),ckabsg(3)
+
+  ! Coefficients molaires de CO2 et H2O dans les produits
+  ! (pour le rayonnement)
+
+  read (impfpp,*,err=999,end=999) xco2, xh2o
+
+  ! Fermeture du fichier
+
+  close(impfpp)
+
+  ! Calcul des coefficients de la fraction massique d oxydant
+  ! on consid\E8re que l'oxydant est un m\E9lange d'O2 et N2
+
+  coeff1 = ((wmolg(2)-0.028)/(0.032-0.028))* (0.032/wmolg(2))
+
+  coeff3 = (1-fs(1))/fs(1)
+
+  coeff2 = coeff3*coeff1
+
+  ! Conversion coefficients from global species to elementary species
+
+  do igg = 1, ngazg
+    do ige = 1, ngaze
+      coefeg(ige,igg) = compog(ige,igg)*wmole(ige)/wmolg(igg)
+    enddo
+  enddo
+
+  ! --- PCI calculation
+
+  ! gas name storage
+  namgas = nomcoe(1)
+
+  pcigas = 0.d0
+
+  do ir = 1, nrgaz
+
+    do igg = 1, ngazg
+
+      ! enthalpies of formation
+      coefg(1)  = 0.d0
+      coefg(2)  = 0.d0
+      coefg(3)  = 0.d0
+      coefg(igg) = 1.d0
+      tgaz      = 300.d0
+
+      efgaz(igg) = cs_gas_combustion_t_to_h(coefg, tgaz)
+
+      pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
+
+    enddo
+
+    ! dimension is J/kg of combustible
+    pcigas = pcigas / (stoeg(1,ir)*wmolg(1))
+
+  enddo
 
 endif
 

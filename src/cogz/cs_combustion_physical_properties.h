@@ -61,8 +61,6 @@ BEGIN_C_DECLS
 /*
  * \brief Compute physical properties for the 3-point chemistry
  *        combustion model.
- *
- * \param[in, out]   mbrom    filling indicator of romb
  */
 /*----------------------------------------------------------------------------*/
 

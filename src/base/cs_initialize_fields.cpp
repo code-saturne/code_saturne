@@ -99,6 +99,9 @@ void
 cs_f_ppiniv0(void);
 
 void
+cs_f_d3pini1(void);
+
+void
 cs_f_user_initialization_wrapper(cs_real_t  dt[]);
 
 /*=============================================================================
@@ -525,6 +528,9 @@ cs_initialize_fields_stage_1(void)
   /* Second stage of initialization for specific physical models
      -----------------------------------------------------------
      (after the user function call) */
+
+  if (pm_flag[CS_COMBUSTION_3PT] >= 0)
+    cs_f_d3pini1();
 
   // Cooling towers
   if (pm_flag[CS_COOLING_TOWERS] >= 0)

@@ -1,3 +1,5 @@
+
+
 /*============================================================================
  * Gas combustion model.
  *============================================================================*/
@@ -100,6 +102,12 @@ _model_name(cs_combustion_gas_model_type_t  model_type)
     break;
   case 101:
     return "CS_COMBUSTION_3PT_PERMEATIC";
+    break;
+  case 102:
+    return "CS_COMBUSTION_BSH_ADIABATIC";
+    break;
+  case 103:
+    return "CS_COMBUSTION_BSH_PERMEATIC";
     break;
   case 200:
     return "CS_COMBUSTION_SLFM_STEADY_ADIABATIC";

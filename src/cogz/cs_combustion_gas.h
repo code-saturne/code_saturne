@@ -81,6 +81,12 @@ typedef enum {
   /*! Infinitely fast 3-point combustion model, permeatic */
   CS_COMBUSTION_3PT_PERMEATIC = 101,
 
+  /*! Burke-Schumann infinitely 3-point combustion model, adiabatic */
+  CS_COMBUSTION_BSH_ADIABATIC = 102,
+
+  /*! Burke-Schumann infinitely 3-point combustion model, permeatic */
+  CS_COMBUSTION_BSH_PERMEATIC = 103,
+
   /*! Steady laminar flamelet model, adiabatic conditions */
   CS_COMBUSTION_SLFM_STEADY_ADIABATIC = 200,
 

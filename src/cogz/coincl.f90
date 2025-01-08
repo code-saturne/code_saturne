@@ -39,6 +39,8 @@ module coincl
 
   !--> MODELES DE COMBUSTION
 
+  integer(c_int), pointer, save :: cmtype
+
   ! ---- Grandeurs communes
 
   ! combustible name
@@ -289,7 +291,7 @@ module coincl
     ! Interface to C function retrieving pointers to members of the
     ! global combustion model flags
 
-    subroutine cs_f_coincl_get_pointers(p_isoot,               &
+    subroutine cs_f_coincl_get_pointers(p_cmtype, p_isoot,     &
                                         p_ngazfl, p_nki,       &
                                         p_nxr, p_nzm,          &
                                         p_nzvar, p_nlibvar,    &
@@ -308,7 +310,7 @@ module coincl
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_isoot, p_ngazfl, p_nki, p_nxr, p_nzm
+      type(c_ptr), intent(out) :: p_cmtype, p_isoot, p_ngazfl, p_nki, p_nxr, p_nzm
       type(c_ptr), intent(out) :: p_nzvar, p_nlibvar, p_ikimid, p_mode_fp2m
       type(c_ptr), intent(out) :: p_use_janaf
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot, p_lsp_fuel
@@ -355,26 +357,27 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_isoot, c_ngazfl, c_nki, c_nxr, c_nzm,     &
-                   c_nzvar, c_nlibvar, c_ikimid, c_mode_fp2m,  &
-                   c_use_janaf, c_coefeg, c_compog, c_xsoot,   &
-                   c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,   &
-                   c_pcigas, c_tinfue, c_tinoxy,               &
-                   c_fmin, c_fmax, c_hmin, c_hmax,             &
+    type(c_ptr) :: c_cmtype, c_isoot, c_ngazfl, c_nki, c_nxr, c_nzm,   &
+                   c_nzvar, c_nlibvar, c_ikimid, c_mode_fp2m,          &
+                   c_use_janaf, c_coefeg, c_compog, c_xsoot,           &
+                   c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,           &
+                   c_pcigas, c_tinfue, c_tinoxy,                       &
+                   c_fmin, c_fmax, c_hmin, c_hmax,                     &
                    c_tgf, c_frmel, c_cebu
 
-    call cs_f_coincl_get_pointers(c_isoot, c_ngazfl, c_nki,       &
-                                  c_nxr, c_nzm, c_nzvar,          &
-                                  c_nlibvar, c_ikimid,            &
-                                  c_mode_fp2m, c_use_janaf,       &
-                                  c_coefeg, c_compog,             &
-                                  c_xsoot,  c_rosoot,             &
-                                  c_lsp_fuel,                     &
-                                  c_hinfue, c_hinoxy,             &
-                                  c_pcigas, c_tinfue, c_tinoxy,   &
-                                  c_fmin, c_fmax, c_hmin, c_hmax, &
+    call cs_f_coincl_get_pointers(c_cmtype, c_isoot, c_ngazfl, c_nki,  &
+                                  c_nxr, c_nzm, c_nzvar,               &
+                                  c_nlibvar, c_ikimid,                 &
+                                  c_mode_fp2m, c_use_janaf,            &
+                                  c_coefeg, c_compog,                  &
+                                  c_xsoot,  c_rosoot,                  &
+                                  c_lsp_fuel,                          &
+                                  c_hinfue, c_hinoxy,                  &
+                                  c_pcigas, c_tinfue, c_tinoxy,        &
+                                  c_fmin, c_fmax, c_hmin, c_hmax,      &
                                   c_tgf, c_frmel, c_cebu)
 
+    call c_f_pointer(c_cmtype, cmtype)
     call c_f_pointer(c_isoot, isoot)
     call c_f_pointer(c_ngazfl, ngazfl)
     call c_f_pointer(c_nki, nki)

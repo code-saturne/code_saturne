@@ -66,6 +66,16 @@
 
 /*----------------------------------------------------------------------------*/
 
+extern "C" void
+cs_f_d3pint(int        *indpdf,
+            cs_real_t  *dirmin,
+            cs_real_t  *dirmax,
+            cs_real_t  *fdeb,
+            cs_real_t  *ffin,
+            cs_real_t  *hrec,
+            cs_real_t  *tpdf,
+            cs_real_t  *w1);
+
 BEGIN_C_DECLS
 
 /*=============================================================================
@@ -92,26 +102,19 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute physical properties for the 3-point chemistry
+ * \brief Compute physical properties for the Burke-Schumann
  *        combustion model.
  *
- * \param[in, out]   mbrom    filling indicator of romb
+ * \param[in]   cm   pointer to combustion model
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_combustion_physical_properties_update_d3p(void)
+static void
+_physical_properties_update_bsh(const cs_combustion_gas_model_t  *cm)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
   cs_rad_transfer_model_t rt_model = cs_glob_rad_transfer_params->type;
 
@@ -168,6 +171,104 @@ cs_combustion_physical_properties_update_d3p(void)
   });
 
   cs_combustion_boundary_conditions_density();
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute physical properties for the 3-point chemistry
+ *        combustion model.
+ *
+ * \param[in, out]   mbrom    filling indicator of romb
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_physical_properties_update_d3p(void)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  if (   cm->type == CS_COMBUSTION_BSH_ADIABATIC
+      || cm->type == CS_COMBUSTION_BSH_PERMEATIC) {
+    _physical_properties_update_bsh(cm);
+    return;
+  }
+
+  /* Initializations
+     --------------- */
+
+  cs_real_t  *dirmin, *dirmax, *fdeb, *ffin, *hrec, *tpdf;
+  CS_MALLOC(dirmin, n_cells, cs_real_t);
+  CS_MALLOC(dirmax, n_cells, cs_real_t);
+  CS_MALLOC(fdeb, n_cells, cs_real_t);
+  CS_MALLOC(ffin, n_cells, cs_real_t);
+  CS_MALLOC(hrec, n_cells, cs_real_t);
+  CS_MALLOC(tpdf, n_cells, cs_real_t);
+
+  const cs_real_t *cvar_fm = CS_F_(fm)->val;
+  cs_real_t *cvar_fp2m = CS_F_(fp2m)->val;
+
+  cs_real_t  *w1, *w2;
+  CS_MALLOC(w1, n_cells, cs_real_t);
+  CS_MALLOC(w2, n_cells, cs_real_t);
+
+  cs_host_context ctx;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+    w1[c_id] = 0.;
+    w2[c_id] = 1.;
+  });
+
+  int *indpdf;
+  CS_MALLOC(indpdf, n_cells, int);
+
+  cs_combustion_dirac_pdf(n_cells, indpdf, tpdf, cvar_fm, cvar_fp2m,
+                          w1, w2, dirmin, dirmax, fdeb, ffin, hrec);
+
+  /* Integrate probability density function to determine
+     temperature, mass fractions, density, radiative qsp. */
+
+  cs_f_d3pint(indpdf, dirmin, dirmax, fdeb, ffin, hrec, tpdf, w1);
+
+  CS_FREE(indpdf);
+
+  /* Compute mass fractions for global species on boundaries */
+
+  cs_field_t *ym[3]
+    = {cs_field_by_name_try("ym_fuel"),
+       cs_field_by_name_try("ym_oxyd"),
+       cs_field_by_name_try("ym_prod")};
+  cs_field_t *bym[3]
+    = {cs_field_by_name_try("boundary_ym_fuel"),
+       cs_field_by_name_try("boundary_ym_oxydizer"),
+       cs_field_by_name_try("boundary_ym_product")};
+
+  for (int igg = 0; igg < cm->n_gas_species; igg++) {
+    cs_real_t *cpro_ymgg = ym[igg]->val;
+    cs_real_t *bsval = bym[igg]->val;
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      cs_lnum_t cell_id = b_face_cells[face_id];
+      bsval[face_id] = cpro_ymgg[cell_id];
+    }
+  }
+
+  CS_FREE(dirmin);
+  CS_FREE(dirmax);
+  CS_FREE(fdeb);
+  CS_FREE(ffin);
+  CS_FREE(hrec);
+  CS_FREE(tpdf);
+  CS_FREE(w1);
+  CS_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -85,7 +85,7 @@ implicit none
 ! Local variables
 
 integer          ii, iel, igg
-double precision coefg(ngazgm), hair
+double precision coefg(ngazgm), hair, tinitk
 double precision ye(ngaze), yg(ngazg), ytot
 
 double precision, dimension(:), pointer :: cvar_scalt
@@ -121,24 +121,33 @@ if ( isuite.eq.0 ) then
 
   ! ---> Initialization a with air at T0
 
-  yg(1) = 0.d0
-  yg(2) = 1.d0
-  yg(3) = 0.d0
+  if (cmtype.eq.102 .or. cmtype.eq.103) then  ! Burke-Schumann model
+    yg(1) = 0.d0
+    yg(2) = 1.d0
+    yg(3) = 0.d0
 
-  do ii = 1, ngaze-1
-    ye(ii) = 0.d0
-    do igg = 1 ,ngazg
+    do ii = 1, ngaze-1
+      ye(ii) = 0.d0
+      do igg = 1 ,ngazg
         ye(ii) = ye(ii) + coefeg(ii,igg) * yg(igg)
+      enddo
     enddo
-  enddo
 
-  ytot = 0.d0
-  do ii = 1, ngaze-1
-    ytot = ytot + ye(ii)
-  enddo
-  ye(ngaze) = 1.d0 - ytot
+    ytot = 0.d0
+    do ii = 1, ngaze-1
+      ytot = ytot + ye(ii)
+    enddo
+    ye(ngaze) = 1.d0 - ytot
 
-  hair = cs_compute_burke_schumann_enthalpy(t0, ye)
+    hair = cs_compute_burke_schumann_enthalpy(t0, ye)
+  else
+    ! Air enthalpy HAIR at TINIK
+    tinitk   = t0
+    coefg(1) = zero
+    coefg(2) = 1.d0
+    coefg(3) = zero
+    hair = cs_gas_combustion_t_to_h(coefg, tinitk)
+  endif
 
   do iel = 1, ncel
 
@@ -159,6 +168,22 @@ if ( isuite.eq.0 ) then
 
   enddo
 
+  if (cmtype.ne.102 .and. cmtype.ne.103) then  ! not Burke-Schumann model
+    ! ---> User initialization, HINFUE and HINOXY are needed
+
+    ! Oxidant enthalpy HINOXY at TINOXY
+    coefg(1) = zero
+    coefg(2) = 1.d0
+    coefg(3) = zero
+    hinoxy = cs_gas_combustion_t_to_h(coefg, tinoxy)
+
+    ! Fuel enthalpy HINFUE at TINFUE
+    coefg(1) = 1.d0
+    coefg(2) = zero
+    coefg(3) = zero
+    hinfue = cs_gas_combustion_t_to_h(coefg, tinfue)
+  endif
+
   ! ---> Parallelism and periodic exchange
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(cvar_fm)
@@ -177,6 +202,131 @@ endif
 !----
 ! FORMATS
 !----
+
+!----
+! End
+!----
+
+return
+end subroutine
+
+subroutine d3pini1 () &
+  bind(C, name='cs_f_d3pini1')
+
+!===============================================================================
+! FONCTION :
+! --------
+
+! INITIALISATION DES VARIABLES DE CALCUL
+!    POUR LA PHYSIQUE PARTICULIERE :
+!        COMBUSTION GAZ - FLAMME DE DIFFUSION CHIMIE 3 POINTS
+!    PENDANT DE USINIV.F
+
+! DETERMINATION DES GRANDEURS THERMOCHIMIQUES
+
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use ppppar
+use ppthch
+use coincl
+use ppincl
+use radiat
+use mesh
+use field
+use cs_c_bindings
+use iso_c_binding
+
+!===============================================================================
+
+implicit none
+
+! Local variables
+
+integer          if, ih, igg
+double precision coefg(ngazgm), fsir, hhloc, tstoea, tin
+
+!===============================================================================
+! DETERMINATION DES GRANDEURS THERMOCHIMIQUES
+!===============================================================================
+
+do igg = 1, ngazgm
+  coefg(igg) = zero
+enddo
+
+hstoea = fs(1)*hinfue + (1.d0-fs(1))*hinoxy
+coefg(1) = zero
+coefg(2) = zero
+coefg(3) = 1.d0
+tstoea = cs_gas_combustion_h_to_t(coefg, hstoea)
+
+! ---> Construction d'une table Temperature en fonction de la richesse
+!        et de l'enthalpie stoechiometrique
+!        de dimension 9X9
+
+fsir = fs(1)
+
+! ---- Calcul du tableau FF(IF)
+
+do if = 1, (nmaxf/2+1)
+  ff(if) = fsir * dble(2*if-2)/dble(nmaxf-1)
+enddo
+do if = (nmaxf/2+2), nmaxf
+  ff(if) = fsir + dble(2*if-nmaxf-1)                            &
+                / dble(nmaxf-1)*(1.d0-fsir)
+enddo
+
+! ----  Remplissage du tableau HH(IH)
+
+coefg(1) = zero
+coefg(2) = zero
+coefg(3) = 1.d0
+tin = min(tinfue,tinoxy)
+hh(nmaxh) = cs_gas_combustion_t_to_h(coefg, tin)
+hh(1) = hstoea
+do ih = 2, (nmaxh-1)
+  hh(ih) = hh(1) + (hh(nmaxh)-hh(1))*                           &
+                  dble(ih-1)/dble(nmaxh-1)
+enddo
+
+! ---- Remplissage du tableau TFH(IF,IH)
+
+do ih = 1, nmaxh
+  do if = 1, (nmaxf/2+1)
+! ----- Melange pauvre
+    coefg(1) = zero
+    coefg(2) = (fsir-ff(if))/fsir
+    coefg(3) = ff(if)/fsir
+    hhloc = hinoxy + dble(2*if-2)/dble(nmaxf-1)                 &
+                   * (hh(ih)-hinoxy)
+    tfh(if,ih) = cs_gas_combustion_h_to_t(coefg, hhloc)
+  enddo
+  do if = (nmaxf/2+2), nmaxf
+! ----- Melange riche
+    coefg(1) = (ff(if)-fsir)/(1.d0-fsir)
+    coefg(2) = 0.d0
+    coefg(3) = (1.d0-ff(if))/(1.d0-fsir)
+    hhloc = ( dble(2*if)*(hinfue-hh(ih))                        &
+              + dble(2*nmaxf)*hh(ih)                            &
+              - hinfue*dble(nmaxf+1) )                          &
+          / dble(nmaxf-1)
+      tfh(if,ih) = cs_gas_combustion_h_to_t(coefg, hhloc)
+  enddo
+
+enddo
 
 !----
 ! End

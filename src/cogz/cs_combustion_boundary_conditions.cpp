@@ -201,7 +201,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
    * ============== */
 
   const int *pm_flag = cs_glob_physical_model_flag;
-  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
   /* Boundary conditions for H */
   cs_real_t *rcodcl1_h = nullptr;
@@ -287,8 +287,17 @@ cs_combustion_boundary_conditions(int  bc_type[])
     if ((ci->ientfu != 1 && ci->ientox != 1) || qimp < 0)
       continue;
 
+    cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+    for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
+      coefg[0] = 0;
+
     /* Fuel inlet at tinfue */
     if (ci->ientfu == 1) {
+      if (   cm->type == CS_COMBUSTION_3PT_ADIABATIC
+          || cm->type == CS_COMBUSTION_3PT_PERMEATIC) {
+        coefg[0] = 1.; coefg[1] = 0.; coefg[2] = 0.;
+        cm->hinfue = cs_gas_combustion_t_to_h(coefg, cm->tinfue);
+      }
       h_in = cm->hinfue;
       fm_in = 1.;
       if (mode_fp2m == 1)
@@ -298,6 +307,11 @@ cs_combustion_boundary_conditions(int  bc_type[])
 
     /* Oxydant inlet at tinoxy */
     if (ci->ientox == 1) {
+      if (   cm->type == CS_COMBUSTION_3PT_ADIABATIC
+          || cm->type == CS_COMBUSTION_3PT_PERMEATIC) {
+        coefg[0] = 0.; coefg[1] = 1.; coefg[2] = 0.;
+        cm->hinoxy = cs_gas_combustion_t_to_h(coefg, cm->tinoxy);
+      }
       h_in = cm->hinoxy;
       fm_in = 0.;
     }
