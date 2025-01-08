@@ -768,9 +768,7 @@ else
   ! on consid\E8re que l'oxydant est un m\E9lange d'O2 et N2
 
   coeff1 = ((wmolg(2)-0.028)/(0.032-0.028))* (0.032/wmolg(2))
-
   coeff3 = (1-fs(1))/fs(1)
-
   coeff2 = coeff3*coeff1
 
   ! Conversion coefficients from global species to elementary species
@@ -781,42 +779,13 @@ else
     enddo
   enddo
 
-  ! --- PCI calculation
-
-  ! gas name storage
-  namgas = nomcoe(1)
-
-  pcigas = 0.d0
-
-  do ir = 1, nrgaz
-
-    do igg = 1, ngazg
-
-      ! enthalpies of formation
-      coefg(1)  = 0.d0
-      coefg(2)  = 0.d0
-      coefg(3)  = 0.d0
-      coefg(igg) = 1.d0
-      tgaz      = 300.d0
-
-      efgaz(igg) = cs_gas_combustion_t_to_h(coefg, tgaz)
-
-      pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
-
-    enddo
-
-    ! dimension is J/kg of combustible
-    pcigas = pcigas / (stoeg(1,ir)*wmolg(1))
-
-  enddo
-
 endif
 
 !==================================================================
 ! Logging
 !==================================================================
 
-if (ippmod(icod3p).ne.-1) then
+if (use_janaf.eqv..true. .and. ippmod(icod3p).ne.-1) then
   write(nfecra,2010)
   write(nfecra,2020) ippmod(icod3p)
   write(nfecra,2070) namgas, pcigas
