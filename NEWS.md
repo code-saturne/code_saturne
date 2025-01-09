@@ -1,5 +1,7 @@
-Release 8.1.3 (unreleased)
+Release 8.1.3 (2025-01-09)
 --------------------------
+
+This is the last release of the v8.1 series.
 
 ### Bug fixes:
 
