@@ -49,7 +49,7 @@ namespace cs {
 /*----------------------------------------------------------------------------*/
 
 template <class T>
-class cs_array_2dspan {
+class array_2dspan {
 public:
 
   /*--------------------------------------------------------------------------*/
@@ -58,7 +58,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  cs_array_2dspan
+  array_2dspan
   (
     cs_lnum_t dim1, /*!<[in] First dimension size */
     cs_lnum_t dim2  /*!<[in] Second dimension size */
@@ -82,7 +82,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  cs_array_2dspan
+  array_2dspan
   (
     cs_lnum_t       dim1,      /*!<[in] First dimension size */
     cs_lnum_t       dim2,      /*!<[in] Second dimension size */
@@ -107,7 +107,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  cs_array_2dspan
+  array_2dspan
   (
     cs_lnum_t       dim1,                      /*!<[in] First dimension size */
     cs_lnum_t       dim2,                      /*!<[in] Second dimension size */
@@ -136,7 +136,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  ~cs_array_2dspan()
+  ~array_2dspan()
   {
     if (_is_owner) {
       CS_FREE(_sub_array);
@@ -146,6 +146,42 @@ public:
       _sub_array = nullptr;
       _full_array = nullptr;
     }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  void resize
+  (
+    cs_lnum_t       dim1, /*!<[in] First dimension size */
+    cs_lnum_t       dim2  /*!<[in] Second dimension size */
+  )
+  {
+    assert(dim1 > 0 && dim2 > 0);
+
+    /* If same dimensions, nothing to do ... */
+    if (dim1 == _dim1 && dim2 == _dim2)
+      return;
+
+    _size = dim1 * dim2;
+
+    if (_is_owner) {
+      CS_REALLOC(_full_array, _size, T);
+    }
+    _dim1 = dim1;
+
+    /* Reallocate sub-array pointer if needed */
+    if (_dim2 != dim2) {
+      CS_REALLOC(_sub_array, dim2, T*);
+      _dim2 = dim2;
+    }
+
+    /* Update sub-array addresses. */
+    for (cs_lnum_t i = 0; i < _dim2; i++)
+      _sub_array[i] = _full_array + _dim1 * i;
   }
 
   /*--------------------------------------------------------------------------*/
