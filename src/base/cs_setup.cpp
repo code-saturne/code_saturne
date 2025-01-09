@@ -142,12 +142,6 @@ void
 cs_f_add_user_scalar_fields(void);
 
 void
-cs_f_atini1(void);
-
-void
-cs_f_atini2(void);
-
-void
 cs_f_solcat(int iappel);
 
 void
@@ -2757,7 +2751,7 @@ _init_user
 
   /* Atmospheric flows */
   if (pm_flag[CS_ATMOSPHERIC] != -1) {
-    cs_f_atini1();
+    cs_atmo_init_variables_1();
 
     if (cs_glob_atmo_option->meteo_profile == 2)
       cs_atmo_init_meteo_profiles();
@@ -2862,7 +2856,7 @@ _init_physical_models_1(void)
   /* Specific physical models initializations */
 
   if (pm_flag[CS_ATMOSPHERIC] != -1)
-    cs_f_atini2();
+    cs_atmo_init_variables_2();
 
   if (   pm_flag[CS_COMBUSTION_3PT] != -1
       || pm_flag[CS_COMBUSTION_SLFM] != -1

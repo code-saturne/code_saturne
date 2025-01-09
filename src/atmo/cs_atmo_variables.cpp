@@ -44,6 +44,7 @@
 
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_aerosol.h"
+#include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo_profile_std.h"
 #include "atmo/cs_air_props.h"
 #include "base/cs_field_default.h"
@@ -95,6 +96,18 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+void
+cs_f_allocate_map_atmo(void);
+
+void
+cs_f_init_chemistry(void);
+
+void
+cs_f_init_meteo(void);
+
+void
+cs_f_activate_imbrication(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1097,6 +1110,108 @@ cs_atmo_physical_properties_update(void)
     crom[c_id] = 1.0 / ((1.0 - yr[c_id])/rho_h[c_id] + yr[c_id]/1000);
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialisation of variable options for the atmospheric module
+ *        before what is done in cs_user_parameters functions
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_init_variables_1(void)
+{
+  const int n_fields = cs_field_n_fields();
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
+
+  /* VERIFICATIONS
+     ------------- */
+
+  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF
+      || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY  )
+    if (at_opt->radiative_model_1d == 1 || at_opt->soil_model <= 1)
+      bft_error(__FILE__, __LINE__, 0,
+              "@                                                            \n"
+              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+              "@                                                            \n"
+              "@ @@ WARNING : STOP WHILE READING INPUT DATA                 \n"
+              "@    =========                                               \n"
+              "@              ATMOSPHERIC  MODULE                           \n"
+              "@ Ground model (soil_model) and radiative model              \n"
+              "@  (radiative_model_1d) are only available with              \n"
+              "@  humid atmosphere model or dry atmosphere model.           \n"
+              "@                                                            \n"
+              "@ Check the input data given through the User Interface      \n"
+              "@      or in cs_user_model.                                  \n"
+              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+              "@                                                            \n");
+
+
+  /* Transported variables for cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+     =  CS_ATMO_CONSTANT_DENSITY, CS_ATMO_DRY, CS_ATMO_HUMID
+     --------------------------------------------------------------------- */
+
+  // constant density
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY)
+    phys_pp->irovar = 0;
+  // for the dry or humid atmosphere case
+  else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY)
+    phys_pp->irovar = 1;
+
+  /* Turbulent Schmidt and Prandtl number for atmospheric flows
+     ---------------------------------------------------------- */
+  const int keysca  = cs_field_key_id("scalar_id");
+  const int ksigmas = cs_field_key_id("turbulent_schmidt");
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    const int sc_id = cs_field_get_key_int(f, keysca) - 1;
+    if (sc_id < 0)
+      continue;
+    cs_field_set_key_double(f, ksigmas, 0.7);
+  }
+
+  /* Force Rij Matrix stabilisation for all atmospheric models
+     --------------------------------------------------------- */
+  if (   cs_glob_turb_rans_model->irijnu == 0
+      && cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
+   cs_get_glob_turb_rans_model()->irijnu = 1;
+
+  /* Some allocation and mapping for meteo...
+     ---------------------------------------- */
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_OFF) {
+
+    cs_f_allocate_map_atmo();
+
+    if (cs_glob_atmo_chemistry->model > 0)
+      cs_f_init_chemistry();
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialisation of variable options for the atmospheric module
+ *        after what is done in cs_user_parameters functions
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_init_variables_2(void)
+{
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF)
+    return;
+
+  cs_f_init_meteo();
+
+  if (cs_glob_atmo_imbrication->imbrication_flag)
+    cs_f_activate_imbrication();
+
+  cs_at_data_assim_build_ops();
 }
 
 /*----------------------------------------------------------------------------*/

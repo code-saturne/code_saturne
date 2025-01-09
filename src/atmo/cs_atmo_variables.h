@@ -64,6 +64,27 @@ void
 cs_atmo_physical_properties_update(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialisation of variable options for the atmospheric module
+ *        before what is done in cs_user_parameters functions
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_init_variables_1(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialisation of variable options for the atmospheric module
+ *        after what is done in cs_user_parameters functions
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_init_variables_2(void);
+
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

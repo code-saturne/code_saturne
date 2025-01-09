@@ -861,16 +861,6 @@ module cs_c_bindings
 
     ! Interface to C function for data assimilation (atmospheric module)
 
-    subroutine cs_at_data_assim_build_ops()                        &
-      bind(C, name='cs_at_data_assim_build_ops')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_at_data_assim_build_ops
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for data assimilation (atmospheric module)
-
     function cs_at_opt_interp_is_p1_proj_needed() result (ineeded)   &
       bind(C, name='cs_at_opt_interp_is_p1_proj_needed')
       use, intrinsic :: iso_c_binding

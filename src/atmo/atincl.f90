@@ -726,14 +726,15 @@ contains
 !===============================================================================
 
 !> \brief Allocate and map to C meteo data
-subroutine allocate_map_atmo
+subroutine allocate_map_atmo () &
+  bind(C, name='cs_f_allocate_map_atmo')
 
-use cs_c_bindings
-use atsoil
+  use cs_c_bindings
+  use atsoil
 
-implicit none
+  implicit none
 
-procedure() :: atlecm
+  procedure() :: atlecm
 
 ! Local variables
 type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_xyp_met
@@ -852,7 +853,8 @@ end subroutine allocate_map_atmo
 !==============================================================================
 
 !> \brief Initialisation of meteo data
-subroutine init_meteo
+subroutine init_meteo() &
+  bind(C, name= "cs_f_init_meteo")
 
 use cs_c_bindings
 

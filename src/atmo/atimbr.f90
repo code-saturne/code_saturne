@@ -1795,11 +1795,15 @@ end subroutine bounds
 !> Warning : the list of files is supposed to be "imbrication_files_list.txt"
 !>
 ! -----------------------------------------------------------------------------
-subroutine activate_imbrication
-implicit none
+subroutine activate_imbrication() &
+  bind(C, name='cs_f_activate_imbrication')
 
-integer i,j,k
-integer first,last
+  use cs_c_bindings
+
+  implicit none
+
+  integer i,j,k
+  integer first,last
 
 write(nfecra,*)"*******************************"
 write(nfecra,*)"Atmospheric Imbrication:       "

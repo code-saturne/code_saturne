@@ -256,7 +256,8 @@ contains
   !=============================================================================
 
   !> \brief Allocate some atmoshperic chemistry arrays
-  subroutine init_chemistry
+  subroutine init_chemistry()&
+    bind(C,name= "cs_f_init_chemistry")
     use, intrinsic :: iso_c_binding
 
     implicit none
