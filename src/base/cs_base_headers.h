@@ -35,6 +35,7 @@
 #include "base/cs_all_to_all.h"
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
+#include "base/cs_array_2dspan.h"
 #include "base/cs_assert.h"
 #include "base/cs_ast_coupling.h"
 #include "base/cs_base.h"
