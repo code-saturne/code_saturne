@@ -843,7 +843,7 @@ cs_probe_set_get_by_id(int   pset_id)
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_probe_set_get_name(cs_probe_set_t   *pset)
+cs_probe_set_get_name(const cs_probe_set_t   *pset)
 {
   if (pset == nullptr)
     return  nullptr;
