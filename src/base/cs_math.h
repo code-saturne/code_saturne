@@ -1974,23 +1974,20 @@ cs_math_33_eig_val_vec(const cs_real_t  m_in[3][3],
  * \brief Compute LU factorization of an array of dense matrices
  *        of identical size.
  *
- * \param[in]   n_blocks  number of blocks
- * \param[in]   b_size    block size
- * \param[in]   a         matrix blocks
- * \param[out]  a_lu      LU factorizations of matrix blocks
+ * \param[in]   n         matrix size
+ * \param[in]   a         matrix (size n.n)
+ * \param[out]  a_lu      LU factorization of matrix (size n.n)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_math_fact_lu(cs_lnum_t         n_blocks,
-                const int         b_size,
+cs_math_fact_lu(const int         n,
                 const cs_real_t  *a,
                 cs_real_t        *a_lu);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Block Jacobi utilities.
- *         Compute forward and backward to solve an LU P*P system.
+ * \brief  Compute forward and backward to solve an LU P*P system.
  *
  * \param[in]   a_lu   matrix LU factorization
  * \param[in]   n      matrix size

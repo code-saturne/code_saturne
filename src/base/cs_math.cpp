@@ -619,63 +619,56 @@ cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
  * \brief Compute LU factorization of an array of dense matrices
  *        of identical size.
  *
- * \param[in]   n_blocks  number of blocks
- * \param[in]   b_size    block size
- * \param[in]   a         matrix blocks
- * \param[out]  a_lu      LU factorizations of matrix blocks
+ * \param[in]   n         matrix size
+ * \param[in]   a         matrix (size n.n)
+ * \param[out]  a_lu      LU factorization of matrix (size n.n)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_math_fact_lu(cs_lnum_t         n_blocks,
-                int               b_size,
+cs_math_fact_lu(const int         n,
                 const cs_real_t  *a,
                 cs_real_t        *a_lu)
 {
-# pragma omp parallel for if(n_blocks > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_blocks; i++) {
+  cs_real_t *restrict _a_lu = a_lu;
+  const cs_real_t *restrict  _a = a;
 
-    cs_real_t *restrict _a_lu = &a_lu[b_size*b_size*i];
-    const cs_real_t *restrict  _a = &a[b_size*b_size*i];
-
-    _a_lu[0] = _a[0];
-    for (cs_lnum_t ii = 1; ii < b_size; ii++) {
-      _a_lu[ii] = _a[ii];
-      _a_lu[ii*b_size] = _a[ii*b_size]/_a[0];
+  _a_lu[0] = _a[0];
+  for (cs_lnum_t ii = 1; ii < n; ii++) {
+    _a_lu[ii] = _a[ii];
+    _a_lu[ii*n] = _a[ii*n]/_a[0];
+  }
+  for (cs_lnum_t ii = 1; ii < n - 1; ii++) {
+    _a_lu[ii + ii*n] = _a[ii + ii*n];
+    for (cs_lnum_t kk = 0; kk < ii; kk++) {
+      _a_lu[ii + ii*n] -=  _a_lu[ii*n + kk]
+                          *_a_lu[kk*n + ii];
     }
-    for (cs_lnum_t ii = 1; ii < b_size - 1; ii++) {
-      _a_lu[ii + ii*b_size] = _a[ii + ii*b_size];
+
+    for (cs_lnum_t jj = ii + 1; jj < n; jj++) {
+      _a_lu[ii*n + jj] = _a[ii*n + jj];
+      _a_lu[jj*n + ii] =   _a[jj*n + ii]
+                        / _a_lu[ii*n + ii];
       for (cs_lnum_t kk = 0; kk < ii; kk++) {
-        _a_lu[ii + ii*b_size] -= _a_lu[ii*b_size + kk]
-                                *_a_lu[kk*b_size + ii];
-      }
-
-      for (cs_lnum_t jj = ii + 1; jj < b_size; jj++) {
-        _a_lu[ii*b_size + jj] = _a[ii*b_size + jj];
-        _a_lu[jj*b_size + ii] =   _a[jj*b_size + ii]
-                                / _a_lu[ii*b_size + ii];
-        for (cs_lnum_t kk = 0; kk < ii; kk++) {
-          _a_lu[ii*b_size + jj] -=  _a_lu[ii*b_size + kk]
-                                   *_a_lu[kk*b_size + jj];
-          _a_lu[jj*b_size + ii] -=  _a_lu[jj*b_size + kk]
-                                   *_a_lu[kk*b_size + ii]
-                                   /_a_lu[ii*b_size + ii];
-        }
+        _a_lu[ii*n + jj] -=  _a_lu[ii*n + kk]
+                            *_a_lu[kk*n + jj];
+        _a_lu[jj*n + ii] -=  _a_lu[jj*n + kk]
+                            *_a_lu[kk*n + ii]
+                            /_a_lu[ii*n + ii];
       }
     }
-    _a_lu[b_size*b_size -1] = _a[b_size*b_size - 1];
+  }
+  _a_lu[n*n -1] = _a[n*n - 1];
 
-    for (cs_lnum_t kk = 0; kk < b_size - 1; kk++) {
-      _a_lu[b_size*b_size - 1] -=  _a_lu[(b_size-1)*b_size + kk]
-                                  *_a_lu[kk*b_size + b_size -1];
-    }
+  for (cs_lnum_t kk = 0; kk < n - 1; kk++) {
+    _a_lu[n*n - 1] -=  _a_lu[(n-1)*n + kk]
+                      *_a_lu[kk*n + n -1];
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Block Jacobi utilities.
- *         Compute forward and backward to solve an LU P*P system.
+ * \brief  Compute forward and backward to solve an LU P*P system.
  *
  * \param[in]   a_lu   matrix LU factorization
  * \param[in]   n      matrix size

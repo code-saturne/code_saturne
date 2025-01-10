@@ -1678,7 +1678,7 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
                                                    mc_id);
     BFT_MALLOC(alu, a_size, cs_real_t);
 
-    cs_math_fact_lu(1, a_l_size, a, alu);
+    cs_math_fact_lu(a_l_size, a, alu);
     BFT_FREE(a);
 
 #if _OI_DEBUG_
