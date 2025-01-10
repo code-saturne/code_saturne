@@ -81,7 +81,6 @@ d3pint.f90 \
 ebuini.f90 \
 ebuphy.f90 \
 ebutss.f90 \
-gauss.f90 \
 lwcgfu.f90 \
 lwcini.f90 \
 lwcphy.f90 \

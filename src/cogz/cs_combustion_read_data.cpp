@@ -64,15 +64,6 @@
 
 #include "cogz/cs_combustion_read_data.h"
 
-/*----------------------------------------------------------------------------*/
-
-extern "C" void
-cs_f_gauss(const int    *nn,
-           const int    *mm,
-           double        aa[],
-           double        xx[],
-           double        bb[]);
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -191,6 +182,101 @@ _extract_token(const char*   buffer_name,
 
   next = se;
   return tok;
+}
+
+/*----------------------------------------------------------------------------
+ * Solve Ax = B for a 4x4 system.
+ *
+ * Here, a is stored in column major due to caller constraints.
+ *
+ * parameters:
+ *   n                  <-- row and column size
+ *   a                  <-- matrix (column major)
+ *   b                  <-- right hand side
+ *   x                  --> solution of Ax = b
+ *----------------------------------------------------------------------------*/
+
+static void
+_solve_ax_b_gauss(int               n,
+                  double            a[],
+                  double  *restrict b,
+                  double  *restrict x)
+{
+  double factor;
+
+  double _a[  CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES
+            * CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES];
+  double _b[CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES];
+  double _a_swap[CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES];
+  double _b_swap;
+
+  const double _epsilon = 1.e-24;
+
+  /* Copy array and RHS (avoid modifying a and b,
+     and switch to row major) */
+
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+      _a[j*n + i] = a[i*n + j];
+    }
+    _b[i] = b[i];
+  }
+
+  /* Forward elimination */
+
+  for (int i = 0; i < n-1; i++) {
+
+    /* Seek best pivot */
+
+    int k_pivot = i;
+    double abs_pivot = fabs(_a[i*n + i]);
+
+    for (int k = i+1; k < n; k++) {
+      double abs_a_ki = fabs(_a[k*n + i]);
+      if (abs_a_ki > abs_pivot) {
+        abs_pivot = abs_a_ki;
+        k_pivot = k;
+      }
+    }
+
+    /* Swap if necessary */
+
+    if (k_pivot != i) {
+      for (int j = 0; j < n; j++) {
+        _a_swap[j] = _a[i*n + j];
+        _a[i*n + j] = _a[k_pivot*n + j];
+        _a[k_pivot*n + j] = _a_swap[j];
+      }
+      _b_swap = _b[i];
+      _b[i] = _b[k_pivot];
+      _b[k_pivot] = _b_swap;
+    }
+
+    if (abs_pivot < _epsilon) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: n non-zero pivot for Gaussian elimination."), __func__);
+    }
+
+    /* Eliminate values */
+
+    for (int k = i+1; k < n; k++) {
+      factor = _a[k*n + i] / _a[i*n + i];
+      _a[k*n + i] = 0.0;
+      for (int j = i+1; j < n; j++) {
+        _a[k*n + j] -= _a[i*n + j]*factor;
+      }
+      _b[k] -= _b[i]*factor;
+    }
+  }
+
+  /* Solve system */
+
+  for (int k = n-1; k > -1; k--) {
+    x[k] =  _b[k];
+    for (int j = k+1; j < n; j++)
+      x[k] -= _a[k*n + j]*x[j];
+    x[k] /= _a[k*n + k];
+  }
 }
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -732,7 +818,10 @@ cs_combustion_read_data(void)
         }
       }
 
-      cs_f_gauss(&nato, &nato, aa+nato, xx+1, bb);
+      double aa_lu[  CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES
+                   * CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+
+      _solve_ax_b_gauss(nato, aa+nato, bb, xx+1);
 
       // we now know the stoichiometric coefficients of global species.
       nreact[igf] = -1.;
