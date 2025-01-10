@@ -65,6 +65,8 @@ public:
     _mode(CS_ALLOC_HOST)
   {
     _size=0;
+    _full_array = nullptr;
+    _sub_array = nullptr;
   }
 
   /*--------------------------------------------------------------------------*/
