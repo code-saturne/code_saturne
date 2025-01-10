@@ -702,10 +702,8 @@ cs_lagr_particle_attr_initialize(void)
   attr_keys[CS_LAGR_CELL_ID][0] = CS_LAGR_P_IVAR;
   attr_keys[CS_LAGR_CELL_ID][1] = ++loc_count;
 
-  /* Warning: apparently rank_id point at the same location
-   * as cell_id. */
   attr_keys[CS_LAGR_RANK_ID][0] = CS_LAGR_P_RKID;
-  attr_keys[CS_LAGR_RANK_ID][1] = 1;
+  attr_keys[CS_LAGR_RANK_ID][1] = ++loc_count;
 
   /* Other attributes */
 
