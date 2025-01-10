@@ -54,7 +54,22 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Default constructor method.
+   * \brief Default constructor method leading to "empty container".
+   */
+  /*--------------------------------------------------------------------------*/
+
+  array_2dspan() :
+    _dim1(0),
+    _dim2(0),
+    _is_owner(true),
+    _mode(CS_ALLOC_HOST)
+  {
+    _size=0;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method using only dimension.
    */
   /*--------------------------------------------------------------------------*/
 
@@ -66,12 +81,12 @@ public:
   :
     _dim1(dim1),
     _dim2(dim2),
-    _size(dim1*dim2),
     _is_owner(true),
     _mode(CS_ALLOC_HOST)
   {
     /* Sanity check for both dimensions */
     assert(_dim1 > 0 && _dim2 > 0);
+    _size = dim1*dim2;
 
     allocate_arrays();
   }
@@ -91,12 +106,12 @@ public:
   :
     _dim1(dim1),
     _dim2(dim2),
-    _size(dim1*dim2),
     _is_owner(true),
     _mode(alloc_mode)
   {
     /* Sanity check for both dimensions */
     assert(_dim1 > 0 && _dim2 > 0);
+    _size = dim1*dim2;
 
     allocate_arrays();
   }
@@ -118,12 +133,13 @@ public:
   :
     _dim1(dim1),
     _dim2(dim2),
-    _size(dim1*dim2),
     _is_owner(false),
     _mode(alloc_mode)
   {
     /* Sanity check for both dimensions */
     assert(_dim1 > 0 && _dim2 > 0);
+
+    _size = dim1*dim2;
 
     _full_array = data_array;
 
@@ -138,14 +154,29 @@ public:
 
   ~array_2dspan()
   {
+    clear();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Clear data (empty container).
+   */
+  /*--------------------------------------------------------------------------*/
+
+  void
+  clear()
+  {
+    CS_FREE(_sub_array);
     if (_is_owner) {
-      CS_FREE(_sub_array);
       CS_FREE(_full_array);
     }
     else {
-      _sub_array = nullptr;
       _full_array = nullptr;
     }
+
+    _dim1 = 0;
+    _dim2 = 0;
+    _size = 0;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -186,6 +217,25 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Set memory allocation mode.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  void set_alloc_mode
+  (
+    cs_alloc_mode_t mode /*!<[in] Memory allocation mode. */
+  )
+  {
+    if (_mode != mode) {
+      if (_size != 0)
+        clear();
+
+      _mode = mode;
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Getter function for full array.
    *
    * \returns raw pointer to the full data array.
@@ -208,6 +258,32 @@ public:
   const T *vals() const
   {
     return _full_array;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Getter function for 2D span data.
+   *
+   * \returns raw pointer to the full data array in 2D span.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  T **vals_2d()
+  {
+    return _sub_array;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Const getter function for 2D span data.
+   *
+   * \returns const raw pointer to the full data array in 2D span.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  const T **vals_2d() const
+  {
+    return _sub_array;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -311,7 +387,7 @@ private:
   T**             _sub_array;  /*!< Array of sub-arrays pointers */
   cs_lnum_t       _dim1;       /*!< First dimension size */
   cs_lnum_t       _dim2;       /*!< Second dimension size */
-  cs_lnum_t       _size;       /*!< Total size of data array */
+  cs_lnum_t       _size = 0;   /*!< Total size of data array */
   bool            _is_owner;   /*!< Is this array owner of data */
   cs_alloc_mode_t _mode;       /*!< Data allocation mode */
 };
