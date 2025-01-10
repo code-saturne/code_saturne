@@ -67,11 +67,11 @@
 /*----------------------------------------------------------------------------*/
 
 extern "C" void
-cs_f_gauss(int     nn,
-           int     mm,
-           double  aa[],
-           double  xx[],
-           double  bb[]);
+cs_f_gauss(const int    *nn,
+           const int    *mm,
+           double        aa[],
+           double        xx[],
+           double        bb[]);
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -578,7 +578,6 @@ cs_combustion_read_data(void)
           bft_error(__FILE__, __LINE__, 0,
                     _("%s: error parsing coeffient in %s, line %d."),
                   __func__, path, line_num);
-        igfuel[0] -= 1;
       }
 
       if (cm->compog[igfuel[0]][iereac[igfuel[0]]] <= 0) {
@@ -733,7 +732,7 @@ cs_combustion_read_data(void)
         }
       }
 
-      cs_f_gauss(nato, nato, aa+nato, xx+2, bb);
+      cs_f_gauss(&nato, &nato, aa+nato, xx+1, bb);
 
       // we now know the stoichiometric coefficients of global species.
       nreact[igf] = -1.;
@@ -836,7 +835,7 @@ cs_combustion_read_data(void)
     int ncoel = cm->n_gas_el_comp, icoel = 0;
 
     if (cm->pcigas > 0) {
-      ncoel = cm->n_gas_el_comp;
+      ncoel = cm->n_gas_el_comp - 1;
       icoel = 1;
       for (int it = 0; it < npo; it++)
         ehgaze[it][0] = 0.;
