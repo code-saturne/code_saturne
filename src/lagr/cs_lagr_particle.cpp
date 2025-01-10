@@ -299,30 +299,11 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
   p_am->n_time_vals = 2;
 
-  if (true) { /* Allocation requires typedef due to cast */
+  using  lagr_attr_ptrdiff_t = ptrdiff_t[CS_LAGR_N_ATTRIBUTES];
+  using  lagr_attr_int_t = int[CS_LAGR_N_ATTRIBUTES];
 
-    typedef ptrdiff_t lagr_attr_ptrdiff_t[CS_LAGR_N_ATTRIBUTES];
-    typedef int       lagr_attr_int_t[CS_LAGR_N_ATTRIBUTES];
-
-    BFT_MALLOC(p_am->displ, 2, lagr_attr_ptrdiff_t);
-    BFT_MALLOC(p_am->count, 2, lagr_attr_int_t);
-
-  }
-
-  /*
-   * Commented out for the moment, since not used and does not compile
-   * in C++
-  else {
-    // Variant:
-    // to avoid issue with cast and no typdef, use lower level function
-
-    p_am->displ = bft_mem_malloc(2, sizeof(p_am->displ[0]),
-                                 "p_am->displ", __FILE__, __LINE__);
-    p_am->count = bft_mem_malloc(2, sizeof(p_am->count[0]),
-                                 "p_am->count", __FILE__, __LINE__);
-
-  }
-  */
+  BFT_MALLOC(p_am->displ, 2, lagr_attr_ptrdiff_t);
+  BFT_MALLOC(p_am->count, 2, lagr_attr_int_t);
 
   p_am->source_term_displ = nullptr;
 
