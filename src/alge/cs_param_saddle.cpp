@@ -286,6 +286,10 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 
   saddlep->schur_sles_param = schurp;
 
+  if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_FGMRES) { // Only with PETSc
+    cs_param_sles_set_solver_class("petsc", schurp);
+  }
+
   /* Extra solve needed to compute the Schur approximation with some
      settings */
 

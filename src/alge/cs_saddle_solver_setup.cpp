@@ -182,234 +182,6 @@ _build_is_for_fieldsplit(cs_saddle_solver_t  *solver,
   PetscFree(indices);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the corresponding PC associated to the given set of parameters
- *
- * \param[in] slesp  set of parameters for the linear algebra
- *
- * \return a type of PETSc preconditioner
- */
-/*----------------------------------------------------------------------------*/
-
-/* static PCType */
-/* _petsc_get_pc_type(const cs_param_sles_t  *slesp) */
-/* { */
-/*   PCType  pc_type = PCNONE; */
-
-/*   switch (slesp->precond) { */
-
-/*   case CS_PARAM_PRECOND_NONE: */
-/*     return PCNONE; */
-
-/*   case CS_PARAM_PRECOND_DIAG: */
-/*     return PCJACOBI; */
-
-/*   case CS_PARAM_PRECOND_BJACOB_ILU0: */
-/*   case CS_PARAM_PRECOND_BJACOB_SGS: */
-/*     return PCBJACOBI; */
-
-/*   case CS_PARAM_PRECOND_SSOR: */
-/*     return PCSOR; */
-
-/*   case CS_PARAM_PRECOND_ICC0: */
-/*     return PCICC; */
-
-/*   case CS_PARAM_PRECOND_ILU0: */
-/*     return PCILU; */
-
-/*   case CS_PARAM_PRECOND_LU: */
-/*     return PCLU; */
-
-/*   case CS_PARAM_PRECOND_AMG: */
-/*     { */
-/*       switch (slesp->amg_type) { */
-
-/*       case CS_PARAM_AMG_PETSC_GAMG_V: */
-/*       case CS_PARAM_AMG_PETSC_GAMG_W: */
-/*         return PCGAMG; */
-/*         break; */
-
-/*       case CS_PARAM_AMG_PETSC_PCMG: */
-/*         return PCMG; */
-/*         break; */
-
-/*       case CS_PARAM_AMG_HYPRE_BOOMER_V: */
-/*       case CS_PARAM_AMG_HYPRE_BOOMER_W: */
-/*         if (cs_param_sles_hypre_from_petsc()) */
-/*           return PCHYPRE; */
-
-/*         else { */
-/*           cs_base_warn(__FILE__, __LINE__); */
-/*           cs_log_printf(CS_LOG_DEFAULT, */
-/*                         "%s: Switch to MG since BoomerAMG is not available.\n", */
-/*                         __func__); */
-/*           return PCMG; */
-/*         } */
-/*         break; */
-
-/*       default: */
-/*         bft_error(__FILE__, __LINE__, 0, */
-/*                   " %s: Invalid AMG type for the PETSc library.", __func__); */
-/*         break; */
-
-/*       } /\* End of switch on the AMG type *\/ */
-
-/*     } /\* AMG as preconditioner *\/ */
-/*     break; */
-
-/*   default: */
-/*     bft_error(__FILE__, __LINE__, 0, */
-/*               " %s: Preconditioner not interfaced with PETSc.", __func__); */
-/*     break; */
-/*   } */
-
-/*   return pc_type; */
-/* } */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Function pointer: setup hook for setting PETSc solver and
- *        preconditioner.
- *
- * \param[in]      slesp  pointer to a set of SLES settings
- * \param[in, out] u_ksp  pointer to PETSc KSP context
- */
-/*----------------------------------------------------------------------------*/
-
-/* static void */
-/* _set_vector_block11_ksp(cs_param_sles_t  *slesp, */
-/*                         KSP               u_ksp) */
-/* { */
-/*   PC  u_pc; */
-/*   KSPGetPC(u_ksp, &u_pc); */
-/*   PCType  pc_type = _petsc_get_pc_type(slesp); */
-
-/*   /\* Set the type of solver *\/ */
-
-/*   switch (slesp->solver) { */
-
-/*   case CS_PARAM_ITSOL_NONE: */
-/*     KSPSetType(u_ksp, KSPPREONLY); */
-/*     break; */
-/*   case CS_PARAM_ITSOL_FCG: */
-/*     KSPSetType(u_ksp, KSPFCG); */
-/*     break; */
-/*   case CS_PARAM_ITSOL_CG: */
-/*     KSPSetType(u_ksp, KSPCG); */
-/*     break; */
-/*   case CS_PARAM_ITSOL_BICGS:      /\* Improved Bi-CG stab *\/ */
-/*     KSPSetType(u_ksp, KSPIBCGS); */
-/*     break; */
-/*   case CS_PARAM_ITSOL_BICGS2: /\* BiCGstab2 *\/ */
-/*     KSPSetType(u_ksp, KSPBCGSL); */
-/*     break; */
-/*   case CS_PARAM_ITSOL_MUMPS:     /\* Direct solver (factorization) *\/ */
-/* #if defined(PETSC_HAVE_MUMPS) */
-/*     KSPSetType(u_ksp, KSPPREONLY); */
-/*     PCSetType(u_pc, PCLU); */
-/*     PCFactorSetMatSolverType(u_pc, MATSOLVERMUMPS); */
-/* #else */
-/*     bft_error(__FILE__, __LINE__, 0, */
-/*               " %s: MUMPS not interfaced with this installation of PETSc.", */
-/*               __func__); */
-/* #endif */
-/*     break; */
-/*   case CS_PARAM_ITSOL_GMRES: */
-/*     /\* Number of iterations before restarting = 30 (default value)  *\/ */
-/*     KSPSetType(u_ksp, KSPGMRES); */
-/*     break; */
-/*   case CS_PARAM_ITSOL_FGMRES: */
-/*     /\* Number of iterations before restarting = 30 (default value)  *\/ */
-/*     KSPSetType(u_ksp, KSPFGMRES); */
-/*     break; */
-
-/*   default: */
-/*     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver.", __func__); */
-/*     break; */
-
-/*   } /\* Switch on solver *\/ */
-
-/*   if (slesp->solver != CS_PARAM_ITSOL_MUMPS) */
-/*     PCSetType(u_pc, pc_type); */
-
-/*   /\* Additional settings for the preconditioner *\/ */
-
-/*   switch (slesp->precond) { */
-
-/*   case CS_PARAM_PRECOND_AMG: */
-/*     switch (slesp->amg_type) { */
-
-/*     case CS_PARAM_AMG_PETSC_GAMG_V: */
-/*       PCGAMGSetType(u_pc, PCGAMGAGG); */
-/*       PCGAMGSetNSmooths(u_pc, 1); */
-/*       PCMGSetCycleType(u_pc, PC_MG_CYCLE_V); */
-/*       _setup_velocity_gamg(); */
-/*       break; */
-
-/*     case CS_PARAM_AMG_PETSC_GAMG_W: */
-/*       PCGAMGSetType(u_pc, PCGAMGAGG); */
-/*       PCGAMGSetNSmooths(u_pc, 1); */
-/*       PCMGSetCycleType(u_pc, PC_MG_CYCLE_W); */
-/*       _setup_velocity_gamg(); */
-/*       break; */
-
-/*     case CS_PARAM_AMG_HYPRE_BOOMER_V: */
-/* #if defined(PETSC_HAVE_HYPRE) */
-/*       PCHYPRESetType(u_pc, "boomeramg"); */
-/*       PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_cycle_type","V"); */
-/*       _setup_velocity_boomeramg(); */
-/* #else */
-/*       PCGAMGSetType(u_pc, PCGAMGAGG); */
-/*       PCGAMGSetNSmooths(u_pc, 1); */
-/*       PCMGSetCycleType(u_pc, PC_MG_CYCLE_V); */
-/*       _setup_velocity_gamg(); */
-/* #endif */
-/*       break; */
-
-/*     case CS_PARAM_AMG_HYPRE_BOOMER_W: */
-/* #if defined(PETSC_HAVE_HYPRE) */
-/*       PCHYPRESetType(u_pc, "boomeramg"); */
-/*       PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_cycle_type","W"); */
-/*       _setup_velocity_boomeramg(); */
-/* #else */
-/*       PCGAMGSetType(u_pc, PCGAMGAGG); */
-/*       PCGAMGSetNSmooths(u_pc, 1); */
-/*       PCMGSetCycleType(u_pc, PC_MG_CYCLE_W); */
-/*       _setup_velocity_gamg(); */
-/* #endif */
-/*       break; */
-
-/*     default: */
-/*       bft_error(__FILE__, __LINE__, 0, "%s: Invalid AMG type.", __func__); */
-/*       break; */
-
-/*     } /\* AMG type *\/ */
-/*     break; */
-
-/*   default: */
-/*     break; /\* Nothing else to do *\/ */
-
-/*   } /\* Switch on preconditioner *\/ */
-
-/*   /\* Set tolerance and number of iterations *\/ */
-
-/*   PetscReal _rtol, abstol, dtol; */
-/*   PetscInt  _max_it; */
-/*   KSPGetTolerances(u_ksp, &_rtol, &abstol, &dtol, &_max_it); */
-/*   KSPSetTolerances(u_ksp, */
-/*                    rtol,        /\* relative convergence tolerance *\/ */
-/*                    abstol,      /\* absolute convergence tolerance *\/ */
-/*                    dtol,        /\* divergence tolerance *\/ */
-/*                    max_it);     /\* max number of iterations *\/ */
-
-/*   PCSetFromOptions(u_pc); */
-/*   PCSetUp(u_pc); */
-
-/*   KSPSetFromOptions(u_ksp); */
-/*   KSPSetUp(u_ksp); */
-/* } */
-
 #if PETSC_VERSION_GE(3,11,0)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -581,7 +353,7 @@ _notay_hook(void  *context,
   MatConvert(A11, MATSAME, MAT_INITIAL_MATRIX, &T11);
 
   MatDiagonalScale(T11, nullptr, D11); /* left scaling = nullptr;
-                                       right scaling = D11 */
+                                          right scaling = D11 */
   MatScale(T11, -one);
 
   Vec ones;
@@ -646,6 +418,206 @@ _notay_hook(void  *context,
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            "%s: PETSc is required for solving \"%s\"\n"
+            " Please modify your settings/build code_saturne with PETSc.",
+            __func__, saddlep->name);
+#endif  /* HAVE_PETSC */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc
+ *        Case of FGMRES with block-preconditioner
+ *
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_fgmres_hook(void *context,
+                   void *ksp_struct)
+{
+  cs_saddle_solver_t *solver = static_cast<cs_saddle_solver_t *>(context);
+
+  const cs_param_saddle_t  *saddlep = solver->param;
+  const cs_param_saddle_context_block_krylov_t *ctxp =
+  static_cast<const cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+
+#if defined(HAVE_PETSC)
+  KSP ksp = static_cast<KSP>(ksp_struct);
+
+  KSPSetType(ksp, KSPFGMRES);
+  KSPGMRESSetRestart(ksp, ctxp->n_stored_directions);
+
+  /* Set KSP tolerances */
+
+  PetscReal rtol, abstol, dtol;
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
+  KSPSetTolerances(ksp,
+                   saddlep->cvg_param.rtol,        // relative convergence tol.
+                   saddlep->cvg_param.atol,        // absolute convergence tol.
+                   saddlep->cvg_param.dtol,        // divergence tol.
+                   saddlep->cvg_param.n_max_iter); // max number iter
+
+  PC saddle_pc;
+
+  KSPGetPC(ksp, &saddle_pc);
+  PCSetType(saddle_pc, PCFIELDSPLIT);
+
+  /* Build IndexSet structures to extract block matrices */
+
+  IS is1 = nullptr, is2 = nullptr;
+
+  _build_is_for_fieldsplit(solver, &is1, &is2);
+
+  /* First level block1 | block2 */
+
+  PCFieldSplitSetIS(saddle_pc, "block1", is1);
+  PCFieldSplitSetIS(saddle_pc, "block2", is2);
+
+  switch (saddlep->precond) {
+
+  case CS_PARAM_SADDLE_PRECOND_DIAG: // Additive
+    // ----------------------------
+    switch (saddlep->schur_approx) {
+
+    case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
+      PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SCHUR);
+      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
+      PCFieldSplitSetSchurFactType(saddle_pc, PC_FIELDSPLIT_SCHUR_FACT_DIAG);
+      break;
+
+    default: // No Schur approximation
+      PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_ADDITIVE);
+      break;
+
+    }
+    break;
+
+  case CS_PARAM_SADDLE_PRECOND_LOWER: // Multiplicative
+    // -----------------------------
+    switch (saddlep->schur_approx) {
+
+    case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
+      PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SCHUR);
+      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
+      PCFieldSplitSetSchurFactType(saddle_pc, PC_FIELDSPLIT_SCHUR_FACT_LOWER);
+      break;
+
+    default: // No Schur approximation
+      PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_MULTIPLICATIVE);
+      break;
+
+    }
+    break;
+
+  case CS_PARAM_SADDLE_PRECOND_SGS: // --> Full
+    // ---------------------------
+    switch (saddlep->schur_approx) {
+
+    case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
+      PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SCHUR);
+      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
+      PCFieldSplitSetSchurFactType(saddle_pc, PC_FIELDSPLIT_SCHUR_FACT_FULL);
+      break;
+
+    default: // No Schur approximation
+      PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SYMMETRIC_MULTIPLICATIVE);
+      break;
+
+    }
+    break;
+
+  case CS_PARAM_SADDLE_PRECOND_UPPER: // Multiplicative
+    // -----------------------------
+    switch (saddlep->schur_approx) {
+
+    case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
+      PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SCHUR);
+      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
+      PCFieldSplitSetSchurFactType(saddle_pc, PC_FIELDSPLIT_SCHUR_FACT_UPPER);
+      break;
+
+    default: // No Schur approximation
+      PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_MULTIPLICATIVE);
+      break;
+
+    }
+    break;
+
+  case CS_PARAM_SADDLE_PRECOND_UZAWA: // Not directly available in PETSc
+    // -----------------------------
+  default:
+    // Keep the default settings defined in PETSc
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "%s: Use PETSc default settings.\n", __func__);
+    break;
+  }
+
+  /* Need to call PCSetUp before configuring the second level (Thanks to
+     Natacha Bereux) */
+
+  PCSetFromOptions(saddle_pc);
+  PCSetUp(saddle_pc);
+  KSPSetUp(ksp);
+
+  PetscInt n_split;
+  KSP *saddle_subksp;
+  PCFieldSplitGetSubKSP(saddle_pc, &n_split, &saddle_subksp);
+  assert(n_split == 2);
+
+  KSP b11_ksp = saddle_subksp[0];
+  KSP b22_ksp = saddle_subksp[1];
+  PC b22_pc;
+
+  /* Set solvers and preconditioners for each block
+   * In all cases, set the (1,1)-block
+   * One needs a "non const" version of the structure for the setup
+   *
+   * Setting the (2,2) block depends on the type of approximation of the Schur
+   * complement
+   */
+
+  cs_equation_param_t  *eqp =
+    cs_equation_param_by_name(saddlep->block11_sles_param->name);
+  assert(eqp != nullptr);
+
+  cs_param_sles_t  *b11_slesp = eqp->sles_param;
+
+  cs_param_sles_setup_petsc_ksp("fieldsplit_block1", b11_slesp, b11_ksp);
+
+  // (2, 2)-block
+
+  switch (saddlep->schur_approx) {
+
+  case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
+    KSPSetType(b22_ksp, KSPMINRES);
+    KSPGetPC(b22_ksp, &b22_pc);
+    PCSetType(b22_pc, PCNONE);
+    break;
+
+  default: // No Schur approximation --> Identity matrix
+    KSPSetType(b22_ksp, KSPPREONLY);
+    KSPGetPC(b22_ksp, &b22_pc);
+    PCSetType(b22_pc, PCJACOBI);
+    break;
+
+  }
+
+  /* Apply modifications to the KSP structure */
+
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  PetscFree(saddle_subksp);
+  ISDestroy(&is2);
+  ISDestroy(&is1);
+
 #else
   bft_error(__FILE__, __LINE__, 0,
             "%s: PETSc is required for solving \"%s\"\n"
@@ -757,6 +729,54 @@ _notay_transformation_setup(cs_saddle_solver_t  *solver,
                          nullptr,
                          MATMPIAIJ,
                          _notay_hook,
+                         (void *)solver); /* context structure for PETSc */
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: PETSc is required for solving \"%s\"\n",
+              " Please modify your settings/build code_saturne with PETSc.",
+              __func__, saddlep->name);
+#endif  /* HAVE PETSC */
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid solver class.\n"
+              " PETSc is requested for solving \"%s\"\n"
+              " Please modify your settings.",
+              __func__, saddlep->name);
+    break;
+
+  } /* Class of solver to consider */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Do the setup stage when the FGMRES of PETSc with block preconditioner
+ *        has been chosen
+ *
+ * \param[in, out] solver         pointer to a saddle-point solver structure
+ * \param[in, out] saddlep        set of parameters for solving a saddle-point
+ * \param[in, out] block11_slesp  set of parameters for the (1,1)-block system
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_fmgres_setup(cs_saddle_solver_t  *solver,
+                    cs_param_saddle_t   *saddlep,
+                    cs_param_sles_t     *block11_slesp)
+{
+  assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_FGMRES);
+
+  switch (saddlep->solver_class) {
+
+  case CS_PARAM_SOLVER_CLASS_PETSC:
+#if defined(HAVE_PETSC)
+    cs_sles_petsc_init();
+
+    cs_sles_petsc_define(block11_slesp->field_id,
+                         nullptr,
+                         MATMPIAIJ,
+                         _petsc_fgmres_hook,
                          (void *)solver); /* context structure for PETSc */
 #else
     bft_error(__FILE__, __LINE__, 0,
@@ -903,7 +923,7 @@ _setup(cs_saddle_solver_t  *solver,
 
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
     /* ----------------------------- */
-    //_petsc_fmgres_setup(solver, saddlep, block11_slesp);
+    _petsc_fmgres_setup(solver, saddlep, block11_slesp);
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
