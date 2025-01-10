@@ -156,6 +156,7 @@ class compile_build(cs_compile):
                 flags.append('-I' + os.path.join(self.srcdir, 'libple', 'src'))
             flags.append('-I' + top_builddir)
             flags.append('-I' + os.path.join(self.srcdir, 'src'))
+            flags.append('-I' + os.path.join(top_builddir, 'src'))
 
         elif flag == 'ldflags':
             tsd = os.path.join(top_builddir, 'src')

@@ -36,7 +36,7 @@ LIBS_PLE = $(PLE_LIBS)
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/src \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -150,7 +150,7 @@ cs_blas_test_SOURCES  = \
 cs_blas_test.cpp \
 cs_blas.cpp
 cs_blas_test_CPPFLAGS  = \
--I$(top_srcdir)/src \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
  $(BLAS_CPPFLAGS) $(MPI_CPPFLAGS)
 cs_blas_test_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_HOT)
 cs_blas_test_LDFLAGS  = $(BLAS_LDFLAGS) $(LDFLAGS_CS_TESTS)
@@ -293,4 +293,4 @@ clean-local:
 	-rm -rf .deps
 
 .cu.$(OBJEXT):
-	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I$(top_builddir)/src/base $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
