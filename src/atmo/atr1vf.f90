@@ -406,7 +406,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
       ! Initialize with standard atmosphere
       ! above the domain
-      call atmstd(zray(kvert), preray(kvert), temray(kvert), &
+      call atmstd(zray(kvert), preray(kvert), temray(kvert)+tkelvi, &
                   zray(k), preray(k), temray(k), romray(k))
       ! Conversion Kelvin to Celsius
       temray(k) = temray(k) - tkelvi
