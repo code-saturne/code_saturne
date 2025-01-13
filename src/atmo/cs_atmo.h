@@ -546,6 +546,8 @@ typedef struct {
   /*! Molar mass of the chemical species (g/mol) */
   cs_real_t *molar_mass;
   int *chempoint;
+  /*! conversion factors for reaction rates Jacobian matrix */
+  cs_real_t *conv_factor_jac;
   /*! kinetics constants */
   cs_real_t *reacnum;
   /*! Initial gaseous and particulate concentrations

@@ -69,7 +69,7 @@ module atchem
   !> pointer to deal with different orders of chemical species
   integer(c_int), dimension(:), pointer ::  chempoint
   !> conversion factors for reaction rates Jacobian matrix
-  double precision, allocatable, dimension(:) ::  conv_factor_jac
+  double precision, dimension(:), pointer ::  conv_factor_jac
   !> kinetics constants
   double precision, dimension(:), pointer ::  reacnum
 
@@ -160,13 +160,13 @@ module atchem
       type(c_ptr), intent(out) :: nbchim, nbchmz, nespgi
     end subroutine cs_f_atmo_get_chem_conc_profiles
 
-    subroutine cs_f_atmo_get_arrays_chem_conc_profiles(espnum, zproc,  tchem,   &
-                                                       xchem, ychem)            &
+    subroutine cs_f_atmo_get_arrays_chem_conc_profiles(espnum, zproc,  tchem,          &
+                                                       xchem, ychem, conv_factor_jac)  &
       bind(C, name='cs_f_atmo_get_arrays_chem_conc_profiles')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: espnum, zproc,  tchem
-      type(c_ptr), intent(out) :: xchem, ychem
+      type(c_ptr), intent(out) :: xchem, ychem, conv_factor_jac
     end subroutine cs_f_atmo_get_arrays_chem_conc_profiles
 
     !---------------------------------------------------------------------------
@@ -267,7 +267,7 @@ contains
     integer imode
     type(c_ptr) :: p_nbchim, p_nbchmz, p_nespgi
     type(c_ptr) :: p_espnum, p_zproc,  p_tchem
-    type(c_ptr) :: p_xchem, p_ychem
+    type(c_ptr) :: p_xchem, p_ychem, p_conv_factor_jac
 
     ! First reading of concentration profiles file
     imode = 0
@@ -280,8 +280,8 @@ contains
 
     ! Dynamical allocations
 
-    call cs_f_atmo_get_arrays_chem_conc_profiles(p_espnum, p_zproc,  p_tchem,  &
-                                                 p_xchem,  p_ychem)
+    call cs_f_atmo_get_arrays_chem_conc_profiles(p_espnum, p_zproc, p_tchem,  &
+                                                 p_xchem,  p_ychem, p_conv_factor_jac)
 
     call c_f_pointer(p_zproc, zproc, [nbchmz])
     call c_f_pointer(p_tchem, tchem, [nbchim])
@@ -289,7 +289,8 @@ contains
     call c_f_pointer(p_ychem, ychem, [nbchim])
     call c_f_pointer(p_espnum, espnum, [nespg*nbchim*nbchmz])
 
-    allocate(conv_factor_jac(nespg*nespg))
+    call c_f_pointer(p_conv_factor_jac, conv_factor_jac, [nespg*nespg])
+
     allocate(idespgi(nespgi))
 
   end subroutine init_chemistry
@@ -376,7 +377,6 @@ contains
 
     call cs_f_atmo_chem_finalize()
 
-    deallocate(conv_factor_jac)
     deallocate(idespgi)
 
   end subroutine finalize_chemistry
