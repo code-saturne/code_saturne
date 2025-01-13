@@ -31,6 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
+
 #include "base/cs_defs.h"
 #include "base/cs_mem.h"
 
@@ -61,12 +63,11 @@ public:
   array_2dspan() :
     _dim1(0),
     _dim2(0),
+    _size(0),
     _is_owner(true),
+    _full_array(nullptr),
     _mode(CS_ALLOC_HOST)
   {
-    _size=0;
-    _full_array = nullptr;
-    _sub_array = nullptr;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -90,7 +91,7 @@ public:
     assert(_dim1 > 0 && _dim2 > 0);
     _size = dim1*dim2;
 
-    allocate_arrays();
+    allocate_();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -115,7 +116,7 @@ public:
     assert(_dim1 > 0 && _dim2 > 0);
     _size = dim1*dim2;
 
-    allocate_arrays();
+    allocate_();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -145,7 +146,7 @@ public:
 
     _full_array = data_array;
 
-    allocate_arrays();
+    allocate_();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -168,7 +169,6 @@ public:
   void
   clear()
   {
-    CS_FREE(_sub_array);
     if (_is_owner) {
       CS_FREE(_full_array);
     }
@@ -199,24 +199,72 @@ public:
     if (dim1 == _dim1 && dim2 == _dim2)
       return;
 
-    _size = dim1 * dim2;
-
     if (_is_owner) {
-      CS_REALLOC(_full_array, _size, T);
-    }
-    _dim1 = dim1;
+      clear();
 
-    /* Reallocate sub-array pointer if needed */
-    if (_dim2 != dim2) {
-      CS_REALLOC(_sub_array, dim2, T*);
+      _dim1 = dim1;
       _dim2 = dim2;
+      _size = dim1 * dim2;
+
+      allocate_();
     }
 
-    /* Update sub-array addresses. */
-    for (cs_lnum_t i = 0; i < _dim2; i++)
-      _sub_array[i] = _full_array + _dim1 * i;
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array while keeping some of the old data.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  void resize
+  (
+    cs_lnum_t       dim1,         /*!<[in] First dimension size */
+    cs_lnum_t       dim2,         /*!<[in] Second dimension size */
+    bool            copy_data,    /*!<[in] Copy data from old pointer to new
+                                           array. Default is false. */
+    cs_lnum_t       size_to_keep  /*!<[in] Size of data to keep */
+  )
+  {
+    assert(dim1 > 0 && dim2 > 0);
+    assert(size_to_keep <= dim2 && size_to_keep <= _dim2);
+
+    /* If same dimensions, nothing to do ... */
+    if (dim1 == _dim1 && dim2 == _dim2)
+      return;
+
+    if (copy_data && dim1 != _dim1)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Data cannot be saved with new dim1 is different from previous.\n");
+
+    cs_lnum_t new_size = dim1 * dim2;
+
+    if (_is_owner) {
+      if (copy_data) {
+        T *tmp = nullptr;
+        CS_MALLOC_HD(tmp, _size, T, _mode);
+        for (cs_lnum_t e_id = 0; e_id < _size; e_id++)
+          tmp[e_id] = _full_array[e_id];
+
+        CS_FREE(_full_array);
+        CS_MALLOC_HD(_full_array, new_size, T, _mode);
+
+        for (cs_lnum_t i = 0; i < _dim1; i++) {
+          for (cs_lnum_t j = 0; j < size_to_keep; j++)
+            _full_array[i*dim2 + j] = tmp[i*_dim2 + j];
+        }
+        CS_FREE(tmp);
+      }
+      else {
+        CS_FREE(_full_array);
+        CS_MALLOC_HD(_full_array, new_size, T, _mode);
+      }
+    }
+
+    _dim1 = dim1;
+    _dim2 = dim2;
+    _size = dim1 * dim2;
+  }
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Set memory allocation mode.
@@ -264,32 +312,6 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Getter function for 2D span data.
-   *
-   * \returns raw pointer to the full data array in 2D span.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  T **vals_2d()
-  {
-    return _sub_array;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Const getter function for 2D span data.
-   *
-   * \returns const raw pointer to the full data array in 2D span.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  const T **vals_2d() const
-  {
-    return _sub_array;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
    * \brief Overloaded [] operator to access the ith subarray (val[i][...]).
    *
    * \returns raw pointer to the i-th sub-array
@@ -301,7 +323,7 @@ public:
     int i /*!<[in] sub-array index to access */
   )
   {
-    return _sub_array[i];
+    return _full_array + i * _dim2;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -317,7 +339,7 @@ public:
     int i /*!<[in] sub-array index to access */
   ) const
   {
-    return _sub_array[i];
+    return _full_array + i * _dim2;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -368,17 +390,12 @@ private:
   /*--------------------------------------------------------------------------*/
 
   void
-  allocate_arrays()
+  allocate_()
   {
     /* Initialize total size of data array and allocate it if owner */
     if (_is_owner) {
       CS_MALLOC_HD(_full_array, _size, T, _mode);
     }
-
-    /* Allocate and initialize sub array pointer */
-    CS_MALLOC_HD(_sub_array, _dim1, T*, _mode);
-    for (cs_lnum_t i = 0; i < _dim1; i++)
-      _sub_array[i] = _full_array + i * _dim2;
   };
 
   /*--------------------------------------------------------------------------*/
@@ -386,10 +403,9 @@ private:
   /*--------------------------------------------------------------------------*/
 
   T*              _full_array; /*!< Full data array */
-  T**             _sub_array;  /*!< Array of sub-arrays pointers */
   cs_lnum_t       _dim1;       /*!< First dimension size */
   cs_lnum_t       _dim2;       /*!< Second dimension size */
-  cs_lnum_t       _size = 0;   /*!< Total size of data array */
+  cs_lnum_t       _size;       /*!< Total size of data array */
   bool            _is_owner;   /*!< Is this array owner of data */
   cs_alloc_mode_t _mode;       /*!< Data allocation mode */
 };
