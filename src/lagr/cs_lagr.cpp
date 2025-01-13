@@ -1006,21 +1006,16 @@ cs_lagr_finalize(void)
   cs_lagr_extra_module_t *extra = extra_i;
   for (int phase_id = 0; phase_id < extra->n_phases; phase_id++){
     BFT_FREE(extra_i[phase_id].grad_pr);
-    if (extra_i[phase_id].grad_vel != nullptr)
-      BFT_FREE(extra_i[phase_id].grad_vel);
+    BFT_FREE(extra_i[phase_id].grad_vel);
 
     for (int i = 0; i < 9; i++){
-      if (extra_i[phase_id].grad_cov_skp[i] != nullptr)
-        BFT_FREE(extra_i[phase_id].grad_cov_skp[i]);
+      BFT_FREE(extra_i[phase_id].grad_cov_skp[i]);
     }
     for (int i = 0; i < 6; i++){
-      if (extra_i[phase_id].grad_cov_sk[i] != nullptr)
-        BFT_FREE(extra_i[phase_id].grad_cov_sk[i]);
+      BFT_FREE(extra_i[phase_id].grad_cov_sk[i]);
     }
-    if (extra_i[phase_id].grad_lagr_time != nullptr)
-      BFT_FREE(extra_i[phase_id].grad_lagr_time);
-    if (extra->grad_tempf != nullptr)
-      BFT_FREE(extra_i[phase_id].grad_tempf);
+    BFT_FREE(extra_i[phase_id].grad_lagr_time);
+    BFT_FREE(extra_i[phase_id].grad_tempf);
   }
   BFT_FREE(extra_i);
 }
@@ -1643,14 +1638,14 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   /* Allocate pressure and velocity gradients */
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     // TODO : check if the pressure and velocity allocs can be removed
-    if ((    cs_glob_lagr_time_scheme->interpol_field != 0
-        || cs_glob_lagr_time_scheme->extended_t_scheme != 0)
-      && cs_glob_lagr_model->idistu == 1)
+    if (  (    cs_glob_lagr_time_scheme->interpol_field != 0
+           || cs_glob_lagr_time_scheme->extended_t_scheme != 0)
+        && cs_glob_lagr_model->idistu == 1)
       BFT_MALLOC(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t);
 
     if (   cs_glob_lagr_model->modcpl > 0
-      || cs_glob_lagr_model->shape > 0
-      || cs_glob_lagr_time_scheme->interpol_field != 0) {
+        || cs_glob_lagr_model->shape > 0
+        || cs_glob_lagr_time_scheme->interpol_field != 0) {
       BFT_MALLOC(extra_i[phase_id].grad_vel, ncelet, cs_real_33_t);
     }
 
@@ -1659,7 +1654,6 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
       BFT_MALLOC(extra_i[phase_id].grad_cov_skp[i], ncelet, cs_real_3_t);
     for (int i = 0; i < 6; i++)
       BFT_MALLOC(extra_i[phase_id].grad_cov_sk[i], ncelet, cs_real_3_t);
-    //
   }
 
   /* For frozen field:
@@ -1687,12 +1681,7 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   /* Allocate pressure and velocity gradients */
   if (   cs_glob_lagr_time_scheme->extended_t_scheme !=0
       && cs_glob_lagr_model->idistu == 1)
-      BFT_MALLOC(extra->grad_lagr_time, ncelet, cs_real_3_t);
-
-  if (   cs_glob_lagr_model->modcpl > 0
-      || cs_glob_lagr_model->shape > 0
-      || cs_glob_lagr_time_scheme->interpol_field != 0)
-      BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
+    BFT_MALLOC(extra->grad_lagr_time, ncelet, cs_real_3_t);
 
   if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
       && extra->temperature != nullptr
