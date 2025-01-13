@@ -180,6 +180,20 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Move constructor.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  array_2dspan
+  (
+    array_2dspan&& other /*!<[in] Original reference to move */
+  )
+    : array_2dspan()
+  {
+    swap(*this, other);
+  }
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Destructor method.
    */
   /*--------------------------------------------------------------------------*/
@@ -187,6 +201,42 @@ public:
   ~array_2dspan()
   {
     clear();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Class swap operator used for assignment or move.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  friend void
+  swap
+  (
+    array_2dspan& first, /*!<[in,out] First class instance */
+    array_2dspan& second /*!<[in,out] Second class instance */
+  )
+  {
+    using std::swap;
+    /* Swap the different members between the two references. */
+    swap(first._dim1, second._dim1);
+    swap(first._dim2, second._dim2);
+    swap(first._size, second._size);
+    swap(first._is_owner, second._is_owner);
+    swap(first._mode, second._mode);
+    swap(first._full_array, second._full_array);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Assignment operator.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  array_2dspan& operator=(array_2dspan other)
+  {
+    swap(*this, other);
+
+    return *this;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -266,8 +316,6 @@ public:
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Data cannot be saved with new dim1 is different from previous.\n");
 
-    cs_lnum_t new_size = dim1 * dim2;
-
     if (_is_owner) {
       if (copy_data) {
         T *tmp = nullptr;
@@ -275,24 +323,24 @@ public:
         for (cs_lnum_t e_id = 0; e_id < _size; e_id++)
           tmp[e_id] = _full_array[e_id];
 
-        CS_FREE(_full_array);
-        CS_MALLOC_HD(_full_array, new_size, T, _mode);
+        cs_lnum_t old_dim1 = _dim1;
+        cs_lnum_t old_dim2 = _dim2;
 
+        resize(dim1, dim2);
+
+        /* We loop on "_dim1" since dim1 = _dim1 */
         for (cs_lnum_t i = 0; i < _dim1; i++) {
           for (cs_lnum_t j = 0; j < size_to_keep; j++)
-            _full_array[i*dim2 + j] = tmp[i*_dim2 + j];
+            _full_array[i*_dim2 + j] = tmp[i*old_dim2 + j];
         }
+
         CS_FREE(tmp);
       }
       else {
-        CS_FREE(_full_array);
-        CS_MALLOC_HD(_full_array, new_size, T, _mode);
+        resize(dim1, dim2);
       }
     }
 
-    _dim1 = dim1;
-    _dim2 = dim2;
-    _size = dim1 * dim2;
   }
   /*--------------------------------------------------------------------------*/
   /*!
