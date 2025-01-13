@@ -151,6 +151,35 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Constructor method using copy. May be a shallow copy.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  array_2dspan
+  (
+   array_2dspan& other,             /*!<[in] Instance to copy */
+   bool          shallow_copy=false /*!<[in] Do a shallow copy or not */
+  )
+  {
+    _dim1 = other._dim1;
+    _dim2 = other._dim2;
+    _size = other._size;
+    _mode = other._mode;
+
+    if (shallow_copy) {
+      _is_owner = false;
+      _full_array = other._full_array;
+    }
+    else {
+      _is_owner = true;
+      allocate_();
+      for (cs_lnum_t e_id = 0; e_id < _size; e_id++)
+        _full_array[e_id] = other._full_array[e_id];
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Destructor method.
    */
   /*--------------------------------------------------------------------------*/
