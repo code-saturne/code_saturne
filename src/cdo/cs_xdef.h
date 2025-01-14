@@ -423,6 +423,30 @@ cs_xdef_get_scalar_value(cs_xdef_t     *def)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the value associated to the given definition.
+ *        This should be a definition by value and the dimension should be
+ *        equal to one.
+ *
+ * \param[in, out] def  pointer to a cs_xdef_t structure
+ * \param[in]      val  the scalar value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_set_scalar_value(cs_xdef_t *def,
+                         cs_real_t  val)
+{
+  assert(def != NULL);
+  assert(def->dim == 1);
+  assert(def->type == CS_XDEF_BY_VALUE);
+
+  cs_real_t *values = (cs_real_t *)def->context;
+
+  values[0] = val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve the values associated to the given definition.
  *         This should be a definition by array
  *
