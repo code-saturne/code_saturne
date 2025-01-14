@@ -1752,10 +1752,11 @@ _additional_fields_stage_2(void)
             snprintf(f_var_name, 127, "%s_variance", f->name);
             f_var_name[127] = '\0';
 
-            cs_field_t *f_var = _add_model_scalar_field(f_var_name,
-                                                        f_var_name,
-                                                        1);
-            cs_field_set_key_int(f_var, kscavr, f_id);
+            cs_field_t *f_var = cs_field_by_name_try(f_var_name);
+            if (f_var == nullptr) {
+              f_var = _add_model_scalar_field(f_var_name, f_var_name, 1);
+              cs_field_set_key_int(f_var, kscavr, f_id);
+            }
           }
         }
         else {
