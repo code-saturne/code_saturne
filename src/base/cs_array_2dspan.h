@@ -1,5 +1,5 @@
-#ifndef __CS_2D_ARRAY_H__
-#define __CS_2D_ARRAY_H__
+#ifndef __CS_ARRAY_2DSPAN_H__
+#define __CS_ARRAY_2DSPAN_H__
 
 /*============================================================================
  * Templated 2D array object
@@ -262,6 +262,21 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Initializer method for empty containers.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  void
+  empty()
+  {
+    _dim1 = _dim2 = _size = 0;
+    _is_owner = false;
+    _full_array = nullptr;
+    _mode = CS_ALLOC_HOST;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Resize data array.
    */
   /*--------------------------------------------------------------------------*/
@@ -314,7 +329,8 @@ public:
 
     if (copy_data && dim1 != _dim1)
       bft_error(__FILE__, __LINE__, 0,
-                "%s: Data cannot be saved with new dim1 is different from previous.\n");
+                "%s: Data cannot be saved with new dim1 is different from previous.\n",
+                __func__);
 
     if (_is_owner) {
       if (copy_data) {
@@ -479,11 +495,11 @@ private:
   /* Private members */
   /*--------------------------------------------------------------------------*/
 
-  T*              _full_array; /*!< Full data array */
   cs_lnum_t       _dim1;       /*!< First dimension size */
   cs_lnum_t       _dim2;       /*!< Second dimension size */
   cs_lnum_t       _size;       /*!< Total size of data array */
   bool            _is_owner;   /*!< Is this array owner of data */
+  T*              _full_array; /*!< Full data array */
   cs_alloc_mode_t _mode;       /*!< Data allocation mode */
 };
 
@@ -495,4 +511,4 @@ private:
 
 /*----------------------------------------------------------------------------*/
 
-#endif // __CS_2D_ARRAY_H__
+#endif // __CS_ARRAY_2DSPAN_H__
