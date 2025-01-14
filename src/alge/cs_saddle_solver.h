@@ -40,6 +40,7 @@
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_system.h"
 #include "cdo/cs_iter_algo.h"
+#include "cdo/cs_property.h"
 #include "alge/cs_param_saddle.h"
 #include "alge/cs_sles.h"
 
