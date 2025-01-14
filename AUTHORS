@@ -49,6 +49,7 @@ Other contributors to code_saturne include
 
 Hector Amino             (EDF, Chatou, France)
 Baptiste Amiot           (CEREA, Chatou, France)
+Panos Asproulis          (RENUDA, London, UK)
 Guilhem Balvet           (EDF, Chatou, France)
 Pascal Borel             (EDF, Chatou, France)
 Romain Camy              (EDF, Lyon, France)
@@ -68,6 +69,7 @@ Bruno Delhom             (INCKA, Boulogne-Billancourt, France)
 Josselin Demont          (EDF, Chatou, France)
 Mohammed Derbane         (Aneo, Boulogne Billancourt)
 Daouda Diakité           (Aneo, Boulogne Billancourt)
+Damien Dubuc             (Aneo, Boulogne Billancourt)
 Cédric Flageul           (CEREA, Marne la Vallée, France)
 Qingqing Feng            (EDF, Chatou, France)
 Samuel Gaucher           (EDF, Chatou, France)
@@ -103,7 +105,7 @@ Pascal Vezolle           (IBM, Montpellier, France)
 
 code_saturne may contain code by Wes Petersen
 (ETHZ, Zurich, Switzerland) for random number generation
-(cs_random.c, adapted from Netlib's zufall functions)
+(cs_random.cpp, adapted from Netlib's zufall functions).
 
 
 The following people should also be thanked for cooperating
