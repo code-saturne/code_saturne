@@ -2047,7 +2047,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
             && extra->temperature != nullptr
-            && cs_glob_lagr_time_scheme->interpol_field > 0)
+            && cs_glob_lagr_time_scheme->interpol_field > 0
+            && phase_id == 0)
           BFT_MALLOC(extra_i[phase_id].grad_tempf, ncelet, cs_real_3_t);
 
         /* Allocate the gradients of second order statistics */
@@ -2071,7 +2072,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
           BFT_REALLOC(extra_i[phase_id].grad_pr, n_cells_ext, cs_real_3_t);
           if (extra_i[phase_id].grad_vel != nullptr)
             BFT_REALLOC(extra_i[phase_id].grad_vel, n_cells_ext, cs_real_33_t);
-          if (extra->grad_tempf != nullptr)
+          if (extra_i[phase_id].grad_tempf != nullptr)
             BFT_REALLOC(extra_i[phase_id].grad_tempf, n_cells_ext, cs_real_3_t);
           if (extra->grad_lagr_time != nullptr)
             BFT_REALLOC(extra_i[phase_id].grad_lagr_time, n_cells_ext, cs_real_3_t);

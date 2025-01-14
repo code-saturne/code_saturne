@@ -448,7 +448,8 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
 
   if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
       && extra->temperature != nullptr
-      && cs_glob_lagr_time_scheme->interpol_field > 0)
+      && cs_glob_lagr_time_scheme->interpol_field > 0
+      && phase_id == 0)
     cs_field_gradient_scalar(extra->temperature,
                              0,
                              1, /* inc */
