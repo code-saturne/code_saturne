@@ -508,19 +508,20 @@ double cs_turb_ce1 = 1.44;
 
 /*!
  * Constant \f$C_{\varepsilon 2}\f$ for the \f$k-\varepsilon\f$ and
- * \f$R_{ij}-\varepsilon\f$ LRR models.
+ * \f$R_{ij}-\varepsilon\f$ models.
  * Default value for (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR)
  * is 1.92, modified otherwise.
- * - Rij-epsilon SSG or EBRSM: 1.83
+ * for \f$R_{ij}-\varepsilon\f$ SSG or EBRSM: 1.83
+ * for the v2f \f$\varphi\f$-model: 1.85
  */
 double cs_turb_ce2 = 1.92;
 
 /*!
- * Constant \f$C_{\varepsilon 3}\f$ for EB-RSM model.
- * Useful only for buoyant term calculation of \f$R_{ij}\f$
- * in \f$R_{ij}-\varepsilon EB-RSM\f$.
+ * Constant \f$C_{\varepsilon 3}\f$ for the \f$k-\varepsilon\f$ and
+ * for \f$R_{ij}-\varepsilon\f$ models. Equal to \c cs_turb_ce1 by default,
+ * to 2.02 for EBRSM
  */
-double cs_turb_ce3 = 2.02;
+double cs_turb_ce3 = 1.44;
 
 /*!
  * Coefficient of interfacial coefficient in k-eps, used in Lagrange treatment.
@@ -661,12 +662,6 @@ double cs_turb_xct = 6.0;
 
 /*! Constant of the Rij-epsilon EBRSM. */
 double cs_turb_xceta = 80.0;
-
-/*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-double cs_turb_cpale1 = 1.44;
-
-/*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-double cs_turb_cpale2 = 1.83;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
 double cs_turb_cpale3 = 2.3;
@@ -952,12 +947,6 @@ double cs_turb_cdries = 26.0;
  * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
  */
 double cs_turb_cv2fa1 = 0.05;
-
-/*!
- * Constant \f$C_{\varepsilon 2}\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
- */
-double cs_turb_cv2fe2 = 1.85;
 
 /*!
  * Constant \f$C_1\f$ for the v2f \f$\varphi\f$-model.
@@ -1424,9 +1413,17 @@ cs_turb_compute_constants(int phase_id)
     cs_turb_crij_c0 = (cs_turb_crij1-1.0)*2.0/3.0;
 
   if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
-      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
+      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM
+      || cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
     cs_turb_ce2 = 1.83;
 
+  if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
+    cs_turb_ce1 = 1.4;
+    cs_turb_ce2 = 1.85;
+  }
+
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
+    cs_turb_ce3 = 2.02;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1916,8 +1913,9 @@ cs_turb_constants_log_setup(void)
       (CS_LOG_SETUP,
        _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
          "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
+         "    ce3:         %14.5e (Cepsilon 3: dissipat.  coef.)\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
-         cs_turb_ce1, cs_turb_ce2, cs_turb_cmu);
+         cs_turb_ce1, cs_turb_ce2, cs_turb_ce3, cs_turb_cmu);
 
   else if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR)
     cs_log_printf
@@ -1930,10 +1928,11 @@ cs_turb_constants_log_setup(void)
          "    crijp2:      %14.5e (Fast coeff. for wall echo)\n"
          "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
          "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
+         "    ce3:         %14.5e (Cepsilon 3: dissipat.  coef.)\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
          cs_turb_crij1, cs_turb_crij2,
          cs_turb_crij3, cs_turb_csrij, cs_turb_crijp1,
-         cs_turb_crijp2, cs_turb_ce1, cs_turb_ce2, cs_turb_cmu);
+         cs_turb_crijp2, cs_turb_ce1, cs_turb_ce2,cs_turb_ce3, cs_turb_cmu);
 
   else if (turb_model->model == CS_TURB_RIJ_EPSILON_SSG)
     cs_log_printf
@@ -1949,11 +1948,12 @@ cs_turb_constants_log_setup(void)
          "    crij3:       %14.5e (Gravity term coeff.)\n"
          "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
          "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
+         "    ce3:         %14.5e (Cepsilon 3: dissipat.  coef.)\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
          cs_turb_cssgs1, cs_turb_cssgs2, cs_turb_cssgr1,
          cs_turb_cssgr2, cs_turb_cssgr3, cs_turb_cssgr4,
          cs_turb_cssgr5, cs_turb_csrij, cs_turb_crij3,
-         cs_turb_ce1, cs_turb_ce2,
+         cs_turb_ce1, cs_turb_ce2, cs_turb_ce3,
          cs_turb_cmu);
 
   else if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
@@ -1970,12 +1970,13 @@ cs_turb_constants_log_setup(void)
          "    crij3:       %14.5e (Gravity term coeff.)\n"
          "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
          "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
+         "    ce3:         %14.5e (Cepsilon 3: dissipat.  coef.)\n"
          "    xa1:         %14.5e (Coef A1)\n"
          "    xceta:       %14.5e (Coef Ceta)\n"
          "    xct:         %14.5e (Coef CT)\n"),
          cs_turb_cebms1, cs_turb_cebmr1, cs_turb_cebmr2,
          cs_turb_cebmr3, cs_turb_cebmr4, cs_turb_cebmr5,
-         cs_turb_csrij, cs_turb_crij3, cs_turb_ce1, cs_turb_ce2,
+         cs_turb_csrij, cs_turb_crij3, cs_turb_ce1, cs_turb_ce2, cs_turb_ce3,
          cs_turb_xa1,
          cs_turb_xceta, cs_turb_xct);
 
@@ -1985,14 +1986,17 @@ cs_turb_constants_log_setup(void)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    cv2fa1:      %14.5e (a1 to calculate Cepsilon1)\n"
-         "    cv2fe2:      %14.5e (Cepsilon 2: dissip. coeff.)\n"
+         "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
+         "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
+         "    ce3:         %14.5e (Cepsilon 3: dissipat.  coef.)\n"
          "    cmu   :      %14.5e (Cmu constant)\n"
          "    cv2fct:      %14.5e (CT constant)\n"
          "    cv2fcl:      %14.5e (CL constant)\n"
          "    cv2fet:      %14.5e (C_eta constant)\n"
          "    cv2fc1:      %14.5e (C1 constant)\n"
          "    cv2fc2:      %14.5e (C2 constant)\n"),
-         cs_turb_cv2fa1, cs_turb_cv2fe2,
+         cs_turb_cv2fa1,
+         cs_turb_ce1, cs_turb_ce2, cs_turb_ce3,
          cs_turb_cmu, cs_turb_cv2fct,
          cs_turb_cv2fcl, cs_turb_cv2fet, cs_turb_cv2fc1,
          cs_turb_cv2fc2);
@@ -2000,17 +2004,17 @@ cs_turb_constants_log_setup(void)
   else if (turb_model->model == CS_TURB_V2F_BL_V2K)
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    cpale1:      %14.5e (Cepsilon 1 : Prod. coeff.)\n"
-         "    cpale2:      %14.5e (Cepsilon 2 : Diss. coeff.)\n"
-         "    cpale3:      %14.5e (Cepsilon 3 : E term coeff.)\n"
-         "    cpale4:      %14.5e (Cepsilon 4 : Mod Diss. coef.)\n"
+       _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
+         "    ce2:         %14.5e (Cepsilon 2: Diss. coef.)\n"
+         "    cpale3:      %14.5e (Cepsilon 3: E term coef.)\n"
+         "    cpale4:      %14.5e (Cepsilon 4: Mod Diss. coe.)\n"
          "    cmu   :      %14.5e (Cmu constant)\n"
          "    cpalct:      %14.5e (CT constant)\n"
          "    cpalcl:      %14.5e (CL constant)\n"
          "    cpalet:      %14.5e (C_eta constant)\n"
          "    cpalc1:      %14.5e (C1 constant)\n"
          "    cpalc2:      %14.5e (C2 constant)\n"),
-         cs_turb_cpale1, cs_turb_cpale2, cs_turb_cpale3,
+         cs_turb_ce1, cs_turb_ce2, cs_turb_cpale3,
          cs_turb_cpale4,
          cs_turb_cmu, cs_turb_cpalct, cs_turb_cpalcl,
          cs_turb_cpalet, cs_turb_cpalc1, cs_turb_cpalc2);

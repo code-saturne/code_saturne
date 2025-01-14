@@ -901,6 +901,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
  * \param[in]       up_rhop     work array for \f$ \vect{u}'\rho' \f$
  * \param[in]       cell_f_vol  cell fluid volume
  * \param[in]       grav        gravity
+ * \param[in, out]  fimp        work array for implicite contribution
  * \param[in, out]  rhs         work array for right-hand side
  */
 /*----------------------------------------------------------------------------*/
@@ -910,6 +911,7 @@ _gravity_st_epsilon(int              phase_id,
                     const cs_real_t  up_rhop[][3],
                     const cs_real_t  cell_f_vol[],
                     const cs_real_t  grav[],
+                    cs_real_t        fimp[],
                     cs_real_t        rhs[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -945,10 +947,9 @@ _gravity_st_epsilon(int              phase_id,
 
   const cs_turb_model_type_t model
     = (cs_turb_model_type_t)cs_glob_turb_model->model;
-  int dissip_buo_mdl = cs_glob_turb_rans_model->dissip_buo_mdl;
+  const int dissip_buo_mdl = cs_glob_turb_rans_model->dissip_buo_mdl;
 
   const cs_real_t xct = cs_turb_xct;
-  const cs_real_t ce1 = cs_turb_ce1;
   const cs_real_t ce3 = cs_turb_ce3;
 
   cs_field_t *f_alpha_theta = nullptr;
@@ -1000,8 +1001,6 @@ _gravity_st_epsilon(int              phase_id,
 
     cs_real_t time_scale = tke / cvara_ep[c_id];
 
-    cs_real_t buoyancy_constant = ce1;
-
     if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
 
       /* Calculation of the Durbin time scale */
@@ -1020,18 +1019,18 @@ _gravity_st_epsilon(int              phase_id,
         cs_real_t xr
           = (1.0 - alpha_theta[c_id])*prdtl + alpha_theta[c_id]*rvarfl;
 
-        buoyancy_constant = ce3;
-
         time_scale = time_scale * sqrt(xr)/sqrt(prdtl);
       }
     }
 
     if (dissip_buo_mdl == 1) {
-      rhs[c_id] +=   buoyancy_constant
+      fimp[c_id] +=  ce3 * g_up_rhop/time_scale
+                     / cvara_ep[c_id] * cell_f_vol[c_id];
+      rhs[c_id] +=   ce3
                    * g_up_rhop/time_scale * cell_f_vol[c_id];
     }
     else {
-      rhs[c_id] +=   buoyancy_constant
+      rhs[c_id] +=   ce3
                    * cs_math_fmax(0., g_up_rhop/time_scale) * cell_f_vol[c_id];
     }
   });
@@ -2758,10 +2757,10 @@ _solve_epsilon(int              phase_id,
 
     /* Extrapolation of source terms (2nd order in time) */
     if (st_prv_id > -1)
-      _gravity_st_epsilon(phase_id, up_rhop, cell_f_vol, grav, c_st_prv);
+      _gravity_st_epsilon(phase_id, up_rhop, cell_f_vol, grav, fimp, c_st_prv);
 
     else
-      _gravity_st_epsilon(phase_id, up_rhop, cell_f_vol, grav, rhs);
+      _gravity_st_epsilon(phase_id, up_rhop, cell_f_vol, grav, fimp, rhs);
 
   }
 

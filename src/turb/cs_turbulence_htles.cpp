@@ -285,8 +285,8 @@ cs_turbulence_htles(void)
       xpsi   = xbeta/(xcmu*xgamma + xr*(xbeta - xcmu*xgamma));
     }
     else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
-      cs_real_t xce1 = cs_turb_cpale1;
-      cs_real_t xce2 = cs_turb_cpale2;
+      cs_real_t xce1 = cs_turb_ce1;
+      cs_real_t xce2 = cs_turb_ce2;
       xpsi   = xce2/(xce1 + xr*(xce2 - xce1));
     }
 

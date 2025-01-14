@@ -64,16 +64,12 @@ BEGIN_C_DECLS
  * model in the context of the atmospheric module
  * g = g*grad(theta)/prdtur/theta
  *
- * \param[in, out]  tinstk    Implicit part of the buoyancy term (for k)
- * \param[in, out]  smbrk     Explicit part of the buoyancy term (for k)
- * \param[in, out]  smbre     Explicit part of the buoyancy term (for eps)
+ * \param[in, out]  gk     Explicit part of the buoyancy term (for k)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_buoyancy_ke_prod(cs_real_t  *tinstk,
-                         cs_real_t  *smbrk,
-                         cs_real_t  *smbre);
+cs_atmo_buoyancy_ke_prod(cs_real_t  gk[]);
 
 /*----------------------------------------------------------------------------*/
 

@@ -220,18 +220,14 @@ _etheq(cs_real_t   pphy,
  *
  * \param[in]       cromo       density
  * \param[in]       cpro_pcvto  turbulent viscosity
- * \param[in, out]  tinstk      implicit part of the buoyancy term (for k)
- * \param[in, out]  smbrk       explicit part of the buoyancy term (for k)
- * \param[in, out]  smbre       explicit part of the buoyancy term (for eps)
+ * \param[in, out]  gk          explicit part of the buoyancy term (for k)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _dry_atmosphere(const cs_real_t  cromo[],
                 const cs_real_t  cpro_pcvto[],
-                cs_real_t        tinstk[],
-                cs_real_t        smbrk[],
-                cs_real_t        smbre[])
+                cs_real_t        gk[])
 {
   cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
   const cs_real_t *cell_f_vol = fvq->cell_vol;
@@ -276,8 +272,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
                            1,    // inc
                            grad);
 
-  /* Production and gravity terms
-     TINSTK = P + G et TINSTE = P + (1 - CE3)*G */
+  /* TKE Production by gravity term G */
 
   cs_real_t rho, visct, xeps, xk, ttke, gravke;
   cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
@@ -294,14 +289,8 @@ _dry_atmosphere(const cs_real_t  cromo[],
     gravke = beta *
       cs_math_3_dot_product(grad[c_id], grav) / prdtur;
 
-    /* Implicit part (no implicit part for epsilon because the source
-     * term is positive) */
-
-    tinstk[c_id] += fmax(-rho*cell_f_vol[c_id]*cs_turb_cmu*ttke*gravke, 0.);
-
-    /* Explicit part */
-    smbre[c_id] += visct*fmax(gravke, 0.);
-    smbrk[c_id] += visct*gravke;
+    /* Explicit Buoyant terms */
+    gk[c_id] += visct*gravke;
 
     /* Save for post processing */
     if (f_tke_buoy != nullptr)
@@ -322,18 +311,14 @@ _dry_atmosphere(const cs_real_t  cromo[],
  *
  * \param[in]       cromo       density
  * \param[in]       cpro_pcvto  turbulent viscosity
- * \param[in, out]  tinstk      implicit part of the buoyancy term (for k)
- * \param[in, out]  smbrk       explicit part of the buoyancy term (for k)
- * \param[in, out]  smbre       explicit part of the buoyancy term (for eps)
+ * \param[in, out]  gk          explicit part of the buoyancy term (for k)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _humid_atmosphere(const cs_real_t  cromo[],
                   const cs_real_t  cpro_pcvto[],
-                  cs_real_t        tinstk[],
-                  cs_real_t        smbrk[],
-                  cs_real_t        smbre[])
+                  cs_real_t        gk[])
 {
   cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
   const cs_real_t *cell_f_vol = fvq->cell_vol;
@@ -438,7 +423,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
                            grad);
 
   /* Production and gravity terms
-   * TINSTK = P + G et TINSTE = P + (1 - CE3)*G */
+   * RHS k  = P + G et RHS ep = ce1 P + ce3 * G */
 
   /* Now store the production term due to theta_liq in gravke_theta */
 
@@ -460,7 +445,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
                            grad);
 
   /* Production and gravity terms
-   * TINSTK = P + G et TINSTE = P + (1 - CE3)*G */
+   * RHS k  = P + G et RHS ep = ce1 P + ce3 * G */
 
   /* Store the production term due to qw in gravke_qw */
 
@@ -484,14 +469,9 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
     gravke  = gravke_theta[c_id] + gravke_qw[c_id];
 
-    /* Implicit part (no implicit part for epsilon because the source
-     * term is positive) */
+    /* Explicit Buoyant terms */
+    gk[c_id] += visct*gravke;
 
-    tinstk[c_id] += fmax(-rho*cell_f_vol[c_id]*cs_turb_cmu*ttke*gravke, 0.);
-
-    /* Explicit part */
-    smbre[c_id] += visct*fmax(gravke, 0.);
-    smbrk[c_id] += visct*gravke;
   }
 
   BFT_FREE(etheta);
@@ -517,16 +497,12 @@ _humid_atmosphere(const cs_real_t  cromo[],
  * model in the context of the atmospheric module
  * g = g*grad(theta)/prdtur/theta
  *
- * \param[in, out]  tinstk    Implicit part of the buoyancy term (for k)
- * \param[in, out]  smbrk     Explicit part of the buoyancy term (for k)
- * \param[in, out]  smbre     Explicit part of the buoyancy term (for eps)
+ * \param[in, out]  gk        Explicit part of the buoyancy term (for k)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_buoyancy_ke_prod(cs_real_t  tinstk[],
-                         cs_real_t  smbrk[],
-                         cs_real_t  smbre[])
+cs_atmo_buoyancy_ke_prod(cs_real_t  gk[])
 {
   /* Time extrapolation? */
   int key_t_ext_id = cs_field_key_id("time_extrapolated");
@@ -552,16 +528,12 @@ cs_atmo_buoyancy_ke_prod(cs_real_t  tinstk[],
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY)
     _dry_atmosphere(cromo,
                     cpro_pcvto,
-                    tinstk,
-                    smbrk,
-                    smbre);
+                    gk);
 
   else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
     _humid_atmosphere(cromo,
                       cpro_pcvto,
-                      tinstk,
-                      smbrk,
-                      smbre);
+                      gk);
 }
 
 /*----------------------------------------------------------------------------*/
