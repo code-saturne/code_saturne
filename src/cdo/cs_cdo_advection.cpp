@@ -1585,6 +1585,8 @@ cs_cdofb_advection(const cs_equation_param_t   *eqp,
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
 
+  cb->upwind_portion = eqp->upwind_portion;
+
   scheme_func(eqp->dim, cm, csys, cb, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
