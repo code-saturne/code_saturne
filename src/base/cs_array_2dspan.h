@@ -36,7 +36,7 @@
 #include "base/cs_defs.h"
 #include "base/cs_mem.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 
 /*=============================================================================
  * Public C++ class template
