@@ -711,118 +711,130 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
  * \brief Define the value at the boundary for the given (isotropic)
  *        property. This value is uniform and steady for all the boundary
  *        faces associated to the boundary zone named zname
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]       val      value to set
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        boundary faces are considered)
+ * \param[in]      val    value to set
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_iso_by_value(cs_property_t    *pty,
-                                      const char       *zname,
-                                      double            val);
+cs_property_boundary_def_iso_by_value(cs_property_t *pty,
+                                      const char    *zname,
+                                      double         val);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define an orthotropic cs_property_t structure by value for entities
- *         related to a volume zone
+ * \brief Define an orthotropic cs_property_t structure by value for entities
+ *        related to a volume zone.
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           cells are considered)
- * \param[in]       val      values to set (vector of size 3)
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        cells are considered)
+ * \param[in]      val    values to set (vector of size 3)
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_ortho_by_value(cs_property_t    *pty,
-                               const char       *zname,
-                               double            val[]);
+cs_property_def_ortho_by_value(cs_property_t *pty,
+                               const char    *zname,
+                               double         val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define the value at the boundary for the given (orthotropic)
  *        property. This value is uniform and steady for all the boundary
  *        faces associated to the boundary zone named zname
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced. *
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]       vals     values to set
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        boundary faces are considered)
+ * \param[in]      vals   values to set
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_ortho_by_value(cs_property_t    *pty,
-                                        const char       *zname,
-                                        double            vals[]);
+cs_property_boundary_def_ortho_by_value(cs_property_t  *pty,
+                                        const char     *zname,
+                                        double          vals[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define an anisotropic cs_property_t structure by value for entities
- *         related to a volume zone
+ * \brief Define an anisotropic cs_property_t structure by value for entities
+ *        related to a volume zone
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           cells are considered)
- * \param[in]       tens     values to set (3x3 tensor)
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        cells are considered)
+ * \param[in]      tens   values to set (3x3 tensor)
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_aniso_by_value(cs_property_t    *pty,
-                               const char       *zname,
-                               cs_real_t         tens[3][3]);
+cs_property_def_aniso_by_value(cs_property_t *pty,
+                               const char    *zname,
+                               cs_real_t      tens[3][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define the value at the boundary for the given (anisotropic)
  *        property. This value is uniform and steady for all the boundary
  *        faces associated to the boundary zone named zname
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]       tens     values to set given as a 3x3 tensor
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        boundary faces are considered)
+ * \param[in]      tens   values to set given as a 3x3 tensor
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_aniso_by_value(cs_property_t    *pty,
-                                        const char       *zname,
-                                        double            tens[3][3]);
+cs_property_boundary_def_aniso_by_value(cs_property_t  *pty,
+                                        const char     *zname,
+                                        double          tens[3][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define the value of a cs_property_t structure thanks to a time
  *        function for all cells associated to the zone named zname.
  *        Optimized case with a symmetric storage.
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out] pty       pointer to a cs_property_t structure
- * \param[in]      zname     name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]      symtens   symmetric tensor given as an array of 6 values
+ * \param[in, out] pty      pointer to a cs_property_t structure
+ * \param[in]      zname    name of the associated zone (if null or "" all
+ *                          boundary faces are considered)
+ * \param[in]      symtens  symmetric tensor given as an array of 6 values
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
-                                   const char       *zname,
-                                   cs_real_t         symtens[6]);
+cs_property_def_aniso_sym_by_value(cs_property_t  *pty,
+                                   const char     *zname,
+                                   cs_real_t       symtens[6]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -830,105 +842,115 @@ cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
  *        property. This value is uniform and steady for all the boundary
  *        faces associated to the boundary zone named zname
  *        Optimized case with a symmetric storage.
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]       tens     tensor to set given as an array of 6 values
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        boundary faces are considered)
+ * \param[in]      tens   tensor to set given as an array of 6 values
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_aniso_sym_by_value(cs_property_t    *pty,
-                                            const char       *zname,
-                                            double            tens[6]);
+cs_property_boundary_def_aniso_sym_by_value(cs_property_t *pty,
+                                            const char    *zname,
+                                            double         tens[6]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define a cs_property_t structure thanks to a time function for all
  *        cells associated to the zone named zname
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           cells are considered)
- * \param[in]       func     pointer to a cs_time_func_t function
- * \param[in]       input    null or pointer to a structure cast on-the-fly
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if nullptr or "" all
+ *                        cells are considered)
+ * \param[in]      func   pointer to a cs_time_func_t function
+ * \param[in]      input  nullptr or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_time_func(cs_property_t      *pty,
-                             const char         *zname,
-                             cs_time_func_t     *func,
-                             void               *input);
+cs_property_def_by_time_func(cs_property_t   *pty,
+                             const char      *zname,
+                             cs_time_func_t  *func,
+                             void            *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define the value of a cs_property_t structure at the boundary thanks
  *        to a time function in a subdomain attached to a zone named zname
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]       func     pointer to a cs_time_func_t function
- * \param[in]       input    null or pointer to a structure cast on-the-fly
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        boundary faces are considered)
+ * \param[in]      func   pointer to a cs_time_func_t function
+ * \param[in]      input  null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_by_time_func(cs_property_t      *pty,
-                                      const char         *zname,
-                                      cs_time_func_t     *func,
-                                      void               *input);
+cs_property_boundary_def_by_time_func(cs_property_t  *pty,
+                                      const char     *zname,
+                                      cs_time_func_t *func,
+                                      void           *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the value of a cs_property_t structure thanks to an analytic
- *         function for all cells associated to the zone named zname
+ * \brief Define a cs_property_t structure thanks to an analytic function for
+ *        all cells associated to the zone named zname
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           cells are considered)
- * \param[in]       func     pointer to a cs_analytic_func_t function
- * \param[in]       input    null or pointer to a structure cast on-the-fly
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        cells are considered)
+ * \param[in]      func   pointer to a cs_analytic_func_t function
+ * \param[in]      input  null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_analytic(cs_property_t        *pty,
-                            const char           *zname,
-                            cs_analytic_func_t   *func,
-                            void                 *input);
+cs_property_def_by_analytic(cs_property_t      *pty,
+                            const char         *zname,
+                            cs_analytic_func_t *func,
+                            void               *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define the value of a cs_property_t structure at the boundary thanks
  *        to a time function for all boundary faces associated to the zone
  *        named zname
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]       func     pointer to a cs_analytic_func_t function
- * \param[in]       input    null or pointer to a structure cast on-the-fly
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      zname  name of the associated zone (if null or "" all
+ *                        boundary faces are considered)
+ * \param[in]      func   pointer to a cs_analytic_func_t function
+ * \param[in]      input  null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_by_analytic(cs_property_t        *pty,
-                                     const char           *zname,
-                                     cs_analytic_func_t   *func,
-                                     void                 *input);
+cs_property_boundary_def_by_analytic(cs_property_t      *pty,
+                                     const char         *zname,
+                                     cs_analytic_func_t *func,
+                                     void               *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -936,35 +958,41 @@ cs_property_boundary_def_by_analytic(cs_property_t        *pty,
  *        functions specifying how to evaluate the property in each cell (with
  *        cell-wise structures or not). This definition applies to all cells
  *        associated to the zone named zname
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out] pty           pointer to a cs_property_t structure
- * \param[in]      zname         name of the zone (if null or "" then all cells
- *                               are selected)
- * \param[in]      context       pointer to a structure (may be null)
- * \param[in]      get_eval_at_cell      pointer to a function
- * \param[in]      get_eval_at_cell_cw   pointer to a function
+ * \param[in, out] pty                  pointer to a cs_property_t structure
+ * \param[in]      zname                name of the zone (if null or "" then all
+ *                                      cells are selected)
+ * \param[in]      context              pointer to a structure (may
+ *                                      be nullptr)
+ * \param[in]      get_eval_at_cell     pointer to a function
+ * \param[in]      get_eval_at_cell_cw  pointer to a function
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_func(cs_property_t         *pty,
-                        const char            *zname,
-                        void                  *context,
-                        cs_xdef_eval_t        *get_eval_at_cell,
-                        cs_xdef_cw_eval_t     *get_eval_at_cell_cw);
+cs_property_def_by_func(cs_property_t     *pty,
+                        const char        *zname,
+                        void              *context,
+                        cs_xdef_eval_t    *get_eval_at_cell,
+                        cs_xdef_cw_eval_t *get_eval_at_cell_cw);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define a cs_property_t structure thanks to an array of values. If an
  *        advanced usage of the definition by array is needed, then call \ref
  *        cs_xdef_array_set_adjacency and/or \ref cs_xdef_array_set_sublist
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
  * \param[in, out] pty           pointer to a cs_property_t structure
- * \param[in]      zname         name of the zone (if null or "" then all cells
- *                               are selected)
- * \param[in]      val_location  information to know where are located values
+ * \param[in]      zname         name of the zone (if null or "" then all
+ *                               cells are selected)
+ * \param[in]      val_location  information to know where
+ *                               are located values
  * \param[in]      array         pointer to an array
  * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struc.
  *                               (true or false)
@@ -979,12 +1007,12 @@ cs_property_def_by_func(cs_property_t         *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_array(cs_property_t      *pty,
-                         const char         *zname,
-                         cs_flag_t           val_location,
-                         cs_real_t          *array,
-                         bool                is_owner,
-                         bool                full_length);
+cs_property_def_by_array(cs_property_t *pty,
+                         const char    *zname,
+                         cs_flag_t      val_location,
+                         cs_real_t     *array,
+                         bool           is_owner,
+                         bool           full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -992,6 +1020,8 @@ cs_property_def_by_array(cs_property_t      *pty,
  *        If an advanced usage of the definition by array is needed, then call
  *        \ref cs_xdef_array_set_adjacency and/or \ref
  *        cs_xdef_array_set_sublist
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
  * \param[in, out] pty          pointer to a cs_property_t structure
  * \param[in]      zname        null or name of the boundary zone
@@ -1010,45 +1040,49 @@ cs_property_def_by_array(cs_property_t      *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_by_array(cs_property_t      *pty,
-                                  const char         *zname,
-                                  cs_flag_t           val_loc,
-                                  cs_real_t          *array,
-                                  bool                is_owner,
-                                  bool                full_length);
+cs_property_boundary_def_by_array(cs_property_t *pty,
+                                  const char    *zname,
+                                  cs_flag_t      val_loc,
+                                  cs_real_t     *array,
+                                  bool           is_owner,
+                                  bool           full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to a field structure. One
- *         assumes that all cells are defined using this array.
+ * \brief Define a cs_property_t structure thanks to a field structure. One
+ *        assumes that all cells are defined using this array.
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       field     pointer to a cs_field_t structure
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      field  pointer to a cs_field_t structure
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_field(cs_property_t    *pty,
-                         cs_field_t       *field);
+cs_property_def_by_field(cs_property_t *pty,
+                         cs_field_t    *field);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define the values of a property at the boundary thanks to a field
  *        structure. One assumes that all boundary faces are defined using
  *        this array.
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       field     pointer to a cs_field_t structure
+ * \param[in, out] pty    pointer to a cs_property_t structure
+ * \param[in]      field  pointer to a cs_field_t structure
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_by_field(cs_property_t    *pty,
-                                  cs_field_t       *field);
+cs_property_boundary_def_by_field(cs_property_t *pty,
+                                  cs_field_t    *field);
 
 /*----------------------------------------------------------------------------*/
 /*!
