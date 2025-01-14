@@ -372,7 +372,7 @@ _lages1(cs_real_t           dtp,
     for (int idim_ = 0; idim_ < 3; idim_ ++) {
       taup_rm[idim_] = 0.;
       for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-        piil_r[phase_id][idim_] = piil[phase_id][cell_id][idim_];
+        piil_r[phase_id][idim_] = piil[phase_id][p_id][idim_];
         tlag_r[phase_id][idim_] = tlag[phase_id][p_id][idim_];
         taup_r[phase_id][idim_] = taup[phase_id][p_id];
         taup_rm[idim_] += lambda[phase_id]/taup_r[phase_id][idim_];
@@ -897,11 +897,11 @@ _lages1(cs_real_t           dtp,
 
       /* trajectory  */
       /* Initialized with the four terms not depending on continuous phases */
-      displ_r[id] = ter1x + ter4x + ter5x + ter7x;
+      displ_r[id] = ter1x + ter4x + ter5x + ter7x + tbrix1 + tbrix2;
 
       /* particles velocity */
       /* Initialized with the four terms not depending on phases */
-      part_vel_r[id] = ter1p + ter4p + ter5p + ter7p;
+      part_vel_r[id] = ter1p + ter4p + ter5p + ter7p + tbriu;
 
       for (int phase_id = 0; phase_id < n_phases; phase_id++){
         /* trajectory  */
