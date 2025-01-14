@@ -1322,9 +1322,9 @@ cs_cdofb_advection_close_default_scal(const cs_equation_param_t   *eqp,
 {
   CS_NO_WARN_IF_UNUSED(eqp);
   CS_NO_WARN_IF_UNUSED(cm);
-  CS_NO_WARN_IF_UNUSED(adv);
+  CS_NO_WARN_IF_UNUSED(cb);
 
-  cs_sdm_add(csys->mat, cb->loc);
+  cs_sdm_add(csys->mat, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1716,14 +1716,15 @@ cs_cdofb_advection_cennoc(int                        dim,
     double  *f_row = adv->val + f*adv->n_rows;
 
     f_row[c] -= half_beta_flx;
-    f_row[f] += half_beta_flx; /* Could be avoided:
+    f_row[f] -= half_beta_flx; /* Could be avoided:
                                   \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
     c_row[c] -= half_beta_flx;
     c_row[f] += half_beta_flx;
 
     /* Apply boundary conditions */
 
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
       const cs_real_t beta_minus = fabs(half_beta_flx) - half_beta_flx;
 
       /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
@@ -1733,9 +1734,10 @@ cs_cdofb_advection_cennoc(int                        dim,
       /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached to
          a boundary face */
 
-      for (int k = 0; k < dim; k++)
-        csys->rhs[dim*f+k] += beta_minus * csys->dir_values[dim*f+k];
-
+      if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
+        for (int k = 0; k < dim; k++)
+          csys->rhs[dim * f + k] += beta_minus * csys->dir_values[dim * f + k];
+      }
     }
 
   } /* Loop on cell faces */
