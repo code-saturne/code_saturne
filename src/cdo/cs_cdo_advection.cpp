@@ -1200,6 +1200,52 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
   }  /* End of loop on cell edges */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the upwinf stabilization attached to a cell with a CDO
+ *         face-based scheme
+ *         Rely on the work performed during R. Milani's PhD
+ *
+ *         A scalar-valued version is built.
+ *
+ * \param[in]      ratio   ratio of upwind stabilization 0 <= ratio <= 1
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_build_cdofb_stab_upwind(const cs_real_t       ratio,
+                         const cs_cell_mesh_t *cm,
+                         cs_cell_builder_t    *cb,
+                         cs_sdm_t             *adv)
+{
+  const short int  c = cm->n_fc; /* current cell's location in the matrix */
+  const cs_real_t *fluxes = cb->adv_fluxes;
+
+  /* Access the row containing current cell */
+
+  cs_real_t *c_row = adv->val + c * adv->n_rows;
+
+  /* Loop on cell faces */
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    const cs_real_t half_beta = 0.5 * ratio * fabs(fluxes[f]);
+
+    /* Access the row containing the current face */
+
+    cs_real_t *f_row = adv->val + f * adv->n_rows;
+
+    f_row[c] -= half_beta;
+    f_row[f] += half_beta;
+
+    c_row[c] += half_beta;
+    c_row[f] -= half_beta;
+
+  } /* Loop on cell faces */
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1452,6 +1498,7 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t   *eqp,
 
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
+  cb->upwind_portion = eqp->upwind_portion;
 
   scheme_func(eqp->dim, cm, csys, cb, adv);
 
@@ -1581,71 +1628,11 @@ cs_cdofb_advection_upwnoc(int                        dim,
                           cs_cell_builder_t         *cb,
                           cs_sdm_t                  *adv)
 {
-  const cs_real_t  *fluxes = cb->adv_fluxes;
+  /* advection part + BC */
+  cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
-  /* Access the row containing current cell */
-
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  double  *c_row = adv->val + c*adv->n_rows;
-
-  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != nullptr) {
-
-    /* There is at least one boundary face associated to this cell */
-
-    for (short int f = 0; f < cm->n_fc; f++) {
-
-      const cs_real_t beta_flx   = cm->f_sgn[f] * fluxes[f];
-      const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
-      const cs_real_t beta_plus  = 0.5 * (fabs(beta_flx) + beta_flx);
-
-      /* Access the row containing the current face */
-
-      double *f_row = adv->val + f * adv->n_rows;
-
-      f_row[f] += beta_minus;
-      f_row[c] -= beta_plus;
-      c_row[f] -= beta_minus;
-      c_row[c] += beta_minus;
-
-      if (csys->bf_ids[f] > -1) { /* This is a boundary face */
-        if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-
-          /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
-
-          f_row[f] += beta_minus;
-
-          /* Weak enforcement of the Dirichlet BCs.
-             Update RHS for faces attached to a boundary face */
-
-          for (int k = 0; k < dim; k++)
-            csys->rhs[dim * f + k]
-              += beta_minus * csys->dir_values[dim * f + k];
-        }
-      }
-
-    } /* Loop on cell faces */
-  }
-  else {
-
-    /* There is no boundary face associated to this cell */
-
-    for (short int f = 0; f < cm->n_fc; f++) {
-
-      const cs_real_t beta_flx   = cm->f_sgn[f] * fluxes[f];
-      const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
-      const cs_real_t beta_plus  = 0.5 * (fabs(beta_flx) + beta_flx);
-
-      /* Access the row containing the current face */
-
-      double *f_row = adv->val + f * adv->n_rows;
-
-      f_row[f] += beta_minus;
-      f_row[c] -= beta_plus;
-      c_row[f] -= beta_minus;
-      c_row[c] += beta_minus;
-
-    } /* Loop on cell faces */
-  }
+  /* upwind stabilization */
+  _build_cdofb_stab_upwind(1.0, cm, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1676,72 +1663,11 @@ cs_cdofb_advection_upwcsv(int                   dim,
                           cs_cell_builder_t    *cb,
                           cs_sdm_t             *adv)
 {
-  const cs_real_t *fluxes = cb->adv_fluxes;
+  /* advection part + BC */
+  cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
 
-  /* Access the row containing current cell */
-
-  const short int c     = cm->n_fc; /* current cell's location in the matrix */
-  double         *c_row = adv->val + c * adv->n_rows;
-
-  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != nullptr) {
-
-    /* There is at least one boundary face associated to this cell */
-
-    for (short int f = 0; f < cm->n_fc; f++) {
-
-      const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-      const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-      const cs_real_t  beta_plus = 0.5*(fabs(beta_flx) + beta_flx);
-
-      /* Access the row containing the current face */
-
-      double  *f_row = adv->val + f*adv->n_rows;
-
-      f_row[f] += beta_minus;
-      f_row[c] -= beta_plus;
-      c_row[f] -= beta_minus;
-      c_row[c] += beta_plus;
-
-      if (csys->bf_ids[f] > -1) { /* This is a boundary face */
-        if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-
-          /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
-
-          f_row[f] += beta_minus;
-
-          /* Weak enforcement of the Dirichlet BCs.
-             Update RHS for faces attached to a boundary face */
-
-          for (int k = 0; k < dim; k++)
-            csys->rhs[dim*f+k] += beta_minus * csys->dir_values[dim*f+k];
-
-        }
-      }
-
-    } /* Loop on cell faces */
-  }
-  else {
-
-    /* There is no boundary face associated to this cell */
-
-    for (short int f = 0; f < cm->n_fc; f++) {
-
-      const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-      const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-      const cs_real_t  beta_plus = 0.5*(fabs(beta_flx) + beta_flx);
-
-      /* Access the row containing the current face */
-
-      double  *f_row = adv->val + f*adv->n_rows;
-
-      f_row[f] += beta_minus;
-      f_row[c] -= beta_plus;
-      c_row[f] -= beta_minus;
-      c_row[c] += beta_plus;
-
-    } /* Loop on cell faces */
-
-  }
+  /* upwind stabilization */
+  _build_cdofb_stab_upwind(1.0, cm, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1792,8 +1718,8 @@ cs_cdofb_advection_cennoc(int                        dim,
     f_row[c] -= half_beta_flx;
     f_row[f] += half_beta_flx;  /* Could be avoided:
                                    \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
-    c_row[f] += half_beta_flx;
     c_row[c] -= half_beta_flx;
+    c_row[f] += half_beta_flx;
 
     /* Apply boundary conditions */
 
@@ -1844,10 +1770,12 @@ cs_cdofb_advection_cencsv(int                        dim,
                           cs_cell_builder_t         *cb,
                           cs_sdm_t                  *adv)
 {
+  cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
+
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
   const cs_real_t  *fluxes = cb->adv_fluxes;
 
-  cs_real_t  div_c = 0;
+  cs_real_t div_beta = 0;
 
   /* Access the row containing current cell */
 
@@ -1856,42 +1784,11 @@ cs_cdofb_advection_cencsv(int                        dim,
   /* Loop on cell faces */
 
   for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  half_beta_flx = 0.5*cm->f_sgn[f]*fluxes[f];
-
-    div_c += half_beta_flx;
-
-    /* Access the row containing the current face */
-
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    f_row[c] -= half_beta_flx;
-    f_row[f] += half_beta_flx;  /* Could be avoided:
-                                   \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
-    c_row[f] += half_beta_flx;
-    c_row[c] -= half_beta_flx;
-
-    /* Apply boundary conditions */
-
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-
-      const cs_real_t  beta_minus = 0.5*fabs(fluxes[f]) - half_beta_flx;
-
-      /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
-
-      f_row[f] += beta_minus;
-
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached to
-         a boundary face */
-
-      for (int k = 0; k < dim; k++)
-        csys->rhs[dim*f+k] += beta_minus * csys->dir_values[dim*f+k];
-
-    }
+    div_beta += cm->f_sgn[f] * fluxes[f];
 
   } /* Loop on cell faces */
 
-  c_row[c] += 2*div_c; /* since half_beta_flx has been considered */
+  c_row[c] += div_beta;
 }
 
 /*----------------------------------------------------------------------------*/
