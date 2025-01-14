@@ -110,7 +110,7 @@ typedef struct {
   double        rpty_val;
 
   double       *adv_fluxes;  /*!< Values of the advection flux */
-
+  double        upwind_portion; /* upwind portion for hybrid advection*/
   /*!
    * @name Temporary buffers
    * @{

@@ -1716,16 +1716,15 @@ cs_cdofb_advection_cennoc(int                        dim,
     double  *f_row = adv->val + f*adv->n_rows;
 
     f_row[c] -= half_beta_flx;
-    f_row[f] += half_beta_flx;  /* Could be avoided:
-                                   \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
+    f_row[f] += half_beta_flx; /* Could be avoided:
+                                  \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
     c_row[c] -= half_beta_flx;
     c_row[f] += half_beta_flx;
 
     /* Apply boundary conditions */
 
     if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-
-      const cs_real_t  beta_minus = 0.5*fabs(fluxes[f]) - half_beta_flx;
+      const cs_real_t beta_minus = fabs(half_beta_flx) - half_beta_flx;
 
       /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
@@ -1789,6 +1788,76 @@ cs_cdofb_advection_cencsv(int                        dim,
   } /* Loop on cell faces */
 
   c_row[c] += div_beta;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - conservative formulation \f$ \nabla\cdot(\beta ) \f$
+ *         - hybrid centred-upwind scheme
+ *         Rely on the work performed during R. Milani's PhD
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_mixcsv(int                   dim,
+                          const cs_cell_mesh_t *cm,
+                          const cs_cell_sys_t  *csys,
+                          cs_cell_builder_t    *cb,
+                          cs_sdm_t             *adv)
+{
+  /* advection part + BC */
+  cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
+
+  /* upwind stabilization */
+  _build_cdofb_stab_upwind(cb->upwind_portion, cm, cb, adv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - non-conservative formulation \f$ \nabla\cdot(\beta ) \f$
+ *         - hybrid centred-upwind scheme
+ *         Rely on the work performed during R. Milani's PhD
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_mixnoc(int                   dim,
+                          const cs_cell_mesh_t *cm,
+                          const cs_cell_sys_t  *csys,
+                          cs_cell_builder_t    *cb,
+                          cs_sdm_t             *adv)
+{
+  /* advection part + BC */
+  cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
+
+  /* upwind stabilization */
+  _build_cdofb_stab_upwind(cb->upwind_portion, cm, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
