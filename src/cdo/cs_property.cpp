@@ -1731,32 +1731,45 @@ cs_property_def_constant_value(cs_property_t *pty,
               " Invalid setting: property %s is not isotropic.\n"
               " Please check your settings.", pty->name);
 
-  int new_id = _add_new_def(pty);
+  cs_xdef_t *d = nullptr;
 
-  if (new_id > 0)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid setting: property %s is assumed to be constant.\n"
-              " Several definitions have been added.\n"
-              " Please check your settings.", __func__, pty->name);
+  if (pty->n_definitions == 0) { // First call to this function
 
-  cs_flag_t state_flag
-    = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
-  cs_flag_t meta_flag = 0; /* metadata */
-  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        1,     /* dim */
-                                        0,     /* all cells */
-                                        state_flag,
-                                        meta_flag,
-                                        &val); /* context */
+    int new_id = _add_new_def(pty);
+    cs_flag_t state_flag
+      = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
+    cs_flag_t meta_flag = 0; /* metadata */
 
-  pty->defs[new_id] = d;
-  pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
-  pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
+    d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                              1,     /* dim */
+                              0,     /* all cells */
+                              state_flag,
+                              meta_flag,
+                              &val); /* context */
 
-  /* Set the state flag */
+    pty->defs[new_id] = d;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
+    pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
 
-  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
-  pty->state_flag |= CS_FLAG_STATE_UNIFORM;
+    /* Set the state flag */
+
+    pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
+    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
+
+  }
+  else {
+
+    if (pty->n_definitions > 1)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Property \"%s\"\n"
+                " Definition by a constant. Only one definition is possible.\n"
+                " Currently: n_definitions = %d.\n Please check your settings.",
+                __func__, pty->name, pty->n_definitions);
+
+    d = pty->defs[0];
+    cs_xdef_set_scalar_value(d, val);
+
+  }
 
   /* Set automatically the reference value if all cells are selected */
 
