@@ -1218,6 +1218,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 void
 _build_cdofb_stab_upwind(const cs_real_t       ratio,
                          const cs_cell_mesh_t *cm,
+                         const cs_cell_sys_t  *csys,
                          cs_cell_builder_t    *cb,
                          cs_sdm_t             *adv)
 {
@@ -1231,17 +1232,19 @@ _build_cdofb_stab_upwind(const cs_real_t       ratio,
   /* Loop on cell faces */
 
   for (short int f = 0; f < cm->n_fc; f++) {
-    const cs_real_t half_beta = 0.5 * ratio * fabs(fluxes[f]);
+    if (csys->bf_ids[f] < 0) { /* Internal face */
+      const cs_real_t half_beta = 0.5 * ratio * fabs(fluxes[f]);
 
-    /* Access the row containing the current face */
+      /* Access the row containing the current face */
 
-    cs_real_t *f_row = adv->val + f * adv->n_rows;
+      cs_real_t *f_row = adv->val + f * adv->n_rows;
 
-    f_row[c] -= half_beta;
-    f_row[f] += half_beta;
+      f_row[c] -= half_beta;
+      f_row[f] += half_beta;
 
-    c_row[c] += half_beta;
-    c_row[f] -= half_beta;
+      c_row[c] += half_beta;
+      c_row[f] -= half_beta;
+    }
 
   } /* Loop on cell faces */
 }
@@ -1634,7 +1637,7 @@ cs_cdofb_advection_upwnoc(int                        dim,
   cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(1.0, cm, cb, adv);
+  _build_cdofb_stab_upwind(1.0, cm, csys, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1669,7 +1672,7 @@ cs_cdofb_advection_upwcsv(int                   dim,
   cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(1.0, cm, cb, adv);
+  _build_cdofb_stab_upwind(1.0, cm, csys, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1718,7 +1721,7 @@ cs_cdofb_advection_cennoc(int                        dim,
     double  *f_row = adv->val + f*adv->n_rows;
 
     f_row[c] -= half_beta_flx;
-    f_row[f] -= half_beta_flx; /* Could be avoided:
+    f_row[f] += half_beta_flx; /* Could be avoided for an internal face:
                                   \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
     c_row[c] -= half_beta_flx;
     c_row[f] += half_beta_flx;
@@ -1826,7 +1829,7 @@ cs_cdofb_advection_mixcsv(int                   dim,
   cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(cb->upwind_portion, cm, cb, adv);
+  _build_cdofb_stab_upwind(cb->upwind_portion, cm, csys, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1861,7 +1864,7 @@ cs_cdofb_advection_mixnoc(int                   dim,
   cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(cb->upwind_portion, cm, cb, adv);
+  _build_cdofb_stab_upwind(cb->upwind_portion, cm, csys, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
