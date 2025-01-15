@@ -171,15 +171,18 @@ public:
     _size = other._size;
     _mode = other._mode;
 
-    if (shallow_copy) {
-      _is_owner = false;
-      _full_array = other._full_array;
-    }
-    else {
-      _is_owner = true;
+    /* If shallow copy new instance is not owner. Otherwise same ownership
+     * as original instance since we copy it.
+     */
+    _is_owner = (shallow_copy) ? false : other._is_owner;
+
+    if (_is_owner) {
       allocate_();
       for (cs_lnum_t e_id = 0; e_id < _size; e_id++)
         _full_array[e_id] = other._full_array[e_id];
+    }
+    else {
+      _full_array = other._full_array;
     }
   }
 
