@@ -60,6 +60,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   array_2dspan() :
     _dim1(0),
     _dim2(0),
@@ -76,6 +77,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   array_2dspan
   (
     cs_lnum_t dim1, /*!<[in] First dimension size */
@@ -100,6 +102,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   array_2dspan
   (
     cs_lnum_t       dim1,      /*!<[in] First dimension size */
@@ -125,6 +128,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   array_2dspan
   (
     cs_lnum_t       dim1,                      /*!<[in] First dimension size */
@@ -155,6 +159,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   array_2dspan
   (
    array_2dspan& other,             /*!<[in] Instance to copy */
@@ -184,6 +189,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   array_2dspan
   (
     array_2dspan&& other /*!<[in] Original reference to move */
@@ -198,6 +204,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   ~array_2dspan()
   {
     clear();
@@ -209,6 +216,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   friend void
   swap
   (
@@ -232,6 +240,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   array_2dspan& operator=(array_2dspan other)
   {
     swap(*this, other);
@@ -245,6 +254,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   void
   clear()
   {
@@ -266,6 +276,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   void
   empty()
   {
@@ -281,6 +292,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   void resize
   (
     cs_lnum_t       dim1, /*!<[in] First dimension size */
@@ -311,6 +323,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   void resize
   (
     cs_lnum_t       dim1,         /*!<[in] First dimension size */
@@ -364,6 +377,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   void set_alloc_mode
   (
     cs_alloc_mode_t mode /*!<[in] Memory allocation mode. */
@@ -385,6 +399,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   T *vals()
   {
     return _full_array;
@@ -398,6 +413,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   const T *vals() const
   {
     return _full_array;
@@ -411,6 +427,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   T* operator[]
   (
     int i /*!<[in] sub-array index to access */
@@ -427,6 +444,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   const T* operator[]
   (
     int i /*!<[in] sub-array index to access */
@@ -443,6 +461,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   cs_lnum_t dim1()
   {
     return _dim1;
@@ -456,6 +475,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   cs_lnum_t dim2()
   {
     return _dim2;
@@ -469,6 +489,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   cs_lnum_t size()
   {
     return _size;
@@ -482,6 +503,7 @@ private:
    */
   /*--------------------------------------------------------------------------*/
 
+  CS_F_HOST_DEVICE
   void
   allocate_()
   {
