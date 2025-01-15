@@ -861,12 +861,6 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
       /* No definition available yet. Try a definition by value */
       cs_domain_automatic_time_step_settings(domain);
 
-    if (cs_property_is_uniform(cs_dt_pty) == false)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Please check your settings.\n"
-                " Unsteady computation with a non-uniform time step.\n",
-                __func__);
-
   }
 
   /* Last setup stage */

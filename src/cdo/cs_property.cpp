@@ -1454,6 +1454,14 @@ cs_property_finalize_setup(void)
     if (pty->type & CS_PROPERTY_BY_PRODUCT)
       continue; /* This is done after in a second step */
 
+    // Set the state flag associated to a property which will be a combination
+    // of the state flags of each definition. One only checks two features:
+    //   1) steady or not definition
+    //   2) uniform or not definition
+
+    bool is_steady = true;
+    bool is_uniform = true;
+
     /* Volume definitions */
     /* ------------------ */
 
@@ -1473,6 +1481,12 @@ cs_property_finalize_setup(void)
 
         assert(def->z_id > 0);
         assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+
+        if (cs_flag_test(def->state, CS_FLAG_STATE_UNIFORM) == false)
+          is_uniform = false;
+
+        if (cs_flag_test(def->state, CS_FLAG_STATE_STEADY) == false)
+          is_steady = false;
 
         const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
         assert(z != nullptr);
@@ -1541,6 +1555,26 @@ cs_property_finalize_setup(void)
                     " value.\n", pty->name);
 
     }
+    else {
+
+      assert(pty->n_definitions == 1);
+
+      cs_xdef_t  *def = pty->defs[0];
+
+      if (cs_flag_test(def->state, CS_FLAG_STATE_UNIFORM) == false)
+        is_uniform = false;
+
+      if (cs_flag_test(def->state, CS_FLAG_STATE_STEADY) == false)
+        is_steady = false;
+
+    }
+
+    // Define the state flag at the level of a property
+
+    if (is_steady)
+      pty->state_flag |= CS_FLAG_STATE_STEADY;
+    if (is_uniform)
+      pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
     /* Boundary definitions */
     /* -------------------- */
@@ -1826,11 +1860,6 @@ cs_property_def_constant_value(cs_property_t *pty,
     pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
     pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
 
-    /* Set the state flag */
-
-    pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
-    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
-
   }
   else {
 
@@ -1896,12 +1925,6 @@ cs_property_def_iso_by_value(cs_property_t *pty,
   pty->defs[def_id] = d;
   pty->get_eval_at_cell[def_id] = cs_xdef_eval_scalar_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_scalar_by_val;
-
-  /* Set the state flag */
-
-  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
-  if (z_id == 0)
-    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   /* Set automatically the reference value if all cells are selected */
 
@@ -2002,12 +2025,6 @@ cs_property_def_ortho_by_value(cs_property_t *pty,
   pty->defs[def_id] = d;
   pty->get_eval_at_cell[def_id] = cs_xdef_eval_vector_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_vector_by_val;
-
-  /* Set the state flag */
-
-  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
-  if (z_id == 0)
-    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   return d;
 }
@@ -2113,12 +2130,6 @@ cs_property_def_aniso_by_value(cs_property_t *pty,
   pty->get_eval_at_cell[def_id] = cs_xdef_eval_tensor_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_tensor_by_val;
 
-  /* Set the state flag */
-
-  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
-  if (z_id == 0)
-    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
-
   return d;
 }
 
@@ -2221,12 +2232,6 @@ cs_property_def_aniso_sym_by_value(cs_property_t  *pty,
   pty->defs[def_id] = d;
   pty->get_eval_at_cell[def_id] = cs_xdef_eval_symtens_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_symtens_by_val;
-
-  /* Set the state flag */
-
-  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
-  if (z_id == 0)
-    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   return d;
 }
@@ -2349,12 +2354,6 @@ cs_property_def_by_time_func(cs_property_t   *pty,
                                         &tfc);
 
   pty->defs[def_id] = d;
-
-  /* Set the state flag for the property */
-
-  pty->state_flag |= CS_FLAG_STATE_CELLWISE;
-  if (z_id == 0)
-    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   return d;
 }
@@ -2661,11 +2660,6 @@ cs_property_def_by_array(cs_property_t *pty,
               " %s: Property \"%s\". Case not available.\n",
               __func__, pty->name);
 
-  /* Set the state flag */
-
-  if (cs_flag_test(val_location, cs_flag_primal_cell))
-    pty->state_flag |= CS_FLAG_STATE_CELLWISE;
-
   return d;
 }
 
@@ -2816,10 +2810,6 @@ cs_property_def_by_field(cs_property_t *pty,
   pty->get_eval_at_cell[def_id] = cs_xdef_eval_cell_by_field;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_by_field;
 
-  /* Set the state flag */
-
-  pty->state_flag |= CS_FLAG_STATE_CELLWISE;
-
   return d;
 }
 
@@ -2872,7 +2862,7 @@ cs_property_boundary_def_by_field(cs_property_t *pty,
               " is supported by cells\n"
               " Property %s\n", pty->name);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  state_flag = CS_FLAG_STATE_FACEWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_FIELD,
