@@ -440,9 +440,6 @@ def run_studymanager(pkg, options):
     if options.compare:
         studies.check_compare(destination=False)
 
-    if options.post:
-        studies.check_plots_and_input(destination=False)
-
     # Create all studies and all cases
 
     if options.runcase or options.post or options.sheet:

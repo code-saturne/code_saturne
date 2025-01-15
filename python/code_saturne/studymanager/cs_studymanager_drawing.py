@@ -620,7 +620,7 @@ class Plotter(object):
                     f = os.path.join(self.parser.getDestination(),
                                      study_label,
                                      case.label, case.resu,
-                                     dest, "monitoring", file_name)
+                                     case.run_id, "monitoring", file_name)
                     if not os.path.isfile(f):
                         print("\n\nThis file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
 
@@ -635,9 +635,10 @@ class Plotter(object):
                 for node in self.parser.getChildren(case.node, "data"):
                     plots, file_name, dest, repo = self.parser.getResult(node)
 
+                    d = case.run_id
+                    dd = self.parser.getDestination()
                     if dest:
-                        d = dest
-                        dd = self.parser.getDestination()
+                        d = case.run_id + "/" + dest
                     elif repo:
                         d = repo
                         dd = self.parser.getRepository()

@@ -965,10 +965,6 @@ class Case(object):
             if not run_ok[0]:
                 return None, msg+run_ok[1]
 
-            # 3. Update the file of parameters with the name of the result directory
-            if node:
-                self.__parser.setAttribute(node, attr, rep)
-
         return rep, None
 
     #---------------------------------------------------------------------------
@@ -1873,11 +1869,7 @@ class Studies(object):
 
                     # update dest="" attribute
                     n1 = self.__parser.getChildren(case.node, "compare")
-                    n3 = self.__parser.getChildren(case.node, "data")
-                    n4 = self.__parser.getChildren(case.node, "probe")
-                    n5 = self.__parser.getChildren(case.node, "resu")
-                    n6 = self.__parser.getChildren(case.node, "input")
-                    for n in n1 + n3 + n4 + n5 + n6:
+                    for n in n1:
                         if self.__parser.getAttribute(n, "dest") == "":
                             self.__parser.setAttribute(n, "dest", case.run_id)
                 else:
@@ -2526,7 +2518,7 @@ class Studies(object):
             for i in range(len(label)):
                 if status[i] and case.plot:
                     cmd = os.path.join(self.__dest, case.study, "POST", label[i])
-                    script_name = cmd
+                    script_name = label[i]
                     if os.path.isfile(cmd):
                         # ensure script is executable
                         set_executable(cmd)
@@ -2613,16 +2605,24 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def check_data(self, case, destination=True):
+    def check_data(self, case):
         """
-        Check coherency between xml file of parameters and repository
+        Check coherency between xml file of parameters and destination
         for data markups of a run.
         """
         for node in self.__parser.getChildren(case.node, "data"):
-            plots, file, dest, repo = self.__parser.getResult(node)
-            if destination == False:
-                dest = None
-            msg = case.check_dirs(node, repo, dest)
+
+            plots, file_name, dest, repo = self.__parser.getResult(node)
+            # we check in monitoring and profiles folders if no dest is given
+            if dest:
+                msg = case.check_file(case.run_dir, dest, file_name)
+            else:
+                for sd in ("monitoring", "profiles", "."):
+                    msg = case.check_file(case.run_dir, sd, file_name)
+                    # stop if file is found
+                    if not msg:
+                        break
+
             if msg:
                 self.reporting(msg)
                 return False
@@ -2631,17 +2631,16 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def check_probes(self, case, destination=True):
+    def check_probes(self, case):
         """
-        Check coherency between xml file of parameters and repository
+        Check coherency between xml file of parameters and destination
         for probes markups of a run.
         """
         for node in self.__parser.getChildren(case.node, "probes"):
-            file, dest, fig = self.__parser.getProbes(node)
-            if destination == False:
-                dest = None
-            repo = None
-            msg = case.check_dirs(node, repo, dest)
+            file_name, dest, fig = self.__parser.getProbes(node)
+            # probes are in monitoring folder
+            dest = "monitoring/" + dest
+            msg = case.check_file(case.run_dir, dest, file_name)
             if msg:
                 self.reporting(msg)
                 return False
@@ -2650,53 +2649,37 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def check_input(self, case, destination=True):
+    def check_input(self, case):
         """
-        Check coherency between xml file of parameters and repository
-        for probes markups of a run.
+        Check coherency between xml file of parameters and destination
+        for input markups of a run.
         """
         for node in self.__parser.getChildren(case.node, "input"):
-            file, dest, repo, tex = self.__parser.getInput(node)
-            if destination == False:
-                dest = None
-            msg = case.check_dirs(node, repo, dest)
+            file_name, dest, repo, tex = self.__parser.getInput(node)
+            msg = case.check_file(case.run_dir, dest, file_name)
             if msg:
                 self.reporting(msg)
-                return False
-
-        return True
 
     #---------------------------------------------------------------------------
 
-    def check_plots_and_input(self, destination=True):
+    def check_plots_and_input(self):
         """
         Check coherency between xml file of parameters and repository.
         Stop if you try to make a plot of a file which does not exist.
         """
-        for l, s in self.studies:
-            check_msg = "  o Check plots and input of study: " + l
-            self.report_action_location(check_msg, destination)
-
-            cases_to_disable = []
-            for case in s.cases:
-                if case.plot:
-
-                    if not self.check_data(case, destination):
-                        cases_to_disable.append(case)
-                        continue
-
-                    if not self.check_probes(case, destination):
-                        cases_to_disable.append(case)
-                        continue
-
-                    if not self.check_input(case, destination):
-                        cases_to_disable.append(case)
-                        continue
-
-            for case in cases_to_disable:
-                case.plot = False
-                msg = "    - Case %s --> POST DISABLED" %(case.title)
-                self.reporting(msg)
+        check_msg = "  o Check plots and input of cases"
+        self.reporting(check_msg)
+        for case in self.graph.graph_dict:
+            if case.plot:
+                # verify input, data and probes
+                self.check_input(case)
+                found_data = self.check_data(case)
+                found_probes = self.check_probes(case)
+                # stop if data or probes are missing
+                if not found_data or not found_probes:
+                    case.plot = False
+                    msg = "    - Case %s --> POST DISABLED" %(case.title)
+                    self.reporting(msg)
 
         self.reporting('')
 
