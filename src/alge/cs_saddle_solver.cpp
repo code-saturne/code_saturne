@@ -4950,6 +4950,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   cs_array_real_fill_zero(ctx->b11_max_size + ctx->b22_max_size, dx);
 
   /* Set pointers used in this algorithm */
+
   cs_real_t *dx1 = dx, *dx2 = dx + ctx->b11_max_size;
 
   cs_real_t *m12x2 = nullptr;
@@ -5120,26 +5121,25 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
 
     /* Initial normalization from the newly computed rhs */
 
-    double  normalization = ctx->square_norm_b11(ctx->rhs);
-
+    normalization = ctx->square_norm_b11(ctx->rhs);
     normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
     /* Compute the first velocity guess
      * Modify the tolerance in order to be more accurate on this step */
 
-    cs_sles_t  *init_sles =
+    init_sles =
       (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
     assert(init_sles != nullptr);
 
-    int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
-                                             init_slesp,
-                                             m11,
-                                             rset,
-                                             normalization,
-                                             false, /* rhs_redux */
-                                             init_sles,
-                                             dx1,
-                                             ctx->rhs);
+    n_iter = cs_cdo_solve_scalar_system(n1_dofs,
+                                        init_slesp,
+                                        m11,
+                                        rset,
+                                        normalization,
+                                        false, /* rhs_redux */
+                                        init_sles,
+                                        dx1,
+                                        ctx->rhs);
 
     cs_iter_algo_update_inner_iters(algo, n_iter);
 
