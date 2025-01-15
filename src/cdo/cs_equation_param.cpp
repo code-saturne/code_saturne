@@ -99,6 +99,48 @@ static const char _err_empty_eqp[] =
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Find an existing "initial condition" definition related to the given
+ *        zone id or add a new one.
+ *
+ * \param[in, out] eqp   pointer to a cs_equation_param_t structure
+ * \param[in]      z_id  id related to a zone
+ *
+ * \return the definition id
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_find_or_add_ic(cs_equation_param_t *eqp,
+                int                  z_id)
+{
+  int def_id = -1;
+
+  for (int i = 0; i < eqp->n_ic_defs; i++) {
+
+    cs_xdef_t *d = eqp->ic_defs[i];
+
+    if (d->z_id == z_id) {
+      def_id = i;
+      eqp->ic_defs[i] = cs_xdef_free(d);
+      break;
+    }
+
+  }
+
+  if (def_id == -1) { // create a new definition
+
+    def_id = eqp->n_ic_defs;
+    eqp->n_ic_defs += 1;
+    BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+    eqp->ic_defs[def_id] = nullptr;
+
+  }
+
+  return def_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set a parameter attached to a keyname in a \ref cs_equation_param_t
  *        structure
  *
@@ -2052,6 +2094,8 @@ cs_equation_param_has_robin_bc(const cs_equation_param_t *eqp)
  *        By default, the unknown is set to zero everywhere.
  *        Here a constant value is set to all the unknows belonging to the
  *        given zone with name z_name
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
  * \param[in, out] eqp     pointer to a cs_equation_param_t structure
  * \param[in]      z_name  name of the associated zone (if null or "" all
@@ -2073,6 +2117,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t *eqp,
   /* Add a new cs_xdef_t structure */
 
   int z_id = cs_volume_zone_id_by_name(z_name);
+  int def_id = _find_or_add_ic(eqp, z_id);
 
   cs_flag_t meta_flag = 0;
   if (z_id == 0)
@@ -2085,37 +2130,28 @@ cs_equation_add_ic_by_value(cs_equation_param_t *eqp,
                                        meta_flag,
                                        val);
 
-  /* Before incrementing the list of definitions, first verify that there
-   * isn't an existing one on the same zone. If so, remove it.
-   * This is done at the end of the function in order to ensure that it was
-   * possible to create the new definition.
-   */
+  /* Update the list of initial conditions for the equation parameters */
 
-  cs_equation_remove_ic(eqp, z_name);
-
-  /* Increment list of initial conditions for the equation parameters */
-
-  int new_id = eqp->n_ic_defs;
-  eqp->n_ic_defs += 1;
-  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
-  eqp->ic_defs[new_id] = d;
+  eqp->ic_defs[def_id] = d;
 
   return d;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the unknown related to this
- *         equation. This definition applies to a volume zone.
- *         By default, the unknown is set to zero everywhere.
- *         Here the value set to each unknown belonging to the given zone with
- *         name z_name is such that the integral over the cells of the zone
- *         returns the requested quantity
+ * \brief Define the initial condition for the unknown related to this
+ *        equation. This definition applies to a volume zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here the value set to each unknown belonging to the given zone with
+ *        name z_name is such that the integral over the cells of the zone
+ *        returns the requested quantity
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
- * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       z_name    name of the associated zone (if null or
- *                            "" all cells are considered)
- * \param[in]       quantity  quantity to distribute over the mesh location
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if null or
+ *                           "" all cells are considered)
+ * \param[in]      quantity  quantity to distribute over the mesh location
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2132,6 +2168,7 @@ cs_equation_add_ic_by_qov(cs_equation_param_t *eqp,
   /* Add a new cs_xdef_t structure */
 
   int z_id = cs_volume_zone_id_by_name(z_name);
+  int def_id = _find_or_add_ic(eqp, z_id);
 
   cs_flag_t meta_flag = 0;
   if (z_id == 0)
@@ -2144,31 +2181,22 @@ cs_equation_add_ic_by_qov(cs_equation_param_t *eqp,
                                        meta_flag,
                                        &quantity);
 
-  /* Before incrementing the list of definitions, first verify that there
-   * isn't an existing one on the same zone. If so, remove it.
-   * This is done at the end of the function in order to ensure that it was
-   * possible to create the new definition.
-   */
+  /* Update the list of initial conditions for the equation parameters */
 
-  cs_equation_remove_ic(eqp, z_name);
-
-  /* Increment list of initial conditions for the equation parameters */
-
-  int new_id = eqp->n_ic_defs;
-  eqp->n_ic_defs += 1;
-  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
-  eqp->ic_defs[new_id] = d;
+  eqp->ic_defs[def_id] = d;
 
   return d;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the unknown related to this
- *         equation. This definition applies to a volume zone.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value for each unknown associated to the zone with
- *         name z_name is set according to an analytical function
+ * \brief Define the initial condition for the unknown related to this
+ *        equation. This definition applies to a volume zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here the initial value for each unknown associated to the zone with
+ *        name z_name is set according to an analytical function
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if null or "" if
@@ -2192,6 +2220,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t *eqp,
   /* Add a new cs_xdef_t structure */
 
   int z_id = cs_volume_zone_id_by_name(z_name);
+  int def_id = _find_or_add_ic(eqp, z_id);
 
   cs_flag_t meta_flag = 0;
   if (z_id == 0)
@@ -2206,20 +2235,9 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t *eqp,
                                         meta_flag,
                                         &ac);
 
-  /* Before incrementing the list of definitions, first verify that there
-   * isn't an existing one on the same zone. If so, remove it.
-   * This is done at the end of the function in order to ensure that it was
-   * possible to create the new definition.
-   */
+  /* Update the list of initial conditions for the equation parameters */
 
-  cs_equation_remove_ic(eqp, z_name);
-
-  /* Increment list of initial conditions for the equation parameters */
-
-  int  new_id = eqp->n_ic_defs;
-  eqp->n_ic_defs += 1;
-  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
-  eqp->ic_defs[new_id] = d;
+  eqp->ic_defs[def_id] = d;
 
   return d;
 }
@@ -2230,6 +2248,8 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t *eqp,
  *        equation. This definition applies to a volume zone.
  *        By default, the unknown is set to zero everywhere.
  *        Case of a definition by a DoF function.
+ *        If a definition already exists for the given zone name, then the
+ *        previous definition is replaced.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if nullptr or "" if
@@ -2255,6 +2275,7 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t *eqp,
   /* Add a new cs_xdef_t structure */
 
   int z_id = cs_volume_zone_id_by_name(z_name);
+  int def_id = _find_or_add_ic(eqp, z_id);
 
   /* Define a flag according to the kind of space discretization */
 
@@ -2276,20 +2297,9 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t *eqp,
                                         meta_flag,
                                         &context);
 
-  /* Before incrementing the list of definitions, first verify that there
-   * isn't an existing one on the same zone. If so, remove it.
-   * This is done at the end of the function in order to ensure that it was
-   * possible to create the new definition.
-   */
+  /* Update the list of initial conditions for the equation parameters */
 
-  cs_equation_remove_ic(eqp, z_name);
-
-  /* Increment list of initial conditions for the equation parameters */
-
-  int  new_id = eqp->n_ic_defs;
-  eqp->n_ic_defs += 1;
-  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
-  eqp->ic_defs[new_id] = d;
+  eqp->ic_defs[def_id] = d;
 
   return d;
 }
