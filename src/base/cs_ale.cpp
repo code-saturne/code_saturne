@@ -333,9 +333,9 @@ _free_surface(const cs_domain_t  *domain,
 
       /* Portion of the surface associated to the vertex
        * projected in the normal direction */
-      cs_real_t portion_surf = -0.25 * (
-          cs_math_3_triple_product(v0v1, v1_cog, normal)
-          + cs_math_3_triple_product(v1v2, v1_cog, normal));
+      cs_real_t portion_surf
+        = -0.25 * (   cs_math_3_triple_product(v0v1, v1_cog, normal)
+                   + cs_math_3_triple_product(v1v2, v1_cog, normal));
 
       _v_surf[v_id1] += portion_surf;
 
@@ -1428,27 +1428,15 @@ cs_ale_update_mesh(int  itrale)
   if (itrale == 0) {
 
     cs_field_t *f = cs_field_by_name("mesh_velocity");
-    if (f->location_id == CS_MESH_LOCATION_VERTICES) {
-      if (ndim == 3) {
-        cs_array_copy(3 * n_vertices, f->val_pre, f->val);
-      }
-      else {
-        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-          for (int idim = 0; idim < ndim; idim++)
-            f->val[3 * v_id + idim] = f->val_pre[3 * v_id + idim];
-      }
-    }
-    else if (f->location_id == CS_MESH_LOCATION_CELLS) {
-      if (ndim == 3) {
-        cs_array_copy(3 * n_cells_ext, f->val_pre, f->val);
-      }
-      else {
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
-          for (int idim = 0; idim < ndim; idim++)
-            f->val[3 * cell_id + idim] = f->val_pre[3 * cell_id + idim];
-      }
+    const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(f->location_id)[2];
 
-    } /* Field located at cells */
+    if (ndim == 3)
+      cs_array_copy(3*n_elts, f->val_pre, f->val);
+    else {
+      for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++)
+        for (int idim = 0; idim < ndim; idim++)
+          f->val[3*e_id + idim] = f->val_pre[3*e_id + idim];
+    }
 
   } /* itrale == 0 */
 }
