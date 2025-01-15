@@ -236,6 +236,48 @@ _assign_weight_func(const cs_param_advection_scheme_t    scheme)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Retrieve the function related to the kind of upwind weighting
+ *
+ * \param[in]  scheme    scheme used for discretizing the advection term
+ *
+ * \return  a function pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_cdofb_weight_func(const cs_param_advection_scheme_t scheme,
+                   const cs_real_t                   beta_n,
+                   const cs_real_t                   ratio)
+{
+  switch (scheme) {
+    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+      return std::abs(beta_n);
+
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+      return 0.0;
+
+    case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
+      return ratio * std::abs(beta_n);
+
+    case CS_PARAM_ADVECTION_SCHEME_SG: /* Sharfetter-Gummel */ {
+      const cs_real_t b_s2 = 0.5 * beta_n;
+      return 2.0 * (b_s2 * std::tanh(b_s2) - 1.0);
+    }
+
+    default:
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " Incompatible type of algorithm to compute the weight of"
+                " upwind.");
+
+  } /* Switch on the type of function to return */
+
+  return 0.0; /* Avoid warning */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve the face edge id from a given cell edge id.
  *         Compute the weights related to each vertex of face from pre-computed
  *         quantities
@@ -1208,6 +1250,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
  *
  *         A scalar-valued version is built.
  *
+ * \param[in]      scheme  scheme used for discretizing the advection term
  * \param[in]      ratio   ratio of upwind stabilization 0 <= ratio <= 1
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      cb      pointer to a cs_cell_builder_t structure
@@ -1216,11 +1259,12 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-_build_cdofb_stab_upwind(const cs_real_t       ratio,
-                         const cs_cell_mesh_t *cm,
-                         const cs_cell_sys_t  *csys,
-                         cs_cell_builder_t    *cb,
-                         cs_sdm_t             *adv)
+_build_cdofb_stab_upwind(const cs_param_advection_scheme_t scheme,
+                         const cs_real_t                   ratio,
+                         const cs_cell_mesh_t             *cm,
+                         const cs_cell_sys_t              *csys,
+                         cs_cell_builder_t                *cb,
+                         cs_sdm_t                         *adv)
 {
   const short int  c = cm->n_fc; /* current cell's location in the matrix */
   const cs_real_t *fluxes = cb->adv_fluxes;
@@ -1233,17 +1277,18 @@ _build_cdofb_stab_upwind(const cs_real_t       ratio,
 
   for (short int f = 0; f < cm->n_fc; f++) {
     if (csys->bf_ids[f] < 0) { /* Internal face */
-      const cs_real_t half_beta = 0.5 * ratio * fabs(fluxes[f]);
+      const cs_real_t beta_n = cm->f_sgn[f] * fluxes[f];
+      const cs_real_t half_A = 0.5 * _cdofb_weight_func(scheme, beta_n, ratio);
 
       /* Access the row containing the current face */
 
       cs_real_t *f_row = adv->val + f * adv->n_rows;
 
-      f_row[c] -= half_beta;
-      f_row[f] += half_beta;
+      f_row[c] -= half_A;
+      f_row[f] += half_A;
 
-      c_row[c] += half_beta;
-      c_row[f] -= half_beta;
+      c_row[c] += half_A;
+      c_row[f] -= half_A;
     }
 
   } /* Loop on cell faces */
@@ -1637,7 +1682,12 @@ cs_cdofb_advection_upwnoc(int                        dim,
   cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(1.0, cm, csys, cb, adv);
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_UPWIND,
+                           cb->upwind_portion,
+                           cm,
+                           csys,
+                           cb,
+                           adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1672,7 +1722,12 @@ cs_cdofb_advection_upwcsv(int                   dim,
   cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(1.0, cm, csys, cb, adv);
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_UPWIND,
+                           cb->upwind_portion,
+                           cm,
+                           csys,
+                           cb,
+                           adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1829,7 +1884,12 @@ cs_cdofb_advection_mixcsv(int                   dim,
   cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(cb->upwind_portion, cm, csys, cb, adv);
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND,
+                           cb->upwind_portion,
+                           cm,
+                           csys,
+                           cb,
+                           adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1864,7 +1924,92 @@ cs_cdofb_advection_mixnoc(int                   dim,
   cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(cb->upwind_portion, cm, csys, cb, adv);
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND,
+                           cb->upwind_portion,
+                           cm,
+                           csys,
+                           cb,
+                           adv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - conservative formulation \f$ \nabla\cdot(\beta ) \f$
+ *         - Sharfetter-Gummel scheme
+ *         Rely on the work performed during R. Milani's PhD
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_sgcsv(int                   dim,
+                         const cs_cell_mesh_t *cm,
+                         const cs_cell_sys_t  *csys,
+                         cs_cell_builder_t    *cb,
+                         cs_sdm_t             *adv)
+{
+  /* advection part + BC */
+  cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
+
+  /* upwind stabilization */
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_SG,
+                           cb->upwind_portion,
+                           cm,
+                           csys,
+                           cb,
+                           adv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - non-conservative formulation \f$ \nabla\cdot(\beta ) \f$
+ *         - Sharfetter-Gummel scheme
+ *         Rely on the work performed during R. Milani's PhD
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_sgnoc(int                   dim,
+                         const cs_cell_mesh_t *cm,
+                         const cs_cell_sys_t  *csys,
+                         cs_cell_builder_t    *cb,
+                         cs_sdm_t             *adv)
+{
+  /* advection part + BC */
+  cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
+
+  /* upwind stabilization */
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_SG,
+                           cb->upwind_portion,
+                           cm,
+                           csys,
+                           cb,
+                           adv);
 }
 
 /*----------------------------------------------------------------------------*/
