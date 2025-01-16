@@ -818,9 +818,6 @@ cs_combustion_read_data(void)
         }
       }
 
-      double aa_lu[  CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES
-                   * CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
-
       _solve_ax_b_gauss(nato, aa+nato, bb, xx+1);
 
       // we now know the stoichiometric coefficients of global species.
