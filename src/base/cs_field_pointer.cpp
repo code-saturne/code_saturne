@@ -345,39 +345,5 @@ cs_field_pointer_map_atmospheric(int        n_chem_species,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Map base fields to enumerated pointers for gas combustion.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_gas_combustion(void)
-{
-  cs_field_pointer_map(CS_ENUMF_(h),
-                       cs_field_by_name_try("enthalpy"));
-
-  cs_field_pointer_map(CS_ENUMF_(fm),
-                       cs_field_by_name_try("mixture_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(fp2m),
-                       cs_field_by_name_try("mixture_fraction_variance"));
-
-  cs_field_pointer_map(CS_ENUMF_(fsm),
-                       cs_field_by_name_try("soot_mass_fraction"));
-
-  cs_field_pointer_map(CS_ENUMF_(npm),
-                       cs_field_by_name_try("soot_precursor_number"));
-
-  cs_field_pointer_map(CS_ENUMF_(ygfm),
-                       cs_field_by_name_try("fresh_gas_fraction"));
-
-  cs_field_pointer_map(CS_ENUMF_(yfm),
-                       cs_field_by_name_try("mass_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(yfp2m),
-                       cs_field_by_name_try("mass_fraction_variance"));
-  cs_field_pointer_map(CS_ENUMF_(coyfp),
-                       cs_field_by_name_try("mass_fraction_covariance"));
-}
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

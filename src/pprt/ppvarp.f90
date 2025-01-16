@@ -86,8 +86,8 @@ end interface
 
 !===============================================================================
 
-! 1. Gas combustion
-!------------------
+! 1. Gas combustion (field mappings)
+!-----------------------------------
 
 if (     ippmod(icod3p).ge.0   &
     .or. ippmod(islfm ).ge.0   &

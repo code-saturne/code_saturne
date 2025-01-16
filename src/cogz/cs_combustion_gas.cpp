@@ -48,11 +48,18 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_assert.h"
 #include "base/cs_base.h"
+#include "base/cs_field_default.h"
+#include "base/cs_field_pointer.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_thermal_model.h"
+#include "mesh/cs_mesh_location.h"
+#include "turb/cs_turbulence_model.h"
 
 #include "pprt/cs_combustion_model.h"
 #include "pprt/cs_physical_model.h"
@@ -252,6 +259,29 @@ _combustion_gas_finalize(void)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a gas combustion model field.
+ *
+ * \param[in]  name   field base name
+ * \param[in]  label  field base label
+ *
+ * \return  pointer to field;
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_field_t *
+_add_model_variable(const char  *name,
+                    const char  *label)
+{
+  int f_id = cs_variable_field_create(name, label, CS_MESH_LOCATION_CELLS, 1);
+  cs_field_t *f = cs_field_by_id(f_id);
+
+  cs_add_model_field_indexes(f->id);
+
+  return f;
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -415,6 +445,22 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
       cm->cpgazg[i][j] = 0;
     }
   }
+
+  /* Fields */
+
+  cm->fm = nullptr;
+  cm->fp2m = nullptr;
+  cm->fsqm = nullptr;
+  cm->pvm = nullptr;
+  cm->ygfm = nullptr;
+  cm->yfm = nullptr;
+  cm->yfp2m = nullptr;
+  cm->coyfp = nullptr;
+  cm->tsc = nullptr;
+  cm->npm = nullptr;
+  cm->fsm = nullptr;
+
+  /* Numerical parameters */
 
   cm->srrom = 0.95;
 
@@ -683,6 +729,244 @@ cs_combustion_gas_log_setup(void)
                   "    rho(n+1) = srrom*rho(n) + (1-srrom)*rho(n+1)\n"
                   "    srrom: %14.5e\n"),
                 cm->srrom);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add variable fields for gas combustion models.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_add_variable_fields(void)
+{
+  if (cs_glob_combustion_gas_model == NULL)
+    return;
+
+  cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
+
+  // Key ids for clipping
+  const int kscmin = cs_field_key_id("min_scalar_clipping");
+  const int kscmax = cs_field_key_id("max_scalar_clipping");
+
+  // Key id for variance
+  const int kscavr = cs_field_key_id("first_moment_id");
+
+  /* Define variable fields
+     ---------------------- */
+
+  // Enthalpy
+
+  if (cm->type%2 == 1) {
+    int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
+                                        CS_MESH_LOCATION_CELLS, 1);
+    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_pointer_map(CS_ENUMF_(h), f);
+    cs_add_model_thermal_field_indexes(f->id);
+
+    cs_field_set_key_double(f, kscmin, -cs_math_big_r);
+    cs_field_set_key_double(f, kscmax, cs_math_big_r);
+
+    /* set thermal model */
+    cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
+    thermal->thermal_variable = CS_THERMAL_MODEL_ENTHALPY;
+  }
+
+  switch (cm->type / 100) {
+
+  case CS_COMBUSTION_3PT:
+    /* Diffusion flame with 3-point chemistry
+       -------------------------------------- */
+    {
+      // Mixture fraction and its variance
+      cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
+      cs_field_set_key_double(cm->fm, kscmin, 0.);
+      cs_field_set_key_double(cm->fm, kscmax, 1.);
+
+      cm->fp2m = _add_model_variable("mixture_fraction_variance", "Var_FrMe");
+      cs_field_set_key_int(cm->fp2m, kscavr, cm->fm->id);
+    }
+    break;
+
+  case CS_COMBUSTION_SLFM:
+    /* Diffusion flame with steady laminar flamelet approach
+       ----------------------------------------------------- */
+    {
+      const int kivisl  = cs_field_key_id("diffusivity_id");
+      const int key_coupled_with_vel_p = cs_field_key_id("coupled_with_vel_p");
+      const int key_turb_diff = cs_field_key_id("turbulent_diffusivity_id");
+      const int key_sgs_sca_coef = cs_field_key_id("sgs_scalar_flux_coef_id");
+
+      // Mixture fraction and its variance
+      cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
+      cs_field_set_key_double(cm->fm, kscmin, 0.);
+      cs_field_set_key_double(cm->fm, kscmax, 1.);
+
+      cs_field_set_key_int(cm->fm, key_coupled_with_vel_p, 1);
+      cs_field_set_key_int(cm->fm, kivisl, 0);
+
+      if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
+        cs_field_set_key_int(cm->fm, key_turb_diff, 0);
+        cs_field_set_key_int(cm->fm, key_sgs_sca_coef, 0);
+      }
+
+      if (cm->mode_fp2m == 0) {
+        cm->fp2m = _add_model_variable("mixture_fraction_variance", "Var_FrMe");
+        cs_field_set_key_int(cm->fp2m, kscavr, cm->fm->id);
+        cs_field_set_key_int(cm->fp2m, key_coupled_with_vel_p, 1);
+      }
+      else if (cm->mode_fp2m == 1) {
+        cm->fsqm = _add_model_variable("mixture_fraction_2nd_moment",
+                                       "2nd_Moment_FrMe");
+        cs_field_set_key_double(cm->fsqm, kscmin, 0.);
+        cs_field_set_key_double(cm->fsqm, kscmax, 1.);
+        cs_field_set_key_int(cm->fsqm, key_coupled_with_vel_p, 1);
+        cs_field_set_key_int(cm->fsqm, kivisl, 0);
+
+        if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
+          cs_field_set_key_int(cm->fsqm, key_turb_diff, 0);
+          cs_field_set_key_int(cm->fsqm, key_sgs_sca_coef, 0);
+        }
+      }
+
+      if (CS_F_(h) != nullptr) {
+        cs_field_set_key_int(CS_F_(h), key_coupled_with_vel_p, 1);
+        cs_field_set_key_int(CS_F_(h), kivisl, 0);
+
+        if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
+          cs_field_set_key_int(CS_F_(h), key_turb_diff, 0);
+          cs_field_set_key_int(CS_F_(h), key_sgs_sca_coef, 0);
+        }
+      }
+
+      // Flamelet/Progress variable model
+      if (cm->type%100 >= 2) {
+        cm->pvm = _add_model_variable("progress_variable", "Prog_Var");
+        cs_field_set_key_double(cm->pvm, kscmin, 0.);
+        cs_field_set_key_double(cm->pvm, kscmax, cs_math_big_r);
+        cs_field_set_key_int(cm->pvm, key_coupled_with_vel_p, 1);
+        cs_field_set_key_int(cm->pvm, kivisl, 0);
+
+        if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
+          cs_field_set_key_int(cm->pvm, key_turb_diff, 0);
+          cs_field_set_key_int(cm->pvm, key_sgs_sca_coef, 0);
+        }
+      }
+    }
+    break;
+
+  case CS_COMBUSTION_EBU:
+    /* Premixed flame: Eddy Break-Up model
+       ----------------------------------- */
+    {
+      // Mass fraction of fresh gas
+      cm->ygfm = _add_model_variable("fresh_gas_fraction", "Fra_GF");
+      cs_field_set_key_double(cm->ygfm, kscmin, 0.);
+      cs_field_set_key_double(cm->ygfm, kscmax, 1.);
+
+      // Mixture fraction
+      if (   cm->type == CS_COMBUSTION_EBU_VARIABLE_ADIABATIC
+          || cm->type == CS_COMBUSTION_EBU_VARIABLE_PERMEATIC) {
+        cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
+        cs_field_set_key_double(cm->fm, kscmin, 0.);
+        cs_field_set_key_double(cm->fm, kscmax, 1.);
+      }
+    }
+    break;
+
+  case CS_COMBUSTION_LW:
+    /* Premixed flame: Libby-Williams model
+       ------------------------------------ */
+    {
+      cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
+      cs_field_set_key_double(cm->fm, kscmin, 0.);
+      cs_field_set_key_double(cm->fm, kscmax, 1.);
+
+      cm->fp2m = _add_model_variable("mixture_fraction_variance", "Var_FrMe");
+      cs_field_set_key_int(cm->fp2m, kscavr, cm->fm->id);
+
+      cm->yfm = _add_model_variable("mass_fraction", "Fra_Mas");
+      cs_field_set_key_double(cm->yfm, kscmin, 0.);
+      cs_field_set_key_double(cm->yfm, kscmax, 1.);
+
+      cm->yfp2m = _add_model_variable("mass_fraction_variance", "Var_FMa");
+      cs_field_set_key_int(cm->yfp2m, kscavr, cm->yfm->id);
+
+      if (cm->type%100 >= 2) {
+        cs_field_t *f = _add_model_variable("mass_fraction_covariance",
+                                            "COYF_PP4");
+        cs_field_set_key_double(f, kscmin, -0.25);
+        cs_field_set_key_double(f, kscmax, 0.25);
+      }
+    }
+    break;
+
+  default:
+    cs_assert(0);
+    break;
+  }
+
+  // Map field pointers depending on model fields
+  // (mapping nullptr not needed but OK (no-op) where no field is present)
+
+  cs_field_pointer_map(CS_ENUMF_(fm), cm->fm);
+  cs_field_pointer_map(CS_ENUMF_(fp2m), cm->fp2m);
+  cs_field_pointer_map(CS_ENUMF_(ygfm), cm->ygfm);
+
+  // Soot mass fraction and precursor number
+  if (cm->isoot >= 1) {
+    cm->fsm = _add_model_variable("soot_mass_fraction", "Fra_Soot");
+    cs_field_set_key_double(cm->fsm, kscmin, 0.);
+    cs_field_set_key_double(cm->fsm, kscmax, 1.);
+    cs_field_pointer_map(CS_ENUMF_(fsm), cm->fsm);
+
+    cm->npm = _add_model_variable("soot_precursor_number", "NPr_Soot");
+    cs_field_set_key_double(cm->npm, kscmin, 0.);
+    cs_field_set_key_double(cm->npm, kscmax, 1.);
+    cs_field_pointer_map(CS_ENUMF_(npm), cm->npm);
+  }
+
+  /* Default numerical options
+     ------------------------- */
+
+  const int n_fields = cs_field_n_fields();
+  const int keysca = cs_field_key_id("scalar_id");
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    if (f->type & CS_FIELD_CDO || f->type & CS_FIELD_USER)
+      continue;
+    if (cs_field_get_key_int(f, keysca) <= 0)
+      continue;
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    // Second order convective scheme
+    eqp->blencv = 1.0;
+
+    // Centered convective scheme
+    eqp->ischcv = 1;
+
+    // Automatic slope test
+    eqp->isstpc = 0;
+
+    // Reconstruct convection and diffusion fluxes at faces
+    eqp->ircflu = 1;
+  }
+
+  if (cm->type%2 == 1) {
+    if (   cm->type == CS_COMBUSTION_3PT_PERMEATIC
+        || cm->type/100 == CS_COMBUSTION_EBU
+        || cm->type/100 == CS_COMBUSTION_LW) {
+
+      // Although we are in enthalpy formulation, we keep Cp constant.
+
+      cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+      fluid_props->icp = -1;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

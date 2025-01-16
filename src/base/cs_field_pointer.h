@@ -133,10 +133,6 @@ typedef enum {
   CS_ENUMF_(npm),          /*!< soot precursor number */
   CS_ENUMF_(ygfm),         /*!< fresh gas fraction */
 
-  CS_ENUMF_(yfm),          /*!< mass fraction */
-  CS_ENUMF_(yfp2m),        /*!< mass fraction variance */
-  CS_ENUMF_(coyfp),        /*!< mass fraction covariance */
-
   CS_ENUMF_(potr),         /*!< Electric potential, real part */
   CS_ENUMF_(poti),         /*!< Electric potential, imaginary part */
   CS_ENUMF_(potva),        /*!< Vector potential */
@@ -331,25 +327,6 @@ cs_field_pointer_map_boundary(void);
 void
 cs_field_pointer_map_atmospheric(int        n_chem_species,
                                  const int  species_f_id[]);
-
-/*----------------------------------------------------------------------------
- * Map base fields to enumerated pointers for atmospheric models
- *
- * parameters:
- *   n_coals   <-- number of coals
- *   n_classes <-- number of coal classes
- *----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_coal_combustion(int  n_coals,
-                                     int  n_classes);
-
-/*----------------------------------------------------------------------------
- * Map base fields to enumerated pointers for gas combustion.
- *----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_gas_combustion(void);
 
 /*----------------------------------------------------------------------------*/
 

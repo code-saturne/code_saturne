@@ -37,6 +37,7 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_field.h"
+#include "pprt/cs_physical_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -68,76 +69,76 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! Gas combustion model type */
-/*------------------------------*/
+/*! Gas combustion model */
+/*-----------------------*/
 
 typedef enum {
 
   CS_COMBUSTION_GAS_NONE = -1,
 
   /*! Infinitely fast 3-point combustion model, adiabatic */
-  CS_COMBUSTION_3PT_ADIABATIC = 100,
+  CS_COMBUSTION_3PT_ADIABATIC = CS_COMBUSTION_3PT*100,
 
   /*! Infinitely fast 3-point combustion model, permeatic */
-  CS_COMBUSTION_3PT_PERMEATIC = 101,
+  CS_COMBUSTION_3PT_PERMEATIC = CS_COMBUSTION_3PT*100 + 1,
 
   /*! Burke-Schumann infinitely 3-point combustion model, adiabatic */
-  CS_COMBUSTION_BSH_ADIABATIC = 102,
+  CS_COMBUSTION_BSH_ADIABATIC = CS_COMBUSTION_3PT*100 + 2,
 
   /*! Burke-Schumann infinitely 3-point combustion model, permeatic */
-  CS_COMBUSTION_BSH_PERMEATIC = 103,
+  CS_COMBUSTION_BSH_PERMEATIC = CS_COMBUSTION_3PT*100 + 3,
 
   /*! Steady laminar flamelet model, adiabatic conditions */
-  CS_COMBUSTION_SLFM_STEADY_ADIABATIC = 200,
+  CS_COMBUSTION_SLFM_STEADY_ADIABATIC = CS_COMBUSTION_SLFM*100,
 
   /*! Steady laminar flamelet model, enthalpy transport with heat loss */
-  CS_COMBUSTION_SLFM_STEADY_PERMEATIC = 201,
+  CS_COMBUSTION_SLFM_STEADY_PERMEATIC = CS_COMBUSTION_SLFM*100 + 1,
 
   /*! Flamelet/progress variable model, adiabatic conditions */
-  CS_COMBUSTION_SLFM_PROGRESS_ADIABATIC = 202,
+  CS_COMBUSTION_SLFM_PROGRESS_ADIABATIC = CS_COMBUSTION_SLFM*100 + 2,
 
   /*! Flamelet/progress variable model, enthalpy transport with heat loss */
-  CS_COMBUSTION_SLFM_PROGRESS_PERMEATIC = 203,
+  CS_COMBUSTION_SLFM_PROGRESS_PERMEATIC = CS_COMBUSTION_SLFM*100 + 3,
 
   /*! Eddy Break Up pre-mixed flame combustion model,
     adiabatic conditions at constant richness */
-  CS_COMBUSTION_EBU_CONSTANT_ADIABATIC = 300,
+  CS_COMBUSTION_EBU_CONSTANT_ADIABATIC = CS_COMBUSTION_EBU*100,
 
   /*! Eddy Break Up pre-mixed flame combustion model,
     adiabatic conditions at constant richness */
-  CS_COMBUSTION_EBU_CONSTANT_PERMEATIC = 301,
+  CS_COMBUSTION_EBU_CONSTANT_PERMEATIC = CS_COMBUSTION_EBU*100 + 1,
 
   /*! Eddy Break Up pre-mixed flame combustion model,
     adiabatic conditions at variable richness */
-  CS_COMBUSTION_EBU_VARIABLE_ADIABATIC = 302,
+  CS_COMBUSTION_EBU_VARIABLE_ADIABATIC = CS_COMBUSTION_EBU*100 + 2,
 
   /*! Eddy Break Up pre-mixed flame combustion model,
     adiabatic conditions at variable richness */
-  CS_COMBUSTION_EBU_VARIABLE_PERMEATIC = 303,
+  CS_COMBUSTION_EBU_VARIABLE_PERMEATIC = CS_COMBUSTION_EBU*100 + 3,
 
   /*! Libby-Williams pre-mixed flame combustion,
     two peak model with adiabatic conditions */
-  CS_COMBUSTION_LW_2PEAK_ADIABATIC = 400,
+  CS_COMBUSTION_LW_2PEAK_ADIABATIC = CS_COMBUSTION_LW*100,
 
   /*! Libby-Williams pre-mixed flame combustion,
     two peak model with permeatic conditions */
-  CS_COMBUSTION_LW_2PEAK_PERMEATIC = 401,
+  CS_COMBUSTION_LW_2PEAK_PERMEATIC = CS_COMBUSTION_LW*100 + 1,
 
   /*! Libby-Williams pre-mixed flame combustion,
     three peak model with adiabatic conditions */
-  CS_COMBUSTION_LW_3PEAK_ADIABATIC = 402,
+  CS_COMBUSTION_LW_3PEAK_ADIABATIC = CS_COMBUSTION_LW*100 + 2,
 
   /*! Libby-Williams pre-mixed flame combustion,
     three peak model with permeatic conditions */
-  CS_COMBUSTION_LW_3PEAK_PERMEATIC = 403,
+  CS_COMBUSTION_LW_3PEAK_PERMEATIC = CS_COMBUSTION_LW*100 + 3,
 
   /*! Libby-Williams pre-mixed flame combustion,
     four peak model with adiabatic conditions */
-  CS_COMBUSTION_LW_4PEAK_ADIABATIC = 404,
+  CS_COMBUSTION_LW_4PEAK_ADIABATIC = CS_COMBUSTION_LW*100 + 4,
 
   /*! Libby-Williams pre-mixed flame combustion,
     four peak model with permeatic conditions */
-  CS_COMBUSTION_LW_4PEAK_PERMEATIC = 405
+  CS_COMBUSTION_LW_4PEAK_PERMEATIC = CS_COMBUSTION_LW*100 + 5
 
 } cs_combustion_gas_model_type_t;
 
@@ -259,6 +260,22 @@ typedef struct {
   /*! absorption coefficient of global species */
   double  ckabsg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
 
+  /* Pointers to gas combustion fields
+     ---------------------------------- */
+
+  cs_field_t  *fm;      /*< mixing rate */
+  cs_field_t  *fp2m;    /*< mixing rate variance */
+  cs_field_t  *fsqm;    /*< second moment of the mixing rate */
+  cs_field_t  *pvm;     /*< transported progress variable (some SFLM variants) */
+  cs_field_t  *ygfm;    /*< fresh gas mass fraction */
+  cs_field_t  *yfm;     /*< mass fraction */
+  cs_field_t  *yfp2m;   /*< mass fraction variance */
+  cs_field_t  *coyfp;   /*< mass fraction covariance */
+
+  cs_field_t  *tsc;     /*< source term in combustion */
+  cs_field_t  *npm;     /*< soot precursor number */
+  cs_field_t  *fsm;     /*< soot mass fraction */
+
   /* Numerical parameters
      -------------------- */
 
@@ -343,6 +360,15 @@ cs_combustion_gas_setup(void);
 
 void
 cs_combustion_gas_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add variable fields for gas combustion models.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_add_variable_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*

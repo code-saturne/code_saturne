@@ -84,13 +84,12 @@ implicit none
 
 ! Local variables
 
-integer          ii, iel, igg
+integer          ii, iel, igg, ibsh0, ibsh1
 double precision coefg(ngazgm), hair, tinitk
 double precision ye(ngaze), yg(ngazg), ytot
 
 double precision, dimension(:), pointer :: cvar_scalt
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
-double precision, dimension(:), pointer :: cvar_npm, cvar_fsm
 
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
@@ -101,11 +100,6 @@ call field_get_val_s(ifp2m, cvar_fp2m)
 
 if (ippmod(icod3p).eq.1) then
   call field_get_val_s(ihm, cvar_scalt)
-endif
-
-if (isoot.ge.1) then
-  call field_get_val_s(inpm, cvar_npm)
-  call field_get_val_s(ifsm, cvar_fsm)
 endif
 
 do igg = 1, ngazgm
@@ -119,9 +113,12 @@ enddo
 
 if ( isuite.eq.0 ) then
 
+  ibsh0 = (icod3p-1)*100 + 2
+  ibsh1 = (icod3p-1)*100 + 3
+
   ! ---> Initialization a with air at T0
 
-  if (cmtype.eq.102 .or. cmtype.eq.103) then  ! Burke-Schumann model
+  if (cmtype.eq.ibsh0 .or. cmtype.eq.ibsh1) then  ! Burke-Schumann model
     yg(1) = 0.d0
     yg(2) = 1.d0
     yg(3) = 0.d0
@@ -160,15 +157,9 @@ if ( isuite.eq.0 ) then
       cvar_scalt(iel) = hair
     endif
 
-    ! Soot
-    if (isoot.ge.1) then
-      cvar_npm(iel) = 0.d0
-      cvar_fsm(iel) = 0.d0
-    endif
-
   enddo
 
-  if (cmtype.ne.102 .and. cmtype.ne.103) then  ! not Burke-Schumann model
+  if (cmtype.ne.ibsh0 .and. cmtype.ne.ibsh1) then  ! not Burke-Schumann model
     ! ---> User initialization, HINFUE and HINOXY are needed
 
     ! Oxidant enthalpy HINOXY at TINOXY
@@ -190,10 +181,6 @@ if ( isuite.eq.0 ) then
     call synsca(cvar_fp2m)
     if ( ippmod(icod3p).eq.1 ) then
       call synsca(cvar_scalt)
-    endif
-    if (isoot.ge.1) then
-      call synsca(cvar_npm)
-      call synsca(cvar_fsm)
     endif
   endif
 

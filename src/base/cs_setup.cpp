@@ -681,6 +681,13 @@ _create_variable_fields(void)
     if (pm_flag[CS_COMBUSTION_COAL] >= 0)
       cs_coal_add_variable_fields();
 
+    // Gas combustion
+    if (   pm_flag[CS_COMBUSTION_3PT] != -1
+        || pm_flag[CS_COMBUSTION_SLFM] != -1
+        || pm_flag[CS_COMBUSTION_EBU] != -1
+        || pm_flag[CS_COMBUSTION_LW] != -1)
+      cs_combustion_gas_add_variable_fields();
+
     cs_f_ppvarp();
 
     if (pm_flag[CS_JOULE_EFFECT] >= 1 || pm_flag[CS_ELECTRIC_ARCS] >= 1)
