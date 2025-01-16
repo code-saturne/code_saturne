@@ -146,10 +146,11 @@ typedef enum {
 
 typedef struct {
 
-  double vref;   /*!< reference velocity */
-  double lref;   /*!< reference length */
-  double ta;     /*!< activation temperature */
-  double tstar;  /*!< crossover temperature */
+  int    n_dirac;  /*!< number of Dirac peaks */
+  double vref;     /*!< reference velocity */
+  double lref;     /*!< reference length */
+  double ta;       /*!< activation temperature */
+  double tstar;    /*!< crossover temperature */
   double fmin;
   double fmax;
   double hmin;

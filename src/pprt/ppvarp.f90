@@ -86,31 +86,6 @@ end interface
 
 !===============================================================================
 
-! 1. Gas combustion (field mappings)
-!-----------------------------------
-
-if (     ippmod(icod3p).ge.0   &
-    .or. ippmod(islfm ).ge.0   &
-    .or. ippmod(icoebu).ge.0   &
-    .or. ippmod(icolwc).ge.0) then
-  call covarp
-endif
-
-! Number of Diracs for LWC model
-
-if (     ippmod(icolwc).eq.0  &
-    .or. ippmod(icolwc).eq.1) then
-  ndirac = 2
-
-else if (      ippmod(icolwc).eq.2  &
-         .or.  ippmod(icolwc).eq.3) then
-  ndirac = 3
-
-else if (     ippmod(icolwc).eq.4  &
-         .or. ippmod(icolwc).eq.5) then
-  ndirac = 4
-endif
-
 ! 3. Compressible model (field mappings)
 !----------------------
 

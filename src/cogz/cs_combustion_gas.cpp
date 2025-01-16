@@ -28,8 +28,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -64,6 +62,11 @@
 #include "pprt/cs_combustion_model.h"
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
+
+/* Prototypes for Fortran functions */
+
+extern "C" void
+cs_f_combustion_map_variables(void);
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -615,6 +618,18 @@ cs_combustion_gas_setup(void)
   }
 
   cs_parameters_error_barrier();
+
+  // Number of Diracs for LWC model
+
+  if (cm->type / 100 == CS_COMBUSTION_LW) {
+    int lw_model = cm->type % 100;
+    if (lw_model == 0 || lw_model == 1)
+      cm->lw.n_dirac = 2;
+    else if (lw_model == 2 || lw_model == 3)
+      cm->lw.n_dirac = 3;
+    else if (lw_model == 4 || lw_model == 5)
+      cm->lw.n_dirac = 4;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -967,6 +982,9 @@ cs_combustion_gas_add_variable_fields(void)
       fluid_props->icp = -1;
     }
   }
+
+  // Map to Fortran
+  cs_f_combustion_map_variables();
 }
 
 /*----------------------------------------------------------------------------*/

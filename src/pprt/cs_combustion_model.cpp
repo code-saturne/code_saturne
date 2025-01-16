@@ -140,6 +140,7 @@ cs_f_coincl_get_pointers(int     **model_type,
                          int     **nlibvar,
                          int     **ikimid,
                          int     **mode_fp2m,
+                         int     **ndirac,
                          bool    **use_janaf,
                          double  **coefeg,
                          double  **compog,
@@ -280,6 +281,7 @@ cs_f_coincl_get_pointers(int     **model_type,
                          int     **nlibvar,
                          int     **ikimid,
                          int     **mode_fp2m,
+                         int     **ndirac,
                          bool    **use_janaf,
                          double  **coefeg,
                          double  **compog,
@@ -316,6 +318,7 @@ cs_f_coincl_get_pointers(int     **model_type,
   *nlibvar = nullptr;
   *ikimid = nullptr;
   *mode_fp2m = nullptr;
+  *ndirac = nullptr;
   *use_janaf = nullptr;
   *coefeg = nullptr;
   *compog = nullptr;
@@ -356,6 +359,7 @@ cs_f_coincl_get_pointers(int     **model_type,
     *nlibvar = &(cm->nlibvar);
     *ikimid = &(cm->ikimid);
     *mode_fp2m = &(cm->mode_fp2m);
+    *ndirac = &(cm->lw.n_dirac);
     *use_janaf = &(cm->use_janaf);
     *coefeg = &(cm->coefeg[0][0]);
     *compog = &(cm->compog[0][0]);

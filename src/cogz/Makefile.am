@@ -74,7 +74,6 @@ cs_steady_laminar_flamelet_source_terms.cpp \
 coini1.f90 \
 coprop.f90 \
 cothht.f90 \
-covarp.f90 \
 d3phst.f90 \
 d3pini.f90 \
 d3pint.f90 \

@@ -150,7 +150,7 @@ module coincl
   integer ndracm
   parameter (ndracm = 5)
 
-  integer, save :: ndirac
+  integer(c_int), pointer, save :: ndirac
 
   ! --- Grandeurs fournies par l'utilisateur dans uslwc1.f90
 
@@ -289,7 +289,7 @@ module coincl
                                         p_nxr, p_nzm,          &
                                         p_nzvar, p_nlibvar,    &
                                         p_ikimid, p_mode_fp2m, &
-                                        p_use_janaf,           &
+                                        p_ndirac, p_use_janaf, &
                                         p_coefeg, p_compog,    &
                                         p_xsoot, p_rosoot,     &
                                         p_lsp_fuel,            &
@@ -309,7 +309,7 @@ module coincl
       implicit none
       type(c_ptr), intent(out) :: p_cmtype, p_isoot, p_ngazfl, p_nki, p_nxr, p_nzm
       type(c_ptr), intent(out) :: p_nzvar, p_nlibvar, p_ikimid, p_mode_fp2m
-      type(c_ptr), intent(out) :: p_use_janaf
+      type(c_ptr), intent(out) :: p_ndirac, p_use_janaf
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot, p_lsp_fuel
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
       type(c_ptr), intent(out) :: p_tinoxy, p_vref, p_lref, p_ta, p_tstar
@@ -357,7 +357,7 @@ contains
 
     type(c_ptr) :: c_cmtype, c_isoot, c_ngazfl, c_nki, c_nxr, c_nzm,   &
                    c_nzvar, c_nlibvar, c_ikimid, c_mode_fp2m,          &
-                   c_use_janaf, c_coefeg, c_compog, c_xsoot,           &
+                   c_ndirac, c_use_janaf, c_coefeg, c_compog, c_xsoot, &
                    c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,           &
                    c_pcigas, c_tinfue, c_tinoxy,                       &
                    c_vref, c_lref, c_ta, c_tstar,                      &
@@ -368,7 +368,7 @@ contains
     call cs_f_coincl_get_pointers(c_cmtype, c_isoot, c_ngazfl, c_nki,  &
                                   c_nxr, c_nzm, c_nzvar,               &
                                   c_nlibvar, c_ikimid,                 &
-                                  c_mode_fp2m, c_use_janaf,            &
+                                  c_mode_fp2m, c_ndirac, c_use_janaf,  &
                                   c_coefeg, c_compog,                  &
                                   c_xsoot,  c_rosoot,                  &
                                   c_lsp_fuel,                          &
@@ -389,6 +389,7 @@ contains
     call c_f_pointer(c_nlibvar, nlibvar)
     call c_f_pointer(c_ikimid, ikimid)
     call c_f_pointer(c_mode_fp2m, mode_fp2m)
+    call c_f_pointer(c_ndirac, ndirac)
     call c_f_pointer(c_use_janaf, use_janaf)
     call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
     call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
@@ -470,5 +471,32 @@ contains
 
     idx = flamelet_rho - 1  ! C index is zero-based, so shift by 1
   end function cs_f_flamelet_rho_idx
+
+  !=============================================================================
+
+  !> \brief Map Fortran combustion model field ids
+
+  subroutine cs_f_combustion_map_variables()  &
+    bind(C, name='cs_f_combustion_map_variables')
+    use, intrinsic :: iso_c_binding
+    use paramx
+    use numvar
+    use ppincl
+    use field
+    use cs_c_bindings
+    implicit none
+
+    call field_get_id_try('enthalpy', ihm)
+    call field_get_id_try('mixture_fraction', ifm)
+    call field_get_id_try('mixture_fraction_variance', ifp2m)
+    call field_get_id_try('mixture_fraction_2nd_moment', ifsqm)
+    call field_get_id_try('progress_variable', ipvm)
+    call field_get_id_try('fresh_gas_fraction', iygfm)
+    call field_get_id_try('mass_fraction', iyfm)
+    call field_get_id_try('mass_fraction_variance', iyfp2m)
+    call field_get_id_try('soot_mass_fraction', ifsm)
+    call field_get_id_try('soot_precursor_number', inpm)
+
+  end subroutine cs_f_combustion_map_variables
 
 end module coincl
