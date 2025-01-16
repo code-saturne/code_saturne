@@ -441,7 +441,6 @@ def run_studymanager(pkg, options):
         studies.check_compare(destination=False)
 
     if options.post:
-        studies.check_script(destination=False)
         studies.check_plots_and_input(destination=False)
 
     # Create all studies and all cases

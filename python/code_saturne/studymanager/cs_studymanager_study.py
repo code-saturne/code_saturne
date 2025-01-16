@@ -185,7 +185,8 @@ class Case(object):
                  rlog,
                  diff,
                  parser,
-                 study,
+                 study_label,
+                 study_index,
                  smgr_cmd,
                  data,
                  repo,
@@ -203,7 +204,8 @@ class Case(object):
         self.__dest        = dest
 
         self.pkg           = pkg
-        self.study         = study
+        self.study         = study_label
+        self.study_index   = study_index
 
         self.node          = data['node']
         self.label         = data['label']
@@ -235,7 +237,7 @@ class Case(object):
         self.resu = "RESU"
         self.run_dir = os.path.join(self.__dest, self.label, self.resu,
                                     self.run_id)
-        self.title = study + "/" + self.label + "/" +  self.resu + "/" \
+        self.title = self.study + "/" + self.label + "/" +  self.resu + "/" \
                    + self.run_id
 
         # Check for coupling
@@ -267,7 +269,7 @@ class Case(object):
             self.run_dir = os.path.join(self.__dest, self.label, self.resu,
                                         self.run_id)
 
-            self.title = study + "/" + self.label + "/" +  self.resu + "/" \
+            self.title = self.study + "/" + self.label + "/" +  self.resu + "/" \
                    + self.run_id
 
         self.exe = os.path.join(pkg.get_dir('bindir'),
@@ -1007,6 +1009,21 @@ class Case(object):
 
         return msg
 
+    #---------------------------------------------------------------------------
+
+    def check_file(self, folder, dest, file_name):
+        """
+        Verify the existence of file in destination
+        """
+        msg = None
+
+        # build path to directory in destination
+        file_addr = os.path.join(folder, dest, file_name)
+        if not os.path.isfile(file_addr):
+            msg = "    The file %s does not exist." %(file_addr)
+
+        return msg
+
 #===============================================================================
 # Study class
 #===============================================================================
@@ -1019,6 +1036,7 @@ class Study(object):
                  pkg,
                  parser,
                  study,
+                 index,
                  exe,
                  dif,
                  smgr_cmd,
@@ -1069,6 +1087,7 @@ class Study(object):
             sys.exit(1)
 
         self.label = study
+        self.index = index
 
         self.cases = []
         self.matplotlib_figures = []
@@ -1112,6 +1131,7 @@ class Study(object):
                              self.__diff,
                              self.__parser,
                              self.label,
+                             self.index,
                              smgr_cmd,
                              data,
                              self.__repo,
@@ -1460,10 +1480,13 @@ class Studies(object):
         self.labels  = self.__parser.getStudiesLabel()
         self.n_study = len(self.labels)
         self.studies = []
+        index = -1
         for l in self.labels:
+            index += 1
             self.studies.append( [l, Study(self.__pkg, \
                                            self.__parser, \
                                            l, \
+                                           index, \
                                            exe, \
                                            dif, \
                                            smgr_cmd, \
@@ -1818,30 +1841,6 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def check_prepro(self, case):
-        """
-        Launch external additional scripts with arguments.
-        """
-        pre, label, nodes, args = self.__parser.getPrepro(case.node)
-        iko = 0
-        for i in range(len(label)):
-            if pre[i]:
-                cmd = os.path.basename(label[i])
-                self.reporting('    - script %s --> FAILED (%s)' % (cmd),
-                               stdout=True, report=False)
-                self.reporting('    - script %s --> FAILED (%s)' % (cmd),
-                               stdout=False, report=True)
-                iko += 1
-
-        if iko:
-            self.reporting('  Error: "prepro" tag present for %s case(s).\n'
-                           %iko, report=False, exit=False)
-            self.reporting('        "prepro" must be updated to one of\n' +
-                           '           "notebook_args", "parametric_args", or "kw_args"\n',
-                           report = False, exit=False)
-
-    #---------------------------------------------------------------------------
-
     def run(self):
         """
         Update and run all cases.
@@ -1853,7 +1852,6 @@ class Studies(object):
 
         for case in self.graph.graph_dict:
 
-            self.check_prepro(case)
             if case.compute and case.is_compiled != "KO":
 
                 if self.__n_iter is not None:
@@ -1875,12 +1873,11 @@ class Studies(object):
 
                     # update dest="" attribute
                     n1 = self.__parser.getChildren(case.node, "compare")
-                    n2 = self.__parser.getChildren(case.node, "script")
                     n3 = self.__parser.getChildren(case.node, "data")
                     n4 = self.__parser.getChildren(case.node, "probe")
                     n5 = self.__parser.getChildren(case.node, "resu")
                     n6 = self.__parser.getChildren(case.node, "input")
-                    for n in n1 + n2 + n3 + n4 + n5 + n6:
+                    for n in n1 + n3 + n4 + n5 + n6:
                         if self.__parser.getAttribute(n, "dest") == "":
                             self.__parser.setAttribute(n, "dest", case.run_id)
                 else:
@@ -1978,7 +1975,6 @@ class Studies(object):
                 # loop on cases of the sub graph
                 for case in self.graph.extract_sub_graph(level,nproc+1).graph_dict:
 
-                    self.check_prepro(case)
                     if case.compute and case.is_compiled != "KO":
 
                         if self.__n_iter is not None:
@@ -2485,48 +2481,31 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def check_script(self, destination=True):
+    def check_script(self):
         """
         Check coherency between xml file of parameters and repository.
         Stop if you try to run a script with a file which does not exist.
         """
+        check_msg = "  o Check scripts of cases"
+        self.reporting(check_msg)
         scripts_checked = False
-        for l, s in self.studies:
-            # search for scripts to check before
-            check_scripts = False
-            for case in s.cases:
-                script, label, nodes, args, repo, dest = \
+        for case in self.graph.graph_dict:
+            # search for scripts to check
+            status, label, nodes, args, repo, dest = \
                     self.__parser.getScript(case.node)
-                if nodes:
-                    check_scripts = True
-                    break
 
-            if not check_scripts:
-                continue
-
-            # if scripts have to be checked
-            check_msg = "  o Check scripts of study: " + l
-            self.report_action_location(check_msg, destination)
-
-            scripts_checked = True
-
-            cases_to_disable = []
-            for case in s.cases:
-                status, label, nodes, args, repo, dest = \
-                    self.__parser.getScript(case.node)
-                for i in range(len(nodes)):
-                    if status[i]:
-                        if destination == False:
-                            dest[i] = None
-                        msg = case.check_dirs(nodes[i], repo[i], dest[i])
-                        if msg:
-                            self.reporting(msg)
-                            cases_to_disable.append(case)
-
-            for case in cases_to_disable:
-                case.plot = False
-                msg = "    - Case %s --> POST DISABLED" %(case.title)
-                self.reporting(msg)
+            # check existing scripts
+            for i in range(len(nodes)):
+                if status[i] and case.plot:
+                    post_folder = os.path.join(self.__dest, case.study, "POST")
+                    # no dest for script in POST
+                    msg = case.check_file(post_folder, "", label[i])
+                    scripts_checked = True
+                    if msg:
+                        self.reporting(msg)
+                        case.plot = False
+                        msg2 = "    - Case %s --> POST DISABLED" %(case.title)
+                        self.reporting(msg2)
 
         if scripts_checked:
             self.reporting('')
@@ -2537,45 +2516,39 @@ class Studies(object):
 
     def scripts(self):
         """
-        Launch external additional scripts with arguments.
+        Launch external additional scripts with arguments for a case.
+        Related to keyword script in smgr xml file
         """
         # create smgr_post_pro.log in dest/STUDY
+        self.reporting("  o Run scripts of cases:")
+        for case in self.graph.graph_dict:
+            status, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
+            for i in range(len(label)):
+                if status[i] and case.plot:
+                    cmd = os.path.join(self.__dest, case.study, "POST", label[i])
+                    script_name = cmd
+                    if os.path.isfile(cmd):
+                        # ensure script is executable
+                        set_executable(cmd)
 
-        for l, s in self.studies:
-            self.reporting("  o Run scripts of study: " + l)
-            for case in s.cases:
-                status, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
-                for i in range(len(label)):
-                    if status[i] and case.plot:
-                        cmd = os.path.join(self.__dest, l, "POST", label[i])
-                        if os.path.isfile(cmd):
-                            sc_name = os.path.basename(cmd)
-                            # ensure script is executable
-                            set_executable(cmd)
-
+                        if args[i]:
                             cmd += " " + args[i]
-                            if repo[i]:
-                                r = os.path.join(self.__repo,  l, case.label,
-                                                 case.resu, repo[i])
-                                cmd += " -r " + r
-                            if dest[i]:
-                                d = os.path.join(self.__dest, l, case.label,
-                                                 case.resu, dest[i])
-                                cmd += " -d " + d
 
-                            retcode, t = run_studymanager_command(cmd,
-                                                                  self.__log_post_file)
-                            stat = "FAILED" if retcode != 0 else "OK"
+                        # folder should not finished by / to prevent error in scripts 
+                        folder = case.run_dir
+                        if dest[i]:
+                            folder = os.path.join(case.run_dir, dest[i])
+                        cmd += " -d " + folder
 
-                            self.reporting('    - script %s --> %s (%s s)'
-                                           %(stat, sc_name, t),
-                                           stdout=True, report=False)
+                        retcode, t = run_studymanager_command(cmd,
+                                                              self.__log_post_file)
+                        stat = "FAILED" if retcode != 0 else "OK"
 
-                            self.reporting('    - script %s --> %s (%s s)'
-                                           %(stat, cmd, t),
-                                           stdout=False, report=True)
-                        else:
-                            self.reporting('    - script %s not found' % cmd)
+                        self.reporting('    - script %s %s in %s (%s s)'
+                                       %(script_name, stat, case.title, t))
+
+                    else:
+                        self.reporting('    - script %s not found' % cmd)
 
         self.reporting('')
 
@@ -2583,41 +2556,47 @@ class Studies(object):
 
     def postpro(self):
         """
-        Launch external additional scripts with arguments.
+        Launch external additional scripts with arguments for studies.
+        Related to keyword postpro in smgr xml file
         """
-        for l, s in self.studies:
-            script, label, nodes, args = self.__parser.getPostPro(l)
-            if not label:
-                continue
 
-            self.reporting('  o Postprocessing cases of study: ' + l)
-            for i in range(len(label)):
-                if script[i]:
-                    cmd = os.path.join(self.__dest, l, "POST", label[i])
-                    if os.path.isfile(cmd):
-                        sc_name = os.path.basename(cmd)
-                        # ensure script is executable
-                        set_executable(cmd)
+        previous_study_name = None
+        for case in self.graph.graph_dict:
 
-                        list_cases, list_dir = s.getRunDirectories()
-                        cmd += ' ' + args[i] + ' -c "' + list_cases + '" -d "' \
-                               + list_dir + '" -s ' + l
+            # detect new study
+            if case.study is not previous_study_name:
+                previous_study_name = case.study
 
-                        self.reporting('    - running postpro %s' % sc_name,
-                                       stdout=True, report=False, status=True)
+                script, label, nodes, args = self.__parser.getPostPro(case.study)
 
-                        retcode, t = run_studymanager_command(cmd, self.__log_post_file)
-                        stat = "FAILED" if retcode != 0 else "OK"
+                for i in range(len(label)):
+                    if i == 0:
+                        self.reporting('  o Postprocessing results of study: ' + case.study)
+                    if script[i]:
+                        cmd = os.path.join(self.__dest, case.study, "POST", label[i])
+                        if os.path.isfile(cmd):
+                            sc_name = os.path.basename(cmd)
+                            # ensure script is executable
+                            set_executable(cmd)
 
-                        self.reporting('    - postpro %s --> %s (%s s)' \
-                                       % (stat, sc_name, t),
-                                       stdout=True, report=False)
+                            # retrieve study_object from index
+                            study_label, study_object = self.studies[case.study_index]
 
-                        self.reporting('    - postpro %s --> %s (%s s)' \
-                                       % (stat, cmd, t),
-                                       stdout=False, report=True)
-                    else:
-                        self.reporting('    - postpro %s not found' % cmd)
+                            list_cases, list_dir = study_object.getRunDirectories()
+                            cmd += ' ' + args[i] + ' -c "' + list_cases + '" -d "' \
+                                   + list_dir + '" -s ' + case.study
+
+                            self.reporting('    - running postpro %s' % sc_name,
+                                           stdout=True, report=False, status=True)
+
+                            retcode, t = run_studymanager_command(cmd, self.__log_post_file)
+                            stat = "FAILED" if retcode != 0 else "OK"
+
+                            self.reporting('    - postpro %s --> %s (%s s)' \
+                                           % (stat, sc_name, t))
+
+                        else:
+                            self.reporting('    - postpro %s not found' % cmd)
 
         # erase empty log file
         self.__log_post_file.close()
