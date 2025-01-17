@@ -87,7 +87,7 @@ cs_domain_automatic_time_step_settings(cs_domain_t       *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the value of the time step thanks to a predefined function
+ * \brief Define the value of the time step thanks to a predefined function
  *
  * \param[in, out] domain      pointer to a cs_domain_t structure
  * \param[in]      func        pointer to a cs_time_func_t function
@@ -98,9 +98,9 @@ cs_domain_automatic_time_step_settings(cs_domain_t       *domain);
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_domain_def_time_step_by_function(cs_domain_t        *domain,
-                                    cs_time_func_t     *func,
-                                    void               *func_input);
+cs_domain_def_time_step_by_function(cs_domain_t    *domain,
+                                    cs_time_func_t *func,
+                                    void           *func_input);
 
 /*----------------------------------------------------------------------------*/
 /*!

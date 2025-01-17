@@ -1452,7 +1452,7 @@ cs_property_finalize_setup(void)
       bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
     if (pty->type & CS_PROPERTY_BY_PRODUCT)
-      continue; /* This is done after */
+      continue; /* This is done after in a second step */
 
     /* Volume definitions */
     /* ------------------ */
@@ -1605,6 +1605,8 @@ cs_property_finalize_setup(void)
     }
 
   } /* Loop on properties */
+
+  // Second loop to treat properties defined from a product of properties
 
   for (int i = 0; i < _n_properties; i++) {
 
@@ -1844,7 +1846,7 @@ cs_property_def_constant_value(cs_property_t *pty,
 
   }
 
-  /* Set automatically the reference value if all cells are selected */
+  /* Set automatically the reference value in this case */
 
   cs_property_set_reference_value(pty, val);
 
@@ -4205,7 +4207,7 @@ cs_property_log_setup(void)
       continue;
     assert(strlen(pty->name) < 200); /* Check that prefix is large enough */
 
-    if (pty->state_flag & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
+    if (pty->state_flag & CS_FLAG_STATE_UNIFORM) is_uniform = true;
     if (pty->state_flag & CS_FLAG_STATE_STEADY) is_steady = true;
 
     cs_log_printf(CS_LOG_SETUP, "\n  * %s | Uniform %s Steady %s\n", pty->name,

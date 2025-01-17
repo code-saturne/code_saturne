@@ -401,7 +401,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the current time step for this new time iteration
+ * \brief Initialize the time step for this new time iteration
  *
  * \param[in, out] ts      pointer to a cs_time_step_t structure
  * \param[in, out] ts_opt  pointer to a cs_time_step_options_t structure
