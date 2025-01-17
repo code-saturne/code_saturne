@@ -302,7 +302,8 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
 
   /* Set the physical model type */
 
-  cs_glob_physical_model_flag[CS_HEAT_TRANSFER] = 1;
+  if (cs_glob_physical_model_flag[CS_SOLIDIFICATION] < 1)
+    cs_glob_physical_model_flag[CS_HEAT_TRANSFER] = 1;
 
   /* Set flags */
 
