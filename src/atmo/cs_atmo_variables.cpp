@@ -1129,9 +1129,9 @@ cs_atmo_init_variables_1(void)
   /* VERIFICATIONS
      ------------- */
 
-  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF
+  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY
       || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY  )
-    if (at_opt->radiative_model_1d == 1 || at_opt->soil_model <= 1)
+    if (at_opt->radiative_model_1d == 1 || at_opt->soil_model >= 1)
       bft_error(__FILE__, __LINE__, 0,
               "@                                                            \n"
               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
