@@ -423,23 +423,23 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the mass flux playing the role of the advection field in
- *         the Navier-Stokes equations
- *         One considers the mass flux across primal faces which relies on the
- *         velocity vector defined on each face.
+ * \brief Compute the mass flux playing the role of the advection field in
+ *        the Navier-Stokes equations
+ *        One considers the mass flux across primal faces which relies on the
+ *        velocity vector defined on each face.
  *
- * \param[in]      nsp         set of parameters to define the NavSto system
- * \param[in]      quant       set of additional geometrical quantities
- * \param[in]      face_vel    velocity vectors for each face
- * \param[in, out] mass_flux   array of mass flux values to update (allocated)
+ * \param[in]      nsp        set of parameters to define the NavSto system
+ * \param[in]      quant      set of additional geometrical quantities
+ * \param[in]      face_vel   velocity vectors for each face
+ * \param[in, out] mass_flux  array of mass flux values to update (allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
-                          const cs_cdo_quantities_t   *quant,
-                          const cs_real_t             *face_vel,
-                          cs_real_t                   *mass_flux)
+cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
+                          const cs_cdo_quantities_t *quant,
+                          const cs_real_t           *face_vel,
+                          cs_real_t                 *mass_flux)
 {
   if (mass_flux == nullptr)
     return;

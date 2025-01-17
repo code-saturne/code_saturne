@@ -4182,6 +4182,7 @@ cs_gui_physical_properties(void)
 
   /* CDO HT Solver define physical properties */
   if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
+
     // density
     cs_property_t  *rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
     if (phys_pp->irovar == 0) {
@@ -4254,7 +4255,8 @@ cs_gui_physical_properties(void)
     else {
       cs_property_def_iso_by_value(lambda, NULL, phys_pp->lambda0);
     }
-  }
+
+  } // CDO for Conjugate Heat Transfer (CHT)
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
