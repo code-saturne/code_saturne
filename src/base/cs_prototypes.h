@@ -138,36 +138,6 @@ cs_at_source_term_for_inlet(cs_real_3_t   st_exp[]);
 void
 cs_summon_cressman(cs_real_t the_time);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert an enthalpy to temperature value for gas combustion.
- *
- * \param[in]     x_sp    mass fraction of constituents
- * \param[in]     h       enthalpy
- *
- * \return  temperature
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_gas_combustion_h_to_t(const cs_real_t   x_sp[],
-                         cs_real_t         h);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Convert a temperature to enthalpy value for gas combustion.
- *
- * \param[in]     x_sp    mass fraction of constituents
- * \param[in]     t       temperature at cells
- *
- * \return  enthalpy
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_gas_combustion_t_to_h(const cs_real_t   x_sp[],
-                         cs_real_t         t);
-
 /*----------------------------------------------------------------------------
  * Return Lagrangian model status.
  *

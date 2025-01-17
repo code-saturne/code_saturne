@@ -46,6 +46,76 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert an enthalpy to temperature value for gas combustion.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     h       enthalpy
+ *
+ * \return  temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_combustion_h_to_t(const cs_real_t   x_sp[],
+                     cs_real_t         h);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert an enthalpy to temperature value for gas combustion.
+ *
+ * \deprecated Use cs_combustion_h_to_t instead.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     h       enthalpy
+ *
+ * \return  temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_gas_combustion_h_to_t(const cs_real_t   x_sp[],
+                         cs_real_t         h)
+{
+  return cs_combustion_h_to_t(x_sp, h);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert a temperature to enthalpy value for gas combustion.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     t       temperature at cells
+ *
+ * \return  enthalpy
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_combustion_t_to_h(const cs_real_t   x_sp[],
+                     cs_real_t         t);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert a temperature to enthalpy value for gas combustion.
+ *
+ * \deprecated Use cs_combustion_t_to_h instead.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     t       temperature at cells
+ *
+ * \return  enthalpy
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_gas_combustion_t_to_h(const cs_real_t   x_sp[],
+                         cs_real_t         t)
+{
+  return cs_combustion_t_to_h(x_sp, t);
+}
+
+/*----------------------------------------------------------------------------*/
 /*
  * \brief Convert enthalpy to temperature at boundary for gas combustion.
  *
@@ -57,6 +127,21 @@ BEGIN_C_DECLS
 void
 cs_combustion_ht_convert_h_to_t_faces(const cs_real_t  h[],
                                       cs_real_t        t[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy for gas combustion.
+ *
+ * \param[in]   xsp  masss fraction of constituents
+ * \param[in]   t    temperature value
+ *
+ * \return   enthalpy value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_combustion_ht_convert_t_to_h(cs_real_t  xsp[],
+                                cs_real_t  t);
 
 /*----------------------------------------------------------------------------*/
 /*!

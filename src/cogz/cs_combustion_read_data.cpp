@@ -57,6 +57,7 @@
 #include "pprt/cs_combustion_model.h"
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_bsh.h"
+#include "cogz/cs_combustion_ht_convert.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

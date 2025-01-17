@@ -102,6 +102,113 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert an enthalpy to temperature value for gas combustion.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     h       enthalpy
+ *
+ * \return  temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_combustion_h_to_t(const cs_real_t   x_sp[],
+                     cs_real_t         h)
+{
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+  const int ngazg = cm->n_gas_species;
+  const int n_tab_m1 = cm->n_tab_points - 1;
+  const double *th = cm->th;
+
+  const double *ehgazg1 = cm->ehgazg[n_tab_m1];
+  double eh1 = 0.;
+  for (int sp_id = 0; sp_id < ngazg; sp_id++)
+    eh1 += x_sp[sp_id]*ehgazg1[sp_id];
+
+  if (h >= eh1)
+    return th[n_tab_m1];
+
+  const double *ehgazg0 = cm->ehgazg[0];
+  double eh0 = 0.;
+  for (int sp_id = 0; sp_id < ngazg; sp_id++)
+    eh0 += x_sp[sp_id]*ehgazg0[sp_id];
+
+  if (h <= eh0)
+    return th[0];
+
+  for (int it = 0; it < n_tab_m1; it++) {
+    eh0 = 0.;
+    eh1 = 0.;
+    ehgazg0 = cm->ehgazg[it];
+    ehgazg1 = cm->ehgazg[it+1];
+    for (int sp_id = 0; sp_id < ngazg; sp_id++) {
+      eh0 += x_sp[sp_id]*ehgazg0[sp_id];
+      eh1 += x_sp[sp_id]*ehgazg1[sp_id];
+    }
+    if (h >= eh0 && h <= eh1)
+      return (th[it] + (h-eh0)*(th[it+1]-th[it])/(eh1-eh0));
+  }
+
+  assert(0);  /* We should return before this point */
+  return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert a temperature to enthalpy value for gas combustion.
+ *
+ * \param[in]     x_sp    mass fraction of constituents
+ * \param[in]     t       temperature at cells
+ *
+ * \return  enthalpy
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_combustion_t_to_h(const cs_real_t   x_sp[],
+                     cs_real_t         t)
+{
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+  const int ngazg = cm->n_gas_species;
+  const int n_tab_m1 = cm->n_tab_points - 1;
+  const double *th = cm->th;
+
+  double h = 0.;
+
+  const double *ehgazg1 = cm->ehgazg[n_tab_m1];
+  if (t >= th[n_tab_m1]) {
+    for (int sp_id = 0; sp_id < ngazg; sp_id++)
+      h += x_sp[sp_id]*ehgazg1[sp_id];
+    return h;
+  }
+
+  const double *ehgazg0 = cm->ehgazg[0];
+  if (t <= th[0]) {
+    for (int sp_id = 0; sp_id < ngazg; sp_id++)
+      h += x_sp[sp_id]*ehgazg0[sp_id];
+    return h;
+  }
+
+  for (int it = 0; it < n_tab_m1; it++) {
+    if (t < th[it+1]) {
+      double eh0 = 0.;
+      double eh1 = 0.;
+      ehgazg0 = cm->ehgazg[it];
+      ehgazg1 = cm->ehgazg[it+1];
+      for (int sp_id = 0; sp_id < ngazg; sp_id++) {
+        eh0 += x_sp[sp_id]*ehgazg0[sp_id];
+        eh1 += x_sp[sp_id]*ehgazg1[sp_id];
+      }
+      return (eh0 + (eh1-eh0)*(t-th[it])/(th[it+1]-th[it]));
+    }
+  }
+
+  assert(0);  /* We should return before this point */
+  return 0;
+}
+
+/*----------------------------------------------------------------------------*/
 /*
  * \brief Convert enthalpy to temperature at boundary for gas combustion.
  *
@@ -136,7 +243,7 @@ cs_combustion_ht_convert_h_to_t_faces(const cs_real_t  h[],
       for (int i = 3; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
         coefg[0] = 0;
 
-      t[face_id] = cs_gas_combustion_h_to_t(coefg, hbl);
+      t[face_id] = cs_combustion_h_to_t(coefg, hbl);
     }
 
   }

@@ -224,7 +224,7 @@ module cs_c_bindings
     !> \brief Convert enthalpy to temperature for gas combustion.
 
     function cs_gas_combustion_h_to_t(xespec, enthal) result(temper)  &
-      bind(C, name='cs_gas_combustion_h_to_t')
+      bind(C, name='cs_combustion_h_to_t')
       use, intrinsic :: iso_c_binding
       implicit none
       real(kind=c_double), dimension(*) :: xespec
@@ -237,7 +237,7 @@ module cs_c_bindings
     !> \brief Convert temperature to enthalpy for gas combustion.
 
     function cs_gas_combustion_t_to_h(xespec, temper) result(enthal)  &
-      bind(C, name='cs_gas_combustion_t_to_h')
+      bind(C, name='cs_combustion_t_to_h')
       use, intrinsic :: iso_c_binding
       implicit none
       real(kind=c_double), dimension(*) :: xespec

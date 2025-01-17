@@ -59,6 +59,7 @@
 #include "mesh/cs_mesh_quantities.h"
 
 #include "cogz/cs_combustion_gas.h"
+#include "cogz/cs_combustion_ht_convert.h"
 #include "pprt/cs_combustion_model.h"
 #include "pprt/cs_physical_model.h"
 
