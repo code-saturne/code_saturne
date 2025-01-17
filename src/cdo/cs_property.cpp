@@ -1478,8 +1478,6 @@ cs_property_finalize_setup(void)
       for (int id = 0; id < pty->n_definitions; id++) {
 
         cs_xdef_t  *def = pty->defs[id];
-
-        assert(def->z_id > 0);
         assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
         if (cs_flag_test(def->state, CS_FLAG_STATE_UNIFORM) == false)
