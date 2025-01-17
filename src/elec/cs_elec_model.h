@@ -55,10 +55,10 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  int         ngaz;
-  int         npoint;
+  int         n_gas;
+  int         n_point;
   cs_real_t  *th;
-  cs_real_t  *ehgaz;
+  cs_real_t  *eh_gas;
   cs_real_t  *rhoel;
   cs_real_t  *cpel;
   cs_real_t  *sigel;

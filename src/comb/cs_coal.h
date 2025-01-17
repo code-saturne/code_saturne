@@ -188,8 +188,8 @@ typedef struct {
 
   /*! massic enthalpy (J/kg) of the i-th elementary gas component
     at temperature  th[j] */
-  double ehgaze[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS]
-               [CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+  double eh_gas_e[CS_COMBUSTION_COAL_MAX_TABULATION_POINTS]
+                 [CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
 
   /* Properties of dry coal
      ---------------------- */
@@ -384,16 +384,16 @@ typedef struct {
   int     in2;         /*!< index of n2 in wmole */
   int     ico2;        /*!< index of co2 in wmole */
 
-  /*! index of CHx1 in ehgaze and wmole */
+  /*! index of CHx1 in eh_gas_e and wmole */
   int ichx1c[CS_COMBUSTION_MAX_COALS];
 
-  /*! index of CHx2 in ehgaze and wmole */
+  /*! index of CHx2 in eh_gas_e and wmole */
   int ichx2c[CS_COMBUSTION_MAX_COALS];
 
-  /*! index of CHx1m in ehgaze and wmole */
+  /*! index of CHx1m in eh_gas_e and wmole */
   int ichx1;
 
-  /*! index of CHx2m in ehgaze and wmole */
+  /*! index of CHx2m in eh_gas_e and wmole */
   int ichx2;
 
   /*! Composition of hydrocarbon relative to MVl: CH(X1) */

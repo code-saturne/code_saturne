@@ -101,7 +101,7 @@ cs_user_initialization(cs_domain_t     *domain)
 
   /* Mass fraction = 1 for first gas, 0 for others */
 
-  int n_gasses = cs_glob_elec_properties->ngaz;
+  int n_gasses = cs_glob_elec_properties->n_gas;
 
   if (n_gasses > 1) {
 

@@ -290,7 +290,7 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_f1f2(cs_real_t        eh,
       for (int icha = 0; icha < cm->n_coals; icha++) {
         int ichx1c_icha = cm->ichx1c[icha] -1;
         ehchx1 +=   den1[icha]
-                  * (  cm->ehgaze[i][ichx1c_icha]
+                  * (  cm->eh_gas_e[i][ichx1c_icha]
                      * f1mc[icha]
                      * cm->a1[icha]
                      * cm->wmole[ichx1c_icha]);
@@ -298,13 +298,13 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_f1f2(cs_real_t        eh,
       ehchx1 /= ychx10;
     }
     else
-      ehchx1 = cm->ehgaze[i][ichx1];
+      ehchx1 = cm->eh_gas_e[i][ichx1];
 
     if (ychx20 > cs_math_epzero) {
       for (int icha = 0; icha < cm->n_coals; icha++) {
         int ichx2c_icha = cm->ichx2c[icha] -1;
         ehchx2 +=   den2[icha]
-                  * (  cm->ehgaze[i][ichx2c_icha]
+                  * (  cm->eh_gas_e[i][ichx2c_icha]
                      * f2mc[icha]
                      * cm->a2[icha]
                      * cm->wmole[ichx2c_icha]);
@@ -312,20 +312,20 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_f1f2(cs_real_t        eh,
       ehchx2 /= ychx20;
     }
     else
-      ehchx2 = cm->ehgaze[i][ichx2];
+      ehchx2 = cm->eh_gas_e[i][ichx2];
 
     cs_real_t eh1 =   xesp[ichx1]*ehchx1
                     + xesp[ichx2]*ehchx2
-                    + xesp[ico]  *cm->ehgaze[i][ico]
-                    + xesp[ih2s] *cm->ehgaze[i][ih2s]
-                    + xesp[ihy]  *cm->ehgaze[i][ihy]
-                    + xesp[ihcn] *cm->ehgaze[i][ihcn]
-                    + xesp[inh3] *cm->ehgaze[i][inh3]
-                    + xesp[io2]  *cm->ehgaze[i][io2]
-                    + xesp[ico2] *cm->ehgaze[i][ico2]
-                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
-                    + xesp[iso2] *cm->ehgaze[i][iso2]
-                    + xesp[in2]  *cm->ehgaze[i][in2];
+                    + xesp[ico]  *cm->eh_gas_e[i][ico]
+                    + xesp[ih2s] *cm->eh_gas_e[i][ih2s]
+                    + xesp[ihy]  *cm->eh_gas_e[i][ihy]
+                    + xesp[ihcn] *cm->eh_gas_e[i][ihcn]
+                    + xesp[inh3] *cm->eh_gas_e[i][inh3]
+                    + xesp[io2]  *cm->eh_gas_e[i][io2]
+                    + xesp[ico2] *cm->eh_gas_e[i][ico2]
+                    + xesp[ih2o] *cm->eh_gas_e[i][ih2o]
+                    + xesp[iso2] *cm->eh_gas_e[i][iso2]
+                    + xesp[in2]  *cm->eh_gas_e[i][in2];
 
     /* Interpolate, with clipping at bounds */
 
@@ -446,7 +446,7 @@ cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(cs_real_t        tp,
       for (int icha = 0; icha < cm->n_coals; icha++) {
         int ichx1c_icha = cm->ichx1c[icha] -1;
         ehchx1 +=   den1[icha]
-                  * (  cm->ehgaze[i][ichx1c_icha]
+                  * (  cm->eh_gas_e[i][ichx1c_icha]
                      * f1mc[icha]
                      * cm->a1[icha]
                      * cm->wmole[ichx1c_icha]);
@@ -454,13 +454,13 @@ cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(cs_real_t        tp,
       ehchx1 /= ychx10;
     }
     else
-      ehchx1 = cm->ehgaze[i][ichx1];
+      ehchx1 = cm->eh_gas_e[i][ichx1];
 
     if (ychx20 > cs_math_epzero) {
       for (int icha = 0; icha < cm->n_coals; icha++) {
         int ichx2c_icha = cm->ichx2c[icha] -1;
         ehchx2 +=   den2[icha]
-                  * (  cm->ehgaze[i][ichx2c_icha]
+                  * (  cm->eh_gas_e[i][ichx2c_icha]
                      * f2mc[icha]
                      * cm->a2[icha]
                      * cm->wmole[ichx2c_icha]);
@@ -468,20 +468,20 @@ cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(cs_real_t        tp,
       ehchx2 /= ychx20;
     }
     else
-      ehchx2 = cm->ehgaze[i][ichx2];
+      ehchx2 = cm->eh_gas_e[i][ichx2];
 
     cs_real_t eh1 =   xesp[ichx1]*ehchx1
                     + xesp[ichx2]*ehchx2
-                    + xesp[ico]  *cm->ehgaze[i][ico]
-                    + xesp[ih2s] *cm->ehgaze[i][ih2s]
-                    + xesp[ihy]  *cm->ehgaze[i][ihy]
-                    + xesp[ihcn] *cm->ehgaze[i][ihcn]
-                    + xesp[inh3] *cm->ehgaze[i][inh3]
-                    + xesp[io2]  *cm->ehgaze[i][io2]
-                    + xesp[ico2] *cm->ehgaze[i][ico2]
-                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
-                    + xesp[iso2] *cm->ehgaze[i][iso2]
-                    + xesp[in2]  *cm->ehgaze[i][in2];
+                    + xesp[ico]  *cm->eh_gas_e[i][ico]
+                    + xesp[ih2s] *cm->eh_gas_e[i][ih2s]
+                    + xesp[ihy]  *cm->eh_gas_e[i][ihy]
+                    + xesp[ihcn] *cm->eh_gas_e[i][ihcn]
+                    + xesp[inh3] *cm->eh_gas_e[i][inh3]
+                    + xesp[io2]  *cm->eh_gas_e[i][io2]
+                    + xesp[ico2] *cm->eh_gas_e[i][ico2]
+                    + xesp[ih2o] *cm->eh_gas_e[i][ih2o]
+                    + xesp[iso2] *cm->eh_gas_e[i][iso2]
+                    + xesp[in2]  *cm->eh_gas_e[i][in2];
 
     /* Interpolate, with clipping at bounds */
 
@@ -548,21 +548,21 @@ cs_coal_ht_convert_h_to_t_gas_by_yi(cs_real_t        eh,
 
   for (int i = 0; i < cm->n_tab_points && tp <= -HUGE_VAL; i++) {
 
-    cs_real_t ehchx1 = cm->ehgaze[i][ichx1];
-    cs_real_t ehchx2 = cm->ehgaze[i][ichx2];
+    cs_real_t ehchx1 = cm->eh_gas_e[i][ichx1];
+    cs_real_t ehchx2 = cm->eh_gas_e[i][ichx2];
 
     cs_real_t eh1 =   xesp[ichx1]*ehchx1
                     + xesp[ichx2]*ehchx2
-                    + xesp[ico]  *cm->ehgaze[i][ico]
-                    + xesp[ih2s] *cm->ehgaze[i][ih2s]
-                    + xesp[ihy]  *cm->ehgaze[i][ihy]
-                    + xesp[ihcn] *cm->ehgaze[i][ihcn]
-                    + xesp[inh3] *cm->ehgaze[i][inh3]
-                    + xesp[io2]  *cm->ehgaze[i][io2]
-                    + xesp[ico2] *cm->ehgaze[i][ico2]
-                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
-                    + xesp[iso2] *cm->ehgaze[i][iso2]
-                    + xesp[in2]  *cm->ehgaze[i][in2];
+                    + xesp[ico]  *cm->eh_gas_e[i][ico]
+                    + xesp[ih2s] *cm->eh_gas_e[i][ih2s]
+                    + xesp[ihy]  *cm->eh_gas_e[i][ihy]
+                    + xesp[ihcn] *cm->eh_gas_e[i][ihcn]
+                    + xesp[inh3] *cm->eh_gas_e[i][inh3]
+                    + xesp[io2]  *cm->eh_gas_e[i][io2]
+                    + xesp[ico2] *cm->eh_gas_e[i][ico2]
+                    + xesp[ih2o] *cm->eh_gas_e[i][ih2o]
+                    + xesp[iso2] *cm->eh_gas_e[i][iso2]
+                    + xesp[in2]  *cm->eh_gas_e[i][in2];
 
     /* Interpolate, with clipping at bounds */
 
@@ -641,21 +641,21 @@ cs_coal_ht_convert_t_to_h_gas_by_yi(cs_real_t        tp,
 
   for (int i = s_id; i < e_id && eh <= -HUGE_VAL; i++) {
 
-    cs_real_t ehchx1 = cm->ehgaze[i][ichx1];
-    cs_real_t ehchx2 = cm->ehgaze[i][ichx2];
+    cs_real_t ehchx1 = cm->eh_gas_e[i][ichx1];
+    cs_real_t ehchx2 = cm->eh_gas_e[i][ichx2];
 
     cs_real_t eh1 =   xesp[ichx1]*ehchx1
                     + xesp[ichx2]*ehchx2
-                    + xesp[ico]  *cm->ehgaze[i][ico]
-                    + xesp[ih2s] *cm->ehgaze[i][ih2s]
-                    + xesp[ihy]  *cm->ehgaze[i][ihy]
-                    + xesp[ihcn] *cm->ehgaze[i][ihcn]
-                    + xesp[inh3] *cm->ehgaze[i][inh3]
-                    + xesp[io2]  *cm->ehgaze[i][io2]
-                    + xesp[ico2] *cm->ehgaze[i][ico2]
-                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
-                    + xesp[iso2] *cm->ehgaze[i][iso2]
-                    + xesp[in2]  *cm->ehgaze[i][in2];
+                    + xesp[ico]  *cm->eh_gas_e[i][ico]
+                    + xesp[ih2s] *cm->eh_gas_e[i][ih2s]
+                    + xesp[ihy]  *cm->eh_gas_e[i][ihy]
+                    + xesp[ihcn] *cm->eh_gas_e[i][ihcn]
+                    + xesp[inh3] *cm->eh_gas_e[i][inh3]
+                    + xesp[io2]  *cm->eh_gas_e[i][io2]
+                    + xesp[ico2] *cm->eh_gas_e[i][ico2]
+                    + xesp[ih2o] *cm->eh_gas_e[i][ih2o]
+                    + xesp[iso2] *cm->eh_gas_e[i][iso2]
+                    + xesp[in2]  *cm->eh_gas_e[i][in2];
 
     /* Interpolate, with clipping at bounds */
 
@@ -725,16 +725,16 @@ cs_coal_ht_convert_h_to_t_gas_by_yi_with_drying(cs_real_t        eh,
 
   for (int i = 0; i < cm->n_tab_points && tp <= -HUGE_VAL; i++) {
 
-    cs_real_t ehchx1 = cm->ehgaze[i][ichx1];
-    cs_real_t ehchx2 = cm->ehgaze[i][ichx2];
+    cs_real_t ehchx1 = cm->eh_gas_e[i][ichx1];
+    cs_real_t ehchx2 = cm->eh_gas_e[i][ichx2];
 
     cs_real_t eh1 =   xesp[ichx1]*ehchx1
                     + xesp[ichx2]*ehchx2
-                    + xesp[ico]  *cm->ehgaze[i][ico]
-                    + xesp[io2]  *cm->ehgaze[i][io2]
-                    + xesp[ico2] *cm->ehgaze[i][ico2]
-                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
-                    + xesp[in2]  *cm->ehgaze[i][in2];
+                    + xesp[ico]  *cm->eh_gas_e[i][ico]
+                    + xesp[io2]  *cm->eh_gas_e[i][io2]
+                    + xesp[ico2] *cm->eh_gas_e[i][ico2]
+                    + xesp[ih2o] *cm->eh_gas_e[i][ih2o]
+                    + xesp[in2]  *cm->eh_gas_e[i][in2];
 
     /* Interpolate, with clipping at bounds */
 
@@ -816,16 +816,16 @@ cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(cs_real_t        tp,
 
   for (int i = s_id; i < e_id && eh <= -HUGE_VAL; i++) {
 
-    cs_real_t ehchx1 = cm->ehgaze[i][ichx1];
-    cs_real_t ehchx2 = cm->ehgaze[i][ichx2];
+    cs_real_t ehchx1 = cm->eh_gas_e[i][ichx1];
+    cs_real_t ehchx2 = cm->eh_gas_e[i][ichx2];
 
     cs_real_t eh1 =   xesp[ichx1]*ehchx1
                     + xesp[ichx2]*ehchx2
-                    + xesp[ico]  *cm->ehgaze[i][ico ]
-                    + xesp[io2]  *cm->ehgaze[i][io2]
-                    + xesp[ico2] *cm->ehgaze[i][ico2]
-                    + xesp[ih2o] *cm->ehgaze[i][ih2o]
-                    + xesp[in2]  *cm->ehgaze[i][in2];
+                    + xesp[ico]  *cm->eh_gas_e[i][ico ]
+                    + xesp[io2]  *cm->eh_gas_e[i][io2]
+                    + xesp[ico2] *cm->eh_gas_e[i][ico2]
+                    + xesp[ih2o] *cm->eh_gas_e[i][ih2o]
+                    + xesp[in2]  *cm->eh_gas_e[i][in2];
 
     /* Interpolate, with clipping at bounds */
 

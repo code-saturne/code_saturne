@@ -1112,7 +1112,7 @@ _additional_fields_stage_1(void)
     }
   }
 
-  /* Collocated time scheme for gaz combustion */
+  /* Collocated time scheme for gas combustion */
   if (vp_p->itpcol == -1) {
     if (   time_scheme->time_order == 2
         && pm_flag[CS_COMBUSTION_SLFM] >= 0) {

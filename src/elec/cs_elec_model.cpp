@@ -197,13 +197,13 @@ BEGIN_C_DECLS
 
   \brief physical properties for electric model descriptor.
 
-  \var  cs_data_elec_t::ngaz
+  \var  cs_data_elec_t::n_gas
         number of gas in electrical data file
-  \var  cs_data_elec_t::npoint
-        number of point in electrical data file for each gas
+  \var  cs_data_elec_t::n_point
+        number of tabulation points in electrical data file for each gas
   \var  cs_data_elec_t::th
         temperature values
-  \var  cs_data_elec_t::ehgaz
+  \var  cs_data_elec_t::eh_gas
         enthalpy values
   \var  cs_data_elec_t::rhoel
         density values
@@ -247,10 +247,10 @@ static cs_elec_option_t  _elec_option = {.ixkabe = -1,
                                          .elcou = 0.,
                                          .srrom = 0.};
 
-static cs_data_elec_t  _elec_properties = {.ngaz = 0,
-                                           .npoint = 0,
+static cs_data_elec_t  _elec_properties = {.n_gas = 0,
+                                           .n_point = 0,
                                            .th = nullptr,
-                                           .ehgaz = nullptr,
+                                           .eh_gas = nullptr,
                                            .rhoel = nullptr,
                                            .cpel = nullptr,
                                            .sigel = nullptr,
@@ -753,7 +753,7 @@ cs_electrical_model_finalize(void)
 
   if (ielarc > 0) {
     BFT_FREE(_elec_properties.th);
-    BFT_FREE(_elec_properties.ehgaz);
+    BFT_FREE(_elec_properties.eh_gas);
     BFT_FREE(_elec_properties.rhoel);
     BFT_FREE(_elec_properties.cpel);
     BFT_FREE(_elec_properties.sigel);
@@ -848,9 +848,9 @@ cs_electrical_model_specific_initialization(void)
     cs_field_set_key_double(f, ksigmas, 0.7);
   }
 
-  if (cs_glob_elec_properties->ngaz > 1) {
-    for (int igaz = 0; igaz < cs_glob_elec_properties->ngaz - 1; igaz++) {
-      f = CS_FI_(ycoel, igaz);
+  if (cs_glob_elec_properties->n_gas > 1) {
+    for (int gas_id = 0; gas_id < cs_glob_elec_properties->n_gas - 1; gas_id++) {
+      f = CS_FI_(ycoel, gas_id);
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       eqp->blencv = 1.;
       cs_field_set_key_double(f, ksigmas, 0.7);
@@ -901,22 +901,22 @@ cs_electrical_properties_read(void)
       /* read number of fluids and number of points */
       if (nb_line_tot == 8)
         sscanf(str, "%d %d",
-               &(_elec_properties.ngaz),
-               &(_elec_properties.npoint));
+               &(_elec_properties.n_gas),
+               &(_elec_properties.n_point));
 
-      if (_elec_properties.ngaz <= 0)
+      if (_elec_properties.n_gas <= 0)
         bft_error(__FILE__, __LINE__, 0,
                   _("incorrect number of species \"%i\";\n"),
-                  _elec_properties.ngaz);
+                  _elec_properties.n_gas);
 
-      cs_lnum_t size =   _elec_properties.ngaz
-                       * _elec_properties.npoint;
+      cs_lnum_t size =   _elec_properties.n_gas
+                       * _elec_properties.n_point;
 
       if (nb_line_tot == 8) {
         BFT_MALLOC(_elec_properties.th,
-                   cs_glob_elec_properties->npoint,
+                   cs_glob_elec_properties->n_point,
                    cs_real_t);
-        BFT_MALLOC(_elec_properties.ehgaz,  size, cs_real_t);
+        BFT_MALLOC(_elec_properties.eh_gas,  size, cs_real_t);
         BFT_MALLOC(_elec_properties.rhoel,  size, cs_real_t);
         BFT_MALLOC(_elec_properties.cpel,   size, cs_real_t);
         BFT_MALLOC(_elec_properties.sigel,  size, cs_real_t);
@@ -940,10 +940,10 @@ cs_electrical_properties_read(void)
         continue;
 
       if (nb_line_tot >= 22) {
-        int shift = iesp *  (_elec_properties.npoint - 1);
+        int shift = iesp *  (_elec_properties.n_point - 1);
         sscanf(str, "%lf %lf %lf %lf %lf %lf %lf %lf",
                &(_elec_properties.th[it]),
-               &(_elec_properties.ehgaz[shift + it]),
+               &(_elec_properties.eh_gas[shift + it]),
                &(_elec_properties.rhoel[shift + it]),
                &(_elec_properties.cpel[shift + it]),
                &(_elec_properties.sigel[shift + it]),
@@ -951,7 +951,7 @@ cs_electrical_properties_read(void)
                &(_elec_properties.xlabel[shift + it]),
                &(_elec_properties.xkabel[shift + it]));
         it++;
-        if (it == _elec_properties.npoint) {
+        if (it == _elec_properties.n_point) {
           iesp++;
           it = 0;
         }
@@ -962,12 +962,12 @@ cs_electrical_properties_read(void)
   }
 
 #if 0
-  for (int it = 0; it < cs_glob_elec_properties->npoint; it++)
+  for (int it = 0; it < cs_glob_elec_properties->n_point; it++)
     bft_printf("read dp_ELE "
                "%15.8E %15.8E %15.8E %15.8E "
                "%15.8E %15.8E %15.8E %15.8E\n",
                _elec_properties.th[it],
-               _elec_properties.ehgaz[it],
+               _elec_properties.eh_gas[it],
                _elec_properties.rhoel[it],
                _elec_properties.cpel[it],
                _elec_properties.sigel[it],
@@ -1096,24 +1096,24 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       bft_printf("electric arc module: properties read on file.\n");
 
     /* compute temperature from enthalpy */
-    int ngaz = e_props->ngaz;
-    int npt  = e_props->npoint;
+    int n_gas = e_props->n_gas;
+    int npt  = e_props->n_point;
 
     cs_real_t *ym, *yvol, *roesp, *visesp, *cpesp;
     cs_real_t *sigesp, *xlabes, *xkabes, *coef;
-    BFT_MALLOC(ym,     ngaz, cs_real_t);
-    BFT_MALLOC(yvol,   ngaz, cs_real_t);
-    BFT_MALLOC(roesp,  ngaz, cs_real_t);
-    BFT_MALLOC(visesp, ngaz, cs_real_t);
-    BFT_MALLOC(cpesp,  ngaz, cs_real_t);
-    BFT_MALLOC(sigesp, ngaz, cs_real_t);
-    BFT_MALLOC(xlabes, ngaz, cs_real_t);
-    BFT_MALLOC(xkabes, ngaz, cs_real_t);
-    BFT_MALLOC(coef,   ngaz * ngaz, cs_real_t);
+    BFT_MALLOC(ym,     n_gas, cs_real_t);
+    BFT_MALLOC(yvol,   n_gas, cs_real_t);
+    BFT_MALLOC(roesp,  n_gas, cs_real_t);
+    BFT_MALLOC(visesp, n_gas, cs_real_t);
+    BFT_MALLOC(cpesp,  n_gas, cs_real_t);
+    BFT_MALLOC(sigesp, n_gas, cs_real_t);
+    BFT_MALLOC(xlabes, n_gas, cs_real_t);
+    BFT_MALLOC(xkabes, n_gas, cs_real_t);
+    BFT_MALLOC(coef,   n_gas * n_gas, cs_real_t);
 
     int ifcsig = cs_field_get_key_int(CS_F_(potr), kivisl);
 
-    if (ngaz == 1) {
+    if (n_gas == 1) {
       ym[0] = 1.;
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
@@ -1122,11 +1122,11 @@ cs_elec_physical_properties(cs_domain_t  *domain)
     else {
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        ym[ngaz - 1] = 1.;
+        ym[n_gas - 1] = 1.;
 
-        for (int ii = 0; ii < ngaz - 1; ii++) {
+        for (int ii = 0; ii < n_gas - 1; ii++) {
           ym[ii] = CS_FI_(ycoel, ii)->val[iel];
-          ym[ngaz - 1] -= ym[ii];
+          ym[n_gas - 1] -= ym[ii];
         }
 
         CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym, CS_F_(h)->val[iel]);
@@ -1171,16 +1171,16 @@ cs_elec_physical_properties(cs_domain_t  *domain)
                   tp);
 
       /* mass fraction */
-      ym[ngaz - 1] = 1.;
+      ym[n_gas - 1] = 1.;
 
-      for (int ii = 0; ii < ngaz - 1; ii++) {
+      for (int ii = 0; ii < n_gas - 1; ii++) {
         ym[ii] = CS_FI_(ycoel, ii)->val[iel];
-        ym[ngaz - 1] -= ym[ii];
+        ym[n_gas - 1] -= ym[ii];
       }
 
       /* density, viscosity, ... for each species */
       if (it == 0) {
-        for (int ii = 0; ii < ngaz; ii++) {
+        for (int ii = 0; ii < n_gas; ii++) {
           roesp[ii]  = e_props->rhoel[ii * (npt - 1)];
           visesp[ii] = e_props->visel[ii * (npt - 1)];
           cpesp[ii]  = e_props->cpel[ii * (npt - 1)];
@@ -1192,7 +1192,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
         }
       }
       else if (it == npt - 1) {
-        for (int ii = 0; ii < ngaz; ii++) {
+        for (int ii = 0; ii < n_gas; ii++) {
           roesp[ii]  = e_props->rhoel[ii * (npt - 1) + npt - 1];
           visesp[ii] = e_props->visel[ii * (npt - 1) + npt - 1];
           cpesp[ii]  = e_props->cpel[ii * (npt - 1) + npt - 1];
@@ -1206,7 +1206,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       else {
         double delt = e_props->th[it + 1] - e_props->th[it];
 
-        for (int ii = 0; ii < ngaz; ii++) {
+        for (int ii = 0; ii < n_gas; ii++) {
           double alpro = (e_props->rhoel[ii * (npt - 1) + it + 1] -
                           e_props->rhoel[ii * (npt - 1) + it]) / delt;
           roesp[ii]  =   e_props->rhoel[ii * (npt - 1) + it]
@@ -1244,7 +1244,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       /* compute density */
       double rhonp1 = 0.;
 
-      for (int ii = 0; ii < ngaz; ii++)
+      for (int ii = 0; ii < n_gas; ii++)
         rhonp1 += ym[ii] / roesp[ii];
 
       rhonp1 = 1. / rhonp1;
@@ -1255,32 +1255,32 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       else
         CS_F_(rho)->val[iel] = rhonp1;
 
-      for (int ii = 0; ii < ngaz; ii++) {
+      for (int ii = 0; ii < n_gas; ii++) {
         yvol[ii] = ym[ii] * roesp[ii] / CS_F_(rho)->val[iel];
         if (yvol[ii] <= 0.)
           yvol[ii] = cs_math_epzero * cs_math_epzero;
       }
 
       /* compute molecular viscosity : kg/(m s) */
-      for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
-        for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
-          coef[iesp1 * (ngaz - 1) + iesp2]
+      for (int iesp1 = 0; iesp1 < n_gas; iesp1++) {
+        for (int iesp2 = 0; iesp2 < n_gas; iesp2++) {
+          coef[iesp1 * (n_gas - 1) + iesp2]
             = 1. +   sqrt(visesp[iesp1] / visesp[iesp2])
                    * sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
-          coef[iesp1 * (ngaz - 1) + iesp2] *= coef[iesp1 * (ngaz - 1) + iesp2];
-          coef[iesp1 * (ngaz - 1) + iesp2] /=    (sqrt(1. + roesp[iesp1]
-                                               / roesp[iesp2]) * sqrt(8.));
+          coef[iesp1 * (n_gas - 1) + iesp2] *= coef[iesp1 * (n_gas - 1) + iesp2];
+          coef[iesp1 * (n_gas - 1) + iesp2] /=    (sqrt(1. + roesp[iesp1]
+                                                / roesp[iesp2]) * sqrt(8.));
         }
       }
 
       CS_F_(mu)->val[iel] = 0.;
 
-      for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
+      for (int iesp1 = 0; iesp1 < n_gas; iesp1++) {
         if (yvol[iesp1] > 1e-30) {
           double somphi = 0.;
-          for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
+          for (int iesp2 = 0; iesp2 < n_gas; iesp2++) {
             if (iesp1 != iesp2)
-              somphi +=   coef[iesp1 * (ngaz - 1) + iesp2]
+              somphi +=   coef[iesp1 * (n_gas - 1) + iesp2]
                         * yvol[iesp2] / yvol[iesp1];
           }
 
@@ -1291,33 +1291,33 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       /* compute specific heat : J/(kg degres) */
       if (cs_glob_fluid_properties->icp > 0) {
         CS_F_(cp)->val[iel] = 0.;
-        for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
+        for (int iesp1 = 0; iesp1 < n_gas; iesp1++)
           CS_F_(cp)->val[iel] += ym[iesp1] * cpesp[iesp1];
       }
 
       /* compute Lambda/Cp : kg/(m s) */
       if (diff_th != nullptr) {
 
-        for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
-          for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
-            coef[iesp1 * (ngaz - 1) + iesp2]
+        for (int iesp1 = 0; iesp1 < n_gas; iesp1++) {
+          for (int iesp2 = 0; iesp2 < n_gas; iesp2++) {
+            coef[iesp1 * (n_gas - 1) + iesp2]
               = 1. +   sqrt(xlabes[iesp1] / xlabes[iesp2])
                      * sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
-            coef[iesp1 * (ngaz - 1) + iesp2]
-              *= coef[iesp1 * (ngaz - 1) + iesp2];
-            coef[iesp1 * (ngaz - 1) + iesp2]
+            coef[iesp1 * (n_gas - 1) + iesp2]
+              *= coef[iesp1 * (n_gas - 1) + iesp2];
+            coef[iesp1 * (n_gas - 1) + iesp2]
               /= (sqrt(1. + roesp[iesp1] / roesp[iesp2]) * sqrt(8.));
           }
         }
         /* Lambda */
         diff_th->val[iel] = 0.;
 
-        for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
+        for (int iesp1 = 0; iesp1 < n_gas; iesp1++) {
           if (yvol[iesp1] > 1e-30) {
             double somphi = 0.;
-            for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
+            for (int iesp2 = 0; iesp2 < n_gas; iesp2++) {
               if (iesp1 != iesp2)
-                somphi +=   coef[iesp1 * (ngaz - 1) + iesp2]
+                somphi +=   coef[iesp1 * (n_gas - 1) + iesp2]
                           * yvol[iesp2] / yvol[iesp1];
             }
 
@@ -1337,7 +1337,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
         c_prop->val[iel] = 0.;
         double val = 0.;
 
-        for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
+        for (int iesp1 = 0; iesp1 < n_gas; iesp1++)
           val += yvol[iesp1] / sigesp[iesp1];
 
         c_prop->val[iel] = 1. / val;
@@ -1345,9 +1345,9 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
       /* compute radiative transfer : W/m3 */
       if (cs_glob_elec_option->ixkabe == 1) {
-        if (cpro_absco != nullptr) { /* May be nullptr if no active radiation model */
+        if (cpro_absco != nullptr) { /* nullptr if no active radiation model */
           double val = 0.;
-          for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
+          for (int iesp1 = 0; iesp1 < n_gas; iesp1++)
             val += yvol[iesp1] * xkabes[iesp1];
           cpro_absco[iel] = val;
         }
@@ -1356,7 +1356,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
         CS_F_(radsc)->val[iel] = 0.;
         double val = 0.;
 
-        for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
+        for (int iesp1 = 0; iesp1 < n_gas; iesp1++)
           val += yvol[iesp1] * xkabes[iesp1];
 
         CS_F_(radsc)->val[iel] = val;
@@ -1817,8 +1817,8 @@ cs_elec_add_variable_fields(void)
     cs_add_model_field_indexes(f->id);
   }
 
-  if (e_props->ngaz > 1) {
-    for (int igaz = 0; igaz < e_props->ngaz - 1; igaz++) {
+  if (e_props->n_gas > 1) {
+    for (int gas_id = 0; gas_id < e_props->n_gas - 1; gas_id++) {
       char *name = nullptr;
       char *label = nullptr;
       char *suf = nullptr;
@@ -1827,7 +1827,7 @@ cs_elec_add_variable_fields(void)
       BFT_MALLOC(suf, 3, char);
       strcpy(name, "esl_fraction_");
       strcpy(label, "YM_ESL");
-      sprintf(suf, "%02d", igaz + 1);
+      sprintf(suf, "%02d", gas_id + 1);
       strcat(name, suf);
       strcat(label, suf);
 
@@ -1845,7 +1845,7 @@ cs_elec_add_variable_fields(void)
     }
   }
 
-  _field_pointer_map_electric_arcs(e_props->ngaz);
+  _field_pointer_map_electric_arcs(e_props->n_gas);
 }
 
 /*----------------------------------------------------------------------------
@@ -1995,10 +1995,10 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh)
     cs_real_t hinit = 0.;
     if (ielarc > 0) {
       cs_real_t *ym;
-      BFT_MALLOC(ym, cs_glob_elec_properties->ngaz, cs_real_t);
+      BFT_MALLOC(ym, cs_glob_elec_properties->n_gas, cs_real_t);
       ym[0] = 1.;
-      if (cs_glob_elec_properties->ngaz > 1)
-        for (int i = 1; i < cs_glob_elec_properties->ngaz; i++)
+      if (cs_glob_elec_properties->n_gas > 1)
+        for (int i = 1; i < cs_glob_elec_properties->n_gas; i++)
           ym[i] = 0.;
 
       cs_real_t tinit = cs_glob_fluid_properties->t0;
@@ -2011,7 +2011,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh)
     }
 
     /* mass fraction of first gas */
-    if (cs_glob_elec_properties->ngaz > 1) {
+    if (cs_glob_elec_properties->n_gas > 1) {
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         CS_FI_(ycoel, 0)->val[iel] = 1.;
     }
@@ -2217,7 +2217,7 @@ cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_data_elec_t  *el_p = cs_glob_elec_properties;
-  const int n_gasses = el_p->ngaz;
+  const int n_gasses = el_p->n_gas;
 
   if (n_gasses == 1) {
 
@@ -2268,13 +2268,13 @@ cs_real_t
 cs_elec_convert_h_to_t(const cs_real_t  ym[],
                        cs_real_t        enthal)
 {
-  int ngaz = cs_glob_elec_properties->ngaz;
-  int it   = cs_glob_elec_properties->npoint;
+  int n_gas = cs_glob_elec_properties->n_gas;
+  int it   = cs_glob_elec_properties->n_point;
 
   cs_real_t eh1 = 0.;
 
-  for (int iesp = 0; iesp < ngaz; iesp++)
-    eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + it - 1];
+  for (int iesp = 0; iesp < n_gas; iesp++)
+    eh1 += ym[iesp] * cs_glob_elec_properties->eh_gas[iesp * (it-1) + it - 1];
 
   if (enthal >= eh1) {
     return cs_glob_elec_properties->th[it - 1];
@@ -2282,20 +2282,20 @@ cs_elec_convert_h_to_t(const cs_real_t  ym[],
 
   eh1 = 0.;
 
-  for (int iesp = 0; iesp < ngaz; iesp++)
-    eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + 0];
+  for (int iesp = 0; iesp < n_gas; iesp++)
+    eh1 += ym[iesp] * cs_glob_elec_properties->eh_gas[iesp * (it-1) + 0];
 
   if (enthal <= eh1) {
     return cs_glob_elec_properties->th[0];
   }
 
-  for (int itt = 0; itt < cs_glob_elec_properties->npoint - 1; itt++) {
+  for (int itt = 0; itt < cs_glob_elec_properties->n_point - 1; itt++) {
     cs_real_t eh0 = 0.;
     eh1 = 0.;
 
-    for (int iesp = 0; iesp < ngaz; iesp++) {
-      eh0 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + itt];
-      eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + itt+1];
+    for (int iesp = 0; iesp < n_gas; iesp++) {
+      eh0 += ym[iesp] * cs_glob_elec_properties->eh_gas[iesp * (it-1) + itt];
+      eh1 += ym[iesp] * cs_glob_elec_properties->eh_gas[iesp * (it-1) + itt+1];
     }
 
     if (enthal > eh0 && enthal <= eh1) {
@@ -2331,7 +2331,7 @@ cs_elec_convert_t_to_h_cells(const cs_real_t  t[],
   const cs_lnum_t n_cells = m->n_cells;
 
   const cs_data_elec_t  *el_p = cs_glob_elec_properties;
-  const int n_gasses = el_p->ngaz;
+  const int n_gasses = el_p->n_gas;
 
   if (n_gasses == 1) {
 
@@ -2386,7 +2386,7 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
   const cs_mesh_t *m = cs_glob_mesh;
 
   const cs_data_elec_t  *el_p = cs_glob_elec_properties;
-  const int n_gasses = el_p->ngaz;
+  const int n_gasses = el_p->n_gas;
 
   if (n_gasses == 1) {
 
@@ -2438,29 +2438,29 @@ cs_real_t
 cs_elec_convert_t_to_h(const cs_real_t ym[],
                        cs_real_t       temp)
 {
-  int ngaz = cs_glob_elec_properties->ngaz;
-  int it   = cs_glob_elec_properties->npoint;
+  int n_gas = cs_glob_elec_properties->n_gas;
+  int it   = cs_glob_elec_properties->n_point;
 
   cs_real_t enthal = 0.;
 
   if (temp >= cs_glob_elec_properties->th[it - 1]) {
-    for (int iesp = 0; iesp < ngaz; iesp++)
-      enthal += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + it-1];
+    for (int iesp = 0; iesp < n_gas; iesp++)
+      enthal += ym[iesp] * cs_glob_elec_properties->eh_gas[iesp * (it-1) + it-1];
   }
   else if (temp <= cs_glob_elec_properties->th[0]) {
-    for (int iesp = 0; iesp < ngaz; iesp++)
-      enthal += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + 0];
+    for (int iesp = 0; iesp < n_gas; iesp++)
+      enthal += ym[iesp] * cs_glob_elec_properties->eh_gas[iesp * (it-1) + 0];
   }
   else {
-    for (int itt = 0; itt < cs_glob_elec_properties->npoint - 1; itt++) {
+    for (int itt = 0; itt < cs_glob_elec_properties->n_point - 1; itt++) {
       if (   temp > cs_glob_elec_properties->th[itt]
           && temp <= cs_glob_elec_properties->th[itt + 1]) {
         cs_real_t eh0 = 0.;
         cs_real_t eh1 = 0.;
 
-        for (int iesp = 0; iesp < ngaz; iesp++) {
-          eh0 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + itt];
-          eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + itt+1];
+        for (int iesp = 0; iesp < n_gas; iesp++) {
+          eh0 += ym[iesp] * cs_glob_elec_properties->eh_gas[iesp * (it-1) + itt];
+          eh1 += ym[iesp] * cs_glob_elec_properties->eh_gas[iesp * (it-1) + itt+1];
         }
 
         enthal = eh0 + (eh1 - eh0) * (temp - cs_glob_elec_properties->th[itt]) /

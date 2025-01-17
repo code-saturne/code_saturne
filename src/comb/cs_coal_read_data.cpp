@@ -481,7 +481,7 @@ cs_coal_read_data(void)
   cm->n_gas_el_comp = 2 + 10 + 2*n_coals;
   cm->n_gas_species = 2 + 10;
 
-  /* Define indexes in wmole and ehgaze.
+  /* Define indexes in wmole and eh_gas_e.
      Remark: these indexes will also be used for the IYMI pointers
      array (property indices).
 
@@ -520,7 +520,7 @@ cs_coal_read_data(void)
     cm->ichx2c[icha] = s_id + n_coals + icha + 1;
   }
 
-  /* Fill ehgaze and wmole from ehcoel and wmolce */
+  /* Fill eh_gas_e and wmole from ehcoel and wmolce */
 
   /* Attention:
      We take by default CH4 for CHX1m
@@ -529,18 +529,18 @@ cs_coal_read_data(void)
   const int ntp = cm->n_tab_points;
 
   for (int it = 0; it < ntp; it++) {
-    cm->ehgaze[it][ichx1] = ehcoel[ncoel*it];
-    cm->ehgaze[it][ichx2] = ehcoel[ncoel*it + 1];
-    cm->ehgaze[it][ico]   = ehcoel[ncoel*it + 2];
-    cm->ehgaze[it][ih2s]  = ehcoel[ncoel*it + 3];
-    cm->ehgaze[it][ihy]   = ehcoel[ncoel*it + 4];
-    cm->ehgaze[it][ihcn]  = ehcoel[ncoel*it + 5];
-    cm->ehgaze[it][inh3]  = ehcoel[ncoel*it + 6];
-    cm->ehgaze[it][io2]   = ehcoel[ncoel*it + 7];
-    cm->ehgaze[it][ico2]  = ehcoel[ncoel*it + 8];
-    cm->ehgaze[it][ih2o]  = ehcoel[ncoel*it + 9];
-    cm->ehgaze[it][iso2]  = ehcoel[ncoel*it + 10];
-    cm->ehgaze[it][in2]   = ehcoel[ncoel*it + 11];
+    cm->eh_gas_e[it][ichx1] = ehcoel[ncoel*it];
+    cm->eh_gas_e[it][ichx2] = ehcoel[ncoel*it + 1];
+    cm->eh_gas_e[it][ico]   = ehcoel[ncoel*it + 2];
+    cm->eh_gas_e[it][ih2s]  = ehcoel[ncoel*it + 3];
+    cm->eh_gas_e[it][ihy]   = ehcoel[ncoel*it + 4];
+    cm->eh_gas_e[it][ihcn]  = ehcoel[ncoel*it + 5];
+    cm->eh_gas_e[it][inh3]  = ehcoel[ncoel*it + 6];
+    cm->eh_gas_e[it][io2]   = ehcoel[ncoel*it + 7];
+    cm->eh_gas_e[it][ico2]  = ehcoel[ncoel*it + 8];
+    cm->eh_gas_e[it][ih2o]  = ehcoel[ncoel*it + 9];
+    cm->eh_gas_e[it][iso2]  = ehcoel[ncoel*it + 10];
+    cm->eh_gas_e[it][in2]   = ehcoel[ncoel*it + 11];
   }
   cm->wmole[ichx1] = wmolce[0];
 
@@ -718,10 +718,10 @@ cs_coal_read_data(void)
 
   for (int icha = 0; icha < n_coals; icha++) {
     int ich_icha = cm->ich[icha]-1;
-    double hco20 = cm->ehgaze[0][ico2] * cm->wmole[ico2];
-    double hh2o0 = cm->ehgaze[0][ih2o] * cm->wmole[ih2o];
-    double ho20  = cm->ehgaze[0][io2] * cm->wmole[io2];
-    double hso20 = cm->ehgaze[0][iso2] * cm->wmole[iso2];
+    double hco20 = cm->eh_gas_e[0][ico2] * cm->wmole[ico2];
+    double hh2o0 = cm->eh_gas_e[0][ih2o] * cm->wmole[ih2o];
+    double ho20  = cm->eh_gas_e[0][io2] * cm->wmole[io2];
+    double hso20 = cm->eh_gas_e[0][iso2] * cm->wmole[iso2];
 
     // Correction of correlation theta - sulfur
 
@@ -778,10 +778,10 @@ cs_coal_read_data(void)
     }
     else {
       for (int it = 0; it < cm->npoc; it++) {
-        double hco20 = cm->ehgaze[it][ico2] * cm->wmole[ico2];
-        double hh2o0 = cm->ehgaze[it][ih2o] * cm->wmole[ih2o];
-        double ho20  = cm->ehgaze[it][io2]  * cm->wmole[io2];
-        double hso20 = cm->ehgaze[it][iso2] * cm->wmole[iso2];
+        double hco20 = cm->eh_gas_e[it][ico2] * cm->wmole[ico2];
+        double hh2o0 = cm->eh_gas_e[it][ih2o] * cm->wmole[ih2o];
+        double ho20  = cm->eh_gas_e[it][io2]  * cm->wmole[io2];
+        double hso20 = cm->eh_gas_e[it][iso2] * cm->wmole[iso2];
 
         // Correction of correlation theta - sulfur
         cm->ehsoli[it][ich_icha]
@@ -850,10 +850,10 @@ cs_coal_read_data(void)
 
      // Consider PCI constant whatever T.
      for (int it = 0; it < cm->npoc; it++) {
-       double hco20 = cm->ehgaze[it][ico2] * cm->wmole[ico2];
-       double hh2o0 = cm->ehgaze[it][ih2o] * cm->wmole[ih2o];
-       double hso20 = cm->ehgaze[it][iso2] * cm->wmole[iso2];
-       double ho20  = cm->ehgaze[it][io2]  * cm->wmole[io2];
+       double hco20 = cm->eh_gas_e[it][ico2] * cm->wmole[ico2];
+       double hh2o0 = cm->eh_gas_e[it][ih2o] * cm->wmole[ih2o];
+       double hso20 = cm->eh_gas_e[it][iso2] * cm->wmole[iso2];
+       double ho20  = cm->eh_gas_e[it][io2]  * cm->wmole[io2];
 
        // Correction of correlation kappa - sulfur.
        cm->ehsoli[it][ick_icha]
@@ -1290,7 +1290,7 @@ cs_coal_read_data(void)
 
   }
 
-  // Compute ehgaze and wmole for species CH(CHX1) and CH(CHX2)
+  // Compute eh_gas_e and wmole for species CH(CHX1) and CH(CHX2)
 
   // CH(CHX1) species
 
@@ -1302,18 +1302,18 @@ cs_coal_read_data(void)
       = cm->wmolat[iatc] + cm->chx1[icha]*cm->wmolat[iath];
     if (cm->iy1ch[icha] == 0 || cm->iy1ch[icha] == 2) {
       for (int it = 0; it < cm->n_tab_points; it++) {
-        cm->ehgaze[it][ichx1c_icha] = cm->ehgaze[it][ichx1];
+        cm->eh_gas_e[it][ichx1c_icha] = cm->eh_gas_e[it][ichx1];
       }
     }
     else {
       // We assume D(HDEV,1,ICHA) = 0
       for (int it = 0; it < cm->n_tab_points; it++) {
         double den1 = cm->a1[icha]*cm->wmole[ichx1c_icha];
-        cm->ehgaze[it][ichx1c_icha]
+        cm->eh_gas_e[it][ichx1c_icha]
           =  (     (                         cm->ehsoli[it][ich_icha]
                      - (1.-cm->y1ch[icha]) * cm->ehsoli[it][ick_icha])
                  * cm->wmols[ich_icha]
-              - cm->b1[icha] * cm->wmole[ico] * cm->ehgaze[it][ico])
+              - cm->b1[icha] * cm->wmole[ico] * cm->eh_gas_e[it][ico])
            / den1;
       }
     }
@@ -1329,18 +1329,18 @@ cs_coal_read_data(void)
       = cm->wmolat[iatc] + cm->chx2[icha]*cm->wmolat[iath];
     if (cm->iy2ch[icha] == 0 || cm->iy2ch[icha] == 2) {
       for (int it = 0; it < cm->n_tab_points; it++) {
-        cm->ehgaze[it][ichx2c_icha] = cm->ehgaze[it][ichx2];
+        cm->eh_gas_e[it][ichx2c_icha] = cm->eh_gas_e[it][ichx2];
       }
     }
     else {
       // We assume D(HDEV,2,ICHA) = 0
       for (int it = 0; it < cm->n_tab_points; it++) {
         double den2 = cm->a2[icha]*cm->wmole[ichx2c_icha];
-        cm->ehgaze[it][ichx2c_icha]
+        cm->eh_gas_e[it][ichx2c_icha]
           =  (     (                         cm->ehsoli[it][ich_icha]
                      - (1.-cm->y2ch[icha]) * cm->ehsoli[it][ick_icha])
                  * cm->wmols[ich_icha]
-              - cm->b2[icha] * cm->wmole[ico] * cm->ehgaze[it][ico])
+              - cm->b2[icha] * cm->wmole[ico] * cm->eh_gas_e[it][ico])
            / den2;
       }
     }
@@ -2220,20 +2220,20 @@ cs_coal_read_data(void)
     //  Enthalpy of volatile matter
 
     double ehvol1
-      =   (  cm->a1[icha]*cm->ehgaze[0][ichx1c_icha]*cm->wmole[ichx1c_icha]
-           + cm->b1[icha]*cm->ehgaze[0][ico]*cm->wmole[ico]
-           + cm->c1[icha]*cm->ehgaze[0][ih2o]*cm->wmole[ih2o]
-           + cm->d1[icha]*cm->ehgaze[0][ih2s]*cm->wmole[ih2s])
+      =   (  cm->a1[icha]*cm->eh_gas_e[0][ichx1c_icha]*cm->wmole[ichx1c_icha]
+           + cm->b1[icha]*cm->eh_gas_e[0][ico]*cm->wmole[ico]
+           + cm->c1[icha]*cm->eh_gas_e[0][ih2o]*cm->wmole[ih2o]
+           + cm->d1[icha]*cm->eh_gas_e[0][ih2s]*cm->wmole[ih2s])
         / (  cm->a1[icha]*cm->wmole[ichx1c_icha]
            + cm->b1[icha]*cm->wmole[ico]
            + cm->c1[icha]*cm->wmole[ih2o]
            + cm->d1[icha]*cm->wmole[ih2s]);
 
     double ehvol2
-      =   (  cm->a2[icha]*cm->ehgaze[0][ichx2c_icha]*cm->wmole[ichx2c_icha]
-           + cm->b2[icha]*cm->ehgaze[0][ico]*cm->wmole[ico]
-           + cm->c2[icha]*cm->ehgaze[0][ih2o]*cm->wmole[ih2o]
-           + cm->d2[icha]*cm->ehgaze[0][ih2s]*cm->wmole[ih2s])
+      =   (  cm->a2[icha]*cm->eh_gas_e[0][ichx2c_icha]*cm->wmole[ichx2c_icha]
+           + cm->b2[icha]*cm->eh_gas_e[0][ico]*cm->wmole[ico]
+           + cm->c2[icha]*cm->eh_gas_e[0][ih2o]*cm->wmole[ih2o]
+           + cm->d2[icha]*cm->eh_gas_e[0][ih2s]*cm->wmole[ih2s])
         / (  cm->a2[icha]*cm->wmole[ichx2c_icha]
            + cm->b2[icha]*cm->wmole[ico]
            + cm->c2[icha]*cm->wmole[ih2o]
