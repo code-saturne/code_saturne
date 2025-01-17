@@ -251,6 +251,9 @@ static cs_cavitation_parameters_t  _cavit_parameters =
   .itscvi =  1
 };
 
+/* Contact angle choice */
+static cs_vof_contact_angle_t _contact_angle_choice = CS_VOF_CONTACT_ANGLE_OFF;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -533,6 +536,7 @@ _smoothe(const cs_mesh_t              *m,
  */
 /*----------------------------------------------------------------------------*/
 
+template <cs_vof_contact_angle_t choice>
 static void
 _contact_angle_correction
 (
@@ -541,6 +545,10 @@ _contact_angle_correction
   const cs_mesh_quantities_t *mq         /*!<[in] pointer to mesh quantities */
 )
 {
+  /* Sanity check */
+  if (choice < CS_VOF_CONTACT_ANGLE_STATIC)
+    return;
+
   /* Get values or local pointers */
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
@@ -585,7 +593,6 @@ _contact_angle_correction
       if ((1. - alpha_g[cell_id]) * alpha_g[cell_id] > 0.01) {
 
         cs_real_t *nw = (cs_real_t *)b_face_u_normal + 3 * face_id;
-        cs_real_t apparent_length = pow(volume[cell_id], cs_math_1ov3) / 2.0;
 
         // Tangential velocity (tangential projection to the wall)
         cs_real_3_t nt;
@@ -593,20 +600,26 @@ _contact_angle_correction
                                         vel[cell_id],
                                         nt);
 
-        cs_real_t utau = cs_math_3_norm(nt);
+        /* Compute theta depending on the chosen model. */
+        cs_real_t theta = theta_micro;
 
-        cs_real_t capillary_number = mu1 * utau / cpro_surftens;
+        if (choice == CS_VOF_CONTACT_ANGLE_DYN) {
+          cs_real_t utau = cs_math_3_norm(nt);
 
-        cs_real_t theta_macro = static_contact_angle
-                              + capillary_number
-                              * log(apparent_length / slip_length);
+          cs_real_t capillary_number = mu1 * utau / cpro_surftens;
 
-        //CK: Always false ?
-        //cs_real_t theta = (static_contact) ? theta_micro : _g_dyn(theta_macro);
-        cs_real_t theta = ( pow(9.0 * theta_macro, cs_math_1ov3)
-                          + 0.0727387 * theta_macro
-                          - 0.0515388 * cs_math_pow2(theta_macro)
-                          + 0.00341336 * cs_math_pow3(theta_macro) ) * pi_inv;
+          cs_real_t apparent_length = pow(volume[cell_id], cs_math_1ov3) / 2.0;
+
+          cs_real_t theta_macro = static_contact_angle
+                                + capillary_number
+                                * log(apparent_length / slip_length);
+
+          //cs_real_t theta = (static_contact) ? theta_micro : _g_dyn(theta_macro);
+          cs_real_t theta = ( pow(9.0 * theta_macro, cs_math_1ov3)
+                            + 0.0727387 * theta_macro
+                            - 0.0515388 * cs_math_pow2(theta_macro)
+                            + 0.00341336 * cs_math_pow3(theta_macro) ) * pi_inv;
+        }
 
         cs_math_3_normalize(nt, nt);
 
@@ -1297,7 +1310,12 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   ctx.wait();
 
   /* Correction of surfxyz_norm at walls (Contact angle) */
-  _contact_angle_correction(surfxyz_norm, m, mq);
+  if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_STATIC) {
+    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_STATIC>(surfxyz_norm, m, mq);
+  }
+  else if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_DYN) {
+    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_DYN>(surfxyz_norm, m, mq);
+  }
 
   /* Curvature Computation */
   cs_real_33_t *gradnxyz;
@@ -2177,6 +2195,24 @@ cs_cavitation_compute_source_term(const cs_real_t  pressure[],
   });
 
   ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the contact angle mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_contact_angle_set
+(
+  const cs_vof_contact_angle_t choice /*!<[in] Contact angle model to set. */
+)
+{
+  /* Sanity check */
+  assert(choice < CS_VOF_N_CONTACT_ANGLE_TYPES);
+
+  _contact_angle_choice = choice;
 }
 
 /*----------------------------------------------------------------------------*/
