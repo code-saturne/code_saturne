@@ -446,19 +446,33 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
 
   assert(face_vel != nullptr);
   assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
-  assert(cs_property_is_uniform(nsp->mass_density));
-  assert(nsp->mass_density->n_definitions == 1);
 
-  const cs_real_t  rho_val = nsp->mass_density->ref_value;
+  switch (nsp->model) {
 
-  /* Define the mass flux */
+    // Models assuming a constant mass density in the fluid part
+  case CS_NAVSTO_MODEL_STOKES:
+  case CS_NAVSTO_MODEL_OSEEN:
+  case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
+    {
+      const cs_real_t  rho_val = nsp->mass_density->ref_value;
 
-# pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
+      /* Define the mass flux */
 
-    const cs_real_t  *fq = cs_quant_get_face_vector_area(f_id, quant);
-    mass_flux[f_id] = rho_val*cs_math_3_dot_product(face_vel + 3*f_id, fq);
+#     pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+      for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
 
+        const cs_real_t  *fq = cs_quant_get_face_vector_area(f_id, quant);
+        mass_flux[f_id] = rho_val*cs_math_3_dot_product(face_vel + 3*f_id, fq);
+
+      }
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Model with a variable mass density not yet implemented.\n",
+              __func__);
+    break;
   }
 }
 
