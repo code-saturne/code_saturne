@@ -71,7 +71,6 @@
 #include "cdo/cs_solidification.h"
 #include "cdo/cs_thermal_system.h"
 #include "cdo/cs_walldistance.h"
-#include "gui/cs_gui.h"
 #include "gwf/cs_gwf.h"
 
 /*----------------------------------------------------------------------------
@@ -812,10 +811,6 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   cs_timer_stats_start(_cdo_ts_id);
 
   cs_domain_init_cdo_structures(domain);
-
-  /* GUI initial conditions - Only HTS for the moment */
-  if (cs_thermal_system_is_activated())
-    cs_gui_initial_conditions();
 
   /* Last user setup stage */
 

@@ -61,6 +61,8 @@
 #include "cdo/cs_thermal_system.h"
 #include "base/cs_time_step.h"
 #include "cdo/cs_walldistance.h"
+#include "gui/cs_gui.h"
+#include "gwf/cs_gwf.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -697,6 +699,11 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
   /* Allocate all fields created during the setup stage */
 
   cs_field_allocate_or_map_all();
+
+  /* GUI initial conditions - Only Conjugate Heat Transfer for the moment */
+
+  if (cs_thermal_system_is_activated())
+    cs_gui_initial_conditions();
 
   /* Set the definition of user-defined properties and/or advection
    * fields (no more fields are created at this stage)

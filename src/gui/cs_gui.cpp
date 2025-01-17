@@ -2866,6 +2866,10 @@ void cs_gui_initial_conditions(void)
         cs_field_t *c_vel = cs_field_by_name_try("velocity");
 
         if (c_vel != nullptr && formula_uvw != NULL) {
+
+          assert(c_vel->val != nullptr); // At this stage, an allocation should
+                                         // have be done
+
           cs_real_t *ini_vals = NULL;
           BFT_MALLOC(ini_vals, c_vel->dim * n_cells, cs_real_t);
 
@@ -2884,6 +2888,7 @@ void cs_gui_initial_conditions(void)
                                     c_vel->val);
 
           BFT_FREE(ini_vals);
+
         }
 
         /* Void fraction initialization for VoF approach */
