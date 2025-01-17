@@ -308,10 +308,10 @@ cs_combustion_read_data(void)
 
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
-  const int ngazem = CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS;
-  const int ngazgm = CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES;
+  const int ngasem = CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS;
+  const int ngasgm = CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES;
   const int npot = CS_COMBUSTION_GAS_MAX_TABULATION_POINTS;
-  const int nrgazm = CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS;
+  const int nrgasm = CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS;
   int cm_type = (int)cm->type;
 
   // rank of fuel in the r-th reaction
@@ -324,9 +324,9 @@ cs_combustion_read_data(void)
   int    iereac[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
   double wmolce[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
 
-  double cpgaze[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
+  double cpgase[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
                [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
-  double ehgaze[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
+  double ehgase[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
                [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
 
   // Stoichiometry in reaction global species.  Negative for the reactants,
@@ -345,26 +345,26 @@ cs_combustion_read_data(void)
   // but make for nicer printing under a debugger.
 
   for (int it = 0; it < npot; it++) {
-    for (int ige = 0; ige < ngazem; ige++) {
-      cpgaze[it][ige] = 0.;
-      ehgaze[it][ige] = 0.;
+    for (int ige = 0; ige < ngasem; ige++) {
+      cpgase[it][ige] = 0.;
+      ehgase[it][ige] = 0.;
     }
   }
 
-  for (int ige = 0; ige < ngazem; ige++) {
+  for (int ige = 0; ige < ngasem; ige++) {
     iereac[ige] = 0;
     wmolce[ige] = 0;
   }
 
-  for (int ir = 0; ir < nrgazm; ir++) {
-    for (int igg = 0; igg < ngazgm; igg++)
+  for (int ir = 0; ir < nrgasm; ir++) {
+    for (int igg = 0; igg < ngasgm; igg++)
       stoeg[ir][igg] = 0.;
     igfuel[ir] = 0;
     igoxy[ir] = 0;
     igprod[ir] = 0;
   }
 
-  for (int igg = 0; igg < ngazgm; igg++) {
+  for (int igg = 0; igg < ngasgm; igg++) {
     nreact[igg] = 0;
   }
 
@@ -505,7 +505,7 @@ cs_combustion_read_data(void)
     // Molar mass of atomic species
     // Composition of current species relative to elementary species
 
-    double atgaze[CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES]
+    double atgase[CS_COMBUSTION_GAS_MAX_ATOMIC_SPECIES]
                  [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
 
     for (int iat = 0; iat < cm->n_atomic_species; iat++) {
@@ -522,7 +522,7 @@ cs_combustion_read_data(void)
       for (int ige = 0; ige < cm->n_gas_el_comp; ige++) {
         tok = _extract_token(path, "composition",
                              ss, last, line_num, ige+1);
-        ns = sscanf(tok, "%lg", &(atgaze[iat][ige]));
+        ns = sscanf(tok, "%lg", &(atgase[iat][ige]));
         if (ns < 1)
           bft_error
             (__FILE__, __LINE__, 0,
@@ -763,7 +763,7 @@ cs_combustion_read_data(void)
     for (int ige = 0; ige < cm->n_gas_el_comp; ige++) {
       cm->wmole[ige] = 0.;
       for (int iat = 0; iat < cm->n_atomic_species; iat++)
-        cm->wmole[ige] += atgaze[iat][ige]*cm->wmolat[iat];
+        cm->wmole[ige] += atgase[iat][ige]*cm->wmolat[iat];
     }
 
     // Compute compostion of products and stoichiometric coefficients
@@ -792,10 +792,10 @@ cs_combustion_read_data(void)
       double xx[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
 
       const int nato = cm->n_atomic_species;
-      const int ngaze = cm->n_gas_el_comp;
-      const int ngazg = cm->n_gas_species;
+      const int ngase = cm->n_gas_el_comp;
+      const int n_gas_species = cm->n_gas_species;
 
-      for (int ige = 0; ige < ngaze; ige++) {
+      for (int ige = 0; ige < ngase; ige++) {
         for (int iat = 0; iat < nato; iat++)
           aa[ige*nato + iat] = 0.;
         xx[ige] = 0.;
@@ -805,16 +805,16 @@ cs_combustion_read_data(void)
       }
 
       for (int iat = 0; iat < nato; iat++) {
-        for (int ige = 0; ige < ngaze; ige++) {
+        for (int ige = 0; ige < ngase; ige++) {
           // fuel
-          bb[iat] = bb[iat] + atgaze[iat][ige]*cm->compog[igf][ige];
+          bb[iat] = bb[iat] + atgase[iat][ige]*cm->compog[igf][ige];
           // oxydizer
-          aa[iereac[igo]*nato+iat] -= atgaze[iat][ige]*cm->compog[igo][ige];
+          aa[iereac[igo]*nato+iat] -= atgase[iat][ige]*cm->compog[igo][ige];
           // products
-          bb[iat] -= atgaze[iat][ige]*cm->compog[igp][ige];
+          bb[iat] -= atgase[iat][ige]*cm->compog[igp][ige];
           if ((  ige != iereac[igf] && ige != iereac[igo])
               && fabs(cm->compog[igp][ige]) <= 0.) {
-            aa[ige*nato + iat] += atgaze[iat][ige];
+            aa[ige*nato + iat] += atgase[iat][ige];
           }
         }
       }
@@ -826,10 +826,10 @@ cs_combustion_read_data(void)
       nreact[igo] = -xx[iereac[igo]];
       nreact[igp] = 1.;
 
-      for (int igg = 0; igg < ngazg; igg++) {
+      for (int igg = 0; igg < n_gas_species; igg++) {
         // reactive global species are already known
         if (igg != igf && igg != igo) {
-          for (int ige = 0; ige < ngaze; ige++) {
+          for (int ige = 0; ige < ngase; ige++) {
             // so are reactive elementary species
             if (ige != iereac[igf] && ige != iereac[igo]
                 && fabs(cm->compog[igg][ige]) <= 0.) {
@@ -840,10 +840,10 @@ cs_combustion_read_data(void)
       }
 
       // Stoichiometry in global reaction species
-      for (int ir= 0; ir < ngazg; ir++) {
-        for (int igg = 0; igg < ngazg; igg++) {
+      for (int ir= 0; ir < n_gas_species; ir++) {
+        for (int igg = 0; igg < n_gas_species; igg++) {
           stoeg[ir][igg] = 0.;
-          for (int ige = 0; ige < ngaze; ige++) {
+          for (int ige = 0; ige < ngase; ige++) {
             stoeg[ir][igg] += cm->compog[igg][ige]*nreact[igg];
           }
         }
@@ -925,7 +925,7 @@ cs_combustion_read_data(void)
       ncoel = cm->n_gas_el_comp - 1;
       icoel = 1;
       for (int it = 0; it < npo; it++)
-        ehgaze[it][0] = 0.;
+        ehgase[it][0] = 0.;
       // Fuel must be placed in first position in the elementary species.
       if (fabs(cm->compog[igfuel[0]][0] - 1.) > 1e-16) {
         bft_error
@@ -941,8 +941,8 @@ cs_combustion_read_data(void)
       wmolce[ige] = cm->wmole[ige];
 
     cs_combustion_enthalpy_and_cp_from_janaf
-      (ncoel, ngazem, npo, &(nomcoe[icoel]),
-       &(ehgaze[0][icoel]), &(cpgaze[0][icoel]), &(wmolce[icoel]),
+      (ncoel, ngasem, npo, &(nomcoe[icoel]),
+       &(ehgase[0][icoel]), &(cpgase[0][icoel]), &(wmolce[icoel]),
        cm->th);
 
     // Masses of global species (becoming molar masses below).
@@ -970,16 +970,16 @@ cs_combustion_read_data(void)
 
     for (int igg = icoel; igg < cm->n_gas_species; igg++) {
       for (int it = 0; it < npo; it++) {
-        cm->ehgazg[it][igg] = 0.;
-        cm->cpgazg[it][igg] = 0.;
+        cm->eh_gas_g[it][igg] = 0.;
+        cm->cp_gas_g[it][igg] = 0.;
         for (int ige = 0; ige < cm->n_gas_el_comp; ige++) {
-          cm->ehgazg[it][igg]
-            += cm->compog[igg][ige]*cm->wmole[ige]*ehgaze[it][ige];
-          cm->cpgazg[it][igg]
-            += cm->compog[igg][ige]*cm->wmole[ige]*cpgaze[it][ige];
+          cm->eh_gas_g[it][igg]
+            += cm->compog[igg][ige]*cm->wmole[ige]*ehgase[it][ige];
+          cm->cp_gas_g[it][igg]
+            += cm->compog[igg][ige]*cm->wmole[ige]*cpgase[it][ige];
         }
-        cm->ehgazg[it][igg] /= cm->wmolg[igg];
-        cm->cpgazg[it][igg] /= cm->wmolg[igg];
+        cm->eh_gas_g[it][igg] /= cm->wmolg[igg];
+        cm->cp_gas_g[it][igg] /= cm->wmolg[igg];
       }
     }
 
@@ -1005,11 +1005,12 @@ cs_combustion_read_data(void)
 
     if (cm->pcigas > 0) {
       for (int it = 0; it < npo; it++) {
-        cm->ehgazg[it][0] = 0.;
+        cm->eh_gas_g[it][0] = 0.;
         for (int igg = icoel; igg < cm->n_gas_species; igg++)
-          cm->ehgazg[it][0] += stoeg[0][igg]*cm->wmolg[igg]*cm->ehgazg[it][igg];
-        cm->ehgazg[it][0] =   cm->pcigas
-                            - cm->ehgazg[it][0]/(cm->wmolg[0]*stoeg[0][0]);
+          cm->eh_gas_g[it][0] += stoeg[0][igg]*cm->wmolg[igg]
+                                              *cm->eh_gas_g[it][igg];
+        cm->eh_gas_g[it][0] =   cm->pcigas
+                              - cm->eh_gas_g[it][0]/(cm->wmolg[0]*stoeg[0][0]);
       }
     }
 
@@ -1049,7 +1050,7 @@ cs_combustion_read_data(void)
         double balance = 0.;
         for (int igg = 0; igg < cm->n_gas_species; igg++) {
           for (int ige = 0; ige < cm->n_gas_el_comp; ige++)
-            balance += stoeg[ir][igg]*cm->compog[igg][ige]*atgaze[iat][ige];
+            balance += stoeg[ir][igg]*cm->compog[igg][ige]*atgase[iat][ige];
         }
         if (fabs(balance) > epsi) {
           bft_error
@@ -1113,7 +1114,7 @@ cs_combustion_read_data(void)
       for (int j = 0; j < 3; j++) {
         tok = _extract_token(path, "enthalpy",
                              ss, last, line_num, j+1);
-        ns = sscanf(tok, "%lg", &(cm->ehgazg[ip][j]));
+        ns = sscanf(tok, "%lg", &(cm->eh_gas_g[ip][j]));
         if (ns < 1)
           bft_error
             (__FILE__, __LINE__, 0,
@@ -1213,7 +1214,7 @@ cs_combustion_read_data(void)
     cm->pcigas = 0.;
 
     cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
-    for (int i = 0; i < ngazem; i++)
+    for (int i = 0; i < ngasem; i++)
       coefg[0] = 0;
 
     for (int ir = 0; ir < cm->n_reactions; ir++) {
@@ -1224,10 +1225,10 @@ cs_combustion_read_data(void)
         coefg[1]  = 0.0;
         coefg[2]  = 0.0;
         coefg[igg] = 1.0;
-        cs_real_t tgaz = 300.0;
-        cs_real_t efgaz = cs_gas_combustion_t_to_h(coefg, tgaz);
+        cs_real_t tgas = 300.0;
+        cs_real_t efgas = cs_gas_combustion_t_to_h(coefg, tgas);
 
-        cm->pcigas += stoeg[ir][igg]*cm->wmolg[igg]*efgaz;
+        cm->pcigas += stoeg[ir][igg]*cm->wmolg[igg]*efgas;
       }
 
       // PCI dimension is J/kg of combustible

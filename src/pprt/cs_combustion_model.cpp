@@ -117,16 +117,12 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **iic,
                          int     **iico2,
                          int     **iio2,
-                         int     **npo,
                          double  **wmole,
                          double  **wmolg,
                          double  **wmolat,
                          double  **xco2,
                          double  **xh2o,
                          double  **fs,
-                         double  **th,
-                         double  **cpgazg,
-                         double  **ehgazg,
                          double  **ckabsg);
 
 void
@@ -199,23 +195,15 @@ cs_f_ppthch_get_pointers(int     **ngaze,
                          int     **iic,
                          int     **iico2,
                          int     **iio2,
-                         int     **npo,
                          double  **wmole,
                          double  **wmolg,
                          double  **wmolat,
                          double  **xco2,
                          double  **xh2o,
                          double  **fs,
-                         double  **th,
-                         double  **cpgazg,
-                         double  **ehgazg,
                          double  **ckabsg)
 {
-  *npo = nullptr;
   *wmolg  = nullptr;
-  *th = nullptr;
-  *cpgazg = nullptr;
-  *ehgazg = nullptr;
   *ckabsg = nullptr;
 
   if (cs_glob_combustion_gas_model != nullptr) {
@@ -226,7 +214,6 @@ cs_f_ppthch_get_pointers(int     **ngaze,
     *ngazg  = &(cm->n_gas_species);
     *nato   = &(cm->n_atomic_species);
     *nrgaz  = &(cm->n_reactions);
-    *npo    = &(cm->n_tab_points);
     *iic    = &(cm->iic);
     *iio2   = &(cm->iio2);
     *iico2  = &(cm->iico2);
@@ -236,9 +223,6 @@ cs_f_ppthch_get_pointers(int     **ngaze,
     *xco2   = &(cm->xco2);
     *xh2o   = &(cm->xh2o);
     *fs     = cm->fs;
-    *th     = cm->th;
-    *cpgazg = (double *)cm->cpgazg;
-    *ehgazg = (double *)cm->ehgazg;
     *ckabsg = (double *)cm->ckabsg;
 
   }
@@ -351,7 +335,7 @@ cs_f_coincl_get_pointers(int     **model_type,
 
     *model_type = (int *)&(cm->type);
     *isoot  = &(cm->isoot);
-    *ngazfl = &(cm->ngazfl);
+    *ngazfl = &(cm->n_gas_fl);
     *nki = &(cm->nki);
     *nxr = &(cm->nxr);
     *nzm = &(cm->nzm);

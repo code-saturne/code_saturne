@@ -62,9 +62,6 @@ module ppthch
   integer    iatc, iath, iato, iatn , iats
   parameter( iatc = 1, iath = 2, iato = 3, iatn = 4 , iats = 5 )
 
-  !> number of tabulation points
-  integer, pointer, save :: npo
-
   !> number of elementary gas components
   integer, pointer, save ::  ngaze
   !> number of global species
@@ -81,17 +78,6 @@ module ppthch
   integer, pointer, save ::  iico2
   !> rank of C in gas composition
   integer, pointer, save ::  iic
-
-  !> temperature (in K)
-  real(c_double), pointer, save :: th(:)
-
-  !> massic enthalpy (J/kg) of the i-th global secies
-  !> at temperature  th(j)
-  real(c_double), pointer, save ::  ehgazg(:,:)
-
-  !> cpgazg(ij) is the massic calorific capacity (J/kg/K) of the i-th global secies
-  !> at temperature  th(j)
-  real(c_double), pointer, save ::  cpgazg(:,:)
 
   !> molar mass of an elementary gas component
   real(c_double), pointer, save ::  wmole(:)
@@ -132,17 +118,17 @@ module ppthch
 
     subroutine cs_f_ppthch_get_pointers(                                       &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
-         p_iic, p_iico2, p_iio2, p_npo,                                        &
+         p_iic, p_iico2, p_iio2,                                               &
          p_wmole, p_wmolg, p_wmolat,                                           &
-         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg, p_ehgazg, p_ckabsg)             &
+         p_xco2, p_xh2o, p_fs, p_ckabsg)                                       &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) ::                                              &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
-         p_iic, p_iico2, p_iio2, p_npo,                                        &
+         p_iic, p_iico2, p_iio2,                                               &
          p_wmole, p_wmolg, p_wmolat,                                           &
-         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg, p_ehgazg, p_ckabsg
+         p_xco2, p_xh2o, p_fs, p_ckabsg
     end subroutine cs_f_ppthch_get_pointers
 
     !---------------------------------------------------------------------------
@@ -172,15 +158,15 @@ contains
 
     type(c_ptr) ::                                                             &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
-         p_iic, p_iico2, p_iio2, p_npo,                                        &
+         p_iic, p_iico2, p_iio2,                                               &
          p_wmole,p_wmolg, p_wmolat,                                            &
-         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg, p_ehgazg, p_ckabsg
+         p_xco2, p_xh2o, p_fs, p_ckabsg
 
     call cs_f_ppthch_get_pointers(                                             &
          p_ngaze, p_ngazg, p_nato, p_nrgaz,                                    &
-         p_iic, p_iico2, p_iio2, p_npo,                                        &
+         p_iic, p_iico2, p_iio2,                                               &
          p_wmole, p_wmolg, p_wmolat,                                           &
-         p_xco2, p_xh2o, p_fs, p_th, p_cpgazg, p_ehgazg, p_ckabsg)
+         p_xco2, p_xh2o, p_fs, p_ckabsg)
 
     call c_f_pointer(p_ngaze, ngaze)
     call c_f_pointer(p_ngazg, ngazg)
@@ -195,10 +181,6 @@ contains
     call c_f_pointer(p_xco2, xco2)
     call c_f_pointer(p_xh2o, xh2o)
     call c_f_pointer(p_fs, fs, [nrgazm])
-    call c_f_pointer(p_th, th, [npot])
-    call c_f_pointer(p_npo, npo)
-    call c_f_pointer(p_cpgazg, cpgazg, [ngazgm, npot])
-    call c_f_pointer(p_ehgazg, ehgazg, [ngazgm, npot])
     call c_f_pointer(p_ckabsg, ckabsg, [ngazgm])
 
   end subroutine thch_models_init

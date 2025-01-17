@@ -249,14 +249,14 @@ typedef struct {
   /*! mixing rate at the stoichiometry */
   double fs[CS_COMBUSTION_GAS_MAX_GLOBAL_REACTIONS];
 
-  /*! cpgazg[j][i] is the massic calorific capacity
+  /*! cpgasg[j][i] is the massic calorific capacity
       (J/kg/K) of the i-th global species at temperature */
-  double cpgazg[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
-               [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+  double cp_gas_g[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
+                 [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
 
   /*! massic enthalpy (J/kg) of the i-th global secies at temperature  th(j) */
-  double ehgazg[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
-               [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+  double eh_gas_g[CS_COMBUSTION_GAS_MAX_TABULATION_POINTS]
+                 [CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
 
   /*! absorption coefficient of global species */
   double  ckabsg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
@@ -290,7 +290,7 @@ typedef struct {
 
   /*! Steady flamelet model parameters */
 
-  int ngazfl;    /*!< number of species in flamelet library
+  int n_gas_fl;  /*!< number of species in flamelet library
                       YFUE YOXY YCO2 YH2O YCO YH2 */
   int nki;       /*!< number of flamelets (strain rate) */
   int nxr;       /*!< discretization of enthalpy defect */

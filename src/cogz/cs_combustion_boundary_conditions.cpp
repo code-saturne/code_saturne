@@ -413,9 +413,9 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
     if (ci->ientgf == 1) {
       coefg[0] = ci->fment;
       coefg[1] = 1. - ci->fment;
-      cs_real_t tgazf = ci->tkent;
-      cs_real_t hgazf = cs_gas_combustion_t_to_h(coefg, tgazf);
-      h_in = hgazf;
+      cs_real_t tgasf = ci->tkent;
+      cs_real_t hgasf = cs_gas_combustion_t_to_h(coefg, tgasf);
+      h_in = hgasf;
       ygfm_in = 1.;
     }
 
@@ -425,9 +425,9 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
       coefg[0] = fmax(0, (ci->fment-fs_1)/(1.-fs_1));
       coefg[2] = (ci->fment - coefg[0])/fs_1;
       coefg[1] = 1.0 - coefg[0] - coefg[2];
-      cs_real_t tgazb = ci->tkent;
-      cs_real_t hgazb = cs_gas_combustion_t_to_h(coefg, tgazb);
-      h_in = hgazb;
+      cs_real_t tgasb = ci->tkent;
+      cs_real_t hgasb = cs_gas_combustion_t_to_h(coefg, tgasb);
+      h_in = hgasb;
       ygfm_in = 0.;
     }
 
@@ -538,17 +538,17 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
     if (ci->ientgf == 1) {       /* Fresh gas inlet */
       coefg[0] = ci->fment;
       coefg[1] = 1. - ci->fment;
-      cs_real_t tgazf = ci->tkent;
-      cs_real_t hgazf = cs_gas_combustion_t_to_h(coefg, tgazf);
-      h_in = hgazf;
+      cs_real_t tgasf = ci->tkent;
+      cs_real_t hgasf = cs_gas_combustion_t_to_h(coefg, tgasf);
+      h_in = hgasf;
       yfm_in = ci->fment;
     }
     else if (ci->ientgb == 1) {  /* Burned gas inlet */
       coefg[0] = ci->fment;
       coefg[1] = 1. - ci->fment;
-      cs_real_t tgazb = ci->tkent;
-      cs_real_t hgazb = cs_gas_combustion_t_to_h(coefg, tgazb);
-      h_in = hgazb;
+      cs_real_t tgasb = ci->tkent;
+      cs_real_t hgasb = cs_gas_combustion_t_to_h(coefg, tgasb);
+      h_in = hgasb;
       yfm_in = 0;
     }
 

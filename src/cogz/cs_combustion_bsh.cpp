@@ -105,7 +105,7 @@ _compute_temperature
   cs_real_t som1, som2, dvar, var1, var;
 
   cs_combustion_gas_model_t *cm    = cs_glob_combustion_gas_model;
-  const cs_lnum_t            ngaze = cm->n_gas_el_comp;
+  const cs_lnum_t            ngase = cm->n_gas_el_comp;
 
   cs_real_t deltat = 1.0e-7;
 
@@ -126,7 +126,7 @@ _compute_temperature
         if (var1 > 1000.0)
           icp = 0;
 
-        for (ie = 0; ie < ngaze; ie++) {
+        for (ie = 0; ie < ngase; ie++) {
           som1 += coeff_therm[5][icp][ie] * yspece[iz][ie];
           for (k = 0; k < 5; k++) {
             som1 += coeff_therm[k][icp][ie] / (k + 1) * pow(var1, k + 1)
@@ -163,14 +163,14 @@ _compute_density
   cs_real_t som1, p0;
 
   cs_combustion_gas_model_t *cm    = cs_glob_combustion_gas_model;
-  const cs_lnum_t            ngaze = cm->n_gas_el_comp;
+  const cs_lnum_t            ngase = cm->n_gas_el_comp;
 
   p0 = 101325.0;
 
   for (iz = 0; iz < N_Z; iz++) {
     for (ixr = 0; ixr < N_XR; ixr++) {
       som1 = 0.0;
-      for (ie = 0; ie < ngaze; ie++) {
+      for (ie = 0; ie < ngase; ie++) {
         som1 += yspece[iz][ie] / cm->wmole[ie];
       }
       rho[iz][ixr] = p0 * (1.0 / (8.31433 * t[iz][ixr] * som1));
@@ -538,7 +538,7 @@ cs_burke_schumann(void)
   cs_real_t       z[N_Z], dz_left, dz_right;
 
   // Space discretization of the defect enthalpy
-  const int ngazem = CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS;
+  const int ngasem = CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS;
   const cs_real_t xr1[N_XR] = {0.0, 0.2, 0.4, 0.6, 0.8};
   const cs_real_t q = 0.5;
 
@@ -599,7 +599,7 @@ cs_burke_schumann(void)
 
   // Calculation of the enthalpy
 
-  for (int ii = 0; ii < ngazem; ii++)
+  for (int ii = 0; ii < ngasem; ii++)
     yspec[ii] = 0;
 
   yspec[0]   = yspece[N_Z - 1][0];
@@ -758,7 +758,7 @@ cs_compute_burke_schumann_enthalpy
 )
 {
   cs_combustion_gas_model_t *cm    = cs_glob_combustion_gas_model;
-  const int                  ngaze = cm->n_gas_el_comp;
+  const int                  ngase = cm->n_gas_el_comp;
 
   // Determination of the set of coefficients used
   int icp = 1;
@@ -767,7 +767,7 @@ cs_compute_burke_schumann_enthalpy
 
   cs_real_t h = 0.0;
 
-  for (int ne = 0; ne < ngaze; ne++) {
+  for (int ne = 0; ne < ngase; ne++) {
     cs_real_t he = coeff_therm[5][icp][ne];
     for (int i = 0; i < 5; i++) {
       he += coeff_therm[i][icp][ne] / (i + 1) * pow(t, i + 1);

@@ -445,7 +445,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   for (int i = 0; i < CS_COMBUSTION_GAS_MAX_TABULATION_POINTS; i++) {
     for (int j = 0; j < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; j++) {
-      cm->cpgazg[i][j] = 0;
+      cm->cp_gas_g[i][j] = 0;
     }
   }
 
@@ -481,7 +481,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   /*! Steady flamelet model */
 
-  cm->ngazfl = -1;
+  cm->n_gas_fl = -1;
   cm->nki = -1;
   cm->nxr = -1;
   cm->nzm = -1;

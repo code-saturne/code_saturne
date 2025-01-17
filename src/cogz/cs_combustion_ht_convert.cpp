@@ -117,22 +117,22 @@ cs_combustion_h_to_t(const cs_real_t   x_sp[],
                      cs_real_t         h)
 {
   const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-  const int ngazg = cm->n_gas_species;
+  const int n_gas_species = cm->n_gas_species;
   const int n_tab_m1 = cm->n_tab_points - 1;
   const double *th = cm->th;
 
-  const double *ehgazg1 = cm->ehgazg[n_tab_m1];
+  const double *eh_gas_g_1 = cm->eh_gas_g[n_tab_m1];
   double eh1 = 0.;
-  for (int sp_id = 0; sp_id < ngazg; sp_id++)
-    eh1 += x_sp[sp_id]*ehgazg1[sp_id];
+  for (int sp_id = 0; sp_id < n_gas_species; sp_id++)
+    eh1 += x_sp[sp_id]*eh_gas_g_1[sp_id];
 
   if (h >= eh1)
     return th[n_tab_m1];
 
-  const double *ehgazg0 = cm->ehgazg[0];
+  const double *eh_gas_g_0 = cm->eh_gas_g[0];
   double eh0 = 0.;
-  for (int sp_id = 0; sp_id < ngazg; sp_id++)
-    eh0 += x_sp[sp_id]*ehgazg0[sp_id];
+  for (int sp_id = 0; sp_id < n_gas_species; sp_id++)
+    eh0 += x_sp[sp_id]*eh_gas_g_0[sp_id];
 
   if (h <= eh0)
     return th[0];
@@ -140,11 +140,11 @@ cs_combustion_h_to_t(const cs_real_t   x_sp[],
   for (int it = 0; it < n_tab_m1; it++) {
     eh0 = 0.;
     eh1 = 0.;
-    ehgazg0 = cm->ehgazg[it];
-    ehgazg1 = cm->ehgazg[it+1];
-    for (int sp_id = 0; sp_id < ngazg; sp_id++) {
-      eh0 += x_sp[sp_id]*ehgazg0[sp_id];
-      eh1 += x_sp[sp_id]*ehgazg1[sp_id];
+    eh_gas_g_0 = cm->eh_gas_g[it];
+    eh_gas_g_1 = cm->eh_gas_g[it+1];
+    for (int sp_id = 0; sp_id < n_gas_species; sp_id++) {
+      eh0 += x_sp[sp_id]*eh_gas_g_0[sp_id];
+      eh1 += x_sp[sp_id]*eh_gas_g_1[sp_id];
     }
     if (h >= eh0 && h <= eh1)
       return (th[it] + (h-eh0)*(th[it+1]-th[it])/(eh1-eh0));
@@ -170,23 +170,23 @@ cs_combustion_t_to_h(const cs_real_t   x_sp[],
                      cs_real_t         t)
 {
   const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-  const int ngazg = cm->n_gas_species;
+  const int n_gas_species = cm->n_gas_species;
   const int n_tab_m1 = cm->n_tab_points - 1;
   const double *th = cm->th;
 
   double h = 0.;
 
-  const double *ehgazg1 = cm->ehgazg[n_tab_m1];
+  const double *eh_gas_g_1 = cm->eh_gas_g[n_tab_m1];
   if (t >= th[n_tab_m1]) {
-    for (int sp_id = 0; sp_id < ngazg; sp_id++)
-      h += x_sp[sp_id]*ehgazg1[sp_id];
+    for (int sp_id = 0; sp_id < n_gas_species; sp_id++)
+      h += x_sp[sp_id]*eh_gas_g_1[sp_id];
     return h;
   }
 
-  const double *ehgazg0 = cm->ehgazg[0];
+  const double *eh_gas_g_0 = cm->eh_gas_g[0];
   if (t <= th[0]) {
-    for (int sp_id = 0; sp_id < ngazg; sp_id++)
-      h += x_sp[sp_id]*ehgazg0[sp_id];
+    for (int sp_id = 0; sp_id < n_gas_species; sp_id++)
+      h += x_sp[sp_id]*eh_gas_g_0[sp_id];
     return h;
   }
 
@@ -194,11 +194,11 @@ cs_combustion_t_to_h(const cs_real_t   x_sp[],
     if (t < th[it+1]) {
       double eh0 = 0.;
       double eh1 = 0.;
-      ehgazg0 = cm->ehgazg[it];
-      ehgazg1 = cm->ehgazg[it+1];
-      for (int sp_id = 0; sp_id < ngazg; sp_id++) {
-        eh0 += x_sp[sp_id]*ehgazg0[sp_id];
-        eh1 += x_sp[sp_id]*ehgazg1[sp_id];
+      eh_gas_g_0 = cm->eh_gas_g[it];
+      eh_gas_g_1 = cm->eh_gas_g[it+1];
+      for (int sp_id = 0; sp_id < n_gas_species; sp_id++) {
+        eh0 += x_sp[sp_id]*eh_gas_g_0[sp_id];
+        eh1 += x_sp[sp_id]*eh_gas_g_1[sp_id];
       }
       return (eh0 + (eh1-eh0)*(t-th[it])/(th[it+1]-th[it]));
     }
