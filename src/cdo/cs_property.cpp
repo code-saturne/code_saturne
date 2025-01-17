@@ -435,6 +435,82 @@ _find_or_add_b_def(cs_property_t *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if a set of definition associated to a property is such that
+ *        the definition is uniform or is steady. This can be the case with
+ *        multiple definition which are redundant because of the GUI and the
+ *        user-defined settings.
+ *
+ * \param[in, out] pty  property to deal with
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_pty_state_flag(cs_property_t *pty)
+{
+  assert(pty != nullptr);
+
+  if (pty->n_definitions == 0) {
+
+    // An automatic definition to a reference value is used
+
+    pty->state_flag |= CS_FLAG_STATE_STEADY | CS_FLAG_STATE_UNIFORM;
+
+  }
+  else if (pty->n_definitions == 1) {
+
+    cs_xdef_t *def = pty->defs[0];
+
+    if (cs_flag_test(def->state, CS_FLAG_STATE_UNIFORM))
+      pty->state_flag |= CS_FLAG_STATE_UNIFORM;
+    if (cs_flag_test(def->state, CS_FLAG_STATE_STEADY))
+      pty->state_flag |= CS_FLAG_STATE_STEADY;
+
+  }
+  else {
+
+    bool is_uniform = true;
+    bool is_steady = true;
+    bool unset = true;
+    double _value = FLT_MAX, eps = 100*FLT_MIN;
+
+    for (int id = 0; id < pty->n_definitions; id++) {
+
+      cs_xdef_t *def = pty->defs[id];
+
+      if (cs_flag_test(def->state, CS_FLAG_STATE_UNIFORM)) {
+
+        if (cs_property_is_isotropic(pty) && def->type == CS_XDEF_BY_VALUE) {
+
+          if (unset)
+            _value = cs_xdef_get_scalar_value(def), unset = false;
+          else
+            if (fabs(_value - cs_xdef_get_scalar_value(def)) > eps)
+              is_uniform = false;
+
+        }
+        else
+          is_uniform = false;   // Multiple definitions and not isotropic -->
+                                // switch to non-uniform
+
+      }
+      else
+        is_uniform = false;
+
+      if (cs_flag_test(def->state, CS_FLAG_STATE_STEADY) == false)
+        is_steady = false;
+
+    } // Loop on definitions
+
+    if (is_uniform)
+      pty->state_flag |= CS_FLAG_STATE_UNIFORM;
+    if (is_steady)
+      pty->state_flag |= CS_FLAG_STATE_STEADY;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Check if the settings are valid and then invert a tensor
  *
  * \param[in, out]  tens           values of the tensor
@@ -1459,8 +1535,7 @@ cs_property_finalize_setup(void)
     //   1) steady or not definition
     //   2) uniform or not definition
 
-    bool is_steady = true;
-    bool is_uniform = true;
+    _set_pty_state_flag(pty);
 
     /* Volume definitions */
     /* ------------------ */
@@ -1479,12 +1554,6 @@ cs_property_finalize_setup(void)
 
         cs_xdef_t  *def = pty->defs[id];
         assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-
-        if (cs_flag_test(def->state, CS_FLAG_STATE_UNIFORM) == false)
-          is_uniform = false;
-
-        if (cs_flag_test(def->state, CS_FLAG_STATE_STEADY) == false)
-          is_steady = false;
 
         const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
         assert(z != nullptr);
@@ -1553,26 +1622,6 @@ cs_property_finalize_setup(void)
                     " value.\n", pty->name);
 
     }
-    else {
-
-      assert(pty->n_definitions == 1);
-
-      cs_xdef_t  *def = pty->defs[0];
-
-      if (cs_flag_test(def->state, CS_FLAG_STATE_UNIFORM) == false)
-        is_uniform = false;
-
-      if (cs_flag_test(def->state, CS_FLAG_STATE_STEADY) == false)
-        is_steady = false;
-
-    }
-
-    // Define the state flag at the level of a property
-
-    if (is_steady)
-      pty->state_flag |= CS_FLAG_STATE_STEADY;
-    if (is_uniform)
-      pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
     /* Boundary definitions */
     /* -------------------- */
