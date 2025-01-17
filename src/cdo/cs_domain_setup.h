@@ -117,64 +117,64 @@ cs_domain_def_time_step_by_value(cs_domain_t *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  First setup stage of the cs_domain_t structure
- *         Define extra domain boundaries
- *         Setup predefined equations
- *         Create fields (already done in the FV part)
- *         Define cs_sles_t structures for variable fields
+ * \brief After having read the mesh and the first setup stage build the
+ *        connectivities and mesh quantities related to CDO/HHO schemes
  *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out] domain  pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_initialize_setup(cs_domain_t                 *domain);
+cs_domain_setup_init_cdo_structures(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  After having read the mesh and the first setup stage build the
- *         connectivities and mesh quantities related to CDO/HHO schemes
+ * \brief First setup stage of the cs_domain_t structure
+ *        Define extra domain boundaries
+ *        Setup predefined equations
+ *        Create fields (already done in the FV part)
+ *        Define cs_sles_t structures for variable fields
  *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out] domain  pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_init_cdo_structures(cs_domain_t              *domain);
+cs_domain_setup_initialize(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last user setup stage of the cs_domain_t structure
+ * \brief Last GUI and then user setup stage of the cs_domain_t structure
  *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out] domain  pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_finalize_user_setup(cs_domain_t         *domain);
+cs_domain_setup_finalize(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last setup stage of the cs_domain_t structure
+ * \brief Last user setup stage of the cs_domain_t structure
  *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out] domain  pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_finalize_module_setup(cs_domain_t         *domain);
+cs_domain_setup_finalize_module(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize systems of equations and their related field values
- *         according to the user settings
+ * \brief Initialize systems of equations and their related field/properties
+ *        values according to the user settings
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_initialize_systems(cs_domain_t   *domain);
+cs_domain_setup_init_state(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

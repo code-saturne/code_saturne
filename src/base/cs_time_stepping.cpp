@@ -465,7 +465,7 @@ cs_time_stepping(void)
 
   if (cs_glob_param_cdo_mode >= CS_PARAM_CDO_MODE_OFF) {  // CDO mode
     assert(cs_glob_domain != nullptr);
-    cs_domain_initialize_systems(cs_glob_domain);
+    cs_domain_setup_init_state(cs_glob_domain);
   }
 
   int iterns = -1;

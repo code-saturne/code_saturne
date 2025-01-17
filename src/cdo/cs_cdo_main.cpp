@@ -763,7 +763,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
    * - Create fields
    */
 
-  cs_domain_initialize_setup(domain);
+  cs_domain_setup_initialize(domain);
 
   _initialized_setup = true;
 
@@ -810,11 +810,13 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   cs_timer_stats_start(_cdo_ts_id);
 
-  cs_domain_init_cdo_structures(domain);
+  // Define and initialize structures for CDO schemes according to the setup
+
+  cs_domain_setup_init_cdo_structures(domain);
 
   /* Last user setup stage */
 
-  cs_domain_finalize_user_setup(domain);
+  cs_domain_setup_finalize(domain);
 
   /* Modify logging if needed (f equal to 0, do nothing: default behavior) */
 
@@ -858,9 +860,9 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   }
 
-  /* Last setup stage */
+  /* Last (automatic) setup stage */
 
-  cs_domain_finalize_module_setup(domain);
+  cs_domain_setup_finalize_module(domain);
 
   /* Initialization of the default post-processing for the computational
      domain */
@@ -1105,15 +1107,12 @@ cs_cdo_main(cs_domain_t   *domain)
 
   cs_log_default_activate(true);
 
-  /*  Build high-level structures and create algebraic systems
-      Set the initial values of the fields and properties. */
+  /* Set the initial values of the fields and properties for all equations and
+   * systems of equations to be solved */
 
   _initialize_time_step(domain->time_step, domain->time_options);
 
-  cs_domain_initialize_systems(domain);
-
-  /* Remark: cs_user_initialization is called at the end of the previous
-     function */
+  cs_domain_setup_init_state(domain);
 
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field

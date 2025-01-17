@@ -40,29 +40,28 @@
 
 #include "base/cs_ale.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
+#include "base/cs_parall.h"
+#include "base/cs_pressure_correction.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_system.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_evaluate.h"
-#include "gwf/cs_gwf.h"
 #include "cdo/cs_hodge.h"
-#include "base/cs_log.h"
-#include "base/cs_log_iteration.h"
 #include "cdo/cs_maxwell.h"
 #include "cdo/cs_mesh_deform.h"
-#include "mesh/cs_mesh_location.h"
 #include "cdo/cs_navsto_system.h"
-#include "base/cs_parall.h"
-#include "base/cs_pressure_correction.h"
-#include "base/cs_prototypes.h"
 #include "cdo/cs_solidification.h"
 #include "cdo/cs_source_term.h"
 #include "cdo/cs_thermal_system.h"
-#include "base/cs_time_step.h"
 #include "cdo/cs_walldistance.h"
 #include "gui/cs_gui.h"
 #include "gwf/cs_gwf.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -462,122 +461,15 @@ cs_domain_def_time_step_by_value(cs_domain_t *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  First setup stage of the cs_domain_t structure
- *         Define extra domain boundaries
- *         Setup predefined equations
- *         Create fields (already done in the FV part)
- *         Define cs_sles_t structures for variable fields
+ * \brief After having read the mesh and the first setup stage build the
+ *        connectivities and mesh quantities related to CDO/HHO schemes
  *
- * \param[in, out]  domain    pointer to a cs_domain_t struct.
+ * \param[in, out] domain  pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_initialize_setup(cs_domain_t    *domain)
-{
-  /* Setup predefined equations which are activated. At this stage, no equation
-   * is added. Space discretization scheme and the related numerical parameters
-   * are set.
-   */
-
-  /* User equations:
-   *  Add a variable field related to each user-defined equation.
-   */
-
-  cs_equation_user_create_fields();
-
-  /* For predefined equations (equations associated to a module), adding a
-   * variable field is done inside each setup function of the module */
-
-  /* Hybrid velcoity/pressure coupling between FV and CDO */
-
-  if (cs_pressure_correction_cdo_is_activated())
-    cs_pressure_correction_cdo_init_setup();
-
-  /* Wall distance */
-
-  if (cs_walldistance_is_activated())
-    cs_walldistance_setup();
-
-  /* Mesh deformation */
-
-  if (cs_mesh_deform_is_activated())
-    cs_mesh_deform_setup(domain);
-
-  /* Thermal module */
-
-  if (cs_thermal_system_is_activated())
-    cs_thermal_system_init_setup();
-
-  /* Groundwater flow module */
-
-  if (cs_gwf_is_activated())
-    cs_gwf_init_setup();
-
-  /* ALE mesh velocity */
-
-  if (cs_ale_is_activated())
-    cs_ale_init_setup(domain);
-
-  /* Maxwell module */
-
-  if (cs_maxwell_is_activated())
-    cs_maxwell_init_setup();
-
-  /* Navier-Stokes system */
-
-  if (cs_navsto_system_is_activated()) {
-
-    /* To make more easy the settings for the end-user, one may have to ensure
-     * that the Navier-Stokes system has the sufficient knowledge of what is
-     * requested */
-
-    if (cs_thermal_system_needs_navsto())
-      cs_navsto_system_update_model(true); /* true = with thermal */
-
-    cs_navsto_system_init_setup();
-
-  }
-  else {
-
-    /* Switch off the turbulence modelling if in CDO mode only */
-
-    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
-
-      cs_turb_model_t  *turb = cs_get_glob_turb_model();
-
-      turb->model = CS_TURB_NONE;          /* laminar flow */
-      turb->itytur = 0;                    /* deprecated */
-      turb->hybrid_turb = CS_HYBRID_NONE;
-      turb->type = CS_TURB_NONE;
-
-    }
-
-  }
-
-  if (cs_solidification_is_activated())
-    cs_solidification_init_setup();
-
-  /* Add fields associated to advection fields */
-
-  cs_advection_field_create_fields();
-
-  /* Set the scheme flag for the computational domain */
-
-  _set_scheme_flags(domain);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  After having read the mesh and the first setup stage build the
- *         connectivities and mesh quantities related to CDO/HHO schemes
- *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_init_cdo_structures(cs_domain_t                 *domain)
+cs_domain_setup_init_cdo_structures(cs_domain_t *domain)
 {
   if (domain == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
@@ -682,14 +574,121 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last user setup stage of the cs_domain_t structure
+ * \brief First setup stage of the cs_domain_t structure
+ *        Define extra domain boundaries
+ *        Setup predefined equations
+ *        Create fields (already done in the FV part)
+ *        Define cs_sles_t structures for variable fields
  *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out] domain  pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_finalize_user_setup(cs_domain_t         *domain)
+cs_domain_setup_initialize(cs_domain_t *domain)
+{
+  /* Setup predefined equations which are activated. At this stage, no equation
+   * is added. Space discretization scheme and the related numerical parameters
+   * are set.
+   */
+
+  /* User equations:
+   *  Add a variable field related to each user-defined equation.
+   */
+
+  cs_equation_user_create_fields();
+
+  /* For predefined equations (equations associated to a module), adding a
+   * variable field is done inside each setup function of the module */
+
+  /* Hybrid velcoity/pressure coupling between FV and CDO */
+
+  if (cs_pressure_correction_cdo_is_activated())
+    cs_pressure_correction_cdo_init_setup();
+
+  /* Wall distance */
+
+  if (cs_walldistance_is_activated())
+    cs_walldistance_setup();
+
+  /* Mesh deformation */
+
+  if (cs_mesh_deform_is_activated())
+    cs_mesh_deform_setup(domain);
+
+  /* Thermal module */
+
+  if (cs_thermal_system_is_activated())
+    cs_thermal_system_init_setup();
+
+  /* Groundwater flow module */
+
+  if (cs_gwf_is_activated())
+    cs_gwf_init_setup();
+
+  /* ALE mesh velocity */
+
+  if (cs_ale_is_activated())
+    cs_ale_init_setup(domain);
+
+  /* Maxwell module */
+
+  if (cs_maxwell_is_activated())
+    cs_maxwell_init_setup();
+
+  /* Navier-Stokes system */
+
+  if (cs_navsto_system_is_activated()) {
+
+    /* To make more easy the settings for the end-user, one may have to ensure
+     * that the Navier-Stokes system has the sufficient knowledge of what is
+     * requested */
+
+    if (cs_thermal_system_needs_navsto())
+      cs_navsto_system_update_model(true); /* true = with thermal */
+
+    cs_navsto_system_init_setup();
+
+  }
+  else {
+
+    /* Switch off the turbulence modelling if in CDO mode only */
+
+    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
+
+      cs_turb_model_t  *turb = cs_get_glob_turb_model();
+
+      turb->model = CS_TURB_NONE;          /* laminar flow */
+      turb->itytur = 0;                    /* deprecated */
+      turb->hybrid_turb = CS_HYBRID_NONE;
+      turb->type = CS_TURB_NONE;
+
+    }
+
+  }
+
+  if (cs_solidification_is_activated())
+    cs_solidification_init_setup();
+
+  /* Add fields associated to advection fields */
+
+  cs_advection_field_create_fields();
+
+  /* Set the scheme flag for the computational domain */
+
+  _set_scheme_flags(domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Last GUI and then user setup stage of the cs_domain_t structure
+ *
+ * \param[in, out] domain  pointer to a cs_domain_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_setup_finalize(cs_domain_t  *domain)
 {
   if (domain == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
@@ -704,6 +703,10 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
 
   if (cs_thermal_system_is_activated())
     cs_gui_initial_conditions();
+
+  // User-defined initialization
+
+  cs_user_initialization(domain);
 
   /* Set the definition of user-defined properties and/or advection
    * fields (no more fields are created at this stage)
@@ -720,20 +723,21 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
   cs_user_finalize_setup(domain);
 
   /* Setup boundary conditions for CHT coupling if needed */
+
   if (cs_thermal_system_is_activated())
     cs_thermal_system_cht_boundary_conditions_setup();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last user setup stage of the cs_domain_t structure
+ * \brief Last user setup stage of the cs_domain_t structure
  *
- * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out] domain  pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_finalize_module_setup(cs_domain_t         *domain)
+cs_domain_setup_finalize_module(cs_domain_t *domain)
 {
   if (domain == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
@@ -786,15 +790,15 @@ cs_domain_finalize_module_setup(cs_domain_t         *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize systems of equations and their related field values
- *         according to the user settings
+ * \brief Initialize systems of equations and their related field/properties
+ *        values according to the user settings
  *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_initialize_systems(cs_domain_t   *domain)
+cs_domain_setup_init_state(cs_domain_t *domain)
 {
   /* Set the initial condition to all variable fields */
 
@@ -847,11 +851,6 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                        domain->connect,
                        domain->cdo_quantities,
                        domain->time_step);
-
-  /* Last word for the user function */
-
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
-    cs_user_initialization(domain);
 }
 
 /*----------------------------------------------------------------------------*/
