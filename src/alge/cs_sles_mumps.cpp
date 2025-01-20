@@ -203,6 +203,28 @@ static double  cs_sles_mumps_zero_fthreshold = 128*FLT_MIN;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if the current rank is the root rank
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_is_root_rank(void)
+{
+  if (cs_glob_n_ranks == 1)
+    return true;
+  else {
+    int root_rank = 0;
+    if (cs_glob_rank_id == root_rank)
+      return true;
+    else
+      return false;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check if a periodicity has to be performed during the computation
  *
  * \param[in] halo   pointer to a halo structure
@@ -3305,24 +3327,10 @@ cs_sles_mumps_setup(void               *context,
         dmumps->ICNTL(7) = 1;  // user-defined permutation
         dmumps->ICNTL(28) = 1; // sequential ordering
 
-        if (cs_glob_n_ranks == 1) { // Sequential run
+        if (_is_root_rank()) { // Either sequential run or root_rank in parallel
 
           BFT_MALLOC(dmumps->perm_in, dmumps->n, MUMPS_INT);
           _copy_ordering(dmumps->n, c->ordering, dmumps->perm_in);
-
-        }
-        else { // Parallel computation
-
-          assert(cs_glob_n_ranks > 1);
-
-          int  root_rank = 0;
-
-          if (cs_glob_rank_id == root_rank) {
-
-            BFT_MALLOC(dmumps->perm_in, dmumps->n, MUMPS_INT);
-            _copy_ordering(dmumps->n, c->ordering, dmumps->perm_in);
-
-          }
 
         }
 
@@ -3337,24 +3345,10 @@ cs_sles_mumps_setup(void               *context,
 
       if (mumpsp->keep_ordering && !_ordering_is_allocated(c)) {
 
-        if (cs_glob_n_ranks == 1) { // Sequential run
+        if (_is_root_rank()) { // Either sequential run or root_rank in parallel
 
           BFT_MALLOC(c->ordering, dmumps->n, MUMPS_INT);
           _copy_ordering(dmumps->n, dmumps->sym_perm, c->ordering);
-
-        }
-        else { // Parallel computation
-
-          assert(cs_glob_n_ranks > 1);
-
-          int  root_rank = 0;
-
-          if (cs_glob_rank_id == root_rank) {
-
-            BFT_MALLOC(c->ordering, dmumps->n, MUMPS_INT);
-            _copy_ordering(dmumps->n, dmumps->sym_perm, c->ordering);
-
-          }
 
         }
 
