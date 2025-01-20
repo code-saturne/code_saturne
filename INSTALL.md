@@ -144,7 +144,6 @@ the optional modules should be the following:
   - CGNS
   - MED
   - PT-Scotch
-  - ParMETIS
 
 The following packages are not handled by the installer so must be installed
 first:
@@ -334,7 +333,7 @@ if the code's source tree is in /home/user/code_saturne/src/code_saturne:
 ```
 /home/user/code_saturne/src/code_saturne/configure \
 --prefix=/home/user/code_saturne/<version>/arch/prod \
---with-med=/home/user/opt/med-4.1 \
+--with-med=/home/user/opt/med-5.0 \
 CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
 ```
 
@@ -1060,7 +1059,7 @@ mkdir dbg
 cd dbg
 ../../code_saturne/configure \
 --prefix=/home/user/code_saturne/<version>/arch/dbg \
---with-med}=/home/user/opt/med-4.1 \
+--with-med}=/home/user/opt/med-5.0 \
 --enable-debug \
 CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
 ```
@@ -1321,23 +1320,22 @@ but keeping the sources nearby may be practical for reference.
 
 For an install on which multiple versions and architectures of the code should
 be available, configure commands with all bells and whistles (except SALOME
-support) for a build on a cluster named gaia}, using the Intel compilers
+support) for a build on a cluster named cronos}, using the Intel compilers
 (made available through environment modules) may look like this:
 
 ```
 module purge
-module load intel_compilers/2019.0.045
-module load open_mpi/gcc/4.0.1
+module load intel/2023.2-srun
 ${SRC_PATH}/configure \
---prefix=${INSTALL_PATH}/arch/gaia_ompi \
---with-blas=/opt/mkl-2019.0.045/mkl \
---with-hdf5=${CS_OPT}/hdf5-1.10/arch/gaia \
---with-med=${CS_OPT}/med-4.1/arch/gaia \
---with-cgns=${CS_OPT}/cgns-4.2/arch/gaia \
---with-scotch=${CS_OPT}/scotch-7.0/arch/gaia_ompi \
---with-metis=${CS_OPT}/parmetis-4.0/arch/gaia_ompi \
---with-eos/${CS_OPT}/eos-1.11.0/arch/gaia_ompi \
-CC=mpicc FC=ifort CXX=mpicxx
+--prefix=${INSTALL_PATH}/arch/cronos_impi \
+--with-blas=${MKLROOT} \
+--with-hdf5=${CS_OPT}/hdf5-1.12/arch/cronos \
+--with-med=${CS_OPT}/med-5.0/arch/cronos \
+--with-cgns=${CS_OPT}/cgns-4.4/arch/cronos \
+--with-scotch=${CS_OPT}/scotch-7.0/arch/cronos_ompi \
+--with-metis=${CS_OPT}/parmetis-4.0/arch/cronos_ompi \
+--with-eos/${CS_OPT}/eos-1.11.0/arch/cronos_ompi \
+CC=mpiicx CXX=mpiicpx FC=ifx
 ```
 
 In the example above, we have appended the `_ompi` postfix to the architecture
@@ -1358,6 +1356,79 @@ from different builds multiple times, we may use the same
 data to the same location for each build. In this case, we recommend
 `--datarootdir=${INSTALL_PATH}/share` to add a `share` directory alongside
 `arch`.
+
+Compiling with GPU support
+--------------------------
+
+code_saturne has not yet been ported to AMD GPUs, and its port to Intel
+GPUS is still very limited. On NVIDIA GPUs.
+
+### Using the NVIDIA SDK (24.9) and local compilers:
+
+Note that using the NVIDIA HPC SDK often requires providing paths
+to some of the bundled libraries, as its layout is different
+from that of most Linux distribution packagings of the CUDA developent
+environment, for which the various math librairies used are usually
+detected automatically.
+
+With NVIDIA GPU's, using the NVIDIA SDK on a local machine, with the default
+provided CUDA-aware MPI library and an RTX A500 GPU (compute capability 86),
+we can use the following command:
+
+```
+module purge
+module load nvhpc-byo-compiler
+${SRC_PATH}/configure \
+--prefix=${INSTALL_PATH}/arch/cuda \
+--with-hdf5=${CS_OPT}/hdf5-1.12/arch/opt \
+--with-med=${CS_OPT}/med-5.0/arch/opt \
+--with-cgns=${CS_OPT}/cgns-4.4/arch/opt \
+--with-scotch=${CS_OPT}/scotch-7.0/arch/opt \
+--with-mpi=${NVHPC_ROOT}/comm_libs/openmpi/openmpi-3.1.5 \
+--enable-cuda \
+CPPFLAGS=-I${NVHPC_ROOT}/math_libs/include \
+LDFLAGS=-L${NVHPC_ROOT}/math_libs/lib64 \
+CUDA_ARCH_NUM=86
+```
+
+This will use the standard commpilers for non-C++ code, and as the backend
+for the `nvcc` compiler driver.
+
+Note that in this example, the HDF5, MED, and CGNS library builds are
+shared with a non-GPU install, as they do not use or depend on the GPU support
+(hence the "opt" instead of "cuda" local directory naming convention).
+
+If another MPI-aware MPI library is already available (such as the default
+Open MPI 5 package on Arch Linux, and probably other recent distributions),
+it can be used instead. Note that code_saturne can run also using a non
+GPU-aware MPI library build, but this will entail additional memory transfers
+and lower performance in most cases.
+
+### Using the NVIDIA SDK with NVIDIA compilers and UCX MPI drivers
+
+The following commmand forces the use of the "hpcx" variant of the NVIDIA SDK,
+which uses the UCX transport layer, for possibly better MPI performance.
+Using the module also forces the use of the NVIDIA (ex PGI) `nvc`, `nvc++`,
+and `nvfortran` compilers, using H100 GPUs.
+```
+module purge
+module load nvhpc-hpcx
+${SRC_PATH}/configure \
+--prefix=${INSTALL_PATH}/arch/cuda \
+--with-hdf5=${CS_OPT}/hdf5-1.12/arch/opt \
+--with-med=${CS_OPT}/med-5.0/arch/opt \
+--with-cgns=${CS_OPT}/cgns-4.4/arch/opt \
+--with-scotch=${CS_OPT}/scotch-7.0/arch/opt \
+--with-mpi=${NVHPC_ROOT}/comm_libs/12.6/openmpi4/openmpi-4.1.5 \
+--enable-cuda \
+--with-cublas=${NVHPC_ROOT}/math_libs/12.6 \
+--with-cusparse=${NVHPC_ROOT}/math_libs/12.6 \
+--with-hypre=${CS_OPT}/hypre/arch/cuda
+CC=nvc CXX=nvc++ FC=nvfortran CPP=cpp \
+CPPFLAGS=-I${NVHPC_ROOT}/cuda/12.6/targets/x86_64-linux/include \
+LDFLAGS=-L${NVHPC_ROOT}/cuda/12.6/targets/x86_64-linux/lib \
+CUDA_ARCH_NUM=90
+```
 
 Cross-compiling
 ---------------
@@ -1406,10 +1477,10 @@ options such as in the following example are recommended:
 ```
 ${SRC_PATH}/configure \
 --prefix=${INSTALL_PATH}/arch/xc30 \
---with-hdf5=${CS_OPT}/hdf5-1.10/arch/xc30 \
---with-med}=${CS_OPT}/med-4.1/arch/xc30 \
---with-cgns}=${CS_OPT}/cgns-4.2/arch/xc30 \
---with-scotch}=${CS_OPT}/scotch-7.0/arch/xc30 \
+--with-hdf5=${CS_OPT}/hdf5-1.12/arch/xc30 \
+--with-med=${CS_OPT}/med-5.0/arch/xc30 \
+--with-cgns=${CS_OPT}/cgns-4.4/arch/xc30 \
+--with-scotch=${CS_OPT}/scotch-7.0/arch/xc30 \
 --disable-sockets \
 --disable-shared \
 --host=x86_64-unknown-linux-gnu \
