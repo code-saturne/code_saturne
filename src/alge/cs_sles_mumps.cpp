@@ -34,10 +34,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/sysinfo.h>
 #include <assert.h>
 #include <float.h>
 #include <math.h>
+
+#if !defined(__APPLE__)
+#include <sys/sysinfo.h>
+#endif
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -2256,6 +2259,16 @@ _automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
   cs_param_mumps_t *mumpsp =
     static_cast<cs_param_mumps_t *>(slesp->context_param);
 
+#ifdef __APPLE__
+  unsigned long  max_estimated_mem = mumps->INFOG(16); /* in MB */
+  if (mumps->ICNTL(35) > 1) /* BLR activated */
+    max_estimated_mem = mumps->INFOG(36);
+
+  if (slesp->verbosity > 1 && cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT, " MUMPS:"
+                  " Estimation of the memory requirement: %lu MB\n",
+                  max_estimated_mem);
+#else
   if (mumpsp->mem_usage == CS_PARAM_MUMPS_MEMORY_CPU_DRIVEN) {
 
     unsigned long  max_estimated_mem = mumps->INFOG(16); /* in MB */
@@ -2295,6 +2308,7 @@ _automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
                     max_estimated_mem);
 
   }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
