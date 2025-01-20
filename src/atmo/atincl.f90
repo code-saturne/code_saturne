@@ -730,11 +730,10 @@ subroutine allocate_map_atmo () &
   bind(C, name='cs_f_allocate_map_atmo')
 
   use cs_c_bindings
+  use atchem
   use atsoil
 
   implicit none
-
-  procedure() :: atlecm
 
 ! Local variables
 type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_xyp_met

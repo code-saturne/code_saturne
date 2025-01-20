@@ -568,6 +568,15 @@ cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
 void
 cs_f_atmo_chem_initialize_dlconc0(cs_real_t **dlconc0);
 
+void
+cs_f_read_aerosol(void);
+
+void
+cs_f_read_meteo_profile(int imode);
+
+void
+cs_f_read_chemistry_profile(const int imode);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/

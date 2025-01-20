@@ -171,6 +171,13 @@ module atchem
 
     !---------------------------------------------------------------------------
 
+    subroutine atlecm (imode) &
+      bind(C, name="cs_f_read_meteo_profile")
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int),value :: imode
+    end subroutine atlecm
+
   end interface
 
   !=============================================================================
@@ -259,12 +266,10 @@ contains
   subroutine init_chemistry()&
     bind(C,name= "cs_f_init_chemistry")
     use, intrinsic :: iso_c_binding
-
+    use cs_c_bindings
     implicit none
 
-    procedure() :: atlecc
-
-    integer imode
+    integer(c_int) :: imode
     type(c_ptr) :: p_nbchim, p_nbchmz, p_nespgi
     type(c_ptr) :: p_espnum, p_zproc,  p_tchem
     type(c_ptr) :: p_xchem, p_ychem, p_conv_factor_jac

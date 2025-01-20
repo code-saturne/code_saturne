@@ -1085,6 +1085,13 @@ module cs_c_bindings
       real(c_double), dimension(6, *) :: var
     end subroutine syntis
 
+    subroutine atlecc (imode) &
+      bind(C, name="cs_f_read_chemistry_profile")
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: imode
+    end subroutine atlecc
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

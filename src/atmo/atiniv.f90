@@ -59,18 +59,26 @@ use cs_c_bindings
 
 implicit none
 
-procedure() :: atlecm, atlecc, atleca
-
 ! Local variables
 
-integer          imode, iel
-integer          k,ii, isc
+integer(c_int) imode
+integer          k,ii, isc,  iel
 double precision zent
 double precision xcent
 
 type(var_cal_opt) :: vcopt_p, vcopt_u
 
 double precision, dimension(:), pointer :: cvar_despgi, cvar_sc
+
+interface
+
+  subroutine atleca () &
+    bind(C, name='cs_f_reads_aerosol')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine atleca
+
+end interface
 
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES

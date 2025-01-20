@@ -41,8 +41,8 @@
 !> \param[in]     imode         execution mode
 !_______________________________________________________________________________
 
-subroutine atlecc (imode )
-
+subroutine atlecc (imode) &
+  bind(C, name="cs_f_read_chemistry_profile")
 !===============================================================================
 ! Module files
 !===============================================================================
@@ -68,7 +68,7 @@ procedure() :: comp_quantile
 
 ! Arguments
 
-integer           imode
+integer(c_int), value  :: imode
 
 ! Local variables
 

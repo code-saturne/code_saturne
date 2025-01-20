@@ -29,7 +29,9 @@
 !> \param[in]   imode        0: reading for dimensions and starting time only
 !>                           1: reading actual meteo data
 !-------------------------------------------------------------------------------
-subroutine atlecm ( imode )
+subroutine atlecm (imode) &
+  bind(C, name="cs_f_read_meteo_profile")
+  use, intrinsic :: iso_c_binding
 
 !===============================================================================
 ! Module files
@@ -54,7 +56,7 @@ procedure() :: comp_quantile
 
 ! Arguments
 
-integer           imode
+integer(c_int), value :: imode
 
 ! a function used in the routine
 ! for the diagnostic of liquid water content
