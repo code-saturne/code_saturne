@@ -291,6 +291,24 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Change pointers/size of an existing container.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  point_to
+  (
+    array_2dspan& other /*!<[in] Other instance to which we want to point
+                                 to (shallow copy) */
+  )
+  {
+    clear();
+    *this = array_2dspan(other, true);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Resize data array.
    */
   /*--------------------------------------------------------------------------*/
