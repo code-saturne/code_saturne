@@ -185,7 +185,7 @@ struct _cs_sles_mumps_t {
 
   // Mutualization of the ordering
 
-  cs_lnum_t                   *ordering;
+  MUMPS_INT                   *ordering;
 
 };
 
@@ -418,6 +418,34 @@ _ordering_is_allocated(const cs_sles_mumps_t  *c)
       return true;
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy an array storing MUMPS_INT values into another one
+ *
+ * \param[in]      n     number of elements to copy
+ * \param[in]      src   reference array to copy
+ * \param[in, out] dest  destination array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_copy_ordering(MUMPS_INT        n,
+               const MUMPS_INT *src,
+               MUMPS_INT       *dest)
+{
+  assert(src != nullptr && dest != NULL);
+
+  if (cs_glob_n_threads > 1) {
+
+#   pragma omp parallel for if (n > CS_THR_MIN)
+    for (MUMPS_INT i = 0; i < n; i++)
+      dest[i] = src[i];
+
+  }
+  else
+    memcpy(dest, src, sizeof(MUMPS_INT)*n);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3279,8 +3307,8 @@ cs_sles_mumps_setup(void               *context,
 
         if (cs_glob_n_ranks == 1) { // Sequential run
 
-          BFT_MALLOC(dmumps->perm_in, dmumps->n, cs_lnum_t);
-          cs_array_lnum_copy(dmumps->n, c->ordering, dmumps->perm_in);
+          BFT_MALLOC(dmumps->perm_in, dmumps->n, MUMPS_INT);
+          _copy_ordering(dmumps->n, c->ordering, dmumps->perm_in);
 
         }
         else { // Parallel computation
@@ -3291,8 +3319,8 @@ cs_sles_mumps_setup(void               *context,
 
           if (cs_glob_rank_id == root_rank) {
 
-            BFT_MALLOC(dmumps->perm_in, dmumps->n, cs_lnum_t);
-            cs_array_lnum_copy(dmumps->n, c->ordering, dmumps->perm_in);
+            BFT_MALLOC(dmumps->perm_in, dmumps->n, MUMPS_INT);
+            _copy_ordering(dmumps->n, c->ordering, dmumps->perm_in);
 
           }
 
@@ -3311,8 +3339,8 @@ cs_sles_mumps_setup(void               *context,
 
         if (cs_glob_n_ranks == 1) { // Sequential run
 
-          BFT_MALLOC(c->ordering, dmumps->n, cs_lnum_t);
-          cs_array_lnum_copy(dmumps->n, dmumps->sym_perm, c->ordering);
+          BFT_MALLOC(c->ordering, dmumps->n, MUMPS_INT);
+          _copy_ordering(dmumps->n, dmumps->sym_perm, c->ordering);
 
         }
         else { // Parallel computation
@@ -3323,8 +3351,8 @@ cs_sles_mumps_setup(void               *context,
 
           if (cs_glob_rank_id == root_rank) {
 
-            BFT_MALLOC(c->ordering, dmumps->n, cs_lnum_t);
-            cs_array_lnum_copy(dmumps->n, dmumps->sym_perm, c->ordering);
+            BFT_MALLOC(c->ordering, dmumps->n, MUMPS_INT);
+            _copy_ordering(dmumps->n, dmumps->sym_perm, c->ordering);
 
           }
 
