@@ -27,7 +27,7 @@
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src -I$(top_builddir)/src \
 $(MPI_CPPFLAGS)
-AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 AM_LDFLAGS = $(CCM_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) \
 $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 
@@ -164,7 +164,7 @@ libfvm_medcoupling_a_CPPFLAGS = \
 -I$(top_srcdir)/src -I$(top_builddir)/src \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_medcoupling_a_CXXFLAGS = \
-$(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(MEDCOUPLING_CXXFLAGS) $(CXXFLAGS_SHARED)
 libfvm_medcoupling_a_SOURCES = fvm_to_medcoupling.cxx
 noinst_LIBRARIES += libfvm_medcoupling.a

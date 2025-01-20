@@ -61,7 +61,7 @@ $(MPI_CPPFLAGS) $(CPPFLAGS_BLAS) \
 $(CPPFLAGS_MUMPS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
-AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 # Global LDFLAGS must be used so as to handle the possibility of a CXX link.
 # Per-executable flags will override this global definition.

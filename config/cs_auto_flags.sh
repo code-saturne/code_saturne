@@ -44,7 +44,6 @@
 # cxxflags_default_prf   # Added to $CXXFLAGS for profiling    (default: "-g")
 # cxxflags_default_omp   # Added to $CXXFLAGS for OpenMP       (default: "")
 # cxxflags_default_omp_ad  # Added to $CXXFLAGS for OpenMP offload (default: "")
-# cxxflags_default_std   # C++ standard variant                (default: "")
 # cxxflags_default_shared  # Added to $CXXFLAGS for shared libs (default: "-fPIC -DPIC")
 
 # fcflags_default        # Base FCFLAGS                       (default: "")
@@ -601,12 +600,11 @@ if test "x$cs_gxx" = "xg++"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wunused -Wfloat-equal"
+  cxxflags_default="-funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wunused -Wfloat-equal"
   cxxflags_default_dbg="-g"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fopenmp"
-  cxxflags_default_std="-funsigned-char"
 
   # Modify default flags on certain systems
 
@@ -681,12 +679,11 @@ elif test "x$cs_gxx" = "xicpc"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-std=c++14 -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default="-std=c++14 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-qopenmp"
-  cxxflags_default_std="-funsigned-char"
 
   case "$cs_cxx_vers_major" in
     1[0123456])
@@ -714,13 +711,12 @@ elif test "x$cs_gxx" = "xoneAPI"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -Wno-unused-command-line-argument"
+  cxxflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -Wno-unused-command-line-argument"
   cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fiopenmp"
   cxxflags_default_omp_ad="-fopenmp-targets=spir64"
-  cxxflags_default_std="-funsigned-char"
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -737,12 +733,11 @@ elif test "x$cs_gxx" = "xclang"; then
   cs_cxx_compiler_known=yes
 
   # Default compiler flags
-  cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fopenmp=libomp"
-  cxxflags_default_std="-funsigned-char"
 
 # Otherwise, are we using pgc++/nvc++ or nvcc ?
 #----------------------------------------------
@@ -770,7 +765,6 @@ else
       cxxflags_default_opt="-O2"
       cxxflags_default_hot="-fast"
       cxxflags_default_omp="-mp"
-      cxxflags_default_std=""
 
     fi
   fi
@@ -797,7 +791,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
     cfxxlags_default_omp="-h omp"              # default: use "-h noomp" to disable
-    cxxflags_default_std=""
 
   fi
 
@@ -823,7 +816,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_hot="-O3"  # Bug observed when -O3 is used
     cxxflags_default_dbg="-g"
     cfxxlags_default_omp="-Kopenmp"
-    cxxflags_default_std=""
   fi
 fi
 
@@ -847,7 +839,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
     cfxxlags_default_omp="-fopenmp"
-    cxxflags_default_std=""
   fi
 fi
 
@@ -867,7 +858,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
       cxxflags_default_opt="-O"
       cxxflags_default_dbg="-g"
       cxxflags_default_omp=""
-      cxxflags_default_std=""
       ;;
 
   esac

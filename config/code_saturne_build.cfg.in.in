@@ -80,7 +80,7 @@ nvcc_version: @cs_nvcc_version_string@
 nvcc_hc_version: @cs_nvcc_hc_version_string@
 
 cflags: @CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@
-cxxflags: @CXXFLAGS_STD@ @CXXFLAGS_SYCL@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@
+cxxflags: @CXXFLAGS@ @CXXFLAGS_SYCL@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@
 fcflags: @FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@
 nvccflags: @NVCCFLAGS@ @NVCCFLAGS_DBG@ @NVCCFLAGS_OPT@
 nvccflags_cpp: @NVCCFLAGS_CPP@

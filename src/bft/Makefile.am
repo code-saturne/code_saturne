@@ -27,7 +27,7 @@
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src -I$(top_builddir)/src \
 $(MPI_CPPFLAGS)
-AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 AM_LDFLAGS =
 
 # Public header files (to be installed)
