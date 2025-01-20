@@ -207,6 +207,9 @@ _set_key(cs_equation_param_t *eqp,
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(keyval, "centered") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
+    else if (strcmp(keyval, "centered_new") == 0) {
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED_NEW;
+    }
     else if (strcmp(keyval, "mix_centered_upwind") == 0 ||
              strcmp(keyval, "hybrid_centered_upwind") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
@@ -256,7 +259,7 @@ _set_key(cs_equation_param_t *eqp,
 
     /* Automatic switch to a hybrid upwind/centered scheme for advection */
 
-    eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
+    // eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
     break;
 
   case CS_EQKEY_AMG_TYPE:

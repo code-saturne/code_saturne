@@ -109,14 +109,15 @@ cs_param_adv_form_name[CS_PARAM_N_ADVECTION_FORMULATIONS][CS_BASE_STRING_LEN] =
   };
 
 static const char
-cs_param_adv_scheme_name[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
-  { N_("Centered"),
+  cs_param_adv_scheme_name[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] = {
+    N_("Centered"),
     N_("Continuous interior penalty"),
     N_("Continuous interior penalty (cellwise)"),
     N_("Hybrid centered-upwind"),
     N_("Upwind with the Samarskii weight function "),
     N_("Upwind with the Scharfetter-Gummel weight function"),
     N_("Upwind"),
+    N_("Centered_new"),
   };
 
 static const char
@@ -306,6 +307,7 @@ cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
   case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
   case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
   case CS_PARAM_ADVECTION_SCHEME_SG:
+  case CS_PARAM_ADVECTION_SCHEME_CENTERED_NEW:
   case CS_PARAM_ADVECTION_SCHEME_UPWIND:
     return cs_param_adv_scheme_name[scheme];
 

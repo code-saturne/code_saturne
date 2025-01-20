@@ -42,10 +42,10 @@
 
 #include "bft/bft_mem.h"
 
+#include "base/cs_math.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_property.h"
-#include "base/cs_math.h"
 #include "cdo/cs_scheme_geometry.h"
 
 #if defined(DEBUG) && !defined(NDEBUG) /* For debugging purpose */
@@ -1841,6 +1841,134 @@ cs_cdofb_advection_cencsv(int                        dim,
   /* Access the row containing current cell */
 
   double  *c_row = adv->val + c*adv->n_rows;
+
+  /* Loop on cell faces */
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    div_beta += cm->f_sgn[f] * fluxes[f];
+
+  } /* Loop on cell faces */
+
+  c_row[c] += div_beta;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - non-conservative formulation beta.grad
+ *         - centered scheme
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_cennoc_new(int                   dim,
+                              const cs_cell_mesh_t *cm,
+                              const cs_cell_sys_t  *csys,
+                              cs_cell_builder_t    *cb,
+                              cs_sdm_t             *adv)
+{
+  const short int  c = cm->n_fc; /* current cell's location in the matrix */
+  const cs_real_t *fluxes = cb->adv_fluxes;
+
+  /* Access the row containing current cell */
+
+  double *c_row = adv->val + c * adv->n_rows;
+
+  /* Loop on cell faces */
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    const cs_real_t beta_flx = cm->f_sgn[f] * fluxes[f];
+
+    const cs_real_t ratio_vol = cm->pvol_f[f] / cm->vol_c;
+
+    const cs_real_t A_plus = cb->upwind_portion * ratio_vol * beta_flx;
+
+    /* Access the row containing the current face */
+
+    double *f_row = adv->val + f * adv->n_rows;
+
+    /* Consistent part */
+    c_row[c] -= beta_flx;
+    c_row[f] += beta_flx;
+
+    /* Stabilisation part */
+
+    f_row[c] -= A_plus;
+    f_row[f] += A_plus;
+    c_row[c] += A_plus;
+    c_row[f] -= A_plus;
+
+    /* Apply boundary conditions */
+
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+      const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
+
+      /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
+
+      f_row[f] += beta_minus;
+
+      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached to
+         a boundary face */
+
+      if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
+        for (int k = 0; k < dim; k++)
+          csys->rhs[dim * f + k] += beta_minus * csys->dir_values[dim * f + k];
+      }
+    }
+
+  } /* Loop on cell faces */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - conservative formulation div(beta )
+ *         - centered scheme
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_cencsv_new(int                   dim,
+                              const cs_cell_mesh_t *cm,
+                              const cs_cell_sys_t  *csys,
+                              cs_cell_builder_t    *cb,
+                              cs_sdm_t             *adv)
+{
+  cs_cdofb_advection_cennoc_new(dim, cm, csys, cb, adv);
+
+  const short int  c = cm->n_fc; /* current cell's location in the matrix */
+  const cs_real_t *fluxes = cb->adv_fluxes;
+
+  cs_real_t div_beta = 0;
+
+  /* Access the row containing current cell */
+
+  double *c_row = adv->val + c * adv->n_rows;
 
   /* Loop on cell faces */
 
