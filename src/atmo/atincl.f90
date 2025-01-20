@@ -354,10 +354,6 @@ integer(c_int), pointer, save:: moddep
 !> adimensional:  sigc=0.53 other referenced values are 0.28, 0.15
 real(c_double), pointer, save :: sigc
 
-!> force initilization in case of restart (this option is
-!> automatically set in lecamp)
-integer, save :: init_at_chem
-
 !> key id for optimal interpolation
 integer, save :: kopint
 

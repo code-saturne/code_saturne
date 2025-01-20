@@ -110,27 +110,19 @@ if (ichemistry.ge.1) then
 
   ! Volume initilization with profiles for species present
   ! in the chemical profiles file
-  if (isuite.eq.0 .or. (isuite.ne.0.and.init_at_chem.eq.1)) then
+  do k = 1, nespgi
+    call field_get_val_s(ivarfl(isca(isca_chem(idespgi(k)))), cvar_despgi)
 
-    do k = 1, nespgi
-      call field_get_val_s(ivarfl(isca(isca_chem(idespgi(k)))), cvar_despgi)
-
-      do iel = 1, ncel
-        zent = xyzcen(3,iel)
-        call intprf                                                         &
-        (nbchmz, nbchim,                                                    &
-         zproc, tchem, espnum, zent  , ttcabs, xcent )
-        ! The first nespg user scalars are supposed to be chemical species
-        cvar_despgi(iel) = xcent
-      enddo
-
+    do iel = 1, ncel
+      zent = xyzcen(3,iel)
+      call intprf                                                         &
+           (nbchmz, nbchim,                                                    &
+           zproc, tchem, espnum, zent  , ttcabs, xcent )
+      ! The first nespg user scalars are supposed to be chemical species
+      cvar_despgi(iel) = xcent
     enddo
-  endif
 
-endif
-
-! Atmospheric gaseous chemistry
-if (ichemistry.ge.1) then
+  enddo
 
   ! Computation of the conversion factor matrix used for
   ! the reaction rates jaccobian matrix
@@ -139,6 +131,7 @@ if (ichemistry.ge.1) then
       conv_factor_jac((chempoint(k)-1)*nespg+chempoint(ii)) = dmmk(ii)/dmmk(k)
     enddo
   enddo
+
 
 endif
 
@@ -150,7 +143,7 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
   call atleca()
 
   ! Initialization
-  if (isuite.eq.0 .or. init_at_chem.eq.1) then
+  if (isuite.eq.0) then
 
     ! Writing
     if (vcopt_u%iwarni.ge.1.or.vcopt_p%iwarni.ge.1) then

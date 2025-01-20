@@ -141,10 +141,6 @@ call atmo_init_imbrication()
 
 call field_get_key_id("opt_interp_id", kopint)
 
-! --> Initialisation for the chemistry models:
-
-init_at_chem = 1
-
 ! --> Initialisation for the gaseous chemistry model:
 
 dtchemmax = 10.d0
