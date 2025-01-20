@@ -280,6 +280,9 @@ cs_combustion_boundary_conditions(int  bc_type[])
     auto ci = reinterpret_cast<cs_combustion_bc_inlet_t *>
                 (cs_boundary_conditions_get_model_inlet(z));
 
+    if (ci == nullptr)
+      continue;
+
     cs_real_t qimp = cs_boundary_conditions_open_get_mass_flow_rate(z);
 
     cs_real_t h_in = -HUGE_VALF;
