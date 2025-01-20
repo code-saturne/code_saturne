@@ -355,7 +355,6 @@ public:
         for (cs_lnum_t e_id = 0; e_id < _size; e_id++)
           tmp[e_id] = _full_array[e_id];
 
-        cs_lnum_t old_dim1 = _dim1;
         cs_lnum_t old_dim2 = _dim2;
 
         resize(dim1, dim2);
