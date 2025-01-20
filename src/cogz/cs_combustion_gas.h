@@ -65,6 +65,9 @@ BEGIN_C_DECLS
 /*! Maximum number of tabulation points */
 #define  CS_COMBUSTION_GAS_MAX_TABULATION_POINTS  50
 
+/*! Maximum number of Dirac peaks */
+#define  CS_COMBUSTION_GAS_MAX_DIRAC  5
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -158,6 +161,17 @@ typedef struct {
   double coeff1;
   double coeff2;
   double coeff3;
+
+  cs_field_t  *tsc;     /*< source term */
+  cs_field_t  *mam;     /*< molar mass */
+
+  cs_field_t  *rhol[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_field_t  *teml[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_field_t  *fmel[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_field_t  *fmal[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_field_t  *ampl[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_field_t  *tscl[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_field_t  *maml[CS_COMBUSTION_GAS_MAX_DIRAC];
 
 } cs_libby_williams_params_t;
 
@@ -273,9 +287,25 @@ typedef struct {
   cs_field_t  *yfp2m;   /*< mass fraction variance */
   cs_field_t  *coyfp;   /*< mass fraction covariance */
 
-  cs_field_t  *tsc;     /*< source term in combustion */
   cs_field_t  *npm;     /*< soot precursor number */
   cs_field_t  *fsm;     /*< soot mass fraction */
+
+  cs_field_t *xr;       /*< heat loss */
+  cs_field_t *hrr;      /*< heat release rate */
+  cs_field_t *omgc;     /*< Omega C */
+  cs_field_t *totki;    /*< total dissipation */
+  cs_field_t *recvr;    /*< reconstructed fp2m */
+
+  /* fuel, oxydizer, and product mass fractions */
+  cs_field_t  *ym[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+
+  /* fuel, oxydizer, and product mass fractions at boundary*/
+  cs_field_t  *bym[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+
+  cs_field_t  *t2m;     /*< state variable:  \f$T^2\f$ term */
+  cs_field_t  *t3m;     /*< state variable:  \f$T^3\f$ term (radiation model) */
+  cs_field_t  *t4m;     /*< state variable:  \f$T^4\f$ term (radiation model) */
+  cs_field_t  *ckabs;   /*< state variable: radiation absorption coefficient */
 
   /* Numerical parameters
      -------------------- */
@@ -303,6 +333,9 @@ typedef struct {
     - 0: variance transport equation (VTE)
     - 1: 2nd moment of mixture fraction transport equation (STE) */
   int mode_fp2m;
+
+  /*! flamelet species names */
+  char  flamelet_species_name[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES][13];
 
   cs_real_t  *flamelet_library_p;  /*!< pointer to flamelet library */
 
@@ -370,6 +403,15 @@ cs_combustion_gas_log_setup(void);
 
 void
 cs_combustion_gas_add_variable_fields(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add property fields for gas combustion models.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*

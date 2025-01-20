@@ -148,9 +148,6 @@ void
 cs_f_fldprp(void);
 
 void
-cs_f_coprop(void);
-
-void
 cs_f_usipsu(int *nmodpp);
 
 void
@@ -903,7 +900,7 @@ _create_property_fields(void)
       || pm_flag[CS_COMBUSTION_SLFM] != -1
       || pm_flag[CS_COMBUSTION_EBU] != -1
       || pm_flag[CS_COMBUSTION_LW] != -1)
-  cs_f_coprop();
+    cs_combustion_gas_add_property_fields();
 
   // Compressible model
   if (pm_flag[CS_COMPRESSIBLE] >= 0) {

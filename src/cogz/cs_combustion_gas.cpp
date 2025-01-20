@@ -54,7 +54,9 @@
 #include "base/cs_physical_constants.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_physical_properties.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_restart_default.h"
 #include "base/cs_thermal_model.h"
 #include "mesh/cs_mesh_location.h"
 #include "turb/cs_turbulence_model.h"
@@ -67,6 +69,9 @@
 
 extern "C" void
 cs_f_combustion_map_variables(void);
+
+extern "C" void
+cs_f_combustion_map_properties(int iym_c[]);
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -285,6 +290,48 @@ _add_model_variable(const char  *name,
   return f;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a 1d property field at cells.
+ *
+ * \param[in]  name        field name
+ * \param[in]  label       field label, or null
+ *
+ * \return  pointer to field
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_field_t *
+_add_property_1d(const char  *name,
+                 const char  *label)
+{
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+  const int keylbl = cs_field_key_id("label");
+
+  if (cs_field_by_name_try(name) != NULL)
+    cs_parameters_error(CS_ABORT_IMMEDIATE,
+                        _("initial data setup"),
+                        _("Field %s has already been assigned.\n"),
+                        name);
+
+  cs_physical_property_define_from_field(name,
+                                         CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                         CS_MESH_LOCATION_CELLS,
+                                         1,       // dim
+                                         false);  // has previous
+
+  int f_id = cs_physical_property_field_id_by_name(name);
+  cs_field_t *f = cs_field_by_id(f_id);
+
+  cs_field_set_key_int(f, keyvis, 0);
+  cs_field_set_key_int(f, keylog, 1);
+  if (label != nullptr)
+    cs_field_set_key_str(f, keylbl, label);
+
+  return f;
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -459,9 +506,15 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->yfm = nullptr;
   cm->yfp2m = nullptr;
   cm->coyfp = nullptr;
-  cm->tsc = nullptr;
   cm->npm = nullptr;
   cm->fsm = nullptr;
+
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
+    cm->ym[i] = nullptr;
+    cm->bym[i] = nullptr;
+  }
+
+  cm->t2m = nullptr;
 
   /* Numerical parameters */
 
@@ -985,6 +1038,158 @@ cs_combustion_gas_add_variable_fields(void)
 
   // Map to Fortran
   cs_f_combustion_map_variables();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add property fields for gas combustion models.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_add_property_fields(void)
+{
+  if (cs_glob_combustion_gas_model == NULL)
+    return;
+
+  cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
+
+  _add_property_1d("temperature", "Temperature");
+
+  if (cm->type/100 != CS_COMBUSTION_SLFM) {
+    cm->ym[0] = _add_property_1d("ym_fuel", "Ym_Fuel");
+    cm->ym[1] = _add_property_1d("ym_oxyd", "Ym_Oxyd");
+    cm->ym[2] = _add_property_1d("ym_prod", "Ym_Prod");
+  }
+
+  switch (cm->type / 100) {
+
+  case CS_COMBUSTION_SLFM:
+    /* Diffusion flame with steady laminar flamelet approach
+       ----------------------------------------------------- */
+    {
+      cm->t2m = _add_property_1d("temperature_2", "Temperature_2");
+
+      /* In case of the classical steady laminar flamelet model,
+         A progress variable is defined as propriety, measuring approximately
+         the products (the progress as well)
+         Otherwise, it should be transported. */
+
+      if (cm->type%2 == 1)
+        cm->xr = _add_property_1d("heat_loss", "Heat Loss");
+
+      cm->hrr = _add_property_1d("heat_release_rate", "Heat Release Rate");
+
+      if (cm->type%100 >= 2)
+        cm->omgc = _add_property_1d("omega_c", "Omega C");
+
+      if (cm->type%100 < 2)
+        cm->totki = _add_property_1d("total_dissipation", "Total Dissip. Rate");
+
+      if (cm->mode_fp2m == 1)
+        cm->recvr = _add_property_1d("reconstructed_fp2m", "rec_fp2m");
+
+      if (cm->n_gas_fl > 0) {
+        int n = CS_MIN(cm->n_gas_fl, CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES - 1);
+        for (int i = 0; i < n; i++) {
+          char name[64], label[64];
+          snprintf(name, 64, "fraction_%s", cm->flamelet_species_name[i]);
+          name[63] = '\0';
+          snprintf(label, 64, "Fraction_%s", cm->flamelet_species_name[i]);
+          label[63] = '\0';
+          cm->ym[i] = _add_property_1d(name, label);
+        }
+      }
+
+      cs_field_t *f = _add_property_1d("ym_progress", "Ym_Progress");
+      cm->ym[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES - 1] = f;
+
+      // Add restart_file key info
+      cs_field_set_key_int(f,
+                           cs_field_key_id("restart_file"),
+                           CS_RESTART_AUXILIARY);
+    }
+    break;
+
+  case CS_COMBUSTION_LW:
+    /* Premixed flame: Libby-Williams model
+       ------------------------------------ */
+    {
+      cm->lw.mam = _add_property_1d("molar_mass", "Molar_Mass");
+      cm->lw.tsc = _add_property_1d("source_term", "Source_Term");
+
+      for (int i = 0; i < cm->lw.n_dirac; i++) {
+        char name[64], label[64];
+
+        snprintf(name, 64, "rho_local_%d", i+1); name[63] = '\0';
+        snprintf(label, 64, "Rho_Local_%d", i+1); label[63] = '\0';
+        cm->lw.rhol[i] = _add_property_1d(name, label);
+
+        snprintf(name, 64, "temperature_local_%d", i+1); name[63] = '\0';
+        snprintf(label, 64, "Temperature_Local_%d", i+1); label[63] = '\0';
+        cm->lw.teml[i] = _add_property_1d(name, label);
+
+        snprintf(name, 64, "ym_local_%d", i+1); name[63] = '\0';
+        snprintf(label, 64, "Ym_Local_%d", i+1); label[63] = '\0';
+        cm->lw.fmel[i] = _add_property_1d(name, label);
+
+        snprintf(name, 64, "w_local_%d", i+1); name[63] = '\0';
+        snprintf(label, 64, "w_Local_%d", i+1); label[63] = '\0';
+        cm->lw.fmal[i] = _add_property_1d(name, label);
+
+        snprintf(name, 64, "amplitude_local_%d", i+1); name[63] = '\0';
+        snprintf(label, 64, "Amplitude_Local_%d", i+1); label[63] = '\0';
+        cm->lw.ampl[i] = _add_property_1d(name, label);
+
+        snprintf(name, 64, "chemical_st_local_%d", i+1); name[63] = '\0';
+        snprintf(label, 64, "Chemical_ST_Local_%d", i+1); label[63] = '\0';
+        cm->lw.tscl[i] = _add_property_1d(name, label);
+
+        snprintf(name, 64, "molar_mass_local_%d", i+1); name[63] = '\0';
+        snprintf(label, 64, "M_Local_%d", i+1); label[63] = '\0';
+        cm->lw.maml[i] = _add_property_1d(name, label);
+      }
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  /* Boundary mass fractions
+     ----------------------- */
+
+  if (cm->type/100 != CS_COMBUSTION_SLFM) {
+    int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+    cm->bym[0] = cs_field_create("boundary_ym_fuel", field_type,
+                                 CS_MESH_LOCATION_BOUNDARY_FACES, 1, false);
+    cm->bym[1] = cs_field_create("boundary_ym_oxydizer", field_type,
+                                 CS_MESH_LOCATION_BOUNDARY_FACES, 1, false);
+    cm->bym[1] = cs_field_create("boundary_ym_product", field_type,
+                                 CS_MESH_LOCATION_BOUNDARY_FACES, 1, false);
+  }
+
+  /* Additional fields for radiation
+     ------------------------------- */
+
+  if (   cs_glob_rad_transfer_params->type != CS_RAD_TRANSFER_NONE
+      && CS_F_(h) != nullptr) {
+    cm->ckabs = _add_property_1d("kabs", "KABS");
+    cm->t4m = _add_property_1d("temperature_4", "Temp4");
+    cm->t3m = _add_property_1d("temperature_3", "Temp3");
+  }
+
+  // Map to Fortran
+  {
+    int iym_c[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+    for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
+      if (cm->ym[i] != nullptr)
+        iym_c[i] = cm->ym[i]->id;
+      else
+        iym_c[i] = -1;
+    }
+    cs_f_combustion_map_properties(iym_c);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

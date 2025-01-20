@@ -116,8 +116,6 @@ module coincl
   integer, save :: flamelet_species(ngazgm)
   integer, save :: flamelet_c,     flamelet_omg_C
 
-  character(len=12) :: flamelet_species_name(ngazgm)
-
   !========================================================================
 
   !> Library for thermochemical properties in SLFM
@@ -161,7 +159,7 @@ module coincl
 
   integer, save :: irhol(ndracm), iteml(ndracm), ifmel(ndracm)
   integer, save :: ifmal(ndracm), iampl(ndracm), itscl(ndracm)
-  integer, save :: imaml(ndracm), ihhhh(ndracm), imam
+  integer, save :: imaml(ndracm), imam
 
   real(c_double), pointer, save :: vref, lref, ta, tstar
   real(c_double), pointer, save :: fmin, fmax, hmin, hmax
@@ -498,5 +496,74 @@ contains
     call field_get_id_try('soot_precursor_number', inpm)
 
   end subroutine cs_f_combustion_map_variables
+
+  !=============================================================================
+
+  !> \brief Map Fortran combustion model field ids
+
+  subroutine cs_f_combustion_map_properties(iym_c)  &
+    bind(C, name='cs_f_combustion_map_properties')
+    use, intrinsic :: iso_c_binding
+    use paramx
+    use numvar
+    use ppincl
+    use field
+    use cs_c_bindings
+    implicit none
+
+    integer(c_int), dimension(*) :: iym_c
+
+    integer :: idirac, ifm
+    character(len=80) :: f_name
+
+    call field_get_id_try('temperature', itemp)
+
+    do ifm = 1, ngazgm
+      iym(ifm) = iym_c(ifm)
+    enddo
+
+    if (ippmod(islfm).ge.0) then
+
+      call field_get_id_try('temperature_2', it2m)
+
+      call field_get_id_try('heat_loss', ixr)
+      call field_get_id_try('heat_release_rate', ihrr)
+      call field_get_id_try('omega_c', iomgc)
+      call field_get_id_try('total_dissipation', itotki)
+      call field_get_id_try('reconstructed_fp2m', irecvr)
+
+    else if (ippmod(icolwc).ge.0) then
+
+      call field_get_id_try('molar_mass', imam)
+      call field_get_id_try('source_term', itsc)
+
+      do idirac = 1, ndirac
+        write(f_name,  '(a,i1)') 'rho_local_', idirac
+        call field_get_id_try(f_name, irhol(idirac))
+        write(f_name,  '(a,i1)') 'temperature_local_', idirac
+        call field_get_id_try(f_name, iteml(idirac))
+        write(f_name,  '(a,i1)') 'ym_local_', idirac
+        call field_get_id_try(f_name, ifmel(idirac))
+        write(f_name,  '(a,i1)') 'w_local_', idirac
+        call field_get_id_try(f_name, ifmal(idirac))
+        write(f_name,  '(a,i1)') 'amplitude_local_', idirac
+        call field_get_id_try(f_name, iampl(idirac))
+        write(f_name,  '(a,i1)') 'chemical_st_local_', idirac
+        call field_get_id_try(f_name, itscl(idirac))
+        write(f_name,  '(a,i1)') 'molar_mass_local_', idirac
+        call field_get_id_try(f_name, imaml(idirac))
+      enddo
+
+    endif
+
+    call field_get_id_try('boundary_ym_fuel', ibym(1))
+    call field_get_id_try('boundary_ym_oxydizer', ibym(2))
+    call field_get_id_try('boundary_ym_product', ibym(3))
+
+    call field_get_id_try('kabs', ickabs)
+    call field_get_id_try('temperature_4', it4m)
+    call field_get_id_try('temperature_3', it3m)
+
+  end subroutine cs_f_combustion_map_properties
 
 end module coincl

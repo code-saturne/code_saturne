@@ -119,7 +119,6 @@ flamelet_temp2 = -1
 flamelet_hrr   = -1
 
 flamelet_species(:)  = -1
-flamelet_species_name(:)  = ' '
 
 flamelet_c     = -1
 flamelet_omg_c = -1
