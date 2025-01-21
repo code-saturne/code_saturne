@@ -1598,10 +1598,25 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                      temperature_out -  r_tn / r_nn * tmp);
         }
       }
-      /* TODO else: for EVM u*^2 / r_nn */
+      /* else: for EVM u*^2 / r_nn = 1/sqrt(C0) as algebraic closure for SLM */
       else {
+        cs_real_3_t r_in_ov_rnn;
+        cs_real_3_t fluid_vel_tau;
         for (int k = 0; k < 3; k++)
-          particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
+          fluid_vel_tau[k] = extra_i[phase_id].vel->val[3*cell_id+k];
+
+        cs_real_t fluid_vel_n =
+          cs_math_3_dot_product(fluid_vel_tau, face_norm);
+        for (int k = 0; k < 3; k++)
+          fluid_vel_tau[k] = fluid_vel_tau[k] - fluid_vel_n * face_norm[k];
+
+        cs_real_3_t dir_tau;
+        cs_math_3_normalize(fluid_vel_tau, dir_tau);
+
+        for (int k = 0; k < 3; k++) {
+          r_in_ov_rnn[k] = face_norm[k] - dir_tau[k] / sqrt(cs_turb_crij_c0);
+          particle_velocity_seen[3 * phase_id + k] -= r_in_ov_rnn[k] * tmp;
+        }
 
         if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
             && extra->temperature != nullptr
