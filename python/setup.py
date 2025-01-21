@@ -22,6 +22,38 @@ SRC_PATH = os.path.relpath(os.path.join(os.path.dirname(__file__)))
 # Get environment variables needed
 # ==============================================================================
 
+# ------------------------------------------------------------------------------
+# Simple version string parser to avoid errors
+# ------------------------------------------------------------------------------
+
+def _parse_saturne_version_string(version_string):
+    """
+    Parse a version string and return a PEP440 compliant one.
+    """
+
+    retval = ''
+    if version_string and len(version_string) > 0:
+        _string = version_string.split('-')
+        retval = _string[0]
+        if len(_string) > 1:
+            if _string[1] == "alpha":
+                retval += 'a0'
+            elif _string[1] == "beta":
+                retval += 'b0'
+            elif _string[1][:2] == 'rc':
+                retval += _string[1]
+            elif _string[1] == 'patch':
+                retval += '.post0'
+            else:
+                retval += '.dev0'
+
+    else:
+        retval = 'master'
+
+    return retval
+
+# ------------------------------------------------------------------------------
+
 _cs_opts = {'enable_gui':False,
             'use_qt5':False,
             'exclude_dirs':[],
@@ -35,7 +67,7 @@ _cs_opts = {'enable_gui':False,
 if '--version' in sys.argv:
     index = sys.argv.index('--version')
     sys.argv.pop(index)
-    _cs_opts['version'] = sys.argv.pop(index)
+    _cs_opts['version'] = _parse_saturne_version_string(sys.argv.pop(index))
 else:
     _cs_opts['version'] = 'master'
 
