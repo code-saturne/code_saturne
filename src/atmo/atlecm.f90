@@ -295,7 +295,7 @@ else
     ! Initialize p0, rho0 and theta0 at the first level
     if (ii.eq.1 .and. itp.eq.1) then
       qv = qvmet(ii,itp)
-      t0 = temp + tkelvi
+      t0 = ttmet(ii,itp) + tkelvi
       rhum = rair*(1.d0+(rvsra-1.d0)*qv*ih2o)
       ro0 = p0 / t0 /rhum
     endif
