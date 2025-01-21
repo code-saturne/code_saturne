@@ -1572,8 +1572,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         /* Reynolds stress tensor (current value) */
         cs_real_t *r_ij = &(extra_i[phase_id].cvar_rij->vals[0][6*cell_id]);
         /* Component Rnn = ni Rij nj */
-        cs_real_t r_nn = cs_math_fmax(
-            cs_math_3_sym_33_3_dot_product(face_norm, r_ij, face_norm), 1e-5);
+        cs_real_t r_nn =
+            cs_math_3_sym_33_3_dot_product(face_norm, r_ij, face_norm);
 
         /* Vector Rij.nj */
         cs_real_t r_in[3];
