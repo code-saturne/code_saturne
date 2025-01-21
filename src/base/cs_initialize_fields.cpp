@@ -636,7 +636,7 @@ cs_initialize_fields_stage_1(void)
       const cs_real_t ro0 = fp->ro0;
       const cs_real_t pred0_m_p0 = fp->pred0 - fp->p0;
       const cs_real_t g[3] = {gravity[0], gravity[1], gravity[2]};
-      const cs_real_t xyzp0[3] = {fp->xyzp0[0], fp->xyzp0[1], fp->xyzp0[1]};
+      const cs_real_t xyzp0[3] = {fp->xyzp0[0], fp->xyzp0[1], fp->xyzp0[2]};
 
       cs_dispatch_context ctx;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {

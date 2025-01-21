@@ -3606,7 +3606,7 @@ cs_solve_navier_stokes_update_total_pressure
 
   /* Copy global arrays to local ones to enable lambda capture for dispatch */
   const cs_real_t g[3] = {gxyz[0], gxyz[1], gxyz[2]};
-  const cs_real_t xyzp0[3] = {fp->xyzp0[0], fp->xyzp0[1], fp->xyzp0[1]};
+  const cs_real_t xyzp0[3] = {fp->xyzp0[0], fp->xyzp0[1], fp->xyzp0[2]};
 
   cs_dispatch_context ctx;
 
