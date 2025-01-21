@@ -147,7 +147,7 @@ typedef enum {
   /* Thermal model additional parameters */
 
   CS_LAGR_TEMPERATURE,
-  CS_LAGR_FLUID_TEMPERATURE,
+  CS_LAGR_TEMPERATURE_SEEN,
   CS_LAGR_CP,
 
   /* Coal combustion additional parameters */

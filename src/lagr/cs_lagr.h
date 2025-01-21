@@ -619,7 +619,7 @@ typedef struct {
   int         velocity_profile;
 
   /*! temperature condition type:
-    - 0 fluid temperature
+    - 0 temperature seen
     - 1 imposed temperature */
   int         temperature_profile;
 

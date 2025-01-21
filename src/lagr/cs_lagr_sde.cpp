@@ -837,7 +837,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       /* TODO: Warning based on the first carrier phase with N fluids */
       if (cs_glob_lagr_brownian->lamvbr == 1) {
 
-        /* Compute fluid temperature */
+        /* Compute temperature seen */
         cs_real_t tempf;
         if (extra->temperature != nullptr) {
           if (t_scl == CS_TEMPERATURE_SCALE_KELVIN)

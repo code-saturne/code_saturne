@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  * \brief Integration of particle stochastic differential equations
  *        for specific physical models.
  *
- * - fluid temperature seen by particles,
+ * - temperature seen by particles,
  * - particle temperature,
  * - particle diameter
  * - particle mass

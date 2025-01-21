@@ -1301,7 +1301,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
               * (part_coord[i] - cell_cen[c_id][i]);
         }
         cs_lagr_particle_set_real(particle, p_am,
-                                  CS_LAGR_FLUID_TEMPERATURE,
+                                  CS_LAGR_TEMPERATURE_SEEN,
                                   loc_fluid_temp);
         /* Set particle temperature to fluid one if required */
         if (   zis->temperature_profile < 1
@@ -1342,7 +1342,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           loc_fluid_temp +=   extra->grad_tempf[c_id][i]
                             * (part_coord[i] - cell_cen[c_id][i]);
       }
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE_SEEN,
                                 loc_fluid_temp);
 
       auto *particle_temp
@@ -1423,7 +1423,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           loc_fluid_temp +=   extra->grad_tempf[c_id][i]
                             * (part_coord[i] - cell_cen[c_id][i]);
       }
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE_SEEN,
                                 loc_fluid_temp);
     }
 
@@ -1434,7 +1434,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       /* Initialize temperature fluctuations */
 
       cs_real_t temp_seen =
-        cs_lagr_particle_get_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE);
+        cs_lagr_particle_get_real(particle, p_am, CS_LAGR_TEMPERATURE_SEEN);
 
       /* Fluctuations to obtain proper thermal turbulent fluxes */
       /* TODO adapt the value of the draws based not only on the first phase */
@@ -1446,7 +1446,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       if (extra->temperature_variance != nullptr )
         temp_seen += var_temp_corel_coef[c_id] * temp_vagaus[l_id];
 
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE_SEEN,
                                 temp_seen);
     }
     /* statistical weight */

@@ -220,7 +220,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
               =  2 user-defined profile
 
      *   temperature_profile: type of temperature condition
-              = 0 fluid temperature
+              = 0 temperature seen
               = 1 imposed temperature: we prescribe the temperature
 
      *   density

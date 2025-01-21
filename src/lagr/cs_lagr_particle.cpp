@@ -864,8 +864,8 @@ cs_lagr_particle_attr_initialize(void)
   if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
 
     if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1) {
-      attr_keys[CS_LAGR_FLUID_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
-      attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = ++loc_count;
+      attr_keys[CS_LAGR_TEMPERATURE_SEEN][0] = CS_LAGR_P_RVAR_TS;
+      attr_keys[CS_LAGR_TEMPERATURE_SEEN][1] = ++loc_count;
     }
 
     if (cs_glob_lagr_specific_physics->solve_temperature == 1) {
@@ -891,8 +891,8 @@ cs_lagr_particle_attr_initialize(void)
     attr_keys[CS_LAGR_TEMPERATURE][2]
       = lagr_model->n_temperature_layers;
 
-    attr_keys[CS_LAGR_FLUID_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
-    attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = ++loc_count;
+    attr_keys[CS_LAGR_TEMPERATURE_SEEN][0] = CS_LAGR_P_RVAR_TS;
+    attr_keys[CS_LAGR_TEMPERATURE_SEEN][1] = ++loc_count;
 
     attr_keys[CS_LAGR_WATER_MASS][1] = ++loc_count;
 
@@ -927,8 +927,8 @@ cs_lagr_particle_attr_initialize(void)
       attr_keys[CS_LAGR_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
       attr_keys[CS_LAGR_TEMPERATURE][1] = ++loc_count;
 
-      attr_keys[CS_LAGR_FLUID_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
-      attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = ++loc_count;
+      attr_keys[CS_LAGR_TEMPERATURE_SEEN][0] = CS_LAGR_P_RVAR_TS;
+      attr_keys[CS_LAGR_TEMPERATURE_SEEN][1] = ++loc_count;
 
 // FIXME: accounting for droplet radiation will be done later
 /*      if (extra->radiative_model > 0)

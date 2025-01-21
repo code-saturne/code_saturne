@@ -1797,18 +1797,18 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         for (int k = 0; k < 3; k++)
           particle_velocity_seen[3 * phase_id + k] -= r_in[k] / r_nn * tmp ;
 
-        /* Modify particle fluid temperature */
+        /* Modify particle temperature seen */
         if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
             && extra->temperature != nullptr
             && extra->temperature_turbulent_flux != nullptr) {
 
           cs_real_t temperature_out =
             cs_lagr_particles_get_real(particles, p_id,
-                                       CS_LAGR_FLUID_TEMPERATURE);
+                                       CS_LAGR_TEMPERATURE_SEEN);
           /* Normal thermal turbulent flux */
           cs_real_t *_rit = &extra->temperature_turbulent_flux->val[3*cell_id];
           cs_real_t  r_tn = cs_math_3_dot_product(_rit, face_norm);
-          cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
+          cs_lagr_particles_set_real(particles, p_id, CS_LAGR_TEMPERATURE_SEEN,
                                      temperature_out -  r_tn / r_nn * tmp);
         }
       }
@@ -1839,8 +1839,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             && extra_i[phase_id].cvar_k != nullptr) {
           cs_real_t temperature_out =
             cs_lagr_particles_get_real(particles, p_id,
-                                       CS_LAGR_FLUID_TEMPERATURE);
-          /* Modify fluid temperature with algebraic solution from SLM--IEM model
+                                       CS_LAGR_TEMPERATURE_SEEN);
+          /* Modify temperature seen with algebraic solution from SLM--IEM model
            * in the neutral limit (=close to walls, could be poor further away)*/
           cs_real_t rnt_ov_rnn =
             -sqrt(cs_turb_crij_ct * (1.5 * cs_turb_crij_c0 + 1.) /
@@ -1866,7 +1866,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           else
             rnt_ov_rnn = 0;
 
-          cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
+          cs_lagr_particles_set_real(particles, p_id, CS_LAGR_TEMPERATURE_SEEN,
                                      temperature_out -  rnt_ov_rnn * tmp);
         }
         else if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
@@ -1876,10 +1876,10 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           if (extra->ustar->val[face_id] > cs_math_epzero) {
             cs_real_t temperature_out =
               cs_lagr_particles_get_real(particles, p_id,
-                                         CS_LAGR_FLUID_TEMPERATURE);
+                                         CS_LAGR_TEMPERATURE_SEEN);
             cs_real_t rnt_ov_rnn = - extra->tstar->val[face_id] /
               (sqrt(cs_turb_crij_c0) * extra->ustar->val[face_id]);
-            cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
+            cs_lagr_particles_set_real(particles, p_id, CS_LAGR_TEMPERATURE_SEEN,
                                        temperature_out -  rnt_ov_rnn * tmp);
           }
         }

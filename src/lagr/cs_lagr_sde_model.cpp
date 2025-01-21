@@ -313,7 +313,7 @@ _lagtmp(cs_lnum_t         npt,
                   * (temprayo + part_temp[l_id]);
 
     cs_real_t  t_fluid_l
-      =   cs_lagr_particles_get_real(p_set, npt, CS_LAGR_FLUID_TEMPERATURE)
+      =   cs_lagr_particle_get_real(particle, p_am, CS_LAGR_TEMPERATURE_SEEN)
         + _tkelvi;
 
     a[l_id] = - (lambda * dt_part)
@@ -374,7 +374,7 @@ _lagtmp(cs_lnum_t         npt,
                           - _c_stephan * pow(part_temp[0], 4);
 
     cs_real_t aux1      =  cs_lagr_particle_get_real(particle, p_am,
-                                                     CS_LAGR_FLUID_TEMPERATURE)
+                                                     CS_LAGR_TEMPERATURE_SEEN)
                          + _tkelvi
                          + tpscara * (phirayo * cs_math_pi * diamp2 + phith[0])
                          / (p_mass * part_cp);
@@ -783,7 +783,7 @@ _lagitp(const cs_lnum_t       npt,
   tcarac = tempct[0];
 
   pip = cs_lagr_particles_get_real_n(p_set, npt, 2 - nor,
-                                         CS_LAGR_FLUID_TEMPERATURE);
+                                         CS_LAGR_TEMPERATURE_SEEN);
 
   /* ======================================================================
   * Account for radiation of present
@@ -808,7 +808,7 @@ _lagitp(const cs_lnum_t       npt,
                         * (extra->rad_energy->val[cell_id]
                       - 4.0 * _c_stephan * pow (prev_p_temp,4));
       pip =   cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                          CS_LAGR_FLUID_TEMPERATURE)
+                                          CS_LAGR_TEMPERATURE_SEEN)
            + tcarac * srad / p_cp / p_mass;
 
     }
@@ -823,7 +823,7 @@ _lagitp(const cs_lnum_t       npt,
                         * (extra->rad_energy->val[cell_id]
                       - 4.0 * _c_stephan *  pow(p_temp , 4));
       pip =  cs_lagr_particle_get_real(particle, p_am,
-                                       CS_LAGR_FLUID_TEMPERATURE)
+                                       CS_LAGR_TEMPERATURE_SEEN)
             + tcarac * srad / p_cp /p_mass;
 
     }
@@ -834,7 +834,7 @@ _lagitp(const cs_lnum_t       npt,
 }
 
 /*----------------------------------------------------------------------------
- * Integration of SDEs for fluid temperature seen by particles.
+ * Integration of SDEs for temperature seen by particles.
  *----------------------------------------------------------------------------*/
 
 static void
@@ -862,7 +862,7 @@ _lagitf(const cs_lnum_t       npt,
       ltsvar   = 1;
   }
 
-  /* Mean fluid temperature in degrees C
+  /* Mean temperature seen in degrees C
    * =================================== */
   cs_real_t t_shift = 0.;
 
@@ -901,17 +901,17 @@ _lagitf(const cs_lnum_t       npt,
   if (nor == 1) {
 
     cs_real_t ter1 = aux2 *
-      cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_FLUID_TEMPERATURE);
+      cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE_SEEN);
     cs_real_t ter2 = loc_tempf * (1.0 - aux2);
 
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE_SEEN,
                               ter1 + ter2);
 
     /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
     if (ltsvar) {
       cs_real_t *part_ts_fluid_t
         = cs_lagr_particles_source_terms(p_set, npt,
-                                         CS_LAGR_FLUID_TEMPERATURE);
+                                         CS_LAGR_TEMPERATURE_SEEN);
       *part_ts_fluid_t = 0.5 * ter1 - loc_tempf
                              * (aux2 + (aux2 - 1.0) * daux1);
     }
@@ -926,14 +926,13 @@ _lagitf(const cs_lnum_t       npt,
 
       cs_real_t ter1
         = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                            CS_LAGR_FLUID_TEMPERATURE) * aux2;
+                                            CS_LAGR_TEMPERATURE_SEEN) * aux2;
       cs_real_t ter2   = loc_tempf * (1.0 + (aux2 - 1.0) * daux1);
       cs_real_t *part_ts_fluid_t
-        = cs_lagr_particles_source_terms(p_set, npt, CS_LAGR_FLUID_TEMPERATURE);
+        = cs_lagr_particles_source_terms(p_set, npt, CS_LAGR_TEMPERATURE_SEEN);
 
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE_SEEN,
                                 *part_ts_fluid_t + ter1 + ter2);
-
     }
   }
 }
@@ -1268,7 +1267,7 @@ _lagich(const cs_lnum_t       npt,
                / coal_model->wmolat[cs_coal_atom_id_c] / 2.0;
 
   aux3 = cs_lagr_particle_get_real(particle, p_am,
-                                   CS_LAGR_FLUID_TEMPERATURE) + _tkelvi;
+                                   CS_LAGR_TEMPERATURE_SEEN) + _tkelvi;
 
   aux4 = cs_coal_ht_convert_t_to_h_gas_by_yi_with_drying(aux3, coefe);
 
@@ -1669,7 +1668,7 @@ _sde_i_ct(const cs_lnum_t       npt,
   cs_real_t t_l_p
     = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE);
   cs_real_t temp_h
-    = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_FLUID_TEMPERATURE);
+    = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE_SEEN);
   cs_real_t x_s_tl = cs_air_x_sat(t_l_p, p0);
   cs_real_t x_s_th = cs_air_x_sat(temp_h, p0);
   cs_real_t xlew   = _lewis_factor(evap_model, molmassrat,
@@ -1760,7 +1759,7 @@ _sde_i_ct(const cs_lnum_t       npt,
     temp_p -= aux2 * ( cs_lagr_particle_get_real_n(particle, p_am, 1,
                                                    CS_LAGR_TEMPERATURE)  -
                        cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                            CS_LAGR_FLUID_TEMPERATURE) );
+                                            CS_LAGR_TEMPERATURE_SEEN) );
 
     /* FIXME: Shall we apply a sort of clipping to the enthalpy before
        converting it into a temperature value ? */
@@ -1797,9 +1796,9 @@ _sde_i_ct(const cs_lnum_t       npt,
                           + cs_lagr_particle_get_real_n(particle, p_am, 1,
                                                         CS_LAGR_TEMPERATURE))
                  - 0.5 * (  cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                      CS_LAGR_FLUID_TEMPERATURE)
+                                                      CS_LAGR_TEMPERATURE_SEEN)
                           + cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                        CS_LAGR_FLUID_TEMPERATURE)));
+                                                        CS_LAGR_TEMPERATURE_SEEN)));
 
     /* FIXME: Shall we apply a sort of clipping to the enthalpy before
        converting it into a temperature value ? */
@@ -1830,7 +1829,7 @@ _sde_i_ct(const cs_lnum_t       npt,
  * \brief Integration of particle stochastic differential equations
  *        for specific physical models.
  *
- * - fluid temperature seen by particles,
+ * - temperature seen by particles,
  * - particle temperature,
  * - particle diameter
  * - particle mass
@@ -1856,14 +1855,14 @@ cs_lagr_sde_model(const cs_lnum_t    npt,
                   cs_real_t         *cpgd2,
                   cs_real_t         *cpght)
 {
-  cs_lagr_attribute_t fluid_temp = CS_LAGR_FLUID_TEMPERATURE;
+  cs_lagr_attribute_t temp_seen = CS_LAGR_TEMPERATURE_SEEN;
 
-  /* Integration of fluid temperature seen by particles */
+  /* Integration of temperature seen by particles */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
       || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           && cs_glob_lagr_specific_physics->solve_temperature_seen == 1))
-    _lagitf(npt, dt_part, nor, &fluid_temp);
+    _lagitf(npt, dt_part, nor, &temp_seen);
 
   /* Integration of particles temperature */
 

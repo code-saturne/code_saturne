@@ -550,7 +550,7 @@ cs_lagr_car(int                iprev,
       const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
       cs_real_t temp_ref = phys_pro->t0;
       cs_real_t temp_s   =
-        cs_lagr_particles_get_real(p_set, ip, CS_LAGR_FLUID_TEMPERATURE);
+        cs_lagr_particles_get_real(p_set, ip, CS_LAGR_TEMPERATURE_SEEN);
 
       cs_real_t expansion_coef
         = cs_field_by_name("thermal_expansion")->val[cell_id];

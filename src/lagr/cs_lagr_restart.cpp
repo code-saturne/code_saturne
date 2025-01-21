@@ -294,7 +294,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
     break;
 
   case CS_LAGR_TEMPERATURE:
-  case CS_LAGR_FLUID_TEMPERATURE:
+  case CS_LAGR_TEMPERATURE_SEEN:
     {
       cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
       cs_lagr_extra_module_t *extra = extra_i;
@@ -309,7 +309,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
 
       assert(datatype == CS_REAL_TYPE);
 
-      /* initialize particle temperature with fluid temperature */
+      /* initialize particle temperature with temperature seen */
       if (t != nullptr) {
         for (cs_lnum_t i = 0; i < n_particles; i++) {
           cs_lnum_t cell_id

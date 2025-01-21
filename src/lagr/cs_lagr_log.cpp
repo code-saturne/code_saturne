@@ -397,8 +397,8 @@ cs_lagr_log_setup(void)
          N_("    1 (solve the particle diameter evolution)")};
 
     const char *solve_temperature_seen_value_str[]
-      = {N_("    0 (no equation on the particle fluid temperature)"),
-         N_("    1 (solve the particle fluid temperature)")};
+      = {N_("    0 (no equation on the particle temperature seen)"),
+         N_("    1 (solve the particle temperature seen)")};
 
     const char *solve_temperature_value_str[]
       = {N_("    0 (no equation on the particle temperature)"),

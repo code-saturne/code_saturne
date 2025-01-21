@@ -152,7 +152,7 @@ cs_user_lagr_volume_conditions(void)
       zis->density = density[set_id];
       zis->fouling_index = 100.0;
 
-      zis->temperature_profile = 0; /* fluid temperature */
+      zis->temperature_profile = 0; /* temperature seen */
 
       zis->cp = 1400.0;
       zis->emissivity = 0.7;
