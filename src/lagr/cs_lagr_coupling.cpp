@@ -297,7 +297,9 @@ cs_lagr_coupling(const cs_real_t  **taup,
       cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am,
                                                     CS_LAGR_MASS);
 
-      cs_lnum_t c_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+      int t_order = cs_glob_lagr_time_scheme->t_order;
+      cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
+                                                   CS_LAGR_CELL_ID);
 
       /* Volume and mass of particles in cell */
       volp[c_id] += p_stat_w * cs_math_pi * pow(prev_p_diam, 3) / 6.0;
@@ -338,8 +340,9 @@ cs_lagr_coupling(const cs_real_t  **taup,
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-        cs_lnum_t  c_id         = cs_lagr_particle_get_lnum(particle, p_am,
-                                                           CS_LAGR_CELL_ID);
+        int t_order = cs_glob_lagr_time_scheme->t_order;
+        cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
+                                                     CS_LAGR_CELL_ID);
         cs_real_t *prev_f_vel  =
           (cs_real_t *)cs_lagr_particle_attr_n(particle, p_am, 1,
                                                CS_LAGR_VELOCITY_SEEN);
@@ -376,8 +379,9 @@ cs_lagr_coupling(const cs_real_t  **taup,
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-        cs_lnum_t  c_id         = cs_lagr_particle_get_lnum(particle, p_am,
-                                                           CS_LAGR_CELL_ID);
+        int t_order = cs_glob_lagr_time_scheme->t_order;
+        cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
+                                                     CS_LAGR_CELL_ID);
 
         cs_real_t *prev_f_vel  =
           (cs_real_t *)cs_lagr_particle_attr_n(particle, p_am, 1,
@@ -447,8 +451,9 @@ cs_lagr_coupling(const cs_real_t  **taup,
         = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
 
       /* Fluid mass source term > 0 -> add mass to fluid */
-      cs_lnum_t c_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                    CS_LAGR_CELL_ID);
+      int t_order = cs_glob_lagr_time_scheme->t_order;
+      cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
+                                                   CS_LAGR_CELL_ID);
 
       cs_real_t dvol = 0.;
       if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -483,8 +488,9 @@ cs_lagr_coupling(const cs_real_t  **taup,
       for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-        cs_lnum_t  c_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                   CS_LAGR_CELL_ID);
+        int t_order = cs_glob_lagr_time_scheme->t_order;
+        cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
+                                                     CS_LAGR_CELL_ID);
         cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
                                                         CS_LAGR_MASS);
         cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1,
@@ -515,8 +521,10 @@ cs_lagr_coupling(const cs_real_t  **taup,
         for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
           unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-          cs_lnum_t  c_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                     CS_LAGR_CELL_ID);
+          int t_order = cs_glob_lagr_time_scheme->t_order;
+          cs_lnum_t c_id =
+            cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
+                                        CS_LAGR_CELL_ID);
           cs_real_t  p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0,
                                                           CS_LAGR_DIAMETER);
           cs_real_t  p_eps = cs_lagr_particle_get_real_n(particle, p_am, 0,
@@ -564,8 +572,10 @@ cs_lagr_coupling(const cs_real_t  **taup,
 
           unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-          cs_lnum_t  c_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                     CS_LAGR_CELL_ID);
+          int t_order = cs_glob_lagr_time_scheme->t_order;
+          cs_lnum_t c_id =
+            cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
+                                        CS_LAGR_CELL_ID);
 
           cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
                                                           CS_LAGR_MASS);
@@ -617,8 +627,9 @@ cs_lagr_coupling(const cs_real_t  **taup,
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-        cs_lnum_t  c_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                   CS_LAGR_CELL_ID);
+        int t_order = cs_glob_lagr_time_scheme->t_order;
+        cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
+                                                     CS_LAGR_CELL_ID);
 
         cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
                                                         CS_LAGR_MASS);
