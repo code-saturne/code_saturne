@@ -90,7 +90,7 @@ public:
     _mode(CS_ALLOC_HOST)
   {
     /* Sanity check for both dimensions */
-    assert(_dim1 > 0 && _dim2 > 0);
+    assert(_dim1 >= 0 && _dim2 >= 0);
     _size = dim1*dim2;
 
     allocate_();
@@ -116,7 +116,7 @@ public:
     _mode(alloc_mode)
   {
     /* Sanity check for both dimensions */
-    assert(_dim1 > 0 && _dim2 > 0);
+    assert(_dim1 >= 0 && _dim2 >= 0);
     _size = dim1*dim2;
 
     allocate_();
@@ -144,7 +144,7 @@ public:
     _mode(alloc_mode)
   {
     /* Sanity check for both dimensions */
-    assert(_dim1 > 0 && _dim2 > 0);
+    assert(_dim1 >= 0 && _dim2 >= 0);
 
     _size = dim1*dim2;
 
@@ -320,7 +320,7 @@ public:
     cs_lnum_t       dim2  /*!<[in] Second dimension size */
   )
   {
-    assert(dim1 > 0 && dim2 > 0);
+    assert(dim1 >= 0 && dim2 >= 0);
 
     /* If same dimensions, nothing to do ... */
     if (dim1 == _dim1 && dim2 == _dim2)
@@ -354,7 +354,7 @@ public:
     cs_lnum_t       size_to_keep  /*!<[in] Size of data to keep */
   )
   {
-    assert(dim1 > 0 && dim2 > 0);
+    assert(dim1 >= 0 && dim2 >= 0);
     assert(size_to_keep <= dim2 && size_to_keep <= _dim2);
 
     /* If same dimensions, nothing to do ... */
