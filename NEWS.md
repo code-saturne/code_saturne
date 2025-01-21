@@ -3,6 +3,8 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix possible error in python CLI build step on python3.13 or newer.
+
 - Fix incorrect index in vector and tensor boundary gradient used for
   reconstruction in some boundary conditions and postprocessing functions.
 
