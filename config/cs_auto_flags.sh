@@ -628,7 +628,7 @@ if test "x$cs_gxx" = "xg++"; then
     g++-4.[012345678]*)
       cxxflags_default="$cxxflags_default -std=c++1y"
       ;;
-    *)
+    g++-[567]*)
       cxxflags_default="$cxxflags_default -std=c++14"
       ;;
   esac
@@ -834,7 +834,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default="-std=c++14 -fPIC"
+    cxxflags_default="-fPIC"
     cxxflags_default_opt="-O2"
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
