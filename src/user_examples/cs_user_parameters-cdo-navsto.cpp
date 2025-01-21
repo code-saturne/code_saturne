@@ -319,8 +319,10 @@ cs_user_model(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t    *domain)
+cs_user_parameters(cs_domain_t *domain)
 {
+  CS_NO_WARN_IF_UNUSED(domain);
+
   /*! [param_cdo_navsto_sles_alu] */
   {
     /* Parameters related to the momentum equation */

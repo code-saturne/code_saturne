@@ -345,18 +345,18 @@ _set_field_vals(int                        n_eqs,
  *        full (coupled) system. The right place is set thanks to the members
  *        asb->l_row_shift and asb->l_col_shift
  *
- * \param[in]      csys       pointer to a cellwise view of the system
- * \param[in, out] sh         pointer to the system helper of the coupled sys.
- * \param[in, out] eqc        context for this kind of discretization
- * \param[in, out] asb        pointer to a cs_cdo_assembly_t structure
+ * \param[in]      csys  pointer to a cellwise view of the system
+ * \param[in, out] sh    pointer to the system helper of the coupled sys.
+ * \param[in, out] eqc   context for this kind of discretization
+ * \param[in, out] asb   pointer to a cs_cdo_assembly_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_one_dblock_assemble(const cs_cell_sys_t          *csys,
-                         cs_cdo_system_helper_t       *sh,
-                         cs_equation_builder_t        *eqb,
-                         cs_cdo_assembly_t            *asb)
+_svb_one_dblock_assemble(const cs_cell_sys_t    *csys,
+                         cs_cdo_system_helper_t *sh,
+                         cs_equation_builder_t  *eqb,
+                         cs_cdo_assembly_t      *asb)
 {
   CS_NO_WARN_IF_UNUSED(eqb);
 
@@ -412,6 +412,7 @@ _solve_mumps(int                               n_eqs,
              cs_cdo_system_helper_t           *sh,
              cs_real_t                        *dof_vals)
 {
+  CS_NO_WARN_IF_UNUSED(n_eqs);
   assert(sh != nullptr);
   assert(sh->n_blocks == 1);
   assert(sh->blocks[0]->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
@@ -856,10 +857,10 @@ cs_cdovb_scalsys_init_sharing(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovb_scalsys_define(int                                 n_eqs,
-                        const cs_equation_system_param_t   *sysp,
-                        cs_equation_core_t                **block_factories,
-                        cs_cdo_system_helper_t            **p_sh)
+cs_cdovb_scalsys_define(int                                n_eqs,
+                        const cs_equation_system_param_t  *sysp,
+                        cs_equation_core_t               **block_factories,
+                        cs_cdo_system_helper_t           **p_sh)
 {
   if (n_eqs == 0)
     return nullptr;
@@ -889,7 +890,7 @@ cs_cdovb_scalsys_define(int                                 n_eqs,
 
   case CS_EQUATION_SYSTEM_SLES_MUMPS:
     {
-      cs_lnum_t  col_block_sizes = n_eqs * n_vertices;
+      cs_lnum_t col_block_sizes = n_eqs * n_vertices;
 
       sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_COUPLED,
                                        1,   /* n_col_blocks */
@@ -926,8 +927,6 @@ cs_cdovb_scalsys_define(int                                 n_eqs,
     cs_equation_core_t  *block_jj = block_factories[j*n_eqs+j];
 
     assert(block_jj != nullptr);
-
-    const cs_equation_param_t *eqp_jj = block_jj->param;
 
     for (int i = 0; i < n_eqs; i++) { /* Loop on rows */
 
@@ -1060,6 +1059,7 @@ cs_cdovb_scalsys_solve_implicit(bool                         cur2prev,
                                 void                        *sys_context,
                                 cs_cdo_system_helper_t      *sh)
 {
+  CS_NO_WARN_IF_UNUSED(time_step);
   assert(sysp->space_scheme == CS_SPACE_SCHEME_CDOVB);
   assert(sysp->block_var_dim == 1);
 

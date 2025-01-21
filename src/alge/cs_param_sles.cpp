@@ -634,7 +634,7 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
   }
   else if (strcmp(keyval, "mumps") == 0) {
 
@@ -643,7 +643,7 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
 
     /* By default, one considers the stand-alone MUMPS library
      * MUMPS or PETSc are valid choices
@@ -674,7 +674,7 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-    slesp->need_flexible      = true;
+    slesp->need_flexible = true;
   }
   else if (strcmp(keyval, "user") == 0) {
 
@@ -723,14 +723,16 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
+
   }
   else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_DIAG;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
+
   }
   else if (strcmp(keyval, "block_jacobi") == 0 ||
            strcmp(keyval, "bjacobi") == 0) {
@@ -743,7 +745,8 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
     slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
+
   }
   else if (strcmp(keyval, "bjacobi_sgs") == 0 ||
            strcmp(keyval, "bjacobi_ssor") == 0) {
@@ -765,7 +768,8 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_BJACOB_SGS;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
+
   }
   else if (strcmp(keyval, "lu") == 0) {
 
@@ -784,15 +788,17 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_LU;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->need_flexible = false;
+
   }
   else if (strcmp(keyval, "ilu0") == 0) {
     /* Either with PETSc or with PETSc/HYPRE or HYPRE using Euclid */
 
     slesp->solver_class = _get_petsc_or_hypre(slesp, false);
 
-    slesp->precond            = CS_PARAM_PRECOND_ILU0;
-    slesp->amg_type           = CS_PARAM_AMG_NONE;
-    slesp->need_flexible      = false;
+    slesp->precond = CS_PARAM_PRECOND_ILU0;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->need_flexible = false;
+
   }
   else if (strcmp(keyval, "icc0") == 0) {
 
@@ -803,6 +809,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_ICC0;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->need_flexible = false;
+
   }
   else if (strcmp(keyval, "amg") == 0) {
 

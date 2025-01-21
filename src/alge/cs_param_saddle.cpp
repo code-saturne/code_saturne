@@ -1587,6 +1587,8 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
         static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
       cs_log_printf(CS_LOG_SETUP, "%s Solver: SIMPLE\n", prefix);
+      cs_log_printf(CS_LOG_SETUP, "%s SIMPLE - dedicated_init_sles: %s\n",
+                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 

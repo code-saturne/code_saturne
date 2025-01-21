@@ -874,7 +874,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   cs_equation_define_builders(m);
 
   /* Define the context structure for each equation. One relies on the given
-   * settings (low-level function pointers
+   * settings (low-level function pointers)
    * Do the same thing for systems of equations and the NavSto module if needed
    */
 
