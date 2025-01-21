@@ -868,7 +868,7 @@ cs_lagr_particle_attr_initialize(void)
       attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = ++loc_count;
     }
 
-    if (cs_glob_lagr_specific_physics->itpvar == 1) {
+    if (cs_glob_lagr_specific_physics->solve_temperature == 1) {
 
       attr_keys[CS_LAGR_CP][1] = ++loc_count;
 

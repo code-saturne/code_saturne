@@ -266,7 +266,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
 
     /* Temperature and Cp */
 
-    if (cs_glob_lagr_specific_physics->itpvar == 1) {
+    if (cs_glob_lagr_specific_physics->solve_temperature == 1) {
       zis->temperature_profile = 1;
       zis->temperature = 20.0;
 

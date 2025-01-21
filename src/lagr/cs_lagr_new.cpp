@@ -708,8 +708,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   /* Initialize pointers (used to simplify future tests) */
 
   if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && (   cs_glob_lagr_specific_physics->solve_temperature_seen == 1
-              || cs_glob_lagr_specific_physics->itpvar == 1))
+          && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+               || cs_glob_lagr_specific_physics->solve_temperature == 1))
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
@@ -740,8 +740,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   /* Prepare enthalpy to temperature conversion if needed */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && (   cs_glob_lagr_specific_physics->solve_temperature_seen == 1
-          || cs_glob_lagr_specific_physics->itpvar == 1)
+      && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+           || cs_glob_lagr_specific_physics->solve_temperature == 1)
       && cval_t == nullptr
       && cval_h != nullptr) {
 
@@ -1305,7 +1305,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                   loc_fluid_temp);
         /* Set particle temperature to fluid one if required */
         if (   zis->temperature_profile < 1
-            && cs_glob_lagr_specific_physics->itpvar > 0)
+            && cs_glob_lagr_specific_physics->solve_temperature > 0)
           cs_lagr_particle_set_real(particle, p_am,
                                     CS_LAGR_TEMPERATURE,
                                     loc_fluid_temp);
@@ -1313,7 +1313,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       }
 
       if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && cs_glob_lagr_specific_physics->itpvar == 1) {
+          && cs_glob_lagr_specific_physics->solve_temperature == 1) {
         /* constant temperature set, may be modified later by user function */
         if (zis->temperature_profile == 1)
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,

@@ -2001,17 +2001,17 @@ _init_vars_attribute(void)
   }
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
     int attr_id = CS_LAGR_DIAMETER;
-    if (   cs_glob_lagr_specific_physics->idpvar
+    if (   cs_glob_lagr_specific_physics->solve_diameter
         && _base_stat_activate[cs_lagr_stat_type_from_attr_id(attr_id)] != 0)
       cs_lagr_stat_activate_attr(attr_id);
 
     attr_id = CS_LAGR_MASS;
-    if (   cs_glob_lagr_specific_physics->impvar
+    if (   cs_glob_lagr_specific_physics->solve_mass
         && _base_stat_activate[cs_lagr_stat_type_from_attr_id(attr_id)] != 0)
       cs_lagr_stat_activate_attr(attr_id);
 
     attr_id = CS_LAGR_TEMPERATURE;
-    if (cs_glob_lagr_specific_physics->itpvar
+    if (cs_glob_lagr_specific_physics->solve_temperature
         && _base_stat_activate[cs_lagr_stat_type_from_attr_id(attr_id)] != 0)
       cs_lagr_stat_activate_attr(attr_id);
   }

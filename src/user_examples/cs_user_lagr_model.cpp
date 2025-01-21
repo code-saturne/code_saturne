@@ -207,16 +207,16 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
     /* equation on diameter */
     /* (default off: 0 ; on: 1)  */
-    cs_glob_lagr_specific_physics->idpvar   = 0;
+    cs_glob_lagr_specific_physics->solve_diameter   = 0;
 
     /* equation on temperature (in Celsius degrees)  */
     /* (default off: 0 ; on: 1)  */
     /* This option requires a thermal scalar for the continuous phase.   */
-    cs_glob_lagr_specific_physics->itpvar   = 0;
+    cs_glob_lagr_specific_physics->solve_temperature   = 0;
 
     /* equation on mass     */
     /* (default off: 0 ; on: 1)  */
-    cs_glob_lagr_specific_physics->impvar   = 0;
+    cs_glob_lagr_specific_physics->solve_mass   = 0;
   }
 
   /*! [particle_tracking_specific_models] */
@@ -342,22 +342,22 @@ cs_user_lagr_model(void)
     cs_glob_lagr_source_terms->ltsdyn = 0;
 
     /* two-way coupling for mass,
-       (if physical_model = CS_LAGR_PHYS_HEAT and impvar = 1)
+       (if physical_model = CS_LAGR_PHYS_HEAT and solve_mass = 1)
        (default off: 0; on: 1) */
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-        && (   cs_glob_lagr_specific_physics->impvar == 1
-            || cs_glob_lagr_specific_physics->idpvar == 1))
+        && (   cs_glob_lagr_specific_physics->solve_mass == 1
+            || cs_glob_lagr_specific_physics->solve_diameter == 1))
       cs_glob_lagr_source_terms->ltsmas = 0;
 
     /* two-way coupling for thermal scalar
-       (if physical_model = CS_LAGR_PHYS_HEAT and impvar = 1,
+       (if physical_model = CS_LAGR_PHYS_HEAT and solve_mass = 1,
        or physical_model = CS_LAGR_PHYS_COAL)
        or for coal variables (if physical_model = CS_LAGR_PHYS_COAL)
        (default off: 0; on: 1) */
 
     if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-            && cs_glob_lagr_specific_physics->itpvar == 1)
+            && cs_glob_lagr_specific_physics->solve_temperature == 1)
         || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
       cs_glob_lagr_source_terms->ltsthe = 0;
 

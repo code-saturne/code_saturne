@@ -238,7 +238,7 @@ cs_lagr_car(int                iprev,
   /* Tc computation  computed only at the first phase*/
 
   if (   (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-             && cs_glob_lagr_specific_physics->itpvar == 1)
+              && cs_glob_lagr_specific_physics->solve_temperature == 1)
          || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
          || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
       && phase_id == 0) {

@@ -181,8 +181,8 @@ cs_lagr_coupling_initialize(void)
   /* Mass source terms
      ================= */
   if (    lag_st->ltsmas == 1
-      && (   cs_glob_lagr_specific_physics->impvar == 1
-          || cs_glob_lagr_specific_physics->idpvar == 1
+      && (   cs_glob_lagr_specific_physics->solve_mass == 1
+          || cs_glob_lagr_specific_physics->solve_diameter == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
     if (t_st_p == nullptr) {
       if (is_time_averaged)
@@ -203,7 +203,7 @@ cs_lagr_coupling_initialize(void)
                 _("Thermal coupling not implemented in multi-layer case"));
 
     if (  (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-           && cs_glob_lagr_specific_physics->itpvar == 1)
+           && cs_glob_lagr_specific_physics->solve_temperature == 1)
         || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
         || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
@@ -383,8 +383,8 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
      ================= */
 
   if (    lag_st->ltsmas == 1
-      && (   cs_glob_lagr_specific_physics->impvar == 1
-          || cs_glob_lagr_specific_physics->idpvar == 1
+      && (   cs_glob_lagr_specific_physics->solve_mass == 1
+          || cs_glob_lagr_specific_physics->solve_diameter == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
 
       t_st_p[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol;
@@ -395,7 +395,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
 
   if (   lag_st->ltsthe == 1
       && (  (    cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-            && cs_glob_lagr_specific_physics->itpvar == 1)
+            && cs_glob_lagr_specific_physics->solve_temperature == 1)
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)) {
 
@@ -416,7 +416,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
                       / tempct[1];
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-        && cs_glob_lagr_specific_physics->itpvar == 1
+        && cs_glob_lagr_specific_physics->solve_temperature == 1
         && extra->radiative_model > 0) {
 
       cs_real_t  p_diam = cs_lagr_particles_get_real_n(p_set, p_id, 0,

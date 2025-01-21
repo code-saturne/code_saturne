@@ -236,11 +236,11 @@ cs_gui_particles_model(void)
   case CS_LAGR_PHYS_HEAT:
     {
       cs_gui_node_get_status_int(cs_tree_node_get_child(tn_pm, "break_up"),
-                                 &(cs_glob_lagr_specific_physics->idpvar));
+                          &(cs_glob_lagr_specific_physics->solve_diameter));
       cs_gui_node_get_status_int(cs_tree_node_get_child(tn_pm, "evaporation"),
-                                 &(cs_glob_lagr_specific_physics->impvar));
+                                 &(cs_glob_lagr_specific_physics->solve_mass));
       cs_gui_node_get_status_int(cs_tree_node_get_child(tn_pm, "thermal"),
-                                 &(cs_glob_lagr_specific_physics->itpvar));
+                          &(cs_glob_lagr_specific_physics->solve_temperature));
     }
     break;
   case CS_LAGR_PHYS_COAL:
@@ -445,9 +445,12 @@ cs_gui_particles_model(void)
   case CS_LAGR_PHYS_OFF:
     break;
   case CS_LAGR_PHYS_HEAT:
-    bft_printf("--idpvar = %i\n", cs_glob_lagr_specific_physics->idpvar);
-    bft_printf("--impvar = %i\n", cs_glob_lagr_specific_physics->impvar);
-    bft_printf("--itpvar = %i\n", cs_glob_lagr_specific_physics->itpvar);
+    bft_printf("--solve_diameter = %i\n",
+        cs_glob_lagr_specific_physics->solve_diameter);
+    bft_printf("--solve_mass = %i\n",
+        cs_glob_lagr_specific_physics->solve_mass);
+    bft_printf("--solve_temperature = %i\n",
+        cs_glob_lagr_specific_physics->solve_temperature);
     break;
   case CS_LAGR_PHYS_COAL:
     bft_printf("--iencra = %i\n", cs_glob_lagr_model->fouling);

@@ -284,7 +284,7 @@ _log_setup_injection(cs_log_t  log)
 
         if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
-                 || cs_glob_lagr_specific_physics->itpvar == 1)) {
+                 || cs_glob_lagr_specific_physics->solve_temperature == 1)) {
           if (zis->temperature_profile == 0)
             cs_log_printf(log,
                           _("    temperature from fluid\n"));
@@ -292,7 +292,7 @@ _log_setup_injection(cs_log_t  log)
             cs_log_printf(log,
                           _("    temperature: %g\n"),
                           zis->temperature);
-          if (cs_glob_lagr_specific_physics->itpvar == 1) {
+          if (cs_glob_lagr_specific_physics->solve_temperature == 1) {
             cs_log_printf(log,
                           _("    Cp: %g\n"),
                           zis->cp);
@@ -392,7 +392,7 @@ cs_lagr_log_setup(void)
                 _(physical_model_value_str[cs_glob_lagr_model->physical_model]));
 
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
-    const char *idpvar_value_str[]
+    const char *solve_diameter_value_str[]
       = {N_("    0 (no evolution equation on particle diameter)"),
          N_("    1 (solve the particle diameter evolution)")};
 
@@ -400,30 +400,33 @@ cs_lagr_log_setup(void)
       = {N_("    0 (no equation on the particle fluid temperature)"),
          N_("    1 (solve the particle fluid temperature)")};
 
-    const char *itpvar_value_str[]
+    const char *solve_temperature_value_str[]
       = {N_("    0 (no equation on the particle temperature)"),
          N_("    1 (solve the particle temperature)")};
 
-    const char *impvar_value_str[]
+    const char *solve_mass_value_str[]
       = {N_("    0 (no evolution equation on particle mass)"),
          N_("    1 (solve the particle mass)")};
 
+    int diameter_id = cs_glob_lagr_specific_physics->solve_diameter;
     cs_log_printf(CS_LOG_SETUP,
-                  _("    idpvar:    %s\n"),
-                  _(idpvar_value_str[cs_glob_lagr_specific_physics->idpvar]));
+                  _("    solve_diameter:    %s\n"),
+                  _(solve_diameter_value_str[diameter_id]));
 
     int temp_seen_id = cs_glob_lagr_specific_physics->solve_temperature_seen;
     cs_log_printf(CS_LOG_SETUP,
                   _("    solve_temperature_seen:    %s\n"),
                   _(solve_temperature_seen_value_str[temp_seen_id]));
 
+    int temp_id = cs_glob_lagr_specific_physics->solve_temperature;
     cs_log_printf(CS_LOG_SETUP,
-                  _("    itpvar:    %s\n"),
-                  _(itpvar_value_str[cs_glob_lagr_specific_physics->itpvar]));
+                  _("    solve_temperature:    %s\n"),
+                  _(solve_temperature_value_str[temp_id]));
 
+    int mass_id = cs_glob_lagr_specific_physics->solve_mass;
     cs_log_printf(CS_LOG_SETUP,
-                  _("    impvar:    %s\n"),
-                  _(impvar_value_str[cs_glob_lagr_specific_physics->impvar]));
+                  _("    solve_mass:    %s\n"),
+                  _(solve_mass_value_str[mass_id]));
   }
 
   const char *isttio_value_str[]

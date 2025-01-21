@@ -437,23 +437,33 @@ typedef struct {
       Useful if \ref physical_model=1 and if there is a thermal scalar
       associated with the continuous phase.
   */
-  int   itpvar;
+  union {
+    int   solve_temperature;
+    int   itpvar; /* deprecated */
+  };
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
       diameter. Useful if \ref physical_model = 1.
   */
-  int   idpvar;
+  union {
+    int   solve_diameter;
+    int   idpvar; /* deprecated */
+  };
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle mass
       Useful if \ref physical_model = 1
   */
-  int   impvar;
+  union {
+    int   solve_mass;
+    int   impvar; /* deprecated */
+  };
 
   /*  initialization temperature (in degree Celsius) for the particles already
       present in the calculation domain when an evolution equation on
       the particle temperature is activated during a calculation
-      (\ref physical_model = 1 and \ref itpvar = 1).
-      Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation.
+      (\ref physical_model = 1 and \ref solve_temperature = 1).
+      Useful if \ref isuila = 1 and \ref solve_temperature = 0 in the previous
+      calculation.
   */
   cs_real_t          tpart;
 
@@ -461,8 +471,9 @@ typedef struct {
      of the particles already present
      in the calculation domain when an evolution equation
      on the particle temperature is activated during a calculation
-     (\ref physical_model = 1 and \ref itpvar = 1).
-     Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
+     (\ref physical_model = 1 and \ref solve_temperature = 1).
+     Useful if \ref isuila = 1 and \ref solve_temperature = 0 in the previous
+     calculation
   */
   cs_real_t          cppart;
 
@@ -670,10 +681,10 @@ typedef struct {
   /*! activation (=1) or not (=0) of the two-way coupling on the mass.
     Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING,
     \ref cs_lagr_model_t::physical_model "physical_model" = 1 and
-    \ref cs_lagr_specific_physics_t::impvar "impvar" = 1 */
+    \ref cs_lagr_specific_physics_t::solve_mass "solve_mass" = 1 */
   int  ltsmas;
 
-  /*  if \ref physical_model = 1 and \ref itpvar = 1, \ref ltsthe
+  /*  if \ref physical_model = 1 and \ref solve_temperature = 1, \ref ltsthe
    activates (=1) or not (=0) the two-way coupling on temperature.
    if \ref physical_model = 2, \ref ltsthe activates (=1) or not (=0) the
    two-way coupling on the eulerian variables related to pulverised

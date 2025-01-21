@@ -229,13 +229,13 @@ cs_lagr_options_definition(int         is_restart,
 
   lagr_model->physical_model = CS_LAGR_PHYS_OFF;
 
-  cs_glob_lagr_specific_physics->idpvar = 0;
+  cs_glob_lagr_specific_physics->solve_diameter = 0;
 
   cs_glob_lagr_specific_physics->solve_temperature_seen = 0;
 
-  cs_glob_lagr_specific_physics->itpvar = 0;
+  cs_glob_lagr_specific_physics->solve_temperature = 0;
 
-  cs_glob_lagr_specific_physics->impvar = 0;
+  cs_glob_lagr_specific_physics->solve_mass = 0;
 
   cs_glob_lagr_specific_physics->tpart = -999.0;
 
@@ -337,18 +337,18 @@ cs_lagr_options_definition(int         is_restart,
 
   cs_parameters_error_barrier();
 
-  /* idpvar itpvar impvar
+  /* solve_diameter solve_temperature solve_mass
    * Return coupling only towards continuous phase */
 
   if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
     /* If the particle temperature is computed so does the temperature seen */
-    if (cs_glob_lagr_specific_physics->itpvar > 0)
+    if (cs_glob_lagr_specific_physics->solve_temperature > 0)
       cs_glob_lagr_specific_physics->solve_temperature_seen = 1;
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
-                                  "cs_glob_lagr_specific_physics->idpvar",
-                                  cs_glob_lagr_specific_physics->idpvar,
+                                  "cs_glob_lagr_specific_physics->solve_diameter",
+                                  cs_glob_lagr_specific_physics->solve_diameter,
                                   0, 2);
     int resol_temp_seen = cs_glob_lagr_specific_physics->solve_temperature_seen;
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -359,38 +359,38 @@ cs_lagr_options_definition(int         is_restart,
                                   0, 2);
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
-                                  "cs_glob_lagr_specific_physics->itpvar",
-                                  cs_glob_lagr_specific_physics->itpvar,
+                                  "cs_glob_lagr_specific_physics->solve_temperature",
+                                  cs_glob_lagr_specific_physics->solve_temperature,
                                   0, 2);
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
-                                  "cs_glob_lagr_specific_physics->impvar",
-                                  cs_glob_lagr_specific_physics->impvar,
+                                  "cs_glob_lagr_specific_physics->solve_mass",
+                                  cs_glob_lagr_specific_physics->solve_mass,
                                   0, 2);
 
-    if (   cs_glob_lagr_specific_physics->itpvar == 1
+    if (   cs_glob_lagr_specific_physics->solve_temperature == 1
         && have_thermal_model == 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
          _("The resolution of the particles temperature is activated\n"
-           "(cs_glob_lagr_specific_physics->itpvar == %d)\n"
+           "(cs_glob_lagr_specific_physics->solve_temperature == %d)\n"
            "but the background Eulerian computation has no thermal scalar."),
-         cs_glob_lagr_specific_physics->itpvar);
+         cs_glob_lagr_specific_physics->solve_temperature);
 
   }
   else {
 
     cs_glob_lagr_specific_physics->solve_temperature_seen = 0;
-    cs_glob_lagr_specific_physics->itpvar = 0;
-    cs_glob_lagr_specific_physics->impvar = 0;
-    cs_glob_lagr_specific_physics->idpvar = 0;
+    cs_glob_lagr_specific_physics->solve_temperature = 0;
+    cs_glob_lagr_specific_physics->solve_mass = 0;
+    cs_glob_lagr_specific_physics->solve_diameter = 0;
 
   }
 
   if (lagr_time_scheme->isuila == 1 &&
       lagr_model->physical_model == CS_LAGR_PHYS_HEAT &&
-      cs_glob_lagr_specific_physics->itpvar == 1) {
+      cs_glob_lagr_specific_physics->solve_temperature == 1) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
                                     "cs_glob_lagr_specific_physics->cppart",
@@ -541,8 +541,8 @@ cs_lagr_options_definition(int         is_restart,
                                   0, 2);
 
     if (     lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-        && (   cs_glob_lagr_specific_physics->impvar == 1
-            || cs_glob_lagr_specific_physics->idpvar == 1)) {
+        && (   cs_glob_lagr_specific_physics->solve_mass == 1
+            || cs_glob_lagr_specific_physics->solve_diameter == 1)) {
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
                                     "cs_glob_lagr_source_terms->ltsmas",
@@ -562,7 +562,7 @@ cs_lagr_options_definition(int         is_restart,
       cs_glob_lagr_source_terms->ltsmas = 0;
 
     if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-            && cs_glob_lagr_specific_physics->itpvar == 1)
+            && cs_glob_lagr_specific_physics->solve_temperature == 1)
         || lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -866,7 +866,7 @@ cs_lagr_options_definition(int         is_restart,
 
     if ((lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           /* Temperature */
-        && cs_glob_lagr_specific_physics->itpvar == 1)
+        && cs_glob_lagr_specific_physics->solve_temperature == 1)
        || lagr_model->physical_model == CS_LAGR_PHYS_COAL
        || lagr_model->physical_model == CS_LAGR_PHYS_CTWR
         ) {

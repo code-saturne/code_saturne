@@ -800,7 +800,7 @@ cs_lagr_restart_read_p(void)
                                      CS_MESH_LOCATION_NONE,
                                      1, CS_TYPE_int, &jdpvar);
     if (ierror != 0)
-      jdpvar = cs_glob_lagr_specific_physics->idpvar;
+      jdpvar = cs_glob_lagr_specific_physics->solve_diameter;
   }
 
   {
@@ -809,15 +809,15 @@ cs_lagr_restart_read_p(void)
                                      CS_MESH_LOCATION_NONE,
                                      1, CS_TYPE_int, &jmpvar);
     if (ierror != 0)
-      jmpvar = cs_glob_lagr_specific_physics->impvar;
+      jmpvar = cs_glob_lagr_specific_physics->solve_mass;
   }
 
   /* Warn if some parameters are different */
 
   if (   jphyla != cs_glob_lagr_model->physical_model
-      || jtpvar != cs_glob_lagr_specific_physics->itpvar
-      || jdpvar != cs_glob_lagr_specific_physics->idpvar
-      || jmpvar != cs_glob_lagr_specific_physics->impvar)
+      || jtpvar != cs_glob_lagr_specific_physics->solve_temperature
+      || jdpvar != cs_glob_lagr_specific_physics->solve_diameter
+      || jmpvar != cs_glob_lagr_specific_physics->solve_mass)
 
     cs_log_printf
       (CS_LOG_DEFAULT,
@@ -845,9 +845,9 @@ cs_lagr_restart_read_p(void)
        jdpvar,
        jmpvar,
        cs_glob_lagr_model->physical_model,
-       cs_glob_lagr_specific_physics->itpvar,
-       cs_glob_lagr_specific_physics->idpvar,
-       cs_glob_lagr_specific_physics->impvar);
+       cs_glob_lagr_specific_physics->solve_temperature,
+       cs_glob_lagr_specific_physics->solve_diameter,
+       cs_glob_lagr_specific_physics->solve_mass);
 
   /* Check compatibility if thermal model change */
 
@@ -870,7 +870,7 @@ cs_lagr_restart_read_p(void)
        "@\n",
        ficsui);
 
-  if (cs_glob_lagr_specific_physics->itpvar == 1 && jtpvar == 0)
+  if (cs_glob_lagr_specific_physics->solve_temperature == 1 && jtpvar == 0)
     cs_log_printf
       (CS_LOG_DEFAULT,
        "@\n"
@@ -1125,7 +1125,7 @@ cs_restart_lagrangian_checkpoint_write(void)
   }
 
   {
-    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->itpvar};
+    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->solve_temperature};
     cs_restart_write_section(lag_stat_restart,
                              "indicateur_temperature_particules",
                              CS_MESH_LOCATION_NONE,
@@ -1133,7 +1133,7 @@ cs_restart_lagrangian_checkpoint_write(void)
   }
 
   {
-    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->idpvar};
+    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->solve_diameter};
     cs_restart_write_section(lag_stat_restart,
                              "indicateur_diametre_particules",
                              CS_MESH_LOCATION_NONE,
@@ -1141,7 +1141,7 @@ cs_restart_lagrangian_checkpoint_write(void)
   }
 
   {
-    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->impvar};
+    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->solve_mass};
     cs_restart_write_section(lag_stat_restart,
                              "indicateur_masse_particules",
                              CS_MESH_LOCATION_NONE,

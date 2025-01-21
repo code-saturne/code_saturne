@@ -1868,19 +1868,19 @@ cs_lagr_sde_model(const cs_lnum_t    npt,
   /* Integration of particles temperature */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && cs_glob_lagr_specific_physics->itpvar == 1)
+      && cs_glob_lagr_specific_physics->solve_temperature == 1)
     _lagitp(npt, dt_part, nor, tempct);
 
   /* Integration of particles diameter */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && cs_glob_lagr_specific_physics-> idpvar == 1)
+      && cs_glob_lagr_specific_physics->solve_diameter == 1)
     _lagidp(npt, dt_part, nor);
 
   /* Integration of particles mass */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && cs_glob_lagr_specific_physics->impvar == 1)
+      && cs_glob_lagr_specific_physics->solve_mass == 1)
     _lagimp(npt, dt_part, nor);
 
   /* Integration of coal equations: hp, mch, mck */
