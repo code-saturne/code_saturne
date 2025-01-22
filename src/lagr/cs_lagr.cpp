@@ -529,8 +529,8 @@ _lagr_map_fields_default(void)
 
       _lagr_extra_module[phase_id].cvar_omg    = nullptr;
       _lagr_extra_module[phase_id].scal_t      = cs_field_by_name_try("lagr_enthalpy");
-      _lagr_extra_module[phase_id].cpro_viscls = cs_field_by_name_try
-                                         ("lagr_thermal_conductivity");
+      _lagr_extra_module[phase_id].cpro_viscls
+        = cs_field_by_name_try("lagr_thermal_conductivity");
       _lagr_extra_module[phase_id].cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
       _lagr_extra_module[phase_id].temperature = cs_field_by_name_try("lagr_temperature");
       _lagr_extra_module[phase_id].temperature_variance

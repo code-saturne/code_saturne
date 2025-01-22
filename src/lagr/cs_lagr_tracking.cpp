@@ -1568,7 +1568,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       tmp = 2. * cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id, face_norm);
 
       /* Wall function */
-      if (extra->cvar_rij != nullptr) {
+      if (extra_i[phase_id].cvar_rij != nullptr) {
         /* Reynolds stress tensor (current value) */
         cs_real_t *r_ij = &(extra_i[phase_id].cvar_rij->vals[0][6*cell_id]);
         /* Component Rnn = ni Rij nj */
