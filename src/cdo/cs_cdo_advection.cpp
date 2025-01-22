@@ -41,6 +41,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_mem.h"
+#include "bft/bft_printf.h"
 
 #include "base/cs_math.h"
 #include "cdo/cs_cdo_bc.h"
@@ -237,31 +238,37 @@ _assign_weight_func(const cs_param_advection_scheme_t    scheme)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Retrieve the function related to the kind of upwind weighting
+ *          for a given face
  *
- * \param[in]  scheme    scheme used for discretizing the advection term
+ * \param[in]  scheme        scheme used for discretizing the advection term
+ * \param[in]  peclet        Peclet number
+ * \param[in]  upwind_ratio  upwind ratio 0 <= r <= 1
+ * \param[in]  internal_face is an internal face
  *
- * \return  a function pointer
+ * \return  weight value
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
 _cdofb_weight_func(const cs_param_advection_scheme_t scheme,
-                   const cs_real_t                   beta_n,
-                   const cs_real_t                   ratio,
+                   const cs_real_t                   beta,
+                   const cs_real_t                   upwind_ratio,
+                   const cs_real_t                   coeff,
                    const bool                        internal_face)
 {
-  const cs_real_t b_s2 = 0.5 * beta_n;
+  const cs_real_t be_s2 = 0.5 * beta;
+
   switch (scheme) {
     case CS_PARAM_ADVECTION_SCHEME_UPWIND: {
       if (internal_face) {
-        return (std::abs(b_s2) + b_s2);
+        return std::abs(be_s2) + be_s2;
       }
-      return b_s2;
+      return be_s2;
       break;
     }
 
     case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE: {
-      return b_s2;
+      return be_s2;
       break;
     }
 
@@ -270,17 +277,25 @@ _cdofb_weight_func(const cs_param_advection_scheme_t scheme,
 
     case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND: {
       if (internal_face) {
-        return ratio * (std::abs(b_s2) + b_s2);
+        return upwind_ratio * (std::abs(be_s2) + be_s2);
       }
-      return ratio * b_s2;
+      return upwind_ratio * be_s2;
       break;
     }
 
     case CS_PARAM_ADVECTION_SCHEME_SG: /* Sharfetter-Gummel */ {
-      if (internal_face) {
-        return (b_s2 * std::tanh(b_s2) - 1.0) + b_s2;
+      const cs_real_t pe    = coeff * beta;
+      cs_real_t       ratio = 0.;
+      if (std::abs(pe) > cs_math_zero_threshold) {
+        const cs_real_t pe_s2 = 0.5 * pe;
+
+        ratio = std::abs(1.0 / std::tanh(pe_s2) - 1.0 / pe_s2);
       }
-      return b_s2;
+
+      if (internal_face) {
+        return ratio * (std::abs(be_s2) + be_s2);
+      }
+      return ratio * be_s2;
       break;
     }
 
@@ -1270,7 +1285,6 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
  *         A scalar-valued version is built.
  *
  * \param[in]      scheme  scheme used for discretizing the advection term
- * \param[in]      ratio   ratio of upwind stabilization 0 <= ratio <= 1
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      cb      pointer to a cs_cell_builder_t structure
  * \param[in, out] adv     pointer to a local matrix to build
@@ -1279,7 +1293,6 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 
 void
 _build_cdofb_stab_upwind(const cs_param_advection_scheme_t scheme,
-                         const cs_real_t                   ratio,
                          const cs_cell_mesh_t             *cm,
                          const cs_cell_sys_t              *csys,
                          cs_cell_builder_t                *cb,
@@ -1292,23 +1305,32 @@ _build_cdofb_stab_upwind(const cs_param_advection_scheme_t scheme,
 
   cs_real_t *c_row = adv->val + c * adv->n_rows;
 
+  /* Acces coefficient for Peclet robustness */
+
+  cs_real_t *coeff = cb->values;
+
+  const cs_real_t upwind_ratio = coeff[cm->n_fc];
+
   /* Loop on cell faces */
 
   for (short int f = 0; f < cm->n_fc; f++) {
     const cs_real_t f_meas = cm->face[f].meas;
-    const cs_real_t beta   = cm->f_sgn[f] * fluxes[f] / f_meas;
-    const cs_real_t half_beta_func =
-      f_meas * _cdofb_weight_func(scheme, beta, ratio, csys->bf_ids[f] < 0);
+    const cs_real_t beta_mean = cm->f_sgn[f] * fluxes[f] / f_meas;
+    const cs_real_t A_plus    = f_meas * _cdofb_weight_func(scheme,
+                                                         beta_mean,
+                                                         upwind_ratio,
+                                                         coeff[f],
+                                                         csys->bf_ids[f] < 0);
 
     /* Access the row containing the current face */
 
     cs_real_t *f_row = adv->val + f * adv->n_rows;
 
-    f_row[c] -= half_beta_func;
-    f_row[f] += half_beta_func;
+    f_row[c] -= A_plus;
+    f_row[f] += A_plus;
 
-    c_row[c] += half_beta_func;
-    c_row[f] -= half_beta_func;
+    c_row[c] += A_plus;
+    c_row[f] -= A_plus;
 
   } /* Loop on cell faces */
 }
@@ -1540,18 +1562,21 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in]      diff_pty     pointer to a \ref cs_property_data_t structure
  * \param[in]      scheme_func  pointer to the function building the system
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_no_diffusion(const cs_equation_param_t   *eqp,
-                                const cs_cell_mesh_t        *cm,
-                                const cs_cell_sys_t         *csys,
-                                cs_cdofb_adv_scheme_t       *scheme_func,
-                                cs_cell_builder_t           *cb)
+cs_cdofb_advection_no_diffusion(const cs_equation_param_t *eqp,
+                                const cs_cell_mesh_t      *cm,
+                                const cs_cell_sys_t       *csys,
+                                const cs_property_data_t  *diff_pty,
+                                cs_cdofb_adv_scheme_t     *scheme_func,
+                                cs_cell_builder_t         *cb)
 {
+  CS_NO_WARN_IF_UNUSED(diff_pty);
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ));
 
@@ -1563,9 +1588,20 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t   *eqp,
   if (cb->cell_flag & CS_FLAG_SOLID_CELL)
     return;         /* Nothing to do. No advection in the current cell volume */
 
+  /* Compute the criterion attached to each face of the cell which is used
+     to evaluate how to upwind and be Peclet robust */
+
+  cs_real_t *coeff = cb->values;
+  assert(coeff != nullptr);
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    coeff[f] = cs_math_big_r; /* dominated by convection */
+  } /* Loop on cell faces */
+
+  coeff[cm->n_fc] = eqp->upwind_portion;
+
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
-  cb->upwind_portion = eqp->upwind_portion;
 
   scheme_func(eqp->dim, cm, csys, cb, adv);
 
@@ -1577,21 +1613,18 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t   *eqp,
 
   assert(cs_equation_param_has_diffusion(eqp) == false);
 
-  cs_real_t  max_abs_flux = 0.;
+  cs_real_t max_abs_flux = 0.;
   for (int f = 0; f < cm->n_fc; f++)
     max_abs_flux = fmax(max_abs_flux, fabs(cb->adv_fluxes[f]));
 
-  const cs_real_t  threshold = max_abs_flux * cs_math_epzero;
+  const cs_real_t threshold = max_abs_flux * cs_math_epzero;
 
   for (int f = 0; f < cm->n_fc; f++) {
-
     if (fabs(cb->adv_fluxes[f]) < threshold) {
-
-      cs_real_t  *f_row = adv->val + f*adv->n_rows;
+      cs_real_t *f_row = adv->val + f * adv->n_rows;
 
       f_row[cm->n_fc] += -1;
-      f_row[f]        +=  1;
-
+      f_row[f] += 1;
     }
 
   } /* Loop on cell faces */
@@ -1622,20 +1655,23 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t   *eqp,
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in]      diff_pty     pointer to a \ref cs_property_data_t structure
  * \param[in]      scheme_func  pointer to the function building the system
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection(const cs_equation_param_t   *eqp,
-                   const cs_cell_mesh_t        *cm,
-                   const cs_cell_sys_t         *csys,
-                   cs_cdofb_adv_scheme_t       *scheme_func,
-                   cs_cell_builder_t           *cb)
+cs_cdofb_advection(const cs_equation_param_t *eqp,
+                   const cs_cell_mesh_t      *cm,
+                   const cs_cell_sys_t       *csys,
+                   const cs_property_data_t  *diff_pty,
+                   cs_cdofb_adv_scheme_t     *scheme_func,
+                   cs_cell_builder_t         *cb)
 {
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
-  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DIAM));
 
   /* Initialize the local matrix structure */
 
@@ -1649,10 +1685,32 @@ cs_cdofb_advection(const cs_equation_param_t   *eqp,
      should have been computed previously in a function compliant with the
      cs_cdofb_adv_open_hook_t prototype */
 
+  /* Compute the criterion attached to each face of the cell which is used
+     to evaluate how to upwind and be Peclet robust */
+
+  cs_real_t *coeff = cb->values;
+  assert(coeff != nullptr);
+  assert(diff_pty != nullptr);
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    coeff[f] = cm->f_diam[f];
+    if (diff_pty->is_unity) {
+      /* Nothing to do*/
+    }
+    else if (diff_pty->is_iso) {
+      coeff[f] /= diff_pty->value;
+    }
+    else { /* Property is considered as tensor-valued */
+      const cs_real_t *unitv = cm->face[f].unitv;
+      coeff[f] /= cs_math_3_33_3_dot_product(unitv, diff_pty->tensor, unitv);
+    }
+
+  } /* Loop on cell faces */
+
+  coeff[cm->n_fc] = eqp->upwind_portion;
+
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
-
-  cb->upwind_portion = eqp->upwind_portion;
 
   scheme_func(eqp->dim, cm, csys, cb, adv);
 
@@ -1701,12 +1759,7 @@ cs_cdofb_advection_upwnoc(int                        dim,
   cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_UPWIND,
-                           cb->upwind_portion,
-                           cm,
-                           csys,
-                           cb,
-                           adv);
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_UPWIND, cm, csys, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1741,12 +1794,7 @@ cs_cdofb_advection_upwcsv(int                   dim,
   cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_UPWIND,
-                           cb->upwind_portion,
-                           cm,
-                           csys,
-                           cb,
-                           adv);
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_UPWIND, cm, csys, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1781,7 +1829,6 @@ cs_cdofb_advection_cennoc_dde(int                   dim,
 
   /* upwind stabilization */
   _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE,
-                           cb->upwind_portion,
                            cm,
                            csys,
                            cb,
@@ -1875,10 +1922,6 @@ cs_cdofb_advection_cennoc(int                   dim,
   for (short int f = 0; f < cm->n_fc; f++) {
     const cs_real_t beta_flx = cm->f_sgn[f] * fluxes[f];
 
-    /* Access the row containing the current face */
-
-    double *f_row = adv->val + f * adv->n_rows;
-
     /* Consistent part */
 
     c_row[f] += beta_flx;
@@ -1887,6 +1930,10 @@ cs_cdofb_advection_cennoc(int                   dim,
 
     if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
         csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+      /* Access the row containing the current face */
+
+      double *f_row = adv->val + f * adv->n_rows;
+
       const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
 
       /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
@@ -1985,7 +2032,6 @@ cs_cdofb_advection_mixcsv(int                   dim,
 
   /* upwind stabilization */
   _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND,
-                           cb->upwind_portion,
                            cm,
                            csys,
                            cb,
@@ -2025,7 +2071,6 @@ cs_cdofb_advection_mixnoc(int                   dim,
 
   /* upwind stabilization */
   _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND,
-                           cb->upwind_portion,
                            cm,
                            csys,
                            cb,
@@ -2064,12 +2109,7 @@ cs_cdofb_advection_sgcsv(int                   dim,
   cs_cdofb_advection_cencsv(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_SG,
-                           cb->upwind_portion,
-                           cm,
-                           csys,
-                           cb,
-                           adv);
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_SG, cm, csys, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2104,12 +2144,7 @@ cs_cdofb_advection_sgnoc(int                   dim,
   cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
   /* upwind stabilization */
-  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_SG,
-                           cb->upwind_portion,
-                           cm,
-                           csys,
-                           cb,
-                           adv);
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_SG, cm, csys, cb, adv);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -506,7 +506,6 @@ cs_cell_builder_create(void)
   cb->gpty_val = 1;             /* grad-div property */
   cb->tpty_val = 1;             /* time property */
   cb->rpty_val = 1;             /* reaction property */
-  cb->upwind_portion = 0.0;           /* upwind portion for hybrid advection*/
 
   for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++) cb->rpty_vals[r] = 1;
 

@@ -107,17 +107,18 @@ typedef void
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in]      diff_pty     pointer to a \ref cs_property_data_t structure
  * \param[in]      scheme_func  function pointer to the scheme definition
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void
-(cs_cdofb_adv_build_t)(const cs_equation_param_t   *eqp,
-                       const cs_cell_mesh_t        *cm,
-                       const cs_cell_sys_t         *csys,
-                       cs_cdofb_adv_scheme_t       *scheme_func,
-                       cs_cell_builder_t           *cb);
+typedef void(cs_cdofb_adv_build_t)(const cs_equation_param_t *eqp,
+                                   const cs_cell_mesh_t      *cm,
+                                   const cs_cell_sys_t       *csys,
+                                   const cs_property_data_t  *diff_pty,
+                                   cs_cdofb_adv_scheme_t     *scheme_func,
+                                   cs_cell_builder_t         *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -318,17 +319,19 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in]      diff_pty     pointer to a \ref cs_property_data_t structure
  * \param[in]      scheme_func  pointer to the function building the system
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_no_diffusion(const cs_equation_param_t   *eqp,
-                                const cs_cell_mesh_t        *cm,
-                                const cs_cell_sys_t         *csys,
-                                cs_cdofb_adv_scheme_t       *scheme_func,
-                                cs_cell_builder_t           *cb);
+cs_cdofb_advection_no_diffusion(const cs_equation_param_t *eqp,
+                                const cs_cell_mesh_t      *cm,
+                                const cs_cell_sys_t       *csys,
+                                const cs_property_data_t  *diff_pty,
+                                cs_cdofb_adv_scheme_t     *scheme_func,
+                                cs_cell_builder_t         *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -343,17 +346,19 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t   *eqp,
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in]      diff_pty     pointer to a \ref cs_property_data_t structure
  * \param[in]      scheme_func  pointer to the function building the system
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection(const cs_equation_param_t   *eqp,
-                   const cs_cell_mesh_t        *cm,
-                   const cs_cell_sys_t         *csys,
-                   cs_cdofb_adv_scheme_t       *scheme_func,
-                   cs_cell_builder_t           *cb);
+cs_cdofb_advection(const cs_equation_param_t *eqp,
+                   const cs_cell_mesh_t      *cm,
+                   const cs_cell_sys_t       *csys,
+                   const cs_property_data_t  *diff_pty,
+                   cs_cdofb_adv_scheme_t     *scheme_func,
+                   cs_cell_builder_t         *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!

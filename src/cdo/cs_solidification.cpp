@@ -604,12 +604,15 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
 
   /* Define the local advection matrix */
 
+  cs_property_data_t *diff_pty =
+    (diff_hodge == nullptr) ? nullptr : diff_hodge->pty_data;
+
   /* Open hook: Compute the advection flux for the numerical scheme and store
      the advection fluxes across primal faces */
 
   eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
 
-  eqc->advection_main(eqp, cm, csys, eqc->advection_scheme, cb);
+  eqc->advection_main(eqp, cm, csys, diff_pty, eqc->advection_scheme, cb);
 
   /* Build the cellwise array: c - c_l
      One should have c_l >= c. Therefore, one takes fmin(...,0) */

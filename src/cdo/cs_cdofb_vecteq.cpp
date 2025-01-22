@@ -572,7 +572,10 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
     /* Define the local advection matrix */
 
-    eqc->advection_main(eqp, cm, csys, eqc->advection_scheme, cb);
+    const cs_property_data_t *diff_pty =
+      (diff_hodge == nullptr) ? nullptr : diff_hodge->pty_data;
+
+    eqc->advection_main(eqp, cm, csys, diff_pty, eqc->advection_scheme, cb);
 
     /* Close hook: Modify if needed the computed advection matrix and update
        the local system */
@@ -1632,7 +1635,8 @@ cs_cdofb_vecteq_init_context(cs_equation_param_t    *eqp,
   eqc->n_dofs = 3*(n_faces + n_cells);
 
   eqb->sys_flag = CS_FLAG_SYS_VECTOR;
-  eqb->msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ;
+  eqb->msh_flag =
+    CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DIAM;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */

@@ -109,8 +109,7 @@ typedef struct {
   double        rpty_vals[CS_CDO_N_MAX_REACTIONS];
   double        rpty_val;
 
-  double       *adv_fluxes;  /*!< Values of the advection flux */
-  double        upwind_portion; /* upwind portion for hybrid advection*/
+  double *adv_fluxes; /*!< Values of the advection flux */
   /*!
    * @name Temporary buffers
    * @{
