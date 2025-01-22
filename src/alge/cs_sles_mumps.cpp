@@ -3400,12 +3400,41 @@ cs_sles_mumps_setup(void               *context,
 
       _automatic_smumps_settings_before_analysis(c->type, slesp, smumps);
 
+      // Appply the ordering previously computed
+
+      if (mumpsp->keep_ordering && _ordering_is_allocated(c)) {
+
+        // Overwrite the initial settings
+
+        smumps->ICNTL(7) = 1;  // user-defined permutation
+        smumps->ICNTL(28) = 1; // sequential ordering
+
+        if (_is_root_rank()) { // Either sequential run or root_rank in parallel
+
+          BFT_MALLOC(smumps->perm_in, smumps->n, MUMPS_INT);
+          _copy_ordering(smumps->n, c->ordering, smumps->perm_in);
+
+        }
+
+      } // Keep ordering is activated
+
       /* Window to enable advanced user settings (before analysis) */
 
       if (c->setup_hook != nullptr)
         c->setup_hook(slesp, c->hook_context, smumps);
 
       smumps_c(smumps);
+
+      if (mumpsp->keep_ordering && !_ordering_is_allocated(c)) {
+
+        if (_is_root_rank()) { // Either sequential run or root_rank in parallel
+
+          BFT_MALLOC(c->ordering, smumps->n, MUMPS_INT);
+          _copy_ordering(smumps->n, smumps->sym_perm, c->ordering);
+
+        }
+
+      }
 
       /* Factorization step */
       /* ------------------ */
