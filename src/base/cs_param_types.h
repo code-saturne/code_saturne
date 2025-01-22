@@ -352,8 +352,8 @@ typedef enum {
  * \var CS_PARAM_ADVECTION_SCHEME_UPWIND
  * Low order upwind discretization
  *
- * \var CS_PARAM_ADVECTION_SCHEME_CENTERED_NEW
- * new centered discretization with less dissipation.
+ * \var CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE
+ * centered discretization of Di Pietro, Droniou, Ern (2015)
  */
 
 typedef enum {
@@ -365,7 +365,7 @@ typedef enum {
   CS_PARAM_ADVECTION_SCHEME_SAMARSKII,
   CS_PARAM_ADVECTION_SCHEME_SG,
   CS_PARAM_ADVECTION_SCHEME_UPWIND,
-  CS_PARAM_ADVECTION_SCHEME_CENTERED_NEW,
+  CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE,
 
   CS_PARAM_N_ADVECTION_SCHEMES
 

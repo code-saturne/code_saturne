@@ -433,11 +433,11 @@ cs_cdofb_advection_upwcsv(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cennoc(int                        dim,
-                          const cs_cell_mesh_t      *cm,
-                          const cs_cell_sys_t       *csys,
-                          cs_cell_builder_t         *cb,
-                          cs_sdm_t                  *adv);
+cs_cdofb_advection_cennoc_dde(int                   dim,
+                              const cs_cell_mesh_t *cm,
+                              const cs_cell_sys_t  *csys,
+                              cs_cell_builder_t    *cb,
+                              cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -461,11 +461,11 @@ cs_cdofb_advection_cennoc(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cencsv(int                        dim,
-                          const cs_cell_mesh_t      *cm,
-                          const cs_cell_sys_t       *csys,
-                          cs_cell_builder_t         *cb,
-                          cs_sdm_t                  *adv);
+cs_cdofb_advection_cencsv_dde(int                   dim,
+                              const cs_cell_mesh_t *cm,
+                              const cs_cell_sys_t  *csys,
+                              cs_cell_builder_t    *cb,
+                              cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -488,11 +488,11 @@ cs_cdofb_advection_cencsv(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cennoc_new(int                   dim,
-                              const cs_cell_mesh_t *cm,
-                              const cs_cell_sys_t  *csys,
-                              cs_cell_builder_t    *cb,
-                              cs_sdm_t             *adv);
+cs_cdofb_advection_cennoc(int                   dim,
+                          const cs_cell_mesh_t *cm,
+                          const cs_cell_sys_t  *csys,
+                          cs_cell_builder_t    *cb,
+                          cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -516,11 +516,11 @@ cs_cdofb_advection_cennoc_new(int                   dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cencsv_new(int                   dim,
-                              const cs_cell_mesh_t *cm,
-                              const cs_cell_sys_t  *csys,
-                              cs_cell_builder_t    *cb,
-                              cs_sdm_t             *adv);
+cs_cdofb_advection_cencsv(int                   dim,
+                          const cs_cell_mesh_t *cm,
+                          const cs_cell_sys_t  *csys,
+                          cs_cell_builder_t    *cb,
+                          cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!

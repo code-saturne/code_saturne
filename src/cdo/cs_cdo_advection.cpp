@@ -247,21 +247,41 @@ _assign_weight_func(const cs_param_advection_scheme_t    scheme)
 static cs_real_t
 _cdofb_weight_func(const cs_param_advection_scheme_t scheme,
                    const cs_real_t                   beta_n,
-                   const cs_real_t                   ratio)
+                   const cs_real_t                   ratio,
+                   const bool                        internal_face)
 {
+  const cs_real_t b_s2 = 0.5 * beta_n;
   switch (scheme) {
-    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-      return std::abs(beta_n);
+    case CS_PARAM_ADVECTION_SCHEME_UPWIND: {
+      if (internal_face) {
+        return (std::abs(b_s2) + b_s2);
+      }
+      return b_s2;
+      break;
+    }
+
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE: {
+      return b_s2;
+      break;
+    }
 
     case CS_PARAM_ADVECTION_SCHEME_CENTERED:
       return 0.0;
 
-    case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
-      return ratio * std::abs(beta_n);
+    case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND: {
+      if (internal_face) {
+        return ratio * (std::abs(b_s2) + b_s2);
+      }
+      return ratio * b_s2;
+      break;
+    }
 
     case CS_PARAM_ADVECTION_SCHEME_SG: /* Sharfetter-Gummel */ {
-      const cs_real_t b_s2 = 0.5 * beta_n;
-      return 2.0 * (b_s2 * std::tanh(b_s2) - 1.0);
+      if (internal_face) {
+        return (b_s2 * std::tanh(b_s2) - 1.0) + b_s2;
+      }
+      return b_s2;
+      break;
     }
 
     default:
@@ -1246,7 +1266,6 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
 /*!
  * \brief  Compute the upwinf stabilization attached to a cell with a CDO
  *         face-based scheme
- *         Rely on the work performed during R. Milani's PhD
  *
  *         A scalar-valued version is built.
  *
@@ -1276,20 +1295,20 @@ _build_cdofb_stab_upwind(const cs_param_advection_scheme_t scheme,
   /* Loop on cell faces */
 
   for (short int f = 0; f < cm->n_fc; f++) {
-    if (csys->bf_ids[f] < 0) { /* Internal face */
-      const cs_real_t beta_n = cm->f_sgn[f] * fluxes[f];
-      const cs_real_t half_A = 0.5 * _cdofb_weight_func(scheme, beta_n, ratio);
+    const cs_real_t f_meas = cm->face[f].meas;
+    const cs_real_t beta   = cm->f_sgn[f] * fluxes[f] / f_meas;
+    const cs_real_t half_beta_func =
+      f_meas * _cdofb_weight_func(scheme, beta, ratio, csys->bf_ids[f] < 0);
 
-      /* Access the row containing the current face */
+    /* Access the row containing the current face */
 
-      cs_real_t *f_row = adv->val + f * adv->n_rows;
+    cs_real_t *f_row = adv->val + f * adv->n_rows;
 
-      f_row[c] -= half_A;
-      f_row[f] += half_A;
+    f_row[c] -= half_beta_func;
+    f_row[f] += half_beta_func;
 
-      c_row[c] += half_A;
-      c_row[f] -= half_A;
-    }
+    c_row[c] += half_beta_func;
+    c_row[f] -= half_beta_func;
 
   } /* Loop on cell faces */
 }
@@ -1752,55 +1771,21 @@ cs_cdofb_advection_upwcsv(int                   dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cennoc(int                        dim,
-                          const cs_cell_mesh_t      *cm,
-                          const cs_cell_sys_t       *csys,
-                          cs_cell_builder_t         *cb,
-                          cs_sdm_t                  *adv)
+cs_cdofb_advection_cennoc_dde(int                   dim,
+                              const cs_cell_mesh_t *cm,
+                              const cs_cell_sys_t  *csys,
+                              cs_cell_builder_t    *cb,
+                              cs_sdm_t             *adv)
 {
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t  *fluxes = cb->adv_fluxes;
+  cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
-  /* Access the row containing current cell */
-
-  double  *c_row = adv->val + c*adv->n_rows;
-
-  /* Loop on cell faces */
-
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  half_beta_flx = 0.5*cm->f_sgn[f]*fluxes[f];
-
-    /* Access the row containing the current face */
-
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    f_row[c] -= half_beta_flx;
-    f_row[f] += half_beta_flx; /* Could be avoided for an internal face:
-                                  \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
-    c_row[c] -= half_beta_flx;
-    c_row[f] += half_beta_flx;
-
-    /* Apply boundary conditions */
-
-    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-        csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
-      const cs_real_t beta_minus = fabs(half_beta_flx) - half_beta_flx;
-
-      /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
-
-      f_row[f] += beta_minus;
-
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached to
-         a boundary face */
-
-      if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-        for (int k = 0; k < dim; k++)
-          csys->rhs[dim * f + k] += beta_minus * csys->dir_values[dim * f + k];
-      }
-    }
-
-  } /* Loop on cell faces */
+  /* upwind stabilization */
+  _build_cdofb_stab_upwind(CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE,
+                           cb->upwind_portion,
+                           cm,
+                           csys,
+                           cb,
+                           adv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1825,13 +1810,13 @@ cs_cdofb_advection_cennoc(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cencsv(int                        dim,
-                          const cs_cell_mesh_t      *cm,
-                          const cs_cell_sys_t       *csys,
-                          cs_cell_builder_t         *cb,
-                          cs_sdm_t                  *adv)
+cs_cdofb_advection_cencsv_dde(int                   dim,
+                              const cs_cell_mesh_t *cm,
+                              const cs_cell_sys_t  *csys,
+                              cs_cell_builder_t    *cb,
+                              cs_sdm_t             *adv)
 {
-  cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
+  cs_cdofb_advection_cennoc_dde(dim, cm, csys, cb, adv);
 
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
   const cs_real_t  *fluxes = cb->adv_fluxes;
@@ -1846,8 +1831,7 @@ cs_cdofb_advection_cencsv(int                        dim,
 
   for (short int f = 0; f < cm->n_fc; f++) {
     div_beta += cm->f_sgn[f] * fluxes[f];
-
-  } /* Loop on cell faces */
+  }
 
   c_row[c] += div_beta;
 }
@@ -1873,11 +1857,11 @@ cs_cdofb_advection_cencsv(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cennoc_new(int                   dim,
-                              const cs_cell_mesh_t *cm,
-                              const cs_cell_sys_t  *csys,
-                              cs_cell_builder_t    *cb,
-                              cs_sdm_t             *adv)
+cs_cdofb_advection_cennoc(int                   dim,
+                          const cs_cell_mesh_t *cm,
+                          const cs_cell_sys_t  *csys,
+                          cs_cell_builder_t    *cb,
+                          cs_sdm_t             *adv)
 {
   const short int  c = cm->n_fc; /* current cell's location in the matrix */
   const cs_real_t *fluxes = cb->adv_fluxes;
@@ -1891,24 +1875,13 @@ cs_cdofb_advection_cennoc_new(int                   dim,
   for (short int f = 0; f < cm->n_fc; f++) {
     const cs_real_t beta_flx = cm->f_sgn[f] * fluxes[f];
 
-    const cs_real_t ratio_vol = cm->pvol_f[f] / cm->vol_c;
-
-    const cs_real_t A_plus = cb->upwind_portion * ratio_vol * beta_flx;
-
     /* Access the row containing the current face */
 
     double *f_row = adv->val + f * adv->n_rows;
 
     /* Consistent part */
-    c_row[c] -= beta_flx;
+
     c_row[f] += beta_flx;
-
-    /* Stabilisation part */
-
-    f_row[c] -= A_plus;
-    f_row[f] += A_plus;
-    c_row[c] += A_plus;
-    c_row[f] -= A_plus;
 
     /* Apply boundary conditions */
 
@@ -1953,13 +1926,13 @@ cs_cdofb_advection_cennoc_new(int                   dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cencsv_new(int                   dim,
-                              const cs_cell_mesh_t *cm,
-                              const cs_cell_sys_t  *csys,
-                              cs_cell_builder_t    *cb,
-                              cs_sdm_t             *adv)
+cs_cdofb_advection_cencsv(int                   dim,
+                          const cs_cell_mesh_t *cm,
+                          const cs_cell_sys_t  *csys,
+                          cs_cell_builder_t    *cb,
+                          cs_sdm_t             *adv)
 {
-  cs_cdofb_advection_cennoc_new(dim, cm, csys, cb, adv);
+  cs_cdofb_advection_cennoc(dim, cm, csys, cb, adv);
 
   const short int  c = cm->n_fc; /* current cell's location in the matrix */
   const cs_real_t *fluxes = cb->adv_fluxes;
@@ -1974,8 +1947,7 @@ cs_cdofb_advection_cencsv_new(int                   dim,
 
   for (short int f = 0; f < cm->n_fc; f++) {
     div_beta += cm->f_sgn[f] * fluxes[f];
-
-  } /* Loop on cell faces */
+  }
 
   c_row[c] += div_beta;
 }

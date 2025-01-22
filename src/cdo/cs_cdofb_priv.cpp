@@ -134,8 +134,8 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
       eqc->advection_scheme = cs_cdofb_advection_upwcsv;
       break;
 
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED_NEW:
-      eqc->advection_scheme = cs_cdofb_advection_cencsv_new;
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE:
+      eqc->advection_scheme = cs_cdofb_advection_cencsv_dde;
       break;
 
     case CS_PARAM_ADVECTION_SCHEME_CENTERED:
@@ -165,8 +165,8 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
       eqc->advection_scheme = cs_cdofb_advection_upwnoc;
       break;
 
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED_NEW:
-      eqc->advection_scheme = cs_cdofb_advection_cennoc_new;
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE:
+      eqc->advection_scheme = cs_cdofb_advection_cennoc_dde;
       break;
 
     case CS_PARAM_ADVECTION_SCHEME_CENTERED:
