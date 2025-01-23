@@ -1283,8 +1283,9 @@ cs_combustion_read_data(void)
       for (int igg = 0; igg < cm->n_gas_species; igg++) {
         cs_log_printf(CS_LOG_SETUP, " %14.5f", cm->coefeg[igg][ige]);
       }
+      cs_log_printf(CS_LOG_SETUP, "\n");
     }
-    cs_log_printf(CS_LOG_SETUP, "\n\n");
+    cs_log_printf(CS_LOG_SETUP, "\n");
 
     cs_log_printf
       (CS_LOG_SETUP,
@@ -1295,6 +1296,7 @@ cs_combustion_read_data(void)
       for (int igg = 0; igg < cm->n_gas_species; igg++) {
         cs_log_printf(CS_LOG_SETUP, " %14.5f", cm->compog[igg][ige]);
       }
+      cs_log_printf(CS_LOG_SETUP, "\n");
     }
     cs_log_printf(CS_LOG_SETUP, "\n");
   }
