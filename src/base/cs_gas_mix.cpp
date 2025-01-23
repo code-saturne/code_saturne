@@ -400,6 +400,7 @@ static void
 _add_species_field(const char  *name,
                    const char  *label)
 {
+  const int kivisl = cs_field_key_id("diffusivity_id");
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
 
@@ -409,6 +410,7 @@ _add_species_field(const char  *name,
   cs_add_model_field_indexes(f->id);
   cs_gas_mix_add_species(f->id);
 
+  cs_field_set_key_int(f, kivisl, 0);
   cs_field_set_key_double(f, kscmin, 0.);
   cs_field_set_key_double(f, kscmax, 1.);
 }
@@ -693,6 +695,7 @@ cs_gas_mix_add_variable_fields(void)
                                     1);
 
     f = cs_field_by_id(f_id);
+    cs_field_pointer_map(CS_ENUMF_(h), f);
     cs_add_model_thermal_field_indexes(f->id);
   }
 
