@@ -81,6 +81,7 @@ double precision second
 integer year, month, quant, hour, day, jday
 character(len=80) :: ccomnt, label, oneline, fname
 character(len=1) :: csaute
+integer(c_int), dimension(nespgi) :: species_profiles_to_fid
 
 ! altitudes and concentrations of every nespgi species
 double precision  zconctemp(nespgi+1)
@@ -88,6 +89,16 @@ double precision  zconctemp(nespgi+1)
 character(len=80), dimension(:), allocatable :: labels
 ! name of the chemistry concentration file
 character(len=80) :: ficmec
+
+interface
+  subroutine cs_f_atmo_chem_initialize_species_profiles_to_fid &
+       (species_profiles_fid) &
+    bind(C,name="cs_f_atmo_chem_initialize_species_profiles_to_fid")
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), dimension(*), intent(in) :: species_profiles_fid
+  end subroutine cs_f_atmo_chem_initialize_species_profiles_to_fid
+end interface
 
 !===============================================================================
 
@@ -379,7 +390,7 @@ else
 endif ! fin test init_gas_with_lib
 
 !===============================================================================
-! 7. logging
+! 7. logging and initialaze species profiles to cpp
 !===============================================================================
 
 if (imode.eq.1) then
@@ -397,6 +408,7 @@ if (imode.eq.1) then
   write(nfecra, '(a)', advance='no') 'zproc, '
   do ii = 1, nespgi
     f_id = ivarfl(isca(isca_chem(idespgi(ii))))
+    species_profiles_to_fid(ii) = f_id
     call field_get_label(f_id, label)
     if (ii .lt. nespgi) then
       write(nfecra, '(a)', advance='no') trim(label)//', '
@@ -409,6 +421,8 @@ if (imode.eq.1) then
     (espnum(ii+(itp-1)*nbchmz+(k-1)*nbchmz*nbchim), k = 1, nespgi)
 7797 format(1x,f8.2,1x,10(es10.2))
   enddo
+
+  call cs_f_atmo_chem_initialize_species_profiles_to_fid(species_profiles_to_fid)
 endif
 
 !================================================================================

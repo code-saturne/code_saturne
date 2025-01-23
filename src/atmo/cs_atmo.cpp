@@ -296,6 +296,7 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .spack_file_name = nullptr,
   .species_to_scalar_id = nullptr,
   .species_to_field_id = nullptr,
+  .species_profiles_to_field_id = nullptr,
   .molar_mass = nullptr,
   .chempoint = nullptr,
   .conv_factor_jac = nullptr,
@@ -362,6 +363,9 @@ cs_atmo_imbrication_t *cs_glob_atmo_imbrication = &_atmo_imbrication;
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
+
+void
+cs_f_reads_aerosol(void);
 
 void
 cs_f_atmo_get_meteo_file_name(int           name_max,
@@ -511,6 +515,9 @@ cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum);
 
 void
 cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
+
+void
+cs_f_atmo_chem_initialize_species_profiles_to_fid(int *species_profiles_fid);
 
 void
 cs_f_atmo_chem_finalize(void);
@@ -2343,6 +2350,17 @@ cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
 }
 
 void
+cs_f_atmo_chem_initialize_species_profiles_to_fid(int *species_profiles_fid)
+{
+  if (_atmo_chem.species_profiles_to_field_id == nullptr)
+    BFT_MALLOC(_atmo_chem.species_profiles_to_field_id,
+               _atmo_chem.n_species_profiles, int);
+
+  for (int i = 0; i < _atmo_chem.n_species_profiles; i++)
+    _atmo_chem.species_profiles_to_field_id[i] = species_profiles_fid[i];
+}
+
+void
 cs_f_atmo_get_chem_conc_profiles(int **nbchim,
                                  int **nbchmz,
                                  int **nespgi)
@@ -2425,6 +2443,8 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.x_conc_profiles);
   BFT_FREE(_atmo_chem.y_conc_profiles);
   BFT_FREE(_atmo_chem.dlconc0);
+  BFT_FREE(_atmo_chem.species_profiles_to_field_id);
+
 }
 
 void
@@ -2705,15 +2725,166 @@ cs_atmo_source_term(int              f_id,
 void
 cs_atmo_fields_init0(void)
 {
+  cs_mesh_t *m = cs_glob_domain->mesh;
+  cs_mesh_quantities_t *mq = cs_glob_domain->mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+
   int has_restart = cs_restart_present();
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
+
+  /* Reading the meteo profile file (if meteo_profile==1) */
+
+  if (at_opt->meteo_profile == 1) {
+    int imode = 1;
+    cs_f_read_meteo_profile(imode);
+  }
+  else if (at_opt->meteo_profile == 2) {
+    cs_atmo_compute_meteo_profiles();
+  }
+
+  /* Atmospheric gaseous chemistry */
+  if (at_chem->model > 0) {
+
+    // Second reading of chemical profiles file
+    int imode = 1;
+    cs_f_read_chemistry_profile(imode);
+
+    /* Volume initilization with profiles
+       for species present in the chemical profiles file */
+    for (int kk = 0; kk < at_chem->n_species_profiles; kk++) {
+
+      const int f_id = at_chem->species_profiles_to_field_id[kk];
+      cs_real_t *cvar_despgi = cs_field_by_id(f_id)->val;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        cvar_despgi[c_id]= cs_intprf(at_chem->n_z_profiles,
+                                     at_chem->nt_step_profiles,
+                                     at_chem->z_conc_profiles,
+                                     at_chem->t_conc_profiles,
+                                     at_chem->conc_profiles,
+                                     cell_cen[c_id][2],
+                                     cs_glob_time_step->t_cur);
+
+    }
+
+    /* Computation of the conversion factor
+     *  matrix used for the reaction rates Jacobian matrix */
+    for (int ii = 0; ii < at_chem->n_species; ii++)
+      for (int kk = 0; kk < at_chem->n_species; kk++) {
+        const int sp_id = (at_chem->chempoint[kk]-1)*at_chem->n_species
+                        +  at_chem->chempoint[ii] - 1;
+        at_chem->conv_factor_jac[sp_id]
+          = at_chem->molar_mass[ii]/at_chem->molar_mass[kk];
+      }
+  }
+
+  /* Atmospheric aerosol chemistry */
+  if (at_chem->aerosol_model != CS_ATMO_AEROSOL_OFF) {
+
+    /* Reading initial concentrations
+       and numbers from file or from the aerosol library */
+    cs_f_reads_aerosol();
+
+    if (has_restart == 0) {
+
+      const int n_aer = at_chem->n_size;
+      const int nlayer_aer = at_chem->n_layer;
+      const int size = n_aer*(1+nlayer_aer);
+
+      const cs_equation_param_t *eqp_p
+        = cs_field_get_equation_param_const(CS_F_(p));
+      const cs_equation_param_t *eqp_vel
+        = cs_field_get_equation_param_const(CS_F_(vel));
+
+      if (eqp_vel->verbosity > 0 || eqp_p->verbosity > 0)
+        bft_printf("   ** INIT ATMO CHEMISTRY VARIABLE FROM FILE\n"
+                   "      --------------------------------------\n");
+
+      for (int ii = 0; ii < size; ii++) {
+        int f_id = _atmo_chem.species_to_field_id[at_chem->n_species + ii];
+        cs_real_t *cvar_sc = cs_field_by_id(f_id)->val;
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          cvar_sc[c_id] = at_chem->dlconc0[ii];
+      }
+    }
+  }
+
+  /*-------------------------------------------------------------------------
+   * Check simulation times used by atmo
+   * radiative transfer or chemistry models
+   *-------------------------------------------------------------------------*/
+  if (   (at_opt->radiative_model_1d == 1 || at_chem->model > 0)
+      && (   at_opt->syear == -1 || at_opt->squant == -1
+          || at_opt->shour == -1 || at_opt->smin  == -1 || at_opt->ssec <= -1.0)  )
+    bft_error(__FILE__,__LINE__, 0,
+              "    WARNING:   STOP WHILE READING INPUT DATA\n"
+              "    =========\n"
+              "               ATMOSPHERIC  MODULE RADITIVE MODEL OR CHEMISTRY\n"
+              "    The simulation time is wrong\n"
+              "    Check variables syear, squant, shour, smin, ssec\n"
+              "    By decreasing priority, these variables can be defined\n"
+              "    in cs_user_parameters or the meteo file or the chemistry file\n");
+
+  /*-------------------------------------------------------------------------
+   * Check radiative module latitude / longitude
+   *-------------------------------------------------------------------------*/
+  if (   at_opt->radiative_model_1d == 1
+      && (   at_opt->latitude >= cs_math_infinite_r*0.5
+          || at_opt->longitude >= cs_math_infinite_r*0.5) )
+    bft_error(__FILE__,__LINE__, 0,
+              "    WARNING:   STOP WHILE READING INPUT DATA\n"
+              "    =========\n"
+              "               ATMOSPHERIC  MODULE RADITIVE MODEL\n"
+              "    Wrong longitude or latitude coordinates\n"
+              "    Check your data and parameters (GUI and user functions)\n");
+
+  /*-------------------------------------------------------------------------
+   * Check latitude / longitude from meteo file
+   *-------------------------------------------------------------------------*/
+  if (at_opt->meteo_profile == 1) {
+    int n_times = CS_MAX(1, at_opt->met_1d_ntimes);
+    cs_real_t xyp_met_max = at_opt->xyp_met[0];
+    for (int ii = 1; ii < 2*n_times; ii++)
+      if (at_opt->xyp_met[ii] > xyp_met_max)
+        xyp_met_max = at_opt->xyp_met[ii];
+    if (xyp_met_max >= cs_math_infinite_r*0.5)
+      bft_error(__FILE__,__LINE__, 0,
+                "    WARNING:   STOP WHILE READING INPUT DATA\n"
+                "    =========\n"
+                "               ATMOSPHERIC  MODULE\n"
+                "    Wrong coordinates for the meteo profile.\n"
+                "    Check your data and parameters (GUI and user functions)\n");
+  }
+
+  /*-------------------------------------------------------------------------
+   * Check latitude / longitude from chemistry file
+   *-------------------------------------------------------------------------*/
+  if (at_chem->model > 0) {
+    cs_real_t xy_chem[2] = {at_chem->x_conc_profiles[0],
+                            at_chem->y_conc_profiles[0]};
+
+    for (int ii = 1; ii < at_chem->nt_step_profiles; ii++) {
+      if (xy_chem[0] <= at_chem->x_conc_profiles[ii])
+        xy_chem[0] = at_chem->x_conc_profiles[ii];
+      if (xy_chem[1] <= at_chem->y_conc_profiles[ii])
+        xy_chem[1] = at_chem->y_conc_profiles[ii];
+    }
+
+    if (   xy_chem[0] >= cs_math_infinite_r*0.5
+        || xy_chem[0] >= cs_math_infinite_r*0.5)
+      bft_error(__FILE__,__LINE__, 0,
+                "    WARNING:   STOP WHILE READING INPUT DATA\n"
+                "    =========\n"
+                "               ATMOSPHERIC  CHEMISTRY\n"
+                "    Wrong coordinates for the concentration profile .\n"
+                "    Check your data and parameters (GUI and user functions)\n");
+  }
 
   /* Only if the simulation is not a restart from another one */
   if (has_restart != 0)
     return;
-
-  cs_mesh_t *m = cs_glob_domain->mesh;
-  cs_mesh_quantities_t *mq = cs_glob_domain->mesh_quantities;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
 
   /* Meteo large scale fields */
   cs_real_3_t *cpro_met_vel = nullptr;
@@ -2788,7 +2959,7 @@ cs_atmo_fields_init0(void)
     cvar_ntdrp = cs_field_by_name("number_of_droplets")->val;
   }
 
-  if (cs_glob_atmo_option->meteo_profile == 0) {
+  if (at_opt->meteo_profile == 0) {
 
     cs_atmo_option_t *aopt = &_atmo_option;
     if (f_th != nullptr) {
@@ -2928,7 +3099,7 @@ cs_atmo_fields_init0(void)
           rij_loc[i] = cpro_met_rij[cell_id][i]; //TODO give a value
 
 
-      /* Initialize turbulence from TKE, dissipation and anistropy if needed */
+      /* Initialize turbulence from TKE, dissipation and anisotropy if needed */
       if (cvar_k != nullptr)
         cvar_k[cell_id]= k_in;
 

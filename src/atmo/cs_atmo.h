@@ -543,6 +543,7 @@ typedef struct {
   char *spack_file_name;
   int *species_to_scalar_id; // used only in Fortran
   int *species_to_field_id;
+  int *species_profiles_to_field_id;
   /*! Molar mass of the chemical species (g/mol) */
   cs_real_t *molar_mass;
   int *chempoint;

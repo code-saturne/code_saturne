@@ -100,7 +100,6 @@ endif
 
 ! Atmospheric flows, first stage
 if (ippmod(iatmos).ge.0) then
-  call atiniv0
   call cs_atmo_fields_init0
 endif
 
