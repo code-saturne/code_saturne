@@ -2631,6 +2631,25 @@ cs_sat_coupling_exchange_at_cells
                                             dist_coords,
                                             cw1_loc,
                                             cw2_loc);
+
+        if (eqp->verbosity > 0) {
+          cs_real_t rhs_loc = 0.;
+          cs_real_t fimp_loc = 0.;
+
+          for (cs_lnum_t e_id = 0; e_id < n_cells_loc; e_id++) {
+            rhs_loc += cw1_loc[e_id];
+            fimp_loc += cw2_loc[e_id];
+          }
+
+          cs_parall_sum(1, CS_DOUBLE, &rhs_loc);
+          cs_parall_sum(1, CS_DOUBLE, &fimp_loc);
+
+          bft_printf("_%s: *Distant* --> (loc)\n"
+                     "|     RHS_loc    |    IMP_loc   |\n"
+                     "|%17.9e|%17.9e|\n ",
+                     f->name, rhs_loc,
+                     fimp_loc);
+        }
       }
 
       /* Symmetric call with a test on both loc and dist sum */
@@ -2702,6 +2721,33 @@ cs_sat_coupling_exchange_at_cells
 
             rhs[c_id]  += cw1_dis[e_id] * one_ov_xtau;
             fimp[c_id] -= cw2_dis[e_id] * one_ov_xtau;
+          }
+
+          if (eqp->verbosity > 0) {
+            cs_real_t rhs_loc = 0.;
+            cs_real_t rhs_dis = 0.;
+            cs_real_t fimp_loc = 0.;
+            cs_real_t fimp_dis = 0.;
+
+            for (cs_lnum_t e_id = 0; e_id < n_cells_dist; e_id++) {
+              cs_lnum_t c_id = dist_elt_ids[e_id];
+              rhs_loc  += rhs[c_id];
+              rhs_dis += cw1_dis[e_id];
+              fimp_loc  += fimp[c_id];
+              fimp_dis += cw2_dis[e_id];
+            }
+
+            cs_parall_sum(1, CS_DOUBLE, &rhs_loc);
+            cs_parall_sum(1, CS_DOUBLE, &fimp_loc);
+            cs_parall_sum(1, CS_DOUBLE, &rhs_dis);
+            cs_parall_sum(1, CS_DOUBLE, &fimp_dis);
+
+            bft_printf("_%s: (Distant) --> *loc*\n"
+                       "|    RHS_loc|    RHS_dis|  FIMP_loc|   FIMP_dis|\n"
+                       "|%17.9e|%17.9e|%17.9e|%17.9e|\n ",
+                       f->name, rhs_loc, rhs_dis,
+                       fimp_loc, fimp_dis);
+
           }
         }
         else {
