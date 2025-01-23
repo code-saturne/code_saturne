@@ -34,6 +34,8 @@
 #include "bft/bft_error.h"
 
 #include "base/cs_defs.h"
+
+#include "base/cs_array.h"
 #include "base/cs_mem.h"
 
 #if defined(__cplusplus)
@@ -166,9 +168,7 @@ public:
    bool          shallow_copy=false /*!<[in] Do a shallow copy or not */
   )
   {
-    _dim1 = other._dim1;
-    _dim2 = other._dim2;
-    _size = other._size;
+    set_size_(other._dim1, other._dim2);
     _mode = other._mode;
 
     /* If shallow copy new instance is not owner. Otherwise same ownership
@@ -178,8 +178,7 @@ public:
 
     if (_is_owner) {
       allocate_();
-      for (cs_lnum_t e_id = 0; e_id < _size; e_id++)
-        _full_array[e_id] = other._full_array[e_id];
+      cs_array_copy<T>(_size, other._full_array, _full_array);
     }
     else {
       _full_array = other._full_array;
@@ -268,9 +267,7 @@ public:
       _full_array = nullptr;
     }
 
-    _dim1 = 0;
-    _dim2 = 0;
-    _size = 0;
+    set_size_(0,0);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -283,7 +280,7 @@ public:
   void
   empty()
   {
-    _dim1 = _dim2 = _size = 0;
+    set_size_(0, 0);
     _is_owner = false;
     _full_array = nullptr;
     _mode = CS_ALLOC_HOST;
@@ -328,11 +325,7 @@ public:
 
     if (_is_owner) {
       clear();
-
-      _dim1 = dim1;
-      _dim2 = dim2;
-      _size = dim1 * dim2;
-
+      set_size_(dim1, dim2);
       allocate_();
     }
 
@@ -361,29 +354,38 @@ public:
     if (dim1 == _dim1 && dim2 == _dim2)
       return;
 
-    if (copy_data && dim1 != _dim1)
+    if (copy_data && dim1 < _dim1)
       bft_error(__FILE__, __LINE__, 0,
-                "%s: Data cannot be saved with new dim1 is different from previous.\n",
+                "%s: Data cannot be saved when new dim1 is smaller than previous.\n",
                 __func__);
 
     if (_is_owner) {
       if (copy_data) {
-        T *tmp = nullptr;
-        CS_MALLOC_HD(tmp, _size, T, _mode);
-        for (cs_lnum_t e_id = 0; e_id < _size; e_id++)
-          tmp[e_id] = _full_array[e_id];
-
-        cs_lnum_t old_dim2 = _dim2;
-
-        resize(dim1, dim2);
-
-        /* We loop on "_dim1" since dim1 = _dim1 */
-        for (cs_lnum_t i = 0; i < _dim1; i++) {
-          for (cs_lnum_t j = 0; j < size_to_keep; j++)
-            _full_array[i*_dim2 + j] = tmp[i*old_dim2 + j];
+        /* If we change dim1 -> Realloc is sufficient */
+        if (_dim1 != dim1) {
+          set_size_(dim1, dim2);
+          reallocate_();
         }
+        else {
+          /* Temporary copy */
+          T *tmp = nullptr;
+          CS_MALLOC_HD(tmp, _size, T, _mode);
 
-        CS_FREE(tmp);
+          cs_array_copy<T>(_size, _full_array, tmp);
+
+          cs_lnum_t old_dim2 = _dim2;
+
+          resize(dim1, dim2);
+
+          /* We loop on "_dim1" since dim1 = _dim1 */
+          for (cs_lnum_t i = 0; i < _dim1; i++) {
+            cs_array_copy<T>(size_to_keep,
+                             tmp + i*old_dim2,
+                             _full_array + i*_dim2);
+          }
+
+          CS_FREE(tmp);
+        }
       }
       else {
         resize(dim1, dim2);
@@ -519,6 +521,25 @@ private:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Private set dimensions method
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  set_size_
+  (
+    cs_lnum_t dim1,
+    cs_lnum_t dim2
+  )
+  {
+    _dim1 = dim1;
+    _dim2 = dim2;
+    _size = dim1 * dim2;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Private allocator
    */
   /*--------------------------------------------------------------------------*/
@@ -530,6 +551,22 @@ private:
     /* Initialize total size of data array and allocate it if owner */
     if (_is_owner) {
       CS_MALLOC_HD(_full_array, _size, T, _mode);
+    }
+  };
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private re-allocator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  reallocate_()
+  {
+    /* If not owner no-op */
+    if (_is_owner) {
+      CS_REALLOC_HD(_full_array, _size, T, _mode);
     }
   };
 
