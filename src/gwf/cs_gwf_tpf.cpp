@@ -1831,19 +1831,6 @@ _compute_plpc_incr_mpicard(const cs_mesh_t           *mesh,
   BFT_MALLOC(pl_k, cdoq->n_vertices, cs_real_t);
   BFT_MALLOC(pc_k, cdoq->n_vertices, cs_real_t);
 
-  //  cs_field_t *pg = tpf->g_pressure;
-  //  cs_real_t *pl_n   = nullptr, *pc_n   = nullptr; /* at ^{n} */
-  // pl_n = pl->val_pre; /* val stores always the latest values */
-  // pc_n = pc->val_pre;
-  // _print_pressures(cdoq, "bloop.pc", pc_kp1,  pc_kp1,  pc_n);
-  // _print_pressures(cdoq, "bloop.pl", pl_kp1,  pl_kp1,  pl_n);
-  // _print_pressures(cdoq, "bloop.pg", pg->val, pg->val, pg->val_pre);
-  // _print_var_properties(connect, cdoq, "pty.bloop",
-  //                       cs_property_get_array(tpf->lsat_pty),
-  //                       tpf->lsat_pre_array,
-  //                       tpf->l_rho_h,
-  //                       tpf->g_rho_h);
-
   do {
 
     /* Previous intermediate values are kept n+1,k+1 --> n+1,k */
@@ -1873,15 +1860,6 @@ _compute_plpc_incr_mpicard(const cs_mesh_t           *mesh,
        the new state for: the pressure fields, krl, krg, etc. */
 
     _update_darcy_fluxes(connect, cdoq, time_eval, cur2prev, tpf);
-
-    // _print_pressures(cdoq, "asolve.pc", pc_kp1,  pc_k,  pc_n);
-    // _print_pressures(cdoq, "asolve.pl", pl_kp1,  pl_k,  pl_n);
-    // _print_pressures(cdoq, "asolve.pg", pg->val, pg->val, pg->val_pre);
-    // _print_var_properties(connect, cdoq, "pty.asolve",
-    //                       cs_property_get_array(tpf->lsat_pty),
-    //                       tpf->lsat_pre_array,
-    //                       tpf->l_rho_h,
-    //                       tpf->g_rho_h);
 
   } while (_check_cvg_nl(tpf->nl_algo_type, pl_k, pl_kp1, pc_k, pc_kp1,
                          algo) == CS_SLES_ITERATING);
