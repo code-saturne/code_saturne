@@ -66,6 +66,10 @@ cs_meg_ibm_func_by_name
 )
 {
   CS_NO_WARN_IF_UNUSED(object_name);
+
+  cs_cutcell_func_t *f = nullptr;
+
+  return f;
 }
 
 /*----------------------------------------------------------------------------*/
