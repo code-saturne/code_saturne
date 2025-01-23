@@ -1421,6 +1421,35 @@ _multigrid_pc_apply(void                *context,
 
   const cs_real_t *rhs = x_in;
 
+  /* Special case where no coarse grid is available
+     (may happen with zero extra-diagonal or penalization everywhere):
+     no preconditioning (should be an easy solve anyways) */
+
+  if (mgd->n_levels == 1) {
+
+    /* If preconditioner is "in-place", no-op */
+
+    if (x_in != nullptr && x_in != x_out) {
+      const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+      const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * db_size;
+
+      cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+      bool use_gpu = (amode > CS_ALLOC_HOST) ? true : false;
+
+      cs_dispatch_context ctx;
+      ctx.set_use_gpu(use_gpu);
+
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        x_out[ii] = x_in[ii];
+      });
+      ctx.wait();
+    }
+
+    mg->info.n_calls[1] += 1;
+
+    return CS_SLES_PC_CONVERGED;
+  }
+
   /* If preconditioner is "in-place", use additional buffer */
 
   if (x_in == nullptr) {
@@ -2391,12 +2420,14 @@ _setup_hierarchy(void             *context,
 
     /* If too few rows were grouped, we stop at this level */
 
-    if (mg->setup_data->n_levels > 1) {
+    if (n_g_rows == 0)
+      add_grid = false;
+    else if (mg->setup_data->n_levels > 1) {
       if (   (n_g_rows < mg->n_g_rows_min)
           || (   n_g_rows > (0.8 * n_g_rows_prev)
-              && n_coarse_ranks == n_coarse_ranks_prev)) {
+              && n_coarse_ranks == n_coarse_ranks_prev)
+          || n_g_rows == 0) {
         add_grid = false;
-        cs_grid_destroy(&g); /* too coarse, not added */
       }
     }
 
@@ -2448,6 +2479,9 @@ _setup_hierarchy(void             *context,
       mg_lv_info->n_elts[2][0] = n_entries;
 
     } /* end adding grid */
+
+    else
+      cs_grid_destroy(&g); /* too coarse, not added */
 
     t2 = cs_timer_time();
     cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t1, &t2);
