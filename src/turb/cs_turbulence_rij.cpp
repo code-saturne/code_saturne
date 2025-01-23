@@ -3903,7 +3903,7 @@ cs_turbulence_rij_clip(int        phase_id,
 
   int kisclp = cs_field_key_id("is_clipped");
   int kclipp = cs_field_key_id("clipping_id");
-  
+
   int is_rij_clipped = cs_field_get_key_int(f_rij, kisclp);
   int is_eps_clipped = cs_field_get_key_int(f_eps, kisclp);
 

@@ -3268,161 +3268,161 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                                         cs_math_infinite_r);
 
           }
-        } /* End on epsilon */
 
-        /* If defined set Dirichlet condition for the Lagrangian time scale */
+          /* If defined set Dirichlet condition for the Lagrangian time scale */
 
-        if (f_tlag != nullptr) {
+          if (f_tlag != nullptr) {
 
-          cs_real_t pimp = 0.;
-          if (cs_glob_wall_functions->iwallf == 0) {
-            /* No wall functions forced by user */
-            pimp = 0.;
+            if (cs_glob_wall_functions->iwallf == 0) {
+              /* No wall functions forced by user */
+              pimp = 0.;
+            }
+            else {
+              /* Use of wall functions */
+              if (iuntur == 1) {
+
+                if (icodcl_vel[f_id] == 5) {
+
+                  pimp = 0.5 * cfnnk / (cfnne * cs_math_pow3(uk)) * cl * xkappa
+                  * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] *rijipb[f_id][0]
+                     + coefa_rij[f_id][1] + coefb_rij[f_id][1][1] *rijipb[f_id][1]
+                     + coefa_rij[f_id][2] + coefb_rij[f_id][2][2] *rijipb[f_id][2])
+                  * (dplus * visclc / (romc * uk) + rough_d);
+                }
+                else if (icodcl_vel[f_id] == 6) {
+                  pimp = 0.5 * cfnnk / (cfnne * cs_math_pow3(uk)) * cl * xkappa
+                  * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] *rijipb[f_id][0]
+                     + coefa_rij[f_id][1] + coefb_rij[f_id][1][1] *rijipb[f_id][1]
+                     + coefa_rij[f_id][2] + coefb_rij[f_id][2][2] *rijipb[f_id][2])
+                  * rough_d;
+                }
+
+              }
+              else
+                pimp = 0.;
+            }
+
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        f_tlag->bc_coeffs,
+                                                        pimp,
+                                                        hint,
+                                                        cs_math_infinite_r);
           }
-          else {
-            /* Use of wall functions */
-            if (iuntur == 1) {
+        }
 
-              if (icodcl_vel[f_id] == 5) {
+        /* process only for smooth wall here after */
+        else if (model == CS_TURB_RIJ_EPSILON_EBRSM && icodcl_vel[f_id] == 5) {
 
-                pimp = 0.5 * cfnnk / (cfnne * cs_math_pow3(uk)) * cl * xkappa
-                * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] *rijipb[f_id][0]
-                   + coefa_rij[f_id][1] + coefb_rij[f_id][1][1] *rijipb[f_id][1]
-                   + coefa_rij[f_id][2] + coefb_rij[f_id][2][2] *rijipb[f_id][2])
-                * (dplus * visclc / (romc * uk) + rough_d);
-              }
-              else if (icodcl_vel[f_id] == 6) {
-                pimp = 0.5 * cfnnk / (cfnne * cs_math_pow3(uk)) * cl * xkappa
-                * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] *rijipb[f_id][0]
-                   + coefa_rij[f_id][1] + coefb_rij[f_id][1][1] *rijipb[f_id][1]
-                   + coefa_rij[f_id][2] + coefb_rij[f_id][2][2] *rijipb[f_id][2])
-                * rough_d;
-              }
+          cs_real_t pimp = 0.0;
 
+          if (cs_glob_wall_functions->iwallf != 0) {
+            /* Use k at I' */
+            const cs_real_t xkip
+              = 0.5 * (rijipb[f_id][0] + rijipb[f_id][1] + rijipb[f_id][2]);
+
+            const cs_real_t pimp_lam =   2 * visclc * xkip
+                                       / (distbf * distbf * romc);
+
+            if (yplus > cs_math_epzero) {
+              const cs_real_t pimp_turb
+                = 5 * pow(uk, 4) * romc / (xkappa * visclc * (yplus + 2 * dplus));
+
+              /* Blending between wall and homogeneous layer
+                 from JF Wald PhD (2016) */
+              const cs_real_t fep  = exp(- pow(0.25 * (yplus + dplus), 1.5));
+              const cs_real_t dep  = 1.0 - exp(- pow((yplus + dplus) / 9.0, 2.1));
+              pimp = fep * pimp_lam + (1.0 - fep) * dep * pimp_turb;
             }
             else
-              pimp = 0.;
-          }
+              pimp = pimp_lam;
 
-          cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                      f_tlag->bc_coeffs,
-                                                      pimp,
-                                                      hint,
-                                                      cs_math_infinite_r);
-        }
-      }
-
-      /* process only for smooth wall here after */
-      else if (model == CS_TURB_RIJ_EPSILON_EBRSM && icodcl_vel[f_id] == 5) {
-
-        cs_real_t pimp = 0.0;
-
-        if (cs_glob_wall_functions->iwallf != 0) {
-          /* Use k at I' */
-          const cs_real_t xkip
-            = 0.5 * (rijipb[f_id][0] + rijipb[f_id][1] + rijipb[f_id][2]);
-
-          const cs_real_t pimp_lam =   2 * visclc * xkip
-                                     / (distbf * distbf * romc);
-
-          if (yplus > cs_math_epzero) {
-            const cs_real_t pimp_turb
-              = 5 * pow(uk, 4) * romc / (xkappa * visclc * (yplus + 2 * dplus));
-
-            /* Blending between wall and homogeneous layer
-               from JF Wald PhD (2016) */
-            const cs_real_t fep  = exp(- pow(0.25 * (yplus + dplus), 1.5));
-            const cs_real_t dep  = 1.0 - exp(- pow((yplus + dplus) / 9.0, 2.1));
-            pimp = fep * pimp_lam + (1.0 - fep) * dep * pimp_turb;
-          }
-          else
-            pimp = pimp_lam;
-
-        }
-        else {
-          /* Use k at I' */
-          const cs_real_t xkip
-            = 0.5 * (rijipb[f_id][0] + rijipb[f_id][1] + rijipb[f_id][2]);
-
-          pimp = 2 * visclc * xkip / (distbf * distbf * romc);
-        }
-
-        pimp = pimp * cfnne;
-
-        cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                    f_eps->bc_coeffs,
-                                                    pimp,
-                                                    hint,
-                                                    cs_math_infinite_r);
-
-        /* If defined set Dirichlet condition for the Lagrangian time scale */
-
-        if (f_tlag != nullptr) {
-
-          if (cs_glob_wall_functions->iwallf == 0) {
-            /* No wall functions forced by user */
-            pimp = 0;
           }
           else {
-            /* Use of wall functions */
-            if (iuntur == 1)
-              pimp =   0.5 * cfnnk / (cfnne * pow(uk, 3)) * cl * xkappa
-               * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] * rijipb[f_id][0]
-                  + coefa_rij[f_id][1] + coefb_rij[f_id][1][1] * rijipb[f_id][1]
-                  + coefa_rij[f_id][2] + coefb_rij[f_id][2][2] * rijipb[f_id][2])
-               * (dplus * visclc / (romc * uk) + rough_d);
-            else
-              pimp = 0.;
+            /* Use k at I' */
+            const cs_real_t xkip
+              = 0.5 * (rijipb[f_id][0] + rijipb[f_id][1] + rijipb[f_id][2]);
+
+            pimp = 2 * visclc * xkip / (distbf * distbf * romc);
           }
 
+          pimp = pimp * cfnne;
+
           cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                      f_tlag->bc_coeffs,
+                                                      f_eps->bc_coeffs,
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
 
-        }
+          /* If defined set Dirichlet condition for the Lagrangian time scale */
 
-        /* Alpha */
+          if (f_tlag != nullptr) {
 
-        /* Dirichlet Boundary Condition
-           ---------------------------- */
+            if (cs_glob_wall_functions->iwallf == 0) {
+              /* No wall functions forced by user */
+              pimp = 0;
+            }
+            else {
+              /* Use of wall functions */
+              if (iuntur == 1)
+                pimp =   0.5 * cfnnk / (cfnne * pow(uk, 3)) * cl * xkappa
+                 * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] * rijipb[f_id][0]
+                    + coefa_rij[f_id][1] + coefb_rij[f_id][1][1] * rijipb[f_id][1]
+                    + coefa_rij[f_id][2] + coefb_rij[f_id][2][2] * rijipb[f_id][2])
+                 * (dplus * visclc / (romc * uk) + rough_d);
+              else
+                pimp = 0.;
+            }
 
-        if (cs_glob_wall_functions->iwallf != 0) {
+            cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                        f_tlag->bc_coeffs,
+                                                        pimp,
+                                                        hint,
+                                                        cs_math_infinite_r);
 
-          if (yplus > cs_math_epzero) {
-            const cs_real_t ypsd  = 0.5 * (yplus + dplus);
+          }
 
-            const cs_real_t falpg
-              = 16. /cs_math_pow2(16 + 4.e-2 * ypsd)
-              * exp(- ypsd / (16. + 4.e-2*ypsd) );
+          /* Alpha */
 
-            const cs_real_t falpv
-              = 1.0 - exp(-(yplus + dplus) / (16. + 4.e-2*(yplus+dplus)));
+          /* Dirichlet Boundary Condition
+             ---------------------------- */
 
-            pimp  = falpv - (yplus + dplus) * falpg;
+          if (cs_glob_wall_functions->iwallf != 0) {
+
+            if (yplus > cs_math_epzero) {
+              const cs_real_t ypsd  = 0.5 * (yplus + dplus);
+
+              const cs_real_t falpg
+                = 16. /cs_math_pow2(16 + 4.e-2 * ypsd)
+                * exp(- ypsd / (16. + 4.e-2*ypsd) );
+
+              const cs_real_t falpv
+                = 1.0 - exp(-(yplus + dplus) / (16. + 4.e-2*(yplus+dplus)));
+
+              pimp  = falpv - (yplus + dplus) * falpg;
+            }
+            else {
+              pimp = 0.;
+            }
           }
           else {
             pimp = 0.;
           }
+
+          hint = 1.0 / distbf;
+          pimp = pimp * cfnne;
+
+          cs_boundary_conditions_set_dirichlet_scalar(f_id,
+                                                      f_alpha->bc_coeffs,
+                                                      pimp,
+                                                      hint,
+                                                      cs_math_infinite_r);
+
         }
-        else {
-          pimp = 0.;
-        }
 
-        hint = 1.0 / distbf;
-        pimp = pimp * cfnne;
+        if (icodcl_vel[f_id] == 6 && df_limiter_eps != nullptr)
+          df_limiter_eps[c_id] = 0.0;
 
-        cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                    f_alpha->bc_coeffs,
-                                                    pimp,
-                                                    hint,
-                                                    cs_math_infinite_r);
-
-      }
-
-      if (icodcl_vel[f_id] == 6 && df_limiter_eps != nullptr)
-        df_limiter_eps[c_id] = 0.0;
+      } /* End on epsilon */
 
     } /* End if order == CS_TURB_SECOND_ORDER */
 

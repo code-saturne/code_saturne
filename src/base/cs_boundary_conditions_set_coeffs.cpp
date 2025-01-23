@@ -2254,21 +2254,21 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             visci[2][0] =          visten[c_id][5]/sigmae;
 
             /* ||Ki.S||^2 */
-            const cs_real_t viscis =   cs_math_pow2(  visci[0][0]*n[0]
-                                                    + visci[1][0]*n[1]
-                                                    + visci[2][0]*n[2])
-                                     + cs_math_pow2(  visci[0][1]*n[0]
-                                                    + visci[1][1]*n[1]
-                                                    + visci[2][1]*n[2])
-                                     + cs_math_pow2(  visci[0][2]*n[0]
-                                                    + visci[1][2]*n[1]
-                                                    + visci[2][2]*n[2]);
+            const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
+                                                  + visci[1][0]*n[1]
+                                                  + visci[2][0]*n[2])
+                                   + cs_math_pow2(  visci[0][1]*n[0]
+                                                  + visci[1][1]*n[1]
+                                                  + visci[2][1]*n[2])
+                                   + cs_math_pow2(  visci[0][2]*n[0]
+                                                  + visci[1][2]*n[1]
+                                                  + visci[2][2]*n[2]);
 
             /* IF.Ki.S */
             cs_real_t fikis
               = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
-                  + cs_math_3_dot_product(dist, visci[1]) * n[1]
-                  + cs_math_3_dot_product(dist, visci[2]) * n[2]);
+                 + cs_math_3_dot_product(dist, visci[1]) * n[1]
+                 + cs_math_3_dot_product(dist, visci[2]) * n[2]);
 
             /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
                NB: eps =1.d-1 must be consistent
@@ -2292,10 +2292,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t hext = rcodcl2_eps[f_id];
 
             cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                eps->bc_coeffs,
-                pimp,
-                hint,
-                hext);
+                                                        eps->bc_coeffs,
+                                                        pimp,
+                                                        hint,
+                                                        hext);
           }
 
           /* Neumann Boundary Condition
@@ -2306,9 +2306,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t dimp = rcodcl3_eps[f_id];
 
             cs_boundary_conditions_set_neumann_scalar(f_id,
-                eps->bc_coeffs,
-                dimp,
-                hint);
+                                                      eps->bc_coeffs,
+                                                      dimp,
+                                                      hint);
           }
 
           /* Convective Boundary Condition
