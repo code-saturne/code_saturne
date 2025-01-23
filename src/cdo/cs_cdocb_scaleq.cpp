@@ -459,7 +459,7 @@ _full_assembly(const cs_cell_sys_t   *csys,
 
   cs_cdo_system_helper_t  *sh = eqc->system_helper;
   cs_cdo_system_block_t  *b = sh->blocks[0];
-  assert(b->type == CS_CDO_SYSTEM_BLOCK_EXT);
+  assert(b->type == CS_CDO_SYSTEM_BLOCK_EXTERN);
   cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */

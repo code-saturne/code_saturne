@@ -485,8 +485,8 @@ _assembly_by_blocks(const cs_cell_sys_t             *csys,
 
   cs_cdo_system_helper_t *sh = sc->system_helper;
   cs_cdo_system_block_t  *b  = sh->blocks[0];
-  assert(b->type == CS_CDO_SYSTEM_BLOCK_SPLIT);
-  cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+  assert(b->type == CS_CDO_SYSTEM_BLOCK_NESTED);
+  cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
   cs_sdm_t *cw_mat           = cs_cdofb_monolithic_cw_mat[cs_get_thread_id()];
 
   /* Convert csys->mat into a block view by component */
@@ -639,7 +639,7 @@ _full_system_assembly(const cs_cell_sys_t             *csys,
 
   cs_cdo_system_helper_t  *sh = sc->system_helper;
   cs_cdo_system_block_t  *b = sh->blocks[0];
-  assert(b->type == CS_CDO_SYSTEM_BLOCK_EXT);
+  assert(b->type == CS_CDO_SYSTEM_BLOCK_EXTERN);
   cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
 
   cs_real_t  *eqc_st = eqc->source_terms;
@@ -812,7 +812,7 @@ _full_system_assembly_solidification(const cs_cell_sys_t              *csys,
   if (solid->cell_is_solid[cm->c_id]) { /* This cell is solid */
 
     cs_cdo_system_block_t  *b = sc->system_helper->blocks[0];
-    assert(b->type == CS_CDO_SYSTEM_BLOCK_EXT);
+    assert(b->type == CS_CDO_SYSTEM_BLOCK_EXTERN);
     cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
 
     const cs_range_set_t  *rset = xb->range_set;

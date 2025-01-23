@@ -148,7 +148,7 @@ _build_shared_structures_full_system(cs_cdo_system_block_t *block,
   const cs_lnum_t            n_faces = quant->n_faces;
   const cs_lnum_t            size    = n_faces + m->n_cells;
 
-  assert(block->type == CS_CDO_SYSTEM_BLOCK_EXT);
+  assert(block->type == CS_CDO_SYSTEM_BLOCK_EXTERN);
   cs_cdo_system_xblock_t *xb
     = static_cast<cs_cdo_system_xblock_t *>(block->block_pointer);
 

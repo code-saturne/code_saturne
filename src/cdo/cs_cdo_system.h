@@ -74,7 +74,7 @@ typedef enum {
  * \var CS_CDO_SYSTEM_BLOCK_DEFAULT
  * Simplest block type. One matrix inside a block.
  *
- * \var CS_CDO_SYSTEM_BLOCK_SPLIT
+ * \var CS_CDO_SYSTEM_BLOCK_NESTED
  * The block is described by several (sub)matrices.
  *
  * \var CS_CDO_SYSTEM_BLOCK_UNASS
@@ -82,7 +82,7 @@ typedef enum {
  * to describe this type of block. For instance, this block can be associated
  * to the pressure block in some strategy for solving sadle-point problems.
  *
- * \var CS_CDO_SYSTEM_BLOCK_EXT
+ * \var CS_CDO_SYSTEM_BLOCK_EXTERN
  * External way to define a block. This block does not rely on the generic
  * function to assemble and build the associated structures. For instance, it
  * corresponds to the full assembly strategy in case of a saddle-point problem.
@@ -91,9 +91,9 @@ typedef enum {
 typedef enum {
 
   CS_CDO_SYSTEM_BLOCK_DEFAULT,
-  CS_CDO_SYSTEM_BLOCK_SPLIT,
+  CS_CDO_SYSTEM_BLOCK_NESTED,
   CS_CDO_SYSTEM_BLOCK_UNASS,
-  CS_CDO_SYSTEM_BLOCK_EXT,
+  CS_CDO_SYSTEM_BLOCK_EXTERN,
 
   CS_CDO_SYSTEM_N_BLOCK_TYPES
 
@@ -208,11 +208,11 @@ typedef struct {
 } cs_cdo_system_dblock_t;
 
 
-/*! \struct cs_cdo_system_sblock_t
- *  \brief Structure associated to the split type of block
+/*! \struct cs_cdo_system_nblock_t
+ *  \brief Structure associated to the nested type of block
  *
- * In this case, the block is split into several matrices sharing the same
- * pattern (structure and way to be assembled)
+ * In this case, the block is built by a set of nested (sub) matrices sharing
+ * the same pattern (structure and function to perform the assembly)
  */
 
 typedef struct {
@@ -253,7 +253,7 @@ typedef struct {
   cs_matrix_assembler_t          *matrix_assembler;
   cs_matrix_structure_t          *matrix_structure;
 
-} cs_cdo_system_sblock_t;
+} cs_cdo_system_nblock_t;
 
 /*! \struct cs_cdo_system_ublock_t
  *  \brief Structure associated to the unassembled type of block
@@ -470,7 +470,7 @@ cs_cdo_system_which_matrix_class(cs_param_solver_class_t  solver_class)
  * \brief Get the matrix class related to the given block_id
  *        \ref CS_CDO_SYSTEM_MATRIX_NONE is returned if not stored in assembled
  *        matrix structure (i.e. block of type equal to
- *        \ref CS_CDO_SYSTEM_BLOCK_DEFAULT or \ref CS_CDO_SYSTEM_BLOCK_EXT
+ *        \ref CS_CDO_SYSTEM_BLOCK_DEFAULT or \ref CS_CDO_SYSTEM_BLOCK_EXTERN
  *
  * \param[in] sh        pointer to a system helper structure
  * \param[in] block_id  id of the block to work with
@@ -563,7 +563,7 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t       *sh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add a split block definition at position "block_id" in the helper
+ * \brief Add a nested block definition at position "block_id" in the helper
  *        structure. Only metadata are set at this stage.
  *
  * \param[in, out] sh          pointer to the system helper to update
@@ -578,7 +578,7 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t       *sh,
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_system_block_t *
-cs_cdo_system_add_sblock(cs_cdo_system_helper_t       *sh,
+cs_cdo_system_add_nblock(cs_cdo_system_helper_t       *sh,
                          int                           block_id,
                          cs_cdo_system_matrix_class_t  matclass,
                          cs_flag_t                     location,
@@ -648,7 +648,7 @@ cs_cdo_system_get_range_set(const cs_cdo_system_helper_t  *sh,
 /*!
  * \brief Retrieve the matrix associated to the given block_id. If the type of
  *        block is either CS_CDO_SYSTEM_BLOCK_DEFAULT or
- *        CS_CDO_SYSTEM_BLOCK_EXT. In other cases, a null pointer is
+ *        CS_CDO_SYSTEM_BLOCK_EXTERN. In other cases, a null pointer is
  *        returned. The unassembled block has no matrix and to get a matrix of
  *        a split block, one should use cs_cdo_system_get_sub_matrix(sh,
  *        block_id, sub_id)
@@ -669,7 +669,7 @@ cs_cdo_system_get_matrix(const cs_cdo_system_helper_t  *sh,
  * \brief Retrieve the (sub-)matrix associated to a split block with id equal
  *        to block_id. sub_id is the id in the list of matrices of size equal
  *        to stride*stride.
- *        If the type of the block is not CS_CDO_SYSTEM_BLOCK_SPLIT, then a
+ *        If the type of the block is not CS_CDO_SYSTEM_BLOCK_NESTED, then a
  *        null pointer is returned.
  *
  * \param[in, out]  sh         pointer to the system_helper structure to update

@@ -404,10 +404,10 @@ _assign_ifs_rset(bool                               forced,
     }
     break; /* default block */
 
-  case CS_CDO_SYSTEM_BLOCK_SPLIT:
+  case CS_CDO_SYSTEM_BLOCK_NESTED:
     /* ------------------------- */
     {
-      cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+      cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
 
       /* Always treated as a scalar-valued block (if stride = 3, then the 9
          blocks are scalar-valued and thus, rely on shared interface and range
@@ -823,10 +823,10 @@ _assign_ma_ms(bool                           forced,
     }
     break; /* default type of block */
 
-  case CS_CDO_SYSTEM_BLOCK_SPLIT:
+  case CS_CDO_SYSTEM_BLOCK_NESTED:
     /* ------------------------- */
     {
-      cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+      cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
 
       if (forced && b->owner) { /* One forces the build of new structures */
 
@@ -954,10 +954,10 @@ _free_block(cs_cdo_system_block_t   **p_block)
     }
     break;
 
-  case CS_CDO_SYSTEM_BLOCK_SPLIT:
+  case CS_CDO_SYSTEM_BLOCK_NESTED:
     /* -------------------------- */
     {
-      cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+      cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
       assert(sb != nullptr);
 
       if (b->owner) {
@@ -999,7 +999,7 @@ _free_block(cs_cdo_system_block_t   **p_block)
     }
     break;
 
-  case CS_CDO_SYSTEM_BLOCK_EXT:
+  case CS_CDO_SYSTEM_BLOCK_EXTERN:
     /* ----------------------- */
     {
       cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
@@ -1093,7 +1093,6 @@ cs_cdo_system_helper_create(cs_cdo_system_type_t type,
 
   sh->full_rhs_size = 0;
   for (int i = 0; i < n_col_blocks; i++) {
-
     sh->col_block_sizes[i] = col_block_sizes[i];
     sh->full_rhs_size += col_block_sizes[i];
   }
@@ -1268,7 +1267,7 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t       *sh,
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_system_block_t *
-cs_cdo_system_add_sblock(cs_cdo_system_helper_t       *sh,
+cs_cdo_system_add_nblock(cs_cdo_system_helper_t       *sh,
                          int                           block_id,
                          cs_cdo_system_matrix_class_t  matclass,
                          cs_flag_t                     location,
@@ -1286,7 +1285,7 @@ cs_cdo_system_add_sblock(cs_cdo_system_helper_t       *sh,
   cs_cdo_system_block_t *b = nullptr;
   BFT_MALLOC(b, 1, cs_cdo_system_block_t);
 
-  b->type = CS_CDO_SYSTEM_BLOCK_SPLIT;
+  b->type = CS_CDO_SYSTEM_BLOCK_NESTED;
   b->info.matrix_class = matclass;
   b->info.location = location;
   b->info.n_elements = n_elements;
@@ -1308,8 +1307,8 @@ cs_cdo_system_add_sblock(cs_cdo_system_helper_t       *sh,
   }
   else { /* Allocate and initialize */
 
-    cs_cdo_system_sblock_t *sb = nullptr;
-    BFT_MALLOC(sb, 1, cs_cdo_system_sblock_t);
+    cs_cdo_system_nblock_t *sb = nullptr;
+    BFT_MALLOC(sb, 1, cs_cdo_system_nblock_t);
 
     sb->n_matrices = stride*stride;
 
@@ -1504,7 +1503,7 @@ cs_cdo_system_add_xblock(cs_cdo_system_helper_t   *sh,
   cs_cdo_system_block_t *b = nullptr;
   BFT_MALLOC(b, 1, cs_cdo_system_block_t);
 
-  b->type = CS_CDO_SYSTEM_BLOCK_EXT;
+  b->type = CS_CDO_SYSTEM_BLOCK_EXTERN;
   b->info.matrix_class = CS_CDO_SYSTEM_MATRIX_CS;
   b->info.location = 0;         /* not defined */
   b->info.n_elements = n_dofs;
@@ -1580,16 +1579,16 @@ cs_cdo_system_get_range_set(const cs_cdo_system_helper_t  *sh,
     }
     break;
 
-  case CS_CDO_SYSTEM_BLOCK_EXT:
+  case CS_CDO_SYSTEM_BLOCK_EXTERN:
     {
     cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
     rs                         = xb->range_set;
     }
     break;
 
-  case CS_CDO_SYSTEM_BLOCK_SPLIT:
+  case CS_CDO_SYSTEM_BLOCK_NESTED:
     {
-    cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+    cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
     rs                         = sb->range_set;
     }
     break;
@@ -1612,7 +1611,7 @@ cs_cdo_system_get_range_set(const cs_cdo_system_helper_t  *sh,
 /*!
  * \brief Retrieve the matrix associated to the given block_id. If the type of
  *        block is either CS_CDO_SYSTEM_BLOCK_DEFAULT or
- *        CS_CDO_SYSTEM_BLOCK_EXT. In other cases, a null pointer is
+ *        CS_CDO_SYSTEM_BLOCK_EXTERN. In other cases, a null pointer is
  *        returned. The unassembled block has no matrix and to get a matrix of
  *        a split block, one should use cs_cdo_system_get_sub_matrix(sh,
  *        block_id, sub_id)
@@ -1646,7 +1645,7 @@ cs_cdo_system_get_matrix(const cs_cdo_system_helper_t  *sh,
     }
     break;
 
-  case CS_CDO_SYSTEM_BLOCK_EXT:
+  case CS_CDO_SYSTEM_BLOCK_EXTERN:
     {
     cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
     m                          = xb->matrix;
@@ -1665,7 +1664,7 @@ cs_cdo_system_get_matrix(const cs_cdo_system_helper_t  *sh,
  * \brief Retrieve the (sub-)matrix associated to a split block with id equal
  *        to block_id. sub_id is the id in the list of matrices of size equal
  *        to stride*stride.
- *        If the type of the block is not CS_CDO_SYSTEM_BLOCK_SPLIT, then a
+ *        If the type of the block is not CS_CDO_SYSTEM_BLOCK_NESTED, then a
  *        null pointer is returned.
  *
  * \param[in, out]  sh         pointer to the system_helper structure to update
@@ -1692,9 +1691,9 @@ cs_cdo_system_get_sub_matrix(cs_cdo_system_helper_t  *sh,
 
   switch (b->type) {
 
-  case CS_CDO_SYSTEM_BLOCK_SPLIT:
+  case CS_CDO_SYSTEM_BLOCK_NESTED:
     {
-    cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+    cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
     if (sub_id > -1 && sub_id < sb->n_matrices)
       m = sb->matrices[sub_id];
     }
@@ -1741,7 +1740,7 @@ cs_cdo_system_build_block(cs_cdo_system_helper_t  *sh,
     cs_cdo_system_block_t  *b = sh->blocks[i];
     assert(b != nullptr);
 
-    if (b->type == CS_CDO_SYSTEM_BLOCK_EXT)
+    if (b->type == CS_CDO_SYSTEM_BLOCK_EXTERN)
       continue; /* All is defined by the calling code. Not generic */
     if (b->owner == false)
       continue;
@@ -1894,9 +1893,9 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
       }
       break;
 
-    case CS_CDO_SYSTEM_BLOCK_SPLIT:
+    case CS_CDO_SYSTEM_BLOCK_NESTED:
       {
-        cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+        cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
         assert(sb->matrices != nullptr);
         assert(sb->mav_array != nullptr);
 
@@ -1936,7 +1935,7 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
       }
       break;
 
-    case CS_CDO_SYSTEM_BLOCK_EXT:
+    case CS_CDO_SYSTEM_BLOCK_EXTERN:
       {
         cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
         assert(xb->matrix_structure != nullptr);
@@ -2000,10 +1999,10 @@ cs_cdo_system_helper_finalize_assembly(cs_cdo_system_helper_t    *sh)
       }
       break;
 
-    case CS_CDO_SYSTEM_BLOCK_SPLIT:
+    case CS_CDO_SYSTEM_BLOCK_NESTED:
       /* ------------------------- */
       {
-        cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+        cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
 
         for (int k = 0; k < sb->n_matrices; k++) {
           cs_matrix_assembler_values_done(sb->mav_array[k]);
@@ -2012,7 +2011,7 @@ cs_cdo_system_helper_finalize_assembly(cs_cdo_system_helper_t    *sh)
       }
       break;
 
-    case CS_CDO_SYSTEM_BLOCK_EXT:
+    case CS_CDO_SYSTEM_BLOCK_EXTERN:
       /* ----------------------- */
       {
         cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
@@ -2066,10 +2065,10 @@ cs_cdo_system_helper_reset(cs_cdo_system_helper_t    *sh)
       }
       break;
 
-    case CS_CDO_SYSTEM_BLOCK_SPLIT:
+    case CS_CDO_SYSTEM_BLOCK_NESTED:
       /* ------------------------- */
       {
-        cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+        cs_cdo_system_nblock_t *sb = (cs_cdo_system_nblock_t *)b->block_pointer;
 
         for (int k = 0; k < sb->n_matrices; k++) {
           cs_matrix_release_coefficients(sb->matrices[k]);
@@ -2078,7 +2077,7 @@ cs_cdo_system_helper_reset(cs_cdo_system_helper_t    *sh)
       }
       break;
 
-    case CS_CDO_SYSTEM_BLOCK_EXT:
+    case CS_CDO_SYSTEM_BLOCK_EXTERN:
       /* ----------------------- */
       {
         cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
