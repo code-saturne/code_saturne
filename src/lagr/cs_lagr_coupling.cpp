@@ -264,9 +264,9 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
                                         const cs_real_2_t             tempct)
 {
   /* WARNING : Only based on the first continuous phase */
-  int t_order = cs_glob_lagr_time_scheme->t_order;
-  cs_lnum_t c_id = cs_lagr_particles_get_lnum_n(p_set, p_id, t_order - 1,
-                                               CS_LAGR_CELL_ID);
+
+  /* The cell_id incremented is the cell_id at the begining of the time step */
+  cs_lnum_t c_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 1, CS_LAGR_CELL_ID);
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   cs_real_t *cell_f_vol = mq->cell_vol;
   const int *restrict c_disable_flag = mq->c_disable_flag;

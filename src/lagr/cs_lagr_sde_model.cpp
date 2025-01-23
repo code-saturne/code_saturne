@@ -211,7 +211,10 @@ _lagtmp(cs_lnum_t         npt,
 
   cs_real_t dd2 = cs_math_sq(p_diam);
 
-  cs_lnum_t cell_id  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                  CS_LAGR_CELL_ID);
   cs_lnum_t co_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
 
   /* Multiple-layer resolution
@@ -495,7 +498,10 @@ _lagsec(cs_lnum_t         npt,
     fwatsat[l_id] = 0.0;
   }
 
-  cs_lnum_t cell_id  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                  CS_LAGR_CELL_ID);
 
   /* find layer */
 
@@ -789,8 +795,10 @@ _lagitp(const cs_lnum_t       npt,
   * Account for radiation of present
   * ======================================================================= */
   if (extra->radiative_model > 0) {
-    cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                  CS_LAGR_CELL_ID);
+    /* use previous step for t_order == 1 or prediction step
+     * and current one for correction step */
+    cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                    CS_LAGR_CELL_ID);
 
     cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
     cs_real_t p_cp   = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
@@ -850,8 +858,10 @@ _lagitf(const cs_lnum_t       npt,
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
   unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-  cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, npt,
-                                                 CS_LAGR_CELL_ID);
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                  CS_LAGR_CELL_ID);
 
   /* Initialize variables to avoid compiler warnings */
 
@@ -1029,8 +1039,11 @@ _lagich(const cs_lnum_t       npt,
 
   unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-  cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                CS_LAGR_CELL_ID);
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                  CS_LAGR_CELL_ID);
+
 
   /* local variables*/
   cs_real_t aux1, aux2, aux3, aux4, aux5;
@@ -1642,8 +1655,10 @@ _sde_i_ct(const cs_lnum_t       npt,
   // cs_real_t r = 461.5; /* J /kg K */
 
   unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-  cs_lnum_t      cell_id  = cs_lagr_particle_get_lnum(particle, p_am,
-                                                      CS_LAGR_CELL_ID);
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                  CS_LAGR_CELL_ID);
   /* Caluclating the current particle surface */
   cs_real_t dia = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
   //cs_real_t surf_p = cs_math_pi*cs_math_pow2(dia) * 0.25;

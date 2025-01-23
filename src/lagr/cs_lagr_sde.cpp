@@ -178,8 +178,11 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
   unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-  const cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                      CS_LAGR_CELL_ID);
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                  CS_LAGR_CELL_ID);
+
 
   if (cell_id <0)
     return;
@@ -1052,8 +1055,10 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
    * ------------------------------- */
   cs_real_6_t auxl;
 
-  cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                CS_LAGR_CELL_ID);
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                  CS_LAGR_CELL_ID);
 
   for (cs_lnum_t id = 0; id < 3; id++) {
     auxl[id] = force_p[id];
@@ -1258,6 +1263,7 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
  *
  * \param[in]  dt_part   remaining time step associated to the particle
  * \param[in]  p_id      particle index in set
+ * \param[in]  nor       current step id (for 2nd order scheme)
  * \param[in]  taup      dynamic characteristic time
  * \param[in]  piil      term in integration of UP SDEs
  * \param[in]  vagaus    gaussian random variables
@@ -1275,6 +1281,7 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
 static void
 _lagesd(cs_real_t                       dt_part,
         cs_lnum_t                       p_id,
+        int                             nor,
         const cs_real_t                 taup,
         const cs_real_3_t               piil,
         const cs_real_3_t              *vagaus,
@@ -1332,7 +1339,10 @@ _lagesd(cs_real_t                       dt_part,
   cs_real_t p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                   CS_LAGR_STAT_WEIGHT);
 
-  cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                  CS_LAGR_CELL_ID);
 
   cs_lnum_t face_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                  CS_LAGR_NEIGHBOR_FACE_ID);
@@ -2681,8 +2691,10 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
 
   if (! imposed_motion) {
 
-      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                  CS_LAGR_CELL_ID);
+    /* use previous step for t_order == 1 or prediction step
+     * and current one for correction step */
+    cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
+                                                    CS_LAGR_CELL_ID);
 
     cs_real_t *old_part_vel      =
       cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
@@ -2895,6 +2907,7 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
 
       _lagesd(dt_part,
               p_id,
+              nor,
               taup,
               piil,
               vagaus,

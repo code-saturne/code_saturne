@@ -623,8 +623,8 @@ cs_lagr_orientation_dyn_spheroids(cs_lnum_t                p_id,
      tau_eta :    Kolmogorov timescale
   */
 
-  cs_lnum_t cell_id
-    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+  cs_lnum_t cell_id =  cs_lagr_particle_get_lnum_n(particle, p_set->p_am, iprev,
+                                                   CS_LAGR_CELL_ID);
 
   cs_real_t romf = extra->cromf->val[cell_id];
 
@@ -728,6 +728,9 @@ cs_lagr_orientation_dyn_spheroids(cs_lnum_t                p_id,
  * \brief Integration of the Jeffey equations in DNS mode
  *
  * \param[in] p_id      particle index
+ * \param[in] iprev     time step indicator for fields
+ *                        0: use fields at current time step
+ *                        1: use fields at previous time step
  * \param[in] dt_part   integration time step associated to the particle
  * \param[in] gradvf    fluid velocity gradient
  */
@@ -735,6 +738,7 @@ cs_lagr_orientation_dyn_spheroids(cs_lnum_t                p_id,
 
 void
 cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
+                                int              iprev,
                                 cs_real_t        dt_part,
                                 const cs_real_t  gradvf[][3][3])
 {
@@ -759,7 +763,8 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
      tau_eta :    Kolmogorov timescale
   */
 
-  cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+  cs_lnum_t cell_id =  cs_lagr_particle_get_lnum_n(particle, p_set->p_am, iprev,
+                                                   CS_LAGR_CELL_ID);
 
   /* Euler parameters */
   auto *euler = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,

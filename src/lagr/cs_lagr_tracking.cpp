@@ -896,14 +896,14 @@ _integ_particle_quantities(cs_lagr_particle_set_t          *particles,
                   nresnew);
 
     /* Integration of SDEs for orientation of spheroids without inertia */
+    int iprev;
+    if (nor == 1)
+      /* Use fields at previous time step    */
+      iprev = 1;
+    else
+      /* Use fields at current time step     */
+      iprev = 0;
     if (lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
-      int iprev;
-      if (nor == 1)
-        /* Use fields at previous time step    */
-        iprev = 1;
-      else
-        /* Use fields at current time step     */
-        iprev = 0;
 
       cs_lagr_orientation_dyn_spheroids(p_id,
                                         iprev,
@@ -913,6 +913,7 @@ _integ_particle_quantities(cs_lagr_particle_set_t          *particles,
     /* Integration of Jeffrey equations for ellipsoids */
     else if (lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
       cs_lagr_orientation_dyn_jeffery(p_id,
+                                      iprev,
                                       dt_part,
                                       (const cs_real_33_t *)extra->grad_vel);
     }
@@ -2276,7 +2277,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
     cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                    CS_LAGR_CELL_ID);
-    cs_lnum_t old_cell_id = cell_id;
+    cs_lagr_particle_set_lnum_n(particle, p_am, 1, CS_LAGR_CELL_ID, cell_id);
 
     assert(cell_id < mesh->n_cells);
     assert(cell_id > -1);
@@ -2799,7 +2800,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
         /* if no rebound nor leaving, nor deposition nor oscillation around a
          * given face.
          * Integrate of the stochastic particle over estimated residence time */
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_ID, old_cell_id);
 
         _integ_particle_quantities(particles,
                                    p_id,
@@ -2823,7 +2823,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                                    save_specific_face_interaction);
 
         /* set back the new cell_id to the particle */
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_ID, cell_id);
 
         if (cs_glob_lagr_time_scheme->t_order == 2) {
           nor = 2;
@@ -2875,7 +2874,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
         save_specific_face_interaction = true;
 
       /* Increment quantities associated to the previous cell if required */
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_ID, old_cell_id);
 
       cs_real_t dt_incr = dt_part - dt_incremented_in_subiter;
 
@@ -2895,14 +2893,15 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
         cs_lagr_stat_update_all_incr(particles, p_id,
                                      dt_incr /cs_glob_lagr_time_step->dtp);
 
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_ID, cell_id);
-
-
       if (  (cell_id == save_old_cell_id && exit_face >= 0)
           || specific_face_interaction) {
         /* save the incremented time but continue tracking virtual partner
          * until next face to avoid spurious oscillation around a face */
         dt_incremented_in_subiter = dt_part;
+
+        save_old_cell_id = cs_lagr_particle_get_lnum_n(particle, p_am, 1,
+                                                       CS_LAGR_CELL_ID);
+        cs_lagr_particle_set_lnum_n(particle, p_am, 1,CS_LAGR_CELL_ID, cell_id);
       }
 
       else {
@@ -2940,8 +2939,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
       }
     }
-    if (prev_tracking_step_id == 0)
-      save_old_cell_id = old_cell_id;
   } /* End of while : local displacement */
 
   BFT_FREE(taup);
@@ -4133,19 +4130,6 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 
       cs_lagr_coupling_initialize();
 
-      cs_lnum_t *list_save_cell_id = nullptr;
-      BFT_MALLOC(list_save_cell_id, particles->n_particles, cs_lnum_t);
-
-      for (cs_lnum_t p_id = 0; p_id < particles->n_particles; p_id++) {
-        /* get  initial cell_id to impose coupling terms & save current one*/
-        list_save_cell_id[p_id]
-          = cs_lagr_particles_get_lnum(particles, p_id, CS_LAGR_CELL_ID);
-        cs_lnum_t prev_cell_id
-          = cs_lagr_particles_get_lnum_n(particles, p_id, 1, CS_LAGR_CELL_ID);
-        cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID,
-                                   prev_cell_id);
-      }
-
       for (cs_lnum_t p_id = 0; p_id < particles->n_particles; p_id++) {
         bool has_rebound_occured =
           (cs_lagr_particles_get_lnum(particles, p_id, CS_LAGR_REBOUND_ID) == 0);
@@ -4157,12 +4141,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                                 list_taup[p_id],
                                                 list_force_p[p_id],
                                                 list_tempct[p_id]);
-
-        /* set back the current particle cell_id */
-        cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID,
-                                   list_save_cell_id[p_id]);
       }
-      BFT_FREE(list_save_cell_id);
     }
   }
   BFT_FREE(list_taup);
