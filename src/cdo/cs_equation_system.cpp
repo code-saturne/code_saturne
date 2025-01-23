@@ -613,7 +613,7 @@ cs_equation_system_set_functions(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the SLES associated to each system of equations
+ * \brief Set the SLES associated to each system of equations
  */
 /*----------------------------------------------------------------------------*/
 
@@ -707,7 +707,7 @@ cs_equation_system_define(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve of a system of coupled equations. Unsteady case.
+ * \brief Solve of a system of coupled equations. Unsteady case.
  *
  * \param[in]      time_step  pointer to a time step structure
  * \param[in]      cur2prev   true="current to previous" operation is performed
