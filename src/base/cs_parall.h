@@ -481,9 +481,9 @@ cs_parall_max_loc_vals(int         n,
  *        default communicator processes.
  *
  * \param[in]       n             size of the related array
- * \param[in, out]  minx           local max in, global max out
- * \param[in, out]  min_loc_vals  array values at location of local max in,
- *                                and at location of global max out
+ * \param[in, out]  minx          local min in, global min out
+ * \param[in, out]  min_loc_vals  array values at location of local min in,
+ *                                and at location of global min out
  */
 /*----------------------------------------------------------------------------*/
 
