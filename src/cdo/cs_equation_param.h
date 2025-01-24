@@ -2596,6 +2596,13 @@ cs_equation_time_control_add(cs_equation_param_t *eqp,
                              bool                 shallow_copy);
 
 /*----------------------------------------------------------------------------*/
+/* Add a time control to an equation_parap structure based on default values */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_time_control_add_default(cs_equation_param_t *eqp);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

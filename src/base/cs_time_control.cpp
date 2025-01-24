@@ -432,5 +432,20 @@ cs_time_control_copy
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy contents of the default cs_time_control to another instance.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_control_copy_from_default
+(
+  cs_time_control_t *tc /*!<[out] Instance to copy data to */
+)
+{
+  cs_time_control_copy(&cs_time_control_default, tc);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

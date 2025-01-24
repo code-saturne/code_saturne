@@ -4219,4 +4219,26 @@ cs_equation_time_control_add
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a time control instance to an equation param structure based
+ * on default values (hard copy).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_time_control_add_default
+(
+  cs_equation_param_t *eqp /*!<[in] pointer to equation param structure */
+)
+{
+  /* Clear existing time control */
+  cs_equation_time_control_clear(eqp);
+
+  /* Hard copy from the default values */
+  eqp->time_control_owner = true;
+  BFT_MALLOC(eqp->time_control, 1, cs_time_control_t);
+  cs_time_control_copy_from_default(eqp->time_control);
+}
+
+/*----------------------------------------------------------------------------*/
 END_C_DECLS
