@@ -153,8 +153,6 @@ _update_face_value_strided
   cs_internal_coupling_t *cpl = nullptr;
   var_t *val_ip_lim = nullptr;
 
-  //halo_type = CS_HALO_EXTENDED;
-
   /* Get the calculation option from the field */
   if (f != nullptr) {
 
@@ -1037,6 +1035,8 @@ _equation_iterative_solve_strided(int                   idtvar,
       });
 
       ctx.wait();
+
+      cs_halo_sync_r(halo, ctx.use_gpu(), dpvar);
 
       /* update with dpvar */
       _update_face_value_strided<stride>(ctx, nullptr, bc_coeffs, inc, eqp, dpvar,
