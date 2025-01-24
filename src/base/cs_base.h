@@ -275,7 +275,6 @@ cs_base_update_status(const char  *format,
 void
 cs_base_trace_set(bool  trace);
 
-
 /*----------------------------------------------------------------------------
  * Set output file name and suppression flag for bft_printf().
  *
@@ -544,7 +543,6 @@ void *
 cs_base_get_dl_function_pointer(void        *handle,
                                 const char  *name,
                                 bool         errors_are_fatal);
-
 
 #endif /* defined(HAVE_DLOPEN) */
 
