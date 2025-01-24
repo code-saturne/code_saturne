@@ -644,11 +644,6 @@ extern cs_atmo_imbrication_t *cs_glob_atmo_imbrication;
 void
 cs_atmo_phyvar_update(void);
 
-void
-cs_atmo_source_term(int              f_id,
-                    cs_real_t        exp_st[],
-                    cs_real_t        imp_st[]);
-
 /*----------------------------------------------------------------------------
  * initialize fields, stage 0
  *----------------------------------------------------------------------------*/

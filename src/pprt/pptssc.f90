@@ -124,6 +124,14 @@ interface
     real(c_double), dimension(*) :: smbrs, rovsdt
   end subroutine cs_coal_source_terms_scalar
 
+  subroutine cs_atmo_scalar_source_term(fld_id, smbrs) &
+    bind(C, name='cs_atmo_scalar_source_term')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: fld_id
+    real(c_double), dimension(*) :: smbrs
+  end subroutine cs_atmo_scalar_source_term
+
 end interface
 
 !===============================================================================
@@ -171,7 +179,7 @@ endif
 ! ---> Atmospheric version
 
 if (ippmod(iatmos).ge.0) then
-  call attssc(iscal, smbrs)
+  call cs_atmo_scalar_source_term(ivarfl(isca(iscal)), smbrs)
 endif
 
 !----

@@ -434,28 +434,6 @@ void CS_PROCF(mesadd, MESADD)
 );
 
 /*----------------------------------------------------------------------------
- * Compute a Cressman interpolation on the global mesh.
- *
- * Fortran interface
- *
- * subroutine mscrss (imeset, type, pldval)
- * *****************
- *
- * integer          imeset      : <-- : Measures set id
- * integer          type        : <-- : Parameter:
- *                                        1: interpolation on volumes
- *                                        2: interpolation on boundary faces
- * cs_real_t*       pldval      : --> : Interpolated values on the global mesh
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(mscrss, MSCRSS)
-(
- const int         *imeset,
- const int         *type,
- cs_real_t         *pldval
-);
-
-/*----------------------------------------------------------------------------
  * Interpolate calculed field on a grid.
  *
  * Fortran interface

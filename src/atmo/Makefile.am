@@ -58,6 +58,7 @@ cs_atmo_aerosol.h \
 cs_atmo_aerosol_ssh.h \
 cs_atmo_headers.h \
 cs_atmo_profile_std.h \
+cs_atmo_source_terms.h \
 cs_atmo_variables.h \
 cs_atprke.h \
 cs_intprf.h
@@ -72,7 +73,6 @@ atlecm.f90 \
 atmcls.f90 \
 atmsol.f90 \
 atr1vf.f90 \
-attssc.f90 \
 chem_roschem.f90 \
 chem_solvelu.f90 \
 chem_source_terms.f90 \
@@ -85,6 +85,7 @@ cs_atmo.cpp \
 cs_atmo_aerosol.cpp \
 cs_atmo_aerosol_ssh.cpp \
 cs_atmo_profile_std.cpp \
+cs_atmo_source_terms.cpp \
 cs_atmo_variables.cpp \
 cs_atprke.cpp \
 cs_intprf.cpp \
