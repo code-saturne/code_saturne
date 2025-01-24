@@ -678,7 +678,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   /* We compute the total explicit balance. */
   cs_real_t thetex = 1. - thetap;
 
-  /* If THETEX=0, no need to add anything */
+  /* If thetex=0, no need to add anything */
   if (cs_math_fabs(thetex) > cs_math_epzero) {
     inc = 1;
 
