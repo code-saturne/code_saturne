@@ -59,8 +59,8 @@ BEGIN_C_DECLS
  *        over a given FSI immersed object. The mathematical expression
  *        is defined in the GUI.
  *
- * \param[in]      object_name      Name of the immersed object
- * \param[in]      var_name         Name of the variable
+ * \param[in] object_name  Name of the immersed object
+ * \param[in] var_name     Name of the variable
  */
 /*----------------------------------------------------------------------------*/
 
@@ -69,8 +69,12 @@ cs_ibm_fsi_func_t *
 cs_meg_ibm_fsi_func_by_name(const char *object_name,
                             const char *gui_var_name)
 {
+  cs_ibm_fsi_func_t *f = nullptr;
+
   CS_NO_WARN_IF_UNUSED(object_name);
   CS_NO_WARN_IF_UNUSED(gui_var_name);
+
+  return f;
 }
 
 /*----------------------------------------------------------------------------*/

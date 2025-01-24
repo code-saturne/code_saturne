@@ -192,6 +192,8 @@ _cs_medcoupling_read_field_real(const char  *medfile_path,
       return dble_field;
     }
   }
+
+  return nullptr; // Avoid a compiler warning
 }
 
 /*----------------------------------------------------------------------------*/
