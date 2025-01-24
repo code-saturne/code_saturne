@@ -1535,13 +1535,6 @@ cs_vof_drift_term(int                        imrgra,
   int i_flux_id = cs_field_get_key_int(CS_F_(void_f), kiflux);
   cs_real_t *i_flux = cs_field_by_id(i_flux_id)->val;
 
-  if (n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
-      rhs[cell_id] = 0.;
-    }
-  }
-
   const cs_real_t kdrift = _vof_parameters.kdrift;
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -1578,8 +1571,10 @@ cs_vof_drift_term(int                        imrgra,
                     / 2.*i_face_surf[face_id]/i_dist[face_id],
                    fluxij);
 
-    cs_dispatch_sum(&rhs[ii], -fluxij[0], sum_type);
-    cs_dispatch_sum(&rhs[jj], fluxij[1], sum_type);
+    if (ii < n_cells)
+      cs_dispatch_sum(&rhs[ii], -fluxij[0], sum_type);
+    if (jj < n_cells)
+      cs_dispatch_sum(&rhs[jj], fluxij[1], sum_type);
     /* store void fraction convection flux contribution */
     i_flux[face_id] += fluxij[0];
   });
