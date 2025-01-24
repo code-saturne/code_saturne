@@ -395,5 +395,42 @@ cs_time_control_get_description(const cs_time_control_t  *tc,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy contents of a cs_time_control to another instance.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_control_copy
+(
+  const cs_time_control_t *src, /*!<[in]  Instance to copy data from */
+  cs_time_control_t       *dst  /*!<[out] Instance to copy data to */
+)
+{
+  dst->type = src->type;
+  dst->at_start = src->at_start;
+  dst->at_first = src->at_first;
+  dst->at_end   = src->at_end;
+
+  dst->start_nt = src->start_nt;
+  dst->start_t  = src->start_t;
+
+  dst->end_nt   = src->end_nt;
+  dst->end_t    = src->end_t;
+
+  dst->interval_nt = src->end_nt;
+  dst->interval_t  = src->end_t;
+
+  dst->control_func = src->control_func;
+  dst->control_input = src->control_input;
+
+  dst->current_state = src->current_state;
+  dst->current_time_step = src->current_time_step;
+
+  dst->last_nt = src->last_nt;
+  dst->last_t = src->last_t;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

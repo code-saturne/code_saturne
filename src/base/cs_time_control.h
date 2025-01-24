@@ -242,6 +242,14 @@ cs_time_control_get_description(const cs_time_control_t  *tc,
                                 size_t                    desc_size);
 
 /*----------------------------------------------------------------------------*/
+/* Copy data from one cs_time_control_t instance to another */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_control_copy(const cs_time_control_t *src,
+                     cs_time_control_t       *dst);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

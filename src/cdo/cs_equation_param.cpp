@@ -1074,21 +1074,9 @@ cs_equation_param_create(const char         *name,
     .beta = 1.0,    /* No damping by default */
     .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
 
-  eqp->time_control = (cs_time_control_t) {
-    .type = CS_TIME_CONTROL_TIME_STEP,
-    .at_start = true,
-    .at_first = true,
-    .at_end = false,
-    {.start_nt = -1},
-    {.end_nt = -1},
-    {.interval_nt = 1},
-    .control_func = nullptr,
-    .control_input = nullptr,
-    .current_state = false,
-    .current_time_step = -1,
-    .last_nt = -2,
-    .last_t = -HUGE_VAL
-  };
+  eqp->time_control_owner = false;
+  eqp->time_control = nullptr; /* nullptr by default (allways active) */
+
   return eqp;
 }
 
@@ -1434,6 +1422,10 @@ cs_equation_param_clear(cs_equation_param_t *eqp)
 
   cs_param_sles_free(&(eqp->sles_param));
   cs_param_saddle_free(&(eqp->saddle_param));
+
+  /* Information related to the time_control structure */
+  if (eqp->time_control_owner)
+    BFT_FREE(eqp->time_control);
 
   BFT_FREE(eqp->name);
 }
@@ -4174,6 +4166,56 @@ cs_equation_add_or_replace_cell_enforcement(cs_equation_param_t *eqp,
   } /* Reset an existant enforcement parameter */
 
   return efp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clear time_control data from the given equation param.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_time_control_clear
+(
+  cs_equation_param_t *eqp /*!<[in,out] Equation param instance */
+)
+{
+  if (eqp->time_control != nullptr) {
+    if (eqp->time_control_owner)
+      BFT_FREE(eqp->time_control);
+    else
+      eqp->time_control = nullptr;
+  }
+  eqp->time_control_owner = false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a time control instance to an equation param structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_time_control_add
+(
+  cs_equation_param_t *eqp,          /*!<[in] pointer to equation param structure */
+  cs_time_control_t   *time_control, /*!<[in] pointer to cs_time_control to add. */
+  bool                 shallow_copy  /*!<[in] should the addition be only a
+                                              shallow copy (pointer) or a real
+                                              copy (data copy). */
+)
+{
+  /* Clear existing time control */
+  cs_equation_time_control_clear(eqp);
+
+  /* Copy if needed */
+  eqp->time_control_owner = (shallow_copy) ? false : true;
+  if (shallow_copy)
+    eqp->time_control = time_control;
+  else {
+    BFT_MALLOC(eqp->time_control, 1, cs_time_control_t);
+    cs_time_control_copy(time_control, eqp->time_control);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -492,21 +492,8 @@ static cs_equation_param_t _equation_param_default
    .incremental_relax_factor = -1.,
    .incremental_anderson_param = {.n_max_dir = 0, .starting_iter = 0,
      .max_cond = -1., .beta = 0., .dp_type = CS_PARAM_N_DOTPROD_TYPES },
-    .time_control = {
-        .type = CS_TIME_CONTROL_TIME_STEP,
-        .at_start = true,
-        .at_first = true,
-        .at_end = false,
-        {.start_nt = -1},
-        {.end_nt = -1},
-        {.interval_nt = 1},
-        .control_func = nullptr,
-        .control_input = nullptr,
-        .current_state = false,
-        .current_time_step = -1,
-        .last_nt = -2,
-        .last_t = -HUGE_VAL
-    }
+    .time_control_owner = false,
+    .time_control = nullptr
   };
 
 /* Space discretisation options structure and associated pointer */

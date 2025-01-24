@@ -1597,8 +1597,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_real_t epsilp = eqp->epsilo;
   cs_real_t thetap = eqp->theta;
 
-  bool _need_solve = cs_time_control_is_active(&(eqp->time_control),
-          cs_glob_time_step);
+  bool _need_solve = cs_time_control_is_active(eqp->time_control,
+                                               cs_glob_time_step);
   if (!_need_solve)
     return;
 

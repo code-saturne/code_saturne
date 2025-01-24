@@ -823,7 +823,9 @@ typedef struct {
 
   /*! @} */
 
-  cs_time_control_t          time_control; /* Time control for equations*/
+  bool                        time_control_owner; /* Is this instance owner
+                                                     of the pointer. */
+  cs_time_control_t          *time_control; /* Time control for equations*/
 
 } cs_equation_param_t;
 
@@ -2576,6 +2578,22 @@ cs_equation_add_or_replace_cell_enforcement(cs_equation_param_t *eqp,
                                             const cs_lnum_t      cell_ids[],
                                             const cs_real_t      ref_value[],
                                             const cs_real_t      cell_values[]);
+
+/*----------------------------------------------------------------------------*/
+/* Clear time control data from equation_param instance. */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_time_control_clear(cs_equation_param_t *eqp);
+
+/*----------------------------------------------------------------------------*/
+/* Add a time control to an equation_parap structure */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_time_control_add(cs_equation_param_t *eqp,
+                             cs_time_control_t   *time_control,
+                             bool                 shallow_copy);
 
 /*----------------------------------------------------------------------------*/
 
