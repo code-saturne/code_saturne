@@ -347,7 +347,8 @@ _update_face_value_strided
 
   if (bc_coeffs_loc != nullptr) {
     CS_FREE_HD(bc_coeffs_loc->a);
-    CS_FREE_HD(bc_coeffs_loc->af);
+     if (cpl != nullptr)
+       CS_FREE_HD(bc_coeffs_loc->af);
     BFT_FREE(bc_coeffs_loc);
   }
   CS_FREE_HD(val_ip_lim);
