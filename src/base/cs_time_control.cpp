@@ -202,7 +202,6 @@ cs_time_control_is_active(cs_time_control_t     *tc,
     if (ts->nt_cur == ts->nt_max && tc->at_end)
       retval = true;
 
-
     if (tc->current_time_step < ts->nt_cur) {
       tc->current_time_step = ts->nt_cur;
       tc->current_state = retval;
