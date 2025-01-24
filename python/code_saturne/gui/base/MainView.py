@@ -1056,7 +1056,7 @@ class MainView(object):
 
         # Check if there are any user files within the SRC folder
         from glob import glob
-        usr_files = glob("*.c") + glob("*.cxx") + glob("*.f90")
+        usr_files = glob("*.c") + glob("*.cxx") + glob("*.f90") + glob("*.cpp")
 
         if len(usr_files) > 0:
             from code_saturne.base import cs_compile
