@@ -132,6 +132,14 @@ class ImmersedBoundariesModel(Variables, Model):
     # ----------------------------------
 
     # ----------------------------------
+    def getNumberOfSTLObjectSeedPoints(self, num_obj):
+        self.isLowerOrEqual(num_obj, self.getNumberOfObjects())
+        node_obj = self.__node_ibm.xmlGetNodeList('ibm_object')[num_obj-1]
+
+        return len(node_obj.xmlGetNodeList('STL_exterior_point'))
+    # ----------------------------------
+
+    # ----------------------------------
     def getObjectsNodeList(self):
 
         return self.__node_ibm.xmlGetNodeList('ibm_object')
@@ -1382,6 +1390,76 @@ class ImmersedBoundariesModel(Variables, Model):
     # ----------------------------------
 
     # ----------------------------------
+
+
+    @Variables.undoLocal
+    def addSTLSeedPoint(self, num_obj, num_pt, x, y, z):
+        self.isLowerOrEqual(num_obj, self.getNumberOfObjects())
+        self.isLowerOrEqual(num_pt, self.getNumberOfSTLObjectSeedPoints(num_obj))
+
+        node_obj = self.__node_ibm.xmlGetNodeList('ibm_object')[num_obj-1]
+
+        num_pt += 1
+
+        node_stl_point = node_obj.xmlInitNode('STL_exterior_point', id=num_pt)
+
+        self.setSTLObjectSeedPoint(num_obj, num_pt, x, y, z)
+
+
+    @Variables.noUndo
+    def deleteSTLSeedPoint(self, num_obj, num_pt):
+        self.isLowerOrEqual(num_obj, self.getNumberOfObjects())
+        self.isLowerOrEqual(num_pt, self.getNumberOfSTLObjectSeedPoints(num_obj))
+
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num_obj-1]
+        node.xmlRemoveChild('STL_exterior_point', id=num_pt)
+
+
+    # ----------------------------------
+
+    # ----------------------------------
+
+
+    @Variables.undoLocal
+    def setSTLObjectSeedPoint(self, num_obj, num_pt, x=None, y=None, z=None):
+        self.isLowerOrEqual(num_obj, self.getNumberOfObjects())
+        self.isLowerOrEqual(num_pt, self.getNumberOfSTLObjectSeedPoints(num_obj))
+
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num_obj-1]
+        node_stl_point = node.xmlInitNode('STL_exterior_point', id=num_pt)
+
+        if x or x == 0:
+            node_stl_point.xmlSetData('x', x)
+        if y or y == 0:
+            node_stl_point.xmlSetData('y', y)
+        if z or z == 0:
+            node_stl_point.xmlSetData('z', z)
+
+
+    # ----------------------------------
+
+    # ----------------------------------
+
+
+    @Variables.noUndo
+    def getSTLObjectSeedPoint(self, num, num_pt):
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_stl_point = node.xmlGetChildNode('STL_exterior_point', id=num_pt)
+
+        if node_stl_point is None:
+            self.setSTLObjectSeedPoint(num,
+                                       num_pt,
+                                       self.defaultValues()['object_init'],
+                                       self.defaultValues()['object_init'],
+                                       self.defaultValues()['object_init'])
+            return self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init']
+        else:
+            return node_stl_point.xmlGetString('x'), \
+                   node_stl_point.xmlGetString('y'), \
+                   node_stl_point.xmlGetString('z')
+
 
 #-------------------------------------------------------------------------------
 # End

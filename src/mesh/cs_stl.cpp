@@ -1170,9 +1170,10 @@ cs_stl_mesh_destroy_all(void)
 {
   for (int s_id = 0; s_id < _stl_meshes.n_meshes; s_id ++) {
     cs_stl_mesh_t *ptr = _stl_meshes.mesh_list[s_id];
-    BFT_FREE(ptr->coords);
-    BFT_FREE(ptr->coords_ini);
-    BFT_FREE(ptr->seed_coords);
+    CS_FREE(ptr->coords);
+    CS_FREE(ptr->coords_ini);
+    CS_FREE(ptr->seed_coords);
+    CS_FREE(ptr);
   }
 
   BFT_FREE(_stl_meshes.mesh_list);
@@ -1398,13 +1399,11 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
   }
 #endif
 
-  cs_coord_3_t *vertex_coord = nullptr;
   cs_lnum_t  *vertex_num   = nullptr;
   cs_gnum_t  *vertex_gnum  = nullptr;
   cs_gnum_t  *faces_gnum   = nullptr;
 
   if (cs_glob_rank_id < 1) {
-    BFT_MALLOC(vertex_coord, n_tria*3, cs_coord_3_t);
     BFT_MALLOC(vertex_num  , n_tria*3, cs_lnum_t);
     BFT_MALLOC(vertex_gnum , n_tria*3, cs_gnum_t);
     BFT_MALLOC(faces_gnum  , n_tria,   cs_gnum_t);
@@ -1412,12 +1411,9 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     for (cs_lnum_t j = 0; j < n_tria*3; j++) {
       vertex_num[j] = j+1;
       vertex_gnum[j] = j+1;
-      for (cs_lnum_t k = 0; k < 3; k++)
-        vertex_coord[j][k] = stl_mesh->coords[j][k];
     }
     for (cs_lnum_t j = 0; j < n_tria; j++)
       faces_gnum[j] = j+1;
-
   }
 
   fvm_nodal_t *ext_mesh = fvm_nodal_create(stl_mesh->name, 3);
@@ -1445,8 +1441,8 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
   stl_mesh->ext_mesh = ext_mesh;
 
   if (cs_glob_rank_id < 1) {
-    BFT_FREE(vertex_gnum);
-    BFT_FREE(faces_gnum);
+    CS_FREE(vertex_gnum);
+    CS_FREE(faces_gnum);
   }
 }
 

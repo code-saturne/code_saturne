@@ -54,8 +54,6 @@ from code_saturne.gui.case.ImmersedBoundariesNeptune import Ui_ImmersedBoundarie
 from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 
-#from code_saturne.base.cs_meg_to_c import meg_to_c_interpreter
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -91,6 +89,7 @@ class ObjectNameDelegate(QItemDelegate):
 
         if str(value) != "":
             model.setData(index, value, Qt.DisplayRole)
+
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for the method : Set explicit function or use MED file
@@ -130,13 +129,6 @@ class MethodDelegate(QItemDelegate):
         value = comboBox.currentText()
         model.setData(index, value, Qt.DisplayRole)
 
-#-------------------------------------------------------------------------------
-# QLineEdit delegate for validation of Syrthes verbosity or visualization
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-# QComboBox delegate for Axis Projection in Conjugate Heat Transfer table
-#-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -153,14 +145,14 @@ class StandardItemModel(QStandardItemModel):
                         self.tr("Solid tracking method")]
 
         self.tooltip = [self.tr("Name of solid object"),
-                        self.tr("Method to track the solid"),
-                        self.tr("Solve interaction between the fluid and the structure")]
+                        self.tr("Method to track the solid")]
 
         self.setColumnCount(len(self.headers))
         self.dataObject = []
         self.__model = model
         self.case = case
         self.browser = tree
+
 
     def data(self, index, role):
         if not index.isValid():
@@ -250,6 +242,7 @@ class StandardItemModel(QStandardItemModel):
         """
         Add a row in the table.
         """
+
         self.dataObject.append([object_name, object_method])
         row = self.rowCount()
         self.setRowCount(row+1)
@@ -266,6 +259,188 @@ class StandardItemModel(QStandardItemModel):
 
     def getItem(self, row):
         return self.dataObject[row]
+
+
+#-------------------------------------------------------------------------------
+# QStandardItemModel for monitoring points QTableView
+#-------------------------------------------------------------------------------
+
+class StandardItemModelSTLPoints(QStandardItemModel):
+    def __init__(self, model, objId):
+        """
+        """
+        QStandardItemModel.__init__(self)
+
+        self.setColumnCount(4)
+        self.data_points = []
+        self.ibm = model
+        self.objId = objId
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        if role == Qt.DisplayRole:
+
+            row = index.row()
+            dico = self.data_points[row]
+
+            if index.column() == 0:
+                return dico['n']
+            elif index.column() == 1:
+                return dico['X']
+            elif index.column() == 2:
+                return dico['Y']
+            elif index.column() == 3:
+                return dico['Z']
+            else:
+                return None
+
+        elif role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
+
+        return None
+
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        if index.column() == 0:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            if section == 0:
+                return self.tr("n")
+            elif section == 1:
+                return self.tr("X")
+            elif section == 2:
+                return self.tr("Y")
+            elif section == 3:
+                return self.tr("Z")
+        return None
+
+
+    def setData(self, index, value, role=None):
+        row = index.row()
+        num_pt = row + 1
+
+        if index.column() == 0:
+            n = from_qvariant(value, int)
+            self.data_points[row]['n'] = n
+        elif index.column() == 1:
+            X = from_qvariant(value, float)
+            self.data_points[row]['X'] = X
+            self.ibm.setSTLObjectSeedPoint(self.objId, num_pt, x=X)
+        elif index.column() == 2:
+            Y = from_qvariant(value, float)
+            self.data_points[row]['Y'] = Y
+            self.ibm.setSTLObjectSeedPoint(self.objId, num_pt, y=Y)
+        elif index.column() == 3:
+            Z = from_qvariant(value, float)
+            self.data_points[row]['Z'] = Z
+            self.ibm.setSTLObjectSeedPoint(self.objId, num_pt, z=Z)
+
+        #self.dataChanged.emit(index, index)
+        id1 = self.index(0, 0)
+        id2 = self.index(self.rowCount(), 0)
+        self.dataChanged.emit(id1, id2)
+        return True
+
+
+    def insertData(self, num, X, Y, Z):
+        """
+        Add a new 'item' into the table.
+        """
+        dico = {}
+        dico['n']    = num
+        dico['X']    = X
+        dico['Y']    = Y
+        dico['Z']    = Z
+
+        self.data_points.append(dico)
+
+        row = self.rowCount()
+        self.setRowCount(row + 1)
+
+
+    def replaceData(self, row, label, X, Y, Z):
+        """
+        Replace value in an existing 'item' into the table.
+        """
+        self.data_points[row]['n']    = label
+        self.data_points[row]['X']    = X
+        self.data_points[row]['Y']    = Y
+        self.data_points[row]['Z']    = Z
+
+        row = self.rowCount()
+        self.setRowCount(row)
+
+
+    def getLabel(self, index):
+        return self.getData(index)['n']
+
+
+    def getData(self, index):
+        row = index.row()
+        dico = self.data_points[row]
+        return dico
+
+
+    def deleteData(self, row):
+        """
+        Delete the row in the model
+        """
+        del self.data_points[row]
+        row = self.rowCount()
+        self.setRowCount(row-1)
+
+
+    def deleteAllData(self):
+        """
+        Destroy the contents of the list.
+        """
+        self.data_points = []
+        self.setRowCount(0)
+
+#-------------------------------------------------------------------------------
+# QItemDelegate for STL seed points points QTableView
+#-------------------------------------------------------------------------------
+
+class STLPointDelegate(QItemDelegate):
+    def __init__(self, parent=None, case=None, model=None):
+
+        super(STLPointDelegate, self).__init__(parent)
+        self.table = parent
+        self.case  = case
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                                   to_text_string)
+        editor.setText(self.value)
+
+
+    def setModelData(self, editor, model, index):
+        value = editor.text()
+
+        if str(value) != "":
+            model.setData(index, value, Qt.DisplayRole)
+            dico = model.data_points[index.row()]
+            x = float(dico['X'])
+            y = float(dico['Y'])
+            z = float(dico['Z'])
+            label = str(dico['n'])
+
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -296,6 +471,8 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.pushButtonExplicit.clicked.connect(self.slotExplicitFormula)
         self.toolButtonMEDFile.clicked.connect(self.slotSearchMEDMesh)
         self.toolButtonSTLFile.clicked.connect(self.slotSearchSTLMesh)
+        self.pushButtonAddSTLPoint.clicked.connect(self.slotAddSTLPoint)
+        self.pushButtonDeleteSTLPoint.clicked.connect(self.slotDeleteSTLPoint)
 
         self.dim = ComboModel(self.comboBoxDim, 1, 1)
         self.dim.addItem("3D computation")
@@ -318,11 +495,9 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         if QT_API == "PYQT4":
             self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
             self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-#            self.tableView.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
         elif QT_API == "PYQT5":
             self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
             self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-#            self.tableView.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
 
         self.model.dataChanged.connect(self.dataChanged)
 
@@ -345,8 +520,35 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             print("Warning: package configuration not available")
             pass
 
+        #STL seed points
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableView.selectionModel().selectionChanged.connect(self.on_selection_changed)
+
+        if QT_API == "PYQT4":
+            self.tableViewSTLPoints.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewSTLPoints.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        delegateSTLObjectPoints = STLPointDelegate(self.tableViewSTLPoints)
+        self.tableViewSTLPoints.setItemDelegate(delegateSTLObjectPoints)
+
         self.updatePageView()
         self.case.undoStartGlobal()
+
+
+
+    def on_selection_changed(self, selected, deselected):
+        indexes = self.tableView.selectionModel().selectedRows()
+
+        if indexes:
+            obj = indexes[0].row()+1
+            self.STLPointsmodel = StandardItemModelSTLPoints(self.ibm, obj)
+            self.tableViewSTLPoints.setModel(self.STLPointsmodel)
+
+            #self.STLPointsmodel.deleteAllData()
+            for pts_id in range(1,self.ibm.getNumberOfSTLObjectSeedPoints(obj)+1):
+                x, y, z = self.ibm.getSTLObjectSeedPoint(obj, pts_id)
+                self.STLPointsmodel.insertData(pts_id-1, x, y, z)
 
 
     def selectIBMMeshFiles(self, extension):
@@ -354,7 +556,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         Open a File Dialog in order to select mesh files.
         """
 
-        # 1) Meshes directory
+        # Meshes directory
 
         self.mesh_dirs = [None]
 
@@ -403,6 +605,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
         return mesh_files
 
+
     @pyqtSlot("QModelIndex")
     def slotChangedSelection(self, index):
         """
@@ -410,6 +613,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         """
         row = self.tableView.currentIndex().row()
         self.current_obj = row + 1
+
         self.updatePageView()
 
 
@@ -424,7 +628,6 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
         # Update the view if needed
         self.updatePageView()
-
 
 
     def dataChanged(self, topLeft, bottomRight):
@@ -452,10 +655,6 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
             if (self.current_obj is not None
                 and self.ibm.getNumberOfObjects() > 0):
-
-                #row = self.tableView.currentIndex().row()
-                #col = self.tableView.currentIndex().column()
-                #if self.data[row][col] == 'defined by function':
 
                 if self.ibm.getObjectMethod(self.current_obj) == 'defined by function':
                     self.groupBoxExplicit.show()
@@ -490,7 +689,6 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                             self.ibm.getMesh(self.current_obj)))
                     else:
                         self.lineEditSTLFile.setText('')
-
 
 
             else:
@@ -625,7 +823,37 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.ibm.setIBMDim(val)
 
 
+    @pyqtSlot()
+    def slotAddSTLPoint(self):
+        """
+        Add one STL seed point with these coordinates in the list
+        The number of the monitoring point is added at the precedent one
+        """
 
+        objId = self.current_obj
+        num = self.ibm.getNumberOfSTLObjectSeedPoints(objId)
+
+        self.STLPointsmodel.insertData(num, str('0'), str('0'), str('0'))
+        self.ibm.addSTLSeedPoint(objId, num, x=0.0, y=0.0, z=0.0)
+
+
+    @pyqtSlot()
+    def slotDeleteSTLPoint(self):
+        """
+        Just delete the current selected seed point
+        """
+
+        row_pt = self.tableViewSTLPoints.currentIndex().row()
+        row_obj = self.tableView.currentIndex().row()
+
+        log.debug("slotDeleteSTLPoint -> %s" % (row_pt,))
+        if row_pt == -1:
+            title = self.tr("Warning")
+            msg   = self.tr("You must select an existing object")
+            QMessageBox.information(self, title, msg)
+        else:
+            self.STLPointsmodel.deleteData(row_pt)
+            self.ibm.deleteSTLSeedPoint(row_obj+1,row_pt+1)
 
 
 #-------------------------------------------------------------------------------
