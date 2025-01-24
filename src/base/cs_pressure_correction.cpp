@@ -202,40 +202,37 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
    * if we do not have standard outlets.
    * The precisiton for tests if more or less arbitrary. */
 
-  int *ical;
-  CS_MALLOC_HD(ical, 1, int, cs_alloc_mode); // allocation on GPU
-  *ical = 0.;
+  if (cs_glob_atmo_option->open_bcs_treatment == 0) {
 
-  const cs_real_t precab = 1.e2*cs_math_epzero;
-  const cs_real_t precre = sqrt(cs_math_epzero);
+    int *ical_g;
+    CS_MALLOC_HD(ical_g, 1, int, cs_alloc_mode); // allocation on GPU
+    *ical_g = 0.;
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    cs_real_t rnrmf = cs_math_3_square_norm(frcxt[c_id]);
-    cs_real_t rnrmdf = cs_math_3_square_norm(dfrcxt[c_id]);
+    const cs_real_t precab = 1.e2*cs_math_epzero;
+    const cs_real_t precre = sqrt(cs_math_epzero);
 
-    if ((rnrmdf >= precre*rnrmf) && (rnrmdf >= precab)) {
-      *ical = 1;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cs_real_t rnrmf = cs_math_3_square_norm(frcxt[c_id]);
+      cs_real_t rnrmdf = cs_math_3_square_norm(dfrcxt[c_id]);
+
+      if ((rnrmdf >= precre*rnrmf) && (rnrmdf >= precab)) {
+        *ical_g = 1;
+      }
+    });
+
+    ctx.wait();
+    if (ctx.use_gpu())
+      cs_sync_d2h_if_needed(ical_g);
+
+    int ical = *ical_g;
+    CS_FREE_HD(ical_g);
+
+    cs_parall_sum(1, CS_INT_TYPE, &ical);
+    if (ical_g[0] == 0) {
+      *indhyd = 0;
+      return;
     }
-  });
-
-  ctx.wait();
-
-  /* copy device to host for the next parall sum on ical */
-  int _ical;
-  #if defined(HAVE_ACCEL)
-    cs_copy_d2h(&_ical, ical, sizeof(int));
-  #else
-    _ical = *ical;
-  #endif
-
-  cs_parall_sum(1, CS_INT_TYPE, &_ical);
-  if ((_ical == 0) && (cs_glob_atmo_option->open_bcs_treatment == 0)) {
-    *indhyd = 0;
-    CS_FREE_HD(ical);
-    return;
   }
-
-  CS_FREE_HD(ical);
 
   if (cs_log_default_is_active() || eqp_pr->verbosity > 0)
     bft_printf("  Hydrostatic pressure computation:\n"
