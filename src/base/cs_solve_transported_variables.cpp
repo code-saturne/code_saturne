@@ -60,10 +60,12 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_restart.h"
 #include "base/cs_solve_equation.h"
 #include "base/cs_time_step.h"
+
+#include "pprt/cs_physical_model.h"
+#include "cogz/cs_combustion_ebu.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -101,7 +103,7 @@ void
 cs_f_kinetics_rates_compute(void);
 
 void
-cs_f_specific_physic_init(void);
+cs_f_lwcini(void);
 
 void
 cs_f_max_mid_min_progvar(const cs_real_t  *zmo,
@@ -126,6 +128,27 @@ static bool _initialized = false;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initializations only done at this stage for specific models.
+ *
+ * TODO: try to move this to an earlier intialization stage if possible
+ *       (though some initializations may depend on a mass flow rate
+ *       at some boundaries, so be difficult to move).
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_delayed_initializations(void)
+{
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  cs_f_lwcini();
+
+  if (pm_flag[CS_COMBUSTION_EBU] >= 0)
+    cs_combustion_ebu_fields_init1();
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -148,7 +171,6 @@ cs_solve_transported_variables(int iterns)
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
@@ -203,31 +225,22 @@ cs_solve_transported_variables(int iterns)
   if (nscapp > 0) {
 
     if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1) {
+      if (_initialized == false) {
+        if (!cs_restart_present()) {
+          _delayed_initializations();
+          for (int ii = 0; ii < n_fields; ii++) {
+            cs_field_t *f_scal = cs_field_by_id(ii);
+            if (!(f_scal->type & CS_FIELD_VARIABLE))
+              continue;
+            if (cs_field_get_key_int(f_scal, keysca) <= 0)
+              continue;
+            if (f_scal->type & CS_FIELD_USER)
+              continue;
 
-      cs_f_specific_physic_init();
-
-      if (_initialized == false && !cs_restart_present()) {
-        _initialized = true;
-
-        for (int ii = 0; ii < n_fields; ii++) {
-          cs_field_t *f_scal = cs_field_by_id(ii);
-
-          if (!(f_scal->type & CS_FIELD_VARIABLE))
-            continue;
-          if (cs_field_get_key_int(f_scal, keysca) <= 0)
-            continue;
-          if (f_scal->type & CS_FIELD_USER)
-            continue;
-
-          cs_real_t *cvar_var = f_scal->val;
-          cs_real_t *cvara_var = f_scal->val_pre;
-          int scal_dim = f_scal->dim;
-
-          for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-            for (cs_lnum_t k = 0; k < scal_dim; k++)
-              cvara_var[c_id*scal_dim + k] = cvar_var[c_id*scal_dim + k];
-
+            cs_field_current_to_previous(f_scal);
+          }
         }
+        _initialized = true;
       }
     }
 

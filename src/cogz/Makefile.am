@@ -51,6 +51,7 @@ cscogz_includedir=$(pkgincludedir)/cogz
 cscogz_include_HEADERS = \
 cs_combustion_boundary_conditions.h \
 cs_combustion_bsh.h \
+cs_combustion_ebu.h \
 cs_combustion_gas.h \
 cs_combustion_ht_convert.h \
 cs_combustion_physical_properties.h \
@@ -65,6 +66,7 @@ noinst_LIBRARIES = libcscogz.a
 libcscogz_a_SOURCES = \
 cs_combustion_boundary_conditions.cpp \
 cs_combustion_bsh.cpp \
+cs_combustion_ebu.cpp \
 cs_combustion_gas.cpp \
 cs_combustion_ht_convert.cpp \
 cs_combustion_physical_properties.cpp \
@@ -75,7 +77,6 @@ coini1.f90 \
 d3phst.f90 \
 d3pini.f90 \
 d3pint.f90 \
-ebuini.f90 \
 ebuphy.f90 \
 ebutss.f90 \
 lwcgfu.f90 \

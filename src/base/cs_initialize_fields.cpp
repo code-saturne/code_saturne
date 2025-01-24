@@ -50,10 +50,7 @@
 #include "base/cs_assert.h"
 #include "cfbl/cs_cf_model.h"
 #include "cfbl/cs_cf_thermo.h"
-#include "comb/cs_coal_initialize.h"
-#include "ctwr/cs_ctwr_initialize.h"
 #include "base/cs_dispatch.h"
-#include "elec/cs_elec_model.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
@@ -68,7 +65,6 @@
 #include "base/cs_parameters_check.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_porosity_from_scan.h"
 #include "base/cs_prototypes.h"
@@ -78,6 +74,13 @@
 #include "turb/cs_turbulence_init.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
+
+#include "pprt/cs_physical_model.h"
+#include "atmo/cs_atmo.h"
+#include "cogz/cs_combustion_ebu.h"
+#include "comb/cs_coal_initialize.h"
+#include "ctwr/cs_ctwr_initialize.h"
+#include "elec/cs_elec_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -96,7 +99,13 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_ppiniv0(void);
+cs_f_d3pini(void);
+
+void
+cs_steady_laminar_flamelet_init(void);
+
+void
+cs_f_lwcini(void);
 
 void
 cs_f_d3pini1(void);
@@ -497,7 +506,20 @@ cs_initialize_fields_stage_1(void)
      ----------------------------------------------- */
 
   if (pm_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
-    cs_f_ppiniv0();
+    if (pm_flag[CS_ATMOSPHERIC] >= 0)
+      cs_atmo_fields_init0();
+
+    if (pm_flag[CS_COMBUSTION_3PT] >= 0)
+      cs_f_d3pini();
+
+    if (pm_flag[CS_COMBUSTION_SLFM] >= 0)
+      cs_steady_laminar_flamelet_init();
+
+    if (pm_flag[CS_COMBUSTION_EBU] >= 0)
+      cs_combustion_ebu_fields_init0();
+
+    if (pm_flag[CS_COMBUSTION_LW] >= 0)
+      cs_f_lwcini();
 
     if (pm_flag[CS_COMBUSTION_COAL] >= 0)
       cs_coal_fields_initialize();

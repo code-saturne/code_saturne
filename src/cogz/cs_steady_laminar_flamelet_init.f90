@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_steady_laminar_flamelet_init
+subroutine cs_steady_laminar_flamelet_init () &
+  bind(C, name='cs_steady_laminar_flamelet_init')
 
 !===============================================================================
 ! FONCTION :

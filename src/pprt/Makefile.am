@@ -60,8 +60,6 @@ libcspprt_a_SOURCES = \
 cs_combustion_model.cpp \
 cs_physical_model.cpp \
 ppinii.f90 \
-ppiniv.f90 \
-ppinv2.f90 \
 ppphyv.f90 \
 ppprcl.f90 \
 pptycl.f90 \
