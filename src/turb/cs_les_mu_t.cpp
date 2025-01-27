@@ -908,7 +908,6 @@ cs_les_mu_t_ksgs(void)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Initialization
@@ -940,7 +939,6 @@ cs_les_mu_t_tausgs(void)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Initialization

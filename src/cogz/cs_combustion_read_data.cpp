@@ -899,8 +899,8 @@ cs_combustion_read_data(void)
     nomcog[igp][0] = '\0';
     for (int ige = 0; ige < cm->n_gas_el_comp; ige++) {
       if (cm->compog[igp][ige] > 0) {
-        char sbuf[151];
-        snprintf(sbuf, 150, "%s %6.3f %s +",
+        char sbuf[256];
+        snprintf(sbuf, 256, "%s %6.3f %s +",
                  nomcog[igp], cm->compog[igp][ige], nomcoe[ige]);
         strncpy(nomcog[igp], sbuf, 150); nomcog[igp][150] = '\0';
       }

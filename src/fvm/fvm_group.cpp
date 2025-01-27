@@ -352,7 +352,7 @@ fvm_group_class_get_group_names(const fvm_group_class_t  *this_group_class)
   const char **retval = nullptr;
 
   if (this_group_class != nullptr) {
-    retval = (const char **const)(this_group_class->group_name);
+    retval = const_cast<const char **>(this_group_class->group_name);
   }
 
   return retval;

@@ -4078,9 +4078,7 @@ cs_solve_navier_stokes(const int        iterns,
 
     /* In case of scalars with drift for particle classes
      * boundary mass flux of the mixture may be updated */
-    cs_drift_boundary_mass_flux(m,
-                                mq,
-                                bmasfl);
+    cs_drift_boundary_mass_flux(m, bmasfl);
 
     CS_FREE_HD(trav);
     CS_FREE_HD(da_uu);
@@ -4479,9 +4477,7 @@ cs_solve_navier_stokes(const int        iterns,
 
   /* In case of scalars with drift for particle classes
    * boundary mass flux of the mixture may be updated */
-  cs_drift_boundary_mass_flux(m,
-                              mq,
-                              bmasfl);
+  cs_drift_boundary_mass_flux(m, bmasfl);
 
   /* VoF: void fraction solving and update the mixture density/viscosity and
    *      mass flux (cs_pressure_correction solved the convective flux of

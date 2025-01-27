@@ -102,14 +102,12 @@ static int class_id_max = 0;
  * \brief Update boundary flux mass of the mixture
  *
  * \param[in]      m       pointer to associated mesh structure
- * \param[in]      mq      pointer to associated mesh quantities structure
  * \param[in, out] bmasfl  boundary face mass flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
-                            const cs_mesh_quantities_t  *mq,
                             cs_real_t                    b_mass_flux[])
 {
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -131,7 +129,7 @@ cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
   for (int jcla = 1; jcla < class_id_max; jcla++) {
 
     char var_name[15];
-    snprintf(var_name, 14, "x_p_%02d", jcla);
+    snprintf(var_name, 15, "x_p_%02d", jcla);
     var_name[14] = '\0';
 
     cs_field_t *f_x_p_i = cs_field_by_name_try(var_name);
@@ -146,19 +144,18 @@ cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
           && !(iscdri & CS_DRIFT_SCALAR_ZERO_BNDY_FLUX)
           && !(iscdri & CS_DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS)) {
 
-
         int b_flmass_id = cs_field_get_key_int(f_x_p_i, kbmasf);
 
         assert(b_flmass_id > -1);
         /* Pointer to the Boundary mass flux */
         cs_real_t *b_mass_flux2 = cs_field_by_id(b_flmass_id)->val;
 
-#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+#       pragma omp parallel for if (n_b_faces > CS_THR_MIN)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
           /* Only for walls and outgoing values */
-          if ((  bc_type[face_id] != CS_SMOOTHWALL
-              && bc_type[face_id] != CS_ROUGHWALL)
+          if (   (   bc_type[face_id] != CS_SMOOTHWALL
+                  && bc_type[face_id] != CS_ROUGHWALL)
               || b_mass_flux2[face_id] < 0.)
             continue;
 
@@ -368,9 +365,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
     if (icla >= 1) {
 
-      char var_name[15];
-      snprintf(var_name, 14, "vd_p_%02d", icla);
-      var_name[14] = '\0';
+      char var_name[64];
+      snprintf(var_name, 64, "vd_p_%02d", icla);
+      var_name[63] = '\0';
 
       cs_field_t *f_vdp_i = cs_field_by_name_try(var_name);
       cs_real_3_t *vdp_i = nullptr;
@@ -694,9 +691,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
       for (int jcla = 1; jcla < class_id_max; jcla++) {
 
-        char var_name[15];
-        snprintf(var_name, 14, "x_p_%02d", jcla);
-        var_name[14] = '\0';
+        char var_name[64];
+        snprintf(var_name, 64, "x_p_%02d", jcla);
+        var_name[63] = '\0';
 
         cs_field_t *f_x_p_i = cs_field_by_name_try(var_name);
         cs_real_t *x2 = nullptr;

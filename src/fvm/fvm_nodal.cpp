@@ -2223,7 +2223,7 @@ fvm_nodal_get_global_vertex_labels(const fvm_nodal_t  *this_nodal)
 {
   assert(this_nodal != nullptr);
 
-  return (const char **)(this_nodal->global_vertex_labels);
+  return const_cast<const char **>(this_nodal->global_vertex_labels);
 }
 
 /*----------------------------------------------------------------------------

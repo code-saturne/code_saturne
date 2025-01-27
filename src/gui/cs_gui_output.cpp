@@ -1045,7 +1045,7 @@ cs_gui_postprocess_meshes(void)
       const char *_location = cs_tree_node_get_child_value_str(tn, "location");
       cs_post_define_volume_mesh_by_func(id, label,
                                          _selection_func_boundary_cells,
-                                         (void *)_location,   /* input */
+                                         const_cast<char *>(_location),   /* input */
                                          true,
                                          add_groups, auto_vars,
                                          n_writers, writer_ids);
@@ -1073,7 +1073,7 @@ cs_gui_postprocess_meshes(void)
         criteria = cs_mesh_location_get_selection_string(z->location_id);
       cs_post_define_volume_mesh_by_func(id, label,
                                          _selection_func_boundary_cells,
-                                         (void *)criteria,  /* input */
+                                         const_cast<char *>(criteria),
                                          true,
                                          add_groups, auto_vars,
                                          n_writers, writer_ids);
@@ -1129,11 +1129,11 @@ cs_gui_postprocess_meshes(void)
       strcpy(probe_labels[i], pn);
     }
 
-    cs_probe_set_t *pset =
-      cs_probe_set_create_from_array("probes",
-                                     n_probes,
-                                     (const cs_real_3_t *)p_coords,
-                                     (const char **)probe_labels);
+    cs_probe_set_t *pset
+      = cs_probe_set_create_from_array("probes",
+                                       n_probes,
+                                       (const cs_real_3_t *)p_coords,
+                                       const_cast<const char **>(probe_labels));
 
     /* Set snap mode. Default is "SNAP_TO_CENTER" */
     const char *snap_mode

@@ -216,7 +216,7 @@ _assign_groups(fvm_selector_t               *this_selector,
   /* Fill arrays with unsorted group class info */
 
   BFT_MALLOC(_set_group_names, n_groups_tot, char *);
-  set_group_names = (const char **)_set_group_names;
+  set_group_names = const_cast<const char **>(_set_group_names);
 
   n_groups_tot = 0;
 
@@ -673,11 +673,12 @@ _add_new_operation(fvm_selector_t  *selector,
 
   /* Parse infix_string */
 
-  pf = fvm_selector_postfix_create(infix_string,
-                                   selector->n_groups,
-                                   selector->n_attributes,
-                                   (const char **)selector->group_name,
-                                   selector->attribute);
+  pf = fvm_selector_postfix_create
+         (infix_string,
+          selector->n_groups,
+          selector->n_attributes,
+          const_cast<const char **>(selector->group_name),
+          selector->attribute);
 
   /* update n_operations */
 
@@ -1289,7 +1290,7 @@ fvm_selector_dump(const fvm_selector_t  *this_selector)
                  i, (unsigned long long) ts->_operations->n_calls[i]);
       fvm_selector_postfix_dump(ts->_operations->postfix[i],
                                 ts->n_groups, ts->n_attributes,
-                                (const char **)ts->group_name,
+                                const_cast<const char **>(ts->group_name),
                                 ts->attribute);
     }
 

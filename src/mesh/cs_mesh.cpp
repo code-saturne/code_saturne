@@ -3102,7 +3102,7 @@ cs_mesh_create_group_classes(cs_mesh_t  *mesh)
 
     fvm_group_class_set_add(class_defs,
                             grp_nbr,
-                            (const char **)group);
+                            const_cast<const char **>(group));
 
   } /* End of loop on families */
 

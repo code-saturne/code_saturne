@@ -46,14 +46,12 @@ BEGIN_C_DECLS
  * \brief Update boundary flux mass of the mixture
  *
  * \param[in]      m       pointer to associated mesh structure
- * \param[in]      mq      pointer to associated mesh quantities structure
  * \param[in, out] bmasfl  boundary face mass flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
-                            const cs_mesh_quantities_t  *mq,
                             cs_real_t                    bmasfl[]);
 
 /*----------------------------------------------------------------------------*/
