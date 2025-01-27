@@ -3,6 +3,14 @@ Master (not on release branches yet)
 
 ### Numerics:
 
+### Numerics:
+
+- Compute boundary value reconstruction ahead of calls to lower-level operators
+  such as gradiants and balances.
+  * This leads to removal of the `CS_GRADIENT_LSQ_BOUNDARY` environment variable,
+    wich allowed switching to an older algorithm for least-squares vector
+    and tensor gradients.
+
 - Advection scheme with CDO-Fb scheme: Replace the former centered scheme
   by a new one close to the CDO-Vb centered scheme. The former scheme is renammed
   as centered_dde and is marked as deprecated. Moreover, a mixed centered/hybrid
