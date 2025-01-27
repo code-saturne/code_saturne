@@ -278,40 +278,46 @@ _perio_face_clean(cs_join_param_t      param,
   mesh->i_face_vtx_idx = new_f2v_idx;
   mesh->i_face_vtx_connect_size = new_f2v_idx[n_fi_faces];
 
-  /* There is no need to define a new glbal interior face numbering
+  /* There is no need to define a new global interior face numbering
      because the excluded faces are always defined on an another rank */
 
   BFT_FREE(tag);
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
- *  Public function prototypes for Fortran API
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+int
+cs_f_join_perio_defined(void);
+
+/*============================================================================
+ * Fortran wrapper function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Check if periodic joining operations are queued
+ * Return 1 if periodic joining operations are defined, 1 otherwise
  *
- * Fortran Interface:
- *
- * SUBROUTINE TSTJPE
- * *****************
- *
- * INTEGER        iperio    : <-> : do we have periodicity ?
+ * returns:
+ *   periodic joining operations indicator
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(tstjpe, tstjpe)
-(
- int    *iperio
-)
+int
+cs_f_join_perio_defined(void)
 {
+  int retval = 0;
+
   for (int i = 0; i < cs_glob_n_joinings; i++) {
     cs_join_param_t param = (cs_glob_join_array[i])->param;
     if (param.perio_type > FVM_PERIODICITY_NULL)
-      *iperio = 1;
+      retval = 1;
   }
-}
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+  return retval;
+}
 
 /*============================================================================
  * Public function definitions
@@ -504,10 +510,11 @@ cs_join_perio_init(cs_join_t           *this_join,
 
   perio_id = fvm_periodicity_get_n_transforms(periodicity)/2;
 
-  fvm_periodicity_add_by_matrix(periodicity,
-                                perio_id + 1,
-                                static_cast<fvm_periodicity_type_t>(param.perio_type),
-                                param.perio_matrix);
+  fvm_periodicity_add_by_matrix
+    (periodicity,
+     perio_id + 1,
+     static_cast<fvm_periodicity_type_t>(param.perio_type),
+     param.perio_matrix);
 
   assert(mesh->n_init_perio == perio_id + 1);
 

@@ -2143,37 +2143,42 @@ _read_data(int                 file_id,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+int
+cs_f_preprocessor_data_check_perio(void);
+
+/*============================================================================
  *  Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Pass information relative to mesh metadata to the Fortran API
+ * Retrieve periodicity indicator.
  *
- * Fortran Interface:
- *
- * subroutine ledevi(iperio)
- * *****************
- *
- * integer          iperio      : <-- : Periodicity indicator
+ * return:
+ *   mesh periodicity indicator
  *----------------------------------------------------------------------------*/
 
-void
-CS_PROCF(ledevi, LEDEVI)(int  *iperio)
+int
+cs_f_preprocessor_data_check_perio(void)
 {
+  int retval = 0;
+
   cs_mesh_t  *m = cs_glob_mesh;
 
   /* Initialize parameter values */
 
   if (m != nullptr) {
     if (m->n_init_perio > 0)
-      *iperio = 1;
+      retval = 1;
   }
-  else {
-    int retval = cs_preprocessor_check_perio();
-    if (retval > 0) {
-      *iperio = 1;
-    }
-  }
+  if (retval == 0)
+    if (cs_preprocessor_check_perio() > 0)
+      retval  = 1;
+
+  return retval;
 }
 
 /*============================================================================

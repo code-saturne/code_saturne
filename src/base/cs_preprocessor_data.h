@@ -65,24 +65,6 @@ typedef enum {
 } cs_preprocessor_data_restart_mode_t;
 
 /*============================================================================
- *  Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Pass information relative to mesh metadata to the Fortran API
- *
- * Fortran Interface:
- *
- * subroutine ledevi(iperio, iperot)
- * *****************
- *
- * integer          iperio      : <-- : Periodicity indicator
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF(ledevi, LEDEVI)(int  *iperio);
-
-/*============================================================================
  *  Public function prototypes
  *============================================================================*/
 
