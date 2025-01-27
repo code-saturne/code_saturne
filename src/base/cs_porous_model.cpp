@@ -83,11 +83,14 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Static global variables
+ * Global variables
  *============================================================================*/
 
-/* Choice of the porous model */
+/*! Choice of the porous model */
 int cs_glob_porous_model = 0;
+
+/*! Specific mesh quantities associated with porous model */
+cs_mesh_quantities_t  *cs_glob_mesh_quantities_f = nullptr;
 
 /*=============================================================================
  * Private function definitions
@@ -117,26 +120,31 @@ static void
 _porous_mesh_quantities_f_free(void)
 {
   /* It is imperative to not use cs_mesh_quantities_destroy(mq_f),
-   * since some members are field, which is already freed in their structure design.
-   * Using destroy leads to crash.
+   * since some members are fields, whose life cycle is managed
+   * separately.
    *
-   * Here, freeing the members which are not field.*/
+   * Here, free the members which are not fields. */
+
   if (cs_glob_mesh_quantities_f != nullptr) {
-    CS_FREE(cs_glob_mesh_quantities_f->c_disable_flag);
-    CS_FREE(cs_glob_mesh_quantities_f->b_sym_flag);
-    CS_FREE(cs_glob_mesh_quantities_f->djjpf);
-    CS_FREE(cs_glob_mesh_quantities_f->diipf);
-    CS_FREE(cs_glob_mesh_quantities_f->dofij);
-    CS_FREE(cs_glob_mesh_quantities_f->diipb);
-    CS_FREE(cs_glob_mesh_quantities_f->dijpf);
-    CS_FREE(cs_glob_mesh_quantities_f->weight);
-    CS_FREE(cs_glob_mesh_quantities_f->i_dist);
-    CS_FREE(cs_glob_mesh_quantities_f->b_dist);
-    CS_FREE(cs_glob_mesh_quantities_f->i_face_u_normal);
-    CS_FREE(cs_glob_mesh_quantities_f->b_face_u_normal);
-    CS_FREE(cs_glob_mesh_quantities_f->corr_grad_lin);
-    CS_FREE(cs_glob_mesh_quantities_f->corr_grad_lin_det);
-    CS_FREE(cs_glob_mesh_quantities_f);
+    cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
+    cs_mesh_quantities_t *mq_f = cs_glob_mesh_quantities_f;
+    CS_FREE(mq_f->c_disable_flag);
+    CS_FREE(mq_f->b_sym_flag);
+    CS_FREE(mq_f->djjpf);
+    CS_FREE(mq_f->diipf);
+    CS_FREE(mq_f->dofij);
+    CS_FREE(mq_f->diipb);
+    CS_FREE(mq_f->dijpf);
+    CS_FREE(mq_f->weight);
+    CS_FREE(mq_f->i_dist);
+    CS_FREE(mq_f->b_dist);
+    if (mq_f->i_face_u_normal != mq_g->i_face_u_normal)
+      CS_FREE(mq_f->i_face_u_normal);
+    if (mq_f->b_face_u_normal != mq_g->b_face_u_normal)
+      CS_FREE(mq_f->b_face_u_normal);
+    CS_FREE(mq_f->corr_grad_lin);
+    CS_FREE(mq_f->corr_grad_lin_det);
+    CS_FREE(mq_f);
   }
 }
 
@@ -206,8 +214,8 @@ cs_porous_model_set_model(int  porous_model)
 void
 cs_porous_model_init_disable_flag(void)
 {
-  cs_mesh_t *m =cs_glob_mesh;
-  cs_mesh_quantities_t *mq =cs_glob_mesh_quantities;
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   static cs_lnum_t n_cells_prev = 0;
 

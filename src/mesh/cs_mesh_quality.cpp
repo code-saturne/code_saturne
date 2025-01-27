@@ -723,7 +723,6 @@ _compute_warp_error(const cs_mesh_t              *mesh,
                     cs_real_t                     warp_error[])
 {
   const cs_real_t  *vol = mesh_quantities->cell_vol;
-  cs_mesh_quantities_t *mesh_quantities_f = cs_glob_mesh_quantities_f;
 
   cs_lnum_t  *c2f_ids = nullptr;
   cs_lnum_t  *c2f_idx = nullptr;
@@ -751,14 +750,14 @@ _compute_warp_error(const cs_mesh_t              *mesh,
           sgn = -1;
 
         xf = mesh_quantities->i_face_cog + 3*f_id;
-        surf = mesh_quantities_f->i_face_normal + 3*f_id;
+        surf = mesh_quantities->i_face_normal + 3*f_id;
 
       }
       else {
 
         f_id -= mesh->n_i_faces; // Border face
         xf = mesh_quantities->b_face_cog + 3*f_id;
-        surf = mesh_quantities_f->b_face_normal + 3*f_id;
+        surf = mesh_quantities->b_face_normal + 3*f_id;
 
       }
 

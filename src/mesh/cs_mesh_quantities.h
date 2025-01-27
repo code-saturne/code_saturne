@@ -156,14 +156,9 @@ typedef struct {
  * Global variables
  *============================================================================*/
 
-/* Pointer to mesh quantities structure associated to the main mesh */
-
-extern cs_mesh_quantities_t  *cs_glob_mesh_quantities_g; /*Pointer associated
-                                                           with geometrical quantities*/
-extern cs_mesh_quantities_t  *cs_glob_mesh_quantities_f;   /*Pointer associated
-                                                           with the fluid quantities*/
-extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;   /*Pointer associated
-                                                           with either*/
+/* Pointers to mesh quantities structure associated to the main mesh */
+extern cs_mesh_quantities_t  *cs_glob_mesh_quantities_g;
+extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;
 
 /* Flag (mask) to activate bad cells correction */
 extern unsigned cs_glob_mesh_quantities_flag;

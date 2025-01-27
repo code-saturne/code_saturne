@@ -95,9 +95,12 @@ BEGIN_C_DECLS
 
 /* Pointer to cs_mesh_quantities_t structure for the main mesh */
 
-cs_mesh_quantities_t  *cs_glob_mesh_quantities_g = nullptr; /*geometric*/
-cs_mesh_quantities_t  *cs_glob_mesh_quantities_f = nullptr; /*fluid*/
-cs_mesh_quantities_t  *cs_glob_mesh_quantities = nullptr;   /*either*/
+/*! Geometry-based mesh quantities (default) */
+cs_mesh_quantities_t  *cs_glob_mesh_quantities_g = nullptr;
+
+/*! Computational mesh quantities
+  (usually same as default, except with porous medel). */
+cs_mesh_quantities_t  *cs_glob_mesh_quantities = nullptr;
 
 /* Choice of the algorithm for computing gravity centers of the cells */
 

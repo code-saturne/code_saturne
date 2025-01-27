@@ -54,6 +54,9 @@ BEGIN_C_DECLS
 /* Choice of the porous model */
 extern int cs_glob_porous_model;
 
+/* Specific mesh quantities associated with porous model */
+extern cs_mesh_quantities_t  *cs_glob_mesh_quantities_f;
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

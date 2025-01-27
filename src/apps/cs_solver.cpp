@@ -262,7 +262,6 @@ _run(void)
   cs_mesh_location_initialize();
   cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh_builder = cs_mesh_builder_create();
-  cs_glob_mesh_quantities_f = nullptr;
   cs_glob_mesh_quantities_g = cs_mesh_quantities_create();
   cs_glob_mesh_quantities = cs_glob_mesh_quantities_g;
   cs_boundary_zone_initialize();

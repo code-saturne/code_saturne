@@ -1381,7 +1381,6 @@ cs_ale_update_mesh(int  itrale)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const int  ndim = m->dim;
-  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t  n_vertices = m->n_vertices;
 
   cs_real_3_t *vtx_coord = (cs_real_3_t *)m->vtx_coord;

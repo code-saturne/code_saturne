@@ -423,7 +423,7 @@ cs_time_stepping(void)
       cs_log_printf(CS_LOG_DEFAULT,
                     _(" Compute porosity field from immersed boundaries\n"));
 
-      cs_immersed_boundaries(m, cs_glob_mesh_quantities_f);
+      cs_immersed_boundaries(m, cs_glob_mesh_quantities);
       cs_porous_model_fluid_surfaces_preprocessing();
     }
     else {
@@ -441,7 +441,7 @@ cs_time_stepping(void)
       }
     }
 
-    cs_mesh_quantities_fluid_vol_reductions(m, cs_glob_mesh_quantities_f);
+    cs_mesh_quantities_fluid_vol_reductions(m, cs_glob_mesh_quantities);
   }
 
   /* Initialize wall condensation model */
