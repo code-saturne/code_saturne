@@ -228,7 +228,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
     CS_FREE_HD(ical_g);
 
     cs_parall_sum(1, CS_INT_TYPE, &ical);
-    if (ical_g[0] == 0) {
+    if (ical == 0) {
       *indhyd = 0;
       return;
     }
