@@ -1,7 +1,10 @@
 Master (not on release branches yet)
 ------------------------------------
 
-### Numerics:
+### Architectural changes:
+
+- Add the class "cs_array_2dspan" which allows handling of 2D arrays.
+  The class automatically allocates and frees the underlying data array.
 
 ### Numerics:
 
