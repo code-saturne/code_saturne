@@ -99,7 +99,6 @@
    const cs_mesh_quantities_t   *fvq,                              \
    cs_halo_type_t                halo_type,                        \
    int                           inc,                              \
-   int                           porous_model,                     \
    bool                          warped_correction,                \
    const cs_real_t               coefav[][stride],                 \
    const cs_real_t               coefbv[][stride][stride],         \
@@ -113,7 +112,6 @@
    const cs_mesh_adjacencies_t  *madj,                             \
    const cs_mesh_quantities_t   *fvq,                              \
    cs_halo_type_t                halo_type,                        \
-   int                           porous_model,                     \
    bool                          warped_correction,                \
    const cs_real_t               val_f[][stride],                  \
    const cs_real_t               pvar[][stride],                   \
@@ -799,7 +797,7 @@ template <cs_lnum_t stride>
 __global__ static void
 _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
                             const cs_lnum_2_t           *i_face_cells,
-                            const cs_real_3_t  *restrict i_f_face_normal,
+                            const cs_real_3_t  *restrict i_face_normal,
                             const cs_real_3_t  *restrict dofij,
                             const cs_real_t   (*restrict pvar)[stride],
                             const cs_real_t             *weight,
@@ -842,8 +840,8 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
   cell_v grad_cf1, grad_cf2;
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    grad_cf1[j].get() =    (pfaci + rfac) * i_f_face_normal[f_id][j];
-    grad_cf2[j].get() = - ((pfacj + rfac) * i_f_face_normal[f_id][j]);
+    grad_cf1[j].get() =    (pfaci + rfac) * i_face_normal[f_id][j];
+    grad_cf2[j].get() = - ((pfacj + rfac) * i_face_normal[f_id][j]);
   }
   cell_v::ref(grad[c_id1][i]).conflict_free_add(-1u, grad_cf1);
   cell_v::ref(grad[c_id2][i]).conflict_free_add(-1u, grad_cf2);
@@ -851,8 +849,8 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
 #else
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    atomicAdd(&grad[c_id1][i][j],   (pfaci + rfac) * i_f_face_normal[f_id][j]);
-    atomicAdd(&grad[c_id2][i][j], - (pfacj + rfac) * i_f_face_normal[f_id][j]);
+    atomicAdd(&grad[c_id1][i][j],   (pfaci + rfac) * i_face_normal[f_id][j]);
+    atomicAdd(&grad[c_id2][i][j], - (pfacj + rfac) * i_face_normal[f_id][j]);
   }
 
 #endif
@@ -872,7 +870,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
                                const cs_lnum_t    *restrict cell_cells,
                                const cs_lnum_t    *restrict cell_i_faces,
                                const short int    *restrict cell_i_faces_sgn,
-                               const cs_real_3_t  *restrict i_f_face_normal,
+                               const cs_real_3_t  *restrict i_face_normal,
                                const cs_real_3_t  *restrict dofij,
                                const cs_real_t   (*restrict pvar)[stride],
                                const cs_real_t             *weight,
@@ -909,7 +907,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
     auto _pvar2 = pvar[c_id2];
     auto _r_grad2 = r_grad[c_id2];
     auto _dofij = dofij[f_id];
-    auto _i_f_face_normal =  i_f_face_normal[f_id];
+    auto _i_face_normal =  i_face_normal[f_id];
 
     cs_real_t pond = (f_sgn > 0) ? weight[f_id] : 1. - weight[f_id];
     cs_real_t ktpond = (c_weight == nullptr) ?
@@ -930,7 +928,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
                                            + _r_grad2[i][2]));
 
       for (cs_lnum_t j = 0; j < 3; j++) {
-        _grad[i][j] += f_sgn * (pfaci + rfac) * _i_f_face_normal[j];
+        _grad[i][j] += f_sgn * (pfaci + rfac) * _i_face_normal[j];
       }
     }
   }
@@ -952,7 +950,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
 template <cs_lnum_t stride>
 __global__ static void
 _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
-                            const cs_real_3_t   *restrict b_f_face_normal,
+                            const cs_real_3_t   *restrict b_face_normal,
                             const cs_lnum_t     *restrict b_face_cells,
                             const cs_real_t    (*restrict val_f)[stride],
                             const cs_real_t    (*restrict pvar)[stride],
@@ -977,14 +975,14 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
 #if 1
 
   for (cs_lnum_t j = 0; j < 3; j++){
-    grad_cf[j].get() = pfac * b_f_face_normal[f_id][j];
+    grad_cf[j].get() = pfac * b_face_normal[f_id][j];
   }
   cell_v::ref(grad[c_id][i]).conflict_free_add(-1u, grad_cf);
 
 #else
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    atomicAdd(&grad[c_id][i][j], pfac * b_f_face_normal[f_id][j]);
+    atomicAdd(&grad[c_id][i][j], pfac * b_face_normal[f_id][j]);
   }
 
 #endif
@@ -1001,7 +999,7 @@ template <cs_lnum_t stride>
 __global__ static void
 _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
                             int                           inc,
-                            const cs_real_3_t   *restrict b_f_face_normal,
+                            const cs_real_3_t   *restrict b_face_normal,
                             const cs_lnum_t     *restrict b_face_cells,
                             const cs_rreal_3_t  *restrict diipb,
                             const cs_real_t    (*restrict coefav)[stride],
@@ -1043,14 +1041,14 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
 #if 1
 
   for (cs_lnum_t j = 0; j < 3; j++){
-    grad_cf[j].get() = (pfac + rfac) * b_f_face_normal[f_id][j];
+    grad_cf[j].get() = (pfac + rfac) * b_face_normal[f_id][j];
   }
   cell_v::ref(grad[c_id][i]).conflict_free_add(-1u, grad_cf);
 
 #else
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    atomicAdd(&grad[c_id][i][j], (pfac + rfac) * b_f_face_normal[f_id][j]);
+    atomicAdd(&grad[c_id][i][j], (pfac + rfac) * b_face_normal[f_id][j]);
   }
 
 #endif
@@ -1452,14 +1450,14 @@ cs_gradient_strided_lsq_cuda
   const short int *restrict cell_i_faces_sgn
     = cs_get_device_ptr_const_pf(madj->cell_i_faces_sgn);
 
-  const cs_real_3_t *restrict cell_f_cen
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_f_cen);
+  const cs_real_3_t *restrict cell_cen
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_cen);
   const cs_real_t *restrict weight
     = cs_get_device_ptr_const_pf(fvq->weight);
   const cs_real_t *restrict b_dist
     = cs_get_device_ptr_const_pf(fvq->b_dist);
-  const cs_real_3_t *restrict b_f_face_cog
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_f_face_cog);
+  const cs_real_3_t *restrict b_face_cog
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_cog);
   const cs_rreal_3_t *restrict diipb
     = cs_get_device_ptr_const_pf(fvq->diipb);
 
@@ -1493,7 +1491,7 @@ cs_gradient_strided_lsq_cuda
      cell_cells_e,
      cell_i_faces,
      cell_i_faces_sgn,
-     cell_f_cen,
+     cell_cen,
      pvar_d,
      weight,
      c_weight,
@@ -1509,8 +1507,8 @@ cs_gradient_strided_lsq_cuda
        cell_b_faces_idx,
        cell_b_faces,
        b_cells,
-       cell_f_cen,
-       b_f_face_cog,
+       cell_cen,
+       b_face_cog,
        b_dist,
        val_f_d,
        pvar_d,
@@ -1542,7 +1540,7 @@ cs_gradient_strided_lsq_cuda
        cell_b_faces_idx,
        cell_b_faces,
        b_f_face_cog,
-       cell_f_cen,
+       cell_cen,
        diipb,
        coefb_d,
        cocg,
@@ -1651,7 +1649,6 @@ INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 6);
  *   madj              <-- pointer to mesh adjacencies structure
  *   fvq               <-- pointer to associated finite volume quantities
  *   halo_type         <-- halo type (extended or not)
- *   porous_model      <-- type of porous model used
  *   warped_correction <-- apply warped faces correction ?
  *   val_f             <-- face value for gradient
  *   pvar              <-- variable
@@ -1668,7 +1665,6 @@ cs_gradient_strided_gg_r_cuda
  const cs_mesh_adjacencies_t  *madj,
  const cs_mesh_quantities_t   *fvq,
  cs_halo_type_t                halo_type,
- int                           porous_model,
  bool                          warped_correction,
  const cs_real_t               val_f[][stride],
  const cs_real_t               pvar[][stride],
@@ -1754,15 +1750,14 @@ cs_gradient_strided_gg_r_cuda
 
   const cs_real_t *restrict weight
     = cs_get_device_ptr_const_pf(fvq->weight);
-  const cs_real_t *restrict cell_f_vol
-    = (porous_model == 3) ? cs_get_device_ptr_const_pf(fvq->cell_f_vol)
-                          : cs_get_device_ptr_const_pf(fvq->cell_vol);
-  const cs_real_3_t *restrict cell_f_cen
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_f_cen);
-  const cs_real_3_t *restrict i_f_face_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->i_f_face_normal);
-  const cs_real_3_t *restrict b_f_face_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_f_face_normal);
+  const cs_real_t *restrict cell_vol
+    = cs_get_device_ptr_const_pf(fvq->cell_vol);
+  const cs_real_3_t *restrict cell_cen
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_cen);
+  const cs_real_3_t *restrict i_face_normal
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->i_face_normal);
+  const cs_real_3_t *restrict b_face_normal
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_normal);
   const cs_real_3_t *restrict dofij
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->dofij);
   const cs_real_33_t *restrict corr_grad_lin
@@ -1794,7 +1789,7 @@ cs_gradient_strided_gg_r_cuda
     _gg_with_r_gradient_i_faces<<<gridsize, blocksize, 0, stream>>>
       (m->n_i_faces,
        i_face_cells,
-       i_f_face_normal,
+       i_face_normal,
        dofij,
        pvar_d,
        weight,
@@ -1811,7 +1806,7 @@ cs_gradient_strided_gg_r_cuda
        cell_cells,
        cell_i_faces,
        cell_i_faces_sgn,
-       i_f_face_normal,
+       i_face_normal,
        dofij,
        pvar_d,
        weight,
@@ -1827,7 +1822,7 @@ cs_gradient_strided_gg_r_cuda
     gridsize = cs_cuda_grid_size(n_b_faces * stride, blocksize);
     _gg_with_r_gradient_b_faces<<<gridsize, blocksize, 0, stream>>>
       (n_b_faces,
-       b_f_face_normal,
+       b_face_normal,
        b_face_cells,
        val_f_d,
        pvar_d,
@@ -1843,7 +1838,7 @@ cs_gradient_strided_gg_r_cuda
     (n_cells,
      warped_correction,
      c_disable_flag,
-     cell_f_vol,
+     cell_vol,
      corr_grad_lin,
      grad_d);
 
@@ -1941,7 +1936,6 @@ INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 6);
  *   fvq               <-- pointer to associated finite volume quantities
  *   halo_type         <-- halo type (extended or not)
  *   inc               <-- if 0, solve on increment; 1 otherwise
- *   porous_model      <-- type of porous model used
  *   warped_correction <-- apply warped faces correction ?
  *   coefav            <-- B.C. coefficients for boundary face normals
  *   coefbv            <-- B.C. coefficients for boundary face normals
@@ -1960,7 +1954,6 @@ cs_gradient_strided_gg_r_cuda
  const cs_mesh_quantities_t   *fvq,
  cs_halo_type_t                halo_type,
  int                           inc,
- int                           porous_model,
  bool                          warped_correction,
  const cs_real_t               coefav[][stride],
  const cs_real_t               coefbv[][stride][stride],
@@ -2050,15 +2043,14 @@ cs_gradient_strided_gg_r_cuda
 
   const cs_real_t *restrict weight
     = cs_get_device_ptr_const_pf(fvq->weight);
-  const cs_real_t *restrict cell_f_vol
-    = (porous_model == 3) ? cs_get_device_ptr_const_pf(fvq->cell_f_vol)
-                          : cs_get_device_ptr_const_pf(fvq->cell_vol);
-  const cs_real_3_t *restrict cell_f_cen
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_f_cen);
-  const cs_real_3_t *restrict i_f_face_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->i_f_face_normal);
-  const cs_real_3_t *restrict b_f_face_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_f_face_normal);
+  const cs_real_t *restrict cell_vol
+    = cs_get_device_ptr_const_pf(fvq->cell_vol);
+  const cs_real_3_t *restrict cell_cen
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_cen);
+  const cs_real_3_t *restrict i_face_normal
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->i_face_normal);
+  const cs_real_3_t *restrict b_face_normal
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_normal);
   const cs_rreal_3_t *restrict diipb
     = cs_get_device_ptr_const_pf(fvq->diipb);
   const cs_real_3_t *restrict dofij
@@ -2092,7 +2084,7 @@ cs_gradient_strided_gg_r_cuda
     _gg_with_r_gradient_i_faces<<<gridsize, blocksize, 0, stream>>>
       (m->n_i_faces,
        i_face_cells,
-       i_f_face_normal,
+       i_face_normal,
        dofij,
        pvar_d,
        weight,
@@ -2109,7 +2101,7 @@ cs_gradient_strided_gg_r_cuda
        cell_cells,
        cell_i_faces,
        cell_i_faces_sgn,
-       i_f_face_normal,
+       i_face_normal,
        dofij,
        pvar_d,
        weight,
@@ -2126,7 +2118,7 @@ cs_gradient_strided_gg_r_cuda
     _gg_with_r_gradient_b_faces<<<gridsize, blocksize, 0, stream>>>
       (n_b_faces,
        inc,
-       b_f_face_normal,
+       b_face_normal,
        b_face_cells,
        diipb,
        coefa_d,
@@ -2144,7 +2136,7 @@ cs_gradient_strided_gg_r_cuda
     (n_cells,
      warped_correction,
      c_disable_flag,
-     cell_f_vol,
+     cell_vol,
      corr_grad_lin,
      grad_d);
 

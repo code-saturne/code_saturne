@@ -224,7 +224,6 @@ cs_gradient_strided_lsq_cuda
  *   madj              <-- pointer to mesh adjacencies structure
  *   fvq               <-- pointer to associated finite volume quantities
  *   halo_type         <-- halo type (extended or not)
- *   porous_model      <-- type of porous model used
  *   warped_correction <-- apply warped faces correction ?
  *   val_f             <-- face value for gradient
  *   pvar              <-- variable
@@ -241,7 +240,6 @@ cs_gradient_strided_gg_r_cuda
  const cs_mesh_adjacencies_t  *madj,
  const cs_mesh_quantities_t   *fvq,
  cs_halo_type_t                halo_type,
- int                           porous_model,
  bool                          warped_correction,
  const cs_real_t               val_f[][stride],
  const cs_real_t               pvar[][stride],
@@ -259,7 +257,6 @@ cs_gradient_strided_gg_r_cuda
  *   fvq               <-- pointer to associated finite volume quantities
  *   cpl               <-- structure associated with internal coupling, or NULL
  *   inc               <-- if 0, solve on increment; 1 otherwise
- *   porous_model      <-- type of porous model used
  *   warped_correction <-- apply warped faces correction ?
  *   coefav            <-- B.C. coefficients for boundary face normals
  *   coefbv            <-- B.C. coefficients for boundary face normals
@@ -278,7 +275,6 @@ cs_gradient_strided_gg_r_cuda
  const cs_mesh_quantities_t   *fvq,
  cs_halo_type_t                halo_type,
  int                           inc,
- int                           porous_model,
  bool                          warped_correction,
  const cs_real_t               coefav[][stride],
  const cs_real_t               coefbv[][stride][stride],
