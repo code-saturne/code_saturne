@@ -2818,7 +2818,7 @@ cs_atmo_fields_init0(void)
   if (   (at_opt->radiative_model_1d == 1 || at_chem->model > 0)
       && (   at_opt->syear == -1 || at_opt->squant == -1
           || at_opt->shour == -1 || at_opt->smin  == -1 || at_opt->ssec <= -1.0)  )
-    bft_error(__FILE__,__LINE__, 0,
+    bft_error(__FILE__, __LINE__, 0,
               "    WARNING:   STOP WHILE READING INPUT DATA\n"
               "    =========\n"
               "               ATMOSPHERIC  MODULE RADITIVE MODEL OR CHEMISTRY\n"
@@ -2833,7 +2833,7 @@ cs_atmo_fields_init0(void)
   if (   at_opt->radiative_model_1d == 1
       && (   at_opt->latitude >= cs_math_infinite_r*0.5
           || at_opt->longitude >= cs_math_infinite_r*0.5) )
-    bft_error(__FILE__,__LINE__, 0,
+    bft_error(__FILE__, __LINE__, 0,
               "    WARNING:   STOP WHILE READING INPUT DATA\n"
               "    =========\n"
               "               ATMOSPHERIC  MODULE RADITIVE MODEL\n"
@@ -2850,7 +2850,7 @@ cs_atmo_fields_init0(void)
       if (at_opt->xyp_met[ii] > xyp_met_max)
         xyp_met_max = at_opt->xyp_met[ii];
     if (xyp_met_max >= cs_math_infinite_r*0.5)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 "    WARNING:   STOP WHILE READING INPUT DATA\n"
                 "    =========\n"
                 "               ATMOSPHERIC  MODULE\n"
@@ -2874,7 +2874,7 @@ cs_atmo_fields_init0(void)
 
     if (   xy_chem[0] >= cs_math_infinite_r*0.5
         || xy_chem[0] >= cs_math_infinite_r*0.5)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 "    WARNING:   STOP WHILE READING INPUT DATA\n"
                 "    =========\n"
                 "               ATMOSPHERIC  CHEMISTRY\n"
@@ -4138,7 +4138,7 @@ cs_soil_model(void)
     }
   }
   else {
-    bft_error(__FILE__,__LINE__, 0,
+    bft_error(__FILE__, __LINE__, 0,
         _("cs_glob_atmo_option->soil_zone_id is missing \n"));
   }
 }
@@ -4165,7 +4165,7 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t rscp = rair/cp0;
   cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
   if (g <= 0.)
-    bft_error(__FILE__,__LINE__, 0,
+    bft_error(__FILE__, __LINE__, 0,
               _("Atmo meteo profiles: gravity must not be 0.\n"));
 
   /* Reference fluid properties set from meteo values */
@@ -5488,7 +5488,7 @@ cs_atmo_init_chemistry(void)
                         &n_photolysis);
 
     if (spack_n_species != _atmo_chem.n_species)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 "    WARNING:   STOP WHILE READING INPUT DATA\n"
                 "    =========\n"
                 "The number of gaseous species read from the SPACK file\n"
@@ -5560,7 +5560,7 @@ cs_atmo_declare_chem_from_spack(void)
   assert(_atmo_chem.model == 4);
 
   if (_atmo_chem.spack_file_name == nullptr)
-    bft_error(__FILE__,__LINE__, 0,
+    bft_error(__FILE__, __LINE__, 0,
               _("Atmo chemistry from SPACK file: requires a SPACK file."));
 
   char line[512] = "";
@@ -5571,7 +5571,7 @@ cs_atmo_declare_chem_from_spack(void)
 
   FILE *file = fopen(_atmo_chem.spack_file_name, "rt");
   if (file == nullptr)
-    bft_error(__FILE__,__LINE__, 0,
+    bft_error(__FILE__, __LINE__, 0,
               _("Atmo chemistry from SPACK file: Could not open file."));
 
   int line_num = 0;
@@ -5580,7 +5580,7 @@ cs_atmo_declare_chem_from_spack(void)
   while (true) {
     line_num++;
     if (fscanf(file, "%s\n", line) != 1)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 _("Atmo chemistry from SPACK file: Could not skip header."));
 
     if (strncmp("[species]", line, 512) == 0)
@@ -5592,7 +5592,7 @@ cs_atmo_declare_chem_from_spack(void)
     /* Read species */
     line_num++;
     if (fscanf(file, "%s\n", line) != 1)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 _("Atmo chemistry from SPACK file: Could not read line %d."),
                 line_num);
 
@@ -5618,7 +5618,7 @@ cs_atmo_declare_chem_from_spack(void)
     /* Read species name and molar mass */
     line_num++;
     if (fscanf(file, "%s %lf\n", line, &(_atmo_chem.molar_mass[i])) != 2)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 _("Atmospheric chemistry from SPACK file:\n"
                   "  could not read species name and molar mass, line %d."),
                 line_num);

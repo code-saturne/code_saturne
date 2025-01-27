@@ -441,7 +441,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         f_name);
     FILE *file = fopen(f_name, "rt");
     if (file == nullptr)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
           _("Porosity from scan: Could not open file."));
 
     /* next file to be read */
@@ -449,7 +449,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     long int n_read_points = 0;
     long int n_points = 0;
     if (fscanf(file, "%ld\n", &n_read_points) != 1)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 _("Porosity from scan: Could not read the number of lines."));
 
     bft_printf(_("  Porosity from scan: %ld points to be read.\n\n"),
@@ -764,7 +764,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     } /* End loop on multiple scans */
 
     if (fclose(file) != 0)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 _("Porosity from scan: Could not close the file."));
 
     /* Nodal mesh is not needed anymore */
@@ -1023,7 +1023,7 @@ void
 cs_ibm_add_sources_by_file_name(const char *file_name)
 {
   if (file_name == nullptr)
-    bft_error(__FILE__,__LINE__, 0, _("Could not read scanner sources file"));
+    bft_error(__FILE__, __LINE__, 0, _("Could not read scanner sources file"));
 
   /* read the csv file */
   const int s_col_idx[3] = {0, 1, 2}; /* columns to read */

@@ -838,7 +838,7 @@ cs_atmo_aerosol_ssh_time_advance(void)
         cs_real_t liqwt = cs_field_by_name("liquid_water")->val[cell_id];
         if (fabs(1. - liqwt) < cs_math_epzero)
           bft_error
-            (__FILE__,__LINE__, 0,
+            (__FILE__, __LINE__, 0,
              _("Error when computing the relative humidity for SSH-aerosol."));
         double rh = (totwt - liqwt)/(1. - liqwt);
         _send_double(_aerosol_so, "api_sshaerosol_set_relhumidity_", rh);

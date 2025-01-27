@@ -325,14 +325,19 @@ _evap_rain(cs_air_fluid_props_t *air_prop,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
-                                       const cs_lnum_t  *elt_ids,
-                                       bool              dense_output,
-                                       void             *input,
-                                       cs_real_t        *retval)
+cs_ctwr_volume_mass_injection_packing_dof_func
+(cs_lnum_t         n_elts,
+ const cs_lnum_t  *elt_ids,
+ bool              dense_output,
+ void             *input,
+ cs_real_t        *retval)
 {
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+
+  if (dense_output == false)
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, _("Not implemented for sparse output."));
 
   const cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
   /* Air / fluid properties */
@@ -341,20 +346,14 @@ cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
   /* Fields necessary for humid atmosphere model */
   cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
 
-  /* Water / air molar mass ratio */
-  const cs_real_t molmassrat = air_prop->molmass_rat;
-
-  cs_real_t *rho = nullptr;
   cs_real_t *rho_h = nullptr;
   cs_real_3_t *vel_h = nullptr;
 
  if (ct_opt->mixture_model) {
-    rho = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
     rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
     vel_h = (cs_real_3_t *)cs_field_by_name("v_c")->val; /* Humid air velocity*/
   }
   else {
-    rho = CS_F_(rho)->val; /* Humid air density */
     rho_h = CS_F_(rho)->val; /* Humid air density */
     vel_h = (cs_real_3_t *)CS_F_(vel)->val_pre; /* Humid air velocity*/
   }
@@ -478,13 +477,19 @@ cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_volume_mass_injection_evap_rain_dof_func(cs_lnum_t         n_elts,
-                                                 const cs_lnum_t  *elt_ids,
-                                                 bool              dense_output,
-                                                 void             *input,
-                                                 cs_real_t        *retval)
+cs_ctwr_volume_mass_injection_evap_rain_dof_func
+([[maybe_unused]]cs_lnum_t         n_elts,
+ [[maybe_unused]]const cs_lnum_t  *elt_ids,
+ bool                              dense_output,
+ [[maybe_unused]]void             *input,
+ cs_real_t                        *retval)
 {
   const cs_mesh_t *m = cs_glob_mesh;
+
+  assert(n_elts == m->n_cells); /* all cells zone only */
+  if (dense_output == false)
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, _("Not implemented for sparse output."));
 
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
@@ -496,26 +501,17 @@ cs_ctwr_volume_mass_injection_evap_rain_dof_func(cs_lnum_t         n_elts,
   /* Fields necessary for humid atmosphere model */
   cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
 
-  /* Water / air molar mass ratio */
-  const cs_real_t molmassrat = air_prop->molmass_rat;
-
   cs_real_t *rho = nullptr;
   cs_real_t *rho_h = nullptr;
-  cs_real_3_t *vel_h = nullptr;
 
  if (ct_opt->mixture_model) {
     rho = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
     rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
-    vel_h = (cs_real_3_t *)cs_field_by_name("v_c")->val; /* Humid air velocity*/
   }
   else {
     rho = CS_F_(rho)->val; /* Humid air density */
     rho_h = CS_F_(rho)->val; /* Humid air density */
-    vel_h = (cs_real_3_t *)CS_F_(vel)->val_pre; /* Humid air velocity*/
   }
-
-  cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
-                                                     in humid air */
 
   cs_real_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
@@ -526,8 +522,6 @@ cs_ctwr_volume_mass_injection_evap_rain_dof_func(cs_lnum_t         n_elts,
   }
   cs_real_t *x = cs_field_by_name("humidity")->val; /* Humidity in air (bulk) */
   cs_real_t *x_s = cs_field_by_name("x_s")->val;
-  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;  /* Liquid velocity
-                                                             in packing */
 
   /* Variable and properties for rain drops */
   cs_field_t *cfld_yp = nullptr;
@@ -616,11 +610,12 @@ cs_ctwr_volume_mass_injection_evap_rain_dof_func(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
-                                            const cs_lnum_t  *elt_ids,
-                                            bool              dense_output,
-                                            void             *input,
-                                            cs_real_t        *retval)
+cs_ctwr_volume_mass_injection_rain_dof_func
+([[maybe_unused]] cs_lnum_t         n_elts,
+ [[maybe_unused]] const cs_lnum_t  *elt_ids,
+ bool                               dense_output,
+ [[maybe_unused]] void             *input,
+ cs_real_t                         *retval)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_2_t *i_face_cells
@@ -629,6 +624,11 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
+
+  assert(n_elts == m->n_cells); /* all cells zone only */
+  if (dense_output == false)
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, _("Not implemented for sparse output."));
 
   /* Generate rain from packing zones which are leaking
      ================================================== */
@@ -685,7 +685,6 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
 
     } /* End of leaking zone test */
 
-
     /* Rain - packing interaction
      * ========================== */
 
@@ -717,15 +716,21 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_volume_mass_injection_yh_rain_dof_func(cs_lnum_t         n_elts,
-                                               const cs_lnum_t  *elt_ids,
-                                               bool              dense_output,
-                                               void             *input,
-                                               cs_real_t        *retval)
+cs_ctwr_volume_mass_injection_yh_rain_dof_func
+([[maybe_unused]]cs_lnum_t         n_elts,
+ [[maybe_unused]]const cs_lnum_t  *elt_ids,
+ bool                              dense_output,
+ [[maybe_unused]]void             *input,
+ cs_real_t                        *retval)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)(m->i_face_cells);
+
+  assert(n_elts == m->n_cells); /* all cells zone only */
+  if (dense_output == false)
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, _("Not implemented for sparse output."));
 
   /* Variable and properties for rain drops */
   cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;
@@ -735,8 +740,6 @@ cs_ctwr_volume_mass_injection_yh_rain_dof_func(cs_lnum_t         n_elts,
   /* Generate rain from packing zones which are leaking
      ================================================== */
 
-  cs_real_t *liq_vol_frac = CS_F_(y_l_pack)->val; /* Liquid mass fraction
-                                                      in packing */
   /* Inner mass flux of liquids (in the packing) */
   cs_real_t *liq_mass_flow
     = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
@@ -927,7 +930,6 @@ cs_ctwr_source_term(int              f_id,
 
   /* Fields necessary for humid atmosphere model */
   cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
-  cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
 
   if (evap_model != CS_CTWR_NONE) {
 
@@ -1288,7 +1290,6 @@ cs_ctwr_source_term(int              f_id,
       cs_real_t *liq_mass_flow
         = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
 
-      cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;
       for (int ict = 0; ict < *_n_ct_zones; ict++) {
 
         cs_ctwr_zone_t *ct = _ct_zone[ict];

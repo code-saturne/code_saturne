@@ -211,21 +211,21 @@ cs_user_zones(void)
     cs_real_t wind_dir = 0.;
 
     if (fscanf(file, "%d\n", &n_turbines) != 1)
-      bft_error(__FILE__,__LINE__, 0,
+      bft_error(__FILE__, __LINE__, 0,
                 _("Could not read the number of turbines."));
 
     for (int i = 0; i < n_turbines; i++) {
       int turbine_id = 0;
       if (fscanf(file, "%d\n", &turbine_id) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Could not read turbine %d."), i);
+        bft_error(__FILE__, __LINE__, 0, _("Could not read turbine %d."), i);
 
       float turb_cen[3];
       if (fscanf(file, "%f\n", &(turb_cen[0])) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Could not read turbine x."));
+        bft_error(__FILE__, __LINE__, 0, _("Could not read turbine x."));
       if (fscanf(file, "%f\n", &(turb_cen[1])) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Could not read turbine y."));
+        bft_error(__FILE__, __LINE__, 0, _("Could not read turbine y."));
       if (fscanf(file, "%f\n", &(turb_cen[2])) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Could not read turbine z."));
+        bft_error(__FILE__, __LINE__, 0, _("Could not read turbine z."));
 
       double s_coords[]
         = {turb_cen[0] - 0.5 * turb_lenght * cos(wind_dir),
@@ -245,7 +245,7 @@ cs_user_zones(void)
       cs_volume_zone_define(name, criteria, CS_VOLUME_ZONE_SOURCE_TERM);
     }
     if (fclose(file) != 0)
-      bft_error(__FILE__,__LINE__, 0, _("Could not close the file."));
+      bft_error(__FILE__, __LINE__, 0, _("Could not close the file."));
   }
 
   /* Example:

@@ -884,7 +884,7 @@ cs_1d_wall_thermal_read(void)
                                      tabvar);
 
     if (ierror < CS_RESTART_SUCCESS) {
-      cs_base_warn(__FILE__,__LINE__);
+      cs_base_warn(__FILE__, __LINE__);
       bft_printf(_("Problem while reading the section in the restart file\n"
                    "for the 1D-wall thermal module:\n"
                    "<%s>\n"), nomrub);

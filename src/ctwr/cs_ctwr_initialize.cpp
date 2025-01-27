@@ -158,7 +158,7 @@ cs_ctwr_fields_init0(void)
     cs_ctwr_init_field_vars(fp->ro0, fp->t0, fp->p0, air_prop->molmass_rat);
 
     if (air_prop->cp_l <= 0 || air_prop->lambda_l <= 0)
-      bft_error(__FILE__,__LINE__, 0, _("Negative lambda or cp for liquid"));
+      bft_error(__FILE__, __LINE__, 0, _("Negative lambda or cp for liquid"));
 
     else
       cs_field_set_key_double(yh_l_p, kvisl0,
