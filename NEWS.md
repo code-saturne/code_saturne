@@ -3,6 +3,9 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix spurious conversion of GUi-defined reference temperature to Kelvin
+  when using a Celsius temperature scale.
+
 - Fix possible error in python CLI build step on python3.13 or newer.
 
 - Fix incorrect index in vector and tensor boundary gradient used for
