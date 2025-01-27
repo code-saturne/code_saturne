@@ -536,6 +536,8 @@ _smoothe(const cs_mesh_t              *m,
  */
 /*----------------------------------------------------------------------------*/
 
+END_C_DECLS // Temporary used here for the templated function
+
 template <cs_vof_contact_angle_t choice>
 static void
 _contact_angle_correction
@@ -577,9 +579,6 @@ _contact_angle_correction
     - 0.00183985 * pow(theta_micro, 4.5)
     + 1.845823e-06 * pow(theta_micro, 12.258487);
 
-  // To review later: (for internal solid faces)
-  //CK : Is the pragma needed here ? Should be using dispatch...
-  //# pragma omp parallel for if(mesh->n_b_faces > CS_THR_MIN)
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
     if (   cs_glob_bc_type[face_id] == CS_SMOOTHWALL
@@ -627,6 +626,8 @@ _contact_angle_correction
     }
   }
 }
+
+BEGIN_C_DECLS
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
