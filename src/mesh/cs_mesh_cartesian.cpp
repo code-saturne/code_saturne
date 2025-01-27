@@ -147,8 +147,8 @@ _intersect_intervals(const cs_gnum_t *i1,
                      cs_gnum_t *i3)
 {
   if (i1[0] > i2[1] || i2[0] > i1[1]) {
-    i3[0] = -1;
-    i3[1] = -1;
+    i3[0] = 0;
+    i3[1] = 0;
   }
   else {
     i3[0] = (i1[0] < i2[0]) ? i2[0] : i1[0]; // start with max
