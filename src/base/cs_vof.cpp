@@ -552,7 +552,7 @@ _contact_angle_correction
   /* Get values or local pointers */
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
-  const cs_real_t *b_face_u_normal = (const cs_real_t *)mq->b_face_u_normal;
+  cs_real_t *b_face_u_normal = (cs_real_t *)mq->b_face_u_normal;
   cs_real_t *restrict volume = mq->cell_vol;
 
   const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
@@ -561,9 +561,6 @@ _contact_angle_correction
   const cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
   cs_real_t *alpha_g = CS_F_(void_f)->val;
-
-  //FIXME: Needed ?
-  bool static_contact = false;
 
   // D. Legendre, Computers & Fluids 113 (2015) 2–13 (for these two values)
   constexpr cs_real_t slip_length = 1.e-9;
@@ -580,9 +577,9 @@ _contact_angle_correction
     - 0.00183985 * pow(theta_micro, 4.5)
     + 1.845823e-06 * pow(theta_micro, 12.258487);
 
-// To review later: (for internal solid faces)
-//CK : Is the pragma needed here ? Should be using dispatch...
-//# pragma omp parallel for if(mesh->n_b_faces > CS_THR_MIN)
+  // To review later: (for internal solid faces)
+  //CK : Is the pragma needed here ? Should be using dispatch...
+  //# pragma omp parallel for if(mesh->n_b_faces > CS_THR_MIN)
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
     if (   cs_glob_bc_type[face_id] == CS_SMOOTHWALL
@@ -610,15 +607,14 @@ _contact_angle_correction
 
           cs_real_t apparent_length = pow(volume[cell_id], cs_math_1ov3) / 2.0;
 
-          cs_real_t theta_macro = static_contact_angle
-                                + capillary_number
-                                * log(apparent_length / slip_length);
+          cs_real_t theta_macro =  static_contact_angle
+                                 + capillary_number
+                                 * log(apparent_length / slip_length);
 
-          //cs_real_t theta = (static_contact) ? theta_micro : _g_dyn(theta_macro);
-          cs_real_t theta = ( pow(9.0 * theta_macro, cs_math_1ov3)
-                            + 0.0727387 * theta_macro
-                            - 0.0515388 * cs_math_pow2(theta_macro)
-                            + 0.00341336 * cs_math_pow3(theta_macro) ) * pi_inv;
+          theta = (  pow(9.0 * theta_macro, cs_math_1ov3)
+                   + 0.0727387 * theta_macro
+                   - 0.0515388 * cs_math_pow2(theta_macro)
+                   + 0.00341336 * cs_math_pow3(theta_macro)) * pi_inv;
         }
 
         cs_math_3_normalize(nt, nt);
