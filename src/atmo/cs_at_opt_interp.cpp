@@ -131,8 +131,7 @@ _p0_projection(cs_measures_set_t  *ms,
                cs_interpol_grid_t *ig)
 {
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_real_3_t  *restrict cell_cen =
-    (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t  *restrict cell_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   const int dim = ms->dim;
   const int stride = dim + 3; /* dimension of field + dimension of space */
@@ -218,20 +217,15 @@ _p1_projection(cs_measures_set_t  *ms,
 
   /* cells -> cells connectivity (standard) */
 
-  const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)ma->cell_cells_idx;
-  const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict)ma->cell_cells;
+  const cs_lnum_t *restrict cell_cells_idx = ma->cell_cells_idx;
+  const cs_lnum_t *restrict cell_cells = ma->cell_cells;
 
   /* cells -> cells connectivity (extended) */
 
-  const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict)ma->cell_cells_e_idx;
-  const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict)ma->cell_cells_e;
+  const cs_lnum_t *restrict cell_cells_e_idx = ma->cell_cells_e_idx;
+  const cs_lnum_t *restrict cell_cells_e = ma->cell_cells_e;
 
-  const cs_real_3_t  *restrict cell_cen =
-    (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t  *restrict cell_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   cs_lnum_t n_obs = ms->nb_measures;
 
@@ -1594,8 +1588,7 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_real_3_t  *restrict cell_cen =
-    (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t  *restrict cell_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   /* measures set */
   const int key_ms = cs_field_key_id("measures_set_id");

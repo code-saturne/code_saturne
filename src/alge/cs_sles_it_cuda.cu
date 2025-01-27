@@ -1263,8 +1263,6 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   cs_sles_convergence_state_t cvg= CS_SLES_ITERATING;
   unsigned n_iter = 0;
 
-  int device_id = cs_get_device_id();
-
   bool local_stream = false;
   cudaStream_t stream;
   stream = cs_matrix_spmv_cuda_get_stream();
@@ -1285,8 +1283,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     cudaStream_t stream_pf = cs_cuda_get_stream_prefetch();
     cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
-    int device_id;
-    cudaGetDevice(&device_id);
+    int device_id = cs_get_device_id();
 
     if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
       _prefetch_h2d(vx, vec_size, device_id, stream_pf);
@@ -1507,8 +1504,6 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   cs_sles_convergence_state_t cvg= CS_SLES_ITERATING;
   unsigned n_iter = 0;
 
-  int device_id = cs_get_device_id();
-
   bool local_stream = false;
   cudaStream_t stream;
   stream = cs_matrix_spmv_cuda_get_stream();
@@ -1529,8 +1524,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     cudaStream_t stream_pf = cs_cuda_get_stream_prefetch();
     cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
-    int device_id;
-    cudaGetDevice(&device_id);
+    int device_id = cs_get_device_id();
 
     if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
       _prefetch_h2d(vx, vec_size, device_id, stream_pf);
@@ -1767,8 +1761,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 {
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
-  int device_id = cs_get_device_id();
-
   bool local_stream = false;
   cudaStream_t stream;
   stream = cs_matrix_spmv_cuda_get_stream();
@@ -1803,8 +1795,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
     cudaStream_t stream_pf = cs_cuda_get_stream_prefetch();
     cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
-    int device_id;
-    cudaGetDevice(&device_id);
+    int device_id = cs_get_device_id();
 
     if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
       _prefetch_h2d(vx, vec_size, device_id, stream_pf);
@@ -1965,8 +1956,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 {
   cs_sles_convergence_state_t cvg= CS_SLES_ITERATING;
 
-  int device_id = cs_get_device_id();
-
   bool local_stream = false;
   cudaStream_t stream;
   stream = cs_matrix_spmv_cuda_get_stream();
@@ -1990,8 +1979,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     cudaStream_t stream_pf = cs_cuda_get_stream_prefetch();
     cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
-    int device_id;
-    cudaGetDevice(&device_id);
+    int device_id = cs_get_device_id();
 
     if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
       _prefetch_h2d(vx, vec_size, device_id, stream_pf);

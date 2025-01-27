@@ -5117,7 +5117,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+    = (const cs_real_3_t *)fvq->cell_cen;
 
   const cs_halo_t *halo = m->halo;
 
