@@ -2811,8 +2811,7 @@ void cs_gui_initial_conditions(void)
   if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
     cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
     cs_equation_param_t  *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
-    /* Convert to °C since T0 is stored in Kelvin */
-    cs_real_t _t0 = phys_pp->t0 - cs_physical_constants_celsius_to_kelvin;
+    cs_real_t _t0 = phys_pp->t0;
     cs_equation_add_ic_by_value(eqp, nullptr, &(_t0));
   }
 
@@ -4067,9 +4066,18 @@ cs_gui_physical_properties(void)
     cs_gui_fluid_properties_value("reference_temperature", &_t0);
 
   if (_t0 > -998) {
-    if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
+    /* FIXME: the current cooling towers code seems to assume t0 is in
+       Kelvin, but this assumption is false in general, and not consistent
+       with t0 using the current temperature scale. For now, we follow
+       this logic to avoid issues with the atmospheric models assuming
+       a Kelvin scale and the cooling towers model assuming a Celsius
+       scale, but the Cooling towers module should align itself on the
+       rest of the code, not the other way around. */
+    if (   cs_glob_physical_model_flag[CS_COOLING_TOWERS] > -1
+        && (   cs_glob_thermal_model->temperature_scale
+            == CS_TEMPERATURE_SCALE_CELSIUS)) {
       _t0 += cs_physical_constants_celsius_to_kelvin;
-
+    }
     phys_pp->t0 = _t0;
   }
 
