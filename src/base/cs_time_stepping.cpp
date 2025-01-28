@@ -441,7 +441,7 @@ cs_time_stepping(void)
       }
     }
 
-    cs_mesh_quantities_fluid_vol_reductions(m, cs_glob_mesh_quantities);
+    cs_mesh_quantities_vol_reductions(m, cs_glob_mesh_quantities);
   }
 
   /* Initialize wall condensation model */

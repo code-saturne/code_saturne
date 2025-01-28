@@ -278,19 +278,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
                            cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------
- * Compute fluid mesh quantities
- *
- * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
-                                 cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------
- * Compute the total, min, and max fluid volumes of cells
+ * Compute the total, min, and max volumes of cells
  *
  * parameters:
  *   mesh            <-- pointer to mesh structure
@@ -298,8 +286,8 @@ cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_fluid_vol_reductions(const cs_mesh_t       *mesh,
-                                        cs_mesh_quantities_t  *mesh_quantities);
+cs_mesh_quantities_vol_reductions(const cs_mesh_t       *mesh,
+                                  cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Compute fluid section mesh quantities at the initial step

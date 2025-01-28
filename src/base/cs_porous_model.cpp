@@ -164,23 +164,43 @@ cs_porous_map_mesh_quantites_f_and_compute(void)
   /* Make fluid surfaces of mesh quantity point to the created fields */
   cs_glob_mesh_quantities_f = cs_mesh_quantities_create();
   cs_mesh_quantities_t *mq_f = cs_glob_mesh_quantities_f;
+  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
   mq_f->has_disable_flag = 1;
 
-  mq_f->i_face_normal = cs_field_by_name("i_f_face_normal")->val;
-  mq_f->b_face_normal = cs_field_by_name("b_f_face_normal")->val;
-  mq_f->i_face_surf   = cs_field_by_name("i_f_face_surf")->val;
-  mq_f->b_face_surf   = cs_field_by_name("b_f_face_surf")->val;
-  mq_f->i_f_face_factor
-    = (cs_real_2_t *)cs_field_by_name("i_f_face_factor")->val;
-  mq_f->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
-  mq_f->i_face_cog    = cs_field_by_name("i_f_face_cog")->val;
-  mq_f->b_face_cog    = cs_field_by_name("b_f_face_cog")->val;
-  mq_f->cell_cen      = cs_field_by_name("cell_f_cen")->val;
-  mq_f->cell_s_cen      = cs_field_by_name("cell_s_cen")->val;
-  mq_f->c_w_face_normal = cs_field_by_name("c_w_face_normal")->val;
-  mq_f->c_w_face_surf   = cs_field_by_name("c_w_face_surf")->val;
-  mq_f->c_w_face_cog    = cs_field_by_name("c_w_face_cog")->val;
-  mq_f->c_w_dist_inv    = cs_field_by_name("c_w_dist_inv")->val;
+  /* Note that cs_glob_mesh_quantities_f is not owner of its members */
+  if (cs_glob_porous_model == 3) {
+    mq_f->i_face_normal = cs_field_by_name("i_f_face_normal")->val;
+    mq_f->b_face_normal = cs_field_by_name("b_f_face_normal")->val;
+    mq_f->i_face_surf   = cs_field_by_name("i_f_face_surf")->val;
+    mq_f->b_face_surf   = cs_field_by_name("b_f_face_surf")->val;
+    mq_f->i_f_face_factor
+      = (cs_real_2_t *)cs_field_by_name("i_f_face_factor")->val;
+    mq_f->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
+    mq_f->i_face_cog    = cs_field_by_name("i_f_face_cog")->val;
+    mq_f->b_face_cog    = cs_field_by_name("b_f_face_cog")->val;
+    mq_f->cell_cen      = cs_field_by_name("cell_f_cen")->val;
+    mq_f->cell_s_cen      = cs_field_by_name("cell_s_cen")->val;
+    mq_f->c_w_face_normal = cs_field_by_name("c_w_face_normal")->val;
+    mq_f->c_w_face_surf   = cs_field_by_name("c_w_face_surf")->val;
+    mq_f->c_w_face_cog    = cs_field_by_name("c_w_face_cog")->val;
+    mq_f->c_w_dist_inv    = cs_field_by_name("c_w_dist_inv")->val;
+  }
+  else {
+    mq_f->i_face_normal   = mq_g->i_face_normal;
+    mq_f->b_face_normal   = mq_g->b_face_normal;
+    mq_f->i_face_surf     = mq_g->i_face_surf;
+    mq_f->b_face_surf     = mq_g->b_face_surf;
+    mq_f->i_f_face_factor = mq_g->i_f_face_factor;
+    mq_f->b_f_face_factor = mq_g->b_f_face_factor;
+    mq_f->i_face_cog      = mq_g->i_face_cog;
+    mq_f->b_face_cog      = mq_g->b_face_cog;
+    mq_f->cell_cen        = mq_g->cell_cen;
+    mq_f->cell_s_cen      = mq_g->cell_s_cen;
+    mq_f->c_w_face_normal = mq_g->c_w_face_normal;
+    mq_f->c_w_face_surf   = mq_g->c_w_face_surf;
+    mq_f->c_w_face_cog    = mq_g->c_w_face_cog;
+    mq_f->c_w_dist_inv    = mq_g->c_w_dist_inv;
+  }
   mq_f->cell_vol        = cs_field_by_name("cell_f_vol")->val;
 
   cs_glob_mesh_quantities = mq_f;

@@ -3236,32 +3236,7 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 
   }
 
-  _cell_volume_reductions(m,
-                          mq->cell_vol,
-                          &(mq->min_vol),
-                          &(mq->max_vol),
-                          &(mq->tot_vol));
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-
-    cs_real_t  _min_vol, _max_vol, _tot_vol;
-
-    MPI_Allreduce(&(mq->min_vol), &_min_vol, 1, CS_MPI_REAL,
-                  MPI_MIN, cs_glob_mpi_comm);
-
-    MPI_Allreduce(&(mq->max_vol), &_max_vol, 1, CS_MPI_REAL,
-                  MPI_MAX, cs_glob_mpi_comm);
-
-    MPI_Allreduce(&(mq->tot_vol), &_tot_vol, 1, CS_MPI_REAL,
-                  MPI_SUM, cs_glob_mpi_comm);
-
-    mq->min_vol = _min_vol;
-    mq->max_vol = _max_vol;
-    mq->tot_vol = _tot_vol;
-
-  }
-#endif
+  cs_mesh_quantities_vol_reductions(m, mq);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4632,23 +4607,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
 }
 
 /*----------------------------------------------------------------------------
- * Compute min, max, and total
- *
- * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
-                                 cs_mesh_quantities_t  *mesh_quantities)
-{
-  CS_UNUSED(mesh);
-  CS_UNUSED(mesh_quantities);
-}
-
-/*----------------------------------------------------------------------------
- * Compute the total, min, and max fluid volumes of cells
+ * Compute the total, min, and max volumes of cells
  *
  * parameters:
  *   mesh            <-- pointer to mesh structure
@@ -4656,8 +4615,8 @@ cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_fluid_vol_reductions(const cs_mesh_t       *mesh,
-                                        cs_mesh_quantities_t  *mesh_quantities)
+cs_mesh_quantities_vol_reductions(const cs_mesh_t       *mesh,
+                                  cs_mesh_quantities_t  *mesh_quantities)
 {
   _cell_volume_reductions(mesh,
                           mesh_quantities->cell_vol,
