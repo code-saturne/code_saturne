@@ -312,30 +312,38 @@ _smoothe(const cs_mesh_t              *m,
          const cs_field_bc_coeffs_t   *bc_coeffs,
          cs_real_t                    *restrict pvar)
 {
-  int n_cells_ext = m->n_cells_with_ghosts;
-  int n_cells     = m->n_cells;
-  int n_i_faces   = m->n_i_faces;
-  int n_b_faces   = m->n_b_faces;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  cs_real_t *restrict dist   = mq->i_dist;
-  cs_real_t *restrict volume = mq->cell_vol;
-  cs_real_t *restrict surfn  = mq->i_face_surf;
+  const cs_real_t *restrict dist = mq->i_dist;
+  const cs_real_t *restrict cell_vol = mq->cell_vol;
+  const cs_real_t *restrict surfn = mq->i_face_surf;
 
-  cs_real_3_t *restrict surfac = (cs_real_3_t *)mq->i_face_normal;
-  cs_rreal_3_t *restrict diipf  = mq->diipf;
-  cs_rreal_3_t *restrict djjpf  = mq->djjpf;
+  const cs_nreal_3_t *restrict i_face_u_normal
+    = (const cs_nreal_3_t *)mq->i_face_u_normal;
+  const cs_rreal_3_t *restrict diipf = mq->diipf;
+  const cs_rreal_3_t *restrict djjpf = mq->djjpf;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *c2c = ma->cell_cells;
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const short int *c2f_sgn = ma->cell_i_faces_sgn;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+  const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *cell_b_faces = ma->cell_b_faces;
+
+  const int *bc_type = cs_glob_bc_type;
 
   cs_dispatch_context ctx;
 
-  double d_tau = 0.1; /* Sharpening interface on 5 cells (0.1 for 3 cells) */
+  const cs_real_t d_tau = 0.1; /* Sharpening interface on 5 cells (0.1 for 3 cells) */
   /* User Intialization Triple line model */
   /*   alpha_p = 0 - Surface hydrophobe
        alpha_p = 1 - Surface hydrophile
        B_s         - Paramètre de pénalité */
-  double B_s = 0.;
-  double alpha_p = 0.263544;
+  const cs_real_t B_s = 0.;
+  const cs_real_t alpha_p = 0.263544;
   /* User Intialization Triple line model */
 
   const cs_equation_param_t *eqp_volf
@@ -347,15 +355,6 @@ _smoothe(const cs_mesh_t              *m,
   CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(rtpdp, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(smbdp, n_cells_ext, cs_real_t, cs_alloc_mode);
-
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    rtpdp[c_id] = 0.;
-    smbdp[c_id] = pvar[c_id] * volume[c_id];
-  });
-
-  ctx.wait();
-
-  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, smbdp);
 
   /* PREPARE SYSTEM TO SOLVE */
   /* Compute the gradient of "diffused void fraction" */
@@ -400,100 +399,96 @@ _smoothe(const cs_mesh_t              *m,
 
   constexpr cs_real_t c_1ov3 = 1. / 3.;
 
-  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
-  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-    cs_lnum_t ii = i_face_cells[f_id][0];
-    cs_lnum_t jj = i_face_cells[f_id][1];
+    /* Initialization */
+    rtpdp[c_id] = 0.;
+    smbdp[c_id] = pvar[c_id] * cell_vol[c_id];
+    dam[c_id] = cell_vol[c_id];
 
-    cs_real_t taille = 0.5 * (  pow(volume[ii], c_1ov3)
-                              + pow(volume[jj], c_1ov3));
-    cs_real_t visco = taille * taille * d_tau;
+    /* Loop on interior faces */
+    const cs_lnum_t s_id_i = c2c_idx[c_id];
+    const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
 
-    cs_real_t distxyz[3];
-    for (cs_lnum_t i = 0; i < 3; i++)
-      distxyz[i] =  dist[f_id] * surfac[f_id][i] / surfn[f_id]
-                  + diipf[f_id][i] + djjpf[f_id][i];
+    for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+      const cs_lnum_t f_id = cell_i_faces[cidx];
+      const cs_lnum_t c_id_adj = c2c[cidx];
+      short int f_sgn = c2f_sgn[cidx];
 
-    viscf[f_id] = visco * surfn[f_id] / cs_math_3_norm(distxyz);
+      /* Extra-diagonal terms computation */
+      xam[f_id] = - viscf[f_id];
 
-    cs_real_t *gradi = (cs_real_t *)grad + 3 * ii;
-    cs_real_t *gradj = (cs_real_t *)grad + 3 * jj;
+      cs_real_t taille = 0.5 * (  pow(cell_vol[c_id], c_1ov3)
+                                + pow(cell_vol[c_id_adj], c_1ov3));
 
-    cs_real_t reconstr
-      = viscf[f_id] * (  cs_math_3_dot_product(diipf[f_id], gradi)
-                       - cs_math_3_dot_product(djjpf[f_id], gradj));
+      cs_real_t visco = taille * taille * d_tau;
 
-    cs_dispatch_sum(&smbdp[ii], -reconstr, i_sum_type);
-    cs_dispatch_sum(&smbdp[jj], reconstr, i_sum_type);
-  });
+      cs_real_t distxyz[3];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        distxyz[i] =   dist[f_id] * i_face_u_normal[f_id][i]
+                     + diipf[f_id][i] + djjpf[f_id][i];
 
-  /* Initialization */
-  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    dam[c_id] = volume[c_id];
-  });
+      viscf[f_id] = visco * surfn[f_id] / cs_math_3_norm(distxyz);
 
-  /* Extra-diagonal terms computation */
-  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-    xam[f_id] -= viscf[f_id];
-  });
+      cs_real_t reconstr
+        =   f_sgn * viscf[f_id]
+          * (  cs_math_3_dot_product(diipf[f_id], grad[c_id])
+             - cs_math_3_dot_product(djjpf[f_id], grad[c_id_adj]));
 
-  /* Extra-diagonal terms contribution to the diagonal
-     (without boundary contribution (0 flux)) */
-  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-    cs_lnum_t ii = i_face_cells[f_id][0];
-    cs_lnum_t jj = i_face_cells[f_id][1];
+      smbdp[c_id] -= reconstr;
 
-    cs_dispatch_sum(&dam[ii], -xam[f_id], i_sum_type);
-    cs_dispatch_sum(&dam[jj], -xam[f_id], i_sum_type);
-  });
+      /* Extra-diagonal terms contribution to the diagonal
+         (without boundary contribution (0 flux)) */
+      dam[c_id] -= xam[f_id];
 
-  ctx.wait();
+    }
 
-  /* Slight re-inforcement of the diagonal if we are not on a
-     Dirichlet condition (move the eigenvalues spectrum) */
-  cs_real_t epsi = 1.e-7;
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    /* Slight re-inforcement of the diagonal if we are not on a
+       Dirichlet condition (move the eigenvalues spectrum) */
+    const cs_real_t epsi = 1.e-7;
     dam[c_id] *= (1. + epsi);
 
-  /* SOLVE SYSTEM */
-  /* Linear system initialization is in nc_sles_default */
-  /* Linear system resolution options */
-  cs_real_t precision = 1.e-5; /* Solver precision */
-  int n_equiv_iter = 0;     /* Number of equivalent iterative
-                               solver iterations */
-  cs_real_t residual;       /* Residual */
+    /* Triple line model (WARNING: model terms are added after
+       residual normalization ?) */
 
-  /* Linear system resolution */
-  /* Get the residual normalization */
-  cs_real_t rnorm = cs_dot(n_cells, smbdp, smbdp);
+    /* Loop on boundary faces */
+    const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+    const cs_lnum_t e_id_b = cell_b_faces_idx[c_id + 1];
 
-  cs_parall_sum(1, CS_DOUBLE, &rnorm);
-  rnorm = sqrt(rnorm); /* Residual normalization */
+    for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+      const cs_lnum_t f_id = cell_b_faces[cidx];
 
-  /* Triple line model (WARNING: model terms are added after
-     residual normalization ?) */
-  const int *bc_type = cs_glob_bc_type;
+      cs_real_t is_wall = 0.;
+      if (   bc_type[f_id] == CS_SMOOTHWALL
+          || bc_type[f_id] == CS_ROUGHWALL)
+        is_wall = 1.;
 
-  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-    cs_lnum_t ii = b_face_cells[f_id];
+      smbdp[c_id] += B_s * cell_vol[c_id] * alpha_p * is_wall;
+      dam[c_id] += cell_vol[c_id] * B_s * is_wall;
+    }
 
-    cs_real_t is_wall = 0.;
-    if (   bc_type[f_id] == CS_SMOOTHWALL
-        || bc_type[f_id] == CS_ROUGHWALL)
-      is_wall = 1.;
-
-    cs_dispatch_sum(&smbdp[ii], B_s * volume[ii] * alpha_p * is_wall,
-                    b_sum_type);
-    cs_dispatch_sum(&dam[ii], B_s * volume[ii] * is_wall, b_sum_type);
   });
 
   ctx.wait();
 
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, smbdp);
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, dam);
+
+  /* SOLVE SYSTEM
+     Linear system initialization is in nc_sles_default
+     Linear system resolution options */
+
+  cs_real_t precision = 1.e-5; /* Solver precision */
+  int n_equiv_iter = 0;        /* Number of equivalent iterative
+                                  solver iterations */
+  cs_real_t residual;          /* Residual */
+
+  /* Linear system resolution */
+  /* Get the residual normalization */
+  cs_real_t rnorm = cs_dot(n_cells, smbdp, smbdp);
+
+  cs_parall_sum(1, CS_REAL_TYPE, &rnorm);
+  rnorm = sqrt(rnorm); /* Residual normalization */
 
   cs_sles_solve_native(-1,
                        "ITM_diffusion_equation",
@@ -511,8 +506,11 @@ _smoothe(const cs_mesh_t              *m,
   cs_sles_free_native(-1, "ITM_diffusion_equation");
 
   /* Increment the distance to the wall */
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     pvar[c_id] = rtpdp[c_id];
+  });
+
+  ctx.wait();
 
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
 
@@ -760,7 +758,6 @@ cs_vof_compute_linear_rho_mu(const cs_mesh_t  *m)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   cs_real_t *cvar_voidf = CS_F_(void_f)->val;
@@ -787,15 +784,9 @@ cs_vof_compute_linear_rho_mu(const cs_mesh_t  *m)
     cpro_viscl[c_id] =  mu2*vf +  mu1*(1. - vf);
   });
 
-  ctx.wait();
-
-  cs_halo_type_t halo_type = m->halo_type;
-  cs_field_synchronize(CS_F_(rho), halo_type);
-  cs_field_synchronize(CS_F_(mu), halo_type);
-
   /* Update mixture density on boundary faces */
 
-  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
     cs_lnum_t c_id = b_face_cells[f_id];
     cs_real_t vf = a_voidf[f_id] + b_voidf[f_id]*cvar_voidf[c_id];
 
@@ -803,6 +794,10 @@ cs_vof_compute_linear_rho_mu(const cs_mesh_t  *m)
   });
 
   ctx.wait();
+
+  cs_halo_type_t halo_type = m->halo_type;
+  cs_field_synchronize(CS_F_(rho), halo_type);
+  cs_field_synchronize(CS_F_(mu), halo_type);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -875,12 +870,12 @@ cs_vof_update_phys_prop(const cs_mesh_t  *m)
 
   cs_dispatch_context ctx;
 
-  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-    i_massflux[f_id] += drho * i_voidflux[f_id] + rho1*i_volflux[f_id];
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    i_massflux[f_id] += drho * i_voidflux[f_id] + rho1 * i_volflux[f_id];
   });
 
-  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-    b_massflux[f_id] += drho * b_voidflux[f_id] + rho1*b_volflux[f_id];
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    b_massflux[f_id] += drho * b_voidflux[f_id] + rho1 * b_volflux[f_id];
   });
 
   ctx.wait();
@@ -962,45 +957,52 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
     CS_MALLOC_HD(i_massflux_abs, n_i_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(b_massflux_abs, n_b_faces, cs_real_t, cs_alloc_mode);
 
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       i_massflux_abs[f_id] = i_massflux[f_id];
 
-      cs_lnum_t  c_id_i = i_face_cells[f_id][0];
-      cs_lnum_t  c_id_j = i_face_cells[f_id][1];
-      int rot_ce_i = cell_rotor_num[cr_step*c_id_i];
-      int rot_ce_j = cell_rotor_num[cr_step*c_id_j];
+      cs_lnum_t c_id_i = i_face_cells[f_id][0];
+      cs_lnum_t c_id_j = i_face_cells[f_id][1];
+      const cs_lnum_t id_i = cr_step*c_id_i;
+      const cs_lnum_t id_j = cr_step*c_id_j;
+      cs_lnum_t rot_ce_i = cell_rotor_num[id_i];
+      cs_lnum_t rot_ce_j = cell_rotor_num[id_j];
 
       if (rot_ce_i != 0 || rot_ce_j != 0) {
-        cs_real_t rhofac = 0.5*(cpro_rom[c_id_i] + cpro_rom[c_id_j]);
+        cs_real_t rhofac = 0.5 * (cpro_rom[c_id_i] + cpro_rom[c_id_j]);
 
         cs_real_t vr1[3], vr2[3];
+        /* cs_rotation_velocity is actually a host function.
+           the code will crash on GPU */
         cs_rotation_velocity(r + rot_ce_i,
                              i_face_cog[f_id],
                              vr1);
+
         cs_rotation_velocity(r + rot_ce_i,
                              i_face_cog[f_id],
                              vr2);
-        cs_real_t vr[] = {0.5*(vr1[0]+vr2[0]),
-                          0.5*(vr1[1]+vr2[1]),
-                          0.5*(vr1[2]+vr2[2])};
 
-        i_massflux_abs[f_id] += rhofac
-                          * cs_math_3_dot_product(i_f_face_normal[f_id],vr);
+        cs_real_t vr[3] = {0.5 * (vr1[0] + vr2[0]),
+                           0.5 * (vr1[1] + vr2[1]),
+                           0.5 * (vr1[2] + vr2[2])};
+
+        i_massflux_abs[f_id]
+          += rhofac * cs_math_3_dot_product(i_f_face_normal[f_id],vr);
       }
     });
 
-    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       b_massflux_abs[f_id] = b_massflux[f_id];
 
-      cs_lnum_t  c_id = b_face_cells[f_id];
-      int rot_ce_i = cell_rotor_num[cr_step*c_id];
+      cs_lnum_t c_id = b_face_cells[f_id];
+      const cs_lnum_t id = cr_step*c_id;
+      cs_lnum_t rot_ce_i = cell_rotor_num[id];
 
       if (rot_ce_i != 0) {
         cs_real_t vr[3];
         cs_rotation_velocity(r + rot_ce_i, b_face_cog[f_id], vr);
 
-        b_massflux_abs[f_id] += bpro_rom[f_id]
-                          * cs_math_3_dot_product(b_f_face_normal[f_id], vr);
+        b_massflux_abs[f_id]
+          += bpro_rom[f_id] * cs_math_3_dot_product(b_f_face_normal[f_id], vr);
 
       }
     });
@@ -1030,6 +1032,7 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
   /* Unsteady term  and mass budget */
 
   cs_real_t glob_m_budget = 0.;
+  // TODO: Reduction for GPU
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_real_t tinsro =  cell_f_vol[c_id]
                       * (cpro_rom[c_id]-cproa_rom[c_id]) / CS_F_(dt)->val[c_id];
@@ -1037,7 +1040,7 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
     glob_m_budget += tinsro + divro[c_id];
   }
 
-  cs_parall_sum(1, CS_DOUBLE, &glob_m_budget);
+  cs_parall_sum(1, CS_REAL_TYPE, &glob_m_budget);
 
   if (cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT,
@@ -1066,14 +1069,20 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  cs_mesh_adjacencies_update_cell_i_faces();
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *c2c = ma->cell_cells;
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const short int *c2f_sgn = ma->cell_i_faces_sgn;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
 
   const cs_real_t *restrict pond = mq->weight;
-
-  cs_real_3_t *restrict surfac = (cs_real_3_t *)mq->i_face_normal;
-  cs_real_3_t *restrict dofij = (cs_real_3_t *)mq->dofij;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *)mq->i_face_u_normal;
+  const cs_real_3_t *restrict dofij = (const cs_real_3_t *)mq->dofij;
+  const cs_real_t *restrict i_face_surf = (const cs_real_t *)mq->i_face_surf;
 
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));
@@ -1101,9 +1110,8 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   cs_real_33_t *coefb_vec = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
   cs_dispatch_context ctx;
-  cs_dispatch_sum_type_t sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
 
-  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
     coefa[face_id] = 0.;
     coefb[face_id] = 1.;
 
@@ -1212,39 +1220,41 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      gradnxyz);
 
   /* Reconstructions for curvature computation */
-  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
-    curv[c_id] = 0.;
-  });
-
-  ctx.wait();
-
-  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-    cs_lnum_t ii = i_face_cells[face_id][0];
-    cs_lnum_t jj = i_face_cells[face_id][1];
-
-    cs_real_t gradf[3];
-
-    for (cs_lnum_t k = 0; k < 3; k++)
-      gradf[k] =         pond[face_id]  * surfxyz_norm[ii][k]
-                 + (1. - pond[face_id]) * surfxyz_norm[jj][k];
-
-    for (cs_lnum_t k = 0; k < 3; k++)
-      for (cs_lnum_t l = 0; l < 3; l++)
-        gradf[k] += 0.5 * dofij[face_id][l]
-                        * (gradnxyz[ii][k][l] + gradnxyz[jj][k][l]);
-
-    double flux = cs_math_3_dot_product(gradf, surfac[face_id]);
-    cs_dispatch_sum(&curv[ii], flux, sum_type);
-    cs_dispatch_sum(&curv[jj], -flux, sum_type);
-  });
-
-  ctx.wait();
-
-  /* Compute volumic surface tension */
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
-    for (int i = 0; i < 3; i++) {
+
+    /* Initialization */
+    curv[c_id] = 0.;
+
+    /* Loop on interior faces */
+    const cs_lnum_t s_id_i = c2c_idx[c_id];
+    const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+
+    for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+      const cs_lnum_t face_id = cell_i_faces[cidx];
+      const cs_lnum_t c_id_adj = c2c[cidx];
+      const short int f_sgn = c2f_sgn[cidx];
+      cs_real_t gradf[3];
+
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        gradf[k] =         pond[face_id]  * surfxyz_norm[c_id][k]
+                   + (1. - pond[face_id]) * surfxyz_norm[c_id_adj][k];
+
+        for (cs_lnum_t l = 0; l < 3; l++)
+          gradf[k] +=   0.5 * dofij[face_id][l]
+                      * (gradnxyz[c_id][k][l] + gradnxyz[c_id_adj][k][l]);
+      }
+
+      cs_real_t flux =   f_sgn * i_face_surf[face_id]
+                       * cs_math_3_dot_product(gradf, i_face_u_normal[face_id]);
+
+      curv[c_id] += flux;
+    }
+
+    /* Compute volumic surface tension */
+    for (cs_lnum_t i = 0; i < 3; i++) {
       stf[c_id][i] = -cpro_surftens * surfxyz_unnormed[c_id][i] * curv[c_id];
     }
+
   });
 
   ctx.wait();
@@ -1309,15 +1319,17 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
 
   const cs_real_t tot_vol = mq->tot_vol;
   const cs_real_t *i_face_surf = (const cs_real_t *)mq->i_face_surf;
-  const cs_real_3_t *i_face_normal = (const cs_real_3_t *)mq->i_face_normal;
+  const cs_real_3_t *i_face_u_normal = (const cs_real_3_t *)mq->i_face_u_normal;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+
+  cs_dispatch_context ctx;
 
   /* Constant parameter */
   const cs_real_t cdrift = _vof_parameters.cdrift;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  const cs_real_t *restrict i_volflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf))->val;
+  const cs_real_t *restrict i_volflux
+    = cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf))->val;
 
   cs_real_t *cpro_idriftf = cs_field_by_name("inner_drift_velocity_flux")->val;
 
@@ -1335,10 +1347,10 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
                            voidf_grad);
 
   /* Stabilization factor */
-  cs_real_t delta = pow(10,-8)/pow(tot_vol/n_g_cells,(1./3.));
+  const cs_real_t delta = pow(10,-8)/pow(tot_vol/n_g_cells,(1./3.));
 
   /* Compute the max of flux/Surf over the entire domain */
-  cs_real_t maxfluxsurf = 0.;
+  cs_real_t maxfluxsurf = 0.; // TODO: Max reduction for GPU
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     if (maxfluxsurf < std::abs(i_volflux[f_id])/i_face_surf[f_id])
       maxfluxsurf = std::abs(i_volflux[f_id])/i_face_surf[f_id];
@@ -1347,26 +1359,33 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   cs_parall_max(1, CS_REAL_TYPE, &maxfluxsurf);
 
   /* Compute the relative velocity at internal faces */
-  cs_real_t gradface[3], normalface[3];
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     cs_lnum_t cell_id1 = i_face_cells[f_id][0];
     cs_lnum_t cell_id2 = i_face_cells[f_id][1];
+
     cs_real_t fluxfactor
       = cs_math_fmin(cdrift*std::abs(i_volflux[f_id])/i_face_surf[f_id],
                      maxfluxsurf);
 
+    cs_real_t gradface[3], normalface[3];
+
     for (cs_lnum_t idim = 0; idim < 3; idim++)
-      gradface[idim] = (  voidf_grad[cell_id1][idim]
-                        + voidf_grad[cell_id2][idim])/2.;
+      gradface[idim] = 0.5 * (  voidf_grad[cell_id1][idim]
+                              + voidf_grad[cell_id2][idim]);
 
     cs_real_t normgrad = cs_math_3_norm(gradface);
 
     for (cs_lnum_t idim = 0; idim < 3; idim++)
-      normalface[idim] = gradface[idim] / (normgrad+delta);
+      normalface[idim] = gradface[idim] / (normgrad + delta);
 
-    cpro_idriftf[f_id] =
-      fluxfactor*cs_math_3_dot_product(normalface, i_face_normal[f_id]);
-  }
+    cpro_idriftf[f_id]
+      =   i_face_surf[f_id] * fluxfactor
+        * cs_math_3_dot_product(normalface, i_face_u_normal[f_id]);
+
+  });
+
+  ctx.wait();
 
   CS_FREE_HD(voidf_grad);
 }
@@ -1419,11 +1438,6 @@ cs_vof_drift_term(int                        imrgra,
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
@@ -1467,7 +1481,6 @@ cs_vof_drift_term(int                        imrgra,
   } else {
 
     const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-    int f_id, itypfl, iflmb0, init, inc;
 
     /* Check if field exist */
     if (idriftflux == nullptr)
@@ -1484,24 +1497,25 @@ cs_vof_drift_term(int                        imrgra,
     cs_real_3_t *coefav = (cs_real_3_t *)bc_coeffs_v_loc.a;
     cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
-    f_id = -1;
-    itypfl = 0;
-    iflmb0 = 1;
-    init = 1;
-    inc = 1;
-
     /* Boundary coefficients */
-    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  ifac) {
-      for (int ii = 0 ; ii < 3 ; ii++) {
-        coefav[ifac][ii] = 0.;
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      for (cs_lnum_t ii = 0 ; ii < 3 ; ii++) {
+        coefav[face_id][ii] = 0.;
+
         for (cs_lnum_t jj = 0 ; jj < 3 ; jj++) {
-          coefbv[ifac][ii][jj] = 0.;
+          coefbv[face_id][ii][jj] = 0.;
         }
-        coefbv[ifac][ii][ii] = 1.;
+        coefbv[face_id][ii][ii] = 1.;
       }
     });
 
     ctx.wait();
+
+    int f_id = -1;
+    int itypfl = 0;
+    int iflmb0 = 1;
+    int init = 1;
+    int inc = 1;
 
     cs_mass_flux(m,
                  fvq,
@@ -1538,24 +1552,24 @@ cs_vof_drift_term(int                        imrgra,
   const cs_real_t kdrift = _vof_parameters.kdrift;
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-    cs_lnum_t ii = i_face_cells[face_id][0];
-    cs_lnum_t jj = i_face_cells[face_id][1];
+    cs_lnum_t c_id1 = i_face_cells[face_id][0];
+    cs_lnum_t c_id2 = i_face_cells[face_id][1];
 
     cs_real_t irvf = 0.;
     if (idriftflux != nullptr)
       irvf = cpro_idriftf[face_id];
 
-    cs_real_2_t fluxij = {0.,0.};
+    cs_real_t fluxij[2] = {0., 0.};
 
     cs_i_conv_flux(1,
                    1.,
                    0,
-                   _pvar[ii],
-                   _pvar[jj],
-                   _pvar[ii]*(1.-_pvar[jj]),
-                   _pvar[ii]*(1.-_pvar[jj]),
-                   _pvar[jj]*(1.-_pvar[ii]),
-                   _pvar[jj]*(1.-_pvar[ii]),
+                   _pvar[c_id1],
+                   _pvar[c_id2],
+                   _pvar[c_id1]*(1.-_pvar[c_id2]),
+                   _pvar[c_id1]*(1.-_pvar[c_id2]),
+                   _pvar[c_id2]*(1.-_pvar[c_id1]),
+                   _pvar[c_id2]*(1.-_pvar[c_id1]),
                    irvf,
                    1.,
                    1.,
@@ -1563,21 +1577,23 @@ cs_vof_drift_term(int                        imrgra,
 
     cs_i_diff_flux(1,
                    1.,
-                   _pvar[ii],
-                   _pvar[jj],
-                   _pvar[ii],
-                   _pvar[jj],
-                   kdrift*(2.-_pvar[ii]-_pvar[jj])
+                   _pvar[c_id1],
+                   _pvar[c_id2],
+                   _pvar[c_id1],
+                   _pvar[c_id2],
+                   kdrift*(2.-_pvar[c_id1]-_pvar[c_id2])
                     / 2.*i_face_surf[face_id]/i_dist[face_id],
                    fluxij);
 
-    if (ii < n_cells)
-      cs_dispatch_sum(&rhs[ii], -fluxij[0], sum_type);
-    if (jj < n_cells)
-      cs_dispatch_sum(&rhs[jj], fluxij[1], sum_type);
+    if (c_id1 < n_cells)
+      cs_dispatch_sum(&rhs[c_id1], -fluxij[0], sum_type);
+    if (c_id2 < n_cells)
+      cs_dispatch_sum(&rhs[c_id2], fluxij[1], sum_type);
+
     /* store void fraction convection flux contribution */
     i_flux[face_id] += fluxij[0];
   });
+
   ctx.wait();
 }
 
@@ -1615,21 +1631,24 @@ cs_vof_solve_void_fraction(int  iterns)
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_real_t *cell_f_vol = fvq->cell_vol;
 
-  cs_real_t *dt = CS_F_(dt)->val;
-
+  const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t rho1 = _vof_parameters.rho1;
   const cs_real_t rho2 = _vof_parameters.rho2;
   const cs_cavitation_parameters_t *cavitation_parameters
     = cs_get_glob_cavitation_parameters();
+
+  cs_dispatch_context ctx;
 
   /* Initialization
      -------------- */
 
   const int i_vof_mass_transfer
     = (_vof_parameters.vof_model & CS_VOF_MERKLE_MASS_TRANSFER);
+  const int isno2t = cs_glob_time_scheme->isno2t;
 
   cs_field_t *volf2 = cs_field_by_name("void_fraction");
   cs_equation_param_t *eqp_vol = cs_field_get_equation_param(volf2);
+  int istat = eqp_vol->istat;
 
   cs_real_t *cvar_voidf = volf2->val;
   cs_real_t *cvara_voidf = volf2->val_pre;
@@ -1678,7 +1697,7 @@ cs_vof_solve_void_fraction(int  iterns)
 
   cs_real_t *c_st_voidf = nullptr;
   const cs_real_t thets = cs_glob_time_scheme->thetsn;
-  if (cs_glob_time_scheme->isno2t > 0) {
+  if (isno2t > 0) {
     const int kstprv = cs_field_key_id("source_term_prev_id");
     const int istprv = cs_field_get_key_int(volf2, kstprv);
 
@@ -1690,13 +1709,15 @@ cs_vof_solve_void_fraction(int  iterns)
 
   /* Initialization */
 
-  cs_array_real_fill_zero(n_cells, smbrs);
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., smbrs);
 
   /* Arbitrary initialization (no diffusion for void fraction) */
-  cs_array_real_set_scalar(n_i_faces, 1.0, i_visc);
-  cs_array_real_set_scalar(n_b_faces, 1.0, b_visc);
+
+  cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 1.0, i_visc);
+  cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 1.0, b_visc);
 
   /* Initialize void fraction convection flux */
+
   const int kiflux = cs_field_key_id("inner_flux_id");
   const int kbflux = cs_field_key_id("boundary_flux_id");
 
@@ -1704,16 +1725,13 @@ cs_vof_solve_void_fraction(int  iterns)
   const int bcflux_id = cs_field_get_key_int(volf2, kbflux);
 
   cs_real_t *icflux = cs_field_by_id(icflux_id)->val;
-  cs_array_real_fill_zero(n_i_faces, icflux);
-
   cs_real_t *bcflux = cs_field_by_id(bcflux_id)->val;
-  cs_array_real_fill_zero(n_b_faces, bcflux);
+
+  cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., icflux);
+  cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., bcflux);
 
   /* Preliminary computations
      ------------------------ */
-
-  cs_dispatch_context ctx;
-  cs_dispatch_sum_type_t sum_type = ctx.get_parallel_for_i_faces_sum_type(mesh);
 
   /* Update the cavitation source term with pressure increment
      if it has been implicited in pressure at correction step,
@@ -1727,9 +1745,9 @@ cs_vof_solve_void_fraction(int  iterns)
 
   if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
-      cs_dispatch_sum(&gamcav[c_id],
-          dgdpca[c_id] * (cvar_pr[c_id] - cvara_pr[c_id]), sum_type);
+      gamcav[c_id] += dgdpca[c_id] * (cvar_pr[c_id] - cvara_pr[c_id]);
     });
+
     ctx.wait();
   }
 
@@ -1801,26 +1819,19 @@ cs_vof_solve_void_fraction(int  iterns)
 
   /* Source terms */
 
-# pragma omp parallel
-  {
-    cs_lnum_t t_s_id, t_e_id;
-    cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     /* Cavitation source term (explicit) */
-    if (i_vof_mass_transfer != 0) {
-      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-        smbrs[c_id] += cell_f_vol[c_id] * gamcav[c_id] / rho2;
-    }
+    if (i_vof_mass_transfer != 0)
+      smbrs[c_id] += cell_f_vol[c_id] * gamcav[c_id] / rho2;
 
     /* Source terms assembly for cs_equation_iterative_solve_scalar */
 
     /* If source terms are extrapolated over time */
-    if (cs_glob_time_scheme->isno2t > 0) {
-      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++) {
-        const cs_real_t tsexp = c_st_voidf[c_id];
-        c_st_voidf[c_id] = smbrs[c_id];
-        smbrs[c_id] = - thets * tsexp + (1.0 + thets) * smbrs[c_id];
-      }
+    if (isno2t > 0) {
+      const cs_real_t tsexp = c_st_voidf[c_id];
+      c_st_voidf[c_id] = smbrs[c_id];
+      smbrs[c_id] = - thets * tsexp + (1.0 + thets) * smbrs[c_id];
     }
 
     /* Source term linked with the non-conservative form of convection term
@@ -1832,26 +1843,25 @@ cs_vof_solve_void_fraction(int  iterns)
        on alpha */
 
     if (i_vof_mass_transfer != 0) {
-      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++) {
-        /* Should be for the conservative form */
+      /* Should be for the conservative form */
 
-        smbrs[c_id] += - cell_f_vol[c_id] * gamcav[c_id]
-                       * (1.0/rho2 - 1.0/rho1) * cvara_voidf[c_id];
+      smbrs[c_id] += - cell_f_vol[c_id] * gamcav[c_id]
+                     * (1.0/rho2 - 1.0/rho1) * cvara_voidf[c_id];
 
-        rovsdt[c_id] = cell_f_vol[c_id] * gamcav[c_id] * (1.0/rho2 - 1.0/rho1);
-      }
+      rovsdt[c_id] = cell_f_vol[c_id] * gamcav[c_id] * (1.0/rho2 - 1.0/rho1);
     }
     else {
-      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-        rovsdt[c_id] = 0;
+      rovsdt[c_id] = 0;
     }
 
     /* Unteady term */
-    if (eqp_vol->istat > 0) {
-      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-        rovsdt[c_id] += cell_f_vol[c_id] / dt[c_id];
+    if (istat > 0) {
+      rovsdt[c_id] += cell_f_vol[c_id] / dt[c_id];
     }
-  }
+
+  });
+
+  ctx.wait();
 
   if (cs_glob_vof_parameters->idrift > 0) {
 
@@ -1921,6 +1931,7 @@ cs_vof_solve_void_fraction(int  iterns)
     cs_real_t vmin = cvar_voidf[0];
     cs_real_t vmax = cvar_voidf[0];
 
+    // TODO: max reduction on GPU
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       vmin = cs_math_fmin(vmin, cvar_voidf[c_id]);
       vmax = cs_math_fmax(vmax, cvar_voidf[c_id]);
@@ -1939,7 +1950,7 @@ cs_vof_solve_void_fraction(int  iterns)
 
     if (clip_voidf_id >= 0) {
       voidf_clipped = cs_field_by_id(clip_voidf_id)->val;
-      cs_array_real_fill_zero(n_cells, voidf_clipped);
+      cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., voidf_clipped);
     }
 
     if (scmaxp > scminp) {
@@ -2038,6 +2049,8 @@ cs_cavitation_compute_source_term(const cs_real_t  pressure[],
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_lnum_t n_cells = mesh->n_cells;
 
+  cs_dispatch_context ctx;
+
   // Merkle model
 
   cs_real_t *gamcav = cs_field_by_name("model:cavitation_gamma")->val;
@@ -2049,20 +2062,23 @@ cs_cavitation_compute_source_term(const cs_real_t  pressure[],
                    / (0.5 * vof->rho1 * cav->uinf * cav->uinf * tinf);
   cs_real_t cvap =   (cav->cprod * vof->rho1)
                    / (0.5 * vof->rho1 * cav->uinf * cav->uinf * tinf);
+
   const cs_real_t presat = cav->presat;
 
-# pragma omp parallel for  if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const cs_real_t w = voidf[c_id] * (1. - voidf[c_id]);
     cs_real_t condens = -cond * cs_math_fmax(0., pressure[c_id] - presat) * w;
     cs_real_t vaporis = -cvap * cs_math_fmin(0., pressure[c_id] - presat) * w;
+
     gamcav[c_id] = condens + vaporis;
+
     if (gamcav[c_id] < 0)
-      dgdpca[c_id] = -cond*voidf[c_id]*(1. - voidf[c_id]);
+      dgdpca[c_id] = - cond * voidf[c_id] * (1. - voidf[c_id]);
     else
-      dgdpca[c_id] = -cvap*voidf[c_id]*(1. - voidf[c_id]);
-  }
+      dgdpca[c_id] = - cvap * voidf[c_id] * (1. - voidf[c_id]);
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
