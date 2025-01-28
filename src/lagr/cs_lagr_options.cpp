@@ -180,19 +180,6 @@ _init_lagr_encrustation_pointers(void)
   }
 }
 
-/*----------------------------------------------------------------------------
- * Free encrustation pointers.
- *----------------------------------------------------------------------------*/
-
-static void
-_free_lagr_encrustation_pointers(void)
-{
-  BFT_FREE(cs_glob_lagr_encrustation->enc1);
-  BFT_FREE(cs_glob_lagr_encrustation->enc2);
-  BFT_FREE(cs_glob_lagr_encrustation->tprenc);
-  BFT_FREE(cs_glob_lagr_encrustation->visref);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -284,9 +271,7 @@ cs_lagr_options_definition(int         is_restart,
 
   if (lagr_time_scheme->iilagr == CS_LAGR_OFF) {
 
-    _free_lagr_encrustation_pointers();
-
-    cs_lagr_finalize_zone_conditions();
+    cs_lagr_finalize();
 
     return;
   }
