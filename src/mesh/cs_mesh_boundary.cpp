@@ -1221,7 +1221,7 @@ _split_vertices(cs_mesh_t  *mesh,
 
   mesh->n_vertices += n_add_vertices;
 
-  /* Update coordinates for added vertices */
+  /* Update arrays for added vertices */
 
   if (n_add_vertices > 0) {
 
@@ -1232,6 +1232,15 @@ _split_vertices(cs_mesh_t  *mesh,
       cs_lnum_t k = n_vertices + i;
       for (cs_lnum_t l = 0; l < 3; l++)
         mesh->vtx_coord[k*3 + l] = mesh->vtx_coord[j*3 + l];
+    }
+
+    if (mesh->have_r_gen) {
+      CS_REALLOC(mesh->vtx_r_gen, mesh->n_vertices, char);
+      for (cs_lnum_t i = 0; i < n_add_vertices; i++) {
+        cs_lnum_t j = v_min_c_add[i];
+        cs_lnum_t k = n_vertices + i;
+        mesh->vtx_r_gen[k] = mesh->vtx_r_gen[j];
+      }
     }
 
   }
