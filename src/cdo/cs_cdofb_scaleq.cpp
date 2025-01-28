@@ -836,8 +836,8 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
   eqc->n_faces = n_faces;
   eqc->n_dofs = n_faces + n_cells;
 
-  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ |
-                  CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DIAM;
+  eqb->msh_flag =
+    CS_FLAG_COMP_PV | CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */

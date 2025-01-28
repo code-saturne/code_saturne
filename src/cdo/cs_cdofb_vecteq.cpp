@@ -1635,8 +1635,7 @@ cs_cdofb_vecteq_init_context(cs_equation_param_t    *eqp,
   eqc->n_dofs = 3*(n_faces + n_cells);
 
   eqb->sys_flag = CS_FLAG_SYS_VECTOR;
-  eqb->msh_flag =
-    CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DIAM;
+  eqb->msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */

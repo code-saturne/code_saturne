@@ -1670,8 +1670,7 @@ cs_cdofb_advection(const cs_equation_param_t *eqp,
                    cs_cell_builder_t         *cb)
 {
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
-  assert(cs_eflag_test(cm->flag,
-                       CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DIAM));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ));
 
   /* Initialize the local matrix structure */
 
@@ -1692,21 +1691,28 @@ cs_cdofb_advection(const cs_equation_param_t *eqp,
   assert(coeff != nullptr);
   assert(diff_pty != nullptr);
 
-  for (short int f = 0; f < cm->n_fc; f++) {
-    coeff[f] = cm->f_diam[f];
-    if (diff_pty->is_unity) {
-      /* Nothing to do*/
-    }
-    else if (diff_pty->is_iso) {
-      coeff[f] /= diff_pty->value;
-    }
-    else { /* Property is considered as tensor-valued */
-      const cs_real_t *unitv = cm->face[f].unitv;
-      coeff[f] /= cs_math_3_33_3_dot_product(unitv, diff_pty->tensor, unitv);
-    }
+  if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_SG) {
+    assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DIAM));
+    for (short int f = 0; f < cm->n_fc; f++) {
+      coeff[f] = cm->f_diam[f];
+      if (diff_pty->is_unity) {
+        /* Nothing to do*/
+      }
+      else if (diff_pty->is_iso) {
+        coeff[f] /= diff_pty->value;
+      }
+      else { /* Property is considered as tensor-valued */
+        const cs_real_t *unitv = cm->face[f].unitv;
+        coeff[f] /= cs_math_3_33_3_dot_product(unitv, diff_pty->tensor, unitv);
+      }
 
-  } /* Loop on cell faces */
-
+    } /* Loop on cell faces */
+  }
+  else {
+    for (short int f = 0; f < cm->n_fc; f++) {
+      coeff[f] = 1.0;
+    }
+  }
   coeff[cm->n_fc] = eqp->upwind_portion;
 
   /* Define the local operator for advection. Boundary conditions are also
