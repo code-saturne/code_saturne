@@ -91,16 +91,16 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_real_t     *cell_cen;       /* Cell center coordinates  */
+  cs_real_t     *cell_cen;       /* Cell center coordinates */
   cs_real_t     *cell_s_cen;     /* Cell solid center coordinates  */
   cs_real_t     *cell_vol;       /* Cell volume */
 
-  cs_real_t     *i_face_normal;  /* Surface normal of interior faces.
-                                    (L2 norm equals area of the face) */
-  cs_real_t     *b_face_normal;  /* Surface normal of border faces.
-                                    (L2 norm equals area of the face) */
-  cs_real_t     *c_w_face_normal;/* Solid surface normal immersed in the cells.
-                                    (L2 norm equals area of the face) */
+  cs_real_t     *i_face_normal;   /* Surface normal of interior faces.
+                                     (L2 norm equals area of the face) */
+  cs_real_t     *b_face_normal;   /* Surface normal of border faces.
+                                     (L2 norm equals area of the face) */
+  cs_real_t     *c_w_face_normal; /* Solid surface normal immersed in the cells.
+                                     (L2 norm equals area of the face) */
   cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
   cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
 
@@ -115,8 +115,8 @@ typedef struct {
   cs_nreal_3_t  *i_face_u_normal;  /* Unit normal of interior faces. */
   cs_nreal_3_t  *b_face_u_normal;  /* Unit normal of boundary faces. */
 
-  cs_real_2_t   *i_f_face_factor;/* Fluid surface factor of interior faces. */
-  cs_real_t     *b_f_face_factor;/* Fluid surface factor of boundary faces. */
+  cs_real_2_t   *i_f_face_factor; /* Fluid surface factor of interior faces. */
+  cs_real_t     *b_f_face_factor; /* Fluid surface factor of boundary faces. */
 
   cs_real_3_t   *dijpf;          /* Vector I'J' for interior faces */
   cs_rreal_3_t  *diipb;          /* Vector II'  for border faces */
