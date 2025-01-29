@@ -318,7 +318,7 @@ _smoothe(const cs_mesh_t              *m,
 
   const cs_real_t *restrict dist = mq->i_dist;
   const cs_real_t *restrict cell_vol = mq->cell_vol;
-  const cs_real_t *restrict surfn = mq->i_face_surf;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
 
   const cs_nreal_3_t *restrict i_face_u_normal
     = (const cs_nreal_3_t *)mq->i_face_u_normal;
@@ -349,8 +349,7 @@ _smoothe(const cs_mesh_t              *m,
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));
 
-  cs_real_t *viscf, *xam, *dam, *rtpdp, *smbdp;
-  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+  cs_real_t *xam, *dam, *rtpdp, *smbdp;
   CS_MALLOC_HD(xam, n_i_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(rtpdp, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -415,9 +414,6 @@ _smoothe(const cs_mesh_t              *m,
       const cs_lnum_t c_id_adj = c2c[cidx];
       short int f_sgn = c2f_sgn[cidx];
 
-      /* Extra-diagonal terms computation */
-      xam[f_id] = - viscf[f_id];
-
       cs_real_t taille = 0.5 * (  pow(cell_vol[c_id], c_1ov3)
                                 + pow(cell_vol[c_id_adj], c_1ov3));
 
@@ -428,10 +424,13 @@ _smoothe(const cs_mesh_t              *m,
         distxyz[i] =   dist[f_id] * i_face_u_normal[f_id][i]
                      + diipf[f_id][i] + djjpf[f_id][i];
 
-      viscf[f_id] = visco * surfn[f_id] / cs_math_3_norm(distxyz);
+      cs_real_t viscf = visco * i_face_surf[f_id] / cs_math_3_norm(distxyz);
+
+      /* Extra-diagonal terms computation */
+      xam[f_id] = - viscf;
 
       cs_real_t reconstr
-        =   f_sgn * viscf[f_id]
+        =   f_sgn * viscf
           * (  cs_math_3_dot_product(diipf[f_id], grad[c_id])
              - cs_math_3_dot_product(djjpf[f_id], grad[c_id_adj]));
 
@@ -514,7 +513,6 @@ _smoothe(const cs_mesh_t              *m,
 
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
 
-  CS_FREE_HD(viscf);
   CS_FREE_HD(xam);
   CS_FREE_HD(dam);
   CS_FREE_HD(rtpdp);
@@ -1089,8 +1087,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
 
-  cs_real_t *curv, *pvar;
-  CS_MALLOC_HD(curv, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_real_t *pvar;
   CS_MALLOC_HD(pvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Boundary condition */
@@ -1223,7 +1220,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
 
     /* Initialization */
-    curv[c_id] = 0.;
+    cs_real_t curv = 0.;
 
     /* Loop on interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
@@ -1247,12 +1244,12 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
       cs_real_t flux =   f_sgn * i_face_surf[face_id]
                        * cs_math_3_dot_product(gradf, i_face_u_normal[face_id]);
 
-      curv[c_id] += flux;
+      curv += flux;
     }
 
     /* Compute volumic surface tension */
     for (cs_lnum_t i = 0; i < 3; i++) {
-      stf[c_id][i] = -cpro_surftens * surfxyz_unnormed[c_id][i] * curv[c_id];
+      stf[c_id][i] = -cpro_surftens * surfxyz_unnormed[c_id][i] * curv;
     }
 
   });
@@ -1262,7 +1259,6 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   CS_FREE_HD(surfxyz_norm);
   CS_FREE_HD(surfxyz_unnormed);
   CS_FREE_HD(gradnxyz);
-  CS_FREE_HD(curv);
   CS_FREE_HD(pvar);
   CS_FREE_HD(coefa);
   CS_FREE_HD(coefb);
@@ -1588,7 +1584,7 @@ cs_vof_drift_term(int                        imrgra,
     if (c_id1 < n_cells)
       cs_dispatch_sum(&rhs[c_id1], -fluxij[0], sum_type);
     if (c_id2 < n_cells)
-      cs_dispatch_sum(&rhs[c_id2], fluxij[1], sum_type);
+      cs_dispatch_sum(&rhs[c_id2],  fluxij[1], sum_type);
 
     /* store void fraction convection flux contribution */
     i_flux[face_id] += fluxij[0];
