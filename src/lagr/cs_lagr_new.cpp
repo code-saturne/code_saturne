@@ -819,8 +819,15 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   cs_real_3_t *eig_val;
 
   /* If no new particles, no need of calculation */
-  if (n <= 0)
+
+  if (n > 0) {
+    if (zis->flow_rate > 0.0 && zis->n_inject > 0) {
+      /* Ensure parallel sum on ranks with n > 0 have matching call. */
+      cs_real_t dmass = 0.0;
+      cs_parall_sum(1, CS_REAL_TYPE, &dmass);
+    }
     return;
+  }
 
   BFT_MALLOC(eig_vec, n_cells, cs_real_33_t);
   BFT_MALLOC(eig_val, n_cells, cs_real_3_t);

@@ -3,6 +3,8 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Lagrangian module: fix parallel hang in particle injection.
+
 - Fix spurious conversion of GUi-defined reference temperature to Kelvin
   when using a Celsius temperature scale.
 
