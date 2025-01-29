@@ -667,6 +667,18 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                           const cs_real_t                 visc_length[],
                           const cs_lagr_injection_set_t  *zis)
 {
+  cs_lnum_t n = particle_range[1] - particle_range[0];
+
+  /* If no new particles, no need of calculation */
+  if (n <= 0) {
+    if (zis->flow_rate > 0.0 && zis->n_inject > 0) {
+      /* Ensure parallel sum on ranks with n > 0 have matching call. */
+      cs_real_t dmass = 0.0;
+      cs_parall_sum(1, CS_REAL_TYPE, &dmass);
+    }
+    return;
+  }
+
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
@@ -748,7 +760,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
      -------------------------------------------------- */
 
   if (cs_glob_lagr_model->idistu == 1) {
-    for (int phase_id = 0; phase_id < n_phases; phase_id ++){
+    for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
       if (   extra_i[phase_id].cvar_rij == nullptr
           && extra_i[phase_id].cvar_k == nullptr) {
         bft_error
@@ -770,7 +782,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   /* Random draws and computation of particle characteristic times */
 
-  cs_lnum_t  n = particle_range[1] - particle_range[0];
   cs_real_3_t  **vagaus = nullptr;
   cs_real_t *temp_vagaus = nullptr;
 
@@ -810,20 +821,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   cs_real_33_t **eig_vec = nullptr;
   cs_real_3_t **eig_val = nullptr;
 
-  /* If no new particles, no need of calculation */
-
-  if (n <= 0) {
-    if (zis->flow_rate > 0.0 && zis->n_inject > 0) {
-      /* Ensure parallel sum on ranks with n > 0 have matching call. */
-      cs_real_t dmass = 0.0;
-      cs_parall_sum(1, CS_REAL_TYPE, &dmass);
-    }
-    return;
-  }
-
   BFT_MALLOC(eig_vec, n_phases, cs_real_33_t *);
   BFT_MALLOC(eig_val, n_phases, cs_real_3_t *);
-  for (int phase_id = 0; phase_id < n_phases; phase_id ++){
+  for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
     BFT_MALLOC(eig_vec[phase_id], n_cells, cs_real_33_t);
     BFT_MALLOC(eig_val[phase_id], n_cells, cs_real_3_t);
   }
@@ -837,9 +837,12 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     cs_real_t tol_err = 1.0e-12;
 
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-      const cs_real_6_t *cvar_rij
-        = (const cs_real_6_t *)extra_i[phase_id].cvar_rij->vals[time_id];
-      const cs_real_t *cvar_k = extra_i[phase_id].cvar_k->vals[time_id];
+      const cs_real_6_t *cvar_rij = nullptr;
+      const cs_real_t *cvar_k = nullptr;
+      if (extra_i[phase_id].cvar_rij != nullptr)
+        cvar_rij = (cs_real_6_t *)extra_i[phase_id].cvar_rij->vals[time_id];
+      if (extra_i[phase_id].cvar_k != nullptr)
+        cvar_k = extra_i[phase_id].cvar_k->vals[time_id];
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_real_33_t sym_rij;
@@ -856,10 +859,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         }
         /* TODO do it better for EVM models */
         else {
-          cs_real_t w = 0.;
-
-          if (cvar_k != nullptr)
-            w = d2s3 * cvar_k[cell_id];
+          cs_real_t w = (cvar_k != nullptr) ? d2s3 * cvar_k[cell_id] : 0.;
 
           sym_rij[0][0] = w;
           sym_rij[1][1] = w;
@@ -933,7 +933,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
   }
   else { /* idistu == 0 */
-    for (int phase_id = 0; phase_id < n_phases; phase_id ++){
+    for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
         eig_vec[phase_id][cell_id][0][0] = 1.;
@@ -971,7 +971,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                CS_LAGR_VELOCITY);
 
-    for (int phase_id = 0; phase_id < n_phases; phase_id++){
+    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
       for (int i = 0; i < 3; i++)
         loc_fluid_vel[phase_id][i] =
           extra_i[phase_id].vel->vals[time_id][c_id * 3  + i];
@@ -1001,7 +1001,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
             part_vel[i] += loc_fluid_vel[0][i];
         }
         else {
-          for (int phase_id = 0; phase_id < n_phases; phase_id++){
+          for (int phase_id = 0; phase_id < n_phases; phase_id++) {
             part_vel[i] += extra_i[phase_id].alpha->val[c_id]
               * extra_i[phase_id].cromf->val[c_id]
               * loc_fluid_vel[phase_id][i];
@@ -1555,7 +1555,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       }
 
       if (yplus <= cs_lagr_particle_get_real(particle, p_am, CS_LAGR_INTERF)) {
-        for (int phase_id = 0; phase_id < n_phases; phase_id++){
+        for (int phase_id = 0; phase_id < n_phases; phase_id++) {
           for (cs_lnum_t i = 0; i < 3; i++)
             vel_seen[phase_id * 3 + i] = loc_fluid_vel[phase_id][i];
         }
@@ -1643,7 +1643,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
 
   }
-  for (int phase_id = 0; phase_id < n_phases; phase_id++){
+  for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     BFT_FREE(vagaus[phase_id]);
     BFT_FREE(eig_vec[phase_id]);
     BFT_FREE(eig_val[phase_id]);
