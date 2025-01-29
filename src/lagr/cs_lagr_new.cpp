@@ -694,25 +694,13 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   cs_real_t tscl_shift = 0;
 
-  const cs_real_3_t  **vel = nullptr;
-  BFT_MALLOC(vel, n_phases, const cs_real_3_t *);
-  for (int phase_id = 0; phase_id < n_phases; phase_id++){
-    vel[phase_id] = (const cs_real_3_t *)extra_i[phase_id].vel->vals[time_id];
-  }
-
-  const cs_real_t **cvar_k = nullptr;
-  const cs_real_6_t **cvar_rij = nullptr;
-  BFT_MALLOC(cvar_k, n_phases, const cs_real_t *);
-  BFT_MALLOC(cvar_rij, n_phases, const cs_real_6_t *);
-
   /* Initialize pointers (used to simplify future tests) */
 
   if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
-               || cs_glob_lagr_specific_physics->itpvar == 1))
+          && (   cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+              || cs_glob_lagr_specific_physics->itpvar == 1))
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-
 
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
       cval_t = cs_field_by_name("real_temperature")->val; /* Humid air temp */
@@ -722,7 +710,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       if (f != nullptr)
         cval_t = f->val;
       else if (   cs_glob_thermal_model->thermal_variable
-          == CS_THERMAL_MODEL_ENTHALPY)
+               == CS_THERMAL_MODEL_ENTHALPY)
         cval_h = cs_field_by_name("enthalpy")->val;
 
       if (   cs_glob_thermal_model->temperature_scale
@@ -741,17 +729,15 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   /* Prepare enthalpy to temperature conversion if needed */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
-           || cs_glob_lagr_specific_physics->itpvar == 1)
+      && (   cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+          || cs_glob_lagr_specific_physics->itpvar == 1)
       && cval_t == nullptr
       && cval_h != nullptr) {
 
     BFT_MALLOC(_cval_t, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
     cs_ht_convert_h_to_t_cells(cval_h, _cval_t);
     cval_t = _cval_t;
-
   }
-
 
   /* Initialization */
 
@@ -763,30 +749,23 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   if (cs_glob_lagr_model->idistu == 1) {
     for (int phase_id = 0; phase_id < n_phases; phase_id ++){
-      if (extra_i[phase_id].cvar_rij != nullptr)
-        cvar_rij[phase_id] = (const cs_real_6_t *) extra_i[phase_id].cvar_rij->vals[time_id];
-
-      else if (extra_i[phase_id].cvar_k != nullptr) {
-        cvar_k[phase_id] = (const cs_real_t *)extra_i[phase_id].cvar_k->vals[time_id];
-        if (extra_i[phase_id].cvar_k != nullptr)
-          cvar_k[phase_id] = (const cs_real_t *)extra_i[phase_id].cvar_k->val;
-      }
-
-      else {
+      if (   extra_i[phase_id].cvar_rij == nullptr
+          && extra_i[phase_id].cvar_k == nullptr) {
         bft_error
-        (__FILE__, __LINE__, 0,
-          _("The Lagrangian module is incompatible with the selected\n"
-          " turbulence model.\n\n"
-          "Turbulent dispersion is used with:\n"
-          "  cs_glob_lagr_model->idistu = %d\n"
-          "And the turbulence model is iturb = %d\n\n"
-          "The only turbulence models compatible with the Lagrangian model's\n"
-          "turbulent dispersion are k-epsilon, Rij-epsilon, v2f, and k-omega."),
-          cs_glob_lagr_model->idistu,
-          extra_i[phase_id].iturb);
+          (__FILE__, __LINE__, 0,
+           _("The Lagrangian module is incompatible with the selected\n"
+             " turbulence model.\n\n"
+             "Turbulent dispersion is used with:\n"
+             "  cs_glob_lagr_model->idistu = %d\n"
+             "And the turbulence model is iturb = %d\n\n"
+             "The only turbulence models compatible with the Lagrangian"
+             " model's\n"
+             "turbulent dispersion are k-epsilon, Rij-epsilon, v2f,"
+             " and k-omega."),
+           cs_glob_lagr_model->idistu,
+           extra_i[phase_id].iturb);
       }
     }
-
   }
 
   /* Random draws and computation of particle characteristic times */
@@ -828,8 +807,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
   }
 
-  cs_real_33_t **eig_vec;
-  cs_real_3_t **eig_val;
+  cs_real_33_t **eig_vec = nullptr;
+  cs_real_3_t **eig_val = nullptr;
 
   /* If no new particles, no need of calculation */
 
@@ -840,6 +819,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_parall_sum(1, CS_REAL_TYPE, &dmass);
     }
     return;
+  }
 
   BFT_MALLOC(eig_vec, n_phases, cs_real_33_t *);
   BFT_MALLOC(eig_val, n_phases, cs_real_3_t *);
@@ -857,25 +837,29 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     cs_real_t tol_err = 1.0e-12;
 
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
+      const cs_real_6_t *cvar_rij
+        = (const cs_real_6_t *)extra_i[phase_id].cvar_rij->vals[time_id];
+      const cs_real_t *cvar_k = extra_i[phase_id].cvar_k->vals[time_id];
+
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_real_33_t sym_rij;
-        if (extra_i[phase_id].cvar_rij != nullptr) {
-          sym_rij[0][0] = cvar_rij[phase_id][cell_id][0];
-          sym_rij[1][1] = cvar_rij[phase_id][cell_id][1];
-          sym_rij[2][2] = cvar_rij[phase_id][cell_id][2];
-          sym_rij[0][1] = cvar_rij[phase_id][cell_id][3];
-          sym_rij[1][0] = cvar_rij[phase_id][cell_id][3];
-          sym_rij[1][2] = cvar_rij[phase_id][cell_id][4];
-          sym_rij[2][1] = cvar_rij[phase_id][cell_id][4];
-          sym_rij[0][2] = cvar_rij[phase_id][cell_id][5];
-          sym_rij[2][0] = cvar_rij[phase_id][cell_id][5];
+        if (cvar_rij != nullptr) {
+          sym_rij[0][0] = cvar_rij[cell_id][0];
+          sym_rij[1][1] = cvar_rij[cell_id][1];
+          sym_rij[2][2] = cvar_rij[cell_id][2];
+          sym_rij[0][1] = cvar_rij[cell_id][3];
+          sym_rij[1][0] = cvar_rij[cell_id][3];
+          sym_rij[1][2] = cvar_rij[cell_id][4];
+          sym_rij[2][1] = cvar_rij[cell_id][4];
+          sym_rij[0][2] = cvar_rij[cell_id][5];
+          sym_rij[2][0] = cvar_rij[cell_id][5];
         }
         /* TODO do it better for EVM models */
         else {
           cs_real_t w = 0.;
 
-          if (extra_i[phase_id].cvar_k != nullptr)
-            w = d2s3 * cvar_k[phase_id][cell_id];
+          if (cvar_k != nullptr)
+            w = d2s3 * cvar_k[cell_id];
 
           sym_rij[0][0] = w;
           sym_rij[1][1] = w;
@@ -905,8 +889,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       }
     }
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
-        && (extra->temperature_turbulent_flux != nullptr
-          || extra->temperature_variance != nullptr)
+        && (   extra->temperature_turbulent_flux != nullptr
+            || extra->temperature_variance != nullptr)
         &&  extra->temperature != nullptr) {
       if (extra->temperature_turbulent_flux != nullptr) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -926,8 +910,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
              temp_vel_fluc_coef[cell_id]);
         }
       } // end turbulent heat fluxes
+
       /* Fluctuations to obtain the proper velocity variance */
-      if(extra->temperature_variance != nullptr ) {
+      if (extra->temperature_variance != nullptr ) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
           var_temp_corel_coef[cell_id]
             = extra->temperature_variance->val[cell_id];
@@ -969,6 +954,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   /* Second stage: initialize particle attributes
      ------------------------------------------- */
+
   cs_real_3_t *loc_fluid_vel = nullptr;
   BFT_MALLOC(loc_fluid_vel, n_phases, cs_real_3_t);
 
@@ -991,7 +977,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           extra_i[phase_id].vel->vals[time_id][c_id * 3  + i];
 
       if (   cs_glob_lagr_time_scheme->interpol_field > 0
-          && extra_i[phase_id].grad_vel != nullptr) { /* gradient have been computed*/
+          && extra_i[phase_id].grad_vel != nullptr) {
+        /* gradients have been computed*/
         /* TODO compute gradient before injection */
         cs_real_t *part_coord
           = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
@@ -999,8 +986,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         for (int i = 0; i < 3; i++) {
           for (int j = 0; j < 3; j++)
             loc_fluid_vel[phase_id][i] +=
-              extra_i[phase_id].grad_vel[c_id][i][j]
-                              * (part_coord[j] - cell_cen[c_id][j]);
+                extra_i[phase_id].grad_vel[c_id][i][j]
+              * (part_coord[j] - cell_cen[c_id][j]);
         }
       }
     }
@@ -1032,8 +1019,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                  CS_LAGR_VELOCITY_SEEN);
     cs_real_t *vel_seen_vel_cov
-      = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                 CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
+      = cs_lagr_particle_attr_get_ptr<cs_real_t>
+          (particle, p_am,
+           CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
 
     /* Lagr velocity seen has to be computed for every fluid */
     /* Lagr covariance between velocity seen and velocity
@@ -1336,7 +1324,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         if (extra->radiative_model > 0)
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_EMISSIVITY,
                                     zis->emissivity);
-
       }
 
     }
@@ -1348,13 +1335,13 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_ID, coal_id);
       cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
       if (   cs_glob_lagr_time_scheme->interpol_field > 0
-          && extra->grad_tempf != nullptr) { /* gradient have been computed*/
+          && extra->grad_tempf != nullptr) { /* gradient have been computed */
         cs_real_t *part_coord
           = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                      CS_LAGR_COORDS);
         for (int i = 0; i < 3; i++)
-            loc_fluid_temp += extra->grad_tempf[c_id][i]
-              * (part_coord[i] - cell_cen[c_id][i]);
+          loc_fluid_temp +=   extra->grad_tempf[c_id][i]
+                            * (part_coord[i] - cell_cen[c_id][i]);
       }
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
                                 loc_fluid_temp);
@@ -1419,24 +1406,23 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
-                                zis->density * pis6 * d3
-                                );
+                                zis->density * pis6 * d3);
 
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
-                                  zis->cp);
+                                zis->cp);
 
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
                                 cval_t_l[c_id]);
 
       cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
       if (   cs_glob_lagr_time_scheme->interpol_field > 0
-          && extra->grad_tempf != nullptr) { /* gradient have been computed*/
+          && extra->grad_tempf != nullptr) { /* gradients have been computed */
         cs_real_t *part_coord
           = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                      CS_LAGR_COORDS);
         for (int i = 0; i < 3; i++)
-            loc_fluid_temp += extra->grad_tempf[c_id][i]
-              * (part_coord[i] - cell_cen[c_id][i]);
+          loc_fluid_temp +=   extra->grad_tempf[c_id][i]
+                            * (part_coord[i] - cell_cen[c_id][i]);
       }
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
                                 loc_fluid_temp);
@@ -1457,7 +1443,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           cs_math_3_dot_product(temp_vel_fluc_coef[c_id], vagaus[0][l_id]);
 
       /* Fluctuations to obtain the proper temperature variance */
-      if(extra->temperature_variance != nullptr )
+      if (extra->temperature_variance != nullptr )
         temp_seen += var_temp_corel_coef[c_id] * temp_vagaus[l_id];
 
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
@@ -1524,32 +1510,29 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
         }
         else {
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID, -1);
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID,
+                                    -1);
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_YPLUS, 0.);
         }
 
       }
 
       if (yplus < cs_lagr_particle_get_real(particle, p_am, CS_LAGR_INTERF)) {
-
-        cs_lagr_particle_set_lnum(particle,
-                                  p_am,
-                                  CS_LAGR_MARKO_VALUE,
-                                  CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF);
-
+        cs_lagr_particle_set_lnum
+          (particle,
+           p_am,
+           CS_LAGR_MARKO_VALUE,
+           CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF);
       }
 
       else if (yplus > 100.0) {
-
         cs_lagr_particle_set_lnum(particle,
                                   p_am,
                                   CS_LAGR_MARKO_VALUE,
                                   CS_LAGR_COHERENCE_STRUCT_BULK);
-
       }
 
       else {
-
         cs_random_uniform(1, &random);
 
         if (random < 0.25)
@@ -1569,11 +1552,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                     p_am,
                                     CS_LAGR_MARKO_VALUE,
                                     CS_LAGR_COHERENCE_STRUCT_EJECTION);
-
       }
 
       if (yplus <= cs_lagr_particle_get_real(particle, p_am, CS_LAGR_INTERF)) {
-
         for (int phase_id = 0; phase_id < n_phases; phase_id++){
           for (cs_lnum_t i = 0; i < 3; i++)
             vel_seen[phase_id * 3 + i] = loc_fluid_vel[phase_id][i];
@@ -1584,13 +1565,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
        * for the resuspension model              */
 
       if (cs_glob_lagr_model->resuspension > 0) {
-
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
-
       }
 
     }
@@ -1598,11 +1577,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     /* Initialization of clogging model */
 
     if (cs_glob_lagr_model->clogging == 1) {
-
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DEPO_TIME, 0.0);
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT, 0.0);
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART, 1.0);
-
     }
 
     /* Initialize the additional user variables */
@@ -1679,9 +1656,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   BFT_FREE(var_temp_corel_coef);
   BFT_FREE(temp_vel_fluc_coef);
   BFT_FREE(temp_vagaus);
-  BFT_FREE(vel);
-  BFT_FREE(cvar_k);
-  BFT_FREE(cvar_rij);
 }
 
 /*----------------------------------------------------------------------------*/

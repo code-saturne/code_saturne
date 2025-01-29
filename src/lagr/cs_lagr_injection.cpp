@@ -1061,13 +1061,10 @@ cs_lagr_injection(int        time_id,
                     "  resizing of particle set impossible but previous\n"
                     "  size computation did not detect this issue.");
 
-
         for (cs_lnum_t p_id = particle_range[0];
              p_id < particle_range[1];
              p_id++)
           cs_lagr_particles_attributes_fill_zero(p_set, p_id);
-
-
 
         /* Define particle coordinates and place on faces/cells */
 
@@ -1118,8 +1115,8 @@ cs_lagr_injection(int        time_id,
           BFT_MALLOC(saved_coords, n_inject, cs_real_3_t);
 
           for (cs_lnum_t p_id = p_set->n_particles - n_inject;
-              p_id < p_set->n_particles;
-              p_id++) {
+               p_id < p_set->n_particles;
+               p_id++) {
 
             cs_lnum_t i = p_id + n_inject - p_set->n_particles;
 
@@ -1145,8 +1142,8 @@ cs_lagr_injection(int        time_id,
           /* For safety, reset saved values for cell number and previous
              particle coordinates and rank_id. */
           for (cs_lnum_t p_id = p_set->n_particles - n_inject;
-              p_id < p_set->n_particles;
-              p_id++) {
+               p_id < p_set->n_particles;
+               p_id++) {
 
             cs_lagr_particles_current_to_previous(p_set, p_id);
 
@@ -1216,8 +1213,8 @@ cs_lagr_injection(int        time_id,
           }
 
           for (cs_lnum_t p_id = p_set->n_particles - n_inject;
-              p_id < p_set->n_particles;
-              p_id++) {
+               p_id < p_set->n_particles;
+               p_id++) {
 
             cs_lnum_t i = p_id + n_inject - p_set->n_particles;
 
@@ -1243,11 +1240,10 @@ cs_lagr_injection(int        time_id,
              particle coordinates. */
 
           for (cs_lnum_t p_id = p_set->n_particles - n_inject;
-              p_id < p_set->n_particles;
-              p_id++) {
+               p_id < p_set->n_particles;
+               p_id++) {
 
             cs_lnum_t i = p_id + n_inject - p_set->n_particles;
-
 
             cs_lagr_particles_set_lnum(p_set,
                                          p_id,
@@ -1275,7 +1271,8 @@ cs_lagr_injection(int        time_id,
                                                             p_id,
                                                             CS_LAGR_COORDS);
               cs_real_t *p_vel =
-                cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY);
+                cs_lagr_particles_attr_get_ptr<cs_real_t>
+                  (p_set, p_id, CS_LAGR_VELOCITY);
               cs_real_t t_fraction = (cs_glob_lagr_time_step->dtp + res_time);
 
               for (cs_lnum_t j = 0; j < 3; j++)
