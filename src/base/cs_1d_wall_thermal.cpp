@@ -47,7 +47,6 @@
 #include "base/cs_math.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
-#include "lagr/cs_lagr.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
@@ -55,6 +54,7 @@
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
 #include "base/cs_wall_condensation.h"
+#include "rayt/cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -370,7 +370,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
   cs_real_t qinc, eps;
   cs_lnum_t ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
 
-  if (cs_glob_lagr_extra_module->radiative_model >= 1) {
+  if (cs_glob_rad_transfer_params->type != CS_RAD_TRANSFER_NONE) {
     /* coupling with radiative module, qinc and qeps != 0 */
     /* incident radiative flux at the boundary at the boundary */
     qinc = CS_F_(qinci)->val[ifac];

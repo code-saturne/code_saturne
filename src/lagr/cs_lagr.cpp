@@ -340,7 +340,7 @@ cs_lagr_extra_module_t *cs_glob_lagr_extra_module = nullptr;
 static void _lagr_map_field_initialize(cs_lnum_t n_phases)
 {
   BFT_REALLOC(_lagr_extra_module, n_phases, cs_lagr_extra_module_t);
-  for (int phase_id = 0; phase_id < n_phases; phase_id++){
+  for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     _lagr_extra_module[phase_id].n_phases = n_phases;
     _lagr_extra_module[phase_id].iturb = 0;
     _lagr_extra_module[phase_id].itytur = 0;
@@ -427,17 +427,17 @@ cs_real_33_t  *cs_glob_lagr_b_face_proj = nullptr;
  * Private function definitions
  *============================================================================*/
 
- /*----------------------------------------------------------------------------*/
-   /*!
-   * \brief Create a field name based on a radical and a phase, scalar, or a
-   *        non condensable index.
-   *
-   * \param[in]  field_radical  pointer to a string containing the radical
-   * \param[in]  index  int containing an index value
-   *
-   * \return field_name  pointer to a string containing the constructed field name
-   */
- /*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a field name based on a radical and a phase, scalar, or a
+ *        non condensable index.
+ *
+ * \param[in]  field_radical  pointer to a string containing the radical
+ * \param[in]  index  int containing an index value
+ *
+ * \return field_name  pointer to a string containing the constructed field name
+ */
+/*----------------------------------------------------------------------------*/
 
 static char *_field_name(const char *field_radical, const int index)
 {
@@ -460,17 +460,16 @@ _lagr_map_fields_default(void)
   int n_phases = _lagr_extra_module[0].n_phases;
   int l_id = -1;
 
-  for (int phase_id = 0; phase_id < n_phases; phase_id++){
+  for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
-      _lagr_extra_module[phase_id].cromf       = cs_field_by_name_try("rho_gas");
+      _lagr_extra_module[phase_id].cromf = cs_field_by_name_try("rho_gas");
     }
     else {
-      _lagr_extra_module[phase_id].cromf       = cs_field_by_name_try("density");
+      _lagr_extra_module[phase_id].cromf = cs_field_by_name_try("density");
     }
 
-    _lagr_extra_module[phase_id].pressure    = cs_field_by_name_try("pressure");
-
-    _lagr_extra_module[phase_id].rad_energy  = cs_field_by_name_try("rad_energy");
+    _lagr_extra_module[phase_id].pressure = cs_field_by_name_try("pressure");
+    _lagr_extra_module[phase_id].rad_energy = cs_field_by_name_try("rad_energy");
 
     if (cs_glob_lagr_model->cs_used == 0) {
       /* we are using neptune_cfd */
@@ -483,20 +482,20 @@ _lagr_map_fields_default(void)
        * Gather the field
        * And free the name */
       f_name = _field_name("lagr_velocity", phase_id);
-      _lagr_extra_module[phase_id].vel         = cs_field_by_name_try(f_name);
+      _lagr_extra_module[phase_id].vel = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
       /* TODO: not correctly defined for LES */
       f_name = _field_name("lagr_k", phase_id);
-      _lagr_extra_module[phase_id].cvar_k      = cs_field_by_name_try(f_name);
+      _lagr_extra_module[phase_id].cvar_k = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
       f_name = _field_name("lagr_gradk", phase_id);
-      _lagr_extra_module[phase_id].cvar_gradk      = cs_field_by_name_try(f_name);
+      _lagr_extra_module[phase_id].cvar_gradk = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
       f_name = _field_name("lagr_rij", phase_id);
-      _lagr_extra_module[phase_id].cvar_rij    = cs_field_by_name_try(f_name);
+      _lagr_extra_module[phase_id].cvar_rij = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
       f_name = _field_name("lagr_gradrij", phase_id);
@@ -504,19 +503,19 @@ _lagr_map_fields_default(void)
       BFT_FREE(f_name);
 
       f_name = _field_name("lagr_epsilon", phase_id);
-      _lagr_extra_module[phase_id].cvar_ep     = cs_field_by_name_try(f_name);
+      _lagr_extra_module[phase_id].cvar_ep = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
       f_name = _field_name("lagr_density", phase_id);
-      _lagr_extra_module[phase_id].cromf       = cs_field_by_name_try(f_name);
+      _lagr_extra_module[phase_id].cromf = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
       f_name = _field_name("molecular_viscosity", phase_id);
-      _lagr_extra_module[phase_id].viscl       = cs_field_by_name_try(f_name);
+      _lagr_extra_module[phase_id].viscl = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
       f_name = _field_name("lagr_alpha", phase_id);
-      _lagr_extra_module[phase_id].alpha       = cs_field_by_name_try(f_name);
+      _lagr_extra_module[phase_id].alpha = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
       f_name = _field_name("lagr_velocity_gradient", phase_id);
@@ -527,20 +526,23 @@ _lagr_map_fields_default(void)
       _lagr_extra_module[phase_id].lagr_time = cs_field_by_name_try(f_name);
       BFT_FREE(f_name);
 
-      _lagr_extra_module[phase_id].cvar_omg    = nullptr;
-      _lagr_extra_module[phase_id].scal_t      = cs_field_by_name_try("lagr_enthalpy");
+      _lagr_extra_module[phase_id].cvar_omg = nullptr;
+      _lagr_extra_module[phase_id].scal_t
+        = cs_field_by_name_try("lagr_enthalpy");
       _lagr_extra_module[phase_id].cpro_viscls
         = cs_field_by_name_try("lagr_thermal_conductivity");
-      _lagr_extra_module[phase_id].cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
-      _lagr_extra_module[phase_id].temperature = cs_field_by_name_try("lagr_temperature");
+      _lagr_extra_module[phase_id].cpro_cp
+        = cs_field_by_name_try("lagr_specific_heat");
+      _lagr_extra_module[phase_id].temperature
+        = cs_field_by_name_try("lagr_temperature");
       _lagr_extra_module[phase_id].temperature_variance
         = cs_field_by_name_try("temperature_variance");
       _lagr_extra_module[phase_id].temperature_variance
         = cs_field_by_name_try("temperature_turbulent_flux");
 
-      _lagr_extra_module[phase_id].x_oxyd      = nullptr;
-      _lagr_extra_module[phase_id].x_eau       = nullptr;
-      _lagr_extra_module[phase_id].x_m         = nullptr;
+      _lagr_extra_module[phase_id].x_oxyd = nullptr;
+      _lagr_extra_module[phase_id].x_eau  = nullptr;
+      _lagr_extra_module[phase_id].x_m    = nullptr;
 
       if (_lagr_extra_module[phase_id].scal_t != nullptr) {
         _lagr_extra_module[phase_id].visls0
@@ -558,10 +560,11 @@ _lagr_map_fields_default(void)
     }
     else {
       /* we use code_saturne */
-      _lagr_extra_module[phase_id].vel         = cs_field_by_name_try("velocity");
-      _lagr_extra_module[phase_id].cvar_omg    = cs_field_by_name_try("omega");
-      _lagr_extra_module[phase_id].cvar_rij    = cs_field_by_name_try("rij");
-      _lagr_extra_module[phase_id].viscl       = cs_field_by_name_try("molecular_viscosity");
+      _lagr_extra_module[phase_id].vel = cs_field_by_name_try("velocity");
+      _lagr_extra_module[phase_id].cvar_omg = cs_field_by_name_try("omega");
+      _lagr_extra_module[phase_id].cvar_rij = cs_field_by_name_try("rij");
+      _lagr_extra_module[phase_id].viscl
+        = cs_field_by_name_try("molecular_viscosity");
       _lagr_extra_module[phase_id].cpro_viscls = nullptr;
 
       _lagr_extra_module[phase_id].scal_t = cs_thermal_model_field();
@@ -577,37 +580,43 @@ _lagr_map_fields_default(void)
           _lagr_extra_module[phase_id].cpro_viscls = cs_field_by_id(l_id);
       }
 
-      _lagr_extra_module[phase_id].cvar_k      = cs_field_by_name_try("k");
+      _lagr_extra_module[phase_id].cvar_k = cs_field_by_name_try("k");
       /* using LES */
       if (_lagr_extra_module[phase_id].cvar_k == nullptr)
         _lagr_extra_module[phase_id].cvar_k = cs_field_by_name_try("k_sgs");
       if (_lagr_extra_module[phase_id].cvar_k == nullptr)
         _lagr_extra_module[phase_id].cvar_k = cs_field_by_name_try("lagr_k");
 
-      _lagr_extra_module[phase_id].cvar_ep     = cs_field_by_name_try("epsilon");
+      _lagr_extra_module[phase_id].cvar_ep = cs_field_by_name_try("epsilon");
       /* using LES */
       if (_lagr_extra_module[phase_id].cvar_ep == nullptr)
-        _lagr_extra_module[phase_id].cvar_ep = cs_field_by_name_try("epsilon_sgs");
+        _lagr_extra_module[phase_id].cvar_ep
+          = cs_field_by_name_try("epsilon_sgs");
       if (_lagr_extra_module[phase_id].cvar_ep == nullptr)
-        _lagr_extra_module[phase_id].cvar_ep = cs_field_by_name_try("lagr_epsilon");
+        _lagr_extra_module[phase_id].cvar_ep
+          = cs_field_by_name_try("lagr_epsilon");
 
-      _lagr_extra_module[phase_id].lagr_time   = cs_field_by_name_try("lagr_time");
+      _lagr_extra_module[phase_id].lagr_time
+        = cs_field_by_name_try("lagr_time");
 
-      _lagr_extra_module[phase_id].cpro_cp     = cs_field_by_name_try("specific_heat");
-      _lagr_extra_module[phase_id].temperature = cs_field_by_name_try("temperature");
+      _lagr_extra_module[phase_id].cpro_cp
+        = cs_field_by_name_try("specific_heat");
+      _lagr_extra_module[phase_id].temperature
+        = cs_field_by_name_try("temperature");
       _lagr_extra_module[phase_id].temperature_variance
         = cs_field_by_name_try("temperature_variance");
       _lagr_extra_module[phase_id].temperature_variance
         = cs_field_by_name_try("temperature_turbulent_flux");
 
-      _lagr_extra_module[phase_id].x_oxyd      = cs_field_by_name_try("ym_o2");
-      _lagr_extra_module[phase_id].x_eau       = cs_field_by_name_try("ym_h2o");
-      _lagr_extra_module[phase_id].x_m         = cs_field_by_name_try("xm");
+      _lagr_extra_module[phase_id].x_oxyd = cs_field_by_name_try("ym_o2");
+      _lagr_extra_module[phase_id].x_eau = cs_field_by_name_try("ym_h2o");
+      _lagr_extra_module[phase_id].x_m = cs_field_by_name_try("xm");
 
-      _lagr_extra_module[phase_id].ustar  = cs_field_by_name_try("boundary_ustar");
+      _lagr_extra_module[phase_id].ustar
+        = cs_field_by_name_try("boundary_ustar");
       if (_lagr_extra_module[phase_id].ustar == nullptr)
-        _lagr_extra_module[phase_id].ustar  = cs_field_by_name_try("ustar");
-      _lagr_extra_module[phase_id].tstar  = cs_field_by_name_try("tstar");
+        _lagr_extra_module[phase_id].ustar = cs_field_by_name_try("ustar");
+      _lagr_extra_module[phase_id].tstar = cs_field_by_name_try("tstar");
     }
   }
 }
@@ -1002,22 +1011,21 @@ cs_lagr_finalize(void)
   cs_lagr_finalize_zone_conditions();
 
   /* Fluid gradients */
-  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
-  cs_lagr_extra_module_t *extra = extra_i;
-  for (int phase_id = 0; phase_id < extra->n_phases; phase_id++){
-    BFT_FREE(extra_i[phase_id].grad_pr);
-    BFT_FREE(extra_i[phase_id].grad_vel);
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  for (int phase_id = 0; phase_id < extra->n_phases; phase_id++) {
+    BFT_FREE(extra[phase_id].grad_pr);
+    BFT_FREE(extra[phase_id].grad_vel);
 
-    for (int i = 0; i < 9; i++){
-      BFT_FREE(extra_i[phase_id].grad_cov_skp[i]);
+    for (int i = 0; i < 9; i++) {
+      BFT_FREE(extra[phase_id].grad_cov_skp[i]);
     }
-    for (int i = 0; i < 6; i++){
-      BFT_FREE(extra_i[phase_id].grad_cov_sk[i]);
+    for (int i = 0; i < 6; i++) {
+      BFT_FREE(extra[phase_id].grad_cov_sk[i]);
     }
-    BFT_FREE(extra_i[phase_id].grad_lagr_time);
-    BFT_FREE(extra_i[phase_id].grad_tempf);
+    BFT_FREE(extra[phase_id].grad_lagr_time);
+    BFT_FREE(extra[phase_id].grad_tempf);
   }
-  BFT_FREE(extra_i);
+  BFT_FREE(cs_glob_lagr_extra_module);
 }
 
 /*----------------------------------------------------------------------------*/
