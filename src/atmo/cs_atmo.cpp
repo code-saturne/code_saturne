@@ -967,12 +967,13 @@ _mo_phim_n(cs_real_t              z,
 
 static cs_real_t
 _mo_phih_n(cs_real_t              z,
-           cs_real_t              dlmo)
+           cs_real_t              dlmo,
+           cs_real_t              prt)
 {
   CS_UNUSED(z);
   CS_UNUSED(dlmo);
 
-  return 1.;
+  return prt;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1106,7 +1107,8 @@ _mo_phim_s(cs_real_t              z,
 
 static cs_real_t
 _mo_phih_s(cs_real_t              z,
-           cs_real_t              dlmo)
+           cs_real_t              dlmo,
+           cs_real_t              prt)
 {
   cs_real_t x = z * dlmo;
 
@@ -1117,13 +1119,13 @@ _mo_phih_s(cs_real_t              z,
         cs_real_t a = 5.3;
         cs_real_t b = 1.1;
 
-        return 1.+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
+        return prt+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
           / (x + pow((1.+pow(x,b)),1./b));
       }
 
   case CS_ATMO_UNIV_FN_HOGSTROM:
     {
-      cs_real_t a = 0.95;
+      cs_real_t a = prt; /* Prt should be 0.95 to be coherent with Hogstrom */
       cs_real_t b = 7.8;
 
       return a + b*x;
@@ -1131,7 +1133,7 @@ _mo_phih_s(cs_real_t              z,
 
   case CS_ATMO_UNIV_FN_BUSINGER:
     {
-      cs_real_t a = 0.74;
+      cs_real_t a = prt; /* Prt should be 0.74 to be coherent with Businger */
       cs_real_t b = 4.7;
 
       return a + b*x;
@@ -1144,7 +1146,8 @@ _mo_phih_s(cs_real_t              z,
       cs_real_t c = 5.;
       cs_real_t d = 0.35;
 
-      return 1. + x*(a*pow((1. + 2./3. * a * x),0.5)
+      /* Note: prt should be 1. to be coherent with Hartogensis */
+      return prt + x*(a*sqrt((1. + 2./3. * a * x))
              + b*exp(-d*x) - b*d*(x - c/d)*exp(-d*x));
     }
 
@@ -1209,7 +1212,8 @@ _mo_phim_u(cs_real_t              z,
 
 static cs_real_t
 _mo_phih_u(cs_real_t              z,
-           cs_real_t              dlmo)
+           cs_real_t              dlmo,
+           cs_real_t              prt)
 {
   cs_real_t x = z * dlmo;
 
@@ -1217,7 +1221,8 @@ _mo_phih_u(cs_real_t              z,
 
   case CS_ATMO_UNIV_FN_HOGSTROM:
     {
-      cs_real_t a = 0.95;
+      /* Note Prt should be 0.95 to be coherent with Hogstrom */
+      cs_real_t a = prt;
       cs_real_t b = 11.6;
       cs_real_t e = -0.5;
 
@@ -1226,7 +1231,8 @@ _mo_phih_u(cs_real_t              z,
 
   case CS_ATMO_UNIV_FN_BUSINGER:
     {
-      cs_real_t a = 0.74;
+      /* Note: Prt should be 0.74 to be coherent with Businger */
+      cs_real_t a = prt;
       cs_real_t b = 9.;
       cs_real_t e = -0.5;
 
@@ -1235,7 +1241,8 @@ _mo_phih_u(cs_real_t              z,
 
   case CS_ATMO_UNIV_FN_CARL:
     {
-      cs_real_t a = 0.74;
+      /* Note: Prt should be 0.74 to be coherent with Carl */
+      cs_real_t a = prt;
       cs_real_t b = 16.;
       cs_real_t e = -0.5;
 
@@ -1541,6 +1548,7 @@ cs_mo_phim(cs_real_t              z,
  *
  * \param[in]  z             altitude
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \param[in]  prt           Turbulent Prandtl number
  *
  * \return                   factor
  */
@@ -1548,17 +1556,18 @@ cs_mo_phim(cs_real_t              z,
 
 cs_real_t
 cs_mo_phih(cs_real_t              z,
-           cs_real_t              dlmo)
+           cs_real_t              dlmo,
+           cs_real_t              prt)
 {
   cs_real_t dlmoneutral = 1.e-12;
   cs_real_t coef;
 
   if (CS_ABS(dlmo) < dlmoneutral)
-    coef = _mo_phih_n(z,dlmo);
+    coef = _mo_phih_n(z,dlmo,prt);
   else if (dlmo >= 0.)
-    coef = _mo_phih_s(z,dlmo);
+    coef = _mo_phih_s(z,dlmo,prt);
   else
-    coef = _mo_phih_u(z,dlmo);
+    coef = _mo_phih_u(z,dlmo,prt);
 
   return coef;
 }
@@ -4323,7 +4332,6 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t theta0 = (aopt->meteo_t0 - clatev/cp0 * aopt->meteo_ql0)
                    * pow(ps/ aopt->meteo_psea, rscp);
 
-
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
   cs_real_t ustar0 = aopt->meteo_ustar0;
@@ -4331,6 +4339,10 @@ cs_atmo_compute_meteo_profiles(void)
 
   /* Friction temperature */
   cs_real_t tstar = aopt->meteo_tstar;
+  cs_real_t prt = 1.;
+  if (CS_F_(t) != nullptr)
+    prt = cs_field_get_key_double(CS_F_(t),
+                                  cs_field_key_id("turbulent_schmidt"));
 
   /* Humidity field */
 
@@ -4487,7 +4499,7 @@ cs_atmo_compute_meteo_profiles(void)
         * Note: same roughness as dynamics */
         cpro_met_potemp[cell_id] =   theta_met_min
                                    + tstar * (z_lim+z0) / kappa
-                                     * cs_mo_phih(z_lim+z0, dlmo)
+                                     * cs_mo_phih(z_lim+z0, dlmo, prt)
                                      * (-1./(z+z0) + 1./(z_lim+z0));
        /* TKE profile
           ri_max is necessarily lower than 1, but CS_MIN might be useful if

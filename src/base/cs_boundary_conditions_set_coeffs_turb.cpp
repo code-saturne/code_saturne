@@ -672,10 +672,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
           /* To approximately respect thermal turbulent
              production with 2 hypothesis */
-          //FIXME should be dynamic rhoughness
+          //FIXME should be dynamic roughness
           const cs_real_t coef_mom = cs_mo_phim(distbf + rough_t, bdlmo[f_id]);
           const cs_real_t coef_mohh
-            = cs_mo_phih (2.0 * distbf + rough_t, bdlmo[f_id]);
+            = cs_mo_phih (2.0 * distbf + rough_t, bdlmo[f_id], turb_schmidt);
 
           const cs_real_t rcprod
             =   2.0 * romc / visctc * distbf * uk * tplus / coef_mom

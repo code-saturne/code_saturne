@@ -756,6 +756,7 @@ cs_mo_phim(cs_real_t              z,
  *
  * \param[in]  z             altitude
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \param[in]  prt           Turbulent Prandtl number
  *
  * \return                   factor
  */
@@ -763,7 +764,8 @@ cs_mo_phim(cs_real_t              z,
 
 cs_real_t
 cs_mo_phih(cs_real_t              z,
-           cs_real_t              dlmo);
+           cs_real_t              dlmo,
+           cs_real_t              prt);
 
 /*----------------------------------------------------------------------------*/
 /*!
