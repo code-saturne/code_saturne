@@ -4216,7 +4216,7 @@ cs_gui_physical_properties(void)
 
     // Cp
     cs_property_t  *cp = cs_property_by_name(CS_THERMAL_CP_NAME);
-    if (phys_pp->icp > 0) {
+    if (phys_pp->icp == 0) {
       for (int z_id = 0; z_id < cs_volume_zone_n_zones(); z_id++) {
         const cs_zone_t *z = cs_volume_zone_by_id(z_id);
         if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
@@ -4241,7 +4241,9 @@ cs_gui_physical_properties(void)
     // Lambda
     cs_property_t  *lambda = cs_property_by_name(CS_THERMAL_LAMBDA_NAME);
     int _lambda_choice = -1;
-    if (_properties_choice_id("thermal_conductivity", &_lambda_choice) > 0) {
+    _properties_choice_id("thermal_conductivity", &_lambda_choice);
+
+    if (_lambda_choice > 0) {
       for (int z_id = 0; z_id < cs_volume_zone_n_zones(); z_id++) {
         const cs_zone_t *z = cs_volume_zone_by_id(z_id);
         if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
@@ -4260,6 +4262,8 @@ cs_gui_physical_properties(void)
       }
     }
     else {
+      /* Set lambda0 which has not been read before... */
+      cs_gui_properties_value("thermal_conductivity", &(phys_pp->lambda0));
       cs_property_def_iso_by_value(lambda, NULL, phys_pp->lambda0);
     }
   }
