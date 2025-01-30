@@ -308,6 +308,8 @@ cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
   case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
   case CS_PARAM_ADVECTION_SCHEME_SG:
   case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE:
+  case CS_PARAM_ADVECTION_SCHEME_CENTERED_V8:
+  case CS_PARAM_ADVECTION_SCHEME_UPWIND_V8:
   case CS_PARAM_ADVECTION_SCHEME_UPWIND:
     return cs_param_adv_scheme_name[scheme];
 

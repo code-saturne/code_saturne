@@ -210,6 +210,12 @@ _set_key(cs_equation_param_t *eqp,
     else if (strcmp(keyval, "centered_dde") == 0) {
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE;
     }
+    else if (strcmp(keyval, "centered_v8") == 0) {
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED_V8;
+    }
+    else if (strcmp(keyval, "upwind_v8") == 0) {
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND_V8;
+    }
     else if (strcmp(keyval, "mix_centered_upwind") == 0 ||
              strcmp(keyval, "hybrid_centered_upwind") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;

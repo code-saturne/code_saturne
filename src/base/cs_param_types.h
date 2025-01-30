@@ -354,6 +354,12 @@ typedef enum {
  *
  * \var CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE
  * centered discretization of Di Pietro, Droniou, Ern (2015)
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_CENTERED_V8
+ * centered discretization of v8 version
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_UPWIND_V8
+ * upwind discretization of v8 version
  */
 
 typedef enum {
@@ -366,6 +372,8 @@ typedef enum {
   CS_PARAM_ADVECTION_SCHEME_SG,
   CS_PARAM_ADVECTION_SCHEME_UPWIND,
   CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE,
+  CS_PARAM_ADVECTION_SCHEME_CENTERED_V8,
+  CS_PARAM_ADVECTION_SCHEME_UPWIND_V8,
 
   CS_PARAM_N_ADVECTION_SCHEMES
 

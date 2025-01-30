@@ -16,7 +16,8 @@ Master (not on release branches yet)
 
 - Advection scheme with CDO-Fb scheme: Replace the former centered scheme
   by a new one close to the CDO-Vb centered scheme. The former scheme is renammed
-  as centered_dde and is marked as deprecated. Moreover, a mixed centered/hybrid
+  as centered_dde and is marked as deprecated. Also, former centered and upwind schemes
+  are post-fixed by _v8 for comparaison. Moreover, a mixed centered/hybrid
   scheme is introduced with a fixed ratio or a variable ratio using Sharfetter-Gummel
   weigth function which is Peclet-robust.
 
