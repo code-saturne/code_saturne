@@ -93,7 +93,7 @@ typedef struct {
 
   int           idrift;      /* drift velocity model */
 
-  double        cdrift;      /* C_gamma constante (drift flux factor)*/
+  double        cdrift;      /* C_gamma constant (drift flux factor)*/
 
   double        kdrift;
 

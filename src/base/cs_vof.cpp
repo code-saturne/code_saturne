@@ -1327,10 +1327,10 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   const cs_real_t *restrict i_volflux
     = cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf))->val;
 
-  cs_real_t *cpro_idriftf = cs_field_by_name("inner_drift_velocity_flux")->val;
+  cs_real_t *ipro_idriftf = cs_field_by_name("inner_drift_velocity_flux")->val;
 
   /* Check if field exists */
-  if (cpro_idriftf == nullptr)
+  if (ipro_idriftf == nullptr)
     bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
 
   cs_real_3_t *voidf_grad;
@@ -1343,7 +1343,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
                            voidf_grad);
 
   /* Stabilization factor */
-  const cs_real_t delta = pow(10,-8)/pow(tot_vol/n_g_cells,(1./3.));
+  const cs_real_t delta = 1.e-8/pow(tot_vol/n_g_cells,(1./3.));
 
   /* Compute the max of flux/Surf over the entire domain */
   cs_real_t maxfluxsurf = 0.; // TODO: Max reduction for GPU
@@ -1375,7 +1375,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     for (cs_lnum_t idim = 0; idim < 3; idim++)
       normalface[idim] = gradface[idim] / (normgrad + delta);
 
-    cpro_idriftf[f_id]
+    ipro_idriftf[f_id]
       =   i_face_surf[f_id] * fluxfactor
         * cs_math_3_dot_product(normalface, i_face_u_normal[f_id]);
 
@@ -1467,7 +1467,7 @@ cs_vof_drift_term(int                        imrgra,
   cs_field_t *vr = cs_field_by_name_try("drift_velocity");
   cs_field_t *idriftflux = cs_field_by_name_try("inner_drift_velocity_flux");
   cs_field_t *bdriftflux = cs_field_by_name_try("boundary_drift_velocity_flux");
-  cs_real_t *cpro_idriftf = idriftflux->val;
+  cs_real_t *ipro_idriftf = idriftflux->val;
 
   if (_vof_parameters.idrift == 1) {
 
@@ -1530,7 +1530,7 @@ cs_vof_drift_term(int                        imrgra,
                  nullptr, /* romb */
                  (const cs_real_3_t *)cpro_vr,
                  &bc_coeffs_v_loc,
-                 cpro_idriftf,
+                 ipro_idriftf,
                  cpro_bdriftf);
 
     CS_FREE_HD(coefav);
@@ -1553,7 +1553,7 @@ cs_vof_drift_term(int                        imrgra,
 
     cs_real_t irvf = 0.;
     if (idriftflux != nullptr)
-      irvf = cpro_idriftf[face_id];
+      irvf = ipro_idriftf[face_id];
 
     cs_real_t fluxij[2] = {0., 0.};
 
