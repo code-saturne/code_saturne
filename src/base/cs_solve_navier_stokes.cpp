@@ -2896,8 +2896,12 @@ _velocity_prediction(const cs_mesh_t             *m,
     else {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++) {
-          for (cs_lnum_t jj = 0; jj < 3; jj++)
-            fimp[c_id][ii][jj] += cs_math_fmax(-tsimp[c_id][ii][jj], 0.0);
+          for (cs_lnum_t jj = 0; jj < 3; jj++) {
+            cs_real_t _tsimp_ij =
+              (ii == jj) ?
+              cs_math_fmax(-tsimp[c_id][ii][jj], 0.0) : -tsimp[c_id][ii][jj];
+            fimp[c_id][ii][jj] += _tsimp_ij;
+          }
         }
       });
       ctx.wait();
