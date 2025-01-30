@@ -43,6 +43,7 @@
 #include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
+#include "atmo/cs_atmo.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_ale.h"
 #include "base/cs_base.h"
@@ -850,7 +851,9 @@ cs_parameters_check(void)
   const int key_dt_var = cs_field_key_id("time_step_factor");
   const int kturt = cs_field_key_id("turbulent_flux_model");
 
+  const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
+  const cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
 
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
     return; /* Avoid the detection of false setting errors when using
@@ -1214,6 +1217,82 @@ cs_parameters_check(void)
                scalar_id, scalar_exp_extrap, scalar_time_order);
       }
     }
+  }
+
+  /*-------------------------------------------------------------------------
+   * Check simulation times used by atmo
+   * radiative transfer or chemistry models
+   *-------------------------------------------------------------------------*/
+  if (   (at_opt->radiative_model_1d == 1 || at_chem->model > 0)
+      && (   at_opt->syear == -1 || at_opt->squant == -1
+          || at_opt->shour == -1 || at_opt->smin  == -1 || at_opt->ssec <= -1.0)  )
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("WARNING:   STOP WHILE READING INPUT DATA\n"),
+       _("    =========\n"
+         "               ATMOSPHERIC  MODULE RADITIVE MODEL OR CHEMISTRY\n"
+         "    The simulation time is wrong\n"
+         "    Check variables syear, squant, shour, smin, ssec\n"
+         "    By decreasing priority, these variables can be defined\n"
+         "    in cs_user_parameters or the meteo file or the chemistry file\n"));
+
+  /*-------------------------------------------------------------------------
+   * Check radiative module latitude / longitude
+   *-------------------------------------------------------------------------*/
+  if (   at_opt->radiative_model_1d == 1
+      && (   at_opt->latitude >= cs_math_infinite_r*0.5
+          || at_opt->longitude >= cs_math_infinite_r*0.5) )
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("WARNING:   STOP WHILE READING INPUT DATA\n"),
+       _("    =========\n"
+         "               ATMOSPHERIC  MODULE RADITIVE MODEL\n"
+         "    Wrong longitude or latitude coordinates\n"
+         "    Check your data and parameters (GUI and user functions)\n"));
+
+
+  /*-------------------------------------------------------------------------
+   * Check latitude / longitude from meteo file
+   *-------------------------------------------------------------------------*/
+  if (at_opt->meteo_profile == 1) {
+    int n_times = CS_MAX(1, at_opt->met_1d_ntimes);
+    cs_real_t xyp_met_max = at_opt->xyp_met[0];
+    for (int ii = 1; ii < 2*n_times; ii++)
+      if (at_opt->xyp_met[ii] > xyp_met_max)
+        xyp_met_max = at_opt->xyp_met[ii];
+    if (xyp_met_max >= cs_math_infinite_r*0.5)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("WARNING:   STOP WHILE READING INPUT DATA\n"),
+         _("    =========\n"
+           "               ATMOSPHERIC  MODULE\n"
+           "    Wrong coordinates for the meteo profile.\n"
+           "    Check your data and parameters (GUI and user functions)\n"));
+  }
+
+  /*-------------------------------------------------------------------------
+   * Check latitude / longitude from chemistry file
+   *-------------------------------------------------------------------------*/
+  if (at_chem->model > 0) {
+    cs_real_t xy_chem[2] = {at_chem->x_conc_profiles[0],
+                            at_chem->y_conc_profiles[0]};
+
+    for (int ii = 1; ii < at_chem->nt_step_profiles; ii++) {
+      if (xy_chem[0] <= at_chem->x_conc_profiles[ii])
+        xy_chem[0] = at_chem->x_conc_profiles[ii];
+      if (xy_chem[1] <= at_chem->y_conc_profiles[ii])
+        xy_chem[1] = at_chem->y_conc_profiles[ii];
+    }
+
+    if (   xy_chem[0] >= cs_math_infinite_r*0.5
+        || xy_chem[0] >= cs_math_infinite_r*0.5)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("WARNING:   STOP WHILE READING INPUT DATA\n"),
+         _("    =========\n"
+           "               ATMOSPHERIC  CHEMISTRY\n"
+           "    Wrong coordinates for the concentration profile .\n"
+           "    Check your data and parameters (GUI and user functions)\n"));
   }
 
   /*--------------------------------------------------------------------------
