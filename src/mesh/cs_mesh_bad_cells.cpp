@@ -123,8 +123,6 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 
   double  cos_alpha, i_face_ortho, b_face_ortho;
 
-  const cs_lnum_t  dim = 3;
-
   /* Loop on interior faces */
   /*------------------------*/
 
@@ -135,20 +133,20 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 
     /* Get information on mesh quantities */
 
-    for (i = 0; i < dim; i++) {
+    for (i = 0; i < 3; i++) {
 
       /* Center of gravity for each cell */
-      cell_center1[i] = mesh_quantities->cell_cen[cell1*dim + i];
-      cell_center2[i] = mesh_quantities->cell_cen[cell2*dim + i];
+      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
+      cell_center2[i] = mesh_quantities->cell_cen[cell2][i];
 
       /* Surface vector (orthogonal to the face) */
-      face_normal[i] = mesh_quantities->i_face_normal[face_id*dim + i];
+      face_normal[i] = mesh_quantities->i_face_normal[face_id*3 + i];
 
     }
 
     /* Evaluate the non-orthogonality. */
 
-    for (i = 0; i < dim; i++)
+    for (i = 0; i < 3; i++)
       vect[i] = cell_center2[i] - cell_center1[i];
 
     cs_real_t v1[3], v2[3];
@@ -175,21 +173,21 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 
     /* Get information on mesh quantities */
 
-    for (i = 0; i < dim; i++) {
+    for (i = 0; i < 3; i++) {
 
       /* Center of gravity of the cell */
-      cell_center1[i] = mesh_quantities->cell_cen[cell1*dim + i];
+      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
 
       /* Face center coordinates */
-      face_center[i] = mesh_quantities->b_face_cog[face_id*dim + i];
+      face_center[i] = mesh_quantities->b_face_cog[face_id][i];
 
       /* Surface vector (orthogonal to the face) */
-      face_normal[i] = mesh_quantities->b_face_normal[face_id*dim + i];
+      face_normal[i] = mesh_quantities->b_face_normal[face_id*3 + i];
 
     }
 
     /* Evaluate the non-orthogonality. */
-    for (i = 0; i < dim; i++)
+    for (i = 0; i < 3; i++)
       vect[i] = face_center[i] - cell_center1[i];
 
     cs_real_t v1[3], v2[3];
@@ -245,7 +243,7 @@ _compute_offsetting(const cs_mesh_t             *mesh,
     /* Compute center offsetting coefficient,
        in a manner consistent with iterative gradient reconstruction */
 
-    v_of = &(mesh_quantities->dofij[face_id*3]);
+    v_of = mesh_quantities->dofij[face_id];
     v_n = &(mesh_quantities->i_face_normal[face_id*3]);
     of_n = cs_math_3_norm(v_of) * cs_math_3_norm(v_n);
 
@@ -285,7 +283,6 @@ _compute_least_squares(const cs_mesh_t             *mesh,
                        unsigned                     bad_cell_flag[])
 {
   cs_real_t lsq;
-  const cs_lnum_t  dim = mesh->dim;
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
 
@@ -317,16 +314,16 @@ _compute_least_squares(const cs_mesh_t             *mesh,
 
     /* Center of gravity for each cell */
 
-    for (i = 0; i < dim; i++) {
-      cell_center1[i] = mesh_quantities->cell_cen[cell1*dim + i];
-      cell_center2[i] = mesh_quantities->cell_cen[cell2*dim + i];
+    for (i = 0; i < 3; i++) {
+      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
+      cell_center2[i] = mesh_quantities->cell_cen[cell2][i];
       vect[i] = cell_center2[i] - cell_center1[i];
     }
 
     cs_real_t v[3];
     cs_math_3_normalize(vect, v);
 
-    for (i = 0; i < dim; i++)
+    for (i = 0; i < 3; i++)
       dij[i] = v[i];
 
     w1[cell1] += dij[0] * dij[0];
@@ -355,7 +352,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
 
     cs_math_3_normalize(b_face_normal[face_id], bn);
 
-    for (i = 0; i < dim; i++)
+    for (i = 0; i < 3; i++)
       dij[i] = bn[i];
 
     w1[cell1] += dij[0] * dij[0];

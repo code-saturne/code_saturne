@@ -714,7 +714,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         f_nb_scan->val[c_id] += 1.;
         for (cs_lnum_t idim = 0; idim < 3; idim++) {
           cen_points[c_id*3+idim]
-            += (dist_coords[i*3 + idim] - mq_g->cell_cen[c_id*3+idim]);
+            += (dist_coords[i*3 + idim] - mq_g->cell_cen[c_id][idim]);
 
           cell_color[c_id*3+idim] += dist_colors[i*3 + idim];
         }
@@ -797,7 +797,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     if (f_nb_scan->val[c_id] > 0) {
       for (cs_lnum_t idim = 0; idim < 3; idim++) {
         cen_points[c_id*3+idim] /= f_nb_scan->val[c_id];
-        cen_points[c_id*3+idim] += mq_g->cell_cen[c_id*3+idim];
+        cen_points[c_id*3+idim] += mq_g->cell_cen[c_id][idim];
         cell_color[c_id*3+idim] /= f_nb_scan->val[c_id];
       }
     }

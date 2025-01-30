@@ -907,7 +907,7 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
      /* Deposition criterion: E_kin > E_barr */
     if (energ >= energt * 0.5 * particle_diameter) {
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen[cell_id];
       cs_real_3_t vect_cen;
       for (int k = 0; k < 3; k++)
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1159,7 +1159,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   else if (b_type == CS_LAGR_DEPO2) {
 
-    cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+    cs_real_t *cell_cen = fvq->cell_cen[cell_id];
     cs_real_3_t vect_cen;
     for (int k = 0; k < 3; k++) {
       vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1252,7 +1252,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
      /* Deposition criterion: E_kin > E_barr */
     if (energ > energt * 0.5 * particle_diameter) {
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen[cell_id];
       cs_real_3_t vect_cen;
       for (int k = 0; k < 3; k++)
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1500,7 +1500,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       cs_lagr_particles_unset_flag(particles, p_id,
                                    CS_LAGR_PART_DEPOSITION_FLAGS);
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen[cell_id];
       cs_real_3_t vect_cen;
       for (int k = 0; k < 3; k++) {
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1540,7 +1540,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     particle_state = CS_LAGR_PART_TO_SYNC;
 
-    cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+    cs_real_t *cell_cen = fvq->cell_cen[cell_id];
     cs_real_3_t vect_cen;
     for (int k = 0; k < 3; k++) {
       vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1681,7 +1681,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     particle_state = CS_LAGR_PART_TO_SYNC;
 
-    cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+    cs_real_t *cell_cen = fvq->cell_cen[cell_id];
     cs_real_3_t vect_cen;
     for (int k = 0; k < 3; k++) {
       vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1791,7 +1791,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     /*--> if there is no fouling, then it is an elastic rebound */
     if (particle_state == CS_LAGR_PART_TO_SYNC) {
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen[cell_id];
       cs_real_t vect_cen[3];
       for (int k = 0; k < 3; k++) {
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -2027,7 +2027,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
       particle_state = CS_LAGR_PART_TREATED;
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen[cell_id];
 
       for (int k = 0; k < 3; k++) {
         prev_location[k] = cell_cen[k];
@@ -2200,7 +2200,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
     if ((n_in != n_out || test_in)
         && (particle_state == CS_LAGR_PART_TO_SYNC)) {
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen[cell_id];
 
       for (int k = 0; k < 3; k++)
         prev_location[k] = cell_cen[k];

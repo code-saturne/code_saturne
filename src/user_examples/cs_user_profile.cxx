@@ -1039,7 +1039,7 @@ _set_stl_layers_seeds(user_profile_t  *profile,
 
   // Get mesh quantities
   const cs_mesh_quantities_t *mq         = cs_glob_mesh_quantities;
-  const cs_real_t            *cell_cen   = mq->cell_cen;
+  const cs_real_3_t          *cell_cen   = mq->cell_cen;
 
   // define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
@@ -1082,7 +1082,7 @@ _set_stl_layers_seeds(user_profile_t  *profile,
   for (int ii = 0; ii < n_selected_cells; ii++) {
     cs_lnum_t c_id = selected_cells[ii];
     for (int k = 0; k < 3; k++)
-      point_coord[3 * ii + k] = cell_cen[3 * c_id + k];
+      point_coord[3 * ii + k] = cell_cen[c_id][k];
   }
 
   cs_lnum_t   point_id[2];
@@ -1610,7 +1610,7 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile)
 {
   // Get mesh quantities
   const cs_mesh_quantities_t *mq       = cs_glob_mesh_quantities;
-  const cs_real_t            *cell_cen = mq->cell_cen;
+  const cs_real_3_t          *cell_cen = mq->cell_cen;
   const cs_lnum_t             n_cells  = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_with_ghosts  = cs_glob_mesh->n_cells_with_ghosts;
 
@@ -1647,9 +1647,9 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile)
   for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++) {
     cs_lnum_t c_id = selected_cells[ii];
 
-    cs_real_t x = cell_cen[3 * c_id + 0];
-    cs_real_t y = cell_cen[3 * c_id + 1];
-    cs_real_t z = cell_cen[3 * c_id + 2];
+    cs_real_t x = cell_cen[c_id][0];
+    cs_real_t y = cell_cen[c_id][1];
+    cs_real_t z = cell_cen[c_id][2];
 
     // project cell cen vector of dir vector
     cs_real_t dist

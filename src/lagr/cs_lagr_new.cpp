@@ -344,13 +344,13 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
     _face_sub_surfaces(n_vertices,
                        vertex_ids,
                        (const cs_real_3_t *)mesh->vtx_coord,
-                       fvq->b_face_cog + 3*face_id,
+                       fvq->b_face_cog[face_id],
                        acc_surf_r);
 
     /* distribute new particles */
 
     cs_lnum_t c_id = mesh->b_face_cells[face_id];
-    const cs_real_t *c_cen = fvq->cell_cen + c_id*3;
+    const cs_real_t *c_cen = fvq->cell_cen[c_id];
 
     for (cs_lnum_t i = 0; i < n_f_p; i++) {
 
@@ -364,7 +364,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
       _random_point_in_face(n_vertices,
                             vertex_ids,
                             (const cs_real_3_t *)mesh->vtx_coord,
-                            fvq->b_face_cog + 3*face_id,
+                            fvq->b_face_cog[face_id],
                             acc_surf_r,
                             part_coord);
 
@@ -430,8 +430,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
     const cs_lnum_t cell_id = (cell_ids != nullptr) ? cell_ids[li] : li;
 
-    const cs_real_t *cell_cen = fvq->cell_cen + cell_id*3;
-
+    const cs_real_t *cell_cen = fvq->cell_cen[cell_id];
 
     const cs_lnum_t n_cell_i_faces =   ma->cell_cells_idx[cell_id+1]
                                      - ma->cell_cells_idx[cell_id];
@@ -478,7 +477,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
         cs_lnum_t vtx_s = mesh->i_face_vtx_idx[face_id];
         n_vertices = mesh->i_face_vtx_idx[face_id+1] - vtx_s;
         vertex_ids = mesh->i_face_vtx_lst + vtx_s;
-        face_cog = fvq->i_face_cog + (3*face_id);
+        face_cog = fvq->i_face_cog[face_id];
         face_normal = fvq->i_face_normal + (3*face_id);
 
       }
@@ -497,7 +496,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
         cs_lnum_t vtx_s = mesh->b_face_vtx_idx[face_id];
         n_vertices = mesh->b_face_vtx_idx[face_id+1] - vtx_s;
         vertex_ids = mesh->b_face_vtx_lst + vtx_s;
-        face_cog = fvq->b_face_cog + (3*face_id);
+        face_cog = fvq->b_face_cog[face_id];
         face_normal = fvq->b_face_normal + (3*face_id);
 
       }
@@ -587,7 +586,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
         cs_lnum_t vtx_s = mesh->i_face_vtx_idx[face_id];
         n_vertices = mesh->i_face_vtx_idx[face_id+1] - vtx_s;
         vertex_ids = mesh->i_face_vtx_lst + vtx_s;
-        face_cog = fvq->i_face_cog + (3*face_id);
+        face_cog = fvq->i_face_cog[face_id];
 
       }
       else { /* Boundary faces */
@@ -605,7 +604,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
         cs_lnum_t vtx_s = mesh->b_face_vtx_idx[face_id];
         n_vertices = mesh->b_face_vtx_idx[face_id+1] - vtx_s;
         vertex_ids = mesh->b_face_vtx_lst + vtx_s;
-        face_cog = fvq->b_face_cog + (3*face_id);
+        face_cog = fvq->b_face_cog[face_id];
 
       }
 

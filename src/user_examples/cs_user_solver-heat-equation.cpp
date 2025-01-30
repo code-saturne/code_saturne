@@ -120,7 +120,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   xL = -1.e30;
 
   for (i = 0; i < mesh->n_b_faces; i++) {
-    cs_real_t  x_face = mesh_quantities->b_face_cog[3*i];
+    cs_real_t  x_face = mesh_quantities->b_face_cog[3][i];
     if (x_face < x0) x0 = x_face;
     if (x_face > xL) xL = x_face;
   }

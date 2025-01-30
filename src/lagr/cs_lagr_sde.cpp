@@ -274,7 +274,7 @@ _lages1(cs_real_t           dtp,
     cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                   CS_LAGR_CELL_ID);
 
-    cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen + (3*cell_id);
+    cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen[cell_id];
 
     if (cell_id < 0)
       continue;

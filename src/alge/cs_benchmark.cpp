@@ -1197,7 +1197,7 @@ cs_benchmark(int  mpi_trace_mode)
   CS_MALLOC_HD(x, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   for (ii = 0; ii < n_cells_ext; ii++)
-    x[ii] = mesh_v->cell_cen[ii*3];
+    x[ii] = mesh_v->cell_cen[ii][0];
 
   CS_MALLOC_HD(y, n_cells_ext, cs_real_t, cs_alloc_mode);
 

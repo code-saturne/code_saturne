@@ -414,7 +414,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
                                                  CS_LAGR_COORDS);
 
       for (cs_lnum_t i = 0; i <  3; i++)
-        part_coord[i] = fvq->cell_cen[cell[ip - npt] * 3 + i];
+        part_coord[i] = fvq->cell_cen[cell[ip - npt]][i];
 
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_ID, cell[ip - npt]);
 

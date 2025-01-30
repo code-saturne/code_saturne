@@ -1181,7 +1181,7 @@ _neighborhood_reduce_anomax(cs_mesh_t             *mesh,
   const cs_lnum_2_t  *face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
 
   const cs_real_t  cos_ij_fn_min = cos(non_ortho_max);
-  const cs_real_t  *cell_cen = mesh_quantities->cell_cen;
+  const cs_real_3_t  *cell_cen = mesh_quantities->cell_cen;
 
   enum {X, Y, Z};
 
@@ -1230,7 +1230,7 @@ _neighborhood_reduce_anomax(cs_mesh_t             *mesh,
     dprod = 0;
 
     for (i = 0; i < 3; i++) {
-      v_ij[i] = cell_cen[3*cell_j + i] - cell_cen[3*cell_i + i];
+      v_ij[i] = cell_cen[cell_j][i] - cell_cen[cell_i][i];
       face_normal[i] = mesh_quantities->i_face_normal[3*face_id + i];
       dprod += v_ij[i]*face_normal[i];
     }
@@ -1373,7 +1373,7 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
   const cs_lnum_t n_cells = mesh->n_cells;
 
   const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const cs_real_3_t  *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t  *cell_cen = mq->cell_cen;
   const cs_real_3_t  *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
   const cs_real_3_t  *i_face_cog = (const cs_real_3_t *)mq->i_face_cog;
   const cs_real_t    *cell_vol = (const cs_real_t *)mq->cell_vol;

@@ -578,7 +578,10 @@ cs_restart_map_build(void)
   options[PLE_LOCATOR_NUMBERING] = 0; /* base 0 numbering */
 
   cs_lnum_t n_points[4] = {m_c->n_cells, 0, 0, m_c->n_vertices};
-  const cs_real_t *point_coords[4] = {mq->cell_cen, nullptr, nullptr, m_c->vtx_coord};
+  const cs_real_t *point_coords[4] = {(const cs_real_t *)mq->cell_cen,
+                                      nullptr,
+                                      nullptr,
+                                      (const cs_real_t *)m_c->vtx_coord};
 
   for (int i = 0; i < 4; i++) {
 

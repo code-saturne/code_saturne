@@ -43,7 +43,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
@@ -52,6 +51,7 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_sort.h"
 #include "base/cs_search.h"
 #include "mesh/cs_mesh_connect.h"
@@ -177,8 +177,8 @@ _create_locator(cs_internal_coupling_t  *cpl)
   /* Number of faces to tag */
   const int nfac_in_nm = fvm_nodal_get_n_entities(nm, 2);
   /* Memory allocation */
-  BFT_MALLOC(faces_in_nm, nfac_in_nm, cs_lnum_t);
-  BFT_MALLOC(tag_nm, nfac_in_nm, int);
+  CS_MALLOC(faces_in_nm, nfac_in_nm, cs_lnum_t);
+  CS_MALLOC(tag_nm, nfac_in_nm, int);
   /* Get id of faces to tag in parent */
   fvm_nodal_get_parent_num(nm, 2, faces_in_nm);
   /* Tag faces */
@@ -194,17 +194,17 @@ _create_locator(cs_internal_coupling_t  *cpl)
   }
   fvm_nodal_set_tag(nm, tag_nm, 2);
   /* Free memory */
-  BFT_FREE(faces_in_nm);
-  BFT_FREE(tag_nm);
+  CS_FREE(faces_in_nm);
+  CS_FREE(tag_nm);
 
   /* Creation of distant group cell centers */
 
-  BFT_MALLOC(point_coords, 3*n_local, cs_real_t);
+  CS_MALLOC(point_coords, 3*n_local, cs_real_t);
 
   for (i = 0; i < n_local; i++) {
     ifac = cpl->faces_local[i]; /* 0..n-1 */
     for (j = 0; j < 3; j++)
-      point_coords[3*i+j] = cs_glob_mesh_quantities->b_face_cog[3*ifac+j];
+      point_coords[3*i+j] = cs_glob_mesh_quantities->b_face_cog[ifac][j];
   }
 
   /* Locator initialization */
@@ -224,7 +224,7 @@ _create_locator(cs_internal_coupling_t  *cpl)
                        cs_coupling_point_in_mesh_p);
   /* Free memory */
   nm = fvm_nodal_destroy(nm);
-  BFT_FREE(point_coords);
+  CS_FREE(point_coords);
   return locator;
 }
 
@@ -238,18 +238,18 @@ _create_locator(cs_internal_coupling_t  *cpl)
 static void
 _destroy_entity(cs_internal_coupling_t  *cpl)
 {
-  BFT_FREE(cpl->c_tag);
-  BFT_FREE(cpl->faces_local);
-  BFT_FREE(cpl->faces_distant);
-  BFT_FREE(cpl->g_weight);
-  BFT_FREE(cpl->ci_cj_vect);
-  BFT_FREE(cpl->offset_vect);
-  BFT_FREE(cpl->coupled_faces);
-  BFT_FREE(cpl->cells_criteria);
-  BFT_FREE(cpl->faces_criteria);
-  BFT_FREE(cpl->interior_faces_group_name);
-  BFT_FREE(cpl->exterior_faces_group_name);
-  BFT_FREE(cpl->volume_zone_ids);
+  CS_FREE(cpl->c_tag);
+  CS_FREE(cpl->faces_local);
+  CS_FREE(cpl->faces_distant);
+  CS_FREE(cpl->g_weight);
+  CS_FREE(cpl->ci_cj_vect);
+  CS_FREE(cpl->offset_vect);
+  CS_FREE(cpl->coupled_faces);
+  CS_FREE(cpl->cells_criteria);
+  CS_FREE(cpl->faces_criteria);
+  CS_FREE(cpl->interior_faces_group_name);
+  CS_FREE(cpl->exterior_faces_group_name);
+  CS_FREE(cpl->volume_zone_ids);
   ple_locator_destroy(cpl->locator);
 }
 
@@ -275,24 +275,24 @@ _compute_geometrical_face_weight(const cs_internal_coupling_t  *cpl)
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
   const cs_mesh_t             *m   = cs_glob_mesh;
 
-  const cs_real_t *cell_cen = fvq->cell_cen;
-  const cs_real_t *b_face_cog = fvq->b_face_cog;
+  const cs_real_3_t *cell_cen = fvq->cell_cen;
+  const cs_real_3_t *b_face_cog = fvq->b_face_cog;
   const cs_rreal_3_t *diipb = fvq->diipb;
-  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
-  const cs_real_t *b_face_normal = cs_glob_mesh_quantities->b_face_normal;
+  const cs_nreal_3_t *b_face_u_normal
+    = cs_glob_mesh_quantities->b_face_u_normal;
 
   /* Store local FI' distances in gweight_distant */
 
   cs_real_t *g_weight_distant = nullptr;
-  BFT_MALLOC(g_weight_distant, n_distant, cs_real_t);
+  CS_MALLOC(g_weight_distant, n_distant, cs_real_t);
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     cs_real_t dv[3];
     face_id = faces_distant[ii];
     cell_id = m->b_face_cells[face_id];
 
     for (cs_lnum_t jj = 0; jj < 3; jj++)
-      dv[jj] =  - diipb[face_id][jj] - cell_cen[3*cell_id +jj]
-                + b_face_cog[3*face_id +jj];
+      dv[jj] =  - diipb[face_id][jj] - cell_cen[cell_id][jj]
+                + b_face_cog[face_id][jj];
 
     g_weight_distant[ii] = cs_math_3_norm(dv);
   }
@@ -304,16 +304,15 @@ _compute_geometrical_face_weight(const cs_internal_coupling_t  *cpl)
                                     g_weight_distant,
                                     g_weight);
   /* Free memory */
-  BFT_FREE(g_weight_distant);
+  CS_FREE(g_weight_distant);
 
   /* Normalise the distance to obtain geometrical weights */
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     face_id = faces_local[ii];
-    g_weight[ii] /= ( ci_cj_vect[ii][0]*b_face_normal[3*face_id+0]
-                    + ci_cj_vect[ii][1]*b_face_normal[3*face_id+1]
-                    + ci_cj_vect[ii][2]*b_face_normal[3*face_id+2])
-                    / b_face_surf[face_id];
+    g_weight[ii] /= ( ci_cj_vect[ii][0]*b_face_u_normal[face_id][0]
+                    + ci_cj_vect[ii][1]*b_face_u_normal[face_id][1]
+                    + ci_cj_vect[ii][2]*b_face_u_normal[face_id][2]);
   }
 }
 
@@ -343,7 +342,7 @@ _compute_physical_face_weight(const cs_internal_coupling_t  *cpl,
   /* Exchange c_weight */
 
   cs_real_t *c_weight_local = nullptr;
-  BFT_MALLOC(c_weight_local, n_local, cs_real_t);
+  CS_MALLOC(c_weight_local, n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            1,
                                            c_weight,
@@ -361,7 +360,7 @@ _compute_physical_face_weight(const cs_internal_coupling_t  *cpl,
   }
 
   /* Free memory */
-  BFT_FREE(c_weight_local);
+  CS_FREE(c_weight_local);
 }
 
 /*----------------------------------------------------------------------------
@@ -383,17 +382,17 @@ _compute_offset(const cs_internal_coupling_t  *cpl)
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_real_t *cell_cen = mq->cell_cen;
-  const cs_real_t *b_face_cog = mq->b_face_cog;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
+  const cs_real_3_t *b_face_cog = mq->b_face_cog;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   /* Exchange cell center location */
 
   cs_real_t *cell_cen_local = nullptr;
-  BFT_MALLOC(cell_cen_local, 3 * n_local, cs_real_t);
+  CS_MALLOC(cell_cen_local, 3*n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
-                                           mq->cell_cen,
+                                           (const cs_real_t *)mq->cell_cen,
                                            cell_cen_local);
 
   /* Compute OF vectors */
@@ -404,14 +403,14 @@ _compute_offset(const cs_internal_coupling_t  *cpl)
 
     for (cs_lnum_t jj = 0; jj < 3; jj++) {
       cs_real_t xxd = cell_cen_local[3*ii + jj];
-      cs_real_t xxl = cell_cen[3*cell_id + jj];
-      offset_vect[ii][jj] = b_face_cog[3*face_id + jj]
+      cs_real_t xxl = cell_cen[cell_id][jj];
+      offset_vect[ii][jj] = b_face_cog[face_id][jj]
         - (        g_weight[ii]*xxl
            + (1. - g_weight[ii])*xxd);
     }
   }
   /* Free memory */
-  BFT_FREE(cell_cen_local);
+  CS_FREE(cell_cen_local);
 }
 
 /*----------------------------------------------------------------------------
@@ -433,16 +432,16 @@ _compute_ci_cj_vect(const cs_internal_coupling_t  *cpl)
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_mesh_t *m = cs_glob_mesh;
 
-  const cs_real_t *cell_cen = mq->cell_cen;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   /* Exchange cell center location */
 
   cs_real_t *cell_cen_local = nullptr;
-  BFT_MALLOC(cell_cen_local, 3 * n_local, cs_real_t);
+  CS_MALLOC(cell_cen_local, 3 * n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3, /* dimension */
-                                           mq->cell_cen,
+                                           (const cs_real_t *)mq->cell_cen,
                                            cell_cen_local);
 
   /* Compute IJ vectors */
@@ -453,13 +452,13 @@ _compute_ci_cj_vect(const cs_internal_coupling_t  *cpl)
 
     for (cs_lnum_t jj = 0; jj < 3; jj++) {
       cs_real_t xxd = cell_cen_local[3*ii + jj];
-      cs_real_t xxl = cell_cen[3*cell_id + jj];
+      cs_real_t xxl = cell_cen[cell_id][jj];
       ci_cj_vect[ii][jj] = xxd - xxl;
     }
   }
 
   /* Free memory */
-  BFT_FREE(cell_cen_local);
+  CS_FREE(cell_cen_local);
 
   /* Compute geometric weights and iterative reconstruction vector */
 
@@ -539,11 +538,11 @@ _criteria_initialize(const char               criteria_cells[],
                      const char               criteria_faces[],
                      cs_internal_coupling_t  *cpl)
 {
-  BFT_MALLOC(cpl->cells_criteria, strlen(criteria_cells)+1, char);
+  CS_MALLOC(cpl->cells_criteria, strlen(criteria_cells)+1, char);
   strcpy(cpl->cells_criteria, criteria_cells);
 
   if (criteria_faces != nullptr) {
-    BFT_MALLOC(cpl->faces_criteria, strlen(criteria_faces)+1, char);
+    CS_MALLOC(cpl->faces_criteria, strlen(criteria_faces)+1, char);
     strcpy(cpl->faces_criteria, criteria_faces);
   }
 }
@@ -565,9 +564,9 @@ _auto_group_name(cs_internal_coupling_t  *cpl,
   char group_name[64];
   snprintf(group_name, 63, "auto:internal_coupling_%d", coupling_id);
   group_name[63] = '\0';
-  BFT_REALLOC(cpl->faces_criteria,
-              strlen(group_name)+1,
-              char);
+  CS_REALLOC(cpl->faces_criteria,
+             strlen(group_name)+1,
+             char);
   strcpy(cpl->faces_criteria, group_name);
 }
 
@@ -592,7 +591,7 @@ _get_cell_list(cs_mesh_t               *m,
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  BFT_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
 
   if (cpl->cells_criteria != nullptr) {
     cs_selector_get_cell_list(cpl->cells_criteria,
@@ -606,7 +605,7 @@ _get_cell_list(cs_mesh_t               *m,
   else if (cpl->n_volume_zones > 0) {
 
     int *cell_flag;
-    BFT_MALLOC(cell_flag, n_cells_ext, int);
+    CS_MALLOC(cell_flag, n_cells_ext, int);
     for (cs_lnum_t i = 0; i < n_cells_ext; i++)
       cell_flag[i] = 0;
 
@@ -637,10 +636,10 @@ _get_cell_list(cs_mesh_t               *m,
       }
     }
 
-    BFT_FREE(cell_flag);
+    CS_FREE(cell_flag);
   }
 
-  BFT_REALLOC(selected_cells, n_selected_cells, cs_lnum_t);
+  CS_REALLOC(selected_cells, n_selected_cells, cs_lnum_t);
 
   *n_cells = n_selected_cells;
   *cell_list = selected_cells;
@@ -686,20 +685,20 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
     cs_lnum_t *sel_faces_ext = nullptr, *sel_faces_int = nullptr;
     int *cell_flag;
 
-    BFT_MALLOC(cell_flag, m->n_cells, int);
+    CS_MALLOC(cell_flag, m->n_cells, int);
     for (cs_lnum_t i = 0; i < m->n_cells; i++)
       cell_flag[i] = 0;
 
     for (cs_lnum_t i = 0; i < n_sel_cells; i++)
       cell_flag[sel_cells[i]] = 1;
 
-    BFT_MALLOC(sel_faces_ext, m->n_b_faces, cs_lnum_t);
+    CS_MALLOC(sel_faces_ext, m->n_b_faces, cs_lnum_t);
     cs_selector_get_b_face_list(cpl->faces_criteria,
                                 &n_sel_faces,
                                 sel_faces_ext);
 
     cs_lnum_t n_sel_int = 0, n_sel_ext = 0;
-    BFT_MALLOC(sel_faces_int, n_sel_faces, cs_lnum_t);
+    CS_MALLOC(sel_faces_int, n_sel_faces, cs_lnum_t);
 
     for (cs_lnum_t i = 0; i < n_sel_faces; i++) {
       cs_lnum_t face_id = sel_faces_ext[i];
@@ -713,7 +712,7 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
       }
     }
 
-    BFT_FREE(cell_flag);
+    CS_FREE(cell_flag);
 
     if (cpl->exterior_faces_group_name != nullptr) {
       cs_mesh_group_b_faces_add(m,
@@ -729,11 +728,11 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
                                 sel_faces_int);
     }
 
-    BFT_FREE(sel_faces_int);
-    BFT_FREE(sel_faces_ext);
+    CS_FREE(sel_faces_int);
+    CS_FREE(sel_faces_ext);
   }
 
-  BFT_FREE(sel_cells);
+  CS_FREE(sel_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -765,7 +764,7 @@ _volume_face_initialize(cs_mesh_t               *m,
 
   /* Initialization */
 
-  BFT_MALLOC(cell_tag, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(cell_tag, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
     cell_tag[cell_id] = 2;
 
@@ -780,13 +779,13 @@ _volume_face_initialize(cs_mesh_t               *m,
 
   /* Free memory */
 
-  BFT_FREE(selected_cells);
+  CS_FREE(selected_cells);
 
   /* Selection of the interface */
 
   cs_lnum_t  n_selected_faces = 0;
 
-  BFT_MALLOC(selected_faces, m->n_b_faces, cs_lnum_t);
+  CS_MALLOC(selected_faces, m->n_b_faces, cs_lnum_t);
   cs_selector_get_b_face_list(cpl->faces_criteria,
                               &n_selected_faces,
                               selected_faces);
@@ -795,7 +794,7 @@ _volume_face_initialize(cs_mesh_t               *m,
   {
     cs_lnum_t n = 0;
     char  *b_face_flag;
-    BFT_MALLOC(b_face_flag, m->n_b_faces, char);
+    CS_MALLOC(b_face_flag, m->n_b_faces, char);
     for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
       b_face_flag[i] = 0;
     for (cs_lnum_t i = 0; i < n_selected_faces; i++)
@@ -805,7 +804,7 @@ _volume_face_initialize(cs_mesh_t               *m,
         selected_faces[n++] = i;
     }
     assert(n == n_selected_faces);
-    BFT_FREE(b_face_flag);
+    CS_FREE(b_face_flag);
   }
 
   /* Prepare locator */
@@ -813,8 +812,8 @@ _volume_face_initialize(cs_mesh_t               *m,
   cpl->n_local = n_selected_faces; /* WARNING: only numerically
                                       valid for conformal meshes */
 
-  BFT_MALLOC(cpl->faces_local, cpl->n_local, cs_lnum_t);
-  BFT_MALLOC(cpl->c_tag, cpl->n_local, int);
+  CS_MALLOC(cpl->faces_local, cpl->n_local, cs_lnum_t);
+  CS_MALLOC(cpl->c_tag, cpl->n_local, int);
 
   for (cs_lnum_t ii = 0; ii < cpl->n_local; ii++) {
     cs_lnum_t face_id = selected_faces[ii];
@@ -825,8 +824,8 @@ _volume_face_initialize(cs_mesh_t               *m,
 
   /* Free memory */
 
-  BFT_FREE(selected_faces);
-  BFT_FREE(cell_tag);
+  CS_FREE(selected_faces);
+  CS_FREE(cell_tag);
 }
 
 /*----------------------------------------------------------------------------
@@ -845,9 +844,9 @@ _locator_initialize(cs_mesh_t               *m,
 
   cpl->locator = _create_locator(cpl);
   cpl->n_distant = ple_locator_get_n_dist_points(cpl->locator);
-  BFT_MALLOC(cpl->faces_distant,
-             cpl->n_distant,
-             cs_lnum_t);
+  CS_MALLOC(cpl->faces_distant,
+            cpl->n_distant,
+            cs_lnum_t);
   const cs_lnum_t *faces_distant_num
     = ple_locator_get_dist_locations(cpl->locator);
 
@@ -857,13 +856,13 @@ _locator_initialize(cs_mesh_t               *m,
 
   /* Geometric quantities */
 
-  BFT_MALLOC(cpl->g_weight, cpl->n_local, cs_real_t);
-  BFT_MALLOC(cpl->ci_cj_vect, cpl->n_local, cs_real_3_t);
-  BFT_MALLOC(cpl->offset_vect, cpl->n_local, cs_real_3_t);
+  CS_MALLOC(cpl->g_weight, cpl->n_local, cs_real_t);
+  CS_MALLOC(cpl->ci_cj_vect, cpl->n_local, cs_real_3_t);
+  CS_MALLOC(cpl->offset_vect, cpl->n_local, cs_real_3_t);
 
   _compute_ci_cj_vect(cpl);
 
-  BFT_MALLOC(cpl->coupled_faces, m->n_b_faces, bool);
+  CS_MALLOC(cpl->coupled_faces, m->n_b_faces, bool);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -901,9 +900,9 @@ void
 cs_internal_coupling_add(const char  criteria_cells[],
                          const char  criteria_faces[])
 {
-  BFT_REALLOC(_internal_coupling,
-              _n_internal_couplings + 1,
-              cs_internal_coupling_t);
+  CS_REALLOC(_internal_coupling,
+             _n_internal_couplings + 1,
+             cs_internal_coupling_t);
 
   cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
 
@@ -932,9 +931,9 @@ cs_internal_coupling_add_volume(const char  criteria_cells[])
     bft_error(__FILE__, __LINE__, 0,
               "Only one volume can be added in this version.");
 
-  BFT_REALLOC(_internal_coupling,
-              _n_internal_couplings + 1,
-              cs_internal_coupling_t);
+  CS_REALLOC(_internal_coupling,
+             _n_internal_couplings + 1,
+             cs_internal_coupling_t);
 
   cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
 
@@ -982,9 +981,9 @@ cs_internal_coupling_add_volume_zones(int        n_zones,
     bft_error(__FILE__, __LINE__, 0,
               "Only one volume can be added in this version.");
 
-  BFT_REALLOC(_internal_coupling,
-              _n_internal_couplings + 1,
-              cs_internal_coupling_t);
+  CS_REALLOC(_internal_coupling,
+             _n_internal_couplings + 1,
+             cs_internal_coupling_t);
 
   cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
 
@@ -993,7 +992,7 @@ cs_internal_coupling_add_volume_zones(int        n_zones,
   cpl->id = _n_internal_couplings;
 
   cpl->n_volume_zones = n_zones;
-  BFT_MALLOC(cpl->volume_zone_ids, n_zones, int);
+  CS_MALLOC(cpl->volume_zone_ids, n_zones, int);
 
   for (int i = 0; i < n_zones; i++)
     cpl->volume_zone_ids[i] = zone_ids[i];
@@ -1025,12 +1024,12 @@ cs_internal_coupling_add_boundary_groups(cs_internal_coupling_t  *cpl,
                                          const char              *exterior_name)
 {
   if (cpl != nullptr && interior_name != nullptr) {
-    BFT_REALLOC(cpl->interior_faces_group_name, strlen(interior_name) + 1, char);
+    CS_REALLOC(cpl->interior_faces_group_name, strlen(interior_name) + 1, char);
     strcpy(cpl->interior_faces_group_name, interior_name);
   }
 
   if (cpl != nullptr && exterior_name != nullptr) {
-    BFT_REALLOC(cpl->exterior_faces_group_name, strlen(exterior_name) + 1, char);
+    CS_REALLOC(cpl->exterior_faces_group_name, strlen(exterior_name) + 1, char);
     strcpy(cpl->exterior_faces_group_name, exterior_name);
   }
 }
@@ -1098,7 +1097,7 @@ cs_internal_coupling_initialize_scalar_gradient(
 
   /* Exchange pvar */
   cs_real_t *pvar_local = nullptr;
-  BFT_MALLOC(pvar_local, n_local, cs_real_t);
+  CS_MALLOC(pvar_local, n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            1,
                                            pvar,
@@ -1107,7 +1106,7 @@ cs_internal_coupling_initialize_scalar_gradient(
   /* Preliminary step in case of heterogenous diffusivity */
 
   if (c_weight != nullptr) {
-    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    CS_MALLOC(r_weight, n_local, cs_real_t);
     _compute_physical_face_weight(cpl,
                                   c_weight, /* diffusivity */
                                   r_weight); /* physical face weight */
@@ -1140,8 +1139,8 @@ cs_internal_coupling_initialize_scalar_gradient(
 
   }
   /* Free memory */
-  if (c_weight != nullptr) BFT_FREE(r_weight);
-  BFT_FREE(pvar_local);
+  if (c_weight != nullptr) CS_FREE(r_weight);
+  CS_FREE(pvar_local);
 }
 
 /*----------------------------------------------------------------------------
@@ -1179,7 +1178,7 @@ cs_internal_coupling_initialize_vector_gradient(
 
   /* Exchange pvar */
   cs_real_3_t *pvar_local = nullptr;
-  BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+  CS_MALLOC(pvar_local, n_local, cs_real_3_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
                                            (const cs_real_t *)pvar,
@@ -1188,7 +1187,7 @@ cs_internal_coupling_initialize_vector_gradient(
   /* Preliminary step in case of heterogenous diffusivity */
 
   if (c_weight != nullptr) {
-    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    CS_MALLOC(r_weight, n_local, cs_real_t);
     _compute_physical_face_weight(cpl,
                                   c_weight, /* diffusivity */
                                   r_weight); /* physical face weight */
@@ -1226,8 +1225,8 @@ cs_internal_coupling_initialize_vector_gradient(
 
   /* Free memory */
 
-  BFT_FREE(r_weight);
-  BFT_FREE(pvar_local);
+  CS_FREE(r_weight);
+  CS_FREE(pvar_local);
 }
 
 /*----------------------------------------------------------------------------
@@ -1265,7 +1264,7 @@ cs_internal_coupling_initialize_tensor_gradient(
 
   /* Exchange pvar */
   cs_real_6_t *pvar_local = nullptr;
-  BFT_MALLOC(pvar_local, n_local, cs_real_6_t);
+  CS_MALLOC(pvar_local, n_local, cs_real_6_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            6,
                                            (const cs_real_t *)pvar,
@@ -1274,7 +1273,7 @@ cs_internal_coupling_initialize_tensor_gradient(
   /* Preliminary step in case of heterogenous diffusivity */
 
   if (c_weight != nullptr) {
-    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    CS_MALLOC(r_weight, n_local, cs_real_t);
     _compute_physical_face_weight(cpl,
                                   c_weight, /* diffusivity */
                                   r_weight); /* physical face weight */
@@ -1312,8 +1311,8 @@ cs_internal_coupling_initialize_tensor_gradient(
 
   /* Free memory */
 
-  BFT_FREE(r_weight);
-  BFT_FREE(pvar_local);
+  CS_FREE(r_weight);
+  CS_FREE(pvar_local);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1355,9 +1354,9 @@ cs_internal_coupling_iterative_scalar_gradient(
 
   /* Exchange grad and pvar */
   cs_real_3_t *grad_local = nullptr;
-  BFT_MALLOC(grad_local, n_local, cs_real_3_t);
+  CS_MALLOC(grad_local, n_local, cs_real_3_t);
   cs_real_t *pvar_local = nullptr;
-  BFT_MALLOC(pvar_local, n_local, cs_real_t);
+  CS_MALLOC(pvar_local, n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
                                            (const cs_real_t *)grad,
@@ -1370,7 +1369,7 @@ cs_internal_coupling_iterative_scalar_gradient(
   /* Preliminary step in case of heterogenous diffusivity */
 
   if (c_weight != nullptr) { /* Heterogenous diffusivity */
-    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    CS_MALLOC(r_weight, n_local, cs_real_t);
     _compute_physical_face_weight(cpl,
                                   c_weight, /* diffusivity */
                                   r_weight); /* physical face weight */
@@ -1415,9 +1414,9 @@ cs_internal_coupling_iterative_scalar_gradient(
       rhs[cell_id][j] += pfaci * b_f_face_normal[face_id][j];
   }
 
-  BFT_FREE(r_weight);
-  BFT_FREE(grad_local);
-  BFT_FREE(pvar_local);
+  CS_FREE(r_weight);
+  CS_FREE(grad_local);
+  CS_FREE(pvar_local);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1459,9 +1458,9 @@ cs_internal_coupling_iterative_vector_gradient(
 
   /* Exchange grad and pvar */
   cs_real_33_t *grad_local = nullptr;
-  BFT_MALLOC(grad_local, n_local, cs_real_33_t);
+  CS_MALLOC(grad_local, n_local, cs_real_33_t);
   cs_real_3_t *pvar_local = nullptr;
-  BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+  CS_MALLOC(pvar_local, n_local, cs_real_3_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            9,
                                            (const cs_real_t *)grad,
@@ -1474,7 +1473,7 @@ cs_internal_coupling_iterative_vector_gradient(
   /* Preliminary step in case of heterogenous diffusivity */
 
   if (c_weight != nullptr) { /* Heterogenous diffusivity */
-    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    CS_MALLOC(r_weight, n_local, cs_real_t);
     _compute_physical_face_weight(cpl,
                                   c_weight, /* diffusivity */
                                   r_weight); /* physical face weight */
@@ -1523,9 +1522,9 @@ cs_internal_coupling_iterative_vector_gradient(
     }
   }
 
-  BFT_FREE(r_weight);
-  BFT_FREE(grad_local);
-  BFT_FREE(pvar_local);
+  CS_FREE(r_weight);
+  CS_FREE(grad_local);
+  CS_FREE(pvar_local);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1567,9 +1566,9 @@ cs_internal_coupling_iterative_tensor_gradient(
 
   /* Exchange grad and pvar */
   cs_real_63_t *grad_local = nullptr;
-  BFT_MALLOC(grad_local, n_local, cs_real_63_t);
+  CS_MALLOC(grad_local, n_local, cs_real_63_t);
   cs_real_6_t *pvar_local = nullptr;
-  BFT_MALLOC(pvar_local, n_local, cs_real_6_t);
+  CS_MALLOC(pvar_local, n_local, cs_real_6_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            18,
                                            (const cs_real_t *)grad,
@@ -1582,7 +1581,7 @@ cs_internal_coupling_iterative_tensor_gradient(
   /* Preliminary step in case of heterogenous diffusivity */
 
   if (c_weight != nullptr) { /* Heterogenous diffusivity */
-    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    CS_MALLOC(r_weight, n_local, cs_real_t);
     _compute_physical_face_weight(cpl,
                                   c_weight, /* diffusivity */
                                   r_weight); /* physical face weight */
@@ -1629,9 +1628,9 @@ cs_internal_coupling_iterative_tensor_gradient(
     }
   }
 
-  if (c_weight != nullptr) BFT_FREE(r_weight);
-  BFT_FREE(grad_local);
-  BFT_FREE(pvar_local);
+  if (c_weight != nullptr) CS_FREE(r_weight);
+  CS_FREE(grad_local);
+  CS_FREE(pvar_local);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1666,7 +1665,7 @@ cs_internal_coupling_reconstruct_scalar_gradient
   /* Exchange r_grad */
 
   cs_real_3_t *r_grad_local = nullptr;
-  BFT_MALLOC(r_grad_local, n_local, cs_real_3_t);
+  CS_MALLOC(r_grad_local, n_local, cs_real_3_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
                                            (const cs_real_t *)r_grad,
@@ -1690,7 +1689,7 @@ cs_internal_coupling_reconstruct_scalar_gradient
       grad[cell_id][ll] += rfac * b_f_face_normal[face_id][ll];
   }
 
-  BFT_FREE(r_grad_local);
+  CS_FREE(r_grad_local);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1725,7 +1724,7 @@ cs_internal_coupling_reconstruct_vector_gradient(
   /* Exchange r_grad */
 
   cs_real_33_t *r_grad_local = nullptr;
-  BFT_MALLOC(r_grad_local, n_local, cs_real_33_t);
+  CS_MALLOC(r_grad_local, n_local, cs_real_33_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            9,
                                            (const cs_real_t *)r_grad,
@@ -1751,7 +1750,7 @@ cs_internal_coupling_reconstruct_vector_gradient(
     }
   }
 
-  BFT_FREE(r_grad_local);
+  CS_FREE(r_grad_local);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1786,7 +1785,7 @@ cs_internal_coupling_reconstruct_tensor_gradient(
   /* Exchange r_grad */
 
   cs_real_63_t *r_grad_local = nullptr;
-  BFT_MALLOC(r_grad_local, n_local, cs_real_63_t);
+  CS_MALLOC(r_grad_local, n_local, cs_real_63_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            18,
                                            (const cs_real_t *)r_grad,
@@ -1812,7 +1811,7 @@ cs_internal_coupling_reconstruct_tensor_gradient(
     }
   }
 
-  BFT_FREE(r_grad_local);
+  CS_FREE(r_grad_local);
 }
 
 /*----------------------------------------------------------------------------
@@ -1866,7 +1865,7 @@ cs_internal_coupling_finalize(void)
     cpl = _internal_coupling + cpl_id;
     _destroy_entity(cpl);
   }
-  BFT_FREE(_internal_coupling);
+  CS_FREE(_internal_coupling);
   _n_internal_couplings = 0;
 }
 
@@ -1949,7 +1948,7 @@ cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
   /* Initialize distant array */
 
   cs_real_t *distant = nullptr;
-  BFT_MALLOC(distant, n_distant*stride, cs_real_t);
+  CS_MALLOC(distant, n_distant*stride, cs_real_t);
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     face_id = faces_distant[ii];
     cell_id = b_face_cells[face_id];
@@ -1964,7 +1963,7 @@ cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
                                     distant,
                                     local);
   /* Free memory */
-  BFT_FREE(distant);
+  CS_FREE(distant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1990,7 +1989,7 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
   /* Initialize distant array */
 
   cs_real_t *distant = nullptr;
-  BFT_MALLOC(distant, n_distant*stride, cs_real_t);
+  CS_MALLOC(distant, n_distant*stride, cs_real_t);
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     cs_lnum_t face_id = faces_distant[ii];
     for (cs_lnum_t jj = 0; jj < stride; jj++)
@@ -2004,7 +2003,7 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
                                     distant,
                                     local);
   /* Free memory */
-  BFT_FREE(distant);
+  CS_FREE(distant);
 }
 
 /*----------------------------------------------------------------------------
@@ -2073,8 +2072,8 @@ cs_internal_coupling_update_bc_coeff_s(const cs_field_bc_coeffs_t    *bc_coeffs,
   const cs_lnum_t *faces_local = cpl->faces_local;
 
   cs_real_t *var_ext = nullptr, *var_distant = nullptr;
-  BFT_MALLOC(var_ext, n_local, cs_real_t);
-  BFT_MALLOC(var_distant, n_distant, cs_real_t);
+  CS_MALLOC(var_ext, n_local, cs_real_t);
+  CS_MALLOC(var_distant, n_distant, cs_real_t);
 
   /* For cases with a stronger gradient normal to the coupling than tangential
      to the coupling, assuming a homogeneous Neuman boundary condition at the
@@ -2148,8 +2147,8 @@ cs_internal_coupling_update_bc_coeff_s(const cs_field_bc_coeffs_t    *bc_coeffs,
     }
   }
 
-  BFT_FREE(var_ext);
-  BFT_FREE(var_distant);
+  CS_FREE(var_ext);
+  CS_FREE(var_distant);
 }
 
 /*----------------------------------------------------------------------------
@@ -2194,7 +2193,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   /* Exchange x */
 
   cs_real_t *x_j = nullptr;
-  BFT_MALLOC(x_j, f->dim * n_local, cs_real_t);
+  CS_MALLOC(x_j, f->dim * n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            f->dim,
                                            x,
@@ -2252,7 +2251,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   }
 
   /* Free memory */
-  BFT_FREE(x_j);
+  CS_FREE(x_j);
 }
 
 /*----------------------------------------------------------------------------
@@ -2282,8 +2281,8 @@ cs_internal_coupling_matrix_add_ids(int                     coupling_id,
   cs_gnum_t g_col_id[800];
 
   cs_gnum_t *g_id_l, *g_id_d;
-  BFT_MALLOC(g_id_l, CS_MAX(n_local, n_distant), cs_gnum_t);
-  BFT_MALLOC(g_id_d, n_local, cs_gnum_t);
+  CS_MALLOC(g_id_l, CS_MAX(n_local, n_distant), cs_gnum_t);
+  CS_MALLOC(g_id_d, n_local, cs_gnum_t);
 
   /* local to global preparation and exchange */
 
@@ -2322,8 +2321,8 @@ cs_internal_coupling_matrix_add_ids(int                     coupling_id,
   if (jj > 0)
     cs_matrix_assembler_add_g_ids(ma, jj, g_row_id, g_col_id);
 
-  BFT_FREE(g_id_l);
-  BFT_FREE(g_id_d);
+  CS_FREE(g_id_l);
+  CS_FREE(g_id_d);
 }
 
 /*----------------------------------------------------------------------------
@@ -2372,8 +2371,8 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   /* local to global preparation and exchange */
 
   cs_gnum_t *g_id_l, *g_id_d;
-  BFT_MALLOC(g_id_l, CS_MAX(n_local, n_distant), cs_gnum_t);
-  BFT_MALLOC(g_id_d, n_local, cs_gnum_t);
+  CS_MALLOC(g_id_l, CS_MAX(n_local, n_distant), cs_gnum_t);
+  CS_MALLOC(g_id_d, n_local, cs_gnum_t);
 
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     cs_lnum_t face_id = cpl->faces_distant[ii];
@@ -2457,8 +2456,8 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 
   /* Free memory */
 
-  BFT_FREE(g_id_l);
-  BFT_FREE(g_id_d);
+  CS_FREE(g_id_l);
+  CS_FREE(g_id_d);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2693,7 +2692,7 @@ cs_ic_field_set_exchcoeff(const cs_field_t *f,
   cs_real_t *rcodcl2 = f->bc_coeffs->rcodcl2;
 
   cs_real_t *hextloc = nullptr;
-  BFT_MALLOC(hextloc, n_local, cs_real_t);
+  CS_MALLOC(hextloc, n_local, cs_real_t);
 
   /* Exchange hbnd */
   cs_internal_coupling_exchange_by_face_id(cpl,
@@ -2708,7 +2707,7 @@ cs_ic_field_set_exchcoeff(const cs_field_t *f,
     rcodcl2[face_id] = hextloc[ii];
   }
 
-  BFT_FREE(hextloc);
+  CS_FREE(hextloc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2740,7 +2739,7 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
   const cs_lnum_t *faces_local = cpl->faces_local;
 
   cs_real_t *local = nullptr;
-  BFT_MALLOC(local, n_local, cs_real_t);
+  CS_MALLOC(local, n_local, cs_real_t);
 
   /* Exchange distant data by face id */
   cs_internal_coupling_exchange_by_face_id(cpl,
@@ -2755,7 +2754,7 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
       tab_local[stride * face_id + jj] = local[stride * ii + jj];
   }
 
-  BFT_FREE(local);
+  CS_FREE(local);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2848,12 +2847,12 @@ cs_internal_coupling_update_bc_coeff_strided(const cs_field_bc_coeffs_t    *bc_c
 
   var_t *var_ext = nullptr, *var_ext_lim = nullptr;
   var_t *var_distant = nullptr, *var_distant_lim = nullptr;
-  BFT_MALLOC(var_ext, n_local, var_t);
-  BFT_MALLOC(var_distant, n_distant, var_t);
+  CS_MALLOC(var_ext, n_local, var_t);
+  CS_MALLOC(var_distant, n_distant, var_t);
 
   if (df_limiter != nullptr) {
-    BFT_MALLOC(var_ext_lim, n_local, var_t);
-    BFT_MALLOC(var_distant_lim, n_distant, var_t);
+    CS_MALLOC(var_ext_lim, n_local, var_t);
+    CS_MALLOC(var_distant_lim, n_distant, var_t);
   }
 
   /* For cases with a stronger gradient normal to the coupling than tangential
@@ -2950,10 +2949,10 @@ cs_internal_coupling_update_bc_coeff_strided(const cs_field_bc_coeffs_t    *bc_c
     }
   }
 
-  BFT_FREE(var_ext);
-  BFT_FREE(var_distant);
-  BFT_FREE(var_ext_lim);
-  BFT_FREE(var_distant_lim);
+  CS_FREE(var_ext);
+  CS_FREE(var_distant);
+  CS_FREE(var_ext_lim);
+  CS_FREE(var_distant_lim);
 }
 
 // Force instanciation

@@ -555,13 +555,13 @@ cs_preprocess_mesh_update_fortran(void)
               &(mq_g->min_vol),
               &(mq_g->max_vol),
               &(mq_g->tot_vol),
-              mq_g->cell_cen,
+              (cs_real_t *)mq_g->cell_cen,
               mq_g->i_face_normal,
               mq_g->b_face_normal,
               mq->i_face_normal,
               mq->b_face_normal,
-              mq_g->i_face_cog,
-              mq_g->b_face_cog,
+              (cs_real_t *)mq_g->i_face_cog,
+              (cs_real_t *)mq_g->b_face_cog,
               mq_g->cell_vol,
               mq->cell_vol,
               mq_g->i_face_surf,
@@ -573,7 +573,7 @@ cs_preprocess_mesh_update_fortran(void)
               mq_g->weight,
               mq_g->dijpf,
               mq_g->diipb,
-              mq_g->dofij);
+              (cs_real_t *)mq_g->dofij);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -348,7 +348,7 @@ cs_b_face_criterion_probes_define(void          *input,
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
     for (cs_lnum_t j = 0; j < 3; j++)
-      _coords[i][j] = mq->b_face_cog[face_ids[i]*3 + j];
+      _coords[i][j] = mq->b_face_cog[face_ids[i]][j];
     _s[i] = _coords[i][0];
   }
 

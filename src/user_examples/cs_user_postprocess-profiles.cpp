@@ -88,7 +88,7 @@ _b_face_criterion_probes_define(void          *input,
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
     for (cs_lnum_t j = 0; j < 3; j++)
-      _coords[i][j] = mq->b_face_cog[face_ids[i]*3 + j];
+      _coords[i][j] = mq->b_face_cog[face_ids[i]][j];
     _s[i] = _coords[i][0];
   }
 
@@ -393,7 +393,7 @@ cs_user_postprocess_values(const char            *mesh_name,
             strncpy(var_name, "Y/H", 64);
             for (cs_lnum_t i = 0; i < n_cells; i++) {
               cs_lnum_t c_id = cell_list[i];
-              val[i] = mq->cell_cen[c_id*3 + 1] / href;
+              val[i] = mq->cell_cen[c_id][1] / href;
             }
           }
           break;

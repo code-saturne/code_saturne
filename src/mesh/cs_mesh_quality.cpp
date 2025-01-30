@@ -382,12 +382,12 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
 
       /* Center of gravity for each cell */
 
-      cell_center1[i] = mesh_quantities->cell_cen[cell1*dim + i];
-      cell_center2[i] = mesh_quantities->cell_cen[cell2*dim + i];
+      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
+      cell_center2[i] = mesh_quantities->cell_cen[cell2][i];
 
       /* Face center coordinates */
 
-      face_center[i] = mesh_quantities->i_face_cog[face_id*dim + i];
+      face_center[i] = mesh_quantities->i_face_cog[face_id][i];
 
       /* Surface vector (orthogonal to the face) */
 
@@ -415,7 +415,7 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
     /*---------------------------------------*/
 
     for (i = 0; i < dim; i++) {
-      v1[i] = mesh_quantities->dofij[face_id*3 + i];
+      v1[i] = mesh_quantities->dofij[face_id][i];
       v2[i] = mesh_quantities->i_face_normal[face_id*3 + i];
     }
     double of_s = _MODULE_3D(v1) * _MODULE_3D(v2);
@@ -471,8 +471,8 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
 
       /* Center of gravity for each cell */
 
-      cell_center1[i] = mesh_quantities->cell_cen[cell1*dim + i];
-      cell_center2[i] = mesh_quantities->cell_cen[cell2*dim + i];
+      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
+      cell_center2[i] = mesh_quantities->cell_cen[cell2][i];
 
       /* Surface vector (orthogonal to the face) */
 
@@ -511,11 +511,11 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
 
       /* Center of gravity of the cell */
 
-      cell_center1[i] = mesh_quantities->cell_cen[cell1*dim + i];
+      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
 
       /* Face center coordinates */
 
-      face_center[i] = mesh_quantities->b_face_cog[face_id*dim + i];
+      face_center[i] = mesh_quantities->b_face_cog[face_id][i];
 
       /* Surface vector (orthogonal to the face) */
 
@@ -733,7 +733,7 @@ _compute_warp_error(const cs_mesh_t              *mesh,
   for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
 
     const cs_real_t  invvol_c = 1/vol[c_id];
-    const cs_real_t  *xc = mesh_quantities->cell_cen + 3*c_id;
+    const cs_real_t  *xc = mesh_quantities->cell_cen[c_id];
 
     cs_real_33_t   tens = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
 
@@ -749,14 +749,14 @@ _compute_warp_error(const cs_mesh_t              *mesh,
         if (c_id == c2_id)
           sgn = -1;
 
-        xf = mesh_quantities->i_face_cog + 3*f_id;
+        xf = mesh_quantities->i_face_cog[f_id];
         surf = mesh_quantities->i_face_normal + 3*f_id;
 
       }
       else {
 
         f_id -= mesh->n_i_faces; // Border face
-        xf = mesh_quantities->b_face_cog + 3*f_id;
+        xf = mesh_quantities->b_face_cog[f_id];
         surf = mesh_quantities->b_face_normal + 3*f_id;
 
       }

@@ -2867,9 +2867,6 @@ _cs_lagr_stat_update_all(void)
   const cs_real_t *dt_val = _dt_val();
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
 
-  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
-  cs_lagr_extra_module_t *extra = extra_i;
-
   /* First, update mesh-based statistics */
 
   _cs_lagr_stat_update_mesh_stats(ts);
@@ -4815,9 +4812,6 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
   cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
   const cs_real_t *dt_val = _dt_val();
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
-
-  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
-  cs_lagr_extra_module_t *extra = extra_i;
 
   _t_prev_iter = ts->t_prev;
 

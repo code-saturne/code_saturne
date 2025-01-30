@@ -148,7 +148,7 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 
       for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
 
-        cs_real_t z = cs_glob_mesh_quantities->cell_cen[cell_id*3 + 2];
+        cs_real_t z = cs_glob_mesh_quantities->cell_cen[cell_id][2];
 
         /* Search for 1D cell */
         int iz = 0;

@@ -80,7 +80,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 
   cs_lnum_t  ncel   = mesh->n_cells;
   cs_lnum_t  ncelet = mesh->n_cells_with_ghosts;
-  cs_real_t *xyzcen =  mesh_quantities->cell_cen;
+  cs_real_3_t *xyzcen =  mesh_quantities->cell_cen;
   cs_real_t *volume = mesh_quantities->cell_vol;
   cs_lnum_t  nfac   = mesh->n_i_faces;
   const cs_real_3_t *surfac = (const cs_real_3_t *) mesh_quantities->b_face_normal;
@@ -150,9 +150,9 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 
         if (diff < 1.e-6) {
           emax = w1[iel];
-          xyzmax[0] = xyzcen[3 * iel    ];
-          xyzmax[1] = xyzcen[3 * iel + 1];
-          xyzmax[2] = xyzcen[3 * iel + 2];
+          xyzmax[0] = xyzcen[iel][0];
+          xyzmax[1] = xyzcen[iel][1];
+          xyzmax[2] = xyzcen[iel][2];
         }
       }
       /* we can only have a single restrike point */
@@ -178,17 +178,17 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
       if (z2 > 2.e-2)
         z2 = 2.e-2;
       for (int iel = 0; iel < ncel; iel++) {
-        if (xyzcen[3 * iel + 2] > z1 && xyzcen[3 * iel + 2] < z2) {
-          double rayo = elec_opt->restrike_point[0] * xyzcen[3 * iel    ]
-                      - elec_opt->restrike_point[1] * xyzcen[3 * iel + 1];
+        if (xyzcen[iel][2] > z1 && xyzcen[iel][2] < z2) {
+          double rayo =   elec_opt->restrike_point[0] * xyzcen[iel][0]
+                        - elec_opt->restrike_point[1] * xyzcen[iel][1];
           double denom = pow(elec_opt->restrike_point[0] * elec_opt->restrike_point[0]
                            + elec_opt->restrike_point[1] * elec_opt->restrike_point[1], 0.5);
           rayo /= denom;
-          rayo += (xyzcen[3 * iel + 2] - elec_opt->restrike_point[2]
-                 * xyzcen[3 * iel + 2] - elec_opt->restrike_point[2]);
+          rayo += (xyzcen[iel][2] - elec_opt->restrike_point[2]
+                 * xyzcen[iel][2] - elec_opt->restrike_point[2]);
           rayo = pow(rayo, 0.5);
 
-          double posi = elec_opt->restrike_point[0] * xyzcen[3 * iel];
+          double posi = elec_opt->restrike_point[0] * xyzcen[iel][0];
 
           if (rayo < 5.e-4 && posi <= 0.)
             CS_F_(h)->val[iel] = 8.e7;

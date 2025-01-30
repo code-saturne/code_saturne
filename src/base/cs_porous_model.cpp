@@ -176,10 +176,10 @@ cs_porous_map_mesh_quantites_f_and_compute(void)
     mq_f->i_f_face_factor
       = (cs_real_2_t *)cs_field_by_name("i_f_face_factor")->val;
     mq_f->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
-    mq_f->i_face_cog    = cs_field_by_name("i_f_face_cog")->val;
-    mq_f->b_face_cog    = cs_field_by_name("b_f_face_cog")->val;
-    mq_f->cell_cen      = cs_field_by_name("cell_f_cen")->val;
-    mq_f->cell_s_cen      = cs_field_by_name("cell_s_cen")->val;
+    mq_f->i_face_cog    = (cs_real_3_t *)cs_field_by_name("i_f_face_cog")->val;
+    mq_f->b_face_cog    = (cs_real_3_t *)cs_field_by_name("b_f_face_cog")->val;
+    mq_f->cell_cen      = (cs_real_3_t *)cs_field_by_name("cell_f_cen")->val;
+    mq_f->cell_s_cen      = (cs_real_3_t *)cs_field_by_name("cell_s_cen")->val;
     mq_f->c_w_face_normal = cs_field_by_name("c_w_face_normal")->val;
     mq_f->c_w_face_surf   = cs_field_by_name("c_w_face_surf")->val;
     mq_f->c_w_face_cog    = cs_field_by_name("c_w_face_cog")->val;

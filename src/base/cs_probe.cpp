@@ -526,8 +526,8 @@ _build_local_probe_set(cs_probe_set_t  *pset)
 #endif
 
 static void
-_merge_snapped_to_center(cs_probe_set_t   *pset,
-                         const cs_real_t   centers[])
+_merge_snapped_to_center(cs_probe_set_t     *pset,
+                         const cs_real_3_t   centers[])
 {
   if (pset == nullptr)
     return;
@@ -550,7 +550,7 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
     cs_lnum_t j_min = order[s_id];
     int l = pset->elt_id[j_min];
     int k = pset->loc_id[j_min];
-    cs_real_t d_min = cs_math_3_distance(pset->coords[k], centers + l*3);
+    cs_real_t d_min = cs_math_3_distance(pset->coords[k], centers[l]);
     tag[pset->loc_id[j_min]] = 1;
 
     for (e_id = s_id+1; e_id < pset->n_loc_probes; e_id++) {
@@ -559,7 +559,7 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
         break;
       else {
         k = pset->loc_id[j];
-        cs_real_t d = cs_math_3_distance(pset->coords[k], centers + l*3);
+        cs_real_t d = cs_math_3_distance(pset->coords[k], centers[l]);
         if (d < d_min) {
           tag[pset->loc_id[j_min]] = 0;
           tag[k] = 1;
@@ -1861,7 +1861,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
 
-  const cs_real_t *centers = mq->cell_cen;
+  const cs_real_3_t *centers = mq->cell_cen;
 
   if (pset->flags & CS_PROBE_BOUNDARY) centers = mq->b_face_cog;
 
@@ -1897,7 +1897,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
     global_num[i] = j+1;
 
     if (pset->elt_id[i] > -1) {
-      const cs_real_t  *elt_coords = centers + pset->elt_id[i]*3;
+      const cs_real_t  *elt_coords = centers[pset->elt_id[i]];
       cs_real_t v[3];
       for (int k = 0; k < 3; k++)
         v[k] = elt_coords[k] - pset->coords[j][k];
@@ -1913,7 +1913,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
     for (int i = 0; i < pset->n_loc_probes; i++) {
       if (pset->elt_id[i] > -1) {
         const int j = pset->loc_id[i];
-        const cs_real_t  *elt_coords = centers + pset->elt_id[i]*3;
+        const cs_real_t  *elt_coords = centers[pset->elt_id[i]];
         for (int k = 0; k < 3; k++) {
           pset->coords[j][k] = elt_coords[k];
           probe_coords[i][k] = elt_coords[k];

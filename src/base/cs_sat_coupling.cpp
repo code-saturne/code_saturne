@@ -810,12 +810,12 @@ _sat_coupling_compute_data_at_cells
                                grad);
 
       /* Interpolation */
-      cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+      cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
       for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
         cs_lnum_t c_id = elt_ids[e_id];
         cs_real_t dxyz[3] = {0.};
         for (int i = 0; i < 3; i++)
-          dxyz[i] = coords[3*e_id + i] - cell_cen[3*c_id + i];
+          dxyz[i] = coords[3*e_id + i] - cell_cen[c_id][i];
 
         warray1[e_id] = f->val_pre[c_id]
                       + cs_math_3_dot_product(dxyz, grad[c_id]);
@@ -832,12 +832,12 @@ _sat_coupling_compute_data_at_cells
                                grad);
 
       /* Interpolation */
-      cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+      cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
       for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
         cs_lnum_t c_id = elt_ids[e_id];
         cs_real_t dxyz[3] = {0.};
         for (int i = 0; i < 3; i++)
-          dxyz[i] = coords[3*e_id + i] - cell_cen[3*c_id + i];
+          dxyz[i] = coords[3*e_id + i] - cell_cen[c_id][i];
 
         for (int j = 0; j < f->dim; j++)
           warray1[3 * e_id + j] = f->val_pre[3 * c_id + j]
@@ -1176,7 +1176,7 @@ _sat_coupling_send_bnd_data
   else {
     cs_real_t *_rvdis = rvdis[ipos];
 
-    cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+    cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
     for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
       cs_lnum_t c_id = b_faces_dist_ids[e_id];
@@ -1184,7 +1184,7 @@ _sat_coupling_send_bnd_data
       cs_real_t xyzjpf[3] = {0.};
       for (int i = 0; i < 3; i++)
         xyzjpf[i] =   coords[3 * e_id + i]
-                    - cell_cen[3 * c_id + i]
+                    - cell_cen[c_id][i]
                     - distant_dist_fbr[3 * e_id + i];
 
       cs_real_t one_ov_jpf = 1./cs_math_3_norm(xyzjpf);
@@ -1595,8 +1595,8 @@ _sat_interpolate_bc_from_b_face_data
   /* Mesh quantities */
   cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
   const cs_rreal_3_t *diipb = cs_glob_mesh_quantities->diipb;
-  cs_real_t *b_face_cog = cs_glob_mesh_quantities->b_face_cog;
-  cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+  cs_real_3_t *b_face_cog = cs_glob_mesh_quantities->b_face_cog;
+  cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
@@ -1715,9 +1715,9 @@ _sat_interpolate_bc_from_b_face_data
 
       const cs_rreal_t *xyziip = diipb[f_id];
 
-      cs_real_3_t xyzif = {b_face_cog[3 * f_id]     - cell_cen[3 * c_id],
-                           b_face_cog[3 * f_id + 1] - cell_cen[3 * c_id + 1],
-                           b_face_cog[3 * f_id + 2] - cell_cen[3 * c_id + 2]};
+      cs_real_3_t xyzif = {b_face_cog[f_id][0] - cell_cen[c_id][0],
+                           b_face_cog[f_id][1] - cell_cen[c_id][1],
+                           b_face_cog[f_id][2] - cell_cen[c_id][2]};
 
       cs_real_3_t xyzipf = {xyzif[0] - xyziip[0],
                             xyzif[1] - xyziip[1],
@@ -2227,7 +2227,7 @@ cs_sat_coupling_locate_all
                          nbr_cel_cpl,
                          c_elt_list,
                          point_tag,
-                         mesh_quantities->cell_cen,
+                         (const cs_real_t *)mesh_quantities->cell_cen,
                          nullptr,
                          cs_coupling_mesh_extents,
                          cs_coupling_point_in_mesh_p);
@@ -2271,7 +2271,7 @@ cs_sat_coupling_locate_all
                          nbr_fbr_cpl,
                          f_elt_list,
                          point_tag,
-                         mesh_quantities->b_face_cog,
+                         (const cs_real_t *)mesh_quantities->b_face_cog,
                          nullptr,
                          cs_coupling_mesh_extents,
                          cs_coupling_point_in_mesh_p);

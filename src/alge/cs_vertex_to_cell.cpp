@@ -179,7 +179,7 @@ _vertex_to_cell_w_inv_distance(void)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+    const cs_real_t *c_coo = mq->cell_cen[c_id];
 
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -246,7 +246,7 @@ _vertex_to_cell_f_lsq(void)
     w[i] = 0;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+    const cs_real_t *c_coo = mq->cell_cen[c_id];
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
     for (cs_lnum_t j = s_id; j < e_id; j++) {
@@ -407,7 +407,7 @@ _vertex_to_cell_scalar(cs_vertex_to_cell_type_t   method,
         rhs[i] = 0;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+        const cs_real_t *c_coo = mq->cell_cen[c_id];
         cs_lnum_t s_id = c2v_idx[c_id];
         cs_lnum_t e_id = c2v_idx[c_id+1];
         for (cs_lnum_t j = s_id; j < e_id; j++) {
@@ -590,7 +590,7 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
         rhs[i] = 0;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+        const cs_real_t *c_coo = mq->cell_cen[c_id];
         cs_lnum_t s_id = c2v_idx[c_id];
         cs_lnum_t e_id = c2v_idx[c_id+1];
         for (cs_lnum_t j = s_id; j < e_id; j++) {

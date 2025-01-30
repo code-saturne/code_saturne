@@ -901,7 +901,7 @@ cs_lagr_car(int              iprev,
          * particle and not in the center of the cell */
         cs_real_t *part_coord =
           cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip, CS_LAGR_COORDS);
-        cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen+(3*cell_id);
+        cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen[cell_id];
         for (int id = 0; id < 3; id++) {
           for (int i = 0; i < 3; i++)
             piil[ip][id] += expansion_coef * grav[id]

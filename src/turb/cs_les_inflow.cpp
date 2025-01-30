@@ -686,7 +686,7 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
         inlet->face_center[i][coo_id]
-          = mq->b_face_cog[face_ids[i]*3 + coo_id];
+          = mq->b_face_cog[face_ids[i]][coo_id];
     }
 
     BFT_MALLOC(inlet->face_surface, n_elts, cs_real_t);
@@ -1694,7 +1694,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
           cs_lnum_t vtx_id = mesh->b_face_vtx_lst[j];
           length_scale_min
             = CS_MAX(length_scale_min,
-                     2.*CS_ABS(mq->cell_cen[3*cell_id + coo_id]
+                     2.*CS_ABS(mq->cell_cen[cell_id][coo_id]
                                - mesh->vtx_coord[3*vtx_id + coo_id]));
         }
 

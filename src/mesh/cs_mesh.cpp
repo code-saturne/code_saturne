@@ -3147,7 +3147,7 @@ cs_mesh_init_selectors(void)
                           cs_glob_mesh->class_defs,
                           cs_glob_mesh->cell_family,
                           1,
-                          cs_glob_mesh_quantities->cell_cen,
+                          (cs_real_t *)cs_glob_mesh_quantities->cell_cen,
                           nullptr);
 
   cs_glob_mesh->select_b_faces
@@ -3156,7 +3156,7 @@ cs_mesh_init_selectors(void)
                           cs_glob_mesh->class_defs,
                           cs_glob_mesh->b_face_family,
                           1,
-                          cs_glob_mesh_quantities->b_face_cog,
+                          (cs_real_t *)cs_glob_mesh_quantities->b_face_cog,
                           cs_glob_mesh_quantities->b_face_normal);
 
   cs_glob_mesh->select_i_faces
@@ -3165,7 +3165,7 @@ cs_mesh_init_selectors(void)
                           cs_glob_mesh->class_defs,
                           cs_glob_mesh->i_face_family,
                           1,
-                          cs_glob_mesh_quantities->i_face_cog,
+                          (cs_real_t *)cs_glob_mesh_quantities->i_face_cog,
                           cs_glob_mesh_quantities->i_face_normal);
 
 }

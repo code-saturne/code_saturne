@@ -174,7 +174,7 @@ _check_segment_intersect_boundary(const cs_real_t  *sx0,
     cs_lnum_t n_vertices = vtx_end - vtx_start;
     const cs_lnum_t *vertex_ids = m->i_face_vtx_lst + vtx_start;
 
-    const cs_real_t *face_center = mq->i_face_cog + (3*face_id);
+    const cs_real_t *face_center = mq->i_face_cog[face_id];
 
     double t = cs_geom_segment_intersect_face(0,
                                               n_vertices,
@@ -206,7 +206,7 @@ _check_segment_intersect_boundary(const cs_real_t  *sx0,
     cs_lnum_t n_vertices = vtx_end - vtx_start;
     const cs_lnum_t *vertex_ids = m->b_face_vtx_lst + vtx_start;
 
-    const cs_real_t *face_center = mq->b_face_cog + (3*face_id);
+    const cs_real_t *face_center = mq->b_face_cog[face_id];
 
     double t = cs_geom_segment_intersect_face(0,
                                               n_vertices,
@@ -319,7 +319,7 @@ cs_mesh_intersect_segment_cell_select(void        *input,
         cs_lnum_t n_vertices = vtx_end - vtx_start;
         const cs_lnum_t *vertex_ids = m->i_face_vtx_lst + vtx_start;
 
-        const cs_real_t *face_center = fvq->i_face_cog + (3*face_id);
+        const cs_real_t *face_center = fvq->i_face_cog[face_id];
 
         double t = cs_geom_segment_intersect_face(0,
                                                   n_vertices,
@@ -362,7 +362,7 @@ cs_mesh_intersect_segment_cell_select(void        *input,
       cs_lnum_t n_vertices = vtx_end - vtx_start;
       const cs_lnum_t *vertex_ids = m->b_face_vtx_lst + vtx_start;
 
-      const cs_real_t *face_center = fvq->b_face_cog + (3*face_id);
+      const cs_real_t *face_center = fvq->b_face_cog[face_id];
 
       double t = cs_geom_segment_intersect_face(0,
                                                 n_vertices,
@@ -516,7 +516,7 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
           cs_lnum_t n_vertices = vtx_end - vtx_start;
           const cs_lnum_t *vertex_ids = m->i_face_vtx_lst + vtx_start;
 
-          const cs_real_t *face_center = fvq->i_face_cog + (3*face_id);
+          const cs_real_t *face_center = fvq->i_face_cog[face_id];
 
           cs_lnum_t c_id0 = m->i_face_cells[face_id][0];
           cs_lnum_t c_id1 = m->i_face_cells[face_id][1];
@@ -646,7 +646,7 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
         cs_lnum_t n_vertices = vtx_end - vtx_start;
         const cs_lnum_t *vertex_ids = m->b_face_vtx_lst + vtx_start;
 
-        const cs_real_t *face_center = fvq->b_face_cog + (3*face_id);
+        const cs_real_t *face_center = fvq->b_face_cog[face_id];
         cs_lnum_t  c_id = m->b_face_cells[face_id];
 
         int n_inout[2] = {0, 0};
@@ -1019,7 +1019,7 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
           n_vertices = vtx_end - vtx_start;
 
           face_connect = m->i_face_vtx_lst + vtx_start;
-          face_cog = mq->i_face_cog + 3*face_id;
+          face_cog = mq->i_face_cog[face_id];
 
         }
         else {
@@ -1034,7 +1034,7 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
           n_vertices = vtx_end - vtx_start;
 
           face_connect = m->b_face_vtx_lst + vtx_start;
-          face_cog = mq->b_face_cog + 3*face_id;
+          face_cog = mq->b_face_cog[face_id];
 
         }
 

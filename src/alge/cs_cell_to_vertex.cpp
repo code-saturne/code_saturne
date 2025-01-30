@@ -225,7 +225,7 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+    const cs_real_t *c_coo = mq->cell_cen[c_id];
 
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -249,7 +249,7 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
+    const cs_real_t *f_coo = mq->b_face_cog[f_id];
 
     cs_lnum_t s_id = f2v_idx[f_id];
     cs_lnum_t e_id = f2v_idx[f_id+1];
@@ -346,7 +346,7 @@ _cell_to_vertex_f_lsq(int  tr_ignore)
     w[i] = 0;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+    const cs_real_t *c_coo = mq->cell_cen[c_id];
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
     for (cs_lnum_t j = s_id; j < e_id; j++) {
@@ -369,7 +369,7 @@ _cell_to_vertex_f_lsq(int  tr_ignore)
   }
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
+    const cs_real_t *f_coo = mq->b_face_cog[f_id];
     cs_lnum_t s_id = f2v_idx[f_id];
     cs_lnum_t e_id = f2v_idx[f_id+1];
     for (cs_lnum_t j = s_id; j < e_id; j++) {
@@ -650,7 +650,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
         rhs[i] = 0;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+        const cs_real_t *c_coo = mq->cell_cen[c_id];
         cs_real_t _c_var = c_var[c_id];
         cs_lnum_t s_id = c2v_idx[c_id];
         cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -669,7 +669,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
 
       if (b_var == nullptr) {
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-          const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
+          const cs_real_t *f_coo = mq->b_face_cog[f_id];
           cs_lnum_t c_id = m->b_face_cells[f_id];
           cs_real_t _b_var = c_var[c_id];
           cs_lnum_t s_id = f2v_idx[f_id];
@@ -689,7 +689,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
       }
       else {
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-          const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
+          const cs_real_t *f_coo = mq->b_face_cog[f_id];
           cs_real_t _b_var = b_var[f_id];
           cs_lnum_t s_id = f2v_idx[f_id];
           cs_lnum_t e_id = f2v_idx[f_id+1];
@@ -997,7 +997,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         rhs[i] = 0;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+        const cs_real_t *c_coo = mq->cell_cen[c_id];
         const cs_real_t *_c_var = c_var + c_id*var_dim;
         cs_lnum_t s_id = c2v_idx[c_id];
         cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -1018,7 +1018,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
       if (b_var == nullptr) {
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-          const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
+          const cs_real_t *f_coo = mq->b_face_cog[f_id];
           cs_lnum_t c_id = m->b_face_cells[f_id];
           const cs_real_t *_b_var = c_var + c_id*var_dim;
           cs_lnum_t s_id = f2v_idx[f_id];
@@ -1040,7 +1040,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
       }
       else {
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-          const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
+          const cs_real_t *f_coo = mq->b_face_cog[f_id];
           const cs_real_t *_b_var = b_var + f_id*var_dim;
           cs_lnum_t s_id = f2v_idx[f_id];
           cs_lnum_t e_id = f2v_idx[f_id+1];

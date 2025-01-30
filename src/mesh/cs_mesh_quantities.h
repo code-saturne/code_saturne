@@ -91,8 +91,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_real_t     *cell_cen;       /* Cell center coordinates */
-  cs_real_t     *cell_s_cen;     /* Cell solid center coordinates  */
+  cs_real_3_t   *cell_cen;       /* Cell center coordinates */
+  cs_real_3_t   *cell_s_cen;     /* Cell solid center coordinates  */
   cs_real_t     *cell_vol;       /* Cell volume */
 
   cs_real_t     *i_face_normal;   /* Surface normal of interior faces.
@@ -101,8 +101,8 @@ typedef struct {
                                      (L2 norm equals area of the face) */
   cs_real_t     *c_w_face_normal; /* Solid surface normal immersed in the cells.
                                      (L2 norm equals area of the face) */
-  cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
-  cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
+  cs_real_3_t   *i_face_cog;     /* Center of gravity of interior faces */
+  cs_real_3_t   *b_face_cog;     /* Center of gravity of border faces */
 
   cs_real_t     *c_w_face_cog;   /* Center of gravity of solid face
                                     immersed in the cells */
@@ -120,7 +120,7 @@ typedef struct {
 
   cs_real_3_t   *dijpf;          /* Vector I'J' for interior faces */
   cs_rreal_3_t  *diipb;          /* Vector II'  for border faces */
-  cs_real_t     *dofij;          /* Vector OF   for interior faces */
+  cs_real_3_t   *dofij;          /* Vector OF   for interior faces */
   cs_rreal_3_t  *diipf;          /* Vector II'  for interior faces */
   cs_rreal_3_t  *djjpf;          /* Vector JJ'  for interior faces */
 

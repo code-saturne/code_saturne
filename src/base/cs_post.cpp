@@ -1391,7 +1391,7 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
 
     cs_lnum_t n_elts = 0;
     cs_lnum_t *elt_ids = nullptr;
-    const cs_real_t *elt_coords = nullptr;
+    const cs_real_3_t *elt_coords = nullptr;
     const cs_gnum_t *elt_gnum = nullptr;
 
     if (post_mesh->ent_flag[0] == 1) {
@@ -1450,7 +1450,7 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
       exp_mesh = fvm_nodal_create(post_mesh->name, 3);
 
       fvm_nodal_define_vertex_list(exp_mesh, n_elts, elt_ids);
-      fvm_nodal_set_shared_vertices(exp_mesh, elt_coords);
+      fvm_nodal_set_shared_vertices(exp_mesh, (const cs_real_t *)elt_coords);
 
       fvm_nodal_init_io_num(exp_mesh, elt_gnum, 0);
 

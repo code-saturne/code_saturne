@@ -88,8 +88,6 @@ cs_user_extra_operations(cs_domain_t     *domain)
 {
   /*! [boundary_forces_ex1] */
   {
-    const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
-
     cs_field_t *b_forces = cs_field_by_name_try("boundary_forces");
 
     if (b_forces != nullptr) {
@@ -113,7 +111,6 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   /*! [boundary_forces_ex2] */
   {
-    const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
     const cs_real_3_t *b_f_face_normal =
       (cs_real_3_t *)domain->mesh_quantities->b_face_normal;
 

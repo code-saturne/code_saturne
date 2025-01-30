@@ -85,7 +85,7 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
 
     BFT_MALLOC(connect, n_edges*2, cs_lnum_t);
 
-    io_num = fvm_io_num_create_from_sfc(mq->cell_cen,
+    io_num = fvm_io_num_create_from_sfc((cs_real_t *)mq->cell_cen,
                                         3,
                                         m->n_cells,
                                         sfc_id);
@@ -97,7 +97,7 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
     for (i = 0; i < m->n_cells; i++) {
       j = order[i];
       for (k = 0; k < 3; k++)
-        coords[i*3 + k] = mq->cell_cen[j*3 + k];
+        coords[i*3 + k] = mq->cell_cen[j][k];
       val[i] = i+1;
     }
 
@@ -188,7 +188,7 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
     cs_block_dist_info_t bi;
     cs_part_to_block_t *d = nullptr;
 
-    io_num = fvm_io_num_create_from_sfc(mq->cell_cen,
+    io_num = fvm_io_num_create_from_sfc((cs_real_t *)mq->cell_cen,
                                         3,
                                         m->n_cells,
                                         sfc_id);

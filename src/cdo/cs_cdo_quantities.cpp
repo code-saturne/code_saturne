@@ -1158,14 +1158,14 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   cdoq->n_i_faces       = m->n_i_faces;
   cdoq->i_face_u_normal = mq->i_face_u_normal;
   cdoq->i_face_normal   = mq->i_face_normal;
-  cdoq->i_face_center   = mq->i_face_cog;
+  cdoq->i_face_center   = (cs_real_t *)mq->i_face_cog;
   cdoq->i_face_surf     = mq->i_face_surf;
   cdoq->i_dist          = mq->i_dist;
 
   cdoq->n_b_faces       = m->n_b_faces;
   cdoq->b_face_u_normal = mq->b_face_u_normal;
   cdoq->b_face_normal   = mq->b_face_normal;
-  cdoq->b_face_center   = mq->b_face_cog;
+  cdoq->b_face_center   = (cs_real_t *)mq->b_face_cog;
   cdoq->b_face_surf     = mq->b_face_surf;
   cdoq->b_dist          = mq->b_dist;
 
@@ -1199,7 +1199,7 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   switch (cs_cdo_cell_center_algo) {
 
   case CS_CDO_QUANTITIES_SATURNE_CENTER:
-    cdoq->cell_centers = mq->cell_cen; /* shared */
+    cdoq->cell_centers = (cs_real_t *)mq->cell_cen; /* shared */
     break;
 
   case CS_CDO_QUANTITIES_BARYC_CENTER:

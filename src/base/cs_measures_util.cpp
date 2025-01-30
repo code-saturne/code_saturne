@@ -317,7 +317,7 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
                      int                        id_type)
 {
   cs_lnum_t n_elts = 0;
-  cs_real_t *xyz_cen = nullptr;
+  cs_real_3_t *xyz_cen = nullptr;
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
 
@@ -337,12 +337,12 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
     cs_real_t interpolated_value = 0.;
     for (cs_lnum_t jj = 0; jj < ms->nb_measures; jj++) {
       if (ms->is_cressman[jj] == 1) {
-        cs_real_t dist_x = (xyz_cen[ii*3   ] - ms->coords[jj*3   ])
-                          *ms->inf_radius[jj*3   ];
-        cs_real_t dist_y = (xyz_cen[ii*3 +1] - ms->coords[jj*3 +1])
-                          *ms->inf_radius[jj*3 +1];
-        cs_real_t dist_z = (xyz_cen[ii*3 +2] - ms->coords[jj*3 +2])
-                          *ms->inf_radius[jj*3 +2];
+        cs_real_t dist_x = (xyz_cen[ii][0] - ms->coords[jj*3   ])
+                           *ms->inf_radius[jj*3   ];
+        cs_real_t dist_y = (xyz_cen[ii][1] - ms->coords[jj*3 +1])
+                           *ms->inf_radius[jj*3 +1];
+        cs_real_t dist_z = (xyz_cen[ii][2] - ms->coords[jj*3 +2])
+                           *ms->inf_radius[jj*3 +2];
 
         cs_real_t r2 = dist_x*dist_x + dist_y*dist_y + dist_z*dist_z;
 

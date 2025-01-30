@@ -556,7 +556,7 @@ cs_flag_check_error_info(const char   *err_elt_descr,
 
   cs_lnum_t         n_elts = 0;
   const cs_gnum_t  *g_elt_num = nullptr;
-  const cs_real_t  *elt_coo = nullptr;
+  const cs_real_3_t  *elt_coo = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -597,7 +597,7 @@ cs_flag_check_error_info(const char   *err_elt_descr,
       if (err_elt_gnum == 0 || elt_gnum < err_elt_gnum) {
         err_flag = elt_flag[i];
         for (cs_lnum_t j = 0; j < 3; j++)
-          err_elt_coo[j] = elt_coo[i*3 + j];
+          err_elt_coo[j] = elt_coo[i][j];
       }
 
       n_g_errors += 1;
