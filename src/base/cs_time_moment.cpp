@@ -59,6 +59,7 @@
 #include "base/cs_restart_default.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_time_step.h"
+#include "base/cs_function.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -163,6 +164,8 @@ typedef struct {
   int                     data_dim;     /* Associated data field dimensions */
   int                     location_id;  /* Associated mesh location id */
 
+  cs_function_t          *eval_func;    /* Associated evaluated elements computation
+                                           function, or null */
   cs_time_moment_data_t  *data_func;    /* Associated data elements computation
                                            function, or null */
   const void             *data_input;   /* pointer to optional (untyped)
@@ -1142,6 +1145,7 @@ _free_all_wa(void)
  *   name        <-- name of associated moment, or null
  *   location_id <-- id of associated mesh location
  *   dim         <-- dimension associated with element data
+ *   eval_func   <-- function used to define data values
  *   data_func   <-- function used to define data values
  *   data_input  <-- pointer to optional (untyped) value or structure
  *                   to be used by data_func
@@ -1156,6 +1160,7 @@ _free_all_wa(void)
 static int
 _find_or_add_moment(int                     location_id,
                     int                     dim,
+                    cs_function_t          *eval_func,
                     cs_time_moment_data_t  *data_func,
                     const void             *data_input,
                     cs_time_moment_type_t   type,
@@ -1172,7 +1177,9 @@ _find_or_add_moment(int                     location_id,
 
   for (int i = 0; i < _n_moments; i++) {
     mt = _moment + i;
+
     if (   location_id == mt->location_id && dim == mt->data_dim
+        && eval_func == mt->eval_func
         && data_func == mt->data_func && data_input == mt->data_input
         && type == mt->type && wa_id == mt->wa_id
         && prev_id == mt->restart_id)
@@ -1207,6 +1214,7 @@ _find_or_add_moment(int                     location_id,
   mt->data_dim = dim;
   mt->location_id = location_id;
 
+  mt->eval_func = eval_func;
   mt->data_func = data_func;
   mt->data_input = data_input;
 
@@ -1551,8 +1559,123 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                        msd[0],
                                        msd[1],
                                        is_intensive,
+                                       nullptr,
                                        _sd_moment_data,
                                        msd,
+                                       nullptr,
+                                       nullptr,
+                                       type,
+                                       nt_start,
+                                       t_start,
+                                       restart_mode,
+                                       restart_name);
+
+  return m_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a moment of existing field.
+ *
+ * Moments will involve the tensor products of their component fields,
+ * and only scalar, vector, or rank-2 tensors are handled (for
+ * post-processing output reasons), so a moment may not involve more than
+ * 2 vectors or 1 tensor, unless single components are specified.
+ *
+ * \param[in]  name           name of associated moment
+ * \param[in]  field_id       ids of associated fields
+ * \param[in]  type           moment type
+ * \param[in]  nt_start       starting time step (or -1 to use t_start)
+ * \param[in]  t_start        starting time
+ * \param[in]  restart_mode   behavior in case of restart (reset,
+ *                            automatic, or strict)
+ * \param[in]  restart_name   if non-null, previous name in case of restart
+ *
+ * \return id of new moment in case of success, -1 in case of error.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_moment_define_by_field_id(const char                *name,
+                                  const int                  field_id,
+                                  cs_time_moment_type_t      type,
+                                  int                        nt_start,
+                                  double                     t_start,
+                                  cs_time_moment_restart_t   restart_mode,
+                                  const char                *restart_name)
+{
+  int m_id = -1;
+  bool is_intensive = true;
+  int component_id = -1;
+  int sd_id =_find_or_add_sd(name, 1, &field_id, &component_id,
+                             &is_intensive);
+
+  const int *msd = _moment_sd_defs[sd_id];
+
+  m_id = cs_time_moment_define_by_func(name,
+                                       msd[0],
+                                       msd[1],
+                                       is_intensive,
+                                       nullptr,
+                                       _sd_moment_data,
+                                       msd,
+                                       nullptr,
+                                       nullptr,
+                                       type,
+                                       nt_start,
+                                       t_start,
+                                       restart_mode,
+                                       restart_name);
+
+  return m_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a moment of specified function.
+ *
+ * Moments will involve the tensor products of their component fields,
+ * and only scalar, vector, or rank-2 tensors are handled (for
+ * post-processing output reasons), so a moment may not involve more than
+ * 2 vectors or 1 tensor, unless single components are specified.
+ *
+ * \param[in]  name           name of associated moment
+ * \param[in]  f              pointer to function object
+ * \param[in]  type           moment type
+ * \param[in]  nt_start       starting time step (or -1 to use t_start)
+ * \param[in]  t_start        starting time
+ * \param[in]  restart_mode   behavior in case of restart (reset,
+ *                            automatic, or strict)
+ * \param[in]  restart_name   if non-null, previous name in case of restart
+ *
+ * \return id of new moment in case of success, -1 in case of error.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_moment_define_by_function(const char                *name,
+                                  cs_function_t             *f,
+                                  cs_time_moment_type_t      type,
+                                  int                        nt_start,
+                                  double                     t_start,
+                                  cs_time_moment_restart_t   restart_mode,
+                                  const char                *restart_name)
+{
+  int m_id = -1;
+  const int dim = f->dim;
+  const int location_id = f->location_id;
+  bool is_intensive = f->type;
+  cs_function_t *eval_func = f;
+  cs_time_moment_data_t *data_func = nullptr;
+  const void* data_input = f->func_input;
+
+  m_id = cs_time_moment_define_by_func(name,
+                                       location_id,
+                                       dim,
+                                       is_intensive,
+                                       eval_func,
+                                       data_func,
+                                       data_input,
                                        nullptr,
                                        nullptr,
                                        type,
@@ -1595,6 +1718,7 @@ cs_time_moment_define_by_func(const char                *name,
                               int                        location_id,
                               int                        dim,
                               bool                       is_intensive,
+                              cs_function_t             *eval_func,
                               cs_time_moment_data_t     *data_func,
                               const void                *data_input,
                               cs_time_moment_data_t     *w_data_func,
@@ -1694,6 +1818,7 @@ cs_time_moment_define_by_func(const char                *name,
 
   moment_id = _find_or_add_moment(location_id,
                                   dim,
+                                  eval_func,
                                   data_func,
                                   data_input,
                                   type,
@@ -1721,6 +1846,7 @@ cs_time_moment_define_by_func(const char                *name,
 
     int l_id = _find_or_add_moment(location_id,
                                    dim,
+                                   eval_func,
                                    data_func,
                                    data_input,
                                    s_type,
@@ -2086,7 +2212,21 @@ cs_time_moment_update_all(void)
 
         BFT_MALLOC(x, nd, cs_real_t);
 
+        assert(mt->data_func == nullptr || mt->eval_func == nullptr);
+
+        if (mt->data_func != nullptr) {
         mt->data_func(mt->data_input, x);
+        }
+        else {
+        const int location_id = mt->location_id;
+        const cs_lnum_t* elt_ids = cs_mesh_location_get_elt_ids(mt->location_id);
+        cs_function_evaluate(mt->eval_func,
+                             ts,
+                             location_id,
+                             n_elts,
+                             elt_ids,
+                             x);
+        }
 
         _ensure_init_moment(mt);
 

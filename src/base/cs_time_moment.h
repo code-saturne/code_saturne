@@ -38,6 +38,7 @@
 #include "base/cs_base.h"
 #include "base/cs_field.h"
 #include "base/cs_restart.h"
+#include "base/cs_function.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -174,6 +175,70 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                    double                     t_start,
                                    cs_time_moment_restart_t   restart_mode,
                                    const char                *restart_name);
+
+/*----------------------------------------------------------------------------
+ * Define a moment of an existing field
+ *
+ * Moments will involve the tensor products of their component fields,
+ * and only scalar, vector, or rank-2 tensors are handled (for
+ * post-processing output reasons), so a moment may not involve more than
+ * 2 vectors or 1 tensor, unless single components are specified.
+ *
+ * If of dimension > 1, the moment array is always interleaved.
+ *
+ * parameters:
+ *   name         <-- name of associated moment
+ *   field_id     <-- ids of associated field
+ *   type         <-- moment type
+ *   nt_start     <-- starting time step (or -1 to use t_start)
+ *   t_start      <-- starting time
+ *   restart_mode <-- behavior in case of restart (reset, auto, or strict)
+ *   restart_name <-- if non-null, previous name in case of restart
+ *
+ * returns:
+ *   id of new moment in case of success, -1 in case of error.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_time_moment_define_by_field_id(const char                *name,
+                                  const int                  field_id,
+                                  cs_time_moment_type_t      type,
+                                  int                        nt_start,
+                                  double                     t_start,
+                                  cs_time_moment_restart_t   restart_mode,
+                                  const char                *restart_name);
+
+/*----------------------------------------------------------------------------
+ * Define a moment of existing function
+ *
+ * Moments will involve the tensor products of their component fields,
+ * and only scalar, vector, or rank-2 tensors are handled (for
+ * post-processing output reasons), so a moment may not involve more than
+ * 2 vectors or 1 tensor, unless single components are specified.
+ *
+ * If of dimension > 1, the moment array is always interleaved.
+ *
+ * parameters:
+ *   name         <-- name of associated moment
+ *   f            <-- pointer to function object
+ *   type         <-- moment type
+ *   nt_start     <-- starting time step (or -1 to use t_start)
+ *   t_start      <-- starting time
+ *   restart_mode <-- behavior in case of restart (reset, auto, or strict)
+ *   restart_name <-- if non-null, previous name in case of restart
+ *
+ * returns:
+ *   id of new moment in case of success, -1 in case of error.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_time_moment_define_by_function(const char                *name,
+                                  cs_function_t             *f,
+                                  cs_time_moment_type_t      type,
+                                  int                        nt_start,
+                                  double                     t_start,
+                                  cs_time_moment_restart_t   restart_mode,
+                                  const char                *restart_name);
 
 /*----------------------------------------------------------------------------
  * Define a moment whose data values will be computed using a
