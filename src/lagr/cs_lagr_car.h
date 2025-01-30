@@ -65,9 +65,7 @@ BEGIN_C_DECLS
  * \param[out] bx               turbulence characteristics
  * \param[out] tempct           thermal characteristic time
  * \param[out] beta             for the extended scheme
- * \param[in]  gradpr           pressure gradient
  * \param[in]  gradvf           fluid velocity gradient
- * \param[in]  grad_lagr_time   fluid lagragian time gradient
  */
 /*----------------------------------------------------------------------------*/
 
@@ -81,9 +79,7 @@ cs_lagr_car(int              iprev,
             cs_real_33_t     *bx,
             cs_real_t        tempct[],
             cs_real_3_t      *beta,
-            cs_real_3_t      gradpr[],
-            cs_real_33_t     gradvf[],
-            cs_real_3_t      grad_lagr_time[]);
+            cs_real_33_t     gradvf[]);
 
 /*----------------------------------------------------------------------------*/
 

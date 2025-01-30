@@ -888,8 +888,8 @@ cs_combustion_read_data(void)
         strncpy(nomcog[igo], sbuf, 150); nomcog[igo][150] = '\0';
       }
       else if (cm->compog[igo][ige] > 0) {
-        char sbuf[151];
-        snprintf(sbuf, 150, "%s %6.3f %s +",
+        char sbuf[256];
+        snprintf(sbuf, 256, "%s %6.3f %s +",
                  nomcog[igo], cm->compog[igo][ige], nomcoe[ige]);
         strncpy(nomcog[igo], sbuf, 150); nomcog[igo][150] = '\0';
       }

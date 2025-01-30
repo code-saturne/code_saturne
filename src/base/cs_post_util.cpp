@@ -910,9 +910,7 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_lnum_t dim = f->dim;

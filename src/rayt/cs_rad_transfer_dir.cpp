@@ -503,17 +503,17 @@ cs_rad_transfer_dir(void)
      * the top to the bottom left) */
 
     int jj   = 0;
-    int int1 = 0;
+    int int_1 = 0;
 
     for (int tri = 1; tri <= max_npt; tri++) {
 
       for (int lev = jj; lev < nquad; lev++)
         xyz3d[lev * max_npt + tri - 1][1] = (tri + jj) / (3.0 * (max_npt + 1.0) / 2.0);
 
-      int1++;
+      int_1++;
 
-      if (int1 == 2) {
-        int1 = 0;
+      if (int_1 == 2) {
+        int_1 = 0;
         jj++;
 
       }

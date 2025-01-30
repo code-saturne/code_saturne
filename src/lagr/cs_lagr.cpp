@@ -2242,23 +2242,21 @@ cs_lagr_solve_time_step(const int         itypfb[],
                     bx[phase_id],
                     tempct,
                     beta[phase_id],
-                    extra->grad_pr,
-                    extra->grad_vel,
-                    extra->grad_lagr_time);
+                    extra->grad_vel);
       }
 
       /* Integration of SDEs: position, fluid and particle velocity */
 
       cs_lagr_sde(cs_glob_lagr_time_step->dtp,
-                  (const cs_real_t **)taup,
-                  (const cs_real_3_t **)tlag,
-                  (const cs_real_3_t **)piil,
-                  (const cs_real_33_t **)bx,
+                  const_cast<const cs_real_t **>(taup),
+                  const_cast<const cs_real_3_t **>(tlag),
+                  const_cast<const cs_real_3_t **>(piil),
+                  const_cast<const cs_real_33_t **>(bx),
                   tsfext,
                   force_p,
                   terbru,
                   (const cs_real_t *)vislen,
-                  (const cs_real_3_t **)beta,
+                  const_cast<const cs_real_3_t **>(beta),
                   &nresnew);
 
       /* Integration of SDEs for orientation of spheroids without inertia */
@@ -2463,7 +2461,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order)
-        cs_lagr_coupling((const cs_real_t **)taup, tempct, tsfext, force_p);
+        cs_lagr_coupling(const_cast<const cs_real_t **>(taup),
+                         tempct,
+                         tsfext,
+                         force_p);
 
       for (int phase_id = 0; phase_id < n_phases; phase_id ++){
         BFT_FREE(tlag[phase_id]);

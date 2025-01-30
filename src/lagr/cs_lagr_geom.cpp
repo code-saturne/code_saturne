@@ -107,7 +107,7 @@ cs_lagr_geom(void)
   cs_mesh_t            *mesh = cs_glob_mesh;
 
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_normal;
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
   const cs_real_3_t *vtx_coord
     = (const cs_real_3_t *)(cs_glob_mesh->vtx_coord);
 

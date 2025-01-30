@@ -578,8 +578,7 @@ cs_wall_condensation_1d_thermal_mesh_initialize(void)
 void
 cs_wall_condensation_1d_thermal_compute_temperature(void)
 {
-  const cs_lnum_t *restrict b_face_cells =
-    (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = cs_glob_mesh->b_face_cells;
 
   const cs_real_t *dt = CS_F_(dt)->val;
 

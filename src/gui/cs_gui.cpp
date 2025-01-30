@@ -475,8 +475,7 @@ _physical_property_th_diffusivity(cs_field_t          *c_prop,
       cs_field_t _c_prop = *c_prop;
       _c_prop.name = prop_name;
 
-      const cs_real_3_t *restrict cell_cen =
-        (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+      const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
 
       cs_meg_volume_function(z->name,
                              n_cells,
@@ -570,8 +569,7 @@ _physical_property(cs_field_t          *c_prop,
     const char *law = _property_formula(c_prop->name, z->name);
 
     if (law != NULL) {
-      const cs_real_3_t *restrict cell_cen =
-        (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+      const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
       cs_meg_volume_function(z->name,
                              z->n_elts,
                              z->elt_ids,
@@ -2072,8 +2070,7 @@ cs_gui_porosity(void)
       const char *formula = cs_tree_node_get_child_value_str(tn_zp, "formula");
 
       if (formula != NULL) {
-        const cs_real_3_t *restrict cell_cen =
-          (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+        const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
 
         if (cs_gui_strcmp(mdl, "anisotropic")) {
           char _name_string[512];
@@ -2336,8 +2333,7 @@ cs_gui_groundwater_property_laws(int  permeability,
                                  int  diffusion,
                                  int  unsaturated)
 {
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+  const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
 
@@ -2804,8 +2800,7 @@ void cs_gui_initial_conditions(void)
 
   const int n_zones = cs_volume_zone_n_zones();
 
-  const cs_real_3_t *restrict cell_cen =
-    (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+  const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   /* For HT solver by default we set initialization at T0_ref on zone "all_cells" */
   if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
@@ -3607,8 +3602,7 @@ cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
         cs_real_t *st_vals = NULL;
         BFT_MALLOC(st_vals, 12*n_cells, cs_real_t);
 
-        const cs_real_3_t *restrict cell_cen =
-          (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+        const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
 
         cs_meg_source_terms(z->name,
                             z->n_elts,
@@ -5533,8 +5527,7 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
                            cs_real_t         *restrict tsimp)
 {
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_vol;
-  const cs_real_3_t *restrict cell_cen =
-    (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+  const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   const char *formula = NULL;
 
@@ -5618,9 +5611,7 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
 {
 
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_vol;
-
-  const cs_real_3_t *restrict cell_cen =
-    (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+  const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   const char *formula = NULL;
 

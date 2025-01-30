@@ -89,10 +89,6 @@ static const cs_real_t  _c_stephan = 5.6703e-8;
 static const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
 static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
 
-static const cs_lnum_t _t2v[3][3] = {{0, 3, 5},
-                                     {3, 1, 4},
-                                     {5, 4, 2}};
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================

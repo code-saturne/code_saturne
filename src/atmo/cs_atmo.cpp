@@ -646,8 +646,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_domain_t *domain = cs_glob_domain;
   cs_mesh_t *m = domain->mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
   cs_field_t *f = cs_field_by_name(name);
   cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
   int f_id = f->id;
@@ -2572,7 +2571,7 @@ cs_atmo_fields_init0(void)
   cs_mesh_quantities_t *mq = cs_glob_domain->mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   int has_restart = cs_restart_present();
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
@@ -2984,12 +2983,9 @@ cs_atmo_bcond(void)
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   int *bc_type = cs_boundary_conditions_get_bc_type();
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
-  const cs_real_3_t *cell_cen =
-    (const cs_real_3_t *)mq->cell_cen;
-  const cs_real_3_t *restrict b_face_u_normal =
-    (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
@@ -4302,7 +4298,7 @@ cs_atmo_compute_meteo_profiles(void)
   cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)mq->cell_cen;
+    = (const cs_real_3_t *)mq->cell_cen;
 
   /* In the log */
   bft_printf(" Computing meteo profiles from large scale meteo data\n\n");
@@ -4570,11 +4566,11 @@ cs_atmo_z_ground_compute(void)
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   const cs_real_3_t *restrict i_face_normal =
-     (const cs_real_3_t *restrict)mq->i_face_normal;
+     (const cs_real_3_t *)mq->i_face_normal;
   const cs_real_3_t *restrict b_face_normal =
-     (const cs_real_3_t *restrict)mq->b_face_normal;
+     (const cs_real_3_t *)mq->b_face_normal;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
+    = (const cs_real_3_t *)mq->b_face_cog;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -4773,10 +4769,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)mq->cell_cen;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
+  const cs_real_3_t *restrict cell_cen = mq->cell_cen;
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
   cs_field_t *f = cs_field_by_name("meteo_pressure");

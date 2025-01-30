@@ -839,7 +839,7 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
 
   unsigned char *particle = particles->p_buffer + p_am->extents * p_id;
 
-  cs_real_t  disp[3], face_normal[3], intersect_pt[3];
+  cs_real_t  disp[3], intersect_pt[3];
 
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
@@ -859,14 +859,7 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
 
   assert(internal_conditions != nullptr);
 
-  for (int k = 0; k < 3; k++)
-    face_normal[k] = fvq->i_face_normal[3*face_id+k];
-
-  cs_real_t face_area  = fvq->i_face_surf[face_id];
-
-  cs_real_t  face_norm[3] = {face_normal[0]/face_area,
-                             face_normal[1]/face_area,
-                             face_normal[2]/face_area};
+  const cs_nreal_t *face_norm = fvq->i_face_u_normal[face_id];
 
   cs_lnum_t  cell_id
     = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
@@ -1952,13 +1945,12 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
 
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+    = (const cs_real_3_t *)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+    = (const cs_real_3_t *)fvq->b_face_cog;
 
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
@@ -2059,11 +2051,11 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
           cs_real_t fluid_vel_proj[3];
 
           /* normal vector coordinates */
-          cs_real_3_t normal;
-          cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
+          const cs_nreal_t *normal = b_face_u_normal[*neighbor_face_id];
 
           /* (V . n) * n  */
-          cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id, normal);
+          cs_real_t v_dot_n
+            = cs_math_3_dot_product(particle_velocity_seen + 3*phase_id, normal);
 
           /* tangential projection to the wall:
            * (Id -n (x) n) U */
@@ -2071,9 +2063,9 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
           /* Update of the flow seen velocity */
 
-          particle_velocity_seen[3 * phase_id + 0] = v_dot_n * normal[0] + fluid_vel_proj[0];
-          particle_velocity_seen[3 * phase_id + 1] = v_dot_n * normal[1] + fluid_vel_proj[1];
-          particle_velocity_seen[3 * phase_id + 2] = v_dot_n * normal[2] + fluid_vel_proj[2];
+          for (int i = 0; i < 3; i++)
+            particle_velocity_seen[3*phase_id + i] =   v_dot_n * normal[i]
+                                                     + fluid_vel_proj[i];
         }
       }
     }
@@ -2313,12 +2305,12 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
               cs_real_t fluid_vel_proj[3];
 
               /* normal vector coordinates */
-              cs_real_3_t normal;
-              cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
+              const cs_nreal_t *normal = b_face_u_normal[*neighbor_face_id];
 
               /* (V . n) * n  */
-              cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id,
-                  normal);
+              cs_real_t v_dot_n
+                = cs_math_3_dot_product(particle_velocity_seen + 3*phase_id,
+                                        normal);
 
               /* tangential projection to the wall:
                * (Id -n (x) n) U */
@@ -2326,9 +2318,9 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
               /* Update of the flow seen velocity */
 
-              particle_velocity_seen[3 * phase_id + 0] = v_dot_n * normal[0] + fluid_vel_proj[0];
-              particle_velocity_seen[3 * phase_id + 1] = v_dot_n * normal[1] + fluid_vel_proj[1];
-              particle_velocity_seen[3 * phase_id + 2] = v_dot_n * normal[2] + fluid_vel_proj[2];
+              for (cs_lnum_t i = 0; i < 3; i++)
+                particle_velocity_seen[3*phase_id + i] =   v_dot_n * normal[i]
+                                                         + fluid_vel_proj[i];
             }
           }
 
@@ -3420,10 +3412,9 @@ cs_lagr_test_wall_cell(const void                     *particle,
 
   cs_lnum_t  *cell_b_face_idx = cs_glob_mesh_adjacencies->cell_b_faces_idx;
   cs_lnum_t  *cell_b_faces = cs_glob_mesh_adjacencies->cell_b_faces;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_normal;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_cog;
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = cs_glob_mesh_quantities->b_face_u_normal;
+  const cs_real_3_t *restrict b_face_cog = cs_glob_mesh_quantities->b_face_cog;
 
   const cs_real_t  *particle_coord
     = cs_lagr_particle_attr_get_const_ptr<cs_real_t>(particle, p_am,
@@ -3444,8 +3435,7 @@ cs_lagr_test_wall_cell(const void                     *particle,
         || (b_type == CS_LAGR_DEPO_DLVO)) {
 
       /* normal vector coordinates */
-      cs_real_3_t normal;
-      cs_math_3_normalize(b_face_normal[f_id], normal);
+      const cs_nreal_t *normal = b_face_u_normal[f_id];
 
       /* [(x_f - x_p) . n ] / L */
       cs_real_t dist_norm = CS_ABS(

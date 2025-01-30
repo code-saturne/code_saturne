@@ -867,28 +867,18 @@ cs_gradient_boundary_iprime_lsq_strided
   const cs_real_t eps_dvg2 = cs_math_pow2(eps_dvg);
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-  const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
-  const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
-  const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
-  const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
-  const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) ma->cell_cells_e;
-  const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+  const cs_lnum_t *restrict cell_cells_idx = ma->cell_cells_idx;
+  const cs_lnum_t *restrict cell_cells_e_idx = ma->cell_cells_e_idx;
+  const cs_lnum_t *restrict cell_b_faces_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_cells = ma->cell_cells;
+  const cs_lnum_t *restrict cell_cells_e = ma->cell_cells_e;
+  const cs_lnum_t *restrict cell_b_faces = ma->cell_b_faces;
 
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
-  const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
+  const cs_real_3_t *restrict diipb = fvq->diipb;
+  const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   assert(stride <= 9);  /* Local arrays with hard-coded dimensions follow. */
@@ -948,12 +938,12 @@ cs_gradient_boundary_iprime_lsq_strided
       if (adj_id == 0){
         s_id = cell_cells_idx[c_id];
         e_id = cell_cells_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
+        cell_cells_p = cell_cells;
       }
       else if (cell_cells_e_idx != nullptr){
         s_id = cell_cells_e_idx[c_id];
         e_id = cell_cells_e_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
+        cell_cells_p = cell_cells_e;
       }
       else
         break;

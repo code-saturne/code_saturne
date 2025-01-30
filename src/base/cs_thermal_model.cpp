@@ -740,9 +740,9 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
   const cs_lnum_t n_cells = m->n_cells;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
   const cs_real_t *alphafij = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
 
@@ -972,8 +972,7 @@ cs_thermal_model_newton_t(int               method,
   const cs_equation_param_t *eqp_u
     = cs_field_get_equation_param_const(f_vel);
 
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
   const cs_physical_constants_t *pc = cs_glob_physical_constants;
@@ -1261,9 +1260,9 @@ cs_thermal_model_pdivu(cs_real_t  smbrs[])
   //cs_real_t _coef = 1. + 2. * (1. - thetv);
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   /* Case for humid air */
 

@@ -2732,7 +2732,7 @@ cs_field_component_id_by_name(const char  *name,
 
   if (l > 3) {
     if (name[l-1] == ']') {
-      size_t l0 = -1;
+      int l0 = -1;
       char _name0[128];
       char *name0 = _name0;
       if (l >= 128)

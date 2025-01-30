@@ -96,7 +96,6 @@ const int nq_rcfsk    = 10; /* nq_rcfsk = nxsgg */
 const int nt_rcfsk    = 28;
 const int nconc_rcfsk = 9;
 const int nfvs_rcfsk  = 6;
-const cs_real_t eps_rcfsk   = 3e-14;
 
 const cs_real_t t_kg_rcfsk[28]
   = {300.0,  400.0,  500.0,  600.0,  700.0,  800.0,  900.0,
@@ -319,7 +318,7 @@ _interpolation4d_rcfsk(int       val_cal,
   int ico2a[2] = { 0, 0 };
   int ih2oa[2] = { 0, 0 };
   int ifvsa[2] = { 0, 0 };
-  int i, is, ih2o, ico2, ich4, it, itrad, ig, ind;
+  int i, is, ih2o, ico2, it, ig;
 
   for (i = 0; i < nit; i++) {
     ita[i] = itx[0][i];

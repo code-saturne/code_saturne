@@ -405,14 +405,11 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t  *)(mesh->i_face_cells);
+  const cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
   const cs_lnum_t  *b_face_cells = mesh->b_face_cells;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)mesh_quantities->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mesh_quantities->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mesh_quantities->b_face_normal;
+  const cs_real_3_t *restrict cell_cen = mesh_quantities->cell_cen;
+  const cs_real_t *restrict i_face_surf = mesh_quantities->i_face_surf;
+  const cs_real_t *restrict b_face_surf = mesh_quantities->b_face_surf;
 
   /* Reset fans in case already built */
 
@@ -537,7 +534,7 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
     if (   cell_id_1 < mesh->n_cells /* ensure the contrib is from one domain */
         && cell_fan_id[cell_id_1] != cell_fan_id[cell_id_2]) {
 
-      l_surf = cs_math_3_norm((i_face_normal[face_id]));
+      l_surf = i_face_surf[face_id];
       if (cell_fan_id[cell_id_1] > -1) {
         int fan_id = cell_fan_id[cell_id_1];
         fan = _cs_glob_fans[fan_id];
@@ -556,7 +553,7 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
   for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++) {
 
     if (cell_fan_id[b_face_cells[face_id]] > -1) {
-      l_surf = cs_math_3_norm((b_face_normal[face_id]));
+      l_surf = b_face_surf[face_id];
       int fan_id = cell_fan_id[b_face_cells[face_id]];
       fan = _cs_glob_fans[fan_id];
       fan->surface += l_surf;
@@ -606,10 +603,10 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
   const cs_lnum_t  nbr_fbr = mesh->n_b_faces;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
   const cs_lnum_t   *b_face_cells = mesh->b_face_cells;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mesh_quantities->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mesh_quantities->b_face_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal
+    = mesh_quantities->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = mesh_quantities->b_face_u_normal;
 
   /* Flag the cells */
 
@@ -644,7 +641,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
           fan = _cs_glob_fans[fan_id];
           direction = (i == 0 ? 1 : - 1);
           flow = i_mass_flux[face_id]/c_rho[cell_id] * direction;
-          if (  cs_math_3_dot_product(fan->axis_dir, i_face_normal[face_id])
+          if (  cs_math_3_dot_product(fan->axis_dir, i_face_u_normal[face_id])
               * direction > 0.0)
             fan->out_flow += flow;
           else
@@ -667,7 +664,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
       fan = _cs_glob_fans[fan_id];
 
       flow = b_mass_flux[face_id]/b_rho[face_id];
-      if (cs_math_3_dot_product(fan->axis_dir, b_face_normal[face_id]) > 0.0)
+      if (cs_math_3_dot_product(fan->axis_dir, b_face_u_normal[face_id]) > 0.0)
         fan->out_flow += flow;
       else
         fan->in_flow += flow;
@@ -727,8 +724,7 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
   cs_real_t  f_z, f_theta;
   cs_real_t  f_rot[3];
 
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities_g->cell_cen;
+  const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities_g->cell_cen;
   const cs_real_t  *cell_f_vol = mesh_quantities->cell_vol;
   const cs_real_t  pi = 4.*atan(1.);
 
