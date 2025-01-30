@@ -106,6 +106,7 @@ typedef enum {
   /* Arrays for 2nd order scheme */
 
   CS_LAGR_TURB_STATE_1,        /* turbulence characteristics of first pass */
+  CS_LAGR_BROWN_STATE_1,       /* Brownian characteristics of first pass */
   CS_LAGR_PRED_VELOCITY,       /* 1st step prediction for particle velocity */
   CS_LAGR_PRED_VELOCITY_SEEN,  /* 1st step prediction for relative velocity */
   CS_LAGR_V_GAUSS,             /* 1st step Gaussian variable */

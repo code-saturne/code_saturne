@@ -177,6 +177,7 @@ const char *cs_lagr_attribute_name[] = {
 
   /* Arrays for 2nd order scheme */
   "turb_state_1",
+  "brown_state_1",
   "pred_velocity",
   "pred_velocity_seen",
   "v_gauss",
@@ -788,6 +789,9 @@ cs_lagr_particle_attr_initialize(void)
     attr_keys[CS_LAGR_TURB_STATE_1][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_TURB_STATE_1][1] = ++pepa_loc_add;
     attr_keys[CS_LAGR_TURB_STATE_1][2] = 3;
+
+    attr_keys[CS_LAGR_BROWN_STATE_1][0] = CS_LAGR_P_RPRP;
+    attr_keys[CS_LAGR_BROWN_STATE_1][1] = ++pepa_loc_add;
 
     attr_keys[CS_LAGR_PRED_VELOCITY][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_PRED_VELOCITY][1] = ++pepa_loc_add;

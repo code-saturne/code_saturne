@@ -158,8 +158,6 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
  * \param[in]  brgaus    gaussian random variables
  * \param[in]  force_p   forces per mass unit on particles (m/s^2)
  * \param[in]  beta      proportional to the gradient of T_lag
- * \param[out] terbru    Diffusion coefficient accounting for Brownian
- *                       (molecular) effect
  */
 /*----------------------------------------------------------------------------*/
 void
@@ -173,8 +171,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
                                       const cs_real_3_t              *vagaus,
                                       const cs_real_6_t               brgaus,
                                       const cs_real_3_t               force_p,
-                                      const cs_real_3_t               beta,
-                                      cs_real_t                      *terbru)
+                                      const cs_real_3_t               beta)
 {
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
@@ -879,11 +876,15 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
 
       if (tiu2 > 0.0) {
         tbriu      = sqrt(tiu2) * brgaus[id + 3];
-        *terbru    = sqrt(tiu2);
+        if (cs_glob_lagr_time_scheme->t_order == 2)
+          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_BROWN_STATE_1,
+                                     sqrt(tiu2));
+
       }
       else {
         tbriu     = 0.0;
-        *terbru   = 0.0;
+        if (cs_glob_lagr_time_scheme->t_order == 2)
+          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_BROWN_STATE_1, 0.);
       }
     }
     else {
@@ -1005,8 +1006,6 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
  * \param[in]  brgaus    gaussian random variables
  * \param[in]  force_p   forces per mass unit on particles (m/s^2)
  * \param[in]  beta      proportional to the gradient of T_lag
- * \param[out] terbru    Diffusion coefficient accounting for Brownian
- *                       (molecular) effect
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1022,8 +1021,7 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
                                       const cs_real_3_t              *vagaus,
                                       const cs_real_6_t               brgaus,
                                       const cs_real_3_t               force_p,
-                                      const cs_real_3_t               beta,
-                                      cs_real_t                      *terbru)
+                                      const cs_real_3_t               beta)
 {
   cs_real_t  aux0, aux1, aux2, aux3, aux4, aux5, aux6, aux7, aux8, aux9;
   cs_real_t  aux10, aux11, aux12, aux17, aux18, aux19;
@@ -1136,8 +1134,7 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
                                           vagaus,
                                           brgaus,
                                           force_p,
-                                          beta,
-                                          terbru);
+                                          beta);
   }
   else {
 
@@ -1235,7 +1232,8 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
 
         /* Compute terms in Brownian movement */
         if (cs_glob_lagr_brownian->lamvbr == 1)
-          tbriu = *terbru * brgaus[id + 3];
+          tbriu = brgaus[id + 3]
+            * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_BROWN_STATE_1);
         else
           tbriu = 0.0;
 
@@ -2969,8 +2967,6 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
  * \param[in]  bx        turbulence characteristics
  * \param[out] tsfext    info for return coupling source terms
  * \param[out] force_p   forces per mass unit on particles (m/s^2)
- * \param[out] terbru    Diffusion coefficient accounting for Brownian
- *                       (molecular) effect
  * \param[in]  vislen    nu/u* = y/y+
  * \param[in]  beta      proportional to the gradient of T_lag
  * \param[out] vagaus    gaussian random variables
@@ -2990,7 +2986,6 @@ cs_lagr_sde(cs_lnum_t                        p_id,
             const cs_real_33_t              *bx,
             cs_real_t                       *tsfext,
             const cs_real_3_t                force_p,
-            cs_real_t                       *terbru,
             const cs_real_t                  vislen[],
             const cs_real_3_t                beta,
             cs_real_3_t                     *vagaus,
@@ -3026,8 +3021,7 @@ cs_lagr_sde(cs_lnum_t                        p_id,
                                             vagaus,
                                             brgaus,
                                             force_p,
-                                            beta,
-                                            terbru);
+                                            beta);
 
     /* Management of the deposition submodel */
 
@@ -3065,8 +3059,7 @@ cs_lagr_sde(cs_lnum_t                        p_id,
                                           vagaus,
                                           brgaus,
                                           force_p,
-                                          beta,
-                                          terbru);
+                                          beta);
 
   }
 }

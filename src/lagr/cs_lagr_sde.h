@@ -51,8 +51,6 @@ BEGIN_C_DECLS
  * \param[in]  brgaus    gaussian random variables
  * \param[in]  force_p   forces per mass unit on particles (m/s^2)
  * \param[in]  beta      proportional to the gradient of T_lag
- * \param[out] terbru    Diffusion coefficient accounting for Brownian
- *                       (molecular) effect
  */
 /*----------------------------------------------------------------------------*/
 void
@@ -66,8 +64,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
                                       const cs_real_3_t              *vagaus,
                                       const cs_real_6_t               brgaus,
                                       const cs_real_3_t               force_p,
-                                      const cs_real_3_t               beta,
-                                      cs_real_t                      *terbru);
+                                      const cs_real_3_t               beta);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -85,8 +82,6 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
  * \param[in]  bx        turbulence characteristics
  * \param[out] tsfext    info for return coupling source terms
  * \param[out] force_p   forces per mass unit on particles (m/s^2)
- * \param[out] terbru    Diffusion coefficient accounting for Brownian
- *                       (molecular) effect
  * \param[in]  vislen    nu/u* = y/y+
  * \param[in]  beta      proportional to the gradient of T_lag
  * \param[out] vagaus    gaussian random variables
@@ -106,7 +101,6 @@ cs_lagr_sde(cs_lnum_t                        p_id,
             const cs_real_33_t              *bx,
             cs_real_t                       *tsfext,
             const cs_real_3_t                force_p,
-            cs_real_t                       *terbru,
             const cs_real_t                  vislen[],
             const cs_real_3_t                beta,
             cs_real_3_t                     *vagaus,

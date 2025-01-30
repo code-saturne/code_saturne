@@ -819,8 +819,6 @@ _manage_error(cs_lnum_t                       failsafe_mode,
  *   bx              <-- turbulence characteristics
  *   tempct          <-- thermal characteristic time
  *   tsfext          --> info for return coupling source terms
- *   terbru          <-> Diffusion coefficient accounting for Brownian
- *                       (molecular) effect
  *   vislen          <-- nu/u* = y/y+
  *   beta            <-- proportional to the gradient of T_lag
  *   vagaus          <-- gaussian random variables
@@ -846,7 +844,6 @@ _integ_particle_quantities(cs_lagr_particle_set_t          *particles,
                            const cs_real_33_t              *bx,
                            cs_real_2_t                      tempct,
                            cs_real_t                       *tsfext,
-                           cs_real_t                       *terbru,
                            const cs_real_t                  vislen[],
                            const cs_real_3_t                beta,
                            cs_real_3_t                     *vagaus,
@@ -892,7 +889,6 @@ _integ_particle_quantities(cs_lagr_particle_set_t          *particles,
                   bx,
                   tsfext,
                   force_p,
-                  terbru,
                   vislen,
                   beta,
                   vagaus,
@@ -2236,7 +2232,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
   /* particle properties */
   cs_real_2_t tempct;
-  cs_real_t cpgd1, cpgd2, cpght, terbru, tsfext;
+  cs_real_t cpgd1, cpgd2, cpght, tsfext;
   cs_real_3_t beta = { 0., 0., 0.};
   cs_real_3_t force_p;
   cs_real_6_t br_gaus;
@@ -2348,8 +2344,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                                             null_vagaus,
                                             null_brgaus,
                                             force_p,
-                                            beta,
-                                            (cs_real_t *)&terbru);
+                                            beta);
       dt_incremented_in_subiter = 0.;
 
     }
@@ -2384,7 +2379,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                                    bx,
                                    tempct,
                                    &tsfext,
-                                   &terbru,
                                    visc_length,
                                    beta,
                                    vagaus,
@@ -2818,7 +2812,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                                    bx,
                                    tempct,
                                    &tsfext,
-                                   &terbru,
                                    visc_length,
                                    beta,
                                    vagaus,
@@ -2864,7 +2857,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                                      bx,
                                      tempct,
                                      &tsfext,
-                                     &terbru,
                                      visc_length,
                                      beta,
                                      vagaus,
@@ -3836,7 +3828,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 
   /* particle properties */
   cs_real_2_t tempct;
-  cs_real_t cpgd1, cpgd2, cpght, terbru, tsfext;
+  cs_real_t cpgd1, cpgd2, cpght, tsfext;
   cs_real_3_t beta = { 0., 0., 0.};
   cs_real_3_t force_p;
   cs_real_6_t br_gaus;
@@ -3918,7 +3910,6 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                  bx,
                                  tempct,
                                  &tsfext,
-                                 &terbru,
                                  visc_length,
                                  beta,
                                  vagaus,
@@ -4114,7 +4105,6 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                    bx,
                                    tempct,
                                    &tsfext,
-                                   &terbru,
                                    visc_length,
                                    beta,
                                    vagaus,
