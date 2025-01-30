@@ -51,6 +51,7 @@
 #include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_random.h"
+#include "base/cs_rotation.h"
 #include "base/cs_thermal_model.h"
 #include "turb/cs_turbulence_model.h"
 

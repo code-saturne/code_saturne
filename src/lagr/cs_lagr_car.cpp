@@ -62,6 +62,7 @@
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_random.h"
+#include "base/cs_rotation.h"
 #include "base/cs_search.h"
 #include "base/cs_timer_stats.h"
 #include "base/cs_thermal_model.h"
@@ -589,6 +590,12 @@ cs_lagr_car(int                iprev,
       }
     }
 
+    /* Add Coriolis effect */
+    /* FIXME Is mean Coriolis effects partially stored in grad_pr ? */
+    if (cs_glob_rotation->omega > cs_math_epzero)
+      cs_rotation_add_coriolis_v(cs_glob_rotation, -2., part_vel_seen,
+                                 piil);
+
     /* Add particle back effect seen by mean fluid velocity
      * (two way coupling terms)
      * ==================================================== */
@@ -695,6 +702,17 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
         + grav[id] + force_p[id]);
     }
   }
+  /* Add Coriolis effect */
+  /* FIXME Is mean Coriolis effects partially stored in grad_pr ? */
+  if (   cs_glob_lagr_model->cs_used == 1
+      && cs_glob_rotation->omega > cs_math_epzero) {
+
+    cs_real_t *part_vel
+      = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip,
+                                                  CS_LAGR_VELOCITY);
+    cs_rotation_add_coriolis_v(cs_glob_rotation, -2., part_vel, force_p);
+  }
+
 }
 /*----------------------------------------------------------------------------*/
 
