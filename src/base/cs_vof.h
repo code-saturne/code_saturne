@@ -141,7 +141,7 @@ extern const cs_cavitation_parameters_t *cs_glob_cavitation_parameters;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *!
+ *
  * \brief Provide write access to VOF structure.
  */
 /*----------------------------------------------------------------------------*/
@@ -159,7 +159,7 @@ void
 cs_vof_field_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Log setup of VoF model.
  */
 /*----------------------------------------------------------------------------*/
@@ -168,7 +168,7 @@ void
 cs_vof_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the mixture density, mixture dynamic viscosity given fluid
  *         volume fractions and the reference density and dynamic viscosity
  *         \f$ \rho_l, \mu_l \f$ (liquid), \f$ \rho_v, \mu_v \f$ (gas).
@@ -192,7 +192,7 @@ void
 cs_vof_compute_linear_rho_mu(const cs_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the mixture density, mixture dynamic viscosity and mixture
  *        mass flux given the volumetric flux, the volume fraction and the
  *        reference density and dynamic viscosity \f$ \rho_l, \mu_l \f$
@@ -229,7 +229,7 @@ void
 cs_vof_update_phys_prop(const cs_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the surface tension momentum source term following the CSF
  * model of Brackbill et al. (1992).
  *
@@ -245,7 +245,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                        cs_real_3_t                  stf[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Write in main log the global mixture mass budget:
  * \f[
  * \sum_i\left(
@@ -264,7 +264,7 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
                        const cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the flux of the drift velocity \f$ \vect u _d \f$,
  *        by using the flux of the standard velocity \f$ \vect u \f$
  *        following the approach described by
@@ -308,7 +308,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
                             const cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
  *
@@ -361,8 +361,26 @@ cs_vof_drift_term(int               imrgra,
 void
 cs_vof_solve_void_fraction(int  iterns);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Smoothe a variable after several double-projections
+ * cells->faces->cells.
+ *
+ * \param[in]      m          pointer to mesh structure
+ * \param[in]      mq         pointer to mesh quantities structure
+ * \param[in]      bc_coeffs  boundary condition structure for the variable
+ * \param[in, out] pvar       diffused variable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_smoothe(const cs_mesh_t              *m,
+               const cs_mesh_quantities_t   *mq,
+               cs_field_bc_coeffs_t         *bc_coeffs,
+               cs_real_t                    *pvar);
+
 /*----------------------------------------------------------------------------
- *!
+ *
  * \brief Provide write access to cavitation parameters structure.
  */
 /*----------------------------------------------------------------------------*/
