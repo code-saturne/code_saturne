@@ -315,20 +315,18 @@ _smoothe(const cs_mesh_t              *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
 
   const cs_real_t *restrict dist = mq->i_dist;
   const cs_real_t *restrict cell_vol = mq->cell_vol;
   const cs_real_t *restrict i_face_surf = mq->i_face_surf;
 
-  const cs_nreal_3_t *restrict i_face_u_normal
-    = mq->i_face_u_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq->i_face_u_normal;
   const cs_rreal_3_t *restrict diipf = mq->diipf;
   const cs_rreal_3_t *restrict djjpf = mq->djjpf;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-  const cs_lnum_t *c2c = ma->cell_cells;
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
-  const short int *c2f_sgn = ma->cell_i_faces_sgn;
   const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
   const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
   const cs_lnum_t *cell_b_faces = ma->cell_b_faces;
@@ -336,30 +334,28 @@ _smoothe(const cs_mesh_t              *m,
   const int *bc_type = cs_glob_bc_type;
 
   cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
 
   const cs_real_t d_tau = 0.1; /* Sharpening interface on 5 cells
                                   (0.1 for 3 cells) */
   /* User Intialization Triple line model */
-  /*   alpha_p = 0 - Surface hydrophobe
-       alpha_p = 1 - Surface hydrophile
-       B_s         - Paramètre de pénalité */
-  const cs_real_t B_s = 0.;
+  /*   alpha_p = 0 - hydrophobic surface
+       alpha_p = 1 - hydrophilic surface
+       b_s         - penalty parameter */
+  const cs_real_t b_s = 0.;
   const cs_real_t alpha_p = 0.263544;
   /* User Intialization Triple line model */
 
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));
 
-  cs_real_t *xam, *dam, *rtpdp, *smbdp;
+  cs_real_t *xam, *dam, *smbdp;
   CS_MALLOC_HD(xam, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(rtpdp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(dam, n_cells, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(smbdp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-  /* PREPARE SYSTEM TO SOLVE */
+  /* Prepare system to solve */
   /* Compute the gradient of "diffused void fraction" */
-  cs_real_3_t *grad;
-  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -378,6 +374,9 @@ _smoothe(const cs_mesh_t              *m,
       w_stride = weight_f->dim;
     }
   }
+
+  cs_real_3_t *grad;
+  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   cs_gradient_scalar("pvar_grad",
                      gradient_type,
@@ -400,85 +399,91 @@ _smoothe(const cs_mesh_t              *m,
   constexpr cs_real_t c_1ov3 = 1. / 3.;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    smbdp[c_id] = 0.;
+  });
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+    cs_lnum_t ii = i_face_cells[f_id][0];
+    cs_lnum_t jj = i_face_cells[f_id][1];
+
+    cs_real_t taille = 0.5 * (  pow(cell_vol[ii], c_1ov3)
+                              + pow(cell_vol[jj], c_1ov3));
+    cs_real_t visco = taille * taille * d_tau;
+
+    cs_real_t distxyz[3];
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      distxyz[i] =   dist[f_id] * i_face_u_normal[f_id][i]
+                   + diipf[f_id][i] + djjpf[f_id][i];
+    }
+
+    cs_real_t visc_f = visco * i_face_surf[f_id] / cs_math_3_norm(distxyz);
+
+    /* Extra-diagonal terms computation */
+    xam[f_id] = -visc_f;
+
+    cs_real_t reconstr
+      = visc_f * (  cs_math_3_dot_product(diipf[f_id], grad[ii])
+                  - cs_math_3_dot_product(djjpf[f_id], grad[jj]));
+
+    cs_dispatch_sum(&smbdp[ii], -reconstr, i_sum_type);
+    cs_dispatch_sum(&smbdp[jj], reconstr, i_sum_type);
+  });
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     /* Initialization */
-    rtpdp[c_id] = 0.;
-    smbdp[c_id] = pvar[c_id] * cell_vol[c_id];
-    dam[c_id] = cell_vol[c_id];
+    smbdp[c_id] += pvar[c_id] * cell_vol[c_id];
+
+    cs_real_t dam_c = cell_vol[c_id];
 
     /* Loop on interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
     const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
 
+    /* Extra-diagonal terms contribution to the diagonal
+       (without boundary contribution (0 flux)) */
+
     for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
       const cs_lnum_t f_id = cell_i_faces[cidx];
-      const cs_lnum_t c_id_adj = c2c[cidx];
-      short int f_sgn = c2f_sgn[cidx];
-
-      cs_real_t taille = 0.5 * (  pow(cell_vol[c_id], c_1ov3)
-                                + pow(cell_vol[c_id_adj], c_1ov3));
-
-      cs_real_t visco = taille * taille * d_tau;
-
-      cs_real_t distxyz[3];
-      for (cs_lnum_t i = 0; i < 3; i++)
-        distxyz[i] =   dist[f_id] * i_face_u_normal[f_id][i]
-                     + diipf[f_id][i] + djjpf[f_id][i];
-
-      cs_real_t viscf = visco * i_face_surf[f_id] / cs_math_3_norm(distxyz);
-
-      /* Extra-diagonal terms computation */
-      cs_real_t xam_f = - viscf;
-
-      /* Since we have symmetry, assign face values only when cell id
-         matches upper lower diagonal part (which also contains halo
-         values); TODO: assemble directly to MSR format instead. */
-      if (c_id_adj > c_id)
-        xam[f_id] = xam_f;
-
-      cs_real_t reconstr
-        =   f_sgn * viscf
-          * (  cs_math_3_dot_product(diipf[f_id], grad[c_id])
-             - cs_math_3_dot_product(djjpf[f_id], grad[c_id_adj]));
-
-      smbdp[c_id] -= reconstr;
-
-      /* Extra-diagonal terms contribution to the diagonal
-         (without boundary contribution (0 flux)) */
-      dam[c_id] -= xam_f;
-
+      dam_c -= xam[f_id];
     }
 
     /* Slight re-inforcement of the diagonal if we are not on a
        Dirichlet condition (move the eigenvalues spectrum) */
-    const cs_real_t epsi = 1.e-7;
-    dam[c_id] *= (1. + epsi);
+    constexpr cs_real_t epsi = 1.e-7;
+    dam_c *= (1. + epsi);
 
     /* Triple line model (WARNING: model terms are added after
        residual normalization ?) */
 
     /* Loop on boundary faces */
-    const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
-    const cs_lnum_t e_id_b = cell_b_faces_idx[c_id + 1];
 
-    for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
-      const cs_lnum_t f_id = cell_b_faces[cidx];
+    if (b_s > 0.) {
+      const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+      const cs_lnum_t e_id_b = cell_b_faces_idx[c_id + 1];
 
-      cs_real_t is_wall = 0.;
-      if (   bc_type[f_id] == CS_SMOOTHWALL
-          || bc_type[f_id] == CS_ROUGHWALL)
-        is_wall = 1.;
+      for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+        const cs_lnum_t f_id = cell_b_faces[cidx];
 
-      smbdp[c_id] += B_s * cell_vol[c_id] * alpha_p * is_wall;
-      dam[c_id] += cell_vol[c_id] * B_s * is_wall;
+        if (   bc_type[f_id] == CS_SMOOTHWALL
+            || bc_type[f_id] == CS_ROUGHWALL) {
+          smbdp[c_id] += b_s * cell_vol[c_id] * alpha_p;
+          dam_c += cell_vol[c_id] * b_s;
+        }
+      }
     }
 
+    dam[c_id] = dam_c;
+    pvar[c_id] = 0.; // Set to 0 before solving.
   });
 
   ctx.wait();
 
+  CS_FREE_HD(grad);
+
+  /* FIXME: the following synchronization should not
+     be needed, unless perhaps when using a native matrix format */
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, smbdp);
-  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, dam);
 
   /* SOLVE SYSTEM
      Linear system initialization is in nc_sles_default
@@ -496,14 +501,6 @@ _smoothe(const cs_mesh_t              *m,
   cs_parall_sum(1, CS_REAL_TYPE, &rnorm);
   rnorm = sqrt(rnorm); /* Residual normalization */
 
-  for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
-    if (dam[ii] > 1e24) printf("\n");
-    if (smbdp[ii] > 1e24) printf("\n");
-  }
-  for (cs_lnum_t ii = 0; ii < n_i_faces; ii++) {
-    if (xam[ii] > 1e24) printf("\n");
-  }
-
   cs_sles_solve_native(-1,
                        "ITM_diffusion_equation",
                        true,                   /* symmetric */
@@ -514,15 +511,10 @@ _smoothe(const cs_mesh_t              *m,
                        &n_equiv_iter,
                        &residual,
                        smbdp,
-                       rtpdp);
+                       pvar);                  /* Distance to the wall */
 
-  /* Destroy multigrid structure */
+  /* Free solver setup and associated matrix. */
   cs_sles_free_native(-1, "ITM_diffusion_equation");
-
-  /* Increment the distance to the wall */
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    pvar[c_id] = rtpdp[c_id];
-  });
 
   ctx.wait();
 
@@ -530,9 +522,7 @@ _smoothe(const cs_mesh_t              *m,
 
   CS_FREE_HD(xam);
   CS_FREE_HD(dam);
-  CS_FREE_HD(rtpdp);
   CS_FREE_HD(smbdp);
-  CS_FREE_HD(grad);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
