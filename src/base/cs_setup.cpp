@@ -42,6 +42,7 @@
 
 #include "bft/bft_printf.h"
 #include "base/cs_ale.h"
+#include "base/cs_coupling.h"
 #include "base/cs_fan.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
@@ -63,6 +64,7 @@
 #include "base/cs_prototypes.h"
 #include "base/cs_restart.h"
 #include "base/cs_runaway_check.h"
+#include "base/cs_syr_coupling.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_turbomachinery.h"
 #include "base/cs_velocity_pressure.h"
@@ -2765,6 +2767,26 @@ _init_user
     if (cs_glob_atmo_option->soil_cat >= 0)
       cs_f_solcat(1);
   }
+
+  /* If thermal solver, set appropriate flags for coupling if needed,
+   * We do this before cs_user_parameters to allow the user to potentially
+   * modify this behavior if needed.
+   */
+  if (pm_flag[CS_HEAT_TRANSFER] > -1) {
+    if (cs_syr_coupling_n_couplings() > 0) {
+      /* We use minimal time step size while following the one
+       * "imposed" by the fluid solvers.
+       */
+      cs_log_printf(CS_LOG_DEFAULT,
+                    _("\n"
+                      " Setting Heat Transfer Solver to follow the time step\n"
+                      " value imposed by the fluid solver. This can be undone\n"
+                      " in cs_user_parameters if needed.\n"));
+      int _flag = PLE_COUPLING_TS_MIN | PLE_COUPLING_TS_FOLLOWER;
+      cs_coupling_set_sync_flag(_flag);
+    }
+  }
+
 
   /* User functions */
   cs_f_usipsu(nmodpp);
