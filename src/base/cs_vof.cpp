@@ -321,7 +321,7 @@ _smoothe(const cs_mesh_t              *m,
   const cs_real_t *restrict i_face_surf = mq->i_face_surf;
 
   const cs_nreal_3_t *restrict i_face_u_normal
-    = (const cs_nreal_3_t *)mq->i_face_u_normal;
+    = mq->i_face_u_normal;
   const cs_rreal_3_t *restrict diipf = mq->diipf;
   const cs_rreal_3_t *restrict djjpf = mq->djjpf;
 
@@ -337,7 +337,8 @@ _smoothe(const cs_mesh_t              *m,
 
   cs_dispatch_context ctx;
 
-  const cs_real_t d_tau = 0.1; /* Sharpening interface on 5 cells (0.1 for 3 cells) */
+  const cs_real_t d_tau = 0.1; /* Sharpening interface on 5 cells
+                                  (0.1 for 3 cells) */
   /* User Intialization Triple line model */
   /*   alpha_p = 0 - Surface hydrophobe
        alpha_p = 1 - Surface hydrophile
@@ -427,7 +428,13 @@ _smoothe(const cs_mesh_t              *m,
       cs_real_t viscf = visco * i_face_surf[f_id] / cs_math_3_norm(distxyz);
 
       /* Extra-diagonal terms computation */
-      xam[f_id] = - viscf;
+      cs_real_t xam_f = - viscf;
+
+      /* Since we have symmetry, assign face values only when cell id
+         matches upper lower diagonal part (which also contains halo
+         values); TODO: assemble directly to MSR format instead. */
+      if (c_id_adj > c_id)
+        xam[f_id] = xam_f;
 
       cs_real_t reconstr
         =   f_sgn * viscf
@@ -438,7 +445,7 @@ _smoothe(const cs_mesh_t              *m,
 
       /* Extra-diagonal terms contribution to the diagonal
          (without boundary contribution (0 flux)) */
-      dam[c_id] -= xam[f_id];
+      dam[c_id] -= xam_f;
 
     }
 
@@ -488,6 +495,14 @@ _smoothe(const cs_mesh_t              *m,
 
   cs_parall_sum(1, CS_REAL_TYPE, &rnorm);
   rnorm = sqrt(rnorm); /* Residual normalization */
+
+  for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
+    if (dam[ii] > 1e24) printf("\n");
+    if (smbdp[ii] > 1e24) printf("\n");
+  }
+  for (cs_lnum_t ii = 0; ii < n_i_faces; ii++) {
+    if (xam[ii] > 1e24) printf("\n");
+  }
 
   cs_sles_solve_native(-1,
                        "ITM_diffusion_equation",
