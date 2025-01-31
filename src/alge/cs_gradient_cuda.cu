@@ -1063,7 +1063,7 @@ __global__ static void
 _gg_gradient_rescale(cs_lnum_t                       n_cells,
                      bool                            warped_correction,
                      const int *restrict             c_disable_flag,
-                     const cs_real_t *restrict       cell_f_vol,
+                     const cs_real_t *restrict       cell_vol,
                      const cs_real_33_t *restrict    corr_grad_lin,
                      cs_real_t            (*restrict grad)[stride][3])
 {
@@ -1079,9 +1079,9 @@ _gg_gradient_rescale(cs_lnum_t                       n_cells,
   cs_real_t dvol;
   /* Is the cell disabled (for solid or porous)? Not the case if coupled */
   if (c_disable_flag == nullptr)
-    dvol = 1. / cell_f_vol[c_id];
+    dvol = 1. / cell_vol[c_id];
   else if (c_disable_flag[c_id] == 0)
-    dvol = 1. / cell_f_vol[c_id];
+    dvol = 1. / cell_vol[c_id];
   else
     dvol = 0.;
 

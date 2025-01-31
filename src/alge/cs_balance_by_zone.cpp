@@ -1286,7 +1286,6 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   if (ncesmp > 0) {
 
-    const cs_real_t *cell_f_vol = fvq->cell_vol;
     const double cp0 = cs_glob_fluid_properties->cp0;
 
     for (cs_lnum_t c_idx = 0; c_idx < ncesmp; c_idx++) {
@@ -1301,7 +1300,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
         else
           v = smcelp[c_idx];
 
-        cs_real_t c_st = cell_f_vol[c_id_sel] * dt[c_id_sel]* vg * v;
+        cs_real_t c_st = cell_vol[c_id_sel] * dt[c_id_sel]* vg * v;
 
         if (itemperature) {
           if (icp >= 0)
