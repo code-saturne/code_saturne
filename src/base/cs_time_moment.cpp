@@ -45,6 +45,7 @@
 #include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
 #include "base/cs_base.h"
 #include "base/cs_field.h"
@@ -1651,6 +1652,82 @@ _time_moment_define_by_func(const char                *name,
   return moment_id;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset selected time step for starting time step of selected moment.
+ *
+ * All other time moments sharing the same start time will also start
+ * at the same time step.
+ *
+ * \param[in]   moment_id  id of associated moment, or -1 for all
+ * \param[in]   nt_start   starting time step (if < 0, t_start is used)
+ * \param[in]   t_start    starting time value
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_time_moment_set_start_time(int     moment_id,
+                            int     nt_start,
+                            double  t_start)
+{
+  const cs_time_step_t  *ts = cs_glob_time_step;
+
+  int *nt_start_prev;
+  CS_MALLOC(nt_start_prev, _n_moment_wa, int);
+
+  for (int i = 0; i < _n_moment_wa; i++) {
+    cs_time_moment_wa_t *mwa = _moment_wa + i;
+    nt_start_prev[i] = mwa->nt_start;
+  }
+
+  int s_id = moment_id;
+  int e_id = moment_id+1;
+  if (moment_id == -1) {
+    s_id = 0;
+    e_id = _n_moments;
+  }
+
+  for (int i = s_id; i < e_id; i++) {
+    cs_time_moment_t *mt = _moment + i;
+    cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
+    if (nt_start > -1)
+      mwa->nt_start = nt_start;
+    if (t_start > -1)
+      mwa->t_start = t_start;
+  }
+
+  for (int i = 0; i < _n_moment_wa; i++) {
+    cs_time_moment_wa_t *mwa = _moment_wa + i;
+    if (   nt_start_prev[i] != mwa->nt_start
+        && mwa->nt_start < ts->nt_cur) {
+      _reset_weight_accumulator(mwa);
+      mwa->t_start = ts->t_cur;
+    }
+    else if (t_start > -1 && mwa->nt_start > ts->nt_cur)
+      mwa->nt_start = -1;
+  }
+
+  for (int i = 0; i < _n_moments; i++) {
+    cs_time_moment_t *mt = _moment + i;
+    cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
+    if (   nt_start_prev[i] != mwa->nt_start
+        && mwa->nt_start < ts->nt_cur) {
+      cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+      cs_lnum_t nd = n_elts * mt->dim;
+
+      /* Reset values */
+      cs_real_t *restrict val = mt->val;
+      if (mt->f_id > -1) {
+        cs_field_t *f = cs_field_by_id(mt->f_id);
+        val = f->val;
+      }
+      cs_array_real_fill_zero(nd, val);
+    }
+  }
+
+  CS_FREE(nt_start_prev);
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -1772,7 +1849,7 @@ cs_time_moment_define_by_field_ids(const char                *name,
  * (i.e. variance) may only involve a scalar or vector.
  *
  * \param[in]  name           name of associated moment
- * \param[in]  field_id       ids of associated fields
+ * \param[in]  f              pointer to associated field
  * \param[in]  type           moment type
  * \param[in]  nt_start       starting time step (or -1 to use t_start)
  * \param[in]  t_start        starting time
@@ -1785,19 +1862,20 @@ cs_time_moment_define_by_field_ids(const char                *name,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_time_moment_define_by_field_id(const char                *name,
-                                  const int                  field_id,
-                                  cs_time_moment_type_t      type,
-                                  int                        nt_start,
-                                  double                     t_start,
-                                  cs_time_moment_restart_t   restart_mode,
-                                  const char                *restart_name)
+cs_time_moment_define_by_field(const char                *name,
+                               const cs_field_t          *f,
+                               cs_time_moment_type_t      type,
+                               int                        nt_start,
+                               double                     t_start,
+                               cs_time_moment_restart_t   restart_mode,
+                               const char                *restart_name)
 {
   int m_id = -1;
   bool is_intensive = true;
-  int component_id = -1;
-  int sd_id =_find_or_add_sd(name, 1, &field_id, &component_id,
-                             &is_intensive);
+  int component_ids[1] = {-1};
+  int field_ids[1] = {f->id};
+  int sd_id = _find_or_add_sd(name, 1, field_ids, component_ids,
+                              &is_intensive);
 
   const int *msd = _moment_sd_defs[sd_id];
 
@@ -2054,6 +2132,48 @@ cs_time_moment_get_field(int  moment_id)
   return nullptr;
 }
 
+END_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset selected time step for starting time step of selected moment.
+ *
+ * All other time moments sharing the same start time will also start
+ * at the same time step.
+ *
+ * \param[in]   moment_id  id of associated moment, or -1 for all
+ * \param[in]   nt_start   starting time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_set_start_time(int   moment_id,
+                              int   nt_start)
+{
+  _time_moment_set_start_time(moment_id, nt_start, -1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset selected time step for starting time step of selected moment.
+ *
+ * All other time moments sharing the same start time will also start
+ * at the same time step.
+ *
+ * \param[in]   moment_id  id of associated moment, or -1 for all
+ * \param[in]   nt_start   starting time value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_set_start_time(int     moment_id,
+                              double  t_start)
+{
+  _time_moment_set_start_time(moment_id, -1, t_start);
+}
+
+BEGIN_C_DECLS
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return 1 if moment is active, 0 if it is not active yet.
@@ -2083,8 +2203,7 @@ cs_time_moment_is_active(int  moment_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Reset a time moment.
- *        Current iteration is set as starting time step for current moment.
+ * \brief Set current iteration as starting time step of selected moment.
  *
  * All other time moments sharing the same start time should also be reset.
  *
@@ -2097,46 +2216,27 @@ cs_time_moment_reset(int   moment_id)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  cs_time_moment_t *mt = _moment + moment_id;
-  cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
-
-  /* set current iteration as starting time step for current moment */
-  mt->nt_cur = -1;
-  mwa->nt_start = ts->nt_cur;
-  mwa->t_start = -1.;
-
-  cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
-  cs_lnum_t nd = n_elts * mt->dim;
-
-  cs_real_t *restrict val = mt->val;
-  if (mt->f_id > -1) {
-    cs_field_t *f = cs_field_by_id(mt->f_id);
-    val = f->val;
+  int s_id = moment_id;
+  int e_id = moment_id+1;
+  if (moment_id == -1) {
+    s_id = 0;
+    e_id = _n_moments;
   }
 
-  for (cs_lnum_t i = 0; i < nd; i++) {
-    /* reset moment values */
-    val[i] = 0.;
-  }
+  for (int m_id = s_id; m_id < e_id; m_id++) {
 
-  _reset_weight_accumulator(mwa);
+    cs_time_moment_t *mt = _moment + m_id;
+    cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
 
-  /* sub-moments (means for variance) */
-
-  if (mt->l_id > -1) {
-    int l_id = mt->l_id;
-
-    mt = _moment + l_id;
-    mwa = _moment_wa + mt->wa_id;
-
+    /* Set current iteration as starting time step for current moment */
     mt->nt_cur = -1;
     mwa->nt_start = ts->nt_cur;
     mwa->t_start = -1.;
 
-    n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
-    nd = n_elts * mt->dim;
+    cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+    cs_lnum_t nd = n_elts * mt->dim;
 
-    val = mt->val;
+    cs_real_t *restrict val = mt->val;
     if (mt->f_id > -1) {
       cs_field_t *f = cs_field_by_id(mt->f_id);
       val = f->val;
@@ -2148,6 +2248,35 @@ cs_time_moment_reset(int   moment_id)
     }
 
     _reset_weight_accumulator(mwa);
+
+    /* sub-moments (means for variance) */
+
+    if (mt->l_id > -1) {
+      int l_id = mt->l_id;
+
+      mt = _moment + l_id;
+      mwa = _moment_wa + mt->wa_id;
+
+      mt->nt_cur = -1;
+      mwa->nt_start = ts->nt_cur;
+      mwa->t_start = -1.;
+
+      n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+      nd = n_elts * mt->dim;
+
+      val = mt->val;
+      if (mt->f_id > -1) {
+        cs_field_t *f = cs_field_by_id(mt->f_id);
+        val = f->val;
+      }
+
+      for (cs_lnum_t i = 0; i < nd; i++) {
+        /* reset moment values */
+        val[i] = 0.;
+      }
+
+      _reset_weight_accumulator(mwa);
+    }
   }
 }
 

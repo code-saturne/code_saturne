@@ -346,6 +346,9 @@ indicate a required argument, `[ ]` to indicate an optional argument).
 <tr><td> postprocess_time_step            <td> <time_step_number> [writer_id]
 <tr><td> postprocess_time_value           <td> <time_step_value> [writer_id]
 <tr><td>                                  <td>
+<tr><td> time_moment_start_time_step      <td> <time_step_number> [time_moment_id]
+<tr><td> time_moment_start_time_value     <td> <time_step_value> [time_moment_id]
+<tr><td>                                  <td>
 <tr><td> time_step_limit                  <td> <time_step_count>
 </table>
 

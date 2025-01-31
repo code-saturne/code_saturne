@@ -187,7 +187,7 @@ cs_time_moment_define_by_field_ids(const char                *name,
  *
  * parameters:
  *   name         <-- name of associated moment
- *   field_id     <-- ids of associated field
+ *   f            <-- pointer to associated field
  *   type         <-- moment type
  *   nt_start     <-- starting time step (or -1 to use t_start)
  *   t_start      <-- starting time
@@ -199,13 +199,13 @@ cs_time_moment_define_by_field_ids(const char                *name,
  *----------------------------------------------------------------------------*/
 
 int
-cs_time_moment_define_by_field_id(const char                *name,
-                                  const int                  field_id,
-                                  cs_time_moment_type_t      type,
-                                  int                        nt_start,
-                                  double                     t_start,
-                                  cs_time_moment_restart_t   restart_mode,
-                                  const char                *restart_name);
+cs_time_moment_define_by_field(const char                *name,
+                               const cs_field_t          *f,
+                               cs_time_moment_type_t      type,
+                               int                        nt_start,
+                               double                     t_start,
+                               cs_time_moment_restart_t   restart_mode,
+                               const char                *restart_name);
 
 /*----------------------------------------------------------------------------
  * Define a time moment based on an evaluation function.
@@ -362,14 +362,49 @@ cs_time_moment_get_field(int  moment_id);
 int
 cs_time_moment_is_active(int  moment_id);
 
+END_C_DECLS
+
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Reset a time moment.
- *        Current iteration is set as starting time step for current moment.
+/*
+ * \brief Reset selected time step for starting time step of selected moment.
+ *
+ * All other time moments sharing the same start time will also start
+ * at the same time step.
+ *
+ * \param[in]   moment_id  id of associated moment, or -1 for all
+ * \param[in]   nt_start   starting time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_set_start_time(int   moment_id,
+                              int   nt_start);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Reset selected time step for starting time step of selected moment.
+ *
+ * All other time moments sharing the same start time will also start
+ * at the same time step.
+ *
+ * \param[in]   moment_id  id of associated moment, or -1 for all
+ * \param[in]   nt_start   starting time value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_set_start_time(int     moment_id,
+                              double  t_start);
+
+BEGIN_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set current iteration as starting time step of selected moment.
  *
  * All other time moments sharing the same start time should also be reset.
  *
- * \param[in]   moment_id  id of associated moment
+ * \param[in]   moment_id  id of associated moment, or -1 for all.
  */
 /*----------------------------------------------------------------------------*/
 

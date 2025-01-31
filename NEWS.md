@@ -6,6 +6,14 @@ Master (not on release branches yet)
 - Add the class "cs_array_2dspan" which allows handling of 2D arrays.
   The class automatically allocates and frees the underlying data array.
 
+- Time moments:
+  * Add `cs_time_moment_define_by_function` and `cs_time_moment_define_by_field`
+    time moment definitions based on evaluation of cs_function_t objects
+    or existing cs_field_t values.
+  * Add `time_moment_start_time_step` and `time_moment_start_time_value`
+    options to `control_file` syntax to dynamically change time step at
+    which time moment accumulation is started.
+
 ### Numerics:
 
 - Compute boundary value reconstruction ahead of calls to lower-level operators
@@ -15,11 +23,11 @@ Master (not on release branches yet)
     and tensor gradients.
 
 - Advection scheme with CDO-Fb scheme: Replace the former centered scheme
-  by a new one close to the CDO-Vb centered scheme. The former scheme is renammed
-  as centered_dde and is marked as deprecated. Also, former centered and upwind schemes
-  are post-fixed by _v8 for comparaison. Moreover, a mixed centered/hybrid
-  scheme is introduced with a fixed ratio or a variable ratio using Sharfetter-Gummel
-  weigth function which is Peclet-robust.
+  by a new one close to the CDO-Vb centered scheme. The former scheme is
+  renammed as centered_dde and is marked as deprecated. Also, former centered
+  and upwind schemes are post-fixed by _v8 for comparison. Moreover, a mixed
+  mixed centered/hybrid scheme is introduced with a fixed ratio or a variable
+  ratio using Sharfetter-Gummel weigth function which is Peclet-robust.
 
 Release 8.3.0 (2024-12-20)
 --------------------------

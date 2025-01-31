@@ -66,6 +66,7 @@
 #include "base/cs_post.h"
 #include "base/cs_resource.h"
 #include "base/cs_restart.h"
+#include "base/cs_time_moment.h"
 #include "base/cs_time_plot.h"
 #include "base/cs_time_stepping.h"
 #include "base/cs_timer.h"
@@ -1596,6 +1597,48 @@ _control_postprocess(const cs_time_step_t   *ts,
 }
 
 /*----------------------------------------------------------------------------
+ * Handle command file line relative to time moments
+ *
+ * parameters:
+ *   ts       <-- pointer to time step status
+ *   s        <-> pointer to current position in line
+ *----------------------------------------------------------------------------*/
+
+static void
+_control_time_moment(const cs_time_step_t   *ts,
+                     char                   *cur_line,
+                     const char            **s)
+{
+  *s += 12; /* shift in string by length of "postprocess_" part */
+
+  if (strncmp(*s, "start_time_step ", 16) == 0) {
+    int nt = 0, moment_id = 0;
+    if (_read_next_int(cur_line, s, &nt) > 0) {
+      if (_read_next_opt_int(s, &moment_id) == 0)
+        moment_id = 0;
+      nt = CS_MAX(nt, ts->nt_cur);
+      cs_time_moment_set_start_time(moment_id, nt);
+      bft_printf("  %-32s %12d %12d\n",
+                 "time_moment_time_step", nt, moment_id);
+    }
+  }
+  else if (strncmp(*s, "start_time_value ", 17) == 0) {
+    int moment_id = 0;
+    double t = 0.;
+    if (_read_next_double(true, cur_line, s, &t) > 0) {
+      if (_read_next_opt_int(s, &moment_id) == 0)
+        moment_id = 0;
+      t = CS_MAX(t, ts->t_cur);
+      bft_printf("  %-32s %12.5g %12d\n",
+                 "postprocess_time_value", t, moment_id);
+      cs_time_moment_set_start_time(moment_id, t);
+    }
+  }
+  else
+    bft_printf(_("   ignored: \"%s\"\n"), cur_line);
+}
+
+/*----------------------------------------------------------------------------
  * Parse control file or queue
  *
  * For some commands (such as advance), this will return before reading
@@ -1760,10 +1803,13 @@ _parse_control_buffer(const char          *name,
 
 #endif
 
-    /* Postprocessing options */
+    /* Postprocessing and time moment options */
 
     else if (strncmp(s, "postprocess_", 12) == 0)
       _control_postprocess(ts, cur_line, const_cast<const char **>(&s));
+
+    else if (strncmp(s, "time_moment_", 12) == 0)
+      _control_time_moment(ts, cur_line, const_cast<const char **>(&s));
 
     /* Notebook options */
 
