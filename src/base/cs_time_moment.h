@@ -177,14 +177,13 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                    const char                *restart_name);
 
 /*----------------------------------------------------------------------------
- * Define a moment of an existing field
+ * Define a time moment of an existing field.
  *
  * Moments will involve the tensor products of their component fields,
  * and only scalar, vector, or rank-2 tensors are handled (for
- * post-processing output reasons), so a moment may not involve more than
- * 2 vectors or 1 tensor, unless single components are specified.
- *
- * If of dimension > 1, the moment array is always interleaved.
+ * post-processing output reasons), so a 1st-order moment (i.e. mean) may
+ * involve a scalar, vector, or tensor, while a second-order moment
+ * (i.e. variance) may only involve a scalar or vector.
  *
  * parameters:
  *   name         <-- name of associated moment
@@ -209,14 +208,13 @@ cs_time_moment_define_by_field_id(const char                *name,
                                   const char                *restart_name);
 
 /*----------------------------------------------------------------------------
- * Define a moment of existing function
+ * Define a time moment based on an evaluation function.
  *
  * Moments will involve the tensor products of their component fields,
  * and only scalar, vector, or rank-2 tensors are handled (for
- * post-processing output reasons), so a moment may not involve more than
- * 2 vectors or 1 tensor, unless single components are specified.
- *
- * If of dimension > 1, the moment array is always interleaved.
+ * post-processing output reasons), so a 1st-order moment (i.e. mean) may
+ * involve a scalar, vector, or tensor, while a second-order moment
+ * (i.e. variance) may only involve a scalar or vector.
  *
  * parameters:
  *   name         <-- name of associated moment

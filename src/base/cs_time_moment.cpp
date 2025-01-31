@@ -1463,230 +1463,6 @@ _ensure_init_moment(cs_time_moment_t  *mt)
   }
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Return field id associated with a given moment
- *
- * parameters:
- *   m_num <-- moment number (1 to n)
- *
- * returns:
- *   field id, or -1
- *----------------------------------------------------------------------------*/
-
-int
-cs_f_time_moment_field_id(int m_num)
-
-{
-  int retval = -1;
-
-  const cs_field_t *f = cs_time_moment_get_field(m_num - 1);
-  if (f != nullptr)
-    retval = f->id;
-
-  return retval;
-}
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Destroy all moments management metadata.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_time_moment_destroy_all(void)
-{
-  _free_all_moments();
-  _free_all_wa();
-  _free_all_sd_defs();
-
-  _p_dt = nullptr;
-  _restart_info_checked = false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a moment of a product of existing fields components.
- *
- * Moments will involve the tensor products of their component fields,
- * and only scalar, vector, or rank-2 tensors are handled (for
- * post-processing output reasons), so a moment may not involve more than
- * 2 vectors or 1 tensor, unless single components are specified.
- *
- * \param[in]  name           name of associated moment
- * \param[in]  n_fields       number of associated fields
- * \param[in]  field_id       ids of associated fields
- * \param[in]  component_id   ids of matching field components (-1 for all)
- * \param[in]  type           moment type
- * \param[in]  nt_start       starting time step (or -1 to use t_start)
- * \param[in]  t_start        starting time
- * \param[in]  restart_mode   behavior in case of restart (reset,
- *                            automatic, or strict)
- * \param[in]  restart_name   if non-null, previous name in case of restart
- *
- * \return id of new moment in case of success, -1 in case of error.
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_time_moment_define_by_field_ids(const char                *name,
-                                   int                        n_fields,
-                                   const int                  field_id[],
-                                   const int                  component_id[],
-                                   cs_time_moment_type_t      type,
-                                   int                        nt_start,
-                                   double                     t_start,
-                                   cs_time_moment_restart_t   restart_mode,
-                                   const char                *restart_name)
-{
-  int m_id = -1;
-  bool is_intensive = true;
-  int sd_id =_find_or_add_sd(name, n_fields, field_id, component_id,
-                             &is_intensive);
-
-  const int *msd = _moment_sd_defs[sd_id];
-
-  m_id = cs_time_moment_define_by_func(name,
-                                       msd[0],
-                                       msd[1],
-                                       is_intensive,
-                                       nullptr,
-                                       _sd_moment_data,
-                                       msd,
-                                       nullptr,
-                                       nullptr,
-                                       type,
-                                       nt_start,
-                                       t_start,
-                                       restart_mode,
-                                       restart_name);
-
-  return m_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a moment of existing field.
- *
- * Moments will involve the tensor products of their component fields,
- * and only scalar, vector, or rank-2 tensors are handled (for
- * post-processing output reasons), so a moment may not involve more than
- * 2 vectors or 1 tensor, unless single components are specified.
- *
- * \param[in]  name           name of associated moment
- * \param[in]  field_id       ids of associated fields
- * \param[in]  type           moment type
- * \param[in]  nt_start       starting time step (or -1 to use t_start)
- * \param[in]  t_start        starting time
- * \param[in]  restart_mode   behavior in case of restart (reset,
- *                            automatic, or strict)
- * \param[in]  restart_name   if non-null, previous name in case of restart
- *
- * \return id of new moment in case of success, -1 in case of error.
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_time_moment_define_by_field_id(const char                *name,
-                                  const int                  field_id,
-                                  cs_time_moment_type_t      type,
-                                  int                        nt_start,
-                                  double                     t_start,
-                                  cs_time_moment_restart_t   restart_mode,
-                                  const char                *restart_name)
-{
-  int m_id = -1;
-  bool is_intensive = true;
-  int component_id = -1;
-  int sd_id =_find_or_add_sd(name, 1, &field_id, &component_id,
-                             &is_intensive);
-
-  const int *msd = _moment_sd_defs[sd_id];
-
-  m_id = cs_time_moment_define_by_func(name,
-                                       msd[0],
-                                       msd[1],
-                                       is_intensive,
-                                       nullptr,
-                                       _sd_moment_data,
-                                       msd,
-                                       nullptr,
-                                       nullptr,
-                                       type,
-                                       nt_start,
-                                       t_start,
-                                       restart_mode,
-                                       restart_name);
-
-  return m_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a moment of specified function.
- *
- * Moments will involve the tensor products of their component fields,
- * and only scalar, vector, or rank-2 tensors are handled (for
- * post-processing output reasons), so a moment may not involve more than
- * 2 vectors or 1 tensor, unless single components are specified.
- *
- * \param[in]  name           name of associated moment
- * \param[in]  f              pointer to function object
- * \param[in]  type           moment type
- * \param[in]  nt_start       starting time step (or -1 to use t_start)
- * \param[in]  t_start        starting time
- * \param[in]  restart_mode   behavior in case of restart (reset,
- *                            automatic, or strict)
- * \param[in]  restart_name   if non-null, previous name in case of restart
- *
- * \return id of new moment in case of success, -1 in case of error.
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_time_moment_define_by_function(const char                *name,
-                                  cs_function_t             *f,
-                                  cs_time_moment_type_t      type,
-                                  int                        nt_start,
-                                  double                     t_start,
-                                  cs_time_moment_restart_t   restart_mode,
-                                  const char                *restart_name)
-{
-  int m_id = -1;
-  const int dim = f->dim;
-  const int location_id = f->location_id;
-  bool is_intensive = f->type;
-  cs_function_t *eval_func = f;
-  cs_time_moment_data_t *data_func = nullptr;
-  const void* data_input = f->func_input;
-
-  m_id = cs_time_moment_define_by_func(name,
-                                       location_id,
-                                       dim,
-                                       is_intensive,
-                                       eval_func,
-                                       data_func,
-                                       data_input,
-                                       nullptr,
-                                       nullptr,
-                                       type,
-                                       nt_start,
-                                       t_start,
-                                       restart_mode,
-                                       restart_name);
-
-  return m_id;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define a moment whose data values will be computed using a
@@ -1713,21 +1489,21 @@ cs_time_moment_define_by_function(const char                *name,
  */
 /*----------------------------------------------------------------------------*/
 
-int
-cs_time_moment_define_by_func(const char                *name,
-                              int                        location_id,
-                              int                        dim,
-                              bool                       is_intensive,
-                              cs_function_t             *eval_func,
-                              cs_time_moment_data_t     *data_func,
-                              const void                *data_input,
-                              cs_time_moment_data_t     *w_data_func,
-                              void                      *w_data_input,
-                              cs_time_moment_type_t      type,
-                              int                        nt_start,
-                              double                     t_start,
-                              cs_time_moment_restart_t   restart_mode,
-                              const char                *restart_name)
+static int
+_time_moment_define_by_func(const char                *name,
+                            int                        location_id,
+                            int                        dim,
+                            bool                       is_intensive,
+                            cs_function_t             *eval_func,
+                            cs_time_moment_data_t     *data_func,
+                            const void                *data_input,
+                            cs_time_moment_data_t     *w_data_func,
+                            void                      *w_data_input,
+                            cs_time_moment_type_t      type,
+                            int                        nt_start,
+                            double                     t_start,
+                            cs_time_moment_restart_t   restart_mode,
+                            const char                *restart_name)
 {
   int i;
   cs_field_t  *f;
@@ -1871,6 +1647,285 @@ cs_time_moment_define_by_func(const char                *name,
     }
 
   }
+
+  return moment_id;
+}
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return field id associated with a given moment
+ *
+ * parameters:
+ *   m_num <-- moment number (1 to n)
+ *
+ * returns:
+ *   field id, or -1
+ *----------------------------------------------------------------------------*/
+
+int
+cs_f_time_moment_field_id(int m_num)
+
+{
+  int retval = -1;
+
+  const cs_field_t *f = cs_time_moment_get_field(m_num - 1);
+  if (f != nullptr)
+    retval = f->id;
+
+  return retval;
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy all moments management metadata.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_destroy_all(void)
+{
+  _free_all_moments();
+  _free_all_wa();
+  _free_all_sd_defs();
+
+  _p_dt = nullptr;
+  _restart_info_checked = false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a moment of a product of existing fields components.
+ *
+ * Moments will involve the tensor products of their component fields,
+ * and only scalar, vector, or rank-2 tensors are handled (for
+ * post-processing output reasons), so a moment may not involve more than
+ * 2 vectors or 1 tensor, unless single components are specified.
+ *
+ * \param[in]  name           name of associated moment
+ * \param[in]  n_fields       number of associated fields
+ * \param[in]  field_id       ids of associated fields
+ * \param[in]  component_id   ids of matching field components (-1 for all)
+ * \param[in]  type           moment type
+ * \param[in]  nt_start       starting time step (or -1 to use t_start)
+ * \param[in]  t_start        starting time
+ * \param[in]  restart_mode   behavior in case of restart (reset,
+ *                            automatic, or strict)
+ * \param[in]  restart_name   if non-null, previous name in case of restart
+ *
+ * \return id of new moment in case of success, -1 in case of error.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_moment_define_by_field_ids(const char                *name,
+                                   int                        n_fields,
+                                   const int                  field_id[],
+                                   const int                  component_id[],
+                                   cs_time_moment_type_t      type,
+                                   int                        nt_start,
+                                   double                     t_start,
+                                   cs_time_moment_restart_t   restart_mode,
+                                   const char                *restart_name)
+{
+  int m_id = -1;
+  bool is_intensive = true;
+  int sd_id =_find_or_add_sd(name, n_fields, field_id, component_id,
+                             &is_intensive);
+
+  const int *msd = _moment_sd_defs[sd_id];
+
+  m_id = _time_moment_define_by_func(name,
+                                     msd[0],
+                                     msd[1],
+                                     is_intensive,
+                                     nullptr,
+                                     _sd_moment_data,
+                                     msd,
+                                     nullptr,
+                                     nullptr,
+                                     type,
+                                     nt_start,
+                                     t_start,
+                                     restart_mode,
+                                     restart_name);
+
+  return m_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a time moment of an existing field.
+ *
+ * Moments will involve the tensor products of their component fields,
+ * and only scalar, vector, or rank-2 tensors are handled (for
+ * post-processing output reasons), so a 1st-order moment (i.e. mean) may
+ * involve a scalar, vector, or tensor, while a second-order moment
+ * (i.e. variance) may only involve a scalar or vector.
+ *
+ * \param[in]  name           name of associated moment
+ * \param[in]  field_id       ids of associated fields
+ * \param[in]  type           moment type
+ * \param[in]  nt_start       starting time step (or -1 to use t_start)
+ * \param[in]  t_start        starting time
+ * \param[in]  restart_mode   behavior in case of restart (reset,
+ *                            automatic, or strict)
+ * \param[in]  restart_name   if non-null, previous name in case of restart
+ *
+ * \return id of new moment in case of success, -1 in case of error.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_moment_define_by_field_id(const char                *name,
+                                  const int                  field_id,
+                                  cs_time_moment_type_t      type,
+                                  int                        nt_start,
+                                  double                     t_start,
+                                  cs_time_moment_restart_t   restart_mode,
+                                  const char                *restart_name)
+{
+  int m_id = -1;
+  bool is_intensive = true;
+  int component_id = -1;
+  int sd_id =_find_or_add_sd(name, 1, &field_id, &component_id,
+                             &is_intensive);
+
+  const int *msd = _moment_sd_defs[sd_id];
+
+  m_id = _time_moment_define_by_func(name,
+                                     msd[0],
+                                     msd[1],
+                                     is_intensive,
+                                     nullptr,
+                                     _sd_moment_data,
+                                     msd,
+                                     nullptr,
+                                     nullptr,
+                                     type,
+                                     nt_start,
+                                     t_start,
+                                     restart_mode,
+                                     restart_name);
+
+  return m_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a time moment based on an evaluation function.
+ *
+ * Moments will involve the tensor products of their component fields,
+ * and only scalar, vector, or rank-2 tensors are handled (for
+ * post-processing output reasons), so a 1st-order moment (i.e. mean) may
+ * involve a scalar, vector, or tensor, while a second-order moment
+ * (i.e. variance) may only involve a scalar or vector.
+ *
+ * \param[in]  name           name of associated moment
+ * \param[in]  f              pointer to function object
+ * \param[in]  type           moment type
+ * \param[in]  nt_start       starting time step (or -1 to use t_start)
+ * \param[in]  t_start        starting time
+ * \param[in]  restart_mode   behavior in case of restart (reset,
+ *                            automatic, or strict)
+ * \param[in]  restart_name   if non-null, previous name in case of restart
+ *
+ * \return id of new moment in case of success, -1 in case of error.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_moment_define_by_function(const char                *name,
+                                  cs_function_t             *f,
+                                  cs_time_moment_type_t      type,
+                                  int                        nt_start,
+                                  double                     t_start,
+                                  cs_time_moment_restart_t   restart_mode,
+                                  const char                *restart_name)
+{
+  bool is_intensive = f->type & CS_FUNCTION_INTENSIVE;
+
+  int m_id = _time_moment_define_by_func(name,
+                                         f->location_id,
+                                         f->dim,
+                                         is_intensive,
+                                         f,
+                                         nullptr,
+                                         f->func_input,
+                                         nullptr,
+                                         nullptr,
+                                         type,
+                                         nt_start,
+                                         t_start,
+                                         restart_mode,
+                                         restart_name);
+
+  return m_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a moment whose data values will be computed using a
+ * specified function.
+ *
+ * \param[in]  name           name of associated moment
+ * \param[in]  location_id    id of associated mesh location
+ * \param[in]  dim            dimension associated with element data
+ * \param[in]  is_intensive   is the time moment intensive?
+ * \param[in]  data_func      function used to define data values
+ * \param[in]  data_input     pointer to optional (untyped) value or structure
+ *                            to be used by data_func
+ * \param[in]  w_data_func    function used to define weight values
+ * \param[in]  w_data_input   pointer to optional (untyped) value or structure
+ *                            to be used by w_data_func
+ * \param[in]  type           moment type
+ * \param[in]  nt_start       starting time step (or -1 to use t_start)
+ * \param[in]  t_start        starting time
+ * \param[in]  restart_mode   behavior in case of restart (reset,
+ *                            automatic, or strict)
+ * \param[in]  restart_name   if non-null, previous name in case of restart
+ *
+ * \return id of new moment in case of success, -1 in case of error.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_moment_define_by_func(const char                *name,
+                              int                        location_id,
+                              int                        dim,
+                              bool                       is_intensive,
+                              cs_time_moment_data_t     *data_func,
+                              const void                *data_input,
+                              cs_time_moment_data_t     *w_data_func,
+                              void                      *w_data_input,
+                              cs_time_moment_type_t      type,
+                              int                        nt_start,
+                              double                     t_start,
+                              cs_time_moment_restart_t   restart_mode,
+                              const char                *restart_name)
+{
+  int moment_id = _time_moment_define_by_func(name,
+                                              location_id,
+                                              dim,
+                                              is_intensive,
+                                              nullptr,
+                                              data_func,
+                                              data_input,
+                                              w_data_func,
+                                              w_data_input,
+                                              type,
+                                              nt_start,
+                                              t_start,
+                                              restart_mode,
+                                              restart_name);
 
   return moment_id;
 }

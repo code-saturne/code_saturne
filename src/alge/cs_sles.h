@@ -590,7 +590,7 @@ cs_sles_get_f_id(const cs_sles_t  *sles);
  * \brief Return name associated with a given sparse linear equation solver.
  *
  * This is simply a utility function which will return its name argument
- * if f_id < 0, and the associated field's name or label otherwise.
+ * if f_id < 0, and the associated field's name otherwise.
  *
  * \param[in]  sles  pointer to solver object
  *
@@ -856,7 +856,7 @@ cs_sles_post_output_var(const char      *name,
  * \brief Return base name associated to a field id, name couple.
  *
  * This is simply a utility function which will return its name argument
- * if f_id < 0, and the associated field's name or label otherwise.
+ * if f_id < 0, and the associated field's name otherwise.
  *
  * \param[in]  f_id  associated field id, or < 0
  * \param[in]  name  associated name if f_id < 0, or NULL
