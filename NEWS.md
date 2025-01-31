@@ -3,6 +3,11 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Heat Transfer Solver:
+  - Fix definition of lambda and Cp using the GUI
+  - Fix time step computation in coupling so as to follow what the fluid
+    solver is imposing.
+
 - Lagrangian module: fix parallel hang in particle injection.
 
 - Fix spurious conversion of GUi-defined reference temperature to Kelvin

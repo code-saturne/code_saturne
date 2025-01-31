@@ -69,6 +69,7 @@
 #include "cs_solid_selection.h"
 #include "cs_solidification.h"
 #include "cs_thermal_system.h"
+#include "cs_syr_coupling.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 #include "cs_volume_zone.h"
@@ -458,6 +459,12 @@ _define_current_time_step(cs_time_step_t           *ts,
   assert(cs_property_is_uniform(cs_dt_pty));
 
   const double  t_cur = ts->t_cur;
+
+  /* CHT coupling, set ref value to dt_ref which was updated previously
+   * in cs_coupling_sync, called by "cs_domain_needs_iteration"
+   */
+  if (cs_thermal_system_is_activated() && cs_syr_coupling_n_couplings() > 0)
+    cs_dt_pty->ref_value = ts->dt_ref;
 
   ts->dt[2] = ts->dt[1];
   ts->dt[1] = ts->dt[0];
