@@ -221,6 +221,7 @@ class Case(object):
         self.compute       = smgr_cmd['compute']
         self.compare       = smgr_cmd['compare']
         self.plot          = smgr_cmd['post']
+        self.state         = smgr_cmd['state']
 
         self.is_compiled   = "not done"
         self.is_time       = None
@@ -1243,7 +1244,8 @@ class Studies(object):
         # Store smgr command options
         smgr_cmd = {"compute" : options.runcase,
                     "compare" : options.compare,
-                    "post"    : options.post}
+                    "post"    : options.post,
+                    "state"   : options.casestate}
 
         # Default expected time in minutes
         resource_config['resource_exp_time'] = 180
@@ -1721,7 +1723,7 @@ class Studies(object):
         global_graph = dependency_graph()
         for l, s in self.studies:
             for case in s.cases:
-                if case.compute:
+                if case.compute or case.compute or case.plot or case.state:
                     msg = global_graph.add_node(case)
                     if msg:
                         self.reporting("Warning in global graph: " + msg)
