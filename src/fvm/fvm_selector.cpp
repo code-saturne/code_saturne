@@ -944,7 +944,7 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
 
   *n_selected_elements = 0;
 
-  /* Add or find the test number in the the cached operations list */
+  /* Add or find the test number in the cached operations list */
 
   c_id = _get_criteria_id(ts, str);
 
@@ -952,7 +952,7 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
   pf = ts->_operations->postfix[c_id];
 
   /* Case without geometrical test: get group class list without the
-     interpretration of the postfix writing of the criteria string */
+     interpretation of the postfix writing of the criteria string */
 
   if (   fvm_selector_postfix_coords_dep(pf) == false
       && fvm_selector_postfix_normals_dep(pf) == false) {
