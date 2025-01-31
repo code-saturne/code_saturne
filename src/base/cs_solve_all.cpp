@@ -1004,6 +1004,12 @@ cs_solve_all(int  itrale)
 
   CS_FREE(icepdc);
 
+  /* Evaluate mass source term coefficients
+     (called on all ranks in case user calls global operations). */
+
+  if (cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_MASS_SOURCE_TERM) > 0)
+    cs_volume_mass_injection_eval();
+
   /* Adjustment of Pth pressure and rho
    * volume mass for the variable density algorithm */
 
@@ -1040,12 +1046,6 @@ cs_solve_all(int  itrale)
         || cs_glob_rad_transfer_params->type > 0)
       itrfin = 0;
   }
-
-  /* Evaluate mass source term coefficients
-     (called on all ranks in case user calls global operations). */
-
-  if (cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_MASS_SOURCE_TERM) > 0)
-    cs_volume_mass_injection_eval();
 
   /* Fill the condensation arrays spcond for the sink term of condensation
    * and hpcond the thermal exchange coefficient associated to the phase
