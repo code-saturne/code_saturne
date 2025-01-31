@@ -2660,7 +2660,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   cs_real_3_t *stf = nullptr;
   if (   cs_glob_vof_parameters->vof_model > 0
       && cs_glob_vof_parameters->sigma_s > 0) {
-    BFT_MALLOC(stf, n_cells, cs_real_3_t);
+    CS_MALLOC_HD(stf, n_cells, cs_real_3_t, cs_alloc_mode);
     cs_vof_surface_tension(m, mq, stf);
   }
 

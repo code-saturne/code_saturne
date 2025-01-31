@@ -180,8 +180,8 @@ _sles_default_native(int                f_id,
     else if (!strcmp(name, "potential_regularisation_sym_tensor")) {
       sles_it_type = CS_SLES_FCG;
     }
-    else if (!strcmp(name, "ITM_diffusion_equation")) { /* cs_vof.cxx */
-      sles_it_type = CS_SLES_PCG;
+    else if (!strcmp(name, "ITM_diffusion_equation")) { /* cs_vof.cpp */
+      sles_it_type = CS_SLES_FCG;
       multigrid = 1;
     }
   }
