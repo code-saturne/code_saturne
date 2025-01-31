@@ -291,6 +291,14 @@ compute_anisotropic_prop(int            iprev,
                               CS_LAGR_MOMENT_MEAN,
                               0,
                               -1);
+  stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
+  cs_field_t *stat_vel_s
+    = cs_lagr_stat_get_moment(stat_type,
+                              CS_LAGR_STAT_GROUP_PARTICLE,
+                              CS_LAGR_MOMENT_MEAN,
+                              0,
+                              -1);
+
 
   cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
 
@@ -298,15 +306,13 @@ compute_anisotropic_prop(int            iprev,
     if (dissip[cell_id] > 0.0 && energi[cell_id] > 0.0) {
       if (stat_w->vals[cell_wise_integ][cell_id] >
             cs_glob_lagr_stat_options->threshold) {
-        /* compute mean relative velocity <Up> - <Uf>*/
-        /* FIXME use stat_vel_s for <Uf> such as made in term II of piil
-         * in cs_lagr_car */
+        /* compute mean relative velocity <Up> - <Us>*/
         for (int i = 0; i < 3; i++)
           dir[i] = stat_vel->vals[cell_wise_integ][cell_id * 3 + i]
-                 - extra_i[phase_id].vel->vals[iprev][cell_id * 3 + i];
+                 - stat_vel_s->vals[cell_wise_integ][cell_id * 3 + i];
 
           /* Compute and store the mean relative velocity square
-         * |<U_r>|^2 = |<Up>-Uf|^2*/
+         * |<U_r>|^2 = |<Up>-<Us>|^2*/
         mean_uvwdif = cs_math_3_square_norm(dir);
 
         mean_uvwdif = (3.0 * mean_uvwdif) / (2.0 * energi[cell_id]);
