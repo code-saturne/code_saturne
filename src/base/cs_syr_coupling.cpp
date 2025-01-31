@@ -53,7 +53,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -71,6 +70,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_ht_convert.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
@@ -435,13 +435,13 @@ _post_init(cs_syr_coupling_t      *syr_coupling,
 
   if (coupling_ent->n_elts > 0) {
     if (coupling_ent->solid_temp == nullptr) { /* surface coupling */
-      BFT_MALLOC(coupling_ent->solid_temp, coupling_ent->n_elts, cs_real_t);
+      CS_MALLOC(coupling_ent->solid_temp, coupling_ent->n_elts, cs_real_t);
       for (cs_lnum_t i = 0; i < coupling_ent->n_elts; i++)
         coupling_ent->solid_temp[i] = t_ref;
     }
     if (coupling_ent->elt_dim == syr_coupling->dim) { /* volume coupling */
       if (coupling_ent->flux == nullptr) {
-        BFT_MALLOC(coupling_ent->flux, coupling_ent->n_elts, float);
+        CS_MALLOC(coupling_ent->flux, coupling_ent->n_elts, float);
         for (cs_lnum_t i = 0; i < coupling_ent->n_elts; i++)
           coupling_ent->flux[i] = 0;
       }
@@ -565,7 +565,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
   /* Initialization */
 
-  BFT_MALLOC(coupling_ent, 1, cs_syr_coupling_ent_t);
+  CS_MALLOC(coupling_ent, 1, cs_syr_coupling_ent_t);
 
   coupling_ent->locator = nullptr;
   coupling_ent->elt_dim = elt_dim;
@@ -593,7 +593,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
   for (int l_i = 0; l_i < n_locations; l_i++)
     n_elts += cs_mesh_location_get_n_elts(location_ids[l_i])[0];
 
-  BFT_MALLOC(elt_list, n_elts, cs_lnum_t);
+  CS_MALLOC(elt_list, n_elts, cs_lnum_t);
 
   n_elts = 0;
   for (int l_i = 0; l_i < n_locations; l_i++) {
@@ -614,9 +614,9 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
   if (elt_dim == syr_coupling->dim) {
 
-    BFT_MALLOC(coupled_mesh_name,
-                 strlen(_("SYRTHES %s cells"))
-               + strlen(syr_coupling->syr_name) + 1, char);
+    CS_MALLOC(coupled_mesh_name,
+              strlen(_("SYRTHES %s cells"))
+              + strlen(syr_coupling->syr_name) + 1, char);
     sprintf(coupled_mesh_name, _("SYRTHES %s cells"), syr_coupling->syr_name);
 
     coupling_ent->n_elts = n_elts;
@@ -630,8 +630,8 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
     /* Allocate additional buffers */
 
-    BFT_MALLOC(coupling_ent->hvol, coupling_ent->n_elts, double);
-    BFT_MALLOC(coupling_ent->solid_temp, coupling_ent->n_elts, cs_real_t);
+    CS_MALLOC(coupling_ent->hvol, coupling_ent->n_elts, double);
+    CS_MALLOC(coupling_ent->solid_temp, coupling_ent->n_elts, cs_real_t);
 
   }
 
@@ -639,9 +639,9 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
   else if (elt_dim == syr_coupling->dim - 1) {
 
-    BFT_MALLOC(coupled_mesh_name,
-               strlen("SYRTHES  faces") + strlen(syr_coupling->syr_name) + 1,
-               char);
+    CS_MALLOC(coupled_mesh_name,
+              strlen("SYRTHES  faces") + strlen(syr_coupling->syr_name) + 1,
+              char);
     sprintf(coupled_mesh_name, _("SYRTHES %s faces"), syr_coupling->syr_name);
 
     coupling_ent->n_elts = n_elts;
@@ -657,9 +657,9 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
   }
 
-  BFT_FREE(elt_list);
+  CS_FREE(elt_list);
 
-  BFT_FREE(coupled_mesh_name);
+  CS_FREE(coupled_mesh_name);
 
   if (syr_coupling->verbosity > 0) {
     bft_printf(" [ok]\n");
@@ -749,11 +749,11 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
   if (coupling_ent->n_elts > 0) {
 
     if (syr_coupling->visualization != 0)
-      BFT_MALLOC(cs_to_syr_dist, coupling_ent->n_elts, float);
+      CS_MALLOC(cs_to_syr_dist, coupling_ent->n_elts, float);
 
-    BFT_MALLOC(elt_centers,
-               coupling_ent->n_elts*syr_coupling->dim,
-               cs_coord_t);
+    CS_MALLOC(elt_centers,
+              coupling_ent->n_elts*syr_coupling->dim,
+              cs_coord_t);
     fvm_nodal_get_element_centers(location_elts,
                                   CS_INTERLACE,
                                   coupling_ent->elt_dim,
@@ -846,7 +846,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
     fvm_nodal_destroy(location_elts);
 
   if (elt_centers != nullptr)
-    BFT_FREE(elt_centers);
+    CS_FREE(elt_centers);
 
   bool default_writer_is_active = false;
 
@@ -877,7 +877,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
                       b_dist,
                       nullptr);  /* time-independent variable */
 
-    BFT_FREE(cs_to_syr_dist);
+    CS_FREE(cs_to_syr_dist);
 
   }
 
@@ -887,7 +887,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
     cs_lnum_t n_dist_elts = ple_locator_get_n_dist_points(coupling_ent->locator);
 
-    BFT_MALLOC(syr_to_cs_dist, n_dist_elts, float);
+    CS_MALLOC(syr_to_cs_dist, n_dist_elts, float);
 
     // Handle direction based on whether solver is fluid or solid
     if (_is_cdo_thermal == 1) {
@@ -923,7 +923,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
       fvm_nodal_t *syr_points = fvm_nodal_create("SYRTHES face centers",
                                                  syr_coupling->dim);
 
-      BFT_MALLOC(p_vtx_id, n_dist_elts, cs_lnum_t);
+      CS_MALLOC(p_vtx_id, n_dist_elts, cs_lnum_t);
 
       for (i = 0; i < (cs_lnum_t)n_dist_elts; i++)
         p_vtx_id[i] = i;
@@ -970,7 +970,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
     } /* Do post-processing */
 
-    BFT_FREE(syr_to_cs_dist);
+    CS_FREE(syr_to_cs_dist);
 
   }
 
@@ -989,11 +989,11 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
     const ple_lnum_t *exterior_list
       = ple_locator_get_exterior_list(coupling_ent->locator);
 
-    BFT_MALLOC(post_vtx_num, n_exterior, cs_lnum_t);
-    BFT_MALLOC(exterior_coords, 3*n_exterior, cs_coord_t);
-    BFT_MALLOC(el_list,
-               coupling_ent->n_elts*3,
-               cs_coord_t);
+    CS_MALLOC(post_vtx_num, n_exterior, cs_lnum_t);
+    CS_MALLOC(exterior_coords, 3*n_exterior, cs_coord_t);
+    CS_MALLOC(el_list,
+              coupling_ent->n_elts*3,
+              cs_coord_t);
 
     fvm_nodal_get_element_centers(coupling_ent->elts,
                                   CS_INTERLACE,
@@ -1038,8 +1038,8 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
     if (cs_glob_n_ranks > 1)
       fvm_io_num_destroy(vtx_io_num);
 
-    BFT_FREE(el_list);
-    BFT_FREE(exterior_coords);
+    CS_FREE(el_list);
+    CS_FREE(exterior_coords);
 
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Coupling with SYRTHES impossible:\n"
@@ -1152,17 +1152,17 @@ _destroy_coupled_ent(cs_syr_coupling_ent_t  **coupling_ent)
     ce->locator = ple_locator_destroy(ce->locator);
 
   if (ce->solid_temp != nullptr)
-    BFT_FREE(ce->solid_temp);
+    CS_FREE(ce->solid_temp);
   if (ce->flux != nullptr)
-    BFT_FREE(ce->flux);
+    CS_FREE(ce->flux);
 
   if (ce->hvol != nullptr)
-    BFT_FREE(ce->hvol);
+    CS_FREE(ce->hvol);
 
   if (ce->elts != nullptr)
     ce->elts = fvm_nodal_destroy(ce->elts);
 
-  BFT_FREE(*coupling_ent);
+  CS_FREE(*coupling_ent);
 }
 
 /*----------------------------------------------------------------------------
@@ -1415,9 +1415,9 @@ _syr_coupling_define(int          dim,
     if (strcmp(_syr_couplings[i]->syr_name, syr_name) == 0) {
       syr_coupling = _syr_couplings[i];
 
-      BFT_FREE(syr_coupling->syr_name);
-      BFT_FREE(syr_coupling->b_location_ids);
-      BFT_FREE(syr_coupling->v_location_ids);
+      CS_FREE(syr_coupling->syr_name);
+      CS_FREE(syr_coupling->b_location_ids);
+      CS_FREE(syr_coupling->v_location_ids);
 
       assert(syr_coupling->faces == nullptr);  /* not built yet at this stage */
       assert(syr_coupling->cells == nullptr);
@@ -1427,9 +1427,9 @@ _syr_coupling_define(int          dim,
   /* Allocate _cs_syr_coupling_t structure */
 
   if (syr_coupling == nullptr) {
-    BFT_REALLOC(_syr_couplings,
-                _syr_n_couplings + 1, cs_syr_coupling_t *);
-    BFT_MALLOC(syr_coupling, 1, cs_syr_coupling_t);
+    CS_REALLOC(_syr_couplings,
+               _syr_n_couplings + 1, cs_syr_coupling_t *);
+    CS_MALLOC(syr_coupling, 1, cs_syr_coupling_t);
 
     _syr_couplings[_syr_n_couplings] = syr_coupling;
 
@@ -1442,11 +1442,11 @@ _syr_coupling_define(int          dim,
   syr_coupling->syr_name = nullptr;
 
   if (syr_name != nullptr) {
-    BFT_MALLOC(syr_coupling->syr_name, strlen(syr_name) + 1, char);
+    CS_MALLOC(syr_coupling->syr_name, strlen(syr_name) + 1, char);
     strcpy(syr_coupling->syr_name, syr_name);
   }
   else {
-    BFT_MALLOC(syr_coupling->syr_name, 1, char);
+    CS_MALLOC(syr_coupling->syr_name, 1, char);
     syr_coupling->syr_name[0] = '\0';
   }
 
@@ -1496,7 +1496,7 @@ _add_mesh_location(cs_syr_coupling_t  *syr_coupling,
   if (l_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
     int i = syr_coupling->n_b_locations;
     syr_coupling->n_b_locations += 1;
-    BFT_REALLOC(syr_coupling->b_location_ids, syr_coupling->n_b_locations, int);
+    CS_REALLOC(syr_coupling->b_location_ids, syr_coupling->n_b_locations, int);
 
     syr_coupling->b_location_ids[i] = location_id;
   }
@@ -1504,7 +1504,7 @@ _add_mesh_location(cs_syr_coupling_t  *syr_coupling,
   else if (l_type == CS_MESH_LOCATION_CELLS) {
     int i = syr_coupling->n_v_locations;
     syr_coupling->n_v_locations += 1;
-    BFT_REALLOC(syr_coupling->v_location_ids, syr_coupling->n_v_locations, int);
+    CS_REALLOC(syr_coupling->v_location_ids, syr_coupling->n_v_locations, int);
 
     syr_coupling->v_location_ids[i] = location_id;
   }
@@ -1531,9 +1531,9 @@ _syr_coupling_all_destroy(void)
 
     /* Free _cs_syr_coupling structure */
 
-    BFT_FREE(syr_coupling->syr_name);
-    BFT_FREE(syr_coupling->b_location_ids);
-    BFT_FREE(syr_coupling->v_location_ids);
+    CS_FREE(syr_coupling->syr_name);
+    CS_FREE(syr_coupling->b_location_ids);
+    CS_FREE(syr_coupling->v_location_ids);
 
     if (syr_coupling->faces != nullptr)
       _destroy_coupled_ent(&(syr_coupling->faces));
@@ -1544,12 +1544,12 @@ _syr_coupling_all_destroy(void)
 
     _finalize_comm(syr_coupling);
 
-    BFT_FREE(syr_coupling);
+    CS_FREE(syr_coupling);
 
   } /* End of loop on _syr_couplings */
 
   _syr_n_couplings = 0;
-  BFT_FREE(_syr_couplings);
+  CS_FREE(_syr_couplings);
 
   bft_printf(_("\nStructures associated with SYRTHES coupling freed.\n"));
   bft_printf_flush();
@@ -1825,7 +1825,7 @@ _syr_coupling_send_tf_hf(cs_syr_coupling_t  *syr_coupling,
 
   /* Prepare and send data */
 
-  BFT_MALLOC(send_var, n_dist*2, double);
+  CS_MALLOC(send_var, n_dist*2, double);
 
   for (cs_lnum_t ii = 0; ii < n_dist; ii++) {
     send_var[ii*2]     = tf[dist_loc[ii]];
@@ -1840,7 +1840,7 @@ _syr_coupling_send_tf_hf(cs_syr_coupling_t  *syr_coupling,
                                  2,
                                  0);
 
-  BFT_FREE(send_var);
+  CS_FREE(send_var);
 
   if (mode == 1 && coupling_ent->n_elts > 0) {
 
@@ -2021,7 +2021,7 @@ _init_all_mpi_syr(int  *n_unmatched,
         for (int l = match_queue_id; l < _n_unmatched; l++)
           _unmatched_ids[l] = _unmatched_ids[l+1];
         if (_n_unmatched == 0)
-          BFT_FREE(_unmatched_ids);
+          CS_FREE(_unmatched_ids);
 
         /* Set communicator */
         _syr_coupling_init_comm(_syr_coupling_by_id(coupling_id),
@@ -2227,12 +2227,12 @@ cs_syr_coupling_define(const char  *syrthes_name,
 
       char *name;
       size_t l = strlen(syrthes_name) + strlen(type_name[i]) + 2;
-      BFT_MALLOC(name, l, char);
+      CS_MALLOC(name, l, char);
       snprintf(name, l, "%s_%s", syrthes_name, type_name[i]);
 
       int j = cs_mesh_location_add(name, type_filter[i], sel_criteria[i]);
 
-      BFT_FREE(name);
+      CS_FREE(name);
 
       _add_mesh_location(syr_coupling, j);
 
@@ -2303,7 +2303,7 @@ cs_syr_coupling_all_init(void)
   int n_unmatched = _syr_n_couplings;
 
   int *unmatched_ids;
-  BFT_MALLOC(unmatched_ids, n_unmatched, int);
+  CS_MALLOC(unmatched_ids, n_unmatched, int);
 
   for (int i = 0; i < n_unmatched; i++)
     unmatched_ids[i] = i;
@@ -2324,7 +2324,7 @@ cs_syr_coupling_all_init(void)
 
     _print_all_unmatched_syr(n_unmatched, unmatched_ids);
 
-    BFT_FREE(unmatched_ids);
+    CS_FREE(unmatched_ids);
 
     bft_error(__FILE__, __LINE__, 0,
               _("At least 1 SYRTHES coupling was defined for which\n"
@@ -2605,7 +2605,7 @@ cs_syr_coupling_recv_boundary(const int  nvar,
       /* Get list of coupled faces */
 
       cs_lnum_t  *f_ids;
-      BFT_MALLOC(f_ids, n_cpl_faces, cs_lnum_t);
+      CS_MALLOC(f_ids, n_cpl_faces, cs_lnum_t);
       fvm_nodal_get_parent_id(coupling_ent->elts,
                               coupling_ent->elt_dim,
                               f_ids);
@@ -2613,7 +2613,7 @@ cs_syr_coupling_recv_boundary(const int  nvar,
       /* Read wall temperature and interpolate if necessary */
 
       cs_real_t *t_solid;
-      BFT_MALLOC(t_solid, n_cpl_faces, cs_real_t);
+      CS_MALLOC(t_solid, n_cpl_faces, cs_real_t);
       _syr_coupling_recv_tsolid(syr_coupling, t_solid, 0);
 
       /*  For scalars coupled with SYRTHES, prescribe a Dirichlet
@@ -2675,8 +2675,8 @@ cs_syr_coupling_recv_boundary(const int  nvar,
 
       } /* End case for enthalpy */
 
-      BFT_FREE(f_ids);
-      BFT_FREE(t_solid);
+      CS_FREE(f_ids);
+      CS_FREE(t_solid);
 
     } /* End loop on couplings */
 
@@ -2721,9 +2721,9 @@ cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
 
   cs_lnum_t  *f_ids;
   cs_real_t  *t_fluid, *h_cpl;
-  BFT_MALLOC(f_ids, n_b_faces, cs_lnum_t);
-  BFT_MALLOC(t_fluid, n_b_faces, cs_real_t);
-  BFT_MALLOC(h_cpl, n_b_faces, cs_real_t);
+  CS_MALLOC(f_ids, n_b_faces, cs_lnum_t);
+  CS_MALLOC(t_fluid, n_b_faces, cs_real_t);
+  CS_MALLOC(h_cpl, n_b_faces, cs_real_t);
 
   /* Prepare conversion to temperature for enthalpy or energy
      (check for surface couplings to make sure it is needed,
@@ -2731,13 +2731,13 @@ cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
 
   cs_real_t  *wa = nullptr;
   if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
-    BFT_MALLOC(wa, n_b_faces, cs_real_t);
+    CS_MALLOC(wa, n_b_faces, cs_real_t);
     cs_ht_convert_h_to_t_faces(v_fluid, wa);
   }
   else if (   cs_glob_thermal_model->thermal_variable
            == CS_THERMAL_MODEL_TOTAL_ENERGY) {
     /* Epsilon sup for perfect gas at cells */
-    BFT_MALLOC(wa, n_cells, cs_real_t);
+    CS_MALLOC(wa, n_cells, cs_real_t);
     cs_cf_thermo_eps_sup(CS_F_(rho)->val, wa, n_cells);
   }
 
@@ -2876,11 +2876,11 @@ cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
 
   } /* End loop on couplings */
 
-  BFT_FREE(wa);
+  CS_FREE(wa);
 
-  BFT_FREE(f_ids);
-  BFT_FREE(t_fluid);
-  BFT_FREE(h_cpl);
+  CS_FREE(f_ids);
+  CS_FREE(t_fluid);
+  CS_FREE(h_cpl);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2938,9 +2938,9 @@ cs_syr_coupling_exchange_volume(void)
 
       cs_lnum_t  *c_ids;
       cs_real_t *t_fluid, *h_vol;
-      BFT_MALLOC(c_ids, n_cpl_cells, cs_lnum_t);
-      BFT_MALLOC(t_fluid, n_cpl_cells, cs_real_t);
-      BFT_MALLOC(h_vol, n_cpl_cells, cs_real_t);
+      CS_MALLOC(c_ids, n_cpl_cells, cs_lnum_t);
+      CS_MALLOC(t_fluid, n_cpl_cells, cs_real_t);
+      CS_MALLOC(h_vol, n_cpl_cells, cs_real_t);
 
       fvm_nodal_get_parent_id(coupling_ent->elts,
                               coupling_ent->elt_dim,
@@ -2972,9 +2972,9 @@ cs_syr_coupling_exchange_volume(void)
 
       _syr_coupling_send_tf_hf(syr_coupling, c_ids, t_fluid, h_vol, 1);
 
-      BFT_FREE(c_ids);
-      BFT_FREE(t_fluid);
-      BFT_FREE(h_vol);
+      CS_FREE(c_ids);
+      CS_FREE(t_fluid);
+      CS_FREE(h_vol);
 
     } /* End loop on couplings */
 
@@ -3031,10 +3031,10 @@ cs_syr_coupling_volume_source_terms(int        field_id,
 
     cs_lnum_t  *c_ids;
     cs_real_t *t_fluid, *ctbimp, *ctbexp;
-    BFT_MALLOC(c_ids, n_cpl_cells, cs_lnum_t);
-    BFT_MALLOC(t_fluid, n_cpl_cells, cs_real_t);
-    BFT_MALLOC(ctbimp, n_cpl_cells, cs_real_t);
-    BFT_MALLOC(ctbexp, n_cpl_cells, cs_real_t);
+    CS_MALLOC(c_ids, n_cpl_cells, cs_lnum_t);
+    CS_MALLOC(t_fluid, n_cpl_cells, cs_real_t);
+    CS_MALLOC(ctbimp, n_cpl_cells, cs_real_t);
+    CS_MALLOC(ctbexp, n_cpl_cells, cs_real_t);
 
     fvm_nodal_get_parent_id(coupling_ent->elts,
                             coupling_ent->elt_dim,
@@ -3064,10 +3064,10 @@ cs_syr_coupling_volume_source_terms(int        field_id,
 
     }
 
-    BFT_FREE(c_ids);
-    BFT_FREE(t_fluid);
-    BFT_FREE(ctbimp);
-    BFT_FREE(ctbexp);
+    CS_FREE(c_ids);
+    CS_FREE(t_fluid);
+    CS_FREE(ctbimp);
+    CS_FREE(ctbexp);
 
   } /* End loop on couplings */
 }
@@ -3260,7 +3260,7 @@ cs_syr_coupling_recv_tf_hf
     const cs_lnum_t n_cpl_elts = coupling_ent->n_elts;
 
     double *_recv_array = nullptr;
-    BFT_MALLOC(_recv_array, n_arrays * n_cpl_elts, double);
+    CS_MALLOC(_recv_array, n_arrays * n_cpl_elts, double);
 
     ple_locator_exchange_point_var(coupling_ent->locator,
                                    nullptr,
@@ -3284,7 +3284,7 @@ cs_syr_coupling_recv_tf_hf
       }
     }
 
-    BFT_FREE(_recv_array);
+    CS_FREE(_recv_array);
   }
 }
 
@@ -3328,7 +3328,7 @@ cs_syr_coupling_send_tsolid
       = ple_locator_get_dist_locations(coupling_ent->locator);
 
     double *_send_array = nullptr;
-    BFT_MALLOC(_send_array, n_dist, double);
+    CS_MALLOC(_send_array, n_dist, double);
 
     for (cs_lnum_t e_id = 0; e_id < n_dist; e_id++)
       _send_array[e_id] = t_solid[dist_loc[e_id]];
@@ -3341,7 +3341,7 @@ cs_syr_coupling_send_tsolid
                                    1,
                                    0);
 
-    BFT_FREE(_send_array);
+    CS_FREE(_send_array);
   }
 }
 

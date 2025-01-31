@@ -37,8 +37,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_1d_wall_thermal_check.h"
 #include "base/cs_boundary_conditions.h"
@@ -46,6 +44,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_ht_convert.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_prototypes.h"
 #include "rayt/cs_rad_transfer.h"
@@ -182,14 +181,14 @@ cs_boundary_conditions_coupling_t_out(cs_real_t  hbord[],
     cs_real_t *wa = nullptr;
 
     // Temperature near boundary faces
-    BFT_MALLOC(wa, m->n_b_faces, cs_real_t);
+    CS_MALLOC(wa, m->n_b_faces, cs_real_t);
     cs_ht_convert_h_to_t_faces(tbord, wa);
 
     for (cs_lnum_t ii = 0; ii < nfpt1d; ii++) {
       const cs_lnum_t face_id = ifpt1d[ii] - 1;
       tbord[face_id] = wa[face_id];
     }
-    BFT_FREE(wa);
+    CS_FREE(wa);
 
   }
   else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TOTAL_ENERGY) {
@@ -204,7 +203,7 @@ cs_boundary_conditions_coupling_t_out(cs_real_t  hbord[],
       cpro_cv = cs_field_by_id(icv)->val;
 
     // Epsilon sup for perfect gas at cells
-    BFT_MALLOC(wa, m->n_cells_with_ghosts, cs_real_t);
+    CS_MALLOC(wa, m->n_cells_with_ghosts, cs_real_t);
     cs_cf_thermo_eps_sup(cpro_rho, wa, m->n_cells);
 
     for (cs_lnum_t ii = 0; ii < nfpt1d; ii++) {
@@ -218,7 +217,7 @@ cs_boundary_conditions_coupling_t_out(cs_real_t  hbord[],
         tbord[face_id] = cvt/cv0;
     }
 
-    BFT_FREE(wa);
+    CS_FREE(wa);
   }
 
   // Update external boudary condition

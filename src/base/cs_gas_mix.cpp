@@ -44,7 +44,6 @@
 
 #include "base/cs_log.h"
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -53,6 +52,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
@@ -374,7 +374,7 @@ _map_field(const cs_field_t *f)
   if (is_solved)
     _gas_mix.n_species_solved += 1;
 
-  BFT_REALLOC(_gas_mix.species_to_field_id, _gas_mix.n_species, int);
+  CS_REALLOC(_gas_mix.species_to_field_id, _gas_mix.n_species, int);
 
   /* If we need to insert a solved variable with non-solved fields
      already mapped, shift the non-solved field map positions */
@@ -935,7 +935,7 @@ cs_gas_mix_physical_properties(void)
     cvar_enth = th_f->val;
     cpro_rho  = CS_F_(rho)->val;
     tempk     = cs_field_by_name("tempk")->val;
-    BFT_MALLOC(lambda, n_cells_ext, cs_real_t);
+    CS_MALLOC(lambda, n_cells_ext, cs_real_t);
   }
   else {
     tempk = CS_F_(t_kelvin)->val;
@@ -1196,7 +1196,7 @@ cs_gas_mix_physical_properties(void)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++)
       cpro_venth[c_id] = lambda[c_id]/cpro_cp[c_id];
 
-    BFT_FREE(lambda);
+    CS_FREE(lambda);
   }
 }
 
@@ -1209,7 +1209,7 @@ cs_gas_mix_physical_properties(void)
 void
 cs_gas_mix_finalize(void)
 {
-  BFT_FREE(_gas_mix.species_to_field_id);
+  CS_FREE(_gas_mix.species_to_field_id);
   _gas_mix.n_species = 0;
 }
 

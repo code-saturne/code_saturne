@@ -53,7 +53,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
@@ -67,6 +66,7 @@
 #include "base/cs_coupling.h"
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -203,13 +203,13 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
   const cs_lnum_t nb_for = ast_cpl->n_faces;
 
   for (int i = 0; i < 2; i++) {
-    BFT_MALLOC(ast_cpl->xast_curr[i], 3 * nb_dyn, cs_real_t);
-    BFT_MALLOC(ast_cpl->xsat_pred[i], 3 * nb_dyn, cs_real_t);
+    CS_MALLOC(ast_cpl->xast_curr[i], 3 * nb_dyn, cs_real_t);
+    CS_MALLOC(ast_cpl->xsat_pred[i], 3 * nb_dyn, cs_real_t);
   }
 
-  BFT_MALLOC(ast_cpl->vast_curr, 3 * nb_dyn, cs_real_t);
-  BFT_MALLOC(ast_cpl->vast_prev, 3 * nb_dyn, cs_real_t);
-  BFT_MALLOC(ast_cpl->vast_pprev, 3 * nb_dyn, cs_real_t);
+  CS_MALLOC(ast_cpl->vast_curr, 3 * nb_dyn, cs_real_t);
+  CS_MALLOC(ast_cpl->vast_prev, 3 * nb_dyn, cs_real_t);
+  CS_MALLOC(ast_cpl->vast_pprev, 3 * nb_dyn, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
                                     0.,
@@ -221,9 +221,9 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->vast_prev,
                                     ast_cpl->vast_pprev);
 
-  BFT_MALLOC(ast_cpl->forc_curr, 3 * nb_for, cs_real_t);
-  BFT_MALLOC(ast_cpl->forc_prev, 3 * nb_for, cs_real_t);
-  BFT_MALLOC(ast_cpl->forc_pred, 3 * nb_for, cs_real_t);
+  CS_MALLOC(ast_cpl->forc_curr, 3 * nb_for, cs_real_t);
+  CS_MALLOC(ast_cpl->forc_prev, 3 * nb_for, cs_real_t);
+  CS_MALLOC(ast_cpl->forc_pred, 3 * nb_for, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * nb_for,
                                     0.,
@@ -232,7 +232,7 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->forc_pred);
 
   for (int i = 0; i < 3; i++) {
-    BFT_MALLOC(ast_cpl->tmp[i], 3 * CS_MAX(nb_dyn, nb_for), cs_real_t);
+    CS_MALLOC(ast_cpl->tmp[i], 3 * CS_MAX(nb_dyn, nb_for), cs_real_t);
   }
 }
 
@@ -408,7 +408,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
   cs_real_t       *values;
   const cs_mesh_t *m      = cs_glob_mesh;
   cs_lnum_t        n_vals = CS_MAX(m->n_b_faces, m->n_vertices) * 3;
-  BFT_MALLOC(values, n_vals, cs_real_t);
+  CS_MALLOC(values, n_vals, cs_real_t);
   cs_arrays_set_value<cs_real_t, 1>(n_vals, 0., values);
 
   _scatter_values_r3(cpl->n_vertices,
@@ -458,7 +458,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
                     values,
                     ts);
 
-  BFT_FREE(values);
+  CS_FREE(values);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -510,7 +510,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   cs_ast_coupling_t *cpl;
 
-  BFT_MALLOC(cpl, 1, cs_ast_coupling_t);
+  CS_MALLOC(cpl, 1, cs_ast_coupling_t);
 
   memset(&(cpl->aci), 0, sizeof(ple_coupling_mpi_set_info_t));
   cpl->aci.root_rank = -1;
@@ -664,20 +664,20 @@ cs_ast_coupling_finalize(void)
     return;
 
   for (int i = 0; i < 2; i++) {
-    BFT_FREE(cpl->xast_curr[i]);
-    BFT_FREE(cpl->xsat_pred[i]);
+    CS_FREE(cpl->xast_curr[i]);
+    CS_FREE(cpl->xsat_pred[i]);
   }
 
-  BFT_FREE(cpl->vast_curr);
-  BFT_FREE(cpl->vast_prev);
-  BFT_FREE(cpl->vast_pprev);
+  CS_FREE(cpl->vast_curr);
+  CS_FREE(cpl->vast_prev);
+  CS_FREE(cpl->vast_pprev);
 
-  BFT_FREE(cpl->forc_curr);
-  BFT_FREE(cpl->forc_prev);
-  BFT_FREE(cpl->forc_pred);
+  CS_FREE(cpl->forc_curr);
+  CS_FREE(cpl->forc_prev);
+  CS_FREE(cpl->forc_pred);
 
   for (int i = 0; i < 3; i++) {
-    BFT_FREE(cpl->tmp[i]);
+    CS_FREE(cpl->tmp[i]);
   }
 
   if (cpl->post_mesh != nullptr)
@@ -689,7 +689,7 @@ cs_ast_coupling_finalize(void)
   cpl->mc_vertices = nullptr;
   cpl->mc_faces    = nullptr;
 
-  BFT_FREE(cpl);
+  CS_FREE(cpl);
 
   cs_glob_ast_coupling = cpl;
 }

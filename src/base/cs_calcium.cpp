@@ -40,11 +40,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -479,7 +479,7 @@ cs_calcium_write_int(int                    rank_id,
   _calcium_echo_pre_write(rank_id,
                           _var_name, iteration, CS_INT_TYPE, n_val);
 
-  BFT_MALLOC(_val, n_val, int);
+  CS_MALLOC(_val, n_val, int);
   memcpy(_val, val, n_val * sizeof(int));
 
 #if defined(HAVE_MPI)
@@ -496,7 +496,7 @@ cs_calcium_write_int(int                    rank_id,
 
 #endif
 
-  BFT_FREE(_val);
+  CS_FREE(_val);
 
   _calcium_echo_post_write(CS_INT_TYPE, n_val, val);
 
@@ -534,7 +534,7 @@ cs_calcium_write_double(int                    rank_id,
   _calcium_echo_pre_write(rank_id,
                           _var_name, iteration, CS_DOUBLE, n_val);
 
-  BFT_MALLOC(_val, n_val, double);
+  CS_MALLOC(_val, n_val, double);
   memcpy(_val, val, n_val * sizeof(double));
 
 #if defined(HAVE_MPI)
@@ -551,7 +551,7 @@ cs_calcium_write_double(int                    rank_id,
 
 #endif
 
-  BFT_FREE(_val);
+  CS_FREE(_val);
 
   _calcium_echo_post_write(CS_DOUBLE, n_val, val);
 

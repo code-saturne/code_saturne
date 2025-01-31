@@ -37,7 +37,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_selector.h"
@@ -60,6 +59,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "alge/cs_matrix_default.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_coherency.h"
@@ -201,7 +201,7 @@ _post_error_faces_select(void         *input,
 
   const cs_lnum_t  *count = reinterpret_cast<cs_lnum_t *>(input);
 
-  BFT_MALLOC(_face_ids, count[1], cs_lnum_t);
+  CS_MALLOC(_face_ids, count[1], cs_lnum_t);
 
   for (face_id = count[0]; face_id < count[1]; face_id++)
     _face_ids[_n_faces++] = face_id;
@@ -250,8 +250,8 @@ _turbomachinery_coupling_tag(void            *context,
     int *elt_tag;
     cs_lnum_t *parent_num;
 
-    BFT_MALLOC(elt_tag, n_elts, int);
-    BFT_MALLOC(parent_num, n_elts, cs_lnum_t);
+    CS_MALLOC(elt_tag, n_elts, int);
+    CS_MALLOC(parent_num, n_elts, cs_lnum_t);
 
     fvm_nodal_get_parent_num(mesh, ent_dim, parent_num);
     for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -259,11 +259,11 @@ _turbomachinery_coupling_tag(void            *context,
       elt_tag[i] = tbm->cell_rotor_num[c_id];
     }
 
-    BFT_FREE(parent_num);
+    CS_FREE(parent_num);
 
     fvm_nodal_set_tag(mesh, elt_tag, ent_dim);
 
-    BFT_FREE(elt_tag);
+    CS_FREE(elt_tag);
 
   }
 
@@ -293,12 +293,12 @@ _turbomachinery_create(void)
 {
   cs_turbomachinery_t  *tbm = NULL;
 
-  BFT_MALLOC(tbm, 1, cs_turbomachinery_t);
+  CS_MALLOC(tbm, 1, cs_turbomachinery_t);
 
   tbm->n_rotors = 0;
   tbm->rotor_cells_c = NULL;
 
-  BFT_MALLOC(tbm->rotation, 1, cs_rotation_t); /* Null rotation at id 0 */
+  CS_MALLOC(tbm->rotation, 1, cs_rotation_t); /* Null rotation at id 0 */
   cs_rotation_t *r = tbm->rotation;
   r->omega = 0;
   r->angle = 0;
@@ -486,7 +486,7 @@ _copy_mesh(const cs_mesh_t  *mesh,
 
   /* Local structures */
 
-  BFT_REALLOC(mesh_copy->vtx_coord, (3*mesh->n_vertices), cs_real_t);
+  CS_REALLOC(mesh_copy->vtx_coord, (3*mesh->n_vertices), cs_real_t);
   memcpy(mesh_copy->vtx_coord,
          mesh->vtx_coord,
          3*mesh->n_vertices*sizeof(cs_real_t));
@@ -494,38 +494,38 @@ _copy_mesh(const cs_mesh_t  *mesh,
   if (cs_glob_n_joinings < 1)
     return;
 
-  BFT_MALLOC(mesh_copy->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
+  CS_MALLOC(mesh_copy->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
   memcpy(mesh_copy->i_face_cells,
          mesh->i_face_cells,
          mesh->n_i_faces*sizeof(cs_lnum_2_t));
 
   if (mesh->n_b_faces > 0) {
-    BFT_MALLOC(mesh_copy->b_face_cells, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(mesh_copy->b_face_cells, mesh->n_b_faces, cs_lnum_t);
     memcpy(mesh_copy->b_face_cells,
            mesh->b_face_cells,
            mesh->n_b_faces*sizeof(cs_lnum_t));
   }
 
-  BFT_MALLOC(mesh_copy->i_face_vtx_idx, mesh->n_i_faces + 1, cs_lnum_t);
+  CS_MALLOC(mesh_copy->i_face_vtx_idx, mesh->n_i_faces + 1, cs_lnum_t);
   memcpy(mesh_copy->i_face_vtx_idx,
          mesh->i_face_vtx_idx,
          (mesh->n_i_faces + 1)*sizeof(cs_lnum_t));
 
-  BFT_MALLOC(mesh_copy->i_face_vtx_lst,
-             mesh->i_face_vtx_connect_size,
-             cs_lnum_t);
+  CS_MALLOC(mesh_copy->i_face_vtx_lst,
+            mesh->i_face_vtx_connect_size,
+            cs_lnum_t);
   memcpy(mesh_copy->i_face_vtx_lst, mesh->i_face_vtx_lst,
          mesh->i_face_vtx_connect_size*sizeof(cs_lnum_t));
 
-  BFT_MALLOC(mesh_copy->b_face_vtx_idx, mesh->n_b_faces + 1, cs_lnum_t);
+  CS_MALLOC(mesh_copy->b_face_vtx_idx, mesh->n_b_faces + 1, cs_lnum_t);
   memcpy(mesh_copy->b_face_vtx_idx,
          mesh->b_face_vtx_idx,
          (mesh->n_b_faces + 1)*sizeof(cs_lnum_t));
 
   if (mesh->b_face_vtx_connect_size > 0) {
-    BFT_MALLOC(mesh_copy->b_face_vtx_lst,
-               mesh->b_face_vtx_connect_size,
-               cs_lnum_t);
+    CS_MALLOC(mesh_copy->b_face_vtx_lst,
+              mesh->b_face_vtx_connect_size,
+              cs_lnum_t);
     memcpy(mesh_copy->b_face_vtx_lst,
            mesh->b_face_vtx_lst,
            mesh->b_face_vtx_connect_size*sizeof(cs_lnum_t));
@@ -541,28 +541,28 @@ _copy_mesh(const cs_mesh_t  *mesh,
   /* Global numbering */
 
   if (mesh->global_cell_num != NULL) {
-    BFT_MALLOC(mesh_copy->global_cell_num, mesh->n_cells, cs_gnum_t);
+    CS_MALLOC(mesh_copy->global_cell_num, mesh->n_cells, cs_gnum_t);
     memcpy(mesh_copy->global_cell_num,
            mesh->global_cell_num,
            mesh->n_cells*sizeof(cs_gnum_t));
   }
 
   if (mesh->global_i_face_num != NULL) {
-    BFT_MALLOC(mesh_copy->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
+    CS_MALLOC(mesh_copy->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
     memcpy(mesh_copy->global_i_face_num,
            mesh->global_i_face_num,
            mesh->n_i_faces*sizeof(cs_gnum_t));
   }
 
   if (mesh->global_b_face_num != NULL) {
-    BFT_MALLOC(mesh_copy->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
+    CS_MALLOC(mesh_copy->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
     memcpy(mesh_copy->global_b_face_num,
            mesh->global_b_face_num,
            mesh->n_b_faces*sizeof(cs_gnum_t));
   }
 
   if (mesh->global_vtx_num != NULL) {
-    BFT_MALLOC(mesh_copy->global_vtx_num, mesh->n_vertices, cs_gnum_t);
+    CS_MALLOC(mesh_copy->global_vtx_num, mesh->n_vertices, cs_gnum_t);
     memcpy(mesh_copy->global_vtx_num,
            mesh->global_vtx_num,
            mesh->n_vertices*sizeof(cs_gnum_t));
@@ -590,7 +590,7 @@ _copy_mesh(const cs_mesh_t  *mesh,
 
   mesh_copy->n_b_cells = mesh->n_b_cells;
 
-  BFT_MALLOC(mesh_copy->b_cells, mesh->n_b_cells, cs_lnum_t);
+  CS_MALLOC(mesh_copy->b_cells, mesh->n_b_cells, cs_lnum_t);
   memcpy(mesh_copy->b_cells, mesh->b_cells, mesh->n_b_cells*sizeof(cs_lnum_t));
 
   /* Group and family features */
@@ -599,10 +599,10 @@ _copy_mesh(const cs_mesh_t  *mesh,
   mesh_copy->n_groups = mesh->n_groups;
 
   if (mesh->n_groups > 0) {
-    BFT_MALLOC(mesh_copy->group_idx, mesh->n_groups + 1, int);
+    CS_MALLOC(mesh_copy->group_idx, mesh->n_groups + 1, int);
     memcpy(mesh_copy->group_idx, mesh->group_idx,
            (mesh->n_groups + 1)*sizeof(cs_lnum_t));
-    BFT_MALLOC(mesh_copy->group, mesh->group_idx[mesh->n_groups], char);
+    CS_MALLOC(mesh_copy->group, mesh->group_idx[mesh->n_groups], char);
     memcpy(mesh_copy->group, mesh->group,
            mesh->group_idx[mesh->n_groups]*sizeof(char));
   }
@@ -612,31 +612,31 @@ _copy_mesh(const cs_mesh_t  *mesh,
 
   n_elts = mesh->n_families*mesh->n_max_family_items;
   if (n_elts > 0) {
-    BFT_MALLOC(mesh_copy->family_item, n_elts , int);
+    CS_MALLOC(mesh_copy->family_item, n_elts , int);
     memcpy(mesh_copy->family_item, mesh->family_item, n_elts*sizeof(int));
   }
 
-  BFT_MALLOC(mesh_copy->cell_family, mesh->n_cells_with_ghosts, int);
+  CS_MALLOC(mesh_copy->cell_family, mesh->n_cells_with_ghosts, int);
   memcpy(mesh_copy->cell_family, mesh->cell_family,
          mesh->n_cells_with_ghosts*sizeof(int));
 
-  BFT_MALLOC(mesh_copy->i_face_family, mesh->n_i_faces, int);
+  CS_MALLOC(mesh_copy->i_face_family, mesh->n_i_faces, int);
   memcpy(mesh_copy->i_face_family, mesh->i_face_family,
          mesh->n_i_faces*sizeof(int));
 
   if (mesh->n_b_faces > 0) {
-    BFT_MALLOC(mesh_copy->b_face_family, mesh->n_b_faces, int);
+    CS_MALLOC(mesh_copy->b_face_family, mesh->n_b_faces, int);
     memcpy(mesh_copy->b_face_family, mesh->b_face_family,
            mesh->n_b_faces*sizeof(int));
   }
 
   if (mesh->i_face_r_gen != NULL) {
-    BFT_MALLOC(mesh_copy->i_face_r_gen, mesh->n_i_faces, char);
+    CS_MALLOC(mesh_copy->i_face_r_gen, mesh->n_i_faces, char);
     memcpy(mesh_copy->i_face_r_gen, mesh->i_face_r_gen,
            mesh->n_i_faces);
   }
   if (mesh->vtx_r_gen != NULL) {
-    BFT_MALLOC(mesh_copy->vtx_r_gen, mesh->n_vertices, char);
+    CS_MALLOC(mesh_copy->vtx_r_gen, mesh->n_vertices, char);
     memcpy(mesh_copy->vtx_r_gen, mesh->vtx_r_gen, mesh->n_vertices);
   }
 }
@@ -702,7 +702,7 @@ _update_geometry(cs_mesh_t  *mesh,
 
   const int  *cell_flag = tbm->cell_rotor_num;
 
-  BFT_MALLOC(vtx_rotor_num, mesh->n_vertices, cs_lnum_t);
+  CS_MALLOC(vtx_rotor_num, mesh->n_vertices, cs_lnum_t);
 
   for (v_id = 0; v_id < mesh->n_vertices; v_id++)
     vtx_rotor_num[v_id] = 0;
@@ -744,7 +744,7 @@ _update_geometry(cs_mesh_t  *mesh,
 
   cs_real_34_t  *m;
 
-  BFT_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
+  CS_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
 
   for (int j = 0; j < tbm->n_rotors+1; j++) {
     cs_rotation_t *r = tbm->rotation + j;
@@ -761,8 +761,8 @@ _update_geometry(cs_mesh_t  *mesh,
                             &(mesh->vtx_coord[3*v_id]));
   }
 
-  BFT_FREE(m);
-  BFT_FREE(vtx_rotor_num);
+  CS_FREE(m);
+  CS_FREE(vtx_rotor_num);
 }
 
 /*----------------------------------------------------------------------------
@@ -817,12 +817,12 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
 
   assert(tbm->rotor_cells_c != NULL);
 
-  BFT_REALLOC(tbm->cell_rotor_num, m->n_cells_with_ghosts, int);
+  CS_REALLOC(tbm->cell_rotor_num, m->n_cells_with_ghosts, int);
 
   for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++)
     tbm->cell_rotor_num[i] = 0;
 
-  BFT_MALLOC(_cell_list, m->n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(_cell_list, m->n_cells_with_ghosts, cs_lnum_t);
 
   for (int r_id = 0; r_id < tbm->n_rotors; r_id++) {
     cs_selector_get_cell_list(tbm->rotor_cells_c[r_id],
@@ -842,7 +842,7 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
       tbm->cell_rotor_num[_cell_list[i]] = r_id + 1;
   }
 
-  BFT_FREE(_cell_list);
+  CS_FREE(_cell_list);
 
   if (m->halo != NULL)
     cs_halo_sync_untyped(m->halo,
@@ -1174,9 +1174,9 @@ _update_mesh(bool     restart_mode,
   if (cs_glob_mesh->halo != NULL) {
 
     const cs_mesh_t *m = cs_glob_mesh;
-    BFT_REALLOC(tbm->cell_rotor_num,
-                m->n_cells_with_ghosts,
-                int);
+    CS_REALLOC(tbm->cell_rotor_num,
+               m->n_cells_with_ghosts,
+               int);
 
     cs_halo_sync_untyped(m->halo,
                          CS_HALO_EXTENDED,
@@ -1446,7 +1446,7 @@ cs_turbomachinery_add_rotor(const char    *cell_criteria,
   int r_id = tbm->n_rotors;
   tbm->n_rotors += 1;
 
-  BFT_REALLOC(tbm->rotation, tbm->n_rotors + 1, cs_rotation_t);
+  CS_REALLOC(tbm->rotation, tbm->n_rotors + 1, cs_rotation_t);
   cs_rotation_t *r = tbm->rotation + r_id + 1;
   r->omega = rotation_velocity;
   r->angle = 0;
@@ -1455,8 +1455,8 @@ cs_turbomachinery_add_rotor(const char    *cell_criteria,
     r->invariant[i] = rotation_invariant[i];
   }
 
-  BFT_REALLOC(tbm->rotor_cells_c, tbm->n_rotors, char *);
-  BFT_MALLOC(tbm->rotor_cells_c[r_id], strlen(cell_criteria) + 1, char);
+  CS_REALLOC(tbm->rotor_cells_c, tbm->n_rotors, char *);
+  CS_MALLOC(tbm->rotor_cells_c[r_id], strlen(cell_criteria) + 1, char);
   strcpy(tbm->rotor_cells_c[r_id], cell_criteria);
 }
 
@@ -1483,7 +1483,7 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
 {
   /* Allocate and initialize a cs_join_t structure */
 
-  BFT_REALLOC(cs_glob_join_array,  cs_glob_n_joinings + 1, cs_join_t *);
+  CS_REALLOC(cs_glob_join_array,  cs_glob_n_joinings + 1, cs_join_t *);
 
   cs_glob_join_array[cs_glob_n_joinings]
     = cs_join_create(cs_glob_n_joinings + 1,
@@ -1668,8 +1668,8 @@ cs_turbomachinery_initialize(void)
   if (tbm->model == CS_TURBOMACHINERY_TRANSIENT) {
     cs_post_set_changing_connectivity();
 
-    BFT_MALLOC(tbm->coftur, cs_glob_mesh->n_b_faces, cs_real_t);
-    BFT_MALLOC(tbm->hfltur, cs_glob_mesh->n_b_faces, cs_real_t);
+    CS_MALLOC(tbm->coftur, cs_glob_mesh->n_b_faces, cs_real_t);
+    CS_MALLOC(tbm->hfltur, cs_glob_mesh->n_b_faces, cs_real_t);
   }
 
   /* Destroy the reference mesh, if required */
@@ -1698,24 +1698,24 @@ cs_turbomachinery_finalize(void)
     cs_turbomachinery_t *tbm = _turbomachinery;
 
     for (int i = tbm->n_rotors -1; i >= 0; i--)
-      BFT_FREE(tbm->rotor_cells_c[i]);
-    BFT_FREE(tbm->rotor_cells_c);
+      CS_FREE(tbm->rotor_cells_c[i]);
+    CS_FREE(tbm->rotor_cells_c);
 
-    BFT_FREE(tbm->rotation);
+    CS_FREE(tbm->rotation);
 
-    BFT_FREE(tbm->cell_rotor_num);
+    CS_FREE(tbm->cell_rotor_num);
 
     if (tbm->reference_mesh != NULL)
       cs_mesh_destroy(tbm->reference_mesh);
 
-    BFT_FREE(tbm->coftur);
-    BFT_FREE(tbm->hfltur);
+    CS_FREE(tbm->coftur);
+    CS_FREE(tbm->hfltur);
 
     /* Unset global rotations pointer for safety */
     cs_glob_rotation = NULL;
   }
 
-  BFT_FREE(_turbomachinery);
+  CS_FREE(_turbomachinery);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1768,7 +1768,7 @@ cs_turbomachinery_resize_cell_fields(void)
 
       for (int kk = 0; kk < f->n_time_vals; kk++) {
 
-        BFT_REALLOC(f->vals[kk], _n_cells*f->dim, cs_real_t);
+        CS_REALLOC(f->vals[kk], _n_cells*f->dim, cs_real_t);
 
         if (halo != NULL) {
 
@@ -1790,7 +1790,7 @@ cs_turbomachinery_resize_cell_fields(void)
 
       if (f->grad != NULL) {
 
-        BFT_REALLOC(f->grad, _n_cells*f->dim*3, cs_real_t);
+        CS_REALLOC(f->grad, _n_cells*f->dim*3, cs_real_t);
 
         if (halo != NULL) {
           cs_halo_sync_var_strided(halo,
@@ -1971,7 +1971,7 @@ cs_turbomachinery_get_rotation_matrices(double dt)
   const cs_turbomachinery_t *tbm = _turbomachinery;
   cs_real_34_t  *m;
 
-  BFT_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
+  CS_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
 
   for (int j = 0; j < tbm->n_rotors+1; j++) {
     cs_rotation_t *r = tbm->rotation + j;
@@ -2000,7 +2000,7 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
   cs_turbomachinery_t *tbm = _turbomachinery;
   cs_real_t time_step = dt[0];
 
-  BFT_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
+  CS_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
 
   for (int j = 0; j < tbm->n_rotors+1; j++) {
     cs_rotation_t *r = tbm->rotation + j;
@@ -2049,7 +2049,7 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
 
   }
 
-  BFT_FREE(m);
+  CS_FREE(m);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2100,7 +2100,7 @@ cs_turbomachinery_restart_read(cs_restart_t  *r)
     return;
 
   cs_real_t *t_angle;
-  BFT_MALLOC(t_angle, tbm->n_rotors+2, cs_real_t);
+  CS_MALLOC(t_angle, tbm->n_rotors+2, cs_real_t);
 
   t_angle[0] = tbm->t_cur;
   for (int i = 0; i < tbm->n_rotors+1; i++) {
@@ -2124,7 +2124,7 @@ cs_turbomachinery_restart_read(cs_restart_t  *r)
     }
   }
 
-  BFT_FREE(t_angle);
+  CS_FREE(t_angle);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2149,7 +2149,7 @@ cs_turbomachinery_restart_write(cs_restart_t  *r)
     return;
 
   cs_real_t *t_angle;
-  BFT_MALLOC(t_angle, tbm->n_rotors+2, cs_real_t);
+  CS_MALLOC(t_angle, tbm->n_rotors+2, cs_real_t);
 
   t_angle[0] = tbm->t_cur;
   for (int i = 0; i < tbm->n_rotors+1; i++) {
@@ -2164,7 +2164,7 @@ cs_turbomachinery_restart_write(cs_restart_t  *r)
                            CS_TYPE_cs_real_t,
                            t_angle);
 
-  BFT_FREE(t_angle);
+  CS_FREE(t_angle);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2193,7 +2193,7 @@ cs_turbomachinery_define_functions(void)
                                    NULL);
 
     const char label[] = "Rel Pressure";
-    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    CS_MALLOC(f->label, strlen(label) + 1, char);
     strcpy(f->label, label);
 
     f->type = CS_FUNCTION_INTENSIVE;
@@ -2213,7 +2213,7 @@ cs_turbomachinery_define_functions(void)
                                    NULL);
 
     const char label[] = "Rel Velocity";
-    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    CS_MALLOC(f->label, strlen(label) + 1, char);
     strcpy(f->label, label);
 
     f->type = CS_FUNCTION_INTENSIVE;

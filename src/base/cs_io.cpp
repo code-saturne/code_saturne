@@ -52,13 +52,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_file.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
-#include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -382,7 +382,7 @@ _cs_io_create(cs_io_mode_t   mode,
 {
   cs_io_t  *cs_io = nullptr;
 
-  BFT_MALLOC(cs_io, 1, cs_io_t);
+  CS_MALLOC(cs_io, 1, cs_io_t);
 
   /* Set structure fields */
 
@@ -434,25 +434,25 @@ _create_index(cs_io_t *inp)
 {
   cs_io_sec_index_t  *idx = nullptr;
 
-  BFT_MALLOC(idx, 1, cs_io_sec_index_t);
+  CS_MALLOC(idx, 1, cs_io_sec_index_t);
 
   /* Set structure fields */
 
   idx->size = 0;
   idx->max_size = 32;
 
-  BFT_MALLOC(idx->h_vals, idx->max_size*7, cs_file_off_t);
-  BFT_MALLOC(idx->offset, idx->max_size, cs_file_off_t);
+  CS_MALLOC(idx->h_vals, idx->max_size*7, cs_file_off_t);
+  CS_MALLOC(idx->offset, idx->max_size, cs_file_off_t);
 
   idx->max_names_size = 256;
   idx->names_size = 0;
 
-  BFT_MALLOC(idx->names, idx->max_names_size, char);
+  CS_MALLOC(idx->names, idx->max_names_size, char);
 
   idx->max_data_size = 256;
   idx->data_size = 0;
 
-  BFT_MALLOC(idx->data, idx->max_data_size, unsigned char);
+  CS_MALLOC(idx->data, idx->max_data_size, unsigned char);
 
   /* Add structure */
 
@@ -474,12 +474,12 @@ _destroy_index(cs_io_t *inp)
   if (idx == nullptr)
     return;
 
-  BFT_FREE(idx->h_vals);
-  BFT_FREE(idx->offset);
-  BFT_FREE(idx->names);
-  BFT_FREE(idx->data);
+  CS_FREE(idx->h_vals);
+  CS_FREE(idx->offset);
+  CS_FREE(idx->names);
+  CS_FREE(idx->data);
 
-  BFT_FREE(inp->index);
+  CS_FREE(inp->index);
 }
 
 /*----------------------------------------------------------------------------
@@ -512,8 +512,8 @@ _update_index_and_shift(cs_io_t             *inp,
       idx->max_size = 32;
     else
       idx->max_size *= 2;
-    BFT_REALLOC(idx->h_vals, idx->max_size*7, cs_file_off_t);
-    BFT_REALLOC(idx->offset, idx->max_size, cs_file_off_t);
+    CS_REALLOC(idx->h_vals, idx->max_size*7, cs_file_off_t);
+    CS_REALLOC(idx->offset, idx->max_size, cs_file_off_t);
   };
 
   new_names_size = idx->names_size + strlen(inp->sec_name) + 1;
@@ -528,7 +528,7 @@ _update_index_and_shift(cs_io_t             *inp,
       idx->max_names_size = 128;
     while (new_names_size > idx->max_names_size)
       idx->max_names_size *= 2;
-    BFT_REALLOC(idx->names, idx->max_names_size, char);
+    CS_REALLOC(idx->names, idx->max_names_size, char);
   }
 
   if (new_data_size > idx->max_data_size) {
@@ -536,7 +536,7 @@ _update_index_and_shift(cs_io_t             *inp,
       idx->max_data_size = 128;
     while (new_data_size > idx->max_data_size)
       idx->max_data_size *= 2;
-    BFT_REALLOC(idx->data, idx->max_data_size, unsigned char);
+    CS_REALLOC(idx->data, idx->max_data_size, unsigned char);
   }
 
   /* Set values */
@@ -707,7 +707,7 @@ _file_open(cs_io_t           *cs_io,
 
     if (i >= _cs_io_map_size_max[mode]) {
       _cs_io_map_size_max[mode] *= 2;
-      BFT_REALLOC(_cs_io_log[mode], _cs_io_map_size_max[mode], cs_io_log_t);
+      CS_REALLOC(_cs_io_log[mode], _cs_io_map_size_max[mode], cs_io_log_t);
     }
     cs_io->log_id = i;
 
@@ -789,7 +789,7 @@ _file_open(cs_io_t           *cs_io,
   }
 
   cs_io->buffer_size = cs_io->header_size;
-  BFT_MALLOC(cs_io->buffer, cs_io->buffer_size, unsigned char);
+  CS_MALLOC(cs_io->buffer, cs_io->buffer_size, unsigned char);
 }
 
 /*----------------------------------------------------------------------------
@@ -855,7 +855,7 @@ _file_open_read_from_mem(cs_io_t           *cs_io,
   _file_read_header(cs_io, magic_string);
 
   cs_io->buffer_size = cs_io->header_size;
-  BFT_MALLOC(cs_io->buffer, cs_io->buffer_size, unsigned char);
+  CS_MALLOC(cs_io->buffer, cs_io->buffer_size, unsigned char);
 }
 
 /*----------------------------------------------------------------------------
@@ -893,7 +893,7 @@ _file_reopen_read(cs_io_t           *inp,
   const char *filename = cs_file_get_name(inp->f);
 
   if (strlen(filename) >= 128)
-    BFT_MALLOC(tmpname, strlen(filename) + 1, char);
+    CS_MALLOC(tmpname, strlen(filename) + 1, char);
   strcpy(tmpname, filename);
 
   inp->f = cs_file_free(inp->f);
@@ -912,7 +912,7 @@ _file_reopen_read(cs_io_t           *inp,
   cs_file_set_big_endian(inp->f);
 
   if (tmpname != _tmpname)
-    BFT_FREE(tmpname);
+    CS_FREE(tmpname);
 }
 
 /*----------------------------------------------------------------------------
@@ -1421,9 +1421,9 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   if (_elts == nullptr && n_vals != 0) {
     if (header->elt_type == CS_CHAR && header->location_id == 0)
-      BFT_MALLOC(_elts, n_vals + 1, char);
+      CS_MALLOC(_elts, n_vals + 1, char);
     else
-      BFT_MALLOC(_elts, n_vals*type_size, char);
+      CS_MALLOC(_elts, n_vals*type_size, char);
   }
 
   /* Element values */
@@ -1436,7 +1436,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
   else if (convert_type == true
            && (   cs_datatype_size[header->type_read]
                != cs_datatype_size[header->elt_type]))
-    BFT_MALLOC(_buf, n_vals*type_size, char);
+    CS_MALLOC(_buf, n_vals*type_size, char);
   else
     _buf = _elts;
 
@@ -1500,7 +1500,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
                         header->elt_type);
     if (   inp->data == nullptr
         && _buf != _elts)
-      BFT_FREE(_buf);
+      CS_FREE(_buf);
   }
   else if (inp->data != nullptr) {
     memcpy(_elts, _buf, n_vals*cs_datatype_size[header->type_read]);
@@ -1684,7 +1684,7 @@ _write_padding(size_t    align,
       if (pad_size > outp->buffer_size) {
         while (pad_size > outp->buffer_size)
           outp->buffer_size *=2;
-        BFT_REALLOC(outp->buffer, outp->buffer_size, unsigned char);
+        CS_REALLOC(outp->buffer, outp->buffer_size, unsigned char);
       }
 
       memset(outp->buffer, 0, pad_size);
@@ -1787,7 +1787,7 @@ _write_header(const char     *sec_name,
   if (header_vals[0] > (cs_file_off_t)(outp->buffer_size)) {
     while (header_vals[0] > (cs_file_off_t)(outp->buffer_size))
       outp->buffer_size *=2;
-    BFT_REALLOC(outp->buffer, outp->buffer_size, unsigned char);
+    CS_REALLOC(outp->buffer, outp->buffer_size, unsigned char);
   }
 
   memset(outp->buffer, 0, outp->buffer_size);
@@ -2195,9 +2195,9 @@ cs_io_finalize(cs_io_t **cs_io)
   _file_close(_cs_io);
 
   _cs_io->buffer_size = 0;
-  BFT_FREE(_cs_io->buffer);
+  CS_FREE(_cs_io->buffer);
 
-  BFT_FREE(*cs_io);
+  CS_FREE(*cs_io);
 }
 
 /*----------------------------------------------------------------------------
@@ -2421,7 +2421,7 @@ cs_io_read_header(cs_io_t             *inp,
     if (header_vals[0] > (cs_file_off_t)(inp->buffer_size)) {
       while (header_vals[0] > (cs_file_off_t)(inp->buffer_size))
         inp->buffer_size *=2;
-      BFT_REALLOC(inp->buffer, inp->buffer_size, unsigned char);
+      CS_REALLOC(inp->buffer, inp->buffer_size, unsigned char);
     }
 
     n_read = cs_file_read_global(inp->f,
@@ -2920,7 +2920,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
   /* Ensure element value initialized in case of empty block */
 
   if (retval == nullptr)
-    BFT_MALLOC(retval, 1, cs_gnum_t);
+    CS_MALLOC(retval, 1, cs_gnum_t);
 
   if (_global_num_start == _global_num_end)
     retval[0] = 0;
@@ -2951,7 +2951,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
       past_last = retval[0];
 
     if (rank_id == 0)
-      BFT_MALLOC(past_last_0, n_ranks, cs_gnum_t);
+      CS_MALLOC(past_last_0, n_ranks, cs_gnum_t);
 
     MPI_Gather(&past_last, 1, CS_MPI_GNUM,
                past_last_0, 1, CS_MPI_GNUM,
@@ -2987,7 +2987,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
                 0, comm);
 
     if (rank_id == 0)
-      BFT_FREE(past_last_0);
+      CS_FREE(past_last_0);
 
     if (retval != nullptr)
       retval[global_num_end - global_num_start] = past_last;
@@ -3386,7 +3386,7 @@ cs_io_log_initialize(void)
     _cs_io_map_size[i] = 0;
     _cs_io_map_size_max[i] = 1;
     _cs_io_map[i] = cs_map_name_to_id_create();
-    BFT_MALLOC(_cs_io_log[i], _cs_io_map_size_max[i], cs_io_log_t);
+    CS_MALLOC(_cs_io_log[i], _cs_io_map_size_max[i], cs_io_log_t);
   }
 }
 
@@ -3486,7 +3486,7 @@ cs_io_log_finalize(void)
     _cs_io_map_size[i] = 0;
     _cs_io_map_size_max[i] = 0;
     cs_map_name_to_id_destroy(&(_cs_io_map[i]));
-    BFT_FREE(_cs_io_log[i]);
+    CS_FREE(_cs_io_log[i]);
   }
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");

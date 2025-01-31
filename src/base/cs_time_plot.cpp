@@ -41,10 +41,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 #include "base/cs_time_step.h"
 
@@ -139,7 +139,7 @@ _ensure_buffer_size(cs_time_plot_t  *p,
     p->buffer_size = CS_MAX(1, p->buffer_size);
     while (p->buffer_size < min_size)
       p->buffer_size *= 2;
-    BFT_REALLOC(p->buffer, p->buffer_size, char);
+    CS_REALLOC(p->buffer, p->buffer_size, char);
   }
 }
 
@@ -292,9 +292,9 @@ _write_probe_coords_csv(const char        *file_prefix,
   char *file_name;
   FILE *_f;
 
-  BFT_MALLOC(file_name,
-             strlen(file_prefix) + strlen(plot_name) + strlen("_coords") + 4 + 1,
-             char);
+  CS_MALLOC(file_name,
+            strlen(file_prefix) + strlen(plot_name) + strlen("_coords") + 4 + 1,
+            char);
 
   if (probe_coords != nullptr) {
     sprintf(file_name, "%s%s%s.csv", file_prefix, plot_name, "_coords");
@@ -325,7 +325,7 @@ _write_probe_coords_csv(const char        *file_prefix,
 
   }
 
-  BFT_FREE(file_name);
+  CS_FREE(file_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -631,11 +631,11 @@ _plot_file_create(const char             *plot_name,
 
   cs_time_plot_t *p = nullptr;
 
-  BFT_MALLOC(p, 1, cs_time_plot_t);
-  BFT_MALLOC(p->plot_name, strlen(plot_name) + 1, char);
-  BFT_MALLOC(p->file_name,
-             strlen(file_prefix) + strlen(plot_name) + 4 + 1,
-             char);
+  CS_MALLOC(p, 1, cs_time_plot_t);
+  CS_MALLOC(p->plot_name, strlen(plot_name) + 1, char);
+  CS_MALLOC(p->file_name,
+            strlen(file_prefix) + strlen(plot_name) + 4 + 1,
+            char);
 
   strcpy(p->plot_name, plot_name);
   switch (format) {
@@ -668,7 +668,7 @@ _plot_file_create(const char             *plot_name,
   p->buffer_size = 256;
   p->buffer_end = 0;
 
-  BFT_MALLOC(p->buffer, p->buffer_size, char);
+  CS_MALLOC(p->buffer, p->buffer_size, char);
 
   _time_plot_register(p);
 
@@ -897,11 +897,11 @@ cs_time_plot_finalize(cs_time_plot_t  **p)
                   _("Error closing file: \"%s\""), _p->file_name);
     }
 
-    BFT_FREE(_p->buffer);
-    BFT_FREE(_p->file_name);
-    BFT_FREE(_p->plot_name);
+    CS_FREE(_p->buffer);
+    CS_FREE(_p->file_name);
+    CS_FREE(_p->plot_name);
 
-    BFT_FREE(*p);
+    CS_FREE(*p);
   }
 }
 

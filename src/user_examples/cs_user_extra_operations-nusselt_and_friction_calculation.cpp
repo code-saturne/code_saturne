@@ -108,14 +108,15 @@ cs_user_extra_operations(cs_domain_t  *domain)
     const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
     const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
     cs_real_t *boundary_flux = nullptr;
-    BFT_MALLOC(boundary_flux, n_elts, cs_real_t);
+    CS_MALLOC(boundary_flux, n_elts, cs_real_t);
 
     cs_post_boundary_flux(f->name, n_elts, nullptr, boundary_flux);
 
     /* Some declarations */
     cs_real_t srfbn, srfnor[3], fornor, stresses[3];
-    cs_real_t *loc_nusselt = nullptr, *loc_friction = nullptr, *loc_coords = nullptr;
-    cs_real_t *glo_nusselt = nullptr, *glo_friction = nullptr, *glo_coords = nullptr;
+    cs_real_t *loc_nusselt = nullptr, *glo_nusselt = nullptr;
+    cs_real_t *loc_friction = nullptr, *glo_friction = nullptr;
+    cs_real_t *loc_coords = nullptr, *glo_coords = nullptr;
 
     /* Print Nusselt and friction coeff file header*/
     if (cs_glob_rank_id <= 0) {
@@ -134,7 +135,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
     cs_gnum_t   n_selected_faces_g = 0;
     cs_lnum_t  *selected_faces = nullptr;
 
-    BFT_MALLOC(selected_faces, n_b_faces, cs_lnum_t);
+    CS_MALLOC(selected_faces, n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(criteria,
                                 &n_selected_faces,
@@ -145,14 +146,14 @@ cs_user_extra_operations(cs_domain_t  *domain)
     cs_parall_sum(1 , CS_GNUM_TYPE, &n_selected_faces_g);
 
     /*Allocate local and global arrays to store the desired data */
-    BFT_MALLOC(loc_nusselt,  n_selected_faces, cs_real_t);
-    BFT_MALLOC(loc_friction, n_selected_faces, cs_real_t);
-    BFT_MALLOC(loc_coords,   n_selected_faces, cs_real_t);
+    CS_MALLOC(loc_nusselt,  n_selected_faces, cs_real_t);
+    CS_MALLOC(loc_friction, n_selected_faces, cs_real_t);
+    CS_MALLOC(loc_coords,   n_selected_faces, cs_real_t);
 
     if (cs_glob_n_ranks > 1) {
-      BFT_MALLOC(glo_nusselt , n_selected_faces_g, cs_real_t);
-      BFT_MALLOC(glo_friction, n_selected_faces_g, cs_real_t);
-      BFT_MALLOC(glo_coords  , n_selected_faces_g, cs_real_t);
+      CS_MALLOC(glo_nusselt , n_selected_faces_g, cs_real_t);
+      CS_MALLOC(glo_friction, n_selected_faces_g, cs_real_t);
+      CS_MALLOC(glo_coords  , n_selected_faces_g, cs_real_t);
     }
 
     /* Add some reference values */
@@ -210,16 +211,16 @@ cs_user_extra_operations(cs_domain_t  *domain)
     }
 
     /* Free allocated memory */
-    BFT_FREE(boundary_flux);
-    BFT_FREE(selected_faces);
+    CS_FREE(boundary_flux);
+    CS_FREE(selected_faces);
 
-    BFT_FREE(loc_nusselt);
-    BFT_FREE(loc_friction);
-    BFT_FREE(loc_coords);
+    CS_FREE(loc_nusselt);
+    CS_FREE(loc_friction);
+    CS_FREE(loc_coords);
 
-    BFT_FREE(glo_nusselt);
-    BFT_FREE(glo_friction);
-    BFT_FREE(glo_coords);
+    CS_FREE(glo_nusselt);
+    CS_FREE(glo_friction);
+    CS_FREE(glo_coords);
   }
 }
 

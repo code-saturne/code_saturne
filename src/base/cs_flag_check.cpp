@@ -47,13 +47,13 @@
 
 #include <ple_locator.h>
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -221,7 +221,7 @@ _post_error_elt_select(void         *input,
   const _error_elt_marker_t *marker =
     static_cast<const _error_elt_marker_t *>(input);
 
-  BFT_MALLOC(_elt_ids, marker->n_elts, cs_lnum_t);
+  CS_MALLOC(_elt_ids, marker->n_elts, cs_lnum_t);
 
   for (elt_id = 0; elt_id < marker->n_elts; elt_id++) {
     if (marker->flag[elt_id] < marker->min_flag)
@@ -254,7 +254,7 @@ _post_valid_elt_select(void         *input,
   const _error_elt_marker_t *marker =
     static_cast<const _error_elt_marker_t *>(input);
 
-  BFT_MALLOC(_elt_ids, marker->n_elts, cs_lnum_t);
+  CS_MALLOC(_elt_ids, marker->n_elts, cs_lnum_t);
 
   for (elt_id = 0; elt_id < marker->n_elts; elt_id++) {
     if (marker->flag[elt_id] >= marker->min_flag)
@@ -406,7 +406,7 @@ _postprocess(const char   *error_mesh_name,
     var_name[31] = '\0';
 
     int *_flag;
-    BFT_MALLOC(_flag, n_elts, int);
+    CS_MALLOC(_flag, n_elts, int);
     for (cs_lnum_t i = 0; i < n_elts; i++)
       _flag[i] = abs(flag[i]);
 
@@ -426,7 +426,7 @@ _postprocess(const char   *error_mesh_name,
 
     }
 
-    BFT_FREE(_flag);
+    CS_FREE(_flag);
   }
 }
 

@@ -41,7 +41,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -165,7 +165,7 @@ _find_or_create_node(cs_tree_node_t   *node,
       level_len += 1;
 
     if (level_len > 128) {
-      BFT_MALLOC(name, level_len, char);
+      CS_MALLOC(name, level_len, char);
       strncpy(name, p, level_len);
     }
     else {
@@ -190,7 +190,7 @@ _find_or_create_node(cs_tree_node_t   *node,
       _nodes = _node;
 
     if (name != _name)
-      BFT_FREE(name);
+      CS_FREE(name);
 
     start += level_len + 1;
 
@@ -342,13 +342,13 @@ _node_free(cs_tree_node_t  **pnode)
   cs_tree_node_t  *node = *pnode;
 
   if (node->name != nullptr)
-    BFT_FREE(node->name);
+    CS_FREE(node->name);
   if (node->desc != nullptr)
-    BFT_FREE(node->desc);
+    CS_FREE(node->desc);
   if (node->value != nullptr)
-    BFT_FREE(node->value);
+    CS_FREE(node->value);
 
-  BFT_FREE(*pnode);
+  CS_FREE(*pnode);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -374,10 +374,10 @@ cs_tree_node_create(const char  *name)
 {
   cs_tree_node_t  *n = nullptr;
 
-  BFT_MALLOC(n, 1, cs_tree_node_t);
+  CS_MALLOC(n, 1, cs_tree_node_t);
   if (name != nullptr) {
     size_t  len = strlen(name);
-    BFT_MALLOC(n->name, len + 1, char);
+    CS_MALLOC(n->name, len + 1, char);
     strcpy(n->name, name);
   }
   else
@@ -441,10 +441,10 @@ cs_tree_node_set_name(cs_tree_node_t  *node,
                       const char      *name)
 {
   if (name == nullptr)
-    BFT_FREE(node->name);
+    CS_FREE(node->name);
 
   else {
-    BFT_REALLOC(node->name, strlen(name) + 1, char);
+    CS_REALLOC(node->name, strlen(name) + 1, char);
     strcpy(node->name, name);
   }
 }
@@ -668,12 +668,12 @@ cs_tree_node_set_value_str(cs_tree_node_t  *node,
   node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_CHAR;
 
   if (val == nullptr) {
-    BFT_FREE(node->value);
+    CS_FREE(node->value);
     return;
   }
 
   node->size = 1;
-  BFT_REALLOC(node->value, strlen(val) + 1, char);
+  CS_REALLOC(node->value, strlen(val) + 1, char);
   strcpy((char *)node->value, val);
 }
 
@@ -721,7 +721,7 @@ cs_tree_node_get_values_bool(cs_tree_node_t  *node)
           if (s[i] == ' ')
             node->size += 1;
         }
-        BFT_MALLOC(v, node->size, bool);
+        CS_MALLOC(v, node->size, bool);
         int n = 0;
         size_t i = 0;
         while (i < l) {
@@ -745,7 +745,7 @@ cs_tree_node_get_values_bool(cs_tree_node_t  *node)
         }
         assert(node->size == n);
       }
-      BFT_FREE(node->value);
+      CS_FREE(node->value);
       node->value = v;
       node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_BOOL;
       retval = (const bool *)(node->value);
@@ -778,7 +778,7 @@ cs_tree_node_set_values_bool(cs_tree_node_t  *node,
 
   node->size = n;
   node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_BOOL;
-  BFT_REALLOC(node->value, node->size, bool);
+  CS_REALLOC(node->value, node->size, bool);
 
   if (node->size > 0)
     memcpy(node->value, val, node->size*sizeof(bool));
@@ -824,7 +824,7 @@ cs_tree_node_get_values_int(cs_tree_node_t  *node)
           if (s[i] == ' ')
             node->size += 1;
         }
-        BFT_MALLOC(v, node->size, int);
+        CS_MALLOC(v, node->size, int);
         int n = 0;
         size_t i = 0;
         while (i < l) {
@@ -846,7 +846,7 @@ cs_tree_node_get_values_int(cs_tree_node_t  *node)
         }
         assert(node->size == n);
       }
-      BFT_FREE(node->value);
+      CS_FREE(node->value);
       node->value = v;
       node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_INT;
       retval = (const int *)(node->value);
@@ -881,7 +881,7 @@ cs_tree_node_set_values_int(cs_tree_node_t  *node,
 
   node->size = n;
   node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_INT;
-  BFT_REALLOC(node->value, node->size, int);
+  CS_REALLOC(node->value, node->size, int);
 
   if (node->size > 0)
     memcpy(node->value, val, node->size*sizeof(int));
@@ -927,7 +927,7 @@ cs_tree_node_get_values_real(cs_tree_node_t  *node)
           if (s[i] == ' ')
             node->size += 1;
         }
-        BFT_MALLOC(v, node->size, cs_real_t);
+        CS_MALLOC(v, node->size, cs_real_t);
         int n = 0;
         size_t i = 0;
         while (i < l) {
@@ -949,7 +949,7 @@ cs_tree_node_get_values_real(cs_tree_node_t  *node)
         }
         assert(node->size == n);
       }
-      BFT_FREE(node->value);
+      CS_FREE(node->value);
       node->value = v;
       node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_REAL;
       retval = (const cs_real_t *)(node->value);
@@ -984,7 +984,7 @@ cs_tree_node_set_values_real(cs_tree_node_t   *node,
 
   node->size = n;
   node->flag = ((node->flag | _any_type) - _any_type) | CS_TREE_NODE_REAL;
-  BFT_REALLOC(node->value, node->size, cs_real_t);
+  CS_REALLOC(node->value, node->size, cs_real_t);
 
   if (node->size > 0)
     memcpy(node->value, val, node->size*sizeof(cs_real_t));
@@ -1188,7 +1188,7 @@ cs_tree_node_dump(cs_log_t                log,
   char  _shift[65] = "";
   char  *shift = _shift;
   if (depth > 31)
-    BFT_MALLOC(shift, (depth+1)*2+1, char);
+    CS_MALLOC(shift, (depth+1)*2+1, char);
 
   for (int i = 0; i < 2*depth; i++)
     shift[i] = ' ';
@@ -1197,7 +1197,7 @@ cs_tree_node_dump(cs_log_t                log,
   cs_log_printf(log, "%snode_pointer: %p\n", shift, (const void *)node);
   if (node == nullptr) {
     if (shift != _shift)
-      BFT_FREE(shift);
+      CS_FREE(shift);
     return;
   }
 
@@ -1305,7 +1305,7 @@ cs_tree_node_dump(cs_log_t                log,
     cs_log_printf(log, "%sdesc: |\n%s\n", shift, node->desc);
 
   if (shift != _shift)
-    BFT_FREE(shift);
+    CS_FREE(shift);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 
 #include "comb/cs_coal_ht_convert.h"
@@ -50,6 +49,7 @@
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
@@ -478,7 +478,7 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
   /* Allow user functions */
 
   cs_real_t *h_f;
-  BFT_MALLOC(h_f, n_b_faces, cs_real_t);
+  CS_MALLOC(h_f, n_b_faces, cs_real_t);
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
     h_f[i] = h[i];
 
@@ -498,7 +498,7 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
     h[f_id] = h_f[f_id];
   }
 
-  BFT_FREE(h_f);
+  CS_FREE(h_f);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -540,8 +540,8 @@ cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
       || pm_flag[CS_COMBUSTION_COAL] >= 0
       || (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)) {
 
-    BFT_MALLOC(t_b, m->n_b_faces, cs_real_t);
-    BFT_MALLOC(h_b, m->n_b_faces, cs_real_t);
+    CS_MALLOC(t_b, m->n_b_faces, cs_real_t);
+    CS_MALLOC(h_b, m->n_b_faces, cs_real_t);
 
     for (cs_lnum_t i = 0; i < n_faces; i++) {
       cs_lnum_t f_id = face_ids[i];
@@ -596,8 +596,8 @@ cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
       h[i] = h_b[f_id];
     }
 
-    BFT_FREE(t_b);
-    BFT_FREE(h_b);
+    CS_FREE(t_b);
+    CS_FREE(h_b);
   }
 
   /* Default for solid zones

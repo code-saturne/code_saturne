@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -55,6 +54,7 @@
 #include "mesh/cs_mesh.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parall.h"
 #include "mesh/cs_mesh.h"
@@ -203,7 +203,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
   /* Compute field cell gradient */
 
   cs_real_t *grad;
-  BFT_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
+  CS_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
 
   if (dim == 1)
     cs_field_gradient_scalar(f,
@@ -242,7 +242,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
 
   }
 
-  BFT_FREE(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -277,8 +277,8 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
   }
 
   cs_real_t *v_min, *v_max;
-  BFT_MALLOC(v_min, n_vertices, cs_real_t);
-  BFT_MALLOC(v_max, n_vertices, cs_real_t);
+  CS_MALLOC(v_min, n_vertices, cs_real_t);
+  CS_MALLOC(v_max, n_vertices, cs_real_t);
 
 # pragma omp parallel for  if (n_vertices > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_vertices; ii++) {
@@ -332,8 +332,8 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
   }
 
   /* Free memory */
-  BFT_FREE(v_min);
-  BFT_FREE(v_max);
+  CS_FREE(v_min);
+  CS_FREE(v_max);
 
   /* Synchronisation */
   if (m->halo != nullptr) {

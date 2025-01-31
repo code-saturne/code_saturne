@@ -43,10 +43,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
@@ -136,7 +136,7 @@ _range_set_mpi_rank_id(const cs_range_set_t  *rs,
   int *e_rank_id;
 
   if (n_elts != n_loc_elts || elt_ids != nullptr)
-    BFT_MALLOC(e_rank_id, n_loc_elts, int);
+    CS_MALLOC(e_rank_id, n_loc_elts, int);
   else
     e_rank_id = vals_i;
 
@@ -170,7 +170,7 @@ _range_set_mpi_rank_id(const cs_range_set_t  *rs,
     for (cs_lnum_t i = 0; i < n_elts; i++)
       _vals[i] = e_rank_id[elt_ids[i]];
 
-    BFT_FREE(e_rank_id);
+    CS_FREE(e_rank_id);
   }
 }
 
@@ -204,7 +204,7 @@ _location_mpi_rank_id(int               location_id,
       cs_gnum_t *g_i_face_num = m->global_i_face_num;
       if (g_i_face_num == nullptr) {
         cs_lnum_t n_i_faces = m->n_i_faces;
-        BFT_MALLOC(g_i_face_num, n_i_faces, cs_gnum_t);
+        CS_MALLOC(g_i_face_num, n_i_faces, cs_gnum_t);
         for (cs_lnum_t i = 0; i < n_i_faces; i++)
           g_i_face_num[i] = (cs_gnum_t)i + 1;
       }
@@ -220,7 +220,7 @@ _location_mpi_rank_id(int               location_id,
                                   nullptr);
 
       if (m->global_i_face_num != g_i_face_num)
-        BFT_FREE(g_i_face_num);
+        CS_FREE(g_i_face_num);
 
       cs_range_set_t *rs = cs_range_set_create(face_interfaces,
                                                nullptr,
@@ -302,7 +302,7 @@ _location_r_gen(int               location_id,
   if (   location_id == CS_MESH_LOCATION_CELLS
       || location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
-    BFT_MALLOC(c_r_gen, m->n_cells_with_ghosts, char);
+    CS_MALLOC(c_r_gen, m->n_cells_with_ghosts, char);
 
     for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++)
       c_r_gen[i] = 0;
@@ -339,7 +339,7 @@ _location_r_gen(int               location_id,
           r_gen[i] = c_r_gen[c_id];
         }
       }
-      BFT_FREE(c_r_gen);
+      CS_FREE(c_r_gen);
       return;
 
     }
@@ -368,7 +368,7 @@ _location_r_gen(int               location_id,
       r_gen[i] = 0;
   }
 
-  BFT_FREE(c_r_gen);
+  CS_FREE(c_r_gen);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -527,7 +527,7 @@ _define_coriolis_functions(void)
                                    nullptr);
 
     const char label[] = "Abs Pressure";
-    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    CS_MALLOC(f->label, strlen(label) + 1, char);
     strcpy(f->label, label);
 
     f->type = CS_FUNCTION_INTENSIVE;
@@ -547,7 +547,7 @@ _define_coriolis_functions(void)
                                    nullptr);
 
     const char label[] = "Abs Velocity";
-    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    CS_MALLOC(f->label, strlen(label) + 1, char);
     strcpy(f->label, label);
 
     f->type = CS_FUNCTION_INTENSIVE;
@@ -673,7 +673,7 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
 
   size_t l_name = strlen(loc_name) + strlen(base_name) + 1;
   char *name;
-  BFT_MALLOC(name, l_name + 1, char);
+  CS_MALLOC(name, l_name + 1, char);
   snprintf(name, l_name, "%s_%s", base_name, loc_name);
 
   cs_function_t *f
@@ -685,7 +685,7 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
                                  _location_mpi_rank_id,
                                  cs_glob_mesh);
 
-  BFT_FREE(name);
+  CS_FREE(name);
 
   /* Use a different label for vertex data and element data, to avoid
      conflicts when outputting values with some writer formats,
@@ -693,12 +693,12 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
 
   cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(location_id);
   if (loc_type != CS_MESH_LOCATION_VERTICES) {
-    BFT_MALLOC(f->label, strlen(base_name) + 1, char);
+    CS_MALLOC(f->label, strlen(base_name) + 1, char);
     strcpy(f->label, base_name);
   }
   else {
     const char base_name_v[] = "mpi_rank_id_v";
-    BFT_MALLOC(f->label, strlen(base_name_v) + 1, char);
+    CS_MALLOC(f->label, strlen(base_name_v) + 1, char);
     strcpy(f->label, base_name_v);
   }
 
@@ -736,7 +736,7 @@ cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id)
 
   size_t l_name = strlen(loc_name) + strlen(base_name) + 1;
   char *name;
-  BFT_MALLOC(name, l_name + 1, char);
+  CS_MALLOC(name, l_name + 1, char);
   snprintf(name, l_name, "%s_%s", base_name, loc_name);
 
   cs_function_t *f
@@ -748,7 +748,7 @@ cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id)
                                  _location_r_gen,
                                  cs_glob_mesh);
 
-  BFT_FREE(name);
+  CS_FREE(name);
 
   /* Use a different label for vertex data and element data, to avoid
      conflicts when outputting values with some writer formats,
@@ -756,12 +756,12 @@ cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id)
 
   cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(location_id);
   if (loc_type != CS_MESH_LOCATION_VERTICES) {
-    BFT_MALLOC(f->label, strlen(base_name) + 1, char);
+    CS_MALLOC(f->label, strlen(base_name) + 1, char);
     strcpy(f->label, base_name);
   }
   else {
     const char base_name_v[] = "r_gen_v";
-    BFT_MALLOC(f->label, strlen(base_name_v) + 1, char);
+    CS_MALLOC(f->label, strlen(base_name_v) + 1, char);
     strcpy(f->label, base_name_v);
   }
 
@@ -1547,7 +1547,7 @@ cs_function_boundary_nusselt(int               location_id,
     const bool *is_coupled = nullptr;
 
     cs_real_t *theipb = nullptr, *dist_theipb = nullptr;
-    BFT_MALLOC(theipb, n_elts, cs_real_t);
+    CS_MALLOC(theipb, n_elts, cs_real_t);
 
     /* Reconstructed fluxes */
 
@@ -1587,8 +1587,8 @@ cs_function_boundary_nusselt(int               location_id,
     if (eqp->icoupl > 0) {
 
       cs_real_t *loc_theipb;
-      BFT_MALLOC(loc_theipb, n_b_faces, cs_real_t);
-      BFT_MALLOC(dist_theipb, n_b_faces, cs_real_t);
+      CS_MALLOC(loc_theipb, n_b_faces, cs_real_t);
+      CS_MALLOC(dist_theipb, n_b_faces, cs_real_t);
 
       for (cs_lnum_t i = 0; i < n_b_faces; i++)
         loc_theipb[i] = 0;
@@ -1607,7 +1607,7 @@ cs_function_boundary_nusselt(int               location_id,
 
       cs_ic_field_dist_data_by_face_id(f_t->id, 1, loc_theipb, dist_theipb);
 
-      BFT_FREE(loc_theipb);
+      CS_FREE(loc_theipb);
 
     }
 
@@ -1668,8 +1668,8 @@ cs_function_boundary_nusselt(int               location_id,
 
     }
 
-    BFT_FREE(dist_theipb);
-    BFT_FREE(theipb);
+    CS_FREE(dist_theipb);
+    CS_FREE(theipb);
 
   }
   else { /* Default if not computable */
@@ -1721,7 +1721,7 @@ cs_function_q_criterion(int               location_id,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_field_gradient_vector(cs_field_by_name("velocity"),
                            false,  /* use_previous_t */
@@ -1738,7 +1738,7 @@ cs_function_q_criterion(int               location_id,
                 - gradv[c_id][1][2]*gradv[c_id][2][1];
   }
 
-  BFT_FREE(gradv);
+  CS_FREE(gradv);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -50,9 +50,9 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 #include "base/cs_fp_exception.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -176,7 +176,7 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
       if (errcode != 0)
         bft_error(__FILE__, __LINE__, 0, "%s", message_buffer);
 
-      BFT_REALLOC(_states, _n_states+1, cs_coolprop_state_t);
+      CS_REALLOC(_states, _n_states+1, cs_coolprop_state_t);
 
       _states[_n_states].abstract_state_handle = state_handle;
       memset(_states[_n_states].backend, 0, 32);
@@ -252,9 +252,9 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
   double *_prop1 = nullptr, *_prop2 = nullptr, *_result = nullptr;
 
   if (sizeof(cs_real_t) != sizeof(double)) {
-    BFT_MALLOC(_prop1, n_vals, double);
-    BFT_MALLOC(_prop2, n_vals, double);
-    BFT_MALLOC(_result, n_vals, double);
+    CS_MALLOC(_prop1, n_vals, double);
+    CS_MALLOC(_prop2, n_vals, double);
+    CS_MALLOC(_result, n_vals, double);
     for (cs_lnum_t i = 0; i < n_vals; i++) {
       _prop1[i] = var1[i];
       _prop2[i] = var1[i];
@@ -343,11 +343,11 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
   if (_result != nullptr) {
     for (int i = 0; i < n_vals; i++)
       val[i] = result[i];
-    BFT_FREE(_result);
+    CS_FREE(_result);
   }
 
-  BFT_FREE(_prop1);
-  BFT_FREE(_prop2);
+  CS_FREE(_prop1);
+  CS_FREE(_prop2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -367,7 +367,7 @@ cs_coolprop_finalize(void)
                        &errcode, message_buffer, 511);
   }
 
-  BFT_FREE(_states);
+  CS_FREE(_states);
   _n_states = 0;
 }
 

@@ -43,7 +43,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_defs.h"
@@ -51,6 +50,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -209,16 +209,16 @@ cs_wall_condensation_1d_thermal_create(int nzones)
 {
   _wall_cond_1d_thermal.nzones = nzones;
 
-  BFT_MALLOC(_wall_cond_1d_thermal.znmur, nzones, cs_lnum_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.ztheta, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.zdxmin, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.zepais, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.zrob, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.zcondb, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.zcpb, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.zhext, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.ztext, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.ztpar0, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.znmur, nzones, cs_lnum_t);
+  CS_MALLOC(_wall_cond_1d_thermal.ztheta, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.zdxmin, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.zepais, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.zrob, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.zcondb, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.zcpb, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.zhext, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.ztext, nzones, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.ztpar0, nzones, cs_real_t);
 
   for (cs_lnum_t iz = 0; iz < _wall_cond_1d_thermal.nzones; iz++) {
     _wall_cond_1d_thermal.znmur[iz]  = 0;
@@ -241,8 +241,8 @@ cs_wall_condensation_1d_thermal_mesh_create(int znmurx, int nfbpcd, int nzones)
 {
   _wall_cond_1d_thermal.znmurx = znmurx;
 
-  BFT_MALLOC(_wall_cond_1d_thermal.zdxp, nzones * znmurx, cs_real_t);
-  BFT_MALLOC(_wall_cond_1d_thermal.ztmur, nfbpcd * znmurx, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.zdxp, nzones * znmurx, cs_real_t);
+  CS_MALLOC(_wall_cond_1d_thermal.ztmur, nfbpcd * znmurx, cs_real_t);
 
   for (int im = 0; im < znmurx; im++) {
     for (cs_lnum_t ieltcd = 0; ieltcd < nfbpcd; ieltcd++) {
@@ -263,18 +263,18 @@ cs_wall_condensation_1d_thermal_mesh_create(int znmurx, int nfbpcd, int nzones)
 void
 cs_wall_condensation_1d_thermal_free(void)
 {
-  BFT_FREE(_wall_cond_1d_thermal.znmur);
-  BFT_FREE(_wall_cond_1d_thermal.ztheta);
-  BFT_FREE(_wall_cond_1d_thermal.zdxmin);
-  BFT_FREE(_wall_cond_1d_thermal.zepais);
-  BFT_FREE(_wall_cond_1d_thermal.zrob);
-  BFT_FREE(_wall_cond_1d_thermal.zcondb);
-  BFT_FREE(_wall_cond_1d_thermal.zcpb);
-  BFT_FREE(_wall_cond_1d_thermal.zhext);
-  BFT_FREE(_wall_cond_1d_thermal.ztext);
-  BFT_FREE(_wall_cond_1d_thermal.ztpar0);
-  BFT_FREE(_wall_cond_1d_thermal.zdxp);
-  BFT_FREE(_wall_cond_1d_thermal.ztmur);
+  CS_FREE(_wall_cond_1d_thermal.znmur);
+  CS_FREE(_wall_cond_1d_thermal.ztheta);
+  CS_FREE(_wall_cond_1d_thermal.zdxmin);
+  CS_FREE(_wall_cond_1d_thermal.zepais);
+  CS_FREE(_wall_cond_1d_thermal.zrob);
+  CS_FREE(_wall_cond_1d_thermal.zcondb);
+  CS_FREE(_wall_cond_1d_thermal.zcpb);
+  CS_FREE(_wall_cond_1d_thermal.zhext);
+  CS_FREE(_wall_cond_1d_thermal.ztext);
+  CS_FREE(_wall_cond_1d_thermal.ztpar0);
+  CS_FREE(_wall_cond_1d_thermal.zdxp);
+  CS_FREE(_wall_cond_1d_thermal.ztmur);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -291,15 +291,15 @@ void
 cs_wall_condensation_0d_thermal_create(cs_lnum_t nvolumes, cs_lnum_t ncmast)
 {
   _wall_cond_0d_thermal.nvolumes = nvolumes;
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_t, ncmast, cs_real_2_t);
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_thickness, nvolumes, cs_real_t);
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_rho, nvolumes, cs_real_t);
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_cp, nvolumes, cs_real_t);
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_lambda, nvolumes, cs_real_t);
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_mass, nvolumes, cs_real_t);
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_surf, nvolumes, cs_real_t);
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_t0, nvolumes, cs_real_t);
-  BFT_MALLOC(_wall_cond_0d_thermal.volume_measure, nvolumes, cs_real_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_t, ncmast, cs_real_2_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_thickness, nvolumes, cs_real_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_rho, nvolumes, cs_real_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_cp, nvolumes, cs_real_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_lambda, nvolumes, cs_real_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_mass, nvolumes, cs_real_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_surf, nvolumes, cs_real_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_t0, nvolumes, cs_real_t);
+  CS_MALLOC(_wall_cond_0d_thermal.volume_measure, nvolumes, cs_real_t);
 
   memset(_wall_cond_0d_thermal.volume_t, 0, ncmast * sizeof(cs_real_2_t));
   cs_array_real_fill_zero(nvolumes, _wall_cond_0d_thermal.volume_thickness);
@@ -323,15 +323,15 @@ cs_wall_condensation_0d_thermal_create(cs_lnum_t nvolumes, cs_lnum_t ncmast)
 void
 cs_wall_condensation_0d_thermal_free(void)
 {
-  BFT_FREE(_wall_cond_0d_thermal.volume_t);
-  BFT_FREE(_wall_cond_0d_thermal.volume_thickness);
-  BFT_FREE(_wall_cond_0d_thermal.volume_rho);
-  BFT_FREE(_wall_cond_0d_thermal.volume_cp);
-  BFT_FREE(_wall_cond_0d_thermal.volume_lambda);
-  BFT_FREE(_wall_cond_0d_thermal.volume_mass);
-  BFT_FREE(_wall_cond_0d_thermal.volume_surf);
-  BFT_FREE(_wall_cond_0d_thermal.volume_t0);
-  BFT_FREE(_wall_cond_0d_thermal.volume_measure);
+  CS_FREE(_wall_cond_0d_thermal.volume_t);
+  CS_FREE(_wall_cond_0d_thermal.volume_thickness);
+  CS_FREE(_wall_cond_0d_thermal.volume_rho);
+  CS_FREE(_wall_cond_0d_thermal.volume_cp);
+  CS_FREE(_wall_cond_0d_thermal.volume_lambda);
+  CS_FREE(_wall_cond_0d_thermal.volume_mass);
+  CS_FREE(_wall_cond_0d_thermal.volume_surf);
+  CS_FREE(_wall_cond_0d_thermal.volume_t0);
+  CS_FREE(_wall_cond_0d_thermal.volume_measure);
 }
 
 /*----------------------------------------------------------------------------*/

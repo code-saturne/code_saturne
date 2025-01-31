@@ -102,8 +102,8 @@ cs_user_porosity(cs_domain_t   *domain)
 
   cs_real_t  *i_face_porosity, *b_face_porosity;
 
-  BFT_MALLOC(i_face_porosity, m->n_i_faces, cs_real_t);
-  BFT_MALLOC(b_face_porosity, m->n_b_faces, cs_real_t);
+  CS_MALLOC(i_face_porosity, m->n_i_faces, cs_real_t);
+  CS_MALLOC(b_face_porosity, m->n_b_faces, cs_real_t);
 
   for (cs_lnum_t i = 0; i < m->n_i_faces; i++)
     i_face_porosity[i] = 1;
@@ -169,8 +169,8 @@ cs_user_porosity(cs_domain_t   *domain)
 
   }
 
-  BFT_FREE(i_face_porosity);
-  BFT_FREE(b_face_porosity);
+  CS_FREE(i_face_porosity);
+  CS_FREE(b_face_porosity);
 
   /* Four set face factor */
 

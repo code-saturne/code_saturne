@@ -56,11 +56,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_file.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_notebook.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
@@ -211,7 +211,7 @@ _queue_initialize(void)
 {
   cs_control_queue_t *queue = nullptr;
 
-  BFT_MALLOC(queue, 1, cs_control_queue_t);
+  CS_MALLOC(queue, 1, cs_control_queue_t);
 
   queue->buf = nullptr;
 
@@ -234,8 +234,8 @@ _queue_finalize(cs_control_queue_t  **queue)
     if (*queue == nullptr)
       return;
     cs_control_queue_t  *_queue = *queue;
-    BFT_FREE(_queue->buf);
-    BFT_FREE(*queue);
+    CS_FREE(_queue->buf);
+    CS_FREE(*queue);
   }
 }
 
@@ -529,7 +529,7 @@ _comm_write_sock(cs_control_comm_t  *comm,
   /* Convert if "little-endian" */
 
   if (comm->swap_endian == true && size != 1) {
-    BFT_MALLOC(_rec_swap, n_bytes, char);
+    CS_MALLOC(_rec_swap, n_bytes, char);
     _swap_endian(_rec_swap, rec, size, count);
     _rec = _rec_swap;
   }
@@ -587,7 +587,7 @@ _comm_write_sock(cs_control_comm_t  *comm,
   }
 
   if (_rec_swap != nullptr)
-    BFT_FREE(_rec_swap);
+    CS_FREE(_rec_swap);
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&_control_send_t_tot, &t0, &t1);
@@ -612,7 +612,7 @@ _comm_read_sock_to_queue_prepare(cs_control_queue_t  *queue,
     queue->buf_idx[1] = 0,
     queue->buf_idx[2] = 0,
     queue->buf_idx[3] = 32767;
-    BFT_MALLOC(queue->buf, queue->buf_idx[3]+1, char);
+    CS_MALLOC(queue->buf, queue->buf_idx[3]+1, char);
   }
 
   assert(comm != nullptr);
@@ -727,7 +727,7 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
     if (ret == n_loc_max) {
       if (queue->buf_idx[1] < 1) {
         queue->buf_idx[3] *= 2;
-        BFT_REALLOC(queue->buf, queue->buf_idx[3], char);
+        CS_REALLOC(queue->buf, queue->buf_idx[3], char);
       }
     }
 
@@ -770,7 +770,7 @@ _comm_read_sock_to_queue_sync(size_t               start_id,
 
     if (buf[2] > (long)queue->buf_idx[3]) {
       queue->buf_idx[3] = buf[2];
-      BFT_REALLOC(queue->buf, queue->buf_idx[3], char);
+      CS_REALLOC(queue->buf, queue->buf_idx[3], char);
     }
 
     queue->buf_idx[2] = buf[1];
@@ -816,7 +816,7 @@ _comm_sock_connect(cs_control_comm_t  *comm)
 
   port_num = atoi(comm->port_name + id + 1);
 
-  BFT_MALLOC(host_name, id + 1, char);
+  CS_MALLOC(host_name, id + 1, char);
   strncpy(host_name, comm->port_name, id);
   host_name[id] = '\0';
 
@@ -870,7 +870,7 @@ _comm_sock_connect(cs_control_comm_t  *comm)
 
   /* Free temporary string */
 
-  BFT_FREE(host_name);
+  CS_FREE(host_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -900,7 +900,7 @@ _comm_sock_handshake(cs_control_comm_t  *comm,
 
   /* Read same magic string */
 
-  BFT_MALLOC(str_cmp, len + 1, char);
+  CS_MALLOC(str_cmp, len + 1, char);
 
   _comm_read_sock_r0(comm, str_cmp, len);
   str_cmp[len] = '\0';
@@ -910,7 +910,7 @@ _comm_sock_handshake(cs_control_comm_t  *comm,
     retval = 1;
   }
 
-  BFT_FREE(str_cmp);
+  CS_FREE(str_cmp);
 
   return retval;
 }
@@ -938,12 +938,12 @@ _comm_initialize(const char             *port_name,
 
   cs_control_comm_t *comm = nullptr;
 
-  BFT_MALLOC(comm, 1, cs_control_comm_t);
+  CS_MALLOC(comm, 1, cs_control_comm_t);
 
   /* Initialize fields */
 
   if (cs_glob_rank_id <= 0) {
-    BFT_MALLOC(comm->port_name, strlen(port_name) + 1, char);
+    CS_MALLOC(comm->port_name, strlen(port_name) + 1, char);
     strcpy(comm->port_name, port_name);
   }
   else
@@ -1033,7 +1033,7 @@ _comm_initialize(const char             *port_name,
 #endif
 
   if (retval != 0)
-    BFT_FREE(comm);
+    CS_FREE(comm);
   else
     comm->connected = true;
 
@@ -1071,9 +1071,9 @@ _comm_finalize(cs_control_comm_t  **comm)
     }
 #endif
 
-    BFT_FREE(_comm->port_name);
+    CS_FREE(_comm->port_name);
 
-    BFT_FREE(*comm);
+    CS_FREE(*comm);
   }
 }
 
@@ -1391,7 +1391,7 @@ _control_snapshot(const char             *cur_line,
                  "load_serialized", s_size);
       if (control_comm != nullptr && s_size > 0) {
         char *buffer;
-        BFT_MALLOC(buffer, s_size, char);
+        CS_MALLOC(buffer, s_size, char);
         _comm_read_sock(control_comm, queue, buffer,
                         1, s_size);
         cs_restart_set_from_memory_serialized(s_size, buffer);
@@ -1496,7 +1496,7 @@ _control_notebook(const cs_time_step_t   *ts,
       id = -1;
 
     _n_input_notebook_vars += 1;
-    BFT_REALLOC(_input_notebook_vars, _n_input_notebook_vars, int);
+    CS_REALLOC(_input_notebook_vars, _n_input_notebook_vars, int);
     _input_notebook_vars[_n_input_notebook_vars - 1] = id;
 
     if (id < 0)
@@ -1522,7 +1522,7 @@ _control_notebook(const cs_time_step_t   *ts,
     int id = cs_notebook_parameter_get_id(name);
 
     _n_output_notebook_vars += 1;
-    BFT_REALLOC(_output_notebook_vars, _n_output_notebook_vars, int);
+    CS_REALLOC(_output_notebook_vars, _n_output_notebook_vars, int);
     _output_notebook_vars[_n_output_notebook_vars - 1] = id;
 
     if (id > -1) {
@@ -1830,7 +1830,7 @@ _parse_control_buffer(const char          *name,
       if (n_notebook_vals > 0) {
         double *notebook_vals = nullptr;
 
-        BFT_MALLOC(notebook_vals, n_notebook_vals, double);
+        CS_MALLOC(notebook_vals, n_notebook_vals, double);
 
         /* Send output variables from previous time step,
            get input variables for new time step. */
@@ -1856,7 +1856,7 @@ _parse_control_buffer(const char          *name,
                                _input_notebook_vars,
                                notebook_vals);
 
-        BFT_FREE(notebook_vals);
+        CS_FREE(notebook_vals);
       }
 
       break;
@@ -1920,8 +1920,8 @@ cs_control_finalize(void)
   _n_input_notebook_vars = 0;
   _n_output_notebook_vars = 0;
 
-  BFT_FREE(_input_notebook_vars);
-  BFT_FREE(_output_notebook_vars);
+  CS_FREE(_input_notebook_vars);
+  CS_FREE(_output_notebook_vars);
 
   cs_timer_t t0 = cs_timer_time();
 
@@ -2027,7 +2027,7 @@ cs_control_check_file(void)
 
   if (f_size >= 0) {
 
-    BFT_MALLOC(buffer, f_size + 1, char);
+    CS_MALLOC(buffer, f_size + 1, char);
 
     if (cs_glob_rank_id <= 0) {
 
@@ -2060,7 +2060,7 @@ cs_control_check_file(void)
 
     _parse_control_buffer("control_file", buffer, f_size, nullptr, nullptr);
 
-    BFT_FREE(buffer);
+    CS_FREE(buffer);
   }
 
   /* Test control queue and connection second */

@@ -34,7 +34,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -60,6 +59,7 @@
 #include "base/cs_log.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_bad_cells.h"
@@ -183,10 +183,10 @@ _free_surface(const cs_domain_t  *domain,
 
   const cs_real_t  invdt = 1./domain->time_step->dt_ref; /* JB: dt[0] ? */
 
-  BFT_MALLOC(_mesh_vel, m->n_vertices, cs_real_3_t);
-  BFT_MALLOC(_v_surf, m->n_vertices, cs_real_t);
-  BFT_MALLOC(_is_loc_min, m->n_vertices, cs_real_t);
-  BFT_MALLOC(_is_loc_max, m->n_vertices, cs_real_t);
+  CS_MALLOC(_mesh_vel, m->n_vertices, cs_real_3_t);
+  CS_MALLOC(_v_surf, m->n_vertices, cs_real_t);
+  CS_MALLOC(_is_loc_min, m->n_vertices, cs_real_t);
+  CS_MALLOC(_is_loc_max, m->n_vertices, cs_real_t);
 
   cs_array_real_fill_zero(m->n_vertices, _v_surf);
   cs_array_real_fill_zero(3 * m->n_vertices, (cs_real_t *)_mesh_vel);
@@ -396,10 +396,10 @@ _free_surface(const cs_domain_t  *domain,
   } /* Loop on selected vertices */
 
   /* Free memory */
-  BFT_FREE(_mesh_vel);
-  BFT_FREE(_v_surf);
-  BFT_FREE(_is_loc_min);
-  BFT_FREE(_is_loc_max);
+  CS_FREE(_mesh_vel);
+  CS_FREE(_v_surf);
+  CS_FREE(_is_loc_min);
+  CS_FREE(_is_loc_max);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -426,8 +426,8 @@ _update_bc_list(const cs_mesh_t   *mesh,
   cs_lnum_t  counter = 0;
 
   _cdo_bc->n_selections++;
-  BFT_REALLOC(_cdo_bc->n_vertices, _cdo_bc->n_selections, cs_lnum_t);
-  BFT_REALLOC(_cdo_bc->vtx_select, _cdo_bc->n_selections, cs_lnum_t *);
+  CS_REALLOC(_cdo_bc->n_vertices, _cdo_bc->n_selections, cs_lnum_t);
+  CS_REALLOC(_cdo_bc->vtx_select, _cdo_bc->n_selections, cs_lnum_t *);
 
   /* Reset vtag */
   cs_array_bool_fill_false(n_vertices, vtag);
@@ -451,7 +451,7 @@ _update_bc_list(const cs_mesh_t   *mesh,
   } /* Loop on selected border faces */
 
   _cdo_bc->n_vertices[id] = counter;
-  BFT_MALLOC(_cdo_bc->vtx_select[id], counter, cs_lnum_t);
+  CS_MALLOC(_cdo_bc->vtx_select[id], counter, cs_lnum_t);
 
   /* Fill the list of selected vertices */
   cs_array_bool_fill_false(n_vertices, vtag);
@@ -536,8 +536,8 @@ _update_bcs(const cs_domain_t  *domain,
         /* Transform face flux to vertex velocities */
         cs_real_3_t *_mesh_vel = nullptr;
 
-        BFT_MALLOC(_v_surf, m->n_vertices, cs_real_t);
-        BFT_MALLOC(_mesh_vel, m->n_vertices, cs_real_3_t);
+        CS_MALLOC(_v_surf, m->n_vertices, cs_real_t);
+        CS_MALLOC(_mesh_vel, m->n_vertices, cs_real_3_t);
 
         /* Initialize */
         cs_array_real_fill_zero(3 * m->n_vertices, (cs_real_t *)_mesh_vel);
@@ -641,9 +641,9 @@ _update_bcs(const cs_domain_t  *domain,
         }
 
         /* Free memory */
-        BFT_FREE(bc_vals);
-        BFT_FREE(_mesh_vel);
-        BFT_FREE(_v_surf);
+        CS_FREE(bc_vals);
+        CS_FREE(_mesh_vel);
+        CS_FREE(_v_surf);
 
         select_id++;
       }
@@ -1089,8 +1089,8 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 static void
 _ale_free(void)
 {
-  BFT_FREE(cs_glob_ale_data->impale);
-  BFT_FREE(cs_glob_ale_data->bc_type);
+  CS_FREE(cs_glob_ale_data->impale);
+  CS_FREE(cs_glob_ale_data->bc_type);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1111,8 +1111,8 @@ cs_ale_allocate(void)
   if (cs_glob_ale <= CS_ALE_NONE)
     return;
 
-  BFT_MALLOC(cs_glob_ale_data->impale, cs_glob_mesh->n_vertices, int);
-  BFT_MALLOC(cs_glob_ale_data->bc_type, cs_glob_mesh->n_b_faces, int);
+  CS_MALLOC(cs_glob_ale_data->impale, cs_glob_mesh->n_vertices, int);
+  CS_MALLOC(cs_glob_ale_data->bc_type, cs_glob_mesh->n_b_faces, int);
 
   cs_arrays_set_value<int, 1>(cs_glob_mesh->n_b_faces,
                               0,
@@ -1191,8 +1191,8 @@ cs_ale_project_displacement(const int           ale_bc_type[],
   const cs_real_3_t *restrict cell_cen   = (const cs_real_3_t *)mq->cell_cen;
   const cs_real_3_t *restrict b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
 
-  BFT_MALLOC(vtx_counter, n_vertices, cs_real_t);
-  BFT_MALLOC(vtx_interior_indicator, n_vertices, bool);
+  CS_MALLOC(vtx_counter, n_vertices, cs_real_t);
+  CS_MALLOC(vtx_interior_indicator, n_vertices, bool);
 
   cs_array_bool_fill_true(n_vertices, vtx_interior_indicator);
   cs_array_real_fill_zero(n_vertices, vtx_counter);
@@ -1364,8 +1364,8 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
   } /* End of loop on border faces */
 
-  BFT_FREE(vtx_counter);
-  BFT_FREE(vtx_interior_indicator);
+  CS_FREE(vtx_counter);
+  CS_FREE(vtx_interior_indicator);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1709,8 +1709,8 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
 
   if (_cdo_bc == nullptr) {
 
-    BFT_MALLOC(_cdo_bc, 1, cs_ale_cdo_bc_t);
-    BFT_MALLOC(_cdo_bc->vtx_values, 3*n_vertices, cs_real_t);
+    CS_MALLOC(_cdo_bc, 1, cs_ale_cdo_bc_t);
+    CS_MALLOC(_cdo_bc->vtx_values, 3*n_vertices, cs_real_t);
 
     cs_array_real_fill_zero(3*n_vertices, _cdo_bc->vtx_values);
 
@@ -1721,7 +1721,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
   }
 
   bool   *vtag = nullptr;
-  BFT_MALLOC(vtag, n_vertices, bool);
+  CS_MALLOC(vtag, n_vertices, bool);
 
   for (int b_id = 0;  b_id < domain->ale_boundaries->n_boundaries; b_id++) {
 
@@ -1793,7 +1793,7 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
   }
 
   /* Free memory */
-  BFT_FREE(vtag);
+  CS_FREE(vtag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1811,7 +1811,7 @@ cs_ale_finalize_setup(cs_domain_t     *domain)
 
   if (_vtx_coord0 == nullptr) {
 
-    BFT_MALLOC(_vtx_coord0, m->n_vertices, cs_real_3_t);
+    CS_MALLOC(_vtx_coord0, m->n_vertices, cs_real_3_t);
 
     memcpy(_vtx_coord0, m->vtx_coord, m->n_vertices * sizeof(cs_real_3_t));
 
@@ -1830,17 +1830,17 @@ cs_ale_finalize_setup(cs_domain_t     *domain)
 void
 cs_ale_destroy_all(void)
 {
-  BFT_FREE(_vtx_coord0);
+  CS_FREE(_vtx_coord0);
 
   if (_cdo_bc != nullptr) {
-    BFT_FREE(_cdo_bc->vtx_values);
+    CS_FREE(_cdo_bc->vtx_values);
 
     for (int i = 0; i < _cdo_bc->n_selections; i++)
-      BFT_FREE(_cdo_bc->vtx_select[i]);
-    BFT_FREE(_cdo_bc->vtx_select);
-    BFT_FREE(_cdo_bc->n_vertices);
+      CS_FREE(_cdo_bc->vtx_select[i]);
+    CS_FREE(_cdo_bc->vtx_select);
+    CS_FREE(_cdo_bc->n_vertices);
 
-    BFT_FREE(_cdo_bc);
+    CS_FREE(_cdo_bc);
   }
 }
 

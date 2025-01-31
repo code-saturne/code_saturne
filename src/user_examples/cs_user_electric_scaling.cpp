@@ -115,7 +115,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
     double aiex = -1.e30;
     double emax = 0.;
     double *w1;
-    BFT_MALLOC(w1, ncelet, double);
+    CS_MALLOC(w1, ncelet, double);
     int diff_id = cs_field_get_key_int(CS_FI_(curre, 0), kivisl);
     cs_field_t *c_prop = nullptr;
     c_prop = cs_field_by_id(diff_id);
@@ -168,7 +168,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
                  elec_opt->restrike_point[2]);
     }
 
-    BFT_FREE(w1);
+    CS_FREE(w1);
 
     if (cs_glob_time_step->nt_cur <= elec_opt->ntdcla + 30) {
       double z1 = elec_opt->restrike_point[0] - 3.e-4;
@@ -181,8 +181,9 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
         if (xyzcen[iel][2] > z1 && xyzcen[iel][2] < z2) {
           double rayo =   elec_opt->restrike_point[0] * xyzcen[iel][0]
                         - elec_opt->restrike_point[1] * xyzcen[iel][1];
-          double denom = pow(elec_opt->restrike_point[0] * elec_opt->restrike_point[0]
-                           + elec_opt->restrike_point[1] * elec_opt->restrike_point[1], 0.5);
+          double denom
+            = pow(  elec_opt->restrike_point[0] * elec_opt->restrike_point[0]
+                  + elec_opt->restrike_point[1] * elec_opt->restrike_point[1], 0.5);
           rayo /= denom;
           rayo += (xyzcen[iel][2] - elec_opt->restrike_point[2]
                  * xyzcen[iel][2] - elec_opt->restrike_point[2]);

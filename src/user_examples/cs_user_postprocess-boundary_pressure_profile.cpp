@@ -173,7 +173,7 @@ cs_user_postprocess_values(const char            *mesh_name,
       /*! [profile_variables] */
 
       cs_real_t *val;
-      BFT_MALLOC(val, n_b_faces, cs_real_t);
+      CS_MALLOC(val, n_b_faces, cs_real_t);
 
       /* x coordinate */
       for (cs_lnum_t i = 0; i < n_b_faces; i++) {
@@ -226,7 +226,7 @@ cs_user_postprocess_values(const char            *mesh_name,
          val,
          ts);
 
-      BFT_FREE(val);
+      CS_FREE(val);
       /*! [profile_variables] */
     }
   }

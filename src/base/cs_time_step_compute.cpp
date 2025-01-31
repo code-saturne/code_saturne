@@ -45,25 +45,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
-#include "cfbl/cs_cf_compute.h"
 #include "base/cs_coupling.h"
-#include "alge/cs_face_viscosity.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log_iteration.h"
+#include "base/cs_mem.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_vof.h"
+#include "alge/cs_face_viscosity.h"
 #include "alge/cs_matrix_building.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
-#include "base/cs_vof.h"
 
+#include "pprt/cs_physical_model.h"
 #include "cfbl/cs_cf_model.h"
+#include "cfbl/cs_cf_compute.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -183,13 +183,13 @@ cs_local_time_step_compute(int  itrale)
 
   cs_real_t *i_visc, *b_visc, *dam;
   CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
+  CS_MALLOC(dam, n_cells_ext, cs_real_t);
   CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
 
   cs_real_t *coefbt = bc_coeffs_loc.b;
   cs_real_t *cofbft = bc_coeffs_loc.bf;
@@ -197,13 +197,13 @@ cs_local_time_step_compute(int  itrale)
   /* Allocate other arrays, depending on user options */
   cs_real_t *wcf = nullptr;
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    BFT_MALLOC(wcf, n_cells_ext, cs_real_t);
+    CS_MALLOC(wcf, n_cells_ext, cs_real_t);
 
   /* Allocate work arrays */
   cs_real_t *w1, *w2, *w3;
   CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(w2, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w3, n_cells_ext, cs_real_t);
+  CS_MALLOC(w2, n_cells_ext, cs_real_t);
+  CS_MALLOC(w3, n_cells_ext, cs_real_t);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -294,12 +294,12 @@ cs_local_time_step_compute(int  itrale)
 
       /* Allocate a temporary array for the gradient calculation */
       cs_real_3_t *grad;
-      BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
       cs_field_bc_coeffs_t bc_coeffs_rho;
       cs_field_bc_coeffs_init(&bc_coeffs_rho);
 
-      BFT_MALLOC(bc_coeffs_rho.b, n_b_faces, cs_real_t);
+      CS_MALLOC(bc_coeffs_rho.b, n_b_faces, cs_real_t);
       cs_real_t *coefbr = bc_coeffs_rho.b;
       cs_array_real_set_scalar(n_b_faces, 0.0, coefbr);
 
@@ -339,8 +339,8 @@ cs_local_time_step_compute(int  itrale)
       }
 
       /* Free memory */
-      BFT_FREE(grad);
-      BFT_FREE(coefbr);
+      CS_FREE(grad);
+      CS_FREE(coefbr);
 
     }
 
@@ -710,7 +710,7 @@ cs_local_time_step_compute(int  itrale)
         && log_is_active) {
 
       cs_real_t *dtsdt0;
-      BFT_MALLOC(dtsdt0, n_cells, cs_real_t);
+      CS_MALLOC(dtsdt0, n_cells, cs_real_t);
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -723,7 +723,7 @@ cs_local_time_step_compute(int  itrale)
                                  1,
                                  dtsdt0);
 
-      BFT_FREE(dtsdt0);
+      CS_FREE(dtsdt0);
 
     }
 
@@ -837,13 +837,13 @@ cs_local_time_step_compute(int  itrale)
   CS_FREE_HD(b_visc);
   CS_FREE_HD(w1);
 
-  BFT_FREE(dam);
-  BFT_FREE(wcf);
-  BFT_FREE(w2);
-  BFT_FREE(w3);
+  CS_FREE(dam);
+  CS_FREE(wcf);
+  CS_FREE(w2);
+  CS_FREE(w3);
 
-  BFT_FREE(bc_coeffs_loc.b);
-  BFT_FREE(bc_coeffs_loc.bf);
+  CS_FREE(bc_coeffs_loc.b);
+  CS_FREE(bc_coeffs_loc.bf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -924,12 +924,12 @@ cs_courant_fourier_compute(void)
   cs_real_t *i_visc, *b_visc, *dam;
   CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
+  CS_MALLOC(dam, n_cells_ext, cs_real_t);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
 
   cs_real_t *coefbt = bc_coeffs_loc.b;
   cs_real_t *cofbft = bc_coeffs_loc.bf;
@@ -1159,9 +1159,9 @@ cs_courant_fourier_compute(void)
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
 
-  BFT_FREE(dam);
-  BFT_FREE(bc_coeffs_loc.b);
-  BFT_FREE(bc_coeffs_loc.bf);
+  CS_FREE(dam);
+  CS_FREE(bc_coeffs_loc.b);
+  CS_FREE(bc_coeffs_loc.bf);
 }
 
 /*----------------------------------------------------------------------------*/

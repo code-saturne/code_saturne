@@ -207,14 +207,14 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
        ddip = rpex - pdi
     */
 
-    BFT_MALLOC(rpex, n_vertices, double);
-    BFT_MALLOC(ddip, n_vertices, double);
+    CS_MALLOC(rpex, n_vertices, double);
+    CS_MALLOC(ddip, n_vertices, double);
     get_sol(tcur, n_vertices, nullptr, cdoq->vtx_coord, true, nullptr, rpex);
     for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 
     len = strlen(field->name) + 7 + 1;
-    BFT_MALLOC(postlabel, len, char);
+    CS_MALLOC(postlabel, len, char);
     sprintf(postlabel, "%s.Error", field->name);
 
     cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
@@ -240,9 +240,9 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 
     /* Free */
 
-    BFT_FREE(postlabel);
-    BFT_FREE(ddip);
-    BFT_FREE(rpex);
+    CS_FREE(postlabel);
+    CS_FREE(ddip);
+    CS_FREE(rpex);
 
   }
 }
@@ -290,14 +290,14 @@ cs_user_extra_operations(cs_domain_t          *domain)
       return;
 
     len += 9;
-    BFT_MALLOC(filename, len, char);
+    CS_MALLOC(filename, len, char);
     sprintf(filename, "Resume-%s-t%.f.log", eqname, time_step->t_cur);
   }
   else {
     if (time_step->nt_cur > 0)
       return;
 
-    BFT_MALLOC(filename, len, char);
+    CS_MALLOC(filename, len, char);
     sprintf(filename, "Resume-%s.log", eqname);
   }
 
@@ -326,7 +326,7 @@ cs_user_extra_operations(cs_domain_t          *domain)
 
   /* Free */
 
-  BFT_FREE(filename);
+  CS_FREE(filename);
   fclose(resume);
 
   /*! [extra_verif_cdo_diff] */

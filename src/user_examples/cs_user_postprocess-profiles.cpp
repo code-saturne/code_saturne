@@ -78,13 +78,13 @@ _b_face_criterion_probes_define(void          *input,
   cs_lnum_t   n_faces;
   cs_lnum_t  *face_ids;
 
-  BFT_MALLOC(face_ids, m->n_b_faces, cs_lnum_t);
+  CS_MALLOC(face_ids, m->n_b_faces, cs_lnum_t);
   cs_selector_get_b_face_list(criterion, &n_faces, face_ids);
 
   cs_real_3_t *_coords;
   cs_real_t *_s;
-  BFT_MALLOC(_coords, n_faces, cs_real_3_t);
-  BFT_MALLOC(_s, n_faces, cs_real_t);
+  CS_MALLOC(_coords, n_faces, cs_real_3_t);
+  CS_MALLOC(_s, n_faces, cs_real_t);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
     for (cs_lnum_t j = 0; j < 3; j++)
@@ -92,7 +92,7 @@ _b_face_criterion_probes_define(void          *input,
     _s[i] = _coords[i][0];
   }
 
-  BFT_FREE(face_ids);
+  CS_FREE(face_ids);
 
   /* Set return values */
 
@@ -314,7 +314,7 @@ cs_user_postprocess_values(const char            *mesh_name,
     if (strncmp(name, "buicesat", strlen("buicesat")) == 0) {
 
       cs_real_t *val;
-      BFT_MALLOC(val, n_cells, cs_real_t);
+      CS_MALLOC(val, n_cells, cs_real_t);
 
       char var_name[64];
 
@@ -335,7 +335,7 @@ cs_user_postprocess_values(const char            *mesh_name,
       const cs_turb_model_t *turb_mdl = cs_glob_turb_model;
 
       cs_real_6_t *rij = nullptr;
-      BFT_MALLOC(rij, n_cells, cs_real_6_t);
+      CS_MALLOC(rij, n_cells, cs_real_6_t);
 
       if (   turb_mdl->itytur == 2
           || turb_mdl->itytur == 5
@@ -364,7 +364,7 @@ cs_user_postprocess_values(const char            *mesh_name,
        * compute xsi and eta invariant of the Lumley triangle */
 
       cs_real_2_t *inv = nullptr;
-      BFT_MALLOC(inv, n_cells, cs_real_2_t);
+      CS_MALLOC(inv, n_cells, cs_real_2_t);
 
 
       cs_post_anisotropy_invariant(n_cells,
@@ -481,9 +481,9 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       }
 
-      BFT_FREE(inv);
-      BFT_FREE(rij);
-      BFT_FREE(val);
+      CS_FREE(inv);
+      CS_FREE(rij);
+      CS_FREE(val);
 
     }
 /*! [post_profile_advanced_var_1] */
@@ -504,7 +504,7 @@ cs_user_postprocess_values(const char            *mesh_name,
       cs_real_t div_half_ro0_uref2 = 1. / (0.5 * phys_pro->ro0 * uref2);
 
       cs_real_t *val;
-      BFT_MALLOC(val, n_b_faces, cs_real_t);
+      CS_MALLOC(val, n_b_faces, cs_real_t);
 
       char var_name[64];
 
@@ -529,7 +529,7 @@ cs_user_postprocess_values(const char            *mesh_name,
       /* Stresses */
 
       cs_real_3_t *stresses;
-      BFT_MALLOC(stresses, n_b_faces, cs_real_3_t);
+      CS_MALLOC(stresses, n_b_faces, cs_real_3_t);
       cs_post_stress_tangential(n_b_faces, b_face_list, stresses);
 
       /* Loop on columns */
@@ -606,8 +606,8 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       }
 
-      BFT_FREE(stresses);
-      BFT_FREE(val);
+      CS_FREE(stresses);
+      CS_FREE(val);
     }
 /*! [post_profile_advanced_var_2] */
 

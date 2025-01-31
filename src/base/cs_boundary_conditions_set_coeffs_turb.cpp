@@ -47,7 +47,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "atmo/cs_air_props.h"
@@ -57,6 +56,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_internal_coupling.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -267,7 +267,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       tstarp = itstar->val;
 
     if (eqp_sc->icoupl > 0) {
-      BFT_MALLOC(dist_theipb, n_b_faces, cs_real_t);
+      CS_MALLOC(dist_theipb, n_b_faces, cs_real_t);
       cs_ic_field_dist_data_by_face_id(f_sc->id, 1, theipb, dist_theipb);
     }
   }
@@ -347,9 +347,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   cs_real_t ypth = 0.0;
 
   cs_real_t *hbnd, *hint, *yptp;
-  BFT_MALLOC(hbnd, n_b_faces, cs_real_t);
-  BFT_MALLOC(hint, n_b_faces, cs_real_t);
-  BFT_MALLOC(yptp, n_b_faces, cs_real_t);
+  CS_MALLOC(hbnd, n_b_faces, cs_real_t);
+  CS_MALLOC(hint, n_b_faces, cs_real_t);
+  CS_MALLOC(yptp, n_b_faces, cs_real_t);
 
   /* Loop on boundary faces */
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -909,10 +909,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   } /* End loop on faces */
 
-  BFT_FREE(hbnd);
-  BFT_FREE(hint);
-  BFT_FREE(yptp);
-  BFT_FREE(dist_theipb);
+  CS_FREE(hbnd);
+  CS_FREE(hint);
+  CS_FREE(yptp);
+  CS_FREE(dist_theipb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1001,10 +1001,10 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
     bpro_rough_t = f_rough_t->val;
 
   cs_real_t *hbnd;
-  BFT_MALLOC(hbnd, n_b_faces, cs_real_t);
+  CS_MALLOC(hbnd, n_b_faces, cs_real_t);
 
   cs_real_t *hint;
-  BFT_MALLOC(hint, n_b_faces, cs_real_t);
+  CS_MALLOC(hint, n_b_faces, cs_real_t);
 
   const int *icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
   const int *icodcl_v = f_v->bc_coeffs->icodcl;
@@ -1236,8 +1236,8 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
 
   } /* End loop on boudary faces */
 
-  BFT_FREE(hbnd);
-  BFT_FREE(hint);
+  CS_FREE(hbnd);
+  CS_FREE(hint);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1877,7 +1877,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     bpro_ustar = boundary_ustar->val;
   }
   else {
-    BFT_MALLOC(buet, n_b_faces, cs_real_t);
+    CS_MALLOC(buet, n_b_faces, cs_real_t);
     bpro_ustar = buet;
   }
 
@@ -1887,7 +1887,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     bpro_uk = boundary_uk->val;
   }
   else {
-    BFT_MALLOC(_buk, n_b_faces, cs_real_t);
+    CS_MALLOC(_buk, n_b_faces, cs_real_t);
     bpro_uk = _buk;
   }
 
@@ -2064,11 +2064,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   /* Pointers to specific fields */
   cs_real_t *byplus = nullptr, *bdplus = nullptr, *bdlmo = nullptr; //*buk = nullptr
-  BFT_MALLOC(byplus, n_b_faces, cs_real_t);
-  BFT_MALLOC(bdplus, n_b_faces, cs_real_t);
-  BFT_MALLOC(bdlmo, n_b_faces, cs_real_t);
+  CS_MALLOC(byplus, n_b_faces, cs_real_t);
+  CS_MALLOC(bdplus, n_b_faces, cs_real_t);
+  CS_MALLOC(bdlmo, n_b_faces, cs_real_t);
 
-  // BFT_MALLOC(buk, n_b_faces, cs_real_t);
+  // CS_MALLOC(buk, n_b_faces, cs_real_t);
 
   /* Correction for atmospheric wall functions */
 
@@ -2080,7 +2080,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     bcfnns = non_neutral_scalar_correction->val;
   }
   else {
-    BFT_MALLOC(bcfnns_loc, n_b_faces, cs_real_t);
+    CS_MALLOC(bcfnns_loc, n_b_faces, cs_real_t);
     bcfnns = bcfnns_loc;
   }
 
@@ -3833,12 +3833,12 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     }
   }
 
-  BFT_FREE(byplus);
-  BFT_FREE(_buk);
-  BFT_FREE(buet);
-  BFT_FREE(bcfnns_loc);
-  BFT_FREE(bdplus);
-  BFT_FREE(bdlmo);
+  CS_FREE(byplus);
+  CS_FREE(_buk);
+  CS_FREE(buet);
+  CS_FREE(bcfnns_loc);
+  CS_FREE(bdplus);
+  CS_FREE(bdlmo);
 
   /* Logging
      ======= */

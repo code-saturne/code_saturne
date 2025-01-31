@@ -37,13 +37,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_defs.h"
 #include "base/cs_file.h"
 #include "base/cs_file_csv_parser.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -199,11 +199,11 @@ _time_table_create(const char *name)
 
   int new_id = _n_time_tables;
 
-  BFT_REALLOC(_time_tables, _n_time_tables+1, cs_time_table_t *);
+  CS_REALLOC(_time_tables, _n_time_tables+1, cs_time_table_t *);
 
-  BFT_MALLOC(retval, 1, cs_time_table_t);
+  CS_MALLOC(retval, 1, cs_time_table_t);
 
-  BFT_MALLOC(retval->name, strlen(name)+1, char);
+  CS_MALLOC(retval->name, strlen(name)+1, char);
   strcpy(retval->name, name);
 
   retval->n_rows      = 0;
@@ -239,16 +239,16 @@ _free_time_table(cs_time_table_t *t)
   assert(t != nullptr);
 
   for (int i = 0; i < t->n_cols; i++) {
-    BFT_FREE(t->columns[i]);
+    CS_FREE(t->columns[i]);
     if (t->headers != nullptr)
-      BFT_FREE(t->headers[i]);
+      CS_FREE(t->headers[i]);
   }
-  BFT_FREE(t->columns);
-  BFT_FREE(t->headers);
+  CS_FREE(t->columns);
+  CS_FREE(t->headers);
 
-  BFT_FREE(t->name);
+  CS_FREE(t->name);
 
-  BFT_FREE(t);
+  CS_FREE(t);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -362,10 +362,10 @@ cs_time_table_set_headers(cs_time_table_t *table,
                 " headers"),
               table->name, table->n_cols, n_headers);
 
-  BFT_MALLOC(table->headers, n_headers, char *);
+  CS_MALLOC(table->headers, n_headers, char *);
   for (int i = 0; i < n_headers; i++) {
     char *_h = nullptr;
-    BFT_MALLOC(_h, strlen(headers[i]) + 1, char);
+    CS_MALLOC(_h, strlen(headers[i]) + 1, char);
 
     strcpy(_h, headers[i]);
     _h[strlen(headers[i])] = '\0';
@@ -426,9 +426,9 @@ cs_time_table_from_csv_file(const char  *name,
   t->n_rows = _n_rows;
   t->n_cols = _n_cols;
 
-  BFT_MALLOC(t->columns, _n_cols, cs_real_t *);
+  CS_MALLOC(t->columns, _n_cols, cs_real_t *);
   for (int i = 0; i < _n_cols; i++)
-    BFT_MALLOC(t->columns[i], _n_rows, cs_real_t);
+    CS_MALLOC(t->columns[i], _n_rows, cs_real_t);
 
   for (int ir = 0; ir < _n_rows; ir++) {
     char **_row = _data[ir];
@@ -439,10 +439,10 @@ cs_time_table_from_csv_file(const char  *name,
   // Free data which is no longer needed.
   for (int i = 0; i < _n_rows; i++) {
     for (int j = 0; j < _n_cols; j++)
-      BFT_FREE(_data[i][j]);
-    BFT_FREE(_data[i]);
+      CS_FREE(_data[i][j]);
+    CS_FREE(_data[i]);
   }
-  BFT_FREE(_data);
+  CS_FREE(_data);
 
   return t;
 }
@@ -756,7 +756,7 @@ cs_time_table_destroy_all(void)
   for (int i = 0; i < _n_time_tables; i++)
     _free_time_table(_time_tables[i]);
 
-  BFT_FREE(_time_tables);
+  CS_FREE(_time_tables);
   _n_time_tables = 0;
 }
 

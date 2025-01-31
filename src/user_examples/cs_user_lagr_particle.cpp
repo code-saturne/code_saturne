@@ -682,8 +682,8 @@ cs_user_lagr_sde(const cs_real_t  dt[],
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
   cs_real_t *tcarac, *pip;
 
-  BFT_MALLOC(tcarac, p_set->n_particles, cs_real_t);
-  BFT_MALLOC(pip   , p_set->n_particles, cs_real_t);
+  CS_MALLOC(tcarac, p_set->n_particles, cs_real_t);
+  CS_MALLOC(pip   , p_set->n_particles, cs_real_t);
 
   /* Characteristic time of the current SDE
      -------------------------------------- */
@@ -724,8 +724,8 @@ cs_user_lagr_sde(const cs_real_t  dt[],
 
   }
 
-  BFT_FREE(tcarac);
-  BFT_FREE(pip);
+  CS_FREE(tcarac);
+  CS_FREE(pip);
 }
 /*! [lagr_SDE] */
 

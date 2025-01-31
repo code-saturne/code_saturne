@@ -175,12 +175,12 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   /* Allocate temporary array */
   cs_real_t *h_reconstructed;
-  BFT_MALLOC(h_reconstructed, n_b_faces, cs_real_t);
+  CS_MALLOC(h_reconstructed, n_b_faces, cs_real_t);
 
   /* Reconstructed value */
   if (false) {
     cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     cs_field_gradient_scalar(h,
                              true, /* use_previous_t */
@@ -195,7 +195,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
                                + grad[cell_id][2]*diipb[face_id][2];
     }
 
-    BFT_FREE(grad);
+    CS_FREE(grad);
 
   /* Non-reconstructed value */
   } else {
@@ -267,7 +267,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
     Compute the contribution from walls with colors 2, 3, 4 and 7
     (adiabatic here, so flux should be 0)
   */
-  BFT_MALLOC(face_list, n_b_faces, cs_lnum_t);
+  CS_MALLOC(face_list, n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_list("2 or 3 or 4 or 7", &n_faces, face_list);
 
@@ -368,8 +368,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
   }
 
   /* Free memory */
-  BFT_FREE(face_list);
-  BFT_FREE(h_reconstructed);
+  CS_FREE(face_list);
+  CS_FREE(h_reconstructed);
 
   /* Sum of values on all ranks (parallel calculations) */
 

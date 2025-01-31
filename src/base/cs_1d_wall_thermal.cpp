@@ -39,7 +39,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -47,6 +46,7 @@
 #include "base/cs_math.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
@@ -217,7 +217,7 @@ _1d_wall_thermal_local_models_init(void)
           and the "z" arrays: Coordonnates of each point of discretization */
 
   if (_1d_wall_thermal.nfpt1d > 0) {
-    BFT_MALLOC(_1d_wall_thermal.local_models->z, 2 * nb_pts_tot, cs_real_t);
+    CS_MALLOC(_1d_wall_thermal.local_models->z, 2 * nb_pts_tot, cs_real_t);
     _1d_wall_thermal.local_models->t =   _1d_wall_thermal.local_models->z
                                        + nb_pts_tot;
   }
@@ -254,7 +254,7 @@ cs_1d_wall_thermal_create(void)
   _1d_wall_thermal.nmxt1d = 0;
 
   /* Allocate the izft1d array */
-  BFT_MALLOC(_1d_wall_thermal.izft1d, n_b_faces, cs_lnum_t);
+  CS_MALLOC(_1d_wall_thermal.izft1d, n_b_faces, cs_lnum_t);
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     _1d_wall_thermal.izft1d[ifac] = 0;
@@ -271,16 +271,16 @@ void
 cs_1d_wall_thermal_local_models_create(void)
 {
   /* Allocate the ifpt1d array */
-  BFT_MALLOC(_1d_wall_thermal.ifpt1d, _1d_wall_thermal.nfpt1d, cs_lnum_t);
+  CS_MALLOC(_1d_wall_thermal.ifpt1d, _1d_wall_thermal.nfpt1d, cs_lnum_t);
 
   /* Allocate the tppt1d array */
-  BFT_MALLOC(_1d_wall_thermal.tppt1d, _1d_wall_thermal.nfpt1d, cs_real_t);
+  CS_MALLOC(_1d_wall_thermal.tppt1d, _1d_wall_thermal.nfpt1d, cs_real_t);
 
   /* Allocate the local_models member of the cs_glob_1d_wall_thermal
    * structure */
-  BFT_MALLOC(_1d_wall_thermal.local_models,
-             _1d_wall_thermal.nfpt1d,
-             cs_1d_wall_thermal_local_model_t);
+  CS_MALLOC(_1d_wall_thermal.local_models,
+            _1d_wall_thermal.nfpt1d,
+            cs_1d_wall_thermal_local_model_t);
 
   for (cs_lnum_t ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
     _1d_wall_thermal.local_models[ii].nppt1d = -999;
@@ -425,7 +425,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
   n = _1d_wall_thermal.local_models[ii].nppt1d;
 
   if (n > 32)
-    BFT_MALLOC(al, 4*n, cs_real_t);
+    CS_MALLOC(al, 4*n, cs_real_t);
   else
     al = _al;
 
@@ -518,7 +518,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
            + hf*tf);
 
   if (al != _al)
-    BFT_FREE(al);
+    CS_FREE(al);
 
 }
 
@@ -586,7 +586,7 @@ cs_1d_wall_thermal_read(void)
     /* Read the header */
     cs_lnum_t  *tabvar;
 
-    BFT_MALLOC(tabvar, 1, cs_lnum_t);
+    CS_MALLOC(tabvar, 1, cs_lnum_t);
 
     nbvent  = 1;
     support = CS_MESH_LOCATION_NONE;
@@ -613,7 +613,7 @@ cs_1d_wall_thermal_read(void)
                   "restart file for the 1D-wall thermal module.\n"),
                 nomsui);
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   {
@@ -624,7 +624,7 @@ cs_1d_wall_thermal_read(void)
     cs_gnum_t  mfpt1t;
     int  iok;
 
-    BFT_MALLOC(tabvar, n_b_faces, cs_lnum_t);
+    CS_MALLOC(tabvar, n_b_faces, cs_lnum_t);
 
     const char nomrub[] = "nb_pts_discretis";
     nbvent  = 1;
@@ -701,7 +701,7 @@ cs_1d_wall_thermal_read(void)
     /* Allocate the cs_glob_par1d structure */
     _1d_wall_thermal_local_models_init();
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   {
@@ -710,7 +710,7 @@ cs_1d_wall_thermal_read(void)
     cs_lnum_t   iok;
     cs_real_t eppt1d;
 
-    BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
+    CS_MALLOC(tabvar, n_b_faces, cs_real_t);
 
     const char nomrub[] = "epaisseur_paroi";
     nbvent  = 1;
@@ -759,14 +759,14 @@ cs_1d_wall_thermal_read(void)
       _1d_wall_thermal.local_models[ii].eppt1d = tabvar[ifac];
     }
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   {
     /* Read the interior boundary temperature */
     cs_real_t  *tabvar;
 
-    BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
+    CS_MALLOC(tabvar, n_b_faces, cs_real_t);
 
     const char nomrub[] = "temperature_bord_int";
     nbvent  = 1;
@@ -792,7 +792,7 @@ cs_1d_wall_thermal_read(void)
       _1d_wall_thermal.tppt1d[ii] = tabvar[ifac];
     }
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   { /* Read the 1D-mesh coordinates */
@@ -802,7 +802,7 @@ cs_1d_wall_thermal_read(void)
     cs_real_t   zz1, zz2, rrgpt1, rgpt1d;
 
     nptmx = n_b_faces * _1d_wall_thermal.nmxt1d;
-    BFT_MALLOC(tabvar, nptmx, cs_real_t);
+    CS_MALLOC(tabvar, nptmx, cs_real_t);
 
     const char nomrub[] = "coords_maillages_1d";
     nbvent  = _1d_wall_thermal.nmxt1d;
@@ -861,7 +861,7 @@ cs_1d_wall_thermal_read(void)
           = tabvar[jj + _1d_wall_thermal.nmxt1d*ifac];
     }
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   { /* Read the wall temperature */
@@ -869,7 +869,7 @@ cs_1d_wall_thermal_read(void)
     cs_real_t   *tabvar;
 
     nptmx = n_b_faces * _1d_wall_thermal.nmxt1d;
-    BFT_MALLOC(tabvar, nptmx, cs_real_t);
+    CS_MALLOC(tabvar, nptmx, cs_real_t);
 
     const char nomrub[] = "temperature_interne";
     nbvent  = _1d_wall_thermal.nmxt1d;
@@ -901,7 +901,7 @@ cs_1d_wall_thermal_read(void)
 
     }
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   cs_restart_read_fields(suite, CS_RESTART_1D_WALL_THERMAL);
@@ -965,7 +965,7 @@ cs_1d_wall_thermal_write(void)
     /* Write the number of discretization points */
     cs_lnum_t  *tabvar;
 
-    BFT_MALLOC(tabvar, n_b_faces, cs_lnum_t);
+    CS_MALLOC(tabvar, n_b_faces, cs_lnum_t);
 
     for (ii = 0; ii < n_b_faces; ii++)
       tabvar[ii] = 0;
@@ -986,14 +986,14 @@ cs_1d_wall_thermal_write(void)
                              typ_val,
                              tabvar);
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   {
     /* Write the wall thickness */
     cs_real_t   *tabvar;
 
-    BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
+    CS_MALLOC(tabvar, n_b_faces, cs_real_t);
 
     for (ii = 0; ii < n_b_faces; ii++)
       tabvar[ii] = 0.;
@@ -1014,14 +1014,14 @@ cs_1d_wall_thermal_write(void)
                              typ_val,
                              tabvar);
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   {
     /* Write the internal wall-boundary temperature */
     cs_real_t  *tabvar;
 
-    BFT_MALLOC(tabvar, n_b_faces, cs_real_t);
+    CS_MALLOC(tabvar, n_b_faces, cs_real_t);
 
     for (ii = 0; ii < n_b_faces; ii++)
       tabvar[ii] = 0.0;
@@ -1042,7 +1042,7 @@ cs_1d_wall_thermal_write(void)
                              typ_val,
                              tabvar);
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   {
@@ -1051,7 +1051,7 @@ cs_1d_wall_thermal_write(void)
     cs_real_t   *tabvar;
 
     nptmx = n_b_faces * _1d_wall_thermal.nmxt1d;
-    BFT_MALLOC(tabvar, nptmx, cs_real_t);
+    CS_MALLOC(tabvar, nptmx, cs_real_t);
 
     for (ii = 0; ii < nptmx; ii++)
       tabvar[ii] = 0.;
@@ -1078,7 +1078,7 @@ cs_1d_wall_thermal_write(void)
                              typ_val,
                              tabvar);
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   {
@@ -1087,7 +1087,7 @@ cs_1d_wall_thermal_write(void)
     cs_real_t   *tabvar;
 
     nptmx = n_b_faces * _1d_wall_thermal.nmxt1d;
-    BFT_MALLOC(tabvar, nptmx, cs_real_t);
+    CS_MALLOC(tabvar, nptmx, cs_real_t);
 
     for (ii = 0; ii < nptmx; ii++)
       tabvar[ii] = 0.;
@@ -1111,7 +1111,7 @@ cs_1d_wall_thermal_write(void)
                              CS_TYPE_cs_real_t,
                              tabvar);
 
-    BFT_FREE(tabvar);
+    CS_FREE(tabvar);
   }
 
   cs_restart_write_fields(suite, CS_RESTART_1D_WALL_THERMAL);
@@ -1130,10 +1130,10 @@ void
 cs_1d_wall_thermal_free(void)
 {
   if (_1d_wall_thermal.local_models != nullptr)
-    BFT_FREE(_1d_wall_thermal.local_models->z);
-  BFT_FREE(_1d_wall_thermal.local_models);
-  BFT_FREE(_1d_wall_thermal.ifpt1d);
-  BFT_FREE(_1d_wall_thermal.tppt1d);
+    CS_FREE(_1d_wall_thermal.local_models->z);
+  CS_FREE(_1d_wall_thermal.local_models);
+  CS_FREE(_1d_wall_thermal.ifpt1d);
+  CS_FREE(_1d_wall_thermal.tppt1d);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1145,7 +1145,7 @@ cs_1d_wall_thermal_free(void)
 void
 cs_1d_wall_thermal_finalize(void)
 {
-  BFT_FREE(_1d_wall_thermal.izft1d);
+  CS_FREE(_1d_wall_thermal.izft1d);
   cs_glob_1d_wall_thermal = nullptr;
 }
 

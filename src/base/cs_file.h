@@ -859,7 +859,7 @@ cs_file_isdir(const char  *path);
 /*----------------------------------------------------------------------------
  * List files inside a directory.
  *
- * The array returned must be freed by the caller using BFT_FREE,
+ * The array returned must be freed by the caller using CS_FREE,
  * as well as the individual entries in the array.
  *
  * parameters:

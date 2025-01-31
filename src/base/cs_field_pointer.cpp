@@ -41,11 +41,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_field.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -145,8 +145,8 @@ _init_pointers(void)
   assert(_field_pointer == nullptr);
 
   _n_pointers = CS_FIELD_N_POINTERS;
-  BFT_MALLOC(_field_pointer, _n_pointers, struct cs_field_pointer_array_t);
-  BFT_MALLOC(_sublist_size, _n_pointers, short int);
+  CS_MALLOC(_field_pointer, _n_pointers, struct cs_field_pointer_array_t);
+  CS_MALLOC(_sublist_size, _n_pointers, short int);
 
   for (int i = 0; i < _n_pointers; i++) {
     _field_pointer[i].f = nullptr;
@@ -187,10 +187,10 @@ cs_field_pointer_destroy_all(void)
 {
   for (int i = 0; i < _n_pointers; i++) {
     if (_sublist_size[i] > 1)
-      BFT_FREE(_field_pointer[i].p);
+      CS_FREE(_field_pointer[i].p);
   }
-  BFT_FREE(_field_pointer);
-  BFT_FREE(_sublist_size);
+  CS_FREE(_field_pointer);
+  CS_FREE(_sublist_size);
 
   cs_glob_field_pointers = nullptr;
 }
@@ -251,9 +251,9 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
       int n_sub = index+1;
 
       if (_field_pointer[e].p == &(_field_pointer[e].f))
-        BFT_MALLOC(_field_pointer[e].p, n_sub, cs_field_t *);
+        CS_MALLOC(_field_pointer[e].p, n_sub, cs_field_t *);
       else
-        BFT_REALLOC(_field_pointer[e].p, n_sub, cs_field_t *);
+        CS_REALLOC(_field_pointer[e].p, n_sub, cs_field_t *);
       _field_pointer[e].p[0] = _field_pointer[e].f;
 
       for (int i = _sublist_size[e]; i < n_sub; i++)

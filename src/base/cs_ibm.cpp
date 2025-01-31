@@ -226,7 +226,8 @@ _geom_face_fraction(cs_real_t alphai,
   if (delta >= 0.) {
     if (cs_math_fabs(aa) < 1.e-20) {
       return 0.5;
-    } else {
+    }
+    else {
       b1 = (-bb - sqrt(delta)) / (2.*aa);
       b2 = (-bb + sqrt(delta)) / (2.*aa);
       if (b1 >= alpi && b1 <= alpj) {
@@ -566,7 +567,8 @@ _tetra_vol_poro(cs_real_t   *vol,
 
   /* Check if at least one solid vertex, subdivision of the edges and
    * distribution of porosities before recursive call */
-  } else if (icut > 0) {
+  }
+  else if (icut > 0) {
     icut--;
 
     cs_real_3_t x12, x13, x14, x23, x24, x34;
@@ -607,7 +609,8 @@ _tetra_vol_poro(cs_real_t   *vol,
     *vol = vol1 + vol2 + vol3 + vol4 + vol5 + vol6 + vol7 + vol8;
     return;
 
-  } else {
+  }
+  else {
     if (cpt4 == 0) {
 
       /* No penalized point -> full tetrahedron */
@@ -616,7 +619,8 @@ _tetra_vol_poro(cs_real_t   *vol,
       for (int i = 0; i < 3; i++)
         cog[i] += 0.25 * (x1[i] + x2[i] + x3[i] + x4[i]) * *vol;
 
-    } else if (cpt4 == 1) {
+    }
+    else if (cpt4 == 1) {
 
       /* One penalized point tetrahedron - tetra from the penalized point */
       cs_real_3_t d12, d13, d14;
@@ -657,7 +661,8 @@ _tetra_vol_poro(cs_real_t   *vol,
 
         return;
 
-      } else if (ipenal2 == 1) {
+      }
+      else if (ipenal2 == 1) {
         cs_real_3_t d21, d23, d24;
         for (int i = 0; i < 3; i++) {
           d21[i] = x1[i] - x2[i];
@@ -693,7 +698,8 @@ _tetra_vol_poro(cs_real_t   *vol,
 
         return;
 
-      } else if (ipenal3 == 1) {
+      }
+      else if (ipenal3 == 1) {
         cs_real_3_t d31, d32, d34;
         for (int i = 0; i < 3; i++) {
           d31[i] = x1[i] - x3[i];
@@ -729,7 +735,8 @@ _tetra_vol_poro(cs_real_t   *vol,
 
         return;
 
-      } else if (ipenal4 == 1) {
+      }
+      else if (ipenal4 == 1) {
         cs_real_3_t d41, d42, d43;
         for (int i = 0; i < 3; i++) {
           d41[i] = x1[i] - x4[i];
@@ -765,11 +772,13 @@ _tetra_vol_poro(cs_real_t   *vol,
 
         return;
 
-      } else
+      }
+      else
         bft_error(__FILE__, __LINE__, 0,
                   "Error in function _tetra_vol_poro\n");
 
-    } else if (cpt4 == 3) {
+    }
+    else if (cpt4 == 3) {
 
       /* Three penalized points : tetrahedron from the non penalized
        * fourth point */
@@ -808,7 +817,8 @@ _tetra_vol_poro(cs_real_t   *vol,
 
         return;
 
-      } else if (ipenal2 == 0) {
+      }
+      else if (ipenal2 == 0) {
         cs_real_3_t d21, d23, d24;
         for (int i = 0; i < 3; i++) {
           d21[i] = x1[i] - x2[i];
@@ -841,7 +851,8 @@ _tetra_vol_poro(cs_real_t   *vol,
 
         return;
 
-      } else if (ipenal3 == 0) {
+      }
+      else if (ipenal3 == 0) {
         cs_real_3_t d31, d32, d34;
         for (int i = 0; i < 3; i++) {
           d31[i] = x1[i] - x3[i];
@@ -874,7 +885,8 @@ _tetra_vol_poro(cs_real_t   *vol,
 
         return;
 
-      } else if (ipenal4 == 0) {
+      }
+      else if (ipenal4 == 0) {
         cs_real_3_t d41, d42, d43;
         for (int i = 0; i < 3; i++) {
           d41[i] = x1[i] - x4[i];
@@ -911,7 +923,8 @@ _tetra_vol_poro(cs_real_t   *vol,
         bft_error(__FILE__, __LINE__, 0,
                   "Error in function _tetra_vol_cutcell\n");
 
-    } else if (cpt4 == 2) {
+    }
+    else if (cpt4 == 2) {
 
       /* Two penalized points : more complex */
       /* One puts in y1 and y2 the two non penalized points and in y3 and y4
@@ -935,7 +948,8 @@ _tetra_vol_poro(cs_real_t   *vol,
         porr3 = por3;
         porr4 = por4;
 
-      } else if (ipenal1 == 0 && ipenal3 == 0) {
+      }
+      else if (ipenal1 == 0 && ipenal3 == 0) {
         for (int i = 0; i < 3; i++) {
           y1[i] = x1[i];
           y2[i] = x3[i];
@@ -948,7 +962,8 @@ _tetra_vol_poro(cs_real_t   *vol,
         porr3 = por2;
         porr4 = por4;
 
-      } else if (ipenal1 == 0 && ipenal4 == 0) {
+      }
+      else if (ipenal1 == 0 && ipenal4 == 0) {
         for (int i = 0; i < 3; i++) {
           y1[i] = x1[i];
           y2[i] = x4[i];
@@ -961,7 +976,8 @@ _tetra_vol_poro(cs_real_t   *vol,
         porr3 = por2;
         porr4 = por3;
 
-      } else if (ipenal2 == 0 && ipenal3 == 0) {
+      }
+      else if (ipenal2 == 0 && ipenal3 == 0) {
         for (int i = 0; i < 3; i++) {
           y1[i] = x2[i];
           y2[i] = x3[i];
@@ -974,7 +990,8 @@ _tetra_vol_poro(cs_real_t   *vol,
         porr3 = por1;
         porr4 = por4;
 
-      } else if (ipenal2 == 0 && ipenal4 == 0) {
+      }
+      else if (ipenal2 == 0 && ipenal4 == 0) {
         for (int i = 0; i < 3; i++) {
           y1[i] = x2[i];
           y2[i] = x4[i];
@@ -987,7 +1004,8 @@ _tetra_vol_poro(cs_real_t   *vol,
         porr3 = por1;
         porr4 = por3;
 
-      } else if (ipenal3 == 0 && ipenal4 == 0) {
+      }
+      else if (ipenal3 == 0 && ipenal4 == 0) {
         for (int i = 0; i < 3; i++) {
           y1[i] = x3[i];
           y2[i] = x4[i];
@@ -1000,7 +1018,8 @@ _tetra_vol_poro(cs_real_t   *vol,
         porr3 = por1;
         porr4 = por2;
 
-      } else
+      }
+      else
         bft_error(__FILE__, __LINE__, 0,
                   "Error in function _tetra_vol_cutcell\n");
 
@@ -1123,7 +1142,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
   /* Check if at least one solid vertex, subdivision of the edges and
    * distribution of porosities before recursive call */
-  } else if (icut > 0) {
+  }
+  else if (icut > 0) {
     cs_real_3_t x12, x23, x13;
     icut--;
 
@@ -1143,7 +1163,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
     return surf;
 
-  } else {
+  }
+  else {
     if (cpt3 != 1 && cpt3 != 2)
       return surf;
 
@@ -1175,7 +1196,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         return surf;
 
-      } else if (ipenal2 == 1) {
+      }
+      else if (ipenal2 == 1) {
 
         cs_real_3_t dx12, dx23;
         for (int i = 0; i < 3; i++) {
@@ -1202,7 +1224,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         return surf;
 
-      } else {
+      }
+      else {
 
         cs_real_3_t dx13, dx23;
         for (int i = 0; i < 3; i++) {
@@ -1229,7 +1252,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         return surf;
       }
-    } else if (cpt3 == 2) {
+    }
+    else if (cpt3 == 2) {
       if (ipenal1 == 0) {
         cs_real_t l12 = _imm_lgth_poro(x1, por1, x2, por2);
         cs_real_t l13 = _imm_lgth_poro(x1, por1, x3, por3);
@@ -1267,7 +1291,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         return surf;
 
-      } else if (ipenal2 == 0) {
+      }
+      else if (ipenal2 == 0) {
         cs_real_t l12 = _imm_lgth_poro(x1, por1, x2, por2);
         cs_real_t l23 = _imm_lgth_poro(x2, por2, x3, por3);
 
@@ -1303,7 +1328,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         return surf;
 
-      } else {
+      }
+      else {
         cs_real_t l13 = _imm_lgth_poro(x1, por1, x3, por3);
         cs_real_t l23 = _imm_lgth_poro(x2, por2, x3, por3);
 
@@ -1436,13 +1462,15 @@ _tetra_vol_cutcell(cs_real_t    *vol,
     *vol = vol1 + vol2 + vol3 + vol4 + vol5 + vol6 + vol7 + vol8;
     return;
 
-  } else {
+  }
+  else {
     if (cpt4 == 0) {
 
       /* No penalized point -> full tetrahedron */
       *vol = _tetra_vol(x1, x2, x3, x4);
 
-    } else if (cpt4 == 1) {
+    }
+    else if (cpt4 == 1) {
 
       /* One penalized point tetrahedron - tetra from the penalized point */
       cs_real_3_t d12, d13, d14;
@@ -1470,7 +1498,8 @@ _tetra_vol_cutcell(cs_real_t    *vol,
 
         return;
 
-      } else if (ipenal2 == 1) {
+      }
+      else if (ipenal2 == 1) {
         cs_real_3_t d21, d23, d24;
         for (int i = 0; i < 3; i++) {
           d21[i] = x1[i] - x2[i];
@@ -1493,7 +1522,8 @@ _tetra_vol_cutcell(cs_real_t    *vol,
 
         return;
 
-      } else if (ipenal3 == 1) {
+      }
+      else if (ipenal3 == 1) {
         cs_real_3_t d31, d32, d34;
         for (int i = 0; i < 3; i++) {
           d31[i] = x1[i] - x3[i];
@@ -1516,7 +1546,8 @@ _tetra_vol_cutcell(cs_real_t    *vol,
 
         return;
 
-      } else if (ipenal4 == 1) {
+      }
+      else if (ipenal4 == 1) {
         cs_real_3_t d41, d42, d43;
         for (int i = 0; i < 3; i++) {
           d41[i] = x1[i] - x4[i];
@@ -1539,11 +1570,13 @@ _tetra_vol_cutcell(cs_real_t    *vol,
 
         return;
 
-      } else
+      }
+      else
         bft_error(__FILE__, __LINE__, 0,
                   "Error in function _tetra_vol_cutcell\n");
 
-    } else if (cpt4 == 3) {
+    }
+    else if (cpt4 == 3) {
 
       /* Three penalized points : tetrahedron from the non penalized
        * fourth point */
@@ -1572,7 +1605,8 @@ _tetra_vol_cutcell(cs_real_t    *vol,
 
         return;
 
-      } else if (ipenal2 == 0) {
+      }
+      else if (ipenal2 == 0) {
         cs_real_3_t d21, d23, d24;
         for (int i = 0; i < 3; i++) {
           d21[i] = x1[i] - x2[i];
@@ -1595,7 +1629,8 @@ _tetra_vol_cutcell(cs_real_t    *vol,
 
         return;
 
-      } else if (ipenal3 == 0) {
+      }
+      else if (ipenal3 == 0) {
         cs_real_3_t d31, d32, d34;
         for (int i = 0; i < 3; i++) {
           d31[i] = x1[i] - x3[i];
@@ -1618,7 +1653,8 @@ _tetra_vol_cutcell(cs_real_t    *vol,
 
         return;
 
-      } else if (ipenal4 == 0) {
+      }
+      else if (ipenal4 == 0) {
         cs_real_3_t d41, d42, d43;
         for (int i = 0; i < 3; i++) {
           d41[i] = x1[i] - x4[i];
@@ -1645,7 +1681,8 @@ _tetra_vol_cutcell(cs_real_t    *vol,
         bft_error(__FILE__, __LINE__, 0,
                   "Error in function _tetra_vol_cutcell\n");
 
-    } else if (cpt4 == 2) {
+    }
+    else if (cpt4 == 2) {
 
       /* Two penalized points : more complex */
       /* One puts in y1 et y2 the two non penalized points and in y3 and y4
@@ -1757,7 +1794,6 @@ _penal_glob(const cs_lnum_t   c_id,
   return ipenal;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute cell porosity using the cut cell method
@@ -1802,10 +1838,10 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
   cs_real_t voltot = 0;
 
   cs_lnum_t *nbvtx, *nbvtx_in, *cog_in, *node_in;
-  BFT_MALLOC(nbvtx, n_cells_ext, cs_lnum_t);
-  BFT_MALLOC(nbvtx_in, n_cells_ext, cs_lnum_t);
-  BFT_MALLOC(cog_in, n_cells_ext, cs_lnum_t);
-  BFT_MALLOC(node_in, mesh->n_vertices, cs_lnum_t);
+  CS_MALLOC(nbvtx, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(nbvtx_in, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(cog_in, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(node_in, mesh->n_vertices, cs_lnum_t);
   cs_array_lnum_fill_zero(n_cells_ext, nbvtx);
   cs_array_lnum_fill_zero(n_cells_ext, nbvtx_in);
   cs_array_lnum_fill_zero(n_cells_ext, cog_in);
@@ -2053,10 +2089,10 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
 
   cs_field_synchronize(CS_F_(poro), CS_HALO_STANDARD);
 
-  BFT_FREE(cog_in);
-  BFT_FREE(nbvtx);
-  BFT_FREE(nbvtx_in);
-  BFT_FREE(node_in);
+  CS_FREE(cog_in);
+  CS_FREE(nbvtx);
+  CS_FREE(nbvtx_in);
+  CS_FREE(node_in);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2115,7 +2151,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   int icut = cs_ibm->nb_cut_cells;
 
   cs_real_t *c_poro;
-  BFT_MALLOC(c_poro, n_cells_ext, cs_real_t);
+  CS_MALLOC(c_poro, n_cells_ext, cs_real_t);
 
   cs_vertex_to_cell(CS_VERTEX_TO_CELL_SHEPARD, 0, 1, nullptr,
                     v_poro, c_poro);
@@ -2123,7 +2159,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   cs_real_t voltot = 0.;
 
   cs_real_t *porbis;
-  BFT_MALLOC(porbis, n_cells_ext, cs_real_t);
+  CS_MALLOC(porbis, n_cells_ext, cs_real_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
     if (comp_cell[c_id] > 0 || comp_all_cog) {
@@ -2345,7 +2381,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
     size_weight = mesh->n_vertices;
 
   cs_real_t *weight;
-  BFT_MALLOC(weight, size_weight, cs_real_t);
+  CS_MALLOC(weight, size_weight, cs_real_t);
 
   for (cs_lnum_t c_id = 0; c_id < mesh->n_vertices; c_id++)
     weight[c_id] = 1.;
@@ -2399,10 +2435,12 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
     if (cs_ibm->prob_dim == CS_IBM_2D_X) {
       cell_f_cen[c_id][0] = cell_cen[c_id][0];
       cell_s_cen[c_id][0] = cell_cen[c_id][0];
-    } else if (cs_ibm->prob_dim == CS_IBM_2D_Y) {
+    }
+    else if (cs_ibm->prob_dim == CS_IBM_2D_Y) {
       cell_f_cen[c_id][1] = cell_cen[c_id][1];
       cell_s_cen[c_id][1] = cell_cen[c_id][1];
-    } else if (cs_ibm->prob_dim == CS_IBM_2D_Z) {
+    }
+    else if (cs_ibm->prob_dim == CS_IBM_2D_Z) {
       cell_f_cen[c_id][2] = cell_cen[c_id][2];
       cell_s_cen[c_id][2] = cell_cen[c_id][2];
     }
@@ -2471,11 +2509,10 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
     cs_field_synchronize(CS_F_(poro), CS_HALO_STANDARD);
   }
 
-  BFT_FREE(porbis);
-  BFT_FREE(c_poro);
-  BFT_FREE(weight);
+  CS_FREE(porbis);
+  CS_FREE(c_poro);
+  CS_FREE(weight);
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2611,7 +2648,6 @@ _compute_b_fac_porosity(const cs_mesh_t            *mesh,
   }
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute internal faces porosity
@@ -2665,11 +2701,10 @@ _compute_i_fac_porosity(const cs_mesh_t            *mesh,
     ifpro_poro[f_id] = porij;
   }
 
-
   /* If for a cell, only one face porosity is positive,
    * one cancels face porosity */
   cs_lnum_t *cpt;
-  BFT_MALLOC(cpt, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(cpt, n_cells_ext, cs_lnum_t);
 
   for (int ii = 0; ii < 4; ii++) {
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
@@ -2696,8 +2731,7 @@ _compute_i_fac_porosity(const cs_mesh_t            *mesh,
     }
   }
 
-  BFT_FREE(cpt);
-
+  CS_FREE(cpt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2735,7 +2769,8 @@ _compute_iso_vol_porosity(const cs_mesh_t            *mesh,
     cs_parall_sum(1, CS_DOUBLE, &volpor);
     cs_ibm->isovol = volpor;
 
-  } else if (ipass > 1) {
+  }
+  else if (ipass > 1) {
     cs_real_t aa = 0.;
     cs_real_t bb = 0.;
     cs_real_t volpor = cs_ibm->isovol;
@@ -3063,7 +3098,7 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   // TODO: Check
 
   cs_real_33_t *cut = nullptr;
-  BFT_MALLOC(cut, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(cut, n_cells_ext, cs_real_33_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
     for (int k = 0; k < 3; k++)
@@ -3130,7 +3165,8 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
       cs_real_t lambda = num / den;
       for (int idim = 0; idim < 3; idim++)
         b_face_cog_tp[idim] = xip[idim] + lambda * b_face_normal[f_id][idim];
-    } else {
+    }
+    else {
       for (int idim = 0; idim < 3; idim++)
         b_face_cog_tp[idim] = b_face_normal[f_id][idim];
     }
@@ -3141,14 +3177,14 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   }
 
   cs_real_t *denom2;
-  BFT_MALLOC(denom2, n_cells_ext, cs_real_t);
+  CS_MALLOC(denom2, n_cells_ext, cs_real_t);
 
   cs_real_3_t *coord_node_out;
-  BFT_MALLOC(coord_node_out, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(coord_node_out, n_cells_ext, cs_real_3_t);
   cs_real_3_t *coord_node_min;
-  BFT_MALLOC(coord_node_min, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(coord_node_min, n_cells_ext, cs_real_3_t);
   cs_real_3_t *coord_node_max;
-  BFT_MALLOC(coord_node_max, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(coord_node_max, n_cells_ext, cs_real_3_t);
 
   /* Compute positions out, min and max */
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
@@ -3340,11 +3376,11 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
     }
   }
 
-  BFT_FREE(cut);
-  BFT_FREE(coord_node_out);
-  BFT_FREE(coord_node_min);
-  BFT_FREE(coord_node_max);
-  BFT_FREE(denom2);
+  CS_FREE(cut);
+  CS_FREE(coord_node_out);
+  CS_FREE(coord_node_min);
+  CS_FREE(coord_node_max);
+  CS_FREE(denom2);
 
   cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD,
                            (cs_real_t *)c_w_face_cog, 3);
@@ -3353,8 +3389,8 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
   // Compute the "characteristic size" vector of each cell
   cs_real_3_t *cell_length3D, *weight3D;
-  BFT_MALLOC(cell_length3D, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(weight3D, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(cell_length3D, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(weight3D, n_cells_ext, cs_real_3_t);
   cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)cell_length3D);
   cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)weight3D);
 
@@ -3442,8 +3478,8 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, c_w_dist_inv);
 
-  BFT_FREE(cell_length3D);
-  BFT_FREE(weight3D);
+  CS_FREE(cell_length3D);
+  CS_FREE(weight3D);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3461,10 +3497,9 @@ static cs_ibm_object_t *
 _create_ibm_object(const char          *name,
                    cs_ibm_algo_type_t   method)
 {
-
   cs_ibm_object_t *new_obj = nullptr;
 
-  BFT_MALLOC(new_obj, 1, cs_ibm_object_t);
+  CS_MALLOC(new_obj, 1, cs_ibm_object_t);
 
   /* Set name */
   if (name == nullptr || strcmp(name, "") == 0)
@@ -3472,7 +3507,7 @@ _create_ibm_object(const char          *name,
               _("Empty name provided for IBM object creation.\n"));
 
   new_obj->name = nullptr;
-  BFT_MALLOC(new_obj->name, strlen(name) + 1, char);
+  CS_MALLOC(new_obj->name, strlen(name) + 1, char);
   strcpy(new_obj->name, name);
 
   /* Method */
@@ -3508,7 +3543,6 @@ static int
 _add_ibm_object(const char          *name,
                 cs_ibm_algo_type_t   method)
 {
-
   /* Check that the chosen algorithm is the correct one */
   if (cs_ibm->algo_choice == CS_IBM_ALGO_NONE)
     cs_ibm->algo_choice = method;
@@ -3531,16 +3565,15 @@ _add_ibm_object(const char          *name,
   int new_obj_id = cs_ibm->n_objects;
 
   if (new_obj_id == 0)
-    BFT_MALLOC(cs_ibm->objects, new_obj_id + 1, cs_ibm_object_t *);
+    CS_MALLOC(cs_ibm->objects, new_obj_id + 1, cs_ibm_object_t *);
   else
-    BFT_REALLOC(cs_ibm->objects, new_obj_id + 1, cs_ibm_object_t *);
+    CS_REALLOC(cs_ibm->objects, new_obj_id + 1, cs_ibm_object_t *);
 
   cs_ibm->objects[new_obj_id] = _create_ibm_object(name, method);
 
   cs_ibm->n_objects += 1;
 
   return new_obj_id;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3554,13 +3587,12 @@ _add_ibm_object(const char          *name,
 static void
 _free_ibm_object(cs_ibm_object_t *obj)
 {
-
-  BFT_FREE(obj->name);
+  CS_FREE(obj->name);
 
   if (obj->cutcell_func != nullptr)
     obj->cutcell_func = nullptr;
 
-  BFT_FREE(obj);
+  CS_FREE(obj);
 
 }
 
@@ -3581,7 +3613,6 @@ _ibm_object_define_property_def(cs_ibm_object_t               *obj,
                                 int                            n_vals,
                                 cs_real_t                     *vals)
 {
-
   assert(ppty_id < CS_N_IBM_OBJ_PROP_TYPES);
   cs_xdef_t *def = obj->property_defs[ppty_id];
 
@@ -3763,7 +3794,7 @@ cs_ibm_create(void)
 {
   cs_ibm_t  *ibm = nullptr;
 
-  BFT_MALLOC(ibm, 1, cs_ibm_t);
+  CS_MALLOC(ibm, 1, cs_ibm_t);
 
   ibm->n_objects = 0;
   ibm->objects = nullptr;
@@ -3801,15 +3832,15 @@ cs_ibm_finalize(void)
 {
   if (cs_ibm != nullptr) {
 
-  BFT_FREE(cs_ibm->solid_porosity);
+  CS_FREE(cs_ibm->solid_porosity);
 
   /* Clean objects */
   for (int iobj = 0; iobj < cs_ibm->n_objects; iobj++) {
     _free_ibm_object(cs_ibm->objects[iobj]);
   }
-  BFT_FREE(cs_ibm->objects);
+  CS_FREE(cs_ibm->objects);
 
-  BFT_FREE(cs_ibm);
+  CS_FREE(cs_ibm);
   }
 }
 
@@ -3860,7 +3891,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
   /* Structure members allocation */
   if (cs_ibm->solid_porosity == nullptr)
-    BFT_MALLOC(cs_ibm->solid_porosity, n_cells_ext, cs_real_t);
+    CS_MALLOC(cs_ibm->solid_porosity, n_cells_ext, cs_real_t);
 
   /* First call to user function to determine the problem dimension
    * and chosen algo for porosity */
@@ -3880,11 +3911,11 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
           && cs_ibm->porosity_user_source_term_modification)) {
 
     if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT)
-      BFT_REALLOC(cs_ibm->solid_porosity, n_cells_ext, cs_real_t);
+      CS_REALLOC(cs_ibm->solid_porosity, n_cells_ext, cs_real_t);
 
     cs_real_3_t *gradp;
 
-    BFT_MALLOC(gradp, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(gradp, n_cells_ext, cs_real_3_t);
 
     int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
     cs_real_3_t *f_ext = (hyd_p_flag == 1) ?
@@ -3921,7 +3952,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
     /* List of cells for which one has to recompute porosity -> comp_cell */
     int *comp_cell;
 
-    BFT_MALLOC(comp_cell, n_cells_ext, int);
+    CS_MALLOC(comp_cell, n_cells_ext, int);
     _compute_cell_list_porosity(mesh, mesh_quantities, comp_cell);
 
     /* Compute cell porosity */
@@ -3941,7 +3972,8 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
       /* Compute cell porosity from a file */
       /* Object logic in this section */
-      } else {
+      }
+      else {
 
         /* User imposed rotations/translations */
         cs_user_ibm_object_transformations(cs_glob_time_step->t_cur);
@@ -3952,7 +3984,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
         /* Local declarations */
         cs_real_t *obj_vol_f_tot = nullptr;
-        BFT_MALLOC(obj_vol_f_tot, n_cells_ext, cs_real_t);
+        CS_MALLOC(obj_vol_f_tot, n_cells_ext, cs_real_t);
         cs_array_real_fill_zero(n_cells_ext, obj_vol_f_tot);
 
         for (int o_id = 0; o_id < cs_ibm->n_objects; o_id++) {
@@ -3980,7 +4012,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
         cs_field_synchronize(CS_F_(poro), CS_HALO_STANDARD);
 
-        BFT_FREE(obj_vol_f_tot);
+        CS_FREE(obj_vol_f_tot);
       }
     }
 
@@ -3999,13 +4031,13 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
     /* Porosity projection at vertices */
     cs_real_t *v_poro;
-    BFT_MALLOC(v_poro, mesh->n_vertices, cs_real_t);
+    CS_MALLOC(v_poro, mesh->n_vertices, cs_real_t);
 
     int ncycle = 1;
 
     /* Save cell cog before modification */
     cs_real_3_t *cog_save;
-    BFT_MALLOC(cog_save, n_cells, cs_real_3_t);
+    CS_MALLOC(cog_save, n_cells, cs_real_3_t);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       for (int idir = 0; idir < 3; idir++)
@@ -4021,14 +4053,14 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
       /* Projection at vertices */
       cs_real_t *c_poro;
-      BFT_MALLOC(c_poro, n_cells_ext, cs_real_t);
+      CS_MALLOC(c_poro, n_cells_ext, cs_real_t);
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
         c_poro[c_id] = 0.5*(CS_F_(poro)->val_pre[c_id] + CS_F_(poro)->val[c_id]);
 
       cs_cell_to_vertex(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, false, nullptr,
                         c_poro, nullptr, v_poro);
 
-      BFT_FREE(c_poro);
+      CS_FREE(c_poro);
 
       /* Compute cell centers of gravity */
       _compute_cell_cog(mesh, mesh_quantities,
@@ -4064,8 +4096,8 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
                                 ifpro_poro, bfpro_poro);
     }
 
-    BFT_FREE(comp_cell);
-    BFT_FREE(v_poro);
+    CS_FREE(comp_cell);
+    CS_FREE(v_poro);
 
     /* Pressure update after moving cell cog */
     cs_real_3_t dcog;
@@ -4082,8 +4114,8 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(p)->val_pre);
     }
 
-    BFT_FREE(cog_save);
-    BFT_FREE(gradp);
+    CS_FREE(cog_save);
+    CS_FREE(gradp);
 
   }
 
@@ -4161,7 +4193,7 @@ cs_ibm_add_object_from_file(const char          *name,
   /*obj->solve_fsi = solve_fsi;
   // TODO create a different function?
   if (solve_fsi) {
-    BFT_MALLOC(obj->fsi_index, 1, int);
+    CS_MALLOC(obj->fsi_index, 1, int);
     obj->fsi_index[0] = cs_fsi_object->number;
     cs_fsi_object->number += 1;
   }*/
@@ -4171,7 +4203,8 @@ cs_ibm_add_object_from_file(const char          *name,
     obj->stl = cs_stl_mesh_add(name);
     cs_stl_file_read(obj->stl, file_name);
     obj->stl->is_porous = true;
-  } else if (method == CS_IBM_ALGO_MEDCOUPLING) {
+  }
+  else if (method == CS_IBM_ALGO_MEDCOUPLING) {
     const char *sel_crit = "all[]";
     const char *intersect_method   = "P0P0";
 
@@ -4181,7 +4214,6 @@ cs_ibm_add_object_from_file(const char          *name,
                                        sel_crit);
     obj->mi = cs_medcoupling_intersector_by_name(name);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4217,7 +4249,7 @@ cs_ibm_add_object_from_func(const char        *name,
     int id0 = cs_fsi_object->number;
     if (n_nodes > 1) {
       obj->is_deformable = true;
-      BFT_MALLOC(obj->fsi_index, n_nodes - 1, int);
+      CS_MALLOC(obj->fsi_index, n_nodes - 1, int);
       for (int i = 0; i < n_nodes - 1; i++)
         obj->fsi_index[i] = id0 + i;
 
@@ -4227,9 +4259,10 @@ cs_ibm_add_object_from_func(const char        *name,
       cs_fsi_object->n_solid += 1;
       obj->n_nodes = n_nodes;
 
-    } else {
+    }
+    else {
       obj->is_deformable = false;
-      BFT_MALLOC(obj->fsi_index, 1, int);
+      CS_MALLOC(obj->fsi_index, 1, int);
       obj->fsi_index[0] = id0;
 
       cs_fsi_object->number += 1;
@@ -4238,7 +4271,6 @@ cs_ibm_add_object_from_func(const char        *name,
   }*/
 
   obj->cutcell_func = cutcell_func;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4432,7 +4464,6 @@ cs_ibm_user_parameters(void)
   cs_user_ibm_define_objects();
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Init writers for STL or MED objects.
@@ -4554,8 +4585,8 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
 
   cs_real_t *wfrac = nullptr;
   cs_lnum_t *windic = nullptr;
-  BFT_MALLOC(wfrac, m->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(windic, m->n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(wfrac, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(windic, m->n_cells_with_ghosts, cs_lnum_t);
 
   switch(obj->method) {
 
@@ -4609,8 +4640,8 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
 
   }
 
-  BFT_FREE(wfrac);
-  BFT_FREE(windic);
+  CS_FREE(wfrac);
+  CS_FREE(windic);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -165,9 +165,9 @@ static user_profile_med_t *
 _allocate_med_mesh_struct([[maybe_unused]] cs_lnum_t n_layers)
 {
   user_profile_med_t *med_t = nullptr;
-  BFT_MALLOC(med_t, 1, user_profile_med_t);
+  CS_MALLOC(med_t, 1, user_profile_med_t);
 #if defined(HAVE_MEDCOUPLING)
-  BFT_MALLOC(med_t->layer_mesh, n_layers, MEDCouplingUMesh *);
+  CS_MALLOC(med_t->layer_mesh, n_layers, MEDCouplingUMesh *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
     char name[10];
     snprintf(name, 10, "%s_%d", "layer", layer_id);
@@ -237,7 +237,7 @@ _create_1d_sample_(user_profile_t  *profile,
   cs_lnum_t *selected_cells   = nullptr;
 
   // Allocate memory for the cells list which will be populated by cs_selector
-  BFT_MALLOC(selected_cells, n_cells, cs_lnum_t);
+  CS_MALLOC(selected_cells, n_cells, cs_lnum_t);
 
   cs_selector_get_cell_list(profile->criteria,
                             &n_selected_cells,
@@ -292,7 +292,7 @@ _create_1d_sample_(user_profile_t  *profile,
   cs_parall_sum(1, CS_REAL_TYPE, &sel_cells_weight);
   profile->sel_cells_weigth = sel_cells_weight;
 
-  BFT_FREE(selected_cells);
+  CS_FREE(selected_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -326,7 +326,7 @@ _compute_sample_moment(cs_real_t *sample,
   cs_real_t *w_n;
   cs_real_t  w_tot = 0.0;
 
-  BFT_MALLOC(w_n, n_elts_sample, cs_real_t);
+  CS_MALLOC(w_n, n_elts_sample, cs_real_t);
 
   for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++)
     w_tot += weights[iel];
@@ -369,7 +369,7 @@ _compute_sample_moment(cs_real_t *sample,
   min_max[0] = min_sample;
   min_max[1] = max_sample;
 
-  BFT_FREE(w_n);
+  CS_FREE(w_n);
 }
 
 /*----------------------------------------------------------------------------
@@ -739,7 +739,7 @@ _calculate_min_max_dir(user_profile_t  *profile)
   cs_lnum_t *selected_cells   = nullptr;
 
   // Allocate memory for the cells list which will be populated by cs_selector
-  BFT_MALLOC(selected_cells, m->n_cells, cs_lnum_t);
+  CS_MALLOC(selected_cells, m->n_cells, cs_lnum_t);
 
   cs_selector_get_cell_list(profile->criteria,
                             &n_selected_cells,
@@ -748,7 +748,7 @@ _calculate_min_max_dir(user_profile_t  *profile)
   cs_lnum_t  n_selected_vertices = 0;
   cs_lnum_t *selected_vertices   = nullptr;
 
-  BFT_MALLOC(selected_vertices, n_vertices, cs_lnum_t);
+  CS_MALLOC(selected_vertices, n_vertices, cs_lnum_t);
   cs_selector_get_cell_vertices_list_by_ids(n_selected_cells,
                                             selected_cells,
                                             &n_selected_vertices,
@@ -802,9 +802,9 @@ _calculate_min_max_dir(user_profile_t  *profile)
 
   cs_real_t **vtx_dist = nullptr;
 
-  BFT_MALLOC(vtx_dist, 3, cs_real_t *);
+  CS_MALLOC(vtx_dist, 3, cs_real_t *);
   for (int k = 0; k < 3; k++)
-    BFT_MALLOC(vtx_dist[k], n_selected_vertices, cs_real_t);
+    CS_MALLOC(vtx_dist[k], n_selected_vertices, cs_real_t);
 
   for (cs_lnum_t ii = 0; ii < n_selected_vertices; ii++) {
     cs_lnum_t vtx_id = selected_vertices[ii];
@@ -838,11 +838,11 @@ _calculate_min_max_dir(user_profile_t  *profile)
   profile->min_dir = min_mesh_ijn[2];
   profile->max_dir = max_mesh_ijn[2];
 
-  BFT_FREE(selected_cells);
-  BFT_FREE(selected_vertices);
+  CS_FREE(selected_cells);
+  CS_FREE(selected_vertices);
   for (int k = 0; k < 3; k++)
-    BFT_FREE(vtx_dist[k]);
-  BFT_FREE(vtx_dist);
+    CS_FREE(vtx_dist[k]);
+  CS_FREE(vtx_dist);
 }
 
 /*----------------------------------------------------------------------------
@@ -1045,7 +1045,7 @@ _set_stl_layers_seeds(user_profile_t  *profile,
   cs_lnum_t  n_selected_cells = 0;
   cs_lnum_t *selected_cells   = nullptr;
   // Allocate memory for the cells list which will be populated by cs_selector
-  BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(selected_cells, cs_glob_mesh->n_cells_with_ghosts, cs_lnum_t);
 
   cs_selector_get_cell_list(
     profile->criteria, &n_selected_cells, selected_cells);
@@ -1077,7 +1077,7 @@ _set_stl_layers_seeds(user_profile_t  *profile,
 
   /* Set an array of selected cell center coordinates */
   cs_real_t *point_coord;
-  BFT_MALLOC(point_coord, 3 * n_selected_cells, cs_real_t);
+  CS_MALLOC(point_coord, 3 * n_selected_cells, cs_real_t);
 
   for (int ii = 0; ii < n_selected_cells; ii++) {
     cs_lnum_t c_id = selected_cells[ii];
@@ -1111,7 +1111,7 @@ _set_stl_layers_seeds(user_profile_t  *profile,
     cs_parall_max(3, CS_REAL_TYPE, closest_point_coord[jj]);
   }
 
-  BFT_MALLOC(stl_mesh->seed_coords, 3 * (n_layers - 1), cs_real_t);
+  CS_MALLOC(stl_mesh->seed_coords, 3 * (n_layers - 1), cs_real_t);
   cs_lnum_t n_seeds = 0;
 
   /* Associate the found closest point to stl seeds */
@@ -1140,9 +1140,9 @@ _set_stl_layers_seeds(user_profile_t  *profile,
 
   stl_mesh->n_seeds = n_seeds;
 
-  BFT_FREE(selected_cells);
+  CS_FREE(selected_cells);
 
-  BFT_FREE(point_coord);
+  CS_FREE(point_coord);
 }
 
 /*----------------------------------------------------------------------------
@@ -1167,7 +1167,7 @@ _set_layers_stl_mesh(user_profile_t  *profile,
 
   // Allocate memory for stl mesh
   stl_mesh->n_faces = 6 * 2; // 2 triangles per faces
-  BFT_MALLOC(stl_mesh->coords, 3 * stl_mesh->n_faces, cs_real_3_t);
+  CS_MALLOC(stl_mesh->coords, 3 * stl_mesh->n_faces, cs_real_3_t);
 
   // Set vector orthogonal spatial system
   cs_real_t n_v[3];
@@ -1380,9 +1380,9 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
   z_max = layer_thickness / 2.0;
 
   double *x_coords, *y_coords, *z_coords;
-  BFT_MALLOC(x_coords, n_x, double);
-  BFT_MALLOC(y_coords, n_y, double);
-  BFT_MALLOC(z_coords, n_z, double);
+  CS_MALLOC(x_coords, n_x, double);
+  CS_MALLOC(y_coords, n_y, double);
+  CS_MALLOC(z_coords, n_z, double);
 
   for (int x_id = 0; x_id < n_x; x_id++)
     x_coords[x_id] = (x_max - x_min) * x_id / (n_x - 1) + x_min;
@@ -1586,9 +1586,9 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
   arrZ->decrRef();
   Cmesh->decrRef();
 
-  BFT_FREE(x_coords);
-  BFT_FREE(y_coords);
-  BFT_FREE(z_coords);
+  CS_FREE(x_coords);
+  CS_FREE(y_coords);
+  CS_FREE(z_coords);
 
 #endif
 }
@@ -1630,7 +1630,7 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile)
   cs_lnum_t  n_selected_cells = 0;
   cs_lnum_t *selected_cells   = nullptr;
   // Allocate memory for the cells list which will be populated by cs_selector
-  BFT_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
 
   cs_selector_get_cell_list(profile->criteria,
                             &n_selected_cells,
@@ -1673,7 +1673,7 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile)
 
   } // end of for loop for layer cell vol / weigth calculation
 
-  BFT_FREE(selected_cells);
+  CS_FREE(selected_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -1698,13 +1698,13 @@ _compute_cell_volume_per_layer_stl(user_profile_t  *profile)
   cs_lnum_t n_layers = profile->n_layers;
 
   cs_real_t *cells_l_id_vol = nullptr;
-  BFT_MALLOC(cells_l_id_vol, n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(cells_l_id_vol, n_cells_with_ghosts, cs_real_t);
 
   // Define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
   cs_lnum_t *selected_cells   = nullptr;
   // Allocate memory for the cells list which will be populated by cs_selector
-  BFT_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
 
   cs_selector_get_cell_list(
     profile->criteria, &n_selected_cells, selected_cells);
@@ -1732,8 +1732,8 @@ _compute_cell_volume_per_layer_stl(user_profile_t  *profile)
     }
   }
 
-  BFT_FREE(cells_l_id_vol);
-  BFT_FREE(selected_cells);
+  CS_FREE(cells_l_id_vol);
+  CS_FREE(selected_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -1826,13 +1826,13 @@ _compute_cell_vol_per_layer_med([[maybe_unused]] user_profile_t *profile)
   cs_lnum_t n_layers = profile->n_layers;
 
   cs_real_t *cells_l_id_vol = nullptr;
-  BFT_MALLOC(cells_l_id_vol, n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(cells_l_id_vol, n_cells_with_ghosts, cs_real_t);
 
   // define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
   cs_lnum_t *selected_cells   = nullptr;
   // Allocate memory for the cells list which will be populated by cs_selector
-  BFT_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
 
   cs_selector_get_cell_list(
     profile->criteria, &n_selected_cells, selected_cells);
@@ -1861,8 +1861,8 @@ _compute_cell_vol_per_layer_med([[maybe_unused]] user_profile_t *profile)
     }
   }
 
-  BFT_FREE(cells_l_id_vol);
-  BFT_FREE(selected_cells);
+  CS_FREE(cells_l_id_vol);
+  CS_FREE(selected_cells);
 
 #endif
 }
@@ -1880,13 +1880,13 @@ _free_profile_all(user_profile_t *profile)
   // free stl meshes
   for (int s_id = 0; s_id < profile->n_layers; s_id++) {
     cs_stl_mesh_t *stl_mesh = profile->mesh_list[s_id];
-    BFT_FREE(stl_mesh->coords);
-    BFT_FREE(stl_mesh->seed_coords);
-    BFT_FREE(stl_mesh->ext_mesh);
-    BFT_FREE(stl_mesh);
+    CS_FREE(stl_mesh->coords);
+    CS_FREE(stl_mesh->seed_coords);
+    CS_FREE(stl_mesh->ext_mesh);
+    CS_FREE(stl_mesh);
   }
 
-  BFT_FREE(profile->mesh_list);
+  CS_FREE(profile->mesh_list);
 
 #if defined(HAVE_MEDCOUPLING)
   /* Free med mesh if created */
@@ -1896,10 +1896,10 @@ _free_profile_all(user_profile_t *profile)
     for (int m_id = 0; m_id < profile->n_layers; m_id++) {
       med_t->layer_mesh[m_id]->decrRef();
     }
-    BFT_FREE(med_t->layer_mesh);
+    CS_FREE(med_t->layer_mesh);
     // Mesh will deallocated afterwards since it can be shared
     med_t->local_mesh = nullptr;
-    BFT_FREE(profile->med_mesh_struct);
+    CS_FREE(profile->med_mesh_struct);
   }
 
 #endif
@@ -1909,21 +1909,21 @@ _free_profile_all(user_profile_t *profile)
     user_histogram_t *histogram = profile->histogram_list[l_id];
     user_destroy_histogram(histogram);
   }
-  BFT_FREE(profile->histogram_list);
+  CS_FREE(profile->histogram_list);
 
-  BFT_FREE(profile->l_thick);
-  BFT_FREE(profile->pos);
-  BFT_FREE(profile->pos_n);
-  BFT_FREE(profile->n_cells);
-  BFT_FREE(profile->weigth);
-  BFT_FREE(profile->mean_f);
-  BFT_FREE(profile->mean_f_n);
-  BFT_FREE(profile->sd_f);
-  BFT_FREE(profile->sd_f_n);
+  CS_FREE(profile->l_thick);
+  CS_FREE(profile->pos);
+  CS_FREE(profile->pos_n);
+  CS_FREE(profile->n_cells);
+  CS_FREE(profile->weigth);
+  CS_FREE(profile->mean_f);
+  CS_FREE(profile->mean_f_n);
+  CS_FREE(profile->sd_f);
+  CS_FREE(profile->sd_f_n);
 
   for (int layer_id = 0; layer_id < profile->n_layers; layer_id++)
-    BFT_FREE(profile->cells_layer_vol[layer_id]);
-  BFT_FREE(profile->cells_layer_vol);
+    CS_FREE(profile->cells_layer_vol[layer_id]);
+  CS_FREE(profile->cells_layer_vol);
 }
 
 /*----------------------------------------------------------------------------
@@ -2290,14 +2290,14 @@ user_create_profile(const char  *name,
   }
 
   _profile_list.n_profiles++;
-  BFT_REALLOC(_profile_list.profile_list,
-              _profile_list.n_profiles,
-              user_profile_t *);
+  CS_REALLOC(_profile_list.profile_list,
+             _profile_list.n_profiles,
+             user_profile_t *);
 
   const cs_lnum_t   n_cells  = cs_glob_mesh->n_cells;
 
   // Initialize and allocate memory for profile
-  BFT_MALLOC(profile, 1, user_profile_t);
+  CS_MALLOC(profile, 1, user_profile_t);
 
   char *_dummy = const_cast<char *>(profile->name);
   strncpy(_dummy, name, 511);
@@ -2351,29 +2351,29 @@ user_create_profile(const char  *name,
   strncpy(_dummy, intersect_method, 511);
   _dummy[511] = '\0';
 
-  BFT_MALLOC(profile->l_thick, n_layers, cs_real_t);
-  BFT_MALLOC(profile->pos, n_layers, cs_real_t);
-  BFT_MALLOC(profile->pos_n, n_layers, cs_real_t);
-  BFT_MALLOC(profile->n_cells, n_layers, cs_lnum_t);
-  BFT_MALLOC(profile->weigth, n_layers, cs_real_t);
-  BFT_MALLOC(profile->mean_f, n_layers, cs_real_t);
-  BFT_MALLOC(profile->mean_f_n, n_layers, cs_real_t);
-  BFT_MALLOC(profile->sd_f, n_layers, cs_real_t);
-  BFT_MALLOC(profile->sd_f_n, n_layers, cs_real_t);
-  BFT_MALLOC(profile->cells_layer_vol, n_layers, cs_real_t *);
+  CS_MALLOC(profile->l_thick, n_layers, cs_real_t);
+  CS_MALLOC(profile->pos, n_layers, cs_real_t);
+  CS_MALLOC(profile->pos_n, n_layers, cs_real_t);
+  CS_MALLOC(profile->n_cells, n_layers, cs_lnum_t);
+  CS_MALLOC(profile->weigth, n_layers, cs_real_t);
+  CS_MALLOC(profile->mean_f, n_layers, cs_real_t);
+  CS_MALLOC(profile->mean_f_n, n_layers, cs_real_t);
+  CS_MALLOC(profile->sd_f, n_layers, cs_real_t);
+  CS_MALLOC(profile->sd_f_n, n_layers, cs_real_t);
+  CS_MALLOC(profile->cells_layer_vol, n_layers, cs_real_t *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++)
-    BFT_MALLOC(profile->cells_layer_vol[layer_id], n_cells, cs_real_t);
+    CS_MALLOC(profile->cells_layer_vol[layer_id], n_cells, cs_real_t);
 
-  BFT_MALLOC(profile->mesh_list, n_layers, cs_stl_mesh_t *);
+  CS_MALLOC(profile->mesh_list, n_layers, cs_stl_mesh_t *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++)
-    BFT_MALLOC(profile->mesh_list[layer_id], 1, cs_stl_mesh_t);
+    CS_MALLOC(profile->mesh_list[layer_id], 1, cs_stl_mesh_t);
 
   /* Allocate mesh med struct*/
   if (test_med == 0)
     profile->med_mesh_struct = _allocate_med_mesh_struct(n_layers);
 
   /* Allocate array of histogram */
-  BFT_MALLOC(profile->histogram_list, n_layers, user_histogram_t *);
+  CS_MALLOC(profile->histogram_list, n_layers, user_histogram_t *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
     char pname[100];
     sprintf(pname, "layer_%d", layer_id);
@@ -2456,11 +2456,11 @@ user_create_histogram(char        *name,
 {
   user_histogram_t *histogram;
 
-  BFT_MALLOC(histogram, 1, user_histogram_t);
-  BFT_MALLOC(histogram->h_i, n_bins_max, cs_real_t);
-  BFT_MALLOC(histogram->l_i, n_bins_max, cs_real_t);
-  BFT_MALLOC(histogram->c_i, n_bins_max, cs_real_t);
-  BFT_MALLOC(histogram->name, 105, char);
+  CS_MALLOC(histogram, 1, user_histogram_t);
+  CS_MALLOC(histogram->h_i, n_bins_max, cs_real_t);
+  CS_MALLOC(histogram->l_i, n_bins_max, cs_real_t);
+  CS_MALLOC(histogram->c_i, n_bins_max, cs_real_t);
+  CS_MALLOC(histogram->name, 105, char);
 
   /* Populate histogram general informations */
   sprintf(histogram->name, "%s", name);
@@ -2537,12 +2537,12 @@ user_histogram_compute(user_histogram_t  *histogram,
 void
 user_destroy_histogram(user_histogram_t  *histogram)
 {
-  BFT_FREE(histogram->name);
-  BFT_FREE(histogram->h_i);
-  BFT_FREE(histogram->l_i);
-  BFT_FREE(histogram->c_i);
+  CS_FREE(histogram->name);
+  CS_FREE(histogram->h_i);
+  CS_FREE(histogram->l_i);
+  CS_FREE(histogram->c_i);
 
-  BFT_FREE(histogram);
+  CS_FREE(histogram);
 }
 
 /*----------------------------------------------------------------------------
@@ -2623,8 +2623,8 @@ user_profile_compute(user_profile_t  *profile)
   cs_real_t min_field = DBL_MAX;
   cs_real_t max_field = DBL_MIN;
 
-  BFT_MALLOC(sample, n_cells, cs_real_t);
-  BFT_MALLOC(weights, n_cells, cs_real_t);
+  CS_MALLOC(sample, n_cells, cs_real_t);
+  CS_MALLOC(weights, n_cells, cs_real_t);
   cs_lnum_t n_elts_sample = 0;
 
   for (int l_id = 0; l_id < n_layers; l_id++) {
@@ -2683,8 +2683,8 @@ user_profile_compute(user_profile_t  *profile)
     }
   }
 
-  BFT_FREE(sample);
-  BFT_FREE(weights);
+  CS_FREE(sample);
+  CS_FREE(weights);
 }
 
 /*----------------------------------------------------------------------------
@@ -2958,7 +2958,7 @@ user_free_profiles(void)
     _free_profile_all(profile);
   }
   _profile_list.n_profiles = 0;
-  BFT_FREE(_profile_list.profile_list);
+  CS_FREE(_profile_list.profile_list);
 }
 
 /*----------------------------------------------------------------------------*/

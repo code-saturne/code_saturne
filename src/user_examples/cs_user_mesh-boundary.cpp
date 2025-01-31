@@ -85,7 +85,7 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh)
     const char criteria[] = "plane[0, -1, 0, 0.5, epsilon = 0.0001]"
                             " or plane[-1, 0, 0, 0.5, epsilon = 0.0001]";
 
-    BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
+    CS_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
 
     cs_selector_get_i_face_list(criteria,
                                 &n_selected_faces,
@@ -95,7 +95,7 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh)
                             n_selected_faces,
                             selected_faces);
 
-    BFT_FREE(selected_faces);
+    CS_FREE(selected_faces);
   }
   /*! [mesh_thinwall] */
 
@@ -109,7 +109,7 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh)
 
     const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
 
-    BFT_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+    CS_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -120,7 +120,7 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh)
                                              n_selected_cells,
                                              selected_cells);
 
-    BFT_FREE(selected_cells);
+    CS_FREE(selected_cells);
   }
   /*! [mesh_boundary_cells] */
 }

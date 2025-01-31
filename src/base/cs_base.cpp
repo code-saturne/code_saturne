@@ -71,7 +71,6 @@
 
 #include "base/cs_mem.h"
 #include "bft/bft_backtrace.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_mem_usage.h"
 #include "bft/bft_printf.h"
 
@@ -812,7 +811,7 @@ _get_path(const char   *dir_path,
 
       while (cs_root_dir == nullptr) {
         buf_size *= 2;
-        BFT_REALLOC(buf, buf_size, char);
+        CS_REALLOC(buf, buf_size, char);
         cs_root_dir = getcwd(buf, buf_size);
         if (cs_root_dir == nullptr && errno != ERANGE)
           bft_error(__FILE__, __LINE__, errno,
@@ -862,8 +861,8 @@ _finalize_reduced_communicators(void)
       MPI_Comm_free(&(_step_comm[comm_id]));
   }
 
-  BFT_FREE(_step_comm);
-  BFT_FREE(_step_ranks);
+  CS_FREE(_step_comm);
+  CS_FREE(_step_ranks);
 
   _n_step_comms = 0;
 }
@@ -1143,7 +1142,7 @@ cs_base_get_app_name(int          argc,
 
     while (wd == nullptr) {
       buf_size *= 2;
-      BFT_REALLOC(buf, buf_size, char);
+      CS_REALLOC(buf, buf_size, char);
       wd = getcwd(buf, buf_size);
       if (wd == nullptr && errno != ERANGE)
         bft_error(__FILE__, __LINE__, errno,
@@ -1153,7 +1152,7 @@ cs_base_get_app_name(int          argc,
     for (i = strlen(buf) - 1; i > 0 && buf[i-1] != '/'; i--);
     CS_MALLOC(app_name, strlen(buf + i) + 1, char);
     strcpy(app_name, buf + i);
-    BFT_FREE(buf);
+    CS_FREE(buf);
   }
 
 #endif /* defined(HAVE_GETCWD) */
@@ -1404,8 +1403,8 @@ cs_base_get_rank_step_comm(int  rank_step)
   if (comm_id >= _n_step_comms) {
 
     _n_step_comms += 1;
-    BFT_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
-    BFT_REALLOC(_step_ranks, _n_step_comms, int);
+    CS_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
+    CS_REALLOC(_step_ranks, _n_step_comms, int);
 
     _step_ranks[comm_id] = n_ranks;
 
@@ -1488,8 +1487,8 @@ cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
   if (comm_id >= _n_step_comms) {
 
     _n_step_comms += 1;
-    BFT_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
-    BFT_REALLOC(_step_ranks, _n_step_comms, int);
+    CS_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
+    CS_REALLOC(_step_ranks, _n_step_comms, int);
 
     _step_ranks[comm_id] = n_ranks;
 
@@ -1872,10 +1871,10 @@ cs_base_mem_finalize(void)
 
   if (_cs_mem_initialized == true) {
 
-    BFT_FREE(_cs_base_env_localedir);
-    BFT_FREE(_cs_base_env_pkgdatadir);
-    BFT_FREE(_cs_base_env_pkglibdir);
-    BFT_FREE(_bft_printf_file_name);
+    CS_FREE(_cs_base_env_localedir);
+    CS_FREE(_cs_base_env_pkgdatadir);
+    CS_FREE(_cs_base_env_pkglibdir);
+    CS_FREE(_bft_printf_file_name);
 
     uint64_t mstats[6] = {0, 0, 0, 0, 0, 0};
     int have_mem_stats = cs_mem_stats(mstats, mstats+1, mstats+2,
@@ -2142,7 +2141,7 @@ void
 cs_base_bft_printf_init(const char  *log_name,
                         bool         rn_log_flag)
 {
-  BFT_FREE(_bft_printf_file_name);
+  CS_FREE(_bft_printf_file_name);
   _bft_printf_suppress = false;
 
   const char ext[] = ".log";
@@ -2504,7 +2503,7 @@ cs_base_open_properties_data_file(const char  *base_name)
     bft_error(__FILE__, __LINE__, errno,
               _("Error opening data file \"%s\""), file_name);
 
-  BFT_FREE(_f_name);
+  CS_FREE(_f_name);
 
   return f;
 }
@@ -2579,7 +2578,7 @@ cs_base_dlopen_plugin(const char *name)
 
   retval = cs_base_dlopen(lib_path);
 
-  BFT_FREE(lib_path);
+  CS_FREE(lib_path);
 
   return retval;
 }
@@ -2762,7 +2761,7 @@ cs_base_at_finalize(cs_base_atexit_t  *func)
   int i = _cs_base_n_finalize;
 
   _cs_base_n_finalize += 1;
-  BFT_REALLOC(_cs_base_finalize, _cs_base_n_finalize, cs_base_atexit_t *);
+  CS_REALLOC(_cs_base_finalize, _cs_base_n_finalize, cs_base_atexit_t *);
 
   _cs_base_finalize[i] = func;
 }
@@ -2782,7 +2781,7 @@ cs_base_finalize_sequence(void)
   if (_cs_base_finalize != nullptr) {
     for (int i = _cs_base_n_finalize - 1; i > -1; i--)
       _cs_base_finalize[i]();
-    BFT_FREE(_cs_base_finalize);
+    CS_FREE(_cs_base_finalize);
     _cs_base_n_finalize = 0;
   }
 }
@@ -2832,7 +2831,7 @@ cs_base_get_run_identity(char  **run_id,
 
   while (wd == nullptr) {
     buf_size *= 2;
-    BFT_REALLOC(buf, buf_size, char);
+    CS_REALLOC(buf, buf_size, char);
     wd = getcwd(buf, buf_size);
     if (wd == nullptr && errno != ERANGE)
       bft_error(__FILE__, __LINE__, errno,
@@ -2886,10 +2885,9 @@ cs_base_get_run_identity(char  **run_id,
     strcpy(*study_name, _study_name);
   }
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 
 #endif /* defined(HAVE_GETCWD) */
-
 }
 
 /*----------------------------------------------------------------------------*/

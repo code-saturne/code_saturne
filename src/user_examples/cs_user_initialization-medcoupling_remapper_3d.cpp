@@ -193,7 +193,7 @@ cs_user_initialization(cs_domain_t     *domain)
       }
     }
 
-    BFT_FREE(m_vals);
+    CS_FREE(m_vals);
 
   } /* End of loop on fields */
 

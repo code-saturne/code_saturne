@@ -57,8 +57,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -259,7 +259,7 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
   output[0] = *eos_o;
 
   int *error;
-  BFT_MALLOC(error, n_vals, int);
+  CS_MALLOC(error, n_vals, int);
   NEPTUNE::EOS_Error_Field eos_error_field(n_vals, error);
 
   NEPTUNE::EOS_Error eos_error = eos->compute(input,
@@ -267,7 +267,7 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
                                               eos_error_field);
 
   _eos_error_code("cs_phys_prop_eos", eos_error);
-  BFT_FREE(error);
+  CS_FREE(error);
 }
 
 /*----------------------------------------------------------------------------*/

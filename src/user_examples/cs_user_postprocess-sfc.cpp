@@ -72,9 +72,9 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
   const cs_gnum_t *cell_gnum = nullptr;
   const double *var_ptr[1] = {nullptr};
 
-  BFT_MALLOC(order, m->n_cells, cs_lnum_t);
-  BFT_MALLOC(val, m->n_cells, double);
-  BFT_MALLOC(coords, m->n_cells*3, double);
+  CS_MALLOC(order, m->n_cells, cs_lnum_t);
+  CS_MALLOC(val, m->n_cells, double);
+  CS_MALLOC(coords, m->n_cells*3, double);
 
   /* Loop on space-filling curve types */
 
@@ -83,7 +83,7 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
        i_sfc_id++) {
     sfc_id = (fvm_io_num_sfc_t)i_sfc_id;
 
-    BFT_MALLOC(connect, n_edges*2, cs_lnum_t);
+    CS_MALLOC(connect, n_edges*2, cs_lnum_t);
 
     io_num = fvm_io_num_create_from_sfc((cs_real_t *)mq->cell_cen,
                                         3,
@@ -144,9 +144,9 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
 
   /* Free memory */
 
-  BFT_FREE(order);
-  BFT_FREE(val);
-  BFT_FREE(coords);
+  CS_FREE(order);
+  CS_FREE(val);
+  CS_FREE(coords);
 }
 
 #if defined(HAVE_MPI)
@@ -211,11 +211,11 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
     block_size = (bi.gnum_range[1] - bi.gnum_range[0]);
 
     if (block_size > 0) {
-      BFT_MALLOC(connect, block_size*2, cs_lnum_t);
-      BFT_MALLOC(val, block_size+1, double);
-      BFT_MALLOC(coords, (block_size+1)*3, double);
-      BFT_MALLOC(vtx_gnum, block_size+1, cs_gnum_t);
-      BFT_MALLOC(edge_gnum, block_size, cs_gnum_t);
+      CS_MALLOC(connect, block_size*2, cs_lnum_t);
+      CS_MALLOC(val, block_size+1, double);
+      CS_MALLOC(coords, (block_size+1)*3, double);
+      CS_MALLOC(vtx_gnum, block_size+1, cs_gnum_t);
+      CS_MALLOC(edge_gnum, block_size, cs_gnum_t);
     }
 
     /* Distribute blocks on ranks */
@@ -261,7 +261,7 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
       val[block_size] = vtx_gnum[block_size];
     }
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     nm = fvm_nodal_create(fvm_io_num_sfc_type_name[sfc_id], 3);
 
@@ -301,10 +301,10 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
     /* Free memory */
 
     if (block_size > 0) {
-      BFT_FREE(val);
-      BFT_FREE(coords);
-      BFT_FREE(vtx_gnum);
-      BFT_FREE(edge_gnum);
+      CS_FREE(val);
+      CS_FREE(coords);
+      CS_FREE(vtx_gnum);
+      CS_FREE(edge_gnum);
     }
 
     fvm_nodal_destroy(nm);

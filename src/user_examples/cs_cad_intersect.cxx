@@ -341,7 +341,7 @@ _build_cell(const cs_mesh_t              *m,
 
         cs_lnum_t n_triangles = n_f_v - 2;
         if (n_triangles > *n_max_triangles) {
-          BFT_REALLOC(*triangle_vertices, 3*n_triangles, cs_lnum_t);
+          CS_REALLOC(*triangle_vertices, 3*n_triangles, cs_lnum_t);
           *n_max_triangles = n_triangles;
         }
 
@@ -587,7 +587,7 @@ _cad_intersect(const cs_mesh_t        *m,
   /* Extract cell->faces index for selected subset */
 
   cs_lnum_t  *c_restrict_id;
-  BFT_MALLOC(c_restrict_id, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(c_restrict_id, n_cells_ext, cs_lnum_t);
   if (cell_ids != nullptr) {
     for (cs_lnum_t i = 0; i < n_cells_ext; i++)
       c_restrict_id[i] = -1;
@@ -762,11 +762,11 @@ _cad_intersect(const cs_mesh_t        *m,
 
   // Cleanup
 
-  BFT_FREE(triangle_vertices);
+  CS_FREE(triangle_vertices);
   if (triangulate_state != nullptr)
     triangulate_state = fvm_triangulate_state_destroy(triangulate_state);
 
-  BFT_FREE(c_restrict_id);
+  CS_FREE(c_restrict_id);
 }
 
 /*----------------------------------------------------------------------------*/

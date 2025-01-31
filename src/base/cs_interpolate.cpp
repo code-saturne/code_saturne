@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -49,6 +48,7 @@
 #include "base/cs_field_default.h"
 #include "alge/cs_gradient.h"
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -269,10 +269,10 @@ cs_interpolate_from_location_p1(void                *input,
       int kbf = cs_field_key_id_try("boundary_value_id");
       int bf_id = cs_field_get_key_int(f, kbf);
       if (bf_id > -1) {
-        BFT_MALLOC(bc_coeffs, 1, cs_field_bc_coeffs_t);
+        CS_MALLOC(bc_coeffs, 1, cs_field_bc_coeffs_t);
         cs_field_bc_coeffs_init(bc_coeffs);
 
-        BFT_MALLOC(bc_coeffs->a, m->n_b_faces, cs_real_t);
+        CS_MALLOC(bc_coeffs->a, m->n_b_faces, cs_real_t);
         const cs_field_t *bf = cs_field_by_id(bf_id);
         cs_array_real_copy(m->n_b_faces, bf->val, bc_coeffs->a);
         bc_coeffs->b = nullptr;
@@ -411,9 +411,9 @@ cs_interpolate_from_location_p1(void                *input,
   }
 
   if (bc_coeffs != nullptr && bc_coeffs != f->bc_coeffs) {
-    BFT_FREE(bc_coeffs->a);
-    BFT_FREE(bc_coeffs->b);
-    BFT_FREE(bc_coeffs);
+    CS_FREE(bc_coeffs->a);
+    CS_FREE(bc_coeffs->b);
+    CS_FREE(bc_coeffs);
   }
 }
 

@@ -40,13 +40,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_assert.h"
 #include "base/cs_block_dist.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -277,7 +277,7 @@ _crystal_create(size_t         n_elts,
 
   /* Allocate structure */
 
-  BFT_MALLOC(cr, 1, cs_crystal_router_t);
+  CS_MALLOC(cr, 1, cs_crystal_router_t);
 
   cr->flags = flags;
 
@@ -374,7 +374,7 @@ _crystal_create_meta_s(size_t         n_elts,
 
   cr->buffer_size[0] = n_elts*cr->comp_size;
   cr->buffer_size[1] = 0;
-  BFT_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
+  CS_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
   memset(cr->buffer[0], 0, cr->buffer_size[0]);
   cr->buffer[1] = nullptr;
 
@@ -454,7 +454,7 @@ _crystal_create_meta_i(size_t            n_elts,
   cr->n_vals[1] = 0;
   cr->buffer_size[0] = n_elts*cr->comp_size + cr->n_vals[0]*elt_size;
   cr->buffer_size[1] = 0;
-  BFT_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
+  CS_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
   memset(cr->buffer[0], 0, cr->buffer_size[0]);
   cr->buffer[1] = nullptr;
 
@@ -714,7 +714,7 @@ _crystal_partition_strided(cs_crystal_router_t  *cr,
   if (   cr->buffer_size[1] < cr->buffer_size[0]
       || cr->buffer_size[1] > cr->buffer_size[0]*_realloc_f_threshold) {
     cr->buffer_size[1] = cr->buffer_size[0];
-    BFT_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
+    CS_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
     if (cr->buffer_size[1] > cr->buffer_size_max[1])
       cr->buffer_size_max[1] = cr->buffer_size[1];
     size_t alloc_tot = cr->buffer_size[0] + cr->buffer_size[1];
@@ -846,7 +846,7 @@ _crystal_partition_indexed(cs_crystal_router_t  *cr,
   }
 
   cr->buffer_size[1] = (id0 == 0) ? r1_end : r0_end;
-  BFT_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
+  CS_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
   if (cr->buffer_size[1] > cr->buffer_size_max[1])
     cr->buffer_size_max[1] = cr->buffer_size[1];
   size_t alloc_tot = cr->buffer_size[0] + cr->buffer_size[1];
@@ -942,7 +942,7 @@ _crystal_sendrecv(cs_crystal_router_t  *cr,
   if (   loc_size > cr->buffer_size[0]
       || loc_size < cr->buffer_size[0]*_realloc_f_threshold) {
     cr->buffer_size[0] = loc_size;
-    BFT_REALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
+    CS_REALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
     if (cr->buffer_size[0] > cr->buffer_size_max[0])
       cr->buffer_size_max[0] = cr->buffer_size[0];
     size_t alloc_tot = cr->buffer_size[0] + cr->buffer_size[1];
@@ -1180,7 +1180,7 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
   /* If we do not have a dest_id buffer, use a local one */
 
   if (_dest_id == nullptr) {
-    BFT_MALLOC(_dest_id, n_elts, cs_lnum_t);
+    CS_MALLOC(_dest_id, n_elts, cs_lnum_t);
     cs_assert(cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID);
   }
 
@@ -1283,7 +1283,7 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
   }
 
   if (dest_id == nullptr)
-    BFT_FREE(_dest_id);
+    CS_FREE(_dest_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -1807,9 +1807,9 @@ cs_crystal_router_destroy(cs_crystal_router_t  **cr)
       cs_crystal_router_t *_cr = *cr;
       if (_cr->mpi_type != MPI_BYTE)
         MPI_Type_free(&(_cr->mpi_type));
-      BFT_FREE(_cr->buffer[1]);
-      BFT_FREE(_cr->buffer[0]);
-      BFT_FREE(*cr);
+      CS_FREE(_cr->buffer[1]);
+      CS_FREE(_cr->buffer[0]);
+      CS_FREE(*cr);
     }
 
     cs_timer_t t1 = cs_timer_time();
@@ -1907,7 +1907,7 @@ cs_crystal_router_exchange(cs_crystal_router_t  *cr)
 
   cr->n_elts[1] = 0;
   cr->buffer_size[1] = 0;
-  BFT_FREE(cr->buffer[1]);
+  CS_FREE(cr->buffer[1]);
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(_cr_timers, &t0, &t1);
@@ -2074,7 +2074,7 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
   if (src_rank != nullptr && cr->flags & CS_CRYSTAL_ROUTER_ADD_SRC_RANK) {
     _src_rank = *src_rank;
     if (_src_rank == nullptr) {
-      BFT_MALLOC(_src_rank, n_elts, int);
+      CS_MALLOC(_src_rank, n_elts, int);
       *src_rank = _src_rank;
     }
   }
@@ -2082,7 +2082,7 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
   if (dest_id != nullptr) { /* May be extracted or provided from previous call */
     _dest_id = *dest_id;
     if (_dest_id == nullptr && cr->flags & CS_CRYSTAL_ROUTER_USE_DEST_ID) {
-      BFT_MALLOC(_dest_id, n_elts, cs_lnum_t);
+      CS_MALLOC(_dest_id, n_elts, cs_lnum_t);
       *dest_id = _dest_id;
     }
   }
@@ -2090,7 +2090,7 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
   if (src_id != nullptr && cr->flags & CS_CRYSTAL_ROUTER_ADD_SRC_ID) {
     _src_id = *src_id;
     if (_src_id == nullptr) {
-      BFT_MALLOC(_src_id, n_elts, cs_lnum_t);
+      CS_MALLOC(_src_id, n_elts, cs_lnum_t);
       *src_id = _src_id;
     }
   }
@@ -2098,7 +2098,7 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
   if (data_index != nullptr && cr->n_vals_shift > 0) {
     _data_index = *data_index;
     if (_data_index == nullptr) {
-      BFT_MALLOC(_data_index, n_elts + 1, cs_lnum_t);
+      CS_MALLOC(_data_index, n_elts + 1, cs_lnum_t);
       *data_index = _data_index;
     }
   }
@@ -2111,7 +2111,7 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
         data_size = n_elts*cr->elt_size;
       else
         data_size = cr->n_vals[0]*cr->elt_size;
-      BFT_MALLOC(_data, data_size, unsigned char);
+      CS_MALLOC(_data, data_size, unsigned char);
       *data = _data;
     }
   }
@@ -2119,7 +2119,7 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
   if (data != nullptr && cr->stride > 0) {
     _data = static_cast<unsigned char *>(*data);
     if (_data == nullptr) {
-      BFT_MALLOC(_data, n_elts*cr->elt_size, unsigned char);
+      CS_MALLOC(_data, n_elts*cr->elt_size, unsigned char);
       *data = _data;
     }
   }
@@ -2135,7 +2135,7 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
                                _data);
     else {
       if (cr->n_vals_shift > 0 && _data_index == nullptr)
-        BFT_MALLOC(_data_index, n_elts + 1, cs_lnum_t);
+        CS_MALLOC(_data_index, n_elts + 1, cs_lnum_t);
 
       _get_data_index_with_dest_id(cr, _dest_id, _data_index);
 
@@ -2158,9 +2158,9 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
   }
 
   if (dest_id == nullptr && _dest_id != nullptr)
-    BFT_FREE(_dest_id);
+    CS_FREE(_dest_id);
   if (data_index == nullptr && _data_index != nullptr)
-    BFT_FREE(_data_index);
+    CS_FREE(_data_index);
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(_cr_timers, &t0, &t1);

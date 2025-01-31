@@ -90,7 +90,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   /* Mark families matching "no groups" */
 
-  BFT_MALLOC(family_flag, mesh->n_families, int);
+  CS_MALLOC(family_flag, mesh->n_families, int);
   for (int i = 0; i < mesh->n_families; i++)
     family_flag[i] = 1;
 
@@ -118,8 +118,8 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   /* Build associated lists */
 
-  BFT_MALLOC(free_faces_list, n_free_faces, cs_lnum_t);
-  BFT_MALLOC(no_group_list, n_no_group, cs_lnum_t);
+  CS_MALLOC(free_faces_list, n_free_faces, cs_lnum_t);
+  CS_MALLOC(no_group_list, n_no_group, cs_lnum_t);
 
   n_free_faces = 0;
   n_no_group = 0;
@@ -134,7 +134,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   }
 
-  BFT_FREE(family_flag);
+  CS_FREE(family_flag);
 
   /* Build nodal mesh associated to isolated faces */
 
@@ -160,7 +160,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
 
-  BFT_FREE(b_face_normal);
+  CS_FREE(b_face_normal);
 
   ple_locator_set_mesh(locator,
                        free_faces,
@@ -176,7 +176,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
                        cs_coupling_mesh_extents,
                        cs_coupling_point_in_mesh_p);
 
-  BFT_FREE(b_face_cog);
+  CS_FREE(b_face_cog);
 
   /* Log number of found and free faces */
 
@@ -215,7 +215,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   const ple_lnum_t *dist_loc = ple_locator_get_dist_locations(locator);
 
   int *dist_fm_id = nullptr;
-  BFT_MALLOC(dist_fm_id, n_dist_points, int);
+  CS_MALLOC(dist_fm_id, n_dist_points, int);
 
   for (cs_lnum_t i = 0; i < n_dist_points; i++)
     dist_fm_id[i] = mesh->b_face_family[dist_loc[i]];
@@ -232,8 +232,8 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   free_faces = fvm_nodal_destroy(free_faces);
 
-  BFT_FREE(free_faces_list);
-  BFT_FREE(no_group_list);
+  CS_FREE(free_faces_list);
+  CS_FREE(no_group_list);
 }
 
 /*============================================================================

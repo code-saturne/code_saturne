@@ -47,7 +47,6 @@
 
 #include <ple_locator.h>
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -69,6 +68,7 @@
 #include "base/cs_flag_check.h"
 #include "base/cs_halo.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -931,7 +931,7 @@ _dof_vel_from_buffer_uniform(cs_lnum_t         n_elts,
 static void
 _clear_inlet_outlet_vel(cs_boundary_conditions_open_t *c)
 {
-  BFT_FREE(c->vel_buffer);
+  CS_FREE(c->vel_buffer);
 
   for (int i = 0; i < 4; i++)
     c->vel_values[i] = 0;
@@ -1074,7 +1074,7 @@ _compute_mass_flow_rate(const cs_zone_t  *zone)
   const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
 
   cs_real_t *sf;
-  BFT_MALLOC(sf, n_elts, cs_real_t);
+  CS_MALLOC(sf, n_elts, cs_real_t);
 
   if (CS_F_(rho_b) != nullptr) {
     const cs_real_t *rho_b = CS_F_(rho_b)->val;
@@ -1103,7 +1103,7 @@ _compute_mass_flow_rate(const cs_zone_t  *zone)
     cs_parall_sum(1, CS_REAL_TYPE, &q_m);
   }
 
-  BFT_FREE(sf);
+  CS_FREE(sf);
 
   return qm;
 }
@@ -1152,7 +1152,7 @@ _scale_vel_mass_flow_rate(int               location_id,
     const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
 
     cs_real_t *sf;
-    BFT_MALLOC(sf, n_elts, cs_real_t);
+    CS_MALLOC(sf, n_elts, cs_real_t);
 
     /* Compressible prescribed inlet with given pressure and temperature */
 
@@ -1197,7 +1197,7 @@ _scale_vel_mass_flow_rate(int               location_id,
     cs_real_t q_ini = cs_sum(n_elts, sf);
     cs_parall_sum(1, CS_REAL_TYPE, &q_ini);
 
-    BFT_FREE(sf);
+    CS_FREE(sf);
 
     if (fabs(q_ini) < 1e-30)
       bft_error
@@ -1257,7 +1257,7 @@ _scale_vel_volume_flow_rate(int               location_id,
   const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
 
   cs_real_t *sf;
-  BFT_MALLOC(sf, n_elts, cs_real_t);
+  CS_MALLOC(sf, n_elts, cs_real_t);
 
   if (elt_ids != nullptr) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -1274,7 +1274,7 @@ _scale_vel_volume_flow_rate(int               location_id,
   cs_real_t q_ini = cs_sum(n_elts, sf);
   cs_parall_sum(1, CS_REAL_TYPE, &q_ini);
 
-  BFT_FREE(sf);
+  CS_FREE(sf);
 
   if (fabs(q_ini) < 1e-30)
     bft_error
@@ -1378,7 +1378,7 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
 
   if (   c->vel_buffer == nullptr
       || cs_glob_mesh->time_dep == CS_MESH_TRANSIENT_CONNECT)
-    BFT_REALLOC(c->vel_buffer, z->n_elts*3, cs_real_t);
+    CS_REALLOC(c->vel_buffer, z->n_elts*3, cs_real_t);
 
   /* Compute velocity buffer */
 
@@ -1472,7 +1472,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
   cs_lnum_t *_faces = nullptr;
 
   if (faces != nullptr) {
-    BFT_MALLOC(_faces, n_faces, cs_lnum_t);
+    CS_MALLOC(_faces, n_faces, cs_lnum_t);
     for (cs_lnum_t i = 0; i < n_faces; i++)
       _faces[i] = faces[i] - 1;
   }
@@ -1486,7 +1486,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     _faces,
                                     balance_w);
 
-  BFT_FREE(_faces);
+  CS_FREE(_faces);
 }
 
 /*----------------------------------------------------------------------------
@@ -1667,10 +1667,10 @@ cs_boundary_conditions_open_find_or_add(const  cs_zone_t   *zone)
       zone_num_max = _bc_open[i]->bc_pm_zone_num;
   }
 
-  BFT_REALLOC(_bc_open, _n_bc_open+1, cs_boundary_conditions_open_t *);
+  CS_REALLOC(_bc_open, _n_bc_open+1, cs_boundary_conditions_open_t *);
 
   cs_boundary_conditions_open_t *c;
-  BFT_MALLOC(c, 1, cs_boundary_conditions_open_t);
+  CS_MALLOC(c, 1, cs_boundary_conditions_open_t);
 
   _bc_open[_n_bc_open] = c;
   _n_bc_open += 1;
@@ -1887,7 +1887,7 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
-  BFT_MALLOC(point_coords, n_faces*3, ple_coord_t);
+  CS_MALLOC(point_coords, n_faces*3, ple_coord_t);
   if (faces != nullptr) {
     for (cs_lnum_t i = 0; i < n_faces; i++) {
       const cs_lnum_t face_id = faces[i];
@@ -1937,7 +1937,7 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
        (unsigned long long)loc_count[0]);
   }
 
-  BFT_FREE(point_coords);
+  CS_FREE(point_coords);
 
   /* Shift from 1-base to 0-based locations */
 
@@ -2030,8 +2030,8 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
 
   /* Allocate working array */
 
-  BFT_MALLOC(distant_var, n_dist*dim, cs_real_t);
-  BFT_MALLOC(local_var, n_faces*dim, cs_real_t);
+  CS_MALLOC(distant_var, n_dist*dim, cs_real_t);
+  CS_MALLOC(local_var, n_faces*dim, cs_real_t);
 
   /* Prepare values to send */
   /*------------------------*/
@@ -2122,8 +2122,8 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
 
   }
 
-  BFT_FREE(local_var);
-  BFT_FREE(distant_var);
+  CS_FREE(local_var);
+  CS_FREE(distant_var);
 
   /* Compute initial balance if applicable */
 
@@ -2189,7 +2189,7 @@ cs_boundary_conditions_add_map(int         bc_location_id,
 {
   int map_id = _n_bc_maps;
 
-  BFT_REALLOC(_bc_maps, _n_bc_maps+1, cs_bc_map_t);
+  CS_REALLOC(_bc_maps, _n_bc_maps+1, cs_bc_map_t);
 
   cs_bc_map_t *bc_map = _bc_maps + _n_bc_maps;
 
@@ -2223,7 +2223,7 @@ cs_boundary_conditions_create_legacy_zone_data(void)
   /* Allocate legacy zone info
      (deprecated, only for specific physics) */
 
-  BFT_MALLOC(cs_glob_bc_pm_info, 1, cs_boundary_condition_pm_info_t);
+  CS_MALLOC(cs_glob_bc_pm_info, 1, cs_boundary_condition_pm_info_t);
   cs_glob_bc_pm_info->izfppp = nullptr;
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
@@ -2268,13 +2268,13 @@ cs_boundary_conditions_create(void)
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
   assert(bc_pm_info != nullptr);
 
-  BFT_MALLOC(bc_pm_info->izfppp, n_b_faces, int);
+  CS_MALLOC(bc_pm_info->izfppp, n_b_faces, int);
   for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
     cs_glob_bc_pm_info->izfppp[ii] = 0;
   }
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-    BFT_MALLOC(bc_pm_info->iautom, n_b_faces, int);
+    CS_MALLOC(bc_pm_info->iautom, n_b_faces, int);
     for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
       bc_pm_info->iautom[ii] = 0;
     }
@@ -2292,37 +2292,37 @@ cs_boundary_conditions_create(void)
 void
 cs_boundary_conditions_free(void)
 {
-  BFT_FREE(_bc_type);
-  BFT_FREE(_bc_pm_face_zone);
+  CS_FREE(_bc_type);
+  CS_FREE(_bc_pm_face_zone);
 
   for (int i = 0; i < _n_bc_maps; i++)
     ple_locator_destroy((_bc_maps + i)->locator);
 
-  BFT_FREE(_bc_maps);
+  CS_FREE(_bc_maps);
   _n_bc_maps = 0;
 
   for (int i = 0; i < _n_bc_open; i++) {
     cs_boundary_conditions_open_t *c = _bc_open[i];
-    BFT_FREE(c->vel_buffer);
+    CS_FREE(c->vel_buffer);
     if (c->model_inlet != nullptr) {
       if (c->model_inlet_del != nullptr)
         c->model_inlet_del(c->model_inlet);
       else
-        BFT_FREE(c->model_inlet);
+        CS_FREE(c->model_inlet);
     }
-    BFT_FREE(c);
+    CS_FREE(c);
     _bc_open[i] = nullptr;
   }
-  BFT_FREE(_bc_open);
+  CS_FREE(_bc_open);
   _n_bc_open = 0;
 
   if (cs_glob_bc_pm_info != nullptr) {
-    BFT_FREE(cs_glob_bc_pm_info->iautom);
-    BFT_FREE(cs_glob_bc_pm_info->izfppp);
-    BFT_FREE(cs_glob_bc_pm_info);
+    CS_FREE(cs_glob_bc_pm_info->iautom);
+    CS_FREE(cs_glob_bc_pm_info->izfppp);
+    CS_FREE(cs_glob_bc_pm_info);
   }
 
-  BFT_FREE(_b_head_loss);
+  CS_FREE(_b_head_loss);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2396,10 +2396,8 @@ cs_boundary_conditions_get_bc_type(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_compute(int  bc_type[])
+cs_boundary_conditions_compute([[maybe_unused]] int  bc_type[])
 {
-  CS_UNUSED(bc_type);
-
   /* Initialization */
 
   const cs_time_step_t *ts = cs_glob_time_step;
@@ -2463,8 +2461,8 @@ cs_boundary_conditions_compute(int  bc_type[])
 
     if (n_max_vals > eval_buf_size) {
       eval_buf_size = n_max_vals;
-      BFT_FREE(eval_buf);
-      BFT_MALLOC(eval_buf, eval_buf_size, cs_real_t);
+      CS_FREE(eval_buf);
+      CS_MALLOC(eval_buf, eval_buf_size, cs_real_t);
     }
 
     /* Loop on boundary conditions */
@@ -2522,8 +2520,8 @@ cs_boundary_conditions_compute(int  bc_type[])
           n_max_vals = stride * n_b_faces;
           if (n_max_vals > eval_buf_size) {
             eval_buf_size = n_max_vals;
-            BFT_FREE(eval_buf);
-            BFT_MALLOC(eval_buf, eval_buf_size, cs_real_t);
+            CS_FREE(eval_buf);
+            CS_MALLOC(eval_buf, eval_buf_size, cs_real_t);
           }
 
           _compute_robin_bc(mesh,
@@ -2561,8 +2559,7 @@ cs_boundary_conditions_compute(int  bc_type[])
 
   }
 
-  BFT_FREE(eval_buf);
-
+  CS_FREE(eval_buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2770,7 +2767,7 @@ cs_real_t *
 cs_boundary_conditions_get_b_head_loss(bool  alloc_if_null)
 {
   if (_b_head_loss == nullptr && alloc_if_null)
-    BFT_REALLOC(_b_head_loss, cs_glob_mesh->n_b_faces, cs_real_t);
+    CS_REALLOC(_b_head_loss, cs_glob_mesh->n_b_faces, cs_real_t);
 
   return _b_head_loss;
 }
@@ -2811,7 +2808,6 @@ cs_boundary_conditions_assign_model_inlet(const cs_zone_t  *zone,
   c->model_inlet_del = (cs_destructor_t *)s_del;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Acess the time control structure of an open (inlet/outlet) boundary.
@@ -2832,6 +2828,7 @@ cs_boundary_conditions_open_get_time_control(const  cs_zone_t  *zone)
 
   return &(c->tc);
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign a constant velocity to an open (inlet/outlet) boundary.
@@ -3203,7 +3200,7 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
   else if (   c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY
            && c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION) {
     if (c->dof_func == nullptr) {
-      BFT_REALLOC(c->vel_buffer, 3, cs_real_t);
+      CS_REALLOC(c->vel_buffer, 3, cs_real_t);
       for (int i = 0; i < 3; i++)
         c->vel_buffer[i] = c->vel_values[i];
 
@@ -3286,7 +3283,7 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_func
   else if (   c->vel_flags & CS_BC_OPEN_UNIFORM_QUANTITY
            && c->vel_flags & CS_BC_OPEN_UNIFORM_DIRECTION) {
     if (c->dof_func == nullptr) {
-      BFT_REALLOC(c->vel_buffer, 3, cs_real_t);
+      CS_REALLOC(c->vel_buffer, 3, cs_real_t);
       for (int i = 0; i < 3; i++)
         c->vel_buffer[i] = c->vel_values[i];
 

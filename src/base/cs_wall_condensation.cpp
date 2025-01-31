@@ -41,7 +41,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -52,6 +51,7 @@
 #include "base/cs_gas_mix.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -855,26 +855,26 @@ cs_wall_condensation_create(void)
     _wall_cond.nvolumes = 1;
 
   // Mesh related quantities
-  BFT_MALLOC(_wall_cond.ifbpcd, _wall_cond.nfbpcd, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.itypcd, _wall_cond.nfbpcd * n_var, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.izzftcd, _wall_cond.nfbpcd, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.spcond, _wall_cond.nfbpcd * n_var, cs_real_t);
-  BFT_MALLOC(_wall_cond.hpcond, _wall_cond.nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.twall_cond, _wall_cond.nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.thermal_condensation_flux, _wall_cond.nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.convective_htc, _wall_cond.nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.condensation_htc, _wall_cond.nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.total_htc, _wall_cond.nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.flthr, _wall_cond.nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.dflthr, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC(_wall_cond.ifbpcd, _wall_cond.nfbpcd, cs_lnum_t);
+  CS_MALLOC(_wall_cond.itypcd, _wall_cond.nfbpcd * n_var, cs_lnum_t);
+  CS_MALLOC(_wall_cond.izzftcd, _wall_cond.nfbpcd, cs_lnum_t);
+  CS_MALLOC(_wall_cond.spcond, _wall_cond.nfbpcd * n_var, cs_real_t);
+  CS_MALLOC(_wall_cond.hpcond, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC(_wall_cond.twall_cond, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC(_wall_cond.thermal_condensation_flux, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC(_wall_cond.convective_htc, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC(_wall_cond.condensation_htc, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC(_wall_cond.total_htc, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC(_wall_cond.flthr, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC(_wall_cond.dflthr, _wall_cond.nfbpcd, cs_real_t);
 
   // Zone related quantities
-  BFT_MALLOC(_wall_cond.izcophc, _wall_cond.nzones, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.izcophg, _wall_cond.nzones, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.iztag1d, _wall_cond.nzones, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.ztpar, _wall_cond.nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond.zxrefcond, 3 * _wall_cond.nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond.zprojcond, 3 * _wall_cond.nzones, cs_real_t);
+  CS_MALLOC(_wall_cond.izcophc, _wall_cond.nzones, cs_lnum_t);
+  CS_MALLOC(_wall_cond.izcophg, _wall_cond.nzones, cs_lnum_t);
+  CS_MALLOC(_wall_cond.iztag1d, _wall_cond.nzones, cs_lnum_t);
+  CS_MALLOC(_wall_cond.ztpar, _wall_cond.nzones, cs_real_t);
+  CS_MALLOC(_wall_cond.zxrefcond, 3 * _wall_cond.nzones, cs_real_t);
+  CS_MALLOC(_wall_cond.zprojcond, 3 * _wall_cond.nzones, cs_real_t);
 
   for (cs_lnum_t i = 0; i < _wall_cond.nfbpcd; i++) {
     _wall_cond.ifbpcd[i]                    = 0;
@@ -911,12 +911,12 @@ cs_wall_condensation_create(void)
     _wall_cond.zprojcond[3 * i + 2] = 0.0;
   }
 
-  BFT_MALLOC(_wall_cond.ltmast, _wall_cond.ncmast, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.itypst, _wall_cond.ncmast * n_var, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.svcond, _wall_cond.ncmast * n_var, cs_real_t);
-  BFT_MALLOC(_wall_cond.izmast, _wall_cond.ncmast, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.flxmst, _wall_cond.ncmast, cs_real_t);
-  BFT_MALLOC(_wall_cond.itagms, _wall_cond.nvolumes, cs_lnum_t);
+  CS_MALLOC(_wall_cond.ltmast, _wall_cond.ncmast, cs_lnum_t);
+  CS_MALLOC(_wall_cond.itypst, _wall_cond.ncmast * n_var, cs_lnum_t);
+  CS_MALLOC(_wall_cond.svcond, _wall_cond.ncmast * n_var, cs_real_t);
+  CS_MALLOC(_wall_cond.izmast, _wall_cond.ncmast, cs_lnum_t);
+  CS_MALLOC(_wall_cond.flxmst, _wall_cond.ncmast, cs_real_t);
+  CS_MALLOC(_wall_cond.itagms, _wall_cond.nvolumes, cs_lnum_t);
 
   cs_array_lnum_fill_zero(_wall_cond.ncmast, _wall_cond.ltmast);
 
@@ -942,33 +942,33 @@ cs_wall_condensation_create(void)
 void
 cs_wall_condensation_free(void)
 {
-  BFT_FREE(_wall_cond.ifbpcd);
-  BFT_FREE(_wall_cond.itypcd);
-  BFT_FREE(_wall_cond.izzftcd);
-  BFT_FREE(_wall_cond.spcond);
-  BFT_FREE(_wall_cond.svcond);
-  BFT_FREE(_wall_cond.hpcond);
-  BFT_FREE(_wall_cond.twall_cond);
-  BFT_FREE(_wall_cond.thermal_condensation_flux);
-  BFT_FREE(_wall_cond.convective_htc);
-  BFT_FREE(_wall_cond.condensation_htc);
-  BFT_FREE(_wall_cond.total_htc);
-  BFT_FREE(_wall_cond.flthr);
-  BFT_FREE(_wall_cond.dflthr);
+  CS_FREE(_wall_cond.ifbpcd);
+  CS_FREE(_wall_cond.itypcd);
+  CS_FREE(_wall_cond.izzftcd);
+  CS_FREE(_wall_cond.spcond);
+  CS_FREE(_wall_cond.svcond);
+  CS_FREE(_wall_cond.hpcond);
+  CS_FREE(_wall_cond.twall_cond);
+  CS_FREE(_wall_cond.thermal_condensation_flux);
+  CS_FREE(_wall_cond.convective_htc);
+  CS_FREE(_wall_cond.condensation_htc);
+  CS_FREE(_wall_cond.total_htc);
+  CS_FREE(_wall_cond.flthr);
+  CS_FREE(_wall_cond.dflthr);
 
-  BFT_FREE(_wall_cond.izcophc);
-  BFT_FREE(_wall_cond.izcophg);
-  BFT_FREE(_wall_cond.iztag1d);
-  BFT_FREE(_wall_cond.ztpar);
-  BFT_FREE(_wall_cond.zxrefcond);
-  BFT_FREE(_wall_cond.zprojcond);
+  CS_FREE(_wall_cond.izcophc);
+  CS_FREE(_wall_cond.izcophg);
+  CS_FREE(_wall_cond.iztag1d);
+  CS_FREE(_wall_cond.ztpar);
+  CS_FREE(_wall_cond.zxrefcond);
+  CS_FREE(_wall_cond.zprojcond);
 
-  BFT_FREE(_wall_cond.ltmast);
-  BFT_FREE(_wall_cond.itypst);
-  BFT_FREE(_wall_cond.izmast);
-  BFT_FREE(_wall_cond.svcond);
-  BFT_FREE(_wall_cond.flxmst);
-  BFT_FREE(_wall_cond.itagms);
+  CS_FREE(_wall_cond.ltmast);
+  CS_FREE(_wall_cond.itypst);
+  CS_FREE(_wall_cond.izmast);
+  CS_FREE(_wall_cond.svcond);
+  CS_FREE(_wall_cond.flxmst);
+  CS_FREE(_wall_cond.itagms);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1164,8 +1164,8 @@ cs_wall_condensation_compute(cs_real_t  total_htc[])
   }
 
   cs_real_t *vol_hcond = nullptr, *vol_hconv = nullptr;
-  BFT_MALLOC(vol_hcond, _wall_cond.ncmast, cs_real_t);
-  BFT_MALLOC(vol_hconv, _wall_cond.ncmast, cs_real_t);
+  CS_MALLOC(vol_hcond, _wall_cond.ncmast, cs_real_t);
+  CS_MALLOC(vol_hconv, _wall_cond.ncmast, cs_real_t);
 
   _compute_exchange_natural_convection_volume_structure(vol_hcond, vol_hconv);
 
@@ -1190,8 +1190,8 @@ cs_wall_condensation_compute(cs_real_t  total_htc[])
     }
   }
 
-  BFT_FREE(vol_hcond);
-  BFT_FREE(vol_hconv);
+  CS_FREE(vol_hcond);
+  CS_FREE(vol_hconv);
 
   if (cs_log_default_is_active())
     cs_wall_condensation_log();
@@ -1371,7 +1371,7 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
        with the metal mass structures modelling */
 
     cs_real_t *surfbm = nullptr;
-    BFT_MALLOC(surfbm, ncmast, cs_real_t);
+    CS_MALLOC(surfbm, ncmast, cs_real_t);
 
     cs_wall_condensation_volume_exchange_surf_at_cells(surfbm);
 
@@ -1393,7 +1393,7 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
       }
     }
 
-    BFT_FREE(surfbm);
+    CS_FREE(surfbm);
   }
 }
 

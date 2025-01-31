@@ -41,10 +41,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_all_to_all.h"
 #include "base/cs_block_dist.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 
 /*----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ cs_block_to_part_create_by_adj_s(MPI_Comm             comm,
   cs_lnum_t _n_ents = n_ents * stride;
 
   int *query_rank;
-  BFT_MALLOC(query_rank, _n_ents, int);
+  CS_MALLOC(query_rank, _n_ents, int);
 
   for (cs_lnum_t j = 0; j < _n_ents; j++) {
     cs_gnum_t adj_g_num = adjacency[j];
@@ -176,7 +176,7 @@ cs_block_to_part_create_by_adj_s(MPI_Comm             comm,
   cs_lnum_t n_elts_query = cs_all_to_all_n_elts_dest(qd);
 
   int *sent_rank;
-  BFT_MALLOC(sent_rank, n_elts_query, int);
+  CS_MALLOC(sent_rank, n_elts_query, int);
 
   if (adjacent_ent_rank != nullptr) {
     for (cs_lnum_t j = 0; j < n_elts_query; j++) {
@@ -197,7 +197,7 @@ cs_block_to_part_create_by_adj_s(MPI_Comm             comm,
     }
   }
 
-  BFT_FREE(adj_query);
+  CS_FREE(adj_query);
 
   /* Return communication */
 
@@ -206,7 +206,7 @@ cs_block_to_part_create_by_adj_s(MPI_Comm             comm,
                                             true, /* reverse */
                                             sent_rank);
 
-  BFT_FREE(sent_rank);
+  CS_FREE(sent_rank);
 
   cs_all_to_all_destroy(&qd);
 
@@ -216,9 +216,9 @@ cs_block_to_part_create_by_adj_s(MPI_Comm             comm,
      -------------------------------------------------------------------- */
 
   int *send_rank;
-  BFT_MALLOC(send_rank, _n_ents, int);
+  CS_MALLOC(send_rank, _n_ents, int);
   cs_gnum_t *send_gnum;
-  BFT_MALLOC(send_gnum, _n_ents, cs_gnum_t);
+  CS_MALLOC(send_gnum, _n_ents, cs_gnum_t);
 
   cs_lnum_t n_send = 0;
 
@@ -267,7 +267,7 @@ cs_block_to_part_create_by_adj_s(MPI_Comm             comm,
               __func__,
               (int)stride);
 
-  BFT_FREE(dest_rank);
+  CS_FREE(dest_rank);
 
   /* Exchange send count and global number */
 
@@ -292,8 +292,8 @@ cs_block_to_part_create_by_adj_s(MPI_Comm             comm,
 
   cs_lnum_t _n_part_elts = cs_all_to_all_n_elts_dest(d);
 
-  BFT_FREE(send_rank);
-  BFT_FREE(send_gnum);
+  CS_FREE(send_rank);
+  CS_FREE(send_gnum);
 
   cs_all_to_all_destroy(&d);
 
@@ -311,7 +311,7 @@ cs_block_to_part_create_by_adj_s(MPI_Comm             comm,
   if (part_gnum != nullptr)
     *part_gnum = recv_gnum;
   else
-    BFT_FREE(recv_gnum);
+    CS_FREE(recv_gnum);
 
   /* Return initialized structure */
 
@@ -372,7 +372,7 @@ cs_block_to_part_global_to_local(cs_lnum_t       n_ents,
 #endif
 
   if (global_list_is_sorted == false) {
-    BFT_MALLOC(_g_list, global_list_size, cs_gnum_t);
+    CS_MALLOC(_g_list, global_list_size, cs_gnum_t);
     order = cs_order_gnum(nullptr, global_list, global_list_size);
     for (i = 0; i < global_list_size; i++)
       _g_list[i] = global_list[order[i]];
@@ -406,12 +406,12 @@ cs_block_to_part_global_to_local(cs_lnum_t       n_ents,
       local_number[i] = base - 1;
   }
 
-  BFT_FREE(_g_list);
+  CS_FREE(_g_list);
 
   if (order != nullptr) {
     for (i = 0; i < n_ents; i++)
       local_number[i] = order[local_number[i] - base] + base;
-    BFT_FREE(order);
+    CS_FREE(order);
   }
 }
 

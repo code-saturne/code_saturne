@@ -97,7 +97,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
   cs_real_t *cpro_ym1_12 = cs_field_by_id(iym1[11])->val;
 
   cs_real_t *visco;
-  BFT_MALLOC(visco, n_cells_ext, cs_real_t);
+  CS_MALLOC(visco, n_cells_ext, cs_real_t);
   /*![init]*/
 
   /* The following examples should be adapted by the user
@@ -278,7 +278,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
   }
 
   /* Free memory */
-  BFT_FREE(visco);
+  CS_FREE(visco);
 
   /*![example_1]*/
 }

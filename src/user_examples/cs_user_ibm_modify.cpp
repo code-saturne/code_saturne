@@ -70,8 +70,8 @@ _smoothe(const cs_mesh_t            *mesh,
   cs_real_t *cell_vol  = mesh_quantities->cell_vol;
 
   cs_real_t *den, *val2;
-  BFT_MALLOC(val2, n_cells_ext, cs_real_t);
-  BFT_MALLOC(den, n_cells_ext, cs_real_t);
+  CS_MALLOC(val2, n_cells_ext, cs_real_t);
+  CS_MALLOC(den, n_cells_ext, cs_real_t);
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, val);
 
@@ -102,8 +102,8 @@ _smoothe(const cs_mesh_t            *mesh,
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, val);
   }
 
-  BFT_FREE(val2);
-  BFT_FREE(den);
+  CS_FREE(val2);
+  CS_FREE(den);
 }
 
 /*============================================================================
@@ -161,9 +161,9 @@ cs_user_ibm_modify(const cs_mesh_t            *mesh,
   cs_real_t *source_term, *por_init;
   cs_real_3_t *convective_term;
 
-  BFT_MALLOC(source_term, n_cells_ext, cs_real_t);
-  BFT_MALLOC(por_init, n_cells_ext, cs_real_t);
-  BFT_MALLOC(convective_term, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(source_term, n_cells_ext, cs_real_t);
+  CS_MALLOC(por_init, n_cells_ext, cs_real_t);
+  CS_MALLOC(convective_term, n_cells_ext, cs_real_3_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
     for (int i = 0; i < 3; i++)
@@ -306,9 +306,9 @@ cs_user_ibm_modify(const cs_mesh_t            *mesh,
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(poro)->val);
 
-  BFT_FREE(por_init);
-  BFT_FREE(convective_term);
-  BFT_FREE(source_term);
+  CS_FREE(por_init);
+  CS_FREE(convective_term);
+  CS_FREE(source_term);
 
   /*!< [example_1] */
 }

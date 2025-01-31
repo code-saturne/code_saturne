@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  *
  * If non-empty and not containing all elements, a list of elements
  * of the parent mesh belonging to the location should be allocated
- * (using BFT_MALLOC) and defined by this function when called.
+ * (using CS_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
  * Note: if the input pointer is non-null, it must point to valid data
@@ -89,12 +89,12 @@ _g3_boundary_cells(void              *input,
   cs_lnum_t n_b_faces = 0;
   cs_lnum_t *b_face_ids = nullptr;
 
-  BFT_MALLOC(b_face_ids, m->n_b_faces, cs_lnum_t);
+  CS_MALLOC(b_face_ids, m->n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_list("G3", &n_b_faces, b_face_ids);
 
   char *cell_flag;
-  BFT_MALLOC(cell_flag, m->n_cells, char);
+  CS_MALLOC(cell_flag, m->n_cells, char);
 
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
     cell_flag[i] = 0;
@@ -116,7 +116,7 @@ _g3_boundary_cells(void              *input,
   }
 
   cs_lnum_t *_elt_ids;
-  BFT_MALLOC(_elt_ids, _n_elts, cs_lnum_t);
+  CS_MALLOC(_elt_ids, _n_elts, cs_lnum_t);
 
   _n_elts = 0;
   for (cs_lnum_t i = 0; i < m->n_cells; i++) {
@@ -128,8 +128,8 @@ _g3_boundary_cells(void              *input,
 
   /* Free memory */
 
-  BFT_FREE(b_face_ids);
-  BFT_FREE(cell_flag);
+  CS_FREE(b_face_ids);
+  CS_FREE(cell_flag);
 
   /* Set return values */
 

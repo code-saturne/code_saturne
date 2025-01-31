@@ -40,7 +40,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_mem_usage.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
@@ -51,6 +50,7 @@
 #include "base/cs_crystal_router.h"
 #include "base/cs_log.h"
 #include "base/cs_order.h"
+#include "base/cs_mem.h"
 #include "base/cs_rank_neighbors.h"
 #include "base/cs_timer.h"
 
@@ -317,7 +317,7 @@ _all_to_all_create_base(size_t    n_elts,
       if (atoi(p) > 0) {
         _n_trace_max = atoi(p);
         bft_printf(_("\n cs_all_2_all_trace: %d.\n\n"), _n_trace_max);
-        BFT_MALLOC(_all_to_all_trace, _n_trace_max*9, uint64_t);
+        CS_MALLOC(_all_to_all_trace, _n_trace_max*9, uint64_t);
         _all_to_all_trace_bt_log = fopen("all_to_all_trace_bt.txt", "w");
       }
     }
@@ -335,7 +335,7 @@ _all_to_all_create_base(size_t    n_elts,
 
   /* Allocate structure */
 
-  BFT_MALLOC(d, 1, cs_all_to_all_t);
+  CS_MALLOC(d, 1, cs_all_to_all_t);
 
   /* Create associated sub-structure */
 
@@ -415,7 +415,7 @@ _alltoall_caller_create_meta(int        flags,
 
   /* Allocate structure */
 
-  BFT_MALLOC(dc, 1, _mpi_all_to_all_caller_t);
+  CS_MALLOC(dc, 1, _mpi_all_to_all_caller_t);
 
   dc->datatype = CS_DATATYPE_NULL;
 
@@ -436,10 +436,10 @@ _alltoall_caller_create_meta(int        flags,
   dc->send_buffer = nullptr;
   dc->_send_buffer = nullptr;
 
-  BFT_MALLOC(dc->send_count, dc->n_ranks, int);
-  BFT_MALLOC(dc->recv_count, dc->n_ranks, int);
-  BFT_MALLOC(dc->send_displ, dc->n_ranks + 1, int);
-  BFT_MALLOC(dc->recv_displ, dc->n_ranks + 1, int);
+  CS_MALLOC(dc->send_count, dc->n_ranks, int);
+  CS_MALLOC(dc->recv_count, dc->n_ranks, int);
+  CS_MALLOC(dc->send_displ, dc->n_ranks + 1, int);
+  CS_MALLOC(dc->recv_displ, dc->n_ranks + 1, int);
   dc->recv_count_save = nullptr;
 
   /* Compute data size and alignment */
@@ -477,13 +477,13 @@ _alltoall_caller_destroy(_mpi_all_to_all_caller_t **dc)
     _mpi_all_to_all_caller_t *_dc = *dc;
     if (_dc->comp_type != MPI_BYTE)
       MPI_Type_free(&(_dc->comp_type));
-    BFT_FREE(_dc->_send_buffer);
-    BFT_FREE(_dc->recv_count_save);
-    BFT_FREE(_dc->recv_displ);
-    BFT_FREE(_dc->send_displ);
-    BFT_FREE(_dc->recv_count);
-    BFT_FREE(_dc->send_count);
-    BFT_FREE(*dc);
+    CS_FREE(_dc->_send_buffer);
+    CS_FREE(_dc->recv_count_save);
+    CS_FREE(_dc->recv_displ);
+    CS_FREE(_dc->send_displ);
+    CS_FREE(_dc->recv_count);
+    CS_FREE(_dc->send_count);
+    CS_FREE(*dc);
   }
 }
 
@@ -555,7 +555,7 @@ static  void
 _alltoall_caller_save_meta_i(_mpi_all_to_all_caller_t  *dc)
 {
   if (dc->recv_count_save == nullptr) {
-    BFT_MALLOC(dc->recv_count_save, dc->n_ranks, int);
+    CS_MALLOC(dc->recv_count_save, dc->n_ranks, int);
     memcpy(dc->recv_count_save, dc->recv_count, sizeof(int)*(dc->n_ranks));
   }
 }
@@ -583,7 +583,7 @@ _alltoall_caller_reset_meta_i(_mpi_all_to_all_caller_t  *dc,
   /* Revert to saved values for receive */
   if (dc->recv_count_save != nullptr) {
     memcpy(dc->recv_count, dc->recv_count_save, sizeof(int)*(dc->n_ranks));
-    BFT_FREE(dc->recv_count_save);
+    CS_FREE(dc->recv_count_save);
   }
 
   /* Recompute associated displacements */
@@ -653,11 +653,11 @@ _alltoall_caller_prepare_s(_mpi_all_to_all_caller_t  *dc,
   /* Allocate send buffer */
 
   if (reverse && recv_id == nullptr) {
-    BFT_FREE(dc->_send_buffer);
+    CS_FREE(dc->_send_buffer);
     dc->send_buffer = data;
   }
   else {
-    BFT_REALLOC(dc->_send_buffer, dc->send_size*dc->comp_size, unsigned char);
+    CS_REALLOC(dc->_send_buffer, dc->send_size*dc->comp_size, unsigned char);
     dc->send_buffer = dc->_send_buffer;
   }
 
@@ -743,7 +743,7 @@ _alltoall_caller_prepare_i(_mpi_all_to_all_caller_t  *dc,
   /* Allocate send buffer */
 
   if (reverse && recv_id == nullptr) {
-    BFT_FREE(dc->_send_buffer);
+    CS_FREE(dc->_send_buffer);
     dc->send_buffer = data;
   }
   else {
@@ -756,7 +756,7 @@ _alltoall_caller_prepare_i(_mpi_all_to_all_caller_t  *dc,
         n_sub_elts += src_index[k+1] - src_index[k];
       }
     }
-    BFT_REALLOC(dc->_send_buffer, n_sub_elts*dc->comp_size, unsigned char);
+    CS_REALLOC(dc->_send_buffer, n_sub_elts*dc->comp_size, unsigned char);
     dc->send_buffer = dc->_send_buffer;
   }
 
@@ -972,12 +972,12 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
   /* Final data buffer */
 
   if (_dest_data == nullptr && dc->recv_size*elt_size > 0)
-    BFT_MALLOC(_dest_data, dc->recv_size*elt_size, unsigned char);
+    CS_MALLOC(_dest_data, dc->recv_size*elt_size, unsigned char);
 
   /* Data buffer for MPI exchange (may merge data and metadata) */
   if (   dc->dest_id_datatype == CS_LNUM_TYPE || d->recv_id != nullptr
       || reverse)
-    BFT_MALLOC(_recv_data, dc->recv_size*dc->comp_size, unsigned char);
+    CS_MALLOC(_recv_data, dc->recv_size*dc->comp_size, unsigned char);
   else
     _recv_data = _dest_data;
 
@@ -1039,7 +1039,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
 
   if (dc->dest_id_datatype == CS_LNUM_TYPE) {
     assert(d->recv_id == nullptr);
-    BFT_MALLOC(d->recv_id, d->dc->recv_size, cs_lnum_t);
+    CS_MALLOC(d->recv_id, d->dc->recv_size, cs_lnum_t);
     for (size_t i = 0; i < d->dc->recv_size; i++)
       d->recv_id[i] = -1;
     const unsigned char *sp = _recv_data;
@@ -1090,7 +1090,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
           _dest_data[w_displ + j] = sp[r_displ + j];
       }
     }
-    BFT_FREE(_recv_data);
+    CS_FREE(_recv_data);
   }
 
   return _dest_data;
@@ -1130,13 +1130,13 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
 
   size_t _n_dest_sub = dest_index[n_elts_dest];
   if (_dest_data == nullptr && _n_dest_sub*elt_size > 0)
-    BFT_MALLOC(_dest_data, _n_dest_sub*elt_size, unsigned char);
+    CS_MALLOC(_dest_data, _n_dest_sub*elt_size, unsigned char);
 
   /* Data buffer for MPI exchange (may merge data and metadata) */
 
   if (d->recv_id != nullptr || reverse) {
     size_t _n_dest_buf = dc->recv_displ[dc->n_ranks] * dc->comp_size;
-    BFT_MALLOC(_recv_data, _n_dest_buf, unsigned char);
+    CS_MALLOC(_recv_data, _n_dest_buf, unsigned char);
   }
   else
     _recv_data = _dest_data;
@@ -1229,7 +1229,7 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
     else {
       assert(_dest_data == _recv_data);
     }
-    BFT_FREE(_recv_data);
+    CS_FREE(_recv_data);
   }
 
   return _dest_data;
@@ -1251,7 +1251,7 @@ _hybrid_pex_create_meta(int        flags,
 
   /* Allocate structure */
 
-  BFT_MALLOC(hc, 1, _hybrid_pex_t);
+  CS_MALLOC(hc, 1, _hybrid_pex_t);
 
   hc->rn_send = nullptr;
   hc->rn_recv = nullptr;
@@ -1316,18 +1316,18 @@ _hybrid_pex_destroy(_hybrid_pex_t **hc)
     _hybrid_pex_t *_hc = *hc;
     if (_hc->comp_type != MPI_BYTE)
       MPI_Type_free(&(_hc->comp_type));
-    BFT_FREE(_hc->elt_rank_index);
-    BFT_FREE(_hc->_send_buffer);
-    BFT_FREE(_hc->recv_count_save);
-    BFT_FREE(_hc->recv_displ);
-    BFT_FREE(_hc->send_displ);
-    BFT_FREE(_hc->recv_count);
-    BFT_FREE(_hc->send_count);
+    CS_FREE(_hc->elt_rank_index);
+    CS_FREE(_hc->_send_buffer);
+    CS_FREE(_hc->recv_count_save);
+    CS_FREE(_hc->recv_displ);
+    CS_FREE(_hc->send_displ);
+    CS_FREE(_hc->recv_count);
+    CS_FREE(_hc->send_count);
 
     cs_rank_neighbors_destroy(&(_hc->rn_send));
     cs_rank_neighbors_destroy(&(_hc->rn_recv));
 
-    BFT_FREE(*hc);
+    CS_FREE(*hc);
   }
 }
 
@@ -1400,7 +1400,7 @@ _hybrid_pex_save_meta_i(_hybrid_pex_t  *hc)
 {
   if (hc->recv_count_save == nullptr) {
     int n_n_ranks = hc->rn_recv->size;
-    BFT_MALLOC(hc->recv_count_save, n_n_ranks, int);
+    CS_MALLOC(hc->recv_count_save, n_n_ranks, int);
     memcpy(hc->recv_count_save, hc->recv_count, sizeof(int)*(n_n_ranks));
   }
 }
@@ -1430,7 +1430,7 @@ _hybrid_pex_reset_meta_i(_hybrid_pex_t  *hc)
   /* Revert to saved values for receive */
   if (hc->recv_count_save != nullptr) {
     memcpy(hc->recv_count, hc->recv_count_save, sizeof(int)*(n_r_ranks));
-    BFT_FREE(hc->recv_count_save);
+    CS_FREE(hc->recv_count_save);
   }
 
   /* Recompute associated displacements */
@@ -1502,11 +1502,11 @@ _hybrid_pex_prepare_s(_hybrid_pex_t    *hc,
   /* Allocate send buffer */
 
   if (reverse && recv_id == nullptr) {
-    BFT_FREE(hc->_send_buffer);
+    CS_FREE(hc->_send_buffer);
     hc->send_buffer = data;
   }
   else {
-    BFT_REALLOC(hc->_send_buffer, hc->send_size*hc->comp_size, unsigned char);
+    CS_REALLOC(hc->_send_buffer, hc->send_size*hc->comp_size, unsigned char);
     hc->send_buffer = hc->_send_buffer;
   }
 
@@ -1594,7 +1594,7 @@ _hybrid_pex_prepare_i(_hybrid_pex_t      *hc,
   /* Allocate send buffer */
 
   if (reverse && recv_id == nullptr) {
-    BFT_FREE(hc->_send_buffer);
+    CS_FREE(hc->_send_buffer);
     hc->send_buffer = data;
   }
   else {
@@ -1607,7 +1607,7 @@ _hybrid_pex_prepare_i(_hybrid_pex_t      *hc,
         n_sub_elts += src_index[k+1] - src_index[k];
       }
     }
-    BFT_REALLOC(hc->_send_buffer, n_sub_elts*hc->comp_size, unsigned char);
+    CS_REALLOC(hc->_send_buffer, n_sub_elts*hc->comp_size, unsigned char);
     hc->send_buffer = hc->_send_buffer;
   }
 
@@ -1747,9 +1747,9 @@ _hybrid_pex_exchange_meta(_hybrid_pex_t  *hc,
   if (hc->rn_send == nullptr) {
     hc->rn_send = cs_rank_neighbors_create(n_elts, dest_rank);
 
-    BFT_MALLOC(hc->elt_rank_index, n_elts, int);
-    BFT_MALLOC(hc->send_count, hc->rn_send->size, int);
-    BFT_MALLOC(hc->send_displ, hc->rn_send->size + 1, int);
+    CS_MALLOC(hc->elt_rank_index, n_elts, int);
+    CS_MALLOC(hc->send_count, hc->rn_send->size, int);
+    CS_MALLOC(hc->send_displ, hc->rn_send->size + 1, int);
 
     cs_rank_neighbors_to_index(hc->rn_send,
                                n_elts,
@@ -1791,8 +1791,8 @@ _hybrid_pex_exchange_meta(_hybrid_pex_t  *hc,
 
   if (hc->rn_recv != nullptr) {
     cs_rank_neighbors_destroy(&(hc->rn_recv));
-    BFT_FREE(hc->recv_count);
-    BFT_FREE(hc->recv_displ);
+    CS_FREE(hc->recv_count);
+    CS_FREE(hc->recv_displ);
   }
 
   cs_rank_neighbors_sync_count_m(hc->rn_send,
@@ -1823,7 +1823,7 @@ _hybrid_pex_exchange_meta(_hybrid_pex_t  *hc,
 
   _all_to_all_calls[CS_ALL_TO_ALL_TIME_METADATA] += 1;
 
-  BFT_MALLOC(hc->recv_displ, hc->rn_recv->size + 1, int);
+  CS_MALLOC(hc->recv_displ, hc->rn_recv->size + 1, int);
 
   hc->recv_size = _compute_displ(hc->rn_recv->size,
                                  hc->recv_count,
@@ -1853,10 +1853,10 @@ _hybrid_alltoallv(_hybrid_pex_t   *hc,
 
     int  *send_count, *send_displ, *recv_count, *recv_displ;
 
-    BFT_MALLOC(send_count, n_ranks, int);
-    BFT_MALLOC(send_displ, n_ranks+1, int);
-    BFT_MALLOC(recv_count, n_ranks, int);
-    BFT_MALLOC(recv_displ, n_ranks+1, int);
+    CS_MALLOC(send_count, n_ranks, int);
+    CS_MALLOC(send_displ, n_ranks+1, int);
+    CS_MALLOC(recv_count, n_ranks, int);
+    CS_MALLOC(recv_displ, n_ranks+1, int);
 
     const int n_s_ranks = hc->rn_send->size;
     const int n_r_ranks = hc->rn_recv->size;
@@ -1879,10 +1879,10 @@ _hybrid_alltoallv(_hybrid_pex_t   *hc,
                   recvbuf, recv_count, recv_displ, hc->comp_type,
                   hc->comm);
 
-    BFT_FREE(recv_displ);
-    BFT_FREE(recv_count);
-    BFT_FREE(send_displ);
-    BFT_FREE(send_count);
+    CS_FREE(recv_displ);
+    CS_FREE(recv_count);
+    CS_FREE(send_displ);
+    CS_FREE(send_count);
   }
 }
 
@@ -1912,12 +1912,12 @@ _hybrid_pex_exchange_s(cs_all_to_all_t  *d,
   /* Final data buffer */
 
   if (_dest_data == nullptr && hc->recv_size*elt_size > 0)
-    BFT_MALLOC(_dest_data, hc->recv_size*elt_size, unsigned char);
+    CS_MALLOC(_dest_data, hc->recv_size*elt_size, unsigned char);
 
   /* Data buffer for MPI exchange (may merge data and metadata) */
   if (   hc->dest_id_datatype == CS_LNUM_TYPE || d->recv_id != nullptr
       || reverse)
-    BFT_MALLOC(_recv_data, hc->recv_size*hc->comp_size, unsigned char);
+    CS_MALLOC(_recv_data, hc->recv_size*hc->comp_size, unsigned char);
   else
     _recv_data = _dest_data;
 
@@ -1963,7 +1963,7 @@ _hybrid_pex_exchange_s(cs_all_to_all_t  *d,
 
   if (hc->dest_id_datatype == CS_LNUM_TYPE) {
     assert(d->recv_id == nullptr);
-    BFT_MALLOC(d->recv_id, d->hc->recv_size, cs_lnum_t);
+    CS_MALLOC(d->recv_id, d->hc->recv_size, cs_lnum_t);
     for (size_t i = 0; i < d->hc->recv_size; i++)
       d->recv_id[i] = -1;
     const unsigned char *sp = _recv_data;
@@ -2016,7 +2016,7 @@ _hybrid_pex_exchange_s(cs_all_to_all_t  *d,
           _dest_data[w_displ + j] = sp[r_displ + j];
       }
     }
-    BFT_FREE(_recv_data);
+    CS_FREE(_recv_data);
   }
 
   return _dest_data;
@@ -2053,14 +2053,14 @@ _hybrid_pex_exchange_i(cs_all_to_all_t    *d,
 
   size_t _n_dest_sub = dest_index[n_elts_dest];
   if (_dest_data == nullptr && _n_dest_sub*elt_size > 0)
-    BFT_MALLOC(_dest_data, _n_dest_sub*elt_size, unsigned char);
+    CS_MALLOC(_dest_data, _n_dest_sub*elt_size, unsigned char);
 
   /* Data buffer for MPI exchange (may merge data and metadata) */
 
   if (d->recv_id != nullptr || reverse) {
     int n_r_ranks = hc->rn_recv->size;
     size_t _n_dest_buf = hc->recv_displ[n_r_ranks] * hc->comp_size;
-    BFT_MALLOC(_recv_data, _n_dest_buf, unsigned char);
+    CS_MALLOC(_recv_data, _n_dest_buf, unsigned char);
   }
   else
     _recv_data = _dest_data;
@@ -2139,7 +2139,7 @@ _hybrid_pex_exchange_i(cs_all_to_all_t    *d,
     else {
       assert(_dest_data == _recv_data);
     }
-    BFT_FREE(_recv_data);
+    CS_FREE(_recv_data);
   }
 
   return _dest_data;
@@ -2168,12 +2168,12 @@ _recv_id_by_src_rank_order(cs_all_to_all_t  *d,
 
   const cs_lnum_t n_elts = d->n_elts_dest;
 
-  BFT_MALLOC(d->recv_id, n_elts, cs_lnum_t);
+  CS_MALLOC(d->recv_id, n_elts, cs_lnum_t);
 
   cs_lnum_t n_rs = 0;
   cs_lnum_2_t *rs;
 
-  BFT_MALLOC(rs, n_elts+1, cs_lnum_2_t);
+  CS_MALLOC(rs, n_elts+1, cs_lnum_2_t);
 
   /* Extract source rank and build rank ranges. */
 
@@ -2196,7 +2196,7 @@ _recv_id_by_src_rank_order(cs_all_to_all_t  *d,
   /* Order ranges. */
 
   cs_lnum_t *rs_order;
-  BFT_MALLOC(rs_order, n_rs, cs_lnum_t);
+  CS_MALLOC(rs_order, n_rs, cs_lnum_t);
 
   cs_order_lnum_allocated_s(nullptr,
                             (const cs_lnum_t  *)rs,
@@ -2216,8 +2216,8 @@ _recv_id_by_src_rank_order(cs_all_to_all_t  *d,
   }
   assert(k == n_elts);
 
-  BFT_FREE(rs_order);
-  BFT_FREE(rs);
+  CS_FREE(rs_order);
+  CS_FREE(rs);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2279,7 +2279,7 @@ _cr_recv_id_by_src_rank(cs_all_to_all_t      *d,
   assert(d->recv_id == nullptr);
 
   int *src_rank;
-  BFT_MALLOC(src_rank, d->n_elts_dest_e, int);
+  CS_MALLOC(src_rank, d->n_elts_dest_e, int);
 
   cs_crystal_router_get_data(cr,
                              &src_rank,
@@ -2293,7 +2293,7 @@ _cr_recv_id_by_src_rank(cs_all_to_all_t      *d,
 
   _recv_id_by_src_rank_order(d, src_rank);
 
-  BFT_FREE(src_rank);
+  CS_FREE(src_rank);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2463,11 +2463,11 @@ cs_all_to_all_create_from_block(size_t                 n_elts,
      64-bit uints, so the overhead is only 50%, and access should
      be faster). */
 
-  BFT_MALLOC(d->_dest_rank, n_elts, int);
+  CS_MALLOC(d->_dest_rank, n_elts, int);
   d->dest_rank = d->_dest_rank;
 
   if (flags & CS_ALL_TO_ALL_USE_DEST_ID) {
-    BFT_MALLOC(d->_dest_id, n_elts, cs_lnum_t);
+    CS_MALLOC(d->_dest_id, n_elts, cs_lnum_t);
     d->dest_id = d->_dest_id;
   }
 
@@ -2533,17 +2533,17 @@ cs_all_to_all_destroy(cs_all_to_all_t **d)
     else if (_d->dc != nullptr)
       _alltoall_caller_destroy(&(_d->dc));
 
-    BFT_FREE(_d->src_rank);
-    BFT_FREE(_d->src_id);
+    CS_FREE(_d->src_rank);
+    CS_FREE(_d->src_id);
 
-    BFT_FREE(_d->_dest_id);
-    BFT_FREE(_d->_dest_rank);
+    CS_FREE(_d->_dest_id);
+    CS_FREE(_d->_dest_rank);
 
-    BFT_FREE(_d->recv_id);
-    BFT_FREE(_d->src_id);
-    BFT_FREE(_d->src_rank);
+    CS_FREE(_d->recv_id);
+    CS_FREE(_d->src_id);
+    CS_FREE(_d->src_rank);
 
-    BFT_FREE(_d);
+    CS_FREE(_d);
 
     t1 = cs_timer_time();
     cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
@@ -2667,7 +2667,7 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
         _hybrid_pex_exchange_meta(d->hc,
                                   d->n_elts_src,
                                   d->dest_rank);
-        BFT_FREE(d->_dest_rank);
+        CS_FREE(d->_dest_rank);
         if (d->hc->dest_id_datatype == CS_LNUM_TYPE)
           cs_all_to_all_copy_array(d,
                                    CS_DATATYPE_NULL,
@@ -2872,7 +2872,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
         _hybrid_pex_exchange_meta(d->hc,
                                   d->n_elts_src,
                                   d->dest_rank);
-        BFT_FREE(d->_dest_rank);
+        CS_FREE(d->_dest_rank);
         d->n_elts_dest = d->hc->recv_size;
         d->n_elts_dest_e = d->hc->recv_size;
       }
@@ -3097,11 +3097,11 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
   t0 = cs_timer_time();
 
   if (dest_index == nullptr)
-    BFT_MALLOC(_dest_index, n_dest + 1, cs_lnum_t);
+    CS_MALLOC(_dest_index, n_dest + 1, cs_lnum_t);
 
   /* Convert send index to count, then exchange */
 
-  BFT_MALLOC(src_count, n_src, cs_lnum_t);
+  CS_MALLOC(src_count, n_src, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_src; i++)
     src_count[i] = src_index[i+1] - src_index[i];
@@ -3119,7 +3119,7 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
 
   t0 = cs_timer_time();
 
-  BFT_FREE(src_count);
+  CS_FREE(src_count);
 
   _dest_index[0] = 0;
 
@@ -3248,7 +3248,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
         _hybrid_pex_exchange_meta(d->hc,
                                   d->n_elts_src,
                                   d->dest_rank);
-        BFT_FREE(d->_dest_rank);
+        CS_FREE(d->_dest_rank);
         d->n_elts_dest = d->hc->recv_size;
       }
       size_t n_elts = (reverse) ? d->n_elts_dest : d->n_elts_src;
@@ -3458,7 +3458,7 @@ cs_all_to_all_get_src_rank(cs_all_to_all_t  *d)
               CS_ALL_TO_ALL_NEED_SRC_RANK,
               CS_ALL_TO_ALL_ORDER_BY_SRC_RANK);
 
-  BFT_MALLOC(src_rank, d->n_elts_dest, int);
+  CS_MALLOC(src_rank, d->n_elts_dest, int);
 
   switch(d->type) {
 
@@ -3633,9 +3633,9 @@ cs_all_to_all_log_finalize(void)
 
   if (cs_glob_n_ranks > 1 && _n_trace > 0) {
     cs_gnum_t *_all_to_all_sum;
-    BFT_MALLOC(_all_to_all_sum, _n_trace*9, uint64_t);
+    CS_MALLOC(_all_to_all_sum, _n_trace*9, uint64_t);
     cs_gnum_t *_all_to_all_max;
-    BFT_MALLOC(_all_to_all_max, _n_trace*9, uint64_t);
+    CS_MALLOC(_all_to_all_max, _n_trace*9, uint64_t);
 
     MPI_Allreduce(_all_to_all_trace, _all_to_all_sum, _n_trace*9, MPI_UINT64_T,
                   MPI_SUM, cs_glob_mpi_comm);
@@ -3679,9 +3679,9 @@ cs_all_to_all_log_finalize(void)
       _all_to_all_trace_bt_log = nullptr;
     }
 
-    BFT_FREE(_all_to_all_sum);
-    BFT_FREE(_all_to_all_max);
-    BFT_FREE(_all_to_all_trace);
+    CS_FREE(_all_to_all_sum);
+    CS_FREE(_all_to_all_max);
+    CS_FREE(_all_to_all_trace);
   }
 
 

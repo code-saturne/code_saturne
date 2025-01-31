@@ -85,10 +85,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -465,7 +465,7 @@ _serializer_init(cs_file_serializer_t  *s,
     /* Initialize counter */
 
     if (s->rank_id == 0)
-      BFT_MALLOC(s->count, s->n_ranks, cs_lnum_t);
+      CS_MALLOC(s->count, s->n_ranks, cs_lnum_t);
     else
       s->count = nullptr;
 
@@ -483,7 +483,7 @@ _serializer_init(cs_file_serializer_t  *s,
       for (i = 0; i < s->n_ranks; i++)
         _max_block_size = CS_MAX(_max_block_size, s->count[i]);
       if (_max_block_size > _buf_block_size)
-        BFT_MALLOC(s->recv_buf, _max_block_size*size, unsigned char);
+        CS_MALLOC(s->recv_buf, _max_block_size*size, unsigned char);
       else
         s->recv_buf = buf;
     }
@@ -522,10 +522,10 @@ _serializer_finalize(cs_file_serializer_t  *s)
   s->next_g_num = 1;
 
   if (s->count != nullptr)
-    BFT_FREE(s->count);
+    CS_FREE(s->count);
 
   if (s->recv_buf != s->buf && s->recv_buf != nullptr)
-    BFT_FREE(s->recv_buf);
+    CS_FREE(s->recv_buf);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -871,7 +871,7 @@ _file_write_in_memory(cs_file_t   *f,
       f->in_mem_max_size = 2 << 15;
     while (f->offset + nb > f->in_mem_max_size)
       f->in_mem_max_size *= 2;
-    BFT_REALLOC(f->in_mem_data, f->in_mem_max_size, unsigned char);
+    CS_REALLOC(f->in_mem_data, f->in_mem_max_size, unsigned char);
   }
 
   if (nb != 0) {
@@ -1308,7 +1308,7 @@ _file_read_block_s(cs_file_t  *f,
       if (f->n_ranks < 64)
         counts = _counts;
       else
-        BFT_MALLOC(counts, f->n_ranks, int);
+        CS_MALLOC(counts, f->n_ranks, int);
     }
 
     /* Exchange counts */
@@ -1328,7 +1328,7 @@ _file_read_block_s(cs_file_t  *f,
       for (dist_rank = 1; dist_rank < f->n_ranks; dist_rank++)
         _buf_size = CS_MAX(_buf_size, counts[dist_rank]);
 
-      BFT_MALLOC(_buf, _buf_size*size, unsigned char);
+      CS_MALLOC(_buf, _buf_size*size, unsigned char);
 
       if (_buf_size*size > INT_MAX) {
         MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
@@ -1355,7 +1355,7 @@ _file_read_block_s(cs_file_t  *f,
 
       } /* End of loop on distant ranks */
 
-      BFT_FREE(_buf);
+      CS_FREE(_buf);
 
     }
 
@@ -1383,7 +1383,7 @@ _file_read_block_s(cs_file_t  *f,
       MPI_Type_free(&ent_type);
 
     if (counts != nullptr && counts != _counts)
-      BFT_FREE(counts);
+      CS_FREE(counts);
   }
 
 #endif /* defined(HAVE_MPI) */
@@ -1519,7 +1519,7 @@ _file_write_block_s(cs_file_t  *f,
     if (s.rank_id == 0)
       count = s.count;
     else
-      BFT_MALLOC(count, s.n_ranks, cs_lnum_t);
+      CS_MALLOC(count, s.n_ranks, cs_lnum_t);
 
     MPI_Scatter(count, 1, CS_MPI_LNUM,
                 &local_count, 1, CS_MPI_LNUM,
@@ -1527,7 +1527,7 @@ _file_write_block_s(cs_file_t  *f,
     retval = local_count;
 
     if (s.rank_id != 0)
-      BFT_FREE(count);
+      CS_FREE(count);
 
     _serializer_finalize(&s);
   }
@@ -1661,7 +1661,7 @@ _gather_block_sizes(cs_file_t   *f,
     /* Allocate buffer */
 
     size_t alloc_size = size * (size_t)block_size;
-    BFT_MALLOC(gather_buf, alloc_size, unsigned char);
+    CS_MALLOC(gather_buf, alloc_size, unsigned char);
 
     *global_num_end = global_num_start + block_size;
   }
@@ -2567,7 +2567,7 @@ cs_file_open(const char        *name,
   int errcode = 0;
   cs_file_t * f = nullptr;
 
-  BFT_MALLOC(f, 1, cs_file_t);
+  CS_MALLOC(f, 1, cs_file_t);
 
   f->sh = nullptr;
 
@@ -2590,7 +2590,7 @@ cs_file_open(const char        *name,
   f->in_mem_max_size = 0;
   f->in_mem_data = nullptr;
 
-  BFT_MALLOC(f->name, strlen(name) + 1, char);
+  CS_MALLOC(f->name, strlen(name) + 1, char);
   strcpy(f->name, name);
 
   f->mode = mode;
@@ -2637,9 +2637,9 @@ cs_file_open(const char        *name,
     f->block_size = nullptr;
     if (f->rank_step > 1) {
       if (f->io_comm != MPI_COMM_NULL)
-        BFT_MALLOC(f->block_size, f->rank_step, cs_gnum_t);
+        CS_MALLOC(f->block_size, f->rank_step, cs_gnum_t);
       else
-        BFT_MALLOC(f->block_size, 1, cs_gnum_t);
+        CS_MALLOC(f->block_size, 1, cs_gnum_t);
     }
 
     if (   f->comm == MPI_COMM_NULL
@@ -2798,12 +2798,12 @@ cs_file_free(cs_file_t  *f)
   else if (_f->fh != MPI_FILE_NULL)
     _mpi_file_close(_f);
 #endif
-  BFT_FREE(f->block_size);
+  CS_FREE(f->block_size);
 #endif
 
-  BFT_FREE(_f->in_mem_data);
-  BFT_FREE(_f->name);
-  BFT_FREE(_f);
+  CS_FREE(_f->in_mem_data);
+  CS_FREE(_f->name);
+  CS_FREE(_f);
 
   return nullptr;
 }
@@ -2863,7 +2863,7 @@ cs_file_in_memory_transfer_data(cs_file_t  *f,
   assert(f != nullptr);
   assert(f->method == CS_FILE_IN_MEMORY_SERIAL && f->rank == 0);
 
-  BFT_FREE(f->in_mem_data);
+  CS_FREE(f->in_mem_data);
   f->in_mem_size = nb;
   f->in_mem_max_size = nb;
   f->in_mem_data     = static_cast<unsigned char *>(data);
@@ -3091,7 +3091,7 @@ cs_file_write_global(cs_file_t   *f,
           || (f->method > CS_FILE_STDIO_PARALLEL))) {
 
     if (size*ni > sizeof(_copybuf))
-      BFT_MALLOC(copybuf, size*ni, unsigned char);
+      CS_MALLOC(copybuf, size*ni, unsigned char);
     memcpy(copybuf, buf, size*ni);
 
     if (f->swap_endian == true && size > 1)
@@ -3165,7 +3165,7 @@ cs_file_write_global(cs_file_t   *f,
 #endif /* defined(HAVE_MPI_IO) */
 
   if (copybuf != _copybuf) /* Free allocated memory if necessary */
-    BFT_FREE(copybuf);
+    CS_FREE(copybuf);
 
 #if defined(HAVE_MPI)
   if (f->comm != MPI_COMM_NULL) {
@@ -3304,7 +3304,7 @@ cs_file_read_block(cs_file_t  *f,
   if (f->rank_step > 1) {
     retval = _scatter_blocks(f, _buf, buf, size);
     if (_buf != buf)
-      BFT_FREE(_buf);
+      CS_FREE(_buf);
   }
 #endif
 
@@ -3375,7 +3375,7 @@ cs_file_write_block(cs_file_t   *f,
 
     unsigned char *copybuf = nullptr;
 
-    BFT_MALLOC(copybuf, bufsize, unsigned char);
+    CS_MALLOC(copybuf, bufsize, unsigned char);
 
     if (copybuf != nullptr)
       memcpy(copybuf, buf, bufsize);
@@ -3387,7 +3387,7 @@ cs_file_write_block(cs_file_t   *f,
                                         global_num_start,
                                         global_num_end);
 
-    BFT_FREE(copybuf);
+    CS_FREE(copybuf);
   }
 
   /* Using Standard IO with no byte-swapping or serialization, write directly */
@@ -3559,7 +3559,7 @@ cs_file_write_block_buffer(cs_file_t  *f,
     }
     retval = f->block_size[0];
     if (_buf != buf)
-      BFT_FREE(_buf);
+      CS_FREE(_buf);
   }
 
   /* Update offset */
@@ -4292,7 +4292,7 @@ cs_file_defaults_info(void)
       int i, n_keys, flag;
       char *val;
       char key[MPI_MAX_INFO_KEY + 1];
-      BFT_MALLOC(val, MPI_MAX_INFO_VAL + 1, char);
+      CS_MALLOC(val, MPI_MAX_INFO_VAL + 1, char);
       MPI_Info_get_nkeys(hints, &n_keys);
       if (n_keys > 0)
         bft_printf(_("    hints:\n"));
@@ -4306,7 +4306,7 @@ cs_file_defaults_info(void)
                           _("      %s: %s\n"), key, val);
         }
       }
-      BFT_FREE(val);
+      CS_FREE(val);
     }
 
 #endif /* MPI_VERSION > 1 */
@@ -4365,7 +4365,7 @@ cs_file_serializer_create(size_t       size,
 {
   cs_file_serializer_t  *s = nullptr;
 
-  BFT_MALLOC(s, 1, cs_file_serializer_t);
+  CS_MALLOC(s, 1, cs_file_serializer_t);
 
   _serializer_init(s,
                    size * stride,
@@ -4391,7 +4391,7 @@ cs_file_serializer_destroy(cs_file_serializer_t  **s)
 {
   if (s != nullptr) {
     _serializer_finalize(*s);
-    BFT_FREE(*s);
+    CS_FREE(*s);
   }
 }
 
@@ -4708,7 +4708,7 @@ cs_file_isdir(const char  *path)
 /*!
  * \brief List files inside a directory.
  *
- * The array returned must be freed by the caller using BFT_FREE,
+ * The array returned must be freed by the caller using CS_FREE,
  * as well as the individual entries in the array.
  *
  * \param[in]  path name of directory.
@@ -4744,11 +4744,11 @@ cs_file_listdir(const char  *path)
 
   rewinddir(d);
 
-  BFT_MALLOC(dirnames, n_ent + 1, char *);
+  CS_MALLOC(dirnames, n_ent + 1, char *);
 
   n_ent = 0;
   while((ent = readdir(d)) != nullptr) {
-    BFT_MALLOC(dirnames[n_ent], strlen(ent->d_name) + 1, char);
+    CS_MALLOC(dirnames[n_ent], strlen(ent->d_name) + 1, char);
     strcpy(dirnames[n_ent], ent->d_name);
     n_ent += 1;
   }

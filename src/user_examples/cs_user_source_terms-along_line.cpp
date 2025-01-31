@@ -92,7 +92,7 @@ cs_user_source_terms(cs_domain_t  *domain,
   /* From North to South at the middle of the first elevation*/
   cs_real_3_t *point_coords;
   cs_lnum_t n_points = 2;
-  BFT_MALLOC(point_coords, n_points, cs_real_3_t); /* Segment: 2 points */
+  CS_MALLOC(point_coords, n_points, cs_real_3_t); /* Segment: 2 points */
 
   point_coords[0][0] = 0.; point_coords[0][1] = 15.; point_coords[0][2] = 0.5;
   point_coords[1][0] = 0.; point_coords[1][1] = 0.;  point_coords[1][2] = 0.5;
@@ -142,10 +142,10 @@ cs_user_source_terms(cs_domain_t  *domain,
   }
 
   /* Free memory */
-  BFT_FREE(seg_c_cen);
+  CS_FREE(seg_c_cen);
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max) {
-    BFT_FREE(elt_ids);
-    BFT_FREE(seg_c_len);
+    CS_FREE(elt_ids);
+    CS_FREE(seg_c_len);
   }
 }
 

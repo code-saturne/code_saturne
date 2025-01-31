@@ -41,7 +41,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "cdo/cs_equation_param.h"
@@ -49,6 +48,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -116,14 +116,14 @@ _volume_mass_injection_finalize(void)
     cs_volume_mass_injection_t *mi = _mass_injection;
 
     for (int field_id = 0; field_id < mi->field_id_ub; field_id++) {
-      BFT_FREE(mi->mst_type[field_id]);
-      BFT_FREE(mi->mst_val[field_id]);
+      CS_FREE(mi->mst_type[field_id]);
+      CS_FREE(mi->mst_val[field_id]);
     }
 
-    BFT_FREE(mi->mst_type);
-    BFT_FREE(mi->mst_val);
-    BFT_FREE(mi->elt_id);
-    BFT_FREE(_mass_injection);
+    CS_FREE(mi->mst_type);
+    CS_FREE(mi->mst_val);
+    CS_FREE(mi->elt_id);
+    CS_FREE(_mass_injection);
   }
 }
 
@@ -144,8 +144,8 @@ _volume_mass_injection_get_field_arrays(const cs_field_t *f,
   if (f->id >= mi->field_id_ub) {
     int s_id = mi->field_id_ub, e_id = f->id + 1;
     mi->field_id_ub = e_id;
-    BFT_REALLOC(mi->mst_type, mi->field_id_ub, int *);
-    BFT_REALLOC(mi->mst_val, mi->field_id_ub, cs_real_t *);
+    CS_REALLOC(mi->mst_type, mi->field_id_ub, int *);
+    CS_REALLOC(mi->mst_val, mi->field_id_ub, cs_real_t *);
     for (int i = s_id; i < e_id; i++) {
       mi->mst_type[i] = nullptr;
       mi->mst_val[i]  = nullptr;
@@ -546,7 +546,7 @@ void
 cs_volume_mass_injection_build_lists(void)
 {
   if (_mass_injection == nullptr) {
-    BFT_MALLOC(_mass_injection, 1, cs_volume_mass_injection_t);
+    CS_MALLOC(_mass_injection, 1, cs_volume_mass_injection_t);
 
     _mass_injection->field_id_ub = 0;
     _mass_injection->n_elts      = 0;
@@ -570,7 +570,7 @@ cs_volume_mass_injection_build_lists(void)
 
   /* Then build list */
 
-  BFT_FREE(_mass_injection->elt_id);
+  CS_FREE(_mass_injection->elt_id);
   CS_MALLOC_HD(_mass_injection->elt_id, n_elts, cs_lnum_t, cs_alloc_mode);
 
   cs_lnum_t  l      = 0;
@@ -616,7 +616,7 @@ cs_volume_mass_injection_eval(void)
 
   int        n_zones = cs_volume_zone_n_zones();
   cs_lnum_t *z_shift;
-  BFT_MALLOC(z_shift, n_zones, cs_lnum_t);
+  CS_MALLOC(z_shift, n_zones, cs_lnum_t);
 
   cs_lnum_t c_shift = 0;
 
@@ -668,7 +668,7 @@ cs_volume_mass_injection_eval(void)
       const cs_lnum_t n_z_vals = z->n_elts * (cs_lnum_t)(f->dim);
 
       cs_real_t *st_loc;
-      BFT_MALLOC(st_loc, n_z_vals, cs_real_t);
+      CS_MALLOC(st_loc, n_z_vals, cs_real_t);
       for (cs_lnum_t j = 0; j < n_z_vals; j++)
         st_loc[j] = 0;
 
@@ -690,11 +690,11 @@ cs_volume_mass_injection_eval(void)
         }
       }
 
-      BFT_FREE(st_loc);
+      CS_FREE(st_loc);
     }
   }
 
-  BFT_FREE(z_shift);
+  CS_FREE(z_shift);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -39,10 +39,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_boundary_zone.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
@@ -100,7 +99,7 @@ cs_boundary_t  *cs_glob_boundaries = nullptr ; /* Pointer to the shared boundari
  *
  * If non-empty and not containing all elements, a list of elements
  * of the parent mesh belonging to the location should be allocated
- * (using BFT_MALLOC) and defined by this function when called.
+ * (using CS_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
  * \param[in]   input        pointer to a structure cast on-the-fly
@@ -123,7 +122,7 @@ _wall_boundary_selection(void              *input,
   const cs_boundary_t  *bdy = (const cs_boundary_t *)input;
 
   bool  *is_wall = nullptr;
-  BFT_MALLOC(is_wall, m->n_b_faces, bool);
+  CS_MALLOC(is_wall, m->n_b_faces, bool);
 
   if (bdy->default_type == CS_BOUNDARY_WALL) {
 
@@ -191,7 +190,7 @@ _wall_boundary_selection(void              *input,
   if (n_wall_elts < m->n_b_faces) {
 
     /* Fill list  */
-    BFT_MALLOC(wall_elts, n_wall_elts, cs_lnum_t);
+    CS_MALLOC(wall_elts, n_wall_elts, cs_lnum_t);
 
     cs_lnum_t shift = 0;
     for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
@@ -201,7 +200,7 @@ _wall_boundary_selection(void              *input,
 
   } /* Build elt_ids */
 
-  BFT_FREE(is_wall);
+  CS_FREE(is_wall);
 
   /* Return pointers */
   *n_elts = n_wall_elts;
@@ -458,7 +457,7 @@ cs_boundary_create(cs_boundary_category_t  category,
 {
   cs_boundary_t  *b = nullptr;
 
-  BFT_MALLOC(b, 1, cs_boundary_t);
+  CS_MALLOC(b, 1, cs_boundary_t);
 
   b->category = category;
   b->default_type = default_type;
@@ -485,9 +484,9 @@ cs_boundary_free(cs_boundary_t    **p_boundaries)
 
   cs_boundary_t  *bdy = *p_boundaries;
 
-  BFT_FREE(bdy->types);
-  BFT_FREE(bdy->zone_ids);
-  BFT_FREE(bdy);
+  CS_FREE(bdy->types);
+  CS_FREE(bdy->zone_ids);
+  CS_FREE(bdy);
   bdy = nullptr;
 }
 
@@ -522,8 +521,8 @@ cs_boundary_add(cs_boundary_t          *bdy,
   /* Add a new boundary for this zone */
   bdy->n_boundaries += 1;
 
-  BFT_REALLOC(bdy->zone_ids, bdy->n_boundaries, int);
-  BFT_REALLOC(bdy->types, bdy->n_boundaries, cs_boundary_type_t);
+  CS_REALLOC(bdy->zone_ids, bdy->n_boundaries, int);
+  CS_REALLOC(bdy->types, bdy->n_boundaries, cs_boundary_type_t);
 
   bdy->zone_ids[new_id] = zone->id;
   bdy->types[new_id] = type;

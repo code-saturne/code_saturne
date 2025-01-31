@@ -42,15 +42,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "cdo/cs_equation_param.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
+#include "base/cs_post.h"
 #include "mesh/cs_mesh_location.h"
 #include "pprt/cs_physical_model.h"
-#include "base/cs_post.h"
 #include "turb/cs_turbulence_bc.h"
 
 /*----------------------------------------------------------------------------
@@ -411,8 +411,8 @@ cs_field_build_bc_codes_all(void)
   _n_vars_bc = n_vars;
   _n_b_faces = n_b_faces;
 
-  BFT_REALLOC(_icodcl, n_vars*n_b_faces, int);
-  BFT_REALLOC(_rcodcl, 3*n_vars*n_b_faces, cs_real_t);
+  CS_REALLOC(_icodcl, n_vars*n_b_faces, int);
+  CS_REALLOC(_rcodcl, 3*n_vars*n_b_faces, cs_real_t);
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
@@ -501,8 +501,8 @@ cs_field_free_bc_codes_all(void)
 
   }
 
-  BFT_FREE(_icodcl);
-  BFT_FREE(_rcodcl);
+  CS_FREE(_icodcl);
+  CS_FREE(_rcodcl);
 
   _n_vars_bc = 0;
   _n_b_faces = 0;
@@ -527,7 +527,7 @@ cs_field_map_and_init_bcs(void)
      - 3: have_exch_bc */
 
   bool *bc_flags;
-  BFT_MALLOC(bc_flags, n_fields*4, bool);
+  CS_MALLOC(bc_flags, n_fields*4, bool);
   for (int i = 0; i < n_fields*4; i++)
     bc_flags[i] = false;
 
@@ -602,7 +602,7 @@ cs_field_map_and_init_bcs(void)
 
   }
 
-  BFT_FREE(bc_flags);
+  CS_FREE(bc_flags);
 
   /* Map pointers to BC's now that BC coefficient pointers are allocated */
 

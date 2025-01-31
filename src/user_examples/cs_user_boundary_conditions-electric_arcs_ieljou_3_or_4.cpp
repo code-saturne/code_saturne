@@ -91,18 +91,18 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   int *nborne;
   char name[8];
 
-  BFT_MALLOC(sir, nbelec, cs_real_t);
-  BFT_MALLOC(sii, nbelec, cs_real_t);
+  CS_MALLOC(sir, nbelec, cs_real_t);
+  CS_MALLOC(sii, nbelec, cs_real_t);
 
-  BFT_MALLOC(sirt, nbtrf, cs_real_t);
-  BFT_MALLOC(siit, nbtrf, cs_real_t);
+  CS_MALLOC(sirt, nbtrf, cs_real_t);
+  CS_MALLOC(siit, nbtrf, cs_real_t);
 
-  BFT_MALLOC(siib, nbtrf, cs_real_6_t);
-  BFT_MALLOC(sirb, nbtrf, cs_real_6_t);
-  BFT_MALLOC(ui, nbtrf, cs_real_6_t);
-  BFT_MALLOC(ur, nbtrf, cs_real_6_t);
+  CS_MALLOC(siib, nbtrf, cs_real_6_t);
+  CS_MALLOC(sirb, nbtrf, cs_real_6_t);
+  CS_MALLOC(ui, nbtrf, cs_real_6_t);
+  CS_MALLOC(ur, nbtrf, cs_real_6_t);
 
-  BFT_MALLOC(nborne, nbtrf, int);
+  CS_MALLOC(nborne, nbtrf, int);
   /*! [init] */
 
   /* 1 - Computation of intensity (A/m2) for each electrode */
@@ -350,15 +350,15 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   /*! [step_2_5] */
 
   /*! [step_3] */
-  BFT_FREE(sir);
-  BFT_FREE(sii);
-  BFT_FREE(sirb);
-  BFT_FREE(siib);
-  BFT_FREE(ur);
-  BFT_FREE(ui);
-  BFT_FREE(sirt);
-  BFT_FREE(siit);
-  BFT_FREE(nborne);
+  CS_FREE(sir);
+  CS_FREE(sii);
+  CS_FREE(sirb);
+  CS_FREE(siib);
+  CS_FREE(ur);
+  CS_FREE(ui);
+  CS_FREE(sirt);
+  CS_FREE(siit);
+  CS_FREE(nborne);
   /*! [step_3] */
 }
 

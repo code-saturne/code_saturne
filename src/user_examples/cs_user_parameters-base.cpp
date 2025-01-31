@@ -764,13 +764,13 @@ cs_user_model(void)
 
   int local_type[] = {1,1,1,0,0,0,0,0,0,0,0};
 
-  BFT_MALLOC(cs_glob_porosity_from_scan_opt->headers, n_headers, char *);
-  BFT_MALLOC(cs_glob_porosity_from_scan_opt->header_type, n_headers, int);
+  CS_MALLOC(cs_glob_porosity_from_scan_opt->headers, n_headers, char *);
+  CS_MALLOC(cs_glob_porosity_from_scan_opt->header_type, n_headers, int);
 
   // Copy each string into modifiable memory
   for (int i = 0; i < n_headers; i++) {
-    BFT_MALLOC(cs_glob_porosity_from_scan_opt->headers[i],
-        strlen(local_headers[i]) + 1, char);
+    CS_MALLOC(cs_glob_porosity_from_scan_opt->headers[i],
+              strlen(local_headers[i]) + 1, char);
     strcpy(cs_glob_porosity_from_scan_opt->headers[i], local_headers[i]);
     cs_glob_porosity_from_scan_opt->header_type[i] = local_type[i];
   }

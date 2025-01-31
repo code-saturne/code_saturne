@@ -47,7 +47,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_1d_wall_thermal.h"
@@ -76,6 +75,7 @@
 #include "base/cs_internal_coupling.h"
 #include "turb/cs_les_inflow.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_mobile_structures.h"
@@ -387,11 +387,11 @@ _boundary_condition_ale_type(const cs_mesh_t            *m,
 
   if (cs_glob_ale == CS_ALE_CDO) {
     const int size_uma = CS_F_(mesh_u)->dim * n_b_faces;
-    BFT_MALLOC(_rcodcl1_mesh_u, size_uma, cs_real_t);
+    CS_MALLOC(_rcodcl1_mesh_u, size_uma, cs_real_t);
     rcodcl1_mesh_u = _rcodcl1_mesh_u;
 
     cs_real_3_t *b_fluid_vel = nullptr;
-    BFT_MALLOC(b_fluid_vel, n_b_faces, cs_real_3_t);
+    CS_MALLOC(b_fluid_vel, n_b_faces, cs_real_3_t);
 
     cs_array_real_fill_zero(3 * n_b_faces, (cs_real_t *)b_fluid_vel);
 
@@ -402,7 +402,7 @@ _boundary_condition_ale_type(const cs_mesh_t            *m,
         rcodcl1_mesh_u[n_b_faces * ii + face_id] = b_fluid_vel[face_id][ii];
     }
 
-    BFT_FREE(b_fluid_vel);
+    CS_FREE(b_fluid_vel);
   }
 
   assert(rcodcl1_mesh_u != nullptr);
@@ -698,7 +698,7 @@ _boundary_condition_ale_type(const cs_mesh_t            *m,
     }
   }
 
-  BFT_FREE(_rcodcl1_mesh_u);
+  CS_FREE(_rcodcl1_mesh_u);
 }
 
 /*----------------------------------------------------------------------------
@@ -1027,8 +1027,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
-    BFT_MALLOC(lbt2h, n_b_faces, cs_lnum_t);
-    BFT_MALLOC(vbt2h, n_b_faces, cs_real_t);
+    CS_MALLOC(lbt2h, n_b_faces, cs_lnum_t);
+    CS_MALLOC(vbt2h, n_b_faces, cs_real_t);
 
     cs_field_t *f_h = CS_F_(h);
     cs_real_t *rcodcl1_h = f_h->bc_coeffs->rcodcl1;
@@ -1054,7 +1054,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   /* Allocate temporary arrays */
   cs_real_3_t *velipb = nullptr;
-  BFT_MALLOC(velipb, n_b_faces, cs_real_3_t);
+  CS_MALLOC(velipb, n_b_faces, cs_real_3_t);
 
   cs_turb_model_type_t model
     = static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
@@ -1298,7 +1298,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               = (const cs_real_3_t *)f_scal->val;
 
             cs_real_33_t *gradv = nullptr;
-            BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+            CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
             const int inc = 1;
             const bool iprev = true;
@@ -1314,7 +1314,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               }
             }
 
-            BFT_FREE(gradv);
+            CS_FREE(gradv);
           }
           else {
             const cs_real_3_t *cvara_v
@@ -1336,7 +1336,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               = (const cs_real_6_t *)f_scal->val;
 
             cs_real_63_t *gradt = nullptr;
-            BFT_MALLOC(gradt, n_cells_ext, cs_real_63_t);
+            CS_MALLOC(gradt, n_cells_ext, cs_real_63_t);
 
             const int inc = 1;
             const bool iprev = true;
@@ -1352,7 +1352,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               }
             }
 
-            BFT_FREE(gradt);
+            CS_FREE(gradt);
           }
           else {
             const cs_real_6_t *cvara_t
@@ -1434,7 +1434,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       && order == CS_TURB_SECOND_ORDER) {
 
     /* Allocate a work array to store rij values at boundary faces */
-    BFT_MALLOC(rijipb, n_b_faces, cs_real_6_t);
+    CS_MALLOC(rijipb, n_b_faces, cs_real_6_t);
 
     cs_equation_param_t *eqp_rij = cs_field_get_equation_param(CS_F_(rij));
 
@@ -1500,7 +1500,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   if (iclsym != 0)
     cs_boundary_conditions_set_coeffs_symmetry(velipb, rijipb);
 
-  BFT_FREE(rijipb);
+  CS_FREE(rijipb);
 
   /*--------------------------------------------------------------------------
    * 9) velocity: Dirichlet, Neumann and convective outlet
@@ -3648,7 +3648,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   }
 
   /* Free memory */
-  BFT_FREE(velipb);
+  CS_FREE(velipb);
 
   /*--------------------------------------------------------------------------
    * 16) Update of boundary temperature when saved and not a variable.
@@ -3675,7 +3675,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       if (b_f_id > -1)
         bvar_s = cs_field_by_id(b_f_id)->val;
       else {
-        BFT_MALLOC(bvar_s, n_b_faces, cs_real_t);
+        CS_MALLOC(bvar_s, n_b_faces, cs_real_t);
         for (int f_id = 0; f_id < n_b_faces; f_id++) {
           bvar_s[f_id] = btemp_s[f_id];
         }
@@ -3684,7 +3684,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       cs_ht_convert_h_to_t_faces(bvar_s, btemp_s);
 
       if (b_f_id < 0)
-        BFT_FREE(bvar_s);
+        CS_FREE(bvar_s);
 
       /* In case of assigned temperature values, overwrite computed
          wall temperature with prescribed one to avoid issues due to
@@ -3695,8 +3695,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         btemp_s[f_id] = vbt2h[f_id];
       }
     }
-    BFT_FREE(lbt2h);
-    BFT_FREE(vbt2h);
+    CS_FREE(lbt2h);
+    CS_FREE(vbt2h);
   }
 }
 
@@ -3824,13 +3824,13 @@ cs_boundary_conditions_set_coeffs_init(void)
   }
 
   int *isostd;
-  BFT_MALLOC(isostd, n_b_faces+1, int);
+  CS_MALLOC(isostd, n_b_faces+1, int);
 
   cs_boundary_conditions_type(true,
                               bc_type,
                               isostd);
 
-  BFT_FREE(isostd);
+  CS_FREE(isostd);
 
   /* Check the consistency of the BCs
      -------------------------------- */

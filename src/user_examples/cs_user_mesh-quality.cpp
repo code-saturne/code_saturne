@@ -109,7 +109,7 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
   double feature_angle = 25; /* bounded between 0 and 90 degrees */
   int *vtx_is_fixed = nullptr;
 
-  BFT_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
+  CS_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
 
   /* Get fixed boundary vertices flag */
 
@@ -123,7 +123,7 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 
   /* Free memory */
 
-  BFT_FREE(vtx_is_fixed);
+  CS_FREE(vtx_is_fixed);
 
   /*! [mesh_smoothing] */
 }
@@ -162,7 +162,7 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
 
   cs_lnum_t  *bad_vol_cells = nullptr;
 
-  BFT_MALLOC(bad_vol_cells, n_cells_wghosts, cs_lnum_t);
+  CS_MALLOC(bad_vol_cells, n_cells_wghosts, cs_lnum_t);
 
   for (cell_id = 0; cell_id < n_cells_wghosts; cell_id++)
     bad_vol_cells[cell_id] = 0;
@@ -220,7 +220,7 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
      For a different tag, postprocessing could be done with a user
      postprocessing function, or calling directly cs_post_write_var(). */
 
-  BFT_FREE(bad_vol_cells);
+  CS_FREE(bad_vol_cells);
 
   /*! [mesh_tag_bad_cells] */
 }

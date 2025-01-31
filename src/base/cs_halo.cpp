@@ -38,7 +38,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -47,9 +46,9 @@
 #if defined(HAVE_CUDA)
 #include "base/cs_base_cuda.h"
 #endif
-#include "base/cs_order.h"
-
 #include "base/cs_interface.h"
+#include "base/cs_mem.h"
+#include "base/cs_order.h"
 #include "base/cs_rank_neighbors.h"
 
 #include "fvm/fvm_periodicity.h"
@@ -230,8 +229,8 @@ _update_requests(const cs_halo_t  *halo,
 
   if (n_requests > hs->request_size) {
     hs->request_size = n_requests;
-    BFT_REALLOC(hs->request, hs->request_size, MPI_Request);
-    BFT_REALLOC(hs->status, hs->request_size,  MPI_Status);
+    CS_REALLOC(hs->request, hs->request_size, MPI_Request);
+    CS_REALLOC(hs->status, hs->request_size,  MPI_Status);
   }
 
 }
@@ -251,10 +250,10 @@ _exchange_send_shift(cs_halo_t  *halo)
   MPI_Request *request = nullptr;
   MPI_Status *status = nullptr;
 
-  BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
-  BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+  CS_MALLOC(request, halo->n_c_domains*2, MPI_Request);
+  CS_MALLOC(status, halo->n_c_domains*2, MPI_Status);
 
-  BFT_REALLOC(halo->c_domain_s_shift, halo->n_c_domains, cs_lnum_t);
+  CS_REALLOC(halo->c_domain_s_shift, halo->n_c_domains, cs_lnum_t);
 
   /* Exchange local range with neighbor ranks */
 
@@ -284,8 +283,8 @@ _exchange_send_shift(cs_halo_t  *halo)
 
   MPI_Waitall(halo->n_c_domains*2, request, status);
 
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(request);
+  CS_FREE(status);
 }
 
 #endif /* HAVE_MPI */
@@ -506,7 +505,7 @@ cs_halo_create(const cs_interface_set_t  *ifs)
 
   const cs_interface_t  *interface = nullptr;
 
-  BFT_MALLOC(halo, 1, cs_halo_t);
+  CS_MALLOC(halo, 1, cs_halo_t);
 
   halo->n_c_domains = cs_interface_set_size(ifs);
   halo->n_transforms = 0;
@@ -521,7 +520,7 @@ cs_halo_create(const cs_interface_set_t  *ifs)
     halo->n_elts [i] = 0;
   }
 
-  BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
+  CS_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
   /* Check if cs_glob_rank_id belongs to interface set in order to
      order ranks with local rank at first place */
@@ -553,8 +552,8 @@ cs_halo_create(const cs_interface_set_t  *ifs)
     cs_lnum_t  *order = nullptr;
     cs_gnum_t  *buffer = nullptr;
 
-    BFT_MALLOC(order, halo->n_c_domains - 1, cs_lnum_t);
-    BFT_MALLOC(buffer, halo->n_c_domains - 1, cs_gnum_t);
+    CS_MALLOC(order, halo->n_c_domains - 1, cs_lnum_t);
+    CS_MALLOC(buffer, halo->n_c_domains - 1, cs_gnum_t);
 
     for (i = 1; i < halo->n_c_domains; i++)
       buffer[i-1] = (cs_gnum_t)halo->c_domain_rank[i];
@@ -567,14 +566,14 @@ cs_halo_create(const cs_interface_set_t  *ifs)
     for (i = 0; i < halo->n_c_domains - 1; i++)
       halo->c_domain_rank[i+1] = (cs_lnum_t)buffer[order[i]];
 
-    BFT_FREE(buffer);
-    BFT_FREE(order);
+    CS_FREE(buffer);
+    CS_FREE(order);
 
   } /* End of ordering ranks */
 
   CS_MALLOC_HD(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t,
                _halo_buffer_alloc_mode);
-  BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
+  CS_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
 
   for (i = 0; i < 2*halo->n_c_domains + 1; i++) {
     halo->send_index[i] = 0;
@@ -600,8 +599,8 @@ cs_halo_create(const cs_interface_set_t  *ifs)
 
     perio_lst_size = 2*halo->n_transforms * 2*halo->n_c_domains;
 
-    BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_lnum_t);
-    BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_lnum_t);
+    CS_MALLOC(halo->send_perio_lst, perio_lst_size, cs_lnum_t);
+    CS_MALLOC(halo->perio_lst, perio_lst_size, cs_lnum_t);
 
     for (i = 0; i < perio_lst_size; i++) {
       halo->send_perio_lst[i] = 0;
@@ -656,7 +655,7 @@ cs_halo_create_complete(cs_halo_t  *halo)
     const int local_rank = CS_MAX(cs_glob_rank_id, 0);
     int n_group_ranks = 0;
     int *group_ranks = nullptr;
-    BFT_MALLOC(group_ranks, halo->n_c_domains + 1, int);
+    CS_MALLOC(group_ranks, halo->n_c_domains + 1, int);
     for (int i = 0; i < halo->n_c_domains; i++) {
       if (halo->c_domain_rank[i] < local_rank)
         group_ranks[n_group_ranks++] = halo->c_domain_rank[i];
@@ -679,7 +678,7 @@ cs_halo_create_complete(cs_halo_t  *halo)
 
     }
 
-    BFT_FREE(group_ranks);
+    CS_FREE(group_ranks);
   }
 
   /* Exchange shifts for one-sided communication */
@@ -755,7 +754,7 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 
   cs_halo_t  *halo = nullptr;
 
-  BFT_MALLOC(halo, 1, cs_halo_t);
+  CS_MALLOC(halo, 1, cs_halo_t);
 
   halo->n_c_domains = ref->n_c_domains;
   halo->n_transforms = ref->n_transforms;
@@ -767,14 +766,14 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
   halo->n_send_elts[0] = 0;
   halo->n_send_elts[1] = 0;
 
-  BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
+  CS_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
   for (i = 0; i < halo->n_c_domains; i++)
     halo->c_domain_rank[i] = ref->c_domain_rank[i];
 
   CS_MALLOC_HD(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t,
                _halo_buffer_alloc_mode);
-  BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
+  CS_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
 
   for (i = 0; i < 2*halo->n_c_domains + 1; i++) {
     halo->send_index[i] = 0;
@@ -788,8 +787,8 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 
     cs_lnum_t  perio_lst_size = 2*halo->n_transforms * 2*halo->n_c_domains;
 
-    BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_lnum_t);
-    BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_lnum_t);
+    CS_MALLOC(halo->send_perio_lst, perio_lst_size, cs_lnum_t);
+    CS_MALLOC(halo->perio_lst, perio_lst_size, cs_lnum_t);
 
     for (i = 0; i < perio_lst_size; i++) {
       halo->send_perio_lst[i] = 0;
@@ -853,7 +852,7 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 {
   cs_halo_t  *halo = nullptr;
 
-  BFT_MALLOC(halo, 1, cs_halo_t);
+  CS_MALLOC(halo, 1, cs_halo_t);
 
   halo->n_c_domains = 0;
   halo->n_transforms = 0;
@@ -884,7 +883,7 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
      check they are are ordered lexicographically */
 
   cs_lnum_t *rank_count;
-  BFT_MALLOC(rank_count, rn->size*2, cs_lnum_t);
+  CS_MALLOC(rank_count, rn->size*2, cs_lnum_t);
   for (int i = 0; i < rn->size; i++)
     rank_count[i] = 0;
 
@@ -911,8 +910,8 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   MPI_Request *request = nullptr;
   MPI_Status *status = nullptr;
 
-  BFT_MALLOC(request, rn->size*2, MPI_Request);
-  BFT_MALLOC(status, rn->size*2, MPI_Status);
+  CS_MALLOC(request, rn->size*2, MPI_Request);
+  CS_MALLOC(status, rn->size*2, MPI_Status);
 
   /* Exchange local range with neighbor ranks */
 
@@ -964,13 +963,13 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
     }
   }
 
-  BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
+  CS_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
   CS_MALLOC_HD(halo->send_list, recv_count, cs_lnum_t,
                _halo_buffer_alloc_mode);
   CS_MALLOC_HD(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t,
                _halo_buffer_alloc_mode);
-  BFT_MALLOC(halo->index, halo->n_c_domains*2+1, cs_lnum_t);
+  CS_MALLOC(halo->index, halo->n_c_domains*2+1, cs_lnum_t);
 
   halo->n_c_domains = 0;
   send_count = 0;
@@ -1007,7 +1006,7 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
     }
   }
 
-  BFT_FREE(rank_count);
+  CS_FREE(rank_count);
 
   for (int i = 0; i < CS_HALO_N_TYPES; i++)
     halo->n_send_elts[i] = send_count;
@@ -1052,8 +1051,8 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 
   MPI_Waitall(request_count, request, status);
 
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(request);
+  CS_FREE(status);
 
   _n_halos += 1;
 
@@ -1087,21 +1086,21 @@ cs_halo_destroy(cs_halo_t  **halo)
   if (_halo->c_domain_group != MPI_GROUP_NULL)
     MPI_Group_free(&(_halo->c_domain_group));
 
-  BFT_FREE(_halo->c_domain_s_shift);
+  CS_FREE(_halo->c_domain_s_shift);
 #endif
 
-  BFT_FREE(_halo->c_domain_rank);
+  CS_FREE(_halo->c_domain_rank);
 
   CS_FREE_HD(_halo->send_list);
   CS_FREE_HD(_halo->send_index);
-  BFT_FREE(_halo->index);
+  CS_FREE(_halo->index);
 
-  BFT_FREE(_halo->send_perio_lst);
-  BFT_FREE(_halo->perio_lst);
+  CS_FREE(_halo->send_perio_lst);
+  CS_FREE(_halo->perio_lst);
 
-  BFT_FREE(_halo->std_send_blocks);
+  CS_FREE(_halo->std_send_blocks);
 
-  BFT_FREE(*halo);
+  CS_FREE(*halo);
 
   _n_halos -= 1;
 
@@ -1123,7 +1122,7 @@ cs_halo_state_t *
 cs_halo_state_create(void)
 {
   cs_halo_state_t *hs;
-  BFT_MALLOC(hs, 1, cs_halo_state_t);
+  CS_MALLOC(hs, 1, cs_halo_state_t);
 
   cs_halo_state_t hs_ini = {
     .sync_mode = CS_HALO_STANDARD,
@@ -1181,11 +1180,11 @@ cs_halo_state_destroy(cs_halo_state_t  **halo_state)
     CS_FREE_HD(hs->recv_buffer);
 
 #if defined(HAVE_MPI)
-    BFT_FREE(hs->request);
-    BFT_FREE(hs->status);
+    CS_FREE(hs->request);
+    CS_FREE(hs->status);
 #endif
 
-    BFT_FREE(*halo_state);
+    CS_FREE(*halo_state);
   }
 }
 
@@ -1246,8 +1245,8 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
 
   cs_lnum_t *send_buf, *recv_buf;
 
-  BFT_MALLOC(send_buf, halo->n_send_elts[1], cs_lnum_t);
-  BFT_MALLOC(recv_buf, halo->n_elts[1], cs_lnum_t);
+  CS_MALLOC(send_buf, halo->n_send_elts[1], cs_lnum_t);
+  CS_MALLOC(recv_buf, halo->n_elts[1], cs_lnum_t);
 
   for (int i = 0; i < halo->n_c_domains; i++) {
     cs_lnum_t start = halo->index[2*i];
@@ -1272,8 +1271,8 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
     MPI_Request  *request;
     MPI_Status   *status;
 
-    BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
-    BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+    CS_MALLOC(request, halo->n_c_domains*2, MPI_Request);
+    CS_MALLOC(status, halo->n_c_domains*2, MPI_Status);
 
     /* Receive data from distant ranks */
 
@@ -1332,8 +1331,8 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
 
     MPI_Waitall(request_count, request, status);
 
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
 
   }
 
@@ -1354,7 +1353,7 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
 
   }
 
-  BFT_FREE(recv_buf);
+  CS_FREE(recv_buf);
 
   /* Now apply renumbering to send list */
 
@@ -1369,7 +1368,7 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
 
   cs_sync_h2d(halo->send_list);
 
-  BFT_FREE(send_buf);
+  CS_FREE(send_buf);
 }
 
 /*----------------------------------------------------------------------------*/

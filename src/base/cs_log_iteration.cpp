@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array_reduce.h"
@@ -54,6 +53,7 @@
 #include "base/cs_function.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_notebook.h"
@@ -674,17 +674,17 @@ _log_fields_and_functions(void)
 
   log_count_max = n_fields + n_functions;
 
-  BFT_MALLOC(log_id, n_ff, int);
-  BFT_MALLOC(vmin, log_count_max, double);
-  BFT_MALLOC(vmax, log_count_max, double);
-  BFT_MALLOC(vsum, log_count_max, double);
-  BFT_MALLOC(wsum, log_count_max, double);
+  CS_MALLOC(log_id, n_ff, int);
+  CS_MALLOC(vmin, log_count_max, double);
+  CS_MALLOC(vmax, log_count_max, double);
+  CS_MALLOC(vsum, log_count_max, double);
+  CS_MALLOC(wsum, log_count_max, double);
 
-  BFT_MALLOC(location_log, n_locations, bool);
+  CS_MALLOC(location_log, n_locations, bool);
   for (int i = 0; i < n_locations; i++)
     location_log[i] = false;
 
-  BFT_MALLOC(f_location_id, n_ff, int);
+  CS_MALLOC(f_location_id, n_ff, int);
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, log_key_id)) {
@@ -705,7 +705,7 @@ _log_fields_and_functions(void)
   }
 
   if (n_moments > 0) {
-    BFT_MALLOC(moment_id, n_fields, int);
+    CS_MALLOC(moment_id, n_fields, int);
     for (int f_id = 0; f_id < n_fields; f_id++)
       moment_id[f_id] = -1;
     for (int m_id = 0; m_id < n_moments; m_id++) {
@@ -767,7 +767,7 @@ _log_fields_and_functions(void)
       case CS_MESH_LOCATION_VERTICES:
         n_g_elts = m->n_g_vertices;
         have_weight = 0;
-        BFT_MALLOC(gather_array, m->n_vertices, cs_real_t);
+        CS_MALLOC(gather_array, m->n_vertices, cs_real_t);
         break;
 
       default:
@@ -855,7 +855,7 @@ _log_fields_and_functions(void)
         if (have_weight && (f->type & CS_FUNCTION_INTENSIVE))
           use_weight = true;
 
-        BFT_MALLOC(_f_val, f_dim*_n_elts, cs_real_t);
+        CS_MALLOC(_f_val, f_dim*_n_elts, cs_real_t);
         f_val = _f_val;
 
         const cs_time_step_t *ts = cs_glob_time_step;
@@ -872,7 +872,7 @@ _log_fields_and_functions(void)
           const cs_lnum_t  parent_id_shift[] = {0};
           char *buffer;
           const void *src_data[1];
-          BFT_MALLOC(buffer, f_dim*_n_elts*cs_datatype_size[f->datatype], char);
+          CS_MALLOC(buffer, f_dim*_n_elts*cs_datatype_size[f->datatype], char);
           src_data[0] = buffer;
           cs_function_evaluate(f,
                                ts,
@@ -890,7 +890,7 @@ _log_fields_and_functions(void)
                             nullptr, /* parent_id */
                             src_data,
                             _f_val);
-          BFT_FREE(buffer);
+          CS_FREE(buffer);
         }
       }
 
@@ -910,10 +910,10 @@ _log_fields_and_functions(void)
 
       while (log_count + _dim > log_count_max) {
         log_count_max *= 2;
-        BFT_REALLOC(vmin, log_count_max, double);
-        BFT_REALLOC(vmax, log_count_max, double);
-        BFT_REALLOC(vsum, log_count_max, double);
-        BFT_REALLOC(wsum, log_count_max, double);
+        CS_REALLOC(vmin, log_count_max, double);
+        CS_REALLOC(vmax, log_count_max, double);
+        CS_REALLOC(vsum, log_count_max, double);
+        CS_REALLOC(wsum, log_count_max, double);
       }
 
       if (use_weight) {
@@ -945,7 +945,7 @@ _log_fields_and_functions(void)
                                                    0); /* g_id_base */
 
           if (f_dim > 1)
-            BFT_REALLOC(gather_array, (f_dim * m->n_vertices), cs_real_t);
+            CS_REALLOC(gather_array, (f_dim * m->n_vertices), cs_real_t);
 
           cs_range_set_gather(m->vtx_range_set,
                               CS_REAL_TYPE,
@@ -970,14 +970,14 @@ _log_fields_and_functions(void)
         }
       }
 
-      BFT_FREE(_f_val);
+      CS_FREE(_f_val);
 
       log_count += _dim;
 
     } /* End of first loop on fields */
 
     if (gather_array != nullptr)
-      BFT_FREE(gather_array);
+      CS_FREE(gather_array);
 
     if (log_count < 1)
       continue;
@@ -1111,14 +1111,14 @@ _log_fields_and_functions(void)
     bft_error(__FILE__, __LINE__, 0,
                 _("Invalid (not-a-number) values detected for a field."));
 
-  BFT_FREE(moment_id);
-  BFT_FREE(wsum);
-  BFT_FREE(vsum);
-  BFT_FREE(vmax);
-  BFT_FREE(vmin);
-  BFT_FREE(log_id);
-  BFT_FREE(f_location_id);
-  BFT_FREE(location_log);
+  CS_FREE(moment_id);
+  CS_FREE(wsum);
+  CS_FREE(vsum);
+  CS_FREE(vmax);
+  CS_FREE(vmin);
+  CS_FREE(log_id);
+  CS_FREE(f_location_id);
+  CS_FREE(location_log);
 
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
@@ -1145,10 +1145,10 @@ _log_sstats(void)
 
   /* Allocate working arrays */
 
-  BFT_MALLOC(vmin, _sstats_val_size, double);
-  BFT_MALLOC(vmax, _sstats_val_size, double);
-  BFT_MALLOC(vsum, _sstats_val_size, double);
-  BFT_MALLOC(wsum, _sstats_val_size, double);
+  CS_MALLOC(vmin, _sstats_val_size, double);
+  CS_MALLOC(vmax, _sstats_val_size, double);
+  CS_MALLOC(vsum, _sstats_val_size, double);
+  CS_MALLOC(wsum, _sstats_val_size, double);
 
   memcpy(vmin, _sstats_vmin, _sstats_val_size*sizeof(double));
   memcpy(vmax, _sstats_vmax, _sstats_val_size*sizeof(double));
@@ -1346,10 +1346,10 @@ _log_sstats(void)
     bft_error(__FILE__, __LINE__, 0,
                 _("Invalid (not-a-number) values detected for a statistic."));
 
-  BFT_FREE(wsum);
-  BFT_FREE(vsum);
-  BFT_FREE(vmax);
-  BFT_FREE(vmin);
+  CS_FREE(wsum);
+  CS_FREE(vsum);
+  CS_FREE(vmax);
+  CS_FREE(vmin);
 
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
@@ -1396,7 +1396,7 @@ _add_clipping(int               name_id,
         _n_clips_max = 1;
       else
         _n_clips_max *= 2;
-      BFT_REALLOC(_clips, _n_clips_max, cs_log_clip_t);
+      CS_REALLOC(_clips, _n_clips_max, cs_log_clip_t);
     }
 
     if (_clips_val_size > _clips_val_size_max) {
@@ -1404,9 +1404,9 @@ _add_clipping(int               name_id,
         _clips_val_size_max = dim;
       while (_clips_val_size > _clips_val_size_max)
         _clips_val_size_max *= 2;
-      BFT_REALLOC(_clips_vmin, _clips_val_size_max, double);
-      BFT_REALLOC(_clips_vmax, _clips_val_size_max, double);
-      BFT_REALLOC(_clips_count, _clips_val_size_max*2, cs_gnum_t);
+      CS_REALLOC(_clips_vmin, _clips_val_size_max, double);
+      CS_REALLOC(_clips_vmax, _clips_val_size_max, double);
+      CS_REALLOC(_clips_count, _clips_val_size_max*2, cs_gnum_t);
     }
 
     need_sort = true;  /* allow for binary search */
@@ -1489,9 +1489,9 @@ _log_clips(void)
 
   /* Allocate working arrays */
 
-  BFT_MALLOC(vmin, _clips_val_size, double);
-  BFT_MALLOC(vmax, _clips_val_size, double);
-  BFT_MALLOC(vcount, _clips_val_size*2, cs_gnum_t);
+  CS_MALLOC(vmin, _clips_val_size, double);
+  CS_MALLOC(vmax, _clips_val_size, double);
+  CS_MALLOC(vcount, _clips_val_size*2, cs_gnum_t);
 
   memcpy(vmin, _clips_vmin, _clips_val_size*sizeof(double));
   memcpy(vmax, _clips_vmax, _clips_val_size*sizeof(double));
@@ -1623,9 +1623,9 @@ _log_clips(void)
 
   }
 
-  BFT_FREE(vcount);
-  BFT_FREE(vmax);
-  BFT_FREE(vmin);
+  CS_FREE(vcount);
+  CS_FREE(vmax);
+  CS_FREE(vmin);
 
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
@@ -1650,11 +1650,11 @@ cs_log_iteration_destroy_all(void)
     _sstats_val_size_max = 0;
     _n_sstats = 0;
     _n_sstats_max = 0;
-    BFT_FREE(_sstats_vmin);
-    BFT_FREE(_sstats_vmax);
-    BFT_FREE(_sstats_vsum);
-    BFT_FREE(_sstats_wsum);
-    BFT_FREE(_sstats);
+    CS_FREE(_sstats_vmin);
+    CS_FREE(_sstats_vmax);
+    CS_FREE(_sstats_vsum);
+    CS_FREE(_sstats_wsum);
+    CS_FREE(_sstats);
     cs_map_name_to_id_destroy(&_category_map);
   }
 
@@ -1663,10 +1663,10 @@ cs_log_iteration_destroy_all(void)
     _clips_val_size_max = 0;
     _n_clips = 0;
     _n_clips_max = 0;
-    BFT_FREE(_clips_count);
-    BFT_FREE(_clips_vmin);
-    BFT_FREE(_clips_vmax);
-    BFT_FREE(_clips);
+    CS_FREE(_clips_count);
+    CS_FREE(_clips_vmin);
+    CS_FREE(_clips_vmax);
+    CS_FREE(_clips);
   }
 
   if (_name_map != nullptr)
@@ -1723,8 +1723,8 @@ cs_log_equation_convergence_info_write(void)
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   cs_real_t *w1, *w2;
-  BFT_MALLOC(w1, n_cells, cs_real_t);
-  BFT_MALLOC(w2, n_cells, cs_real_t);
+  CS_MALLOC(w1, n_cells, cs_real_t);
+  CS_MALLOC(w2, n_cells, cs_real_t);
 
   char title[128] = "   Variable    ";
   char line[128] = "";
@@ -1765,7 +1765,7 @@ cs_log_equation_convergence_info_write(void)
   char _var_name_trunc[128];
   char *var_name_trunc = _var_name_trunc;
   if (max_name_width + 1 > 128)
-    BFT_MALLOC(var_name_trunc, max_name_width + 1, char);
+    CS_MALLOC(var_name_trunc, max_name_width + 1, char);
 
   cs_log_printf(CS_LOG_DEFAULT, _("%s\n%s\n%s\n"), line, title, line);
 
@@ -1865,10 +1865,10 @@ cs_log_equation_convergence_info_write(void)
   cs_log_printf(CS_LOG_DEFAULT, _("%s\n"), line);
 
   if (var_name_trunc != _var_name_trunc)
-    BFT_FREE(var_name_trunc);
+    CS_FREE(var_name_trunc);
 
-  BFT_FREE(w1);
-  BFT_FREE(w2);
+  CS_FREE(w1);
+  CS_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1992,7 +1992,7 @@ cs_log_iteration_add_array(const char                     *name,
         _n_sstats_max = 1;
       else
         _n_sstats_max *= 2;
-      BFT_REALLOC(_sstats, _n_sstats_max, cs_log_sstats_t);
+      CS_REALLOC(_sstats, _n_sstats_max, cs_log_sstats_t);
     }
 
     if (_sstats_val_size > _sstats_val_size_max) {
@@ -2000,10 +2000,10 @@ cs_log_iteration_add_array(const char                     *name,
         _sstats_val_size_max = dim;
       while (_sstats_val_size > _sstats_val_size_max)
         _sstats_val_size_max *= 2;
-      BFT_REALLOC(_sstats_vmin, _sstats_val_size_max, double);
-      BFT_REALLOC(_sstats_vmax, _sstats_val_size_max, double);
-      BFT_REALLOC(_sstats_vsum, _sstats_val_size_max, double);
-      BFT_REALLOC(_sstats_wsum, _sstats_val_size_max, double);
+      CS_REALLOC(_sstats_vmin, _sstats_val_size_max, double);
+      CS_REALLOC(_sstats_vmax, _sstats_val_size_max, double);
+      CS_REALLOC(_sstats_vsum, _sstats_val_size_max, double);
+      CS_REALLOC(_sstats_wsum, _sstats_val_size_max, double);
     }
 
     need_sort = true;  /* allow for binary search */
@@ -2204,7 +2204,7 @@ cs_log_iteration_l2residual(void)
     bool                   use_iteration = (ts->is_local) ? true : false;
 
     const char **labels;
-    BFT_MALLOC(labels, n_fields + 1, const char *);
+    CS_MALLOC(labels, n_fields + 1, const char *);
 
     int n_variables = 0;
     for (int f_id = 0 ; f_id < n_fields ; f_id++) {
@@ -2226,12 +2226,12 @@ cs_log_iteration_l2residual(void)
                                                 nullptr,
                                                 labels);
 
-    BFT_FREE(labels);
+    CS_FREE(labels);
   }
 
   {
     cs_real_t *vals;
-    BFT_MALLOC(vals, n_fields, cs_real_t);
+    CS_MALLOC(vals, n_fields, cs_real_t);
 
     int si_k_id = cs_field_key_id("solving_info");
 
@@ -2252,7 +2252,7 @@ cs_log_iteration_l2residual(void)
                             n_variables,
                             vals);
 
-    BFT_FREE(vals);
+    CS_FREE(vals);
   }
 }
 

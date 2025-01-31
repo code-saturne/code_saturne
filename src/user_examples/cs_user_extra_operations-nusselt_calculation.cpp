@@ -105,7 +105,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     cs_lnum_t nlelt;
     cs_lnum_t *lstelt;
-    BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
+    CS_MALLOC(lstelt, n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list
       ("normal[0, -1, 0, 0.1] and box[-1000, -1000, -1000, 1000, 0.01, 1000]",
@@ -116,7 +116,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     /*! [compute_nusselt] */
     cs_real_t *treloc;
-    BFT_MALLOC(treloc, nlelt, cs_real_t);
+    CS_MALLOC(treloc, nlelt, cs_real_t);
 
     int iortho = 0;
     /*! [compute_nusselt] */
@@ -155,11 +155,11 @@ cs_user_extra_operations(cs_domain_t     *domain)
     cs_real_t *xabs = nullptr, *xabsg = nullptr, *xnusselt = nullptr;
     cs_real_t *treglo = nullptr;
 
-    BFT_MALLOC(xabs, nlelt, cs_real_t);
+    CS_MALLOC(xabs, nlelt, cs_real_t);
 
-    BFT_MALLOC(xnusselt, neltg, cs_real_t);
-    BFT_MALLOC(xabsg, neltg, cs_real_t);
-    BFT_MALLOC(treglo, neltg, cs_real_t);
+    CS_MALLOC(xnusselt, neltg, cs_real_t);
+    CS_MALLOC(xabsg, neltg, cs_real_t);
+    CS_MALLOC(treglo, neltg, cs_real_t);
 
     for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt ++) {
       cs_lnum_t face_id = lstelt[ilelt];
@@ -169,9 +169,9 @@ cs_user_extra_operations(cs_domain_t     *domain)
     cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs, xabs, xabsg);
     cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs, treloc, treglo);
 
-    BFT_FREE(xabs);
-    BFT_FREE(treloc);
-    BFT_FREE(lstelt);
+    CS_FREE(xabs);
+    CS_FREE(treloc);
+    CS_FREE(lstelt);
     /*! [value_ortho_nusselt] */
 
     /* Calculation of the bulk temperature and compute Nusselt number */
@@ -241,9 +241,9 @@ cs_user_extra_operations(cs_domain_t     *domain)
     if (file != nullptr)
       fclose(file);
 
-    BFT_FREE(xnusselt);
-    BFT_FREE(xabsg);
-    BFT_FREE(treglo);
+    CS_FREE(xnusselt);
+    CS_FREE(xabsg);
+    CS_FREE(treglo);
     /*! [bulk_nusselt] */
   }
 }

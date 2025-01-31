@@ -89,7 +89,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   /* ! [vorticity_d] */
 
   /* ! [vorticity_a] */
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
   /* ! [vorticity_a] */
 
   /* ! [vorticity_g] */
@@ -114,7 +114,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   /* ! [vorticity_cv] */
 
   /* ! [vorticity_da] */
-  BFT_FREE(gradv);
+  CS_FREE(gradv);
   /* ! [vorticity_da] */
 }
 

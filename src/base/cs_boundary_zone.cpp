@@ -48,7 +48,6 @@
 
 #include <ple_locator.h>
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -56,6 +55,7 @@
 #include "base/cs_flag_check.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -202,7 +202,7 @@ _zone_define(const char  *name)
       _n_zones_max = 8;
     else
       _n_zones_max *= 2;
-    BFT_REALLOC(_zones, _n_zones_max, cs_zone_t *);
+    CS_REALLOC(_zones, _n_zones_max, cs_zone_t *);
   }
 
   /* Allocate zones descriptor block if necessary
@@ -211,7 +211,7 @@ _zone_define(const char  *name)
 
   int shift_in_alloc_block = zone_id % _CS_ZONE_S_ALLOC_SIZE;
   if (shift_in_alloc_block == 0)
-    BFT_MALLOC(_zones[zone_id], _CS_ZONE_S_ALLOC_SIZE, cs_zone_t);
+    CS_MALLOC(_zones[zone_id], _CS_ZONE_S_ALLOC_SIZE, cs_zone_t);
   else
     _zones[zone_id] =   _zones[zone_id - shift_in_alloc_block]
                       + shift_in_alloc_block;
@@ -277,7 +277,7 @@ _build_zone_class_id(void)
 
   cs_lnum_t n_faces = m->n_b_faces;
 
-  BFT_REALLOC(_zone_class_id, n_faces, int);
+  CS_REALLOC(_zone_class_id, n_faces, int);
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_faces; i++)
     _zone_class_id[i] = _zone_id[i];
@@ -400,15 +400,15 @@ cs_boundary_zone_initialize(void)
 void
 cs_boundary_zone_finalize(void)
 {
-  BFT_FREE(_zone_class_id);
-  BFT_FREE(_zone_id);
+  CS_FREE(_zone_class_id);
+  CS_FREE(_zone_id);
 
   for (int i = 0; i < _n_zones; i++) {
     if (i % _CS_ZONE_S_ALLOC_SIZE == 0)
-      BFT_FREE(_zones[i]);
+      CS_FREE(_zones[i]);
   }
 
-  BFT_FREE(_zones);
+  CS_FREE(_zones);
 
   cs_map_name_to_id_destroy(&_zone_map);
 
@@ -510,7 +510,7 @@ cs_boundary_zone_build_all(bool  mesh_modified)
      (start with zone 1, as 0 is default) */
 
   if (mesh_modified)
-    BFT_REALLOC(_zone_id, m->n_b_faces, int);
+    CS_REALLOC(_zone_id, m->n_b_faces, int);
 
   if (mesh_modified || has_time_varying) {
 

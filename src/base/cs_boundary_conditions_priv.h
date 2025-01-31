@@ -170,7 +170,7 @@ typedef struct {
 
   cs_destructor_t        *model_inlet_del;    /*!< Destructor for associated
                                                 inlet structure (use simple
-                                                BFT_FREE if no destructor
+                                                CS_FREE if no destructor
                                                 is associated) */
 
 } cs_boundary_conditions_open_t;

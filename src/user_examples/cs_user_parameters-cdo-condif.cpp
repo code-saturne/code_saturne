@@ -226,7 +226,7 @@ _free_input(void   *input)
 {
   double *_input = (double *)input;
 
-  BFT_FREE(_input);
+  CS_FREE(_input);
   input = nullptr;
 
   return nullptr;
@@ -806,7 +806,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_equation_param_t  *eqp2 = cs_equation_param_by_name("MyEq");
 
     double  *input = nullptr;
-    BFT_MALLOC(input, 2, double);
+    CS_MALLOC(input, 2, double);
 
     input[0] = 0.5;            /* Value of the reaction coefficient */
     input[1] = 4.0*atan(1.0);  /* Value of pi (computed only once) */

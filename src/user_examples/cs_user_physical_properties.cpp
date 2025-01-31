@@ -276,11 +276,11 @@ cs_user_physical_properties_turb_viscosity(cs_domain_t      *domain)
   cs_real_t  *mijmij;
   cs_real_t *s_n, *sf_n;
   cs_real_3_t *f_vel;
-  BFT_MALLOC(mijlij, n_cells_ext, cs_real_t);
-  BFT_MALLOC(mijmij, n_cells_ext, cs_real_t);
-  BFT_MALLOC(s_n, n_cells_ext, cs_real_t);
-  BFT_MALLOC(sf_n, n_cells_ext, cs_real_t);
-  BFT_MALLOC(f_vel, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(mijlij, n_cells_ext, cs_real_t);
+  CS_MALLOC(mijmij, n_cells_ext, cs_real_t);
+  CS_MALLOC(s_n, n_cells_ext, cs_real_t);
+  CS_MALLOC(sf_n, n_cells_ext, cs_real_t);
+  CS_MALLOC(f_vel, n_cells_ext, cs_real_3_t);
 
   /* Compute:
    *   s_n (aka sqrt(2SijSij))
@@ -307,11 +307,11 @@ cs_user_physical_properties_turb_viscosity(cs_domain_t      *domain)
   }
 
   /* Free memory */
-  BFT_FREE(s_n);
-  BFT_FREE(sf_n);
-  BFT_FREE(f_vel);
-  BFT_FREE(mijmij);
-  BFT_FREE(mijlij);
+  CS_FREE(s_n);
+  CS_FREE(sf_n);
+  CS_FREE(f_vel);
+  CS_FREE(mijmij);
+  CS_FREE(mijlij);
 
   cs_parall_sum(1, CS_REAL_TYPE, &mijlijmoy);
   cs_parall_sum(1, CS_REAL_TYPE, &mijmijmoy);

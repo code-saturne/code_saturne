@@ -121,7 +121,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = nullptr;
 
-    BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(criteria,
                                 &n_selected_faces,
@@ -139,7 +139,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     /* Free temporary memory */
 
-    BFT_FREE(selected_faces);
+    CS_FREE(selected_faces);
 
   }
   /*! [mesh_modify_extrude_1] */
@@ -161,7 +161,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     cs_lnum_t n_faces;
     cs_lnum_t *face_list;
 
-    BFT_MALLOC(face_list, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(face_list, mesh->n_b_faces, cs_lnum_t);
 
     for (int z_id = 0; z_id < n_zones; z_id++) {
 
@@ -176,7 +176,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     }
 
-    BFT_FREE(face_list);
+    CS_FREE(face_list);
 
     /* Determine vertex values for extrusion */
 
@@ -229,7 +229,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = nullptr;
 
-    BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(criteria,
                                 &n_selected_faces,
@@ -247,7 +247,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     /* Free temporary memory */
 
-    BFT_FREE(selected_faces);
+    CS_FREE(selected_faces);
 
     /* Compute the number of extruded cells */
 
@@ -257,7 +257,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
      * the initial number of cells (before extrusion). */
 
     cs_lnum_t  *selected_elts = nullptr;
-    BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
+    CS_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
 
     for(int i=0; i<n_selected_elts; i++)
       selected_elts[i] = n_prev_cells + i;
@@ -268,7 +268,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
                             n_selected_elts,
                             selected_elts);
 
-    BFT_FREE(selected_elts);
+    CS_FREE(selected_elts);
   }
   /*! [mesh_modify_extrude_3] */
 
@@ -281,7 +281,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
 
-    BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
+    CS_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_elts,
@@ -292,7 +292,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
                             n_selected_elts,
                             selected_elts);
 
-    BFT_FREE(selected_elts);
+    CS_FREE(selected_elts);
 
     /* Mark mesh as modified to save it */
 
@@ -309,7 +309,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
 
-    BFT_MALLOC(selected_elts, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(selected_elts, mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(criteria,
                                 &n_selected_elts,
@@ -320,7 +320,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
                               n_selected_elts,
                               selected_elts);
 
-    BFT_FREE(selected_elts);
+    CS_FREE(selected_elts);
 
     /* Mark mesh as modified to save it */
 
@@ -353,7 +353,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     cs_lnum_t n_faces;
     cs_lnum_t *face_list;
 
-    BFT_MALLOC(face_list, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(face_list, mesh->n_b_faces, cs_lnum_t);
 
     for (int z_id = 0; z_id < n_zones; z_id++) {
 
@@ -368,7 +368,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     }
 
-    BFT_FREE(face_list);
+    CS_FREE(face_list);
 
     /* Determine vertex values for extrusion */
 
@@ -393,7 +393,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     cs_lnum_t   n_selected_cells = 0;
     cs_lnum_t  *selected_cells = nullptr;
 
-    BFT_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+    CS_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -404,7 +404,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
                                    n_selected_cells,
                                    selected_cells);
 
-    BFT_FREE(selected_cells);
+    CS_FREE(selected_cells);
   }
   /*! [mesh_modify_refine_1] */
 
@@ -451,14 +451,14 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     const char criteria[] = "box[-250, -250, 0, 250, 250, 100]";
 
-    BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
+    CS_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_elts,
                               selected_elts);
 
     char *flag;
-    BFT_MALLOC(flag, mesh->n_cells, char);
+    CS_MALLOC(flag, mesh->n_cells, char);
 
     for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
       flag[i] = 0;
@@ -470,8 +470,8 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     cs_mesh_remove_cells(mesh, flag, "[Building]");
 
-    BFT_FREE(selected_elts);
-    BFT_FREE(flag);
+    CS_FREE(selected_elts);
+    CS_FREE(flag);
 
     /* Mark for re-partitioning */
     mesh->modified |= CS_MESH_MODIFIED_BALANCE;
@@ -499,7 +499,7 @@ cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
     cs_lnum_t   n_faces = 0;
     cs_lnum_t  *face_ids = nullptr;
 
-    BFT_MALLOC(face_ids, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(face_ids, mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list("symmetry",
                                 &n_faces,
@@ -510,7 +510,7 @@ cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
                                                n_faces,
                                                face_ids);
 
-    BFT_FREE(face_ids);
+    CS_FREE(face_ids);
     /*! [mesh_modify_ignore_symmetry_faces] */
   }
 }

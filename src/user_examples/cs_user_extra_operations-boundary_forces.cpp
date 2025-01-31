@@ -121,7 +121,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     /* compute static pressure on selected boundary faces */
     cs_real_t *p_b_val;
-    BFT_MALLOC(p_b_val, zn->n_elts, cs_real_t);
+    CS_MALLOC(p_b_val, zn->n_elts, cs_real_t);
     cs_post_b_pressure(zn->n_elts, zn->elt_ids, p_b_val);
 
     for (cs_lnum_t e_id = 0; e_id < zn->n_elts; e_id++) {
@@ -130,7 +130,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
         total_b_p_forces[i] += p_b_val[e_id]*b_f_face_normal[face_id][i];
     }
 
-    BFT_FREE(p_b_val);
+    CS_FREE(p_b_val);
 
     /* parallel sum */
     cs_parall_sum(3, CS_REAL_TYPE, total_b_p_forces);

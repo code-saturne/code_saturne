@@ -81,12 +81,12 @@ _i_faces_select_example(void         *input,
 
   /* Allocate selection list */
 
-  BFT_MALLOC(i_face_ids, m->n_i_faces, cs_lnum_t);
+  CS_MALLOC(i_face_ids, m->n_i_faces, cs_lnum_t);
 
   /* Build mask on families matching groups "2" (1), "3" (2) */
 
-  BFT_MALLOC(family_list, m->n_families, int);
-  BFT_MALLOC(family_mask, m->n_families, int);
+  CS_MALLOC(family_list, m->n_families, int);
+  CS_MALLOC(family_mask, m->n_families, int);
 
   for (i = 0; i < m->n_families; i++)
     family_mask[i] = 0;
@@ -101,7 +101,7 @@ _i_faces_select_example(void         *input,
   for (i = 0; i < n_families; i++)
     family_mask[family_list[i] - 1] += 2;
 
-  BFT_FREE(family_list);
+  CS_FREE(family_list);
 
   /* Now that mask is built, test for adjacency */
 
@@ -126,8 +126,8 @@ _i_faces_select_example(void         *input,
 
   /* Free memory */
 
-  BFT_FREE(family_mask);
-  BFT_REALLOC(i_face_ids, n_i_faces, cs_lnum_t);
+  CS_FREE(family_mask);
+  CS_REALLOC(i_face_ids, n_i_faces, cs_lnum_t);
 
   /* Set return values */
 
@@ -162,7 +162,7 @@ _b_faces_select_example(void         *input,
 
   /* Allocate selection list */
 
-  BFT_MALLOC(b_face_ids, m->n_b_faces, cs_lnum_t);
+  CS_MALLOC(b_face_ids, m->n_b_faces, cs_lnum_t);
 
   /* Use simple selection function */
 
@@ -170,7 +170,7 @@ _b_faces_select_example(void         *input,
 
   /* Adjust array to final size (cleaner, but not required) */
 
-  BFT_REALLOC(b_face_ids, n_b_faces, cs_lnum_t);
+  CS_REALLOC(b_face_ids, n_b_faces, cs_lnum_t);
 
   /* Set return values */
 
@@ -216,7 +216,7 @@ _he_fraction_05_select(void        *input,
 
   if (f->val != nullptr) {
 
-    BFT_MALLOC(_cell_ids, m->n_cells, cs_lnum_t); /* Allocate selection list */
+    CS_MALLOC(_cell_ids, m->n_cells, cs_lnum_t); /* Allocate selection list */
 
     for (cs_lnum_t i = 0; i < m->n_cells; i++) {
       if (f->val[i] > 5.e-2) {
@@ -225,8 +225,8 @@ _he_fraction_05_select(void        *input,
       }
     }
 
-    BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
-                                                    but not required) */
+    CS_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
+                                                   but not required) */
 
   }
 
@@ -685,7 +685,7 @@ cs_user_postprocess_values(const char            *mesh_name,
     if (cs_glob_turb_model->itytur == 3) {
 
       cs_real_t *s_cell;
-      BFT_MALLOC(s_cell, n_cells, cs_real_t);
+      CS_MALLOC(s_cell, n_cells, cs_real_t);
 
       const cs_real_6_t *cvar_r = (const cs_real_6_t *)(CS_F_(rij)->val);
       for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -711,7 +711,7 @@ cs_user_postprocess_values(const char            *mesh_name,
        * compute xsi and eta invariant of the Lumley triangle */
 
       cs_real_2_t *inv = nullptr;
-      BFT_MALLOC(inv, n_cells, cs_real_2_t);
+      CS_MALLOC(inv, n_cells, cs_real_2_t);
 
       cs_post_anisotropy_invariant(n_cells,
                                    cell_list,
@@ -730,8 +730,8 @@ cs_user_postprocess_values(const char            *mesh_name,
                         nullptr,                           /* b_face_vals */
                         ts);
 
-      BFT_FREE(s_cell);
-      BFT_FREE(inv);
+      CS_FREE(s_cell);
+      CS_FREE(inv);
 
     }
 
@@ -757,7 +757,7 @@ cs_user_postprocess_values(const char            *mesh_name,
     /* Interior faces  */
 
     if (n_i_faces > 0) {
-      BFT_MALLOC(s_i_faces, n_i_faces, cs_real_t);
+      CS_MALLOC(s_i_faces, n_i_faces, cs_real_t);
 
       for (cs_lnum_t i = 0; i < n_i_faces; i++) {
         cs_lnum_t face_id = i_face_list[i];
@@ -771,7 +771,7 @@ cs_user_postprocess_values(const char            *mesh_name,
     /* Boundary faces  */
 
     if (n_b_faces > 0) {
-      BFT_MALLOC(s_b_faces, n_b_faces, cs_real_t);
+      CS_MALLOC(s_b_faces, n_b_faces, cs_real_t);
 
       for (cs_lnum_t i = 0; i < n_b_faces; i++) {
         cs_lnum_t face_id = b_face_list[i];
@@ -793,8 +793,8 @@ cs_user_postprocess_values(const char            *mesh_name,
                       s_b_faces,                      /* b_face_vals */
                       ts);
 
-    BFT_FREE(s_i_faces);
-    BFT_FREE(s_b_faces);
+    CS_FREE(s_i_faces);
+    CS_FREE(s_b_faces);
   }
   /*< [postprocess_values_ex_2] */
 

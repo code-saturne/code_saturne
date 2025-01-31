@@ -41,12 +41,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_all_to_all.h"
 #include "base/cs_base.h"
 #include "base/cs_block_dist.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 
 #include "fvm/fvm_periodicity.h"
@@ -169,7 +169,7 @@ _cs_interface_create(void)
 {
   cs_interface_t  *_interface;
 
-  BFT_MALLOC(_interface, 1, cs_interface_t);
+  CS_MALLOC(_interface, 1, cs_interface_t);
 
   _interface->rank = -1;
   _interface->size = 0;
@@ -200,11 +200,11 @@ _cs_interface_destroy(cs_interface_t  **itf)
   cs_interface_t  *_itf = *itf;
 
   if (_itf != nullptr) {
-    BFT_FREE(_itf->tr_index);
-    BFT_FREE(_itf->elt_id);
-    BFT_FREE(_itf->match_id);
-    BFT_FREE(_itf->send_order);
-    BFT_FREE(_itf);
+    CS_FREE(_itf->tr_index);
+    CS_FREE(_itf->elt_id);
+    CS_FREE(_itf->match_id);
+    CS_FREE(_itf->send_order);
+    CS_FREE(_itf);
   }
 
   *itf = _itf;
@@ -344,8 +344,8 @@ _sort_periodic_tuples(cs_lnum_t    *n_block_tuples,
 
   /* Sort periodic tuples by local correspondant */
 
-  BFT_MALLOC(order, n_tuples, cs_lnum_t);
-  BFT_MALLOC(tuples_tmp, n_tuples*3, cs_gnum_t);
+  CS_MALLOC(order, n_tuples, cs_lnum_t);
+  CS_MALLOC(tuples_tmp, n_tuples*3, cs_gnum_t);
 
   cs_order_gnum_allocated_s(nullptr,
                             tuples,
@@ -374,12 +374,12 @@ _sort_periodic_tuples(cs_lnum_t    *n_block_tuples,
   }
   n_tuples = j / 3;
 
-  BFT_FREE(order);
+  CS_FREE(order);
 
   /* Resize input/outpout array if duplicates were removed */
 
   if (n_tuples <= *n_block_tuples) {
-    BFT_REALLOC(tuples, n_tuples*3, cs_gnum_t);
+    CS_REALLOC(tuples, n_tuples*3, cs_gnum_t);
     *n_block_tuples = n_tuples;
     *block_tuples = tuples;
   }
@@ -388,7 +388,7 @@ _sort_periodic_tuples(cs_lnum_t    *n_block_tuples,
 
   memcpy(tuples, tuples_tmp, sizeof(cs_gnum_t)*n_tuples*3);
 
-  BFT_FREE(tuples_tmp);
+  CS_FREE(tuples_tmp);
 }
 
 /*----------------------------------------------------------------------------
@@ -436,7 +436,7 @@ _transform_combine_info(const fvm_periodicity_t   *periodicity,
   n_rows_1 = tr_level_idx[1];
   n_vals_1 = n_rows_1*n_rows_1;
 
-  BFT_MALLOC(tr_combine_1, n_vals_1, int);
+  CS_MALLOC(tr_combine_1, n_vals_1, int);
 
   for (i = 0; i < n_vals_1; i++)
     tr_combine_1[i] = -1;
@@ -474,7 +474,7 @@ _transform_combine_info(const fvm_periodicity_t   *periodicity,
 
     /* Allocate and populate array */
 
-    BFT_MALLOC(tr_combine_2, n_vals_2, int);
+    CS_MALLOC(tr_combine_2, n_vals_2, int);
 
     for (i = 0; i < n_vals_2; i++)
       tr_combine_2[i] = -1;
@@ -502,7 +502,7 @@ _transform_combine_info(const fvm_periodicity_t   *periodicity,
 
     }
 
-    BFT_FREE(tr_combine_1);
+    CS_FREE(tr_combine_1);
 
     /* Set return values */
 
@@ -588,7 +588,7 @@ _block_global_num_to_equiv(cs_lnum_t          n_elts_recv,
      by increasing number. */
 
   cs_lnum_t   *recv_order = nullptr;
-  BFT_MALLOC(recv_order, n_elts_recv, cs_lnum_t);
+  CS_MALLOC(recv_order, n_elts_recv, cs_lnum_t);
 
   cs_order_gnum_allocated(nullptr,
                           recv_global_num,
@@ -622,19 +622,19 @@ _block_global_num_to_equiv(cs_lnum_t          n_elts_recv,
   if (equiv_id[recv_order[n_elts_recv-1]] > -1)
     e.count++;
 
-  BFT_FREE(recv_order);
+  CS_FREE(recv_order);
 
   /* Count number of elements associated with each equivalence */
 
   int  *multiple;
-  BFT_MALLOC(multiple, e.count, int);
+  CS_MALLOC(multiple, e.count, int);
   for (cs_lnum_t i = 0; i < e.count; multiple[i++] = 0);
   for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
     if (equiv_id[i] > -1)
       multiple[equiv_id[i]] += 1;
   }
 
-  BFT_MALLOC(e.shift, e.count+1, cs_lnum_t);
+  CS_MALLOC(e.shift, e.count+1, cs_lnum_t);
   e.shift[0] = 0;
   for (cs_lnum_t i = 0; i < e.count; i++) {
     e.shift[i+1] = e.shift[i] + multiple[i];
@@ -643,8 +643,8 @@ _block_global_num_to_equiv(cs_lnum_t          n_elts_recv,
 
   /* Build equivalence data */
 
-  BFT_MALLOC(e.rank, e.shift[e.count], int);
-  BFT_MALLOC(e.num, e.shift[e.count], cs_lnum_t);
+  CS_MALLOC(e.rank, e.shift[e.count], int);
+  CS_MALLOC(e.num, e.shift[e.count], cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
     if (equiv_id[i] > -1) {
@@ -655,7 +655,7 @@ _block_global_num_to_equiv(cs_lnum_t          n_elts_recv,
     }
   }
 
-  BFT_FREE(multiple);
+  CS_FREE(multiple);
 
   return e;
 }
@@ -718,7 +718,7 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
     }
   }
 
-  BFT_MALLOC(n_elts_rank, max_rank + 1, cs_lnum_t);
+  CS_MALLOC(n_elts_rank, max_rank + 1, cs_lnum_t);
 
   for (i = 0; i < max_rank + 1; n_elts_rank[i++] = 0);
 
@@ -747,9 +747,9 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
 
   ifs->size += n_ranks;
 
-  BFT_REALLOC(ifs->interfaces,
-              ifs->size,
-              cs_interface_t *);
+  CS_REALLOC(ifs->interfaces,
+             ifs->size,
+             cs_interface_t *);
 
   for (i = start_id; i < ifs->size; i++)
     ifs->interfaces[i] = _cs_interface_create();
@@ -757,7 +757,7 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
   /* Initialize rank info and interface id */
 
   n_ranks = 0;
-  BFT_MALLOC(interface_id, max_rank + 1, int);
+  CS_MALLOC(interface_id, max_rank + 1, int);
   for (i = 0; i < max_rank + 1; i++) {
     if (n_elts_rank[i] > 0) {
       interface_id[i] = start_id + n_ranks++;
@@ -768,12 +768,12 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
       interface_id[i] = -1;
   }
 
-  BFT_FREE(n_elts_rank);
+  CS_FREE(n_elts_rank);
 
   /* n_elts_rank_tr will be used as a position counter for new interfaces */
 
   n_elts_rank_tr_size = (ifs->size - start_id)*_tr_stride;
-  BFT_MALLOC(n_elts_rank_tr, n_elts_rank_tr_size, cs_lnum_t);
+  CS_MALLOC(n_elts_rank_tr, n_elts_rank_tr_size, cs_lnum_t);
   for (i = 0; i < n_elts_rank_tr_size; i++)
     n_elts_rank_tr[i] = 0;
 
@@ -781,12 +781,12 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
 
     _interface = ifs->interfaces[i];
 
-    BFT_MALLOC(_interface->elt_id, _interface->size, cs_lnum_t);
-    BFT_MALLOC(_interface->match_id, _interface->size, cs_lnum_t);
+    CS_MALLOC(_interface->elt_id, _interface->size, cs_lnum_t);
+    CS_MALLOC(_interface->match_id, _interface->size, cs_lnum_t);
 
     if (_tr_index_size > 1) {
       _interface->tr_index_size = _tr_index_size;
-      BFT_MALLOC(_interface->tr_index, _interface->tr_index_size, cs_lnum_t);
+      CS_MALLOC(_interface->tr_index, _interface->tr_index_size, cs_lnum_t);
       for (k = 0; k < _interface->tr_index_size; k++)
         _interface->tr_index[k] = 0;
     }
@@ -889,8 +889,8 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
 
   /* n_elts_rank will now be used as a position counter for new interfaces */
 
-  BFT_FREE(n_elts_rank_tr);
-  BFT_FREE(interface_id);
+  CS_FREE(n_elts_rank_tr);
+  CS_FREE(interface_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -945,7 +945,7 @@ _add_global_equiv(cs_interface_set_t  *ifs,
                                                         global_num);
 
   cs_lnum_t  *send_num = nullptr;
-  BFT_MALLOC(send_num, n_elts, cs_lnum_t);
+  CS_MALLOC(send_num, n_elts, cs_lnum_t);
   for (cs_lnum_t i = 0; i < n_elts; i++)
     send_num[i] = i+1;
 
@@ -954,7 +954,7 @@ _add_global_equiv(cs_interface_set_t  *ifs,
                                                  false, /* reverse */
                                                  send_num);
 
-  BFT_FREE(send_num);
+  CS_FREE(send_num);
 
   cs_lnum_t n_elts_recv = cs_all_to_all_n_elts_dest(d);
 
@@ -963,7 +963,7 @@ _add_global_equiv(cs_interface_set_t  *ifs,
   /* Build equivalence data */
 
   cs_lnum_t  *equiv_id = nullptr;
-  BFT_MALLOC(equiv_id, n_elts_recv, cs_lnum_t);
+  CS_MALLOC(equiv_id, n_elts_recv, cs_lnum_t);
 
   _per_block_equiv_t  e = _block_global_num_to_equiv(n_elts_recv,
                                                      src_rank,
@@ -973,15 +973,15 @@ _add_global_equiv(cs_interface_set_t  *ifs,
 
   /* Now free Memory */
 
-  BFT_FREE(recv_num);
-  BFT_FREE(recv_global_num);
+  CS_FREE(recv_num);
+  CS_FREE(recv_global_num);
 
   /* Now that equivalences are marked, count for each rank; for each
      equivalence, we will need to send the corresponding element
      numbers and ranks, for a total of 2*(e.multiple[...] - 1) values. */
 
   cs_lnum_t  *block_index;
-  BFT_MALLOC(block_index, n_elts_recv+1, cs_lnum_t);
+  CS_MALLOC(block_index, n_elts_recv+1, cs_lnum_t);
 
   block_index[0] = 0;
   for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
@@ -1001,7 +1001,7 @@ _add_global_equiv(cs_interface_set_t  *ifs,
   /* Now prepare new send buffer */
 
   cs_lnum_t  *block_equiv;
-  BFT_MALLOC(block_equiv, block_index[n_elts_recv], cs_lnum_t);
+  CS_MALLOC(block_equiv, block_index[n_elts_recv], cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
     if (equiv_id[i] > -1) {
@@ -1031,14 +1031,14 @@ _add_global_equiv(cs_interface_set_t  *ifs,
   /* Free temporary (block) equivalence info */
 
   e.count = 0;
-  BFT_FREE(e.shift);
-  BFT_FREE(e.rank);
+  CS_FREE(e.shift);
+  CS_FREE(e.rank);
   if (e.tr_id != nullptr)
-    BFT_FREE(e.tr_id);
-  BFT_FREE(e.num);
+    CS_FREE(e.tr_id);
+  CS_FREE(e.num);
 
-  BFT_FREE(src_rank);
-  BFT_FREE(equiv_id);
+  CS_FREE(src_rank);
+  CS_FREE(equiv_id);
 
   /* Send prepared block data to destination rank */
 
@@ -1053,9 +1053,9 @@ _add_global_equiv(cs_interface_set_t  *ifs,
   /* At this stage, MPI operations are finished; we may release
      the corresponding counts and indexes */
 
-  BFT_FREE(block_equiv);
-  BFT_FREE(part_index);
-  BFT_FREE(block_index);
+  CS_FREE(block_equiv);
+  CS_FREE(part_index);
+  CS_FREE(block_index);
 
   cs_all_to_all_destroy(&d);
 
@@ -1066,7 +1066,7 @@ _add_global_equiv(cs_interface_set_t  *ifs,
                               n_vals_part,
                               part_equiv);
 
-  BFT_FREE(part_equiv);
+  CS_FREE(part_equiv);
 }
 
 /*----------------------------------------------------------------------------
@@ -1106,7 +1106,7 @@ _combine_periodic_tuples(size_t                     block_size,
 
   int n_tr = fvm_periodicity_get_n_transforms(periodicity);
 
-  BFT_MALLOC(tr_reverse_id, n_tr, int);
+  CS_MALLOC(tr_reverse_id, n_tr, int);
 
   for (int i = 0; i < n_tr; i++)
     tr_reverse_id[i] = fvm_periodicity_get_reverse_id(periodicity, i);
@@ -1161,8 +1161,8 @@ _combine_periodic_tuples(size_t                     block_size,
       end_id += 1;
     }
 
-    BFT_MALLOC(send_rank, n_send, int);
-    BFT_MALLOC(send_tuples, n_send*3, cs_gnum_t);
+    CS_MALLOC(send_rank, n_send, int);
+    CS_MALLOC(send_tuples, n_send*3, cs_gnum_t);
 
     /* Now exchange combined tuples */
 
@@ -1220,7 +1220,7 @@ _combine_periodic_tuples(size_t                     block_size,
 
     assert((cs_gnum_t)(l*2) == n_send);
 
-    BFT_FREE(tr_combine);
+    CS_FREE(tr_combine);
 
     cs_all_to_all_t  *d = cs_all_to_all_create(n_send,
                                                0,
@@ -1235,20 +1235,20 @@ _combine_periodic_tuples(size_t                     block_size,
                                                       false, /* reverse */
                                                       send_tuples);
 
-    BFT_FREE(send_tuples);
+    CS_FREE(send_tuples);
 
     cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
 
     cs_all_to_all_destroy(&d);
 
     if (n_recv > 0) {
-      BFT_REALLOC(_block_tuples, (_n_block_tuples + n_recv)*3, cs_gnum_t);
+      CS_REALLOC(_block_tuples, (_n_block_tuples + n_recv)*3, cs_gnum_t);
       memcpy(_block_tuples + _n_block_tuples*3,
              recv_tuples,
              n_recv*3*sizeof(cs_gnum_t));
     }
 
-    BFT_FREE(recv_tuples);
+    CS_FREE(recv_tuples);
 
     /* Finally, merge additional tuples received for block with
        existing periodicity information */
@@ -1268,7 +1268,7 @@ _combine_periodic_tuples(size_t                     block_size,
 
   }
 
-  BFT_FREE(tr_reverse_id);
+  CS_FREE(tr_reverse_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -1320,8 +1320,8 @@ _exchange_periodic_tuples(size_t                    block_size,
   for (int list_id = 0; list_id < n_periodic_lists; list_id++)
     n_g_periodic_tuples += 2 * n_periodic_couples[list_id];
 
-  BFT_MALLOC(periodic_block_rank, n_g_periodic_tuples, int);
-  BFT_MALLOC(send_tuples, n_g_periodic_tuples*3, cs_gnum_t);
+  CS_MALLOC(periodic_block_rank, n_g_periodic_tuples, int);
+  CS_MALLOC(send_tuples, n_g_periodic_tuples*3, cs_gnum_t);
 
   /* Prepare lists to send to distant processors */
 
@@ -1382,11 +1382,11 @@ _exchange_periodic_tuples(size_t                    block_size,
 
   cs_lnum_t _n_block_tuples = cs_all_to_all_n_elts_dest(d_periodic);
 
-  BFT_FREE(send_tuples);
+  CS_FREE(send_tuples);
 
   cs_all_to_all_destroy(&d_periodic);
 
-  BFT_FREE(periodic_block_rank);
+  CS_FREE(periodic_block_rank);
 
   /* Sort periodic couples by local correspondant, remove duplicates */
 
@@ -1604,7 +1604,7 @@ _exchange_periodic_equiv(size_t                     block_size,
 
   /* Associate id in block for periodic couples prior to sending */
 
-  BFT_MALLOC(couple_block_id, n_block_couples, cs_lnum_t);
+  CS_MALLOC(couple_block_id, n_block_couples, cs_lnum_t);
 
   _periodic_couples_block_id(n_block_elements,
                              order,
@@ -1618,8 +1618,8 @@ _exchange_periodic_equiv(size_t                     block_size,
 
   int  *send_rank;
   cs_lnum_t  *src_index;
-  BFT_MALLOC(send_rank, n_block_couples, int);
-  BFT_MALLOC(src_index, n_block_couples+1, cs_lnum_t);
+  CS_MALLOC(send_rank, n_block_couples, int);
+  CS_MALLOC(src_index, n_block_couples+1, cs_lnum_t);
 
   _count_periodic_equiv_exchange(block_size,
                                  equiv_id,
@@ -1653,13 +1653,13 @@ _exchange_periodic_equiv(size_t                     block_size,
      types rather than casting all to cs_gnum_t is not feasible */
 
   cs_gnum_t *equiv_send;
-  BFT_MALLOC(equiv_send, src_index[n_block_couples], cs_gnum_t);
+  CS_MALLOC(equiv_send, src_index[n_block_couples], cs_gnum_t);
 
   /* temporary array to find reverse transforms */
 
   int n_tr = fvm_periodicity_get_n_transforms(periodicity);
 
-  BFT_MALLOC(reverse_tr_id, n_tr, int);
+  CS_MALLOC(reverse_tr_id, n_tr, int);
 
   for (int tr_id = 0; tr_id < n_tr; tr_id++)
     reverse_tr_id[tr_id] = fvm_periodicity_get_reverse_id(periodicity, tr_id);
@@ -1723,8 +1723,8 @@ _exchange_periodic_equiv(size_t                     block_size,
 
   }
 
-  BFT_FREE(couple_block_id);
-  BFT_FREE(reverse_tr_id);
+  CS_FREE(couple_block_id);
+  CS_FREE(reverse_tr_id);
 
   /* Parallel exchange */
 
@@ -1739,9 +1739,9 @@ _exchange_periodic_equiv(size_t                     block_size,
 
   /* Free memory */
 
-  BFT_FREE(src_index);
-  BFT_FREE(dest_index);
-  BFT_FREE(equiv_send);
+  CS_FREE(src_index);
+  CS_FREE(dest_index);
+  CS_FREE(equiv_send);
 
   cs_all_to_all_destroy(&d);
 
@@ -1760,14 +1760,14 @@ _exchange_periodic_equiv(size_t                     block_size,
       i += 3 + 2*equiv_recv[i];
     }
 
-    BFT_MALLOC(block_recv_num, pe.count, cs_gnum_t);
+    CS_MALLOC(block_recv_num, pe.count, cs_gnum_t);
 
-    BFT_MALLOC(pe.tr_id, pe.count, int);
+    CS_MALLOC(pe.tr_id, pe.count, int);
 
-    BFT_MALLOC(pe.shift, pe.count + 1, int);
+    CS_MALLOC(pe.shift, pe.count + 1, int);
 
-    BFT_MALLOC(pe.rank, j, int);
-    BFT_MALLOC(pe.num, j, cs_lnum_t);
+    CS_MALLOC(pe.rank, j, int);
+    CS_MALLOC(pe.num, j, cs_lnum_t);
 
     pe.shift[0] = 0;
 
@@ -1787,11 +1787,11 @@ _exchange_periodic_equiv(size_t                     block_size,
 
   }
 
-  BFT_FREE(equiv_recv);
+  CS_FREE(equiv_recv);
 
   /* Associate id in block for received periodic equivalences */
 
-  BFT_MALLOC(pe.block_id, pe.count, cs_lnum_t);
+  CS_MALLOC(pe.block_id, pe.count, cs_lnum_t);
 
   _periodic_couples_block_id(n_block_elements,
                              order,
@@ -1803,9 +1803,9 @@ _exchange_periodic_equiv(size_t                     block_size,
 
   /* Free remaining working arrays */
 
-  BFT_FREE(block_recv_num);
-  BFT_FREE(couple_block_id);
-  BFT_FREE(order);
+  CS_FREE(block_recv_num);
+  CS_FREE(couple_block_id);
+  CS_FREE(order);
 
   return pe;
 }
@@ -1870,7 +1870,7 @@ _merge_periodic_equiv(cs_lnum_t             n_block_elts,
       equiv_id[pe->block_id[i]] = new_count++;
   }
 
-  BFT_MALLOC(eq_mult, new_count, cs_lnum_t);
+  CS_MALLOC(eq_mult, new_count, cs_lnum_t);
 
   for (i = 0; i < old_count; i++)
     eq_mult[i] = equiv->shift[i+1] - equiv->shift[i];
@@ -1887,7 +1887,7 @@ _merge_periodic_equiv(cs_lnum_t             n_block_elts,
 
   /* Build new (merged) index, resetting eq_mult to use as a counter */
 
-  BFT_MALLOC(new_shift, new_count+1, cs_lnum_t);
+  CS_MALLOC(new_shift, new_count+1, cs_lnum_t);
 
   new_shift[0] = 0;
 
@@ -1910,7 +1910,7 @@ _merge_periodic_equiv(cs_lnum_t             n_block_elts,
     int *new_rank = nullptr;
     cs_lnum_t *new_num = nullptr;
 
-    BFT_MALLOC(new_rank, new_size, int);
+    CS_MALLOC(new_rank, new_size, int);
 
     for (i = 0; i < old_count; i++) {
       eq_mult[i] = equiv->shift[i+1] - equiv->shift[i];
@@ -1918,48 +1918,48 @@ _merge_periodic_equiv(cs_lnum_t             n_block_elts,
         new_rank[new_shift[i] + k] = equiv->rank[equiv->shift[i] + k];
     }
 
-    BFT_FREE(equiv->rank);
+    CS_FREE(equiv->rank);
     equiv->rank = new_rank;
 
-    BFT_MALLOC(new_num, new_size, cs_lnum_t);
+    CS_MALLOC(new_num, new_size, cs_lnum_t);
 
     for (i = 0; i < old_count; i++) {
       for (k = 0; k < eq_mult[i]; k++)
         new_num[new_shift[i] + k] = equiv->num[equiv->shift[i] + k];
     }
-    BFT_FREE(equiv->num);
+    CS_FREE(equiv->num);
     equiv->num = new_num;
 
     if (equiv->tr_id != nullptr) {
 
       int *new_tr_id = nullptr;
-      BFT_MALLOC(new_tr_id, new_size, int);
+      CS_MALLOC(new_tr_id, new_size, int);
       for (i = 0; i < old_count; i++) {
         for (k = 0; k < eq_mult[i]; k++)
           new_tr_id[new_shift[i] + k] = equiv->tr_id[equiv->shift[i] + k];
       }
-      BFT_FREE(equiv->tr_id);
+      CS_FREE(equiv->tr_id);
       equiv->tr_id = new_tr_id;
 
     }
 
     /* All is expanded at this stage, so old index may be replaced */
 
-    BFT_FREE(equiv->shift);
+    CS_FREE(equiv->shift);
     equiv->shift = new_shift;
 
   }
   else {
 
-    BFT_FREE(equiv->shift);
+    CS_FREE(equiv->shift);
     equiv->shift = new_shift;
-    BFT_MALLOC(equiv->rank, new_size, int);
-    BFT_MALLOC(equiv->num, new_size, cs_lnum_t);
+    CS_MALLOC(equiv->rank, new_size, int);
+    CS_MALLOC(equiv->num, new_size, cs_lnum_t);
 
   }
 
   if (equiv->tr_id == nullptr) {
-    BFT_MALLOC(equiv->tr_id, new_size, int);
+    CS_MALLOC(equiv->tr_id, new_size, int);
     for (j = 0; j < new_size; j++)
       equiv->tr_id[j] = 0;
   }
@@ -2003,15 +2003,15 @@ _merge_periodic_equiv(cs_lnum_t             n_block_elts,
 
   }
 
-  BFT_FREE(eq_mult);
+  CS_FREE(eq_mult);
 
   /* Free temporary periodic equivalence structure elements */
 
-  BFT_FREE(pe->block_id);
-  BFT_FREE(pe->tr_id);
-  BFT_FREE(pe->shift);
-  BFT_FREE(pe->rank);
-  BFT_FREE(pe->num);
+  CS_FREE(pe->block_id);
+  CS_FREE(pe->tr_id);
+  CS_FREE(pe->shift);
+  CS_FREE(pe->rank);
+  CS_FREE(pe->num);
 }
 
 /*----------------------------------------------------------------------------
@@ -2083,7 +2083,7 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
                                                         global_num);
 
   cs_lnum_t  *send_num = nullptr;
-  BFT_MALLOC(send_num, n_elts, cs_lnum_t);
+  CS_MALLOC(send_num, n_elts, cs_lnum_t);
   for (cs_lnum_t i = 0; i < n_elts; i++)
     send_num[i] = i+1;
 
@@ -2092,7 +2092,7 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
                                                  false, /* reverse */
                                                  send_num);
 
-  BFT_FREE(send_num);
+  CS_FREE(send_num);
 
   cs_lnum_t n_elts_recv = cs_all_to_all_n_elts_dest(d);
 
@@ -2122,7 +2122,7 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
   /* Build purely parallel equivalence data first */
 
   if (n_elts_recv > 0)
-    BFT_MALLOC(equiv_id, n_elts_recv, cs_lnum_t);
+    CS_MALLOC(equiv_id, n_elts_recv, cs_lnum_t);
 
   _per_block_equiv_t
     e = _block_global_num_to_equiv(n_elts_recv,
@@ -2146,7 +2146,7 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
                                   block_couples,
                                   comm);
 
-  BFT_FREE(recv_global_num);
+  CS_FREE(recv_global_num);
 
   _merge_periodic_equiv(n_elts_recv,
                         src_rank,
@@ -2157,10 +2157,10 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
 
   /* Free all arrays not needed anymore */
 
-  BFT_FREE(recv_num);
+  CS_FREE(recv_num);
 
-  BFT_FREE(couple_equiv_id);
-  BFT_FREE(block_couples);
+  CS_FREE(couple_equiv_id);
+  CS_FREE(block_couples);
   n_block_couples = 0;
 
   /* Now that equivalences are marked, count for each rank; for each
@@ -2170,7 +2170,7 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
      = (3*e.multiple[...]) - 1 values. */
 
   cs_lnum_t  *block_index;
-  BFT_MALLOC(block_index, n_elts_recv+1, cs_lnum_t);
+  CS_MALLOC(block_index, n_elts_recv+1, cs_lnum_t);
 
   block_index[0] = 0;
   for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
@@ -2190,7 +2190,7 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
   /* Now prepare new send buffer */
 
   cs_lnum_t  *block_equiv;
-  BFT_MALLOC(block_equiv, block_index[n_elts_recv], cs_lnum_t);
+  CS_MALLOC(block_equiv, block_index[n_elts_recv], cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
     if (equiv_id[i] > -1) {
@@ -2222,13 +2222,13 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
   /* Free temporary (block) equivalence info */
 
   e.count = 0;
-  BFT_FREE(e.shift);
-  BFT_FREE(e.rank);
-  BFT_FREE(e.tr_id);
-  BFT_FREE(e.num);
+  CS_FREE(e.shift);
+  CS_FREE(e.rank);
+  CS_FREE(e.tr_id);
+  CS_FREE(e.num);
 
-  BFT_FREE(src_rank);
-  BFT_FREE(equiv_id);
+  CS_FREE(src_rank);
+  CS_FREE(equiv_id);
 
   cs_lnum_t *part_equiv = cs_all_to_all_copy_indexed(d,
                                                      true, /* reverse */
@@ -2241,9 +2241,9 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
   /* At this stage, MPI operations are finished; we may release
      the corresponding counts and indexes */
 
-  BFT_FREE(block_equiv);
-  BFT_FREE(part_index);
-  BFT_FREE(block_index);
+  CS_FREE(block_equiv);
+  CS_FREE(part_index);
+  CS_FREE(block_index);
 
   cs_all_to_all_destroy(&d);
 
@@ -2256,7 +2256,7 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
                               n_vals_part,
                               part_equiv);
 
-  BFT_FREE(part_equiv);
+  CS_FREE(part_equiv);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -2306,7 +2306,7 @@ _define_periodic_couples_sp(const fvm_periodicity_t  *periodicity,
   for (list_id = 0, _n_couples = 0; list_id < n_periodic_lists; list_id++)
     _n_couples += n_periodic_couples[list_id] * 2;
 
-  BFT_MALLOC(_couples, _n_couples*3, cs_gnum_t);
+  CS_MALLOC(_couples, _n_couples*3, cs_gnum_t);
 
   /* Prepare lists */
 
@@ -2392,7 +2392,7 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
 
   n_tr = fvm_periodicity_get_n_transforms(periodicity);
 
-  BFT_MALLOC(tr_reverse_id, n_tr, int);
+  CS_MALLOC(tr_reverse_id, n_tr, int);
 
   for (i = 0; i < n_tr; i++)
     tr_reverse_id[i] = fvm_periodicity_get_reverse_id(periodicity, i);
@@ -2450,11 +2450,11 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
     /* Nothing to do for this combination level if add_count = 0 */
 
     if (add_count == 0) {
-      BFT_FREE(tr_combine);
+      CS_FREE(tr_combine);
       continue;
     }
 
-    BFT_REALLOC(_couples, _n_couples*3 + add_count, cs_gnum_t);
+    CS_REALLOC(_couples, _n_couples*3 + add_count, cs_gnum_t);
 
     _add_couples = _couples + _n_couples*3;
 
@@ -2508,7 +2508,7 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
       end_id += 1;
     }
 
-    BFT_FREE(tr_combine);
+    CS_FREE(tr_combine);
 
     /* Finally, merge additional couples received for block
        existing periodicity information */
@@ -2526,7 +2526,7 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
 
   }
 
-  BFT_FREE(tr_reverse_id);
+  CS_FREE(tr_reverse_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -2588,9 +2588,9 @@ _add_global_equiv_periodic_sp(cs_interface_set_t       *ifs,
 
   ifs->size += 1;
 
-  BFT_REALLOC(ifs->interfaces,
-              ifs->size,
-              cs_interface_t *);
+  CS_REALLOC(ifs->interfaces,
+             ifs->size,
+             cs_interface_t *);
 
   _interface = _cs_interface_create();
 
@@ -2604,13 +2604,13 @@ _add_global_equiv_periodic_sp(cs_interface_set_t       *ifs,
   _interface->tr_index_size
     = fvm_periodicity_get_n_transforms(periodicity) + 2;
 
-  BFT_MALLOC(_interface->tr_index, _interface->tr_index_size, cs_lnum_t);
-  BFT_MALLOC(_interface->elt_id, _interface->size, cs_lnum_t);
-  BFT_MALLOC(_interface->match_id, _interface->size, cs_lnum_t);
+  CS_MALLOC(_interface->tr_index, _interface->tr_index_size, cs_lnum_t);
+  CS_MALLOC(_interface->elt_id, _interface->size, cs_lnum_t);
+  CS_MALLOC(_interface->match_id, _interface->size, cs_lnum_t);
 
   /* Count couples for each transform */
 
-  BFT_MALLOC(n_elts_tr, _interface->tr_index_size - 2, cs_lnum_t);
+  CS_MALLOC(n_elts_tr, _interface->tr_index_size - 2, cs_lnum_t);
 
   for (i = 0; i < _interface->tr_index_size - 2; i++)
     n_elts_tr[i] = 0;
@@ -2648,7 +2648,7 @@ _add_global_equiv_periodic_sp(cs_interface_set_t       *ifs,
   else {
 
     cs_lnum_t *renum;
-    BFT_MALLOC(renum, n_elts, cs_lnum_t);
+    CS_MALLOC(renum, n_elts, cs_lnum_t);
     for (i = 0; i < n_elts; i++) {
       cs_lnum_t j = global_num[i] - 1;
       assert(j >= 0 && j < n_elts);
@@ -2667,13 +2667,13 @@ _add_global_equiv_periodic_sp(cs_interface_set_t       *ifs,
 
     }
 
-    BFT_FREE(renum);
+    CS_FREE(renum);
   }
 
   /* Free temporary arrays */
 
-  BFT_FREE(n_elts_tr);
-  BFT_FREE(couples);
+  CS_FREE(n_elts_tr);
+  CS_FREE(couples);
 }
 
 /*----------------------------------------------------------------------------
@@ -2720,8 +2720,8 @@ _order_elt_id(cs_interface_set_t  *ifs)
       tr_index = itf->tr_index;
     }
 
-    BFT_MALLOC(order, tr_index[tr_index_size - 1], cs_lnum_t);
-    BFT_MALLOC(tmp, tr_index[tr_index_size - 1], cs_lnum_t);
+    CS_MALLOC(order, tr_index[tr_index_size - 1], cs_lnum_t);
+    CS_MALLOC(tmp, tr_index[tr_index_size - 1], cs_lnum_t);
 
     for (section_id = 0; section_id < tr_index_size - 1; section_id++) {
 
@@ -2751,8 +2751,8 @@ _order_elt_id(cs_interface_set_t  *ifs)
 
     }
 
-    BFT_FREE(tmp);
-    BFT_FREE(order);
+    CS_FREE(tmp);
+    CS_FREE(order);
 
   }
 }
@@ -2795,8 +2795,8 @@ _order_by_elt_id(cs_interface_set_t  *ifs)
       tr_index = itf->tr_index;
     }
 
-    BFT_MALLOC(order, tr_index[tr_index_size - 1], cs_lnum_t);
-    BFT_MALLOC(buffer, tr_index[tr_index_size - 1]*2, cs_lnum_t);
+    CS_MALLOC(order, tr_index[tr_index_size - 1], cs_lnum_t);
+    CS_MALLOC(buffer, tr_index[tr_index_size - 1]*2, cs_lnum_t);
 
     for (section_id = 0; section_id < tr_index_size - 1; section_id++) {
 
@@ -2823,8 +2823,8 @@ _order_by_elt_id(cs_interface_set_t  *ifs)
 
     }
 
-    BFT_FREE(buffer);
-    BFT_FREE(order);
+    CS_FREE(buffer);
+    CS_FREE(order);
 
   }
 }
@@ -2869,7 +2869,7 @@ _match_id_to_send_order(cs_interface_set_t  *ifs)
       tr_index = itf->tr_index;
     }
 
-    BFT_MALLOC(order, tr_index[tr_index_size - 1], cs_lnum_t);
+    CS_MALLOC(order, tr_index[tr_index_size - 1], cs_lnum_t);
 
     for (section_id = 0; section_id < tr_index_size - 1; section_id++) {
 
@@ -2916,7 +2916,7 @@ _match_id_to_send_order(cs_interface_set_t  *ifs)
       assert(k == itf->size);
     }
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
   }
 }
@@ -2965,7 +2965,7 @@ _set_renumber_update_ids(cs_interface_set_t  *ifs,
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1)
-    BFT_MALLOC(send_buf, cs_interface_set_n_elts(ifs), cs_lnum_t);
+    CS_MALLOC(send_buf, cs_interface_set_n_elts(ifs), cs_lnum_t);
 
 #endif /* HAVE_MPI */
 
@@ -3008,8 +3008,8 @@ _set_renumber_update_ids(cs_interface_set_t  *ifs,
 
   if (n_ranks > 1) {
 
-    BFT_MALLOC(request, ifs->size*2, MPI_Request);
-    BFT_MALLOC(status, ifs->size*2, MPI_Status);
+    CS_MALLOC(request, ifs->size*2, MPI_Request);
+    CS_MALLOC(status, ifs->size*2, MPI_Status);
 
     for (i = 0, j = 0; i < ifs->size; i++) {
       cs_interface_t *itf = ifs->interfaces[i];
@@ -3039,9 +3039,9 @@ _set_renumber_update_ids(cs_interface_set_t  *ifs,
 
     MPI_Waitall(request_count, request, status);
 
-    BFT_FREE(request);
-    BFT_FREE(status);
-    BFT_FREE(send_buf);
+    CS_FREE(request);
+    CS_FREE(status);
+    CS_FREE(send_buf);
 
   }
 
@@ -3104,9 +3104,9 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
 
   assert(ifs != nullptr);
 
-  BFT_MALLOC(send_buf,
-             cs_interface_set_n_elts(ifs)*stride_size,
-             unsigned char);
+  CS_MALLOC(send_buf,
+            cs_interface_set_n_elts(ifs)*stride_size,
+            unsigned char);
 
   /* Prepare send buffer first (so that src is not used
      anymore after this, and may overlap with dest if desired);
@@ -3138,8 +3138,8 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1) {
-    BFT_MALLOC(request, ifs->size*2, MPI_Request);
-    BFT_MALLOC(status, ifs->size*2, MPI_Status);
+    CS_MALLOC(request, ifs->size*2, MPI_Request);
+    CS_MALLOC(status, ifs->size*2, MPI_Status);
   }
 
 #endif
@@ -3189,14 +3189,14 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
 
     MPI_Waitall(request_count, request, status);
 
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
 
   }
 
 #endif /* defined(HAVE_MPI) */
 
-  BFT_FREE(send_buf);
+  CS_FREE(send_buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3221,7 +3221,7 @@ _copy_sub_strided(cs_lnum_t   size_old,
   cs_lnum_t *array_n = nullptr;
 
   if (array_o != nullptr) {
-    BFT_MALLOC(array_n, size_new, cs_lnum_t);
+    CS_MALLOC(array_n, size_new, cs_lnum_t);
     for (cs_lnum_t i = 0; i < size_new; i++)
       array_n[i] = array_o[i/stride]*stride + i%stride;
   }
@@ -3257,7 +3257,7 @@ _copy_sub_blocked(cs_interface_t  *o,
 
   n->tr_index_size = o->tr_index_size;
   if (o->tr_index != nullptr) {
-    BFT_MALLOC(n->tr_index, n->tr_index_size, cs_lnum_t);
+    CS_MALLOC(n->tr_index, n->tr_index_size, cs_lnum_t);
     for (int j = 0; j < n->tr_index_size; j++)
       n->tr_index[j] = o->tr_index[j] * n_blocks;
   }
@@ -3270,7 +3270,7 @@ _copy_sub_blocked(cs_interface_t  *o,
 
   if (o->elt_id != nullptr) {
 
-    BFT_MALLOC(n->elt_id, size_new, cs_lnum_t);
+    CS_MALLOC(n->elt_id, size_new, cs_lnum_t);
 
     cs_lnum_t j = 0;
     for (int tr_id = 0; tr_id < n_tr; tr_id++) {
@@ -3284,7 +3284,7 @@ _copy_sub_blocked(cs_interface_t  *o,
     }
 
 
-    BFT_MALLOC(n->match_id, size_new, cs_lnum_t);
+    CS_MALLOC(n->match_id, size_new, cs_lnum_t);
 
     j = 0;
     for (int tr_id = 0; tr_id < n_tr; tr_id++) {
@@ -3516,7 +3516,7 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
 
   /* Create structure */
 
-  BFT_MALLOC(ifs, 1, cs_interface_set_t);
+  CS_MALLOC(ifs, 1, cs_interface_set_t);
   ifs->size = 0;
   ifs->interfaces = nullptr;
   ifs->periodicity = periodicity;
@@ -3528,7 +3528,7 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
 
   if (global_number != nullptr && parent_element_id != nullptr) {
 
-    BFT_MALLOC(_global_num, n_elts, cs_gnum_t);
+    CS_MALLOC(_global_num, n_elts, cs_gnum_t);
 
     for (size_t i = 0 ; i < (size_t)n_elts ; i++)
       _global_num[i] = global_number[parent_element_id[i]];
@@ -3582,7 +3582,7 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
 
   }
 
-  BFT_FREE(_global_num);
+  CS_FREE(_global_num);
 
   /* Finish preparation of interface set and return */
 
@@ -3610,8 +3610,8 @@ cs_interface_set_destroy(cs_interface_set_t  **ifs)
     for (i = 0; i < itfs->size; i++) {
       _cs_interface_destroy(&(itfs->interfaces[i]));
     }
-    BFT_FREE(itfs->interfaces);
-    BFT_FREE(itfs);
+    CS_FREE(itfs->interfaces);
+    CS_FREE(itfs);
     *ifs = itfs;
   }
 }
@@ -3639,7 +3639,7 @@ cs_interface_set_dup(const cs_interface_set_t  *ifs,
   if (stride < 1)
     stride = 1;
 
-  BFT_MALLOC(ifs_new, 1, cs_interface_set_t);
+  CS_MALLOC(ifs_new, 1, cs_interface_set_t);
 
   ifs_new->size = ifs->size;
   ifs_new->periodicity = ifs->periodicity;
@@ -3649,9 +3649,9 @@ cs_interface_set_dup(const cs_interface_set_t  *ifs,
   ifs_new->comm = ifs->comm;
 #endif
 
-  BFT_MALLOC(ifs_new->interfaces,
-             ifs->size,
-             cs_interface_t *);
+  CS_MALLOC(ifs_new->interfaces,
+            ifs->size,
+            cs_interface_t *);
 
   /* Loop on interfaces */
 
@@ -3665,7 +3665,7 @@ cs_interface_set_dup(const cs_interface_set_t  *ifs,
 
     n->tr_index_size = o->tr_index_size;
     if (o->tr_index != nullptr) {
-      BFT_MALLOC(n->tr_index, n->tr_index_size, cs_lnum_t);
+      CS_MALLOC(n->tr_index, n->tr_index_size, cs_lnum_t);
       for (int j = 0; j < n->tr_index_size; j++)
         n->tr_index[j] = o->tr_index[j] * stride;
     }
@@ -3706,14 +3706,14 @@ cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
   if (n_blocks < 1)
     n_blocks = 1;
 
-  BFT_MALLOC(ifs_new, 1, cs_interface_set_t);
+  CS_MALLOC(ifs_new, 1, cs_interface_set_t);
   ifs->match_id_rc = 0;
 
   ifs_new->size = ifs->size;
   ifs_new->periodicity = ifs->periodicity;
 
   cs_lnum_t *d_block_size;
-  BFT_MALLOC(d_block_size, ifs->size, cs_lnum_t);
+  CS_MALLOC(d_block_size, ifs->size, cs_lnum_t);
 
   int n_ranks = 1;
 
@@ -3736,8 +3736,8 @@ cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
 
     cs_lnum_t send_buf[1] = {block_size};
 
-    BFT_MALLOC(request, ifs->size*2, MPI_Request);
-    BFT_MALLOC(status, ifs->size*2, MPI_Status);
+    CS_MALLOC(request, ifs->size*2, MPI_Request);
+    CS_MALLOC(status, ifs->size*2, MPI_Status);
 
     for (int i = 0; i < ifs->size; i++) {
       cs_interface_t *itf = ifs->interfaces[i];
@@ -3767,8 +3767,8 @@ cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
 
     MPI_Waitall(request_count, request, status);
 
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
 
   }
 
@@ -3788,9 +3788,9 @@ cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
   /* Build new interface
      ------------------- */
 
-  BFT_MALLOC(ifs_new->interfaces,
-             ifs->size,
-             cs_interface_t *);
+  CS_MALLOC(ifs_new->interfaces,
+            ifs->size,
+            cs_interface_t *);
 
   /* Loop on interfaces */
 
@@ -3804,7 +3804,7 @@ cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
 
   cs_interface_set_free_match_ids(ifs);
 
-  BFT_FREE(d_block_size);
+  CS_FREE(d_block_size);
 
   /* Finish preparation of interface set and return */
 
@@ -3975,13 +3975,13 @@ cs_interface_set_renumber(cs_interface_set_t  *ifs,
     if (k < itf->size) {
       if (k > 0) {
         itf->size = k;
-        BFT_REALLOC(itf->elt_id, k, cs_lnum_t);
-        BFT_REALLOC(itf->match_id, k, cs_lnum_t);
+        CS_REALLOC(itf->elt_id, k, cs_lnum_t);
+        CS_REALLOC(itf->match_id, k, cs_lnum_t);
       }
       else {
-        BFT_FREE(itf->elt_id);
-        BFT_FREE(itf->match_id);
-        BFT_FREE(ifs->interfaces[i]);
+        CS_FREE(itf->elt_id);
+        CS_FREE(itf->match_id);
+        CS_FREE(ifs->interfaces[i]);
       }
     }
   }
@@ -3992,9 +3992,9 @@ cs_interface_set_renumber(cs_interface_set_t  *ifs,
   }
 
   if (n_interfaces < ifs->size) {
-    BFT_REALLOC(ifs->interfaces,
-                n_interfaces,
-                cs_interface_t *);
+    CS_REALLOC(ifs->interfaces,
+               n_interfaces,
+               cs_interface_t *);
     ifs->size = n_interfaces;
   }
 
@@ -4057,9 +4057,9 @@ cs_interface_set_copy_array(const cs_interface_set_t  *ifs,
 
   assert(ifs != nullptr);
 
-  BFT_MALLOC(send_buf,
-             cs_interface_set_n_elts(ifs)*stride_size,
-             unsigned char);
+  CS_MALLOC(send_buf,
+            cs_interface_set_n_elts(ifs)*stride_size,
+            unsigned char);
 
   /* Prepare send buffer first (so that src is not used
      anymore after this, and may overlap with dest if desired); */
@@ -4095,8 +4095,8 @@ cs_interface_set_copy_array(const cs_interface_set_t  *ifs,
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1) {
-    BFT_MALLOC(request, ifs->size*2, MPI_Request);
-    BFT_MALLOC(status, ifs->size*2, MPI_Status);
+    CS_MALLOC(request, ifs->size*2, MPI_Request);
+    CS_MALLOC(status, ifs->size*2, MPI_Status);
   }
 #endif
 
@@ -4145,14 +4145,14 @@ cs_interface_set_copy_array(const cs_interface_set_t  *ifs,
 
     MPI_Waitall(request_count, request, status);
 
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
 
   }
 
 #endif /* defined(HAVE_MPI) */
 
-  BFT_FREE(send_buf);
+  CS_FREE(send_buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4229,7 +4229,7 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
 
   /* Count number of elements to send or receive */
 
-  BFT_MALLOC(itf_index, 2*(ifs->size + 1), cs_lnum_t);
+  CS_MALLOC(itf_index, 2*(ifs->size + 1), cs_lnum_t);
   itf_s_index = itf_index;
   itf_s_index[0] = 0;
 
@@ -4265,7 +4265,7 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
   else
     itf_r_index = itf_s_index;
 
-  BFT_MALLOC(send_buf, send_size*type_size, unsigned char);
+  CS_MALLOC(send_buf, send_size*type_size, unsigned char);
 
   /* Prepare send buffer first (so that src is not used
      anymore after this, and may overlap with dest if desired); */
@@ -4301,8 +4301,8 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1) {
-    BFT_MALLOC(request, ifs->size*2, MPI_Request);
-    BFT_MALLOC(status, ifs->size*2, MPI_Status);
+    CS_MALLOC(request, ifs->size*2, MPI_Request);
+    CS_MALLOC(status, ifs->size*2, MPI_Status);
   }
 #endif
 
@@ -4353,15 +4353,15 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
 
     MPI_Waitall(request_count, request, status);
 
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
 
   }
 
 #endif /* defined(HAVE_MPI) */
 
-  BFT_FREE(send_buf);
-  BFT_FREE(itf_index);
+  CS_FREE(send_buf);
+  CS_FREE(itf_index);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4397,7 +4397,7 @@ cs_interface_set_inclusive_or(const cs_interface_set_t  *ifs,
   cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
   unsigned char *buf = nullptr;
 
-  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+  CS_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
 
   if (stride < 2 || interlace)
     cs_interface_set_copy_array(ifs,
@@ -4568,7 +4568,7 @@ cs_interface_set_inclusive_or(const cs_interface_set_t  *ifs,
               (int)datatype);
   }
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4604,7 +4604,7 @@ cs_interface_set_sum(const cs_interface_set_t  *ifs,
   cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
   unsigned char *buf = nullptr;
 
-  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+  CS_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
 
   if (stride < 2 || interlace)
     cs_interface_set_copy_array(ifs,
@@ -4823,7 +4823,7 @@ cs_interface_set_sum(const cs_interface_set_t  *ifs,
               (int)datatype);
   }
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4891,7 +4891,7 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
 
   fvm_periodicity_type_t tr_threshold = FVM_PERIODICITY_ROTATION;
 
-  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+  CS_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
 
   if (stride < 2 || interlace)
     cs_interface_set_copy_array(ifs,
@@ -5019,7 +5019,7 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
     }
   }
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5055,7 +5055,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
   cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
   unsigned char *buf = nullptr;
 
-  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+  CS_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
 
   if (stride < 2 || interlace)
     cs_interface_set_copy_array(ifs,
@@ -5292,7 +5292,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
               (int)datatype);
   }
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5328,7 +5328,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
   cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
   unsigned char *buf = nullptr;
 
-  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+  CS_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
 
   if (stride < 2 || interlace)
     cs_interface_set_copy_array(ifs,
@@ -5563,7 +5563,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
               (int)datatype);
   }
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5631,7 +5631,7 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
 
   fvm_periodicity_type_t tr_threshold = FVM_PERIODICITY_ROTATION;
 
-  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+  CS_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
 
   if (stride < 2 || interlace)
     cs_interface_set_copy_array(ifs,
@@ -5865,7 +5865,7 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
 
   }
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5908,7 +5908,7 @@ cs_interface_set_add_match_ids(cs_interface_set_t  *ifs)
 
   assert(ifs != nullptr);
 
-  BFT_MALLOC(send_buf, cs_interface_set_n_elts(ifs), cs_lnum_t);
+  CS_MALLOC(send_buf, cs_interface_set_n_elts(ifs), cs_lnum_t);
 
   /* Prepare send buffer first (for same rank, send_order is swapped
      with match_id directly) */
@@ -5922,7 +5922,7 @@ cs_interface_set_add_match_ids(cs_interface_set_t  *ifs)
        a send_order array, but not a match_id array */
 
     assert(itf->match_id == nullptr);
-    BFT_MALLOC(itf->match_id, itf->size, cs_lnum_t);
+    CS_MALLOC(itf->match_id, itf->size, cs_lnum_t);
 
     for (k = 0; k < itf->size; k++)
       send_buf[j + k] = itf->elt_id[itf->send_order[k]];
@@ -5935,8 +5935,8 @@ cs_interface_set_add_match_ids(cs_interface_set_t  *ifs)
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1) {
-    BFT_MALLOC(request, ifs->size*2, MPI_Request);
-    BFT_MALLOC(status, ifs->size*2, MPI_Status);
+    CS_MALLOC(request, ifs->size*2, MPI_Request);
+    CS_MALLOC(status, ifs->size*2, MPI_Status);
   }
 #endif
 
@@ -5983,14 +5983,14 @@ cs_interface_set_add_match_ids(cs_interface_set_t  *ifs)
 
     MPI_Waitall(request_count, request, status);
 
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
 
   }
 
 #endif /* defined(HAVE_MPI) */
 
-  BFT_FREE(send_buf);
+  CS_FREE(send_buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6018,7 +6018,7 @@ cs_interface_set_free_match_ids(cs_interface_set_t  *ifs)
   for (int i = 0; i < ifs->size; i++) {
     cs_interface_t *itf = ifs->interfaces[i];
     assert(itf->send_order != nullptr || itf->size == 0);
-    BFT_FREE(itf->match_id);
+    CS_FREE(itf->match_id);
   }
 }
 
@@ -6054,7 +6054,7 @@ cs_interface_tag_local_matches(const cs_interface_t     *itf,
   /* Build temporary local match id */
 
   cs_lnum_t  *match_id;
-  BFT_MALLOC(match_id, itf->size, cs_lnum_t);
+  CS_MALLOC(match_id, itf->size, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < itf->size; i++)
     match_id[i] = itf->elt_id[itf->send_order[i]];
@@ -6088,7 +6088,7 @@ cs_interface_tag_local_matches(const cs_interface_t     *itf,
 
   }
 
-  BFT_FREE(match_id);
+  CS_FREE(match_id);
 }
 
 /*----------------------------------------------------------------------------*/

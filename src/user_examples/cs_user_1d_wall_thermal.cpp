@@ -84,7 +84,7 @@ cs_user_1d_wall_thermal(int iappel)
 /*! [allocate] */
 
   if (iappel > 0)
-    BFT_MALLOC(lstelt, cs_glob_mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(lstelt, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
 /*! [allocate] */
 
@@ -237,7 +237,7 @@ cs_user_1d_wall_thermal(int iappel)
 
 /*! [deallocate] */
 
-  BFT_FREE(lstelt);
+  CS_FREE(lstelt);
 
 /*! [deallocate] */
 }

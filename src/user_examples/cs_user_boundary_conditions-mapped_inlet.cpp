@@ -207,7 +207,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     cs_real_t coord_shift[1][3] = {{5.95, 0, 0}};
 
     cs_lnum_t *cells_ids;
-    BFT_MALLOC(cells_ids, n_cells_ext, cs_lnum_t);
+    CS_MALLOC(cells_ids, n_cells_ext, cs_lnum_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       cells_ids[c_id] = c_id;
 
@@ -219,7 +219,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
                                          coord_shift,
                                          0,
                                          0.10);
-    BFT_FREE(cells_ids);
+    CS_FREE(cells_ids);
   }
 
   /*![example_1_map_init]*/

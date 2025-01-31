@@ -40,12 +40,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_base.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
@@ -185,7 +184,7 @@ cs_fan_define(int              fan_dim,
 
   /* Define a new fan */
 
-  BFT_MALLOC(fan, 1, cs_fan_t);
+  CS_MALLOC(fan, 1, cs_fan_t);
 
   fan->id = _cs_glob_n_fans;
 
@@ -238,7 +237,7 @@ cs_fan_define(int              fan_dim,
 
   if (_cs_glob_n_fans == _cs_glob_n_fans_max) {
     _cs_glob_n_fans_max = (_cs_glob_n_fans_max + 1) * 2;
-    BFT_REALLOC(_cs_glob_fans, _cs_glob_n_fans_max, cs_fan_t *);
+    CS_REALLOC(_cs_glob_fans, _cs_glob_n_fans_max, cs_fan_t *);
   }
 
   /* Adds in the fans array */
@@ -258,13 +257,13 @@ cs_fan_destroy_all(void)
 {
   for (int i = 0; i < _cs_glob_n_fans; i++) {
     cs_fan_t  *fan = _cs_glob_fans[i];
-    BFT_FREE(fan->cell_list);
-    BFT_FREE(fan);
+    CS_FREE(fan->cell_list);
+    CS_FREE(fan);
   }
 
   _cs_glob_n_fans_max = 0;
   _cs_glob_n_fans = 0;
-  BFT_FREE(_cs_glob_fans);
+  CS_FREE(_cs_glob_fans);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -423,7 +422,7 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
   /* Create an array for cells flaging */
   /*-----------------------------------*/
 
-  BFT_MALLOC(cell_fan_id, n_cells_ext, int);
+  CS_MALLOC(cell_fan_id, n_cells_ext, int);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
     cell_fan_id[cell_id] = -1;
@@ -492,13 +491,13 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
   /* Create the lists of cells belonging to each fan */
   /*-------------------------------------------------*/
 
-  BFT_MALLOC(cpt_cel_vtl, _cs_glob_n_fans, cs_lnum_t);
+  CS_MALLOC(cpt_cel_vtl, _cs_glob_n_fans, cs_lnum_t);
 
   for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
 
     fan = _cs_glob_fans[fan_id];
 
-    BFT_REALLOC(fan->cell_list, fan->n_cells, cs_lnum_t);
+    CS_REALLOC(fan->cell_list, fan->n_cells, cs_lnum_t);
 
     cpt_cel_vtl[fan_id] = 0;
   }
@@ -566,8 +565,8 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
   /* Free memory */
 
 
-  BFT_FREE(cpt_cel_vtl);
-  BFT_FREE(cell_fan_id);
+  CS_FREE(cpt_cel_vtl);
+  CS_FREE(cell_fan_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -610,7 +609,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
 
   /* Flag the cells */
 
-  BFT_MALLOC(cell_fan_id, n_cells_ext, int);
+  CS_MALLOC(cell_fan_id, n_cells_ext, int);
 
   cs_fan_flag_cells(mesh, cell_fan_id);
 
@@ -704,7 +703,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
 
   /* Free memory */
 
-  BFT_FREE(cell_fan_id);
+  CS_FREE(cell_fan_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -939,11 +938,11 @@ cs_fan_cells_select(void         *input,
 
   /* Preallocate selection list */
 
-  BFT_MALLOC(_cell_ids, m->n_cells, cs_lnum_t);
+  CS_MALLOC(_cell_ids, m->n_cells, cs_lnum_t);
 
   /* Allocate working array */
 
-  BFT_MALLOC(cell_fan_id, m->n_cells_with_ghosts, int);
+  CS_MALLOC(cell_fan_id, m->n_cells_with_ghosts, int);
 
   /* Now flag cells and build list */
 
@@ -958,8 +957,8 @@ cs_fan_cells_select(void         *input,
   }
 
   /* Free memory */
-  BFT_FREE(cell_fan_id);
-  BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t);
+  CS_FREE(cell_fan_id);
+  CS_REALLOC(_cell_ids, _n_cells, cs_lnum_t);
 
   /* Set return values */
 

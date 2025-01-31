@@ -48,7 +48,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -62,6 +61,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_field.h"
 #include "alge/cs_gradient.h"
@@ -195,7 +195,7 @@ _update_face_value_strided
   /* Mute coefa when inc = 0 */
   if (inc == 0 && cpl == nullptr) {
 
-    BFT_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
+    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
     cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
 
     CS_MALLOC_HD(bc_coeffs_loc->a, stride*m->n_b_faces,
@@ -218,11 +218,11 @@ _update_face_value_strided
   /* Update of local BC. coefficients for internal coupling */
   if (cpl != nullptr) {
 
-    BFT_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
+    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
     cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
 
-    BFT_MALLOC(bc_coeffs_loc->a, stride*n_b_faces, cs_real_t);
-    BFT_MALLOC(bc_coeffs_loc->af, stride*n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc->a, stride*n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc->af, stride*n_b_faces, cs_real_t);
 
     var_t *bc_coeff_a = (var_t *)bc_coeffs->a;
     var_t *bc_coeffs_cpl_a = (var_t *)bc_coeffs_loc->a;
@@ -347,7 +347,7 @@ _update_face_value_strided
     CS_FREE_HD(bc_coeffs_loc->a);
      if (cpl != nullptr)
        CS_FREE_HD(bc_coeffs_loc->af);
-    BFT_FREE(bc_coeffs_loc);
+    CS_FREE(bc_coeffs_loc);
   }
   CS_FREE_HD(val_ip_lim);
 }
@@ -645,7 +645,7 @@ _equation_iterative_solve_strided(int                   idtvar,
    *===========================================================================*/
 
   cs_bc_coeffs_solve_t *bc_coeffs_solve;
-  BFT_MALLOC(bc_coeffs_solve, 1, cs_bc_coeffs_solve_t);
+  CS_MALLOC(bc_coeffs_solve, 1, cs_bc_coeffs_solve_t);
 
   CS_MALLOC_HD(bc_coeffs_solve->val_ip, stride*n_b_faces, cs_real_t, amode);
   CS_MALLOC_HD(bc_coeffs_solve->val_f, stride*n_b_faces, cs_real_t, amode);

@@ -51,9 +51,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 #include "base/cs_time_plot.h"
 
@@ -219,7 +219,7 @@ static void
 _build_time_plot(void)
 {
   const char **stats_labels;
-  BFT_MALLOC(stats_labels, _n_stats, const char *);
+  CS_MALLOC(stats_labels, _n_stats, const char *);
 
   int stats_count = 0;
 
@@ -243,7 +243,7 @@ _build_time_plot(void)
                                          nullptr,
                                          stats_labels);
 
-  BFT_FREE(stats_labels);
+  CS_FREE(stats_labels);
 }
 
 /*----------------------------------------------------------------------------
@@ -254,7 +254,7 @@ static void
 _output_time_plot(void)
 {
   cs_real_t *vals;
-  BFT_MALLOC(vals, _n_stats, cs_real_t);
+  CS_MALLOC(vals, _n_stats, cs_real_t);
 
   int stats_count = 0;
 
@@ -274,7 +274,7 @@ _output_time_plot(void)
                           stats_count,
                           vals);
 
-  BFT_FREE(vals);
+  CS_FREE(vals);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -333,12 +333,12 @@ cs_timer_stats_finalize(void)
 
   for (int stats_id = 0; stats_id < _n_stats; stats_id++) {
     cs_timer_stats_t  *s = _stats + stats_id;
-    BFT_FREE(s->label);
+    CS_FREE(s->label);
   }
 
-  BFT_FREE(_stats);
+  CS_FREE(_stats);
 
-  BFT_FREE(_active_id);
+  CS_FREE(_active_id);
   _n_roots = 0;
 
   cs_map_name_to_id_destroy(&_name_map);
@@ -469,7 +469,7 @@ cs_timer_stats_create(const char  *parent_name,
   }
 
   if (_parent_name == nullptr) {
-    BFT_REALLOC(_active_id, _n_roots+1, int);
+    CS_REALLOC(_active_id, _n_roots+1, int);
     _active_id[_n_roots] = -1;
     root_id = _n_roots;
     _n_roots += 1;
@@ -506,7 +506,7 @@ cs_timer_stats_create(const char  *parent_name,
       _n_stats_max = 8;
     else
       _n_stats_max *= 2;
-    BFT_REALLOC(_stats, _n_stats_max, cs_timer_stats_t);
+    CS_REALLOC(_stats, _n_stats_max, cs_timer_stats_t);
   }
 
   /* Now build new statistics */
@@ -517,12 +517,12 @@ cs_timer_stats_create(const char  *parent_name,
   if (label != nullptr) {
     size_t l_len = strlen(label);
     if (l_len > 0) {
-      BFT_MALLOC(s->label, l_len + 1, char);
+      CS_MALLOC(s->label, l_len + 1, char);
       strcpy(s->label, label);
     }
   }
   if (s->label == nullptr) {
-    BFT_MALLOC(s->label, strlen(name) + 1, char);
+    CS_MALLOC(s->label, strlen(name) + 1, char);
     strcpy(s->label, name);
   }
 

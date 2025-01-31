@@ -157,7 +157,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     if ((cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) ||
         (cs_glob_turb_model->itytur == 5)){
 
-      BFT_MALLOC(mrkcel, n_cells_ext, int);
+      CS_MALLOC(mrkcel, n_cells_ext, int);
       for (cs_lnum_t i = 0; i < n_cells_ext; i++)
         mrkcel[i] = 0;
 
@@ -229,7 +229,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
         fld->bc_coeffs->rcodcl1[face_id] = 1;
       }
     }
-    BFT_FREE(mrkcel);
+    CS_FREE(mrkcel);
   }
   else {
 

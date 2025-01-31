@@ -107,7 +107,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     cs_real_t balance[CS_BALANCE_N_TERMS];
 
-    BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
+    CS_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -118,7 +118,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
                                selected_cells,
                                balance);
 
-    BFT_FREE(selected_cells);
+    CS_FREE(selected_cells);
 
     cs_balance_term_t  mass_in_idx = CS_BALANCE_MASS_IN;
     cs_balance_term_t  mass_out_idx = CS_BALANCE_MASS_OUT;
@@ -145,7 +145,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     cs_real_t balance[CS_BALANCE_P_N_TERMS];
 
-    BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
+    CS_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -155,7 +155,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
                                      selected_cells,
                                      balance);
 
-    BFT_FREE(selected_cells);
+    CS_FREE(selected_cells);
 
     cs_balance_p_term_t  rhou_in_idx = CS_BALANCE_P_RHOU_IN;
     cs_balance_p_term_t  rhou_out_idx = CS_BALANCE_P_RHOU_OUT;

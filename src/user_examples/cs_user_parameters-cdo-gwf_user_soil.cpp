@@ -182,7 +182,7 @@ tracy_free_param(void         **p_soil_param)
 {
   cs_soil_tracy_param_t  *sp = (cs_soil_tracy_param_t *)(*p_soil_param);
 
-  BFT_FREE(sp);
+  CS_FREE(sp);
   *p_soil_param = nullptr;
 }
 /*! [param_cdo_gwf_set_user_free_soil] */
@@ -349,7 +349,7 @@ cs_user_model(void)
 
   cs_soil_tracy_param_t  *tp = nullptr;
 
-  BFT_MALLOC(tp, 1, cs_soil_tracy_param_t);
+  CS_MALLOC(tp, 1, cs_soil_tracy_param_t);
 
   tp->L = 200;
   tp->h_s = 0.;

@@ -42,10 +42,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -192,7 +192,7 @@ _function_create(const char    *name,
       _n_functions_max = 8;
     else
       _n_functions_max *= 2;
-    BFT_REALLOC(_functions, _n_functions_max, cs_function_t *);
+    CS_REALLOC(_functions, _n_functions_max, cs_function_t *);
   }
 
   /* Allocate functions descriptor block if necessary
@@ -201,8 +201,8 @@ _function_create(const char    *name,
 
   int shift_in_alloc_block = function_id % _CS_FUNCTION_S_ALLOC_SIZE;
   if (shift_in_alloc_block == 0)
-    BFT_MALLOC(_functions[function_id], _CS_FUNCTION_S_ALLOC_SIZE,
-               cs_function_t);
+    CS_MALLOC(_functions[function_id], _CS_FUNCTION_S_ALLOC_SIZE,
+              cs_function_t);
   else
     _functions[function_id] = _functions[function_id - shift_in_alloc_block]
                                                      + shift_in_alloc_block;
@@ -415,15 +415,15 @@ cs_function_destroy_all(void)
 {
   for (int i = 0; i < _n_functions; i++) {
     cs_function_t  *f = _functions[i];
-    BFT_FREE(f->label);
+    CS_FREE(f->label);
   }
 
   for (int i = 0; i < _n_functions; i++) {
     if (i % _CS_FUNCTION_S_ALLOC_SIZE == 0)
-      BFT_FREE(_functions[i]);
+      CS_FREE(_functions[i]);
   }
 
-  BFT_FREE(_functions);
+  CS_FREE(_functions);
 
   cs_map_name_to_id_destroy(&_function_map);
 
@@ -531,7 +531,7 @@ void
 cs_function_set_label(cs_function_t   *f,
                       const char      *label)
 {
-  BFT_REALLOC(f->label, strlen(label) + 1, char);
+  CS_REALLOC(f->label, strlen(label) + 1, char);
   strcpy(f->label, label);
 }
 
@@ -549,7 +549,7 @@ cs_function_log_defs(void)
 
   int cat_id_max = -1;
   int *in_cat_id;
-  BFT_MALLOC(in_cat_id, _n_functions, int);
+  CS_MALLOC(in_cat_id, _n_functions, int);
   for (int i = 0; i < _n_functions; i++)
     in_cat_id[i] = -1;
 
@@ -679,7 +679,7 @@ cs_function_log_defs(void)
 
   } /* End fo loop on categories */
 
-  BFT_FREE(in_cat_id);
+  CS_FREE(in_cat_id);
 }
 
 /*----------------------------------------------------------------------------*/

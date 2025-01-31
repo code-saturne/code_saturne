@@ -81,7 +81,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
   /* Names of the fields to read */
   const char  **field_names = nullptr;
-  BFT_MALLOC(field_names, nremapper_fields, const char *);
+  CS_MALLOC(field_names, nremapper_fields, const char *);
   field_names[0] = "TEMPERATURE";
 
   /*! [loc_var_def] */

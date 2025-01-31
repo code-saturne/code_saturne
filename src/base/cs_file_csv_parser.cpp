@@ -37,11 +37,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_file_csv_parser.h"
 
@@ -83,7 +83,7 @@ _get_token(const char *str1,
 
   if (l_1 > l_2) {
     size_t l_t = l_1 - l_2;
-    BFT_MALLOC(t, l_t + 1, char);
+    CS_MALLOC(t, l_t + 1, char);
     memcpy(t, str1, l_t);
     t[l_t] = '\0';
   }
@@ -126,12 +126,12 @@ _parse_line(char          *line,
 
       char *_t = _get_token(c, n);
       if (keep_missing_tokens || (_t != nullptr && strlen(_t) > 0) ) {
-        BFT_REALLOC(tokens, _nt + 1, char *);
+        CS_REALLOC(tokens, _nt + 1, char *);
         tokens[_nt] = _t;
         _nt += 1;
       }
       else
-        BFT_FREE(_t);
+        CS_FREE(_t);
       c = n + 1;
 
     }
@@ -142,13 +142,13 @@ _parse_line(char          *line,
 
       char *_t = _get_token(c, n);
       if (keep_missing_tokens || (_t != nullptr && strlen(_t) > 0) ) {
-        BFT_REALLOC(tokens, _nt + 1, char *);
-        BFT_FREE(_t);
+        CS_REALLOC(tokens, _nt + 1, char *);
+        CS_FREE(_t);
         tokens[_nt] = _get_token(c, n);
         _nt += 1;
       }
       else
-        BFT_FREE(_t);
+        CS_FREE(_t);
       break;
 
     }
@@ -198,7 +198,7 @@ _get_token_from_line(char    *line,
 
         if (l_c > l_n) {
           size_t l_t = l_c - l_n;
-          BFT_MALLOC(retval, l_t + 1, char);
+          CS_MALLOC(retval, l_t + 1, char);
           memcpy(retval, c, l_t);
           retval[l_t] = '\0';
         }
@@ -327,7 +327,7 @@ cs_file_csv_parse(const char  *file_name,
   *n_rows = _n_rows;
 
   char ***retval = nullptr;
-  BFT_MALLOC(retval, _n_rows, char **);
+  CS_MALLOC(retval, _n_rows, char **);
   for (int i = 0; i < _n_rows; i++)
     retval[i] = nullptr;
 
@@ -359,9 +359,9 @@ cs_file_csv_parse(const char  *file_name,
         if (retval[0] == nullptr) {
           *n_cols = _n_col;
           for (int i = 0; i < _n_rows; i++) {
-            BFT_MALLOC(retval[i], _n_col, char *);
+            CS_MALLOC(retval[i], _n_col, char *);
             for (int j = 0; j < _n_col; j++)
-              BFT_MALLOC(retval[i][j], 120, char);
+              CS_MALLOC(retval[i][j], 120, char);
           }
         }
 
@@ -374,8 +374,8 @@ cs_file_csv_parse(const char  *file_name,
 
         // Free tokens
         for (int i = 0; i < n_tokens; i++)
-          BFT_FREE(tokens[i]);
-        BFT_FREE(tokens);
+          CS_FREE(tokens[i]);
+        CS_FREE(tokens);
       }
     }
     read_lines += 1;

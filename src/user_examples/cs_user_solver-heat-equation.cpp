@@ -112,9 +112,9 @@ cs_user_solver(const cs_mesh_t             *mesh,
 
   /* Initialization */
 
-  BFT_MALLOC(t, n, cs_real_t);
-  BFT_MALLOC(t_old, n, cs_real_t);
-  BFT_MALLOC(t_sol, n, cs_real_t);
+  CS_MALLOC(t, n, cs_real_t);
+  CS_MALLOC(t_old, n, cs_real_t);
+  CS_MALLOC(t_sol, n, cs_real_t);
 
   x0 =  1.e30;
   xL = -1.e30;
@@ -278,9 +278,9 @@ cs_user_solver(const cs_mesh_t             *mesh,
 
   /* Finalization */
 
-  BFT_FREE(t);
-  BFT_FREE(t_old);
-  BFT_FREE(t_sol);
+  CS_FREE(t);
+  CS_FREE(t_old);
+  CS_FREE(t_sol);
 
   cs_time_plot_finalize(&time_plot);
 

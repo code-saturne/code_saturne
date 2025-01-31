@@ -59,6 +59,7 @@
 #include "alge/cs_face_viscosity.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_physical_constants.h"
@@ -274,16 +275,16 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
   cs_real_t *w1, *viscce;
   cs_real_3_t *dudt;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC(w1, n_cells_ext, cs_real_t);
   CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(dudt, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(dudt, n_cells_ext, cs_real_3_t);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  BFT_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
 
   cs_real_t *coefap = bc_coeffs_loc.a;
   cs_real_t *coefbp = bc_coeffs_loc.b;
@@ -292,22 +293,22 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
   cs_field_bc_coeffs_t bc_coeffs1_loc;
   cs_field_bc_coeffs_init(&bc_coeffs1_loc);
-  BFT_MALLOC(bc_coeffs1_loc.a, 3*n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs1_loc.b, 9*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs1_loc.a, 3*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs1_loc.b, 9*n_b_faces, cs_real_t);
 
   cs_real_3_t  *coefa1 = (cs_real_3_t  *)bc_coeffs1_loc.a;
   cs_real_33_t *coefb1 = (cs_real_33_t *)bc_coeffs1_loc.b;
 
   cs_real_t *i_visc, *flumas;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(flumas, n_i_faces, cs_real_t);
+  CS_MALLOC(i_visc, n_i_faces, cs_real_t);
+  CS_MALLOC(flumas, n_i_faces, cs_real_t);
 
   cs_real_t *b_visc, *flumab;
-  BFT_MALLOC(flumab, n_b_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC(flumab, n_b_faces, cs_real_t);
+  CS_MALLOC(b_visc, n_b_faces, cs_real_t);
 
-  BFT_MALLOC(i_mass_flux_gas, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_mass_flux_gas, n_b_faces, cs_real_t);
+  CS_MALLOC(i_mass_flux_gas, n_i_faces, cs_real_t);
+  CS_MALLOC(b_mass_flux_gas, n_b_faces, cs_real_t);
 
   if (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) {
 
@@ -796,7 +797,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     }
 
     cs_real_t *divflu;
-    BFT_MALLOC(divflu, n_cells_ext, cs_real_t);
+    CS_MALLOC(divflu, n_cells_ext, cs_real_t);
 
     cs_divergence(mesh,
                   1, /* init */
@@ -833,27 +834,27 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     }
 
     /* Free memory */
-    BFT_FREE(divflu);
+    CS_FREE(divflu);
   }
 
   CS_FREE_HD(viscce);
-  BFT_FREE(dudt);
-  BFT_FREE(w1);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
-  BFT_FREE(flumas);
-  BFT_FREE(flumab);
+  CS_FREE(dudt);
+  CS_FREE(w1);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(flumas);
+  CS_FREE(flumab);
 
-  BFT_FREE(i_mass_flux_gas);
-  BFT_FREE(b_mass_flux_gas);
+  CS_FREE(i_mass_flux_gas);
+  CS_FREE(b_mass_flux_gas);
 
-  BFT_FREE(coefap);
-  BFT_FREE(coefbp);
-  BFT_FREE(cofafp);
-  BFT_FREE(cofbfp);
+  CS_FREE(coefap);
+  CS_FREE(coefbp);
+  CS_FREE(cofafp);
+  CS_FREE(cofbfp);
 
-  BFT_FREE(coefa1);
-  BFT_FREE(coefb1);
+  CS_FREE(coefa1);
+  CS_FREE(coefb1);
 }
 
 /*----------------------------------------------------------------------------*/

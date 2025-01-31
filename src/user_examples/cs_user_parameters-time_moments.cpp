@@ -339,9 +339,9 @@ cs_user_time_moments(void)
                                     1,                      /* field dimension */
                                     true,                   /* intensive*/
                                     _simple_data_sum,       /* data_func */
-                                    nullptr,                   /* data_input */
-                                    nullptr,                   /* w_data_func */
-                                    nullptr,                   /* w_data_input */
+                                    nullptr,                /* data_input */
+                                    nullptr,                /* w_data_func */
+                                    nullptr,                /* w_data_input */
                                     m_type[i],
                                     1000,                   /* nt_start */
                                     -1,                     /* t_start */
@@ -365,9 +365,9 @@ cs_user_time_moments(void)
                                     1,                      /* field dimension */
                                     true,                   /* intensive*/
                                     _boundary_thermal_flux, /* data_func */
-                                    nullptr,                   /* data_input */
-                                    nullptr,                   /* w_data_func */
-                                    nullptr,                   /* w_data_input */
+                                    nullptr,                /* data_input */
+                                    nullptr,                /* w_data_func */
+                                    nullptr,                /* w_data_input */
                                     m_type[i],
                                     1,                      /* nt_start */
                                     -1,                     /* t_start */
@@ -395,8 +395,8 @@ cs_user_time_moments(void)
                                     true,                        /* intensive*/
                                     _velocity_moment_data,       /* data_func */
                                     &(vel_comp_input[comp_id]),  /* data_input */
-                                    nullptr,                        /* w_data_func */
-                                    nullptr,                        /* w_data_input */
+                                    nullptr,                     /* w_data_func */
+                                    nullptr,                     /* w_data_input */
                                     CS_TIME_MOMENT_MEAN,
                                     74000,                       /* nt_start */
                                     -1,                          /* t_start */
@@ -417,7 +417,7 @@ cs_user_time_moments(void)
       int n_fields = 1;
       const char extension[] = "_mean";
       char *mean_name;
-      BFT_MALLOC(mean_name, strlen(f->name) + 1 + 5, char);
+      CS_MALLOC(mean_name, strlen(f->name) + 1 + 5, char);
 
       strcpy(mean_name, f->name); /* copy field name into the new var */
       strcat(mean_name, extension); /* add the extension */
@@ -434,7 +434,6 @@ cs_user_time_moments(void)
     }
   }
   /*! [tmom_all_variables] */
-
 }
 
 /*----------------------------------------------------------------------------*/

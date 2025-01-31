@@ -42,12 +42,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 
@@ -449,8 +449,8 @@ _field_create(const char   *name,
       _n_fields_max = 8;
     else
       _n_fields_max *= 2;
-    BFT_REALLOC(_fields, _n_fields_max, cs_field_t *);
-    BFT_REALLOC(_key_vals, _n_keys_max*_n_fields_max, cs_field_key_val_t);
+    CS_REALLOC(_fields, _n_fields_max, cs_field_t *);
+    CS_REALLOC(_key_vals, _n_keys_max*_n_fields_max, cs_field_key_val_t);
   }
 
   /* Allocate fields descriptor block if necessary
@@ -459,7 +459,7 @@ _field_create(const char   *name,
 
   int shift_in_alloc_block = field_id % _CS_FIELD_S_ALLOC_SIZE;
   if (shift_in_alloc_block == 0)
-    BFT_MALLOC(_fields[field_id], _CS_FIELD_S_ALLOC_SIZE, cs_field_t);
+    CS_MALLOC(_fields[field_id], _CS_FIELD_S_ALLOC_SIZE, cs_field_t);
   else
     _fields[field_id] = _fields[field_id - shift_in_alloc_block]
                         + shift_in_alloc_block;
@@ -582,8 +582,8 @@ _find_or_add_key(const char  *name)
       _n_keys_max = 8;
     else
       _n_keys_max *= 2;
-    BFT_REALLOC(_key_defs, _n_keys_max, cs_field_key_def_t);
-    BFT_REALLOC(_key_vals, _n_keys_max*_n_fields_max, cs_field_key_val_t);
+    CS_REALLOC(_key_defs, _n_keys_max, cs_field_key_def_t);
+    CS_REALLOC(_key_vals, _n_keys_max*_n_fields_max, cs_field_key_val_t);
     for (int field_id = _n_fields - 1; field_id >= 0; field_id--) {
       for (int _key_id = _n_keys - 2; _key_id >= 0; _key_id--)
         _key_vals[field_id*_n_keys_max + _key_id]
@@ -644,11 +644,11 @@ _cs_field_free_str(void)
 
       for (int f_id = 0; f_id < _n_fields; f_id++) {
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
-        BFT_FREE(kv->val.v_p);
+        CS_FREE(kv->val.v_p);
       }
 
       if (kd->def_val.v_p != nullptr)
-        BFT_FREE(kd->def_val.v_p);
+        CS_FREE(kd->def_val.v_p);
 
     } /* If the key is a "string" key */
 
@@ -672,11 +672,11 @@ _cs_field_free_struct(void)
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
         if (kd->clear_func != nullptr)
           kd->clear_func(kv->val.v_p);
-        BFT_FREE(kv->val.v_p);
+        CS_FREE(kv->val.v_p);
       }
 
       if (kd->def_val.v_p != nullptr)
-        BFT_FREE(kd->def_val.v_p);
+        CS_FREE(kd->def_val.v_p);
 
     } /* If the key is a "structure" key */
 
@@ -1567,37 +1567,37 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
                              cs_field_bc_coeffs_t        *copy)
 {
   if (copy->a != ref->a)
-    BFT_FREE(copy->a);
+    CS_FREE(copy->a);
   if (copy->b != ref->b)
-    BFT_FREE(copy->b);
+    CS_FREE(copy->b);
   if (copy->af != ref->af)
-    BFT_FREE(copy->af);
+    CS_FREE(copy->af);
   if (copy->bf != ref->bf)
-    BFT_FREE(copy->bf);
+    CS_FREE(copy->bf);
 
   if (copy->ad != ref->ad)
-    BFT_FREE(copy->ad);
+    CS_FREE(copy->ad);
   if (copy->bd != ref->bd)
-    BFT_FREE(copy->bd);
+    CS_FREE(copy->bd);
   if (copy->ac != ref->ac)
-    BFT_FREE(copy->ac);
+    CS_FREE(copy->ac);
   if (copy->bc != ref->bc)
-    BFT_FREE(copy->bc);
+    CS_FREE(copy->bc);
 
   if (copy->val_f != ref->val_f)
-    BFT_FREE(copy->val_f);
+    CS_FREE(copy->val_f);
   if (copy->val_f_lim != ref->val_f_lim)
-    BFT_FREE(copy->val_f_lim);
+    CS_FREE(copy->val_f_lim);
   if (copy->val_f_d != ref->val_f_d)
-    BFT_FREE(copy->val_f_d);
+    CS_FREE(copy->val_f_d);
   if (copy->val_f_d_lim != ref->val_f_d_lim)
-    BFT_FREE(copy->val_f_d_lim);
+    CS_FREE(copy->val_f_d_lim);
 
   if (copy->hint != ref->hint)
-    BFT_FREE(copy->hint);
+    CS_FREE(copy->hint);
 
   if (copy->rcodcl2 != ref->rcodcl2)
-    BFT_FREE(copy->rcodcl2);
+    CS_FREE(copy->rcodcl2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1644,7 +1644,7 @@ cs_field_create(const char   *name,
 
   f->n_time_vals = has_previous ? 2 : 1;
 
-  BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
+  CS_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
   for (int i = 0; i < f->n_time_vals; i++)
     f->vals[i] = nullptr;
 
@@ -1682,7 +1682,7 @@ cs_field_create_by_composite_name(const char   *name_prefix,
   char *buffer = _buffer;
 
   if (lt + 1> 196)
-    BFT_MALLOC(buffer, lt+1, char);
+    CS_MALLOC(buffer, lt+1, char);
 
   memcpy(buffer, name_prefix, lp);
   buffer[lp] = '_';
@@ -1696,7 +1696,7 @@ cs_field_create_by_composite_name(const char   *name_prefix,
                                    has_previous);
 
   if (buffer != _buffer)
-    BFT_FREE(buffer);
+    CS_FREE(buffer);
 
   return f;
 }
@@ -1762,7 +1762,7 @@ cs_field_find_or_create(const char   *name,
 
     f->n_time_vals = has_previous ? 2 : 1;
 
-    BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
+    CS_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
     for (int i = 0; i < f->n_time_vals; i++)
       f->vals[i] = nullptr;
 
@@ -1812,7 +1812,7 @@ cs_field_set_n_time_vals(cs_field_t  *f,
 
   f->n_time_vals = _n_time_vals;
 
-  BFT_REALLOC(f->vals, f->n_time_vals, cs_real_t *);
+  CS_REALLOC(f->vals, f->n_time_vals, cs_real_t *);
   for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
     f->vals[i] = nullptr;
 
@@ -1822,7 +1822,7 @@ cs_field_set_n_time_vals(cs_field_t  *f,
     if (n_time_vals_ini > _n_time_vals) {
       assert(n_time_vals_ini == 2 && _n_time_vals == 1);
       if (f->is_owner)
-        BFT_FREE(f->val_pre);
+        CS_FREE(f->val_pre);
       else
         f->val_pre = nullptr;
     }
@@ -1884,8 +1884,8 @@ cs_field_map_values(cs_field_t   *f,
     return;
 
   if (f->is_owner) {
-    BFT_FREE(f->val);
-    BFT_FREE(f->val_pre);
+    CS_FREE(f->val);
+    CS_FREE(f->val_pre);
     f->is_owner = false;
   }
 
@@ -1959,7 +1959,7 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
     if (f->bc_coeffs == nullptr) {
 
-      BFT_MALLOC(f->bc_coeffs, 1, cs_field_bc_coeffs_t);
+      CS_MALLOC(f->bc_coeffs, 1, cs_field_bc_coeffs_t);
 
       f->bc_coeffs->location_id = location_id;
 
@@ -2006,8 +2006,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_exch_bc) {
-        BFT_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
+        CS_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
+        CS_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
       }
       else {
         f->bc_coeffs->hint = nullptr;
@@ -2051,12 +2051,12 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_exch_bc) {
-        BFT_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
+        CS_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
+        CS_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
       }
       else {
-        BFT_FREE(f->bc_coeffs->hint);
-        BFT_FREE(f->bc_coeffs->_hext);
+        CS_FREE(f->bc_coeffs->hint);
+        CS_FREE(f->bc_coeffs->_hext);
       }
 
     }
@@ -2402,48 +2402,48 @@ cs_field_destroy_all(void)
       if (f->vals != nullptr) {
         int ii;
         for (ii = 0; ii < f->n_time_vals; ii++)
-          BFT_FREE(f->vals[ii]);
+          CS_FREE(f->vals[ii]);
       }
     }
-    BFT_FREE(f->vals);
+    CS_FREE(f->vals);
 
     if (f->grad != nullptr)
-      BFT_FREE(f->grad);
+      CS_FREE(f->grad);
 
     if (f->bc_coeffs != nullptr) {
       CS_FREE_HD(f->bc_coeffs->a);
       CS_FREE_HD(f->bc_coeffs->b);
       CS_FREE_HD(f->bc_coeffs->af);
       CS_FREE_HD(f->bc_coeffs->bf);
-      BFT_FREE(f->bc_coeffs->ad);
-      BFT_FREE(f->bc_coeffs->bd);
+      CS_FREE(f->bc_coeffs->ad);
+      CS_FREE(f->bc_coeffs->bd);
       CS_FREE_HD(f->bc_coeffs->ac);
       CS_FREE_HD(f->bc_coeffs->bc);
-      BFT_FREE(f->bc_coeffs->hint);
-      BFT_FREE(f->bc_coeffs->_hext);
+      CS_FREE(f->bc_coeffs->hint);
+      CS_FREE(f->bc_coeffs->_hext);
       if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
         CS_FREE_HD(f->bc_coeffs->val_f_lim);
         CS_FREE_HD(f->bc_coeffs->val_f_d_lim);
       }
       CS_FREE_HD(f->bc_coeffs->val_f);
       CS_FREE_HD(f->bc_coeffs->val_f_d);
-      BFT_FREE(f->bc_coeffs);
+      CS_FREE(f->bc_coeffs);
     }
   }
 
   for (int i = 0; i < _n_fields; i++) {
     if (i % _CS_FIELD_S_ALLOC_SIZE == 0)
-      BFT_FREE(_fields[i]);
+      CS_FREE(_fields[i]);
   }
 
-  BFT_FREE(_fields);
+  CS_FREE(_fields);
 
   cs_map_name_to_id_destroy(&_field_map);
 
   _cs_field_free_str();
   _cs_field_free_struct();
 
-  BFT_FREE(_key_vals);
+  CS_FREE(_key_vals);
 
   _n_fields = 0;
   _n_fields_max = 0;
@@ -2608,7 +2608,7 @@ cs_field_by_composite_name_try(const char  *name_prefix,
   char *buffer = _buffer;
 
   if (lt + 1> 196)
-    BFT_MALLOC(buffer, lt+1, char);
+    CS_MALLOC(buffer, lt+1, char);
 
   memcpy(buffer, name_prefix, lp);
   buffer[lp] = '_';
@@ -2618,7 +2618,7 @@ cs_field_by_composite_name_try(const char  *name_prefix,
   int id = cs_map_name_to_id_try(_field_map, buffer);
 
   if (buffer != _buffer)
-    BFT_FREE(buffer);
+    CS_FREE(buffer);
 
   if (id > -1)
     return _fields[id];
@@ -2665,7 +2665,7 @@ cs_field_by_double_composite_name_try(const char  *name_part_1,
   char *buffer = _buffer;
 
   if (l + 1 > 196)
-    BFT_MALLOC(buffer, l+1, char);
+    CS_MALLOC(buffer, l+1, char);
 
   size_t s = 0;
   for (size_t i = 0; i < 3; i++) {
@@ -2677,7 +2677,7 @@ cs_field_by_double_composite_name_try(const char  *name_part_1,
   int id = cs_map_name_to_id_try(_field_map, buffer);
 
   if (buffer != _buffer)
-    BFT_FREE(buffer);
+    CS_FREE(buffer);
 
   if (id > -1)
     return _fields[id];
@@ -2736,7 +2736,7 @@ cs_field_component_id_by_name(const char  *name,
       char _name0[128];
       char *name0 = _name0;
       if (l >= 128)
-        BFT_MALLOC(name0, l + 1, char);
+        CS_MALLOC(name0, l + 1, char);
       strcpy(name0, name);
       for (l0 = l-2; l0 > 0; l0--) {
         if (name0[l0] == '[') {
@@ -2785,7 +2785,7 @@ cs_field_component_id_by_name(const char  *name,
                     f->name, name + l0 - 1);
       }
       if (name0 != _name0)
-        BFT_FREE(name0);
+        CS_FREE(name0);
     }
   }
 
@@ -2949,10 +2949,10 @@ cs_field_define_key_str(const char  *name,
 
   /* Free possible previous allocation */
   if (n_keys_init == _n_keys)
-    BFT_FREE(kd->def_val.v_p);
+    CS_FREE(kd->def_val.v_p);
 
   if (default_value != nullptr) {
-    BFT_MALLOC(kd->def_val.v_p, strlen(default_value) + 1, char);
+    CS_MALLOC(kd->def_val.v_p, strlen(default_value) + 1, char);
     strcpy(reinterpret_cast<char *>(kd->def_val.v_p), default_value);
   }
   else
@@ -3005,10 +3005,10 @@ cs_field_define_key_struct(const char                   *name,
 
   /* Free possible previous allocation */
   if (n_keys_init == _n_keys)
-    BFT_FREE(kd->def_val.v_p);
+    CS_FREE(kd->def_val.v_p);
 
   if (default_value != nullptr) {
-    BFT_MALLOC(kd->def_val.v_p, size, unsigned char);
+    CS_MALLOC(kd->def_val.v_p, size, unsigned char);
     memcpy(kd->def_val.v_p, default_value, size);
   }
   else
@@ -3074,17 +3074,17 @@ cs_field_destroy_all_keys(void)
   for (key_id = 0; key_id < _n_keys; key_id++) {
     cs_field_key_def_t *kd = _key_defs + key_id;
     if (kd->type_id == 's' || kd->type_id == 't') {
-      BFT_FREE(kd->def_val.v_p);
+      CS_FREE(kd->def_val.v_p);
     }
   }
 
   _n_keys = 0;
   _n_keys_max = 0;
-  BFT_FREE(_key_defs);
+  CS_FREE(_key_defs);
 
   cs_map_name_to_id_destroy(&_key_map);
 
-  BFT_FREE(_key_vals);
+  CS_FREE(_key_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3576,7 +3576,7 @@ cs_field_set_key_str(cs_field_t  *f,
       else {
         if (kv->is_set == 0)
           kv->val.v_p = nullptr;
-        BFT_REALLOC(kv->val.v_p, strlen(str) + 1, char);
+        CS_REALLOC(kv->val.v_p, strlen(str) + 1, char);
         strcpy(reinterpret_cast<char *>(kv->val.v_p), str);
         kv->is_set = 1;
       }
@@ -3696,7 +3696,7 @@ cs_field_set_key_struct(cs_field_t  *f,
         retval = CS_FIELD_LOCKED;
       else {
         if (kv->is_set == 0)
-          BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
+          CS_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
         memcpy(kv->val.v_p, s, kd->type_size);
         kv->is_set = 1;
       }
@@ -3822,7 +3822,7 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
         errcode = CS_FIELD_LOCKED;
       else {
         if (kv->is_set == 0) {
-          BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
+          CS_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
           cs_field_get_key_struct(f, key_id, kv->val.v_p);
         }
         p = kv->val.v_p;
