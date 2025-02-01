@@ -135,6 +135,11 @@ class GuiLabelManager(object):
 
         self._completer = {}
         self._completer['mesh_selection'] = ['all[]',
+                                            'no_group[]',
+                                            'range[first, last]',
+                                            'range[first, last, group]',
+                                            'range[first, last, attribute]',
+                                            'contains[substring]',
                                             'plane[a, b, c, d, epsilon]',
                                             'plane[a, b, c, d, inside]',
                                             'plane[a, b, c, d, outside]',

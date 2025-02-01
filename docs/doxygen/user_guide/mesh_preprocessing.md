@@ -478,6 +478,7 @@ A few examples are given below:
 `all[]`                                     <br/>
 `3.1 >= z >= -2 or not (15 or entry)`       <br/>
 `range[04, 13, attribute]`                  <br/>
+`contains[X]`                               <br/>
 `sphere[0, 0, 0, 2] and (not no_group[])`   <br/>
 
 Strings such as group names containing white-space
@@ -511,6 +512,7 @@ versions are not):
 <tr><th> General functions <th>
 <tr><td> select all                          <td> `all[]`
 <tr><td> entities having no group or color   <td> `no_group[]`
+<tr><td> select a all groups or containing a substring  <td> `contains[` *substring* `]` <br/>
 <tr><td> select a range of groups or colors  <td> `range[` *first*, *last*`]` <br/>
                                                   `range[` *first*, *last*`, group]` <br/>
                                                   `range[` *first*, *last*`, attribute]`
@@ -639,6 +641,9 @@ Several examples of possible selections are given here:
 
 *  `cs_selector_get_i_face_list("range[in_04, in_08]", nlelt, lstelt)` selects internal faces
     with group names between *in_04* and *in_08* (in lexicographical order),
+
+*  `cs_selector_get_b_face_list("contains[X]", nlelt, lstelt)` selects boundary faces
+    with group names containing *X*,
 
 *  `cs_selector_get_cell_list("1 or 2", nlelt, lstelt)` selects cells with colors 1 or 2,
 

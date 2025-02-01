@@ -161,6 +161,7 @@ fvm_selector_postfix_get_missing(const fvm_selector_postfix_t  *pf,
  *   pf           <-- pointer to postfix structure
  *   n_groups     <-- number of groups associated with group class
  *   n_attributes <-- number of attributes associated with group class
+ *   group_name   <-- array of group names (ordered)
  *   group_id     <-- array group ids associated with group class
  *   attribute_id <-- array of attribute ids associated with group class
  *   coords       <-- coordinates associated with evaluation, or NULL
@@ -174,6 +175,7 @@ bool
 fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
                           int                            n_groups,
                           int                            n_attributes,
+                          const char                    *group_name[],
                           const int                      group_id[],
                           const int                      attribute_id[],
                           const double                   coords[],

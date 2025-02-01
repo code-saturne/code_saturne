@@ -126,6 +126,7 @@ typedef enum {
   OC_ALL,
   OC_NO_GROUP,
   OC_RANGE,
+  OC_CONTAINS,
 
   OC_NORMAL,
   OC_PLANE,
@@ -144,7 +145,7 @@ typedef enum {
 
 static const char *_operator_name[] = {"(", ")",
                                        "not", "and", "or", "xor",
-                                       "all", "no_group", "range",
+                                       "all", "no_group", "range", "contains",
                                        "normal", "plane", "box",
                                        "cylinder", "sphere",
                                        ">", "<", ">=", "<=",
@@ -160,7 +161,8 @@ typedef enum {
   PF_GROUP_ID,
   PF_ATTRIBUTE_ID,
   PF_INT,
-  PF_FLOAT
+  PF_FLOAT,
+  PF_STRING
 
 } _postfix_type_t;
 
@@ -402,6 +404,7 @@ _parser_create(void)
   const char *kw_all[] = {"all", "ALL"};
   const char *kw_ngr[] = {"no_group", "NO_GROUP"};
   const char *kw_rng[] = {"range", "RANGE"};
+  const char *kw_con[] = {"contains", "CONTAINS"};
 
   const char *kw_nrm[] = {"normal", "NORMAL"};
   const char *kw_pln[] = {"plane", "PLANE"};
@@ -443,6 +446,7 @@ _parser_create(void)
   _add_operator(p, "all", OC_ALL, OT_FUNCTION, 4, 2, kw_all);
   _add_operator(p, "no_group", OC_NO_GROUP, OT_FUNCTION, 4, 2, kw_ngr);
   _add_operator(p, "range", OC_RANGE, OT_FUNCTION, 4, 2, kw_rng);
+  _add_operator(p, "contains", OC_CONTAINS, OT_FUNCTION, 4, 2, kw_con);
 
   _add_operator(p, "normal", OC_NORMAL, OT_FUNCTION, 4, 2, kw_nrm);
   _add_operator(p, "plane", OC_PLANE, OT_FUNCTION, 4, 2, kw_pln);
@@ -1156,6 +1160,30 @@ _postfix_add_missing(fvm_selector_postfix_t *pf, const char *missing)
 }
 
 /*----------------------------------------------------------------------------
+ * Add a string to a postfix expression
+ *
+ * parameters:
+ *   pf  <-> pointer to postfix structure
+ *   val <-- pointer to string
+ *----------------------------------------------------------------------------*/
+
+static void
+_postfix_add_string(fvm_selector_postfix_t *pf, const char *val)
+{
+  size_t add_size = _postfix_type_size + strlen(val) + 1;
+
+  /* Update postfix */
+
+  if (pf->size + add_size > pf->max_size)
+    _postfix_grow(pf, pf->size + add_size);
+
+  *((_postfix_type_t *)(pf->elements + pf->size)) = PF_STRING;
+  strcpy((char *)(pf->elements + pf->size + _postfix_type_size), val);
+
+  pf->size += add_size;
+}
+
+/*----------------------------------------------------------------------------
  * Check if a string defines an integer and scan its value
  *
  * parameters:
@@ -1586,7 +1614,7 @@ _group_range(int         n_groups,
 }
 
 /*----------------------------------------------------------------------------
- * Determine if tokens define an atribute range
+ * Determine if tokens define an attribute range
  *
  * parameters:
  *   n_attributes <-- number of attributes
@@ -2071,6 +2099,33 @@ _parse_for_function(const _parser_t         *this_parser,
       }
     }
 
+  }
+
+  /* Handle contains operator */
+
+  else if (op->code == OC_CONTAINS) {
+
+    const char *t[1] = {nullptr};
+    bool error = false;
+
+    i++;
+    k = 0;
+    while (i < j && k < 1) {
+      t[k++] = te->tokens + te->token_id[i];
+      i++;
+    }
+    if (i < j)
+      error = true;
+
+    if (k != 1 || error)
+      _parse_error(_("contains[] argument error"),
+                   _("  contains[<string>]\n"),
+                   infix, te, i - 1, os, postfix);
+
+    else {
+      _postfix_add_opcode(*postfix, op->code);
+      _postfix_add_string(*postfix, t[0]);
+    }
   }
 
   /* Handle geometric operators */
@@ -3014,6 +3069,7 @@ fvm_selector_postfix_get_missing(const fvm_selector_postfix_t  *pf,
  *   pf           <-- pointer to postfix structure
  *   n_groups     <-- number of groups associated with group class
  *   n_attributes <-- number of attributes associated with group class
+ *   group_name   <-- array of group names (ordered)
  *   group_id     <-- array group ids associated with group class
  *   attribute_id <-- array of attribute ids associated with group class
  *   coords       <-- coordinates associated with evaluation, or nullptr
@@ -3027,6 +3083,7 @@ bool
 fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
                           int                            n_groups,
                           int                            n_attributes,
+                          const char                    *group_name[],
                           const int                      group_id[],
                           const int                      attribute_id[],
                           const double                   coords[],
@@ -3181,6 +3238,24 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
           eval_size++;
           break;
 
+        case OC_CONTAINS:
+          {
+            i += _postfix_type_size;
+            const char *val = (const char *)(pf->elements + i);
+            i += strlen(val) + 1;
+
+            int j;
+            eval_stack[eval_size] = false;
+            for (j = 0; j < n_groups; j++) {
+              const char *name = group_name[group_id[j]];
+              if (strstr(name, val)) {
+                eval_stack[eval_size] = true;
+                break;
+              }
+            }
+          }
+          eval_size++;
+          break;
         case OC_NORMAL:
           eval_stack[eval_size++] = _eval_normal(pf, normal, &i);
           break;
