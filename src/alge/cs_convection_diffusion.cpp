@@ -50,7 +50,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -63,6 +62,7 @@
 #include "base/cs_log.h"
 #include "base/cs_internal_coupling.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
@@ -1419,7 +1419,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
   /* Allocate work arrays */
 
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   /* Choose gradient type */
 
@@ -1563,7 +1563,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
     /* Compute cell gradient used in slope test */
     if (isstpp == 0) {
 
-      BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(gradst, n_cells_ext, cs_real_3_t);
 
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -1587,7 +1587,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
     /* Pure SOLU scheme */
     if (ischcp == 2 || (xcpp != nullptr && ischcp == 4)) {
 
-      BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(gradup, n_cells_ext, cs_real_3_t);
 
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -2002,7 +2002,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
      * is required */
     if (icoupl > 0) {
       /* Prepare data for sending */
-      BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+      CS_MALLOC(pvar_distant, n_distant, cs_real_t);
 
       for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
         cs_lnum_t face_id = faces_distant[ii];
@@ -2026,7 +2026,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
       }
 
       /* Receive data */
-      BFT_MALLOC(pvar_local, n_local, cs_real_t);
+      CS_MALLOC(pvar_local, n_local, cs_real_t);
       cs_internal_coupling_exchange_var(cpl,
                                         1, /* Dimension */
                                         pvar_distant,
@@ -2034,7 +2034,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
       /* Exchange diffusion limiter */
       if (df_limiter != nullptr) {
-        BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
+        CS_MALLOC(df_limiter_local, n_local, cs_real_t);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
                                           df_limiter,
@@ -2083,11 +2083,11 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
         rhs[jj] -= thetap * fluxi;
       }
 
-      BFT_FREE(pvar_local);
+      CS_FREE(pvar_local);
       /* Sending structures are no longer needed */
-      BFT_FREE(pvar_distant);
+      CS_FREE(pvar_distant);
       if (df_limiter != nullptr)
-        BFT_FREE(df_limiter_local);
+        CS_FREE(df_limiter_local);
     }
 
     /* Boundary convective flux is imposed at some faces
@@ -2163,9 +2163,9 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   }
 
   /* Free memory */
-  BFT_FREE(grad);
-  BFT_FREE(gradup);
-  BFT_FREE(gradst);
+  CS_FREE(grad);
+  CS_FREE(gradup);
+  CS_FREE(gradst);
 
 }
 
@@ -2301,7 +2301,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
   /* Allocate work arrays */
 
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   /* Choose gradient type */
 
@@ -2330,14 +2330,14 @@ _face_convection_scalar_steady(const cs_field_t           *f,
     /* NVD/TVD limiters */
     if (ischcp == 4) {
       limiter_choice = (cs_nvd_type_t)cs_field_get_key_int(f, key_lim_choice);
-      BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
-      BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
+      CS_MALLOC(local_max, n_cells_ext, cs_real_t);
+      CS_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(f_id,
                                     halo_type,
                                     local_max,
                                     local_min);
       if (limiter_choice >= CS_NVD_VOF_HRIC) {
-        BFT_MALLOC(courant, n_cells_ext, cs_real_t);
+        CS_MALLOC(courant, n_cells_ext, cs_real_t);
         cs_cell_courant_number(f, ctx, courant);
       }
     }
@@ -2449,7 +2449,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
     /* Compute cell gradient used in slope test */
     if (isstpp == 0) {
 
-      BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(gradst, n_cells_ext, cs_real_3_t);
 
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -2473,7 +2473,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
     /* Pure SOLU scheme */
     if (ischcp == 2) {
 
-      BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(gradup, n_cells_ext, cs_real_3_t);
 
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -2865,12 +2865,12 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   }
 
   /* Free memory */
-  BFT_FREE(grad);
-  BFT_FREE(gradup);
-  BFT_FREE(gradst);
-  BFT_FREE(local_max);
-  BFT_FREE(local_min);
-  BFT_FREE(courant);
+  CS_FREE(grad);
+  CS_FREE(gradup);
+  CS_FREE(gradst);
+  CS_FREE(local_max);
+  CS_FREE(local_min);
+  CS_FREE(courant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5764,7 +5764,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
      ======================================================================*/
 
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
-    BFT_MALLOC(grdpa, n_cells_ext, cs_real_63_t);
+    CS_MALLOC(grdpa, n_cells_ext, cs_real_63_t);
 
     _slope_test_gradient_strided<6>(ctx,
                                     halo_type,
@@ -6151,7 +6151,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
   }
 
   /* Free memory */
-  BFT_FREE(grdpa);
+  CS_FREE(grdpa);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7458,7 +7458,6 @@ cs_face_convection_scalar(int                         idtvar,
       <std::chrono::microseconds>(t_stop - t_start);
     printf(", total = %ld\n", elapsed.count());
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8289,7 +8288,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   w2 = nullptr;
 
   /* Allocate work arrays */
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   /* Choose gradient type */
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -8346,7 +8345,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
     /* With porosity */
   }
   else if (porosi != nullptr && porosf == nullptr) {
-    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+    CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
         w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
@@ -8357,7 +8356,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
     /* With tensorial porosity */
   }
   else if (porosi != nullptr && porosf != nullptr) {
-    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+    CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_math_sym_33_product(porosf[cell_id],
                              viscel[cell_id],
@@ -8767,28 +8766,28 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
     if (icoupl > 0) {
 
       /* Exchange pvar */
-      BFT_MALLOC(pvar_local, n_local, cs_real_t);
+      CS_MALLOC(pvar_local, n_local, cs_real_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                1, /* Dimension */
                                                _pvar,
                                                pvar_local);
 
       /* Exchange grad */
-      BFT_MALLOC(grad_local, n_local, cs_real_3_t);
+      CS_MALLOC(grad_local, n_local, cs_real_3_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                3, /* Dimension */
                                                (const cs_real_t*)grad,
                                                (cs_real_t *)grad_local);
 
       /* Exchange viscce */
-      BFT_MALLOC(viscce_local, n_local, cs_real_6_t);
+      CS_MALLOC(viscce_local, n_local, cs_real_6_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                6, /* Dimension */
                                                (const cs_real_t*)viscce,
                                                (cs_real_t *)viscce_local);
 
       /* Exchange weighb */
-      BFT_MALLOC(weighb_local, n_local, cs_real_t);
+      CS_MALLOC(weighb_local, n_local, cs_real_t);
       cs_internal_coupling_exchange_by_face_id(cpl,
                                                1, /* Dimension */
                                                (const cs_real_t*)weighb,
@@ -8796,7 +8795,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
       /* Exchange diffusion limiter */
       if (df_limiter != nullptr) {
-        BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
+        CS_MALLOC(df_limiter_local, n_local, cs_real_t);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
                                           df_limiter,
@@ -8883,19 +8882,19 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       }
 
       /* Remote data no longer needed */
-      BFT_FREE(pvar_local);
+      CS_FREE(pvar_local);
       if (df_limiter != nullptr)
-        BFT_FREE(df_limiter_local);
-      BFT_FREE(grad_local);
-      BFT_FREE(viscce_local);
-      BFT_FREE(weighb_local);
+        CS_FREE(df_limiter_local);
+      CS_FREE(grad_local);
+      CS_FREE(viscce_local);
+      CS_FREE(weighb_local);
     }
 
   }
 
   /* Free memory */
-  BFT_FREE(grad);
-  BFT_FREE(w2);
+  CS_FREE(grad);
+  CS_FREE(w2);
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -9028,7 +9027,7 @@ cs_anisotropic_left_diffusion_vector
   /* 1. Initialization */
 
   /* Allocate work arrays */
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   /* Choose gradient type */
 
@@ -9337,7 +9336,7 @@ cs_anisotropic_left_diffusion_vector
        are removed. */
 
     /* Allocate a temporary array */
-    BFT_MALLOC(bndcel, n_cells_ext, cs_real_t);
+    CS_MALLOC(bndcel, n_cells_ext, cs_real_t);
 
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -9418,12 +9417,12 @@ cs_anisotropic_left_diffusion_vector
        tangential one is modeled by the wall law) */
 
     /*Free memory */
-    BFT_FREE(bndcel);
+    CS_FREE(bndcel);
 
   }
 
   /* Free memory */
-  BFT_FREE(gradv);
+  CS_FREE(gradv);
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -9554,7 +9553,7 @@ cs_anisotropic_right_diffusion_vector
   viscce = nullptr;
 
   /* Allocate work arrays */
-  BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_33_t);
 
   /* Choose gradient type */
 
@@ -9997,28 +9996,28 @@ cs_anisotropic_right_diffusion_vector
     if (icoupl > 0) {
 
       /* Exchange pvar */
-      BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+      CS_MALLOC(pvar_local, n_local, cs_real_3_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                3, /* Dimension */
                                                (const cs_real_t*)_pvar,
                                                (cs_real_t *)pvar_local);
 
       /* Exchange grad */
-      BFT_MALLOC(grad_local, n_local, cs_real_33_t);
+      CS_MALLOC(grad_local, n_local, cs_real_33_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                9, /* Dimension */
                                                (const cs_real_t*)grad,
                                                (cs_real_t *)grad_local);
 
       /* Exchange viscce */
-      BFT_MALLOC(viscce_local, n_local, cs_real_6_t);
+      CS_MALLOC(viscce_local, n_local, cs_real_6_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                6, /* Dimension */
                                                (const cs_real_t*)viscce,
                                                (cs_real_t *)viscce_local);
 
       /* Exchange weighb */
-      BFT_MALLOC(weighb_local, n_local, cs_real_t);
+      CS_MALLOC(weighb_local, n_local, cs_real_t);
       cs_internal_coupling_exchange_by_face_id(cpl,
                                                1, /* Dimension */
                                                (const cs_real_t*)weighb,
@@ -10026,7 +10025,7 @@ cs_anisotropic_right_diffusion_vector
 
       /* Exchange diffusion limiter */
       if (df_limiter != nullptr) {
-        BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
+        CS_MALLOC(df_limiter_local, n_local, cs_real_t);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
                                           df_limiter,
@@ -10121,12 +10120,12 @@ cs_anisotropic_right_diffusion_vector
       }
 
       /* Remote data no longer needed */
-      BFT_FREE(pvar_local);
+      CS_FREE(pvar_local);
       if (df_limiter != nullptr)
-        BFT_FREE(df_limiter_local);
-      BFT_FREE(grad_local);
-      BFT_FREE(viscce_local);
-      BFT_FREE(weighb_local);
+        CS_FREE(df_limiter_local);
+      CS_FREE(grad_local);
+      CS_FREE(viscce_local);
+      CS_FREE(weighb_local);
 
     }
 
@@ -10134,7 +10133,7 @@ cs_anisotropic_right_diffusion_vector
   } /* idtvar */
 
   /* Free memory */
-  BFT_FREE(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -10253,7 +10252,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   w2 = nullptr;
 
   /* Allocate work arrays */
-  BFT_MALLOC(grad, n_cells_ext, cs_real_63_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_63_t);
 
   /* Choose gradient type */
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -10312,7 +10311,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
     /* With porosity */
   }
   else if (porosi != nullptr && porosf == nullptr) {
-    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+    CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
         w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
@@ -10323,7 +10322,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
     /* With tensorial porosity */
   }
   else if (porosi != nullptr && porosf != nullptr) {
-    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+    CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_math_sym_33_product(porosf[cell_id],
                              viscel[cell_id],
@@ -10720,8 +10719,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   }
 
   /* Free memory */
-  BFT_FREE(grad);
-  BFT_FREE(w2);
+  CS_FREE(grad);
+  CS_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -11256,7 +11255,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       /* With porosity */
     }
     else if (porosi != nullptr && porosf == nullptr) {
-      BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+      CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         for (cs_lnum_t isou = 0; isou < 6; isou++) {
           w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
@@ -11267,7 +11266,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       /* With tensorial porosity */
     }
     else if (porosi != nullptr && porosf != nullptr) {
-      BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+      CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_math_sym_33_product(porosf[cell_id],
                                viscel[cell_id],
@@ -11283,7 +11282,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
     /* Allocate a work array for the gradient calculation */
     cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute gradient */
     if (iwgrp > 0) {
@@ -11448,8 +11447,8 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
     }
 
     /* Free memory */
-    BFT_FREE(grad);
-    BFT_FREE(w2);
+    CS_FREE(grad);
+    CS_FREE(w2);
   }
 }
 
@@ -11668,7 +11667,7 @@ cs_diffusion_potential(const int                   f_id,
     cs_real_t *_pvar = pvar;
 
     if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION) {
-      BFT_MALLOC(_pvar, n_cells_ext, cs_real_t);
+      CS_MALLOC(_pvar, n_cells_ext, cs_real_t);
       cs_array_real_copy(n_cells_ext, pvar, _pvar);
 
       cs_bad_cells_regularisation_scalar(_pvar);
@@ -11693,7 +11692,7 @@ cs_diffusion_potential(const int                   f_id,
                                     grad);
 
     if (_pvar != pvar)
-      BFT_FREE(_pvar);
+      CS_FREE(_pvar);
 
     /* Handle parallelism and periodicity */
 
@@ -12021,7 +12020,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
       /* With porosity */
     }
     else if (porosi != nullptr && porosf == nullptr) {
-      BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+      CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         for (int isou = 0; isou < 6; isou++) {
           w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
@@ -12032,7 +12031,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
       /* With tensorial porosity */
     }
     else if (porosi != nullptr && porosf != nullptr) {
-      BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+      CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_math_sym_33_product(porosf[cell_id],
                                viscel[cell_id],
@@ -12053,7 +12052,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
     }
 
     /* Allocate a work array for the gradient calculation */
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute gradient */
     if (iwgrp > 0) {
@@ -12248,11 +12247,10 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
     }
 
     /* Free memory */
-    BFT_FREE(grad);
-    BFT_FREE(w2);
+    CS_FREE(grad);
+    CS_FREE(w2);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

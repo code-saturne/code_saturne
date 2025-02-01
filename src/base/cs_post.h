@@ -110,7 +110,7 @@ typedef cs_datatype_t cs_post_type_t;
  * usually cells, interior faces, boundary faces, or particles.
  *
  * If non-empty and not containing all elements, a list of elements of the
- * main mesh should be allocated (using BFT_MALLOC) and defined by this
+ * main mesh should be allocated (using CS_MALLOC) and defined by this
  * function when called. This list's lifecycle is then managed by the
  * postprocessing subsystem.
  *

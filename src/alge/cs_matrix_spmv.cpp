@@ -57,7 +57,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -66,6 +65,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_timer.h"
 
@@ -243,7 +243,7 @@ _unset_mkl_sparse_map(cs_matrix_t   *matrix)
     bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
               __func__, (int)status, _cs_mkl_status_get_string(status));
 
-  BFT_FREE(matrix->ext_lib_map);
+  CS_FREE(matrix->ext_lib_map);
   matrix->destroy_adaptor = nullptr;
 }
 
@@ -264,7 +264,7 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
     _unset_mkl_sparse_map(matrix);
   }
   else {
-    BFT_MALLOC(csm, 1, cs_matrix_mkl_sparse_map_t);
+    CS_MALLOC(csm, 1, cs_matrix_mkl_sparse_map_t);
     csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     csm->descr.mode = SPARSE_FILL_MODE_FULL;
     csm->descr.diag = SPARSE_DIAG_NON_UNIT;
@@ -430,7 +430,7 @@ _unset_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
     bft_error(__FILE__, __LINE__, 0, _("%s: MKL sparse blas error %d (%s)."),
               __func__, (int)status, _cs_mkl_status_get_string(status));
 
-  BFT_FREE(matrix->ext_lib_map);
+  CS_FREE(matrix->ext_lib_map);
   matrix->destroy_adaptor = nullptr;
 }
 
@@ -451,7 +451,7 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
     _unset_mkl_sparse_sycl_map(matrix);
   }
   else {
-    BFT_MALLOC(csm, 1, cs_matrix_mkl_sparse_sycl_map_t);
+    CS_MALLOC(csm, 1, cs_matrix_mkl_sparse_sycl_map_t);
     csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     csm->descr.mode = SPARSE_FILL_MODE_FULL;
     csm->descr.diag = SPARSE_DIAG_NON_UNIT;

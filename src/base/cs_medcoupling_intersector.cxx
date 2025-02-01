@@ -44,10 +44,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
@@ -148,7 +148,7 @@ static cs_medcoupling_intersector_t *
 _create_intersector(void)
 {
   cs_medcoupling_intersector_t *mi = nullptr;
-  BFT_MALLOC(mi, 1, cs_medcoupling_intersector_t);
+  CS_MALLOC(mi, 1, cs_medcoupling_intersector_t);
 
   mi->name                 = nullptr;
   mi->id                   = -1;
@@ -199,8 +199,8 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   cs_lnum_t n_b_vtx = b_mesh->getNumberOfNodes();
 
   mi->n_b_vertices = n_b_vtx;
-  BFT_MALLOC(mi->boundary_coords, n_b_vtx, cs_coord_3_t);
-  BFT_MALLOC(mi->init_boundary_coords, n_b_vtx, cs_coord_3_t);
+  CS_MALLOC(mi->boundary_coords, n_b_vtx, cs_coord_3_t);
+  CS_MALLOC(mi->init_boundary_coords, n_b_vtx, cs_coord_3_t);
 
   for (cs_lnum_t i = 0; i < n_b_vtx; i++) {
     for (cs_lnum_t j = 0; j < dim; j++) {
@@ -228,13 +228,13 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   if (cs_glob_rank_id < 1)
     _n_b_faces = n_b_faces;
 
-  BFT_MALLOC(vertex_idx, _n_b_faces +1, cs_lnum_t);
+  CS_MALLOC(vertex_idx, _n_b_faces +1, cs_lnum_t);
   vertex_idx[0] = 0;
 
   if (cs_glob_rank_id < 1) {
-    BFT_MALLOC(faces_gnum  , _n_b_faces   ,  cs_gnum_t);
-    BFT_MALLOC(vertex_num  , n_elt_lst , cs_lnum_t);
-    BFT_MALLOC(vertex_gnum , n_b_vtx , cs_gnum_t);
+    CS_MALLOC(faces_gnum  , _n_b_faces   ,  cs_gnum_t);
+    CS_MALLOC(vertex_num  , n_elt_lst , cs_lnum_t);
+    CS_MALLOC(vertex_gnum , n_b_vtx , cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < _n_b_faces ; i++) {
       vertex_idx[i] = vtx_idx->getIJ(i,0) - i;
@@ -281,8 +281,8 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   mi->ext_mesh = ext_mesh;
 
   if (cs_glob_rank_id < 1) {
-    BFT_FREE(vertex_gnum);
-    BFT_FREE(faces_gnum);
+    CS_FREE(vertex_gnum);
+    CS_FREE(faces_gnum);
   }
 }
 
@@ -308,15 +308,15 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
                       const char                   *select_criteria,
                       cs_medcpl_intersect_type_t    type)
 {
-  BFT_MALLOC(mi->name, strlen(name)+1, char);
+  CS_MALLOC(mi->name, strlen(name)+1, char);
   strcpy(mi->name, name);
 
   mi->id = _n_intersects;
 
-  BFT_MALLOC(mi->medfile_path, strlen(medfile_path)+1, char);
+  CS_MALLOC(mi->medfile_path, strlen(medfile_path)+1, char);
   strcpy(mi->medfile_path, medfile_path);
 
-  BFT_MALLOC(mi->interp_method, strlen(interp_method)+1, char);
+  CS_MALLOC(mi->interp_method, strlen(interp_method)+1, char);
   strcpy(mi->interp_method, interp_method);
 
   mi->type = type;
@@ -371,7 +371,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   cs_lnum_t n_vtx = mesh->getNumberOfNodes();
   cs_lnum_t dim   = mesh->getMeshDimension();
 
-  BFT_MALLOC(mi->init_coords, n_vtx, cs_coord_3_t);
+  CS_MALLOC(mi->init_coords, n_vtx, cs_coord_3_t);
 
   DataArrayDouble *med_coords = DataArrayDouble::New();
   med_coords = mi->source_mesh->getCoordinatesAndOwner();
@@ -390,7 +390,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   const cs_lnum_t _n_intersect_vals =
     (cs_elt_dim == 3) ? cs_glob_mesh->n_cells : mi->local_mesh->n_elts;
 
-  BFT_MALLOC(mi->intersect_vals, _n_intersect_vals, cs_real_t);
+  CS_MALLOC(mi->intersect_vals, _n_intersect_vals, cs_real_t);
   for (cs_lnum_t e_id = 0; e_id < _n_intersect_vals; e_id++)
     mi->intersect_vals[e_id] = 0.;
 }
@@ -437,9 +437,9 @@ _add_intersector(const char                 *name,
               mi->local_mesh->sel_criteria, mi->type);
 
   if (_n_intersects == 0)
-    BFT_MALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
+    CS_MALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
   else
-    BFT_REALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
+    CS_REALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
 
   mi = _create_intersector();
 
@@ -556,14 +556,14 @@ _assign_vertex_coords(MEDCouplingUMesh   *med_mesh,
 static void
 _destroy_intersector(cs_medcoupling_intersector_t *mi)
 {
-  BFT_FREE(mi->name);
-  BFT_FREE(mi->medfile_path);
-  BFT_FREE(mi->interp_method);
+  CS_FREE(mi->name);
+  CS_FREE(mi->medfile_path);
+  CS_FREE(mi->interp_method);
 
-  BFT_FREE(mi->init_coords);
-  BFT_FREE(mi->boundary_coords);
-  BFT_FREE(mi->init_boundary_coords);
-  BFT_FREE(mi->intersect_vals);
+  CS_FREE(mi->init_coords);
+  CS_FREE(mi->boundary_coords);
+  CS_FREE(mi->init_boundary_coords);
+  CS_FREE(mi->intersect_vals);
 
   mi->source_mesh->decrRef();
 
@@ -791,7 +791,7 @@ _dump_medcoupling_mesh(MEDCouplingUMesh *m,
     if (cs_file_endswith(filename, _ext) == 0)
       lext = strlen(_ext);
     char *fname = nullptr;
-    BFT_MALLOC(fname, lsdir + lname + lext + 2, char);
+    CS_MALLOC(fname, lsdir + lname + lext + 2, char);
 
     strcpy(fname, subdir);
     fname[lsdir] = _dir_separator;
@@ -942,7 +942,7 @@ cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t  *mi)
 #else
   _destroy_intersector(mi);
 
-  BFT_FREE(mi);
+  CS_FREE(mi);
 #endif
 }
 
@@ -959,7 +959,7 @@ cs_medcoupling_intersector_destroy_all(void)
   for (int i = 0; i < _n_intersects; i++)
     cs_medcoupling_intersector_destroy(_intersects[i]);
 
-  BFT_FREE(_intersects);
+  CS_FREE(_intersects);
 #endif
 }
 
@@ -1359,7 +1359,7 @@ cs_medcoupling_intersector_transform_from_init(cs_medcoupling_intersector_t  *mi
   const cs_lnum_t n_vtx = mi->source_mesh->getNumberOfNodes();
   const cs_lnum_t n_b_vtx = mi->n_b_vertices;
 
-  BFT_MALLOC(_new_coords, n_vtx, cs_coord_3_t);
+  CS_MALLOC(_new_coords, n_vtx, cs_coord_3_t);
 
   /* Compute the new coordinates according
    * to a given transformation matrix */
@@ -1380,7 +1380,7 @@ cs_medcoupling_intersector_transform_from_init(cs_medcoupling_intersector_t  *mi
 
   mi->matrix_needs_update = 1;
 
-  BFT_FREE(_new_coords);
+  CS_FREE(_new_coords);
 #endif
 }
 

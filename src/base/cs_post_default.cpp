@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
@@ -52,6 +51,7 @@
 #include "base/cs_function_default.h"
 #include "lagr/cs_lagr_tracking.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_location.h"
@@ -152,9 +152,9 @@ _write_additional_vars(void                  *input,
         continue;
 
       cs_real_t  *b_face_val = nullptr;
-      BFT_MALLOC(b_face_val,
-                 n_b_faces * (cs_lnum_t)(f->dim),
-                 cs_real_t);
+      CS_MALLOC(b_face_val,
+                n_b_faces * (cs_lnum_t)(f->dim),
+                cs_real_t);
 
       cs_function_field_boundary_nr(f->location_id,
                                     n_b_faces,
@@ -177,7 +177,7 @@ _write_additional_vars(void                  *input,
                         b_face_val,
                         ts);
 
-      BFT_FREE(b_face_val);
+      CS_FREE(b_face_val);
 
     }
 

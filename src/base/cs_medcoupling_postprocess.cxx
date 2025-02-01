@@ -146,7 +146,7 @@ static inline cs_medcoupling_slice_t * _allocate_new_slice
 )
 {
   cs_medcoupling_slice_t *_si = nullptr;
-  BFT_MALLOC(_si, 1, cs_medcoupling_slice_t);
+  CS_MALLOC(_si, 1, cs_medcoupling_slice_t);
 
   _si->name = nullptr;
   _si->csm  = nullptr;
@@ -192,7 +192,7 @@ static inline cs_medcoupling_slice_t * _add_slice
 
   _si = _allocate_new_slice();
 
-  BFT_MALLOC(_si->name, strlen(name) + 1, char);
+  CS_MALLOC(_si->name, strlen(name) + 1, char);
   strcpy(_si->name, name);
 
   cs_math_3_normalize(normal, _si->normal);
@@ -206,11 +206,11 @@ static inline cs_medcoupling_slice_t * _add_slice
                                            0);
 
   if (_n_slices == 0)
-    BFT_MALLOC(_slices, 1, cs_medcoupling_slice_t *);
+    CS_MALLOC(_slices, 1, cs_medcoupling_slice_t *);
   else
-    BFT_REALLOC(_slices,
-                _n_slices + 1,
-                cs_medcoupling_slice_t *);
+    CS_REALLOC(_slices,
+               _n_slices + 1,
+               cs_medcoupling_slice_t *);
 
   _slices[_n_slices] = _si;
 
@@ -233,11 +233,11 @@ static inline void _compute_slice
 {
   /* We can only intersect the elements which match the selection criteria */
   si->n_elts = si->csm->n_elts;
-  BFT_MALLOC(si->elt_ids, si->n_elts, cs_lnum_t);
+  CS_MALLOC(si->elt_ids, si->n_elts, cs_lnum_t);
   for (cs_lnum_t e_id = 0; e_id < si->n_elts; e_id++)
     si->elt_ids[e_id] = si->csm->new_to_old[e_id];
 
-  BFT_MALLOC(si->surface,  si->n_elts, cs_real_t);
+  CS_MALLOC(si->surface,  si->n_elts, cs_real_t);
   cs_array_real_fill_zero(si->n_elts, si->surface);
 
   /* Get global arrays */
@@ -245,7 +245,7 @@ static inline void _compute_slice
   const cs_lnum_t n_cells_with_ghost = cs_glob_mesh->n_cells_with_ghosts;
 
   cs_lnum_t *_flag = nullptr;
-  BFT_MALLOC(_flag, n_cells_with_ghost, cs_lnum_t);
+  CS_MALLOC(_flag, n_cells_with_ghost, cs_lnum_t);
   memset(_flag, 0, n_cells_with_ghost * sizeof(cs_lnum_t));
 
   if (si->n_elts > 0) {
@@ -319,7 +319,7 @@ static inline void _compute_slice
     }
   }
 
-  BFT_FREE(_flag);
+  CS_FREE(_flag);
 
   // ----------------------------------------------------------------------
   // Compute total surface
@@ -1059,20 +1059,18 @@ void cs_medcoupling_slice_destroy_all
   void
 )
 {
-
   for (int i = 0; i < _n_slices; i++) {
     cs_medcoupling_slice_t *_s = _slices[i];
 
-    BFT_FREE(_s->name);
-    BFT_FREE(_s->elt_ids);
-    BFT_FREE(_s->surface);
+    CS_FREE(_s->name);
+    CS_FREE(_s->elt_ids);
+    CS_FREE(_s->surface);
 
-    BFT_FREE(_s);
+    CS_FREE(_s);
   }
 
-  BFT_FREE(_slices);
+  CS_FREE(_slices);
   _n_slices = 0;
-
 }
 
 /*----------------------------------------------------------------------------*/

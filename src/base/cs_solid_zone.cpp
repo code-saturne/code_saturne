@@ -46,15 +46,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <ple_locator.h>
-
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_flag_check.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_solid_zone.h"
 
@@ -149,7 +147,7 @@ cs_solid_zone_flag(const cs_mesh_t   *m)
 
   cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  BFT_MALLOC(c_is_solid, n_cells_ext, int);
+  CS_MALLOC(c_is_solid, n_cells_ext, int);
   for (cs_lnum_t i = 0; i < n_cells_ext; i++)
     c_is_solid[i] = 0;
   cs_volume_zone_tag_cell_type(CS_VOLUME_ZONE_SOLID, 1, c_is_solid);

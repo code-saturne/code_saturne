@@ -38,12 +38,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -444,9 +444,9 @@ _log_threading_info(cs_log_t               log,
   cs_lnum_t *group_min;
   cs_lnum_t *group_max;
 
-  BFT_MALLOC(group_sum, count_max[1]*2, cs_gnum_t);
-  BFT_MALLOC(group_min, count_max[1], cs_lnum_t);
-  BFT_MALLOC(group_max, count_max[1], cs_lnum_t);
+  CS_MALLOC(group_sum, count_max[1]*2, cs_gnum_t);
+  CS_MALLOC(group_min, count_max[1], cs_lnum_t);
+  CS_MALLOC(group_max, count_max[1], cs_lnum_t);
 
   for (int g_id = 0; g_id < n_groups; g_id++) {
     cs_lnum_t n_elts = _n_group_elts(numbering, g_id);
@@ -482,9 +482,9 @@ _log_threading_info(cs_log_t               log,
        (unsigned)group_min[i], (unsigned)group_max[i], (unsigned)group_mean);
   }
 
-  BFT_FREE(group_sum);
-  BFT_FREE(group_min);
-  BFT_FREE(group_max);
+  CS_FREE(group_sum);
+  CS_FREE(group_min);
+  CS_FREE(group_max);
 
 #endif
 
@@ -521,7 +521,7 @@ cs_numbering_create_default(cs_lnum_t  n_elts)
 {
   cs_numbering_t  *numbering = nullptr;
 
-  BFT_MALLOC(numbering, 1, cs_numbering_t);
+  CS_MALLOC(numbering, 1, cs_numbering_t);
 
   numbering->type = CS_NUMBERING_DEFAULT;
 
@@ -533,7 +533,7 @@ cs_numbering_create_default(cs_lnum_t  n_elts)
   numbering->n_no_adj_halo_groups = 0;
   numbering->n_no_adj_halo_elts = 0;
 
-  BFT_MALLOC(numbering->group_index, 2, cs_lnum_t);
+  CS_MALLOC(numbering->group_index, 2, cs_lnum_t);
   numbering->group_index[0] = 0;
   numbering->group_index[1] = n_elts;
 
@@ -558,7 +558,7 @@ cs_numbering_create_vectorized(cs_lnum_t  n_elts,
 {
   cs_numbering_t  *numbering = nullptr;
 
-  BFT_MALLOC(numbering, 1, cs_numbering_t);
+  CS_MALLOC(numbering, 1, cs_numbering_t);
 
   numbering->type = CS_NUMBERING_VECTORIZE;
 
@@ -570,7 +570,7 @@ cs_numbering_create_vectorized(cs_lnum_t  n_elts,
   numbering->n_no_adj_halo_groups = 0;
   numbering->n_no_adj_halo_elts = 0;
 
-  BFT_MALLOC(numbering->group_index, 2, cs_lnum_t);
+  CS_MALLOC(numbering->group_index, 2, cs_lnum_t);
   numbering->group_index[0] = 0;
   numbering->group_index[1] = n_elts;
 
@@ -601,7 +601,7 @@ cs_numbering_create_threaded(int        n_threads,
 {
   cs_numbering_t  *numbering = nullptr;
 
-  BFT_MALLOC(numbering, 1, cs_numbering_t);
+  CS_MALLOC(numbering, 1, cs_numbering_t);
 
   numbering->type = CS_NUMBERING_THREADS;
 
@@ -613,7 +613,7 @@ cs_numbering_create_threaded(int        n_threads,
   numbering->n_no_adj_halo_groups = 0;
   numbering->n_no_adj_halo_elts = 0;
 
-  BFT_MALLOC(numbering->group_index, n_threads*2*n_groups, cs_lnum_t);
+  CS_MALLOC(numbering->group_index, n_threads*2*n_groups, cs_lnum_t);
 
   memcpy(numbering->group_index,
          group_index,
@@ -635,12 +635,10 @@ void
 cs_numbering_destroy(cs_numbering_t  **numbering)
 {
   if (*numbering != nullptr) {
-
     cs_numbering_t  *_n = *numbering;
 
-    BFT_FREE(_n->group_index);
-
-    BFT_FREE(*numbering);
+    CS_FREE(_n->group_index);
+    CS_FREE(*numbering);
   }
 }
 

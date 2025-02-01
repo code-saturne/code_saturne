@@ -48,6 +48,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_assert.h"
+#include "base/cs_mem.h"
 
 #ifdef __NVCC__
 #include "base/cs_base_cuda.h"

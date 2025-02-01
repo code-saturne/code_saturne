@@ -51,7 +51,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -59,6 +58,7 @@
 #include "base/cs_log.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
 #include "base/cs_timer.h"
@@ -379,12 +379,12 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
   cs_lnum_t        *_col_id = nullptr;
 
   if (sizeof(int) != sizeof(cs_lnum_t)) {
-    BFT_MALLOC(_row_index, n_rows, int);
+    CS_MALLOC(_row_index, n_rows, int);
     for (cs_lnum_t i = 0; i < n_rows; i++)
       _row_index[i] = a_row_index[i];
     row_index = _row_index;
     int nnz = row_index[n_rows];
-    BFT_MALLOC(_col_id, nnz, int);
+    CS_MALLOC(_col_id, nnz, int);
     for (cs_lnum_t i = 0; i < nnz; i++)
       _col_id[i] = a_col_id[i];
     col_id = _col_id;
@@ -407,8 +407,8 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
   if (cs_glob_n_ranks > 1) {
 
     int *send_sizes, *recv_sizes;
-    BFT_MALLOC(send_sizes, halo->n_c_domains, int);
-    BFT_MALLOC(recv_sizes, halo->n_c_domains, int);
+    CS_MALLOC(send_sizes, halo->n_c_domains, int);
+    CS_MALLOC(recv_sizes, halo->n_c_domains, int);
     for (int i = 0; i < halo->n_c_domains; i++) {
       send_sizes[i] =   halo->send_index[2*i + 1]
                       - halo->send_index[2*i];
@@ -416,17 +416,17 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
                       - halo->index[2*i];
     }
     int **send_maps, **recv_maps;
-    BFT_MALLOC(send_maps, halo->n_c_domains, int *);
-    BFT_MALLOC(recv_maps, halo->n_c_domains, int *);
+    CS_MALLOC(send_maps, halo->n_c_domains, int *);
+    CS_MALLOC(recv_maps, halo->n_c_domains, int *);
 
     assert(sizeof(cs_lnum_t) == sizeof(int));
 
     for (int i = 0; i < halo->n_c_domains; i++) {
-      BFT_MALLOC(send_maps[i], send_sizes[i], int);
+      CS_MALLOC(send_maps[i], send_sizes[i], int);
       int *_send_map = send_maps[i];
       for (int j = 0; j < send_sizes[i]; j++)
         _send_map[j] = halo->send_list[halo->send_index[2*i] + j];
-      BFT_MALLOC(recv_maps[i], recv_sizes[i], int);
+      CS_MALLOC(recv_maps[i], recv_sizes[i], int);
       int *_recv_map = recv_maps[i];
       for (int j = 0; j < recv_sizes[i]; j++)
         _recv_map[j] = halo->n_local_elts + halo->index[2*i] + j;
@@ -448,11 +448,11 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
     }
 
     for (int i = 0; i < halo->n_c_domains; i++) {
-      BFT_FREE(recv_maps[i]);
-      BFT_FREE(send_maps[i]);
+      CS_FREE(recv_maps[i]);
+      CS_FREE(send_maps[i]);
     }
-    BFT_FREE(recv_sizes);
-    BFT_FREE(send_sizes);
+    CS_FREE(recv_sizes);
+    CS_FREE(send_sizes);
 
   }
 
@@ -498,8 +498,8 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
   if (amode_row_index < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)row_index);
 
-  BFT_FREE(_row_index);
-  BFT_FREE(_col_id);
+  CS_FREE(_row_index);
+  CS_FREE(_col_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -802,7 +802,7 @@ cs_sles_amgx_create(void)
 
   _n_amgx_systems += 1;
 
-  BFT_MALLOC(c, 1, cs_sles_amgx_t);
+  CS_MALLOC(c, 1, cs_sles_amgx_t);
   c->n_setups = 0;
   c->n_solves = 0;
   c->n_iterations_last = 0;
@@ -851,13 +851,13 @@ cs_sles_amgx_copy(const void  *context)
 
     if (c->amgx_config_file != nullptr) {
       size_t l = strlen(c->amgx_config_file);
-      BFT_MALLOC(d->amgx_config_file, l+1, char);
+      CS_MALLOC(d->amgx_config_file, l+1, char);
       strncpy(d->amgx_config_file, c->amgx_config_file, l);
       d->amgx_config_file[l] = '\0';
     }
     if (c->amgx_config_string != nullptr) {
       size_t l = strlen(c->amgx_config_string);
-      BFT_MALLOC(d->amgx_config_string, l+1, char);
+      CS_MALLOC(d->amgx_config_string, l+1, char);
       strncpy(d->amgx_config_string, c->amgx_config_string, l);
       d->amgx_config_string[l] = '\0';
     }
@@ -886,8 +886,8 @@ cs_sles_amgx_destroy(void **context)
 
     /* Free local strings */
 
-    BFT_FREE(c->amgx_config_file);
-    BFT_FREE(c->amgx_config_string);
+    CS_FREE(c->amgx_config_file);
+    CS_FREE(c->amgx_config_string);
 
     if (c->n_setups >= 1) {
       char err_str[4096];
@@ -912,7 +912,7 @@ cs_sles_amgx_destroy(void **context)
     /* Free structure */
 
     cs_sles_amgx_free(c);
-    BFT_FREE(c);
+    CS_FREE(c);
     *context = c;
 
     _n_amgx_systems -= 1;
@@ -1001,7 +1001,7 @@ cs_sles_amgx_set_config(void        *context,
 
   size_t l = strlen(config);
 
-  BFT_REALLOC(c->amgx_config_string, l+1, char);
+  CS_REALLOC(c->amgx_config_string, l+1, char);
   strncpy(c->amgx_config_string, config, l);
   c->amgx_config_string[l] = '\0';
 }
@@ -1047,7 +1047,7 @@ cs_sles_amgx_set_config_file(void        *context,
 
   size_t l = strlen(path);
 
-  BFT_REALLOC(c->amgx_config_file, l+1, char);
+  CS_REALLOC(c->amgx_config_file, l+1, char);
   strncpy(c->amgx_config_file, path, l);
   c->amgx_config_file[l] = '\0';
 }
@@ -1182,7 +1182,7 @@ cs_sles_amgx_setup(void               *context,
 
   if (sd == nullptr) {
 
-    BFT_MALLOC(c->setup_data, 1, cs_sles_amgx_setup_t);
+    CS_MALLOC(c->setup_data, 1, cs_sles_amgx_setup_t);
     sd = c->setup_data;
 
     /* Load configuration at first call */
@@ -1596,7 +1596,7 @@ cs_sles_amgx_free(void  *context)
 
   }
   if (c->setup_data != nullptr)
-    BFT_FREE(c->setup_data);
+    CS_FREE(c->setup_data);
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);

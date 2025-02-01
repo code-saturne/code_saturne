@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -55,6 +54,7 @@
 #include "base/cs_file.h"
 #include "gui/cs_gui_mobile_mesh.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters_check.h"
@@ -214,7 +214,7 @@ _mobile_structures_create(void)
 {
   cs_mobile_structures_t *ms;
 
-  BFT_MALLOC(ms, 1, cs_mobile_structures_t);
+  CS_MALLOC(ms, 1, cs_mobile_structures_t);
 
   ms->n_int_structs = 0;
 
@@ -265,7 +265,7 @@ _mobile_structures_create(void)
 
   ms->plot_dir_name = nullptr;
   const char dir_name[] = "monitoring";
-  BFT_MALLOC(ms->plot_dir_name, strlen(dir_name) + 1, char);
+  CS_MALLOC(ms->plot_dir_name, strlen(dir_name) + 1, char);
   strcpy(ms->plot_dir_name, dir_name);
 
   ms->plot_files[0] = nullptr;
@@ -291,27 +291,27 @@ _mobile_structures_destroy(cs_mobile_structures_t  **ms)
 {
   cs_mobile_structures_t  *_ms = *ms;
 
-  BFT_FREE(_ms->xmstru);
-  BFT_FREE(_ms->xcstru);
-  BFT_FREE(_ms->xkstru);
+  CS_FREE(_ms->xmstru);
+  CS_FREE(_ms->xcstru);
+  CS_FREE(_ms->xkstru);
 
-  BFT_FREE(_ms->xstr);
-  BFT_FREE(_ms->xsta);
-  BFT_FREE(_ms->xstp);
-  BFT_FREE(_ms->xstreq);
+  CS_FREE(_ms->xstr);
+  CS_FREE(_ms->xsta);
+  CS_FREE(_ms->xstp);
+  CS_FREE(_ms->xstreq);
 
-  BFT_FREE(_ms->xpstr);
-  BFT_FREE(_ms->xpsta);
+  CS_FREE(_ms->xpstr);
+  CS_FREE(_ms->xpsta);
 
-  BFT_FREE(_ms->xppstr);
-  BFT_FREE(_ms->xppsta);
+  CS_FREE(_ms->xppstr);
+  CS_FREE(_ms->xppsta);
 
-  BFT_FREE(_ms->forstr);
-  BFT_FREE(_ms->forsta);
-  BFT_FREE(_ms->forstp);
+  CS_FREE(_ms->forstr);
+  CS_FREE(_ms->forsta);
+  CS_FREE(_ms->forstp);
 
-  BFT_FREE(_ms->dtstr);
-  BFT_FREE(_ms->dtsta);
+  CS_FREE(_ms->dtstr);
+  CS_FREE(_ms->dtsta);
 
   /* Plot info */
 
@@ -327,18 +327,18 @@ _mobile_structures_destroy(cs_mobile_structures_t  **ms)
         }
       }
 
-      BFT_FREE(_ms->plot_files[fmt]);
+      CS_FREE(_ms->plot_files[fmt]);
 
     }
   }
 
-  BFT_FREE(_ms->plot_dir_name);
+  CS_FREE(_ms->plot_dir_name);
 
   /* Face association */
 
-  BFT_FREE(_ms->idfstr);
+  CS_FREE(_ms->idfstr);
 
-  BFT_FREE(_ms);
+  CS_FREE(_ms);
   *ms = _ms;
 }
 
@@ -362,27 +362,27 @@ _init_internal_structures(cs_mobile_structures_t *ms,
   int n_int_structs_prev = ms->n_int_structs;
   ms->n_int_structs      = n_structures;
 
-  BFT_REALLOC(ms->xmstru, n_structures, cs_real_33_t);
-  BFT_REALLOC(ms->xcstru, n_structures, cs_real_33_t);
-  BFT_REALLOC(ms->xkstru, n_structures, cs_real_33_t);
+  CS_REALLOC(ms->xmstru, n_structures, cs_real_33_t);
+  CS_REALLOC(ms->xcstru, n_structures, cs_real_33_t);
+  CS_REALLOC(ms->xkstru, n_structures, cs_real_33_t);
 
-  BFT_REALLOC(ms->xstr, n_structures, cs_real_3_t);
-  BFT_REALLOC(ms->xsta, n_structures, cs_real_3_t);
-  BFT_REALLOC(ms->xstp, n_structures, cs_real_3_t);
-  BFT_REALLOC(ms->xstreq, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->xstr, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->xsta, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->xstp, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->xstreq, n_structures, cs_real_3_t);
 
-  BFT_REALLOC(ms->xpstr, n_structures, cs_real_3_t);
-  BFT_REALLOC(ms->xpsta, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->xpstr, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->xpsta, n_structures, cs_real_3_t);
 
-  BFT_REALLOC(ms->xppstr, n_structures, cs_real_3_t);
-  BFT_REALLOC(ms->xppsta, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->xppstr, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->xppsta, n_structures, cs_real_3_t);
 
-  BFT_REALLOC(ms->forstr, n_structures, cs_real_3_t);
-  BFT_REALLOC(ms->forsta, n_structures, cs_real_3_t);
-  BFT_REALLOC(ms->forstp, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->forstr, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->forsta, n_structures, cs_real_3_t);
+  CS_REALLOC(ms->forstp, n_structures, cs_real_3_t);
 
-  BFT_REALLOC(ms->dtstr, n_structures, cs_real_t);
-  BFT_REALLOC(ms->dtsta, n_structures, cs_real_t);
+  CS_REALLOC(ms->dtstr, n_structures, cs_real_t);
+  CS_REALLOC(ms->dtsta, n_structures, cs_real_t);
 
   for (int i = n_int_structs_prev; i < n_structures; i++) {
     ms->dtstr[i] = 0;
@@ -591,11 +591,11 @@ _init_time_plot(cs_mobile_structures_t   *ms)
 
   if (ms->plot_dir_name != nullptr) {
     l += strlen(ms->plot_dir_name) + 1;
-    BFT_MALLOC(file_prefix, l+1, char);
+    CS_MALLOC(file_prefix, l+1, char);
     snprintf(file_prefix, l+1, "%s/%s", ms->plot_dir_name, base_prefix);
   }
   else {
-    BFT_MALLOC(file_prefix, l+1, char);
+    CS_MALLOC(file_prefix, l+1, char);
     strncpy(file_prefix, base_prefix, l+1);
   }
   file_prefix[l] = '\0';
@@ -611,7 +611,7 @@ _init_time_plot(cs_mobile_structures_t   *ms)
 
       if (ms->plot & fmt_mask) {
         if (i == 0) {
-          BFT_REALLOC(ms->plot_files[fmt], n_plots, cs_time_plot_t *);
+          CS_REALLOC(ms->plot_files[fmt], n_plots, cs_time_plot_t *);
           for (int j = 0; j < n_plots; j++)
             ms->plot_files[fmt][j] = nullptr;
         }
@@ -633,7 +633,7 @@ _init_time_plot(cs_mobile_structures_t   *ms)
 
   ms->n_plots = n_plots;
 
-  BFT_FREE(file_prefix);
+  CS_FREE(file_prefix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -687,7 +687,7 @@ _output_time_plots(cs_mobile_structures_t  *ms,
   /* Main processing */
 
   cs_real_t *vartmp;
-  BFT_MALLOC(vartmp, ms->n_int_structs, cs_real_t);
+  CS_MALLOC(vartmp, ms->n_int_structs, cs_real_t);
 
   int pl_id = 0;
 
@@ -711,7 +711,7 @@ _output_time_plots(cs_mobile_structures_t  *ms,
 
   }
 
-  BFT_FREE(vartmp);
+  CS_FREE(vartmp);
 }
 
 /*============================================================================
@@ -801,7 +801,7 @@ cs_mobile_structures_initialize(void)
 
   /* Reserve idfstr array */
   assert(ms != nullptr);
-  BFT_REALLOC(ms->idfstr, n_b_faces, int);
+  CS_REALLOC(ms->idfstr, n_b_faces, int);
 
   int *idfstr = ms->idfstr;
   cs_array_int_fill_zero(n_b_faces, idfstr);
@@ -866,7 +866,7 @@ cs_mobile_structures_initialize(void)
   if (n_ast_structs > 0) {
 
     cs_lnum_t *face_ids = nullptr;
-    BFT_MALLOC(face_ids, n_ast_faces, cs_lnum_t);
+    CS_MALLOC(face_ids, n_ast_faces, cs_lnum_t);
 
     cs_lnum_t count = 0;
 
@@ -890,7 +890,7 @@ cs_mobile_structures_initialize(void)
     /* Send geometric information to code_aster */
     cs_ast_coupling_geometry(n_ast_faces, face_ids, almax);
 
-    BFT_FREE(face_ids);
+    CS_FREE(face_ids);
 
   }
 
@@ -901,7 +901,7 @@ cs_mobile_structures_initialize(void)
   if (n_int_structs + n_ast_structs == 0) {
     cs_glob_mobile_structures_n_iter_max = 1;
 
-    BFT_FREE(ms->idfstr);
+    CS_FREE(ms->idfstr);
     idfstr = nullptr;
   }
 
@@ -921,8 +921,8 @@ cs_mobile_structures_finalize(void)
   if (_mobile_structures != nullptr)
     _mobile_structures_destroy(&_mobile_structures);
 
-  BFT_FREE(_bc_coeffs_save);
-  BFT_FREE(_pr_save);
+  CS_FREE(_bc_coeffs_save);
+  CS_FREE(_pr_save);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1364,7 +1364,7 @@ cs_mobile_structures_prediction(int  itrale,
       cs_real_t *coefap = CS_F_(p)->bc_coeffs->a;
       cs_real_t *coefbp = CS_F_(p)->bc_coeffs->b;
 
-      BFT_REALLOC(_bc_coeffs_save, n_b_faces, _cs_real_11_t);
+      CS_REALLOC(_bc_coeffs_save, n_b_faces, _cs_real_11_t);
       _cs_real_11_t *cofale = _bc_coeffs_save;
 
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -1392,7 +1392,7 @@ cs_mobile_structures_prediction(int  itrale,
         cs_lnum_t        n_vals   = m->n_cells_with_ghosts;
         const cs_real_t *cvara_pr = CS_F_(p)->val_pre;
 
-        BFT_REALLOC(_pr_save, n_b_faces, cs_real_t);
+        CS_REALLOC(_pr_save, n_b_faces, cs_real_t);
         cs_array_copy(n_vals, cvara_pr, _pr_save);
       }
 
@@ -1728,8 +1728,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   }
 
   else if (*itrfin == -1) {
-    BFT_FREE(_bc_coeffs_save);
-    BFT_FREE(_pr_save);
+    CS_FREE(_bc_coeffs_save);
+    CS_FREE(_pr_save);
 
     if (n_int_structs > 0 &&
         cs_time_control_is_active(&(ms->plot_time_control), ts)) {

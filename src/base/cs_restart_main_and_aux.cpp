@@ -47,8 +47,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
 #include "atmo/cs_atmo.h"
@@ -60,6 +58,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
@@ -556,7 +555,7 @@ _write_auxiliary_checkpoint(void)
     if (wco->nztag1d == 1) {
       cs_wall_cond_1d_thermal_t *wco1d = cs_get_glob_wall_cond_1d_thermal();
 
-      BFT_MALLOC(tmp, wco1d->znmurx * cs_glob_mesh->n_b_faces, cs_real_t);
+      CS_MALLOC(tmp, wco1d->znmurx * cs_glob_mesh->n_b_faces, cs_real_t);
       cs_array_real_fill_zero(wco1d->znmurx * cs_glob_mesh->n_b_faces,
                               tmp);
 
@@ -576,7 +575,7 @@ _write_auxiliary_checkpoint(void)
                                tmp);
     }
     else {
-      BFT_MALLOC(tmp, cs_glob_mesh->n_b_faces, cs_real_t);
+      CS_MALLOC(tmp, cs_glob_mesh->n_b_faces, cs_real_t);
       cs_array_real_fill_zero(cs_glob_mesh->n_b_faces, tmp);
 
       for (cs_lnum_t e_id = 0; e_id < wco->nfbpcd; e_id++) {
@@ -593,7 +592,7 @@ _write_auxiliary_checkpoint(void)
                                tmp);
     }
 
-    BFT_FREE(tmp);
+    CS_FREE(tmp);
   }
 
   /* ALE */
@@ -1056,7 +1055,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     if (wco->nztag1d == 1) {
       cs_wall_cond_1d_thermal_t *wco1d = cs_get_glob_wall_cond_1d_thermal();
 
-      BFT_MALLOC(tmp, wco1d->znmurx * cs_glob_mesh->n_b_faces, cs_real_t);
+      CS_MALLOC(tmp, wco1d->znmurx * cs_glob_mesh->n_b_faces, cs_real_t);
       retval = cs_restart_read_section(r,
                                        "tmur_bf_prev",
                                        3,
@@ -1075,7 +1074,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
     }
     else {
-      BFT_MALLOC(tmp, cs_glob_mesh->n_b_faces, cs_real_t);
+      CS_MALLOC(tmp, cs_glob_mesh->n_b_faces, cs_real_t);
 
       retval = cs_restart_read_section(r,
                                        "tpar_bf_prev",
@@ -1094,7 +1093,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
       }
     }
 
-    BFT_FREE(tmp);
+    CS_FREE(tmp);
   }
 
   /* ------------------- */

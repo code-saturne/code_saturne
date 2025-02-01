@@ -97,7 +97,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -107,6 +106,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_sort.h"
@@ -359,7 +359,7 @@ _create_struct_native(cs_lnum_t        n_rows,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_native_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_native_t);
 
   /* Allocate and map */
 
@@ -385,7 +385,7 @@ _destroy_struct_native(void  **ms)
   if (ms != nullptr && *ms !=nullptr) {
     auto _ms = static_cast<cs_matrix_struct_native_t *>(*ms);
 
-    BFT_FREE(_ms);
+    CS_FREE(_ms);
 
     *ms= nullptr;
   }
@@ -547,9 +547,9 @@ _destroy_struct_csr(void  **ms)
   if (ms != nullptr && *ms !=nullptr) {
     auto _ms = static_cast<cs_matrix_struct_csr_t  *>( *ms);
 
-    BFT_FREE(_ms->_row_index);
-    BFT_FREE(_ms->_col_id);
-    BFT_FREE(_ms);
+    CS_FREE(_ms->_row_index);
+    CS_FREE(_ms->_col_id);
+    CS_FREE(_ms);
 
     *ms= nullptr;
   }
@@ -580,7 +580,7 @@ _compact_struct_csr(cs_matrix_struct_csr_t  *ms,
     cs_lnum_t *tmp_row_index = nullptr;
     cs_lnum_t  kk = 0;
 
-    BFT_MALLOC(tmp_row_index, ms->n_rows+1, cs_lnum_t);
+    CS_MALLOC(tmp_row_index, ms->n_rows+1, cs_lnum_t);
     memcpy(tmp_row_index, ms->_row_index, (ms->n_rows+1)*sizeof(cs_lnum_t));
 
     kk = 0;
@@ -601,7 +601,7 @@ _compact_struct_csr(cs_matrix_struct_csr_t  *ms,
 
     assert(ms->_row_index[ms->n_rows] < tmp_row_index[ms->n_rows]);
 
-    BFT_FREE(tmp_row_index);
+    CS_FREE(tmp_row_index);
     CS_REALLOC_HD(ms->_col_id,
                   (ms->_row_index[ms->n_rows]),
                   cs_lnum_t,
@@ -644,7 +644,7 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_csr_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_csr_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -657,7 +657,7 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
 
   /* Count number of nonzero elements per row */
 
-  BFT_MALLOC(ccount, ms->n_rows, cs_lnum_t);
+  CS_MALLOC(ccount, ms->n_rows, cs_lnum_t);
 
   /* count starting with diagonal terms */
   for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++)
@@ -708,7 +708,7 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
 
   } /* if (edges != nullptr) */
 
-  BFT_FREE(ccount);
+  CS_FREE(ccount);
 
   /* Compact and finalize indexes */
 
@@ -839,7 +839,7 @@ _create_struct_csr_from_csr(bool         have_diag,
 {
   cs_matrix_struct_csr_t  *ms = nullptr;
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_csr_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_csr_t);
 
   _init_struct_csr_from_csr(ms,
                             have_diag,
@@ -881,7 +881,7 @@ _create_struct_csr_from_shared(bool              have_diag,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_csr_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_csr_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -916,7 +916,7 @@ _create_struct_csr_from_restrict_local(const cs_matrix_struct_csr_t  *src)
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_csr_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_csr_t);
 
   const cs_lnum_t n_rows = src->n_rows;
 
@@ -973,7 +973,7 @@ _create_coeff(void)
 
   /* Allocate */
 
-  BFT_MALLOC(mc, 1, cs_matrix_coeff_t);
+  CS_MALLOC(mc, 1, cs_matrix_coeff_t);
 
   /* Initialize */
 
@@ -1015,7 +1015,7 @@ _destroy_coeff(cs_matrix_t  *m)
     CS_FREE(mc->_val);
     CS_FREE_HD(mc->d_idx);
 
-    BFT_FREE(m->coeffs);
+    CS_FREE(m->coeffs);
   }
 }
 
@@ -1452,9 +1452,9 @@ _set_coeffs_csr_from_msr(cs_matrix_t    *matrix,
   /* Now free transferred arrays */
 
   if (d_vals_transfer != nullptr)
-    BFT_FREE(*d_vals_transfer);
+    CS_FREE(*d_vals_transfer);
   if (x_vals_transfer != nullptr)
-    BFT_FREE(*x_vals_transfer);
+    CS_FREE(*x_vals_transfer);
 }
 
 /*----------------------------------------------------------------------------
@@ -2277,7 +2277,7 @@ _set_coeffs_msr_from_msr(cs_matrix_t       *matrix,
     if (*x_vals_transfer != nullptr) {
       mc->eb_size = matrix->eb_size;
       if (mc->_e_val != *x_vals_transfer) {
-        BFT_FREE(mc->_e_val);
+        CS_FREE(mc->_e_val);
         mc->_e_val = *x_vals_transfer;
       }
       mc->e_val = mc->_e_val;
@@ -2827,7 +2827,7 @@ _variant_add(const char                *name,
       *n_variants_max = 8;
     else
       *n_variants_max *= 2;
-    BFT_REALLOC(*m_variant, *n_variants_max, cs_matrix_variant_t);
+    CS_REALLOC(*m_variant, *n_variants_max, cs_matrix_variant_t);
   }
 
   v = (*m_variant) + i;
@@ -2902,7 +2902,7 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_dist_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_dist_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -2968,7 +2968,7 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
 
   cs_lnum_t count_size = 2*n_rows;
   cs_lnum_t *ccount;
-  BFT_MALLOC(ccount, count_size, cs_lnum_t);
+  CS_MALLOC(ccount, count_size, cs_lnum_t);
 
   for (cs_lnum_t ii = 0; ii < count_size; ii++)
     ccount[ii] = 0;
@@ -3000,7 +3000,7 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
     }
   }
 
-  BFT_FREE(ccount);
+  CS_FREE(ccount);
 
   /* Compact structures if needed */
 
@@ -3039,7 +3039,7 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_dist_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_dist_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -3081,7 +3081,7 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
 
   cs_lnum_t count_size = n_rows;
   cs_lnum_t *ccount;
-  BFT_MALLOC(ccount, count_size, cs_lnum_t);
+  CS_MALLOC(ccount, count_size, cs_lnum_t);
 
   for (cs_lnum_t ii = 0; ii < count_size; ii++)
     ccount[ii] = 0;
@@ -3101,7 +3101,7 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
     }
   }
 
-  BFT_FREE(ccount);
+  CS_FREE(ccount);
 
   /* Compact structures if needed */
 
@@ -3137,7 +3137,7 @@ _create_struct_msr_from_shared(bool              direct_assembly,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_dist_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_dist_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -3187,7 +3187,7 @@ _create_struct_msr_from_msr(bool         transfer,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_dist_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_dist_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -3235,7 +3235,7 @@ _create_struct_msr_from_csr(bool              direct_assembly,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_dist_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_dist_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -3302,7 +3302,7 @@ _create_struct_dist_from_csr(bool              direct_assembly,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_dist_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_dist_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -3393,7 +3393,7 @@ _create_struct_dist_from_msr(bool              direct_assembly,
 
   /* Allocate and map */
 
-  BFT_MALLOC(ms, 1, cs_matrix_struct_dist_t);
+  CS_MALLOC(ms, 1, cs_matrix_struct_dist_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -3477,7 +3477,7 @@ _destroy_struct_dist(void  **ms)
 
     CS_FREE_HD(_ms->h_row_id);
 
-    BFT_FREE(_ms);
+    CS_FREE(_ms);
 
     *ms= nullptr;
   }
@@ -3947,7 +3947,7 @@ _matrix_create(cs_matrix_type_t  type,
 {
   cs_matrix_t *m;
 
-  BFT_MALLOC(m, 1, cs_matrix_t);
+  CS_MALLOC(m, 1, cs_matrix_t);
 
   m->type = type;
 
@@ -4136,7 +4136,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
 {
   cs_matrix_structure_t *ms;
 
-  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
+  CS_MALLOC(ms, 1, cs_matrix_structure_t);
 
   ms->type = type;
 
@@ -4238,7 +4238,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
 {
   cs_matrix_structure_t *ms = nullptr;
 
-  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
+  CS_MALLOC(ms, 1, cs_matrix_structure_t);
 
   ms->type = type;
 
@@ -4326,7 +4326,7 @@ cs_matrix_structure_create_msr_shared(bool                    direct_assembly,
 {
   cs_matrix_structure_t *ms = nullptr;
 
-  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
+  CS_MALLOC(ms, 1, cs_matrix_structure_t);
 
   ms->type = CS_MATRIX_MSR;
 
@@ -4371,7 +4371,7 @@ cs_matrix_structure_create_from_assembler(cs_matrix_type_t        type,
 {
   cs_matrix_structure_t *ms = nullptr;
 
-  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
+  CS_MALLOC(ms, 1, cs_matrix_structure_t);
 
   ms->type = type;
 
@@ -4417,7 +4417,7 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
 
     /* Now free main structure */
 
-    BFT_FREE(*ms);
+    CS_FREE(*ms);
   }
 }
 
@@ -4520,7 +4520,7 @@ cs_matrix_create_by_copy(cs_matrix_t   *src)
 {
   cs_matrix_t *m;
 
-  BFT_MALLOC(m, 1, cs_matrix_t);
+  CS_MALLOC(m, 1, cs_matrix_t);
 
   memcpy(m, src, sizeof(cs_matrix_t));
 
@@ -4560,7 +4560,7 @@ cs_matrix_create_by_local_restrict(const cs_matrix_t  *src)
 
   const cs_lnum_t n_rows = src->n_rows;
 
-  BFT_MALLOC(m, 1, cs_matrix_t);
+  CS_MALLOC(m, 1, cs_matrix_t);
   memcpy(m, src, sizeof(cs_matrix_t));
   m->n_cols_ext = m->n_rows;
 
@@ -4648,7 +4648,7 @@ cs_matrix_destroy(cs_matrix_t **matrix)
 
   /* Now free main structure */
 
-  BFT_FREE(*matrix);
+  CS_FREE(*matrix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5327,7 +5327,7 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
 
   if (matrix->release_coefficients != nullptr) {
     matrix->xa = nullptr;
-    BFT_FREE(matrix->_xa);
+    CS_FREE(matrix->_xa);
     matrix->release_coefficients(matrix);
   }
   else {
@@ -5552,9 +5552,9 @@ cs_matrix_row_finalize(cs_matrix_row_info_t  *r)
   r->row_size = 0;
   r->buffer_size = 0;
   r->col_id = nullptr;
-  BFT_FREE(r->_col_id);
+  CS_FREE(r->_col_id);
   r->vals = nullptr;
-  BFT_FREE(r->_vals);
+  CS_FREE(r->_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5612,9 +5612,9 @@ cs_matrix_get_row(const cs_matrix_t     *matrix,
         r->row_size = (n_ed_cols+1)*b_size;
       if (r->buffer_size < r->row_size) {
         r->buffer_size = r->row_size*2;
-        BFT_REALLOC(r->_col_id, r->buffer_size, cs_lnum_t);
+        CS_REALLOC(r->_col_id, r->buffer_size, cs_lnum_t);
         r->col_id = r->_col_id;
-        BFT_REALLOC(r->_vals, r->buffer_size, cs_real_t);
+        CS_REALLOC(r->_vals, r->buffer_size, cs_real_t);
         r->vals = r->_vals;
       }
       cs_lnum_t ii = 0, jj = 0;
@@ -5694,9 +5694,9 @@ cs_matrix_get_row(const cs_matrix_t     *matrix,
         r->row_size = (n_ed_cols + n_h_cols + 1)*b_size;
       if (r->buffer_size < r->row_size) {
         r->buffer_size = r->row_size*2;
-        BFT_REALLOC(r->_col_id, r->buffer_size, cs_lnum_t);
+        CS_REALLOC(r->_col_id, r->buffer_size, cs_lnum_t);
         r->col_id = r->_col_id;
-        BFT_REALLOC(r->_vals, r->buffer_size, cs_real_t);
+        CS_REALLOC(r->_vals, r->buffer_size, cs_real_t);
         r->vals = r->_vals;
       }
       cs_lnum_t ii = 0, jj = 0;
@@ -6360,7 +6360,7 @@ cs_matrix_variant_create(cs_matrix_t  *m)
 {
   cs_matrix_variant_t  *mv;
 
-  BFT_MALLOC(mv, 1, cs_matrix_variant_t);
+  CS_MALLOC(mv, 1, cs_matrix_variant_t);
 
   mv->type = m->type;
   mv->fill_type = m->fill_type;
@@ -6600,7 +6600,7 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
   }
 
   n_variants_max = *n_variants;
-  BFT_REALLOC(*m_variant, *n_variants, cs_matrix_variant_t);
+  CS_REALLOC(*m_variant, *n_variants, cs_matrix_variant_t);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6615,7 +6615,7 @@ void
 cs_matrix_variant_destroy(cs_matrix_variant_t  **mv)
 {
   if (mv != nullptr)
-    BFT_FREE(*mv);
+    CS_FREE(*mv);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -38,8 +38,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -857,7 +857,7 @@ cs_order_gnum(const cs_lnum_t  list[],
 {
   cs_lnum_t *order;
 
-  BFT_MALLOC(order, nb_ent, cs_lnum_t);
+  CS_MALLOC(order, nb_ent, cs_lnum_t);
 
   cs_order_gnum_allocated(list,
                           number,
@@ -896,7 +896,7 @@ cs_order_gnum_s(const cs_lnum_t  list[],
 {
   cs_lnum_t *order;
 
-  BFT_MALLOC(order, nb_ent, cs_lnum_t);
+  CS_MALLOC(order, nb_ent, cs_lnum_t);
 
   cs_order_gnum_allocated_s(list,
                             number,
@@ -935,7 +935,7 @@ cs_order_gnum_i(const cs_lnum_t  list[],
 {
   cs_lnum_t *order = nullptr;
 
-  BFT_MALLOC(order, nb_ent, cs_lnum_t);
+  CS_MALLOC(order, nb_ent, cs_lnum_t);
 
   cs_order_gnum_allocated_i(list, number, index, order, nb_ent);
 
@@ -971,11 +971,11 @@ cs_order_gnum_allocated(const cs_lnum_t  list[],
   if (number != nullptr) {
 
     if (list != nullptr) {
-      BFT_MALLOC(number_list, nb_ent, cs_gnum_t);
+      CS_MALLOC(number_list, nb_ent, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++)
         number_list[i] = number[list[i]];
       _order_gnum(number_list, order, nb_ent);
-      BFT_FREE(number_list);
+      CS_FREE(number_list);
     }
     else
       _order_gnum(number,
@@ -989,11 +989,11 @@ cs_order_gnum_allocated(const cs_lnum_t  list[],
   else {
 
     if (list != nullptr) {
-      BFT_MALLOC(number_list, nb_ent, cs_gnum_t);
+      CS_MALLOC(number_list, nb_ent, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++)
         number_list[i] = (cs_gnum_t)(list[i]);
       _order_gnum(number_list, order, nb_ent);
-      BFT_FREE(number_list);
+      CS_FREE(number_list);
     }
     else {
       for (i = 0 ; i < nb_ent ; i++)
@@ -1037,13 +1037,13 @@ cs_order_gnum_allocated_s(const cs_lnum_t  list[],
   if (number != nullptr) {
 
     if (list != nullptr) {
-      BFT_MALLOC(number_list, nb_ent*stride, cs_gnum_t);
+      CS_MALLOC(number_list, nb_ent*stride, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++) {
         for (j = 0; j < stride; j++)
           number_list[i*stride + j] = number[list[i]*stride + j];
       }
       _order_gnum_s(number_list, stride, order, nb_ent);
-      BFT_FREE(number_list);
+      CS_FREE(number_list);
     }
     else
       _order_gnum_s(number, stride, order, nb_ent);
@@ -1094,7 +1094,7 @@ cs_order_gnum_allocated_i(const cs_lnum_t  list[],
       cs_lnum_t   *_index = nullptr;
       cs_gnum_t   *number_list = nullptr;
 
-      BFT_MALLOC(_index, nb_ent + 1, cs_lnum_t);
+      CS_MALLOC(_index, nb_ent + 1, cs_lnum_t);
 
       /* Count reduced size */
 
@@ -1107,7 +1107,7 @@ cs_order_gnum_allocated_i(const cs_lnum_t  list[],
       for (i = 0; i < nb_ent; i++)
         _index[i+1] += _index[i];
 
-      BFT_MALLOC(number_list, _index[nb_ent], cs_gnum_t);
+      CS_MALLOC(number_list, _index[nb_ent], cs_gnum_t);
 
       /* Define reduced index and adjacency */
 
@@ -1126,8 +1126,8 @@ cs_order_gnum_allocated_i(const cs_lnum_t  list[],
 
       _order_gnum_i(number_list, _index, order, nb_ent);
 
-      BFT_FREE(_index);
-      BFT_FREE(number_list);
+      CS_FREE(_index);
+      CS_FREE(number_list);
 
     }
     else { /* Local ordering */
@@ -1175,13 +1175,13 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
   if (number != nullptr) {
 
     if (list != nullptr) {
-      BFT_MALLOC(number_list, nb_ent, cs_lnum_t);
+      CS_MALLOC(number_list, nb_ent, cs_lnum_t);
       for (i = 0 ; i < nb_ent ; i++)
         number_list[i] = number[list[i]];
       _order_lnum(number_list,
                   order,
                   nb_ent);
-      BFT_FREE(number_list);
+      CS_FREE(number_list);
     }
     else
       _order_lnum(number,
@@ -1195,13 +1195,13 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
   else {
 
     if (list != nullptr) {
-      BFT_MALLOC(number_list, nb_ent, cs_lnum_t);
+      CS_MALLOC(number_list, nb_ent, cs_lnum_t);
       for (i = 0 ; i < nb_ent ; i++)
         number_list[i] = (cs_gnum_t)(list[i]);
       _order_lnum(number_list,
                   order,
                   nb_ent);
-      BFT_FREE(number_list);
+      CS_FREE(number_list);
     }
     else {
       for (i = 0 ; i < nb_ent ; i++)
@@ -1245,7 +1245,7 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
   if (number != nullptr) {
 
     if (list != nullptr) {
-      BFT_MALLOC(number_list, nb_ent*stride, cs_lnum_t);
+      CS_MALLOC(number_list, nb_ent*stride, cs_lnum_t);
       for (i = 0 ; i < nb_ent ; i++) {
         for (j = 0; j < stride; j++)
           number_list[i*stride + j] = number[list[i]*stride + j];
@@ -1254,7 +1254,7 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
                     stride,
                     order,
                     nb_ent);
-      BFT_FREE(number_list);
+      CS_FREE(number_list);
     }
     else
       _order_lnum_s(number,
@@ -1302,13 +1302,13 @@ cs_order_real_allocated(const cs_lnum_t  list[],
   /* Explicit numbering */
 
   if (list != nullptr) {
-    BFT_MALLOC(val_list, nb_ent, cs_real_t);
+    CS_MALLOC(val_list, nb_ent, cs_real_t);
     for (i = 0 ; i < nb_ent ; i++)
       val_list[i] = val[list[i]];
     _order_real(val_list,
                 order,
                 nb_ent);
-    BFT_FREE(val_list);
+    CS_FREE(val_list);
   }
   else
     _order_real(val,
@@ -1342,7 +1342,7 @@ cs_order_renumbering(const cs_lnum_t  order[],
 
   assert(order != nullptr);
 
-  BFT_MALLOC(number, nb_ent, cs_lnum_t);
+  CS_MALLOC(number, nb_ent, cs_lnum_t);
 
 #if defined(DEBUG) && !defined(NDEBUG)
   /* Initialize with "impossible" number (so as to have a reproducible
@@ -1388,7 +1388,7 @@ cs_order_reorder_data(cs_lnum_t         n_elts,
   unsigned char *tmp;
   unsigned char *_data =  static_cast<unsigned char *>(data);
 
-  BFT_MALLOC(tmp, n_elts*elt_size, unsigned char);
+  CS_MALLOC(tmp, n_elts*elt_size, unsigned char);
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
     cs_lnum_t j = order[i];
@@ -1399,7 +1399,7 @@ cs_order_reorder_data(cs_lnum_t         n_elts,
   }
   memcpy(data, tmp, n_elts*elt_size);
 
-  BFT_FREE(tmp);
+  CS_FREE(tmp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1457,7 +1457,7 @@ cs_order_single_gnum(size_t            n_ent,
 
   if (_n_single > 0) {
 
-    BFT_MALLOC(_single, _n_single, cs_gnum_t);
+    CS_MALLOC(_single, _n_single, cs_gnum_t);
 
     size_t j = 0;
     cs_gnum_t num_c = number[order[s_id]];
@@ -1476,7 +1476,7 @@ cs_order_single_gnum(size_t            n_ent,
     assert(j == _n_single);
   }
 
-  BFT_FREE(order);
+  CS_FREE(order);
 
   *n_single = _n_single;
   *single = _single;

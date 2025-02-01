@@ -46,7 +46,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_periodicity.h"
@@ -55,6 +54,7 @@
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
 #include "base/cs_interface.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_cartesian.h"
 #include "mesh/cs_mesh_from_builder.h"
@@ -269,17 +269,17 @@ _set_default_input_if_needed(void)
       char **dir_files = cs_file_listdir(input_path);
       for (int i = 0; dir_files[i] != nullptr; i++) {
         char *tmp_name = nullptr;
-        BFT_MALLOC(tmp_name,
-                   strlen(input_path) + 1 + strlen(dir_files[i]) + 1,
-                   char);
+        CS_MALLOC(tmp_name,
+                  strlen(input_path) + 1 + strlen(dir_files[i]) + 1,
+                  char);
         sprintf(tmp_name, "%s%c%s",
                 input_path, _dir_separator, dir_files[i]);
         if (cs_file_isreg(tmp_name))
           cs_preprocessor_data_add_file(tmp_name, 0, nullptr, nullptr);
-        BFT_FREE(tmp_name);
-        BFT_FREE(dir_files[i]);
+        CS_FREE(tmp_name);
+        CS_FREE(dir_files[i]);
       }
-      BFT_FREE(dir_files);
+      CS_FREE(dir_files);
     }
 
   }
@@ -311,7 +311,7 @@ _mesh_reader_create(int                 *n_mesh_files,
   int i;
   _mesh_reader_t  *mr = nullptr;
 
-  BFT_MALLOC(mr, 1, _mesh_reader_t);
+  CS_MALLOC(mr, 1, _mesh_reader_t);
 
   memset(mr, 0, sizeof(_mesh_reader_t));
 
@@ -320,14 +320,14 @@ _mesh_reader_create(int                 *n_mesh_files,
   mr->n_files = *n_mesh_files;
   mr->file_info = *mesh_file_info;
 
-  BFT_REALLOC(mr->file_info, mr->n_files, _mesh_file_info_t);
+  CS_REALLOC(mr->file_info, mr->n_files, _mesh_file_info_t);
 
   /* Setup remaining structure fields */
 
   *n_mesh_files = 0;
   *mesh_file_info = nullptr;
 
-  BFT_MALLOC(mr->gc_id_shift, mr->n_files, int);
+  CS_MALLOC(mr->gc_id_shift, mr->n_files, int);
   for (i = 0; i < mr->n_files; i++)
     mr->gc_id_shift[i] = 0;
 
@@ -362,13 +362,13 @@ _mesh_reader_destroy(_mesh_reader_t  **mr)
 
   for (i = 0; i < _mr->n_files; i++) {
     _mesh_file_info_t  *f = _mr->file_info + i;
-    BFT_FREE(f->data);
+    CS_FREE(f->data);
   }
-  BFT_FREE(_mr->file_info);
+  CS_FREE(_mr->file_info);
 
-  BFT_FREE(_mr->gc_id_shift);
+  CS_FREE(_mr->gc_id_shift);
 
-  BFT_FREE(*mr);
+  CS_FREE(*mr);
 }
 
 /*----------------------------------------------------------------------------
@@ -428,7 +428,7 @@ _set_block_ranges(cs_mesh_t          *mesh,
   /* Always build per_face_range in case of periodicity */
 
   if (mb->n_perio > 0) {
-    BFT_REALLOC(mb->per_face_bi, mb->n_perio, cs_block_dist_info_t);
+    CS_REALLOC(mb->per_face_bi, mb->n_perio, cs_block_dist_info_t);
     memset(mb->per_face_bi, 0, sizeof(cs_block_dist_info_t)*mb->n_perio);
   }
 
@@ -490,7 +490,7 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
 
   /* Check for rename matches */
 
-  BFT_MALLOC(new_group_id, n_ids, int);
+  CS_MALLOC(new_group_id, n_ids, int);
 
   for (i = 0, j = start_id; i < n_ids; i++, j++) {
     const char *g_name = mesh->group + mesh->group_idx[j];
@@ -513,8 +513,8 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
     int *saved_idx = nullptr;
     char *saved_names = nullptr;
 
-    BFT_MALLOC(saved_idx, n_ids + 1, int);
-    BFT_MALLOC(saved_names, old_size, char);
+    CS_MALLOC(saved_idx, n_ids + 1, int);
+    CS_MALLOC(saved_names, old_size, char);
 
     for (i = 0; i < n_ids+1; i++)
       saved_idx[i] = mesh->group_idx[start_id + i] - mesh->group_idx[start_id];
@@ -537,7 +537,7 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
         = mesh->group_idx[start_id] + new_size;
     }
 
-    BFT_REALLOC(mesh->group, mesh->group_idx[mesh->n_groups], char);
+    CS_REALLOC(mesh->group, mesh->group_idx[mesh->n_groups], char);
 
     for (i = 0, j = start_id; i < n_ids; i++, j++) {
       char *new_dest = mesh->group + mesh->group_idx[j];
@@ -552,8 +552,8 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
         strcpy(new_dest, "");
     }
 
-    BFT_FREE(saved_names);
-    BFT_FREE(saved_idx);
+    CS_FREE(saved_names);
+    CS_FREE(saved_idx);
 
     /* Set mesh modification flag */
 
@@ -561,7 +561,7 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
 
   }
 
-  BFT_FREE(new_group_id);
+  CS_FREE(new_group_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -603,14 +603,14 @@ _colors_to_groups(cs_mesh_t  *mesh,
 
   if (n_colors > 0) {
     if (mesh->n_groups > 0) {
-      BFT_REALLOC(mesh->group_idx, mesh->n_groups + n_colors + 1, int);
-      BFT_REALLOC(mesh->group,
-                  mesh->group_idx[mesh->n_groups] + color_names_size,
-                  char);
+      CS_REALLOC(mesh->group_idx, mesh->n_groups + n_colors + 1, int);
+      CS_REALLOC(mesh->group,
+                 mesh->group_idx[mesh->n_groups] + color_names_size,
+                 char);
     }
     else {
-      BFT_MALLOC(mesh->group_idx, n_colors + 1, int);
-      BFT_MALLOC(mesh->group, color_names_size, char);
+      CS_MALLOC(mesh->group_idx, n_colors + 1, int);
+      CS_MALLOC(mesh->group, color_names_size, char);
       mesh->group_idx[0] = 0;
     }
   }
@@ -912,9 +912,9 @@ _read_dimensions(cs_mesh_t          *mesh,
         cs_io_read_global(&header, &n_gc_props_max, pp_in);
         if (n_gc_props_max > mesh->n_max_family_items) {
           /* Update (pad) previous definitions */
-          BFT_REALLOC(mesh->family_item,
-                      mesh->n_families*n_gc_props_max,
-                      int);
+          CS_REALLOC(mesh->family_item,
+                     mesh->n_families*n_gc_props_max,
+                     int);
           for (int i = mesh->n_max_family_items;
                i < n_gc_props_max;
                i++) {
@@ -948,21 +948,21 @@ _read_dimensions(cs_mesh_t          *mesh,
       else {
         cs_io_set_int(&header, pp_in);
         int *_group_idx;
-        BFT_MALLOC(_group_idx, n_groups + 1, int);
+        CS_MALLOC(_group_idx, n_groups + 1, int);
         cs_io_read_global(&header, _group_idx, pp_in);
         if (mesh->group_idx == nullptr) {
-          BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+          CS_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
           for (int i = 0; i < n_groups+1; i++)
             mesh->group_idx[i] = _group_idx[i] - 1;
         }
         else {
-          BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+          CS_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
           int i, j;
           for (i = 0, j = mesh->n_groups - n_groups; i < n_groups; i++, j++)
             mesh->group_idx[j + 1] = (   mesh->group_idx[j]
                                       + _group_idx[i+1] - _group_idx[i]);
         }
-        BFT_FREE(_group_idx);
+        CS_FREE(_group_idx);
       }
 
     }
@@ -977,7 +977,7 @@ _read_dimensions(cs_mesh_t          *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         int i = mesh->group_idx[mesh->n_groups - n_groups] - mesh->group_idx[0];
-        BFT_REALLOC(mesh->group, i + header.n_vals + 1, char);
+        CS_REALLOC(mesh->group, i + header.n_vals + 1, char);
         cs_io_read_global(&header, mesh->group + i, pp_in);
       }
 
@@ -992,13 +992,13 @@ _read_dimensions(cs_mesh_t          *mesh,
       else {
         cs_io_set_int(&header, pp_in);
         if (mesh->family_item == nullptr)
-          BFT_MALLOC(mesh->family_item, n_elts, int);
+          CS_MALLOC(mesh->family_item, n_elts, int);
         if (mesh->n_families == n_gc)
           cs_io_read_global(&header, mesh->family_item, pp_in);
         else {
           int *_family_item = nullptr;
-          BFT_REALLOC(mesh->family_item, n_elts, int);
-          BFT_MALLOC(_family_item, header.n_vals, int);
+          CS_REALLOC(mesh->family_item, n_elts, int);
+          CS_MALLOC(_family_item, header.n_vals, int);
           cs_io_read_global(&header, _family_item, pp_in);
           /* Shift previous data */
           for (int j = mesh->n_max_family_items - 1; j > 0; j--) {
@@ -1020,7 +1020,7 @@ _read_dimensions(cs_mesh_t          *mesh,
               mesh->family_item[mesh->n_families*j + (mesh->n_families-n_gc+i)]
                 = 0;
           }
-          BFT_FREE(_family_item);
+          CS_FREE(_family_item);
         }
         /* Transform colors to group names if present */
         _colors_to_groups(mesh, n_gc);
@@ -1054,9 +1054,9 @@ _read_dimensions(cs_mesh_t          *mesh,
         if (mesh->periodicity == nullptr)
           mesh->periodicity = fvm_periodicity_create(0.001);
 
-        BFT_REALLOC(mb->n_per_face_couples, mesh->n_init_perio, cs_lnum_t);
-        BFT_REALLOC(mb->n_g_per_face_couples, mesh->n_init_perio, cs_gnum_t);
-        BFT_REALLOC(mb->per_face_couples, mesh->n_init_perio, cs_gnum_t *);
+        CS_REALLOC(mb->n_per_face_couples, mesh->n_init_perio, cs_lnum_t);
+        CS_REALLOC(mb->n_g_per_face_couples, mesh->n_init_perio, cs_gnum_t);
+        CS_REALLOC(mb->per_face_couples, mesh->n_init_perio, cs_gnum_t *);
 
         mb->n_perio = mesh->n_init_perio;
 
@@ -1166,7 +1166,7 @@ _read_cartesian_dimensions(const int          id,
 
   if (mesh->n_max_family_items < 1) {
     // Update (pad) previous definitions
-    BFT_REALLOC(mesh->family_item, mesh->n_families, int);
+    CS_REALLOC(mesh->family_item, mesh->n_families, int);
 
     for (int j = 0; j < mesh->n_families; j++)
       mesh->family_item[j] = 0;
@@ -1185,17 +1185,17 @@ _read_cartesian_dimensions(const int          id,
   mesh->n_groups += n_grp_cart;
 
   if (mesh->family_item == nullptr) {
-    BFT_MALLOC(mesh->family_item,
-               mesh->n_families * mesh->n_max_family_items,
-               int);
+    CS_MALLOC(mesh->family_item,
+              mesh->n_families * mesh->n_max_family_items,
+              int);
     mesh->family_item[0] = 0; /* Default family */
     for (int i = 1; i < mesh->n_families; i++)
       mesh->family_item[i] = -i;
   }
   else {
-    BFT_REALLOC(mesh->family_item,
-                mesh->n_families * mesh->n_max_family_items,
-                int);
+    CS_REALLOC(mesh->family_item,
+               mesh->n_families * mesh->n_max_family_items,
+               int);
     /* Shift previous data */
     for (int j = mesh->n_max_family_items - 1; j > 0; j--) {
       for (int i = mesh->n_families - n_gc - 1; i > -1; i--)
@@ -1218,11 +1218,11 @@ _read_cartesian_dimensions(const int          id,
   // ---------------------------------
 
   if (mesh->group_idx == nullptr) {
-    BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+    CS_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
     mesh->group_idx[0] = 0;
   }
   else {
-    BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+    CS_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
   }
 
   /* Check if block prefix is available */
@@ -1239,9 +1239,9 @@ _read_cartesian_dimensions(const int          id,
 
   int _gp_id0 = mesh->group_idx[mesh->n_groups - n_grp_cart] - mesh->group_idx[0];
 
-  BFT_REALLOC(mesh->group,
-              mesh->group_idx[mesh->n_groups]-mesh->group_idx[0],
-              char);
+  CS_REALLOC(mesh->group,
+             mesh->group_idx[mesh->n_groups]-mesh->group_idx[0],
+             char);
 
   _i0 = 0;
   for (int i = 0; i < n_grp_cart; i++) {
@@ -1701,7 +1701,7 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->face_cells == nullptr)
-          BFT_MALLOC(mb->face_cells, n_vals, cs_gnum_t);
+          CS_MALLOC(mb->face_cells, n_vals, cs_gnum_t);
 
         /* Read data */
         cs_io_set_cs_gnum(&header, pp_in);
@@ -1745,7 +1745,7 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->cell_gc_id == nullptr)
-          BFT_MALLOC(mb->cell_gc_id, n_vals, int);
+          CS_MALLOC(mb->cell_gc_id, n_vals, int);
 
         /* Read data */
         cs_io_set_int(&header, pp_in);
@@ -1789,7 +1789,7 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->face_gc_id == nullptr)
-          BFT_MALLOC(mb->face_gc_id, n_vals, int);
+          CS_MALLOC(mb->face_gc_id, n_vals, int);
 
         /* Read data */
         cs_io_set_int(&header, pp_in);
@@ -1835,7 +1835,7 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->face_r_gen == nullptr) {
-          BFT_MALLOC(mb->face_r_gen, n_vals, char);
+          CS_MALLOC(mb->face_r_gen, n_vals, char);
           for (cs_lnum_t ii = 0; ii < n_vals; ii++)
             mb->face_r_gen[ii] = 0;
         }
@@ -1877,14 +1877,14 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->face_vertices_idx == nullptr)
-          BFT_MALLOC(mb->face_vertices_idx, n_vals, cs_lnum_t);
+          CS_MALLOC(mb->face_vertices_idx, n_vals, cs_lnum_t);
 
         if (val_offset_cur > 0)
           idx_offset_shift = mb->face_vertices_idx[val_offset_cur];
 
         /* Read data */
         cs_io_set_cs_gnum(&header, pp_in);
-        BFT_MALLOC(_g_face_vertices_idx, n_vals_cur+1, cs_gnum_t);
+        CS_MALLOC(_g_face_vertices_idx, n_vals_cur+1, cs_gnum_t);
         cs_io_read_index_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                                _g_face_vertices_idx, pp_in);
 
@@ -1900,7 +1900,7 @@ _read_data(int                 file_id,
             = _face_vtx_idx + idx_offset_shift;
         }
 
-        BFT_FREE(_g_face_vertices_idx);
+        CS_FREE(_g_face_vertices_idx);
       }
 
       else if (strncmp(header.sec_name, "face_vertices",
@@ -1932,9 +1932,9 @@ _read_data(int                 file_id,
         /* Reallocate for each read, as size of indexed array
            cannot be determined before reading the previous section
            (and is thus not yet known for future files). */
-        BFT_REALLOC(mb->face_vertices,
-                    mr->n_faces_connect_read + n_vals_cur,
-                    cs_gnum_t);
+        CS_REALLOC(mb->face_vertices,
+                   mr->n_faces_connect_read + n_vals_cur,
+                   cs_gnum_t);
 
         /* Read data */
         cs_io_set_cs_gnum(&header, pp_in);
@@ -1978,7 +1978,7 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->vertex_coords == nullptr)
-          BFT_MALLOC(mb->vertex_coords, n_vals, cs_real_t);
+          CS_MALLOC(mb->vertex_coords, n_vals, cs_real_t);
 
         /* Read data */
         cs_io_assert_cs_real(&header, pp_in);
@@ -2023,7 +2023,7 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->vtx_r_gen == nullptr) {
-          BFT_MALLOC(mb->vtx_r_gen, n_vals, char);
+          CS_MALLOC(mb->vtx_r_gen, n_vals, char);
           for (cs_lnum_t ii = 0; ii < n_vals; ii++)
             mb->vtx_r_gen[ii] = 0;
         }
@@ -2102,7 +2102,7 @@ _read_data(int                 file_id,
 
           cs_io_set_cs_gnum(&header, pp_in);
           n_vals = mb->n_per_face_couples[perio_id]*2;
-          BFT_MALLOC(mb->per_face_couples[perio_id], n_vals, cs_gnum_t);
+          CS_MALLOC(mb->per_face_couples[perio_id], n_vals, cs_gnum_t);
           assert(header.n_location_vals == 2);
           cs_io_read_block(&header,
                            (mb->per_face_bi[perio_id]).gnum_range[0],
@@ -2272,12 +2272,12 @@ cs_preprocessor_data_add_file(const char     *file_name,
 
   if (_n_max_mesh_files == 0) {
     _n_max_mesh_files = 1;
-    BFT_MALLOC(_mesh_file_info, 1, _mesh_file_info_t);
+    CS_MALLOC(_mesh_file_info, 1, _mesh_file_info_t);
   }
 
   if (_n_mesh_files + 1 > _n_max_mesh_files) {
     _n_max_mesh_files *= 2;
-    BFT_REALLOC(_mesh_file_info, _n_max_mesh_files, _mesh_file_info_t);
+    CS_REALLOC(_mesh_file_info, _n_max_mesh_files, _mesh_file_info_t);
   }
 
   f = _mesh_file_info + _n_mesh_files;
@@ -2287,7 +2287,7 @@ cs_preprocessor_data_add_file(const char     *file_name,
 
   f->offset = 0;
   f->data_size = data_size;
-  BFT_MALLOC(f->data, f->data_size, unsigned char);
+  CS_MALLOC(f->data, f->data_size, unsigned char);
   memset(f->data, 0, f->data_size);
 
   /* Setup data */
@@ -2506,7 +2506,7 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
     }
     else {
       mesh_builder->have_cell_rank = false;
-      BFT_FREE(mesh_builder->cell_rank);
+      CS_FREE(mesh_builder->cell_rank);
     }
 
   }

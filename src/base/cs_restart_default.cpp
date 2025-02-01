@@ -43,7 +43,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -59,6 +58,7 @@
 #include "base/cs_log.h"
 #include "base/cs_map.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_notebook.h"
 #include "base/cs_parall.h"
@@ -375,7 +375,7 @@ _read_field_vals(cs_restart_t  *r,
   char *sec_name = _sec_name;
 
   if (strlen(r_name) > 96)
-    BFT_MALLOC(sec_name, strlen(r_name) + 64, char); /* wide margin */
+    CS_MALLOC(sec_name, strlen(r_name) + 64, char); /* wide margin */
 
   /* Check for data; data will be read later, so that compatibility
      checks may be done first; we really try reading the data only
@@ -429,7 +429,7 @@ _read_field_vals(cs_restart_t  *r,
   }
 
   if (sec_name != _sec_name)
-    BFT_FREE(sec_name);
+    CS_FREE(sec_name);
 
   if (   retcode == CS_RESTART_SUCCESS
       && f->location_id == CS_MESH_LOCATION_CELLS)
@@ -474,7 +474,7 @@ _read_rij(cs_restart_t  *r,
     const char *old_names[] = {"R11", "R22", "R33", "R12", "R23", "R13"};
 
     cs_real_t *v_tmp;
-    BFT_MALLOC(v_tmp, n_cells, cs_real_t);
+    CS_MALLOC(v_tmp, n_cells, cs_real_t);
 
     for (cs_lnum_t j = 0; j < 6; j++) {
       char old_sec_name[128];
@@ -503,7 +503,7 @@ _read_rij(cs_restart_t  *r,
         rij[i][j] = v_tmp[i];
     }
 
-    BFT_FREE(v_tmp);
+    CS_FREE(v_tmp);
   }
 
   return retcode;
@@ -952,10 +952,10 @@ _check_field_model(cs_restart_t               *r,
   int  n_diff = 0;
 
   cs_lnum_t *old_key_val;
-  BFT_MALLOC(old_key_val, n_o_fields, cs_lnum_t);
+  CS_MALLOC(old_key_val, n_o_fields, cs_lnum_t);
 
   char *sec_name;
-  BFT_MALLOC(sec_name, strlen("fields:") + strlen(key) + 1, char);
+  CS_MALLOC(sec_name, strlen("fields:") + strlen(key) + 1, char);
   strcpy(sec_name, "fields:");
   strcat(sec_name, key);
 
@@ -1010,8 +1010,8 @@ _check_field_model(cs_restart_t               *r,
        _("Error %d reading \"%s\" in restart file \"%s\"."),
        retcode, sec_name, cs_restart_get_name(r));
 
-  BFT_FREE(sec_name);
-  BFT_FREE(old_key_val);
+  CS_FREE(sec_name);
+  CS_FREE(old_key_val);
 
   return n_diff;
 }
@@ -1282,7 +1282,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   cs_real_t *v_tmp;
-  BFT_MALLOC(v_tmp, n_cells, cs_real_t);
+  CS_MALLOC(v_tmp, n_cells, cs_real_t);
 
   /* Now convert variables if needed. When we do not know how to
      deduce turbulence variables from available info, we ignore
@@ -1301,14 +1301,14 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       cs_real_t *v_k = CS_F_(k)->vals[t_id];
 
       cs_real_6_t *rij;
-      BFT_MALLOC(rij, n_cells, cs_real_6_t);
+      CS_MALLOC(rij, n_cells, cs_real_6_t);
 
       err_sum += _read_rij(r, CS_MESH_LOCATION_CELLS, 0, rij);
 
       for (cs_lnum_t i = 0; i < n_cells; i++)
         v_k[i] = 0.5 * (rij[i][0] + rij[i][1] + rij[i][2]);
 
-      BFT_FREE(rij);
+      CS_FREE(rij);
 
       if (err_sum == 0)
         read_flag[CS_F_(k)->id] += t_mask;
@@ -1339,7 +1339,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
       cs_real_6_t *v_rij = (cs_real_6_t *)(CS_F_(rij)->vals[t_id]);
       cs_real_t *v_k;
-      BFT_MALLOC(v_k, n_cells, cs_real_t);
+      CS_MALLOC(v_k, n_cells, cs_real_t);
 
       err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
 
@@ -1358,7 +1358,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       if (err_sum == 0)
         read_flag[CS_F_(rij)->id] += t_mask;
 
-      BFT_FREE(v_k);
+      CS_FREE(v_k);
 
     }
 
@@ -1372,7 +1372,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       cs_real_t *v_eps = CS_F_(eps)->vals[t_id];
 
       cs_real_t *v_k;
-      BFT_MALLOC(v_k, n_cells, cs_real_t);
+      CS_MALLOC(v_k, n_cells, cs_real_t);
 
       err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
       err_sum += _read_turb_array_1d_compat(r, "omega", "omega", t_id, v_eps);
@@ -1397,7 +1397,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       if (err_sum == 0)
         read_flag[CS_F_(rij)->id] += t_mask;
 
-      BFT_FREE(v_k);
+      CS_FREE(v_k);
     }
 
   } else if (itytur_cur == 5) { /* New computation is in v2f; */
@@ -1474,14 +1474,14 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       cs_real_t *v_omg = CS_F_(omg)->vals[t_id];
 
       cs_real_6_t *rij;
-      BFT_MALLOC(rij, n_cells, cs_real_6_t);
+      CS_MALLOC(rij, n_cells, cs_real_6_t);
 
       err_sum += _read_rij(r, CS_MESH_LOCATION_CELLS, 0, rij);
 
       for (cs_lnum_t i = 0; i < n_cells; i++)
         v_k[i] = 0.5 * (rij[i][0] + rij[i][1] + rij[i][2]);
 
-      BFT_FREE(rij);
+      CS_FREE(rij);
 
       err_sum += _read_turb_array_1d_compat(r, "epsilon", "eps", t_id, v_omg);
 
@@ -1513,16 +1513,16 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       cs_real_3_t *v_vel = (cs_real_3_t *)(CS_F_(vel)->vals[t_id]);
 
       cs_real_t *v_k;
-      BFT_MALLOC(v_k, n_cells, cs_real_t);
+      CS_MALLOC(v_k, n_cells, cs_real_t);
       const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
       bool use_previous_t = false;
       int inc = 1;
       cs_real_t *v_eps;  /* Dissipation rate from the previous simulation */
-      BFT_MALLOC(v_eps, n_cells, cs_real_t);
+      CS_MALLOC(v_eps, n_cells, cs_real_t);
       cs_real_6_t *rst;    /* Reynolds Stress Tensor for each cell */
-      BFT_MALLOC(rst, n_cells , cs_real_6_t);
+      CS_MALLOC(rst, n_cells , cs_real_6_t);
       cs_real_33_t *gradv;  /* Velocity gradient for each cell */
-      BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+      CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
       cs_field_gradient_vector(CS_F_(vel),
                                use_previous_t,
@@ -1629,23 +1629,23 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         int  n_structures = cs_les_synthetic_eddy_get_n_restart_structures();
 
         cs_inflow_sem_t *sem_in;
-        BFT_MALLOC(sem_in, 1, cs_inflow_sem_t);
+        CS_MALLOC(sem_in, 1, cs_inflow_sem_t);
         sem_in->n_structures = n_structures;
         sem_in->volume_mode = 1;
-        BFT_MALLOC(sem_in->position, sem_in->n_structures, cs_real_3_t);
-        BFT_MALLOC(sem_in->energy, sem_in->n_structures, cs_real_3_t);
+        CS_MALLOC(sem_in->position, sem_in->n_structures, cs_real_3_t);
+        CS_MALLOC(sem_in->energy, sem_in->n_structures, cs_real_3_t);
 
         /* Velocity fluctuations before modifications with Lund's method */
         cs_real_3_t  *fluctuations = nullptr;
-        BFT_MALLOC(fluctuations, n_cells, cs_real_3_t);
+        CS_MALLOC(fluctuations, n_cells, cs_real_3_t);
         cs_array_real_fill_zero(3*n_cells, (cs_real_t *)fluctuations);
 
         cs_real_3_t *vel_l = nullptr;
-        BFT_MALLOC(vel_l, n_cells, cs_real_3_t);
+        CS_MALLOC(vel_l, n_cells, cs_real_3_t);
         cs_array_real_fill_zero(3*n_cells, (cs_real_t *)vel_l);
 
         cs_real_3_t *point_coordinates = nullptr;
-        BFT_MALLOC(point_coordinates, n_cells, cs_real_3_t);
+        CS_MALLOC(point_coordinates, n_cells, cs_real_3_t);
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
           for (cs_lnum_t j = 0; j < 3; j++)
             point_coordinates[cell_id][j] = cell_cen[cell_id][j];
@@ -1678,19 +1678,19 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
             v_vel[cell_id][j] += fluctuations[cell_id][j];
         }
 
-        BFT_FREE(fluctuations);
-        BFT_FREE(vel_l);
-        BFT_FREE(point_coordinates);
-        BFT_FREE(sem_in->position);
-        BFT_FREE(sem_in->energy);
-        BFT_FREE(sem_in);
+        CS_FREE(fluctuations);
+        CS_FREE(vel_l);
+        CS_FREE(point_coordinates);
+        CS_FREE(sem_in->position);
+        CS_FREE(sem_in->energy);
+        CS_FREE(sem_in);
 
       }
 
-      BFT_FREE(rst);
-      BFT_FREE(gradv);
-      BFT_FREE(v_k);
-      BFT_FREE(v_eps);
+      CS_FREE(rst);
+      CS_FREE(gradv);
+      CS_FREE(v_k);
+      CS_FREE(v_eps);
 
     }
 
@@ -1709,7 +1709,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
            "         in restart file \"%s\", so default initializations\n"
            "          will be used:\n\n"), cs_restart_get_name(r));
 
-  BFT_FREE(v_tmp);
+  CS_FREE(v_tmp);
 }
 
 /*----------------------------------------------------------------------------
@@ -1796,8 +1796,8 @@ cs_restart_read_field_info(cs_restart_t           *r,
 
     /* Now read main metadata */
 
-    BFT_MALLOC(name_buf, sizes[1] + 1, char);
-    BFT_MALLOC(type_buf, sizes[0], int);
+    CS_MALLOC(name_buf, sizes[1] + 1, char);
+    CS_MALLOC(type_buf, sizes[0], int);
 
     retcode = cs_restart_read_section(r,
                                       "fields:names",
@@ -1835,7 +1835,7 @@ cs_restart_read_field_info(cs_restart_t           *r,
       }
     }
 
-    BFT_FREE(name_buf);
+    CS_FREE(name_buf);
 
     /* Count variables  */
 
@@ -1886,7 +1886,7 @@ cs_restart_read_field_info(cs_restart_t           *r,
          (int)(n_cur[0]), (int)(n_cur[1]), (int)(n_cur[2]), (int)(n_cur[3]),
          (int)(n_old[0]), (int)(n_old[1]), (int)(n_old[2]), (int)(n_old[3]));
 
-    BFT_FREE(type_buf);
+    CS_FREE(type_buf);
   }
 
   /* Read legacy metadata */
@@ -1923,8 +1923,8 @@ cs_restart_write_field_info(cs_restart_t  *r)
   cs_lnum_t  *type_buf;
   char       *name_buf;
 
-  BFT_MALLOC(type_buf, n_fields, cs_lnum_t);
-  BFT_MALLOC(name_buf, sizes[1] + 1, char);
+  CS_MALLOC(type_buf, n_fields, cs_lnum_t);
+  CS_MALLOC(name_buf, sizes[1] + 1, char);
 
   sizes[1] = 0;
 
@@ -1963,8 +1963,8 @@ cs_restart_write_field_info(cs_restart_t  *r)
                            CS_TYPE_int,
                            type_buf);
 
-  BFT_FREE(name_buf);
-  BFT_FREE(type_buf);
+  CS_FREE(name_buf);
+  CS_FREE(type_buf);
 
   bft_printf(_("  Wrote field names and types to checkpoint"
                " at iteration %d: %s\n"),
@@ -2000,7 +2000,7 @@ cs_restart_read_variables(cs_restart_t               *r,
   int *_read_flag = read_flag;
 
   if (_read_flag == nullptr) {
-    BFT_MALLOC(_read_flag, n_fields, int);
+    CS_MALLOC(_read_flag, n_fields, int);
     for (int f_id = 0; f_id < n_fields; f_id++)
       _read_flag[f_id] = 0;
   }
@@ -2136,7 +2136,7 @@ cs_restart_read_variables(cs_restart_t               *r,
   /* Cleanup */
 
   if (_read_flag != read_flag)
-    BFT_FREE(_read_flag);
+    CS_FREE(_read_flag);
 
   bft_printf(_("  Read variables from restart: %s\n"),
              cs_restart_get_name(r));
@@ -2169,7 +2169,7 @@ cs_restart_write_variables(cs_restart_t  *r,
   int *_write_flag = write_flag;
 
   if (_write_flag == nullptr) {
-    BFT_MALLOC(_write_flag, n_fields, int);
+    CS_MALLOC(_write_flag, n_fields, int);
     for (int f_id = 0; f_id < n_fields; f_id++)
       _write_flag[f_id] = 0;
   }
@@ -2187,7 +2187,7 @@ cs_restart_write_variables(cs_restart_t  *r,
   {
     cs_lnum_t *turbt_buf;
 
-    BFT_MALLOC(turbt_buf, n_fields, cs_lnum_t);
+    CS_MALLOC(turbt_buf, n_fields, cs_lnum_t);
 
     for (int f_id = 0; f_id < n_fields; f_id++)
       turbt_buf[f_id] = 0;
@@ -2217,7 +2217,7 @@ cs_restart_write_variables(cs_restart_t  *r,
                                CS_TYPE_int,
                                turbt_buf);
 
-    BFT_FREE(turbt_buf);
+    CS_FREE(turbt_buf);
   }
 
   /* Write field data */
@@ -2276,7 +2276,7 @@ cs_restart_write_variables(cs_restart_t  *r,
   /* Cleanup */
 
   if (_write_flag != write_flag)
-    BFT_FREE(_write_flag);
+    CS_FREE(_write_flag);
 
   bft_printf(_("  Wrote main variables to checkpoint: %s\n"),
              cs_restart_get_name(r));
@@ -2308,7 +2308,7 @@ cs_restart_read_notebook_variables(cs_restart_t  *r)
       char *buf = _buf;
 
       if (l > 64)
-        BFT_MALLOC(buf, l, char);
+        CS_MALLOC(buf, l, char);
 
       snprintf(buf, l, "%s%s", _ntb_prefix, name);
 
@@ -2335,7 +2335,7 @@ cs_restart_read_notebook_variables(cs_restart_t  *r)
       }
 
       if (buf != _buf)
-        BFT_FREE(buf);
+        CS_FREE(buf);
 
     }
 
@@ -2369,7 +2369,7 @@ cs_restart_write_notebook_variables(cs_restart_t  *r)
     char *buf = _buf;
 
     if (l > 64)
-      BFT_MALLOC(buf, l, char);
+      CS_MALLOC(buf, l, char);
 
     snprintf(buf, l, "%s%s", _ntb_prefix, name);
 
@@ -2384,7 +2384,7 @@ cs_restart_write_notebook_variables(cs_restart_t  *r)
                              &val_notebook_var);
 
     if (buf != _buf)
-      BFT_FREE(buf);
+      CS_FREE(buf);
 
   }
 
@@ -2448,16 +2448,16 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
   int *_read_flag = read_flag;
 
   if (_read_flag == nullptr) {
-    BFT_MALLOC(_read_flag, n_fields, int);
+    CS_MALLOC(_read_flag, n_fields, int);
     for (int f_id = 0; f_id < n_fields; f_id++)
       _read_flag[f_id] = 0;
   }
 
   cs_lnum_t *old_key_val;
-  BFT_MALLOC(old_key_val, n_o_fields, cs_lnum_t);
+  CS_MALLOC(old_key_val, n_o_fields, cs_lnum_t);
 
   char *sec_name;
-  BFT_MALLOC(sec_name, strlen("fields:") + strlen(key) + 1, char);
+  CS_MALLOC(sec_name, strlen("fields:") + strlen(key) + 1, char);
   strcpy(sec_name, "fields:");
   strcat(sec_name, key);
 
@@ -2484,7 +2484,7 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
                                       CS_TYPE_int,
                                       old_key_val);
 
-  BFT_FREE(sec_name);
+  CS_FREE(sec_name);
 
   if (retcode == CS_RESTART_SUCCESS && n_legacy_read == 0) {
 
@@ -2564,10 +2564,10 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
     }
   }
 
-  BFT_FREE(old_key_val);
+  CS_FREE(old_key_val);
 
   if (read_flag != _read_flag)
-    BFT_FREE(_read_flag);
+    CS_FREE(_read_flag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2600,16 +2600,16 @@ cs_restart_write_linked_fields(cs_restart_t  *r,
   int *_write_flag = write_flag;
 
   if (_write_flag == nullptr) {
-    BFT_MALLOC(_write_flag, n_fields, int);
+    CS_MALLOC(_write_flag, n_fields, int);
     for (int f_id = 0; f_id < n_fields; f_id++)
       _write_flag[f_id] = 0;
   }
 
   cs_lnum_t *key_val;
-  BFT_MALLOC(key_val, n_fields, cs_lnum_t);
+  CS_MALLOC(key_val, n_fields, cs_lnum_t);
 
   char *sec_name;
-  BFT_MALLOC(sec_name, strlen("fields:") + strlen(key) + 1, char);
+  CS_MALLOC(sec_name, strlen("fields:") + strlen(key) + 1, char);
   strcpy(sec_name, "fields:");
   strcat(sec_name, key);
 
@@ -2632,7 +2632,7 @@ cs_restart_write_linked_fields(cs_restart_t  *r,
                            CS_TYPE_int,
                            key_val);
 
-  BFT_FREE(sec_name);
+  CS_FREE(sec_name);
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
@@ -2661,10 +2661,10 @@ cs_restart_write_linked_fields(cs_restart_t  *r,
 
   }
 
-  BFT_FREE(key_val);
+  CS_FREE(key_val);
 
   if (_write_flag != write_flag)
-    BFT_FREE(_write_flag);
+    CS_FREE(_write_flag);
 
   return retval;
 }
@@ -2753,9 +2753,9 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
           n_loc_vals = f->dim;
         }
 
-        BFT_MALLOC(sec_name,
-                   strlen(name) + strlen(_coeff_name[c_id]) + 3,
-                   char);
+        CS_MALLOC(sec_name,
+                  strlen(name) + strlen(_coeff_name[c_id]) + 3,
+                  char);
         sprintf(sec_name, "%s::%s", name, _coeff_name[c_id]);
 
         retval = cs_restart_check_section(r,
@@ -2808,7 +2808,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
         if (retval != CS_RESTART_SUCCESS)
           errcount += 1;
 
-        BFT_FREE(sec_name);
+        CS_FREE(sec_name);
 
       } /* End of loop in i (coeff type) */
 
@@ -2901,9 +2901,9 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
           n_loc_vals = f->dim;
         }
 
-        BFT_MALLOC(sec_name,
-                   strlen(f->name) + strlen(_coeff_name[c_id]) + 3,
-                   char);
+        CS_MALLOC(sec_name,
+                  strlen(f->name) + strlen(_coeff_name[c_id]) + 3,
+                  char);
         sprintf(sec_name, "%s::%s", f->name, _coeff_name[c_id]);
 
         cs_restart_write_section(r,
@@ -2913,10 +2913,10 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
                                  CS_TYPE_cs_real_t,
                                  c);
 
-        BFT_FREE(sec_name);
+        CS_FREE(sec_name);
 
         if (c != p[c_id])
-          BFT_FREE(c);
+          CS_FREE(c);
 
       } /* End of loop in i (coeff type) */
 
@@ -3081,7 +3081,7 @@ cs_restart_read_field_vals(cs_restart_t  *r,
       sec_name[127] = '\0';
       const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
       cs_real_t *v_tmp;
-      BFT_MALLOC(v_tmp, n_cells, cs_real_t);
+      CS_MALLOC(v_tmp, n_cells, cs_real_t);
 
       retcode = cs_restart_read_section(r,
                                         sec_name,
@@ -3096,7 +3096,7 @@ cs_restart_read_field_vals(cs_restart_t  *r,
                              - cs_glob_fluid_properties->pred0;
       }
 
-      BFT_FREE(v_tmp);
+      CS_FREE(v_tmp);
   }
 
   /* Store retcode in read status */
@@ -3356,7 +3356,7 @@ cs_restart_initialize_fields_read_status(void)
 
   const int n_fields = cs_field_n_fields();
 
-  BFT_MALLOC(_fields_read_status, n_fields, cs_restart_file_t);
+  CS_MALLOC(_fields_read_status, n_fields, cs_restart_file_t);
   for (int i = 0; i < n_fields; i++)
     _fields_read_status[i] = CS_RESTART_DISABLED;
 }
@@ -3370,7 +3370,7 @@ cs_restart_initialize_fields_read_status(void)
 void
 cs_restart_finalize_fields_read_status(void)
 {
-  BFT_FREE(_fields_read_status);
+  CS_FREE(_fields_read_status);
 }
 
 /*----------------------------------------------------------------------------*/

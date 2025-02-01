@@ -62,7 +62,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -78,6 +77,7 @@
 
 #include "alge/cs_matrix.h"
 #include "base/cs_base_accel.h"
+#include "base/cs_mem.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_petsc.h"
 #include "alge/cs_matrix_petsc_priv.h"
@@ -219,8 +219,8 @@ _compute_diag_sizes_assembler(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
   PetscInt *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows, PetscInt);
-  BFT_MALLOC(_offdiag_sizes, n_rows, PetscInt);
+  CS_MALLOC(_diag_sizes, n_rows, PetscInt);
+  CS_MALLOC(_offdiag_sizes, n_rows, PetscInt);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -276,8 +276,8 @@ _compute_diag_sizes_assembler_db(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
   PetscInt *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows*db_size, PetscInt);
-  BFT_MALLOC(_offdiag_sizes, n_rows*db_size, PetscInt);
+  CS_MALLOC(_diag_sizes, n_rows*db_size, PetscInt);
+  CS_MALLOC(_offdiag_sizes, n_rows*db_size, PetscInt);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -338,8 +338,8 @@ _compute_diag_sizes_assembler_b(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
   PetscInt *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows*b_size, PetscInt);
-  BFT_MALLOC(_offdiag_sizes, n_rows*b_size, PetscInt);
+  CS_MALLOC(_diag_sizes, n_rows*b_size, PetscInt);
+  CS_MALLOC(_offdiag_sizes, n_rows*b_size, PetscInt);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -404,8 +404,8 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
   cs_lnum_t _n_rows = n_rows*b_size;
 
   PetscInt *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, _n_rows, PetscInt);
-  BFT_MALLOC(_offdiag_sizes, _n_rows, PetscInt);
+  CS_MALLOC(_diag_sizes, _n_rows, PetscInt);
+  CS_MALLOC(_offdiag_sizes, _n_rows, PetscInt);
 
   /* Case with b_size > e_size handled later */
   int n_diag = (have_diag && b_size == e_size) ? e_size : 0;
@@ -541,7 +541,7 @@ _setup_coeffs(cs_matrix_t  *matrix,
     cs_matrix_petsc_ensure_init();
 
     cs_matrix_coeffs_petsc_t *coeffs;
-    BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_petsc_t);
+    CS_MALLOC(coeffs, 1, cs_matrix_coeffs_petsc_t);
     memset(coeffs, 0, sizeof(cs_matrix_coeffs_petsc_t));
     coeffs->matrix_state = 0;
 
@@ -641,8 +641,8 @@ _assembler_values_init(void        *matrix_p,
     MatSeqAIJSetPreallocation(coeffs->hm, 0, diag_sizes);
     MatMPIAIJSetPreallocation(coeffs->hm, 0, diag_sizes, 0, offdiag_sizes);
 
-    BFT_FREE(diag_sizes);
-    BFT_FREE(offdiag_sizes);
+    CS_FREE(diag_sizes);
+    CS_FREE(offdiag_sizes);
   }
 }
 
@@ -1298,8 +1298,8 @@ _set_coeffs(cs_matrix_t        *matrix,
     MatSeqAIJSetPreallocation(coeffs->hm, 0, diag_sizes);
     MatMPIAIJSetPreallocation(coeffs->hm, 0, diag_sizes, 0, offdiag_sizes);
 
-    BFT_FREE(diag_sizes);
-    BFT_FREE(offdiag_sizes);
+    CS_FREE(diag_sizes);
+    CS_FREE(offdiag_sizes);
   }
 
   /* Scalar case */
@@ -1447,7 +1447,7 @@ _destroy_coeffs(cs_matrix_t  *matrix)
 {
   if (matrix->coeffs != nullptr) {
     _release_coeffs(matrix);
-    BFT_FREE(matrix->coeffs);
+    CS_FREE(matrix->coeffs);
   }
 }
 

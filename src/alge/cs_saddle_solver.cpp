@@ -43,12 +43,6 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  BFT headers
- *----------------------------------------------------------------------------*/
-
-#include "bft/bft_mem.h"
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -56,6 +50,7 @@
 #include "alge/cs_blas.h"
 #include "cdo/cs_cdo_solve.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "cdo/cs_saddle_system.h"
 
@@ -641,7 +636,7 @@ _compute_residual(cs_saddle_solver_t *solver,
    */
 
   cs_real_t *m12x2 = nullptr;
-  BFT_MALLOC(m12x2, solver->n1_scatter_dofs, cs_real_t);
+  CS_MALLOC(m12x2, solver->n1_scatter_dofs, cs_real_t);
   cs_array_real_fill_zero(solver->n1_scatter_dofs, m12x2);
 
   const cs_adjacency_t *adj = ctx->m21_adj;
@@ -722,7 +717,7 @@ _compute_residual(cs_saddle_solver_t *solver,
   for (cs_lnum_t i1 = 0; i1 < solver->n1_scatter_dofs; i1++)
     res1[i1] = rhs1[i1] - res1[i1] - m12x2[i1];
 
-  BFT_FREE(m12x2);
+  CS_FREE(m12x2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -763,7 +758,7 @@ _matvec_product(cs_saddle_solver_t *solver, cs_real_t *vec, cs_real_t *matvec)
   /* 1) M12.v2 and M21.v1 */
 
   cs_real_t *m12v2 = nullptr;
-  BFT_MALLOC(m12v2, solver->n1_scatter_dofs, cs_real_t);
+  CS_MALLOC(m12v2, solver->n1_scatter_dofs, cs_real_t);
   cs_array_real_fill_zero(solver->n1_scatter_dofs, m12v2);
 
   assert(solver->n2_scatter_dofs == adj->n_elts);
@@ -839,7 +834,7 @@ _matvec_product(cs_saddle_solver_t *solver, cs_real_t *vec, cs_real_t *matvec)
   for (cs_lnum_t i1 = 0; i1 < solver->n1_scatter_dofs; i1++)
     mv1[i1] += m12v2[i1];
 
-  BFT_FREE(m12v2);
+  CS_FREE(m12v2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1561,25 +1556,25 @@ _set_pc_by_block(const cs_saddle_solver_t                   *solver,
 
   case CS_PARAM_SADDLE_PRECOND_LOWER:
     *wsp_size = ctx->b22_max_size;
-    BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+    CS_MALLOC(*p_wsp, *wsp_size, cs_real_t);
 
     return _lower_schur_pc_apply;
 
   case CS_PARAM_SADDLE_PRECOND_SGS:
     *wsp_size = 2*ctx->b11_max_size;
-    BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+    CS_MALLOC(*p_wsp, *wsp_size, cs_real_t);
 
     return _sgs_schur_pc_apply;
 
   case CS_PARAM_SADDLE_PRECOND_UPPER:
     *wsp_size = ctx->b11_max_size;
-    BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+    CS_MALLOC(*p_wsp, *wsp_size, cs_real_t);
 
     return _upper_schur_pc_apply;
 
   case CS_PARAM_SADDLE_PRECOND_UZAWA:
     *wsp_size = 2*(ctx->b11_max_size + ctx->b22_max_size);
-    BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+    CS_MALLOC(*p_wsp, *wsp_size, cs_real_t);
 
     return _uza_schur_pc_apply;
 
@@ -2013,7 +2008,7 @@ _create_saddle_solver(cs_lnum_t                 n1_elts,
 
   cs_saddle_solver_t  *solver = nullptr;
 
-  BFT_MALLOC(solver, 1, cs_saddle_solver_t);
+  CS_MALLOC(solver, 1, cs_saddle_solver_t);
 
   solver->param = saddlep;        /* shared */
   solver->system_helper = sh;     /* shared */
@@ -2167,9 +2162,9 @@ cs_saddle_solver_add(cs_lnum_t                 n1_elts,
                      cs_cdo_system_helper_t   *sh,
                      cs_sles_t                *main_sles)
 {
-  BFT_REALLOC(cs_saddle_solver_systems,
-              cs_saddle_solver_n_systems + 1,
-              cs_saddle_solver_t *);
+  CS_REALLOC(cs_saddle_solver_systems,
+             cs_saddle_solver_n_systems + 1,
+             cs_saddle_solver_t *);
 
   cs_saddle_solver_t  *solver = _create_saddle_solver(n1_elts,
                                                       n1_dofs_by_elt,
@@ -2197,7 +2192,7 @@ cs_saddle_solver_add(cs_lnum_t                 n1_elts,
 void
 cs_saddle_solver_finalize(void)
 {
-  BFT_FREE(cs_saddle_solver_systems);
+  CS_FREE(cs_saddle_solver_systems);
   cs_saddle_solver_n_systems = 0;
 }
 
@@ -2231,7 +2226,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 
     cs_saddle_solver_context_alu_free(&ctx);
 
-    BFT_FREE(ctx);
+    CS_FREE(ctx);
     }
     break;
 
@@ -2243,7 +2238,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 
     cs_saddle_solver_context_block_pcd_free(&ctx);
 
-    BFT_FREE(ctx);
+    CS_FREE(ctx);
     }
     break;
 
@@ -2254,7 +2249,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 
     cs_saddle_solver_context_gkb_free(&ctx);
 
-    BFT_FREE(ctx);
+    CS_FREE(ctx);
     }
     break;
 
@@ -2263,7 +2258,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
     cs_saddle_solver_context_notay_t *ctx =
       static_cast<cs_saddle_solver_context_notay_t *>(solver->context);
 
-    BFT_FREE(ctx);
+    CS_FREE(ctx);
     }
     break;
 
@@ -2274,7 +2269,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 
     cs_saddle_solver_context_uzawa_cg_free(&ctx);
 
-    BFT_FREE(ctx);
+    CS_FREE(ctx);
     }
     break;
 
@@ -2285,7 +2280,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 
     cs_saddle_solver_context_simple_free(&ctx);
 
-    BFT_FREE(ctx);
+    CS_FREE(ctx);
     }
     break;
 
@@ -2294,7 +2289,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
     break; /* Nothing to do */
   }
 
-  BFT_FREE(solver);
+  CS_FREE(solver);
   *p_solver = nullptr;
 }
 
@@ -2454,11 +2449,11 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
   const cs_lnum_t  b11_size = solver->n1_scatter_dofs;
 
   cs_real_t  *inv_lumped_m11 = nullptr;
-  BFT_MALLOC(inv_lumped_m11, b11_size, cs_real_t);
+  CS_MALLOC(inv_lumped_m11, b11_size, cs_real_t);
   cs_array_real_fill_zero(b11_size, inv_lumped_m11);
 
   cs_real_t  *rhs = nullptr;
-  BFT_MALLOC(rhs, b11_size, cs_real_t);
+  CS_MALLOC(rhs, b11_size, cs_real_t);
   cs_array_real_set_scalar(b11_size, 1, rhs);
 
   cs_param_sles_t  *slesp = cs_param_saddle_get_xtra_sles_param(solver->param);
@@ -2482,7 +2477,7 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
 
   /* Partial memory free */
 
-  BFT_FREE(rhs);
+  CS_FREE(rhs);
 
   return inv_lumped_m11;
 }
@@ -2657,7 +2652,7 @@ cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
     return;
 
   cs_saddle_solver_context_alu_t *ctx = nullptr;
-  BFT_MALLOC(ctx, 1, cs_saddle_solver_context_alu_t);
+  CS_MALLOC(ctx, 1, cs_saddle_solver_context_alu_t);
 
   ctx->inv_m22 = nullptr;
   ctx->res2 = nullptr;
@@ -2721,11 +2716,11 @@ cs_saddle_solver_context_alu_clean(cs_saddle_solver_context_alu_t *ctx)
 
   cs_sles_free(ctx->init_sles);
 
-  BFT_FREE(ctx->inv_m22);
-  BFT_FREE(ctx->res2);
-  BFT_FREE(ctx->m21x1);
-  BFT_FREE(ctx->b1_tilda);
-  BFT_FREE(ctx->rhs);
+  CS_FREE(ctx->inv_m22);
+  CS_FREE(ctx->res2);
+  CS_FREE(ctx->m21x1);
+  CS_FREE(ctx->b1_tilda);
+  CS_FREE(ctx->rhs);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2749,7 +2744,7 @@ cs_saddle_solver_context_alu_free
 
   cs_saddle_solver_context_alu_clean(ctx);
 
-  BFT_FREE(ctx);
+  CS_FREE(ctx);
   *p_ctx = nullptr;
 }
 
@@ -2771,7 +2766,7 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
     return;
 
   cs_saddle_solver_context_block_pcd_t *ctx = nullptr;
-  BFT_MALLOC(ctx, 1, cs_saddle_solver_context_block_pcd_t);
+  CS_MALLOC(ctx, 1, cs_saddle_solver_context_block_pcd_t);
 
   /* Sanity checks on the system helper have already been done */
 
@@ -2878,10 +2873,10 @@ cs_saddle_solver_context_block_pcd_clean(
   cs_sles_free(ctx->schur_sles);
   cs_sles_free(ctx->xtra_sles);
 
-  BFT_FREE(ctx->schur_diag);
-  BFT_FREE(ctx->schur_xtra);
-  BFT_FREE(ctx->m22_mass_diag);
-  BFT_FREE(ctx->m11_inv_diag);
+  CS_FREE(ctx->schur_diag);
+  CS_FREE(ctx->schur_xtra);
+  CS_FREE(ctx->m22_mass_diag);
+  CS_FREE(ctx->m11_inv_diag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2906,7 +2901,7 @@ cs_saddle_solver_context_block_pcd_free
 
   cs_saddle_solver_context_block_pcd_clean(ctx);
 
-  BFT_FREE(ctx);
+  CS_FREE(ctx);
   *p_ctx = nullptr;
 }
 
@@ -2925,7 +2920,7 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
     return;
 
   cs_saddle_solver_context_gkb_t *ctx = nullptr;
-  BFT_MALLOC(ctx, 1, cs_saddle_solver_context_gkb_t);
+  CS_MALLOC(ctx, 1, cs_saddle_solver_context_gkb_t);
 
   ctx->alpha = 0.0;
   ctx->beta = 0.0;
@@ -3008,18 +3003,18 @@ cs_saddle_solver_context_gkb_clean(cs_saddle_solver_context_gkb_t *ctx)
   ctx->zeta_size = 0;
   ctx->zeta_square_sum = 0;
 
-  BFT_FREE(ctx->zeta_array);
-  BFT_FREE(ctx->q);
-  BFT_FREE(ctx->d);
-  BFT_FREE(ctx->m21v);
-  BFT_FREE(ctx->inv_m22);
+  CS_FREE(ctx->zeta_array);
+  CS_FREE(ctx->q);
+  CS_FREE(ctx->d);
+  CS_FREE(ctx->m21v);
+  CS_FREE(ctx->inv_m22);
 
-  BFT_FREE(ctx->w);
-  BFT_FREE(ctx->v);
-  BFT_FREE(ctx->m12q);
-  BFT_FREE(ctx->x1_tilda);
+  CS_FREE(ctx->w);
+  CS_FREE(ctx->v);
+  CS_FREE(ctx->m12q);
+  CS_FREE(ctx->x1_tilda);
 
-  BFT_FREE(ctx->rhs_tilda);
+  CS_FREE(ctx->rhs_tilda);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3043,7 +3038,7 @@ cs_saddle_solver_context_gkb_free
 
   cs_saddle_solver_context_gkb_clean(ctx);
 
-  BFT_FREE(ctx);
+  CS_FREE(ctx);
   *p_ctx = nullptr;
 }
 
@@ -3063,7 +3058,7 @@ cs_saddle_solver_context_notay_create(cs_saddle_solver_t  *solver)
     return;
 
   cs_saddle_solver_context_notay_t *ctx = nullptr;
-  BFT_MALLOC(ctx, 1, cs_saddle_solver_context_notay_t);
+  CS_MALLOC(ctx, 1, cs_saddle_solver_context_notay_t);
 
   /* Function pointer */
 
@@ -3104,7 +3099,7 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
     return;
 
   cs_saddle_solver_context_uzawa_cg_t *ctx = nullptr;
-  BFT_MALLOC(ctx, 1, cs_saddle_solver_context_uzawa_cg_t);
+  CS_MALLOC(ctx, 1, cs_saddle_solver_context_uzawa_cg_t);
 
   ctx->alpha = 0.0;
 
@@ -3227,12 +3222,12 @@ cs_saddle_solver_context_uzawa_cg_clean(
   if (ctx == nullptr)
     return;
 
-  BFT_FREE(ctx->res2);
-  BFT_FREE(ctx->m21x1);
-  BFT_FREE(ctx->gk);
-  BFT_FREE(ctx->b1_tilda);
-  BFT_FREE(ctx->dzk);
-  BFT_FREE(ctx->rhs);
+  CS_FREE(ctx->res2);
+  CS_FREE(ctx->m21x1);
+  CS_FREE(ctx->gk);
+  CS_FREE(ctx->b1_tilda);
+  CS_FREE(ctx->dzk);
+  CS_FREE(ctx->rhs);
 
   /* Remove the setup data in SLES. The pointer to the following SLES will be
      still valid */
@@ -3241,10 +3236,10 @@ cs_saddle_solver_context_uzawa_cg_clean(
   cs_sles_free(ctx->xtra_sles);
   cs_sles_free(ctx->init_sles);
 
-  BFT_FREE(ctx->schur_diag);
-  BFT_FREE(ctx->schur_xtra);
-  BFT_FREE(ctx->m11_inv_diag);
-  BFT_FREE(ctx->inv_m22);
+  CS_FREE(ctx->schur_diag);
+  CS_FREE(ctx->schur_xtra);
+  CS_FREE(ctx->m11_inv_diag);
+  CS_FREE(ctx->inv_m22);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3268,7 +3263,7 @@ cs_saddle_solver_context_uzawa_cg_free
 
   cs_saddle_solver_context_uzawa_cg_clean(ctx);
 
-  BFT_FREE(ctx);
+  CS_FREE(ctx);
   *p_ctx = nullptr;
 }
 
@@ -3290,7 +3285,7 @@ cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
     return;
 
   cs_saddle_solver_context_simple_t *ctx = nullptr;
-  BFT_MALLOC(ctx, 1, cs_saddle_solver_context_simple_t);
+  CS_MALLOC(ctx, 1, cs_saddle_solver_context_simple_t);
 
   ctx->m21x1 = nullptr;
   ctx->rhs = nullptr;
@@ -3402,9 +3397,9 @@ cs_saddle_solver_context_simple_clean(cs_saddle_solver_context_simple_t *ctx)
   if (ctx == nullptr)
     return;
 
-  BFT_FREE(ctx->m21x1);
-  BFT_FREE(ctx->b1_tilda);
-  BFT_FREE(ctx->rhs);
+  CS_FREE(ctx->m21x1);
+  CS_FREE(ctx->b1_tilda);
+  CS_FREE(ctx->rhs);
 
   /* Remove the setup data in SLES. The pointer to the following SLES will be
      still valid */
@@ -3413,10 +3408,10 @@ cs_saddle_solver_context_simple_clean(cs_saddle_solver_context_simple_t *ctx)
   cs_sles_free(ctx->xtra_sles);
   cs_sles_free(ctx->init_sles);
 
-  BFT_FREE(ctx->schur_diag);
-  BFT_FREE(ctx->schur_xtra);
-  BFT_FREE(ctx->m11_inv_diag);
-  BFT_FREE(ctx->inv_m22);
+  CS_FREE(ctx->schur_diag);
+  CS_FREE(ctx->schur_xtra);
+  CS_FREE(ctx->m11_inv_diag);
+  CS_FREE(ctx->inv_m22);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3440,7 +3435,7 @@ cs_saddle_solver_context_simple_free
 
   cs_saddle_solver_context_simple_clean(ctx);
 
-  BFT_FREE(ctx);
+  CS_FREE(ctx);
   *p_ctx = nullptr;
 }
 
@@ -3706,10 +3701,10 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
   /* Prepare the solution and rhs arrays given to the solver */
 
   cs_real_t  *sol = nullptr;
-  BFT_MALLOC(sol, CS_MAX(n_cols, n_scatter_dofs), cs_real_t);
+  CS_MALLOC(sol, CS_MAX(n_cols, n_scatter_dofs), cs_real_t);
 
   cs_real_t  *b = nullptr;
-  BFT_MALLOC(b, n_scatter_dofs, cs_real_t);
+  CS_MALLOC(b, n_scatter_dofs, cs_real_t);
 
   if (solver->n1_dofs_by_elt == 3 && solver->n2_dofs_by_elt == 1)
     _join_x1_vector_x2_deinterlaced(n1_elts, x1,
@@ -3804,7 +3799,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   cs_real_t  *m12_x2 = nullptr, *mat_diag = nullptr;
 
-  BFT_MALLOC(m12_x2, n1_dofs, cs_real_t);
+  CS_MALLOC(m12_x2, n1_dofs, cs_real_t);
 
   /* Warning: Do not reset the array inside the function since there is a trick
      in the way that the system_helper is built (there are two blocks but the
@@ -3824,7 +3819,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   /* Retrieve the diagonal of the matrix in a "scatter" view */
 
-  BFT_MALLOC(mat_diag, n_scatter_dofs, cs_real_t);
+  CS_MALLOC(mat_diag, n_scatter_dofs, cs_real_t);
 
   /* diag is stored in a "gather view". Switch to a "scatter view" to make
      the change of variable */
@@ -3850,10 +3845,10 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
     x1[3*i1+2] = solz[i1] - alpha * m12_x2[3*i1+2]/dz[i1];
   }
 
-  BFT_FREE(m12_x2);
-  BFT_FREE(mat_diag);
-  BFT_FREE(sol);
-  BFT_FREE(b);
+  CS_FREE(m12_x2);
+  CS_FREE(mat_diag);
+  CS_FREE(sol);
+  CS_FREE(b);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3893,7 +3888,7 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
   cs_lnum_t  wsp_size = 7*ssys_size;
   cs_real_t  *wsp = nullptr;
 
-  BFT_MALLOC(wsp, wsp_size, cs_real_t);
+  CS_MALLOC(wsp, wsp_size, cs_real_t);
 
   /* Avoid calling an OpenMP initialization on the full buffer (first touch
      paragdim could slows down the memory access when used) */
@@ -4106,8 +4101,8 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
 
   /* Free temporary workspace */
 
-  BFT_FREE(wsp);
-  BFT_FREE(pc_wsp);
+  CS_FREE(wsp);
+  CS_FREE(pc_wsp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4152,18 +4147,18 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
   const int  triangular_size = (restart*(restart+1))/2;
   double  *gamma = nullptr;
-  BFT_MALLOC(gamma, triangular_size, double);
+  CS_MALLOC(gamma, triangular_size, double);
   memset(gamma, 0, triangular_size*sizeof(double));
 
   double  *alpha = nullptr, *beta = nullptr;
-  BFT_MALLOC(alpha, 2*restart, double);
+  CS_MALLOC(alpha, 2*restart, double);
   memset(alpha, 0, 2*restart*sizeof(double));
   beta = alpha + restart;
 
   const cs_lnum_t  ssys_size = ctx->b11_max_size + ctx->b22_max_size;
   cs_lnum_t  wsp_size = (2 + 2*restart)*ssys_size;
   cs_real_t  *wsp = nullptr;
-  BFT_MALLOC(wsp, wsp_size, cs_real_t);
+  CS_MALLOC(wsp, wsp_size, cs_real_t);
   memset(wsp, 0, wsp_size*sizeof(cs_real_t));
 
   cs_real_t  *zsave = wsp;
@@ -4334,10 +4329,10 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
   /* Free temporary workspace */
 
-  BFT_FREE(gamma);
-  BFT_FREE(alpha);
-  BFT_FREE(wsp);
-  BFT_FREE(pc_wsp);
+  CS_FREE(gamma);
+  CS_FREE(alpha);
+  CS_FREE(wsp);
+  CS_FREE(pc_wsp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4534,10 +4529,10 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
   /* Prepare the solution and rhs arrays given to the solver */
 
   cs_real_t  *sol = nullptr;
-  BFT_MALLOC(sol, CS_MAX(n_cols, n_scatter_dofs), cs_real_t);
+  CS_MALLOC(sol, CS_MAX(n_cols, n_scatter_dofs), cs_real_t);
 
   cs_real_t  *b = nullptr;
-  BFT_MALLOC(b, n_scatter_dofs, cs_real_t);
+  CS_MALLOC(b, n_scatter_dofs, cs_real_t);
 
   assert(solver->n2_elts == n2_dofs);
 
@@ -4647,8 +4642,8 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
   if (slesp->field_id > -1)
     cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
 
-  BFT_FREE(sol);
-  BFT_FREE(b);
+  CS_FREE(sol);
+  CS_FREE(b);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4945,8 +4940,8 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   cs_real_t  *rhs2 = sh->rhs_array[1];
   cs_real_t  *dx = nullptr, *r = nullptr;
 
-  BFT_MALLOC(dx, ctx->b11_max_size + ctx->b22_max_size, cs_real_t);
-  BFT_MALLOC(r, ctx->b11_max_size + ctx->b22_max_size, cs_real_t);
+  CS_MALLOC(dx, ctx->b11_max_size + ctx->b22_max_size, cs_real_t);
+  CS_MALLOC(r, ctx->b11_max_size + ctx->b22_max_size, cs_real_t);
   cs_array_real_fill_zero(ctx->b11_max_size + ctx->b22_max_size, dx);
 
   /* Set pointers used in this algorithm */
@@ -4954,7 +4949,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   cs_real_t *dx1 = dx, *dx2 = dx + ctx->b11_max_size;
 
   cs_real_t *m12x2 = nullptr;
-  BFT_MALLOC(m12x2, n1_dofs, cs_real_t);
+  CS_MALLOC(m12x2, n1_dofs, cs_real_t);
   cs_array_real_fill_zero(n1_dofs, m12x2);
 
   if (rset->ifs != nullptr)
@@ -5248,9 +5243,9 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
     }
   }
 
-  BFT_FREE(dx);
-  BFT_FREE(r);
-  BFT_FREE(m12x2);
+  CS_FREE(dx);
+  CS_FREE(r);
+  CS_FREE(m12x2);
 
   /* --- ALGO END --- */
   /* ---------------- */

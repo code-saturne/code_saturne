@@ -52,7 +52,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -64,6 +63,7 @@
 #include "base/cs_block_to_part.h"
 #include "base/cs_file.h"
 #include "base/cs_io.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_save.h"
 #include "mesh/cs_mesh_location.h"
@@ -320,10 +320,10 @@ _locations_from_index(cs_restart_t  *r)
                   r->name, (int)(h.location_id),
                   (int)(r->n_locations + 1));
 
-      BFT_REALLOC(r->location, r->n_locations + 1, _location_t);
+      CS_REALLOC(r->location, r->n_locations + 1, _location_t);
 
       loc = r->location + r->n_locations;
-      BFT_MALLOC(loc->name, strlen(h.sec_name) + 1, char);
+      CS_MALLOC(loc->name, strlen(h.sec_name) + 1, char);
       strcpy(loc->name, h.sec_name);
 
       loc->id = h.location_id;
@@ -497,7 +497,7 @@ _read_ent_values(cs_restart_t           *r,
   block_buf_size = (bi.gnum_range[1] - bi.gnum_range[0]) * nbr_byte_ent;
 
   if (block_buf_size > 0)
-    BFT_MALLOC(buffer, block_buf_size, cs_byte_t);
+    CS_MALLOC(buffer, block_buf_size, cs_byte_t);
 
   cs_io_read_block(header,
                    bi.gnum_range[0],
@@ -516,7 +516,7 @@ _read_ent_values(cs_restart_t           *r,
 
   /* Free buffer */
 
-  BFT_FREE(buffer);
+  CS_FREE(buffer);
 
   cs_all_to_all_destroy(&d);
 }
@@ -597,7 +597,7 @@ _write_ent_values(const cs_restart_t     *r,
   block_buf_size = (bi.gnum_range[1] - bi.gnum_range[0]) * nbr_byte_ent;
 
   if (block_buf_size > 0)
-    BFT_MALLOC(buffer, block_buf_size, cs_byte_t);
+    CS_MALLOC(buffer, block_buf_size, cs_byte_t);
 
   /* Distribute blocks on ranks */
 
@@ -622,7 +622,7 @@ _write_ent_values(const cs_restart_t     *r,
 
   /* Free buffer */
 
-  BFT_FREE(buffer);
+  CS_FREE(buffer);
 
   cs_part_to_block_destroy(&d);
 }
@@ -663,7 +663,7 @@ _restart_permute_read(cs_lnum_t               n_ents,
       char  *val_ord;
       char  *val_cur = (char *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, char);
+      CS_MALLOC(val_ord, n_ents * n_location_vals, char);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -674,7 +674,7 @@ _restart_permute_read(cs_lnum_t               n_ents,
       for (ii = 0; ii < n_ents * n_location_vals; ii++)
         val_cur[ii] = val_ord[ii];
 
-      BFT_FREE(val_ord);
+      CS_FREE(val_ord);
     }
     break;
 
@@ -683,7 +683,7 @@ _restart_permute_read(cs_lnum_t               n_ents,
       int  *val_ord;
       int  *val_cur = (int *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, int);
+      CS_MALLOC(val_ord, n_ents * n_location_vals, int);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -694,7 +694,7 @@ _restart_permute_read(cs_lnum_t               n_ents,
       for (ii = 0; ii < n_ents * n_location_vals; ii++)
         val_cur[ii] = val_ord[ii];
 
-      BFT_FREE(val_ord);
+      CS_FREE(val_ord);
     }
     break;
 
@@ -703,7 +703,7 @@ _restart_permute_read(cs_lnum_t               n_ents,
       cs_gnum_t  *val_ord;
       cs_gnum_t  *val_cur = (cs_gnum_t *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_gnum_t);
+      CS_MALLOC(val_ord, n_ents * n_location_vals, cs_gnum_t);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -714,7 +714,7 @@ _restart_permute_read(cs_lnum_t               n_ents,
       for (ii = 0; ii < n_ents * n_location_vals; ii++)
         val_cur[ii] = val_ord[ii];
 
-      BFT_FREE(val_ord);
+      CS_FREE(val_ord);
     }
     break;
 
@@ -723,7 +723,7 @@ _restart_permute_read(cs_lnum_t               n_ents,
       cs_real_t  *val_ord;
       cs_real_t  *val_cur = (cs_real_t *)vals;
 
-      BFT_MALLOC (val_ord, n_ents * n_location_vals, cs_real_t);
+      CS_MALLOC (val_ord, n_ents * n_location_vals, cs_real_t);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -734,7 +734,7 @@ _restart_permute_read(cs_lnum_t               n_ents,
       for (ii = 0; ii < n_ents * n_location_vals; ii++)
         val_cur[ii] = val_ord[ii];
 
-      BFT_FREE(val_ord);
+      CS_FREE(val_ord);
     }
     break;
 
@@ -781,7 +781,7 @@ _restart_permute_write(cs_lnum_t               n_ents,
       char  *val_ord;
       const char  *val_cur = (const char *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, char);
+      CS_MALLOC(val_ord, n_ents * n_location_vals, char);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -798,7 +798,7 @@ _restart_permute_write(cs_lnum_t               n_ents,
       int  *val_ord;
       const int  *val_cur = (const int *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, int);
+      CS_MALLOC(val_ord, n_ents * n_location_vals, int);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -815,7 +815,7 @@ _restart_permute_write(cs_lnum_t               n_ents,
       cs_gnum_t  *val_ord;
       const cs_gnum_t  *val_cur = (const cs_gnum_t *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_gnum_t);
+      CS_MALLOC(val_ord, n_ents * n_location_vals, cs_gnum_t);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -832,7 +832,7 @@ _restart_permute_write(cs_lnum_t               n_ents,
       cs_real_t  *val_ord;
       const cs_real_t  *val_cur = (const cs_real_t *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_real_t);
+      CS_MALLOC(val_ord, n_ents * n_location_vals, cs_real_t);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -887,7 +887,7 @@ _restart_section_id(cs_restart_t     *restart,
     if (postfix != nullptr)
       sec_name_l += strlen(postfix);
 
-    BFT_MALLOC(_sec_name, sec_name_l + 1, char);
+    CS_MALLOC(_sec_name, sec_name_l + 1, char);
     sec_name = _sec_name;
 
     if (prefix != nullptr) {
@@ -916,7 +916,7 @@ _restart_section_id(cs_restart_t     *restart,
     rec_id = -1;
   }
 
-  BFT_FREE(_sec_name);
+  CS_FREE(_sec_name);
 
   return rec_id;
 }
@@ -1000,11 +1000,11 @@ _default_p_rank(cs_block_dist_info_t  *p_bi,
    *  The main objective of this function
    *  is to ensure some measure of load balancing. */
 
-  BFT_MALLOC(default_rank, _n_particles, int);
+  CS_MALLOC(default_rank, _n_particles, int);
   for (i = 0; i < _n_particles; i++)
     default_rank[i] = -1;
 
-  BFT_MALLOC(free_particle_ids, n_free_particles, cs_lnum_t);
+  CS_MALLOC(free_particle_ids, n_free_particles, cs_lnum_t);
 
   n_free_particles = 0;
   for (i = 0; i < _n_particles; i++) {
@@ -1023,7 +1023,7 @@ _default_p_rank(cs_block_dist_info_t  *p_bi,
   }
 
   free_particle_io_num = fvm_io_num_destroy(free_particle_io_num);
-  BFT_FREE(free_particle_ids);
+  CS_FREE(free_particle_ids);
 
   return default_rank;
 }
@@ -1484,7 +1484,7 @@ _write_section(cs_restart_t           *restart,
                        restart->fh);
 
     if (val_tmp != nullptr)
-      BFT_FREE (val_tmp);
+      CS_FREE (val_tmp);
   }
 
 #if defined(HAVE_MPI)
@@ -1637,7 +1637,7 @@ static _restart_multiwriter_t *
 _restart_multiwriter_create(void)
 {
   _restart_multiwriter_t *new_writer = nullptr;
-  BFT_MALLOC(new_writer, 1, _restart_multiwriter_t);
+  CS_MALLOC(new_writer, 1, _restart_multiwriter_t);
 
   new_writer->id = -1;
   new_writer->name = nullptr;
@@ -1705,11 +1705,11 @@ _add_restart_multiwriter(const char  name[],
 
   /* Allocate or reallocate the array */
   if (_n_restart_multiwriters == 0)
-    BFT_MALLOC(_restart_multiwriter,
-               _n_restart_multiwriters + 1,
-               _restart_multiwriter_t *);
+    CS_MALLOC(_restart_multiwriter,
+              _n_restart_multiwriters + 1,
+              _restart_multiwriter_t *);
   else
-    BFT_REALLOC(_restart_multiwriter,
+    CS_REALLOC(_restart_multiwriter,
                _n_restart_multiwriters + 1,
                _restart_multiwriter_t *);
 
@@ -1721,7 +1721,7 @@ _add_restart_multiwriter(const char  name[],
 
   /* Set name */
   size_t lname = strlen(name) + 1;
-  BFT_MALLOC(new_writer->name, lname, char);
+  CS_MALLOC(new_writer->name, lname, char);
   strcpy(new_writer->name, name);
 
   /* Set path to subdir, which can be null */
@@ -1733,7 +1733,7 @@ _add_restart_multiwriter(const char  name[],
 
   if (_path != nullptr) {
     size_t lpath = strlen(_path) + 1;
-    BFT_MALLOC(new_writer->path, lpath, char);
+    CS_MALLOC(new_writer->path, lpath, char);
     strcpy(new_writer->path, _path);
   }
 
@@ -1765,13 +1765,13 @@ _restart_multiwriter_increment(_restart_multiwriter_t  *mw,
   mw->n_prev_files_tot++;
 
   if (mw->prev_files == nullptr)
-    BFT_MALLOC(mw->prev_files, mw->n_prev_files, char *);
+    CS_MALLOC(mw->prev_files, mw->n_prev_files, char *);
   else
-    BFT_REALLOC(mw->prev_files, mw->n_prev_files, char *);
+    CS_REALLOC(mw->prev_files, mw->n_prev_files, char *);
 
   mw->prev_files[mw->n_prev_files - 1] = nullptr;
   size_t lenf = strlen(fname) + 1;
-  BFT_MALLOC(mw->prev_files[mw->n_prev_files - 1], lenf, char);
+  CS_MALLOC(mw->prev_files[mw->n_prev_files - 1], lenf, char);
   strcpy(mw->prev_files[mw->n_prev_files - 1], fname);
 }
 
@@ -2259,7 +2259,7 @@ cs_restart_create(const char         *name,
   ldir = strlen(_path);
   lname = strlen(name);
 
-  BFT_MALLOC(_name, ldir + lname + 2, char);
+  CS_MALLOC(_name, ldir + lname + 2, char);
 
   strcpy(_name, _path);
   _name[ldir] = _dir_separator;
@@ -2273,10 +2273,10 @@ cs_restart_create(const char         *name,
   if (mode == CS_RESTART_MODE_READ) {
 
     if (cs_file_isreg(_name) == 0 && cs_file_endswith(name, _extension)) {
-      BFT_FREE(_name);
+      CS_FREE(_name);
 
       lext  = strlen(_extension);
-      BFT_MALLOC(_name, ldir + lname + 2 - lext, char);
+      CS_MALLOC(_name, ldir + lname + 2 - lext, char);
       strcpy(_name, _path);
       _name[ldir] = _dir_separator;
       _name[ldir+1] = '\0';
@@ -2298,7 +2298,7 @@ cs_restart_create(const char         *name,
       size_t lsdir = strlen(_subdir);
 
       char *_re_name = nullptr;
-      BFT_MALLOC(_re_name, ldir + lsdir + lname + 3, char);
+      CS_MALLOC(_re_name, ldir + lsdir + lname + 3, char);
 
       strcpy(_re_name, _path);
       _re_name[ldir] = _dir_separator;
@@ -2326,7 +2326,7 @@ cs_restart_create(const char         *name,
 
       _restart_multiwriter_increment(mw, _re_name);
 
-      BFT_FREE(_re_name);
+      CS_FREE(_re_name);
     }
     else
       mw->n_prev_files = 0;
@@ -2334,13 +2334,13 @@ cs_restart_create(const char         *name,
 
   /* Allocate and initialize base structure */
 
-  BFT_MALLOC(restart, 1, cs_restart_t);
+  CS_MALLOC(restart, 1, cs_restart_t);
 
-  BFT_MALLOC(restart->name, strlen(_name) + 1, char);
+  CS_MALLOC(restart->name, strlen(_name) + 1, char);
 
   strcpy(restart->name, _name);
 
-  BFT_FREE(_name);
+  CS_FREE(_name);
 
   /* Initialize other fields */
 
@@ -2433,18 +2433,18 @@ cs_restart_destroy(cs_restart_t  **restart)
   if (r->n_locations > 0) {
     size_t loc_id;
     for (loc_id = 0; loc_id < r->n_locations; loc_id++) {
-      BFT_FREE((r->location[loc_id]).name);
-      BFT_FREE((r->location[loc_id])._ent_global_num);
+      CS_FREE((r->location[loc_id]).name);
+      CS_FREE((r->location[loc_id])._ent_global_num);
     }
   }
   if (r->location != nullptr)
-    BFT_FREE(r->location);
+    CS_FREE(r->location);
 
   /* Free remaining memory */
 
-  BFT_FREE(r->name);
+  CS_FREE(r->name);
 
-  BFT_FREE(*restart);
+  CS_FREE(*restart);
 
   timing[1] = cs_timer_wtime();
   _restart_wtime[mode] += timing[1] - timing[0];
@@ -2576,10 +2576,10 @@ cs_restart_add_location(cs_restart_t     *restart,
 
     restart->n_locations += 1;
 
-    BFT_REALLOC(restart->location, restart->n_locations, _location_t);
-    BFT_MALLOC((restart->location[restart->n_locations-1]).name,
-               strlen(location_name)+1,
-               char);
+    CS_REALLOC(restart->location, restart->n_locations, _location_t);
+    CS_MALLOC((restart->location[restart->n_locations-1]).name,
+              strlen(location_name)+1,
+              char);
 
     strcpy((restart->location[restart->n_locations-1]).name, location_name);
 
@@ -2629,16 +2629,16 @@ cs_restart_add_location_ref(const char       *location_name,
 
   _n_locations_ref += 1;
 
-  BFT_REALLOC(_location_ref, _n_locations_ref, _location_t);
-  BFT_MALLOC((_location_ref[_n_locations_ref-1]).name,
-             strlen(location_name)+1,
-             char);
+  CS_REALLOC(_location_ref, _n_locations_ref, _location_t);
+  CS_MALLOC((_location_ref[_n_locations_ref-1]).name,
+            strlen(location_name)+1,
+            char);
 
   strcpy((_location_ref[_n_locations_ref-1]).name, location_name);
 
   if (ent_global_num != nullptr) {
-    BFT_MALLOC((_location_ref[_n_locations_ref-1])._ent_global_num,
-               n_ents, cs_gnum_t);
+    CS_MALLOC((_location_ref[_n_locations_ref-1])._ent_global_num,
+              n_ents, cs_gnum_t);
     for (cs_lnum_t i = 0; i < n_ents; i++) {
       (_location_ref[_n_locations_ref-1])._ent_global_num[i]
         = ent_global_num[i];
@@ -2665,10 +2665,10 @@ void
 cs_restart_clear_locations_ref(void)
 {
   for (size_t loc_id = 0; loc_id < _n_locations_ref; loc_id++) {
-    BFT_FREE((_location_ref[loc_id]).name);
-    BFT_FREE((_location_ref[loc_id])._ent_global_num);
+    CS_FREE((_location_ref[loc_id]).name);
+    CS_FREE((_location_ref[loc_id])._ent_global_num);
   }
-  BFT_FREE(_location_ref);
+  CS_FREE(_location_ref);
   _n_locations_ref = 0;
 }
 
@@ -3046,7 +3046,7 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
     block_buf_size = (part_bi.gnum_range[1] - part_bi.gnum_range[0]);
 
     if (block_buf_size > 0)
-      BFT_MALLOC(part_cell_num, block_buf_size, cs_gnum_t);
+      CS_MALLOC(part_cell_num, block_buf_size, cs_gnum_t);
 
     header = cs_io_get_indexed_sec_header(restart->fh, rec_id);
 
@@ -3060,11 +3060,11 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
 
     /* Build block distribution cell rank info */
 
-    BFT_MALLOC(b_cell_rank,
-               (cell_bi.gnum_range[1] - cell_bi.gnum_range[0]),
-               int);
+    CS_MALLOC(b_cell_rank,
+              (cell_bi.gnum_range[1] - cell_bi.gnum_range[0]),
+              int);
 
-    BFT_MALLOC(p_cell_rank, n_cells, int);
+    CS_MALLOC(p_cell_rank, n_cells, int);
 
     pbd = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
                                           cell_bi,
@@ -3082,7 +3082,7 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
 
     cs_part_to_block_destroy(&pbd);
 
-    BFT_FREE(p_cell_rank);
+    CS_FREE(p_cell_rank);
 
     /* Now build distribution structure */
 
@@ -3104,9 +3104,9 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
                                          &ent_global_num);
 
     if (default_p_rank != nullptr)
-      BFT_FREE(default_p_rank);
+      CS_FREE(default_p_rank);
 
-    BFT_FREE(b_cell_rank);
+    CS_FREE(b_cell_rank);
 
     (restart->location[loc_id])._ent_global_num = ent_global_num;
     (restart->location[loc_id]).ent_global_num
@@ -3117,7 +3117,7 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
 
     cs_all_to_all_destroy(&d);
 
-    BFT_FREE(part_cell_num);
+    CS_FREE(part_cell_num);
 
   }
 
@@ -3176,7 +3176,7 @@ cs_restart_read_particles(cs_restart_t  *restart,
 
   /* Read particle coordinates */
 
-  BFT_MALLOC(sec_name, strlen(name) + strlen(coords_postfix) + 1, char);
+  CS_MALLOC(sec_name, strlen(name) + strlen(coords_postfix) + 1, char);
   strcpy(sec_name, name);
   strcat(sec_name, coords_postfix);
 
@@ -3187,14 +3187,14 @@ cs_restart_read_particles(cs_restart_t  *restart,
                                     CS_TYPE_cs_real_t,
                                     particle_coords);
 
-  BFT_FREE(sec_name);
+  CS_FREE(sec_name);
 
   if (retcode != CS_RESTART_SUCCESS)
     return retcode;
 
   /* Read particle cell id */
 
-  BFT_MALLOC(sec_name, strlen(name) + strlen(cell_num_postfix) + 1, char);
+  CS_MALLOC(sec_name, strlen(name) + strlen(cell_num_postfix) + 1, char);
   strcpy(sec_name, name);
   strcat(sec_name, cell_num_postfix);
 
@@ -3204,7 +3204,7 @@ cs_restart_read_particles(cs_restart_t  *restart,
 
     cs_gnum_t *g_part_cell_num;
 
-    BFT_MALLOC(g_part_cell_num, n_particles, cs_gnum_t);
+    CS_MALLOC(g_part_cell_num, n_particles, cs_gnum_t);
 
     retcode = cs_restart_read_section(restart,
                                       sec_name,
@@ -3223,7 +3223,7 @@ cs_restart_read_particles(cs_restart_t  *restart,
                                      g_part_cell_num,
                                      particle_cell_id);
 
-    BFT_FREE(g_part_cell_num);
+    CS_FREE(g_part_cell_num);
 
     timing[1] = cs_timer_wtime();
     _restart_wtime[restart->mode] += timing[1] - timing[0];
@@ -3243,7 +3243,7 @@ cs_restart_read_particles(cs_restart_t  *restart,
       particle_cell_id[i] -= 1;
   }
 
-  BFT_FREE(sec_name);
+  CS_FREE(sec_name);
 
   return retcode;
 }
@@ -3323,7 +3323,7 @@ cs_restart_write_particles(cs_restart_t     *restart,
 
   /* Write particle coordinates */
 
-  BFT_MALLOC(sec_name, strlen(name) + strlen(coords_postfix) + 1, char);
+  CS_MALLOC(sec_name, strlen(name) + strlen(coords_postfix) + 1, char);
   strcpy(sec_name, name);
   strcat(sec_name, coords_postfix);
 
@@ -3339,11 +3339,11 @@ cs_restart_write_particles(cs_restart_t     *restart,
 
   timing[0] = cs_timer_wtime();
 
-  BFT_FREE(sec_name);
+  CS_FREE(sec_name);
 
   /* Write particle cell location information */
 
-  BFT_MALLOC(global_part_cell_num, n_particles, cs_gnum_t);
+  CS_MALLOC(global_part_cell_num, n_particles, cs_gnum_t);
 
   if (restart->location[CS_MESH_LOCATION_CELLS-1].ent_global_num != nullptr) {
     const cs_gnum_t  *g_cell_num
@@ -3360,7 +3360,7 @@ cs_restart_write_particles(cs_restart_t     *restart,
       global_part_cell_num[i] = particle_cell_id[i] + 1;
   }
 
-  BFT_MALLOC(sec_name, strlen(name) + strlen(cell_num_postfix) + 1, char);
+  CS_MALLOC(sec_name, strlen(name) + strlen(cell_num_postfix) + 1, char);
   strcpy(sec_name, name);
   strcat(sec_name, cell_num_postfix);
 
@@ -3374,9 +3374,9 @@ cs_restart_write_particles(cs_restart_t     *restart,
                            CS_TYPE_cs_gnum_t,
                            global_part_cell_num);
 
-  BFT_FREE(sec_name);
+  CS_FREE(sec_name);
 
-  BFT_FREE(global_part_cell_num);
+  CS_FREE(global_part_cell_num);
 
   return loc_id;
 }
@@ -3447,7 +3447,7 @@ cs_restart_read_ids(cs_restart_t     *restart,
 
   /* Transform local to global ids */
 
-  BFT_MALLOC(g_num, n_ents, cs_gnum_t);
+  CS_MALLOC(g_num, n_ents, cs_gnum_t);
 
   /* Read associated data */
 
@@ -3484,7 +3484,7 @@ cs_restart_read_ids(cs_restart_t     *restart,
 
   }
 
-  BFT_FREE(g_num);
+  CS_FREE(g_num);
 
   /* Return */
 
@@ -3551,7 +3551,7 @@ cs_restart_write_ids(cs_restart_t           *restart,
 
   timing[0] = cs_timer_wtime();
 
-  BFT_MALLOC(g_num, n_ents, cs_gnum_t);
+  CS_MALLOC(g_num, n_ents, cs_gnum_t);
 
   if (ref_location_id == 0) {
     for (i = 0; i < n_ents; i++)
@@ -3590,7 +3590,7 @@ cs_restart_write_ids(cs_restart_t           *restart,
                            CS_TYPE_cs_gnum_t,
                            g_num);
 
-  BFT_FREE(g_num);
+  CS_FREE(g_num);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3725,7 +3725,7 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
       cs_lnum_t i;
       cs_lnum_t n_ents = (restart->location[location_id-1]).n_ents;
 
-      BFT_MALLOC(buffer, n_ents*3, cs_real_t);
+      CS_MALLOC(buffer, n_ents*3, cs_real_t);
 
       retval = cs_restart_read_section(restart,
                                        old_name_x,
@@ -3758,7 +3758,7 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
         }
       }
 
-      BFT_FREE(buffer);
+      CS_FREE(buffer);
 
       return retval;
 
@@ -3842,7 +3842,7 @@ cs_restart_read_real_6_t_compat(cs_restart_t  *restart,
       cs_lnum_t i;
       cs_lnum_t n_ents = (restart->location[location_id-1]).n_ents;
 
-      BFT_MALLOC(buffer, n_ents*6, cs_real_t);
+      CS_MALLOC(buffer, n_ents*6, cs_real_t);
 
       retval = cs_restart_read_section(restart,
                                        old_name_xx,
@@ -3900,7 +3900,7 @@ cs_restart_read_real_6_t_compat(cs_restart_t  *restart,
         }
       }
 
-      BFT_FREE(buffer);
+      CS_FREE(buffer);
 
       return retval;
 
@@ -3984,7 +3984,7 @@ cs_restart_read_real_66_t_compat(cs_restart_t  *restart,
       cs_lnum_t i;
       cs_lnum_t n_ents = (restart->location[location_id-1]).n_ents;
 
-      BFT_MALLOC(buffer, n_ents*6, cs_real_t);
+      CS_MALLOC(buffer, n_ents*6, cs_real_t);
 
       retval = cs_restart_read_section(restart,
                                        old_name_xx,
@@ -4042,7 +4042,7 @@ cs_restart_read_real_66_t_compat(cs_restart_t  *restart,
         }
       }
 
-      BFT_FREE(buffer);
+      CS_FREE(buffer);
 
       return retval;
 
@@ -4240,7 +4240,7 @@ cs_restart_clean_multiwriters_history(void)
           }
         }
 
-        BFT_FREE(mw->prev_files[ii]);
+        CS_FREE(mw->prev_files[ii]);
 
       }
 
@@ -4272,17 +4272,17 @@ cs_restart_multiwriters_destroy_all(void)
     for (int i = 0; i < _n_restart_multiwriters; i++) {
       _restart_multiwriter_t *w = _restart_multiwriter[i];
 
-      BFT_FREE(w->name);
-      BFT_FREE(w->path);
+      CS_FREE(w->name);
+      CS_FREE(w->path);
 
       for (int j = 0; j < w->n_prev_files; j++)
-        BFT_FREE(w->prev_files[j]);
-      BFT_FREE(w->prev_files);
+        CS_FREE(w->prev_files[j]);
+      CS_FREE(w->prev_files);
 
-      BFT_FREE(w);
+      CS_FREE(w);
 
     }
-    BFT_FREE(_restart_multiwriter);
+    CS_FREE(_restart_multiwriter);
   }
 }
 

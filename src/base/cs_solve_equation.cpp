@@ -40,7 +40,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -75,6 +74,7 @@
 #include "lagr/cs_lagr_precipitation_model.h"
 #include "base/cs_math.h"
 #include "base/cs_mass_source_terms.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -277,8 +277,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
 
   cs_real_t *coefa_p = bc_coeffs_loc.a;
   cs_real_t *coefb_p = bc_coeffs_loc.b;
@@ -293,7 +293,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   }
 
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   cs_field_gradient_scalar_array(f_fm->id,
                                  1,     /* inc */
@@ -301,8 +301,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
                                  cvara_var_fm,
                                  grad);
 
-  BFT_FREE(coefa_p);
-  BFT_FREE(coefb_p);
+  CS_FREE(coefa_p);
+  CS_FREE(coefb_p);
 
   /* Production Term
      --------------- */
@@ -389,7 +389,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       }
   }
 
-  BFT_FREE(grad);
+  CS_FREE(grad);
 
   /* Dissipation term
      ---------------- */
@@ -398,7 +398,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     ("algo:", f->name, "_dissipation");
 
   cs_real_6_t *cvara_rij = nullptr;
-  cs_real_t *cvara_k= nullptr, *cvara_ep = nullptr, *cvara_omg= nullptr, *cvar_al = nullptr;
+  cs_real_t *cvara_k= nullptr, *cvara_ep = nullptr;
+  cs_real_t *cvara_omg= nullptr, *cvar_al = nullptr;
 
   const cs_real_t thetap = (st_prv_id >= 0) ? thetv : 1;
 
@@ -574,7 +575,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
                       viscb);
 
 
-    BFT_FREE(w1);
+    CS_FREE(w1);
   }
 
   /* Symmetric tensor diffusivity (GGDH) */
@@ -732,7 +733,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
 
     const int idifftp = eqp->idifft;
     cs_real_t *w1;
-    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC(w1, n_cells_ext, cs_real_t);
 
     if (cpro_viscls == nullptr) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -760,7 +761,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
                       viscf,
                       viscb);
 
-    BFT_FREE(w1);
+    CS_FREE(w1);
   }
 
   /* Symmetric tensor diffusivity (GGDH) */
@@ -901,7 +902,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
 
     if (fabs(cdtvar - 1.0) > cs_math_epzero) {
-      BFT_MALLOC(dtr, n_cells_ext, cs_real_t);
+      CS_MALLOC(dtr, n_cells_ext, cs_real_t);
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
         dtr[c_id] = dt[c_id] * cdtvar;
@@ -948,7 +949,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   cs_real_t *fimp, *rhs;
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
-  //BFT_MALLOC(fimp, n_cells_ext, cs_real_t);
+  //CS_MALLOC(fimp, n_cells_ext, cs_real_t);
 
   cs_array_real_fill_zero(n_cells, rhs);
   cs_array_real_fill_zero(n_cells, fimp);
@@ -1111,7 +1112,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       && (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
           || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY)) {
 
-    BFT_MALLOC(xcvv, n_cells_ext, cs_real_t);
+    CS_MALLOC(xcvv, n_cells_ext, cs_real_t);
 
     /* Compute cv */
 
@@ -1398,7 +1399,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                         &mst_val_p);
 
     cs_real_t *srcmas;
-    BFT_MALLOC(srcmas, n_elts, cs_real_t);
+    CS_MALLOC(srcmas, n_elts, cs_real_t);
 
     /* When treating the Temperature, the equation is multiplied by Cp */
     for (cs_lnum_t c_idx = 0; c_idx < n_elts; c_idx++) {
@@ -1429,7 +1430,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          fimp,
                          gapinj);
 
-    BFT_FREE(srcmas);
+    CS_FREE(srcmas);
   }
 
   /* Condensation source terms for the scalars
@@ -1463,7 +1464,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Initialize turbulent diffusivity for SGDH model */
   cs_real_t *sgdh_diff;
   CS_MALLOC_HD(sgdh_diff, n_cells_ext, cs_real_t, cs_alloc_mode);
-  //BFT_MALLOC(sgdh_diff, n_cells_ext, cs_real_t);
+  //CS_MALLOC(sgdh_diff, n_cells_ext, cs_real_t);
 
   _init_sgdh_diff(f, sgdh_diff);
 
@@ -1559,7 +1560,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     //TODO add boundary terms?
   }
 
-  BFT_FREE(sgdh_diff);
+  CS_FREE(sgdh_diff);
 
   if (eqp->istat == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1687,7 +1688,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   }
 
-  BFT_FREE(xcvv);
+  CS_FREE(xcvv);
 
   /* Clipping, finalization of the computation of some terms and log
    * =============================================================== */
@@ -1716,7 +1717,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
        * number of condensation nucleii (ncc) and if the droplet number (nc)
        * is smaller than ncc set it to ncc. */
       cs_real_t *pphy;
-      BFT_MALLOC(pphy, n_cells_ext, cs_real_t);
+      CS_MALLOC(pphy, n_cells_ext, cs_real_t);
 
       if (cs_glob_atmo_option->meteo_profile == 0) {
         cs_real_t _pphy, dum;
@@ -1754,7 +1755,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                              cpro_liqwt,
                              pphy,
                              cpro_rad_cool);
-      BFT_FREE(pphy);
+      CS_FREE(pphy);
 
     } // qliqmax.gt.1.e-8
   } // for humid atmosphere physics only
@@ -1816,12 +1817,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Log in case of velocity/pressure inner iterations */
   if ((iterns > 0) && (eqp->verbosity > 1)) {
     cs_real_t *errork;
-    BFT_MALLOC(errork, n_cells_ext, cs_real_t);
+    CS_MALLOC(errork, n_cells_ext, cs_real_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       errork[c_id] = cvar_var[c_id] - cvark_var[c_id];
 
     double l2errork = sqrt(cs_gres(n_cells, cell_f_vol, errork, errork));
-    BFT_FREE(errork);
+    CS_FREE(errork);
 
     double l2norm = sqrt(cs_gres(n_cells, cell_f_vol, cvara_var, cvara_var));
     double dl2norm = 1.0;
@@ -1833,7 +1834,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                l2errork, l2errork*dl2norm, l2norm);
   }
 
-  BFT_FREE(dtr);
+  CS_FREE(dtr);
 
   CS_FREE_HD(fimp);
   CS_FREE_HD(rhs);
@@ -1896,7 +1897,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
 
     if (fabs(cdtvar - 1.0) > cs_math_epzero) {
-      BFT_MALLOC(dtr, n_cells_ext, cs_real_t);
+      CS_MALLOC(dtr, n_cells_ext, cs_real_t);
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
         dtr[c_id] = dt[c_id] * cdtvar;
@@ -1922,8 +1923,8 @@ cs_solve_equation_vector(cs_field_t       *f,
   cs_real_3_t *rhs;
   cs_real_33_t *fimp;
 
-  BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(fimp, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_3_t);
 
   cs_array_real_fill_zero(9*n_cells_ext, (cs_real_t *)fimp);
   cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)rhs);
@@ -2211,12 +2212,12 @@ cs_solve_equation_vector(cs_field_t       *f,
                                      nullptr);
 
   if (weighb != nullptr) {
-    BFT_FREE(weighb);
-    BFT_FREE(weighf);
-    BFT_FREE(viscce);
+    CS_FREE(weighb);
+    CS_FREE(weighf);
+    CS_FREE(viscce);
   }
 
-  BFT_FREE(fimp);
+  CS_FREE(fimp);
 
   if (eqp->verbosity > 1) {
     cs_real_t ibcl = 0;
@@ -2238,8 +2239,8 @@ cs_solve_equation_vector(cs_field_t       *f,
     bft_printf("%s: EXPLICIT BALANCE = %14.5e\n\n",f->name, sclnor);
   }
 
-  BFT_FREE(rhs);
-  BFT_FREE(dtr);
+  CS_FREE(rhs);
+  CS_FREE(dtr);
 }
 
 /*----------------------------------------------------------------------------*/

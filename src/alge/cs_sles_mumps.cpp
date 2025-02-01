@@ -57,7 +57,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -68,6 +67,7 @@
 #include "base/cs_halo.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_timer.h"
 #include "alge/cs_sles.h"
@@ -536,7 +536,7 @@ _mumps_pc_apply(void                *context,
   if (x_in == nullptr) {
 
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(c->matrix) * db_size;
-    BFT_MALLOC(_rhs, n_cols, cs_real_t);
+    CS_MALLOC(_rhs, n_cols, cs_real_t);
 
     cs_array_real_copy(n_rows, x_out, _rhs);
     rhs = _rhs;
@@ -560,7 +560,7 @@ _mumps_pc_apply(void                *context,
                                                          nullptr);
 
   if (x_in == nullptr)
-    BFT_FREE(_rhs);
+    CS_FREE(_rhs);
 
   cs_sles_pc_state_t state;
 
@@ -681,9 +681,9 @@ _msr_dmumps(int                   verbosity,
       if (fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold)
         dmumps->nnz += 1;
 
-  BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->a, dmumps->nnz, double);
+  CS_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
+  CS_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
+  CS_MALLOC(dmumps->a, dmumps->nnz, double);
 
   /* Add diagonal entries */
 
@@ -780,9 +780,9 @@ _parall_msr_dmumps(int                   verbosity,
 
   /* Allocate local arrays */
 
-  BFT_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
+  CS_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
 
   /* Add diagonal entries */
 
@@ -865,9 +865,9 @@ _native_dmumps(int                   verbosity,
   dmumps->n = (MUMPS_INT)n_rows;
   dmumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
 
-  BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->a, dmumps->nnz, double);
+  CS_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
+  CS_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
+  CS_MALLOC(dmumps->a, dmumps->nnz, double);
 
   /* Add diagonal entries */
 
@@ -962,9 +962,9 @@ _parall_native_dmumps(int                   verbosity,
 
   dmumps->nnz_loc = (MUMPS_INT8)(n_rows + 2*n_faces);
 
-  BFT_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
+  CS_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
 
   /* Add diagonal entries */
 
@@ -1061,9 +1061,9 @@ _msr_sym_dmumps(int                   verbosity,
 
   }
 
-  BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->a, dmumps->nnz, double);
+  CS_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
+  CS_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
+  CS_MALLOC(dmumps->a, dmumps->nnz, double);
 
   /* Add diagonal entries */
 
@@ -1196,9 +1196,9 @@ _parall_msr_sym_dmumps(int                   verbosity,
 
   /* Allocate local arrays */
 
-  BFT_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
+  CS_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
 
   /* Add diagonal entries */
 
@@ -1304,9 +1304,9 @@ _native_sym_dmumps(int                   verbosity,
   dmumps->n = (MUMPS_INT)n_rows;
   dmumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
 
-  BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->a, dmumps->nnz, double);
+  CS_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
+  CS_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
+  CS_MALLOC(dmumps->a, dmumps->nnz, double);
 
   /* Add diagonal entries */
 
@@ -1477,9 +1477,9 @@ _msr_smumps(int                   verbosity,
       if (fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold)
         smumps->nnz += 1;
 
-  BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->a, smumps->nnz, float);
+  CS_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
+  CS_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
+  CS_MALLOC(smumps->a, smumps->nnz, float);
 
   /* Add diagonal entries */
 
@@ -1576,9 +1576,9 @@ _parall_msr_smumps(int                   verbosity,
 
   /* Allocate local arrays */
 
-  BFT_MALLOC(smumps->irn_loc, smumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(smumps->jcn_loc, smumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(smumps->a_loc, smumps->nnz_loc, float);
+  CS_MALLOC(smumps->irn_loc, smumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(smumps->jcn_loc, smumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(smumps->a_loc, smumps->nnz_loc, float);
 
   /* Add diagonal entries */
 
@@ -1664,9 +1664,9 @@ _native_smumps(int                   verbosity,
   smumps->n = (MUMPS_INT)n_rows;
   smumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
 
-  BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->a, smumps->nnz, float);
+  CS_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
+  CS_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
+  CS_MALLOC(smumps->a, smumps->nnz, float);
 
   /* Add diagonal entries */
 
@@ -1759,9 +1759,9 @@ _msr_sym_smumps(int                   verbosity,
 
   }
 
-  BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->a, smumps->nnz, float);
+  CS_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
+  CS_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
+  CS_MALLOC(smumps->a, smumps->nnz, float);
 
   /* Add diagonal entries */
 
@@ -1894,9 +1894,9 @@ _parall_msr_sym_smumps(int                   verbosity,
 
   /* Allocate local arrays */
 
-  BFT_MALLOC(smumps->irn_loc, smumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(smumps->jcn_loc, smumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(smumps->a_loc, smumps->nnz_loc, float);
+  CS_MALLOC(smumps->irn_loc, smumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(smumps->jcn_loc, smumps->nnz_loc, MUMPS_INT);
+  CS_MALLOC(smumps->a_loc, smumps->nnz_loc, float);
 
   /* Add diagonal entries */
 
@@ -2001,9 +2001,9 @@ _native_sym_smumps(int                   verbosity,
   smumps->n = (MUMPS_INT)n_rows;
   smumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
 
-  BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->a, smumps->nnz, float);
+  CS_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
+  CS_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
+  CS_MALLOC(smumps->a, smumps->nnz, float);
 
   /* Add diagonal entries */
 
@@ -2826,7 +2826,7 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
 
   _n_mumps_systems += 1;
 
-  BFT_MALLOC(c, 1, cs_sles_mumps_t);
+  CS_MALLOC(c, 1, cs_sles_mumps_t);
 
   c->type = _set_type(slesp);
 
@@ -2921,28 +2921,28 @@ cs_sles_mumps_free(void  *context)
 
       if (cs_glob_n_ranks == 1) {
 
-        BFT_FREE(dmumps->irn);
-        BFT_FREE(dmumps->jcn);
-        BFT_FREE(dmumps->a);
+        CS_FREE(dmumps->irn);
+        CS_FREE(dmumps->jcn);
+        CS_FREE(dmumps->a);
 
         if (mumpsp->keep_ordering)
-          BFT_FREE(dmumps->perm_in);
+          CS_FREE(dmumps->perm_in);
 
       }
       else {
 
         int  root_rank = 0;
 
-        BFT_FREE(dmumps->irn_loc);
-        BFT_FREE(dmumps->jcn_loc);
-        BFT_FREE(dmumps->a_loc);
+        CS_FREE(dmumps->irn_loc);
+        CS_FREE(dmumps->jcn_loc);
+        CS_FREE(dmumps->a_loc);
 
         if (mumpsp->keep_ordering && cs_glob_rank_id == root_rank)
-          BFT_FREE(dmumps->perm_in);
+          CS_FREE(dmumps->perm_in);
 
       }
 
-      BFT_FREE(dmumps);
+      CS_FREE(dmumps);
 
     }
     else {
@@ -2954,28 +2954,28 @@ cs_sles_mumps_free(void  *context)
 
       if (cs_glob_n_ranks == 1) {
 
-        BFT_FREE(smumps->irn);
-        BFT_FREE(smumps->jcn);
-        BFT_FREE(smumps->a);
+        CS_FREE(smumps->irn);
+        CS_FREE(smumps->jcn);
+        CS_FREE(smumps->a);
 
         if (mumpsp->keep_ordering)
-          BFT_FREE(smumps->perm_in);
+          CS_FREE(smumps->perm_in);
 
       }
       else {
 
         int  root_rank = 0;
 
-        BFT_FREE(smumps->irn_loc);
-        BFT_FREE(smumps->jcn_loc);
-        BFT_FREE(smumps->a_loc);
+        CS_FREE(smumps->irn_loc);
+        CS_FREE(smumps->jcn_loc);
+        CS_FREE(smumps->a_loc);
 
         if (mumpsp->keep_ordering && cs_glob_rank_id == root_rank)
-          BFT_FREE(smumps->perm_in);
+          CS_FREE(smumps->perm_in);
 
       }
 
-      BFT_FREE(smumps);
+      CS_FREE(smumps);
 
     }
 
@@ -3006,9 +3006,9 @@ cs_sles_mumps_destroy(void   **context)
 
     cs_sles_mumps_free(c);
 
-    BFT_FREE(c->ordering); // This member is kept through the iterations
+    CS_FREE(c->ordering); // This member is kept through the iterations
 
-    BFT_FREE(c);
+    CS_FREE(c);
     *context = c;
 
     _n_mumps_systems -= 1;
@@ -3096,7 +3096,7 @@ cs_sles_mumps_setup(void               *context,
     assert(sizeof(double) == sizeof(DMUMPS_REAL));
 
     DMUMPS_STRUC_C  *dmumps = nullptr;
-    BFT_MALLOC(dmumps, 1, DMUMPS_STRUC_C);
+    CS_MALLOC(dmumps, 1, DMUMPS_STRUC_C);
 
     dmumps->job = MUMPS_JOB_INIT;
     dmumps->par = 1;      /* all ranks are working */
@@ -3137,7 +3137,7 @@ cs_sles_mumps_setup(void               *context,
     assert(sizeof(float) == sizeof(SMUMPS_REAL));
 
     SMUMPS_STRUC_C  *smumps = nullptr;
-    BFT_MALLOC(smumps, 1, SMUMPS_STRUC_C);
+    CS_MALLOC(smumps, 1, SMUMPS_STRUC_C);
 
     smumps->job = MUMPS_JOB_INIT;
     smumps->par = 1;       /* all ranks are working */
@@ -3340,7 +3340,7 @@ cs_sles_mumps_setup(void               *context,
 
         if (_is_root_rank()) { // Either sequential run or root_rank in parallel
 
-          BFT_MALLOC(dmumps->perm_in, dmumps->n, MUMPS_INT);
+          CS_MALLOC(dmumps->perm_in, dmumps->n, MUMPS_INT);
           _copy_ordering(dmumps->n, c->ordering, dmumps->perm_in);
 
         }
@@ -3358,7 +3358,7 @@ cs_sles_mumps_setup(void               *context,
 
         if (_is_root_rank()) { // Either sequential run or root_rank in parallel
 
-          BFT_MALLOC(c->ordering, dmumps->n, MUMPS_INT);
+          CS_MALLOC(c->ordering, dmumps->n, MUMPS_INT);
           _copy_ordering(dmumps->n, dmumps->sym_perm, c->ordering);
 
         }
@@ -3411,7 +3411,7 @@ cs_sles_mumps_setup(void               *context,
 
         if (_is_root_rank()) { // Either sequential run or root_rank in parallel
 
-          BFT_MALLOC(smumps->perm_in, smumps->n, MUMPS_INT);
+          CS_MALLOC(smumps->perm_in, smumps->n, MUMPS_INT);
           _copy_ordering(smumps->n, c->ordering, smumps->perm_in);
 
         }
@@ -3429,7 +3429,7 @@ cs_sles_mumps_setup(void               *context,
 
         if (_is_root_rank()) { // Either sequential run or root_rank in parallel
 
-          BFT_MALLOC(c->ordering, smumps->n, MUMPS_INT);
+          CS_MALLOC(c->ordering, smumps->n, MUMPS_INT);
           _copy_ordering(smumps->n, smumps->sym_perm, c->ordering);
 
         }
@@ -3581,7 +3581,7 @@ cs_sles_mumps_solve(void                *context,
 
       double  *glob_rhs = nullptr;
       if (cs_glob_rank_id == root_rank)
-        BFT_MALLOC(glob_rhs, n_g_rows, double);
+        CS_MALLOC(glob_rhs, n_g_rows, double);
 
       cs_parall_gather_r(root_rank, n_rows, n_g_rows, rhs, glob_rhs);
 
@@ -3615,7 +3615,7 @@ cs_sles_mumps_solve(void                *context,
       cs_parall_scatter_r(root_rank, n_rows, n_g_rows, glob_rhs, vx);
 
       if (cs_glob_rank_id == root_rank)
-        BFT_FREE(glob_rhs);
+        CS_FREE(glob_rhs);
       dmumps->rhs = nullptr;
 
     }
@@ -3635,7 +3635,7 @@ cs_sles_mumps_solve(void                *context,
 
       assert(n_rows == smumps->n);
       smumps->nrhs = 1;
-      BFT_MALLOC(smumps->rhs, n_rows, float);
+      CS_MALLOC(smumps->rhs, n_rows, float);
 
       /* The MUMPS structure stores the RHS with the type SMUMPS_COMPLEX */
 
@@ -3653,7 +3653,7 @@ cs_sles_mumps_solve(void                *context,
       MUMPS_INT  n_g_rows = smumps->n;
       float  *glob_rhs = nullptr;
       if (cs_glob_rank_id == root_rank)
-        BFT_MALLOC(glob_rhs, n_g_rows, float);
+        CS_MALLOC(glob_rhs, n_g_rows, float);
 
       /* Use vx (an initial guess is not useful for a direct solver) to define
        * a single-precision rhs
@@ -3687,7 +3687,7 @@ cs_sles_mumps_solve(void                *context,
       for (cs_lnum_t i = 0; i < n_rows; i++)
         vx[i] = (cs_real_t)smumps->rhs[i];
 
-      BFT_FREE(smumps->rhs);
+      CS_FREE(smumps->rhs);
 
     }
     else {
@@ -3709,7 +3709,7 @@ cs_sles_mumps_solve(void                *context,
       for (cs_lnum_t i = n_rows-1; i > -1; i--)
         vx[i] = (cs_real_t)_svx[i];
 
-      BFT_FREE(glob_rhs);
+      CS_FREE(glob_rhs);
 
     }
 

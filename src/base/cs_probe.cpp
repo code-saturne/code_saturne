@@ -39,7 +39,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -49,6 +48,7 @@
 #include "base/cs_base.h"
 #include "base/cs_map.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_location.h"
@@ -281,7 +281,7 @@ _copy_label(const char  *name)
 
   if (name) {
     size_t  len = strlen(name) + 1;
-    BFT_MALLOC(label, len, char);
+    CS_MALLOC(label, len, char);
     strcpy(label, name);
   }
 
@@ -302,32 +302,32 @@ _probe_set_free(cs_probe_set_t   *pset)
   if (pset == nullptr)
     return;
 
-  BFT_FREE(pset->name);
-  BFT_FREE(pset->coords_ini);
-  BFT_FREE(pset->coords);
-  BFT_FREE(pset->sel_criter);
-  BFT_FREE(pset->loc_id);
-  BFT_FREE(pset->elt_id);
-  BFT_FREE(pset->cell_id);
-  BFT_FREE(pset->vtx_id);
-  BFT_FREE(pset->located);
+  CS_FREE(pset->name);
+  CS_FREE(pset->coords_ini);
+  CS_FREE(pset->coords);
+  CS_FREE(pset->sel_criter);
+  CS_FREE(pset->loc_id);
+  CS_FREE(pset->elt_id);
+  CS_FREE(pset->cell_id);
+  CS_FREE(pset->vtx_id);
+  CS_FREE(pset->located);
 
-  BFT_FREE(pset->_p_define_input);
+  CS_FREE(pset->_p_define_input);
 
   if (pset->labels != nullptr) {
     for (int i = 0; i < pset->n_probes; i++)
-      BFT_FREE(pset->labels[i]);
-    BFT_FREE(pset->labels);
+      CS_FREE(pset->labels[i]);
+    CS_FREE(pset->labels);
   }
 
   if (pset->s_coords != nullptr)
-    BFT_FREE(pset->s_coords);
+    CS_FREE(pset->s_coords);
 
   if (pset->n_writers > 0)
-    BFT_FREE(pset->writer_ids);
+    CS_FREE(pset->writer_ids);
 
   if (pset->n_fields > 0)
-    BFT_FREE(pset->field_info);
+    CS_FREE(pset->field_info);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -365,14 +365,14 @@ _probe_set_create(const char    *name,
     int pset_id = _n_probe_sets;
 
     _n_probe_sets++;
-    BFT_REALLOC(_probe_set_array, _n_probe_sets, cs_probe_set_t *);
-    BFT_MALLOC(pset, 1, cs_probe_set_t);
+    CS_REALLOC(_probe_set_array, _n_probe_sets, cs_probe_set_t *);
+    CS_MALLOC(pset, 1, cs_probe_set_t);
     _probe_set_array[pset_id] = pset;
   }
 
   /* Copy name */
   int  len = strlen(name) + 1;
-  BFT_MALLOC(pset->name, len, char);
+  CS_MALLOC(pset->name, len, char);
   strncpy(pset->name, name, len);
 
   pset->flags = CS_PROBE_AUTO_VAR;
@@ -387,7 +387,7 @@ _probe_set_create(const char    *name,
 
   pset->coords_ini = nullptr;
 
-  BFT_MALLOC(pset->coords, n_max_probes, cs_real_3_t);
+  CS_MALLOC(pset->coords, n_max_probes, cs_real_3_t);
   pset->s_coords = nullptr;
   pset->labels = nullptr;
 
@@ -465,8 +465,8 @@ _build_local_probe_set(cs_probe_set_t  *pset)
   pset->n_probes = 0;
   pset->n_loc_probes = 0;
 
-  BFT_FREE(pset->coords);
-  BFT_FREE(pset->s_coords);
+  CS_FREE(pset->coords);
+  CS_FREE(pset->s_coords);
 
   cs_lnum_t     n_elts = 0;
   cs_real_3_t  *coords = nullptr;
@@ -484,11 +484,11 @@ _build_local_probe_set(cs_probe_set_t  *pset)
      as this is already handled through IO numbering in that case) */
 
   if (cs_glob_n_ranks <= 1) {
-    BFT_MALLOC(pset->coords, n_elts, cs_real_3_t);
-    BFT_MALLOC(pset->s_coords, n_elts, cs_real_t);
+    CS_MALLOC(pset->coords, n_elts, cs_real_3_t);
+    CS_MALLOC(pset->s_coords, n_elts, cs_real_t);
 
     cs_lnum_t *order = nullptr;
-    BFT_MALLOC(order, n_elts, cs_lnum_t);
+    CS_MALLOC(order, n_elts, cs_lnum_t);
     cs_order_real_allocated(nullptr, s, order, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -498,10 +498,10 @@ _build_local_probe_set(cs_probe_set_t  *pset)
       pset->s_coords[i] = s[j];
     }
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
-    BFT_FREE(coords);
-    BFT_FREE(s);
+    CS_FREE(coords);
+    CS_FREE(s);
   }
 
   else {
@@ -533,13 +533,13 @@ _merge_snapped_to_center(cs_probe_set_t     *pset,
     return;
 
   int *tag;
-  BFT_MALLOC(tag, pset->n_probes, int);
+  CS_MALLOC(tag, pset->n_probes, int);
 
   for (int i = 0; i < pset->n_probes; i++)
     tag[i] = 0;
 
   cs_lnum_t *order;
-  BFT_MALLOC(order, pset->n_loc_probes, cs_lnum_t);
+  CS_MALLOC(order, pset->n_loc_probes, cs_lnum_t);
   cs_order_lnum_allocated(nullptr, pset->elt_id, order, pset->n_loc_probes);
 
   cs_lnum_t e_id = 0;
@@ -571,7 +571,7 @@ _merge_snapped_to_center(cs_probe_set_t     *pset,
 
   }
 
-  BFT_FREE(order);
+  CS_FREE(order);
 
   /* Now all points to keep are tagged */
 
@@ -598,18 +598,18 @@ _merge_snapped_to_center(cs_probe_set_t     *pset,
     }
     else {
       if (pset->labels != nullptr)
-        BFT_FREE(pset->labels[i]);
+        CS_FREE(pset->labels[i]);
       tag[i] = -1;
     }
   }
   pset->n_probes = n_probes;
 
-  BFT_REALLOC(pset->coords, n_probes, cs_real_3_t);
+  CS_REALLOC(pset->coords, n_probes, cs_real_3_t);
   if (pset->s_coords != nullptr)
-    BFT_REALLOC(pset->s_coords, n_probes, cs_real_t);
+    CS_REALLOC(pset->s_coords, n_probes, cs_real_t);
   if (pset->labels != nullptr)
-    BFT_REALLOC(pset->labels, n_probes, char *);
-  BFT_REALLOC(pset->located, n_probes, char);
+    CS_REALLOC(pset->labels, n_probes, char *);
+  CS_REALLOC(pset->located, n_probes, char);
 
   /* Update local arrays */
 
@@ -625,11 +625,11 @@ _merge_snapped_to_center(cs_probe_set_t     *pset,
   }
   pset->n_loc_probes = n_loc_probes;
 
-  BFT_REALLOC(pset->loc_id, n_loc_probes, cs_lnum_t);
-  BFT_REALLOC(pset->elt_id, n_loc_probes, cs_lnum_t);
-  BFT_REALLOC(pset->vtx_id, n_loc_probes, cs_lnum_t);
+  CS_REALLOC(pset->loc_id, n_loc_probes, cs_lnum_t);
+  CS_REALLOC(pset->elt_id, n_loc_probes, cs_lnum_t);
+  CS_REALLOC(pset->vtx_id, n_loc_probes, cs_lnum_t);
 
-  BFT_FREE(tag);
+  CS_FREE(tag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -682,8 +682,8 @@ _cell_profile_probes_define(void          *input,
 
   cs_real_3_t *_coords;
   cs_real_t *_s;
-  BFT_MALLOC(_coords, n_cells, cs_real_3_t);
-  BFT_MALLOC(_s, n_cells, cs_real_t);
+  CS_MALLOC(_coords, n_cells, cs_real_3_t);
+  CS_MALLOC(_s, n_cells, cs_real_t);
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     cs_real_t dx[3], coo[3];
@@ -695,9 +695,9 @@ _cell_profile_probes_define(void          *input,
     _s[i] = cs_math_3_dot_product(dx, dx1) / s_norm2;
   }
 
-  BFT_FREE(cell_ids);
-  BFT_FREE(seg_c_len);
-  BFT_FREE(seg_c_cen);
+  CS_FREE(cell_ids);
+  CS_FREE(seg_c_len);
+  CS_FREE(seg_c_cen);
 
   /* Set return values */
 
@@ -725,11 +725,11 @@ cs_probe_finalize(void)
   for (int i = 0; i < _n_probe_sets; i++) {
     cs_probe_set_t *pset = _probe_set_array[i];
     _probe_set_free(pset);
-    BFT_FREE(pset);
+    CS_FREE(pset);
   }
 
   _n_probe_sets = 0;
-  BFT_FREE(_probe_set_array);
+  CS_FREE(_probe_set_array);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -993,9 +993,9 @@ cs_probe_set_add_probe(cs_probe_set_t     *pset,
 
   if (point_id >= pset->n_max_probes) { /* Reallocate arrays */
     pset->n_max_probes *= 2;
-    BFT_REALLOC(pset->coords, pset->n_max_probes, cs_real_3_t);
+    CS_REALLOC(pset->coords, pset->n_max_probes, cs_real_3_t);
     if (pset->labels != nullptr)
-      BFT_REALLOC(pset->labels, pset->n_max_probes, char *);
+      CS_REALLOC(pset->labels, pset->n_max_probes, char *);
   }
 
   /* Set coordinates */
@@ -1005,7 +1005,7 @@ cs_probe_set_add_probe(cs_probe_set_t     *pset,
 
   if (label != nullptr) { /* Manage the label */
     if (pset->labels == nullptr)
-      BFT_MALLOC(pset->labels, pset->n_max_probes, char *);
+      CS_MALLOC(pset->labels, pset->n_max_probes, char *);
 
     /* Copy label */
     pset->labels[point_id] = _copy_label(label);
@@ -1044,7 +1044,7 @@ cs_probe_set_create_from_array(const char          *name,
 
   /* Copy labels */
   if (labels != nullptr) {
-    BFT_MALLOC(pset->labels, n_probes, char *);
+    CS_MALLOC(pset->labels, n_probes, char *);
     for (int i = 0; i < n_probes; i++)
       pset->labels[i] = _copy_label(labels[i]);
   }
@@ -1091,7 +1091,7 @@ cs_probe_set_create_from_segment(const char        *name,
     if (pset->flags & CS_PROBE_AUTO_VAR)
       pset->flags -= CS_PROBE_AUTO_VAR;
 
-    BFT_MALLOC(pset->s_coords, n_probes, cs_real_t);
+    CS_MALLOC(pset->s_coords, n_probes, cs_real_t);
 
     /* 2 probes are already defined (the starting and ending points)
        Define the additional probes */
@@ -1126,7 +1126,7 @@ cs_probe_set_create_from_segment(const char        *name,
 
   else {
     cs_real_t *se_coords;
-    BFT_MALLOC(se_coords, 6, cs_real_t);
+    CS_MALLOC(se_coords, 6, cs_real_t);
 
     for (int i = 0; i < 3; i++) {
       se_coords[i] = start_coords[i];
@@ -1232,7 +1232,7 @@ cs_probe_set_assign_curvilinear_abscissa(cs_probe_set_t   *pset,
 
   pset->flags |= CS_PROBE_ON_CURVE;
 
-  BFT_REALLOC(pset->s_coords, pset->n_probes, cs_real_t);
+  CS_REALLOC(pset->s_coords, pset->n_probes, cs_real_t);
 
   if (s != nullptr) {
     for (int i = 0; i < pset->n_probes; i++)
@@ -1273,7 +1273,7 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
 
   int  n_init_writers = pset->n_writers;
   pset->n_writers += n_writers;
-  BFT_REALLOC(pset->writer_ids, pset->n_writers, int);
+  CS_REALLOC(pset->writer_ids, pset->n_writers, int);
 
   for (int i = n_init_writers, j = 0; i < pset->n_writers; i++, j++)
     pset->writer_ids[i] = writer_ids[j];
@@ -1311,7 +1311,7 @@ cs_probe_set_associate_field(cs_probe_set_t   *pset,
       pset->n_max_fields = 8;
     else
       pset->n_max_fields *= 2;
-    BFT_REALLOC(pset->field_info, 3*(pset->n_max_fields), int);
+    CS_REALLOC(pset->field_info, 3*(pset->n_max_fields), int);
   }
 
   int *afi = pset->field_info + 3*pset->n_fields;
@@ -1485,7 +1485,7 @@ cs_probe_set_option(cs_probe_set_t   *pset,
   case PSETKEY_SELECT_CRIT:
     {
       int  len = strlen(keyval) + 1;
-      BFT_MALLOC(pset->sel_criter, len, char);
+      CS_MALLOC(pset->sel_criter, len, char);
       strncpy(pset->sel_criter, keyval, len);
     }
     break;
@@ -1562,16 +1562,16 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
   /* Allocate on first pass */
 
   if (pset->located == nullptr) {
-    BFT_MALLOC(pset->located, pset->n_probes, char);
+    CS_MALLOC(pset->located, pset->n_probes, char);
     first_location = true;
   }
 
   /* Reallocate on all passes, in case local sizes change */
 
-  BFT_REALLOC(pset->loc_id, pset->n_probes, cs_lnum_t);
-  BFT_REALLOC(pset->elt_id, pset->n_probes, cs_lnum_t);
-  BFT_FREE(pset->cell_id);
-  BFT_FREE(pset->vtx_id);
+  CS_REALLOC(pset->loc_id, pset->n_probes, cs_lnum_t);
+  CS_REALLOC(pset->elt_id, pset->n_probes, cs_lnum_t);
+  CS_FREE(pset->cell_id);
+  CS_FREE(pset->vtx_id);
 
   if (location_mesh == nullptr) {
 
@@ -1583,7 +1583,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
       n_select_elements = mesh->n_b_faces;
       if (pset->sel_criter != nullptr) {
         if (strcmp(pset->sel_criter, "all[]")) {
-          BFT_MALLOC(selected_elements, mesh->n_b_faces, cs_lnum_t);
+          CS_MALLOC(selected_elements, mesh->n_b_faces, cs_lnum_t);
           cs_selector_get_b_face_num_list(pset->sel_criter,
                                           &n_select_elements, selected_elements);
         }
@@ -1603,7 +1603,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
       n_select_elements = mesh->n_cells;
       if (pset->sel_criter != nullptr) {
         if (strcmp(pset->sel_criter, "all[]")) {
-          BFT_MALLOC(selected_elements, mesh->n_cells, cs_lnum_t);
+          CS_MALLOC(selected_elements, mesh->n_cells, cs_lnum_t);
           cs_selector_get_cell_list(pset->sel_criter,
                                     &n_select_elements, selected_elements);
         }
@@ -1618,7 +1618,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
     } /* volumic or surfacic mesh */
 
     if (selected_elements != nullptr)
-      BFT_FREE(selected_elements);
+      CS_FREE(selected_elements);
 
     location_mesh = _location_mesh;
   }
@@ -1631,7 +1631,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   float *distance;
 
-  BFT_MALLOC(distance, pset->n_probes, float);
+  CS_MALLOC(distance, pset->n_probes, float);
 
   for (int i = 0; i < pset->n_probes; i++) {
     pset->elt_id[i] = -1;
@@ -1698,8 +1698,8 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
     cs_double_int_t  *gmin_loc = nullptr, *loc = nullptr;
 
-    BFT_MALLOC(gmin_loc, pset->n_probes, cs_double_int_t);
-    BFT_MALLOC(loc, pset->n_probes, cs_double_int_t);
+    CS_MALLOC(gmin_loc, pset->n_probes, cs_double_int_t);
+    CS_MALLOC(loc, pset->n_probes, cs_double_int_t);
 
     for (int i = 0; i < pset->n_probes; i++) {
       gmin_loc[i].id = loc[i].id = cs_glob_rank_id;
@@ -1724,12 +1724,12 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
       }
     }
 
-    BFT_FREE(gmin_loc);
-    BFT_FREE(loc);
+    CS_FREE(gmin_loc);
+    CS_FREE(loc);
   }
 #endif
 
-  BFT_FREE(distance);
+  CS_FREE(distance);
 
   if (n_unlocated_probes > 0 && first_location) {
     bft_printf(_("\n Warning: probe set \"%s\"\n"
@@ -1774,7 +1774,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
     else if (   pset->labels == nullptr
              && (pset->flags & CS_PROBE_ON_CURVE) == false) {
-      BFT_MALLOC(pset->labels, pset->n_probes, char *);
+      CS_MALLOC(pset->labels, pset->n_probes, char *);
       char label[16];
       for (int i = 0; i < pset->n_probes; i++) {
         snprintf(label, 15, "%d", i+1); label[15] = '\0';
@@ -1784,15 +1784,15 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   }
 
-  BFT_REALLOC(pset->loc_id, pset->n_loc_probes, cs_lnum_t);
-  BFT_REALLOC(pset->elt_id, pset->n_loc_probes, cs_lnum_t);
-  BFT_MALLOC(pset->vtx_id, pset->n_loc_probes, cs_lnum_t);
+  CS_REALLOC(pset->loc_id, pset->n_loc_probes, cs_lnum_t);
+  CS_REALLOC(pset->elt_id, pset->n_loc_probes, cs_lnum_t);
+  CS_MALLOC(pset->vtx_id, pset->n_loc_probes, cs_lnum_t);
 
   /* Now also locate relative to closest vertices and update
      element num relative to parents */
 
   cs_coord_3_t  *probe_coords = nullptr;
-  BFT_MALLOC(probe_coords, pset->n_loc_probes, cs_coord_3_t);
+  CS_MALLOC(probe_coords, pset->n_loc_probes, cs_coord_3_t);
   for (int i = 0; i < n_loc_probes; i++) {
     int j = pset->loc_id[i];
     for (int k = 0; k < 3; k++)
@@ -1806,7 +1806,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
                                     pset->elt_id,
                                     pset->vtx_id);
 
-  BFT_FREE(probe_coords);
+  CS_FREE(probe_coords);
 
   /* Now switch to 0-based location */
 
@@ -1874,15 +1874,15 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
     if (! (pset->flags & CS_PROBE_TRANSIENT))
       _merge_snapped_to_center(pset, centers);
     else if (pset->coords_ini == nullptr) {
-      BFT_MALLOC(pset->coords_ini, pset->n_probes, cs_real_3_t);
+      CS_MALLOC(pset->coords_ini, pset->n_probes, cs_real_3_t);
       memcpy(pset->coords_ini,
              pset->coords,
              pset->n_probes*3*sizeof(cs_real_t));
     }
   }
 
-  BFT_MALLOC(probe_coords, pset->n_loc_probes, cs_coord_3_t);
-  BFT_MALLOC(global_num, pset->n_loc_probes, cs_gnum_t);
+  CS_MALLOC(probe_coords, pset->n_loc_probes, cs_coord_3_t);
+  CS_MALLOC(global_num, pset->n_loc_probes, cs_gnum_t);
 
   /* Build the final list of probe coordinates */
 
@@ -1945,7 +1945,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
     cs_real_t *s = cs_probe_set_get_loc_curvilinear_abscissa(pset);
     fvm_io_num_t *vtx_io_num
       = fvm_io_num_create_from_real(s, pset->n_loc_probes);
-    BFT_FREE(s);
+    CS_FREE(s);
     fvm_nodal_transfer_vertex_io_num(exp_mesh, &vtx_io_num);
   }
   else if (cs_glob_n_ranks > 1) {
@@ -1964,14 +1964,14 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
                  " requested coordinates:"
                  " %5.3e\n"), pset->name, gmax_distance);
 
-  BFT_FREE(global_num);
+  CS_FREE(global_num);
 
   /* Add global labels */
 
   if (pset->labels != nullptr) {
     char **g_labels;
     int ngl = fvm_nodal_get_n_g_vertices(exp_mesh);
-    BFT_MALLOC(g_labels, ngl, char *);
+    CS_MALLOC(g_labels, ngl, char *);
 
     int j = 0;
     for (int i = 0; i < pset->n_probes; i++) {
@@ -2010,8 +2010,8 @@ cs_probe_set_unlocated_export_mesh(cs_probe_set_t   *pset,
   cs_coord_3_t  *probe_coords = nullptr;
   fvm_nodal_t  *exp_mesh = fvm_nodal_create(mesh_name, 3);
 
-  BFT_MALLOC(probe_coords, pset->n_probes, cs_coord_3_t);
-  BFT_MALLOC(global_num, pset->n_loc_probes, cs_gnum_t);
+  CS_MALLOC(probe_coords, pset->n_probes, cs_coord_3_t);
+  CS_MALLOC(global_num, pset->n_loc_probes, cs_gnum_t);
 
   /* Build the final list of probe coordinates */
 
@@ -2033,7 +2033,7 @@ cs_probe_set_unlocated_export_mesh(cs_probe_set_t   *pset,
 
   if (pset->p_define_func != nullptr) {
     cs_real_t *s;
-    BFT_MALLOC(s, pset->n_probes, cs_real_t);
+    CS_MALLOC(s, pset->n_probes, cs_real_t);
     int j = 0;
     for (int i = 0; i < pset->n_probes; i++) {
       if (pset->located[i] == 0)
@@ -2041,20 +2041,20 @@ cs_probe_set_unlocated_export_mesh(cs_probe_set_t   *pset,
     }
     fvm_io_num_t *vtx_io_num
       = fvm_io_num_create_from_real(pset->s_coords, j);
-    BFT_FREE(s);
+    CS_FREE(s);
     fvm_nodal_transfer_vertex_io_num(exp_mesh, &vtx_io_num);
   }
   else if (cs_glob_n_ranks > 1)
     fvm_nodal_init_io_num(exp_mesh, global_num, 0); // 0 = vertices
 
-  BFT_FREE(global_num);
+  CS_FREE(global_num);
 
   /* Add global labels */
 
   if (pset->labels != nullptr) {
     char **g_labels;
     int ngl = fvm_nodal_get_n_g_vertices(exp_mesh);
-    BFT_MALLOC(g_labels, ngl, char *);
+    CS_MALLOC(g_labels, ngl, char *);
 
     int j = 0;
     for (int i = 0; i < pset->n_probes; i++) {
@@ -2211,7 +2211,7 @@ cs_probe_set_get_loc_curvilinear_abscissa(const cs_probe_set_t   *pset)
     return nullptr;
 
   cs_real_t *s;
-  BFT_MALLOC(s, pset->n_loc_probes, cs_real_t);
+  CS_MALLOC(s, pset->n_loc_probes, cs_real_t);
   for (int i = 0; i < pset->n_loc_probes; i++) {
     int j = pset->loc_id[i];
     s[i] = pset->s_coords[j];
@@ -2249,7 +2249,7 @@ cs_probe_set_get_elt_ids(const cs_probe_set_t  *pset,
       if (pset->cell_id == nullptr) {
         const cs_mesh_t  *mesh = cs_glob_mesh;
         cs_probe_set_t *_pset = const_cast<cs_probe_set_t *>(pset);
-        BFT_MALLOC(_pset->cell_id, _pset->n_loc_probes, cs_lnum_t);
+        CS_MALLOC(_pset->cell_id, _pset->n_loc_probes, cs_lnum_t);
         for (int i = 0; i < pset->n_loc_probes; i++) {
           int j = pset->elt_id[i];
           if (j > -1)

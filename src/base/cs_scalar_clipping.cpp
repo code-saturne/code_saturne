@@ -40,13 +40,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "base/cs_field.h"
 #include "base/cs_log_iteration.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -167,8 +167,8 @@ cs_scalar_clipping(cs_field_t  *f)
   cs_real_t *vmin;
   cs_real_t *vmax;
 
-  BFT_MALLOC(vmin, f->dim, cs_real_t);
-  BFT_MALLOC(vmax, f->dim, cs_real_t);
+  CS_MALLOC(vmin, f->dim, cs_real_t);
+  CS_MALLOC(vmax, f->dim, cs_real_t);
 
   for (cs_lnum_t i = 0; i < f->dim; i++) {
 
@@ -187,8 +187,8 @@ cs_scalar_clipping(cs_field_t  *f)
 
   cs_lnum_t *iclmax;
   cs_lnum_t *iclmin;
-  BFT_MALLOC(iclmin, f->dim, cs_lnum_t);
-  BFT_MALLOC(iclmax, f->dim, cs_lnum_t);
+  CS_MALLOC(iclmin, f->dim, cs_lnum_t);
+  CS_MALLOC(iclmax, f->dim, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < f->dim; i++) {
     iclmin[i] = 0;
@@ -258,10 +258,10 @@ cs_scalar_clipping(cs_field_t  *f)
                                   iclmax);
 
 
-  BFT_FREE(vmin);
-  BFT_FREE(vmax);
-  BFT_FREE(iclmin);
-  BFT_FREE(iclmax);
+  CS_FREE(vmin);
+  CS_FREE(vmax);
+  CS_FREE(iclmin);
+  CS_FREE(iclmax);
 }
 
 /*----------------------------------------------------------------------------*/

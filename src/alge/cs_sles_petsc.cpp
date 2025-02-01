@@ -70,7 +70,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 
 #include "base/cs_base.h"
@@ -78,6 +77,7 @@
 #include "base/cs_log.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_petsc.h"
@@ -239,7 +239,7 @@ _export_petsc_system(const char   *name,
 
   char  *filename = nullptr;
   int len = strlen(name) + strlen("_matrix.dat") + 1;
-  BFT_MALLOC(filename, len, char);
+  CS_MALLOC(filename, len, char);
 
   if (strcmp(p, "BINARY") == 0) {
 
@@ -297,7 +297,7 @@ _export_petsc_system(const char   *name,
 
   }
 
-  BFT_FREE(filename);
+  CS_FREE(filename);
 }
 
 /*----------------------------------------------------------------------------
@@ -419,7 +419,7 @@ _shell_mat_duplicate(Mat                                   a,
 
   _mat_shell_t *shc;
 
-  BFT_MALLOC(shc, 1, _mat_shell_t);
+  CS_MALLOC(shc, 1, _mat_shell_t);
   shc->a = sh->a;
   cs_matrix_row_init(&(shc->r));
 
@@ -452,7 +452,7 @@ _shell_mat_destroy(Mat                                   a,
 
   cs_matrix_row_finalize(&(sh->r));
 
-  BFT_FREE(sh);
+  CS_FREE(sh);
 }
 
 /*----------------------------------------------------------------------------
@@ -573,7 +573,7 @@ _cs_sles_hpddm_setup([[maybe_unused]] void               *context,
 
     PetscInt *gnum = nullptr;
     assert(n_rows <= n_cols);
-    BFT_MALLOC(gnum, n_cols, PetscInt);
+    CS_MALLOC(gnum, n_cols, PetscInt);
 
     for (int i = 0; i < n_cols; i++) {
       gnum[i] = grow_id[i];
@@ -581,7 +581,7 @@ _cs_sles_hpddm_setup([[maybe_unused]] void               *context,
 
     ISCreateGeneral(PETSC_COMM_SELF, n_cols, gnum, PETSC_COPY_VALUES, &auxIS);
 
-    BFT_FREE(gnum);
+    CS_FREE(gnum);
 
     /* Create local Neumann matrix with ghost */
 
@@ -597,7 +597,7 @@ _cs_sles_hpddm_setup([[maybe_unused]] void               *context,
     /* Preallocate */
 
     PetscInt *d_nnz;
-    BFT_MALLOC(d_nnz, n_cols * db_size, PetscInt);
+    CS_MALLOC(d_nnz, n_cols * db_size, PetscInt);
 
     if (cs_mat_type == CS_MATRIX_CSR || cs_mat_type == CS_MATRIX_MSR) {
 
@@ -648,7 +648,7 @@ _cs_sles_hpddm_setup([[maybe_unused]] void               *context,
 
     MatSeqAIJSetPreallocation(auxMat, 0, d_nnz);
 
-    BFT_FREE(d_nnz);
+    CS_FREE(d_nnz);
 
     /* Now set matrix values, depending on type */
 
@@ -929,7 +929,7 @@ cs_sles_petsc_create(const char                 *matrix_type,
 
   _n_petsc_systems += 1;
 
-  BFT_MALLOC(c, 1, cs_sles_petsc_t);
+  CS_MALLOC(c, 1, cs_sles_petsc_t);
   c->n_setups = 0;
   c->n_solves = 0;
   c->n_iterations_last = 0;
@@ -1019,7 +1019,7 @@ cs_sles_petsc_destroy(void  **context)
     /* Free structure */
 
     cs_sles_petsc_free(c);
-    BFT_FREE(c);
+    CS_FREE(c);
     *context = c;
 
     _n_petsc_systems -= 1;
@@ -1059,7 +1059,7 @@ cs_sles_petsc_setup(void               *context,
   cs_sles_petsc_setup_t *sd = c->setup_data;
 
   if (sd == nullptr) {
-    BFT_MALLOC(c->setup_data, 1, cs_sles_petsc_setup_t);
+    CS_MALLOC(c->setup_data, 1, cs_sles_petsc_setup_t);
     sd = c->setup_data;
   }
 
@@ -1093,7 +1093,7 @@ cs_sles_petsc_setup(void               *context,
 
     _mat_shell_t *sh;
 
-    BFT_MALLOC(sh, 1, _mat_shell_t);
+    CS_MALLOC(sh, 1, _mat_shell_t);
     sh->a = a;
     cs_matrix_row_init(&(sh->r));
 
@@ -1130,7 +1130,7 @@ cs_sles_petsc_setup(void               *context,
 
     cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
 
-    BFT_MALLOC(col_gid, a_row_index[n_rows], PetscInt);
+    CS_MALLOC(col_gid, a_row_index[n_rows], PetscInt);
 
     for (cs_lnum_t j = 0; j < n_rows; j++) {
       for (cs_lnum_t i = a_row_index[j]; i < a_row_index[j+1]; ++i)
@@ -1143,7 +1143,7 @@ cs_sles_petsc_setup(void               *context,
     PetscScalar  *_val = nullptr;
 
     if (sizeof(PetscInt) != sizeof(cs_lnum_t)) {
-      BFT_MALLOC(_row_index, n_rows, PetscInt);
+      CS_MALLOC(_row_index, n_rows, PetscInt);
       for (cs_lnum_t i = 0; i < n_rows; i++)
         _row_index[i] = a_row_index[i];
       row_index = _row_index;
@@ -1151,7 +1151,7 @@ cs_sles_petsc_setup(void               *context,
 
     if (sizeof(PetscScalar) != sizeof(cs_real_t)) {
       const cs_lnum_t val_size = a_row_index[n_rows];
-      BFT_MALLOC(_val, val_size, PetscScalar);
+      CS_MALLOC(_val, val_size, PetscScalar);
       for (cs_lnum_t i = 0; i < val_size; i++)
         _val[i] = a_val[i];
       val = _val;
@@ -1170,16 +1170,16 @@ cs_sles_petsc_setup(void               *context,
                               &(sd->a));         /* Petsc Matrix */
 
     if (sizeof(PetscScalar) != sizeof(cs_real_t)) {
-      BFT_FREE(_val);
+      CS_FREE(_val);
       val = nullptr;
     }
 
     if (sizeof(PetscInt) != sizeof(cs_lnum_t)) {
-      BFT_FREE(_row_index);
+      CS_FREE(_row_index);
       row_index = nullptr;
     }
 
-    BFT_FREE(col_gid);
+    CS_FREE(col_gid);
 
   }
   else if (   sizeof(PetscInt) == sizeof(cs_lnum_t)
@@ -1230,8 +1230,8 @@ cs_sles_petsc_setup(void               *context,
     /* Preallocate */
 
     PetscInt *d_nnz, *o_nnz;
-    BFT_MALLOC(d_nnz, n_rows*db_size, PetscInt);
-    BFT_MALLOC(o_nnz, n_rows*db_size, PetscInt);
+    CS_MALLOC(d_nnz, n_rows*db_size, PetscInt);
+    CS_MALLOC(o_nnz, n_rows*db_size, PetscInt);
 
     if (cs_mat_type == CS_MATRIX_CSR || cs_mat_type == CS_MATRIX_MSR) {
 
@@ -1290,8 +1290,8 @@ cs_sles_petsc_setup(void               *context,
     MatSeqAIJSetPreallocation(sd->a, 0, d_nnz);
     MatMPIAIJSetPreallocation(sd->a, 0, d_nnz, 0, o_nnz);
 
-    BFT_FREE(o_nnz);
-    BFT_FREE(d_nnz);
+    CS_FREE(o_nnz);
+    CS_FREE(d_nnz);
 
     /* Now set matrix values, depending on type */
 
@@ -1551,7 +1551,7 @@ cs_sles_petsc_solve(void                *context,
       PetscInt nghost = (n_cols - n_rows)*db_size;
       PetscInt *ghosts;
 
-      BFT_MALLOC(ghosts, nghost, PetscInt);
+      CS_MALLOC(ghosts, nghost, PetscInt);
 
       for (PetscInt i = 0; i < nghost; i++)
         ghosts[i] = n_rows*db_size + i;
@@ -1574,7 +1574,7 @@ cs_sles_petsc_solve(void                *context,
                               rhs,
                               &b);
 
-      BFT_FREE(ghosts);
+      CS_FREE(ghosts);
 
     }
     else {
@@ -1720,7 +1720,7 @@ cs_sles_petsc_free(void  *context)
 
     PetscLogStagePop();
 
-    BFT_FREE(c->setup_data);
+    CS_FREE(c->setup_data);
 
   }
 

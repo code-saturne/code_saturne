@@ -58,7 +58,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -67,6 +66,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_tuning.h"
@@ -359,7 +359,7 @@ _create_grid(void)
 {
   cs_grid_t *g;
 
-  BFT_MALLOC(g, 1, cs_grid_t);
+  CS_MALLOC(g, 1, cs_grid_t);
 
   g->conv_diff = false;
   g->symmetric = false;
@@ -509,7 +509,7 @@ _aggregation_stats_log(const cs_grid_t  *f,
 
   cs_lnum_t *c_aggr_count;
 
-  BFT_MALLOC(c_aggr_count, c_n_rows, cs_lnum_t);
+  CS_MALLOC(c_aggr_count, c_n_rows, cs_lnum_t);
   for (cs_lnum_t i = 0; i < c_n_rows; i++)
     c_aggr_count[i] = 0;
 
@@ -553,7 +553,7 @@ _aggregation_stats_log(const cs_grid_t  *f,
     bft_printf("       histogram\n");
 
     cs_lnum_t *histogram;
-    BFT_MALLOC(histogram, aggr_count, cs_lnum_t);
+    CS_MALLOC(histogram, aggr_count, cs_lnum_t);
     for (cs_lnum_t i = 0; i < aggr_count; i++)
       histogram[i] = 0;
     for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
@@ -572,10 +572,10 @@ _aggregation_stats_log(const cs_grid_t  *f,
       bft_printf("         aggregation %ld = %8.2f %%\n",
                  (long)(aggr_min + i), epsp);
     }
-    BFT_FREE(histogram);
+    CS_FREE(histogram);
   }
 
-  BFT_FREE(c_aggr_count);
+  CS_FREE(c_aggr_count);
 }
 
 /*----------------------------------------------------------------------------
@@ -621,8 +621,8 @@ _coarsen_face_cell(const cs_grid_t    *fine,
   /* Pre-allocate return values
      (coarse face->cell connectivity is over-allocated) */
 
-  BFT_MALLOC(_coarse_face, f_n_faces, cs_lnum_t);
-  BFT_MALLOC(_c_face_cell, f_n_faces, cs_lnum_2_t);
+  CS_MALLOC(_coarse_face, f_n_faces, cs_lnum_t);
+  CS_MALLOC(_c_face_cell, f_n_faces, cs_lnum_2_t);
 
 # pragma omp parallel for if(f_n_faces > CS_THR_MIN)
   for (face_id = 0; face_id < f_n_faces; face_id++)
@@ -630,7 +630,7 @@ _coarsen_face_cell(const cs_grid_t    *fine,
 
   /* Allocate index */
 
-  BFT_MALLOC(c_cell_cell_idx, c_n_cells + 1, cs_lnum_t);
+  CS_MALLOC(c_cell_cell_idx, c_n_cells + 1, cs_lnum_t);
 
 # pragma omp parallel for if(c_n_cells > CS_THR_MIN)
   for (ii = 0; ii <= c_n_cells; ii++)
@@ -653,13 +653,13 @@ _coarsen_face_cell(const cs_grid_t    *fine,
   for (ii = 0; ii < c_n_cells; ii++)
     c_cell_cell_idx[ii+1] += c_cell_cell_idx[ii];
 
-  BFT_MALLOC(c_cell_cell_id,
-             c_cell_cell_idx[c_n_cells],
-             cs_lnum_t);
+  CS_MALLOC(c_cell_cell_id,
+            c_cell_cell_idx[c_n_cells],
+            cs_lnum_t);
 
-  BFT_MALLOC(c_cell_cell_face,
-             c_cell_cell_idx[c_n_cells],
-             cs_lnum_t);
+  CS_MALLOC(c_cell_cell_face,
+            c_cell_cell_idx[c_n_cells],
+            cs_lnum_t);
 
   connect_size = c_cell_cell_idx[c_n_cells];
 
@@ -670,7 +670,7 @@ _coarsen_face_cell(const cs_grid_t    *fine,
   /* Use a counter for array population, as array will usually
      not be fully populated */
 
-  BFT_MALLOC(c_cell_cell_cnt, c_n_cells, cs_lnum_t);
+  CS_MALLOC(c_cell_cell_cnt, c_n_cells, cs_lnum_t);
 
 # pragma omp parallel for if(c_n_cells > CS_THR_MIN)
   for (ii = 0; ii < c_n_cells; ii++)
@@ -720,14 +720,14 @@ _coarsen_face_cell(const cs_grid_t    *fine,
 
   /* Free temporary arrays */
 
-  BFT_FREE(c_cell_cell_cnt);
-  BFT_FREE(c_cell_cell_face);
-  BFT_FREE(c_cell_cell_id);
-  BFT_FREE(c_cell_cell_idx);
+  CS_FREE(c_cell_cell_cnt);
+  CS_FREE(c_cell_cell_face);
+  CS_FREE(c_cell_cell_id);
+  CS_FREE(c_cell_cell_idx);
 
   /* Set return values */
 
-  BFT_REALLOC(_c_face_cell, c_n_faces, cs_lnum_2_t);
+  CS_REALLOC(_c_face_cell, c_n_faces, cs_lnum_2_t);
 
   coarse->n_faces = c_n_faces;
   coarse->coarse_face = _coarse_face;
@@ -779,8 +779,8 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
     /* Allocate if necessary */
 
     if (halo->n_c_domains*2 > 128) {
-      BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
-      BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+      CS_MALLOC(request, halo->n_c_domains*2, MPI_Request);
+      CS_MALLOC(status, halo->n_c_domains*2, MPI_Status);
     }
 
     /* Receive data from distant ranks */
@@ -839,8 +839,8 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
     MPI_Waitall(request_count, request, status);
 
     if (request != _request) {
-      BFT_FREE(request);
-      BFT_FREE(status);
+      CS_FREE(request);
+      CS_FREE(status);
     }
   }
 
@@ -923,9 +923,9 @@ _coarsen_halo(const cs_grid_t   *f,
 
   /* Allocate and initialize counters */
 
-  BFT_MALLOC(start_end_id, n_sections*2, cs_lnum_t);
-  BFT_MALLOC(sub_num, c_n_rows + 1, cs_lnum_t);
-  BFT_MALLOC(coarse_send, n_f_send, cs_lnum_t);
+  CS_MALLOC(start_end_id, n_sections*2, cs_lnum_t);
+  CS_MALLOC(sub_num, c_n_rows + 1, cs_lnum_t);
+  CS_MALLOC(coarse_send, n_f_send, cs_lnum_t);
 
   /* Sub_num values shifted by 1, so 0 can be used for handling
      of removed (penalized) rows) */
@@ -1022,7 +1022,7 @@ _coarsen_halo(const cs_grid_t   *f,
 
   _exchange_halo_coarsening(f_halo, coarse_send, coarse_row);
 
-  BFT_FREE(coarse_send);
+  CS_FREE(coarse_send);
 
   /* Proceed halo section by halo section */
 
@@ -1210,7 +1210,7 @@ _coarsen_halo(const cs_grid_t   *f,
     const cs_lnum_t  stride_n = 4*domain_count;
 
     cs_lnum_t *send_perio_lst, *perio_lst;
-    BFT_MALLOC(send_perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
+    CS_MALLOC(send_perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
     CS_MALLOC_HD(perio_lst,
                  c_halo->n_transforms*stride_n,
                  cs_lnum_t,
@@ -1242,7 +1242,7 @@ _coarsen_halo(const cs_grid_t   *f,
 
     }
 
-    BFT_FREE(c_halo->send_perio_lst);
+    CS_FREE(c_halo->send_perio_lst);
     CS_FREE(c_halo->perio_lst);
     c_halo->send_perio_lst = send_perio_lst;
     c_halo->perio_lst = perio_lst;
@@ -1257,7 +1257,7 @@ _coarsen_halo(const cs_grid_t   *f,
     }
   }
   c_halo->n_c_domains = domain_count;
-  BFT_REALLOC(c_halo->c_domain_rank, c_halo->n_c_domains, int);
+  CS_REALLOC(c_halo->c_domain_rank, c_halo->n_c_domains, int);
 
   if (cs_check_device_ptr(c_halo->send_index) > CS_ALLOC_HOST) {
     cs_sync_h2d(c_halo->send_index);
@@ -1266,9 +1266,9 @@ _coarsen_halo(const cs_grid_t   *f,
 
   /* Free memory */
 
-  BFT_FREE(coarse_send);
-  BFT_FREE(sub_num);
-  BFT_FREE(start_end_id);
+  CS_FREE(coarse_send);
+  CS_FREE(sub_num);
+  CS_FREE(start_end_id);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -1366,10 +1366,10 @@ _rebuild_halo_send_lists(cs_halo_t        *h,
   MPI_Status *status = nullptr;
   MPI_Request *request = nullptr;
 
-  BFT_MALLOC(status, h->n_c_domains*2, MPI_Status);
-  BFT_MALLOC(request, h->n_c_domains*2, MPI_Request);
-  BFT_MALLOC(send_buf, h->n_c_domains*n_sections, cs_lnum_t);
-  BFT_MALLOC(recv_buf, h->n_c_domains*n_sections, cs_lnum_t);
+  CS_MALLOC(status, h->n_c_domains*2, MPI_Status);
+  CS_MALLOC(request, h->n_c_domains*2, MPI_Request);
+  CS_MALLOC(send_buf, h->n_c_domains*n_sections, cs_lnum_t);
+  CS_MALLOC(recv_buf, h->n_c_domains*n_sections, cs_lnum_t);
 
   /* Exchange sizes */
 
@@ -1418,7 +1418,7 @@ _rebuild_halo_send_lists(cs_halo_t        *h,
   /* Update send_perio_lst in case of transforms */
 
   if (h->n_transforms > 0) {
-    BFT_MALLOC(h->send_perio_lst, h->n_c_domains*h->n_transforms*4, cs_lnum_t);
+    CS_MALLOC(h->send_perio_lst, h->n_c_domains*h->n_transforms*4, cs_lnum_t);
     for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
       cs_lnum_t n_cur_vals = recv_buf[rank_id*n_sections];
       for (tr_id = 0; tr_id < h->n_transforms; tr_id++)
@@ -1435,8 +1435,8 @@ _rebuild_halo_send_lists(cs_halo_t        *h,
     }
   }
 
-  BFT_FREE(send_buf);
-  BFT_FREE(recv_buf);
+  CS_FREE(send_buf);
+  CS_FREE(recv_buf);
 
   h->n_send_elts[0] = h->send_index[h->n_c_domains*2];
   h->n_send_elts[1] = h->n_send_elts[0];
@@ -1476,8 +1476,8 @@ _rebuild_halo_send_lists(cs_halo_t        *h,
 
   MPI_Waitall(request_count, request, status);
 
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(request);
+  CS_FREE(status);
 }
 
 /*----------------------------------------------------------------------------
@@ -1494,7 +1494,7 @@ _empty_halo(cs_halo_t  *h)
     return;
 
   h->n_c_domains = 0;
-  BFT_FREE(h->c_domain_rank);
+  CS_FREE(h->c_domain_rank);
 
   h->n_send_elts[0] = 0;
   h->n_send_elts[1] = 0;
@@ -1503,9 +1503,9 @@ _empty_halo(cs_halo_t  *h)
 
   CS_FREE_HD(h->send_list);
   CS_FREE_HD(h->send_index);
-  BFT_FREE(h->send_perio_lst);
-  BFT_FREE(h->index);
-  BFT_FREE(h->perio_lst);
+  CS_FREE(h->send_perio_lst);
+  CS_FREE(h->index);
+  CS_FREE(h->perio_lst);
 }
 
 /*----------------------------------------------------------------------------
@@ -1544,7 +1544,7 @@ _merge_halo_data(cs_halo_t   *h,
   /* Order list by rank, transform, and new element number */
 
   cs_gnum_t  *tmp_num = nullptr;
-  BFT_MALLOC(tmp_num, n_elts_ini*stride, cs_gnum_t);
+  CS_MALLOC(tmp_num, n_elts_ini*stride, cs_gnum_t);
 
   for (int rank_idx = 0; rank_idx < n_c_domains_ini; rank_idx++) {
     int c_rank_id = h->c_domain_rank[rank_idx];
@@ -1600,7 +1600,7 @@ _merge_halo_data(cs_halo_t   *h,
     }
 
     h->n_c_domains = j+1;
-    BFT_REALLOC(h->c_domain_rank, h->n_c_domains, int);
+    CS_REALLOC(h->c_domain_rank, h->n_c_domains, int);
   }
 
   cs_lnum_t *section_idx = nullptr;
@@ -1704,7 +1704,7 @@ _merge_halo_data(cs_halo_t   *h,
             cs_lnum_t section_idx_size_prv = section_idx_size;
             section_idx_size
               = (section_idx_size_prv > 0) ? section_idx_size_prv*2 : 16;
-            BFT_REALLOC(section_idx, section_idx_size, cs_lnum_t);
+            CS_REALLOC(section_idx, section_idx_size, cs_lnum_t);
             for (cs_lnum_t sid = section_idx_size_prv;
                  sid < section_idx_size;
                  sid++)
@@ -1737,8 +1737,8 @@ _merge_halo_data(cs_halo_t   *h,
       section_idx[sid] += section_idx[sid - 1];
   }
 
-  BFT_FREE(order);
-  BFT_FREE(tmp_num);
+  CS_FREE(order);
+  CS_FREE(tmp_num);
 
   /* Restore local rank in connected domains list */
 
@@ -1765,17 +1765,17 @@ _merge_halo_data(cs_halo_t   *h,
       }
     }
 
-    BFT_FREE(section_idx);
+    CS_FREE(section_idx);
 
   }
 
   /* Free and resize memory */
 
-  BFT_REALLOC(h->index, h->n_c_domains*2+1, cs_lnum_t);
+  CS_REALLOC(h->index, h->n_c_domains*2+1, cs_lnum_t);
   if (h->n_transforms > 0)
-    BFT_REALLOC(h->perio_lst,
-                h->n_c_domains * h->n_transforms * 4,
-                cs_lnum_t);
+    CS_REALLOC(h->perio_lst,
+               h->n_c_domains * h->n_transforms * 4,
+               cs_lnum_t);
 
   h->n_elts[1] = h->n_elts[0];
   h->index[h->n_c_domains*2] = h->n_elts[0];
@@ -1821,7 +1821,7 @@ _append_halos(cs_grid_t   *g,
   h->n_send_elts[1] = 0;
   CS_FREE_HD(h->send_list);
   CS_FREE_HD(h->send_index);
-  BFT_FREE(h->send_perio_lst);
+  CS_FREE(h->send_perio_lst);
 
   if (g->merge_sub_size == 0) {
     _empty_halo(h);
@@ -1843,7 +1843,7 @@ _append_halos(cs_grid_t   *g,
   /* Exchange counters needed for concatenation */
 
   if (g->merge_sub_rank == 0) {
-    BFT_MALLOC(recv_count, g->merge_sub_size*3, int);
+    CS_MALLOC(recv_count, g->merge_sub_size*3, int);
     for (ii = 0; ii < 3; ii++)
       recv_count[ii] = counts[ii];
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
@@ -1863,7 +1863,7 @@ _append_halos(cs_grid_t   *g,
 
   if (n_transforms > 0) {
     cs_lnum_t *perio_list_tr;
-    BFT_MALLOC(perio_list_tr, h->n_c_domains*n_transforms*4, cs_lnum_t);
+    CS_MALLOC(perio_list_tr, h->n_c_domains*n_transforms*4, cs_lnum_t);
     for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
       for (int tr_id = 0; tr_id < n_transforms; tr_id++) {
         for (int k = 0; k < 4; k++)
@@ -1874,20 +1874,20 @@ _append_halos(cs_grid_t   *g,
     memcpy(h->perio_lst,
            perio_list_tr,
            h->n_c_domains*n_transforms*4*sizeof(cs_lnum_t));
-    BFT_FREE(perio_list_tr);
+    CS_FREE(perio_list_tr);
   }
 
   /* Reallocate arrays for receiving rank and append data */
 
   if (g->merge_sub_rank == 0) {
 
-    BFT_MALLOC(new_src_cell_id, counts[2], cs_lnum_t);
+    CS_MALLOC(new_src_cell_id, counts[2], cs_lnum_t);
     for (ii = g->n_rows, jj = 0; ii < g->n_cols_ext; ii++, jj++)
       new_src_cell_id[jj] = new_cell_id[ii];
 
-    BFT_REALLOC(h->c_domain_rank, counts[0], int);
-    BFT_REALLOC(h->index, counts[0]*2 + 1, cs_lnum_t);
-    BFT_REALLOC(h->perio_lst, counts[0]*n_transforms*4, cs_lnum_t);
+    CS_REALLOC(h->c_domain_rank, counts[0], int);
+    CS_REALLOC(h->index, counts[0]*2 + 1, cs_lnum_t);
+    CS_REALLOC(h->perio_lst, counts[0]*n_transforms*4, cs_lnum_t);
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
@@ -1930,7 +1930,7 @@ _append_halos(cs_grid_t   *g,
   }
   else if (g->merge_sub_size > 1) {
 
-    BFT_MALLOC(new_src_cell_id, h->n_elts[0], cs_lnum_t);
+    CS_MALLOC(new_src_cell_id, h->n_elts[0], cs_lnum_t);
     for (ii = g->n_rows, jj = 0; ii < g->n_cols_ext; ii++, jj++)
       new_src_cell_id[jj] = new_cell_id[ii];
 
@@ -1957,7 +1957,7 @@ _append_halos(cs_grid_t   *g,
 
     if (n_transforms > 0) {
       cs_lnum_t *perio_list_tr;
-      BFT_MALLOC(perio_list_tr, h->n_c_domains*n_transforms*4, cs_lnum_t);
+      CS_MALLOC(perio_list_tr, h->n_c_domains*n_transforms*4, cs_lnum_t);
       for (int tr_id = 0; tr_id < n_transforms; tr_id++) {
         for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
           for (int k = 0; k < 4; k++)
@@ -1968,12 +1968,12 @@ _append_halos(cs_grid_t   *g,
       memcpy(h->perio_lst,
              perio_list_tr,
              h->n_c_domains*n_transforms*4*sizeof(cs_lnum_t));
-      BFT_FREE(perio_list_tr);
+      CS_FREE(perio_list_tr);
     }
 
     /* Now merge data */
 
-    BFT_MALLOC(new_halo_cell_id, h->n_elts[0], cs_lnum_t);
+    CS_MALLOC(new_halo_cell_id, h->n_elts[0], cs_lnum_t);
 
     _merge_halo_data(h,
                      cs_glob_rank_id,
@@ -1986,7 +1986,7 @@ _append_halos(cs_grid_t   *g,
   }
 
   if (new_src_cell_id != nullptr)
-    BFT_FREE(new_src_cell_id);
+    CS_FREE(new_src_cell_id);
 
   g->halo = h;
   g->_halo = h;
@@ -2009,13 +2009,13 @@ _append_halos(cs_grid_t   *g,
       send_shift += n_send;
     }
 
-    BFT_FREE(recv_count);
+    CS_FREE(recv_count);
   }
   else if (g->merge_sub_size > 1)
     MPI_Recv(new_cell_id + g->n_rows, g->n_cols_ext - g->n_rows,
              CS_MPI_LNUM, g->merge_sub_root, tag, comm, &status);
 
-  BFT_FREE(new_halo_cell_id);
+  CS_FREE(new_halo_cell_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -2045,11 +2045,11 @@ _append_cell_data(cs_grid_t  *g)
     g->n_cols_ext = g->n_rows + g->halo->n_elts[0];
 
     if (g->relaxation > 0) {
-      BFT_REALLOC(g->_cell_cen, g->n_cols_ext * 3, cs_real_t);
-      BFT_REALLOC(g->_cell_vol, g->n_cols_ext, cs_real_t);
+      CS_REALLOC(g->_cell_cen, g->n_cols_ext * 3, cs_real_t);
+      CS_REALLOC(g->_cell_vol, g->n_cols_ext, cs_real_t);
     }
 
-    BFT_REALLOC(g->_da, g->n_cols_ext*db_stride, cs_real_t);
+    CS_REALLOC(g->_da, g->n_cols_ext*db_stride, cs_real_t);
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
@@ -2076,16 +2076,16 @@ _append_cell_data(cs_grid_t  *g)
     if (g->relaxation > 0) {
       MPI_Send(g->_cell_cen, g->n_rows*3, CS_MPI_REAL, g->merge_sub_root,
                tag, comm);
-      BFT_FREE(g->_cell_cen);
+      CS_FREE(g->_cell_cen);
 
       MPI_Send(g->_cell_vol, g->n_rows, CS_MPI_REAL, g->merge_sub_root,
                tag, comm);
-      BFT_FREE(g->_cell_vol);
+      CS_FREE(g->_cell_vol);
     }
 
     MPI_Send(g->_da, g->n_rows*db_stride, CS_MPI_REAL,
              g->merge_sub_root, tag, comm);
-    BFT_FREE(g->_da);
+    CS_FREE(g->_da);
 
     g->n_rows = 0;
     g->n_cols_ext = 0;
@@ -2154,7 +2154,7 @@ _append_face_data(cs_grid_t   *g,
   /* Exchange counters needed for concatenation */
 
   if (g->merge_sub_rank == 0) {
-    BFT_MALLOC(recv_count, g->merge_sub_size, cs_lnum_t);
+    CS_MALLOC(recv_count, g->merge_sub_size, cs_lnum_t);
     recv_count[0] = g->n_faces;
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
@@ -2167,7 +2167,7 @@ _append_face_data(cs_grid_t   *g,
 
   /* Reallocate arrays for receiving rank and append data */
 
-  BFT_FREE(g->coarse_face);
+  CS_FREE(g->coarse_face);
 
   if (g->merge_sub_rank == 0) {
 
@@ -2176,19 +2176,19 @@ _append_face_data(cs_grid_t   *g,
     for (rank_id = 0; rank_id < g->merge_sub_size; rank_id++)
       n_faces_tot += recv_count[rank_id];
 
-    BFT_REALLOC(g->_face_cell, n_faces_tot, cs_lnum_2_t);
+    CS_REALLOC(g->_face_cell, n_faces_tot, cs_lnum_2_t);
 
     if (g->symmetric == true)
-      BFT_REALLOC(g->_xa, n_faces_tot, cs_real_t);
+      CS_REALLOC(g->_xa, n_faces_tot, cs_real_t);
     else
-      BFT_REALLOC(g->_xa, n_faces_tot*2, cs_real_t);
+      CS_REALLOC(g->_xa, n_faces_tot*2, cs_real_t);
 
     if (g->relaxation > 0) {
 
-      BFT_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
+      CS_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
 
-      BFT_REALLOC(g->_xa0, n_faces_tot, cs_real_t);
-      BFT_REALLOC(g->xa0ij, n_faces_tot*3, cs_real_t);
+      CS_REALLOC(g->_xa0, n_faces_tot, cs_real_t);
+      CS_REALLOC(g->xa0ij, n_faces_tot*3, cs_real_t);
 
     }
 
@@ -2225,7 +2225,7 @@ _append_face_data(cs_grid_t   *g,
       g->n_faces += recv_count[rank_id];
     }
 
-    BFT_FREE(recv_count);
+    CS_FREE(recv_count);
 
   }
   else {
@@ -2257,7 +2257,7 @@ _append_face_data(cs_grid_t   *g,
 
     MPI_Send(g->_face_cell, n_faces*2, CS_MPI_LNUM,
              g->merge_sub_root, tag, comm);
-    BFT_FREE(g->_face_cell);
+    CS_FREE(g->_face_cell);
 
     if (g->symmetric == true)
       MPI_Send(g->_xa, n_faces, CS_MPI_REAL,
@@ -2265,20 +2265,20 @@ _append_face_data(cs_grid_t   *g,
     else
       MPI_Send(g->_xa, n_faces*2, CS_MPI_REAL,
                g->merge_sub_root, tag, comm);
-    BFT_FREE(g->_xa);
+    CS_FREE(g->_xa);
 
     if (g->relaxation > 0) {
       MPI_Send(g->_face_normal, n_faces*3, CS_MPI_REAL,
                g->merge_sub_root, tag, comm);
-      BFT_FREE(g->_face_normal);
+      CS_FREE(g->_face_normal);
 
       MPI_Send(g->_xa0, n_faces, CS_MPI_REAL,
                g->merge_sub_root, tag, comm);
-      BFT_FREE(g->_xa0);
+      CS_FREE(g->_xa0);
 
       MPI_Send(g->xa0ij, n_faces*3, CS_MPI_REAL,
                g->merge_sub_root, tag, comm);
-      BFT_FREE(g->xa0ij);
+      CS_FREE(g->xa0ij);
     }
 
     g->n_faces = 0;
@@ -2378,7 +2378,7 @@ _merge_grids(cs_grid_t  *g,
   if (g->merge_sub_size > 1) {
 
     if (g->merge_sub_rank == 0) {
-      BFT_MALLOC(g->merge_cell_idx, g->merge_sub_size + 1, cs_lnum_t);
+      CS_MALLOC(g->merge_cell_idx, g->merge_sub_size + 1, cs_lnum_t);
       g->merge_cell_idx[0] = 0; g->merge_cell_idx[1] = g->n_rows;
       for (i = 1; i < g->merge_sub_size; i++) {
         cs_lnum_t recv_val;
@@ -2409,7 +2409,7 @@ _merge_grids(cs_grid_t  *g,
 
   /* Compute and exchange new cell numbers */
 
-  BFT_MALLOC(new_cell_id, g->n_cols_ext, cs_lnum_t);
+  CS_MALLOC(new_cell_id, g->n_cols_ext, cs_lnum_t);
   for (j = 0; j < g->n_rows; j++)
     new_cell_id[j] = cell_shift + j;
   for (j = g->n_rows; j < g->n_cols_ext; j++)
@@ -2430,8 +2430,8 @@ _merge_grids(cs_grid_t  *g,
        connected to a cell on a lower rank in the same merge set is
        discarded, as it has already been accounted for by that rank. */
 
-    BFT_MALLOC(face_list, g->n_faces, cs_lnum_t);
-    BFT_MALLOC(halo_cell_flag, n_ghost_cells, bool);
+    CS_MALLOC(face_list, g->n_faces, cs_lnum_t);
+    CS_MALLOC(halo_cell_flag, n_ghost_cells, bool);
     for (j = 0; j < n_ghost_cells; j++)
       halo_cell_flag[j] = false;
 
@@ -2468,7 +2468,7 @@ _merge_grids(cs_grid_t  *g,
         face_list[n_faces++] = face_id;
     }
 
-    BFT_FREE(halo_cell_flag);
+    CS_FREE(halo_cell_flag);
   }
 
   /* Append and merge halos */
@@ -2485,7 +2485,7 @@ _merge_grids(cs_grid_t  *g,
     g->_face_cell[face_id][1] = new_cell_id[jj];
   }
 
-  BFT_FREE(new_cell_id);
+  CS_FREE(new_cell_id);
 
   /* Merge cell and face data */
 
@@ -2495,7 +2495,7 @@ _merge_grids(cs_grid_t  *g,
   }
   _sync_merged_cell_data(g);
 
-  BFT_FREE(face_list);
+  CS_FREE(face_list);
 
   if (verbosity > 3)
     bft_printf("      merged to %ld (from %ld) rows\n\n",
@@ -2826,7 +2826,7 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
   cs_lnum_t *t_c_scan = nullptr;
   int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
   if (n_loc_threads > 1) {
-    BFT_MALLOC(t_c_scan, n_loc_threads, cs_lnum_t);
+    CS_MALLOC(t_c_scan, n_loc_threads, cs_lnum_t);
     for (int i = 0; i < n_loc_threads; i++)
       t_c_scan[i] = 0;
   }
@@ -2837,9 +2837,9 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
   cs_real_t  *a_max; /* max per line */
   cs_lnum_t *s_next;
 
-  BFT_MALLOC(a_m, f_n_rows, short int);
-  BFT_MALLOC(a_max, f_n_rows, cs_real_t);
-  BFT_MALLOC(s_next, f_n_rows*2, cs_lnum_t);
+  CS_MALLOC(a_m, f_n_rows, short int);
+  CS_MALLOC(a_max, f_n_rows, cs_real_t);
+  CS_MALLOC(s_next, f_n_rows*2, cs_lnum_t);
 
   #pragma omp parallel shared(c_n_rows)  num_threads(n_loc_threads)
   {
@@ -2936,7 +2936,7 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
       s.m_min = 0;
       s.m_max = m_max;
 
-      BFT_MALLOC(s.m_head, s.m_max+1, cs_lnum_t);
+      CS_MALLOC(s.m_head, s.m_max+1, cs_lnum_t);
       s.next = s_next;
       s.prev = s.next + f_n_rows;
 
@@ -3056,7 +3056,7 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
           f_c_row[ii] = t_c_n_rows++;
       }
 
-      BFT_FREE(s.m_head);
+      CS_FREE(s.m_head);
 
       /* Prepare combining thread results */
 
@@ -3083,11 +3083,11 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
 
   /* Free working arrays */
 
-  BFT_FREE(s_next);
-  BFT_FREE(a_max);
-  BFT_FREE(a_m);
+  CS_FREE(s_next);
+  CS_FREE(a_max);
+  CS_FREE(a_m);
 
-  BFT_FREE(t_c_scan);
+  CS_FREE(t_c_scan);
 
   return c_n_rows;
 }
@@ -3135,14 +3135,14 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
   const cs_lnum_t eb_size = f->eb_size;
 
   if (db_size > 1) {
-    BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
+    CS_MALLOC(_d_val, f_n_rows, cs_real_t);
     _reduce_block(f_n_rows, db_size, d_val, _d_val);
     d_val = _d_val;
   }
 
   if (eb_size > 1) {
     cs_lnum_t f_n_enz = row_index[f_n_rows];
-    BFT_MALLOC(_x_val, f_n_enz, cs_real_t);
+    CS_MALLOC(_x_val, f_n_enz, cs_real_t);
     _reduce_block(f_n_enz, eb_size, x_val, _x_val);
     x_val = _x_val;
   }
@@ -3162,8 +3162,8 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
 
   /* Free working arrays */
 
-  BFT_FREE(_d_val);
-  BFT_FREE(_x_val);
+  CS_FREE(_d_val);
+  CS_FREE(_x_val);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -3238,21 +3238,21 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   const cs_lnum_t eb_size = f->eb_size;
 
   if (db_size > 1) {
-    BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
+    CS_MALLOC(_d_val, f_n_rows, cs_real_t);
     _reduce_block(f_n_rows, db_size, d_val, _d_val);
     d_val = _d_val;
   }
 
   if (eb_size > 1) {
-    BFT_MALLOC(_x_val, n_edges*isym, cs_real_t);
+    CS_MALLOC(_x_val, n_edges*isym, cs_real_t);
     _reduce_block(n_edges*isym, eb_size, x_val, _x_val);
     x_val = _x_val;
   }
 
   /* Allocate working arrays */
 
-  BFT_MALLOC(c_aggr_count, f_n_rows, cs_lnum_t);
-  BFT_MALLOC(maxi, f_n_rows, cs_real_t);
+  CS_MALLOC(c_aggr_count, f_n_rows, cs_lnum_t);
+  CS_MALLOC(maxi, f_n_rows, cs_real_t);
 
   for (cs_lnum_t ii = 0; ii < f_n_rows; ii++){
     c_aggr_count[ii] = 1;
@@ -3264,7 +3264,7 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
    * is only on the negative coefficient. */
 
   cs_real_t *sum;
-  BFT_MALLOC(sum, f_n_rows, cs_real_t);
+  CS_MALLOC(sum, f_n_rows, cs_real_t);
 
   for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
     sum[ii] = 0;
@@ -3295,7 +3295,7 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
         f_c_row[ii] = -1;
     }
   }
-  BFT_FREE(sum);
+  CS_FREE(sum);
 
   /* Passes */
 
@@ -3386,10 +3386,10 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
 
   /* Free working arrays */
 
-  BFT_FREE(_d_val);
-  BFT_FREE(_x_val);
-  BFT_FREE(c_aggr_count);
-  BFT_FREE(maxi);
+  CS_FREE(_d_val);
+  CS_FREE(_x_val);
+  CS_FREE(c_aggr_count);
+  CS_FREE(maxi);
 
   return c_n_rows;
 }
@@ -3454,14 +3454,14 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
   const cs_lnum_t f_nnz = row_index[f_n_rows];
 
   if (db_size > 1) {
-    BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
+    CS_MALLOC(_d_val, f_n_rows, cs_real_t);
     _reduce_block(f_n_rows, db_size, d_val, _d_val);
     d_val = _d_val;
   }
 
   if (eb_size > 1) {
     cs_lnum_t f_n_enz = row_index[f_n_rows];
-    BFT_MALLOC(_x_val, f_n_enz, cs_real_t);
+    CS_MALLOC(_x_val, f_n_enz, cs_real_t);
     _reduce_block(f_n_enz, eb_size, x_val, _x_val);
     x_val = _x_val;
   }
@@ -3471,20 +3471,20 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
   cs_lnum_t *t_c_scan = nullptr;
   int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
   if (n_loc_threads > 1) {
-    BFT_MALLOC(t_c_scan, n_loc_threads, cs_lnum_t);
+    CS_MALLOC(t_c_scan, n_loc_threads, cs_lnum_t);
     for (int i = 0; i < n_loc_threads; i++)
       t_c_scan[i] = 0;
   }
 
   /* Allocate working arrays */
 
-  BFT_MALLOC(c_aggr_count, f_n_rows, cs_lnum_t);
-  BFT_MALLOC(maxi, f_n_rows, cs_real_t);
+  CS_MALLOC(c_aggr_count, f_n_rows, cs_lnum_t);
+  CS_MALLOC(maxi, f_n_rows, cs_real_t);
 
   /* aggregation queue: local column id, index in matrix, and
      index of symmetric element if needed */
   cs_lnum_t *ag_queue;
-  BFT_MALLOC(ag_queue, f_nnz*2, cs_lnum_t);
+  CS_MALLOC(ag_queue, f_nnz*2, cs_lnum_t);
 
   /* Handle a block of rows per thread; aggregation will not be done
      across thread blocks, in a similar manner that it is not done
@@ -3757,12 +3757,12 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
 
   /* Free working arrays */
 
-  BFT_FREE(ag_queue);
-  BFT_FREE(c_aggr_count);
-  BFT_FREE(_d_val);
-  BFT_FREE(_x_val);
-  BFT_FREE(maxi);
-  BFT_FREE(t_c_scan);
+  CS_FREE(ag_queue);
+  CS_FREE(c_aggr_count);
+  CS_FREE(_d_val);
+  CS_FREE(_x_val);
+  CS_FREE(maxi);
+  CS_FREE(t_c_scan);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -3821,8 +3821,8 @@ _coarse_to_fine_adjacency_msr(int               f_level,
 
   cs_lnum_t *cf_r_idx, *c_r_idx_0, *cf_r_shift;
   CS_MALLOC_HD(cf_r_idx, c_n_rows+1, cs_lnum_t, alloc_mode);
-  BFT_MALLOC(c_r_idx_0, c_n_rows+1, cs_lnum_t);
-  BFT_MALLOC(cf_r_shift, c_n_rows, cs_lnum_t);
+  CS_MALLOC(c_r_idx_0, c_n_rows+1, cs_lnum_t);
+  CS_MALLOC(cf_r_shift, c_n_rows, cs_lnum_t);
 
 # pragma omp parallel for  num_threads(n_c_threads)
   for (cs_lnum_t i = 0; i < c_n_rows; i++) {
@@ -3858,7 +3858,7 @@ _coarse_to_fine_adjacency_msr(int               f_level,
 
   cs_lnum_t *t_c_scan = nullptr;
   if (n_c_threads > 1) {
-    BFT_MALLOC(t_c_scan, n_f_threads*2, cs_lnum_t);
+    CS_MALLOC(t_c_scan, n_f_threads*2, cs_lnum_t);
     for (int i = 0; i < n_f_threads; i++) {
       t_c_scan[i*2] = 0;
       t_c_scan[i*2+1] = 0;
@@ -3933,7 +3933,7 @@ _coarse_to_fine_adjacency_msr(int               f_level,
 
 #endif /* defined(HAVE_OPENMP) */
 
-  BFT_FREE(t_c_scan);
+  CS_FREE(t_c_scan);
 
   /* Now assign rows */
 
@@ -3955,8 +3955,8 @@ _coarse_to_fine_adjacency_msr(int               f_level,
     }
   }
 
-  BFT_FREE(cf_r_shift);
-  BFT_FREE(t_c_scan);
+  CS_FREE(cf_r_shift);
+  CS_FREE(t_c_scan);
 
   *c_f_row_index = cf_r_idx;
   *c_f_row_ids = cf_r_ids;
@@ -3964,7 +3964,7 @@ _coarse_to_fine_adjacency_msr(int               f_level,
   if (c_row_index_0 != nullptr)
     *c_row_index_0 = c_r_idx_0;
   else
-    BFT_FREE(c_r_idx_0);
+    CS_FREE(c_r_idx_0);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -4022,7 +4022,7 @@ _coarse_msr_struct(int                f_level,
   cs_lnum_t *t_c_scan = nullptr;
   int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
   if (n_loc_threads > 1) {
-    BFT_MALLOC(t_c_scan, n_loc_threads*2, cs_lnum_t);
+    CS_MALLOC(t_c_scan, n_loc_threads*2, cs_lnum_t);
     for (int i = 0; i < n_loc_threads; i++) {
       t_c_scan[i*2] = 0;
       t_c_scan[i*2 + 1] = 0;
@@ -4042,7 +4042,7 @@ _coarse_msr_struct(int                f_level,
   const cs_lnum_t c_nnz_0 = c_row_index_0[c_n_rows];
 
   cs_lnum_t *c_col_id_0;
-  BFT_MALLOC(c_col_id_0, c_nnz_0, cs_lnum_t);
+  CS_MALLOC(c_col_id_0, c_nnz_0, cs_lnum_t);
 
   /* Loop on coarse rows */
 
@@ -4140,7 +4140,7 @@ _coarse_msr_struct(int                f_level,
       }
     }
 
-    BFT_FREE(c_col_id_0);
+    CS_FREE(c_col_id_0);
 
   }
 
@@ -4153,7 +4153,7 @@ _coarse_msr_struct(int                f_level,
 
   /* Free working arrays */
 
-  BFT_FREE(t_c_scan);
+  CS_FREE(t_c_scan);
 
   *c_row_index = c_row_idx;
   *c_col_ids = c_col_id;
@@ -4212,7 +4212,7 @@ _msr_face_adjacency(const cs_grid_t  *f,
   cs_lnum_t n_faces = 0;
 
   if (n_loc_threads > 1) {
-    BFT_MALLOC(t_f_scan, n_loc_threads*2, cs_lnum_t);
+    CS_MALLOC(t_f_scan, n_loc_threads*2, cs_lnum_t);
     for (int i = 0; i < n_loc_threads; i++) {
       t_f_scan[i] = 0;
     }
@@ -4296,7 +4296,7 @@ _msr_face_adjacency(const cs_grid_t  *f,
 
 #endif /* defined(HAVE_OPENMP) */
 
-  BFT_FREE(t_f_scan);
+  CS_FREE(t_f_scan);
 
   /* Third stage: determine coarse face ids in opposite orientation */
 
@@ -4392,13 +4392,13 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
   cs_real_t *s_da = nullptr, *s_xa = nullptr;
 
   if (db_size > 1) {
-    BFT_MALLOC(s_da, f_n_cells, cs_real_t);
+    CS_MALLOC(s_da, f_n_cells, cs_real_t);
     _reduce_block(f_n_cells, db_size, f_da, s_da);
     _f_da = s_da;
   }
 
   if (eb_size > 1) {
-    BFT_MALLOC(s_xa, f_n_faces*isym, cs_real_t);
+    CS_MALLOC(s_xa, f_n_faces*isym, cs_real_t);
     _reduce_block(f_n_faces*isym, eb_size, f_xa, s_xa);
     _f_xa = s_xa;
   }
@@ -4406,7 +4406,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
   /* Allocate working arrays */
 
   cs_lnum_t *i_work_array = nullptr;
-  BFT_MALLOC(i_work_array, f_n_cells_ext*2 + f_n_faces*3, cs_lnum_t);
+  CS_MALLOC(i_work_array, f_n_cells_ext*2 + f_n_faces*3, cs_lnum_t);
 
   cs_lnum_t *c_cardinality = i_work_array;
   cs_lnum_t *c_aggr_count = i_work_array + f_n_cells_ext;
@@ -4426,7 +4426,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   cs_real_t *xv_sum = nullptr;
   if (f->level == 0) {
-    BFT_MALLOC(xv_sum, f_n_cells_ext, cs_real_t);
+    CS_MALLOC(xv_sum, f_n_cells_ext, cs_real_t);
 #   pragma omp parallel for if(f_n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < f_n_cells_ext; ii++) {
       xv_sum[ii] = 0;
@@ -4460,7 +4460,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
         f_c_cell[ii] = -1;
     }
 
-    BFT_FREE(xv_sum);
+    CS_FREE(xv_sum);
   }
 
   else { /* if f->level > 0) */
@@ -4589,8 +4589,8 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   } while (npass < npass_max); /* Loop on passes */
 
-  BFT_FREE(s_da);
-  BFT_FREE(s_xa);
+  CS_FREE(s_da);
+  CS_FREE(s_xa);
 
   /* Finish assembly */
   for (cs_lnum_t i = 0; i < f_n_cells; i++) {
@@ -4602,7 +4602,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   /* Free working arrays */
 
-  BFT_FREE(i_work_array);
+  CS_FREE(i_work_array);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -4686,13 +4686,13 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 #endif
 
   if (db_size > 1) {
-    BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
+    CS_MALLOC(_d_val, f_n_rows, cs_real_t);
     _reduce_block(f_n_rows, db_size, d_val, _d_val);
     d_val = _d_val;
   }
 
   if (eb_size > 1) {
-    BFT_MALLOC(_x_val, f_nnz, cs_real_t);
+    CS_MALLOC(_x_val, f_nnz, cs_real_t);
     _reduce_block(f_nnz, eb_size, x_val, _x_val);
     x_val = _x_val;
   }
@@ -4702,7 +4702,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   cs_lnum_t *t_c_scan = nullptr;
   int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
   if (n_loc_threads > 1) {
-    BFT_MALLOC(t_c_scan, n_loc_threads, cs_lnum_t);
+    CS_MALLOC(t_c_scan, n_loc_threads, cs_lnum_t);
     for (int i = 0; i < n_loc_threads; i++)
       t_c_scan[i] = 0;
   }
@@ -4710,20 +4710,20 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   /* Allocate working arrays */
 
   short *c_cardinality, *c_aggr_count;
-  BFT_MALLOC(c_cardinality, f_n_rows, short);
-  BFT_MALLOC(c_aggr_count, f_n_rows, short);
+  CS_MALLOC(c_cardinality, f_n_rows, short);
+  CS_MALLOC(c_aggr_count, f_n_rows, short);
 
   /* aggregation queue: local column id, index in matrix, and
      index of symmetric element if needed */
   const cs_lnum_t ag_queue_stride = (1+isym);
   cs_lnum_t ag_work_size = CS_MAX(f_nnz*ag_queue_stride, f_n_rows);
   cs_lnum_t *ag_work;
-  BFT_MALLOC(ag_work, ag_work_size, cs_lnum_t);
+  CS_MALLOC(ag_work, ag_work_size, cs_lnum_t);
   cs_lnum_t *ag_queue = ag_work;
 
   cs_lnum_t *log_counts = nullptr;
   if (verbosity > 3) {
-    BFT_MALLOC(log_counts, n_loc_threads*npass_max*2, cs_lnum_t);
+    CS_MALLOC(log_counts, n_loc_threads*npass_max*2, cs_lnum_t);
     memset(log_counts, 0, n_loc_threads*npass_max*2*sizeof(cs_lnum_t));
   }
 
@@ -5086,7 +5086,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
                      npass, t_id, (long)r_n_faces, (long)aggr_count);
       }
     }
-    BFT_FREE(log_counts);
+    CS_FREE(log_counts);
   }
 
   /* Combine thread results */
@@ -5099,14 +5099,14 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 
   /* Free working arrays */
 
-  BFT_FREE(ag_work);
-  BFT_FREE(c_cardinality);
-  BFT_FREE(c_aggr_count);
+  CS_FREE(ag_work);
+  CS_FREE(c_cardinality);
+  CS_FREE(c_aggr_count);
 
-  BFT_FREE(_d_val);
-  BFT_FREE(_x_val);
+  CS_FREE(_d_val);
+  CS_FREE(_x_val);
 
-  BFT_FREE(t_c_scan);
+  CS_FREE(t_c_scan);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -5190,7 +5190,7 @@ _verify_matrix(const cs_grid_t  *g)
   const cs_lnum_t db_size = g->db_size;
 
   cs_real_t *val;
-  BFT_MALLOC(val, n_cols*db_size, cs_real_t);
+  CS_MALLOC(val, n_cols*db_size, cs_real_t);
 
   /* Evaluate fine and coarse grids diagonal dominance */
 
@@ -5207,7 +5207,7 @@ _verify_matrix(const cs_grid_t  *g)
       vmax = val[i];
   }
 
-  BFT_FREE(val);
+  CS_FREE(val);
 
 #if defined(HAVE_MPI)
   if (cs_glob_mpi_comm != MPI_COMM_NULL) {
@@ -5277,8 +5277,8 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
     return;
 
   cs_real_t *w3, *w4;
-  BFT_MALLOC(w3, n_cells_ext*db_stride, cs_real_t);
-  BFT_MALLOC(w4, n_cells_ext*db_stride, cs_real_t);
+  CS_MALLOC(w3, n_cells_ext*db_stride, cs_real_t);
+  CS_MALLOC(w4, n_cells_ext*db_stride, cs_real_t);
 
   /* Evaluate matrix anisotropy */
 
@@ -5320,7 +5320,7 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
                "                        max      = %12.5e\n"),
              anmin, anmax);
 
-  BFT_FREE(w4);
+  CS_FREE(w4);
 
   if (interp == 1) {
     double rmin = HUGE_VAL, rmax = -HUGE_VAL;
@@ -5339,7 +5339,7 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
                rmin, rmax);
   }
 
-  BFT_FREE(w3);
+  CS_FREE(w3);
 }
 
 /*----------------------------------------------------------------------------
@@ -5694,7 +5694,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
       }
 
-      BFT_FREE(_f_xa0);
+      CS_FREE(_f_xa0);
       f_xa0 = nullptr;
     }
 
@@ -5804,7 +5804,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   /* Initialize non differential fine grid term saved in w1 */
 
   cs_real_t *w1 = nullptr;
-  BFT_MALLOC(w1, f_n_cells_ext*db_stride, cs_real_t);
+  CS_MALLOC(w1, f_n_cells_ext*db_stride, cs_real_t);
 
   if (db_size == 1) {
 #   pragma omp parallel for if(f_n_cells > CS_THR_MIN)
@@ -5869,7 +5869,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
     }
   }
 
-  BFT_FREE(w1);
+  CS_FREE(w1);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -5956,7 +5956,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   const cs_real_t *f_xa0_diff = fine_grid->xa0_diff;
   const cs_real_t *f_xa_diff = fine_grid->xa_diff;
 
-  BFT_MALLOC(w1, 2*f_n_cells_ext*db_stride, cs_real_t);
+  CS_MALLOC(w1, 2*f_n_cells_ext*db_stride, cs_real_t);
 
   assert(fine_grid->symmetric == false);
 
@@ -6210,7 +6210,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     c_xa[2*c_face +1] = c_xa_conv[2*c_face +1] + c_xa_diff[c_face];
   }
 
-  BFT_FREE(w1);
+  CS_FREE(w1);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -7128,7 +7128,7 @@ _native_from_msr(cs_grid_t  *g)
 
   {
     CS_FREE(g->_da);
-    BFT_MALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
+    CS_MALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
     g->da = g->_da;
 
     for (cs_lnum_t i = 0; i < n_rows; i++) {
@@ -7143,8 +7143,8 @@ _native_from_msr(cs_grid_t  *g)
   }
 
   if (g->symmetric) {
-    BFT_REALLOC(g->_face_cell, row_index[n_rows], cs_lnum_2_t);
-    BFT_REALLOC(g->_xa, eb_stride*row_index[n_rows], cs_real_t);
+    CS_REALLOC(g->_face_cell, row_index[n_rows], cs_lnum_2_t);
+    CS_REALLOC(g->_xa, eb_stride*row_index[n_rows], cs_real_t);
 
     cs_lnum_t n_edges = 0;
 
@@ -7164,8 +7164,8 @@ _native_from_msr(cs_grid_t  *g)
     }
 
     g->n_faces = n_edges;
-    BFT_REALLOC(g->_face_cell, n_edges, cs_lnum_2_t);
-    BFT_REALLOC(g->_xa, eb_stride*n_edges, cs_real_t);
+    CS_REALLOC(g->_face_cell, n_edges, cs_lnum_2_t);
+    CS_REALLOC(g->_xa, eb_stride*n_edges, cs_real_t);
     g->face_cell = (const cs_lnum_2_t *)(g->_face_cell);
     g->xa = g->_xa;
   }
@@ -7451,7 +7451,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
         g->xa0 = g->xa;
       }
       else {
-        BFT_MALLOC(g->_xa0, n_faces, cs_real_t);
+        CS_MALLOC(g->_xa0, n_faces, cs_real_t);
         for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++)
           g->_xa0[face_id] = 0.5 * (g->xa[face_id*2] + g->xa[face_id*2+1]);
         g->xa0 = g->_xa0;
@@ -7467,8 +7467,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
 
       /* Compute multigrid-specific terms */
 
-      BFT_MALLOC(g->xa0ij, n_faces*3, cs_real_t);
-      BFT_MALLOC(g->xa0_diff, n_faces, cs_real_t);
+      CS_MALLOC(g->xa0ij, n_faces*3, cs_real_t);
+      CS_MALLOC(g->xa0_diff, n_faces, cs_real_t);
 
       /* Finest grid: we need to separate convective and diffusive coefficients.
          By construction, extra-diagonal coefficients are expected to be
@@ -7599,15 +7599,15 @@ cs_grid_destroy(cs_grid_t **grid)
     cs_grid_t *g = *grid;
     cs_grid_free_quantities(g);
 
-    BFT_FREE(g->_face_cell);
+    CS_FREE(g->_face_cell);
 
     CS_FREE_HD(g->coarse_row);
 
     if (g->_halo != nullptr)
       cs_halo_destroy(&(g->_halo));
 
-    BFT_FREE(g->_da);
-    BFT_FREE(g->_xa);
+    CS_FREE(g->_da);
+    CS_FREE(g->_xa);
 
     cs_matrix_destroy(&(g->_matrix));
     cs_matrix_structure_destroy(&(g->matrix_struct));
@@ -7616,10 +7616,10 @@ cs_grid_destroy(cs_grid_t **grid)
     CS_FREE(g->cell_face_sgn);
 
 #if defined(HAVE_MPI)
-    BFT_FREE(g->merge_cell_idx);
+    CS_FREE(g->merge_cell_idx);
 #endif
 
-    BFT_FREE(*grid);
+    CS_FREE(*grid);
   }
 }
 
@@ -7639,28 +7639,28 @@ cs_grid_free_quantities(cs_grid_t  *g)
   assert(g != nullptr);
 
   if (cs_matrix_get_type(g->matrix) != CS_MATRIX_NATIVE) {
-    BFT_FREE(g->_face_cell);
+    CS_FREE(g->_face_cell);
     g->face_cell = nullptr;
-    BFT_FREE(g->_xa);
+    CS_FREE(g->_xa);
     g->xa = nullptr;
     if (cs_matrix_get_type(g->matrix) == CS_MATRIX_CSR) {
-      BFT_FREE(g->_da);
+      CS_FREE(g->_da);
       g->da = nullptr;
     }
   }
 
-  BFT_FREE(g->coarse_face);
+  CS_FREE(g->coarse_face);
 
-  BFT_FREE(g->_cell_cen);
-  BFT_FREE(g->_cell_vol);
-  BFT_FREE(g->_face_normal);
+  CS_FREE(g->_cell_cen);
+  CS_FREE(g->_cell_vol);
+  CS_FREE(g->_face_normal);
 
-  BFT_FREE(g->xa_conv);
-  BFT_FREE(g->xa_diff);
-  BFT_FREE(g->_xa0);
-  BFT_FREE(g->xa0_diff);
+  CS_FREE(g->xa_conv);
+  CS_FREE(g->xa_diff);
+  CS_FREE(g->_xa0);
+  CS_FREE(g->xa0_diff);
 
-  BFT_FREE(g->xa0ij);
+  CS_FREE(g->xa0ij);
 }
 
 /*----------------------------------------------------------------------------
@@ -8087,37 +8087,37 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     /* Allocate permanent arrays in coarse grid */
 
-    BFT_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
+    CS_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
     c->da = c->_da;
 
-    BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
+    CS_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
     c->xa = c->_xa;
 
-    BFT_MALLOC(c->_cell_cen, c->n_cols_ext*3, cs_real_t);
+    CS_MALLOC(c->_cell_cen, c->n_cols_ext*3, cs_real_t);
     c->cell_cen = c->_cell_cen;
 
-    BFT_MALLOC(c->_cell_vol, c->n_cols_ext, cs_real_t);
+    CS_MALLOC(c->_cell_vol, c->n_cols_ext, cs_real_t);
     c->cell_vol = c->_cell_vol;
 
-    BFT_MALLOC(c->_face_normal, c->n_faces*3, cs_real_t);
+    CS_MALLOC(c->_face_normal, c->n_faces*3, cs_real_t);
     c->face_normal = c->_face_normal;
 
     if (conv_diff) {
-      BFT_MALLOC(c->xa_conv, c->n_faces*2, cs_real_t);
-      BFT_MALLOC(c->xa_diff, c->n_faces, cs_real_t);
+      CS_MALLOC(c->xa_conv, c->n_faces*2, cs_real_t);
+      CS_MALLOC(c->xa_diff, c->n_faces, cs_real_t);
     }
 
     /* We could have xa0 point to xa if symmetric, but this would require
        caution in CRSTGR to avoid overwriting. */
 
-    BFT_MALLOC(c->_xa0, c->n_faces*isym, cs_real_t);
+    CS_MALLOC(c->_xa0, c->n_faces*isym, cs_real_t);
     c->xa0 = c->_xa0;
 
     if (conv_diff) {
-      BFT_MALLOC(c->xa0_diff, c->n_faces, cs_real_t);
+      CS_MALLOC(c->xa0_diff, c->n_faces, cs_real_t);
     }
 
-    BFT_MALLOC(c->xa0ij, c->n_faces*3, cs_real_t);
+    CS_MALLOC(c->xa0ij, c->n_faces*3, cs_real_t);
 
     /* Matrix-related data */
 
@@ -8240,8 +8240,8 @@ cs_grid_coarsen(const cs_grid_t      *f,
     /* Project coarsening */
 
     if (c->use_faces) {
-      BFT_FREE(cc->coarse_face);
-      BFT_FREE(cc->_face_cell);
+      CS_FREE(cc->coarse_face);
+      CS_FREE(cc->_face_cell);
       cc->face_cell = nullptr;
       if (msr_gather == false)
         _coarsen_face_cell(f, cc);
@@ -8391,10 +8391,10 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 
   else if (f->use_faces) {
 
-    BFT_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
+    CS_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
     c->da = c->_da;
 
-    BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
+    CS_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
     c->xa = c->_xa;
 
     _compute_coarse_quantities_native(f, c, verbosity);
@@ -8466,7 +8466,7 @@ cs_grid_project_row_num(const cs_grid_t  *g,
       n_max_rows = _g->n_rows;
   }
 
-  BFT_MALLOC(tmp_num_1, n_max_rows, cs_lnum_t);
+  CS_MALLOC(tmp_num_1, n_max_rows, cs_lnum_t);
 
   /* Compute local base starting row number in parallel mode */
 
@@ -8487,7 +8487,7 @@ cs_grid_project_row_num(const cs_grid_t  *g,
 
     /* Allocate temporary arrays */
 
-    BFT_MALLOC(tmp_num_2, n_max_rows, cs_lnum_t);
+    CS_MALLOC(tmp_num_2, n_max_rows, cs_lnum_t);
     for (cs_lnum_t i = 0; i < n_max_rows; i++)
       tmp_num_2[i] = -1;        /* singleton */
 
@@ -8515,12 +8515,12 @@ cs_grid_project_row_num(const cs_grid_t  *g,
 
     /* Free temporary arrays */
 
-    BFT_FREE(tmp_num_2);
+    CS_FREE(tmp_num_2);
   }
 
   memcpy(c_row_num, tmp_num_1, n_base_rows*sizeof(int));
 
-  BFT_FREE(tmp_num_1);
+  CS_FREE(tmp_num_1);
 }
 
 /*----------------------------------------------------------------------------
@@ -8551,7 +8551,7 @@ cs_grid_project_row_rank(const cs_grid_t  *g,
       n_max_rows = _g->n_rows;
   }
 
-  BFT_MALLOC(tmp_rank_1, n_max_rows, int);
+  CS_MALLOC(tmp_rank_1, n_max_rows, int);
 
   for (ii = 0; ii < g->n_rows; ii++)
     tmp_rank_1[ii] = cs_glob_rank_id;
@@ -8562,7 +8562,7 @@ cs_grid_project_row_rank(const cs_grid_t  *g,
 
     /* Allocate temporary arrays */
 
-    BFT_MALLOC(tmp_rank_2, n_max_rows, int);
+    CS_MALLOC(tmp_rank_2, n_max_rows, int);
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
@@ -8583,12 +8583,12 @@ cs_grid_project_row_rank(const cs_grid_t  *g,
 
     /* Free temporary arrays */
 
-    BFT_FREE(tmp_rank_2);
+    CS_FREE(tmp_rank_2);
   }
 
   memcpy(f_row_rank, tmp_rank_1, n_base_rows*sizeof(int));
 
-  BFT_FREE(tmp_rank_1);
+  CS_FREE(tmp_rank_1);
 }
 
 /*----------------------------------------------------------------------------
@@ -8664,12 +8664,12 @@ cs_grid_project_var(const cs_grid_t  *g,
 
     /* Free temporary arrays */
 
-    BFT_FREE(tmp_var_2);
+    CS_FREE(tmp_var_2);
   }
 
   memcpy(f_var, tmp_var_1, n_base_rows*db_size*sizeof(cs_real_t));
 
-  BFT_FREE(tmp_var_1);
+  CS_FREE(tmp_var_1);
 }
 
 /*----------------------------------------------------------------------------
@@ -8696,7 +8696,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
   if (g->level == 0)
     dd = diag_dom;
   else
-    BFT_MALLOC(dd, g->n_cols_ext*db_stride, cs_real_t);
+    CS_MALLOC(dd, g->n_cols_ext*db_stride, cs_real_t);
 
   /* Compute coarse diagonal dominance */
 
@@ -8706,7 +8706,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
 
   if (dd != diag_dom) {
     cs_grid_project_var(g, n_base_rows, dd, diag_dom);
-    BFT_FREE(dd);
+    CS_FREE(dd);
   }
 }
 
@@ -8727,8 +8727,8 @@ cs_grid_finalize(void)
       }
     }
 
-    BFT_FREE(_grid_tune_variant);
-    BFT_FREE(_grid_tune_max_fill_level);
+    CS_FREE(_grid_tune_variant);
+    CS_FREE(_grid_tune_max_fill_level);
 
     _grid_tune_max_level = 0;
   }
@@ -8844,12 +8844,12 @@ cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
   if (_grid_tune_max_level < max_level) {
 
     if (_grid_tune_max_level == 0) {
-      BFT_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
+      CS_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
       for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++)
         _grid_tune_max_fill_level[i] = 0;
     }
 
-    BFT_REALLOC(_grid_tune_variant,
+    CS_REALLOC(_grid_tune_variant,
                 CS_MATRIX_N_FILL_TYPES*max_level, cs_matrix_variant_t *);
 
     for (int i = _grid_tune_max_level; i < max_level; i++) {

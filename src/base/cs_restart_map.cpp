@@ -45,7 +45,6 @@
 
 #include "ple_locator.h"
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 #include "base/cs_array.h"
@@ -53,6 +52,7 @@
 #include "base/cs_base.h"
 #include "base/cs_coupling.h"
 #include "base/cs_io.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_location.h"
@@ -178,7 +178,7 @@ _interpolate_p0(ple_locator_t          *locator,
   /* Prepare and send data */
 
   unsigned char  *send_var;
-  BFT_MALLOC(send_var, n_dist*loc_size, unsigned char);
+  CS_MALLOC(send_var, n_dist*loc_size, unsigned char);
 
   for (size_t i = 0; i < n_dist; i++) {
     const unsigned char  *src = _val_src + dist_loc[i]*loc_size;
@@ -195,7 +195,7 @@ _interpolate_p0(ple_locator_t          *locator,
                                      n_location_vals,
                                      0);
 
-  BFT_FREE(send_var);
+  CS_FREE(send_var);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -229,7 +229,7 @@ _interpolate_vtx(ple_locator_t          *locator,
   /* Prepare and send data */
 
   unsigned char  *send_var;
-  BFT_MALLOC(send_var, n_dist*loc_size, unsigned char);
+  CS_MALLOC(send_var, n_dist*loc_size, unsigned char);
 
   cs_assert(_nodal_src != nullptr);
 
@@ -250,7 +250,7 @@ _interpolate_vtx(ple_locator_t          *locator,
                                      n_location_vals,
                                      0);
 
-  BFT_FREE(send_var);
+  CS_FREE(send_var);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -313,7 +313,7 @@ _read_section_interpolate(cs_restart_t           *restart,
     size_t loc_size = type_size*n_location_vals;
 
     unsigned char *read_buffer;
-    BFT_MALLOC(read_buffer, n_src_elts*loc_size, unsigned char);
+    CS_MALLOC(read_buffer, n_src_elts*loc_size, unsigned char);
 
     retval = _read_section_f(restart,
                              context,
@@ -351,7 +351,7 @@ _read_section_interpolate(cs_restart_t           *restart,
 
     }
 
-    BFT_FREE(read_buffer);
+    CS_FREE(read_buffer);
   }
 
   return retval;
@@ -373,7 +373,7 @@ _read_mesh_deformation(cs_mesh_t  *m)
     return;
 
   cs_real_3_t *v_disp;
-  BFT_MALLOC(v_disp, m->n_vertices, cs_real_3_t);
+  CS_MALLOC(v_disp, m->n_vertices, cs_real_3_t);
 
   int retcode = cs_restart_read_section(r,
                                         "mesh_displacement::vals::0",
@@ -391,7 +391,7 @@ _read_mesh_deformation(cs_mesh_t  *m)
 
   }
 
-  BFT_FREE(v_disp);
+  CS_FREE(v_disp);
 
   cs_restart_destroy(&r);
 }
@@ -414,7 +414,7 @@ void
 cs_restart_map_set_mesh_input(const char  *mesh_path)
 {
   size_t n = strlen(mesh_path);
-  BFT_REALLOC(_mesh_input_path, n + 1, char);
+  CS_REALLOC(_mesh_input_path, n + 1, char);
 
   strncpy(_mesh_input_path, mesh_path, n + 1);
   _mesh_input_path[n] = '\0';
@@ -654,7 +654,7 @@ cs_restart_map_build(void)
 void
 cs_restart_map_free(void)
 {
-  BFT_FREE(_mesh_input_path);
+  CS_FREE(_mesh_input_path);
   _tolerance[0] = 0;
   _tolerance[1] = 0.1;
 

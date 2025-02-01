@@ -66,13 +66,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_timer.h"
 
@@ -268,8 +268,8 @@ _compute_diag_sizes_assembler(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
   HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, n_rows, HYPRE_Int);
+  CS_MALLOC(_diag_sizes, n_rows, HYPRE_Int);
+  CS_MALLOC(_offdiag_sizes, n_rows, HYPRE_Int);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -325,8 +325,8 @@ _compute_diag_sizes_assembler_db(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
   HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows*db_size, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, n_rows*db_size, HYPRE_Int);
+  CS_MALLOC(_diag_sizes, n_rows*db_size, HYPRE_Int);
+  CS_MALLOC(_offdiag_sizes, n_rows*db_size, HYPRE_Int);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -387,8 +387,8 @@ _compute_diag_sizes_assembler_b(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
   HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows*b_size, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, n_rows*b_size, HYPRE_Int);
+  CS_MALLOC(_diag_sizes, n_rows*b_size, HYPRE_Int);
+  CS_MALLOC(_offdiag_sizes, n_rows*b_size, HYPRE_Int);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -453,8 +453,8 @@ _compute_diag_sizes_native(cs_matrix_t *matrix,
   cs_lnum_t _n_rows = n_rows*b_size;
 
   HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, _n_rows, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, _n_rows, HYPRE_Int);
+  CS_MALLOC(_diag_sizes, _n_rows, HYPRE_Int);
+  CS_MALLOC(_offdiag_sizes, _n_rows, HYPRE_Int);
 
   /* Case with b_size > e_size handled later */
   int n_diag = (have_diag && b_size == e_size) ? e_size : 0;
@@ -592,7 +592,7 @@ _setup_coeffs(cs_matrix_t  *matrix,
 
   if (matrix->coeffs == nullptr) {
     cs_matrix_coeffs_hypre_t  *coeffs;
-    BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_hypre_t);
+    CS_MALLOC(coeffs, 1, cs_matrix_coeffs_hypre_t);
     memset(coeffs, 0, sizeof(cs_matrix_coeffs_hypre_t));
     coeffs->matrix_state = 0;
 
@@ -716,8 +716,8 @@ _assembler_values_init(void        *matrix_p,
     HYPRE_IJMatrixSetDiagOffdSizes(hm, diag_sizes, offdiag_sizes);
     HYPRE_IJMatrixSetMaxOffProcElmts(hm, 0);
 
-    BFT_FREE(diag_sizes);
-    BFT_FREE(offdiag_sizes);
+    CS_FREE(diag_sizes);
+    CS_FREE(offdiag_sizes);
 
     HYPRE_IJMatrixSetOMPFlag(hm, 0);
 
@@ -1626,8 +1626,8 @@ _set_coeffs_ij(cs_matrix_t *matrix,
     HYPRE_IJMatrixSetDiagOffdSizes(hm, diag_sizes, offdiag_sizes);
     HYPRE_IJMatrixSetMaxOffProcElmts(hm, 0);
 
-    BFT_FREE(diag_sizes);
-    BFT_FREE(offdiag_sizes);
+    CS_FREE(diag_sizes);
+    CS_FREE(offdiag_sizes);
 
     HYPRE_IJMatrixSetOMPFlag(hm, 0);
 
@@ -1837,7 +1837,7 @@ _destroy_coeffs_ij(cs_matrix_t  *matrix)
 {
   if (matrix->coeffs != nullptr) {
     _release_coeffs_ij(matrix);
-    BFT_FREE(matrix->coeffs);
+    CS_FREE(matrix->coeffs);
   }
 }
 
@@ -1865,14 +1865,14 @@ _copy_diagonal_ij(const cs_matrix_t  *matrix,
   HYPRE_Int *n_rcols;
   HYPRE_Real *aij;
 
-  BFT_MALLOC(n_rcols, n_rows, HYPRE_Int);
-  BFT_MALLOC(rows, n_rows, HYPRE_BigInt);
-  BFT_MALLOC(cols, n_rows, HYPRE_BigInt);
+  CS_MALLOC(n_rcols, n_rows, HYPRE_Int);
+  CS_MALLOC(rows, n_rows, HYPRE_BigInt);
+  CS_MALLOC(cols, n_rows, HYPRE_BigInt);
 
   if (sizeof(HYPRE_Real) == sizeof(cs_real_t))
     aij = da;
   else
-    BFT_MALLOC(aij, n_rows, HYPRE_Real);
+    CS_MALLOC(aij, n_rows, HYPRE_Real);
 
 # pragma omp parallel for  if(n_rows > CS_THR_MIN)
   for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
@@ -1892,12 +1892,12 @@ _copy_diagonal_ij(const cs_matrix_t  *matrix,
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
       da[ii] = aij[ii];;
     }
-    BFT_FREE(aij);
+    CS_FREE(aij);
   }
 
-  BFT_FREE(cols);
-  BFT_FREE(rows);
-  BFT_FREE(n_rcols);
+  CS_FREE(cols);
+  CS_FREE(rows);
+  CS_FREE(n_rcols);
 }
 
 /*============================================================================

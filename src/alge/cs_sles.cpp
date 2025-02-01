@@ -45,7 +45,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -56,6 +55,7 @@
 #include "base/cs_log.h"
 #include "base/cs_halo.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "alge/cs_matrix.h"
@@ -393,12 +393,12 @@ _sles_create(int          f_id,
 {
   cs_sles_t *sles;
 
-  BFT_MALLOC(sles, 1, cs_sles_t);
+  CS_MALLOC(sles, 1, cs_sles_t);
 
   sles->f_id = f_id;
 
   if (f_id < 0 && name != nullptr) {
-    BFT_MALLOC(sles->_name, strlen(name) + 1, char);
+    CS_MALLOC(sles->_name, strlen(name) + 1, char);
     strcpy(sles->_name, name);
   }
   else
@@ -465,7 +465,7 @@ _find_or_add_system_by_f_id(int  f_id)
       _cs_sles_n_max_systems[0] = 1;
     while (_cs_sles_n_max_systems[0] <= f_id)
       _cs_sles_n_max_systems[0] *= 2;
-    BFT_REALLOC(_cs_sles_systems[0],
+    CS_REALLOC(_cs_sles_systems[0],
                 _cs_sles_n_max_systems[0],
                 cs_sles_t *);
 
@@ -530,9 +530,9 @@ _find_or_add_system_by_name(const char  *name)
     if (_cs_sles_n_max_systems[1] == 0)
       _cs_sles_n_max_systems[1] = 1;
     _cs_sles_n_max_systems[1] *= 2;
-    BFT_REALLOC(_cs_sles_systems[1],
-                _cs_sles_n_max_systems[1],
-                cs_sles_t*);
+    CS_REALLOC(_cs_sles_systems[1],
+               _cs_sles_n_max_systems[1],
+               cs_sles_t*);
 
     for (int j = i; j < _cs_sles_n_max_systems[1]; j++)
       _cs_sles_systems[1][j] = nullptr;
@@ -573,9 +573,9 @@ _save_system_info(cs_sles_t  *s)
     if (_cs_sles_n_max_systems[2] == 0)
       _cs_sles_n_max_systems[2] = 1;
     _cs_sles_n_max_systems[2] *=2;
-    BFT_REALLOC(_cs_sles_systems[2],
-                _cs_sles_n_max_systems[2],
-                cs_sles_t *);
+    CS_REALLOC(_cs_sles_systems[2],
+               _cs_sles_n_max_systems[2],
+               cs_sles_t *);
 
     for (int j = i; j < _cs_sles_n_max_systems[2]; j++)
       _cs_sles_systems[2][j] = nullptr;
@@ -590,7 +590,7 @@ _save_system_info(cs_sles_t  *s)
   /* Save other context and options */
 
   cs_sles_t *s_old;
-  BFT_MALLOC(s_old, 1, cs_sles_t);
+  CS_MALLOC(s_old, 1, cs_sles_t);
   memcpy(s_old, s, sizeof(cs_sles_t));
 
   s_old->_name = nullptr; /* still points to new name */
@@ -853,7 +853,7 @@ _ensure_alloc_post(cs_sles_t          *sles,
     sles->post_info->n_rows = cs_matrix_get_n_rows(a);
     sles->post_info->block_size = diag_block_size;
 
-    BFT_REALLOC(sles->post_info->row_residual, n_vals, cs_real_t);
+    CS_REALLOC(sles->post_info->row_residual, n_vals, cs_real_t);
   }
 }
 
@@ -922,7 +922,7 @@ _post_function(void                  *sles_p,
                           sp->block_size,
                           sp->row_residual);
 
-  BFT_FREE(sp->row_residual);
+  CS_FREE(sp->row_residual);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1002,16 +1002,16 @@ cs_sles_finalize(void)
         if (sles->destroy_func != nullptr)
           sles->destroy_func(&(sles->context));
         if (sles->post_info != nullptr) {
-          BFT_FREE(sles->post_info->row_residual);
-          BFT_FREE(sles->post_info);
+          CS_FREE(sles->post_info->row_residual);
+          CS_FREE(sles->post_info);
         }
-        BFT_FREE(sles->_name);
-        BFT_FREE(_cs_sles_systems[i][j]);
+        CS_FREE(sles->_name);
+        CS_FREE(_cs_sles_systems[i][j]);
       }
 
     }
 
-    BFT_FREE(_cs_sles_systems[i]);
+    CS_FREE(_cs_sles_systems[i]);
     _cs_sles_n_max_systems[i] = 0;
     _cs_sles_n_systems[i] = 0;
 
@@ -1324,7 +1324,7 @@ cs_sles_push(int          f_id,
          "  without calling cs_sles_pop between those calls."), f_id);
   else {
     assert(retval->_name == nullptr);
-    BFT_MALLOC(retval->_name, strlen(name) + 1, char);
+    CS_MALLOC(retval->_name, strlen(name) + 1, char);
     strcpy(retval->_name, name);
     retval->name = retval->_name;
   }
@@ -1352,7 +1352,7 @@ cs_sles_pop(int  f_id)
   cs_sles_t *retval = _find_or_add_system_by_f_id(f_id);
 
   retval->name = nullptr;
-  BFT_FREE(retval->_name);
+  CS_FREE(retval->_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1494,7 +1494,7 @@ cs_sles_set_post_output(cs_sles_t  *sles,
   if (sles->post_info == nullptr)
     cs_post_add_time_dep_output(_post_function, (void *)sles);
 
-  BFT_REALLOC(sles->post_info, 1, cs_sles_post_t);
+  CS_REALLOC(sles->post_info, 1, cs_sles_post_t);
   sles->post_info->writer_id = writer_id;
   sles->post_info->n_rows = 0;
   sles->post_info->block_size = 0;
@@ -2187,7 +2187,7 @@ cs_sles_post_output_var(const char      *name,
       _diag_block_size[3] = diag_block_size*diag_block_size;
     }
 
-    BFT_MALLOC(val_type, _diag_block_size[1]*n_rows, cs_real_t);
+    CS_MALLOC(val_type, _diag_block_size[1]*n_rows, cs_real_t);
 
     n_non_norm = _value_type(_diag_block_size[1]*n_rows, var, val_type);
 
@@ -2252,7 +2252,7 @@ cs_sles_post_output_var(const char      *name,
 
     }
 
-    BFT_FREE(val_type);
+    CS_FREE(val_type);
   }
 }
 

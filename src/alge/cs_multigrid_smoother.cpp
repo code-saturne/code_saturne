@@ -45,6 +45,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -164,7 +166,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -275,7 +277,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
 
@@ -336,7 +338,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -454,7 +456,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
 
@@ -512,7 +514,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -618,7 +620,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
 
@@ -681,7 +683,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -784,7 +786,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
 
@@ -847,7 +849,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -961,7 +963,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
   } /* Loop on iterations */
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
 
@@ -1020,7 +1022,7 @@ _jacobi(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -1064,7 +1066,7 @@ _jacobi(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
 
@@ -1128,7 +1130,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -1184,7 +1186,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
 
@@ -1246,7 +1248,7 @@ _block_jacobi(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -1303,7 +1305,7 @@ _block_jacobi(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
 
@@ -2103,7 +2105,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
 {
   cs_sles_it_t *c;
 
-  BFT_MALLOC(c, 1, cs_sles_it_t);
+  CS_MALLOC(c, 1, cs_sles_it_t);
 
   c->solve = nullptr;
   c->_pc = nullptr;

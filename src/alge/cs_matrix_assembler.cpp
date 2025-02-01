@@ -42,11 +42,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_mem_usage.h"
 
 #include "base/cs_defs.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_rank_neighbors.h"
 #include "base/cs_sort.h"
 #include "base/cs_timer.h"
@@ -148,7 +148,7 @@ _display_rank_histogram(cs_log_t  log_id,
   const int n_counts = cs_glob_n_ranks;
 
   int *r_count;
-  BFT_MALLOC(r_count, cs_glob_n_ranks, int);
+  CS_MALLOC(r_count, cs_glob_n_ranks, int);
 
   r_count[0] = count;
 
@@ -216,7 +216,7 @@ _display_rank_histogram(cs_log_t  log_id,
                   1, count_min, count_max, n_counts);
   }
 
-  BFT_FREE(r_count);
+  CS_FREE(r_count);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -259,7 +259,7 @@ _sort_and_compact_local(cs_matrix_assembler_t  *ma)
 
     cs_lnum_t *tmpr_idx = nullptr;
 
-    BFT_MALLOC(tmpr_idx, n_rows+1, cs_lnum_t);
+    CS_MALLOC(tmpr_idx, n_rows+1, cs_lnum_t);
     memcpy(tmpr_idx, ma->_r_idx, (n_rows+1)*sizeof(cs_lnum_t));
 
     cs_lnum_t  k = 0;
@@ -280,8 +280,8 @@ _sort_and_compact_local(cs_matrix_assembler_t  *ma)
 
     assert(ma->_r_idx[n_rows] < tmpr_idx[n_rows]);
 
-    BFT_FREE(tmpr_idx);
-    BFT_REALLOC(ma->_c_id, (ma->_r_idx[n_rows]), cs_lnum_t);
+    CS_FREE(tmpr_idx);
+    CS_REALLOC(ma->_c_id, (ma->_r_idx[n_rows]), cs_lnum_t);
     ma->c_id = ma->_c_id;
 
   }
@@ -367,7 +367,7 @@ _sort_and_compact_distant(cs_matrix_assembler_t  *ma)
 
     cs_lnum_t *tmpr_idx = nullptr;
 
-    BFT_MALLOC(tmpr_idx, n_rows+1, cs_lnum_t);
+    CS_MALLOC(tmpr_idx, n_rows+1, cs_lnum_t);
     memcpy(tmpr_idx, ma->d_r_idx, (n_rows+1)*sizeof(cs_lnum_t));
 
     cs_lnum_t  k = 0;
@@ -387,8 +387,8 @@ _sort_and_compact_distant(cs_matrix_assembler_t  *ma)
 
     assert(ma->d_r_idx[n_rows] < tmpr_idx[n_rows]);
 
-    BFT_FREE(tmpr_idx);
-    BFT_REALLOC(ma->d_g_c_id, (ma->d_r_idx[n_rows]), cs_gnum_t);
+    CS_FREE(tmpr_idx);
+    CS_REALLOC(ma->d_g_c_id, (ma->d_r_idx[n_rows]), cs_gnum_t);
 
   }
 }
@@ -415,7 +415,7 @@ _complete_local(cs_matrix_assembler_t  *ma,
   cs_lnum_t n_rows = ma->n_rows;
 
   cs_lnum_t *l_c_count, *l_r_idx;
-  BFT_MALLOC(l_c_count, n_rows, cs_lnum_t);
+  CS_MALLOC(l_c_count, n_rows, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_rows; i++)
     l_c_count[i] = 0;
@@ -423,7 +423,7 @@ _complete_local(cs_matrix_assembler_t  *ma,
   for (cs_lnum_t i = 0; i < n; i++)
     l_c_count[l_ij[i][0]] += 1;
 
-  BFT_MALLOC(l_r_idx, n_rows+1, cs_lnum_t);
+  CS_MALLOC(l_r_idx, n_rows+1, cs_lnum_t);
 
   l_r_idx[0] = 0;
   for (cs_lnum_t i = 0; i < n_rows; i++)
@@ -432,7 +432,7 @@ _complete_local(cs_matrix_assembler_t  *ma,
   /* Expand matrix, starting copies from end to avoid overwrites
      (first line untouched) */
 
-  BFT_REALLOC(ma->_c_id, ma->r_idx[n_rows] + l_r_idx[n_rows], cs_lnum_t);
+  CS_REALLOC(ma->_c_id, ma->r_idx[n_rows] + l_r_idx[n_rows], cs_lnum_t);
   ma->c_id = ma->_c_id;
 
   for (cs_lnum_t i = n_rows-1; i > 0; i--) {
@@ -447,7 +447,7 @@ _complete_local(cs_matrix_assembler_t  *ma,
   l_c_count[0] = ma->_r_idx[1];
   ma->_r_idx[1] += l_r_idx[1];
 
-  BFT_FREE(l_r_idx);
+  CS_FREE(l_r_idx);
 
   /* Now add terms */
 
@@ -457,7 +457,7 @@ _complete_local(cs_matrix_assembler_t  *ma,
     ma->_c_id[ma->_r_idx[r_id] + l_c_count[r_id]] = c_id;
     l_c_count[r_id] += 1;
   }
-  BFT_FREE(l_c_count);
+  CS_FREE(l_c_count);
 
   /* Sort and remove duplicates */
 
@@ -486,8 +486,8 @@ _complete_distant(cs_matrix_assembler_t  *ma,
   cs_lnum_t n_rows = ma->n_rows;
 
   cs_lnum_t *d_c_count, *d_r_idx;
-  BFT_MALLOC(d_c_count, n_rows, cs_lnum_t);
-  BFT_MALLOC(d_r_idx, n_rows+1, cs_lnum_t);
+  CS_MALLOC(d_c_count, n_rows, cs_lnum_t);
+  CS_MALLOC(d_r_idx, n_rows+1, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_rows; i++)
     d_c_count[i] = 0;
@@ -512,7 +512,7 @@ _complete_distant(cs_matrix_assembler_t  *ma,
   /* Expand matrix, starting copies from end to avoid overwrites
      (first line untouched) */
 
-  BFT_REALLOC(ma->d_g_c_id, ma->d_r_idx[n_rows] + d_r_idx[n_rows], cs_gnum_t);
+  CS_REALLOC(ma->d_g_c_id, ma->d_r_idx[n_rows] + d_r_idx[n_rows], cs_gnum_t);
 
   for (cs_lnum_t i = n_rows-1; i > 0; i--) {
     cs_lnum_t n_cols = ma->d_r_idx[i+1] - ma->d_r_idx[i];
@@ -528,7 +528,7 @@ _complete_distant(cs_matrix_assembler_t  *ma,
     ma->d_r_idx[1] += d_r_idx[1];
   }
 
-  BFT_FREE(d_r_idx);
+  CS_FREE(d_r_idx);
 
   /* Now add terms */
 
@@ -541,7 +541,7 @@ _complete_distant(cs_matrix_assembler_t  *ma,
       d_c_count[l_r_id] += 1;
     }
   }
-  BFT_FREE(d_c_count);
+  CS_FREE(d_c_count);
 
   /* Sort and remove duplicates */
 
@@ -582,12 +582,12 @@ _append_local_and_distant(cs_matrix_assembler_t  *ma,
   cs_lnum_t n_rows = ma->n_rows;
 
   cs_lnum_t *c_count;
-  BFT_MALLOC(c_count, n_rows, cs_lnum_t);
+  CS_MALLOC(c_count, n_rows, cs_lnum_t);
 
   /* Expand matrix, starting copies from end to avoid overwrites
      (first line untouched) */
 
-  BFT_REALLOC(ma->_c_id, ma->_r_idx[n_rows] + ma->d_r_idx[n_rows], cs_lnum_t);
+  CS_REALLOC(ma->_c_id, ma->_r_idx[n_rows] + ma->d_r_idx[n_rows], cs_lnum_t);
   ma->c_id = ma->_c_id;
 
   for (cs_lnum_t i = n_rows-1; i > 0; i--) {
@@ -617,7 +617,7 @@ _append_local_and_distant(cs_matrix_assembler_t  *ma,
     }
   }
 
-  BFT_FREE(c_count);
+  CS_FREE(c_count);
 }
 
 /*----------------------------------------------------------------------------
@@ -696,7 +696,7 @@ _assumed_rank_neighbors(cs_lnum_t        n,
 
   cs_lnum_t l_range_size = l_range[1] - l_range[0];
 
-  BFT_MALLOC(a_rank, l_range_size + n, int);
+  CS_MALLOC(a_rank, l_range_size + n, int);
 
   cs_lnum_t n_a_neighbors = 0, count = 0;
 
@@ -732,7 +732,7 @@ _assumed_rank_neighbors(cs_lnum_t        n,
 
   cs_rank_neighbors_t *arn = cs_rank_neighbors_create(count, a_rank);
 
-  BFT_FREE(a_rank);
+  CS_FREE(a_rank);
 
   cs_rank_neighbors_symmetrize(arn, comm);
 
@@ -763,9 +763,9 @@ _rank_ranges_exchange(cs_rank_neighbors_t  *arn,
   MPI_Status *status = nullptr;
   cs_gnum_t *d_ranges = nullptr;
 
-  BFT_MALLOC(d_ranges, arn->size*2, cs_gnum_t);
-  BFT_MALLOC(request, arn->size*2, MPI_Request);
-  BFT_MALLOC(status, arn->size*2, MPI_Status);
+  CS_MALLOC(d_ranges, arn->size*2, cs_gnum_t);
+  CS_MALLOC(request, arn->size*2, MPI_Request);
+  CS_MALLOC(status, arn->size*2, MPI_Status);
 
   /* Prepare for determination of assumed rank */
 
@@ -796,8 +796,8 @@ _rank_ranges_exchange(cs_rank_neighbors_t  *arn,
 
   MPI_Waitall(request_count, request, status);
 
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(request);
+  CS_FREE(status);
 
   return d_ranges;
 }
@@ -833,7 +833,7 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
                       MPI_Comm              comm)
 {
   int *d_rank;
-  BFT_MALLOC(d_rank, n, int);
+  CS_MALLOC(d_rank, n, int);
 
   MPI_Request *request = nullptr;
   MPI_Status *status = nullptr;
@@ -851,14 +851,14 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
   MPI_Comm_size(comm, &n_ranks);
   MPI_Comm_rank(comm, &l_rank);
 
-  BFT_MALLOC(request, arn->size*2, MPI_Request);
-  BFT_MALLOC(status, arn->size*2, MPI_Status);
+  CS_MALLOC(request, arn->size*2, MPI_Request);
+  CS_MALLOC(status, arn->size*2, MPI_Status);
 
   /* Determine ranks with which we will first exchange;
      we filter and immediately handle elements whose assumed
      rank matches the current rank */
 
-  BFT_MALLOC(a_rank, n, int);
+  CS_MALLOC(a_rank, n, int);
 
   cs_lnum_t n_range_match = 0;
   cs_lnum_t n_range_dist = 0;
@@ -888,17 +888,17 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
      local values have index -1 */
 
   cs_lnum_t *send_index;
-  BFT_MALLOC(send_index, arn->size+1, cs_lnum_t);
+  CS_MALLOC(send_index, arn->size+1, cs_lnum_t);
 
   send_index[0] = 0;
   cs_rank_neighbors_count(arn, n_range_dist, a_rank, send_index + 1);
 
-  BFT_FREE(a_rank);
+  CS_FREE(a_rank);
 
   /* Exchange counts */
 
   cs_lnum_t *recv_index;
-  BFT_MALLOC(recv_index, arn->size + 1, cs_lnum_t);
+  CS_MALLOC(recv_index, arn->size + 1, cs_lnum_t);
 
   recv_index[0] = 0;
 
@@ -939,7 +939,7 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
   const cs_lnum_t recv_size = recv_index[arn->size];
 
   cs_gnum_t *recv_g_id;
-  BFT_MALLOC(recv_g_id, recv_size, cs_gnum_t);
+  CS_MALLOC(recv_g_id, recv_size, cs_gnum_t);
 
   request_count = 0;
 
@@ -972,7 +972,7 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
   /* Now for each global id, determine its rank */
 
   int *d_rank_ar;
-  BFT_MALLOC(d_rank_ar, recv_size, int);
+  CS_MALLOC(d_rank_ar, recv_size, int);
 
   for (cs_lnum_t i = 0; i < recv_size; i++) {
     cs_gnum_t _g_id = recv_g_id[i];
@@ -986,7 +986,7 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
     }
   }
 
-  BFT_FREE(recv_g_id);
+  CS_FREE(recv_g_id);
 
   /* Send data back to original rank;
      remember part of the data is already known */
@@ -1030,13 +1030,13 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
      We are not sure the added complexity would be worth it,
      so at this stage, we just add this placeholder. */
 
-  BFT_FREE(d_rank_ar);
+  CS_FREE(d_rank_ar);
 
-  BFT_FREE(recv_index);
-  BFT_FREE(send_index);
+  CS_FREE(recv_index);
+  CS_FREE(send_index);
 
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(request);
+  CS_FREE(status);
 
   return d_rank;
 }
@@ -1091,7 +1091,7 @@ _rank_neighbors(cs_lnum_t          n_e_g_ids,
                                          e_g_id,
                                          comm);
 
-  BFT_FREE(d_ranges);
+  CS_FREE(d_ranges);
 
   /* Now rebuild rank neighbors */
 
@@ -1099,7 +1099,7 @@ _rank_neighbors(cs_lnum_t          n_e_g_ids,
 
   arn = cs_rank_neighbors_create(n_e_g_ids, e_rank_id);
 
-  BFT_FREE(e_rank_id);
+  CS_FREE(e_rank_id);
 
   cs_rank_neighbors_symmetrize(arn, comm);
 
@@ -1151,15 +1151,15 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
   if (ma->coeff_send_size > 0) {
 
-    BFT_MALLOC(e_g_id, n_e_g_ids, cs_gnum_t);
+    CS_MALLOC(e_g_id, n_e_g_ids, cs_gnum_t);
 
     n_e_g_ids = 0;
 
     cs_lnum_t row_count = 0;
 
-    BFT_MALLOC(ma->coeff_send_index, ma->coeff_send_n_rows+1, cs_lnum_t);
-    BFT_MALLOC(ma->coeff_send_row_g_id, ma->coeff_send_n_rows, cs_gnum_t);
-    BFT_MALLOC(ma->coeff_send_col_g_id, ma->coeff_send_size, cs_gnum_t);
+    CS_MALLOC(ma->coeff_send_index, ma->coeff_send_n_rows+1, cs_lnum_t);
+    CS_MALLOC(ma->coeff_send_row_g_id, ma->coeff_send_n_rows, cs_gnum_t);
+    CS_MALLOC(ma->coeff_send_col_g_id, ma->coeff_send_size, cs_gnum_t);
 
     g_r_id_prev = ma->l_range[0]; /* impossible value here */
 
@@ -1193,14 +1193,14 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
                                              &(ma->n_ranks_init[0]),
                                              ma->comm);
 
-  BFT_FREE(e_g_id);
+  CS_FREE(e_g_id);
 
   cs_gnum_t *d_ranges = _rank_ranges_exchange(arn, ma->l_range, ma->comm);
 
   /* Prepare counts */
 
   cs_lnum_t *counts;
-  BFT_MALLOC(counts, arn->size*2, cs_lnum_t);
+  CS_MALLOC(counts, arn->size*2, cs_lnum_t);
 
   for (int i = 0; i < arn->size*2; i++)
     counts[i] = 0;
@@ -1214,15 +1214,15 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
     counts[r_rank_id] += ma->coeff_send_index[i+1] - ma->coeff_send_index[i];
   }
 
-  BFT_FREE(d_ranges);
+  CS_FREE(d_ranges);
 
   /* Exchange counts */
 
   MPI_Request *request = nullptr;
   MPI_Status *status = nullptr;
 
-  BFT_MALLOC(request, arn->size*2, MPI_Request);
-  BFT_MALLOC(status, arn->size*2, MPI_Status);
+  CS_MALLOC(request, arn->size*2, MPI_Request);
+  CS_MALLOC(status, arn->size*2, MPI_Status);
 
   const int local_rank = cs_glob_rank_id;
 
@@ -1258,12 +1258,12 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
       ma->n_coeff_ranks += 1;
   }
 
-  BFT_MALLOC(ma->coeff_rank, ma->n_coeff_ranks, int);
+  CS_MALLOC(ma->coeff_rank, ma->n_coeff_ranks, int);
 
   if (ma->n_coeff_ranks > 0) {
 
-    BFT_MALLOC(ma->coeff_rank_send_index, ma->n_coeff_ranks+1, cs_lnum_t);
-    BFT_MALLOC(ma->coeff_rank_recv_index, ma->n_coeff_ranks+1, cs_lnum_t);
+    CS_MALLOC(ma->coeff_rank_send_index, ma->n_coeff_ranks+1, cs_lnum_t);
+    CS_MALLOC(ma->coeff_rank_recv_index, ma->n_coeff_ranks+1, cs_lnum_t);
 
     ma->coeff_rank_send_index[0] = 0;
     ma->coeff_rank_recv_index[0] = 0;
@@ -1283,7 +1283,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
   }
 
-  BFT_FREE(counts);
+  CS_FREE(counts);
 
   /* We don't need the ranks neighbors structure anymore
      (we'll use the saved and compacted info from now on) */
@@ -1297,7 +1297,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
     ma->coeff_recv_size = ma->coeff_rank_recv_index[ma->n_coeff_ranks];
 
     cs_gnum_t  *recv_data;
-    BFT_MALLOC(recv_data, ma->coeff_recv_size*2, cs_gnum_t);
+    CS_MALLOC(recv_data, ma->coeff_recv_size*2, cs_gnum_t);
 
     request_count = 0;
 
@@ -1342,14 +1342,14 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
        array. For indexing, we implicitly consider that each row is built of 2
        sub-rows, with the local columns first, and distant columns second. */
 
-    BFT_MALLOC(ma->coeff_recv_row_id, ma->coeff_recv_size, cs_lnum_t);
+    CS_MALLOC(ma->coeff_recv_row_id, ma->coeff_recv_size, cs_lnum_t);
 
     if (ma->flags & CS_MATRIX_DISTANT_ROW_USE_COL_IDX) {
 
       cs_lnum_t    n_l_insert = 0, n_l_insert_max = 0;
       cs_lnum_2_t *l_insert = nullptr;
 
-      BFT_MALLOC(ma->coeff_recv_col_idx, ma->coeff_recv_size, cs_lnum_t);
+      CS_MALLOC(ma->coeff_recv_col_idx, ma->coeff_recv_size, cs_lnum_t);
 
       /* First pass: determine local row ids, and check if insertion of
          previously unknown entries is required; column ids are set for local
@@ -1381,7 +1381,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
             if (n_l_insert >= n_l_insert_max) {
               n_l_insert_max = CS_MAX(n_l_insert_max*2, 16);
-              BFT_REALLOC(l_insert, n_l_insert_max, cs_lnum_2_t);
+              CS_REALLOC(l_insert, n_l_insert_max, cs_lnum_2_t);
             }
 
             l_insert[n_l_insert][0] = l_r_id;
@@ -1400,7 +1400,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
         _complete_local(ma, n_l_insert, l_insert);
 
-        BFT_FREE(l_insert);
+        CS_FREE(l_insert);
         n_l_insert_max = 0;
 
       }
@@ -1457,7 +1457,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
     if (ma->flags & CS_MATRIX_DISTANT_ROW_USE_COL_G_ID) {
 
-      BFT_MALLOC(ma->coeff_recv_col_g_id, ma->coeff_recv_size, cs_gnum_t);
+      CS_MALLOC(ma->coeff_recv_col_g_id, ma->coeff_recv_size, cs_gnum_t);
 
       for (cs_lnum_t i = 0; i < ma->coeff_recv_size; i++) {
         ma->coeff_recv_row_id[i] = recv_data[i*2] - ma->l_range[0];
@@ -1466,11 +1466,11 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
     }
 
-    BFT_FREE(recv_data);
+    CS_FREE(recv_data);
   }
 
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(request);
+  CS_FREE(status);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1508,8 +1508,8 @@ _matrix_assembler_compute_halo(cs_matrix_assembler_t  *ma,
 
   int        *rank_id;
   cs_lnum_t  *r_loc_id;
-  BFT_MALLOC(rank_id, n_e_g_ids, int);
-  BFT_MALLOC(r_loc_id, n_e_g_ids, cs_lnum_t);
+  CS_MALLOC(rank_id, n_e_g_ids, int);
+  CS_MALLOC(r_loc_id, n_e_g_ids, cs_lnum_t);
 
 # pragma omp parallel if(n_e_g_ids > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_e_g_ids; i++) {
@@ -1521,7 +1521,7 @@ _matrix_assembler_compute_halo(cs_matrix_assembler_t  *ma,
     rank_id[i] = r_id;
   }
 
-  BFT_FREE(d_ranges);
+  CS_FREE(d_ranges);
 
   ma->_halo = cs_halo_create_from_rank_neighbors(arn,
                                                  ma->n_rows,
@@ -1530,8 +1530,8 @@ _matrix_assembler_compute_halo(cs_matrix_assembler_t  *ma,
                                                  r_loc_id);
   ma->halo = ma->_halo;
 
-  BFT_FREE(r_loc_id);
-  BFT_FREE(rank_id);
+  CS_FREE(r_loc_id);
+  CS_FREE(rank_id);
 
   cs_rank_neighbors_destroy(&arn);
 }
@@ -1567,12 +1567,12 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
 
   cs_lnum_t  *l_c_count, *d_c_count;
 
-  BFT_MALLOC(ma->_r_idx, n_rows+1, cs_lnum_t);
-  BFT_MALLOC(ma->d_r_idx, n_rows+1, cs_lnum_t);
+  CS_MALLOC(ma->_r_idx, n_rows+1, cs_lnum_t);
+  CS_MALLOC(ma->d_r_idx, n_rows+1, cs_lnum_t);
   ma->r_idx = ma->_r_idx;
 
-  BFT_MALLOC(l_c_count, n_rows, cs_lnum_t);
-  BFT_MALLOC(d_c_count, n_rows, cs_lnum_t);
+  CS_MALLOC(l_c_count, n_rows, cs_lnum_t);
+  CS_MALLOC(d_c_count, n_rows, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_rows; i++) {
     l_c_count[i] = 0;
@@ -1631,12 +1631,12 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
 
   /* Allocate structures holding data */
 
-  BFT_MALLOC(ma->_c_id, ma->_r_idx[n_rows], cs_lnum_t);
-  BFT_MALLOC(ma->d_g_c_id, ma->d_r_idx[n_rows], cs_gnum_t);
+  CS_MALLOC(ma->_c_id, ma->_r_idx[n_rows], cs_lnum_t);
+  CS_MALLOC(ma->d_g_c_id, ma->d_r_idx[n_rows], cs_gnum_t);
   ma->c_id = ma->_c_id;
 
   cs_gnum_t *e_g_ij;
-  BFT_MALLOC(e_g_ij, e_size*2, cs_gnum_t);
+  CS_MALLOC(e_g_ij, e_size*2, cs_gnum_t);
 
   /* Now fill data: local part is determined (will be cleaned),
      and list of distant rows defined; in cases where sizeof(cs_lnum_t),
@@ -1695,12 +1695,12 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
 
   }
 
-  BFT_FREE(d_c_count);
-  BFT_FREE(l_c_count);
+  CS_FREE(d_c_count);
+  CS_FREE(l_c_count);
 
   /* We can free the initial insertion structure */
 
-  BFT_FREE(ma->g_rc_id);
+  CS_FREE(ma->g_rc_id);
 
   assert(k == e_size*2);
 
@@ -1724,7 +1724,7 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
 
   _process_assembly_data(ma, e_size, e_g_ij);
 
-  BFT_FREE(e_g_ij);
+  CS_FREE(e_g_ij);
 
   /* Build compact external global id array */
 
@@ -1733,7 +1733,7 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
 
   cs_lnum_t d_size = ma->d_r_idx[ma->n_rows];
 
-  BFT_MALLOC(e_g_id, d_size, cs_gnum_t);
+  CS_MALLOC(e_g_id, d_size, cs_gnum_t);
 
   /* Initial pass to reduce data a bit before sorting */
 
@@ -1749,7 +1749,7 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
   }
 
   n_e_g_ids = cs_sort_and_compact_gnum(n_e_g_ids, e_g_id);
-  BFT_REALLOC(e_g_id, n_e_g_ids, cs_gnum_t);
+  CS_REALLOC(e_g_id, n_e_g_ids, cs_gnum_t);
 
   /* Finally, append distant row to local rows, and build matching halo */
 
@@ -1800,7 +1800,7 @@ _matrix_assembler_compute_local(cs_matrix_assembler_t  *ma)
 
   ma->r_idx = ma->_r_idx;
 
-  BFT_MALLOC(c_count, n_rows, cs_lnum_t);
+  CS_MALLOC(c_count, n_rows, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_rows; i++)
     c_count[i] = 0;
@@ -1871,7 +1871,7 @@ _matrix_assembler_compute_local(cs_matrix_assembler_t  *ma)
 
   }
 
-  BFT_FREE(c_count);
+  CS_FREE(c_count);
 
   /* Set global number of rows (will be updated in parallel) */
 
@@ -1904,7 +1904,7 @@ _matrix_assembler_values_diag_idx(cs_matrix_assembler_values_t  *mav)
   if (ma->separate_diag == mav->separate_diag)
     return;
 
-  BFT_MALLOC(mav->diag_idx, ma->n_rows, cs_lnum_t);
+  CS_MALLOC(mav->diag_idx, ma->n_rows, cs_lnum_t);
 
   /*
     Two cases:
@@ -2371,7 +2371,7 @@ cs_matrix_assembler_create(const cs_gnum_t  l_range[2],
 {
   cs_matrix_assembler_t *ma = nullptr;
 
-  BFT_MALLOC(ma, 1, cs_matrix_assembler_t);
+  CS_MALLOC(ma, 1, cs_matrix_assembler_t);
 
   ma->separate_diag = separate_diag;
 
@@ -2492,8 +2492,8 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
   if (ma->halo != nullptr) {
 
     cs_gnum_t *t_g_id;
-    BFT_MALLOC(ma->e_g_id, ma->halo->n_elts[0], cs_gnum_t);
-    BFT_MALLOC(t_g_id, ma->n_rows + ma->halo->n_elts[0], cs_gnum_t);
+    CS_MALLOC(ma->e_g_id, ma->halo->n_elts[0], cs_gnum_t);
+    CS_MALLOC(t_g_id, ma->n_rows + ma->halo->n_elts[0], cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < ma->n_rows; i++)
       t_g_id[i] = (cs_gnum_t)i + ma->l_range[0];
@@ -2507,11 +2507,11 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
     for (cs_lnum_t i = 0; i < ma->n_e_g_ids; i++)
       ma->e_g_id[i] = t_g_id[ma->n_rows + i];
 
-    BFT_FREE(t_g_id);
+    CS_FREE(t_g_id);
 
     /* Build distant columns index and global ids */
 
-    BFT_MALLOC(ma->d_r_idx, ma->n_rows+1, cs_lnum_t);
+    CS_MALLOC(ma->d_r_idx, ma->n_rows+1, cs_lnum_t);
 
     ma->d_r_idx[0] = 0;
     for (cs_lnum_t i = 0; i < ma->n_rows; i++) {
@@ -2528,7 +2528,7 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
     for (cs_lnum_t i = 0; i < ma->n_rows; i++)
       ma->d_r_idx[i+1] += ma->d_r_idx[i];
 
-    BFT_MALLOC(ma->d_g_c_id, ma->d_r_idx[ma->n_rows], cs_gnum_t);
+    CS_MALLOC(ma->d_g_c_id, ma->d_r_idx[ma->n_rows], cs_gnum_t);
     for (cs_lnum_t i = 0; i < ma->n_rows; i++) {
       cs_lnum_t offset = ma->d_r_idx[i];
       cs_lnum_t n_cols = ma->r_idx[i+1] - ma->r_idx[i];
@@ -2560,36 +2560,36 @@ cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma)
   if (ma != nullptr && *ma != nullptr) {
     cs_matrix_assembler_t *_ma = *ma;
 
-    BFT_FREE(_ma->e_g_id);
+    CS_FREE(_ma->e_g_id);
 
     if (_ma->_halo != nullptr)
       cs_halo_destroy(&(_ma->_halo));
 
 #if defined(HAVE_MPI)
 
-    BFT_FREE(_ma->coeff_recv_col_g_id);
-    BFT_FREE(_ma->coeff_recv_col_idx);
-    BFT_FREE(_ma->coeff_recv_row_id);
+    CS_FREE(_ma->coeff_recv_col_g_id);
+    CS_FREE(_ma->coeff_recv_col_idx);
+    CS_FREE(_ma->coeff_recv_row_id);
 
-    BFT_FREE(_ma->coeff_rank_recv_index);
-    BFT_FREE(_ma->coeff_rank_send_index);
+    CS_FREE(_ma->coeff_rank_recv_index);
+    CS_FREE(_ma->coeff_rank_send_index);
 
-    BFT_FREE(_ma->coeff_send_col_g_id);
-    BFT_FREE(_ma->coeff_send_row_g_id);
-    BFT_FREE(_ma->coeff_send_index);
-    BFT_FREE(_ma->coeff_rank);
+    CS_FREE(_ma->coeff_send_col_g_id);
+    CS_FREE(_ma->coeff_send_row_g_id);
+    CS_FREE(_ma->coeff_send_index);
+    CS_FREE(_ma->coeff_rank);
 
 #endif /* HAVE_MPI */
 
-    BFT_FREE(_ma->g_rc_id);
+    CS_FREE(_ma->g_rc_id);
 
-    BFT_FREE(_ma->d_g_c_id);
-    BFT_FREE(_ma->d_r_idx);
+    CS_FREE(_ma->d_g_c_id);
+    CS_FREE(_ma->d_r_idx);
 
-    BFT_FREE(_ma->_c_id);
-    BFT_FREE(_ma->_r_idx);
+    CS_FREE(_ma->_c_id);
+    CS_FREE(_ma->_r_idx);
 
-    BFT_FREE(*ma);
+    CS_FREE(*ma);
   }
 }
 
@@ -2694,7 +2694,7 @@ cs_matrix_assembler_add_g_ids(cs_matrix_assembler_t  *ma,
       ma->max_size = 4;
     while (ma->size + n >= ma->max_size)
       ma->max_size *= 2;
-    BFT_REALLOC(ma->g_rc_id, ma->max_size*2, cs_gnum_t);
+    CS_REALLOC(ma->g_rc_id, ma->max_size*2, cs_gnum_t);
   }
 
   cs_gnum_t *_g_rc_id = ma->g_rc_id + ma->size*2;
@@ -2748,7 +2748,7 @@ cs_matrix_assembler_compute(cs_matrix_assembler_t  *ma)
   /* Non-null array to simplify binary search (rare diagonal-only case) */
 
   if (ma->c_id == nullptr) {
-    BFT_MALLOC(ma->_c_id, 1, cs_lnum_t);
+    CS_MALLOC(ma->_c_id, 1, cs_lnum_t);
     ma->c_id = ma->_c_id;
     ma->_c_id[0] = -1;
   }
@@ -3062,7 +3062,7 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
 {
   cs_matrix_assembler_values_t *mav;
 
-  BFT_MALLOC(mav, 1, cs_matrix_assembler_values_t);
+  CS_MALLOC(mav, 1, cs_matrix_assembler_values_t);
 
   mav->ma = ma;
 
@@ -3088,7 +3088,7 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
 
   cs_lnum_t  alloc_size = ma->coeff_send_size * eb_size_2;
 
-  BFT_MALLOC(mav->coeff_send, alloc_size, cs_real_t);
+  CS_MALLOC(mav->coeff_send, alloc_size, cs_real_t);
 
   for (cs_lnum_t i = 0; i < alloc_size; i++)
     mav->coeff_send[i] = 0;
@@ -3134,7 +3134,7 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
   if (_mav->assembly_end != nullptr)
     _mav->assembly_end(_mav->matrix);
 
-  BFT_FREE(*mav);
+  CS_FREE(*mav);
   *mav = nullptr;
 }
 
@@ -3530,10 +3530,10 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
     MPI_Request *request = nullptr;
     MPI_Status *status = nullptr;
 
-    BFT_MALLOC(recv_coeffs, ma->coeff_recv_size*stride, cs_real_t);
+    CS_MALLOC(recv_coeffs, ma->coeff_recv_size*stride, cs_real_t);
 
-    BFT_MALLOC(request, ma->n_coeff_ranks*2, MPI_Request);
-    BFT_MALLOC(status, ma->n_coeff_ranks*2, MPI_Status);
+    CS_MALLOC(request, ma->n_coeff_ranks*2, MPI_Request);
+    CS_MALLOC(status, ma->n_coeff_ranks*2, MPI_Status);
 
     int request_count = 0;
     int local_rank = cs_glob_rank_id;
@@ -3570,8 +3570,8 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 
     MPI_Waitall(request_count, request, status);
 
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
 
     /* Now add coefficients to local rows */
 
@@ -3640,15 +3640,15 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 
     }
 
-    BFT_FREE(recv_coeffs);
+    CS_FREE(recv_coeffs);
 
   }
 
-  BFT_FREE(mav->coeff_send);
+  CS_FREE(mav->coeff_send);
 
 #endif /* HAVE_MPI */
 
-  BFT_FREE(mav->diag_idx);
+  CS_FREE(mav->diag_idx);
 
   mav->final_assembly = true;
 

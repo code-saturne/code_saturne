@@ -45,7 +45,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 
 #include "base/cs_base.h"
@@ -54,6 +53,7 @@
 #include "base/cs_field.h"
 #include "base/cs_log.h"
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
@@ -295,7 +295,7 @@ _sles_pc_poly_create(void)
 {
   cs_sles_pc_poly_t *pc;
 
-  BFT_MALLOC(pc, 1, cs_sles_pc_poly_t);
+  CS_MALLOC(pc, 1, cs_sles_pc_poly_t);
 
 #if defined(HAVE_ACCEL)
   pc->accelerated = false;
@@ -685,7 +685,7 @@ _sles_pc_poly_destroy (void  **context)
 {
   if (context != nullptr) {
     _sles_pc_poly_free(*context);
-    BFT_FREE(*context);
+    CS_FREE(*context);
   }
 }
 
@@ -735,7 +735,7 @@ cs_sles_pc_define(void                    *context,
 {
   cs_sles_pc_t  *pc;
 
-  BFT_MALLOC(pc, 1, cs_sles_pc_t);
+  CS_MALLOC(pc, 1, cs_sles_pc_t);
 
   /* Now define options */
   pc->context = context;
@@ -767,7 +767,7 @@ cs_sles_pc_destroy(cs_sles_pc_t **pc)
     cs_sles_pc_t *_pc = *pc;
     if (_pc != nullptr) {
       _pc->destroy_func(&(_pc->context));
-      BFT_FREE(*pc);
+      CS_FREE(*pc);
     }
   }
 }
@@ -796,7 +796,7 @@ cs_sles_pc_clone(const cs_sles_pc_t  *src)
 
   cs_sles_pc_t  *dest;
 
-  BFT_MALLOC(dest, 1, cs_sles_pc_t);
+  CS_MALLOC(dest, 1, cs_sles_pc_t);
 
   /* Now define options */
 

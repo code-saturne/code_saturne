@@ -49,7 +49,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -59,6 +58,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -797,7 +797,7 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
   csm->d_col_id = nullptr;
   csm->d_e_val = nullptr;
 
-  BFT_FREE(matrix->ext_lib_map);
+  CS_FREE(matrix->ext_lib_map);
   matrix->destroy_adaptor = nullptr;
 }
 
@@ -818,7 +818,7 @@ _set_cusparse_map(cs_matrix_t   *matrix)
     _unset_cusparse_map(matrix);
   }
   else {
-    BFT_MALLOC(csm, 1, cs_matrix_cusparse_map_t);
+    CS_MALLOC(csm, 1, cs_matrix_cusparse_map_t);
     matrix->ext_lib_map = (void *)csm;
   }
   matrix->destroy_adaptor = _unset_cusparse_map;

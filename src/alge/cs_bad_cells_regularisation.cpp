@@ -39,13 +39,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_bad_cells.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -107,9 +107,9 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   cs_parall_min(1, CS_DOUBLE, &varmin);
   cs_parall_max(1, CS_DOUBLE, &varmax);
 
-  BFT_MALLOC(xam, n_i_faces, cs_real_t);
-  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
+  CS_MALLOC(xam, n_i_faces, cs_real_t);
+  CS_MALLOC(dam, n_cells_ext, cs_real_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     dam[cell_id] = 0.;
@@ -185,9 +185,9 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
                       "potential_regularisation_scalar");
 
   /* Free memory */
-  BFT_FREE(xam);
-  BFT_FREE(dam);
-  BFT_FREE(rhs);
+  CS_FREE(xam);
+  CS_FREE(dam);
+  CS_FREE(rhs);
 
   return;
 }
@@ -247,9 +247,9 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   }
 #endif
 
-  BFT_MALLOC(xam, n_i_faces, cs_real_t);
-  BFT_MALLOC(dam, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(xam, n_i_faces, cs_real_t);
+  CS_MALLOC(dam, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_3_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (int i = 0; i < 3; i++) {
@@ -373,9 +373,9 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
                       "potential_regularisation_vector");
 
   /* Free memory */
-  BFT_FREE(xam);
-  BFT_FREE(dam);
-  BFT_FREE(rhs);
+  CS_FREE(xam);
+  CS_FREE(dam);
+  CS_FREE(rhs);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -426,9 +426,9 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
   }
 #endif
 
-  BFT_MALLOC(xam, n_i_faces, cs_real_t);
-  BFT_MALLOC(dam, n_cells_ext, cs_real_66_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(xam, n_i_faces, cs_real_t);
+  CS_MALLOC(dam, n_cells_ext, cs_real_66_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_6_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (int i = 0; i < 6; i++) {
@@ -553,9 +553,9 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
                       "potential_regularisation_sym_tensor");
 
   /* Free memory */
-  BFT_FREE(xam);
-  BFT_FREE(dam);
-  BFT_FREE(rhs);
+  CS_FREE(xam);
+  CS_FREE(dam);
+  CS_FREE(rhs);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -606,9 +606,9 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   }
 #endif
 
-  BFT_MALLOC(xam, n_i_faces, cs_real_t);
-  BFT_MALLOC(dam, n_cells_ext, cs_real_99_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_9_t);
+  CS_MALLOC(xam, n_i_faces, cs_real_t);
+  CS_MALLOC(dam, n_cells_ext, cs_real_99_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_9_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (int i = 0; i < 9; i++) {
@@ -732,9 +732,9 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
                       "potential_regularisation_tensor");
 
   /* Free memory */
-  BFT_FREE(xam);
-  BFT_FREE(dam);
-  BFT_FREE(rhs);
+  CS_FREE(xam);
+  CS_FREE(dam);
+  CS_FREE(rhs);
 }
 
 /*----------------------------------------------------------------------------*/

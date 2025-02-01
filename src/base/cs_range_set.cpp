@@ -42,12 +42,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_interface.h"
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -689,7 +689,7 @@ cs_range_set_create(const cs_interface_set_t  *ifs,
   cs_gnum_t  *g_id;
   cs_gnum_t  l_range[2];
 
-  BFT_MALLOC(g_id, n_elts, cs_gnum_t);
+  CS_MALLOC(g_id, n_elts, cs_gnum_t);
 
   cs_range_set_define(ifs,
                       halo,
@@ -740,7 +740,7 @@ cs_range_set_create_from_shared(const cs_interface_set_t  *ifs,
                                 cs_gnum_t                 *g_id)
 {
   cs_range_set_t *rs;
-  BFT_MALLOC(rs, 1, cs_range_set_t);
+  CS_MALLOC(rs, 1, cs_range_set_t);
 
   rs->n_elts[0] = 0;
   if (l_range[1] > l_range[0])
@@ -784,8 +784,8 @@ cs_range_set_destroy(cs_range_set_t  **rs)
   if (rs != nullptr) {
     cs_range_set_t  *_rs = *rs;
     if (_rs != nullptr) {
-      BFT_FREE(_rs->_g_id);
-      BFT_FREE(*rs);
+      CS_FREE(_rs->_g_id);
+      CS_FREE(*rs);
     }
   }
 }

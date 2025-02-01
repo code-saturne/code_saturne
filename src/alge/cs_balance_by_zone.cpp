@@ -42,7 +42,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -56,6 +55,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_halo.h"
@@ -846,14 +846,14 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       cpro_cp = CS_F_(cp)->val;
     else {
       const double cp0 = cs_glob_fluid_properties->cp0;
-      BFT_MALLOC(cpro_cp, n_cells, cs_real_t);
+      CS_MALLOC(cpro_cp, n_cells, cs_real_t);
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cpro_cp[c_id] = cp0;
       }
     }
   }
   else {
-    BFT_MALLOC(cpro_cp, n_cells, cs_real_t);
+    CS_MALLOC(cpro_cp, n_cells, cs_real_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cpro_cp[c_id] = 1.;
     }
@@ -960,14 +960,14 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     /* NVD/TVD limiters */
     if (ischcp == 4) {
       limiter_choice = cs_field_get_key_int(f, key_lim_choice);
-      BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
-      BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
+      CS_MALLOC(local_max, n_cells_ext, cs_real_t);
+      CS_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(field_id,
                                     halo_type,
                                     local_max,
                                     local_min);
       if (limiter_choice >= CS_NVD_VOF_HRIC) {
-        BFT_MALLOC(courant, n_cells_ext, cs_real_t);
+        CS_MALLOC(courant, n_cells_ext, cs_real_t);
         cs_cell_courant_number(f, ctx, courant);
       }
     }
@@ -985,11 +985,11 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Allocate temporary array */
   cs_real_t *f_reconstructed;
-  BFT_MALLOC(f_reconstructed, n_b_faces, cs_real_t);
+  CS_MALLOC(f_reconstructed, n_b_faces, cs_real_t);
 
   /* Reconstructed value */
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   halo_type = CS_HALO_STANDARD;
   cs_field_gradient_scalar(f,
@@ -1022,7 +1022,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_3_t *gradup = nullptr;
   cs_real_3_t *gradst = nullptr;
   if (eqp->blencv > 0 && eqp->isstpc == 0) {
-    BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(gradst, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradst[c_id][0] = 0.;
       gradst[c_id][1] = 0.;
@@ -1045,7 +1045,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      or Roe and Sweby limiters */
   if (eqp->blencv > 0
       && (eqp->ischcv==2 || eqp->ischcv==4)) {
-    BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(gradup, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradup[c_id][0] = 0.;
       gradup[c_id][1] = 0.;
@@ -1069,11 +1069,11 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   int imvisf = eqp->imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC(i_visc, n_i_faces, cs_real_t);
+  CS_MALLOC(b_visc, n_b_faces, cs_real_t);
 
   cs_real_t *c_visc = nullptr;
-  BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
+  CS_MALLOC(c_visc, n_cells_ext, cs_real_t);
   const int kivisl
     = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
   if (kivisl != -1) {
@@ -1106,12 +1106,12 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Initialize arrays */
 
   /* Internal faces of the selected zone */
-  BFT_MALLOC(i_face_sel_ids, n_i_faces, cs_lnum_t);
+  CS_MALLOC(i_face_sel_ids, n_i_faces, cs_lnum_t);
   /* Boundary faces of the selected zone,
      which are internal faces of the global mesh.
      Faces -> cells connectivity */
-  BFT_MALLOC(bi_face_sel_ids, n_i_faces, cs_lnum_t);
-  BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
+  CS_MALLOC(bi_face_sel_ids, n_i_faces, cs_lnum_t);
+  CS_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     i_face_sel_ids[f_id] = -1;
     bi_face_sel_ids[f_id] = -1;
@@ -1121,13 +1121,13 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Boundary faces of the selected zone,
      which are also boundary faces of the global mesh */
-  BFT_MALLOC(bb_face_sel_ids, n_b_faces, cs_lnum_t);
+  CS_MALLOC(bb_face_sel_ids, n_b_faces, cs_lnum_t);
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     bb_face_sel_ids[f_id] = -1;
   }
 
   /* Synchronization for parallelism */
-  BFT_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     cells_tag_ids[c_id] = 0;
   }
@@ -1401,7 +1401,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   if (eqp->icoupl > 0) {
 
     /* Prepare data for sending from distant */
-    BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+    CS_MALLOC(pvar_distant, n_distant, cs_real_t);
 
     for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
       cs_lnum_t f_id = faces_distant[ii];
@@ -1416,7 +1416,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     }
 
     /* Receive data */
-    BFT_MALLOC(pvar_local, n_local, cs_real_t);
+    CS_MALLOC(pvar_local, n_local, cs_real_t);
     cs_internal_coupling_exchange_var(cpl,
                                       1, /* Dimension */
                                       pvar_distant,
@@ -1454,8 +1454,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       }
     }
 
-    BFT_FREE(pvar_local);
-    BFT_FREE(pvar_distant);
+    CS_FREE(pvar_local);
+    CS_FREE(pvar_distant);
 
   }
 
@@ -1591,25 +1591,25 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Free memory */
 
-  BFT_FREE(grad);
-  BFT_FREE(gradup);
-  BFT_FREE(gradst);
-  BFT_FREE(f_reconstructed);
-  BFT_FREE(local_max);
-  BFT_FREE(local_min);
-  BFT_FREE(courant);
+  CS_FREE(grad);
+  CS_FREE(gradup);
+  CS_FREE(gradst);
+  CS_FREE(f_reconstructed);
+  CS_FREE(local_max);
+  CS_FREE(local_min);
+  CS_FREE(courant);
 
   if (!itemperature || icp == -1)
-    BFT_FREE(cpro_cp);
-  BFT_FREE(c_visc);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+    CS_FREE(cpro_cp);
+  CS_FREE(c_visc);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
 
-  BFT_FREE(cells_tag_ids);
-  BFT_FREE(bi_face_cells);
-  BFT_FREE(i_face_sel_ids);
-  BFT_FREE(bb_face_sel_ids);
-  BFT_FREE(bi_face_sel_ids);
+  CS_FREE(cells_tag_ids);
+  CS_FREE(bi_face_cells);
+  CS_FREE(i_face_sel_ids);
+  CS_FREE(bb_face_sel_ids);
+  CS_FREE(bi_face_sel_ids);
 
   /* Sum of values on all ranks (parallel calculations) */
 
@@ -1690,7 +1690,7 @@ cs_balance_by_zone(const char  *selection_crit,
   cs_lnum_t n_cells_sel = 0;
   cs_lnum_t *cells_sel_ids = nullptr;
 
-  BFT_MALLOC(cells_sel_ids, m->n_cells, cs_lnum_t);
+  CS_MALLOC(cells_sel_ids, m->n_cells, cs_lnum_t);
   cs_selector_get_cell_list(selection_crit, &n_cells_sel, cells_sel_ids);
 
   /* Compute balance */
@@ -1700,7 +1700,7 @@ cs_balance_by_zone(const char  *selection_crit,
                              cells_sel_ids,
                              balance);
 
-  BFT_FREE(cells_sel_ids);
+  CS_FREE(cells_sel_ids);
 
   /* Log results at time step n */
 
@@ -1858,12 +1858,12 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   /* Initialize arrays */
 
   /* Internal faces of the selected zone */
-  BFT_MALLOC(i_face_sel_ids, n_i_faces, cs_lnum_t);
+  CS_MALLOC(i_face_sel_ids, n_i_faces, cs_lnum_t);
   /* Boundary faces of the selected zone,
      which are internal faces of the global mesh.
      Faces -> cells connectivity */
-  BFT_MALLOC(bi_face_sel_ids, n_i_faces, cs_lnum_t);
-  BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
+  CS_MALLOC(bi_face_sel_ids, n_i_faces, cs_lnum_t);
+  CS_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     i_face_sel_ids[f_id] = -1;
     bi_face_sel_ids[f_id] = -1;
@@ -1873,14 +1873,14 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
 
   /* Boundary faces of the selected zone,
      which are also boundary faces of the global mesh */
-  BFT_MALLOC(bb_face_sel_ids, n_b_faces, cs_lnum_t);
+  CS_MALLOC(bb_face_sel_ids, n_b_faces, cs_lnum_t);
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     bb_face_sel_ids[f_id] = -1;
   }
 
 
   /* Synchronization for parallelism */
-  BFT_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     cells_tag_ids[c_id] = 0;
   }
@@ -2266,11 +2266,11 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
 
   /* Free memory */
 
-  BFT_FREE(cells_tag_ids);
-  BFT_FREE(bi_face_cells);
-  BFT_FREE(i_face_sel_ids);
-  BFT_FREE(bb_face_sel_ids);
-  BFT_FREE(bi_face_sel_ids);
+  CS_FREE(cells_tag_ids);
+  CS_FREE(bi_face_cells);
+  CS_FREE(i_face_sel_ids);
+  CS_FREE(bb_face_sel_ids);
+  CS_FREE(bi_face_sel_ids);
 
   /* Sum of values on all ranks (parallel calculations) */
 
@@ -2311,7 +2311,7 @@ cs_pressure_drop_by_zone(const char * selection_crit)
   cs_lnum_t n_cells_sel = 0;
   cs_lnum_t *cells_sel_ids = nullptr;
 
-  BFT_MALLOC(cells_sel_ids, m->n_cells, cs_lnum_t);
+  CS_MALLOC(cells_sel_ids, m->n_cells, cs_lnum_t);
   cs_selector_get_cell_list(selection_crit, &n_cells_sel, cells_sel_ids);
 
   /* Compute pressure drop terms */
@@ -2320,7 +2320,7 @@ cs_pressure_drop_by_zone(const char * selection_crit)
                                    cells_sel_ids,
                                    balance);
 
-  BFT_FREE(cells_sel_ids);
+  CS_FREE(cells_sel_ids);
 
   /* Log results at time step n */
 
@@ -2407,8 +2407,8 @@ cs_surface_balance(const char       *selection_crit,
   cs_lnum_t n_i_faces_sel = 0;
   cs_lnum_t *i_face_sel_ids = nullptr;
 
-  BFT_MALLOC(i_face_sel_ids, m->n_i_faces, cs_lnum_t);
-  BFT_MALLOC(b_face_sel_ids, m->n_b_faces, cs_lnum_t);
+  CS_MALLOC(i_face_sel_ids, m->n_i_faces, cs_lnum_t);
+  CS_MALLOC(b_face_sel_ids, m->n_b_faces, cs_lnum_t);
 
   cs_selector_get_i_face_list(selection_crit, &n_i_faces_sel, i_face_sel_ids);
   cs_selector_get_b_face_list(selection_crit, &n_b_faces_sel, b_face_sel_ids);
@@ -2441,8 +2441,8 @@ cs_surface_balance(const char       *selection_crit,
 
   /* Free memory */
 
-  BFT_FREE(i_face_sel_ids);
-  BFT_FREE(b_face_sel_ids);
+  CS_FREE(i_face_sel_ids);
+  CS_FREE(b_face_sel_ids);
 
   /* Compute some sums */
 
@@ -2607,14 +2607,14 @@ cs_flux_through_surface(const char         *scalar_name,
       cpro_cp = CS_F_(cp)->val;
     else {
       const double cp0 = cs_glob_fluid_properties->cp0;
-      BFT_MALLOC(cpro_cp, n_cells, cs_real_t);
+      CS_MALLOC(cpro_cp, n_cells, cs_real_t);
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cpro_cp[c_id] = cp0;
       }
     }
   }
   else {
-    BFT_MALLOC(cpro_cp, n_cells, cs_real_t);
+    CS_MALLOC(cpro_cp, n_cells, cs_real_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cpro_cp[c_id] = 1.;
     }
@@ -2702,14 +2702,14 @@ cs_flux_through_surface(const char         *scalar_name,
     /* NVD/TVD limiters */
     if (ischcp == 4) {
       limiter_choice = cs_field_get_key_int(f, key_lim_choice);
-      BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
-      BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
+      CS_MALLOC(local_max, n_cells_ext, cs_real_t);
+      CS_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(field_id,
                                     halo_type,
                                     local_max,
                                     local_min);
       if (limiter_choice >= CS_NVD_VOF_HRIC) {
-        BFT_MALLOC(courant, n_cells_ext, cs_real_t);
+        CS_MALLOC(courant, n_cells_ext, cs_real_t);
         cs_cell_courant_number(f, ctx, courant);
       }
     }
@@ -2729,7 +2729,7 @@ cs_flux_through_surface(const char         *scalar_name,
      -------------------- */
 
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   cs_field_gradient_scalar(f,
                            true, /* use_previous_t */
@@ -2741,7 +2741,7 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_real_3_t *gradup = nullptr;
   cs_real_3_t *gradst = nullptr;
   if (eqp->blencv > 0 && eqp->isstpc == 0) {
-    BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(gradst, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradst[c_id][0] = 0.;
       gradst[c_id][1] = 0.;
@@ -2764,7 +2764,7 @@ cs_flux_through_surface(const char         *scalar_name,
      or Roe and Sweby limiters */
   if (eqp->blencv > 0
       && (eqp->ischcv==2 || eqp->ischcv==4)) {
-    BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(gradup, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradup[c_id][0] = 0.;
       gradup[c_id][1] = 0.;
@@ -2790,7 +2790,7 @@ cs_flux_through_surface(const char         *scalar_name,
 
   if (n_i_faces_sel > 0) {
 
-    BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
+    CS_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
       bi_face_cells[f_id][0] = -999;
       bi_face_cells[f_id][1] = -999;
@@ -2907,7 +2907,7 @@ cs_flux_through_surface(const char         *scalar_name,
 
     cs_lnum_t *inv_b_face_sel_ids = nullptr;
 
-    BFT_MALLOC(inv_b_face_sel_ids, n_b_faces, cs_lnum_t);
+    CS_MALLOC(inv_b_face_sel_ids, n_b_faces, cs_lnum_t);
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
       inv_b_face_sel_ids[f_id] = -1;
 
@@ -2923,7 +2923,7 @@ cs_flux_through_surface(const char         *scalar_name,
     }
 
     /* Prepare data for sending from distant */
-    BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+    CS_MALLOC(pvar_distant, n_distant, cs_real_t);
 
     for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
       cs_lnum_t f_id = faces_distant[ii];
@@ -2938,7 +2938,7 @@ cs_flux_through_surface(const char         *scalar_name,
     }
 
     /* Receive data */
-    BFT_MALLOC(pvar_local, n_local, cs_real_t);
+    CS_MALLOC(pvar_local, n_local, cs_real_t);
     cs_internal_coupling_exchange_var(cpl,
                                       1, /* Dimension */
                                       pvar_distant,
@@ -2987,10 +2987,10 @@ cs_flux_through_surface(const char         *scalar_name,
 
     }
 
-    BFT_FREE(pvar_local);
-    BFT_FREE(pvar_distant);
+    CS_FREE(pvar_local);
+    CS_FREE(pvar_distant);
 
-    BFT_FREE(inv_b_face_sel_ids);
+    CS_FREE(inv_b_face_sel_ids);
   }
 
   /* Balance on selected interior faces */
@@ -3139,16 +3139,16 @@ cs_flux_through_surface(const char         *scalar_name,
 
   /* Free memory */
 
-  BFT_FREE(bi_face_cells);
-  BFT_FREE(grad);
-  BFT_FREE(gradup);
-  BFT_FREE(gradst);
-  BFT_FREE(local_max);
-  BFT_FREE(local_min);
-  BFT_FREE(courant);
+  CS_FREE(bi_face_cells);
+  CS_FREE(grad);
+  CS_FREE(gradup);
+  CS_FREE(gradst);
+  CS_FREE(local_max);
+  CS_FREE(local_min);
+  CS_FREE(courant);
 
   if (!itemperature || icp == -1)
-    BFT_FREE(cpro_cp);
+    CS_FREE(cpro_cp);
   CS_FREE_HD(c_visc);
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);

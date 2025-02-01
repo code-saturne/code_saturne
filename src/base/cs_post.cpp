@@ -40,7 +40,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_nodal.h"
@@ -56,6 +55,7 @@
 #include "base/cs_function.h"
 #include "lagr/cs_lagr_extract.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "lagr/cs_lagr_query.h"
 #include "meg/cs_meg_prototypes.h"
 #include "mesh/cs_mesh.h"
@@ -115,7 +115,7 @@ BEGIN_C_DECLS
   usually cells, interior faces, or boundary faces.
 
   If non-empty and not containing all elements, a list of elements of the
-  main mesh should be allocated (using BFT_MALLOC) and defined by this
+  main mesh should be allocated (using CS_MALLOC) and defined by this
   function when called. This list's lifecycle is then managed by the
   postprocessing subsystem.
 
@@ -503,10 +503,10 @@ _destroy_writer_def(cs_post_writer_t  *writer)
   assert(writer != nullptr);
   if (writer->wd != nullptr) {
     cs_post_writer_def_t  *wd = writer->wd;
-    BFT_FREE(wd->case_name);
-    BFT_FREE(wd->dir_name);
-    BFT_FREE(wd->fmt_opts);
-    BFT_FREE(writer->wd);
+    CS_FREE(wd->case_name);
+    CS_FREE(wd->dir_name);
+    CS_FREE(wd->fmt_opts);
+    CS_FREE(writer->wd);
   }
 }
 
@@ -624,9 +624,9 @@ _free_writer_times(cs_post_writer_t  *w)
   assert(w != nullptr);
 
   if (w->ot == nullptr) {
-    BFT_FREE(w->ot->t_vals);
-    BFT_FREE(w->ot->t_steps);
-    BFT_FREE(w->ot);
+    CS_FREE(w->ot->t_vals);
+    CS_FREE(w->ot->t_steps);
+    CS_FREE(w->ot);
   }
 }
 
@@ -641,7 +641,7 @@ static cs_post_writer_times_t *
 _writer_times_create(void)
 {
   cs_post_writer_times_t  *ot;
-  BFT_MALLOC(ot, 1, cs_post_writer_times_t);
+  CS_MALLOC(ot, 1, cs_post_writer_times_t);
 
   ot->n_t_steps_max = 0;
   ot->n_t_vals_max = 0;
@@ -705,7 +705,7 @@ _add_writer_ts(cs_post_writer_t  *w,
         w->ot->n_t_steps_max = 1;
       else
         w->ot->n_t_steps_max *= 2;
-      BFT_REALLOC(w->ot->t_steps, w->ot->n_t_steps_max, int);
+      CS_REALLOC(w->ot->t_steps, w->ot->n_t_steps_max, int);
     }
 
     w->ot->t_steps[w->ot->n_t_steps] = nt;
@@ -765,7 +765,7 @@ _add_writer_tv(cs_post_writer_t  *w,
         w->ot->n_t_vals_max = 1;
       else
         w->ot->n_t_vals_max *= 2;
-      BFT_REALLOC(w->ot->t_vals, w->ot->n_t_vals_max, double);
+      CS_REALLOC(w->ot->t_vals, w->ot->n_t_vals_max, double);
     }
 
     w->ot->t_vals[w->ot->n_t_vals] = t;
@@ -1076,8 +1076,8 @@ _update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
 
     if (j < n_writers) {
       post_mesh->n_writers = j;
-      BFT_REALLOC(post_mesh->writer_id, j, int);
-      BFT_REALLOC(post_mesh->nt_last, j, int);
+      CS_REALLOC(post_mesh->writer_id, j, int);
+      CS_REALLOC(post_mesh->nt_last, j, int);
     }
 
   }
@@ -1125,11 +1125,11 @@ _predefine_mesh(int        mesh_id,
 
       post_mesh = _cs_post_meshes + i;
 
-      BFT_FREE(post_mesh->name);
+      CS_FREE(post_mesh->name);
       for (j = 0; j < 5; j++)
-        BFT_FREE(post_mesh->criteria[j]);
-      BFT_FREE(post_mesh->writer_id);
-      BFT_FREE(post_mesh->nt_last);
+        CS_FREE(post_mesh->criteria[j]);
+      CS_FREE(post_mesh->writer_id);
+      CS_FREE(post_mesh->nt_last);
 
       post_mesh->exp_mesh = nullptr;
       if (post_mesh->_exp_mesh != nullptr)
@@ -1149,9 +1149,9 @@ _predefine_mesh(int        mesh_id,
         _cs_post_n_meshes_max = 8;
       else
         _cs_post_n_meshes_max *= 2;
-      BFT_REALLOC(_cs_post_meshes,
-                  _cs_post_n_meshes_max,
-                  cs_post_mesh_t);
+      CS_REALLOC(_cs_post_meshes,
+                 _cs_post_n_meshes_max,
+                 cs_post_mesh_t);
     }
 
     post_mesh = _cs_post_meshes + i;
@@ -1208,8 +1208,8 @@ _predefine_mesh(int        mesh_id,
   /* Associate mesh with writers */
 
   post_mesh->n_writers = n_writers;
-  BFT_MALLOC(post_mesh->writer_id, n_writers, int);
-  BFT_MALLOC(post_mesh->nt_last, n_writers, int);
+  CS_MALLOC(post_mesh->writer_id, n_writers, int);
+  CS_MALLOC(post_mesh->nt_last, n_writers, int);
 
   for (i = 0; i < n_writers; i++) {
     post_mesh->writer_id[i] = _cs_post_writer_id(writer_ids[i]);
@@ -1249,15 +1249,15 @@ _free_mesh(int _mesh_id)
   if (post_mesh->_exp_mesh != nullptr)
     post_mesh->_exp_mesh = fvm_nodal_destroy(post_mesh->_exp_mesh);
 
-  BFT_FREE(post_mesh->writer_id);
-  BFT_FREE(post_mesh->nt_last);
+  CS_FREE(post_mesh->writer_id);
+  CS_FREE(post_mesh->nt_last);
   post_mesh->n_writers = 0;
 
   for (i = 0; i < 5; i++)
-    BFT_FREE(post_mesh->criteria[i]);
+    CS_FREE(post_mesh->criteria[i]);
 
-  BFT_FREE(post_mesh->name);
-  BFT_FREE(post_mesh->a_field_info);
+  CS_FREE(post_mesh->name);
+  CS_FREE(post_mesh->a_field_info);
 
   /* Shift remaining meshes */
 
@@ -1517,7 +1517,7 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
 
       exp_mesh = fvm_nodal_create(post_mesh->name, 3);
 
-      BFT_MALLOC(coords, n_particles, cs_coord_3_t);
+      CS_MALLOC(coords, n_particles, cs_coord_3_t);
 
       cs_lagr_get_particle_values(p_set,
                                   CS_LAGR_COORDS,
@@ -1543,19 +1543,19 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
 
       assert(ts->nt_cur > 0);
 
-      BFT_MALLOC(mesh_name, strlen(post_mesh->name) + 32, char);
+      CS_MALLOC(mesh_name, strlen(post_mesh->name) + 32, char);
       sprintf(mesh_name, "%s_%05d", post_mesh->name, ts->nt_cur);
 
       exp_mesh = fvm_nodal_create(mesh_name, 3);
 
-      BFT_FREE(mesh_name);
+      CS_FREE(mesh_name);
 
-      BFT_MALLOC(vertex_num, n_particles*2, cs_lnum_t);
+      CS_MALLOC(vertex_num, n_particles*2, cs_lnum_t);
 
       for (i = 0; i < n_particles*2; i++)
         vertex_num[i] = i+1;
 
-      BFT_MALLOC(coords, n_particles*2, cs_coord_3_t);
+      CS_MALLOC(coords, n_particles*2, cs_coord_3_t);
 
       cs_lagr_get_trajectory_values(p_set,
                                     CS_LAGR_COORDS,
@@ -1601,7 +1601,7 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
       if (post_mesh->ent_flag[3] == 1) {
 
         fvm_nodal_init_io_num(exp_mesh, global_num, 0);
-        BFT_FREE(global_num);
+        CS_FREE(global_num);
 
       }
       else if (post_mesh->ent_flag[3] == 2) {
@@ -1611,16 +1611,16 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
 
         fvm_nodal_init_io_num(exp_mesh, global_num, 1);
 
-        BFT_MALLOC(g_coord_num, n_particles*2, cs_gnum_t);
+        CS_MALLOC(g_coord_num, n_particles*2, cs_gnum_t);
         for (i = 0; i < n_particles; i++) {
           g_coord_num[i*2] = global_num[i]*2 - 1;
           g_coord_num[i*2+1] = global_num[i]*2;
         }
-        BFT_FREE(global_num);
+        CS_FREE(global_num);
 
         fvm_nodal_init_io_num(exp_mesh, g_coord_num, 0);
 
-        BFT_FREE(g_coord_num);
+        CS_FREE(g_coord_num);
 
       }
 
@@ -1681,7 +1681,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
 
     cs_lnum_t *elt_list = nullptr;
     if (elt_ids != nullptr) {
-      BFT_MALLOC(elt_list, n_elts, cs_lnum_t);
+      CS_MALLOC(elt_list, n_elts, cs_lnum_t);
       for (cs_lnum_t i = 0; i < n_elts; i++)
         elt_list[i] = elt_ids[i];
     }
@@ -1703,7 +1703,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
       elt_list = nullptr;
       break;
     default:
-      BFT_FREE(elt_list);
+      CS_FREE(elt_list);
       assert(0);
       break;
     }
@@ -1714,7 +1714,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
     if (!strcmp(criteria, "all[]"))
       n_cells = mesh->n_cells;
     else {
-      BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
+      CS_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
       cs_selector_get_cell_list(criteria, &n_cells, cell_list);
     }
   }
@@ -1728,7 +1728,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
     if (!strcmp(criteria, "all[]"))
       n_i_faces = mesh->n_i_faces;
     else {
-      BFT_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
+      CS_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
       cs_selector_get_i_face_list(criteria, &n_i_faces, i_face_list);
     }
   }
@@ -1742,7 +1742,7 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
     if (!strcmp(criteria, "all[]"))
       n_b_faces = mesh->n_b_faces;
     else {
-      BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+      CS_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
       cs_selector_get_b_face_list(criteria, &n_b_faces, b_face_list);
     }
   }
@@ -1761,9 +1761,9 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
                       i_face_list,
                       b_face_list);
 
-  BFT_FREE(cell_list);
-  BFT_FREE(i_face_list);
-  BFT_FREE(b_face_list);
+  CS_FREE(cell_list);
+  CS_FREE(i_face_list);
+  CS_FREE(b_face_list);
 }
 
 /*----------------------------------------------------------------------------
@@ -1887,21 +1887,21 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
       if (!strcmp(criteria, "all[]"))
         n_cells = mesh->n_cells;
       else {
-        BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
+        CS_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
         cs_selector_get_cell_num_list(criteria, &n_cells, cell_list);
       }
       if (n_cells < mesh->n_cells || post_mesh->density < 1.) {
-        BFT_MALLOC(particle_list, n_particles, cs_lnum_t);
+        CS_MALLOC(particle_list, n_particles, cs_lnum_t);
         cs_lagr_get_particle_list(n_cells,
                                   cell_list,
                                   post_mesh->density,
                                   &n_post_particles,
                                   particle_list);
-        BFT_REALLOC(particle_list, n_post_particles, cs_lnum_t);
+        CS_REALLOC(particle_list, n_post_particles, cs_lnum_t);
       }
       else
         n_post_particles = n_particles;
-      BFT_FREE(cell_list);
+      CS_FREE(cell_list);
     }
 
     else if (post_mesh->sel_func[3] != nullptr) {
@@ -1914,7 +1914,7 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
                                  particle_list,
                                  ts);
 
-    BFT_FREE(particle_list);
+    CS_FREE(particle_list);
   }
 
   /* Probe mesh */
@@ -1974,7 +1974,7 @@ _clear_unused_meshes(void)
 
   /* Mark used meshes */
 
-  BFT_MALLOC(discard, _cs_post_n_meshes, int);
+  CS_MALLOC(discard, _cs_post_n_meshes, int);
 
   for (i = 0; i < _cs_post_n_meshes; i++) {
     post_mesh = _cs_post_meshes + i;
@@ -1999,7 +1999,7 @@ _clear_unused_meshes(void)
       _free_mesh(i);  /* shifts other meshes and reduces _cs_post_n_meshes */
   }
 
-  BFT_FREE(discard);
+  CS_FREE(discard);
 }
 
 /*----------------------------------------------------------------------------
@@ -2060,7 +2060,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 
   /* Prepare domain number */
 
-  BFT_MALLOC(domain, n_elts, int32_t);
+  CS_MALLOC(domain, n_elts, int32_t);
 
   for (i = 0; i < n_elts; i++)
     domain[i] = cs_glob_rank_id;
@@ -2089,7 +2089,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 
   /* Free memory */
 
-  BFT_FREE(domain);
+  CS_FREE(domain);
 }
 
 /*----------------------------------------------------------------------------
@@ -2507,17 +2507,17 @@ _build_group_flag(const cs_mesh_t  *mesh,
 
   char *group_flag = nullptr;
 
-  BFT_MALLOC(group_flag, mesh->n_groups, char);
+  CS_MALLOC(group_flag, mesh->n_groups, char);
   memset(group_flag, 0, mesh->n_groups);
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     int *_fam_flag = nullptr;
-    BFT_MALLOC(_fam_flag, mesh->n_families + 1, int);
+    CS_MALLOC(_fam_flag, mesh->n_families + 1, int);
     MPI_Allreduce(fam_flag, _fam_flag, mesh->n_families + 1,
                   MPI_INT, MPI_MAX, cs_glob_mpi_comm);
     memcpy(fam_flag, _fam_flag, (mesh->n_families + 1)*sizeof(int));
-    BFT_FREE(_fam_flag);
+    CS_FREE(_fam_flag);
   }
 #endif /* defined(HAVE_MPI) */
 
@@ -2611,7 +2611,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
   /* Now detect which groups may be referenced */
 
-  BFT_MALLOC(fam_flag, (mesh->n_families + 1), int);
+  CS_MALLOC(fam_flag, (mesh->n_families + 1), int);
   memset(fam_flag, 0, (mesh->n_families + 1) * sizeof(int));
 
   if (mesh->cell_family != nullptr) {
@@ -2636,9 +2636,9 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
      Note that selector structures may not have been initialized yet,
      so to avoid issue, we use a direct selection here. */
 
-  BFT_REALLOC(fam_flag, mesh->n_families, int);
+  CS_REALLOC(fam_flag, mesh->n_families, int);
 
-  BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
+  CS_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
 
   for (i = 0; i < mesh->n_groups; i++) {
 
@@ -2704,12 +2704,12 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
     exp_mesh = fvm_nodal_destroy(exp_mesh);
   }
 
-  BFT_FREE(cell_list);
+  CS_FREE(cell_list);
 
   /* Now extract faces by groups */
 
-  BFT_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
-  BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
+  CS_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
 
   for (i = 0; i < mesh->n_groups; i++) {
 
@@ -2759,11 +2759,11 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
   writer = fvm_writer_finalize(writer);
 
-  BFT_FREE(b_face_list);
-  BFT_FREE(i_face_list);
+  CS_FREE(b_face_list);
+  CS_FREE(i_face_list);
 
-  BFT_FREE(fam_flag);
-  BFT_FREE(group_flag);
+  CS_FREE(fam_flag);
+  CS_FREE(group_flag);
 }
 
 /*----------------------------------------------------------------------------
@@ -2832,7 +2832,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 
   /* Now detect which groups may be referenced */
 
-  BFT_MALLOC(fam_flag, mesh->n_families + 1, int);
+  CS_MALLOC(fam_flag, mesh->n_families + 1, int);
   memset(fam_flag, 0, (mesh->n_families + 1)*sizeof(int));
 
   if (mesh->b_face_family != nullptr) {
@@ -2846,9 +2846,9 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
      Note that selector structures may not have been initialized yet,
      so to avoid issue, we use a direct selection here. */
 
-  BFT_REALLOC(fam_flag, mesh->n_families, int);
+  CS_REALLOC(fam_flag, mesh->n_families, int);
 
-  BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
 
   for (i = 0; i < mesh->n_groups; i++) {
 
@@ -2918,12 +2918,12 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
     exp_mesh = fvm_nodal_destroy(exp_mesh);
   }
 
-  BFT_FREE(b_face_list);
+  CS_FREE(b_face_list);
 
   writer = fvm_writer_finalize(writer);
 
-  BFT_FREE(fam_flag);
-  BFT_FREE(group_flag);
+  CS_FREE(fam_flag);
+  CS_FREE(group_flag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3039,7 +3039,7 @@ _extract_field_component(const cs_field_t  *f,
   const cs_real_t *src_val = f->val;
 
   cs_real_t *val;
-  BFT_MALLOC(val, n_elts, cs_real_t);
+  CS_MALLOC(val, n_elts, cs_real_t);
 
   for (cs_lnum_t i = 0; i < n_elts; i++)
     val[i] = src_val[i*dim + comp_id];
@@ -3087,7 +3087,7 @@ _cs_post_output_profile_coords(cs_post_mesh_t        *post_mesh,
                                nullptr,
                                s,
                                ts);
-    BFT_FREE(s);
+    CS_FREE(s);
   }
 
   if (auto_cart_coo) {
@@ -3097,7 +3097,7 @@ _cs_post_output_profile_coords(cs_post_mesh_t        *post_mesh,
 
     const cs_lnum_t  n_points = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
     cs_coord_t  *point_coords;
-    BFT_MALLOC(point_coords, n_points*3, cs_coord_t);
+    CS_MALLOC(point_coords, n_points*3, cs_coord_t);
     fvm_nodal_get_vertex_coords(post_mesh->exp_mesh,
                                 CS_INTERLACE,
                                 point_coords);
@@ -3130,7 +3130,7 @@ _cs_post_output_profile_coords(cs_post_mesh_t        *post_mesh,
 
     } /* End of loop on writers */
 
-    BFT_FREE(point_coords);
+    CS_FREE(point_coords);
 
   }
 }
@@ -3260,7 +3260,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
           if (field_and_mesh_ids_match == false) {
 
-            BFT_MALLOC(tmp_val, n_vals_p, cs_real_t);
+            CS_MALLOC(tmp_val, n_vals_p, cs_real_t);
 
             /* Remark: in case we decide to output values on the parent mesh,
                we need to initialize values to a default for elements not in
@@ -3310,7 +3310,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
                           b_face_val,
                           ts);
 
-        BFT_FREE(tmp_val);
+        CS_FREE(tmp_val);
       }
 
       else if (field_loc_type == CS_MESH_LOCATION_VERTICES)
@@ -3596,7 +3596,7 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
 
     }
 
-    BFT_FREE(_val);
+    CS_FREE(_val);
   }
 }
 
@@ -3623,7 +3623,7 @@ _attach_probe_set_fields(cs_post_mesh_t  *post_mesh)
   cs_probe_set_transfer_associated_field_info(pset, &ps_naf, &ps_afi);
 
   post_mesh->n_a_fields = 0;
-  BFT_REALLOC(post_mesh->a_field_info, 3*ps_naf, int);
+  CS_REALLOC(post_mesh->a_field_info, 3*ps_naf, int);
 
   const int vis_key_id = cs_field_key_id("post_vis");
   int vis_key_mask = 0;
@@ -3673,8 +3673,8 @@ _attach_probe_set_fields(cs_post_mesh_t  *post_mesh)
 
   }
 
-  BFT_FREE(ps_afi);
-  BFT_REALLOC(post_mesh->a_field_info, 3*post_mesh->n_a_fields, int);
+  CS_FREE(ps_afi);
+  CS_REALLOC(post_mesh->a_field_info, 3*post_mesh->n_a_fields, int);
 }
 
 /*----------------------------------------------------------------------------
@@ -3898,7 +3898,7 @@ _cs_post_define_probe_mesh(int                    mesh_id,
   /* Define mesh based on current arguments */
 
   const char  *mesh_name = cs_probe_set_get_name(pset);
-  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  CS_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
   strcpy(post_mesh->name, mesh_name);
 
   post_mesh->sel_func[4] = nullptr;
@@ -4211,12 +4211,12 @@ cs_post_define_writer(int                     writer_id,
   for (i = 0; i < _cs_post_n_writers; i++) {
     if ((_cs_post_writers + i)->id == writer_id) {
       w = _cs_post_writers + i;
-      BFT_FREE(w->ot);
+      CS_FREE(w->ot);
       wd = w->wd;
       assert(wd != nullptr);
-      BFT_FREE(wd->case_name);
-      BFT_FREE(wd->dir_name);
-      BFT_FREE(wd->fmt_opts);
+      CS_FREE(wd->case_name);
+      CS_FREE(wd->dir_name);
+      CS_FREE(wd->fmt_opts);
       break;
     }
   }
@@ -4230,9 +4230,9 @@ cs_post_define_writer(int                     writer_id,
         _cs_post_n_writers_max = 4;
       else
         _cs_post_n_writers_max *= 2;
-      BFT_REALLOC(_cs_post_writers,
-                  _cs_post_n_writers_max,
-                  cs_post_writer_t);
+      CS_REALLOC(_cs_post_writers,
+                 _cs_post_n_writers_max,
+                 cs_post_writer_t);
     }
 
     if (writer_id < _cs_post_min_writer_id)
@@ -4240,7 +4240,7 @@ cs_post_define_writer(int                     writer_id,
     _cs_post_n_writers += 1;
 
     w = _cs_post_writers + i;
-    BFT_MALLOC(w->wd, 1, cs_post_writer_def_t);
+    CS_MALLOC(w->wd, 1, cs_post_writer_def_t);
     wd = w->wd;
 
   }
@@ -4279,20 +4279,20 @@ cs_post_define_writer(int                     writer_id,
 
   wd->time_dep = time_dep;
 
-  BFT_MALLOC(wd->case_name, strlen(case_name) + 1, char);
+  CS_MALLOC(wd->case_name, strlen(case_name) + 1, char);
   strcpy(wd->case_name, case_name);
 
-  BFT_MALLOC(wd->dir_name, strlen(dir_name) + 1, char);
+  CS_MALLOC(wd->dir_name, strlen(dir_name) + 1, char);
   strcpy(wd->dir_name, dir_name);
 
   wd->fmt_id = fvm_writer_get_format_id(fmt_name);
 
   if (fmt_opts != nullptr) {
-    BFT_MALLOC(wd->fmt_opts, strlen(fmt_opts) + 1, char);
+    CS_MALLOC(wd->fmt_opts, strlen(fmt_opts) + 1, char);
     strcpy(wd->fmt_opts, fmt_opts);
   }
   else {
-    BFT_MALLOC(wd->fmt_opts, 1, char);
+    CS_MALLOC(wd->fmt_opts, 1, char);
     wd->fmt_opts[0] = '\0';
   }
 
@@ -4303,13 +4303,13 @@ cs_post_define_writer(int                     writer_id,
   if (writer_id == CS_POST_WRITER_DEFAULT) {
     _cs_post_default_format_id = wd->fmt_id;
     if (wd->fmt_opts != nullptr) {
-      BFT_REALLOC(_cs_post_default_format_options,
-                  strlen(wd->fmt_opts)+ 1,
-                  char);
+      CS_REALLOC(_cs_post_default_format_options,
+                 strlen(wd->fmt_opts)+ 1,
+                 char);
       strcpy(_cs_post_default_format_options, wd->fmt_opts);
     }
     else
-      BFT_FREE(_cs_post_default_format_options);
+      CS_FREE(_cs_post_default_format_options);
     /* Remove possible "separate_writers" option from default format */
     fvm_writer_filter_option(_cs_post_default_format_options,
                              "separate_meshes");
@@ -4349,11 +4349,11 @@ cs_post_define_volume_mesh(int          mesh_id,
 
   /* Define mesh based on current arguments */
 
-  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  CS_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
   strcpy(post_mesh->name, mesh_name);
 
   if (cell_criteria != nullptr) {
-    BFT_MALLOC(post_mesh->criteria[0], strlen(cell_criteria) + 1, char);
+    CS_MALLOC(post_mesh->criteria[0], strlen(cell_criteria) + 1, char);
     strcpy(post_mesh->criteria[0], cell_criteria);
     if (!strcmp(cell_criteria, "all[]"))
       post_mesh->location_id = CS_MESH_LOCATION_CELLS;
@@ -4419,7 +4419,7 @@ cs_post_define_volume_mesh_by_func(int                    mesh_id,
 
   /* Define mesh based on current arguments */
 
-  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  CS_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
   strcpy(post_mesh->name, mesh_name);
 
   post_mesh->sel_func[0] = cell_select_func;
@@ -4468,17 +4468,17 @@ cs_post_define_surface_mesh(int          mesh_id,
 
   /* Define mesh based on current arguments */
 
-  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  CS_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
   strcpy(post_mesh->name, mesh_name);
 
   if (i_face_criteria != nullptr) {
-    BFT_MALLOC(post_mesh->criteria[1], strlen(i_face_criteria) + 1, char);
+    CS_MALLOC(post_mesh->criteria[1], strlen(i_face_criteria) + 1, char);
     strcpy(post_mesh->criteria[1], i_face_criteria);
     post_mesh->ent_flag[1] = 1;
   }
 
   if (b_face_criteria != nullptr) {
-    BFT_MALLOC(post_mesh->criteria[2], strlen(b_face_criteria) + 1, char);
+    CS_MALLOC(post_mesh->criteria[2], strlen(b_face_criteria) + 1, char);
     strcpy(post_mesh->criteria[2], b_face_criteria);
     post_mesh->ent_flag[2] = 1;
     if (!strcmp(b_face_criteria, "all[]") && i_face_criteria == nullptr)
@@ -4551,7 +4551,7 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
 
   /* Define mesh based on current arguments */
 
-  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  CS_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
   strcpy(post_mesh->name, mesh_name);
 
   post_mesh->sel_func[1] = i_face_select_func;
@@ -4611,7 +4611,7 @@ cs_post_define_mesh_by_location(int          mesh_id,
 
   cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(location_id);
 
-  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  CS_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
   strcpy(post_mesh->name, mesh_name);
 
   switch(loc_type) {
@@ -4688,11 +4688,11 @@ cs_post_define_particles_mesh(int          mesh_id,
 
   /* Define mesh based on current arguments */
 
-  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  CS_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
   strcpy(post_mesh->name, mesh_name);
 
   if (cell_criteria != nullptr) {
-    BFT_MALLOC(post_mesh->criteria[3], strlen(cell_criteria) + 1, char);
+    CS_MALLOC(post_mesh->criteria[3], strlen(cell_criteria) + 1, char);
     strcpy(post_mesh->criteria[3], cell_criteria);
   }
 
@@ -4756,7 +4756,7 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
 
   /* Define mesh based on current arguments */
 
-  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  CS_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
   strcpy(post_mesh->name, mesh_name);
 
   post_mesh->sel_func[3] = p_select_func;
@@ -4853,7 +4853,7 @@ cs_post_define_existing_mesh(int           mesh_id,
 
   else if (dim_ent == 2 && n_elts > 0) {
 
-    BFT_MALLOC(num_ent_parent, n_elts, cs_lnum_t);
+    CS_MALLOC(num_ent_parent, n_elts, cs_lnum_t);
 
     fvm_nodal_get_parent_num(exp_mesh, dim_ext_ent, num_ent_parent);
 
@@ -4865,7 +4865,7 @@ cs_post_define_existing_mesh(int           mesh_id,
         post_mesh->n_b_faces += 1;
     }
 
-    BFT_FREE(num_ent_parent);
+    CS_FREE(num_ent_parent);
 
     if (post_mesh->n_i_faces > 0)
       loc_flag[1] = 0;
@@ -4944,9 +4944,9 @@ cs_post_define_edges_mesh(int        mesh_id,
 
   post_mesh = _predefine_mesh(mesh_id, true, 0, n_writers, writer_ids);
 
-  BFT_MALLOC(post_mesh->name,
-             strlen(post_base->name) + strlen(_(" edges")) + 1,
-             char);
+  CS_MALLOC(post_mesh->name,
+            strlen(post_base->name) + strlen(_(" edges")) + 1,
+            char);
   strcpy(post_mesh->name, post_base->name);
   strcat(post_mesh->name, _(" edges"));
 }
@@ -5018,8 +5018,8 @@ cs_post_mesh_attach_writer(int  mesh_id,
       return;
   }
 
-  BFT_REALLOC(post_mesh->writer_id, post_mesh->n_writers + 1, int);
-  BFT_REALLOC(post_mesh->nt_last, post_mesh->n_writers + 1, int);
+  CS_REALLOC(post_mesh->writer_id, post_mesh->n_writers + 1, int);
+  CS_REALLOC(post_mesh->nt_last, post_mesh->n_writers + 1, int);
   post_mesh->writer_id[post_mesh->n_writers] = _writer_id;
   post_mesh->nt_last[post_mesh->n_writers] = -2;
   post_mesh->n_writers += 1;
@@ -5083,8 +5083,8 @@ cs_post_mesh_detach_writer(int  mesh_id,
   if (j < post_mesh->n_writers) {
 
     post_mesh->n_writers = j;
-    BFT_REALLOC(post_mesh->writer_id, post_mesh->n_writers, int);
-    BFT_REALLOC(post_mesh->nt_last, post_mesh->n_writers, int);
+    CS_REALLOC(post_mesh->writer_id, post_mesh->n_writers, int);
+    CS_REALLOC(post_mesh->nt_last, post_mesh->n_writers, int);
 
     _update_mesh_writer_associations(post_mesh);
   }
@@ -5147,7 +5147,7 @@ cs_post_mesh_attach_field(int  mesh_id,
   }
 
   if (! redundant) {
-    BFT_REALLOC(post_mesh->a_field_info, 3*(post_mesh->n_a_fields+1), int);
+    CS_REALLOC(post_mesh->a_field_info, 3*(post_mesh->n_a_fields+1), int);
     int *afi = post_mesh->a_field_info + 3*post_mesh->n_a_fields;
     afi[0] = writer_id;
     afi[1] = field_id;
@@ -5299,13 +5299,13 @@ cs_post_mesh_get_i_face_ids(int        mesh_id,
     else {
       cs_lnum_t n_i_faces = 0;
       cs_lnum_t *tmp_ids = nullptr;
-      BFT_MALLOC(tmp_ids, n_faces, cs_lnum_t);
+      CS_MALLOC(tmp_ids, n_faces, cs_lnum_t);
       fvm_nodal_get_parent_num(mesh->exp_mesh, 3, tmp_ids);
       for (i = 0; i < n_faces; i++) {
         if (tmp_ids[i] > cs_glob_mesh->n_b_faces)
           i_face_ids[n_i_faces++] = tmp_ids[i] - num_shift;
       }
-      BFT_FREE(tmp_ids);
+      CS_FREE(tmp_ids);
     }
   }
   else
@@ -5371,13 +5371,13 @@ cs_post_mesh_get_b_face_ids(int        mesh_id,
     else {
       cs_lnum_t n_b_faces = 0;
       cs_lnum_t *tmp_ids = nullptr;
-      BFT_MALLOC(tmp_ids, n_faces, cs_lnum_t);
+      CS_MALLOC(tmp_ids, n_faces, cs_lnum_t);
       fvm_nodal_get_parent_num(mesh->exp_mesh, 3, tmp_ids);
       for (i = 0; i < n_faces; i++) {
         if (tmp_ids[i] > cs_glob_mesh->n_b_faces)
           b_face_ids[n_b_faces++] = tmp_ids[i] - 1;
       }
-      BFT_FREE(tmp_ids);
+      CS_FREE(tmp_ids);
     }
   }
   else
@@ -6253,10 +6253,10 @@ cs_post_write_var(int                    mesh_id,
 
         if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
 
-          BFT_MALLOC(var_tmp,
-                     (   post_mesh->n_i_faces
-                      +  post_mesh->n_b_faces) * var_dim,
-                     cs_real_t);
+          CS_MALLOC(var_tmp,
+                    (   post_mesh->n_i_faces
+                     +  post_mesh->n_b_faces) * var_dim,
+                    cs_real_t);
 
           _cs_post_assmb_var_faces
             (post_mesh->exp_mesh,
@@ -6366,7 +6366,7 @@ cs_post_write_var(int                    mesh_id,
   /* Free memory (if both interior and boundary faces present) */
 
   if (var_tmp != nullptr)
-    BFT_FREE(var_tmp);
+    CS_FREE(var_tmp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6514,7 +6514,7 @@ cs_post_write_function(int                    mesh_id,
   cs_lnum_t n_elts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, ent_dim);
 
   cs_lnum_t *elt_ids;
-  BFT_MALLOC(elt_ids, n_elts, cs_lnum_t);
+  CS_MALLOC(elt_ids, n_elts, cs_lnum_t);
   fvm_nodal_get_parent_id(post_mesh->exp_mesh, ent_dim, elt_ids);
 
   if (elt_id_shift > 0) {
@@ -6524,7 +6524,7 @@ cs_post_write_function(int                    mesh_id,
 
   unsigned char *_vals = nullptr;
   size_t elt_size = cs_datatype_size[f->datatype] * f->dim;
-  BFT_MALLOC(_vals, ((size_t)n_elts) * elt_size,  unsigned char);
+  CS_MALLOC(_vals, ((size_t)n_elts) * elt_size,  unsigned char);
 
   cs_function_evaluate(f,
                        ts,
@@ -6533,7 +6533,7 @@ cs_post_write_function(int                    mesh_id,
                        elt_ids,
                        _vals);
 
-  BFT_FREE(elt_ids);
+  CS_FREE(elt_ids);
 
   var_ptr[0] = _vals;
 
@@ -6579,7 +6579,7 @@ cs_post_write_function(int                    mesh_id,
 
   /* Free memory */
 
-  BFT_FREE(_vals);
+  CS_FREE(_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6755,12 +6755,12 @@ cs_post_write_vertex_function(int                    mesh_id,
   cs_lnum_t n_elts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
 
   cs_lnum_t *elt_ids;
-  BFT_MALLOC(elt_ids, n_elts, cs_lnum_t);
+  CS_MALLOC(elt_ids, n_elts, cs_lnum_t);
   fvm_nodal_get_parent_id(post_mesh->exp_mesh, 0, elt_ids);
 
   unsigned char *_vals = nullptr;
   size_t elt_size = cs_datatype_size[f->datatype] * f->dim;
-  BFT_MALLOC(_vals, ((size_t)n_elts) * elt_size,  unsigned char);
+  CS_MALLOC(_vals, ((size_t)n_elts) * elt_size,  unsigned char);
 
   cs_function_evaluate(f,
                        ts,
@@ -6769,7 +6769,7 @@ cs_post_write_vertex_function(int                    mesh_id,
                        elt_ids,
                        _vals);
 
-  BFT_FREE(elt_ids);
+  CS_FREE(elt_ids);
 
   var_ptr[0] = _vals;
 
@@ -6816,7 +6816,7 @@ cs_post_write_vertex_function(int                    mesh_id,
 
   /* Free memory */
 
-  BFT_FREE(_vals);
+  CS_FREE(_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6908,13 +6908,13 @@ cs_post_write_particle_values(int                    mesh_id,
 
   n_pts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
 
-  BFT_MALLOC(vals, n_pts*_length, unsigned char);
+  CS_MALLOC(vals, n_pts*_length, unsigned char);
 
   var_ptr[0] = vals;
 
   if (n_pts != n_particles) {
     int parent_dim = (post_mesh->ent_flag[3] == 2) ? 1 : 0;
-    BFT_MALLOC(particle_list, n_particles, cs_lnum_t);
+    CS_MALLOC(particle_list, n_particles, cs_lnum_t);
     fvm_nodal_get_parent_num(post_mesh->exp_mesh, parent_dim, particle_list);
   }
 
@@ -6942,7 +6942,7 @@ cs_post_write_particle_values(int                    mesh_id,
                                   vals);
   }
 
-  BFT_FREE(particle_list);
+  CS_FREE(particle_list);
 
   /* Effective output: loop on writers */
   /*-----------------------------------*/
@@ -6973,7 +6973,7 @@ cs_post_write_particle_values(int                    mesh_id,
 
   }
 
-  BFT_FREE(vals);
+  CS_FREE(vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7042,12 +7042,12 @@ cs_post_write_probe_values(int                              mesh_id,
     if (_interpolate_func == nullptr)
       _interpolate_func = cs_interpolate_from_location_p0;
 
-    BFT_MALLOC(_vals,
-               n_points*cs_datatype_size[datatype]*var_dim,
-               unsigned char);
+    CS_MALLOC(_vals,
+              n_points*cs_datatype_size[datatype]*var_dim,
+              unsigned char);
 
     if (_interpolate_func != cs_interpolate_from_location_p0) {
-      BFT_MALLOC(point_coords, n_points*3, cs_coord_t);
+      CS_MALLOC(point_coords, n_points*3, cs_coord_t);
       fvm_nodal_get_vertex_coords(post_mesh->exp_mesh,
                                   CS_INTERLACE,
                                   point_coords);
@@ -7063,7 +7063,7 @@ cs_post_write_probe_values(int                              mesh_id,
                       _vals);
     var_ptr[0] = _vals;
 
-    BFT_FREE(point_coords);
+    CS_FREE(point_coords);
   }
 
   /* Effective output: loop on writers */
@@ -7097,7 +7097,7 @@ cs_post_write_probe_values(int                              mesh_id,
 
   }
 
-  BFT_FREE(_vals);
+  CS_FREE(_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7185,13 +7185,13 @@ cs_post_write_probe_function(int                              mesh_id,
         || f->datatype != CS_REAL_TYPE)
       _interpolate_func = nullptr;
 
-    BFT_MALLOC(_vals,
-               (size_t)n_points*cs_datatype_size[f->datatype]*((size_t)f->dim),
-               unsigned char);
+    CS_MALLOC(_vals,
+              (size_t)n_points*cs_datatype_size[f->datatype]*((size_t)f->dim),
+              unsigned char);
 
     if (   _interpolate_func != cs_interpolate_from_location_p0
         || f->analytic_func != nullptr) {
-      BFT_MALLOC(point_coords, n_points*3, cs_coord_t);
+      CS_MALLOC(point_coords, n_points*3, cs_coord_t);
       fvm_nodal_get_vertex_coords(post_mesh->exp_mesh,
                                   CS_INTERLACE,
                                   point_coords);
@@ -7201,7 +7201,7 @@ cs_post_write_probe_function(int                              mesh_id,
       const cs_lnum_t *n_p_elts
         = cs_mesh_location_get_n_elts(parent_location_id);
       cs_real_t *_p_vals;
-      BFT_MALLOC(_p_vals, n_p_elts[2]*_dim, cs_real_t);
+      CS_MALLOC(_p_vals, n_p_elts[2]*_dim, cs_real_t);
 
       cs_function_evaluate(f,
                            ts,
@@ -7219,7 +7219,7 @@ cs_post_write_probe_function(int                              mesh_id,
                         _p_vals,
                         _vals);
 
-      BFT_FREE(_p_vals);
+      CS_FREE(_p_vals);
     }
 
     else if (f->analytic_func != nullptr)
@@ -7240,7 +7240,7 @@ cs_post_write_probe_function(int                              mesh_id,
 
     var_ptr[0] = _vals;
 
-    BFT_FREE(point_coords);
+    CS_FREE(point_coords);
   }
 
   /* Effective output: loop on writers */
@@ -7282,7 +7282,7 @@ cs_post_write_probe_function(int                              mesh_id,
 
   }
 
-  BFT_FREE(_vals);
+  CS_FREE(_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7332,7 +7332,7 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
 
     n_elts = mesh->n_cells;
 
-    BFT_MALLOC(renum_ent_parent, n_elts, cs_lnum_t);
+    CS_MALLOC(renum_ent_parent, n_elts, cs_lnum_t);
 
     for (icel = 0; icel < mesh->n_cells; icel++)
       renum_ent_parent[init_cell_num[icel]] = icel;
@@ -7354,7 +7354,7 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
 
     }
 
-    BFT_FREE(renum_ent_parent);
+    CS_FREE(renum_ent_parent);
 
   }
 
@@ -7409,7 +7409,7 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
 
     n_elts = mesh->n_i_faces + mesh->n_b_faces;
 
-    BFT_MALLOC(renum_ent_parent, n_elts, cs_lnum_t);
+    CS_MALLOC(renum_ent_parent, n_elts, cs_lnum_t);
 
     if (init_b_face_num == nullptr) {
       for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
@@ -7453,7 +7453,7 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
 
     }
 
-    BFT_FREE(renum_ent_parent);
+    CS_FREE(renum_ent_parent);
   }
 }
 
@@ -7827,7 +7827,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
   /* Prepare flag to avoid multiple field synchronizations */
 
   const int n_fields = cs_field_n_fields();
-  BFT_MALLOC(_field_sync, n_fields, char);
+  CS_MALLOC(_field_sync, n_fields, char);
   for (int f_id = 0; f_id < n_fields; f_id++)
     _field_sync[f_id] = 0;
 
@@ -7876,7 +7876,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
       if (n_elts > n_elts_max) {
         n_elts_max = n_elts;
-        BFT_REALLOC(parent_ids, n_elts_max, cs_lnum_t);
+        CS_REALLOC(parent_ids, n_elts_max, cs_lnum_t);
       }
 
       /* Get corresponding element ids */
@@ -7931,8 +7931,8 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
         else {
 
-          BFT_MALLOC(i_face_ids, n_i_faces, cs_lnum_t);
-          BFT_MALLOC(b_face_ids, n_b_faces, cs_lnum_t);
+          CS_MALLOC(i_face_ids, n_i_faces, cs_lnum_t);
+          CS_MALLOC(b_face_ids, n_b_faces, cs_lnum_t);
 
           n_i_faces = 0, n_b_faces = 0;
 
@@ -7994,7 +7994,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
       if (post_mesh->sel_input[4] == nullptr) {
 
         cs_lnum_t *vertex_ids;
-        BFT_MALLOC(vertex_ids, n_vertices, cs_lnum_t);
+        CS_MALLOC(vertex_ids, n_vertices, cs_lnum_t);
         cs_post_mesh_get_vertex_ids(post_mesh->id, vertex_ids);
 
         cs_user_postprocess_values(post_mesh->name,
@@ -8011,14 +8011,14 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
                                    vertex_ids,
                                    ts);
 
-        BFT_FREE(vertex_ids);
+        CS_FREE(vertex_ids);
 
         /* In case of mixed interior and boundary faces, free
            additional arrays */
 
         if (i_face_ids != nullptr && b_face_ids != nullptr) {
-          BFT_FREE(i_face_ids);
-          BFT_FREE(b_face_ids);
+          CS_FREE(i_face_ids);
+          CS_FREE(b_face_ids);
         }
 
       }
@@ -8076,8 +8076,8 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
   /* Free memory */
 
-  BFT_FREE(_field_sync);
-  BFT_FREE(parent_ids);
+  CS_FREE(_field_sync);
+  CS_FREE(parent_ids);
 
   cs_timer_stats_switch(t_top_id);
 }
@@ -8196,15 +8196,15 @@ cs_post_finalize(void)
     post_mesh = _cs_post_meshes + i;
     if (post_mesh->_exp_mesh != nullptr)
       fvm_nodal_destroy(post_mesh->_exp_mesh);
-    BFT_FREE(post_mesh->name);
+    CS_FREE(post_mesh->name);
     for (j = 0; j < 4; j++)
-      BFT_FREE(post_mesh->criteria[j]);
-    BFT_FREE(post_mesh->writer_id);
-    BFT_FREE(post_mesh->nt_last);
-    BFT_FREE(post_mesh->a_field_info);
+      CS_FREE(post_mesh->criteria[j]);
+    CS_FREE(post_mesh->writer_id);
+    CS_FREE(post_mesh->nt_last);
+    CS_FREE(post_mesh->a_field_info);
   }
 
-  BFT_FREE(_cs_post_meshes);
+  CS_FREE(_cs_post_meshes);
 
   _cs_post_min_mesh_id = _MIN_RESERVED_MESH_ID;
   _cs_post_n_meshes = 0;
@@ -8222,7 +8222,7 @@ cs_post_finalize(void)
       fvm_writer_finalize((_cs_post_writers + i)->writer);
   }
 
-  BFT_FREE(_cs_post_writers);
+  CS_FREE(_cs_post_writers);
 
   _cs_post_n_writers = 0;
   _cs_post_n_writers_max = 0;
@@ -8230,18 +8230,18 @@ cs_post_finalize(void)
   /* Registered processings if necessary */
 
   if (_cs_post_n_output_tp_max > 0) {
-    BFT_FREE(_cs_post_f_output_tp);
-    BFT_FREE(_cs_post_i_output_tp);
+    CS_FREE(_cs_post_f_output_tp);
+    CS_FREE(_cs_post_i_output_tp);
   }
 
   if (_cs_post_n_output_mtp_max > 0) {
-    BFT_FREE(_cs_post_f_output_mtp);
-    BFT_FREE(_cs_post_i_output_mtp);
+    CS_FREE(_cs_post_f_output_mtp);
+    CS_FREE(_cs_post_i_output_mtp);
   }
 
   /* Options */
 
-  BFT_FREE(_cs_post_default_format_options);
+  CS_FREE(_cs_post_default_format_options);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8279,7 +8279,7 @@ cs_post_add_free_faces(void)
 
   /* Build list of faces to extract */
 
-  BFT_MALLOC(f_face_list, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(f_face_list, mesh->n_b_faces, cs_lnum_t);
 
   for (i = 0; i < mesh->n_b_faces; i++) {
     if (mesh->b_face_cells[i] < 0)
@@ -8346,7 +8346,7 @@ cs_post_add_free_faces(void)
 
     /* Now detect which groups may be referenced */
 
-    BFT_MALLOC(fam_flag, mesh->n_families + 1, int);
+    CS_MALLOC(fam_flag, mesh->n_families + 1, int);
     memset(fam_flag, 0, (mesh->n_families + 1)*sizeof(int));
 
     if (mesh->b_face_family != nullptr) {
@@ -8360,9 +8360,9 @@ cs_post_add_free_faces(void)
        Selector structures may not have been initialized yet,
        so we use a direct selection here. */
 
-    BFT_REALLOC(fam_flag, mesh->n_families, int);
+    CS_REALLOC(fam_flag, mesh->n_families, int);
 
-    BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
 
     for (i = 0; i < mesh->n_groups; i++) {
 
@@ -8439,10 +8439,10 @@ cs_post_add_free_faces(void)
       exp_mesh = fvm_nodal_destroy(exp_mesh);
     }
 
-    BFT_FREE(b_face_list);
+    CS_FREE(b_face_list);
 
-    BFT_FREE(fam_flag);
-    BFT_FREE(group_flag);
+    CS_FREE(fam_flag);
+    CS_FREE(group_flag);
 
   } /* End of submeshes generation */
 
@@ -8450,7 +8450,7 @@ cs_post_add_free_faces(void)
 
   writer = fvm_writer_finalize(writer);
 
-  BFT_FREE(f_face_list);
+  CS_FREE(f_face_list);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8564,10 +8564,10 @@ cs_post_add_time_dep_output(cs_post_time_dep_output_t  *function,
       _cs_post_n_output_tp_max = 8;
     else
       _cs_post_n_output_tp_max *= 2;
-    BFT_REALLOC(_cs_post_f_output_tp,
-                _cs_post_n_output_tp_max,
-                cs_post_time_dep_output_t *);
-    BFT_REALLOC(_cs_post_i_output_tp, _cs_post_n_output_tp_max, void *);
+    CS_REALLOC(_cs_post_f_output_tp,
+               _cs_post_n_output_tp_max,
+               cs_post_time_dep_output_t *);
+    CS_REALLOC(_cs_post_i_output_tp, _cs_post_n_output_tp_max, void *);
   }
 
   /* Add a post-processing */
@@ -8605,10 +8605,10 @@ cs_post_add_time_mesh_dep_output(cs_post_time_mesh_dep_output_t  *function,
       _cs_post_n_output_mtp_max = 8;
     else
       _cs_post_n_output_mtp_max *= 2;
-    BFT_REALLOC(_cs_post_f_output_mtp,
-                _cs_post_n_output_mtp_max,
-                cs_post_time_mesh_dep_output_t *);
-    BFT_REALLOC(_cs_post_i_output_mtp, _cs_post_n_output_mtp_max, void *);
+    CS_REALLOC(_cs_post_f_output_mtp,
+               _cs_post_n_output_mtp_max,
+               cs_post_time_mesh_dep_output_t *);
+    CS_REALLOC(_cs_post_i_output_mtp, _cs_post_n_output_mtp_max, void *);
   }
 
   /* Add a post-processing */

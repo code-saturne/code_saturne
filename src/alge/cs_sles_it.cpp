@@ -391,7 +391,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -536,7 +536,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -598,7 +598,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -720,7 +720,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -783,7 +783,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -931,7 +931,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -993,7 +993,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1139,7 +1139,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -1196,7 +1196,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1322,7 +1322,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -1384,7 +1384,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1523,7 +1523,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -1584,7 +1584,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1701,7 +1701,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -1760,7 +1760,7 @@ _jacobi(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1888,7 +1888,7 @@ _jacobi(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -1952,7 +1952,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -2065,7 +2065,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
   return cvg;
 }
 
@@ -2126,7 +2126,7 @@ _block_jacobi(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -2241,7 +2241,7 @@ _block_jacobi(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -2354,7 +2354,7 @@ _bi_cgstab(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -2504,7 +2504,7 @@ _bi_cgstab(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -2570,7 +2570,7 @@ _bicgstab2(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -2759,7 +2759,7 @@ _bicgstab2(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -2945,7 +2945,7 @@ _gcr(cs_sles_it_t              *c,
     wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -2954,14 +2954,14 @@ _gcr(cs_sles_it_t              *c,
     ck = _aux_vectors + wa_size * (1 + n_k_per_restart);   /* store A*zk */
   }
 
-  BFT_MALLOC(alpha, n_k_per_restart, cs_real_t);
+  CS_MALLOC(alpha, n_k_per_restart, cs_real_t);
 
   /* gkj stores the upper triangle matrix Gamma of crossed inner-products
    * Not necessary to allocate the full matrix size
    * gkj_inv stores the inverse of gkj */
 
-  BFT_MALLOC(gkj, (n_k_per_restart + 1) * n_k_per_restart / 2, cs_real_t);
-  BFT_MALLOC(gkj_inv, (n_k_per_restart + 1) * n_k_per_restart / 2, cs_real_t);
+  CS_MALLOC(gkj, (n_k_per_restart + 1) * n_k_per_restart / 2, cs_real_t);
+  CS_MALLOC(gkj_inv, (n_k_per_restart + 1) * n_k_per_restart / 2, cs_real_t);
 
   /* Current Restart */
   while (cvg == CS_SLES_ITERATING) {
@@ -3102,11 +3102,11 @@ _gcr(cs_sles_it_t              *c,
   } /* Needs iterating */
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
-  BFT_FREE(alpha);
-  BFT_FREE(gkj);
-  BFT_FREE(gkj_inv);
+  CS_FREE(alpha);
+  CS_FREE(gkj);
+  CS_FREE(gkj_inv);
 
   return cvg;
 }
@@ -3197,7 +3197,7 @@ _gmres(cs_sles_it_t              *c,
                   + (krylov_size-1)*(n_rows + krylov_size) + 3*krylov_size;
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < _aux_r_size)
-      BFT_MALLOC(_aux_vectors, _aux_r_size, cs_real_t);
+      CS_MALLOC(_aux_vectors, _aux_r_size, cs_real_t);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -3360,7 +3360,7 @@ _gmres(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   return cvg;
 }
@@ -4280,7 +4280,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
 {
   cs_sles_it_t *c;
 
-  BFT_MALLOC(c, 1, cs_sles_it_t);
+  CS_MALLOC(c, 1, cs_sles_it_t);
 
   c->type = solver_type;
   c->solve = nullptr;
@@ -4388,10 +4388,10 @@ cs_sles_it_destroy(void **context)
       c->plot = nullptr;
     }
     if (c->add_data != nullptr) {
-      BFT_FREE(c->add_data->order);
-      BFT_FREE(c->add_data);
+      CS_FREE(c->add_data->order);
+      CS_FREE(c->add_data);
     }
-    BFT_FREE(c);
+    CS_FREE(c);
     *context = c;
   }
 }
@@ -5023,7 +5023,7 @@ cs_sles_it_free(void  *context)
 
   if (c->setup_data != nullptr) {
     CS_FREE_HD(c->setup_data->_ad_inv);
-    BFT_FREE(c->setup_data);
+    CS_FREE(c->setup_data);
   }
 
   if (c->update_stats == true) {
@@ -5281,16 +5281,16 @@ cs_sles_it_assign_order(cs_sles_it_t   *context,
                         cs_lnum_t     **order)
 {
   if (context->type != CS_SLES_P_GAUSS_SEIDEL)
-    BFT_FREE(*order);
+    CS_FREE(*order);
 
   else {
 
     if (context->add_data == nullptr) {
-      BFT_MALLOC(context->add_data, 1, cs_sles_it_add_t);
+      CS_MALLOC(context->add_data, 1, cs_sles_it_add_t);
       context->add_data->order = nullptr;
     }
 
-    BFT_FREE(context->add_data->order);
+    CS_FREE(context->add_data->order);
 
     context->add_data->order = *order;
 

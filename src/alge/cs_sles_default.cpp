@@ -45,7 +45,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -56,6 +55,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_internal_coupling.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -1039,7 +1039,7 @@ cs_sles_solve_ccc_fv(cs_sles_t           *sc,
                       0,
                       nullptr);
 
-  BFT_FREE(_rhs);
+  CS_FREE(_rhs);
   if (_vx != vx) {
 
     cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
@@ -1182,8 +1182,8 @@ cs_sles_solve_native(int                  f_id,
     cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
     assert(n_rows == m->n_cells);
     cs_lnum_t _n_rows = n_rows*stride;
-    BFT_MALLOC(_rhs, n_cols_ext*stride, cs_real_t);
-    BFT_MALLOC(_vx, n_cols_ext*stride, cs_real_t);
+    CS_MALLOC(_rhs, n_cols_ext*stride, cs_real_t);
+    CS_MALLOC(_vx, n_cols_ext*stride, cs_real_t);
 #   pragma omp parallel for  if(_n_rows > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < _n_rows; i++) {
       _rhs[i] = rhs[i];
@@ -1208,7 +1208,7 @@ cs_sles_solve_native(int                  f_id,
                       0,
                       nullptr);
 
-  BFT_FREE(_rhs);
+  CS_FREE(_rhs);
   if (_vx != vx) {
     size_t stride = diag_block_size;
     cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -1216,7 +1216,7 @@ cs_sles_solve_native(int                  f_id,
 #   pragma omp parallel for  if(_n_rows > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < _n_rows; i++)
       vx[i] = _vx[i];
-    BFT_FREE(_vx);
+    CS_FREE(_vx);
   }
 
   return cvg;

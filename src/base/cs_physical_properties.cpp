@@ -42,9 +42,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
 #include "cdo/cs_property.h"
@@ -182,7 +182,7 @@ _thermal_table_create(void)
 {
   cs_thermal_table_t  *tt = nullptr;
 
-  BFT_MALLOC(tt, 1, cs_thermal_table_t);
+  CS_MALLOC(tt, 1, cs_thermal_table_t);
 
   tt->material     = nullptr;
   tt->method       = nullptr;
@@ -308,11 +308,11 @@ cs_thermal_table_set(const char                        *material,
     CS_TIMER_COUNTER_INIT(_physprop_lib_t_tot);
   }
 
-  BFT_MALLOC(cs_glob_thermal_table->material, strlen(material) +1, char);
+  CS_MALLOC(cs_glob_thermal_table->material, strlen(material) +1, char);
   strcpy(cs_glob_thermal_table->material,  material);
 
   if (strcmp(material, "user_material") == 0) {
-    BFT_MALLOC(cs_glob_thermal_table->method, strlen(method) +1, char);
+    CS_MALLOC(cs_glob_thermal_table->method, strlen(method) +1, char);
     strcpy(cs_glob_thermal_table->method, method);
     cs_glob_thermal_table->type = CS_PHYS_PROP_TABLE_USER;
   }
@@ -344,7 +344,7 @@ cs_thermal_table_set(const char                        *material,
 #endif
   }
   else {
-    BFT_MALLOC(cs_glob_thermal_table->method, strlen(method) +5, char);
+    CS_MALLOC(cs_glob_thermal_table->method, strlen(method) +5, char);
     strcpy(cs_glob_thermal_table->method, "EOS_");
     strcat(cs_glob_thermal_table->method, method);
     cs_glob_thermal_table->type = CS_PHYS_PROP_TABLE_EOS;
@@ -424,11 +424,11 @@ cs_thermal_table_finalize(void)
       cs_base_dlclose("cs_coolprop", _cs_coolprop_dl_lib);
       _cs_phys_prop_coolprop = nullptr;
     }
-    BFT_FREE(_cs_coolprop_backend);
+    CS_FREE(_cs_coolprop_backend);
 #endif
-    BFT_FREE(cs_glob_thermal_table->material);
-    BFT_FREE(cs_glob_thermal_table->method);
-    BFT_FREE(cs_glob_thermal_table);
+    CS_FREE(cs_glob_thermal_table->material);
+    CS_FREE(cs_glob_thermal_table->method);
+    CS_FREE(cs_glob_thermal_table);
   }
 }
 
@@ -488,14 +488,14 @@ cs_physical_properties_set_coolprop_backend(const char  *backend)
     backend = "HEOS";
 
   size_t l = strlen(backend);
-  BFT_REALLOC(_cs_coolprop_backend, l+1, char);
+  CS_REALLOC(_cs_coolprop_backend, l+1, char);
   strcpy(_cs_coolprop_backend, backend);
 
   if (cs_glob_thermal_table != nullptr) {
 
-    BFT_REALLOC(cs_glob_thermal_table->method,
-                strlen("CoolProp ()") + strlen(_cs_coolprop_backend) + 3,
-                char);
+    CS_REALLOC(cs_glob_thermal_table->method,
+               strlen("CoolProp ()") + strlen(_cs_coolprop_backend) + 3,
+               char);
     strcpy(cs_glob_thermal_table->method, "CoolProp (");
     strcat(cs_glob_thermal_table->method, _cs_coolprop_backend);
     strcat(cs_glob_thermal_table->method, ")");
@@ -549,7 +549,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
     _n_vals = 1;
 
   if (var1_stride == 0 && n_vals > 1) {
-    BFT_MALLOC(_var1_c, n_vals, cs_real_t);
+    CS_MALLOC(_var1_c, n_vals, cs_real_t);
     for (cs_lnum_t ii = 0; ii < n_vals; ii++)
       _var1_c[ii] = var1[0];
     var1_c = _var1_c;
@@ -564,7 +564,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
       var2_c = _var2_c_single;
     }
     else {
-      BFT_MALLOC(_var2_c, n_vals, cs_real_t);
+      CS_MALLOC(_var2_c, n_vals, cs_real_t);
       for (cs_lnum_t ii = 0; ii < n_vals; ii++)
         _var2_c[ii] = var2[ii*var2_stride] + 273.15;
       var2_c = _var2_c;
@@ -572,7 +572,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
   }
   else {
     if (var2_stride == 0 && n_vals > 1) {
-      BFT_MALLOC(_var2_c, n_vals, cs_real_t);
+      CS_MALLOC(_var2_c, n_vals, cs_real_t);
       for (cs_lnum_t ii = 0; ii < n_vals; ii++)
         _var2_c[ii] = var2[0];
       var2_c = _var2_c;
@@ -609,8 +609,8 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&_physprop_lib_t_tot, &t0, &t1);
 
-  BFT_FREE(_var1_c);
-  BFT_FREE(_var2_c);
+  CS_FREE(_var1_c);
+  CS_FREE(_var2_c);
 
   /* In case of single value, apply to all */
 

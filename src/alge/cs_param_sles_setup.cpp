@@ -59,11 +59,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_fp_exception.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "alge/cs_multigrid.h"
 #include "alge/cs_sles.h"
 
@@ -1473,7 +1473,7 @@ _petsc_amg_block_gamg_hook(void  *context,
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
   char  *prefix = nullptr;
-  BFT_MALLOC(prefix, _len + 1, char);
+  CS_MALLOC(prefix, _len + 1, char);
   sprintf(prefix, "%s_", slesp->name);
   prefix[len] = '\0';
   KSPSetOptionsPrefix(ksp, prefix);
@@ -1514,7 +1514,7 @@ _petsc_amg_block_gamg_hook(void  *context,
 
   } /* Loop on block settings */
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
   PetscFree(xyz_subksp);
 
   /* User function for additional settings */
@@ -1553,7 +1553,7 @@ _petsc_amg_block_hmg_hook(void  *context,
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
   char  *prefix = nullptr;
-  BFT_MALLOC(prefix, _len + 1, char);
+  CS_MALLOC(prefix, _len + 1, char);
   sprintf(prefix, "%s_", slesp->name);
   prefix[len] = '\0';
   KSPSetOptionsPrefix(ksp, prefix);
@@ -1593,7 +1593,7 @@ _petsc_amg_block_hmg_hook(void  *context,
 
   } /* Loop on block settings */
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
   PetscFree(xyz_subksp);
 
   /* User function for additional settings */
@@ -1633,7 +1633,7 @@ _petsc_amg_block_boomer_hook(void     *context,
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
   char  *prefix = nullptr;
-  BFT_MALLOC(prefix, _len + 1, char);
+  CS_MALLOC(prefix, _len + 1, char);
   sprintf(prefix, "%s_", slesp->name);
   prefix[len] = '\0';
   KSPSetOptionsPrefix(ksp, prefix);
@@ -1675,7 +1675,7 @@ _petsc_amg_block_boomer_hook(void     *context,
 
   } /* Loop on block settings */
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
   PetscFree(xyz_subksp);
 
   /* User function for additional settings */
@@ -1714,7 +1714,7 @@ _petsc_block_hook(void     *context,
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
   char  *prefix = nullptr;
-  BFT_MALLOC(prefix, _len + 1, char);
+  CS_MALLOC(prefix, _len + 1, char);
   sprintf(prefix, "%s_", slesp->name);
   prefix[len] = '\0';
   KSPSetOptionsPrefix(ksp, prefix);
@@ -1890,7 +1890,7 @@ _petsc_block_hook(void     *context,
 
   } /* Loop on block settings */
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
   PetscFree(xyz_subksp);
 
   /* User function for additional settings */
@@ -3445,11 +3445,11 @@ cs_param_sles_setup_petsc_ksp(const char       *label,
 
   int len = strlen(label) + 1;
   char  *prefix = nullptr;
-  BFT_MALLOC(prefix, len + 1, char);
+  CS_MALLOC(prefix, len + 1, char);
   sprintf(prefix, "%s_", label);
   prefix[len] = '\0';
   KSPSetOptionsPrefix(ksp, prefix);
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
 
   /* 1) Set the solver */
 

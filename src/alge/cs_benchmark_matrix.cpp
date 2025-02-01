@@ -51,7 +51,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -60,6 +59,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_parall.h"
 #include "base/cs_prototypes.h"
@@ -229,7 +229,7 @@ _variant_add(const char                        *name,
       *n_variants_max = 8;
     else
       *n_variants_max *= 2;
-    BFT_REALLOC(*m_variant, *n_variants_max, cs_matrix_timing_variant_t);
+    CS_REALLOC(*m_variant, *n_variants_max, cs_matrix_timing_variant_t);
   }
 
   v = (*m_variant) + i;
@@ -689,7 +689,7 @@ _variant_build_list(int                             n_fill_types,
   }
 
   n_variants_max = *n_variants;
-  BFT_REALLOC(*m_variant, *n_variants, cs_matrix_timing_variant_t);
+  CS_REALLOC(*m_variant, *n_variants, cs_matrix_timing_variant_t);
 }
 
 /*----------------------------------------------------------------------------
@@ -774,7 +774,7 @@ _matrix_check(int                          n_variants,
 
   CS_MALLOC_HD(x, n_cols_ext*6, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(y, n_cols_ext*6, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(yr0, n_cols_ext*6, cs_real_t);
+  CS_MALLOC(yr0, n_cols_ext*6, cs_real_t);
 
   CS_MALLOC_HD(da, (size_t)n_cols_ext*(size_t)(6*6), cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(xa, (size_t)n_edges*(size_t)(2*3*3), cs_real_t, cs_alloc_mode);
@@ -782,7 +782,7 @@ _matrix_check(int                          n_variants,
   /* Initialize arrays */
 
   cs_gnum_t *cell_gnum = nullptr;
-  BFT_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
+  CS_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
   if (cs_glob_mesh->global_cell_num != nullptr) {
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       cell_gnum[ii] = cs_glob_mesh->global_cell_num[ii];
@@ -957,15 +957,15 @@ _matrix_check(int                          n_variants,
 
   } /* end of loop on fill types */
 
-  BFT_FREE(cell_gnum);
+  CS_FREE(cell_gnum);
 
-  BFT_FREE(yr0);
+  CS_FREE(yr0);
 
-  BFT_FREE(y);
-  BFT_FREE(x);
+  CS_FREE(y);
+  CS_FREE(x);
 
-  BFT_FREE(xa);
-  BFT_FREE(da);
+  CS_FREE(xa);
+  CS_FREE(da);
 }
 
 /*----------------------------------------------------------------------------
@@ -1238,11 +1238,11 @@ _matrix_time_test(int                          n_time_runs,
   if (ms != nullptr)
     cs_matrix_structure_destroy(&ms);
 
-  BFT_FREE(x);
-  BFT_FREE(y);
+  CS_FREE(x);
+  CS_FREE(y);
 
-  BFT_FREE(da);
-  BFT_FREE(xa);
+  CS_FREE(da);
+  CS_FREE(xa);
 }
 
 /*----------------------------------------------------------------------------
@@ -1783,7 +1783,7 @@ cs_benchmark_matrix(int                    n_time_runs,
 
   }
 
-  BFT_FREE(m_variant);
+  CS_FREE(m_variant);
 
   t1 = cs_timer_time();
 

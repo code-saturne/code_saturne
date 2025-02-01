@@ -46,9 +46,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
@@ -222,23 +222,23 @@ _create_remapper(const char                        *name,
                  int                                order)
 {
   cs_medcoupling_remapper_t *r = nullptr;
-  BFT_MALLOC(r, 1, cs_medcoupling_remapper_t);
+  CS_MALLOC(r, 1, cs_medcoupling_remapper_t);
 
   r->n_fields = n_fields;
 
-  BFT_MALLOC(r->name, strlen(name)+1, char);
+  CS_MALLOC(r->name, strlen(name)+1, char);
   strcpy(r->name, name);
 
   r->id = _n_remappers;
 
   // Store fields and medfile info in case updates are needed
 
-  BFT_MALLOC(r->medfile_path, strlen(medfile_path)+1, char);
+  CS_MALLOC(r->medfile_path, strlen(medfile_path)+1, char);
   strcpy(r->medfile_path, medfile_path);
 
-  BFT_MALLOC(r->field_names, n_fields, char *);
+  CS_MALLOC(r->field_names, n_fields, char *);
   for (int i = 0; i < n_fields; i++) {
-    BFT_MALLOC(r->field_names[i], strlen(field_names[i])+1, char);
+    CS_MALLOC(r->field_names[i], strlen(field_names[i])+1, char);
     strcpy(r->field_names[i], field_names[i]);
   }
 
@@ -259,10 +259,10 @@ _create_remapper(const char                        *name,
   std::vector< std::pair<int,int> > ito = tf->getTimeSteps(t2s);
 
   r->ntsteps = ito.size();
-  BFT_MALLOC(r->iter_order, r->ntsteps, int *);
+  CS_MALLOC(r->iter_order, r->ntsteps, int *);
   for (int ii = 0; ii < ito.size(); ii++)
-    BFT_MALLOC(r->iter_order[ii], 2, int);
-  BFT_MALLOC(r->time_steps, r->ntsteps, cs_real_t);
+    CS_MALLOC(r->iter_order[ii], 2, int);
+  CS_MALLOC(r->time_steps, r->ntsteps, cs_real_t);
 
   for (int ii = 0; ii < ito.size(); ii++) {
     r->iter_order[ii][0] = ito[ii].first;
@@ -278,7 +278,7 @@ _create_remapper(const char                        *name,
 
   // Read the fields from the medfile
 
-  BFT_MALLOC(r->source_fields, n_fields, MEDCouplingFieldDouble *);
+  CS_MALLOC(r->source_fields, n_fields, MEDCouplingFieldDouble *);
   for (int ii = 0; ii < n_fields; ii++) {
     r->source_fields[ii] = _cs_medcoupling_read_field_real(medfile_path,
                                                            field_names[ii],
@@ -287,7 +287,7 @@ _create_remapper(const char                        *name,
   }
 
   // Set the interpolation type (P0P0 or P1P0) based on source_fields type
-  BFT_MALLOC(r->interp_method, 5, char);
+  CS_MALLOC(r->interp_method, 5, char);
   if (r->source_fields[0]->getTypeOfField() == MEDCoupling::ON_CELLS) {
     r->interp_method = "P0P0";
   }
@@ -351,9 +351,9 @@ _add_remapper(const char   *name,
 
   // Allocate or reallocate if needed
   if (_remapper == nullptr)
-    BFT_MALLOC(_remapper, 1, cs_medcoupling_remapper_t *);
+    CS_MALLOC(_remapper, 1, cs_medcoupling_remapper_t *);
   else
-    BFT_REALLOC(_remapper, _n_remappers+1, cs_medcoupling_remapper_t *);
+    CS_REALLOC(_remapper, _n_remappers+1, cs_medcoupling_remapper_t *);
 
   // Initialize new remapper, and update number of remappers
 
@@ -402,7 +402,7 @@ _copy_values_no_bbox(cs_medcoupling_remapper_t  *r,
     cs_lnum_t dim    = target_field->getNumberOfComponents();
     cs_lnum_t n_vals = (cs_lnum_t)dim * n_elts;
 
-    BFT_MALLOC(new_vals, n_vals, cs_real_t);
+    CS_MALLOC(new_vals, n_vals, cs_real_t);
     for (cs_lnum_t i = 0; i < n_vals; i++) {
       new_vals[i] = default_val;
     }
@@ -460,7 +460,7 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
     cs_lnum_t dim    = target_field->getNumberOfComponents();
     cs_lnum_t n_vals = (cs_lnum_t)dim * n_elts_loc;
 
-    BFT_MALLOC(new_vals, n_vals, cs_real_t);
+    CS_MALLOC(new_vals, n_vals, cs_real_t);
     for (cs_lnum_t i = 0; i < n_vals; i++) {
       new_vals[i] = default_val;
     }
@@ -574,15 +574,15 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
 void
 _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
 {
-  BFT_FREE(r->name);
-  BFT_FREE(r->medfile_path);
+  CS_FREE(r->name);
+  CS_FREE(r->medfile_path);
 
   for (int i = 0; i < r->n_fields; i++) {
-    BFT_FREE(r->field_names[i]);
+    CS_FREE(r->field_names[i]);
     r->source_fields[i]->decrRef();
   }
-  BFT_FREE(r->field_names);
-  BFT_FREE(r->source_fields);
+  CS_FREE(r->field_names);
+  CS_FREE(r->source_fields);
 
   //r->bbox_source_mesh->decrRef();
   delete r->remapper;
@@ -590,7 +590,7 @@ _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
   // Mesh will deallocated afterwards since it can be shared
   r->target_mesh = nullptr;
 
-  BFT_FREE(r);
+  CS_FREE(r);
 }
 
 /*----------------------------------------------------------------------------*/

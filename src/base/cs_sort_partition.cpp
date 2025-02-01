@@ -41,8 +41,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -172,11 +172,11 @@ _define_rank_distrib(int                           n_ranks,
   const cs_lnum_t  n_samples = sampling_factor * n_ranks;
 
   if (elt_size > 1024)
-    BFT_MALLOC(sample_code, elt_size, unsigned char);
+    CS_MALLOC(sample_code, elt_size, unsigned char);
 
   /* Initialization */
 
-  BFT_MALLOC(l_distrib, n_samples, cs_gnum_t);
+  CS_MALLOC(l_distrib, n_samples, cs_gnum_t);
 
   for (cs_lnum_t id = 0; id < n_samples; id++) {
     l_distrib[id] = 0;
@@ -245,7 +245,7 @@ _define_rank_distrib(int                           n_ranks,
   MPI_Allreduce(l_distrib, g_distrib, n_samples, CS_MPI_GNUM, MPI_SUM,
                 comm);
 
-  BFT_FREE(l_distrib);
+  CS_FREE(l_distrib);
 
   /* Define the cumulative frequency related to g_distribution */
 
@@ -264,7 +264,7 @@ _define_rank_distrib(int                           n_ranks,
     static int  loop_id1 = 0;
 
     len = strlen("DistribOutput_l.dat")+1+2;
-    BFT_MALLOC(rfilename, len, char);
+    CS_MALLOC(rfilename, len, char);
     sprintf(rfilename, "DistribOutput_l%02d.dat", loop_id1);
 
     loop_id1++;
@@ -282,7 +282,7 @@ _define_rank_distrib(int                           n_ranks,
             i, 1.0, 1.0, 1.0, 0);
 
     fclose(dbg_file);
-    BFT_FREE(rfilename);
+    CS_FREE(rfilename);
 
   }
 
@@ -316,7 +316,7 @@ _define_rank_distrib(int                           n_ranks,
 #endif /* sanity check */
 
   if (sample_code != _sample_buffer)
-    BFT_FREE(sample_code);
+    CS_FREE(sample_code);
 }
 
 /*----------------------------------------------------------------------------
@@ -346,7 +346,7 @@ _update_sampling(int        n_ranks,
 
   /* Compute new_sampling */
 
-  BFT_MALLOC(new_sampling, n_samples + 1, double);
+  CS_MALLOC(new_sampling, n_samples + 1, double);
 
   new_sampling[0] = _sampling[0];
 
@@ -393,7 +393,7 @@ _update_sampling(int        n_ranks,
 
   new_sampling[n_samples] = 1.0;
 
-  BFT_FREE(_sampling);
+  CS_FREE(_sampling);
 
   /* Return pointers */
 
@@ -471,8 +471,8 @@ _bucket_sampling(int                            n_ranks,
 
   /* Define the distribution associated to the current sampling array */
 
-  BFT_MALLOC(distrib, n_samples, cs_gnum_t);
-  BFT_MALLOC(cfreq, n_samples + 1, double);
+  CS_MALLOC(distrib, n_samples, cs_gnum_t);
+  CS_MALLOC(cfreq, n_samples + 1, double);
 
   _define_rank_distrib(n_ranks,
                        sampling_factor,
@@ -495,7 +495,7 @@ _bucket_sampling(int                            n_ranks,
   fit = _evaluate_distribution(n_ranks, distrib, optim);
   best_fit = fit;
 
-  BFT_MALLOC(best_sampling, n_samples + 1, double);
+  CS_MALLOC(best_sampling, n_samples + 1, double);
 
   for (cs_lnum_t i = 0; i < n_samples + 1; i++)
     best_sampling[i] = _sampling[i];
@@ -548,9 +548,9 @@ _bucket_sampling(int                            n_ranks,
 
   /* Free memory */
 
-  BFT_FREE(cfreq);
-  BFT_FREE(distrib);
-  BFT_FREE(_sampling);
+  CS_FREE(cfreq);
+  CS_FREE(distrib);
+  CS_FREE(_sampling);
 
   *sampling = best_sampling;
 
@@ -602,7 +602,7 @@ _build_rank_index(cs_lnum_t                      sampling_factor,
 
   cs_lnum_t n_samples = sampling_factor * n_ranks;
 
-  BFT_MALLOC(sampling, n_samples + 1, double);
+  CS_MALLOC(sampling, n_samples + 1, double);
 
   for (cs_lnum_t i = 0; i < n_samples + 1; i++)
     sampling[i] = 0.0;
@@ -631,7 +631,7 @@ _build_rank_index(cs_lnum_t                      sampling_factor,
 
   /* Free memory */
 
-  BFT_FREE(sampling);
+  CS_FREE(sampling);
 
   return best_fit;
 }
@@ -739,7 +739,7 @@ cs_sort_partition_dest_rank_id(cs_lnum_t                      sampling_factor,
   unsigned char *_rank_index;
   const unsigned char *_elts = static_cast<const unsigned char *>(elts);
 
-  BFT_MALLOC(_rank_index, (size_t)(n_ranks+1)*elt_size, unsigned char);
+  CS_MALLOC(_rank_index, (size_t)(n_ranks+1)*elt_size, unsigned char);
 
   _build_rank_index(sampling_factor,
                     elt_size,
@@ -763,7 +763,7 @@ cs_sort_partition_dest_rank_id(cs_lnum_t                      sampling_factor,
                                        f_input);
   }
 
-  BFT_FREE(_rank_index);
+  CS_FREE(_rank_index);
 }
 
 #endif /* HAVE_MPI */

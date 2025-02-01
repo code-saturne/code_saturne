@@ -46,29 +46,26 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem_usage.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_point_location.h"
 
 #include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_map.h"
+#include "base/cs_measures_util.h"
+#include "base/cs_mem.h"
 #include "base/cs_selector.h"
 #include "mesh/cs_mesh_connect.h"
+#include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_prototypes.h"
 
-#include "base/cs_log.h"
-#include "base/cs_map.h"
-#include "base/cs_parall.h"
-#include "mesh/cs_mesh_location.h"
-
 #include "mesh/cs_mesh.h"
-#include "base/cs_measures_util.h"
-
-#include "base/cs_field.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -139,8 +136,8 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
                                               mesh->n_cells,
                                               nullptr);
 
-  BFT_MALLOC(location, nb_points, cs_lnum_t);
-  BFT_MALLOC(distance, nb_points, float);
+  CS_MALLOC(location, nb_points, cs_lnum_t);
+  CS_MALLOC(distance, nb_points, float);
 
 #   pragma omp parallel for
   for (ii = 0; ii < nb_points; ii++) {
@@ -187,8 +184,8 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
   }
 
   nodal_mesh = fvm_nodal_destroy(nodal_mesh);
-  BFT_FREE(location);
-  BFT_FREE(distance);
+  CS_FREE(location);
+  CS_FREE(distance);
 }
 
 /*----------------------------------------------------------------------------
@@ -409,7 +406,7 @@ cs_interpol_grid_create(const char   *name)
       _n_grids_max = 8;
     else
       _n_grids_max *= 2;
-    BFT_REALLOC(_grids, _n_grids_max, cs_interpol_grid_t);
+    CS_REALLOC(_grids, _n_grids_max, cs_interpol_grid_t);
   }
 
   /* Assign grid */
@@ -429,12 +426,12 @@ cs_interpol_grid_create(const char   *name)
   }
 
   else {
-    BFT_FREE(ig->coords);
+    CS_FREE(ig->coords);
     if (ig->is_connect) {
-      BFT_FREE(ig->cell_connect);
+      CS_FREE(ig->cell_connect);
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1)
-        BFT_FREE(ig->rank_connect);
+        CS_FREE(ig->rank_connect);
 #endif
     }
   }
@@ -458,12 +455,12 @@ cs_interpol_grid_init(cs_interpol_grid_t    *ig,
                       const cs_real_t       *coords)
 {
   cs_lnum_t ii;
-  BFT_MALLOC(ig->cell_connect, nb_points, cs_lnum_t);
+  CS_MALLOC(ig->cell_connect, nb_points, cs_lnum_t);
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
-    BFT_MALLOC(ig->rank_connect, nb_points, int);
+    CS_MALLOC(ig->rank_connect, nb_points, int);
 #endif
-  BFT_MALLOC(ig->coords, 3*nb_points, cs_real_t);
+  CS_MALLOC(ig->coords, 3*nb_points, cs_real_t);
 
 #   pragma omp parallel for
   for (ii = 0; ii < 3*nb_points; ii++) {
@@ -529,7 +526,7 @@ cs_measures_set_create(const char   *name,
       _n_measures_sets_max = 8;
     else
       _n_measures_sets_max *= 2;
-    BFT_REALLOC(_measures_sets, _n_measures_sets_max, cs_measures_set_t);
+    CS_REALLOC(_measures_sets, _n_measures_sets_max, cs_measures_set_t);
   }
 
   /* Assign measure set */
@@ -559,12 +556,12 @@ cs_measures_set_create(const char   *name,
     ms->comp_ids = nullptr;
   }
   else {
-    BFT_FREE(ms->coords);
-    BFT_FREE(ms->measures);
-    BFT_FREE(ms->is_cressman);
-    BFT_FREE(ms->is_interpol);
-    BFT_FREE(ms->inf_radius);
-    BFT_FREE(ms->comp_ids);
+    CS_FREE(ms->coords);
+    CS_FREE(ms->measures);
+    CS_FREE(ms->is_cressman);
+    CS_FREE(ms->is_interpol);
+    CS_FREE(ms->inf_radius);
+    CS_FREE(ms->comp_ids);
   }
 
   return ms;
@@ -600,11 +597,11 @@ cs_measures_set_map_values(cs_measures_set_t       *ms,
   int dim = ms->dim;
 
   if (nb_measures != ms->nb_measures) {
-    BFT_REALLOC(ms->measures, nb_measures*dim, cs_real_t);
-    BFT_REALLOC(ms->inf_radius, nb_measures*3, cs_real_t);
-    BFT_REALLOC(ms->coords, nb_measures*3, cs_real_t);
-    BFT_REALLOC(ms->is_cressman, nb_measures, int);
-    BFT_REALLOC(ms->is_interpol, nb_measures, int);
+    CS_REALLOC(ms->measures, nb_measures*dim, cs_real_t);
+    CS_REALLOC(ms->inf_radius, nb_measures*3, cs_real_t);
+    CS_REALLOC(ms->coords, nb_measures*3, cs_real_t);
+    CS_REALLOC(ms->is_cressman, nb_measures, int);
+    CS_REALLOC(ms->is_interpol, nb_measures, int);
     ms->nb_measures = nb_measures;
   }
 
@@ -680,10 +677,10 @@ cs_measures_set_add_values(cs_measures_set_t       *ms,
   if (ms->nb_measures + nb_measures > ms->nb_measures_max) {
     ms->nb_measures_max = 2*(ms->nb_measures + nb_measures);
 
-    BFT_REALLOC(ms->measures, ms->nb_measures_max*dim, cs_real_t);
-    BFT_REALLOC(ms->coords, ms->nb_measures_max*3, cs_real_t);
-    BFT_REALLOC(ms->is_cressman, ms->nb_measures_max, int);
-    BFT_REALLOC(ms->is_interpol, ms->nb_measures_max, int);
+    CS_REALLOC(ms->measures, ms->nb_measures_max*dim, cs_real_t);
+    CS_REALLOC(ms->coords, ms->nb_measures_max*3, cs_real_t);
+    CS_REALLOC(ms->is_cressman, ms->nb_measures_max, int);
+    CS_REALLOC(ms->is_interpol, ms->nb_measures_max, int);
   }
 
   if (dim == 1) {
@@ -842,15 +839,15 @@ cs_measures_sets_destroy(void)
 
   for (i = 0; i < _n_measures_sets; i++) {
     cs_measures_set_t  *ms = _measures_sets + i;
-    BFT_FREE(ms->measures);
-    BFT_FREE(ms->coords);
-    BFT_FREE(ms->is_interpol);
-    BFT_FREE(ms->is_cressman);
-    BFT_FREE(ms->inf_radius);
-    BFT_FREE(ms->comp_ids);
+    CS_FREE(ms->measures);
+    CS_FREE(ms->coords);
+    CS_FREE(ms->is_interpol);
+    CS_FREE(ms->is_cressman);
+    CS_FREE(ms->inf_radius);
+    CS_FREE(ms->comp_ids);
   }
 
-  BFT_FREE(_measures_sets);
+  CS_FREE(_measures_sets);
 
   cs_map_name_to_id_destroy(&_measures_sets_map);
 
@@ -869,13 +866,13 @@ cs_interpol_grids_destroy(void)
 
   for (i = 0; i < _n_grids; i++) {
     cs_interpol_grid_t  *ig = _grids + i;
-    BFT_FREE(ig->coords);
-    BFT_FREE(ig->cell_connect);
+    CS_FREE(ig->coords);
+    CS_FREE(ig->cell_connect);
     if (cs_glob_n_ranks > 1)
-      BFT_FREE(ig->rank_connect);
+      CS_FREE(ig->rank_connect);
   }
 
-  BFT_FREE(_grids);
+  CS_FREE(_grids);
 
   cs_map_name_to_id_destroy(&_grids_map);
 

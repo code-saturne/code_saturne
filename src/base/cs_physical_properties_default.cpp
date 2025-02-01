@@ -44,7 +44,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -65,6 +64,7 @@
 #include "base/cs_ht_convert.h"
 #include "turb/cs_les_mu_t.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -804,7 +804,7 @@ _init_boundary_temperature(void)
       const cs_real_t *field_s_v = fld->val;
 
       cs_real_t *ttmp = nullptr;   /* n_cells should be sufficient ? */
-      BFT_MALLOC(ttmp, n_cells_ext, cs_real_t);
+      CS_MALLOC(ttmp, n_cells_ext, cs_real_t);
       cs_ht_convert_h_to_t_cells(field_s_v, ttmp);
 
 #     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
@@ -813,7 +813,7 @@ _init_boundary_temperature(void)
           field_s_b[face_id] = ttmp[b_face_cells[face_id]];
       }
 
-      BFT_FREE(ttmp);
+      CS_FREE(ttmp);
 
     }
 
@@ -1033,7 +1033,7 @@ cs_physical_properties_update(int   iterns)
 
   int n_scal = 0;
   int *scalar_idx = nullptr;
-  BFT_MALLOC(scalar_idx, n_fields, int);
+  CS_MALLOC(scalar_idx, n_fields, int);
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
@@ -1083,7 +1083,7 @@ cs_physical_properties_update(int   iterns)
   // Calculation of scalar limits and printing
   _check_log_scalar_diff(first_pass, n_scal, scalar_idx, n_cells);
 
-  BFT_FREE(scalar_idx);
+  CS_FREE(scalar_idx);
 
   // Calculation of mesh viscosity bounds in ALE
   _check_log_mesh_diff(first_pass, n_cells);

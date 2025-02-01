@@ -40,7 +40,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "atmo/cs_atmo.h"
@@ -56,6 +55,7 @@
 #include "turb/cs_les_balance.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parall.h"
@@ -145,7 +145,7 @@ _field_section_desc(cs_field_t  *f,
               + cs_log_strlen(f_name) + 2;
 
   char *section_desc = nullptr;
-  BFT_MALLOC(section_desc, s_size, char);
+  CS_MALLOC(section_desc, s_size, char);
   snprintf(section_desc, s_size, "%s %s", section_desc_b, f_name);
 
   return section_desc;
@@ -1787,7 +1787,7 @@ cs_parameters_check(void)
                                     eqp->isstpc,
                                     0, 3);
 
-      BFT_FREE(f_desc);
+      CS_FREE(f_desc);
     }
   }
 
@@ -1807,7 +1807,7 @@ cs_parameters_check(void)
                                     limiter_choice,
                                     CS_NVD_GAMMA, CS_NVD_VOF_HRIC);
 
-      BFT_FREE(f_desc);
+      CS_FREE(f_desc);
     }
   }
 
@@ -1823,7 +1823,7 @@ cs_parameters_check(void)
                                   eqp->theta,
                                   1.);
 
-    BFT_FREE(f_desc);
+    CS_FREE(f_desc);
   }
 
   /* 2nd order in time (rho, visc, N.S source terms, velocity theta)
@@ -1909,7 +1909,7 @@ cs_parameters_check(void)
                                   eqp_v->theta,
                                   0.5);
 
-    BFT_FREE(f_desc);
+    CS_FREE(f_desc);
 
     f_desc = _field_section_desc(CS_F_(vel), "in LES, while reading "
                                  "convection scheme "
@@ -1935,7 +1935,7 @@ cs_parameters_check(void)
                                eqp_v->isstpc,
                                1);
 
-    BFT_FREE(f_desc);
+    CS_FREE(f_desc);
 
     for (int f_id = 0 ; f_id < n_fields ; f_id ++) {
       cs_field_t *f = cs_field_by_id(f_id);
@@ -1951,7 +1951,7 @@ cs_parameters_check(void)
                                       eqp->theta,
                                       0.5);
 
-        BFT_FREE(f_desc);
+        CS_FREE(f_desc);
 
         f_desc = _field_section_desc(f, "in LES, while reading "
                                         "convection scheme "
@@ -1977,7 +1977,7 @@ cs_parameters_check(void)
                                    eqp->isstpc,
                                    0);
 
-        BFT_FREE(f_desc);
+        CS_FREE(f_desc);
       }
     }
 
@@ -2104,7 +2104,7 @@ cs_parameters_check(void)
                                    b_flux_id,
                                    -1);
 
-        BFT_FREE(f_desc);
+        CS_FREE(f_desc);
       }
     }
 
@@ -2174,7 +2174,7 @@ cs_parameters_check(void)
                                     eqp->b_diff_flux_rc,
                                     0, 2);
 
-      BFT_FREE(f_desc);
+      CS_FREE(f_desc);
 
       if (   eqp->ischcv == 0
           && CS_ABS(eqp->blencv) > cs_math_epzero) {
@@ -2187,7 +2187,7 @@ cs_parameters_check(void)
                                    eqp->ircflu,
                                    1);
 
-        BFT_FREE(f_desc);
+        CS_FREE(f_desc);
       }
     }
   }
@@ -2507,7 +2507,7 @@ cs_parameters_check(void)
                                       "equation param relaxv",
                                       eqp->relaxv,
                                       1.);
-        BFT_FREE(f_desc);
+        CS_FREE(f_desc);
       }
       else { /* ikecou = 0 */
         f_desc = _field_section_desc(f, "while reading numerical "
@@ -2518,7 +2518,7 @@ cs_parameters_check(void)
                                          "equation param relaxv",
                                          eqp->relaxv,
                                          0, 1);
-        BFT_FREE(f_desc);
+        CS_FREE(f_desc);
       }
     }
   }
@@ -2538,7 +2538,7 @@ cs_parameters_check(void)
                                        "equation param relaxv",
                                        eqp->relaxv,
                                        0, 1);
-      BFT_FREE(f_desc);
+      CS_FREE(f_desc);
   }
 
   /* checks for RSM models */
@@ -2760,7 +2760,7 @@ cs_parameters_check(void)
                                   icpsyr,
                                   0, 2);
 
-    BFT_FREE(f_desc);
+    CS_FREE(f_desc);
   }
 
   /* the number of coupled scalars is counted */
@@ -2863,7 +2863,7 @@ cs_parameters_check(void)
                                     "equation param nswrsm",
                                     eqp->nswrsm);
 
-      BFT_FREE(f_desc);
+      CS_FREE(f_desc);
 
       if (eqp->nswrsm <= 0) {
         eqp->nswrsm = 1;
@@ -2939,7 +2939,7 @@ cs_parameters_check(void)
                                    vr_clip,
                                    -1);
 
-      BFT_FREE(f_desc);
+      CS_FREE(f_desc);
     }
   }
 
@@ -2963,7 +2963,7 @@ cs_parameters_check(void)
                                         0.);
       }
 
-      BFT_FREE(f_desc);
+      CS_FREE(f_desc);
     }
   }
 
@@ -3107,7 +3107,7 @@ cs_parameters_check(void)
                                   -1,
                                   3);
 
-    BFT_FREE(f_desc);
+    CS_FREE(f_desc);
   }
 
   /* Wall distance

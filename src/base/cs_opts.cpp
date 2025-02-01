@@ -48,11 +48,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_ext_library_info.h"
+#include "base/cs_mem.h"
 #include "base/cs_system_info.h"
 
 /*----------------------------------------------------------------------------
@@ -211,7 +211,7 @@ cs_opts_define(int         argc,
 
     if (strcmp(s, "--app-name") == 0) {
       if (arg_id + 1 < argc) {
-        BFT_MALLOC(opts->app_name, strlen(argv[arg_id + 1]) + 1, char);
+        CS_MALLOC(opts->app_name, strlen(argv[arg_id + 1]) + 1, char);
         strcpy(opts->app_name, argv[arg_id + 1]);
         arg_id++;
       }

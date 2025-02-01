@@ -38,7 +38,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_1d_wall_thermal.h"
@@ -62,6 +61,7 @@
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_head_losses.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
@@ -416,14 +416,14 @@ _solve_most(int              n_var,
     cs_field_build_bc_codes_all();
 
   if (isvhb > -1)
-    BFT_MALLOC(hbord, n_b_faces, cs_real_t);
+    CS_MALLOC(hbord, n_b_faces, cs_real_t);
 
   if (th_f != nullptr)
-    BFT_MALLOC(theipb, n_b_faces, cs_real_t);
+    CS_MALLOC(theipb, n_b_faces, cs_real_t);
 
   if (   cs_glob_turb_model->type == CS_TURB_LES
       && cs_glob_turb_les_model->idries == 1)
-    BFT_MALLOC(visvdr, n_cells_ext, cs_real_t);
+    CS_MALLOC(visvdr, n_cells_ext, cs_real_t);
 
   int icvrge = 0, inslst = 0, iterns = 1;
 
@@ -544,9 +544,9 @@ _solve_most(int              n_var,
       }
 
     if (_must_return) {
-      BFT_FREE(hbord);
-      BFT_FREE(theipb);
-      BFT_FREE(visvdr);
+      CS_FREE(hbord);
+      CS_FREE(theipb);
+      CS_FREE(visvdr);
       CS_FREE_HD(isostd);
       cs_field_free_bc_codes_all();
       *must_return = _must_return;
@@ -636,9 +636,9 @@ _solve_most(int              n_var,
 
   *must_return = _must_return;
 
-  BFT_FREE(hbord);
-  BFT_FREE(theipb);
-  BFT_FREE(visvdr);
+  CS_FREE(hbord);
+  CS_FREE(theipb);
+  CS_FREE(visvdr);
   CS_FREE_HD(isostd);
   if (cs_glob_velocity_pressure_param->nterup > 1)
     CS_FREE_HD(trava);
@@ -677,13 +677,13 @@ _solve_turbulence(cs_lnum_t   n_cells,
       || cs_glob_turb_model->itytur == 5) {
     cs_real_t *prdv2f = nullptr;
     if (cs_glob_turb_model->itytur == 5)
-      BFT_MALLOC(prdv2f, n_cells_ext, cs_real_t);
+      CS_MALLOC(prdv2f, n_cells_ext, cs_real_t);
     cs_turbulence_ke(-1, prdv2f);
 
     if (cs_glob_turb_model->itytur == 5)
       cs_turbulence_v2f(prdv2f);
 
-    BFT_FREE(prdv2f);
+    CS_FREE(prdv2f);
 
     cs_real_t *cvar_k = CS_F_(k)->val;
     cs_real_t *cvar_ep = CS_F_(eps)->val;
@@ -961,7 +961,7 @@ cs_solve_all(int  itrale)
   cs_real_6_t *ckupdc = nullptr;
 
   if (ncpdct > 0) {
-    BFT_MALLOC(icepdc, ncepdc, cs_lnum_t);
+    CS_MALLOC(icepdc, ncepdc, cs_lnum_t);
     cs_volume_zone_select_type_cells(CS_VOLUME_ZONE_HEAD_LOSS, icepdc);
 
     CS_MALLOC_HD(ckupdc, ncepdc, cs_real_6_t, cs_alloc_mode);
@@ -1002,7 +1002,7 @@ cs_solve_all(int  itrale)
                                  icepdc,
                                  ckupdc);
 
-  BFT_FREE(icepdc);
+  CS_FREE(icepdc);
 
   /* Adjustment of Pth pressure and rho
    * volume mass for the variable density algorithm */
@@ -1062,7 +1062,7 @@ cs_solve_all(int  itrale)
 
     // Use empiric correlations to compute heat
     // and mass transfer due to wall condensation
-    BFT_MALLOC(htot_cond, wall_cond->nfbpcd, cs_real_t);
+    CS_MALLOC(htot_cond, wall_cond->nfbpcd, cs_real_t);
     cs_wall_condensation_compute(htot_cond);
   }
 
@@ -1090,7 +1090,7 @@ cs_solve_all(int  itrale)
     need_new_solve = false;
 
     if (must_return) {
-      BFT_FREE(htot_cond);
+      CS_FREE(htot_cond);
       CS_FREE_HD(ckupdc);
       return;
     }
@@ -1130,7 +1130,7 @@ cs_solve_all(int  itrale)
 
   } // end if _active_dyn
 
-  BFT_FREE(htot_cond);
+  CS_FREE(htot_cond);
 
   // Re Enable solid cells in fluid_solid mode
   if (cs_glob_velocity_pressure_model->fluid_solid)
@@ -1171,7 +1171,7 @@ cs_solve_all(int  itrale)
   }
 
   cs_field_free_bc_codes_all();
-  BFT_FREE(ckupdc);
+  CS_FREE(ckupdc);
 
   /* Handle mass flux, viscosity, density, and specific heat for theta-scheme
      ------------------------------------------------------------------------ */

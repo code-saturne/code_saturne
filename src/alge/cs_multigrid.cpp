@@ -51,7 +51,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -67,6 +66,7 @@
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_spmv_cuda.h"
 #include "alge/cs_matrix_util.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "alge/cs_multigrid_smoother.h"
@@ -873,7 +873,7 @@ _multigrid_setup_data_create(void)
 {
   cs_multigrid_setup_data_t *mgd;
 
-  BFT_MALLOC(mgd, 1, cs_multigrid_setup_data_t);
+  CS_MALLOC(mgd, 1, cs_multigrid_setup_data_t);
 
   mgd->n_levels = 0;
   mgd->n_levels_alloc = 0;
@@ -931,8 +931,8 @@ _multigrid_add_level(cs_multigrid_t  *mg,
     else
       mgd->n_levels_alloc *= 2;
 
-    BFT_REALLOC(mgd->grid_hierarchy, mgd->n_levels_alloc, cs_grid_t *);
-    BFT_REALLOC(mgd->sles_hierarchy, mgd->n_levels_alloc*2, cs_mg_sles_t);
+    CS_REALLOC(mgd->grid_hierarchy, mgd->n_levels_alloc, cs_grid_t *);
+    CS_REALLOC(mgd->sles_hierarchy, mgd->n_levels_alloc*2, cs_mg_sles_t);
 
     for (ii = mgd->n_levels; ii < mgd->n_levels_alloc*2; ii++) {
       mgd->sles_hierarchy[ii].context = nullptr;
@@ -942,7 +942,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
     }
 
     if (n_lv_max_prev < mgd->n_levels_alloc) {
-      BFT_REALLOC(mg->lv_info, mgd->n_levels_alloc, cs_multigrid_level_info_t);
+      CS_REALLOC(mg->lv_info, mgd->n_levels_alloc, cs_multigrid_level_info_t);
       for (ii = n_lv_max_prev; ii < mgd->n_levels_alloc; ii++)
         _multigrid_level_info_init(mg->lv_info + ii);
     }
@@ -955,14 +955,14 @@ _multigrid_add_level(cs_multigrid_t  *mg,
 
   if (mg->post_row_num != nullptr) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
-    BFT_REALLOC(mg->post_row_num, mgd->n_levels_alloc, int *);
+    CS_REALLOC(mg->post_row_num, mgd->n_levels_alloc, int *);
     for (ii = n_max_post_levels + 1; ii < mgd->n_levels_alloc; ii++)
       mg->post_row_num[ii] = nullptr;
   }
 
   if (mg->post_row_rank != nullptr) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
-    BFT_REALLOC(mg->post_row_rank, mgd->n_levels_alloc, int *);
+    CS_REALLOC(mg->post_row_rank, mgd->n_levels_alloc, int *);
     for (ii = n_max_post_levels + 1; ii < mgd->n_levels_alloc; ii++)
       mg->post_row_rank[ii] = nullptr;
   }
@@ -1088,7 +1088,7 @@ _multigrid_add_post(cs_multigrid_t  *mg,
   mg->post_location = post_location;
   mg->n_levels_post = mgd->n_levels - 1;
 
-  BFT_REALLOC(mg->post_name, strlen(name) + 1, char);
+  CS_REALLOC(mg->post_name, strlen(name) + 1, char);
   strcpy(mg->post_name, name);
 
   assert(mg->n_levels_post <= mg->n_levels_max);
@@ -1096,19 +1096,19 @@ _multigrid_add_post(cs_multigrid_t  *mg,
   /* Reallocate arrays if necessary */
 
   if (mg->post_row_num == nullptr) {
-    BFT_MALLOC(mg->post_row_num, mg->n_levels_max, int *);
+    CS_MALLOC(mg->post_row_num, mg->n_levels_max, int *);
     for (ii = 0; ii < mg->n_levels_max; ii++)
       mg->post_row_num[ii] = nullptr;
   }
 
   if (mg->post_row_rank == nullptr && mg->merge_stride > 1) {
-    BFT_MALLOC(mg->post_row_rank, mg->n_levels_max, int *);
+    CS_MALLOC(mg->post_row_rank, mg->n_levels_max, int *);
     for (ii = 0; ii < mg->n_levels_max; ii++)
       mg->post_row_rank[ii] = nullptr;
   }
 
   for (ii = 0; ii < mg->n_levels_post; ii++) {
-    BFT_REALLOC(mg->post_row_num[ii], n_base_rows, int);
+    CS_REALLOC(mg->post_row_num[ii], n_base_rows, int);
     cs_grid_project_row_num(mgd->grid_hierarchy[ii+1],
                             n_base_rows,
                             mg->post_row_max,
@@ -1117,7 +1117,7 @@ _multigrid_add_post(cs_multigrid_t  *mg,
 
   if (mg->post_row_rank != nullptr) {
     for (ii = 0; ii < mg->n_levels_post; ii++) {
-      BFT_REALLOC(mg->post_row_rank[ii], n_base_rows, int);
+      CS_REALLOC(mg->post_row_rank[ii], n_base_rows, int);
       cs_grid_project_row_rank(mgd->grid_hierarchy[ii+1],
                                n_base_rows,
                                mg->post_row_rank[ii]);
@@ -1156,7 +1156,7 @@ _cs_multigrid_post_function(void                  *mgh,
   int *s_num = nullptr;
   const cs_range_set_t *rs = nullptr;
   if (mg->post_location == CS_MESH_LOCATION_VERTICES) {
-    BFT_MALLOC(s_num, cs_glob_mesh->n_vertices, int);
+    CS_MALLOC(s_num, cs_glob_mesh->n_vertices, int);
     rs = cs_glob_mesh->vtx_range_set;
   }
 
@@ -1164,7 +1164,7 @@ _cs_multigrid_post_function(void                  *mgh,
 
   base_name = mg->post_name;
   name_len = 3 + strlen(base_name) + 1 + 3 + 1 + 4 + 1;
-  BFT_MALLOC(var_name, name_len, char);
+  CS_MALLOC(var_name, name_len, char);
 
   /* Loop on grid levels */
 
@@ -1202,7 +1202,7 @@ _cs_multigrid_post_function(void                  *mgh,
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Invalid location for post-processing.\n", __func__);
 
-    BFT_FREE(mg->post_row_num[ii]);
+    CS_FREE(mg->post_row_num[ii]);
 
     if (mg->post_row_rank != nullptr) {
 
@@ -1234,15 +1234,15 @@ _cs_multigrid_post_function(void                  *mgh,
                                  cs_glob_time_step);
       }
 
-      BFT_FREE(mg->post_row_rank[ii]);
+      CS_FREE(mg->post_row_rank[ii]);
 
     }
 
   }
   mg->n_levels_post = 0;
 
-  BFT_FREE(s_num);
-  BFT_FREE(var_name);
+  CS_FREE(s_num);
+  CS_FREE(var_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -1294,7 +1294,7 @@ _multigrid_pc_setup(void               *context,
   cs_multigrid_t  *mg = (cs_multigrid_t  *)context;
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
-  BFT_REALLOC(mgd->pc_name, strlen(name) + 1, char);
+  CS_REALLOC(mgd->pc_name, strlen(name) + 1, char);
   strcpy(mgd->pc_name, name);
 }
 
@@ -1336,7 +1336,7 @@ _multigrid_pc_setup_k_sub(void               *context,
 
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
-  BFT_REALLOC(mgd->pc_name, strlen(name) + 1, char);
+  CS_REALLOC(mgd->pc_name, strlen(name) + 1, char);
   strcpy(mgd->pc_name, name);
 }
 
@@ -1362,7 +1362,7 @@ _multigrid_setup_k_local_smoothe(void               *context,
 
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
-  BFT_REALLOC(mgd->pc_name, strlen(name) + 1, char);
+  CS_REALLOC(mgd->pc_name, strlen(name) + 1, char);
   strcpy(mgd->pc_name, name);
 }
 
@@ -1735,7 +1735,7 @@ _multigrid_create_k_cycle_bottom(cs_multigrid_t  *parent)
   mg->n_levels_post = 0;
   mg->setup_data = nullptr;
 
-  BFT_REALLOC(mg->lv_info, mg->n_levels_max, cs_multigrid_level_info_t);
+  CS_REALLOC(mg->lv_info, mg->n_levels_max, cs_multigrid_level_info_t);
 
   for (int ii = 0; ii < mg->n_levels_max; ii++)
     _multigrid_level_info_init(mg->lv_info + ii);
@@ -1801,7 +1801,7 @@ _multigrid_setup_sles_work_arrays(cs_multigrid_t  *mg,
     n1 = n0 + 6;
   }
 
-  BFT_MALLOC(mgd->rhs_vx, mgd->n_levels*n1, cs_real_t *);
+  CS_MALLOC(mgd->rhs_vx, mgd->n_levels*n1, cs_real_t *);
 
   for (unsigned i = 0; i < n1; i++)
     mgd->rhs_vx[i] = nullptr;
@@ -1860,7 +1860,7 @@ _multigrid_setup_sles_k_cycle_bottom(cs_multigrid_t  *mg,
 
   size_t l = strlen(name) + 32;
   char *_name;
-  BFT_MALLOC(_name, l, char);
+  CS_MALLOC(_name, l, char);
 
   /* Initialization */
 
@@ -1975,7 +1975,7 @@ _multigrid_setup_sles_k_cycle_bottom(cs_multigrid_t  *mg,
 
   _multigrid_setup_sles_work_arrays(mg, stride);
 
-  BFT_FREE(_name);
+  CS_FREE(_name);
 
   /* Timing */
 
@@ -2005,7 +2005,7 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
 
   size_t l = strlen(name) + 32;
   char *_name;
-  BFT_MALLOC(_name, l, char);
+  CS_MALLOC(_name, l, char);
 
   /* Initialization */
 
@@ -2198,7 +2198,7 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
 
   _multigrid_setup_sles_work_arrays(mg, stride);
 
-  BFT_FREE(_name);
+  CS_FREE(_name);
 
   /* Timing */
 
@@ -2257,7 +2257,7 @@ _level_names_init(const char                 *name,
 {
   int n_levels = mgd->n_levels;
   size_t lv_names_size = _level_names_size(name, n_levels);
-  BFT_REALLOC(mgd->lv_names_buffer, lv_names_size, char);
+  CS_REALLOC(mgd->lv_names_buffer, lv_names_size, char);
 
   /* Format name width */
 
@@ -2545,9 +2545,9 @@ _setup_hierarchy(void             *context,
     cs_gnum_t *_n_elts_l = nullptr, *_n_elts_s = nullptr, *_n_elts_m = nullptr;
     int grid_lv = mg->setup_data->n_levels;
 
-    BFT_MALLOC(_n_elts_l, 3*grid_lv, cs_gnum_t);
-    BFT_MALLOC(_n_elts_s, 3*grid_lv, cs_gnum_t);
-    BFT_MALLOC(_n_elts_m, 3*grid_lv, cs_gnum_t);
+    CS_MALLOC(_n_elts_l, 3*grid_lv, cs_gnum_t);
+    CS_MALLOC(_n_elts_s, 3*grid_lv, cs_gnum_t);
+    CS_MALLOC(_n_elts_m, 3*grid_lv, cs_gnum_t);
 
     for (i = 0; i < grid_lv; i++) {
       cs_multigrid_level_info_t *mg_inf = mg->lv_info + i;
@@ -2573,9 +2573,9 @@ _setup_hierarchy(void             *context,
       }
     }
 
-    BFT_FREE(_n_elts_m);
-    BFT_FREE(_n_elts_s);
-    BFT_FREE(_n_elts_l);
+    CS_FREE(_n_elts_m);
+    CS_FREE(_n_elts_s);
+    CS_FREE(_n_elts_l);
 
   }
 
@@ -2975,7 +2975,7 @@ _log_residual(const cs_multigrid_t   *mg,
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
   cs_real_t  *r;
-  BFT_MALLOC(r, n_cols, cs_real_t);
+  CS_MALLOC(r, n_cols, cs_real_t);
 
   cs_matrix_vector_multiply(a, vx, r);
 
@@ -2984,7 +2984,7 @@ _log_residual(const cs_multigrid_t   *mg,
 
   double s = cs_dot_xx(n_rows, r);
 
-  BFT_FREE(r);
+  CS_FREE(r);
 
 #if defined(HAVE_MPI)
 
@@ -3135,7 +3135,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   }
   else {
     if (amode <= CS_ALLOC_HOST)
-      BFT_MALLOC(wr, wr_size, cs_real_t);
+      CS_MALLOC(wr, wr_size, cs_real_t);
     else
       CS_MALLOC_HD(wr, wr_size, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
   }
@@ -3458,7 +3458,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   /* Free memory */
 
   if (wr != aux_vectors)
-    BFT_FREE(wr);
+    CS_FREE(wr);
 
   return cvg;
 }
@@ -4539,7 +4539,7 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
 
   /* Increment number of setups */
 
-  BFT_MALLOC(mg, 1, cs_multigrid_t);
+  CS_MALLOC(mg, 1, cs_multigrid_t);
 
   mg->type = mg_type;
   mg->subtype = CS_MULTIGRID_MAIN;
@@ -4604,7 +4604,7 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
 
   mg->setup_data = nullptr;
 
-  BFT_MALLOC(mg->lv_info, mg->n_levels_max, cs_multigrid_level_info_t);
+  CS_MALLOC(mg->lv_info, mg->n_levels_max, cs_multigrid_level_info_t);
 
   for (ii = 0; ii < mg->n_levels_max; ii++)
     _multigrid_level_info_init(mg->lv_info + ii);
@@ -4661,25 +4661,25 @@ cs_multigrid_destroy(void  **context)
   if (mg == nullptr)
     return;
 
-  BFT_FREE(mg->lv_info);
+  CS_FREE(mg->lv_info);
 
   if (mg->post_row_num != nullptr) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
     for (int i = 0; i < n_max_post_levels; i++)
       if (mg->post_row_num[i] != nullptr)
-        BFT_FREE(mg->post_row_num[i]);
-    BFT_FREE(mg->post_row_num);
+        CS_FREE(mg->post_row_num[i]);
+    CS_FREE(mg->post_row_num);
   }
 
   if (mg->post_row_rank != nullptr) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
     for (int i = 0; i < n_max_post_levels; i++)
       if (mg->post_row_rank[i] != nullptr)
-        BFT_FREE(mg->post_row_rank[i]);
-    BFT_FREE(mg->post_row_rank);
+        CS_FREE(mg->post_row_rank[i]);
+    CS_FREE(mg->post_row_rank);
   }
 
-  BFT_FREE(mg->post_name);
+  CS_FREE(mg->post_name);
 
   if (mg->cycle_plot != nullptr)
     cs_time_plot_finalize(&(mg->cycle_plot));
@@ -4689,7 +4689,7 @@ cs_multigrid_destroy(void  **context)
       cs_multigrid_destroy((void **)(&(mg->lv_mg[i])));
   }
 
-  BFT_FREE(mg);
+  CS_FREE(mg);
   *context = (void *)mg;
 }
 
@@ -5283,7 +5283,7 @@ cs_multigrid_solve(void                *context,
     }
     else
       _aux_buf = aux_vectors;
-    BFT_MALLOC(_aux_buf_h, _aux_size_h, unsigned char);
+    CS_MALLOC(_aux_buf_h, _aux_size_h, unsigned char);
   }
   else if (_aux_size_d > 0) {
     CS_MALLOC_HD(_aux_buf, _aux_size_d,
@@ -5291,7 +5291,7 @@ cs_multigrid_solve(void                *context,
                  CS_ALLOC_HOST_DEVICE_SHARED);
     _aux_size = _aux_size_d;
     if (_aux_size_h > aux_size)
-      BFT_MALLOC(_aux_buf_h, _aux_size_h, unsigned char);
+      CS_MALLOC(_aux_buf_h, _aux_size_h, unsigned char);
     else {
       _aux_buf_h = aux_vectors;
       _aux_size_h = aux_size;
@@ -5299,7 +5299,7 @@ cs_multigrid_solve(void                *context,
   }
   else {
     if (_aux_size_h > aux_size) {
-      BFT_MALLOC(_aux_buf, _aux_size_h, unsigned char);
+      CS_MALLOC(_aux_buf, _aux_size_h, unsigned char);
       _aux_size = _aux_size_h;
     }
     else {
@@ -5382,7 +5382,7 @@ cs_multigrid_solve(void                *context,
 
   if (_aux_buf_h == _aux_buf) {
     if (_aux_buf != aux_vectors) {
-      BFT_FREE(_aux_buf);
+      CS_FREE(_aux_buf);
       _aux_buf_h = _aux_buf;
     }
   }
@@ -5390,7 +5390,7 @@ cs_multigrid_solve(void                *context,
     if (_aux_buf != aux_vectors)
       CS_FREE_HD(_aux_buf);
     if (_aux_buf_h != aux_vectors)
-      BFT_FREE(_aux_buf_h);
+      CS_FREE(_aux_buf_h);
   }
 
   if (verbosity > 0)
@@ -5460,7 +5460,7 @@ cs_multigrid_free(void  *context)
 
     /* Free coarse solution data */
 
-    BFT_FREE(mgd->rhs_vx);
+    CS_FREE(mgd->rhs_vx);
     CS_FREE_HD(mgd->rhs_vx_buf);
 
     /* Destroy solver hierarchy */
@@ -5472,22 +5472,22 @@ cs_multigrid_free(void  *context)
           mg_sles->destroy_func(&(mg_sles->context));
       }
     }
-    BFT_FREE(mgd->sles_hierarchy);
+    CS_FREE(mgd->sles_hierarchy);
 
     /* Destroy grid hierarchy */
 
     for (int i = mgd->n_levels - 1; i > -1; i--)
       cs_grid_destroy(mgd->grid_hierarchy + i);
-    BFT_FREE(mgd->grid_hierarchy);
+    CS_FREE(mgd->grid_hierarchy);
 
-    BFT_FREE(mgd->lv_names_buffer);
+    CS_FREE(mgd->lv_names_buffer);
 
     /* Destroy peconditioning-only arrays */
 
-    BFT_FREE(mgd->pc_name);
-    BFT_FREE(mgd->pc_aux);
+    CS_FREE(mgd->pc_name);
+    CS_FREE(mgd->pc_aux);
 
-    BFT_FREE(mg->setup_data);
+    CS_FREE(mg->setup_data);
   }
 
   /* Update timers */
@@ -5582,8 +5582,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
     const cs_lnum_t n_base_rows = cs_grid_get_n_rows(g);
     const cs_matrix_t  *_matrix = nullptr;
 
-    BFT_MALLOC(var, cs_grid_get_n_cols_ext(g), cs_real_t);
-    BFT_MALLOC(da, cs_grid_get_n_cols_ext(g), cs_real_t);
+    CS_MALLOC(var, cs_grid_get_n_cols_ext(g), cs_real_t);
+    CS_MALLOC(da, cs_grid_get_n_cols_ext(g), cs_real_t);
 
     /* Output info on main level */
 
@@ -5679,7 +5679,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
 
       /* Compute residual */
 
-      BFT_MALLOC(c_res, n_cols_ext*db_size, cs_real_t);
+      CS_MALLOC(c_res, n_cols_ext*db_size, cs_real_t);
 
       _matrix = cs_grid_get_matrix(g);
 
@@ -5697,7 +5697,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
       cs_grid_project_var(g, n_base_rows, c_res, var);
       cs_range_set_scatter(rs, CS_REAL_TYPE, db_size, var, var);
 
-      BFT_FREE(c_res);
+      CS_FREE(c_res);
 
       sprintf(var_name, "Residual_%04d", level);
       cs_sles_post_output_var(var_name,
@@ -5710,8 +5710,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
 
     cs_post_finalize();
 
-    BFT_FREE(da);
-    BFT_FREE(var);
+    CS_FREE(da);
+    CS_FREE(var);
   }
 
   /* Now abort */

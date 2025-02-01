@@ -47,7 +47,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
@@ -55,6 +54,7 @@
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -144,8 +144,8 @@ _cell_to_vertex_w_unweighted(int tr_ignore)
 
   cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0];
   int *w_sum;
-  BFT_REALLOC(w, n_vertices, cs_weight_t);
-  BFT_MALLOC(w_sum, n_vertices, int);
+  CS_REALLOC(w, n_vertices, cs_weight_t);
+  CS_MALLOC(w_sum, n_vertices, int);
 
   _set[CS_CELL_TO_VERTEX_UNWEIGHTED] = true;
   _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0] = w;
@@ -179,7 +179,7 @@ _cell_to_vertex_w_unweighted(int tr_ignore)
   for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
     w[v_id] = 1. / w_sum[v_id];
 
-  BFT_FREE(w_sum);
+  CS_FREE(w_sum);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -211,9 +211,9 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
   cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_SHEPARD][0];
   cs_weight_t *wb = _weights[CS_CELL_TO_VERTEX_SHEPARD][1];
   cs_real_t   *w_sum;
-  BFT_REALLOC(w, c2v_idx[n_cells], cs_weight_t);
-  BFT_REALLOC(wb, f2v_idx[n_b_faces], cs_weight_t);
-  BFT_MALLOC(w_sum, n_vertices, cs_real_t);
+  CS_REALLOC(w, c2v_idx[n_cells], cs_weight_t);
+  CS_REALLOC(wb, f2v_idx[n_b_faces], cs_weight_t);
+  CS_MALLOC(w_sum, n_vertices, cs_real_t);
 
   _set[CS_CELL_TO_VERTEX_SHEPARD] = true;
   _weights[CS_CELL_TO_VERTEX_SHEPARD][0] = w;
@@ -304,7 +304,7 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
 
   }
 
-  BFT_FREE(w_sum);
+  CS_FREE(w_sum);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -336,7 +336,7 @@ _cell_to_vertex_f_lsq(int  tr_ignore)
   cs_lnum_t  w_size = n_vertices*10;
 
   cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_LR][0];
-  BFT_MALLOC(w, w_size, cs_real_t);
+  CS_MALLOC(w, w_size, cs_real_t);
 
   _set[CS_CELL_TO_VERTEX_LR] = true;
   _weights[CS_CELL_TO_VERTEX_LR][0] = w;
@@ -481,7 +481,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
       }
       else {
         cs_real_t *v_w;
-        BFT_MALLOC(v_w, n_vertices, cs_real_t);
+        CS_MALLOC(v_w, n_vertices, cs_real_t);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_w[v_id] = 0;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -514,7 +514,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_var[v_id] /= v_w[v_id];
 
-        BFT_FREE(v_w);
+        CS_FREE(v_w);
       }
     }
     break;
@@ -528,7 +528,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
 
       cs_real_t *v_w = nullptr;
       if (c_weight != nullptr) {
-        BFT_MALLOC(v_w, n_vertices, cs_real_t);
+        CS_MALLOC(v_w, n_vertices, cs_real_t);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_w[v_id] = 0;
       }
@@ -632,7 +632,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
                                   v_w);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_var[v_id] /= v_w[v_id];
-        BFT_FREE(v_w);
+        CS_FREE(v_w);
       }
 
     }
@@ -645,7 +645,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
 
       cs_real_t  *rhs;
       cs_lnum_t  rhs_size = n_vertices*4;
-      BFT_MALLOC(rhs, rhs_size, cs_real_t);
+      CS_MALLOC(rhs, rhs_size, cs_real_t);
       for (cs_lnum_t i = 0; i < rhs_size; i++)
         rhs[i] = 0;
 
@@ -725,7 +725,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
         v_var[v_id] = cs_math_sym_44_partial_solve_ldlt(_ldlt, _rhs);
       }
 
-      BFT_FREE(rhs);
+      CS_FREE(rhs);
     }
     break;
   default:
@@ -816,7 +816,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
       }
       else {
         cs_real_t *v_w;
-        BFT_MALLOC(v_w, n_vertices, cs_real_t);
+        CS_MALLOC(v_w, n_vertices, cs_real_t);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_w[v_id] = 0;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -851,7 +851,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
             v_var[v_id*var_dim + k] /= v_w[v_id];
         }
 
-        BFT_FREE(v_w);
+        CS_FREE(v_w);
       }
     }
     break;
@@ -865,7 +865,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
       cs_real_t *v_w = nullptr;
       if (c_weight != nullptr) {
-        BFT_MALLOC(v_w, n_vertices, cs_real_t);
+        CS_MALLOC(v_w, n_vertices, cs_real_t);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_w[v_id] = 0;
       }
@@ -979,7 +979,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
           for (cs_lnum_t k = 0; k < var_dim; k++)
             v_var[v_id*var_dim+k] /= v_w[v_id];
         }
-        BFT_FREE(v_w);
+        CS_FREE(v_w);
       }
 
     }
@@ -992,7 +992,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
       cs_real_t  *rhs;
       cs_lnum_t  rhs_size = n_vertices*4*var_dim;
-      BFT_MALLOC(rhs, rhs_size, cs_real_t);
+      CS_MALLOC(rhs, rhs_size, cs_real_t);
       for (cs_lnum_t i = 0; i < rhs_size; i++)
         rhs[i] = 0;
 
@@ -1081,7 +1081,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         }
       }
 
-      BFT_FREE(rhs);
+      CS_FREE(rhs);
     }
     break;
   default:
@@ -1108,7 +1108,7 @@ cs_cell_to_vertex_free(void)
 {
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 2; j++)
-    BFT_FREE(_weights[i][j]);
+    CS_FREE(_weights[i][j]);
     _set[i] = false;
   }
 }

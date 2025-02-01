@@ -39,10 +39,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -160,7 +160,7 @@ cs_param_amg_boomer_create(void)
 {
   cs_param_amg_boomer_t  *bamgp = nullptr;
 
-  BFT_MALLOC(bamgp, 1, cs_param_amg_boomer_t);
+  CS_MALLOC(bamgp, 1, cs_param_amg_boomer_t);
 
   /* Main options */
 
@@ -302,7 +302,7 @@ cs_param_amg_boomer_log(const char                  *name,
 
   char  *prefix = nullptr;
   int  len = strlen(name) + strlen("  *  |") + 1;
-  BFT_MALLOC(prefix, len, char);
+  CS_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", name);
 
   cs_log_printf(CS_LOG_SETUP, "%s BoomerAMG_down_smoothing: %1d it.| %s\n",
@@ -405,7 +405,7 @@ cs_param_amg_boomer_log(const char                  *name,
 
   } /* Interpolation algorithm */
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -422,7 +422,7 @@ cs_param_amg_gamg_create(void)
 {
   cs_param_amg_gamg_t  *gamgp = nullptr;
 
-  BFT_MALLOC(gamgp, 1, cs_param_amg_gamg_t);
+  CS_MALLOC(gamgp, 1, cs_param_amg_gamg_t);
 
   // Default settings for GAMG
   // -------------------------
@@ -572,7 +572,7 @@ cs_param_amg_gamg_log(const char                 *name,
 
   char  *prefix = nullptr;
   int  len = strlen(name) + strlen("  *  |") + 1;
-  BFT_MALLOC(prefix, len, char);
+  CS_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", name);
 
   cs_log_printf(CS_LOG_SETUP, "%s GAMG_down_smoothing: %1d it.| %s\n",
@@ -598,7 +598,7 @@ cs_param_amg_gamg_log(const char                 *name,
   cs_log_printf(CS_LOG_SETUP, "%s   use graph square        %s\n",
                 prefix, cs_base_strtf(gamgp->use_square_graph));
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -615,7 +615,7 @@ cs_param_amg_hmg_create(void)
 {
   cs_param_amg_hmg_t  *hmgp = nullptr;
 
-  BFT_MALLOC(hmgp, 1, cs_param_amg_hmg_t);
+  CS_MALLOC(hmgp, 1, cs_param_amg_hmg_t);
 
   // Default settings for HMG
   // ------------------------
@@ -686,7 +686,7 @@ cs_param_amg_hmg_log(const char                *name,
 
   char  *prefix = nullptr;
   int  len = strlen(name) + strlen("  *  |") + 1;
-  BFT_MALLOC(prefix, len, char);
+  CS_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", name);
 
   cs_log_printf(CS_LOG_SETUP, "%s HMG_down_smoothing:     %1d it.| %s\n",
@@ -708,7 +708,7 @@ cs_param_amg_hmg_log(const char                *name,
   cs_log_printf(CS_LOG_SETUP, "%s use_subspace_coarsening %s\n",
                 prefix, cs_base_strtf(hmgp->use_subspace_coarsening));
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -729,7 +729,7 @@ cs_param_amg_inhouse_create(bool  used_as_solver,
 {
   cs_param_amg_inhouse_t  *amgp = nullptr;
 
-  BFT_MALLOC(amgp, 1, cs_param_amg_inhouse_t);
+  CS_MALLOC(amgp, 1, cs_param_amg_inhouse_t);
 
   /* Options shared among all configurations */
 
@@ -906,7 +906,7 @@ cs_param_amg_inhouse_log(const char                    *name,
 
   char  *prefix = nullptr;
   int  len = strlen(name) + strlen("  *  |") + 1;
-  BFT_MALLOC(prefix, len, char);
+  CS_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", name);
 
   cs_log_printf(CS_LOG_SETUP,
@@ -964,7 +964,7 @@ cs_param_amg_inhouse_log(const char                    *name,
   cs_log_printf(CS_LOG_SETUP, "%s   aggregation_limit:      %d\n",
                 prefix, amgp->aggreg_limit);
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
 }
 
 /*----------------------------------------------------------------------------*/

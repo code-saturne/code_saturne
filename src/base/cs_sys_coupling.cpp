@@ -53,7 +53,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -63,6 +62,7 @@
 
 #include "base/cs_base.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_mem.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_zone.h"
@@ -112,7 +112,7 @@ _create_cfd_sys_cplbc(cs_syscpl_bc_type_t type)
 {
   cs_cfd_sys_cplbc_t *retval = nullptr;
 
-  BFT_MALLOC(retval, 1, cs_cfd_sys_cplbc_t);
+  CS_MALLOC(retval, 1, cs_cfd_sys_cplbc_t);
 
   retval->type = type;
 
@@ -161,10 +161,10 @@ _create_cs_sys_coupling(const char *sys_name,
 
   cs_sys_cpl_t *cpl = nullptr;
 
-  BFT_MALLOC(cpl, 1, cs_sys_cpl_t);
+  CS_MALLOC(cpl, 1, cs_sys_cpl_t);
 
   cpl->sys_name = nullptr;
-  BFT_MALLOC(cpl->sys_name, strlen(sys_name) + 1, char);
+  CS_MALLOC(cpl->sys_name, strlen(sys_name) + 1, char);
   strcpy(cpl->sys_name, sys_name);
 
   cpl->n_cpl_phases = n_cpl_phases;
@@ -364,7 +364,7 @@ _init_all_mpi_sys(int  *n_unmatched,
           _unmatched_ids[l] = _unmatched_ids[l+1];
 
         if (_n_unmatched == 0)
-          BFT_FREE(_unmatched_ids);
+          CS_FREE(_unmatched_ids);
 
         /* Set communicator */
         _sys_coupling_init_comm(_sys_couplings[coupling_id],
@@ -455,9 +455,7 @@ _sys_coupling_set_fields(cs_cfd_sys_cplbc_t *cplbc,
 static void
 _sys_coupling_finish_initialization(cs_sys_cpl_t *cpl)
 {
-
   assert(cpl != nullptr);
-
 
   for (int i = 0; i < cpl->n_cpl_bcs; i++) {
     cs_cfd_sys_cplbc_t *cplbc = cpl->cplbc[i];
@@ -467,12 +465,11 @@ _sys_coupling_finish_initialization(cs_sys_cpl_t *cpl)
     cpl->n_recv_vals += cplbc->n_recv_fields * cplbc->n_sys_elts;
   }
 
-  BFT_MALLOC(cpl->send_vals, cpl->n_send_vals, cs_real_t);
+  CS_MALLOC(cpl->send_vals, cpl->n_send_vals, cs_real_t);
   memset(cpl->send_vals, 0, cpl->n_send_vals*sizeof(cs_real_t));
 
-  BFT_MALLOC(cpl->recv_vals, cpl->n_recv_vals, cs_real_t);
+  CS_MALLOC(cpl->recv_vals, cpl->n_recv_vals, cs_real_t);
   memset(cpl->recv_vals, 0, cpl->n_recv_vals*sizeof(cs_real_t));
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -494,7 +491,6 @@ _sys_coupling_finish_initialization(cs_sys_cpl_t *cpl)
 cs_sys_cpl_t *
 cs_sys_coupling_by_id(const int cpl_id)
 {
-
   cs_sys_cpl_t *cpl = nullptr;
 
   if (cpl_id < 0 || cpl_id >= _sys_n_couplings)
@@ -505,7 +501,6 @@ cs_sys_coupling_by_id(const int cpl_id)
   cpl = _sys_couplings[cpl_id];
 
   return cpl;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -521,7 +516,6 @@ cs_sys_coupling_by_id(const int cpl_id)
 cs_sys_cpl_t *
 cs_sys_coupling_by_name_try(const char *sys_name)
 {
-
   cs_sys_cpl_t *cpl = nullptr;
 
   if (sys_name != nullptr) {
@@ -534,7 +528,6 @@ cs_sys_coupling_by_name_try(const char *sys_name)
   }
 
   return cpl;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -573,14 +566,12 @@ void
 cs_sys_cplbc_add_field_to_send(cs_cfd_sys_cplbc_t *cplbc,
                                const int           field_id)
 {
-
   int new_id = cplbc->n_send_fields;
 
   cplbc->n_send_fields += 1;
 
-  BFT_REALLOC(cplbc->send_field_ids, cplbc->n_send_fields, int);
+  CS_REALLOC(cplbc->send_field_ids, cplbc->n_send_fields, int);
   cplbc->send_field_ids[new_id] = field_id;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -596,14 +587,12 @@ void
 cs_sys_cplbc_add_field_to_recv(cs_cfd_sys_cplbc_t *cplbc,
                                const int           field_id)
 {
-
   int new_id = cplbc->n_recv_fields;
 
   cplbc->n_recv_fields += 1;
 
-  BFT_REALLOC(cplbc->recv_field_ids, cplbc->n_recv_fields, int);
+  CS_REALLOC(cplbc->recv_field_ids, cplbc->n_recv_fields, int);
   cplbc->recv_field_ids[new_id] = field_id;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -656,7 +645,6 @@ cs_sys_cplbc_add_exchanged_field(cs_cfd_sys_cplbc_t *cplbc,
                                  const int           dir,
                                  const int           field_id)
 {
-
   assert(cplbc != nullptr);
 
   switch(dir) {
@@ -664,7 +652,7 @@ cs_sys_cplbc_add_exchanged_field(cs_cfd_sys_cplbc_t *cplbc,
     {
       int fs_id = cplbc->n_send_fields;
       cplbc->n_send_fields += 1;
-      BFT_REALLOC(cplbc->send_field_ids,
+      CS_REALLOC(cplbc->send_field_ids,
                   cplbc->n_send_fields,
                   int);
       cplbc->send_field_ids[fs_id] = field_id;
@@ -674,7 +662,7 @@ cs_sys_cplbc_add_exchanged_field(cs_cfd_sys_cplbc_t *cplbc,
     {
       int fr_id = cplbc->n_recv_fields;
       cplbc->n_recv_fields += 1;
-      BFT_REALLOC(cplbc->recv_field_ids,
+      CS_REALLOC(cplbc->recv_field_ids,
                   cplbc->n_recv_fields,
                   int);
       cplbc->recv_field_ids[fr_id] = field_id;
@@ -715,23 +703,22 @@ cs_sys_coupling_add_cplbc(cs_sys_cpl_t        *sys_coupling,
                           const int            c1,
                           const int            n_sys_elts)
 {
-
   assert(sys_coupling != nullptr && element_name != nullptr);
 
   int cpl_id = sys_coupling->n_cpl_bcs;
 
   sys_coupling->n_cpl_bcs += 1;
 
-  BFT_REALLOC(sys_coupling->cplbc,
-              sys_coupling->n_cpl_bcs,
-              cs_cfd_sys_cplbc_t *);
+  CS_REALLOC(sys_coupling->cplbc,
+             sys_coupling->n_cpl_bcs,
+             cs_cfd_sys_cplbc_t *);
 
   cs_cfd_sys_cplbc_t *cplbc = _create_cfd_sys_cplbc(type);
 
   cplbc->input_zone_id = z_input->id;
   if (sel_criteria_output != nullptr) {
     size_t _l = strlen(sel_criteria_output);
-    BFT_MALLOC(cplbc->selection_criteria_output, _l + 1, char);
+    CS_MALLOC(cplbc->selection_criteria_output, _l + 1, char);
     strcpy(cplbc->selection_criteria_output, sel_criteria_output);
   }
 
@@ -741,7 +728,7 @@ cs_sys_coupling_add_cplbc(cs_sys_cpl_t        *sys_coupling,
   }
   else {
     size_t _l = strlen(element_name);
-    BFT_MALLOC(cplbc->element_name, _l + 1, char);
+    CS_MALLOC(cplbc->element_name, _l + 1, char);
     strncpy(cplbc->element_name, element_name, _l);
     cplbc->element_name[_l] = '\0';
   }
@@ -783,7 +770,7 @@ cs_sys_coupling_add(const char *sys_name,
   // Reallocate arrays
   _sys_n_couplings += 1;
 
-  BFT_REALLOC(_sys_couplings, _sys_n_couplings, cs_sys_cpl_t *);
+  CS_REALLOC(_sys_couplings, _sys_n_couplings, cs_sys_cpl_t *);
   _sys_couplings[new_id] = cpl;
 
   return new_id;
@@ -873,7 +860,7 @@ cs_sys_coupling_all_init(void)
   int n_unmatched = _sys_n_couplings;
 
   int *unmatched_ids = nullptr;
-  BFT_MALLOC(unmatched_ids, n_unmatched, int);
+  CS_MALLOC(unmatched_ids, n_unmatched, int);
   for (int i = 0; i < n_unmatched; i++)
     unmatched_ids[i] = i;
 
@@ -886,7 +873,7 @@ cs_sys_coupling_all_init(void)
     bft_printf("Unmatched SYSTEM couplings:\n"
                "---------------------------\n\n");
 
-    BFT_FREE(unmatched_ids);
+    CS_FREE(unmatched_ids);
     bft_error(__FILE__, __LINE__, 0,
               _("At least 1 SYSTEM coupling was defined for which\n"
                 "no communication with a SYSTEM scale instance is possible.\n"));

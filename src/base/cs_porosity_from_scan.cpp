@@ -48,7 +48,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -71,6 +70,7 @@
 #include "base/cs_io.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_location.h"
@@ -163,10 +163,10 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
                                      cs_real_t          mom_mat[][3][3])
 {
   cs_real_33_t  *c, *d, *z, *t;
-  BFT_MALLOC(c, m->n_cells, cs_real_33_t);
-  BFT_MALLOC(d, m->n_cells, cs_real_33_t);
-  BFT_MALLOC(z, m->n_cells, cs_real_33_t);
-  BFT_MALLOC(t, m->n_cells, cs_real_33_t);
+  CS_MALLOC(c, m->n_cells, cs_real_33_t);
+  CS_MALLOC(d, m->n_cells, cs_real_33_t);
+  CS_MALLOC(z, m->n_cells, cs_real_33_t);
+  CS_MALLOC(t, m->n_cells, cs_real_33_t);
   const cs_real_t threshold = _porosity_from_scan_opt.threshold;
 
   // Initialization
@@ -209,9 +209,9 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
 
   } // Loop over points
 
-  BFT_FREE(z);
-  BFT_FREE(t);
-  BFT_FREE(c);
+  CS_FREE(z);
+  CS_FREE(t);
+  CS_FREE(c);
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
@@ -220,7 +220,7 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
 
   } // Loop over cells
 
-  BFT_FREE(d);
+  CS_FREE(d);
 }
 
 /*----------------------------------------------------------------------------
@@ -349,11 +349,11 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     n_headers = 7;
     _porosity_from_scan_opt.n_headers = n_headers;
 
-    BFT_MALLOC(headers, n_headers, char *);
-    BFT_MALLOC(type, n_headers, int);
+    CS_MALLOC(headers, n_headers, char *);
+    CS_MALLOC(type, n_headers, int);
     // Copy each string into modifiable memory
     for (int i = 0; i < n_headers; i++) {
-      BFT_MALLOC(headers[i], strlen(default_headers[i]) + 1, char);
+      CS_MALLOC(headers[i], strlen(default_headers[i]) + 1, char);
       strcpy(headers[i], default_headers[i]);
       type[i] = default_type[i];
     }
@@ -415,7 +415,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
   /* Covariance matrix for solid plane computation */
   cs_real_33_t *mom_mat;
-  BFT_MALLOC(mom_mat, m->n_cells, cs_real_33_t);
+  CS_MALLOC(mom_mat, m->n_cells, cs_real_33_t);
   memset(mom_mat, 0., m->n_cells * sizeof(cs_real_33_t));
 
   /* Loop on file_names */
@@ -424,14 +424,14 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   // parse names
 
   char *file_names;
-  BFT_MALLOC(file_names, strlen(_porosity_from_scan_opt.file_names)+1, char);
+  CS_MALLOC(file_names, strlen(_porosity_from_scan_opt.file_names)+1, char);
   strcpy(file_names, _porosity_from_scan_opt.file_names);
 
   tok = strtok(file_names, sep);
 
   while (tok != nullptr) {
     char *f_name;
-    BFT_MALLOC(f_name,
+    CS_MALLOC(f_name,
         strlen(tok) + 1,
         char);
     strcpy(f_name, tok);
@@ -480,8 +480,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
       cs_real_3_t *point_coords;
       float *colors;
-      BFT_MALLOC(point_coords, n_points, cs_real_3_t);
-      BFT_MALLOC(colors, 3*n_points, float);
+      CS_MALLOC(point_coords, n_points, cs_real_3_t);
+      CS_MALLOC(colors, 3*n_points, float);
 
       cs_real_3_t min_vec = { HUGE_VAL,  HUGE_VAL,  HUGE_VAL};
       cs_real_3_t max_vec = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
@@ -575,15 +575,15 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       if (_porosity_from_scan_opt.postprocess_points) {
         char *fvm_name;
         if (_porosity_from_scan_opt.output_name == nullptr) {
-          BFT_MALLOC(fvm_name,
-                     strlen(f_name) + 3 + 1,
-                     char);
+          CS_MALLOC(fvm_name,
+                    strlen(f_name) + 3 + 1,
+                    char);
           strcpy(fvm_name, f_name);
         }
         else {
-          BFT_MALLOC(fvm_name,
-                     strlen(_porosity_from_scan_opt.output_name) + 3 + 1,
-                     char);
+          CS_MALLOC(fvm_name,
+                    strlen(_porosity_from_scan_opt.output_name) + 3 + 1,
+                    char);
           strcpy(fvm_name, _porosity_from_scan_opt.output_name);
         }
         char suffix[13];
@@ -601,7 +601,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
           fvm_nodal_define_vertex_list(pts_mesh, n_points, nullptr);
           fvm_nodal_set_shared_vertices(pts_mesh, (cs_coord_t *)point_coords);
 
-          BFT_MALLOC(vtx_gnum, n_points, cs_gnum_t);
+          CS_MALLOC(vtx_gnum, n_points, cs_gnum_t);
           for (cs_lnum_t i = 0; i < n_points; i++)
             vtx_gnum[i] = i + 1;
 
@@ -609,7 +609,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         fvm_nodal_init_io_num(pts_mesh, vtx_gnum, 0);
 
         /* Free if allocated */
-        BFT_FREE(vtx_gnum);
+        CS_FREE(vtx_gnum);
 
         /* Create default writer */
         fvm_writer_t *writer
@@ -641,8 +641,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         /* Free and destroy */
         fvm_writer_finalize(writer);
         pts_mesh = fvm_nodal_destroy(pts_mesh);
-        BFT_FREE(fvm_name);
-        BFT_FREE(f_name);
+        CS_FREE(fvm_name);
+        CS_FREE(f_name);
       }
 
       /* Now build locator
@@ -699,7 +699,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       const ple_coord_t *dist_coords = ple_locator_get_dist_coords(_locator);
 
       float *dist_colors = nullptr;
-      BFT_MALLOC(dist_colors, 3*n_points_dist, float);
+      CS_MALLOC(dist_colors, 3*n_points_dist, float);
 
       ple_locator_exchange_point_var(_locator,
                                      dist_colors,
@@ -728,7 +728,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                                            (const cs_real_3_t *)dist_coords,
                                            mom_mat);
 
-      BFT_FREE(dist_colors);
+      CS_FREE(dist_colors);
 
       /* Solid face roughness from point cloud is computed as the RMS of points
        *  distance to the reconstructed plane */
@@ -758,8 +758,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
       /* Free memory */
       _locator = ple_locator_destroy(_locator);
-      BFT_FREE(point_coords);
-      BFT_FREE(colors);
+      CS_FREE(point_coords);
+      CS_FREE(colors);
 
     } /* End loop on multiple scans */
 
@@ -774,10 +774,10 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
   /* Finalization */
   for (int i = 0; i < n_headers; i++) {
-    BFT_FREE(headers[i]);
+    CS_FREE(headers[i]);
   }
-  BFT_FREE(headers);
-  BFT_FREE(type);
+  CS_FREE(headers);
+  CS_FREE(type);
 
   const cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
 
@@ -804,8 +804,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   }
 
   /* Free memory */
-  BFT_FREE(mom_mat);
-  BFT_FREE(file_names);
+  CS_FREE(mom_mat);
+  CS_FREE(file_names);
 
   /* Parallel synchronisation */
   cs_halo_sync(m->halo, false, mq_g->cell_vol);
@@ -923,14 +923,14 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
   cs_glob_porous_model = 3;
 
   if (_porosity_from_scan_opt.file_names == nullptr) {
-    BFT_MALLOC(_porosity_from_scan_opt.file_names,
-               strlen(file_name) + 1 + 1,
-               char);
+    CS_MALLOC(_porosity_from_scan_opt.file_names,
+              strlen(file_name) + 1 + 1,
+              char);
     sprintf(_porosity_from_scan_opt.file_names, "%s;", file_name);
   }
   else {
     int length = strlen(_porosity_from_scan_opt.file_names);
-    BFT_REALLOC(_porosity_from_scan_opt.file_names,
+    CS_REALLOC(_porosity_from_scan_opt.file_names,
                length + strlen(file_name) + 1 + 1,
                char);
 
@@ -962,9 +962,9 @@ cs_porosity_from_scan_set_output_name(const char  *output_name)
 
   _porosity_from_scan_opt.postprocess_points = true;
 
-  BFT_MALLOC(_porosity_from_scan_opt.output_name,
-             strlen(output_name) + 1,
-             char);
+  CS_MALLOC(_porosity_from_scan_opt.output_name,
+            strlen(output_name) + 1,
+            char);
 
   sprintf(_porosity_from_scan_opt.output_name, "%s", output_name);
 }
@@ -986,13 +986,13 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
   const int s_id = _porosity_from_scan_opt.nb_sources;
   _porosity_from_scan_opt.nb_sources++;
 
-  BFT_REALLOC(_porosity_from_scan_opt.source_c_ids,
-              _porosity_from_scan_opt.nb_sources,
-              cs_lnum_t);
+  CS_REALLOC(_porosity_from_scan_opt.source_c_ids,
+             _porosity_from_scan_opt.nb_sources,
+             cs_lnum_t);
 
-  BFT_REALLOC(_porosity_from_scan_opt.sources,
-              _porosity_from_scan_opt.nb_sources,
-              cs_real_3_t);
+  CS_REALLOC(_porosity_from_scan_opt.sources,
+             _porosity_from_scan_opt.nb_sources,
+             cs_real_3_t);
 
   if (transform) {
     /* Apply translation and rotation */
@@ -1053,10 +1053,10 @@ cs_ibm_add_sources_by_file_name(const char *file_name)
   // Free data which is no longer needed.
   for (int i = 0; i < nb_scan; i++) {
     for (int j = 0; j < nb_cols; j++)
-      BFT_FREE(csv_data[i][j]);
-    BFT_FREE(csv_data[i]);
+      CS_FREE(csv_data[i][j]);
+    CS_FREE(csv_data[i]);
   }
-  BFT_FREE(csv_data);
+  CS_FREE(csv_data);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1339,10 +1339,10 @@ cs_compute_porosity_from_scan(void)
 
   /* Free memory */
 
-  BFT_FREE(_porosity_from_scan_opt.output_name);
-  BFT_FREE(_porosity_from_scan_opt.file_names);
-  BFT_FREE(_porosity_from_scan_opt.sources);
-  BFT_FREE(_porosity_from_scan_opt.source_c_ids);
+  CS_FREE(_porosity_from_scan_opt.output_name);
+  CS_FREE(_porosity_from_scan_opt.file_names);
+  CS_FREE(_porosity_from_scan_opt.sources);
+  CS_FREE(_porosity_from_scan_opt.source_c_ids);
 
   CS_FREE_HD(grdporo);
   CS_FREE_HD(rovsdt);

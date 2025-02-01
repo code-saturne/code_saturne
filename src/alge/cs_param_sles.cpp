@@ -45,10 +45,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "cdo/cs_param_cdo.h"
 
 /*----------------------------------------------------------------------------
@@ -241,12 +241,12 @@ cs_param_sles_create(int          field_id,
 {
   cs_param_sles_t  *slesp = nullptr;
 
-  BFT_MALLOC(slesp, 1, cs_param_sles_t);
+  CS_MALLOC(slesp, 1, cs_param_sles_t);
 
   slesp->name = nullptr;
   if (system_name != nullptr) {
     size_t  len = strlen(system_name);
-    BFT_MALLOC(slesp->name, len + 1, char);
+    CS_MALLOC(slesp->name, len + 1, char);
     strncpy(slesp->name, system_name, len + 1);
   }
 
@@ -297,14 +297,14 @@ cs_param_sles_free(cs_param_sles_t  **p_slesp)
   if (slesp == nullptr)
     return;
 
-  BFT_FREE(slesp->name);
+  CS_FREE(slesp->name);
 
   /* One asumes that this context has no pointer to free. This is the case up
      to now, since this process is totally managed by the code. */
 
-  BFT_FREE(slesp->context_param);
+  CS_FREE(slesp->context_param);
 
-  BFT_FREE(slesp);
+  CS_FREE(slesp);
   slesp = nullptr;
 }
 
@@ -502,7 +502,7 @@ cs_param_sles_copy_from(const cs_param_sles_t  *src,
   dst->cvg_param.n_max_iter = src->cvg_param.n_max_iter;
 
   if (dst->context_param != nullptr)
-    BFT_FREE(dst->context_param);
+    CS_FREE(dst->context_param);
 
   if (dst->precond == CS_PARAM_PRECOND_MUMPS ||
       dst->solver == CS_PARAM_SOLVER_MUMPS)
@@ -1404,7 +1404,7 @@ cs_param_sles_amg_inhouse_reset(cs_param_sles_t  *slesp,
     return;
 
   if (slesp->context_param != nullptr)
-    BFT_FREE(slesp->context_param);
+    CS_FREE(slesp->context_param);
 
   slesp->context_param = cs_param_amg_inhouse_create(used_as_solver,
                                                      used_as_k_cycle);
@@ -1537,7 +1537,7 @@ cs_param_sles_boomeramg_reset(cs_param_sles_t  *slesp)
     return;
 
   if (slesp->context_param != nullptr)
-    BFT_FREE(slesp->context_param);
+    CS_FREE(slesp->context_param);
 
   slesp->context_param = cs_param_amg_boomer_create();
 }
@@ -1644,7 +1644,7 @@ cs_param_sles_gamg_reset(cs_param_sles_t  *slesp)
     return;
 
   if (slesp->context_param != nullptr)
-    BFT_FREE(slesp->context_param);
+    CS_FREE(slesp->context_param);
 
   slesp->context_param = cs_param_amg_gamg_create();
 }
@@ -1745,7 +1745,7 @@ cs_param_sles_hmg_reset(cs_param_sles_t  *slesp)
     return;
 
   if (slesp->context_param != nullptr)
-    BFT_FREE(slesp->context_param);
+    CS_FREE(slesp->context_param);
 
   slesp->context_param = cs_param_amg_hmg_create();
 }
@@ -1841,8 +1841,8 @@ cs_param_sles_mumps_reset(cs_param_sles_t  *slesp)
     return;
 
   if (slesp->context_param != nullptr)
-    BFT_FREE(slesp->context_param);  /* Up to now the context structures have
-                                        no allocation inside */
+    CS_FREE(slesp->context_param);  /* Up to now the context structures have
+                                       no allocation inside */
 
   /* Allocate and initialize a structure to store the MUMPS settings */
 

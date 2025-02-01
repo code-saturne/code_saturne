@@ -39,7 +39,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 
 /*----------------------------------------------------------------------------
@@ -265,8 +265,8 @@ _get_array_distribution(MPI_Comm  comm,
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
-  BFT_MALLOC(count, n_ranks, int);
-  BFT_MALLOC(shift, n_ranks, int);
+  CS_MALLOC(count, n_ranks, int);
+  CS_MALLOC(shift, n_ranks, int);
 
   MPI_Gather(&n_elts, 1, MPI_INT,
              count, 1, MPI_INT, root_rank, comm);
@@ -315,7 +315,7 @@ _cs_parall_allreduce(MPI_Comm        comm,
   unsigned char  _locval[256];
 
   if (data_size > 256)
-    BFT_MALLOC(locval, data_size, unsigned char);
+    CS_MALLOC(locval, data_size, unsigned char);
   else
     locval = _locval;
 
@@ -325,7 +325,7 @@ _cs_parall_allreduce(MPI_Comm        comm,
                 comm);
 
   if (locval != _locval)
-    BFT_FREE(locval);
+    CS_FREE(locval);
 }
 
 #endif
@@ -923,8 +923,8 @@ cs_parall_allgather_r(int        n_elts,
 
     assert(sizeof(double) == sizeof(cs_real_t));
 
-    BFT_MALLOC(count, n_domains, int);
-    BFT_MALLOC(shift, n_domains, int);
+    CS_MALLOC(count, n_domains, int);
+    CS_MALLOC(shift, n_domains, int);
 
     MPI_Allgather(&n_elts, 1, MPI_INT, count, 1, MPI_INT,
                   cs_glob_mpi_comm);
@@ -943,8 +943,8 @@ cs_parall_allgather_r(int        n_elts,
     MPI_Allgatherv(array, n_elts, CS_MPI_REAL,
                    g_array, count, shift, CS_MPI_REAL, cs_glob_mpi_comm);
 
-    BFT_FREE(count);
-    BFT_FREE(shift);
+    CS_FREE(count);
+    CS_FREE(shift);
 
   }
 
@@ -993,8 +993,8 @@ cs_parall_allgather_ordered_r(int        n_elts,
   cs_lnum_t  *order;
   cs_real_t  *g_o_key;
 
-  BFT_MALLOC(g_o_key, n_g_elts, cs_real_t);
-  BFT_MALLOC(order, n_g_elts, cs_lnum_t);
+  CS_MALLOC(g_o_key, n_g_elts, cs_real_t);
+  CS_MALLOC(order, n_g_elts, cs_lnum_t);
 
   cs_parall_allgather_r(n_elts, n_g_elts, o_key, g_o_key);
   cs_parall_allgather_r(n_elts, n_g_elts*stride, array, g_array);
@@ -1002,8 +1002,8 @@ cs_parall_allgather_ordered_r(int        n_elts,
   cs_order_real_allocated(nullptr, g_o_key, order, n_g_elts);
   cs_order_reorder_data(n_g_elts, sizeof(cs_real_t)*stride, order, g_array);
 
-  BFT_FREE(order);
-  BFT_FREE(g_o_key);
+  CS_FREE(order);
+  CS_FREE(g_o_key);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1052,8 +1052,8 @@ cs_parall_gather_r(int               root_rank,
                 g_array, count, shift, CS_MPI_REAL,
                 root_rank, cs_glob_mpi_comm);
 
-    BFT_FREE(count);
-    BFT_FREE(shift);
+    CS_FREE(count);
+    CS_FREE(shift);
 
   }
 
@@ -1106,8 +1106,8 @@ cs_parall_gather_ordered_r(int        root_rank,
   cs_real_t  *g_o_key = nullptr;
 
   if (cs_glob_rank_id == root_rank) {
-    BFT_MALLOC(g_o_key, n_g_elts, cs_real_t);
-    BFT_MALLOC(order, n_g_elts, cs_lnum_t);
+    CS_MALLOC(g_o_key, n_g_elts, cs_real_t);
+    CS_MALLOC(order, n_g_elts, cs_lnum_t);
   }
 
   cs_parall_gather_r(root_rank, n_elts, n_g_elts, o_key, g_o_key);
@@ -1118,8 +1118,8 @@ cs_parall_gather_ordered_r(int        root_rank,
     cs_order_reorder_data(n_g_elts, sizeof(cs_real_t)*stride, order, g_array);
   }
 
-  BFT_FREE(order);
-  BFT_FREE(g_o_key);
+  CS_FREE(order);
+  CS_FREE(g_o_key);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1169,8 +1169,8 @@ cs_parall_scatter_r(int               root_rank,
     MPI_Scatterv(g_array, count, shift, CS_MPI_REAL,
                  array, n_elts, CS_MPI_REAL, root_rank, cs_glob_mpi_comm);
 
-    BFT_FREE(count);
-    BFT_FREE(shift);
+    CS_FREE(count);
+    CS_FREE(shift);
 
   }
 
@@ -1234,8 +1234,8 @@ cs_parall_gather_f(int             root_rank,
     MPI_Gatherv(array, n_elts, MPI_FLOAT,
                 g_array, count, shift, MPI_FLOAT, root_rank, cs_glob_mpi_comm);
 
-    BFT_FREE(count);
-    BFT_FREE(shift);
+    CS_FREE(count);
+    CS_FREE(shift);
 
   }
 
@@ -1299,8 +1299,8 @@ cs_parall_scatter_f(int           root_rank,
     MPI_Scatterv(g_array, count, shift, MPI_FLOAT,
                  array, n_elts, MPI_FLOAT, root_rank, cs_glob_mpi_comm);
 
-    BFT_FREE(count);
-    BFT_FREE(shift);
+    CS_FREE(count);
+    CS_FREE(shift);
 
   }
 

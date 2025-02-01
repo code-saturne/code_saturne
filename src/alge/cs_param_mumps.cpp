@@ -39,10 +39,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -88,7 +88,7 @@ cs_param_mumps_create(void)
 {
   cs_param_mumps_t  *mumpsp = nullptr;
 
-  BFT_MALLOC(mumpsp, 1, cs_param_mumps_t);
+  CS_MALLOC(mumpsp, 1, cs_param_mumps_t);
 
   mumpsp->is_single = false;
   mumpsp->facto_type = CS_PARAM_MUMPS_FACTO_LU;

@@ -39,11 +39,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -122,9 +122,9 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
     size_t prev_size = m->max_size;
 
     m->max_size*= 2;
-    BFT_REALLOC(m->key, m->max_size, char *);
-    BFT_REALLOC(m->id, m->max_size, int);
-    BFT_REALLOC(m->reverse_id, m->max_size, int);
+    CS_REALLOC(m->key, m->max_size, char *);
+    CS_REALLOC(m->id, m->max_size, int);
+    CS_REALLOC(m->reverse_id, m->max_size, int);
 
     for (i = prev_size; i < m->max_size; i++) {
       m->key[i] = nullptr;
@@ -152,10 +152,10 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
     while (b_size < (key_size * n_keys_mini) + 2*sizeof(char*))
       b_size *= 2;
 
-    BFT_MALLOC(key_block, b_size, char);
+    CS_MALLOC(key_block, b_size, char);
     memset(key_block, 0, b_size);
 
-    BFT_REALLOC(m->key_blocks, m->n_key_blocks+1, char *);
+    CS_REALLOC(m->key_blocks, m->n_key_blocks+1, char *);
     m->key_blocks[m->n_key_blocks] = key_block;
     m->n_key_blocks++;
 
@@ -211,18 +211,18 @@ cs_map_name_to_id_create(void)
 {
   cs_map_name_to_id_t *m = nullptr;
 
-  BFT_MALLOC(m, 1, cs_map_name_to_id_t);
+  CS_MALLOC(m, 1, cs_map_name_to_id_t);
 
   m->size = 0;
   m->max_size = 8;
 
   m->n_key_blocks = 1;
-  BFT_MALLOC(m->key_blocks, 1, char *);
+  CS_MALLOC(m->key_blocks, 1, char *);
 
   const size_t b_size = 128;
   char *key_block;
 
-  BFT_MALLOC(key_block, b_size, char);
+  CS_MALLOC(key_block, b_size, char);
   memset(key_block, 0, b_size);
 
   char *s = key_block + CS_ALIGN_SIZE(2*sizeof(char *));
@@ -234,9 +234,9 @@ cs_map_name_to_id_create(void)
   m->key_blocks[0] = key_block;
   m->n_key_blocks = 1;
 
-  BFT_MALLOC(m->key, m->max_size, char *);
-  BFT_MALLOC(m->id, m->max_size, int);
-  BFT_MALLOC(m->reverse_id, m->max_size, int);
+  CS_MALLOC(m->key, m->max_size, char *);
+  CS_MALLOC(m->id, m->max_size, int);
+  CS_MALLOC(m->reverse_id, m->max_size, int);
 
   return m;
 }
@@ -257,15 +257,15 @@ cs_map_name_to_id_destroy(cs_map_name_to_id_t **m)
 
       cs_map_name_to_id_t *_m = *m;
 
-      BFT_FREE(_m->reverse_id);
-      BFT_FREE(_m->id);
-      BFT_FREE(_m->key);
+      CS_FREE(_m->reverse_id);
+      CS_FREE(_m->id);
+      CS_FREE(_m->key);
 
       for (size_t i = 0; i < _m->n_key_blocks; i++)
-        BFT_FREE(_m->key_blocks[i]);
-      BFT_FREE(_m->key_blocks);
+        CS_FREE(_m->key_blocks[i]);
+      CS_FREE(_m->key_blocks);
 
-      BFT_FREE(*m);
+      CS_FREE(*m);
 
     }
   }

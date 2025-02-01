@@ -1210,13 +1210,13 @@ void
 cs_parameters_add_variable(const char  *name,
                            int          dim)
 {
-  BFT_REALLOC(_user_variable_defs,
-              _n_user_variables + 1,
-              cs_user_variable_def_t);
+  CS_REALLOC(_user_variable_defs,
+             _n_user_variables + 1,
+             cs_user_variable_def_t);
 
-  BFT_MALLOC((_user_variable_defs + _n_user_variables)->name,
-             strlen(name) + 1,
-             char);
+  CS_MALLOC((_user_variable_defs + _n_user_variables)->name,
+            strlen(name) + 1,
+            char);
   strcpy((_user_variable_defs + _n_user_variables)->name, name);
 
   (_user_variable_defs + _n_user_variables)->dim = dim;
@@ -1251,15 +1251,15 @@ void
 cs_parameters_add_variable_variance(const char  *name,
                                     const char  *variable_name)
 {
-  BFT_REALLOC(_user_variable_defs,
-              _n_user_variables + 1,
-              cs_user_variable_def_t);
-  BFT_MALLOC((_user_variable_defs + _n_user_variables)->name,
-             strlen(name) + 1,
-             char);
-  BFT_MALLOC((_user_variable_defs + _n_user_variables)->ref_name,
-             strlen(variable_name) + 1,
-             char);
+  CS_REALLOC(_user_variable_defs,
+             _n_user_variables + 1,
+             cs_user_variable_def_t);
+  CS_MALLOC((_user_variable_defs + _n_user_variables)->name,
+            strlen(name) + 1,
+            char);
+  CS_MALLOC((_user_variable_defs + _n_user_variables)->ref_name,
+            strlen(variable_name) + 1,
+            char);
 
   strcpy((_user_variable_defs + _n_user_variables)->name, name);
   strcpy((_user_variable_defs + _n_user_variables)->ref_name, variable_name);
@@ -1289,12 +1289,12 @@ cs_parameters_add_property(const char  *name,
                            int          dim,
                            int          location_id)
 {
-  BFT_REALLOC(_user_property_defs,
-              _n_user_properties + 1,
-              cs_user_property_def_t);
-  BFT_MALLOC((_user_property_defs + _n_user_properties)->name,
-             strlen(name) + 1,
-             char);
+  CS_REALLOC(_user_property_defs,
+             _n_user_properties + 1,
+             cs_user_property_def_t);
+  CS_MALLOC((_user_property_defs + _n_user_properties)->name,
+            strlen(name) + 1,
+            char);
 
   strcpy((_user_property_defs + _n_user_properties)->name, name);
   (_user_property_defs + _n_user_properties)->dim = dim;
@@ -1385,7 +1385,7 @@ cs_parameters_create_added_variables(void)
       int k_var = cs_field_key_id("first_moment_id");
       cs_field_set_key_int(f, k_var, f_ref->id);
       cs_field_lock_key(f, k_var);
-      BFT_FREE((_user_variable_defs + i)->ref_name);
+      CS_FREE((_user_variable_defs + i)->ref_name);
 
     }
 
@@ -1401,7 +1401,7 @@ cs_parameters_create_added_variables(void)
 
     }
 
-    BFT_FREE((_user_variable_defs + i)->name);
+    CS_FREE((_user_variable_defs + i)->name);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
@@ -1413,7 +1413,7 @@ cs_parameters_create_added_variables(void)
 
   }
 
-  BFT_FREE(_user_variable_defs);
+  CS_FREE(_user_variable_defs);
   _n_user_variables = 0;
 }
 
@@ -1605,11 +1605,11 @@ cs_parameters_create_added_properties(void)
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
 
-    BFT_FREE((_user_property_defs + i)->name);
+    CS_FREE((_user_property_defs + i)->name);
 
   }
 
-  BFT_FREE(_user_property_defs);
+  CS_FREE(_user_property_defs);
   _n_user_properties = 0;
 }
 
@@ -1657,7 +1657,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 
   char *b_name;
   size_t l = strlen("boundary_") + strlen(f->name) + 1;
-  BFT_MALLOC(b_name, l, char);
+  CS_MALLOC(b_name, l, char);
   snprintf(b_name, l, "boundary_%s", f->name);
 
   /* Field may already have been defined */
@@ -1712,7 +1712,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 
   }
 
-  BFT_FREE(b_name);
+  CS_FREE(b_name);
 
   cs_field_set_key_int(f, kbf, bf->id);
   cs_field_lock_key(f, kbf);

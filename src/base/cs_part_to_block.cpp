@@ -40,11 +40,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 
 #include "base/cs_all_to_all.h"
 #include "base/cs_block_dist.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -158,7 +158,7 @@ _part_to_block_create(MPI_Comm comm)
 {
   cs_part_to_block_t *d;
 
-  BFT_MALLOC(d, 1, cs_part_to_block_t);
+  CS_MALLOC(d, 1, cs_part_to_block_t);
 
   d->comm = comm;
 
@@ -213,8 +213,8 @@ _init_gather_by_gnum(cs_part_to_block_t  *d,
   /* Initialize send and receive counts */
 
   if (d->rank == 0) {
-    BFT_MALLOC(d->recv_count, n_ranks, int);
-    BFT_MALLOC(d->recv_displ, n_ranks, int);
+    CS_MALLOC(d->recv_count, n_ranks, int);
+    CS_MALLOC(d->recv_displ, n_ranks, int);
   }
 
   /* Count values to send and receive */
@@ -227,9 +227,9 @@ _init_gather_by_gnum(cs_part_to_block_t  *d,
   /* Prepare list of local block ids of sent elements */
 
   if (d->rank == 0)
-    BFT_MALLOC(d->recv_block_id, d->recv_size, cs_lnum_t);
+    CS_MALLOC(d->recv_block_id, d->recv_size, cs_lnum_t);
 
-  BFT_MALLOC(send_block_id, d->n_part_ents, cs_lnum_t);
+  CS_MALLOC(send_block_id, d->n_part_ents, cs_lnum_t);
 
   for (j = 0; j < d->n_part_ents; j++)
     send_block_id[j] = global_ent_num[j] -1;
@@ -240,7 +240,7 @@ _init_gather_by_gnum(cs_part_to_block_t  *d,
               d->recv_block_id, d->recv_count, d->recv_displ, CS_MPI_LNUM,
               0, d->comm);
 
-  BFT_FREE(send_block_id);
+  CS_FREE(send_block_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -287,9 +287,9 @@ _copy_array_gatherv(cs_part_to_block_t  *d,
     }
   }
 
-  BFT_MALLOC(recv_buf, n_recv_ents*stride_size, unsigned char);
+  CS_MALLOC(recv_buf, n_recv_ents*stride_size, unsigned char);
 
-  BFT_MALLOC(send_buf, d->n_part_ents*stride_size, unsigned char);
+  CS_MALLOC(send_buf, d->n_part_ents*stride_size, unsigned char);
   if (d->n_part_ents > 0)
     memcpy(send_buf, part_values, d->n_part_ents*stride_size);
 
@@ -312,8 +312,8 @@ _copy_array_gatherv(cs_part_to_block_t  *d,
 
   /* Cleanup */
 
-  BFT_FREE(recv_buf);
-  BFT_FREE(send_buf);
+  CS_FREE(recv_buf);
+  CS_FREE(send_buf);
 
   /* Reset send and receive dimensions */
 
@@ -353,14 +353,14 @@ _copy_index_gatherv(cs_part_to_block_t  *d,
 
   /* Prepare MPI buffers */
 
-  BFT_MALLOC(send_buf, d->n_part_ents, cs_lnum_t);
+  CS_MALLOC(send_buf, d->n_part_ents, cs_lnum_t);
 
   /* Prepare list of element values to send */
 
   for (j = 0; j < d->n_part_ents; j++)
     send_buf[j] = part_index[j+1] - part_index[j];
 
-  BFT_MALLOC(recv_buf, n_recv_ents, cs_lnum_t);
+  CS_MALLOC(recv_buf, n_recv_ents, cs_lnum_t);
 
   /* Exchange values */
 
@@ -389,8 +389,8 @@ _copy_index_gatherv(cs_part_to_block_t  *d,
 
   /* Cleanup */
 
-  BFT_FREE(recv_buf);
-  BFT_FREE(send_buf);
+  CS_FREE(recv_buf);
+  CS_FREE(send_buf);
 }
 
 /*----------------------------------------------------------------------------
@@ -444,8 +444,8 @@ _copy_indexed_gatherv(cs_part_to_block_t  *d,
   /*-------------------------------*/
 
   if (d->rank == 0) {
-    BFT_MALLOC(recv_count, n_ranks, int);
-    BFT_MALLOC(recv_displ, n_ranks, int);
+    CS_MALLOC(recv_count, n_ranks, int);
+    CS_MALLOC(recv_displ, n_ranks, int);
     for (i = 0; i < n_ranks; i++)
       recv_count[i] = 0;
   }
@@ -472,9 +472,9 @@ _copy_indexed_gatherv(cs_part_to_block_t  *d,
   /*--------------------------------*/
 
   if (d->rank == 0)
-    BFT_MALLOC(recv_buf, recv_size*type_size, unsigned char);
+    CS_MALLOC(recv_buf, recv_size*type_size, unsigned char);
 
-  BFT_MALLOC(send_buf, send_count * type_size, unsigned char);
+  CS_MALLOC(send_buf, send_count * type_size, unsigned char);
 
   w_displ = 0;
   for (j = 0; j < d->n_part_ents; j++) {
@@ -493,7 +493,7 @@ _copy_indexed_gatherv(cs_part_to_block_t  *d,
               recv_buf, recv_count, recv_displ, mpi_type,
               0, d->comm);
 
-  BFT_FREE(send_buf);
+  CS_FREE(send_buf);
 
   /* Distribute received values */
 
@@ -518,9 +518,9 @@ _copy_indexed_gatherv(cs_part_to_block_t  *d,
   /* Cleanup */
 
   if (d->rank == 0) {
-    BFT_FREE(recv_buf);
-    BFT_FREE(recv_count);
-    BFT_FREE(recv_displ);
+    CS_FREE(recv_buf);
+    CS_FREE(recv_count);
+    CS_FREE(recv_displ);
   }
 }
 
@@ -593,17 +593,17 @@ cs_part_to_block_destroy(cs_part_to_block_t  **d)
   if (_d->d != nullptr)
     cs_all_to_all_destroy(&(_d->d));
 
-  BFT_FREE(_d->recv_count);
-  BFT_FREE(_d->recv_displ);
+  CS_FREE(_d->recv_count);
+  CS_FREE(_d->recv_displ);
 
-  BFT_FREE(_d->block_rank_id);
-  BFT_FREE(_d->send_block_id);
-  BFT_FREE(_d->recv_block_id);
+  CS_FREE(_d->block_rank_id);
+  CS_FREE(_d->send_block_id);
+  CS_FREE(_d->recv_block_id);
 
   if (_d->_global_ent_num != nullptr)
-    BFT_FREE(_d->_global_ent_num);
+    CS_FREE(_d->_global_ent_num);
 
-  BFT_FREE(*d);
+  CS_FREE(*d);
 }
 
 /*----------------------------------------------------------------------------

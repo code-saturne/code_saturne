@@ -41,11 +41,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "alge/cs_sles.h"
 #include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -119,7 +119,7 @@ _init_xtra_slesp(const cs_param_saddle_t  *saddlep)
 
   int  len = strlen(basename) + strlen("_b11_xtra");
   char  *name = nullptr;
-  BFT_MALLOC(name, len + 1, char);
+  CS_MALLOC(name, len + 1, char);
   sprintf(name, "%s_b11_xtra", basename);
 
   /* One starts from a copy of the (1, 1) block settings */
@@ -133,7 +133,7 @@ _init_xtra_slesp(const cs_param_saddle_t  *saddlep)
   xtra_slesp->cvg_param.rtol = 1e-3;
   xtra_slesp->cvg_param.n_max_iter = 50;
 
-  BFT_FREE(name);
+  CS_FREE(name);
 
   return xtra_slesp;
 }
@@ -187,7 +187,7 @@ _init_init_slesp(const cs_param_saddle_t  *saddlep)
 
   int  len = strlen(basename) + strlen("_init");
   char  *name = nullptr;
-  BFT_MALLOC(name, len + 1, char);
+  CS_MALLOC(name, len + 1, char);
   sprintf(name, "%s_init", basename);
 
   /* One starts from a copy of the (1, 1) block settings */
@@ -213,7 +213,7 @@ _init_init_slesp(const cs_param_saddle_t  *saddlep)
   init_slesp->cvg_param.atol = fmin(saddlep->cvg_param.atol,
                                     b11_slesp->cvg_param.atol);
 
-  BFT_FREE(name);
+  CS_FREE(name);
 
   return init_slesp;
 }
@@ -266,7 +266,7 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 
   int  len = strlen(basename) + strlen("_schur_approx");
   char  *name = nullptr;
-  BFT_MALLOC(name, len + 1, char);
+  CS_MALLOC(name, len + 1, char);
   sprintf(name, "%s_schur_approx", basename);
 
   cs_param_sles_t  *schurp = cs_param_sles_create(-1, name);
@@ -343,7 +343,7 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
     break;
   }
 
-  BFT_FREE(name);
+  CS_FREE(name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -407,7 +407,7 @@ _free_context(cs_param_saddle_t  *saddlep)
 
   }
 
-  BFT_FREE(saddlep->context);
+  CS_FREE(saddlep->context);
 }
 
 /*============================================================================
@@ -652,7 +652,7 @@ cs_param_saddle_create(void)
 {
   cs_param_saddle_t  *saddlep = nullptr;
 
-  BFT_MALLOC(saddlep, 1, cs_param_saddle_t);
+  CS_MALLOC(saddlep, 1, cs_param_saddle_t);
 
   saddlep->verbosity = 0;
   saddlep->name = nullptr;
@@ -700,7 +700,7 @@ cs_param_saddle_free(cs_param_saddle_t  **p_saddlep)
   if (saddlep == nullptr)
     return;
 
-  BFT_FREE(saddlep->name);
+  CS_FREE(saddlep->name);
 
   cs_param_sles_free(&(saddlep->schur_sles_param));
 
@@ -708,7 +708,7 @@ cs_param_saddle_free(cs_param_saddle_t  **p_saddlep)
 
   _free_context(saddlep);
 
-  BFT_FREE(saddlep);
+  CS_FREE(saddlep);
   *p_saddlep = nullptr;
 }
 
@@ -887,7 +887,7 @@ cs_param_saddle_set_name(const char         *name,
     return;
 
   size_t  len = strlen(name);
-  BFT_MALLOC(saddlep->name, len + 1, char);
+  CS_MALLOC(saddlep->name, len + 1, char);
   strncpy(saddlep->name, name, len + 1);
 }
 
@@ -1110,7 +1110,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     /* Context structure dedicated to this algorithm */
 
     cs_param_saddle_context_alu_t  *ctxp = nullptr;
-    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_alu_t);
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_alu_t);
 
     /* Default value for this context */
 
@@ -1137,7 +1137,7 @@ cs_param_saddle_set_solver(const char          *keyval,
       return 2;
 
     cs_param_saddle_context_block_krylov_t  *ctxp = nullptr;
-    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
     ctxp->augmentation_scaling = 0.;
     ctxp->n_stored_directions = 30;    /* default value */
@@ -1157,7 +1157,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_MASS_SCALED;
 
     cs_param_saddle_context_block_krylov_t  *ctxp = nullptr;
-    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
     ctxp->augmentation_scaling = 0.;
     ctxp->n_stored_directions = 30;    /* default value */
@@ -1177,7 +1177,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     /* Context structure dedicated to this algorithm */
 
     cs_param_saddle_context_gkb_t  *ctxp = nullptr;
-    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_gkb_t);
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_gkb_t);
 
     ctxp->augmentation_scaling = 0;  /* default value */
     ctxp->truncation_threshold = 5;  /* default value */
@@ -1231,7 +1231,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     /* Context structure dedicated to this algorithm */
 
     cs_param_saddle_context_notay_t  *ctxp = nullptr;
-    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_notay_t);
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_notay_t);
 
     ctxp->scaling_coef = 1.0;  /* default value */
 
@@ -1248,7 +1248,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     /* Context structure dedicated to this algorithm */
 
     cs_param_saddle_context_uzacg_t  *ctxp = nullptr;
-    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_uzacg_t);
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_uzacg_t);
 
     ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
                                       approximation used */
@@ -1277,7 +1277,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     /* Context structure dedicated to this algorithm */
 
     cs_param_saddle_context_simple_t *ctxp = nullptr;
-    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
 
     ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
                                       approximation used */
@@ -1377,7 +1377,7 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
         static_cast<cs_param_saddle_context_alu_t *>(ref->context);
       cs_param_saddle_context_alu_t *ctxp_dest = nullptr;
 
-      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_alu_t);
+      CS_MALLOC(ctxp_dest, 1, cs_param_saddle_context_alu_t);
 
       ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
       ctxp_dest->dedicated_init_sles  = ctxp_ref->dedicated_init_sles;
@@ -1394,7 +1394,7 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
         static_cast<cs_param_saddle_context_block_krylov_t *>(ref->context);
       cs_param_saddle_context_block_krylov_t *ctxp_dest = nullptr;
 
-      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_block_krylov_t);
+      CS_MALLOC(ctxp_dest, 1, cs_param_saddle_context_block_krylov_t);
 
       ctxp_ref->n_stored_directions = ctxp_ref->n_stored_directions;
       ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
@@ -1410,7 +1410,7 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
         static_cast<cs_param_saddle_context_gkb_t *>(ref->context);
       cs_param_saddle_context_gkb_t *ctxp_dest = nullptr;
 
-      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_gkb_t);
+      CS_MALLOC(ctxp_dest, 1, cs_param_saddle_context_gkb_t);
 
       ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
       ctxp_dest->truncation_threshold = ctxp_ref->truncation_threshold;
@@ -1465,7 +1465,7 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   char  *prefix = nullptr;
   int  len = strlen(basename) + strlen("  *  |") + 1;
-  BFT_MALLOC(prefix, len, char);
+  CS_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", basename);
 
   /* Start the logging */
@@ -1732,7 +1732,7 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   }
 
-  BFT_FREE(prefix);
+  CS_FREE(prefix);
 }
 
 /*----------------------------------------------------------------------------*/

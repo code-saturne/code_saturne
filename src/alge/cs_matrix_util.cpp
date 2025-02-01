@@ -45,7 +45,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -57,6 +56,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
@@ -724,8 +724,8 @@ _pre_dump_native(const cs_matrix_t   *matrix,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
-  BFT_MALLOC(_m_val, n_entries, double);
+  CS_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  CS_MALLOC(_m_val, n_entries, double);
 
   *m_coo = _m_coo;
   *m_val = _m_val;
@@ -813,8 +813,8 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
-  BFT_MALLOC(_m_val, n_entries, double);
+  CS_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  CS_MALLOC(_m_val, n_entries, double);
 
   *m_coo = _m_coo;
   *m_val = _m_val;
@@ -907,8 +907,8 @@ _pre_dump_csr(const cs_matrix_t   *matrix,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
-  BFT_MALLOC(_m_val, n_entries, double);
+  CS_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  CS_MALLOC(_m_val, n_entries, double);
 
   *m_coo = _m_coo;
   *m_val = _m_val;
@@ -978,8 +978,8 @@ _pre_dump_msr(const cs_matrix_t   *matrix,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
-  BFT_MALLOC(_m_val, n_entries, double);
+  CS_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  CS_MALLOC(_m_val, n_entries, double);
 
   *m_coo = _m_coo;
   *m_val = _m_val;
@@ -1060,8 +1060,8 @@ _b_pre_dump_msr(const cs_matrix_t   *matrix,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
-  BFT_MALLOC(_m_val, n_entries, double);
+  CS_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  CS_MALLOC(_m_val, n_entries, double);
 
   *m_coo = _m_coo;
   *m_val = _m_val;
@@ -1162,7 +1162,7 @@ _sort_matrix_dump_data(cs_lnum_t   n_entries,
 
   cs_lnum_t *order = cs_order_gnum_s(nullptr, m_coords, 2, n_entries);
 
-  BFT_MALLOC(_m_coords, n_entries*2, cs_gnum_t);
+  CS_MALLOC(_m_coords, n_entries*2, cs_gnum_t);
 
   for (ii = 0; ii < n_entries; ii++) {
     jj = order[ii];
@@ -1171,18 +1171,18 @@ _sort_matrix_dump_data(cs_lnum_t   n_entries,
   }
   memcpy(m_coords, _m_coords, n_entries*2*sizeof(cs_gnum_t));
 
-  BFT_FREE(_m_coords);
+  CS_FREE(_m_coords);
 
-  BFT_MALLOC(_m_vals, n_entries, double);
+  CS_MALLOC(_m_vals, n_entries, double);
 
   for (ii = 0; ii < n_entries; ii++)
     _m_vals[ii] = m_vals[order[ii]];
 
   memcpy(m_vals, _m_vals, n_entries*sizeof(double));
 
-  BFT_FREE(_m_vals);
+  CS_FREE(_m_vals);
 
-  BFT_FREE(order);
+  CS_FREE(order);
 }
 
 /*----------------------------------------------------------------------------
@@ -1211,7 +1211,7 @@ _prepare_matrix_dump_data(const cs_matrix_t   *m,
   cs_gnum_t *_m_coords = nullptr;
   double *_m_vals = nullptr;
 
-  BFT_MALLOC(g_coo_num, m->n_cols_ext, cs_gnum_t);
+  CS_MALLOC(g_coo_num, m->n_cols_ext, cs_gnum_t);
 
   n_g_rows = m->n_rows;
 
@@ -1259,7 +1259,7 @@ _prepare_matrix_dump_data(const cs_matrix_t   *m,
     break;
   }
 
-  BFT_FREE(g_coo_num);
+  CS_FREE(g_coo_num);
 
   /* Sort values */
 
@@ -1362,23 +1362,23 @@ _write_matrix_g(const cs_matrix_t  *m,
   /* Distribute coordinate blocks on ranks */
 
   if (block_size > 0)
-    BFT_MALLOC(b_coords, block_size*2, cs_gnum_t);
+    CS_MALLOC(b_coords, block_size*2, cs_gnum_t);
 
   cs_part_to_block_copy_array(d, gnum_type, 2, m_coords, b_coords);
 
-  BFT_FREE(m_coords);
+  CS_FREE(m_coords);
 
   /* De-interlace coordinates */
 
   if (block_size > 0) {
    cs_lnum_t  ii;
-   BFT_MALLOC(r_coords, block_size, cs_gnum_t);
-   BFT_MALLOC(c_coords, block_size, cs_gnum_t);
+   CS_MALLOC(r_coords, block_size, cs_gnum_t);
+   CS_MALLOC(c_coords, block_size, cs_gnum_t);
    for (ii = 0; ii < block_size; ii++) {
      r_coords[ii] = b_coords[ii*2];
      c_coords[ii] = b_coords[ii*2+1];
    }
-   BFT_FREE(b_coords);
+   CS_FREE(b_coords);
   }
 
   /* Write coordinate blocks */
@@ -1397,17 +1397,17 @@ _write_matrix_g(const cs_matrix_t  *m,
                              bi.gnum_range[0],
                              bi.gnum_range[1]);
 
-  BFT_FREE(c_coords);
-  BFT_FREE(r_coords);
+  CS_FREE(c_coords);
+  CS_FREE(r_coords);
 
   /* Distribute value blocks on ranks */
 
   if (block_size > 0)
-    BFT_MALLOC(b_vals, block_size, double);
+    CS_MALLOC(b_vals, block_size, double);
 
   cs_part_to_block_copy_array(d, CS_DOUBLE, 1, m_vals, b_vals);
 
-  BFT_FREE(m_vals);
+  CS_FREE(m_vals);
 
   /* Write value blocks */
 
@@ -1418,7 +1418,7 @@ _write_matrix_g(const cs_matrix_t  *m,
                              bi.gnum_range[0],
                              bi.gnum_range[1]);
 
-  BFT_FREE(b_vals);
+  CS_FREE(b_vals);
 
   /* Free matrix coefficient distribution structures */
 
@@ -1472,27 +1472,27 @@ _write_matrix_l(const cs_matrix_t  *m,
 
   /* De-interlace coordinates */
 
-  BFT_MALLOC(r_coords, n_entries, cs_gnum_t);
-  BFT_MALLOC(c_coords, n_entries, cs_gnum_t);
+  CS_MALLOC(r_coords, n_entries, cs_gnum_t);
+  CS_MALLOC(c_coords, n_entries, cs_gnum_t);
   for (ii = 0; ii < n_entries; ii++) {
     r_coords[ii] = m_coords[ii*2];
     c_coords[ii] = m_coords[ii*2+1];
   }
-  BFT_FREE(m_coords);
+  CS_FREE(m_coords);
 
   /* Write coordinate blocks */
 
   cs_file_write_global(f, r_coords, sizeof(cs_gnum_t), n_entries);
   cs_file_write_global(f, c_coords, sizeof(cs_gnum_t), n_entries);
 
-  BFT_FREE(r_coords);
-  BFT_FREE(c_coords);
+  CS_FREE(r_coords);
+  CS_FREE(c_coords);
 
   /* Write value blocks */
 
   cs_file_write_global(f, m_vals, sizeof(double), n_entries);
 
-  BFT_FREE(m_vals);
+  CS_FREE(m_vals);
 }
 
 #if defined(HAVE_MPI)
@@ -1541,7 +1541,7 @@ _write_vector_g(cs_lnum_t         n_elts,
   MPI_Allreduce(&local_max, &n_glob_ents, 1, CS_MPI_GNUM, MPI_MAX,
                 cs_glob_mpi_comm);
 
-  BFT_MALLOC(g_elt_num, n_elts, cs_gnum_t);
+  CS_MALLOC(g_elt_num, n_elts, cs_gnum_t);
 
   for (ii = 0; ii < n_elts; ii++)
     g_elt_num[ii] = ii + coo_shift + 1;
@@ -1570,15 +1570,15 @@ _write_vector_g(cs_lnum_t         n_elts,
   block_size = (bi.gnum_range[1] - bi.gnum_range[0]);
 
   if (block_size > 0)
-    BFT_MALLOC(b_vals, block_size, double);
+    CS_MALLOC(b_vals, block_size, double);
 
   if (sizeof(cs_real_t) != sizeof(double)) {
     double  *p_vals = nullptr;
-    BFT_MALLOC(p_vals, n_elts, double);
+    CS_MALLOC(p_vals, n_elts, double);
     for (ii = 0; ii < n_elts; ii++)
       p_vals[ii] = vals[ii];
     cs_part_to_block_copy_array(d, CS_DOUBLE, 1, p_vals, b_vals);
-    BFT_FREE(p_vals);
+    CS_FREE(p_vals);
   }
   else
     cs_part_to_block_copy_array(d, CS_DOUBLE, 1, vals, b_vals);
@@ -1592,13 +1592,13 @@ _write_vector_g(cs_lnum_t         n_elts,
                              bi.gnum_range[0],
                              bi.gnum_range[1]);
 
-  BFT_FREE(b_vals);
+  CS_FREE(b_vals);
 
   /* Free distribution structures */
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(g_elt_num);
+  CS_FREE(g_elt_num);
 }
 
 #endif /* #if defined(HAVE_MPI) */
@@ -1632,11 +1632,11 @@ _write_vector_l(cs_lnum_t         n_elts,
   if (sizeof(cs_real_t) != sizeof(double)) {
     cs_lnum_t ii;
     double  *p_vals = nullptr;
-    BFT_MALLOC(p_vals, n_elts, double);
+    CS_MALLOC(p_vals, n_elts, double);
     for (ii = 0; ii < n_elts; ii++)
       p_vals[ii] = vals[ii];
     cs_file_write_global(f, p_vals, sizeof(double), n_elts);
-    BFT_FREE(p_vals);
+    CS_FREE(p_vals);
   }
   else
     cs_file_write_global(f, vals, sizeof(double), n_elts);
@@ -2070,10 +2070,10 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
 
-  BFT_MALLOC(rhs, n_cols_ext*db_size, cs_real_t);
+  CS_MALLOC(rhs, n_cols_ext*db_size, cs_real_t);
 
-  BFT_MALLOC(da, n_cols_ext*db_size_2, cs_real_t);
-  BFT_MALLOC(xa, n_edges*2, cs_real_t);
+  CS_MALLOC(da, n_cols_ext*db_size_2, cs_real_t);
+  CS_MALLOC(xa, n_edges*2, cs_real_t);
 
 # pragma omp parallel for
   for (ii = 0; ii < n_cols_ext*db_size_2; ii++)
@@ -2123,10 +2123,10 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
     cs_matrix_structure_destroy(&ms);
   }
 
-  BFT_FREE(rhs);
+  CS_FREE(rhs);
 
-  BFT_FREE(da);
-  BFT_FREE(xa);
+  CS_FREE(da);
+  CS_FREE(xa);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -66,7 +66,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -76,6 +75,7 @@
 #include "base/cs_log.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_hypre.h"
@@ -370,8 +370,7 @@ cs_sles_hypre_create(cs_sles_hypre_type_t         solver_type,
   }
   _n_hypre_systems += 1;
 
-
-  BFT_MALLOC(c, 1, cs_sles_hypre_t);
+  CS_MALLOC(c, 1, cs_sles_hypre_t);
 
   c->solver_type = solver_type;
   c->precond_type = precond_type;
@@ -415,7 +414,7 @@ cs_sles_hypre_destroy(void **context)
   cs_sles_hypre_t *c = (cs_sles_hypre_t *)(*context);
   if (c != nullptr) {
     cs_sles_hypre_free(c);
-    BFT_FREE(c);
+    CS_FREE(c);
     *context = c;
   }
 
@@ -595,7 +594,7 @@ cs_sles_hypre_setup(void               *context,
   cs_sles_hypre_t       *c  = static_cast<cs_sles_hypre_t *>(context);
   cs_sles_hypre_setup_t *sd = c->setup_data;
   if (sd == nullptr) {
-    BFT_MALLOC(c->setup_data, 1, cs_sles_hypre_setup_t);
+    CS_MALLOC(c->setup_data, 1, cs_sles_hypre_setup_t);
     sd = c->setup_data;
     sd->solver = nullptr;
     sd->precond = nullptr;
@@ -1345,7 +1344,7 @@ cs_sles_hypre_free(void  *context)
         sd->precond = nullptr;
     }
 
-    BFT_FREE(c->setup_data);
+    CS_FREE(c->setup_data);
   }
 
   cs_timer_t t1 = cs_timer_time();

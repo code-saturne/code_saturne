@@ -46,9 +46,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
@@ -177,7 +177,7 @@ _assign_vertex_coords(const cs_mesh_t        *mesh,
       vtx_id[i] = i;
   }
   else {
-    BFT_REALLOC(pmmesh->vtx_list, n_vtx, cs_lnum_t);
+    CS_REALLOC(pmmesh->vtx_list, n_vtx, cs_lnum_t);
     cs_lnum_t vtx_count = 0;
     for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
       if (vtx_id[i] > -1) {
@@ -241,7 +241,7 @@ _assign_face_mesh(const cs_mesh_t        *mesh,
 
   cs_lnum_t *face_id = nullptr;
   cs_lnum_t face_count = 0;
-  BFT_MALLOC(face_id, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(face_id, mesh->n_b_faces, cs_lnum_t);
   for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
     face_id[i] = -1;
 
@@ -252,13 +252,13 @@ _assign_face_mesh(const cs_mesh_t        *mesh,
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
     new_to_old[face_id[elts_list[ii]]] = elts_list[ii];
   }
-  BFT_FREE(face_id);
+  CS_FREE(face_id);
 
   /* Mark vertices (-1 if unused, 0 if used) */
 
   cs_lnum_t vtx_count = 0;
 
-  BFT_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
+  CS_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
   for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
     vtx_id[i] = -1;
 
@@ -303,7 +303,7 @@ _assign_face_mesh(const cs_mesh_t        *mesh,
   /* Assign faces */
 
   mcIdType *elt_buf = nullptr;
-  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
+  CS_MALLOC(elt_buf, elt_buf_size, mcIdType);
   med_mesh->allocateCells(n_elts);
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -318,7 +318,7 @@ _assign_face_mesh(const cs_mesh_t        *mesh,
 
     if (n_vtx > elt_buf_size) { /* reallocate buffer if required */
       elt_buf_size *= 2;
-      BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
+      CS_REALLOC(elt_buf, elt_buf_size, mcIdType);
     }
 
     const cs_lnum_t *_perm_face = _get_face_vertices_permutation(n_vtx);
@@ -348,8 +348,8 @@ _assign_face_mesh(const cs_mesh_t        *mesh,
 
   med_mesh->finishInsertingCells();
 
-  BFT_FREE(elt_buf);
-  BFT_FREE(vtx_id);
+  CS_FREE(elt_buf);
+  CS_FREE(vtx_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -381,7 +381,7 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
 
   /* Build old->new cell id indirection */
 
-  BFT_MALLOC(cell_id, mesh->n_cells, cs_lnum_t);
+  CS_MALLOC(cell_id, mesh->n_cells, cs_lnum_t);
   for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
     cell_id[i] = -1;
 
@@ -397,7 +397,7 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
 
   cs_lnum_t vtx_count = 0;
 
-  BFT_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
+  CS_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
   for (cs_lnum_t vid = 0; vid < mesh->n_vertices; vid++) {
     vtx_id[vid] = -1;
   }
@@ -447,7 +447,7 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
                                  &cell_faces_idx,
                                  &cell_faces_num);
 
-  BFT_FREE(cell_id);
+  CS_FREE(cell_id);
 
   /* Now loop on cells */
 
@@ -459,7 +459,7 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
                                             mesh->i_face_vtx_lst};
 
   mcIdType *elt_buf = nullptr;
-  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
+  CS_MALLOC(elt_buf, elt_buf_size, mcIdType);
   for (cs_lnum_t  ii = 0; ii < elt_buf_size; ii++)
     elt_buf[ii] = -1;
 
@@ -558,7 +558,7 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
 
         while (n_vtx + n_face_vertices + 1 > elt_buf_size) {
           elt_buf_size *= 2;
-          BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
+          CS_REALLOC(elt_buf, elt_buf_size, mcIdType);
         }
 
         /* Add separator after first face */
@@ -594,10 +594,10 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
 
   med_mesh->finishInsertingCells();
 
-  BFT_FREE(elt_buf);
-  BFT_FREE(cell_faces_num);;
-  BFT_FREE(cell_faces_idx);
-  BFT_FREE(vtx_id);
+  CS_FREE(elt_buf);
+  CS_FREE(cell_faces_num);;
+  CS_FREE(cell_faces_idx);
+  CS_FREE(vtx_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -728,9 +728,9 @@ _add_medcoupling_mesh(const char  *name,
               "MEDCoupling support\n"));
 #else
 
-  BFT_REALLOC(_sub_meshes, _n_sub_meshes + 1, cs_medcoupling_mesh_t *);
+  CS_REALLOC(_sub_meshes, _n_sub_meshes + 1, cs_medcoupling_mesh_t *);
 
-  BFT_MALLOC(m, 1, cs_medcoupling_mesh_t);
+  CS_MALLOC(m, 1, cs_medcoupling_mesh_t);
 
   m->sel_criteria = nullptr;
   m->elt_dim  = elt_dim;
@@ -772,24 +772,24 @@ _select_from_criteria(cs_mesh_t              *csmesh,
 {
   if (pmmesh->elt_dim == 3) {
 
-    BFT_MALLOC(pmmesh->elt_list, csmesh->n_cells, cs_lnum_t);
+    CS_MALLOC(pmmesh->elt_list, csmesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(pmmesh->sel_criteria,
                               &(pmmesh->n_elts),
                               pmmesh->elt_list);
 
-    BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+    CS_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
 
   }
   else if (pmmesh->elt_dim == 2) {
 
-    BFT_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(pmmesh->sel_criteria,
                                 &(pmmesh->n_elts),
                                 pmmesh->elt_list);
 
-    BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+    CS_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
 
   }
 }
@@ -829,14 +829,14 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
   else {
     if (pmmesh->elt_dim == 3) {
       /* Creation of a new nodal mesh from selected cells */
-      BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
+      CS_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
 
       _assign_cell_mesh(csmesh, pmmesh);
 
       // BBOX
       if (use_bbox) {
         if (pmmesh->bbox == nullptr) {
-          BFT_MALLOC(pmmesh->bbox, 6, cs_real_t);
+          CS_MALLOC(pmmesh->bbox, 6, cs_real_t);
         }
         pmmesh->med_mesh->getBoundingBox(pmmesh->bbox);
       }
@@ -845,16 +845,16 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
       /* Creation of a new nodal mesh from selected border faces */
 
       if (pmmesh->sel_criteria != nullptr) {
-        BFT_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
+        CS_MALLOC(pmmesh->elt_list, csmesh->n_b_faces, cs_lnum_t);
 
         cs_selector_get_b_face_list(pmmesh->sel_criteria,
                                     &(pmmesh->n_elts),
                                     pmmesh->elt_list);
 
-        BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
+        CS_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
       }
 
-      BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
+      CS_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
 
       _assign_face_mesh(csmesh, pmmesh);
     }
@@ -914,7 +914,7 @@ cs_medcoupling_mesh_from_base(cs_mesh_t   *csmesh,
     m = _add_medcoupling_mesh(name, elt_dim);
 
     size_t len_sel_crit = strlen(_sel_crit);
-    BFT_MALLOC(m->sel_criteria, len_sel_crit+1, char);
+    CS_MALLOC(m->sel_criteria, len_sel_crit+1, char);
     strcpy(m->sel_criteria, _sel_crit);
     m->sel_criteria[len_sel_crit] = '\0';
 
@@ -971,7 +971,7 @@ cs_medcoupling_mesh_from_ids(cs_mesh_t       *csmesh,
     m = _add_medcoupling_mesh(name, elt_dim);
 
     m->n_elts = n_elts;
-    BFT_MALLOC(m->elt_list, n_elts, cs_lnum_t);
+    CS_MALLOC(m->elt_list, n_elts, cs_lnum_t);
     memcpy(m->elt_list, elt_ids, n_elts*sizeof(cs_lnum_t));
 
     _copy_mesh_from_base(csmesh, m, use_bbox);
@@ -993,17 +993,17 @@ cs_medcoupling_mesh_from_ids(cs_mesh_t       *csmesh,
 void
 cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t  *mesh)
 {
-  BFT_FREE(mesh->sel_criteria);
-  BFT_FREE(mesh->elt_list);
-  BFT_FREE(mesh->vtx_list);
-  BFT_FREE(mesh->new_to_old);
-  BFT_FREE(mesh->bbox);
+  CS_FREE(mesh->sel_criteria);
+  CS_FREE(mesh->elt_list);
+  CS_FREE(mesh->vtx_list);
+  CS_FREE(mesh->new_to_old);
+  CS_FREE(mesh->bbox);
 
 #if defined(HAVE_MEDCOUPLING)
   mesh->med_mesh->decrRef();
 #endif
 
-  BFT_FREE(mesh);
+  CS_FREE(mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1020,7 +1020,7 @@ cs_medcoupling_mesh_destroy_all(void)
     _sub_meshes[i] = nullptr;
   }
 
-  BFT_FREE(_sub_meshes);
+  CS_FREE(_sub_meshes);
 
   _sub_meshes   = nullptr;
   _n_sub_meshes = 0;

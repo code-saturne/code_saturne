@@ -43,12 +43,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "gui/cs_gui_util.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 
 /*----------------------------------------------------------------------------
@@ -194,15 +194,15 @@ _entry_create(const char  *name,
       _n_entries_max = 8;
     else
       _n_entries_max *= 2;
-    BFT_REALLOC(_entries, _n_entries_max, _cs_notebook_entry_t *);
+    CS_REALLOC(_entries, _n_entries_max, _cs_notebook_entry_t *);
   }
 
   /* Allocate entries descriptor block if necessary (same as for cs_field_t) */
   int shift_in_alloc_block = entry_id % _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE;
   if (shift_in_alloc_block == 0)
-    BFT_MALLOC(_entries[entry_id],
-               _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE,
-               _cs_notebook_entry_t);
+    CS_MALLOC(_entries[entry_id],
+              _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE,
+              _cs_notebook_entry_t);
 
   else
     _entries[entry_id] = _entries[entry_id - shift_in_alloc_block]
@@ -247,7 +247,7 @@ _entry_set_description(_cs_notebook_entry_t *e,
 {
 
   int l = strlen(description);
-  BFT_MALLOC(e->description, l+1, char);
+  CS_MALLOC(e->description, l+1, char);
   if (l == 0)
     strcpy(e->description, "");
   else
@@ -567,15 +567,15 @@ cs_notebook_destroy_all(void)
 
   for (int i = 0; i < _n_entries; i++) {
     _cs_notebook_entry_t *e = _entries[i];
-    BFT_FREE(e->description);
+    CS_FREE(e->description);
   }
 
   for (int i = 0; i < _n_entries; i++) {
     if (i % _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE == 0)
-      BFT_FREE(_entries[i]);
+      CS_FREE(_entries[i]);
   }
 
-  BFT_FREE(_entries);
+  CS_FREE(_entries);
 
   cs_map_name_to_id_destroy(&_entry_map);
 

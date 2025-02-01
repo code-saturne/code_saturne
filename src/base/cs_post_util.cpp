@@ -37,7 +37,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array_reduce.h"
@@ -48,6 +47,7 @@
 #include "base/cs_field_operator.h"
 #include "mesh/cs_geom.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_intersect.h"
 #include "mesh/cs_mesh_location.h"
@@ -286,8 +286,8 @@ cs_cell_segment_intersect_probes_define(void          *input,
 
   cs_real_3_t *_coords;
   cs_real_t *_s;
-  BFT_MALLOC(_coords, n_cells, cs_real_3_t);
-  BFT_MALLOC(_s, n_cells, cs_real_t);
+  CS_MALLOC(_coords, n_cells, cs_real_3_t);
+  CS_MALLOC(_s, n_cells, cs_real_t);
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     cs_real_t dx[3], coo[3];
@@ -299,9 +299,9 @@ cs_cell_segment_intersect_probes_define(void          *input,
     _s[i] = cs_math_3_dot_product(dx, dx1) / s_norm2;
   }
 
-  BFT_FREE(cell_ids);
-  BFT_FREE(seg_c_len);
-  BFT_FREE(seg_c_cen);
+  CS_FREE(cell_ids);
+  CS_FREE(seg_c_len);
+  CS_FREE(seg_c_cen);
 
   /* Set return values */
 
@@ -338,13 +338,13 @@ cs_b_face_criterion_probes_define(void          *input,
   cs_lnum_t   n_faces;
   cs_lnum_t  *face_ids;
 
-  BFT_MALLOC(face_ids, m->n_b_faces, cs_lnum_t);
+  CS_MALLOC(face_ids, m->n_b_faces, cs_lnum_t);
   cs_selector_get_b_face_list(criterion, &n_faces, face_ids);
 
   cs_real_3_t *_coords;
   cs_real_t *_s;
-  BFT_MALLOC(_coords, n_faces, cs_real_3_t);
-  BFT_MALLOC(_s, n_faces, cs_real_t);
+  CS_MALLOC(_coords, n_faces, cs_real_3_t);
+  CS_MALLOC(_s, n_faces, cs_real_t);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
     for (cs_lnum_t j = 0; j < 3; j++)
@@ -352,7 +352,7 @@ cs_b_face_criterion_probes_define(void          *input,
     _s[i] = _coords[i][0];
   }
 
-  BFT_FREE(face_ids);
+  CS_FREE(face_ids);
 
   /* Set return values */
 
@@ -413,7 +413,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
     switch(location) {
     case CS_MESH_LOCATION_CELLS:
 
-      BFT_MALLOC(elt_list, mesh->n_cells, cs_lnum_t);
+      CS_MALLOC(elt_list, mesh->n_cells, cs_lnum_t);
       cs_selector_get_cell_list(criteria, &n_elts, elt_list);
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -423,12 +423,12 @@ cs_post_turbomachinery_head(const char               *criteria_in,
                         cs_math_3_square_norm(vel[cell_id]));
         sum += weight;
       }
-      BFT_FREE(elt_list);
+      CS_FREE(elt_list);
       break;
 
     case CS_MESH_LOCATION_BOUNDARY_FACES:
 
-      BFT_MALLOC(elt_list, mesh->n_b_faces, cs_lnum_t);
+      CS_MALLOC(elt_list, mesh->n_b_faces, cs_lnum_t);
       cs_selector_get_b_face_list(criteria, &n_elts, elt_list);
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -439,12 +439,12 @@ cs_post_turbomachinery_head(const char               *criteria_in,
                       *cs_math_3_square_norm(vel[cell_id]));
         sum += surf;
       }
-      BFT_FREE(elt_list);
+      CS_FREE(elt_list);
       break;
 
     case CS_MESH_LOCATION_INTERIOR_FACES:
 
-      BFT_MALLOC(elt_list, mesh->n_i_faces, cs_lnum_t);
+      CS_MALLOC(elt_list, mesh->n_i_faces, cs_lnum_t);
       cs_selector_get_i_face_list(criteria, &n_elts, elt_list);
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -461,7 +461,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
         pabs += w*(pt + 0.5*r*cs_math_3_square_norm(v));
         sum += w;
       }
-      BFT_FREE(elt_list);
+      CS_FREE(elt_list);
       break;
 
     default:
@@ -594,7 +594,7 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
   const cs_rreal_3_t *diipb = mq->diipb;
   cs_real_3_t *gradp;
 
-  BFT_MALLOC(gradp, m->n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC(gradp, m->n_cells_with_ghosts, cs_real_3_t);
 
   int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
   cs_real_3_t *f_ext = (hyd_p_flag == 1) ?
@@ -619,7 +619,7 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 
 
   }
-  BFT_FREE(gradp);
+  CS_FREE(gradp);
 
   const cs_turb_model_t  *turb_model = cs_glob_turb_model;
 
@@ -627,7 +627,7 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
       || turb_model->itytur == 5
       || turb_model->itytur == 6) {
     cs_real_3_t *gradk;
-    BFT_MALLOC(gradk, m->n_cells_with_ghosts, cs_real_3_t);
+    CS_MALLOC(gradk, m->n_cells_with_ghosts, cs_real_3_t);
 
     cs_field_gradient_scalar(CS_F_(k),
                              false,  /* use_previous_t */
@@ -645,7 +645,7 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
                          *(  CS_F_(k)->bc_coeffs->a[face_id]
                            + CS_F_(k)->bc_coeffs->b[face_id]*kip);
     }
-    BFT_FREE(gradk);
+    CS_FREE(gradk);
   }
 }
 
@@ -722,7 +722,7 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
   /* velocity gradient */
 
   cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_field_gradient_vector(CS_F_(vel),
                            false,  /* use_previous_t */
@@ -733,7 +733,7 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
   cs_real_t *_xk = nullptr;
 
   if (cell_ids != nullptr) {
-    BFT_MALLOC(_xk, n_cells, cs_real_t);
+    CS_MALLOC(_xk, n_cells, cs_real_t);
 
     if (coords != nullptr)
       cs_field_interpolate(CS_F_(k),
@@ -771,8 +771,8 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
     rst[iloc][5] = -nut*(gradv[iel][2][0]+gradv[iel][0][2]);
   }
 
-  BFT_FREE(gradv);
-  BFT_FREE(_xk);
+  CS_FREE(gradv);
+  CS_FREE(_xk);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -810,7 +810,7 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
   if (   turb_model->order == CS_TURB_FIRST_ORDER
       && turb_model->type  == CS_TURB_RANS) {
     cs_real_6_t *rij;
-    BFT_MALLOC(rij, n_cells, cs_real_6_t);
+    CS_MALLOC(rij, n_cells, cs_real_6_t);
 
     cs_post_evm_reynolds_stresses(interpolation_type,
                                   n_cells,
@@ -822,7 +822,7 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
       _anisotropy_invariant(rij[i], inv[i]);
     }
 
-    BFT_FREE(rij);
+    CS_FREE(rij);
   }
   else {
     const cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
@@ -926,7 +926,7 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
   if (dim == 1) {
 
     cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     cs_field_gradient_scalar(f,
                              true, /* use_previous_t */
@@ -944,14 +944,14 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
                   + f->bc_coeffs->b[face_id] * c;
     }
 
-    BFT_FREE(grad);
+    CS_FREE(grad);
 
   }
 
   else if (dim == 3 || dim == 6) {
 
     cs_real_t *grad;
-    BFT_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
+    CS_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
 
     if (dim == 3)
       cs_field_gradient_vector(f,
@@ -989,7 +989,7 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
       }
     }
 
-    BFT_FREE(grad);
+    CS_FREE(grad);
   }
   else
     bft_error(__FILE__, __LINE__, 0,

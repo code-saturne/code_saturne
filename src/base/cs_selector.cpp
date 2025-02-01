@@ -35,13 +35,13 @@
 #include <math.h>
 
 #include "bft/bft_mem_usage.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_selector.h"
 
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 
@@ -265,8 +265,8 @@ cs_selector_get_b_face_list(const char  *criteria,
                                  n_b_faces,
                                  b_face_list);
 
-    BFT_FREE(b_face_cog);
-    BFT_FREE(b_face_normal);
+    CS_FREE(b_face_cog);
+    CS_FREE(b_face_normal);
 
     if (del_class_defs)
       mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
@@ -342,8 +342,8 @@ cs_selector_get_i_face_list(const char  *criteria,
                                  n_i_faces,
                                  i_face_list);
 
-    BFT_FREE(i_face_cog);
-    BFT_FREE(i_face_normal);
+    CS_FREE(i_face_cog);
+    CS_FREE(i_face_normal);
 
     if (del_class_defs)
       mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
@@ -405,7 +405,7 @@ cs_selector_get_cell_list(const char  *criteria,
     cs_real_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
     cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
     cs_real_t  *cell_cen = nullptr;
-    BFT_MALLOC(cell_cen, mesh->n_cells_with_ghosts*3, cs_real_t);
+    CS_MALLOC(cell_cen, mesh->n_cells_with_ghosts*3, cs_real_t);
 
     cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
     cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
@@ -417,10 +417,10 @@ cs_selector_get_cell_list(const char  *criteria,
                                       b_face_cog,
                                       cell_cen);
 
-    BFT_FREE(b_face_normal);
-    BFT_FREE(b_face_cog);
-    BFT_FREE(i_face_normal);
-    BFT_FREE(i_face_cog);
+    CS_FREE(b_face_normal);
+    CS_FREE(b_face_cog);
+    CS_FREE(i_face_normal);
+    CS_FREE(i_face_cog);
 
     fvm_selector_t *sel_cells = fvm_selector_create(mesh->dim,
                                                     mesh->n_cells,
@@ -436,7 +436,7 @@ cs_selector_get_cell_list(const char  *criteria,
                                  n_cells,
                                  cell_list);
 
-    BFT_FREE(cell_cen);
+    CS_FREE(cell_cen);
 
     if (del_class_defs)
       mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
@@ -466,7 +466,7 @@ cs_selector_get_cell_vertices_list(const char  *criteria,
   cs_lnum_t  n_cells = 0;
   cs_lnum_t  *cell_ids = nullptr;
 
-  BFT_MALLOC(cell_ids, cs_glob_mesh->n_cells, cs_lnum_t);
+  CS_MALLOC(cell_ids, cs_glob_mesh->n_cells, cs_lnum_t);
 
   cs_selector_get_cell_list(criteria, &n_cells, cell_ids);
   cs_selector_get_cell_vertices_list_by_ids(n_cells,
@@ -474,7 +474,7 @@ cs_selector_get_cell_vertices_list(const char  *criteria,
                                             n_vertices,
                                             vtx_ids);
 
-  BFT_FREE(cell_ids);
+  CS_FREE(cell_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -499,7 +499,7 @@ cs_selector_get_cell_vertices_list_by_ids(cs_lnum_t         n_cells,
   const cs_lnum_t _n_vertices = m->n_vertices;
 
   char *cell_flag;
-  BFT_MALLOC(cell_flag, m->n_cells, char);
+  CS_MALLOC(cell_flag, m->n_cells, char);
 
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
     cell_flag[i] = 0;
@@ -543,7 +543,7 @@ cs_selector_get_cell_vertices_list_by_ids(cs_lnum_t         n_cells,
     }
   }
 
-  BFT_FREE(cell_flag);
+  CS_FREE(cell_flag);
 
   /* Now compact list */
 
@@ -578,7 +578,7 @@ cs_selector_get_b_face_vertices_list(const char *criteria,
   cs_lnum_t  n_faces = 0;
   cs_lnum_t  *face_ids = nullptr;
 
-  BFT_MALLOC(face_ids, cs_glob_mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(face_ids, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_list(criteria, &n_faces, face_ids);
   cs_selector_get_b_face_vertices_list_by_ids(n_faces,
@@ -586,7 +586,7 @@ cs_selector_get_b_face_vertices_list(const char *criteria,
                                               n_vertices,
                                               vtx_ids);
 
-  BFT_FREE(face_ids);
+  CS_FREE(face_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -676,8 +676,8 @@ cs_selector_get_cells_boundary(const char  *criteria,
 
   /* Mark cells inside zone selection */
 
-  BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
-  BFT_MALLOC(cell_flag, mesh->n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
+  CS_MALLOC(cell_flag, mesh->n_cells_with_ghosts, cs_lnum_t);
 
   for (ii = 0; ii < mesh->n_cells; ii++)
     cell_flag[ii] = 0;
@@ -689,7 +689,7 @@ cs_selector_get_cells_boundary(const char  *criteria,
   for (ii = 0; ii < n_cells; ii++)
     cell_flag[cell_list[ii]] = 1;
 
-  BFT_FREE(cell_list);
+  CS_FREE(cell_list);
 
   if (mesh->halo != nullptr)
     cs_halo_sync_num(mesh->halo, CS_HALO_STANDARD, cell_flag);
@@ -713,7 +713,7 @@ cs_selector_get_cells_boundary(const char  *criteria,
     }
   }
 
-  BFT_FREE(cell_flag);
+  CS_FREE(cell_flag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -741,14 +741,14 @@ cs_selector_get_b_face_cells_list(const char  *criteria,
   cs_lnum_t  n_b_faces = 0;
   cs_lnum_t *b_face_list = nullptr;
 
-  BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_list(criteria, &n_b_faces, b_face_list);
 
   /* Flag array initialization */
   int *cell_flag = nullptr;
 
-  BFT_MALLOC(cell_flag, mesh->n_cells, int);
+  CS_MALLOC(cell_flag, mesh->n_cells, int);
 
   for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
     cell_flag[i] = 0;
@@ -772,8 +772,8 @@ cs_selector_get_b_face_cells_list(const char  *criteria,
     }
   }
 
-  BFT_FREE(b_face_list);
-  BFT_FREE(cell_flag);
+  CS_FREE(b_face_list);
+  CS_FREE(cell_flag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -795,7 +795,7 @@ cs_selector_get_perio_face_list(int         perio_num,
   int ii;
   int *face_perio_num = nullptr;
 
-  BFT_MALLOC(face_perio_num, cs_glob_mesh->n_i_faces, int);
+  CS_MALLOC(face_perio_num, cs_glob_mesh->n_i_faces, int);
 
   cs_mesh_get_face_perio_num(cs_glob_mesh, face_perio_num);
 
@@ -807,7 +807,7 @@ cs_selector_get_perio_face_list(int         perio_num,
     }
   }
 
-  BFT_FREE(face_perio_num);
+  CS_FREE(face_perio_num);
 }
 
 /*----------------------------------------------------------------------------*/

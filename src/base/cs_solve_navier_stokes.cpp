@@ -40,7 +40,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -80,6 +79,7 @@
 #include "base/cs_mass_source_terms.h"
 #include "base/cs_math.h"
 #include "alge/cs_matrix_building.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -2958,7 +2958,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   }
 
-  BFT_FREE(stf);
+  CS_FREE(stf);
 
   /* Right Hand Side initialization
      ------------------------------ */

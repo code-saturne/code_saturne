@@ -232,7 +232,7 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
   cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 
   if (sd == nullptr) {
-    BFT_MALLOC(c->setup_data, 1, cs_sles_it_setup_t);
+    CS_MALLOC(c->setup_data, 1, cs_sles_it_setup_t);
     sd = c->setup_data;
     sd->ad_inv = nullptr;
     sd->_ad_inv = nullptr;

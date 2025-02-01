@@ -45,7 +45,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -56,6 +55,7 @@
 #include "base/cs_halo_perio.h"
 #include "base/cs_internal_coupling.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "base/cs_numbering.h"
@@ -197,8 +197,8 @@ _update_block_row_g_id(cs_lnum_t         n_rows,
   }
 
   if (_n_cols_ext > _row_num_size) {
-    BFT_FREE(_global_row_id);
-    BFT_MALLOC(_global_row_id, _n_cols_ext, cs_gnum_t);
+    CS_FREE(_global_row_id);
+    CS_MALLOC(_global_row_id, _n_cols_ext, cs_gnum_t);
     _row_num_size = _n_cols_ext;
   }
 
@@ -471,7 +471,7 @@ cs_matrix_initialize(void)
   int n_ic = cs_internal_coupling_n_couplings();
 
   if (n_ic > 0) {
-    BFT_MALLOC(_matrix_assembler_coupled, n_ic, cs_matrix_assembler_t *);
+    CS_MALLOC(_matrix_assembler_coupled, n_ic, cs_matrix_assembler_t *);
     for (int i = 0; i < n_ic; i++)
       _matrix_assembler_coupled[i] = nullptr;
   }
@@ -488,7 +488,7 @@ cs_matrix_finalize(void)
   cs_matrix_spmv_cuda_finalize();
 #endif
 
-  BFT_FREE(_global_row_id);
+  CS_FREE(_global_row_id);
 
   for (int t = 0; t < CS_MATRIX_N_BUILTIN_TYPES; t++) {
     for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
@@ -507,8 +507,8 @@ cs_matrix_finalize(void)
   }
 
   _n_ext_matrices = 0;
-  BFT_FREE(_ext_matrix);
-  BFT_FREE(_ext_fill_type);
+  CS_FREE(_ext_matrix);
+  CS_FREE(_ext_fill_type);
 
   cs_matrix_assembler_destroy(&_matrix_assembler);
 
@@ -518,7 +518,7 @@ cs_matrix_finalize(void)
   for (int i = 0; i < n_ic; i++) {
     cs_matrix_assembler_destroy(&(_matrix_assembler_coupled[i]));
   }
-  BFT_FREE(_matrix_assembler_coupled);
+  CS_FREE(_matrix_assembler_coupled);
 
   /* Exit status */
 
@@ -742,8 +742,8 @@ cs_matrix_copy_to_external(cs_matrix_t  *src,
 {
   int m_id = _n_ext_matrices;
   _n_ext_matrices += 1;
-  BFT_REALLOC(_ext_matrix, _n_ext_matrices, cs_matrix_t *);
-  BFT_REALLOC(_ext_fill_type, _n_ext_matrices, cs_matrix_fill_type_t);
+  CS_REALLOC(_ext_matrix, _n_ext_matrices, cs_matrix_t *);
+  CS_REALLOC(_ext_fill_type, _n_ext_matrices, cs_matrix_fill_type_t);
 
   _ext_fill_type[m_id] = cs_matrix_get_fill_type(symmetric,
                                                  diag_block_size,
@@ -751,7 +751,7 @@ cs_matrix_copy_to_external(cs_matrix_t  *src,
 
 
   cs_matrix_t *m;
-  BFT_MALLOC(m, 1, cs_matrix_t);
+  CS_MALLOC(m, 1, cs_matrix_t);
   memcpy(m, src, sizeof(cs_matrix_t));
   m->coeffs = nullptr;
 

@@ -69,7 +69,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -78,6 +77,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_timer.h"
@@ -275,13 +275,13 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
 
     int     n = n_variants*2;
     double *cost_local;
-    BFT_MALLOC(cost_local, n, double);
+    CS_MALLOC(cost_local, n, double);
     for (int i = 0; i < n; i++)
       cost_local[i] = spmv_cost[i];
 
     MPI_Allreduce(cost_local, spmv_cost, n, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
 
-    BFT_FREE(cost_local);
+    CS_FREE(cost_local);
 
   }
 
@@ -396,7 +396,7 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
   if (cs_get_device_id() > -1)
     n_r_variants = 3;
 
-  BFT_MALLOC(r_variant, n_r_variants, cs_matrix_variant_t);
+  CS_MALLOC(r_variant, n_r_variants, cs_matrix_variant_t);
 
   cs_matrix_variant_build_list(m, &n_variants, &m_variant);
 
@@ -411,7 +411,7 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
                     cs_matrix_fill_type_name[m->fill_type]);
 
     double *spmv_cost;
-    BFT_MALLOC(spmv_cost, n_variants*CS_MATRIX_SPMV_N_TYPES, double);
+    CS_MALLOC(spmv_cost, n_variants*CS_MATRIX_SPMV_N_TYPES, double);
 
     _matrix_tune_test(m,
                       n_measure,
@@ -427,7 +427,7 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
                              r_variant,
                              spmv_cost);
 
-    BFT_FREE(spmv_cost);
+    CS_FREE(spmv_cost);
 
     cs_log_printf(CS_LOG_PERFORMANCE, "\n");
     cs_log_separator(CS_LOG_PERFORMANCE);
@@ -439,7 +439,7 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
   else
     memcpy(r_variant, m_variant, sizeof(cs_matrix_variant_t));
 
-  BFT_FREE(m_variant);
+  CS_FREE(m_variant);
 
   return r_variant;
 }

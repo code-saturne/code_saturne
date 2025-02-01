@@ -46,9 +46,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
@@ -177,7 +177,7 @@ _cs_paramedmem_create_transformation(int             type,
 
   _mesh_transformation_t *mt = nullptr;
 
-  BFT_MALLOC(mt, 1, _mesh_transformation_t);
+  CS_MALLOC(mt, 1, _mesh_transformation_t);
 
   mt->type  = type;
   mt->angle = angle;
@@ -202,9 +202,9 @@ _cs_paramedmem_reset_transformations(void)
 {
   if (_transformations != nullptr) {
     for (int i = 0; i < _n_transformations; i++) {
-      BFT_FREE(_transformations[i]);
+      CS_FREE(_transformations[i]);
     }
-    BFT_FREE(_transformations);
+    CS_FREE(_transformations);
   }
 
   _n_transformations = 0;
@@ -293,7 +293,7 @@ _cs_paramedmem_get_mpi_comm_world_ranks(void)
   MPI_Comm_size(cs_glob_mpi_comm, &mycomm_size);
 
   int *world_ranks;
-  BFT_MALLOC(world_ranks, mycomm_size, int);
+  CS_MALLOC(world_ranks, mycomm_size, int);
 
   MPI_Allgather(&my_rank, 1, MPI_INT, world_ranks, 1, MPI_INT, cs_glob_mpi_comm);
 
@@ -317,9 +317,9 @@ _cs_paramedmem_overlap_create(const char  *name)
 
   /* Add corresponding coupling to temporary ICoCo couplings array */
 
-  BFT_MALLOC(r, 1, cs_paramedmem_remapper_t);
+  CS_MALLOC(r, 1, cs_paramedmem_remapper_t);
 
-  BFT_MALLOC(r->name, strlen(name) + 1, char);
+  CS_MALLOC(r->name, strlen(name) + 1, char);
   strcpy(r->name, name);
 
   r->iter       = nullptr;
@@ -435,9 +435,9 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
 
   r->ntsteps    = tio.size();
 
-  BFT_MALLOC(r->time_steps, r->ntsteps, cs_real_t);
-  BFT_MALLOC(r->iter, r->ntsteps, int);
-  BFT_MALLOC(r->order, r->ntsteps, int);
+  CS_MALLOC(r->time_steps, r->ntsteps, cs_real_t);
+  CS_MALLOC(r->iter, r->ntsteps, int);
+  CS_MALLOC(r->order, r->ntsteps, int);
   for (int i = 0; i < r->ntsteps; i++) {
     int it  = tio[i].first;
     int ord = tio[i].second;
@@ -460,13 +460,13 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
 static void
 _cs_paramedmem_remapper_destroy(cs_paramedmem_remapper_t *r)
 {
-  BFT_FREE(r->name);
-  BFT_FREE(r->src_mesh);
-  BFT_FREE(r->MEDFields);
-  BFT_FREE(r->iter);
-  BFT_FREE(r->order);
-  BFT_FREE(r->time_steps);
-  BFT_FREE(r->odec);
+  CS_FREE(r->name);
+  CS_FREE(r->src_mesh);
+  CS_FREE(r->MEDFields);
+  CS_FREE(r->iter);
+  CS_FREE(r->order);
+  CS_FREE(r->time_steps);
+  CS_FREE(r->odec);
 }
 
 #endif /* !HAVE_PARAMEDMEM && !HAVE_MEDCOUPLING_LOADER */
@@ -518,9 +518,9 @@ cs_paramedmem_remapper_create(char       *name,
 #else
 
   if (_remapper == nullptr)
-    BFT_MALLOC(_remapper, 1, cs_paramedmem_remapper_t *);
+    CS_MALLOC(_remapper, 1, cs_paramedmem_remapper_t *);
   else
-    BFT_REALLOC(_remapper, _n_remappers+1, cs_paramedmem_remapper_t *);
+    CS_REALLOC(_remapper, _n_remappers+1, cs_paramedmem_remapper_t *);
 
   r = _cs_paramedmem_overlap_create(name);
 
@@ -660,7 +660,7 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
   // Write new values
   const double *val_ptr = trg_field->getArray()->getConstPointer();
 
-  BFT_MALLOC(new_vals, r->local_mesh->n_elts, cs_real_t);
+  CS_MALLOC(new_vals, r->local_mesh->n_elts, cs_real_t);
 
   const cs_lnum_t *new_connec = r->local_mesh->new_to_old;
 
@@ -774,7 +774,7 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
                                                           r->iter[id2],
                                                           r->order[id2]);
 
-    BFT_MALLOC(new_vals, r->local_mesh->n_elts, cs_real_t);
+    CS_MALLOC(new_vals, r->local_mesh->n_elts, cs_real_t);
     for (int c_id = 0; c_id < r->local_mesh->n_elts; c_id++) {
       new_vals[c_id] = vals1[c_id] +
                        (vals2[c_id]-vals1[c_id]) *
@@ -811,7 +811,7 @@ cs_paramedmem_remapper_translate(cs_paramedmem_remapper_t  *r,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
 #else
-  BFT_REALLOC(_transformations, _n_transformations+1, _mesh_transformation_t *);
+  CS_REALLOC(_transformations, _n_transformations+1, _mesh_transformation_t *);
 
   cs_real_t cen[3] = {0.,0.,0.};
   _transformations[_n_transformations] =
@@ -848,7 +848,7 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
 #else
-  BFT_REALLOC(_transformations, _n_transformations+1, _mesh_transformation_t *);
+  CS_REALLOC(_transformations, _n_transformations+1, _mesh_transformation_t *);
 
   _transformations[_n_transformations] =
     _cs_paramedmem_create_transformation(0, invariant, axis, angle);

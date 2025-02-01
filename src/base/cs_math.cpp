@@ -46,7 +46,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -687,7 +687,7 @@ cs_math_fw_and_bw_lu(const cs_real_t  a_lu[],
   cs_real_t  *aux = _aux;
 
   if (n > 256)
-    BFT_MALLOC(aux, n, cs_real_t);
+    CS_MALLOC(aux, n, cs_real_t);
 
   /* forward */
   for (int ii = 0; ii < n; ii++) {
@@ -707,7 +707,7 @@ cs_math_fw_and_bw_lu(const cs_real_t  a_lu[],
   }
 
   if (n > 256)
-    BFT_FREE(aux);
+    CS_FREE(aux);
 }
 
 /*----------------------------------------------------------------------------*/

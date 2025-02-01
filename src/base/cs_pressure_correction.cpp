@@ -38,7 +38,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -66,6 +65,7 @@
 #include "lagr/cs_lagr.h"
 #include "base/cs_log.h"
 #include "alge/cs_matrix_building.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -1123,7 +1123,7 @@ _pressure_correction_fv(int                   iterns,
         rovsdt[c_id] += cell_f_vol[c_id] * _coef * dc2[c_id] / dt[c_id];
       });
 
-      BFT_FREE(xcpp);
+      CS_FREE(xcpp);
 
     }
   }
@@ -3220,7 +3220,7 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
   /* Allocate temporary arrays */
 
   cs_real_3_t  *wrk = nullptr;
-  BFT_MALLOC(wrk, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(wrk, n_cells_ext, cs_real_3_t);
 
   cs_field_t  *f_dp = cs_field_by_id(eq_dp->field_id);
   cs_real_t  *phi = f_dp->val;
@@ -3352,7 +3352,7 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
      --------------------------------------- */
 
   cs_real_t *diff_flux = nullptr;
-  BFT_MALLOC(diff_flux, quant->n_faces, cs_real_t);
+  CS_MALLOC(diff_flux, quant->n_faces, cs_real_t);
 
   cs_equation_compute_diffusive_flux(eq_dp,
                                      nullptr, /* eqp --> default*/
@@ -3413,12 +3413,12 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
 
   /*  Free memory */
 
-  BFT_FREE(wrk);
-  BFT_FREE(diff_flux);
+  CS_FREE(wrk);
+  CS_FREE(diff_flux);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_PRESSURE_CORRECTION_CDO_DBG > 0
   cs_real_t *res = nullptr;
-  BFT_MALLOC(res, n_cells_ext, cs_real_t);
+  CS_MALLOC(res, n_cells_ext, cs_real_t);
 
   cs_divergence(m, 1, imasfl, bmasfl, res);
 
@@ -3428,7 +3428,7 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
                 ">> Divergence of mass flux after correction step: %15.7e \n",
                 rnormp);
 
-  BFT_FREE(res);
+  CS_FREE(res);
 #endif
 
   /* Update the pressure field
@@ -3452,7 +3452,7 @@ _pressure_correction_cdo_create(void)
 {
   cs_pressure_correction_cdo_t *prcdo = nullptr;
 
-  BFT_MALLOC(prcdo, 1, cs_pressure_correction_cdo_t);
+  CS_MALLOC(prcdo, 1, cs_pressure_correction_cdo_t);
 
   /* Equation
      -------- */
@@ -3692,10 +3692,10 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  BFT_MALLOC(prcdo->div_st, n_cells_ext, cs_real_t);
-  BFT_MALLOC(prcdo->inner_potential_flux, n_i_faces, cs_real_t);
-  BFT_MALLOC(prcdo->bdy_potential_flux, n_b_faces, cs_real_t);
-  BFT_MALLOC(prcdo->bdy_pressure_incr, n_b_faces, cs_real_t);
+  CS_MALLOC(prcdo->div_st, n_cells_ext, cs_real_t);
+  CS_MALLOC(prcdo->inner_potential_flux, n_i_faces, cs_real_t);
+  CS_MALLOC(prcdo->bdy_potential_flux, n_b_faces, cs_real_t);
+  CS_MALLOC(prcdo->bdy_pressure_incr, n_b_faces, cs_real_t);
 
   /* Affect source term for the equation
      ----------------------------------- */
@@ -3753,12 +3753,12 @@ cs_pressure_correction_cdo_destroy_all(void)
   if (prcdo == nullptr)
     return;
 
-  BFT_FREE(prcdo->div_st);
-  BFT_FREE(prcdo->inner_potential_flux);
-  BFT_FREE(prcdo->bdy_potential_flux);
-  BFT_FREE(prcdo->bdy_pressure_incr);
+  CS_FREE(prcdo->div_st);
+  CS_FREE(prcdo->inner_potential_flux);
+  CS_FREE(prcdo->bdy_potential_flux);
+  CS_FREE(prcdo->bdy_pressure_incr);
 
-  BFT_FREE(prcdo);
+  CS_FREE(prcdo);
 
   cs_pressure_correction_cdo = nullptr;
 }

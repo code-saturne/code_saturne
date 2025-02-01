@@ -50,7 +50,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -69,6 +68,7 @@
 #include "base/cs_internal_coupling.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -266,7 +266,7 @@ _gradient_quantities_get(int  id)
 
   if (id >= _n_gradient_quantities) {
 
-    BFT_REALLOC(_gradient_quantities, id+1, cs_gradient_quantities_t);
+    CS_REALLOC(_gradient_quantities, id+1, cs_gradient_quantities_t);
 
     for (int i = _n_gradient_quantities; i < id+1; i++) {
       cs_gradient_quantities_t  *gq = _gradient_quantities + i;
@@ -298,15 +298,15 @@ _gradient_quantities_destroy(void)
 
     cs_gradient_quantities_t  *gq = _gradient_quantities + i;
 
-    BFT_FREE(gq->cocg_it);
-    BFT_FREE(gq->cocgb_s_lsq);
-    BFT_FREE(gq->cocg_lsq);
-    BFT_FREE(gq->cocgb_s_lsq_ext);
-    BFT_FREE(gq->cocg_lsq_ext);
+    CS_FREE(gq->cocg_it);
+    CS_FREE(gq->cocgb_s_lsq);
+    CS_FREE(gq->cocg_lsq);
+    CS_FREE(gq->cocgb_s_lsq_ext);
+    CS_FREE(gq->cocg_lsq_ext);
 
   }
 
-  BFT_FREE(_gradient_quantities);
+  CS_FREE(_gradient_quantities);
   _n_gradient_quantities = 0;
 }
 
@@ -327,8 +327,8 @@ _gradient_info_create(const char          *name,
 {
   cs_gradient_info_t *new_info = nullptr;
 
-  BFT_MALLOC(new_info, 1, cs_gradient_info_t);
-  BFT_MALLOC(new_info->name, strlen(name) + 1, char);
+  CS_MALLOC(new_info, 1, cs_gradient_info_t);
+  CS_MALLOC(new_info->name, strlen(name) + 1, char);
 
   strcpy(new_info->name, name);
   new_info->type = type;
@@ -354,8 +354,8 @@ static void
 _gradient_info_destroy(cs_gradient_info_t  **this_info)
 {
   if (*this_info != nullptr) {
-    BFT_FREE((*this_info)->name);
-    BFT_FREE(*this_info);
+    CS_FREE((*this_info)->name);
+    CS_FREE(*this_info);
   }
 }
 
@@ -464,9 +464,9 @@ _find_or_add_system(const char          *name,
     else
       _gradient_n_max_systems *= 2;
 
-    BFT_REALLOC(_gradient_systems,
-                _gradient_n_max_systems,
-                cs_gradient_info_t *);
+    CS_REALLOC(_gradient_systems,
+               _gradient_n_max_systems,
+               cs_gradient_info_t *);
 
   }
 
@@ -798,7 +798,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
   cs_real_t *_clip_factor = nullptr;
 
   if (clip_factor == nullptr) {
-    BFT_MALLOC(_clip_factor, n_cells_ext, cs_real_t);
+    CS_MALLOC(_clip_factor, n_cells_ext, cs_real_t);
     clip_factor = _clip_factor;
   }
 
@@ -895,7 +895,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
   else if (clip_mode == CS_GRADIENT_LIMIT_FACE) {
 
     cs_real_t *factor;
-    BFT_MALLOC(factor, n_cells_ext, cs_real_t);
+    CS_MALLOC(factor, n_cells_ext, cs_real_t);
     cs_array_real_set_scalar(n_cells_ext, DBL_MAX, factor);
 
 #   pragma omp parallel for  if  (n_cells > CS_THR_MIN)
@@ -979,7 +979,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
     _gradient_update_face_clip_factor(m, ma, halo_type, factor, clip_factor);
 
-    BFT_FREE(factor);
+    CS_FREE(factor);
 
   } /* End for clip_mode == CS_GRADIENT_LIMIT_FACE */
 
@@ -1049,7 +1049,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
   cs_halo_sync_r(m->halo, halo_type, false, grad);
 
-  BFT_FREE(_clip_factor);
+  CS_FREE(_clip_factor);
 }
 
 /*----------------------------------------------------------------------------
@@ -1464,7 +1464,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
 
   /* Correction matrix */
   cs_real_33_t *cor_mat;
-  BFT_MALLOC(cor_mat, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(cor_mat, n_cells_ext, cs_real_33_t);
 
   /* Initialization */
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
@@ -1567,7 +1567,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
     }
   }
 
-  BFT_FREE(cor_mat);
+  CS_FREE(cor_mat);
 
   /* Synchronize halos */
   cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, false, grad);
@@ -1820,7 +1820,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     return;
   }
 
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_3_t);
 
   /* Vector OijFij is computed in CLDijP */
 
@@ -2171,7 +2171,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   if (gradient_info != nullptr)
     _gradient_info_update_iter(gradient_info, n_sweeps);
 
-  BFT_FREE(rhs);
+  CS_FREE(rhs);
 }
 
 /*----------------------------------------------------------------------------
@@ -2676,7 +2676,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   /*-------------------------*/
 
   cs_real_4_t  *restrict rhsv;
-  BFT_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
+  CS_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
@@ -2825,7 +2825,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   cs_halo_sync_r(m->halo, CS_HALO_STANDARD, false, grad);
 
-  BFT_FREE(rhsv);
+  CS_FREE(rhsv);
 }
 
 /*----------------------------------------------------------------------------
@@ -3636,10 +3636,10 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
   }
 
   cs_real_4_t  *restrict rhsv;
-  BFT_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
+  CS_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
 
   cs_cocg_6_t  *restrict cocg = nullptr;
-  BFT_MALLOC(cocg, n_cells_ext, cs_cocg_6_t);
+  CS_MALLOC(cocg, n_cells_ext, cs_cocg_6_t);
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -3796,8 +3796,8 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
   cs_halo_sync_r(m->halo, CS_HALO_STANDARD, false, grad);
 
-  BFT_FREE(cocg);
-  BFT_FREE(rhsv);
+  CS_FREE(cocg);
+  CS_FREE(rhsv);
 }
 
 /*----------------------------------------------------------------------------
@@ -4301,10 +4301,10 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
   cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
 
   if (inc < 1) {
-    BFT_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
+    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
     cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
 
-    BFT_MALLOC(bc_coeffs_loc->a, m->n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc->a, m->n_b_faces, cs_real_t);
     for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
       bc_coeffs_loc->a[i] = 0;
   }
@@ -4349,7 +4349,7 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
 
   if (bc_coeffs_loc != nullptr) {
     cs_field_bc_coeffs_free_copy(bc_coeffs, bc_coeffs_loc);
-    BFT_FREE(bc_coeffs_loc);
+    CS_FREE(bc_coeffs_loc);
   }
 }
 
@@ -4707,7 +4707,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   /* Pre-compute values at boundary using least squares */
 
   cs_real_t *b_f_var;
-  BFT_MALLOC(b_f_var, m->n_b_faces, cs_real_t);
+  CS_MALLOC(b_f_var, m->n_b_faces, cs_real_t);
 
   if (hyd_p_flag == 1)
     _lsq_scalar_b_face_val_phyd(m,
@@ -4733,7 +4733,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
      --------------------------- */
 
   cs_real_t *v_var;
-  BFT_MALLOC(v_var, m->n_vertices, cs_real_t);
+  CS_MALLOC(v_var, m->n_vertices, cs_real_t);
 
   cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
                     0, /* verbosity */
@@ -4748,7 +4748,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
      -------------------------------- */
 
   cs_real_t *i_f_var;
-  BFT_MALLOC(i_f_var, m->n_i_faces, cs_real_t);
+  CS_MALLOC(i_f_var, m->n_i_faces, cs_real_t);
 
   for (int f_t = 0; f_t < 2; f_t++) {
 
@@ -4795,7 +4795,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
     mean[3] += b_f_var[i];
   mean[3] /= m->n_b_faces;
 
-  BFT_FREE(v_var);
+  CS_FREE(v_var);
 
   /* Case with hydrostatic pressure
      ------------------------------ */
@@ -4976,8 +4976,8 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
   }
 
-  BFT_FREE(i_f_var);
-  BFT_FREE(b_f_var);
+  CS_FREE(i_f_var);
+  CS_FREE(b_f_var);
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -5066,7 +5066,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   cs_real_t *_clip_factor = nullptr;
 
   if (clip_factor == nullptr) {
-    BFT_MALLOC(_clip_factor, n_cells_ext, cs_real_t);
+    CS_MALLOC(_clip_factor, n_cells_ext, cs_real_t);
     clip_factor = _clip_factor;
   }
 
@@ -5179,7 +5179,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   else if (clip_mode == CS_GRADIENT_LIMIT_FACE) {
 
     cs_real_t *factor;
-    BFT_MALLOC(factor, n_cells_ext, cs_real_t);
+    CS_MALLOC(factor, n_cells_ext, cs_real_t);
     cs_array_real_set_scalar(n_cells_ext, DBL_MAX, factor);
 
 #   pragma omp parallel for  if  (n_cells > CS_THR_MIN)
@@ -5276,7 +5276,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
 
     _gradient_update_face_clip_factor(m, ma, halo_type, factor, clip_factor);
 
-    BFT_FREE(factor);
+    CS_FREE(factor);
 
   } /* End for clip_mode == CS_GRADIENT_LIMIT_FACE */
 
@@ -5363,7 +5363,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
     }
   }
 
-  BFT_FREE(_clip_factor);
+  CS_FREE(_clip_factor);
 }
 
 /*----------------------------------------------------------------------------
@@ -5912,7 +5912,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
     coupled_faces = (const bool *)cpl->coupled_faces;
   }
 
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_33_t);
 
   /* Gradient reconstruction to handle non-orthogonal meshes */
   /*---------------------------------------------------------*/
@@ -6111,7 +6111,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
   if (gradient_info != nullptr)
     _gradient_info_update_iter(gradient_info, isweep);
 
-  BFT_FREE(rhs);
+  CS_FREE(rhs);
 }
 
 /*----------------------------------------------------------------------------
@@ -6191,7 +6191,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
   if (cocg == nullptr)
     cocg = _compute_cell_cocg_it(m, fvq, nullptr, gq);
 
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_63_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_63_t);
 
   /* Gradient reconstruction to handle non-orthogonal meshes */
   /*---------------------------------------------------------*/
@@ -6378,7 +6378,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
   if (gradient_info != nullptr)
     _gradient_info_update_iter(gradient_info, isweep);
 
-  BFT_FREE(rhs);
+  CS_FREE(rhs);
 }
 
 /*----------------------------------------------------------------------------
@@ -6777,7 +6777,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   if (cs_glob_timer_kernels_flag > 0)
     t_halo = std::chrono::high_resolution_clock::now();
 
-  BFT_FREE(rhs);
+  CS_FREE(rhs);
 
   if (cs_glob_timer_kernels_flag > 0) {
     t_stop = std::chrono::high_resolution_clock::now();
@@ -6933,7 +6933,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
   /* Pre-compute gradient at boundary using least squares */
 
   var_t *b_f_var;
-  BFT_MALLOC(b_f_var, m->n_b_faces, var_t);
+  CS_MALLOC(b_f_var, m->n_b_faces, var_t);
   cs_array_copy<cs_real_t>(stride*m->n_b_faces,
                            (const cs_real_t *)val_f,
                            (cs_real_t *)b_f_var);
@@ -6942,7 +6942,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
      --------------------------- */
 
   var_t *v_var;
-  BFT_MALLOC(v_var, m->n_vertices, var_t);
+  CS_MALLOC(v_var, m->n_vertices, var_t);
 
   cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
                     0, /* verbosity */
@@ -6957,7 +6957,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
      -------------------------------- */
 
   var_t *i_f_var;
-  BFT_MALLOC(i_f_var, m->n_i_faces, var_t);
+  CS_MALLOC(i_f_var, m->n_i_faces, var_t);
 
   for (int f_t = 0; f_t < 2; f_t++) {
 
@@ -6995,7 +6995,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
 
   /* Vertex values are not needed after this stage */
 
-  BFT_FREE(v_var);
+  CS_FREE(v_var);
 
   /* Contribution from interior faces */
 
@@ -7062,8 +7062,8 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
 
   }
 
-  BFT_FREE(i_f_var);
-  BFT_FREE(b_f_var);
+  CS_FREE(i_f_var);
+  CS_FREE(b_f_var);
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -7342,11 +7342,11 @@ _gradient_scalar(const char                    *var_name,
   cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
 
   if (bc_coeffs == nullptr) {
-    BFT_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
+    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
     cs_field_bc_coeffs_init(bc_coeffs_loc);
 
-    BFT_MALLOC(bc_coeffs_loc->a, n_b_faces, cs_real_t);
-    BFT_MALLOC(bc_coeffs_loc->b, n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc->a, n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc->b, n_b_faces, cs_real_t);
 
     for (cs_lnum_t i = 0; i < n_b_faces; i++) {
       bc_coeffs_loc->a[i] = 0.;
@@ -7374,11 +7374,11 @@ _gradient_scalar(const char                    *var_name,
       cs_real_t *bc_coeff_a = bc_coeffs->a;
       cs_real_t *bc_coeff_b = bc_coeffs->b;
 
-      BFT_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
+      CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
       cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
 
-      BFT_MALLOC(bc_coeffs_loc->a, n_b_faces, cs_real_t);
-      BFT_MALLOC(bc_coeffs_loc->b, n_b_faces, cs_real_t);
+      CS_MALLOC(bc_coeffs_loc->a, n_b_faces, cs_real_t);
+      CS_MALLOC(bc_coeffs_loc->b, n_b_faces, cs_real_t);
 
       for (cs_lnum_t i = 0; i < n_b_faces; i++) {
         bc_coeffs_loc->a[i] = inc * bc_coeff_a[i];
@@ -7565,9 +7565,9 @@ _gradient_scalar(const char                    *var_name,
   }
 
   if (bc_coeffs_loc != nullptr) {
-    BFT_FREE(bc_coeffs_loc->a);
-    BFT_FREE(bc_coeffs_loc->b);
-    BFT_FREE(bc_coeffs_loc);
+    CS_FREE(bc_coeffs_loc->a);
+    CS_FREE(bc_coeffs_loc->b);
+    CS_FREE(bc_coeffs_loc);
   }
 
   _scalar_gradient_clipping(mesh,
@@ -8381,7 +8381,7 @@ cs_gradient_finalize(void)
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
   cs_log_separator(CS_LOG_PERFORMANCE);
 
-  BFT_FREE(_gradient_systems);
+  CS_FREE(_gradient_systems);
 
   _gradient_n_systems = 0;
   _gradient_n_max_systems = 0;
@@ -8403,11 +8403,11 @@ cs_gradient_free_quantities(void)
 
     cs_gradient_quantities_t  *gq = _gradient_quantities + i;
 
-    BFT_FREE(gq->cocg_it);
-    BFT_FREE(gq->cocgb_s_lsq);
-    BFT_FREE(gq->cocg_lsq);
-    BFT_FREE(gq->cocgb_s_lsq_ext);
-    BFT_FREE(gq->cocg_lsq_ext);
+    CS_FREE(gq->cocg_it);
+    CS_FREE(gq->cocgb_s_lsq);
+    CS_FREE(gq->cocg_lsq);
+    CS_FREE(gq->cocgb_s_lsq_ext);
+    CS_FREE(gq->cocg_lsq_ext);
 
   }
 }
@@ -8611,7 +8611,7 @@ cs_gradient_vector(const char                    *var_name,
 
       cs_real_3_t  *bc_coeff_a = (cs_real_3_t  *)bc_coeffs_v->a;
 
-      BFT_MALLOC(bc_coeffs_v_loc, 1, cs_field_bc_coeffs_t);
+      CS_MALLOC(bc_coeffs_v_loc, 1, cs_field_bc_coeffs_t);
       cs_field_bc_coeffs_shallow_copy(bc_coeffs_v, bc_coeffs_v_loc);
       CS_MALLOC_HD(bc_coeffs_v_loc->a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
 
@@ -8666,11 +8666,11 @@ cs_gradient_vector(const char                    *var_name,
     }
     else {
 
-      BFT_MALLOC(bc_coeffs_v_loc, 1, cs_field_bc_coeffs_t);
+      CS_MALLOC(bc_coeffs_v_loc, 1, cs_field_bc_coeffs_t);
       cs_field_bc_coeffs_init(bc_coeffs_v_loc);
 
-      BFT_MALLOC(bc_coeffs_v_loc->a, 3*n_b_faces, cs_real_t);
-      BFT_MALLOC(bc_coeffs_v_loc->b, 9*n_b_faces, cs_real_t);
+      CS_MALLOC(bc_coeffs_v_loc->a, 3*n_b_faces, cs_real_t);
+      CS_MALLOC(bc_coeffs_v_loc->b, 9*n_b_faces, cs_real_t);
 
       cs_real_3_t  *bc_coeff_loc_a = (cs_real_3_t  *)bc_coeffs_v_loc->a;
       cs_real_33_t *bc_coeff_loc_b = (cs_real_33_t *)bc_coeffs_v_loc->b;
@@ -8771,7 +8771,7 @@ cs_gradient_vector(const char                    *var_name,
     if (bc_coeffs_v == nullptr && gradient_type == CS_GRADIENT_GREEN_ITER)
       CS_FREE_HD(bc_coeffs_v_loc->b);
 
-    BFT_FREE(bc_coeffs_v_loc);
+    CS_FREE(bc_coeffs_v_loc);
   }
 
   t1 = cs_timer_time();
@@ -8872,11 +8872,11 @@ cs_gradient_tensor(const char                  *var_name,
                                                  nullptr);
     }
     else {
-      BFT_MALLOC(bc_coeffs_ts_loc, 1, cs_field_bc_coeffs_t);
+      CS_MALLOC(bc_coeffs_ts_loc, 1, cs_field_bc_coeffs_t);
       cs_field_bc_coeffs_init(bc_coeffs_ts_loc);
 
-      BFT_MALLOC(bc_coeffs_ts_loc->a, 6*n_b_faces, cs_real_t);
-      BFT_MALLOC(bc_coeffs_ts_loc->b, 36*n_b_faces, cs_real_t);
+      CS_MALLOC(bc_coeffs_ts_loc->a, 6*n_b_faces, cs_real_t);
+      CS_MALLOC(bc_coeffs_ts_loc->b, 36*n_b_faces, cs_real_t);
 
       cs_real_6_t  *bc_coeff_loc_a = (cs_real_6_t  *)bc_coeffs_ts_loc->a;
       cs_real_66_t *bc_coeff_loc_b = (cs_real_66_t *)bc_coeffs_ts_loc->b;
@@ -8962,9 +8962,9 @@ cs_gradient_tensor(const char                  *var_name,
     CS_FREE_HD(val_f);
 
   if (bc_coeffs_ts_loc != nullptr) {
-    BFT_FREE(bc_coeffs_ts_loc->a);
-    BFT_FREE(bc_coeffs_ts_loc->b);
-    BFT_FREE(bc_coeffs_ts_loc);
+    CS_FREE(bc_coeffs_ts_loc->a);
+    CS_FREE(bc_coeffs_ts_loc->b);
+    CS_FREE(bc_coeffs_ts_loc);
   }
 
   t1 = cs_timer_time();

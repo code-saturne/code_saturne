@@ -70,7 +70,7 @@ typedef enum {
  *
  * If non-empty and not containing all elements, a list of coordinates
  * as well as a list of curvilinear coordinates should be allocated
- * (using BFT_MALLOC) and defined by this function when called.
+ * (using CS_MALLOC) and defined by this function when called.
  * Those list's lifecycle is then managed automatically by the
  * probe set object.
  *

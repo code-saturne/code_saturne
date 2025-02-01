@@ -40,12 +40,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_block_dist.h"
 #include "base/cs_crystal_router.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_timer.h"
 
@@ -284,7 +284,7 @@ _cs_rank_neighbors_init_sort(cs_rank_neighbors_t  *n,
                              size_t                n_elts,
                              const int             elt_rank[])
 {
-  BFT_MALLOC(n->rank, n_elts, int);
+  CS_MALLOC(n->rank, n_elts, int);
 
   /* Copy element ranks to sort tree, ignoring those whose values are
      are identical to the previous values (as some data  partitioning locality
@@ -316,7 +316,7 @@ _cs_rank_neighbors_init_sort(cs_rank_neighbors_t  *n,
       r_prev = n->rank[i];
     }
   }
-  BFT_REALLOC(n->rank, n->size, int);
+  CS_REALLOC(n->rank, n->size, int);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -357,7 +357,7 @@ cs_rank_neighbors_create(size_t     n_elts,
 
   /* Allocate structure */
 
-  BFT_MALLOC(n, 1, cs_rank_neighbors_t);
+  CS_MALLOC(n, 1, cs_rank_neighbors_t);
 
   /* Create associated sub-structure */
 
@@ -396,8 +396,8 @@ cs_rank_neighbors_destroy(cs_rank_neighbors_t  **n)
 
     cs_rank_neighbors_t *_n = *n;
 
-    BFT_FREE(_n->rank);
-    BFT_FREE(*n);
+    CS_FREE(_n->rank);
+    CS_FREE(*n);
 
     t1 = cs_timer_time();
     cs_timer_counter_add_diff(_rank_neighbors_timer, &t0, &t1);
@@ -527,8 +527,8 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
     MPI_Comm_size(comm, &comm_size);
 
     int *sendbuf, *recvbuf;
-    BFT_MALLOC(sendbuf, comm_size, int);
-    BFT_MALLOC(recvbuf, comm_size, int);
+    CS_MALLOC(sendbuf, comm_size, int);
+    CS_MALLOC(recvbuf, comm_size, int);
 
     for (int i = 0; i < comm_size; i++)
       sendbuf[i] = 0;
@@ -544,7 +544,7 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
         n_elts++;
     }
 
-    BFT_REALLOC(n->rank, n->size + n_elts, int);
+    CS_REALLOC(n->rank, n->size + n_elts, int);
 
     n_elts = 0;
     for (int i = 0; i < comm_size; i++) {
@@ -556,8 +556,8 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
 
     n_elts += n->size;
 
-    BFT_FREE(recvbuf);
-    BFT_FREE(sendbuf);
+    CS_FREE(recvbuf);
+    CS_FREE(sendbuf);
 
   }
 
@@ -572,12 +572,12 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
     int *sendbuf, *recvbuf;
     MPI_Request  *requests;
 
-    BFT_MALLOC(sendbuf, n->size, int);
-    BFT_MALLOC(requests, n->size, MPI_Request);
+    CS_MALLOC(sendbuf, n->size, int);
+    CS_MALLOC(requests, n->size, MPI_Request);
 
     n_elts = 0;
     n_max_elts = 16;
-    BFT_MALLOC(recvbuf, n_max_elts, int);
+    CS_MALLOC(recvbuf, n_max_elts, int);
 
     int tag = 0;
 
@@ -599,7 +599,7 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
       if (flag) {
         if (n_elts >= n_max_elts) {
           n_max_elts *= 2;
-          BFT_REALLOC(recvbuf, n_max_elts, int);
+          CS_REALLOC(recvbuf, n_max_elts, int);
         }
         MPI_Recv(recvbuf + n_elts, 1, MPI_INT, status. MPI_SOURCE,
                  tag, comm, &status_recv);
@@ -622,17 +622,17 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
     }
 
     n_max_elts = n_elts;
-    BFT_REALLOC(recvbuf, n_max_elts, int);
+    CS_REALLOC(recvbuf, n_max_elts, int);
 
-    BFT_REALLOC(n->rank, n->size + n_elts, int);
+    CS_REALLOC(n->rank, n->size + n_elts, int);
     for (size_t i = 0; i < n_elts; i++)
       n->rank[n->size + i] = recvbuf[i];
 
     n_elts += n->size;
 
-    BFT_FREE(recvbuf);
-    BFT_FREE(requests);
-    BFT_FREE(sendbuf);
+    CS_FREE(recvbuf);
+    CS_FREE(requests);
+    CS_FREE(sendbuf);
 
   }
 
@@ -663,13 +663,13 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
     int *src_rank = nullptr;
     cs_crystal_router_get_data(cr, &src_rank, nullptr, nullptr, nullptr, nullptr);
 
-    BFT_REALLOC(n->rank, n->size + n_elts, int);
+    CS_REALLOC(n->rank, n->size + n_elts, int);
     for (size_t i = 0; i < n_elts; i++)
       n->rank[n->size + i] = src_rank[i];
 
     n_elts += n->size;
 
-    BFT_FREE(src_rank);
+    CS_FREE(src_rank);
     cs_crystal_router_destroy(&cr);
 
   }
@@ -689,7 +689,7 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
       r_prev = n->rank[i];
     }
   }
-  BFT_REALLOC(n->rank, n->size, int);
+  CS_REALLOC(n->rank, n->size, int);
 
   /* Stop timer */
 
@@ -805,7 +805,7 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
   cs_rank_neighbors_t  *_n_recv = nullptr;
   cs_lnum_t            *_recv_count = nullptr;
 
-  BFT_MALLOC(_n_recv, 1, cs_rank_neighbors_t);
+  CS_MALLOC(_n_recv, 1, cs_rank_neighbors_t);
   _n_recv->rank = nullptr;
 
   /* Fallback if nonblocking barrier is not available */
@@ -830,8 +830,8 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
       MPI_Comm_size(comm, &comm_size);
 
       cs_lnum_t *sendbuf, *recvbuf;
-      BFT_MALLOC(sendbuf, comm_size, cs_lnum_t);
-      BFT_MALLOC(recvbuf, comm_size, cs_lnum_t);
+      CS_MALLOC(sendbuf, comm_size, cs_lnum_t);
+      CS_MALLOC(recvbuf, comm_size, cs_lnum_t);
 
       for (int i = 0; i < comm_size; i++)
         sendbuf[i] = 0;
@@ -847,8 +847,8 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
           _n_recv->size++;
       }
 
-      BFT_MALLOC(_n_recv->rank, _n_recv->size, int);
-      BFT_MALLOC(_recv_count, _n_recv->size, cs_lnum_t);
+      CS_MALLOC(_n_recv->rank, _n_recv->size, int);
+      CS_MALLOC(_recv_count, _n_recv->size, cs_lnum_t);
 
       size_t n_elts = 0;
       for (int i = 0; i < comm_size; i++) {
@@ -859,8 +859,8 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
         }
       }
 
-      BFT_FREE(recvbuf);
-      BFT_FREE(sendbuf);
+      CS_FREE(recvbuf);
+      CS_FREE(sendbuf);
 
     }
     break;
@@ -877,10 +877,10 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
 
       MPI_Request  *requests;
 
-      BFT_MALLOC(requests, n_send->size, MPI_Request);
+      CS_MALLOC(requests, n_send->size, MPI_Request);
 
-      BFT_MALLOC(_n_recv->rank, n_max_elts, int);
-      BFT_MALLOC(_recv_count, n_max_elts, cs_lnum_t);
+      CS_MALLOC(_n_recv->rank, n_max_elts, int);
+      CS_MALLOC(_recv_count, n_max_elts, cs_lnum_t);
 
       int tag = 0;
 
@@ -901,8 +901,8 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
         if (flag) {
           if (n_elts >= n_max_elts) {
             n_max_elts *= 2;
-            BFT_REALLOC(_n_recv->rank, n_max_elts, int);
-            BFT_REALLOC(_recv_count, n_max_elts, cs_lnum_t);
+            CS_REALLOC(_n_recv->rank, n_max_elts, int);
+            CS_REALLOC(_recv_count, n_max_elts, cs_lnum_t);
           }
           MPI_Recv(_recv_count + n_elts, 1, CS_MPI_LNUM, status.MPI_SOURCE,
                    tag, comm, &status_recv);
@@ -925,12 +925,12 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
       }
 
       _n_recv->size = n_elts;
-      BFT_REALLOC(_n_recv->rank, _n_recv->size, int);
-      BFT_REALLOC(_recv_count, _n_recv->size, cs_lnum_t);
+      CS_REALLOC(_n_recv->rank, _n_recv->size, int);
+      CS_REALLOC(_recv_count, _n_recv->size, cs_lnum_t);
 
       _heapsort_int_count(_n_recv->rank, _recv_count, _n_recv->size);
 
-      BFT_FREE(requests);
+      CS_FREE(requests);
 
     }
     break;
@@ -980,7 +980,7 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
 
   default:
     assert(0);
-    BFT_FREE(_n_recv);
+    CS_FREE(_n_recv);
 
   }
 
