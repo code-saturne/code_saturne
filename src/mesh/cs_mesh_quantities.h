@@ -164,6 +164,47 @@ extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;
 extern unsigned cs_glob_mesh_quantities_flag;
 
 /*=============================================================================
+ * Templated inline functions
+ *============================================================================*/
+
+END_C_DECLS
+
+#if defined(__cplusplus)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute volume inverse for non-disabled cell, 0 otherwise
+ *
+ * \param[in]  c_id             cell_id
+ * \param[in]  c_disable_flag   cell disable flag array, null if non disabled
+ * \param[in]  c_vol            cell volume array
+ *
+ * \return the volume inverse if enabled, 0 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline cs_real_t
+cs_mq_cell_vol_inv(cs_lnum_t         c_id,
+                   const int        *c_disable_flag,
+                   const cs_real_t   c_vol[])
+{
+  cs_real_t dvol;
+
+  if (c_disable_flag == nullptr)
+    dvol = 1. / c_vol[c_id];
+  else if (c_disable_flag[c_id] == 0)
+    dvol = 1. / c_vol[c_id];
+  else
+    dvol = 0.;
+
+  return dvol;
+}
+
+#endif // defined(__cplusplus)
+
+BEGIN_C_DECLS
+
+/*=============================================================================
  * Public function prototypes
  *============================================================================*/
 

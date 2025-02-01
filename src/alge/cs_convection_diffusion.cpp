@@ -742,14 +742,15 @@ _slope_test_gradient_h
 
   });
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
 
-    cs_real_t unsvol = 1./cell_vol[cell_id];
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+    cs_real_t unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
 
     grdpa[cell_id][0] *= unsvol;
     grdpa[cell_id][1] *= unsvol;
     grdpa[cell_id][2] *= unsvol;
-
   });
 }
 
@@ -810,6 +811,9 @@ _slope_test_gradient_d
   const short int *c2f_sgn = ma->cell_i_faces_sgn;
   const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
 
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
+
   /* Cast to the parent class to obtain info on the parent class.
      On device, we know this is not necessary and we use an atomic
      sum, but with this precaution, we can enable this function on
@@ -848,7 +852,7 @@ _slope_test_gradient_d
 
       /* Scale now to avoid second loop */
 
-      cs_real_t unsvol = 1./cell_vol[cell_id];
+      cs_real_t unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
         grdpa[cell_id][isou] = grdpa_c[isou]*unsvol;
       }
@@ -867,8 +871,8 @@ _slope_test_gradient_d
 
     cs_lnum_t ii = b_face_cells[face_id];
 
-    const cs_real_t _b_face_surf_o_v
-      = b_face_surf[face_id] / cell_vol[ii];
+    cs_real_t unsvol = cs_mq_cell_vol_inv(ii, c_disable_flag, cell_vol);
+    const cs_real_t _b_face_surf_o_v = b_face_surf[face_id] * unsvol;
 
     cs_real_t pfac = inc*coefap[face_id] + coefbp[face_id]
       * (pvar[ii] + cs_math_3_dot_product(grad[ii], diipb[face_id]));
@@ -1008,8 +1012,11 @@ _slope_test_gradient_strided_h
 
   });
 
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
+
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-    cs_real_t unsvol = 1./cell_vol[cell_id];
+    cs_real_t unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
     for (cs_lnum_t isou = 0; isou < stride; isou++) {
       for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
         grdpa[cell_id][isou][jsou] = grdpa[cell_id][isou][jsou]*unsvol;
@@ -1065,6 +1072,8 @@ _slope_test_gradient_strided_d
   const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   cs_mesh_adjacencies_update_cell_i_faces();
@@ -1125,7 +1134,7 @@ _slope_test_gradient_strided_d
 
     /* Scale now to avoid second loop */
 
-    cs_real_t unsvol = 1./cell_vol[cell_id];
+    cs_real_t unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
     for (cs_lnum_t isou = 0; isou < stride; isou++) {
       for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
         grdpa[cell_id][isou][jsou] = grdpa_c[isou][jsou]*unsvol;
@@ -1147,8 +1156,8 @@ _slope_test_gradient_strided_d
 
     /* x-y-z components, p = u, v, w */
 
-    const cs_real_t _b_f_face_surf_o_v
-      = b_f_face_surf[face_id] / cell_vol[ii];
+    cs_real_t unsvol = cs_mq_cell_vol_inv(ii, c_disable_flag, cell_vol);
+    const cs_real_t _b_f_face_surf_o_v = b_f_face_surf[face_id] * unsvol;
 
     for (cs_lnum_t isou = 0; isou < stride; isou++) {
       for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
@@ -1367,6 +1376,8 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
@@ -1892,8 +1903,15 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
             if (ii < n_cells)
               n_upwind++;
             if (v_slope_test != nullptr) {
-              v_slope_test[ii] += std::abs(i_massflux[face_id]) / cell_vol[ii];
-              v_slope_test[jj] += std::abs(i_massflux[face_id]) / cell_vol[jj];
+              cs_real_t q_d_vol_ii
+                =   std::abs(i_massflux[face_id])
+                  * cs_mq_cell_vol_inv(ii, c_disable_flag, cell_vol);
+              cs_real_t q_d_vol_jj
+                =   std::abs(i_massflux[face_id])
+                  * cs_mq_cell_vol_inv(jj, c_disable_flag, cell_vol);
+
+              v_slope_test[ii] += q_d_vol_ii;
+              v_slope_test[jj] += q_d_vol_jj;
             }
 
           }
@@ -2245,6 +2263,8 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
 
   /* Local variables */
 
@@ -2707,8 +2727,15 @@ _face_convection_scalar_steady(const cs_field_t           *f,
             if (ii < n_cells)
               n_upwind++;
             if (v_slope_test != nullptr) {
-              v_slope_test[ii] += std::abs(i_massflux[face_id]) / cell_vol[ii];
-              v_slope_test[jj] += std::abs(i_massflux[face_id]) / cell_vol[jj];
+              cs_real_t q_d_vol_ii
+                =   std::abs(i_massflux[face_id])
+                  * cs_mq_cell_vol_inv(ii, c_disable_flag, cell_vol);
+              cs_real_t q_d_vol_jj
+                =   std::abs(i_massflux[face_id])
+                  * cs_mq_cell_vol_inv(jj, c_disable_flag, cell_vol);
+
+              v_slope_test[ii] += q_d_vol_ii;
+              v_slope_test[jj] += q_d_vol_jj;
             }
 
           }
@@ -2958,6 +2985,8 @@ _convection_diffusion_scalar_unsteady
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
@@ -3679,12 +3708,15 @@ _convection_diffusion_scalar_unsteady
           i_upwind[face_id] = 1;
 
         if (v_slope_test != nullptr) {
-          cs_dispatch_sum(&v_slope_test[ii],
-                          cs_math_fabs(i_massflux[face_id]) / cell_vol[ii],
-                          i_sum_type);
-          cs_dispatch_sum(&v_slope_test[jj],
-                          cs_math_fabs(i_massflux[face_id]) / cell_vol[jj],
-                          i_sum_type);
+          cs_real_t q_d_vol_ii
+            =   cs_math_fabs(i_massflux[face_id])
+              * cs_mq_cell_vol_inv(ii, c_disable_flag, cell_vol);
+          cs_real_t q_d_vol_jj
+            =   cs_math_fabs(i_massflux[face_id])
+              * cs_mq_cell_vol_inv(jj, c_disable_flag, cell_vol);
+
+          cs_dispatch_sum(&v_slope_test[ii], q_d_vol_ii, i_sum_type);
+          cs_dispatch_sum(&v_slope_test[jj], q_d_vol_jj, i_sum_type);
         }
 
       }
@@ -4034,6 +4066,9 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
+
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
@@ -4672,12 +4707,15 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
           i_upwind[face_id] = 1;
 
         if (v_slope_test != nullptr) {
-          cs_dispatch_sum(&v_slope_test[ii],
-                          cs_math_fabs(i_massflux[face_id]) / cell_vol[ii],
-                          i_sum_type);
-          cs_dispatch_sum(&v_slope_test[jj],
-                          cs_math_fabs(i_massflux[face_id]) / cell_vol[jj],
-                          i_sum_type);
+          cs_real_t q_d_vol_ii
+            =   cs_math_fabs(i_massflux[face_id])
+              * cs_mq_cell_vol_inv(ii, c_disable_flag, cell_vol);
+          cs_real_t q_d_vol_jj
+            =   cs_math_fabs(i_massflux[face_id])
+              * cs_mq_cell_vol_inv(jj, c_disable_flag, cell_vol);
+
+          cs_dispatch_sum(&v_slope_test[ii], q_d_vol_ii, i_sum_type);
+          cs_dispatch_sum(&v_slope_test[jj], q_d_vol_jj, i_sum_type);
         }
       }
     });
@@ -6238,15 +6276,16 @@ _convection_diffusion_unsteady_strided
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
+
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
 
   const int *bc_type = cs_glob_bc_type;
   cs_real_2_t *i_f_face_factor = nullptr;
@@ -6821,12 +6860,15 @@ _convection_diffusion_unsteady_strided
           }
 
           if (v_slope_test != nullptr) {
-            cs_dispatch_sum(&v_slope_test[ii],
-                            std::abs(i_massflux[face_id]) / cell_vol[ii],
-                            i_sum_type);
-            cs_dispatch_sum(&v_slope_test[jj],
-                            std::abs(i_massflux[face_id]) / cell_vol[jj],
-                            i_sum_type);
+            cs_real_t q_d_vol_ii
+              =   std::abs(i_massflux[face_id])
+                * cs_mq_cell_vol_inv(ii, c_disable_flag, cell_vol);
+            cs_real_t q_d_vol_jj
+              =   std::abs(i_massflux[face_id])
+                * cs_mq_cell_vol_inv(jj, c_disable_flag, cell_vol);
+
+            cs_dispatch_sum(&v_slope_test[ii], q_d_vol_ii, i_sum_type);
+            cs_dispatch_sum(&v_slope_test[jj], q_d_vol_jj, i_sum_type);
           }
         }
 
@@ -12257,6 +12299,9 @@ cs_cell_courant_number(const cs_field_t    *f,
 
   const cs_real_t *restrict dt = CS_F_(dt)->val;
 
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
+
   /* ---> Contribution from interior and boundary faces */
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -12264,13 +12309,15 @@ cs_cell_courant_number(const cs_field_t    *f,
     /* Initialization */
     courant[c_id] = 0.;
 
+    cs_real_t dvol = cs_mq_cell_vol_inv(c_id, c_disable_flag, vol);
+
     /* Loop on interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
     const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
 
     for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
       const cs_lnum_t face_id = cell_i_faces[cidx];
-      cs_real_t cnt = cs_math_fabs(i_massflux[face_id]*dt[c_id]/vol[c_id]);
+      cs_real_t cnt = cs_math_fabs(i_massflux[face_id])*dt[c_id]*dvol;
       courant[c_id] = cs_math_fmax(courant[c_id], cnt); //FIXME may contain rho
     }
 
@@ -12280,7 +12327,7 @@ cs_cell_courant_number(const cs_field_t    *f,
 
     for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
       const cs_lnum_t face_id = cell_b_faces[cidx];
-      cs_real_t cnt = cs_math_fabs(b_massflux[face_id]*dt[c_id]*vol[c_id]);
+      cs_real_t cnt = cs_math_fabs(b_massflux[face_id])*dt[c_id]*dvol;
       courant[c_id] = cs_math_fmax(courant[c_id], cnt);
     }
   });
@@ -12424,6 +12471,8 @@ cs_upwind_gradient(const int                     f_id,
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
 
   /* Parallel or device dispatch */
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
@@ -12468,7 +12517,7 @@ cs_upwind_gradient(const int                     f_id,
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
 
-    cs_real_t unsvol = 1./cell_vol[cell_id];
+    cs_real_t unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
 
     grdpa[cell_id][0] *= unsvol;
     grdpa[cell_id][1] *= unsvol;
