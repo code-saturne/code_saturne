@@ -1415,7 +1415,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
 /*----------------------------------------------------------------------------
  * Renomalize scalar gradient by multiplying with a renormalization matrix
- * (so this gradient is not conservative on non cartesian grids)
+ * (so this gradient is not conservative on non Cartesian grids)
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
@@ -1466,7 +1466,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
   cs_real_33_t *cor_mat;
   CS_MALLOC(cor_mat, n_cells_ext, cs_real_33_t);
 
-  /* Initialization */
+  /* InitializatioC */
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
