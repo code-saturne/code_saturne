@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -12566,7 +12566,7 @@ cs_cell_courant_number(const cs_field_t    *f,
 
     for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
       const cs_lnum_t face_id = cell_b_faces[cidx];
-      cs_real_t cnt = cs_math_fabs(b_massflux[face_id]*dt[c_id]*vol[c_id]);
+      cs_real_t cnt = cs_math_fabs(b_massflux[face_id]*dt[c_id]/vol[c_id]);
       courant[c_id] = cs_math_fmax(courant[c_id], cnt);
     }
   });
