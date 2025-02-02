@@ -1,6 +1,15 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### User changes:
+
+- Replace use of "boundary_forces" field (which is extensive), with
+  "boundary_stress" (which is intensive).
+   The `cs_function_define_boundary_stress` is removed, as it is not
+  needed anymore.
+  * User-defined functions using the "boundary_forces" field will
+    need to be updated.
+
 ### Architectural changes:
 
 - Add the class "cs_array_2dspan" which allows handling of 2D arrays.

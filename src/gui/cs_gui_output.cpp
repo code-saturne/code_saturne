@@ -757,6 +757,27 @@ _selection_func_boundary_cells(void        *input,
   *elt_list = _cell_list;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to "boundary_stress" field, creating it if needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_field_t *
+_boundary_stress(void)
+{
+  const char name[] = "boundary_stress";
+  cs_field_t *bf = cs_field_by_name_try(name);
+  if (bf == nullptr) {
+    int type = CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS;
+    int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+    bf = cs_field_create(name, type, location_id, 3, false);
+  }
+
+  return bf;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -881,17 +902,21 @@ cs_gui_output_boundary(void)
   }
 
   if (ignore_stresses == false) {
-    if (_surfacic_variable_post("stress", true))
-      cs_function_define_boundary_stress();
+    if (_surfacic_variable_post("stress", true)) {
+      cs_field_t *bf = _boundary_stress();
+      bf = cs_field_by_name_try("boundary_stress");
+      cs_field_set_key_int(bf, cs_field_key_id("log"), 1);
+      cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 1);
+    }
     if (_surfacic_variable_post("stress_tangential", false))
       cs_function_define_boundary_stress_tangential();
     if (_surfacic_variable_post("stress_normal", false))
       cs_function_define_boundary_stress_normal();
   }
 
-    /* TODO: move this following field and function definitions earlier
-       (with thermal model), and only handle "post_vis" option here,
-       to also allow for logging */
+  /* TODO: move this following field and function definitions earlier
+     (with thermal model), and only handle "post_vis" option here,
+     to also allow for logging */
 
   if (ignore_yplus == false) {
     if (_surfacic_variable_post("yplus", true)) {

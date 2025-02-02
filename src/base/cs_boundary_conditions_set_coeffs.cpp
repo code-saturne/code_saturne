@@ -1100,7 +1100,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
 
   cs_real_t   *bfconv  = nullptr, *bhconv = nullptr;
-  cs_real_3_t *forbr   = nullptr;
+  cs_real_3_t *b_stress   = nullptr;
   const cs_real_6_t *dttens = nullptr;
 
   /* Pointers to specific fields */
@@ -1114,10 +1114,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   if (f_dttens != nullptr)
     dttens = (const cs_real_6_t *)f_dttens->val;
 
-  cs_field_t *f_forbr = cs_field_by_name_try("boundary_forces");
+  cs_field_t *f_b_stress = cs_field_by_name_try("boundary_stress");
 
-  if (f_forbr != nullptr && iterns == 1)
-    forbr = (cs_real_3_t *)f_forbr->val;
+  if (f_b_stress != nullptr && iterns == 1)
+    b_stress = (cs_real_3_t *)f_b_stress->val;
 
   /*--------------------------------------------------------------------------
    * 2) Treatment of types of bcs given by bc_type
@@ -1405,7 +1405,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   /* Compute the velocity in i' for boundary cells */
 
-  if (iclsym != 0 || ipatur != 0 || ipatrg != 0 || f_forbr != nullptr) {
+  if (iclsym != 0 || ipatur != 0 || ipatrg != 0 || f_b_stress != nullptr) {
 
     if (nt_cur > 1 && eqp_vel->ircflu == 1) {
       cs_field_gradient_boundary_iprime_vector(vel,
@@ -3618,31 +3618,30 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    * 15) Compute stresses at boundary (step 1 of 5)
    *--------------------------------------------------------------------------*/
 
-  if (f_forbr != nullptr && iterns == 1) {
+  if (f_b_stress != nullptr && iterns == 1) {
 
     cs_real_3_t  *cofaf_vel = (cs_real_3_t  *)vel->bc_coeffs->af;
     cs_real_33_t *cofbf_vel = (cs_real_33_t *)vel->bc_coeffs->bf;
 
     /* Coupled solving of the velocity components */
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      const cs_real_t srfbnf = b_face_surf[f_id];
 
       /* The implicit term is added after having updated the velocity */
 
-      forbr[f_id][0] =   srfbnf * (cofaf_vel[f_id][0]
-                       + cofbf_vel[f_id][0][0]*velipb[f_id][0]
-                       + cofbf_vel[f_id][1][0]*velipb[f_id][1]
-                       + cofbf_vel[f_id][2][0]*velipb[f_id][2]);
+      b_stress[f_id][0] =   cofaf_vel[f_id][0]
+                          + (  cofbf_vel[f_id][0][0]*velipb[f_id][0]
+                             + cofbf_vel[f_id][1][0]*velipb[f_id][1]
+                             + cofbf_vel[f_id][2][0]*velipb[f_id][2]);
 
-      forbr[f_id][1] =   srfbnf * (cofaf_vel[f_id][1] +
-                       + cofbf_vel[f_id][0][1]*velipb[f_id][0]
-                       + cofbf_vel[f_id][1][1]*velipb[f_id][1]
-                       + cofbf_vel[f_id][2][1]*velipb[f_id][2]);
+      b_stress[f_id][1] =   cofaf_vel[f_id][1]
+                          + (  cofbf_vel[f_id][0][1]*velipb[f_id][0]
+                             + cofbf_vel[f_id][1][1]*velipb[f_id][1]
+                             + cofbf_vel[f_id][2][1]*velipb[f_id][2]);
 
-      forbr[f_id][2] =   srfbnf * (cofaf_vel[f_id][2] +
-                       + cofbf_vel[f_id][0][2]*velipb[f_id][0]
-                       + cofbf_vel[f_id][1][2]*velipb[f_id][1]
-                       + cofbf_vel[f_id][2][2]*velipb[f_id][2]);
+      b_stress[f_id][2] =   cofaf_vel[f_id][2]
+                          + (  cofbf_vel[f_id][0][2]*velipb[f_id][0]
+                             + cofbf_vel[f_id][1][2]*velipb[f_id][1]
+                             + cofbf_vel[f_id][2][2]*velipb[f_id][2]);
 
     }
   }

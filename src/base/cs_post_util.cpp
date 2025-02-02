@@ -513,22 +513,23 @@ cs_post_moment_of_force(cs_lnum_t        n_b_faces,
                         const cs_lnum_t  b_face_ids[],
                         cs_real_t        axis[3])
 {
-  const cs_real_3_t *b_face_cog
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-  const cs_real_3_t *b_forces
-    = (const cs_real_3_t *)cs_field_by_name("boundary_forces")->val;
+  const cs_real_3_t *b_face_cog = cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
+  const cs_real_3_t *b_stress
+    = (const cs_real_3_t *)cs_field_by_name("boundary_stress")->val;
 
   cs_real_3_t moment = {0., 0., 0.};
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-    cs_real_3_t m;
+    cs_real_t m[3];
     cs_lnum_t face_id = b_face_ids[i];
-    cs_math_3_cross_product(b_face_cog[face_id], b_forces[face_id], m);
+    cs_math_3_cross_product(b_face_cog[face_id], b_stress[face_id], m);
 
     /* b_forces is the stress on the solid boundary,
        thus it comes with a '-' sign here */
+    cs_real_t f_surf = b_face_surf[face_id];
     for (int j = 0; j < 3; j++)
-      moment[j] -= m[j];
+      moment[j] -= m[j]*f_surf;
   }
   cs_parall_sum(3, CS_DOUBLE, moment);
 
@@ -551,26 +552,19 @@ cs_post_stress_tangential(cs_lnum_t        n_b_faces,
                           const cs_lnum_t  b_face_ids[],
                           cs_real_3_t      stress[])
 {
-  const cs_real_3_t *b_face_normal =
-    (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
-  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
-  const cs_real_3_t *forbr =
-    (const cs_real_3_t *)cs_field_by_name("boundary_forces")->val;
-  cs_lnum_t ifac;
-  cs_real_t srfbn, srfnor[3], fornor;
+  const cs_nreal_3_t *b_face_u_normal = cs_glob_mesh_quantities->b_face_u_normal;
+  const cs_real_3_t *stressbr
+    = (const cs_real_3_t *)cs_field_by_name("boundary_stress")->val;
 
   for (cs_lnum_t iloc = 0 ; iloc < n_b_faces; iloc++) {
-    ifac = b_face_ids[iloc];
-    srfbn = b_face_surf[ifac];
-    srfnor[0] = b_face_normal[ifac][0] / srfbn;
-    srfnor[1] = b_face_normal[ifac][1] / srfbn;
-    srfnor[2] = b_face_normal[ifac][2] / srfbn;
-    fornor =   forbr[ifac][0]*srfnor[0]
-             + forbr[ifac][1]*srfnor[1]
-             + forbr[ifac][2]*srfnor[2];
-    stress[iloc][0] = (forbr[ifac][0] - fornor*srfnor[0]) / srfbn;
-    stress[iloc][1] = (forbr[ifac][1] - fornor*srfnor[1]) / srfbn;
-    stress[iloc][2] = (forbr[ifac][2] - fornor*srfnor[2]) / srfbn;
+    cs_lnum_t ifac = b_face_ids[iloc];
+    const cs_nreal_t *u_n = b_face_u_normal[ifac];
+    cs_real_t stressnor =   stressbr[ifac][0]*u_n[0]
+                          + stressbr[ifac][1]*u_n[1]
+                          + stressbr[ifac][2]*u_n[2];
+    stress[iloc][0] = (stressbr[ifac][0] - stressnor*u_n[0]);
+    stress[iloc][1] = (stressbr[ifac][1] - stressnor*u_n[1]);
+    stress[iloc][2] = (stressbr[ifac][2] - stressnor*u_n[2]);
   }
 }
 

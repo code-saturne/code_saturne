@@ -791,7 +791,7 @@ _face_diff_vel(const cs_mesh_t             *m,
  * \param[in]        brom      density at boundary faces
  * \param[in, out]   cpro_divr reynolds stress divergence
  * \param[in, out]   c_st_vel  source term of velicity
- * \param[in, out]   forbr     boundary forces
+ * \param[in, out]   b_stress  boundary stress
  * \param[in, out]   trava     work array for velocity-pressure coupling
  * \param[in, out]   trav      right hand side for the normalizing
  *                             the residual
@@ -804,7 +804,7 @@ _div_rij(const cs_mesh_t     *m,
          const cs_real_t      brom[],
          cs_real_3_t         *cpro_divr,
          cs_real_3_t         *c_st_vel,
-         cs_real_3_t         *forbr,
+         cs_real_3_t         *b_stress,
          cs_real_3_t          trava[],
          cs_real_3_t          trav[])
 {
@@ -823,8 +823,8 @@ _div_rij(const cs_mesh_t     *m,
   const cs_equation_param_t *eqp = nullptr;
 
   cs_real_3_t *tflmas = nullptr, *tflmab = nullptr;
-  CS_MALLOC_HD(tflmas, n_i_faces,cs_real_3_t, cs_alloc_mode);
-  CS_MALLOC_HD(tflmab, n_b_faces,cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(tflmas, n_i_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(tflmab, n_b_faces, cs_real_3_t, cs_alloc_mode);
 
   /* Reynolds Stress Models */
   if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
@@ -902,10 +902,13 @@ _div_rij(const cs_mesh_t     *m,
   }
 
   /* Compute stresses at boundary (part 5/5), if necessary */
-  if (forbr != nullptr) {
+  if (b_stress != nullptr) {
+    const cs_real_t *b_face_surf = mq->b_face_surf;
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      cs_real_t surf = b_face_surf[f_id];
+      cs_real_t dsurf = (surf > 1e-24) ? 1./surf : 0.0;
       for (cs_lnum_t ii = 0; ii < 3; ii++)
-        forbr[f_id][ii] += tflmab[f_id][ii];
+        b_stress[f_id][ii] += tflmab[f_id][ii] * dsurf;
     });
   }
 
@@ -1969,8 +1972,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   const cs_real_t *cell_f_vol = mq->cell_vol;
   const cs_rreal_3_t *restrict diipb = mq->diipb;
 
-  const cs_real_3_t  *restrict b_face_normal
-    = (const cs_real_3_t  *) mq->b_face_normal;
+  const cs_nreal_3_t  *restrict b_face_u_normal = mq->b_face_u_normal;
   int has_disable_flag = mq->has_disable_flag;
   int *c_disable_flag = mq->c_disable_flag;
 
@@ -2114,13 +2116,13 @@ _velocity_prediction(const cs_mesh_t             *m,
   cs_real_t *cvar_pr = nullptr;
   cs_real_t *cvara_k = nullptr;
 
-  cs_field_t *iforbr = cs_field_by_name_try("boundary_forces");
+  cs_field_t *ib_stress = cs_field_by_name_try("boundary_stress");
 
-  if ((iforbr != nullptr && iterns == 1) || (vof_param->vof_model > 0))
+  if ((ib_stress != nullptr && iterns == 1) || (vof_param->vof_model > 0))
     cvar_pr = CS_F_(p)->val;
 
   if (   iterns == 1
-      && iforbr != nullptr
+      && ib_stress != nullptr
       && cs_glob_turb_rans_model->igrhok == 1
       /* Eddy viscosity model with k defined */
       && ( cs_glob_turb_model->order == CS_TURB_FIRST_ORDER
@@ -2132,9 +2134,9 @@ _velocity_prediction(const cs_mesh_t             *m,
       cvara_k = CS_F_(k)->val_pre;
   }
 
-  cs_real_3_t *forbr = nullptr;
-  if (iforbr != nullptr && iterns == 1)
-    forbr = (cs_real_3_t *)iforbr->val;
+  cs_real_3_t *b_stress = nullptr;
+  if (ib_stress != nullptr && iterns == 1)
+    b_stress = (cs_real_3_t *)ib_stress->val;
 
   cs_real_3_t *c_st_vel = nullptr;
   const cs_real_t thets = cs_glob_time_scheme->thetsn;
@@ -2334,7 +2336,7 @@ _velocity_prediction(const cs_mesh_t             *m,
    * We restrict this to the first iteration (for simplicity relatively
    * to the part in cs_boundary_condition_set_coeffs, outside the loop) */
 
-  if (forbr != nullptr && iterns == 1) {
+  if (b_stress != nullptr && iterns == 1) {
     const cs_real_t *coefa_p = CS_F_(p)->bc_coeffs->a;
     const cs_real_t *coefb_p = CS_F_(p)->bc_coeffs->b;
 
@@ -2351,7 +2353,7 @@ _velocity_prediction(const cs_mesh_t             *m,
               - pred0;
 
       for (cs_lnum_t isou = 0; isou < 3; isou++)
-        forbr[f_id][isou] += pfac*b_face_normal[f_id][isou];
+        b_stress[f_id][isou] += pfac*b_face_u_normal[f_id][isou];
     });
   }
 
@@ -2558,7 +2560,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     });
 
     /* Calculation of wall stresses (part 3/5), if requested */
-    if (iforbr != nullptr) {
+    if (ib_stress != nullptr) {
       const cs_real_t *coefa_k = CS_F_(k)->bc_coeffs->a;
       const cs_real_t *coefb_k = CS_F_(k)->bc_coeffs->b;
 
@@ -2571,7 +2573,7 @@ _velocity_prediction(const cs_mesh_t             *m,
         xkb = coefa_k[f_id] + coefb_k[f_id]*xkb;
         xkb = d2s3 * crom[c_id] * xkb;
         for (cs_lnum_t isou = 0; isou < 3; isou++)
-          forbr[f_id][isou] += xkb*b_face_normal[f_id][isou];
+          b_stress[f_id][isou] += xkb*b_face_u_normal[f_id][isou];
       });
     }
     ctx.wait();
@@ -2764,7 +2766,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     _div_rij(m,
              crom, brom,
              cpro_divr, c_st_vel,
-             forbr, trava, trav);
+             b_stress, trava, trav);
   }
 
   /* Face diffusivity for the velocity
@@ -2780,7 +2782,6 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (cs_glob_turb_rans_model->irijnu == 2) {
 
     const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
-    const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
     if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION) {
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {

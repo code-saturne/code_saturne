@@ -82,21 +82,18 @@ BEGIN_C_DECLS
 void
 cs_user_extra_operations(cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
-
   FILE *file = nullptr;
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_real_3_t *b_face_cog
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-  const cs_real_3_t *b_face_normal
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
-  const cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_surf;
+    = (const cs_real_3_t *)domain->mesh_quantities->b_face_cog;
+  const cs_nreal_3_t *b_face_u_normal
+    = domain->mesh_quantities->b_face_u_normal;
 
   const cs_real_t    *f_b_temp
     = (const cs_real_t *)cs_field_by_name("boundary_temperature")->val;
-  const cs_real_3_t  *forbr
-    = (const cs_real_3_t *)cs_field_by_name("boundary_forces")->val;
+  const cs_real_3_t  *b_stress
+    = (const cs_real_3_t *)cs_field_by_name("boundary_stress")->val;
 
   cs_field_t *f = cs_thermal_model_field();
   const double visls_0
@@ -113,7 +110,6 @@ cs_user_extra_operations(cs_domain_t  *domain)
     cs_post_boundary_flux(f->name, n_elts, nullptr, boundary_flux);
 
     /* Some declarations */
-    cs_real_t srfbn, srfnor[3], fornor, stresses[3];
     cs_real_t *loc_nusselt = nullptr, *glo_nusselt = nullptr;
     cs_real_t *loc_friction = nullptr, *glo_friction = nullptr;
     cs_real_t *loc_coords = nullptr, *glo_coords = nullptr;
@@ -172,17 +168,12 @@ cs_user_extra_operations(cs_domain_t  *domain)
                           / (visls_0 * (tfac-temp_ref));
 
       /* Compute the friction coefficient */
-      srfbn = surfbn[f_id];
-      srfnor[0] = b_face_normal[f_id][0] / srfbn;
-      srfnor[1] = b_face_normal[f_id][1] / srfbn;
-      srfnor[2] = b_face_normal[f_id][2] / srfbn;
-      fornor = forbr[f_id][0]*srfnor[0]
-             + forbr[f_id][1]*srfnor[1]
-             + forbr[f_id][2]*srfnor[2];
+      const cs_nreal_t *u_n = b_face_u_normal[f_id];
+      cs_real_t s_nor = cs_math_3_dot_product(b_stress[f_id], u_n);
 
-      stresses[0] = (forbr[f_id][0] - fornor*srfnor[0]) / srfbn;
-      stresses[1] = (forbr[f_id][1] - fornor*srfnor[1]) / srfbn;
-      stresses[2] = (forbr[f_id][2] - fornor*srfnor[2]) / srfbn;
+      cs_real_t stresses[3];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        stresses[j] = b_stress[f_id][j] - s_nor*u_n[j];
 
       loc_friction[ielt] = cs_math_3_norm(stresses);
 

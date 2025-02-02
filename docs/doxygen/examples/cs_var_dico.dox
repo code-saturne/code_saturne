@@ -274,7 +274,7 @@
   \ref cs_real_t *cpro_beta = \ref cs_field_by_name("thermal_expansion")->val       | Thermal expansion coefficient
   CS_F_(poro)->val                                                                  | Porosity
   CS_F_(t_poro)->val                                                                | Tensorial porosity
-  \ref cs_real_t *bpro_forbr = \ref cs_field_by_name("boundary_forces")->val        | Field id of the stresses at boundary
+  \ref cs_real_t *bpro_b_stress = \ref cs_field_by_name("boundary_stress")->val     | Field id of the stress at boundary
   \ref cs_real_t *bpro_yplus = \ref cs_field_by_name("yplus")->val                  | Field id of \f$y^+\f$ at boundary
   \ref cs_real_t *dttens = \ref cs_field_by_name("dttens")->val                     | Field id for the dttens tensor
   CS_F_(t_b)->val                                                                   | Boundary temperature </tt>

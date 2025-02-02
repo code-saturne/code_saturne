@@ -64,7 +64,6 @@ BEGIN_C_DECLS
  *
  * This is an example of cs_user_extra_operations.c which computes the total
  * force on a boundary zone.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -88,11 +87,12 @@ cs_user_extra_operations(cs_domain_t     *domain)
 {
   /*! [boundary_forces_ex1] */
   {
-    cs_field_t *b_forces = cs_field_by_name_try("boundary_forces");
+    cs_field_t *b_forces = cs_field_by_name_try("boundary_stress");
 
     if (b_forces != nullptr) {
       cs_real_3_t total_b_forces = {0., 0., 0.};
-      cs_real_3_t *bpro_forces = (cs_real_3_t *) b_forces->val;
+      const cs_real_t *b_face_surf = domain->mesh_quantities->b_face_surf;
+      const cs_real_3_t *bpro_forces = (cs_real_3_t *)b_forces->val;
 
       /* get zone from its name, here "selected_wall" */
       const cs_zone_t *zn = cs_boundary_zone_by_name("selected_wall");
@@ -100,7 +100,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
       for (cs_lnum_t e_id = 0; e_id < zn->n_elts; e_id++) {
         cs_lnum_t face_id = zn->elt_ids[e_id];
         for (cs_lnum_t i = 0; i < 3; i++)
-          total_b_forces[i] += bpro_forces[face_id][i];
+          total_b_forces[i] += bpro_forces[face_id][i] * b_face_surf[face_id];
       }
 
       /* parallel sum */
@@ -111,8 +111,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   /*! [boundary_forces_ex2] */
   {
-    const cs_real_3_t *b_f_face_normal =
-      (cs_real_3_t *)domain->mesh_quantities->b_face_normal;
+    const cs_real_3_t *b_f_face_normal
+      = (cs_real_3_t *)domain->mesh_quantities->b_face_normal;
 
     cs_real_3_t total_b_p_forces = {0., 0., 0.};
 
@@ -137,5 +137,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   }
   /*! [boundary_forces_ex2] */
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

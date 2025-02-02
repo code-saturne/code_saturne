@@ -104,20 +104,20 @@ cutcell_func1(const cs_lnum_t c_id,
 /* -------------------------------------------------------------------------- */
 /* Dam break gate opening between t = 0 and t = 0.127 s */
 /* -------------------------------------------------------------------------- */
-static int
-cutcell_dambreak_func(const cs_lnum_t c_id,
-                      const cs_real_3_t xyz,
-                      const cs_real_t t,
-                      const int num_object)
-{
 
+static int
+_cut_cell_dambreak_func(const cs_lnum_t c_id,
+                        const cs_real_3_t xyz,
+                        const cs_real_t t,
+                        const int num_object)
+{
   int ipenal = 0;
 
   if (t <= 0.127) {
     cs_real_t gate_pos = -2.8440e2*cs_math_pow3(t)
-                       + 7.2640e1*cs_math_pow2(t)
-                       + 8.8722e-2*t
-                       -9.5122e-4;
+                         + 7.2640e1*cs_math_pow2(t)
+                         + 8.8722e-2*t
+                         -9.5122e-4;
 
     if (xyz[0] < 0.21 && xyz[0] > 0.2 && xyz[1] > gate_pos)
       ipenal = 1;
@@ -141,18 +141,19 @@ cs_user_ibm_define_objects(void)
 {
   /*!< [add_cutcell_object] */
   /* Add object using a cutcell method */
-  cs_ibm_add_object_from_func("cutcell_object1",  /* Name of the object */
-                              cutcell_func1, /* Pointer to the cutcell function of the object */
-                              false,  /* Object used in the FSI resolution if true */
-                              0); /* Number of nodes if the object is deformable (0 otherwise) */
+  cs_ibm_add_object_from_func("cutcell_object1", /* Name of the object */
+                              cutcell_func1,     /* Associated function */
+                              false,             /* Used in FSI resolution ? */
+                              0);                /* Number of nodes if
+                                                    deformable, or 0 */
   /*!< [add_cutcell_object] */
 
   /*!< [add_stl_object] */
   /* Add object from an STL file */
-  cs_ibm_add_object_from_file("stl_object1", /* Name of the object */
-                              CS_IBM_ALGO_STL, /* Porosity computation method */
-                              "toto.stl", /* File name */
-                              false); /* Object used in the FSI resolution if true */
+  cs_ibm_add_object_from_file("stl_object1",     /* Name of the object */
+                              CS_IBM_ALGO_STL,
+                              "toto.stl",        /* File name */
+                              false);            /* Used in FSI resolution ? */
   int n_pts = 2;
   cs_real_t pts_coords[6] = { 0.9, 0.9, 1.9,
                              -0.9,-0.9,-1.9};
@@ -164,10 +165,10 @@ cs_user_ibm_define_objects(void)
 
   /*!< [add_med_object] */
   /* Add object from a MED file */
-  cs_ibm_add_object_from_file("cylinder", /* Name of the object */
-                              CS_IBM_ALGO_MEDCOUPLING, /* Porosity computation method */
-                              "cylinder.med", /* File name */
-                              true); /* Object used in the FSI resolution if true */
+  cs_ibm_add_object_from_file("cylinder",        /* Name of the object */
+                              CS_IBM_ALGO_MEDCOUPLING,
+                              "cylinder.med",    /* File name */
+                              true);             /* Used in FSI resolution ? */
   /*!< [add_med_object] */
 
   /* Eventually move the object at initialisation */
@@ -178,20 +179,19 @@ cs_user_ibm_define_objects(void)
   cs_real_t center[3] = {0.0, 0.0, 0.1}; // Center of rotation
 
   cs_ibm_object_rotate("object_to_rotate",
-                                     theta,
-                                     axis,
-                                     center);
+                       theta,
+                       axis,
+                       center);
 
   /* Translation */
   cs_real_t trans[3]  = {0.0, 0.0, 0.1}; // Translation vector
   cs_ibm_object_translate("object_to_translate",
-                                        trans);
+                          trans);
 
   /* Scaling */
   cs_real_t scaling_factor = 1.2;
   cs_ibm_object_scale("object_to_scale",
-                                    scaling_factor);
-
+                      scaling_factor);
 }
 
 /*----------------------------------------------------------------------------*/

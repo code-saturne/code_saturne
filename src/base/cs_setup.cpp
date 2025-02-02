@@ -2406,8 +2406,8 @@ _additional_fields_stage_2(void)
 
   /* In case of ALE or postprocessing, ensure boundary forces are tracked */
   if (cs_glob_ale > CS_ALE_NONE) {
-    cs_field_find_or_create("boundary_forces",
-                            CS_FIELD_EXTENSIVE | CS_FIELD_POSTPROCESS,
+    cs_field_find_or_create("boundary_stress",
+                            CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS,
                             CS_MESH_LOCATION_BOUNDARY_FACES,
                             3,
                             false);

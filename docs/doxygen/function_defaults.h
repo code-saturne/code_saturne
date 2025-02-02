@@ -175,8 +175,8 @@ char *boundary_zone_class_id;
   \var "boundary_stress"
 
   Stress exerted by fluid forces over boundary. Activating this function
-  also leads to the creation of the "boundary_forces" field, used to store
-  and update the (extensive) boundary forces.
+  also leads to the creation of the "boundary_stress" field, used to store
+  and update the boundary stress vector.
 
   Accessed or activated using:
   \code{.c}
@@ -189,8 +189,8 @@ char *boundary_stress;
   \var "boundary_stress_normal"
 
   Normal component of the stress exerted by fluid forces over boundary.
-  Activating this function also leads to the creation of the "boundary_forces"
-  field, used to store and update the (extensive) boundary forces.
+  Activating this function also leads to the creation of the "boundary_stress"
+  field, used to store and update the boundary stress vector.
 
   Accessed or activated using:
   \code{.c}
@@ -203,8 +203,8 @@ char *boundary_stress_normal;
   \var "boundary_stress_tangential"
 
   Tangential component of the stress exerted by fluid forces over boundary.
-  Activating this function also leads to the creation of the "boundary_forces"
-  field, used to store and update the (extensive) boundary forces.
+  Activating this function also leads to the creation of the "boundary_stress"
+  field, used to store and update the boundary stresses.
 
   Accessed or activated using:
   \code{.c}
