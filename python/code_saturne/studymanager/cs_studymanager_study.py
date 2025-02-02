@@ -1778,20 +1778,18 @@ class Studies(object):
                 # build case dir. (in repo.)
                 study_path = os.path.join(self.__repo, case.study)
 
-                if case.compute:
+                # test compilation
+                is_compiled = case.test_compilation(study_path,
+                                                    log_comp_file)
 
-                    # test compilation
-                    is_compiled = case.test_compilation(study_path,
-                                                        log_comp_file)
-
-                    # report
-                    if is_compiled == "OK":
-                        self.reporting('    - compile %s --> OK' %case.title,
-                                       report=False)
-                    elif is_compiled == "KO":
-                        self.reporting('    - compile %s --> FAILED' %case.title,
-                                       report=False)
-                        iko+=1
+                # report
+                if is_compiled == "OK":
+                    self.reporting('    - compile %s --> OK' %case.title,
+                                   report=False)
+                elif is_compiled == "KO":
+                    self.reporting('    - compile %s --> FAILED' %case.title,
+                                   report=False)
+                    iko+=1
 
         self.reporting('',report=False)
 
