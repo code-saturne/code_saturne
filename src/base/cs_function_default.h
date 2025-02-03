@@ -349,6 +349,18 @@ cs_function_define_property_cells
 );
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Define output function for the vorticity.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_vorticity
+(
+  cs_field_t *velocity_field /*!<[in] Pointer to velocity field */
+);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

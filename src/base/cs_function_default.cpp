@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <string>
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -612,6 +614,71 @@ _output_cells_property
                               ppty,
                               _vals);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Private function which computes the vorticity
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_vorticity
+(
+  int              location_id, /*!<[in] location id (mesh location) */
+  cs_lnum_t        n_elts,      /*!<[in] number of cells for computation */
+  const cs_lnum_t *elt_ids,     /*!<[in] cells' ids indirection */
+  void            *input,       /*!<[in] input pointer to cast into cs_field_t * */
+  void            *vals         /*!<[in] array of values */
+)
+{
+  /* Sanity check */
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  /* Check for single of multiphase case */
+  cs_field_t *f = static_cast<cs_field_t *>(input);
+
+  cs_real_33_t *gradv = nullptr;
+
+  /* Use field gradient if available, otherwise recompute */
+  if (f->grad != nullptr)
+    gradv = reinterpret_cast<cs_real_33_t *>(f->grad);
+  else {
+    const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+    CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+    int inc = 1;
+    cs_field_gradient_vector(f,
+                             false, /* use previous */
+                             inc,
+                             gradv);
+  }
+
+  cs_real_t *vorticity = static_cast<cs_real_t *>(vals);
+
+  if (elt_ids != nullptr) {
+    for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
+      cs_lnum_t c_id = elt_ids[e_id];
+      cs_real_t *vort = vorticity + 3 * e_id;
+
+      vort[0] = gradv[c_id][2][1] - gradv[c_id][1][2];
+      vort[1] = gradv[c_id][0][2] - gradv[c_id][2][0];
+      vort[2] = gradv[c_id][1][0] - gradv[c_id][0][1];
+    }
+  }
+  else {
+    for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
+      cs_real_t *vort = vorticity + 3 * e_id;
+      vort[0] = gradv[e_id][2][1] - gradv[e_id][1][2];
+      vort[1] = gradv[e_id][0][2] - gradv[e_id][2][0];
+      vort[2] = gradv[e_id][1][0] - gradv[e_id][0][1];
+    }
+  }
+
+  /* Free pointer if needed */
+  if (f->grad == nullptr)
+    CS_FREE(gradv);
+
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1677,6 +1744,41 @@ cs_function_define_property_cells
 
   return f;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define output function for the vorticity.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_vorticity
+(
+  cs_field_t *velocity_field /*!<[in] Pointer to velocity field */
+)
+{
+  if (velocity_field == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Null pointer provided for the velocity field.\n", __func__);
+
+  std::string f_name = "vorticity::" + std::string(velocity_field->name);
+  cs_function_t *f
+    = cs_function_define_by_func(f_name.c_str(),
+                                 CS_MESH_LOCATION_CELLS,
+                                 3,
+                                 true,
+                                 CS_REAL_TYPE,
+                                 _compute_vorticity,
+                                 velocity_field);
+
+  cs_function_set_label(f, f_name.c_str());
+  f->type = CS_FUNCTION_INTENSIVE;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

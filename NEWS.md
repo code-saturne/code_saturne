@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Add a predefined function to compute vorticity based on a velocity
+  field (cs_function_define_vorticity).
+
 - Replace use of "boundary_forces" field (which is extensive), with
   "boundary_stress" (which is intensive).
    The `cs_function_define_boundary_stress` is removed, as it is not
