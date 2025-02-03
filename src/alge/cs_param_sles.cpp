@@ -544,13 +544,7 @@ cs_param_sles_set_solver(const char       *keyval,
 
   if (strcmp(keyval, "amg") == 0) {
     slesp->need_flexible      = false;
-    slesp->solver = CS_PARAM_SOLVER_AMG;
-    slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->precond = CS_PARAM_PRECOND_NONE;
-
     cs_param_sles_amg_inhouse_reset(slesp, true, false);
-
   }
   else if (strcmp(keyval, "bicgs") == 0 ||
            strcmp(keyval, "bicgstab") == 0) {
@@ -855,8 +849,7 @@ cs_param_sles_set_precond(const char       *keyval,
     switch (ret_class) {
 
     case CS_PARAM_SOLVER_CLASS_CS:
-      slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
-      cs_param_sles_amg_inhouse_reset(slesp, false, false);
+      cs_param_sles_amg_inhouse_reset(slesp, false, false); // precond; v-cycle
       break;
     case CS_PARAM_SOLVER_CLASS_PETSC:
       slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
@@ -889,8 +882,7 @@ cs_param_sles_set_precond(const char       *keyval,
     switch (ret_class) {
 
     case CS_PARAM_SOLVER_CLASS_CS:
-      slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
-      cs_param_sles_amg_inhouse_reset(slesp, false, false);
+      cs_param_sles_amg_inhouse_reset(slesp, false, false); // precond; v-cycle
       break;
 
     case CS_PARAM_SOLVER_CLASS_PETSC:
@@ -1144,7 +1136,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
   else if (strcmp(keyval, "k_cycle") == 0 || strcmp(keyval, "kamg") == 0) {
 
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->need_flexible = true;
 
     if (slesp->solver == CS_PARAM_SOLVER_AMG)
@@ -1408,6 +1399,20 @@ cs_param_sles_amg_inhouse_reset(cs_param_sles_t  *slesp,
   if (slesp->context_param != nullptr)
     CS_FREE(slesp->context_param);
 
+  slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+
+  if (used_as_solver) {
+    slesp->solver = CS_PARAM_SOLVER_AMG;
+    slesp->precond = CS_PARAM_PRECOND_NONE;
+  }
+  else
+    slesp->precond = CS_PARAM_PRECOND_AMG;
+
+  if (used_as_k_cycle)
+    slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
+  else
+    slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
+
   slesp->context_param = cs_param_amg_inhouse_create(used_as_solver,
                                                      used_as_k_cycle);
 }
@@ -1540,6 +1545,16 @@ cs_param_sles_boomeramg_reset(cs_param_sles_t  *slesp)
 
   if (slesp->context_param != nullptr)
     CS_FREE(slesp->context_param);
+
+  if (slesp->solver_class != CS_PARAM_SOLVER_CLASS_PETSC &&
+      slesp->solver_class != CS_PARAM_SOLVER_CLASS_HYPRE)
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_HYPRE;
+
+  slesp->precond = CS_PARAM_PRECOND_AMG;
+
+  if (slesp->amg_type != CS_PARAM_AMG_HYPRE_BOOMER_V &&
+      slesp->amg_type != CS_PARAM_AMG_HYPRE_BOOMER_W)
+    slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
 
   slesp->context_param = cs_param_amg_boomer_create();
 }
@@ -1755,6 +1770,13 @@ cs_param_sles_hmg_reset(cs_param_sles_t  *slesp)
 
   if (slesp->context_param != nullptr)
     CS_FREE(slesp->context_param);
+
+  slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+  slesp->precond = CS_PARAM_PRECOND_AMG;
+
+  if (slesp->amg_type != CS_PARAM_AMG_PETSC_HMG_V &&
+      slesp->amg_type != CS_PARAM_AMG_PETSC_HMG_W)
+    slesp->amg_type = CS_PARAM_AMG_PETSC_HMG_V;
 
   slesp->context_param = cs_param_amg_hmg_create();
 }
