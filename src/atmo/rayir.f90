@@ -582,14 +582,13 @@ if(inua.ne.1) then
     ctray = sig/romray(k)/(cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(k)))
     !  a1: contribution from  0 to z
     a1 = 0.d0
-    do kk = k+1, k
+    do kk = k1+1, k
       qqqqv = qqqv(k) - qqv(kk)
       qqqqc = qqqc(k) - qqc(kk)
 
       call rayive(tauv,dtauv,qqqqv,qv0(k),qqqqc,qc(k),romray(k))
       a1 = a1 + dt4dz(kk)*(daco2(k,kk) - dtauv)*dz0(kk-1)
     enddo
-
 
     ! a2: contribution from z to ztop
     a2 = 0.d0
