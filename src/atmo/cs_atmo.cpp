@@ -2653,6 +2653,22 @@ cs_atmo_fields_init0(void)
     }
   }
 
+  /*-------------------------------------------------------------------------
+   * Check simulation times used by atmo
+   * radiative transfer or chemistry models
+   *-------------------------------------------------------------------------*/
+  if (   (at_opt->radiative_model_1d == 1 || at_chem->model > 0)
+      && (   at_opt->syear == -1 || at_opt->squant == -1
+          || at_opt->shour == -1 || at_opt->smin  == -1 || at_opt->ssec <= -1.0)  )
+    bft_error(__FILE__, __LINE__, 0,
+              "    WARNING:   STOP WHILE READING INPUT DATA\n"
+              "    =========\n"
+              "               ATMOSPHERIC  MODULE RADITIVE MODEL OR CHEMISTRY\n"
+              "    The simulation time is wrong\n"
+              "    Check variables syear, squant, shour, smin, ssec\n"
+              "    By decreasing priority, these variables can be defined\n"
+              "    in cs_user_parameters or the meteo file or the chemistry file\n");
+
   /* Only if the simulation is not a restart from another one */
   if (has_restart != 0)
     return;

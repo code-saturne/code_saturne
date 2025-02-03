@@ -1220,23 +1220,6 @@ cs_parameters_check(void)
   }
 
   /*-------------------------------------------------------------------------
-   * Check simulation times used by atmo
-   * radiative transfer or chemistry models
-   *-------------------------------------------------------------------------*/
-  if (   (at_opt->radiative_model_1d == 1 || at_chem->model > 0)
-      && (   at_opt->syear == -1 || at_opt->squant == -1
-          || at_opt->shour == -1 || at_opt->smin  == -1 || at_opt->ssec <= -1.0)  )
-    cs_parameters_error
-      (CS_ABORT_DELAYED,
-       _("WARNING:   STOP WHILE READING INPUT DATA\n"),
-       _("    =========\n"
-         "               ATMOSPHERIC  MODULE RADITIVE MODEL OR CHEMISTRY\n"
-         "    The simulation time is wrong\n"
-         "    Check variables syear, squant, shour, smin, ssec\n"
-         "    By decreasing priority, these variables can be defined\n"
-         "    in cs_user_parameters or the meteo file or the chemistry file\n"));
-
-  /*-------------------------------------------------------------------------
    * Check radiative module latitude / longitude
    *-------------------------------------------------------------------------*/
   if (   at_opt->radiative_model_1d == 1
