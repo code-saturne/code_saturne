@@ -57,8 +57,6 @@
 subroutine kinetic_4(nr,rk,temp,xlw,press,azi,att,                  &
      option_photolysis)
 
-use entsor
-
 implicit none
 
 ! Arguments
@@ -116,8 +114,6 @@ end subroutine kinetic_4
 
 subroutine fexchem_4(ns,nr,y,rk,zcsourc,convers_factor,chem)
 
-use entsor
-
 implicit none
 
 ! Arguments
@@ -165,8 +161,6 @@ end subroutine fexchem_4
 subroutine ssh_jacdchemdc(ns,nr,y,convers_factor,                     &
                           convers_factor_jac,rk,jacc)
 
-use entsor
-
 implicit none
 
 ! Arguments
@@ -203,8 +197,6 @@ end subroutine ssh_jacdchemdc
 
 subroutine ssh_lu_decompose (ns,m)
 
-use entsor
-
 implicit none
 
 ! Arguments
@@ -239,8 +231,6 @@ end subroutine ssh_lu_decompose
 !______________________________________________________________________________
 
 subroutine ssh_lu_solve (ns, m, x)
-
-use entsor
 
 implicit none
 

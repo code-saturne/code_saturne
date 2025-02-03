@@ -88,8 +88,7 @@ cs_user_source_terms.cpp \
 cs_user_time_table.cpp \
 cs_user_turbomachinery.cpp \
 cs_user_wall_condensation.cpp \
-cs_user_zones.cpp \
-usatch.f90
+cs_user_zones.cpp
 
 # Special treatment for files existing both in f90 and C:
 cs_user_f_boundary_conditions = $(top_srcdir)/src/user/cs_user_boundary_conditions.f90
