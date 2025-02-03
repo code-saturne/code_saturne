@@ -41,6 +41,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_printf.h"
+#include "bft/bft_error.h"
 
 #include "atmo/cs_atmo.h"
 #include "base/cs_1d_wall_thermal.h"
@@ -1233,50 +1234,6 @@ cs_parameters_check(void)
          "    Wrong longitude or latitude coordinates\n"
          "    Check your data and parameters (GUI and user functions)\n"));
 
-
-  /*-------------------------------------------------------------------------
-   * Check latitude / longitude from meteo file
-   *-------------------------------------------------------------------------*/
-  if (at_opt->meteo_profile == 1) {
-    int n_times = CS_MAX(1, at_opt->met_1d_ntimes);
-    cs_real_t xyp_met_max = at_opt->xyp_met[0];
-    for (int ii = 1; ii < 2*n_times; ii++)
-      if (at_opt->xyp_met[ii] > xyp_met_max)
-        xyp_met_max = at_opt->xyp_met[ii];
-    if (xyp_met_max >= cs_math_infinite_r*0.5)
-      cs_parameters_error
-        (CS_ABORT_DELAYED,
-         _("WARNING:   STOP WHILE READING INPUT DATA\n"),
-         _("    =========\n"
-           "               ATMOSPHERIC  MODULE\n"
-           "    Wrong coordinates for the meteo profile.\n"
-           "    Check your data and parameters (GUI and user functions)\n"));
-  }
-
-  /*-------------------------------------------------------------------------
-   * Check latitude / longitude from chemistry file
-   *-------------------------------------------------------------------------*/
-  if (at_chem->model > 0) {
-    cs_real_t xy_chem[2] = {at_chem->x_conc_profiles[0],
-                            at_chem->y_conc_profiles[0]};
-
-    for (int ii = 1; ii < at_chem->nt_step_profiles; ii++) {
-      if (xy_chem[0] <= at_chem->x_conc_profiles[ii])
-        xy_chem[0] = at_chem->x_conc_profiles[ii];
-      if (xy_chem[1] <= at_chem->y_conc_profiles[ii])
-        xy_chem[1] = at_chem->y_conc_profiles[ii];
-    }
-
-    if (   xy_chem[0] >= cs_math_infinite_r*0.5
-        || xy_chem[0] >= cs_math_infinite_r*0.5)
-      cs_parameters_error
-        (CS_ABORT_DELAYED,
-         _("WARNING:   STOP WHILE READING INPUT DATA\n"),
-         _("    =========\n"
-           "               ATMOSPHERIC  CHEMISTRY\n"
-           "    Wrong coordinates for the concentration profile .\n"
-           "    Check your data and parameters (GUI and user functions)\n"));
-  }
 
   /*--------------------------------------------------------------------------
    * Verification in the turbulent flux model for scalars

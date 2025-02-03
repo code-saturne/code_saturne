@@ -72,6 +72,7 @@
 #include "base/cs_measures_util.h"
 #include "base/cs_parall.h"
 #include "base/cs_equation_iterative_solve.h"
+#include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_post.h"
@@ -2582,6 +2583,25 @@ cs_atmo_fields_init0(void)
   if (at_opt->meteo_profile == 1) {
     int imode = 1;
     cs_f_read_meteo_profile(imode);
+
+    /* Check latitude / longitude from meteo file */
+    int n_times = CS_MAX(1, at_opt->met_1d_ntimes);
+    cs_real_t xyp_met_max = at_opt->xyp_met[0];
+    for (int i = 0; i < n_times; i++) {
+      if (at_opt->xyp_met[3 * i] > xyp_met_max)
+        xyp_met_max = at_opt->xyp_met[3 * i];
+      if (at_opt->xyp_met[3 * i + 1] > xyp_met_max)
+        xyp_met_max = at_opt->xyp_met[3 * i + 1];
+    }
+    if (xyp_met_max >= cs_math_infinite_r*0.5)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("WARNING:   STOP WHILE READING INPUT DATA\n"),
+         _("    =========\n"
+           "               ATMOSPHERIC  MODULE\n"
+           "    Wrong coordinates for the meteo profile.\n"
+           "    Check your data and parameters (GUI and user functions)\n"));
+
   }
   else if (at_opt->meteo_profile == 2) {
     cs_atmo_compute_meteo_profiles();
@@ -2594,7 +2614,28 @@ cs_atmo_fields_init0(void)
     int imode = 1;
     cs_f_read_chemistry_profile(imode);
 
-    /* Volume initilization with profiles
+    /* Check latitude / longitude from chemistry file */
+    cs_real_t xy_chem[2] = {at_chem->x_conc_profiles[0],
+                            at_chem->y_conc_profiles[0]};
+
+    for (int ii = 1; ii < at_chem->nt_step_profiles; ii++) {
+      if (xy_chem[0] <= at_chem->x_conc_profiles[ii])
+        xy_chem[0] = at_chem->x_conc_profiles[ii];
+      if (xy_chem[1] <= at_chem->y_conc_profiles[ii])
+        xy_chem[1] = at_chem->y_conc_profiles[ii];
+    }
+
+    if (   xy_chem[0] >= cs_math_infinite_r*0.5
+        || xy_chem[0] >= cs_math_infinite_r*0.5)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("WARNING:   STOP WHILE READING INPUT DATA\n"),
+         _("    =========\n"
+           "               ATMOSPHERIC  CHEMISTRY\n"
+           "    Wrong coordinates for the concentration profile .\n"
+           "    Check your data and parameters (GUI and user functions)\n"));
+
+    /* Volume initialization with profiles
        for species present in the chemical profiles file */
     for (int kk = 0; kk < at_chem->n_species_profiles; kk++) {
 
