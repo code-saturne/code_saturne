@@ -640,7 +640,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                            b_viscm);
 
   /*===========================================================================
-   * Iterative process to handle non orthogonlaities (starting from the
+   * Iterative process to handle non orthogonalities (starting from the
    * second iteration).
    *===========================================================================*/
 
