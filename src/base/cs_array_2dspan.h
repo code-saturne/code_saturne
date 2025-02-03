@@ -41,6 +41,14 @@
 #if defined(__cplusplus)
 
 /*=============================================================================
+ * BUILTIN TEST
+ *============================================================================*/
+
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+
+/*=============================================================================
  * Public C++ class template
  *============================================================================*/
 
@@ -83,19 +91,25 @@ public:
   array_2dspan
   (
     cs_lnum_t dim1, /*!<[in] First dimension size */
-    cs_lnum_t dim2  /*!<[in] Second dimension size */
+    cs_lnum_t dim2, /*!<[in] Second dimension size */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
+    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+#else
+    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
+    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+#endif
   )
   :
     _dim1(dim1),
     _dim2(dim2),
+    _size(dim1*dim2),
     _is_owner(true),
     _mode(CS_ALLOC_HOST)
   {
-    /* Sanity check for both dimensions */
-    assert(_dim1 >= 0 && _dim2 >= 0);
-    _size = dim1*dim2;
-
-    allocate_();
+    allocate_(file_name, line_number);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -107,21 +121,27 @@ public:
   CS_F_HOST_DEVICE
   array_2dspan
   (
-    cs_lnum_t       dim1,      /*!<[in] First dimension size */
-    cs_lnum_t       dim2,      /*!<[in] Second dimension size */
-    cs_alloc_mode_t alloc_mode /*!<[in] Memory allocation mode */
+    cs_lnum_t       dim1,       /*!<[in] First dimension size */
+    cs_lnum_t       dim2,       /*!<[in] Second dimension size */
+    cs_alloc_mode_t alloc_mode, /*!<[in] Memory allocation mode */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
+    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+#else
+    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
+    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+#endif
   )
   :
     _dim1(dim1),
     _dim2(dim2),
+    _size(dim1 * dim2),
     _is_owner(true),
     _mode(alloc_mode)
   {
-    /* Sanity check for both dimensions */
-    assert(_dim1 >= 0 && _dim2 >= 0);
-    _size = dim1*dim2;
-
-    allocate_();
+    allocate_(file_name, line_number);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -142,17 +162,11 @@ public:
   :
     _dim1(dim1),
     _dim2(dim2),
+    _size(dim1 * dim2),
     _is_owner(false),
-    _mode(alloc_mode)
+    _mode(alloc_mode),
+    _full_array(data_array)
   {
-    /* Sanity check for both dimensions */
-    assert(_dim1 >= 0 && _dim2 >= 0);
-
-    _size = dim1*dim2;
-
-    _full_array = data_array;
-
-    allocate_();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -164,8 +178,17 @@ public:
   CS_F_HOST_DEVICE
   array_2dspan
   (
-   array_2dspan& other,             /*!<[in] Instance to copy */
-   bool          shallow_copy=false /*!<[in] Do a shallow copy or not */
+    array_2dspan& other,              /*!<[in] Instance to copy */
+    bool          shallow_copy=false, /*!<[in] Do a shallow copy or not */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
+    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+#else
+    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
+    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+#endif
   )
   {
     set_size_(other._dim1, other._dim2);
@@ -177,7 +200,7 @@ public:
     _is_owner = (shallow_copy) ? false : other._is_owner;
 
     if (_is_owner) {
-      allocate_();
+      allocate_(file_name, line_number);
       cs_array_copy<T>(_size, other._full_array, _full_array);
     }
     else {
@@ -301,7 +324,22 @@ public:
   )
   {
     clear();
-    *this = array_2dspan(other, true);
+    *this = other.view();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set all values of the data array to a constant value.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void set_to_val
+  (
+    T val /*!<[in] Value to set to entire data array. */
+  )
+  {
+    cs_arrays_set_value<T,1>(_size, val, _full_array);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -314,7 +352,16 @@ public:
   void resize
   (
     cs_lnum_t       dim1, /*!<[in] First dimension size */
-    cs_lnum_t       dim2  /*!<[in] Second dimension size */
+    cs_lnum_t       dim2, /*!<[in] Second dimension size */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
+    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+#else
+    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
+    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+#endif
   )
   {
     assert(dim1 >= 0 && dim2 >= 0);
@@ -326,7 +373,7 @@ public:
     if (_is_owner) {
       clear();
       set_size_(dim1, dim2);
-      allocate_();
+      allocate_(file_name, line_number);
     }
 
   }
@@ -344,7 +391,16 @@ public:
     cs_lnum_t       dim2,         /*!<[in] Second dimension size */
     bool            copy_data,    /*!<[in] Copy data from old pointer to new
                                            array. Default is false. */
-    cs_lnum_t       size_to_keep  /*!<[in] Size of data to keep */
+    cs_lnum_t       size_to_keep, /*!<[in] Size of data to keep */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
+    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+#else
+    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
+    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+#endif
   )
   {
     assert(dim1 >= 0 && dim2 >= 0);
@@ -364,7 +420,7 @@ public:
         /* If we change dim1 -> Realloc is sufficient */
         if (_dim1 != dim1) {
           set_size_(dim1, dim2);
-          reallocate_();
+          reallocate_(file_name, line_number);
         }
         else {
           /* Temporary copy */
@@ -375,7 +431,7 @@ public:
 
           cs_lnum_t old_dim2 = _dim2;
 
-          resize(dim1, dim2);
+          resize(dim1, dim2, file_name, line_number);
 
           /* We loop on "_dim1" since dim1 = _dim1 */
           for (cs_lnum_t i = 0; i < _dim1; i++) {
@@ -388,11 +444,27 @@ public:
         }
       }
       else {
-        resize(dim1, dim2);
+        resize(dim1, dim2, file_name, line_number);
       }
     }
 
   }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get a view (non owner) of the array.
+   *
+   * \return temporary instance which is a view (non owner) of the data
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  array_2dspan view()
+  {
+    /* Use the shallow copy constructor to return a temporary instance */
+    return array_2dspan(*this, true);
+  }
+
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Set memory allocation mode.
@@ -546,13 +618,20 @@ private:
 
   CS_F_HOST_DEVICE
   void
-  allocate_()
+  allocate_
+  (
+    const char *file_name,  /*!<[in] File initiating the call for logging */
+    const int   line_number /*!<[in] Line initiating the call for logging */
+  )
   {
-    /* Initialize total size of data array and allocate it if owner */
-    if (_is_owner) {
-      CS_MALLOC_HD(_full_array, _size, T, _mode);
-    }
-  };
+    const char *_ptr_name = "_full_array";
+    _full_array = static_cast<T *>(cs_mem_malloc_hd(_mode,
+                                                    _size,
+                                                    sizeof(T),
+                                                    _ptr_name,
+                                                    file_name,
+                                                    line_number));
+  }
 
   /*--------------------------------------------------------------------------*/
   /*!
@@ -562,11 +641,22 @@ private:
 
   CS_F_HOST_DEVICE
   void
-  reallocate_()
+  reallocate_
+  (
+    const char *file_name,  /*!<[in] File initiating the call for logging */
+    const int   line_number /*!<[in] Line initiating the call for logging */
+  )
   {
     /* If not owner no-op */
     if (_is_owner) {
-      CS_REALLOC_HD(_full_array, _size, T, _mode);
+      const char *_ptr_name = "_full_array";
+      _full_array = static_cast<T *>(cs_mem_realloc_hd(_full_array,
+                                                       _mode,
+                                                       _size,
+                                                       sizeof(T),
+                                                       _ptr_name,
+                                                       file_name,
+                                                       line_number));
     }
   };
 
