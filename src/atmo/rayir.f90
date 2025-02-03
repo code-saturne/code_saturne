@@ -104,7 +104,7 @@ procedure() :: rayigc, rayive
 
 integer ivertc, k1, kmray, ico2
 double precision emis
-double precision qqv(kmx+1), qqqv(kmx+1), qqvinf, zqq(kmx)
+double precision qqv(kmx+1), qqqv(kmx+1), qqvinf, zqq(kmx+1)
 double precision acinfe(kmx), dacinfe(kmx), aco2(kmx,kmx), daco2(kmx,kmx)
 double precision aco2s(kmx,kmx), daco2s(kmx,kmx)
 double precision acsup(kmx), dacsup(kmx), acsups(kmx), dacsups(kmx)
@@ -154,13 +154,13 @@ double precision, dimension(:,:), pointer :: cpro_ck_down
 !===============================================================================
 
 allocate(rov(kmx), roc(kmx), rol(kmx), qv0(kmx), qc(kmx))
-allocate(qqc(kmx), qql(kmx))
+allocate(qqc(kmx+1), qql(kmx+1))
 allocate(qqqc(kmx), qqql(kmx))
 allocate(pspo(kmx), pspoqq(kmx), dt4dz(kmx), tqq(kmx))
 allocate(dz0(kmx))
 allocate(kliq(kmx+1))
 
-allocate(dfir(kmx), ufir(kmx))
+allocate(dfir(kmx+1), ufir(kmx+1))
 allocate(ckup(kmx), ckdown(kmx))
 
 ! local initializations
@@ -190,6 +190,8 @@ do k = 1, kmx
 enddo
 
 qqv(kmx+1) = 0.d0
+qqc(kmx+1) = 0.d0
+qql(kmx+1) = 0.d0
 qqqv(kmx+1) = 0.d0
 
 foir = 0.d0
@@ -250,9 +252,9 @@ do k = k1, kmray
   if(aeroso(k).gt.1.d-8) iaer = 1
 
   ! Note, simplification:
-  ! pspo(k) = preray(k) / preray(k1)
   ! so pspo(k) * preray(k1) = preray(k)
   corp = preray(k) / 101315.d0
+  pspo(k) = preray(k) / preray(k1)
 
   qv0(k) = qvray(k)*corp*sqrt(tkelvi/(temray(k) + tkelvi))
   rov(k) = romray(k)*qv0(k)
