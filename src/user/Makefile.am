@@ -91,6 +91,8 @@ cs_user_wall_condensation.cpp \
 cs_user_zones.cpp
 
 # Special treatment for files existing both in f90 and C:
+FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
+
 cs_user_f_boundary_conditions = $(top_srcdir)/src/user/cs_user_boundary_conditions.f90
 
 cs_f_user_boundary_conditions.$(OBJEXT): $(cs_user_f_boundary_conditions)
