@@ -91,6 +91,9 @@ cs_user_wall_condensation.cpp \
 cs_user_zones.cpp
 
 # Special treatment for files existing both in f90 and C:
+# Force the definition of FCCOMPILE here since officially there are no more
+# f90 files in the user folder.
+# Once all f90 cs_user files are deleted, this line could be removed !
 FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
 
 cs_user_f_boundary_conditions = $(top_srcdir)/src/user/cs_user_boundary_conditions.f90
