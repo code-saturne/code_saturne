@@ -8594,6 +8594,7 @@ cs_gradient_vector(const char                    *var_name,
      ------------------------------- */
 
   cs_real_3_t *val_ip = nullptr, *val_f = nullptr;
+  cs_real_3_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
 
   /* For internal coupling, find field BC Coefficients
      matching the current variable.
@@ -8602,28 +8603,27 @@ cs_gradient_vector(const char                    *var_name,
 
   /* Update of local BC. coefficients for internal coupling */
 
-  cs_field_bc_coeffs_t *bc_coeffs_v_loc = nullptr;
+  cs_real_3_t *bc_coeff_loc_cpl_a = nullptr;
 
   if (   cpl != nullptr
       && gradient_type != CS_GRADIENT_GREEN_ITER) {
 
     if (bc_coeffs_v != nullptr) {
 
-      cs_real_3_t  *bc_coeff_a = (cs_real_3_t  *)bc_coeffs_v->a;
+      cs_real_3_t *bc_coeff_a = (cs_real_3_t *)bc_coeffs_v->a;
+      cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
+      cs_field_bc_coeffs_shallow_copy(bc_coeffs_v, &bc_coeffs_loc_cpl);
+      CS_MALLOC_HD(bc_coeffs_loc_cpl.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
 
-      CS_MALLOC(bc_coeffs_v_loc, 1, cs_field_bc_coeffs_t);
-      cs_field_bc_coeffs_shallow_copy(bc_coeffs_v, bc_coeffs_v_loc);
-      CS_MALLOC_HD(bc_coeffs_v_loc->a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
-
-      cs_real_3_t  *bc_coeffs_cpl_a = (cs_real_3_t   *)bc_coeffs_v_loc->a;
+      bc_coeff_loc_cpl_a = (cs_real_3_t *)bc_coeffs_loc_cpl.a;
 
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
         for (cs_lnum_t i = 0; i < 3; i++) {
-          bc_coeffs_cpl_a[face_id][i] = inc * bc_coeff_a[face_id][i];
+          bc_coeff_loc_cpl_a[face_id][i] = inc * bc_coeff_a[face_id][i];
         }
       }
 
-      bc_coeffs_v = bc_coeffs_v_loc;
+      bc_coeffs_v = &bc_coeffs_loc_cpl;
 
       inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
                    uncoupled faces, and bc_coeff_a used for coupled faces. */
@@ -8642,15 +8642,39 @@ cs_gradient_vector(const char                    *var_name,
     }
   }
 
+  cs_real_3_t  *bc_coeff_loc_a = nullptr;
+  cs_real_33_t *bc_coeff_loc_b = nullptr;
+
   // Use Neumann BC's as default if not provided
   if (bc_coeffs_v == nullptr) {
 
-    // val_f = var_iprime for hmg Neumann
+    cs_field_bc_coeffs_t bc_coeffs_v_loc;
+    cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
+
+    CS_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+
+    bc_coeff_loc_a = (cs_real_3_t  *)bc_coeffs_v_loc.a;
+    bc_coeff_loc_b = (cs_real_33_t *)bc_coeffs_v_loc.b;
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        bc_coeff_loc_a[i][j] = 0;
+        for (cs_lnum_t k = 0; k < 3; k++)
+          bc_coeff_loc_b[i][j][k] = 0;
+
+        bc_coeff_loc_b[i][j][j] = 1;
+      }
+    }
+
+    bc_coeffs_v = &bc_coeffs_v_loc;
+
     if (gradient_type != CS_GRADIENT_GREEN_ITER) {
+      // else only above standard coefa&b are used
 
-      CS_MALLOC_HD(val_f, n_b_faces, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_3_t, cs_alloc_mode);
 
-      /* Compute var_iprime */
+      /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
       cs_gradient_boundary_iprime_lsq_strided<3>(mesh,
                                                  fvq,
                                                  n_b_faces,
@@ -8661,31 +8685,10 @@ cs_gradient_vector(const char                    *var_name,
                                                  bc_coeffs_v,
                                                  c_weight,
                                                  var,
-                                                 val_f,
+                                                 val_f_hmg,
                                                  nullptr);
-    }
-    else {
 
-      CS_MALLOC(bc_coeffs_v_loc, 1, cs_field_bc_coeffs_t);
-      cs_field_bc_coeffs_init(bc_coeffs_v_loc);
-
-      CS_MALLOC(bc_coeffs_v_loc->a, 3*n_b_faces, cs_real_t);
-      CS_MALLOC(bc_coeffs_v_loc->b, 9*n_b_faces, cs_real_t);
-
-      cs_real_3_t  *bc_coeff_loc_a = (cs_real_3_t  *)bc_coeffs_v_loc->a;
-      cs_real_33_t *bc_coeff_loc_b = (cs_real_33_t *)bc_coeffs_v_loc->b;
-
-      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          bc_coeff_loc_a[i][j] = 0;
-          for (cs_lnum_t k = 0; k < 3; k++)
-            bc_coeff_loc_b[i][j][k] = 0;
-
-          bc_coeff_loc_b[i][j][j] = 1;
-        }
-      }
-
-      bc_coeffs_v = bc_coeffs_v_loc;
+      val_f = val_f_hmg;
     }
   }
   else { // bc_coeffs_v != nullptr, enter here for cpl
@@ -8709,7 +8712,7 @@ cs_gradient_vector(const char                    *var_name,
         // else standard coefa&b are used
 
         CS_MALLOC_HD(val_ip, n_b_faces, cs_real_3_t, cs_alloc_mode);
-        CS_MALLOC_HD(val_f, n_b_faces, cs_real_3_t, cs_alloc_mode);
+        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_3_t, cs_alloc_mode);
 
         cs_gradient_boundary_iprime_lsq_strided<3>(mesh,
                                                    fvq,
@@ -8730,13 +8733,14 @@ cs_gradient_vector(const char                    *var_name,
         for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
           for (cs_lnum_t i = 0; i < 3; i++) {
-            val_f[face_id][i] = inc*coefa[face_id][i];
+            val_f_wrk[face_id][i] = inc*coefa[face_id][i];
             for (cs_lnum_t j = 0; j < 3; j++) {
-              val_f[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
+              val_f_wrk[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
             }
           }
         } /* End loop on boundary faces */
 
+        val_f = val_f_wrk;
       }
     }
   }
@@ -8761,18 +8765,11 @@ cs_gradient_vector(const char                    *var_name,
                    gradv);
 
   CS_FREE_HD(val_ip);
-
-  if (   bc_coeffs_v == nullptr
-      || (bc_coeffs_v != nullptr && bc_coeffs_v->val_f == nullptr))
-         CS_FREE_HD(val_f);
-
-  if (bc_coeffs_v_loc != nullptr) {
-    CS_FREE_HD(bc_coeffs_v_loc->a);
-    if (bc_coeffs_v == nullptr && gradient_type == CS_GRADIENT_GREEN_ITER)
-      CS_FREE_HD(bc_coeffs_v_loc->b);
-
-    CS_FREE(bc_coeffs_v_loc);
-  }
+  CS_FREE_HD(val_f_hmg);
+  CS_FREE_HD(val_f_wrk);
+  CS_FREE_HD(bc_coeff_loc_a);
+  CS_FREE_HD(bc_coeff_loc_b);
+  CS_FREE_HD(bc_coeff_loc_cpl_a);
 
   t1 = cs_timer_time();
 
@@ -8847,17 +8844,40 @@ cs_gradient_tensor(const char                  *var_name,
 
   /* Use Neumann BC's as default if not provided */
 
-  cs_field_bc_coeffs_t *bc_coeffs_ts_loc = nullptr;
+  cs_real_6_t  *bc_coeff_loc_a = nullptr;
+  cs_real_66_t *bc_coeff_loc_b = nullptr;
   cs_real_6_t *val_f = nullptr, *val_ip = nullptr;
+  cs_real_6_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
 
   if (bc_coeffs_ts == nullptr) {
 
-    // val_f = var_iprime for hmg Neumann
+    cs_field_bc_coeffs_t bc_coeffs_ts_loc;
+    cs_field_bc_coeffs_init(&bc_coeffs_ts_loc);
+
+    CS_MALLOC(bc_coeffs_ts_loc.a, 6*n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_ts_loc.b, 36*n_b_faces, cs_real_t);
+
+    bc_coeff_loc_a = (cs_real_6_t  *)bc_coeffs_ts_loc.a;
+    bc_coeff_loc_b = (cs_real_66_t *)bc_coeffs_ts_loc.b;
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 6; j++) {
+        bc_coeff_loc_a[i][j] = 0;
+        for (cs_lnum_t k = 0; k < 6; k++)
+          bc_coeff_loc_b[i][j][k] = 0;
+
+        bc_coeff_loc_b[i][j][j] = 1;
+      }
+    }
+
+    bc_coeffs_ts = &bc_coeffs_ts_loc;
+
     if (gradient_type != CS_GRADIENT_GREEN_ITER) {
+      // else only above standard coefa&b are used
 
-      CS_MALLOC_HD(val_f, n_b_faces, cs_real_6_t, cs_alloc_mode);
+      CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_6_t, cs_alloc_mode);
 
-      /* Compute var_iprime */
+      /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
       cs_gradient_boundary_iprime_lsq_strided<6>(mesh,
                                                  fvq,
                                                  n_b_faces,
@@ -8868,30 +8888,10 @@ cs_gradient_tensor(const char                  *var_name,
                                                  bc_coeffs_ts,
                                                  nullptr, // c_weight,
                                                  var,
-                                                 val_f,
+                                                 val_f_hmg,
                                                  nullptr);
-    }
-    else {
-      CS_MALLOC(bc_coeffs_ts_loc, 1, cs_field_bc_coeffs_t);
-      cs_field_bc_coeffs_init(bc_coeffs_ts_loc);
 
-      CS_MALLOC(bc_coeffs_ts_loc->a, 6*n_b_faces, cs_real_t);
-      CS_MALLOC(bc_coeffs_ts_loc->b, 36*n_b_faces, cs_real_t);
-
-      cs_real_6_t  *bc_coeff_loc_a = (cs_real_6_t  *)bc_coeffs_ts_loc->a;
-      cs_real_66_t *bc_coeff_loc_b = (cs_real_66_t *)bc_coeffs_ts_loc->b;
-
-      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-        for (cs_lnum_t j = 0; j < 6; j++) {
-          bc_coeff_loc_a[i][j] = 0;
-          for (cs_lnum_t k = 0; k < 6; k++)
-            bc_coeff_loc_b[i][j][k] = 0;
-
-          bc_coeff_loc_b[i][j][j] = 1;
-        }
-      }
-
-      bc_coeffs_ts = bc_coeffs_ts_loc;
+      val_f = val_f_hmg;
     }
   }
   else {
@@ -8907,7 +8907,7 @@ cs_gradient_tensor(const char                  *var_name,
         // else standard coefa&b are used
 
         CS_MALLOC_HD(val_ip, n_b_faces, cs_real_6_t, cs_alloc_mode);
-        CS_MALLOC_HD(val_f, n_b_faces, cs_real_6_t, cs_alloc_mode);
+        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_6_t, cs_alloc_mode);
 
         cs_real_6_t  *coefav = (cs_real_6_t  *)bc_coeffs_ts->a;
         cs_real_66_t *coefbv = (cs_real_66_t *)bc_coeffs_ts->b;
@@ -8928,12 +8928,14 @@ cs_gradient_tensor(const char                  *var_name,
 
         for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
           for (cs_lnum_t i = 0; i < 6; i++) {
-            val_f[face_id][i] = inc*coefav[face_id][i];
+            val_f_wrk[face_id][i] = inc*coefav[face_id][i];
             for (cs_lnum_t j = 0; j < 6; j++) {
-              val_f[face_id][i] += coefbv[face_id][j][i]*val_ip[face_id][j];
+              val_f_wrk[face_id][i] += coefbv[face_id][j][i]*val_ip[face_id][j];
             }
           }
         }
+
+        val_f = val_f_wrk;
 
       }
     }
@@ -8957,15 +8959,10 @@ cs_gradient_tensor(const char                  *var_name,
                    grad);
 
   CS_FREE_HD(val_ip);
-  if (   bc_coeffs_ts == nullptr
-      || (bc_coeffs_ts != nullptr && bc_coeffs_ts->val_f == nullptr))
-    CS_FREE_HD(val_f);
-
-  if (bc_coeffs_ts_loc != nullptr) {
-    CS_FREE(bc_coeffs_ts_loc->a);
-    CS_FREE(bc_coeffs_ts_loc->b);
-    CS_FREE(bc_coeffs_ts_loc);
-  }
+  CS_FREE_HD(val_f_hmg);
+  CS_FREE_HD(val_f_wrk);
+  CS_FREE_HD(bc_coeff_loc_a);
+  CS_FREE_HD(bc_coeff_loc_b);
 
   t1 = cs_timer_time();
 
