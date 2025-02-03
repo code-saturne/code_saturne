@@ -364,6 +364,8 @@ cs_time_moment_is_active(int  moment_id);
 
 END_C_DECLS
 
+#ifdef __cplusplus
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Reset selected time step for starting time step of selected moment.
@@ -395,6 +397,8 @@ cs_time_moment_set_start_time(int   moment_id,
 void
 cs_time_moment_set_start_time(int     moment_id,
                               double  t_start);
+
+#endif //ifdef __cplusplus
 
 BEGIN_C_DECLS
 
