@@ -184,7 +184,7 @@ _update_face_value_strided
 
     /* variable at I'position with diffusion limiter */
     if (df_limiter != nullptr)
-      CS_MALLOC_HD(val_ip_lim, stride * n_b_faces, var_t, cs_alloc_mode);
+      CS_MALLOC_HD(val_ip_lim, n_b_faces, var_t, cs_alloc_mode);
   }
 
   /* gradient clipping on boundary */
