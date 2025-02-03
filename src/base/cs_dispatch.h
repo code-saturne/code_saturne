@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <utility>
+#include <cmath>
 
 #if defined(SYCL_LANGUAGE_VERSION)
 #include <sycl/sycl.hpp>
@@ -122,6 +123,19 @@ public:
   parallel_for_reduce_sum
     (cs_lnum_t n, double& sum, F&& f, Args&&... args) = delete;
 
+  // Parallel reduction with reducer template.
+  // Must be redefined by the child class
+  template <class R, class RO, class F, class... Args>
+  decltype(auto)
+  parallel_for_reduce
+    (cs_lnum_t n, R& r, RO& reducer, F&& f, Args&&... args) = delete;
+
+  // Wait upon completion
+  // Must be redefined by the child class
+  template <class... Args>
+  decltype(auto)
+  wait(void) = delete;
+
   // Query sum type for assembly loop over all interior faces
   // Must be redefined by the child class
   template <class M>
@@ -197,6 +211,55 @@ public:
     : n_min_per_thread(CS_THR_MIN), n_threads_(-1)
   {}
 
+  //!  Compute array index bounds for a local thread.
+  //
+  // \param[in]       n          size of array
+  // \param[in]       type_size  element type size (or multiple)
+  // \param[in, out]  s_id       start index for the current thread
+  // \param[in, out]  e_id       past-the-end index for the current thread
+
+private:
+
+  // Determine number of threads that should actually be used.
+  int
+  n_threads(cs_lnum_t   n)
+  {
+    int n_t = n_threads_;
+    if (n_t < 0) {
+      n_t = cs_glob_n_threads;
+      int n_t_l = n / n_min_per_thread;
+      if (n_t_l < n_t)
+        n_t = n_t_l;
+      if (n_t < 1)
+        n_t = 1;
+    }
+    return n_t;
+  }
+
+  // Determine element range for current thread.
+  void
+  thread_range(cs_lnum_t                n,
+               [[maybe_unused]] size_t  type_size,
+               cs_lnum_t                &s_id,
+               cs_lnum_t                &e_id)
+  {
+#if defined(HAVE_OPENMP)
+    const int t_id = omp_get_thread_num();
+    const int n_t = omp_get_num_threads();
+    const cs_lnum_t t_n = (n + n_t - 1) / n_t;
+    const cs_lnum_t cl_m = CS_CL_SIZE / type_size;  /* Cache line multiple */
+
+    s_id =  t_id    * t_n;
+    e_id = (t_id+1) * t_n;
+    s_id = cs_align(s_id, cl_m);
+    e_id = cs_align(e_id, cl_m);
+    if (e_id > n) e_id = n;
+#else
+    s_id = 0;
+    e_id = n;
+#endif
+  }
+
 public:
 
   //! Set minimum number of elements threshold for CPU multithread execution.
@@ -227,15 +290,7 @@ public:
   template <class F, class... Args>
   bool
   parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-    int n_t = n_threads_;
-    if (n_t < 0) {
-      n_t = cs_glob_n_threads;
-      int n_t_l = n / n_min_per_thread;
-      if (n_t_l < n_t)
-        n_t = n_t_l;
-      if (n_t < 1)
-        n_t = 1;
-    }
+    int n_t = n_threads(n);
 
 #   pragma omp parallel for  num_threads(n_t)
     for (cs_lnum_t i = 0; i < n; ++i) {
@@ -291,22 +346,120 @@ public:
                           double&   sum,
                           F&&       f,
                           Args&&... args) {
-    int n_t = n_threads_;
-    if (n_t < 0) {
-      n_t = cs_glob_n_threads;
-      int n_t_l = n / n_min_per_thread;
-      if (n_t_l < n_t)
-        n_t = n_t_l;
-      if (n_t < 1)
-        n_t = 1;
-    }
+    int n_t = n_threads(n);
 
     sum = 0;
 
+#if 0
 #   pragma omp parallel for reduction(+:sum) num_threads(n_t)
     for (cs_lnum_t i = 0; i < n; ++i) {
-      f(i, sum, args...);
+      double se;
+      f(i, se, args...);
+      sum += se;
     }
+#else
+#   pragma omp parallel num_threads(n_t)
+    {
+      cs_lnum_t s_id, e_id;
+      thread_range(n, 4, s_id, e_id);
+
+      const cs_lnum_t _n = e_id - s_id;
+      cs_lnum_t n_sblocks, blocks_in_sblocks;
+      const cs_lnum_t block_size = 60;
+      { // superblock counts
+        cs_lnum_t n_blocks = (_n + block_size - 1) / block_size;
+        n_sblocks = (n_blocks > 1) ? std::sqrt(n_blocks) : 1;
+        cs_lnum_t n_b = block_size * n_sblocks;
+        blocks_in_sblocks = (_n + n_b - 1) / n_b;
+      }
+
+      for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+        double sum_sblock = 0;
+
+        for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+          cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid) + s_id;
+          cs_lnum_t end_id = start_id + block_size;
+          if (end_id > e_id)
+            end_id = e_id;
+          double sum_block = 0;
+          for (cs_lnum_t i = start_id; i < end_id; i++) {
+            double se;
+            f(i, se, args...);
+            sum_block += se;
+          }
+          sum_sblock += sum_block;
+        }
+
+        #pragma omp atomic
+        sum += sum_sblock;
+      }
+    }
+
+#endif
+    return true;
+  }
+
+  //! OpenMP parallel reduction with general reducer.
+  // In case the reduction involves floating-point sums,
+  // we use a Superblock / block loop to reduce numerical error.
+  template <class R, class RO, class F, class... Args>
+  bool
+  parallel_for_reduce(cs_lnum_t n,
+                      R&        result,
+                      RO&       reducer,
+                      F&&       f,
+                      Args&&... args) {
+    int n_t = n_threads(n);
+
+    reducer.identity(result);
+
+#   pragma omp parallel num_threads(n_t)
+    {
+      cs_lnum_t s_id, e_id;
+      thread_range(n, 4, s_id, e_id);
+
+      const cs_lnum_t _n = e_id - s_id;
+      cs_lnum_t n_sblocks, blocks_in_sblocks;
+      const cs_lnum_t block_size = 60;
+      { // superblock counts
+        cs_lnum_t n_blocks = (_n + block_size - 1) / block_size;
+        n_sblocks = (n_blocks > 1) ? std::sqrt(n_blocks) : 1;
+        cs_lnum_t n_b = block_size * n_sblocks;
+        blocks_in_sblocks = (_n + n_b - 1) / n_b;
+      }
+
+      for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+        R result_sblock;
+        reducer.identity(result_sblock);
+
+        for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+          cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid) + s_id;
+          cs_lnum_t end_id = start_id + block_size;
+          if (end_id > e_id)
+            end_id = e_id;
+          R result_block;
+          reducer.identity(result_block);
+          for (cs_lnum_t i = start_id; i < end_id; i++) {
+            f(i, result_block, args...);
+            reducer.combine(result_sblock, result_block);
+          }
+        }
+
+        #pragma omp critical
+        {
+          reducer.combine(result, result_sblock);
+        }
+      }
+    }
+
+    return true;
+  }
+
+  //! Wait upon completion
+  // No-op here as Open-MP based methods used here have implicit barriers.
+  template <class... Args>
+  bool
+  wait(void) {
     return true;
   }
 
@@ -629,13 +782,29 @@ public:
     return true;
   }
 
+  //! Parallel reduction with general reducer.
+  template <class R, class RO, class F, class... Args>
+  bool
+  parallel_for_reduce(cs_lnum_t n,
+                      R&        result,
+                      RO&       reducer,
+                      F&&       f,
+                      Args&&... args) {
+
+    // TODO implement this
+    return false;
+  }
+
   //! Synchronize associated stream
-  void
+  template <class... Args>
+  bool
   wait(void) {
     if (device_ > -1 && use_gpu_) {
       CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
       CS_CUDA_CHECK(cudaGetLastError());
+      return true;
     }
+    return false;
   }
 
   // Get interior faces sum type associated with this context
@@ -784,11 +953,28 @@ public:
     return true;
   }
 
+  //! Parallel reduction with general reducer.
+  template <class R, class RO, class F, class... Args>
+  bool
+  parallel_for_reduce(cs_lnum_t n,
+                      R&        result,
+                      RO&       reducer,
+                      F&&       f,
+                      Args&&... args) {
+
+    // TODO implement this
+    return false;
+  }
+
   //! Synchronize associated stream
-  void
+  template <class... Args>
+  bool
   wait(void) {
-    if (is_gpu && use_gpu_)
+    if (is_gpu && use_gpu_) {
       queue_.wait();
+      return true;
+    }
+    return false;
   }
 
   // Get interior faces sum type associated with this context
@@ -915,10 +1101,24 @@ public:
     return true;
   }
 
+  //! Parallel reduction with general reducer.
+  template <class R, class RO, class F, class... Args>
+  bool
+  parallel_for_reduce(cs_lnum_t n,
+                      R&        result,
+                      RO&       reducer,
+                      F&&       f,
+                      Args&&... args) {
+
+    // TODO implement this
+    return false;
+  }
+
   //! Synchronize associated stream
-  void
+  template <class... Args>
+  bool
   wait(void) {
-    return;
+    return true;
   }
 
   // Get interior faces sum type associated with this context
@@ -1017,10 +1217,6 @@ public:
     return CS_ALLOC_HOST;
   }
 
-  void
-  wait(void) {
-  }
-
 #endif  // ! __NVCC__ && ! SYCL_LANGUAGE_VERSION && ! defined(HAVE_OPENMP_TARGET)
 
 public:
@@ -1040,6 +1236,25 @@ public:
                                [[maybe_unused]] double&    sum,
                                [[maybe_unused]] F&&        f,
                                [[maybe_unused]] Args&&...  args) {
+    cs_assert(0);
+    return false;
+  }
+
+  // Abort execution if no execution method is available.
+  template <class R, class RO, class F, class... Args>
+  bool parallel_for_reduce([[maybe_unused]] cs_lnum_t  n,
+                           [[maybe_unused]] R&         result,
+                           [[maybe_unused]] RO&        reducer,
+                           [[maybe_unused]] F&&        f,
+                           [[maybe_unused]] Args&&...  args) {
+    cs_assert(0);
+    return false;
+  }
+
+  // Abort execution if no synchronization method is available.
+  template <class... Args>
+  bool
+  wait(void) {
     cs_assert(0);
     return false;
   }
@@ -1067,6 +1282,25 @@ public:
 
 public:
 
+  /*--------------------------------------------------------------------------*/
+  /* \brief Parallel computation over interior faces.
+   *
+   * This method is intended for use when assembling cell values
+   * with face-based computations, using the appropriate \ref cs_dispatch_sum
+   * functions.
+   *
+   * On CPU, loops are scheduled based on the current face numbering, so
+   * as to avoid thread races when summing values. On GPU, atomic sums are used.
+   *
+   * \tparam M  mesh type structure (templated mostly to avoid
+   *            dependency to mesh definitions in lower level code)
+   * \tparam F  lambda function or functor
+   *
+   * \param[in]  m     pointer to  mesh
+   * \param[in]  f     lambda function or functor to execute
+   */
+  /*--------------------------------------------------------------------------*/
+
   template <class M, class F, class... Args>
   auto parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
     bool launched = false;
@@ -1075,6 +1309,25 @@ public:
        || Contexts::parallel_for_i_faces(m, f, args...), nullptr)...
     };
   }
+
+  /*--------------------------------------------------------------------------*/
+  /* \brief Parallel computation over boundary faces.
+   *
+   * This method is intended for use when assembling cell values
+   * with face-based computations, using the appropriate \ref cs_dispatch_sum
+   * functions.
+   *
+   * On CPU, loops are scheduled based on the current face numbering, so
+   * as to avoid thread races when summing values. On GPU, atomic sums are used.
+   *
+   * \tparam M  mesh type structure (templated mostly to avoid
+   *            dependency to mesh definitions in lower level code)
+   * \tparam F  lambda function or functor
+   *
+   * \param[in]  m     pointer to  mesh
+   * \param[in]  f     lambda function or functor to execute
+   */
+  /*--------------------------------------------------------------------------*/
 
   template <class M, class F, class... Args>
   auto parallel_for_b_faces(const M* m, F&& f, Args&&... args) {
@@ -1085,6 +1338,16 @@ public:
     };
   }
 
+  /*--------------------------------------------------------------------------*/
+  /* \brief General parallel computation over elements.
+   *
+   * \tparam F  lambda function or functor
+   *
+   * \param[in]  n  number of elements to compute
+   * \param[in]  f  lambda function or functor to execute
+   */
+  /*--------------------------------------------------------------------------*/
+
   template <class F, class... Args>
   auto parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
     bool launched = false;
@@ -1093,6 +1356,18 @@ public:
        || Contexts::parallel_for(n, f, args...), nullptr)...
     };
   }
+
+  /*--------------------------------------------------------------------------*/
+  /* \brief General parallel computation over elements, with a floating-point
+   *        sum reduction.
+   *
+   * \tparam F  lambda function or functor
+   *
+   * \param[in]  n    number of elements to compute
+   * \param[in]  sum  resulting sum
+   * \param[in]  f    lambda function or functor to execute
+   */
+  /*--------------------------------------------------------------------------*/
 
   template <class F, class... Args>
   auto parallel_for_reduce_sum
@@ -1104,6 +1379,56 @@ public:
           nullptr)...
     };
   }
+
+  /*--------------------------------------------------------------------------*/
+  /* \brief General parallel computation over elements, with a
+   *        user-defined reduction.
+   *
+   * \tparam F  lambda function or functor
+   *
+   * \param[in]  n    number of elements to compute
+   * \param[in]  sum  resulting sum
+   * \param[in]  f    lambda function or functor to execute
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <class R, class RO, class F, class... Args>
+  auto parallel_for_reduce
+    (cs_lnum_t n, R& result, RO& reducer, F&& f, Args&&... args) {
+    bool launched = false;
+    [[maybe_unused]] decltype(nullptr) try_execute[] = {
+      (   launched = launched
+       || Contexts::parallel_for_reduce(n, result, reducer, f, args...),
+          nullptr)...
+    };
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Wait (synchronize) until launched computations have finished.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  void
+    wait(void) {
+    bool done = false;
+    [[maybe_unused]] decltype(nullptr) try_execute[] = {
+      (   done = done
+       || Contexts::wait(), nullptr)...
+    };
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*! \brief Return sum type to be used with \ref parallel_for_i_faces.
+   *
+   * \tparam M  mesh type structure (templated mostly to avoid
+   *            dependency to mesh definitions in lower level code)
+   *
+   * \param[in]  m     pointer to  mesh
+   *
+   * \return  assembly sum type that should be used in parallel_for_i_faces
+   */
+  /*--------------------------------------------------------------------------*/
 
   template <class M>
   cs_dispatch_sum_type_t
@@ -1117,6 +1442,18 @@ public:
     };
     return sum_type;
   }
+
+  /*--------------------------------------------------------------------------*/
+  /*! \brief Return sum type to be used with \ref parallel_for_b_faces.
+   *
+   * \tparam M  mesh type structure (templated mostly to avoid
+   *            dependency to mesh definitions in lower level code)
+   *
+   * \param[in]  m     pointer to  mesh
+   *
+   * \return  assembly sum type that should be used in parallel_for_b_faces
+   */
+  /*--------------------------------------------------------------------------*/
 
   template <class M>
   cs_dispatch_sum_type_t

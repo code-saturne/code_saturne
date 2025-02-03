@@ -29,6 +29,7 @@
 #include "math.h"
 #include "stdlib.h"
 
+#include <climits>
 #include <iostream>
 
 /*----------------------------------------------------------------------------
@@ -36,6 +37,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base_accel.h"
+#include "base/cs_math.h"
 
 #include "base/cs_dispatch.h"
 
@@ -54,6 +56,39 @@
 void
 cs_dispatch_test_cuda(void);
 
+struct cs_data_1r_2i {   // struct: class with only public members
+
+  // Members
+  cs_real_t r[1];
+  cs_lnum_t i[2];
+
+  // Constructors
+
+  cs_data_1r_2i(void) {}
+
+  cs_data_1r_2i(cs_real_t a_r0,
+                cs_lnum_t a_i0,
+                cs_lnum_t a_i1)
+    : r{a_r0}, i{a_i0, a_i1} {}
+
+};
+
+struct cs_reduce_sum1r1i_max1i {    // struct: class with only public members
+  using T = cs_data_1r_2i;
+
+  void identity(T &a) const {
+    a.r[0] =  0.;
+    a.i[0] = 0;
+    a.i[1] = -INT_MAX;
+  }
+
+  void combine(T &a, const T &b) const {
+    a.r[0] += b.r[0];
+    a.i[0] += b.i[0];
+    a.i[1] = CS_MAX(a.i[1], b.i[1]);
+  }
+};
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -68,10 +103,10 @@ cs_dispatch_test_cuda(void);
  * Test dispatch class.
  *----------------------------------------------------------------------------*/
 
-void
-cs_dispatch_test(void)
+static void
+_cs_dispatch_test(void)
 {
-  const cs_lnum_t n = 100;
+  const cs_lnum_t n = 100, n_sum = 100;
 
   //cs_dispatch_context ctx(cs_device_context(), {});
   cs_dispatch_context ctx;
@@ -133,26 +168,61 @@ cs_dispatch_test(void)
 
     ctx.wait();
 
+    cs_real_t pi = cs_math_pi;
+
     for (cs_lnum_t ii = 0; ii < n/10; ii++) {
       std::cout << ii << " " << a2[ii][0]
                       << " " << a2[ii][1]
                       << " " << a2[ii][2] << std::endl;
     }
 
+    // reference sum
+    double r_sum = 0;
+    for (cs_lnum_t ii = 0; ii < n_sum; ii++) {
+      cs_real_t x = (ii%10 - 3)*pi;
+      r_sum -= (double)x;
+    };
+
     double s1 = 0;
     ctx.parallel_for_reduce_sum
-      (n, s1, [=] CS_F_HOST_DEVICE (cs_lnum_t ii,
-                                    CS_DISPATCH_SUM_DOUBLE &sum) {
+      (n_sum, s1, [=] CS_F_HOST_DEVICE (cs_lnum_t ii,
+                                        CS_DISPATCH_SUM_DOUBLE &se) {
+        cs_real_t x = (ii%10 - 3)*pi;
 #if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
-      {sum += (double)ii;}
+      {se = (double)x;}
 #else
-      {sum += -(double)ii;}
+      {se = -(double)x;}
 #endif
     });
 
     ctx.wait();
 
-    std::cout << "reduction (sum)" << s1 << std::endl;
+    std::cout << "reduction (sum) " << s1 << " (ref " << r_sum << ")" \
+              << std::endl;
+
+    struct cs_data_1r_2i rd;
+    struct cs_reduce_sum1r1i_max1i reducer;
+
+    ctx.parallel_for_reduce
+      (n_sum, rd, reducer,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t ii, cs_data_1r_2i &res)
+      {
+#if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
+        cs_real_t x = (ii%10 - 3)*pi;
+#else
+        cs_real_t x = -(ii%10 - 3)*pi;
+#endif
+        cs_lnum_t y = (ii%10 + 1);
+
+        res = cs_data_1r_2i(x, y, y);
+        //res.r[0] = x, res.i[0] = y, res.i[1] = y;
+      });
+
+    ctx.wait();
+
+    std::cout << "reduction (mixed) " << rd.r[0] << " " \
+              << rd.i[0] << " " << rd.i[1] << std::endl;
+
   }
 
 #ifdef __NVCC__
@@ -171,7 +241,21 @@ main(int argc, char *argv[])
   CS_UNUSED(argc);
   CS_UNUSED(argv);
 
-  cs_dispatch_test();
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+  cs_glob_n_threads = omp_get_max_threads();
+#endif
+
+#if defined(HAVE_CUDA)
+  cs_base_cuda_select_default_device();
+#endif
+#if defined(HAVE_SYCL)
+  cs_sycl_select_default_device();
+#endif
+#if defined(HAVE_OPENMP_TARGET)
+  cs_omp_target_select_default_device();
+#endif
+
+  _cs_dispatch_test();
 
   exit(EXIT_SUCCESS);
 }
