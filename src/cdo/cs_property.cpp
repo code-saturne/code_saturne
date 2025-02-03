@@ -1203,6 +1203,7 @@ cs_property_add(const char            *name,
     cs_log_printf(CS_LOG_WARNINGS,
                   _(" %s: An existing property has already the name %s.\n"
                     " Stop adding this property.\n"), __func__, name);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     return  pty;
   }
 
@@ -1620,6 +1621,7 @@ cs_property_finalize_setup(void)
       cs_log_printf(CS_LOG_WARNINGS,
                     "\n The property \"%s\" will be defined using its reference"
                     " value.\n", pty->name);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
     }
 
@@ -2656,12 +2658,16 @@ cs_property_def_by_array(cs_property_t *pty,
   cs_flag_t  meta_flag = 0;  /* metadata */
 
   if (z_id == 0 && full_length == false) {
+
     full_length = true;
+
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Invalid settings detected for property \"%s\"\n"
                   "    A full-length array is set since z_id=0.",
                   __func__, pty->name);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
+
   }
 
   cs_xdef_array_context_t input = { .z_id           = z_id,
@@ -2756,12 +2762,16 @@ cs_property_boundary_def_by_array(cs_property_t *pty,
   cs_flag_t  meta_flag = 0;
 
   if (z_id == 0 && full_length == false) {
+
     full_length = true;
+
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Invalid settings detected for property \"%s\"\n"
                   "    A full-length array is set since z_id=0.",
                   __func__, pty->name);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
+
   }
 
   cs_xdef_array_context_t input = { .z_id           = z_id,

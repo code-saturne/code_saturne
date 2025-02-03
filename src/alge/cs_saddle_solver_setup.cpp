@@ -824,11 +824,14 @@ _schur_complement_setup(cs_param_saddle_t  *saddlep)
   ierr = cs_param_sles_setup(false, schur_slesp);
 
   if (ierr < 0) {
+
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Problem detected when settings the system \"%s\""
                   " related to a Schur complement\n",
                   __func__, schur_slesp->name);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
+
     return ierr;
   }
 
@@ -850,6 +853,7 @@ _schur_complement_setup(cs_param_saddle_t  *saddlep)
                       "%s: Problem detected when settings the system \"%s\""
                       " related to the Schur complement (extra system)\n",
                       __func__, xtra_slesp->name);
+        cs_log_printf_flush(CS_LOG_WARNINGS);
 
         return ierr;
       }

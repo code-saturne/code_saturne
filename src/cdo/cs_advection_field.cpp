@@ -469,6 +469,7 @@ cs_advection_field_add(const char                  *name,
                   _(" An existing advection field has already the name %s.\n"
                     " Stop adding this advection field.\n"),
                   name);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     return adv;
   }
 
@@ -1052,13 +1053,16 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t *adv,
     meta_flag |= CS_FLAG_FULL_LOC;
 
   if (z_id == 0 && full_length == false) {
+
     full_length = true;
+
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Invalid settings detected for tha adv. field \"%s\"\n"
                   "    A full-length array is set since z_id=0.",
-                  __func__,
-                  adv->name);
+                  __func__, adv->name);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
+
   }
 
   cs_xdef_array_context_t context;

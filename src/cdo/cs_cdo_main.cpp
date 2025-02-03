@@ -1093,6 +1093,7 @@ cs_cdo_main(cs_domain_t   *domain)
   if (cs_equation_get_n_equations() < 1) {
     cs_log_printf(CS_LOG_WARNINGS,
                   "\n  No equation to solve. Immediate exit\n");
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     return;
   }
 

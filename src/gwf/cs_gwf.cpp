@@ -1077,6 +1077,7 @@ cs_gwf_add_decay_chain(int                       n_tracers,
                     " %s: The decay coefficient for the tracer \"%s\" has a"
                     " negative value (%6.4e).\n",
                     __func__, varname, lambda_vals[i]);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
     }
 

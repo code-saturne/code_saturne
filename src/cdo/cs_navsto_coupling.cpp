@@ -300,6 +300,7 @@ cs_navsto_ac_last_setup(const cs_navsto_param_t     *nsp,
                   "%s: Add a unitary scaling for the grad-div term.\n"
                   "%s: No definition given.",
                   __func__, __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
 
   }
 }

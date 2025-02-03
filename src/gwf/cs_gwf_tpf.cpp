@@ -3151,6 +3151,7 @@ cs_gwf_tpf_compute(const cs_mesh_t           *mesh,
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s: Switch to a Picard algorithm\n", __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
       [[fallthrough]]; /* No break, pass to the following too */
     case CS_PARAM_NL_ALGO_PICARD:
       _compute_plpc_picard(mesh, connect, cdoq, time_step,

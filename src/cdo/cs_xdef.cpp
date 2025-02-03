@@ -747,6 +747,7 @@ cs_xdef_set_input_context(cs_xdef_t       *d,
     cs_log_printf(CS_LOG_WARNINGS,
                   " %s: Setting a free input function is ignored.\n"
                   " The type of definition is not compatible.", __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     break; /* Nothing special to do */
 
   } /* End of switch */
@@ -804,6 +805,7 @@ cs_xdef_set_free_input_function(cs_xdef_t               *d,
     cs_log_printf(CS_LOG_WARNINGS,
                   " %s: Setting a free input function is ignored.\n"
                   " The type of definition is not compatible.", __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     break; /* Nothing special to do */
 
   } /* End of switch */

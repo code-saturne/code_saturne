@@ -2114,6 +2114,7 @@ _try_again_dmumps(cs_sles_mumps_t     *c)
                     "%s: DMUMPS has detected a lack of memory.\n"
                     " A new analysis/factorization cycle is going to start.",
                     __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
       return true;
 
@@ -2136,6 +2137,7 @@ _try_again_dmumps(cs_sles_mumps_t     *c)
                     "%s: DMUMPS has detected a lack of memory.\n"
                     " A new analysis/factorization cycle is going to start.",
                     __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
       return true;
 
@@ -2396,6 +2398,7 @@ _try_again_smumps(cs_sles_mumps_t     *c)
                     "%s: SMUMPS has detected a lack of memory.\n"
                     " A new analysis/factorization cycle is going to start.",
                     __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
       return true;
 
@@ -2418,6 +2421,7 @@ _try_again_smumps(cs_sles_mumps_t     *c)
                     "%s: SMUMPS has detected a lack of memory.\n"
                     " A new analysis/factorization cycle is going to start.",
                     __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
       return true;
 
@@ -3730,6 +3734,7 @@ cs_sles_mumps_solve(void                *context,
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS, "%s: MUMPS Feedback: INFOG(1)=%d\n",
                     __func__, infog1);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
     }
 
   }

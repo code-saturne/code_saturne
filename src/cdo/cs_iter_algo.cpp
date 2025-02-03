@@ -1521,6 +1521,7 @@ cs_iter_algo_check_warning(const char          *func_name,
                   " when solving equation \"%s\"\n"
                   " %s: max_iter=%d; last residual=%5.3e\n",
                   func_name, algo_name, eq_name, func_name, n_iter, res);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
 
   }
 }

@@ -2027,6 +2027,7 @@ cs_cdovb_scaleq_init_context(cs_equation_param_t    *eqp,
           cs_log_printf(CS_LOG_WARNINGS,
                         "%s: A better choice for the reduction of the source"
                         " term is on primal entities.\n\n", __func__);
+          cs_log_printf_flush(CS_LOG_WARNINGS);
         }
 
       } /* Loop on the definitions of source terms */
@@ -4919,6 +4920,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
     cs_log_printf(CS_LOG_WARNINGS,
                   _(" Mesh location type is incompatible with the computation\n"
                     " of the flux across faces.\n"));
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     return;
   }
 

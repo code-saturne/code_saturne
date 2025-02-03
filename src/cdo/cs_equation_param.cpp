@@ -431,6 +431,7 @@ _set_key(cs_equation_param_t *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL", "CS_EQKEY_SOLVER");
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER:
     ierr = cs_param_sles_set_solver(keyval, eqp->sles_param);
@@ -446,6 +447,7 @@ _set_key(cs_equation_param_t *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_ATOL", "CS_EQKEY_SOLVER_ATOL");
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_ATOL:
     eqp->sles_param->cvg_param.atol = atof(keyval);
@@ -455,6 +457,7 @@ _set_key(cs_equation_param_t *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_DTOL", "CS_EQKEY_SOLVER_DTOL");
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_DTOL:
     eqp->sles_param->cvg_param.dtol = atof(keyval);
@@ -464,6 +467,7 @@ _set_key(cs_equation_param_t *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_MAX_ITER", "CS_EQKEY_SOLVER_MAX_ITER");
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_MAX_ITER:
     eqp->sles_param->cvg_param.n_max_iter = atoi(keyval);
@@ -484,6 +488,7 @@ _set_key(cs_equation_param_t *eqp,
                   "  Please replace it with \"%s\"\n",
                   __func__, "CS_EQKEY_ITSOL_EPS", "CS_EQKEY_ITSOL_RTOL",
                   "CS_EQKEY_SOLVER_RTOL");
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_RTOL:
     eqp->sles_param->cvg_param.rtol = atof(keyval);
@@ -496,6 +501,7 @@ _set_key(cs_equation_param_t *eqp,
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_RESNORM_TYPE",
                   "CS_EQKEY_SOLVER_RESNORM_TYPE");
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_RESNORM_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0 ||
@@ -520,6 +526,7 @@ _set_key(cs_equation_param_t *eqp,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS, wkmsg, __func__, eqname,
                   "CS_EQKEY_ITSOL_RESTART", "CS_EQKEY_SOLVER_RESTART");
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     [[fallthrough]]; /* No break wanted */
   case CS_EQKEY_SOLVER_RESTART:
     eqp->sles_param->restart = atoi(keyval);
@@ -1693,6 +1700,8 @@ cs_equation_param_ensure_consistent_settings(cs_equation_param_t *eqp)
                     "%s: Equation \"%s\": Switch to a WBS algo.\n"
                     "%s: Please check your settings.\n",
                     __func__, __func__, eqp->name, __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
+
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_WBS;
 
     }
@@ -1707,6 +1716,8 @@ cs_equation_param_ensure_consistent_settings(cs_equation_param_t *eqp)
                     "%s: Equation \"%s\": Switch to a COST algo.\n"
                     "%s: Please check your settings.\n",
                     __func__, __func__, eqp->name, __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
+
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
 
     }

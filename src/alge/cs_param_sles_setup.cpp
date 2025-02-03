@@ -421,6 +421,7 @@ _set_petsc_mg_levels(const char                        *prefix,
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s: CS_PARAM_AMG_GAMG_L1_JACOBI not set.\n"
                     "  PETSc v3.21 or newer is requested.", __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 #endif
       break;
 
@@ -484,6 +485,7 @@ _set_petsc_mg_levels(const char                        *prefix,
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s: CS_PARAM_AMG_GAMG_L1_JACOBI not set.\n"
                     "  PETSc v3.21 or newer is requested.", __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 #endif
       break;
 
@@ -542,6 +544,7 @@ _set_petsc_mg_levels(const char                        *prefix,
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s: CS_PARAM_AMG_GAMG_L1_JACOBI not set.\n"
                     "  PETSc v3.21 or newer is requested.", __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 #endif
       break;
 
@@ -682,6 +685,7 @@ _petsc_pchmg_hook(const char            *prefix,
                   "%s: HYPRE is not available through PETSc.\n"
                   "%s: Please check your installation.\n",
                   __func__, slesp->name, __func__, __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
   }
 #endif
 
@@ -1080,6 +1084,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
                     " PETSC.\n"
                     " Switch to a block jacobi preconditioner.\n",
                     __func__, slesp->name, prefix);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
       _petsc_bssor_hook(prefix);
 
@@ -1102,6 +1107,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
                     " PETSC.\n"
                     " Switch to a block jacobi preconditioner.\n",
                     __func__, slesp->name, prefix);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
       _petsc_bicc0_hook(prefix);
 
@@ -1144,6 +1150,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
                       " PETSC.\n"
                       " Switch to a block jacobi preconditioner.\n",
                       __func__, slesp->name, prefix);
+        cs_log_printf_flush(CS_LOG_WARNINGS);
 
       }
 
@@ -2329,6 +2336,7 @@ _set_saturne_sles(bool                 use_field_id,
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Switch to the GCR implementation of code_saturne\n",
                   __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     [[fallthrough]]; /* No break, pass to the following too */
   case CS_PARAM_SOLVER_GCR:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
@@ -2396,6 +2404,7 @@ _set_saturne_sles(bool                 use_field_id,
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s: A flexible Krylov method should be used.\n", __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
       break;
 
     default:
@@ -2590,6 +2599,7 @@ _set_petsc_hypre_sles(bool             use_field_id,
                         " %s: System: %s.\n"
                         " Boomer is not available. Switch to GAMG solver.",
                         __func__, slesp->name);
+          cs_log_printf_flush(CS_LOG_WARNINGS);
 
           // Switch a default set of parameters for GAMG
 
@@ -3506,6 +3516,7 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
                     "%s: prefix=\"%s\": Switch to GAMG since BoomerAMG is not"
                     " available.\n",
                     __func__, prefix);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
       _petsc_pcgamg_hook(prefix, slesp);
 
     }

@@ -4072,6 +4072,7 @@ cs_solidification_set_strategy(cs_solidification_strategy_t  strategy)
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Only one strategy is available with the Stefan model.\n",
                   __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     break;
 
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:

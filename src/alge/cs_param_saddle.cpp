@@ -447,6 +447,7 @@ cs_param_saddle_set_restart_range(cs_param_saddle_t  *saddlep,
                   "%s: Restart range not taken into account.\n"
                   "%s: Change the saddle-point solver to do that.",
                   __func__, __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     break;
   }
 }
@@ -532,6 +533,7 @@ cs_param_saddle_set_augmentation_coef(cs_param_saddle_t  *saddlep,
                   "%s: Augmentation coef. not taken into account.\n"
                   "%s: Saddle-point solver not relevant.",
                   __func__, __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     break;
   }
 }

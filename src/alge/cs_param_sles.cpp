@@ -823,6 +823,7 @@ cs_param_sles_set_precond(const char       *keyval,
                     "%s() SLES \"%s\"\n"
                     " >> Switch to a flexible variant for CG.\n",
                     __func__, sles_name);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
       slesp->solver = CS_PARAM_SOLVER_FCG;
       break;
@@ -836,6 +837,7 @@ cs_param_sles_set_precond(const char       *keyval,
                     "%s() SLES \"%s\"\n"
                     " >> Switch to a flexible variant: GCR solver.\n",
                     __func__, sles_name);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
 
       slesp->solver = CS_PARAM_SOLVER_GCR;
       break;
@@ -910,6 +912,7 @@ cs_param_sles_set_precond(const char       *keyval,
                       "%s(): SLES \"%s\". Switch to HYPRE.\n"
                       "No block preconditioner will be used.",
                       __func__, sles_name);
+        cs_log_printf_flush(CS_LOG_WARNINGS);
 
       }
       break;
@@ -1269,6 +1272,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
                   "%s: Undefined AMG type.\n"
                   "%s: Set AMG type to \"CS_PARAM_AMG_NONE\".",
                   __func__, __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
 
   }
 
@@ -1985,6 +1989,7 @@ cs_param_sles_check_class(cs_param_solver_class_t  wanted_class)
       cs_log_printf(CS_LOG_WARNINGS,
                     "%s: Switch to PETSc library since Hypre is not available",
                     __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
       return CS_PARAM_SOLVER_CLASS_PETSC; /* Switch to PETSc */
     }
 #else
@@ -2011,6 +2016,7 @@ cs_param_sles_check_class(cs_param_solver_class_t  wanted_class)
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Switch to PETSc library since MUMPS is not available as"
                   " a stand-alone library\n", __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
     return CS_PARAM_SOLVER_CLASS_PETSC;
 #else
     return CS_PARAM_N_SOLVER_CLASSES;
