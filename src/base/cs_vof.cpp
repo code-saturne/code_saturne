@@ -425,8 +425,10 @@ _smoothe(const cs_mesh_t              *m,
       = visc_f * (  cs_math_3_dot_product(diipf[f_id], grad[ii])
                   - cs_math_3_dot_product(djjpf[f_id], grad[jj]));
 
-    cs_dispatch_sum(&smbdp[ii], -reconstr, i_sum_type);
-    cs_dispatch_sum(&smbdp[jj], reconstr, i_sum_type);
+    if (ii < n_cells)
+      cs_dispatch_sum(&smbdp[ii], -reconstr, i_sum_type);
+    if (jj < n_cells)
+      cs_dispatch_sum(&smbdp[jj], reconstr, i_sum_type);
   });
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
