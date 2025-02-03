@@ -1208,7 +1208,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
                 " Please check your settings.", __func__, sles_name);
 
     slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
     slesp->need_flexible = true;
 
     cs_param_sles_gamg_reset(slesp);
@@ -1226,7 +1225,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
                 " Please check your settings.", __func__, sles_name);
 
     slesp->amg_type      = CS_PARAM_AMG_PETSC_GAMG_W;
-    slesp->solver_class  = CS_PARAM_SOLVER_CLASS_PETSC;
     slesp->need_flexible = true;
 
     cs_param_sles_gamg_reset(slesp);
@@ -1649,6 +1647,13 @@ cs_param_sles_gamg_reset(cs_param_sles_t  *slesp)
 
   if (slesp->context_param != nullptr)
     CS_FREE(slesp->context_param);
+
+  slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+  slesp->precond = CS_PARAM_PRECOND_AMG;
+
+  if (slesp->amg_type != CS_PARAM_AMG_PETSC_GAMG_V &&
+      slesp->amg_type != CS_PARAM_AMG_PETSC_GAMG_W)
+    slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
 
   slesp->context_param = cs_param_amg_gamg_create();
 }
