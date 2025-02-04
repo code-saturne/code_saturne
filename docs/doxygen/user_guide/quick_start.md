@@ -53,7 +53,7 @@ code_saturne create -s T_JUNCTION
 ```
 The mesh files should be copied in the `MESH` directory (though they may also be
 selected from another directory  (see [sec:prg_stepbystepcalculation])
-and the C and Fortran user files necessary for the calculation in the directory
+and the C++ or C user files necessary for the calculation in the directory
 `CASE1/SRC`.  Finally, the calculation data file `setup.xml` managed  by the GUI
 should be copied to the `CASE1/DATA` directory.
 Once these steps are completed, the user should go in the directory `CASE1/DATA` and run

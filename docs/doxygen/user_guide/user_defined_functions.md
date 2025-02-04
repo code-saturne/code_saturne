@@ -56,14 +56,7 @@ Function and file names
 -----------------------
 
 In most cases, a given user function reference may be found in the C++
-(or C) file of the same name.
-
-Fortran versions of some commonly used user-defined functions are still
-available for compatibility, but deprecated, and not documented here
-any more. When this is the case, the Fortran version is called first, so the
-C/C++ function has the "last word". For example, `cs_user_extra_operations`
-may be found in the `cs_user_extra_operations.c` file, while
-`cs_f_user_extra_operations` is in `cs_user_extra_operations.f90`.
+file of the same name.
 
 Callback functions  {#cs_ug_udf_intro_callback}
 ------------------

@@ -51,9 +51,7 @@ Low-level user-defined functions for boundary conditions
 ========================================================
 
 For definitions using the legacy finite-volume scheme (i.e. not using CDO),
-the \ref cs_user_boundary_conditions (in C) may be used. The Fortran equivalent,
-\ref cs_f_user_boundary_conditions may still be used but is deprecated, and not
-described here (please refer to the documentation from previous versions if needed).
+the \ref cs_user_boundary_conditions (in C) may be used.
 
 For more details about the treatment of boundary conditions, the user
 may refer to the theoretical and computer documentation [@theory] of the

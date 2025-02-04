@@ -135,7 +135,7 @@ The following coding rules are strongly recommended:
 
 - Usage of global variables must be kept to a minimum, though such
   variables may be useful to maintain state or references to mesh or
-  variable structures in C code callable by Fortran code.
+  variable structures.
   If a global variable is only needed inside a single file, it should
   be declared `static`. It it is needed in other files, then it must
   instead  be declared `extern`' in the matching header file.
@@ -245,14 +245,14 @@ The following rules should be followed:
 
 - Index arrays used with *0* to *n-1* (zero-based) numbering should
   be named using a `idx_` or `index_` prefix or suffix, while
-  similar arrays using a *1* to *n* numbering (usually those that may be
-  also used in Fortran code) should be named using a `pos_`
+  similar arrays using a *1* to *n* numbering (usually those that were
+  also used in prior Fortran code) are named using a `pos_`
   prefix or suffix.
 
 - In a similar manner, element identifiers should in general use
   a *0* to *n-1* (zero-based) numbering and be named using a `id_` prefix
   or suffix, while identifiers using a *1* to *n* numbering (usually those
-  that may be also used in Fortran code) should be named using a `num_`
+  that were be also used in Fortran code) are named using a `num_`
   prefix or suffix.
 
 Naming of enumerations
@@ -359,36 +359,6 @@ C++ coding style
 Most rules applicable to C apply here also. Note that standard C++ stream output
 (using `std::cout` ) may be practical for temporary debugging code, but
 should not be used instead of `bft_printf` or `cs_log` for production code.
-
-
-Fortran coding style
-====================
-
-Migration from Fortran to C
----------------------------
-
-It is imperative that new code be written in C or C++ rather than in Fortran.
-Fortran continues to be one of the best supported languages in HPC
-(with C++ and C), and has some interesting features such as Co-Array Fortran
-(starting with in Fortran 2008), but...
-
-- Many free tools were available for Fortran 77, few have been extended
-  to modern Fortran.
-- Available tools are often linked to a few major editors (Intel, NVIDIA, ...)
-- No or few "community" tools aside from PHOTRAN (for Eclipse)
-  - sign of a more reduced user base;
-  - compilers are not as user tested as for C and C++;
-- This is one of the main reasons for focusing more on C, less on Fortran.
-  - The other being that many features we need are available in Fortran compilers
-    only since 5 or so years, while equivalent (less complete, but sufficient)
-    features existed in C 20 years ago (i.e. Fortran 95 and 2003 were too little,
-    too late).
-- The lack of local variable scopes in Fortran makes it much more bug-prone
-  than C when using OpenMP loop-based constructs.
-- C has its limitations, but is in general simpler to code for, and can
-  interoperate easily with C++.
-- Performance of C and Fortran is similar when both are used correctly,
-  so is not a discriminating factor.
 
 Python coding style
 ===================

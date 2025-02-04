@@ -63,7 +63,7 @@ Every calculation directory contains:
 
 * A `DATA` directory for the setup data
   (xml file from the GUI, input profiles, thermo-chemical data, ...).
-* A `SRC` directory for user-defined functions (C or Fortran)
+* A `SRC` directory for user-defined functions (C++ or C)
 * A `RESU` directory for the computation results
 
 To improve the calculation traceability, the files and directories

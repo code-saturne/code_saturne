@@ -121,8 +121,8 @@ int limiter_choice;
 
 /*!
   \var scalar_id
-  Matching scalar id (inverse Fortran <tt> isca(iscal) </tt>),
-  or -1 if the field does not represent a solved scalar type variable.
+  Matching scalar id, or -1 if the field does not represent
+  a solved scalar type variable.
  */
 int scalar_id;
 

@@ -185,18 +185,8 @@ double b[] = {1, 2, 3, 4};
 double matrix[3][4] = {{1., 0., 0., 0.},
                        {0., 1., 0., 0.},
                        {0., 0., 1., 0.}};
-static int call_id = 0; /* static C equivalent
-                           to Fortran save */
+static int call_id = 0;
 const double pi = 4.*atan(1.), e = exp(1);
-```
-
-\remark
-In Fortran, initialization with declaration implies *save* attribute, so
-the following are equivalent:
-
-```{.f90}
-integer :: i = 4
-integer, save :: i = 4
 ```
 
 C Types and Structures
@@ -340,7 +330,7 @@ C storage class specifiers
 A variable declaration can be combined with a \emph{storage class specifier}.
 
 - `static` indicates the variable is "permanent":
-   - Its values are saved from one call to the next, like *save* in Fortran
+   - Its values are saved from one call to the next.
 - `extern` indicates we reference a variable, but its memory location is not
    defined here; for example:
    - `int option = 2;` in a _single_ (owning) `.c` file.
@@ -386,8 +376,7 @@ const double *const c;  /* can modify neither pointer
     - There may still be relics of the first syntax in code_saturne, especially
       in `src/gui`; choose more recent code examples, such as \ref cs_field.c;
   - It is strongly recommended to use `const` as much as possible
-  - It is more or less equivalent to `intent(in)` in Fortran, and can allow
-    detecting unintentional variable modifications at compile time.
+  - It can allow detecting unintentional variable modifications at compile time.
 
 ### C restrict attribute
 
