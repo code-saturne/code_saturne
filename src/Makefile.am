@@ -22,15 +22,11 @@
 
 #-------------------------------------------------------------------------------
 
-SUBDIRS = . bft
-
-if HAVE_BACKEND
-SUBDIRS += \
-fvm gui \
+SUBDIRS = . \
+bft fvm gui \
 base cdo pprt alge mesh turb \
 atmo cfbl cogz comb ctwr elec gwf lagr rayt \
 user user_examples meg apps
-endif
 
 # General flags
 
@@ -43,8 +39,6 @@ AM_LDFLAGS = -no-undefined
 # Library source files
 
 noinst_LIBRARIES = libcsmodules.a
-
-if HAVE_BACKEND
 
 # Public header files (to be installed)
 
@@ -168,5 +162,3 @@ uninstall-local:
 	echo " ( cd '$(DESTDIR)$(pkgincludedir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(pkgincludedir)" && rm -f $$files
 	rmdir $(pkgincludedir) || exit 0
-
-endif
