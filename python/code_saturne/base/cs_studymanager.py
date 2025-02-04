@@ -339,15 +339,16 @@ def run_studymanager(pkg, options):
         exe = exe + ".com"
     exe = enquote_arg(exe)
 
-    dif = pkg.get_io_dump()
+    dif = None
 
-    for p in exe, dif:
-        if not os.path.isfile(p):
-            print("Error: executable %s not found." % p)
-            if not sys.platform.startswith('win'):
-                return 1
-
-    dif += " -d"
+    if options.compare:
+        dif = pkg.get_io_dump()
+        for p in exe, dif:
+            if not os.path.isfile(p):
+                print("Error: executable %s not found." % p)
+                if not sys.platform.startswith('win'):
+                    return 1
+        dif += " -d"
 
     # Analyse slurm options
     slurm_submission = False
@@ -390,7 +391,8 @@ def run_studymanager(pkg, options):
     studies.reporting(" Code name:         " + pkg.name, report=report_in_file)
     studies.reporting(" Kernel version:    " + pkg.version, report=report_in_file)
     studies.reporting(" Install directory: " + pkg.get_dir('exec_prefix'), report=report_in_file)
-    studies.reporting(" File dump:         " + dif, report=report_in_file)
+    if dif:
+        studies.reporting(" File dump:         " + dif, report=report_in_file)
 
     studies.reporting("\n Informations:", report=report_in_file)
     studies.reporting(" -------------\n", report=report_in_file)
