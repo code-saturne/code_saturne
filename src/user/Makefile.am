@@ -39,20 +39,7 @@ $(MPI_CPPFLAGS)
 
 AM_CXXFLAGS = $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
-
 AM_LDFLAGS =
-
-# Add cs_user_modules file to distribution as it is not automatically accounted
-# for by automake
-
-EXTRA_DIST = cs_user_modules.f90 \
-cs_user_boundary_conditions.f90 \
-cs_user_extra_operations.f90 \
-cs_user_initialization.f90  \
-cs_user_parameters.f90
 
 # Library source files
 
@@ -90,46 +77,13 @@ cs_user_turbomachinery.cpp \
 cs_user_wall_condensation.cpp \
 cs_user_zones.cpp
 
-# Special treatment for files existing both in f90 and C:
-# Force the definition of FCCOMPILE here since officially there are no more
-# f90 files in the user folder.
-# Once all f90 cs_user files are deleted, this line could be removed !
-FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
-
-cs_user_f_boundary_conditions = $(top_srcdir)/src/user/cs_user_boundary_conditions.f90
-
-cs_f_user_boundary_conditions.$(OBJEXT): $(cs_user_f_boundary_conditions)
-	$(FCCOMPILE) -c -o cs_f_user_boundary_conditions.$(OBJEXT)  $(cs_user_f_boundary_conditions)
-
-cs_user_f_parameters = $(top_srcdir)/src/user/cs_user_parameters.f90
-
-cs_f_user_parameters.$(OBJEXT): $(cs_user_f_parameters)
-	$(FCCOMPILE) -c -o cs_f_user_parameters.$(OBJEXT)  $(cs_user_f_parameters)
-
-cs_user_f_extra_operations = $(top_srcdir)/src/user/cs_user_extra_operations.f90
-
-cs_f_user_extra_operations.$(OBJEXT): $(cs_user_f_extra_operations)
-	$(FCCOMPILE) -c -o cs_f_user_extra_operations.$(OBJEXT)  $(cs_user_f_extra_operations)
-
-cs_user_f_initialization = $(top_srcdir)/src/user/cs_user_initialization.f90
-
-cs_f_user_initialization.$(OBJEXT): $(cs_user_f_initialization)
-	$(FCCOMPILE) -c -o cs_f_user_initialization.$(OBJEXT)  $(cs_user_f_initialization)
-
 noinst_LIBRARIES = libcsuser.a
 libcsuser_a_SOURCES = $(userfiles)
-libcsuser_a_LIBADD = cs_f_user_parameters.$(OBJEXT) cs_f_user_extra_operations.$(OBJEXT) \
-cs_f_user_initialization.$(OBJEXT) cs_f_user_boundary_conditions.$(OBJEXT)
 
 userdir = $(pkgdatadir)/user_sources/REFERENCE
-user_DATA = $(userfiles) cs_user_modules.f90 \
-cs_user_boundary_conditions.f90 \
-cs_user_parameters.f90 \
-cs_user_extra_operations.f90 \
-cs_user_initialization.f90
+user_DATA = $(userfiles)
 
 clean-local:
-	-rm -f *__genmod.f90 *__genmod.mod
 	-rm -rf .deps
 
 if HAVE_CUDA_CPP
@@ -147,13 +101,5 @@ install-data-hook:
 	for f in $${c_user_files}; do \
 	  file=`basename "$${f}"` && \
 	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user/$${file}" > "$(DESTDIR)$(userdir)/$${file}"; \
-	done ; \
-	cd $(DESTDIR)$(userdir) && \
-	f90_user_files=`ls *.f90 2>/dev/null`; \
-	stubvers="^\!VERS\n"; \
-	version1="\!                      code_saturne version $(cs_version_short)\n"; \
-	version2="\!                      ------------------------"; \
-	for file in $${f90_user_files}; do \
-	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" > "$${file}.tmp" && \
-	  mv "$${file}.tmp" "$${file}"; \
 	done
+

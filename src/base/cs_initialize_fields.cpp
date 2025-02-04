@@ -101,9 +101,6 @@ cs_f_ppiniv0(void);
 void
 cs_f_d3pini1(void);
 
-void
-cs_f_user_initialization_wrapper(cs_real_t  dt[]);
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -516,13 +513,6 @@ cs_initialize_fields_stage_1(void)
      --------------------------- */
 
   cs_gui_initial_conditions();
-
-  {
-    cs_real_t *dt_val = nullptr;
-    if (CS_F_(dt) != nullptr)
-      dt_val = CS_F_(dt)->val;
-    cs_f_user_initialization_wrapper(dt_val);
-  }
   cs_user_initialization(cs_glob_domain);
 
   /* Second stage of initialization for specific physical models

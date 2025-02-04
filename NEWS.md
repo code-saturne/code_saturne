@@ -1,6 +1,12 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### User changes:
+
+- Removed last remaining Fortran user-defined functions
+  (cs_f_user_boundary_conditions, cs_f_user_extra_operations,
+  cs_user_f_initialization, usppmo, usipsu, and usipes).
+
 Release 9.0.0 (unreleased)
 --------------------------
 

@@ -132,9 +132,6 @@ void
 cs_f_indsui(void);
 
 void
-cs_f_usppmo(void);
-
-void
 cs_f_fldvar(void);
 
 void
@@ -148,9 +145,6 @@ cs_f_solcat(int iappel);
 
 void
 cs_f_fldprp(void);
-
-void
-cs_f_usipsu(int *nmodpp);
 
 void
 cs_f_iniini(void);
@@ -572,7 +566,8 @@ _create_variable_fields(void)
     /* epsilon given by an algebraic relation in LES with transport of tau_SGS */
     if (model != CS_TURB_LES_TAUSGS)
       cs_field_pointer_map(CS_ENUMF_(eps),
-                           _add_variable_field("epsilon", "Turb Dissipation", 1));
+                           _add_variable_field("epsilon",
+                                               "Turb Dissipation", 1));
 
     if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_pointer_map(CS_ENUMF_(alp_bl),
@@ -2592,10 +2587,7 @@ _read_specific_physics_data(void)
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_user
-(
-  int   *nmodpp
-)
+_init_user(void)
 {
   const int *pm_flag = cs_glob_physical_model_flag;
   cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
@@ -2609,13 +2601,9 @@ _init_user
   /* Flow model selection through GUI */
   cs_gui_physical_model_select();
 
-  /* Flow model selection through user Fortran subroutine */
-  /* Warning : This is a user function maybe no need to translate it...
-   * It is only called in the case 69_PARISFOG */
-  cs_f_usppmo();
+  /* User-defined function only for wall condensation */
   cs_wall_condensation_set_onoff_state(icondb, condv);
 
-  /* Other model selection through GUI */
   /* ALE parameters */
   cs_gui_ale_params();
 
@@ -2789,7 +2777,6 @@ _init_user
 
 
   /* User functions */
-  cs_f_usipsu(nmodpp);
   cs_user_parameters(cs_glob_domain);
 
   /* If time step is local or variable, pass information to C layer, as it
@@ -3603,7 +3590,7 @@ cs_setup(void)
   }
 
   /* User input, variable definitions */
-  _init_user(&nmodpp);
+  _init_user();
 
   _init_physical_models_1();
 
@@ -3657,9 +3644,6 @@ cs_setup(void)
   cs_gui_output();
 
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
-    /* Warning: Used in 0 validation cases ? */
-    cs_f_usipes(&nmodpp);
-
     /* Avoid a second spurious call to this function
      * called in the C part if CDO is activated */
     if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF) {

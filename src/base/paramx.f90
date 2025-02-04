@@ -255,22 +255,22 @@ module paramx
   ! command would be a possibility, but a simpler compiled source-only solution
   ! would be preferred.
 
-  integer :: cs_f_user_head_losses
+  integer :: cs_f_user_head_losses, cs_f_user_boundary_conditions,    &
+             cs_f_user_extra_operations, cs_user_f_initialization
 
   integer :: cs_user_boundary_conditions, cs_user_cooling_towers,     &
-             cs_user_combustion,                                      &
-             cs_user_extra_operations, cs_user_initialization,        &
-             cs_user_mass_source_terms,                               &
+             cs_user_combustion, cs_user_extra_operations,            &
+             cs_user_initialization, cs_user_mass_source_terms,       &
              cs_user_metal_structures_source_terms,                   &
              cs_user_parameters, cs_user_physical_properties,         &
              cs_user_turbulence_source_terms,                         &
-             cs_user_turbulence_source_terms2,                        &
-             cs_user_atmo_soil, cs_user_physical_properties_smagorinsky_c
-
+             cs_user_turbulence_source_terms2, cs_user_atmo_soil,     &
+             cs_user_physical_properties_smagorinsky_c
 
   integer :: usalcl, usatdv, usati1, usatph, usatsoil,                &
              uscfx1, uscfx2, usipph, ushist,                          &
              usphyv, usporo, ussmag, usstr1, usstr2,                  &
-             ustsnv, ustssc, ustsvv, usthht, usvosy, usvpst, usvist
+             ustsnv, ustssc, ustsvv, usthht, usvosy, usvpst, usvist,  &
+             usppmo, usipsu, usipes
 
 end module paramx

@@ -133,9 +133,6 @@ void
 cs_f_atmsol(void);
 
 void
-cs_f_user_extra_operations_wrapper(cs_real_t dt[]);
-
-void
 cs_f_finalize_meteo(void);
 
 void
@@ -761,8 +758,6 @@ cs_time_stepping(void)
 
       cs_gui_balance_by_zone();
       cs_gui_pressure_drop_by_zone();
-
-      cs_f_user_extra_operations_wrapper(CS_F_(dt)->val);
 
       cs_user_extra_operations(cs_glob_domain);
 

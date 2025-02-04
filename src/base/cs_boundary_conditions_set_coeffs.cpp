@@ -130,11 +130,6 @@ void
 cs_f_pptycl(bool        init,
             int        *itypfb);
 
-void
-cs_f_user_boundary_conditions_wrapper(int              itypfb[],
-                                      const int        izfppp[],
-                                      cs_real_t        dt[]);
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -935,9 +930,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   /* User-defined functions
      ---------------------- */
-
-  cs_f_user_boundary_conditions_wrapper
-    (bc_type, cs_glob_bc_pm_info->izfppp, dt);
 
   cs_user_boundary_conditions(cs_glob_domain, bc_type);
 
@@ -3742,9 +3734,6 @@ cs_boundary_conditions_set_coeffs_init(void)
   cs_boundary_conditions_compute(bc_type);
 
   /* User-defined function settings */
-
-  cs_f_user_boundary_conditions_wrapper
-    (bc_type, cs_glob_bc_pm_info->izfppp, dt);
 
   cs_user_boundary_conditions(cs_glob_domain, bc_type);
 
