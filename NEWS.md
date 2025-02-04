@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 9.0.0 (unreleased)
+--------------------------
+
 ### User changes:
 
 - Add a predefined function to compute vorticity based on a velocity
