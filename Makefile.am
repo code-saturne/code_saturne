@@ -22,20 +22,27 @@
 
 #-------------------------------------------------------------------------------
 
-if HAVE_FRONTEND
-PREPRO = preprocessor
-DOCS = docs
-endif
-
-if HAVE_BACKEND
-TSTS = tests
-endif
+SUBDIRS = .
 
 if HAVE_INTERNAL_PLE
 PLE = libple
 endif
 
-SUBDIRS = . $(PLE) $(PREPRO) external src python $(NEPTUNE_CFD) $(DOCS) $(TSTS)
+if HAVE_BACKEND
+TSTS = tests
+SUBDIRS += $(PLE)
+endif
+
+if HAVE_FRONTEND
+SUBDIRS += preprocessor
+DOCS = docs
+endif
+
+if HAVE_BACKEND
+SUBDIRS += external src
+endif
+
+SUBDIRS +=  python $(NEPTUNE_CFD) $(DOCS) $(TSTS)
 
 AUX_DIST =
 
