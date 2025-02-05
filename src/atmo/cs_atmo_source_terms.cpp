@@ -629,14 +629,17 @@ cs_atmo_scalar_source_term(int              f_id,
   const cs_field_t *fld = cs_field_by_id(f_id);
 
   const cs_real_t *cpro_met_p = nullptr;
+  const cs_real_t *cpro_tempc = nullptr;
   const cs_real_t *cpro_rho   = CS_F_(rho)->val;
-  const cs_real_t *cpro_tempc = cs_field_by_name_try("real_temperature")->val;
 
   const cs_real_t cp0 = phys_pro->cp0;
   const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
   if (at_opt->meteo_profile > 1)
     cpro_met_p = cs_field_by_name("meteo_pressure")->val;
+
+  if (cs_field_by_name_try("real_temperature") != nullptr)
+    cpro_tempc = cs_field_by_name_try("real_temperature")->val;
 
   /*-------------------------------------------------------------------
    * Taking into account radiative forcing for the 1D radiative module
