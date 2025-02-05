@@ -87,6 +87,18 @@ void
 cs_atmo_scalar_source_term(int              f_id,
                            cs_real_t        exp_st[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Additional right-hand side source terms
+ *         for momentum equation in case of free inlet
+ *
+ * \param[in,out] exp_st        Explicit source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[]);
+
 
 /*----------------------------------------------------------------------------*/
 

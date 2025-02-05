@@ -119,16 +119,6 @@ cs_atmo_chem_source_terms(int         iscal,
                           cs_real_t   st_imp[]);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Additional right-hand side source terms for momentum equation in case
- *        of free inlet
- * \param[in]   st_exp          explicit part of the momentum source term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_at_source_term_for_inlet(cs_real_3_t   st_exp[]);
-
-/*----------------------------------------------------------------------------*/
 /*! \brief  Prepare for the cressman interpolation of the variables
  *
  * \param[in]   the_time          current time

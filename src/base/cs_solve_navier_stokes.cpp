@@ -48,6 +48,7 @@
 #include "base/cs_assert.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_at_data_assim.h"
+#include "atmo/cs_atmo_source_terms.h"
 #include "alge/cs_bad_cells_regularisation.h"
 #include "base/cs_base_accel.h"
 #include "alge/cs_balance.h"
@@ -2220,7 +2221,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                                    (cs_real_t *)tsimp);
 
     if (cs_glob_atmo_option->open_bcs_treatment > 0)
-      cs_at_source_term_for_inlet(tsexp);
+      cs_atmo_source_term_for_inlet(tsexp);
   }
 
   /* Coupling between two code_saturne instances */

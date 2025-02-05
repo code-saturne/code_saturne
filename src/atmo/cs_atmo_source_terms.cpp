@@ -65,6 +65,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -338,6 +339,7 @@ _compute_gradient(const cs_mesh_t                *m,
   BFT_MALLOC(sed_vel, n_cells, cs_real_t);
 
   //taup g, with taup = cuning * d^2 * rhop / (18 * mu) ...
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     sed_vel[c_id] = 1.19e8 * pow(r3[c_id], 2.0);
 
@@ -408,6 +410,7 @@ _compute_gradient(const cs_mesh_t                *m,
 
   _gradient_homogeneous_neumann_sca(local_field, grad1);
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     local_field[c_id] = cpro_rho[c_id]               // mass density of the air kg/m3
                       * cvar_ntdrp[c_id]             // total liquid water content kg/kg
@@ -672,12 +675,13 @@ cs_atmo_scalar_source_term(int              f_id,
        *  nucleation model for humid atmosphere */
       if (cs_field_by_name_try("radiative_cooling") != nullptr) {
         cs_real_t *cpro_rad_cool = cs_field_by_name("radiative_cooling")->val;
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           cpro_rad_cool[c_id] = ray3Dst[c_id] - ray3Di[c_id];
       }
 
       // Explicit source term for the thermal scalar equation:
-
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t cp_rho = cp0*cell_vol[c_id]*cpro_rho[c_id];
        // Conversion Temperature -> Potential Temperature
@@ -765,6 +769,7 @@ cs_atmo_scalar_source_term(int              f_id,
     // For ym water
     else if (fld == cs_field_by_name("ym_water")) {
       if (qliqmax > 1e-8) {
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           st_exp[c_id] -= cell_vol[c_id]*grad1[c_id][2];
       }
@@ -774,6 +779,7 @@ cs_atmo_scalar_source_term(int              f_id,
     // For Number of droplets
     else if (fld == cs_field_by_name("number_of_droplets")) {
       if (qliqmax > 1e-8) {
+#       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           st_exp[c_id] += cell_vol[c_id]*grad2[c_id][2];
       }
@@ -790,5 +796,270 @@ cs_atmo_scalar_source_term(int              f_id,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Additional right-hand side source terms
+ *         for momentum equation in case of free inlet
+ *
+ * \param[in,out] exp_st        Explicit source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *cell_vol = mq->cell_vol;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
+
+  const cs_real_t *dt = CS_F_(dt)->val;
+  const cs_real_t *cpro_rho = CS_F_(rho)->val;
+  const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+
+  cs_real_t *tot_vol = nullptr;
+  cs_real_3_t *mom_a = nullptr;
+  cs_real_3_t *mom_met_a = nullptr;
+
+  cs_real_3_t *cpro_momst
+    = (cs_real_3_t *)cs_field_by_name("momentum_source_terms")->val;
+
+  // Bulk momentum
+  int n_level = 1;
+  // Variable in z
+  if (at_opt->open_bcs_treatment != 1)
+    n_level = fmax(at_opt->met_1d_nlevels_d, 1);
+
+  CS_MALLOC(tot_vol, n_level, cs_real_t);
+  CS_MALLOC(mom_a, n_level, cs_real_3_t);
+  CS_MALLOC(mom_met_a, n_level, cs_real_3_t);
+
+  cs_real_3_t *mom = at_opt->mom_cs;
+  cs_real_3_t *mom_met = at_opt->mom_met;
+
+  const cs_real_t uref = cs_glob_turb_ref_values->uref;
+
+  // Save previous values
+  cs_array_copy<cs_real_t>(3*n_level,
+                           (const cs_real_t *)(mom),
+                           (cs_real_t *)(mom_a));
+
+  cs_array_copy<cs_real_t>(3*n_level,
+                           (const cs_real_t *)(mom_met),
+                           (cs_real_t *)(mom_met_a));
+
+  for (int l_id =0; l_id < n_level; l_id++) {
+    for (int ii = 0; ii < 3; ii++) {
+      mom[l_id][ii] = 0.0;
+      mom_met[l_id][ii] = 0.0;
+    }
+    tot_vol[l_id] = 0.0;
+  }
+
+  /* Computation of the target momentum bulk
+     using the interpolated mean velocity field */
+
+  cs_real_3_t *cpro_vel_target = nullptr;
+  if (cs_field_by_name_try("meteo_velocity") != nullptr)
+    cpro_vel_target
+      = (cs_real_3_t *)cs_field_by_name_try("meteo_velocity")->val;
+  else
+    CS_MALLOC(cpro_vel_target, n_cells_ext, cs_real_3_t);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    int l_id = 0;
+    cs_real_t xuent = 0.0, xvent = 0.0;
+    const cs_real_t zent = cell_cen[c_id][2];
+
+    // Get level id
+    if (at_opt->met_1d_nlevels_d > 0) {
+      cs_real_t dist_min = fabs(zent - at_opt->z_dyn_met[0]);
+      for (int id = 1; id < n_level; id++) {
+        const cs_real_t dist_ent = fabs(zent -at_opt->z_dyn_met[id]);
+        if (dist_ent >= dist_min)
+          continue;
+        l_id = id;
+        dist_min = dist_ent;
+      }
+    }
+
+    if (at_opt->theo_interp == 1 || at_opt->meteo_profile > 1) {
+      xuent = cpro_vel_target[c_id][0];
+      xvent = cpro_vel_target[c_id][1];
+    }
+    else {
+      xuent = cs_intprf(at_opt->met_1d_nlevels_d,
+                        at_opt->met_1d_ntimes,
+                        at_opt->z_dyn_met,
+                        at_opt->time_met,
+                        at_opt->u_met,
+                        zent,
+                        cs_glob_time_step->t_cur);
+
+      xvent = cs_intprf(at_opt->met_1d_nlevels_d,
+                        at_opt->met_1d_ntimes,
+                        at_opt->z_dyn_met,
+                        at_opt->time_met,
+                        at_opt->v_met,
+                        zent,
+                        cs_glob_time_step->t_cur);
+    }
+
+    tot_vol[l_id] += cell_vol[c_id];
+    mom_met[l_id][0] += cpro_rho[c_id] * cell_vol[c_id] * xuent;
+    mom_met[l_id][1] += cpro_rho[c_id] * cell_vol[c_id] * xvent;
+
+  }
+
+  if (cs_field_by_name_try("meteo_velocity") == nullptr)
+    CS_FREE(cpro_vel_target);
+
+  cs_parall_sum(n_level, CS_REAL_TYPE, tot_vol);
+  cs_parall_sum(3*n_level, CS_REAL_TYPE, (cs_real_t *)(mom_met));
+
+  for (int l_id = 0; l_id < n_level; l_id++) {
+    if (tot_vol[l_id] <= 0.0)
+      continue;
+    for (int ii = 0; ii < 3; ii++)
+      mom_met[l_id][ii] = mom_met[l_id][ii]/tot_vol[l_id];
+  }
+
+  /* Computation of the momentum using the computed velocity
+     ------------------------------------------------------- */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    int l_id = 0;
+    const cs_real_t zent = cell_cen[c_id][2];
+
+    // Get level id
+    if (at_opt->met_1d_nlevels_d > 0) {
+      cs_real_t dist_min = fabs(zent - at_opt->z_dyn_met[0]);
+      for (int id = 1; id < n_level; id++) {
+        const cs_real_t dist_ent = fabs(zent - at_opt->z_dyn_met[id]);
+        if (dist_ent >= dist_min)
+          continue;
+        l_id = id;
+        dist_min = dist_ent;
+      }
+    }
+
+    for (int ii = 0; ii < 3; ii++)
+      mom[l_id][ii] += cpro_rho[c_id] * cell_vol[c_id] *cvar_vel[c_id][ii];
+  }
+
+  cs_parall_sum(3*n_level, CS_REAL_TYPE, (cs_real_t *)mom);
+
+  for (int l_id = 0; l_id < n_level; l_id++) {
+    if (tot_vol[l_id] <= 0.0)
+      continue;
+    for (int ii = 0; ii < 3; ii++)
+      mom[l_id][ii] = mom[l_id][ii]/tot_vol[l_id];
+  }
+
+  CS_FREE(tot_vol);
+
+  /* Computation of the momentum source term
+     --------------------------------------- */
+
+  // First pass, reset previous values
+  if (   cs_glob_time_step->nt_cur < 2
+      || cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
+    cs_array_copy<cs_real_t>(3*n_level,
+                             (const cs_real_t *)mom,
+                             (cs_real_t *)mom_a);
+
+    cs_array_copy<cs_real_t>(3*n_level,
+                             (const cs_real_t *)(mom_met),
+                             (cs_real_t *)(mom_met_a));
+
+    cs_array_real_fill_zero(n_level, at_opt->dpdt_met);
+  }
+
+  // Delta of pressure integrated over a time step for each level
+  cs_real_t *dpdtx = nullptr;
+  cs_real_t *dpdty = nullptr;
+  CS_MALLOC(dpdtx, n_level, cs_real_t);
+  CS_MALLOC(dpdty, n_level, cs_real_t);
+
+  for (int l_id = 0; l_id < n_level; l_id++) {
+
+    // Momentum of CS and of the target
+    const cs_real_t mom_norm = cs_math_3_norm(mom[l_id]);
+    const cs_real_t mom_norm_a = cs_math_3_norm(mom_a[l_id]);
+
+    const cs_real_t mom_met_norm = cs_math_3_norm(mom_met[l_id]);
+    const cs_real_t mom_met_norm_a = cs_math_3_norm(mom_met_a[l_id]);
+
+    at_opt->dpdt_met[l_id] += 0.5*(2.0*(mom_norm - mom_met_norm)
+                                   - (mom_norm_a - mom_met_norm_a));
+
+    // target meteo directions (current and previous)
+    cs_real_3_t dir_met = {0.0, 0.0, 0.0};
+    cs_real_3_t dir_met_a = {0.0, 0.0, 0.0};
+
+    if (mom_met_norm > cs_math_epzero*uref*phys_pro->ro0)
+      for (int ii = 0; ii < 3; ii++)
+        dir_met[ii] = mom_met[l_id][ii] / mom_met_norm;
+    if (mom_met_norm_a > cs_math_epzero*uref*phys_pro->ro0)
+      for (int ii = 0; ii < 3; ii++)
+        dir_met_a[ii] = mom_met_a[l_id][ii] / mom_met_norm_a;
+
+    /* Delta of pressure in the target direction
+     * Steady state DP and Rotating term due to transient meteo */
+    dpdtx[l_id] = at_opt->dpdt_met[l_id] * dir_met[0]
+                - mom_met_norm*(dir_met[0] - dir_met_a[0]);    //FIXME use directly umet?
+    dpdty[l_id] = at_opt->dpdt_met[l_id] * dir_met[1]
+                - mom_met_norm*(dir_met[1] - dir_met_a[1]);
+
+  }
+
+  CS_FREE(mom_a);
+  CS_FREE(mom_met_a);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    cs_real_t dpdtx_ent = dpdtx[0];
+    cs_real_t dpdty_ent = dpdty[0];
+
+    if (n_level > 1) {
+      cs_intprz(at_opt->met_1d_nlevels_d,
+                at_opt->z_dyn_met,
+                dpdtx,
+                cell_cen[c_id][2],
+                nullptr,
+                &dpdtx_ent);
+
+      cs_intprz(at_opt->met_1d_nlevels_d,
+                at_opt->z_dyn_met,
+                dpdty,
+                cell_cen[c_id][2],
+                nullptr,
+                &dpdty_ent);
+    }
+
+    cpro_momst[c_id][0] = - dpdtx_ent / dt[c_id];
+    cpro_momst[c_id][1] = - dpdty_ent / dt[c_id];
+    cpro_momst[c_id][2] = 0.0; //FIXME not ok
+
+    for (int ii = 0; ii < 3; ii++)
+      exp_st[c_id][ii] += cpro_momst[c_id][ii] * cell_vol[c_id];
+
+  }
+
+  CS_FREE(dpdtx);
+  CS_FREE(dpdty);
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
