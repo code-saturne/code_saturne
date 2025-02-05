@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_field.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -70,32 +71,16 @@ BEGIN_C_DECLS
  *              - for enthalpy            \f$ J . s^{-1} \f$
  *              - rovsdt                  \f$ kg . s^{-1} \f$
  *
- * \param[in]      fld_id  scalar field id
- * \param[in,out]  smbrs   explicit second member
- * \param[in,out]  rovsdt  implicit diagonal part
+ * \param[in]      fld_scal  pointer to scalar field
+ * \param[in,out]  smbrs     explicit second member
+ * \param[in,out]  rovsdt    implicit diagonal part
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coal_source_terms_scalar(int        fld_id,
-                            cs_real_t  smbrs[],
-                            cs_real_t  rovsdt[]);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Pulverized coal flame: production and dissipation source terms
- *        for the variance.
- *
- * \param[in]      iscal   scalar id
- * \param[in,out]  smbrs   explicit second member
- * \param[in,out]  rovsdt  implicit diagonal part
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_coal_fp2st(int         iscal,
-              cs_real_t  *smbrs,
-              cs_real_t  *rovsdt);
+cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
+                            cs_real_t    smbrs[],
+                            cs_real_t    rovsdt[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -381,16 +381,16 @@ _coal_fp2st(const cs_field_t  *fld_scal,
  *              - for enthalpy            \f$ J . s^{-1} \f$
  *              - rovsdt                  \f$ kg . s^{-1} \f$
  *
- * \param[in]      fld_id  scalar field id
- * \param[in,out]  smbrs   explicit second member
- * \param[in,out]  rovsdt  implicit diagonal part
+ * \param[in]      fld_scal  pointer to scalar field
+ * \param[in,out]  smbrs     explicit second member
+ * \param[in,out]  rovsdt    implicit diagonal part
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coal_source_terms_scalar(int        fld_id,
-                            cs_real_t  smbrs[],
-                            cs_real_t  rovsdt[])
+cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
+                            cs_real_t    smbrs[],
+                            cs_real_t    rovsdt[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
@@ -400,7 +400,7 @@ cs_coal_source_terms_scalar(int        fld_id,
   /* Initialization
    * -------------- */
 
-  const cs_field_t *fld_scal = cs_field_by_id(fld_id);
+  const int fld_id = fld_scal->id;
   const cs_real_t *cvara_var = fld_scal->val_pre;
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(fld_scal);
 

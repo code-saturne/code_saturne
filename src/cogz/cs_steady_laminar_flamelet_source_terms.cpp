@@ -50,6 +50,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_boundary_conditions.h"
+#include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
@@ -83,7 +84,7 @@ cs_f_combustion_reconstruct_variance(int iprev);
  *============================================================================*/
 
 /*!
-  \file cs_steady_laminar_flamelet_source_terms.c
+  \file cs_steady_laminar_flamelet_source_terms.cpp
         Specific physic routine: STE/VTE and progress variable equations.
 */
 
@@ -122,18 +123,17 @@ cs_f_combustion_reconstruct_variance(int iprev);
  *     for enthalpy: \f$ J.s^{-1} \f$)
  *   - \f$ rovsdt \f$ en \f$ kg.s^{-1} \f$
  *
- * \param[in]      fld_id        field id
+ * \param[in]      f_sc          pointer to scalar field
  * \param[in,out]  smbrs         explicit right hand side
  * \param[in,out]  rovsdt        implicit terms
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_steady_laminar_flamelet_source_terms(int        fld_id,
-                                        cs_real_t  smbrs[],
-                                        cs_real_t  rovsdt[])
+cs_steady_laminar_flamelet_source_terms(cs_field_t  *f_sc,
+                                        cs_real_t    smbrs[],
+                                        cs_real_t    rovsdt[])
 {
-
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
@@ -155,7 +155,6 @@ cs_steady_laminar_flamelet_source_terms(int        fld_id,
   /* Coef. of SGS kinetic energy used for the variance dissipation computation */
   const cs_real_t coef_k = 7.0e-2;
 
-  cs_field_t *f_sc = cs_field_by_id(fld_id);
   cs_field_t *f_fm = CS_F_(fm);
 
   cs_real_t *scal_pre = f_sc->val_pre;
@@ -166,8 +165,8 @@ cs_steady_laminar_flamelet_source_terms(int        fld_id,
   if (ifcvsl >= 0)
     viscls = cs_field_by_id(ifcvsl)->val;
 
-  /* Writings
-     -------- */
+  /* Logging
+     ------- */
 
   if (eqp_sc->verbosity >= 1)
     cs_log_printf(CS_LOG_DEFAULT,
@@ -184,16 +183,16 @@ cs_steady_laminar_flamelet_source_terms(int        fld_id,
     if (t_dif_id > -1)
       turb_diff = cs_field_by_id(t_dif_id)->val;
 
-  /* --- Cuenot et al.:
-   * STE: Prod := 0
-   *      Disp := - (D + Dtur)/(C_k * Delta_les**2)*fp2m
-   * VTE: Prod := 2*rho*(D + Dtur)*|grad(Z)|**2
-   *      Disp := - (D + Dtur)/(C_k * Delta_les**2)*fp2m
-   *
-   * --- Pierce:
-   * Progress variable equation:
-   *      Prod := flamelet_lib(fm, fp2m, ki, progvar)
-   */
+    /* --- Cuenot et al.:
+     * STE: Prod := 0
+     *      Disp := - (D + Dtur)/(C_k * Delta_les**2)*fp2m
+     * VTE: Prod := 2*rho*(D + Dtur)*|grad(Z)|**2
+     *      Disp := - (D + Dtur)/(C_k * Delta_les**2)*fp2m
+     *
+     * --- Pierce:
+     * Progress variable equation:
+     *      Prod := flamelet_lib(fm, fp2m, ki, progvar)
+     */
 
     /* For the moment, this model for source computation
        is only available in LES */
@@ -298,7 +297,6 @@ cs_steady_laminar_flamelet_source_terms(int        fld_id,
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

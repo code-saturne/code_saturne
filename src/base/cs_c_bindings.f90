@@ -755,17 +755,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C soot production function
-    subroutine cs_soot_production(f_id, smbrs, rovsdt) &
-      bind(C, name='cs_soot_production')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      real(kind=c_double), dimension(*) :: smbrs, rovsdt
-    end subroutine cs_soot_production
-
-    !---------------------------------------------------------------------------
-
     !> \brief Get the aerosols concentrations and numbers from aerosol code
 
     subroutine cs_atmo_aerosol_get_aero(array) &

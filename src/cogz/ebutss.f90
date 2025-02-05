@@ -20,8 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ebutss &
- (f_id, smbrs, rovsdt)
+subroutine ebutss(f_id, smbrs, rovsdt)  &
+ bind(C, name='cs_f_ebutss')
 
 !===============================================================================
 ! FONCTION :
@@ -55,7 +55,6 @@ subroutine ebutss &
 !          pour les temperatures      kg degres/s
 !          pour les enthalpies        Joules/s
 !    ROVSDT en kg /s
-
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
