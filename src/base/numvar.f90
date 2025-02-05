@@ -66,10 +66,6 @@ module numvar
   !> velocity component \f$ u_z \f$
   integer, save :: iw = 0
 
-  !> \anchor ivolf2
-  !> void fraction for VOF method
-  integer, save :: ivolf2 = 0
-
   !> \anchor ik
   !> turbulent kinetic energy \f$ k \f$
   integer, save :: ik = 0
@@ -78,53 +74,13 @@ module numvar
   !> turbulent dissipation \f$ \varepsilon \f$
   integer, save :: iep = 0
 
-  !> \anchor ir11
-  !> Reynolds stress component \f$ R_{xx} \f$
-  integer, save :: ir11 = 0
-
-  !> \anchor ir22
-  !> Reynolds stress component \f$ R_{yy} \f$
-  integer, save :: ir22 = 0
-
-  !> \anchor ir33
-  !> Reynolds stress component \f$ R_{zz} \f$
-  integer, save :: ir33 = 0
-
-  !> \anchor ir12
-  !> Reynolds stress component \f$ R_{xy} \f$
-  integer, save :: ir12 = 0
-
-  !> \anchor ir23
-  !> Reynolds stress component \f$ R_{yz} \f$
-  integer, save :: ir23 = 0
-
-  !> \anchor ir13
-  !> Reynolds stress component \f$ R_{zz} \f$
-  integer, save :: ir13 = 0
-
   !> \anchor irij
   !> Reynolds stress tenso \f$ R_{ij} \f$
   integer, save :: irij = 0
 
-  !> \anchor iphi
-  !> variable \f$ \phi \f$ of the \f$ \phi-f_b \f$ model
-  integer, save :: iphi = 0
-
-  !> \anchor ifb
-  !> variable \f$ f_b \f$ of the \f$ \phi-f_b \f$ model
-  integer, save :: ifb = 0
-
-  !> \anchor ial
-  !> variable \f$ \alpha \f$ of the \f$ Bl-v^2-k \f$ model
-  integer, save :: ial = 0
-
   !> \anchor iomg
   !> variable \f$ \omega \f$ of the \f$ k-\omega \f$ SST
   integer, save :: iomg = 0
-
-  !> \anchor inusa
-  !> variable \f$ \widetilde{\nu}_T \f$ of the Spalart Allmaras
-  integer, save :: inusa = 0
 
   !> \anchor isca
   !> isca(i) is the index of the scalar i
@@ -141,18 +97,6 @@ module numvar
   !> \anchor nscapp
   !> number of specific physics scalars
   integer, save :: nscapp = 0
-
-  !> \anchor iuma
-  !> mesh velocity component \f$ w_x \f$
-  integer, save :: iuma = 0
-
-  !> \anchor ivma
-  !> mesh velocity component \f$ w_y \f$
-  integer, save :: ivma = 0
-
-  !> \anchor iwma
-  !> mesh velocity component \f$ w_z \f$
-  integer, save :: iwma = 0
 
   !> \}
 
@@ -190,12 +134,6 @@ module numvar
 
   !> boundary density field ids of the variables
   integer, save :: ibrom = -1
-
-  !> pointer for dilatation source terms
-  integer, save :: iustdy(nscamx)
-
-  !> pointer for global dilatation source terms
-  integer, save :: itsrho = -1
 
   !> \}
 

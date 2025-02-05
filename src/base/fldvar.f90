@@ -104,10 +104,6 @@ iw = iv + 1
 ! Pressure
 call map_variable_field_try('pressure', ipr)
 
-! void fraction (VoF algorithm)
-
-call map_variable_field_try('void_fraction', ivolf2)
-
 ! Turbulence
 
 if (itytur.eq.2) then
@@ -115,39 +111,13 @@ if (itytur.eq.2) then
   call map_variable_field_try('epsilon', iep)
 else if (itytur.eq.3) then
   call map_variable_field_try('rij', irij)
-  ! All rij components point to same field
-  ir11 = irij
-  ir22 = ir11 + 1
-  ir33 = ir22 + 1
-  ir12 = ir33 + 1
-  ir23 = ir12 + 1
-  ir13 = ir23 + 1
-
   call map_variable_field_try('epsilon', iep)
-  if (iturb.eq.32) then
-    call map_variable_field_try('alpha', ial)
-  endif
 else if (itytur.eq.5) then
   call map_variable_field_try('k', ik)
   call map_variable_field_try('epsilon', iep)
-  call map_variable_field_try('phi', iphi)
-  if (iturb.eq.50) then
-    call map_variable_field_try('f_bar', ifb)
-  else if (iturb.eq.51) then
-    call map_variable_field_try('alpha', ial)
-  endif
 else if (iturb.eq.60) then
   call map_variable_field_try('k', ik)
   call map_variable_field_try('omega', iomg)
-else if (iturb.eq.70) then
-  call map_variable_field_try('nu_tilda', inusa)
-endif
-
-! Mesh velocity with ALE
-call map_variable_field_try('mesh_velocity', iuma)
-if (iuma.ge.1) then
-  ivma = iuma + 1
-  iwma = ivma + 1
 endif
 
 ! Number of user variables

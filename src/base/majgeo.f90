@@ -94,8 +94,6 @@ integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2
 integer(c_int), dimension(2,nfac2), target :: iface2
 integer(c_int), dimension(nfabo2), target :: ifabo2
 
-real(c_double) :: volmn2, volmx2, voltt2
-
 real(c_double), dimension(3,ncele2), target :: xyzce2
 real(c_double), dimension(3,nfac2), target :: surfa2, cdgfa2
 real(c_double), dimension(3,nfac2), target :: suffa2
