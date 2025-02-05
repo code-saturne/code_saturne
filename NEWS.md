@@ -3,6 +3,9 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix behavior of GUI when creating a new boundary zone, which was not using
+  the "not(..)" syntax for newly added zones.
+
 - Fix error in boundary contribution to cell Courant number using in
   CS_NVD_VOF_HRIC NVD convection limiter.
 
