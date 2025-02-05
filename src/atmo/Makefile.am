@@ -80,7 +80,6 @@ compute_gaseous_chemistry.f90 \
 cs_air_props.cpp \
 cs_at_opt_interp.cpp \
 cs_at_data_assim.cpp \
-cs_at_source_terms.f90 \
 cs_atmo.cpp \
 cs_atmo_aerosol.cpp \
 cs_atmo_aerosol_ssh.cpp \
