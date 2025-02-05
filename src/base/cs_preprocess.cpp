@@ -117,9 +117,6 @@ extern void cs_f_majgeo(const cs_lnum_t    *ncel,
                         const cs_lnum_t    *nfabor,
                         const cs_lnum_2_t   ifacel[],
                         const cs_lnum_t     ifabor[],
-                        const cs_real_t    *volmin,
-                        const cs_real_t    *volmax,
-                        const cs_real_t    *voltot,
                         const cs_real_t     xyzcen[],
                         const cs_real_t     surfac[],
                         const cs_real_t     surfbo[],
@@ -134,11 +131,7 @@ extern void cs_f_majgeo(const cs_lnum_t    *ncel,
                         const cs_real_t     suffan[],
                         const cs_real_t     suffbn[],
                         const cs_real_t     dist[],
-                        const cs_real_t     distb[],
-                        const cs_real_t     pond[],
-                        const cs_real_t     dijpf[][3],
-                        const cs_rreal_t    diipb[][3],
-                        const cs_real_t     dofij[]);
+                        const cs_real_t     distb[]);
 
 /*============================================================================
  * Private function definitions
@@ -552,9 +545,6 @@ cs_preprocess_mesh_update_fortran(void)
               &(m->n_b_faces),
               (const cs_lnum_2_t *)(m->i_face_cells),
               m->b_face_cells,
-              &(mq_g->min_vol),
-              &(mq_g->max_vol),
-              &(mq_g->tot_vol),
               (cs_real_t *)mq_g->cell_cen,
               mq_g->i_face_normal,
               mq_g->b_face_normal,
@@ -569,11 +559,7 @@ cs_preprocess_mesh_update_fortran(void)
               mq->i_face_surf,
               mq->b_face_surf,
               mq_g->i_dist,
-              mq_g->b_dist,
-              mq_g->weight,
-              mq_g->dijpf,
-              mq_g->diipb,
-              (cs_real_t *)mq_g->dofij);
+              mq_g->b_dist);
 }
 
 /*----------------------------------------------------------------------------*/

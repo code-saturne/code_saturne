@@ -166,42 +166,6 @@ static cs_wall_functions_t  _wall_functions =
 
 const cs_wall_functions_t  * cs_glob_wall_functions = &_wall_functions;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_wall_functions_get_pointers(int     **iwallf,
-                                 int     **iwalfs,
-                                 double  **ypluli);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the wall functions structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   iwallf  --> pointer to cs_glob_wall_functions->iwallf
- *   iwalfs  --> pointer to cs_glob_wall_functions->iwalfs
- *   ypluli  --> pointer to cs_glob_wall_functions->ypluli
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_wall_functions_get_pointers(int     **iwallf,
-                                 int     **iwalfs,
-                                 double  **ypluli)
-{
-  *iwallf  = (int *)&(_wall_functions.iwallf);
-  *iwalfs = (int *)&(_wall_functions.iwalfs);
-  *ypluli  = &(_wall_functions.ypluli);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================

@@ -49,22 +49,6 @@ module optcal
   !> \addtogroup time_stepping
   !> \{
 
-  !> Time order of time stepping
-  !> (see \ref cs_time_scheme_t::time_order).
-  integer(c_int), pointer, save :: ischtp
-
-  !> Time order of the mass flux scheme.
-  !> (see \ref cs_time_scheme_t::istmpf).
-  integer(c_int), pointer, save :: istmpf
-
-  !> Time scheme for source terms of momentum equations
-  !> (see \ref cs_time_scheme_t::isno2t).
-  integer(c_int), pointer, save :: isno2t
-
-  !> Time scheme for source terms of turbulence equations
-  !> (see \ref cs_time_scheme_t::isto2t).
-  integer(c_int), pointer, save :: isto2t
-
   !> initro : =1 if density read from checkpoint file
   integer(c_int), pointer, save :: initro
 
@@ -74,55 +58,11 @@ module optcal
   ! Space discretisation
   !----------------------------------------------------------------------------
 
-  !> \defgroup space_discretisation Space discretisation
-
-  !> \addtogroup space_discretisation
-  !> \{
-
-  !> \defgroup gradient_calculation Gradient calculation
-  !> \addtogroup gradient_calculation
-  !> \{
-
-  !> type of gradient reconstruction
-  !>    - 0: iterative process
-  !>    - 1: standard least squares method
-  !>    - 2: least square method with extended neighborhood
-  !>    - 3: least square method with reduced extended neighborhood
-  !>    - 4: iterative process initialized by the least squares method
-  integer(c_int), pointer, save :: imrgra
-
-  !> \}
-
-  !> \defgroup diffusive_scheme Diffusive scheme
-  !> \addtogroup diffusive_scheme
-  !> \{
-
-  !> face viscosity field interpolation
-  !>    - 1: harmonic
-  !>    - 0: arithmetic (default)
-  integer(c_int), pointer, save :: imvisf
-
-  !> \}
-
- !> \}
-
   !> Indicator of a calculation restart (=1) or not (=0).
   !> This value is set automatically by the code; depending on
   !> whether a restart directory is present, and should not be modified by
   !> the user (no need for C mapping).
   integer, save :: isuite = 0
-
-  !> Indicates the reading (=1) or not (=0) of the auxiliary
-  !> calculation restart file\n
-  !> Useful only in the case of a calculation restart
-  integer(c_int), pointer, save :: ileaux
-
-  !> \anchor isuit1
-  !> For the 1D wall thermal module, activation (1) or not(0)
-  !> of the reading of the mesh and of the wall temperature
-  !> from the restart file
-  !> Useful if nfpt1d > 0
-  integer, save :: isuit1
 
   !----------------------------------------------------------------------------
   ! Time stepping options
@@ -288,211 +228,6 @@ module optcal
   !> Class of turbulence model (integer value iturb/10)
   integer(c_int), pointer, save :: itytur
 
-  !> Activation of Hybrid RANS/LES model (only valid for iturb equal to 60 or 51)
-  integer(c_int), pointer, save :: hybrid_turb
-
-  !> Activation of rotation/curvature correction for eddy viscosity turbulence
-  !> models
-  !>    - 0: false
-  !>    - 1: true
-  integer(c_int), pointer, save :: irccor
-
-  !> Type of rotation/curvature correction for eddy viscosity turbulence models
-  !>    - 1 Cazalbou correction (default when irccor=1 and itytur=2 or 5)
-  !>    - 2 Spalart-Shur correction (default when irccor=1 and iturb=60 or 70)
-  integer(c_int), pointer, save :: itycor
-
-  !> Turbulent diffusion model for second moment closure
-  !>    - 0: scalar diffusivity (Shir model)
-  !>    - 1: tensorial diffusivity (Daly and Harlow model, default model)
-  integer(c_int), pointer, save :: idirsm
-
-  !>  Wall functions
-  !>  Indicates the type of wall function used for the velocity
-  !>  boundary conditions on a frictional wall.
-  !>  - 0: no wall functions
-  !>  - 1: one scale of friction velocities (power law)
-  !>  - 2: one scale of friction velocities (log law)
-  !>  - 3: two scales of friction velocities (log law)
-  !>  - 4: two scales of friction velocities (log law) (scalable wall functions)
-  !>  - 5: two scales of friction velocities (mixing length based on V. Driest
-  !>       analysis)
-  !>  - 6: wall function unifying rough and smooth friction regimes
-  !>  - 7: All \f$ y^+ \f$  for low Reynolds models\n
-  !>  \ref iwallf is initialised to 2 for \ref iturb = 10, 40, 41 or 70
-  !>  (mixing length, LES and Spalart Allmaras).\n
-  !>  \ref iwallf is initialised to 0 for \ref iturb = 0, 32, 50 or 51\n
-  !>  \ref iwallf is initialised to 3 for \ref iturb = 20, 21, 30, 31 or 60
-  !>  (\f$k-\epsilon\f$, \f$R_{ij}-\epsilon\f$ LRR, \f$R_{ij}-\epsilon\f$ SSG and
-  !> \f$ k-\omega\f$ SST models).\n
-  !>  The v2f model (\ref iturb=50) is not designed to use wall functions
-  !>  (the mesh must be low Reynolds).\n
-  !>  The value \ref iwallf = 3 is not compatible with \ref iturb=0, 10, 40
-  !>  or 41 (laminar, mixing length and LES).\n
-  !>  Concerning the \f$k-\epsilon\f$ and \f$R_{ij}-\epsilon\f$ models, the
-  !>  two-scales model is usually at least as satisfactory as the one-scale
-  !>  model.\n
-  !>  The scalable wall function allows to virtually shift the wall when
-  !>  necessary in order to be always in a logarithmic layer. It is used to make
-  !>  up for the problems related to the use of High-Reynolds models on very
-  !>  refined meshes.\n
-  !>  Useful if \ref iturb is different from 50.
-  integer(c_int), pointer, save :: iwallf
-
-  !>  Wall functions for scalar
-  !>    - 0: three layer wall function of Arpaci and Larsen
-  !>    - 1: Van Driest wall function
-  integer(c_int), pointer, save :: iwalfs
-
-  !> Indicates the clipping method used for \f$k\f$ and
-  !> \f$\varepsilon\f$, for the \f$k-\epsilon\f$ and v2f models
-  !> - 0: clipping in absolute value
-  !> - 1: coupled clipping based on physical relationships\n
-  !> Useful if and only if \ref iturb = 20, 21 or 50 (\f$k-\epsilon\f$ and
-  !> v2f models). The results obtained with the method corresponding to
-  !> \ref iclkep =1 showed in some cases a substantial sensitivity to the
-  !> values of the length scale \ref cs_turb_ref_values_t::almax "almax".\n
-  !> The option \ref iclkep = 1 is therefore not recommended, and,
-  !> if chosen, must be used cautiously.
-  integer(c_int), pointer, save :: iclkep
-
-  !> Indicates if the term \f$\frac{2}{3}\grad \rho k\f$
-  !> is taken into account in the velocity equation.
-  !> - 1: true
-  !> - 0: false in the velocity\n
-  !> Useful if and only if \ref iturb = 20, 21, 50 or 60.\n
-  !> This term may generate non-physical velocities at the wall.
-  !> When it is not explicitly taken into account, it is
-  !> implicitly included into the pressure.
-  integer(c_int), pointer, save :: igrhok
-
-  !> Indicates if the coupling of the source terms of
-  !> \f$k\f$ and \f$\epsilon\f$ or \f$k\f$ and \f$\omega\f$
-  !> is taken into account or not.
-  !> - 1: true,
-  !> - 0: false\n
-  !> If \ref ikecou = 0 in \f$k-\epsilon\f$ model, the term
-  !> in \f$\epsilon\f$ in the equation of \f$k\f$ is made implicit.\n
-  !> \ref ikecou is initialised to 0 if \ref iturb = 21 or 60, and
-  !> to 1 if \ref iturb = 20.\n
-  !> \ref ikecou = 1 is forbidden when using the v2f model (\ref iturb = 50).\n
-  !> Useful if and only if \ref iturb = 20, 21 or 60 (\f$k-\epsilon\f$ and
-  !> \f$k-\omega\f$ models)
-  integer(c_int), pointer, save :: ikecou
-
-  !> Advanced re-init for EBRSM and k-omega models
-  !>    - 1: true
-  !>    - 0: false (default)
-  integer(c_int), pointer, save :: reinit_turb
-
-  !> Coupled solving of \f$ \tens{R} \f$
-  !>    - 1: true
-  !>    - 0: false (default)
-  integer(c_int), pointer, save :: irijco
-
-  !> pseudo eddy viscosity in the matrix of momentum equation to partially
-  !> implicit \f$ \divv \left( \rho \tens{R} \right) \f$
-  !>    - 1: true
-  !>    - 0: false (default)
-  !> The goal is to improve the stability of the calculation.
-  !> The usefulness of \ref irijnu = 1 has however not been
-  !> clearly demonstrated.\n Since the system is solved in
-  !> incremental form, this extra turbulent viscosity does
-  !> not change the final solution for steady flows. However,
-  !> for unsteady flows, the parameter \ref nswrsm should be
-  !> increased.\n Useful if and only if \ref iturb = 30 or 31
-  !> (\f$R_{ij}-\epsilon\f$ model).
-  !>    - 2: Rusanov scheme on the system momentum + Rij
-  !>    - 3: Godunov scheme on the system momentum + Rij
-  integer(c_int), pointer, save :: irijnu
-
-  !> accurate treatment of \f$ \tens{R} \f$ at the boundary
-  !> (see \ref cs_boundary_condition_set_coeffs)
-  !>    - 1: true
-  !>    - 0: false (default)
-  integer(c_int), pointer, save :: irijrb
-
-  !> Indicates if the wall echo terms in
-  !> \f$R_{ij}-\epsilon\f$ LRR model are taken into account:
-  !> - 1: true,
-  !> - 0: false (default)\n
-  !> Useful if and only if \ref iturb = 30 (\f$R_{ij}-\epsilon\f$
-  !> LRR).\n It is not recommended to take these terms into account:
-  !> they have an influence only near the walls, their expression is hardly
-  !> justifiable according to some authors and, in the configurations
-  !> studied with code_saturne, they did not bring any improvement in
-  !> the results.\n
-  !> In addition, their use induces an increase in the calculation time.\n
-  !> The wall echo terms imply the calculation of the distance to the wall
-  !> for every cell in the domain.
-  integer(c_int), pointer, save :: irijec
-
-  !> whole treatment of the diagonal part of the diffusion tensor of
-  !> \f$ \tens{R} \f$ and \f$ \varepsilon \f$
-  !>    - 1: true (default)
-  !>    - 0: simplified treatment
-  integer(c_int), pointer, save :: idifre
-
-  !> partial implicitation of symmetry BCs of \f$ \tens{R} \f$
-  !>    - 1: true (default)
-  !>    - 0: false
-  integer(c_int), pointer, save :: iclsyr
-
-  !> partial implicitation of wall BCs of \f$ \tens{R} \f$
-  !>    - 1: true
-  !>    - 0: false (default)
-  integer(c_int), pointer, save :: iclptr
-
-  !> Activates or the van Driest wall-damping for the
-  !> Smagorinsky constant (the Smagorinsky constant
-  !> is multiplied by the damping function
-  !> \f$1-e^{-y^+/ cdries}\f$, where \f$y^+\f$
-  !> designates the non-dimensional distance to the
-  !> nearest wall).
-  !>    - 1: true
-  !>    - 0: false
-  !> The default value is 1 for the Smagorinsky model
-  !> and 0 for the dynamic model.\n The van Driest
-  !> wall-damping requires the knowledge of the
-  !> distance to the nearest wall for each cell
-  !> in the domain.
-  !> Useful if and only if \ref iturb = 40 or 41
-  integer(c_int), pointer, save :: idries
-
-  !> Applied or not the Internal Consistency
-  !> Constraint (ICC) for the HTLES model,
-  !> in order to recover the correct RANS
-  !> behavior when the energy ratio is forced
-  !> to one in the RANS region:
-  !>   - 1: True (default)
-  !>   - 0: False
-  !> Useful if and only if \ref hybrid_turb=4
-  integer(c_int), pointer, save :: iicc
-
-  !> Applied or not the two-fold shielding
-  !> function (\f$f_s(\xi_K,\xi_D)\f$ of HTLES,
-  !> to properly control the RANS-to-LES
-  !> transition in the vicinity of the wall:
-  !>    - 1: True (default)
-  !>    - 0: False
-  !> Useful if and only if \ref hybrid_turb=4
-  integer(c_int), pointer, save :: ishield
-
-  !> Wall boundary condition on omega in k-omega SST
-  !> 0: Deprecated Neumann boundary condition
-  !> 1: Dirichlet boundary condition consistent with Menter's
-  !>    original model: w_wall = 60*nu/(beta*d**2)
-  integer, save :: ikwcln = 1
-
-  !> Activates or not the LES balance module
-  !> - 0: false (default)
-  !> - 1: true
-  !> Useful if \ref iturb =40, 41 or 42\n
-  integer(c_int), pointer, save :: i_les_balance
-
-  !> number of variable (deprecated, used only for compatibility)
-  integer, save :: nvarcl
-
   !> \}
 
   !----------------------------------------------------------------------------
@@ -503,32 +238,6 @@ module optcal
 
   !> \addtogroup stokes
   !> \{
-
-  !> Time scheme option:
-  !>    - 0: staggered time scheme. On the time grids, the velocity is
-  !>         half a time step behind the density and the buoyant scalar.
-  !>         (See the thesis of \cite Pierce:2004)
-  !>    - 1: collocated time scheme. On the time grids, the velocity is
-  !>         at the same location as the density and the buoyant scalar.
-  !>         (See \cite Ma:2019)
-  integer(c_int), pointer, save :: itpcol
-
-  !> \anchor iccvfg
-  !> indicates whether the dynamic field should be frozen or not:
-  !>    - 1: true
-  !>    - 0: false (default)\n
-  !> In such a case, the values of velocity, pressure and the
-  !> variables related to the potential turbulence model
-  !> (\f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\varphi\f$,
-  !> \f$\bar{f}\f$, \f$\omega\f$, turbulent viscosity) are kept
-  !> constant over time and only the equations for the scalars
-  !> are solved.\n Also, if \ref iccvfg = 1, the physical properties
-  !> modified in \ref cs_user_physical_properties will keep being
-  !> updated. Beware of non-consistencies if these properties would
-  !> normally affect the dynamic field (modification of density for
-  !> instance).\n Useful if and only if \ref dimens::nscal "nscal"
-  !> \f$>\f$ 0 and the calculation is a restart.
-  integer(c_int), pointer, save :: iccvfg
 
   !> Algorithm to take into account the density variation in time
   !>    - 0: boussinesq algorithm with constant density
@@ -543,63 +252,11 @@ module optcal
 
   integer(c_int), pointer, save :: iphydr
 
-  !> compute the hydrostatic pressure in order to compute the Dirichlet
-  !> conditions on the pressure at outlets
-  !>    - 1: true
-  !>    - 0: false (default)
-  integer(c_int), pointer, save :: icalhy
-
-  !> \}
-
-  !----------------------------------------------------------------------------
-  ! Homogeneous mixture modelling
-  !----------------------------------------------------------------------------
-
-  !> \addtogroup homogeneous_mixture
-  !> \{
-  !> \addtogroup vof
-  !> \{
-
-  !> VoF model (sum of masks defining VoF model and submodels).
-  !> See defined masks in \ref vof_masks.
-  integer(c_int), pointer, save :: ivofmt
-
-  !> \}
   !> \}
 
   !----------------------------------------------------------------------------
   ! Transported scalars parameters
   !----------------------------------------------------------------------------
-
-  !> \defgroup scalar_params Transported scalars parameters
-
-  !> \addtogroup scalar_params
-  !> \{
-
-  !> flag for isotropic diffusion
-  integer :: ISOTROPIC_DIFFUSION
-
-  !> flag for orthotropic diffusion
-  integer :: ORTHOTROPIC_DIFFUSION
-
-  !> flag for diffusion by a left-multiplied symmetric 3x3 tensor
-  integer :: ANISOTROPIC_LEFT_DIFFUSION
-
-  ! flag for diffusion by a right-multiplied symmetric 3x3 tensor
-  integer :: ANISOTROPIC_RIGHT_DIFFUSION
-
-  !> flag for diffusion by a symmetric 3x3 tensor
-  integer :: ANISOTROPIC_DIFFUSION
-
-  parameter (ISOTROPIC_DIFFUSION=1)
-  parameter (ORTHOTROPIC_DIFFUSION=2)
-  parameter (ANISOTROPIC_LEFT_DIFFUSION=4)
-  parameter (ANISOTROPIC_RIGHT_DIFFUSION=8)
-  parameter (ANISOTROPIC_DIFFUSION=12)
-
-  !> \}
-
-  !=============================================================================
 
   interface
 
@@ -608,26 +265,6 @@ module optcal
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
-
-    ! Interface to C function defining whether time step is variable in
-    ! time or not
-
-    subroutine time_step_define_variable(is_variable)  &
-      bind(C, name='cs_time_step_define_variable')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: is_variable
-    end subroutine time_step_define_variable
-
-    ! Interface to C function defining whether time step is local in
-    ! space or not
-
-    subroutine time_step_define_local(is_local)  &
-      bind(C, name='cs_time_step_define_local')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: is_local
-    end subroutine time_step_define_local
 
     ! Interface to C function retrieving pointers to members of the
     ! global time step structure
@@ -664,70 +301,12 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global turbulence model structure
 
-    subroutine cs_f_turb_model_get_pointers(iturb, itytur, hybrid_turb) &
+    subroutine cs_f_turb_model_get_pointers(iturb, itytur) &
       bind(C, name='cs_f_turb_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iturb, itytur, hybrid_turb
+      type(c_ptr), intent(out) :: iturb, itytur
     end subroutine cs_f_turb_model_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global wall functions structure
-
-    subroutine cs_f_wall_functions_get_pointers(iwallf, iwalfs, &
-                                                ypluli)         &
-      bind(C, name='cs_f_wall_functions_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: iwallf, iwalfs, ypluli
-    end subroutine cs_f_wall_functions_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! RANS turbulence model structure
-
-    subroutine cs_f_turb_rans_model_get_pointers(irccor, itycor, idirsm, &
-                                                 iclkep, igrhok,  &
-                                                 ikecou, reinit_turb, &
-                                                 irijco, irijnu,  &
-                                                 irijrb, irijec, idifre, &
-                                                 iclsyr, iclptr)         &
-      bind(C, name='cs_f_turb_rans_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: irccor, itycor, idirsm, iclkep, igrhok
-      type(c_ptr), intent(out) :: ikecou, reinit_turb, irijco
-      type(c_ptr), intent(out) :: irijnu, irijrb
-      type(c_ptr), intent(out) :: irijec, idifre, iclsyr, iclptr
-    end subroutine cs_f_turb_rans_model_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! LES turbulence model structure
-
-    subroutine cs_f_turb_les_model_get_pointers(idries) &
-      bind(C, name='cs_f_turb_les_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: idries
-    end subroutine cs_f_turb_les_model_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! hybrid turbulence model structure
-
-    subroutine cs_f_turb_hybrid_model_get_pointers(iicc, ishield) &
-      bind(C, name='cs_f_turb_hybrid_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: iicc, ishield
-    end subroutine cs_f_turb_hybrid_model_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! LES balance structure
-    subroutine cs_f_les_balance_get_pointer(i_les_balance) &
-      bind(C, name='cs_f_les_balance_get_pointer')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: i_les_balance
-    end subroutine cs_f_les_balance_get_pointer
 
     ! Interface to C function retrieving pointers to members of the
     ! velocity pressure model options structure
@@ -741,47 +320,14 @@ module optcal
     end subroutine cs_f_velocity_pressure_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
-    ! velocity pressure parameters structure
-
-    subroutine cs_f_velocity_pressure_param_get_pointers  &
-      (iphydr, icalhy, itpcol)  &
-      bind(C, name='cs_f_velocity_pressure_param_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: iphydr, icalhy, itpcol
-    end subroutine cs_f_velocity_pressure_param_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global spatial discretisation options structure
-
-    subroutine cs_f_space_disc_get_pointers(imvisf, imrgra)   &
-      bind(C, name='cs_f_space_disc_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: imvisf, imrgra
-    end subroutine cs_f_space_disc_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
     ! global time schemeoptions structure
 
-    subroutine cs_f_time_scheme_get_pointers(ischtp, istmpf, isno2t, isto2t, &
-                                             iccvfg, initro) &
+    subroutine cs_f_time_scheme_get_pointers(initro) &
       bind(C, name='cs_f_time_scheme_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ischtp, istmpf, isno2t, isto2t
-      type(c_ptr), intent(out) :: iccvfg, initro
+      type(c_ptr), intent(out) :: initro
     end subroutine cs_f_time_scheme_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global restart_auxiliary options structure
-
-    subroutine cs_f_restart_auxiliary_get_pointers(ileaux)          &
-      bind(C, name='cs_f_restart_auxiliary_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: ileaux
-    end subroutine cs_f_restart_auxiliary_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -942,115 +488,14 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iturb, c_itytur, c_hybrid_turb
+    type(c_ptr) :: c_iturb, c_itytur
 
-    call cs_f_turb_model_get_pointers(c_iturb, c_itytur, c_hybrid_turb)
+    call cs_f_turb_model_get_pointers(c_iturb, c_itytur)
 
     call c_f_pointer(c_iturb, iturb)
     call c_f_pointer(c_itytur, itytur)
-    call c_f_pointer(c_hybrid_turb, hybrid_turb)
 
   end subroutine turb_model_init
-
-  !> \brief Initialize Fortran wall functions API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine wall_functions_init
-
-    use, intrinsic :: iso_c_binding
-    use cstphy, only: ypluli
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_iwallf, c_iwalfs, c_ypluli
-
-    call cs_f_wall_functions_get_pointers(c_iwallf, c_iwalfs, &
-                                          c_ypluli)
-
-    call c_f_pointer(c_iwallf, iwallf)
-    call c_f_pointer(c_iwalfs, iwalfs)
-    call c_f_pointer(c_ypluli, ypluli)
-
-  end subroutine wall_functions_init
-
-  !> \brief Initialize Fortran RANS turbulence model API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine turb_rans_model_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_irccor, c_itycor, c_idirsm, c_iclkep, c_igrhok
-    type(c_ptr) :: c_ikecou, c_reinit_turb, c_irijco, c_irijnu
-    type(c_ptr) :: c_irijrb, c_irijec, c_idifre
-    type(c_ptr) :: c_iclsyr, c_iclptr
-
-    call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_idirsm, &
-                                            c_iclkep, c_igrhok, &
-                                            c_ikecou, c_reinit_turb, &
-                                            c_irijco, c_irijnu, &
-                                            c_irijrb, c_irijec, c_idifre, &
-                                            c_iclsyr, c_iclptr)
-
-    call c_f_pointer(c_irccor, irccor)
-    call c_f_pointer(c_itycor, itycor)
-    call c_f_pointer(c_idirsm, idirsm)
-    call c_f_pointer(c_iclkep, iclkep)
-    call c_f_pointer(c_igrhok, igrhok)
-    call c_f_pointer(c_ikecou, ikecou)
-    call c_f_pointer(c_reinit_turb, reinit_turb)
-    call c_f_pointer(c_irijco, irijco)
-    call c_f_pointer(c_irijnu, irijnu)
-    call c_f_pointer(c_irijrb, irijrb)
-    call c_f_pointer(c_irijec, irijec)
-    call c_f_pointer(c_idifre, idifre)
-    call c_f_pointer(c_iclsyr, iclsyr)
-    call c_f_pointer(c_iclptr, iclptr)
-
-  end subroutine turb_rans_model_init
-
-  !> \brief Initialize Fortran LES turbulence model API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine turb_les_model_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_idries, c_i_les_balance
-
-    call cs_f_turb_les_model_get_pointers(c_idries)
-    call cs_f_les_balance_get_pointer(c_i_les_balance)
-
-    call c_f_pointer(c_idries, idries)
-    call c_f_pointer(c_i_les_balance, i_les_balance)
-
-  end subroutine turb_les_model_init
-
-  !> \brief Initialize Fortran hybrid turbulence model API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine turb_hybrid_model_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_iicc, c_ishield
-
-    call cs_f_turb_hybrid_model_get_pointers(c_iicc, c_ishield)
-
-    call c_f_pointer(c_iicc, iicc)
-    call c_f_pointer(c_ishield, ishield)
-
-  end subroutine turb_hybrid_model_init
 
   !> \brief Initialize Fortran Stokes options API.
   !> This maps Fortran pointers to global C structure members.
@@ -1062,39 +507,13 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_itpcol, c_idilat, c_iphydr, c_icalhy
+    type(c_ptr) :: c_idilat
 
     call cs_f_velocity_pressure_model_get_pointers(c_idilat)
 
     call c_f_pointer(c_idilat, idilat)
 
-    call cs_f_velocity_pressure_param_get_pointers  &
-      (c_iphydr, c_icalhy, c_itpcol)
-
-    call c_f_pointer(c_iphydr, iphydr)
-    call c_f_pointer(c_icalhy, icalhy)
-    call c_f_pointer(c_itpcol, itpcol)
-
   end subroutine velocity_pressure_options_init
-
-  !> \brief Initialize Fortran space discretisation options API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine space_disc_options_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_imvisf, c_imrgra
-
-    call cs_f_space_disc_get_pointers(c_imvisf, c_imrgra)
-
-    call c_f_pointer(c_imvisf, imvisf)
-    call c_f_pointer(c_imrgra, imrgra)
-
-  end subroutine space_disc_options_init
 
   !> \brief Initialize Fortran time scheme options API.
   !> This maps Fortran pointers to global C structure members.
@@ -1106,38 +525,13 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ischtp, c_istmpf, c_isno2t, c_isto2t
-    type(c_ptr) :: c_iccvfg, c_initro
+    type(c_ptr) :: c_initro
 
-    call cs_f_time_scheme_get_pointers(c_ischtp, c_istmpf, c_isno2t, c_isto2t, &
-                                       c_iccvfg, c_initro)
+    call cs_f_time_scheme_get_pointers(c_initro)
 
-    call c_f_pointer(c_ischtp, ischtp)
-    call c_f_pointer(c_istmpf, istmpf)
-    call c_f_pointer(c_isno2t, isno2t)
-    call c_f_pointer(c_isto2t, isto2t)
-    call c_f_pointer(c_iccvfg, iccvfg)
     call c_f_pointer(c_initro, initro)
 
   end subroutine time_scheme_options_init
-
-  !> \brief Initialize Fortran auxiliary options API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine restart_auxiliary_options_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_ileaux
-
-    call cs_f_restart_auxiliary_get_pointers(c_ileaux)
-
-    call c_f_pointer(c_ileaux, ileaux)
-
-  end subroutine restart_auxiliary_options_init
 
   !=============================================================================
 

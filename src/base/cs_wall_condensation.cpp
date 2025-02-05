@@ -165,16 +165,6 @@ const cs_wall_condensation_t *cs_glob_wall_condensation = &_wall_cond;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_wall_condensation_get_model_pointers
-  (int                                **icondb,
-   int                                **icondv);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -763,19 +753,6 @@ _compute_exchange_natural_convection_volume_structure(cs_real_t   *hcond,
     hconv[ii] = cp * lambda_over_cp * nu / lcar_nc;
     hcond[ii] = hconv[ii] * hcd_over_hcv;
   }
-}
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-void
-cs_f_wall_condensation_get_model_pointers
-  (int                                **icondb,
-   int                                **icondv)
-{
-  *icondb       = &(_wall_cond.icondb);
-  *icondv       = &(_wall_cond.icondv);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

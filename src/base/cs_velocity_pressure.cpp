@@ -365,10 +365,6 @@ const cs_velocity_pressure_param_t  *cs_glob_velocity_pressure_param
 
 void
 cs_f_velocity_pressure_model_get_pointers(int     **idilat);
-void
-cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
-                                          int     **icalhy,
-                                          int     **itpcol);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -385,23 +381,6 @@ void
 cs_f_velocity_pressure_model_get_pointers(int     **idilat)
 {
   *idilat = &(_velocity_pressure_model.idilat);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global velocity_pressure structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
-                                          int     **icalhy,
-                                          int     **itpcol)
-{
-  *iphydr = &(_velocity_pressure_param.iphydr);
-  *icalhy = &(_velocity_pressure_param.icalhy);
-  *itpcol = &(_velocity_pressure_param.itpcol);
 }
 
 /*============================================================================

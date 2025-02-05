@@ -23,12 +23,10 @@
 subroutine majgeo &
  ( ncel2  , ncele2 , nfac2  , nfabo2 ,                            &
    iface2 , ifabo2 ,                                              &
-   volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
    cdgfa2 , cdgfb2 ,                                              &
    volum2 , volf2  , srfan2 , srfbn2 , sffan2 , sffbn2 ,          &
-   dist2  , distb2 , pond2  ,                                     &
-   dijpf2 , diipb2 , dofij2 )                                     &
+   dist2  , distb2  )                                             &
 
  bind(C, name="cs_f_majgeo")
 
@@ -52,9 +50,6 @@ subroutine majgeo &
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
 ! ifmfb2           ! ia ! <-- ! boundary face family number                    !
 ! ifmce2           ! ia ! <-- ! cell family number                             !
-! volmn2           ! r  ! <-- ! Minimum control volume                         !
-! volmx2           ! r  ! <-- ! Maximum control volume                         !
-! voltt2           ! r  ! <-- ! Total   control volume                         !
 ! xyzce2           ! ra ! <-- ! cell centers                                   !
 ! surfa2           ! ra ! <-- ! interior face normals                          !
 ! surfb2           ! ra ! <-- ! boundary face normals                          !
@@ -69,10 +64,6 @@ subroutine majgeo &
 ! sffbn2           ! ra ! <-- ! boundary fluid face surfaces                   !
 ! dist2            ! ra ! <-- ! distance IJ.Nij                                !
 ! distb2           ! ra ! <-- ! likewise for boundary faces                    !
-! pond2            ! ra ! <-- ! weighting (Aij=pond Ai+(1-pond)Aj)             !
-! dijpf2           ! ra ! <-- ! vector I'J'                                    !
-! diipb2           ! ra ! <-- ! likewise for boundary faces                    !
-! dofij2           ! ra ! <-- ! vector OF at interior faces                    !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -106,13 +97,13 @@ integer(c_int), dimension(nfabo2), target :: ifabo2
 real(c_double) :: volmn2, volmx2, voltt2
 
 real(c_double), dimension(3,ncele2), target :: xyzce2
-real(c_double), dimension(3,nfac2), target :: surfa2, cdgfa2, dijpf2, dofij2
+real(c_double), dimension(3,nfac2), target :: surfa2, cdgfa2
 real(c_double), dimension(3,nfac2), target :: suffa2
-real(c_double), dimension(3,nfabo2), target :: surfb2, cdgfb2, diipb2
+real(c_double), dimension(3,nfabo2), target :: surfb2, cdgfb2
 real(c_double), dimension(3,nfabo2), target :: suffb2
 real(c_double), dimension(ncele2), target :: volum2
 real(c_double), dimension(ncele2), target :: volf2
-real(c_double), dimension(nfac2), target :: srfan2, sffan2, dist2, pond2
+real(c_double), dimension(nfac2), target :: srfan2, sffan2, dist2
 real(c_double), dimension(nfabo2), target :: srfbn2, sffbn2, distb2
 
 ! Local variables
@@ -157,20 +148,6 @@ suffbn => sffbn2(1:nfabor)
 
 dist => dist2(1:nfac)
 distb => distb2(1:nfabor)
-
-pond => pond2(1:nfac)
-
-dijpf => dijpf2(1:3,1:nfac)
-diipb => diipb2(1:3,1:nfabor)
-dofij => dofij2(1:3,1:nfac)
-
-!===============================================================================
-! 4. Define cstphy variables
-!===============================================================================
-
-volmin = volmn2
-volmax = volmx2
-voltot = voltt2
 
 !===============================================================================
 

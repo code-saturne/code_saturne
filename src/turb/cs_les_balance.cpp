@@ -2627,34 +2627,6 @@ _les_balance_create_tui(void)
   _les_balance_initialize_tui();
 }
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_les_balance_get_pointer(int **i_les_balance);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointer to member of the global les balance structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   i_les_balance --> pointer to cs_glob_les_balance->i_les_balance
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_les_balance_get_pointer(int **i_les_balance)
-{
-  *i_les_balance = &(_les_balance.i_les_balance);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================

@@ -135,38 +135,6 @@ module mesh
   !> oriented to the exterior of the domain
   double precision, dimension(:), pointer :: distb
 
-  !> \anchor pond
-  !> weighting (Aij=pond Ai+(1-pond)Aj)
-  !> for every internal face,
-  !> \f$\displaystyle\frac{\vect{FJ}.\vect{n}}{\vect{IJ}.\vect{n}}\f$.
-  !> With regard to the mesh quality, its ideal value is 0.5
-  double precision, dimension(:), pointer :: pond
-
-  !> \anchor dijpf
-  !> vector I'J' for interior faces
-  !> for every internal face, the three components of the vector
-  !> \f$\vect{I'J'}\f$, where I' and J' are
-  !> respectively the orthogonal projections of the neighboring cell
-  !> centers I and J on a straight line orthogonal to the face and passing
-  !> through its center
-  double precision, dimension(:,:), pointer :: dijpf
-
-  !> \anchor diipb
-  !> vector II' for interior faces
-  !> for every boundary face, the three components of the vector
-  !> \f$\vect{II'}\f$. I' is the orthogonal projection of I,
-  !> center of the neighboring cell, on the
-  !> straight line perpendicular to the face and passing through its center
-  double precision, dimension(:,:), pointer :: diipb
-
-  !> \anchor dofij
-  !> vector OF for interior faces
-  !> for every internal face, the three components of the vector
-  !> \f$\vect{OF}\f$. O is the intersection
-  !> point between the face and the straight line joining the centers
-  !> of the two neighboring cells. F is the face center
-  double precision, dimension(:,:), pointer :: dofij
-
   !=============================================================================
 
 contains

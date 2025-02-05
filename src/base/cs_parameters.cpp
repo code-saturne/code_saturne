@@ -569,19 +569,7 @@ cs_tree_node_t  *cs_glob_tree = nullptr;
  *============================================================================*/
 
 void
-cs_f_space_disc_get_pointers(int     **imvisf,
-                             int     **imrgra);
-
-void
-cs_f_time_scheme_get_pointers(int     **ischtp,
-                              int     **istmpf,
-                              int     **isno2t,
-                              int     **isto2t,
-                              int     **iccvfg,
-                              int     **initro);
-
-void
-cs_f_restart_auxiliary_get_pointers(int  **ileaux);
+cs_f_time_scheme_get_pointers(int     **initro);
 
 void
 cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
@@ -796,21 +784,6 @@ _var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Get pointers to members of the global space disc structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_space_disc_get_pointers(int     **imvisf,
-                             int     **imrgra)
-{
-  *imvisf = &(_space_disc.imvisf);
-  *imrgra = &(_space_disc.imrgra);
-}
-
-/*----------------------------------------------------------------------------
  * Get pointers to members of the global time scheme structure.
  *
  * This function is intended for use by Fortran wrappers, and
@@ -818,36 +791,9 @@ cs_f_space_disc_get_pointers(int     **imvisf,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_time_scheme_get_pointers(int     **ischtp,
-                              int     **istmpf,
-                              int     **isno2t,
-                              int     **isto2t,
-                              int     **iccvfg,
-                              int     **initro)
+cs_f_time_scheme_get_pointers(int     **initro)
 {
-  *ischtp = &(_time_scheme.time_order);
-  *istmpf = &(_time_scheme.istmpf);
-  *isno2t = &(_time_scheme.isno2t);
-  *isto2t = &(_time_scheme.isto2t);
-  *iccvfg = &(_time_scheme.iccvfg);
-
   *initro = &_initro;
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global restart_auxiliary structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ileaux  --> pointer to cs_glob_restart_auxiliary->read_auxiliary
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_restart_auxiliary_get_pointers(int  **ileaux)
-{
-  *ileaux = &(_restart_auxiliary.read_auxiliary);
 }
 
 /*----------------------------------------------------------------------------

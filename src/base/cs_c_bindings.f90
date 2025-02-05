@@ -121,56 +121,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Set mapped boundary conditions for a given field and mapping
-    !>        locator.
-
-    !> param[in]       field_id         id of field whose boundary conditions
-    !>                                  are set
-    !> param[in]       locator          associated mapping locator, as returned
-    !>                                  by \ref cs_boundary_conditions_map.
-    !> param[in]       location_type    matching values location
-    !>                                  (CS_MESH_LOCATION_CELLS or
-    !>                                  CS_MESH_LOCATION_BOUNDARY_FACES)
-    !> param[in]       normalize        normalization:
-    !>                                    0: values are simply mapped
-    !>                                    1: values are mapped, then multiplied
-    !>                                       by a constant factor so that their
-    !>                                       surface integral on selected faces
-    !>                                       is preserved (relative to the
-    !>                                       input values)
-    !>                                    2: as 1, but with a boundary-defined
-    !>                                       weight, defined by balance_w
-    !>                                    3: as 1, but with a cell-defined
-    !>                                       weight, defined by balance_w
-    !> param[in]       interpolate      interpolation option:
-    !>                                    0: values are simply based on
-    !>                                       matching cell or face center values
-    !>                                    1: values are based on matching cell
-    !>                                       or face center values, corrected
-    !>                                       by gradient interpolation
-    !> param[in]       n_faces          number of selected boundary faces
-    !> param[in]       faces            list of selected boundary faces (1 to n)
-    !> param[in]       balance_w        optional balance weight
-    !> param[in]       nvar             number of variables with BC's
-    !> param[in, out]  rcodcl           boundary condition values
-
-    subroutine boundary_conditions_mapped_set(field_id, locator,               &
-                                              location_type, normalize,        &
-                                              interpolate, n_faces, faces,     &
-                                              balance_w, nvar, rcodcl)         &
-      bind(C, name='cs_f_boundary_conditions_mapped_set')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: field_id
-      type(c_ptr), value :: locator
-      integer(c_int), value :: location_type, normalize, interpolate
-      integer(c_int), value :: n_faces, nvar
-      integer(c_int), dimension(*), intent(in) :: faces
-      real(kind=c_double), dimension(*), intent(in) :: balance_w, rcodcl
-    end subroutine boundary_conditions_mapped_set
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function copying a var_cal_opt structure associated
     ! with a field.
 
@@ -249,17 +199,6 @@ module cs_c_bindings
 
     ! Interface to C function activating default log.
 
-    subroutine cs_log_default_activate(activate)  &
-      bind(C, name='cs_log_default_activate')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      logical(kind=c_bool), value :: activate
-    end subroutine cs_log_default_activate
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function activating default log.
-
     function cs_log_default_is_active() result(is_active) &
       bind(C, name='cs_log_default_is_active')
       use, intrinsic :: iso_c_binding
@@ -329,198 +268,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Return the number of temporal moments.
-
-    !> \return number of defined moments
-
-    function cs_time_moment_n_moments() result(n_moments)  &
-      bind(C, name='cs_time_moment_n_moments')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int) :: n_moments
-    end function cs_time_moment_n_moments
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Return if moment is active (1) or not (0).
-
-    !> \return 1 if moment is active, 0 if not
-
-    function cs_time_moment_is_active(m_id) result(is_active)  &
-      bind(C, name='cs_time_moment_is_active')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: m_id
-      integer(c_int) :: is_active
-    end function cs_time_moment_is_active
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Get field id associated with a given moment.
-
-    !> For moments not defined by the user, but defined automatically so as
-    !> to allow computation of higher order moments (i.e. variances), no field
-    !> is associated, so the returned value is -1.
-
-    !> \param[in]   m_num   moment number (based on moment creation order,
-    !>                      1 to n numbering)
-
-    !> \return      f_id    associated field id, or -1
-
-    function time_moment_field_id(m_num) result(f_id)  &
-      bind(C, name='cs_f_time_moment_field_id')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: m_num
-      integer(c_int)        :: f_id
-    end function time_moment_field_id
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Enable or disable plotting for a timer statistic.
-
-    !> \param[in]  id    id of statistic
-    !> \param[in]  plot  0 to disable, 1 to enable
-
-    subroutine timer_stats_set_plot(id, plot)  &
-      bind(C, name='cs_timer_stats_set_plot')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: id, plot
-    end subroutine timer_stats_set_plot
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Start a timer for a given statistic.
-
-    !> Parents of the current statistic are also started, if not active.
-
-    !> If a timer with the same root but different parents is active, we assume
-    !> the current operation is a subset of the active timer, so the timer is
-    !> not started, so as to avoid having a sum of parts larger thn the total.
-
-    !> \param[in]   id    id of statistic
-
-    subroutine timer_stats_start(id)  &
-      bind(C, name='cs_timer_stats_start')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: id
-    end subroutine timer_stats_start
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Start a timer for a given statistic, stopping previous timers
-    !>         of the same type which are not a parent, and starting inactive
-    !>         parent timers if necessary.
-
-    !> \param[in]   id    id of statistic
-
-    !> \return  id of previously active statistic, or -1 in case of error
-
-    function timer_stats_switch(id)  result(old_id)  &
-      bind(C, name='cs_timer_stats_switch')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: id
-      integer(c_int)        :: old_id
-    end function timer_stats_switch
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Calculation of \f$ k \f$ and \f$\varepsilon\f$
-    !>        from a diameter \f$ D_H \f$, a turbulent intensity \f$ I \f$
-    !>        and the reference velocity \f$ U_{ref} \f$
-    !>        for a circular duct flow with smooth wall
-    !>        (for inlet boundary conditions).
-    !>
-    !> \param[in]     uref2         square of the reference flow velocity
-    !> \param[in]     t_intensity   turbulent intensity \f$ I \f$
-    !> \param[in]     dh            hydraulic diameter \f$ D_H \f$
-    !> \param[out]    k             calculated turbulent intensity \f$ k \f$
-    !> \param[out]    eps           calculated turbulent dissipation
-    !>                               \f$ \varepsilon \f$
-
-    subroutine turbulence_bc_ke_turb_intensity(uref2, t_intensity, dh,         &
-                                               k, eps)                         &
-      bind(C, name='cs_turbulence_bc_ke_turb_intensity')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), value :: uref2, t_intensity, dh
-      real(kind=c_double), intent(inout) :: k, eps
-    end subroutine turbulence_bc_ke_turb_intensity
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Compute matrix \f$ \tens{alpha} \f$ used in the computation of the
-    !>        Reynolds stress tensor boundary conditions.
-    !>
-    !> \param[in]      is_sym  Constant c in description above
-    !>                         (1 at a symmetry face, 0 at a wall face)
-    !> \param[in]      p_lg    change of basis matrix (local to global)
-    !> \param[out]     alpha   transformation matrix
-
-    subroutine turbulence_bc_rij_transform(is_sym, p_lg, alpha)                &
-      bind(C, name='cs_turbulence_bc_rij_transform')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: is_sym
-      real(c_double), dimension(3,3), intent(in) :: p_lg
-      real(c_double), dimension(6,6), intent(out) :: alpha
-    end subroutine turbulence_bc_rij_transform
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Compute molar and mass fractions of elementary species Ye, Xe
-    !>  (fuel, O2, CO2, H2O, N2) from global species Yg (fuel, oxidant, products)
-
-    !> \param[in]     yg            global mass fraction
-    !> \param[out]    ye            elementary mass fraction
-    !> \param[out]    xe            elementary molar fraction
-
-    subroutine yg2xye(yg, ye, xe)  &
-      bind(C, name='cs_combustion_gas_yg2xye')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*) :: yg
-      real(kind=c_double), dimension(*), intent(out) :: ye, xe
-    end subroutine yg2xye
-
-    !---------------------------------------------------------------------------
-
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function handling boundary condition errors and output
-
-    subroutine cs_boundary_conditions_error(bc_flag, type_name) &
-      bind(C, name='cs_boundary_conditions_error')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), dimension(*), intent(in) :: bc_flag
-      type(c_ptr), value :: type_name
-    end subroutine cs_boundary_conditions_error
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function locating shifted bundary face coordinates on
-    ! possibly filtered cells or boundary faces for later interpolation.
-
-    function cs_boundary_conditions_map(location_type, n_location_elts,         &
-                                        n_faces, location_elts, faces,          &
-                                        coord_shift, coord_stride,              &
-                                        tolerance) result(l)                    &
-      bind(C, name='cs_boundary_conditions_map')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: location_type, n_location_elts, n_faces
-      integer(c_int), dimension(*), intent(in) :: location_elts, faces
-      real(kind=c_double), dimension(*) :: coord_shift
-      integer(c_int), value :: coord_stride
-      real(kind=c_double), value :: tolerance
-      type(c_ptr) :: l
-    end function cs_boundary_conditions_map
 
     !---------------------------------------------------------------------------
 
@@ -536,49 +284,12 @@ module cs_c_bindings
 
     ! Interface to C function to get the bc type array pointer
 
-    subroutine cs_f_boundary_conditions_get_pointers(itypfb, izfppp) &
+    subroutine cs_f_boundary_conditions_get_pointers(itypfb) &
       bind(C, name='cs_f_boundary_conditions_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: itypfb, izfppp
+      type(c_ptr), intent(out) :: itypfb
     end subroutine cs_f_boundary_conditions_get_pointers
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function creating a directory
-
-    subroutine cs_file_mkdir_default(path)  &
-      bind(C, name='cs_file_mkdir_default')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in) :: path
-    end subroutine cs_file_mkdir_default
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function returning the global dot product of 2 vectors
-
-    function cs_gdot(n, x, y) result(gdot) &
-      bind(C, name='cs_gdot')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: n
-      real(kind=c_double), dimension(*), intent(in) :: x, y
-      real(kind=c_double) :: gdot
-    end function cs_gdot
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function returning the global residual of 2 vectors
-
-    function cs_gres(n, vol, x, y) result(gres) &
-      bind(C, name='cs_gres')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: n
-      real(kind=c_double), dimension(*), intent(in) :: vol, x, y
-      real(kind=c_double) :: gres
-    end function cs_gres
 
     !---------------------------------------------------------------------------
 
@@ -633,7 +344,8 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
 
     ! Interface to C function
-    !> \brief Add a property definition based on a cs_field_t. Field is created if needed
+    !> \brief Add a property definition based on a cs_field_t.
+    ! Field is created if needed
 
     !> \param[in] name          property name
     !> \param[in] type_flag     field type flag
@@ -672,7 +384,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function which returns if the restart is from NEPTUNE_CFD
+    ! Interface to C function which returns if the restart present
     function cs_restart_present() result(flag) &
       bind(C, name='cs_restart_present')
       use, intrinsic :: iso_c_binding
@@ -694,64 +406,6 @@ module cs_c_bindings
       integer(c_int), value                                    :: dim
       integer(c_int)                                           :: id
     end function cs_variable_field_create
-
-    !---------------------------------------------------------------------------
-    ! Interface to C function for balance computation
-
-    subroutine cs_balance_by_zone(selection_crit, scalar_name)  &
-      bind(C, name='cs_balance_by_zone')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
-      character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name
-    end subroutine cs_balance_by_zone
-
-    !---------------------------------------------------------------------------
-    ! Interface to C function for balance computation
-
-    subroutine cs_pressure_drop_by_zone(selection_crit)  &
-      bind(C, name='cs_pressure_drop_by_zone')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
-    end subroutine cs_pressure_drop_by_zone
-
-    !---------------------------------------------------------------------------
-    ! Interface to C function for balance computation
-
-    subroutine cs_surface_balance(selection_crit, scalar_name, normal)  &
-      bind(C, name='cs_surface_balance')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
-      character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name
-      real(kind=c_double), dimension(3), intent(in) :: normal
-    end subroutine cs_surface_balance
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function cs_balance_scalar
-
-    subroutine cs_balance_scalar(idtvar, f_id , imucpp, imasac, inc,          &
-                                 vcopt , pvar , pvara,                        &
-                                 coefap, coefbp, cofafp, cofbfp, i_massflux,  &
-                                 b_massflux, i_visc, b_visc, viscel, xcpp,    &
-                                 weighf, weighb, icvflb, icvfli,              &
-                                 smbrp)                                       &
-      bind(C, name='cs_balance_scalar')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: idtvar, f_id, imasac, imucpp, inc
-      type(c_ptr), value :: vcopt
-      real(kind=c_double), dimension(*), intent(in) :: pvar, pvara, coefap
-      real(kind=c_double), dimension(*), intent(in) :: coefbp, cofafp, cofbfp
-      real(kind=c_double), dimension(*), intent(in) :: i_massflux, b_massflux
-      real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc, viscel
-      real(kind=c_double), dimension(*), intent(in) :: weighf, weighb, xcpp
-      integer(c_int), value :: icvflb
-      integer(c_int), dimension(*), intent(in) :: icvfli
-      real(kind=c_double), dimension(*), intent(inout) :: smbrp
-    end subroutine cs_balance_scalar
 
     !---------------------------------------------------------------------------
 
@@ -779,7 +433,7 @@ module cs_c_bindings
 
     !> \brief Get the gas concentrations from aerosol code
 
-    subroutine cs_atmo_aerosol_get_gas(array) &
+    subroutine cs_atmo_aerosol_get_gas(array)   &
       bind(C, name='cs_atmo_aerosol_get_gas')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -790,8 +444,8 @@ module cs_c_bindings
 
     !> \brief Return pointers to atmo chemistry arrays
 
-    subroutine cs_f_atmo_chem_arrays_get_pointers(isca_chem, dmmk, &
-        chempoint) &
+    subroutine cs_f_atmo_chem_arrays_get_pointers(isca_chem, dmmk,  &
+                                                  chempoint)        &
       bind(C, name='cs_f_atmo_chem_arrays_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -802,7 +456,8 @@ module cs_c_bindings
 
     ! Interface to C function for atmo
 
-    subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, za, muzero, omega, fo) &
+    subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, za, muzero, &
+                      omega, fo) &
       bind(C, name='cs_atmo_compute_solar_angles')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -837,18 +492,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function cs_math_3_normalize
-
-    subroutine vector_normalize(vin, vout)                   &
-      bind(C, name='cs_f_math_3_normalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(in) :: vin
-      real(kind=c_double), dimension(*), intent(out) :: vout
-    end subroutine vector_normalize
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for data assimilation (atmospheric module)
 
     subroutine cs_at_data_assim_initialize()                        &
@@ -880,81 +523,6 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: exp_st
       real(kind=c_double), dimension(*), intent(inout) :: imp_st
     end subroutine cs_at_data_assim_source_term
-
-    !---------------------------------------------------------------------------
-
-    ! Compute solid mesh quantities
-
-    subroutine cs_f_mesh_quantities_solid_compute()   &
-      bind(C, name='cs_f_mesh_quantities_solid_compute')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_f_mesh_quantities_solid_compute
-
-    !---------------------------------------------------------------------------
-
-    ! Set porosity model.
-
-    subroutine cs_porous_model_set_model(iporos)   &
-      bind(C, name='cs_porous_model_set_model')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), value :: iporos
-    end subroutine cs_porous_model_set_model
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Return pointers
-
-    !> \param[out]   ibm_porosity_mode  Pointer to ibm_porosity_mode
-
-    subroutine cs_f_porosity_ibm_get_pointer(ibm_porosity_mode) &
-      bind(C, name='cs_f_porosity_ibm_get_pointer')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: ibm_porosity_mode
-    end subroutine cs_f_porosity_ibm_get_pointer
-
-   !---------------------------------------------------------------------------
-
-    !> \brief Return pointers
-
-    !> \param[out]   compute_porosity_from_scan  Pointer to
-    !>                                           compute_porosity_from_scan
-
-    subroutine cs_f_porosity_from_scan_get_pointer(compute_porosity_from_scan) &
-      bind(C, name='cs_f_porosity_from_scan_get_pointer')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: compute_porosity_from_scan
-    end subroutine cs_f_porosity_from_scan_get_pointer
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function to get notebook parameter value
-
-    function cs_f_notebook_parameter_value_by_name(name) result(val) &
-      bind(C, name='cs_notebook_parameter_value_by_name')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
-      real(kind=c_double) :: val
-    end function cs_f_notebook_parameter_value_by_name
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for temperature-enthalpy conversion at
-    ! selected faces
-
-    subroutine cs_ht_convert_t_to_h_faces_l(n_faces, face_ids, t, h)  &
-      bind(C, name='cs_ht_convert_t_to_h_faces_l')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: n_faces
-      integer(c_int), dimension(*), intent(in) :: face_ids
-      real(kind=c_double), dimension(*), intent(in) :: t
-      real(kind=c_double), dimension(*), intent(inout) :: h
-    end subroutine cs_ht_convert_t_to_h_faces_l
 
     !---------------------------------------------------------------------------
 
@@ -1037,37 +605,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function updating scalar array extended ghost values.
-
-    subroutine synsce(var)  &
-      bind(C, name='cs_mesh_sync_var_scal_ext')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), dimension(*) :: var
-    end subroutine synsce
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function updating vector array ghost values.
-
-    subroutine synvin(var)  &
-      bind(C, name='cs_mesh_sync_var_vect')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), dimension(3, *) :: var
-    end subroutine synvin
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function updating symmetric tensor array ghost values.
-
-    subroutine syntis(var)  &
-      bind(C, name='cs_mesh_sync_var_sym_tens')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), dimension(6, *) :: var
-    end subroutine syntis
-
     subroutine atlecc (imode) &
       bind(C, name="cs_f_read_chemistry_profile")
       use, intrinsic :: iso_c_binding
@@ -1084,35 +621,6 @@ module cs_c_bindings
   !=============================================================================
 
 contains
-
-  !=============================================================================
-
-  !> \brief Compute balance on a given zone for a given scalar
-
-  !> param[in]       sel_crit   selection criteria of a volume zone
-  !> param[in]       name       scalar name
-
-  subroutine balance_by_zone(sel_crit, name)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in)             :: sel_crit, name
-
-    ! Local variables
-
-    character(len=len_trim(sel_crit)+1, kind=c_char) :: c_sel_crit
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-
-    c_sel_crit = trim(sel_crit)//c_null_char
-    c_name = trim(name)//c_null_char
-
-    call cs_balance_by_zone(c_sel_crit, c_name)
-
-    return
-
-  end subroutine balance_by_zone
 
   !=============================================================================
 
@@ -1159,156 +667,6 @@ contains
     iz2 = z_lv(2) + 1
 
   end subroutine intprz
-
-  !=============================================================================
-
-  !> \brief Compute pressure drop for a given zone
-
-  !> param[in]       sel_crit   selection criteria of a volume zone
-
-  subroutine pressure_drop_by_zone(sel_crit)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in)             :: sel_crit
-
-    ! Local variables
-
-    character(len=len_trim(sel_crit)+1, kind=c_char) :: c_sel_crit
-
-    c_sel_crit = trim(sel_crit)//c_null_char
-
-    call cs_pressure_drop_by_zone(c_sel_crit)
-
-    return
-
-  end subroutine pressure_drop_by_zone
-
-  !=============================================================================
-
-  !> \brief Compute surface scalar balance for a given surface area
-
-  !> param[in]       sel_crit   selection criteria of a volume zone
-
-  subroutine surface_balance(sel_crit, name, normal)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in)             :: sel_crit, name
-    real(kind=c_double), dimension(3), intent(in) :: normal
-
-    ! Local variables
-
-    character(len=len_trim(sel_crit)+1, kind=c_char) :: c_sel_crit
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-
-    c_sel_crit = trim(sel_crit)//c_null_char
-    c_name = trim(name)//c_null_char
-
-    call cs_surface_balance(c_sel_crit, c_name, normal)
-
-    return
-
-  end subroutine surface_balance
-
-  !=============================================================================
-
-  !> \brief Handle boundary condition definition errors and associated output.
-
-  !> For each boundary face, bc_type defines the boundary condition type.
-  !> As a convention here, zero values correspond to undefined types,
-  !> positive values to defined types (with no error), and negative values
-  !> to defined types with inconsistent or incompatible values, the
-  !> absolute value indicating the original boundary condition type.
-
-  !> param[in]  bc_type    array og BC type ids
-
-  subroutine boundary_conditions_error(bc_type)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer(c_int), dimension(*), intent(in) :: bc_type
-
-    ! Call C function with default name
-
-    call cs_boundary_conditions_error(bc_type, c_null_ptr)
-
-  end subroutine boundary_conditions_error
-
-  !=============================================================================
-
-  !> \brief Locate shifted boundary face coordinates on possibly filtered
-  !>        cells or boundary faces for later interpolation.
-
-  !> param[in]  location_type    matching values location (CS_MESH_LOCATION_CELLS
-  !>                             or CS_MESH_LOCATION_BOUNDARY_FACES)
-  !> param[in]  n_location_elts  number of selected location elements
-  !> param[in]  n_faces          number of selected boundary faces
-  !> param[in]  location_elts    list of selected location elements (1 to n),
-  !>                             or NULL if no indirection is needed
-  !> param[in]  faces            list of selected boundary faces (1 to n),
-  !>                             or NULL if no indirection is needed
-  !> param[in]  coord_shift      array of coordinates shift relative to selected
-  !>                             boundary faces
-  !> param[in]  coord_stride     access stride in coord_shift: 0 for uniform
-  !>                             shift, 1 for "per face" shift.
-  !> param[in]  tolerance        relative tolerance for point location.
-
-  !> return  associated locator structure
-
-  function boundary_conditions_map(location_type, n_location_elts,           &
-                                   n_faces, location_elts, faces,            &
-                                   coord_shift, coord_stride,                &
-                                   tolerance) result(l)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: location_type, n_location_elts, n_faces
-    integer, dimension(*), intent(in) :: location_elts, faces
-    real(kind=c_double), dimension(*) :: coord_shift
-    integer, intent(in) :: coord_stride
-    double precision, intent(in) :: tolerance
-    type(c_ptr) :: l
-
-    ! Local variables
-
-    integer iel, ifac
-    integer(c_int) :: c_loc_type, c_n_elts, c_n_faces, c_coord_stride
-    integer(c_int), dimension(:), allocatable :: c_loc_elts, c_faces
-    real(kind=c_double) :: c_tolerance
-
-    c_loc_type = location_type
-    c_n_elts = n_location_elts
-    c_n_faces = n_faces
-    c_coord_stride = coord_stride
-    c_tolerance = tolerance
-
-    allocate(c_loc_elts(n_location_elts))
-    allocate(c_faces(n_faces))
-
-    do iel = 1, n_location_elts
-      c_loc_elts(iel) = location_elts(iel) - 1
-    enddo
-    do ifac = 1, n_faces
-      c_faces(ifac) = faces(ifac) - 1
-    enddo
-
-    l = cs_boundary_conditions_map(c_loc_type, c_n_elts, c_n_faces,          &
-                                   c_loc_elts, c_faces,                      &
-                                   coord_shift, c_coord_stride, c_tolerance)
-
-    deallocate(c_faces)
-    deallocate(c_loc_elts)
-
-  end function boundary_conditions_map
 
   !=============================================================================
 
@@ -1438,34 +796,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return notebook parameter value
-
-  !> \param[in]     name      name of the notebook parameter
-  !> \result        val
-
-  function notebook_parameter_value_by_name(name) result(val)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in) :: name
-    double precision :: val
-
-    ! Local variables
-
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-    real(kind=c_double) :: c_val
-
-    c_name = trim(name)//c_null_char
-
-    c_val = cs_f_notebook_parameter_value_by_name(c_name)
-    val = c_val
-
-  end function notebook_parameter_value_by_name
-
-  !=============================================================================
   !> brief Clipping scalar field.
   ! \param[in]   iscal
 

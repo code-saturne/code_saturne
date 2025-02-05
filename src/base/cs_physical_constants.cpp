@@ -474,45 +474,21 @@ END_C_DECLS
  *============================================================================*/
 
 void
-cs_f_physical_constants_get_pointers(double  **gx,
-                                     double  **gy,
-                                     double  **gz,
-                                     int     **icorio);
+cs_f_physical_constants_get_pointers(double  **gz);
 
 void
-cs_f_fluid_properties_get_pointers(int     **ixyzp0,
-                                   int     **icp,
-                                   int     **icv,
+cs_f_fluid_properties_get_pointers(int     **icp,
                                    int     **irovar,
-                                   int     **ivivar,
-                                   int     **ivsuth,
                                    double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
-                                   double  **pred0,
-                                   double  **xyzp0,
                                    double  **t0,
                                    double  **cp0,
-                                   double  **cv0,
-                                   double  **cpv0,
-                                   double  **cvl,
-                                   double  **l00,
-                                   double  **lambda0,
                                    double  **rair,
                                    double  **rvapor,
                                    double  **rvsra,
-                                   double  **clatev,
-                                   double  **xmasmr,
-                                   int     **ipthrm,
                                    double  **pther,
-                                   double  **pthera,
-                                   double  **pthermax,
-                                   double  **sleak,
-                                   double  **kleak,
                                    double  **roref);
-
-void
-cs_f_fluid_properties_pp_get_pointers(double  **viscv0);
 
 /*============================================================================
  * Private function definitions
@@ -529,22 +505,13 @@ cs_f_fluid_properties_pp_get_pointers(double  **viscv0);
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   gx     --> pointer to cs_glob_physical_constants->gravity[0]
- *   gy     --> pointer to cs_glob_physical_constants->gravity[1]
  *   gz     --> pointer to cs_glob_physical_constants->gravity[2]
- *   icorio --> pointer to cs_glob_physical_constants->icorio
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_physical_constants_get_pointers(double  **gx,
-                                     double  **gy,
-                                     double  **gz,
-                                     int     **icorio)
+cs_f_physical_constants_get_pointers(double  **gz)
 {
-  *gx     = &(_physical_constants.gravity[0]);
-  *gy     = &(_physical_constants.gravity[1]);
-  *gz     = &(_physical_constants.gravity[2]);
-  *icorio = &(_physical_constants.icorio);
+  *gz = &(_physical_constants.gravity[2]);
 }
 
 /*----------------------------------------------------------------------------
@@ -554,116 +521,46 @@ cs_f_physical_constants_get_pointers(double  **gx,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   ixyzp0   --> pointer to cs_glob_fluid_properties->ixyzp0
  *   icp      --> pointer to cs_glob_fluid_properties->icp
- *   icv      --> pointer to cs_glob_fluid_properties->icv
  *   irovar   --> pointer to cs_glob_fluid_properties->irovar
- *   ivivar   --> pointer to cs_glob_fluid_properties->ivivar
- *   ivsuth   --> pointer to cs_glob_fluid_properties->ivsuth
  *   ro0      --> pointer to cs_glob_fluid_properties->ro0
  *   viscl0   --> pointer to cs_glob_fluid_properties->viscl0
  *   p0       --> pointer to cs_glob_fluid_properties->p0
- *   pred0    --> pointer to cs_glob_fluid_properties->pred0
- *   xyzp0    --> pointer to cs_glob_fluid_properties->xyzp0
  *   t0       --> pointer to cs_glob_fluid_properties->t0
  *   cp0      --> pointer to cs_glob_fluid_properties->cp0
- *   cv0      --> pointer to cs_glob_fluid_properties->cv0
- *   cpv0     --> pointer to cs_glob_fluid_properties->cpv0
- *   cvl      --> pointer to cs_glob_fluid_properties->cvl
- *   l00      --> pointer to cs_glob_fluid_properties->l00
- *   lambda0  --> pointer to cs_glob_fluid_properties->lambda0
  *   rair     --> pointer to cs_glob_fluid_properties->r_pg_cnst
  *   rvapor   --> pointer to cs_glob_fluid_properties->r_v_cnst
  *   rvsra    --> pointer to cs_glob_fluid_properties->rvsra
- *   clatev   --> pointer to cs_glob_fluid_properties->clatev
- *   xmasmr   --> pointer to cs_glob_fluid_properties->xmasmr
- *   ipthrm   --> pointer to cs_glob_fluid_properties->ipthrm
  *   pther    --> pointer to cs_glob_fluid_properties->pther
- *   pthera   --> pointer to cs_glob_fluid_properties->pthera
- *   pthermax --> pointer to cs_glob_fluid_properties->pthermax
- *   sleak    --> pointer to cs_glob_fluid_properties->sleak
- *   kleak    --> pointer to cs_glob_fluid_properties->kleak
  *   roref    --> pointer to cs_glob_fluid_properties->roref
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_fluid_properties_get_pointers(int     **ixyzp0,
-                                   int     **icp,
-                                   int     **icv,
+cs_f_fluid_properties_get_pointers(int     **icp,
                                    int     **irovar,
-                                   int     **ivivar,
-                                   int     **ivsuth,
                                    double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
-                                   double  **pred0,
-                                   double  **xyzp0,
                                    double  **t0,
                                    double  **cp0,
-                                   double  **cv0,
-                                   double  **cpv0,
-                                   double  **cvl,
-                                   double  **l00,
-                                   double  **lambda0,
                                    double  **rair,
                                    double  **rvapor,
                                    double  **rvsra,
-                                   double  **clatev,
-                                   double  **xmasmr,
-                                   int     **ipthrm,
                                    double  **pther,
-                                   double  **pthera,
-                                   double  **pthermax,
-                                   double  **sleak,
-                                   double  **kleak,
                                    double  **roref)
 {
-  *ixyzp0   = &(_fluid_properties.ixyzp0);
   *icp      = &(_fluid_properties.icp);
-  *icv      = &(_fluid_properties.icv);
   *irovar   = &(_fluid_properties.irovar);
-  *ivivar   = &(_fluid_properties.ivivar);
-  *ivsuth   = &(_fluid_properties.ivsuth);
   *ro0      = &(_fluid_properties.ro0);
   *viscl0   = &(_fluid_properties.viscl0);
   *p0       = &(_fluid_properties.p0);
-  *pred0    = &(_fluid_properties.pred0);
-  *xyzp0    =  (_fluid_properties.xyzp0);
   *t0       = &(_fluid_properties.t0);
   *cp0      = &(_fluid_properties.cp0);
-  *cv0      = &(_fluid_properties.cv0);
-  *cpv0     = &(_fluid_properties.cpv0);
-  *cvl      = &(_fluid_properties.cvl);
-  *l00      = &(_fluid_properties.l00);
-  *lambda0  = &(_fluid_properties.lambda0);
   *rair     = &(_fluid_properties.r_pg_cnst);
   *rvapor   = &(_fluid_properties.r_v_cnst);
   *rvsra    = &(_fluid_properties.rvsra);
-  *clatev   = &(_fluid_properties.clatev);
-  *xmasmr   = &(_fluid_properties.xmasmr);
-  *ipthrm   = &(_fluid_properties.ipthrm);
   *pther    = &(_fluid_properties.pther);
-  *pthera   = &(_fluid_properties.pthera);
-  *pthermax = &(_fluid_properties.pthermax);
-  *sleak    = &(_fluid_properties.sleak);
-  *kleak    = &(_fluid_properties.kleak);
   *roref    = &(_fluid_properties.roref);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global fluid properties structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   visv0   --> pointer to cs_glob_fluid_properties->viscv0
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_fluid_properties_pp_get_pointers(double  **viscv0)
-{
-  *viscv0   = &(_fluid_properties.viscv0);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

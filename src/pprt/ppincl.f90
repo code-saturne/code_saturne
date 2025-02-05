@@ -236,49 +236,6 @@ module ppincl
 
   !> \}
 
-  !--> PARAMETERS ASSOCIATED WITH THE GAS MIXTURE MODELLING
-
-  !> \defgroup modelling chosen by the user
-
-  !> \addtogroup gas_mixture
-  !> \{
-
-  !> Specific condensation modelling
-  !>      if = -1 module not activated
-  !>      if =  0 condensation source terms activated
-  integer(c_int), pointer, save ::  icondb
-
-  !> Specific condensation modelling
-  !>      if = -1 module not activated
-  !>      if =  0 condensation source terms with metal
-  !>                               structures activate
-  integer(c_int), pointer, save ::  icondv
-
-  !> \}
-
-  !> \defgroup compressible Compressible models options
-
-  !> \addtogroup compressible
-  !> \{
-
-  !> specific total energy for compressible algorithm
-  integer, save :: ienerg = 0
-
-  !> temperature deduced from the specific total energy
-  integer, save :: itempk = 0
-
-  !> \}
-
-  !> \defgroup common Common
-
-  !> \addtogroup common
-  !> \{
-
-  !> reference volume viscosity
-  real(c_double), pointer, save :: viscv0
-
-  !> \}
-
   !> \defgroup enthalpy Enthalpic variables pointers
 
   !> \addtogroup enthalpy
@@ -292,17 +249,6 @@ module ppincl
 
   !> \}
 
-
-  !> \defgroup boundary_conditions Boundary conditions
-
-  !> \addtogroup boundary_conditions
-  !> \{
-
-  !> number of boundary zones on current process
-  integer, save :: nzfppp
-
-  !> \}
-
   !=============================================================================
 
   !> \}
@@ -311,19 +257,7 @@ module ppincl
 
   interface
 
-    !---------------------------------------------------------------------------
-
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global fluid properties structure
-
-    subroutine cs_f_fluid_properties_pp_get_pointers(viscv0)   &
-      bind(C, name='cs_f_fluid_properties_pp_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: viscv0
-    end subroutine cs_f_fluid_properties_pp_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -351,19 +285,6 @@ module ppincl
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function retrieving pointers to members of the
-    ! global physical model flags
-
-    subroutine cs_f_wall_condensation_get_model_pointers(p_icondb, &
-                                                         p_icondv) &
-      bind(C, name='cs_f_wall_condensation_get_model_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: p_icondb, p_icondv
-    end subroutine cs_f_wall_condensation_get_model_pointers
-
-    !---------------------------------------------------------------------------
-
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -386,18 +307,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_viscv0, p_ippmod
-    type(c_ptr) :: p_icondb, p_icondv
-
-    call cs_f_fluid_properties_pp_get_pointers(p_viscv0)
-    call c_f_pointer(p_viscv0, viscv0)
+    type(c_ptr) :: p_ippmod
 
     call cs_f_physical_model_get_pointers(p_ippmod)
-    call cs_f_wall_condensation_get_model_pointers(p_icondb, p_icondv)
 
     call c_f_pointer(p_ippmod, ippmod, [nmodmx])
-    call c_f_pointer(p_icondb, icondb)
-    call c_f_pointer(p_icondv, icondv)
 
   end subroutine pp_models_init
 

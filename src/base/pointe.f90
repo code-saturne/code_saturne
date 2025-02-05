@@ -68,10 +68,6 @@ module pointe
   !> (see \ref cs_user_boundary_conditions)
   integer, dimension(:), pointer, save :: itypfb
 
-  !> to identify boundary zones associated with boundary faces
-  !> (specific physics models)
-  integer, dimension(:), pointer :: izfppp
-
   !> \}
 
   !> \}
@@ -91,14 +87,13 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_itypfb, c_izfppp
+    type(c_ptr) :: c_itypfb
 
     call cs_f_boundary_conditions_create
 
-    call cs_f_boundary_conditions_get_pointers(c_itypfb, c_izfppp)
+    call cs_f_boundary_conditions_get_pointers(c_itypfb)
 
     call c_f_pointer(c_itypfb, itypfb, [nfabor])
-    call c_f_pointer(c_izfppp, izfppp, [nfabor])
 
   end subroutine boundary_conditions_init
 

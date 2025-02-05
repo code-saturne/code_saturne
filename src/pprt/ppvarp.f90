@@ -86,15 +86,6 @@ end interface
 
 !===============================================================================
 
-! 3. Compressible model (field mappings)
-!----------------------
-
-if (ippmod(icompf).ge.0) then
-  ! Fortran field mappings
-  call map_variable_field_try('total_energy', ienerg)
-  call map_variable_field_try('temperature', itempk)
-endif
-
 ! 6. Atmospheric model
 !---------------------
 

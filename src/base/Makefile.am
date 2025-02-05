@@ -355,7 +355,6 @@ cs_sat_coupling.cpp \
 cs_scalar_clipping.cpp \
 cs_search.cpp \
 cs_selector.cpp \
-cs_selector_f2c.f90 \
 cs_setup.cpp \
 cs_solid_zone.cpp \
 cs_solve_all.cpp \

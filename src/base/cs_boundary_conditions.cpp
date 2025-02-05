@@ -174,8 +174,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     cs_real_t                 *rcodcl);
 
 void
-cs_f_boundary_conditions_get_pointers(int  **itypfb,
-                                      int  **izfppp);
+cs_f_boundary_conditions_get_pointers(int  **itypfb);
 
 /*============================================================================
  * Private function definitions
@@ -1494,12 +1493,9 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_boundary_conditions_get_pointers(int **itypfb,
-                                      int **izfppp)
+cs_f_boundary_conditions_get_pointers(int **itypfb)
 {
   *itypfb = _bc_type;
-
-  *izfppp = cs_glob_bc_pm_info->izfppp;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

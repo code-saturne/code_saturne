@@ -1059,31 +1059,7 @@ double cs_turb_xclt = 0.305;
 
 void
 cs_f_turb_model_get_pointers(int     **model,
-                             int     **itytur,
-                             int     **hybrid_turb);
-
-void
-cs_f_turb_rans_model_get_pointers(int     **irccor,
-                                  int     **itycor,
-                                  int     **idirsm,
-                                  int     **iclkep,
-                                  int     **igrhok,
-                                  int     **ikecou,
-                                  int     **reinit_turb,
-                                  int     **irijco,
-                                  int     **irijnu,
-                                  int     **irijrb,
-                                  int     **irijec,
-                                  int     **idifre,
-                                  int     **iclsyr,
-                                  int     **iclptr);
-
-void
-cs_f_turb_les_model_get_pointers(int     **idries);
-
-void
-cs_f_turb_hybrid_model_get_pointers(int  **iicc,
-                                    int  **ishield);
+                             int     **itytur);
 
 void
 cs_f_turb_reference_values(double  **almax,
@@ -1091,14 +1067,10 @@ cs_f_turb_reference_values(double  **almax,
 
 void
 cs_f_turb_model_constants_get_pointers(double  **cmu,
-                                       double  **csmago,
                                        double  **xlesfd,
                                        double  **xlesfl,
                                        double  **ales,
-                                       double  **bles,
-                                       double  **cdries,
-                                       double  **csrij,
-                                       double  **xclt);
+                                       double  **bles);
 
 /*============================================================================
  * Private function definitions
@@ -1117,109 +1089,15 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
  * parameters:
  *   iturb  --> pointer to cs_glob_turb_model->model
  *   itytur --> pointer to cs_glob_turb_model->itytur
- *   hybrid_turb --> pointer to cs_glob_turb_model->hybrid_turb
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_turb_model_get_pointers(int     **iturb,
-                             int     **itytur,
-                             int     **hybrid_turb)
+                             int     **itytur)
 {
   *iturb  = &(_turb_model.model);
   *itytur = &(_turb_model.itytur);
-  *hybrid_turb = &(_turb_model.hybrid_turb);
 }
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the RANS turbulence functions structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   irccor --> pointer to cs_glob_turb_rans_model->irccor
- *   itycor --> pointer to cs_glob_turb_rans_model->itycor
- *   idirsm --> pointer to cs_glob_turb_rans_model->idirsm
- *   iclkep --> pointer to cs_glob_turb_rans_model->iclkep
- *   igrhok --> pointer to cs_glob_turb_rans_model->igrhok
- *   ikecou --> pointer to cs_glob_turb_rans_model->ikecou
- *   reinit_turb --> pointer to cs_glob_turb_rans_model->reinit_turb
- *   irijco --> pointer to cs_glob_turb_rans_model->irijco
- *   irijnu --> pointer to cs_glob_turb_rans_model->irijnu
- *   irijrb --> pointer to cs_glob_turb_rans_model->irijrb
- *   irijec --> pointer to cs_glob_turb_rans_model->irijec
- *   idifre --> pointer to cs_glob_turb_rans_model->idifre
- *   iclsyr --> pointer to cs_glob_turb_rans_model->iclsyr
- *   iclptr --> pointer to cs_glob_turb_rans_model->iclptr
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turb_rans_model_get_pointers(int     **irccor,
-                                  int     **itycor,
-                                  int     **idirsm,
-                                  int     **iclkep,
-                                  int     **igrhok,
-                                  int     **ikecou,
-                                  int     **reinit_turb,
-                                  int     **irijco,
-                                  int     **irijnu,
-                                  int     **irijrb,
-                                  int     **irijec,
-                                  int     **idifre,
-                                  int     **iclsyr,
-                                  int     **iclptr)
-{
-  *irccor = &(_turb_rans_model.irccor);
-  *itycor = &(_turb_rans_model.itycor);
-  *idirsm = &(_turb_rans_model.idirsm);
-  *iclkep = &(_turb_rans_model.iclkep);
-  *igrhok = &(_turb_rans_model.igrhok);
-  *ikecou = &(_turb_rans_model.ikecou);
-  *reinit_turb= &(_turb_rans_model.reinit_turb);
-  *irijco = &(_turb_rans_model.irijco);
-  *irijnu = &(_turb_rans_model.irijnu);
-  *irijrb = &(_turb_rans_model.irijrb);
-  *irijec = &(_turb_rans_model.irijec);
-  *idifre = &(_turb_rans_model.idifre);
-  *iclsyr = &(_turb_rans_model.iclsyr);
-  *iclptr = &(_turb_rans_model.iclptr);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the LES turbulence model structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   idries --> pointer to cs_glob_turb_les_model->idries
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turb_les_model_get_pointers(int     **idries)
-{
-  *idries = &(_turb_les_model.idries);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the hybrid turbulence model structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   iicc    --> pointer to cs_glob_turb_hybrid_model->iicc
- *   ishield --> pointer to cs_glob_turb_hybrid_model->ishield
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turb_hybrid_model_get_pointers(int  **iicc,
-                                    int  ** ishield)
-{
-  *iicc    = &(_turb_hybrid_model.iicc);
-  *ishield = &(_turb_hybrid_model.ishield);
-}
-
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the RANS turbulence functions structure.
@@ -1250,25 +1128,16 @@ cs_f_turb_reference_values(double  **almax,
 
 void
 cs_f_turb_model_constants_get_pointers(double  **cmu,
-                                       double  **csmago,
                                        double  **xlesfd,
                                        double  **xlesfl,
                                        double  **ales,
-                                       double  **bles,
-                                       double  **cdries,
-                                       double  **csrij,
-                                       double  **xclt)
+                                       double  **bles)
 {
   *cmu    = &cs_turb_cmu;
-  *csmago= &cs_turb_csmago;
-  *csmago= &cs_turb_csmago;
   *xlesfd= &cs_turb_xlesfd;
   *xlesfl= &cs_turb_xlesfl;
   *ales  = &cs_turb_ales;
   *bles  = &cs_turb_bles;
-  *cdries= &cs_turb_cdries;
-  *csrij = &cs_turb_csrij;
-  *xclt = &cs_turb_xclt;
 }
 
 /*============================================================================

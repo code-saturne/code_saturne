@@ -34,25 +34,11 @@ module field
 
   integer :: FIELD_INTENSIVE, FIELD_EXTENSIVE
   integer :: FIELD_VARIABLE, FIELD_PROPERTY
-  integer :: FIELD_POSTPROCESS, FIELD_ACCUMULATOR, FIELD_USER, FIELD_CDO
-
-  integer :: FIELD_OK, FIELD_INVALID_KEY_NAME, FIELD_INVALID_KEY_ID,   &
-             FIELD_INVALID_CATEGORY, FIELD_INVALID_TYPE
 
   parameter (FIELD_INTENSIVE=1)
   parameter (FIELD_EXTENSIVE=2)
   parameter (FIELD_VARIABLE=4)
   parameter (FIELD_PROPERTY=8)
-  parameter (FIELD_POSTPROCESS=16)
-  parameter (FIELD_ACCUMULATOR=32)
-  parameter (FIELD_USER=64)
-  parameter (FIELD_CDO=128)
-
-  parameter (FIELD_OK=0)
-  parameter (FIELD_INVALID_KEY_NAME=1)
-  parameter (FIELD_INVALID_KEY_ID=2)
-  parameter (FIELD_INVALID_CATEGORY=3)
-  parameter (FIELD_INVALID_TYPE=4)
 
   !=============================================================================
 
@@ -75,46 +61,6 @@ module field
       implicit none
       integer(c_int), value :: f_id, k_id, k_value
     end subroutine field_set_key_int
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function assigning integer bit values to a key
-
-    !> \brief Set integer bits matching a mask to 1 for a given key for a field.
-
-    !> If the key id is not valid, or the value type or field category is not
-    !> compatible, a fatal error is provoked.
-
-    !> \param[in]   f_id  field id
-    !> \param[in]   k_id  id of associated key
-    !> \param[in]   mask  associated mask
-
-    subroutine field_set_key_int_bits(f_id, k_id, k_value)  &
-      bind(C, name='cs_f_field_set_key_int_bits')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id, k_id, k_value
-    end subroutine field_set_key_int_bits
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function assigning integer bit values to a key
-
-    !> \brief Set integer bits matching a mask to 0 for a given key for a field.
-
-    !> If the key id is not valid, or the value type or field category is not
-    !> compatible, a fatal error is provoked.
-
-    !> \param[in]   f_id  field id
-    !> \param[in]   k_id  id of associated key
-    !> \param[in]   mask  associated mask
-
-    subroutine field_clear_key_int_bits(f_id, k_id, k_value)  &
-      bind(C, name='cs_f_field_clear_key_int_bits')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id, k_id, k_value
-    end subroutine field_clear_key_int_bits
 
     !---------------------------------------------------------------------------
 
@@ -274,52 +220,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function indicating if a field maintains a previous time
-
-    function cs_f_field_have_previous(f_id) result(have_previous)  &
-      bind(C, name='cs_f_field_have_previous')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      integer(c_int) :: have_previous
-    end function cs_f_field_have_previous
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function changing a fields handling of previous values
-
-    subroutine cs_f_field_set_n_previous(f_id, n_previous)  &
-      bind(C, name='cs_f_field_set_n_previous')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id, n_previous
-    end subroutine cs_f_field_set_n_previous
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function to get the number of previous values
-
-    subroutine cs_f_field_get_n_previous(f_id, n_previous)  &
-      bind(C, name='cs_f_field_get_n_previous')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      integer(c_int), dimension(1), intent(out) :: n_previous
-    end subroutine cs_f_field_get_n_previous
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function copying current to previous values
-
-    subroutine cs_field_current_to_previous(f)  &
-      bind(C, name='cs_field_current_to_previous')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: f
-    end subroutine cs_field_current_to_previous
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function returning field's value pointer and dimensions.
 
     ! If the field id is not valid, a fatal error is provoked.
@@ -334,41 +234,6 @@ module field
       integer(c_int), dimension(2) :: f_dim
       type(c_ptr), intent(out)     :: c_p
     end subroutine cs_f_field_var_ptr_by_id
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function returning field's value pointer and dimensions.
-
-    ! If the field id is not valid, a fatal error is provoked.
-
-    subroutine cs_f_field_var_ptr_by_id_try(id, p_type, p_rank, f_dim, c_p)  &
-      bind(C, name='cs_f_field_var_ptr_by_id_try')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value        :: id
-      integer(c_int), value        :: p_type
-      integer(c_int), value        :: p_rank
-      integer(c_int), dimension(2) :: f_dim
-      type(c_ptr), intent(out)     :: c_p
-    end subroutine cs_f_field_var_ptr_by_id_try
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function returning field's boundary condition
-    ! coefficient values pointer and dimensions.
-
-    ! If the field id is not valid, a fatal error is provoked.
-
-    subroutine cs_f_field_bc_coeffs_ptr_by_id(id, p_type, p_rank, f_dim, c_p)  &
-      bind(C, name='cs_f_field_bc_coeffs_ptr_by_id')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value        :: id
-      integer(c_int), value        :: p_type
-      integer(c_int), value        :: p_rank
-      integer(c_int), dimension(3) :: f_dim
-      type(c_ptr), intent(out)     :: c_p
-    end subroutine cs_f_field_bc_coeffs_ptr_by_id
 
     !---------------------------------------------------------------------------
 
@@ -393,44 +258,6 @@ module field
       character(kind=c_char, len=1), dimension(*), intent(in)  :: name
       integer(c_int)                                           :: id
     end function cs_f_field_key_id_try
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function querying if key value was defined
-
-    function cs_field_is_key_set(f, k_id) result(is_set) &
-      bind(C, name='cs_field_is_key_set')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value    :: f
-      integer(c_int), value :: k_id
-      logical(c_bool)       :: is_set
-    end function cs_field_is_key_set
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function querying if key value was locked
-
-    function cs_field_is_key_locked(f, k_id) result(is_locked) &
-      bind(C, name='cs_field_is_key_locked')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value    :: f
-      integer(c_int), value :: k_id
-      logical(c_bool)       :: is_locked
-    end function cs_field_is_key_locked
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function locking a key value
-
-    subroutine cs_field_lock_key(f, k_id) &
-      bind(C, name='cs_field_lock_key')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value    :: f
-      integer(c_int), value :: k_id
-    end subroutine cs_field_lock_key
 
     !---------------------------------------------------------------------------
 
@@ -888,198 +715,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Indicate if a field maintains values at the previous time step
-
-  !> \param[in]   f_id           field id
-  !> \param[out]  have_previous  true if previous values are maintained
-
-  subroutine field_have_previous(f_id, have_previous)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)  :: f_id
-    logical, intent(out) :: have_previous
-
-    ! Local variables
-
-    integer(c_int) :: c_f_id, c_have_prev
-
-    c_f_id = f_id
-
-    c_have_prev = cs_f_field_have_previous(c_f_id)
-
-    if (c_have_prev .eq. 0) then
-      have_previous = .false.
-    else
-      have_previous = .true.
-    endif
-
-    return
-
-  end subroutine field_have_previous
-
-  !=============================================================================
-
-  !> \brief Interface to C function locking a key value
-
-  !> \param[in]   f_id        field id
-  !> \param[in]   k_id        key id
-
-  subroutine field_lock_key(f_id, k_id)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: f_id           ! Id of defined field
-    integer, intent(in) :: k_id
-
-    ! Local variables
-
-    integer(c_int) :: cf_id, ck_id
-    type(c_ptr)    :: f
-
-    cf_id = f_id
-    ck_id = k_id
-    f = cs_field_by_id(cf_id)
-
-    call cs_field_lock_key(f, ck_id)
-
-  end subroutine field_lock_key
-
-  !=============================================================================
-
-  !> \brief Modify a field's handling of values at the previous time step
-
-  !> \param[in]   f_id        field id
-  !> \param[out]  n_previous  number of previous values (0 or 1)
-
-  subroutine field_set_n_previous(f_id, n_previous)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)  :: f_id, n_previous
-
-    ! Local variables
-
-    integer(c_int) :: c_f_id, c_n_previous
-
-    c_f_id = f_id
-    c_n_previous = n_previous
-
-    call cs_f_field_set_n_previous(c_f_id, c_n_previous)
-
-    return
-
-  end subroutine field_set_n_previous
-
-  !=============================================================================
-
-  !> \brief Return a given field's number of previous values.
-
-  !> \param[in]   f_id   field id
-  !> \param[out]  f_n    number of previous values
-
-  subroutine field_get_n_previous(f_id, f_n)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)  :: f_id
-    integer, intent(out) :: f_n
-
-    ! Local variables
-
-    integer(c_int) :: c_f_id
-    integer(c_int), dimension(1) :: c_n
-
-    c_f_id = f_id
-
-    call cs_f_field_get_n_previous(c_f_id, c_n)
-
-    f_n = c_n(1)
-
-    return
-
-  end subroutine field_get_n_previous
-
-  !=============================================================================
-
-  !> \brief  Copy current values to previous values
-
-  !> \param[in]  id  field id
-
-  subroutine field_current_to_previous(id)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: id
-
-    ! Local variables
-
-    integer(c_int) :: c_id
-    type(c_ptr)    :: f
-
-    c_id = id
-
-    f = cs_field_by_id(c_id)
-    call cs_field_current_to_previous(f)
-
-    return
-
-  end subroutine field_current_to_previous
-
-  !=============================================================================
-
-  !> \brief  Query if a given key has been set for a field.
-
-  !> If the key id is not valid, or the field category is not
-  !> compatible, a fatal error is provoked.
-
-  !> \param[in]   f_id     field id
-  !> \param[in]   k_id     id of associated key
-  !> \param[out]  is_set   is .true. if the field is set
-
-  subroutine field_is_key_set(f_id, k_id, is_set)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)   :: f_id, k_id
-    logical, intent(out)  :: is_set
-
-    ! Local variables
-
-    integer(c_int) :: c_f_id, c_k_id
-    logical(c_bool) :: c_is_set
-    type(c_ptr) :: f
-
-    is_set = .false.
-
-    c_f_id = f_id
-    c_k_id = k_id
-    f = cs_field_by_id(c_f_id)
-    c_is_set = cs_field_is_key_set(f, k_id)
-    if (c_is_set.eqv..true.) is_set = .true.
-
-  end subroutine field_is_key_set
-
-  !=============================================================================
-
   !> \brief  Return an id associated with a given key name if present.
 
   !> If the key has not been defined previously, -1 is returned.
@@ -1482,38 +1117,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the values array of a given 3*3 tensor field
-
-  !> \param[in]     field_id  id of given field (which must be vectorial)
-  !> \param[out]    p         pointer to vector field values
-
-  subroutine field_get_val_t(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(2) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 1
-    p_rank = 2
-
-    call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    ! TODO assert f_dim(2) = 9
-    call c_f_pointer(c_p, p, [f_dim(1)/3, f_dim(1)/3, f_dim(2)])
-
-  end subroutine field_get_val_t
-
-
-!=============================================================================
-
   !> \brief Return pointer to the values array of a given vector field
 
   !> \param[in]     name      name of given field (which must be vectorial)
@@ -1544,41 +1147,6 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
   end subroutine field_get_val_v_by_name
-
-  !=============================================================================
-
-  !> \brief Return pointer to the array's previous values of a given vector
-  !>        field
-
-  !> \param[in]     name      name of given field (which must be vectorial)
-  !> \param[out]    p         pointer to vector field values at the previous
-  !>                          iteration
-
-  subroutine field_get_val_prev_v_by_name(name, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    character(len=*), intent(in)                             :: name
-    double precision, dimension(:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(2) :: f_dim
-    type(c_ptr) :: c_p
-
-    c_name = trim(name)//c_null_char
-
-    f_id = cs_f_field_id_by_name(c_name)
-    p_type = 2
-    p_rank = 2
-
-    call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_val_prev_v_by_name
 
   !=============================================================================
 
@@ -1642,37 +1210,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the previous values array of a given scalar field
-  !> if it exists, to the current value otherwise
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to previous scalar field values
-
-  subroutine field_get_val_prev_s_try(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 2
-    p_rank = 1
-
-    call cs_f_field_var_ptr_by_id_try(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_val_prev_s_try
-
-  !=============================================================================
-
   !> \brief Return pointer to the previous values array of a given vector field
 
   !> \param[in]     field_id  id of given field (which must be vectorial)
@@ -1700,156 +1237,6 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
   end subroutine field_get_val_prev_v
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefa array of a given scalar field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to scalar field BC coefa values
-
-  subroutine field_get_coefa_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 1
-    p_rank = 1
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_coefa_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefb array of a given scalar field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to scalar field BC coefa values
-
-  subroutine field_get_coefb_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 2
-    p_rank = 1
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_coefb_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefaf array of a given scalar field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to scalar field BC coefa values
-
-  subroutine field_get_coefaf_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 3
-    p_rank = 1
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_coefaf_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefac array of a given scalar field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to scalar field BC coefa values
-
-  subroutine field_get_coefac_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 7
-    p_rank = 1
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_coefac_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefbf array of a given scalar field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to scalar field BC coefb values
-
-  subroutine field_get_coefbf_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 4
-    p_rank = 1
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_coefbf_s
 
   !=============================================================================
 
