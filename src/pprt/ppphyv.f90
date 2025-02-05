@@ -34,7 +34,7 @@
 !>  - it is forbidden to modify the turbulent viscosity here.
 !>  - \ref cstphy::icp "icp" must be set to 1 if one wants the specific heat
 !>    to be variable in space
-!>  - it is necessary to call field_set_key_int(ivarfl(isca(iscal)), kivisl, 0)
+!>  - it is necessary to call cs_field_set_key_int(f, kivisl, 0)
 !>    if one wants the specific heat to be variable in space
 !> \remarks:
 !>  - this routine is called at the beginning of each time step,

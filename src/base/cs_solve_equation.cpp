@@ -98,6 +98,11 @@
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_functions.h"
 
+#include "cogz/cs_combustion_gas.h"
+#include "cogz/cs_steady_laminar_flamelet_source_terms.h"
+#include "cogz/cs_soot_model.h"
+#include "comb/cs_coal_source_terms.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -134,7 +139,15 @@ BEGIN_C_DECLS
  * Prototypes for Fortran functions and variables.
  *============================================================================*/
 
-extern int cs_glob_darcy_unsteady;
+void
+cs_f_ebutss(int        f_id,
+            cs_real_t  smbrs[],
+            cs_real_t  rovsdt[]);
+
+void
+cs_f_lwctss(int        f_id,
+            cs_real_t  smbrs[],
+            cs_real_t  rovsdt[]);
 
 /* Use legacy macro type to maintain compatibility with legacy user files */
 
@@ -829,9 +842,96 @@ _diffusion_terms_vector(const cs_field_t            *f,
   *viscce = (cs_real_6_t *)_viscce;
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the source terms for scalars which are part of
+ * specific physics models. Source terms are defined over one time step.
+ *
+ * Warning: source terms are treated differently from the way they are
+ *          in cs_user_source_terms.
+ * fimp*d(var) = smbrs is solved. fimp and rhs already hold possible user
+ * source terms values and thus have to be incremented (and not overwritten).
+ *
+ * For stability reasons, only positive terms are added to fimp, while there
+ * are no such constrains on values to be added to rhs.
+ *
+ * In the case of a source term of the form cexp + cimp*var, the source term
+ * should be implemented as follows:
+ * \f[
+ *   smbrs  = smbrs  + cexp + cimp*var
+ * \f]
+ * \f[
+ *   rovsdt = rovsdt + max(-cimp,0)
+ * \f]
+ *
+ *rovsdt and smbrs are provided here respectively in kg/s and in kg/s*[scalar].
+ * Examples:
+ *   velocity \f$ kg m/s^2 \f$
+ *   temperature \f$ kg K/s \f$
+ *   enthalpy \f$ J/s \f$
+ *
+ * \param[in]       f          pointer to field structure
+ * \param[in, out]  iterns     explicit source terms
+ * \param[in, out]  fimp       implicit source terms
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_physical_model_source_terms(cs_field_t        *f,
+                             cs_real_t          rhs[],
+                             cs_real_t          fimp[])
+{
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  /* Gas combustion */
+
+  if (cs_glob_combustion_gas_model != nullptr) {
+    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+    int cm_type = cm->type / 100;
+    if (cm_type == CS_COMBUSTION_SLFM)
+      cs_steady_laminar_flamelet_source_terms(f, rhs, fimp);
+
+    if (cm->isoot >= 1) {
+      if (f == cm->fsm || f == cm->npm)
+        cs_soot_production(f->id, rhs, fimp);
+    }
+
+    if (cm_type == CS_COMBUSTION_EBU)
+      cs_f_ebutss(f->id, rhs, fimp);
+    else if (cm_type == CS_COMBUSTION_LW)
+      cs_f_lwctss(f->id, rhs, fimp);
+  }
+
+  /* Pulverized coal combustion */
+
+  else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
+    cs_coal_source_terms_scalar(f, rhs, fimp);
+
+  /* Atmospheric version */
+
+  if (pm_flag[CS_ATMOSPHERIC] >= 0) {
+    cs_atmo_scalar_source_term(f->id, rhs);
+
+    cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+    if (at_opt->rain == true){
+      cs_atmo_source_term(f->id, rhs, fimp);
+    }
+  }
+
+  /*! Electric arcs, Joule effect ionic conduction */
+
+  if (   pm_flag[CS_JOULE_EFFECT] > 0
+      || pm_flag[CS_ELECTRIC_ARCS] > 0) {
+    const cs_mesh_t *m = cs_glob_mesh;
+    const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+    cs_elec_source_terms(m, fvq, f->id, rhs);
+  }
+
+  /*! Cooling towers */
+
+  if (pm_flag[CS_COOLING_TOWERS] > 0)
+    cs_ctwr_source_term(f->id, rhs, fimp);
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1247,25 +1347,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
     cs_syr_coupling_volume_source_terms(f->id, rhs, fimp);
 
   /* Specific physical models; order 2 not handled. */
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
-    cs_physical_model_source_terms(iscal, rhs, fimp);
-    cs_atmo_option_t *at_opt = cs_glob_atmo_option;
-    if (at_opt->rain == true){
-      cs_atmo_source_term(f->id, rhs, fimp);
-    }
-
-    /*! Electric arcs, Joule effect ionic conduction */
-    if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0
-        || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0)
-      cs_elec_source_terms(m, fvq, f->id, rhs);
-
-    /*! Cooling towers */
-    if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0)
-      cs_ctwr_source_term(f->id, rhs, fimp);
-  }
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
+    _physical_model_source_terms(f, rhs, fimp);
 
   /*  Rayonnement
-   *  Ordre 2 non pris en compte */
+   *  2nd order not handled */
   cs_real_t *cpro_tsscal = nullptr;
   if (idilat > 3) {
     char fname[128];

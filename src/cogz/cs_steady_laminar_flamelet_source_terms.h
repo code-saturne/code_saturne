@@ -47,24 +47,17 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_steady_laminar_flamelet_source_terms.c
- *
- * \brief Specific physic routine: STE/VTE and progress variable equations.
- */
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*
- * \param[in]      fld_id        field id
+ * \param[in]      f_sc          pointer to scalar field
  * \param[in,out]  smbrs         explicit right hand side
  * \param[in,out]  rovsdt        implicit terms
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_steady_laminar_flamelet_source_terms(int        fld_id,
-                                        cs_real_t  smbrs[],
-                                        cs_real_t  rovsdt[]);
+cs_steady_laminar_flamelet_source_terms(cs_field_t  *f_sc,
+                                        cs_real_t    smbrs[],
+                                        cs_real_t    rovsdt[]);
 
 /*----------------------------------------------------------------------------*/
 
