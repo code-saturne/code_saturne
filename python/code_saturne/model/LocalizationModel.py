@@ -475,15 +475,21 @@ class LocalizationModel(object):
 
         has_default_zone = False
 
-        if newZone.getLocalization() == newZone.defaultValues()['localization'] or newZone.getLabel() == newZone.defaultValues()['label'] or checkPresence == True:
+        if newZone.getLocalization() == newZone.defaultValues()['localization'] \
+                or newZone.getLabel() == newZone.defaultValues()['label'] \
+                or checkPresence == True:
           zones = self.getZones()
-          # Ensure that default zone is created if needed and it does not allready
-          # exist in xml
-          for zone in zones:
-            if zone.getLocalization() == zone.defaultValues()['localization'] and \
+
+          if self._typeZone == 'VolumicZone':
+            # Ensure that default volume zone is created if needed and
+            # it does not allready exist in xml
+            for zone in zones:
+              if zone.getLocalization() == zone.defaultValues()['localization'] and \
                       zone.getLabel() == zone.defaultValues()['label']:
-              has_default_zone = True
-              break
+                has_default_zone = True
+                break
+          else:
+            has_default_zone = True
 
         # Set localization
 
