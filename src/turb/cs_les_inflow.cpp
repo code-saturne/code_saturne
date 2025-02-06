@@ -816,8 +816,7 @@ cs_les_inflow_compute(void)
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
 
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   if (cs_glob_inflow_n_inlets == 0)
     return;
@@ -910,7 +909,7 @@ cs_les_inflow_compute(void)
 
         cs_inflow_sem_t *inflowsem = (cs_inflow_sem_t *)inlet->inflow;
 
-        if (inflowsem->volume_mode == 1){
+        if (inflowsem->volume_mode == 1) {
 
           cs_real_t dissiprate = eps_r[0];
           cs_lnum_t n_points = cs_glob_mesh->n_cells;
@@ -930,19 +929,12 @@ cs_les_inflow_compute(void)
           BFT_REALLOC(eps_r, n_points, cs_real_t);
           cs_array_real_set_scalar(n_cells, dissiprate, eps_r);
 
-          cs_real_3_t *point_coordinates = nullptr;
-          BFT_MALLOC(point_coordinates, n_cells, cs_real_3_t);
-          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-            for (cs_lnum_t j = 0; j < 3; j++)
-              point_coordinates[cell_id][j] = cell_cen[cell_id][j];
-          }
-
           BFT_REALLOC(fluctuations, n_points, cs_real_3_t);
           cs_array_real_fill_zero(3*n_cells, (cs_real_t *)fluctuations);
 
           cs_les_synthetic_eddy_method(cs_glob_mesh->n_cells,
                                        elt_ids,
-                                       point_coordinates,
+                                       cell_cen,
                                        point_weight,
                                        inlet->initialize,
                                        inlet->verbosity,
@@ -1643,6 +1635,8 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   /* Computation of the characteristic scale of the synthetic eddies */
   /*-----------------------------------------------------------------*/
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   cs_real_3_t  *length_scale;
   BFT_MALLOC(length_scale, n_points, cs_real_3_t);
 
@@ -1656,9 +1650,10 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
         cs_real_t length_scale_min = -HUGE_VAL;
-        length_scale_min = CS_MAX(length_scale_min,
-                           2.*CS_ABS(pow(mq->cell_vol[point_id + coo_id],
-                                         1./3.)));
+        length_scale_min
+          = fmax(length_scale_min,
+                 2.*fabs(pow(mq->cell_vol[point_id + coo_id],
+                             c_1ov3)));
 
         length_scale[point_id][coo_id]
           =    pow(1.5*rij_l[point_id][coo_id], 1.5)
