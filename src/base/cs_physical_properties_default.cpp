@@ -326,8 +326,8 @@ _compute_anisotropic_turbulent_viscosity(cs_lnum_t                   n_cells,
 
   }
 
-  if ( !(    (cs_glob_turb_rans_model->idirsm == 1)
-          && ((idfm) || (cs_glob_turb_model->itytur == 3))   ) )
+  if (!(   (cs_glob_turb_rans_model->idirsm == 1)
+        && ((idfm) || (cs_glob_turb_model->itytur == 3))))
     return;
 
   cs_real_6_t *visten

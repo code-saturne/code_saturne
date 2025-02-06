@@ -3288,7 +3288,7 @@ _additional_fields_stage_3(void)
    * for a scalar (exclusive or).*/
 
   if (idfm == 1 || iggafm == 1
-      || (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
+      || (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
           && cs_glob_turb_rans_model->idirsm == 1)) {
 
     cs_field_t *f_atv = cs_field_create("anisotropic_turbulent_viscosity",
