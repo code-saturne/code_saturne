@@ -2486,7 +2486,7 @@ class Studies(object):
                         if args[i]:
                             cmd += " " + args[i]
 
-                        # folder should not finished by / to prevent error in scripts 
+                        # folder should not finished by / to prevent error in scripts
                         folder = case.run_dir
                         if dest[i]:
                             folder = os.path.join(case.run_dir, dest[i])
