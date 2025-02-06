@@ -245,14 +245,14 @@ The following rules should be followed:
 
 - Index arrays used with *0* to *n-1* (zero-based) numbering should
   be named using a `idx_` or `index_` prefix or suffix, while
-  similar arrays using a *1* to *n* numbering (usually those that may be
-  also used in Fortran code) should be named using a `pos_`
+  similar arrays using a *1* to *n* numbering (usually those that were
+  also used in prior Fortran code) are named using a `pos_`
   prefix or suffix.
 
 - In a similar manner, element identifiers should in general use
   a *0* to *n-1* (zero-based) numbering and be named using a `id_` prefix
   or suffix, while identifiers using a *1* to *n* numbering (usually those
-  that may be also used in Fortran code) should be named using a `num_`
+  that were be also used in Fortran code) are named using a `num_`
   prefix or suffix.
 
 Naming of enumerations

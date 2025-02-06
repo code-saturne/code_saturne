@@ -184,10 +184,4 @@
 
   \snippet cs_user_extra_operations-turbomachinery.cpp extra_tbm_velocity_cylinder
 
-  \subsection tbm_user_fortran Fortran naming
-
-  Useful fortran variables and/or functions specific to turbomachinery computations
-  are contained int the fortran module \ref at_turbomachinery "turbomachinery"
-  and \ref at_rotation "rotation".
-
 */

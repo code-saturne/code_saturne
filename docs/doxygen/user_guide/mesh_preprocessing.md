@@ -484,9 +484,7 @@ Strings such as group names containing white-space
 or having names similar to reserved operators may be protected
 using "escape characters".
 
-Note that for defining a string in Fortran, double quotes are easier to use,
-as they do not conflict with Fortran's single quotes delimiting a string.
-In C, the converse is true. Also, in C, to define a string such as
+In C++ (or C), to define a string such as
 `\plane`, the string `\\plane` must be
 used, as the first `\` character is used by the
 compiler itself. Using the GUI, either notation is easy.
@@ -606,8 +604,8 @@ containing geometric functions may thus lead to reduced performance.
 Using selection criteria in user code {#sec_fvm_selector}
 ------------------------
 
-In order to use [selection criteria](@ref sec_selection_criteria) in C and
-Fortran user subroutines, a collection of utility subroutines is provided.
+In order to use [selection criteria](@ref sec_selection_criteria) in
+user-defined functions, a collection of utility subroutines is provided.
 
 for example:
 
@@ -617,40 +615,40 @@ for example:
 * advanced post-processing (c.f. \ref cs_user_postprocess.c,
   \ref cs_user_extra_operations, ...),
 
-### Selection criteria in Fortran
+### Selection criteria
 
 This section explains how to define surface or volume sections,
 in the form of lists `lstelt` of `nlelt` elements
 (internal faces, boundary faces or cells).
-For each type of element, the user calls the appropriate Fortran subroutine:
+For each type of element, the user calls the appropriate function:
 
-* \ref getfbr for boundary faces
-* \ref getfac for internal faces
-* \ref getcel for cells.
+* \ref cs_selector_get_b_face_list for boundary faces
+* \ref cs_selector_get_i_face_list for internal faces
+* \ref cs_selector_get_cell_list for cells.
 
 Several examples of possible selections are given here:
 
-*  `call getfbr("Face_1, Face_2", nlelt, lstelt)` selects
+*  `cs_selector_get_b_face_list("Face_1, Face_2", nlelt, lstelt)` selects
     boundary faces in groups *Face_1* or *Face_2*,
 
-*  `call getfac("4", nlelt, lstelt)` selects internal
+*  `cs_selector_get_i_face_list("4", nlelt, lstelt)` selects internal
     faces of color *4*,
 
-*  `call getfac("not(4)", nlelt, lstelt)` selects internal
+*  `cs_selector_get_i_face_list("not(4)", nlelt, lstelt)` selects internal
     faces which have a different color than 4,
 
-*  `call getfac("range[in_04, in_08]", nlelt, lstelt)` selects internal faces
+*  `cs_selector_get_i_face_list("range[in_04, in_08]", nlelt, lstelt)` selects internal faces
     with group names between *in_04* and *in_08* (in lexicographical order),
 
-*  `call getcel("1 or 2", nlelt, lstelt)` selects cells with colors 1 or 2,
+*  `cs_selector_get_cell_list("1 or 2", nlelt, lstelt)` selects cells with colors 1 or 2,
 
-*  `call getfbr("wall and y > 0", nlelt, lstelt)` selects boundary
+*  `cs_selector_get_b_face_list("wall and y > 0", nlelt, lstelt)` selects boundary
     faces of group *wall* which have the coordinate *Y > 0*,
 
-*  `call getfac("normal[1, 0, 0, 0.0001]", nlelt, lstelt)` selects
-    internal faces which have a normal direction to the vector (1,0,0),
+*  `cs_selector_get_b_face_list("normal[1, 0, 0, 0.0001]", nlelt, lstelt)` selects
+    boundary faces which have a normal direction to the vector (1,0,0),
 
-*  `call getcel("all[]", nlelt, lstelt)` selects all cells.
+*  `cs_selector_get_cell_list("all[]", nlelt, lstelt)` selects all cells.
 
 The user may then use a loop on the selected elements.
 For instance, in the subroutine `cs_user_boundary_y_conditions` used to impose
@@ -659,15 +657,6 @@ number 2 and which have the coordinate *X <= 0.01*
 (so that `call getfbr('2 and x <= 0.01', nlelt,lstelt)`);
 we can do a loop (`do ilelt = 1, nlelt`) and
 obtain `ifac = lstelt(ilelt)`.
-
-### Selection criteria in C
-
-In C, the equivalent functions are:
-
-* \ref cs_selector_get_b_face_list for boundary faces
-* \ref cs_selector_get_i_face_list for internal faces
-* \ref cs_selector_get_cell_list for cells.
-
 
 More examples are available in the [User examples](@ref cs_user_examples) section.
 

@@ -522,15 +522,11 @@
 /*!
   \page atmospheric_examples Atmospheric examples
 
-  \section advanced_loc_var_atm Local variables to be added for the Fortran examples
-
-  \snippet cs_user_boundary_conditions-atmo.f90 loc_var_dec
-
   \section base_init_atm Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
-  \section atmospheric_ex_1 Example 1 (Fortran)
+  \section atmospheric_ex_1 Example 1
 
   For boundary faces of zone "open_11",
   assign an inlet boundary condition prescribed from the

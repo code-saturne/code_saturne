@@ -83,19 +83,17 @@ global operations. The following list is not exhaustive:
   some interior faces will be on parallel boundaries. When values
   in these cells may have been modified locally, it is necessary to
   "synchronize" the ghost values for that array, using functions such
-  as \ref synsca in Fortran or \ref cs_halo_sync_var in C, before
+  as \ref cs_halo_sync_var, before
   using the face neighbor values.
-* In C code, the \ref cs_glob_rank_id and \ref cs_glob_n_ranks
+* The \ref cs_glob_rank_id and \ref cs_glob_n_ranks
   global variables can be used to query the current rank id
   (-1 in serial model, 0 to n-1 in parallel) and the number
   of ranks.
-  - in Fortran, the matching variables are `irangp` and `nrangp`.
 * The presence of periodicity is tested with the variable
-  <tt>cs_glob_mesh->n_init_perio</tt> in C, `iperio` in Fortran
+  <tt>cs_glob_mesh->n_init_perio</tt>
   (> 1 if periodicity is activated);
   - The presence of rotation periodicity is tested with the
-    <tt>cs_glob_mesh->have_rotation_perio</tt> variable in C
-    (`iperot` in Fortran).
+    <tt>cs_glob_mesh->have_rotation_perio</tt> variable.
 
 The user may refer to the different
 [parallel operation](@ref cs_user_extra_operations_examples_parallel_operations_p)
@@ -113,8 +111,7 @@ number of internal faces of the initial mesh).
 ### Logging operations in parallel mode
 
 When running in parallel, only the first rank actually produces outputs
-when writing to `run_solver.log` using the `nfecra` logical unit
-in Fortran, or \ref bft_printf or \ref cs_log_printf in C.
+when writing to `run_solver.log` using the \ref cs_log_printf function.
 
 This avoids requiring tests in calling code, which would add clutter
 an could easily be forgotten.
