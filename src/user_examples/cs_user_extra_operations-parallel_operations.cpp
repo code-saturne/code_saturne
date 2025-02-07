@@ -364,7 +364,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   xyz[1] = cvar_vel[0][1];
   xyz[2] = cvar_vel[0][2];
 
-  /* broadcast from rank irangv to all others */
+  /* broadcast from rank root_rank to all others */
   cs_parall_bcast(root_rank, 3, CS_REAL_TYPE, xyz);
 
   bft_printf("%s: On rank %d\n"
