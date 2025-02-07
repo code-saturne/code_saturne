@@ -602,19 +602,12 @@ void CS_PROCF(synthe, SYNTHE)
           BFT_REALLOC(eps_r, n_points, cs_real_t);
           cs_array_real_set_scalar(n_cells, dissiprate, eps_r);
 
-          cs_real_3_t *point_coordinates = NULL;
-          BFT_MALLOC(point_coordinates, n_cells, cs_real_3_t);
-          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-            for (cs_lnum_t j = 0; j < 3; j++)
-              point_coordinates[cell_id][j] = cell_cen[cell_id][j];
-          }
-
           BFT_REALLOC(fluctuations, n_points, cs_real_3_t);
           cs_array_real_fill_zero(3*n_cells, (cs_real_t *)fluctuations);
 
           cs_les_synthetic_eddy_method(cs_glob_mesh->n_cells,
                                        elt_ids,
-                                       point_coordinates,
+                                       cell_cen,
                                        point_weight,
                                        inlet->initialize,
                                        inlet->verbosity,
@@ -1659,12 +1652,11 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
     for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
 
-      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+      cs_real_t length_scale_min
+        = fmax(length_scale_min,
+               2.*fabs(pow(mq->cell_vol[point_id], 1./3.)));
 
-        cs_real_t length_scale_min = -HUGE_VAL;
-        length_scale_min = CS_MAX(length_scale_min,
-                           2.*CS_ABS(pow(mq->cell_vol[point_id + coo_id],
-                                         1./3.)));
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
         length_scale[point_id][coo_id]
           =    pow(1.5*rij_l[point_id][coo_id], 1.5)

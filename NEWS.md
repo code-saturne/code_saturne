@@ -3,6 +3,8 @@ Release 8.0.5 (unreleased)
 
 ### Bug fixes:
 
+- Fix for LES SEM in volume mode (memory leak and incorrect array access).
+
 - Fix error at setup stage in case of drift, due to incorrect
   test on field keyword.
 
