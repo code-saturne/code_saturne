@@ -3,6 +3,8 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix for LES SEM in volume mode (memory leak and incorrect array access).
+
 - Fix behavior of GUI when creating a new boundary zone, which was not using
   the "not(..)" syntax for newly added zones.
 
