@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1660,12 +1660,15 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
     for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
 
-      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+      // TODO: add a mesh algorithm to compute better estimation of longest
+      // and shortest cell lengths (would also be useful for HTLES and
+      // possibly other models.
 
-        cs_real_t length_scale_min = -HUGE_VAL;
-        length_scale_min = CS_MAX(length_scale_min,
-                           2.*CS_ABS(pow(mq->cell_vol[point_id + coo_id],
-                                         1./3.)));
+      cs_real_t length_scale_min
+        = fmax(length_scale_min,
+               2.*fabs(pow(mq->cell_vol[point_id], 1./3.)));
+
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
         length_scale[point_id][coo_id]
           =    pow(1.5*rij_l[point_id][coo_id], 1.5)
@@ -1675,9 +1678,9 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
           = 0.5*length_scale[point_id][coo_id];
 
         length_scale[point_id][coo_id]
-          = CS_MAX(length_scale[point_id][coo_id], length_scale_min);
+          = fmax(length_scale[point_id][coo_id], length_scale_min);
 
-        if (CS_ABS(length_scale[point_id][coo_id]-length_scale_min) < EPZERO)
+        if (fabs(length_scale[point_id][coo_id]-length_scale_min) < EPZERO)
           count[coo_id]++;
 
       }
@@ -1700,9 +1703,9 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
              j++) {
           cs_lnum_t vtx_id = mesh->b_face_vtx_lst[j];
           length_scale_min
-            = CS_MAX(length_scale_min,
-                     2.*CS_ABS(mq->cell_cen[3*cell_id + coo_id]
-                               - mesh->vtx_coord[3*vtx_id + coo_id]));
+            = fmax(length_scale_min,
+                   2.*fabs(mq->cell_cen[3*cell_id + coo_id]
+                           - mesh->vtx_coord[3*vtx_id + coo_id]));
         }
 
         length_scale[point_id][coo_id]
