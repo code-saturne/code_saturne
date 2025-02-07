@@ -512,7 +512,7 @@ versions are not):
 <tr><th> General functions <th>
 <tr><td> select all                          <td> `all[]`
 <tr><td> entities having no group or color   <td> `no_group[]`
-<tr><td> select a all groups or containing a string  <td> `range[`*string*`]` <br/>
+<tr><td> select a all groups or containing a substring  <td> `contains[` *substring* `]` <br/>
 <tr><td> select a range of groups or colors  <td> `range[` *first*, *last*`]` <br/>
                                                   `range[` *first*, *last*`, group]` <br/>
                                                   `range[` *first*, *last*`, attribute]`
@@ -643,7 +643,7 @@ Several examples of possible selections are given here:
     with group names between *in_04* and *in_08* (in lexicographical order),
 
 *  `cs_selector_get_b_face_list("contains[X]", nlelt, lstelt)` selects boundary faces
-    with group names conatining *X*,
+    with group names containing *X*,
 
 *  `cs_selector_get_cell_list("1 or 2", nlelt, lstelt)` selects cells with colors 1 or 2,
 
