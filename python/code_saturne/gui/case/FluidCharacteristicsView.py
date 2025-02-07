@@ -312,7 +312,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         validatorP0 = DoubleValidator(self.lineEditP0, min=0.0)
         self.lineEditP0.setValidator(validatorP0)
 
-        validatorT0 = DoubleValidator(self.lineEditT0,  min=0.0)
+        min_t0 = 0.0
+        if tsm == 'temperature_celsius':
+            min_t0 = -273.15
+        validatorT0 = DoubleValidator(self.lineEditT0,  min=min_t0)
         validatorT0.setExclusiveMin(True)
         self.lineEditT0.setValidator(validatorT0)
 
