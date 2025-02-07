@@ -540,31 +540,31 @@ usable only for face selections, not cell selections.
          `plane[` *a, b, c, d*, `inside]`  <br/>
          `plane[` *a, b, c, d*, `outside]`  <br/>
 <tr><td> plane, normal + point in plane form
-    <td> `plane[` *n<span style=" vertical-align:sub;">x</span>,
+    <td> `plane[` <em>n<span style=" vertical-align:sub;">x</span>,
                    n<span style=" vertical-align:sub;">y</span>,
                    n<span style=" vertical-align:sub;">z</span>,
-                   x, y, z, epsilon*`]` <br/>
- `plane[` *n<span style=" vertical-align:sub;">x</span>,
+                   x, y, z, epsilon</em>`]` <br/>
+ `plane[` <em>n<span style=" vertical-align:sub;">x</span>,
                    n<span style=" vertical-align:sub;">y</span>,
                    n<span style=" vertical-align:sub;">z</span>,
-                   x, y, z,* `epsilon = ` *epsilon*`]` <br/>
- `plane[` *n<span style=" vertical-align:sub;">x</span>,
+                   x, y, z,</em> `epsilon = ` *epsilon*`]` <br/>
+ `plane[` <em>n<span style=" vertical-align:sub;">x</span>,
                    n<span style=" vertical-align:sub;">y</span>,
                    n<span style=" vertical-align:sub;">z</span>,
-                   x, y, z,* `inside]` <br/>
- `plane[` *n<span style=" vertical-align:sub;">x</span>,
+                   x, y, z,</em> `inside]` <br/>
+ `plane[` <em>n<span style=" vertical-align:sub;">x</span>,
                    n<span style=" vertical-align:sub;">y</span>,
                    n<span style=" vertical-align:sub;">z</span>,
-                   x, y, z,* `outside]`
+                   x, y, z,</em> `outside]`
 <tr><td> box, extents (axis-aligned) form
-    <td> `box[` *x<span style=" vertical-align:sub;">min</span>,
+    <td> `box[` <em>x<span style=" vertical-align:sub;">min</span>,
                  y<span style=" vertical-align:sub;">min</span>,
                  z<span style=" vertical-align:sub;">min</span>,
                  x<span style=" vertical-align:sub;">max</span>,
                  y<span style=" vertical-align:sub;">max</span>,
-                 z<span style=" vertical-align:sub;">max</span>*`]`
+                 z<span style=" vertical-align:sub;">max</span></em>`]`
 <tr><td> box, origin + axes form
-    <td> `box[` *x<span style=" vertical-align:sub;">0</span>,
+    <td> `box[` <em>x<span style=" vertical-align:sub;">0</span>,
                  y<span style=" vertical-align:sub;">0</span>,
                  z<span style=" vertical-align:sub;">0</span>,
                  dx<span style=" vertical-align:sub;">1</span>,
@@ -575,21 +575,21 @@ usable only for face selections, not cell selections.
                  dz<span style=" vertical-align:sub;">2</span>,
                  dx<span style=" vertical-align:sub;">3</span>,
                  dy<span style=" vertical-align:sub;">3</span>,
-                 dz<span style=" vertical-align:sub;">3</span>*`]`
+                 dz<span style=" vertical-align:sub;">3</span></em>`]`
 <tr><td> cylinder
-    <td> `cylinder[` *x<span style=" vertical-align:sub;">0</span>,
+    <td> `cylinder[` <em>x<span style=" vertical-align:sub;">0</span>,
                       y<span style=" vertical-align:sub;">0</span>,
                       z<span style=" vertical-align:sub;">0</span>,
                       x<span style=" vertical-align:sub;">1</span>,
                       y<span style=" vertical-align:sub;">1</span>,
                       z<span style=" vertical-align:sub;">1</span>,
-                      radius*`]`
+                      radius</em>`]`
 <tr><td> sphere <td> `sphere[` *x, y, z, radius*`]`
 <tr><td> inequalities <td> `>`, `<`, `>=`, `<=`
                             associated with `x`, `y`, `z`  or `X`, `Y`, `Z`
                             keywords and coordinate value <br/>
-                           *x<span style=" vertical-align:sub;">min</span>* `<= x`
-                           *x<span style=" vertical-align:sub;">max</span>*
+                           <em>x<span style=" vertical-align:sub;">min</span></em> `<= x`
+                           <em>x<span style=" vertical-align:sub;">max</span></em>
                            type syntax is allowed
 </table>
 
