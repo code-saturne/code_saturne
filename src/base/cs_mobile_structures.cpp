@@ -1427,6 +1427,7 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   /* Initialization */
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   const cs_field_t *f_b_stress = cs_field_by_name("boundary_stress");
   cs_real_3_t *b_stress = (cs_real_3_t *)f_b_stress->val;
@@ -1457,11 +1458,11 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     if (str_num > 0) {
       int i = str_num - 1;
       for (cs_lnum_t j = 0; j < 3; j++)
-        ms->forstr[i][j] += b_stress[face_id][j];
+        ms->forstr[i][j] += b_stress[face_id][j] * b_face_surf[face_id];
     }
     else if (str_num < 0) {
       for (cs_lnum_t j = 0; j < 3; j++)
-        forast[indast][j] = b_stress[face_id][j];
+        forast[indast][j] = b_stress[face_id][j] * b_face_surf[face_id];
       indast += 1;
     }
   }
