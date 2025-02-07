@@ -3586,7 +3586,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           = 60 * visclc / (romc * cs_turb_ckwbt1 * distbf * distbf);
 
         /* If we are outside the viscous sub-layer (either naturally, or
-           artificialy using scalable wall functions) */
+           artificially using scalable wall functions) */
 
         if (yplus > cs_math_epzero) {
           const cs_real_t pimp_turb
