@@ -509,7 +509,10 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         Set reference temperature.
         """
-        self.isGreater(value, 0.0)
+        min_t0 = 0.0
+        if self.tsm == 'temperature_celsius':
+            min_t0 = -273.15
+        self.isGreater(value, min_t0)
         self.node_fluid.xmlSetData('reference_temperature', value)
 
 

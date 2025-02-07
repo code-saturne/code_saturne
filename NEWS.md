@@ -3,6 +3,8 @@ Release 8.0.5 (unreleased)
 
 ### Bug fixes:
 
+- GUI: allow setting reference temperature < 0 with Celsisu scale.
+
 - Fix for LES SEM in volume mode (memory leak and incorrect array access).
 
 - Fix error at setup stage in case of drift, due to incorrect
