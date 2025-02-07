@@ -20,7 +20,6 @@
       <tab type="user" visible="yes" url="@ref low_level_boundary_condition_definitions" title="Low-level finite-volume boundary-condition definitions"/>
       <tab type="user" visible="yes" url="@ref advanced_specific_physics" title="Specific physical models"/>
       <tab type="user" visible="yes" url="@ref advanced_coal_and_gas_combution" title="Pulverized coal and gas combustion module"/>
-      <tab type="user" visible="yes" url="@ref advanced_fuel_oil_combustion" title="Heavy fuel oil combustion module"/>
       <tab type="user" visible="yes" url="@ref advanced_radiative_thermal" title="Radiative thermal transfers in semi-transparent gray media"/>
       <tab type="user" visible="yes" url="@ref advanced_conjugate_heat_transfer" title="Conjugate heat transfer"/>
       <tab type="user" visible="yes" url="@ref advanced_particle_tracking" title="Particle-tracking (Lagrangian) module"/>
