@@ -1257,9 +1257,6 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
  * \param[in]        ypup         yplus projected vel ratio
  * \param[in]        dplus        dimensionless shift to the wall for scalable
  *                                wall functions
- * \param[inout]     cofimp       \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
- *                                turbulence production
- * \param[inout]     rcprod       ?
  * \param[inout]     hflui        internal exchange coefficient
  * \param[inout]     uiptn        counter of reversal layer
  *
@@ -1278,8 +1275,6 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
                                         const cs_real_t  yplus,
                                         const cs_real_t  ypup,
                                         const cs_real_t  dplus,
-                                        cs_real_t       *cofimp,
-                                        cs_real_t       *rcprod,
                                         cs_real_t       *hflui,
                                         cs_real_t       *uiptn)
 
@@ -1321,12 +1316,12 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
 
       if (yplus > cs_math_epzero) { /* TODO use iuntur == 1 */
         /*FIXME not valid for rough */
-        *rcprod = cs_math_fmin(xkappa,
+        cs_real_t rcprod = cs_math_fmin(xkappa,
                                  cs_math_fmax(1.0,sqrt(mut_lm_dmut))
                                / (yplus+dplus));
 
         *uiptn =   utau - distbf * uet * uk * romc / xkappa / visclc
-                 * (2.0*(*rcprod) - 1.0 / (2.0 * yplus + dplus));
+                 * (2.0 * rcprod - 1.0 / (2.0 * yplus + dplus));
       }
       else {
         *uiptn = 0.;
@@ -1368,14 +1363,6 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
 
       *uiptn  = utau - 1.5 * uet / xkappa;
 
-      /* If (mu+mut) becomes zero (dynamic models),
-         an arbitrary value is set
-         (zero flux) but without any problems because the flux
-         is really zero at this face. */
-      if (visctc+visclc <= 0)
-        *hflui = 0.; /* TODO check if this is useful as it is implicited
-                       and overwritten below */
-
     }
 
     /* v2f
@@ -1390,16 +1377,17 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
     }
   }
 
-  /* Implicit the term (rho*uet*uk) */
+  /* Implicit the term (rho*uet*uk)
+   * hflui is always mu/d * y+/U+
+   * */
   *hflui = visclc / distbf * ypup;
 
-  /* To be coherent with a wall function, clip it to 0 */
-  *cofimp = cs_math_fmax(*cofimp, 0.);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update physical quantities for rough wall
+ * \brief Update physical quantities for rough wall.
+ * TODO Should be moved to cs_wall_functions_velocity
  *
  * \param[in]         visclc       kinematic viscosity
  * \param[in]         visctc       turbulent kinematic viscosity
@@ -1419,7 +1407,6 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
  * \param[in,out]     nsubla       counter of cell in the viscous sublayer
  * \param[in,out]     cofimp       \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
  *                                 turbulence production
- * \param[in,out]     rcprod       ?
  * \param[in,out]     hflui        internal exchange coefficient
  * \param[in,out]     uiptn        counter of reversal layer
  *
@@ -1441,7 +1428,6 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
                                        cs_gnum_t       *nlogla,
                                        cs_gnum_t       *nsubla,
                                        cs_real_t       *cofimp,
-                                       cs_real_t       *rcprod,
                                        cs_real_t       *hflui,
                                        cs_real_t       *uiptn)
 {
@@ -1477,10 +1463,10 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
         const cs_real_t var
           =  2.0 * sqrt(xmutlm/visctc) - distb0/distbf/(2.0 + rough_d / distb0);
 
-        *rcprod = distbf / distb0 * cs_math_fmax(1.0, var);
+        cs_real_t rcprod = distbf / distb0 * cs_math_fmax(1.0, var);
 
         /* Ground apparent velocity (for log only) */
-        *uiptn  = cs_math_fmax(utau - uet/xkappa* (*rcprod), 0.0);
+        *uiptn  = cs_math_fmax(utau - uet/xkappa * rcprod, 0.0);
         *iuntur = 1;
         *nlogla = *nlogla + 1;
 
@@ -1488,7 +1474,7 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
            The boundary term for velocity gradient is implicit
            modified for non neutral boundary layer (in uplus) */
 
-        *cofimp  = cs_math_fmax(1.0 - 1.0/(xkappa*uplus)*(*rcprod), 0.0);
+        *cofimp  = cs_math_fmax(1.0 - 1.0/(xkappa*uplus) * rcprod, 0.0);
 
         /*The term (rho*uet*uk) is implicit */
 
@@ -1506,11 +1492,11 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
         const cs_real_t coef_mom = cs_mo_phim(distbf+rough_d, dlmo);
         const cs_real_t coef_momm = cs_mo_phim(2.0*distbf+rough_d, dlmo);
 
-        *rcprod =   2*distbf*sqrt( xkappa*uk*romc*coef_mom/visctc/distb0 )
+        cs_real_t rcprod =   2*distbf*sqrt( xkappa*uk*romc*coef_mom/visctc/distb0 )
                  - coef_momm / (2.0 + rough_d / distbf);
 
         /* Ground apparent velocity (for log only) */
-        *uiptn  = cs_math_fmax(utau - uet/xkappa*(*rcprod), 0.0);
+        *uiptn  = cs_math_fmax(utau - uet/xkappa * rcprod, 0.0);
         *iuntur = 1;
         *nlogla = *nlogla + 1;
 
@@ -1518,7 +1504,7 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
           The boundary term for velocity gradient is implicit
           modified for non neutral boundary layer (in uplus) */
 
-        *cofimp  = cs_math_fmin(cs_math_fmax(1 - 1/(xkappa*uplus)*(*rcprod), 0),
+        *cofimp  = cs_math_fmin(cs_math_fmax(1 - 1/(xkappa*uplus) * rcprod, 0),
                                 1);
 
         /* The term (rho*uet*uk) is implicit */
@@ -1836,7 +1822,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   cs_real_t cofimp = 0;
   cs_real_t ek = 0.;
-  cs_real_t rcprod = 0;
   cs_real_t uiptn = 0;
   cs_real_t rnnb = 0;
 
@@ -2506,7 +2491,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
            the correct turbulence production */
         coef_mom = cs_mo_phim(distbf+rough_d, dlmo);
         const cs_real_t coef_momm = cs_mo_phim(2 * distbf + rough_d, dlmo);
-        rcprod =   2*distbf*sqrt(  xkappa*uk*romc*coef_mom/visctc
+        cs_real_t rcprod =   2*distbf*sqrt(  xkappa*uk*romc*coef_mom/visctc
                                    / (distbf+rough_d))
                  - coef_momm / (2.0 + rough_d / distbf);
 
@@ -2516,7 +2501,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* Coupled solving of the velocity components
            The boundary term for velocity gradient is implicit
            modified for non neutral boundary layer (in uplus) */
-        cofimp  = cs_math_fmin(cs_math_fmax(1-1/(xkappa*_uplus)*rcprod, 0),
+        cofimp  = cs_math_fmin(cs_math_fmax(1-1/(xkappa*_uplus) * rcprod, 0),
                                1);
         yk = distbf * uk / xnuii;
 
@@ -2593,8 +2578,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                               yplus,
                                               ypup,
                                               dplus,
-                                              &cofimp,
-                                              &rcprod,
                                               &hflui,
                                               &uiptn);
     else if (icodcl_vel[f_id] == 6)
@@ -2612,7 +2595,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                              &nlogla,
                                              &nsubla,
                                              &cofimp,
-                                             &rcprod,
                                              &hflui,
                                              &uiptn);
 

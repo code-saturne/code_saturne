@@ -369,6 +369,9 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
   default:
     break;
   }
+
+  /* To be coherent with a wall function, clip it to 0 */
+  *cofimp = cs_math_fmax(*cofimp, 0.);
 }
 
 /*----------------------------------------------------------------------------*/
