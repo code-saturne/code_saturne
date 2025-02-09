@@ -241,7 +241,7 @@ cs_combustion_ht_convert_h_to_t_faces(const cs_real_t  h[],
       coefg[1] = bym2[face_id];
       coefg[2] = bym3[face_id];
       for (int i = 3; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
-        coefg[0] = 0;
+        coefg[i] = 0;
 
       t[face_id] = cs_combustion_h_to_t(coefg, hbl);
     }
@@ -328,7 +328,7 @@ cs_combustion_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
       coefg[1] = bym2[face_id];
       coefg[2] = bym3[face_id];
       for (int i = 3; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
-        coefg[0] = 0;
+        coefg[i] = 0;
 
       h[face_id] = cs_gas_combustion_t_to_h(coefg, tbl);
     }
@@ -436,7 +436,7 @@ cs_combustion_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
       coefg[1] = bym2[face_id];
       coefg[2] = bym3[face_id];
       for (int i = 3; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
-        coefg[0] = 0;
+        coefg[i] = 0;
 
       h[face_id] = cs_gas_combustion_t_to_h(coefg, tbl);
     }
