@@ -194,9 +194,6 @@ void
 cs_f_ppincl_combustion_init(void);
 
 void
-cs_f_ppcpfu_models_init(void);
-
-void
 cs_f_thch_models_init(void);
 
 void
@@ -551,7 +548,6 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   cs_f_ppincl_combustion_init();
   cs_f_co_models_init();
-  cs_f_ppcpfu_models_init();
   cs_f_thch_models_init();
 
   return cm;

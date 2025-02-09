@@ -164,12 +164,6 @@ cs_f_coincl_get_pointers(int     **model_type,
                          double  **cebu);
 
 void
-cs_f_ppcpfu_get_pointers(double  **oxyo2,
-                         double  **oxyn2,
-                         double  **oxyh2o,
-                         double  **oxyco2);
-
-void
 cs_f_combustion_model_get_pointers(double  **srrom);
 
 /*============================================================================
@@ -376,48 +370,6 @@ cs_f_coincl_get_pointers(int     **model_type,
     cs_coal_model_t  *cm = cs_glob_coal_model;
 
     *pcigas = &(cm->pcigas);
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of combustion model (ppcpfu).
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ieqco2 --> pointer to cm->ieqco2
- *   oxyo2  --> pointer to cm->oxyo2
- *   oxyn2  --> pointer to cm->oxyn2
- *   oxyh2o --> pointer to cm->oxyh2o
- *   oxyco2 --> pointer to cm->oxyco2
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_ppcpfu_get_pointers(double  **oxyo2,
-                         double  **oxyn2,
-                         double  **oxyh2o,
-                         double  **oxyco2)
-{
-  if (cs_glob_combustion_gas_model != nullptr) {
-
-    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-
-    *oxyo2 = nullptr;
-    *oxyn2 =  cm->oxyn2;
-    *oxyh2o = cm->oxyh2o;
-    *oxyco2 = cm->oxyco2;
-
-  }
-  else if (cs_glob_coal_model != nullptr) {
-
-    cs_coal_model_t  *cm = cs_glob_coal_model;
-
-    *oxyo2 =  cm->oxyo2;
-    *oxyn2 =  cm->oxyn2;
-    *oxyh2o = cm->oxyh2o;
-    *oxyco2 = cm->oxyco2;
 
   }
 }

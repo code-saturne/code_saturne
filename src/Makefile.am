@@ -66,7 +66,6 @@ atmo/atchem.f90 \
 atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
 ctwr/ctincl.f90 \
-pprt/ppcpfu.f90 \
 pprt/ppincl.f90 \
 pprt/ppthch.f90 \
 cogz/coincl.f90 \
@@ -112,14 +111,12 @@ cogz/coincl.$(OBJEXT): base/paramx.$(OBJEXT) \
 
 ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
 
-pprt/ppcpfu.$(OBJEXT): pprt/ppthch.$(OBJEXT) pprt/ppppar.$(OBJEXT)
-
 pprt/ppincl.$(OBJEXT): pprt/ppthch.$(OBJEXT)
 
 pprt/ppthch.$(OBJEXT): base/cstphy.$(OBJEXT)
 
 rayt/radiat.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
- base/optcal.$(OBJEXT) pprt/ppcpfu.$(OBJEXT) base/numvar.$(OBJEXT)
+ base/optcal.$(OBJEXT) base/numvar.$(OBJEXT)
 
 # Additional local targets
 

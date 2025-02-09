@@ -135,9 +135,6 @@ void
 cs_f_ppincl_combustion_init(void);
 
 void
-cs_f_ppcpfu_models_init(void);
-
-void
 cs_f_thch_models_init(void);
 
 /* Additional prototypes for Fortran mappings */
@@ -431,7 +428,6 @@ cs_coal_model_set_model(cs_coal_model_type_t  type)
 
   cs_f_ppincl_combustion_init();
   cs_f_co_models_init();
-  cs_f_ppcpfu_models_init();
   cs_f_thch_models_init();
 
   return cm;

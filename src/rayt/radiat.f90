@@ -156,7 +156,6 @@ contains
 
     use ppincl
     use optcal
-    use ppcpfu
     use numvar
 
     type(c_ptr) :: p_iirayo, p_nwsgg, p_nt_rad_prp, p_rad_atmo_model
