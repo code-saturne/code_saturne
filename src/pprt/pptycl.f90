@@ -78,9 +78,6 @@ integer(c_int) ::  itypfb(nfabor)
 
 ! Local variables
 
-integer, pointer, dimension(:,:) :: icodcl
-double precision, pointer, dimension(:,:,:) :: rcodcl
-
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -134,8 +131,6 @@ end interface
 ! Computations should not be called under initialization for most
 ! models; those for which it should be called are tested first.
 !===============================================================================
-
-call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 ! Atmospheric flows
 if (ippmod(iatmos).ge.0) then

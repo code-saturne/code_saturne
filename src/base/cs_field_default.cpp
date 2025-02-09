@@ -100,54 +100,8 @@ static cs_real_t   *_rcodcl = nullptr;
  *============================================================================*/
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_field_update_bcs_ptr(int          dim_icodcl[2],
-                          int          dim_rcodcl[3],
-                          int        **p_icodcl,
-                          cs_real_t  **p_rcodcl);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Update field icodcl/rcodcl map and pointers to matching base arrays.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   dim_icodcl --> dimensions of icodcl array
- *   dim_rcodcl --> dimensions of rcodcl array
- *   p_icodcl   --> pointer to icodcl base array
- *   p_rcodcl   --> pointer to rcodcl base array
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_update_bcs_ptr(int          dim_icodcl[2],
-                          int          dim_rcodcl[3],
-                          int        **p_icodcl,
-                          cs_real_t  **p_rcodcl)
-{
-  cs_field_build_bc_codes_all();
-
-  dim_icodcl[0] = _n_b_faces;
-  dim_icodcl[1] = _n_vars_bc;
-
-  dim_rcodcl[0] = _n_b_faces;
-  dim_rcodcl[1] = _n_vars_bc;
-  dim_rcodcl[2] = 3;
-
-  *p_icodcl = _icodcl;
-  *p_rcodcl = _rcodcl;
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

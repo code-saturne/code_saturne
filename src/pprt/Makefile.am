@@ -61,7 +61,6 @@ cs_combustion_model.cpp \
 cs_physical_model.cpp \
 ppinii.f90 \
 ppphyv.f90 \
-ppprcl.f90 \
 pptycl.f90 \
 ppvarp.f90
 

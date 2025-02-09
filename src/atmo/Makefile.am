@@ -70,7 +70,6 @@ libcsatmo_a_SOURCES = \
 atleca.f90 \
 atlecc.f90 \
 atlecm.f90 \
-atmcls.f90 \
 atmsol.f90 \
 atr1vf.f90 \
 chem_roschem.f90 \

@@ -353,21 +353,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function allocating and mapping boundary condition
-    ! coefficients for all variable fields.
-
-    subroutine cs_f_field_update_bcs_ptr(dim_i, dim_r, c_pi, c_pr)  &
-      bind(C, name='cs_f_field_update_bcs_ptr')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), dimension(2) :: dim_i
-      integer(c_int), dimension(3) :: dim_r
-      type(c_ptr), intent(out)     :: c_pi
-      type(c_ptr), intent(out)     :: c_pr
-    end subroutine cs_f_field_update_bcs_ptr
-
-    !---------------------------------------------------------------------------
-
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -1237,34 +1222,6 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
   end subroutine field_get_val_prev_v
-
-  !=============================================================================
-
-  !> \brief Map and return icodcl and rcodcl boundary condition arrays.
-
-  !> \param[out]  icodcl  pointer to icodcl array
-  !> \param[out]  icodcl  pointer to icodcl array
-
-  subroutine field_build_bc_codes_all(icodcl, rcodcl)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, dimension(:,:), pointer, intent(inout) :: icodcl
-    double precision, dimension(:,:,:), pointer, intent(inout) :: rcodcl
-
-    ! Local variables
-
-    integer(c_int), dimension(2) :: dim_i
-    integer(c_int), dimension(3) :: dim_r
-    type(c_ptr) :: c_pi, c_pr
-
-    call cs_f_field_update_bcs_ptr(dim_i, dim_r, c_pi, c_pr)
-
-    call c_f_pointer(c_pi, icodcl, [dim_i(1), dim_i(2)])
-    call c_f_pointer(c_pr, rcodcl, [dim_r(1), dim_r(2), dim_r(3)])
-
-  end subroutine field_build_bc_codes_all
 
   !=============================================================================
 
