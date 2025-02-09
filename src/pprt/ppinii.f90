@@ -38,7 +38,6 @@ subroutine ppinii () &
 use paramx
 use cstnum
 use cstphy
-use ppppar
 use ppthch
 use coincl
 use ppincl

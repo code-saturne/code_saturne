@@ -53,7 +53,6 @@ use entsor
 use field
 use cstnum
 use cstphy
-use ppppar
 use atincl
 use numvar
 use atchem

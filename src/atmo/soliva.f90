@@ -40,7 +40,6 @@ use cstnum
 use entsor
 use parall
 use period
-use ppppar
 use ppincl
 use atincl
 use atsoil

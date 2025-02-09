@@ -52,10 +52,8 @@ use optcal
 use cstphy
 use entsor
 use cstnum
-use ppppar
 use coincl
 use ppincl
-use ppcpfu
 use atincl
 use field
 use cs_c_bindings

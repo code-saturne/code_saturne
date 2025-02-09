@@ -165,7 +165,6 @@ use cstphy
 use entsor
 use parall
 use period
-use ppppar
 use ppincl
 use cs_c_bindings
 use mesh

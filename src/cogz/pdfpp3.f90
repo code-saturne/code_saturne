@@ -90,7 +90,6 @@ use cstphy
 use cstnum
 use entsor
 use pointe
-use ppppar
 use ppthch
 use ppincl
 use coincl

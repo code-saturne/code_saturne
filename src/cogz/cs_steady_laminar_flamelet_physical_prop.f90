@@ -50,7 +50,6 @@ use optcal
 use cstphy
 use cstnum
 use entsor
-use ppppar
 use ppthch
 use coincl
 use ppincl
@@ -1027,7 +1026,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use ppppar
 use ppthch
 use coincl
 use ppincl
@@ -1111,7 +1109,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use ppppar
 use ppthch
 use coincl
 use ppincl

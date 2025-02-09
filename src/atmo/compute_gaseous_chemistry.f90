@@ -53,7 +53,6 @@ use cstnum
 use parall
 use period
 use pointe
-use ppppar
 use ppincl
 use mesh
 use field

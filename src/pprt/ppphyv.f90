@@ -73,7 +73,6 @@ use optcal
 use cstphy
 use entsor
 use pointe
-use ppppar
 use ppthch
 use coincl
 use ppincl

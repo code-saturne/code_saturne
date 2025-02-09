@@ -28,7 +28,6 @@ module sshaerosol
   !=============================================================================
 
   use, intrinsic :: iso_c_binding
-  use ppppar, only: nozppm
 
   !=============================================================================
   !> \defgroup at_aerosol_chemistry Aerosol chemistry parameters for the

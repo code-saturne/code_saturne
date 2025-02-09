@@ -49,7 +49,6 @@ use cstnum
 use entsor
 use atincl
 use parall
-use ppppar
 use coincl
 use ppincl
 use radiat

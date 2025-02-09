@@ -154,7 +154,6 @@ contains
 
   subroutine radiat_init
 
-    use ppppar
     use ppincl
     use optcal
     use ppcpfu

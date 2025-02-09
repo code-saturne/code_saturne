@@ -29,7 +29,6 @@ module ppincl
 
   use, intrinsic :: iso_c_binding
 
-  use ppppar
   use ppthch
 
   !=============================================================================

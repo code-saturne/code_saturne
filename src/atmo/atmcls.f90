@@ -102,7 +102,6 @@ use dimens, only: nvar
 use entsor
 use parall
 use period
-use ppppar
 use ppincl
 use mesh
 use field

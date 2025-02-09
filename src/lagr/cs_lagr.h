@@ -903,7 +903,7 @@ typedef struct {
   /* cpincl */
   int ncharb;
 
-  /* ppppar */
+  /* cs_coal.h */
   int ncharm;
 
   /* radiation */

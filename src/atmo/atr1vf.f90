@@ -41,7 +41,6 @@ use cstphy
 use cstnum, only:pi
 use parall
 use period
-use ppppar
 use ppincl
 use mesh
 use field

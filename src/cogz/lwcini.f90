@@ -69,7 +69,6 @@ use cstnum
 use entsor
 use parall
 use period
-use ppppar
 use ppthch
 use coincl
 use ppincl

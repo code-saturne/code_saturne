@@ -53,15 +53,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/*! Maximum number of physical model zones
- *
- * \deprecated This is used for Fortran compatibilty (and maps to the Fortran
- * \ref ppppar:nozppm  "nozppm" parameter). In C, we should move to high
- * level boundary condition definitions not requiring indexing by legacy
- * zone numbers.
-*/
-#define  CS_MAX_BC_PM_ZONE_NUM  2000
-
 /*! Maximum number of boundary condition code types */
 #define  CS_MAX_BC_TYPE  200
 

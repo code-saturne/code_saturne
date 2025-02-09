@@ -46,7 +46,6 @@ use pointe
 use entsor
 use cstnum
 use cstphy
-use ppppar
 use ppthch
 use coincl
 use ppincl

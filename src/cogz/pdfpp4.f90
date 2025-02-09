@@ -96,7 +96,6 @@ use cstnum
 use entsor
 use parall
 use pointe
-use ppppar
 use ppthch
 use ppincl
 use coincl

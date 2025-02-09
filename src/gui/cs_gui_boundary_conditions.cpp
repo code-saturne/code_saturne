@@ -2643,8 +2643,6 @@ static void
 _init_zones(const cs_lnum_t   n_b_faces,
             int              *izfppp)
 {
-  const int nozppm = CS_MAX_BC_PM_ZONE_NUM;
-
   assert(boundaries != NULL);
 
   int n_zones = cs_tree_get_node_count(cs_glob_tree,
@@ -2656,11 +2654,6 @@ _init_zones(const cs_lnum_t   n_b_faces,
   for (int izone = 0; izone < n_zones; izone++) {
 
     int zone_nbr = boundaries->bc_num[izone];
-
-    if (zone_nbr > nozppm)
-      bft_error(__FILE__, __LINE__, 0,
-                _("zone's label number %i is greater than %i,"
-                  " the maximum allowed \n"), zone_nbr, nozppm);
 
     cs_lnum_t n_elts = 0;
     const cs_lnum_t *face_ids
@@ -3282,14 +3275,6 @@ cs_gui_boundary_conditions_verify(void)
       bft_error(__FILE__, __LINE__, 0,
                 _("boundary nature %s is unknown \n"),
                 boundaries->nature[izone]);
-
-    int zone_nbr = boundaries->bc_num[izone];
-
-    if (zone_nbr > CS_MAX_BC_PM_ZONE_NUM)
-      bft_error(__FILE__, __LINE__, 0,
-                _("zone's label number %i is greater than %i,"
-                  " the maximum allowed \n"), zone_nbr, CS_MAX_BC_PM_ZONE_NUM);
-
   } /*  for izone */
 }
 

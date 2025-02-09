@@ -27,7 +27,6 @@ module ppcpfu
 
   !=============================================================================
 
-  use ppppar
   use ppthch
 
   implicit none

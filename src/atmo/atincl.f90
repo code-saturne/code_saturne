@@ -29,7 +29,6 @@ module atincl
 !=============================================================================
 
 use mesh
-use ppppar
 use ppincl
 
 implicit none

@@ -29,7 +29,6 @@ module coincl
 
   use, intrinsic :: iso_c_binding
 
-  use ppppar
   use ppincl
   use radiat, only : nwsgg
 

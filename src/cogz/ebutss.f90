@@ -82,7 +82,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use ppppar
 use ppthch
 use coincl
 use ppincl

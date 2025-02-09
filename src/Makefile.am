@@ -68,7 +68,6 @@ atmo/sshaerosol.f90 \
 ctwr/ctincl.f90 \
 pprt/ppcpfu.f90 \
 pprt/ppincl.f90 \
-pprt/ppppar.f90 \
 pprt/ppthch.f90 \
 cogz/coincl.f90 \
 rayt/radiat.f90
@@ -94,32 +93,32 @@ base/optcal.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT) \
 base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/mesh.$(OBJEXT) \
  base/cs_c_bindings.$(OBJEXT)
 
-atmo/atincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
+atmo/atincl.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
  base/mesh.$(OBJEXT) atmo/atsoil.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
  atmo/atchem.$(OBJEXT) atmo/sshaerosol.$(OBJEXT)
 
-atmo/atchem.$(OBJEXT): pprt/ppppar.$(OBJEXT) base/mesh.$(OBJEXT) \
+atmo/atchem.$(OBJEXT): base/mesh.$(OBJEXT) \
  base/entsor.$(OBJEXT) base/numvar.$(OBJEXT) \
  base/cs_c_bindings.$(OBJEXT)
 
 atmo/atimbr.$(OBJEXT): base/cstphy.$(OBJEXT) base/entsor.$(OBJEXT) \
  atmo/atincl.$(OBJEXT) ctwr/ctincl.$(OBJEXT)
 
-atmo/sshaerosol.$(OBJEXT): pprt/ppppar.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
+atmo/sshaerosol.$(OBJEXT): base/cs_c_bindings.$(OBJEXT) \
  atmo/atchem.$(OBJEXT) base/mesh.$(OBJEXT)
 
-cogz/coincl.$(OBJEXT): base/paramx.$(OBJEXT) pprt/ppppar.$(OBJEXT) \
+cogz/coincl.$(OBJEXT): base/paramx.$(OBJEXT) \
  pprt/ppincl.$(OBJEXT) rayt/radiat.$(OBJEXT)
 
 ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
 
 pprt/ppcpfu.$(OBJEXT): pprt/ppthch.$(OBJEXT) pprt/ppppar.$(OBJEXT)
 
-pprt/ppincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
+pprt/ppincl.$(OBJEXT): pprt/ppthch.$(OBJEXT)
 
 pprt/ppthch.$(OBJEXT): base/cstphy.$(OBJEXT)
 
-rayt/radiat.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
+rayt/radiat.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
  base/optcal.$(OBJEXT) pprt/ppcpfu.$(OBJEXT) base/numvar.$(OBJEXT)
 
 # Additional local targets
