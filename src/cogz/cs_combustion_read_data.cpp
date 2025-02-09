@@ -1215,7 +1215,7 @@ cs_combustion_read_data(void)
 
     cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
     for (int i = 0; i < ngasem; i++)
-      coefg[0] = 0;
+      coefg[i] = 0;
 
     for (int ir = 0; ir < cm->n_reactions; ir++) {
       for (int igg = 0; igg < cm->n_gas_species; igg++) {

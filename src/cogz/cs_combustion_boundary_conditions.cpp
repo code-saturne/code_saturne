@@ -293,7 +293,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
 
     cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
     for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
-      coefg[0] = 0;
+      coefg[i] = 0;
 
     /* Fuel inlet at tinfue */
     if (ci->ientfu == 1) {
@@ -408,7 +408,7 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
 
     cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
     for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
-      coefg[0] = 0;
+      coefg[i] = 0;
 
     cs_real_t ygfm_in = 0, h_in = 0, fm_in = ci->fment;
 
@@ -532,7 +532,7 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
 
     cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
     for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
-      coefg[0] = 0;
+      coefg[i] = 0;
 
     cs_real_t yfm_in = 0, h_in = 0;
 
