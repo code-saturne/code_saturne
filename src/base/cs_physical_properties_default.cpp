@@ -51,8 +51,6 @@
 #include "atmo/cs_atmo_variables.h"
 #include "base/cs_boundary_conditions.h"
 #include "cfbl/cs_cf_model.h"
-#include "comb/cs_coal_physical_properties.h"
-#include "ctwr/cs_ctwr_physical_properties.h"
 #include "cdo/cs_domain.h"
 #include "elec/cs_elec_model.h"
 #include "cdo/cs_equation.h"
@@ -70,7 +68,6 @@
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_thermal_model.h"
 #include "turb/cs_turbulence_ml.h"
@@ -85,6 +82,12 @@
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_condensation_1d_thermal.h"
 #include "base/cs_1d_wall_thermal.h"
+
+#include "pprt/cs_physical_model.h"
+#include "cogz/cs_combustion_ebu.h"
+#include "cogz/cs_combustion_physical_properties.h"
+#include "comb/cs_coal_physical_properties.h"
+#include "ctwr/cs_ctwr_physical_properties.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -136,10 +139,13 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 void
-cs_f_physical_properties1(int *mbrom);
+cs_f_physical_properties2(void);
 
 void
-cs_f_physical_properties2(void);
+cs_steady_laminar_flamelet_physical_prop(void);
+
+void
+cs_combustion_lw_physical_prop(void);
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -239,7 +245,6 @@ _field_is_constant(const char       *name,
 static void
 _compute_turbulence_mu(const cs_lnum_t  n_cells)
 {
-
   // Laminar
   if (cs_glob_turb_model->model == CS_TURB_NONE)
     cs_array_real_fill_zero(n_cells, CS_F_(mu_t)->val);
@@ -285,7 +290,6 @@ _compute_turbulence_mu(const cs_lnum_t  n_cells)
   // Spalart-Allmaras
   else if (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS)
     cs_turbulence_sa_mu_t();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -881,6 +885,23 @@ _physical_properties_update_models_stage_1(int  *mbrom)
 
   /* After this point, models considered are mutually exclusive */
 
+  if (pm_flag[CS_COMBUSTION_3PT] >= 0) {
+    cs_combustion_physical_properties_update_d3p();
+    *mbrom = 1;
+  }
+  else if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
+    cs_combustion_physical_properties_update_d3p();
+    cs_steady_laminar_flamelet_physical_prop();
+    *mbrom = 1;
+  }
+  else if (pm_flag[CS_COMBUSTION_EBU] >= 0) {
+    cs_combustion_ebu_physical_prop(mbrom);
+  }
+  else if (pm_flag[CS_COMBUSTION_LW] >= 0) {
+    cs_combustion_lw_physical_prop();
+    *mbrom = 1;
+  }
+
   if (pm_flag[CS_COMBUSTION_COAL] >= 0)
     cs_coal_physprop(mbrom);
 
@@ -958,8 +979,6 @@ cs_physical_properties_update(int   iterns)
 
   // First computation of physical properties for specific physics
   // BEFORE the user
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
-    cs_f_physical_properties1(&mbrom);
   _physical_properties_update_models_stage_1(&mbrom);
 
   /* Interface code_saturne

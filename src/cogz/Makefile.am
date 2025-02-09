@@ -77,7 +77,6 @@ coini1.f90 \
 d3phst.f90 \
 d3pini.f90 \
 d3pint.f90 \
-ebuphy.f90 \
 ebutss.f90 \
 lwcgfu.f90 \
 lwcini.f90 \

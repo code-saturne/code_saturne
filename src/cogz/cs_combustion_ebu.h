@@ -78,6 +78,17 @@ void
 cs_combustion_ebu_fields_init1(void);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute physical properties for EBU combustion model.
+ *
+ * \param[in, out]   mbrom    filling indicator of romb
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_ebu_physical_prop(int  *mbrom);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

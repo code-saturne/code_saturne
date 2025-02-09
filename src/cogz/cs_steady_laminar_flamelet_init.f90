@@ -39,7 +39,6 @@ subroutine cs_steady_laminar_flamelet_init () &
 !     les variables de calcul,
 !     les valeurs du pas de temps
 
-
 ! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
 !     ou relues d'un fichier suite
 ! On ne dispose des variables VISCLS, CP (quand elles sont
@@ -47,8 +46,7 @@ subroutine cs_steady_laminar_flamelet_init () &
 !     suite de calcul
 
 ! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
-!     ET PAS ICI
+!     SE FERA EN STANDARD ET PAS ICI
 
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -115,7 +113,7 @@ endif
 !      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
 !===============================================================================
 
-if ( isuite.eq.0 ) then
+if (isuite.eq.0) then
 
   do iel = 1, ncel
 

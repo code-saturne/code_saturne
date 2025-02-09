@@ -38,7 +38,8 @@
 !______________________________________________________________________________!
 !______________________________________________________________________________!
 
-subroutine cs_steady_laminar_flamelet_physical_prop
+subroutine cs_steady_laminar_flamelet_physical_prop()  &
+  bind(C, name='cs_steady_laminar_flamelet_physical_prop')
 
 !===============================================================================
 ! Module files
