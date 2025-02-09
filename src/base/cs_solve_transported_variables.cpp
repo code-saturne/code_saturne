@@ -143,10 +143,11 @@ _delayed_initializations(void)
 {
   const int *pm_flag = cs_glob_physical_model_flag;
 
-  cs_f_lwcini();
-
   if (pm_flag[CS_COMBUSTION_EBU] >= 0)
     cs_combustion_ebu_fields_init1();
+
+  if (pm_flag[CS_COMBUSTION_LW] >= 0)
+    cs_f_lwcini();
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
