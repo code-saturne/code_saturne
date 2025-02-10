@@ -542,9 +542,9 @@ template <cs_vof_contact_angle_t choice>
 static void
 _contact_angle_correction
 (
-  cs_real_3_t                *surf_norm, /*!<[in,out] */
-  const cs_mesh_t            *mesh,      /*!<[in] pointer to mesh structure */
-  const cs_mesh_quantities_t *mq         /*!<[in] pointer to mesh quantities */
+  const cs_mesh_t            *m,         /*!<[in] pointer to mesh structure */
+  const cs_mesh_quantities_t *mq,        /*!<[in] pointer to mesh quantities */
+  cs_real_3_t                *surf_norm  /*!<[in,out] */
 )
 {
   /* Sanity check */
@@ -552,8 +552,8 @@ _contact_angle_correction
     return;
 
   /* Get values or local pointers */
-  const cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
   cs_real_t *b_face_u_normal = (cs_real_t *)mq->b_face_u_normal;
   cs_real_t *restrict volume = mq->cell_vol;
 
@@ -579,10 +579,17 @@ _contact_angle_correction
     - 0.00183985 * pow(theta_micro, 4.5)
     + 1.845823e-06 * pow(theta_micro, 12.258487);
 
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+  const int *bc_type = cs_glob_bc_type;
 
-    if (   cs_glob_bc_type[face_id] == CS_SMOOTHWALL
-        || cs_glob_bc_type[face_id] == CS_ROUGHWALL)
+  /* Dispatch class */
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+    if (   bc_type[face_id] == CS_SMOOTHWALL
+        || bc_type[face_id] == CS_ROUGHWALL)
     {
       cs_lnum_t cell_id = b_face_cells[face_id];
 
@@ -604,13 +611,13 @@ _contact_angle_correction
 
           cs_real_t capillary_number = mu1 * utau / cpro_surftens;
 
-          cs_real_t apparent_length = pow(volume[cell_id], cs_math_1ov3) / 2.0;
+          cs_real_t apparent_length = cbrt(volume[cell_id]) / 2.0;
 
           cs_real_t theta_macro =  static_contact_angle
                                  + capillary_number
                                  * log(apparent_length / slip_length);
 
-          theta = (  pow(9.0 * theta_macro, cs_math_1ov3)
+          theta = (  cbrt(9.0 * theta_macro)
                    + 0.0727387 * theta_macro
                    - 0.0515388 * cs_math_pow2(theta_macro)
                    + 0.00341336 * cs_math_pow3(theta_macro)) * pi_inv;
@@ -621,10 +628,14 @@ _contact_angle_correction
         cs_real_t ctheta = cos(theta);
         cs_real_t stheta = sin(theta);
         for (int i = 0; i < 3; i++)
-          surf_norm[cell_id][i] = - nw[i] * ctheta + nt[i] * stheta;
+          cs_dispatch_sum(&surf_norm[cell_id][i],
+                          - nw[i] * ctheta + nt[i] * stheta,
+                          b_sum_type);
       }
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 BEGIN_C_DECLS
@@ -1308,10 +1319,10 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   /* Correction of surfxyz_norm at walls (Contact angle) */
   if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_STATIC) {
-    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_STATIC>(surfxyz_norm, m, mq);
+    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_STATIC>(m, mq, surfxyz_norm);
   }
   else if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_DYN) {
-    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_DYN>(surfxyz_norm, m, mq);
+    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_DYN>(m, mq, surfxyz_norm);
   }
 
   /* Curvature Computation */
