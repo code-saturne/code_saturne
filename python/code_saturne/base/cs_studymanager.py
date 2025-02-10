@@ -446,12 +446,15 @@ def run_studymanager(pkg, options):
     if options.debug:
         print(" run_studymanager() >> Starts running...")
 
-    if options.runcase:
-        if slurm_submission:
-            studies.check_slurm_batches()
-            studies.run_slurm_batches(options.state_file)
-        else:
-            studies.run()
+    # Launch runs one by one (only the run step)
+    if options.runcase and not slurm_submission:
+        # launch run one by one
+        studies.run()
+
+    # Launch all steps in slurm batch mode
+    if slurm_submission:
+        studies.check_slurm_batches()
+        studies.run_slurm_batches(options.state_file)
 
     if options.debug:
         print(" run_studymanager() >> Exits runs")
