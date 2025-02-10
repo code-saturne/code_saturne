@@ -3268,6 +3268,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   const cs_real_3_t *restrict i_face_cog = (const cs_real_3_t *)mq_g->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = (const cs_real_3_t *)mq_g->b_face_cog;
 
+  cs_real_3_t *restrict cell_f_cen      = (cs_real_3_t *)mq_f->cell_cen;
   cs_real_3_t *restrict i_f_face_cog    = (cs_real_3_t *)mq_f->i_face_cog;
   cs_real_3_t *restrict b_f_face_cog    = (cs_real_3_t *)mq_f->b_face_cog;
   cs_real_3_t *restrict i_f_face_normal = (cs_real_3_t *)mq_f->i_face_normal;
@@ -4264,8 +4265,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
         c_w_face_normal[c_id][i] -= sign*i_f_face_normal[f_id][i];
 
-        const cs_real_t xfmxc
-          = (mq_f->i_face_cog[3*f_id+i] - mq_f->cell_cen[3*c_id+i]);
+        const cs_real_t xfmxc = (i_f_face_cog[f_id][i] - cell_f_cen[c_id][i]);
 
         for (cs_lnum_t j = 0; j < 3; j++)
           xpsn[c_id][i][j] += sign*xfmxc*i_f_face_normal[f_id][j];
@@ -4301,8 +4301,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       for (cs_lnum_t i = 0; i < 3; i++) {
         c_w_face_normal[c_id][i] -= b_f_face_normal[f_id][i];
 
-        const cs_real_t xfmxc
-          = (mq_f->b_face_cog[3*f_id+i] - mq_f->cell_cen[3*c_id+i]);
+        const cs_real_t xfmxc = (b_f_face_cog[f_id][i] - cell_f_cen[c_id][i]);
 
         for (cs_lnum_t j = 0; j < 3; j++)
           xpsn[c_id][i][j] += xfmxc*b_f_face_normal[f_id][j];
