@@ -3379,14 +3379,20 @@ cs_restart_finalize_fields_read_status(void)
  *
  * \param[in] f_id  field id
  *
- * \returns 0 if field read action failed, 1 otherwise
+ * \returns 0 if field was not read, 1 otherwise
  */
 /*----------------------------------------------------------------------------*/
 
 int
 cs_restart_get_field_read_status(const int f_id)
 {
-  int retval = (_fields_read_status[f_id] < CS_RESTART_N_RESTART_FILES) ? 1 : 0;
+  int retval = 0;
+
+  if (_fields_read_status != nullptr) {
+    if (   _fields_read_status[f_id] > CS_RESTART_DISABLED
+        && _fields_read_status[f_id] < CS_RESTART_N_RESTART_FILES)
+      retval = 1;
+  }
 
   return retval;
 }

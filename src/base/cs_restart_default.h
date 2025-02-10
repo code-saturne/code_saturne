@@ -328,7 +328,7 @@ cs_restart_finalize_fields_read_status(void);
  *
  * \param[in] f_id  field id
  *
- * \returns 0 if field read action failed, 1 otherwise
+ * \returns 0 if field was not read, 1 otherwise
  */
 /*----------------------------------------------------------------------------*/
 
