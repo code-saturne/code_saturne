@@ -62,17 +62,16 @@ if test "x$cs_have_cuda" != "xno" ; then
   CUDA_LIBS+=" -lcudart"
 
   # Try to detect available architectures.
-  # As of 2025, we do not care to support CUDA versions older than 11
-  # (and even then, target machines should be at least Volta, though
+  # As of 2024, we do not care to support CUDA versions older than 11
+  # (and even then,target machines should be at least Volta, though
   # developping/debugging on local machines using older hardware remains useful).
 
-  AC_ARG_VAR([CUDA_ARCH_NUM], [Build for specified CUDA archtectures (example:
-     CUDA_ARCH_NUM="60 62 70 72 75 80 86").
-     Must be specified when compiling for CUDA on node with no GPU.])
+  if test "$CUDA_ARCH_NUM" = ""; then
+    # CUDA_ARCH_NUM="60 61 62 70 72 75 80 86"
+    CUDA_ARCH_NUM="70 80"
+  fi
 
   user_nvccflags="${NVCCFLAGS}"
-
-  # CUDA architectures to build for
 
   if test "$CUDA_ARCH_NUM" != ""; then
     touch conftest.cu
@@ -83,8 +82,6 @@ if test "x$cs_have_cuda" != "xno" ; then
       fi
     done
     rm -f conftest.cu conftest.o
-  else
-    NVCCFLAGS="${NVCCFLAGS} --gpu-architecture=native"
   fi
 
   NVCCFLAGS="${NVCCFLAGS} -Xptxas -v"
