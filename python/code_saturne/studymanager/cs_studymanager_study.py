@@ -2025,8 +2025,8 @@ class Studies(object):
                             cases_list.append(case)
                             if level > 0:
                                 depend_id = self.graph.graph_dict[case].job_id
-                                if depend_id not in cur_job_id_list:
-                                    cur_job_id_list.append(depend_id)
+                                if depend_id not in dep_job_id_list:
+                                    dep_job_id_list.append(depend_id)
 
                 if cur_batch_size > 0:
                     slurm_batch_name = "slurm_batch_file_" + \
