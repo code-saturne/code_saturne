@@ -323,7 +323,7 @@ _solve_eq_fbr_al(const int         istprv,
   cs_real_t  *w2, *visel, *w5, *viscf, *viscb;
 
   /* Allocate temporary arrays */
-  BFT_MALLOC(visel, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(visel, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(w5, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
@@ -416,9 +416,7 @@ _solve_eq_fbr_al(const int         istprv,
    *     \f[ -\div{\grad{ \dfrac{\overline{f}}{\alpha}}} = rhs \f]
    */
 
-  for (cs_lnum_t i = 0; i < n_cells; i++) {
-    visel[i] = 1.0;
-  }
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, 1., visel);
 
   int imvisf = cs_glob_space_disc->imvisf;
   cs_face_viscosity(m,
@@ -628,7 +626,7 @@ _solve_eq_fbr_al(const int         istprv,
                                      nullptr);
 
   /* Free memory */
-  BFT_FREE(visel);
+  CS_FREE_HD(visel);
 
   CS_FREE_HD(w2);
   CS_FREE_HD(w5);
@@ -1088,7 +1086,7 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
   cs_real_t *rovsdt;
 
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Map field arrays */
 

@@ -677,13 +677,13 @@ _solve_turbulence(cs_lnum_t   n_cells,
       || cs_glob_turb_model->itytur == 5) {
     cs_real_t *prdv2f = nullptr;
     if (cs_glob_turb_model->itytur == 5)
-      CS_MALLOC(prdv2f, n_cells_ext, cs_real_t);
+      CS_MALLOC_HD(prdv2f, n_cells_ext, cs_real_t, cs_alloc_mode);
     cs_turbulence_ke(-1, prdv2f);
 
     if (cs_glob_turb_model->itytur == 5)
       cs_turbulence_v2f(prdv2f);
 
-    CS_FREE(prdv2f);
+    CS_FREE_HD(prdv2f);
 
     cs_real_t *cvar_k = CS_F_(k)->val;
     cs_real_t *cvar_ep = CS_F_(eps)->val;
