@@ -3505,7 +3505,7 @@ _additional_fields_stage_4(void)
 
       cs_field_set_key_int(f_dflim, k_log, 1);
       cs_field_set_key_int(f_dflim, k_vis, CS_POST_ON_LOCATION);
-      cs_field_set_key_int(f, k_cvlim, f_dflim->id);
+      cs_field_set_key_int(f, k_dflim, f_dflim->id);
     }
 
     /* Convection limiter */
