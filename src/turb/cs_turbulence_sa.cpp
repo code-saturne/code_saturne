@@ -186,17 +186,22 @@ _src_terms(const cs_real_t    dt[],
            cs_real_t          st_exp[],
            cs_real_t          st_imp[])
 {
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_real_t *b_dist = cs_glob_mesh_quantities->b_dist;
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *b_dist = mq->b_dist;
+  const cs_real_t *cell_f_vol = mq->cell_vol;
 
   const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
   const cs_real_t *cvara_nusa = CS_F_(nusa)->val_pre;
 
   const cs_real_t dsigma = 1.0 / cs_turb_csasig;
+
+  const int *c_disable_flag = mq->c_disable_flag;
+  const cs_lnum_t has_dc = mq->has_disable_flag;
 
   cs_real_t dsa0 = -999.0;
   cs_real_t hssa = -999.0;
@@ -286,7 +291,11 @@ _src_terms(const cs_real_t    dt[],
     const cs_real_t fv2 = 1.0 - nusa /(nu0 + nusa*fv1);
 
     /* Numerical fix to prevent taussa to be smaller than 0 */
-    const cs_real_t sbar = nusa/cs_math_pow2(cs_turb_xkappa*distbf)*fv2;
+
+    cs_real_t inv_dist_sq = (has_dc * c_disable_flag[has_dc * i] == 0) ?
+                            1. / cs_math_pow2(distbf) : 0;
+
+    const cs_real_t sbar = nusa*fv2*inv_dist_sq/cs_math_pow2(cs_turb_xkappa);
     const cs_real_t omega = sqrt(vort[i]);
     cs_real_t taussa;
 
@@ -301,7 +310,7 @@ _src_terms(const cs_real_t    dt[],
     if (nusa >= 10.0*taussa*cs_math_pow2(cs_turb_xkappa*distbf))
       rsa = 10.0;
     else
-      rsa = nusa / (taussa*cs_math_pow2(cs_turb_xkappa*distbf));
+      rsa = nusa*inv_dist_sq / (taussa*cs_math_pow2(cs_turb_xkappa));
 
     const cs_real_t rsa_6 = rsa*rsa*rsa * rsa*rsa*rsa;
     const cs_real_t gsa = rsa + cs_turb_csaw2*(rsa_6 - rsa);
@@ -315,15 +324,14 @@ _src_terms(const cs_real_t    dt[],
     st_exp[i] =   cell_f_vol[i] * rho
                 * (  dsigma * cs_turb_csab2 * tr_gr_nu[i]
                    + csab1r[i] * taussa * nusa
-                   - cs_turb_csaw1 * fw * cs_math_pow2(nusa/distbf));
+                   - cs_turb_csaw1 * fw * nusa * nusa * inv_dist_sq);
 
     /* Implicitation of the negative source terms of the SA equation.
        NB: this term may be negative, and if so, then we explicit it. */
 
-    st_imp[i] = (cs::max((  cs_turb_csaw1*fw*nusa/cs_math_pow2(distbf)
+    st_imp[i] = (cs::max((  cs_turb_csaw1*fw*nusa*inv_dist_sq
                           - csab1r[i]*taussa),
-                         0.0))
-                * rho * cell_f_vol[i];
+                         0.0));
 
   }
 
@@ -502,11 +510,6 @@ cs_turbulence_sa(void)
                        CS_F_(nusa)->id,
                        st_exp,
                        st_imp);
-
-  if (cs_glob_porous_model == 3)
-    cs_immersed_boundary_wall_functions(CS_F_(nusa)->id,
-                                        st_exp,
-                                        st_imp);
 
   /* User source terms and d/dt(rho) and div(rho u) are taken into account
      stored in ext_term */

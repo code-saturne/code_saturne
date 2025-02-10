@@ -61,6 +61,7 @@
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
+#include "base/cs_renumber.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
 #include "rayt/cs_rad_transfer_fields.h"

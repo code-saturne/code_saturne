@@ -797,17 +797,19 @@ _cs_renumber_update_b_faces(cs_mesh_t        *mesh,
 
     cs_lnum_t  *b_face_cells_old = nullptr;
 
-    const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+    const cs_lnum_t n_b_faces_connect
+      = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
 
     /* Allocate Work array */
 
-    CS_MALLOC(b_face_cells_old, n_b_faces, cs_lnum_t);
+    CS_MALLOC(b_face_cells_old, n_b_faces_connect, cs_lnum_t);
 
     /* Update faces -> cells connectivity */
 
-    memcpy(b_face_cells_old, mesh->b_face_cells, n_b_faces*sizeof(cs_lnum_t));
+    memcpy(b_face_cells_old, mesh->b_face_cells,
+           n_b_faces_connect*sizeof(cs_lnum_t));
 
-    for (face_id = 0; face_id < n_b_faces; face_id++) {
+    for (face_id = 0; face_id < n_b_faces_connect; face_id++) {
       face_id_old = new_to_old_b[face_id];
       mesh->b_face_cells[face_id] = b_face_cells_old[face_id_old];
     }
@@ -816,16 +818,16 @@ _cs_renumber_update_b_faces(cs_mesh_t        *mesh,
 
     /* Update faces -> vertices connectivity */
 
-    _update_face_vertices(n_b_faces,
+    _update_face_vertices(n_b_faces_connect,
                           mesh->b_face_vtx_idx,
                           mesh->b_face_vtx_lst,
                           new_to_old_b);
 
     /* Update face families and global numbering */
 
-    _update_family(n_b_faces, new_to_old_b, mesh->b_face_family);
+    _update_family(n_b_faces_connect, new_to_old_b, mesh->b_face_family);
 
-    _update_global_num(n_b_faces, new_to_old_b, &(mesh->global_b_face_num));
+    _update_global_num(n_b_faces_connect, new_to_old_b, &(mesh->global_b_face_num));
 
     /* Update parent face numbers for post-processing meshes
        that may already have been built; Post-processing meshes
@@ -1585,19 +1587,20 @@ _renumber_b_faces_by_cell_adjacency(cs_mesh_t  *mesh)
 {
   cs_lnum_t  *new_to_old_b;
 
-  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_b_faces_connect
+      = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
 
-  CS_MALLOC(new_to_old_b, n_b_faces, cs_lnum_t);
+  CS_MALLOC(new_to_old_b, n_b_faces_connect, cs_lnum_t);
 
   cs_lnum_t *fc_num;
-  CS_MALLOC(fc_num, mesh->n_b_faces*2, cs_lnum_t);
+  CS_MALLOC(fc_num, n_b_faces_connect*2, cs_lnum_t);
 
-  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_b_faces_connect; ii++) {
     fc_num[ii*2] = mesh->b_face_cells[ii];
     fc_num[ii*2+1] = ii;
   }
 
-  cs_order_lnum_allocated_s(nullptr, fc_num, 2, new_to_old_b, n_b_faces);
+  cs_order_lnum_allocated_s(nullptr, fc_num, 2, new_to_old_b, n_b_faces_connect);
 
   CS_FREE(fc_num);
 
@@ -1605,13 +1608,13 @@ _renumber_b_faces_by_cell_adjacency(cs_mesh_t  *mesh)
 
   {
     cs_lnum_t f_id = 0;
-    while (f_id < n_b_faces) {
+    while (f_id < n_b_faces_connect) {
       if (new_to_old_b[f_id] != f_id)
         break;
       else
         f_id++;
     }
-    if (f_id == n_b_faces)
+    if (f_id == n_b_faces_connect)
       CS_FREE(new_to_old_b);
   }
 
@@ -2618,29 +2621,35 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
   cs_lnum_t ii, subset_size, start_id, end_id;
 
   int retval = 0;
+  const cs_lnum_t n_b_faces_connect
+    = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
 
   /* Initialization */
 
-  CS_MALLOC(*b_group_index, n_b_threads*2, cs_lnum_t);
+  cs_lnum_t n_b_groups = 1;
+  if (mesh->n_b_faces > n_b_faces_connect)
+    n_b_groups = 2;
+
+  CS_MALLOC(*b_group_index, n_b_threads*(n_b_groups)*2, cs_lnum_t);
 
   /* Order faces lexicographically (with stable sort) */
 
   cs_lnum_t *fc_num;
-  CS_MALLOC(fc_num, mesh->n_b_faces*2, cs_lnum_t);
+  CS_MALLOC(fc_num, n_b_faces_connect*2, cs_lnum_t);
 
-  for (ii = 0; ii < mesh->n_b_faces; ii++) {
+  for (ii = 0; ii < n_b_faces_connect; ii++) {
     fc_num[ii*2] = mesh->b_face_cells[ii];
     fc_num[ii*2+1] = ii;
   }
 
-  cs_order_lnum_allocated_s(nullptr, fc_num, 2, new_to_old_b, mesh->n_b_faces);
+  cs_order_lnum_allocated_s(nullptr, fc_num, 2, new_to_old_b, n_b_faces_connect);
 
   CS_FREE(fc_num);
 
   /* Compute target subset size */
 
-  subset_size = mesh->n_b_faces / n_b_threads;
-  if (mesh->n_b_faces % n_b_threads > 0)
+  subset_size = n_b_faces_connect / n_b_threads;
+  if (n_b_faces_connect % n_b_threads > 0)
     subset_size++;
   subset_size = cs::max(subset_size, min_subset_size);
 
@@ -2654,23 +2663,57 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
     if (end_id < start_id)
       end_id = start_id;
 
-    if (end_id > mesh->n_b_faces)
-      end_id = mesh->n_b_faces;
-    else if (end_id > 0 && end_id < mesh->n_b_faces) {
+    if (end_id > n_b_faces_connect)
+      end_id = n_b_faces_connect;
+    else if (end_id > 0 && end_id < n_b_faces_connect) {
       cs_lnum_t f_id = new_to_old_b[end_id - 1];
       cs_lnum_t c_id = mesh->b_face_cells[f_id];
       f_id = new_to_old_b[end_id];
       while (mesh->b_face_cells[f_id] == c_id) {
         end_id += 1;
-        if (end_id < mesh->n_b_faces)
+        if (end_id < n_b_faces_connect)
           f_id = new_to_old_b[end_id];
         else
           break;
       }
     }
 
-    (*b_group_index)[t_id*2] = start_id;
-    (*b_group_index)[t_id*2+1] = end_id;
+    /* The first group contains all the standard boundary faces */
+    cs_lnum_t g_id = 0;
+    (*b_group_index)[(t_id*n_b_groups + g_id)*2] = start_id;
+    (*b_group_index)[(t_id*n_b_groups + g_id)*2 + 1] = end_id;
+  }
+
+  if (mesh->n_b_faces > mesh->n_b_faces_all) {
+    /* The second groups contains all the IBM faces */
+    cs_lnum_t g_id = 1;
+    cs_lnum_t ip = n_b_faces_connect;
+    cs_lnum_t group_size = mesh->n_b_faces - n_b_faces_connect;
+
+    cs_lnum_t j  = group_size / n_b_threads;
+    cs_lnum_t jr = group_size % n_b_threads;
+
+    if (j > 4) {
+      for (cs_lnum_t k = 0; k < n_b_threads; k++) {
+        (*b_group_index)[(k*n_b_groups + g_id)*2] = ip;
+        ip += j;
+        if (k < jr)
+          ip++;
+        (*b_group_index)[(k*n_b_groups + g_id)*2 + 1] = ip;
+      }
+    }
+    else {
+      /* only thread 0 has elements */
+      cs_lnum_t k = 0;
+      (*b_group_index)[(k*n_b_groups + g_id)*2] = ip;
+      ip += group_size;
+      (*b_group_index)[(k*n_b_groups + g_id)*2 + 1] = ip;
+      for (k = 1; k < n_b_threads; k++) {
+        (*b_group_index)[(k*n_b_groups + g_id)*2]  = 0;
+        (*b_group_index)[(k*n_b_groups + g_id)*2 + 1] = 0;
+      }
+    }
+    assert(mesh->n_b_faces == ip);
   }
 
   if (mesh->n_b_faces < 1)
@@ -5070,6 +5113,7 @@ _renumber_b_faces(cs_mesh_t  *mesh)
   cs_lnum_t  ii;
   cs_lnum_t  *new_to_old_b = nullptr;
   cs_lnum_t  *b_group_index = nullptr;
+  cs_lnum_t n_b_faces_connect = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
 
   int  n_b_threads = _cs_renumber_n_threads;
 
@@ -5085,11 +5129,11 @@ _renumber_b_faces(cs_mesh_t  *mesh)
 
   /* Allocate Work array */
 
-  CS_MALLOC(new_to_old_b, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(new_to_old_b, n_b_faces_connect, cs_lnum_t);
 
   /* Initialize renumbering array */
 
-  for (ii = 0; ii < mesh->n_b_faces; ii++)
+  for (ii = 0; ii < n_b_faces_connect; ii++)
     new_to_old_b[ii] = ii;
 
   /* Boundary faces renumbering */
@@ -5143,22 +5187,26 @@ _renumber_b_faces(cs_mesh_t  *mesh)
     if (retval != 0) {
       CS_REALLOC(b_group_index, 2, cs_lnum_t);
       b_group_index[0] = 0;
-      b_group_index[1] = mesh->n_b_faces;
+      b_group_index[1] = n_b_faces_connect;
     }
+    cs_lnum_t n_b_groups = 1;
+    if (mesh->n_b_faces > n_b_faces_connect)
+      n_b_groups = 2;
+
     mesh->b_face_numbering = cs_numbering_create_threaded(n_b_threads,
-                                                          1,
+                                                          n_b_groups,
                                                           b_group_index);
     if (n_b_threads == 1)
       mesh->b_face_numbering->type = CS_NUMBERING_DEFAULT;
   }
   else if (numbering_type == CS_NUMBERING_VECTORIZE && retval == 0) {
     mesh->b_face_numbering
-      = cs_numbering_create_vectorized(mesh->n_b_faces,
+      = cs_numbering_create_vectorized(n_b_faces_connect,
                                        _cs_renumber_vector_size);
   }
   else
     mesh->b_face_numbering
-      = cs_numbering_create_default(mesh->n_b_faces);
+      = cs_numbering_create_default(n_b_faces_connect);
 
   mesh->b_face_numbering->n_no_adj_halo_groups = 0;
 
@@ -6103,16 +6151,18 @@ cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh)
   if (mesh->b_face_numbering != nullptr)
     cs_numbering_destroy(&(mesh->b_face_numbering));
 
+  cs_lnum_t n_b_faces_connect = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
+
   if (mesh->global_b_face_num != nullptr) {
 
     cs_lnum_t *new_to_old_b = cs_order_gnum(nullptr,
                                             mesh->global_b_face_num,
-                                            mesh->n_b_faces);
+                                            n_b_faces_connect);
 
     _cs_renumber_update_b_faces(mesh, new_to_old_b);
 
     mesh->b_face_numbering
-      = cs_numbering_create_default(mesh->n_b_faces);
+      = cs_numbering_create_default(n_b_faces_connect);
 
     CS_FREE(new_to_old_b);
 

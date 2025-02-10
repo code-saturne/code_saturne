@@ -1517,11 +1517,6 @@ cs_turbulence_ke(int              phase_id,
                        usexpe,
                        usimpe);
 
-  if (cs_glob_porous_model == 3) {
-    cs_immersed_boundary_wall_functions(f_k->id, usexpk, usimpk);
-    cs_immersed_boundary_wall_functions(f_eps->id, usexpe, usimpe);
-  }
-
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
 
     int k_interp_id = cs_field_key_id("opt_interp_id");

@@ -149,6 +149,16 @@ void
 cs_porous_model_clip(void);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Convert cell array to boundary array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
+                                         const cs_lnum_t   ibcell_cells[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

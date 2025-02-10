@@ -3801,7 +3801,7 @@ cs_boundary_conditions_set_coeffs_init(void)
   const cs_lnum_t n_vertices  = mesh->n_vertices;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
 
-  int *bc_type = cs_f_boundary_conditions_get_bc_type();
+  int *bc_type = cs_boundary_conditions_get_bc_type();
   cs_real_t *dt = CS_F_(dt)->val;
 
   const cs_lnum_t nt_cur  = cs_glob_time_step->nt_cur;

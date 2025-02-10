@@ -374,9 +374,6 @@ _solve_eq_fbr_al(const int         istprv,
                        rhs,
                        rovsdt);
 
-  if (cs_glob_porous_model == 3)
-    cs_immersed_boundary_wall_functions(f->id, rhs, rovsdt);
-
   /* If we extrapolate the source terms */
   if (istprv >= 0) {
     for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -733,9 +730,6 @@ _solve_eq_phi(const int           istprv,
                        f_phi->id,
                        rhs,
                        rovsdt);
-
-  if (cs_glob_porous_model == 3)
-    cs_immersed_boundary_wall_functions(f_phi->id, rhs, rovsdt);
 
   /* If we extrapolate the source terms */
   if (istprv >= 0) {

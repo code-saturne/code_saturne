@@ -111,7 +111,6 @@ typedef struct {
   cs_real_t eigenvalue_criteria;
   int       use_restart;
   cs_ibm_cog_location_t cog_location;
-
 } cs_porosity_from_scan_opt_t;
 
 /*============================================================================

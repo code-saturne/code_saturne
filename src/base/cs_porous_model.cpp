@@ -46,14 +46,23 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_boundary_conditions.h"
 #include "base/cs_field.h"
+#include "base/cs_field_default.h"
+#include "alge/cs_gradient.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "cdo/cs_domain.h"
+#include "alge/cs_matrix_default.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "pprt/cs_physical_model.h"
 #include "base/cs_porosity_from_scan.h"
+#include "base/cs_post.h"
 #include "base/cs_preprocess.h"
+#include "base/cs_renumber.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -109,6 +118,45 @@ cs_mesh_quantities_t  *cs_glob_mesh_quantities_f = nullptr;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*
+ * Realloc the boundary field values array on the immersed zone
+ * and initialize it only in the immersed zone
+ * parameters:
+ *   n_elts     <-- number of associated elements
+ *   n_ib_cells <-- number of immersed boundary cells
+ *   dim        <-- associated dimension
+ *   val_old    <-- pointer to previous array in case of reallocation
+ *                  (usually nullptr)
+ *
+ * returns  pointer to new field values.
+ *----------------------------------------------------------------------------*/
+
+static cs_real_t *
+_add_val(cs_lnum_t   n_elts,
+         cs_lnum_t   n_ib_cells,
+         int         dim,
+         cs_real_t  *val_old)
+{
+  cs_real_t  *val = val_old;
+
+  const cs_lnum_t _n_b_faces_tot = dim * n_elts;
+  CS_REALLOC_HD(val, _n_b_faces_tot, cs_real_t, cs_alloc_mode);
+
+  /* Initialize field. This should not be necessary, but when using
+     threads with Open MP, this should help ensure that the memory will
+     first be touched by the same core that will later operate on
+     this memory, usually leading to better core/memory affinity. */
+
+  const cs_lnum_t _n_ib_elts = dim * n_ib_cells;
+  const cs_lnum_t _n_b_faces_old = _n_b_faces_tot - _n_ib_elts;
+
+# pragma omp parallel for if (_n_ib_elts > CS_THR_MIN)
+  for (cs_lnum_t ii = _n_b_faces_old; ii < _n_b_faces_tot; ii++)
+    val[ii] = 0.;
+
+  return val;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -610,6 +658,219 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
       mq->b_f_face_factor[face_id] = 1.;
       //}
     }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Realloc boundary arrays for all defined fields.
+ *
+ * Location sized must thus be known.
+ *
+ * Fields that do not own their data should all have been mapped at this
+ * stage, and are checked.
+ *
+ * \param[in]   n_ib_cells   immersed boundary cell number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_ibm_reallocate(cs_lnum_t  n_ib_cells)
+{
+  const int n_fields = cs_field_n_fields();
+
+  for (int i = 0; i < n_fields; i++) {
+    cs_field_t *f = cs_field_by_id(i);
+
+    if (f->is_owner) {
+      assert(f != nullptr);
+
+      if (f->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
+        continue;
+
+      if (f->is_owner) {
+
+        const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+
+        /* Initialization */
+
+        for (int ii = 0; ii < f->n_time_vals; ii++)
+          f->vals[ii] = _add_val(n_elts[2], n_ib_cells, f->dim, f->vals[ii]);
+
+        f->val = f->vals[0];
+        if (f->n_time_vals > 1)
+          f->val_pre = f->vals[1];
+      }
+
+    }
+    else {
+      if (f->val == nullptr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Field \"%s\"\n"
+                    " requires mapped values which have not been set."),
+                  f->name);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert cell array to boundary array
+ *
+ * \param[in]   n_ib_cells     immersed cell number
+ * \param[in]   ibcell_cells   immersed cell to cell connectivity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
+                                         const cs_lnum_t   ibcell_cells[])
+{
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq_f = cs_glob_mesh_quantities;
+
+  const cs_real_3_t *restrict c_w_face_normal
+    = (const cs_real_3_t *)mq_f->c_w_face_normal;
+  const cs_real_t *restrict c_w_face_surf
+    = (const cs_real_t *)mq_f->c_w_face_surf;
+  const cs_real_3_t *restrict c_w_face_cog
+    = (const cs_real_3_t *)mq_f->c_w_face_cog;
+  const cs_real_t *c_w_dist_inv = (const cs_real_t *)mq_f->c_w_dist_inv;
+  const cs_real_3_t *cell_cen = mq_f->cell_cen;
+
+  const cs_lnum_t n_b_faces_old = m->n_b_faces;
+  const cs_lnum_t n_g_b_faces_all = m->n_g_b_faces_all;
+  const cs_lnum_t n_b_faces_tot = n_b_faces_old + n_ib_cells;
+
+  m->n_b_faces = n_b_faces_tot;
+  cs_mesh_location_build(m,
+                         CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  /* Update bc_type */
+  cs_boundary_conditions_ibm_create(n_ib_cells);
+
+  /* Realloc mesh quantities array wich are not fields */
+  CS_REALLOC_HD(m->b_face_family, n_b_faces_tot, cs_lnum_t, cs_alloc_mode);
+  CS_REALLOC_HD(m->b_face_cells, n_b_faces_tot, cs_lnum_t, cs_alloc_mode);
+  /*CS_REALLOC_HD(m->b_face_vtx_idx, n_b_faces_tot+1, cs_lnum_t, cs_alloc_mode);
+  CS_REALLOC_HD(m->b_face_vtx_lst, m->b_face_vtx_idx[n_b_faces_old]+n_glob_vtx,
+                cs_lnum_t, cs_alloc_mode);*/
+
+  CS_REALLOC_HD(mq_f->b_face_u_normal, n_b_faces_tot, cs_nreal_3_t, cs_alloc_mode);
+  CS_REALLOC_HD(mq_f->b_dist, n_b_faces_tot, cs_real_t, cs_alloc_mode);
+  CS_REALLOC_HD(mq_f->b_sym_flag, n_b_faces_tot, int, cs_alloc_mode);
+  CS_REALLOC_HD(mq_f->diipb, n_b_faces_tot, cs_rreal_3_t, cs_alloc_mode);
+
+  cs_field_map_and_init_bcs();
+  cs_field_ibm_reallocate(n_ib_cells);
+
+  /* mq_f points to reallocated fields */
+  mq_f->b_face_normal = cs_field_by_name("b_f_face_normal")->val;
+  mq_f->b_face_surf = cs_field_by_name("b_f_face_surf")->val;
+  mq_f->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
+  mq_f->b_face_cog = (cs_real_3_t *)cs_field_by_name("b_f_face_cog")->val;
+  mq_f->cell_cen = (cs_real_3_t *)cs_field_by_name("cell_f_cen")->val;
+
+  cs_lnum_t *b_face_cells = m->b_face_cells;
+  //cs_lnum_t *b_face_vtx_idx = m->b_face_vtx_idx;
+  //cs_lnum_t *b_face_vtx_lst = m->b_face_vtx_lst;
+  cs_real_t *b_dist = mq_f->b_dist;
+  cs_real_3_t *b_face_u_normal = mq_f->b_face_u_normal;
+  cs_real_3_t *b_face_normal = (cs_real_3_t *)mq_f->b_face_normal;
+  cs_real_3_t *b_face_cog = (cs_real_3_t *)mq_f->b_face_cog;
+  cs_rreal_3_t *diipb = mq_f->diipb;
+  cs_real_t *b_face_surf = mq_f->b_face_surf;
+
+  /* Initialization in the ibm zone for cs_mesh_update_selectors */
+  for (cs_lnum_t face_id = n_b_faces_old; face_id < n_b_faces_tot; face_id++) {
+    m->b_face_family[face_id] = 1;
+  }
+
+  /* Rebuild the boundary zone */
+  cs_mesh_free_b_rebuildable(m);
+
+  cs_mesh_init_b_selector();
+
+  CS_REALLOC(m->global_b_face_num, n_b_faces_tot, cs_gnum_t);
+  cs_gnum_t *g_b_face_num = m->global_b_face_num;
+
+  fvm_io_num_t *face_io_num = nullptr;
+  const cs_gnum_t *face_gnum = nullptr;
+  if (cs_glob_n_ranks > 1) {
+    /* Order faces by increasing global number */
+    face_io_num = fvm_io_num_create_from_scan(n_ib_cells);
+    face_gnum = fvm_io_num_get_global_num(face_io_num);
+  }
+
+  for (cs_lnum_t i = 0; i < n_ib_cells; i++) {
+    const cs_lnum_t c_id = ibcell_cells[i];
+    const cs_lnum_t f_id = n_b_faces_old + i;
+    const cs_real_t surf = c_w_face_surf[c_id];
+
+    b_face_cells[f_id] = c_id;
+
+    if (cs_glob_n_ranks > 1) {
+      g_b_face_num[f_id] = n_g_b_faces_all + face_gnum[i];
+    }
+    else {
+      g_b_face_num[f_id] = f_id+1;
+    }
+
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      b_face_cog[f_id][j] = c_w_face_cog[c_id][j];
+      b_face_normal[f_id][j] = c_w_face_normal[c_id][j];
+    }
+
+    /* Unit normal */
+    cs_math_3_normalize(c_w_face_normal[c_id], b_face_u_normal[f_id]);
+
+    b_face_surf[f_id] = surf;
+
+    b_dist[f_id] = (c_w_dist_inv[c_id] < DBL_MIN) ?
+                    0.:
+                    1. / c_w_dist_inv[c_id];
+
+    // Vector II' for immersed boundaries
+
+    // ---> IF
+    cs_real_t ib_vec_if[3] = {c_w_face_cog[c_id][0] - cell_cen[c_id][0],
+                              c_w_face_cog[c_id][1] - cell_cen[c_id][1],
+                              c_w_face_cog[c_id][2] - cell_cen[c_id][2]};
+
+    // ---> ib_diipb = IF - (IF.NIJ)NIJ
+    cs_math_3_orthogonal_projection(b_face_u_normal[f_id], ib_vec_if, diipb[f_id]);
+
+    /*const int n_vtx = 0.5*(w_vtx_idx[c_id+1]-w_vtx_idx[c_id]);
+    b_face_vtx_idx[f_id+1] = b_face_vtx_idx[f_id]+n_vtx;
+
+    // vtx order : {n_vertices+1, n_vertices+2,..., n_vertices + n_glob_vtx}
+    for (cs_lnum_t j = b_face_vtx_idx[f_id]; j < b_face_vtx_idx[f_id+1]; j++) {
+      b_face_vtx_lst[j] = n_vertices+1+(j-b_face_vtx_idx[f_id]);
+    }*/
+
+    //n_vertices += n_vtx;
+  }
+
+  cs_renumber_b_faces(cs_glob_mesh);
+
+  cs_volume_zone_build_all(true);
+  cs_boundary_zone_build_all(true);
+  assert(m->cell_numbering != nullptr);
+  assert(m->i_face_numbering != nullptr);
+  assert(m->vtx_numbering != nullptr);
+  assert(m->b_face_numbering != nullptr);
+
+  /* Update global n_g_b_faces, and b_cells (from b_face_cells) */
+  cs_mesh_update_auxiliary(m);
+
+  cs_gradient_free_quantities();
+
+  cs_mesh_adjacencies_update_cell_b_faces();
+
+  cs_matrix_update_mesh();
+
+  if (cs_glob_n_ranks > 1) {
+    fvm_io_num_destroy(face_io_num);
   }
 }
 

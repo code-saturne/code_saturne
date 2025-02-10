@@ -53,6 +53,7 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "base/cs_porosity_from_scan.h"
+#include "base/cs_porous_model.h"
 #include "base/cs_post.h"
 
 #include "fvm/fvm_nodal_from_desc.h"
@@ -4380,7 +4381,11 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   CS_MALLOC(face_vertex_idx, n_ib_cells + 1, cs_lnum_t);
   face_vertex_idx[0] = 0;
 
-  cs_lnum_t n_ib_cells0 = 0;
+  /* Immersed boundary cells number */
+  cs_lnum_t n_ib_cells0 = 0; // (included small porosity)
+  cs_lnum_t n_ib_cells_true = 0; // (skip the small porosity/disable_cell)
+  cs_lnum_t *ibcell_cells_true; // TODO: use only b_face_cells
+  CS_MALLOC(ibcell_cells_true, n_ib_cells, cs_lnum_t);
   cs_lnum_t n_glob_vtx = 0;
 
   /* face_vertex_idx and ibcell_cells computation */
@@ -4407,6 +4412,12 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       n_ib_cells0 += 1;
       n_glob_vtx += 0.5*n_vtx;
       face_vertex_idx[n_ib_cells0] = 0.5*w_vtx_idx[c_id+1];
+
+      /* Skip the disable cells with small porosity */
+      if (mq_f->c_disable_flag[c_id] == 0) {
+        ibcell_cells_true[n_ib_cells_true] = c_id;
+        n_ib_cells_true += 1;
+      }
     }
   }
 
@@ -4418,9 +4429,14 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                  face_vertex_idx,
                  w_vtx);
 
+  if (!cs_glob_porosity_from_scan_opt->use_staircase) {
+    cs_porous_model_convert_cell_to_boundary(n_ib_cells_true, ibcell_cells_true);
+  }
+
   /* Free memory */
   CS_FREE(face_vertex_idx);
   CS_FREE(ibcell_cells);
+  CS_FREE(ibcell_cells_true);
   CS_FREE(_i_f_surf);
 
   CS_FREE(i_f_face_cell_normal);

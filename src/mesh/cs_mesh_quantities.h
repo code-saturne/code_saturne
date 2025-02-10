@@ -150,7 +150,7 @@ typedef struct {
                                        used for fluid solid and porous models */
   unsigned     *bad_cell_flag;      /* Flag (mask) for bad cells detected */
 
-} cs_mesh_quantities_t ;
+} cs_mesh_quantities_t;
 
 /*============================================================================
  * Global variables

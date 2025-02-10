@@ -201,6 +201,15 @@ void
 cs_mesh_adjacencies_update_cell_i_faces(void);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief  Update cells -> boundary faces connectivity
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_adjacencies_update_cell_b_faces(void);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Map some global mesh adjacency arrays for use on device.
  *

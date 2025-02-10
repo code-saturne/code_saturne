@@ -4485,6 +4485,7 @@ cs_atmo_z_ground_compute(void)
   const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
+  const cs_lnum_t n_cells = m->n_cells;
 
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *)mq->i_face_normal;
@@ -4494,27 +4495,15 @@ cs_atmo_z_ground_compute(void)
 
   const int *bc_type = cs_glob_bc_type;
 
-  /* Quantities required for use_staircase = true */
   const cs_real_t *restrict i_face_surf = mq_g->i_face_surf;
   const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;
-  const cs_nreal_3_t *restrict i_face_u_normal
-    = mq_g->i_face_u_normal;
   const cs_real_3_t *restrict i_face_normal_g
     = (const cs_real_3_t *)mq_g->i_face_normal;
-
-  const cs_real_3_t *restrict cell_cen = mq->cell_cen;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *c2c = ma->cell_cells;
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
   const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
   const short int *cell_i_faces_sgn = ma->cell_i_faces_sgn;
-
-  /* Quantities required to account for the immersed walls*/
-  const cs_lnum_t  n_cells = m->n_cells;
-  const cs_real_t *c_w_face_surf = mq->c_w_face_surf;
-  const cs_real_3_t *c_w_face_normal = (const cs_real_3_t *)mq->c_w_face_normal;
-  const cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
-  const cs_real_3_t *c_w_face_cog = (const cs_real_3_t *)mq->c_w_face_cog;
 
   /* Pointer to z_ground field */
   cs_field_t *f = cs_field_by_name_try("z_ground");
@@ -4624,10 +4613,10 @@ cs_atmo_z_ground_compute(void)
         if (mq->c_disable_flag[c_id_adj] != 1)
           continue;
 
-        cs_real_t i_wall_dist
+        /*cs_real_t i_wall_dist
           = - sign * cs_math_3_distance_dot_product(cell_cen[c_id_adj],
                                                     i_face_cog[face_id],
-                                                    i_face_u_normal[face_id]);
+                                                    i_face_u_normal[face_id]);*/
 
         eqp_p->ndircl = 1;
         cs_real_t pimp = cs_math_3_dot_product(i_face_cog[face_id], normal);
@@ -4643,32 +4632,8 @@ cs_atmo_z_ground_compute(void)
       } /* loop on interior faces */
     } /* loop on cells */
   }
-  else {
-    /* Dirichlet condition on immersed boundaries */
-    if (c_w_face_surf != nullptr) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells ; c_id++) {
-        eqp_p->ndircl = 1;
-        cs_real_t hint = c_w_dist_inv[c_id];
-        cs_real_t pimp = cs_math_3_dot_product(c_w_face_cog[c_id], normal);
-
-        f->bc_coeffs->ib_g_wall_cor[c_id] = 0.;
-        f->bc_coeffs->ib_val_ext[c_id] = pimp;
-        f->bc_coeffs->ib_hint[c_id] = hint;
-        f->bc_coeffs->ib_qimp[c_id] = 0.;
-
-        cs_real_t tsimp = fmax(- cs_math_3_dot_product(c_w_face_normal[c_id], normal), 0.);
-
-        rhs[c_id] += tsimp * (pimp - f->val[c_id]); //explicit term
-        rovsdt[c_id] += cs::max(tsimp, 0.); //implicit term
-
-        norm += cs_math_pow2(pimp) * c_w_face_surf[c_id];
-        ground_surf += c_w_face_surf[c_id];
-      }
-    }
-  }
 
   cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
-
 
   /* Norm
    * ==== */
@@ -4726,7 +4691,7 @@ cs_atmo_z_ground_compute(void)
 
     /* Compute the L_infinity norm */
     inf_norm = 0.;
-    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       //FIXME make this dimensionless
       inf_norm = fmax(inf_norm, fabs(f->val[cell_id]-f->val_pre[cell_id]));
 

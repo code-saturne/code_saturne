@@ -288,65 +288,6 @@ _update_cell_i_faces(cs_mesh_adjacencies_t  *ma)
 }
 
 /*----------------------------------------------------------------------------
- * Update cells -> boundary faces connectivity
- *
- * parameters:
- *   ma <-> mesh adjacecies structure to update
- *----------------------------------------------------------------------------*/
-
-static void
-_update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-
-  /* (re)build cell -> boundary faces index */
-
-  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(ma->cell_b_faces_idx);
-
-  CS_FREE(ma->cell_b_faces_idx);
-  CS_MALLOC_HD(ma->cell_b_faces_idx, n_cells + 1, cs_lnum_t, alloc_mode);
-  cs_mem_advise_set_read_mostly(ma->cell_b_faces_idx);
-  cs_lnum_t *c2b_idx = ma->cell_b_faces_idx;
-
-  cs_lnum_t *c2b_count;
-  CS_MALLOC(c2b_count, n_cells, cs_lnum_t);
-
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    c2b_count[i] = 0;
-
-  for (cs_lnum_t i = 0; i < n_b_faces; i++)
-    c2b_count[b_face_cells[i]] += 1;
-
-  c2b_idx[0] = 0;
-  for (cs_lnum_t i = 0; i < n_cells; i++) {
-    c2b_idx[i+1] = c2b_idx[i] + c2b_count[i];
-    c2b_count[i] = 0;
-  }
-
-  /* Rebuild values */
-
-  CS_FREE(ma->cell_b_faces);
-  CS_MALLOC_HD(ma->cell_b_faces, c2b_idx[n_cells], cs_lnum_t, alloc_mode);
-  cs_mem_advise_set_read_mostly(ma->cell_b_faces);
-  cs_lnum_t *c2b = ma->cell_b_faces;
-
-  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-    cs_lnum_t c_id = b_face_cells[i];
-    c2b[c2b_idx[c_id] + c2b_count[c_id]] = i;
-    c2b_count[c_id] += 1;
-  }
-
-  CS_FREE(c2b_count);
-
-  /* Sort array */
-
-  cs_sort_indexed(n_cells, c2b_idx, c2b);
-}
-
-/*----------------------------------------------------------------------------
  * Update cells -> hidden boundary faces connectivity
  *
  * parameters:
@@ -746,7 +687,7 @@ cs_mesh_adjacencies_update_mesh(void)
 
   /* (re)build cell -> boundary face connectivities */
 
-  _update_cell_b_faces(ma);
+  cs_mesh_adjacencies_update_cell_b_faces();
 
   if (m->n_b_faces_all > m->n_b_faces)
     _update_cell_hb_faces(ma);
@@ -794,6 +735,66 @@ cs_mesh_adjacencies_update_cell_i_faces(void)
 
   if (ma->cell_i_faces == nullptr)
     _update_cell_i_faces(ma);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update cells -> boundary faces connectivity
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_adjacencies_update_cell_b_faces(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
+
+  /* (re)build cell -> boundary faces index */
+
+  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(ma->cell_b_faces_idx);
+
+  CS_FREE(ma->cell_b_faces_idx);
+  CS_MALLOC_HD(ma->cell_b_faces_idx, n_cells + 1, cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_b_faces_idx);
+  cs_lnum_t *c2b_idx = ma->cell_b_faces_idx;
+
+  cs_lnum_t *c2b_count;
+  CS_MALLOC(c2b_count, n_cells, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2b_count[i] = 0;
+
+  for (cs_lnum_t i = 0; i < n_b_faces; i++)
+    c2b_count[b_face_cells[i]] += 1;
+
+  c2b_idx[0] = 0;
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    c2b_idx[i+1] = c2b_idx[i] + c2b_count[i];
+    c2b_count[i] = 0;
+  }
+
+  /* Rebuild values */
+
+  CS_FREE(ma->cell_b_faces);
+  CS_MALLOC_HD(ma->cell_b_faces, c2b_idx[n_cells], cs_lnum_t, alloc_mode);
+  cs_mem_advise_set_read_mostly(ma->cell_b_faces);
+  cs_lnum_t *c2b = ma->cell_b_faces;
+
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+    cs_lnum_t c_id = b_face_cells[i];
+    c2b[c2b_idx[c_id] + c2b_count[c_id]] = i;
+    c2b_count[c_id] += 1;
+  }
+
+  CS_FREE(c2b_count);
+
+  /* Sort array */
+
+  cs_sort_indexed(n_cells, c2b_idx, c2b);
 }
 
 /*----------------------------------------------------------------------------*/

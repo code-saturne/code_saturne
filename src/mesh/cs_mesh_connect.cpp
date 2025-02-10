@@ -296,7 +296,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
   cs_lnum_t  *cell_faces_idx = nullptr;
   cs_lnum_t  *cell_faces_val = nullptr;
 
-  const cs_lnum_t n_b_faces = cs::max(mesh->n_b_faces_all, mesh->n_b_faces);
+  const cs_lnum_t n_b_faces = mesh->n_b_faces_all;
 
   /* Allocate and initialize cell ->faces index */
 
@@ -465,7 +465,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   fvm_nodal_t  *extr_mesh;
 
-  const cs_lnum_t n_b_faces = cs::max(mesh->n_b_faces_all, mesh->n_b_faces);
+  const cs_lnum_t n_b_faces = mesh->n_b_faces_all;
 
   /* If a family has no attributes, it must be 1st by construction
      (as families are sorted when merging duplicates) */
@@ -760,7 +760,7 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
                                   cs_lnum_t   **v2c)
 {
   const cs_lnum_t n_vertices = mesh->n_vertices;
-  const cs_lnum_t n_b_faces = cs::max(mesh->n_b_faces_all, mesh->n_b_faces);
+  const cs_lnum_t n_b_faces = mesh->n_b_faces_all;
 
   /* Mark vertices which may be split (vertices lying on new boundary faces) */
 

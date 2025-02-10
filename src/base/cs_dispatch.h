@@ -336,15 +336,17 @@ public:
   template <class M, class F, class... Args>
   bool
   parallel_for_b_faces(const M* m, F&& f, Args&&... args) {
+    const int n_b_groups  = m->b_face_numbering->n_groups;
     const int n_b_threads = m->b_face_numbering->n_threads;
     const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
-    #pragma omp parallel for
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t f_id = b_group_index[t_id*2];
-           f_id < b_group_index[t_id*2 + 1];
-           f_id++) {
-        f(f_id, args...);
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+      #pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t f_id = b_group_index[(t_id * n_b_groups + g_id) * 2];
+             f_id < b_group_index[(t_id * n_b_groups + g_id) * 2 + 1];
+             f_id++) {
+          f(f_id, args...);
+        }
       }
     }
     return true;

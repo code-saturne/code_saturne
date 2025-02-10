@@ -307,9 +307,11 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
    */
   if (z->time_varying || mesh_modified) {
 
+    cs_mesh_t *mesh = cs_glob_mesh;
     cs_real_t *b_face_surf   = cs_glob_mesh_quantities_g->b_face_surf;
     cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_face_surf;
     cs_real_3_t *face_cen = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+    cs_lnum_t n_b_faces_all = mesh->n_b_faces_all;
 
     z->measure = 0.;
     z->f_measure = 0.;
@@ -321,10 +323,12 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
 
     for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
       cs_lnum_t f_id = z->elt_ids[e_id];
-      z->measure   += b_face_surf[f_id];
       z->f_measure += b_f_face_surf[f_id];
       for (int idim = 0; idim < 3; idim++)
-        z->cog[idim] += face_cen[f_id][idim] * b_face_surf[f_id];
+        z->cog[idim] += face_cen[f_id][idim] * b_f_face_surf[f_id];
+
+      if (f_id < n_b_faces_all)
+        z->measure += b_face_surf[f_id];
     }
 
     cs_real_t measures[7] = {z->measure, z->f_measure,

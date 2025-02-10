@@ -380,11 +380,6 @@ cs_turbulence_kw(int phase_id)
                        smbrw,
                        usimpw);
 
-  if (cs_glob_porous_model == 3) {
-    cs_immersed_boundary_wall_functions(f_k->id, smbrk, usimpk);
-    cs_immersed_boundary_wall_functions(f_omg->id, smbrw, usimpw);
-  }
-
   /* If source terms are extrapolated over time */
 
   if (istprv >= 0) {

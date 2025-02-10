@@ -2236,8 +2236,6 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
 {
   /* Free structures that may be rebuilt */
 
-  CS_FREE(mesh->b_cells);
-
   if (mesh->cell_cells_idx != nullptr) {
     CS_FREE(mesh->cell_cells_idx);
     CS_FREE(mesh->cell_cells_lst);
@@ -2261,20 +2259,55 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
 
   }
 
+  cs_mesh_free_b_rebuildable(mesh);
+
   /* Free numbering info */
 
   if (mesh->cell_numbering != nullptr)
     cs_numbering_destroy(&(mesh->cell_numbering));
   if (mesh->i_face_numbering != nullptr)
     cs_numbering_destroy(&(mesh->i_face_numbering));
-  if (mesh->b_face_numbering != nullptr)
-    cs_numbering_destroy(&(mesh->b_face_numbering));
   if (mesh->vtx_numbering != nullptr)
     cs_numbering_destroy(&(mesh->vtx_numbering));
 
   /* Free selection structures */
 
-  _free_selectors(mesh);
+  if (mesh->select_cells != nullptr)
+    mesh->select_cells = fvm_selector_destroy(mesh->select_cells);
+  if (mesh->select_i_faces != nullptr)
+    mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
+
+  /* Destroy group class set after selectors, who reference it */
+
+  if (mesh->class_defs != nullptr)
+    mesh->class_defs
+      = fvm_group_class_set_destroy(mesh->class_defs);
+}
+
+/*----------------------------------------------------------------------------
+ * Remove boundary arrays and structures that may be rebuilt.
+ *
+ * mesh       <-> pointer to a mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_free_b_rebuildable(cs_mesh_t  *mesh)
+{
+  /* Free structures that may be rebuilt */
+
+  CS_FREE(mesh->b_cells);
+
+  if (mesh->b_face_numbering != nullptr)
+    cs_numbering_destroy(&(mesh->b_face_numbering));
+
+  /* Free boundary selection structures */
+
+  if (mesh->select_b_faces != nullptr)
+    mesh->select_b_faces = fvm_selector_destroy(mesh->select_b_faces);
+
+  if (mesh->class_defs != nullptr)
+    mesh->class_defs
+      = fvm_group_class_set_destroy(mesh->class_defs);
 }
 
 /*----------------------------------------------------------------------------
@@ -3142,6 +3175,25 @@ cs_mesh_init_selectors(void)
 
   /* Construction of the selectors */
 
+  cs_mesh_init_cell_selector();
+  cs_mesh_init_b_selector();
+  cs_mesh_init_i_selector();
+}
+
+/*----------------------------------------------------------------------------
+ * Assign cell selector to global mesh.
+ *
+ * Should be called once the mesh is fully built.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_cell_selector(void)
+{
+  if (cs_glob_mesh->class_defs == nullptr)
+    cs_mesh_init_group_classes(cs_glob_mesh);
+
+  /* Construction of the cell selector */
+
   cs_glob_mesh->select_cells
     = fvm_selector_create(cs_glob_mesh->dim,
                           cs_glob_mesh->n_cells,
@@ -3150,6 +3202,21 @@ cs_mesh_init_selectors(void)
                           1,
                           (cs_real_t *)cs_glob_mesh_quantities->cell_cen,
                           nullptr);
+}
+
+/*----------------------------------------------------------------------------
+ * Assign boundary selector to global mesh.
+ *
+ * Should be called once the mesh is fully built.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_b_selector(void)
+{
+  if (cs_glob_mesh->class_defs == nullptr)
+    cs_mesh_init_group_classes(cs_glob_mesh);
+
+  /* Construction of the boundary selector */
 
   cs_glob_mesh->select_b_faces
     = fvm_selector_create(cs_glob_mesh->dim,
@@ -3159,6 +3226,21 @@ cs_mesh_init_selectors(void)
                           1,
                           (cs_real_t *)cs_glob_mesh_quantities->b_face_cog,
                           cs_glob_mesh_quantities->b_face_normal);
+}
+
+/*----------------------------------------------------------------------------
+ * Assign internal selector to global mesh.
+ *
+ * Should be called once the mesh is fully built.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_i_selector(void)
+{
+  if (cs_glob_mesh->class_defs == nullptr)
+    cs_mesh_init_group_classes(cs_glob_mesh);
+
+  /* Construction of the internal selector */
 
   cs_glob_mesh->select_i_faces
     = fvm_selector_create(cs_glob_mesh->dim,
@@ -3168,7 +3250,6 @@ cs_mesh_init_selectors(void)
                           1,
                           (cs_real_t *)cs_glob_mesh_quantities->i_face_cog,
                           cs_glob_mesh_quantities->i_face_normal);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3181,7 +3262,21 @@ cs_mesh_init_selectors(void)
 void
 cs_mesh_update_selectors(cs_mesh_t  *mesh)
 {
-  _free_selectors(mesh);
+  /* Free selectors */
+
+  if (mesh->select_cells != nullptr)
+    mesh->select_cells = fvm_selector_destroy(mesh->select_cells);
+  if (mesh->select_i_faces != nullptr)
+    mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
+  if (mesh->select_b_faces != nullptr)
+    mesh->select_b_faces = fvm_selector_destroy(mesh->select_b_faces);
+
+  /* Destroy group class set after selectors, who reference it */
+
+  if (mesh->class_defs != nullptr)
+    mesh->class_defs
+      = fvm_group_class_set_destroy(mesh->class_defs);
+
   cs_mesh_init_selectors();
 }
 

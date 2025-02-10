@@ -2281,6 +2281,50 @@ cs_boundary_conditions_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the legacy boundary conditions face type and face zone arrays.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_ibm_create(cs_lnum_t n_ib_cells)
+{
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_lnum_t n_b_faces_old = n_b_faces - n_ib_cells;
+
+  /* Get default boundary type (converting "current" to "legacy" codes) */
+
+  const cs_boundary_t  *boundaries = cs_glob_boundaries;
+  int default_type = CS_SMOOTHWALL;
+
+  /* boundary conditions type by boundary face */
+
+  CS_REALLOC_HD(_bc_type, n_b_faces, int, cs_alloc_mode);
+  for (cs_lnum_t ii = n_b_faces_old; ii < n_b_faces; ii++) {
+    _bc_type[ii] = default_type;
+  }
+  cs_glob_bc_type = _bc_type;
+
+  /* Allocate legacy zone info
+     (deprecated, only for specific physics) */
+
+  cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
+  assert(bc_pm_info != nullptr);
+
+  CS_REALLOC(bc_pm_info->izfppp, n_b_faces, int);
+  for (cs_lnum_t ii = n_b_faces_old; ii < n_b_faces; ii++) {
+    cs_glob_bc_pm_info->izfppp[ii] = 0;
+  }
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
+    CS_REALLOC(bc_pm_info->iautom, n_b_faces, int);
+    for (cs_lnum_t ii = n_b_faces_old; ii < n_b_faces; ii++) {
+      bc_pm_info->iautom[ii] = 0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Free the boundary conditions face type and face zone arrays.
  *
  * This also frees boundary condition mappings which may have been defined.

@@ -1869,7 +1869,7 @@ _log_norm(const cs_mesh_t                *m,
                / (b_face_surf[face_id]*brom[face_id]*porosi[c_id]);
       else {
         /* Deal with null fluid section */
-        if (b_f_face_surf[face_id]/b_face_surf[face_id] > cs_math_epzero)
+        if (b_f_face_surf[face_id] > cs_math_epzero*cs_math_epzero)
           nrm = bmasfl[face_id]/(b_f_face_surf[face_id]*brom[face_id]);
       }
       res.r[0] = nrm;
@@ -2224,11 +2224,6 @@ _velocity_prediction(const cs_mesh_t             *m,
                        CS_F_(vel)->id,
                        (cs_real_t *)tsexp,
                        (cs_real_t *)tsimp);
-
-  if (cs_glob_porous_model == 3)
-    cs_immersed_boundary_wall_functions(CS_F_(vel)->id,
-                                        (cs_real_t *)tsexp,
-                                        (cs_real_t *)tsimp);
 
   if (cs_fan_n_fans() > 0) {
     if (ts->nt_cur == ts->nt_prev+1)

@@ -295,6 +295,15 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
                          bool        free_halos);
 
 /*----------------------------------------------------------------------------
+ * Remove boundary arrays and structures that may be rebuilt.
+ *
+ * mesh       <-> pointer to a mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_free_b_rebuildable(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Discard free (isolated) faces from a mesh.
  *
  * This should always be done before using the mesh for computation.
@@ -457,6 +466,33 @@ cs_mesh_init_group_classes(cs_mesh_t  *mesh);
 
 void
 cs_mesh_init_selectors(void);
+
+/*----------------------------------------------------------------------------
+ * Assign cell selector to global mesh.
+ *
+ * Should be called once the mesh is fully built.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_cell_selector(void);
+
+/*----------------------------------------------------------------------------
+ * Assign boundary selector to global mesh.
+ *
+ * Should be called once the mesh is fully built.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_b_selector(void);
+
+/*----------------------------------------------------------------------------
+ * Assign internal selector to global mesh.
+ *
+ * Should be called once the mesh is fully built.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_i_selector(void);
 
 /*----------------------------------------------------------------------------
  * Update selector and associated structures.

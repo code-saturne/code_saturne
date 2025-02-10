@@ -9438,6 +9438,7 @@ cs_gradient_porosity_balance(int inc)
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
+  const cs_lnum_t n_b_faces_all = m->n_b_faces_all;
   const cs_halo_t  *halo = m->halo;
 
   const cs_real_t *restrict cell_vol = mq->cell_vol;
@@ -9534,6 +9535,10 @@ cs_gradient_porosity_balance(int inc)
       for (cs_lnum_t f_id = b_group_index[t_id*2];
            f_id < b_group_index[t_id*2 + 1];
            f_id++) {
+
+        /* Skip the IBM faces */
+        if (f_id >= n_b_faces_all)
+          continue;
 
         cs_lnum_t ii = b_face_cells[f_id];
 

@@ -259,6 +259,15 @@ cs_boundary_conditions_create_legacy_zone_data(void);
 void
 cs_boundary_conditions_create(void);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Update the legacy boundary conditions face type and face zone arrays.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_ibm_create(cs_lnum_t n_ib_cells);
+
 /*----------------------------------------------------------------------------
  * Free the boundary conditions face type and face zone arrays.
  *

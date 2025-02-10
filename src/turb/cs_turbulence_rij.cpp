@@ -2507,9 +2507,6 @@ _solve_epsilon(int              phase_id,
                        rhs,
                        fimp);
 
-  if (cs_glob_porous_model == 3)
-    cs_immersed_boundary_wall_functions(f_eps->id, rhs, fimp);
-
   /* If we extrapolate the source terms */
   if (st_prv_id > -1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -3242,11 +3239,6 @@ cs_turbulence_rij(int phase_id)
   /* Prepare to solve Rij, in a manner similar
      to that of cs_solve_equation_scalar.
    * ========================================= */
-
-  if (cs_glob_porous_model == 3)
-    cs_immersed_boundary_wall_functions(f_rij->id,
-                                        (cs_real_t*)rhs,
-                                        (cs_real_t*)fimp);
 
   /* Lagrangian source terms
    * ----------------------- */
