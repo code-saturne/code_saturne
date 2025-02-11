@@ -201,32 +201,33 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         w1[cell_id] = cpro_ym3[cell_id]*xm/wmolg[2]*cm->xco2;
         w2[cell_id] = cpro_ym3[cell_id]*xm/wmolg[2]*cm->xh2o;
 
-        /* Soot model */
+        if (cm->isoot >= 0) {   /* Soot model */
+          cs_real_t ys;
+          if (cm->isoot == 0 && cm->iic > 0)
+            ys = cpro_ym3[cell_id]*cm->coefeg[2][cm->iic-1];
+          else if (cm->isoot == 0)
+            ys = xsoot * cpro_ym3[cell_id];
+          else // (cm->isoot >= 1)
+            ys = cvar_fsm[cell_id];
 
-        cs_real_t ys;
-        if (cm->isoot == 0 && cm->iic > 0)
-          ys = cpro_ym3[cell_id]*cm->coefeg[2][cm->iic-1];
-        else if (cm->isoot == 0)
-          ys = xsoot * cpro_ym3[cell_id];
-        else if (cm->isoot >= 1)
-          ys = cvar_fsm[cell_id];
+          w3[cell_id] = ys * crom[cell_id] / rosoot;
+        }
         else
-          ys = 0;
+          w3[cell_id] = 0;
 
-        yi[0] = cpro_ym1[cell_id];
-        yi[1] = cpro_ym2[cell_id];
-        yi[2] = cpro_ym3[cell_id];
-
-        cs_assert(n_gas_g <= 3);  /* Otherwise fill values */
-
-        cs_combustion_gas_yg2xye(yi, yk, xk);
-        xpro = (xk[2] + xk[3]);
-        w3[cell_id] = ys * crom[cell_id] / rosoot;
         if (rt_params->imgrey == 2) {
+          yi[0] = cpro_ym1[cell_id];
+          yi[1] = cpro_ym2[cell_id];
+          yi[2] = cpro_ym3[cell_id];
+          cs_assert(n_gas_g <= 3);  /* Otherwise fill values */
+
+          cs_combustion_gas_yg2xye(yi, yk, xk);
+          xpro = (xk[2] + xk[3]);
           cpro_cak0[cell_id]
             = 1225. * w3[cell_id] * cpro_temp[cell_id] + 0.1 * xpro;
         }
       }
+
       if (rt_params->imgrey == 1) {
         cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
       }
@@ -469,28 +470,26 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
     const double *restrict wmolg = cm->wmolg;
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
       cs_real_t xm
-        = 1.
-          / (cpro_ym1[cell_id] / wmolg[0] + cpro_ym2[cell_id] / wmolg[1]
-             + cpro_ym3[cell_id] / wmolg[2]);
+        = 1. / (  cpro_ym1[cell_id] / wmolg[0] + cpro_ym2[cell_id] / wmolg[1]
+                + cpro_ym3[cell_id] / wmolg[2]);
       w1[cell_id] = cpro_ym3[cell_id] * xm / wmolg[2] * cm->xco2;
       w2[cell_id] = cpro_ym3[cell_id] * xm / wmolg[2] * cm->xh2o;
 
-      /* Soot model */
+      if (cm->isoot >= 0) { /* Soot model */
+        cs_real_t ys;
+        if (cm->isoot == 0 && cm->iic > 0)
+          ys = cpro_ym3[cell_id] * cm->coefeg[2][cm->iic - 1];
+        else if (cm->isoot == 0)
+          ys = xsoot * cpro_ym3[cell_id];
+        else // if (cm->isoot >= 1)
+          ys = cvar_fsm[cell_id];
 
-      cs_real_t ys;
-      if (cm->isoot == 0 && cm->iic > 0)
-        ys = cpro_ym3[cell_id] * cm->coefeg[2][cm->iic - 1];
-      else if (cm->isoot == 0)
-        ys = xsoot * cpro_ym3[cell_id];
-      else if (cm->isoot >= 1)
-        ys = cvar_fsm[cell_id];
+        /* Calculation of soot volume fraction */
+        w3[cell_id] = ys * crom[cell_id] / rosoot;
+      }
       else
-        ys = 0;
-
-      /* Calculation of soot volume fraction */
-      w3[cell_id] = ys * crom[cell_id] / rosoot;
+        w3[cell_id] = 0.;
     }
 
     /* Calculation of the absorption coefficient using the RCFSK scheme */
