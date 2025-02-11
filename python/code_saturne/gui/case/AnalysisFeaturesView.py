@@ -147,10 +147,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelReactiveFlows.addItem(self.tr("Pulverized Coal"),
                                         "pulverized_coal")
 
-        self.modelGasCombustion.addItem(self.tr("perfect premixed flame (Eddy Break-Up)"),
-                                        "ebu")
         self.modelGasCombustion.addItem(self.tr("infinitely fast chemistry diffusion flame"),
                                         "d3p")
+        self.modelGasCombustion.addItem(self.tr("perfect premixed flame (Eddy Break-Up)"),
+                                        "ebu")
         self.modelGasCombustion.addItem(self.tr("partial premixed flame (Libby_Williams)"),
                                         "lwp")
 

@@ -70,7 +70,7 @@ class GasCombustionModel(Variables, Model):
         self.node_prop   = self.case.xmlGetNode('physical_properties')
         self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
 
-        self.gasCombustionModel = ('off', 'ebu', 'd3p','lwp')
+        self.gasCombustionModel = ('off', 'd3p', 'ebu', 'lwp')
         self.d3p_list = ("adiabatic", "extended")
         self.ebu_list = ("spalding", "enthalpy_st", "mixture_st", "enthalpy_mixture_st")
         self.lwp_list = ("2-peak_adiabatic", "2-peak_enthalpy",
@@ -125,12 +125,12 @@ class GasCombustionModel(Variables, Model):
         node_fluid  = node_prop.xmlInitNode('fluid_properties')
 
         old_model = self.node_gas['model']
-        ThermalScalarModel(self.case).setThermalModel('off')
 
         if model == 'off':
             self.node_gas['model'] = model
             self.node_gas['option'] = "off"
             ThermalRadiationModel(self.case).setRadiativeModel('off')
+            ThermalScalarModel(self.case).setThermalModel('off')
             for tag in ('variable',
                         'property',
                         'reference_mass_molar',
@@ -235,23 +235,23 @@ class GasCombustionModel(Variables, Model):
         option = self.getGasCombustionOption()
         list_options = ["3-peak_adiabatic", "3-peak_enthalpy",
                         "4-peak_adiabatic", "4-peak_enthalpy"]
-        acceptable_options = ["2-peak_enthalpy", "3-peak_enthalpy",
-                              "4-peak_enthalpy"]
         lst = []
-
-        ThermalScalarModel(self.case).setThermalModel('off')
 
         if model == 'd3p':
             lst.append("mixture_fraction")
             lst.append("mixture_fraction_variance")
             if option == 'extended':
                 ThermalScalarModel(self.case).setThermalModel('enthalpy')
+            else:
+                ThermalScalarModel(self.case).setThermalModel('off')
         elif model == 'ebu':
             lst.append("fresh_gas_fraction")
             if option == "mixture_st" or option =="enthalpy_mixture_st":
                 lst.append("mixture_fraction")
-            elif option == "enthalpy_st" or option =="enthalpy_mixture_st":
+            if option == "enthalpy_st" or option =="enthalpy_mixture_st":
                 ThermalScalarModel(self.case).setThermalModel('enthalpy')
+            else:
+                ThermalScalarModel(self.case).setThermalModel('off')
         elif model == 'lwp':
             lst.append("mixture_fraction")
             lst.append("mixture_fraction_variance")
@@ -259,8 +259,10 @@ class GasCombustionModel(Variables, Model):
             lst.append("mass_fraction_covariance")
             if option in list_options:
                 lst.append("mass_fraction_variance")
-            if option in acceptable_options:
+            if option.find("enthalpy") > -1:
                 ThermalScalarModel(self.case).setThermalModel('enthalpy')
+            else:
+                ThermalScalarModel(self.case).setThermalModel('off')
         return lst
 
 
