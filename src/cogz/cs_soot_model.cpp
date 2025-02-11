@@ -120,20 +120,20 @@ BEGIN_C_DECLS
  * and the precursor number for soot model.
  * The equations read: \f$ rovsdt \delta a = smbrs \f$
  *
- * \f$ rovsdt \f$ et \f$ smbrs \f$ could already contain source term
- *  and don't have to be erased but incremented.
+ * \f$ rovsdt \f$ et \f$ smbrs \f$ may already contain source term
+ * so must not be overwritten, but incremented.
  *
- * For stability sake, only positive terms should be add in \f$ rovsdt \f$.
- *  There is no constrain for \f$ smbrs \f$.
+ * For stability only positive terms should be add in \f$ rovsdt \f$.
+ * There is no constraint for \f$ smbrs \f$.
  * For a source term written \f$ S_{exp} + S_{imp} a \f$, source terms are:
  *           \f$ smbrs  = smbrs  + S_{exp} + S_{imp} a \f$
  *           \f$ rovsdt = rovsdt + \max(-S_{imp},0) \f$
  *
- *  Here are set \f$ rovsdt \f$ and \f$ smbrs \f$ containning \f$ \rho \Omega \f$
+ * Here we set \f$ rovsdt \f$ and \f$ smbrs \f$ containing \f$ \rho \Omega \f$
  *   - \f$ smbrs \f$ in \f$ kg_a.s^{-1} \f$ (ex: for velocity:
  *     \f$ kg.m.s^{-2} \f$, for temperature: \f$ kg.C.s^{-1} \f$,
  *     for enthalpy: \f$ J.s^{-1} \f$)
- *   - \f$ rovsdt \f$ en \f$ kg.s^{-1} \f$
+ *   - \f$ rovsdt \f$ in \f$ kg.s^{-1} \f$
  *
  * \param[in]     f_id           scalar field id
  * \param[out]    smbrs          explicit right hand side

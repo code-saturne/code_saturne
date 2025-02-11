@@ -159,12 +159,6 @@ if ( isuite.eq.0 ) then
       hair = cs_gas_combustion_t_to_h(coefg, tinitk)
     endif
 
-! ----- On en profite pour initialiser FRMEL et TGF
-!       CAR on n'a pas encore vu usebuc.F
-
-    frmel = zero
-    tgf   = 300.d0
-
     do iel = 1, ncel
 
 ! ----- Fraction massique de fuel et sa variance

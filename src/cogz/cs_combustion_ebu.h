@@ -89,6 +89,21 @@ void
 cs_combustion_ebu_physical_prop(int  *mbrom);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute physical properties for EBU combustion model.
+ *
+ * \param[in]      f_sc          pointer to scalar field
+ * \param[in,out]  smbrs         explicit right hand side
+ * \param[in,out]  rovsdt        implicit terms
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_ebu_source_terms(cs_field_t  *f_sc,
+                               cs_real_t    smbrs[],
+                               cs_real_t    rovsdt[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

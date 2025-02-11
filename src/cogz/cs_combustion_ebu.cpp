@@ -47,7 +47,9 @@
 #include "base/cs_array_reduce.h"
 #include "base/cs_base.h"
 #include "base/cs_dispatch.h"
+#include "cdo/cs_equation_param.h"
 #include "base/cs_field.h"
+#include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_log.h"
@@ -58,6 +60,7 @@
 #include "base/cs_restart_default.h"
 #include "mesh/cs_mesh.h"
 #include "rayt/cs_rad_transfer.h"
+#include "turb/cs_turbulence_model.h"
 
 #include "pprt/cs_combustion_model.h"
 #include "pprt/cs_physical_model.h"
@@ -510,6 +513,111 @@ cs_combustion_ebu_physical_prop(int  *mbrom)
   CS_FREE(masmel);
 
   *mbrom = 1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute physical properties for premixed flame EBU combustion model.
+ *
+ * Define the source terms for a given scalar over one time step.
+ *
+ * The equations read: \f$ rovsdt \delta a = smbrs \f$
+ *
+ * \f$ rovsdt \f$ et \f$ smbrs \f$ may already contain source term
+ * so must not be overwritten, but incremented.
+ *
+ * For stability, only positive terms should be add in \f$ rovsdt \f$.
+ * There is no constraint for \f$ smbrs \f$.
+ * For a source term written \f$ S_{exp} + S_{imp} a \f$, source terms are:
+ *           \f$ smbrs  = smbrs  + S_{exp} + S_{imp} a \f$
+ *           \f$ rovsdt = rovsdt + \max(-S_{imp},0) \f$
+ *
+ * Here we set \f$ rovsdt \f$ and \f$ smbrs \f$ containing \f$ \rho \Omega \f$
+ *   - \f$ smbrs \f$ in \f$ kg_a.s^{-1} \f$ (ex: for velocity:
+ *     \f$ kg.m.s^{-2} \f$, for temperature: \f$ kg.C.s^{-1} \f$,
+ *     for enthalpy: \f$ J.s^{-1} \f$)
+ *   - \f$ rovsdt \f$ in \f$ kg.s^{-1} \f$
+ *
+ * \param[in]      f_sc          pointer to scalar field
+ * \param[in,out]  smbrs         explicit right hand side
+ * \param[in,out]  rovsdt        implicit terms
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_ebu_source_terms(cs_field_t  *f_sc,
+                               cs_real_t    smbrs[],
+                               cs_real_t    rovsdt[])
+{
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  if (f_sc != cm->ygfm)
+    return;
+
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_sc);
+  if (eqp->verbosity >= 1)
+    bft_printf(_("Source terms for variable %s\n\n"), f_sc->name);
+
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  // Get variables and coefficients
+
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *cvara_scal = f_sc->val_pre;
+  const cs_real_t *volume = cs_glob_mesh_quantities->cell_vol;
+
+  const cs_real_t *cvara_k = nullptr;
+  const cs_real_t *cvara_ep = nullptr;
+  const cs_real_t *cvara_omg = nullptr;
+  const cs_real_6_t *cvara_rij = nullptr;
+
+  cs_real_t  *w1 = nullptr;
+
+  cs_host_context ctx;
+
+  if (   cs_glob_turb_model->itytur == 2
+      || cs_glob_turb_model->itytur == 5) {
+    cvara_k = CS_F_(k)->val_pre;
+    cvara_ep = CS_F_(eps)->val_pre;
+  }
+
+  else if (cs_glob_turb_model->itytur == 3) {
+    cvara_rij = (const cs_real_6_t *)(CS_F_(k)->val_pre);
+    cvara_ep = CS_F_(eps)->val_pre;
+
+    CS_MALLOC(w1, n_cells_ext, cs_real_t);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+      w1[c_id] = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+    });
+    cvara_k = w1;
+  }
+
+  else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
+    cvara_k = CS_F_(k)->val_pre;
+    cvara_omg = CS_F_(omg)->val_pre;
+
+    const cs_real_t cmu = cs_turb_cmu;
+    CS_MALLOC(w1, n_cells_ext, cs_real_t);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+      w1[c_id] = cmu * cvara_k[c_id]* cvara_omg[c_id];
+    });
+    cvara_ep = w1;
+  }
+
+  const cs_real_t epzero = cs_math_epzero;
+  const cs_real_t cebu = cm->cebu;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+    if (cvara_k[c_id] > epzero && cvara_ep[c_id] > epzero) {
+      cs_real_t w3 =   cebu*cvara_ep[c_id] / cvara_k[c_id]
+                     * crom[c_id] * volume[c_id] * (1.0 - cvara_scal[c_id]);
+      smbrs[c_id] = smbrs[c_id] - cvara_scal[c_id]*w3;
+      rovsdt[c_id] = rovsdt[c_id] + fmax(w3, 0.0);
+    }
+  });
+
+  CS_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------*/

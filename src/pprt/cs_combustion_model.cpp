@@ -159,9 +159,7 @@ cs_f_coincl_get_pointers(int     **model_type,
                          double  **coeff1,
                          double  **coeff2,
                          double  **coeff3,
-                         double  **tgf,
-                         double  **frmel,
-                         double  **cebu);
+                         double  **tgf);
 
 void
 cs_f_combustion_model_get_pointers(double  **srrom);
@@ -282,9 +280,7 @@ cs_f_coincl_get_pointers(int     **model_type,
                          double  **coeff1,
                          double  **coeff2,
                          double  **coeff3,
-                         double  **tgf,
-                         double  **frmel,
-                         double  **cebu)
+                         double  **tgf)
 {
   *model_type = nullptr;
   *isoot  = nullptr;
@@ -320,8 +316,6 @@ cs_f_coincl_get_pointers(int     **model_type,
   *coeff2 = nullptr;
   *coeff3 = nullptr;
   *tgf = nullptr;
-  *frmel = nullptr;
-  *cebu = nullptr;
 
   if (cs_glob_combustion_gas_model != nullptr) {
 
@@ -361,8 +355,6 @@ cs_f_coincl_get_pointers(int     **model_type,
     *coeff2 = &(cm->lw.coeff2);
     *coeff3 = &(cm->lw.coeff3);
     *tgf = &(cm->tgf);
-    *frmel = &(cm->frmel);
-    *cebu = &(cm->cebu);
 
   }
   else if (cs_glob_coal_model != nullptr) {

@@ -132,12 +132,10 @@ module coincl
 
   ! ---- Grandeurs fournies par l'utilisateur dans usebuc.f90
 
-  !       FRMEL        --> Taux de melange constant pour modeles 0 et 1
   !       TGF          --> Temperature gaz frais en K identique
   !                        pour premelange frais et dilution
-  !       CEBU         --> Constante Eddy break-Up
 
-  real(c_double), pointer, save :: frmel, tgf, cebu
+  real(c_double), pointer, save :: tgf
 
   !--> MODELE DE FLAMME DE PREMELANGE LWC
 
@@ -256,16 +254,6 @@ module coincl
   ! TODO
   integer, save :: itsc = -1
 
-  !> pointer for soot precursor number in isca (isoot = 1)
-  integer, save :: inpm = -1
-
-  !> pointer for soot mass fraction in isca (isoot = 1)
-  integer, save :: ifsm = -1
-
-  !> Burke Schumann combustion model constants
-  integer, parameter :: n_z = 80, n_xr = 5, n_zvar = 10
-  integer, parameter :: n_var_bsh = 7, nvar_turb = 10
-
   !> \}
 
   !=============================================================================
@@ -299,8 +287,7 @@ module coincl
                                         p_hmin, p_hmax,        &
                                         p_coeff1, p_coeff2,    &
                                         p_coeff3,              &
-                                        p_tgf, p_frmel,        &
-                                        p_cebu)                &
+                                        p_tgf)                 &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -312,7 +299,7 @@ module coincl
       type(c_ptr), intent(out) :: p_tinoxy, p_vref, p_lref, p_ta, p_tstar
       type(c_ptr), intent(out) :: p_fmin, p_fmax, p_hmin, p_hmax
       type(c_ptr), intent(out) :: p_coeff1, p_coeff2, p_coeff3
-      type(c_ptr), intent(out) :: p_tgf, p_frmel, p_cebu
+      type(c_ptr), intent(out) :: p_tgf
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -360,7 +347,7 @@ contains
                    c_vref, c_lref, c_ta, c_tstar,                      &
                    c_fmin, c_fmax, c_hmin, c_hmax,                     &
                    c_coeff1, c_coeff2, c_coeff3,                       &
-                   c_tgf, c_frmel, c_cebu
+                   c_tgf
 
     call cs_f_coincl_get_pointers(c_cmtype, c_isoot, c_ngazfl, c_nki,  &
                                   c_nxr, c_nzm, c_nzvar,               &
@@ -374,7 +361,7 @@ contains
                                   c_vref, c_lref, c_ta, c_tstar,       &
                                   c_fmin, c_fmax, c_hmin, c_hmax,      &
                                   c_coeff1, c_coeff2, c_coeff3,        &
-                                  c_tgf, c_frmel, c_cebu)
+                                  c_tgf)
 
     call c_f_pointer(c_cmtype, cmtype)
     call c_f_pointer(c_isoot, isoot)
@@ -410,8 +397,6 @@ contains
     call c_f_pointer(c_coeff2, coeff2)
     call c_f_pointer(c_coeff3, coeff3)
     call c_f_pointer(c_tgf, tgf);
-    call c_f_pointer(c_frmel, frmel);
-    call c_f_pointer(c_cebu, cebu);
 
   end subroutine co_models_init
 
@@ -491,8 +476,6 @@ contains
     call field_get_id_try('fresh_gas_fraction', iygfm)
     call field_get_id_try('mass_fraction', iyfm)
     call field_get_id_try('mass_fraction_variance', iyfp2m)
-    call field_get_id_try('soot_mass_fraction', ifsm)
-    call field_get_id_try('soot_precursor_number', inpm)
 
   end subroutine cs_f_combustion_map_variables
 
