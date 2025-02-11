@@ -54,6 +54,7 @@ cs_combustion_bsh.h \
 cs_combustion_ebu.h \
 cs_combustion_gas.h \
 cs_combustion_ht_convert.h \
+cs_combustion_lw.h \
 cs_combustion_physical_properties.h \
 cs_combustion_read_data.h \
 cs_soot_model.h \
@@ -69,6 +70,7 @@ cs_combustion_bsh.cpp \
 cs_combustion_ebu.cpp \
 cs_combustion_gas.cpp \
 cs_combustion_ht_convert.cpp \
+cs_combustion_lw.cpp \
 cs_combustion_physical_properties.cpp \
 cs_combustion_read_data.cpp \
 cs_soot_model.cpp \
@@ -78,7 +80,6 @@ d3phst.f90 \
 d3pini.f90 \
 d3pint.f90 \
 lwcgfu.f90 \
-lwcini.f90 \
 lwcphy.f90 \
 lwctss.f90 \
 lwcurl.f90 \

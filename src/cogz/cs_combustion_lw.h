@@ -1,8 +1,8 @@
-#ifndef CS_COMBUSTION_EBU_H
-#define CS_COMBUSTION_EBU_H
+#ifndef CS_COMBUSTION_LW_H
+#define CS_COMBUSTION_LW_H
 
 /*============================================================================
- * EBU (Eddy Break-Up) gas combustion model.
+ * Libby-Williams gas combustion model.
  *============================================================================*/
 
 /*
@@ -60,33 +60,35 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize specific fields for EBU gas combustion model (first step).
+/*
+ * \brief Initialize specific fields for Libby-Williams gas combustion model
+ *        (first step).
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_ebu_fields_init0(void);
+cs_combustion_lw_fields_init0(void);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Initialize specific fields for EBU gas combustion model (second step).
+ * \brief Initialize specific fields for Libby-Williams gas combustion model
+ *        (second step).
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_ebu_fields_init1(void);
+cs_combustion_lw_fields_init1(void);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute physical properties for EBU combustion model.
+ * \brief Compute physical properties for Libby-Williams combustion model.
  *
  * \param[in, out]   mbrom    filling indicator of romb
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_ebu_physical_prop(int  *mbrom);
+cs_combustion_lw_physical_prop(int  *mbrom);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -118,12 +120,12 @@ cs_combustion_ebu_physical_prop(int  *mbrom);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_ebu_source_terms(cs_field_t  *f_sc,
-                               cs_real_t    smbrs[],
-                               cs_real_t    rovsdt[]);
+cs_combustion_lw_source_terms(cs_field_t  *f_sc,
+                              cs_real_t    smbrs[],
+                              cs_real_t    rovsdt[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* CS_COMBUSTION_EBU_H */
+#endif /* CS_COMBUSTION_LW_H */

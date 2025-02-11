@@ -66,6 +66,7 @@
 
 #include "pprt/cs_physical_model.h"
 #include "cogz/cs_combustion_ebu.h"
+#include "cogz/cs_combustion_lw.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -101,9 +102,6 @@ BEGIN_C_DECLS
 
 void
 cs_f_kinetics_rates_compute(void);
-
-void
-cs_f_lwcini(void);
 
 void
 cs_f_max_mid_min_progvar(const cs_real_t  *zmo,
@@ -147,7 +145,7 @@ _delayed_initializations(void)
     cs_combustion_ebu_fields_init1();
 
   if (pm_flag[CS_COMBUSTION_LW] >= 0)
-    cs_f_lwcini();
+    cs_combustion_lw_fields_init1();
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

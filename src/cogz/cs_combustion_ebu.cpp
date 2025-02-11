@@ -240,8 +240,8 @@ cs_combustion_ebu_fields_init1(void)
   cs_log_printf
     (CS_LOG_DEFAULT,
      _("\n"
-       " ** INITIALIZATION OF EBU MODEL VARIABLES (FL PRE EBU)\n"
-       "    --------------------------------------------------\n"
+       " ** Initialization of Eddy-Break-Up model variables (pm flame)\n"
+       "    -----------------------------------------------\n"
        "\n"
        " ---------------------------------\n"
        "  Variable  Min. value  Max. value\n"
@@ -516,7 +516,7 @@ cs_combustion_ebu_physical_prop(int  *mbrom)
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Compute physical properties for premixed flame EBU combustion model.
  *
  * Define the source terms for a given scalar over one time step.

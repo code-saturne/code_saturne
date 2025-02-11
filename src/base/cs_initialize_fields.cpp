@@ -78,6 +78,7 @@
 #include "pprt/cs_physical_model.h"
 #include "atmo/cs_atmo.h"
 #include "cogz/cs_combustion_ebu.h"
+#include "cogz/cs_combustion_lw.h"
 #include "comb/cs_coal_initialize.h"
 #include "ctwr/cs_ctwr_initialize.h"
 #include "elec/cs_elec_model.h"
@@ -103,9 +104,6 @@ cs_f_d3pini(void);
 
 void
 cs_steady_laminar_flamelet_init(void);
-
-void
-cs_f_lwcini(void);
 
 void
 cs_f_d3pini1(void);
@@ -519,7 +517,7 @@ cs_initialize_fields_stage_1(void)
       cs_combustion_ebu_fields_init0();
 
     if (pm_flag[CS_COMBUSTION_LW] >= 0)
-      cs_f_lwcini();
+      cs_combustion_lw_fields_init0();
 
     if (pm_flag[CS_COMBUSTION_COAL] >= 0)
       cs_coal_fields_initialize();
