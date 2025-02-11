@@ -544,6 +544,7 @@ _contact_angle_correction
 (
   const cs_mesh_t            *m,         /*!<[in] pointer to mesh structure */
   const cs_mesh_quantities_t *mq,        /*!<[in] pointer to mesh quantities */
+  cs_dispatch_context        &ctx        /*!<[in] reference to dispatch context */
   cs_real_3_t                *surf_norm  /*!<[in,out] */
 )
 {
@@ -582,7 +583,6 @@ _contact_angle_correction
   const int *bc_type = cs_glob_bc_type;
 
   /* Dispatch class */
-  cs_dispatch_context ctx;
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
 
@@ -1319,10 +1319,12 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   /* Correction of surfxyz_norm at walls (Contact angle) */
   if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_STATIC) {
-    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_STATIC>(m, mq, surfxyz_norm);
+    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_STATIC>(m, mq, ctx,
+                                                           surfxyz_norm);
   }
   else if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_DYN) {
-    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_DYN>(m, mq, surfxyz_norm);
+    _contact_angle_correction<CS_VOF_CONTACT_ANGLE_DYN>(m, mq, ctx,
+                                                               surfxyz_norm);
   }
 
   /* Curvature Computation */
