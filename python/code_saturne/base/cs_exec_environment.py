@@ -636,7 +636,8 @@ def clean_os_environ_for_shell():
 
     # In case LMOD is present, avoid warnings on macros
     # for called scripts.
-    for ev in ('BASH_FUNC_module%%', 'BASH_FUNC_ml%%'):
+    for ev in ('BASH_FUNC_module%%', 'BASH_FUNC_ml%%',
+               'BASH_FUNC_scl%%'):
         if ev in os.environ:
             if is_bash:
                 saved_os_env_vars[ev] = os.environ[ev]
