@@ -1163,7 +1163,7 @@ cs_combustion_gas_add_property_fields(void)
                                  CS_MESH_LOCATION_BOUNDARY_FACES, 1, false);
     cm->bym[1] = cs_field_create("boundary_ym_oxydizer", field_type,
                                  CS_MESH_LOCATION_BOUNDARY_FACES, 1, false);
-    cm->bym[1] = cs_field_create("boundary_ym_product", field_type,
+    cm->bym[2] = cs_field_create("boundary_ym_product", field_type,
                                  CS_MESH_LOCATION_BOUNDARY_FACES, 1, false);
   }
 
