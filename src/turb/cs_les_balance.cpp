@@ -1170,14 +1170,8 @@ _les_balance_compute_tdivturflux(const void   *input,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const int keysca = cs_field_key_id("scalar_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
-      if (f_id == sca->id)
-        break;
-    }
-  }
+  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  assert(isca > -1);
 
   cs_real_t sigmas, *diverg;
   cs_real_3_t *w1;
@@ -1187,16 +1181,12 @@ _les_balance_compute_tdivturflux(const void   *input,
   BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
   BFT_MALLOC(w1, n_cells, cs_real_3_t);
 
-  cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
+  cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  /* TODO : bug dans le fortran, boucle sur ii ? */
-  for (cs_lnum_t i = 0; i < 3; i++) {
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      for (cs_lnum_t k = 0; k < 3; k++)
-        w1[iel][k] =  cs_math_sq(CS_F_(mu_t)->val[iel])/sigmas
-                     *(grdv[iel][i][k]+grdv[iel][k][i]);
-    }
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t k = 0; k < 3; k++)
+      w1[iel][k] =  CS_F_(mu_t)->val[iel]/sigmas * grdt[iel][k];
   }
 
   _les_balance_divergence_vector(w1, diverg);
@@ -1819,7 +1809,7 @@ _les_balance_time_moment_tui(void)
                                   nullptr);
   }
 
-  /* Define time moments for Tui balance */
+  /* Define time moments for T.ui balance */
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
     cs_field_t *f = cs_field_by_id(f_id);
     int iscal = cs_field_get_key_int(f, keysca)-1;
@@ -1910,7 +1900,7 @@ _les_balance_time_moment_tui(void)
       }
 
       {
-        /* tui variance */
+        /* T.ui variance */
         int moment_f_id[] = {f_id, CS_F_(vel)->id};
         int moment_c_id[] = {-1, -1};
         int n_fields = 2;
@@ -2041,7 +2031,7 @@ _les_balance_time_moment_tui(void)
       }
 
       if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
-        /* _tdjtauij mean */
+        /* mean of T.d(tau_ij)/dxj :  _tdjtauij mean */
         _les_balance_get_tm_label(isca, "tdjtauij_m", buffer);
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
@@ -2057,7 +2047,7 @@ _les_balance_time_moment_tui(void)
                                       CS_TIME_MOMENT_RESTART_AUTO,
                                       nullptr);
 
-        /* _uidivturflux mean */
+        /* mean of U_i. d(U'_j. T')/dxi : _uidivturflux mean */
         _les_balance_get_tm_label(isca, "uidivturflux_m", buffer);
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
@@ -2073,7 +2063,7 @@ _les_balance_time_moment_tui(void)
                                       CS_TIME_MOMENT_RESTART_AUTO,
                                       nullptr);
 
-        /* _tdivturflux mean */
+        /* mean of T.div(U'T') : _tdivturflux mean */
         _les_balance_get_tm_label(isca, "tdivturflux_m", buffer);
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
