@@ -2133,6 +2133,9 @@ class Studies(object):
             # empty list can occur with existing runs in study
             output = subprocess.check_output(['sbatch', slurm_batch_name])
 
+        msg = output.decode('utf-8').strip()
+        self.reporting('    - %s ...' % msg)
+
         slurm_batch_file.close()
 
         os.chdir(self.__dest)
