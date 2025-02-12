@@ -370,7 +370,7 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
 
   /* Boundary conditions mass fraction of fresh gas */
   cs_real_t *rcodcl1_ygfm = nullptr;
-  rcodcl1_ygfm = cs_field_by_name("fresh_gas_fraction")->bc_coeffs->rcodcl1;
+  rcodcl1_ygfm = cm->yfgm->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for H */
   cs_real_t *rcodcl1_h = nullptr;
@@ -384,7 +384,7 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
   cs_real_t *rcodcl1_fm = nullptr;
 
   if (ebu_model == 2 || ebu_model == 3)
-    rcodcl1_fm = cs_field_by_name("mixture_fraction")->bc_coeffs->rcodcl1;
+    rcodcl1_fm = cm->fm->bc_coeffs->rcodcl1;
 
   /* Loop on inlet boundaries
      ======================== */

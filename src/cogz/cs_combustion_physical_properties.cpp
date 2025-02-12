@@ -243,18 +243,9 @@ cs_combustion_physical_properties_update_d3p(void)
 
   /* Compute mass fractions for global species on boundaries */
 
-  cs_field_t *ym[3]
-    = {cs_field_by_name_try("ym_fuel"),
-       cs_field_by_name_try("ym_oxyd"),
-       cs_field_by_name_try("ym_prod")};
-  cs_field_t *bym[3]
-    = {cs_field_by_name_try("boundary_ym_fuel"),
-       cs_field_by_name_try("boundary_ym_oxydizer"),
-       cs_field_by_name_try("boundary_ym_product")};
-
   for (int igg = 0; igg < cm->n_gas_species; igg++) {
-    cs_real_t *cpro_ymgg = ym[igg]->val;
-    cs_real_t *bsval = bym[igg]->val;
+    cs_real_t *cpro_ymgg = cm->ym[igg]->val;
+    cs_real_t *bsval = cm->bym[igg]->val;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       cs_lnum_t cell_id = b_face_cells[face_id];
       bsval[face_id] = cpro_ymgg[cell_id];

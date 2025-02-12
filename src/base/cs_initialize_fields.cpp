@@ -514,10 +514,10 @@ cs_initialize_fields_stage_1(void)
       cs_steady_laminar_flamelet_init();
 
     if (pm_flag[CS_COMBUSTION_EBU] >= 0)
-      cs_combustion_ebu_fields_init0();
+      cs_combustion_ebu_fields_init();
 
     if (pm_flag[CS_COMBUSTION_LW] >= 0)
-      cs_combustion_lw_fields_init0();
+      cs_combustion_lw_fields_init();
 
     if (pm_flag[CS_COMBUSTION_COAL] >= 0)
       cs_coal_fields_initialize();

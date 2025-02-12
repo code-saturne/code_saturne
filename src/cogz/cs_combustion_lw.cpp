@@ -132,13 +132,12 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize specific fields for Libby-Williams gas combustion model
- *        (first step).
+ * \brief Initialize specific fields for Libby-Williams gas combustion model.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_lw_fields_init0(void)
+cs_combustion_lw_fields_init(void)
 {
   // Only when not a restart
   if (cs_restart_present())
@@ -185,96 +184,6 @@ cs_combustion_lw_fields_init0(void)
 
   // No need to set yfp2m, fp2m, or coyfp to 0,
   // as this is the default for all fields.
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize specific fields for Libby-Williams gas combustion model
- *        (second step).
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_combustion_lw_fields_init1(void)
-{
-  // Only when not a restart
-  if (cs_restart_present())
-    return;
-
-  // Local variables
-
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
-  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-
-  cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
-  for (int igg = 0; igg < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; igg++)
-    coefg[igg] = 0;
-
-  // Preliminary computations: mixture fraction, T, H
-
-  cs_real_t fmelm, tentm;
-  cs_combustion_boundary_conditions_mean_inlet_ebu_lw(&fmelm, &tentm);
-
-  // Mixture enthalpy
-  if (cm->type %2 == 1) {
-    coefg[0] = fmelm;
-    coefg[1] = (1.-fmelm);
-    coefg[2] = 0.;
-    cs_real_t hinit = cs_gas_combustion_t_to_h(coefg, tentm);
-
-    // FIXME check this: in Fortran code (up to v9.0), H was not set,
-    // so previous computations in this function were not used.
-    cs_real_t *cvar_scalt = CS_F_(h)->val;
-    cs_array_real_set_scalar(n_cells_ext, hinit, cvar_scalt);
-  }
-
-  // Logging
-  // -------
-
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-
-  cs_log_printf(CS_LOG_DEFAULT, "\n");
-  cs_log_separator(CS_LOG_DEFAULT);
-
-  cs_log_printf
-    (CS_LOG_DEFAULT,
-     _("\n"
-       " ** Initialization of Libby-Williams model variables (pm flame)\n"
-       "    ------------------------------------------------\n"
-       "\n"
-       " ---------------------------------\n"
-       "  Variable  Min. value  Max. value\n"
-       " ---------------------------------\n"));
-
-  // Model scalars only
-
-  const int n_fields = cs_field_n_fields();
-  const int keysca = cs_field_key_id("scalar_id");
-
-  for (int ii = 0; ii < n_fields; ii++) {
-    cs_field_t *f_scal = cs_field_by_id(ii);
-
-    if (!(f_scal->type & CS_FIELD_VARIABLE))
-      continue;
-    if (cs_field_get_key_int(f_scal, keysca) <= 0)
-      continue;
-    if (f_scal->type & CS_FIELD_USER)
-      continue;
-
-    cs_real_t vmin = HUGE_VALF, vmax = -HUGE_VALF;
-    cs_array_reduce_minmax(n_cells, f_scal->val, vmin, vmax);
-
-    cs_parall_min(1, CS_REAL_TYPE, &vmin);
-    cs_parall_max(1, CS_REAL_TYPE, &vmax);
-
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "  %8s  %12.4e  %12.4e\n",
-                  f_scal->name, vmin, vmax);
-  }
-
-  cs_log_printf(CS_LOG_DEFAULT, "\n");
-  cs_log_separator(CS_LOG_DEFAULT);
 }
 
 /*----------------------------------------------------------------------------*/

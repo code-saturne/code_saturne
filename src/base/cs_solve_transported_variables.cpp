@@ -65,8 +65,6 @@
 #include "base/cs_time_step.h"
 
 #include "pprt/cs_physical_model.h"
-#include "cogz/cs_combustion_ebu.h"
-#include "cogz/cs_combustion_lw.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -125,28 +123,6 @@ static bool _initialized = false;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initializations only done at this stage for specific models.
- *
- * TODO: try to move this to an earlier intialization stage if possible
- *       (though some initializations may depend on a mass flow rate
- *       at some boundaries, so be difficult to move).
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_delayed_initializations(void)
-{
-  const int *pm_flag = cs_glob_physical_model_flag;
-
-  if (pm_flag[CS_COMBUSTION_EBU] >= 0)
-    cs_combustion_ebu_fields_init1();
-
-  if (pm_flag[CS_COMBUSTION_LW] >= 0)
-    cs_combustion_lw_fields_init1();
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -226,7 +202,6 @@ cs_solve_transported_variables(int iterns)
     if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1) {
       if (_initialized == false) {
         if (!cs_restart_present()) {
-          _delayed_initializations();
           for (int ii = 0; ii < n_fields; ii++) {
             cs_field_t *f_scal = cs_field_by_id(ii);
             if (!(f_scal->type & CS_FIELD_VARIABLE))

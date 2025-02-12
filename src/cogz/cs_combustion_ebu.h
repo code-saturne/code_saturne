@@ -61,21 +61,12 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize specific fields for EBU gas combustion model (first step).
+ * \brief Initialize specific fields for EBU gas combustion model.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_ebu_fields_init0(void);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Initialize specific fields for EBU gas combustion model (second step).
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_combustion_ebu_fields_init1(void);
+cs_combustion_ebu_fields_init(void);
 
 /*----------------------------------------------------------------------------*/
 /*
