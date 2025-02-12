@@ -100,6 +100,7 @@
 
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_ebu.h"
+#include "cogz/cs_combustion_lw.h"
 #include "cogz/cs_steady_laminar_flamelet_source_terms.h"
 #include "cogz/cs_soot_model.h"
 #include "comb/cs_coal_source_terms.h"
@@ -135,15 +136,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
-
-/*============================================================================
- * Prototypes for Fortran functions and variables.
- *============================================================================*/
-
-void
-cs_f_lwctss(int        f_id,
-            cs_real_t  smbrs[],
-            cs_real_t  rovsdt[]);
 
 /* Use legacy macro type to maintain compatibility with legacy user files */
 
@@ -895,7 +887,7 @@ _physical_model_source_terms(cs_field_t        *f,
     if (cm_type == CS_COMBUSTION_EBU)
       cs_combustion_ebu_source_terms(f, rhs, fimp);
     else if (cm_type == CS_COMBUSTION_LW)
-      cs_f_lwctss(f->id, rhs, fimp);
+      cs_combustion_lw_source_terms(f, rhs, fimp);
   }
 
   /* Pulverized coal combustion */
