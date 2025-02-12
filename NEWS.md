@@ -24,6 +24,12 @@ Release 8.0.5 (unreleased)
   such as when using the dynamic Smagorinsky model without
   and extended cell to cell neighborhood.
 
+### Architectural changes:
+
+- Fix spurious: "sh: scl: line 1: syntax error: unexpected end of file"
+  and "sh: error importing function definition for `scl'" messages in
+  environments with LMOD modules.
+
 Release 8.0.4 (2024-10-22)
 --------------------------
 
