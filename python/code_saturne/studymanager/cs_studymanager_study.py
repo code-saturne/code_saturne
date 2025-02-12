@@ -423,8 +423,10 @@ class Case(object):
                 if tag in list_param:
                     index = list_param.index(tag)
                     run_id_depends = list_param[index+1]
-                    depends = os.path.join(self.study, self.label,
-                                           self.resu, run_id_depends)
+                    run_path = os.path.join(self.study, self.label,
+                                            self.resu, run_id_depends)
+                    # run_id_depends could contain path to another case
+                    depends = os.path.normpath(run_path)
 
         # check the existence of the dependency run folder
         # remove dependency in case of sucessfull run
