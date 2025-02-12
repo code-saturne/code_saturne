@@ -139,9 +139,6 @@ module cstphy
   !> Thermodynamic pressure for the current time step
   real(c_double), pointer, save :: pther
 
-  !> Initial reference density
-  real(c_double), pointer, save :: roref
-
   !> \defgroup csttur Module for turbulence constants
 
   !> \addtogroup csttur
@@ -275,8 +272,7 @@ module cstphy
                                                   rair,    &
                                                   rvapor,  &
                                                   rvsra,   &
-                                                  pther,   &
-                                                  roref)   &
+                                                  pther)   &
       bind(C, name='cs_f_fluid_properties_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -285,7 +281,6 @@ module cstphy
       type(c_ptr), intent(out) :: p0, t0, cp0
       type(c_ptr), intent(out) :: rair, rvapor, rvsra
       type(c_ptr), intent(out) :: pther
-      type(c_ptr), intent(out) :: roref
     end subroutine cs_f_fluid_properties_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -361,13 +356,12 @@ contains
     type(c_ptr) :: c_t0, c_cp0
     type(c_ptr) :: c_rair,c_rvapor, c_rvsra
     type(c_ptr) :: c_pther
-    type(c_ptr) :: c_roref
 
     call cs_f_fluid_properties_get_pointers(c_icp, c_irovar,                &
                                             c_ro0, c_viscl0,                &
                                             c_p0, c_t0, c_cp0,              &
                                             c_rair, c_rvapor, c_rvsra,      &
-                                            c_pther, c_roref)
+                                            c_pther)
 
     call c_f_pointer(c_icp, icp)
     call c_f_pointer(c_irovar, irovar)
@@ -380,7 +374,6 @@ contains
     call c_f_pointer(c_rvapor, rvapor)
     call c_f_pointer(c_rvsra, rvsra)
     call c_f_pointer(c_pther, pther)
-    call c_f_pointer(c_roref, roref)
 
   end subroutine fluid_properties_init
 

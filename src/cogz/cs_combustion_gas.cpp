@@ -59,6 +59,7 @@
 #include "mesh/cs_mesh_location.h"
 #include "turb/cs_turbulence_model.h"
 
+#include "gui/cs_gui_specific_physics.h"
 #include "pprt/cs_combustion_model.h"
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
@@ -70,6 +71,9 @@ cs_f_combustion_map_variables(void);
 
 extern "C" void
 cs_f_combustion_map_properties(int iym_c[]);
+
+extern "C" void
+cs_f_steady_laminar_flamelet_verify(int *iok);
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -453,8 +457,8 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->isoot = -1;
 
   cm->hinfue = cs_math_big_r;
-  cm->tinfue = 0;
-  cm->tinoxy = 0;
+  cm->tinfue = - cs_math_big_r;
+  cm->tinoxy = - cs_math_big_r;
   cm->hinoxy = cs_math_big_r;
 
   cm->xsoot = 0.;
@@ -516,9 +520,10 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->srrom = 0.95;
 
   /* Libby Williams model */
-  cm->lw.vref = 0.;
-  cm->lw.lref = 0.;
-  cm->lw.ta = 0.;
+  cm->lw.vref = - cs_math_big_r;
+  cm->lw.lref = - cs_math_big_r;
+  cm->lw.ta = - cs_math_big_r;
+  cm->lw.tstar = - cs_math_big_r;
   cm->lw.fmin = 0.;
   cm->lw.fmax = 1.;
   cm->lw.hmin = 0.;
@@ -591,15 +596,83 @@ cs_combustion_gas_setup(void)
     return;
 
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
+  int macro_type = cm->type / 100;
 
-  const int *pm_flag = cs_glob_physical_model_flag;
+  const int kclvfl = cs_field_key_id("variance_clipping");
+  const int keysca  = cs_field_key_id("scalar_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
+  const int ksigmas = cs_field_key_id("turbulent_schmidt");
+  const int kvisl0 = cs_field_key_id("diffusivity_ref");
+  const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
-  if (pm_flag[CS_COMBUSTION_3PT] != -1) {
+  /* Transported variables
+     --------------------- */
+
+  if (macro_type == CS_COMBUSTION_3PT) {
+    // Clipping to scamax of the mixture fraction variance.
+    cs_field_set_key_int(cm->fp2m, kclvfl, 2);
   }
-  else if (pm_flag[CS_COMBUSTION_SLFM] != -1) {
+
+  else if (macro_type == CS_COMBUSTION_SLFM) {
+    if (cm->mode_fp2m == 0) {
+      // Clipping by max of fm
+      cs_field_set_key_int(cm->fp2m, kclvfl, 1);
+    }
   }
-  else if (pm_flag[CS_COMBUSTION_EBU] != -1) {
+
+  else if (macro_type == CS_COMBUSTION_LW) {
+    cs_field_set_key_int(cm->fp2m, kclvfl, 0);
+    cs_field_set_key_int(cm->yfp2m, kclvfl, 0);
   }
+
+  // Physical or numerical values specific to combustion scalars
+
+  const int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    if (f->type & CS_FIELD_CDO || f->type & CS_FIELD_USER)
+      continue;
+    if (cs_field_get_key_int(f, keysca) <= 0)
+      continue;
+
+    int variance_id = cs_field_get_key_int(f, kscavr);
+    if (f != CS_F_(h) && variance_id <= 0) {
+      // We consider that turbulent viscosity domintes. We prohibit
+      // the computation of laminar flames with  =/= 1
+      cs_field_set_key_double(f, kvisl0, viscl0);
+    }
+
+    // Turbulent Schmidt or Prandtl
+    cs_field_set_key_double(f, ksigmas, 0.7);
+  }
+
+  /* Additional information
+     ---------------------- */
+
+  // Compute ro0 based on t0 and p0.
+
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+
+  if (macro_type != CS_COMBUSTION_SLFM)
+    fp->ro0 = fp->pther * cm->wmolg[1] / (cs_physical_constants_r * fp->t0);
+
+  cs_f_coini1();
+
+  fp->roref = fp->ro0;
+
+  // Variable density
+  fp->irovar = 1;
+
+  /* User settings
+     -------------*/
+
+  cs_gui_combustion_gas_model();
+
+  if (   macro_type == CS_COMBUSTION_3PT
+      || macro_type == CS_COMBUSTION_SLFM)
+    cs_gui_combustion_gas_model_temperatures();
 
   cs_f_coini1();
 
@@ -608,14 +681,23 @@ cs_combustion_gas_setup(void)
 
   const char section_name[] = N_("Gas combustion model setup");
 
-  if (pm_flag[CS_COMBUSTION_3PT] != -1) {
+  if (macro_type == CS_COMBUSTION_3PT) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED, _(section_name),
                                     "tinfue", cm->tinfue, 0.);
     cs_parameters_is_greater_double(CS_ABORT_DELAYED, _(section_name),
                                     "tinoxy", cm->tinoxy, 0.);
   }
 
-  else if (pm_flag[CS_COMBUSTION_SLFM] != -1) {
+  else if (macro_type == CS_COMBUSTION_SLFM) {
+    /* TODO migrate remainder of cs_steady_laminar_flamelet_verify here */
+    int iok = 0;
+    cs_f_steady_laminar_flamelet_verify(&iok);
+    if (iok != 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED, _(section_name),
+         _("incoherent or incomplete SLFM model parameters\n"
+           "detected in call to cs_steady_laminar_flamelet_verify.\n"));
+
     if (cm->hinfue < - cs_math_big_r)
       cs_parameters_error
         (CS_ABORT_DELAYED, _(section_name),
@@ -626,14 +708,27 @@ cs_combustion_gas_setup(void)
         (CS_ABORT_DELAYED, _(section_name),
          _("hinoxy must be set by the user, and not remain at %g.\n"),
          cm->hinoxy);
-
-    /* TODO migrate remainder of cs_steady_laminar_flamelet_verify here */
   }
 
-  else if (pm_flag[CS_COMBUSTION_EBU] != -1) {
+  else if (macro_type == CS_COMBUSTION_EBU) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
-                                    _("Gas combustion model setup (EBU)"),
+                                    _(section_name),
                                     "cebu", cm->cebu, 0.);
+  }
+
+  else if (macro_type == CS_COMBUSTION_LW) {
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                    _(section_name),
+                                    "vref", cm->lw.vref, 0.);
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                    _(section_name),
+                                    "lref", cm->lw.lref, 0.);
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                    _(section_name),
+                                    "ta", cm->lw.ta, 0.);
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                    _(section_name),
+                                    "tstar", cm->lw.tstar, 0.);
   }
 
   cs_parameters_is_in_range_double(CS_ABORT_IMMEDIATE, _(section_name),

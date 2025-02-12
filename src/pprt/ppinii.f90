@@ -90,8 +90,6 @@ enddo
 
 ! ---> Modele de flamme de diffusion (chimie 3 points)
 
-nmaxh = 0
-nmaxf = 0
 hstoea = -grand
 do ih = 1, nmaxhm
   hh(ih) = -grand

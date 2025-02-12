@@ -77,7 +77,8 @@ module coincl
   !       TFH(IF,IH)   --> Tabulation richesse - enthalpie stoechiometrique
 
   integer    nmaxf, nmaxfm, nmaxh, nmaxhm
-  parameter( nmaxfm = 15 , nmaxhm = 15)
+  parameter(nmaxf = 9, nmaxh = 9)
+  parameter(nmaxfm = 15, nmaxhm = 15)
 
   double precision, save :: hstoea
   double precision, save :: hh(nmaxhm), ff(nmaxfm), tfh(nmaxfm,nmaxhm)

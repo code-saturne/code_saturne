@@ -50,17 +50,12 @@ subroutine coini1 () &
 !===============================================================================
 
 use paramx
-use dimens
 use numvar
 use optcal
 use cstphy
-use entsor
 use cstnum
-use ppthch
 use coincl
 use ppincl
-use radiat
-use field
 use cs_c_bindings
 
 !===============================================================================
@@ -69,224 +64,15 @@ implicit none
 
 ! Local variables
 
-integer          jj, iok
-integer          isc, iclvfl, kclvfl, f_id
-double precision wmolme, turb_schmidt
-
 !===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  subroutine cs_gui_combustion_gas_model()              &
-    bind(C, name='cs_gui_combustion_gas_model')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_combustion_gas_model
-
-  subroutine cs_gui_combustion_gas_model_temperatures()     &
-    bind(C, name='cs_gui_combustion_gas_model_temperatures')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_combustion_gas_model_temperatures
-
-end interface
-
-!===============================================================================
-! 1. VARIABLES TRANSPORTEES
-!===============================================================================
-
-! 1.1 Definition des scamin et des scamax des variables transportees
-! ==================================================================
-
-! --> Flamme de diffusion : chimie 3 points
-
-if (ippmod(icod3p).ge.0) then
-
-  ! ---- Variance du taux de melange
-  !        Type de clipping superieur pour la variance
-  !        0 pas de clipping, 1 clipping var max de fm, 2 clipping a SCAMAX
-  !iclvfl = 1
-  iclvfl = 2
-  call field_get_key_id("variance_clipping", kclvfl)
-  call field_set_key_int(ifp2m, kclvfl, iclvfl)
-  ! call field_set_key_id(ifp2m, kscmin, 0.d0)
-  ! call field_set_key_id(ifp2m, kscmax, 0.25d0)
-
-endif
-
-! --> Flamme de diffusion : Steady laminar flamelet
-
-if (ippmod(islfm).ge.0) then
-
-  ! Manière de calculer la variance de fraction de mélange
-  ! mode_fp2m 0: Variance transport equation(VTE)
-  ! mode_fp2m 1: 2nd moment of mixutre fraction transport equation (STE)
-
-  ! ---- Variance du taux de melange
-  !        Type de clipping superieur pour la variance
-  !        0 pas de clipping, 1 clipping var max de fm, 2 clipping a SCAMAX
-  if (mode_fp2m .eq. 0) then
-    iclvfl = 1
-    call field_get_key_id("variance_clipping", kclvfl)
-    call field_set_key_int(ifp2m, kclvfl, iclvfl)
-    ! call field_set_key_id(ifp2m, kscmin, 0.d0)
-    ! call field_set_key_id(ifp2m, kscmax, 0.25d0)
-  endif
-endif
-
-! --> Flamme de premelange : modele LWC
-
-if (ippmod(icolwc).ge.0) then
-  iclvfl = 0
-  call field_get_key_id("variance_clipping", kclvfl)
-  call field_set_key_int(ifp2m, kclvfl, iclvfl)
-  iclvfl = 0
-  call field_get_key_id("variance_clipping", kclvfl)
-  call field_set_key_int(iyfp2m, kclvfl, iclvfl)
-endif
-
-! 1.4 Donnees physiques ou numeriques propres aux scalaires COMBUSTION
-! ====================================================================
-
-do isc = 1, nscapp
-
-  jj = iscapp(isc)
-
-  f_id = ivarfl(isca(jj))
-
-  if (f_id.ne.ihm .and. iscavr(jj).le.0) then
-
-    ! ---- En combustion on considere que la viscosite turbulente domine
-    !      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
-
-    call field_set_key_double(f_id, kvisl0, viscl0)
-
-  endif
-
-  ! Schmidt ou Prandtl turbulent
-
-  turb_schmidt = 0.7d0
-  call field_set_key_double(f_id, ksigmas, turb_schmidt)
-
-enddo
-
-!===============================================================================
-! 2. INFORMATIONS COMPLEMENTAIRES
+! INFORMATIONS COMPLEMENTAIRES
 !===============================================================================
 
 ! --> Calcul de RO0 a partir de T0 et P0
 
-if (ippmod(icod3p).ne.-1 .or.                                   &
-    ippmod(icoebu).ne.-1 .or.                                   &
-    ippmod(icolwc).ne.-1) then
-  wmolme = wmolg(2)
-  ro0 = pther*wmolme / (cs_physical_constants_r*t0)
-  roref = ro0
-else if (ippmod(islfm).ne.-1) then
+if (ippmod(islfm).ne.-1) then
   ro0 = flamelet_library(flamelet_rho, 1, 1, 1, 1)
-  roref = ro0
 endif
-
-! --> Constantes modele LWC par defaut
-vref  =-grand
-lref  =-grand
-ta    =-grand
-tstar =-grand
-
-! --> Reference temperature for fuel and oxydant (K)
-tinfue = -grand
-tinoxy = -grand
-
-! --> Diffusion 3 points, tableaux HH HF THF
-!           (generes dans d3pphy)
-
-nmaxf = 9
-nmaxh = 9
-
-! ---> Masse volumique variable
-irovar = 1
-
-!===============================================================================
-! 3. ON REDONNE LA MAIN A L'UTLISATEUR
-!===============================================================================
-
-! GUI
-call cs_gui_combustion_gas_model
-
-if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
-  call cs_gui_combustion_gas_model_temperatures
-endif
-
-!===============================================================================
-! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
-!===============================================================================
-
-iok = 0
-
-if (ippmod(islfm).ge.0) then
-  call cs_steady_laminar_flamelet_verify(iok)
-  if (iok.gt.0) then
-    write(nfecra,9991)iok
-    call csexit(1)
-  else
-    write(nfecra,9990)
-  endif
-
-else if (ippmod(icolwc).ge.0) then
-  call lwcver(iok)
-  if (iok.gt.0) then
-    write(nfecra,9993)iok
-    call csexit(1)
-  else
-    write(nfecra,9992)
-  endif
-
-endif
-
- 9990 format(                                                     &
-'                                                             ',/,&
-' Pas d erreur detectee lors de la verification des donnees  .',/)
- 9991 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute (',I10,' erreurs).          ',/,&
-'@                                                            ',/,&
-'@  Se reporter aux impressions precedentes pour plus de      ',/,&
-'@    renseignements.                                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9992 format(                                                     &
-'                                                             ',/,&
-' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                                    (uslwc1).',/)
- 9993 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute (',I10,' erreurs).          ',/,&
-'@                                                            ',/,&
-'@  Se reporter aux impressions precedentes pour plus de      ',/,&
-'@    renseignements.                                         ',/,&
-'@  Verifier uslwc1.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 return
 end subroutine

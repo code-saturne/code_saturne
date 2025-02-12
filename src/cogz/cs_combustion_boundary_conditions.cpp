@@ -370,7 +370,7 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
 
   /* Boundary conditions mass fraction of fresh gas */
   cs_real_t *rcodcl1_ygfm = nullptr;
-  rcodcl1_ygfm = cm->yfgm->bc_coeffs->rcodcl1;
+  rcodcl1_ygfm = cm->ygfm->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for H */
   cs_real_t *rcodcl1_h = nullptr;

@@ -81,7 +81,8 @@ cs_combustion_lw_physical_prop(int  *mbrom);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute physical properties for premixed flame EBU combustion model.
+ * \brief Compute physical properties for premixed flame Libby-Williams
+ *        combustion model.
  *
  * Define the source terms for a given scalar over one time step.
  *

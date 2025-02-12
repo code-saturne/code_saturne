@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_steady_laminar_flamelet_verify &
-!================
-
- ( iok    )
+subroutine cs_steady_laminar_flamelet_verify(iok) &
+  bind(C, name='cs_f_steady_laminar_flamelet_verify')
 
 !===============================================================================
 !  FONCTION  :
@@ -62,13 +60,15 @@ use coincl
 use ppincl
 use radiat
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          iok
+integer(c_int) :: iok
 
 ! Local variables
 

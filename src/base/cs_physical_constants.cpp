@@ -487,8 +487,7 @@ cs_f_fluid_properties_get_pointers(int     **icp,
                                    double  **rair,
                                    double  **rvapor,
                                    double  **rvsra,
-                                   double  **pther,
-                                   double  **roref);
+                                   double  **pther);
 
 /*============================================================================
  * Private function definitions
@@ -532,7 +531,6 @@ cs_f_physical_constants_get_pointers(double  **gz)
  *   rvapor   --> pointer to cs_glob_fluid_properties->r_v_cnst
  *   rvsra    --> pointer to cs_glob_fluid_properties->rvsra
  *   pther    --> pointer to cs_glob_fluid_properties->pther
- *   roref    --> pointer to cs_glob_fluid_properties->roref
  *----------------------------------------------------------------------------*/
 
 void
@@ -546,8 +544,7 @@ cs_f_fluid_properties_get_pointers(int     **icp,
                                    double  **rair,
                                    double  **rvapor,
                                    double  **rvsra,
-                                   double  **pther,
-                                   double  **roref)
+                                   double  **pther)
 {
   *icp      = &(_fluid_properties.icp);
   *irovar   = &(_fluid_properties.irovar);
@@ -560,7 +557,6 @@ cs_f_fluid_properties_get_pointers(int     **icp,
   *rvapor   = &(_fluid_properties.r_v_cnst);
   *rvsra    = &(_fluid_properties.rvsra);
   *pther    = &(_fluid_properties.pther);
-  *roref    = &(_fluid_properties.roref);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

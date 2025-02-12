@@ -81,9 +81,7 @@ d3pini.f90 \
 d3pint.f90 \
 lwcgfu.f90 \
 lwcphy.f90 \
-lwctss.f90 \
 lwcurl.f90 \
-lwcver.f90 \
 pdflwc.f90 \
 pdfpp3.f90 \
 pdfpp4.f90 \
