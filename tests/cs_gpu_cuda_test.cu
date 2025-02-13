@@ -20,7 +20,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -42,20 +42,20 @@ namespace cg = cooperative_groups;
 
 /*---------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_mem_usage.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_printf.h"
 
-#include "cs_blas_cuda.h"
-#include "cs_math.h"
-#include "cs_timer.h"
+#include "alge/cs_blas_cuda.h"
+#include "base/cs_math.h"
+#include "base/cs_timer.h"
 
-#include "cs_base_accel.h"
-#include "cs_base_cuda.h"
-#include "cs_cuda_contrib.h"
+#include "base/cs_base_accel.h"
+#include "base/cs_base_cuda.h"
+#include "base/cs_cuda_contrib.h"
 
-#include "cs_system_info.h"
+#include "base/cs_system_info.h"
 
 // Number of threads per block. Should be high enough threads to keep block
 // be busy, but not too high, otherwise the likelihood of getting more blocks
