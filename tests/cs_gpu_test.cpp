@@ -20,7 +20,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "base/cs_defs.h"
 
 #include <assert.h>
 #include <math.h>
@@ -32,18 +32,17 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_mem_usage.h"
-#include "bft_printf.h"
+#include "bft/bft_error.h"
+#include "bft/bft_mem.h"
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_printf.h"
 
-#include "cs_system_info.h"
+#include "base/cs_system_info.h"
 
-#include "cs_defs.h"
-#include "cs_math.h"
-#include "cs_timer.h"
+#include "base/cs_math.h"
+#include "base/cs_timer.h"
 
-#include "cs_base_accel.h"
+#include "base/cs_base_accel.h"
 
 extern "C" {
   void
