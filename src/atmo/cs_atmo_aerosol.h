@@ -73,18 +73,6 @@ cs_atmo_aerosol_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function fills the given array with aerosol concentrations
- *        and numbers from the external aerosol code..
- *
- * \param[out]  array  aerosol concentrations and numbers
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_atmo_aerosol_get_aero(cs_real_t  *array);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This function fills the given array with gas concentrations from
  *        the external aerosol code.
  *
@@ -127,6 +115,14 @@ cs_atmo_aerosol_nuclea(cs_real_t         *nc,
                        const cs_real_t   *qldia,
                        const cs_real_t   *pphy,
                        const cs_real_t   *refrad);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reads initial aerosol concentration and number
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_atmo_read_aerosol(void);
 
 /*----------------------------------------------------------------------------*/
 

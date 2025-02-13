@@ -366,9 +366,6 @@ cs_atmo_imbrication_t *cs_glob_atmo_imbrication = &_atmo_imbrication;
  *============================================================================*/
 
 void
-cs_f_reads_aerosol(void);
-
-void
 cs_f_atmo_get_meteo_file_name(int           name_max,
                               const char  **name,
                               int          *name_len);
@@ -572,9 +569,6 @@ cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
                                         cs_real_t **xchem,
                                         cs_real_t **ychem,
                                         cs_real_t **conv_factor_jac);
-
-void
-cs_f_atmo_chem_initialize_dlconc0(cs_real_t **dlconc0);
 
 void
 cs_f_read_aerosol(void);
@@ -2419,19 +2413,6 @@ cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
 }
 
 void
-cs_f_atmo_chem_initialize_dlconc0(cs_real_t **dlconc0)
-{
-  const int n_aer = _atmo_chem.n_size;
-  const int nlayer_aer = _atmo_chem.n_layer;
-  const int size = n_aer*(1+nlayer_aer);
-
-  if (_atmo_chem.dlconc0 == nullptr)
-    BFT_MALLOC(_atmo_chem.dlconc0, size, cs_real_t);
-
-  *dlconc0 = _atmo_chem.dlconc0;
-}
-
-void
 cs_f_atmo_chem_finalize(void)
 {
   if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
@@ -2668,7 +2649,7 @@ cs_atmo_fields_init0(void)
 
     /* Reading initial concentrations
        and numbers from file or from the aerosol library */
-    cs_f_reads_aerosol();
+    cs_atmo_read_aerosol();
 
     if (has_restart == 0) {
 
@@ -5918,6 +5899,25 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.soil_cat_thermal_inertia);
   BFT_FREE(_atmo_option.soil_cat_thermal_roughness);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief initialize gaseous and particulate concentrations and aerosol number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chem_initialize_dlconc0(void)
+{
+  if (_atmo_chem.dlconc0 != nullptr)
+    return;
+
+  const int n_aer = _atmo_chem.n_size;
+  const int nlayer_aer = _atmo_chem.n_layer;
+  const int size = n_aer*(1+nlayer_aer);
+
+  BFT_MALLOC(_atmo_chem.dlconc0, size, cs_real_t);
 }
 
 /*----------------------------------------------------------------------------*/

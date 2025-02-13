@@ -261,24 +261,6 @@ cs_atmo_aerosol_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function fills the given array with aerosol concentrations
- *        and numbers from the external aerosol code.
- *
- * \param[out]  array  aerosol concentrations and numbers
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_atmo_aerosol_get_aero(cs_real_t  *array)
-{
-  assert(cs_glob_atmo_chemistry->aerosol_model != CS_ATMO_AEROSOL_OFF);
-
-  if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH)
-    cs_atmo_aerosol_ssh_get_aero(array);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This function fills the given array with gas concentrations from
  *        the external aerosol code.
  *
@@ -630,6 +612,90 @@ cs_atmo_aerosol_nuclea(cs_real_t         *nc,
 
     } /* end qldia[c_id] > cs_math_epzero */
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reads initial aerosol concentration and number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_read_aerosol(void)
+{
+  const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  const cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
+  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+
+  const int n_aer = at_chem->n_size;
+  const int nlayer_aer = at_chem->n_layer;
+  const int size = n_aer * nlayer_aer;
+
+  cs_atmo_chem_initialize_dlconc0();
+
+  bft_printf("reading of aerosols numbers and concentrations\n");
+
+  if (at_chem->init_aero_with_lib) {
+
+    // The external library provides the concentrations / numbers
+    if (at_chem->aerosol_model == CS_ATMO_AEROSOL_SSH)
+      cs_atmo_aerosol_ssh_get_aero(at_chem->dlconc0);
+
+    // Conversion from molecules / m^3 to ppm
+    const cs_real_t ro0 = 1e3*phys_pro->ro0;
+    for (int jb = 0; jb < size; jb++)
+      at_chem->dlconc0[jb] = at_chem->dlconc0[jb] / ro0;
+
+    // Conversion from molecules / m^3 to molecules / kg
+    const int end_size = size + n_aer;
+    for (int jb = size; jb < end_size; jb++)
+      at_chem->dlconc0[jb] = at_chem->dlconc0[jb] / phys_pro->ro0;
+
+  }
+  else {
+
+    // Read from file
+    FILE *file = fopen(at_chem->aero_conc_file_name, "r");
+
+    // Reading aerosol numbers
+    for (int jb = 0; jb < n_aer; jb++)
+      fscanf(file,"%le", &at_chem->dlconc0[jb + size]);
+
+    // Reading aerosol concentrations
+    for (int jb = 0; jb < n_aer; jb++)
+      for (int jsp = 0; jsp < nlayer_aer; jsp++)
+        fscanf(file,"%le", &at_chem->dlconc0[jb + jsp*n_aer]);
+
+    fclose(file);
+
+  }
+
+  /* printing
+     -------- */
+
+  bft_printf("\n===================================================\n");
+  bft_printf("printing aerosol numbers\n");
+  for (int jb = 0; jb < n_aer; jb++) {
+    const int f_id
+      = at_chem->species_to_scalar_id[at_chem->n_species + size + jb];
+    const cs_field_t *f = cs_field_by_id(f_id);
+    bft_printf("%s : %10.2le\n ", cs_field_get_label(f),
+                                  at_chem->dlconc0[jb + size]);
+  }
+
+  bft_printf("\n===================================================\n");
+  bft_printf("printing aerosol concentrations\n");
+  for (int jb = 0; jb < n_aer; jb++) {
+    bft_printf("Size bin number %10.14le\n", jb);
+    for (int jsp = 0; jsp < nlayer_aer; jsp++) {
+      const int f_id
+        = at_chem->species_to_scalar_id[at_chem->n_species + jsp*n_aer];
+      const cs_field_t *f = cs_field_by_id(f_id);
+      bft_printf("%s : %10.2le\n ", cs_field_get_label(f),
+                                    at_chem->dlconc0[jb + jsp*n_aer]);
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

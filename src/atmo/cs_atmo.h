@@ -1030,6 +1030,15 @@ void
 cs_soil_model(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief initialize gaseous and particulate concentrations and aerosol number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chem_initialize_dlconc0(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

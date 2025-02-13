@@ -409,17 +409,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Get the aerosols concentrations and numbers from aerosol code
-
-    subroutine cs_atmo_aerosol_get_aero(array) &
-      bind(C, name='cs_atmo_aerosol_get_aero')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(out) :: array
-    end subroutine cs_atmo_aerosol_get_aero
-
-    !---------------------------------------------------------------------------
-
     !> \brief Get the gas concentrations from aerosol code
 
     subroutine cs_atmo_aerosol_get_gas(array)   &
@@ -539,16 +528,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
     ! Interface to C function to compute the number of aerosols
-
-    subroutine cs_atmo_aerosol_ssh_compute_numbers(dlconc0) &
-       bind(C, name='cs_atmo_aerosol_ssh_compute_numbers')
-       use, intrinsic :: iso_c_binding
-       implicit none
-       real(kind=c_double), dimension(*), intent(inout) :: dlconc0
-    end subroutine cs_atmo_aerosol_ssh_compute_numbers
-
-    !---------------------------------------------------------------------------
-    ! Interface to C function to set the humidity in SSH
 
     subroutine cs_atmo_aerosol_ssh_set_t_p_h(t, p, h) &
        bind(C, name='cs_atmo_aerosol_ssh_set_t_p_h')

@@ -58,44 +58,11 @@ module sshaerosol
   !> Number of aerosols
   integer(c_int), pointer, save :: n_aer
 
-  !> Initial gaseous and particulate concentrations
-  !> and aerosol number read in file
-  double precision, save, dimension(:), pointer :: dlconc0
-
   !> \}
 
   !=============================================================================
 
 contains
-
-  !-------------------------------------------------------------------------------
-
-  !> \brief Get the aerosols concentrations and numbers from SSH-aerosol
-
-  !> \param[out]    array         array with the aerosols
-  !>                              concentrations (microg / m^3)
-  !>                              and numbers (molecules / m^3)
-
-  subroutine sshaerosol_get_aero(array)
-
-    use, intrinsic :: iso_c_binding
-    use cs_c_bindings
-
-    implicit none
-
-    ! Arguments
-
-    double precision, intent(out) :: array(n_aer*(1+nlayer_aer))
-
-    ! Local variables
-
-    real(kind=c_double) :: c_array(n_aer*(1+nlayer_aer))
-
-    call cs_atmo_aerosol_get_aero(c_array)
-
-    array(1:n_aer*(1+nlayer_aer)) = c_array(1:n_aer*(1+nlayer_aer))
-
-  end subroutine sshaerosol_get_aero
 
   !-----------------------------------------------------------------------------
 
