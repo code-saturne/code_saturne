@@ -248,7 +248,7 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
 
     for (cs_lnum_t iplan = 0; iplan < 4; iplan++) {
 
-      for (cs_lnum_t p_id = 0; p_set->n_particles; p_id++) {
+      for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
 
         const cs_real_t *part_coords
           = (const cs_real_t *)cs_lagr_particles_attr_const(p_set, p_id,
