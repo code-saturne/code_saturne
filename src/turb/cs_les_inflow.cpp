@@ -1651,9 +1651,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
       // and shortest cell lengths (would also be useful for HTLES and
       // possibly other models.
 
-      cs_real_t length_scale_min
-        = fmax(length_scale_min,
-               2.*fabs(pow(mq->cell_vol[point_id], c_1ov3)));
+      cs_real_t length_scale_min = 2.*cbrt(mq->cell_vol[point_id]);
 
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
@@ -1696,7 +1694,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
         }
 
         length_scale[point_id][coo_id]
-          = pow(1.5*rij_l[point_id ][coo_id], 1.5) / eps_l[point_id];
+          = pow(1.5*rij_l[point_id][coo_id], 1.5) / eps_l[point_id];
 
         length_scale[point_id][coo_id]
           = 0.5*length_scale[point_id][coo_id];
