@@ -50,6 +50,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_file.h"
 #include "mesh/cs_mesh.h"
@@ -185,27 +186,55 @@ BEGIN_C_DECLS
 
 /* Tensor directions */
 
-static const int idirtens[6][2] = {{0,0},
-                                   {1,1},
-                                   {2,2},
-                                   {0,1},
-                                   {0,2},
-                                   {1,2}};
+#undef _IJV2T
+#undef _IJV2T3
+#undef _PIJV2T
+#undef _PIJV2T3
+#define _IJV2T { \
+    {0, 0}, \
+    {1, 1}, \
+    {2, 2}, \
+    {0, 1}, \
+    {1, 2}, \
+    {0, 2}  \
+};
 
-static const int idirtens3[10][3] = {{0,1,2},
-                                     {0,0,0},
-                                     {0,0,1},
-                                     {0,0,2},
-                                     {1,1,0},
-                                     {1,1,1},
-                                     {1,1,2},
-                                     {2,2,0},
-                                     {2,2,1},
-                                     {2,2,2}};
+#define _PIJV2T { \
+    {5, 5, 5}, \
+    {5, 1, 4}, \
+    {5, 4, 2}  \
+};
 
-static int ipdirtens[3][3];
+#define _IJV2T3 { \
+    {0, 1, 2}, \
+    {0, 0, 0}, \
+    {0, 0, 1}, \
+    {0, 0, 2}, \
+    {1, 1, 0}, \
+    {1, 1, 1}, \
+    {1, 1, 2}, \
+    {2, 2, 0}, \
+    {2, 2, 1}, \
+    {2, 2, 2}  \
+};
 
-static int ipdirtens3[3][3][3];
+#define _PIJV2T3 { \
+    { \
+        {7, 7, 7}, \
+        {7, 7, 7}, \
+        {7, 7, 7}  \
+    }, \
+    { \
+        {7, 7, 7}, \
+        {7, 5, 6}, \
+        {7, 6, 8}  \
+    }, \
+    { \
+        {7, 7, 7}, \
+        {7, 6, 8}, \
+        {7, 8, 9}  \
+    }  \
+};
 
 /* Total number of scalars */
 static int nscal = 0;
@@ -322,7 +351,7 @@ _les_balance_get_tm_by_scalar_id(int scalar_id,
 static void
 _les_balance_laplacian(cs_real_t   *wa,
                        cs_real_t   *res,
-                       int         type)
+                       int          type)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -330,15 +359,20 @@ _les_balance_laplacian(cs_real_t   *wa,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_real_t *b_dist = fvq->b_dist;
+  const cs_real_t *cell_vol = fvq->cell_vol;
 
   const int *bc_type = cs_glob_bc_type;
 
+  cs_dispatch_context ctx;
+
   cs_field_bc_coeffs_t bc_coeffs_loc; // a voir ci dessous (a=af,b=bf)
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  CS_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+
+  CS_MALLOC_HD(bc_coeffs_loc.a,  n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.b,  n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.af, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *coefa = bc_coeffs_loc.a;
   cs_real_t *coefb = bc_coeffs_loc.b;
@@ -348,8 +382,8 @@ _les_balance_laplacian(cs_real_t   *wa,
   const cs_real_t visc = 1., pimp = 0., qimp = 0.; // hext = -1;
   //cs_real_t a, b;
 
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    cs_real_t hint = visc / fvq->b_dist[face_id];
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    cs_real_t hint = visc / b_dist[face_id];
 
     if (   type == 0
         && (   bc_type[face_id] == CS_SMOOTHWALL
@@ -387,15 +421,17 @@ _les_balance_laplacian(cs_real_t   *wa,
       coefb[face_id] = coefbf[face_id];
 
     }
-  }
+  });
+
+  ctx.wait();
 
   cs_real_t *c_visc, *i_visc, *b_visc;
-  CS_MALLOC(c_visc, n_cells_ext, cs_real_t);
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    c_visc[c_id] = visc;
+  CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
-  CS_MALLOC(i_visc, n_i_faces, cs_real_t);
-  CS_MALLOC(b_visc, n_b_faces, cs_real_t);
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, visc, c_visc);
+
   cs_face_viscosity(m,
                     fvq,
                     0,      /* mean type */
@@ -426,6 +462,12 @@ _les_balance_laplacian(cs_real_t   *wa,
                                  res,
                                  nullptr, nullptr);
 
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    res[c_id] /= cell_vol[c_id];
+  });
+
+  ctx.wait();
+
   CS_FREE(coefa);
   CS_FREE(coefb);
   CS_FREE(coefaf);
@@ -433,9 +475,6 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   CS_FREE(i_visc);
   CS_FREE(b_visc);
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    res[c_id] /= cs_glob_mesh_quantities->cell_vol[c_id];
 }
 
 /*----------------------------------------------------------------------------
@@ -454,45 +493,47 @@ _les_balance_laplacian(cs_real_t   *wa,
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
   const int *bc_type = cs_glob_bc_type;
-  int f_id, itypfl, iflmb0, init, inc;
 
-  cs_real_t *i_massflux, *b_massflux;
+  cs_dispatch_context ctx;
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
-  CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_3_t  *coefav = (cs_real_3_t  *)bc_coeffs_v_loc.a;
   cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
-  CS_MALLOC(i_massflux, n_i_faces, cs_real_t);
-  CS_MALLOC(b_massflux, n_b_faces, cs_real_t);
-
-  f_id = -1;
-  itypfl = 0;
-  iflmb0 = 1;
-  init = 1;
-  inc = 1;
+  cs_real_t *i_massflux, *b_massflux;
+  CS_MALLOC_HD(i_massflux, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_massflux, n_b_faces, cs_real_t, cs_alloc_mode);
 
   /* Bc coeffs */
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        coefav[ifac][ii] = 0.;
-        for (cs_lnum_t pp = 0; pp < 3; pp++) {
-          if (bc_type[ifac] == CS_SMOOTHWALL
-           || bc_type[ifac] == CS_ROUGHWALL)
-            coefbv[ifac][ii][pp] = 0.;
-          else
-            coefbv[ifac][ii][pp] = 1.;
-      }
+        coefav[face_id][ii] = 0.;
+
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
+          coefbv[face_id][ii][jj] = 0.;
+
+        if (!(   bc_type[face_id] == CS_SMOOTHWALL
+              || bc_type[face_id] == CS_ROUGHWALL))
+            coefbv[face_id][ii][ii] = 1.;
     }
-  }
+  });
+
+  ctx.wait();
+
+  int f_id = -1;
+  int itypfl = 0;
+  int iflmb0 = 1;
+  int init = 1;
+  int inc = 1;
 
   cs_mass_flux(m,
                mq,
@@ -538,6 +579,8 @@ _les_balance_compute_gradients(void)
   const int *bc_type = cs_glob_bc_type;
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
+  cs_dispatch_context ctx;
+
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
 
@@ -556,25 +599,28 @@ _les_balance_compute_gradients(void)
                            (cs_real_33_t *)_gradv->val);
 
   /* Computation of the nu_t gradient */
-  if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL ||
-      _les_balance.type & CS_LES_BALANCE_TUI_FULL) {
+  if (   _les_balance.type & CS_LES_BALANCE_RIJ_FULL
+      || _les_balance.type & CS_LES_BALANCE_TUI_FULL) {
 
     cs_field_bc_coeffs_t bc_coeffs_loc;
-    CS_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
-    CS_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(bc_coeffs_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
 
     cs_real_t *coefas = bc_coeffs_loc.a;
     cs_real_t *coefbs = bc_coeffs_loc.b;
 
     /* Bc coeffs */
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      coefas[ifac] = 0.;
-      if (bc_type[ifac] == CS_SMOOTHWALL
-       || bc_type[ifac] == CS_ROUGHWALL)
-        coefbs[ifac] = 0.;
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      coefas[face_id] = 0.;
+
+      if (   bc_type[face_id] == CS_SMOOTHWALL
+          || bc_type[face_id] == CS_ROUGHWALL)
+        coefbs[face_id] = 0.;
       else
-        coefbs[ifac] = 1.;
-    }
+        coefbs[face_id] = 1.;
+    });
+
+    ctx.wait();
 
     cs_gradient_scalar("nu_t",
                        gradient_type,
@@ -619,7 +665,7 @@ _les_balance_compute_gradients(void)
                                  false, /* use_previous_t */
                                  inc,
                                  (cs_real_3_t *)_gradt[iii]->val);
-         iii++;
+        iii++;
       }
     }
   }
@@ -642,17 +688,26 @@ _les_balance_compute_pdjuisym(const void   *input,
 
   CS_UNUSED(input);
 
-  cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
+  cs_dispatch_context ctx;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-    cs_real_t pre = CS_F_(p)->val[iel];
+  cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
+  cs_real_t *pressure = CS_F_(p)->val;
+
+  const int idirtens[6][2] = _IJV2T;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    cs_real_t pre = pressure[c_id];
+
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
       cs_lnum_t i = idirtens[ii][0];
       cs_lnum_t j = idirtens[ii][1];
-      vals[6*iel + ii] = pre*(grdv[iel][i][j] + grdv[iel][j][i]);
+
+      const cs_lnum_t id = 6*c_id + ii;
+      vals[id] = pre*(grdv[c_id][i][j] + grdv[c_id][j][i]);
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -672,11 +727,15 @@ _les_balance_compute_smag(const void   *input,
 
   CS_UNUSED(input);
 
+  cs_dispatch_context ctx;
+
   cs_real_t *cpro_smago = cs_field_by_name("smagorinsky_constant^2")->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-    vals[iel] = cs_math_sq(cpro_smago[iel]);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    vals[c_id] = cs_math_sq(cpro_smago[c_id]);
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -695,21 +754,26 @@ _les_balance_compute_dkuidkuj(const void   *input,
 
   CS_UNUSED(input);
 
+  cs_dispatch_context ctx;
+
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  const int idirtens[6][2] = _IJV2T;
 
-    for (cs_lnum_t ii = 0; ii < 6; ii++)
-      vals[6*iel + ii] = 0.;
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
-      int i = idirtens[ii][0];
-      int j = idirtens[ii][1];
+      cs_lnum_t i = idirtens[ii][0];
+      cs_lnum_t j = idirtens[ii][1];
+      const cs_lnum_t id = 6*c_id + ii;
+      vals[id] = 0.;
+
       for (cs_lnum_t k = 0; k < 3; k++)
-        vals[6*iel + ii] += grdv[iel][i][k] + grdv[iel][j][k];
+        vals[id] += grdv[c_id][i][k] + grdv[c_id][j][k];
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -722,20 +786,22 @@ _les_balance_compute_dkuidkuj(const void   *input,
 
 static void
 _les_balance_compute_uidktaujk(const void   *input,
-                                 cs_real_t    *vals)
+                               cs_real_t    *vals)
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   CS_UNUSED(input);
 
+  cs_dispatch_context ctx;
+
+  cs_real_3_t *velocity = (cs_real_3_t *)CS_F_(vel)->val;
+  cs_real_t *mu_t = CS_F_(mu_t)->val;
+
   cs_real_t *diverg;
-  cs_real_3_t *vel, *velocity;
-
-  velocity = (cs_real_3_t *)CS_F_(vel)->val;
-
-  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
-  CS_MALLOC(vel, n_cells, cs_real_3_t);
+  cs_real_3_t *vel;
+  CS_MALLOC_HD(diverg, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(vel, n_cells, cs_real_3_t, cs_alloc_mode);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
@@ -743,20 +809,25 @@ _les_balance_compute_uidktaujk(const void   *input,
 
     for (cs_lnum_t j = 0; j < 3; j++) {
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t k = 0; k < 3; k++)
-          vel[iel][k] = -CS_F_(mu_t)->val[iel]*( grdv[iel][j][k]
-                                                +grdv[iel][k][j]);
-      }
+          vel[c_id][k] = -mu_t[c_id]*(  grdv[c_id][j][k]
+                                      + grdv[c_id][k][j]);
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(vel, diverg);
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        vals[9*iel+i*3+j] = velocity[iel][i]*diverg[iel];
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        const cs_lnum_t id = 9*c_id+i*3+j;
+        vals[id] = velocity[c_id][i]*diverg[c_id];
+      });
+
     }
   }
+
+  ctx.wait();
 
   CS_FREE(diverg);
   CS_FREE(vel);
@@ -778,22 +849,27 @@ _les_balance_compute_nutdkuidkuj(const void   *input,
 
   CS_UNUSED(input);
 
+  cs_dispatch_context ctx;
+
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
+  cs_real_t *mu_t = CS_F_(mu_t)->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  const int idirtens[6][2] = _IJV2T;
 
-    for (cs_lnum_t ii = 0; ii < 6; ii++)
-      vals[6*iel + ii] = 0.;
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
       int i = idirtens[ii][0];
       int j = idirtens[ii][1];
+      const cs_lnum_t id = 6*c_id + ii;
+
+      vals[id] = 0.;
       for (cs_lnum_t k = 0; k < 3; k++)
-        vals[6*iel + ii] +=
-          CS_F_(mu_t)->val[iel]*grdv[iel][i][k]*grdv[iel][j][k];
+        vals[id] += mu_t[c_id]*grdv[c_id][i][k]*grdv[c_id][j][k];
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -812,27 +888,30 @@ _les_balance_compute_dknutuidjuksym(const void   *input,
 
   CS_UNUSED(input);
 
-  cs_real_3_t *vel;
-  vel = (cs_real_3_t *)CS_F_(vel)->val;
+  cs_dispatch_context ctx;
 
-  cs_real_33_t *grdv  = (cs_real_33_t *)_gradv->val;
+  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+  cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  const int idirtens[6][2] = _IJV2T;
 
-    for (cs_lnum_t ii = 0; ii < 6; ii++)
-      vals[6*iel + ii] = 0.;
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
       cs_lnum_t i = idirtens[ii][0];
       cs_lnum_t j = idirtens[ii][1];
+
+      const cs_lnum_t id = 6*c_id + ii;
+      vals[id] = 0.;
       for (cs_lnum_t k = 0; k < 3; k++)
-        vals[6*iel + ii] += grdnu[iel][i]
-                            *( vel[iel][i]*grdv[iel][k][j]
-                              +vel[iel][j]*grdv[iel][k][i]);
+        vals[id] += grdnu[c_id][i]
+                      *(  vel[c_id][i]*grdv[c_id][k][j]
+                        + vel[c_id][j]*grdv[c_id][k][i]);
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -850,21 +929,26 @@ _les_balance_compute_nutdkuiuj(const void   *input,
   const int *k = (const int *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
+  cs_dispatch_context ctx;
+
   cs_real_3_t *vel   = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t   *mu_t  = CS_F_(mu_t)->val;
   cs_real_6_t *tens  = (cs_real_6_t *)vals;
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  const int idirtens[6][2] = _IJV2T;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
       cs_lnum_t i = idirtens[ii][0];
       cs_lnum_t j = idirtens[ii][1];
-      tens[iel][ii] = mu_t[iel]
-                      *( vel[iel][i]*grdv[iel][j][*k]
-                        +vel[iel][j]*grdv[iel][i][*k]);
+      tens[c_id][ii] = mu_t[c_id]
+                      *( vel[c_id][i]*grdv[c_id][j][*k]
+                        +vel[c_id][j]*grdv[c_id][i][*k]);
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -883,19 +967,21 @@ _les_balance_compute_dknutdiuk(const void   *input,
 
   CS_UNUSED(input);
 
+  cs_dispatch_context ctx;
+
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-
-    for (cs_lnum_t i = 0; i < 3; i++)
-      vals[3*iel + i] = 0.;
-
-    for (cs_lnum_t i = 0; i < 3; i++)
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      const cs_lnum_t id = 3*c_id + i;
+      vals[id] = 0.;
       for (cs_lnum_t j = 0; j < 3; j++)
-        vals[3*iel + i] += grdnu[iel][i]*grdv[iel][i][j];
-  }
+        vals[id] += grdnu[c_id][i]*grdv[c_id][i][j];
+    }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -908,23 +994,26 @@ _les_balance_compute_dknutdiuk(const void   *input,
 
 static void
 _les_balance_compute_uidjnut(const void   *input,
-                               cs_real_t    *vals)
+                             cs_real_t    *vals)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   CS_UNUSED(input);
 
+  cs_dispatch_context ctx;
+
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
   cs_real_3_t *vel   = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_33_t *tens = (cs_real_33_t *)vals;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
-        tens[iel][i][j] = vel[iel][i]*grdnu[iel][j];
+        tens[c_id][i][j] = vel[c_id][i]*grdnu[c_id][j];
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -946,19 +1035,24 @@ _les_balance_compute_djtdjui(const void   *input,
   int isca = cs_field_get_key_int(sca, keysca) - 1;
   assert(isca > -1);
 
+  cs_dispatch_context ctx;
+
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++) {
+      const cs_lnum_t id = 3*c_id+i;
       cs_real_t dtdxjduidxj = 0.;
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        dtdxjduidxj += grdt[iel][kk]*grdv[iel][i][kk];
 
-      vals[3*iel+i] = dtdxjduidxj;
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
+        dtdxjduidxj += grdt[c_id][kk]*grdv[c_id][i][kk];
+
+      vals[id] = dtdxjduidxj;
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -974,17 +1068,25 @@ _les_balance_compute_tuiuj(const void   *input,
                            cs_real_t    *vals)
 {
   const cs_field_t *sca = (const cs_field_t *)input;
+  cs_real_t *sca_val = sca->val;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  cs_dispatch_context ctx;
+
+  const int idirtens[6][2] = _IJV2T;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
       cs_lnum_t i = idirtens[ii][0];
       cs_lnum_t j = idirtens[ii][1];
-      vals[6*iel+ii] = sca->val[iel]*vel[iel][i]*vel[iel][j];
+
+      const cs_lnum_t id = 6*c_id+ii;
+      vals[id] = sca_val[c_id]*vel[c_id][i]*vel[c_id][j];
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1004,16 +1106,21 @@ _les_balance_compute_uidjt(const void   *input,
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_33_t *tens = (cs_real_33_t *)vals;
 
+  cs_dispatch_context ctx;
+
   const int keysca = cs_field_key_id("scalar_id");
   int isca = cs_field_get_key_int(sca, keysca) - 1;
   assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++)
       for (cs_lnum_t j = 0; j < 3; j++)
-        tens[iel][i][j] = vel[iel][i]*grdt[iel][j];
+        tens[c_id][i][j] = vel[c_id][i]*grdt[c_id][j];
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1026,7 +1133,7 @@ _les_balance_compute_uidjt(const void   *input,
 
 static void
 _les_balance_compute_ditdit(const void   *input,
-                                cs_real_t    *vals)
+                            cs_real_t    *vals)
 {
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -1035,15 +1142,19 @@ _les_balance_compute_ditdit(const void   *input,
   int isca = cs_field_get_key_int(sca, keysca) - 1;
   assert(isca > -1);
 
+  cs_dispatch_context ctx;
+
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_real_t dtdxidtdxi = 0.;
     for (cs_lnum_t i = 0; i < 3; i++)
-      dtdxidtdxi += grdt[iel][i]; // FIXME: missing SQUARE??
-    vals[iel] = dtdxidtdxi;
-  }
+      dtdxidtdxi += grdt[c_id][i]; // FIXME: missing SQUARE??
+
+    vals[c_id] = dtdxidtdxi;
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1059,9 +1170,12 @@ _les_balance_compute_tdjtauij(const void   *input,
                               cs_real_t    *vals)
 {
   const cs_field_t *sca = (const cs_field_t *)input;
+  cs_real_t *sca_val = sca->val;
   const int keysca = cs_field_key_id("scalar_id");
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_dispatch_context ctx;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
@@ -1073,26 +1187,30 @@ _les_balance_compute_tdjtauij(const void   *input,
 
   cs_real_t *diverg;
   cs_real_3_t *w1;
-
-  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
-  CS_MALLOC(w1, n_cells, cs_real_3_t);
+  CS_MALLOC_HD(diverg, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w1, n_cells, cs_real_3_t, cs_alloc_mode);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
+  cs_real_t *mu_t = CS_F_(mu_t)->val;
 
   for (cs_lnum_t i = 0; i < 3; i++) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t k = 0; k < 3; k++)
-        w1[iel][k] = -CS_F_(mu_t)->val[iel]*( grdv[iel][i][k]
-                                             +grdv[iel][k][i]);
-    }
+        w1[c_id][k] = -mu_t[c_id]*(  grdv[c_id][i][k]
+                                   + grdv[c_id][k][i]);
+    });
+
+    ctx.wait();
 
     _les_balance_divergence_vector(w1, diverg);
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      vals[3*iel+i] = sca->val[iel]*diverg[iel];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const cs_lnum_t id = 3*c_id+i;
+      vals[id] = sca_val[c_id]*diverg[c_id];
+    });
   }
+
+  ctx.wait();
 
   CS_FREE(diverg);
   CS_FREE(w1);
@@ -1116,6 +1234,8 @@ _les_balance_compute_uidivturflux(const void   *input,
   const int keysca = cs_field_key_id("scalar_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
 
+  cs_dispatch_context ctx;
+
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
@@ -1130,25 +1250,31 @@ _les_balance_compute_uidivturflux(const void   *input,
   vel = (cs_real_3_t *)CS_F_(vel)->val;
   sigmas = cs_field_get_key_double(sca, ksigmas);
 
-  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
-  CS_MALLOC(w1, n_cells, cs_real_3_t);
+  CS_MALLOC_HD(diverg, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w1, n_cells, cs_real_3_t, cs_alloc_mode);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
+  cs_real_t *mu_t = CS_F_(mu_t)->val;
 
   for (cs_lnum_t i = 0; i < 3; i++) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t k = 0; k < 3; k++)
-        w1[iel][k] =  cs_math_sq(CS_F_(mu_t)->val[iel])/sigmas
-                     *(grdv[iel][i][k]+grdv[iel][k][i]);
-    }
+        w1[c_id][k] =  cs_math_sq(mu_t[c_id])/sigmas
+                     *(grdv[c_id][i][k]+grdv[c_id][k][i]);
+    });
+
+    ctx.wait();
 
     _les_balance_divergence_vector(w1, diverg);
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      vals[3*iel+i] = vel[iel][i]*diverg[iel];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const cs_lnum_t id = 3*c_id+i;
+      vals[id] = vel[c_id][i]*diverg[c_id];
+    });
   }
+
+  ctx.wait();
 
   CS_FREE(diverg);
   CS_FREE(w1);
@@ -1174,27 +1300,33 @@ _les_balance_compute_tdivturflux(const void   *input,
   int isca = cs_field_get_key_int(sca, keysca) - 1;
   assert(isca > -1);
 
+  cs_dispatch_context ctx;
+
   cs_real_t sigmas, *diverg;
   cs_real_3_t *w1;
 
   sigmas = cs_field_get_key_double(sca, ksigmas);
 
-  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
-  CS_MALLOC(w1, n_cells, cs_real_3_t);
+  CS_MALLOC_HD(diverg, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w1, n_cells, cs_real_3_t, cs_alloc_mode);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
+  cs_real_t *mu_t = CS_F_(mu_t)->val;
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t k = 0; k < 3; k++)
-      w1[iel][k] =  CS_F_(mu_t)->val[iel]/sigmas * grdt[iel][k];
-  }
+      w1[c_id][k] = mu_t[c_id]/sigmas * grdt[c_id][k];
+  });
+
+  ctx.wait();
 
   _les_balance_divergence_vector(w1, diverg);
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-    vals[iel] = sca->val[iel]*diverg[iel];
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    vals[c_id] = sca->val[c_id]*diverg[c_id];
+  });
+
+  ctx.wait();
 
   CS_FREE(diverg);
   CS_FREE(w1);
@@ -1213,23 +1345,27 @@ _les_balance_compute_nutditdit(const void   *input,
                                cs_real_t    *vals)
 {
   const cs_field_t *sca = (const cs_field_t *)input;
+  cs_real_t *sca_val = sca->val;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_dispatch_context ctx;
 
   const int keysca = cs_field_key_id("scalar_id");
   int isca = cs_field_get_key_int(sca, keysca) - 1;
   assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
+  cs_real_t *mu_t = CS_F_(mu_t)->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_real_t nutditdit = 0.;
     for (cs_lnum_t i = 0; i < 3; i++)
-      nutditdit +=  CS_F_(mu_t)->val[iel]*sca->val[iel]
-                       *cs_math_sq(grdt[iel][i]);
+      nutditdit += mu_t[c_id]*sca_val[c_id]*cs_math_sq(grdt[c_id][i]);
 
-    vals[iel] = nutditdit;
-  }
+    vals[c_id] = nutditdit;
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1249,18 +1385,22 @@ _les_balance_compute_nutuidjt(const void   *input,
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_33_t *tens = (cs_real_33_t *)vals;
 
+  cs_dispatch_context ctx;
+
   const int keysca = cs_field_key_id("scalar_id");
   int isca = cs_field_get_key_int(sca, keysca) - 1;
   assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
+  cs_real_t *mu_t = CS_F_(mu_t)->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++)
       for (cs_lnum_t j = 0; j < 3; j++)
-        tens[iel][i][j] = CS_F_(mu_t)->val[iel]*vel[iel][i]*grdt[iel][j];
-  }
+        tens[c_id][i][j] = mu_t[c_id]*vel[c_id][i]*grdt[c_id][j];
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1278,23 +1418,29 @@ _les_balance_compute_nutdjuidjt(const void   *input,
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
+  cs_dispatch_context ctx;
+
   const int keysca = cs_field_key_id("scalar_id");
   int isca = cs_field_get_key_int(sca, keysca) - 1;
   assert(isca > -1);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
+  cs_real_t *mu_t = CS_F_(mu_t)->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       cs_real_t nutdjuidjt = 0.;
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        nutdjuidjt += CS_F_(mu_t)->val[iel]*grdv[iel][i][kk]*grdt[iel][kk];
 
-      vals[3*iel+i] = nutdjuidjt;
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
+        nutdjuidjt += mu_t[c_id]*grdv[c_id][i][kk]*grdt[c_id][kk];
+
+      const cs_lnum_t id = 3*c_id+i;
+      vals[id] = nutdjuidjt;
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1313,19 +1459,23 @@ _les_balance_compute_djnutdiuj(const void   *input,
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
+  cs_dispatch_context ctx;
+
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       cs_real_t djnutdiuj = 0.;
       for (cs_lnum_t kk = 0; kk < 3; kk++)
-        djnutdiuj += grdnu[iel][kk]*grdv[iel][kk][i];
+        djnutdiuj += grdnu[c_id][kk]*grdv[c_id][kk][i];
 
-      vals[3*iel+i] = djnutdiuj;
+      const cs_lnum_t id = 3*c_id+i;
+      vals[id] = djnutdiuj;
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1341,21 +1491,27 @@ _les_balance_compute_djnuttdiuj(const void   *input,
                                 cs_real_t    *vals)
 {
   const cs_field_t *sca = (const cs_field_t *)input;
+  cs_real_t *sca_val = sca->val;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_dispatch_context ctx;
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       cs_real_t djnuttdiuj = 0.;
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        djnuttdiuj += grdnu[iel][kk]*sca->val[iel]*grdv[iel][kk][i];
 
-      vals[3*iel+i] = djnuttdiuj;
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
+        djnuttdiuj += grdnu[c_id][kk]*sca_val[c_id]*grdv[c_id][kk][i];
+
+      const cs_lnum_t id = 3*c_id+i;
+      vals[id] = djnuttdiuj;
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -2274,20 +2430,20 @@ _les_balance_allocate_rij(void)
   /* Allocation of the working arrays  that cannot
      be declared using time moments */
 
-  CS_MALLOC(brij->prodij, n_cells, cs_real_6_t);
-  CS_MALLOC(brij->epsij, n_cells, cs_real_6_t);
-  CS_MALLOC(brij->phiij, n_cells, cs_real_6_t);
-  CS_MALLOC(brij->difftij, n_cells, cs_real_6_t);
-  CS_MALLOC(brij->difftpij, n_cells, cs_real_6_t);
-  CS_MALLOC(brij->convij, n_cells, cs_real_6_t);
-  CS_MALLOC(brij->difflamij, n_cells, cs_real_6_t);
-  CS_MALLOC(brij->unstij, n_cells, cs_real_6_t);
+  CS_MALLOC_HD(brij->prodij, n_cells, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(brij->epsij, n_cells, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(brij->phiij, n_cells, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(brij->difftij, n_cells, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(brij->difftpij, n_cells, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(brij->convij, n_cells, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(brij->difflamij, n_cells, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(brij->unstij, n_cells, cs_real_6_t, cs_alloc_mode);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE)
-    CS_MALLOC(brij->budsgsij, n_cells, cs_real_6_t);
+    CS_MALLOC_HD(brij->budsgsij, n_cells, cs_real_6_t, cs_alloc_mode);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL)
-    CS_MALLOC(brij->budsgsfullij, n_cells, cs_real_69_t);
+    CS_MALLOC_HD(brij->budsgsfullij, n_cells, cs_real_69_t, cs_alloc_mode);
 
   return brij;
 }
@@ -2312,34 +2468,34 @@ _les_balance_allocate_tui(void)
      be declared using time moments */
 
   /* Working arrays */
-  CS_MALLOC(btui->unstvar, n_cells, cs_real_t);
-  CS_MALLOC(btui->tptp, n_cells, cs_real_t);
-  CS_MALLOC(btui->prodvar, n_cells, cs_real_t);
-  CS_MALLOC(btui->epsvar, n_cells, cs_real_t);
-  CS_MALLOC(btui->difftvar, n_cells, cs_real_t);
-  CS_MALLOC(btui->convvar, n_cells, cs_real_t);
-  CS_MALLOC(btui->difflamvar, n_cells, cs_real_t);
-  CS_MALLOC(btui->tpuip, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->unstti, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->prodtUi, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->prodtTi, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->phiti, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->epsti, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->difftti, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->diffttpi, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->convti, n_cells, cs_real_3_t);
-  CS_MALLOC(btui->difflamti, n_cells, cs_real_3_t);
+  CS_MALLOC_HD(btui->unstvar, n_cells, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->tptp, n_cells, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->prodvar, n_cells, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->epsvar, n_cells, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->difftvar, n_cells, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->convvar, n_cells, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->difflamvar, n_cells, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->tpuip, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->unstti, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->prodtUi, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->prodtTi, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->phiti, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->epsti, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->difftti, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->diffttpi, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->convti, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(btui->difflamti, n_cells, cs_real_3_t, cs_alloc_mode);
 
   if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
-    CS_MALLOC(btui->budsgsvar, n_cells, cs_real_t);
-    CS_MALLOC(btui->budsgstui, n_cells, cs_real_3_t);
+    CS_MALLOC_HD(btui->budsgsvar, n_cells, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(btui->budsgstui, n_cells, cs_real_3_t, cs_alloc_mode);
   }
 
   if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
-    CS_MALLOC(btui->budsgsvarfull, n_cells, cs_real_6_t);
-    CS_MALLOC(btui->budsgstuifull, 10, cs_real_3_t *);
+    CS_MALLOC_HD(btui->budsgsvarfull, n_cells, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(btui->budsgstuifull, 10, cs_real_3_t *, cs_alloc_mode);
     for (int ii = 0; ii < 10; ii++)
-      CS_MALLOC(btui->budsgstuifull[ii], n_cells, cs_real_3_t);
+      CS_MALLOC_HD(btui->budsgstuifull[ii], n_cells, cs_real_3_t, cs_alloc_mode);
   }
 
   return btui;
@@ -2356,28 +2512,47 @@ _les_balance_initialize_rij(void)
 
   cs_les_balance_rij_t *brij = _les_balance.brij;
 
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+  cs_dispatch_context ctx;
+
+  cs_real_6_t *prodij = brij->prodij;
+  cs_real_6_t *epsij = brij->epsij;
+  cs_real_6_t *phiij = brij->phiij;
+  cs_real_6_t *difftij = brij->difftij;
+  cs_real_6_t *difftpij = brij->difftpij;
+  cs_real_6_t *convij = brij->convij;
+  cs_real_6_t *difflamij = brij->difflamij;
+  cs_real_6_t *unstij = brij->unstij;
+  cs_real_6_t *budsgsij = brij->budsgsij;
+
+  cs_real_69_t *budsgsfullij = brij->budsgsfullij;
+
+  const bool is_rij_base = (_les_balance.type & CS_LES_BALANCE_RIJ_BASE);
+  const bool is_rij_full = (_les_balance.type & CS_LES_BALANCE_RIJ_FULL);
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     for (cs_lnum_t i = 0; i < 6; i++) {
-      brij->prodij[iel][i] = 0.;
-      brij->epsij[iel][i] = 0.;
-      brij->phiij[iel][i] = 0.;
-      brij->difftij[iel][i] = 0.;
-      brij->difftpij[iel][i] = 0.;
-      brij->convij[iel][i] = 0.;
-      brij->difflamij[iel][i] = 0.;
-      brij->unstij[iel][i] = 0.;
+      prodij[c_id][i] = 0.;
+      epsij[c_id][i] = 0.;
+      phiij[c_id][i] = 0.;
+      difftij[c_id][i] = 0.;
+      difftpij[c_id][i] = 0.;
+      convij[c_id][i] = 0.;
+      difflamij[c_id][i] = 0.;
+      unstij[c_id][i] = 0.;
 
-      if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE)
-        brij->budsgsij[iel][i] = 0.;
+      if (is_rij_base)
+        budsgsij[c_id][i] = 0.;
     }
 
-    if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL)
+    if (is_rij_full)
       for (cs_lnum_t i = 0; i < 9; i++)
         for (cs_lnum_t j = 0; j < 6; j++)
-          brij->budsgsfullij[iel][i][j] = 0.;
+          budsgsfullij[c_id][i][j] = 0.;
 
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -2443,6 +2618,8 @@ _les_balance_initialize_tui(void)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const int keysca = cs_field_key_id("scalar_id");
+  cs_dispatch_context ctx;
+
   int iscal = 0;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
@@ -2456,44 +2633,73 @@ _les_balance_initialize_tui(void)
   /* Since every time averages for Tui were created using
      time moments, there is no need to initialize them by
      reading the les_balance restart */
+
   for (int isca = 0; isca < nscal; isca++) {
     cs_les_balance_tui_t *btui = _les_balance.btui[isca];
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      btui->unstvar[iel] = 0.;
-      btui->tptp[iel] = 0.;
-      btui->prodvar[iel] = 0.;
-      btui->epsvar[iel] = 0.;
-      btui->difftvar[iel] = 0.;
-      btui->convvar[iel] = 0.;
-      btui->difflamvar[iel] = 0.;
+    cs_real_t *unstvar = btui->unstvar;
+    cs_real_t *tptp = btui->tptp;
+    cs_real_t *prodvar = btui->prodvar;
+    cs_real_t *epsvar = btui->epsvar;
+    cs_real_t *difftvar = btui->difftvar;
+    cs_real_t *convvar = btui->convvar;
+    cs_real_t *difflamvar = btui->difflamvar;
+
+    cs_real_3_t *unstti = btui->unstti;
+    cs_real_3_t *tpuip = btui->tpuip;
+    cs_real_3_t *prodtUi = btui->prodtUi;
+    cs_real_3_t *prodtTi = btui->prodtTi;
+    cs_real_3_t *phiti = btui->phiti;
+    cs_real_3_t *epsti = btui->epsti;
+    cs_real_3_t *difftti = btui->difftti;
+    cs_real_3_t *diffttpi = btui->diffttpi;
+    cs_real_3_t *convti = btui->convti;
+    cs_real_3_t *difflamti = btui->difflamti;
+
+    cs_real_t *budsgsvar = btui->budsgsvar;
+    cs_real_3_t *budsgstui = btui->budsgstui;
+    cs_real_3_t **budsgstuifull = btui->budsgstuifull;
+
+    const bool is_tui_base = (_les_balance.type & CS_LES_BALANCE_TUI_BASE);
+    const bool is_tui_full = (_les_balance.type & CS_LES_BALANCE_TUI_FULL);
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      unstvar[c_id] = 0.;
+      tptp[c_id] = 0.;
+      prodvar[c_id] = 0.;
+      epsvar[c_id] = 0.;
+      difftvar[c_id] = 0.;
+      convvar[c_id] = 0.;
+      difflamvar[c_id] = 0.;
 
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        btui->unstti[iel][ii] = 0.;
-        btui->tpuip[iel][ii] = 0.;
-        btui->prodtUi[iel][ii] = 0.;
-        btui->prodtTi[iel][ii] = 0.;
-        btui->phiti[iel][ii] = 0.;
-        btui->epsti[iel][ii] = 0.;
-        btui->difftti[iel][ii] = 0.;
-        btui->diffttpi[iel][ii] = 0.;
-        btui->convti[iel][ii] = 0.;
-        btui->difflamti[iel][ii] = 0.;
+        unstti[c_id][ii] = 0.;
+        tpuip[c_id][ii] = 0.;
+        prodtUi[c_id][ii] = 0.;
+        prodtTi[c_id][ii] = 0.;
+        phiti[c_id][ii] = 0.;
+        epsti[c_id][ii] = 0.;
+        difftti[c_id][ii] = 0.;
+        diffttpi[c_id][ii] = 0.;
+        convti[c_id][ii] = 0.;
+        difflamti[c_id][ii] = 0.;
       }
 
-      if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
-        btui->budsgsvar[iel] = 0.;
+      if (is_tui_base) {
+        budsgsvar[c_id] = 0.;
 
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          btui->budsgstui[iel][ii] = 0.;
+          budsgstui[c_id][ii] = 0.;
       }
 
-      if (_les_balance.type & CS_LES_BALANCE_TUI_FULL)
+      if (is_tui_full)
         for (cs_lnum_t ii = 0; ii < 10; ii++)
           for (cs_lnum_t jj = 0; jj < 3; jj++)
-            btui->budsgstuifull[ii][iel][jj] = 0.;
-    }
-  }
+            budsgstuifull[ii][c_id][jj] = 0.;
+    });
+  } /* End loop on scalars */
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -2733,8 +2939,9 @@ cs_les_balance_create(void)
     if (isca > 0) nscal++;
   }
 
+  /* I keep this comment to undestand how _PIJV2T3 is computed */
   /* Remplissage des tableaux de directions de tenseurs */
-  for (cs_lnum_t ii = 0; ii < 3; ii++)
+  /*for (cs_lnum_t ii = 0; ii < 3; ii++)
     for (cs_lnum_t jj = 0; jj < 3; jj++)
       for (cs_lnum_t iii = 0; iii < 6; iii++)
         if (ii*jj == idirtens[iii][0]*idirtens[iii][1])
@@ -2745,7 +2952,7 @@ cs_les_balance_create(void)
       for (cs_lnum_t kk = 0; kk < 3; kk++)
         for (cs_lnum_t iii = 0; iii < 10; iii++)
           if (ii*jj*kk == idirtens3[iii][0]*idirtens3[iii][1]*idirtens3[iii][2])
-            ipdirtens3[ii][jj][kk] = iii;
+            ipdirtens3[ii][jj][kk] = iii;*/
 
   if (cs_restart_present())
     _check_restart_type();
@@ -2813,6 +3020,8 @@ cs_les_balance_compute_rij(void)
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  cs_dispatch_context ctx;
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
@@ -2891,240 +3100,267 @@ cs_les_balance_compute_rij(void)
     uidujdxk[2] = (cs_real_33_t *)cs_field_by_name("u3dkuj_m")->val;
   }
 
-  /* Working arrays */
-  cs_real_t *diverg, *w2, *lapl;
-  cs_real_3_t *w1, *w3;
-
   cs_field_bc_coeffs_t bc_coeffs;
   cs_field_bc_coeffs_init(&bc_coeffs);
-  CS_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs.a, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs.b, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *coefas = bc_coeffs.a, *coefbs = bc_coeffs.b;
 
   cs_real_t dtref = cs_glob_time_step->dt_ref;
   cs_real_t ro0 = cs_glob_fluid_properties->ro0;
   cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
-  int i, j, jj, ll, jjj, kkk, lll, inc;
 
   const int *bc_type = cs_glob_bc_type;
-
-  inc = 1;
 
   cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
   /* Working arrays memory allocation */
-  CS_MALLOC(w1, n_cells, cs_real_3_t);
-  CS_MALLOC(w2, n_cells_ext, cs_real_t);
-  CS_MALLOC(w3, n_cells_ext, cs_real_3_t);
-  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
-  CS_MALLOC(lapl, n_cells_ext, cs_real_t);
+  cs_real_t *diverg, *w2, *lapl;
+  cs_real_3_t *w1, *w3;
+  CS_MALLOC_HD(w1, n_cells, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w3, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(diverg, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(lapl, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-    for (cs_lnum_t iii = 0; iii < 6; iii++) {
-      brij->prodij[iel][iii]    = 0.;
-      brij->epsij[iel][iii]     = 0.;
-      brij->phiij[iel][iii]     = 0.;
-      brij->difftij[iel][iii]   = 0.;
-      brij->difftpij[iel][iii]  = 0.;
-      brij->convij[iel][iii]    = 0.;
-      brij->difflamij[iel][iii] = 0.;
-    }
-  }
+  cs_real_6_t *prodij = brij->prodij;
+  cs_real_6_t *epsij = brij->epsij;
+  cs_real_6_t *phiij = brij->phiij;
+  cs_real_6_t *difftij = brij->difftij;
+  cs_real_6_t *difftpij = brij->difftpij;
+  cs_real_6_t *convij = brij->convij;
+  cs_real_6_t *difflamij = brij->difflamij;
+  cs_real_6_t *unstij = brij->unstij;
+  cs_real_6_t *budsgsij = brij->budsgsij;
+  cs_real_69_t *budsgsfullij = brij->budsgsfullij;
 
-  /* unstij, epsij, prodij, phiij */
-  for (cs_lnum_t ii = 0; ii < 6; ii++) {
-    i = idirtens[ii][0];
-    j = idirtens[ii][1];
+  const int idirtens[6][2] = _IJV2T;
+  const int ipdirtens[3][3] = _PIJV2T;
+  const int ipdirtens3[3][3][3] = _PIJV2T3;
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      brij->unstij[iel][ii] = (rij[iel][ii] - brij->unstij[iel][ii])/dtref;
-      brij->epsij[iel][ii] = duidxkdujdxk[iel][ii];
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    /* unstij, epsij, prodij, phiij */
+
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
+      prodij[c_id][ii] = 0.;
+      epsij[c_id][ii] = 0.;
+      phiij[c_id][ii] = 0.;
+      difftij[c_id][ii] = 0.;
+      difftpij[c_id][ii] = 0.;
+      convij[c_id][ii] = 0.;
+      difflamij[c_id][ii] = 0.;
+      unstij[c_id][ii] = (rij[c_id][ii] - unstij[c_id][ii]) / dtref;
+      epsij[c_id][ii] = duidxkdujdxk[c_id][ii];
+
+      const cs_lnum_t i = idirtens[ii][0];
+      const cs_lnum_t j = idirtens[ii][1];
 
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        jj = ipdirtens[i][kk];
-        ll = ipdirtens[j][kk];
-        brij->prodij[iel][ii] -= rij[iel][ll]*duidxj[iel][i][kk]
-                               + rij[iel][jj]*duidxj[iel][j][kk];
-        brij->epsij[iel][ii] -= duidxj[iel][i][kk]*duidxj[iel][j][kk];
+        const cs_lnum_t jj = ipdirtens[i][kk];
+        const cs_lnum_t ll = ipdirtens[j][kk];
+
+        prodij[c_id][ii] -=   rij[c_id][ll]*duidxj[c_id][i][kk]
+                            + rij[c_id][jj]*duidxj[c_id][j][kk];
+
+        epsij[c_id][ii] -= duidxj[c_id][i][kk]*duidxj[c_id][j][kk];
       }
 
-      brij->phiij[iel][ii] = (  pduidxj[iel][ii]
-                              - p[iel]*(duidxj[iel][i][j]
-                              + duidxj[iel][j][i])) / ro0;
-      brij->epsij[iel][ii] *= -2.*viscl0/ro0;
+      phiij[c_id][ii] = (  pduidxj[c_id][ii]
+                         - p[c_id]*(  duidxj[c_id][i][j]
+                                    + duidxj[c_id][j][i])) / ro0;
+
+      epsij[c_id][ii] *= -2.*viscl0/ro0;
     }
-  }
+  });
 
   /* convij */
   for (cs_lnum_t iii = 0; iii < 6; iii++) {
-    i = idirtens[iii][0];
-    j = idirtens[iii][1];
+    const cs_lnum_t i = idirtens[iii][0];
+    const cs_lnum_t j = idirtens[iii][1];
 
     /* convij */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t kk = 0; kk < 3; kk++)
-        w1[iel][kk] = ui[iel][kk]*rij[iel][iii];
+        w1[c_id][kk] = ui[c_id][kk]*rij[c_id][iii];
+    });
+
+    ctx.wait();
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      brij->convij[iel][iii] = diverg[iel];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      convij[c_id][iii] = diverg[c_id];
 
-    /* difftij */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      /* difftij */
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        jjj = ipdirtens[i][kk];
-        kkk = ipdirtens[j][kk];
-        lll = ipdirtens3[i][j][kk];
+        const cs_lnum_t jjj = ipdirtens[i][kk];
+        const cs_lnum_t kkk = ipdirtens[j][kk];
+        const cs_lnum_t lll = ipdirtens3[i][j][kk];
         cs_real_t *triple_corr = uiujuk[lll];
 
-        w1[iel][kk] = - triple_corr[iel] - 2.*ui[iel][i]*ui[iel][j]*ui[iel][kk]
-                                         + ui[iel][i]*uiuj[iel][kkk]
-                                         + ui[iel][j]*uiuj[iel][jjj]
-                                         + ui[iel][kk]*uiuj[iel][iii];
+        w1[c_id][kk] = - triple_corr[c_id] - 2.*ui[c_id][i]*ui[c_id][j]*ui[c_id][kk]
+                                         + ui[c_id][i]*uiuj[c_id][kkk]
+                                         + ui[c_id][j]*uiuj[c_id][jjj]
+                                         + ui[c_id][kk]*uiuj[c_id][iii];
       }
-    }
+    });
+
+    ctx.wait();
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      brij->difftij[iel][iii] = diverg[iel];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      difftij[c_id][iii] = diverg[c_id];
 
-    /* difftpij */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        w1[iel][kk] = 0.;
-
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      /* difftpij */
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
+        w1[c_id][kk] = 0.;
+
         if (kk == i)
-          w1[iel][kk] -= pu[iel][j] - p[iel]*ui[iel][j];
+          w1[c_id][kk] -= pu[c_id][j] - p[c_id]*ui[c_id][j];
         else if (kk == j)
-          w1[iel][kk] -= pu[iel][i] - p[iel]*ui[iel][i];
+          w1[c_id][kk] -= pu[c_id][i] - p[c_id]*ui[c_id][i];
       }
-    }
+    });
+
+    ctx.wait();
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      brij->difftpij[iel][iii] = diverg[iel];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      difftpij[c_id][iii] = diverg[c_id];
 
-    /* Laminar diffusion */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      w2[iel] = rij[iel][iii];
+      /* Laminar diffusion */
+      w2[c_id] = rij[c_id][iii];
+    });
+
+    ctx.wait();
 
     _les_balance_laplacian(w2, lapl, 0);
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      brij->difflamij[iel][iii] = viscl0*lapl[iel]/ro0;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      difflamij[c_id][iii] = viscl0*lapl[c_id]/ro0;
+    });
+
+    ctx.wait();
   }
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE) {
 
     for (cs_lnum_t iii = 0; iii < 6; iii++) {
-      i = idirtens[iii][0];
-      j = idirtens[iii][1];
+      const cs_lnum_t i = idirtens[iii][0];
+      const cs_lnum_t j = idirtens[iii][1];
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1[iel][kk] = -nutduidxj[iel][j][kk] - nutduidxj[iel][kk][j];
+          w1[c_id][kk] = -nutduidxj[c_id][j][kk] - nutduidxj[c_id][kk][j];
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        brij->budsgsij[iel][iii]
-          = -(uidtaujkdxk[iel][i][j]-ui[iel][i]*diverg[iel]);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        budsgsij[c_id][iii]
+          = -(uidtaujkdxk[c_id][i][j]-ui[c_id][i]*diverg[c_id]);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1[iel][kk] = -nutduidxj[iel][i][kk] - nutduidxj[iel][kk][i];
+          w1[c_id][kk] = -nutduidxj[c_id][i][kk] - nutduidxj[c_id][kk][i];
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        brij->budsgsij[iel][iii] -= (  uidtaujkdxk[iel][j][i]
-                                     - ui[iel][j]*diverg[iel]);
-        brij->budsgsij[iel][iii] /= ro0;
-      }
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        budsgsij[c_id][iii] -= (  uidtaujkdxk[c_id][j][i]
+                                     - ui[c_id][j]*diverg[c_id]);
+        budsgsij[c_id][iii] /= ro0;
+      });
+
+      ctx.wait();
     }
   }
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) {
 
     for (cs_lnum_t iii = 0; iii < 6; iii++) {
-      i = idirtens[iii][0];
-      j = idirtens[iii][1];
-      cs_real_33_t *uidujdxk_ii = (cs_real_33_t*)uidujdxk[i];
-      cs_real_33_t *uidujdxk_jj = (cs_real_33_t*)uidujdxk[j];
+      const cs_lnum_t i = idirtens[iii][0];
+      const cs_lnum_t j = idirtens[iii][1];
+      cs_real_33_t *uidujdxk_ii = (cs_real_33_t *)uidujdxk[i];
+      cs_real_33_t *uidujdxk_jj = (cs_real_33_t *)uidujdxk[j];
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1[iel][kk] = nut[iel]*((  uidujdxk_ii[iel][j][kk]
-                                   - ui[iel][i]*duidxj[iel][j][kk])
-                                + (  uidujdxk_jj[iel][i][kk]
-                                   - ui[iel][j]*duidxj[iel][i][kk]));
+          w1[c_id][kk] = nut[c_id]*( (  uidujdxk_ii[c_id][j][kk]
+                                      - ui[c_id][i]*duidxj[c_id][j][kk])
+                                    +(  uidujdxk_jj[c_id][i][kk]
+                                      - ui[c_id][j]*duidxj[c_id][i][kk]));
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        brij->budsgsfullij[iel][iii][0] = diverg[iel]/ro0;
-        brij->budsgsfullij[iel][iii][1] = nut[iel]/viscl0*brij->epsij[iel][iii];
-      }
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        budsgsfullij[c_id][iii][0] = diverg[c_id]/ro0;
+        budsgsfullij[c_id][iii][1] = nut[c_id]/viscl0*epsij[c_id][iii];
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
           cs_real_6_t *nutdkuiuj_loc = (cs_real_6_t*)nutdkuiuj[kk];
 
-          w1[iel][kk] = nutdkuiuj_loc[iel][iii]
-                      + 2.*nut[iel]*(  ui[iel][i]*duidxj[iel][j][kk]
-                                     + ui[iel][j]*duidxj[iel][i][kk])
-                      - nut[iel]*(  uidujdxk_ii[iel][j][kk]
-                                  + uidujdxk_jj[iel][i][kk])
-                      - ui[iel][i]*nutduidxj[iel][j][kk]
-                      - ui[iel][j]*nutduidxj[iel][i][kk]
-                      - duidxj[iel][j][kk]*nutui[iel][i]
-                      - duidxj[iel][i][kk]*nutui[iel][j];
+          w1[c_id][kk] = nutdkuiuj_loc[c_id][iii]
+                      + 2.*nut[c_id]*(  ui[c_id][i]*duidxj[c_id][j][kk]
+                                      + ui[c_id][j]*duidxj[c_id][i][kk])
+                      - nut[c_id]*(  uidujdxk_ii[c_id][j][kk]
+                                   + uidujdxk_jj[c_id][i][kk])
+                      - ui[c_id][i]*nutduidxj[c_id][j][kk]
+                      - ui[c_id][j]*nutduidxj[c_id][i][kk]
+                      - duidxj[c_id][j][kk]*nutui[c_id][i]
+                      - duidxj[c_id][i][kk]*nutui[c_id][j];
         }
-      }
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        brij->budsgsfullij[iel][iii][2] = diverg[iel]/ro0;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        budsgsfullij[c_id][iii][2] = diverg[c_id]/ro0;
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        brij->budsgsfullij[iel][iii][3] =  nutduidxkdujdxk[iel][iii]
-                                         - nut[iel]*duidxkdujdxk[iel][iii];
+        budsgsfullij[c_id][iii][3] =  nutduidxkdujdxk[c_id][iii]
+                                    - nut[c_id]*duidxkdujdxk[c_id][iii];
 
         cs_real_t xx = 0.;
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          xx += 2.*nut[iel]*duidxj[iel][i][kk]*duidxj[iel][j][kk]
-              - duidxj[iel][i][kk]*nutduidxj[iel][j][kk]
-              - duidxj[iel][j][kk]*nutduidxj[iel][i][kk];
+          xx += 2.*nut[c_id]*duidxj[c_id][i][kk]*duidxj[c_id][j][kk]
+              - duidxj[c_id][i][kk]*nutduidxj[c_id][j][kk]
+              - duidxj[c_id][j][kk]*nutduidxj[c_id][i][kk];
 
-        brij->budsgsfullij[iel][iii][3] += xx;
-        brij->budsgsfullij[iel][iii][3]
-          = -2./ro0*brij->budsgsfullij[iel][iii][3];
-      }
+        budsgsfullij[c_id][iii][3] += xx;
+        budsgsfullij[c_id][iii][3] = -2./ro0*budsgsfullij[c_id][iii][3];
+      });
     }
 
     /* Bc coeffs */
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      coefas[ifac] = 0.;
-      if (bc_type[ifac] == CS_SMOOTHWALL
-       || bc_type[ifac] == CS_ROUGHWALL)
-        coefbs[ifac] = 0.;
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      coefas[face_id] = 0.;
+      if (   bc_type[face_id] == CS_SMOOTHWALL
+          || bc_type[face_id] == CS_ROUGHWALL)
+        coefbs[face_id] = 0.;
       else
-        coefbs[ifac] = 1.;
-    }
+        coefbs[face_id] = 1.;
+    });
+
+    ctx.wait();
 
     cs_gradient_scalar("nu_t",
                        gradient_type,
                        halo_type,
-                       inc,
+                       1, // inc
                        eqp->nswrgr,
                        0,
                        1,
@@ -3140,86 +3376,74 @@ cs_les_balance_compute_rij(void)
                        w3);
 
     for (cs_lnum_t iii = 0; iii < 6; iii++) {
-      i = idirtens[iii][0];
-      j = idirtens[iii][1];
+      const cs_lnum_t i = idirtens[iii][0];
+      const cs_lnum_t j = idirtens[iii][1];
       cs_real_33_t *uidujdxk_ii = (cs_real_33_t*)uidujdxk[i];
       cs_real_33_t *uidujdxk_jj = (cs_real_33_t*)uidujdxk[j];
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        brij->budsgsfullij[iel][iii][4] = 0.;
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          brij->budsgsfullij[iel][iii][4]
-            += w3[iel][kk]
-               *(  uidujdxk_ii[iel][kk][j]-ui[iel][i]*duidxj[iel][kk][j]
-                 + uidujdxk_jj[iel][kk][i]-ui[iel][j]*duidxj[iel][kk][i] );
-        brij->budsgsfullij[iel][iii][4] /= ro0;
-      }
-    }
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        budsgsfullij[c_id][iii][4] = 0.;
 
-    for (cs_lnum_t iii = 0; iii < 6; iii++) {
-      i = idirtens[iii][0];
-      j = idirtens[iii][1];
-      cs_real_33_t *uidujdxk_ii = (cs_real_33_t*)uidujdxk[i];
-      cs_real_33_t *uidujdxk_jj = (cs_real_33_t*)uidujdxk[j];
+        budsgsfullij[c_id][iii][5] =  dnutdxkuidukdxjsym[c_id][iii]
+                                    - ui[c_id][i]*dnutdxkdukdxi[c_id][j]
+                                    - ui[c_id][j]*dnutdxkdukdxi[c_id][i];
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-       brij->budsgsfullij[iel][iii][5] =   dnutdxkuidukdxjsym[iel][iii]
-                                         - ui[iel][i]*dnutdxkdukdxi[iel][j]
-                                         - ui[iel][j]*dnutdxkdukdxi[iel][i];
-      }
-
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         cs_real_t xx = 0.;
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          xx += 2.*dnutdxi[iel][kk]*(  ui[iel][i]*duidxj[iel][kk][j]
-                                     + ui[iel][j]*duidxj[iel][kk][i])
-                 - dnutdxi[iel][kk]*(  uidujdxk_ii[iel][kk][j]
-                                     + uidujdxk_jj[iel][kk][i])
-                 - duidxj[iel][kk][j]*uidnutdxj[iel][i][kk]
-                 - duidxj[iel][kk][i]*uidnutdxj[iel][j][kk];
+          budsgsfullij[c_id][iii][4]
+            += w3[c_id][kk]
+               *(  uidujdxk_ii[c_id][kk][j]-ui[c_id][i]*duidxj[c_id][kk][j]
+                 + uidujdxk_jj[c_id][kk][i]-ui[c_id][j]*duidxj[c_id][kk][i] );
+
+          xx += 2.*dnutdxi[c_id][kk]*(  ui[c_id][i]*duidxj[c_id][kk][j]
+                                      + ui[c_id][j]*duidxj[c_id][kk][i])
+                 - dnutdxi[c_id][kk]*(  uidujdxk_ii[c_id][kk][j]
+                                      + uidujdxk_jj[c_id][kk][i])
+                 - duidxj[c_id][kk][j]*uidnutdxj[c_id][i][kk]
+                 - duidxj[c_id][kk][i]*uidnutdxj[c_id][j][kk];
+
+          w1[c_id][kk]
+            =  (nutui[c_id][j]-nut[c_id]*ui[c_id][j])*duidxj[c_id][i][kk]
+             + (nutui[c_id][i]-nut[c_id]*ui[c_id][i])*duidxj[c_id][j][kk];
         }
 
-        brij->budsgsfullij[iel][iii][5] += xx;
-        brij->budsgsfullij[iel][iii][5] /= ro0;
-      }
+        budsgsfullij[c_id][iii][4] /= ro0;
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1[iel][kk] = (nutui[iel][j]-nut[iel]*ui[iel][j])*duidxj[iel][i][kk]
-                      + (nutui[iel][i]-nut[iel]*ui[iel][i])*duidxj[iel][j][kk];
+        budsgsfullij[c_id][iii][5] += xx;
+        budsgsfullij[c_id][iii][5] /= ro0;
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        brij->budsgsfullij[iel][iii][6] = diverg[iel]/ro0;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        budsgsfullij[c_id][iii][6] = diverg[c_id]/ro0;
+        budsgsfullij[c_id][iii][7] = 0.;
+        budsgsfullij[c_id][iii][8] = 0.;
 
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          budsgsfullij[c_id][iii][7]
+            -=    (  nutduidxj[c_id][j][kk]
+                   - nut[c_id]*duidxj[c_id][j][kk]) * duidxj[c_id][i][kk]
+                + (  nutduidxj[c_id][i][kk]
+                   - nut[c_id]*duidxj[c_id][i][kk]) * duidxj[c_id][j][kk];
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        brij->budsgsfullij[iel][iii][7] = 0.;
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          brij->budsgsfullij[iel][iii][7]
-            -=    (  nutduidxj[iel][j][kk]
-                   - nut[iel]*duidxj[iel][j][kk]) * duidxj[iel][i][kk]
-                + (  nutduidxj[iel][i][kk]
-                   - nut[iel]*duidxj[iel][i][kk]) * duidxj[iel][j][kk];
+          budsgsfullij[c_id][iii][8]
+            +=      (uidnutdxj[c_id][i][kk]-ui[c_id][i]*dnutdxi[c_id][kk])
+                  * duidxj[c_id][kk][j]
+                +   (uidnutdxj[c_id][j][kk]-ui[c_id][j]*dnutdxi[c_id][kk])
+                  * duidxj[c_id][kk][i];
+        }
 
-        brij->budsgsfullij[iel][iii][7] /= ro0;
-      }
+        budsgsfullij[c_id][iii][7] /= ro0;
+        budsgsfullij[c_id][iii][8] /= ro0;
+      });
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        brij->budsgsfullij[iel][iii][8] = 0.;
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          brij->budsgsfullij[iel][iii][8]
-            +=      (uidnutdxj[iel][i][kk]-ui[iel][i]*dnutdxi[iel][kk])
-                  * duidxj[iel][kk][j]
-                +   (uidnutdxj[iel][j][kk]-ui[iel][j]*dnutdxi[iel][kk])
-                  * duidxj[iel][kk][i];
+      ctx.wait();
 
-        brij->budsgsfullij[iel][iii][8] /= ro0;
-      }
-
-    }
-  }
+    } /* End loop on iii */
+  } /* end test on CS_LES_BALANCE_RIJ_FULL */
 
   CS_FREE(uiujuk);
   CS_FREE(nutdkuiuj);
@@ -3250,6 +3474,8 @@ cs_les_balance_compute_tui(void)
   const int kvisls0 = cs_field_key_id("diffusivity_ref");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   const int *bc_type = cs_glob_bc_type;
+
+  cs_dispatch_context ctx;
 
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
@@ -3287,23 +3513,20 @@ cs_les_balance_compute_tui(void)
   cs_real_t ro0    = cs_glob_fluid_properties->ro0;
   cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
-  cs_real_t wvar, xx;
-
   /* Working local arrays */
   cs_real_t *diverg, *lapl, *w2;
   cs_real_3_t *w1;
-
-  CS_MALLOC(w1    , n_cells_ext, cs_real_3_t);
-  CS_MALLOC(w2    , n_cells_ext, cs_real_t);
-  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
-  CS_MALLOC(lapl  , n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1    , n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(w2    , n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(diverg, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(lapl  , n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_field_bc_coeffs_t bc_coeffs;
   cs_field_bc_coeffs_init(&bc_coeffs);
-  CS_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs.a, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs.b, n_b_faces, cs_real_t, cs_alloc_mode);
 
- cs_real_t *coefas = bc_coeffs.a, *coefbs = bc_coeffs.b;
+  cs_real_t *coefas = bc_coeffs.a, *coefbs = bc_coeffs.b;
 
   /* For each scalar */
   for (int isca = 0; isca < nscal; isca++) {
@@ -3370,258 +3593,302 @@ cs_les_balance_compute_tui(void)
         = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "nutuidjt_m")->val;
     }
 
-    if (_les_balance.type & CS_LES_BALANCE_TUI_FULL ||
-        _les_balance.type & CS_LES_BALANCE_TUI_BASE   )
+    if (   _les_balance.type & CS_LES_BALANCE_TUI_FULL
+        || _les_balance.type & CS_LES_BALANCE_TUI_BASE   )
       nutdtdxi
         = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "nutdit_m")->val;
 
-    /* Initialization */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    cs_real_t *unstvar = b_sca->unstvar;
+    cs_real_t *tptp = b_sca->tptp;
+    cs_real_t *prodvar = b_sca->prodvar;
+    cs_real_t *epsvar = b_sca->epsvar;
+    cs_real_t *difftvar = b_sca->difftvar;
+    cs_real_t *convvar = b_sca->convvar;
+    cs_real_t *difflamvar = b_sca->difflamvar;
+
+    cs_real_3_t *unstti = b_sca->unstti;
+    cs_real_3_t *tpuip = b_sca->tpuip;
+    cs_real_3_t *prodtUi = b_sca->prodtUi;
+    cs_real_3_t *prodtTi = b_sca->prodtTi;
+    cs_real_3_t *phiti = b_sca->phiti;
+    cs_real_3_t *epsti = b_sca->epsti;
+    cs_real_3_t *difftti = b_sca->difftti;
+    cs_real_3_t *diffttpi = b_sca->diffttpi;
+    cs_real_3_t *convti = b_sca->convti;
+    cs_real_3_t *difflamti = b_sca->difflamti;
+
+    cs_real_t *budsgsvar = b_sca->budsgsvar;
+    cs_real_3_t *budsgstui = b_sca->budsgstui;
+    cs_real_6_t *budsgsvarfull = b_sca->budsgsvarfull;
+    cs_real_3_t **budsgstuifull = b_sca->budsgstuifull;
+
+    const int ipdirtens[3][3] = _PIJV2T;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+      tptp[c_id] = t2[c_id] - cs_math_sq(t[c_id]);
+
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        b_sca->prodtUi[iel][ii]   = 0.;
-        b_sca->prodtTi[iel][ii]   = 0.;
-        b_sca->phiti[iel][ii]     = 0.;
-        b_sca->epsti[iel][ii]     = 0.;
-        b_sca->difftti[iel][ii]   = 0.;
-        b_sca->diffttpi[iel][ii]  = 0.;
-        b_sca->convti[iel][ii]    = 0.;
-        b_sca->difflamti[iel][ii] = 0.;
+        tpuip[c_id][ii] = tui[c_id][ii] - t[c_id]*ui[c_id][ii];
+        unstti[c_id][ii] = (tpuip[c_id][ii] - unstti[c_id][ii]) / dtref;
       }
-    }
 
-    /* tptp */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      b_sca->tptp[iel] = t2[iel] - cs_math_sq(t[iel]);
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        b_sca->tpuip[iel][ii] = tui[iel][ii] - t[iel]*ui[iel][ii];
-    }
-
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        b_sca->unstti[iel][ii] = (  b_sca->tpuip[iel][ii]
-                                  - b_sca->unstti[iel][ii]) / dtref;
-        b_sca->prodtUi[iel][ii] = 0.;
-        b_sca->prodtTi[iel][ii] = 0.;
-        b_sca->epsti[iel][ii] = dtdxjduidxj[iel][ii];
+        prodtUi[c_id][ii]   = 0.;
+        prodtTi[c_id][ii]   = 0.;
+        phiti[c_id][ii]     = 0.;
+        epsti[c_id][ii]     = dtdxjduidxj[c_id][ii];
+        difftti[c_id][ii]   = 0.;
+        diffttpi[c_id][ii]  = 0.;
+        convti[c_id][ii]    = 0.;
+        difflamti[c_id][ii] = 0.;
 
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
           cs_lnum_t iii = ipdirtens[ii][kk];
-          b_sca->prodtUi[iel][ii] -= b_sca->tpuip[iel][kk]*duidxj[iel][ii][kk];
-          wvar = uiuj[iel][iii] - ui[iel][ii]*ui[iel][kk];
-          b_sca->prodtTi[iel][ii] -= wvar*dtdxi[iel][kk];
-          b_sca->epsti[iel][ii] -= dtdxi[iel][kk]*duidxj[iel][ii][kk];
+
+          prodtUi[c_id][ii] -= tpuip[c_id][kk]*duidxj[c_id][ii][kk];
+          cs_real_t wvar = uiuj[c_id][iii] - ui[c_id][ii]*ui[c_id][kk];
+          prodtTi[c_id][ii] -= wvar*dtdxi[c_id][kk];
+          epsti[c_id][ii] -= dtdxi[c_id][kk]*duidxj[c_id][ii][kk];
         }
 
-        b_sca->epsti[iel][ii] *= -xvistot/ro0;
-        b_sca->phiti[iel][ii] = pdtdxi[iel][ii]-p[iel]*dtdxi[iel][ii];
+        epsti[c_id][ii] *= -xvistot/ro0;
+        phiti[c_id][ii] = pdtdxi[c_id][ii]-p[c_id]*dtdxi[c_id][ii];
       }
-    }
+    });
 
     /* convti */
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1[iel][kk] = ui[iel][kk]*b_sca->tpuip[iel][ii];
-      }
+          w1[c_id][kk] = ui[c_id][kk]*tpuip[c_id][ii];
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        b_sca->convti[iel][ii] = diverg[iel];
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        convti[c_id][ii] = diverg[c_id];
 
-      /* difftti */
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+        /* difftti */
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
           cs_lnum_t jjj = ipdirtens[ii][kk];
-          w1[iel][kk] = - tuiuj[iel][jjj] - 2.*t[iel]*ui[iel][ii]*ui[iel][kk]
-                                             + ui[iel][ii]*tui[iel][kk]
-                                             + ui[iel][kk]*tui[iel][ii]
-                                             + t[iel]*uiuj[iel][jjj];
+          w1[c_id][kk] = - tuiuj[c_id][jjj] - 2.*t[c_id]*ui[c_id][ii]*ui[c_id][kk]
+                                             + ui[c_id][ii]*tui[c_id][kk]
+                                             + ui[c_id][kk]*tui[c_id][ii]
+                                             + t[c_id]*uiuj[c_id][jjj];
         }
-      }
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        b_sca->difftti[iel][ii] = diverg[iel];
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        difftti[c_id][ii] = diverg[c_id];
 
-      /* diffttpi */
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        /* diffttpi */
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1[iel][kk] = tp[iel] - t[iel]*p[iel];
+          w1[c_id][kk] = tp[c_id] - t[c_id]*p[c_id];
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        b_sca->diffttpi[iel][ii] = diverg[iel]/ro0;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        diffttpi[c_id][ii] = diverg[c_id]/ro0;
 
-      /* Laminar diffusion */
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        /* Laminar diffusion */
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1[iel][kk] = viscl0*(tduidxj[iel][ii][kk]-t[iel]*duidxj[iel][ii][kk])
-                      + visls0*(uidtdxj[iel][ii][kk]-ui[iel][ii]*dtdxi[iel][kk]);
+          w1[c_id][kk]
+            =  viscl0*(tduidxj[c_id][ii][kk]-t[c_id]*duidxj[c_id][ii][kk])
+             + visls0*(uidtdxj[c_id][ii][kk]-ui[c_id][ii]*dtdxi[c_id][kk]);
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        b_sca->difflamti[iel][ii] = diverg[iel]/ro0;
-    }
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        difflamti[c_id][ii] = diverg[c_id]/ro0;
+      });
+    } /* End loop on ii */
 
     /* Variance budgets */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      b_sca->prodvar[iel]    = 0.;
-      b_sca->epsvar[iel]     = 0.;
-      b_sca->difftvar[iel]   = 0.;
-      b_sca->convvar[iel]    = 0.;
-      b_sca->difflamvar[iel] = 0.;
-    }
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      prodvar[c_id]    = 0.;
+      epsvar[c_id]     = 0.;
+      difftvar[c_id]   = 0.;
+      convvar[c_id]    = 0.;
+      difflamvar[c_id] = 0.;
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      b_sca->unstvar[iel] = (b_sca->tptp[iel] - b_sca->unstvar[iel])/dtref;
-      b_sca->prodvar[iel] = 0.;
-      b_sca->epsvar[iel] = dtdxidtdxi[iel];
+      unstvar[c_id] = (tptp[c_id] - unstvar[c_id])/dtref;
+      prodvar[c_id] = 0.;
+      epsvar[c_id] = dtdxidtdxi[c_id];
+
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        b_sca->prodvar[iel] += b_sca->tpuip[iel][kk]*dtdxi[iel][kk];
-        b_sca->epsvar[iel] -= cs_math_sq(dtdxi[iel][kk]);
+        prodvar[c_id] += tpuip[c_id][kk]*dtdxi[c_id][kk];
+        epsvar[c_id] -= cs_math_sq(dtdxi[c_id][kk]);
+        w1[c_id][kk] = ui[c_id][kk]*tptp[c_id];
       }
-      b_sca->prodvar[iel] *= -2.;
-      b_sca->epsvar[iel] *= -2.*visls0/ro0;
-    }
+
+      prodvar[c_id] *= -2.;
+      epsvar[c_id] *= -2.*visls0/ro0;
+    });
+
+    ctx.wait();
 
     /* convvar */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        w1[iel][kk] = ui[iel][kk]*b_sca->tptp[iel];
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      b_sca->convvar[iel] = diverg[iel];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      convvar[c_id] = diverg[c_id];
 
-    /* difftti */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      /* difftti */
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        w1[iel][kk] = ttui[iel][kk] + 2.*cs_math_sq(t[iel])*ui[iel][kk]
-                                    - ui[iel][kk]*t2[iel]
-                                    - 2.*t[iel]*tui[iel][kk];
+        w1[c_id][kk] = ttui[c_id][kk] + 2.*cs_math_sq(t[c_id])*ui[c_id][kk]
+                                    - ui[c_id][kk]*t2[c_id]
+                                    - 2.*t[c_id]*tui[c_id][kk];
       }
-    }
+    });
+
+    ctx.wait();
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      b_sca->difftvar[iel] = diverg[iel];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      difftvar[c_id] = diverg[c_id];
 
-    /* Laminar diffusion */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      w2[iel] = b_sca->tptp[iel];
+      /* Laminar diffusion */
+      w2[c_id] = tptp[c_id];
+    });
+
+    ctx.wait();
 
     _les_balance_laplacian(w2, lapl, 1);
 
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      b_sca->difflamvar[iel] = visls0*lapl[iel]/ro0;
-
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      difflamvar[c_id] = visls0*lapl[c_id]/ro0;
+    });
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
 
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           for (cs_lnum_t kk = 0; kk < 3; kk++)
-            w1[iel][kk] = -nutduidxj[iel][ii][kk] - nutduidxj[iel][kk][ii];
+            w1[c_id][kk] = -nutduidxj[c_id][ii][kk] - nutduidxj[c_id][kk][ii];
+        });
+
+        ctx.wait();
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgstui[iel][ii] = -tdtauijdxj[iel][ii]-t[iel]*diverg[iel];
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          budsgstui[c_id][ii] = -tdtauijdxj[c_id][ii]-t[c_id]*diverg[c_id];
+        });
       }
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1[iel][kk] = -nutdtdxi[iel][kk];
+          w1[c_id][kk] = -nutdtdxi[c_id][kk];
+      });
+
+      ctx.wait();
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgstui[iel][ii]
-            -= (uidivturflux[iel][ii]-ui[iel][ii]*diverg[iel]/sigmas);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgstui[iel][ii] /= ro0;
-      }
+        /* Total SGS contribution for the variance of a scalar */
+        budsgsvar[c_id]
+          = -2.*(tdivturflux[c_id]-t[c_id]*diverg[c_id]/sigmas)/ro0;
 
-      /* Total SGS contribution for the variance of a scalar */
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        b_sca->budsgsvar[iel]
-          = -2.*(tdivturflux[iel]-t[iel]*diverg[iel]/sigmas)/ro0;
+        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+          budsgstui[c_id][ii]
+            -= (uidivturflux[c_id][ii]-ui[c_id][ii]*diverg[c_id]/sigmas);
 
-    }
+          budsgstui[c_id][ii] /= ro0;
+        }
+      });
+
+    } /* End test on CS_LES_BALANCE_TUI_BASE */
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
 
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
           for (cs_lnum_t kk = 0; kk < 3; kk++)
-            w1[iel][kk] = nut[iel]*( tduidxj[iel][ii][kk]
-                                    -t[iel]*duidxj[iel][ii][kk])
-                        + nut[iel]*( uidtdxj[iel][ii][kk]
-                                    -ui[iel][ii]*dtdxi[iel][kk])/sigmas;
+            w1[c_id][kk] = nut[c_id]*( tduidxj[c_id][ii][kk]
+                                    -t[c_id]*duidxj[c_id][ii][kk])
+                        + nut[c_id]*( uidtdxj[c_id][ii][kk]
+                                    -ui[c_id][ii]*dtdxi[c_id][kk])/sigmas;
+        });
+
+        ctx.wait();
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgstuifull[0][iel][ii] = diverg[iel]/ro0;
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          budsgstuifull[0][c_id][ii] = diverg[c_id]/ro0;
+          budsgstuifull[1][c_id][ii]
+            = nut[c_id]*(1.+1./sigmas)*epsti[c_id][ii]/xvistot;
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgstuifull[1][iel][ii]
-            = nut[iel]*(1.+1./sigmas)*b_sca->epsti[iel][ii]/xvistot;
-
-
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (cs_lnum_t kk = 0; kk < 3; kk++) {
-            w1[iel][kk] = nuttduidxj[iel][ii][kk]
-                        + 2.*nut[iel]*t[iel]*duidxj[iel][ii][kk]
-                        - nut[iel]*tduidxj[iel][ii][kk]
-                        - t[iel]*nutduidxj[iel][ii][kk]
-                        - duidxj[iel][ii][kk]*nutt[iel];
-            xx          = nutuidtdxj[iel][ii][kk]
-                        + 2.*nut[iel]*uidtdxj[iel][ii][kk]
-                        - ui[iel][ii]*nutdtdxi[iel][kk]
-                        - dtdxi[iel][kk]*nutui[iel][ii];
-            w1[iel][kk] += xx/sigmas;
+            w1[c_id][kk] = nuttduidxj[c_id][ii][kk]
+                        + 2.*nut[c_id]*t[c_id]*duidxj[c_id][ii][kk]
+                        - nut[c_id]*tduidxj[c_id][ii][kk]
+                        - t[c_id]*nutduidxj[c_id][ii][kk]
+                        - duidxj[c_id][ii][kk]*nutt[c_id];
+
+            cs_real_t xx =   nutuidtdxj[c_id][ii][kk]
+                           + 2.*nut[c_id]*uidtdxj[c_id][ii][kk]
+                           - ui[c_id][ii]*nutdtdxi[c_id][kk]
+                           - dtdxi[c_id][kk]*nutui[c_id][ii];
+
+            w1[c_id][kk] += xx/sigmas;
           }
-        }
+        });
+
+        ctx.wait();
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgstuifull[2][iel][ii] = diverg[iel]/ro0;
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          budsgstuifull[2][c_id][ii] = diverg[c_id]/ro0;
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          b_sca->budsgstuifull[3][iel][ii]
-            = nutduidxjdtdxj[iel][ii] - nut[iel]*dtdxjduidxj[iel][ii];
+          budsgstuifull[3][c_id][ii]
+            = nutduidxjdtdxj[c_id][ii] - nut[c_id]*dtdxjduidxj[c_id][ii];
 
-          xx = 0.;
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-            xx = xx + 2.*nut[iel]*duidxj[iel][ii][kk]*dtdxi[iel][kk]
-                    - duidxj[iel][ii][kk]*nutdtdxi[iel][kk]
-                    - dtdxi[iel][kk]*nutduidxj[iel][ii][kk];
+          cs_real_t xx = 0.;
+          for (cs_lnum_t kk = 0; kk < 3; kk++) {
+            xx = xx + 2.*nut[c_id]*duidxj[c_id][ii][kk]*dtdxi[c_id][kk]
+                    - duidxj[c_id][ii][kk]*nutdtdxi[c_id][kk]
+                    - dtdxi[c_id][kk]*nutduidxj[c_id][ii][kk];
+          }
 
-          b_sca->budsgstuifull[3][iel][ii] += xx;
-          b_sca->budsgstuifull[3][iel][ii] *= -(1.+1./sigmas)/ro0;
-        }
-      }
+          budsgstuifull[3][c_id][ii] += xx;
+          budsgstuifull[3][c_id][ii] *= -(1.+1./sigmas)/ro0;
+        });
+      } /* End loop on ii */
 
       /* Bc coeffs */
-      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-        coefas[ifac] = 0.;
-        if (bc_type[ifac] == CS_SMOOTHWALL
-         || bc_type[ifac] == CS_ROUGHWALL)
-          coefbs[ifac] = 0.;
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        coefas[face_id] = 0.;
+        if (   bc_type[face_id] == CS_SMOOTHWALL
+            || bc_type[face_id] == CS_ROUGHWALL)
+          coefbs[face_id] = 0.;
         else
-          coefbs[ifac] = 1.;
-      }
+          coefbs[face_id] = 1.;
+      });
+
+      ctx.wait();
 
       cs_gradient_scalar("nu_t",
                          gradient_type,
@@ -3642,114 +3909,117 @@ cs_les_balance_compute_tui(void)
                          w1);
 
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          b_sca->budsgstuifull[4][iel][ii] = 0.;
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-            b_sca->budsgstuifull[4][iel][ii]
-              += w1[iel][kk]*(tduidxj[iel][ii][kk]-t[iel]*duidxj[iel][ii][kk]);
-          b_sca->budsgstuifull[4][iel][ii] /= ro0;
 
-          b_sca->budsgstuifull[5][iel][ii] =   dnutdxjtdujdxi[iel][ii]
-                                             - t[iel]*dnutdxjdujdxi[iel][ii];
-          xx = 0.;
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-            xx = xx + 2.*t[iel]*dnutdxi[iel][kk]*duidxj[iel][kk][ii]
-                    - duidxj[iel][kk][ii]*tdnutdxi[iel][kk]
-                    - dnutdxi[iel][kk]*tduidxj[iel][kk][ii];
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          cs_real_t xx = 0.;
+          budsgstuifull[4][c_id][ii] = 0.;
+          budsgstuifull[5][c_id][ii] =   dnutdxjtdujdxi[c_id][ii]
+                                       - t[c_id]*dnutdxjdujdxi[c_id][ii];
 
-          b_sca->budsgstuifull[5][iel][ii] += xx;
-          b_sca->budsgstuifull[5][iel][ii] *= viscl0/ro0;
-        }
-
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-            w1[iel][kk] =     duidxj[iel][ii][kk]
-                            * (nutt[iel]-nut[iel]*t[iel])
-                          +   dtdxi[iel][kk]
-                            * (  nutui[iel][ii]
-                               - nut[iel]*ui[iel][ii]) / sigmas;
-        }
-
-        _les_balance_divergence_vector(w1, diverg);
-
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgstuifull[6][iel][ii] = diverg[iel]/ro0;
-
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          b_sca->budsgstuifull[7][iel][ii] = 0.;
-          b_sca->budsgstuifull[8][iel][ii] = 0.;
           for (cs_lnum_t kk = 0; kk < 3; kk++) {
-            b_sca->budsgstuifull[7][iel][ii]
-              -=   duidxj[iel][ii][kk]*(nutdtdxi[iel][kk]
-                 - nut[iel]*dtdxi[iel][kk])
-                 + dtdxi[iel][kk]*(nutduidxj[iel][ii][kk]
-                 - nut[iel]*duidxj[iel][ii][kk])/sigmas;
-            b_sca->budsgstuifull[8][iel][ii]
-              +=   duidxj[iel][kk][ii]*( tdnutdxi[iel][kk]
-                                        -t[iel]*dnutdxi[iel][kk]);
+            budsgstuifull[4][c_id][ii]
+              += w1[c_id][kk]*(  tduidxj[c_id][ii][kk]
+                               -t[c_id]*duidxj[c_id][ii][kk]);
+
+            w1[c_id][kk] =     duidxj[c_id][ii][kk]
+                            * (nutt[c_id]-nut[c_id]*t[c_id])
+                          +   dtdxi[c_id][kk]
+                            * (  nutui[c_id][ii]
+                               - nut[c_id]*ui[c_id][ii]) / sigmas;
+
+            xx = xx + 2.*t[c_id]*dnutdxi[c_id][kk]*duidxj[c_id][kk][ii]
+                    - duidxj[c_id][kk][ii]*tdnutdxi[c_id][kk]
+                    - dnutdxi[c_id][kk]*tduidxj[c_id][kk][ii];
           }
-          b_sca->budsgstuifull[7][iel][ii] /= ro0;
-          b_sca->budsgstuifull[8][iel][ii] /= ro0;
-        }
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-            w1[iel][kk] =   2.*nut[iel]/sigmas*(tdtdxi[iel][kk]
-                          - t[iel]*dtdxi[iel][kk]);
-        }
+          budsgstuifull[4][c_id][ii] /= ro0;
+          budsgstuifull[5][c_id][ii] += xx;
+          budsgstuifull[5][c_id][ii] *= viscl0/ro0;
+        });
+
+        ctx.wait();
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgsvarfull[iel][0] = diverg[iel]/ro0;
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          budsgstuifull[6][c_id][ii] = diverg[c_id]/ro0;
+          budsgstuifull[7][c_id][ii] = 0.;
+          budsgstuifull[8][c_id][ii] = 0.;
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgsvarfull[iel][1] = b_sca->epsvar[iel]*nut[iel]/viscl0;
+          for (cs_lnum_t kk = 0; kk < 3; kk++) {
+            budsgstuifull[7][c_id][ii]
+              -=   duidxj[c_id][ii][kk]*(nutdtdxi[c_id][kk]
+                 - nut[c_id]*dtdxi[c_id][kk])
+                 + dtdxi[c_id][kk]*(nutduidxj[c_id][ii][kk]
+                 - nut[c_id]*duidxj[c_id][ii][kk])/sigmas;
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-            w1[iel][kk] = nuttdtdxi[iel][kk]
-                        + 2.*nut[iel]*t[iel]*dtdxi[iel][kk]
-                        - nut[iel]*tdtdxi[iel][kk]
-                        - t[iel]*nutdtdxi[iel][kk]
-                        - dtdxi[iel][kk]*nutt[iel];
+            budsgstuifull[8][c_id][ii]
+              += duidxj[c_id][kk][ii]*(  tdnutdxi[c_id][kk]
+                                       - t[c_id]*dnutdxi[c_id][kk]);
 
-        _les_balance_divergence_vector(w1, diverg);
+            w1[c_id][kk] =   2.*nut[c_id]/sigmas*(tdtdxi[c_id][kk]
+                           - t[c_id]*dtdxi[c_id][kk]);
+          }
+          budsgstuifull[7][c_id][ii] /= ro0;
+          budsgstuifull[8][c_id][ii] /= ro0;
+        });
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgsvarfull[iel][2] = 2.*diverg[iel]/(ro0*sigmas);
-
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          b_sca->budsgsvarfull[iel][3]
-            = nutdtdxidtdxi[iel]-nut[iel]*dtdxidtdxi[iel];
-          xx = 0.;
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-            xx += 2.*nut[iel]*t[iel]*dtdxi[iel][kk]
-                  -t[iel]*nutdtdxi[iel][kk]-dtdxi[iel][kk]*nutt[iel];
-
-          b_sca->budsgsvarfull[iel][3] += xx;
-          b_sca->budsgsvarfull[iel][3] *= -2./(sigmas*ro0);
-        }
-
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-            w1[iel][kk] = dtdxi[iel][kk]*(nutt[iel]-nut[iel]*t[iel]);
+        ctx.wait();
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          b_sca->budsgsvarfull[iel][4] = 2.*diverg[iel]/(sigmas*ro0);
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          budsgsvarfull[c_id][0] = diverg[c_id]/ro0;
+          budsgsvarfull[c_id][1] = epsvar[c_id]*nut[c_id]/viscl0;
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          b_sca->budsgsvarfull[iel][5] = 0.;
           for (cs_lnum_t kk = 0; kk < 3; kk++)
-            b_sca->budsgsvarfull[iel][5]
-              += dtdxi[iel][kk]*(nutdtdxi[iel][kk]-nut[iel]*dtdxi[iel][kk]);
-          b_sca->budsgsvarfull[iel][5] *= -2./(sigmas*ro0);
-        }
-      }
-    }
-  }
+            w1[c_id][kk] = nuttdtdxi[c_id][kk]
+                        + 2.*nut[c_id]*t[c_id]*dtdxi[c_id][kk]
+                        - nut[c_id]*tdtdxi[c_id][kk]
+                        - t[c_id]*nutdtdxi[c_id][kk]
+                        - dtdxi[c_id][kk]*nutt[c_id];
+        });
+
+        ctx.wait();
+
+        _les_balance_divergence_vector(w1, diverg);
+
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          budsgsvarfull[c_id][2] = 2.*diverg[c_id]/(ro0*sigmas);
+          budsgsvarfull[c_id][3]
+            = nutdtdxidtdxi[c_id]-nut[c_id]*dtdxidtdxi[c_id];
+
+          cs_real_t xx = 0.;
+          for (cs_lnum_t kk = 0; kk < 3; kk++) {
+            xx += 2.*nut[c_id]*t[c_id]*dtdxi[c_id][kk]
+                  -t[c_id]*nutdtdxi[c_id][kk]-dtdxi[c_id][kk]*nutt[c_id];
+
+            w1[c_id][kk] = dtdxi[c_id][kk]*(nutt[c_id]-nut[c_id]*t[c_id]);
+          }
+
+          budsgsvarfull[c_id][3] += xx;
+          budsgsvarfull[c_id][3] *= -2./(sigmas*ro0);
+        });
+
+        ctx.wait();
+
+        _les_balance_divergence_vector(w1, diverg);
+
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          budsgsvarfull[c_id][4] = 2.*diverg[c_id]/(sigmas*ro0);
+          budsgsvarfull[c_id][5] = 0.;
+
+          for (cs_lnum_t kk = 0; kk < 3; kk++) {
+            budsgsvarfull[c_id][5]
+              += dtdxi[c_id][kk]*(nutdtdxi[c_id][kk]-nut[c_id]*dtdxi[c_id][kk]);
+          }
+          budsgsvarfull[c_id][5] *= -2./(sigmas*ro0);
+        });
+      } /* End loop on ii */
+    } /* End test on CS_LES_BALANCE_TUI_FULL */
+  } /* End loop on scalars */
+
+  ctx.wait();
 
   CS_FREE(w1);
   CS_FREE(w2);

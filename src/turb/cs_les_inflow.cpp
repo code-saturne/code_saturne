@@ -48,6 +48,7 @@
 
 #include "base/cs_array.h"
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
@@ -57,6 +58,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_random.h"
+#include "base/cs_reducers.h"
 #include "base/cs_timer.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_restart.h"
@@ -77,10 +79,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
-
-#if !defined(HUGE_VAL)
-#define HUGE_VAL  1.E+12
-#endif
 
 /*=============================================================================
  * Local Structure Definitions
@@ -182,7 +180,7 @@ static void
 _random_method(cs_lnum_t    n_points,
                cs_real_3_t  fluctuations[])
 {
-  cs_real_t    random[3];
+  cs_real_t random[3];
 
   for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
     cs_random_normal(3, random);
@@ -215,49 +213,47 @@ _batten_method(cs_lnum_t            n_points,
                const cs_real_t     *eps_r,
                cs_real_3_t         *fluctuations)
 {
-  cs_lnum_t  point_id;
-
-  int       coo_id;
-  int       mode_id;
-
   const cs_real_t  two_pi              = 2.*acos(-1.);
   const cs_real_t  sqrt_three_half     = sqrt(1.5);
   const cs_real_t  sqrt_two_by_n_modes = sqrt(2./inflow->n_modes);
 
-  const cs_real_t *frequency = inflow->frequency;
-  const cs_real_3_t *wave_vector = (const cs_real_3_t *)inflow->wave_vector;
-  const cs_real_3_t *amplitude_cos = (const cs_real_3_t *)inflow->amplitude_cos;
-  const cs_real_3_t *amplitude_sin = (const cs_real_3_t *)inflow->amplitude_sin;
+  cs_real_t *frequency = inflow->frequency;
+  cs_real_3_t *wave_vector = inflow->wave_vector;
+  cs_real_3_t *amplitude_cos = (cs_real_3_t *)inflow->amplitude_cos;
+  cs_real_3_t *amplitude_sin = (cs_real_3_t *)inflow->amplitude_sin;
+  const cs_lnum_t n_modes = inflow->n_modes;
+
+  cs_dispatch_context ctx;
 
   if (initialize == 1) {
 
-    const int     three_n_modes   = 3*inflow->n_modes;
-    const cs_real_t  one_by_sqrt_two = sqrt(0.5);
+    const int three_n_modes   = 3*n_modes;
+    const cs_real_t one_by_sqrt_two = sqrt(0.5);
 
     if (cs_glob_rank_id <= 0) {
 
       /* Random generation of the n_modes frequencies following a normal
          law with a mean of 1 and a variance of 1 (i.e. N(1,1)). */
 
-      cs_random_normal(inflow->n_modes, inflow->frequency);
+      cs_random_normal(n_modes, frequency);
 
-      for (mode_id = 0; mode_id < inflow->n_modes; mode_id++)
-        inflow->frequency[mode_id] += 1.;
+      for (cs_lnum_t mode_id = 0; mode_id < n_modes; mode_id++)
+        frequency[mode_id] += 1.;
 
       /* Random generation of the n_modes wave vectors following a normal
          law with a mean of 0 and a variance of 0.5 (i.e. N(0,1/2)). */
 
-      cs_random_normal(three_n_modes, (cs_real_t *)inflow->wave_vector);
+      cs_random_normal(three_n_modes, (cs_real_t *)wave_vector);
 
-      for (mode_id = 0; mode_id < inflow->n_modes; mode_id++) {
-        for (coo_id = 0; coo_id < 3; coo_id++)
-          inflow->wave_vector[mode_id][coo_id] *= one_by_sqrt_two;
+      for (cs_lnum_t mode_id = 0; mode_id < n_modes; mode_id++) {
+        for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+          wave_vector[mode_id][coo_id] *= one_by_sqrt_two;
       }
 
       /* Generation of the n_modes amplitude vector for both the sines and
          the cosines. */
 
-      for (mode_id = 0; mode_id < inflow->n_modes; mode_id++) {
+      for (cs_lnum_t mode_id = 0; mode_id < n_modes; mode_id++) {
 
         cs_real_t  rcos[3];
         cs_real_t  rsin[3];
@@ -269,12 +265,12 @@ _batten_method(cs_lnum_t            n_points,
         cs_random_normal(3, rsin);
 
         cs_math_3_cross_product(rcos,
-                                inflow->wave_vector[mode_id],
-                                inflow->amplitude_cos[mode_id]);
+                                wave_vector[mode_id],
+                                amplitude_cos[mode_id]);
 
         cs_math_3_cross_product(rsin,
-                                inflow->wave_vector[mode_id],
-                                inflow->amplitude_sin[mode_id]);
+                                wave_vector[mode_id],
+                                amplitude_sin[mode_id]);
 
       }
 
@@ -284,7 +280,7 @@ _batten_method(cs_lnum_t            n_points,
 
     if (cs_glob_rank_id >= 0) {
 
-      MPI_Bcast(inflow->frequency,   inflow->n_modes, CS_MPI_REAL, 0,
+      MPI_Bcast(inflow->frequency,     n_modes, CS_MPI_REAL, 0,
                 cs_glob_mpi_comm);
       MPI_Bcast(inflow->wave_vector,   three_n_modes, CS_MPI_REAL, 0,
                 cs_glob_mpi_comm);
@@ -299,7 +295,7 @@ _batten_method(cs_lnum_t            n_points,
 
   }
 
-  for (point_id = 0; point_id < n_points; point_id++) {
+  ctx.parallel_for(n_points, [=] CS_F_HOST_DEVICE (cs_lnum_t point_id) {
 
     cs_real_t spectral_time;
     cs_real_t spectral_coordinates[3];
@@ -321,19 +317,19 @@ _batten_method(cs_lnum_t            n_points,
 
     spectral_time = two_pi * time / time_scale;
 
-    for (coo_id = 0; coo_id < 3; coo_id++) {
+    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
       spectral_coordinates[coo_id]
         = two_pi * point_coordinates[point_id][coo_id] / lenght_scale;
     }
 
     /* Compute the velocity fluctuations */
 
-    for (mode_id = 0; mode_id < inflow->n_modes; mode_id++) {
+    for (cs_lnum_t mode_id = 0; mode_id < n_modes; mode_id++) {
 
       cs_real_t mod_wave_vector[3];
 
       cs_real_t norm_wave_vector =
-        cs_math_3_norm((const cs_real_t *)(wave_vector + mode_id));
+        cs_math_3_norm((const cs_real_t *)(wave_vector[mode_id]));
 
       cs_real_t spectral_velocity_scale
         = cs_math_3_sym_33_3_dot_product(wave_vector[mode_id],
@@ -343,7 +339,7 @@ _batten_method(cs_lnum_t            n_points,
       spectral_velocity_scale =   sqrt_three_half*sqrt(spectral_velocity_scale)
                                 / norm_wave_vector;
 
-      for (coo_id = 0; coo_id < 3; coo_id++) {
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
         mod_wave_vector[coo_id]
           =   wave_vector[mode_id][coo_id]
             * velocity_scale / spectral_velocity_scale;
@@ -353,7 +349,7 @@ _batten_method(cs_lnum_t            n_points,
         =    cs_math_3_dot_product(mod_wave_vector, spectral_coordinates)
           +  frequency[mode_id]*spectral_time;
 
-      for (coo_id = 0; coo_id < 3; coo_id++) {
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
         fluctuations[point_id][coo_id]
           +=   amplitude_cos[mode_id][coo_id]*cos(dxpot)
              + amplitude_sin[mode_id][coo_id]*sin(dxpot);
@@ -361,10 +357,12 @@ _batten_method(cs_lnum_t            n_points,
 
     }
 
-    for (coo_id = 0; coo_id < 3; coo_id++)
+    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
       fluctuations[point_id][coo_id] *= sqrt_two_by_n_modes;
 
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -385,63 +383,67 @@ _rescale_flowrate(cs_lnum_t         n_points,
   /* Compute the mass flow rate of the fluctuating field */
   /* and the area of the inlet */
 
-  cs_lnum_t point_id;
+  cs_dispatch_context ctx;
 
-  cs_real_t mass_flow_rate = 0., mass_flow_rate_g = 0.;
-  cs_real_t area = 0., area_g = 0.;
   cs_real_t *density = CS_F_(rho)->val;
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
 
-  cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+  const cs_lnum_t *b_face_vtx_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t *b_face_vtx_lst = mesh->b_face_vtx_lst;
+  const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
 
-  for (point_id = 0; point_id < n_points; point_id++) {
+  struct cs_data_2d rd_sum_2d;
+  struct cs_reduce_sum2d reducer_sum_2d;
+
+  ctx.parallel_for_reduce
+    (n_points, rd_sum_2d, reducer_sum_2d,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_2d &res) {
 
     cs_lnum_t face_id = face_ids[point_id];
-    cs_lnum_t cell_id = mesh->b_face_cells[face_id];
+    cs_lnum_t cell_id = b_face_cells[face_id];
 
     const cs_real_t *fluct = fluctuations[point_id];
-    const cs_real_t *normal = mq->b_face_normal + face_id*3;
+    const cs_real_t *normal = b_face_u_normal[face_id];
 
-    cs_real_t dot_product = cs_math_3_dot_product(fluct, normal);
+    cs_real_t dot_product
+      = b_face_surf[face_id] * cs_math_3_dot_product(fluct, normal);
 
-    mass_flow_rate += density[cell_id]*dot_product;
-    area = area + mq->b_face_surf[face_id];
+    res.d[0] = density[cell_id]*dot_product;
+    res.d[1] = b_face_surf[face_id];
+  });
 
-  }
-  mass_flow_rate_g = mass_flow_rate;
-  area_g = area;
+  ctx.wait();
 
-#if defined(HAVE_MPI)
-  if (cs_glob_rank_id >= 0) {
-    MPI_Allreduce(&mass_flow_rate, &mass_flow_rate_g, 1, CS_MPI_REAL, MPI_SUM,
-                  cs_glob_mpi_comm);
-    MPI_Allreduce(&area, &area_g, 1, CS_MPI_REAL, MPI_SUM, cs_glob_mpi_comm);
-  }
-#endif
+  cs_parall_sum(2, CS_DOUBLE, rd_sum_2d.d);
 
-  for (point_id = 0; point_id < n_points; point_id++) {
+  double mass_flow_rate = rd_sum_2d.d[0];
+  double area = rd_sum_2d.d[1];
+
+  ctx.parallel_for(n_points, [=] CS_F_HOST_DEVICE (cs_lnum_t point_id) {
 
     /* Decompose the fluctuation in a local coordinate system */
     /* (not valid for warped boundary faces) */
 
-    int coo_id;
     cs_lnum_t face_id = face_ids[point_id];
-    cs_lnum_t cell_id = mesh->b_face_cells[face_id];
+    cs_lnum_t cell_id = b_face_cells[face_id];
 
-    cs_lnum_t idx = mesh->b_face_vtx_idx[face_id];
-    cs_lnum_t vtx_id1 = mesh->b_face_vtx_lst[idx];
-    cs_lnum_t vtx_id2 = mesh->b_face_vtx_lst[idx+1];
+    cs_lnum_t idx = b_face_vtx_idx[face_id];
+    cs_lnum_t vtx_id1 = b_face_vtx_lst[idx];
+    cs_lnum_t vtx_id2 = b_face_vtx_lst[idx+1];
 
     cs_real_t tangent_unit1[3], tangent_unit2[3];
 
-    cs_nreal_t *normal_unit = b_face_u_normal[face_id];
+    const cs_nreal_t *normal_unit = b_face_u_normal[face_id];
 
     const cs_real_t *fluct = fluctuations[point_id];
 
-    for (coo_id = 0; coo_id < 3; coo_id++) {
-      tangent_unit1[coo_id] = mesh->vtx_coord[3*vtx_id1 + coo_id]
-                            - mesh->vtx_coord[3*vtx_id2 + coo_id];
+    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+      tangent_unit1[coo_id] =   vtx_coord[vtx_id1][coo_id]
+                              - vtx_coord[vtx_id2][coo_id];
     }
 
     cs_math_3_cross_product(normal_unit, tangent_unit1, tangent_unit2);
@@ -454,14 +456,16 @@ _rescale_flowrate(cs_lnum_t         n_points,
 
     /* Rescale the normal component and return in Cartesian coordinates*/
 
-    normal_comp -= mass_flow_rate_g/(density[cell_id]*area_g);
+    normal_comp -= mass_flow_rate/(density[cell_id]*area);
 
-    for (coo_id = 0; coo_id < 3; coo_id++)
+    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
       fluctuations[point_id][coo_id] =   normal_comp*normal_unit[coo_id]
                                        + tangent_comp1*tangent_unit1[coo_id]
                                        + tangent_comp2*tangent_unit2[coo_id];
 
-  }
+  });
+
+  ctx.wait();
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -495,16 +499,13 @@ cs_les_inflow_initialize(void)
 void
 cs_les_inflow_finalize(void)
 {
-  int coo_id;
-  int inlet_id;
-
   if (cs_glob_inflow_n_inlets == 0)
     return;
 
   /* Destruction of each inlet structure */
   /*-------------------------------------*/
 
-  for (inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
+  for (int inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
 
     cs_inlet_t *inlet = cs_glob_inflow_inlet_array[inlet_id];
 
@@ -550,7 +551,7 @@ cs_les_inflow_finalize(void)
 
     /* Turbulence level */
 
-    for (coo_id = 0; coo_id < 3; coo_id++)
+    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
       inlet->vel_m[coo_id] = 0.;
 
     inlet->k_r   = 0.;
@@ -652,12 +653,16 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
                         cs_real_t              k_r,
                         cs_real_t              eps_r)
 {
-  cs_inlet_t   *inlet = nullptr;
+  cs_inlet_t  *inlet = nullptr;
 
   bft_printf(_(" Definition of the LES inflow for zone \"%s\" \n"),
              zone->name);
 
-  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *b_face_cog = mq->b_face_cog;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
+
+  cs_dispatch_context ctx;
 
   /* Allocating inlet structures */
   /*-----------------------------*/
@@ -679,18 +684,22 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
 
   if (n_elts > 0) {
 
-    CS_MALLOC(inlet->face_center, n_elts, cs_real_3_t);
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-        inlet->face_center[i][coo_id]
-          = mq->b_face_cog[face_ids[i]][coo_id];
-    }
+    CS_MALLOC_HD(inlet->face_center, n_elts, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(inlet->face_surface, n_elts, cs_real_t, cs_alloc_mode);
 
-    CS_MALLOC(inlet->face_surface, n_elts, cs_real_t);
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      inlet->face_surface[i]
-        = cs_math_3_norm(mq->b_face_normal + face_ids[i]*3);
+    cs_real_3_t *face_center = inlet->face_center;
+    cs_real_t *face_surface = inlet->face_surface;
 
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      const cs_lnum_t face_id = face_ids[i];
+      face_surface[i] = b_face_surf[face_id];
+
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+        face_center[i][coo_id] = b_face_cog[face_id][coo_id];
+      }
+    });
+
+    ctx.wait();
   }
 
   /* Turbulence level */
@@ -806,17 +815,18 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
 void
 cs_les_inflow_compute(void)
 {
-  const cs_real_t two_third = 2./3.;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-
-  const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
-
-  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
-
   if (cs_glob_inflow_n_inlets == 0)
     return;
+
+  constexpr cs_real_t two_third = 2./3.;
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  const cs_real_3_t *cell_cen
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
+
+  cs_dispatch_context ctx;
 
   for (int inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
 
@@ -826,10 +836,6 @@ cs_les_inflow_compute(void)
                               inlet->vel_m,
                               &(inlet->k_r),
                               &(inlet->eps_r));
-
-    cs_real_3_t *vel_m_l = nullptr;
-    cs_real_6_t *rij_l = nullptr;
-    cs_real_t   *eps_r = nullptr;
 
     cs_real_3_t *fluctuations = nullptr;
 
@@ -844,26 +850,32 @@ cs_les_inflow_compute(void)
     /* Mean velocity profile, one-point statistics and dissipation rate */
     /*------------------------------------------------------------------*/
 
-    CS_MALLOC(vel_m_l, n_elts, cs_real_3_t);
-    CS_MALLOC(rij_l, n_elts, cs_real_6_t);
-    CS_MALLOC(eps_r, n_elts, cs_real_t);
+    cs_real_3_t *vel_m_l;
+    cs_real_6_t *rij_l;
+    cs_real_t   *eps_r;
+    CS_MALLOC_HD(vel_m_l, n_elts, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(rij_l, n_elts, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(eps_r, n_elts, cs_real_t, cs_alloc_mode);
+
+    cs_real_t *vel_m = inlet->vel_m;
+    const cs_real_t two_third_k_r = two_third*inlet->k_r;
+    const cs_real_t inlet_eps_r = inlet->eps_r;
 
     /* Initialization by the turbulence scales given by the user */
 
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
 
-      for (int coo_id = 0; coo_id < 3; coo_id++)
-        vel_m_l[i][coo_id] = inlet->vel_m[coo_id];
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+        vel_m_l[i][coo_id] = vel_m[coo_id];
+        rij_l[i][coo_id] = two_third_k_r;
+      }
 
-      for (int coo_id = 0; coo_id < 3; coo_id++)
-        rij_l[i][coo_id] = two_third*inlet->k_r;
-
-      for (int coo_id = 3; coo_id < 6; coo_id++)
+      for (cs_lnum_t coo_id = 3; coo_id < 6; coo_id++)
         rij_l[i][coo_id] = 0.;
 
-      eps_r[i] = inlet->eps_r;
+      eps_r[i] = inlet_eps_r;
 
-    }
+    });
 
     /* Modification by the user */
 
@@ -872,11 +884,11 @@ cs_les_inflow_compute(void)
                                 rij_l,
                                 eps_r);
 
-    /* Generation of the synthetic turbulence */
-    /*----------------------------------------*/
+    /* Generation of the synthetic turbulence
+       --------------------------------------*/
 
-    CS_MALLOC(fluctuations, n_elts, cs_real_3_t);
-    cs_array_real_fill_zero(3*n_elts, (cs_real_t *)fluctuations);
+    CS_MALLOC_HD(fluctuations, n_elts, cs_real_3_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(3*n_elts, 0., (cs_real_t *)fluctuations);
 
     const cs_time_step_t *time_step = cs_glob_time_step;
 
@@ -908,26 +920,30 @@ cs_les_inflow_compute(void)
 
         if (inflowsem->volume_mode == 1) {
 
-          cs_real_t dissiprate = eps_r[0];
+          const cs_real_t dissiprate = eps_r[0];
           cs_lnum_t n_points = cs_glob_mesh->n_cells;
           cs_real_t *point_weight = nullptr;
 
-          CS_REALLOC(rij_l, n_cells, cs_real_6_t);
-          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-            for (cs_lnum_t j = 0; j < 3; j++)
-              rij_l[cell_id][j] = two_third*inlet->k_r;
+          CS_REALLOC_HD(rij_l, n_cells, cs_real_6_t, cs_alloc_mode);
+          CS_REALLOC_HD(vel_m_l, n_cells, cs_real_3_t, cs_alloc_mode);
+          CS_REALLOC_HD(eps_r, n_points, cs_real_t, cs_alloc_mode);
+          CS_REALLOC_HD(fluctuations, n_points, cs_real_3_t, cs_alloc_mode);
+
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+
+            eps_r[cell_id] = dissiprate;
+
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              rij_l[cell_id][j] = two_third_k_r;
+              vel_m_l[cell_id][j] = 0.;
+              fluctuations[cell_id][j] = 0.;
+            }
+
             for (cs_lnum_t j = 3; j < 6; j++)
               rij_l[cell_id][j] = 0.;
-          }
+          });
 
-          CS_REALLOC(vel_m_l, n_cells, cs_real_3_t);
-          cs_array_real_fill_zero(3*n_cells, (cs_real_t *)vel_m_l);
-
-          CS_REALLOC(eps_r, n_points, cs_real_t);
-          cs_array_real_set_scalar(n_cells, dissiprate, eps_r);
-
-          CS_REALLOC(fluctuations, n_points, cs_real_3_t);
-          cs_array_real_fill_zero(3*n_cells, (cs_real_t *)fluctuations);
+          ctx.wait();
 
           cs_les_synthetic_eddy_method(cs_glob_mesh->n_cells,
                                        elt_ids,
@@ -1017,13 +1033,15 @@ cs_les_inflow_compute(void)
     cs_real_t *rcodcl1_v = rcodcl1_u + n_b_faces;
     cs_real_t *rcodcl1_w = rcodcl1_v + n_b_faces;
 
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       cs_lnum_t face_id = elt_ids[i];
 
       rcodcl1_u[face_id] = vel_m_l[i][0] + fluctuations[i][0];
       rcodcl1_v[face_id] = vel_m_l[i][1] + fluctuations[i][1];
       rcodcl1_w[face_id] = vel_m_l[i][2] + fluctuations[i][2];
-    }
+    });
+
+    ctx.wait();
 
     CS_FREE(vel_m_l);
     CS_FREE(fluctuations);
@@ -1616,31 +1634,36 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
                              const cs_real_t     eps_l[],
                              cs_real_3_t         fluctuations[])
 {
-  cs_real_t  alpha;
-  cs_real_t  random = -1.;
+  cs_real_t alpha;
+  cs_real_t random = -1.;
 
-  cs_real_t  vel_m[3];
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  cs_real_t  box_volume;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+  const cs_lnum_t *b_face_vtx_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t *b_face_vtx_lst = mesh->b_face_vtx_lst;
+  const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
 
-  cs_real_t  box_length[3];
-  cs_real_t  box_min_coord[3];
-  cs_real_t  box_max_coord[3];
-
-  cs_gnum_t  count[3] = {0, 0, 0};
+  cs_dispatch_context ctx;
 
   /* Computation of the characteristic scale of the synthetic eddies */
   /*-----------------------------------------------------------------*/
 
-  cs_real_3_t  *length_scale;
-  CS_MALLOC(length_scale, n_points, cs_real_3_t);
+  cs_real_3_t *length_scale;
+  CS_MALLOC_HD(length_scale, n_points, cs_real_3_t, cs_alloc_mode);
 
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
+  struct cs_data_3g rd_sum_3g;
+  struct cs_reduce_sum3g reducer_sum_3g;
 
   if (inflow->volume_mode == 1) { //Generate turbulence over the whole domain
 
-    for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
+    ctx.parallel_for_reduce
+      (n_points, rd_sum_3g, reducer_sum_3g,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_3g &res) {
+
+      res.g[0] = 0, res.g[1] = 0, res.g[2] = 0;
 
       // TODO: add a mesh algorithm to compute better estimation of longest
       // and shortest cell lengths (would also be useful for HTLES and
@@ -1661,32 +1684,34 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
           = fmax(length_scale[point_id][coo_id], length_scale_min);
 
         if (cs::abs(length_scale[point_id][coo_id]-length_scale_min)
-            < cs_math_epzero)
-          count[coo_id]++;
-
+            < cs_math_epzero) {
+          res.g[coo_id] = 1;
+        }
       }
-
-    }
-
+    });
   }
-  else{
-    for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
+  else {
+    ctx.parallel_for_reduce
+      (n_points, rd_sum_3g, reducer_sum_3g,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_3g &res) {
+
+      res.g[0] = 0, res.g[1] = 0, res.g[2] = 0;
 
       cs_lnum_t face_id = elt_ids[point_id];
-      cs_lnum_t cell_id = mesh->b_face_cells[face_id];
+      cs_lnum_t cell_id = b_face_cells[face_id];
 
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
-        cs_real_t length_scale_min = -HUGE_VAL;
+        cs_real_t length_scale_min = -cs_math_big_r;
 
-        for (cs_lnum_t j = mesh->b_face_vtx_idx[face_id];
-             j < mesh->b_face_vtx_idx[face_id + 1];
+        for (cs_lnum_t j = b_face_vtx_idx[face_id];
+             j < b_face_vtx_idx[face_id + 1];
              j++) {
-          cs_lnum_t vtx_id = mesh->b_face_vtx_lst[j];
+          cs_lnum_t vtx_id = b_face_vtx_lst[j];
           length_scale_min
             = cs::max(length_scale_min,
-                      2.*cs::abs(mq->cell_cen[cell_id][coo_id]
-                                 - mesh->vtx_coord[3*vtx_id + coo_id]));
+                      2.*cs::abs(cell_cen[cell_id][coo_id]
+                                 - vtx_coord[vtx_id][coo_id]));
         }
 
         length_scale[point_id][coo_id]
@@ -1700,11 +1725,10 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
         if (cs::abs(length_scale[point_id][coo_id] - length_scale_min)
             < cs_math_epzero)
-          count[coo_id]++;
+          res.g[coo_id] = 1;
 
       }
-
-    }
+    });
   }
 
   if (verbosity > 0) {
@@ -1714,54 +1738,43 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
-      cs_real_t ls_max = -HUGE_VAL;
-      cs_real_t xyzmax[3] = {0., 0., 0.};
+      struct cs_data_4r rd_4r;
+      cs_reduce_max1r_bcast3r reducer_max1r_bcast3r;
 
-      for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
+      ctx.parallel_for_reduce
+        (n_points, rd_4r, reducer_max1r_bcast3r,
+         [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_4r &res) {
 
-        ls_max = cs::max(length_scale[point_id][coo_id], ls_max);
+        res.r[3] = length_scale[point_id][coo_id];
 
-        if (cs::abs(ls_max - length_scale[point_id][coo_id])
-            < cs_math_epzero) {
-          for (cs_lnum_t j = 0; j < 3; j++)
-            xyzmax[j] = point_coordinates[point_id][j];
-        }
+        res.r[0] = point_coordinates[point_id][0];
+        res.r[1] = point_coordinates[point_id][1];
+        res.r[2] = point_coordinates[point_id][2];
 
-      }
+      });
 
-#if defined(HAVE_MPI)
+      ctx.wait();
 
-      if (cs_glob_rank_id >= 0) {
+      cs_real_t xyzmax[3] = {rd_4r.r[0], rd_4r.r[1], rd_4r.r[2]};
 
-        _mpi_double_int_t  val_in, val_max;
+      cs_parall_max_loc_vals(3, &rd_4r.r[3], xyzmax);
 
-        val_in.val  = ls_max;
-        val_in.rank = cs_glob_rank_id;
-
-        MPI_Allreduce(&val_in, &val_max, 1, MPI_DOUBLE_INT, MPI_MAXLOC,
-                      cs_glob_mpi_comm);
-
-        ls_max = val_max.val;
-
-        MPI_Bcast(xyzmax, 3, CS_MPI_REAL, val_max.rank, cs_glob_mpi_comm);
-
-      }
-
-#endif
+      cs_real_t ls_max = rd_4r.r[3];
 
       bft_printf(_("   max(sigma_%c) = %f, at coordinates (%f,%f,%f)\n"),
                  direction[coo_id], ls_max, xyzmax[0], xyzmax[1], xyzmax[2]);
 
     }
+
     bft_printf(_("\n"));
 
     bft_printf(_("Number of min. clippings (eddy size equals grid size):\n"));
 
-    cs_parall_counter(count, 3);
+    cs_parall_counter(rd_sum_3g.g, 3);
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
       bft_printf(_("   sigma_%c clipped %ld times\n"),
-                 direction[coo_id], (long)count[coo_id]);
+                 direction[coo_id], (long)rd_sum_3g.g[coo_id]);
 
     bft_printf(_("\n"));
   }
@@ -1769,54 +1782,37 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   /* Definition of the box on which eddies are generated */
   /*-----------------------------------------------------*/
 
-  for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
-    box_min_coord[coo_id] =  HUGE_VAL;
-    box_max_coord[coo_id] = -HUGE_VAL;
-  }
+  struct cs_data_3r_3r rd_3r_3r;
+  struct cs_reduce_min3r_max3r reducer_3r_3r;
 
-  for (cs_lnum_t point_id = 0; point_id < n_points; point_id++)
-
-    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
-
-      box_min_coord[coo_id]
-        = cs::min(box_min_coord[coo_id],
-                    point_coordinates[point_id][coo_id]
-                  - length_scale[point_id][coo_id]);
-
-      box_max_coord[coo_id]
-        = cs::max(box_max_coord[coo_id],
-                    point_coordinates[point_id][coo_id]
-                  + length_scale[point_id][coo_id]);
-
-    }
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_rank_id >= 0) {
-
-    cs_real_t min_glob[3], max_glob[3];
-
-    MPI_Allreduce(box_min_coord, &min_glob, 3, CS_MPI_REAL, MPI_MIN,
-                  cs_glob_mpi_comm);
-
-    MPI_Allreduce(box_max_coord, &max_glob, 3, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_mpi_comm);
+  ctx.parallel_for_reduce
+    (n_points, rd_3r_3r, reducer_3r_3r,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_3r_3r &res) {
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
-      box_min_coord[coo_id] = min_glob[coo_id];
-      box_max_coord[coo_id] = max_glob[coo_id];
+      res.r1[coo_id] =  point_coordinates[point_id][coo_id]
+                      - length_scale[point_id][coo_id];
+
+      res.r2[coo_id] =  point_coordinates[point_id][coo_id]
+                      + length_scale[point_id][coo_id];
     }
+  });
 
-  }
+  ctx.wait();
 
-#endif
+  cs_parall_min(3, CS_REAL_TYPE, rd_3r_3r.r1);
+  cs_parall_max(3, CS_REAL_TYPE, rd_3r_3r.r2);
 
+  cs_real_t box_min_coord[3] = {rd_3r_3r.r1[0], rd_3r_3r.r1[1], rd_3r_3r.r1[2]};
+  cs_real_t box_max_coord[3] = {rd_3r_3r.r2[0], rd_3r_3r.r2[1], rd_3r_3r.r2[2]};
+
+  cs_real_t box_length[3];
   for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
     box_length[coo_id] = box_max_coord[coo_id] - box_min_coord[coo_id];
 
-  box_volume = box_length[0]*box_length[1]*box_length[2];
+  cs_real_t box_volume = box_length[0]*box_length[1]*box_length[2];
 
-  if (box_volume <= -HUGE_VAL) {
+  if (box_volume <= -cs_math_big_r) {
     bft_printf(_("%s: empty virtual box\n"), __func__);
     CS_FREE(length_scale);
     return;
@@ -1881,53 +1877,46 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   /* Estimation of the convection speed (with weighting by surface) */
   /*----------------------------------------------------------------*/
 
-  cs_real_t *weight = nullptr;
-  CS_MALLOC(weight, n_points, cs_real_t);
+  cs_real_t *weight;
+  CS_MALLOC_HD(weight, n_points, cs_real_t, cs_alloc_mode);
 
-  if (point_weight == nullptr)
-    for (cs_lnum_t point_id = 0; point_id < n_points; point_id++)
+  if (point_weight == nullptr) {
+    ctx.parallel_for(n_points, [=] CS_F_HOST_DEVICE (cs_lnum_t point_id) {
       weight[point_id] = 1.;
-  else
-    for (cs_lnum_t point_id = 0; point_id < n_points; point_id++)
+    });
+  }
+  else {
+    ctx.parallel_for(n_points, [=] CS_F_HOST_DEVICE (cs_lnum_t point_id) {
       weight[point_id] = point_weight[point_id];
+    });
+  }
 
-  cs_real_t  weight_tot = 0.;
+  ctx.wait();
 
-  for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-    vel_m[coo_id] = 0.;
+  struct cs_data_4d rd_sum_4d;
+  struct cs_reduce_sum4d reducer_sum_4d;
 
-  for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
-
-    weight_tot += weight[point_id];
+  ctx.parallel_for_reduce
+    (n_points, rd_sum_4d, reducer_sum_4d,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_4d &res) {
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-      vel_m[coo_id] += vel_m_l[point_id][coo_id]*weight[point_id];
+      res.d[coo_id] = vel_m_l[point_id][coo_id]*weight[point_id];
 
-  }
+    res.d[3] = weight[point_id];
+  });
+
+  ctx.wait();
 
   CS_FREE(weight);
 
-  if (cs_glob_rank_id < 0)
+  cs_parall_sum(4, CS_DOUBLE, rd_sum_4d.d);
 
-    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-      vel_m[coo_id] /= weight_tot;
+  cs_real_t weight_tot = rd_sum_4d.d[3];
+  cs_real_t vel_m[3] = {rd_sum_4d.d[0], rd_sum_4d.d[1], rd_sum_4d.d[2]};
 
-#if defined(HAVE_MPI)
-
-  else {
-
-    cs_real_t _s[4] = {vel_m[0], vel_m[1], vel_m[2],
-                       weight_tot};
-    cs_real_t s[4];
-
-    MPI_Allreduce(_s, s, 4, CS_MPI_REAL, MPI_SUM, cs_glob_mpi_comm);
-
-    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-      vel_m[coo_id] = s[coo_id] / s[3];
-
-  }
-
-#endif
+  for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+    vel_m[coo_id] /= weight_tot;
 
   /* Time evolution of the eddies */
   /*------------------------------*/
@@ -2020,17 +2009,20 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   /*--------------------------------*/
 
   alpha = sqrt(box_volume / (double)inflow->n_structures);
+  const int n_structures = inflow->n_structures;
+  const cs_real_3_t *position = inflow->position;
+  const cs_real_3_t *energy = inflow->energy;
 
-  for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
+  ctx.parallel_for(n_points, [=] CS_F_HOST_DEVICE (cs_lnum_t point_id) {
 
     cs_real_t distance[3];
 
-    for (int struct_id = 0; struct_id < inflow->n_structures; struct_id++) {
+    for (int struct_id = 0; struct_id < n_structures; struct_id++) {
 
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
         distance[coo_id] =
-          cs::abs(point_coordinates[point_id][coo_id]
-                  - inflow->position[struct_id][coo_id]);
+          cs::abs(  point_coordinates[point_id][coo_id]
+                  - position[struct_id][coo_id]);
 
       if (   distance[0] < length_scale[point_id][0]
           && distance[1] < length_scale[point_id][1]
@@ -2044,7 +2036,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
         for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
           fluctuations[point_id][coo_id]
-            += inflow->energy[struct_id][coo_id]*form_function;
+            += energy[struct_id][coo_id]*form_function;
 
       }
 
@@ -2053,7 +2045,9 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
       fluctuations[point_id][coo_id] *= alpha;
 
-  }
+  });
+
+  ctx.wait();
 
   CS_FREE(length_scale);
 }
@@ -2076,7 +2070,9 @@ cs_les_rescale_fluctuations(cs_lnum_t          n_points,
                             const cs_real_6_t  statistics[],
                             cs_real_3_t        fluctuations[])
 {
-  for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
+  cs_dispatch_context ctx;
+
+  ctx.parallel_for(n_points, [=] CS_F_HOST_DEVICE (cs_lnum_t point_id) {
 
     /* Reynolds stresses */
 
@@ -2091,10 +2087,10 @@ cs_les_rescale_fluctuations(cs_lnum_t          n_points,
 
     cs_real_t a11 = sqrt(r11);
     cs_real_t a21 = r12 / a11;
-    cs_real_t a22 = sqrt(fmax(r22 - a21*a21, 0));
+    cs_real_t a22 = sqrt(cs_math_fmax(r22 - a21*a21, 0));
     cs_real_t a31 = r13 / a11;
     cs_real_t a32 = (r23 - a21*a31) / a22;
-    cs_real_t a33 = sqrt(fmax(r33 - a31*a31 - a32*a32, 0));
+    cs_real_t a33 = sqrt(cs_math_fmax(r33 - a31*a31 - a32*a32, 0));
 
     /* Rescaling of velocity fluctuations */
 
@@ -2109,7 +2105,9 @@ cs_les_rescale_fluctuations(cs_lnum_t          n_points,
     fluctuations[point_id][1] = vp_corr;
     fluctuations[point_id][2] = wp_corr;
 
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

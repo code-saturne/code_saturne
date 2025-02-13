@@ -50,6 +50,7 @@
 #include "bft/bft_printf.h"
 
 #include "alge/cs_cell_to_vertex.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_ext_neighborhood.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
@@ -61,12 +62,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "turb/cs_les_filter.h"
-#include "base/cs_halo.h"
-#include "base/cs_halo_perio.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -86,200 +83,196 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
+BEGIN_C_DECLS
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute filters for dynamic models.
  *
+ *
  * This function deals with the standard or extended neighborhood.
  *
- * \param[in]   stride   stride of array to filter
+ * \param[in]   ctx      reference to dispatch context
  * \param[in]   val      array of values to filter
  * \param[out]  f_val    array of filtered values
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_les_filter_ext_neighborhood(int        stride,
-                             cs_real_t  val[],
-                             cs_real_t  f_val[])
-{
-  cs_real_t *w1 = nullptr, *w2 = nullptr;
+_les_filter_ext_neighborhood_scalar(cs_dispatch_context  &ctx,
+                                    const cs_real_t       val[],
+                                    cs_real_t             f_val[])
 
+{
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_lnum_t  _stride = stride;
   const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const cs_lnum_t  n_elts_l = n_cells * _stride;
-  const cs_lnum_t  n_elts = n_cells_ext * _stride;
-  const int n_i_groups = mesh->i_face_numbering->n_groups;
-  const int n_i_threads = mesh->i_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = mesh->i_face_numbering->group_index;
   const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
   const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *c2c = ma->cell_cells;
+  if (c2c == nullptr) {
+    cs_mesh_adjacencies_update_cell_i_faces();
+  }
+
+  assert(cell_cells_idx != nullptr);
+
+  /* Synchronize variable */
+
+  cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, const_cast<cs_real_t *>(val));
+
+  /* Define filtered variable array */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+    /* Initialization */
+    cs_real_t w1 = val[c_id] * cell_vol[c_id];
+    cs_real_t w2 = cell_vol[c_id];
+
+    /* Contribution from extended neighborhood */
+
+    const cs_lnum_t s_id_ex = cell_cells_idx[c_id];
+    const cs_lnum_t e_id_ex = cell_cells_idx[c_id+1];
+
+    for (cs_lnum_t cidx = s_id_ex; cidx < e_id_ex; cidx++) {
+      cs_lnum_t c_id_adj = cell_cells_lst[cidx];
+
+      w1 += val[c_id_adj] * cell_vol[c_id_adj];
+      w2 += cell_vol[c_id_adj];
+    }
+
+    /* Contribution from adjacent faces */
+
+    const cs_lnum_t s_id_i = c2c_idx[c_id];
+    const cs_lnum_t e_id_i = c2c_idx[c_id+1];
+
+    for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+      cs_lnum_t c_id_adj = c2c[cidx];
+
+      w1 += val[c_id_adj] * cell_vol[c_id_adj];
+      w2 += cell_vol[c_id_adj];
+    }
+
+    f_val[c_id] = w1 / w2;
+
+  }); /* End of loop on cells */
+
+  /* Synchronize variable */
+
+  ctx.wait();
+  cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_val);
+}
+
+END_C_DECLS
+
+/*============================================================================
+ * Private C++ function definitions
+ *============================================================================*/
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute filters for dynamic models.
+ *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *
+ * This function deals with the standard or extended neighborhood.
+ *
+ * \param[in]   ctx      reference to dispatch context
+ * \param[in]   val      array of values to filter
+ * \param[out]  f_val    array of filtered values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+static void
+_les_filter_ext_neighborhood_strided(cs_dispatch_context  &ctx,
+                                     const cs_real_t       val[][stride],
+                                     cs_real_t             f_val[][stride])
+{
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t *cell_cells_idx = mesh->cell_cells_idx;
+  const cs_lnum_t *cell_cells_lst = mesh->cell_cells_lst;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *c2c = ma->cell_cells;
+  if (c2c == nullptr) {
+    cs_mesh_adjacencies_update_cell_i_faces();
+  }
+
+  using var_t = cs_real_t[stride];
 
   assert(cell_cells_idx != nullptr);
 
   /* Allocate and initialize working buffers */
 
-  CS_MALLOC(w1, n_elts, cs_real_t);
-  CS_MALLOC(w2, n_elts, cs_real_t);
+  /* Synchronize variable */
 
-  /* Case for scalar variable */
-  /*--------------------------*/
+  cs_halo_sync_r(mesh->halo, CS_HALO_EXTENDED, ctx.use_gpu(),
+                 const_cast<var_t *>(val));
 
-  if (stride == 1) {
+  /* Define filtered variable array */
 
-    /* Synchronize variable */
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    if (mesh->halo != nullptr)
-      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, val);
+    var_t w1, w2;
 
-    /* Define filtered variable array */
-
-#   pragma omp parallel for
-    for (cs_lnum_t i = 0; i < n_cells; i++) {
-
-      w1[i] = val[i] * cell_vol[i];
-      w2[i] = cell_vol[i];
-
-      /* Loop on connected cells (without cells sharing a face) */
-
-      for (cs_lnum_t j = cell_cells_idx[i]; j < cell_cells_idx[i+1]; j++) {
-        cs_lnum_t k = cell_cells_lst[j];
-        w1[i] += val[k] * cell_vol[k];
-        w2[i] += cell_vol[k];
-      }
-
-    } /* End of loop on cells */
-
-#   pragma omp parallel for if (mesh->n_ghost_cells > CS_THR_MIN)
-    for (cs_lnum_t i = n_cells; i < n_cells_ext; i++) {
-      w1[i] = 0;
-      w2[i] = 0;
+    for (cs_lnum_t j = 0; j < stride; j++) {
+      w1[j] = val[c_id][j] * cell_vol[c_id];
+      w2[j] = cell_vol[c_id];
     }
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+    /* Contribution from extended neighborhood */
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+    const cs_lnum_t s_id_ex = cell_cells_idx[c_id];
+    const cs_lnum_t e_id_ex = cell_cells_idx[c_id+1];
 
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    for (cs_lnum_t cidx = s_id_ex; cidx < e_id_ex; cidx++) {
+      cs_lnum_t c_id_adj = cell_cells_lst[cidx];
 
-          cs_lnum_t i = mesh->i_face_cells[face_id][0];
-          cs_lnum_t j = mesh->i_face_cells[face_id][1];
-
-          w1[i] += val[j] * cell_vol[j];
-          w2[i] += cell_vol[j];
-
-          w1[j] += val[i] * cell_vol[i];
-          w2[j] += cell_vol[i];
-        }
-
-      }
-
-    }
-
-#   pragma omp parallel for
-    for (cs_lnum_t i = 0; i < n_cells; i++)
-      f_val[i] = w1[i]/w2[i];
-
-    /* Synchronize variable */
-
-    if (mesh->halo != nullptr)
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_val);
-  }
-
-  /* Case for vector or tensor variable */
-  /*------------------------------------*/
-
-  else {
-
-    /* Synchronize variable */
-
-    if (mesh->halo != nullptr)
-      cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, val, stride);
-
-    /* Define filtered variable array */
-
-#   pragma omp parallel for
-    for (cs_lnum_t i = 0; i < n_cells; i++) {
-
-      for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
-        const cs_lnum_t ic = i *_stride + c_id;
-        w1[ic] = val[ic] * cell_vol[i];
-        w2[ic] = cell_vol[i];
-      }
-
-      /* Loop on connected cells (without cells sharing a face) */
-
-      for (cs_lnum_t j = cell_cells_idx[i]; j < cell_cells_idx[i+1]; j++) {
-        cs_lnum_t k = cell_cells_lst[j];
-        for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
-          const cs_lnum_t ic = i *_stride + c_id;
-          const cs_lnum_t kc = k *_stride + c_id;
-          w1[ic] += val[kc] * cell_vol[k];
-          w2[ic] += cell_vol[k];
-        }
-      }
-
-    } /* End of loop on cells */
-
-#   pragma omp parallel for if (mesh->n_ghost_cells > CS_THR_MIN)
-    for (cs_lnum_t i = n_cells; i < n_cells_ext; i++) {
-      for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
-        const cs_lnum_t ic = i *_stride + c_id;
-        w1[ic] = 0;
-        w2[ic] = 0;
+      for (cs_lnum_t j = 0; j < stride; j++) {
+        w1[j] += val[c_id_adj][j] * cell_vol[c_id_adj];
+        w2[j] += cell_vol[c_id_adj];
       }
     }
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+    /* Contribution from adjacent faces */
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+    const cs_lnum_t s_id_i = c2c_idx[c_id];
+    const cs_lnum_t e_id_i = c2c_idx[c_id+1];
 
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+      cs_lnum_t c_id_adj = c2c[cidx];
 
-          cs_lnum_t i = mesh->i_face_cells[face_id][0];
-          cs_lnum_t j = mesh->i_face_cells[face_id][1];
-
-          for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
-            const cs_lnum_t ic = i *_stride + c_id;
-            const cs_lnum_t jc = j *_stride + c_id;
-
-            w1[ic] += val[jc] * cell_vol[j];
-            w2[ic] += cell_vol[j];
-
-            w1[jc] += val[ic] * cell_vol[i];
-            w2[jc] += cell_vol[i];
-          }
-
-        }
-
+      for (cs_lnum_t j = 0; j < stride; j++) {
+        w1[j] += val[c_id_adj][j] * cell_vol[c_id_adj];
+        w2[j] += cell_vol[c_id_adj];
       }
-
     }
 
-#   pragma omp parallel for
-    for (cs_lnum_t i = 0; i < n_elts_l; i++)
-      f_val[i] = w1[i]/w2[i];
+    for (cs_lnum_t j = 0; j < stride; j++)
+      f_val[c_id][j] = w1[j]/w2[j];
 
-    /* Synchronize variable */
+  }); /* End of loop on cells */
 
-    if (mesh->halo != nullptr)
-      cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, f_val, stride);
-  }
+  /* Synchronize variable */
 
-  CS_FREE(w2);
-  CS_FREE(w1);
+  ctx.wait();
+  cs_halo_sync_r(mesh->halo, CS_HALO_EXTENDED, ctx.use_gpu(), f_val);
 }
 
+#endif /* cplusplus */
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function definitions
@@ -289,41 +282,42 @@ _les_filter_ext_neighborhood(int        stride,
 /*!
  * \brief Compute filters for dynamic models.
  *
+ *
+ *
  * This function deals with the standard or extended neighborhood.
  *
- * \param[in]   stride   stride of array to filter
  * \param[in]   val      array of values to filter
  * \param[out]  f_val    array of filtered values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_filter(int        stride,
-              cs_real_t  val[],
-              cs_real_t  f_val[])
+cs_les_filter_scalar(const cs_real_t  val[],
+                     cs_real_t        f_val[])
 {
+  cs_dispatch_context ctx;
+
   if (cs_ext_neighborhood_get_type() == CS_EXT_NEIGHBORHOOD_COMPLETE) {
-    _les_filter_ext_neighborhood(stride, val, f_val);
+    _les_filter_ext_neighborhood_scalar(ctx, val, f_val);
     return;
   }
 
-  cs_real_t *v_val = nullptr, *v_weight = nullptr;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_lnum_t  _stride = stride;
+  const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
 
   /* Allocate and initialize working buffer */
 
-  CS_MALLOC(v_val, mesh->n_vertices*_stride, cs_real_t);
-  CS_MALLOC(v_weight, mesh->n_vertices, cs_real_t);
+  cs_real_t *v_val, *v_weight;
+  CS_MALLOC_HD(v_val, n_vertices, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(v_weight, n_vertices, cs_real_t, cs_alloc_mode);
 
   /* Define filtered variable array */
 
   cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
                     0,
-                    _stride,
+                    1,    /* v_val dimension */
                     true, /* ignore periodicity of rotation */
                     cell_vol,
                     val,
@@ -341,61 +335,150 @@ cs_les_filter(int        stride,
 
   /* Build cell average */
 
-  const cs_adjacency_t  *c2v = cs_mesh_adjacencies_cell_vertices();
+  const cs_adjacency_t *c2v = cs_mesh_adjacencies_cell_vertices();
   const cs_lnum_t *c2v_idx = c2v->idx;
   const cs_lnum_t *c2v_ids = c2v->ids;
 
-  if (_stride == 1) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    cs_lnum_t s_id = c2v_idx[c_id];
+    cs_lnum_t e_id = c2v_idx[c_id+1];
+    cs_real_t _f_val = 0, _f_weight = 0;
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_lnum_t s_id = c2v_idx[c_id];
-      cs_lnum_t e_id = c2v_idx[c_id+1];
-      cs_real_t _f_val = 0, _f_weight = 0;
-      for (cs_lnum_t j = s_id; j < e_id; j++) {
-        cs_lnum_t v_id = c2v_ids[j];
-        _f_val += v_val[v_id] * v_weight[v_id];
-        _f_weight += v_weight[v_id];
-      }
-      f_val[c_id] = _f_val / _f_weight;
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t v_id = c2v_ids[j];
+      _f_val += v_val[v_id] * v_weight[v_id];
+      _f_weight += v_weight[v_id];
     }
 
-  }
-  else {
+    f_val[c_id] = _f_val / _f_weight;
+  });
 
-    assert(_stride <= 9);
+  ctx.wait();
 
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_lnum_t s_id = c2v_idx[c_id];
-      cs_lnum_t e_id = c2v_idx[c_id+1];
-      cs_real_t _f_val[9], _f_weight = 0;
-      for (cs_lnum_t k = 0; k < _stride; k++)
-        _f_val[k] = 0;
-      for (cs_lnum_t j = s_id; j < e_id; j++) {
-        cs_lnum_t v_id = c2v_ids[j];
-        for (cs_lnum_t k = 0; k < _stride; k++) {
-          _f_val[k] += v_val[v_id*_stride + k] * v_weight[v_id];
-        }
-        _f_weight += v_weight[v_id];
-      }
-      for (cs_lnum_t k = 0; k < _stride; k++) {
-        f_val[c_id*_stride + k] = _f_val[k] / _f_weight;
-      }
-
-    }
-
-  }
-
-  CS_FREE(v_weight);
-  CS_FREE(v_val);
+  CS_FREE_HD(v_weight);
+  CS_FREE_HD(v_val);
 
   /* Synchronize variable */
-
-  if (mesh->halo != nullptr)
-    cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, f_val, _stride);
+  cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);
 }
+
+END_C_DECLS
+
+/*=============================================================================
+ * Public C++ function definitions
+ *============================================================================*/
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute filters for dynamic models.
+ *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *
+ * This function deals with the standard or extended neighborhood.
+ *
+ * \param[in]   val      array of values to filter
+ * \param[out]  f_val    array of filtered values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_les_filter_strided(const cs_real_t  val[][stride],
+                      cs_real_t        f_val[][stride])
+{
+  assert(stride == 3 or stride == 6);
+
+  cs_dispatch_context ctx;
+
+  if (cs_ext_neighborhood_get_type() == CS_EXT_NEIGHBORHOOD_COMPLETE) {
+    _les_filter_ext_neighborhood_strided<stride>(ctx, val, f_val);
+    return;
+  }
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+
+  using var_t = cs_real_t[stride];
+
+  /* Allocate and initialize working buffer */
+  var_t *v_val;
+  cs_real_t *v_weight;
+  CS_MALLOC_HD(v_val, n_vertices, var_t, cs_alloc_mode);
+  CS_MALLOC_HD(v_weight, n_vertices, cs_real_t, cs_alloc_mode);
+
+  /* Define filtered variable array */
+
+  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
+                    0,
+                    stride,
+                    true, /* ignore periodicity of rotation */
+                    cell_vol,
+                    reinterpret_cast<const cs_real_t *>(val),
+                    nullptr,
+                    reinterpret_cast<cs_real_t *>(v_val));
+
+  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
+                    0,
+                    1,
+                    true, /* ignore periodicity of rotation */
+                    nullptr,
+                    cell_vol,
+                    nullptr,
+                    v_weight);
+
+  /* Build cell average */
+
+  const cs_adjacency_t *c2v = cs_mesh_adjacencies_cell_vertices();
+  const cs_lnum_t *c2v_idx = c2v->idx;
+  const cs_lnum_t *c2v_ids = c2v->ids;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    cs_lnum_t s_id = c2v_idx[c_id];
+    cs_lnum_t e_id = c2v_idx[c_id+1];
+    cs_real_t _f_val[9], _f_weight = 0.;
+
+    for (cs_lnum_t k = 0; k < stride; k++)
+      _f_val[k] = 0;
+
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t v_id = c2v_ids[j];
+
+      for (cs_lnum_t k = 0; k < stride; k++) {
+        _f_val[k] += v_val[v_id][k] * v_weight[v_id];
+      }
+      _f_weight += v_weight[v_id];
+    }
+
+    for (cs_lnum_t k = 0; k < stride; k++) {
+      f_val[c_id][k] = _f_val[k] / _f_weight;
+    }
+
+  });
+
+  ctx.wait();
+
+  CS_FREE_HD(v_weight);
+  CS_FREE_HD(v_val);
+
+  /* Synchronize variable */
+  cs_halo_sync_r(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);
+}
+
+// Force instanciation
+
+template void
+cs_les_filter_strided(const cs_real_t  val[][3],
+                      cs_real_t        f_val[][3]);
+
+template void
+cs_les_filter_strided(const cs_real_t  val[][6],
+                      cs_real_t        f_val[][6]);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+#endif /* cplusplus */

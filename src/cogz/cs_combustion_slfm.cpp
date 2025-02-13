@@ -1266,7 +1266,7 @@ cs_combustion_slfm_physical_properties(int   iterns)
       }
 
     });
-    cs_les_filter(1, rho_eos, cpro_rho);
+    cs_les_filter_scalar(rho_eos, cpro_rho);
 
     CS_FREE(rho_eos);
     cs_combustion_boundary_conditions_density();
@@ -1648,4 +1648,3 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-

@@ -69,6 +69,19 @@ struct cs_data_14r {
   cs_real_t r[14];
 };
 
+struct cs_data_3r_3r {
+  cs_real_t r1[3];
+  cs_real_t r2[3];
+};
+
+struct cs_data_2d {
+  double d[2];
+};
+
+struct cs_data_4d {
+  double d[4];
+};
+
 // 2 cs_lnum_t
 
 struct cs_data_2i {
@@ -82,6 +95,14 @@ struct cs_data_7i {
 template<size_t stride>
 struct cs_double_n {
   double r[stride];
+
+struct cs_data_3g {
+  cs_gnum_t g[3];
+};
+
+struct cs_data_1d2r {
+  double d[1];
+  cs_real_t r[2];
 };
 
 template<size_t stride>
@@ -173,6 +194,57 @@ struct cs_reduce_min7r_max7r {
   }
 };
 
+// Min (3 reals) and Max (3 reals)
+
+struct cs_reduce_min3r_max3r {
+  using T = cs_data_3r_3r;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.r1[0] =  cs_math_infinite_r;
+    a.r1[1] =  cs_math_infinite_r;
+    a.r1[2] =  cs_math_infinite_r;
+
+
+    a.r2[0] = -cs_math_infinite_r;
+    a.r2[1] = -cs_math_infinite_r;
+    a.r2[2] = -cs_math_infinite_r;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.r1[0] = cs::min(a.r1[0], b.r2[0]);
+    a.r1[1] = cs::min(a.r1[1], b.r2[1]);
+    a.r1[2] = cs::min(a.r1[2], b.r2[2]);
+
+    a.r2[0] = cs::max(a.r2[0], b.r2[0]);
+    a.r2[1] = cs::max(a.r2[1], b.r2[1]);
+    a.r2[2] = cs::max(a.r2[2], b.r2[2]);
+  }
+};
+
+// Min, max (cs_real_t), sum (double) and sum (cs_gnum_t)
+
+struct cs_reduce_sum1d_min1r_max1r {
+  using T = cs_data_1d2r;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.d[0] = 0.0;
+
+    a.r[0] =  cs_math_infinite_r;
+    a.r[1] = -cs_math_infinite_r;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.d[0] += b.d[0];
+
+    a.r[0] = cs::min(a.r[0], b.r[0]);
+    a.r[1] = cs::max(a.r[1], b.r[1]);
+  }
+};
+
 // Sum and sum
 
 struct cs_reduce_sum2i {
@@ -207,13 +279,30 @@ struct cs_reduce_sum7i {
   }
 };
 
+struct cs_reduce_sum3g {
+  using T = cs_data_3g;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.g[0] = 0;
+    a.g[1] = 0;
+    a.g[2] = 0;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.g[0] += b.g[0];
+    a.g[1] += b.g[1];
+    a.g[2] += b.g[2];
+});
+
 struct cs_reduce_sum2r {
   using T = cs_data_2r;
 
   CS_F_HOST_DEVICE void
   identity(T &a) const {
-    a.r[0] = 0;
-    a.r[1] = 0;
+    a.r[0] = 0.;
+    a.r[1] = 0.;
   }
 
   CS_F_HOST_DEVICE void
@@ -223,6 +312,22 @@ struct cs_reduce_sum2r {
   }
 };
 
+struct cs_reduce_sum2d {
+  using T = cs_data_2d;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.d[0] = 0.;
+    a.d[1] = 0.;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.d[0] += b.d[0];
+    a.d[1] += b.d[1];
+  }
+});
+
 template<size_t stride>
 struct cs_reduce_sum_n {
   using T = cs_double_n<stride>;
@@ -230,7 +335,7 @@ struct cs_reduce_sum_n {
   CS_F_HOST_DEVICE void
   identity(T &a) const {
     for (size_t i = 0; i < stride; i++)
-      a.r[i] = 0.;;
+      a.r[i] = 0.;
   }
 
   CS_F_HOST_DEVICE void
@@ -263,6 +368,26 @@ struct cs_reduce_min_max_sum_nr {
   }
 };
 
+struct cs_reduce_sum4d {
+  using T = cs_data_4d;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.d[0] = 0.0;
+    a.d[1] = 0.0;
+    a.d[2] = 0.0;
+    a.d[3] = 0.0;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.d[0] += b.d[0];
+    a.d[1] += b.d[1];
+    a.d[2] += b.d[2];
+    a.d[3] += b.d[3];
+  }
+});
+
 template<size_t stride>
 struct cs_reduce_min_max_sum_nr_with_norm {
   using T = cs_double_n<3*(stride + 1)>;
@@ -293,6 +418,30 @@ struct cs_reduce_min_max_sum_nr_with_norm {
   }
 };
 
+struct cs_reduce_max1r_bcast3r {
+  using T = cs_data_4r;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.r[3] = -cs_math_infinite_r;
+
+    a.r[0] = 0.;
+    a.r[1] = 0.;
+    a.r[2] = 0.;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    if (a.r[3] < b.r[3]) {
+      a.r[3] = b.r[3]; // a=max(a,b)
+
+      a.r[0] = b.r[0];
+      a.r[1] = b.r[1];
+      a.r[2] = b.r[2];
+    }
+  }
+});
+
 template<size_t stride>
 struct cs_reduce_min_max_weighted_sum_nr {
   using T = cs_double_n<4*stride>;
@@ -314,6 +463,7 @@ struct cs_reduce_min_max_weighted_sum_nr {
       a.r[stride + i] = cs::max(a.r[stride + i], b.r[stride + i]);
       a.r[2*stride + i] += b.r[2*stride + i];
       a.r[3*stride + i] += b.r[3*stride + i];
+
     }
   }
 };

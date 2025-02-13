@@ -50,23 +50,43 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute filters for dynamic models.
+ * Compute filters for dynamic models for a scalar.
  *
  * This function deals with the standard or extended neighborhood.
  *
  * parameters:
- *   stride  <--  stride of array to filter
  *   val     <->  array of values to filter
  *   f_val   -->  array of filtered values
  *----------------------------------------------------------------------------*/
 
 void
-cs_les_filter(int        stride,
-              cs_real_t  val[],
-              cs_real_t  f_val[]);
+cs_les_filter_scalar(const cs_real_t  val[],
+                     cs_real_t        f_val[]);
+
+END_C_DECLS
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------
+ * Compute filters for dynamic models for vectors.
+ *
+ * This function deals with the standard or extended neighborhood.
+ *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *
+ * parameters:
+ *   val     <->  array of values to filter
+ *   f_val   -->  array of filtered values
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_les_filter_strided(const cs_real_t  val[][stride],
+                      cs_real_t        f_val[][stride]);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+#endif /* cplusplus */
 
 #endif /* __CS_LES_FILTER_H__ */

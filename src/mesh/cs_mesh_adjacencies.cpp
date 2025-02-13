@@ -527,8 +527,8 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
   cs_adjacency_t *c2v = ma->_c2v;
 
   if (c2v->n_elts != m->n_cells)
-    CS_REALLOC(c2v->idx, m->n_cells+1, cs_lnum_t);
-  CS_FREE(c2v->ids);
+    CS_REALLOC_HD(c2v->idx, m->n_cells+1, cs_lnum_t, cs_alloc_mode);
+  CS_FREE_HD(c2v->ids);
 
   const cs_lnum_t n_cells = m->n_cells;
 
@@ -570,7 +570,7 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
 
   /* Add vertices */
 
-  CS_REALLOC(c2v->ids, c2v->idx[n_cells], cs_lnum_t);
+  CS_REALLOC_HD(c2v->ids, c2v->idx[n_cells], cs_lnum_t, cs_alloc_mode);
 
   cs_lnum_t *ids = c2v->ids;
 
@@ -634,7 +634,7 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
     s_id = e_id;
   }
 
-  CS_REALLOC(c2v->ids, c2v->idx[n_cells], cs_lnum_t);
+  CS_REALLOC_HD(c2v->ids, c2v->idx[n_cells], cs_lnum_t, cs_alloc_mode);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -953,14 +953,14 @@ cs_adjacency_create(cs_flag_t    flag,
   if (stride > 0) {
 
     adj->flag |= CS_ADJACENCY_STRIDE;
-    CS_MALLOC(adj->ids, stride*n_elts, cs_lnum_t);
+    CS_MALLOC_HD(adj->ids, stride*n_elts, cs_lnum_t, cs_alloc_mode);
     if (flag & CS_ADJACENCY_SIGNED)
-      CS_MALLOC(adj->sgn, stride*n_elts, short int);
+      CS_MALLOC_HD(adj->sgn, stride*n_elts, short int, cs_alloc_mode);
 
   }
   else {
 
-    CS_MALLOC(adj->idx, n_elts+1, cs_lnum_t);
+    CS_MALLOC_HD(adj->idx, n_elts+1, cs_lnum_t, cs_alloc_mode);
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < adj->n_elts + 1; i++)  adj->idx[i] = 0;
 

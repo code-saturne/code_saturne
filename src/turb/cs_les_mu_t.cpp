@@ -47,6 +47,7 @@
 
 #include "base/cs_array.h"
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
@@ -65,6 +66,7 @@
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_reducers.h"
 #include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
@@ -75,7 +77,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
+#ifdef __cplusplus
 
 /*============================================================================
  * Static global variables
@@ -83,8 +85,10 @@ BEGIN_C_DECLS
 
 /* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
 
-static const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
-static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
+#undef _IV2T
+#undef _JV2T
+#define _IV2T {0, 1, 2, 0, 1, 0};
+#define _JV2T {0, 1, 2, 1, 2, 2};
 
 /*=============================================================================
  * Public function definitions
@@ -122,17 +126,29 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
 
   const int irovar = cs_glob_fluid_properties->irovar;
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
+  const cs_real_t xlesfl = cs_turb_xlesfl;
+  const cs_real_t ales = cs_turb_ales;
+  const cs_real_t bles = cs_turb_bles;
+  const cs_real_t xlesfd = cs_turb_xlesfd;
+
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
+
+  cs_dispatch_context ctx;
+
   /*  Allocate some work arrays */
 
   cs_real_t *w0, *xro, *xrof;
   cs_real_6_t *mij;
   cs_real_33_t *gradv;
 
-  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
-  CS_MALLOC(w0, n_cells_ext, cs_real_t);
-  CS_MALLOC(mij, n_cells_ext, cs_real_6_t);
-  CS_MALLOC(xro, n_cells_ext, cs_real_t);
-  CS_MALLOC(xrof, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+  CS_MALLOC_HD(w0, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(mij, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(xro, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xrof, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Take into account variable density case: Favre filtering
    * Constant density case: Reynolds filtering */
@@ -141,31 +157,31 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
   const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
   if (irovar == 1)
-    cs_array_real_copy(n_cells, crom, xro);
+    cs_array_copy<cs_real_t>(n_cells, crom, xro);
   else
-    cs_array_real_set_scalar(n_cells, 1.0, xro);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells, 1.0, xro);
 
   /* In case of constant density, xrof is 1.0 */
 
-  cs_les_filter(1, xro, xrof);
+  cs_les_filter_scalar(xro, xrof);
 
-  /* Calculation of velocity gradient and of
+  /* Computation of velocity gradient and of
    * S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2)
    *======================================== */
 
-  /* Allocate temporary arrays for gradients calculation */
+  /* Allocate temporary arrays for gradients computation */
 
   cs_real_6_t *w61, *w62;
 
-  CS_MALLOC(w61, n_cells_ext, cs_real_6_t);
-  CS_MALLOC(w62, n_cells_ext, cs_real_6_t);
+  CS_MALLOC_HD(w61, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(w62, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
   cs_field_gradient_vector(CS_F_(vel),
                            false, // no use_previous_t
                            1,     // inc
                            gradv);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     /* gradv[c_id][uvw][xyz] */
 
     cs_real_t divu = cs_math_33_trace(gradv[c_id]);
@@ -173,9 +189,9 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
     /* In the case of constant density, s11+s22+s33 is zero
      * TODO: this is not exactly true, we should always remove the trace  */
 
-    mij[c_id][0] = gradv[c_id][0][0]-irovar*1.0/3.0*divu;
-    mij[c_id][1] = gradv[c_id][1][1]-irovar*1.0/3.0*divu;
-    mij[c_id][2] = gradv[c_id][2][2]-irovar*1.0/3.0*divu;
+    mij[c_id][0] = gradv[c_id][0][0]-irovar*c_1ov3*divu;
+    mij[c_id][1] = gradv[c_id][1][1]-irovar*c_1ov3*divu;
+    mij[c_id][2] = gradv[c_id][2][2]-irovar*c_1ov3*divu;
     mij[c_id][3] = 0.5*(gradv[c_id][0][1]+gradv[c_id][1][0]);
     mij[c_id][4] = 0.5*(gradv[c_id][1][2]+gradv[c_id][2][1]);
     mij[c_id][5] = 0.5*(gradv[c_id][0][2]+gradv[c_id][2][0]);
@@ -185,57 +201,56 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
 
     for (cs_lnum_t ij = 0; ij < 6; ij++)
       w62[c_id][ij] = xro[c_id] * mij[c_id][ij];
-  }
+
+  });
+
+  ctx.wait();
 
   CS_FREE(gradv);
 
   /* w62 temporarily contains rho*S */
 
-  cs_les_filter(6, (cs_real_t*)w62, (cs_real_t*)w61);
+  cs_les_filter_strided<6>(w62, w61);
 
   /* w61 <rho*S>/<rho>, sf_n is ||<rho*S>/<rho>|| */
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 6; i++)
       w61[c_id][i] /= xrof[c_id];
 
     sf_n[c_id] =
       sqrt(2. * cs_math_sym_33_sym_33_product_trace(w61[c_id], w61[c_id]));
-  }
 
-  /* Here mij contains Sij^d
-   *   S_n  contains ||S||
-   *       sqrt(2)*sqrt(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
-   *   Sf_n contains ||SF||
-   *       sqrt(2)*sqrt(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2)) */
+    /* Here mij contains Sij^d
+     *   S_n  contains ||S||
+     *       sqrt(2)*sqrt(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
+     *   Sf_n contains ||SF||
+     *       sqrt(2)*sqrt(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2)) */
 
-  /* Calculation of Mij
-   * ================== */
+    /* Computation of Mij
+     * ================== */
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                                 cs_turb_bles);
+    const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
     w0[c_id] = delta;
     for (cs_lnum_t ij = 0; ij < 6; ij++)
       mij[c_id][ij] *= -2.0 * xro[c_id] * cs_math_pow2(delta) * s_n[c_id];
-  }
+  });
+
+  ctx.wait();
 
   /* w62 now contains <-2*rho*delta^2*||S||*S> */
-  cs_les_filter(6, (cs_real_t*)mij, (cs_real_t*)w62);
+  cs_les_filter_strided<6>(mij, w62);
 
   /* Now compute final mij value: M_ij = alpha_ij - beta_ij */
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const cs_real_t delta = w0[c_id];
-    const cs_real_t deltaf = cs_turb_xlesfd * delta;
+    const cs_real_t deltaf = xlesfd * delta;
     for (cs_lnum_t ij = 0; ij < 6; ij++)
       mij[c_id][ij] = -2.0 * xro[c_id] * cs_math_pow2(deltaf)
                            * sf_n[c_id] * w61[c_id][ij]
                       - w62[c_id][ij];
-  }
-
-  CS_FREE(w61);
-  CS_FREE(w62);
+  });
 
   /* Allocate work arrays */
   cs_real_6_t *lij;
@@ -243,48 +258,55 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
   cs_real_6_t *w_t;
   cs_real_3_t *w_v;
 
-  CS_MALLOC(rho_ui_uj, n_cells_ext, cs_real_6_t);
-  CS_MALLOC(lij, n_cells_ext, cs_real_6_t);
-  CS_MALLOC(w_t, n_cells_ext, cs_real_6_t);
-  CS_MALLOC(w_v, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(rho_ui_uj, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(lij, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(w_t, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(w_v, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   /* Filtering the velocity and its square */
 
   /* Second order moment  <rho u_i u_j> */
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t ij = 0; ij < 6; ij++)
-      w_t[c_id][ij] = xro[c_id]*vel[c_id][_iv2t[ij]]*vel[c_id][_jv2t[ij]];
-  }
-  cs_les_filter(6, (cs_real_t*)w_t, (cs_real_t*)rho_ui_uj);
+      w_t[c_id][ij] = xro[c_id]*vel[c_id][iv2t[ij]]*vel[c_id][jv2t[ij]];
+  });
+
+  ctx.wait();
+
+  cs_les_filter_strided<6>(w_t, rho_ui_uj);
 
   /* <rho u_i>/rho */
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++)
       w_v[c_id][i] = xro[c_id]*vel[c_id][i];
-  }
-  cs_les_filter(3, (cs_real_t*)w_v, (cs_real_t*)f_vel);
+  });
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+  ctx.wait();
+
+  cs_les_filter_strided<3>(w_v, f_vel);
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++)
       f_vel[c_id][i] /= xrof[c_id];
-  }
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
-
-    /* Calculation of Lij */
+    /* Computation of Lij */
     for (cs_lnum_t ij = 0; ij < 6; ij++)
       lij[c_id][ij] = rho_ui_uj[c_id][ij]
-        - xrof[c_id] * f_vel[c_id][_iv2t[ij]] * f_vel[c_id][_jv2t[ij]];
+        - xrof[c_id] * f_vel[c_id][iv2t[ij]] * f_vel[c_id][jv2t[ij]];
 
-    /* Calculation of Mij :: Lij */
+    /* Computation of Mij :: Lij */
     mijlij[c_id] = cs_math_sym_33_sym_33_product_trace(mij[c_id], lij[c_id]);
 
-    /* Calculation of Mij :: Mij */
+    /* Computation of Mij :: Mij */
     mijmij[c_id] = cs_math_sym_33_sym_33_product_trace(mij[c_id], mij[c_id]);
 
-  }
+  });
+
+  ctx.wait();
 
   /* Free memory */
+  CS_FREE(w61);
+  CS_FREE(w62);
   CS_FREE(gradv);
   CS_FREE(w0);
   CS_FREE(mij);
@@ -298,7 +320,7 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Calculation of the turbulent viscosity for
+ * \brief Computation of the turbulent viscosity for
  *        a dynamic Smagorinsky LES model
  *
  * \f[ smago = \dfrac{L_{ij}M_{ij}}{M_{ij}M_{ij}} \f]
@@ -324,13 +346,15 @@ cs_les_mu_t_smago_dyn(void)
 
   const int irovar = cs_glob_fluid_properties->irovar;
 
+  cs_dispatch_context ctx;
+
   /* Initialization
    * ============== */
 
   /*  Map field arrays */
 
-  cs_real_t *visct =  CS_F_(mu_t)->val;
-  const cs_real_t *crom  = CS_F_(rho)->val;
+  cs_real_t *visct = CS_F_(mu_t)->val;
+  const cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
   cs_real_t *cpro_smago
@@ -338,43 +362,45 @@ cs_les_mu_t_smago_dyn(void)
 
   /* For the calculation of the viscosity of the sub-mesh */
 
-  const cs_real_t xa     = cs_turb_ales;
-  const cs_real_t xb     = cs_turb_bles;
+  const cs_real_t ales = cs_turb_ales;
+  const cs_real_t bles = cs_turb_bles;
   const cs_real_t xsmgmx = cs_turb_csmago_max;
   const cs_real_t xsmgmn = cs_turb_csmago_min;
+  const cs_real_t xlesfl = cs_turb_xlesfl;
+  const cs_real_t xlesfd = cs_turb_xlesfd;
+  const cs_real_t c0 = cs_turb_crij_c0;
 
   /*  Allocate some work arrays */
 
   cs_real_t *w0, *w1, *xro, *xrof;
-
-  CS_MALLOC(w0, n_cells_ext, cs_real_t);
-  CS_MALLOC(w1, n_cells_ext, cs_real_t);
-  CS_MALLOC(xro, n_cells_ext, cs_real_t);
-  CS_MALLOC(xrof, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w0, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xro, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xrof, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Take into account variable density case: Favre filtering
    * Constant density case: Reynolds filtering */
 
   if (irovar == 1)
-    cs_array_real_copy(n_cells, crom, xro);
+    cs_array_copy<cs_real_t>(n_cells, crom, xro);
   else
-    cs_array_real_set_scalar(n_cells, 1.0, xro);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells, 1.0, xro);
 
   /* In case of constant density, xrof always 1.0 */
 
-  cs_les_filter(1, xro, xrof);
+  cs_les_filter_scalar(xro, xrof);
 
   /* Allocate work arrays */
   cs_real_t *s_n, *sf_n;
   cs_real_t *w2, *w3, *w4;
   cs_real_3_t *f_vel;
 
-  CS_MALLOC(s_n, n_cells_ext, cs_real_t);
-  CS_MALLOC(sf_n, n_cells_ext, cs_real_t);
-  CS_MALLOC(w2, n_cells_ext, cs_real_t);
-  CS_MALLOC(w3, n_cells_ext, cs_real_t);
-  CS_MALLOC(w4, n_cells_ext, cs_real_t);
-  CS_MALLOC(f_vel, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(s_n, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(sf_n, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w3, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w4, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(f_vel, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   /* Compute:
    *   s_n (aka sqrt(2SijSij))
@@ -383,58 +409,69 @@ cs_les_mu_t_smago_dyn(void)
    *   Mij:Mij
    *   Lij:Mij
    */
+
   cs_les_mu_t_smago_dyn_prepare(s_n, sf_n, f_vel, w2, w1);
 
   /* By default we compute a local average of the numerator and of the
      denominator, then only compute  the quotient. The user can overwrite
      this in cs_user_physical_properties_turb_viscosity. */
 
-  cs_les_filter(1, w1, w3);
-  cs_les_filter(1, w2, w4);
+  cs_les_filter_scalar(w1, w3);
+  cs_les_filter_scalar(w2, w4);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    if (fabs(w4[c_id]) <= cs_math_epzero)
+  cs_gnum_t iclipc = 0;
+
+  ctx.parallel_for_reduce_sum
+    (n_cells, iclipc, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t c_id,
+      CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
+
+    if (cs_math_fabs(w4[c_id]) <= cs_math_epzero)
       cpro_smago[c_id] = xsmgmx;
     else
       cpro_smago[c_id] = w3[c_id]/w4[c_id];
-  }
 
-  cs_gnum_t iclipc = 0;
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    /* Clipping of cpro_smago */
+
     if (cpro_smago[c_id] >= xsmgmx) {
       cpro_smago[c_id] = xsmgmx;
-      iclipc += 1;
+      sum += 1;
     }
-    else if(cpro_smago[c_id] <= xsmgmn) {
+    else if (cpro_smago[c_id] <= xsmgmn) {
       cpro_smago[c_id] = xsmgmn;
-      iclipc += 1;
+      sum += 1;
     }
-  }
 
-  /* Calculation of (dynamic) viscosity
-   * ================================== */
+    /* Computation of (dynamic) viscosity
+     * ================================== */
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t coef = cpro_smago[c_id];
-    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                                 cs_turb_bles);
+    const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
+
     visct[c_id] = crom[c_id]*coef*cs_math_pow2(delta)*s_n[c_id];
-  }
+  });
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
   cs_field_t *f_k = cs_field_by_name_try("k_sgs");
   cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
+
   if (f_k != nullptr && f_eps != nullptr) {
+    cs_real_t *cvar_k = f_k->val;
+    cs_real_t *cvar_eps = f_eps->val;
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      const cs_real_t nu_t = cs::max(visct[c_id], cs_math_epzero*viscl0)
-                           / crom[c_id];
-      const cs_real_t c0 = cs_turb_crij_c0;
-      cs_real_t s = s_n[c_id];
-      f_eps->val[c_id] = nu_t * cs_math_pow2(s);
-      f_k->val[c_id] = nu_t * s * (1. + 1.5 * c0)/sqrt(c0);
-    }
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const cs_real_t nu_t =   cs::max(visct[c_id], cs_math_epzero*viscl0)
+                             / crom[c_id];
+
+      const cs_real_t s = s_n[c_id];
+
+      cvar_eps[c_id] = nu_t * cs_math_pow2(s);
+      cvar_k[c_id] = nu_t * s * (1. + 1.5 * c0)/sqrt(c0);
+    });
+
+    ctx.wait();
 
     /* Parallel sync */
     cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
@@ -449,28 +486,37 @@ cs_les_mu_t_smago_dyn(void)
     = cs_field_get_equation_param_const(CS_F_(vel));
 
   if (eqp->verbosity >= 1) {
-    cs_real_t smagma = -1.0e12;
-    cs_real_t smagmi =  1.0e12;
-    cs_real_t smagmy =  0.0;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      smagma = fmax(smagma, cpro_smago[c_id]);
-      smagmi = fmin(smagmi, cpro_smago[c_id]);
-      smagmy += cpro_smago[c_id]*cell_vol[c_id];
-    }
-    cs_parall_max(1, CS_REAL_TYPE, &smagma);
-    cs_parall_min(1, CS_REAL_TYPE, &smagmi);
-    cs_parall_sum(1, CS_REAL_TYPE, &smagmy);
+    struct cs_data_1d2r rd;
+    struct cs_reduce_sum1d_min1r_max1r reducer;
+
+    ctx.parallel_for_reduce
+      (n_cells, rd, reducer,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_1d2r &res) {
+
+      res.d[0] = cpro_smago[c_id]*cell_vol[c_id];
+      res.r[0] = cpro_smago[c_id];
+      res.r[1] = cpro_smago[c_id];
+    });
+
+    ctx.wait();
+
+    cs_parall_min(1, CS_REAL_TYPE, &rd.r[0]);
+    cs_parall_max(1, CS_REAL_TYPE, &rd.r[1]);
+    cs_parall_sum(1, CS_DOUBLE, &rd.d[0]);
     cs_parall_counter(&iclipc, 1);
 
-    smagmy /= cs_glob_mesh_quantities->tot_vol;
+    cs_real_t smagmy = rd.d[0] / cs_glob_mesh_quantities->tot_vol;
+    cs_real_t smagmi = rd.r[0];
+    cs_real_t smagma = rd.r[1];
+
     cs_log_printf(CS_LOG_DEFAULT,
                   _("N. clippings of the Smagorinsky constant %lu\n"
                     " --- Information on the squared Smagorinsky constant\n"
                     " --------------------------------\n"
                     " Mean value  Min value  Max value\n"
                     " --------------------------------\n"
-                    " %e12.4, %e12.4, %e12.4\n"
+                    " %12.4e, %12.4e, %12.4e\n"
                     " --------------------------------\n"),
                   (unsigned long)iclipc, smagmy, smagmi, smagma);
   }
@@ -480,19 +526,26 @@ cs_les_mu_t_smago_dyn(void)
 
   /* Clip turbulent viscosity so that it is always positive. */
 
-  iclipc = 0;
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  cs_gnum_t n_clip_visct = 0;
+
+  ctx.parallel_for_reduce_sum
+    (n_cells, n_clip_visct, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t c_id,
+      CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
+
     if (visct[c_id] < 0.0) {
       visct[c_id] = 0.0;
-      iclipc += 1;
+      sum += 1;
     }
-  }
+  });
+
+  ctx.wait();
 
   if (eqp->verbosity >= 1) {
-    cs_parall_counter(&iclipc, 1);
+    cs_parall_counter(&n_clip_visct, 1);
     cs_log_printf(CS_LOG_DEFAULT,
                   _("N. clippings for turbulent viscosity (mu_t>0): %lu\n"),
-                  (unsigned long)iclipc);
+                  (unsigned long)n_clip_visct);
   }
 
   /* Scalar turbulent model
@@ -536,8 +589,8 @@ cs_les_mu_t_smago_dyn(void)
        * ========================= */
 
       cs_real_3_t *grads, *gradsf;
-      CS_MALLOC(grads, n_cells_ext, cs_real_3_t);
-      CS_MALLOC(gradsf, n_cells_ext, cs_real_3_t);
+      CS_MALLOC_HD(grads, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(gradsf, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
       const cs_field_bc_coeffs_t *bc_coeffs = fld->bc_coeffs;
 
@@ -549,14 +602,26 @@ cs_les_mu_t_smago_dyn(void)
 
       /* compute grad (<rho.Y>/<rho>) */
       cs_real_3_t *scami, *scamif;
-      CS_MALLOC(scami, n_cells_ext, cs_real_3_t);
-      CS_MALLOC(scamif, n_cells_ext, cs_real_3_t);
+      CS_MALLOC_HD(scami, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(scamif, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      cs_real_3_t *w_v, *f_sca_vel;
+      CS_MALLOC_HD(w_v, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(f_sca_vel, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         w0[c_id] = cvar_sca[c_id]*xro[c_id];
-      cs_les_filter(1, w0, w4);
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      });
+
+      ctx.wait();
+
+      cs_les_filter_scalar(w0, w4);
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         w4[c_id] /= xrof[c_id];
+      });
+
+      ctx.wait();
 
       const cs_equation_param_t *eqp_fld
         = cs_field_get_equation_param_const(fld);
@@ -586,40 +651,40 @@ cs_les_mu_t_smago_dyn(void)
                          nullptr, /* internal coupling */
                          gradsf);
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                                     cs_turb_bles);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
         for (cs_lnum_t i = 0; i < 3; i++)
           scami[c_id][i]
             = -xro[c_id]*cs_math_pow2(delta)*s_n[c_id]*grads[c_id][i];
-      }
+      });
 
-      cs_les_filter(3, (cs_real_t *)scami, (cs_real_t *)scamif);
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t deltaf  = cs_turb_xlesfd * pow(xa*cell_vol[c_id],xb);
-        for (cs_lnum_t i = 0; i < 3; i++)
+      ctx.wait();
+
+      cs_les_filter_strided<3>(scami, scamif);
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        const cs_real_t deltaf  = xlesfd * pow(ales*cell_vol[c_id], bles);
+        for (cs_lnum_t i = 0; i < 3; i++) {
           scami[c_id][i] = - cs_math_pow2(deltaf)*xrof[c_id]
                               * sf_n[c_id]*gradsf[c_id][i]
-                            - scamif[c_id][i];
-      }
+                           - scamif[c_id][i];
 
-      /* Compute the Li for scalar
-       * ========================= */
+          /* Compute the Li for scalar
+           * ========================= */
 
-      cs_real_3_t *w_v, *f_sca_vel;
-      CS_MALLOC(w_v, n_cells_ext, cs_real_3_t);
-      CS_MALLOC(f_sca_vel, n_cells_ext, cs_real_3_t);
-
-      /* rho*Y*vel */
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t i = 0; i < 3; i++)
+          /* rho*Y*vel */
           w_v[c_id][i] = xro[c_id]*vel[c_id][i]*cvar_sca[c_id];
-      }
-      cs_les_filter(3, (cs_real_t*)w_v, (cs_real_t*)f_sca_vel);
+        }
+
+      });
+
+      ctx.wait();
+
+      cs_les_filter_strided<3>(w_v, f_sca_vel);
 
       CS_FREE(w_v);
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         /* filter(rho Y vel) - rho filter(rho vel)/rho filter(Y)/rho */
         cs_real_t variance[3];
         for (cs_lnum_t i = 0; i < 3; i++)
@@ -627,29 +692,33 @@ cs_les_mu_t_smago_dyn(void)
 
         w1[c_id] = cs_math_3_dot_product(variance, scami[c_id]);
         w2[c_id] = cs_math_3_square_norm(scami[c_id]);
-      }
+      });
+
+      ctx.wait();
 
       CS_FREE(f_sca_vel);
 
-      cs_les_filter(1, w1, w3);
-      cs_les_filter(1, w2, w4);
+      cs_les_filter_scalar(w1, w3);
+      cs_les_filter_scalar(w2, w4);
 
       /*
        * Compute the SGS flux coefficient and SGS diffusivity
        * Cs >= 0, Dt >=0
        */
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        if(fabs(w4[c_id]) <= cs_math_epzero)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        if (cs_math_fabs(w4[c_id]) <= cs_math_epzero)
           cpro_sca_dync[c_id] = 0.0;
         else
-          cpro_sca_dync[c_id] = fmax(w3[c_id]/w4[c_id], 0.0);
+          cpro_sca_dync[c_id] = cs_math_fmax(w3[c_id]/w4[c_id], 0.0);
 
-        const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                                     cs_turb_bles);
+        const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
+
         cpro_turb_diff[c_id] =   crom[c_id] * cpro_sca_dync[c_id]
                                * cs_math_pow2(delta) * s_n[c_id];
-      }
+      });
+
+      ctx.wait();
 
       CS_FREE(scami);
       CS_FREE(scamif);
@@ -674,7 +743,7 @@ cs_les_mu_t_smago_dyn(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Calculation of turbulent viscosity for a Smagorinsky LES model
+/*! \brief Computation of turbulent viscosity for a Smagorinsky LES model
  *
  * \f[ \mu_T = \rho (C_{S} l)^2  \sqrt{2 S_{ij}S_{ij}} \f]
  * \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
@@ -690,14 +759,22 @@ cs_les_mu_t_smago_const(void)
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
+  const cs_real_t xlesfl = cs_turb_xlesfl;
+  const cs_real_t ales = cs_turb_ales;
+  const cs_real_t bles = cs_turb_bles;
+  const cs_real_t csmago = cs_turb_csmago;
+  const cs_real_t c0 = cs_turb_crij_c0;
+
+  cs_dispatch_context ctx;
+
   /* Initialization
    * ============== */
 
   cs_real_33_t *gradv;
-  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
-  cs_real_t *visct =  CS_F_(mu_t)->val;
-  const cs_real_t *crom  = CS_F_(rho)->val;
+  cs_real_t *visct = CS_F_(mu_t)->val;
+  const cs_real_t *crom = CS_F_(rho)->val;
 
   /* We need the velocity gradient */
 
@@ -706,33 +783,39 @@ cs_les_mu_t_smago_const(void)
                            1,      /* inc */
                            gradv);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
-
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     /* S2 = 2 S:S = 2 Sij Sij
      * Note: should be the deviatoric part */
-    cs_real_t s2 = 2. * cs_math_33_main_invariant_2(gradv[c_id]);
+    const cs_real_t s2 = 2. * cs_math_33_main_invariant_2(gradv[c_id]);
 
-    /* Calculation of (dynamic) viscosity */
+    /* Computation of (dynamic) viscosity */
 
-    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                                 cs_turb_bles);
-    visct[c_id] = crom[c_id] * cs_math_pow2(cs_turb_csmago * delta) * sqrt(s2);
-  }
+    const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
+
+    visct[c_id] = crom[c_id] * cs_math_pow2(csmago * delta) * sqrt(s2);
+  });
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
   cs_field_t *f_k = cs_field_by_name_try("k_sgs");
   cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
+
   if (f_k != nullptr && f_eps != nullptr) {
+    cs_real_t *cvar_k = f_k->val;
+    cs_real_t *cvar_eps = f_eps->val;
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      const cs_real_t nu_t = cs::max(visct[c_id], cs_math_epzero*viscl0)
-                           / crom[c_id];
-      const cs_real_t c0 = cs_turb_crij_c0;
-      cs_real_t s = sqrt(2. * cs_math_33_main_invariant_2(gradv[c_id]));
-      f_eps->val[c_id] = nu_t * cs_math_pow2(s);
-      f_k->val[c_id] = nu_t * s * (1. + 1.5 * c0)/sqrt(c0);
-    }
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const cs_real_t nu_t =   cs::max(visct[c_id], cs_math_epzero*viscl0)
+                             / crom[c_id];
+
+      const cs_real_t s = sqrt(2. * cs_math_33_main_invariant_2(gradv[c_id]));
+
+      cvar_eps[c_id] = nu_t * cs_math_pow2(s);
+      cvar_k[c_id] = nu_t * s * (1. + 1.5 * c0)/sqrt(c0);
+    });
+
+    ctx.wait();
 
     /* Parallel sync */
     cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
@@ -742,6 +825,8 @@ cs_les_mu_t_smago_const(void)
     cs_field_current_to_previous(f_eps);
     cs_field_current_to_previous(f_k);
   }
+
+  ctx.wait();
 
   /* Free memory */
   CS_FREE(gradv);
@@ -770,11 +855,21 @@ cs_les_mu_t_wale(void)
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
+  const cs_real_t xlesfl = cs_turb_xlesfl;
+  const cs_real_t ales = cs_turb_ales;
+  const cs_real_t bles = cs_turb_bles;
+  const cs_real_t c0 = cs_turb_crij_c0;
+  const cs_real_t cwale = cs_turb_cwale;
+
+  cs_dispatch_context ctx;
+
   /* Initialization
    * ============== */
 
   cs_real_33_t *gradv;
-  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   cs_real_t *visct = CS_F_(mu_t)->val;
   const cs_real_t *crom = CS_F_(rho)->val;
@@ -787,45 +882,41 @@ cs_les_mu_t_wale(void)
                            1,      /* inc */
                            gradv);
 
-  cs_real_t dudx[3][3], kdelta[3][3], g2[3][3];
-
   /* Kronecker delta Dij */
 
-  for (cs_lnum_t i = 0; i < 3; i++) {
-    for (cs_lnum_t j = 0; j < 3; j++) {
-      if (i == j)
-        kdelta[i][j] = 1;
-      else
-        kdelta[i][j] = 0;
-    }
-  }
+  const cs_real_t tdeltij[3][3] = {{1., 0., 0.},
+                                   {0., 1., 0.},
+                                   {0., 0., 1.}};
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
+
   cs_field_t *f_k = cs_field_by_name_try("k_sgs");
   cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
   cs_real_t *s_eq = nullptr;
+
   /* Store inverse of the time scale if needed */
   if (f_k != nullptr && f_eps != nullptr)
-    CS_MALLOC(s_eq, n_cells, cs_real_t);
+    CS_MALLOC_HD(s_eq, n_cells, cs_real_t, cs_alloc_mode);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     /* Dudx is interleaved, but not gradv...
      * gradv[c_id][xyz][uvw]
      * ====================================== */
+
+    cs_real_t dudx[3][3], g2[3][3];
 
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
         dudx[i][j] = gradv[c_id][i][j];
     }
 
-    cs_real_t s = 0, trace_g2 = 0;
-    const cs_real_t third = 1.0/3.0;
+    cs_real_t s = 0., trace_g2 = 0.;
 
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         /* s = 1/4 * (dUi/dXj + dUj/dXi) * (dUi/dXj + dUj/dXi) */
-        s += 0.25*cs_math_pow2(dudx[i][j] + dudx[j][i]);
+        s += 0.25 * cs_math_pow2(dudx[i][j] + dudx[j][i]);
 
         /* g2 is the square tensor of the velocity gradient */
         g2[i][j] = 0.0;
@@ -836,13 +927,13 @@ cs_les_mu_t_wale(void)
       trace_g2 += g2[i][i];
     }
 
-    cs_real_t sd = 0;
+    cs_real_t sd = 0.;
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         /* Traceless symmetric part of the square of the velocity gradient tensor
          *   Sijd =   0.5*(dUi/dXk dUk/dXj + dUj/dXk dUk/dXi)
          *          - 1/3 Dij dUk/dXl dUl/dXk */
-        cs_real_t sijd = 0.50*(g2[i][j]+g2[j][i])-third*kdelta[i][j]*trace_g2;
+        cs_real_t sijd = 0.5*(g2[i][j]+g2[j][i])-c_1ov3*tdeltij[i][j]*trace_g2;
         sd += cs_math_pow2(sijd);
       }
     }
@@ -861,25 +952,33 @@ cs_les_mu_t_wale(void)
     if (s_eq != nullptr)
       s_eq[c_id] = con;
 
-    cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                           cs_turb_bles);
+    cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
 
-    visct[c_id] = crom[c_id] * cs_math_pow2(cs_turb_cwale * delta) * con;
+    visct[c_id] = crom[c_id] * cs_math_pow2(cwale * delta) * con;
 
-  }
+  });
+
+  ctx.wait();
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
+
   if (f_k != nullptr && f_eps != nullptr) {
+    cs_real_t *cvar_k = f_k->val;
+    cs_real_t *cvar_eps = f_eps->val;
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      const cs_real_t nu_t = cs::max(visct[c_id], cs_math_epzero*viscl0)
-                           / crom[c_id];
-      const cs_real_t c0 = cs_turb_crij_c0;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const cs_real_t nu_t =   cs::max(visct[c_id], cs_math_epzero*viscl0)
+                             / crom[c_id];
+
       cs_real_t s = s_eq[c_id];
-      f_eps->val[c_id] = nu_t * cs_math_pow2(s);
-      f_k->val[c_id] = nu_t * s * (1. + 1.5 * c0)/sqrt(c0);
-    }
+
+      cvar_eps[c_id] = nu_t * cs_math_pow2(s);
+      cvar_k[c_id] = nu_t * s * (1. + 1.5 * c0) / sqrt(c0);
+    });
+
+    ctx.wait();
 
     /* Parallel sync */
     cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
@@ -898,7 +997,7 @@ cs_les_mu_t_wale(void)
 
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Calculation of turbulent viscosity for
+/*! \brief Computation of turbulent viscosity for
  *        a k-SGS LES model
  !*/
 /*----------------------------------------------------------------------------*/
@@ -910,26 +1009,33 @@ cs_les_mu_t_ksgs(void)
   const cs_lnum_t n_cells = m->n_cells;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
+  const cs_real_t xlesfl = cs_turb_xlesfl;
+  const cs_real_t ales = cs_turb_ales;
+  const cs_real_t bles = cs_turb_bles;
+  const cs_real_t csmago = cs_turb_csmago;
+
+  cs_dispatch_context ctx;
+
   /* Initialization
    * ============== */
 
-  cs_real_t *visct =  CS_F_(mu_t)->val;
-  const cs_real_t *crom  = CS_F_(rho)->val;
+  cs_real_t *visct = CS_F_(mu_t)->val;
+  const cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t *cvar_k = CS_F_(k)->val;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    /* Calculation of (dynamic) viscosity */
+    /* Computation of (dynamic) viscosity */
+    const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
 
-    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                                 cs_turb_bles);
-    visct[c_id] = crom[c_id] * cs_turb_csmago * delta * sqrt(cvar_k[c_id]);
-  }
+    visct[c_id] = crom[c_id] * csmago * delta * sqrt(cvar_k[c_id]);
+  });
 
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Calculation of turbulent viscosity for
+/*! \brief Computation of turbulent viscosity for
  *        a tau-SGS LES model
  !*/
 /*----------------------------------------------------------------------------*/
@@ -941,6 +1047,13 @@ cs_les_mu_t_tausgs(void)
   const cs_lnum_t n_cells = m->n_cells;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
+  const cs_real_t xlesfl = cs_turb_xlesfl;
+  const cs_real_t ales = cs_turb_ales;
+  const cs_real_t bles = cs_turb_bles;
+  const cs_real_t csmago = cs_turb_csmago;
+
+  cs_dispatch_context ctx;
+
   /* Initialization
    * ============== */
 
@@ -948,18 +1061,19 @@ cs_les_mu_t_tausgs(void)
   const cs_real_t *crom  = CS_F_(rho)->val;
   cs_real_6_t *cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    /* Calculation of (dynamic) viscosity */
+    /* Computation of (dynamic) viscosity */
 
-    const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-                                                 cs_turb_bles);
+    const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
+
     cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
-    visct[c_id] = crom[c_id] * cs_turb_csmago * delta * sqrt(tke);
-  }
+    visct[c_id] = crom[c_id] * csmago * delta * sqrt(tke);
+  });
 
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+#endif /* cplusplus */
