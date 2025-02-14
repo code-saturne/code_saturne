@@ -899,7 +899,6 @@ _physical_properties_update_models_stage_1(int  *mbrom)
   }
   else if (pm_flag[CS_COMBUSTION_LW] >= 0) {
     cs_combustion_lw_physical_prop();
-    *mbrom = 1;
   }
 
   if (pm_flag[CS_COMBUSTION_COAL] >= 0)

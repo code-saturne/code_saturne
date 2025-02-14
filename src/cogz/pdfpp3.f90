@@ -20,11 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine pdfpp3 &
-!================
-
- ( ncelet , ncel  ,                                               &
-   fm     , fp2m  , yfm    , yfp2m , coyfp )
+subroutine pdfpp3(ncel, fm, fp2m, yfm, yfp2m, coyfp)  &
+  bind(C, name='cs_f_pdfpp3')
 
 !===============================================================================
 ! FONCTION :
@@ -96,17 +93,19 @@ use coincl
 use field
 use cs_c_bindings
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          ncelet, ncel
+integer(c_int), value :: ncel
 
-double precision fm(ncelet)   , fp2m(ncelet)
-double precision yfm(ncelet)  , yfp2m(ncelet)
-double precision coyfp(ncelet)
+double precision fm(*)   , fp2m(*)
+double precision yfm(*)  , yfp2m(*)
+double precision coyfp(*)
 
 ! Local variables
 

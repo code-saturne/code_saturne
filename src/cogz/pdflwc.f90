@@ -20,11 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine pdflwc &
-!================
-
- ( ncelet , ncel  ,                                               &
-   fm     , fp2m  , yfm    , yfp2m )
+subroutine pdflwc(ncel, fm, fp2m, yfm, yfp2m) &
+  bind(C, name='cs_f_pdflwc')
 
 !===============================================================================
 ! FONCTION :
@@ -95,16 +92,18 @@ use ppincl
 use field
 use cs_c_bindings
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          ncelet, ncel
+integer(c_int), value :: ncel
 
-double precision fm(ncelet)   , fp2m(ncelet)
-double precision yfm(ncelet)  , yfp2m(ncelet)
+double precision fm(*), fp2m(*)
+double precision yfm(*), yfp2m(*)
 
 ! Local variables
 

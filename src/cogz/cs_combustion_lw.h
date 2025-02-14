@@ -71,13 +71,11 @@ cs_combustion_lw_fields_init(void);
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Compute physical properties for Libby-Williams combustion model.
- *
- * \param[in, out]   mbrom    filling indicator of romb
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_lw_physical_prop(int  *mbrom);
+cs_combustion_lw_physical_prop(void);
 
 /*----------------------------------------------------------------------------*/
 /*
