@@ -80,9 +80,7 @@ d3phst.f90 \
 d3pini.f90 \
 d3pint.f90 \
 lwcgfu.f90 \
-lwcurl.f90 \
 pdflwc.f90 \
-pdfpp3.f90 \
 cs_steady_laminar_flamelet_init.f90 \
 cs_steady_laminar_flamelet_physical_prop.f90 \
 cs_steady_laminar_flamelet_verify.f90 \
