@@ -337,9 +337,6 @@ _update_pressure_temperature(cs_lnum_t n_cells)
   if (cs_glob_time_scheme->time_order == 2)
     c = 2.0;
 
-  // Saving pressure corrected in resopv as ancient pressure
-  cs_field_current_to_previous(CS_F_(p));
-
   if (   cs_glob_thermal_model->thermal_variable
       == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
     cs_field_t *temp = cs_field_by_name_try("temperature");
@@ -352,6 +349,9 @@ _update_pressure_temperature(cs_lnum_t n_cells)
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     cvar_pr[c_id] = c * cvar_pr[c_id] - (c - 1) * cvara_pr[c_id];
+
+  // Saving pressure corrected in resopv as ancient pressure
+  cs_field_current_to_previous(CS_F_(p));
 }
 
 /*----------------------------------------------------------------------------*/
