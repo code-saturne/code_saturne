@@ -25,7 +25,7 @@
 # Files not built through classical Automake rules need to be explicitely
 # added to distribution.
 
-EXTRA_DIST = cs_solver.cpp
+EXTRA_DIST = cs_solver.cxx
 
 # Build flat archives
 
@@ -103,7 +103,7 @@ $(top_builddir)/src/meg/libcsmeg.a \
 $(top_builddir)/src/libcsmodules.a \
 $(top_builddir)/src/bft/libbft.a
 
-cs_solver = $(top_srcdir)/src/apps/cs_solver.cpp
+cs_solver = $(top_srcdir)/src/apps/cs_solver.cxx
 cs_solver.$(OBJEXT): $(cs_solver)
 	$(CXX) -c $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) ${cs_solver}
 
@@ -165,7 +165,7 @@ endif
 
 if HAVE_FRONTEND
 cs_io_dump_CPPFLAGS = -DLOCALEDIR=\"'$(localedir)'\" -I$(top_srcdir)/src -I$(top_builddir)/src
-cs_io_dump_SOURCES = cs_io_dump.cpp
+cs_io_dump_SOURCES = cs_io_dump.cxx
 cs_io_dump_LDADD =
 endif
 
