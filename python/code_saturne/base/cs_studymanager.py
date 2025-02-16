@@ -125,6 +125,10 @@ def process_cmd_line(argv, pkg):
                       type="string",
                       help="name of file for state analysis (default value is 'state_detailed')")
 
+    parser.add_option("--job-name", dest="job_name", default="saturne_vnv",
+                      type="string",
+                      help="name of job launched in slurm batch mode (default value is 'saturne_vnv')")
+
     parser.add_option("-z", "--disable-tex",
                       action="store_true", dest="disable_tex", default=False,
                       help="disable text rendering with LaTex in Matplotlib (use Mathtext)")
@@ -454,7 +458,8 @@ def run_studymanager(pkg, options):
     # Launch all steps in slurm batch mode
     if slurm_submission:
         studies.check_slurm_batches()
-        studies.run_slurm_batches(options.state_file)
+        studies.run_slurm_batches(options.state_file,
+                                  options.job_name)
 
     if options.debug:
         print(" run_studymanager() >> Exits runs")

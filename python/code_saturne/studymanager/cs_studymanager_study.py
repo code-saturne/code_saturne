@@ -1886,7 +1886,7 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def run_slurm_batches(self, state_file_name):
+    def run_slurm_batches(self, state_file_name, job_name):
         """
         Run all cases in slurm batch mode.
         The number of case per batch is limited by a maximum number and a maximum
@@ -1899,7 +1899,7 @@ class Studies(object):
 #SBATCH --time={1}:{2}:00
 #SBATCH --output=vnv_{3}
 #SBATCH --error=vnv_{3}
-#SBATCH --job-name=saturne_vnv_{3}
+#SBATCH --job-name={4}_{3}
 """
         cur_batch_id = 0
         tot_job_id_list = []
@@ -1963,7 +1963,8 @@ class Studies(object):
                             cmd = slurm_batch_template.format(nproc+1,
                                                               math.ceil(hh),
                                                               math.ceil(mm),
-                                                              cur_batch_id)
+                                                              cur_batch_id,
+                                                              job_name)
 
                             # add exclusive option to batch template for
                             # computation with at least 6 processes
@@ -2037,8 +2038,11 @@ class Studies(object):
 
                     # fill file with template
                     hh, mm = divmod(batch_total_time, 60)
-                    cmd = slurm_batch_template.format(nproc+1, math.ceil(hh),
-                                                      math.ceil(mm), cur_batch_id)
+                    cmd = slurm_batch_template.format(nproc+1,
+                                                      math.ceil(hh),
+                                                      math.ceil(mm),
+                                                      cur_batch_id,
+                                                      job_name)
 
                     # add exclusive option to batch template for
                     # computation with at least 6 processes
@@ -2103,7 +2107,8 @@ class Studies(object):
         cmd = slurm_batch_template.format(1,
                                           math.ceil(hh),
                                           math.ceil(mm),
-                                          cur_batch_id)
+                                          cur_batch_id,
+                                          job_name)
 
         # add user defined options if needed
         if self.__slurm_batch_args:
