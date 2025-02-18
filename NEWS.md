@@ -3,6 +3,9 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Major fix for missing updates of local time step at time steps where
+  log was not active for adaptive and local time steps.
+
 - GUI: allow setting reference temperature < 0 with Celsius scale.
 
 - Fix for LES SEM in volume mode (memory leak and incorrect array access).
