@@ -170,7 +170,6 @@ _intersect_intervals(const cs_gnum_t *i1,
 static cs_mesh_cartesian_params_t *
 _get_structured_mesh_by_id(const int id)
 {
-
   if (id < 0 || id >= _n_structured_meshes)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: Out of bound id.\n"));
@@ -317,7 +316,10 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
     dirp->progression = -1.;
     BFT_MALLOC(dirp->s, 1, cs_real_t);
 
-    dirp->s[0] = dir_len / dirp->ncells;
+    if (dirp->ncells > 0)
+      dirp->s[0] = dir_len / dirp->ncells;
+    else
+      dirp->s[0] = smin;
   }
   else if (law == CS_MESH_CARTESIAN_GEOMETRIC_LAW) {
     dirp->progression = progression;
