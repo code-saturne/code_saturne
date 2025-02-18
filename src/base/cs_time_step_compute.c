@@ -142,18 +142,21 @@ cs_local_time_step_compute(int  itrale)
   cs_field_t *f_courant_number = cs_field_by_name_try("courant_number");
   cs_field_t *f_fourier_number = cs_field_by_name_try("fourier_number");
 
-  if (   !(eqp_vel->iconv >= 1 && f_courant_number != NULL)
-      && !(eqp_vel->idiff >= 1  && f_fourier_number != NULL)
-      && !(   (eqp_vel->iconv >= 1 || eqp_vel->idiff >= 1)
-           && (eqp_vel->verbosity >= 2 || log_is_active))
-      && !(   cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
-           && (eqp_vel->verbosity >= 2 || log_is_active))
-      && !(   idtvar == -1 || idtvar == 1 || idtvar == 2
-           || (   (eqp_vel->verbosity >= 2 || log_is_active)
-               && (   eqp_vel->idiff >= 1
-                   || eqp_vel->iconv >= 1
-                   || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0))))
-    return;
+  if (idtvar == CS_TIME_STEP_CONSTANT) {
+    int v_iconv = eqp_vel->iconv;
+    int v_idiff = eqp_vel->idiff;
+    bool need_compute = false;
+    if (   (v_iconv >= 1 && f_courant_number != NULL)
+        || (v_idiff >= 1  && f_fourier_number != NULL))
+      need_compute = true;
+    else if (eqp_vel->verbosity >= 2 || log_is_active) {
+      if (   v_iconv + v_idiff >= 1
+          || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
+        need_compute = true;
+    }
+    if (need_compute == false)
+      return;
+  }
 
   /* Pointers to the mass fluxes */
 
@@ -659,7 +662,7 @@ cs_local_time_step_compute(int  itrale)
         cs_array_real_set_scalar(n_cells, dtloc, dt);
 
       }
-      else if (log_is_active || eqp_p->verbosity >= 2) {
+      else {
 
         cs_real_t vmin = dt[0];
         cs_real_t vmax = dt[0];
@@ -701,7 +704,7 @@ cs_local_time_step_compute(int  itrale)
            (unsigned long long)cpt[1], dtmax);
       }
 
-  }
+    }
 
     /* Ratio DT/DTmax related to density effect (display in ecrlis) */
 
