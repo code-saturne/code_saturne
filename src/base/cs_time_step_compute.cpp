@@ -150,7 +150,7 @@ cs_local_time_step_compute(int  itrale)
     if (   (v_iconv >= 1 && f_courant_number != nullptr)
         || (v_idiff >= 1  && f_fourier_number != nullptr))
       need_compute = true;
-    else if (eqp_vel->verbosity || log_is_active) {
+    else if (eqp_vel->verbosity >= 2 || log_is_active) {
       if (   v_iconv + v_idiff >= 1
           || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
         need_compute = true;
