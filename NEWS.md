@@ -3,6 +3,9 @@ release 8.2.2 (unreleased)
 
 ### Bug fixes:
 
+- Major fix for missing updates of local time step at time steps where
+  log was not active for adaptive and local time steps.
+
 - Fix build with GCC 14 (which has stricter type checking than
   older GCC versions) when also using PETSc.
 
