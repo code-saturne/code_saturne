@@ -1576,13 +1576,14 @@ cs_ctwr_source_term(int              f_id,
         /* Rain drift and velocity fields */
         sprintf(f_name, "vd_p_%02d", class_id);
         cs_real_3_t *cfld_drift
-          = (cs_real_3_t *)cs_field_by_composite_name(cfld_yp->name,"drift_vel")->val;
+          = (cs_real_3_t *)cs_field_by_composite_name
+                             (cfld_yp->name, "drift_vel")->val;
         cs_real_3_t *vp = (cs_real_3_t *)f_vp->val;
 
         /* Gravity norm */
         cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
         for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-          if (y_rain[cell_id] > 0.){
+          if (y_rain[cell_id] > 0.) {
             /* Droplet drift and absolute velocity */
             cs_real_t drift = cs_math_3_norm(cfld_drift[cell_id]);
             cs_real_t v_drop = cs_math_3_norm(vp[cell_id]);
@@ -1592,38 +1593,42 @@ cs_ctwr_source_term(int              f_id,
             cs_real_t e_o = g * droplet_diam * (rho_l - rho_h[cell_id]) / sigma;
             /* Sphere drag coefficient */
             cs_real_t cd = 0.;
-            if (re_d > 0.){
+            if (re_d > 0.) {
               cd = (24. / re_d) * (1. + 0.15 * pow(re_d, 0.685));
-            }
-            /* Droplet terminal velocity */
-            cs_real_t v_term = pow((4. * rho_l * droplet_diam * g)
-                / (3. * cd * rho_h[cell_id]), 0.5);
-            /* Droplet deformation / elongation */
-            cs_real_t e_tau = 1. / (1. + 0.148 * pow(e_o, 0.85));
-            //FIXME : check positivity of E
-            cs_real_t E =   1. - cs_math_pow2(CS_MIN(v_drop / v_term, 1.))
-              * (1. - e_tau);
 
-            /* Total drag coefficient for deformed drop */
-            cs_real_t cd_tot = cd * (1. - 0.17185 * (1. - E)
-                + 6.692 * cs_math_pow2(1. - E)
-                - 6.605 * cs_math_pow3(1. - E));
+              /* Droplet terminal velocity */
+              cs_real_t v_term = sqrt((4. * rho_l * droplet_diam * g)
+                                      / (3. * cd * rho_h[cell_id]));
+              /* Droplet deformation / elongation */
+              cs_real_t e_tau = 1. / (1. + 0.148 * pow(e_o, 0.85));
+              //FIXME : check positivity of E
+              cs_real_t e =   1. - cs_math_pow2(CS_MIN(v_drop / v_term, 1.))
+                            * (1. - e_tau);
 
-            /* Air / droplets interfacial area density calculation */
-            cs_real_t vol_frac_rain = y_rain[cell_id] * rho_h[cell_id] / rho_l;
-            if (vol_frac_rain >= 1.0)
-              vol_frac_rain = 1.0;
-            cs_real_t a_i =  6.0 * vol_frac_rain * (1.0 - vol_frac_rain)
-              / droplet_diam;
+              /* Total drag coefficient for deformed drop */
+              cs_real_t cd_tot = cd * (1. - 0.17185 * (1. - e)
+                                       + 6.692 * cs_math_pow2(1. - e)
+                                       - 6.605 * cs_math_pow3(1. - e));
 
-            /* Droplet relaxation time */
-            cs_real_t tau_d = rho_l * cs_math_pow2(droplet_diam) / (18. * visc);
-            /* Final head loss coefficient */
-            cs_real_t k_drop = rho_l * (cd_tot * re_d / 24.) * droplet_diam * a_i
-              / (6. * tau_d);
-            for (int k = 0; k < 3; k++){
-              _imp_st[cell_id][k][k] += -cell_f_vol[cell_id] * k_drop;
-              _exp_st[cell_id][k] += cell_f_vol[cell_id] * k_drop * vp[cell_id][k];
+              /* Air / droplets interfacial area density calculation */
+              cs_real_t vol_frac_rain = y_rain[cell_id] * rho_h[cell_id] / rho_l;
+              if (vol_frac_rain >= 1.0)
+                vol_frac_rain = 1.0;
+              cs_real_t a_i =  6.0 * vol_frac_rain * (1.0 - vol_frac_rain)
+                              / droplet_diam;
+
+              /* Droplet relaxation time */
+              cs_real_t tau_d = rho_l * cs_math_pow2(droplet_diam)
+                                      / (18. * visc);
+              /* Final head loss coefficient */
+              cs_real_t k_drop = rho_l * (cd_tot * re_d / 24.)
+                                       * droplet_diam * a_i
+                                       / (6. * tau_d);
+              for (int k = 0; k < 3; k++) {
+                _imp_st[cell_id][k][k] += -cell_f_vol[cell_id] * k_drop;
+                _exp_st[cell_id][k] +=   cell_f_vol[cell_id] * k_drop
+                                       * vp[cell_id][k];
+              }
             }
           }
         }
