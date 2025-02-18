@@ -30,6 +30,7 @@
  * Standard library headers
  *----------------------------------------------------------------------------*/
 
+#include <algorithm>
 #include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
