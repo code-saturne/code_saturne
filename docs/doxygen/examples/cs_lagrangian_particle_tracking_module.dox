@@ -187,6 +187,15 @@
 
   \snippet cs_user_lagr_volume_conditions.cpp lagr_vol_define_injection_2
 
+  In the followin example, we define an injection for rain zone for cooling
+  towers module:
+
+  \snippet cs_user_lagr_volume_conditions.cpp lagr_vol_define_injection_ctwr
+
+  This requires in preambule the definition of the function pointer:
+
+  \snippet cs_user_lagr_volume_conditions.cpp lagr_vol_define_injection_fun
+
   \subsection cs_user_lagr_volume_conditions_h_force  External force
 
   User definition of an external force field acting on the particles.

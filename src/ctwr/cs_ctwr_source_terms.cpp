@@ -931,6 +931,11 @@ cs_ctwr_source_term(int              f_id,
   /* Fields necessary for humid atmosphere model */
   cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
 
+  cs_real_t *lagr_injection_profile = nullptr;
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
+    lagr_injection_profile =
+      cs_field_by_name_try("lagr_injection_profile")->val;
+
   if (evap_model != CS_CTWR_NONE) {
 
     /* =========================================
@@ -1329,9 +1334,15 @@ cs_ctwr_source_term(int              f_id,
               * yh_l_pack[cell_id_leak] * sign * liq_mass_flow[face_id];
 
             /* Injected liquid mass equation for rain zones
-               (solve in drift model form) */
+               (solve in drift model form)
+               or store it for Lagrangian model for future injection
+             */
             if (f_id == cfld_yp->id) {
-              exp_st[cell_id_rain] += rain_leak_mass_flow;
+              if (lagr_injection_profile != nullptr)
+                lagr_injection_profile[cell_id_rain] = rain_leak_mass_flow;
+              else
+                exp_st[cell_id_rain] += rain_leak_mass_flow;
+              t_l_p[cell_id_rain] = t_l_p[cell_id_leak];
             }
             /* Rain enthalpy */
             else if (f_id == cfld_yh_rain->id) {

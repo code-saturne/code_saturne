@@ -48,6 +48,65 @@
 BEGIN_C_DECLS
 
 /*============================================================================
+ * Local (user defined) function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Computation of particle injection profile.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   zone_id     <-- id of associated mesh zone
+ *   location_id <-- id of associated mesh location
+ *   input       <-- pointer to optional (untyped) value or structure.
+ *   n_elts      <-- number of zone elements
+ *   elt_ids     <-- ids of zone elements
+ *   profile     <-- weight of a given zone element (size: n_elts)
+ *----------------------------------------------------------------------------*/
+
+/*! [lagr_vol_define_injection_fun] */
+static void
+_injection_profile(int               zone_id,
+                   int               location_id,
+                   const void       *input,
+                   cs_lnum_t         n_elts,
+                   const cs_lnum_t   elt_ids[],
+                   cs_real_t         profile[])
+{
+  CS_NO_WARN_IF_UNUSED(zone_id);
+  CS_NO_WARN_IF_UNUSED(location_id);
+  CS_NO_WARN_IF_UNUSED(input);
+
+  const cs_real_3_t  *b_face_coords
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
+  const int itmx = 8;
+
+  /* Loop on elements
+     ---------------- */
+
+  cs_real_t *lagr_injection_profile =
+    cs_field_by_name_try("lagr_injection_profile")->val;
+
+  for (cs_lnum_t ei = 0; ei < n_elts; ei++) {
+
+    const cs_lnum_t cell_id = elt_ids[ei];
+
+    /* number of particles in the cell proportional to
+     * the lagr_injection_profile */
+
+    profile[ei] = lagr_injection_profile[cell_id];
+
+    assert(profile[ei] >= 0.);
+
+  }
+}
+/*! [lagr_vol_define_injection_fun] */
+
+/*============================================================================
  * User function definitions
  *============================================================================*/
 
@@ -161,6 +220,53 @@ cs_user_lagr_volume_conditions(void)
   }
 
   /*! [lagr_vol_define_injection_2] */
+
+  /* Example for an injection using Cooling Tower module */
+
+  /*! [lagr_vol_define_injection_ctwr] */
+  {
+    const cs_mesh_t *m = cs_glob_mesh;
+
+    /* Get all cells zone */
+    const cs_zone_t *z = cs_volume_zone_by_id(0);
+
+    /* Inject 1 particle set every time step */
+    int set_id = 0;
+
+    cs_lagr_injection_set_t *zis
+      = cs_lagr_get_injection_set(lagr_vol_conds, z->id, set_id);
+
+    zis->n_inject = 1000;
+    zis->injection_frequency = 1; /* if <= 0, injection at
+                                     initialization only */
+    zis->velocity_profile = -1; /* fluid velocity */
+
+    zis->stat_weight = 1.0;
+
+    zis->diameter = 5e-3; /* 5mm */
+    zis->diameter_variance = 0.;
+
+    zis->density = 1000.;
+    zis->cp = 4179.0;
+
+    zis->fouling_index = 0.;
+
+    /* Profile of injection below the packing */
+    zis->injection_profile_func = _injection_profile;
+    cs_real_t flow_rate = 0;
+
+    cs_real_t *lagr_injection_profile =
+      cs_field_by_name_try("lagr_injection_profile")->val;
+
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+      flow_rate += lagr_injection_profile[cell_id];
+
+    cs_parall_sum(1, CS_REAL_TYPE, &flow_rate);
+
+    zis->flow_rate = flow_rate;
+
+  }
+  /*! [lagr_vol_define_injection_ctwr] */
 }
 
 /*----------------------------------------------------------------------------*/

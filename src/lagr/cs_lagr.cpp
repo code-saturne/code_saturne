@@ -1106,6 +1106,18 @@ cs_lagr_add_fields(void)
                                 true);
     cs_field_set_key_int(f, k_log, 1);
   }
+
+  /* Add field used for injection of particle with Lagrangian module */
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+    f = cs_field_create("lagr_injection_profile",
+                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        false);
+
+    cs_field_set_key_int(f, k_log, 1);
+    cs_field_set_key_int(f, k_vis, 0);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
