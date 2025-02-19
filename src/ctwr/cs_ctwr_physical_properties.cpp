@@ -280,7 +280,8 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
        No, this would be the value at the previous time step -
        At present, it is not stored in the restart file, so for lack
        of information initialize it with the present value of the temperature */
-    t_h_a[cell_id] = t_h[cell_id];
+    if (t_h_a != nullptr)
+      t_h_a[cell_id] = t_h[cell_id];
 
     /* Update the humid air enthalpy based on the solved value of T_h */
     //FIXME Need to use the method of 'cs_ctwr_phyvar_update'
