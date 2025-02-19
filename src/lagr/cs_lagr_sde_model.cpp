@@ -1669,11 +1669,11 @@ _sde_i_ct(const cs_lnum_t       npt,
   const cs_real_t *vel_f
     = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                CS_LAGR_VELOCITY_SEEN);
-  cs_real_t vel_p_mag = cs_math_3_norm(vel_p);
-  cs_real_t vel_f_mag = cs_math_3_norm(vel_f);
   cs_real_t rho_h = extra->cromf->val[cell_id];
   cs_real_t visc  = extra->viscl->val[cell_id];
-  cs_real_t rey   = rho_h * fabs(vel_p_mag - vel_f_mag) * dia / visc;
+
+  /* local Reynolds number */
+  cs_real_t rey   = rho_h * cs_math_3_distance(vel_p, vel_f) * dia / visc;
 
   /* Prandtl number */
   cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
@@ -1874,6 +1874,7 @@ cs_lagr_sde_model(const cs_lnum_t    npt,
   /* Integration of temperature seen by particles */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
+      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
       || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           && cs_glob_lagr_specific_physics->solve_temperature_seen == 1))
     _lagitf(npt, dt_part, nor, &temp_seen);
