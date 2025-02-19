@@ -179,6 +179,19 @@ _bft_printf_f(const char     *const format,
     cs_exit(EXIT_FAILURE);
   }
 
+  /* Workaround intel fortran compilers....
+   * Intel Fortran compilers lead to strange behaviors when write is combined
+   * with the "advance=no" keyword. On older ones (2019 or before),
+   * the buffer is wiped unless it's flushed after each call. On newer
+   * ones it may not be flushed unless forced to. Hence, we avoid using the
+   * advance=no keyword, and remove trailing "\n" if present.
+   */
+  size_t len = strlen(cs_buf_print_f);
+  if (strcmp(cs_buf_print_f + len -1, "\n") == 0) {
+    cs_buf_print_f[len - 1] = 0;
+    msgsize -= 1;
+  }
+
   /* Effective output by Fortran code */
 
   cs_f_print(cs_buf_print_f, &msgsize);

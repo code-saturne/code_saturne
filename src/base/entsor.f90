@@ -189,7 +189,16 @@ contains
       chloc(ii:ii) = str(ii)
     enddo
 
-    write(nfecra, '(a)', advance='no') chloc(1:l)
+    ! Workaround intel fortran compilers....
+    ! Intel Fortran compilers lead to strange behaviors when write is combined
+    ! with the "advance=no" keyword. On older ones (2019 or before),
+    ! the buffer is wiped unless it's flushed after each call. On newer
+    ! ones it may not be flushed unless forced to. Hence, we avoid using the
+    ! advance=no keyword, and remove trailing "\n" if present in the C level.
+    !
+    ! write(nfecra, '(a)', advance='no') chloc(1:taille) <- original call
+
+    write(nfecra, '(a)') chloc(1:l)
 
     return
 
