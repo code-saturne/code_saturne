@@ -90,10 +90,12 @@ config/code_saturne_build.cfg.in.in
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += extras m4 patches
 
+if HAVE_BACKEND
 csbase_includedir=$(pkgincludedir)/base
 nodist_csbase_include_HEADERS = \
 src/base/cs_config.h \
 src/base/cs_version.h
+endif
 
 DISTCLEANFILES = \
 bin/code_saturne \
