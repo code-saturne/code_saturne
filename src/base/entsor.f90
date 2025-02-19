@@ -198,7 +198,7 @@ contains
     ! advance=no keyword when possible, and remove trailing "\n" if
     ! present in the C level.
 
-    if (chloc(1:l) .eq. c_new_line) then
+    if (chloc(l:l) .eq. c_new_line) then
       write(nfecra, '(a)') chloc(1:l-1)
     else
       write(nfecra, '(a)', advance='no') chloc(1:l)
