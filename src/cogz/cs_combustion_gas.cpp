@@ -736,7 +736,7 @@ cs_combustion_gas_setup(void)
 
   cs_rad_transfer_model_t rt_model_type = cs_glob_rad_transfer_params->type;
 
-  if (cm->isoot && rt_model_type == CS_RAD_TRANSFER_NONE) {
+  if (cm->isoot > -1 && rt_model_type == CS_RAD_TRANSFER_NONE) {
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _(section_name),
