@@ -532,6 +532,18 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->lw.coeff2 = 0.;
   cm->lw.coeff3 = 0.;
 
+  // Number of Diracs for LWC model
+
+  if (cm->type / 100 == CS_COMBUSTION_LW) {
+    int lw_model = cm->type % 100;
+    if (lw_model == 0 || lw_model == 1)
+      cm->lw.n_dirac = 2;
+    else if (lw_model == 2 || lw_model == 3)
+      cm->lw.n_dirac = 3;
+    else if (lw_model == 4 || lw_model == 5)
+      cm->lw.n_dirac = 4;
+  }
+
   /*! Steady flamelet model */
 
   cm->n_gas_fl = -1;
@@ -760,18 +772,6 @@ cs_combustion_gas_setup(void)
   }
 
   cs_parameters_error_barrier();
-
-  // Number of Diracs for LWC model
-
-  if (cm->type / 100 == CS_COMBUSTION_LW) {
-    int lw_model = cm->type % 100;
-    if (lw_model == 0 || lw_model == 1)
-      cm->lw.n_dirac = 2;
-    else if (lw_model == 2 || lw_model == 3)
-      cm->lw.n_dirac = 3;
-    else if (lw_model == 4 || lw_model == 5)
-      cm->lw.n_dirac = 4;
-  }
 }
 
 /*----------------------------------------------------------------------------*/

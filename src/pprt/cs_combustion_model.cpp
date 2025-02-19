@@ -136,7 +136,6 @@ cs_f_coincl_get_pointers(int     **model_type,
                          int     **nlibvar,
                          int     **ikimid,
                          int     **mode_fp2m,
-                         int     **ndirac,
                          bool    **use_janaf,
                          double  **coefeg,
                          double  **compog,
@@ -147,19 +146,7 @@ cs_f_coincl_get_pointers(int     **model_type,
                          double  **hinoxy,
                          double  **pcigas,
                          double  **tinfue,
-                         double  **tinoxy,
-                         double  **vref,
-                         double  **lref,
-                         double  **ta,
-                         double  **tstar,
-                         double  **fmin,
-                         double  **fmax,
-                         double  **hmin,
-                         double  **hmax,
-                         double  **coeff1,
-                         double  **coeff2,
-                         double  **coeff3,
-                         double  **tgf);
+                         double  **tinoxy);
 
 void
 cs_f_combustion_model_get_pointers(double  **srrom);
@@ -257,7 +244,6 @@ cs_f_coincl_get_pointers(int     **model_type,
                          int     **nlibvar,
                          int     **ikimid,
                          int     **mode_fp2m,
-                         int     **ndirac,
                          bool    **use_janaf,
                          double  **coefeg,
                          double  **compog,
@@ -268,19 +254,7 @@ cs_f_coincl_get_pointers(int     **model_type,
                          double  **hinoxy,
                          double  **pcigas,
                          double  **tinfue,
-                         double  **tinoxy,
-                         double  **vref,
-                         double  **lref,
-                         double  **ta,
-                         double  **tstar,
-                         double  **fmin,
-                         double  **fmax,
-                         double  **hmin,
-                         double  **hmax,
-                         double  **coeff1,
-                         double  **coeff2,
-                         double  **coeff3,
-                         double  **tgf)
+                         double  **tinoxy)
 {
   *model_type = nullptr;
   *isoot  = nullptr;
@@ -292,7 +266,6 @@ cs_f_coincl_get_pointers(int     **model_type,
   *nlibvar = nullptr;
   *ikimid = nullptr;
   *mode_fp2m = nullptr;
-  *ndirac = nullptr;
   *use_janaf = nullptr;
   *coefeg = nullptr;
   *compog = nullptr;
@@ -304,18 +277,6 @@ cs_f_coincl_get_pointers(int     **model_type,
   *hinoxy = nullptr;
   *tinoxy = nullptr;
   *pcigas = nullptr;
-  *vref = nullptr;
-  *lref = nullptr;
-  *ta = nullptr;
-  *tstar = nullptr;
-  *fmin = nullptr;
-  *fmax = nullptr;
-  *hmin = nullptr;
-  *hmax = nullptr;
-  *coeff1 = nullptr;
-  *coeff2 = nullptr;
-  *coeff3 = nullptr;
-  *tgf = nullptr;
 
   if (cs_glob_combustion_gas_model != nullptr) {
 
@@ -331,7 +292,6 @@ cs_f_coincl_get_pointers(int     **model_type,
     *nlibvar = &(cm->nlibvar);
     *ikimid = &(cm->ikimid);
     *mode_fp2m = &(cm->mode_fp2m);
-    *ndirac = &(cm->lw.n_dirac);
     *use_janaf = &(cm->use_janaf);
     *coefeg = &(cm->coefeg[0][0]);
     *compog = &(cm->compog[0][0]);
@@ -343,18 +303,6 @@ cs_f_coincl_get_pointers(int     **model_type,
     *hinoxy = &(cm->hinoxy);
     *tinoxy = &(cm->tinoxy);
     *pcigas = &(cm->pcigas);
-    *vref = &(cm->lw.vref);
-    *lref = &(cm->lw.lref);
-    *ta = &(cm->lw.ta);
-    *tstar = &(cm->lw.tstar);
-    *fmin = &(cm->lw.fmin);
-    *fmax = &(cm->lw.fmax);
-    *hmin = &(cm->lw.hmin);
-    *hmax = &(cm->lw.hmax);
-    *coeff1 = &(cm->lw.coeff1);
-    *coeff2 = &(cm->lw.coeff2);
-    *coeff3 = &(cm->lw.coeff3);
-    *tgf = &(cm->tgf);
 
   }
   else if (cs_glob_coal_model != nullptr) {

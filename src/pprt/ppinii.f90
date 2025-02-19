@@ -55,7 +55,6 @@ implicit none
 ! Local variables
 
 integer         igg, ih, if
-integer         idirac
 
 !===============================================================================
 
@@ -73,15 +72,6 @@ call pp_models_init
 do igg = 1, ngazgm
   iym(igg) = -1
   ibym(igg) = -1
-enddo
-do idirac = 1, ndracm
-  irhol (idirac) = -1
-  iteml (idirac) = -1
-  ifmel (idirac) = -1
-  ifmal (idirac) = -1
-  iampl (idirac) = -1
-  itscl (idirac) = -1
-  imaml (idirac) = -1
 enddo
 
 !===============================================================================

@@ -42,9 +42,6 @@ module coincl
 
   ! ---- Grandeurs communes
 
-  ! combustible name
-  character(len=12) :: namgas
-
   ! combustible reaction enthalpy (Pouvoir Calorifique Inferieur)
   double precision, save, pointer :: pcigas
 
@@ -129,40 +126,6 @@ module coincl
 
   !========================================================================
 
-  !--> MODELE FLAMME DE PREMELANGE (MODELE EBU)
-
-  ! ---- Grandeurs fournies par l'utilisateur dans usebuc.f90
-
-  !       TGF          --> Temperature gaz frais en K identique
-  !                        pour premelange frais et dilution
-
-  real(c_double), pointer, save :: tgf
-
-  !--> MODELE DE FLAMME DE PREMELANGE LWC
-
-  !       NDRACM : nombre de pics de Dirac maximum
-  !       NDIRAC : nombre de Dirac (en fonction du modele)
-
-  integer ndracm
-  parameter (ndracm = 5)
-
-  integer(c_int), pointer, save :: ndirac
-
-  ! --- Grandeurs fournies par l'utilisateur dans uslwc1.f90
-
-  !       VREF : Vitesse de reference
-  !       LREF : Longueur de reference
-  !         TA : Temperature d'activation
-  !      TSTAR : Temperature de cross-over
-
-  integer, save :: irhol(ndracm), iteml(ndracm), ifmel(ndracm)
-  integer, save :: ifmal(ndracm), iampl(ndracm), itscl(ndracm)
-  integer, save :: imaml(ndracm), imam
-
-  real(c_double), pointer, save :: vref, lref, ta, tstar
-  real(c_double), pointer, save :: fmin, fmax, hmin, hmax
-  real(c_double), pointer, save :: coeff1, coeff2, coeff3
-
   ! --- Soot model
 
   !     XSOOT : soot fraction production (isoot = 0)
@@ -197,18 +160,6 @@ module coincl
   !> id of transported progress variable field (for ippmod(islfm) >= 2)
   integer, save :: ipvm = -1
 
-  !> id of fresh gas mass fraction field
-  integer, save :: iygfm = -1
-
-  !> id of mass fraction field
-  integer, save :: iyfm = -1
-
-  !> id of mass fraction variance field
-  integer, save :: iyfp2m = -1
-
-  !> id of mass fraction covariance field
-  integer, save :: icoyfp = -1
-
   ! ---- Variables d'etat
 
   !> mass fractions :
@@ -221,10 +172,6 @@ module coincl
 
   !> state variable (temperature)
   integer, save :: itemp = -1
-  !> state variable
-  integer, save :: ifmin
-  !> state variable
-  integer, save :: ifmax
 
   !> state variable: Pointer to the reconstructed variance in case of mode_fp2m = 1
   integer, save :: irecvr = -1
@@ -251,10 +198,6 @@ module coincl
   !> state variable:  \f$T^4\f$ term, when the radiation modelling is activated
   integer, save :: it4m = -1
 
-  ! pointer for source term in combustion
-  ! TODO
-  integer, save :: itsc = -1
-
   !> \}
 
   !=============================================================================
@@ -275,32 +218,22 @@ module coincl
                                         p_nxr, p_nzm,          &
                                         p_nzvar, p_nlibvar,    &
                                         p_ikimid, p_mode_fp2m, &
-                                        p_ndirac, p_use_janaf, &
+                                        p_use_janaf,           &
                                         p_coefeg, p_compog,    &
                                         p_xsoot, p_rosoot,     &
                                         p_lsp_fuel,            &
                                         p_hinfue, p_hinoxy,    &
                                         p_pcigas, p_tinfue,    &
-                                        p_tinoxy,              &
-                                        p_vref, p_lref,        &
-                                        p_ta, p_tstar,         &
-                                        p_fmin, p_fmax,        &
-                                        p_hmin, p_hmax,        &
-                                        p_coeff1, p_coeff2,    &
-                                        p_coeff3,              &
-                                        p_tgf)                 &
+                                        p_tinoxy)        &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_cmtype, p_isoot, p_ngazfl, p_nki, p_nxr, p_nzm
       type(c_ptr), intent(out) :: p_nzvar, p_nlibvar, p_ikimid, p_mode_fp2m
-      type(c_ptr), intent(out) :: p_ndirac, p_use_janaf
+      type(c_ptr), intent(out) :: p_use_janaf
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot, p_lsp_fuel
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
-      type(c_ptr), intent(out) :: p_tinoxy, p_vref, p_lref, p_ta, p_tstar
-      type(c_ptr), intent(out) :: p_fmin, p_fmax, p_hmin, p_hmax
-      type(c_ptr), intent(out) :: p_coeff1, p_coeff2, p_coeff3
-      type(c_ptr), intent(out) :: p_tgf
+      type(c_ptr), intent(out) :: p_tinoxy
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -342,27 +275,19 @@ contains
 
     type(c_ptr) :: c_cmtype, c_isoot, c_ngazfl, c_nki, c_nxr, c_nzm,   &
                    c_nzvar, c_nlibvar, c_ikimid, c_mode_fp2m,          &
-                   c_ndirac, c_use_janaf, c_coefeg, c_compog, c_xsoot, &
+                   c_use_janaf, c_coefeg, c_compog, c_xsoot,           &
                    c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,           &
-                   c_pcigas, c_tinfue, c_tinoxy,                       &
-                   c_vref, c_lref, c_ta, c_tstar,                      &
-                   c_fmin, c_fmax, c_hmin, c_hmax,                     &
-                   c_coeff1, c_coeff2, c_coeff3,                       &
-                   c_tgf
+                   c_pcigas, c_tinfue, c_tinoxy
 
     call cs_f_coincl_get_pointers(c_cmtype, c_isoot, c_ngazfl, c_nki,  &
                                   c_nxr, c_nzm, c_nzvar,               &
                                   c_nlibvar, c_ikimid,                 &
-                                  c_mode_fp2m, c_ndirac, c_use_janaf,  &
+                                  c_mode_fp2m, c_use_janaf,            &
                                   c_coefeg, c_compog,                  &
                                   c_xsoot,  c_rosoot,                  &
                                   c_lsp_fuel,                          &
                                   c_hinfue, c_hinoxy,                  &
-                                  c_pcigas, c_tinfue, c_tinoxy,        &
-                                  c_vref, c_lref, c_ta, c_tstar,       &
-                                  c_fmin, c_fmax, c_hmin, c_hmax,      &
-                                  c_coeff1, c_coeff2, c_coeff3,        &
-                                  c_tgf)
+                                  c_pcigas, c_tinfue, c_tinoxy)
 
     call c_f_pointer(c_cmtype, cmtype)
     call c_f_pointer(c_isoot, isoot)
@@ -374,7 +299,6 @@ contains
     call c_f_pointer(c_nlibvar, nlibvar)
     call c_f_pointer(c_ikimid, ikimid)
     call c_f_pointer(c_mode_fp2m, mode_fp2m)
-    call c_f_pointer(c_ndirac, ndirac)
     call c_f_pointer(c_use_janaf, use_janaf)
     call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
     call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
@@ -386,18 +310,6 @@ contains
     call c_f_pointer(c_pcigas, pcigas)
     call c_f_pointer(c_tinfue, tinfue)
     call c_f_pointer(c_tinoxy, tinoxy)
-    call c_f_pointer(c_vref, vref)
-    call c_f_pointer(c_lref, lref)
-    call c_f_pointer(c_ta, ta)
-    call c_f_pointer(c_tstar, tstar)
-    call c_f_pointer(c_fmin, fmin)
-    call c_f_pointer(c_fmax, fmax)
-    call c_f_pointer(c_hmin, hmin)
-    call c_f_pointer(c_hmax, hmax)
-    call c_f_pointer(c_coeff1, coeff1)
-    call c_f_pointer(c_coeff2, coeff2)
-    call c_f_pointer(c_coeff3, coeff3)
-    call c_f_pointer(c_tgf, tgf);
 
   end subroutine co_models_init
 
@@ -474,9 +386,6 @@ contains
     call field_get_id_try('mixture_fraction_variance', ifp2m)
     call field_get_id_try('mixture_fraction_2nd_moment', ifsqm)
     call field_get_id_try('progress_variable', ipvm)
-    call field_get_id_try('fresh_gas_fraction', iygfm)
-    call field_get_id_try('mass_fraction', iyfm)
-    call field_get_id_try('mass_fraction_variance', iyfp2m)
 
   end subroutine cs_f_combustion_map_variables
 
@@ -496,8 +405,7 @@ contains
 
     integer(c_int), dimension(*) :: iym_c
 
-    integer :: idirac, ifm
-    character(len=80) :: f_name
+    integer :: ifm
 
     call field_get_id_try('temperature', itemp)
 
@@ -514,28 +422,6 @@ contains
       call field_get_id_try('omega_c', iomgc)
       call field_get_id_try('total_dissipation', itotki)
       call field_get_id_try('reconstructed_fp2m', irecvr)
-
-    else if (ippmod(icolwc).ge.0) then
-
-      call field_get_id_try('molar_mass', imam)
-      call field_get_id_try('source_term', itsc)
-
-      do idirac = 1, ndirac
-        write(f_name,  '(a,i1)') 'rho_local_', idirac
-        call field_get_id_try(f_name, irhol(idirac))
-        write(f_name,  '(a,i1)') 'temperature_local_', idirac
-        call field_get_id_try(f_name, iteml(idirac))
-        write(f_name,  '(a,i1)') 'ym_local_', idirac
-        call field_get_id_try(f_name, ifmel(idirac))
-        write(f_name,  '(a,i1)') 'w_local_', idirac
-        call field_get_id_try(f_name, ifmal(idirac))
-        write(f_name,  '(a,i1)') 'amplitude_local_', idirac
-        call field_get_id_try(f_name, iampl(idirac))
-        write(f_name,  '(a,i1)') 'chemical_st_local_', idirac
-        call field_get_id_try(f_name, itscl(idirac))
-        write(f_name,  '(a,i1)') 'molar_mass_local_', idirac
-        call field_get_id_try(f_name, imaml(idirac))
-      enddo
 
     endif
 

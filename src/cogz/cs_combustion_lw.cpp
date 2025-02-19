@@ -114,18 +114,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_pdflwc(const cs_lnum_t   n_cells,
-            const cs_real_t  *fm,
-            const cs_real_t  *fp2m,
-            const cs_real_t  *yfm,
-            const cs_real_t  *yfp2m);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -237,6 +225,619 @@ _lwcurl(const cs_real_t   ampen1,
     exit01 = valmoy;
     exit02 = valmoy;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute values of function G.
+ *
+ * \param[in]   f     mixture fraction
+ * \param[in]   fm    mixture fraction mean
+ * \param[in]   fm2m  mixture fraction variance
+ * \param[in]   yp2m  massfraction variance
+ *
+ * \return value of g at point f
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_lwcgfu(cs_real_t  f,
+        cs_real_t  fm,
+        cs_real_t  yfp2m,
+        cs_real_t  fp2m)
+{
+  constexpr cs_real_t epsi = 1.e-9;
+  cs_real_t gfunc = 0.;
+
+  if (fp2m <= epsi)
+    gfunc = 1.;
+  else
+    gfunc = (f-fm) * sqrt(1. + yfp2m/fp2m);
+
+  return gfunc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute PDF parameters for 3-point Libby-Williams with curl
+ *        or modified curl hypothesis.
+ *
+ * Remarks:
+ * --------
+ *
+ * In a (F, Yf) diagram, we build 2 lines:
+ * - The complete combustion line
+ * - The mixing line
+ *
+ * In this domain, we build 2 peaks on F which defined a 3rd line on
+ * which we define a curvilinear abscissa G.
+ *
+ * The result is:
+ * -------------
+ *
+ * Compute parameters associated to Dirac functions.
+ *
+ * The positions of peaks are:
+ *   [F[0],Y1[0]] and [F[0],Y1[1]]
+ *   [F[1],Y2[0]] and [F[1],Y2[1]]
+ * Their respective amplitudes are:
+ *   D1[0] and D1[1]
+ *   D2[0] and D2[1]
+ * For each Dirac, compute:
+ *   Temperature Ti(j),
+ *   Density RHOi(j),
+ *   Chemical source term Wi(j),
+ *     i being the positiion on F of the Dirac peak
+ *     j being the positiion on Yf of the Dirac peak
+ *
+ * \param[in]  n_cells  number of associated cells
+ * \param[in]  fm       mean of mixture fraction
+ * \param[in]  fp2m     variance of the mixture fraction
+ * \param[in]  yfm      mean of the mass fraction
+ * \param[in]  yfp2m    variance of the mass fraction
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pdflwc(cs_lnum_t         n_cells,
+        const cs_real_t  *fm,
+        const cs_real_t  *fp2m,
+        const cs_real_t  *yfm,
+        const cs_real_t  *yfp2m)
+{
+  // Call counter
+  static int n_calls = 0;
+  n_calls += 1;
+
+  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  cs_real_t f[CS_COMBUSTION_GAS_MAX_DIRAC], y[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t d[CS_COMBUSTION_GAS_MAX_DIRAC], g[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t h[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t teml[CS_COMBUSTION_GAS_MAX_DIRAC], maml[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t w[CS_COMBUSTION_GAS_MAX_DIRAC], rhol[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t theta[CS_COMBUSTION_GAS_MAX_DIRAC];
+
+  const cs_real_t epsi = 1.e-09;
+
+  cs_real_t gmin = HUGE_VALF;
+  cs_real_t gmax = -HUGE_VALF;
+
+  // Get variables and coefficients
+
+  cs_real_t *crom = CS_F_(rho)->val;
+  cs_real_t *cpro_temp = CS_F_(t)->val;
+  cs_real_t *cpro_ym1 = cm->ym[0]->val;
+  cs_real_t *cpro_ym2 = cm->ym[1]->val;
+  cs_real_t *cpro_ym3 = cm->ym[2]->val;
+  cs_real_t *cpro_tsc = cm->lw.tsc->val;
+  cs_real_t *cpro_mam = cm->lw.mam->val;
+
+  cs_real_t *cpro_fmel[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t *cpro_fmal[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t *cpro_teml[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t *cpro_tscl[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t *cpro_rhol[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t *cpro_maml[CS_COMBUSTION_GAS_MAX_DIRAC];
+  cs_real_t *cpro_ampl[CS_COMBUSTION_GAS_MAX_DIRAC];
+
+  const int n_dirac = cm->lw.n_dirac;
+  for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+    cpro_fmel[dirac_id] = cm->lw.fmel[dirac_id]->val;
+    cpro_fmal[dirac_id] = cm->lw.fmal[dirac_id]->val;
+    cpro_teml[dirac_id] = cm->lw.teml[dirac_id]->val;
+    cpro_tscl[dirac_id] = cm->lw.tscl[dirac_id]->val;
+    cpro_rhol[dirac_id] = cm->lw.rhol[dirac_id]->val;
+    cpro_maml[dirac_id] = cm->lw.maml[dirac_id]->val;
+    cpro_ampl[dirac_id] = cm->lw.ampl[dirac_id]->val;
+  }
+
+  cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+  for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
+    coefg[i] = 0;
+
+  const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+  const cs_real_t p0 = fp->p0;
+  const cs_real_t ro0 = fp->ro0;
+
+  const cs_real_t srrom = cm->srrom;
+  const cs_real_t ta = cm->lw.ta;
+  const cs_real_t tstar = cm->lw.tstar;
+  const cs_real_t h_max = cm->lw.hmax;
+  const cs_real_t h_min = cm->lw.hmin;
+  const cs_real_t coeff1 = cm->lw.coeff1;
+  const cs_real_t coeff2 = cm->lw.coeff2;
+  const cs_real_t coeff3 = cm->lw.coeff3;
+  const cs_real_t vref = cm->lw.vref;
+  const cs_real_t lref = cm->lw.lref;
+  const cs_real_t *fs = cm->fs;
+  const cs_real_t *wmolg = cm->wmolg;
+
+  cs_real_t f_max = cm->lw.fmax;
+  cs_real_t f_min = cm->lw.fmin;
+
+  /* Loop on cells
+     ------------- */
+
+  const int n_gas_species = cm->n_gas_species;
+
+  bool update_rho = false;
+  if (n_calls > 1 || cs_restart_get_field_read_status(CS_F_(rho)->id) == 1)
+    update_rho = true;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    cs_real_t fmp    =  std::max(std::min(f_max, fm[c_id]), f_min);
+    cs_real_t yfmp   =  std::max(std::min(yfm[c_id], fmp),
+                                 (fmp-fs[0]) / (1.-fs[0]));
+    yfmp = std::max(yfmp, 0.);
+    cs_real_t fp2mp  =  std::max(std::min(fp2m[c_id],
+                                          (std::min(f_max,
+                                                    (1-fs[0])*yfmp+fs[0])-fmp)
+                                          * (fmp-std::max(f_min, yfmp))), 0.);
+    cs_real_t yfp2mp
+      =  std::max(std::min(yfp2m[c_id],
+                           (fmp-yfmp) * (yfmp-std::max(0.,
+                                                       (fmp-fs[0])/(1.-fs[0])))),
+                  0.);
+
+    // no PDF case
+
+    if (fp2mp < epsi && yfp2mp < epsi) {
+
+      cs_real_t sum1 = 0., sum2 = 0., sum3 = 0., sum4 = 0.;
+      cs_real_t sum5 = 0., sum6 = 0., sum15 = 0., sum16 = 0.;
+
+      // For each Dirac peak:
+      for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+
+        // Compute f, Y, Amplitude of each DIRAC == mean Val
+
+        d[dirac_id] = 1. / n_dirac;
+        f[dirac_id] = fmp;
+        y[dirac_id] = yfmp;
+
+        // Compute Enthalpy
+
+        h[dirac_id] =  ((h_max-h_min)*f[dirac_id] + h_min*f_max - h_max*f_min)
+                      / (f_max-f_min);
+
+        // Compute mass fraction of gasses (F, O and P)
+
+        cs_real_t yfuel = y[dirac_id];
+        cs_real_t yoxyd = 1. - (coeff3+1.)*f[dirac_id] + coeff3*y[dirac_id];
+        cs_real_t yprod = 1. - yfuel - yoxyd;
+        cs_real_t yo2   = coeff1 - (coeff1 + coeff2) * f[dirac_id]
+                                 + coeff2 * y[dirac_id];
+
+        // Compute molar mass and temperature
+
+        coefg[0] = yfuel;
+        coefg[1] = yoxyd;
+        coefg[2] = yprod;
+
+        cs_real_t nbmol = 0;
+        for (int igg = 0; igg < n_gas_species; igg++)
+          nbmol += coefg[igg]/wmolg[igg];
+        maml[dirac_id] = 1./nbmol;
+
+        // Temperature for each peak
+
+        teml[dirac_id] = cs_gas_combustion_h_to_t(coefg, h[dirac_id]);
+
+        // Density for each peak
+
+        if (update_rho)
+          rhol[dirac_id] =   p0 * maml[dirac_id]
+                           / (cs_physical_constants_r*teml[dirac_id]);
+        else
+          rhol[dirac_id] = ro0;
+
+        // Compute source term for scalar YFM for each peak
+
+        theta[dirac_id] =   ta / teml[dirac_id]
+                          * (1. - teml[dirac_id] / tstar);
+        w[dirac_id] = vref / lref * (- d[dirac_id]*rhol[dirac_id]
+                                     * yfuel*yo2
+                                     * exp(-theta[dirac_id]));
+
+        // Molar mass of mixture
+
+        sum1 += d[dirac_id]*maml[dirac_id];
+
+        // Mixture temperature
+
+        sum2 += d[dirac_id]*teml[dirac_id];
+
+        // Temperature / Molar mass
+
+        sum3 += d[dirac_id]*teml[dirac_id]/maml[dirac_id];
+
+        // Mass fractions of global species
+
+        sum4 += yfuel*d[dirac_id];
+        sum5 += yoxyd*d[dirac_id];
+        sum6 += yprod*d[dirac_id];
+        sum15 += rhol[dirac_id]*d[dirac_id];
+        sum16 += w[dirac_id];
+
+        // Store properties
+
+        cpro_ampl[dirac_id][c_id] = d[dirac_id];
+        cpro_fmel[dirac_id][c_id] = f[dirac_id];
+        cpro_fmal[dirac_id][c_id] = y[dirac_id];
+        cpro_teml[dirac_id][c_id] = teml[dirac_id];
+        cpro_maml[dirac_id][c_id] = maml[dirac_id];
+        cpro_rhol[dirac_id][c_id] = rhol[dirac_id];
+        cpro_tscl[dirac_id][c_id] = w[dirac_id];
+
+      } // Loop on Diracs
+
+      cpro_mam[c_id]  = sum1;
+      cpro_temp[c_id] = sum2;
+      cpro_ym1[c_id]  = sum4;
+      cpro_ym2[c_id]  = sum5;
+      cpro_ym3[c_id]  = sum6;
+      cpro_tsc[c_id]  = sum16;
+
+      // Mixture density
+
+      if (update_rho) {
+        cs_real_t temsmm = sum3;
+        crom[c_id] =    srrom * crom[c_id]
+                     + (1.-srrom) * (p0/(cs_physical_constants_r*temsmm));
+      }
+
+    }
+
+    // PDF case
+
+    else {
+
+      if  (   (fp2mp > epsi && yfp2mp < epsi)
+           || (fp2mp < epsi && yfp2mp > epsi)) {
+
+        // case 1: vertical straight line
+        if (fp2mp < epsi) {
+
+          // Extrema choices
+          gmin = std::max(-yfmp, -(yfmp-(fmp-fs[0]) / (1.-fs[0])));
+          gmax = fmp - yfmp;
+
+          // Diracs amplitudes computation
+          d[0] = gmax / (gmax-gmin);
+          d[1] = (1. - d[0]);
+
+          // Compute variance of curvilinear abscissa (GP2M)
+          cs_real_t gp2m = fp2mp + yfp2mp;
+
+          // Test on gp2m
+          g[0] = -sqrt(-gmin/gmax*gp2m);
+          g[1] = -d[0] * g[0] / d[1];
+
+          for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+            f[dirac_id] = fmp + g[dirac_id] * sqrt(fp2mp/gp2m);
+            y[dirac_id] = yfmp + g[dirac_id] * sqrt(yfp2mp/gp2m);
+          }
+
+        }
+
+        // case 2 : horizontal straight line
+
+        else if (yfp2mp < epsi) {
+
+          // Computation of the different intersections of the lines
+          cs_real_t f12 = yfmp;
+          cs_real_t f13 = fs[0] + yfmp * (1-fs[0]);
+          cs_real_t f14 = f_min;
+          cs_real_t f15 = f_max;
+
+          // Curvilinear coordinate computation
+          // call to G function
+          cs_real_t g2max = _lwcgfu(f15, fmp, yfp2mp, fp2mp);
+          cs_real_t g3max = _lwcgfu(f13, fmp, yfp2mp, fp2mp);
+          cs_real_t g1min = _lwcgfu(f12, fmp, yfp2mp, fp2mp);
+          cs_real_t g2min = _lwcgfu(f14, fmp, yfp2mp, fp2mp);
+
+          // Extrema choices
+          gmin = std::max(g1min, g2min);
+          gmax = std::min(g2max, g3max);
+
+          // Computation of Dirac amplitudes
+          d[0] = gmax / (gmax-gmin);
+          d[1] = (1. - d[0]);
+
+          // Computation of curviline coordinate variance (gp2m)
+          cs_real_t gp2m = fp2mp + yfp2mp;
+
+          g[0] = -sqrt(-gmin/gmax*gp2m);
+          g[1] = -d[0] * g[0] / d[1];
+
+          for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+            f[dirac_id] = fmp + g[dirac_id] * sqrt(fp2mp/gp2m);
+            y[dirac_id] = yfmp + g[dirac_id] * sqrt(yfp2mp/gp2m);
+          }
+
+        }
+
+      }
+
+      else if ((fp2mp > epsi) && (yfp2mp > epsi)) {
+
+        // case 3: parallelism and mix line
+
+        if (   ((yfp2mp / fp2mp)  <  1. + epsi)
+            && ((yfp2mp / fp2mp)  >  1. - epsi)) {
+
+          cs_real_t aa1 = 1.;
+          cs_real_t bb1 = yfmp - fmp;
+          cs_real_t aa3 = 1. / (1.-fs[0]);
+          cs_real_t bb3 = -fs[0] / (1.-fs[0]);
+          cs_real_t aa6 = 0.;
+          cs_real_t bb6 = 0.;
+
+          // computation of the different intersections of the lines.
+          cs_real_t f13 = (bb3-bb1) / (aa1-aa3);
+          cs_real_t f14 = f_min;
+          cs_real_t f15 = f_max;
+          cs_real_t f16 = (bb6-bb1) / (aa1-aa6);
+
+          // Curvilinear coordinate computation
+          // call to G function
+          cs_real_t g2max = _lwcgfu(f15, fmp, yfp2mp, fp2mp);
+          cs_real_t g3max = _lwcgfu(f13, fmp, yfp2mp, fp2mp);
+          cs_real_t g2min = _lwcgfu(f14, fmp, yfp2mp, fp2mp);
+          cs_real_t g3min = _lwcgfu(f16, fmp, yfp2mp, fp2mp);
+
+          gmin = std::max(g2min, g3min);
+          gmax = std::min(g2max, g3max);
+
+          // computation of Dirac amplitudes
+          d[0] = gmax / (gmax-gmin);
+          d[1] = (1. - d[0]);
+
+          // Computation of curvilinear coordinate variance (gp2m)
+          cs_real_t gp2m = fp2mp + yfp2mp;
+
+          // Test on gp2m
+          g[0] = -sqrt(-gmin/gmax*gp2m);
+          g[1] =  -d[0] * g[0] / d[1];
+
+          for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+            f[dirac_id] = fmp + g[dirac_id] * sqrt(fp2mp/gp2m);
+            y[dirac_id] = yfmp + g[dirac_id] * sqrt(yfp2mp/gp2m);
+          }
+
+        }
+
+        // case 4 : parallelism with complete combustion line
+
+        else if (   ((sqrt(yfp2mp/fp2mp) * (1.-fs[0])) < 1. + epsi)
+                 && ((sqrt(yfp2mp/fp2mp) * (1.-fs[0])) > 1. - epsi)) {
+
+          cs_real_t aa1 = sqrt( yfp2mp/fp2mp);
+          cs_real_t bb1 = yfmp - sqrt( yfp2mp/fp2mp ) * fmp;
+          cs_real_t aa2 = 1.;
+          cs_real_t bb2 = 0.;
+          cs_real_t aa6 = 0.;
+          cs_real_t bb6 = 0.;
+
+          // Computation of the different intersections of the lines
+          cs_real_t f12 = (bb2-bb1) / (aa1-aa2);
+          cs_real_t f14 = f_min;
+          cs_real_t f15 = f_max;
+          cs_real_t f16 = (bb6-bb1) / (aa1-aa6);
+
+          // Curvilinear coordinate extrema computation
+          // call to G function
+          cs_real_t g2max = _lwcgfu(f15, fmp, yfp2mp, fp2mp);
+          cs_real_t g1max = _lwcgfu(f12, fmp, yfp2mp, fp2mp);
+          cs_real_t g2min = _lwcgfu(f14, fmp, yfp2mp, fp2mp);
+          cs_real_t g3min = _lwcgfu(f16, fmp, yfp2mp, fp2mp);
+
+          gmin = std::max(g2min, g3min);
+          gmax = std::min(g1max, g2max);
+
+          // Dirac amplitudes computations
+          d[0] = gmax / (gmax-gmin);
+          d[1] = (1. - d[0]);
+
+          // ---> computation of curviline coordinate variance (gp2m)
+
+          cs_real_t gp2m = fp2mp + yfp2mp;
+
+          // Test on gp2m
+
+          g[0] = -sqrt(-gmin/gmax*gp2m);
+          g[1] = -d[0] * g[0] / d[1];
+
+          for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+            f[dirac_id] = fmp + g[dirac_id] * sqrt(fp2mp/gp2m);
+            y[dirac_id] = yfmp + g[dirac_id] * sqrt(yfp2mp/gp2m);
+          }
+
+        }
+
+        // General case
+
+        else {
+
+          // Expression for the different lines: Y=AX+B
+
+          cs_real_t aa1 = -sqrt(yfp2mp/fp2mp);
+          cs_real_t bb1 = yfmp - aa1 * fmp;
+          cs_real_t aa2 = 1.;
+          cs_real_t bb2 = 0.;
+          cs_real_t aa3 = 1. / (1.-fs[0]);
+          cs_real_t bb3 = -fs[0] / (1.-fs[0]);
+          cs_real_t aa6 = 0.;
+          cs_real_t bb6 = 0.;
+
+          // Computation of the different intersections of the lines.
+
+          cs_real_t f12 = (bb2-bb1) / (aa1-aa2);
+          cs_real_t f13 = (bb3-bb1) / (aa1-aa3);
+          cs_real_t f14 = f_min;
+          cs_real_t f15 = f_max;
+          cs_real_t f16 = (bb6-bb1) / (aa1-aa6);
+
+          // Curvilinear coordinate extrema computation.
+          // call to G function
+
+          cs_real_t g1max = _lwcgfu(f12, fmp, yfp2mp, fp2mp);
+          cs_real_t g2max = _lwcgfu(f15, fmp, yfp2mp, fp2mp);
+          cs_real_t g3max = _lwcgfu(f13, fmp, yfp2mp, fp2mp);
+          cs_real_t g1min = _lwcgfu(f12, fmp, yfp2mp, fp2mp);
+          cs_real_t g2min = _lwcgfu(f14, fmp, yfp2mp, fp2mp);
+          cs_real_t g3min = _lwcgfu(f16, fmp, yfp2mp, fp2mp);
+          cs_real_t g4min = _lwcgfu(f13, fmp, yfp2mp, fp2mp);
+
+          /* Computation of the parameters of the two Dirac peaks
+             ---------------------------------------------------- */
+
+          // Extrema choice according to the lines slope
+          if (aa1 > aa3) {
+            gmin = std::max (std::max(g2min, g3min), g4min);
+            gmax = std::min (g1max, g2max);
+          }
+          else if ((aa1 > aa2) && (aa1 <= aa3)) {
+            gmin = std::max(g2min, g3min);
+            gmax = std::min(std::min(g1max, g2max), g3max);
+          }
+          else if (aa1 <= aa2) {
+            gmin = std::max(std::max(g1min, g2min), g3min);
+            gmax = std::min(g2max, g3max);
+          }
+
+          // Dirac amplitudes computations
+          d[0] = gmax / (gmax-gmin);
+          d[1] = (1. - d[0]);
+
+          // Compute variance of curvilinear abscissa (GP2M)
+          cs_real_t gp2m = fp2mp + yfp2mp;
+
+          g[0] = -sqrt(gmin/gmax*gp2m);
+          g[1] = -d[0] * g[0] / d[1];
+
+          for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+            f[dirac_id] = fmp + g[dirac_id] * sqrt( fp2mp/gp2m);
+            y[dirac_id] = yfmp + g[dirac_id] * sqrt( yfp2mp/gp2m);
+          }
+
+        }
+      }
+
+      /* Computations of the thermochemical quantities at the two peaks
+         -------------------------------------------------------------- */
+
+      // Enthalpy computation in 1 and 2
+      cs_real_t sum7  = 0., sum8  = 0., sum9  = 0., sum10 = 0.;
+      cs_real_t sum11 = 0., sum12 = 0., sum17 = 0.;
+
+      for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+
+        h[dirac_id] =   ((h_max-h_min)*f[dirac_id] + h_min*f_max - h_max*f_min)
+                      / (f_max-f_min);
+
+        // Computation of the mass fraction of the gas (F, O et P) in 1 and 2.
+        cs_real_t yfuel = y[dirac_id];
+        cs_real_t yoxyd = 1. - (coeff3+1.)*f[dirac_id] + coeff3*y[dirac_id];
+        cs_real_t yprod = 1. - yfuel - yoxyd;
+        cs_real_t yo2   = coeff1 - (coeff1 + coeff2) * f[dirac_id]
+                                  + coeff2 * y[dirac_id];
+
+        // Computation of molar mass and temperature in 1 and 2.
+        coefg[0] = yfuel;
+        coefg[1] = yoxyd;
+        coefg[2] = yprod;
+
+        // Molar mass for peaks 1 and 2
+        cs_real_t nbmol = 0.;
+        for (int igg = 0; igg < n_gas_species; igg++)
+          nbmol += coefg[igg]/wmolg[igg];
+        maml[dirac_id] = 1./nbmol;
+
+        // Computation of temperature for peaks 1 and 2.
+        teml[dirac_id] = cs_gas_combustion_h_to_t(coefg, h[dirac_id]);
+
+        // Computation of density in 1 and 2
+        if (update_rho)
+          rhol[dirac_id] =   p0 * maml[dirac_id]
+                           / (cs_physical_constants_r*teml[dirac_id]);
+        else
+          rhol[dirac_id] = ro0;
+
+        // Source term computation in 1 and 2 for scalar yfm
+
+        theta[dirac_id] =   ta / teml[dirac_id]
+                          * (1. - teml[dirac_id] / tstar);
+
+        w[dirac_id] = vref / lref * (  -d[dirac_id]*rhol[dirac_id]
+                                     * yfuel*yo2
+                                     * exp( -theta[dirac_id]));
+
+        // Mix molar mass
+        sum7 += d[dirac_id]*maml[dirac_id];
+
+        // Mix temperature
+        sum8 += d[dirac_id]*teml[dirac_id];
+
+        // Temperature / molar mass
+        sum9 += d[dirac_id]*teml[dirac_id]/maml[dirac_id];
+
+        // Global species mass fractions
+        sum10 += yfuel*d[dirac_id];
+        sum11 += yoxyd*d[dirac_id];
+        sum12 += yprod*d[dirac_id];
+        sum17 += w[dirac_id];
+
+        // Property storage in fields
+        cpro_ampl[dirac_id][c_id] = d[dirac_id];
+        cpro_fmel[dirac_id][c_id] = f[dirac_id];
+        cpro_fmal[dirac_id][c_id] = y[dirac_id];
+        cpro_maml[dirac_id][c_id] = maml[dirac_id];
+        cpro_teml[dirac_id][c_id] = teml[dirac_id];
+        cpro_rhol[dirac_id][c_id] = rhol[dirac_id];
+        cpro_tscl[dirac_id][c_id] = w[dirac_id];
+
+      }
+
+      cpro_mam[c_id]  = sum7;
+      cpro_temp[c_id] = sum8;
+      cpro_ym1[c_id]  = sum10;
+      cpro_ym2[c_id]  = sum11;
+      cpro_ym3[c_id]  = sum12;
+      cpro_tsc[c_id]  = sum17;
+
+      if (update_rho) {
+        cs_real_t temsmm = sum9;
+        crom[c_id] =    srrom * crom[c_id]
+                     + (1.-srrom) * (p0/(cs_physical_constants_r*temsmm));
+      }
+
+    }
+
+  } // End of loop on cells
 }
 
 /*----------------------------------------------------------------------------*/
@@ -500,6 +1101,7 @@ _pdfpp3(const cs_lnum_t   n_cells,
                                      * exp(-theta[dirac_id]));
 
         // BO 27/06 Control sign of W
+        // FIXME: check this
 
         w[dirac_id] = std::min(w[dirac_id], 0.);
 
@@ -1262,8 +1864,8 @@ _pdfpp4(const cs_lnum_t   n_cells,
         // Compute source term for scalar YFM for each peak.
         theta[dirac_id] =   ta / teml[dirac_id]
                           * (1. - teml[dirac_id] / tstar);
-        tetmax = fmax(theta[dirac_id], tetmax);
-        tetmin = fmin(theta[dirac_id], tetmin);
+        tetmax = std::max(theta[dirac_id], tetmax);
+        tetmin = std::min(theta[dirac_id], tetmin);
         w[dirac_id] = vref / lref * (- d[dirac_id]
                                      * yfuel*yo2
                                      * exp(-theta[dirac_id]));
@@ -1426,7 +2028,6 @@ cs_combustion_lw_fields_init(void)
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-  cs_real_t *cvar_ygfm = cm->ygfm->val;
 
   cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
   for (int igg = 0; igg < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; igg++)
@@ -1434,9 +2035,6 @@ cs_combustion_lw_fields_init(void)
 
   // Initializations with air at tinitk
   // ----------------------------------
-
-  // Mass fraction of fresh gas
-  cs_array_real_set_scalar(n_cells_ext, 1.0, cvar_ygfm);
 
   // Mixture enthalpy
   if (cm->type % 2 == 1) {
@@ -1492,7 +2090,7 @@ cs_combustion_lw_physical_prop(void)
    * ----------------------------------- */
 
   if (sub_type == 0 || sub_type == 1)
-    cs_f_pdflwc(n_cells, cvar_fm, cvar_fp2m, cvar_yfm, cvar_yfp2m);
+    _pdflwc(n_cells, cvar_fm, cvar_fp2m, cvar_yfm, cvar_yfp2m);
 
   else if (sub_type == 2 || sub_type == 3)
     _pdfpp3(n_cells, cvar_fm, cvar_fp2m, cvar_yfm, cvar_yfp2m, cvar_coyfp);
@@ -1558,9 +2156,6 @@ cs_combustion_lw_source_terms(cs_field_t  *f_sc,
                               cs_real_t    rovsdt[])
 {
   const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-
-  if (f_sc != cm->ygfm)
-    return;
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_sc);
   if (eqp->verbosity >= 1)
