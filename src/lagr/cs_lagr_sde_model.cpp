@@ -1044,17 +1044,16 @@ _lagich(const cs_lnum_t       npt,
   cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
                                                   CS_LAGR_CELL_ID);
 
-
   /* local variables*/
   cs_real_t aux1, aux2, aux3, aux4, aux5;
 
   /* Variables generiques */
   cs_real_t diam           = cs_lagr_particle_get_real(particle, p_am,
-                                                     CS_LAGR_DIAMETER);
+                                                       CS_LAGR_DIAMETER);
   cs_real_t init_diam      = cs_lagr_particle_get_real(particle, p_am,
-                                                     CS_LAGR_INITIAL_DIAMETER);
+                                                       CS_LAGR_INITIAL_DIAMETER);
   cs_real_t shrink_diam    = cs_lagr_particle_get_real(particle, p_am,
-                                                     CS_LAGR_SHRINKING_DIAMETER);
+                                                       CS_LAGR_SHRINKING_DIAMETER);
 
   cs_real_t *part_vel_seen =
     cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
@@ -1540,7 +1539,7 @@ _lagich(const cs_lnum_t       npt,
   }
 
   shrink_diam = cs_lagr_particle_get_real(particle, p_am,
-                                           CS_LAGR_SHRINKING_DIAMETER);
+                                          CS_LAGR_SHRINKING_DIAMETER);
 
   /* Compute diameter of coal grains
    * ------------------------------- */
@@ -1557,7 +1556,7 @@ _lagich(const cs_lnum_t       npt,
     aux1 += part_coal_mass[l_id] + part_coke_mass[l_id];
 
   cs_real_t mwat = cs_lagr_particle_get_real(particle, p_am,
-                                              CS_LAGR_WATER_MASS);
+                                             CS_LAGR_WATER_MASS);
 
   aux1 += mwat + coal_model->xashch[co_id] * mp0;
 
@@ -1626,7 +1625,7 @@ _sde_i_ct(const cs_lnum_t       npt,
           const cs_real_t       dt_part,
           int                   nor)
 {
-  /* Adressing structures of the lagrangian module */
+  /* Adressing structures of the Lagrangian module */
   cs_lagr_particle_set_t        *p_set  = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t *p_am   = p_set->p_am;
   cs_lagr_extra_module_t        *extra  = cs_glob_lagr_extra_module;
@@ -1635,7 +1634,7 @@ _sde_i_ct(const cs_lnum_t       npt,
   cs_ctwr_option_t              *ct_opt = cs_get_glob_ctwr_option();
   int                            evap_model= ct_opt->evap_model;
 
-  /* Adressing field values of the eulerian cooling tower model */
+  /* Adressing field values of the Eulerian cooling tower model */
   cs_real_t *x   = cs_field_by_name("humidity")->val;
   cs_real_t *x_s = cs_field_by_name("x_s")->val;
 
@@ -1659,7 +1658,7 @@ _sde_i_ct(const cs_lnum_t       npt,
    * and current one for correction step */
   cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
                                                   CS_LAGR_CELL_ID);
-  /* Caluclating the current particle surface */
+  /* Calculating the current particle surface */
   cs_real_t dia = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
   //cs_real_t surf_p = cs_math_pi*cs_math_pow2(dia) * 0.25;
 
@@ -1749,7 +1748,7 @@ _sde_i_ct(const cs_lnum_t       npt,
   cs_real_t droplet_dia = pow(6*mass_p/(cs_math_pi*rho_l),1./3);
   cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, droplet_dia);
 
-  /* Integaration of droplet enthalpy
+  /* Integration of droplet enthalpy
      -------------------------- */
   /* Energy loss due to evaporation */
   aux1 = 0.0;
