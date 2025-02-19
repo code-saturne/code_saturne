@@ -979,7 +979,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
     int i;
     int writer_ids[] = {-1};
     int mesh_id = cs_post_get_free_mesh_id();
-    cs_lnum_t *post_vtx_num = nullptr;
+    cs_lnum_t *post_vtx_id = nullptr;
     cs_coord_t *exterior_coords = nullptr;
     cs_coord_t *el_list = nullptr;
     fvm_io_num_t *vtx_io_num = nullptr;
@@ -989,7 +989,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
     const ple_lnum_t *exterior_list
       = ple_locator_get_exterior_list(coupling_ent->locator);
 
-    CS_MALLOC(post_vtx_num, n_exterior, cs_lnum_t);
+    CS_MALLOC(post_vtx_id, n_exterior, cs_lnum_t);
     CS_MALLOC(exterior_coords, 3*n_exterior, cs_coord_t);
     CS_MALLOC(el_list,
               coupling_ent->n_elts*3,
@@ -1001,7 +1001,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
                                   el_list);
 
     for (i = 0; i < (cs_lnum_t)n_exterior; i++) {
-      post_vtx_num[i] = i+1;
+      post_vtx_id[i] = i;
       if (exterior_list[i] >= coupling_ent->n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _("Error: invalid exterior elements selection."));
@@ -1012,10 +1012,8 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
     fvm_nodal_define_vertex_list(ulck_points,
                                  (cs_lnum_t)n_exterior,
-                                 post_vtx_num);
-    fvm_nodal_set_shared_vertices
-      (ulck_points,
-       exterior_coords);
+                                 post_vtx_id);
+    fvm_nodal_set_shared_vertices(ulck_points, exterior_coords);
 
     if (cs_glob_n_ranks > 1) {
       vtx_io_num = fvm_io_num_create_from_scan(n_exterior);
