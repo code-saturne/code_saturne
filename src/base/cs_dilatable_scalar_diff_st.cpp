@@ -98,13 +98,11 @@ BEGIN_C_DECLS
           Computation of scalar diffusion terms.
  *
  * \param[in]  iterns      Navier-Stokes iteration number
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_dilatable_scalar_diff_st(int iterns)
-
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -156,7 +154,8 @@ cs_dilatable_scalar_diff_st(int iterns)
 
     /* Key id for buoyant field (inside the Navier Stokes loop) */
     const int key_coupled_with_vel_p = cs_field_key_id_try("coupled_with_vel_p");
-    const int coupled_with_vel_p_fld = cs_field_get_key_int(f_scal, key_coupled_with_vel_p);
+    const int coupled_with_vel_p_fld
+      = cs_field_get_key_int(f_scal, key_coupled_with_vel_p);
 
     if (   (coupled_with_vel_p_fld == 1 && iterns == -1)
         || (coupled_with_vel_p_fld == 0 && iterns != -1))
@@ -308,7 +307,6 @@ cs_dilatable_scalar_diff_st(int iterns)
   CS_FREE_HD(xcpp);
 
   CS_FREE_HD(vistot);
-
 }
 
 /*---------------------------------------------------------------------------- */

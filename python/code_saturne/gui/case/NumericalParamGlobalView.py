@@ -111,17 +111,15 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelExtNeighbors.addItem(self.tr("Non-orthogonal faces threshold (legacy)"),
                                        'non_ortho_max')
 
-        self.modelDensityVar = ComboModel(self.comboBoxDensityVar, 6, 1)
+        self.modelDensityVar = ComboModel(self.comboBoxDensityVar, 5, 1)
         self.modelDensityVar.addItem(self.tr("Automatic"), 'default')
         self.modelDensityVar.addItem(self.tr("Boussinesq approximation (rho constant except in the buoyant term)"),
                                        'boussi')
         self.modelDensityVar.addItem(self.tr("Dilatable steady algorithm"), 'dilat_std')
         self.modelDensityVar.addItem(self.tr("Dilatable unsteady algorithm"),
-                                       'dilat_unstd')
+                                     'dilat_unstd')
         self.modelDensityVar.addItem(self.tr("Low-Mach algorithm"),
-                                       'low_mach')
-        self.modelDensityVar.addItem(self.tr("Algorithm for fire"),
-                                       'algo_fire')
+                                     'low_mach')
 
         # Connections
         self.checkBoxIVISSE.clicked.connect(self.slotIVISSE)
@@ -200,10 +198,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.lineEditRELAXP.show()
             self.labelRELAXP.show()
             self.checkBoxImprovedPressure.show()
-
-        self.modelDensityVar.disableItem(str_model = 'algo_fire')
-        if modl_gas != 'off':
-            self.modelDensityVar.enableItem(str_model = 'algo_fire')
 
         # For the moment, the Low Mach algorithm is disabled in the GUI
         self.modelDensityVar.disableItem(str_model = 'low_mach')

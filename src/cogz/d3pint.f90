@@ -260,20 +260,6 @@ endif
 call field_get_val_s(itemp, cpro_temp)
 call field_get_val_s(icrom, cpro_rho)
 
-if (idilat.ge.4) then
-  call field_get_val_prev2_s(icrom, cproaa_rho)
-  call field_get_val_s_by_name("dila_st", cpro_tsrho)
-  call field_get_val_s_by_name("mixture_fraction_dila_st", cpro_tsfm)
-  call field_get_val_s_by_name("mixture_fraction_variance_dila_st", cpro_tsfp2m)
-
-  if (ihm.gt.-1) then
-    call field_get_name(ihm, th_name)
-    th_st_name  = trim(th_name) // '_dila_st'
-    call field_get_val_s_by_name(th_st_name, cpro_tsscalt)
-  endif
-  call field_get_val_s(iym(3), cpro_ym3)
-endif
-
 if ( iirayo.gt.0 ) then
   call field_get_val_s(ickabs, cpro_ckabs)
   call field_get_val_s(it4m, cpro_t4m)
@@ -299,12 +285,6 @@ do iel = 1, ncel
     cpro_temp(iel) = dirmin(iel)*tinoxy + dirmax(iel)*tinfue
     temsmm = dirmin(iel)/wmolg(2)*tinoxy + dirmax(iel)/wmolg(1)*tinfue
 
-    ! Weakly compressible algorithm: d T/M /d D1, d T/M /d D2
-    if (idilat.ge.4) then
-      dtsmdd1 = tinoxy/wmolg(2)
-      dtsmdd2 = tinfue/wmolg(1)
-    endif
-
     if (iirayo.gt.0) then
       cpro_ckabs(iel) = dirmin(iel)*ckabsg(2)  + dirmax(iel)*ckabsg(1)
       cpro_t4m(iel) =   dirmin(iel)*tinoxy**4 + dirmax(iel)*tinfue**4
@@ -319,12 +299,6 @@ do iel = 1, ncel
     if (fdeb(iel) .ge. ff(nmaxf)) if = nmaxf-1
     f2 = zero
     f1 = fdeb(iel)
-
-    ! Weakly compressible algorithm: initialisation of d T/M /d Hrec d T/M /d Hs
-    if (idilat.ge.4) then
-      dtsmdhrec = 0.d0
-      dtsmdhs   = 0.d0
-    endif
 
     do while ( (ffin(iel)-f2).gt.epzero )
       f2 = min(ff(if+1),ffin(iel))
@@ -413,44 +387,9 @@ do iel = 1, ncel
         + (c*b+a*d) * (f2**2-f1**2)/2.d0                          &
         +  b*d      * (f2**3-f1**3)/3.d0 )
 
-        ! Weakly compressible algorithm:
-        ! d T/M /d f0 ; d T/M /d Hrec ; d T/M /d Hs ;
-        ! d T/M /d f1 est calcule apres la boucle pour etre sur d'avoir f1 = ffin
-        if (idilat.ge.4) then
-
-          if (ippmod(icod3p).eq.1) then
-
-           ! d(T/M)dHs = d(T/M)dA*dAdHs + d(T/M)dB*dBdHs
-            dadhs = (aa2-aa1)/(hh(ih+1)-hh(ih))                      &
-                  - (bb2-bb1)/(hh(ih+1)-hh(ih))*ff(if)
-            dbdhs = (bb2-bb1)/(hh(ih+1)-hh(ih))
-
-            dtsmdhs = dtsmdhs + hrec(iel) *                           &
-                 ( (c * (f2-f1) + d * (f2**2-f1**2)/2.d0) * dadhs     &
-      + (c * (f2**2-f1**2)/2.d0 + d * (f2**3-f1**3)/3.d0) * dbdhs )
-
-          endif
-
-          if ((f1-fdeb(iel)).lt.epzero) then
-            dtsmdf1 =  hrec(iel) * ( -a*c -(c*b+a*d)*fdeb(iel)    &
-                                        -b*d*fdeb(iel)**2       )
-          endif
-
-          dtsmdhrec = dtsmdhrec + (     a*c   *(f2-f1)              &
-                                   + (c*b+a*d)*(f2**2-f1**2)/2.d0   &
-                                   +    b*d   *(f2**3-f1**3)/3.d0 )
-        endif
-
       if = if+1
       f1 = f2
     enddo
-
-    if (idilat.ge.4) then
-
-      ! Weakly compressible algorithm: d T/M /d f1
-      dtsmdf2 = hrec(iel) * ( a*c +(c*b+a*d)*ffin(iel) + b*d*ffin(iel)**2 )
-
-    endif
 
   else
 
@@ -525,24 +464,6 @@ do iel = 1, ncel
 
     temsmm = a*c +(c*b+a*d)*fm + b*d*fm**2
 
-    ! Weakly compressible algorithm: derivative
-    if (idilat.ge.4) then
-      dtsmdf   = (c*b+a*d) + 2.d0*b*d*fm
-      dtsmdfp2 = 0.d0
-
-      if (ippmod(icod3p).eq.1) then
-
-        ! d(T/M)dHs = d(T/M)dA*dAdHs + d(T/M)dB*dBdHs
-        dadhs = (aa2-aa1)/(hh(ih+1)-hh(ih))                              &
-              - (bb2-bb1)/(hh(ih+1)-hh(ih))*ff(if)
-        dbdhs = (bb2-bb1)/(hh(ih+1)-hh(ih))
-
-        dtsmdhs = (c + d * fm) * ( dadhs + fm * dbdhs )
-
-      endif
-
-    endif
-
   endif
 
 ! ---> Calcul de la masse volumique
@@ -551,117 +472,6 @@ do iel = 1, ncel
     cpro_rho(iel) = srrom*cpro_rho(iel)               &
                   + (1.d0-srrom)*                         &
                   ( pther/(cs_physical_constants_r*temsmm) )
-  endif
-
-  ! Weakly compressible algorithm: Derivative calculation of pdf parameters
-  if (idilat.ge.4) then
-
-    ! dD0df, dD0df"2,
-    ! dD1df, dD1df"2,
-    ! df0df, df0df"2,
-    ! df1df, df1df"2,
-    ! dhrecdf,dhrecdf"2
-
-    df1df     = 0.d0
-    df1dfp2   = 0.d0
-    df2df     = 0.d0
-    df2dfp2   = 0.d0
-    dd1df     = 0.d0
-    dd1dfp2   = 0.d0
-    dd2df     = 0.d0
-    dd2dfp2   = 0.d0
-    dhrecdf   = 0.d0
-    dhrecdfp2 = 0.d0
-
-    if (indpdf(iel).eq.1) then
-
-      if (tpdf(iel).eq.1.d0) then
-
-        df1df = 1.d0
-        df1dfp2 = -3.d0/(2.d0*sqrt(3.d0*fp2m))
-
-        df2df = 1.d0
-        df2dfp2 = 3.d0/(2.d0*sqrt(3.d0*fp2m))
-
-      elseif (tpdf(iel).eq.2.d0) then
-
-        df2df = 3.d0/2.d0*(fm**2-fp2m)/fm**2
-        df2dfp2 = 3.d0/(2.d0*fm)
-
-        dd1df = -8.d0/3.d0*fm*fp2m/(fp2m+fm**2)**2
-        dd1dfp2 = 4.d0/3.d0*fm**2/(fp2m+fm**2)**2
-
-      elseif (tpdf(iel).eq.3.d0) then
-
-        df1df = 3.d0/2.d0*(1.d0-2.d0*fm+fm**2-fp2m)/(fm-1.d0)**2
-        df1dfp2 = 3.d0/(2.d0*(fm-1.d0))
-
-        dd2df = 8.d0/3.d0*(fp2m*(1.d0-fm))/((1.d0-fm)**2+fp2m)**2
-        dd2dfp2 = 4.d0/3.d0*(1.d0-fm)**2/((1.d0-fm)**2+fp2m)**2
-
-      elseif (tpdf(iel).eq.4.d0) then
-
-        dd1df = 6.d0*fm-4.d0
-        dd1dfp2 = 3.d0
-
-        dd2df = 6.d0*fm-2.d0
-        dd2dfp2 = 3.d0
-
-      endif
-
-      dhrecdf = - 1.d0/(ffin(iel)-fdeb(iel))*dd1df                      &
-                - 1.d0/(ffin(iel)-fdeb(iel))*dd2df                      &
-                + (1.d0-dirmin(iel)-dirmax(iel))*df1df                  &
-                   /(ffin(iel)-fdeb(iel))**2                            &
-                - (1.d0-dirmin(iel)-dirmax(iel))*df2df                  &
-                   /(ffin(iel)-fdeb(iel))**2
-
-      dhrecdfp2 = - 1.d0/(ffin(iel)-fdeb(iel))*dd1dfp2                  &
-                  - 1.d0/(ffin(iel)-fdeb(iel))*dd2dfp2                  &
-                  + (1.d0-dirmin(iel)-dirmax(iel))*df1dfp2              &
-                    /(ffin(iel)-fdeb(iel))**2                           &
-                  - (1.d0-dirmin(iel)-dirmax(iel))*df2dfp2              &
-                    /(ffin(iel)-fdeb(iel))**2
-
-     ! Calculation of d(T/MM)/df, d(T/MM)/df"2, d(T/MM)/dH = 1/(M*Cp) = (C+Df)/Cp
-
-      dtsmdf =   dtsmdd1 * dd1df + dtsmdd2 * dd2df                      &
-               + dtsmdf1 * df1df + dtsmdf2 * df2df                      &
-               + dtsmdhrec * dhrecdf
-
-      dtsmdfp2 =   dtsmdd1 * dd1dfp2 + dtsmdd2 * dd2dfp2                &
-                 + dtsmdf1 * df1dfp2 + dtsmdf2 * df2dfp2                &
-                 + dtsmdhrec * dhrecdfp2
-
-    endif
-
-    ! Scalar contribution is computed and add to the total source term
-    cpro_tsrho(iel) =  (-cs_physical_constants_r/pther * dtsmdf)        &
-                       *cpro_tsfm(iel)                                    &
-                     + (-cs_physical_constants_r/pther * dtsmdfp2)      &
-                       *cpro_tsfp2m(iel)
-
-    yprod = cpro_ym3(iel)
-
-    ! Note that h*=hm/Yp
-    if (ippmod(icod3p).eq.1.and.abs(yprod).gt.epzero) then
-
-      cpro_tsrho(iel) =  cpro_tsrho(iel)                                 &
-                       + (-cs_physical_constants_r/pther * dtsmdhs)      &
-                         /yprod*cpro_tsscalt(iel)
-
-    endif
-
-    ! D(rho)/Dt = 1/rho d(rho)/dz Diff(z) = -rho d(1/rho)/dz Diff(z)
-    ! iptsro contains -d(1/rho)/dz Diff(z) > x rho
-    cpro_tsrho(iel) = cpro_tsrho(iel) * cpro_rho(iel)**2              &
-                                            / cproaa_rho(iel)
-
-    ! arrays are re-initialize for source terms of next time step
-    cpro_tsfm(iel) = 0.d0
-    cpro_tsfp2m(iel) = 0.d0
-    if (ippmod(icod3p).ge.1) cpro_tsscalt(iel) = 0.d0
-
   endif
 
 enddo

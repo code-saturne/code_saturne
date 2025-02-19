@@ -970,7 +970,6 @@ _additional_fields_stage_1(void)
   const int keysca = cs_field_key_id("scalar_id");
   const int kisso2t = cs_field_key_id("scalar_time_scheme");
   const int kturt = cs_field_key_id("turbulent_flux_model");
-  const int k_restart_id = cs_field_key_id("restart_file");
   const int key_buoyant_id = cs_field_key_id_try("coupled_with_vel_p");
 
   const char *stage_desc = N_("initial data setup");
@@ -1289,39 +1288,6 @@ _additional_fields_stage_1(void)
                           1,
                           false);
     }
-  }
-
-  /* Source term for weakly incompressible algorithm (semi analytic scheme) */
-
-  if (vp_m->idilat >= 4) {
-    for (int ii = 0; ii < n_fields; ii++) {
-      cs_field_t *f_scal = cs_field_by_id(ii);
-
-      if (!(f_scal->type & CS_FIELD_VARIABLE))
-        continue;
-      if (cs_field_get_key_int(f_scal, keysca) <= 0)
-        continue;
-
-      char s_name[128];
-      char s_label[128];
-      snprintf(s_name, 127, "%s_dila_st", f_scal->name);
-      snprintf(s_label, 127, "%s dila source term", f_scal->name);
-      s_name[127] = '\0';
-      s_label[127] = '\0';
-
-      cs_field_t *f_dila_sc = _add_property_field(s_name,
-                                                  s_label,
-                                                  1,
-                                                  false);
-
-      /* Set restart file option for source terms */
-      cs_field_set_key_int(f_dila_sc, k_restart_id, CS_RESTART_AUXILIARY);
-    }
-
-    _add_property_field("dila_st",
-                        "dila source term",
-                        1,
-                        false);
   }
 
   /* One needs a table for the source terms of NS that needs to be extrapolated.

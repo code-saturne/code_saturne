@@ -221,8 +221,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
                                   const cs_real_t   *cpro_viscls,
                                   cs_real_t         *rhs,
                                   cs_real_t         *fimp,
-                                  cs_real_t         *cpro_st,
-                                  cs_real_t         *cpro_tsscal)
+                                  cs_real_t         *cpro_st)
 {
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
 
@@ -381,13 +380,6 @@ _production_and_dissipation_terms(const cs_field_t  *f,
                        * prod;
       }
     }
-
-    /* Production term for a variance  TODO compute ustdy when isso2t >0 */
-    if (cs_glob_velocity_pressure_model->idilat >= 4)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cpro_tsscal[c_id] +=   2*xcpp[c_id] * sgdh_diff[c_id] * cell_f_vol[c_id]
-                             * cs_math_3_dot_product(grad[c_id], grad[c_id]);
-      }
   }
 
   CS_FREE(grad);
@@ -1562,8 +1554,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                       cpro_viscls,
                                       rhs,
                                       fimp,
-                                      cpro_st,
-                                      cpro_tsscal);
+                                      cpro_st);
 
   if (st_prv_id > -1) {
     const cs_real_t thetp1 = 1 + thets;

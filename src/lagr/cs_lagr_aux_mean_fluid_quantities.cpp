@@ -140,12 +140,11 @@ _field_name_aux(const char *field_radical, const int index)
  */
 /*----------------------------------------------------------------------------*/
 void
-compute_particle_covariance_gradient(int iprev,
-                                     int phase_id,
+compute_particle_covariance_gradient(int          iprev,
+                                     int          phase_id,
                                      cs_real_3_t *grad_cov_skp[9],
                                      cs_real_3_t *grad_cov_sk[6])
 {
-
   assert (cs_glob_lagr_model->cs_used == 0);
 
   cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;

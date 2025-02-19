@@ -107,7 +107,6 @@ BEGIN_C_DECLS
         - 1: dilatable steady algorithm (default)
         - 2: dilatable unsteady algorithm
         - 3: low-Mach algorithm
-        - 4: algorithm for fire
 
   \var  cs_velocity_pressure_model_t::fluid_solid
         Has a solid zone where dynamics must be killed?
@@ -510,11 +509,9 @@ cs_velocity_pressure_model_log_setup(void)
     = {N_("0 (Boussinesq approximation)"),
        N_("1 (without unsteady term in the continuity equation)"),
        N_("2 (with unsteady term in the continuity equation)"),
-       N_("3 (with unsteady term in the continuity equationnn\n"
+       N_("3 (with unsteady term in the continuity equation\n"
           "                   "
-          "   and a thermo pressure constant in the domain)"),
-       N_("4 (with unsteady term in the continuity equation)"),
-       N_("5 (for fire modelling)")};
+          "   and a thermo pressure constant in the domain)")};
   cs_log_printf(CS_LOG_SETUP,
                 _("    idilat:        %s\n"),
                 _(idilat_value_str[vp_model->idilat]));

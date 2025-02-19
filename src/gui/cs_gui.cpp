@@ -3766,7 +3766,7 @@ cs_gui_numerical_options(void)
   else if (cs_gui_strcmp(choice, "low_mach"))
     _idilat = 3;
   else if (cs_gui_strcmp(choice, "algo_fire"))
-    _idilat = 4;
+    _idilat = 2;  // Temporary for backwards compatibility. Was 4.
 
   if (_idilat > -1)
     vp_model->idilat = _idilat;

@@ -62,7 +62,6 @@ typedef struct {
                                  - 1: dilatable steady algorithm (default)
                                  - 2: dilatable unsteady algorithm
                                  - 3: low-Mach algorithm
-                                 - 4: algorithm for fire
                                  - 0: boussinesq algorithm with constant
                                  density */
 

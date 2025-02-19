@@ -762,7 +762,7 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *xdtsro = nullptr;
   cs_real_6_t *tpusro = nullptr;
 
-  if (vof_parameters->vof_model > 0 || idilat == 4) {
+  if (vof_parameters->vof_model > 0) {
 
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
       CS_MALLOC_HD(xdtsro, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -1385,14 +1385,12 @@ _pressure_correction_fv(int                   iterns,
     cs_arrays_set_value<cs_real_t, 1>(3*n_cells, 0., (cs_real_t *)wrk);
   }
 
-  if (idilat < 4) {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        wrk[c_id][j] += vel[c_id][j];
-        wrk2[c_id][j] = wrk[c_id][j];
-      }
-    });
-  }
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      wrk[c_id][j] += vel[c_id][j];
+      wrk2[c_id][j] = wrk[c_id][j];
+    }
+  });
 
   ctx.wait();
 
@@ -1400,10 +1398,9 @@ _pressure_correction_fv(int                   iterns,
   cs_halo_sync_r(m->halo, on_device, wrk);
 
   {
-    /* BCs will be taken into account later if idilat >= 4 */
-    int inc = (idilat >= 4) ? 0 : 1;
+    int inc = 1;
     int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
-    int itypfl = (vof_parameters->vof_model > 0 || idilat == 4) ? 0 : 1;
+    int itypfl = (vof_parameters->vof_model > 0) ? 0 : 1;
 
     cs_mass_flux(m,
                  fvq,
@@ -1630,7 +1627,7 @@ _pressure_correction_fv(int                   iterns,
       cs_real_6_t *cpro_vitenp;
       CS_MALLOC_HD(cpro_vitenp, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
-      if (idilat == 4 || vof_parameters->vof_model > 0) {
+      if (vof_parameters->vof_model > 0) {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_real_t arsr = arak / crom[c_id];
           for (cs_lnum_t j = 0; j < 6; j++)
@@ -1779,79 +1776,6 @@ _pressure_correction_fv(int                   iterns,
 
   cs_real_t *velflx = nullptr, *velflb = nullptr;
 
-  if (idilat >= 4) {
-
-    cs_real_t *cpro_tsrho = cs_field_by_name("dila_st")->val;
-
-    CS_MALLOC_HD(velflx, n_i_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(velflb, n_b_faces, cs_real_t, cs_alloc_mode);
-
-    /* 1. The RHS contains rho div(u*) and not div(rho u*) */
-
-    int init = 1;
-    int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
-
-    cs_mass_flux(m,
-                 fvq,
-                 f_vel->id,
-                 0,  /* itypfl */
-                 iflmb0,
-                 init,
-                 1,  /* inc */
-                 eqp_u->imrgra,
-                 eqp_u->nswrgr,
-                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
-                 eqp_p->verbosity,
-                 eqp_u->epsrgr,
-                 eqp_u->climgr,
-                 crom, brom,
-                 vel,
-                 bc_coeffs_v,
-                 velflx, velflb);
-
-    cs_divergence(m, init, velflx, velflb, res);
-
-    if (idilat == 4) {
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cpro_divu[c_id] +=   res[c_id]
-        /* Add the dilatation source term D(rho)/Dt */
-                           + cpro_tsrho[c_id] / crom[c_id];
-      });
-    }
-    else {
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cpro_divu[c_id] +=   res[c_id]*crom[c_id]
-        /* Add the dilatation source term D(rho)/Dt */
-                           + cpro_tsrho[c_id];
-      });
-    }
-
-    /* The mass flux is completed by u*.S (idilat=4)
-     *                               rho u* . S (idilat=5)
-     */
-
-    int itypfl = (idilat == 4) ? 0 : 1;
-
-    cs_mass_flux(m,
-                 fvq,
-                 f_vel->id,
-                 itypfl,
-                 iflmb0,
-                 0,  /* init */
-                 1,  /* inc */
-                 eqp_u->imrgra,
-                 eqp_u->nswrgr,
-                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
-                 eqp_p->verbosity,
-                 eqp_u->epsrgr,
-                 eqp_u->climgr,
-                 crom, brom,
-                 vel,
-                 bc_coeffs_v,
-                 imasfl, bmasfl);
-
-  }
-
   /* Mass source terms adding for volumic flow rate */
 
   cs_lnum_t n_elts = 0;
@@ -1999,7 +1923,7 @@ _pressure_correction_fv(int                   iterns,
 
     /* VOF algorithm: the pressure step corresponds to the
        correction of the volumetric flux, not the mass flux */
-    int itypfl = (vof_parameters->vof_model > 0 || idilat >= 4) ? 0 : 1;
+    int itypfl = (vof_parameters->vof_model > 0) ? 0 : 1;
 
     cs_mass_flux(m,
                  fvq,
@@ -2025,23 +1949,11 @@ _pressure_correction_fv(int                   iterns,
   CS_FREE_HD(iflux);
   CS_FREE_HD(bflux);
 
-  if (idilat >= 4) {
-    /* Weakly compressible algorithm: semi analytic scheme */
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      res[c_id] =   res[c_id]*crom[c_id]
-      /* It is: div(dt/rho*rho grad P) + div(rho u*) - Gamma
-         NB: if iphydr=1, div(rho u*) contains div(dt d fext).  */
-                  + cpro_divu[c_id];
-    });
-  }
-  else {
-    /* It is: div(dt/rho*rho grad P) + div(rho u*) - Gamma
-       NB: if iphydr=1, div(rho u*) contains div(dt d fext).  */
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      res[c_id] += cpro_divu[c_id];
-    });
-  }
+  /* It is: div(dt/rho*rho grad P) + div(rho u*) - Gamma
+     NB: if iphydr=1, div(rho u*) contains div(dt d fext).  */
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    res[c_id] += cpro_divu[c_id];
+  });
 
   ctx.wait();
 
@@ -2640,353 +2552,6 @@ _pressure_correction_fv(int                   iterns,
      2nd step solving a convection diffusion equation
      =================================================== */
 
-  if (idilat == 5) {
-
-    cs_real_t *ddphi;
-    CS_MALLOC_HD(ddphi, n_cells_ext, cs_real_t, cs_alloc_mode);
-
-    cs_field_bc_coeffs_t bc_coeffs_loc;
-    CS_MALLOC_HD(bc_coeffs_loc.a,  3*n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bc_coeffs_loc.af, 3*n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bc_coeffs_loc.b,  9*n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bc_coeffs_loc.bf, 9*n_b_faces, cs_real_t, cs_alloc_mode);
-
-    cs_real_3_t  *coefar = (cs_real_3_t  *)bc_coeffs_loc.a;
-    cs_real_3_t  *cofafr = (cs_real_3_t  *)bc_coeffs_loc.af;
-    cs_real_33_t *coefbr = (cs_real_33_t *)bc_coeffs_loc.b;
-    cs_real_33_t *cofbfr = (cs_real_33_t *)bc_coeffs_loc.bf;
-
-    /* Boundary condition for the pressure increment
-       coefb, coefbf are those of the pressure */
-
-    cs_field_bc_coeffs_t bc_coeffs_dp2;
-    cs_field_bc_coeffs_shallow_copy(bc_coeffs_p, &bc_coeffs_dp2);
-    CS_MALLOC_HD(bc_coeffs_dp2.a,  n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bc_coeffs_dp2.af, n_b_faces, cs_real_t, cs_alloc_mode);
-
-    cs_real_t *coefa_dp2  = bc_coeffs_dp2.a;
-    cs_real_t *coefaf_dp2 = bc_coeffs_dp2.af;
-
-    /* Convective flux: dt/rho grad(rho) */
-
-    cs_field_bc_coeffs_t bc_coeffs_rho_loc;
-    cs_field_bc_coeffs_init(&bc_coeffs_rho_loc);
-    CS_MALLOC_HD(bc_coeffs_rho_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bc_coeffs_rho_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
-
-    cs_real_t *coefa_rho = bc_coeffs_rho_loc.a;
-    cs_real_t *coefb_rho = bc_coeffs_rho_loc.b;
-
-    int idften = eqp_p->idften;
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-
-      /* Dirichlet Boundary Condition on rho */
-      coefa_rho[f_id] = brom[f_id];
-      coefb_rho[f_id] = 0.;
-
-      coefa_dp2[f_id] = 0.;
-      coefaf_dp2[f_id] = 0.;
-
-      if (   idften & CS_ISOTROPIC_DIFFUSION
-          || idften & CS_ANISOTROPIC_DIFFUSION) { // test inutile ?
-
-        /* Neumann boundary Conditions for the convective flux (qimpv = 0) */
-
-        //cs_lnum_t c_id = b_face_cells[f_id];
-        //cs_real_t hint = dt[c_id] / b_dist[f_id];
-
-        // Gradient and Flux BCs (qimpv=0 --> a=af=bf=0, b=Id)
-
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          coefar[f_id][i] = 0.;
-          cofafr[f_id][i] = 0.;
-
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            cofbfr[f_id][i][j] = 0.;
-            coefbr[f_id][i][j] = 0.;
-          }
-          coefbr[f_id][i][i] = 1.0;
-        }
-      }
-    });
-
-    ctx.wait();
-
-    cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-    cs_gradient_type_by_imrgra(eqp_u->imrgra,
-                               &gradient_type,
-                               &halo_type);
-
-    cs_gradient_scalar("Work array",
-                       gradient_type,
-                       halo_type,
-                       1,             /* inc */
-                       eqp_u->nswrgr,
-                       0,             /* iphydp */
-                       1,             /* w_stride */
-                       eqp_p->verbosity,
-                       static_cast<cs_gradient_limit_t>(eqp_u->imligr),
-                       eqp_u->epsrgr,
-                       eqp_u->climgr,
-                       nullptr,          /* f_ext */
-                       &bc_coeffs_rho_loc,
-                       crom,
-                       nullptr,         /* c_weight */
-                       nullptr,         /* cpl */
-                       gradp);
-
-    CS_FREE_HD(bc_coeffs_rho_loc.a);
-    CS_FREE_HD(bc_coeffs_rho_loc.b);
-
-    /* dt/rho * grad rho */
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      rhs[c_id] = 0.;
-
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        wrk[c_id][j] = gradp[c_id][j] * dt[c_id] / crom[c_id];
-      }
-    });
-
-    ctx.wait();
-
-    /* Viscosity */
-    cs_face_viscosity(m,
-                      fvq,
-                      eqp_u->imvisf,
-                      dt,
-                      i_visc, b_visc);
-
-    /* (dt/rho * grad rho) . S */
-
-    int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
-
-    cs_mass_flux(m,
-                 fvq,
-                 -1,
-                 0,  /* itypfl */
-                 iflmb0,
-                 1,  /* init */
-                 1,  /* inc */
-                 eqp_u->imrgra,
-                 eqp_u->nswrgr,
-                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
-                 eqp_p->verbosity,
-                 eqp_u->epsrgr,
-                 eqp_u->climgr,
-                 crom, brom,
-                 wrk,
-                 &bc_coeffs_loc,
-                 velflx, velflb);
-
-    /* Convective source term */
-
-    cs_equation_param_t  eqp_loc = *eqp_p;
-
-    /*  All boundary convective flux with upwind */
-
-    eqp_loc.iconv  = 1;
-    eqp_loc.istat  = -1;
-    eqp_loc.idiff  = 0;
-    eqp_loc.idifft = -1;
-    eqp_loc.iswdyn = -1;
-    eqp_loc.nswrgr = eqp_u->nswrgr;  /* FIXME: based on Fortran version,
-                                        but value from pressure would
-                                        seem more logical */
-    eqp_loc.nswrsm = -1;
-    eqp_loc.iwgrec = 0;
-    eqp_loc.theta = 1;
-    eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
-    eqp_loc.epsilo = -1;
-    eqp_loc.epsrsm = -1;
-
-    cs_balance_scalar(idtvar,
-                      -1,
-                      0,     /* imucpp */
-                      1,     /* imasac */
-                      1,     /* inc */
-                      &eqp_loc,
-                      phi, phi,
-                      &bc_coeffs_dp2,
-                      velflx, velflb,
-                      i_visc, b_visc,
-                      nullptr,  /* viscel */
-                      nullptr,  /* xcpp */
-                      nullptr,  /* weighf */
-                      nullptr,  /* weighb */
-                      0,     /* icvflb; upwind scheme */
-                      nullptr,
-                      rhs);
-
-    /* Initialization of the variable to solve */
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      rovsdt[c_id] = 340.0/dt[c_id] * cell_f_vol[c_id];
-      dphi[c_id]   = 0.;
-      ddphi[c_id]  = 0.;
-      rhs[c_id]    = - rhs[c_id];
-    });
-
-    ctx.wait();
-
-    /* Solve the convection diffusion equation */
-
-    const char var_name[] = "Pr compress";
-
-    cs_sles_push(f_p->id, var_name);
-
-    eqp_loc = *eqp_p;
-
-    eqp_loc.iconv  = 1;
-    eqp_loc.istat  = -1;
-    eqp_loc.icoupl = -1;
-    eqp_loc.ndircl = 0;    /* to reinforce the diagonal */
-    eqp_loc.idiff  = 1;
-    eqp_loc.idifft = -1;
-    eqp_loc.iwgrec = 0;    /* Warning, may be overwritten if a field */
-    eqp_loc.blend_st = 0;  /* Warning, may be overwritten if a field */
-
-    cs_equation_iterative_solve_scalar(idtvar,
-                                       iterns,
-                                       f_p->id,
-                                       var_name,
-                                       0,      /* iescap */
-                                       0,      /* imucpp */
-                                       -1,     /* normp */
-                                       &eqp_loc,
-                                       dphi, dphi,
-                                       &bc_coeffs_dp2,
-                                       velflx, velflb,
-                                       i_visc, b_visc,
-                                       i_visc, b_visc,
-                                       nullptr,   /* viscel */
-                                       weighf, weighb,
-                                       0,      /* icvflb (upwind conv. flux) */
-                                       nullptr,   /* icvfli */
-                                       rovsdt,
-                                       rhs,
-                                       dphi, ddphi,
-                                       nullptr,   /* xcpp */
-                                       nullptr);  /* eswork */
-
-    cs_sles_pop(f_p->id);
-
-    /* Update the pressure increment */
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      phi[c_id] += dphi[c_id];
-      /* Remove the last increment */
-      dphi[c_id] -= ddphi[c_id];
-    });
-
-    ctx.wait();
-
-    /* Update the mass flux */
-
-    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
-      cs_face_diffusion_potential(-1,
-                                  m,
-                                  fvq,
-                                  0,  /* init */
-                                  1,  /* inc */
-                                  eqp_p->imrgra,
-                                  eqp_p->nswrgr,
-                                  eqp_p->imligr,
-                                  vp_param->iphydr,
-                                  eqp_p->iwgrec,
-                                  eqp_p->verbosity,
-                                  eqp_p->epsrgr,
-                                  eqp_p->climgr,
-                                  dfrcxt,
-                                  dphi,
-                                  &bc_coeffs_dp2,
-                                  i_visc, b_visc,
-                                  dt,
-                                  imasfl, bmasfl);
-
-    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-      cs_face_anisotropic_diffusion_potential(-1,
-                                              m,
-                                              fvq,
-                                              0,  /* init */
-                                              1,  /* inc */
-                                              eqp_p->imrgra,
-                                              eqp_p->nswrgr,
-                                              eqp_p->imligr,
-                                              eqp_p->ircflu,
-                                              eqp_p->b_diff_flux_rc,
-                                              vp_param->iphydr,
-                                              eqp_p->iwgrec,
-                                              eqp_p->verbosity,
-                                              eqp_p->epsrgr,
-                                              eqp_p->climgr,
-                                              dfrcxt,
-                                              dphi,
-                                              &bc_coeffs_dp2,
-                                              i_visc, b_visc,
-                                              vitenp,
-                                              weighf, weighb,
-                                              imasfl, bmasfl);
-
-    /* The last increment is not reconstructed so as to fulfill exactly
-       the continuity equation (see theory guide). The value of dfrcxt has
-       no importance. */
-
-    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
-      cs_face_diffusion_potential(-1,
-                                  m,
-                                  fvq,
-                                  0,  /* init */
-                                  0,  /* inc */
-                                  eqp_p->imrgra,
-                                  0,  /* nswrgr (no reconstruction) */
-                                  eqp_p->imligr,
-                                  vp_param->iphydr,
-                                  eqp_p->iwgrec,
-                                  eqp_p->verbosity,
-                                  eqp_p->epsrgr,
-                                  eqp_p->climgr,
-                                  dfrcxt,
-                                  ddphi,
-                                  &bc_coeffs_dp2,
-                                  i_visc, b_visc,
-                                  dt,
-                                  imasfl, bmasfl);
-
-    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-      cs_face_anisotropic_diffusion_potential(-1,
-                                              m,
-                                              fvq,
-                                              0, /* init */
-                                              0, /* inc */
-                                              eqp_p->imrgra,
-                                              0, /* nswrgr (no reconstruction) */
-                                              eqp_p->imligr,
-                                              0, /* ircflu */
-                                              0, /* b_diff_flux_rc */
-                                              vp_param->iphydr,
-                                              eqp_p->iwgrec,
-                                              eqp_p->verbosity,
-                                              eqp_p->epsrgr,
-                                              eqp_p->climgr,
-                                              dfrcxt,
-                                              ddphi,
-                                              &bc_coeffs_dp2,
-                                              i_visc, b_visc,
-                                              vitenp,
-                                              weighf, weighb,
-                                              imasfl, bmasfl);
-
-    /* Free memory */
-    CS_FREE_HD(ddphi);
-    CS_FREE_HD(coefar);
-    CS_FREE_HD(coefbr);
-    CS_FREE_HD(cofafr);
-    CS_FREE_HD(cofbfr);
-
-    cs_field_bc_coeffs_free_copy(bc_coeffs_p, &bc_coeffs_dp2);
-
-  } /* End if weaky compressible algorithm (idilat = 5) */
-
   CS_FREE_HD(velflx);
   CS_FREE_HD(velflb);
 
@@ -3095,25 +2660,6 @@ _pressure_correction_fv(int                   iterns,
         rho_k_prev[c_id] = crom_eos[c_id];
       });
     }
-
-  }
-
-  if (idilat == 4) {
-
-    const cs_real_t *restrict fw = fvq->weight;
-
-    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      bmasfl[f_id] *= brom[f_id];
-    });
-
-    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      cs_lnum_t c_id_0 = i_face_cells[f_id][0];
-      cs_lnum_t c_id_1 = i_face_cells[f_id][1];
-
-      // FIXME: should be coherent with the convective scheme of the species...
-      imasfl[f_id] *=   fw[f_id]*crom[c_id_0]
-                      + (1.-fw[f_id])*crom[c_id_1];
-    });
 
   }
 
