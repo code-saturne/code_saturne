@@ -56,8 +56,8 @@ use entsor
 
 implicit none
 
-character      :: chaine(*)
-integer(c_int) :: taille
+character(c_char) :: chaine(*)
+integer(c_int)    :: taille
 
 character     chloc*16384
 integer       ii
@@ -72,7 +72,19 @@ do ii = 1, taille
    chloc(ii:ii) = chaine(ii)
 enddo
 
-write(nfecra, '(a)', advance='no') chloc(1:taille)
+! Workaround for Intel Fortran compilers....
+! Intel Fortran compilers lead to strange behaviors when write is combined
+! with the "advance=no" keyword. On older ones (2019 or before),
+! the buffer is wiped unless it's flushed after each call. On newer
+! ones it may not be flushed unless forced to. Hence, we avoid using the
+! advance=no keyword when possible, and remove trailing "\n" if
+! present in the C level.
+
+if (chloc(1:taille) .eq. c_new_line) then
+  write(nfecra, '(a)') chloc(1:taille-1)
+else
+  write(nfecra, '(a)', advance='no') chloc(1:taille)
+endif
 
 return
 

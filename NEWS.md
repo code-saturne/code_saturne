@@ -3,6 +3,9 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Workaround for empty of rarely flushed `run_solver.log` with builds
+  using Intel Fortran compilers (due to bugs in these compilers).
+
 - Major fix for missing updates of local time step at time steps where
   log was not active for adaptive and local time steps.
 
