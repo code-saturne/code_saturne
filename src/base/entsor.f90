@@ -171,6 +171,7 @@ contains
   subroutine csprnt(str, l) &
      bind(C, name='cs_f_print')
 
+    use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
@@ -189,7 +190,19 @@ contains
       chloc(ii:ii) = str(ii)
     enddo
 
-    write(nfecra, '(a)', advance='no') chloc(1:l)
+    ! Workaround for Intel Fortran compilers....
+    ! Intel Fortran compilers lead to strange behaviors when write is combined
+    ! with the "advance=no" keyword. On older ones (2019 or before),
+    ! the buffer is wiped unless it's flushed after each call. On newer
+    ! ones it may not be flushed unless forced to. Hence, we avoid using the
+    ! advance=no keyword when possible, and remove trailing "\n" if
+    ! present in the C level.
+
+    if (chloc(1:l) .eq. c_new_line) then
+      write(nfecra, '(a)') chloc(1:l-1)
+    else
+      write(nfecra, '(a)', advance='no') chloc(1:l)
+    endif
 
     return
 
