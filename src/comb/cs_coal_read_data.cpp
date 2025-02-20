@@ -467,6 +467,7 @@ cs_coal_read_data(void)
                                            nomcoel,
                                            ehcoel,
                                            cpcoel,
+                                           nullptr,
                                            wmolce,
                                            cm->th);
 

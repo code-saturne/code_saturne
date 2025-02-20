@@ -940,10 +940,15 @@ cs_combustion_read_data(void)
     for (int ige = icoel; ige < cm->n_gas_el_comp; ige++)
       wmolce[ige] = cm->wmole[ige];
 
+    using coeff_therm_t = double[2][5];
+    coeff_therm_t *coeff_therm = nullptr;
+    if (cm->type/100 == 1 && cm->type%100 > 1)
+      coeff_therm = &(cm->coeff_therm[icoel]);
+
     cs_combustion_enthalpy_and_cp_from_janaf
       (ncoel, ngasem, npo, &(nomcoe[icoel]),
-       &(ehgase[0][icoel]), &(cpgase[0][icoel]), &(wmolce[icoel]),
-       cm->th);
+       &(ehgase[0][icoel]), &(cpgase[0][icoel]), coeff_therm,
+       &(wmolce[icoel]), cm->th);
 
     // Masses of global species (becoming molar masses below).
 

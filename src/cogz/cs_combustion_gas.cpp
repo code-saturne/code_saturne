@@ -518,6 +518,14 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   cm->srrom = 0.95;
 
+  /* Burke-Schumann model */
+  for (int i = 0; i < 7; i++) {
+    for (int j = 0; j < 2; j++) {
+      for (int k = 0; k < 5; k++)
+        cm->coeff_therm[i][j][k] = 0.;
+    }
+  }
+
   /* Libby Williams model */
   cm->lw.vref = 0.;
   cm->lw.lref = 0.;

@@ -314,6 +314,10 @@ typedef struct {
                    \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
                    (hence, with a zero value, there is no sub-relaxation) */
 
+  /*! Burke-Schumann parameters */
+
+  double coeff_therm[7][2][5];
+
   /*! Libby Williams parameters */
 
   cs_libby_williams_params_t  lw;
