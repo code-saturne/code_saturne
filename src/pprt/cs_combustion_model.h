@@ -63,16 +63,18 @@ BEGIN_C_DECLS
 /*!
  * \brief Compute Enthalpy and Cp based on the JANAF band.
  *
- * \param[in]   ncoel    number of elementary constituents
- * \param[in]   ngazem   number of elementary constituents
- * \param[in]   npo      number of interpolation points
- * \param[in]   nomcoel  names of elementary constituants
- * \param[out]  ehcoel   enthalpy for each elementary species
- *                       (for point i and species j, ehcoel[i*ngazem + j])
- * \param[out]  cpcoel   cp for each elementary species
- *                       (for point i and species j, cpcoel[i*ngazem + j])
- * \param[in]   wmolce   molar mass of each species
- * \param[in]   th       temperature in K
+ * \param[in]   ncoel        number of elementary constituents
+ * \param[in]   ngazem       number of elementary constituents
+ * \param[in]   npo          number of interpolation points
+ * \param[in]   nomcoel      names of elementary constituants
+ * \param[out]  ehcoel       enthalpy for each elementary species
+ *                           (for point i and species j, ehcoel[i*ngazem + j])
+ * \param[out]  cpcoel       cp for each elementary species
+ *                           (for point i and species j, cpcoel[i*ngazem + j])
+ * \param[out]  coeff_therm  coefficients for the Burke-Scumann model,
+ *                           or null otherwise
+ * \param[in]   wmolce       molar mass of each species
+ * \param[in]   th           temperature in K
  */
 /*----------------------------------------------------------------------------*/
 
@@ -83,6 +85,7 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
                                          const char    nomcoel[][13],
                                          double        ehcoel[],
                                          double        cpcoel[],
+                                         double        coeff_therm[][2][5],
                                          const double  wmolce[],
                                          const double  th[]);
 

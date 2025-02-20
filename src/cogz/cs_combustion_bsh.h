@@ -53,10 +53,6 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-/*! Burke Schumann combustion model thermal coefficients */
-
-extern cs_real_t coeff_therm[7][2][5];
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

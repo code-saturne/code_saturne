@@ -77,7 +77,7 @@ BEGIN_C_DECLS
 
 /*! Burke Schumann combustion model variables */
 
-cs_real_t        coeff_therm[7][2][5];
+cs_real_t        cs_bsh_coeff_therm[7][2][5];
 static cs_real_t bsh_lib[N_XR][N_Z][N_VAR_BSH];
 static cs_real_t turb_bsh_lib[CS_BSH_NVAR_TURB][N_XR][N_ZVAR][N_Z];
 
@@ -127,11 +127,11 @@ _compute_temperature
           icp = 0;
 
         for (ie = 0; ie < ngase; ie++) {
-          som1 += coeff_therm[5][icp][ie] * yspece[iz][ie];
+          som1 += cm->coeff_therm[5][icp][ie] * yspece[iz][ie];
           for (k = 0; k < 5; k++) {
-            som1 += coeff_therm[k][icp][ie] / (k + 1) * pow(var1, k + 1)
+            som1 += cm->coeff_therm[k][icp][ie] / (k + 1) * pow(var1, k + 1)
                     * yspece[iz][ie];
-            som2 += coeff_therm[k][icp][ie] * pow(var1, k) * yspece[iz][ie];
+            som2 += cm->coeff_therm[k][icp][ie] * pow(var1, k) * yspece[iz][ie];
           }
         }
 
@@ -768,9 +768,9 @@ cs_compute_burke_schumann_enthalpy
   cs_real_t h = 0.0;
 
   for (int ne = 0; ne < ngase; ne++) {
-    cs_real_t he = coeff_therm[5][icp][ne];
+    cs_real_t he = cm->coeff_therm[5][icp][ne];
     for (int i = 0; i < 5; i++) {
-      he += coeff_therm[i][icp][ne] / (i + 1) * pow(t, i + 1);
+      he += cm->coeff_therm[i][icp][ne] / (i + 1) * pow(t, i + 1);
     }
     h += he * yspec[ne];
   }

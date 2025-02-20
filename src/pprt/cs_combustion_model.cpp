@@ -350,16 +350,18 @@ cs_f_combustion_model_get_pointers(double  **srrom)
 /*!
  * \brief Compute Enthalpy and Cp based on the JANAF band.
  *
- * \param[in]   ncoel    number of elementary constituents
- * \param[in]   ngazem   number of elementary constituents
- * \param[in]   npo      number of interpolation points
- * \param[in]   nomcoel  names of elementary constituants
- * \param[out]  ehcoel   enthalpy for each elementary species
- *                       (for point i and species j, ehcoel[i*ngazem + j])
- * \param[out]  cpcoel   cp for each elementary species
- *                       (for point i and species j, cpcoel[i*ngazem + j])
- * \param[in]   wmolce   molar mass of each species
- * \param[in]   th       temperature in K
+ * \param[in]   ncoel        number of elementary constituents
+ * \param[in]   ngazem       number of elementary constituents
+ * \param[in]   npo          number of interpolation points
+ * \param[in]   nomcoel      names of elementary constituants
+ * \param[out]  ehcoel       enthalpy for each elementary species
+ *                           (for point i and species j, ehcoel[i*ngazem + j])
+ * \param[out]  cpcoel       cp for each elementary species
+ *                           (for point i and species j, cpcoel[i*ngazem + j])
+ * \param[out]  coeff_therm  coefficients for the Burke-Scumann model,
+ *                           or null otherwise
+ * \param[in]   wmolce       molar mass of each species
+ * \param[in]   th           temperature in K
  */
 /*----------------------------------------------------------------------------*/
 
@@ -370,6 +372,7 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
                                          const char    nomcoel[][13],
                                          double        ehcoel[],
                                          double        cpcoel[],
+                                         double        coeff_therm[][2][5],
                                          const double  wmolce[],
                                          const double  th[])
 {
@@ -436,14 +439,6 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
     }
   }
 
-  for (int ne = 0; ne < ncoel; ne++) {
-    for (int inicff = 0; inicff < 2; inicff++) {
-      for (int injcff = 0; injcff < 7; injcff++) {
-        coeff_therm[injcff][inicff][ne] = 0.0;
-      }
-    }
-  }
-
   char *s = cs_file_gets(buf, 127, impjnf, &line);  /* dummy read for 1st line */
 
   /* Read temperature data */
@@ -485,10 +480,8 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
       if (strcmp(nomcoel[ne], nomesp) == 0) {
         icoeff[ne] = 1;
         for (int inicff = 0; inicff < 2; inicff++) {
-          for (int injcff = 0; injcff < 7; injcff++) {
+          for (int injcff = 0; injcff < 7; injcff++)
             coeff[injcff][inicff][ne] = wcoeff[injcff][inicff];
-            coeff_therm[injcff][inicff][ne] = wcoeff[injcff][inicff];
-          }
         }
       }
     }
@@ -498,16 +491,6 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
   /* Finish reading if all data has beeen stored */
 
   impjnf = cs_file_free(impjnf);
-
-  for (int ne = 0; ne < ncoel; ne++) {
-    for (int inicff = 0; inicff < 2; inicff++) {
-      for (int injcff = 0; injcff < 7; injcff++) {
-        coeff_therm[injcff][inicff][ne] = cs_physical_constants_r
-                                          * coeff_therm[injcff][inicff][ne]
-                                          / wmolce[ne];
-      }
-    }
-  }
 
   /* Test and possible stop */
 
@@ -561,6 +544,20 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
       cpcoel[nt*ngazem + ne] *= cs_physical_constants_r / wmolce[ne];
     }
 
+  }
+
+  /* Compute coeff_therm for Burk-Schumann model */
+
+  if (coeff_therm != nullptr) {
+    for (int ne = 0; ne < ncoel; ne++) {
+      for (int inicff = 0; inicff < 2; inicff++) {
+        for (int injcff = 0; injcff < 7; injcff++) {
+          coeff_therm[injcff][inicff][ne] = cs_physical_constants_r
+                                            * coeff[injcff][inicff][ne]
+                                            / wmolce[ne];
+        }
+      }
+    }
   }
 }
 
