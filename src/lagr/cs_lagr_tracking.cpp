@@ -620,10 +620,8 @@ _delete_lagr_halo(cs_lagr_halo_t   **halo)
 #endif
 
     BFT_FREE(h->send_buf);
-
     BFT_FREE(*halo);
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -832,6 +830,7 @@ _manage_error(cs_lnum_t                       failsafe_mode,
  *                       this sub-iteration for cell_wise_integ == 1
 
  *----------------------------------------------------------------------------*/
+
 static void
 _integ_particle_quantities(cs_lagr_particle_set_t          *particles,
                            cs_lnum_t                        p_id,
@@ -960,7 +959,6 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
 
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
-
   cs_lagr_internal_condition_t *internal_conditions
     = cs_glob_lagr_internal_conditions;
 
@@ -1022,6 +1020,7 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
     }
     return particle_state;
   }
+
   /* Now, we know we have some specific interactions to handle */
 
   *specific_face_interaction = true;
@@ -1229,6 +1228,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
   cs_lagr_zone_data_t  *bdy_conditions = cs_lagr_get_boundary_conditions();
+  cs_lagr_boundary_interactions_t  *bdy_interactions
+    = cs_glob_lagr_boundary_interactions;
 
   cs_real_t  energt = 0.;
   cs_lnum_t  contact_number = 0;
@@ -1401,11 +1402,14 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       /* computation of the number of particles in contact with */
       /* the depositing particle                                */
 
-      surface_coverage = &bound_stat[cs_glob_lagr_boundary_interactions->iscovc * n_b_faces + face_id];
-      deposit_height_mean = &bound_stat[cs_glob_lagr_boundary_interactions->ihdepm * n_b_faces + face_id];
-      deposit_height_var = &bound_stat[cs_glob_lagr_boundary_interactions->ihdepv * n_b_faces + face_id];
-
-      deposit_diameter_sum = &bound_stat[cs_glob_lagr_boundary_interactions->ihsum * n_b_faces + face_id];
+      surface_coverage = &bound_stat[  bdy_interactions->iscovc * n_b_faces
+                                     + face_id];
+      deposit_height_mean = &bound_stat[  bdy_interactions->ihdepm * n_b_faces
+                                        + face_id];
+      deposit_height_var = &bound_stat[  bdy_interactions->ihdepv * n_b_faces
+                                       + face_id];
+      deposit_diameter_sum = &bound_stat[bdy_interactions->ihsum * n_b_faces
+                                         + face_id];
 
       contact_number = cs_lagr_clogging_barrier(particle,
                                                 p_am,
@@ -1445,7 +1449,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       p_info->tracking_step_id = 2;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_REMAINING_INTEG_TIME,
-                                                  -1.);
+                                  -1.);
       cs_real_t *cell_cen = fvq->cell_cen[cell_id];
       cs_real_3_t vect_cen;
       for (int k = 0; k < 3; k++)
@@ -1462,7 +1466,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         particle_state = CS_LAGR_PART_STUCK;
         if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_REMAINING_INTEG_TIME,
-                                                    -1.);
+                                    -1.);
         p_info->tracking_step_id = 2;
       }
 
@@ -1483,13 +1487,13 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         particle_state = CS_LAGR_PART_TREATED;
         if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_REMAINING_INTEG_TIME,
-                                                    -1.);
+                                    -1.);
         p_info->tracking_step_id = 2;
       }
 
       if (cs_glob_lagr_model->clogging) {
 
-        bound_stat[cs_glob_lagr_boundary_interactions->inclgt
+        bound_stat[bdy_interactions->inclgt
                    * n_b_faces + face_id] += particle_stat_weight;
         *deposit_diameter_sum += particle_diameter;
 
@@ -1512,7 +1516,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                  * particle_stat_weight / face_area, 2)
                                  * pow(depositing_radius,4);
 
-          bound_stat[cs_glob_lagr_boundary_interactions->inclg
+          bound_stat[bdy_interactions->inclg
                      * n_b_faces + face_id] += particle_stat_weight;
 
           /* The particle is replaced towards the cell center
@@ -1640,8 +1644,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           *deposit_height_mean -=   cur_part_height*pi*pow(cur_part_diameter, 2)
                                   * cur_part_stat_weight / (4.0*face_area);
           *deposit_height_var -=   pow(cur_part_height*pi
-                                  * cur_part_stat_weight / (4.0*face_area),2)
-                                  * pow(cur_part_diameter, 4);
+                                 * cur_part_stat_weight / (4.0*face_area), 2)
+                                 * pow(cur_part_diameter, 4);
 
           if (*surface_coverage >= limit) {
             cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_HEIGHT,
@@ -1671,12 +1675,16 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                       cur_part_diameter);
           }
 
-          cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_MASS,
-                                    cur_part_mass + particle_mass
-                                    * particle_stat_weight / cur_part_stat_weight);
-          cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_CLUSTER_NB_PART,
-                                    cur_part_cluster_nb_part+particle_cluster_nb_part
-                                    * particle_stat_weight / cur_part_stat_weight);
+          cs_lagr_particle_set_real
+            (cur_part, p_am, CS_LAGR_MASS,
+             cur_part_mass + (  particle_mass
+                              * particle_stat_weight
+                              / cur_part_stat_weight));
+          cs_lagr_particle_set_real
+            (cur_part, p_am, CS_LAGR_CLUSTER_NB_PART,
+             cur_part_cluster_nb_part + (  particle_cluster_nb_part
+                                         * particle_stat_weight
+                                         / cur_part_stat_weight));
 
           particle_state = CS_LAGR_PART_OUT;
           if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
@@ -1809,6 +1817,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                      temperature_out -  r_tn / r_nn * tmp);
         }
       }
+
       /* else: for EVM u*^2 / r_nn = 1/sqrt(C0) as algebraic closure for SLM */
       else {
         cs_real_3_t r_in_ov_rnn;
@@ -1837,6 +1846,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           cs_real_t temperature_out =
             cs_lagr_particles_get_real(particles, p_id,
                                        CS_LAGR_TEMPERATURE_SEEN);
+
           /* Modify temperature seen with algebraic solution from SLM--IEM model
            * in the neutral limit (=close to walls, could be poor further away)*/
           cs_real_t rnt_ov_rnn =
@@ -2121,8 +2131,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
        || b_type == CS_LAGR_FOULING) {
 
     /* Number of particle-boundary interactions  */
-    if (cs_glob_lagr_boundary_interactions->has_part_impact_nbr > 0)
-      bound_stat[cs_glob_lagr_boundary_interactions->inbr * n_b_faces + face_id]
+    if (bdy_interactions->has_part_impact_nbr > 0)
+      bound_stat[bdy_interactions->inbr * n_b_faces + face_id]
         += particle_stat_weight;
 
   }
@@ -3762,7 +3772,7 @@ cs_lagr_tracking_initialize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Integrate or not SDEs associated tot the particle and apply one
+ * \brief Integrate or not SDEs associated to the particle and apply one
  * trajectography step to track the displacement.
  *
  * \param[in]     visc_length     viscous layer thickness
@@ -3872,7 +3882,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                     p_id,
                     1, // nor
                     dtp,
-                    &taup[phase_id],
+                    &(taup[phase_id]),
                     tlag[phase_id],
                     piil[phase_id],
                     bx[phase_id],
@@ -4011,12 +4021,10 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
           p_info->state = CS_LAGR_PART_TREATED;
           cs_real_t *cell_cen = fvq->cell_cen[cell_id];
 
-
           cs_lnum_t n_rep =
             cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_TR_REPOSITION);
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_TR_REPOSITION,
                                     n_rep+1);
-
 
           for (int k = 0; k < 3; k++) {
             p_info->start_coords[k] = cell_cen[k];
@@ -4027,7 +4035,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 
       }
     } /* End of loop on particles */
-  /* Update of the particle set structure. Delete exited particles,
+    /* Update of the particle set structure. Delete exited particles,
      update for particles which change domain. */
 
     continue_displacement = _sync_particle_set(particles, particle_range);

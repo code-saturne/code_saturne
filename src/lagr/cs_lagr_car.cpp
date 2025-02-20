@@ -187,7 +187,6 @@ cs_lagr_car(int                iprev,
   /* Compute Tp and Tc in case of thermal model
      -------------------------------------------*/
 
-
   cs_real_t p_diam   = cs_lagr_particle_get_real(particle, p_am,
                                                  CS_LAGR_DIAMETER);
   cs_lnum_t cell_id  = cs_lagr_particle_get_lnum(particle, p_am,
@@ -312,7 +311,7 @@ cs_lagr_car(int                iprev,
       }
     }
 
-    /* -> Calculation of TL BX and potentially beta     */
+    /* Calculation of TL BX and potentially beta */
     cs_real_t energi = extra_i[phase_id].cvar_k->val[cell_id];
     if (   extra_i[phase_id].lagr_time->val[cell_id] > cs_math_epzero
         && energi > cs_math_epzero) {
@@ -320,7 +319,8 @@ cs_lagr_car(int                iprev,
 
         for (cs_lnum_t id = 0; id < 3; id++) {
           tlag[id]  =
-            CS_MAX(extra_i[phase_id].anisotropic_lagr_time[cell_id][id], cs_math_epzero);
+            CS_MAX(extra_i[phase_id].anisotropic_lagr_time[cell_id][id],
+                   cs_math_epzero);
           cs_real_t bxi = extra_i[phase_id].anisotropic_bx[cell_id][id];
           if (bxi > 0.0)
             bx[id][nor-1] = sqrt(bxi);
@@ -462,7 +462,8 @@ cs_lagr_car(int                iprev,
         }
       }
 
-    } else {
+    }
+    else {
       bft_error
         (__FILE__, __LINE__, 0,
         _("Lagrangian turbulent dispersion is not compatible with\n"
@@ -691,7 +692,7 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
                   + grav[id] + force_p[id]);
     }
   }
-  /* Added-mass term?     */
+  /* Added-mass term ? */
   else {
     /* TODO make force_p influenced by each phase as they may have different
      * density for added mass effects*/
@@ -712,8 +713,8 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
                                                   CS_LAGR_VELOCITY);
     cs_rotation_add_coriolis_v(cs_glob_rotation, -2., part_vel, force_p);
   }
-
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
