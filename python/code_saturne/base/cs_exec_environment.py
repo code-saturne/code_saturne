@@ -646,6 +646,25 @@ def clean_os_environ_for_shell():
 
 #-------------------------------------------------------------------------------
 
+def filtered_os_environ_for_shell(env=None):
+    """
+    Return filtered environment relative to sub-shells.
+    """
+
+    if env:
+        s_env = env.copy()
+    else:
+        s_env = os.environ.copy()
+
+    for ev in ('BASH_FUNC_module%%', 'BASH_FUNC_ml%%',
+               'BASH_FUNC_scl%%'):
+        if ev in s_env:
+            del s_env[ev]
+
+    return s_env
+
+#-------------------------------------------------------------------------------
+
 def full_os_environ_for_shell(env=None):
     """
     Return environment relative to sub-shells.
@@ -717,6 +736,8 @@ def run_command(args, pkg = None, echo = False,
                                  env=full_os_environ_for_shell(env),
                                  **kwargs)
         else:
+            if env is None:
+                env = filtered_os_environ_for_shell()
             p = subprocess.Popen(args,
                                  universal_newlines=True,
                                  env=env,
