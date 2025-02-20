@@ -2223,7 +2223,7 @@ cs_sles_post_output_var(const char      *name,
       size_t l = 31 - strlen("_fp_type");
 
       strncpy(type_name, name, l);
-      type_name[31] = '\0';
+      type_name[l] = '\0';
 
       strcat(type_name, "_fp_type");
 
