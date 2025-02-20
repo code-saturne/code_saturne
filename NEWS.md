@@ -3,6 +3,8 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- GUI: Fix HTSolver temperature initialization by function.
+
 - GUI: fix display of Fourier number with local or adaptive time step.
 
 - Workaround for empty of rarely flushed `run_solver.log` with builds

@@ -2841,10 +2841,11 @@ void cs_gui_initial_conditions(void)
               cs_equation_param_by_name(CS_THERMAL_EQNAME);
 
             cs_meg_xdef_input_t *_input
-              = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
+              = cs_meg_xdef_wrapper_add_input(CS_MEG_INITIALIZATION_FUNC,
                                               z_id,
+                                              CS_MESH_LOCATION_VERTICES,
                                               1,
-                                              "temperature",
+                                              "thermal",
                                               NULL);
             cs_equation_add_ic_by_analytic(eqp,
                                            z->name,
@@ -4202,6 +4203,7 @@ cs_gui_physical_properties(void)
           cs_meg_xdef_input_t *_input
             = cs_meg_xdef_wrapper_add_input(CS_MEG_VOLUME_FUNC,
                                             z_id,
+                                            CS_MESH_LOCATION_CELLS,
                                             1,
                                             "density",
                                             NULL);
@@ -4223,6 +4225,7 @@ cs_gui_physical_properties(void)
           cs_meg_xdef_input_t *_input
             = cs_meg_xdef_wrapper_add_input(CS_MEG_VOLUME_FUNC,
                                             z_id,
+                                            CS_MESH_LOCATION_CELLS,
                                             1,
                                             "specific_heat",
                                             NULL);
@@ -4250,6 +4253,7 @@ cs_gui_physical_properties(void)
           cs_meg_xdef_input_t *_input
             = cs_meg_xdef_wrapper_add_input(CS_MEG_VOLUME_FUNC,
                                             z_id,
+                                            CS_MESH_LOCATION_CELLS,
                                             1,
                                             "thermal_conductivity",
                                             NULL);
@@ -5054,6 +5058,7 @@ cs_gui_calculator_functions(void)
       cs_meg_xdef_input_t *_input
         = cs_meg_xdef_wrapper_add_input(CS_MEG_CALCULATOR_FUNC,
                                         -1,
+                                        _loc,
                                         dim,
                                         name,
                                         NULL);

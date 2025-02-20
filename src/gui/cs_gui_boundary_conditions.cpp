@@ -1610,6 +1610,7 @@ _boundary_hts_temperature
       cs_meg_xdef_input_t *_input
         = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
                                         z->id,
+                                        CS_MESH_LOCATION_BOUNDARY_FACES,
                                         1,
                                         "temperature",
                                         choice);
@@ -1628,6 +1629,7 @@ _boundary_hts_temperature
       cs_meg_xdef_input_t *_input
         = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
                                         z->id,
+                                        CS_MESH_LOCATION_BOUNDARY_FACES,
                                         1,
                                         "temperature",
                                         choice);
@@ -1646,6 +1648,7 @@ _boundary_hts_temperature
       cs_meg_xdef_input_t *_input
         = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
                                         z->id,
+                                        CS_MESH_LOCATION_BOUNDARY_FACES,
                                         1,
                                         "temperature",
                                         choice);

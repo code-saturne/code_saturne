@@ -69,6 +69,38 @@ _meg_xdef_wrapper_finalize(void)
   _n_meg_defs = 0;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get number of elements based on location type.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_meg_alloc_size_from_location
+(
+  cs_mesh_location_type_t location
+)
+{
+  cs_lnum_t retval = 0;
+
+  switch(location) {
+  case CS_MESH_LOCATION_CELLS:
+    retval = cs_glob_mesh->n_cells;
+    break;
+  case CS_MESH_LOCATION_BOUNDARY_FACES:
+    retval = cs_glob_mesh->n_b_faces;
+    break;
+  case CS_MESH_LOCATION_VERTICES:
+    retval = cs_glob_mesh->n_vertices;
+    break;
+  default:
+    assert(0);
+    break;
+  }
+
+  return retval;
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -90,11 +122,12 @@ _meg_xdef_wrapper_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 cs_meg_xdef_input_t *
-cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t type,
-                              const int                    z_id,
-                              const int                    stride,
-                              const char                  *name,
-                              const char                  *additional_data)
+cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t   type,
+                              const int                      z_id,
+                              const cs_mesh_location_type_t  location,
+                              const int                      stride,
+                              const char                    *name,
+                              const char                    *additional_data)
 {
   if (_n_meg_defs == 0)
     cs_base_at_finalize(_meg_xdef_wrapper_finalize);
@@ -109,6 +142,7 @@ cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t type,
 
   d->type = type;
   d->z_id = z_id;
+  d->location = location;
   d->stride = stride;
 
   if (name == NULL || (name != NULL && strlen(name) == 0))
@@ -162,16 +196,20 @@ cs_meg_xdef_wrapper(cs_real_t         time,
   cs_real_t *meg_vals = NULL;
   /* Volume function takes as an input arrays over the entire domain */
   if (_input->type == CS_MEG_VOLUME_FUNC) {
-    if (dense_output)
-      CS_MALLOC(meg_vals, cs_glob_mesh->n_cells * _input->stride, cs_real_t);
+    if (dense_output) {
+      cs_lnum_t n_elts_alloc = _meg_alloc_size_from_location(_input->location);
+      CS_MALLOC(meg_vals, n_elts_alloc * _input->stride, cs_real_t);
+    }
     else
       meg_vals = retval;
   }
   else {
     if (dense_output)
       meg_vals = retval;
-    else
-      CS_MALLOC(meg_vals, cs_glob_mesh->n_cells * _input->stride, cs_real_t);
+    else {
+      cs_lnum_t n_elts_alloc = _meg_alloc_size_from_location(_input->location);
+      CS_MALLOC(meg_vals, n_elts_alloc * _input->stride, cs_real_t);
+    }
   }
 
   switch(_input->type) {
