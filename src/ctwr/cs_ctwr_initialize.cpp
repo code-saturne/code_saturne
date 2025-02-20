@@ -91,6 +91,9 @@ BEGIN_C_DECLS
 void
 cs_ctwr_fields_init0(void)
 {
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
   int has_restart = cs_restart_present();
   cs_halo_t *halo = cs_glob_mesh->halo;
 
@@ -119,9 +122,17 @@ cs_ctwr_fields_init0(void)
   cs_real_t tkelvin = cs_physical_constants_celsius_to_kelvin;
   const cs_real_t xhum = air_prop->humidity0;
 
+  int rho_l_pack_id = cs_field_get_key_int(CS_F_(y_l_pack), cs_field_key_id("density_id"));
+  cs_real_t *rho_l_pack = cs_field_by_id(rho_l_pack_id)->val;
+
+  /* Initialize liquid density used for packing zones */
+  cs_array_real_set_scalar(n_cells_ext, air_prop->rho_l, rho_l_pack);
+
+  /* Cooling tower zones */
+
   /* Only if the simulation is not a restart from another one */
   if (has_restart == 0) {
-    for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       /* Humid air */
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF)
@@ -344,9 +355,6 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   cs_gnum_t nclip_ym_w_max = 0;
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
-    /* Initialize liquid density used for packing zones */
-    rho_l_pack[cell_id] = rho_l;
 
     /* Update humidity field in case users have updated the initial
        dry air mass fraction.
