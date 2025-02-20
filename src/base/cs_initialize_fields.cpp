@@ -77,6 +77,7 @@
 
 #include "pprt/cs_physical_model.h"
 #include "atmo/cs_atmo.h"
+#include "cogz/cs_combustion_d3p.h"
 #include "cogz/cs_combustion_ebu.h"
 #include "cogz/cs_combustion_lw.h"
 #include "comb/cs_coal_initialize.h"
@@ -100,13 +101,7 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_d3pini(void);
-
-void
 cs_steady_laminar_flamelet_init(void);
-
-void
-cs_f_d3pini1(void);
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -509,7 +504,7 @@ cs_initialize_fields_stage_1(void)
       cs_atmo_fields_init0();
 
     if (pm_flag[CS_COMBUSTION_3PT] >= 0)
-      cs_f_d3pini();
+      cs_combustion_d3p_fields_init0();
 
     if (pm_flag[CS_COMBUSTION_SLFM] >= 0)
       cs_steady_laminar_flamelet_init();
@@ -541,7 +536,7 @@ cs_initialize_fields_stage_1(void)
      (after the user function call) */
 
   if (pm_flag[CS_COMBUSTION_3PT] >= 0)
-    cs_f_d3pini1();
+    cs_combustion_d3p_fields_init1();
 
   // Cooling towers
   if (pm_flag[CS_COOLING_TOWERS] >= 0)

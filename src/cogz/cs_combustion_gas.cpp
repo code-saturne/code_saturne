@@ -519,6 +519,19 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   cm->srrom = 0.95;
 
+  /* Legacy 3-pt model */
+  const int nmaxh = 9, nmaxf = 9;
+
+  cm->hstoea = 0.;
+  for (int i = 0; i < nmaxh; i++)
+    cm->hh[i] = 0.;
+  for (int i = 0; i < nmaxf; i++)
+    cm->ff[i] = 0.;
+  for (int i = 0; i < nmaxh; i++) {
+    for (int j = 0; j < nmaxf; j++)
+      cm->tfh[i][j] = 0.;
+  }
+
   /* Burke-Schumann model */
   for (int i = 0; i < 7; i++) {
     for (int j = 0; j < 2; j++) {

@@ -314,6 +314,13 @@ typedef struct {
                    \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
                    (hence, with a zero value, there is no sub-relaxation) */
 
+  /*! Infinitely fast 3-point chemistry model parameters */
+
+  double hstoea;        /*< temperature at adiabatic stoichiometry */
+  double hh[9];         /*< tabulated stoichiometric enthalpy (size nmaxhm) */
+  double ff[9];         /*< tabulated richness (size nmaxfm) */
+  double tfh[9][9];     /*< tabulated richness - stoichiometric enthalpy */
+
   /*! Burke-Schumann parameters */
 
   double coeff_therm[7][2][5];

@@ -52,6 +52,7 @@
 #include "mesh/cs_mesh_quantities.h"
 
 #include "cogz/cs_combustion_bsh.h"
+#include "cogz/cs_combustion_d3p.h"
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_boundary_conditions.h"
 #include "pprt/cs_combustion_model.h"
@@ -65,16 +66,6 @@
 #include "cogz/cs_combustion_physical_properties.h"
 
 /*----------------------------------------------------------------------------*/
-
-extern "C" void
-cs_f_d3pint(int        *indpdf,
-            cs_real_t  *dirmin,
-            cs_real_t  *dirmax,
-            cs_real_t  *fdeb,
-            cs_real_t  *ffin,
-            cs_real_t  *hrec,
-            cs_real_t  *tpdf,
-            cs_real_t  *w1);
 
 BEGIN_C_DECLS
 
@@ -237,7 +228,13 @@ cs_combustion_physical_properties_update_d3p(void)
   /* Integrate probability density function to determine
      temperature, mass fractions, density, radiative qsp. */
 
-  cs_f_d3pint(indpdf, dirmin, dirmax, fdeb, ffin, hrec, tpdf, w1);
+  cs_combustion_d3p_integration(indpdf,
+                                dirmin,
+                                dirmax,
+                                fdeb,
+                                ffin,
+                                hrec,
+                                w1);
 
   CS_FREE(indpdf);
 
