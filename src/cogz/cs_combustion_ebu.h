@@ -81,7 +81,7 @@ cs_combustion_ebu_physical_prop(int  *mbrom);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute physical properties for premixed flame EBU combustion model.
+ * \brief Compute source terms for premixed flame EBU combustion model.
  *
  * Define the source terms for a given scalar over one time step.
  *

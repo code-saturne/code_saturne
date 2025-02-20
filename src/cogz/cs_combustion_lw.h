@@ -79,7 +79,7 @@ cs_combustion_lw_physical_prop(void);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute physical properties for premixed flame Libby-Williams
+ * \brief Compute source terms for premixed flame Libby-Williams
  *        combustion model.
  *
  * Define the source terms for a given scalar over one time step.
