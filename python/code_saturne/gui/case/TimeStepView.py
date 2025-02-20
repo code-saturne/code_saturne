@@ -320,10 +320,9 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
                 self.lineEditCDTMIN.setText(str(time_step_min_factor))
                 self.lineEditCDTMAX.setText(str(time_step_max_factor))
                 self.lineEditVARRDT.setText(str(time_step_var))
-            elif idtvar == 1:
-                # Fourier number only used in unsteady
-                fourier_max   = self.mdl.getOptions('max_fourier_num')
-                self.lineEditFOUMAX.setText(str(fourier_max))
+
+            fourier_max   = self.mdl.getOptions('max_fourier_num')
+            self.lineEditFOUMAX.setText(str(fourier_max))
 
             _hide_dt_params = self.hts_activated and idtvar == 2
             self.groupBoxTimeStep.setVisible(not _hide_dt_params)
