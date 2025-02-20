@@ -115,6 +115,15 @@ typedef struct {
 
 } cs_cavitation_parameters_t;
 
+/*! Enum definition of contact angle model. */
+
+typedef enum {
+  CS_VOF_CONTACT_ANGLE_OFF,    /*!< No contact angle model. */
+  CS_VOF_CONTACT_ANGLE_STATIC, /*!< Static contact angle model. */
+  CS_VOF_CONTACT_ANGLE_DYN,    /*!< Dynamic contact angle model. */
+  CS_VOF_N_CONTACT_ANGLE_TYPES /*!< Number of possible values. */
+} cs_vof_contact_angle_t;
+
 /*=============================================================================
  * Global variables
  *============================================================================*/
@@ -392,6 +401,16 @@ cs_get_glob_cavitation_parameters(void);
 void
 cs_cavitation_compute_source_term(const cs_real_t  pressure[],
                                   const cs_real_t  voidf[]);
+
+/*----------------------------------------------------------------------------*/
+/* Set the contact angle mode */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_contact_angle_set
+(
+  const cs_vof_contact_angle_t choice
+);
 
 /*----------------------------------------------------------------------------*/
 
