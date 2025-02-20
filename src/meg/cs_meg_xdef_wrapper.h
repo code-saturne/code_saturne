@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -73,6 +74,9 @@ typedef struct {
   /* boundary or source term data */
   char additional_data[512];
 
+  /* LOCATION */
+  cs_mesh_location_type_t location;
+
   /* constant data */
   cs_real_t constant_value;
 
@@ -99,11 +103,12 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 
 cs_meg_xdef_input_t *
-cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t type,
-                              const int                    z_id,
-                              const int                    stride,
-                              const char                  *name,
-                              const char                  *additional_data);
+cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t  type,
+                              const int                     z_id,
+                              const cs_mesh_location_type_t location,
+                              const int                     stride,
+                              const char                   *name,
+                              const char                   *additional_data);
 
 /*----------------------------------------------------------------------------*/
 /*!
