@@ -537,7 +537,7 @@ _clip_rho_mu_cp(bool                         first_pass,
     bft_error(__FILE__, __LINE__, 0,
               _("Warning: abort in the physical quantities computation\n"
                 "========\n"
-                "The physical property %s, has not been correctly defined"
+                "The physical property %s has not been correctly defined.\n"
                 "The calculation will not be run.\n"
                 "The physical property identified is variable and the"
                 "minimum reached is %10.12e\n"
@@ -632,7 +632,7 @@ _check_log_scalar_diff(const bool        first_pass,
       bft_error(__FILE__, __LINE__, 0,
           _("Warning: abort in the physical quantities computation\n"
             "========\n"
-            "The diffusivity of the scalar %s, has not been correctly defined\n"
+            "The diffusivity of the scalar %s has not been correctly defined.\n"
             "The calculation will not be run.\n"
             "The physical property identified is variable and the"
             "minimum reached is %10.12e\n"
@@ -658,7 +658,7 @@ _check_log_scalar_diff(const bool        first_pass,
     bft_error(__FILE__, __LINE__, 0,
               _("Warning: abort in the physical quantities computation\n"
                 "========\n"
-                "The physical property %s, has not been correctly defined\n"
+                "The physical property %s, has not been correctly defined.\n"
                 "The calculation will not be run.\n"
                 "The physical property identified is variable and the"
                 "minimum reached is %10.12e\n"
@@ -723,7 +723,7 @@ _check_log_mesh_diff(bool       first_pass,
         bft_error(__FILE__, __LINE__, 0,
                   _("Warning: abort in the physical quantities computation\n"
                   "========\n"
-                  "The mesh viscosity has not been correctly defined"
+                  "The mesh viscosity has not been correctly defined.\n"
                   "The calculation will not be run.\n"
                   "The minimum reached is %10.12e\n"
                   "Verify he definition of this property"), varmn);
@@ -761,7 +761,7 @@ _check_log_mesh_diff(bool       first_pass,
       bft_error(__FILE__, __LINE__, 0,
                 _("Warning: abort in the physical quantities computation\n"
                   "========\n"
-                  "The mesh viscosity has not been correctly defined"
+                  "The mesh viscosity has not been correctly defined.\n"
                   "The calculation will not be run.\n"
                   "The minimum reached is %10.12e\n"
                   "Verify he definition of this property"), varmn);
