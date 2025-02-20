@@ -437,6 +437,7 @@ cs_initialize_fields_stage_0(void)
       cs_field_current_to_previous(f);
   }
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize variable, time step, and wall distance fields.

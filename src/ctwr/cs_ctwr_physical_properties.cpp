@@ -201,11 +201,13 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
   cs_field_t *cfld_taup = cs_field_by_composite_name(cfld_yp->name,"drift_tau");
   cs_field_t *cfld_drift_vel = cs_field_by_composite_name(cfld_yp->name,"drift_vel");
-  cs_real_t *cpro_taup = nullptr;
+  cs_real_t *cpro_taup = nullptr, *_cpro_taup = nullptr;
   if (cfld_taup != nullptr)
     cpro_taup = cfld_taup->val;
-  else
-    BFT_MALLOC(cpro_taup, n_cells_with_ghosts, cs_real_t);
+  else {
+    CS_MALLOC(_cpro_taup, n_cells_with_ghosts, cs_real_t);
+    cpro_taup = _cpro_taup;
+  }
 
   /* Get ct zones information */
 
@@ -352,8 +354,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   cs_gnum_t n_g_clip_yw_min = nclip_yw_min;
   cs_gnum_t n_g_clip_yw_max = nclip_yw_max;
 
-  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yw_min);
-  cs_parall_sum(1, CS_GNUM_TYPE, &n_g_clip_yw_max);
+  cs_parall_sum_scalars(n_g_clip_yw_min, n_g_clip_yw_max);
 
   /* Printing clips in listing */
   if (n_g_clip_yw_min >= 1 || n_g_clip_yw_max >= 1) {
@@ -364,7 +365,6 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
   /* Loop over exchange zones */
   for (int ict = 0; ict < *_n_ct_zones; ict++) {
-
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->elt_ids;
@@ -400,8 +400,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   }
 
   /* Free memory */
-  if (cfld_taup != nullptr)
-    BFT_FREE(cpro_taup);
+  CS_FREE(_cpro_taup);
 }
 
 /*----------------------------------------------------------------------------*/
