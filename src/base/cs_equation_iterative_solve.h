@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_parameters.h"
 
 BEGIN_C_DECLS
@@ -406,5 +407,50 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                    cs_real_t                   pvar[][6]);
 
 END_C_DECLS
+
+#ifdef __cplusplus
+
+/*============================================================================
+ * Public C++ function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Update face value for gradient and diffusion when solving
+ *         in increment
+ *
+ * \param[in]      ctx          reference to dispatch context
+ * \param[in]      f            pointer to field
+ * \param[in]      bc_coeffs    boundary condition structure for the variable
+ * \param[in]      bc_coeffs_solve_v  boundary conditions structure when solving
+ * \param[in]      inc          0 if an increment, 1 otherwise
+ * \param[in]      halo_type    halo type (extended or not)
+ * \param[in]      var          variable values at cell centers
+ * \param[in,out]  var_ip       boundary variable values at I' position
+ * \param[in,out]  var_f        face values for the gradient computation
+ * \param[in,out]  var_f_lim    face values for the gradient computation
+ *                              (with limiter)
+ * \param[in,out]  var_f_d      face values for the diffusion computation
+ * \param[in,out]  var_f_d_lim  face values for the diffusion computation
+ *                              (with limiter)
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_update_face_value_strided
+  (cs_dispatch_context        &ctx,
+   cs_field_t                 *f,
+   const cs_field_bc_coeffs_t *bc_coeffs,
+   const int                   inc,
+   const cs_equation_param_t  *eqp,
+   const cs_real_t             pvar[][stride],
+   cs_real_t                   val_ip[][stride],
+   cs_real_t                   val_f[][stride],
+   cs_real_t                   val_f_lim[][stride],
+   cs_real_t                   val_f_d[][stride],
+   cs_real_t                   val_f_d_lim[][stride]);
+
+#endif /* cplusplus */
 
 #endif /* __CS_EQUATION_ITERATIVE_SOLVE_H__ */

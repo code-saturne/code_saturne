@@ -3216,7 +3216,7 @@ cs_turbulence_rij(int phase_id)
   /* Compute the velocity gradient */
 
   if (f_vel->grad == nullptr)
-    cs_field_gradient_vector(f_vel, true, 1, gradv);
+    cs_field_gradient_vector(f_vel, false, 1, gradv);
 
   /* Compute the production term for Rij
    * ----------------------------------- */
