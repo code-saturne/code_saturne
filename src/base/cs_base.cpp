@@ -1607,8 +1607,9 @@ cs_base_error_init(bool  signal_defaults)
 
     if (cs_glob_rank_id <= 0) {
       cs_glob_base_sigint_save  = signal(SIGINT, _cs_base_sig_fatal);
-      cs_glob_base_sigterm_save = signal(SIGTERM, _cs_base_sig_fatal);
     }
+
+    cs_glob_base_sigterm_save = signal(SIGTERM, _cs_base_sig_fatal);
 
     cs_glob_base_sigfpe_save  = signal(SIGFPE, _cs_base_sig_fatal);
     cs_glob_base_sigsegv_save = signal(SIGSEGV, _cs_base_sig_fatal);

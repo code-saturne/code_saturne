@@ -3,6 +3,9 @@ Release 8.3.1 (unreleased)
 
 ### Bug fixes:
 
+- Better handling of SIGTERM on clusters in order to allow the code to cleanly
+  exit and finish the computation.
+
 - GUI: Fix HTSolver temperature initialization by function.
 
 - GUI: fix display of Fourier number with local or adaptive time step.
