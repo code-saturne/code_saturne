@@ -42,10 +42,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_writer.h"
+
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -154,7 +155,7 @@ _time_set_create(void)
 
   /* Create and initialize structure */
 
-  BFT_MALLOC(this_time, 1, fvm_to_ensight_case_time_t);
+  CS_MALLOC(this_time, 1, fvm_to_ensight_case_time_t);
 
   this_time->n_time_values = 0;
   this_time->last_time_step = -1;
@@ -179,9 +180,9 @@ _time_set_create(void)
 static fvm_to_ensight_case_time_t *
 _time_set_destroy(fvm_to_ensight_case_time_t  *this_time)
 {
-  BFT_FREE(this_time->time_value);
+  CS_FREE(this_time->time_value);
 
-  BFT_FREE(this_time);
+  CS_FREE(this_time);
 
   return nullptr;
 }
@@ -245,7 +246,7 @@ _add_time(fvm_to_ensight_case_time_t  *const time_set,
     time_set->last_time_step  = time_step;
     time_set->n_time_values += 1;
 
-    BFT_REALLOC(time_set->time_value, time_set->n_time_values, double);
+    CS_REALLOC(time_set->time_value, time_set->n_time_values, double);
 
     time_set->time_value[time_set->n_time_values - 1] = time_value;
 
@@ -284,9 +285,9 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
   l = strlen(name);
 
   this_case->n_vars += 1;
-  BFT_MALLOC(var, 1, fvm_to_ensight_case_var_t);
+  CS_MALLOC(var, 1, fvm_to_ensight_case_var_t);
 
-  BFT_MALLOC(var->name, l + 1, char);
+  CS_MALLOC(var->name, l + 1, char);
   strcpy(var->name, name);
 
   /* Create description (49 chars max) */
@@ -399,10 +400,10 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
   else
     postfix_len = 0;
 
-  BFT_MALLOC(var->file_name,
-             (  this_case->dir_name_length + prefix_len
-              + base_len + postfix_len + 1),
-             char);
+  CS_MALLOC(var->file_name,
+            (  this_case->dir_name_length + prefix_len
+             + base_len + postfix_len + 1),
+            char);
   sprintf(var->file_name, "%s.", this_case->file_name_prefix);
 
   strcat(var->file_name, name);
@@ -436,10 +437,10 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
 
   /* Now we may finish associated case file line */
 
-  BFT_MALLOC(var->case_line,
-             (  strlen(line) + strlen(var->file_name)
-              - this_case->dir_name_length + 1),
-             char);
+  CS_MALLOC(var->case_line,
+            (  strlen(line) + strlen(var->file_name)
+             - this_case->dir_name_length + 1),
+            char);
 
   strcpy(var->case_line, line);
   strcat(var->case_line, var->file_name + this_case->dir_name_length);
@@ -460,7 +461,7 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
        this_case->case_file_name, name);
   }
 
-  BFT_REALLOC(this_case->var, this_case->n_vars, fvm_to_ensight_case_var_t *);
+  CS_REALLOC(this_case->var, this_case->n_vars, fvm_to_ensight_case_var_t *);
 
   this_case->var[this_case->n_vars - 1] = var;
   this_case->modified = true;
@@ -482,15 +483,15 @@ _del_vars(fvm_to_ensight_case_t  *const this_case)
 
     fvm_to_ensight_case_var_t  *var = this_case->var[i];
 
-    BFT_FREE(var->name);
-    BFT_FREE(var->case_line);
-    BFT_FREE(var->file_name);
+    CS_FREE(var->name);
+    CS_FREE(var->case_line);
+    CS_FREE(var->file_name);
 
-    BFT_FREE(var);
+    CS_FREE(var);
 
   }
 
-  BFT_FREE(this_case->var);
+  CS_FREE(this_case->var);
 }
 
 /*----------------------------------------------------------------------------
@@ -523,9 +524,9 @@ _update_geom_file_name(fvm_to_ensight_case_t  *const this_case)
       sprintf(extension, ".geo.%05d", geom_index);
     }
 
-    BFT_MALLOC(this_case->geom_file_name,
-               strlen(this_case->file_name_prefix) + strlen(extension) + 1,
-               char);
+    CS_MALLOC(this_case->geom_file_name,
+              strlen(this_case->file_name_prefix) + strlen(extension) + 1,
+              char);
     strcpy(this_case->geom_file_name, this_case->file_name_prefix);
     strcat(this_case->geom_file_name, extension);
 
@@ -573,11 +574,11 @@ fvm_to_ensight_case_create(const char                   *const name,
 
   /* Create and initialize structure */
 
-  BFT_MALLOC(this_case, 1, fvm_to_ensight_case_t);
+  CS_MALLOC(this_case, 1, fvm_to_ensight_case_t);
 
   /* Initialize base name and partial file names */
 
-  BFT_MALLOC(this_case->name, strlen(name) + 1, char);
+  CS_MALLOC(this_case->name, strlen(name) + 1, char);
   strcpy(this_case->name, name);
   name_len = strlen(name);
 
@@ -594,7 +595,7 @@ fvm_to_ensight_case_create(const char                   *const name,
 
   this_case->dir_name_length = prefix_len;
 
-  BFT_MALLOC(this_case->case_file_name, prefix_len + name_len + 6, char);
+  CS_MALLOC(this_case->case_file_name, prefix_len + name_len + 6, char);
   if (dir_prefix != nullptr)
     strcpy(this_case->case_file_name, dir_prefix);
       else
@@ -604,9 +605,9 @@ fvm_to_ensight_case_create(const char                   *const name,
     this_case->case_file_name[prefix_len + i] = toupper(name[i]);
   this_case->case_file_name[prefix_len + name_len] = '\0';
 
-  BFT_MALLOC(this_case->file_name_prefix,
-             strlen(this_case->case_file_name) + 1,
-             char);
+  CS_MALLOC(this_case->file_name_prefix,
+            strlen(this_case->case_file_name) + 1,
+            char);
   strcpy(this_case->file_name_prefix, this_case->case_file_name);
   for (i = 0 ; i < name_len ; i++)
     this_case->file_name_prefix[prefix_len + i]
@@ -662,17 +663,17 @@ fvm_to_ensight_case_destroy(fvm_to_ensight_case_t  *this_case)
 
   /* Free names */
 
-  BFT_FREE(this_case->name);
-  BFT_FREE(this_case->case_file_name);
-  BFT_FREE(this_case->file_name_prefix);
+  CS_FREE(this_case->name);
+  CS_FREE(this_case->case_file_name);
+  CS_FREE(this_case->file_name_prefix);
 
-  BFT_FREE(this_case->geom_file_name);
+  CS_FREE(this_case->geom_file_name);
 
   /* Free other members */
 
   for (i = 0 ; i < this_case->n_parts ; i++)
-    BFT_FREE(this_case->part_name[i]);
-  BFT_FREE(this_case->part_name);
+    CS_FREE(this_case->part_name[i]);
+  CS_FREE(this_case->part_name);
 
   /* Free variable entries */
 
@@ -682,11 +683,11 @@ fvm_to_ensight_case_destroy(fvm_to_ensight_case_t  *this_case)
 
   for (i = 0 ; i < this_case->n_time_sets ; i++)
     _time_set_destroy(this_case->time_set[i]);
-  BFT_FREE(this_case->time_set);
+  CS_FREE(this_case->time_set);
 
   /* Free structure and return */
 
-  BFT_FREE(this_case);
+  CS_FREE(this_case);
 
   return nullptr;
 }
@@ -729,9 +730,9 @@ fvm_to_ensight_case_set_geom_time(fvm_to_ensight_case_t  *const this_case,
   if (this_case->geom_time_set == -1) {
     this_case->geom_time_set = this_case->n_time_sets;
     this_case->n_time_sets += 1;
-    BFT_REALLOC(this_case->time_set,
-                this_case->n_time_sets,
-                fvm_to_ensight_case_time_t *);
+    CS_REALLOC(this_case->time_set,
+               this_case->n_time_sets,
+               fvm_to_ensight_case_time_t *);
     this_case->time_set[this_case->geom_time_set] = _time_set_create();
   }
 
@@ -808,8 +809,8 @@ fvm_to_ensight_case_add_part(fvm_to_ensight_case_t  *const this_case,
 
   else if (this_case->n_parts < 65000) {
     this_case->n_parts += 1;
-    BFT_REALLOC(this_case->part_name, this_case->n_parts, char *);
-    BFT_MALLOC(this_case->part_name[i], strlen(part_name) + 1, char);
+    CS_REALLOC(this_case->part_name, this_case->n_parts, char *);
+    CS_MALLOC(this_case->part_name[i], strlen(part_name) + 1, char);
     strcpy(this_case->part_name[i], part_name);
     i += 1;
   }
@@ -901,7 +902,7 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
 
   size_t l_n = strlen(name);
   if (l_n > 128)
-    BFT_MALLOC(lw_name, l_n + 1, char);
+    CS_MALLOC(lw_name, l_n + 1, char);
   for (size_t j = 0; j < l_n; j++)
     lw_name[j] = tolower(name[j]);
   lw_name[l_n] = '\0';
@@ -913,9 +914,9 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
     size_t l_c = strlen(var->name);
     if (l_c > 128) {
       if (clw_name == _clw_name)
-        BFT_MALLOC(clw_name, l_c + 1, char);
+        CS_MALLOC(clw_name, l_c + 1, char);
       else
-        BFT_REALLOC(clw_name, l_c + 1, char);
+        CS_REALLOC(clw_name, l_c + 1, char);
     }
     for (size_t j = 0; j < l_c; j++)
       clw_name[j] = tolower(var->name[j]);
@@ -955,9 +956,9 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
   }
 
   if (lw_name != _lw_name)
-    BFT_FREE(lw_name);
+    CS_FREE(lw_name);
   if (clw_name != _clw_name)
-    BFT_FREE(clw_name);
+    CS_FREE(clw_name);
 
   /* Second, update time step */
 
@@ -967,9 +968,9 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
     if (this_case->geom_time_set == -1) {
       this_case->geom_time_set = this_case->n_time_sets;
       this_case->n_time_sets += 1;
-      BFT_REALLOC(this_case->time_set,
-                  this_case->n_time_sets,
-                  fvm_to_ensight_case_time_t *);
+      CS_REALLOC(this_case->time_set,
+                 this_case->n_time_sets,
+                 fvm_to_ensight_case_time_t *);
       this_case->time_set[this_case->geom_time_set] = _time_set_create();
     }
 

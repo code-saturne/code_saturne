@@ -41,7 +41,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
@@ -50,6 +49,7 @@
 #include "fvm/fvm_triangulate.h"
 
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -551,7 +551,7 @@ _build_octree_leaves(int                level,
       octree->n_nodes_max = 8;
     }
     octree->n_nodes_max *= 2;
-    BFT_REALLOC(octree->nodes, octree->n_nodes_max, _octant_t);
+    CS_REALLOC(octree->nodes, octree->n_nodes_max, _octant_t);
   }
 
   /* Number of points */
@@ -719,12 +719,12 @@ _build_octree(cs_lnum_t         n_points,
                    point_coords,
                    _octree.extents);
 
-    BFT_MALLOC(_octree.point_ids, _octree.n_points, cs_lnum_t);
+    CS_MALLOC(_octree.point_ids, _octree.n_points, cs_lnum_t);
 
     for (i = 0; i < _octree.n_points; i++)
       _octree.point_ids[i] = i;
 
-    BFT_MALLOC(point_ids_tmp, n_points, cs_lnum_t);
+    CS_MALLOC(point_ids_tmp, n_points, cs_lnum_t);
 
     _build_octree_leaves(0,
                          _octree.extents,
@@ -733,7 +733,7 @@ _build_octree(cs_lnum_t         n_points,
                          &_octree,
                          point_range);
 
-    BFT_FREE(point_ids_tmp);
+    CS_FREE(point_ids_tmp);
 
   }
 
@@ -758,8 +758,8 @@ _free_octree(_octree_t *octree)
   octree->n_nodes = 0;
   octree->n_nodes_max = 0;
 
-  BFT_FREE(octree->nodes);
-  BFT_FREE(octree->point_ids);
+  CS_FREE(octree->nodes);
+  CS_FREE(octree->point_ids);
 }
 
 /*----------------------------------------------------------------------------
@@ -939,7 +939,7 @@ _build_quadtree_leaves(int                level,
       quadtree->n_nodes_max = 4;
     }
     quadtree->n_nodes_max *= 2;
-    BFT_REALLOC(quadtree->nodes, quadtree->n_nodes_max, _quadrant_t);
+    CS_REALLOC(quadtree->nodes, quadtree->n_nodes_max, _quadrant_t);
   }
 
   /* Number of points */
@@ -1095,12 +1095,12 @@ _build_quadtree(cs_lnum_t         n_points,
                    point_coords,
                    _quadtree.extents);
 
-    BFT_MALLOC(_quadtree.point_ids, _quadtree.n_points, cs_lnum_t);
+    CS_MALLOC(_quadtree.point_ids, _quadtree.n_points, cs_lnum_t);
 
     for (i = 0; i < _quadtree.n_points; i++)
       _quadtree.point_ids[i] = i;
 
-    BFT_MALLOC(point_ids_tmp, n_points, cs_lnum_t);
+    CS_MALLOC(point_ids_tmp, n_points, cs_lnum_t);
 
     _build_quadtree_leaves(0,
                            _quadtree.extents,
@@ -1109,7 +1109,7 @@ _build_quadtree(cs_lnum_t         n_points,
                            &_quadtree,
                            point_range);
 
-    BFT_FREE(point_ids_tmp);
+    CS_FREE(point_ids_tmp);
 
   }
 
@@ -1134,8 +1134,8 @@ _free_quadtree(_quadtree_t *quadtree)
   quadtree->n_nodes = 0;
   quadtree->n_nodes_max = 0;
 
-  BFT_FREE(quadtree->nodes);
-  BFT_FREE(quadtree->point_ids);
+  CS_FREE(quadtree->nodes);
+  CS_FREE(quadtree->point_ids);
 }
 
 /*----------------------------------------------------------------------------
@@ -2363,7 +2363,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
   if (n_vertices_max < 3)
     return;
 
-  BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
+  CS_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
   state = fvm_triangulate_state_create(n_vertices_max);
 
   /* Loop on elements */
@@ -2521,7 +2521,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
 
   } /* End of loop on elements */
 
-  BFT_FREE(triangle_vertices);
+  CS_FREE(triangle_vertices);
   state = fvm_triangulate_state_destroy(state);
 }
 
@@ -2597,7 +2597,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
   if (n_vertices_max < 3)
     return;
 
-  BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
+  CS_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
   state = fvm_triangulate_state_create(n_vertices_max);
 
   /* Main loop on elements */
@@ -2676,7 +2676,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
 
   } /* End of loop on elements */
 
-  BFT_FREE(triangle_vertices);
+  CS_FREE(triangle_vertices);
   state = fvm_triangulate_state_destroy(state);
 }
 
@@ -2952,7 +2952,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
     if (n_vertices_max < 3)
       return;
 
-    BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
+    CS_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
     state = fvm_triangulate_state_create(n_vertices_max);
 
   }
@@ -3116,7 +3116,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
   /* Free axiliary arrays and structures */
 
   if (triangle_vertices != _triangle_vertices)
-    BFT_FREE(triangle_vertices);
+    CS_FREE(triangle_vertices);
 
   if (state != nullptr)
     state = fvm_triangulate_state_destroy(state);
@@ -3283,7 +3283,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
   /* Build point query list
      (max size: n_points, usually much less) */
 
-  BFT_MALLOC(points_in_extents, n_points, cs_lnum_t);
+  CS_MALLOC(points_in_extents, n_points, cs_lnum_t);
 
   /* Use octree for 3d point location */
 
@@ -3387,7 +3387,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
 
   }
 
-  BFT_FREE(points_in_extents);
+  CS_FREE(points_in_extents);
 
 }
 
@@ -3449,8 +3449,8 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
   size_t  *section_index = nullptr;
   int  *section_list = nullptr;
 
-  BFT_MALLOC(section_index, n_max_dim_sections + 1, size_t);
-  BFT_MALLOC(section_list, n_max_dim_sections, int);
+  CS_MALLOC(section_index, n_max_dim_sections + 1, size_t);
+  CS_MALLOC(section_list, n_max_dim_sections, int);
 
   section_index[0] = 0;
   int shift = 0;
@@ -3591,8 +3591,8 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
   }
 
   /* Free memory */
-  BFT_FREE(section_index);
-  BFT_FREE(section_list);
+  CS_FREE(section_index);
+  CS_FREE(section_list);
 }
 
 /*----------------------------------------------------------------------------*/

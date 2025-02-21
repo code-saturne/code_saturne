@@ -42,7 +42,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
@@ -54,6 +53,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
 
@@ -471,8 +471,8 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
   /* Build arrays */
 
   block_buf_size = (bi.gnum_range[1] - bi.gnum_range[0]);
-  BFT_MALLOC(block_coords, block_buf_size, float);
-  BFT_MALLOC(part_coords, n_vertices_tot, float);
+  CS_MALLOC(block_coords, block_buf_size, float);
+  CS_MALLOC(part_coords, n_vertices_tot, float);
 
   /* Vertex coordinates */
   /*--------------------*/
@@ -521,10 +521,10 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(block_coords);
-  BFT_FREE(part_coords);
+  CS_FREE(block_coords);
+  CS_FREE(part_coords);
   if (extra_vertex_coords != nullptr)
-    BFT_FREE(extra_vertex_coords);
+    CS_FREE(extra_vertex_coords);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -567,7 +567,7 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
   /* Vertex coordinates */
   /*--------------------*/
 
-  BFT_MALLOC(coords_tmp, CS_MAX(n_vertices, n_extra_vertices), float);
+  CS_MALLOC(coords_tmp, CS_MAX(n_vertices, n_extra_vertices), float);
 
   _write_string(f, "coordinates");
   _write_int(f, n_vertices + n_extra_vertices);
@@ -612,10 +612,10 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 
   } /* end of loop on mesh dimension */
 
-  BFT_FREE(coords_tmp);
+  CS_FREE(coords_tmp);
 
   if (extra_vertex_coords != nullptr)
-    BFT_FREE(extra_vertex_coords);
+    CS_FREE(extra_vertex_coords);
 }
 
 #if defined(HAVE_MPI)
@@ -871,7 +871,7 @@ _write_connect_l(int                stride,
     const size_t  n_values = n_elems*stride;
     const size_t  buffer_size = n_values >  64 ? (n_values / 8) : n_values;
 
-    BFT_MALLOC(buffer, buffer_size, int32_t);
+    CS_MALLOC(buffer, buffer_size, int32_t);
 
     while (k < n_values) {
       for (j = 0; j < buffer_size && k < n_values; j++)
@@ -879,7 +879,7 @@ _write_connect_l(int                stride,
       cs_file_write_global(f.bf, buffer, sizeof(int32_t), j);
     }
 
-    BFT_FREE(buffer);
+    CS_FREE(buffer);
   }
 
 }
@@ -968,7 +968,7 @@ _export_point_elements_g(const fvm_to_ensight_writer_t  *w,
                                      min_block_size,
                                      n_g_vertices);
 
-    BFT_MALLOC(connect, bi.gnum_range[1] - bi.gnum_range[0], int32_t);
+    CS_MALLOC(connect, bi.gnum_range[1] - bi.gnum_range[0], int32_t);
 
     for (i = 0, j = bi.gnum_range[0]; j < bi.gnum_range[1]; i++, j++)
       connect[i] = j;
@@ -980,7 +980,7 @@ _export_point_elements_g(const fvm_to_ensight_writer_t  *w,
                            w->comm,
                            f);
 
-    BFT_FREE(connect);
+    CS_FREE(connect);
   }
 }
 
@@ -1019,7 +1019,7 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
     int32_t  *buf = nullptr;
     const int32_t  bufsize = n_vertices >  64 ? (n_vertices / 8) : n_vertices;
 
-    BFT_MALLOC(buf, bufsize, int32_t);
+    CS_MALLOC(buf, bufsize, int32_t);
 
     j_end = n_vertices + 1;
     while (j < j_end) {
@@ -1028,7 +1028,7 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
       cs_file_write_global(f.bf, buf, sizeof(int32_t), k);
     }
 
-    BFT_FREE(buf);
+    CS_FREE(buf);
   }
 }
 
@@ -1078,8 +1078,8 @@ _write_lengths_g(const fvm_to_ensight_writer_t  *w,
 
   /* Build distribution structures */
 
-  BFT_MALLOC(block_lengths, bi.gnum_range[1] - bi.gnum_range[0], int);
-  BFT_MALLOC(part_lengths, n_elements, int32_t);
+  CS_MALLOC(block_lengths, bi.gnum_range[1] - bi.gnum_range[0], int);
+  CS_MALLOC(part_lengths, n_elements, int32_t);
 
   for (i = 0; i < n_elements; i++)
     part_lengths[i] = vertex_index[i+1] - vertex_index[i];
@@ -1093,7 +1093,7 @@ _write_lengths_g(const fvm_to_ensight_writer_t  *w,
                               block_lengths);
 
   cs_part_to_block_destroy(&d);
-  BFT_FREE(part_lengths);
+  CS_FREE(part_lengths);
 
   /* Write to file */
 
@@ -1104,7 +1104,7 @@ _write_lengths_g(const fvm_to_ensight_writer_t  *w,
                          w->comm,
                          f);
 
-  BFT_FREE(block_lengths);
+  CS_FREE(block_lengths);
 }
 
 /*----------------------------------------------------------------------------
@@ -1238,7 +1238,7 @@ _write_indexed_connect_g(const fvm_to_ensight_writer_t  *w,
                                    min_block_size,
                                    n_g_elements);
 
-  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
+  CS_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
   d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_elt_num);
 
@@ -1248,7 +1248,7 @@ _write_indexed_connect_g(const fvm_to_ensight_writer_t  *w,
 
   block_size = block_index[bi.gnum_range[1] - bi.gnum_range[0]];
 
-  BFT_MALLOC(block_vtx_num, block_size, int32_t);
+  CS_MALLOC(block_vtx_num, block_size, int32_t);
 
   cs_part_to_block_copy_indexed(d,
                                 CS_INT32,
@@ -1268,9 +1268,9 @@ _write_indexed_connect_g(const fvm_to_ensight_writer_t  *w,
 
   /* Free memory */
 
-  BFT_FREE(block_vtx_num);
+  CS_FREE(block_vtx_num);
   cs_part_to_block_destroy(&d);
-  BFT_FREE(block_index);
+  CS_FREE(block_index);
 }
 
 /*----------------------------------------------------------------------------
@@ -1342,9 +1342,9 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
     /* Build local polyhedron face lengths information */
 
-    BFT_MALLOC(part_face_len,
-               section->face_index[section->n_elements],
-               int32_t);
+    CS_MALLOC(part_face_len,
+              section->face_index[section->n_elements],
+              int32_t);
 
     k = 0;
     for (i = 0; i < section->n_elements; i++) {
@@ -1370,7 +1370,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
                                         n_elements,
                                         g_elt_num);
 
-    BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
+    CS_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
     cs_part_to_block_copy_index(d,
                                 section->face_index,
@@ -1378,7 +1378,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
     block_size = block_index[bi.gnum_range[1] - bi.gnum_range[0]];
 
-    BFT_MALLOC(block_face_len, block_size, int32_t);
+    CS_MALLOC(block_face_len, block_size, int32_t);
 
     cs_part_to_block_copy_indexed(d,
                                   CS_INT32,
@@ -1398,12 +1398,12 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
                            w->comm,
                            f);
 
-    BFT_FREE(block_face_len);
+    CS_FREE(block_face_len);
 
     cs_part_to_block_destroy(&d);
 
-    BFT_FREE(block_index);
-    BFT_FREE(part_face_len);
+    CS_FREE(block_index);
+    CS_FREE(part_face_len);
 
     current_section = current_section->next;
 
@@ -1424,7 +1424,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
     const cs_gnum_t   *g_vtx_num
       = fvm_io_num_get_global_num(global_vertex_num);
 
-    BFT_MALLOC(part_vtx_idx, section->n_elements + 1, cs_lnum_t);
+    CS_MALLOC(part_vtx_idx, section->n_elements + 1, cs_lnum_t);
 
     l = 0;
 
@@ -1463,7 +1463,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
     }
 
-    BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], int32_t);
+    CS_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], int32_t);
 
     l = 0;
 
@@ -1499,8 +1499,8 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
                              part_vtx_num,
                              f);
 
-    BFT_FREE(part_vtx_num);
-    BFT_FREE(part_vtx_idx);
+    CS_FREE(part_vtx_num);
+    CS_FREE(part_vtx_idx);
 
     current_section = current_section->next;
 
@@ -1562,7 +1562,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
 
       if (buffer_size < (size_t)section->n_elements * 4) {
         buffer_size = section->n_elements * 4;
-        BFT_REALLOC(buffer, buffer_size, int32_t);
+        CS_REALLOC(buffer, buffer_size, int32_t);
       }
 
       /* Now fill buffer and write */
@@ -1697,7 +1697,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
            && current_section->continues_previous == true);
 
   if (buffer != nullptr)
-    BFT_FREE(buffer);
+    CS_FREE(buffer);
 
   return current_section;
 }
@@ -1768,7 +1768,7 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
 
     else { /* we are in text mode if f.bf == nullptr */
 
-      BFT_MALLOC(_part_vtx_idx, section->n_elements + 1, cs_lnum_t);
+      CS_MALLOC(_part_vtx_idx, section->n_elements + 1, cs_lnum_t);
 
       _part_vtx_idx[0] = 0;
       for (i = 0; i < section->n_elements; i++)
@@ -1780,7 +1780,7 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
 
     /* Build connectivity array */
 
-    BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], int32_t);
+    CS_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], int32_t);
 
     if (f.bf != nullptr) { /* binary mode */
       for (i = 0, k = 0; i < section->n_elements; i++) {
@@ -1809,9 +1809,9 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
                              part_vtx_num,
                              f);
 
-    BFT_FREE(part_vtx_num);
+    CS_FREE(part_vtx_num);
     if (_part_vtx_idx != nullptr)
-      BFT_FREE(_part_vtx_idx);
+      CS_FREE(_part_vtx_idx);
 
     current_section = current_section->next;
 
@@ -1873,7 +1873,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
       if (buffer_size < (size_t)section->n_elements) {
         buffer_size = section->n_elements;
-        BFT_REALLOC(buffer, buffer_size, int32_t);
+        CS_REALLOC(buffer, buffer_size, int32_t);
       }
 
       /* Now fill buffer and write */
@@ -1938,7 +1938,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
            && current_section->continues_previous == true);
 
   if (buffer != nullptr)
-    BFT_FREE(buffer);
+    CS_FREE(buffer);
 
   return current_section;
 }
@@ -2008,8 +2008,8 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
   assert(sub_element_idx[n_elements]*stride == part_size);
 
   if (n_elements > 0) {
-    BFT_MALLOC(part_vtx_num, part_size, int32_t);
-    BFT_MALLOC(part_vtx_gnum, part_size, cs_gnum_t);
+    CS_MALLOC(part_vtx_num, part_size, int32_t);
+    CS_MALLOC(part_vtx_gnum, part_size, cs_gnum_t);
   }
 
   fvm_tesselation_decode_g(tesselation,
@@ -2023,7 +2023,7 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
   if (n_elements > 0) {
     for (cs_lnum_t i = 0; i < part_size; i++)
       part_vtx_num[i] = part_vtx_gnum[i];
-    BFT_FREE(part_vtx_gnum);
+    CS_FREE(part_vtx_gnum);
   }
 
   /* Allocate memory for additionnal indexes and decoded connectivity */
@@ -2034,8 +2034,8 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
                                    min_block_size,
                                    n_g_elements);
 
-  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
-  BFT_MALLOC(part_index, n_elements + 1, cs_lnum_t);
+  CS_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
+  CS_MALLOC(part_index, n_elements + 1, cs_lnum_t);
 
   d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_elt_num);
 
@@ -2055,7 +2055,7 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
 
   /* Copy connectivity */
 
-  BFT_MALLOC(block_vtx_num, block_size, int32_t);
+  CS_MALLOC(block_vtx_num, block_size, int32_t);
 
   cs_part_to_block_copy_indexed(d,
                                 CS_INT32,
@@ -2066,9 +2066,9 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(part_vtx_num);
-  BFT_FREE(part_index);
-  BFT_FREE(block_index);
+  CS_FREE(part_vtx_num);
+  CS_FREE(part_index);
+  CS_FREE(block_index);
 
   /* Write to file */
 
@@ -2087,7 +2087,7 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
 
   /* Free remaining memory */
 
-  BFT_FREE(block_vtx_num);
+  CS_FREE(block_vtx_num);
 }
 
 /*----------------------------------------------------------------------------
@@ -2181,10 +2181,10 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
     if (n_sub_elements_max > n_buffer_elements_max)
       n_buffer_elements_max = n_sub_elements_max;
 
-    BFT_MALLOC(vertex_num,
-               (  n_buffer_elements_max
-                * fvm_nodal_n_vertices_element[export_section->type]),
-               cs_lnum_t);
+    CS_MALLOC(vertex_num,
+              (  n_buffer_elements_max
+               * fvm_nodal_n_vertices_element[export_section->type]),
+              cs_lnum_t);
 
     for (start_id = 0;
          start_id < section->n_elements;
@@ -2206,7 +2206,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
 
     }
 
-    BFT_FREE(vertex_num);
+    CS_FREE(vertex_num);
 
     current_section = current_section->next;
 
@@ -2288,8 +2288,8 @@ _export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
 
     block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
-    BFT_MALLOC(block_vtx_num, block_size*stride, int32_t);
-    BFT_MALLOC(part_vtx_num, n_elements*stride, int32_t);
+    CS_MALLOC(block_vtx_num, block_size*stride, int32_t);
+    CS_MALLOC(part_vtx_num, n_elements*stride, int32_t);
 
     for (i = 0; i < n_elements; i++) {
       for (j = 0; j < stride; j++) {
@@ -2304,7 +2304,7 @@ _export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
                                 part_vtx_num,
                                 block_vtx_num);
 
-    BFT_FREE(part_vtx_num);
+    CS_FREE(part_vtx_num);
 
     _write_block_connect_g(stride,
                            bi.gnum_range[0],
@@ -2313,7 +2313,7 @@ _export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
                            w->comm,
                            f);
 
-    BFT_FREE(block_vtx_num);
+    CS_FREE(block_vtx_num);
 
     cs_part_to_block_destroy(&d);
 
@@ -2372,7 +2372,7 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
   const size_t  output_buffer_size
     = mesh->n_vertices >  16 ? (mesh->n_vertices / 4) : mesh->n_vertices;
 
-  BFT_MALLOC(output_buffer, output_buffer_size, float);
+  CS_MALLOC(output_buffer, output_buffer_size, float);
 
   for (i = 0; i < output_dim; i++) {
 
@@ -2398,7 +2398,7 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
     }
   }
 
-  BFT_FREE(output_buffer);
+  CS_FREE(output_buffer);
 }
 
 /*----------------------------------------------------------------------------
@@ -2461,7 +2461,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
   output_buffer_size = CS_MAX(output_buffer_size, 128);
   output_buffer_size = CS_MIN(output_buffer_size, output_size);
 
-  BFT_MALLOC(output_buffer, output_buffer_size, float);
+  CS_MALLOC(output_buffer, output_buffer_size, float);
 
   /* Loop on dimension (de-interlace vectors, always 3D for EnSight) */
 
@@ -2504,7 +2504,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 
   } /* end of loop on spatial dimension */
 
-  BFT_FREE(output_buffer);
+  CS_FREE(output_buffer);
 
   return current_section;
 }
@@ -2557,9 +2557,9 @@ fvm_to_ensight_init_writer(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(this_writer, 1, fvm_to_ensight_writer_t);
+  CS_MALLOC(this_writer, 1, fvm_to_ensight_writer_t);
 
-  BFT_MALLOC(this_writer->name, strlen(name) + 1, char);
+  CS_MALLOC(this_writer->name, strlen(name) + 1, char);
   strcpy(this_writer->name, name);
 
   this_writer->text_mode = false;
@@ -2671,11 +2671,11 @@ fvm_to_ensight_finalize_writer(void  *this_writer_p)
   fvm_to_ensight_writer_t  *this_writer
                              = (fvm_to_ensight_writer_t *)this_writer_p;
 
-  BFT_FREE(this_writer->name);
+  CS_FREE(this_writer->name);
 
   fvm_to_ensight_case_destroy(this_writer->case_info);
 
-  BFT_FREE(this_writer);
+  CS_FREE(this_writer);
 
   return nullptr;
 }
@@ -2984,7 +2984,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
 
   } /* End of loop on sections */
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 
   /* Close geometry file and update case file */
   /*------------------------------------------*/
@@ -3239,7 +3239,7 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
 
   fvm_writer_field_helper_destroy(&helper);
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 
   /* Close variable file and update case file */
   /*------------------------------------------*/

@@ -42,7 +42,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_convert_array.h"
@@ -55,6 +54,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
 
@@ -193,7 +193,7 @@ _field_output(void           *context,
       sprintf(t_stamp, "_%.4i", w->nt);
     size_t l =   strlen(w->path) + strlen(w->name)
                + strlen(t_stamp) + 4 + 1;
-    BFT_REALLOC(w->file_name, l, char);
+    CS_REALLOC(w->file_name, l, char);
 
     if (w->format == CS_PLOT_DAT)
       sprintf(w->file_name, "%s%s%s.dat", w->path, w->name, t_stamp);
@@ -230,7 +230,7 @@ _field_output(void           *context,
       else
         w->n_cols_max *= 2;
     }
-    BFT_REALLOC(w->buffer, w->n_rows*w->n_cols_max, cs_real_t);
+    CS_REALLOC(w->buffer, w->n_rows*w->n_cols_max, cs_real_t);
   }
 
   for (int i = 0; i < dimension; i++) {
@@ -346,12 +346,12 @@ fvm_to_plot_init_writer(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(w, 1, fvm_to_plot_writer_t);
+  CS_MALLOC(w, 1, fvm_to_plot_writer_t);
 
-  BFT_MALLOC(w->name, strlen(name) + 1, char);
+  CS_MALLOC(w->name, strlen(name) + 1, char);
   strcpy(w->name, name);
 
-  BFT_MALLOC(w->path, strlen(path) + 1, char);
+  CS_MALLOC(w->path, strlen(path) + 1, char);
   strcpy(w->path, path);
 
   w->rank = 0;
@@ -436,17 +436,17 @@ fvm_to_plot_finalize_writer(void  *writer)
   fvm_to_plot_writer_t  *w
     = (fvm_to_plot_writer_t *)writer;
 
-  BFT_FREE(w->name);
-  BFT_FREE(w->path);
+  CS_FREE(w->name);
+  CS_FREE(w->path);
 
   fvm_to_plot_flush(writer);
 
   if (w->f != nullptr)
     _file_close(w);
 
-  BFT_FREE(w->file_name);
+  CS_FREE(w->file_name);
 
-  BFT_FREE(w);
+  CS_FREE(w);
 
   return nullptr;
 }
@@ -697,7 +697,7 @@ fvm_to_plot_flush(void  *writer)
 
   }
 
-  BFT_FREE(w->buffer);
+  CS_FREE(w->buffer);
 }
 
 /*----------------------------------------------------------------------------*/

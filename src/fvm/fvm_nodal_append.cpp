@@ -39,8 +39,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
@@ -275,7 +275,7 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
 
   /* Create new section */
 
-  BFT_REALLOC(this_nodal->sections, n_sections + 1, fvm_nodal_section_t *);
+  CS_REALLOC(this_nodal->sections, n_sections + 1, fvm_nodal_section_t *);
 
   new_section = _transfer_to_section(n_elements,
                                      type,
@@ -350,7 +350,7 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
 
   /* Create new section */
 
-  BFT_REALLOC(this_nodal->sections, n_sections + 1, fvm_nodal_section_t *);
+  CS_REALLOC(this_nodal->sections, n_sections + 1, fvm_nodal_section_t *);
 
   new_section = _map_to_section(n_elements,
                                 type,

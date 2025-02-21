@@ -39,8 +39,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
@@ -96,7 +96,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
   stride = this_section->stride * 2;
   connectivity_size = this_section->n_elements * stride * n_layers;
 
-  BFT_MALLOC(vertex_num, connectivity_size, cs_lnum_t);
+  CS_MALLOC(vertex_num, connectivity_size, cs_lnum_t);
   this_section->connectivity_size = 0;
 
   for (i = 0; i < this_section->n_elements; i++) {
@@ -120,7 +120,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
   /* Replace old connectivity */
 
   if (this_section->_vertex_num != nullptr)
-    BFT_FREE(this_section->_vertex_num);
+    CS_FREE(this_section->_vertex_num);
 
   this_section->_vertex_num = vertex_num;
   this_section->vertex_num = this_section->_vertex_num;
@@ -129,14 +129,14 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
 
   /* Remove old attributes */
 
-  BFT_FREE(this_section->gc_id);
-  BFT_FREE(this_section->tag);
+  CS_FREE(this_section->gc_id);
+  CS_FREE(this_section->tag);
 
   /* Remove old parent numbering */
 
   this_section->parent_element_id = nullptr;
   if (this_section->_parent_element_id != nullptr)
-    BFT_FREE(this_section->_parent_element_id);
+    CS_FREE(this_section->_parent_element_id);
 
   /* Update global_numbering */
 
@@ -149,7 +149,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
     const cs_gnum_t *old_global_element_num
       = fvm_io_num_get_global_num(this_section->global_element_num);
 
-    BFT_MALLOC(global_element_num, n_elements*n_layers, cs_gnum_t);
+    CS_MALLOC(global_element_num, n_elements*n_layers, cs_gnum_t);
 
     for (i = 0; i < n_elements; i++) {
       cs_gnum_t   base_num = (  (old_global_element_num[i]-1)
@@ -252,7 +252,7 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
   /* Set distribution if necessary */
 
   if (distribution == nullptr) {
-    BFT_MALLOC(_distrib, n_planes, cs_coord_t);
+    CS_MALLOC(_distrib, n_planes, cs_coord_t);
     for (cs_lnum_t i = 0; i < n_planes; i++)
       _distrib[i] = ((double)i) / ((double)n_layers);
     distrib = _distrib;
@@ -263,7 +263,7 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
   n_vertices = this_nodal->n_vertices;
   old_coords = this_nodal->vertex_coords;
 
-  BFT_MALLOC(new_coords, n_planes*n_vertices*dim, cs_coord_t);
+  CS_MALLOC(new_coords, n_planes*n_vertices*dim, cs_coord_t);
 
   if (this_nodal->_parent_vertex_id != nullptr) {
 
@@ -299,14 +299,14 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
   /* Replace old coords with new */
 
   if (this_nodal->_vertex_coords != nullptr)
-    BFT_FREE(this_nodal->_vertex_coords);
+    CS_FREE(this_nodal->_vertex_coords);
 
   this_nodal->_vertex_coords = new_coords;
   this_nodal->vertex_coords = this_nodal->_vertex_coords;
 
   this_nodal->parent_vertex_id = nullptr;
   if (this_nodal->_parent_vertex_id != nullptr)
-    BFT_FREE(this_nodal->_parent_vertex_id);
+    CS_FREE(this_nodal->_parent_vertex_id);
 
   /* Update global numbering */
 
@@ -319,7 +319,7 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
     const cs_gnum_t *old_global_vertex_num
       = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
 
-    BFT_MALLOC(global_vertex_num, n_planes*n_vertices, cs_gnum_t);
+    CS_MALLOC(global_vertex_num, n_planes*n_vertices, cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < n_vertices; i++) {
       cs_gnum_t   base_num = (  (old_global_vertex_num[i]-1)

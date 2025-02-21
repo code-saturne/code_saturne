@@ -57,7 +57,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
@@ -67,6 +66,7 @@
 #include "fvm/fvm_writer_priv.h"
 
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -186,7 +186,7 @@ _field_c_output(void           *context,
     l += 2 + lce;
 
   if (l > 128)
-    BFT_MALLOC(c_name, l, char);
+    CS_MALLOC(c_name, l, char);
 
   if (lce > 0)
     sprintf(c_name, "%s[%s]", c->name, tmpe);
@@ -246,7 +246,7 @@ _field_c_output(void           *context,
 
   /* Local cleanup */
   if (c_name != tmpn)
-    BFT_FREE(c_name);
+    CS_FREE(c_name);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -346,9 +346,9 @@ fvm_to_melissa_init_writer(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(w, 1, fvm_to_melissa_writer_t);
+  CS_MALLOC(w, 1, fvm_to_melissa_writer_t);
 
-  BFT_MALLOC(w->name, strlen(name) + 1, char);
+  CS_MALLOC(w->name, strlen(name) + 1, char);
   strcpy(w->name, name);
 
   w->dry_run = dry_run;
@@ -406,7 +406,7 @@ fvm_to_melissa_init_writer(const char             *name,
 
     int tracefile_path_l = path_len + strlen(name) + strlen(".log") + 1;
     char *tracefile_path;
-    BFT_MALLOC(tracefile_path, tracefile_path_l, char);
+    CS_MALLOC(tracefile_path, tracefile_path_l, char);
     if (path != nullptr)
       strcpy(tracefile_path, path);
     else
@@ -419,7 +419,7 @@ fvm_to_melissa_init_writer(const char             *name,
       bft_error(__FILE__, __LINE__, errno,
                 _("Error opening file: \"%s\""), tracefile_path);
 
-    BFT_FREE(tracefile_path);
+    CS_FREE(tracefile_path);
 
   }
 
@@ -453,15 +453,15 @@ fvm_to_melissa_finalize_writer(void  *this_writer_p)
       bft_error(__FILE__, __LINE__, errno,
                 _("Error closing file: \"%s.log\""), w->name);
   }
-  BFT_FREE(w->name);
+  CS_FREE(w->name);
 
   cs_map_name_to_id_destroy(&(w->f_map));
-  BFT_FREE(w->f_ts);
+  CS_FREE(w->f_ts);
 
   if (w->dry_run == false)
     melissa_finalize();
 
-  BFT_FREE(w);
+  CS_FREE(w);
 
   return nullptr;
 }
@@ -565,7 +565,7 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
   if (f_id < 0) {
     f_id = cs_map_name_to_id(w->f_map, name);
     int n_fields = cs_map_name_to_id_size(w->f_map);
-    BFT_REALLOC(w->f_ts, n_fields, int);
+    CS_REALLOC(w->f_ts, n_fields, int);
     c.call_init = true;
     if (w->tracefile != nullptr) {
       fprintf
@@ -665,7 +665,7 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
   /* Free helper structures */
 
   fvm_writer_field_helper_destroy(&helper);
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 }
 
 /*----------------------------------------------------------------------------*/

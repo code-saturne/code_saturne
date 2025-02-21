@@ -40,8 +40,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
@@ -113,7 +113,7 @@ _triangulate_section(int                         dim,
   n_elements = base_section->n_elements;
 
   if (base_section->global_element_num != nullptr)
-    BFT_MALLOC(n_sub_elements, n_elements, cs_lnum_t);
+    CS_MALLOC(n_sub_elements, n_elements, cs_lnum_t);
 
   /* Count expected total and local numbers of triangles */
 
@@ -153,13 +153,13 @@ _triangulate_section(int                         dim,
   ret_section->stride = 3;
   ret_section->connectivity_size =   ret_section->stride
                                    * ret_section->n_elements;
-  BFT_MALLOC(ret_section->_vertex_num,
-             ret_section->connectivity_size,
-             cs_lnum_t);
+  CS_MALLOC(ret_section->_vertex_num,
+            ret_section->connectivity_size,
+            cs_lnum_t);
   ret_section->vertex_num = ret_section->_vertex_num;
-  BFT_MALLOC(ret_section->_parent_element_id,
-             ret_section->n_elements,
-             cs_lnum_t);
+  CS_MALLOC(ret_section->_parent_element_id,
+            ret_section->n_elements,
+            cs_lnum_t);
   ret_section->parent_element_id = ret_section->_parent_element_id;
 
   triangle_id = 0;
@@ -264,7 +264,7 @@ _triangulate_section(int                         dim,
       = fvm_io_num_create_from_sub(base_section->global_element_num,
                                    n_sub_elements);
     if (n_sub_elements != nullptr)
-      BFT_FREE(n_sub_elements);
+      CS_FREE(n_sub_elements);
   }
 
   /* Return new (triangulated) section */
@@ -343,7 +343,7 @@ _triangulate_section_polygons(int                         dim,
   /* Allocate memory and state variables */
 
   if (n_vertices_max > 4 && base_section->vertex_index != nullptr) {
-    BFT_MALLOC(triangle_vertices, n_triangles_max*3, cs_lnum_t);
+    CS_MALLOC(triangle_vertices, n_triangles_max*3, cs_lnum_t);
     state = fvm_triangulate_state_create(n_vertices_max);
   }
 
@@ -359,17 +359,17 @@ _triangulate_section_polygons(int                         dim,
       _section->stride = fvm_nodal_n_vertices_element[element_type[type_id]];
       _section->connectivity_size =   _section->stride
                                     * _section->n_elements;
-      BFT_MALLOC(_section->_vertex_num,
-                 _section->connectivity_size,
-                 cs_lnum_t);
+      CS_MALLOC(_section->_vertex_num,
+                _section->connectivity_size,
+                cs_lnum_t);
       _section->vertex_num = _section->_vertex_num;
-      BFT_MALLOC(_section->_parent_element_id,
-                 _section->n_elements,
-                 cs_lnum_t);
+      CS_MALLOC(_section->_parent_element_id,
+                _section->n_elements,
+                cs_lnum_t);
       _section->parent_element_id = _section->_parent_element_id;
       new_sections[type_id] = _section;
       if (base_section->global_element_num != nullptr)
-        BFT_MALLOC(n_sub_elements[type_id], n_elements, cs_lnum_t);
+        CS_MALLOC(n_sub_elements[type_id], n_elements, cs_lnum_t);
     }
 
   }
@@ -473,7 +473,7 @@ _triangulate_section_polygons(int                         dim,
   /* Free memory and state variables */
 
   if (n_vertices_max > 4 && base_section->vertex_index != nullptr) {
-    BFT_FREE(triangle_vertices);
+    CS_FREE(triangle_vertices);
     state = fvm_triangulate_state_destroy(state);
   }
 
@@ -485,7 +485,7 @@ _triangulate_section_polygons(int                         dim,
         = fvm_io_num_create_from_sub(base_section->global_element_num,
                                      n_sub_elements[type_id]);
     }
-    BFT_FREE(n_sub_elements[type_id]);
+    CS_FREE(n_sub_elements[type_id]);
   }
 
 }
@@ -550,9 +550,9 @@ fvm_nodal_triangulate(fvm_nodal_t  *this_nodal,
         n_faces +=_section->n_elements;
 
       if (_section->parent_element_id == nullptr) {
-        BFT_MALLOC(_section->_parent_element_id,
-                   _section->n_elements,
-                   cs_lnum_t);
+        CS_MALLOC(_section->_parent_element_id,
+                  _section->n_elements,
+                  cs_lnum_t);
         for (j = 0; j < _section->n_elements; j++)
           _section->_parent_element_id[j] = base_element_id + j;
         _section->parent_element_id = _section->_parent_element_id;
@@ -602,7 +602,7 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
       n_sections += 1;
   }
 
-  BFT_MALLOC(sections, n_sections, fvm_nodal_section_t *);
+  CS_MALLOC(sections, n_sections, fvm_nodal_section_t *);
 
   /* Now triangulate and update new section list */
 
@@ -645,9 +645,9 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
         n_faces += _section->n_elements;
 
       if (_section->parent_element_id == nullptr) {
-        BFT_MALLOC(_section->_parent_element_id,
-                   _section->n_elements,
-                   cs_lnum_t);
+        CS_MALLOC(_section->_parent_element_id,
+                  _section->n_elements,
+                  cs_lnum_t);
         for (k = 0; k < _section->n_elements; k++)
           _section->_parent_element_id[k] = base_element_id + k;
         _section->parent_element_id = _section->_parent_element_id;
@@ -664,8 +664,8 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
 
   /* Now replace section list */
 
-  BFT_FREE(this_nodal->sections);
-  BFT_REALLOC(sections, n_sections, fvm_nodal_section_t *);
+  CS_FREE(this_nodal->sections);
+  CS_REALLOC(sections, n_sections, fvm_nodal_section_t *);
 
   this_nodal->n_sections = n_sections;
   this_nodal->sections = sections;

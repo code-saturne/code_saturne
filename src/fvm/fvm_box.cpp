@@ -41,7 +41,8 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_all_to_all.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
@@ -50,8 +51,6 @@
 
 #include "fvm/fvm_box.h"
 #include "fvm/fvm_box_priv.h"
-
-#include "base/cs_all_to_all.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -262,7 +261,7 @@ fvm_box_set_create(int                dim,
 
   /* Allocate box set structure and initialize it */
 
-  BFT_MALLOC(boxes, 1, fvm_box_set_t);
+  CS_MALLOC(boxes, 1, fvm_box_set_t);
 
   boxes->dim = dim;
   boxes->n_boxes = n_boxes;
@@ -325,8 +324,8 @@ fvm_box_set_create(int                dim,
 
   /* Now assign values */
 
-  BFT_MALLOC(boxes->g_num, n_boxes, cs_gnum_t);
-  BFT_MALLOC(boxes->extents, n_boxes*boxes->dim*2, cs_coord_t);
+  CS_MALLOC(boxes->g_num, n_boxes, cs_gnum_t);
+  CS_MALLOC(boxes->extents, n_boxes*boxes->dim*2, cs_coord_t);
 
   for (i = 0; i < n_boxes; i++) {
 
@@ -390,9 +389,9 @@ fvm_box_set_destroy(fvm_box_set_t  **boxes)
     if (_boxes == nullptr)
       return;
 
-    BFT_FREE(_boxes->g_num);
-    BFT_FREE(_boxes->extents);
-    BFT_FREE(_boxes);
+    CS_FREE(_boxes->g_num);
+    CS_FREE(_boxes->extents);
+    CS_FREE(_boxes);
   }
 }
 
@@ -526,7 +525,7 @@ fvm_box_set_build_morton_index(const fvm_box_set_t  *boxes,
   assert(distrib != nullptr);
   assert(distrib->morton_index != nullptr);
 
-  BFT_MALLOC(order, n_leaves, cs_lnum_t);
+  CS_MALLOC(order, n_leaves, cs_lnum_t);
 
   /* Locally order Morton encoding */
 
@@ -547,7 +546,7 @@ fvm_box_set_build_morton_index(const fvm_box_set_t  *boxes,
                                                boxes->comm);
   /* Free memory */
 
-  BFT_FREE(order);
+  CS_FREE(order);
 
 #endif
 }
@@ -578,12 +577,12 @@ fvm_box_set_redistribute(const fvm_box_distrib_t  *distrib,
   size_t n_send = distrib->index[distrib->n_ranks];
 
   int *dest_rank;
-  BFT_MALLOC(dest_rank, n_send, int);
+  CS_MALLOC(dest_rank, n_send, int);
 
   cs_gnum_t *send_g_num;
-  BFT_MALLOC(send_g_num, n_send, cs_gnum_t);
+  CS_MALLOC(send_g_num, n_send, cs_gnum_t);
   cs_coord_t *send_extents;
-  BFT_MALLOC(send_extents, n_send*stride, cs_coord_t);
+  CS_MALLOC(send_extents, n_send*stride, cs_coord_t);
 
   for (int rank_id = 0; rank_id < distrib->n_ranks; rank_id++) {
     cs_lnum_t s_id = distrib->index[rank_id];
@@ -597,8 +596,8 @@ fvm_box_set_redistribute(const fvm_box_distrib_t  *distrib,
     }
   }
 
-  BFT_FREE(boxes->g_num);
-  BFT_FREE(boxes->extents);
+  CS_FREE(boxes->g_num);
+  CS_FREE(boxes->extents);
 
   cs_all_to_all_t *d = cs_all_to_all_create(n_send,
                                             0, /* flags */
@@ -624,9 +623,9 @@ fvm_box_set_redistribute(const fvm_box_distrib_t  *distrib,
 
   /* Free buffers */
 
-  BFT_FREE(send_extents);
-  BFT_FREE(send_g_num);
-  BFT_FREE(dest_rank);
+  CS_FREE(send_extents);
+  CS_FREE(send_g_num);
+  CS_FREE(dest_rank);
 
   cs_all_to_all_destroy(&d);
 
@@ -771,7 +770,7 @@ fvm_box_distrib_create(cs_lnum_t  n_boxes,
   if (n_g_boxes == 0)
     return nullptr;
 
-  BFT_MALLOC(new_distrib, 1, fvm_box_distrib_t);
+  CS_MALLOC(new_distrib, 1, fvm_box_distrib_t);
 
   /* Parallel parameters */
 
@@ -783,14 +782,14 @@ fvm_box_distrib_create(cs_lnum_t  n_boxes,
 
   assert(n_ranks > 1);
 
-  BFT_MALLOC(new_distrib->morton_index, n_ranks + 1, fvm_morton_code_t);
+  CS_MALLOC(new_distrib->morton_index, n_ranks + 1, fvm_morton_code_t);
 
   MPI_Allreduce(&max_level, &gmax_level, 1, MPI_INT, MPI_MAX, comm);
 
   new_distrib->max_level = gmax_level;
   new_distrib->fit = 999.0;
 
-  BFT_MALLOC(new_distrib->index, n_ranks + 1, cs_lnum_t);
+  CS_MALLOC(new_distrib->index, n_ranks + 1, cs_lnum_t);
 
   for (i = 0; i < n_ranks + 1; i++)
     new_distrib->index[i] = 0;
@@ -817,11 +816,11 @@ fvm_box_distrib_destroy(fvm_box_distrib_t  **distrib)
     if (d == nullptr)
       return;
 
-    BFT_FREE(d->index);
-    BFT_FREE(d->list);
-    BFT_FREE(d->morton_index);
+    CS_FREE(d->index);
+    CS_FREE(d->list);
+    CS_FREE(d->morton_index);
 
-    BFT_FREE(d);
+    CS_FREE(d);
   }
 }
 
@@ -839,8 +838,8 @@ fvm_box_distrib_clean(fvm_box_distrib_t  *distrib)
 
   cs_lnum_t   *counter = nullptr, *new_index = nullptr;
 
-  BFT_MALLOC(counter, distrib->n_boxes, cs_lnum_t);
-  BFT_MALLOC(new_index, distrib->n_ranks + 1, cs_lnum_t);
+  CS_MALLOC(counter, distrib->n_boxes, cs_lnum_t);
+  CS_MALLOC(new_index, distrib->n_ranks + 1, cs_lnum_t);
 
   for (i = 0; i < distrib->n_ranks + 1; i++)
     new_index[i] = 0;
@@ -874,12 +873,12 @@ fvm_box_distrib_clean(fvm_box_distrib_t  *distrib)
 
   /* Memory management */
 
-  BFT_FREE(distrib->index);
-  BFT_REALLOC(distrib->list, new_index[distrib->n_ranks], cs_lnum_t);
+  CS_FREE(distrib->index);
+  CS_REALLOC(distrib->list, new_index[distrib->n_ranks], cs_lnum_t);
 
   distrib->index = new_index;
 
-  BFT_FREE(counter);
+  CS_FREE(counter);
 }
 
 /*----------------------------------------------------------------------------

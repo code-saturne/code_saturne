@@ -41,7 +41,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
@@ -575,13 +575,13 @@ fvm_hilbert_local_order_coords(int                dim,
 {
   fvm_hilbert_code_t *h_code = nullptr;
 
-  BFT_MALLOC(h_code, n_coords, fvm_hilbert_code_t);
+  CS_MALLOC(h_code, n_coords, fvm_hilbert_code_t);
 
   fvm_hilbert_encode_coords(dim, extents, n_coords, coords, h_code);
 
   fvm_hilbert_local_order(n_coords, h_code, order);
 
-  BFT_FREE(h_code);
+  CS_FREE(h_code);
 }
 
 /*----------------------------------------------------------------------------*/

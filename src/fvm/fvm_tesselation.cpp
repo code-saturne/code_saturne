@@ -92,13 +92,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_triangulate.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -686,8 +686,8 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
           heap = nullptr;
           vertex_list = nullptr;
         }
-        BFT_REALLOC(heap, max_list_size, cs_lnum_t);
-        BFT_REALLOC(vertex_list, max_list_size, cs_lnum_t);
+        CS_REALLOC(heap, max_list_size, cs_lnum_t);
+        CS_REALLOC(vertex_list, max_list_size, cs_lnum_t);
       }
 
       /* Obtain list of polyhedron's vertices */
@@ -818,8 +818,8 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
   } /* End of main loop on polyhedra */
 
   if (heap != _heap) {
-    BFT_FREE(heap);
-    BFT_FREE(vertex_list);
+    CS_FREE(heap);
+    CS_FREE(vertex_list);
   }
 }
 
@@ -920,17 +920,17 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
 
   ts->encoding = nullptr;
   if (ts->_encoding != nullptr)
-    BFT_FREE(ts->_encoding);
+    CS_FREE(ts->_encoding);
 
   /* Allocate memory and state variables */
   /*-------------------------------------*/
 
   if (n_vertices_max > 4) {
-    BFT_MALLOC(ts->_encoding,
-               ts->vertex_index[n_elements] - n_elements*2,
-               fvm_tesselation_encoding_t);
+    CS_MALLOC(ts->_encoding,
+              ts->vertex_index[n_elements] - n_elements*2,
+              fvm_tesselation_encoding_t);
     ts->encoding = ts->_encoding;
-    BFT_MALLOC(triangle_vertices, (n_vertices_max - 2) * 3, cs_lnum_t);
+    CS_MALLOC(triangle_vertices, (n_vertices_max - 2) * 3, cs_lnum_t);
     state = fvm_triangulate_state_create(n_vertices_max);
   }
 
@@ -1032,7 +1032,7 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
   /* Free memory and state variables */
 
   if (n_vertices_max > 4) {
-    BFT_FREE(triangle_vertices);
+    CS_FREE(triangle_vertices);
     state = fvm_triangulate_state_destroy(state);
   }
 
@@ -1108,7 +1108,7 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
       assert(0);
     }
 
-    BFT_MALLOC(ts->_sub_elt_index[sub_type_id], n_elements + 1, cs_lnum_t);
+    CS_MALLOC(ts->_sub_elt_index[sub_type_id], n_elements + 1, cs_lnum_t);
 
     for (i = 0 ; i < n_elements + 1 ; i++)
       ts->_sub_elt_index[sub_type_id][i] = 0;
@@ -1249,7 +1249,7 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
       assert(0);
     }
 
-    BFT_MALLOC(ts->_sub_elt_index[sub_type_id], n_elements + 1, cs_lnum_t);
+    CS_MALLOC(ts->_sub_elt_index[sub_type_id], n_elements + 1, cs_lnum_t);
 
     for (i = 0 ; i < n_elements + 1 ; i++)
       ts->_sub_elt_index[sub_type_id][i] = 0;
@@ -2035,7 +2035,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
 
   /* Now, create structure */
 
-  BFT_MALLOC(this_tesselation, 1, fvm_tesselation_t);
+  CS_MALLOC(this_tesselation, 1, fvm_tesselation_t);
 
   /* Assign parent mesh section info */
 
@@ -2129,13 +2129,13 @@ fvm_tesselation_destroy(fvm_tesselation_t  * this_tesselation)
   int i;
 
   if (this_tesselation->_encoding != nullptr)
-    BFT_FREE(this_tesselation->_encoding);
+    CS_FREE(this_tesselation->_encoding);
 
   for (i = 0; i < this_tesselation->n_sub_types; i++) {
     if (this_tesselation->_sub_elt_index[i] != nullptr)
-      BFT_FREE(this_tesselation->_sub_elt_index[i]);
+      CS_FREE(this_tesselation->_sub_elt_index[i]);
   }
-  BFT_FREE(this_tesselation);
+  CS_FREE(this_tesselation);
 
   return nullptr;
 }
@@ -2221,7 +2221,7 @@ fvm_tesselation_reduce(fvm_tesselation_t  * this_tesselation)
 
   this_tesselation->encoding = nullptr;
   if (this_tesselation->_encoding != nullptr)
-    BFT_FREE(this_tesselation->_encoding);
+    CS_FREE(this_tesselation->_encoding);
 }
 
 /*----------------------------------------------------------------------------

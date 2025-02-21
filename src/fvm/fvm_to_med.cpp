@@ -55,7 +55,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_convert_array.h"
@@ -67,6 +66,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
 
@@ -425,8 +425,8 @@ _add_med_mesh(fvm_to_med_writer_t  *writer,
   writer->n_med_meshes += 1;
   id = writer->n_med_meshes - 1;
 
-  BFT_REALLOC(writer->med_meshes, writer->n_med_meshes, fvm_to_med_mesh_t *);
-  BFT_MALLOC(writer->med_meshes[id], 1, fvm_to_med_mesh_t);
+  CS_REALLOC(writer->med_meshes, writer->n_med_meshes, fvm_to_med_mesh_t *);
+  CS_MALLOC(writer->med_meshes[id], 1, fvm_to_med_mesh_t);
 
   strncpy(writer->med_meshes[id]->name, med_mesh_name, MED_NAME_SIZE);
   writer->med_meshes[id]->name[MED_NAME_SIZE] = '\0';
@@ -505,7 +505,7 @@ _add_med_mesh(fvm_to_med_writer_t  *writer,
         n_groups = fvm_group_class_get_n_groups(gc);
 
         if (n_groups > 0) {
-          BFT_MALLOC(med_groups, MED_LNAME_SIZE  * n_groups + 1, char);
+          CS_MALLOC(med_groups, MED_LNAME_SIZE  * n_groups + 1, char);
           for (i = 0; i < n_groups; i++) {
             char *group_p = med_groups + (MED_LNAME_SIZE*i);
             memset(group_p, 0, MED_LNAME_SIZE);
@@ -531,7 +531,7 @@ _add_med_mesh(fvm_to_med_writer_t  *writer,
                   (int)family_num, med_mesh_name, writer->name);
 
       if (med_groups != nullptr)
-        BFT_FREE(med_groups);
+        CS_FREE(med_groups);
 
     }
   }
@@ -626,7 +626,7 @@ _extra_vertex_coords(const fvm_to_med_writer_t  *this_writer,
 
     const int  export_dim = fvm_nodal_get_max_entity_dim(mesh);
 
-    BFT_MALLOC(coords, n_extra_vertices * 3, cs_coord_t);
+    CS_MALLOC(coords, n_extra_vertices * 3, cs_coord_t);
 
     for (i = 0 ; i < mesh->n_sections ; i++) {
 
@@ -1214,9 +1214,9 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
 
   if (i_field == n_fields) { /* Create a new field for this writer */
 
-    BFT_REALLOC(writer->fields, writer->n_fields + 1, fvm_to_med_field_t *);
+    CS_REALLOC(writer->fields, writer->n_fields + 1, fvm_to_med_field_t *);
 
-    BFT_MALLOC(writer->fields[n_fields], 1, fvm_to_med_field_t);
+    CS_MALLOC(writer->fields[n_fields], 1, fvm_to_med_field_t);
 
     memcpy(writer->fields[n_fields]->basename,
            med_fieldname,
@@ -1242,8 +1242,8 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
       /* Component and unit names */
 
       name_size = MED_SNAME_SIZE * dimension;
-      BFT_MALLOC(component_name, name_size + 1, char);
-      BFT_MALLOC(units_name, name_size + 1, char);
+      CS_MALLOC(component_name, name_size + 1, char);
+      CS_MALLOC(units_name, name_size + 1, char);
 
       for (i = 0; i < name_size; i++) {
         component_name[i] = ' ';
@@ -1253,7 +1253,7 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
       component_name[name_size] = '\0';
       units_name[name_size] = '\0';
 
-      BFT_MALLOC(component_unit, name_size + 1, char);
+      CS_MALLOC(component_unit, name_size + 1, char);
       for (i = 0; i < name_size; i++)
         component_unit[i] = ' ';
       component_unit[name_size] = '\0';
@@ -1306,7 +1306,7 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
                           dt_unit,
                           med_meshname);
 
-      BFT_FREE(component_unit);
+      CS_FREE(component_unit);
 
       if (retval < 0)
         bft_error(__FILE__, __LINE__, 0,
@@ -1316,8 +1316,8 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
                   "Associated fieldname: \"%s\"\n",
                   writer->name, med_meshname, med_fieldname);
 
-      BFT_FREE(units_name);
-      BFT_FREE(component_name);
+      CS_FREE(units_name);
+      CS_FREE(component_name);
 
     } /* End if rank participates in IO */
 
@@ -1493,8 +1493,8 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   /* Build arrays */
 
   cs_lnum_t block_buf_size = (bi.gnum_range[1] - bi.gnum_range[0]);
-  BFT_MALLOC(block_coords, block_buf_size*dim, med_float);
-  BFT_MALLOC(part_coords, n_vertices_tot*dim, med_float);
+  CS_MALLOC(block_coords, block_buf_size*dim, med_float);
+  CS_MALLOC(part_coords, n_vertices_tot*dim, med_float);
 
   /* Export vertex coordinates to a MED file */
   /*-----------------------------------------*/
@@ -1527,7 +1527,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
         part_coords[idx++] = (med_float)extra_vertex_coords[i_lnod*dim + i_dim];
     }
 
-    BFT_FREE(extra_vertex_coords);
+    CS_FREE(extra_vertex_coords);
   }
 
   /* Distribute block coordinates */
@@ -1540,7 +1540,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(part_coords);
+  CS_FREE(part_coords);
 
   if (writer->block_comm != MPI_COMM_NULL) { /* Parallel IO */
 
@@ -1611,7 +1611,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
 
   /* Free buffers */
 
-  BFT_FREE(block_coords);
+  CS_FREE(block_coords);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -1683,7 +1683,7 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
   /* Vertex coordinates export */
   /*---------------------------*/
 
-  BFT_MALLOC(med_coords, n_vertices * dim, med_float);
+  CS_MALLOC(med_coords, n_vertices * dim, med_float);
 
   if (parent_vertex_id != nullptr) {
 
@@ -1706,9 +1706,9 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
 
   if (n_extra_vertices > 0) {
 
-    BFT_REALLOC(med_coords,
-                (n_vertices + n_extra_vertices)*dim,
-                med_float);
+    CS_REALLOC(med_coords,
+               (n_vertices + n_extra_vertices)*dim,
+               med_float);
 
     /* Convert cs_coord_t to med_float */
 
@@ -1745,10 +1745,10 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
 
   /* Free buffers */
 
-  BFT_FREE(med_coords);
+  CS_FREE(med_coords);
 
   if (extra_vertex_coords != nullptr)
-    BFT_FREE(extra_vertex_coords);
+    CS_FREE(extra_vertex_coords);
 
   return;
 }
@@ -1855,7 +1855,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
     start_id = 0;
     n_g_elements = 0;
 
-    BFT_MALLOC(_g_elt_num, part_size, cs_gnum_t);
+    CS_MALLOC(_g_elt_num, part_size, cs_gnum_t);
     g_elt_num = _g_elt_num;
 
     /* loop on sections which should be appended */
@@ -1888,7 +1888,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
     start_id = 0;
 
-    BFT_MALLOC(part_n_sub, part_size, int);
+    CS_MALLOC(part_n_sub, part_size, int);
 
     current_section = export_section;
     do {
@@ -1938,13 +1938,13 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
   if (have_tesselation) {
 
-    BFT_MALLOC(block_n_sub, block_size, int);
+    CS_MALLOC(block_n_sub, block_size, int);
     cs_part_to_block_copy_array(d,
                                 CS_INT_TYPE,
                                 1,
                                 part_n_sub,
                                 block_n_sub);
-    BFT_FREE(part_n_sub);
+    CS_FREE(part_n_sub);
 
     for (i = 0; i < block_size; i++)
       block_sub_size += block_n_sub[i];
@@ -1957,19 +1957,19 @@ _export_families_g(const fvm_writer_section_t  *export_section,
      point to the same memory space, as they are not needed simultaneously.
      Without tesselation, _block_values simply points to block_values */
 
-  BFT_MALLOC(block_values, block_size, med_int);
+  CS_MALLOC(block_values, block_size, med_int);
 
   if (have_tesselation) {
-    BFT_MALLOC(part_values,
-               CS_MAX(part_size, (cs_lnum_t)block_sub_size),
-               med_int);
+    CS_MALLOC(part_values,
+              CS_MAX(part_size, (cs_lnum_t)block_sub_size),
+              med_int);
     MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM,
              writer->comm);
     block_end += 1;
     _block_values = part_values;
   }
   else {
-    BFT_MALLOC(part_values, part_size, med_int);
+    CS_MALLOC(part_values, part_size, med_int);
     block_end = bi.gnum_range[1];
     _block_values = block_values;
   }
@@ -2116,13 +2116,13 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
   }
 
-  BFT_FREE(block_values);
-  BFT_FREE(part_values);
+  CS_FREE(block_values);
+  CS_FREE(part_values);
 
   cs_part_to_block_destroy(&d);
 
   if (block_n_sub != nullptr)
-    BFT_FREE(block_n_sub);
+    CS_FREE(block_n_sub);
 
   return current_section;
 }
@@ -2232,7 +2232,7 @@ _section_elt_gnum(const fvm_writer_section_t  *export_sections)
 
   /* Case where the array must be assembled */
 
-  BFT_MALLOC(elt_gnum, n_elements, cs_gnum_t);
+  CS_MALLOC(elt_gnum, n_elements, cs_gnum_t);
 
   cs_lnum_t elt_id = 0;
   cs_gnum_t elt_gnum_shift = 0;
@@ -2258,13 +2258,13 @@ _section_elt_gnum(const fvm_writer_section_t  *export_sections)
         = fvm_tesselation_sub_elt_index(section->tesselation,
                                         current_section->type);
       cs_lnum_t *n_sub_entities;
-      BFT_MALLOC(n_sub_entities, section->n_elements, cs_lnum_t);
+      CS_MALLOC(n_sub_entities, section->n_elements, cs_lnum_t);
       for (cs_lnum_t i = 0; i < section->n_elements; i++)
         n_sub_entities[i] = sub_index[i+1] - sub_index[i];
       fvm_io_num_t *sub_io_num
         = fvm_io_num_create_from_sub(section->global_element_num,
                                      n_sub_entities);
-      BFT_FREE(n_sub_entities);
+      CS_FREE(n_sub_entities);
       const cs_gnum_t *s_elt_gnum
         = fvm_io_num_get_global_num(sub_io_num);
       for (cs_lnum_t i = 0; i < n_s_elements; i++)
@@ -2346,8 +2346,8 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
   /* Distribute connectivity from sections sharing the same element type */
   /*---------------------------------------------------------------------*/
 
-  BFT_MALLOC(block_vertex_num, stride * n_block_elts, med_int);
-  BFT_MALLOC(part_vertex_num, stride * n_part_elts, med_int);
+  CS_MALLOC(block_vertex_num, stride * n_block_elts, med_int);
+  CS_MALLOC(part_vertex_num, stride * n_part_elts, med_int);
 
   cs_part_to_block_t *d
     = cs_part_to_block_create_by_gnum(w->comm, bi, n_part_elts, s_elt_gnum);
@@ -2403,7 +2403,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
         cs_lnum_t buffer_size = n_sub_elts*stride;
         cs_gnum_t *sub_elt_vtx_gnum = nullptr;
 
-        BFT_MALLOC(sub_elt_vtx_gnum, buffer_size, cs_gnum_t);
+        CS_MALLOC(sub_elt_vtx_gnum, buffer_size, cs_gnum_t);
 
         fvm_tesselation_decode_g(section->tesselation,
                                  current_section->type,
@@ -2420,7 +2420,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
                                  + vertex_order[l_id]];
         }
 
-        BFT_FREE(sub_elt_vtx_gnum);
+        CS_FREE(sub_elt_vtx_gnum);
 
       }
 
@@ -2439,7 +2439,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(part_vertex_num);
+  CS_FREE(part_vertex_num);
 
   /* Write buffers into MED file */
   /*-----------------------------*/
@@ -2523,7 +2523,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
 
   } /* If rank == 0 */
 
-  BFT_FREE(block_vertex_num);
+  CS_FREE(block_vertex_num);
 
   /* Write family numbers */
 
@@ -2607,7 +2607,7 @@ _export_families_l(const fvm_writer_section_t  *export_section,
   } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
-  BFT_MALLOC(elt_family, n_elements, med_int);
+  CS_MALLOC(elt_family, n_elements, med_int);
 
   /* Distribute partition to block values */
 
@@ -2691,7 +2691,7 @@ _export_families_l(const fvm_writer_section_t  *export_section,
          "Associated MED geometrical element: \"%i\"\n"),
        writer->name, med_mesh->name, med_section_type);
 
-  BFT_FREE(elt_family);
+  CS_FREE(elt_family);
 
   return current_section;
 }
@@ -2788,7 +2788,7 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
       buffer_size = CS_MAX(n_sub_elts_max, n_sub_elts/4 + 1);
       buffer_size = CS_MAX(256, buffer_size);
 
-      BFT_MALLOC(sub_elt_vertex_num, buffer_size * stride, cs_lnum_t);
+      CS_MALLOC(sub_elt_vertex_num, buffer_size * stride, cs_lnum_t);
 
       do {
 
@@ -2817,7 +2817,7 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
 
       } while (end_id < section->n_elements);
 
-      BFT_FREE(sub_elt_vertex_num);
+      CS_FREE(sub_elt_vertex_num);
 
     } /* End of tesselated section */
 
@@ -2928,7 +2928,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
   cs_lnum_t *_part_index = nullptr;
   const cs_lnum_t *part_index = current_section->section->vertex_index;
 
-  BFT_MALLOC(block_index, n_block_elts + 1, cs_lnum_t);
+  CS_MALLOC(block_index, n_block_elts + 1, cs_lnum_t);
 
   /* Build copy if multiple sections need to be appended,
      point to index otherwise */
@@ -2939,7 +2939,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
 
     current_section = export_sections;
 
-    BFT_MALLOC(_part_index, n_part_elts + 1, cs_lnum_t);
+    CS_MALLOC(_part_index, n_part_elts + 1, cs_lnum_t);
     part_index = _part_index;
 
     _part_index[0] = 0;
@@ -2980,8 +2980,8 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
 
   cs_lnum_t block_size = block_index[n_block_elts];
 
-  BFT_MALLOC(block_connect, block_size, med_int);
-  BFT_MALLOC(part_connect, part_index[n_part_elts], med_int);
+  CS_MALLOC(block_connect, block_size, med_int);
+  CS_MALLOC(part_connect, part_index[n_part_elts], med_int);
 
   do {   /* Loop on sections with equivalent MED element type */
 
@@ -3008,8 +3008,8 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(part_connect);
-  BFT_FREE(_part_index);
+  CS_FREE(part_connect);
+  CS_FREE(_part_index);
 
   /* Build global block index */
 
@@ -3020,12 +3020,12 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
   const cs_gnum_t block_start = block_end - block_size;
 
   med_int *g_block_index;
-  BFT_MALLOC(g_block_index, n_block_elts + 1, med_int);
+  CS_MALLOC(g_block_index, n_block_elts + 1, med_int);
 
   for (cs_lnum_t v_id = 0; v_id < n_block_elts+1; v_id++)
     g_block_index[v_id] = block_index[v_id] + block_start;
 
-  BFT_FREE(block_index);
+  CS_FREE(block_index);
 
   /* Write buffers into MED file */
   /*-----------------------------*/
@@ -3063,8 +3063,8 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
     _med_file_open(w, MED_ACC_RDWR);
   }
 
-  BFT_FREE(g_block_index);
-  BFT_FREE(block_connect);
+  CS_FREE(g_block_index);
+  CS_FREE(block_connect);
 
   /* Write family numbers */
 
@@ -3126,9 +3126,9 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_sections,
 
       /* Allocate global buffers */
 
-      BFT_REALLOC(med_global_vtx_idx,
-                  n_export_elements + n_elements_section + 1,
-                  med_int);
+      CS_REALLOC(med_global_vtx_idx,
+                 n_export_elements + n_elements_section + 1,
+                 med_int);
 
       /*
         Build global vertex connectivity. First, we have to create a global
@@ -3194,7 +3194,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_sections,
                 "Associated med_mesh_name: \"%s\"\n"),
               writer->name, med_mesh->name);
 
-  BFT_FREE(med_global_vtx_idx);
+  CS_FREE(med_global_vtx_idx);
 
   /* Write family numbers */
 
@@ -3271,7 +3271,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
   const fvm_writer_section_t  *current_section = export_sections;
   const cs_lnum_t *part_f_index = current_section->section->face_index;
 
-  BFT_MALLOC(block_f_index, n_block_elts + 1, cs_lnum_t);
+  CS_MALLOC(block_f_index, n_block_elts + 1, cs_lnum_t);
 
   /* Build copy if multiple sections need to be appended,
      point to index otherwise */
@@ -3282,7 +3282,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
 
     current_section = export_sections;
 
-    BFT_MALLOC(_part_f_index, n_part_elts + 1, cs_lnum_t);
+    CS_MALLOC(_part_f_index, n_part_elts + 1, cs_lnum_t);
     part_f_index = _part_f_index;
 
     _part_f_index[0] = 0;
@@ -3318,11 +3318,11 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
   cs_lnum_t *block_v_index = nullptr, *part_v_index = nullptr;
   med_int *block_f_v_index = nullptr, *part_f_v_count = nullptr;
 
-  BFT_MALLOC(block_v_index, n_block_elts + 1, cs_lnum_t);
-  BFT_MALLOC(part_v_index, n_part_elts + 1, cs_lnum_t);
+  CS_MALLOC(block_v_index, n_block_elts + 1, cs_lnum_t);
+  CS_MALLOC(part_v_index, n_part_elts + 1, cs_lnum_t);
 
-  BFT_MALLOC(block_f_v_index, block_f_count+1, med_int);
-  BFT_MALLOC(part_f_v_count, part_f_count, med_int);
+  CS_MALLOC(block_f_v_index, block_f_count+1, med_int);
+  CS_MALLOC(part_f_v_count, part_f_count, med_int);
 
   current_section = export_sections;
 
@@ -3374,8 +3374,8 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
                                 block_f_index,
                                 block_f_v_index + 1);
 
-  BFT_FREE(part_f_v_count);
-  BFT_FREE(_part_f_index);
+  CS_FREE(part_f_v_count);
+  CS_FREE(_part_f_index);
   part_f_index = nullptr;
 
   /* Build connectivity from sections sharing the same element type */
@@ -3385,8 +3385,8 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
 
   med_int *block_connect = nullptr, *part_connect = nullptr;
 
-  BFT_MALLOC(block_connect, block_v_index[n_block_elts], med_int);
-  BFT_MALLOC(part_connect, part_v_index[n_part_elts], med_int);
+  CS_MALLOC(block_connect, block_v_index[n_block_elts], med_int);
+  CS_MALLOC(part_connect, part_v_index[n_part_elts], med_int);
 
   current_section = export_sections;
 
@@ -3430,8 +3430,8 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
                                 block_v_index,
                                 block_connect);
 
-  BFT_FREE(part_connect);
-  BFT_FREE(part_v_index);
+  CS_FREE(part_connect);
+  CS_FREE(part_v_index);
 
   cs_part_to_block_destroy(&d); /* All distribution done */
 
@@ -3450,7 +3450,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
   const cs_gnum_t block_f_start = block_end[0] - block_size[0];
   const cs_gnum_t block_v_start = block_end[1] - block_size[1];
 
-  BFT_FREE(block_v_index);
+  CS_FREE(block_v_index);
 
   /* Convert face vertex counts to index */
 
@@ -3461,12 +3461,12 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
   /* Build global cell -> faces index */
 
   med_int *g_block_f_index;
-  BFT_MALLOC(g_block_f_index, n_block_elts + 1, med_int);
+  CS_MALLOC(g_block_f_index, n_block_elts + 1, med_int);
 
   for (cs_lnum_t i = 0; i < n_block_elts+1; i++)
     g_block_f_index[i] = block_f_index[i] + block_f_start;
 
-  BFT_FREE(block_f_index);
+  CS_FREE(block_f_index);
 
   /* Write buffers into MED file */
   /*-----------------------------*/
@@ -3507,9 +3507,9 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
     _med_file_open(w, MED_ACC_RDWR);
   }
 
-  BFT_FREE(g_block_f_index);
-  BFT_FREE(block_connect);
-  BFT_FREE(block_f_v_index);
+  CS_FREE(g_block_f_index);
+  CS_FREE(block_connect);
+  CS_FREE(block_f_v_index);
 
   /* Write family numbers */
 
@@ -3571,13 +3571,13 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
 
     n_faces_section = section->face_index[section->n_elements];
 
-    BFT_REALLOC(med_face_lengths,
-                n_faces_section + 1 + n_export_faces,
-                med_int);
+    CS_REALLOC(med_face_lengths,
+               n_faces_section + 1 + n_export_faces,
+               med_int);
 
-    BFT_REALLOC(med_cell_lengths,
-                section->n_elements + 1 + n_export_elements,
-                med_int);
+    CS_REALLOC(med_cell_lengths,
+               section->n_elements + 1 + n_export_elements,
+               med_int);
 
     /*
       Build locally:
@@ -3667,8 +3667,8 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
                 "Associated med_mesh_name: \"%s\"\n"),
               writer->name, med_mesh->name);
 
-  BFT_FREE(med_cell_lengths);
-  BFT_FREE(med_face_lengths);
+  CS_FREE(med_cell_lengths);
+  CS_FREE(med_face_lengths);
 
   /* Write family numbers */
 
@@ -3705,7 +3705,7 @@ _export_point_elements(fvm_to_med_writer_t   *writer,
 
     /* Prepare buffer */
 
-    BFT_MALLOC(export_connect, n_g_vertices, med_int);
+    CS_MALLOC(export_connect, n_g_vertices, med_int);
 
     for (i_elt = 0; i_elt < n_g_vertices; i_elt++)
       export_connect[i_elt] = i_elt + 1;
@@ -3734,7 +3734,7 @@ _export_point_elements(fvm_to_med_writer_t   *writer,
            "Associated MED geometrical element: \"%i\"\n"),
          writer->name, med_mesh->name, (int)MED_POINT1);
 
-    BFT_FREE(export_connect);
+    CS_FREE(export_connect);
 
   } /* If rank == 0 */
 }
@@ -4147,7 +4147,7 @@ fvm_to_med_init_writer(const char                   *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(writer, 1, fvm_to_med_writer_t);
+  CS_MALLOC(writer, 1, fvm_to_med_writer_t);
 
   writer->n_med_meshes = 0;
   writer->n_fields  = 0;
@@ -4269,7 +4269,7 @@ fvm_to_med_init_writer(const char                   *name,
     bft_error(__FILE__, __LINE__, 0,
               _("Empty MED filename."));
 
-  BFT_MALLOC(writer->name, name_length + 1, char);
+  CS_MALLOC(writer->name, name_length + 1, char);
   strcpy(writer->name, name);
 
   for (i = 0; i < name_length; i++) {
@@ -4282,7 +4282,7 @@ fvm_to_med_init_writer(const char                   *name,
   else
     path_length = 0;
   filename_length = path_length + name_length + strlen(".med");
-  BFT_MALLOC(writer->filename, filename_length + 1, char);
+  CS_MALLOC(writer->filename, filename_length + 1, char);
 
   if (path != nullptr)
     strcpy(writer->filename, path);
@@ -4336,25 +4336,25 @@ fvm_to_med_finalize_writer(void  *this_writer_p)
   /* Free structures */
   /*-----------------*/
 
-  BFT_FREE(writer->name);
-  BFT_FREE(writer->filename);
-  BFT_FREE(writer->time_values);
-  BFT_FREE(writer->time_steps);
+  CS_FREE(writer->name);
+  CS_FREE(writer->filename);
+  CS_FREE(writer->time_values);
+  CS_FREE(writer->time_steps);
 
   /* Free fvm_to_med_mesh_t structure */
 
   for (i = 0; i < writer->n_med_meshes; i++)
-    BFT_FREE(writer->med_meshes[i]);
-  BFT_FREE(writer->med_meshes);
+    CS_FREE(writer->med_meshes[i]);
+  CS_FREE(writer->med_meshes);
 
   for (i = 0; i < writer->n_fields; i++)
-    BFT_FREE(writer->fields[i]);
+    CS_FREE(writer->fields[i]);
 
-  BFT_FREE(writer->fields);
+  CS_FREE(writer->fields);
 
   /* Free fvm_to_med_writer_t structure */
 
-  BFT_FREE(writer);
+  CS_FREE(writer);
 
   return nullptr;
 }
@@ -4415,8 +4415,8 @@ fvm_to_med_set_mesh_time(void          *this_writer,
       writer->n_time_steps += 1;
       n_vals = writer->n_time_steps;
 
-      BFT_REALLOC(writer->time_values, n_vals, double);
-      BFT_REALLOC(writer->time_steps, n_vals, int);
+      CS_REALLOC(writer->time_values, n_vals, double);
+      CS_REALLOC(writer->time_steps, n_vals, int);
 
       writer->time_values[n_vals - 1] = time_value;
       writer->time_steps[n_vals - 1] = time_step;
@@ -4426,8 +4426,8 @@ fvm_to_med_set_mesh_time(void          *this_writer,
     writer->n_time_steps += 1;
     n_vals = writer->n_time_steps;
 
-    BFT_REALLOC(writer->time_values, n_vals, double);
-    BFT_REALLOC(writer->time_steps, n_vals, int);
+    CS_REALLOC(writer->time_values, n_vals, double);
+    CS_REALLOC(writer->time_steps, n_vals, int);
 
     writer->time_values[n_vals - 1] = time_value;
     writer->time_steps[n_vals - 1] = time_step;
@@ -4630,7 +4630,7 @@ fvm_to_med_export_nodal(void               *this_writer,
                                                          export_sections);
 
   if (n_ranks == 1)
-    BFT_MALLOC(med_export_connect, global_connect_slice_size, med_int);
+    CS_MALLOC(med_export_connect, global_connect_slice_size, med_int);
 
   /* Loop on MED element types */
   /*---------------------------*/
@@ -4720,10 +4720,10 @@ fvm_to_med_export_nodal(void               *this_writer,
   /* Free buffers */
 
   if (med_export_connect != nullptr)
-    BFT_FREE(med_export_connect);
+    CS_FREE(med_export_connect);
 
   if (export_list != nullptr)
-    BFT_FREE(export_list);
+    CS_FREE(export_list);
 
   /* Close MED file (to force its update) */
 
@@ -4934,7 +4934,7 @@ fvm_to_med_export_field(void                            *this_writer,
 
   fvm_writer_field_helper_destroy(&helper);
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 
   /* Close MED file (to force its update) */
   /*--------------------------------------*/

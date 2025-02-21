@@ -53,7 +53,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
@@ -65,6 +64,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
 
@@ -202,7 +202,7 @@ _add_medcoupling_mesh(fvm_to_medcoupling_t  *writer,
   writer->n_med_meshes += 1;
   id = writer->n_med_meshes - 1;
 
-  BFT_REALLOC(writer->med_meshes, writer->n_med_meshes, MEDCouplingUMesh *);
+  CS_REALLOC(writer->med_meshes, writer->n_med_meshes, MEDCouplingUMesh *);
 
   writer->med_meshes[id] = m;
 
@@ -483,9 +483,9 @@ _add_medcoupling_field(fvm_to_medcoupling_t      *writer,
 
   f_id = writer->n_fields;
 
-  BFT_REALLOC(writer->fields,
-              writer->n_fields + 1,
-              fvm_medcoupling_field_t *);
+  CS_REALLOC(writer->fields,
+             writer->n_fields + 1,
+             fvm_medcoupling_field_t *);
 
   /* Build ParaFIELD object if required */
 
@@ -518,11 +518,11 @@ _add_medcoupling_field(fvm_to_medcoupling_t      *writer,
 
   f_id = writer->n_fields;
 
-  BFT_REALLOC(writer->fields,
-              writer->n_fields + 1,
-              fvm_medcoupling_field_t *);
+  CS_REALLOC(writer->fields,
+             writer->n_fields + 1,
+             fvm_medcoupling_field_t *);
 
-  BFT_MALLOC(writer->fields[f_id], 1, fvm_medcoupling_field_t);
+  CS_MALLOC(writer->fields[f_id], 1, fvm_medcoupling_field_t);
 
   writer->fields[f_id]->mesh_id = mesh_id;
   writer->fields[f_id]->td = td;
@@ -652,7 +652,7 @@ _export_nodal_polyhedra_l(const fvm_nodal_section_t  *section,
   int elt_buf_size = 8;
   mcIdType *elt_buf = nullptr;
 
-  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
+  CS_MALLOC(elt_buf, elt_buf_size, mcIdType);
 
   /* Write cell/vertex connectivity */
   /*--------------------------------*/
@@ -683,7 +683,7 @@ _export_nodal_polyhedra_l(const fvm_nodal_section_t  *section,
 
       while (m + face_length + 1 > elt_buf_size) {
         elt_buf_size *= 2;
-        BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
+        CS_REALLOC(elt_buf, elt_buf_size, mcIdType);
       }
 
       if (j >  section->face_index[i])
@@ -701,7 +701,7 @@ _export_nodal_polyhedra_l(const fvm_nodal_section_t  *section,
 
   } /* End of loop on polyhedral cells */
 
-  BFT_FREE(elt_buf);
+  CS_FREE(elt_buf);
 }
 
 /*----------------------------------------------------------------------------
@@ -723,7 +723,7 @@ _export_nodal_polygons_l(const fvm_nodal_section_t  *section,
   int elt_buf_size = 8;
   mcIdType *elt_buf = nullptr;
 
-  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
+  CS_MALLOC(elt_buf, elt_buf_size, mcIdType);
 
   /* Loop on all polygonal faces */
   /*-----------------------------*/
@@ -735,7 +735,7 @@ _export_nodal_polygons_l(const fvm_nodal_section_t  *section,
     int face_size = section->vertex_index[i+1] - section->vertex_index[i];
     while (elt_buf_size < face_size) {
       elt_buf_size *= 2;
-      BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
+      CS_REALLOC(elt_buf, elt_buf_size, mcIdType);
     }
 
     for (j = section->vertex_index[i];
@@ -747,7 +747,7 @@ _export_nodal_polygons_l(const fvm_nodal_section_t  *section,
 
   } /* End of loop on polygonal faces */
 
-  BFT_FREE(elt_buf);
+  CS_FREE(elt_buf);
 }
 
 /*----------------------------------------------------------------------------
@@ -921,7 +921,7 @@ fvm_to_medcoupling_init_writer(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(writer, 1, fvm_to_medcoupling_t);
+  CS_MALLOC(writer, 1, fvm_to_medcoupling_t);
 
   writer->rank = 0;
   writer->n_ranks = 1;
@@ -939,12 +939,12 @@ fvm_to_medcoupling_init_writer(const char             *name,
   /* Writer name */
 
   if (name != nullptr) {
-    BFT_MALLOC(writer->name, strlen(name) + 1, char);
+    CS_MALLOC(writer->name, strlen(name) + 1, char);
     strcpy(writer->name, name);
   }
   else {
     const char _name[] = "MEDCoupling writer";
-    BFT_MALLOC(writer->name, strlen(_name) + 1, char);
+    CS_MALLOC(writer->name, strlen(_name) + 1, char);
     strcpy(writer->name, _name);
   }
 
@@ -989,27 +989,27 @@ fvm_to_medcoupling_finalize_writer(void  *this_writer_p)
 
   /* Free structures */
 
-  BFT_FREE(writer->name);
-  BFT_FREE(writer->time_values);
-  BFT_FREE(writer->time_steps);
+  CS_FREE(writer->name);
+  CS_FREE(writer->time_values);
+  CS_FREE(writer->time_steps);
 
   /* Free MEDCouplingUMesh and field structures
      (reference counters should go to 0) */
 
   for (i = 0; i < writer->n_med_meshes; i++)
     writer->med_meshes[i] = nullptr; // delete writer->med_meshes[i];
-  BFT_FREE(writer->med_meshes);
+  CS_FREE(writer->med_meshes);
 
   for (i = 0; i < writer->n_fields; i++) {
     writer->fields[i]->f = nullptr; // delete writer->fields[i]->f;
-    BFT_FREE(writer->fields[i]);
+    CS_FREE(writer->fields[i]);
   }
 
-  BFT_FREE(writer->fields);
+  CS_FREE(writer->fields);
 
   /* Free fvm_to_medcoupling_t structure */
 
-  BFT_FREE(writer);
+  CS_FREE(writer);
 
   return nullptr;
 }

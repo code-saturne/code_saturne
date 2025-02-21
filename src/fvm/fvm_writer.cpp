@@ -44,7 +44,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -54,6 +53,7 @@
 #include "base/cs_base.h"
 #include "base/cs_file.h"
 #include "base/cs_fp_exception.h"
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -496,7 +496,7 @@ _fvm_writer_option_list(const char  *const option_list)
 
   l = strlen(option_list);
 
-  BFT_MALLOC(ret_list, l + 1, char);
+  CS_MALLOC(ret_list, l + 1, char);
 
   /* Transform format name to lowercase, single whitespace separated */
 
@@ -545,12 +545,12 @@ _get_dl_function_pointer(fvm_writer_format_t  *wf,
                                              errors_are_fatal);
   else {
     char *_name;
-    BFT_MALLOC(_name, strlen(wf->dl_prefix) + strlen(name) + 1, char);
+    CS_MALLOC(_name, strlen(wf->dl_prefix) + strlen(name) + 1, char);
     sprintf(_name, "%s%s", wf->dl_prefix, name);
     retval = cs_base_get_dl_function_pointer(wf->dl_lib,
                                              _name,
                                              errors_are_fatal);
-    BFT_FREE(_name);
+    CS_FREE(_name);
   }
 
   return retval;
@@ -693,7 +693,7 @@ _format_writer_init(fvm_writer_t  *this_writer,
     int l = strlen(this_writer->path);
 
     if (l > 0) {
-      BFT_MALLOC(tmp_path, l + 2, char);
+      CS_MALLOC(tmp_path, l + 2, char);
       strcpy(tmp_path, this_writer->path);
       if (tmp_path[l - 1] == DIR_SEPARATOR)
         tmp_path[l - 1] = '\0';
@@ -725,7 +725,7 @@ _format_writer_init(fvm_writer_t  *this_writer,
     else if (mesh_name != nullptr) {
       if (strlen(mesh_name) > 0) {
         size_t l = lw + 1 + strlen(mesh_name);
-        BFT_MALLOC(tmp_name, l + 1, char);
+        CS_MALLOC(tmp_name, l + 1, char);
         sprintf(tmp_name, "%s_%s", this_writer->name, mesh_name);
         for (size_t i = lw + 1, j = 0; i < l; i++, j++) {
           if (tmp_name[i] == ' ')
@@ -770,8 +770,8 @@ _format_writer_init(fvm_writer_t  *this_writer,
 
   }
 
-  BFT_FREE(tmp_name);
-  BFT_FREE(tmp_path);
+  CS_FREE(tmp_name);
+  CS_FREE(tmp_path);
 
   /* Return pointer to initialized writer */
 
@@ -811,9 +811,9 @@ _find_or_add_format_writer(fvm_writer_t        *this_writer,
         break;
     }
     if (i >= this_writer->n_format_writers) {
-      BFT_REALLOC(this_writer->format_writer, i + 1, void *);
-      BFT_REALLOC(this_writer->mesh_names, i + 1, char *);
-      BFT_MALLOC(this_writer->mesh_names[i], strlen(name) + 1, char);
+      CS_REALLOC(this_writer->format_writer, i + 1, void *);
+      CS_REALLOC(this_writer->mesh_names, i + 1, char *);
+      CS_MALLOC(this_writer->mesh_names[i], strlen(name) + 1, char);
       strcpy(this_writer->mesh_names[i], name);
       this_writer->format_writer[i] = _format_writer_init(this_writer, name);
       this_writer->n_format_writers += 1;
@@ -1084,7 +1084,7 @@ fvm_writer_filter_option(char        *format_options,
       }
 
       i1 = strlen(tmp_options);
-      BFT_REALLOC(tmp_options, i1+1, char);
+      CS_REALLOC(tmp_options, i1+1, char);
 
     }
 
@@ -1092,7 +1092,7 @@ fvm_writer_filter_option(char        *format_options,
 
   strcpy(format_options, tmp_options);
 
-  BFT_FREE(tmp_options);
+  CS_FREE(tmp_options);
 }
 
 /*----------------------------------------------------------------------------
@@ -1190,9 +1190,9 @@ fvm_writer_init(const char             *name,
 
       i1 = strlen(tmp_options);
       if (i1 > 0)
-        BFT_REALLOC(tmp_options, i1+1, char);
+        CS_REALLOC(tmp_options, i1+1, char);
       else {
-        BFT_FREE(tmp_options);
+        CS_FREE(tmp_options);
         break;
       }
 
@@ -1202,9 +1202,9 @@ fvm_writer_init(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(this_writer, 1, fvm_writer_t);
+  CS_MALLOC(this_writer, 1, fvm_writer_t);
 
-  BFT_MALLOC(this_writer->name, strlen(name) + 1, char);
+  CS_MALLOC(this_writer->name, strlen(name) + 1, char);
   strcpy(this_writer->name, name);
 
   this_writer->format = &(_fvm_writer_format_list[i]);
@@ -1217,7 +1217,7 @@ fvm_writer_init(const char             *name,
 #endif
 
   if (path) {
-    BFT_MALLOC(this_writer->path, strlen(path) + 1, char);
+    CS_MALLOC(this_writer->path, strlen(path) + 1, char);
     strcpy(this_writer->path, path);
   }
   else
@@ -1249,7 +1249,7 @@ fvm_writer_init(const char             *name,
   /* Initialize format-specific writer */
 
   if  (this_writer->n_format_writers > 0) {
-    BFT_MALLOC(this_writer->format_writer, 1, void *);
+    CS_MALLOC(this_writer->format_writer, 1, void *);
     this_writer->format_writer[0] = _format_writer_init(this_writer,
                                                         nullptr);
   }
@@ -1279,9 +1279,9 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
   assert(this_writer != nullptr);
   assert(this_writer->format != nullptr);
 
-  BFT_FREE(this_writer->name);
-  BFT_FREE(this_writer->path);
-  BFT_FREE(this_writer->options);
+  CS_FREE(this_writer->name);
+  CS_FREE(this_writer->path);
+  CS_FREE(this_writer->options);
 
   finalize_func = this_writer->format->finalize_func;
 
@@ -1293,13 +1293,13 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
   }
   else
     this_writer->format_writer = nullptr;
-  BFT_FREE(this_writer->format_writer);
+  CS_FREE(this_writer->format_writer);
 
   if (this_writer->mesh_names != nullptr) {
     for (int i = 0; i < this_writer->n_format_writers; i++)
-      BFT_FREE(this_writer->mesh_names[i]);
+      CS_FREE(this_writer->mesh_names[i]);
   }
-  BFT_FREE(this_writer->mesh_names);
+  CS_FREE(this_writer->mesh_names);
 
   /* Unload plugin if required */
 
@@ -1308,7 +1308,7 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
     _close_plugin(this_writer->format);
 #endif
 
-  BFT_FREE(this_writer);
+  CS_FREE(this_writer);
 
   return nullptr;
 }

@@ -53,13 +53,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_hilbert.h"
 #include "fvm/fvm_morton.h"
 
 #include "base/cs_all_to_all.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_sort_partition.h"
@@ -381,14 +381,14 @@ _fvm_io_num_order_finalize(fvm_io_num_t     *this_io_num,
     for (i = 0, j = 0; i < this_io_num->global_num_size; i++)
       j += n_sub_entities[i];
 
-    BFT_MALLOC(_global_num, j, cs_gnum_t);
+    CS_MALLOC(_global_num, j, cs_gnum_t);
 
     for (i = 0, j = 0; i < this_io_num->global_num_size; i++) {
       for (k = 0; k < n_sub_entities[i]; j++, k++)
         _global_num[j] = this_io_num->_global_num[i] - n_sub_entities[i] + k + 1;
     }
 
-    BFT_FREE(this_io_num->_global_num);
+    CS_FREE(this_io_num->_global_num);
     this_io_num->_global_num = _global_num;
 
     if (this_io_num->global_num_size != (cs_lnum_t)j) {
@@ -411,7 +411,7 @@ _fvm_io_num_order_finalize(fvm_io_num_t     *this_io_num,
     if (i < this_io_num->global_num_size)
       this_io_num->global_num = this_io_num->_global_num;
     else
-      BFT_FREE(this_io_num->_global_num);
+      CS_FREE(this_io_num->_global_num);
   }
 }
 
@@ -458,7 +458,7 @@ _fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
     cs_gnum_t *b_gnum = this_io_num->_global_num;
     const cs_lnum_t *b_nsub = n_sub_entities;
 
-    BFT_MALLOC(b_order, n_ent, cs_lnum_t);
+    CS_MALLOC(b_order, n_ent, cs_lnum_t);
 
     cs_order_gnum_allocated(nullptr,
                             b_gnum,
@@ -503,7 +503,7 @@ _fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
 
     }
 
-    BFT_FREE(b_order);
+    CS_FREE(b_order);
 
   }
 
@@ -533,9 +533,9 @@ _fvm_io_num_copy_on_write(fvm_io_num_t  *const this_io_num)
 {
   if (this_io_num->_global_num == nullptr) {
     cs_lnum_t i;
-    BFT_MALLOC(this_io_num->_global_num,
-               this_io_num->global_num_size,
-               cs_gnum_t);
+    CS_MALLOC(this_io_num->_global_num,
+              this_io_num->global_num_size,
+              cs_gnum_t);
     for (i = 0; i < this_io_num->global_num_size; i++)
       this_io_num->_global_num[i] = this_io_num->global_num[i];
     this_io_num->global_num = this_io_num->_global_num;
@@ -566,7 +566,7 @@ _fvm_io_num_try_to_set_shared(fvm_io_num_t      *const this_io_num,
       this_io_num->global_num = this_io_num->_global_num;
     else {
       this_io_num->global_num = parent_global_number;
-      BFT_FREE(this_io_num->_global_num);
+      CS_FREE(this_io_num->_global_num);
     }
   }
 }
@@ -723,7 +723,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
     cs_lnum_t *b_order;
 
-    BFT_MALLOC(b_order, b_size, cs_lnum_t);
+    CS_MALLOC(b_order, b_size, cs_lnum_t);
 
     cs_order_gnum_allocated(nullptr,
                             b_gnum,
@@ -768,13 +768,13 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
     }
 
-    BFT_FREE(b_order);
+    CS_FREE(b_order);
 
   }
 
   /* Partial clean-up */
 
-  BFT_FREE(b_nsub);
+  CS_FREE(b_nsub);
 
   /* At this stage, b_gnum[] is valid for this process, and
      current_gnum indicates the total number of entities handled
@@ -799,7 +799,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   /* Free memory */
 
-  BFT_FREE(b_gnum);
+  CS_FREE(b_gnum);
 
   cs_all_to_all_destroy(&d);
 
@@ -870,7 +870,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
   const cs_gnum_t block_size = bi.block_size;
 
   int *dest_rank;
-  BFT_MALLOC(dest_rank, this_io_num->global_num_size, int);
+  CS_MALLOC(dest_rank, this_io_num->global_num_size, int);
 
   for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++) {
     cs_gnum_t g_elt_id = global_num[stride*i] - 1;
@@ -899,8 +899,8 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
 
     cs_lnum_t *b_order = nullptr;
 
-    BFT_MALLOC(r_gnum, b_size, cs_gnum_t);
-    BFT_MALLOC(b_order, b_size, cs_lnum_t);
+    CS_MALLOC(r_gnum, b_size, cs_gnum_t);
+    CS_MALLOC(b_order, b_size, cs_lnum_t);
 
     cs_order_gnum_allocated_s(nullptr,
                               b_gnum,
@@ -932,11 +932,11 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
       prev_id = cur_id;
     }
 
-    BFT_FREE(b_order);
+    CS_FREE(b_order);
 
   }
 
-  BFT_FREE(b_gnum);
+  CS_FREE(b_gnum);
 
   /* At this stage, r_gnum[] is valid for this process, and
      current_gnum indicates the total number of entities handled
@@ -961,7 +961,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
 
   /* Partial clean-up */
 
-  BFT_FREE(r_gnum);
+  CS_FREE(r_gnum);
 
   cs_all_to_all_destroy(&d);
 
@@ -1080,7 +1080,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
      elements */
 
   int *dest_rank;
-  BFT_MALLOC(dest_rank, this_io_num->global_num_size, int);
+  CS_MALLOC(dest_rank, this_io_num->global_num_size, int);
   for (size_t i = 0; i < n_ent; i++)
     dest_rank[i] = ((global_num[index[i]] - 1) / _block_size) * bi.rank_step;
 
@@ -1120,7 +1120,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
     size_t prev_id, cur_id;
 
     cs_lnum_t  *recv_order = nullptr;
-    BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
+    CS_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
     cs_order_gnum_allocated_i(nullptr,
                               recv_global_num,
@@ -1135,7 +1135,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
        such that for each block, the global number of an entity is equal to
        the cumulative number of elements */
 
-    BFT_MALLOC(block_global_num, n_ent_recv, cs_gnum_t);
+    CS_MALLOC(block_global_num, n_ent_recv, cs_gnum_t);
 
     current_global_num = 1;
     prev_id = recv_order[0];
@@ -1153,14 +1153,14 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
 
     }
 
-    BFT_FREE(recv_order);
+    CS_FREE(recv_order);
 
   } /* End if n_ent_recv > 0 */
 
   /* Partial clean-up */
 
-  BFT_FREE(recv_index);
-  BFT_FREE(recv_global_num);
+  CS_FREE(recv_index);
+  CS_FREE(recv_global_num);
 
   /* At this stage, block_global_num[] is valid for this rank, and
      current_global_num indicates the total number of entities handled
@@ -1185,7 +1185,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
 
   /* Free memory */
 
-  BFT_FREE(block_global_num);
+  CS_FREE(block_global_num);
 
   cs_all_to_all_destroy(&d);
 
@@ -1258,9 +1258,9 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   if (this_io_num->_global_num != nullptr)
     send_global_num = this_io_num->_global_num;
   else {
-    BFT_MALLOC(send_global_num,
-               this_io_num->global_num_size,
-               cs_gnum_t);
+    CS_MALLOC(send_global_num,
+              this_io_num->global_num_size,
+              cs_gnum_t);
     memcpy(send_global_num,
            this_io_num->global_num,
            this_io_num->global_num_size * sizeof(cs_gnum_t));
@@ -1273,10 +1273,10 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
   cs_lnum_t n_ent_recv = cs_all_to_all_n_elts_dest(d);
 
-  BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
+  CS_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
   if (send_global_num != this_io_num->_global_num)
-    BFT_FREE(send_global_num);
+    CS_FREE(send_global_num);
 
   /* Do we have sub-entities ? */
 
@@ -1288,7 +1288,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   if (have_sub_glob > 0) {
 
     cs_lnum_t   *send_n_sub;
-    BFT_MALLOC(send_n_sub, this_io_num->global_num_size, cs_lnum_t);
+    CS_MALLOC(send_n_sub, this_io_num->global_num_size, cs_lnum_t);
 
     if (n_sub_entities != nullptr) {
       for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++)
@@ -1304,7 +1304,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
                                           false, /* reverse */
                                           send_n_sub);
 
-    BFT_FREE(send_n_sub);
+    CS_FREE(send_n_sub);
   }
 
   if (n_ent_recv > 0) {
@@ -1336,9 +1336,9 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
   /* Partial clean-up */
 
-  BFT_FREE(recv_n_sub);
-  BFT_FREE(recv_order);
-  BFT_FREE(recv_global_num);
+  CS_FREE(recv_n_sub);
+  CS_FREE(recv_order);
+  CS_FREE(recv_global_num);
 
   cs_all_to_all_destroy(&d);
 
@@ -1432,11 +1432,11 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 
   /* Create structure */
 
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+  CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
   this_io_num->global_num_size = n_entities;
 
-  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+  CS_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   /* Build Morton encoding and order it */
@@ -1458,9 +1458,9 @@ _create_from_coords_morton(const cs_coord_t  coords[],
     fvm_morton_code_t *m_code = nullptr;
     int input[1] = {dim};
 
-    BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
-    BFT_MALLOC(order, n_entities, cs_lnum_t);
-    BFT_MALLOC(dest_rank, n_entities, int);
+    CS_MALLOC(m_code, n_entities, fvm_morton_code_t);
+    CS_MALLOC(order, n_entities, cs_lnum_t);
+    CS_MALLOC(dest_rank, n_entities, int);
 
     fvm_morton_encode_coords(dim, level, extents, n_entities, coords, m_code);
     fvm_morton_local_order(n_entities, m_code, order);
@@ -1477,8 +1477,8 @@ _create_from_coords_morton(const cs_coord_t  coords[],
                                    input,
                                    comm);
 
-    BFT_FREE(order);
-    BFT_FREE(m_code);
+    CS_FREE(order);
+    CS_FREE(m_code);
 
     cs_all_to_all_t
       *d = cs_all_to_all_create(this_io_num->global_num_size,
@@ -1501,8 +1501,8 @@ _create_from_coords_morton(const cs_coord_t  coords[],
        efficient, but using coordinates allows breaking ties for
        possibly identical codes through lexicographical ordering). */
 
-    BFT_MALLOC(order, b_size, cs_lnum_t);
-    BFT_MALLOC(m_code, b_size, fvm_morton_code_t);
+    CS_MALLOC(order, b_size, cs_lnum_t);
+    CS_MALLOC(m_code, b_size, fvm_morton_code_t);
 
     fvm_morton_encode_coords(dim,
                              level,
@@ -1519,8 +1519,8 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 
     _check_morton_ordering(dim, b_size, b_coords, m_code, order);
 
-    BFT_FREE(m_code);
-    BFT_FREE(b_coords);
+    CS_FREE(m_code);
+    CS_FREE(b_coords);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (blocks associated with each process are
@@ -1530,12 +1530,12 @@ _create_from_coords_morton(const cs_coord_t  coords[],
        the cumulative number of sub-entities */
 
     cs_gnum_t *b_gnum;
-    BFT_MALLOC(b_gnum, b_size, cs_gnum_t);
+    CS_MALLOC(b_gnum, b_size, cs_gnum_t);
 
     for (i = 0; i < b_size; i++)
       b_gnum[order[i]] = i+1;
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     cs_gnum_t gnum_shift = 0, current_gnum = b_size;
 
@@ -1562,7 +1562,7 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 
     /* Free memory */
 
-    BFT_FREE(b_gnum);
+    CS_FREE(b_gnum);
 
     cs_all_to_all_destroy(&d);
 
@@ -1578,20 +1578,20 @@ _create_from_coords_morton(const cs_coord_t  coords[],
     cs_lnum_t         *order  = nullptr;
     fvm_morton_code_t *m_code = nullptr;
 
-    BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
-    BFT_MALLOC(order, n_entities, cs_lnum_t);
+    CS_MALLOC(m_code, n_entities, fvm_morton_code_t);
+    CS_MALLOC(order, n_entities, cs_lnum_t);
 
     fvm_morton_encode_coords(dim, level, extents, n_entities, coords, m_code);
     fvm_morton_local_order(n_entities, m_code, order);
 
     _check_morton_ordering(dim, n_entities, coords, m_code, order);
 
-    BFT_FREE(m_code);
+    CS_FREE(m_code);
 
     for (i = 0; i < n_entities; i++)
       this_io_num->_global_num[order[i]] = i + 1;
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     this_io_num->global_count = n_entities;
   }
@@ -1636,11 +1636,11 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
 
   /* Create structure */
 
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+  CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
   this_io_num->global_num_size = n_entities;
 
-  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+  CS_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   /* Build Hilbert encoding and order it */
@@ -1660,9 +1660,9 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
     cs_lnum_t          *order     = nullptr;
     fvm_hilbert_code_t *h_code    = nullptr;
 
-    BFT_MALLOC(h_code, n_entities, fvm_hilbert_code_t);
-    BFT_MALLOC(order, n_entities, cs_lnum_t);
-    BFT_MALLOC(dest_rank, n_entities, int);
+    CS_MALLOC(h_code, n_entities, fvm_hilbert_code_t);
+    CS_MALLOC(order, n_entities, cs_lnum_t);
+    CS_MALLOC(dest_rank, n_entities, int);
 
     fvm_hilbert_encode_coords(dim, extents, n_entities, coords, h_code);
     fvm_hilbert_local_order(n_entities, h_code, order);
@@ -1679,8 +1679,8 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
                                    nullptr,
                                    comm);
 
-    BFT_FREE(order);
-    BFT_FREE(h_code);
+    CS_FREE(order);
+    CS_FREE(h_code);
 
     cs_all_to_all_t *d = cs_all_to_all_create(this_io_num->global_num_size,
                                               0,       /* flags */
@@ -1702,7 +1702,7 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
        efficient, but using coordinates allows breaking ties for
        possibly identical codes through lexicographical ordering). */
 
-    BFT_MALLOC(order, b_size, cs_lnum_t);
+    CS_MALLOC(order, b_size, cs_lnum_t);
 
     fvm_hilbert_local_order_coords(dim,
                                    extents,
@@ -1710,7 +1710,7 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
                                    b_coords,
                                    order);
 
-    BFT_FREE(b_coords);
+    CS_FREE(b_coords);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (blocks associated with each process are
@@ -1720,12 +1720,12 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
        the cumulative number of sub-entities */
 
     cs_gnum_t *b_gnum;
-    BFT_MALLOC(b_gnum, b_size, cs_gnum_t);
+    CS_MALLOC(b_gnum, b_size, cs_gnum_t);
 
     for (i = 0; i < b_size; i++)
       b_gnum[order[i]] = i+1;
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     cs_gnum_t gnum_shift = 0, current_gnum = b_size;
 
@@ -1752,7 +1752,7 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
 
     /* Free memory */
 
-    BFT_FREE(b_gnum);
+    CS_FREE(b_gnum);
 
     cs_all_to_all_destroy(&d);
 
@@ -1767,7 +1767,7 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
   if (n_ranks == 1) {
 
     cs_lnum_t *order = nullptr;
-    BFT_MALLOC(order, n_entities, cs_lnum_t);
+    CS_MALLOC(order, n_entities, cs_lnum_t);
 
     fvm_hilbert_local_order_coords(dim,
                                    extents,
@@ -1778,7 +1778,7 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
     for (i = 0; i < n_entities; i++)
       this_io_num->_global_num[order[i]] = i+1;
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     this_io_num->global_count = n_entities;
 
@@ -1905,7 +1905,7 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
   cs_lnum_t *parent_entity_id = nullptr;
 
   if (parent_entity_number != nullptr) {
-    BFT_MALLOC(parent_entity_id, n_entities, cs_lnum_t);
+    CS_MALLOC(parent_entity_id, n_entities, cs_lnum_t);
     for (size_t i = 0; i < n_entities; i++)
       parent_entity_id[i] = parent_entity_number[i] - 1;
   }
@@ -1916,7 +1916,7 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
                                     n_entities,
                                     share_parent_global);
 
-  BFT_FREE(parent_entity_id);
+  CS_FREE(parent_entity_id);
 
   return this_io_num;
 }
@@ -1956,11 +1956,11 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
 
   /* Create structure */
 
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+  CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
   this_io_num->global_num_size = n_entities;
 
-  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+  CS_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   if (n_entities > 0) {
@@ -1983,11 +1983,11 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
       order = cs_order_gnum(nullptr,
                             this_io_num->_global_num,
                             n_entities);
-      BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
+      CS_MALLOC(tmp_num, n_entities, cs_gnum_t);
       for (i = 0; i < n_entities; i++)
         tmp_num[i] = this_io_num->_global_num[order[i]];
       memcpy(this_io_num->_global_num, tmp_num, n_entities*sizeof(cs_gnum_t));
-      BFT_FREE(tmp_num);
+      CS_FREE(tmp_num);
     }
   }
 
@@ -2012,12 +2012,12 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
 
   if (order != nullptr) {
     cs_gnum_t *tmp_num;
-    BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
+    CS_MALLOC(tmp_num, n_entities, cs_gnum_t);
     for (i = 0; i < n_entities; i++)
       tmp_num[order[i]] = this_io_num->_global_num[i];
     memcpy(this_io_num->_global_num, tmp_num, n_entities*sizeof(cs_gnum_t));
-    BFT_FREE(tmp_num);
-    BFT_FREE(order);
+    CS_FREE(tmp_num);
+    CS_FREE(order);
   }
 
   if (share_parent_global != 0)
@@ -2050,7 +2050,7 @@ fvm_io_num_create_shared(const cs_gnum_t   global_number[],
 
   /* Create structure */
 
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+  CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
   this_io_num->global_count = global_count;
   this_io_num->global_num_size = n_entities;
@@ -2089,11 +2089,11 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
 
   /* Create structure */
 
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+  CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
   cs_lnum_t n_ent = base_io_num->global_num_size;
 
-  BFT_MALLOC(this_io_num->_global_num, n_ent, cs_gnum_t);
+  CS_MALLOC(this_io_num->_global_num, n_ent, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   this_io_num->global_num_size = n_ent;
@@ -2165,11 +2165,11 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
 
     /* Create structure */
 
-    BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+    CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
     this_io_num->global_num_size = n_entities;
 
-    BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+    CS_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
     this_io_num->global_num = this_io_num->_global_num;
 
     if (n_entities > 0) {
@@ -2178,7 +2178,7 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
 
       /* Assign initial global numbers */
 
-      BFT_MALLOC(_adjacency, n_entities*stride, cs_gnum_t);
+      CS_MALLOC(_adjacency, n_entities*stride, cs_gnum_t);
 
       if (parent_entity_id != nullptr) {
         for (i = 0 ; i < n_entities ; i++) {
@@ -2201,7 +2201,7 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
                                _adjacency,
                                cs_glob_mpi_comm);
 
-    BFT_FREE(_adjacency);
+    CS_FREE(_adjacency);
   }
 #endif
 
@@ -2253,14 +2253,14 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
 
     /* Create structure */
 
-    BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+    CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
     this_io_num->global_num_size = n_entities;
 
-    BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+    CS_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
     this_io_num->global_num = this_io_num->_global_num;
 
-    BFT_MALLOC(_index, n_entities + 1, cs_lnum_t);
+    CS_MALLOC(_index, n_entities + 1, cs_lnum_t);
     _index[0] = 0;
 
     if (n_entities > 0) {
@@ -2289,7 +2289,7 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
         for (i = 0 ; i < n_entities ; i++)
           _index[i+1] += _index[i];
 
-        BFT_MALLOC(_adjacency, _index[n_entities], cs_gnum_t);
+        CS_MALLOC(_adjacency, _index[n_entities], cs_gnum_t);
 
         /* Define reduced index and adjacency */
 
@@ -2313,7 +2313,7 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
         }
 #endif
 
-        BFT_MALLOC(_adjacency, index[n_entities], cs_gnum_t);
+        CS_MALLOC(_adjacency, index[n_entities], cs_gnum_t);
 
         memcpy(_index, index, (n_entities+1)*sizeof(cs_lnum_t));
         memcpy(_adjacency, adjacency, index[n_entities]*sizeof(cs_gnum_t));
@@ -2332,9 +2332,9 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
                                    cs_glob_mpi_comm);
 
     if (_adjacency != nullptr)
-      BFT_FREE(_adjacency);
+      CS_FREE(_adjacency);
     if (_index != nullptr)
-      BFT_FREE(_index);
+      CS_FREE(_index);
   }
 #endif
 
@@ -2418,11 +2418,11 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
 
   /* Create structure */
 
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+  CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
   this_io_num->global_num_size = n_entities;
 
-  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+  CS_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   /* Scale values */
@@ -2458,7 +2458,7 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
       scale = 0;
 
     cs_real_t *s_val;
-    BFT_MALLOC(s_val, n_entities, cs_real_t);
+    CS_MALLOC(s_val, n_entities, cs_real_t);
 
     for (i = 0; i < n_entities; i++)
       s_val[i] = (val[i] - v_min)*scale;
@@ -2466,8 +2466,8 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
     int *dest_rank = nullptr;
     cs_lnum_t *order = nullptr;
 
-    BFT_MALLOC(order, n_entities, cs_lnum_t);
-    BFT_MALLOC(dest_rank, n_entities, int);
+    CS_MALLOC(order, n_entities, cs_lnum_t);
+    CS_MALLOC(dest_rank, n_entities, int);
 
     cs_order_real_allocated(nullptr, s_val, order, n_entities);
 
@@ -2483,7 +2483,7 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
                                    nullptr,
                                    comm);
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     cs_all_to_all_t
       *d = cs_all_to_all_create(this_io_num->global_num_size,
@@ -2499,17 +2499,17 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
                                                 false, /* reverse */
                                                 s_val);
 
-    BFT_FREE(s_val);
+    CS_FREE(s_val);
 
     size_t b_size = cs_all_to_all_n_elts_dest(d);
 
     /* Now re-build order on block distribution. */
 
-    BFT_MALLOC(order, b_size, cs_lnum_t);
+    CS_MALLOC(order, b_size, cs_lnum_t);
 
     cs_order_real_allocated(nullptr, b_val, order, b_size);
 
-    BFT_FREE(b_val);
+    CS_FREE(b_val);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (blocks associated with each process are
@@ -2519,12 +2519,12 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
        the cumulative number of sub-entities */
 
     cs_gnum_t *b_gnum;
-    BFT_MALLOC(b_gnum, b_size, cs_gnum_t);
+    CS_MALLOC(b_gnum, b_size, cs_gnum_t);
 
     for (i = 0; i < b_size; i++)
       b_gnum[order[i]] = i+1;
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     cs_gnum_t gnum_shift = 0, current_gnum = b_size;
 
@@ -2551,7 +2551,7 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
 
     /* Free memory */
 
-    BFT_FREE(b_gnum);
+    CS_FREE(b_gnum);
 
     cs_all_to_all_destroy(&d);
 
@@ -2567,14 +2567,14 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
   if (n_ranks == 1) {
 
     cs_lnum_t *order = nullptr;
-    BFT_MALLOC(order, n_entities, cs_lnum_t);
+    CS_MALLOC(order, n_entities, cs_lnum_t);
 
     cs_order_real_allocated(nullptr, val, order, n_entities);
 
     for (i = 0; i < n_entities; i++)
       this_io_num->_global_num[order[i]] = i+1;
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     this_io_num->global_count = n_entities;
 
@@ -2601,9 +2601,9 @@ fvm_io_num_create_from_scan(size_t  n_entities)
 
   /* Create structure */
 
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+  CS_MALLOC(this_io_num, 1, fvm_io_num_t);
 
-  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+  CS_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   this_io_num->global_num_size = n_entities;
@@ -2655,8 +2655,8 @@ fvm_io_num_t *
 fvm_io_num_destroy(fvm_io_num_t  * this_io_num)
 {
   if (this_io_num != nullptr) {
-    BFT_FREE(this_io_num->_global_num);
-    BFT_FREE(this_io_num);
+    CS_FREE(this_io_num->_global_num);
+    CS_FREE(this_io_num);
   }
 
   return this_io_num;

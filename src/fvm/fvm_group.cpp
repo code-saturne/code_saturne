@@ -40,7 +40,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
@@ -143,8 +143,8 @@ _group_class_set_send(const fvm_group_class_set_t  *class_set,
 
   /* Allocate and prepare buffers */
 
-  BFT_MALLOC(send_ints, n_ints, int);
-  BFT_MALLOC(send_chars, n_chars, char);
+  CS_MALLOC(send_ints, n_ints, int);
+  CS_MALLOC(send_chars, n_chars, char);
 
   send_count[0] = class_set->size;
   send_count[1] = n_ints;
@@ -174,8 +174,8 @@ _group_class_set_send(const fvm_group_class_set_t  *class_set,
   if (n_chars > 0)
     MPI_Send(send_chars, n_chars, MPI_CHAR, dest_rank, _GROUP_TAG, comm);
 
-  BFT_FREE(send_ints);
-  BFT_FREE(send_chars);
+  CS_FREE(send_ints);
+  CS_FREE(send_chars);
 }
 
 /*----------------------------------------------------------------------------
@@ -211,13 +211,13 @@ _group_class_set_recv(fvm_group_class_set_t  *class_set,
   /* Allocate and receive buffers */
 
   if (recv_count[1] > 0) {
-    BFT_MALLOC(recv_ints, recv_count[1], int);
+    CS_MALLOC(recv_ints, recv_count[1], int);
     MPI_Recv(recv_ints, recv_count[1], MPI_INT,
              src_rank, _GROUP_TAG, comm, &status);
   }
 
   if (recv_count[2] > 0) {
-    BFT_MALLOC(recv_chars, recv_count[2], char);
+    CS_MALLOC(recv_chars, recv_count[2], char);
     MPI_Recv(recv_chars, recv_count[2], MPI_CHAR,
              src_rank, _GROUP_TAG, comm, &status);
   }
@@ -225,16 +225,16 @@ _group_class_set_recv(fvm_group_class_set_t  *class_set,
   /* Decode buffers */
 
   class_set->size = recv_count[0];
-  BFT_MALLOC(class_set->gclass, class_set->size, fvm_group_class_t);
+  CS_MALLOC(class_set->gclass, class_set->size, fvm_group_class_t);
 
   for (i = 0; i < class_set->size; i++) {
     fvm_group_class_t  *gc = class_set->gclass + i;
     gc->n_groups = recv_ints[n_ints++];
     if (gc->n_groups > 0)
-      BFT_MALLOC(gc->group_name, gc->n_groups, char *);
+      CS_MALLOC(gc->group_name, gc->n_groups, char *);
     for (j = 0; j < gc->n_groups; j++) {
       size_t l = strlen(recv_chars + n_chars) + 1;
-      BFT_MALLOC(gc->group_name[j], l, char);
+      CS_MALLOC(gc->group_name[j], l, char);
       strcpy(recv_chars + n_chars, gc->group_name[j]);
       n_chars += l;
     }
@@ -242,8 +242,8 @@ _group_class_set_recv(fvm_group_class_set_t  *class_set,
 
   /* Free receive buffers */
 
-  BFT_FREE(recv_ints);
-  BFT_FREE(recv_chars);
+  CS_FREE(recv_ints);
+  CS_FREE(recv_chars);
 }
 
 #endif
@@ -268,9 +268,9 @@ _group_class_copy(const fvm_group_class_t  *src,
   }
   else {
     dest->n_groups = src->n_groups;
-    BFT_MALLOC(dest->group_name, dest->n_groups, char *);
+    CS_MALLOC(dest->group_name, dest->n_groups, char *);
     for (i = 0; i < src->n_groups; i++) {
-      BFT_MALLOC(dest->group_name[i], strlen(src->group_name[i]) + 1, char);
+      CS_MALLOC(dest->group_name[i], strlen(src->group_name[i]) + 1, char);
       strcpy(dest->group_name[i], src->group_name[i]);
     }
   }
@@ -370,7 +370,7 @@ fvm_group_class_set_create(void)
 {
   fvm_group_class_set_t *class_set;
 
-  BFT_MALLOC(class_set, 1, fvm_group_class_set_t);
+  CS_MALLOC(class_set, 1, fvm_group_class_set_t);
 
   class_set->size = 0;
 
@@ -403,7 +403,7 @@ fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
 
   /* Resize array of group class descriptors */
 
-  BFT_REALLOC(class_set->gclass, class_set->size + 1, fvm_group_class_t);
+  CS_REALLOC(class_set->gclass, class_set->size + 1, fvm_group_class_t);
 
   /* Initialize new descriptor */
 
@@ -411,13 +411,13 @@ fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
 
   _class->n_groups = n_groups;
 
-  BFT_MALLOC(_class->group_name, n_groups, char *);
+  CS_MALLOC(_class->group_name, n_groups, char *);
 
   /* Copy group names */
 
   if (n_groups > 0) {
     for (i = 0; i < n_groups; i++) {
-      BFT_MALLOC(_class->group_name[i], strlen(group_names[i]) + 1, char);
+      CS_MALLOC(_class->group_name[i], strlen(group_names[i]) + 1, char);
       strcpy(_class->group_name[i], group_names[i]);
     }
     qsort(_class->group_name, n_groups, sizeof(char *), &_compare_names);
@@ -448,16 +448,16 @@ fvm_group_class_set_destroy(fvm_group_class_set_t  *this_group_class_set)
     fvm_group_class_t *_class = this_group_class_set->gclass + i;
 
     for (int j = 0; j < _class->n_groups; j++)
-      BFT_FREE(_class->group_name[j]);
+      CS_FREE(_class->group_name[j]);
 
     _class->n_groups = 0;
 
-    BFT_FREE(_class->group_name);
+    CS_FREE(_class->group_name);
 
   }
 
-  BFT_FREE(this_group_class_set->gclass);
-  BFT_FREE(this_group_class_set);
+  CS_FREE(this_group_class_set->gclass);
+  CS_FREE(this_group_class_set);
 
   return nullptr;
 }
@@ -528,14 +528,14 @@ fvm_group_class_set_copy(const fvm_group_class_set_t  *this_group_class_set,
   int i;
   fvm_group_class_set_t  *class_set = nullptr;
 
-  BFT_MALLOC(class_set, 1, fvm_group_class_set_t);
+  CS_MALLOC(class_set, 1, fvm_group_class_set_t);
 
   if (n_gcs == 0)
     class_set->size = this_group_class_set->size;
   else
     class_set->size = n_gcs;
 
-  BFT_MALLOC(class_set->gclass, class_set->size, fvm_group_class_t);
+  CS_MALLOC(class_set->gclass, class_set->size, fvm_group_class_t);
 
   if (n_gcs == 0) {
     for (i = 0; i < class_set->size; i++)

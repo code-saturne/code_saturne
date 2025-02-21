@@ -39,12 +39,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_box.h"
 #include "fvm/fvm_box_tree.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_part_to_block.h"
 #include "base/cs_timer.h"
@@ -350,7 +350,7 @@ _clean_neighbor_nums(fvm_neighborhood_t  *n)
   } /* End of loop on elements */
 
   if (n_count < n_neighbors)
-    BFT_REALLOC(n->neighbor_num, n_count, cs_gnum_t);
+    CS_REALLOC(n->neighbor_num, n_count, cs_gnum_t);
 }
 
 /*----------------------------------------------------------------------------
@@ -378,10 +378,10 @@ _order_neighborhood(fvm_neighborhood_t  *n)
   n_elts = n->n_elts;
   n_neighbors = n->neighbor_index[n_elts];
 
-  BFT_MALLOC(order, n_elts, cs_lnum_t);
-  BFT_MALLOC(old_e_num, n_elts, cs_gnum_t);
-  BFT_MALLOC(old_index, n_elts + 1, cs_lnum_t);
-  BFT_MALLOC(old_n_num, n_neighbors, cs_gnum_t);
+  CS_MALLOC(order, n_elts, cs_lnum_t);
+  CS_MALLOC(old_e_num, n_elts, cs_gnum_t);
+  CS_MALLOC(old_index, n_elts + 1, cs_lnum_t);
+  CS_MALLOC(old_n_num, n_neighbors, cs_gnum_t);
 
   memcpy(old_e_num, n->elt_num, n_elts*sizeof(cs_gnum_t));
   memcpy(old_index, n->neighbor_index, (n_elts + 1)*sizeof(cs_lnum_t));
@@ -436,10 +436,10 @@ _order_neighborhood(fvm_neighborhood_t  *n)
 
   /* Free temporary memory */
 
-  BFT_FREE(order);
-  BFT_FREE(old_e_num);
-  BFT_FREE(old_index);
-  BFT_FREE(old_n_num);
+  CS_FREE(order);
+  CS_FREE(old_e_num);
+  CS_FREE(old_index);
+  CS_FREE(old_n_num);
 }
 
 #if defined(HAVE_MPI)
@@ -483,7 +483,7 @@ _sync_by_block(fvm_neighborhood_t  *n,
                                       n->comm);
 
   cs_gnum_t *send_meta;
-  BFT_MALLOC(send_meta, n->n_elts*2, cs_gnum_t);
+  CS_MALLOC(send_meta, n->n_elts*2, cs_gnum_t);
 
   for (cs_lnum_t i = 0; i < n->n_elts; i++) {
     send_meta[i*2] = n->elt_num[i];
@@ -495,14 +495,14 @@ _sync_by_block(fvm_neighborhood_t  *n,
                                                   false, /* reverse */
                                                   send_meta);
 
-  BFT_FREE(send_meta);
+  CS_FREE(send_meta);
 
   cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
 
   cs_gnum_t *recv_gnum;
-  BFT_MALLOC(recv_gnum, n_recv, cs_gnum_t);
+  CS_MALLOC(recv_gnum, n_recv, cs_gnum_t);
   cs_lnum_t *recv_index;
-  BFT_MALLOC(recv_index, n_recv+1, cs_lnum_t);
+  CS_MALLOC(recv_index, n_recv+1, cs_lnum_t);
 
   recv_index[0] = 0;
   for (cs_lnum_t i = 0; i < n_recv; i++) {
@@ -510,7 +510,7 @@ _sync_by_block(fvm_neighborhood_t  *n,
     recv_index[i+1] = recv_index[i] + recv_meta[i*2+1];
   }
 
-  BFT_FREE(recv_meta);
+  CS_FREE(recv_meta);
 
   cs_gnum_t *recv_neighbor = cs_all_to_all_copy_indexed(d,
                                                         false, /* reverse */
@@ -522,12 +522,12 @@ _sync_by_block(fvm_neighborhood_t  *n,
 
   n->n_elts = bi.gnum_range[1] - bi.gnum_range[0];
 
-  BFT_FREE(n->elt_num);
-  BFT_FREE(n->neighbor_index);
-  BFT_FREE(n->neighbor_num);
+  CS_FREE(n->elt_num);
+  CS_FREE(n->neighbor_index);
+  CS_FREE(n->neighbor_num);
 
-  BFT_MALLOC(n->elt_num, n->n_elts, cs_gnum_t);
-  BFT_MALLOC(n->neighbor_index, n->n_elts + 1, cs_lnum_t);
+  CS_MALLOC(n->elt_num, n->n_elts, cs_gnum_t);
+  CS_MALLOC(n->neighbor_index, n->n_elts + 1, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n->n_elts; i++) {
     n->elt_num[i] = bi.gnum_range[0] + i;
@@ -548,12 +548,12 @@ _sync_by_block(fvm_neighborhood_t  *n,
   for (cs_lnum_t i = 0; i < n->n_elts; i++)
     n->neighbor_index[i+1] += n->neighbor_index[i];
 
-  BFT_MALLOC(n->neighbor_num, n->neighbor_index[n->n_elts], cs_gnum_t);
+  CS_MALLOC(n->neighbor_num, n->neighbor_index[n->n_elts], cs_gnum_t);
 
   /* Fill element neighbors in block distribution */
 
   cs_lnum_t *counter;
-  BFT_MALLOC(counter, n->n_elts, cs_lnum_t);
+  CS_MALLOC(counter, n->n_elts, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n->n_elts; i++)
     counter[i] = 0;
@@ -574,10 +574,10 @@ _sync_by_block(fvm_neighborhood_t  *n,
 
   } /* End of loop on ranks */
 
-  BFT_FREE(recv_gnum);
-  BFT_FREE(counter);
-  BFT_FREE(recv_neighbor);
-  BFT_FREE(recv_index);
+  CS_FREE(recv_gnum);
+  CS_FREE(counter);
+  CS_FREE(recv_neighbor);
+  CS_FREE(recv_index);
 
   cs_all_to_all_destroy(&d);
 
@@ -623,7 +623,7 @@ fvm_neighborhood_create(void)
 
   /* Allocate and initialize */
 
-  BFT_MALLOC(n, 1, fvm_neighborhood_t);
+  CS_MALLOC(n, 1, fvm_neighborhood_t);
 
   n->n_elts = 0;
   n->elt_num = nullptr;
@@ -672,13 +672,13 @@ fvm_neighborhood_destroy(fvm_neighborhood_t  **n)
     fvm_neighborhood_t *_n = *n;
     if (_n != nullptr) {
       if (_n->elt_num != nullptr)
-        BFT_FREE(_n->elt_num);
+        CS_FREE(_n->elt_num);
       if (_n->neighbor_index != nullptr)
-        BFT_FREE(_n->neighbor_index);
+        CS_FREE(_n->neighbor_index);
       if (_n->neighbor_num != nullptr)
-        BFT_FREE(_n->neighbor_num);
+        CS_FREE(_n->neighbor_num);
     }
-    BFT_FREE(*n);
+    CS_FREE(*n);
   }
 }
 
@@ -859,11 +859,11 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 
   n->n_elts = 0;
   if (n->elt_num != nullptr)
-    BFT_FREE(n->elt_num);
+    CS_FREE(n->elt_num);
   if (n->neighbor_index != nullptr)
-    BFT_FREE(n->neighbor_index);
+    CS_FREE(n->neighbor_index);
   if (n->neighbor_num != nullptr)
-    BFT_FREE(n->neighbor_num);
+    CS_FREE(n->neighbor_num);
 
   /* Allocate fvm_box_set_t structure and initialize it */
 
@@ -898,12 +898,12 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 
   if (box_gnum_assigned != nullptr) {
     _box_gnum = nullptr;
-    BFT_FREE(*box_gnum_assigned);
+    CS_FREE(*box_gnum_assigned);
   }
 
   if (extents_assigned != nullptr) {
     _extents = nullptr;
-    BFT_FREE(*extents_assigned);
+    CS_FREE(*extents_assigned);
   }
 
   /* Build a tree structure and use it to order bounding boxes */
@@ -937,7 +937,7 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 
   n->n_elts = fvm_box_set_get_size(boxes);
 
-  BFT_MALLOC(n->elt_num, n->n_elts, cs_gnum_t);
+  CS_MALLOC(n->elt_num, n->n_elts, cs_gnum_t);
   if (n->n_elts > 0)
     memcpy(n->elt_num,
            fvm_box_set_get_g_num(boxes),
@@ -1031,8 +1031,8 @@ fvm_neighborhood_prune(fvm_neighborhood_t  *n)
 
   if (e_count < n_elts) {
     n->n_elts = e_count;
-    BFT_REALLOC(n->elt_num, e_count, cs_gnum_t);
-    BFT_REALLOC(n->neighbor_index, e_count + 1, cs_lnum_t);
+    CS_REALLOC(n->elt_num, e_count, cs_gnum_t);
+    CS_REALLOC(n->neighbor_index, e_count + 1, cs_lnum_t);
   }
 }
 

@@ -40,8 +40,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
@@ -1269,7 +1269,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
   /* Build count and index */
   /*-----------------------*/
 
-  BFT_MALLOC(element_count, n_vertices, cs_lnum_t);
+  CS_MALLOC(element_count, n_vertices, cs_lnum_t);
   for (i = 0; i < n_vertices; i++)
     element_count[i] = 0;
 
@@ -1323,7 +1323,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
 
   } /* End of loop on sections */
 
-  BFT_MALLOC(_element_index, n_vertices + 1, cs_lnum_t);
+  CS_MALLOC(_element_index, n_vertices + 1, cs_lnum_t);
   _element_index[0] = 0;
 
   for (i = 0; i < n_vertices; i++) {
@@ -1334,7 +1334,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
   /* Build inverse connectivity */
   /*----------------------------*/
 
-  BFT_MALLOC(_element_id, _element_index[n_vertices], cs_lnum_t);
+  CS_MALLOC(_element_id, _element_index[n_vertices], cs_lnum_t);
 
   element_concat_id = 0;
 

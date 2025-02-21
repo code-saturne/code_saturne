@@ -42,12 +42,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_notebook.h"
 
 /*----------------------------------------------------------------------------
@@ -325,9 +325,9 @@ _add_operator(_parser_t          *this_parser,
 
   /* Resize structures */
 
-  BFT_REALLOC(this_parser->operators,
-              this_parser->n_operators + 1,
-              _operator_t);
+  CS_REALLOC(this_parser->operators,
+             this_parser->n_operators + 1,
+             _operator_t);
 
   if (n_keywords > 0) {
 
@@ -336,17 +336,17 @@ _add_operator(_parser_t          *this_parser,
     for (i = 0; i < n_keywords; i++)
       keywords_size += (strlen(keywords[i]) + 1);
 
-    BFT_REALLOC(this_parser->keyword_op_id,
-                this_parser->n_keywords + n_keywords,
-                int);
+    CS_REALLOC(this_parser->keyword_op_id,
+               this_parser->n_keywords + n_keywords,
+               int);
 
-    BFT_REALLOC(this_parser->keyword,
-                this_parser->n_keywords + n_keywords,
-                char *);
+    CS_REALLOC(this_parser->keyword,
+               this_parser->n_keywords + n_keywords,
+               char *);
 
-    BFT_REALLOC(this_parser->keywords,
-                this_parser->keywords_size + keywords_size,
-                char);
+    CS_REALLOC(this_parser->keywords,
+               this_parser->keywords_size + keywords_size,
+               char);
 
   }
 
@@ -421,7 +421,7 @@ _parser_create(void)
 
   /* Create base structure */
 
-  BFT_MALLOC(p, 1, _parser_t);
+  CS_MALLOC(p, 1, _parser_t);
 
   p->n_operators = 0;
   p->operators = nullptr;
@@ -484,12 +484,12 @@ _parser_destroy(_parser_t  **this_parser)
 {
   if (*this_parser != nullptr) {
 
-    BFT_FREE((*this_parser)->operators);
-    BFT_FREE((*this_parser)->keyword_op_id);
-    BFT_FREE((*this_parser)->keyword);
-    BFT_FREE((*this_parser)->keywords);
+    CS_FREE((*this_parser)->operators);
+    CS_FREE((*this_parser)->keyword_op_id);
+    CS_FREE((*this_parser)->keyword);
+    CS_FREE((*this_parser)->keywords);
 
-    BFT_FREE(*this_parser);
+    CS_FREE(*this_parser);
 
   }
 }
@@ -590,10 +590,10 @@ _tokenize(const char  *infix)
                             each character (worst case), so no size
                             increase will be necessary */
 
-  BFT_MALLOC(te.infix_id, l, int);
-  BFT_MALLOC(te.token_id, l, int);
-  BFT_MALLOC(te.is_protected, l, bool);
-  BFT_MALLOC(te.tokens, te.max_size, char);
+  CS_MALLOC(te.infix_id, l, int);
+  CS_MALLOC(te.token_id, l, int);
+  CS_MALLOC(te.is_protected, l, bool);
+  CS_MALLOC(te.tokens, te.max_size, char);
 
   for (i = 0; i < l; i++)
     te.is_protected[i] = false;
@@ -766,10 +766,10 @@ _tokenize(const char  *infix)
 
   /* Resize to adjusted size */
 
-  BFT_REALLOC(te.infix_id, te.n_tokens, int);
-  BFT_REALLOC(te.token_id, te.n_tokens, int);
-  BFT_REALLOC(te.is_protected, te.n_tokens, bool);
-  BFT_REALLOC(te.tokens, te.size, char);
+  CS_REALLOC(te.infix_id, te.n_tokens, int);
+  CS_REALLOC(te.token_id, te.n_tokens, int);
+  CS_REALLOC(te.is_protected, te.n_tokens, bool);
+  CS_REALLOC(te.tokens, te.size, char);
 
   /* Return tokenization structure */
 
@@ -789,10 +789,10 @@ _empty_tokenized(_tokenized_t *te)
   te->n_tokens = 0;
   te->size     = 0;
   te->max_size = 0;
-  BFT_FREE(te->infix_id);
-  BFT_FREE(te->token_id);
-  BFT_FREE(te->is_protected);
-  BFT_FREE(te->tokens);
+  CS_FREE(te->infix_id);
+  CS_FREE(te->token_id);
+  CS_FREE(te->is_protected);
+  CS_FREE(te->tokens);
 }
 
 /*----------------------------------------------------------------------------
@@ -853,7 +853,7 @@ _stack_empty(_stack_t *stack)
   stack->size     = 0;
   stack->max_size = BASE_STACK_SIZE;
   if (stack->elements != stack->_elements) {
-    BFT_FREE(stack->elements);
+    CS_FREE(stack->elements);
     stack->elements = stack->_elements;
   }
 }
@@ -878,13 +878,13 @@ _stack_push(_stack_t *stack, const _operator_t *op, int token_id)
     stack->max_size *= 2;
     if (stack->max_size > BASE_STACK_SIZE) {
       if (stack->elements == stack->_elements) {
-        BFT_MALLOC(stack->elements, stack->max_size, _stack_entry_t);
+        CS_MALLOC(stack->elements, stack->max_size, _stack_entry_t);
         memcpy(stack->elements,
                stack->_elements,
                stack->size * sizeof(_stack_entry_t));
       }
       else
-        BFT_REALLOC(stack->elements, stack->max_size, _stack_entry_t);
+        CS_REALLOC(stack->elements, stack->max_size, _stack_entry_t);
     }
   }
 
@@ -979,7 +979,7 @@ _postfix_create(const char *infix)
   size_t                  size = strlen(infix);
   fvm_selector_postfix_t *pf   = nullptr;
 
-  BFT_MALLOC(pf, 1, fvm_selector_postfix_t);
+  CS_MALLOC(pf, 1, fvm_selector_postfix_t);
 
   pf->coords_dependency  = false;
   pf->normals_dependency = false;
@@ -987,10 +987,10 @@ _postfix_create(const char *infix)
   pf->size     = 0;
   pf->max_size = size * sizeof(size_t);
 
-  BFT_MALLOC(pf->infix, size + 1, char);
+  CS_MALLOC(pf->infix, size + 1, char);
   strcpy(pf->infix, infix);
 
-  BFT_MALLOC(pf->elements, pf->max_size, unsigned char);
+  CS_MALLOC(pf->elements, pf->max_size, unsigned char);
   for (i = 0; i < pf->max_size; pf->elements[i++] = '\0')
     ;
 
@@ -1013,17 +1013,17 @@ _postfix_destroy(fvm_selector_postfix_t **pf)
   fvm_selector_postfix_t *_pf = *pf;
 
   if (*pf != nullptr) {
-    BFT_FREE(_pf->infix);
-    BFT_FREE(_pf->elements);
+    CS_FREE(_pf->infix);
+    CS_FREE(_pf->elements);
 
     if (_pf->n_missing_operands > 0) {
       int i;
       for (i = 0; i < _pf->n_missing_operands; i++)
-        BFT_FREE(_pf->missing_operand[i]);
-      BFT_FREE(_pf->missing_operand);
+        CS_FREE(_pf->missing_operand[i]);
+      CS_FREE(_pf->missing_operand);
     }
 
-    BFT_FREE(_pf);
+    CS_FREE(_pf);
     *pf = _pf;
   }
 }
@@ -1046,7 +1046,7 @@ _postfix_grow(fvm_selector_postfix_t *pf, size_t new_size)
   else
     pf->max_size = new_size;
 
-  BFT_REALLOC(pf->elements, pf->max_size, unsigned char);
+  CS_REALLOC(pf->elements, pf->max_size, unsigned char);
   for (i = old_max_size; i < pf->max_size; pf->elements[i++] = '\0')
     ;
 }
@@ -1063,7 +1063,7 @@ _postfix_adjust(fvm_selector_postfix_t *pf)
 {
   if (pf->size != pf->max_size) {
     pf->max_size = pf->size;
-    BFT_REALLOC(pf->elements, pf->max_size, unsigned char);
+    CS_REALLOC(pf->elements, pf->max_size, unsigned char);
   }
 }
 
@@ -1153,8 +1153,8 @@ _postfix_add_missing(fvm_selector_postfix_t *pf, const char *missing)
 {
   int n = pf->n_missing_operands;
 
-  BFT_REALLOC(pf->missing_operand, n + 1, char *);
-  BFT_MALLOC(pf->missing_operand[n], strlen(missing) + 1, char);
+  CS_REALLOC(pf->missing_operand, n + 1, char *);
+  CS_MALLOC(pf->missing_operand[n], strlen(missing) + 1, char);
   strcpy(pf->missing_operand[pf->n_missing_operands], missing);
   pf->n_missing_operands++;
 }
@@ -1350,7 +1350,7 @@ _parse_error(const char              *err_str,
     int   i;
     char *infix_string_marker = nullptr;
 
-    BFT_MALLOC(infix_string_marker, infix_pos + 2, char);
+    CS_MALLOC(infix_string_marker, infix_pos + 2, char);
     for (i = 0; i < infix_pos; i++)
       infix_string_marker[i] = ' ';
     infix_string_marker[infix_pos]     = '^';
@@ -1382,7 +1382,7 @@ _parse_error(const char              *err_str,
                 infix_string_marker,
                 err_str);
 
-    BFT_FREE(infix_string_marker);
+    CS_FREE(infix_string_marker);
   }
 
   else {
@@ -3304,11 +3304,11 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
     if (eval_size == eval_max_size) {
       eval_max_size *= 2;
       if (eval_stack == _eval_stack) {
-        BFT_MALLOC(eval_stack, eval_max_size, bool);
+        CS_MALLOC(eval_stack, eval_max_size, bool);
         memcpy(eval_stack, _eval_stack, BASE_STACK_SIZE*sizeof(bool));
       }
       else
-        BFT_REALLOC(eval_stack, eval_max_size, bool);
+        CS_REALLOC(eval_stack, eval_max_size, bool);
     }
 
   } /* End of loop on postfix elements */
@@ -3322,7 +3322,7 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
   retval = eval_stack[0];
 
   if (eval_stack != _eval_stack)
-    BFT_FREE(eval_stack);
+    CS_FREE(eval_stack);
 
   return retval;
 }

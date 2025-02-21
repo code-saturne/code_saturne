@@ -42,7 +42,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_convert_array.h"
@@ -55,6 +54,7 @@
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
 #include "base/cs_time_plot.h"
@@ -180,7 +180,7 @@ _coords_output(void           *context,
 
   size_t l = strlen(w->prefix) + strlen("coords") + strlen(t_stamp) + 4 + 1;
 
-  BFT_MALLOC(file_name, l, char);
+  CS_MALLOC(file_name, l, char);
 
   if (w->format == CS_TIME_PLOT_DAT)
     sprintf(file_name, "%scoords%s.dat", w->prefix, t_stamp);
@@ -272,7 +272,7 @@ _coords_output(void           *context,
     bft_error(__FILE__, __LINE__, errno,
               _("Error closing file: \"%s\""), file_name);
 
-  BFT_FREE(file_name);
+  CS_FREE(file_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -315,7 +315,7 @@ _field_output(void           *context,
   cs_real_t *_vals = nullptr;
 
   if (dimension > 1)
-    BFT_MALLOC(_vals, n_vals, cs_real_t);
+    CS_MALLOC(_vals, n_vals, cs_real_t);
 
   for (int _component_id = 0; _component_id < dimension; _component_id++) {
 
@@ -334,7 +334,7 @@ _field_output(void           *context,
       l += 2 + lce;
 
     if (l > 128)
-      BFT_MALLOC(plot_name, l, char);
+      CS_MALLOC(plot_name, l, char);
 
     if (lce > 0)
       sprintf(plot_name, "%s[%s]", c->name, tmpe);
@@ -346,7 +346,7 @@ _field_output(void           *context,
     if (p_id >= w->n_plots) {
 
       w->n_plots += 1;
-      BFT_REALLOC(w->tp, w->n_plots, cs_time_plot_t *);
+      CS_REALLOC(w->tp, w->n_plots, cs_time_plot_t *);
 
       int n_probes = (block_end > block_start) ? block_end - block_start : 0;
 
@@ -366,7 +366,7 @@ _field_output(void           *context,
     }
 
     if (plot_name != tmpn)
-      BFT_FREE(plot_name);
+      CS_FREE(plot_name);
 
     p = w->tp[p_id];
 
@@ -385,7 +385,7 @@ _field_output(void           *context,
     }
   }
 
-  BFT_FREE(_vals);
+  CS_FREE(_vals);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -436,17 +436,17 @@ fvm_to_time_plot_init_writer(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(w, 1, fvm_to_time_plot_writer_t);
+  CS_MALLOC(w, 1, fvm_to_time_plot_writer_t);
 
-  BFT_MALLOC(w->name, strlen(name) + 1, char);
+  CS_MALLOC(w->name, strlen(name) + 1, char);
   strcpy(w->name, name);
 
   if (strlen(name) > 0) {
-    BFT_MALLOC(w->prefix, strlen(path) + 1 + strlen(name) + 1, char);
+    CS_MALLOC(w->prefix, strlen(path) + 1 + strlen(name) + 1, char);
     sprintf(w->prefix, "%s%s_", path, name);
   }
   else {
-    BFT_MALLOC(w->prefix, strlen(path) + 1, char);
+    CS_MALLOC(w->prefix, strlen(path) + 1, char);
     strcpy(w->prefix, path);
   }
 
@@ -545,17 +545,17 @@ fvm_to_time_plot_finalize_writer(void  *writer)
 {
   fvm_to_time_plot_writer_t  *w  = (fvm_to_time_plot_writer_t *)writer;
 
-  BFT_FREE(w->name);
-  BFT_FREE(w->prefix);
+  CS_FREE(w->name);
+  CS_FREE(w->prefix);
 
   if (w->rank <= 0) {
     for (int i = 0; i < w->n_plots; i++)
       cs_time_plot_finalize(&(w->tp[i]));
-    BFT_FREE(w->tp);
+    CS_FREE(w->tp);
     cs_map_name_to_id_destroy(&(w->f_map));
   }
 
-  BFT_FREE(w);
+  CS_FREE(w);
 
   return nullptr;
 }

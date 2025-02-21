@@ -40,10 +40,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
 #include "fvm/fvm_defs.h"
@@ -191,10 +191,10 @@ _assign_groups(fvm_selector_t               *this_selector,
 
   /* Build basic arrays which exist in any case */
 
-  BFT_MALLOC(this_selector->n_class_groups,
-             this_selector->n_group_classes,
-             int);
-  BFT_MALLOC(this_selector->group_ids, this_selector->n_group_classes, int *);
+  CS_MALLOC(this_selector->n_class_groups,
+            this_selector->n_group_classes,
+            int);
+  CS_MALLOC(this_selector->group_ids, this_selector->n_group_classes, int *);
 
   for (i = 0; i < this_selector->n_group_classes; i++) {
 
@@ -205,7 +205,7 @@ _assign_groups(fvm_selector_t               *this_selector,
 
     this_selector->n_class_groups[i] = n_groups;
     if (n_groups > 0)
-      BFT_MALLOC(this_selector->group_ids[i], n_groups, int);
+      CS_MALLOC(this_selector->group_ids[i], n_groups, int);
     else
       this_selector->group_ids[i] = nullptr;
   }
@@ -215,7 +215,7 @@ _assign_groups(fvm_selector_t               *this_selector,
 
   /* Fill arrays with unsorted group class info */
 
-  BFT_MALLOC(_set_group_names, n_groups_tot, char *);
+  CS_MALLOC(_set_group_names, n_groups_tot, char *);
   set_group_names = const_cast<const char **>(_set_group_names);
 
   n_groups_tot = 0;
@@ -234,26 +234,26 @@ _assign_groups(fvm_selector_t               *this_selector,
 
   qsort(set_group_names, n_groups_tot, sizeof(char *), &_compare_groups);
 
-  BFT_MALLOC(this_selector->group_name, n_groups_tot, char *);
+  CS_MALLOC(this_selector->group_name, n_groups_tot, char *);
 
-  BFT_MALLOC(this_selector->group_name[0],
-             strlen(set_group_names[0]) + 1,
-             char);
+  CS_MALLOC(this_selector->group_name[0],
+            strlen(set_group_names[0]) + 1,
+            char);
   strcpy(this_selector->group_name[0], set_group_names[0]);
   for (i = 1, j = 1; i < n_groups_tot; i++) {
     const char *name = set_group_names[i];
     if (strcmp(name, set_group_names[i-1]) != 0) {
-      BFT_MALLOC(this_selector->group_name[j], strlen(name) + 1, char);
+      CS_MALLOC(this_selector->group_name[j], strlen(name) + 1, char);
       strcpy(this_selector->group_name[j], name);
       j++;
     }
   }
 
   set_group_names = nullptr;
-  BFT_FREE(_set_group_names);
+  CS_FREE(_set_group_names);
 
   this_selector->n_groups = j;
-  BFT_REALLOC(this_selector->group_name, this_selector->n_groups, char *);
+  CS_REALLOC(this_selector->group_name, this_selector->n_groups, char *);
 
   /* Now build group_id arrays */
 
@@ -360,12 +360,12 @@ _assign_attributes(fvm_selector_t               *this_selector,
 
   /* Build basic arrays which exist in any case */
 
-  BFT_MALLOC(this_selector->n_class_attributes,
-             this_selector->n_group_classes,
-             int);
-  BFT_MALLOC(this_selector->attribute_ids,
-             this_selector->n_group_classes,
-             int *);
+  CS_MALLOC(this_selector->n_class_attributes,
+            this_selector->n_group_classes,
+            int);
+  CS_MALLOC(this_selector->attribute_ids,
+            this_selector->n_group_classes,
+            int *);
 
   for (i = 0; i < this_selector->n_group_classes; i++) {
 
@@ -385,7 +385,7 @@ _assign_attributes(fvm_selector_t               *this_selector,
 
     this_selector->n_class_attributes[i] = n_attributes;
     if (n_attributes > 0)
-      BFT_MALLOC(this_selector->attribute_ids[i], n_attributes, int);
+      CS_MALLOC(this_selector->attribute_ids[i], n_attributes, int);
     else
       this_selector->attribute_ids[i] = nullptr;
   }
@@ -393,7 +393,7 @@ _assign_attributes(fvm_selector_t               *this_selector,
   if (n_attributes_tot == 0)
     return;
 
-  BFT_MALLOC(set_attributes, n_attributes_tot, int);
+  CS_MALLOC(set_attributes, n_attributes_tot, int);
 
   n_attributes_tot = 0;
 
@@ -413,7 +413,7 @@ _assign_attributes(fvm_selector_t               *this_selector,
 
   qsort(set_attributes, n_attributes_tot, sizeof(int), &_compare_attributes);
 
-  BFT_MALLOC(this_selector->attribute, n_attributes_tot, int);
+  CS_MALLOC(this_selector->attribute, n_attributes_tot, int);
 
   this_selector->attribute[0] = set_attributes[0];
   for (i = 1, j = 1; i < n_attributes_tot; i++) {
@@ -421,14 +421,14 @@ _assign_attributes(fvm_selector_t               *this_selector,
       this_selector->attribute[j++] = set_attributes[i];
   }
 
-  BFT_FREE(set_attributes);
+  CS_FREE(set_attributes);
 
   this_selector->n_attributes = j;
-  BFT_REALLOC(this_selector->attribute, this_selector->n_attributes, int);
+  CS_REALLOC(this_selector->attribute, this_selector->n_attributes, int);
 
   /* Now build attribute_id arrays */
 
-  BFT_MALLOC(attributes, n_attributes_max, int);
+  CS_MALLOC(attributes, n_attributes_max, int);
 
   for (i = 0; i < this_selector->n_group_classes; i++) {
 
@@ -472,7 +472,7 @@ _assign_attributes(fvm_selector_t               *this_selector,
     }
   }
 
-  BFT_FREE(attributes);
+  CS_FREE(attributes);
 }
 
 /*----------------------------------------------------------------------------
@@ -491,21 +491,21 @@ _operation_list_allocate(void)
   int i;
   const int n_operations = 16;
 
-  BFT_MALLOC(ops, 1, _operation_list_t);
+  CS_MALLOC(ops, 1, _operation_list_t);
 
   /*  Definitions */
 
   ops->n_operations = 0;
   ops->n_max_operations = n_operations;
 
-  BFT_MALLOC(ops->postfix,
-             ops->n_max_operations,
-             fvm_selector_postfix_t *);
+  CS_MALLOC(ops->postfix,
+            ops->n_max_operations,
+            fvm_selector_postfix_t *);
 
-  BFT_MALLOC(ops->n_calls, ops->n_max_operations, size_t);
+  CS_MALLOC(ops->n_calls, ops->n_max_operations, size_t);
 
-  BFT_MALLOC(ops->n_group_classes, ops->n_max_operations, int);
-  BFT_MALLOC(ops->group_class_set, ops->n_max_operations, int *);
+  CS_MALLOC(ops->n_group_classes, ops->n_max_operations, int);
+  CS_MALLOC(ops->group_class_set, ops->n_max_operations, int *);
 
   for (i = 0; i < ops->n_max_operations; i++) {
     ops->postfix[i] = nullptr;
@@ -538,14 +538,14 @@ _operation_list_reallocate(_operation_list_t  *ops)
 
   /* Reallocation */
 
-  BFT_REALLOC(ops->postfix,
-              ops->n_max_operations,
-              fvm_selector_postfix_t *);
+  CS_REALLOC(ops->postfix,
+             ops->n_max_operations,
+             fvm_selector_postfix_t *);
 
-  BFT_REALLOC(ops->n_calls, ops->n_max_operations, size_t);
+  CS_REALLOC(ops->n_calls, ops->n_max_operations, size_t);
 
-  BFT_REALLOC(ops->n_group_classes, ops->n_max_operations, int);
-  BFT_REALLOC(ops->group_class_set, ops->n_max_operations, int *);
+  CS_REALLOC(ops->n_group_classes, ops->n_max_operations, int);
+  CS_REALLOC(ops->group_class_set, ops->n_max_operations, int *);
 
   for (i = old_size; i < ops->n_max_operations; i++) {
     ops->postfix[i] = nullptr;
@@ -571,17 +571,17 @@ _operation_list_free(_operation_list_t  *ops)
   int i = 0;
 
   if (ops != nullptr) {
-    BFT_FREE(ops->n_calls);
-    BFT_FREE(ops->n_group_classes);
+    CS_FREE(ops->n_calls);
+    CS_FREE(ops->n_group_classes);
     for (i = 0; i < ops->n_max_operations; i++) {
       if (ops->group_class_set[i] != nullptr)
-        BFT_FREE(ops->group_class_set[i]);
+        CS_FREE(ops->group_class_set[i]);
       if (ops->postfix[i] != nullptr)
         fvm_selector_postfix_destroy(ops->postfix + i);
     }
-    BFT_FREE(ops->postfix);
-    BFT_FREE(ops->group_class_set);
-    BFT_FREE(ops);
+    CS_FREE(ops->postfix);
+    CS_FREE(ops->group_class_set);
+    CS_FREE(ops);
   }
 
   return nullptr;
@@ -608,9 +608,9 @@ _create_operation_group_class_set(const fvm_selector_t  *this_selector,
   const fvm_selector_postfix_t  *pf
     = operations->postfix[operations->n_operations -1];
 
-  BFT_MALLOC(operations->group_class_set[operations->n_operations - 1],
-             this_selector->n_group_classes,
-             int);
+  CS_MALLOC(operations->group_class_set[operations->n_operations - 1],
+            this_selector->n_group_classes,
+            int);
 
   group_class_set
     = operations->group_class_set[operations->n_operations - 1];
@@ -633,9 +633,9 @@ _create_operation_group_class_set(const fvm_selector_t  *this_selector,
 
   operations->n_group_classes[operations->n_operations-1] = n_group_classes;
 
-  BFT_REALLOC(operations->group_class_set[operations->n_operations-1],
-              n_group_classes,
-              int);
+  CS_REALLOC(operations->group_class_set[operations->n_operations-1],
+             n_group_classes,
+             int);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("  - group_classes list: ");
@@ -777,7 +777,7 @@ fvm_selector_create(int                           dim,
 
   int n_group_classes = fvm_group_class_set_size(group_class_set);
 
-  BFT_MALLOC(selector, 1, fvm_selector_t);
+  CS_MALLOC(selector, 1, fvm_selector_t);
 
   selector->dim = dim;
   selector->n_elements = n_elements;
@@ -813,8 +813,8 @@ fvm_selector_create(int                           dim,
 
   if (group_class_id != nullptr && n_group_classes > 0) {
 
-    BFT_MALLOC(selector->_n_group_class_elements, n_group_classes, cs_lnum_t);
-    BFT_MALLOC(selector->_group_class_elements, n_group_classes, cs_lnum_t *);
+    CS_MALLOC(selector->_n_group_class_elements, n_group_classes, cs_lnum_t);
+    CS_MALLOC(selector->_group_class_elements, n_group_classes, cs_lnum_t *);
 
     /* Counting loop and allocation */
 
@@ -826,9 +826,9 @@ fvm_selector_create(int                           dim,
                                         - group_class_id_base] += 1;
 
     for (i = 0; i < n_group_classes; i++)
-      BFT_MALLOC(selector->_group_class_elements[i],
-                 selector->_n_group_class_elements[i],
-                 cs_lnum_t);
+      CS_MALLOC(selector->_group_class_elements[i],
+                selector->_n_group_class_elements[i],
+                cs_lnum_t);
 
     /* Definition loop */
 
@@ -872,40 +872,40 @@ fvm_selector_destroy(fvm_selector_t  *this_selector)
   _operation_list_free(this_selector->_operations);
 
   if (this_selector->_coords != nullptr)
-    BFT_FREE(this_selector->_coords);
+    CS_FREE(this_selector->_coords);
   if (this_selector->_normals != nullptr)
-    BFT_FREE(this_selector->_normals);
+    CS_FREE(this_selector->_normals);
 
   for (i = 0; i < this_selector->n_groups; i++)
-    BFT_FREE(this_selector->group_name[i]);
-  BFT_FREE(this_selector->group_name);
+    CS_FREE(this_selector->group_name[i]);
+  CS_FREE(this_selector->group_name);
 
-  BFT_FREE(this_selector->attribute);
+  CS_FREE(this_selector->attribute);
 
-  BFT_FREE(this_selector->n_class_groups);
-  BFT_FREE(this_selector->n_class_attributes);
+  CS_FREE(this_selector->n_class_groups);
+  CS_FREE(this_selector->n_class_attributes);
 
   for (i = 0; i < this_selector->n_group_classes; i++) {
     if (this_selector->group_ids[i] != nullptr)
-      BFT_FREE(this_selector->group_ids[i]);
+      CS_FREE(this_selector->group_ids[i]);
     if (this_selector->attribute_ids[i] != nullptr)
-      BFT_FREE(this_selector->attribute_ids[i]);
+      CS_FREE(this_selector->attribute_ids[i]);
   }
 
-  BFT_FREE(this_selector->group_ids);
-  BFT_FREE(this_selector->attribute_ids);
+  CS_FREE(this_selector->group_ids);
+  CS_FREE(this_selector->attribute_ids);
 
   if (this_selector->_group_class_elements != nullptr) {
     for (i = 0; i < this_selector->n_group_classes; i++)
-      BFT_FREE(this_selector->_group_class_elements[i]);
+      CS_FREE(this_selector->_group_class_elements[i]);
 
-    BFT_FREE(this_selector->_n_group_class_elements);
-    BFT_FREE(this_selector->_group_class_elements);
+    CS_FREE(this_selector->_n_group_class_elements);
+    CS_FREE(this_selector->_group_class_elements);
   }
 
   /* Delete selector */
 
-  BFT_FREE(this_selector);
+  CS_FREE(this_selector);
 
   return nullptr;
 }
