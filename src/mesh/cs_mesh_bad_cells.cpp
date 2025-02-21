@@ -41,12 +41,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_halo.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -300,7 +300,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
 
   const double pi = 4 * atan(1);
 
-  BFT_MALLOC(w1, 6 * n_cells_wghosts, cs_real_t);
+  CS_MALLOC(w1, 6 * n_cells_wghosts, cs_real_t);
 
   for (i = 0; i < 6 * n_cells_wghosts; i++)
     w1[i] = 0.;
@@ -444,7 +444,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
       bad_cell_flag[cell_id] |= CS_BAD_CELL_LSQ_GRAD;
   }
 
-  BFT_FREE(w1);
+  CS_FREE(w1);
 
   if (mesh->halo != nullptr)
     cs_halo_sync_untyped(mesh->halo,
@@ -544,7 +544,7 @@ _bad_cells_post(const cs_mesh_t             *mesh,
   if (_type_flag_visualize[call_type] == 0)
     return;
 
-  BFT_MALLOC(bad_cells_v, n_cells, int);
+  CS_MALLOC(bad_cells_v, n_cells, int);
 
   /* Loop on criteria */
   /*------------------*/
@@ -584,7 +584,7 @@ _bad_cells_post(const cs_mesh_t             *mesh,
 
   }
 
-  BFT_FREE(bad_cells_v);
+  CS_FREE(bad_cells_v);
 }
 
 /*----------------------------------------------------------------------------
@@ -640,7 +640,7 @@ _to_regularize(const cs_mesh_t             *mesh,
   static cs_gnum_t nb_bad_cells = 0;
 
   cs_real_3_t *vol;
-  BFT_MALLOC(vol, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(vol, n_cells_ext, cs_real_3_t);
 
   //FIXME tensor ?
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -697,7 +697,7 @@ _to_regularize(const cs_mesh_t             *mesh,
 
   cs_parall_counter(&nb_bad_cells, 1);
 
-  BFT_FREE(vol);
+  CS_FREE(vol);
 
   /* If no bad cells, no need of regularisation */
   if (nb_bad_cells <= 0) {
@@ -858,9 +858,9 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   /* Global bad cells storing array initialization */
 
   if (mesh_quantities->bad_cell_flag == nullptr)
-    BFT_MALLOC(mesh_quantities->bad_cell_flag,
-               mesh->n_cells_with_ghosts,
-               unsigned);
+    CS_MALLOC(mesh_quantities->bad_cell_flag,
+              mesh->n_cells_with_ghosts,
+              unsigned);
 
   bad_cell_flag = mesh_quantities->bad_cell_flag;
 
@@ -1011,7 +1011,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
     cs_lnum_t  *bad_guilt_cells = nullptr;
 
-    BFT_MALLOC(bad_guilt_cells, n_cells_wghosts, cs_lnum_t);
+    CS_MALLOC(bad_guilt_cells, n_cells_wghosts, cs_lnum_t);
 
     for (i = 0; i < n_cells_wghosts; i++)
       bad_guilt_cells[i] = 0;
@@ -1035,7 +1035,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
       }
     }
 
-    BFT_FREE(bad_guilt_cells);
+    CS_FREE(bad_guilt_cells);
 
     if (_type_flag_compute[call_type_log] & CS_BAD_CELL_GUILT) {
 

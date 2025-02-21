@@ -39,7 +39,6 @@
  *---------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_order.h"
@@ -47,6 +46,7 @@
 #include "fvm/fvm_writer.h"
 
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_post.h"
 #include "base/cs_timer_stats.h"
@@ -322,7 +322,7 @@ cs_join_post_mesh(const char            *mesh_name,
 
   /* Define vertex_coord for fvm_nodal_set_shared_vertices() */
 
-  BFT_MALLOC(vertex_coord, 3*join_mesh->n_vertices, cs_real_t);
+  CS_MALLOC(vertex_coord, 3*join_mesh->n_vertices, cs_real_t);
 
   for (i = 0; i < join_mesh->n_vertices; i++)
     for (j = 0; j < 3; j++)
@@ -337,7 +337,7 @@ cs_join_post_mesh(const char            *mesh_name,
 
   /* Order vertices by increasing global number */
 
-  BFT_MALLOC(vertex_gnum, join_mesh->n_vertices, cs_gnum_t);
+  CS_MALLOC(vertex_gnum, join_mesh->n_vertices, cs_gnum_t);
 
   for (i = 0; i < join_mesh->n_vertices; i++)
     vertex_gnum[i] = (join_mesh->vertices[i]).gnum;
@@ -349,26 +349,26 @@ cs_join_post_mesh(const char            *mesh_name,
 
   fvm_writer_export_nodal(writer, post_mesh);
 
-  BFT_FREE(vertex_gnum);
-  BFT_FREE(vertex_coord);
+  CS_FREE(vertex_gnum);
+  CS_FREE(vertex_coord);
 
   /* Write rank associated to each face */
 
-  BFT_MALLOC(ifield, join_mesh->n_faces, int);
+  CS_MALLOC(ifield, join_mesh->n_faces, int);
 
   for (i = 0; i < join_mesh->n_faces; i++)
     ifield[i] = local_rank;
 
   _post_elt_ifield(post_mesh, _("Rank"), 1, ifield);
 
-  BFT_FREE(ifield);
+  CS_FREE(ifield);
 
   /* Write vertex tolerance */
 
   n_vertices = fvm_nodal_get_n_entities(post_mesh, 0);
 
-  BFT_MALLOC(parent_vtx_num, n_vertices, cs_lnum_t);
-  BFT_MALLOC(dfield, n_vertices, double);
+  CS_MALLOC(parent_vtx_num, n_vertices, cs_lnum_t);
+  CS_MALLOC(dfield, n_vertices, double);
 
   fvm_nodal_get_parent_num(post_mesh, 0, parent_vtx_num);
 
@@ -381,8 +381,8 @@ cs_join_post_mesh(const char            *mesh_name,
 
   _post_vtx_dfield(post_mesh, _("VtxTolerance"), 1, dfield);
 
-  BFT_FREE(parent_vtx_num);
-  BFT_FREE(dfield);
+  CS_FREE(parent_vtx_num);
+  CS_FREE(dfield);
 
   post_mesh = fvm_nodal_destroy(post_mesh);
 
@@ -451,12 +451,12 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 
   adj_mesh_id = cs_post_get_free_mesh_id();
 
-  BFT_MALLOC(mesh_name, strlen("AdjacentJoinFaces_j") + 2 + 1, char);
+  CS_MALLOC(mesh_name, strlen("AdjacentJoinFaces_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "AdjacentJoinFaces_j", join_param.num);
 
   cs_lnum_t *i_adj_faces, *b_adj_faces;
-  BFT_MALLOC(i_adj_faces, join_select->n_i_adj_faces, cs_lnum_t);
-  BFT_MALLOC(b_adj_faces, join_select->n_b_adj_faces, cs_lnum_t);
+  CS_MALLOC(i_adj_faces, join_select->n_i_adj_faces, cs_lnum_t);
+  CS_MALLOC(b_adj_faces, join_select->n_b_adj_faces, cs_lnum_t);
   for (cs_lnum_t i = 0; i < join_select->n_i_adj_faces; i++)
     i_adj_faces[i] = join_select->i_adj_faces[i] - 1;
   for (cs_lnum_t i = 0; i < join_select->n_b_adj_faces; i++)
@@ -470,8 +470,8 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
                                             join_select->i_adj_faces,
                                             join_select->b_adj_faces);
 
-  BFT_FREE(i_adj_faces);
-  BFT_FREE(b_adj_faces);
+  CS_FREE(i_adj_faces);
+  CS_FREE(b_adj_faces);
 
   cs_post_define_existing_mesh(adj_mesh_id,
                                adj_mesh,
@@ -483,11 +483,11 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 
   sel_mesh_id = cs_post_get_free_mesh_id();
 
-  BFT_REALLOC(mesh_name, strlen("JoinFacesAfterMerge_j") + 2 + 1, char);
+  CS_REALLOC(mesh_name, strlen("JoinFacesAfterMerge_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "JoinFacesAfterMerge_j", join_param.num);
 
   cs_lnum_t *faces;
-  BFT_MALLOC(faces, join_select->n_faces, cs_lnum_t);
+  CS_MALLOC(faces, join_select->n_faces, cs_lnum_t);
   for (cs_lnum_t i = 0; i < join_select->n_faces; i++)
     b_adj_faces[i] = join_select->faces[i] - 1;
 
@@ -507,7 +507,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
                                1,
                                writer_ids);
 
-  BFT_FREE(faces);
+  CS_FREE(faces);
 
   /* Post */
 
@@ -517,7 +517,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
   cs_post_free_mesh(sel_mesh_id);
   cs_post_free_mesh(adj_mesh_id);
 
-  BFT_FREE(mesh_name);
+  CS_FREE(mesh_name);
 
   cs_timer_stats_switch(t_top_id);
 }
@@ -561,8 +561,8 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
 
   /* Define list of faces to post-process */
 
-  BFT_MALLOC(post_i_faces, n_new_i_faces, cs_lnum_t);
-  BFT_MALLOC(post_b_faces, n_new_b_faces, cs_lnum_t);
+  CS_MALLOC(post_i_faces, n_new_i_faces, cs_lnum_t);
+  CS_MALLOC(post_b_faces, n_new_b_faces, cs_lnum_t);
 
   for (i = n_old_i_faces, j = 0; i < mesh->n_i_faces; i++, j++)
     post_i_faces[j] = i;
@@ -570,7 +570,7 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
   for (i = n_old_b_faces-n_select_faces, j = 0; i < mesh->n_b_faces; i++, j++)
     post_b_faces[j] = i;
 
-  BFT_MALLOC(mesh_name, strlen("InteriorJoinedFaces_j") + 2 + 1, char);
+  CS_MALLOC(mesh_name, strlen("InteriorJoinedFaces_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "InteriorJoinedFaces_j", join_param.num);
 
   post_i_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
@@ -594,7 +594,7 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
     fvm_nodal_t  *post_b_mesh = nullptr;
     post_b_mesh_id = cs_post_get_free_mesh_id();
 
-    BFT_REALLOC(mesh_name, strlen("BoundaryJoinedFaces_j") + 2 + 1, char);
+    CS_REALLOC(mesh_name, strlen("BoundaryJoinedFaces_j") + 2 + 1, char);
     sprintf(mesh_name,"%s%02d", "BoundaryJoinedFaces_j", join_param.num);
 
     post_b_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
@@ -624,9 +624,9 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
     cs_post_free_mesh(post_b_mesh_id);
   cs_post_free_mesh(post_i_mesh_id);
 
-  BFT_FREE(post_i_faces);
-  BFT_FREE(post_b_faces);
-  BFT_FREE(mesh_name);
+  CS_FREE(post_i_faces);
+  CS_FREE(post_b_faces);
+  CS_FREE(mesh_name);
 
   cs_timer_stats_switch(t_top_id);
 }
@@ -659,7 +659,7 @@ cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
   char  *name = nullptr;
   fvm_nodal_t *export_mesh = nullptr;
 
-  BFT_MALLOC(name, strlen("CleanFaces_j") + 2 + 1, char);
+  CS_MALLOC(name, strlen("CleanFaces_j") + 2 + 1, char);
   sprintf(name,"%s%02d", "CleanFaces_j", param.num);
 
   export_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
@@ -685,7 +685,7 @@ cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
 
   cs_post_free_mesh(post_mesh_id);
 
-  BFT_FREE(name);
+  CS_FREE(name);
 
   cs_timer_stats_switch(t_top_id);
 }
@@ -716,7 +716,7 @@ cs_join_post_dump_mesh(const char            *basename,
   /* Define a specific name for the output */
 
   len = strlen("log/JoinDBG_.dat") + strlen(basename) + 4 + 2 + 1;
-  BFT_MALLOC(fullname, len, char);
+  CS_MALLOC(fullname, len, char);
   sprintf(fullname, "log%cJoin%02dDBG_%s%04d.dat", DIR_SEPARATOR,
           param.num, basename, rank_id);
 
@@ -741,7 +741,7 @@ cs_join_post_dump_mesh(const char            *basename,
 
         char *mesh_name = nullptr;
 
-        BFT_MALLOC(mesh_name, strlen(basename) + 2 + 2 + 5 + 1, char);
+        CS_MALLOC(mesh_name, strlen(basename) + 2 + 2 + 5 + 1, char);
         sprintf(mesh_name,"%s%02d%s%05d", basename, param.num, "_n", rank);
 
         if (rank_id == rank)
@@ -753,13 +753,13 @@ cs_join_post_dump_mesh(const char            *basename,
           cs_join_mesh_destroy(&tmp);
         }
 
-        BFT_FREE(mesh_name);
+        CS_FREE(mesh_name);
 
       } /* End of loop on ranks */
     } /* End of parallel treatment */
   }
 
-  BFT_FREE(fullname);
+  CS_FREE(fullname);
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1)

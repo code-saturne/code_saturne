@@ -46,10 +46,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -175,11 +175,11 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
 
   cs_real_t *y, *tpaadf;
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
-  BFT_MALLOC(y, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(y, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
 
   if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS) {
 
-    BFT_MALLOC(tpaadf, nfabor, cs_real_t );
+    CS_MALLOC(tpaadf, nfabor, cs_real_t );
     for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++)
       tpaadf[ifac] = f_b_temp->val[ifac] + tkelvi;
 
@@ -208,7 +208,7 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
     fscanf(radfile, "%d", &ntsto);
 
     /* Number of tabulated gas phase temperatures    */
-    BFT_MALLOC(tsto, ntsto, cs_real_t);
+    CS_MALLOC(tsto, ntsto, cs_real_t);
 
     fgets(line, 256, radfile);
     fgets(line, 256, radfile);
@@ -229,7 +229,7 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
     /* Number of tabulated ratios ph2o/pco2     */
     fscanf(radfile, "%d", &nysto);
 
-    BFT_MALLOC(ysto, nysto, cs_real_t);
+    CS_MALLOC(ysto, nysto, cs_real_t);
 
     fgets(line, 256, radfile);
     fgets(line, 256, radfile);
@@ -251,8 +251,8 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
     fscanf(radfile, "%lf %lf", &tref, &xh2oref);
     fgets(line, 256, radfile);
 
-    BFT_MALLOC(asto,  nwsgg * nysto * ntsto, cs_real_t);
-    BFT_MALLOC(ksto2, nwsgg * nysto * ntsto, cs_real_t);
+    CS_MALLOC(asto,  nwsgg * nysto * ntsto, cs_real_t);
+    CS_MALLOC(ksto2, nwsgg * nysto * ntsto, cs_real_t);
 
     /*    READING THE PARAMETERS */
     fgets(line, 256, radfile);
@@ -262,7 +262,7 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
 
       for (int j = 0; j < ntsto; j++) {
         cs_real_t *temp;
-        BFT_MALLOC(temp, 2*nysto, cs_real_t);
+        CS_MALLOC(temp, 2*nysto, cs_real_t);
         int nvalues;
         _line_to_array(radfile, temp, &nvalues);
         assert(nvalues == nysto * 2);
@@ -276,7 +276,7 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
           /*               the k-th ratio of ph2o/pco2, and */
           /*               the j-th tabulated temperature   */
         }
-        BFT_FREE(temp);
+        CS_FREE(temp);
       }
     }
   }
@@ -402,7 +402,7 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
 
   }
 
-  BFT_FREE(tpaadf);
+  CS_FREE(tpaadf);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -448,7 +448,7 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
 
   if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS) {
 
-    BFT_MALLOC(tpaadf, nfabor, cs_real_t );
+    CS_MALLOC(tpaadf, nfabor, cs_real_t );
     for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++)
       tpaadf[ifac] = f_b_temp->val[ifac] + tkelvi;
 
@@ -477,7 +477,7 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
     fscanf(radfile, "%d", &ntsto);
 
     /* Number of tabulated gas phase temperatures */
-    BFT_MALLOC(tsto, ntsto, cs_real_t);
+    CS_MALLOC(tsto, ntsto, cs_real_t);
 
     fgets(line, 256, radfile);
     fgets(line, 256, radfile);
@@ -498,7 +498,7 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
     /* Number of tabulated h2o volume fractions  */
     fscanf(radfile, "%d", &nxh2osto);
 
-    BFT_MALLOC(xh2osto, nxh2osto, cs_real_t);
+    CS_MALLOC(xh2osto, nxh2osto, cs_real_t);
 
     fgets(line, 256, radfile);
     fgets(line, 256, radfile);
@@ -520,9 +520,9 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
     fscanf(radfile, "%lf %lf", &tref, &xh2oref);
     fgets(line, 256, radfile);
 
-    BFT_MALLOC(asto,  nwsgg * nxh2osto * ntsto, cs_real_t);
-    BFT_MALLOC(ksto1, nwsgg * nxh2osto, cs_real_t);
-    BFT_MALLOC(ksto2, nwsgg * nxh2osto * ntsto, cs_real_t);
+    CS_MALLOC(asto,  nwsgg * nxh2osto * ntsto, cs_real_t);
+    CS_MALLOC(ksto1, nwsgg * nxh2osto, cs_real_t);
+    CS_MALLOC(ksto2, nwsgg * nxh2osto * ntsto, cs_real_t);
 
     /*    READING THE PARAMETERS */
     fgets(line, 256, radfile);
@@ -532,7 +532,7 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
 
       for (int j = 0; j < ntsto; j++) {
         cs_real_t *temp;
-        BFT_MALLOC(temp, 2*nxh2osto, cs_real_t);
+        CS_MALLOC(temp, 2*nxh2osto, cs_real_t);
         int nvalues;
         _line_to_array(radfile, temp, &nvalues);
         assert(nvalues == nxh2osto * 2);
@@ -550,7 +550,7 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
            *               the k-th h2o volume fraction, and
            *               the j-th tabulated temperature   */
         }
-        BFT_FREE(temp);
+        CS_FREE(temp);
       }
     }
   }
@@ -662,20 +662,21 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
 
     /* Absortion Coefficient     */
 
-    for (int i = 0; i < nwsgg; i++)
-      alocb[ifac + i * nfabor] =   (1.0 - rt) * (1.0 - rx)
-                                  * asto[i + ix * nwsgg + it * nxh2osto * nwsgg]
-                                 +  (1.0 - rt) * rx
-                                  * asto[i + (ix + 1) * nwsgg + it * nxh2osto * nwsgg]
-                                 +  rt * (1.0 - rx)
-                                  * asto[i + ix * nwsgg + (it + 1) * nxh2osto * nwsgg]
-                                 +  rt * rx
-                                  * asto[i + (ix + 1) * nwsgg + (it + 1) * nxh2osto * nwsgg];
-                                 /* Local weight of the i-th grey gas   */
-
+    for (int i = 0; i < nwsgg; i++) {
+      alocb[ifac + i * nfabor]
+        =      (1.0 - rt) * (1.0 - rx)
+             * asto[i + ix*nwsgg + it*nxh2osto*nwsgg]
+          +    (1.0 - rt) * rx
+             * asto[i + (ix+1)*nwsgg + it*nxh2osto*nwsgg]
+          +    rt * (1.0 - rx)
+             * asto[i + ix*nwsgg + (it+1) * nxh2osto*nwsgg]
+          +    rt * rx
+             * asto[i + (ix + 1) * nwsgg + (it + 1) * nxh2osto * nwsgg];
+              /* Local weight of the i-th grey gas   */
+    }
   }
 
-  BFT_FREE(tpaadf);
+  CS_FREE(tpaadf);
 }
 
 /*----------------------------------------------------------------------------*/

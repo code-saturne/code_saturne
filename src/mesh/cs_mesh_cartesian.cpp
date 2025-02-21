@@ -35,11 +35,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_block_dist.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
@@ -234,12 +234,12 @@ _cs_mesh_cartesian_init(const char *name,
               "Error: a mesh with name \"%s\" allready exists.\n",
               name);
 
-  BFT_MALLOC(_new_mesh, 1, cs_mesh_cartesian_params_t);
+  CS_MALLOC(_new_mesh, 1, cs_mesh_cartesian_params_t);
 
   _new_mesh->name = nullptr;
   if (name != nullptr && strlen(name) > 0) {
     size_t _l = strlen(name);
-    BFT_MALLOC(_new_mesh->name, _l+1, char);
+    CS_MALLOC(_new_mesh->name, _l+1, char);
     strcpy(_new_mesh->name, name);
     _new_mesh->name[_l] = '\0';
   }
@@ -260,7 +260,7 @@ _cs_mesh_cartesian_init(const char *name,
   _new_mesh->n_vtx_on_rank   = 0;
 
   _new_mesh->ndir = ndir;
-  BFT_MALLOC(_new_mesh->params, ndir, _cs_mesh_cartesian_direction_t *);
+  CS_MALLOC(_new_mesh->params, ndir, _cs_mesh_cartesian_direction_t *);
   for (int i = 0; i < ndir; i++)
     _new_mesh->params[i] = nullptr;
 
@@ -268,7 +268,7 @@ _cs_mesh_cartesian_init(const char *name,
   _new_mesh->id = _id;
 
   _n_structured_meshes += 1;
-  BFT_REALLOC(_mesh_params, _n_structured_meshes ,cs_mesh_cartesian_params_t *);
+  CS_REALLOC(_mesh_params, _n_structured_meshes ,cs_mesh_cartesian_params_t *);
 
   _mesh_params[_id] = _new_mesh;
 
@@ -302,7 +302,7 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
     bft_error(__FILE__, __LINE__, 0,
               _("Error: smax < smin in %s\n"), __func__);
 
-  BFT_MALLOC(dirp, 1, _cs_mesh_cartesian_direction_t);
+  CS_MALLOC(dirp, 1, _cs_mesh_cartesian_direction_t);
 
   dirp->ncells = ncells;
   dirp->smin   = smin;
@@ -314,7 +314,7 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
 
   if (law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
     dirp->progression = -1.;
-    BFT_MALLOC(dirp->s, 1, cs_real_t);
+    CS_MALLOC(dirp->s, 1, cs_real_t);
 
     if (dirp->ncells > 0)
       dirp->s[0] = dir_len / dirp->ncells;
@@ -327,7 +327,7 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
     cs_real_t rho_n = pow(rho, dirp->ncells);
     cs_real_t dx0   = dir_len * (rho - 1.) / (rho_n - 1.);
 
-    BFT_MALLOC(dirp->s, ncells+1, cs_real_t);
+    CS_MALLOC(dirp->s, ncells+1, cs_real_t);
 
     cs_real_t dx_cur = dx0;
     dirp->s[0] = smin;
@@ -340,7 +340,7 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
   else if (law == CS_MESH_CARTESIAN_PARABOLIC_LAW) {
     dirp->progression = progression;
 
-    BFT_MALLOC(dirp->s, ncells+1, cs_real_t);
+    CS_MALLOC(dirp->s, ncells+1, cs_real_t);
     cs_real_t rho   = dirp->progression;
 
     cs_real_t dx0 = 0.;
@@ -767,12 +767,12 @@ cs_mesh_cartesian_define_dir_user(cs_mesh_cartesian_params_t *mp,
               idir);
 
   _cs_mesh_cartesian_direction_t *dirp = nullptr;
-  BFT_MALLOC(dirp, 1, _cs_mesh_cartesian_direction_t);
+  CS_MALLOC(dirp, 1, _cs_mesh_cartesian_direction_t);
 
   dirp->ncells = ncells;
   dirp->law    = CS_MESH_CARTESIAN_USER_LAW;
 
-  BFT_MALLOC(dirp->s, ncells + 1, cs_real_t);
+  CS_MALLOC(dirp->s, ncells + 1, cs_real_t);
   for (int i = 0; i < ncells+1; i++)
     dirp->s[i] = vtx_coord[i];
 
@@ -782,7 +782,6 @@ cs_mesh_cartesian_define_dir_user(cs_mesh_cartesian_params_t *mp,
   dirp->progression = -1.;
 
   mp->params[idir] = dirp;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -829,7 +828,7 @@ cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
   /* There are n_cells + 1 coordinates to define */
 
   cs_real_t  *vtx_coord = nullptr;
-  BFT_MALLOC(vtx_coord, n_tot_cells + 1, cs_real_t);
+  CS_MALLOC(vtx_coord, n_tot_cells + 1, cs_real_t);
 
   vtx_coord[0] = part_coords[0];
 
@@ -880,7 +879,7 @@ cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
 
   cs_mesh_cartesian_define_dir_user(mp, idir, n_tot_cells, vtx_coord);
 
-  BFT_FREE(vtx_coord);
+  CS_FREE(vtx_coord);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -934,7 +933,7 @@ cs_mesh_cartesian_define_from_csv(const char  *name,
       sscanf(line, "%d;%d;%d", &nc[0], &nc[1], &nc[2]);
 
       for (int i = 0; i < _ndim; i++)
-        BFT_MALLOC(s[i], nc[i], cs_real_t);
+        CS_MALLOC(s[i], nc[i], cs_real_t);
 
       ln += 1;
       continue;
@@ -979,7 +978,7 @@ cs_mesh_cartesian_define_from_csv(const char  *name,
     cs_mesh_cartesian_define_dir_user(mp, i, nc[i]-1, s[i]);
 
   for (int i = 0; i < _ndim; i++)
-    BFT_FREE(s[i]);
+    CS_FREE(s[i]);
 
   fclose(f);
 }
@@ -1047,7 +1046,7 @@ cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t  *mp,
                "which was allready defined.\n",
                idim);
     bft_printf_flush();
-    BFT_FREE(mp->params[idim]);
+    CS_FREE(mp->params[idim]);
   }
 
   assert(idim < mp->ndir);
@@ -1279,13 +1278,13 @@ cs_mesh_cartesian_block_connectivity(int                 id,
   /* --------- */
 
   if (mb->cell_gc_id == nullptr)
-    BFT_MALLOC(mb->cell_gc_id, n_cells, int);
+    CS_MALLOC(mb->cell_gc_id, n_cells, int);
 
   for (cs_gnum_t i = 0; i < mp->n_cells_on_rank; i++)
     mb->cell_gc_id[i + _rank_c_offset] = mp->gc_id_shift + 1;
 
   if (mb->face_gc_id == nullptr)
-    BFT_MALLOC(mb->face_gc_id, n_faces, int);
+    CS_MALLOC(mb->face_gc_id, n_faces, int);
 
   // Default face group is 8
   for (cs_gnum_t i = 0; i < mp->n_faces_on_rank; i++)
@@ -1293,7 +1292,7 @@ cs_mesh_cartesian_block_connectivity(int                 id,
 
   /* number of vertices per face array */
   if (mb->face_vertices_idx == nullptr) {
-    BFT_MALLOC(mb->face_vertices_idx, n_faces + 1, cs_lnum_t);
+    CS_MALLOC(mb->face_vertices_idx, n_faces + 1, cs_lnum_t);
     /* First value is always 0 */
     mb->face_vertices_idx[0] = 0;
   }
@@ -1304,9 +1303,9 @@ cs_mesh_cartesian_block_connectivity(int                 id,
 
   /* Face to cell connectivity using global numbering */
   if (mb->face_cells == nullptr)
-    BFT_MALLOC(mb->face_cells, 2*n_faces, cs_gnum_t);
+    CS_MALLOC(mb->face_cells, 2*n_faces, cs_gnum_t);
   if (mb->face_vertices == nullptr)
-    BFT_MALLOC(mb->face_vertices, 4*n_faces, cs_gnum_t);
+    CS_MALLOC(mb->face_vertices, 4*n_faces, cs_gnum_t);
 
   /* Global numbering starts at 1! */
 
@@ -1364,7 +1363,7 @@ cs_mesh_cartesian_block_connectivity(int                 id,
     }
   }
 
-  BFT_REALLOC(mb->vertex_coords, 3*(_rank_v_offset + n_vertices), cs_real_t);
+  CS_REALLOC(mb->vertex_coords, 3*(_rank_v_offset + n_vertices), cs_real_t);
 
   /* We should find a better way of filtering what is built on the
      current rank, but currently ignore everything which is out of range */
@@ -1402,7 +1401,6 @@ cs_mesh_cartesian_block_connectivity(int                 id,
       }
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1449,14 +1447,14 @@ cs_mesh_cartesian_params_destroy(void)
 
   for (int i = 0; i < _n_structured_meshes; i++) {
     for (int j = 0; j < _mesh_params[i]->ndir; j++) {
-      BFT_FREE(_mesh_params[i]->params[j]->s);
-      BFT_FREE(_mesh_params[i]->params[j]);
+      CS_FREE(_mesh_params[i]->params[j]->s);
+      CS_FREE(_mesh_params[i]->params[j]);
     }
-    BFT_FREE(_mesh_params[i]->params);
+    CS_FREE(_mesh_params[i]->params);
 
-    BFT_FREE(_mesh_params[i]);
+    CS_FREE(_mesh_params[i]);
   }
-  BFT_FREE(_mesh_params);
+  CS_FREE(_mesh_params);
   _n_structured_meshes = 0;
 }
 

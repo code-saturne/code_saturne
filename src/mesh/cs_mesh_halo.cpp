@@ -38,7 +38,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -46,6 +45,7 @@
 
 #include "base/cs_base.h"
 #include "base/cs_interface.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_order.h"
 #include "base/cs_halo.h"
@@ -120,7 +120,7 @@ _fill_vtx_lookup(vtx_lookup_table_t        *vtx_lookup,
 
   const cs_lnum_t n_interfaces = cs_interface_set_size(ifs);
 
-  BFT_MALLOC(counter, vtx_lookup->n_vertices, cs_lnum_t);
+  CS_MALLOC(counter, vtx_lookup->n_vertices, cs_lnum_t);
 
   for (i = 0; i < vtx_lookup->n_vertices; i++)
     counter[i] = 0;
@@ -143,8 +143,7 @@ _fill_vtx_lookup(vtx_lookup_table_t        *vtx_lookup,
 
   } /* End of loop on ranks */
 
-  BFT_FREE(counter);
-
+  CS_FREE(counter);
 }
 
 /*---------------------------------------------------------------------------
@@ -175,7 +174,7 @@ _fill_vtx_lookup_with_perio(vtx_lookup_table_t        *vtx_lookup,
 
   assert(n_transforms > 0);
 
-  BFT_MALLOC(counter, vtx_lookup->n_vertices, cs_lnum_t);
+  CS_MALLOC(counter, vtx_lookup->n_vertices, cs_lnum_t);
 
   for (i = 0; i < vtx_lookup->n_vertices; i++)
     counter[i] = 0;
@@ -218,8 +217,7 @@ _fill_vtx_lookup_with_perio(vtx_lookup_table_t        *vtx_lookup,
 
   } /* End of loop on ranks */
 
-  BFT_FREE(counter);
-
+  CS_FREE(counter);
 }
 
 /*---------------------------------------------------------------------------
@@ -248,16 +246,16 @@ _vtx_lookup_create(cs_lnum_t                  n_vertices,
   const cs_lnum_t n_transforms = fvm_periodicity_get_n_transforms(periodicity);
   const cs_lnum_t n_interfaces = cs_interface_set_size(ifs);
 
-  BFT_MALLOC(vtx_lookup, 1, vtx_lookup_table_t);
+  CS_MALLOC(vtx_lookup, 1, vtx_lookup_table_t);
 
   vtx_lookup->n_vertices = n_vertices;
   vtx_lookup->n_interfaces = n_interfaces;
   vtx_lookup->n_transforms = n_transforms;
   vtx_lookup->n_categories = (n_transforms + 1)*n_interfaces;
 
-  BFT_MALLOC(vtx_lookup->index, n_vertices + 1, cs_lnum_t);
-  BFT_MALLOC(vtx_lookup->if_ranks, n_interfaces, cs_lnum_t);
-  BFT_MALLOC(vtx_lookup->rank_ids, n_interfaces, cs_lnum_t);
+  CS_MALLOC(vtx_lookup->index, n_vertices + 1, cs_lnum_t);
+  CS_MALLOC(vtx_lookup->if_ranks, n_interfaces, cs_lnum_t);
+  CS_MALLOC(vtx_lookup->rank_ids, n_interfaces, cs_lnum_t);
 
   for (i = 0; i < n_vertices + 1; i++)
     vtx_lookup->index[i] = 0;
@@ -297,9 +295,9 @@ _vtx_lookup_create(cs_lnum_t                  n_vertices,
 
       assert(sizeof(cs_lnum_t) == sizeof(cs_lnum_t));
 
-      BFT_MALLOC(order, n_interfaces - 1, cs_lnum_t);
-      BFT_MALLOC(buffer, n_interfaces - 1, cs_lnum_t);
-      BFT_MALLOC(_rank_ids, n_interfaces , cs_lnum_t);
+      CS_MALLOC(order, n_interfaces - 1, cs_lnum_t);
+      CS_MALLOC(buffer, n_interfaces - 1, cs_lnum_t);
+      CS_MALLOC(_rank_ids, n_interfaces , cs_lnum_t);
 
       _rank_ids[0] = vtx_lookup->rank_ids[0];
       for (i = 1; i < n_interfaces; i++) {
@@ -317,9 +315,9 @@ _vtx_lookup_create(cs_lnum_t                  n_vertices,
         vtx_lookup->rank_ids[i+1] = _rank_ids[order[i] + 1];
       }
 
-      BFT_FREE(buffer);
-      BFT_FREE(order);
-      BFT_FREE(_rank_ids);
+      CS_FREE(buffer);
+      CS_FREE(order);
+      CS_FREE(_rank_ids);
 
     } /* End of ordering ranks */
 
@@ -343,13 +341,13 @@ _vtx_lookup_create(cs_lnum_t                  n_vertices,
   for (i = 0; i < n_vertices; i++)
     vtx_lookup->index[i+1] += vtx_lookup->index[i];
 
-  BFT_MALLOC(vtx_lookup->rank_list, vtx_lookup->index[n_vertices], cs_lnum_t);
+  CS_MALLOC(vtx_lookup->rank_list, vtx_lookup->index[n_vertices], cs_lnum_t);
 
   /* Second loop to fill table(s) */
 
   if (n_transforms > 0) {
 
-    BFT_MALLOC(vtx_lookup->type_list, vtx_lookup->index[n_vertices], cs_lnum_t);
+    CS_MALLOC(vtx_lookup->type_list, vtx_lookup->index[n_vertices], cs_lnum_t);
     _fill_vtx_lookup_with_perio(vtx_lookup, ifs);
 
   }
@@ -375,15 +373,15 @@ _vtx_lookup_destroy(vtx_lookup_table_t  **vtx_lookup)
 {
   vtx_lookup_table_t  *vl = *vtx_lookup;
 
-  BFT_FREE(vl->if_ranks);
-  BFT_FREE(vl->rank_ids);
-  BFT_FREE(vl->index);
-  BFT_FREE(vl->rank_list);
+  CS_FREE(vl->if_ranks);
+  CS_FREE(vl->rank_ids);
+  CS_FREE(vl->index);
+  CS_FREE(vl->rank_list);
 
   if (vl->type_list != nullptr)
-    BFT_FREE(vl->type_list);
+    CS_FREE(vl->type_list);
 
-  BFT_FREE(*vtx_lookup);
+  CS_FREE(*vtx_lookup);
 }
 
 /*---------------------------------------------------------------------------
@@ -829,9 +827,9 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
   if (gcell_faces_idx != nullptr && gcell_faces_lst != nullptr) {
 
-    BFT_MALLOC(vtx_checker, n_categories, cs_lnum_t);
-    BFT_MALLOC(face_checker, n_categories, cs_halo_type_t);
-    BFT_MALLOC(cell_tag, n_cells, cs_halo_type_t);
+    CS_MALLOC(vtx_checker, n_categories, cs_lnum_t);
+    CS_MALLOC(face_checker, n_categories, cs_halo_type_t);
+    CS_MALLOC(cell_tag, n_cells, cs_halo_type_t);
 
     /* First loop to create index and allocate cell_list */
 
@@ -896,7 +894,7 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
     /* Initialize counter */
 
-    BFT_MALLOC(counter, 2*n_categories, cs_lnum_t);
+    CS_MALLOC(counter, 2*n_categories, cs_lnum_t);
 
     for (i = 0; i < 2*n_categories; i++)
       counter[i] = 0;
@@ -966,10 +964,10 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
     /* Free memory */
 
-    BFT_FREE(vtx_checker);
-    BFT_FREE(face_checker);
-    BFT_FREE(counter);
-    BFT_FREE(cell_tag);
+    CS_FREE(vtx_checker);
+    CS_FREE(face_checker);
+    CS_FREE(counter);
+    CS_FREE(cell_tag);
 
   } /* End if gcell_face_idx and gcell_faces_lst != nullptr */
 
@@ -1015,7 +1013,7 @@ _get_vertex_tag(cs_lnum_t                  n_vertices,
 
   const int  ifs_size = cs_interface_set_size(vertex_ifs);
 
-  BFT_MALLOC(vertex_tag, n_vertices, cs_lnum_t);
+  CS_MALLOC(vertex_tag, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++)
     vertex_tag[i] = 0;
@@ -1118,8 +1116,8 @@ _fill_halo(cs_mesh_t  *mesh)
 
 #if defined(HAVE_MPI)
   if (halo->n_c_domains*2 > 128) {
-    BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
-    BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+    CS_MALLOC(request, halo->n_c_domains*2, MPI_Request);
+    CS_MALLOC(status, halo->n_c_domains*2, MPI_Status);
   }
 #endif
 
@@ -1150,7 +1148,7 @@ _fill_halo(cs_mesh_t  *mesh)
     MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
-  BFT_MALLOC(count, 2*n_c_domains, cs_lnum_t);
+  CS_MALLOC(count, 2*n_c_domains, cs_lnum_t);
 
   /* Send data to distant ranks */
 
@@ -1190,7 +1188,7 @@ _fill_halo(cs_mesh_t  *mesh)
 #endif
   request_count = 0;
 
-  BFT_FREE(count);
+  CS_FREE(count);
 
   /* Build index */
   /*-------------*/
@@ -1211,7 +1209,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
     const cs_lnum_t n_elts_to_exchange = 2 * n_transforms;
 
-    BFT_MALLOC(exchange_buffer, 4*n_transforms, cs_lnum_t);
+    CS_MALLOC(exchange_buffer, 4*n_transforms, cs_lnum_t);
 
     for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
 
@@ -1260,7 +1258,7 @@ _fill_halo(cs_mesh_t  *mesh)
 
     } /* End of loop on communicating ranks */
 
-    BFT_FREE(exchange_buffer);
+    CS_FREE(exchange_buffer);
 
     /* Build index values for perio_lst */
 
@@ -1304,8 +1302,8 @@ _fill_halo(cs_mesh_t  *mesh)
 
 #if defined(HAVE_MPI)
   if (request != _request) {
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
   }
 #endif
 
@@ -1905,8 +1903,8 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
 
   /* Allocate and initialize buffers */
 
-  BFT_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_lnum_t);
-  BFT_MALLOC(counter, n_ghost_cells, cs_lnum_t);
+  CS_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_lnum_t);
+  CS_MALLOC(counter, n_ghost_cells, cs_lnum_t);
 
   gcell_dist_vtx_idx[0] = 0;
   for (i = 0; i < n_ghost_cells; i++) {
@@ -1914,13 +1912,13 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
     counter[i] = 0;
   }
 
-  BFT_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
+  CS_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++)
     vtx_tag[i] = -1;
 
-  BFT_MALLOC(vtx_interface_idx, n_vertices + 1, cs_lnum_t);
-  BFT_MALLOC(dist_id_lst, max_lst_size, cs_lnum_t);
+  CS_MALLOC(vtx_interface_idx, n_vertices + 1, cs_lnum_t);
+  CS_MALLOC(dist_id_lst, max_lst_size, cs_lnum_t);
 
   for (i = 0; i < max_lst_size; i++)
     dist_id_lst[i] = -1;
@@ -1950,7 +1948,7 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
   for (i = 0; i < n_ghost_cells; i++)
     gcell_dist_vtx_idx[i+1] += gcell_dist_vtx_idx[i];
 
-  BFT_MALLOC(gcell_dist_vtx_lst, gcell_dist_vtx_idx[n_ghost_cells], cs_lnum_t);
+  CS_MALLOC(gcell_dist_vtx_lst, gcell_dist_vtx_idx[n_ghost_cells], cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++)
     vtx_tag[i] = -1;
@@ -1977,14 +1975,13 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
 
   cs_interface_set_free_match_ids(interface_set);
 
-  BFT_FREE(counter);
-  BFT_FREE(vtx_tag);
-  BFT_FREE(vtx_interface_idx);
-  BFT_FREE(dist_id_lst);
+  CS_FREE(counter);
+  CS_FREE(vtx_tag);
+  CS_FREE(vtx_interface_idx);
+  CS_FREE(dist_id_lst);
 
   *p_gcell_dist_vtx_idx = gcell_dist_vtx_idx;
   *p_gcell_dist_vtx_lst = gcell_dist_vtx_lst;
-
 }
 
 /*---------------------------------------------------------------------------
@@ -2035,8 +2032,8 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
     }
   }
 
-  BFT_MALLOC(send_idx_buffer, send_buffer_size, cs_lnum_t);
-  BFT_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_lnum_t);
+  CS_MALLOC(send_idx_buffer, send_buffer_size, cs_lnum_t);
+  CS_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_lnum_t);
 
   for (i = 0; i < n_ghost_cells + 1; i++)
     gcell_dist_vtx_idx[i] = 0;
@@ -2080,14 +2077,14 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
 
   } /* End of loop on if_ranks */
 
-  BFT_FREE(send_idx_buffer);
+  CS_FREE(send_idx_buffer);
 
   /* Define index */
 
   for (i = 0; i < n_ghost_cells; i++)
     gcell_dist_vtx_idx[i+1] += gcell_dist_vtx_idx[i];
 
-  BFT_MALLOC(gcell_dist_vtx_lst, gcell_dist_vtx_idx[n_ghost_cells], cs_lnum_t);
+  CS_MALLOC(gcell_dist_vtx_lst, gcell_dist_vtx_idx[n_ghost_cells], cs_lnum_t);
 
   /* Exchange lists to define gcell_dist_vtx_lst */
 
@@ -2265,8 +2262,8 @@ _update_i_face_cells(cs_mesh_t           *mesh,
   MPI_Status *status = _status;
 
   if (n_c_domains*2 > 128) {
-    BFT_MALLOC(request, n_c_domains*2, MPI_Request);
-    BFT_MALLOC(status, n_c_domains*2, MPI_Status);
+    CS_MALLOC(request, n_c_domains*2, MPI_Request);
+    CS_MALLOC(status, n_c_domains*2, MPI_Status);
   }
 #endif
 
@@ -2277,8 +2274,8 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
   /* Allocate auxiliary buffers */
 
-  BFT_MALLOC(l2d_fids, mesh->n_i_faces, cs_lnum_t);
-  BFT_MALLOC(halo2ifs_rank, n_c_domains, cs_lnum_t);
+  CS_MALLOC(l2d_fids, mesh->n_i_faces, cs_lnum_t);
+  CS_MALLOC(halo2ifs_rank, n_c_domains, cs_lnum_t);
 
   /* If there is an extended neighborhood, n_c_domains can be different
      from n_interfaces (c_rank with only vertices on the interface) */
@@ -2306,8 +2303,8 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
   /* First exchange number of faces linked to each ghost cells */
 
-  BFT_MALLOC(send_buffer, halo->n_send_elts[CS_HALO_EXTENDED], cs_lnum_t);
-  BFT_MALLOC(send_shift, n_c_domains + 1, cs_lnum_t);
+  CS_MALLOC(send_buffer, halo->n_send_elts[CS_HALO_EXTENDED], cs_lnum_t);
+  CS_MALLOC(send_shift, n_c_domains + 1, cs_lnum_t);
 
   send_shift[0] = 0;
   for (i = 0; i < halo->n_send_elts[CS_HALO_EXTENDED]; i++)
@@ -2391,7 +2388,7 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
   /* Exchange data over the ranks  => build face_count */
 
-  BFT_MALLOC(gcell_face_count, halo->n_elts[CS_HALO_EXTENDED], cs_lnum_t);
+  CS_MALLOC(gcell_face_count, halo->n_elts[CS_HALO_EXTENDED], cs_lnum_t);
 
   for (i = 0; i < halo->n_elts[CS_HALO_EXTENDED]; i++)
     gcell_face_count[i] = 0;
@@ -2476,7 +2473,7 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
   /* Build recv_shift */
 
-  BFT_MALLOC(recv_shift, n_c_domains + 1, cs_lnum_t);
+  CS_MALLOC(recv_shift, n_c_domains + 1, cs_lnum_t);
 
   recv_shift[0] = 0;
   for (rank = 0; rank < n_c_domains; rank++) {
@@ -2488,8 +2485,8 @@ _update_i_face_cells(cs_mesh_t           *mesh,
   for (rank = 0; rank < n_c_domains; rank++)
     recv_shift[rank+1] += recv_shift[rank];
 
-  BFT_REALLOC(send_buffer, send_shift[n_c_domains], cs_lnum_t);
-  BFT_MALLOC(recv_buffer, recv_shift[n_c_domains], cs_lnum_t);
+  CS_REALLOC(send_buffer, send_shift[n_c_domains], cs_lnum_t);
+  CS_MALLOC(recv_buffer, recv_shift[n_c_domains], cs_lnum_t);
 
   /* Build send_buffer */
 
@@ -2668,18 +2665,18 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
   cs_interface_set_free_match_ids(face_ifs);
 
-  BFT_FREE(recv_buffer);
-  BFT_FREE(send_buffer);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_shift);
-  BFT_FREE(gcell_face_count);
-  BFT_FREE(halo2ifs_rank);
-  BFT_FREE(l2d_fids);
+  CS_FREE(recv_buffer);
+  CS_FREE(send_buffer);
+  CS_FREE(send_shift);
+  CS_FREE(recv_shift);
+  CS_FREE(gcell_face_count);
+  CS_FREE(halo2ifs_rank);
+  CS_FREE(l2d_fids);
 
 #if defined(HAVE_MPI)
   if (request != _request) {
-    BFT_FREE(request);
-    BFT_FREE(status);
+    CS_FREE(request);
+    CS_FREE(status);
   }
 #endif
 
@@ -2729,12 +2726,12 @@ _clean_halo(cs_mesh_t  *mesh)
 
   /* halo->index, halo->perio_lst and n_c_domains need an update */
 
-  BFT_MALLOC(new_c_domain_rank, n_real_c_domains, cs_lnum_t);
+  CS_MALLOC(new_c_domain_rank, n_real_c_domains, cs_lnum_t);
 
   CS_ALLOC_HD(new_index, 2*n_real_c_domains+1, cs_lnum_t, halo_alloc_mode);
 
   if (n_transforms > 0)
-    BFT_MALLOC(new_perio_lst, 4*n_transforms*n_real_c_domains, cs_lnum_t);
+    CS_MALLOC(new_perio_lst, 4*n_transforms*n_real_c_domains, cs_lnum_t);
 
   /* Define the new buffers */
 
@@ -2762,11 +2759,11 @@ _clean_halo(cs_mesh_t  *mesh)
   /* Replace halo->send_perio_lst, halo->send_index and
      halo->c_domain_rank by new ones */
 
-  BFT_FREE(halo->c_domain_rank);
+  CS_FREE(halo->c_domain_rank);
   CS_FREE_HD(halo->send_index);
 
   if (n_transforms > 0)
-    BFT_FREE(halo->send_perio_lst);
+    CS_FREE(halo->send_perio_lst);
 
   halo->n_c_domains = n_real_c_domains;
   halo->c_domain_rank = new_c_domain_rank;
@@ -2777,9 +2774,8 @@ _clean_halo(cs_mesh_t  *mesh)
 
   /* Reallocation of halo's buffers */
 
-  BFT_REALLOC(halo->index, 2*n_real_c_domains+1, cs_lnum_t);
-  BFT_REALLOC(halo->perio_lst, 4*n_transforms*n_real_c_domains, cs_lnum_t);
-
+  CS_REALLOC(halo->index, 2*n_real_c_domains+1, cs_lnum_t);
+  CS_REALLOC(halo->perio_lst, 4*n_transforms*n_real_c_domains, cs_lnum_t);
 }
 
 #endif /* #if 0 */
@@ -2822,8 +2818,8 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
   if (vertex_ifs == nullptr)
     return;
 
-  BFT_MALLOC(cell_faces_idx, n_cells+1, cs_lnum_t);
-  BFT_MALLOC(cell_buffer, 2*n_cells, cs_lnum_t);
+  CS_MALLOC(cell_faces_idx, n_cells+1, cs_lnum_t);
+  CS_MALLOC(cell_buffer, 2*n_cells, cs_lnum_t);
 
   cell_tag = &(cell_buffer[0]);
   counter = &(cell_buffer[n_cells]);
@@ -2895,7 +2891,7 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
     cell_tag[i] = -1;
   }
 
-  BFT_MALLOC(cell_faces_lst, cell_faces_idx[n_cells], cs_lnum_t);
+  CS_MALLOC(cell_faces_lst, cell_faces_idx[n_cells], cs_lnum_t);
 
   for (fac_id = 0; fac_id < n_i_faces; fac_id++) {
 
@@ -2958,8 +2954,8 @@ _create_gcell_faces_connect(cs_mesh_t                 *mesh,
 
   } /* End of loop on internal faces */
 
-  BFT_FREE(vtx_tag);
-  BFT_FREE(cell_buffer);
+  CS_FREE(vtx_tag);
+  CS_FREE(cell_buffer);
 
   *p_cell_faces_idx = cell_faces_idx;
   *p_cell_faces_lst = cell_faces_lst;
@@ -3062,8 +3058,8 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
 
     /* Free memory */
 
-    BFT_FREE(send_gcell_vtx_idx);
-    BFT_FREE(send_gcell_vtx_lst);
+    CS_FREE(send_gcell_vtx_idx);
+    CS_FREE(send_gcell_vtx_lst);
 
     /* Define mesh->i_face_cells array for ghost cells in standard halo and
        also ghost cells to ghost cells connectivity for standard and extended
@@ -3078,8 +3074,8 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
 
   }
 
-  BFT_FREE(gcell_faces_idx);
-  BFT_FREE(gcell_faces_lst);
+  CS_FREE(gcell_faces_idx);
+  CS_FREE(gcell_faces_lst);
 
   *p_gcell_vtx_idx = gcell_vtx_idx;
   *p_gcell_vtx_lst = gcell_vtx_lst;
@@ -3087,7 +3083,7 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
   /* Update mesh structure elements bound to halo management */
 
   if (mesh->n_ghost_cells > 0)
-    BFT_REALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, int);
+    CS_REALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, int);
 
 #if 0 /* for debugging purposes */
   cs_halo_dump(halo, 1);

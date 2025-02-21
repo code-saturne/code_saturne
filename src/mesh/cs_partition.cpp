@@ -83,7 +83,6 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
@@ -95,6 +94,7 @@ extern "C" {
 #include "base/cs_file.h"
 #include "base/cs_io.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
 #include "base/cs_order.h"
@@ -301,7 +301,7 @@ _cell_part_histogram(cs_gnum_t   cell_range[2],
 
   bft_printf(_("  Number of cells per domain (histogramm):\n"));
 
-  BFT_MALLOC(n_part_cells, n_parts, cs_lnum_t);
+  CS_MALLOC(n_part_cells, n_parts, cs_lnum_t);
 
   for (i = 0; i < n_parts; i++)
     n_part_cells[i] = 0;
@@ -313,10 +313,10 @@ _cell_part_histogram(cs_gnum_t   cell_range[2],
 
   if (cs_glob_n_ranks > 1) {
     cs_lnum_t *n_part_cells_sum;
-    BFT_MALLOC(n_part_cells_sum, n_parts, cs_lnum_t);
+    CS_MALLOC(n_part_cells_sum, n_parts, cs_lnum_t);
     MPI_Allreduce(n_part_cells, n_part_cells_sum, n_parts,
                   CS_MPI_LNUM, MPI_SUM, cs_glob_mpi_comm);
-    BFT_FREE(n_part_cells);
+    CS_FREE(n_part_cells);
     n_part_cells = n_part_cells_sum;
     n_part_cells_sum = nullptr;
   }
@@ -379,7 +379,7 @@ _cell_part_histogram(cs_gnum_t   cell_range[2],
                (int)(n_min), (int)n_max, (int)n_parts);
   }
 
-  BFT_FREE(n_part_cells);
+  CS_FREE(n_part_cells);
 }
 
 #if defined(HAVE_MPI)
@@ -420,7 +420,7 @@ _cell_center_g(cs_lnum_t         n_cells,
 
   assert(face_vtx_idx[0] == 0);
 
-  BFT_MALLOC(weight, n_cells, cs_coord_t);
+  CS_MALLOC(weight, n_cells, cs_coord_t);
 
   for (i = 0; i < n_cells; i++) {
     weight[i] = 0.0;
@@ -438,7 +438,7 @@ _cell_center_g(cs_lnum_t         n_cells,
       n_max_face_vertices = n_face_vertices;
   }
 
-  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
+  CS_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
 
   /* Loop on each face */
 
@@ -566,14 +566,14 @@ _cell_center_g(cs_lnum_t         n_cells,
 
   } /* End of loop on faces */
 
-  BFT_FREE(face_vtx_coord);
+  CS_FREE(face_vtx_coord);
 
   for (i = 0; i < n_cells; i++) {
     for (j = 0; j < 3; j++)
       cell_center[i*3 + j] /= weight[i];
   }
 
-  BFT_FREE(weight);
+  CS_FREE(weight);
 }
 
 /*----------------------------------------------------------------------------
@@ -615,7 +615,7 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
 
   _n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
 
-  BFT_MALLOC(_cell_num, _n_cells, cs_gnum_t);
+  CS_MALLOC(_cell_num, _n_cells, cs_gnum_t);
 
   for (i = 0; i < _n_cells; i++)
     _cell_num[i] = mb->cell_bi.gnum_range[0] + i;
@@ -633,7 +633,7 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
                                        &_n_faces,
                                        &_face_num);
 
-  BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
+  CS_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
 
   /* Face -> cell connectivity */
 
@@ -645,7 +645,7 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
 
   /* Now convert face -> cell connectivity to local cell numbers */
 
-  BFT_MALLOC(_face_cells, _n_faces*2, cs_lnum_t);
+  CS_MALLOC(_face_cells, _n_faces*2, cs_lnum_t);
 
   cs_block_to_part_global_to_local(_n_faces*2,
                                    1,
@@ -655,19 +655,19 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
                                    _face_gcells,
                                    _face_cells);
 
-  BFT_FREE(_cell_num);
-  BFT_FREE(_face_gcells);
+  CS_FREE(_cell_num);
+  CS_FREE(_face_gcells);
 
   /* Face connectivity */
 
-  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
+  CS_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
   cs_all_to_all_copy_index(d,
                            true,  /* reverse */
                            mb->face_vertices_idx,
                            _face_vertices_idx);
 
-  BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
+  CS_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
 
   cs_all_to_all_copy_indexed(d,
                              true, /* reverse */
@@ -705,7 +705,7 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
-  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
+  CS_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
   cs_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
                                    1,
@@ -715,7 +715,7 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
                                    _face_gvertices,
                                    _face_vertices);
 
-  BFT_FREE(_face_gvertices);
+  CS_FREE(_face_gvertices);
 
   _cell_center_g(_n_cells,
                  _n_faces,
@@ -725,15 +725,15 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
                  _vtx_coord,
                  cell_center);
 
-  BFT_FREE(_vtx_coord);
-  BFT_FREE(_vtx_num);
+  CS_FREE(_vtx_coord);
+  CS_FREE(_vtx_num);
 
-  BFT_FREE(_face_cells);
+  CS_FREE(_face_cells);
 
-  BFT_FREE(_face_vertices_idx);
-  BFT_FREE(_face_vertices);
+  CS_FREE(_face_vertices_idx);
+  CS_FREE(_face_vertices);
 
-  BFT_FREE(_face_num);
+  CS_FREE(_face_num);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -772,7 +772,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
 
   assert(face_vtx_idx[0] == 0);
 
-  BFT_MALLOC(weight, n_cells, cs_coord_t);
+  CS_MALLOC(weight, n_cells, cs_coord_t);
 
   for (i = 0; i < n_cells; i++) {
     weight[i] = 0.0;
@@ -790,7 +790,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
       n_max_face_vertices = n_face_vertices;
   }
 
-  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
+  CS_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
 
   /* Loop on each face */
 
@@ -918,14 +918,14 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
 
   } /* End of loop on faces */
 
-  BFT_FREE(face_vtx_coord);
+  CS_FREE(face_vtx_coord);
 
   for (i = 0; i < n_cells; i++) {
     for (j = 0; j < 3; j++)
       cell_center[i*3 + j] /= weight[i];
   }
 
-  BFT_FREE(weight);
+  CS_FREE(weight);
 }
 
 /*----------------------------------------------------------------------------
@@ -979,7 +979,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
   n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
   block_size = mb->cell_bi.block_size;
 
-  BFT_MALLOC(cell_center, n_cells*3, cs_coord_t);
+  CS_MALLOC(cell_center, n_cells*3, cs_coord_t);
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1)
@@ -1001,7 +1001,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
                                            n_cells,
                                            sfc_type);
 
-  BFT_FREE(cell_center);
+  CS_FREE(cell_center);
 
   cell_num = fvm_io_num_get_global_num(cell_io_num);
 
@@ -1129,14 +1129,14 @@ _add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
   }
 
   cs_gnum_t *send_adj;
-  BFT_MALLOC(send_adj, n_send*2, cs_gnum_t);
+  CS_MALLOC(send_adj, n_send*2, cs_gnum_t);
 
   cs_gnum_t *r_data = cs_all_to_all_copy_array(d,
                                                1,
                                                true, /* reverse */
                                                b_data);
 
-  BFT_FREE(b_data);
+  CS_FREE(b_data);
 
   /* Now r_data contains the global cell number matching a given face;
      Send global face number and cell number adjacent with its
@@ -1152,14 +1152,14 @@ _add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
 
   }
 
-  BFT_FREE(r_data);
+  CS_FREE(r_data);
 
   b_data = cs_all_to_all_copy_array(d,
                                     2,
                                     false, /* reverse */
                                     send_adj);
 
-  BFT_FREE(send_adj);
+  CS_FREE(send_adj);
 
   /* Update face -> cell connectivity */
 
@@ -1183,7 +1183,7 @@ _add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
                 (unsigned long long)g_face_cells[g_face_id*2+1]);
   }
 
-  BFT_FREE(b_data);
+  CS_FREE(b_data);
 
   cs_all_to_all_destroy(&d);
 }
@@ -1281,7 +1281,7 @@ _metis_cell_cells(size_t       n_cells,
 
   /* Count and allocate arrays */
 
-  BFT_MALLOC(n_neighbors, n_cells, idx_t);
+  CS_MALLOC(n_neighbors, n_cells, idx_t);
 
   for (i = 0; i < n_cells; i++)
     n_neighbors[i] = 0;
@@ -1303,14 +1303,14 @@ _metis_cell_cells(size_t       n_cells,
       n_neighbors[c_num[1] - start_cell] += 1;
   }
 
-  BFT_MALLOC(_cell_idx, n_cells + 1, idx_t);
+  CS_MALLOC(_cell_idx, n_cells + 1, idx_t);
 
   _cell_idx[0] = 0;
 
   for (i = 0; i < n_cells; i++)
     _cell_idx[i + 1] = _cell_idx[i] + n_neighbors[i];
 
-  BFT_MALLOC(_cell_neighbors, _cell_idx[n_cells], idx_t);
+  CS_MALLOC(_cell_neighbors, _cell_idx[n_cells], idx_t);
 
   for (i = 0; i < n_cells; i++)
     n_neighbors[i] = 0;
@@ -1336,7 +1336,7 @@ _metis_cell_cells(size_t       n_cells,
     }
   }
 
-  BFT_FREE(n_neighbors);
+  CS_FREE(n_neighbors);
 
   *cell_idx = _cell_idx;
   *cell_neighbors = _cell_neighbors;
@@ -1377,7 +1377,7 @@ _part_metis(size_t   n_cells,
     _cell_part = (idx_t *)cell_part;
 
   else
-    BFT_MALLOC(_cell_part, n_cells, idx_t);
+    CS_MALLOC(_cell_part, n_cells, idx_t);
 
   if (n_parts < 8) {
 
@@ -1440,7 +1440,7 @@ _part_metis(size_t   n_cells,
   if (sizeof(idx_t) != sizeof(int)) {
     for (i = 0; i < n_cells; i++)
       cell_part[i] = _cell_part[i];
-    BFT_FREE(_cell_part);
+    CS_FREE(_cell_part);
   }
 }
 
@@ -1502,7 +1502,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
   if (sizeof(idx_t) == sizeof(int))
     _cell_part = (idx_t *)cell_part;
   else
-    BFT_MALLOC(_cell_part, n_cells, idx_t);
+    CS_MALLOC(_cell_part, n_cells, idx_t);
 
   bft_printf(_("\n"
                " Partitioning %llu cells to %d domains on %d ranks\n"
@@ -1513,7 +1513,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 
   /* Build vtxdist */
 
-  BFT_MALLOC(vtxdist, n_ranks + 1, idx_t);
+  CS_MALLOC(vtxdist, n_ranks + 1, idx_t);
 
   MPI_Allgather(&vtxstart, 1, mpi_idx_t, vtxdist, 1, mpi_idx_t, comm);
   MPI_Allreduce(&vtxend, vtxdist + n_ranks, 1, mpi_idx_t, MPI_MAX, comm);
@@ -1533,7 +1533,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
     real_t  ubvec[] = { 1.5 };
     real_t *tpwgts  = nullptr;
 
-    BFT_MALLOC(tpwgts, n_parts, real_t);
+    CS_MALLOC(tpwgts, n_parts, real_t);
 
     for (j = 0; j < n_parts; j++)
       tpwgts[j] = wgt;
@@ -1554,7 +1554,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
                                       _cell_part,
                                       &comm);
 
-    BFT_FREE(tpwgts);
+    CS_FREE(tpwgts);
 
     edgecut = _edgecut;
 
@@ -1564,7 +1564,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 
   end_time = cs_timer_wtime();
 
-  BFT_FREE(vtxdist);
+  CS_FREE(vtxdist);
 
   if (edgecut > 0)
     bft_printf(_("\n"
@@ -1584,7 +1584,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
   if (sizeof(idx_t) != sizeof(int)) {
     for (i = 0; i < n_cells; i++)
       cell_part[i] = _cell_part[i];
-    BFT_FREE(_cell_part);
+    CS_FREE(_cell_part);
   }
 }
 
@@ -1739,7 +1739,7 @@ _scotch_cell_cells(size_t        n_cells,
 
   /* Count and allocate arrays */
 
-  BFT_MALLOC(n_neighbors, n_cells, SCOTCH_Num);
+  CS_MALLOC(n_neighbors, n_cells, SCOTCH_Num);
 
   for (i = 0; i < n_cells; i++)
     n_neighbors[i] = 0;
@@ -1761,14 +1761,14 @@ _scotch_cell_cells(size_t        n_cells,
       n_neighbors[c_num[1] - start_cell] += 1;
   }
 
-  BFT_MALLOC(_cell_idx, n_cells + 1, SCOTCH_Num);
+  CS_MALLOC(_cell_idx, n_cells + 1, SCOTCH_Num);
 
   _cell_idx[0] = 0;
 
   for (i = 0; i < n_cells; i++)
     _cell_idx[i + 1] = _cell_idx[i] + n_neighbors[i];
 
-  BFT_MALLOC(_cell_neighbors, _cell_idx[n_cells], SCOTCH_Num);
+  CS_MALLOC(_cell_neighbors, _cell_idx[n_cells], SCOTCH_Num);
 
   for (i = 0; i < n_cells; i++)
     n_neighbors[i] = 0;
@@ -1794,7 +1794,7 @@ _scotch_cell_cells(size_t        n_cells,
     }
   }
 
-  BFT_FREE(n_neighbors);
+  CS_FREE(n_neighbors);
 
   /* Clean graph */
 
@@ -1830,7 +1830,7 @@ _scotch_cell_cells(size_t        n_cells,
     }
 
     if (c_id < end_id)
-      BFT_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
+      CS_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
 
   }
 
@@ -1876,7 +1876,7 @@ _part_scotch(SCOTCH_Num   n_cells,
   if (sizeof(SCOTCH_Num) == sizeof(int))
     _cell_part = (SCOTCH_Num *)cell_part;
   else
-    BFT_MALLOC(_cell_part, n_cells, SCOTCH_Num);
+    CS_MALLOC(_cell_part, n_cells, SCOTCH_Num);
 
   bft_printf(_("\n"
                " Partitioning %llu cells to %d domains\n"
@@ -1916,7 +1916,7 @@ _part_scotch(SCOTCH_Num   n_cells,
   if (sizeof(SCOTCH_Num) != sizeof(int)) {
     for (i = 0; i < n_cells; i++)
       cell_part[i] = _cell_part[i];
-    BFT_FREE(_cell_part);
+    CS_FREE(_cell_part);
   }
 
   /* Compute edge cut */
@@ -2002,7 +2002,7 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
   if (sizeof(SCOTCH_Num) == sizeof(int))
     _cell_part = (SCOTCH_Num *)cell_part;
   else
-    BFT_MALLOC(_cell_part, n_cells, SCOTCH_Num);
+    CS_MALLOC(_cell_part, n_cells, SCOTCH_Num);
 
   bft_printf(_("\n"
                " Partitioning %llu cells to %d domains on %d ranks\n"
@@ -2049,7 +2049,7 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
           malloc((strlen(dgraph_save_name) + n_dec + 2) * sizeof(char)));
         sprintf(l_name, "%s.%0*d", dgraph_save_name, n_dec, cs_glob_rank_id);
         graph_save = fopen(l_name, "w");
-        BFT_FREE(l_name);
+        CS_FREE(l_name);
       }
       else {
         graph_save = fopen(dgraph_save_name, "w");
@@ -2078,7 +2078,7 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
   if (sizeof(SCOTCH_Num) != sizeof(int)) {
     for (SCOTCH_Num i = 0; i < n_cells; i++)
       cell_part[i] = _cell_part[i];
-    BFT_FREE(_cell_part);
+    CS_FREE(_cell_part);
   }
 
   /* Finalization */
@@ -2155,7 +2155,7 @@ _prepare_input(const cs_mesh_t           *mesh,
     if (mb->face_bi.gnum_range[1] > mb->face_bi.gnum_range[0])
       _n_b_faces = mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0];
 
-    BFT_MALLOC(_g_face_cells, _n_b_faces*2, cs_gnum_t);
+    CS_MALLOC(_g_face_cells, _n_b_faces*2, cs_gnum_t);
     *g_face_cells = _g_face_cells;
 
     memcpy(_g_face_cells, mb->face_cells, sizeof(cs_gnum_t)*_n_b_faces*2);
@@ -2169,7 +2169,7 @@ _prepare_input(const cs_mesh_t           *mesh,
         n_g_per_face_couples += mb->n_g_per_face_couples[perio_id];
       }
 
-      BFT_MALLOC(_per_face_couples, n_per_face_couples*2, cs_gnum_t);
+      CS_MALLOC(_per_face_couples, n_per_face_couples*2, cs_gnum_t);
       per_face_couples = _per_face_couples;
 
       n_per_face_couples = 0;
@@ -2208,7 +2208,7 @@ _prepare_input(const cs_mesh_t           *mesh,
     }
 
     if (_per_face_couples != nullptr)
-      BFT_FREE(_per_face_couples);
+      CS_FREE(_per_face_couples);
   }
 
   else if (mb->n_perio > 0)
@@ -2233,7 +2233,7 @@ _prepare_input(const cs_mesh_t           *mesh,
                                             n_faces,
                                             nullptr);
 
-    BFT_MALLOC(g_face_cells_tmp, (*n_faces)*2, cs_gnum_t);
+    CS_MALLOC(g_face_cells_tmp, (*n_faces)*2, cs_gnum_t);
 
     /* Face -> cell connectivity */
 
@@ -2244,7 +2244,7 @@ _prepare_input(const cs_mesh_t           *mesh,
                              g_face_cells_tmp);
 
     if (_g_face_cells != nullptr) /* in case of periodicity */
-      BFT_FREE(_g_face_cells);
+      CS_FREE(_g_face_cells);
 
     *g_face_cells = g_face_cells_tmp;
 
@@ -2304,8 +2304,8 @@ _distribute_output(const cs_mesh_builder_t   *mb,
     if (cell_range[1] > cell_range[0])
       n_p_cells = cell_range[1] - cell_range[0];
 
-    BFT_MALLOC(_cell_rank, n_b_cells, int);
-    BFT_MALLOC(global_cell_num, n_p_cells, cs_gnum_t);
+    CS_MALLOC(_cell_rank, n_b_cells, int);
+    CS_MALLOC(global_cell_num, n_p_cells, cs_gnum_t);
 
     for (i = 0; i < n_p_cells; i++)
       global_cell_num[i] = cell_range[0] + i;
@@ -2327,7 +2327,7 @@ _distribute_output(const cs_mesh_builder_t   *mb,
 
     cs_part_to_block_destroy(&d);
 
-    BFT_FREE(*cell_rank);
+    CS_FREE(*cell_rank);
     *cell_rank = _cell_rank;
   }
 
@@ -2383,7 +2383,7 @@ _write_output(cs_gnum_t  n_g_cells,
 
   if (cell_range[1] > cell_range[0]) {
     cs_gnum_t _n_cells = cell_range[1] - cell_range[0];
-    BFT_MALLOC(domain_num, _n_cells, int);
+    CS_MALLOC(domain_num, _n_cells, int);
     for (i = 0; i < _n_cells; i++)
       domain_num[i] = domain_rank[i] + 1;
   }
@@ -2408,9 +2408,9 @@ _write_output(cs_gnum_t  n_g_cells,
        i >= 10;
        i /= 10, n_ranks_size += 1);
 
-  BFT_MALLOC(filename,
-             strlen(dir) + strlen("domain_number_") + n_ranks_size + 2,
-             char);
+  CS_MALLOC(filename,
+            strlen(dir) + strlen("domain_number_") + n_ranks_size + 2,
+            char);
 
   sprintf(filename,
           "%s%cdomain_number_%d",
@@ -2443,7 +2443,7 @@ _write_output(cs_gnum_t  n_g_cells,
   }
 #endif
 
-  BFT_FREE(filename);
+  CS_FREE(filename);
 
   /* Write headers */
 
@@ -2478,7 +2478,7 @@ _write_output(cs_gnum_t  n_g_cells,
 
   cs_io_finalize(&fh);
 
-  BFT_FREE(domain_num);
+  CS_FREE(domain_num);
 }
 
 /*----------------------------------------------------------------------------
@@ -2644,7 +2644,7 @@ _read_cell_rank(cs_mesh_t            *mesh,
         cs_io_set_cs_lnum(&header, rank_pp_in);
         if (mb->cell_bi.gnum_range[0] > 0)
           n_elts = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
-        BFT_MALLOC(mb->cell_rank, n_elts, int);
+        CS_MALLOC(mb->cell_rank, n_elts, int);
         cs_io_read_block(&header,
                          mb->cell_bi.gnum_range[0],
                          mb->cell_bi.gnum_range[1],
@@ -3088,7 +3088,7 @@ cs_partition_add_partitions(int  n_extra_partitions,
 {
   _part_n_extra_partitions = n_extra_partitions;
 
-  BFT_REALLOC(_part_extra_partitions_list, n_extra_partitions, int);
+  CS_REALLOC(_part_extra_partitions_list, n_extra_partitions, int);
 
   if (n_extra_partitions > 0)
     memcpy(_part_extra_partitions_list,
@@ -3153,7 +3153,7 @@ cs_partition(cs_mesh_t             *mesh,
   /* Free previous cell rank info if present */
 
   if (mb->cell_rank != nullptr)
-    BFT_FREE(mb->cell_rank);
+    CS_FREE(mb->cell_rank);
 
   /* Read cell rank data if available */
 
@@ -3223,7 +3223,7 @@ cs_partition(cs_mesh_t             *mesh,
                       &cell_neighbors);
 
     if (face_cells != mb->face_cells)
-      BFT_FREE(face_cells);
+      CS_FREE(face_cells);
 
     t2 = cs_timer_time();
     dt = cs_timer_diff(&t0, &t2);
@@ -3256,7 +3256,7 @@ cs_partition(cs_mesh_t             *mesh,
         if (n_ranks < 2)
           continue;
 
-        BFT_REALLOC(cell_part, n_cells, int);
+        CS_REALLOC(cell_part, n_cells, int);
 
         if (cs_glob_rank_id % _part_rank_step[stage] == 0)
           _part_parmetis(mesh->n_g_cells,
@@ -3304,9 +3304,10 @@ cs_partition(cs_mesh_t             *mesh,
         if (n_ranks < 2)
           continue;
 
-        BFT_REALLOC(cell_part, n_cells, int);
+        CS_REALLOC(cell_part, n_cells, int);
 
-        if (cs_glob_rank_id < 0 || (cs_glob_rank_id % _part_rank_step[stage] == 0))
+        if (  cs_glob_rank_id < 0
+            || (cs_glob_rank_id % _part_rank_step[stage] == 0))
           _part_metis(n_cells,
                       n_ranks,
                       cell_idx,
@@ -3328,8 +3329,8 @@ cs_partition(cs_mesh_t             *mesh,
       }
     }
 
-    BFT_FREE(cell_idx);
-    BFT_FREE(cell_neighbors);
+    CS_FREE(cell_idx);
+    CS_FREE(cell_neighbors);
   }
 
 #endif /* defined(HAVE_METIS) || defined(HAVE_PARMETIS) */
@@ -3350,7 +3351,7 @@ cs_partition(cs_mesh_t             *mesh,
                        &cell_neighbors);
 
     if (face_cells != mb->face_cells)
-      BFT_FREE(face_cells);
+      CS_FREE(face_cells);
 
     t2 = cs_timer_time();
     dt = cs_timer_diff(&t0, &t2);
@@ -3383,7 +3384,7 @@ cs_partition(cs_mesh_t             *mesh,
         if (n_ranks < 2)
           continue;
 
-        BFT_REALLOC(cell_part, n_cells, int);
+        CS_REALLOC(cell_part, n_cells, int);
 
         if (cs_glob_rank_id % _part_rank_step[stage] == 0)
           _part_ptscotch(mesh->n_g_cells,
@@ -3431,9 +3432,10 @@ cs_partition(cs_mesh_t             *mesh,
         if (n_ranks < 2)
           continue;
 
-        BFT_REALLOC(cell_part, n_cells, int);
+        CS_REALLOC(cell_part, n_cells, int);
 
-        if (cs_glob_rank_id < 0 || (cs_glob_rank_id % _part_rank_step[stage] == 0))
+        if (   cs_glob_rank_id < 0
+            || (cs_glob_rank_id % _part_rank_step[stage] == 0))
           _part_scotch(n_cells,
                        n_ranks,
                        cell_idx,
@@ -3455,8 +3457,8 @@ cs_partition(cs_mesh_t             *mesh,
       }
     }
 
-    BFT_FREE(cell_idx);
-    BFT_FREE(cell_neighbors);
+    CS_FREE(cell_idx);
+    CS_FREE(cell_neighbors);
   }
 
 #endif /* defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH) */
@@ -3468,7 +3470,7 @@ cs_partition(cs_mesh_t             *mesh,
     auto sfc_type =
       static_cast<fvm_io_num_sfc_t>(_algorithm - CS_PARTITION_SFC_MORTON_BOX);
 
-    BFT_MALLOC(cell_part, n_cells, int);
+    CS_MALLOC(cell_part, n_cells, int);
 
     for (i = 0; i < n_extra_partitions + 1; i++) {
 
@@ -3511,7 +3513,7 @@ cs_partition(cs_mesh_t             *mesh,
 
   else if (_algorithm == CS_PARTITION_BLOCK) {
 
-    BFT_MALLOC(cell_part, n_cells, int);
+    CS_MALLOC(cell_part, n_cells, int);
 
     _block_partititioning(mesh, mb, cell_part);
 
@@ -3520,7 +3522,7 @@ cs_partition(cs_mesh_t             *mesh,
   /* Reset extra partitions list if used */
 
   if (n_extra_partitions > 0) {
-    BFT_FREE(_part_extra_partitions_list);
+    CS_FREE(_part_extra_partitions_list);
     _part_n_extra_partitions = 0;
   }
 

@@ -45,11 +45,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_boundary_zone.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -324,9 +324,9 @@ cs_rad_transfer_get_pointers(int  **p_iirayo,
 void
 cs_rad_transfer_finalize(void)
 {
-  BFT_FREE(_rt_params.vect_s);
-  BFT_FREE(_rt_params.angsol);
-  BFT_FREE(_rt_params.wq);
+  CS_FREE(_rt_params.vect_s);
+  CS_FREE(_rt_params.angsol);
+  CS_FREE(_rt_params.wq);
 }
 
 /*----------------------------------------------------------------------------*/

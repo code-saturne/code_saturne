@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 #include "base/cs_assert.h"
@@ -52,6 +51,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -140,9 +140,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
   if (   rt_params->imgrey >= 1
       || rt_params->imoadf >= 1
       || rt_params->imfsck >= 1) {
-    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-    BFT_MALLOC(w2, n_cells_ext, cs_real_t);
-    BFT_MALLOC(w3, n_cells_ext, cs_real_t);
+    CS_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC(w2, n_cells_ext, cs_real_t);
+    CS_MALLOC(w3, n_cells_ext, cs_real_t);
   }
 
   cs_real_t *crom = CS_F_(rho)->val;
@@ -167,7 +167,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       cs_real_t xpro;
 
       cs_real_t *_w;
-      BFT_MALLOC(_w, n_gas_e + n_gas_g + n_gas_e, cs_real_t);
+      CS_MALLOC(_w, n_gas_e + n_gas_g + n_gas_e, cs_real_t);
 
       cs_real_t *xk = _w;
       cs_real_t *yi = _w + n_gas_e;
@@ -232,7 +232,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
       }
 
-      BFT_FREE(_w);
+      CS_FREE(_w);
     }
     else if (rt_params->imfsck == 2) {
 
@@ -301,9 +301,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   /* Free temporary memory */
 
-  BFT_FREE(w1);
-  BFT_FREE(w2);
-  BFT_FREE(w3);
+  CS_FREE(w1);
+  CS_FREE(w2);
+  CS_FREE(w3);
 
   /* Absorption coefficient of particles per class k2/x2 (m-1)
      --------------------------------------------------------- */
@@ -378,7 +378,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   if (rt_params->type == CS_RAD_TRANSFER_P1 && rt_params->imoadf == 0) {
 
-    BFT_MALLOC(w3, n_cells_ext, cs_real_t);
+    CS_MALLOC(w3, n_cells_ext, cs_real_t);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       w3[cell_id] = cpro_cak0[cell_id];
@@ -406,7 +406,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     cs_rad_transfer_absorption_check_p1(w3);
 
-    BFT_FREE(w3);
+    CS_FREE(w3);
 
   }
 }
@@ -442,9 +442,9 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
 
   /* Initialization */
 
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w2, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w3, n_cells_ext, cs_real_t);
+  CS_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC(w2, n_cells_ext, cs_real_t);
+  CS_MALLOC(w3, n_cells_ext, cs_real_t);
 
   cs_real_t *crom = CS_F_(rho)->val;
 
@@ -499,9 +499,9 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
 
   /* Free temporary memory */
 
-  BFT_FREE(w1);
-  BFT_FREE(w2);
-  BFT_FREE(w3);
+  CS_FREE(w1);
+  CS_FREE(w2);
+  CS_FREE(w3);
 }
 
 /*----------------------------------------------------------------------------*/

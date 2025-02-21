@@ -40,18 +40,19 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
 
-#include "mesh/cs_join_util.h"
 #include "base/cs_file.h"
-#include "mesh/cs_mesh.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
 #include "base/cs_sort.h"
+
+#include "mesh/cs_join_util.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -274,7 +275,7 @@ _create_join_sync(void)
 {
   cs_join_sync_t  *sync = nullptr;
 
-  BFT_MALLOC(sync, 1, cs_join_sync_t);
+  CS_MALLOC(sync, 1, cs_join_sync_t);
 
   sync->n_elts = 0;
   sync->n_ranks = 0;
@@ -301,12 +302,12 @@ _destroy_join_sync(cs_join_sync_t   **sync)
     return;
 
   if (_sync->array != nullptr)
-    BFT_FREE(_sync->array);
+    CS_FREE(_sync->array);
   if (_sync->ranks != nullptr)
-    BFT_FREE(_sync->ranks);
-  BFT_FREE(_sync->index);
+    CS_FREE(_sync->ranks);
+  CS_FREE(_sync->index);
 
-  BFT_FREE(_sync);
+  CS_FREE(_sync);
 
   *sync = _sync;
 }
@@ -339,7 +340,7 @@ _compact_face_gnum_selection(cs_lnum_t   n_select_faces,
 
   assert(_reduce_gnum_index == nullptr);
 
-  BFT_MALLOC(_reduce_gnum_index, n_ranks + 1, cs_gnum_t);
+  CS_MALLOC(_reduce_gnum_index, n_ranks + 1, cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     _reduce_gnum_index[i] = 0;
@@ -366,7 +367,7 @@ _compact_face_gnum_selection(cs_lnum_t   n_select_faces,
 
   }
 
-  BFT_MALLOC(_reduce_gnum, n_select_faces, cs_gnum_t);
+  CS_MALLOC(_reduce_gnum, n_select_faces, cs_gnum_t);
 
   for (i = 0; i < n_select_faces; i++)
     _reduce_gnum[i] = shift + i + 1;
@@ -417,7 +418,7 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
 
   /* Reverse face -> vertex connectivity */
 
-  BFT_MALLOC(counter, n_vertices, cs_lnum_t);
+  CS_MALLOC(counter, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++)
     counter[i] = 0;
@@ -431,7 +432,7 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
 
   /* Define v2f_idx */
 
-  BFT_MALLOC(v2f_idx, n_vertices + 1, cs_lnum_t);
+  CS_MALLOC(v2f_idx, n_vertices + 1, cs_lnum_t);
 
   v2f_idx[0] = 0;
   for (i = 0; i < n_vertices; i++)
@@ -442,7 +443,7 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
 
   /* Define v2f_lst */
 
-  BFT_MALLOC(v2f_lst, v2f_idx[n_vertices], cs_lnum_t);
+  CS_MALLOC(v2f_lst, v2f_idx[n_vertices], cs_lnum_t);
 
   for (i = 0; i < n_faces; i++) {
 
@@ -457,7 +458,7 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
 
   } /* End of loop on faces */
 
-  BFT_REALLOC(counter, n_faces, cs_lnum_t);
+  CS_REALLOC(counter, n_faces, cs_lnum_t);
 
   for (i = 0; i < n_faces; i++)
     counter[i] = 0;
@@ -487,7 +488,7 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
 
   /* Define contig_faces */
 
-  BFT_MALLOC(_contig_faces, _n_contig_faces, cs_lnum_t);
+  CS_MALLOC(_contig_faces, _n_contig_faces, cs_lnum_t);
 
   _n_contig_faces = 0;
   for (i = 0; i < n_faces; i++) {
@@ -499,9 +500,9 @@ _extract_contig_faces(cs_lnum_t          n_vertices,
 
   /* Free memory */
 
-  BFT_FREE(v2f_idx);
-  BFT_FREE(v2f_lst);
-  BFT_FREE(counter);
+  CS_FREE(v2f_idx);
+  CS_FREE(v2f_lst);
+  CS_FREE(counter);
 
   /* Return pointers */
 
@@ -551,7 +552,7 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
 
   total_size = cs_interface_set_n_elts(interfaces);
 
-  BFT_MALLOC(buf, total_size, cs_lnum_t);
+  CS_MALLOC(buf, total_size, cs_lnum_t);
 
   /* Exchange with distant ranks */
 
@@ -602,9 +603,9 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
 
   if (n_max_elts > 0) { /* We have found single vertices */
 
-    BFT_MALLOC(single->ranks, n_max_ranks, int);
-    BFT_MALLOC(single->index, n_max_ranks + 1, cs_lnum_t);
-    BFT_MALLOC(single->array, n_max_elts, cs_lnum_t);
+    CS_MALLOC(single->ranks, n_max_ranks, int);
+    CS_MALLOC(single->index, n_max_ranks + 1, cs_lnum_t);
+    CS_MALLOC(single->array, n_max_elts, cs_lnum_t);
 
     count_size = 0;
     last_found_rank = -1;
@@ -648,13 +649,13 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
 
     } /* End of loop on interfaces */
 
-    BFT_REALLOC(single->ranks, single->n_ranks, int);
-    BFT_REALLOC(single->index, single->n_ranks + 1, cs_lnum_t);
-    BFT_REALLOC(single->array, single->n_elts, cs_lnum_t);
+    CS_REALLOC(single->ranks, single->n_ranks, int);
+    CS_REALLOC(single->index, single->n_ranks + 1, cs_lnum_t);
+    CS_REALLOC(single->array, single->n_elts, cs_lnum_t);
 
   } /* End if n_max_elts > 0 */
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 
   if (cs_glob_join_log != nullptr && verbosity > 3) {
     int  i, j;
@@ -722,7 +723,7 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
 
   total_size = cs_interface_set_n_elts(interfaces);
 
-  BFT_MALLOC(buf, total_size, int);
+  CS_MALLOC(buf, total_size, int);
 
   /* Exchange with distant ranks */
 
@@ -769,9 +770,9 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
 
     int  rank_shift = 0, vtx_shift = 0;
 
-    BFT_MALLOC(coupled->array, coupled->n_elts, cs_lnum_t);
-    BFT_MALLOC(coupled->index, coupled->n_ranks + 1, cs_lnum_t);
-    BFT_MALLOC(coupled->ranks, coupled->n_ranks, int);
+    CS_MALLOC(coupled->array, coupled->n_elts, cs_lnum_t);
+    CS_MALLOC(coupled->index, coupled->n_ranks + 1, cs_lnum_t);
+    CS_MALLOC(coupled->ranks, coupled->n_ranks, int);
 
     coupled->index[0] = 0;
 
@@ -810,7 +811,7 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
 
   } /* End if coupled->n_elts > 0 */
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 
   if (cs_glob_join_log != nullptr && verbosity > 3) {
 
@@ -865,8 +866,8 @@ _get_missing_vertices(cs_lnum_t            n_vertices,
 
   /* Define a counter on vertices. 1 if selected, 0 otherwise */
 
-  BFT_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
-  BFT_MALLOC(related_ranks, n_vertices, int);
+  CS_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
+  CS_MALLOC(related_ranks, n_vertices, int);
 
   for (i = 0; i < n_vertices; i++) {
     vtx_tag[i] = 0;
@@ -912,7 +913,7 @@ _get_missing_vertices(cs_lnum_t            n_vertices,
 
   /* Free memory */
 
-  BFT_FREE(related_ranks);
+  CS_FREE(related_ranks);
 }
 
 /*----------------------------------------------------------------------------
@@ -942,7 +943,7 @@ _get_select_v2v_connect(cs_lnum_t              n_vertices,
 
   /* Build a vertex -> vertex connectivity for the selected boundary faces  */
 
-  BFT_MALLOC(sel_v2v_idx, n_vertices + 1, cs_lnum_t);
+  CS_MALLOC(sel_v2v_idx, n_vertices + 1, cs_lnum_t);
 
   for (i = 0; i < n_vertices + 1; i++)
     sel_v2v_idx[i] = 0;
@@ -953,14 +954,14 @@ _get_select_v2v_connect(cs_lnum_t              n_vertices,
                           b_f2v_lst,
                           sel_v2v_idx);
 
-  BFT_MALLOC(count, n_vertices, cs_lnum_t);
+  CS_MALLOC(count, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_vertices; i++) {
     sel_v2v_idx[i+1] += sel_v2v_idx[i];
     count[i] = 0;
   }
 
-  BFT_MALLOC(sel_v2v_lst, sel_v2v_idx[n_vertices], cs_lnum_t);
+  CS_MALLOC(sel_v2v_lst, sel_v2v_idx[n_vertices], cs_lnum_t);
 
   cs_join_build_edges_lst(selection->n_faces,
                           selection->faces,
@@ -970,7 +971,7 @@ _get_select_v2v_connect(cs_lnum_t              n_vertices,
                           sel_v2v_idx,
                           sel_v2v_lst);
 
-  BFT_FREE(count);
+  CS_FREE(count);
 
   /* Order sub-lists and then clean repeated elements */
 
@@ -998,7 +999,7 @@ _get_select_v2v_connect(cs_lnum_t              n_vertices,
   }
 
   n_sel_edges = sel_v2v_idx[n_vertices];
-  BFT_REALLOC(sel_v2v_lst, n_sel_edges, cs_lnum_t);
+  CS_REALLOC(sel_v2v_lst, n_sel_edges, cs_lnum_t);
 
   /* Return pointers */
 
@@ -1108,7 +1109,7 @@ _add_s_edge(cs_lnum_t        vertex_tag[],
 
         if (tmp_size >= max_size) {
           max_size *= 2;
-          BFT_REALLOC(tmp_edges, 2*max_size, cs_lnum_t);
+          CS_REALLOC(tmp_edges, 2*max_size, cs_lnum_t);
         }
 
       }
@@ -1161,8 +1162,8 @@ _copy_interface_edges(cs_interface_set_t   *ifs,
   cs_lnum_t *_sel_v2v_send_idx = nullptr, *_sel_v2v_recv_idx = nullptr;
   cs_lnum_t *_sel_v2v_send_lst = nullptr, *_sel_v2v_recv_lst = nullptr;
 
-  BFT_MALLOC(_sel_v2v_send_idx, ifs_tot_size + 1, cs_lnum_t);
-  BFT_MALLOC(_sel_v2v_recv_idx, ifs_tot_size + 1, cs_lnum_t);
+  CS_MALLOC(_sel_v2v_send_idx, ifs_tot_size + 1, cs_lnum_t);
+  CS_MALLOC(_sel_v2v_recv_idx, ifs_tot_size + 1, cs_lnum_t);
 
   /* Counting pass for v2v_info exchange
      (send/receive indexes are prepared as counts) */
@@ -1212,8 +1213,8 @@ _copy_interface_edges(cs_interface_set_t   *ifs,
 
   cs_interface_set_add_match_ids(ifs);
 
-  BFT_MALLOC(_sel_v2v_send_lst, _sel_v2v_send_idx[ifs_tot_size], cs_lnum_t);
-  BFT_MALLOC(_sel_v2v_recv_lst, _sel_v2v_recv_idx[ifs_tot_size], cs_lnum_t);
+  CS_MALLOC(_sel_v2v_send_lst, _sel_v2v_send_idx[ifs_tot_size], cs_lnum_t);
+  CS_MALLOC(_sel_v2v_recv_lst, _sel_v2v_recv_idx[ifs_tot_size], cs_lnum_t);
 
   if_shift = 0;
 
@@ -1257,8 +1258,8 @@ _copy_interface_edges(cs_interface_set_t   *ifs,
 
   /* Free temporary data and set return pointers */
 
-  BFT_FREE(_sel_v2v_send_idx);
-  BFT_FREE(_sel_v2v_send_lst);
+  CS_FREE(_sel_v2v_send_idx);
+  CS_FREE(_sel_v2v_send_lst);
 
   cs_interface_set_free_match_ids(ifs);
 
@@ -1319,7 +1320,7 @@ _add_single_edges(cs_interface_set_t   *ifs,
 
   /* Scan adjacent faces to find new "single" edges */
 
-  BFT_MALLOC(tmp_edges, 2*max_size, cs_lnum_t);
+  CS_MALLOC(tmp_edges, 2*max_size, cs_lnum_t);
 
   for (i = 0; i < selection->n_b_adj_faces; i++) {
 
@@ -1395,12 +1396,12 @@ _add_single_edges(cs_interface_set_t   *ifs,
     const int  n_interfaces = cs_interface_set_size(ifs);
 
     s_edges->n_elts = tmp_size;
-    BFT_REALLOC(tmp_edges, 2*tmp_size, cs_lnum_t);
+    CS_REALLOC(tmp_edges, 2*tmp_size, cs_lnum_t);
 
-    BFT_MALLOC(edge_tag, tmp_size, bool);
-    BFT_MALLOC(s_edges->array, 2*tmp_size, cs_lnum_t);
-    BFT_MALLOC(s_edges->index, n_interfaces + 1, cs_lnum_t);
-    BFT_MALLOC(s_edges->ranks, n_interfaces, int);
+    CS_MALLOC(edge_tag, tmp_size, bool);
+    CS_MALLOC(s_edges->array, 2*tmp_size, cs_lnum_t);
+    CS_MALLOC(s_edges->index, n_interfaces + 1, cs_lnum_t);
+    CS_MALLOC(s_edges->ranks, n_interfaces, int);
 
     for (i = 0; i < tmp_size; i++)
       edge_tag[i] = false; /* Not matched */
@@ -1471,19 +1472,19 @@ _add_single_edges(cs_interface_set_t   *ifs,
     /* Memory management */
 
     if (s_edges->n_elts != tmp_size)
-      BFT_REALLOC(s_edges->array, 2*s_edges->n_elts, cs_lnum_t);
+      CS_REALLOC(s_edges->array, 2*s_edges->n_elts, cs_lnum_t);
 
-    BFT_REALLOC(s_edges->ranks, s_edges->n_ranks, int);
-    BFT_REALLOC(s_edges->index, s_edges->n_ranks + 1, cs_lnum_t);
-    BFT_FREE(edge_tag);
+    CS_REALLOC(s_edges->ranks, s_edges->n_ranks, int);
+    CS_REALLOC(s_edges->index, s_edges->n_ranks + 1, cs_lnum_t);
+    CS_FREE(edge_tag);
 
   } /* End if tmp_size > 0 */
 
   /* Free memory */
 
-  BFT_FREE(tmp_edges);
-  BFT_FREE(sel_v2v_recv_idx);
-  BFT_FREE(sel_v2v_recv_lst);
+  CS_FREE(tmp_edges);
+  CS_FREE(sel_v2v_recv_idx);
+  CS_FREE(sel_v2v_recv_lst);
 
   /* Logging */
 
@@ -1545,9 +1546,9 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
   /* Exchange number of single edges */
 
-  BFT_MALLOC(request, n_interfaces * 2, MPI_Request);
-  BFT_MALLOC(status,  n_interfaces * 2, MPI_Status);
-  BFT_MALLOC(buf, 2*n_interfaces, cs_lnum_t);
+  CS_MALLOC(request, n_interfaces * 2, MPI_Request);
+  CS_MALLOC(status,  n_interfaces * 2, MPI_Status);
+  CS_MALLOC(buf, 2*n_interfaces, cs_lnum_t);
 
   for (i = 0; i < 2*n_interfaces; i++)
     buf[i] = 0;
@@ -1611,9 +1612,9 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
     }
   }
 
-  BFT_MALLOC(c_edges->ranks, c_edges->n_ranks, int);
-  BFT_MALLOC(c_edges->index, c_edges->n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(c_edges->array, 2*c_edges->n_elts, cs_lnum_t);
+  CS_MALLOC(c_edges->ranks, c_edges->n_ranks, int);
+  CS_MALLOC(c_edges->index, c_edges->n_ranks + 1, cs_lnum_t);
+  CS_MALLOC(c_edges->array, 2*c_edges->n_elts, cs_lnum_t);
 
   for (i = 0; i < c_edges->n_ranks + 1; i++)
     c_edges->index[i] = 0;
@@ -1638,7 +1639,7 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
   assert(c_edges->index[c_edges->n_ranks] == c_edges->n_elts);
 
-  BFT_FREE(buf);
+  CS_FREE(buf);
 
   /* Exchange couple of vertices defining coupled edges */
 
@@ -1705,8 +1706,8 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
   MPI_Waitall(request_count, request, status);
 
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(request);
+  CS_FREE(status);
 
   rank_shift = 0;
 
@@ -1812,11 +1813,11 @@ _filter_edge_element(cs_join_select_t   *selection,
 
   /* Allocate MPI buffers used for exchanging data */
 
-  BFT_MALLOC(request, c_edges->n_ranks + s_edges->n_ranks, MPI_Request);
-  BFT_MALLOC(status, c_edges->n_ranks + s_edges->n_ranks, MPI_Status);
+  CS_MALLOC(request, c_edges->n_ranks + s_edges->n_ranks, MPI_Request);
+  CS_MALLOC(status, c_edges->n_ranks + s_edges->n_ranks, MPI_Status);
 
-  BFT_MALLOC(c_edge_tag, c_edges->n_elts, int);
-  BFT_MALLOC(s_edge_tag, s_edges->n_elts, int);
+  CS_MALLOC(c_edge_tag, c_edges->n_elts, int);
+  CS_MALLOC(s_edge_tag, s_edges->n_elts, int);
 
   for (i = 0; i < c_edges->n_elts; i++)
     c_edge_tag[i] = 1; /* define as selected */
@@ -1926,10 +1927,10 @@ _filter_edge_element(cs_join_select_t   *selection,
 
   /* Free memory */
 
-  BFT_FREE(c_edge_tag);
-  BFT_FREE(s_edge_tag);
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(c_edge_tag);
+  CS_FREE(s_edge_tag);
+  CS_FREE(request);
+  CS_FREE(status);
 }
 
 /*----------------------------------------------------------------------------
@@ -2064,9 +2065,8 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
 
   /* Free memory */
 
-  BFT_FREE(sel_v2v_idx);
-  BFT_FREE(sel_v2v_lst);
-
+  CS_FREE(sel_v2v_idx);
+  CS_FREE(sel_v2v_lst);
 }
 #endif /* defined(HAVE_MPI) */
 
@@ -2127,7 +2127,7 @@ cs_join_create(int                      join_number,
 
   /* Initialize structure */
 
-  BFT_MALLOC(join, 1, cs_join_t);
+  CS_MALLOC(join, 1, cs_join_t);
 
   join->selection = nullptr;
 
@@ -2147,7 +2147,7 @@ cs_join_create(int                      join_number,
   /* Copy the selection criteria for future use */
 
   l = strlen(sel_criteria);
-  BFT_MALLOC(join->criteria, l + 1, char);
+  CS_MALLOC(join->criteria, l + 1, char);
   strcpy(join->criteria, sel_criteria);
 
   /* Initialize log file if necessary */
@@ -2173,7 +2173,7 @@ cs_join_create(int                      join_number,
       sprintf(rank_add, "_r%04d", cs_glob_rank_id);
     sprintf(logname, "log%cjoin_%02d%s%s.log", DIR_SEPARATOR,
             join_number, perio_add, rank_add);
-    BFT_MALLOC(join->log_name, strlen(logname) + 1, char);
+    CS_MALLOC(join->log_name, strlen(logname) + 1, char);
     strcpy(join->log_name, logname);
   }
 
@@ -2194,10 +2194,10 @@ cs_join_destroy(cs_join_t  **join)
 
     cs_join_t  *_join = *join;
 
-    BFT_FREE(_join->log_name);
-    BFT_FREE(_join->criteria);
+    CS_FREE(_join->log_name);
+    CS_FREE(_join->criteria);
 
-    BFT_FREE(_join);
+    CS_FREE(_join);
     *join = nullptr;
 
   }
@@ -2233,7 +2233,7 @@ cs_join_select_create(const char              *selection_criteria,
 
   /* Initialize cs_join_select_t struct. */
 
-  BFT_MALLOC(selection, 1, cs_join_select_t);
+  CS_MALLOC(selection, 1, cs_join_select_t);
 
   selection->n_init_b_faces = mesh->n_b_faces;
   selection->n_init_i_faces = mesh->n_i_faces;
@@ -2276,7 +2276,7 @@ cs_join_select_create(const char              *selection_criteria,
 
   /* Extract selected boundary faces (0-based at this stage) */
 
-  BFT_MALLOC(selection->faces, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(selection->faces, mesh->n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_list(selection_criteria,
                               &(selection->n_faces),
@@ -2295,8 +2295,8 @@ cs_join_select_create(const char              *selection_criteria,
     selection->n_faces = j;
   }
 
-  BFT_MALLOC(order, selection->n_faces, cs_lnum_t);
-  BFT_MALLOC(ordered_faces, selection->n_faces, cs_lnum_t);
+  CS_MALLOC(order, selection->n_faces, cs_lnum_t);
+  CS_MALLOC(ordered_faces, selection->n_faces, cs_lnum_t);
 
   cs_order_gnum_allocated(selection->faces, nullptr, order, selection->n_faces);
 
@@ -2305,8 +2305,8 @@ cs_join_select_create(const char              *selection_criteria,
   for (cs_lnum_t i = 0; i < selection->n_faces; i++)
     ordered_faces[i] = selection->faces[order[i]] + 1;
 
-  BFT_FREE(order);
-  BFT_FREE(selection->faces);
+  CS_FREE(order);
+  CS_FREE(selection->faces);
   selection->faces = ordered_faces;
 
   if (n_ranks == 1)
@@ -2417,7 +2417,7 @@ cs_join_select_create(const char              *selection_criteria,
                        selection,
                        verbosity);
 
-    BFT_FREE(vtx_tag);
+    CS_FREE(vtx_tag);
     cs_interface_set_destroy(&ifs);
 
   }
@@ -2425,8 +2425,8 @@ cs_join_select_create(const char              *selection_criteria,
 
   /* Face state setting */
 
-  BFT_MALLOC(selection->b_face_state, mesh->n_b_faces, cs_join_state_t);
-  BFT_MALLOC(selection->i_face_state, mesh->n_i_faces, cs_join_state_t);
+  CS_MALLOC(selection->b_face_state, mesh->n_b_faces, cs_join_state_t);
+  CS_MALLOC(selection->i_face_state, mesh->n_i_faces, cs_join_state_t);
 
   for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
     selection->b_face_state[i] = CS_JOIN_STATE_UNDEF;
@@ -2561,25 +2561,25 @@ cs_join_select_destroy(cs_join_param_t     param,
 
     cs_join_select_t *_js = *join_select;
 
-    BFT_FREE(_js->faces);
-    BFT_FREE(_js->compact_face_gnum);
-    BFT_FREE(_js->compact_rank_index);
-    BFT_FREE(_js->vertices);
-    BFT_FREE(_js->b_adj_faces);
-    BFT_FREE(_js->i_adj_faces);
+    CS_FREE(_js->faces);
+    CS_FREE(_js->compact_face_gnum);
+    CS_FREE(_js->compact_rank_index);
+    CS_FREE(_js->vertices);
+    CS_FREE(_js->b_adj_faces);
+    CS_FREE(_js->i_adj_faces);
 
-    BFT_FREE(_js->b_face_state);
-    BFT_FREE(_js->i_face_state);
+    CS_FREE(_js->b_face_state);
+    CS_FREE(_js->i_face_state);
 
     if (param.perio_type != FVM_PERIODICITY_NULL)
-      BFT_FREE(_js->per_v_couples);
+      CS_FREE(_js->per_v_couples);
 
     _destroy_join_sync(&(_js->s_vertices));
     _destroy_join_sync(&(_js->c_vertices));
     _destroy_join_sync(&(_js->s_edges));
     _destroy_join_sync(&(_js->c_edges));
 
-    BFT_FREE(*join_select);
+    CS_FREE(*join_select);
     *join_select = nullptr;
 
   }
@@ -2617,7 +2617,7 @@ cs_join_extract_vertices(cs_lnum_t         n_select_faces,
 
   if (n_select_faces > 0) {
 
-    BFT_MALLOC(counter, n_vertices, cs_lnum_t);
+    CS_MALLOC(counter, n_vertices, cs_lnum_t);
 
     for (i = 0; i < n_vertices; i++)
       counter[i] = 0;
@@ -2634,7 +2634,7 @@ cs_join_extract_vertices(cs_lnum_t         n_select_faces,
     for (i = 0; i < n_vertices; i++)
       _n_select_vertices += counter[i];
 
-    BFT_MALLOC(_select_vertices, _n_select_vertices, cs_lnum_t);
+    CS_MALLOC(_select_vertices, _n_select_vertices, cs_lnum_t);
 
     _n_select_vertices = 0;
     for (i = 0; i < n_vertices; i++)
@@ -2643,7 +2643,7 @@ cs_join_extract_vertices(cs_lnum_t         n_select_faces,
 
     assert(_n_select_vertices > 0);
 
-    BFT_FREE(counter);
+    CS_FREE(counter);
 
   } /* End if n_select_faces > 0 */
 
@@ -2688,7 +2688,7 @@ cs_join_clean_selection(cs_lnum_t  *n_elts,
   for (;i < *n_elts; i++, _n_elts++)
     _elts[_n_elts] = _elts[i];
 
-  BFT_REALLOC(_elts, _n_elts, cs_lnum_t);
+  CS_REALLOC(_elts, _n_elts, cs_lnum_t);
 
   *n_elts = _n_elts;
   *elts = _elts;

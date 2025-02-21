@@ -46,10 +46,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -94,14 +94,14 @@ static void
 _init_quadrature(void)
 {
   if (cs_glob_rad_transfer_params->vect_s == nullptr)
-    BFT_MALLOC(cs_glob_rad_transfer_params->vect_s,
-               cs_glob_rad_transfer_params->ndirs,
-               cs_real_3_t);
+    CS_MALLOC(cs_glob_rad_transfer_params->vect_s,
+              cs_glob_rad_transfer_params->ndirs,
+              cs_real_3_t);
 
   if (cs_glob_rad_transfer_params->angsol == nullptr)
-    BFT_MALLOC(cs_glob_rad_transfer_params->angsol,
-               cs_glob_rad_transfer_params->ndirs,
-               cs_real_t);
+    CS_MALLOC(cs_glob_rad_transfer_params->angsol,
+              cs_glob_rad_transfer_params->ndirs,
+              cs_real_t);
 }
 
 /*----------------------------------------------------------------------------
@@ -480,7 +480,7 @@ cs_rad_transfer_dir(void)
     int max_npt = 2 * nquad - 1;
 
     cs_real_3_t *xyz3d;
-    BFT_MALLOC(xyz3d, nquad * max_npt, cs_real_3_t);
+    CS_MALLOC(xyz3d, nquad * max_npt, cs_real_3_t);
 
     /* z position */
 
@@ -546,7 +546,7 @@ cs_rad_transfer_dir(void)
     for (int ii = 0; ii < cs_rp->ndirs; ii++)
       _normve(cs_rp->vect_s[ii]);
 
-    BFT_FREE(xyz3d);
+    CS_FREE(xyz3d);
     xyz3d = nullptr;
 
     /* All the directions are now known, weights will be computed */
@@ -567,7 +567,7 @@ cs_rad_transfer_dir(void)
 
     max_npt = nquad + 1;
 
-    BFT_MALLOC(xyz3d, max_npt * (nquad + 1), cs_real_3_t);
+    CS_MALLOC(xyz3d, max_npt * (nquad + 1), cs_real_3_t);
 
     /* z position */
 
@@ -658,7 +658,7 @@ cs_rad_transfer_dir(void)
 
     }
 
-    BFT_FREE(xyz3d);
+    CS_FREE(xyz3d);
 
   }
 

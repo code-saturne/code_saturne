@@ -39,12 +39,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 
@@ -191,8 +191,8 @@ cs_mesh_coherency_check(void)
 
   /* allocate and initialize buffers */
 
-  BFT_MALLOC(emin, n_cells_with_ghosts, cs_real_3_t);
-  BFT_MALLOC(emax, n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC(emin, n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC(emax, n_cells_with_ghosts, cs_real_3_t);
 
   /* Loop on coordinates */
 
@@ -297,9 +297,9 @@ cs_mesh_coherency_check(void)
 
     /* allocate and initialize buffers */
 
-    BFT_MALLOC(smin, n_cells_with_ghosts, cs_real_3_t);
-    BFT_MALLOC(smax, n_cells_with_ghosts, cs_real_3_t);
-    BFT_MALLOC(c_coords, n_cells_with_ghosts, cs_real_3_t);
+    CS_MALLOC(smin, n_cells_with_ghosts, cs_real_3_t);
+    CS_MALLOC(smax, n_cells_with_ghosts, cs_real_3_t);
+    CS_MALLOC(c_coords, n_cells_with_ghosts, cs_real_3_t);
 
     memcpy(smin, emin, n_cells_with_ghosts*sizeof(cs_real_3_t));
     memcpy(smax, emax, n_cells_with_ghosts*sizeof(cs_real_3_t));
@@ -339,9 +339,9 @@ cs_mesh_coherency_check(void)
 
     }
 
-    BFT_FREE(smin);
-    BFT_FREE(smax);
-    BFT_FREE(c_coords);
+    CS_FREE(smin);
+    CS_FREE(smax);
+    CS_FREE(c_coords);
 
   } /* end of additional updates for rotational periodicity */
 
@@ -388,11 +388,10 @@ cs_mesh_coherency_check(void)
 
   /* Free memory */
 
-  BFT_FREE(emin);
-  BFT_FREE(emax);
+  CS_FREE(emin);
+  CS_FREE(emax);
 
   bft_printf(_(" End of coherency check of the mesh structure.\n"));
-
 }
 
 /*----------------------------------------------------------------------------*/

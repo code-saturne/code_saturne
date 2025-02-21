@@ -40,7 +40,6 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
@@ -48,6 +47,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
@@ -154,16 +154,16 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
   cs_real_t *cvar_tempk = CS_F_(t)->val;
 
   cs_real_t *ei, *v;
-  BFT_MALLOC(ei, m->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(v, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(ei, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(v, m->n_cells_with_ghosts, cs_real_t);
 
   cs_real_t *alpha_eq, *y_eq, *z_eq;
-  BFT_MALLOC(alpha_eq, m->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(y_eq, m->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(z_eq, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(alpha_eq, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(y_eq, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(z_eq, m->n_cells_with_ghosts, cs_real_t);
 
   cs_real_t *relax_tau;
-  BFT_MALLOC(relax_tau, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(relax_tau, m->n_cells_with_ghosts, cs_real_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t u2 = cs_math_3_norm(vel[cell_id]);
@@ -216,12 +216,12 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
                      &cvar_pr[cell_id]);
   }
 
-  BFT_FREE(ei);
-  BFT_FREE(v);
-  BFT_FREE(alpha_eq);
-  BFT_FREE(y_eq);
-  BFT_FREE(z_eq);
-  BFT_FREE(relax_tau);
+  CS_FREE(ei);
+  CS_FREE(v);
+  CS_FREE(alpha_eq);
+  CS_FREE(y_eq);
+  CS_FREE(z_eq);
+  CS_FREE(relax_tau);
 
   /* synchronize */
   const cs_halo_t  *halo = cs_glob_mesh->halo;

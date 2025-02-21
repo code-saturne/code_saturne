@@ -46,10 +46,10 @@
 
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_log.h"
 #include "base/cs_field.h"
+#include "base/cs_mem.h"
 #include "base/cs_field_pointer.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
@@ -148,7 +148,7 @@ cs_rad_transfer_write(void)
 
   else {
     cs_real_t *tb_save;
-    BFT_MALLOC(tb_save, cs_glob_mesh->n_b_faces, cs_real_t);
+    CS_MALLOC(tb_save, cs_glob_mesh->n_b_faces, cs_real_t);
 
     for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++)
       tb_save[ifac] = f_btemp->val[ifac] + tkelvi;
@@ -159,7 +159,7 @@ cs_rad_transfer_write(void)
                              1,
                              CS_TYPE_cs_real_t,
                              tb_save);
-    BFT_FREE(tb_save);
+    CS_FREE(tb_save);
   }
 
   cs_restart_write_field_vals(rp, CS_F_(qinci)->id, 0);

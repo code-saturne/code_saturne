@@ -46,14 +46,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "mesh/cs_mesh_quantities.h"
-#include "base/cs_parall.h"
-#include "mesh/cs_mesh_quality.h"
 #include "base/cs_all_to_all.h"
+#include "base/cs_mem.h"
+#include "base/cs_parall.h"
+
+#include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_quality.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -490,7 +491,7 @@ _get_global_tolerance(cs_mesh_t            *mesh,
 
   /* Define the global tolerance array */
 
-  BFT_MALLOC(g_vtx_tolerance, block_size, double);
+  CS_MALLOC(g_vtx_tolerance, block_size, double);
 
   for (i = 0; i < block_size; i++)
     g_vtx_tolerance[i] = DBL_MAX;
@@ -519,11 +520,11 @@ _get_global_tolerance(cs_mesh_t            *mesh,
 
   cs_all_to_all_destroy(&d);
 
-  BFT_FREE(recv_glist);
-  BFT_FREE(send_glist);
-  BFT_FREE(send_list);
-  BFT_FREE(recv_list);
-  BFT_FREE(g_vtx_tolerance);
+  CS_FREE(recv_glist);
+  CS_FREE(send_glist);
+  CS_FREE(send_list);
+  CS_FREE(recv_list);
+  CS_FREE(g_vtx_tolerance);
 }
 
 #endif /* HAVE_MPI */
@@ -802,13 +803,13 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
   cs_real_t *b_vtx_norm = nullptr;
   cs_real_t *_vtx_is_fixed = nullptr;
 
-  BFT_MALLOC(_vtx_is_fixed, mesh->n_vertices, cs_real_t);
-  BFT_MALLOC(b_vtx_norm, 3*(mesh->n_vertices), cs_real_t);
+  CS_MALLOC(_vtx_is_fixed, mesh->n_vertices, cs_real_t);
+  CS_MALLOC(b_vtx_norm, 3*(mesh->n_vertices), cs_real_t);
 
   cs_mesh_quantities_b_faces(mesh,
                              &(b_face_cog),
                              &(b_face_norm));
-  BFT_FREE(b_face_cog);
+  CS_FREE(b_face_cog);
 
   for (face = 0; face < mesh->n_b_faces; face++) {
     rnorm_b = sqrt(  b_face_norm[3*face    ]*b_face_norm[3*face    ]
@@ -856,10 +857,10 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
       vtx_is_fixed[j] = 0;
   }
 
-  BFT_FREE(b_face_norm);
-  BFT_FREE(b_vtx_norm);
+  CS_FREE(b_face_norm);
+  CS_FREE(b_vtx_norm);
 
-  BFT_FREE(_vtx_is_fixed);
+  CS_FREE(_vtx_is_fixed);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -871,9 +872,9 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
  * <a href="../../theory.pdf#unwarp"><b>unwarping algorithm</b></a>
  * section of the theory guide for more informations.
  *
- * parameters:
- *   \param[in]  mesh          pointer to a cs_mesh_t structure
- *   \param[out] vtx_is_fixed  array to define vertices mobility (1 : fixed, 0 : free)
+ * \param[in]  mesh          pointer to a cs_mesh_t structure
+ * \param[out] vtx_is_fixed  array to define vertices mobility
+ *                           (1 : fixed, 0 : free)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -905,11 +906,11 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
 
   bft_printf(_("\n Start unwarping algorithm\n\n"));
 
-  BFT_MALLOC(b_face_warp, mesh->n_b_faces, cs_real_t);
-  BFT_MALLOC(i_face_warp, mesh->n_i_faces, cs_real_t);
+  CS_MALLOC(b_face_warp, mesh->n_b_faces, cs_real_t);
+  CS_MALLOC(i_face_warp, mesh->n_i_faces, cs_real_t);
 
-  BFT_MALLOC(vtx_tolerance, mesh->n_vertices, cs_real_t);
-  BFT_MALLOC(loc_vtx_mvt, 3*(mesh->n_vertices), cs_real_t);
+  CS_MALLOC(vtx_tolerance, mesh->n_vertices, cs_real_t);
+  CS_MALLOC(loc_vtx_mvt, 3*(mesh->n_vertices), cs_real_t);
 
   while (!conv) {
 
@@ -1006,7 +1007,8 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
     if (   ((1 - maxwarp/maxwarp_p) > 0 && (1 - maxwarp/maxwarp_p) < eps)
         || iter == max_iter) {
       conv = true;
-      bft_printf(_("\nUnwarping algorithm converged at iteration %d \n"), iter +1);
+      bft_printf(_("\nUnwarping algorithm converged at iteration %d \n"),
+                 iter +1);
     }
     maxwarp_p = maxwarp;
 
@@ -1015,10 +1017,10 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
                      loc_vtx_mvt,
                      vtx_is_fixed);
 
-    BFT_FREE(i_face_norm);
-    BFT_FREE(b_face_norm);
-    BFT_FREE(i_face_cog);
-    BFT_FREE(b_face_cog);
+    CS_FREE(i_face_norm);
+    CS_FREE(b_face_norm);
+    CS_FREE(i_face_cog);
+    CS_FREE(b_face_cog);
     iter++;
   }
 
@@ -1056,11 +1058,11 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
                         max_i);
   }
 
-  BFT_FREE(vtx_tolerance);
-  BFT_FREE(loc_vtx_mvt);
+  CS_FREE(vtx_tolerance);
+  CS_FREE(loc_vtx_mvt);
 
-  BFT_FREE(i_face_warp);
-  BFT_FREE(b_face_warp);
+  CS_FREE(i_face_warp);
+  CS_FREE(b_face_warp);
 
   bft_printf(_("\n End unwarping algorithm\n\n"));
 }

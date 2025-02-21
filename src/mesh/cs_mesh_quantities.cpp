@@ -41,7 +41,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -50,6 +49,7 @@
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "base/cs_porosity_from_scan.h"
@@ -207,7 +207,7 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
     (const cs_real_3_t *)fvq->i_face_cog;
 
   if (fvq->corr_grad_lin_det == nullptr)
-    BFT_MALLOC(fvq->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
+    CS_MALLOC(fvq->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
   if (fvq->corr_grad_lin == nullptr) {
     CS_MALLOC_HD(fvq->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t, amode);
     cs_mem_advise_set_read_mostly(fvq->corr_grad_lin);
@@ -967,14 +967,14 @@ _correct_cell_face_center(const cs_mesh_t    *mesh,
   cs_real_33_t *dxidxj;
   cs_real_t *determinant;
 
-  BFT_MALLOC(i_face_cog0, n_i_faces, cs_real_3_t);
-  BFT_MALLOC(b_face_cog0, n_b_faces, cs_real_3_t);
-  BFT_MALLOC(i_face_cen, n_i_faces, cs_real_3_t);
-  BFT_MALLOC(b_face_cen, n_b_faces, cs_real_3_t);
-  BFT_MALLOC(relaxf, n_i_faces, cs_real_t);
-  BFT_MALLOC(relaxb, n_b_faces, cs_real_t);
-  BFT_MALLOC(dxidxj, n_cells_with_ghosts, cs_real_33_t);
-  BFT_MALLOC(determinant, n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(i_face_cog0, n_i_faces, cs_real_3_t);
+  CS_MALLOC(b_face_cog0, n_b_faces, cs_real_3_t);
+  CS_MALLOC(i_face_cen, n_i_faces, cs_real_3_t);
+  CS_MALLOC(b_face_cen, n_b_faces, cs_real_3_t);
+  CS_MALLOC(relaxf, n_i_faces, cs_real_t);
+  CS_MALLOC(relaxb, n_b_faces, cs_real_t);
+  CS_MALLOC(dxidxj, n_cells_with_ghosts, cs_real_33_t);
+  CS_MALLOC(determinant, n_cells_with_ghosts, cs_real_t);
 
   /* Iterative process */
   for (int sweep = 0; sweep < 1; sweep++) {
@@ -1167,14 +1167,14 @@ _correct_cell_face_center(const cs_mesh_t    *mesh,
     } while (iiter < nitmax && irelax > 0);
 
   }
-  BFT_FREE(i_face_cog0);
-  BFT_FREE(b_face_cog0);
-  BFT_FREE(i_face_cen);
-  BFT_FREE(b_face_cen);
-  BFT_FREE(relaxf);
-  BFT_FREE(relaxb);
-  BFT_FREE(dxidxj);
-  BFT_FREE(determinant);
+  CS_FREE(i_face_cog0);
+  CS_FREE(b_face_cog0);
+  CS_FREE(i_face_cen);
+  CS_FREE(b_face_cen);
+  CS_FREE(relaxf);
+  CS_FREE(relaxb);
+  CS_FREE(dxidxj);
+  CS_FREE(determinant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1218,7 +1218,7 @@ _compute_cell_quantities(const cs_mesh_t      *mesh,
   /* Compute approximate cell center using face centers */
 
   cs_real_3_t *a_cell_cen;
-  BFT_MALLOC(a_cell_cen, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(a_cell_cen, n_cells_ext, cs_real_3_t);
 
   cs_mesh_quantities_cell_faces_cog(mesh,
                                     (const cs_real_t *)i_face_norm,
@@ -1297,7 +1297,7 @@ _compute_cell_quantities(const cs_mesh_t      *mesh,
 
   } /* End of loop on boundary faces */
 
-  BFT_FREE(a_cell_cen);
+  CS_FREE(a_cell_cen);
 
   /* Loop on cells to finalize the computation
      ----------------------------------------- */
@@ -1343,7 +1343,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
 
   /* First pass of verification */
   int *pb1;
-  BFT_MALLOC(pb1, n_cells_with_ghosts, int);
+  CS_MALLOC(pb1, n_cells_with_ghosts, int);
 
   for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++)
     pb1[cell_id] = 0;
@@ -1383,9 +1383,9 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
     cs_real_3_t  *b;
     cs_real_3_t  *cdgbis;
 
-    BFT_MALLOC(a, n_cells_with_ghosts, cs_real_33_t);
-    BFT_MALLOC(b, n_cells_with_ghosts, cs_real_3_t);
-    BFT_MALLOC(cdgbis, n_cells_with_ghosts, cs_real_3_t);
+    CS_MALLOC(a, n_cells_with_ghosts, cs_real_33_t);
+    CS_MALLOC(b, n_cells_with_ghosts, cs_real_3_t);
+    CS_MALLOC(cdgbis, n_cells_with_ghosts, cs_real_3_t);
 
     /* init matrice et second membre */
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++) {
@@ -1528,7 +1528,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
     /* Second verification */
 
     int *pb2;
-    BFT_MALLOC(pb2, n_cells_with_ghosts, int);
+    CS_MALLOC(pb2, n_cells_with_ghosts, int);
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++)
       pb2[cell_id] = 0;
@@ -1579,14 +1579,14 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
                                   (cs_real_t *)cell_cen);
     }
 
-    BFT_FREE(a);
-    BFT_FREE(b);
-    BFT_FREE(cdgbis);
-    BFT_FREE(pb2);
+    CS_FREE(a);
+    CS_FREE(b);
+    CS_FREE(cdgbis);
+    CS_FREE(pb2);
   }
 
   /* Free memory */
-  BFT_FREE(pb1);
+  CS_FREE(pb1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1673,7 +1673,7 @@ _cell_bad_volume_correction(const cs_mesh_t   *mesh,
   /* Iterations in order to get vol_I / max(vol_J) > critmin */
 
   double *vol_neib_max;
-  BFT_MALLOC(vol_neib_max, mesh->n_cells_with_ghosts, double);
+  CS_MALLOC(vol_neib_max, mesh->n_cells_with_ghosts, double);
 
   for (int iter = 0; iter < 10; iter++) {
 
@@ -1706,7 +1706,7 @@ _cell_bad_volume_correction(const cs_mesh_t   *mesh,
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, cell_vol);
   }
 
-  BFT_FREE(vol_neib_max);
+  CS_FREE(vol_neib_max);
 }
 
 /*----------------------------------------------------------------------------
@@ -2300,7 +2300,7 @@ _mesh_quantities_cell_faces_cog_solid
   const cs_lnum_t *cell_b_faces = ma->cell_b_faces;
 
   cs_real_t *cell_area;
-  BFT_MALLOC(cell_area, n_cells, cs_real_t);
+  CS_MALLOC(cell_area, n_cells, cs_real_t);
 
   /* Loop on cells
      ------------- */
@@ -2368,7 +2368,7 @@ _mesh_quantities_cell_faces_cog_solid
 
   } /* End of loop on cell */
 
-  BFT_FREE(cell_area);
+  CS_FREE(cell_area);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2445,7 +2445,7 @@ _compute_fluid_solid_cell_quantities
   /* Compute approximate cell center using face centers */
 
   cs_real_3_t *a_cell_cen;
-  BFT_MALLOC(a_cell_cen, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(a_cell_cen, n_cells_ext, cs_real_3_t);
 
   // TODO merge with cs_mesh_quantities_cell_faces_cog
   _mesh_quantities_cell_faces_cog_solid(m,
@@ -2460,10 +2460,10 @@ _compute_fluid_solid_cell_quantities
   /* Compute COG from pyramids sub-volume */
 
   cs_real_t *_cell_f_vol;
-  BFT_MALLOC(_cell_f_vol, n_cells_ext, cs_real_t);
+  CS_MALLOC(_cell_f_vol, n_cells_ext, cs_real_t);
 
   cs_real_3_t *_cell_f_cen;
-  BFT_MALLOC(_cell_f_cen, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(_cell_f_cen, n_cells_ext, cs_real_3_t);
 
   /* Loop on cells
      ------------- */
@@ -2576,9 +2576,9 @@ _compute_fluid_solid_cell_quantities
   } /* End of loop on cells */
 
   /* Free memory */
-  BFT_FREE(a_cell_cen);
-  BFT_FREE(_cell_f_vol);
-  BFT_FREE(_cell_f_cen);
+  CS_FREE(a_cell_cen);
+  CS_FREE(_cell_f_vol);
+  CS_FREE(_cell_f_cen);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2651,7 +2651,7 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
                const cs_real_t      w_vtx[][3])
 {
   cs_lnum_t *face_vertex_ids;
-  BFT_MALLOC(face_vertex_ids, n_glob_vtx, cs_lnum_t);
+  CS_MALLOC(face_vertex_ids, n_glob_vtx, cs_lnum_t);
   for (cs_lnum_t i = 0; i < n_glob_vtx; i++)
     face_vertex_ids[i] = i;
 
@@ -2660,7 +2660,7 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
 
   cs_lnum_t n_w_vtx = 0;
   cs_coord_3_t *edge;
-  BFT_MALLOC(edge, n_glob_vtx, cs_coord_3_t);
+  CS_MALLOC(edge, n_glob_vtx, cs_coord_3_t);
 
   for (cs_lnum_t c_id_ib = 0; c_id_ib < n_ib_cells; c_id_ib++) {
 
@@ -2828,8 +2828,8 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
     fvm_io_num_destroy(face_io_num);
   }
 
-  BFT_FREE(face_vertex_ids);
-  BFT_FREE(edge);
+  CS_FREE(face_vertex_ids);
+  CS_FREE(edge);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2902,7 +2902,7 @@ cs_mesh_quantities_create(void)
 {
   cs_mesh_quantities_t  *mesh_quantities = nullptr;
 
-  BFT_MALLOC(mesh_quantities, 1, cs_mesh_quantities_t);
+  CS_MALLOC(mesh_quantities, 1, cs_mesh_quantities_t);
 
   mesh_quantities->cell_cen = nullptr;
   mesh_quantities->cell_s_cen = nullptr;
@@ -2954,7 +2954,7 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mq)
 {
   cs_mesh_quantities_free_all(mq);
 
-  BFT_FREE(mq);
+  CS_FREE(mq);
 
   return (mq);
 }
@@ -2972,10 +2972,10 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 {
   CS_FREE_HD(mq->cell_cen);
   mq->cell_s_cen = nullptr;
-  BFT_FREE(mq->cell_vol);
+  CS_FREE(mq->cell_vol);
 
-  BFT_FREE(mq->i_face_normal);
-  BFT_FREE(mq->b_face_normal);
+  CS_FREE(mq->i_face_normal);
+  CS_FREE(mq->b_face_normal);
   mq->c_w_face_normal = nullptr;
 
   CS_FREE_HD(mq->i_face_cog);
@@ -3003,11 +3003,11 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
   CS_FREE_HD(mq->diipf);
   CS_FREE_HD(mq->djjpf);
 
-  BFT_FREE(mq->corr_grad_lin_det);
+  CS_FREE(mq->corr_grad_lin_det);
   CS_FREE_HD(mq->corr_grad_lin);
   CS_FREE_HD(mq->b_sym_flag);
   CS_FREE_HD(mq->c_disable_flag);
-  BFT_FREE(mq->bad_cell_flag);
+  CS_FREE(mq->bad_cell_flag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3315,13 +3315,13 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   }
 
   cs_real_23_t *i_f_face_cog_dual;
-  BFT_MALLOC(i_f_face_cog_dual, m->n_i_faces, cs_real_23_t);
+  CS_MALLOC(i_f_face_cog_dual, m->n_i_faces, cs_real_23_t);
   cs_array_real_set_scalar(3*2*m->n_i_faces,
                            -HUGE_VAL,
                            (cs_real_t *)i_f_face_cog_dual);
 
   cs_real_23_t *i_f_face_cell_normal;
-  BFT_MALLOC(i_f_face_cell_normal, m->n_i_faces, cs_real_23_t);
+  CS_MALLOC(i_f_face_cell_normal, m->n_i_faces, cs_real_23_t);
 
   cs_array_real_set_scalar(3*2*m->n_i_faces,
                            -HUGE_VAL,
@@ -3337,37 +3337,37 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   /* ib face vertex number */
   cs_lnum_t *w_vtx_idx;
-  BFT_MALLOC(w_vtx_idx, m->n_cells+1, cs_lnum_t);
+  CS_MALLOC(w_vtx_idx, m->n_cells+1, cs_lnum_t);
   w_vtx_idx[0] = 0;
 
   /* ib face vertex coordinates */
   cs_real_3_t *w_vtx;
   cs_lnum_t w_vtx_max_size = m->n_cells*16;
-  BFT_MALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
+  CS_MALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
 
   /* two vertices id for an ib edge */
   cs_lnum_2_t *vtx_ids;
-  BFT_MALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
+  CS_MALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
 
   /* compute and store the first vertex on the solid immersed face
    * to compute its surface and COG */
 
   cs_real_3_t *v_w_ref;
-  BFT_MALLOC(v_w_ref, m->n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC(v_w_ref, m->n_cells_with_ghosts, cs_real_3_t);
   cs_array_real_set_scalar(3*m->n_cells_with_ghosts,
                            0.,
                            (cs_real_t *)v_w_ref);
 
   cs_lnum_t *flag_id;
-  BFT_MALLOC(flag_id, m->n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(flag_id, m->n_cells_with_ghosts, cs_lnum_t);
   cs_array_lnum_fill_zero(m->n_cells_with_ghosts, flag_id);
 
   cs_real_t *sum_surf;
-  BFT_MALLOC(sum_surf, m->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(sum_surf, m->n_cells_with_ghosts, cs_real_t);
   cs_array_real_fill_zero(m->n_cells_with_ghosts, sum_surf);
 
   cs_real_t *_i_f_surf;
-  BFT_MALLOC(_i_f_surf, m->n_i_faces, cs_real_t);
+  CS_MALLOC(_i_f_surf, m->n_i_faces, cs_real_t);
   cs_array_real_set_scalar(m->n_i_faces, DBL_MAX, _i_f_surf);
 
   cs_lnum_t w_vtx_s_id = 0;
@@ -3410,7 +3410,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       cs_real_t *_vc[10][3];
       cs_real_3_t *vc = (cs_real_3_t *)_vc;
       if (n_face_vertices > 10)
-        BFT_MALLOC(vc, n_face_vertices, cs_real_3_t);
+        CS_MALLOC(vc, n_face_vertices, cs_real_3_t);
 
       cs_array_real_set_scalar(3*n_face_vertices,
                                -1.,
@@ -3422,7 +3422,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       cs_real_t *_f_vtx_coord[20][3];
       cs_real_3_t *f_vtx_coord = (cs_real_3_t *)_f_vtx_coord;
       if (max_n_f_face_vertices > 20)
-        BFT_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_3_t);
+        CS_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_3_t);
 
       cs_array_real_set_scalar(3*max_n_f_face_vertices,
                                -1.,
@@ -3507,7 +3507,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
             if (!(vc_dot_nw[0] > 0.)) {
               s_vtx_id++;
               if (s_vtx_id >= 2)
-                BFT_REALLOC(v_w_inteface, s_vtx_id + 1, cs_real_3_t);
+                CS_REALLOC(v_w_inteface, s_vtx_id + 1, cs_real_3_t);
 
               _proj_solid_vtx_to_plane(vc[loc_id[0]], /* direction of proj */
                                        vc[loc_id[1]], /* projected vtx */
@@ -3530,8 +3530,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
               if (w_vtx_s_id + n_w_vtx > w_vtx_max_size) {
                 w_vtx_max_size *= 2;
-                BFT_REALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
-                BFT_REALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
+                CS_REALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
+                CS_REALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
               }
 
               /* Coordinates of the ib vertex */
@@ -3556,7 +3556,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
               s_vtx_id++;
               if (s_vtx_id >= 2)
-                BFT_REALLOC(v_w_inteface, s_vtx_id + 1, cs_real_3_t);
+                CS_REALLOC(v_w_inteface, s_vtx_id + 1, cs_real_3_t);
 
               _proj_solid_vtx_to_plane(vc[loc_id[2]],
                                        vc[loc_id[1]],
@@ -3580,8 +3580,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
               if (w_vtx_s_id + n_w_vtx > w_vtx_max_size) {
                 w_vtx_max_size *= 2;
-                BFT_REALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
-                BFT_REALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
+                CS_REALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
+                CS_REALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
               }
 
               /* Coordinates of the ib vertex */
@@ -3628,7 +3628,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                     * cs_math_3_norm(vn);
 
         if (v_w_inteface != (cs_real_3_t *)_v_w_inteface)
-          BFT_FREE(v_w_inteface);
+          CS_FREE(v_w_inteface);
       }
 
       cs_lnum_t n_f_face_vertices = f_vtx_id;
@@ -3639,7 +3639,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_lnum_t *_f_face_pos[8];
         cs_lnum_t *f_face_pos = (cs_lnum_t *)_f_face_pos;
         if (n_f_face_vertices > 8)
-          BFT_MALLOC(f_face_pos, n_f_face_vertices, cs_lnum_t);
+          CS_MALLOC(f_face_pos, n_f_face_vertices, cs_lnum_t);
 
         for (cs_lnum_t i = 0; i < n_f_face_vertices; i++)
           f_face_pos[i] = i;
@@ -3651,7 +3651,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_real_t *_f_vtx_coord_l[10][3];
         cs_real_3_t *f_vtx_coord_l = (cs_real_3_t *)_f_vtx_coord_l;
         if (n_f_face_vertices > 10)
-          BFT_MALLOC(f_vtx_coord_l, n_f_face_vertices, cs_real_3_t);
+          CS_MALLOC(f_vtx_coord_l, n_f_face_vertices, cs_real_3_t);
 
         for (cs_lnum_t ffv = 0; ffv < n_f_face_vertices; ffv++) {
           for (cs_lnum_t i = 0; i < 3; i++)
@@ -3666,7 +3666,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                  _i_f_face_normal);
 
         if (f_vtx_coord_l != (cs_real_3_t *)_f_vtx_coord_l)
-          BFT_FREE(f_vtx_coord_l);
+          CS_FREE(f_vtx_coord_l);
 
         /* Storing fluid face COG associated to each cell */
         for (cs_lnum_t i = 0; i < 3; i++) {
@@ -3675,14 +3675,14 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         }
 
         if (f_face_pos != (cs_lnum_t *)_f_face_pos)
-          BFT_FREE(f_face_pos);
+          CS_FREE(f_face_pos);
       }
 
       if (vc != (cs_real_3_t *)_vc)
-        BFT_FREE(vc);
+        CS_FREE(vc);
 
       if (f_vtx_coord != (cs_real_3_t *)_f_vtx_coord)
-        BFT_FREE(f_vtx_coord);
+        CS_FREE(f_vtx_coord);
 
     } /* End loop on adjacents cells */
 
@@ -3705,7 +3705,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       cs_real_t *_vc[10][3];
       cs_real_3_t *vc = (cs_real_3_t *)_vc;
       if (n_face_vertices > 10)
-        BFT_MALLOC(vc, n_face_vertices, cs_real_3_t);
+        CS_MALLOC(vc, n_face_vertices, cs_real_3_t);
 
       cs_array_real_set_scalar(3*n_face_vertices,
                                -1.,
@@ -3717,7 +3717,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
       cs_real_t *_f_vtx_coord[20][3];
       cs_real_3_t *f_vtx_coord = (cs_real_3_t *)_f_vtx_coord;
       if (max_n_f_face_vertices > 20)
-        BFT_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_3_t);
+        CS_MALLOC(f_vtx_coord, max_n_f_face_vertices, cs_real_3_t);
 
       cs_array_real_set_scalar(3*max_n_f_face_vertices,
                                -1.,
@@ -3798,7 +3798,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
             if (!(vc_dot_nw[0] > 0.)) {
               s_vtx_count++;
               if (s_vtx_count >= 2)
-                BFT_REALLOC(v_w_inteface, s_vtx_count + 1, cs_real_3_t);
+                CS_REALLOC(v_w_inteface, s_vtx_count + 1, cs_real_3_t);
 
               _proj_solid_vtx_to_plane(vc[loc_id[0]],
                                        vc[loc_id[1]],
@@ -3821,8 +3821,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
               if (w_vtx_s_id + n_w_vtx > w_vtx_max_size) {
                 w_vtx_max_size *= 2;
-                BFT_REALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
-                BFT_REALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
+                CS_REALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
+                CS_REALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
               }
 
               /* Coordinates of the ib vertex */
@@ -3847,7 +3847,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
             if (!(vc_dot_nw[2] > 0.)) {
               s_vtx_count++;
               if (s_vtx_count >= 2)
-                BFT_REALLOC(v_w_inteface, s_vtx_count + 1, cs_real_3_t);
+                CS_REALLOC(v_w_inteface, s_vtx_count + 1, cs_real_3_t);
 
               _proj_solid_vtx_to_plane(vc[loc_id[2]],
                                        vc[loc_id[1]],
@@ -3870,8 +3870,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
               if (w_vtx_s_id + n_w_vtx > w_vtx_max_size) {
                 w_vtx_max_size *= 2;
-                BFT_REALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
-                BFT_REALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
+                CS_REALLOC(w_vtx, w_vtx_max_size, cs_real_3_t);
+                CS_REALLOC(vtx_ids, w_vtx_max_size, cs_lnum_2_t);
               }
 
               /* Coordinates of the ib vertex */
@@ -3919,7 +3919,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                  * cs_math_3_norm(vn);
 
         if (v_w_inteface != (cs_real_3_t *)_v_w_inteface)
-          BFT_FREE(v_w_inteface);
+          CS_FREE(v_w_inteface);
       }
 
       cs_lnum_t n_f_face_vertices = f_vtx_count;
@@ -3930,7 +3930,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_lnum_t *_f_face_pos[8];
         cs_lnum_t *f_face_pos = (cs_lnum_t *)_f_face_pos;
         if (n_f_face_vertices > 8)
-          BFT_MALLOC(f_face_pos, n_f_face_vertices, cs_lnum_t);
+          CS_MALLOC(f_face_pos, n_f_face_vertices, cs_lnum_t);
 
         for (cs_lnum_t i = 0; i < n_f_face_vertices; i++) {
           f_face_pos[i] = i;
@@ -3943,7 +3943,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         cs_real_t *_f_vtx_coord_l[8][3];
         cs_real_3_t *f_vtx_coord_l = (cs_real_3_t *)_f_vtx_coord_l;
         if (n_f_face_vertices > 8)
-          BFT_MALLOC(f_vtx_coord_l, n_f_face_vertices, cs_real_3_t);
+          CS_MALLOC(f_vtx_coord_l, n_f_face_vertices, cs_real_3_t);
 
         for (cs_lnum_t ffv = 0; ffv < n_f_face_vertices; ffv++) {
           for (cs_lnum_t i = 0; i < 3; i++)
@@ -3958,7 +3958,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                  face_normal);
 
         if (f_vtx_coord_l != (cs_real_3_t *)_f_vtx_coord_l)
-          BFT_FREE(f_vtx_coord_l);
+          CS_FREE(f_vtx_coord_l);
 
         /* Adjust porosity and COG */
 
@@ -3969,14 +3969,14 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         mq_f->b_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
 
         if (f_face_pos != (cs_lnum_t *)_f_face_pos)
-          BFT_FREE(f_face_pos);
+          CS_FREE(f_face_pos);
       }
 
       if (vc != (cs_real_3_t *)_vc)
-        BFT_FREE(vc);
+        CS_FREE(vc);
 
       if (f_vtx_coord != (cs_real_3_t *)_f_vtx_coord)
-        BFT_FREE(f_vtx_coord);
+        CS_FREE(f_vtx_coord);
 
     } /* Loop on boundary faces */
 
@@ -4010,10 +4010,10 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   } /* End loop on cells */
 
-  BFT_FREE(sum_surf);
-  BFT_FREE(v_w_ref);
-  BFT_FREE(flag_id);
-  BFT_REALLOC(w_vtx, w_vtx_idx[m->n_cells], cs_real_3_t);
+  CS_FREE(sum_surf);
+  CS_FREE(v_w_ref);
+  CS_FREE(flag_id);
+  CS_REALLOC(w_vtx, w_vtx_idx[m->n_cells], cs_real_3_t);
 
   /* Synchronize geometrics quantities with face duality */
 
@@ -4027,7 +4027,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     cs_gnum_t **perio_face_couples = nullptr;
 
     if (n_perio > 0) {
-      BFT_MALLOC(perio_num, n_perio, int);
+      CS_MALLOC(perio_num, n_perio, int);
       for (int i = 0; i < n_perio; i++)
         perio_num[i] = i+1;
 
@@ -4048,11 +4048,11 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
     if (n_perio > 0) {
       for (int i = 0; i < n_perio; i++)
-        BFT_FREE(perio_face_couples[i]);
+        CS_FREE(perio_face_couples[i]);
 
-      BFT_FREE(perio_face_couples);
-      BFT_FREE(n_perio_face_couples);
-      BFT_FREE(perio_num);
+      CS_FREE(perio_face_couples);
+      CS_FREE(n_perio_face_couples);
+      CS_FREE(perio_num);
     }
 
     /* Synchronization */
@@ -4240,7 +4240,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   /* Compute solid normal from fluid normals */
   cs_real_33_t *xpsn;
-  BFT_MALLOC(xpsn, m->n_cells_with_ghosts, cs_real_33_t);
+  CS_MALLOC(xpsn, m->n_cells_with_ghosts, cs_real_33_t);
   cs_array_real_set_scalar(9*m->n_cells_with_ghosts,
                            0.,
                            (cs_real_t *)xpsn);
@@ -4383,10 +4383,10 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   /* Connectivity ib_cell to cells */
   cs_lnum_t *ibcell_cells; // TODO: use only b_face_cells
-  BFT_MALLOC(ibcell_cells, n_ib_cells, cs_lnum_t);
+  CS_MALLOC(ibcell_cells, n_ib_cells, cs_lnum_t);
 
   cs_lnum_t *face_vertex_idx;
-  BFT_MALLOC(face_vertex_idx, n_ib_cells + 1, cs_lnum_t);
+  CS_MALLOC(face_vertex_idx, n_ib_cells + 1, cs_lnum_t);
   face_vertex_idx[0] = 0;
 
   cs_lnum_t n_ib_cells0 = 0;
@@ -4428,18 +4428,18 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                  w_vtx);
 
   /* Free memory */
-  BFT_FREE(face_vertex_idx);
-  BFT_FREE(ibcell_cells);
-  BFT_FREE(_i_f_surf);
+  CS_FREE(face_vertex_idx);
+  CS_FREE(ibcell_cells);
+  CS_FREE(_i_f_surf);
 
-  BFT_FREE(i_f_face_cell_normal);
-  BFT_FREE(xpsn);
+  CS_FREE(i_f_face_cell_normal);
+  CS_FREE(xpsn);
 
-  BFT_FREE(w_vtx_idx);
-  BFT_FREE(vtx_ids);
-  BFT_FREE(w_vtx);
+  CS_FREE(w_vtx_idx);
+  CS_FREE(vtx_ids);
+  CS_FREE(w_vtx);
 
-  BFT_FREE(i_f_face_cog_dual);
+  CS_FREE(i_f_face_cog_dual);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4712,10 +4712,10 @@ cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
   cs_lnum_t  n_i_faces = mesh->n_i_faces;
 
   if (mesh_quantities->diipf == nullptr)
-    BFT_MALLOC(mesh_quantities->diipf, n_i_faces, cs_rreal_3_t);
+    CS_MALLOC(mesh_quantities->diipf, n_i_faces, cs_rreal_3_t);
 
   if (mesh_quantities->djjpf == nullptr)
-    BFT_MALLOC(mesh_quantities->djjpf, n_i_faces, cs_rreal_3_t);
+    CS_MALLOC(mesh_quantities->djjpf, n_i_faces, cs_rreal_3_t);
 
   _compute_face_sup_vectors
     (mesh->n_cells,
@@ -4752,7 +4752,7 @@ cs_mesh_quantities_face_normal(const cs_mesh_t   *mesh,
 
   /* Internal face treatment */
 
-  BFT_MALLOC(i_face_normal, n_i_faces * 3, cs_real_t);
+  CS_MALLOC(i_face_normal, n_i_faces * 3, cs_real_t);
 
   _compute_face_normal(mesh->n_i_faces,
                        (const cs_real_3_t *)mesh->vtx_coord,
@@ -4764,7 +4764,7 @@ cs_mesh_quantities_face_normal(const cs_mesh_t   *mesh,
 
   /* Boundary face treatment */
 
-  BFT_MALLOC(b_face_normal, n_b_faces * 3, cs_real_t);
+  CS_MALLOC(b_face_normal, n_b_faces * 3, cs_real_t);
 
   _compute_face_normal(mesh->n_b_faces,
                        (const cs_real_3_t *)mesh->vtx_coord,
@@ -4794,8 +4794,8 @@ cs_mesh_quantities_i_faces(const cs_mesh_t   *mesh,
 {
   cs_real_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
 
-  BFT_MALLOC(i_face_cog, mesh->n_i_faces * mesh->dim, cs_real_t);
-  BFT_MALLOC(i_face_normal, mesh->n_i_faces * mesh->dim, cs_real_t);
+  CS_MALLOC(i_face_cog, mesh->n_i_faces * mesh->dim, cs_real_t);
+  CS_MALLOC(i_face_normal, mesh->n_i_faces * mesh->dim, cs_real_t);
 
   _compute_face_quantities(mesh->n_i_faces,
                           (const cs_real_3_t *)mesh->vtx_coord,
@@ -4827,8 +4827,8 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
 {
   cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
 
-  BFT_MALLOC(b_face_cog, mesh->n_b_faces * mesh->dim, cs_real_t);
-  BFT_MALLOC(b_face_normal, mesh->n_b_faces * mesh->dim, cs_real_t);
+  CS_MALLOC(b_face_cog, mesh->n_b_faces * mesh->dim, cs_real_t);
+  CS_MALLOC(b_face_normal, mesh->n_b_faces * mesh->dim, cs_real_t);
 
   _compute_face_quantities(mesh->n_b_faces,
                            (const cs_real_3_t *)mesh->vtx_coord,
@@ -4895,7 +4895,7 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
 
   /* Initialization */
 
-  BFT_MALLOC(cell_area, n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(cell_area, n_cells_with_ghosts, cs_real_t);
 
   for (cs_lnum_t j = 0; j < n_cells_with_ghosts; j++) {
 
@@ -4981,7 +4981,7 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
 
   /* Free memory */
 
-  BFT_FREE(cell_area);
+  CS_FREE(cell_area);
 }
 
 /*----------------------------------------------------------------------------
@@ -5001,10 +5001,10 @@ cs_real_t *
 cs_mesh_quantities_cell_volume(const cs_mesh_t  *mesh)
 {
   cs_real_t *cell_vol;
-  BFT_MALLOC(cell_vol, mesh->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(cell_vol, mesh->n_cells_with_ghosts, cs_real_t);
 
   cs_real_3_t *cell_cen;
-  BFT_MALLOC(cell_cen, mesh->n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC(cell_cen, mesh->n_cells_with_ghosts, cs_real_3_t);
 
   cs_real_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
   cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
@@ -5020,11 +5020,11 @@ cs_mesh_quantities_cell_volume(const cs_mesh_t  *mesh)
                            (cs_real_3_t *)cell_cen,
                            cell_vol);
 
-  BFT_FREE(cell_cen);
-  BFT_FREE(b_face_normal);
-  BFT_FREE(b_face_cog);
-  BFT_FREE(i_face_normal);
-  BFT_FREE(i_face_cog);
+  CS_FREE(cell_cen);
+  CS_FREE(b_face_normal);
+  CS_FREE(b_face_cog);
+  CS_FREE(i_face_normal);
+  CS_FREE(i_face_cog);
 
   return cell_vol;
 }
@@ -5102,7 +5102,7 @@ cs_mesh_quantities_cell_extents(const cs_mesh_t  *m,
 {
   cs_real_6_t *bbox;
 
-  BFT_MALLOC(bbox, m->n_cells_with_ghosts, cs_real_6_t);
+  CS_MALLOC(bbox, m->n_cells_with_ghosts, cs_real_6_t);
 
   for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++) {
     bbox[i][0] = HUGE_VAL;
@@ -5211,9 +5211,9 @@ cs_mesh_quantities_b_thickness_v(const cs_mesh_t             *m,
   cs_real_t *v_sum = nullptr;
   cs_real_t *f_b_thickness = nullptr;
 
-  BFT_MALLOC(v_sum, m->n_vertices*2, cs_real_t);
+  CS_MALLOC(v_sum, m->n_vertices*2, cs_real_t);
 
-  BFT_MALLOC(f_b_thickness, m->n_b_faces*2, cs_real_t);
+  CS_MALLOC(f_b_thickness, m->n_b_faces*2, cs_real_t);
   _b_thickness(m, mq, f_b_thickness);
 
   if (n_passes < 1)
@@ -5269,7 +5269,7 @@ cs_mesh_quantities_b_thickness_v(const cs_mesh_t             *m,
 
   }
 
-  BFT_FREE(f_b_thickness);
+  CS_FREE(f_b_thickness);
 
   for (cs_lnum_t j = 0; j < m->n_vertices; j++) {
     if (v_sum[j*2+1] > 0)
@@ -5278,7 +5278,7 @@ cs_mesh_quantities_b_thickness_v(const cs_mesh_t             *m,
       b_thickness[j] = 0;
   }
 
-  BFT_FREE(v_sum);
+  CS_FREE(v_sum);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5305,7 +5305,7 @@ cs_mesh_quantities_b_thickness_f(const cs_mesh_t             *m,
 
     cs_real_t *v_b_thickness = nullptr;
 
-    BFT_MALLOC(v_b_thickness, m->n_vertices, cs_real_t);
+    CS_MALLOC(v_b_thickness, m->n_vertices, cs_real_t);
 
     cs_mesh_quantities_b_thickness_v(m,
                                      mq,
@@ -5323,7 +5323,7 @@ cs_mesh_quantities_b_thickness_f(const cs_mesh_t             *m,
       b_thickness[f_id] /= (e_id - s_id);
     }
 
-    BFT_FREE(v_b_thickness);
+    CS_FREE(v_b_thickness);
 
   }
 }

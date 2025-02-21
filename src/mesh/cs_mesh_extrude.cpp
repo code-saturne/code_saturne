@@ -46,13 +46,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
 
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_boundary.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -170,7 +170,7 @@ _select_vertices_from_adj_b_faces(const cs_mesh_t   *m,
 
   /* Build vertices indirection */
 
-  BFT_MALLOC(v_flag, m->n_vertices, char);
+  CS_MALLOC(v_flag, m->n_vertices, char);
 
   for (cs_lnum_t i = 0; i < m->n_vertices; i++)
     v_flag[i] = 0;
@@ -212,7 +212,7 @@ _select_vertices_from_adj_b_faces(const cs_mesh_t   *m,
       _n_vertices++;
   }
 
-  BFT_MALLOC(_vertices, _n_vertices, cs_lnum_t);
+  CS_MALLOC(_vertices, _n_vertices, cs_lnum_t);
 
   _n_vertices = 0;
   for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
@@ -224,7 +224,7 @@ _select_vertices_from_adj_b_faces(const cs_mesh_t   *m,
 
   /* Free temporary arrays and return result array */
 
-  BFT_FREE(v_flag);
+  CS_FREE(v_flag);
 
   *n_vertices = _n_vertices;
   *vertices = _vertices;
@@ -333,7 +333,7 @@ _build_face_edges(cs_mesh_t         *m,
   /* Build vertices flag */
 
   char *v_flag;
-  BFT_MALLOC(v_flag, m->n_vertices, char);
+  CS_MALLOC(v_flag, m->n_vertices, char);
   for (cs_lnum_t i = 0; i < m->n_vertices; i++)
     v_flag[i] = 0;
   for (cs_lnum_t i = 0; i < n_vertices; i++)
@@ -342,7 +342,7 @@ _build_face_edges(cs_mesh_t         *m,
   /* Build vertices indirection */
 
   cs_lnum_t *v2v_idx;
-  BFT_MALLOC(v2v_idx, m->n_vertices+1, cs_lnum_t);
+  CS_MALLOC(v2v_idx, m->n_vertices+1, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < m->n_vertices+1; i++)
     v2v_idx[i] = 0;
@@ -373,8 +373,8 @@ _build_face_edges(cs_mesh_t         *m,
 
   cs_lnum_t *v2v, *v2v_count;
 
-  BFT_MALLOC(v2v, v2v_idx[m->n_vertices], cs_lnum_t);
-  BFT_MALLOC(v2v_count, m->n_vertices, cs_lnum_t);
+  CS_MALLOC(v2v, v2v_idx[m->n_vertices], cs_lnum_t);
+  CS_MALLOC(v2v_count, m->n_vertices, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < m->n_vertices; i++)
     v2v_count[i] = 0;
@@ -408,7 +408,7 @@ _build_face_edges(cs_mesh_t         *m,
     }
   }
 
-  BFT_FREE(v_flag);
+  CS_FREE(v_flag);
 
   /* Make indexed structure compact */
 
@@ -418,14 +418,14 @@ _build_face_edges(cs_mesh_t         *m,
                                              v2v_count,
                                              v2v);
 
-  BFT_REALLOC(v2v, _n_edges, cs_lnum_t);
+  CS_REALLOC(v2v, _n_edges, cs_lnum_t);
 
-  BFT_FREE(v2v_count);
+  CS_FREE(v2v_count);
 
   /* Generate boundary face -> selected face indirection */
 
   cs_lnum_t *f_s_id;
-  BFT_MALLOC(f_s_id, m->n_b_faces, cs_lnum_t);
+  CS_MALLOC(f_s_id, m->n_b_faces, cs_lnum_t);
 
   for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++)
     f_s_id[f_id] = -1;
@@ -457,10 +457,10 @@ _build_face_edges(cs_mesh_t         *m,
   cs_lnum_2_t *e2v, *e2sf;
   int *e_gc, *e_nf;
 
-  BFT_MALLOC(e2v, _n_edges, cs_lnum_2_t);
-  BFT_MALLOC(e2sf, _n_edges, cs_lnum_2_t);
-  BFT_MALLOC(e_gc, _n_edges, int);
-  BFT_MALLOC(e_nf, _n_edges, int);
+  CS_MALLOC(e2v, _n_edges, cs_lnum_2_t);
+  CS_MALLOC(e2sf, _n_edges, cs_lnum_2_t);
+  CS_MALLOC(e_gc, _n_edges, int);
+  CS_MALLOC(e_nf, _n_edges, int);
 
   for (cs_lnum_t i = 0; i < _n_edges; i++) {
     e2v[i][0] = -1;
@@ -504,10 +504,10 @@ _build_face_edges(cs_mesh_t         *m,
 
   /* Free work arrays */
 
-  BFT_FREE(v2v);
-  BFT_FREE(v2v_idx);
+  CS_FREE(v2v);
+  CS_FREE(v2v_idx);
 
-  BFT_FREE(f_s_id);
+  CS_FREE(f_s_id);
 
   /* Build initial global numbering if applicable */
   /* -------------------------------------------- */
@@ -519,7 +519,7 @@ _build_face_edges(cs_mesh_t         *m,
     const cs_gnum_t  *global_vtx_num = m->global_vtx_num;
     cs_gnum_t *g_e2v;
 
-    BFT_MALLOC(g_e2v, _n_edges*2, cs_gnum_t);
+    CS_MALLOC(g_e2v, _n_edges*2, cs_gnum_t);
 
     /* Orient and order edges based on global (not local) numbers */
 
@@ -549,7 +549,7 @@ _build_face_edges(cs_mesh_t         *m,
     cs_order_reorder_data(_n_edges, sizeof(int), order, e_gc);
     cs_order_reorder_data(_n_edges, sizeof(int), order, e_nf);
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
     fvm_io_num_t  *e_io_num
       = fvm_io_num_create_from_adj_s(nullptr, g_e2v, _n_edges, 2);
@@ -558,7 +558,7 @@ _build_face_edges(cs_mesh_t         *m,
 
     e_io_num = fvm_io_num_destroy(e_io_num);
 
-    BFT_FREE(g_e2v);
+    CS_FREE(g_e2v);
 
     /* No need to handle periodicity here, as periodic edges could
        have independent group classes. */
@@ -609,7 +609,7 @@ _build_face_edges(cs_mesh_t         *m,
     else if (e_nf[i] > 2) {
       /* Too many incident faces: no extrusion along this edge */
       if (lock_mult == nullptr) {
-        BFT_MALLOC(lock_mult,  m->n_vertices, cs_lnum_t);
+        CS_MALLOC(lock_mult,  m->n_vertices, cs_lnum_t);
         for (cs_lnum_t j = 0; j < m->n_vertices; j++)
           lock_mult[j] = 1;
       }
@@ -621,9 +621,9 @@ _build_face_edges(cs_mesh_t         *m,
   cs_lnum_t     *_b_e2sf;
   cs_lnum_2_t   *_b_e2v;
   int           *_b_e_gc;
-  BFT_MALLOC(_b_e2sf, _n_b_edges, cs_lnum_t);
-  BFT_MALLOC(_b_e2v, _n_b_edges, cs_lnum_2_t);
-  BFT_MALLOC(_b_e_gc, _n_b_edges, int);
+  CS_MALLOC(_b_e2sf, _n_b_edges, cs_lnum_t);
+  CS_MALLOC(_b_e2v, _n_b_edges, cs_lnum_2_t);
+  CS_MALLOC(_b_e_gc, _n_b_edges, int);
 
   /* Distribution loop */
 
@@ -655,9 +655,9 @@ _build_face_edges(cs_mesh_t         *m,
     }
   }
 
-  BFT_REALLOC(e2sf, _n_i_edges, cs_lnum_2_t);
-  BFT_REALLOC(e2v, _n_i_edges, cs_lnum_2_t);
-  BFT_FREE(e_gc);
+  CS_REALLOC(e2sf, _n_i_edges, cs_lnum_2_t);
+  CS_REALLOC(e2v, _n_i_edges, cs_lnum_2_t);
+  CS_FREE(e_gc);
 
   /* Compact global numberings if required */
 
@@ -665,8 +665,8 @@ _build_face_edges(cs_mesh_t         *m,
 
     cs_lnum_t ki = 0, kb = 0;
     cs_lnum_t *i_edges, *b_edges;
-    BFT_MALLOC(i_edges, _n_i_edges, cs_lnum_t);
-    BFT_MALLOC(b_edges, _n_b_edges, cs_lnum_t);
+    CS_MALLOC(i_edges, _n_i_edges, cs_lnum_t);
+    CS_MALLOC(b_edges, _n_b_edges, cs_lnum_t);
 
     for (cs_lnum_t i = 0; i < _n_edges; i++) {
       if (e_nf[i] == 2)
@@ -685,8 +685,8 @@ _build_face_edges(cs_mesh_t         *m,
                                                  _n_b_edges,
                                                  0);
 
-    BFT_FREE(i_edges);
-    BFT_FREE(b_edges);
+    CS_FREE(i_edges);
+    CS_FREE(b_edges);
 
   }
   else {
@@ -696,8 +696,8 @@ _build_face_edges(cs_mesh_t         *m,
 
   }
 
-  BFT_FREE(e_gnum);
-  BFT_FREE(e_nf);
+  CS_FREE(e_gnum);
+  CS_FREE(e_nf);
 
   /* Other return values */
 
@@ -715,11 +715,11 @@ _build_face_edges(cs_mesh_t         *m,
   cs_lnum_t  *_n_layers = nullptr;
 
   if (lock_mult != nullptr) {
-    BFT_MALLOC(_n_layers, n_vertices, cs_lnum_t);
+    CS_MALLOC(_n_layers, n_vertices, cs_lnum_t);
     for (cs_lnum_t j = 0; j < n_vertices; j++) {
       _n_layers[j] = n_layers[j] * lock_mult[vertices[j]];
     }
-    BFT_FREE(lock_mult);
+    CS_FREE(lock_mult);
   }
 
   return _n_layers;
@@ -765,7 +765,7 @@ _add_extruded_vertices(cs_mesh_t          *m,
 
   cs_lnum_t *v_shift;
 
-  BFT_MALLOC(v_shift, n_vertices+1, cs_lnum_t);
+  CS_MALLOC(v_shift, n_vertices+1, cs_lnum_t);
 
   v_shift[0] = 0;
   for (cs_lnum_t i = 0; i < n_vertices; i++)
@@ -775,7 +775,7 @@ _add_extruded_vertices(cs_mesh_t          *m,
 
   /* Update coordinates */
 
-  BFT_REALLOC(m->vtx_coord, (n_vertices_ini + n_vertices_add)*3, cs_real_t);
+  CS_REALLOC(m->vtx_coord, (n_vertices_ini + n_vertices_add)*3, cs_real_t);
 
   if (distribution != nullptr) {
     for (cs_lnum_t i = 0; i < n_vertices; i++) {
@@ -824,7 +824,7 @@ _add_extruded_vertices(cs_mesh_t          *m,
 
     assert(n_vertices_add == fvm_io_num_get_local_count(v_add_io_num));
 
-    BFT_REALLOC(m->global_vtx_num, n_vertices_ini + n_vertices_add, cs_gnum_t);
+    CS_REALLOC(m->global_vtx_num, n_vertices_ini + n_vertices_add, cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < n_vertices_add; i++)
       m->global_vtx_num[n_vertices_ini + i] = v_add_gnum[i] + m->n_g_vertices;
@@ -840,7 +840,7 @@ _add_extruded_vertices(cs_mesh_t          *m,
   /* Update refinement level */
 
   if (m->have_r_gen) {
-    BFT_REALLOC(m->vtx_r_gen, (n_vertices_ini + n_vertices_add), char);
+    CS_REALLOC(m->vtx_r_gen, (n_vertices_ini + n_vertices_add), char);
 
     for (cs_lnum_t i = 0; i < n_vertices_add; i++)
       m->vtx_r_gen[n_vertices_ini + i] = 0;
@@ -887,8 +887,8 @@ _add_extruded_cells(cs_mesh_t          *m,
   cs_lnum_t *c_shift;
   int *c_family;
 
-  BFT_MALLOC(c_shift, n_faces+1, cs_lnum_t);
-  BFT_MALLOC(c_family, n_faces, int);
+  CS_MALLOC(c_shift, n_faces+1, cs_lnum_t);
+  CS_MALLOC(c_family, n_faces, int);
 
   c_shift[0] = 0;
 
@@ -918,12 +918,12 @@ _add_extruded_cells(cs_mesh_t          *m,
   if (m->global_b_face_num != nullptr || cs_glob_n_ranks > 1) {
 
     if (m->global_cell_num == nullptr) {
-      BFT_MALLOC(m->global_cell_num, n_cells_ini + n_cells_add, cs_gnum_t);
+      CS_MALLOC(m->global_cell_num, n_cells_ini + n_cells_add, cs_gnum_t);
       for (cs_lnum_t i = 0; i < n_cells_ini; i++)
         m->global_cell_num[i] = i+1;
     }
     else
-      BFT_REALLOC(m->global_cell_num, n_cells_ini + n_cells_add, cs_gnum_t);
+      CS_REALLOC(m->global_cell_num, n_cells_ini + n_cells_add, cs_gnum_t);
 
     fvm_io_num_t *c_io_num
       = fvm_io_num_create_from_select(faces,
@@ -932,7 +932,7 @@ _add_extruded_cells(cs_mesh_t          *m,
                                       0);
 
     cs_lnum_t *n_f_sub;
-    BFT_MALLOC(n_f_sub, n_faces, cs_lnum_t);
+    CS_MALLOC(n_f_sub, n_faces, cs_lnum_t);
     cs_lnum_t *restrict _n_f_sub = n_f_sub;
     for (cs_lnum_t i = 0; i < n_faces; i++)
       _n_f_sub[i] = c_shift[i+1] - c_shift[i];
@@ -943,7 +943,7 @@ _add_extruded_cells(cs_mesh_t          *m,
 
     c_io_num = fvm_io_num_destroy(c_io_num);
 
-    BFT_FREE(n_f_sub);
+    CS_FREE(n_f_sub);
 
     const cs_gnum_t n_g_cells_ini = m->n_g_cells;
 
@@ -964,7 +964,7 @@ _add_extruded_cells(cs_mesh_t          *m,
   else
     m->n_g_cells += n_cells_add;
 
-  BFT_REALLOC(m->cell_family, n_cells_ini + n_cells_add, int);
+  CS_REALLOC(m->cell_family, n_cells_ini + n_cells_add, int);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
     for (cs_lnum_t j = c_shift[i]; j < c_shift[i+1]; j++)
@@ -983,7 +983,7 @@ _add_extruded_cells(cs_mesh_t          *m,
   m->n_cells += n_cells_add;
   m->n_cells_with_ghosts += n_cells_add;
 
-  BFT_FREE(c_family);
+  CS_FREE(c_family);
 
   /* Return shift array */
 
@@ -1051,15 +1051,15 @@ _add_layer_faces(cs_mesh_t        *m,
 
     /* Preparation stage */
 
-    BFT_REALLOC(m->i_face_cells, m->n_i_faces + n_add_faces, cs_lnum_2_t);
+    CS_REALLOC(m->i_face_cells, m->n_i_faces + n_add_faces, cs_lnum_2_t);
 
-    BFT_REALLOC(m->i_face_vtx_idx, m->n_i_faces + n_add_faces + 1, cs_lnum_t);
-    BFT_REALLOC(m->i_face_vtx_lst,
-                m->i_face_vtx_idx[m->n_i_faces] + connect_add_size,
-                cs_lnum_t);
+    CS_REALLOC(m->i_face_vtx_idx, m->n_i_faces + n_add_faces + 1, cs_lnum_t);
+    CS_REALLOC(m->i_face_vtx_lst,
+               m->i_face_vtx_idx[m->n_i_faces] + connect_add_size,
+               cs_lnum_t);
 
-    BFT_REALLOC(m->i_face_family, m->n_i_faces + n_add_faces, int);
-    BFT_REALLOC(m->i_face_r_gen, m->n_i_faces + n_add_faces, char);
+    CS_REALLOC(m->i_face_family, m->n_i_faces + n_add_faces, int);
+    CS_REALLOC(m->i_face_r_gen, m->n_i_faces + n_add_faces, char);
 
     bool have_g_i_face_num = (m->global_i_face_num != nullptr) ? true : false;
     bool have_g_cell_num = (m->global_cell_num != nullptr) ? true : false;
@@ -1070,7 +1070,7 @@ _add_layer_faces(cs_mesh_t        *m,
 
     if (have_g_i_face_num || have_g_cell_num) {
 
-      BFT_REALLOC(m->global_i_face_num, m->n_i_faces + n_add_faces, cs_gnum_t);
+      CS_REALLOC(m->global_i_face_num, m->n_i_faces + n_add_faces, cs_gnum_t);
 
       if (! have_g_i_face_num) {
         for (cs_lnum_t i = 0; i < m->n_i_faces; i++)
@@ -1078,7 +1078,7 @@ _add_layer_faces(cs_mesh_t        *m,
       }
 
       if (_g_cell_num == nullptr) {
-        BFT_MALLOC(_g_cell_num, m->n_cells, cs_gnum_t);
+        CS_MALLOC(_g_cell_num, m->n_cells, cs_gnum_t);
         for (cs_lnum_t i = 0; i < m->n_cells; i++)
           _g_cell_num[i] = i+1;
       }
@@ -1205,7 +1205,7 @@ _add_layer_faces(cs_mesh_t        *m,
     m->n_g_i_faces += (m->n_g_cells - n_g_cells_ini);
 
     if (_g_cell_num != m->global_cell_num)
-      BFT_FREE(_g_cell_num);
+      CS_FREE(_g_cell_num);
 
   }
 }
@@ -1257,7 +1257,7 @@ _add_side_faces(cs_mesh_t           *m,
 
   cs_lnum_t *f_shift;
 
-  BFT_MALLOC(f_shift, n_edges+1, cs_lnum_t);
+  CS_MALLOC(f_shift, n_edges+1, cs_lnum_t);
 
   f_shift[0] = 0;
 
@@ -1293,7 +1293,7 @@ _add_side_faces(cs_mesh_t           *m,
   if (e_io_num != nullptr || cs_glob_n_ranks > 1) {
 
     cs_lnum_t *n_f_sub;
-    BFT_MALLOC(n_f_sub, n_edges, cs_lnum_t);
+    CS_MALLOC(n_f_sub, n_edges, cs_lnum_t);
     cs_lnum_t *restrict _n_f_sub = n_f_sub;
     for (cs_lnum_t i = 0; i < n_edges; i++)
       _n_f_sub[i] = f_shift[i+1] - f_shift[i];
@@ -1306,7 +1306,7 @@ _add_side_faces(cs_mesh_t           *m,
 
     f_add_io_num = fvm_io_num_destroy(f_add_io_num);
 
-    BFT_FREE(n_f_sub);
+    CS_FREE(n_f_sub);
 
   }
 
@@ -1352,34 +1352,34 @@ _add_side_faces(cs_mesh_t           *m,
     if (e2f_stride == 2) {
       cs_lnum_t f2v_size_ini = m->i_face_vtx_idx[m->n_i_faces];
       f_ini_gcount = m->n_g_i_faces;
-      BFT_REALLOC(m->i_face_cells, m->n_i_faces + n_faces_add, cs_lnum_2_t);
-      BFT_REALLOC(m->i_face_vtx_idx, m->n_i_faces + n_faces_add + 1, cs_lnum_t);
-      BFT_REALLOC(m->i_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
-      BFT_REALLOC(m->i_face_family, m->n_i_faces + n_faces_add, int);
-      BFT_REALLOC(m->i_face_r_gen, m->n_i_faces + n_faces_add, char);
+      CS_REALLOC(m->i_face_cells, m->n_i_faces + n_faces_add, cs_lnum_2_t);
+      CS_REALLOC(m->i_face_vtx_idx, m->n_i_faces + n_faces_add + 1, cs_lnum_t);
+      CS_REALLOC(m->i_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
+      CS_REALLOC(m->i_face_family, m->n_i_faces + n_faces_add, int);
+      CS_REALLOC(m->i_face_r_gen, m->n_i_faces + n_faces_add, char);
       a_face_cell = (cs_lnum_t *)(m->i_face_cells + m->n_i_faces);
       p_face_vtx_idx = m->i_face_vtx_idx + m->n_i_faces;
       p_face_vtx_lst = m->i_face_vtx_lst + f2v_size_ini;
       a_face_gc = m->i_face_family + m->n_i_faces;
       a_face_r_gen = m->i_face_r_gen + m->n_i_faces;
       if (e_io_num != nullptr) {
-        BFT_REALLOC(m->global_i_face_num, m->n_i_faces + n_faces_add, cs_gnum_t);
+        CS_REALLOC(m->global_i_face_num, m->n_i_faces + n_faces_add, cs_gnum_t);
         a_face_gnum = m->global_i_face_num +  m->n_i_faces;
       }
     }
     else if (e2f_stride == 1) {
       cs_lnum_t f2v_size_ini = m->b_face_vtx_idx[m->n_b_faces];
       f_ini_gcount = m->n_g_b_faces;
-      BFT_REALLOC(m->b_face_cells, m->n_b_faces + n_faces_add, cs_lnum_t);
-      BFT_REALLOC(m->b_face_vtx_idx, m->n_b_faces + n_faces_add + 1, cs_lnum_t);
-      BFT_REALLOC(m->b_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
-      BFT_REALLOC(m->b_face_family, m->n_b_faces + n_faces_add, int);
+      CS_REALLOC(m->b_face_cells, m->n_b_faces + n_faces_add, cs_lnum_t);
+      CS_REALLOC(m->b_face_vtx_idx, m->n_b_faces + n_faces_add + 1, cs_lnum_t);
+      CS_REALLOC(m->b_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
+      CS_REALLOC(m->b_face_family, m->n_b_faces + n_faces_add, int);
       a_face_cell = m->b_face_cells + m->n_b_faces;
       p_face_vtx_idx = m->b_face_vtx_idx + m->n_b_faces;
       p_face_vtx_lst = m->b_face_vtx_lst + f2v_size_ini;
       a_face_gc = m->b_face_family + m->n_b_faces;
       if (e_io_num != nullptr) {
-        BFT_REALLOC(m->global_b_face_num, m->n_b_faces + n_faces_add, cs_gnum_t);
+        CS_REALLOC(m->global_b_face_num, m->n_b_faces + n_faces_add, cs_gnum_t);
         a_face_gnum = m->global_b_face_num +  m->n_b_faces;
       }
     }
@@ -1531,8 +1531,8 @@ _add_side_faces(cs_mesh_t           *m,
 
   /* Free temporary arrays */
 
-  BFT_FREE(f_add_gnum);
-  BFT_FREE(f_shift);
+  CS_FREE(f_add_gnum);
+  CS_FREE(f_shift);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1567,13 +1567,13 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
   cs_real_2_t *w = nullptr;
   int *c = nullptr;
 
-  BFT_MALLOC(_n_layers, n_vertices, cs_lnum_t);
-  BFT_MALLOC(_expansion, n_vertices, float);
-  BFT_MALLOC(_thickness_se, n_vertices, cs_real_2_t);
-  BFT_MALLOC(_coord_shift, n_vertices, cs_coord_3_t);
+  CS_MALLOC(_n_layers, n_vertices, cs_lnum_t);
+  CS_MALLOC(_expansion, n_vertices, float);
+  CS_MALLOC(_thickness_se, n_vertices, cs_real_2_t);
+  CS_MALLOC(_coord_shift, n_vertices, cs_coord_3_t);
 
-  BFT_MALLOC(w, n_vertices, cs_real_2_t);
-  BFT_MALLOC(c, n_vertices, int);
+  CS_MALLOC(w, n_vertices, cs_real_2_t);
+  CS_MALLOC(c, n_vertices, int);
 
   for (cs_lnum_t i = 0; i < n_vertices; i++) {
     _n_layers[i] = 0;
@@ -1601,7 +1601,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
   cs_parall_min(1, CS_INT_TYPE, &z_thickness_spec);
 
   cs_real_t *_distance;
-  BFT_MALLOC(_distance, n_b_faces, cs_real_t);
+  CS_MALLOC(_distance, n_b_faces, cs_real_t);
 
   if (z_thickness_spec < 1)
     cs_mesh_quantities_b_thickness_f(m,
@@ -1628,7 +1628,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
         n_faces++;
     }
 
-    BFT_REALLOC(e->face_ids, n_faces, cs_lnum_t);
+    CS_REALLOC(e->face_ids, n_faces, cs_lnum_t);
 
     e->n_faces = n_faces;
 
@@ -1679,7 +1679,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
     }
   }
 
-  BFT_FREE(_distance);
+  CS_FREE(_distance);
 
   /* Handle parallelism */
 
@@ -1827,8 +1827,8 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
 
   /* Free temporaries */
 
-  BFT_FREE(c);
-  BFT_FREE(w);
+  CS_FREE(c);
+  CS_FREE(w);
 
   mq = cs_mesh_quantities_destroy(mq);
 
@@ -1840,8 +1840,8 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
                                     &(e->n_vertices),
                                     &(e->vertex_ids));
 
-  BFT_REALLOC(e->n_layers, e->n_vertices, cs_lnum_t);
-  BFT_REALLOC(e->coord_shift, e->n_vertices, cs_coord_3_t);
+  CS_REALLOC(e->n_layers, e->n_vertices, cs_lnum_t);
+  CS_REALLOC(e->coord_shift, e->n_vertices, cs_coord_3_t);
 
   for (cs_lnum_t i = 0; i < e->n_vertices; i++) {
     cs_lnum_t v_id = e->vertex_ids[i];
@@ -1850,16 +1850,16 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
       e->coord_shift[i][l] = _coord_shift[v_id][l];
   }
 
-  BFT_FREE(_n_layers);
-  BFT_FREE(_coord_shift);
+  CS_FREE(_n_layers);
+  CS_FREE(_coord_shift);
 
-  BFT_REALLOC(e->distribution_idx, e->n_vertices+1, cs_lnum_t);
+  CS_REALLOC(e->distribution_idx, e->n_vertices+1, cs_lnum_t);
 
   e->distribution_idx[0] = 0;
   for (cs_lnum_t i = 0; i < e->n_vertices; i++)
     e->distribution_idx[i+1] = e->distribution_idx[i] + e->n_layers[i];
 
-  BFT_REALLOC(e->distribution, e->distribution_idx[e->n_vertices], float);
+  CS_REALLOC(e->distribution, e->distribution_idx[e->n_vertices], float);
 
   /* Compute distribution for each extruded vertex */
 
@@ -1945,8 +1945,8 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
 
   }
 
-  BFT_FREE(_expansion);
-  BFT_FREE(_thickness_se);
+  CS_FREE(_expansion);
+  CS_FREE(_thickness_se);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2021,14 +2021,14 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   /* Ensure we have explicit selections */
 
   if (faces == nullptr) {
-    BFT_MALLOC(l_faces, n_faces, cs_lnum_t);
+    CS_MALLOC(l_faces, n_faces, cs_lnum_t);
     for (cs_lnum_t i = 0; i < n_faces; i++)
       l_faces[i] = i;
     _faces = l_faces;
   }
 
   if (vertices == nullptr) {
-    BFT_MALLOC(l_vertices, n_vertices, cs_lnum_t);
+    CS_MALLOC(l_vertices, n_vertices, cs_lnum_t);
     for (cs_lnum_t i = 0; i < n_vertices; i++)
       l_vertices[i] = i;
     _vertices = l_vertices;
@@ -2076,7 +2076,7 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   /* Now determine number of extruded faces per edge and cells per face */
 
   cs_lnum_t *n_v_sub;
-  BFT_MALLOC(n_v_sub, m->n_vertices, cs_lnum_t);
+  CS_MALLOC(n_v_sub, m->n_vertices, cs_lnum_t);
 
   for (cs_lnum_t v_id = 0; v_id < m->n_vertices; v_id++)
     n_v_sub[v_id] = 0;
@@ -2089,7 +2089,7 @@ cs_mesh_extrude(cs_mesh_t                        *m,
                                              _faces,
                                              n_v_sub);
 
-  BFT_FREE(n_v_sub);
+  CS_FREE(n_v_sub);
 
   bft_printf(_("            %llu cells added.\n"),
              (unsigned long long)(m->n_g_cells - n_g_cells_ini));
@@ -2097,7 +2097,7 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   /* Add faces whose normals are parallel to the extrusion direction */
 
   cs_lnum_t *v_s_id;
-  BFT_MALLOC(v_s_id, m->n_vertices, cs_lnum_t);
+  CS_MALLOC(v_s_id, m->n_vertices, cs_lnum_t);
 
   for (cs_lnum_t v_id = 0; v_id < m->n_vertices; v_id++)
     v_s_id[v_id] = -1;
@@ -2155,21 +2155,21 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   /* Free local arrays */
 
   n_layers = nullptr;
-  BFT_FREE(_n_layers);
+  CS_FREE(_n_layers);
 
-  BFT_FREE(v_s_id);
+  CS_FREE(v_s_id);
 
-  BFT_FREE(n_c_shift);
-  BFT_FREE(n_v_shift);
+  CS_FREE(n_c_shift);
+  CS_FREE(n_v_shift);
 
-  BFT_FREE(i_e2sf);
-  BFT_FREE(b_e2sf);
-  BFT_FREE(i_e2v);
-  BFT_FREE(b_e2v);
-  BFT_FREE(b_e_gc);
+  CS_FREE(i_e2sf);
+  CS_FREE(b_e2sf);
+  CS_FREE(i_e2v);
+  CS_FREE(b_e2v);
+  CS_FREE(b_e_gc);
 
-  BFT_FREE(l_faces);
-  BFT_FREE(l_vertices);
+  CS_FREE(l_faces);
+  CS_FREE(l_vertices);
 
   m->modified |= CS_MESH_MODIFIED;
 
@@ -2252,13 +2252,13 @@ cs_mesh_extrude_face_info_create(const cs_mesh_t  *m)
 
   const cs_lnum_t n_faces = m->n_b_faces;
 
-  BFT_MALLOC(efi, 1, cs_mesh_extrude_face_info_t);
+  CS_MALLOC(efi, 1, cs_mesh_extrude_face_info_t);
 
-  BFT_MALLOC(efi->n_layers, n_faces, cs_lnum_t);
-  BFT_MALLOC(efi->distance, n_faces, cs_real_t);
-  BFT_MALLOC(efi->expansion_factor, n_faces, float);
-  BFT_MALLOC(efi->thickness_s, n_faces, cs_real_t);
-  BFT_MALLOC(efi->thickness_e, n_faces, cs_real_t);
+  CS_MALLOC(efi->n_layers, n_faces, cs_lnum_t);
+  CS_MALLOC(efi->distance, n_faces, cs_real_t);
+  CS_MALLOC(efi->expansion_factor, n_faces, float);
+  CS_MALLOC(efi->thickness_s, n_faces, cs_real_t);
+  CS_MALLOC(efi->thickness_e, n_faces, cs_real_t);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
     efi->n_layers[i] = -1;
@@ -2285,12 +2285,12 @@ cs_mesh_extrude_face_info_destroy(cs_mesh_extrude_face_info_t  **efi)
   if (efi != nullptr) {
     cs_mesh_extrude_face_info_t *_efi = *efi;
     if (_efi != nullptr) {
-      BFT_FREE(_efi->n_layers);
-      BFT_FREE(_efi->distance);
-      BFT_FREE(_efi->expansion_factor);
-      BFT_FREE(_efi->thickness_s);
-      BFT_FREE(_efi->thickness_e);
-      BFT_FREE(*efi);
+      CS_FREE(_efi->n_layers);
+      CS_FREE(_efi->distance);
+      CS_FREE(_efi->expansion_factor);
+      CS_FREE(_efi->thickness_s);
+      CS_FREE(_efi->thickness_e);
+      CS_FREE(*efi);
     }
   }
 }
@@ -2362,7 +2362,7 @@ cs_mesh_extrude_vectors_create(const cs_mesh_extrude_face_info_t  *efi)
 {
   cs_mesh_extrude_vectors_t *e;
 
-  BFT_MALLOC(e, 1, cs_mesh_extrude_vectors_t);
+  CS_MALLOC(e, 1, cs_mesh_extrude_vectors_t);
 
   e->n_faces = 0;
   e->n_vertices = 0;
@@ -2394,13 +2394,13 @@ cs_mesh_extrude_vectors_destroy(cs_mesh_extrude_vectors_t **e)
   if (e != nullptr) {
     cs_mesh_extrude_vectors_t *_e = *e;
     if (_e != nullptr) {
-      BFT_FREE(_e->face_ids);
-      BFT_FREE(_e->vertex_ids);
-      BFT_FREE(_e->n_layers);
-      BFT_FREE(_e->coord_shift);
-      BFT_FREE(_e->distribution_idx);
-      BFT_FREE(_e->distribution);
-      BFT_FREE(*e);
+      CS_FREE(_e->face_ids);
+      CS_FREE(_e->vertex_ids);
+      CS_FREE(_e->n_layers);
+      CS_FREE(_e->coord_shift);
+      CS_FREE(_e->distribution_idx);
+      CS_FREE(_e->distribution);
+      CS_FREE(*e);
     }
   }
 }

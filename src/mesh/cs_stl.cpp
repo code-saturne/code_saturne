@@ -42,11 +42,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_writer.h"
+#include "base/cs_mem.h"
 #include "base/cs_post.h"
 
 #include "fvm/fvm_nodal_append.h"
@@ -312,7 +312,7 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
   cs_real_t _new_vtx[10][3];
   cs_real_3_t *new_vtx = (cs_real_3_t *)_new_vtx;
   if (nb_vtx_max >= 10)
-    BFT_MALLOC(new_vtx, nb_vtx_max + 1, cs_real_3_t);
+    CS_MALLOC(new_vtx, nb_vtx_max + 1, cs_real_3_t);
   int j = 0;
 
   cs_real_t tolerance_factor = _tolerance_factor;
@@ -389,7 +389,7 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
   }
 
   if (new_vtx != _new_vtx)
-    BFT_FREE(new_vtx);
+    CS_FREE(new_vtx);
 
   *nb_vertex = j;
 }
@@ -1106,9 +1106,9 @@ cs_stl_mesh_add(const char  *name)
   else {
     // If it does not exists create it
     _stl_meshes.n_meshes++;
-    BFT_REALLOC(_stl_meshes.mesh_list, _stl_meshes.n_meshes, cs_stl_mesh_t *);
+    CS_REALLOC(_stl_meshes.mesh_list, _stl_meshes.n_meshes, cs_stl_mesh_t *);
 
-    BFT_MALLOC(stl_mesh, 1, cs_stl_mesh_t);
+    CS_MALLOC(stl_mesh, 1, cs_stl_mesh_t);
 
     if (name != nullptr) {
       strncpy(stl_mesh->name, name, 19);
@@ -1176,7 +1176,7 @@ cs_stl_mesh_destroy_all(void)
     CS_FREE(ptr);
   }
 
-  BFT_FREE(_stl_meshes.mesh_list);
+  CS_FREE(_stl_meshes.mesh_list);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1248,8 +1248,8 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     stl_mesh->n_faces = n_tria;
 
     /* Allocation*/
-    BFT_MALLOC(stl_mesh->coords     , 3*n_tria, cs_real_3_t);
-    BFT_MALLOC(loc_coords , 9, float);
+    CS_MALLOC(stl_mesh->coords     , 3*n_tria, cs_real_3_t);
+    CS_MALLOC(loc_coords , 9, float);
 
     /* Loop on triangle faces
        ---------------------- */
@@ -1310,16 +1310,16 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     stl_mesh->n_faces = n_tria;
 
     /* Re-allocation*/
-    BFT_REALLOC(stl_mesh->coords    , 3*n_tria, cs_real_3_t);
+    CS_REALLOC(stl_mesh->coords    , 3*n_tria, cs_real_3_t);
 
     /* Copy coordinates to a work aray that
      * will contain all the init coordinates */
-    BFT_MALLOC(stl_mesh->coords_ini , 3*n_tria, cs_real_3_t);
+    CS_MALLOC(stl_mesh->coords_ini , 3*n_tria, cs_real_3_t);
     for (int i = 0; i < 3*n_tria; i++)
       for (int j = 0; j < 3; j++)
         stl_mesh->coords_ini[i][j] = stl_mesh->coords[i][j];
 
-    BFT_FREE(loc_coords);
+    CS_FREE(loc_coords);
     fclose(fp);
 
   }
@@ -1332,8 +1332,8 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
                   &(stl_mesh->n_faces));
 
   if (cs_glob_rank_id > 0) {
-    BFT_MALLOC(stl_mesh->coords    , stl_mesh->n_faces*3, cs_real_3_t);
-    BFT_MALLOC(stl_mesh->coords_ini, stl_mesh->n_faces*3, cs_real_3_t);
+    CS_MALLOC(stl_mesh->coords    , stl_mesh->n_faces*3, cs_real_3_t);
+    CS_MALLOC(stl_mesh->coords_ini, stl_mesh->n_faces*3, cs_real_3_t);
   }
 
   cs_parall_bcast(0, /* root_rank */
@@ -1354,7 +1354,7 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
   cs_lnum_t n_coo_ini = n_tria*3;
 
   cs_coord_t *_face_vtx_coord = nullptr;
-  BFT_MALLOC(_face_vtx_coord, n_coo_ini*3, cs_coord_t);
+  CS_MALLOC(_face_vtx_coord, n_coo_ini*3, cs_coord_t);
   for (cs_lnum_t i = 0; i < n_coo_ini*3; i++)
     _face_vtx_coord[i] = stl_mesh->coords[i];
 
@@ -1363,7 +1363,7 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
                                                       n_coo_ini,
                                                       FVM_IO_NUM_SFC_MORTON_BOX);
 
-  BFT_FREE(_face_vtx_coord);
+  CS_FREE(_face_vtx_coord);
 
   cs_gnum_t *vtx_gnum = fvm_io_num_transfer_global_num(v_io_num);
 
@@ -1376,8 +1376,8 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
 
   if (cs_glob_rank_id < 1) {
 
-    BFT_MALLOC(vertex_coord, n_coo_ini*3, cs_coord_t);
-    BFT_MALLOC(vertex_num, n_tria*3, cs_lnum_t);
+    CS_MALLOC(vertex_coord, n_coo_ini*3, cs_coord_t);
+    CS_MALLOC(vertex_num, n_tria*3, cs_lnum_t);
 
     for (cs_lnum_t i = 0; i < n_coo_ini; i++)
       vertex_num[i] = -1;
@@ -1394,7 +1394,7 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
       }
     }
 
-    BFT_REALLOC(vertex_coord, n_coo_new*3, cs_coord_t);
+    CS_REALLOC(vertex_coord, n_coo_new*3, cs_coord_t);
 
   }
 #endif
@@ -1404,9 +1404,9 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
   cs_gnum_t  *faces_gnum   = nullptr;
 
   if (cs_glob_rank_id < 1) {
-    BFT_MALLOC(vertex_num  , n_tria*3, cs_lnum_t);
-    BFT_MALLOC(vertex_gnum , n_tria*3, cs_gnum_t);
-    BFT_MALLOC(faces_gnum  , n_tria,   cs_gnum_t);
+    CS_MALLOC(vertex_num  , n_tria*3, cs_lnum_t);
+    CS_MALLOC(vertex_gnum , n_tria*3, cs_gnum_t);
+    CS_MALLOC(faces_gnum  , n_tria,   cs_gnum_t);
 
     for (cs_lnum_t j = 0; j < n_tria*3; j++) {
       vertex_num[j] = j+1;
@@ -1607,7 +1607,7 @@ cs_stl_set_porosity_seed(cs_stl_mesh_t  *stl_mesh,
                          cs_real_t      *coords)
 {
   stl_mesh->n_seeds = n_points;
-  BFT_REALLOC(stl_mesh->seed_coords, n_points*3, cs_real_t);
+  CS_REALLOC(stl_mesh->seed_coords, n_points*3, cs_real_t);
 
   for (int i = 0; i < 3*n_points; i++)
     stl_mesh->seed_coords[i] = coords[i];
@@ -1833,8 +1833,8 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
   cs_gnum_t *box_gnum = nullptr;
   cs_coord_t *extents = nullptr;
 
-  BFT_MALLOC(box_gnum, n_boxes, cs_gnum_t);
-  BFT_MALLOC(extents , 2*dim*n_boxes, cs_coord_t);
+  CS_MALLOC(box_gnum, n_boxes, cs_gnum_t);
+  CS_MALLOC(extents , 2*dim*n_boxes, cs_coord_t);
 
   /* Global numbering construction */
   for (cs_lnum_t i = 0; i < n_cells; i++)
@@ -1854,10 +1854,10 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
     for (int id = 0; id < 6; id ++)
       extents[6*i + id] = bbox[input_idx[i]][id];
 
-  BFT_FREE(bbox);
+  CS_FREE(bbox);
 
   // For the STL mesh
-  BFT_MALLOC(bbox, n_tria_stl, cs_real_6_t);
+  CS_MALLOC(bbox, n_tria_stl, cs_real_6_t);
 
   for (cs_lnum_t i = 0; i < n_tria_stl; i++) {
     bbox[i][0] = HUGE_VAL;
@@ -1884,7 +1884,7 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
       extents[6*(i+n_cells) + id] = bbox[i][id];
   }
 
-  BFT_FREE(bbox);
+  CS_FREE(bbox);
 
   fvm_neighborhood_t  *cell_neighborhood = nullptr;
 
@@ -1961,7 +1961,7 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
             if (tria_in_cell_lst != nullptr) {
               if (idx_num >= *max_size) {
                 *max_size *= 2;
-                BFT_REALLOC(_tria_in_cell_lst, *max_size, cs_lnum_t);
+                CS_REALLOC(_tria_in_cell_lst, *max_size, cs_lnum_t);
               }
               _tria_in_cell_lst[idx_num] = ntria_id;
               idx_num ++;
@@ -1991,11 +1991,11 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 
   fvm_neighborhood_destroy(&cell_neighborhood);
 
-  BFT_FREE(elt_num);
-  BFT_FREE(neighbor_index);
-  BFT_FREE(neighbor_num);
-  BFT_FREE(box_gnum);
-  BFT_FREE(extents);
+  CS_FREE(elt_num);
+  CS_FREE(neighbor_index);
+  CS_FREE(neighbor_num);
+  CS_FREE(box_gnum);
+  CS_FREE(extents);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2018,7 +2018,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
   /* Initialisation of the selection criteria (first level) */
   cs_lnum_t n_input_cells = m->n_cells;
   cs_lnum_t *input_cells = nullptr;
-  BFT_MALLOC(input_cells, m->n_cells, cs_lnum_t);
+  CS_MALLOC(input_cells, m->n_cells, cs_lnum_t);
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
     input_cells[i] = i;
 
@@ -2030,11 +2030,11 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
 
     cs_lnum_t n_selected_cells = 0;
     cs_lnum_t *selected_cells = nullptr;
-    BFT_MALLOC(selected_cells, m->n_cells, cs_lnum_t);
+    CS_MALLOC(selected_cells, m->n_cells, cs_lnum_t);
 
     /* Select previous refined cells */
     if (n_level > 0) {
-       BFT_REALLOC(input_cells, m->n_cells, cs_lnum_t);
+       CS_REALLOC(input_cells, m->n_cells, cs_lnum_t);
 
       char criteria[100];
       sprintf(criteria,"STL_refined_region_%d",n_level-1);
@@ -2073,7 +2073,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
     if (n_level < n_ref) {
 
       int *cell_tag;
-      BFT_MALLOC(cell_tag, m->n_cells_with_ghosts, int);
+      CS_MALLOC(cell_tag, m->n_cells_with_ghosts, int);
 
       for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id ++) {
         cell_tag[c_id] = 0;
@@ -2114,7 +2114,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
         }
       }
 
-      BFT_FREE(cell_tag);
+      CS_FREE(cell_tag);
 
       cs_mesh_refine_simple_selected(m,
                                      false,
@@ -2122,7 +2122,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
                                      selected_cells);
     }
 
-    BFT_FREE(selected_cells);
+    CS_FREE(selected_cells);
 
     /* Every 2 refinemet stages and at the end, re-partition
      * the mesh to limit imbalance in the processors load */
@@ -2143,7 +2143,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
     cs_mesh_update_auxiliary(m);
   }
 
-  BFT_FREE(input_cells);
+  CS_FREE(input_cells);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2193,13 +2193,13 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
 
   cs_lnum_t max_size = stl->n_faces;
 
-  BFT_MALLOC(input_cells      , m->n_cells      , cs_lnum_t);
-  BFT_MALLOC(selected_cells   , m->n_cells      , cs_lnum_t);
-  BFT_MALLOC(tria_in_cell_idx , m->n_cells      , cs_lnum_t);
-  BFT_MALLOC(tria_in_cell_lst , max_size        , cs_lnum_t);
-  BFT_MALLOC(cell_selected_idx, m->n_cells      , cs_lnum_t);
-  BFT_MALLOC(stl_normals      , stl->n_faces*3  , cs_real_t);
-  BFT_MALLOC(mean_plane_def   , m->n_cells*6    , cs_real_t);
+  CS_MALLOC(input_cells      , m->n_cells      , cs_lnum_t);
+  CS_MALLOC(selected_cells   , m->n_cells      , cs_lnum_t);
+  CS_MALLOC(tria_in_cell_idx , m->n_cells      , cs_lnum_t);
+  CS_MALLOC(tria_in_cell_lst , max_size        , cs_lnum_t);
+  CS_MALLOC(cell_selected_idx, m->n_cells      , cs_lnum_t);
+  CS_MALLOC(stl_normals      , stl->n_faces*3  , cs_real_t);
+  CS_MALLOC(mean_plane_def   , m->n_cells*6    , cs_real_t);
 
   /* Input cells are all[] cells and initialisation */
   for (cs_lnum_t i = 0; i < m->n_cells; i++) {
@@ -2441,7 +2441,7 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
    * ==================================== */
 
   int *cell_tag = nullptr;
-  BFT_MALLOC(cell_tag, m->n_cells_with_ghosts, int);
+  CS_MALLOC(cell_tag, m->n_cells_with_ghosts, int);
 
   /*-------------------------
    * cell_tag is :
@@ -2524,15 +2524,15 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
       porosity[cell_id] = 1.0;
   }
 
-  BFT_FREE(cell_tag);
-  BFT_FREE(cell_selected_idx);
-  BFT_FREE(mean_plane_def);
-  BFT_FREE(stl_normals);
-  BFT_FREE(bbox);
-  BFT_FREE(input_cells);
-  BFT_FREE(selected_cells);
-  BFT_FREE(tria_in_cell_lst);
-  BFT_FREE(tria_in_cell_idx);
+  CS_FREE(cell_tag);
+  CS_FREE(cell_selected_idx);
+  CS_FREE(mean_plane_def);
+  CS_FREE(stl_normals);
+  CS_FREE(bbox);
+  CS_FREE(input_cells);
+  CS_FREE(selected_cells);
+  CS_FREE(tria_in_cell_lst);
+  CS_FREE(tria_in_cell_idx);
 }
 
 /*----------------------------------------------------------------------------*/

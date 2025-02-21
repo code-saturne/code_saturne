@@ -45,7 +45,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "atmo/cs_atmo.h"
@@ -61,6 +60,7 @@
 #include "base/cs_internal_coupling.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -237,12 +237,14 @@ _order_by_direction(void)
   int kdir = 0;
 
   cs_real_t *s;
-  BFT_MALLOC(s, n_cells, cs_real_t);
+  CS_MALLOC(s, n_cells, cs_real_t);
 
   for (int kk = -1; kk < 2; kk+=2) {
     for (int ii = -1; ii < 2; ii+=2) {
       for (int jj = -1; jj < 2; jj+=2) {
-        for (int dir_id = 0; dir_id < cs_glob_rad_transfer_params->ndirs; dir_id++) {
+        for (int dir_id = 0;
+             dir_id < cs_glob_rad_transfer_params->ndirs;
+             dir_id++) {
 
           cs_real_t v[3] = {ii*cs_glob_rad_transfer_params->vect_s[dir_id][0],
                             jj*cs_glob_rad_transfer_params->vect_s[dir_id][1],
@@ -272,7 +274,7 @@ _order_by_direction(void)
                           + v[2]*cell_cen[c_id][2];
 
               cs_lnum_t *order;
-              BFT_MALLOC(order, n_cells, cs_lnum_t);
+              CS_MALLOC(order, n_cells, cs_lnum_t);
 
               _order_axis(s, order, n_cells);
 
@@ -297,7 +299,7 @@ _order_by_direction(void)
     }
   }
 
-  BFT_FREE(s);
+  CS_FREE(s);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -405,14 +407,14 @@ _cs_rad_transfer_sol(int       gg_id,
   cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
   cs_real_t *radiance_prev = CS_FI_(radiance, gg_id)->val_pre;
   cs_real_t *ck_u_d = nullptr;
-  BFT_MALLOC(rhs0,  n_cells_ext, cs_real_t);
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC(rhs0,  n_cells_ext, cs_real_t);
+  CS_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
   /* Specific heat capacity of the bulk phase */
   // CAUTION FOR NEPTUNE INTEGRATION HERE
 
   cs_real_t *dcp;
-  BFT_MALLOC(dcp, n_cells_ext, cs_real_t);
+  CS_MALLOC(dcp, n_cells_ext, cs_real_t);
 
   if (cs_glob_fluid_properties->icp > 0) {
     const cs_field_t *f_cp = CS_F_(cp);
@@ -435,7 +437,7 @@ _cs_rad_transfer_sol(int       gg_id,
     f_up = cs_field_by_name_try("rad_flux_up");
     f_down = cs_field_by_name_try("rad_flux_down");
 
-    BFT_MALLOC(ck_u_d,  n_cells_ext, cs_real_t);
+    CS_MALLOC(ck_u_d,  n_cells_ext, cs_real_t);
     ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
     ck_d = cs_field_by_name("rad_absorption_coeff_down")->val;
 
@@ -919,7 +921,7 @@ _cs_rad_transfer_sol(int       gg_id,
 
   }
 
-  BFT_FREE(dcp);
+  CS_FREE(dcp);
 
 #if 0
   /* TODO add clean generation and log of "per day source terms"
@@ -940,9 +942,9 @@ _cs_rad_transfer_sol(int       gg_id,
 
   /* Free memory */
 
-  BFT_FREE(ck_u_d);
-  BFT_FREE(rhs0);
-  BFT_FREE(dpvar);
+  CS_FREE(ck_u_d);
+  CS_FREE(rhs0);
+  CS_FREE(dpvar);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1085,8 +1087,8 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
                                      &faces_distant);
 
   cs_real_t *net_flux_local, *net_flux_distant;
-  BFT_MALLOC(net_flux_local, n_local, cs_real_t);
-  BFT_MALLOC(net_flux_distant, n_distant, cs_real_t);
+  CS_MALLOC(net_flux_local, n_local, cs_real_t);
+  CS_MALLOC(net_flux_distant, n_distant, cs_real_t);
 
   /* Compute radiant net flux at internal coupling boundary face */
 
@@ -1109,8 +1111,8 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
                          / mq->cell_vol[cell_id];
   }
 
-  BFT_FREE(net_flux_local);
-  BFT_FREE(net_flux_distant);
+  CS_FREE(net_flux_local);
+  CS_FREE(net_flux_distant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1161,21 +1163,21 @@ _rad_transfer_solve(int bc_type[])
 
   /* Allocate temporary arrays for the radiative equations resolution */
   cs_real_t *viscf, *viscb, *rhs, *rovsdt;
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC(viscf, n_i_faces, cs_real_t);
+  CS_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_t);
+  CS_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Allocate specific arrays for the radiative transfer module */
   cs_real_t *tempk, *flurds, *flurdb;
-  BFT_MALLOC(tempk, n_cells * rt_params->nrphas, cs_real_t);
-  BFT_MALLOC(flurds, n_i_faces, cs_real_t);
-  BFT_MALLOC(flurdb, n_b_faces, cs_real_t);
+  CS_MALLOC(tempk, n_cells * rt_params->nrphas, cs_real_t);
+  CS_MALLOC(flurds, n_i_faces, cs_real_t);
+  CS_MALLOC(flurdb, n_b_faces, cs_real_t);
 
   /* Allocate work arrays */
   /* Absorption coefficient of the bulk phase */
   cs_real_t *ckmix;
-  BFT_MALLOC(ckmix, n_cells_ext, cs_real_t);
+  CS_MALLOC(ckmix, n_cells_ext, cs_real_t);
 
   /* Map field arrays */
   cs_field_t *f_tempb = CS_F_(t_b);
@@ -1196,15 +1198,15 @@ _rad_transfer_solve(int bc_type[])
      of the i-th grey gas
      (the sum over the grey gases is  CS_FI_(rad_cak, 0)->val) */
   cs_real_t *kgi, *agi;
-  BFT_MALLOC(kgi, n_cells_ext * nwsgg, cs_real_t);
-  BFT_MALLOC(agi, n_cells_ext * nwsgg, cs_real_t);
+  CS_MALLOC(kgi, n_cells_ext * nwsgg, cs_real_t);
+  CS_MALLOC(agi, n_cells_ext * nwsgg, cs_real_t);
 
   cs_real_t *int_rad_domega;
-  BFT_MALLOC(int_rad_domega, n_cells_ext, cs_real_t);
+  CS_MALLOC(int_rad_domega, n_cells_ext, cs_real_t);
 
   /* Flux density components   */
   cs_real_3_t *iqpar;
-  BFT_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
 
   cs_coal_model_t *coal = cs_glob_coal_model;
 
@@ -1216,11 +1218,11 @@ _rad_transfer_solve(int bc_type[])
   /* Irradiating flux density at walls.
      Careful: Should not be confused with qinci */
   cs_real_t *iqpato;
-  BFT_MALLOC(iqpato, n_b_faces, cs_real_t);
+  CS_MALLOC(iqpato, n_b_faces, cs_real_t);
 
   /* Weight of the i-th grey gas at walls     */
   cs_real_t *w_gg;
-  BFT_MALLOC(w_gg, n_b_faces * nwsgg, cs_real_t);
+  CS_MALLOC(w_gg, n_b_faces * nwsgg, cs_real_t);
 
   /* Wall temperature */
   cs_real_t xptk;
@@ -1230,7 +1232,7 @@ _rad_transfer_solve(int bc_type[])
     xptk = 0.0;
 
   cs_real_t *twall;
-  BFT_MALLOC(twall, n_b_faces, cs_real_t);
+  CS_MALLOC(twall, n_b_faces, cs_real_t);
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     if (   bc_type[ifac] == CS_SMOOTHWALL
@@ -1245,7 +1247,7 @@ _rad_transfer_solve(int bc_type[])
   /* FSCK model parameters */
   if (wq == nullptr) {
     /* Weight of the i-the Gaussian quadrature  */
-    BFT_MALLOC(wq, nwsgg, cs_real_t);
+    CS_MALLOC(wq, nwsgg, cs_real_t);
     rt_params->wq = wq;
 
     /* Must be set to 1 in case of using the standard as well as */
@@ -1289,8 +1291,8 @@ _rad_transfer_solve(int bc_type[])
 
   /* Work arrays */
   cs_real_t *int_abso = nullptr, *int_emi, *int_rad_ist;
-  BFT_MALLOC(int_emi, n_cells_ext, cs_real_t);
-  BFT_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
+  CS_MALLOC(int_emi, n_cells_ext, cs_real_t);
+  CS_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
 
   cs_real_t *cpro_lumin = CS_F_(rad_energy)->val;
   cs_real_3_t *cpro_q = (cs_real_3_t *)(CS_F_(rad_q)->val);
@@ -1514,7 +1516,7 @@ _rad_transfer_solve(int bc_type[])
   /* Specific heat capacity of the bulk phase */
   // CAUTION FOR NEPTUNE INTEGRATION HERE
   cs_real_t *dcp;
-  BFT_MALLOC(dcp, n_cells_ext, cs_real_t);
+  CS_MALLOC(dcp, n_cells_ext, cs_real_t);
 
   if (cs_glob_fluid_properties->icp > 0) {
     const cs_field_t *f_cp = CS_F_(cp);
@@ -1546,7 +1548,7 @@ _rad_transfer_solve(int bc_type[])
     if (f_abs != nullptr)
       int_abso = f_abs->val;
     else if (int_abso == nullptr)
-      BFT_MALLOC(int_abso, n_cells_ext, cs_real_t);
+      CS_MALLOC(int_abso, n_cells_ext, cs_real_t);
 
     if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
 
@@ -1903,7 +1905,7 @@ _rad_transfer_solve(int bc_type[])
     }
 
     if (f_abs == nullptr && gg_id == nwsgg-1)
-      BFT_FREE(int_abso);
+      CS_FREE(int_abso);
 
     /* Emission
      * -------- */
@@ -2000,8 +2002,8 @@ _rad_transfer_solve(int bc_type[])
 
   } /* end loop on grey gas */
 
-  BFT_FREE(dcp);
-  BFT_FREE(int_rad_domega);
+  CS_FREE(dcp);
+  CS_FREE(int_rad_domega);
 
   /* The total radiative flux is copied in bqinci
    * a) for post-processing reasons and
@@ -2061,10 +2063,10 @@ _rad_transfer_solve(int bc_type[])
   const int *b_face_class_id = cs_boundary_zone_face_class_or_zone_id();
 
   int *iflux;
-  BFT_MALLOC(iflux, n_zones, int);
+  CS_MALLOC(iflux, n_zones, int);
 
   cs_real_t *flux;
-  BFT_MALLOC(flux, n_zones, cs_real_t);
+  CS_MALLOC(flux, n_zones, cs_real_t);
 
   for (int izone = 0; izone < n_zones; izone++) {
     flux[izone]  = 0.0;
@@ -2158,8 +2160,8 @@ _rad_transfer_solve(int bc_type[])
 
     cs_field_bc_coeffs_t bc_coeffs_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_loc);
-    BFT_MALLOC(bc_coeffs_loc.a, 3*n_b_faces, cs_real_t);
-    BFT_MALLOC(bc_coeffs_loc.b, 9*n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc.a, 3*n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc.b, 9*n_b_faces, cs_real_t);
 
     cs_real_3_t  *coefaq = (cs_real_3_t  *)bc_coeffs_loc.a;
     cs_real_33_t *coefbq = (cs_real_33_t *)bc_coeffs_loc.b;
@@ -2175,7 +2177,7 @@ _rad_transfer_solve(int bc_type[])
     }
 
     cs_real_33_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
+    CS_MALLOC(grad, n_cells_ext, cs_real_33_t);
 
     /* Data for computation of divergence */
 
@@ -2208,9 +2210,9 @@ _rad_transfer_solve(int bc_type[])
     }
 
     /* Free memory */
-    BFT_FREE(grad);
-    BFT_FREE(coefbq);
-    BFT_FREE(coefaq);
+    CS_FREE(grad);
+    CS_FREE(coefbq);
+    CS_FREE(coefaq);
 
   } /* End of computation of divergence */
 
@@ -2285,24 +2287,24 @@ _rad_transfer_solve(int bc_type[])
 
   /* Free memory */
 
-  BFT_FREE(iflux);
-  BFT_FREE(flux);
-  BFT_FREE(iqpato);
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
-  BFT_FREE(rhs);
-  BFT_FREE(rovsdt);
-  BFT_FREE(tempk);
-  BFT_FREE(flurds);
-  BFT_FREE(flurdb);
-  BFT_FREE(int_emi);
-  BFT_FREE(int_rad_ist);
-  BFT_FREE(ckmix);
-  BFT_FREE(twall);
-  BFT_FREE(kgi);
-  BFT_FREE(agi);
-  BFT_FREE(w_gg);
-  BFT_FREE(iqpar);
+  CS_FREE(iflux);
+  CS_FREE(flux);
+  CS_FREE(iqpato);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
+  CS_FREE(rhs);
+  CS_FREE(rovsdt);
+  CS_FREE(tempk);
+  CS_FREE(flurds);
+  CS_FREE(flurdb);
+  CS_FREE(int_emi);
+  CS_FREE(int_rad_ist);
+  CS_FREE(ckmix);
+  CS_FREE(twall);
+  CS_FREE(kgi);
+  CS_FREE(agi);
+  CS_FREE(w_gg);
+  CS_FREE(iqpar);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2350,20 +2352,20 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
   /* Allocate temporary arrays for the radiative equations resolution */
   cs_real_t *viscf, *viscb, *rhs, *rovsdt;
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC(viscf, n_i_faces, cs_real_t);
+  CS_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_t);
+  CS_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Allocate specific arrays for the radiative transfer module */
   cs_real_t *flurds, *flurdb;
-  BFT_MALLOC(flurds, n_i_faces, cs_real_t);
-  BFT_MALLOC(flurdb, n_b_faces, cs_real_t);
+  CS_MALLOC(flurds, n_i_faces, cs_real_t);
+  CS_MALLOC(flurdb, n_b_faces, cs_real_t);
 
   /* Allocate work arrays */
   /* Absorption coefficient of the bulk phase */
   cs_real_t *ckmix;
-  BFT_MALLOC(ckmix, n_cells_ext, cs_real_t);
+  CS_MALLOC(ckmix, n_cells_ext, cs_real_t);
 
   /* Map field arrays */
   cs_field_t *f_tempb = CS_F_(t_b);
@@ -2382,24 +2384,24 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
      of the i-th grey gas
      (the sum over the grey gases is  CS_FI_(rad_cak, 0)->val) */
   cs_real_t *kgi, *agi;
-  BFT_MALLOC(kgi, n_cells_ext * nwsgg, cs_real_t);
-  BFT_MALLOC(agi, n_cells_ext * nwsgg, cs_real_t);
+  CS_MALLOC(kgi, n_cells_ext * nwsgg, cs_real_t);
+  CS_MALLOC(agi, n_cells_ext * nwsgg, cs_real_t);
 
   cs_real_t *int_rad_domega;
-  BFT_MALLOC(int_rad_domega, n_cells_ext, cs_real_t);
+  CS_MALLOC(int_rad_domega, n_cells_ext, cs_real_t);
 
   /* Flux density components   */
   cs_real_3_t *iqpar;
-  BFT_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
 
   /* Irradiating flux density at walls.
      Careful: Should not be confused with qinci */
   cs_real_t *iqpato;
-  BFT_MALLOC(iqpato, n_b_faces, cs_real_t);
+  CS_MALLOC(iqpato, n_b_faces, cs_real_t);
 
   /* Weight of the i-th grey gas at walls     */
   cs_real_t *w_gg;
-  BFT_MALLOC(w_gg, n_b_faces * nwsgg, cs_real_t);
+  CS_MALLOC(w_gg, n_b_faces * nwsgg, cs_real_t);
 
   /* Wall temperature */
   cs_real_t xptk;
@@ -2409,7 +2411,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     xptk = 0.0;
 
   cs_real_t *twall;
-  BFT_MALLOC(twall, n_b_faces, cs_real_t);
+  CS_MALLOC(twall, n_b_faces, cs_real_t);
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     if (bc_type[ifac] == CS_SMOOTHWALL || bc_type[ifac] == CS_ROUGHWALL)
@@ -2453,8 +2455,8 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
   /* Work arrays */
   cs_real_t *int_abso = NULL, *int_emi, *int_rad_ist;
-  BFT_MALLOC(int_emi, n_cells_ext, cs_real_t);
-  BFT_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
+  CS_MALLOC(int_emi, n_cells_ext, cs_real_t);
+  CS_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
 
   cs_real_t   *cpro_lumin = CS_F_(rad_energy)->val;
   cs_real_3_t *cpro_q     = (cs_real_3_t *)(CS_F_(rad_q)->val);
@@ -2562,7 +2564,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     if (f_abs != NULL)
       int_abso = f_abs->val;
     else if (int_abso == NULL)
-      BFT_MALLOC(int_abso, n_cells_ext, cs_real_t);
+      CS_MALLOC(int_abso, n_cells_ext, cs_real_t);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       ckg[cell_id] = kgi[n_cells * gg_id + cell_id];
@@ -2661,11 +2663,11 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
       iqpato[ifac] += f_qinsp->val[gg_id + ifac * nwsgg];
 
     if (f_abs == NULL && gg_id == nwsgg - 1)
-      BFT_FREE(int_abso);
+      CS_FREE(int_abso);
 
   } /* end loop on grey gas */
 
-  BFT_FREE(int_rad_domega);
+  CS_FREE(int_rad_domega);
 
   /* Calculation of divQr */
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -2729,10 +2731,10 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   const int *b_face_class_id = cs_boundary_zone_face_class_or_zone_id();
 
   int *iflux;
-  BFT_MALLOC(iflux, n_zones, int);
+  CS_MALLOC(iflux, n_zones, int);
 
   cs_real_t *flux;
-  BFT_MALLOC(flux, n_zones, cs_real_t);
+  CS_MALLOC(flux, n_zones, cs_real_t);
 
   for (int izone = 0; izone < n_zones; izone++) {
     flux[izone]  = 0.0;
@@ -2800,23 +2802,23 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
   /* Free memory */
 
-  BFT_FREE(iflux);
-  BFT_FREE(flux);
-  BFT_FREE(iqpato);
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
-  BFT_FREE(rhs);
-  BFT_FREE(rovsdt);
-  BFT_FREE(flurds);
-  BFT_FREE(flurdb);
-  BFT_FREE(int_emi);
-  BFT_FREE(int_rad_ist);
-  BFT_FREE(ckmix);
-  BFT_FREE(twall);
-  BFT_FREE(kgi);
-  BFT_FREE(agi);
-  BFT_FREE(w_gg);
-  BFT_FREE(iqpar);
+  CS_FREE(iflux);
+  CS_FREE(flux);
+  CS_FREE(iqpato);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
+  CS_FREE(rhs);
+  CS_FREE(rovsdt);
+  CS_FREE(flurds);
+  CS_FREE(flurdb);
+  CS_FREE(int_emi);
+  CS_FREE(int_rad_ist);
+  CS_FREE(ckmix);
+  CS_FREE(twall);
+  CS_FREE(kgi);
+  CS_FREE(agi);
+  CS_FREE(w_gg);
+  CS_FREE(iqpar);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

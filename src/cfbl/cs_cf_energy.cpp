@@ -47,7 +47,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -64,6 +63,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_gas_mix.h"
 #include "base/cs_mass_source_terms.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "pprt/cs_physical_model.h"
@@ -144,9 +144,9 @@ _cf_div(cs_real_t div[])
   cs_real_t *vistot;
   cs_real_33_t *gradv;
   cs_real_3_t *tempv;
-  BFT_MALLOC(vistot, n_cells_ext, cs_real_t);
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(tempv, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(vistot, n_cells_ext, cs_real_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(tempv, n_cells_ext, cs_real_3_t);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -278,10 +278,9 @@ _cf_div(cs_real_t div[])
   }
 
   /* Free memory */
-  BFT_FREE(gradv);
-  BFT_FREE(tempv);
-  BFT_FREE(vistot);
-
+  CS_FREE(gradv);
+  CS_FREE(tempv);
+  CS_FREE(vistot);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -391,17 +390,17 @@ cs_cf_energy(int f_sc_id)
 
   /* Allocate a temporary array */
   cs_real_t *wb, *rhs, *rovsdt;
-  BFT_MALLOC(wb, n_b_faces, cs_real_t);
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC(wb, n_b_faces, cs_real_t);
+  CS_MALLOC(rhs, n_cells_ext, cs_real_t);
+  CS_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Allocate work arrays */
   cs_real_t *w7, *w9, *dpvar;
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(w7, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w9, n_cells_ext, cs_real_t);
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(w7, n_cells_ext, cs_real_t);
+  CS_MALLOC(w9, n_cells_ext, cs_real_t);
+  CS_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
   /* Physical property numbers */
   cs_real_t *crom = CS_F_(rho)->val;
@@ -515,8 +514,8 @@ cs_cf_energy(int f_sc_id)
   */
 
   cs_real_t *iprtfl, *bprtfl;
-  BFT_MALLOC(iprtfl, n_i_faces, cs_real_t);
-  BFT_MALLOC(bprtfl, n_b_faces, cs_real_t);
+  CS_MALLOC(iprtfl, n_i_faces, cs_real_t);
+  CS_MALLOC(bprtfl, n_b_faces, cs_real_t);
 
   /* No reconstruction yet */
 
@@ -560,8 +559,8 @@ cs_cf_energy(int f_sc_id)
                 bprtfl,
                 rhs);
 
-  BFT_FREE(iprtfl);
-  BFT_FREE(bprtfl);
+  CS_FREE(iprtfl);
+  CS_FREE(bprtfl);
 
   /* Gravitation force term: rho*g.u *cvolume
      ---------------------- */
@@ -580,9 +579,9 @@ cs_cf_energy(int f_sc_id)
   /* Only SGDH available */
 
   cs_real_t *c_viscs_t, *i_visc, *b_visc;
-  BFT_MALLOC(c_viscs_t, n_cells_ext, cs_real_t);
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC(c_viscs_t, n_cells_ext, cs_real_t);
+  CS_MALLOC(i_visc, n_i_faces, cs_real_t);
+  CS_MALLOC(b_visc, n_b_faces, cs_real_t);
 
   if (eqp_e->idiff >= 1) {
 
@@ -751,9 +750,9 @@ cs_cf_energy(int f_sc_id)
       /* Diffusion flux for the species at internal faces */
 
       cs_real_t *kspe;
-      BFT_MALLOC(kspe, n_cells_ext, cs_real_t);
-      BFT_MALLOC(i_visck, n_i_faces, cs_real_t);
-      BFT_MALLOC(b_visck, n_b_faces, cs_real_t);
+      CS_MALLOC(kspe, n_cells_ext, cs_real_t);
+      CS_MALLOC(i_visck, n_i_faces, cs_real_t);
+      CS_MALLOC(b_visck, n_b_faces, cs_real_t);
 
       /* Diffusion coefficient  T*lambda*Cvk/Cv */
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -768,10 +767,10 @@ cs_cf_energy(int f_sc_id)
                         i_visck,
                         b_visck);
 
-      BFT_FREE(kspe);
+      CS_FREE(kspe);
 
       cs_real_t *grad_dd;
-      BFT_MALLOC(grad_dd, n_i_faces, cs_real_t);
+      CS_MALLOC(grad_dd, n_i_faces, cs_real_t);
       cs_array_real_fill_zero(n_i_faces, grad_dd);
 
       for (cs_lnum_t spe_id = 0; spe_id < n_species_solved; spe_id++) {
@@ -886,7 +885,7 @@ cs_cf_energy(int f_sc_id)
 
       }
 
-      BFT_FREE(grad_dd);
+      CS_FREE(grad_dd);
 
     } /* End gas mix process */
 
@@ -941,8 +940,8 @@ cs_cf_energy(int f_sc_id)
       cs_real_t *coefbt = f_tempk->bc_coeffs->b;
 
       cs_real_t *grad_dd, *btemp;
-      BFT_MALLOC(grad_dd, n_b_faces, cs_real_t);
-      BFT_MALLOC(btemp, n_b_faces, cs_real_t);
+      CS_MALLOC(grad_dd, n_b_faces, cs_real_t);
+      CS_MALLOC(btemp, n_b_faces, cs_real_t);
 
       cs_field_gradient_scalar(f_tempk,
                                false,
@@ -997,12 +996,14 @@ cs_cf_energy(int f_sc_id)
             const cs_real_t yip
               = yk[c_id] + cs_math_3_dot_product(grad[c_id], diipb[f_id]);
 
-            const cs_real_t gradnb = coefayk[f_id] + (coefbyk[f_id] - 1.0) * yip;
+            const cs_real_t gradnb
+              = coefayk[f_id] + (coefbyk[f_id] - 1.0) * yip;
 
             grad_dd[f_id] = grad_dd[f_id] - gradnb;
 
-            const cs_real_t flux =   b_visck[f_id] * c_viscs_t[c_id] * btemp[f_id] * cv
-                                   / b_dist[f_id] * (-gradnb);
+            const cs_real_t flux
+              =   b_visck[f_id] * c_viscs_t[c_id] * btemp[f_id] * cv
+                                / b_dist[f_id] * (-gradnb);
 
             rhs[c_id] = rhs[c_id] + flux;
           }
@@ -1037,17 +1038,18 @@ cs_cf_energy(int f_sc_id)
 
           const cs_lnum_t c_id = b_face_cells[f_id];
 
-          const cs_real_t flux =   b_visck[f_id] * c_viscs_t[c_id] * btemp[f_id] * cv
-                                 / b_dist[f_id] * grad_dd[f_id];
+          const cs_real_t flux
+            =   b_visck[f_id] * c_viscs_t[c_id] * btemp[f_id] * cv
+                              / b_dist[f_id] * grad_dd[f_id];
 
           rhs[c_id] = rhs[c_id] + flux;
         }
       }
 
-      BFT_FREE(grad_dd);
-      BFT_FREE(btemp);
-      BFT_FREE(i_visck);
-      BFT_FREE(b_visck);
+      CS_FREE(grad_dd);
+      CS_FREE(btemp);
+      CS_FREE(i_visck);
+      CS_FREE(b_visck);
 
     } /* End gas mix process */
 
@@ -1102,9 +1104,9 @@ cs_cf_energy(int f_sc_id)
                                      nullptr,   /* xcpp */
                                      nullptr);  /* eswork */
 
-  BFT_FREE(dpvar);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE(dpvar);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
 
   /* Logging and clipping
      -------------------- */
@@ -1169,13 +1171,13 @@ cs_cf_energy(int f_sc_id)
   }
 
   /* Free memory */
-  BFT_FREE(wb);
-  BFT_FREE(rhs);
-  BFT_FREE(rovsdt);
-  BFT_FREE(grad);
-  BFT_FREE(c_viscs_t);
-  BFT_FREE(w7);
-  BFT_FREE(w9);
+  CS_FREE(wb);
+  CS_FREE(rhs);
+  CS_FREE(rovsdt);
+  CS_FREE(grad);
+  CS_FREE(c_viscs_t);
+  CS_FREE(w7);
+  CS_FREE(w9);
 }
 
 /*----------------------------------------------------------------------------*/

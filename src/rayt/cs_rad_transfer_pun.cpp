@@ -46,12 +46,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -165,8 +165,8 @@ cs_rad_transfer_pun(int                          iband,
 
   /* Allocate temporary arrays */
   cs_real_t *dpvar, *thetaa;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
-  BFT_MALLOC(thetaa, n_cells_ext, cs_real_t);
+  CS_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC(thetaa, n_cells_ext, cs_real_t);
 
   /* Solver settings and initialization */
 
@@ -345,8 +345,8 @@ cs_rad_transfer_pun(int                          iband,
   }
 
   /* Free memory */
-  BFT_FREE(dpvar);
-  BFT_FREE(thetaa);
+  CS_FREE(dpvar);
+  CS_FREE(thetaa);
 }
 
 /*----------------------------------------------------------------------------*/
