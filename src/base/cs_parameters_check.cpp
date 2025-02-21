@@ -1279,33 +1279,41 @@ cs_parameters_check(void)
    * Check if gravity terms in turbulence are taken into account correctly
    *--------------------------------------------------------------------------*/
 
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (!(f->type & CS_FIELD_VARIABLE))
-      continue;
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    if (eqp == nullptr)
-      continue;
+  if (cs_glob_turb_model->type == CS_TURB_RANS) {
+    const cs_real_t *gravity = cs_glob_physical_constants->gravity;
+    cs_real_t gravity_norm = cs_math_3_norm(gravity);
 
-    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
-    if (scalar_id > -1) {
-      if (   cs_glob_turb_model->type == CS_TURB_RANS
-          && cs_thermal_model_field() == nullptr
-          && cs_math_3_norm(cs_glob_physical_constants->gravity) > cs_math_epzero) {
-        cs_log_warning
-          (_("Turbulence model with gravity\n"
-             "Gravity is taken into account %f %f %f without solving\n"
-             "temperature or energy\n"),
-           cs_glob_physical_constants->gravity[0],
-           cs_glob_physical_constants->gravity[1],
-           cs_glob_physical_constants->gravity[2]);
-        if (cs_glob_turb_rans_model->has_buoyant_term == 1)
+    if (   gravity_norm  > cs_math_epzero
+        && cs_thermal_model_field() == nullptr
+        && cs_glob_fluid_properties->irovar == 0) {
+
+      // FIXME: check if this warning is relevant
+      for (int f_id = 0; f_id < n_fields; f_id++) {
+        cs_field_t *f = cs_field_by_id(f_id);
+        if (!(f->type & CS_FIELD_VARIABLE))
+          continue;
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        if (eqp == nullptr)
+          continue;
+
+        int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+        if (scalar_id > -1) {
           cs_log_warning
             (_("Turbulence model with gravity\n"
-               "Gravity is taken into account in the turbulence source terms\n"
-               "(has_buoyant_term = %d) without solving temperature or energy\n"),
-             cs_glob_turb_rans_model->has_buoyant_term);
+               "Gravity g = [%g %g %g] is taken into account without\n"
+               "solving a thermal variable or with variable density\n"),
+             gravity[0], gravity[1], gravity[2]);
+          break;
+        }
       }
+
+      if (cs_glob_turb_rans_model->has_buoyant_term == 1)
+        cs_log_warning
+          (_("Turbulence model with gravity\n"
+             "Gravity g = [%g %g %g] is taken in the turbulence source terms\n"
+             "(has_buoyant_term = %d) without solving a thermal variable "
+             "or with variable density.\n"),
+           cs_glob_turb_rans_model->has_buoyant_term);
     }
   }
 
