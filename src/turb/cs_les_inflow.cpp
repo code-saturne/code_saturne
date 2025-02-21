@@ -43,7 +43,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -53,6 +52,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -548,8 +548,8 @@ cs_les_inflow_finalize(void)
 
     /* Mesh */
 
-    BFT_FREE(inlet->face_center);
-    BFT_FREE(inlet->face_surface);
+    CS_FREE(inlet->face_center);
+    CS_FREE(inlet->face_surface);
 
     /* Turbulence level */
 
@@ -580,12 +580,12 @@ cs_les_inflow_finalize(void)
       {
         cs_inflow_batten_t *inflow = (cs_inflow_batten_t *) inlet->inflow;
 
-        BFT_FREE(inflow->frequency);
-        BFT_FREE(inflow->wave_vector);
-        BFT_FREE(inflow->amplitude_cos);
-        BFT_FREE(inflow->amplitude_sin);
+        CS_FREE(inflow->frequency);
+        CS_FREE(inflow->wave_vector);
+        CS_FREE(inflow->amplitude_cos);
+        CS_FREE(inflow->amplitude_sin);
 
-        BFT_FREE(inflow);
+        CS_FREE(inflow);
 
         inlet->inflow = nullptr;
       }
@@ -596,10 +596,10 @@ cs_les_inflow_finalize(void)
       {
         cs_inflow_sem_t *inflow = (cs_inflow_sem_t *) inlet->inflow;
 
-        BFT_FREE(inflow->position);
-        BFT_FREE(inflow->energy);
+        CS_FREE(inflow->position);
+        CS_FREE(inflow->energy);
 
-        BFT_FREE(inflow);
+        CS_FREE(inflow);
 
         inlet->inflow = nullptr;
       }
@@ -613,14 +613,14 @@ cs_les_inflow_finalize(void)
     inlet->wt_tot  = 0.;
     inlet->cpu_tot = 0.;
 
-    BFT_FREE(inlet);
+    CS_FREE(inlet);
   }
 
   /* Global array of inlets */
   /*------------------------*/
 
   cs_glob_inflow_n_inlets = 0;
-  BFT_FREE(cs_glob_inflow_inlet_array);
+  CS_FREE(cs_glob_inflow_inlet_array);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -665,10 +665,10 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
   /* Allocating inlet structures */
   /*-----------------------------*/
 
-  BFT_REALLOC(cs_glob_inflow_inlet_array,
-              cs_glob_inflow_n_inlets + 1, cs_inlet_t *);
+  CS_REALLOC(cs_glob_inflow_inlet_array,
+             cs_glob_inflow_n_inlets + 1, cs_inlet_t *);
 
-  BFT_MALLOC(inlet, 1, cs_inlet_t);
+  CS_MALLOC(inlet, 1, cs_inlet_t);
 
   inlet->zone = zone;
 
@@ -682,14 +682,14 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
 
   if (n_elts > 0) {
 
-    BFT_MALLOC(inlet->face_center, n_elts, cs_real_3_t);
+    CS_MALLOC(inlet->face_center, n_elts, cs_real_3_t);
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
         inlet->face_center[i][coo_id]
           = mq->b_face_cog[face_ids[i]][coo_id];
     }
 
-    BFT_MALLOC(inlet->face_surface, n_elts, cs_real_t);
+    CS_MALLOC(inlet->face_surface, n_elts, cs_real_t);
     for (cs_lnum_t i = 0; i < n_elts; i++)
       inlet->face_surface[i]
         = cs_math_3_norm(mq->b_face_normal + face_ids[i]*3);
@@ -744,14 +744,14 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
                   n_entities);
 
       cs_inflow_batten_t *inflow;
-      BFT_MALLOC(inflow, 1, cs_inflow_batten_t);
+      CS_MALLOC(inflow, 1, cs_inflow_batten_t);
 
       inflow->n_modes = n_entities;
 
-      BFT_MALLOC(inflow->frequency,     inflow->n_modes, cs_real_t);
-      BFT_MALLOC(inflow->wave_vector,   inflow->n_modes, cs_real_3_t);
-      BFT_MALLOC(inflow->amplitude_cos, inflow->n_modes, cs_real_3_t);
-      BFT_MALLOC(inflow->amplitude_sin, inflow->n_modes, cs_real_3_t);
+      CS_MALLOC(inflow->frequency,     inflow->n_modes, cs_real_t);
+      CS_MALLOC(inflow->wave_vector,   inflow->n_modes, cs_real_3_t);
+      CS_MALLOC(inflow->amplitude_cos, inflow->n_modes, cs_real_3_t);
+      CS_MALLOC(inflow->amplitude_sin, inflow->n_modes, cs_real_3_t);
 
       inlet->inflow = inflow;
 
@@ -768,12 +768,12 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
                   n_entities);
 
       cs_inflow_sem_t *inflow;
-      BFT_MALLOC(inflow, 1, cs_inflow_sem_t);
+      CS_MALLOC(inflow, 1, cs_inflow_sem_t);
       inflow->volume_mode = (volume_mode == true) ? 1 : 0;
       inflow->n_structures = n_entities;
 
-      BFT_MALLOC(inflow->position, inflow->n_structures, cs_real_3_t);
-      BFT_MALLOC(inflow->energy,   inflow->n_structures, cs_real_3_t);
+      CS_MALLOC(inflow->position, inflow->n_structures, cs_real_3_t);
+      CS_MALLOC(inflow->energy,   inflow->n_structures, cs_real_3_t);
 
       inlet->inflow = inflow;
 
@@ -847,9 +847,9 @@ cs_les_inflow_compute(void)
     /* Mean velocity profile, one-point statistics and dissipation rate */
     /*------------------------------------------------------------------*/
 
-    BFT_MALLOC(vel_m_l, n_elts, cs_real_3_t);
-    BFT_MALLOC(rij_l, n_elts, cs_real_6_t);
-    BFT_MALLOC(eps_r, n_elts, cs_real_t);
+    CS_MALLOC(vel_m_l, n_elts, cs_real_3_t);
+    CS_MALLOC(rij_l, n_elts, cs_real_6_t);
+    CS_MALLOC(eps_r, n_elts, cs_real_t);
 
     /* Initialization by the turbulence scales given by the user */
 
@@ -878,7 +878,7 @@ cs_les_inflow_compute(void)
     /* Generation of the synthetic turbulence */
     /*----------------------------------------*/
 
-    BFT_MALLOC(fluctuations, n_elts, cs_real_3_t);
+    CS_MALLOC(fluctuations, n_elts, cs_real_3_t);
     cs_array_real_fill_zero(3*n_elts, (cs_real_t *)fluctuations);
 
     const cs_time_step_t *time_step = cs_glob_time_step;
@@ -915,7 +915,7 @@ cs_les_inflow_compute(void)
           cs_lnum_t n_points = cs_glob_mesh->n_cells;
           cs_real_t *point_weight = nullptr;
 
-          BFT_REALLOC(rij_l, n_cells, cs_real_6_t);
+          CS_REALLOC(rij_l, n_cells, cs_real_6_t);
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
             for (cs_lnum_t j = 0; j < 3; j++)
               rij_l[cell_id][j] = two_third*inlet->k_r;
@@ -923,13 +923,13 @@ cs_les_inflow_compute(void)
               rij_l[cell_id][j] = 0.;
           }
 
-          BFT_REALLOC(vel_m_l, n_cells, cs_real_3_t);
+          CS_REALLOC(vel_m_l, n_cells, cs_real_3_t);
           cs_array_real_fill_zero(3*n_cells, (cs_real_t *)vel_m_l);
 
-          BFT_REALLOC(eps_r, n_points, cs_real_t);
+          CS_REALLOC(eps_r, n_points, cs_real_t);
           cs_array_real_set_scalar(n_cells, dissiprate, eps_r);
 
-          BFT_REALLOC(fluctuations, n_points, cs_real_3_t);
+          CS_REALLOC(fluctuations, n_points, cs_real_3_t);
           cs_array_real_fill_zero(3*n_cells, (cs_real_t *)fluctuations);
 
           cs_les_synthetic_eddy_method(cs_glob_mesh->n_cells,
@@ -969,7 +969,7 @@ cs_les_inflow_compute(void)
 
     inlet->initialize = 0;
 
-    BFT_FREE(eps_r);
+    CS_FREE(eps_r);
 
     /* Rescaling of the synthetic fluctuations by the statistics */
     /*-----------------------------------------------------------*/
@@ -993,7 +993,7 @@ cs_les_inflow_compute(void)
       cs_les_rescale_fluctuations(n_elts, rij_l, fluctuations);
     }
 
-    BFT_FREE(rij_l);
+    CS_FREE(rij_l);
 
     /* Rescaling of the mass flow rate */
     /*---------------------------------*/
@@ -1028,8 +1028,8 @@ cs_les_inflow_compute(void)
       rcodcl1_w[face_id] = vel_m_l[i][2] + fluctuations[i][2];
     }
 
-    BFT_FREE(vel_m_l);
-    BFT_FREE(fluctuations);
+    CS_FREE(vel_m_l);
+    CS_FREE(fluctuations);
 
     wt_stop  = cs_timer_wtime();
     cpu_stop = cs_timer_cpu_time();
@@ -1638,7 +1638,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   constexpr cs_real_t c_1ov3 = 1./3.;
 
   cs_real_3_t  *length_scale;
-  BFT_MALLOC(length_scale, n_points, cs_real_3_t);
+  CS_MALLOC(length_scale, n_points, cs_real_3_t);
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
@@ -1820,7 +1820,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
   if (box_volume <= -HUGE_VAL) {
     bft_printf(_("%s: empty virtual box\n"), __func__);
-    BFT_FREE(length_scale);
+    CS_FREE(length_scale);
     return;
   }
 
@@ -1884,7 +1884,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   /*----------------------------------------------------------------*/
 
   cs_real_t *weight = nullptr;
-  BFT_MALLOC(weight, n_points, cs_real_t);
+  CS_MALLOC(weight, n_points, cs_real_t);
 
   if (point_weight == nullptr)
     for (cs_lnum_t point_id = 0; point_id < n_points; point_id++)
@@ -1907,7 +1907,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
   }
 
-  BFT_FREE(weight);
+  CS_FREE(weight);
 
   if (cs_glob_rank_id < 0)
 
@@ -2057,7 +2057,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
   }
 
-  BFT_FREE(length_scale);
+  CS_FREE(length_scale);
 }
 
 /*----------------------------------------------------------------------------*/

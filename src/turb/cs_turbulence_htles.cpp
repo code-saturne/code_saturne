@@ -43,8 +43,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_array.h"
 #include "alge/cs_balance.h"
 #include "alge/cs_blas.h"
@@ -62,6 +60,7 @@
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_physical_constants.h"
@@ -436,9 +435,9 @@ cs_htles_initialization(void) {
   cs_lnum_t *vtx2_edg_per_cells = nullptr;
   cs_lnum_t *cpt_edg_per_cells = nullptr;
 
-  BFT_MALLOC(vtx1_edg_per_cells, n_cells*max_edg_per_cells, cs_lnum_t);
-  BFT_MALLOC(vtx2_edg_per_cells, n_cells*max_edg_per_cells, cs_lnum_t);
-  BFT_MALLOC(cpt_edg_per_cells, n_cells, cs_lnum_t);
+  CS_MALLOC(vtx1_edg_per_cells, n_cells*max_edg_per_cells, cs_lnum_t);
+  CS_MALLOC(vtx2_edg_per_cells, n_cells*max_edg_per_cells, cs_lnum_t);
+  CS_MALLOC(cpt_edg_per_cells, n_cells, cs_lnum_t);
 
   /* The counter is set to zero */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -459,15 +458,20 @@ cs_htles_initialization(void) {
         vtx1_id = m->i_face_vtx_lst[vtx1];
         vtx2_id = m->i_face_vtx_lst[vtx2];
 
-        /* Not take into account the ghost cells in case of periodic boundaries */
+        /* Do not take into account the ghost cells in case
+           of periodic boundaries */
         if (c_id_1 < n_cells) {
-          vtx1_edg_per_cells[c_id_1*max_edg_per_cells + cpt_edg_per_cells[c_id_1]] = vtx1_id;
-          vtx2_edg_per_cells[c_id_1*max_edg_per_cells + cpt_edg_per_cells[c_id_1]] = vtx2_id;
+          vtx1_edg_per_cells[c_id_1*max_edg_per_cells
+                             + cpt_edg_per_cells[c_id_1]] = vtx1_id;
+          vtx2_edg_per_cells[c_id_1*max_edg_per_cells
+                             + cpt_edg_per_cells[c_id_1]] = vtx2_id;
           cpt_edg_per_cells[c_id_1] += 1;
         }
         if (c_id_2 < n_cells) {
-          vtx1_edg_per_cells[c_id_2*max_edg_per_cells + cpt_edg_per_cells[c_id_2]] = vtx1_id;
-          vtx2_edg_per_cells[c_id_2*max_edg_per_cells + cpt_edg_per_cells[c_id_2]] = vtx2_id;
+          vtx1_edg_per_cells[c_id_2*max_edg_per_cells
+                             + cpt_edg_per_cells[c_id_2]] = vtx1_id;
+          vtx2_edg_per_cells[c_id_2*max_edg_per_cells
+                             + cpt_edg_per_cells[c_id_2]] = vtx2_id;
           cpt_edg_per_cells[c_id_2] += 1;
         }
       }
@@ -487,8 +491,10 @@ cs_htles_initialization(void) {
         vtx1_id = m->b_face_vtx_lst[vtx1];
         vtx2_id = m->b_face_vtx_lst[vtx2];
 
-        vtx1_edg_per_cells[c_id_1*max_edg_per_cells + cpt_edg_per_cells[c_id_1]] = vtx1_id;
-        vtx2_edg_per_cells[c_id_1*max_edg_per_cells + cpt_edg_per_cells[c_id_1]] = vtx2_id;
+        vtx1_edg_per_cells[c_id_1*max_edg_per_cells
+                           + cpt_edg_per_cells[c_id_1]] = vtx1_id;
+        vtx2_edg_per_cells[c_id_1*max_edg_per_cells
+                           + cpt_edg_per_cells[c_id_1]] = vtx2_id;
         cpt_edg_per_cells[c_id_1] += 1;
       }
     }
@@ -519,7 +525,7 @@ cs_htles_initialization(void) {
         vtx2_edg1_id = vtx2_edg_per_cells[c_id*max_edg_per_cells + edg1_id];
         vtx1_edg2_id = vtx1_edg_per_cells[c_id*max_edg_per_cells + edg2_id];
         vtx2_edg2_id = vtx2_edg_per_cells[c_id*max_edg_per_cells + edg2_id];
-        if (((vtx1_edg1_id == vtx1_edg2_id) && (vtx2_edg1_id == vtx2_edg2_id))
+        if (   ((vtx1_edg1_id == vtx1_edg2_id) && (vtx2_edg1_id == vtx2_edg2_id))
             || ((vtx1_edg1_id == vtx2_edg2_id) && (vtx2_edg1_id == vtx1_edg2_id))) {
           vtx1_id = vtx1_edg1_id;
           vtx2_id = vtx2_edg1_id;
@@ -539,10 +545,11 @@ cs_htles_initialization(void) {
 
   }
 
-  BFT_FREE(vtx1_edg_per_cells);
-  BFT_FREE(vtx2_edg_per_cells);
-  BFT_FREE(cpt_edg_per_cells);
-
+  CS_FREE(vtx1_edg_per_cells);
+  CS_FREE(vtx2_edg_per_cells);
+  CS_FREE(cpt_edg_per_cells);
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -43,7 +43,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -65,6 +64,7 @@
 #include "base/cs_log_iteration.h"
 #include "base/cs_mass_source_terms.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -1298,13 +1298,13 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   ctx.wait();
 
-  BFT_FREE(c_is_solid_zone_flag);
+  CS_FREE(c_is_solid_zone_flag);
 
   /* Coriolis terms in the Phi1 and production
    * ----------------------------------------- */
 
   cs_real_6_t *w2;
-  BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
 
   if ((icorio == 1) || (tm_model == 1)) {
 
@@ -1378,7 +1378,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   }
 
-  BFT_FREE(w2);
+  CS_FREE(w2);
 
   /* Buoyancy source term
    * -------------------- */
@@ -1419,7 +1419,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   else {
 
     cs_real_t *w1;
-    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC(w1, n_cells_ext, cs_real_t);
 
     if (eqp->idifft == 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1442,7 +1442,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
                       viscf,
                       viscb);
 
-    BFT_FREE(w1);
+    CS_FREE(w1);
 
   }
 }
@@ -1682,13 +1682,13 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   }
 
-  BFT_FREE(c_is_solid_zone_flag);
+  CS_FREE(c_is_solid_zone_flag);
 
   /* Coriolis terms in the Phi1 and production
    * -----------------------------------------*/
 
   cs_real_6_t *w2;
-  BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
 
   if (icorio == 1 || tm_model == CS_TURBOMACHINERY_FROZEN) {
     const cs_rotation_t *rotation = cs_glob_rotation;
@@ -1761,7 +1761,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   }
 
-  BFT_FREE(w2);
+  CS_FREE(w2);
 
   /* Buoyancy source term
    * -------------------- */
@@ -1802,7 +1802,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   else {
 
     cs_real_t *w1;
-    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC(w1, n_cells_ext, cs_real_t);
 
     if (eqp->idifft == 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1825,7 +1825,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
                       viscf,
                       viscb);
 
-    BFT_FREE(w1);
+    CS_FREE(w1);
   }
 }
 
@@ -4123,7 +4123,7 @@ cs_turbulence_rij_clip(int        phase_id,
     icltot += t_icltot;
   }
 
-  BFT_FREE(c_is_solid_zone_flag);
+  CS_FREE(c_is_solid_zone_flag);
 
   /* Store number of clippings for logging */
 

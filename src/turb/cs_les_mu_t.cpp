@@ -43,7 +43,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -58,6 +57,7 @@
 #include "turb/cs_les_filter.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -128,11 +128,11 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
   cs_real_6_t *mij;
   cs_real_33_t *gradv;
 
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(w0, n_cells_ext, cs_real_t);
-  BFT_MALLOC(mij, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(xro, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xrof, n_cells_ext, cs_real_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(w0, n_cells_ext, cs_real_t);
+  CS_MALLOC(mij, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(xro, n_cells_ext, cs_real_t);
+  CS_MALLOC(xrof, n_cells_ext, cs_real_t);
 
   /* Take into account variable density case: Favre filtering
    * Constant density case: Reynolds filtering */
@@ -157,8 +157,8 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
 
   cs_real_6_t *w61, *w62;
 
-  BFT_MALLOC(w61, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(w62, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(w61, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(w62, n_cells_ext, cs_real_6_t);
 
   cs_field_gradient_vector(CS_F_(vel),
                            false, // no use_previous_t
@@ -187,7 +187,7 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
       w62[c_id][ij] = xro[c_id] * mij[c_id][ij];
   }
 
-  BFT_FREE(gradv);
+  CS_FREE(gradv);
 
   /* w62 temporarily contains rho*S */
 
@@ -234,8 +234,8 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
                       - w62[c_id][ij];
   }
 
-  BFT_FREE(w61);
-  BFT_FREE(w62);
+  CS_FREE(w61);
+  CS_FREE(w62);
 
   /* Allocate work arrays */
   cs_real_6_t *lij;
@@ -243,10 +243,10 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
   cs_real_6_t *w_t;
   cs_real_3_t *w_v;
 
-  BFT_MALLOC(rho_ui_uj, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(lij, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(w_t, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(w_v, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(rho_ui_uj, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(lij, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(w_t, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(w_v, n_cells_ext, cs_real_3_t);
 
   /* Filtering the velocity and its square */
 
@@ -285,15 +285,15 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
   }
 
   /* Free memory */
-  BFT_FREE(gradv);
-  BFT_FREE(w0);
-  BFT_FREE(mij);
-  BFT_FREE(xro);
-  BFT_FREE(xrof);
-  BFT_FREE(rho_ui_uj);
-  BFT_FREE(lij);
-  BFT_FREE(w_t);
-  BFT_FREE(w_v);
+  CS_FREE(gradv);
+  CS_FREE(w0);
+  CS_FREE(mij);
+  CS_FREE(xro);
+  CS_FREE(xrof);
+  CS_FREE(rho_ui_uj);
+  CS_FREE(lij);
+  CS_FREE(w_t);
+  CS_FREE(w_v);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -347,10 +347,10 @@ cs_les_mu_t_smago_dyn(void)
 
   cs_real_t *w0, *w1, *xro, *xrof;
 
-  BFT_MALLOC(w0, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xro, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xrof, n_cells_ext, cs_real_t);
+  CS_MALLOC(w0, n_cells_ext, cs_real_t);
+  CS_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC(xro, n_cells_ext, cs_real_t);
+  CS_MALLOC(xrof, n_cells_ext, cs_real_t);
 
   /* Take into account variable density case: Favre filtering
    * Constant density case: Reynolds filtering */
@@ -369,12 +369,12 @@ cs_les_mu_t_smago_dyn(void)
   cs_real_t *w2, *w3, *w4;
   cs_real_3_t *f_vel;
 
-  BFT_MALLOC(s_n, n_cells_ext, cs_real_t);
-  BFT_MALLOC(sf_n, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w2, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w3, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w4, n_cells_ext, cs_real_t);
-  BFT_MALLOC(f_vel, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(s_n, n_cells_ext, cs_real_t);
+  CS_MALLOC(sf_n, n_cells_ext, cs_real_t);
+  CS_MALLOC(w2, n_cells_ext, cs_real_t);
+  CS_MALLOC(w3, n_cells_ext, cs_real_t);
+  CS_MALLOC(w4, n_cells_ext, cs_real_t);
+  CS_MALLOC(f_vel, n_cells_ext, cs_real_3_t);
 
   /* Compute:
    *   s_n (aka sqrt(2SijSij))
@@ -536,8 +536,8 @@ cs_les_mu_t_smago_dyn(void)
        * ========================= */
 
       cs_real_3_t *grads, *gradsf;
-      BFT_MALLOC(grads, n_cells_ext, cs_real_3_t);
-      BFT_MALLOC(gradsf, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(grads, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(gradsf, n_cells_ext, cs_real_3_t);
 
       const cs_field_bc_coeffs_t *bc_coeffs = fld->bc_coeffs;
 
@@ -549,8 +549,8 @@ cs_les_mu_t_smago_dyn(void)
 
       /* compute grad (<rho.Y>/<rho>) */
       cs_real_3_t *scami, *scamif;
-      BFT_MALLOC(scami, n_cells_ext, cs_real_3_t);
-      BFT_MALLOC(scamif, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(scami, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(scamif, n_cells_ext, cs_real_3_t);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         w0[c_id] = cvar_sca[c_id]*xro[c_id];
@@ -607,8 +607,8 @@ cs_les_mu_t_smago_dyn(void)
        * ========================= */
 
       cs_real_3_t *w_v, *f_sca_vel;
-      BFT_MALLOC(w_v, n_cells_ext, cs_real_3_t);
-      BFT_MALLOC(f_sca_vel, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(w_v, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(f_sca_vel, n_cells_ext, cs_real_3_t);
 
       /* rho*Y*vel */
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -617,7 +617,7 @@ cs_les_mu_t_smago_dyn(void)
       }
       cs_les_filter(3, (cs_real_t*)w_v, (cs_real_t*)f_sca_vel);
 
-      BFT_FREE(w_v);
+      CS_FREE(w_v);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         /* filter(rho Y vel) - rho filter(rho vel)/rho filter(Y)/rho */
@@ -629,7 +629,7 @@ cs_les_mu_t_smago_dyn(void)
         w2[c_id] = cs_math_3_square_norm(scami[c_id]);
       }
 
-      BFT_FREE(f_sca_vel);
+      CS_FREE(f_sca_vel);
 
       cs_les_filter(1, w1, w3);
       cs_les_filter(1, w2, w4);
@@ -651,26 +651,26 @@ cs_les_mu_t_smago_dyn(void)
                                * cs_math_pow2(delta) * s_n[c_id];
       }
 
-      BFT_FREE(scami);
-      BFT_FREE(scamif);
-      BFT_FREE(grads);
-      BFT_FREE(gradsf);
+      CS_FREE(scami);
+      CS_FREE(scamif);
+      CS_FREE(grads);
+      CS_FREE(gradsf);
     }
   }
 
   /* Free memory */
-  BFT_FREE(s_n);
-  BFT_FREE(sf_n);
+  CS_FREE(s_n);
+  CS_FREE(sf_n);
 
-  BFT_FREE(f_vel);
-  BFT_FREE(w4);
-  BFT_FREE(w3);
-  BFT_FREE(w2);
-  BFT_FREE(w1);
-  BFT_FREE(w0);
+  CS_FREE(f_vel);
+  CS_FREE(w4);
+  CS_FREE(w3);
+  CS_FREE(w2);
+  CS_FREE(w1);
+  CS_FREE(w0);
 
-  BFT_FREE(xro);
-  BFT_FREE(xrof);
+  CS_FREE(xro);
+  CS_FREE(xrof);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -694,7 +694,7 @@ cs_les_mu_t_smago_const(void)
    * ============== */
 
   cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_real_t *visct =  CS_F_(mu_t)->val;
   const cs_real_t *crom  = CS_F_(rho)->val;
@@ -744,7 +744,7 @@ cs_les_mu_t_smago_const(void)
   }
 
   /* Free memory */
-  BFT_FREE(gradv);
+  CS_FREE(gradv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -774,7 +774,7 @@ cs_les_mu_t_wale(void)
    * ============== */
 
   cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_real_t *visct = CS_F_(mu_t)->val;
   const cs_real_t *crom = CS_F_(rho)->val;
@@ -806,7 +806,7 @@ cs_les_mu_t_wale(void)
   cs_real_t *s_eq = nullptr;
   /* Store inverse of the time scale if needed */
   if (f_k != nullptr && f_eps != nullptr)
-    BFT_MALLOC(s_eq, n_cells, cs_real_t);
+    CS_MALLOC(s_eq, n_cells, cs_real_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
@@ -889,11 +889,11 @@ cs_les_mu_t_wale(void)
     cs_field_current_to_previous(f_eps);
     cs_field_current_to_previous(f_k);
 
-    BFT_FREE(s_eq);
+    CS_FREE(s_eq);
   }
 
   /* Free memory */
-  BFT_FREE(gradv);
+  CS_FREE(gradv);
 }
 
 

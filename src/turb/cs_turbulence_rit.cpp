@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -57,6 +56,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log_iteration.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -471,7 +471,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
   cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
 
   cs_real_3_t *w1;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(w1, n_cells_ext, cs_real_3_t);
 
   /* loop on cells */
 
@@ -696,8 +696,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
-  BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
 
   cs_real_3_t  *coefat = (cs_real_3_t  *)bc_coeffs_v_loc.a;
   cs_real_33_t *coefbt = (cs_real_33_t *)bc_coeffs_v_loc.b;
@@ -737,9 +737,9 @@ _thermal_flux_and_diff(cs_field_t         *f,
                thflxf,
                thflxb);
 
-  BFT_FREE(w1);
-  BFT_FREE(coefat);
-  BFT_FREE(coefbt);
+  CS_FREE(w1);
+  CS_FREE(coefat);
+  CS_FREE(coefbt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -836,8 +836,8 @@ _solve_rit(const cs_field_t     *f,
   cs_real_33_t *fimp;
   cs_real_3_t *rhs_ut;
 
-  BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
-  BFT_MALLOC(rhs_ut, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(fimp, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(rhs_ut, n_cells_ext, cs_real_3_t);
 
   cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)rhs_ut);
   cs_array_real_fill_zero(9*n_cells_ext, (cs_real_t *)fimp);
@@ -919,12 +919,12 @@ _solve_rit(const cs_field_t     *f,
   cs_real_6_t *viscce;
   cs_real_t *w1, *viscf, *viscb, *weighb;
 
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
-  BFT_MALLOC(weighb, n_b_faces, cs_real_t);
-  BFT_MALLOC(weighf, n_i_faces, cs_real_2_t);
-  BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC(viscf, n_i_faces, cs_real_t);
+  CS_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC(weighb, n_b_faces, cs_real_t);
+  CS_MALLOC(weighf, n_i_faces, cs_real_2_t);
+  CS_MALLOC(viscce, n_cells_ext, cs_real_6_t);
 
   cs_real_t mdifft = (cs_real_t)(eqp_ut->idifft);
 
@@ -1053,14 +1053,14 @@ _solve_rit(const cs_field_t     *f,
                                      xut,
                                      nullptr);
 
-  BFT_FREE(w1);
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
-  BFT_FREE(weighb);
-  BFT_FREE(weighf);
-  BFT_FREE(viscce);
-  BFT_FREE(fimp);
-  BFT_FREE(rhs_ut);
+  CS_FREE(w1);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
+  CS_FREE(weighb);
+  CS_FREE(weighf);
+  CS_FREE(viscce);
+  CS_FREE(fimp);
+  CS_FREE(rhs_ut);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1118,7 +1118,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     else if (f_vg != nullptr)
       gradv = (cs_real_33_t *)f_vg->val;
     else {
-      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      CS_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
       gradv = _gradv;
     }
   }
@@ -1135,7 +1135,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     if (f_tg != nullptr)
       gradt = (cs_real_3_t *)f_tg->val;
     else {
-      BFT_MALLOC(_gradt, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(_gradt, n_cells_ext, cs_real_3_t);
       gradt = _gradt;
     }
   }
@@ -1154,7 +1154,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       || (turb_flux_model == 21)
       || (turb_flux_model == 31)) {
 
-    BFT_MALLOC(grad_al, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(grad_al, n_cells_ext, cs_real_3_t);
 
     cs_field_gradient_scalar(cs_field_by_composite_name(f->name, "alpha"),
                              false,       /* use previous t */
@@ -1193,8 +1193,8 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
    * ------------------- */
 
   cs_real_t *thflxf, *thflxb;
-  BFT_MALLOC(thflxf, n_i_faces, cs_real_t);
-  BFT_MALLOC(thflxb, n_b_faces, cs_real_t);
+  CS_MALLOC(thflxf, n_i_faces, cs_real_t);
+  CS_MALLOC(thflxb, n_b_faces, cs_real_t);
 
   if (turb_flux_model_type != 3) {
 
@@ -1237,7 +1237,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     const cs_real_t *brom = CS_F_(rho_b)->val;
 
     cs_real_3_t *w1;
-    BFT_MALLOC(w1, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(w1, n_cells_ext, cs_real_3_t);
 
 #   pragma omp parallel if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)  {
@@ -1276,7 +1276,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
                  thflxf,
                  thflxb);
 
-    BFT_FREE(w1);
+    CS_FREE(w1);
   }
 
   /* Add the divergence of the thermal flux to the thermal transport equation
@@ -1291,7 +1291,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     if (f_dut != nullptr)
       divut = f_dut->val;
     else {
-      BFT_MALLOC(_divut, n_cells_ext, cs_real_t);
+      CS_MALLOC(_divut, n_cells_ext, cs_real_t);
       divut = _divut;
     }
 
@@ -1316,14 +1316,14 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
         divut[c_id] *= dvol;
       }
     }
-    BFT_FREE(_divut);
+    CS_FREE(_divut);
   }
 
-  BFT_FREE(grad_al);
-  BFT_FREE(_gradt);
-  BFT_FREE(_gradv);
-  BFT_FREE(thflxf);
-  BFT_FREE(thflxb);
+  CS_FREE(grad_al);
+  CS_FREE(_gradt);
+  CS_FREE(_gradv);
+  CS_FREE(thflxf);
+  CS_FREE(thflxb);
 }
 
 /*----------------------------------------------------------------------------*/

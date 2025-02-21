@@ -43,7 +43,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -61,6 +60,7 @@
 #include "base/cs_log_iteration.h"
 #include "base/cs_mass_source_terms.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -233,11 +233,11 @@ _src_terms(const cs_real_t    dt[],
      if necessary
      => variable production term coefficient (csab1) */
   cs_real_t *csab1r;
-  BFT_MALLOC(csab1r, n_cells, cs_real_t);
+  CS_MALLOC(csab1r, n_cells, cs_real_t);
 
   if (cs_glob_turb_rans_model->irccor == 1) {
     cs_real_t *w1;
-    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC(w1, n_cells_ext, cs_real_t);
 
     /* Compute the rotation function (w1 array not used) */
     cs_turbulence_rotation_correction(dt, csab1r, w1);
@@ -246,7 +246,7 @@ _src_terms(const cs_real_t    dt[],
       csab1r[i] *= cs_turb_csab1;
     }
 
-    BFT_FREE(w1);
+    CS_FREE(w1);
   }
   else {
     cs_array_real_set_scalar(n_cells, cs_turb_csab1, csab1r);
@@ -327,7 +327,7 @@ _src_terms(const cs_real_t    dt[],
 
   }
 
-  BFT_FREE(csab1r);
+  CS_FREE(csab1r);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -453,9 +453,9 @@ cs_turbulence_sa(void)
 
   cs_real_t *imp_sa, *rhs_sa;
 
-  BFT_MALLOC(vort, n_cells_ext, cs_real_t);
-  BFT_MALLOC(tr_gr_u, n_cells_ext, cs_real_t);
-  BFT_MALLOC(tr_gr_nu, n_cells_ext, cs_real_t);
+  CS_MALLOC(vort, n_cells_ext, cs_real_t);
+  CS_MALLOC(tr_gr_u, n_cells_ext, cs_real_t);
+  CS_MALLOC(tr_gr_nu, n_cells_ext, cs_real_t);
   CS_MALLOC_HD(rhs_sa, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(imp_sa, n_cells_ext, cs_real_t, cs_alloc_mode);
 
@@ -477,9 +477,9 @@ cs_turbulence_sa(void)
              rhs_sa,
              imp_sa);
 
-  BFT_FREE(vort);
-  BFT_FREE(tr_gr_u);
-  BFT_FREE(tr_gr_nu);
+  CS_FREE(vort);
+  CS_FREE(tr_gr_u);
+  CS_FREE(tr_gr_nu);
 
   /* Take user source terms into account */
   /*!
@@ -490,8 +490,8 @@ cs_turbulence_sa(void)
    !*/
   cs_real_t *st_exp, *st_imp;
 
-  BFT_MALLOC(st_imp, n_cells_ext, cs_real_t);
-  BFT_MALLOC(st_exp, n_cells_ext, cs_real_t);
+  CS_MALLOC(st_imp, n_cells_ext, cs_real_t);
+  CS_MALLOC(st_exp, n_cells_ext, cs_real_t);
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     st_exp[i] = 0;
@@ -537,8 +537,8 @@ cs_turbulence_sa(void)
     }
   }
 
-  BFT_FREE(st_exp);
-  BFT_FREE(st_imp);
+  CS_FREE(st_exp);
+  CS_FREE(st_imp);
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     const cs_real_t romvsd = cpro_rho[i]*cell_f_vol[i] / dt[i];
