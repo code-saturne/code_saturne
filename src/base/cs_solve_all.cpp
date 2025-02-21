@@ -91,6 +91,8 @@
 #include "base/cs_wall_condensation_1d_thermal.h"
 #include "base/cs_wall_condensation.h"
 
+#include "cfbl/cs_cf_model.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -154,9 +156,9 @@ cs_f_atr1vf(void);
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_previous_values(const int        itrale,
-                        const int        n_fields,
-                        const cs_lnum_t  n_cells_ext)
+_update_previous_values(int        itrale,
+                        int        n_fields,
+                        cs_lnum_t  n_cells_ext)
 {
   const int kst = cs_field_key_id_try("source_term_id");
   const int kstprv = cs_field_key_id_try("source_term_prev_id");
@@ -320,38 +322,35 @@ _solve_coupled_vel_p_variables_equation(const int        iterns,
 /*!
  * \brief  Save of the pressure and temperature (if we have internal energy)
  *
- * \param[in]  n_cells  number of cells
+ * \param[in]  n_cells  number of cells (with ghosts)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_pressure_temperature(cs_lnum_t n_cells)
+_update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
 {
-  if (cs_glob_velocity_pressure_model->idilat != 2)
-    return;
+  assert(cs_glob_velocity_pressure_model->idilat == 2);
 
   cs_real_t *cvar_pr = CS_F_(p)->val;
   const cs_real_t *cvara_pr = CS_F_(p)->val_pre;
-
-  cs_real_t c = 1.0;
-  if (cs_glob_time_scheme->time_order == 2)
-    c = 2.0;
 
   if (   cs_glob_thermal_model->thermal_variable
       == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
     cs_field_t *temp = cs_field_by_name_try("temperature");
     if (temp != nullptr)
-      cs_array_real_copy(n_cells, temp->val, temp->val_pre);
+      cs_array_real_copy(n_cells_ext, temp->val, temp->val_pre);
   }
 
   /* Saving the thermodynamic pressure at time n+1
    * coherent with the equation of state */
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    cvar_pr[c_id] = c * cvar_pr[c_id] - (c - 1) * cvara_pr[c_id];
 
-  // Saving pressure corrected in resopv as ancient pressure
-  cs_field_current_to_previous(CS_F_(p));
+  if (cs_glob_time_scheme->time_order == 2) {
+#   pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      cvar_pr[c_id] = 2.*cvar_pr[c_id] - cvara_pr[c_id];
+
+    cs_field_current_to_previous(CS_F_(p));
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -621,12 +620,14 @@ _solve_most(int              n_var,
 
   }  // end while
 
-  if (cs_glob_cf_model-> ieos == CS_EOS_IDEAL_GAS
+  if (   cs_glob_cf_model-> ieos == CS_EOS_IDEAL_GAS
       || cs_glob_cf_model-> ieos == CS_EOS_GAS_MIX
-      || cs_glob_cf_model -> ieos == CS_EOS_MOIST_AIR){
-     _update_pressure_temperature(n_cells);
+      || cs_glob_cf_model-> ieos == CS_EOS_MOIST_AIR) {
+    if (cs_glob_velocity_pressure_model->idilat == 2)
+      _update_pressure_temperature_idilat_2(n_cells);
+  }
   else {
-    // Saving pressure corrected in resopv as ancient pressure
+    // Saving pressure corrected in resopv as previous pressure
     cs_field_current_to_previous(CS_F_(p));
   }
 
