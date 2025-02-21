@@ -54,7 +54,6 @@
 
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_convert_array.h"
@@ -67,6 +66,7 @@
 #include "base/cs_base.h"
 #include "base/cs_file.h"
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
 #include "mesh/cs_mesh_connect.h"
@@ -359,7 +359,7 @@ _build_ordered_cell_gnum(const cs_mesh_t    *b_mesh,
 
   /* Allocate array */
 
-  BFT_MALLOC(cell_gnum, b_mesh->n_cells_with_ghosts, cs_gnum_t);
+  CS_MALLOC(cell_gnum, b_mesh->n_cells_with_ghosts, cs_gnum_t);
 
   /* Build global numbering */
 
@@ -426,7 +426,7 @@ _build_ordered_b_face_gnum(const cs_mesh_t  *b_mesh)
 
   /* Allocate array */
 
-  BFT_MALLOC(face_gnum, b_mesh->n_b_faces, cs_gnum_t);
+  CS_MALLOC(face_gnum, b_mesh->n_b_faces, cs_gnum_t);
 
   /* As the nodal mesh used to build the CCM mesh is the (full) volume
      mesh, we need to build a local nodal boundary mesh to ensure
@@ -470,7 +470,7 @@ _build_order_by_gnum(cs_lnum_t         n_elts,
 
   /* Allocate array */
 
-  BFT_MALLOC(order, n_elts, cs_lnum_t);
+  CS_MALLOC(order, n_elts, cs_lnum_t);
 
   /* Build global numbering */
 
@@ -527,7 +527,7 @@ _build_export_list(const fvm_nodal_t  *mesh,
   if (n_sections == 0)
     return nullptr;
 
-  BFT_MALLOC(export_list, n_sections, ccm_writer_section_t);
+  CS_MALLOC(export_list, n_sections, ccm_writer_section_t);
 
   /* Build unsorted list */
 
@@ -576,9 +576,9 @@ _write_state(fvm_to_ccm_writer_t  *w)
 
     /* Prepare state name */
     sprintf(state_number, "%lu", w->state_counter);
-    BFT_MALLOC(state_full_name,
-               strlen(state_name) + strlen(state_number) + 1,
-               char);
+    CS_MALLOC(state_full_name,
+              strlen(state_name) + strlen(state_number) + 1,
+              char);
     strcpy(state_full_name, state_name);
     strcat(state_full_name, state_number);
 
@@ -590,7 +590,7 @@ _write_state(fvm_to_ccm_writer_t  *w)
                 _("CCMIO error %d writing state."), (int)error);
     w->state_id = state_id;
 
-    BFT_FREE(state_full_name);
+    CS_FREE(state_full_name);
   }
 
   w->state_counter++;
@@ -691,7 +691,7 @@ _update_time(int                   type,
     if (time_step == -1 && w->state_counter == 1) {
       time->n_time_values = 1;
       time->last_time_step = -1;
-      BFT_MALLOC(time->time_value, time->n_time_values, double);
+      CS_MALLOC(time->time_value, time->n_time_values, double);
       time->time_value[time->n_time_values-1] = time_value;
     }
 
@@ -699,7 +699,7 @@ _update_time(int                   type,
     else if (time_step != -1) {
       time->n_time_values++;
       time->last_time_step = time_step;
-      BFT_REALLOC(time->time_value, time->n_time_values, double);
+      CS_REALLOC(time->time_value, time->n_time_values, double);
       time->time_value[time->n_time_values-1] = time_value;
     }
 
@@ -709,7 +709,7 @@ _update_time(int                   type,
   else if (type == FIELD_TIME) {
     time->n_time_values++;
     time->last_time_step = time_step;
-    BFT_REALLOC(time->time_value, time->n_time_values, double);
+    CS_REALLOC(time->time_value, time->n_time_values, double);
     time->time_value[time->n_time_values-1] = time_value;
   }
 
@@ -891,7 +891,7 @@ _write_map(const char             *name,
 
     CCMIONewEntity(err, w->root_id, kCCMIOMap, name, map_id);
 
-    BFT_MALLOC(map_data, bi.block_size, cs_ccm_num_t);
+    CS_MALLOC(map_data, bi.block_size, cs_ccm_num_t);
 
     for (start_id = 1, end_id = bi.block_size;
          start_id < n_g_elts;
@@ -923,7 +923,7 @@ _write_map(const char             *name,
                   (int)error);
 
     }
-    BFT_FREE(map_data);
+    CS_FREE(map_data);
   }
 }
 
@@ -1125,9 +1125,9 @@ _write_vertices_g(const cs_mesh_t      *mesh,
                                       mesh->n_vertices,
                                       mesh->global_vtx_num);
 
-  BFT_MALLOC(_vtx_coords,
-             (vtx_bi.gnum_range[1] - vtx_bi.gnum_range[0]) * 3 *sizeof(cs_real_t),
-             cs_byte_t);
+  CS_MALLOC(_vtx_coords,
+            (vtx_bi.gnum_range[1] - vtx_bi.gnum_range[0]) * 3 *sizeof(cs_real_t),
+            cs_byte_t);
 
   cs_part_to_block_copy_array(d,
                               real_type,
@@ -1182,7 +1182,7 @@ _write_vertices_g(const cs_mesh_t      *mesh,
 
   cs_file_serializer_destroy(&s);
 
-  BFT_FREE(_vtx_coords);
+  CS_FREE(_vtx_coords);
 
   cs_part_to_block_destroy(&d);
 }
@@ -1235,9 +1235,9 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
 
   /* Create distribution structure */
 
-  BFT_MALLOC(_cell_gc_id,
-             (cell_bi.gnum_range[1] - cell_bi.gnum_range[0]),
-             int);
+  CS_MALLOC(_cell_gc_id,
+            (cell_bi.gnum_range[1] - cell_bi.gnum_range[0]),
+            int);
 
   d = cs_part_to_block_create_by_gnum(w->comm,
                                       cell_bi,
@@ -1282,7 +1282,7 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
 
   cs_file_serializer_destroy(&s);
 
-  BFT_FREE(_cell_gc_id);
+  CS_FREE(_cell_gc_id);
 
   cs_part_to_block_destroy(&d);
 }
@@ -1344,8 +1344,8 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
   /* Face -> vertex connectivity */
   /*-----------------------------*/
 
-  BFT_MALLOC(face_connect_idx, n_faces + 1, cs_lnum_t);
-  BFT_MALLOC(_face_connect_idx, block_size + 1, cs_lnum_t);
+  CS_MALLOC(face_connect_idx, n_faces + 1, cs_lnum_t);
+  CS_MALLOC(_face_connect_idx, block_size + 1, cs_lnum_t);
 
   face_connect_idx[0] = 0;
   for (i = 0; i < n_faces; i++) {
@@ -1357,9 +1357,9 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
 
   /* Build connectivity */
 
-  BFT_MALLOC(face_connect_g,
-             n_faces + face_connect_size,
-             cs_ccm_num_t);
+  CS_MALLOC(face_connect_g,
+            n_faces + face_connect_size,
+            cs_ccm_num_t);
 
   k = 0;
   for (i = 0; i < n_faces; i++) {
@@ -1368,7 +1368,7 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
       face_connect_g[k++] = b_mesh->global_vtx_num[face_vtx_lst[j]];
   }
 
-  BFT_MALLOC(_face_connect_g, _face_connect_idx[block_size], cs_ccm_num_t);
+  CS_MALLOC(_face_connect_g, _face_connect_idx[block_size], cs_ccm_num_t);
 
   cs_part_to_block_copy_indexed(d,
                                 ccm_num_type,
@@ -1377,8 +1377,8 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
                                 _face_connect_idx,
                                 _face_connect_g);
 
-  BFT_FREE(face_connect_g);
-  BFT_FREE(face_connect_idx);
+  CS_FREE(face_connect_g);
+  CS_FREE(face_connect_idx);
 
   /* Now write face -> vertices connectivity */
 
@@ -1394,7 +1394,7 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
   if (g_connect_size > 0)
     g_connect_size -= 1;
 
-  BFT_FREE(_face_connect_idx);
+  CS_FREE(_face_connect_idx);
 
   s = cs_file_serializer_create(sizeof(ccm_num_type),
                                 1,
@@ -1423,7 +1423,7 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
 
   cs_file_serializer_destroy(&s);
 
-  BFT_FREE(_face_connect_g);
+  CS_FREE(_face_connect_g);
 }
 
 /*----------------------------------------------------------------------------
@@ -1477,7 +1477,7 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
   /* Face -> cell connectivity */
   /*---------------------------*/
 
-  BFT_MALLOC(face_cell_g, n_faces*n_cells_per_face, cs_ccm_num_t);
+  CS_MALLOC(face_cell_g, n_faces*n_cells_per_face, cs_ccm_num_t);
 
   if (entity == kCCMIOInternalFaces) {
     for (i = 0; i < n_faces; i++) {
@@ -1492,9 +1492,9 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
 
   /* Distribute to blocks and write */
 
-  BFT_MALLOC(_face_cell_g,
-             (face_bi.gnum_range[1] - face_bi.gnum_range[0]) * n_cells_per_face,
-             cs_ccm_num_t);
+  CS_MALLOC(_face_cell_g,
+            (face_bi.gnum_range[1] - face_bi.gnum_range[0]) * n_cells_per_face,
+            cs_ccm_num_t);
 
   cs_part_to_block_copy_array(d,
                               ccm_num_type,
@@ -1502,7 +1502,7 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
                               face_cell_g,
                               _face_cell_g);
 
-  BFT_FREE(face_cell_g);
+  CS_FREE(face_cell_g);
 
   /* Now write face -> cells connectivity */
 
@@ -1536,7 +1536,7 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
 
   cs_file_serializer_destroy(&s);
 
-  BFT_FREE(_face_cell_g);
+  CS_FREE(_face_cell_g);
 }
 
 /*----------------------------------------------------------------------------
@@ -1587,7 +1587,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
   /* Allocate arrays large enough for both periodic boundary + true interior
      faces to avoid counting loop */
 
-  BFT_MALLOC(face_connect_idx, n_faces + 1, cs_lnum_t);
+  CS_MALLOC(face_connect_idx, n_faces + 1, cs_lnum_t);
 
   block_size = face_bi.gnum_range[1] - face_bi.gnum_range[0];
 
@@ -1619,15 +1619,15 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
     }
   }
 
-  BFT_MALLOC(_face_connect_idx, block_size + 1, cs_lnum_t);
+  CS_MALLOC(_face_connect_idx, block_size + 1, cs_lnum_t);
 
   cs_part_to_block_copy_index(d, face_connect_idx, _face_connect_idx);
 
   /* Build connectivity */
 
-  BFT_MALLOC(face_connect_g,
-             n_faces + face_connect_size,
-             cs_ccm_num_t);
+  CS_MALLOC(face_connect_g,
+            n_faces + face_connect_size,
+            cs_ccm_num_t);
 
   k = 0;
 
@@ -1655,7 +1655,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
     }
   }
 
-  BFT_MALLOC(_face_connect_g, _face_connect_idx[block_size], cs_ccm_num_t);
+  CS_MALLOC(_face_connect_g, _face_connect_idx[block_size], cs_ccm_num_t);
 
   cs_part_to_block_copy_indexed(d,
                                 ccm_num_type,
@@ -1664,8 +1664,8 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
                                 _face_connect_idx,
                                 _face_connect_g);
 
-  BFT_FREE(face_connect_g);
-  BFT_FREE(face_connect_idx);
+  CS_FREE(face_connect_g);
+  CS_FREE(face_connect_idx);
 
   /* Now write face -> vertices connectivity */
 
@@ -1681,7 +1681,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
   if (g_connect_size > 0)
     g_connect_size -= 1;
 
-  BFT_FREE(_face_connect_idx);
+  CS_FREE(_face_connect_idx);
 
   s = cs_file_serializer_create(sizeof(ccm_num_type),
                                 1,
@@ -1710,7 +1710,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
 
   cs_file_serializer_destroy(&s);
 
-  BFT_FREE(_face_connect_g);
+  CS_FREE(_face_connect_g);
 }
 
 /*----------------------------------------------------------------------------
@@ -1759,7 +1759,7 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
   /* Face -> cell connectivity */
   /*---------------------------*/
 
-  BFT_MALLOC(face_cell_g, n_faces*n_cells_per_face, cs_ccm_num_t);
+  CS_MALLOC(face_cell_g, n_faces*n_cells_per_face, cs_ccm_num_t);
 
   if (entity == kCCMIOInternalFaces) {
     for (i = 0; i < n_faces; i++) {
@@ -1780,9 +1780,9 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
 
   /* Distribute to blocks and write */
 
-  BFT_MALLOC(_face_cell_g,
-             (face_bi.gnum_range[1] - face_bi.gnum_range[0]) * n_cells_per_face,
-             cs_ccm_num_t);
+  CS_MALLOC(_face_cell_g,
+            (face_bi.gnum_range[1] - face_bi.gnum_range[0]) * n_cells_per_face,
+            cs_ccm_num_t);
 
   cs_part_to_block_copy_array(d,
                               ccm_num_type,
@@ -1790,7 +1790,7 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
                               face_cell_g,
                               _face_cell_g);
 
-  BFT_FREE(face_cell_g);
+  CS_FREE(face_cell_g);
 
   /* Now write face -> cells connectivity */
 
@@ -1860,7 +1860,7 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
 
   cs_file_serializer_destroy(&s);
 
-  BFT_FREE(_face_cell_g);
+  CS_FREE(_face_cell_g);
 }
 
 /*----------------------------------------------------------------------------
@@ -1993,7 +1993,7 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
       cs_part_to_block_destroy(&d);
 
       if (_face_gnum != nullptr) {
-        BFT_FREE(_face_gnum);
+        CS_FREE(_face_gnum);
         face_gnum = nullptr;
       }
 
@@ -2061,7 +2061,7 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
   cs_part_to_block_destroy(&d);
 
   if (_face_gnum != nullptr)
-    BFT_FREE(_face_gnum);
+    CS_FREE(_face_gnum);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -2171,7 +2171,7 @@ _write_cells_l(const cs_mesh_t      *b_mesh,
 
   w->topology_id = topology_id;
 
-  BFT_MALLOC(cell_family, b_mesh->n_cells, int);
+  CS_MALLOC(cell_family, b_mesh->n_cells, int);
 
   for (i = 0; i < b_mesh->n_cells; i++)
     cell_family[cell_gnum[i] - 1] = b_mesh->cell_family[i];
@@ -2188,7 +2188,7 @@ _write_cells_l(const cs_mesh_t      *b_mesh,
     bft_error(__FILE__, __LINE__, 0,
               _("CCMIO error %d writing cells."), (int)error);
 
-  BFT_FREE(cell_family);
+  CS_FREE(cell_family);
 }
 
 /*----------------------------------------------------------------------------
@@ -2236,7 +2236,7 @@ _write_face_vertices_l(const cs_mesh_t         *b_mesh,
 
   /* Build connectivity */
 
-  BFT_MALLOC(face_connect, face_connect_size, cs_ccm_num_t);
+  CS_MALLOC(face_connect, face_connect_size, cs_ccm_num_t);
 
   k = 0;
   for (i = 0; i < n_faces; i++) {
@@ -2259,7 +2259,7 @@ _write_face_vertices_l(const cs_mesh_t         *b_mesh,
               _("CCMIO error %d writing face -> vertices connectivity."),
               (int)error);
 
-  BFT_FREE(face_connect);
+  CS_FREE(face_connect);
 }
 
 /*----------------------------------------------------------------------------
@@ -2289,7 +2289,7 @@ _write_face_cells_l(const cs_mesh_t        *b_mesh,
   /*---------------------------*/
 
   if (entity == kCCMIOInternalFaces) {
-    BFT_MALLOC(face_cells, b_mesh->n_i_faces * 2, cs_ccm_num_t);
+    CS_MALLOC(face_cells, b_mesh->n_i_faces * 2, cs_ccm_num_t);
     for (i = 0; i < b_mesh->n_i_faces; i++) {
       cs_lnum_t face_id = face_order[i];
       face_cells[i*2]     = cell_gnum[b_mesh->i_face_cells[face_id][0]];
@@ -2297,7 +2297,7 @@ _write_face_cells_l(const cs_mesh_t        *b_mesh,
     }
   }
   else if (entity == kCCMIOBoundaryFaces) {
-    BFT_MALLOC(face_cells, b_mesh->n_b_faces, cs_ccm_num_t);
+    CS_MALLOC(face_cells, b_mesh->n_b_faces, cs_ccm_num_t);
     for (i = 0; i < b_mesh->n_b_faces; i++) {
       cs_lnum_t face_id = face_order[i];
       face_cells[i] = cell_gnum[b_mesh->b_face_cells[face_id]];
@@ -2317,7 +2317,7 @@ _write_face_cells_l(const cs_mesh_t        *b_mesh,
               _("CCMIO error %d writing face -> cells connectivity."),
               (int)error);
 
-  BFT_FREE(face_cells);
+  CS_FREE(face_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -2357,7 +2357,7 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
     = CS_MAX(b_mesh->i_face_vtx_connect_size + b_mesh->n_i_faces,
              b_mesh->b_face_vtx_connect_size + b_mesh->n_b_faces);
 
-  BFT_MALLOC(face_connect, n_max_faces, cs_ccm_num_t);
+  CS_MALLOC(face_connect, n_max_faces, cs_ccm_num_t);
 
   /* Face -> vertex connectivity */
   /*-----------------------------*/
@@ -2405,7 +2405,7 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
               _("CCMIO error %d writing face -> vertices connectivity."),
               (int)error);
 
-  BFT_FREE(face_connect);
+  CS_FREE(face_connect);
 }
 
 /*----------------------------------------------------------------------------
@@ -2442,7 +2442,7 @@ _write_face_cells_perio_l(const cs_mesh_t        *b_mesh,
   /* Face -> cell connectivity */
   /*---------------------------*/
 
-  BFT_MALLOC(face_cells, b_mesh->n_i_faces*n_cells_per_face, cs_ccm_num_t);
+  CS_MALLOC(face_cells, b_mesh->n_i_faces*n_cells_per_face, cs_ccm_num_t);
 
   j = 0;
 
@@ -2484,7 +2484,7 @@ _write_face_cells_perio_l(const cs_mesh_t        *b_mesh,
               _("CCMIO error %d writing face -> cells connectivity."),
               (int)error);
 
-  BFT_FREE(face_cells);
+  CS_FREE(face_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -2529,7 +2529,7 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
     n_faces = b_mesh->n_b_faces;
     n_g_faces = b_mesh->n_g_b_faces;
     face_order = _build_order_by_gnum(n_faces, face_gnum);
-    BFT_FREE(face_gnum);
+    CS_FREE(face_gnum);
   }
 
   if (n_g_perio_faces > 0 && entity == kCCMIOInternalFaces)
@@ -2588,7 +2588,7 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
 
       /* Rebuild global face part to block distribution structures */
 
-      BFT_FREE(face_order);
+      CS_FREE(face_order);
       face_order = _build_order_by_gnum(b_mesh->n_i_faces,
                                         b_mesh->global_i_face_num);
 
@@ -2630,7 +2630,7 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
 
   }
 
-  BFT_FREE(face_order);
+  CS_FREE(face_order);
 }
 
 #if defined(HAVE_MPI)
@@ -2658,7 +2658,7 @@ _build_buffer_elt_gnum(const fvm_nodal_t  *mesh,
   cs_gnum_t num_shift = 0;
   cs_gnum_t *elt_gnum = nullptr;
 
-  BFT_MALLOC(elt_gnum, n_elts, cs_gnum_t);
+  CS_MALLOC(elt_gnum, n_elts, cs_gnum_t);
 
   k = 0;
 
@@ -2778,12 +2778,12 @@ _write_field_data_g(CCMIOID                 data_id,
   else
     dst_datatype = datatype;
 
-  BFT_MALLOC(_field_values_b,
-             buffer_size  * cs_datatype_size[dst_datatype],
-             unsigned char);
-  BFT_MALLOC(_field_values_p,
-             part_size * cs_datatype_size[dst_datatype],
-             unsigned char);
+  CS_MALLOC(_field_values_b,
+            buffer_size  * cs_datatype_size[dst_datatype],
+            unsigned char);
+  CS_MALLOC(_field_values_p,
+            part_size * cs_datatype_size[dst_datatype],
+            unsigned char);
 
   /* Initialize the serializer with the appropriate type.
 
@@ -2829,7 +2829,7 @@ _write_field_data_g(CCMIOID                 data_id,
      handle case where the nodal mesh is a subset of the base mesh */
   assert(fvm_nodal_get_n_entities(mesh, ent_dim) == part_size);
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 
   /* Switch from partition to block distribution */
 
@@ -2839,7 +2839,7 @@ _write_field_data_g(CCMIOID                 data_id,
                               _field_values_p,
                               _field_values_b);
 
-  BFT_FREE(_field_values_p);
+  CS_FREE(_field_values_p);
 
   /* Prepare Serializer */
 
@@ -2913,12 +2913,12 @@ _write_field_data_g(CCMIOID                 data_id,
 
   cs_file_serializer_destroy(&s);
 
-  BFT_FREE(_field_values_b);
+  CS_FREE(_field_values_b);
 
   cs_part_to_block_destroy(&d);
 
   if (_elt_gnum != nullptr)
-    BFT_FREE(_elt_gnum);
+    CS_FREE(_elt_gnum);
 }
 
 #endif /* HAVE_MPI */
@@ -2989,9 +2989,9 @@ _write_field_data_l(CCMIOID                     data_id,
   else
     dst_datatype = datatype;
 
-  BFT_MALLOC(_field_values,
-             end * cs_datatype_size[dst_datatype],
-             unsigned char);
+  CS_MALLOC(_field_values,
+            end * cs_datatype_size[dst_datatype],
+            unsigned char);
 
   ccm_writer_section_t  *export_list = _build_export_list(mesh, ent_dim);
 
@@ -3022,7 +3022,7 @@ _write_field_data_l(CCMIOID                     data_id,
      handle case where the nodal mesh is a subset of the base mesh */
   assert(fvm_nodal_get_n_entities(mesh, ent_dim) == end);
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 
   /* Write integer data */
 
@@ -3058,7 +3058,7 @@ _write_field_data_l(CCMIOID                     data_id,
                          CCMIOIndex_t(start),
                          CCMIOIndex_t(end));
 
-  BFT_FREE(_field_values);
+  CS_FREE(_field_values);
 
   if (error != kCCMIONoErr)
     bft_error(__FILE__, __LINE__, 0,
@@ -3104,7 +3104,7 @@ _write_multidimensional_field_data(const char              *name,
   /* Set up the variable names */
 
   char *full_name = nullptr;
-  BFT_MALLOC(full_name, strlen("CS_") + strlen(name) + strlen("XX")  + 1, char);
+  CS_MALLOC(full_name, strlen("CS_") + strlen(name) + strlen("XX")  + 1, char);
   full_name[0] = '\0';
 
   char vect_short_name[7]="";
@@ -3345,7 +3345,7 @@ _write_multidimensional_field_data(const char              *name,
     }
   }
 
-  BFT_FREE(full_name);
+  CS_FREE(full_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -3445,7 +3445,7 @@ _write_field(const char                 *name,
   }
 
   char *full_name = nullptr;
-  BFT_MALLOC(full_name, strlen(name) + strlen("CS_") + 1, char);
+  CS_MALLOC(full_name, strlen(name) + strlen("CS_") + 1, char);
   strcpy(full_name, "CS_");
   strcat(full_name, name);
 
@@ -3541,7 +3541,7 @@ _write_field(const char                 *name,
 
   }
 
-  BFT_FREE(full_name);
+  CS_FREE(full_name);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3641,7 +3641,7 @@ fvm_to_ccm_init_writer(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(writer, 1, fvm_to_ccm_writer_t);
+  CS_MALLOC(writer, 1, fvm_to_ccm_writer_t);
 
   /* Mesh metadata */
 
@@ -3680,7 +3680,7 @@ fvm_to_ccm_init_writer(const char             *name,
   if (name_length == 0)
     bft_error(__FILE__, __LINE__, 0,
               _("Empty CCMIO filename."));
-  BFT_MALLOC(writer->name, name_length + 1, char);
+  CS_MALLOC(writer->name, name_length + 1, char);
   strcpy(writer->name, name);
 
   for (i = 0; i < name_length; i++) {
@@ -3695,7 +3695,7 @@ fvm_to_ccm_init_writer(const char             *name,
   else
     path_length = 0;
   mesh_filename_length = path_length + name_length + strlen(".ccmg") + 1;
-  BFT_MALLOC(writer->mesh_filename, mesh_filename_length, char);
+  CS_MALLOC(writer->mesh_filename, mesh_filename_length, char);
 
   writer->solution_filename = nullptr;
 
@@ -3708,11 +3708,11 @@ fvm_to_ccm_init_writer(const char             *name,
   strcat(writer->mesh_filename, ".ccmg");
 
   mesh_basename_length = name_length + strlen(".ccmg") + 1;
-  BFT_MALLOC(writer->mesh_basename, mesh_basename_length, char);
+  CS_MALLOC(writer->mesh_basename, mesh_basename_length, char);
   strcpy(writer->mesh_basename, writer->name);
   strcat(writer->mesh_basename, ".ccmg");
 
-  BFT_MALLOC(writer->path, strlen(path)+1, char);
+  CS_MALLOC(writer->path, strlen(path)+1, char);
   strcpy(writer->path, path);
 
   /* CCMIO Base structure */
@@ -3776,14 +3776,14 @@ fvm_to_ccm_finalize_writer(void  *this_writer_p)
 
   /* Free memory */
 
-  BFT_FREE(w->path);
-  BFT_FREE(w->solution_filename);
-  BFT_FREE(w->mesh_basename);
-  BFT_FREE(w->mesh_filename);
-  BFT_FREE(w->name);
-  BFT_FREE(w->mesh_time.time_value);
-  BFT_FREE(w->field_time.time_value);
-  BFT_FREE(w);
+  CS_FREE(w->path);
+  CS_FREE(w->solution_filename);
+  CS_FREE(w->mesh_basename);
+  CS_FREE(w->mesh_filename);
+  CS_FREE(w->name);
+  CS_FREE(w->mesh_time.time_value);
+  CS_FREE(w->field_time.time_value);
+  CS_FREE(w);
 
   return nullptr;
 }
@@ -3876,21 +3876,21 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
         sprintf(s_time_step, "%d", w->mesh_time.last_time_step);
         int path_length = strlen(w->path) + strlen(w->name) + 1
                           + strlen(s_time_step) + strlen(".ccmg") + 1;
-        BFT_REALLOC(w->mesh_filename, path_length, char);
+        CS_REALLOC(w->mesh_filename, path_length, char);
         sprintf(w->mesh_filename, "%s%s-%s.ccmg",
                 w->path, w->name, s_time_step);
         path_length =   strlen(w->name) + 1
                       + strlen(s_time_step) + strlen(".ccmg") + 1;
-        BFT_REALLOC(w->mesh_basename, path_length, char);
+        CS_REALLOC(w->mesh_basename, path_length, char);
         sprintf(w->mesh_basename, "%s-%s.ccmg",
                 w->name, s_time_step);
       }
       else {
         int path_length = strlen(w->path) + strlen(w->name) + strlen(".ccmg") + 1;
-        BFT_REALLOC(w->mesh_filename, path_length, char);
+        CS_REALLOC(w->mesh_filename, path_length, char);
         sprintf(w->mesh_filename, "%s%s.ccmg", w->path, w->name);
         path_length = strlen(w->name) + strlen(".ccmg") + 1;
-        BFT_REALLOC(w->mesh_basename, path_length, char);
+        CS_REALLOC(w->mesh_basename, path_length, char);
         sprintf(w->mesh_basename, "%s.ccmg", w->name);
       }
     }
@@ -3948,7 +3948,7 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
 
       _finalize_processor(nullptr, nullptr, w);
 
-      BFT_FREE(cell_gnum);
+      CS_FREE(cell_gnum);
     }
   }
 
@@ -3988,7 +3988,7 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
 
       _finalize_processor(nullptr, nullptr, w);
 
-      BFT_FREE(cell_gnum);
+      CS_FREE(cell_gnum);
     }
 
     if (w->rank < 1) {
@@ -4086,13 +4086,13 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
       sprintf(s_time_step, "%d", time_step);
       int path_length =   strlen(w->path) + strlen(w->name) + 1
                         + strlen(s_time_step) + strlen(".ccmp") + 1;
-      BFT_REALLOC(w->solution_filename, path_length, char);
+      CS_REALLOC(w->solution_filename, path_length, char);
       sprintf(w->solution_filename, "%s%s-%s.ccmp",
               w->path, w->name, s_time_step);
     }
     else {
       int path_length = strlen(w->path) + strlen(w->name) + strlen(".ccmp") + 1;
-      BFT_REALLOC(w->solution_filename, path_length, char);
+      CS_REALLOC(w->solution_filename, path_length, char);
       sprintf(w->solution_filename, "%s%s.ccmp",
               w->path, w->name);
     }

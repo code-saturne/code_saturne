@@ -41,13 +41,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_priv.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -931,7 +931,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   n_faces = face_list_shift[n_face_lists] - face_list_shift[0];
 
-  BFT_MALLOC(local_face_num, n_faces, cs_lnum_t);
+  CS_MALLOC(local_face_num, n_faces, cs_lnum_t);
 
   for (face_id = 0; face_id < n_faces; face_id++)
     local_face_num[face_id] = 0;
@@ -941,7 +941,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   n_cell_faces = 0;
 
-  BFT_MALLOC(this_section->_face_index, n_polys + 1, cs_lnum_t);
+  CS_MALLOC(this_section->_face_index, n_polys + 1, cs_lnum_t);
   this_section->face_index = this_section->_face_index;
   this_section->_face_index[0] = 0;
 
@@ -999,9 +999,9 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
   /* Cells -> Faces Connectivity (face numbers) */
   /*--------------------------------------------*/
 
-  BFT_MALLOC(this_section->_face_num,
-             this_section->_face_index[n_polys],
-             cs_lnum_t);
+  CS_MALLOC(this_section->_face_num,
+            this_section->_face_index[n_polys],
+            cs_lnum_t);
   this_section->face_num = this_section->_face_num;
 
   num_count = 0;
@@ -1031,16 +1031,16 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
   /*--------------------------------*/
 
   if (cell_face_list != nullptr)
-    BFT_MALLOC(*cell_face_list, n_cell_faces, cs_lnum_t);
+    CS_MALLOC(*cell_face_list, n_cell_faces, cs_lnum_t);
 
-  BFT_MALLOC(this_section->_vertex_index,
-             n_cell_faces + 1,
-             cs_lnum_t);
+  CS_MALLOC(this_section->_vertex_index,
+            n_cell_faces + 1,
+            cs_lnum_t);
   this_section->vertex_index = this_section->_vertex_index;
 
-  BFT_MALLOC(this_section->_vertex_num,
-             n_cell_face_vertex_nums,
-             cs_lnum_t);
+  CS_MALLOC(this_section->_vertex_num,
+            n_cell_face_vertex_nums,
+            cs_lnum_t);
   this_section->vertex_num = this_section->_vertex_num;
 
   /* Definition */
@@ -1092,8 +1092,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   /* Free memory */
 
-  BFT_FREE(local_face_num);
-
+  CS_FREE(local_face_num);
 }
 
 /*----------------------------------------------------------------------------
@@ -1126,9 +1125,9 @@ _raise_sections_parent_id(const int             n_sections,
     fvm_nodal_section_t  *section = sections[section_id];
     if (section != nullptr) {
       if (section->_parent_element_id == nullptr) {
-        BFT_MALLOC(section->_parent_element_id,
-                   section->n_elements,
-                   cs_lnum_t);
+        CS_MALLOC(section->_parent_element_id,
+                  section->n_elements,
+                  cs_lnum_t);
         section->parent_element_id = section->_parent_element_id;
       }
       for (cs_lnum_t element_counter = 0;
@@ -1138,7 +1137,6 @@ _raise_sections_parent_id(const int             n_sections,
           = parent_element_id[section->parent_element_id[element_counter]];
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1175,11 +1173,10 @@ _optimize_sections_parent_num(const int             n_sections,
       }
       if (element_counter == section->n_elements) {
         section->parent_element_id = nullptr;
-        BFT_FREE(section->_parent_element_id);
+        CS_FREE(section->_parent_element_id);
       }
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1215,9 +1212,9 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
       section_count++;
   }
 
-  BFT_REALLOC(this_nodal->sections,
-              this_nodal->n_sections + section_count,
-              fvm_nodal_section_t *);
+  CS_REALLOC(this_nodal->sections,
+             this_nodal->n_sections + section_count,
+             fvm_nodal_section_t *);
 
   section_count = 0;
   for (section_id = 0; section_id < n_sections; section_id++) {
@@ -1227,7 +1224,6 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
         = section;
   }
   this_nodal->n_sections += section_count;
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1361,7 +1357,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
           && section->type != FVM_CELL_POLY) {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = section->stride * section->n_elements;
-        BFT_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
+        CS_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
         section->vertex_num = section->_vertex_num;
       }
     }
@@ -1370,7 +1366,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     section = sections[type_id];
     if (section != nullptr) {
-      BFT_MALLOC(section->_parent_element_id, section->n_elements, cs_lnum_t);
+      CS_MALLOC(section->_parent_element_id, section->n_elements, cs_lnum_t);
       section->parent_element_id = section->_parent_element_id;
     }
   }
@@ -1477,7 +1473,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
       section = sections[section_id];
       if (section == nullptr)
         continue;
-      BFT_MALLOC(section->gc_id, section->n_elements, int);
+      CS_MALLOC(section->gc_id, section->n_elements, int);
       if (section->parent_element_id != nullptr) {
         for (cs_lnum_t cell_id = 0; cell_id < section->n_elements; cell_id++)
           section->gc_id[cell_id]
@@ -1629,14 +1625,14 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
       if (section->type != FVM_FACE_POLY) {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = section->stride * section->n_elements;
-        BFT_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
+        CS_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
         section->vertex_num = section->_vertex_num;
       }
       else {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = poly_connect_size;
-        BFT_MALLOC(section->_vertex_index, section->n_elements + 1, cs_lnum_t);
-        BFT_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
+        CS_MALLOC(section->_vertex_index, section->n_elements + 1, cs_lnum_t);
+        CS_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
         section->vertex_index = section->_vertex_index;
         section->vertex_num = section->_vertex_num;
         section->_vertex_index[0] = 0;
@@ -1647,7 +1643,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     section = sections[type_id];
     if (section != nullptr) {
-      BFT_MALLOC(section->_parent_element_id, section->n_elements, cs_lnum_t);
+      CS_MALLOC(section->_parent_element_id, section->n_elements, cs_lnum_t);
       section->parent_element_id = section->_parent_element_id;
     }
   }
@@ -1719,7 +1715,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
       if (section == nullptr)
         continue;
 
-      BFT_MALLOC(section->gc_id, section->n_elements, int);
+      CS_MALLOC(section->gc_id, section->n_elements, int);
 
       if (section->parent_element_id != nullptr) {
         for (face_id = 0; face_id < section->n_elements; face_id++) {

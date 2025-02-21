@@ -40,8 +40,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "fvm/fvm_defs.h"
 
@@ -536,7 +536,7 @@ fvm_periodicity_create(double  equiv_tolerance)
   int i;
   fvm_periodicity_t  *period = nullptr;
 
-  BFT_MALLOC(period, 1, fvm_periodicity_t);
+  CS_MALLOC(period, 1, fvm_periodicity_t);
 
   period->n_transforms = 0;
   period->transform = nullptr;
@@ -570,11 +570,11 @@ fvm_periodicity_destroy(fvm_periodicity_t  *this_periodicity)
     return nullptr;
 
   for (i = 0; i < this_periodicity->n_transforms; i++)
-    BFT_FREE(this_periodicity->transform[i]);
+    CS_FREE(this_periodicity->transform[i]);
 
-  BFT_FREE(this_periodicity->transform);
+  CS_FREE(this_periodicity->transform);
 
-  BFT_FREE(this_periodicity);
+  CS_FREE(this_periodicity);
 
   return nullptr;
 }
@@ -683,15 +683,15 @@ fvm_periodicity_add_by_matrix(fvm_periodicity_t       *this_periodicity,
   if (this_periodicity == nullptr)
     return -1;
 
-  BFT_REALLOC(this_periodicity->transform,
-              this_periodicity->n_transforms + 2,
-              _transform_t *);
+  CS_REALLOC(this_periodicity->transform,
+             this_periodicity->n_transforms + 2,
+             _transform_t *);
 
   for (sub_transf = 0; sub_transf < 2; sub_transf++) {
 
     /* Create new transformation */
 
-    BFT_MALLOC(transform, 1, _transform_t);
+    CS_MALLOC(transform, 1, _transform_t);
 
     this_periodicity->transform[this_periodicity->n_transforms] = transform;
 
@@ -1255,9 +1255,9 @@ fvm_periodicity_combine(fvm_periodicity_t  *this_periodicity,
     else /* if (level == 2) */
       n_transforms_max = this_periodicity->n_transforms + (n_level_0*n_level_1);
 
-    BFT_REALLOC(this_periodicity->transform,
-                n_transforms_max,
-                _transform_t *);
+    CS_REALLOC(this_periodicity->transform,
+               n_transforms_max,
+               _transform_t *);
 
     for (i = 0; i < n_level_0; i++) {
 
@@ -1295,7 +1295,7 @@ fvm_periodicity_combine(fvm_periodicity_t  *this_periodicity,
 
         if (retval == 0) {
 
-          BFT_MALLOC(this_periodicity->transform[tr_count], 1, _transform_t);
+          CS_MALLOC(this_periodicity->transform[tr_count], 1, _transform_t);
 
           _combine_transforms(this_periodicity,
                               i,
@@ -1344,9 +1344,9 @@ fvm_periodicity_combine(fvm_periodicity_t  *this_periodicity,
       n_level_1 = tr_count - n_level_0;
   }
 
-  BFT_REALLOC(this_periodicity->transform,
-              this_periodicity->n_transforms,
-              _transform_t *);
+  CS_REALLOC(this_periodicity->transform,
+             this_periodicity->n_transforms,
+             _transform_t *);
 }
 
 /*----------------------------------------------------------------------------

@@ -96,7 +96,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
@@ -108,6 +107,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
 
@@ -355,10 +355,10 @@ _add_v2_pipeline(const char  *path)
   int id = _n_scripts;
   _n_scripts += 1;
 
-  BFT_REALLOC(_scripts, _n_scripts, char *);
+  CS_REALLOC(_scripts, _n_scripts, char *);
 
   size_t l = strlen(path);
-  BFT_MALLOC(_scripts[id], l+1, char);
+  CS_MALLOC(_scripts[id], l+1, char);
   strncpy(_scripts[id], path, l);
   _scripts[id][l] = '\0';
 
@@ -432,10 +432,10 @@ _add_script(const char         *path)
   int id = _n_scripts;
   _n_scripts += 1;
 
-  BFT_REALLOC(_scripts, _n_scripts, char *);
+  CS_REALLOC(_scripts, _n_scripts, char *);
 
   size_t l = strlen(path);
-  BFT_MALLOC(_scripts[id], l+1, char);
+  CS_MALLOC(_scripts[id], l+1, char);
   strncpy(_scripts[id], path, l);
   _scripts[id][l] = '\0';
 
@@ -482,19 +482,19 @@ _add_dir_scripts(const char  *dir_path)
       }
     }
     if (ext == nullptr) {
-      BFT_FREE(dir_files[i]);
+      CS_FREE(dir_files[i]);
       continue;
     }
 
     /* Filter: Python files only */
     if (l_ext == 3 && strncmp(ext, ".py", 3) == 0) {
       char *tmp_name = nullptr;
-      BFT_MALLOC(tmp_name,
-                 strlen(dir_path) + 1 + strlen(file_name) + 1,
-                 char);
+      CS_MALLOC(tmp_name,
+                strlen(dir_path) + 1 + strlen(file_name) + 1,
+                char);
       sprintf(tmp_name, "%s/%s", dir_path, file_name);
       _add_script(tmp_name);
-      BFT_FREE(tmp_name);
+      CS_FREE(tmp_name);
     }
 
 #if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
@@ -502,19 +502,19 @@ _add_dir_scripts(const char  *dir_path)
     /* Filter: Catalyst V2 pipeline might be in ".zip" form */
     else if (l_ext == 4 && strncmp(ext, ".zip", 4) == 0) {
       char *tmp_name = nullptr;
-      BFT_MALLOC(tmp_name,
-                 strlen(dir_path) + 1 + strlen(file_name) + 1,
-                 char);
+      CS_MALLOC(tmp_name,
+                strlen(dir_path) + 1 + strlen(file_name) + 1,
+                char);
       sprintf(tmp_name, "%s/%s", dir_path, file_name);
       _add_v2_pipeline(tmp_name);
-      BFT_FREE(tmp_name);
+      CS_FREE(tmp_name);
     }
 #endif /* defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H) */
 
-    BFT_FREE(dir_files[i]);
+    CS_FREE(dir_files[i]);
   }
 
-  BFT_FREE(dir_files);
+  CS_FREE(dir_files);
 }
 
 /*----------------------------------------------------------------------------
@@ -624,8 +624,8 @@ _free_coprocessor(void)
     _processor = nullptr;
 
     for (int i = 0; i < _n_scripts; i++)
-      BFT_FREE(_scripts[i]);
-    BFT_FREE(_scripts);
+      CS_FREE(_scripts[i]);
+    CS_FREE(_scripts);
 
 #if defined(HAVE_MPI)
     {
@@ -932,9 +932,9 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
 
   int f_id = writer->n_fields;
 
-  BFT_REALLOC(writer->fields,
-              writer->n_fields+ 1,
-              fvm_catalyst_field_t *);
+  CS_REALLOC(writer->fields,
+             writer->n_fields+ 1,
+             fvm_catalyst_field_t *);
 
   vtkUnstructuredGrid *f = nullptr;
 
@@ -966,11 +966,11 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
 
   }
 
-  BFT_REALLOC(writer->fields,
-              writer->n_fields+ 1,
-              fvm_catalyst_field_t *);
+  CS_REALLOC(writer->fields,
+             writer->n_fields+ 1,
+             fvm_catalyst_field_t *);
 
-  BFT_MALLOC(writer->fields[f_id], 1, fvm_catalyst_field_t);
+  CS_MALLOC(writer->fields[f_id], 1, fvm_catalyst_field_t);
 
   writer->fields[f_id]->mesh_id = mesh_id;
 
@@ -1116,7 +1116,7 @@ _export_nodal_polygons(const fvm_nodal_section_t  *section,
   int vtx_ids_size = 8;
   vtkIdType *vtx_ids = nullptr;
 
-  BFT_MALLOC(vtx_ids, vtx_ids_size, vtkIdType);
+  CS_MALLOC(vtx_ids, vtx_ids_size, vtkIdType);
 
   /* Loop on all polygonal faces */
   /*-----------------------------*/
@@ -1128,7 +1128,7 @@ _export_nodal_polygons(const fvm_nodal_section_t  *section,
     int face_size = section->vertex_index[i+1] - section->vertex_index[i];
     while (vtx_ids_size < face_size) {
       vtx_ids_size *= 2;
-      BFT_REALLOC(vtx_ids, vtx_ids_size, vtkIdType);
+      CS_REALLOC(vtx_ids, vtx_ids_size, vtkIdType);
     }
 
     for (j = section->vertex_index[i];
@@ -1140,7 +1140,7 @@ _export_nodal_polygons(const fvm_nodal_section_t  *section,
 
   } /* End of loop on polygonal faces */
 
-  BFT_FREE(vtx_ids);
+  CS_FREE(vtx_ids);
 }
 
 /*----------------------------------------------------------------------------
@@ -1167,9 +1167,9 @@ _export_nodal_polyhedra(cs_lnum_t                   n_vertices,
   vtkIdType *face_array = nullptr;
   vtkIdType *vtx_ids = nullptr;
 
-  BFT_MALLOC(vtx_marker, n_vertices, int);
-  BFT_MALLOC(face_array, buf_size, vtkIdType);
-  BFT_MALLOC(vtx_ids, buf_size, vtkIdType);
+  CS_MALLOC(vtx_marker, n_vertices, int);
+  CS_MALLOC(face_array, buf_size, vtkIdType);
+  CS_MALLOC(vtx_ids, buf_size, vtkIdType);
 
   for (i = 0; i < n_vertices; i++)
     vtx_marker[i] = -1;
@@ -1201,8 +1201,8 @@ _export_nodal_polyhedra(cs_lnum_t                   n_vertices,
 
       while (m + face_length + 1 > buf_size) {
         buf_size *= 2;
-        BFT_REALLOC(face_array, buf_size, vtkIdType);
-        BFT_REALLOC(vtx_ids, buf_size, vtkIdType);
+        CS_REALLOC(face_array, buf_size, vtkIdType);
+        CS_REALLOC(vtx_ids, buf_size, vtkIdType);
       }
 
       face_array[m++] = face_length;
@@ -1227,9 +1227,9 @@ _export_nodal_polyhedra(cs_lnum_t                   n_vertices,
 
   } /* End of loop on polyhedral cells */
 
-  BFT_FREE(vtx_ids);
-  BFT_FREE(face_array);
-  BFT_FREE(vtx_marker);
+  CS_FREE(vtx_ids);
+  CS_FREE(face_array);
+  CS_FREE(vtx_marker);
 }
 
 /*----------------------------------------------------------------------------
@@ -1451,7 +1451,7 @@ fvm_to_catalyst_init_writer(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(w, 1, fvm_to_catalyst_t);
+  CS_MALLOC(w, 1, fvm_to_catalyst_t);
 
   w->rank = 0;
   w->n_ranks = 1;
@@ -1472,12 +1472,12 @@ fvm_to_catalyst_init_writer(const char             *name,
   /* Writer name */
 
   if (name != nullptr) {
-    BFT_MALLOC(w->name, strlen(name) + 1, char);
+    CS_MALLOC(w->name, strlen(name) + 1, char);
     strcpy(w->name, name);
   }
   else {
     const char _name[] = "catalyst";
-    BFT_MALLOC(w->name, strlen(_name) + 1, char);
+    CS_MALLOC(w->name, strlen(_name) + 1, char);
     strcpy(w->name, _name);
   }
 
@@ -1504,7 +1504,7 @@ fvm_to_catalyst_init_writer(const char             *name,
       }
       else if ((l_opt > 11) && (strncmp(options + i1, "input_name=", 11) == 0)) {
         int l = strlen(options + i1 + 11);
-        BFT_MALLOC(w->input_name, l+1, char);
+        CS_MALLOC(w->input_name, l+1, char);
         strncpy(w->input_name, options + i1 + 11, l);
         w->input_name[l] = '\0';
       }
@@ -1518,7 +1518,7 @@ fvm_to_catalyst_init_writer(const char             *name,
 #if CS_PV_VERSION < 55
   if (w->input_name == nullptr) {
     char n[] = "input";
-    BFT_MALLOC(w->input_name, strlen(n)+1, char);
+    CS_MALLOC(w->input_name, strlen(n)+1, char);
     strcpy(w->input_name, n);
   }
 #endif
@@ -1575,7 +1575,7 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
 
   /* Free structures */
 
-  BFT_FREE(w->name);
+  CS_FREE(w->name);
 
   /* Free vtkUnstructuredGrid and field structures
      (reference counters should go to 0) */
@@ -1588,14 +1588,14 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
 
   for (i = 0; i < w->n_fields; i++) {
     w->fields[i]->f = nullptr; // delete w->fields[i]->f;
-    BFT_FREE(w->fields[i]);
+    CS_FREE(w->fields[i]);
   }
 
-  BFT_FREE(w->fields);
+  CS_FREE(w->fields);
 
   /* Free fvm_to_catalyst_t structure */
 
-  BFT_FREE(w);
+  CS_FREE(w);
 
   return nullptr;
 }
@@ -1624,9 +1624,9 @@ fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
         && _time_step > w->time_step) {
       for (int i = 0; i < w->n_fields; i++) {
         w->fields[i]->f = nullptr; // delete w->fields[i]->f;
-        BFT_FREE(w->fields[i]);
+        CS_FREE(w->fields[i]);
       }
-      BFT_FREE(w->fields);
+      CS_FREE(w->fields);
       w->n_fields = 0;
       w->mb->Delete();
       w->mb = vtkMultiBlockDataSet::New();

@@ -44,7 +44,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
@@ -60,6 +59,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
 
@@ -332,7 +332,7 @@ _display_histograms(cs_real_t                   var_min,
 
     cs_gnum_t *g_count = nullptr;
 
-    BFT_MALLOC(g_count, w->n_sub, cs_gnum_t);
+    CS_MALLOC(g_count, w->n_sub, cs_gnum_t);
 
     MPI_Allreduce(count, g_count, w->n_sub, CS_MPI_GNUM, MPI_SUM,
                   w->comm);
@@ -340,7 +340,7 @@ _display_histograms(cs_real_t                   var_min,
     for (i = 0; i < w->n_sub; i++)
       count[i] = g_count[i];
 
-    BFT_FREE(g_count);
+    CS_FREE(g_count);
   }
 
 #endif
@@ -376,7 +376,7 @@ _histogram(cs_lnum_t                    n_vals,
 
   cs_gnum_t *count = nullptr;
 
-  BFT_MALLOC(count, w->n_sub, cs_gnum_t);
+  CS_MALLOC(count, w->n_sub, cs_gnum_t);
 
   assert (sizeof(double) == sizeof(cs_real_t));
 
@@ -428,7 +428,7 @@ _histogram(cs_lnum_t                    n_vals,
 
   _display_histograms(min, max, count, display_func, w, var_name);
 
-  BFT_FREE(count);
+  CS_FREE(count);
 }
 
 /*----------------------------------------------------------------------------
@@ -476,7 +476,7 @@ _field_output(void           *context,
     lv += 2 + lce;
 
   if (lv > 128)
-    BFT_MALLOC(var_name, lv, char);
+    CS_MALLOC(var_name, lv, char);
 
   if (lce > 0)
     sprintf(var_name, "%s[%s]", c->name, tmpe);
@@ -489,7 +489,7 @@ _field_output(void           *context,
   size_t l =   strlen(w->path) + strlen(w->name)
              + strlen(t_stamp) + 4 + 1;
 
-  BFT_REALLOC(w->file_name, l, char);
+  CS_REALLOC(w->file_name, l, char);
 
   const cs_real_t *vals = (const cs_real_t *)buffer;
 
@@ -559,12 +559,12 @@ fvm_to_histogram_init_writer(const char             *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(w, 1, fvm_to_histogram_writer_t);
+  CS_MALLOC(w, 1, fvm_to_histogram_writer_t);
 
-  BFT_MALLOC(w->name, strlen(name) + 1, char);
+  CS_MALLOC(w->name, strlen(name) + 1, char);
   strcpy(w->name, name);
 
-  BFT_MALLOC(w->path, strlen(path) + 1, char);
+  CS_MALLOC(w->path, strlen(path) + 1, char);
   strcpy(w->path, path);
 
   w->rank = 0;
@@ -668,12 +668,12 @@ fvm_to_histogram_finalize_writer(void  *writer)
   fvm_to_histogram_writer_t  *w
     = (fvm_to_histogram_writer_t *)writer;
 
-  BFT_FREE(w->name);
-  BFT_FREE(w->path);
+  CS_FREE(w->name);
+  CS_FREE(w->path);
 
   fvm_to_histogram_flush(writer);
 
-  BFT_FREE(w->file_name);
+  CS_FREE(w->file_name);
 
 #if defined(HAVE_PLUGIN_CATALYST)
   if (w->format == CS_HISTOGRAM_PNG)
@@ -681,7 +681,7 @@ fvm_to_histogram_finalize_writer(void  *writer)
                     _catalyst_plugin); /* decrease reference count or free */
 #endif
 
-  BFT_FREE(w);
+  CS_FREE(w);
 
   return nullptr;
 }
@@ -809,7 +809,7 @@ fvm_to_histogram_export_field(void                  *writer,
                                    field_values,
                                    _field_output);
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 
   /* Free helper structures */
 
@@ -838,7 +838,7 @@ fvm_to_histogram_flush(void  *writer)
 
   }
 
-  BFT_FREE(w->buffer);
+  CS_FREE(w->buffer);
 }
 
 /*----------------------------------------------------------------------------*/

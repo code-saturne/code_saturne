@@ -40,13 +40,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_convert_array.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_priv.h"
+
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -400,7 +401,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
     cs_lnum_t start_id = 0;
     cs_gnum_t gnum_shift = 0;
 
-    BFT_MALLOC(_g_elt_num, part_size, cs_gnum_t);
+    CS_MALLOC(_g_elt_num, part_size, cs_gnum_t);
     g_elt_num = _g_elt_num;
 
     /* loop on sections which should be appended */
@@ -434,7 +435,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
     cs_lnum_t start_id = 0;
 
-    BFT_MALLOC(part_n_sub, part_size, int);
+    CS_MALLOC(part_n_sub, part_size, int);
 
     current_section = export_section;
     do {
@@ -484,14 +485,14 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
   if (have_tesselation) {
 
-    BFT_MALLOC(block_n_sub, block_size, int);
+    CS_MALLOC(block_n_sub, block_size, int);
 
     cs_part_to_block_copy_array(d,
                                 CS_INT_TYPE,
                                 1,
                                 part_n_sub,
                                 block_n_sub);
-    BFT_FREE(part_n_sub);
+    CS_FREE(part_n_sub);
 
     for (cs_lnum_t j = 0; j < block_size; j++)
       block_sub_size += block_n_sub[j];
@@ -509,20 +510,20 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
      point to the same memory space, as they are not needed simultaneously.
      Without tesselation, _block_values simply points to block_values */
 
-  BFT_MALLOC(block_values, block_size*elt_size*stride, unsigned char);
+  CS_MALLOC(block_values, block_size*elt_size*stride, unsigned char);
 
   if (have_tesselation) {
-    BFT_MALLOC(part_values,
-               (  CS_MAX(part_size, (cs_lnum_t)block_sub_size)
-                * elt_size*convert_dim),
-               unsigned char);
+    CS_MALLOC(part_values,
+              (  CS_MAX(part_size, (cs_lnum_t)block_sub_size)
+               * elt_size*convert_dim),
+              unsigned char);
     MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, h->comm);
     block_end += 1;
     block_start = block_end - block_sub_size;
     _block_values = part_values;
   }
   else {
-    BFT_MALLOC(part_values, part_size*elt_size*convert_dim, unsigned char);
+    CS_MALLOC(part_values, part_size*elt_size*convert_dim, unsigned char);
     block_start = bi.gnum_range[0];
     block_end = bi.gnum_range[1];
     _block_values = block_values;
@@ -626,13 +627,13 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
   } /* end of loop on spatial dimension */
 
-  BFT_FREE(block_values);
-  BFT_FREE(part_values);
+  CS_FREE(block_values);
+  CS_FREE(part_values);
 
   cs_part_to_block_destroy(&d);
 
   if (block_n_sub != nullptr)
-    BFT_FREE(block_n_sub);
+    CS_FREE(block_n_sub);
 
   /* Return pointer to next section */
 
@@ -717,10 +718,10 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
   const int n_dim_loops = (h->interlace == CS_INTERLACE) ? 1 : h->field_dim;
   const int convert_dim = (h->interlace == CS_INTERLACE) ? h->field_dim : 1;
 
-  BFT_MALLOC(values,
-             (  CS_MAX(n_elements, (cs_lnum_t)sub_size)
-              * elt_size*convert_dim),
-             unsigned char);
+  CS_MALLOC(values,
+            (  CS_MAX(n_elements, (cs_lnum_t)sub_size)
+             * elt_size*convert_dim),
+            unsigned char);
 
   /* Loop on dimension (for non-interlaced output) */
 
@@ -811,7 +812,7 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
 
   } /* end of loop on spatial dimension */
 
-  BFT_FREE(values);
+  CS_FREE(values);
 
   /* Return pointer to next section */
 
@@ -888,8 +889,8 @@ _field_helper_output_ng(fvm_writer_field_helper_t        *helper,
   const int n_dim_loops = (h->interlace == CS_INTERLACE) ? 1 : h->field_dim;
   const int convert_dim = (h->interlace == CS_INTERLACE) ? h->field_dim : 1;
 
-  BFT_MALLOC(part_values, part_size*elt_size*convert_dim, unsigned char);
-  BFT_MALLOC(block_values, block_size*elt_size*convert_dim, unsigned char);
+  CS_MALLOC(part_values, part_size*elt_size*convert_dim, unsigned char);
+  CS_MALLOC(block_values, block_size*elt_size*convert_dim, unsigned char);
 
   /* Loop on dimension (for non-interlaced output) */
 
@@ -1003,8 +1004,8 @@ _field_helper_output_ng(fvm_writer_field_helper_t        *helper,
 
   }
 
-  BFT_FREE(block_values);
-  BFT_FREE(part_values);
+  CS_FREE(block_values);
+  CS_FREE(part_values);
 
   cs_part_to_block_destroy(&d);
 }
@@ -1061,7 +1062,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
 
   /* Allocate buffer */
 
-  BFT_MALLOC(values, n_vertices*elt_size*convert_dim, unsigned char);
+  CS_MALLOC(values, n_vertices*elt_size*convert_dim, unsigned char);
 
   /* Loop on dimension (for non-interlaced output) */
 
@@ -1167,7 +1168,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
 
   }
 
-  BFT_FREE(values);
+  CS_FREE(values);
 }
 
 /*============================================================================
@@ -1267,7 +1268,7 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
   if (n_sections == 0)
     return nullptr;
 
-  BFT_MALLOC(export_list, n_sections, fvm_writer_section_t);
+  CS_MALLOC(export_list, n_sections, fvm_writer_section_t);
 
   for (i = 0 ; i < n_sections - 1 ; i++)
     (export_list[i]).next = export_list + i + 1;
@@ -1484,7 +1485,7 @@ fvm_writer_vertex_part_to_block_create(int                     min_rank_step,
 
   if (n_add_vertices > 0) {
 
-    BFT_MALLOC(_g_num, n_vertices_tot, cs_gnum_t);
+    CS_MALLOC(_g_num, n_vertices_tot, cs_gnum_t);
 
     memcpy(_g_num, g_num, n_vertices*sizeof(cs_gnum_t));
     _extra_vertex_get_gnum(mesh, n_add_vertices, _g_num + n_vertices);
@@ -1534,7 +1535,7 @@ fvm_writer_extra_vertex_coords(const fvm_nodal_t  *mesh,
 
   if (n_extra_vertices > 0) { /* This implies divide_polyhedra = true */
 
-    BFT_MALLOC(coords, n_extra_vertices * 3, cs_coord_t);
+    CS_MALLOC(coords, n_extra_vertices * 3, cs_coord_t);
 
     for (i = 0; i < mesh->n_sections; i++) {
 
@@ -1599,7 +1600,7 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
 
   /* Initialize structure */
 
-  BFT_MALLOC(h, 1, fvm_writer_field_helper_t);
+  CS_MALLOC(h, 1, fvm_writer_field_helper_t);
 
   /* Initialize structure */
 
@@ -1742,7 +1743,7 @@ void
 fvm_writer_field_helper_destroy(fvm_writer_field_helper_t **helper)
 {
   if (helper != nullptr)
-    BFT_FREE(*helper);
+    CS_FREE(*helper);
 }
 
 #if defined(HAVE_MPI)

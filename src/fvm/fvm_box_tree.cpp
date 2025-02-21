@@ -39,7 +39,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_box_priv.h"
@@ -793,9 +793,9 @@ _copy_tree(fvm_box_tree_t        *dest,
 
   memcpy(dest, src, sizeof(fvm_box_tree_t));
 
-  BFT_MALLOC(dest->nodes, dest->n_max_nodes, _node_t);
-  BFT_MALLOC(dest->child_ids, dest->n_max_nodes*dest->n_children, cs_lnum_t);
-  BFT_MALLOC(dest->box_ids, (dest->stats).n_linked_boxes, cs_lnum_t);
+  CS_MALLOC(dest->nodes, dest->n_max_nodes, _node_t);
+  CS_MALLOC(dest->child_ids, dest->n_max_nodes*dest->n_children, cs_lnum_t);
+  CS_MALLOC(dest->box_ids, (dest->stats).n_linked_boxes, cs_lnum_t);
 
   memcpy(dest->nodes, src->nodes, dest->n_nodes * sizeof(_node_t));
   memcpy(dest->child_ids,
@@ -820,9 +820,9 @@ _free_tree_arrays(fvm_box_tree_t  *bt)
 {
   assert(bt != nullptr);
 
-  BFT_FREE(bt->nodes);
-  BFT_FREE(bt->child_ids);
-  BFT_FREE(bt->box_ids);
+  CS_FREE(bt->nodes);
+  CS_FREE(bt->child_ids);
+  CS_FREE(bt->box_ids);
 }
 
 /*----------------------------------------------------------------------------
@@ -899,8 +899,8 @@ _split_node_3d(fvm_box_tree_t       *bt,
   if (n_init_nodes + 8 > next_bt->n_max_nodes) {
     assert(next_bt->n_max_nodes > 0);
     next_bt->n_max_nodes *= 2;
-    BFT_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
-    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*8, cs_lnum_t);
+    CS_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
+    CS_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*8, cs_lnum_t);
   }
 
   /* Define a Morton code for each child and create the children nodes */
@@ -1079,8 +1079,8 @@ _split_node_2d(fvm_box_tree_t       *bt,
   if (n_init_nodes + 4 > next_bt->n_max_nodes) {
     assert(next_bt->n_max_nodes > 0);
     next_bt->n_max_nodes *= 2;
-    BFT_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
-    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*4, cs_lnum_t);
+    CS_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
+    CS_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*4, cs_lnum_t);
   }
 
   /* Define a Morton code for each child and create the children nodes */
@@ -1259,8 +1259,8 @@ _split_node_1d(fvm_box_tree_t       *bt,
   if (n_init_nodes + 2 > next_bt->n_max_nodes) {
     assert(next_bt->n_max_nodes > 0);
     next_bt->n_max_nodes *= 2;
-    BFT_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
-    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*2, cs_lnum_t);
+    CS_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
+    CS_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*2, cs_lnum_t);
   }
 
   /* Define a Morton code for each child and create the children nodes */
@@ -1964,7 +1964,7 @@ fvm_box_tree_create(int    max_level,
 {
   fvm_box_tree_t  *bt = nullptr;
 
-  BFT_MALLOC(bt, 1, fvm_box_tree_t);
+  CS_MALLOC(bt, 1, fvm_box_tree_t);
 
   /* Sanity checks */
 
@@ -2032,11 +2032,11 @@ fvm_box_tree_destroy(fvm_box_tree_t  **bt)
 
   if (_bt != nullptr) {
 
-    BFT_FREE(_bt->nodes);
-    BFT_FREE(_bt->child_ids);
-    BFT_FREE(_bt->box_ids);
+    CS_FREE(_bt->nodes);
+    CS_FREE(_bt->child_ids);
+    CS_FREE(_bt->box_ids);
 
-    BFT_FREE(_bt);
+    CS_FREE(_bt);
     *bt = _bt;
   }
 }
@@ -2114,10 +2114,10 @@ fvm_box_tree_set_boxes(fvm_box_tree_t       *bt,
 
   bt->n_nodes = 1;
 
-  BFT_MALLOC(bt->nodes, bt->n_max_nodes, _node_t);
-  BFT_MALLOC(bt->child_ids,
-             bt->n_max_nodes*bt->n_children,
-             cs_lnum_t);
+  CS_MALLOC(bt->nodes, bt->n_max_nodes, _node_t);
+  CS_MALLOC(bt->child_ids,
+            bt->n_max_nodes*bt->n_children,
+            cs_lnum_t);
 
   /* Define root node */
 
@@ -2125,7 +2125,7 @@ fvm_box_tree_set_boxes(fvm_box_tree_t       *bt,
 
   /* Initialize bt by assigning all boxes to the root leaf */
 
-  BFT_MALLOC(bt->box_ids, boxes->n_boxes, cs_lnum_t);
+  CS_MALLOC(bt->box_ids, boxes->n_boxes, cs_lnum_t);
 
   for (box_id = 0; box_id < boxes->n_boxes; box_id++)
     bt->box_ids[box_id] = box_id;
@@ -2152,14 +2152,14 @@ fvm_box_tree_set_boxes(fvm_box_tree_t       *bt,
     /* Optimize memory usage */
 
     bt->n_max_nodes = bt->n_nodes;
-    BFT_REALLOC(bt->nodes, bt->n_nodes, _node_t);
-    BFT_REALLOC(bt->child_ids,
-                bt->n_max_nodes*bt->n_children,
-                cs_lnum_t);
+    CS_REALLOC(bt->nodes, bt->n_nodes, _node_t);
+    CS_REALLOC(bt->child_ids,
+               bt->n_max_nodes*bt->n_children,
+               cs_lnum_t);
 
     /* Define a box ids list for the next level of the boxtree */
 
-    BFT_REALLOC(tmp_bt.box_ids, next_box_ids_size, cs_lnum_t);
+    CS_REALLOC(tmp_bt.box_ids, next_box_ids_size, cs_lnum_t);
     shift = 0;
 
     _build_next_level(bt,
@@ -2227,8 +2227,8 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
   if (distrib == nullptr)
     return nullptr;
 
-  BFT_MALLOC(leaf_codes, bt->stats.n_leaves, fvm_morton_code_t);
-  BFT_MALLOC(weight, bt->stats.n_leaves, cs_lnum_t);
+  CS_MALLOC(leaf_codes, bt->stats.n_leaves, fvm_morton_code_t);
+  CS_MALLOC(weight, bt->stats.n_leaves, cs_lnum_t);
 
   /* Build index for boxes */
 
@@ -2240,8 +2240,8 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
 
   assert(n_leaves <= bt->stats.n_leaves);
 
-  BFT_REALLOC(leaf_codes, n_leaves, fvm_morton_code_t);
-  BFT_REALLOC(weight, n_leaves, cs_lnum_t);
+  CS_REALLOC(leaf_codes, n_leaves, fvm_morton_code_t);
+  CS_REALLOC(weight, n_leaves, cs_lnum_t);
 
   /* Compute the resulting Morton index */
 
@@ -2251,8 +2251,8 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
                                  leaf_codes,
                                  weight);
 
-  BFT_FREE(leaf_codes);
-  BFT_FREE(weight);
+  CS_FREE(leaf_codes);
+  CS_FREE(weight);
 
   /* Compact Morton_index to get an array without "0 element" */
 
@@ -2261,8 +2261,8 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
                           distrib->morton_index[i]))
       reduce_size++;
 
-  BFT_MALLOC(reduce_index, reduce_size + 1, fvm_morton_code_t);
-  BFT_MALLOC(reduce_ids, reduce_size, int);
+  CS_MALLOC(reduce_index, reduce_size + 1, fvm_morton_code_t);
+  CS_MALLOC(reduce_ids, reduce_size, int);
 
   reduce_size = 0;
   reduce_index[0] = distrib->morton_index[0];
@@ -2292,10 +2292,10 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
   for (i = 0; i < distrib->n_ranks; i++)
     distrib->index[i+1] += distrib->index[i];
 
-  BFT_MALLOC(distrib->list,
-             distrib->index[distrib->n_ranks], cs_lnum_t);
+  CS_MALLOC(distrib->list,
+            distrib->index[distrib->n_ranks], cs_lnum_t);
 
-  BFT_MALLOC(counter, distrib->n_ranks, cs_lnum_t);
+  CS_MALLOC(counter, distrib->n_ranks, cs_lnum_t);
 
   for (i = 0; i < distrib->n_ranks; i++)
     counter[i] = 0;
@@ -2311,9 +2311,9 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
 
   /* Free memory */
 
-  BFT_FREE(counter);
-  BFT_FREE(reduce_ids);
-  BFT_FREE(reduce_index);
+  CS_FREE(counter);
+  CS_FREE(reduce_ids);
+  CS_FREE(reduce_index);
 
   /* Define the final index (without redundancies) and realloc list */
 
@@ -2355,7 +2355,7 @@ fvm_box_tree_get_intersects(fvm_box_tree_t       *bt,
 
   /* Build index */
 
-  BFT_MALLOC(_index, boxes->n_boxes + 1, cs_lnum_t);
+  CS_MALLOC(_index, boxes->n_boxes + 1, cs_lnum_t);
 
   for (i = 0; i < boxes->n_boxes + 1; i++)
     _index[i] = 0;
@@ -2372,9 +2372,9 @@ fvm_box_tree_get_intersects(fvm_box_tree_t       *bt,
 
   list_size = _index[boxes->n_boxes];
 
-  BFT_MALLOC(_g_num, list_size, cs_gnum_t);
+  CS_MALLOC(_g_num, list_size, cs_gnum_t);
 
-  BFT_MALLOC(counter, boxes->n_boxes, cs_lnum_t);
+  CS_MALLOC(counter, boxes->n_boxes, cs_lnum_t);
 
   for (i = 0; i < boxes->n_boxes; i++)
     counter[i] = 0;
@@ -2388,7 +2388,7 @@ fvm_box_tree_get_intersects(fvm_box_tree_t       *bt,
                      _index,
                      _g_num);
 
-  BFT_FREE(counter);
+  CS_FREE(counter);
 
   /* Return pointers */
 

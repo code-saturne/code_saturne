@@ -40,7 +40,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "fvm/fvm_defs.h"
 
@@ -190,7 +190,7 @@ _polygon_plane_3d(const int   n_vertices,
     /* First rotation of axis (Oz) and angle (Ox, normal proj. on Oxy) */
 
     if (n_vertices > _N_VERTICES_AUTO_MAX) {
-      BFT_MALLOC(_tmp_coords_p, n_vertices*3, cs_coord_t);
+      CS_MALLOC(_tmp_coords_p, n_vertices*3, cs_coord_t);
       tmp_coords = _tmp_coords_p;
     }
 
@@ -249,7 +249,7 @@ _polygon_plane_3d(const int   n_vertices,
     }
 
     if (_tmp_coords_p != nullptr) {
-      BFT_FREE(_tmp_coords_p);
+      CS_FREE(_tmp_coords_p);
       tmp_coords = nullptr;
     }
 
@@ -990,17 +990,17 @@ fvm_triangulate_state_create(const int  n_vertices_max)
   int n_edges_max = (2*n_vertices_max) - 3;
   int n_edges_tot_max = n_edges_max * (n_edges_max - 1) / 2;
 
-  BFT_MALLOC(this_state, 1, fvm_triangulate_state_t);
+  CS_MALLOC(this_state, 1, fvm_triangulate_state_t);
 
   if (n_vertices_max > 3) {
-    BFT_MALLOC(this_state->triangle_vertices, (n_vertices_max - 2) * 3, int);
-    BFT_MALLOC(this_state->coords, n_vertices_max*3, cs_coord_t);
-    BFT_MALLOC(this_state->list_previous, n_vertices_max, int);
-    BFT_MALLOC(this_state->list_next, n_vertices_max, int);
-    BFT_MALLOC(this_state->edge_vertices, n_edges_tot_max*2, int);
-    BFT_MALLOC(this_state->edge_neighbors, n_edges_tot_max*2, int);
-    BFT_MALLOC(this_state->edge_is_delaunay, n_edges_tot_max, bool);
-    BFT_MALLOC(this_state->concave, n_vertices_max, bool);
+    CS_MALLOC(this_state->triangle_vertices, (n_vertices_max - 2) * 3, int);
+    CS_MALLOC(this_state->coords, n_vertices_max*3, cs_coord_t);
+    CS_MALLOC(this_state->list_previous, n_vertices_max, int);
+    CS_MALLOC(this_state->list_next, n_vertices_max, int);
+    CS_MALLOC(this_state->edge_vertices, n_edges_tot_max*2, int);
+    CS_MALLOC(this_state->edge_neighbors, n_edges_tot_max*2, int);
+    CS_MALLOC(this_state->edge_is_delaunay, n_edges_tot_max, bool);
+    CS_MALLOC(this_state->concave, n_vertices_max, bool);
   }
   else {
     this_state->triangle_vertices = nullptr;
@@ -1033,16 +1033,16 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state)
 {
   if (this_state != nullptr) {
     if (this_state->triangle_vertices != nullptr) {
-      BFT_FREE(this_state->triangle_vertices);
-      BFT_FREE(this_state->coords);
-      BFT_FREE(this_state->list_previous);
-      BFT_FREE(this_state->list_next);
-      BFT_FREE(this_state->edge_vertices);
-      BFT_FREE(this_state->edge_neighbors);
-      BFT_FREE(this_state->edge_is_delaunay);
-      BFT_FREE(this_state->concave);
+      CS_FREE(this_state->triangle_vertices);
+      CS_FREE(this_state->coords);
+      CS_FREE(this_state->list_previous);
+      CS_FREE(this_state->list_next);
+      CS_FREE(this_state->edge_vertices);
+      CS_FREE(this_state->edge_neighbors);
+      CS_FREE(this_state->edge_is_delaunay);
+      CS_FREE(this_state->concave);
     }
-    BFT_FREE(this_state);
+    CS_FREE(this_state);
   }
 
   return nullptr;
@@ -1110,14 +1110,14 @@ fvm_triangulate_polygon(int                             dim,
     int n_edges_tot_max = n_edges_max * (n_edges_max - 1) / 2;
 
     state->n_vertices_max = n_vertices_max;
-    BFT_REALLOC(state->triangle_vertices, (n_vertices_max - 2) * 3, int);
-    BFT_REALLOC(state->coords, n_vertices_max*3, cs_coord_t);
-    BFT_REALLOC(state->list_previous, n_vertices_max, int);
-    BFT_REALLOC(state->list_next, n_vertices_max, int);
-    BFT_REALLOC(state->edge_vertices, n_edges_tot_max*2, int);
-    BFT_REALLOC(state->edge_neighbors, n_edges_tot_max*2, int);
-    BFT_REALLOC(state->edge_is_delaunay, n_edges_tot_max, bool);
-    BFT_REALLOC(state->concave, n_vertices_max, bool);
+    CS_REALLOC(state->triangle_vertices, (n_vertices_max - 2) * 3, int);
+    CS_REALLOC(state->coords, n_vertices_max*3, cs_coord_t);
+    CS_REALLOC(state->list_previous, n_vertices_max, int);
+    CS_REALLOC(state->list_next, n_vertices_max, int);
+    CS_REALLOC(state->edge_vertices, n_edges_tot_max*2, int);
+    CS_REALLOC(state->edge_neighbors, n_edges_tot_max*2, int);
+    CS_REALLOC(state->edge_is_delaunay, n_edges_tot_max, bool);
+    CS_REALLOC(state->concave, n_vertices_max, bool);
 
   }
 

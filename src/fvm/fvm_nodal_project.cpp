@@ -40,8 +40,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
@@ -123,16 +123,16 @@ _faces_to_edges(int                         dim,
   ret_section->connectivity_size =   ret_section->stride
                                    * ret_section->n_elements;
 
-  BFT_MALLOC(ret_section->_vertex_num,
-             ret_section->connectivity_size,
-             cs_lnum_t);
+  CS_MALLOC(ret_section->_vertex_num,
+            ret_section->connectivity_size,
+            cs_lnum_t);
   ret_section->vertex_num = ret_section->_vertex_num;
 
   if (base_section->parent_element_id != nullptr) {
 
-    BFT_MALLOC(ret_section->_parent_element_id,
-               ret_section->n_elements,
-               cs_lnum_t);
+    CS_MALLOC(ret_section->_parent_element_id,
+              ret_section->n_elements,
+              cs_lnum_t);
     ret_section->parent_element_id = ret_section->_parent_element_id;
 
   }
@@ -275,8 +275,8 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
   n_vertices_new = idx;
 
 
-  BFT_MALLOC(new_to_old, n_vertices_new, cs_lnum_t);
-  BFT_MALLOC(old_to_new, n_vertices_old, cs_lnum_t);
+  CS_MALLOC(new_to_old, n_vertices_new, cs_lnum_t);
+  CS_MALLOC(old_to_new, n_vertices_old, cs_lnum_t);
 
   for (i = 0, idx = 0; i < n_vertices_old; i++) {
 
@@ -299,10 +299,10 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
       /* generate a new coordinate array */
 
-      BFT_MALLOC(new_coords, dim * n_vertices_new, cs_coord_t);
+      CS_MALLOC(new_coords, dim * n_vertices_new, cs_coord_t);
 
       if (this_nodal->_parent_vertex_id != nullptr) {
-        BFT_FREE(this_nodal->_parent_vertex_id);
+        CS_FREE(this_nodal->_parent_vertex_id);
         this_nodal->parent_vertex_id = nullptr;
       }
 
@@ -324,7 +324,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
         /* generate a new parent_vertex_id */
 
-        BFT_MALLOC(new_parent_vtx_id, n_vertices_new, cs_lnum_t);
+        CS_MALLOC(new_parent_vtx_id, n_vertices_new, cs_lnum_t);
 
         for (i = 0, idx = 0; i < n_vertices_old; i++) {
 
@@ -334,7 +334,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
         }
 
         if (this_nodal->_parent_vertex_id != nullptr)
-          BFT_FREE(this_nodal->_parent_vertex_id);
+          CS_FREE(this_nodal->_parent_vertex_id);
 
         this_nodal->_parent_vertex_id = new_parent_vtx_id;
         this_nodal->parent_vertex_id = this_nodal->_parent_vertex_id;
@@ -355,7 +355,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
       if (section->type == FVM_EDGE) {
 
         if (section->_vertex_num == nullptr)
-          BFT_MALLOC(section->_vertex_num, n_connect, cs_lnum_t);
+          CS_MALLOC(section->_vertex_num, n_connect, cs_lnum_t);
 
         for (j = 0; j < n_connect; j++)
           section->_vertex_num[j] = old_to_new[section->vertex_num[j] - 1];
@@ -386,8 +386,8 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
   this_nodal->global_vertex_num = new_vtx_io_num;
   this_nodal->n_vertices = n_vertices_new;
 
-  BFT_FREE(old_to_new);
-  BFT_FREE(new_to_old);
+  CS_FREE(old_to_new);
+  CS_FREE(new_to_old);
 
 }
 
@@ -424,7 +424,7 @@ fvm_nodal_project(fvm_nodal_t  *this_nodal,
   assert(this_nodal != nullptr);
 
   n_vertices = this_nodal->n_vertices;
-  BFT_MALLOC(selected_vertices, n_vertices, bool);
+  CS_MALLOC(selected_vertices, n_vertices, bool);
 
   for (i = 0; i < n_vertices; i++)
     selected_vertices[i] = false;
@@ -485,7 +485,7 @@ fvm_nodal_project(fvm_nodal_t  *this_nodal,
   this_nodal->n_faces = 0;
   this_nodal->n_edges = n_edges;
 
-  BFT_FREE(selected_vertices);
+  CS_FREE(selected_vertices);
 }
 
 /*----------------------------------------------------------------------------
@@ -526,7 +526,7 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
                 "spatial dimension would be reduced to %d"),
               entity_dim, new_dim);
 
-  BFT_MALLOC(new_coords, n_vertices*new_dim, cs_coord_t);
+  CS_MALLOC(new_coords, n_vertices*new_dim, cs_coord_t);
 
   if (old_dim == 3) {
 
@@ -577,11 +577,11 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
   this_nodal->dim = new_dim;
 
   if (this_nodal->_vertex_coords != nullptr)
-    BFT_FREE(this_nodal->_vertex_coords);
+    CS_FREE(this_nodal->_vertex_coords);
 
   this_nodal->parent_vertex_id = nullptr;
   if (this_nodal->_parent_vertex_id != nullptr)
-    BFT_FREE(this_nodal->_parent_vertex_id);
+    CS_FREE(this_nodal->_parent_vertex_id);
 
   this_nodal->vertex_coords = new_coords;
   this_nodal->_vertex_coords = new_coords;

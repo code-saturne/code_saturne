@@ -51,7 +51,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_convert_array.h"
@@ -64,6 +63,7 @@
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
 #include "base/cs_map.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
 
@@ -270,7 +270,7 @@ _create_writer(const char           *name,
 
   /* Initialize writer */
 
-  BFT_MALLOC(w, 1, fvm_to_cgns_writer_t);
+  CS_MALLOC(w, 1, fvm_to_cgns_writer_t);
 
   /* Writer name */
 
@@ -282,7 +282,7 @@ _create_writer(const char           *name,
   if (postfix != nullptr)
     name_length += strlen(postfix);
 
-  BFT_MALLOC(w->name, name_length + 1, char);
+  CS_MALLOC(w->name, name_length + 1, char);
 
   strcpy(w->name, name);
   if (postfix != nullptr)
@@ -300,7 +300,7 @@ _create_writer(const char           *name,
   else
     path_length = 0;
   filename_length = path_length + name_length + strlen(".cgns") + 1;
-  BFT_MALLOC(w->filename, filename_length, char);
+  CS_MALLOC(w->filename, filename_length, char);
 
   if (path != nullptr) {
     strcpy(w->filename, path);
@@ -484,15 +484,15 @@ _del_base(fvm_to_cgns_base_t  *base)
 {
   int i;
 
-  BFT_FREE(base->name);
+  CS_FREE(base->name);
 
   for (i = 0; i < base->n_sols; i++) {
-    BFT_FREE(base->solutions[i]->name);
-    BFT_FREE(base->solutions[i]);
+    CS_FREE(base->solutions[i]->name);
+    CS_FREE(base->solutions[i]);
   }
 
-  BFT_FREE(base->solutions);
-  BFT_FREE(base);
+  CS_FREE(base->solutions);
+  CS_FREE(base);
 
   return nullptr;
 }
@@ -570,9 +570,9 @@ _add_base(fvm_to_cgns_writer_t  *writer,
   writer->n_bases += 1;
   i = writer->n_bases - 1;
 
-  BFT_REALLOC(writer->bases, writer->n_bases, fvm_to_cgns_base_t *);
-  BFT_MALLOC(writer->bases[i], 1, fvm_to_cgns_base_t);
-  BFT_MALLOC(writer->bases[i]->name, strlen(base_name) + 1, char);
+  CS_REALLOC(writer->bases, writer->n_bases, fvm_to_cgns_base_t *);
+  CS_MALLOC(writer->bases[i], 1, fvm_to_cgns_base_t);
+  CS_MALLOC(writer->bases[i]->name, strlen(base_name) + 1, char);
 
   strcpy(writer->bases[i]->name, base_name);
   writer->bases[i]->celldim  = entity_dim;
@@ -673,14 +673,14 @@ _write_zone_link(fvm_to_cgns_writer_t      *writer,
 
     size_t l = strlen(base->name) + strlen("Zone 1") + strlen(nodename) + 4;
     char *name_in_file;
-    BFT_MALLOC(name_in_file, l+1, char);
+    CS_MALLOC(name_in_file, l+1, char);
     snprintf(name_in_file, l, "/%s/%s/%s", base->name, "Zone 1", nodename);
 
     retval = cg_link_write(nodename,
                            filename,
                            name_in_file);
 
-    BFT_FREE(name_in_file);
+    CS_FREE(name_in_file);
 
     if (retval != CG_OK)
       bft_error(__FILE__, __LINE__, 0,
@@ -733,8 +733,8 @@ _add_solution(fvm_to_cgns_writer_t        *writer,
   base->n_sols += 1;
   sol_id = base->n_sols - 1;
 
-  BFT_REALLOC(base->solutions, sol_id + 1, fvm_to_cgns_solution_t *);
-  BFT_MALLOC(base->solutions[sol_id], 1, fvm_to_cgns_solution_t);
+  CS_REALLOC(base->solutions, sol_id + 1, fvm_to_cgns_solution_t *);
+  CS_MALLOC(base->solutions[sol_id], 1, fvm_to_cgns_solution_t);
 
   /* Initialization of the new solution structure */
 
@@ -752,7 +752,7 @@ _add_solution(fvm_to_cgns_writer_t        *writer,
             (int)time_step, GridLocationName[location]);
 
   sol_length = strlen(sol_name);
-  BFT_MALLOC(base->solutions[sol_id]->name, sol_length + 1, char);
+  CS_MALLOC(base->solutions[sol_id]->name, sol_length + 1, char);
   strncpy(base->solutions[sol_id]->name, sol_name, sol_length + 1);
   base->solutions[sol_id]->name[sol_length] = '\0';
 
@@ -1010,7 +1010,7 @@ _reorder_export_list(fvm_writer_section_t  *export_list)
     n = n->next;
   }
 
-  BFT_MALLOC(ordered, n_sections, fvm_writer_section_t);
+  CS_MALLOC(ordered, n_sections, fvm_writer_section_t);
   n_sections = 0;
 
   for (int dim = 3; dim > -1; dim--) {
@@ -1033,7 +1033,7 @@ _reorder_export_list(fvm_writer_section_t  *export_list)
     (export_list[i]).next = &(export_list[i+1]);
   (export_list[n_sections - 1]).next = nullptr;
 
-  BFT_FREE(ordered);
+  CS_FREE(ordered);
 }
 
 /*----------------------------------------------------------------------------
@@ -1297,7 +1297,7 @@ _bcs_output(void           *context,
   /* Determine which group classes are referenced here */
 
   cgsize_t *gc_elt_count;
-  BFT_MALLOC(gc_elt_count, n_gc_sets, cgsize_t);
+  CS_MALLOC(gc_elt_count, n_gc_sets, cgsize_t);
 
   for (int i = 0; i < n_gc_sets; i++)
     gc_elt_count[i] = 0;
@@ -1334,7 +1334,7 @@ _bcs_output(void           *context,
   int n_groups = cs_map_name_to_id_size(group_names);
 
   int *gc_idx;
-  BFT_MALLOC(gc_idx, n_gc_sets+1, int);
+  CS_MALLOC(gc_idx, n_gc_sets+1, int);
 
   for (int gc_id = 0; gc_id < n_gc_sets; gc_id++) {
     if (gc_elt_count[gc_id]) {
@@ -1345,7 +1345,7 @@ _bcs_output(void           *context,
       gc_idx[gc_id+1] = 0;
   }
 
-  BFT_FREE(gc_elt_count);
+  CS_FREE(gc_elt_count);
 
   /* Transform count to index */
 
@@ -1355,7 +1355,7 @@ _bcs_output(void           *context,
   }
 
   int *gc_g_id;
-  BFT_MALLOC(gc_g_id, gc_idx[n_gc_sets], int);
+  CS_MALLOC(gc_g_id, gc_idx[n_gc_sets], int);
 
   for (int gc_id = 0; gc_id < n_gc_sets; gc_id++) {
     if (gc_idx[gc_id+1] > gc_idx[gc_id]) {
@@ -1372,8 +1372,8 @@ _bcs_output(void           *context,
   /* Now build lists for each group */
 
   cgsize_t *g_idx, *g_count;
-  BFT_MALLOC(g_idx, n_groups+1, cgsize_t);
-  BFT_MALLOC(g_count, n_groups, cgsize_t);
+  CS_MALLOC(g_idx, n_groups+1, cgsize_t);
+  CS_MALLOC(g_count, n_groups, cgsize_t);
 
   for (int g_id = 0; g_id < n_groups; g_id++)
     g_count[g_id] = 0;
@@ -1397,7 +1397,7 @@ _bcs_output(void           *context,
   }
 
   cgsize_t *g_elts;
-  BFT_MALLOC(g_elts, g_idx[n_groups], cgsize_t);
+  CS_MALLOC(g_elts, g_idx[n_groups], cgsize_t);
 
   cgsize_t id_shift = c->n_g_vol_elts + 1;
 
@@ -1414,10 +1414,10 @@ _bcs_output(void           *context,
     }
   }
 
-  BFT_FREE(g_count);
+  CS_FREE(g_count);
 
-  BFT_FREE(gc_idx);
-  BFT_FREE(gc_g_id);
+  CS_FREE(gc_idx);
+  CS_FREE(gc_g_id);
 
   /* Now loop on groups */
 
@@ -1524,8 +1524,8 @@ _bcs_output(void           *context,
 
   }
 
-  BFT_FREE(g_idx);
-  BFT_FREE(g_elts);
+  CS_FREE(g_idx);
+  CS_FREE(g_elts);
 
   cs_map_name_to_id_destroy(&group_names);
 }
@@ -1761,8 +1761,8 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
     size_t part_buf_size = n_vertices_tot;
     block_buf_size *= cs_datatype_size[datatype];
     part_buf_size *= cs_datatype_size[datatype];
-    BFT_MALLOC(block_coords, block_buf_size, unsigned char);
-    BFT_MALLOC(part_coords, part_buf_size, unsigned char);
+    CS_MALLOC(block_coords, block_buf_size, unsigned char);
+    CS_MALLOC(part_coords, part_buf_size, unsigned char);
   }
 
   /* Vertex coordinates */
@@ -1838,10 +1838,10 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(block_coords);
-  BFT_FREE(part_coords);
+  CS_FREE(block_coords);
+  CS_FREE(part_coords);
   if (extra_vertex_coords != nullptr)
-    BFT_FREE(extra_vertex_coords);
+    CS_FREE(extra_vertex_coords);
 }
 
 #endif
@@ -1900,7 +1900,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
 
   extra_vertex_coords = fvm_writer_extra_vertex_coords(mesh, n_extra_vertices);
 
-  BFT_MALLOC(coords_tmp, n_vertices + n_extra_vertices, cs_coord_t);
+  CS_MALLOC(coords_tmp, n_vertices + n_extra_vertices, cs_coord_t);
 
   /* Loop on dimension */
 
@@ -1938,10 +1938,10 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
 
   } /* End of loop on coordinates */
 
-  BFT_FREE(coords_tmp);
+  CS_FREE(coords_tmp);
 
   if (extra_vertex_coords != nullptr)
-    BFT_FREE(extra_vertex_coords);
+    CS_FREE(extra_vertex_coords);
 }
 
 #if defined(HAVE_MPI)
@@ -2113,8 +2113,8 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
 
   block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
-  BFT_MALLOC(block_vtx_num, block_size*stride, cgsize_t);
-  BFT_MALLOC(part_vtx_num, n_elements*stride, cgsize_t);
+  CS_MALLOC(block_vtx_num, block_size*stride, cgsize_t);
+  CS_MALLOC(part_vtx_num, n_elements*stride, cgsize_t);
 
   for (cs_lnum_t i = 0; i < n_elements; i++) {
     for (cs_lnum_t j = 0; j < stride; j++) {
@@ -2129,7 +2129,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
                               part_vtx_num,
                               block_vtx_num);
 
-  BFT_FREE(part_vtx_num);
+  CS_FREE(part_vtx_num);
 
   cs_part_to_block_destroy(&d);
 
@@ -2146,7 +2146,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
 
   /* Free remaining memory */
 
-  BFT_FREE(block_vtx_num);
+  CS_FREE(block_vtx_num);
 
   *global_counter += n_g_elements;
 
@@ -2197,7 +2197,7 @@ _export_nodal_strided_l(const fvm_writer_section_t  *export_section,
     const cgsize_t *vertex_num = (const cgsize_t *)section->vertex_num;
     if (sizeof(cgsize_t) != sizeof(cs_lnum_t)) {
       cgsize_t i = 0, n = (elt_end + 1 - elt_start)*section->stride;
-      BFT_MALLOC(_vertex_num, n, cgsize_t);
+      CS_MALLOC(_vertex_num, n, cgsize_t);
       vertex_num = _vertex_num;
       for (i = 0; i < n; i++)
         _vertex_num[i] = section->vertex_num[i];
@@ -2213,7 +2213,7 @@ _export_nodal_strided_l(const fvm_writer_section_t  *export_section,
                               vertex_num,
                               &section_index);
     if (_vertex_num != nullptr)
-      BFT_FREE(_vertex_num);
+      CS_FREE(_vertex_num);
   }
 
   if (retval != CG_OK)
@@ -2302,8 +2302,8 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
     cs_gnum_t   *part_vtx_gnum;
 
-    BFT_MALLOC(part_vtx_num, part_size, cgsize_t);
-    BFT_MALLOC(part_vtx_gnum, part_size, cs_gnum_t);
+    CS_MALLOC(part_vtx_num, part_size, cgsize_t);
+    CS_MALLOC(part_vtx_gnum, part_size, cs_gnum_t);
 
     fvm_tesselation_decode_g(tesselation,
                              type,
@@ -2316,7 +2316,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
     if (n_elements > 0) {
       for (cs_lnum_t i = 0; i < part_size; i++)
         part_vtx_num[i] = part_vtx_gnum[i];
-      BFT_FREE(part_vtx_gnum);
+      CS_FREE(part_vtx_gnum);
     }
 
   }
@@ -2333,8 +2333,8 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
                                    min_block_size,
                                    n_g_elements);
 
-  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
-  BFT_MALLOC(part_index, n_elements + 1, cs_lnum_t);
+  CS_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
+  CS_MALLOC(part_index, n_elements + 1, cs_lnum_t);
 
   d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_elt_num);
 
@@ -2354,7 +2354,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
   /* Copy connectivity */
 
-  BFT_MALLOC(block_vtx_num, block_size, cgsize_t);
+  CS_MALLOC(block_vtx_num, block_size, cgsize_t);
 
   cs_part_to_block_copy_indexed(d,
                                 _cgsize_datatype(),
@@ -2365,9 +2365,9 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(part_vtx_num);
-  BFT_FREE(part_index);
-  BFT_FREE(block_index);
+  CS_FREE(part_vtx_num);
+  CS_FREE(part_index);
+  CS_FREE(block_index);
 
   /* Write to file */
 
@@ -2388,7 +2388,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
   /* Free remaining memory */
 
-  BFT_FREE(block_vtx_num);
+  CS_FREE(block_vtx_num);
 
   *global_counter += n_g_sub_elements;
 
@@ -2458,7 +2458,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
   if (n_sub_elements_max > n_buffer_elements_max)
     n_buffer_elements_max = n_sub_elements_max;
 
-  BFT_MALLOC(vertex_num, n_buffer_elements_max * stride, cs_lnum_t);
+  CS_MALLOC(vertex_num, n_buffer_elements_max * stride, cs_lnum_t);
 
   for (start_id = 0;
        start_id < section->n_elements;
@@ -2482,7 +2482,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
       if (sizeof(cgsize_t) != sizeof(cs_lnum_t)) {
         int i = 0, n = (elt_end + 1 - elt_start)*stride;
         if (sizeof(cgsize_t) > sizeof(cs_lnum_t))
-          BFT_MALLOC(_vertex_num, n, cgsize_t);
+          CS_MALLOC(_vertex_num, n, cgsize_t);
         for (i = 0; i < n; i++)
           _vertex_num[i] = vertex_num[i];
       }
@@ -2528,7 +2528,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
                   cg_get_error());
 
       if (sizeof(cgsize_t) > sizeof(cs_lnum_t))
-        BFT_FREE(_vertex_num);
+        CS_FREE(_vertex_num);
     }
 
   } /* End of loop on parent elements */
@@ -2537,7 +2537,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
     fvm_tesselation_n_sub_elements(tesselation,
                                    current_section->type);
 
-  BFT_FREE(vertex_num);
+  CS_FREE(vertex_num);
 
   return current_section->next;
 }
@@ -2626,7 +2626,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
 #if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
 
         if (range[0] == 1) { /* First pass */
-          BFT_MALLOC(_block_offsets, block_size+1, cgsize_t);
+          CS_MALLOC(_block_offsets, block_size+1, cgsize_t);
           _block_offsets[0] = g_offset;
         }
 
@@ -2729,7 +2729,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
 
     } while (_block_connect != nullptr);
 
-    BFT_FREE(_block_offsets);
+    CS_FREE(_block_offsets);
 
     cs_file_serializer_destroy(&s);
   }
@@ -2782,7 +2782,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
   cs_lnum_t  *part_index = nullptr, *block_index = nullptr;
   cgsize_t   *part_connect = nullptr, *block_connect = nullptr;
 
-  BFT_MALLOC(part_index, section->n_elements + 1, cs_lnum_t);
+  CS_MALLOC(part_index, section->n_elements + 1, cs_lnum_t);
 
   part_index[0] = 0;
   for (cs_lnum_t i = 0; i < section->n_elements; i++)
@@ -2807,7 +2807,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                                    min_block_size,
                                    n_g_elements);
 
-  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
+  CS_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
   d = cs_part_to_block_create_by_gnum(writer->comm, bi, n_elements, g_elt_num);
 
@@ -2817,8 +2817,8 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
 
   /* Build connectivity array */
 
-  BFT_MALLOC(block_connect, block_size, cgsize_t);
-  BFT_MALLOC(part_connect, part_index[n_elements], cgsize_t);
+  CS_MALLOC(block_connect, block_size, cgsize_t);
+  CS_MALLOC(part_connect, part_index[n_elements], cgsize_t);
 
   cs_lnum_t k = 0;
   for (cs_lnum_t i = 0; i < section->n_elements; i++) {
@@ -2840,7 +2840,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                                 block_index,
                                 block_connect);
 
-  BFT_FREE(part_connect);
+  CS_FREE(part_connect);
 
   /* Write connectivity */
 
@@ -2854,12 +2854,12 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                            block_size,
                            block_connect);
 
-  BFT_FREE(block_connect);
+  CS_FREE(block_connect);
 
   cs_part_to_block_destroy(&d);
 
-  BFT_FREE(block_index);
-  BFT_FREE(part_index);
+  CS_FREE(block_index);
+  CS_FREE(part_index);
 
   /* Free remaining memory */
 
@@ -2915,8 +2915,8 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
     cs_lnum_t  offsets_size = section->n_elements + 1;
 
     cgsize_t  *offsets, *connect;
-    BFT_MALLOC(offsets, offsets_size, cgsize_t);
-    BFT_MALLOC(connect, section->connectivity_size, cgsize_t);
+    CS_MALLOC(offsets, offsets_size, cgsize_t);
+    CS_MALLOC(connect, section->connectivity_size, cgsize_t);
 
     offsets[0] = 0;
     for (cs_lnum_t i = 0; i < offsets_size; i++)
@@ -2945,8 +2945,8 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
                   "Associated section name: \"%s\"\n%s"),
                 writer->name, base->name, section_name, cg_get_error());
 
-    BFT_FREE(offsets);
-    BFT_FREE(connect);
+    CS_FREE(offsets);
+    CS_FREE(connect);
 
   }
 
@@ -2957,7 +2957,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
   if (connect_size > 0) {
 
     cgsize_t *connect;
-    BFT_MALLOC(connect, connect_size, cgsize_t);
+    CS_MALLOC(connect, connect_size, cgsize_t);
 
     connect_size = 0;
     for (cs_lnum_t j = 0; j < section->n_elements; j++) {
@@ -2995,7 +2995,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
                   "Associated section name: \"%s\"\n%s"),
                 writer->name, base->name, section_name, cg_get_error());
 
-    BFT_FREE(connect);
+    CS_FREE(connect);
 
   }
 
@@ -3179,7 +3179,7 @@ _export_bcs(fvm_to_cgns_writer_t  *w,
   cs_lnum_t n_b_ids = fvm_nodal_get_n_entities(mesh, bc_dim);
 
   int *gc_id;
-  BFT_MALLOC(gc_id, n_b_ids, int);
+  CS_MALLOC(gc_id, n_b_ids, int);
 
   n_b_ids = 0;
   for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
@@ -3218,13 +3218,13 @@ _export_bcs(fvm_to_cgns_writer_t  *w,
                                    var_ptr,
                                    _bcs_output);
 
-  BFT_FREE(gc_id);
+  CS_FREE(gc_id);
 
   /* Free helper structures */
 
   fvm_writer_field_helper_destroy(&helper);
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 }
 
 /*----------------------------------------------------------------------------
@@ -3284,8 +3284,8 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
 
     if (retval == CG_OK) {
 
-      BFT_MALLOC(time_values, base->n_sols, double);
-      BFT_MALLOC(time_steps, base->n_sols, int);
+      CS_MALLOC(time_values, base->n_sols, double);
+      CS_MALLOC(time_steps, base->n_sols, int);
 
       for (sol_id = 0; sol_id < base->n_sols; sol_id++) {
         time_values[sol_id] = base->solutions[sol_id]->time_value;
@@ -3320,8 +3320,8 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
                     "Associated base:\"%s\"\n%s"),
                   writer->filename, base->name,cg_get_error());
 
-      BFT_FREE(time_values);
-      BFT_FREE(time_steps);
+      CS_FREE(time_values);
+      CS_FREE(time_steps);
     }
 
     /* Create a ZoneIterativeData */
@@ -3351,7 +3351,7 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
       dim[0] = FVM_CGNS_NAME_SIZE;
       dim[1] = sol_id;
 
-      BFT_MALLOC(sol_names, dim[0] * dim[1] , char);
+      CS_MALLOC(sol_names, dim[0] * dim[1] , char);
 
       for (j = 0; j < dim[0] * dim[1]; j++)
         sol_names[j] = ' ';
@@ -3374,7 +3374,7 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
                     "Associated base:\"%s\"\n%s"),
                   writer->filename, base->name, cg_get_error());
 
-      BFT_FREE(sol_names);
+      CS_FREE(sol_names);
 
     }
 
@@ -3642,21 +3642,21 @@ fvm_to_cgns_finalize_writer(void  *this_writer_p)
 
   /* Free structures */
 
-  BFT_FREE(writer->name);
-  BFT_FREE(writer->filename);
-  BFT_FREE(writer->time_values);
-  BFT_FREE(writer->time_steps);
+  CS_FREE(writer->name);
+  CS_FREE(writer->filename);
+  CS_FREE(writer->time_values);
+  CS_FREE(writer->time_steps);
 
   /* Free fvm_to_cgns_base structure */
 
   for (int i = 0; i < writer->n_bases; i++)
     writer->bases[i] = _del_base(writer->bases[i]);
 
-  BFT_FREE(writer->bases);
+  CS_FREE(writer->bases);
 
   /* Free fvm_to_cgns_writer structure */
 
-  BFT_FREE(writer);
+  CS_FREE(writer);
   return nullptr;
 }
 
@@ -3718,8 +3718,8 @@ fvm_to_cgns_set_mesh_time(void     *this_writer_p,
       writer->n_time_steps += 1;
       n_vals = writer->n_time_steps;
 
-      BFT_REALLOC(writer->time_values, n_vals, double);
-      BFT_REALLOC(writer->time_steps, n_vals, int);
+      CS_REALLOC(writer->time_values, n_vals, double);
+      CS_REALLOC(writer->time_steps, n_vals, int);
 
       writer->time_values[n_vals - 1] = time_value;
       writer->time_steps[n_vals - 1] = time_step;
@@ -3729,8 +3729,8 @@ fvm_to_cgns_set_mesh_time(void     *this_writer_p,
     writer->n_time_steps += 1;
     n_vals = writer->n_time_steps;
 
-    BFT_REALLOC(writer->time_values, n_vals, double);
-    BFT_REALLOC(writer->time_steps, n_vals, int);
+    CS_REALLOC(writer->time_values, n_vals, double);
+    CS_REALLOC(writer->time_steps, n_vals, int);
 
     writer->time_values[n_vals - 1] = time_value;
     writer->time_steps[n_vals - 1] = time_step;
@@ -4050,7 +4050,7 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
 
   /* Free buffers */
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 }
 
 /*----------------------------------------------------------------------------
@@ -4208,7 +4208,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
     field_name[FVM_CGNS_NAME_SIZE] = '\0';
 
     shift = FVM_CGNS_NAME_SIZE + 1;
-    BFT_MALLOC(field_label, output_dim * shift, char);
+    CS_MALLOC(field_label, output_dim * shift, char);
 
     for (pos = strlen(field_name) - 1;
          pos > 0 && (field_name[pos] == ' ' || field_name[pos] == '\t');
@@ -4348,10 +4348,10 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 
   fvm_writer_field_helper_destroy(&helper);
 
-  BFT_FREE(export_list);
+  CS_FREE(export_list);
 
   if (rank == 0)
-    BFT_FREE(field_label);
+    CS_FREE(field_label);
 }
 
 /*----------------------------------------------------------------------------

@@ -39,13 +39,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_priv.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 
 /*----------------------------------------------------------------------------
@@ -92,7 +92,7 @@ _fvm_nodal_order_parent_list(cs_lnum_t         * _list[],
 
   cs_lnum_t   *ordered_list = nullptr;
 
-  BFT_MALLOC(ordered_list, nb_ent, cs_lnum_t);
+  CS_MALLOC(ordered_list, nb_ent, cs_lnum_t);
 
   if (*list != nullptr) {
 
@@ -102,7 +102,7 @@ _fvm_nodal_order_parent_list(cs_lnum_t         * _list[],
     if (*_list != nullptr) {
       for (i = 0 ; i < nb_ent ; i++)
         (*_list)[i] = ordered_list[i];
-      BFT_FREE(ordered_list);
+      CS_FREE(ordered_list);
     }
     else
       *_list = ordered_list;
@@ -141,7 +141,7 @@ _fvm_nodal_order_strided_connect(cs_lnum_t           connect[],
 
   cs_lnum_t   *tmp_connect = nullptr;
 
-  BFT_MALLOC(tmp_connect, nb_ent * stride, cs_lnum_t);
+  CS_MALLOC(tmp_connect, nb_ent * stride, cs_lnum_t);
 
   /* Temporary ordered copy */
 
@@ -156,7 +156,7 @@ _fvm_nodal_order_strided_connect(cs_lnum_t           connect[],
 
   memcpy(connect, tmp_connect, stride * nb_ent * sizeof(cs_lnum_t));
 
-  BFT_FREE(tmp_connect);
+  CS_FREE(tmp_connect);
 }
 
 /*----------------------------------------------------------------------------
@@ -184,7 +184,7 @@ _fvm_nodal_order_indexed_connect(cs_lnum_t           connect_idx[],
   if (nb_ent > nb_ent_max) /* only if some entities have no connectivity */
     nb_ent_max = nb_ent;
 
-  BFT_MALLOC(tmp_connect, nb_ent_max, cs_lnum_t);
+  CS_MALLOC(tmp_connect, nb_ent_max, cs_lnum_t);
 
   /* Temporary ordered copy of values */
 
@@ -220,7 +220,7 @@ _fvm_nodal_order_indexed_connect(cs_lnum_t           connect_idx[],
   for (i = 0 ; i < nb_ent ; i++)
     connect_idx[i+1] = connect_idx[i+1] + connect_idx[i];
 
-  BFT_FREE(tmp_connect);
+  CS_FREE(tmp_connect);
 
 }
 
@@ -242,7 +242,7 @@ _fvm_nodal_order_gc_id(int              gc_id[],
 
   int  *tmp_gc_id = nullptr;
 
-  BFT_MALLOC(tmp_gc_id, nb_ent, int);
+  CS_MALLOC(tmp_gc_id, nb_ent, int);
 
   /* Temporary ordered copy */
 
@@ -253,7 +253,7 @@ _fvm_nodal_order_gc_id(int              gc_id[],
 
   memcpy(gc_id, tmp_gc_id, nb_ent * sizeof(int));
 
-  BFT_FREE(tmp_gc_id);
+  CS_FREE(tmp_gc_id);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -323,7 +323,7 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
                                  order,
                                  section->n_elements);
 
-        BFT_FREE(order);
+        CS_FREE(order);
 
       }
 
@@ -395,7 +395,7 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
                                  order,
                                  section->n_elements);
 
-        BFT_FREE(order);
+        CS_FREE(order);
 
       }
 
@@ -458,7 +458,7 @@ fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
 
   renumber = cs_order_renumbering(order, this_nodal->n_vertices);
 
-  BFT_FREE(order);
+  CS_FREE(order);
 
   /* Update element connectivities */
 
@@ -475,7 +475,7 @@ fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
 
   /* Free renumbering table */
 
-  BFT_FREE(renumber);
+  CS_FREE(renumber);
 
 }
 

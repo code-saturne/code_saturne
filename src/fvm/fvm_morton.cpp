@@ -41,7 +41,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
@@ -486,7 +486,7 @@ _define_rank_distrib(int                      dim,
 
   /* Initialization */
 
-  BFT_MALLOC(l_distrib, n_samples, cs_gnum_t);
+  CS_MALLOC(l_distrib, n_samples, cs_gnum_t);
 
   for (id = 0; id < n_samples; id++) {
     l_distrib[id] = 0;
@@ -525,7 +525,7 @@ _define_rank_distrib(int                      dim,
   MPI_Allreduce(l_distrib, g_distrib, n_samples, CS_MPI_GNUM, MPI_SUM,
                 comm);
 
-  BFT_FREE(l_distrib);
+  CS_FREE(l_distrib);
 
   /* Define the cumulative frequency related to g_distribution */
 
@@ -544,7 +544,7 @@ _define_rank_distrib(int                      dim,
     static int  loop_id1 = 0;
 
     len = strlen("DistribOutput_l.dat")+1+2;
-    BFT_MALLOC(rfilename, len, char);
+    CS_MALLOC(rfilename, len, char);
     sprintf(rfilename, "DistribOutput_l%02d.dat", loop_id1);
 
     loop_id1++;
@@ -562,7 +562,7 @@ _define_rank_distrib(int                      dim,
             i, 1.0, 1.0, 1.0, 0);
 
     fclose(dbg_file);
-    BFT_FREE(rfilename);
+    CS_FREE(rfilename);
 
   }
 
@@ -627,7 +627,7 @@ _update_sampling(int      dim,
 
   /* Compute new_sampling */
 
-  BFT_MALLOC(new_sampling, n_samples + 1, double);
+  CS_MALLOC(new_sampling, n_samples + 1, double);
 
   new_sampling[0] = _sampling[0];
   next_id = 1;
@@ -673,7 +673,7 @@ _update_sampling(int      dim,
 
   new_sampling[n_samples] = 1.0;
 
-  BFT_FREE(_sampling);
+  CS_FREE(_sampling);
 
   /* Return pointers */
 
@@ -740,8 +740,8 @@ _bucket_sampling(int                      dim,
 
   /* Define the distribution associated to the current sampling array */
 
-  BFT_MALLOC(distrib, n_samples, cs_gnum_t);
-  BFT_MALLOC(cfreq, n_samples + 1, double);
+  CS_MALLOC(distrib, n_samples, cs_gnum_t);
+  CS_MALLOC(cfreq, n_samples + 1, double);
 
   _define_rank_distrib(dim,
                        n_ranks,
@@ -761,7 +761,7 @@ _bucket_sampling(int                      dim,
   fit = _evaluate_distribution(n_ranks, distrib, optim);
   best_fit = fit;
 
-  BFT_MALLOC(best_sampling, n_samples + 1, double);
+  CS_MALLOC(best_sampling, n_samples + 1, double);
 
   for (i = 0; i < n_samples + 1; i++)
     best_sampling[i] = _sampling[i];
@@ -812,9 +812,9 @@ _bucket_sampling(int                      dim,
 
   /* Free memory */
 
-  BFT_FREE(cfreq);
-  BFT_FREE(distrib);
-  BFT_FREE(_sampling);
+  CS_FREE(cfreq);
+  CS_FREE(distrib);
+  CS_FREE(_sampling);
 
   *sampling = best_sampling;
 
@@ -1372,7 +1372,7 @@ fvm_morton_build_rank_index(int                      dim,
 
   n_samples = sampling_factor * n_ranks;
 
-  BFT_MALLOC(sampling, n_samples + 1, double);
+  CS_MALLOC(sampling, n_samples + 1, double);
 
   for (i = 0; i < n_samples + 1; i++)
     sampling[i] = 0.0;
@@ -1412,7 +1412,7 @@ fvm_morton_build_rank_index(int                      dim,
 
   /* Free memory */
 
-  BFT_FREE(sampling);
+  CS_FREE(sampling);
 
   return best_fit;
 }
