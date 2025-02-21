@@ -621,7 +621,14 @@ _solve_most(int              n_var,
 
   }  // end while
 
-  _update_pressure_temperature(n_cells);
+  if (cs_glob_cf_model-> ieos == CS_EOS_IDEAL_GAS
+      || cs_glob_cf_model-> ieos == CS_EOS_GAS_MIX
+      || cs_glob_cf_model -> ieos == CS_EOS_MOIST_AIR){
+     _update_pressure_temperature(n_cells);
+  else {
+    // Saving pressure corrected in resopv as ancient pressure
+    cs_field_current_to_previous(CS_F_(p));
+  }
 
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
