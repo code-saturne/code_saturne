@@ -2029,7 +2029,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     ctx.wait();
 
-    /* Without relaxation even for a stationnary computation */
+    /* Without relaxation even for a stationary computation */
 
     cs_balance_scalar(idtvar,
                       f_id,

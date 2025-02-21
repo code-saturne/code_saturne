@@ -62,6 +62,8 @@
     Velocity field after the prediction step, cell-based field of dimension 3.
   - <tt> algo:predicted_velocity_divergence </tt>
     Divergence of the velocity field after the prediction step, cell-based field of dimension 1.
+  - <tt> algo:velocity_divergence </tt>
+    Divergence of the velocity for the VOF module, cell-based field of dimension 1.
   - <tt> algo:pressure_gradient </tt>
     Pressure gradient, cell-based field of dimension 3.
   - <tt> algo:gradient_ </tt> supplemented with a transported field name

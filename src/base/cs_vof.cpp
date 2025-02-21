@@ -566,8 +566,8 @@ cs_vof_field_create(void)
   const int k_bmasf = cs_field_key_id("boundary_mass_flux_id");
 
   // Key id for flux id
-  const int k_iflux = cs_field_key_id("inner_flux_id");
-  const int k_bflux = cs_field_key_id("boundary_flux_id");
+  const int kiflux = cs_field_key_id("inner_flux_id");
+  const int kbflux = cs_field_key_id("boundary_flux_id");
 
   /* Interior faces*/
 
@@ -585,7 +585,7 @@ cs_vof_field_create(void)
                                        CS_MESH_LOCATION_INTERIOR_FACES,
                                        1,
                                        false);
-  cs_field_set_key_int(CS_F_(void_f), k_iflux, f_ivff->id);
+  cs_field_set_key_int(CS_F_(void_f), kiflux, f_ivff->id);
   cs_field_set_key_int(f_ivff, keyvis, 0);
   cs_field_set_key_int(f_ivff, keylog, 0);
 
@@ -605,7 +605,7 @@ cs_vof_field_create(void)
                                        CS_MESH_LOCATION_BOUNDARY_FACES,
                                        1,
                                        false);
-  cs_field_set_key_int(CS_F_(void_f), k_bflux, f_bvff->id);
+  cs_field_set_key_int(CS_F_(void_f), kbflux, f_bvff->id);
   cs_field_set_key_int(f_bvff, keyvis, 0);
   cs_field_set_key_int(f_bvff, keylog, 0);
 
@@ -1799,14 +1799,14 @@ cs_vof_solve_void_fraction(int  iterns)
   /* Visualization of divu (only for advanced analysis purpose,
      not used in the source terms hereafter) */
 
-  cs_field_t *vel_div = cs_field_by_name_try("velocity_divergence");
-  cs_real_t *divu = nullptr, *t_divu = nullptr;
+  cs_field_t *vel_div = cs_field_by_name_try("algo:velocity_divergence");
+  cs_real_t *divu = nullptr, *_divu = nullptr;
   if (vel_div != nullptr)
     divu = vel_div->val;
   else {
     /* Allocation */
-    CS_MALLOC_HD(t_divu, n_cells_ext, cs_real_t, cs_alloc_mode);
-    divu = t_divu;
+    CS_MALLOC_HD(_divu, n_cells_ext, cs_real_t, cs_alloc_mode);
+    divu = _divu;
   }
 
   cs_divergence(mesh,
@@ -1815,7 +1815,7 @@ cs_vof_solve_void_fraction(int  iterns)
                 b_mass_flux_volf,
                 divu);
 
-  CS_FREE_HD(t_divu);
+  CS_FREE_HD(_divu);
 
   /* Construct the system to solve
      ----------------------------- */
