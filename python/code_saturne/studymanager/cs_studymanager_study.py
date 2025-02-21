@@ -2102,8 +2102,8 @@ class Studies(object):
         slurm_batch_file = open(slurm_batch_name, mode='w')
 
         # fill file with template
-        # we consider 5 minutes per study
-        hh, mm = divmod(self.n_study*5, 60)
+        # we consider 10 minutes per study
+        hh, mm = divmod(self.n_study*10, 60)
         cmd = slurm_batch_template.format(1,
                                           math.ceil(hh),
                                           math.ceil(mm),
