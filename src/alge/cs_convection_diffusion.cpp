@@ -2230,7 +2230,6 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   const int isstpp = eqp.isstpc;
   const int iwarnp = eqp.verbosity;
   const int icoupl = eqp.icoupl;
-  cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
   const double blencp = eqp.blencv;
   const double blend_st = eqp.blend_st;
   const double epsrgp = eqp.epsrgr;
@@ -2285,13 +2284,9 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
   cs_real_t *local_min = nullptr;
   cs_real_t *local_max = nullptr;
-  cs_real_t *courant = nullptr;
 
   cs_real_t *df_limiter = nullptr;
-
   cs_real_t *gweight = nullptr;
-
-  const int key_lim_choice = cs_field_key_id("limiter_choice");
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
@@ -2329,17 +2324,12 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
-      limiter_choice = (cs_nvd_type_t)cs_field_get_key_int(f, key_lim_choice);
       CS_MALLOC(local_max, n_cells_ext, cs_real_t);
       CS_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(f_id,
                                     halo_type,
                                     local_max,
                                     local_min);
-      if (limiter_choice >= CS_NVD_VOF_HRIC) {
-        CS_MALLOC(courant, n_cells_ext, cs_real_t);
-        cs_cell_courant_number(f, ctx, courant);
-      }
     }
 
     int df_limiter_id =
@@ -2870,7 +2860,6 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   CS_FREE(gradst);
   CS_FREE(local_max);
   CS_FREE(local_min);
-  CS_FREE(courant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2917,10 +2906,12 @@ _face_convection_scalar_steady(const cs_field_t           *f,
  *                               at border faces for the r.h.s.
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$), or nullptr
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] i_flux        interior flux (or nullptr)
+ * \param[in,out] b_flux        boundary flux (or nullptr)
  */
 /*----------------------------------------------------------------------------*/
 
-template <bool is_thermal>
+template <bool is_thermal, bool store_flux>
 static void
 _convection_diffusion_scalar_unsteady
   (const cs_field_t           *f,
@@ -2937,7 +2928,9 @@ _convection_diffusion_scalar_unsteady
    const cs_real_t             i_visc[],
    const cs_real_t             b_visc[],
    const cs_real_t             xcpp[],
-   cs_real_t         *restrict rhs)
+   cs_real_t         *restrict rhs,
+   cs_real_2_t       *restrict i_flux,
+   cs_real_t         *restrict b_flux)
 {
   const cs_real_t *coefap = bc_coeffs->a;
   const cs_real_t *coefbp = bc_coeffs->b;
@@ -3313,6 +3306,12 @@ _convection_diffusion_scalar_unsteady
 
         fluxj += cpj*(  thetap * (flui*_pvar[ii] + fluj*_pvar[jj])
                       - imasac *  _i_massflux*_pvar[jj]);
+
+        /* Fluxes without mass accumulation */
+        if (store_flux) {
+          i_flux[face_id][0] +=  cpi*thetap*(flui*_pvar[ii] + fluj*_pvar[jj]);
+          i_flux[face_id][1] +=  cpj*thetap*(flui*_pvar[ii] + fluj*_pvar[jj]);
+        }
       }
 
       /* Diffusive flux */
@@ -3320,6 +3319,11 @@ _convection_diffusion_scalar_unsteady
       cs_real_t diff_contrib = idiffp*thetap*i_visc[face_id]*(pip - pjp);
       fluxi += diff_contrib;
       fluxj += diff_contrib;
+      /* Fluxes if needed */
+      if (store_flux) {
+        i_flux[face_id][0] += diff_contrib;
+        i_flux[face_id][1] += diff_contrib;
+      }
 
       if (ii < n_cells)
         cs_dispatch_sum(&rhs[ii], -fluxi, i_sum_type);
@@ -3530,6 +3534,11 @@ _convection_diffusion_scalar_unsteady
         fluxj += cpj*(  thetap*(flui*pif + fluj*pjf)
                       - imasac*_i_massflux*_pvar[jj]);
 
+        /* Fluxes without mass accumulation if needed */
+        if (store_flux) {
+          i_flux[face_id][0] +=  cpi*thetap*(flui*pif + fluj*pjf);
+          i_flux[face_id][1] +=  cpj*thetap*(flui*pif + fluj*pjf);
+        }
       }
 
       // Diffusive flux (no relaxation)
@@ -3537,6 +3546,12 @@ _convection_diffusion_scalar_unsteady
       cs_real_t diff_contrib = idiffp*thetap*i_visc[face_id]*(pip - pjp);
       fluxi += diff_contrib;
       fluxj += diff_contrib;
+
+      /* Fluxes if needed */
+      if (store_flux) {
+        i_flux[face_id][0] += diff_contrib;
+        i_flux[face_id][1] += diff_contrib;
+      }
 
       if (ii < n_cells)
         cs_dispatch_sum(&rhs[ii], -fluxi, i_sum_type);
@@ -3694,6 +3709,13 @@ _convection_diffusion_scalar_unsteady
 
         fluxj += cpj*(  thetap*(flui*pif + fluj*pjf)
                       - imasac*_i_massflux*_pvar[jj]);
+
+        /* Fluxes without mass accumulation if needed */
+        if (store_flux) {
+          i_flux[face_id][0] +=  cpi*thetap*(flui*pif + fluj*pjf);
+          i_flux[face_id][1] +=  cpj*thetap*(flui*pif + fluj*pjf);
+        }
+
       }
 
       // Diffusive flux (no relaxation)
@@ -3701,6 +3723,12 @@ _convection_diffusion_scalar_unsteady
       cs_real_t diff_contrib = idiffp*thetap*i_visc[face_id]*(pip - pjp);
       fluxi += diff_contrib;
       fluxj += diff_contrib;
+
+      /* Fluxes if needed */
+      if (store_flux) {
+        i_flux[face_id][0] += diff_contrib;
+        i_flux[face_id][1] += diff_contrib;
+      }
 
       if (upwind_switch) {
         /* in parallel, face will be counted by one and only one rank */
@@ -3808,6 +3836,36 @@ _convection_diffusion_scalar_unsteady
 
       cs_dispatch_sum(&rhs[ii], -fluxi, b_sum_type);
 
+      /* Fluxes without mass accumulation if needed */
+      if (store_flux) {
+        fluxi = 0.;
+
+        cs_b_upwind_flux(iconvp,
+                         thetap,
+                         0, //imasac,
+                         inc,
+                         bc_type[face_id],
+                         _pvar[ii],
+                         _pvar[ii], /* no relaxation */
+                         pip,
+                         coefap[face_id],
+                         coefbp[face_id],
+                         b_massflux[face_id],
+                         cpi,
+                         &fluxi);
+
+        cs_b_diff_flux(idiffp,
+                       thetap,
+                       inc,
+                       pip,
+                       cofafp[face_id],
+                       cofbfp[face_id],
+                       b_visc[face_id],
+                       &fluxi);
+
+        b_flux[face_id] += fluxi;
+      }
+
     });
 
     /* The scalar is internally coupled and an implicit contribution
@@ -3888,6 +3946,9 @@ _convection_diffusion_scalar_unsteady
                                 heq,
                                 &fluxi);
 
+        if (store_flux)
+          b_flux[face_id] += thetap * fluxi;
+
         rhs[jj] -= thetap * fluxi;
       }
 
@@ -3959,6 +4020,39 @@ _convection_diffusion_scalar_unsteady
                      &fluxi);
 
       cs_dispatch_sum(&rhs[ii], -fluxi, b_sum_type);
+
+      /* Fluxes without mass accumulation if needed */
+      if (store_flux) {
+        fluxi = 0.;
+
+        cs_b_imposed_conv_flux(iconvp,
+                               thetap,
+                               0, //imasac,
+                               inc,
+                               bc_type[face_id],
+                               icvfli[face_id],
+                               _pvar[ii],
+                               _pvar[ii], /* no relaxation */
+                               pip,
+                               coefap[face_id],
+                               coefbp[face_id],
+                               coface[face_id],
+                               cofbce[face_id],
+                               b_massflux[face_id],
+                               1., /* xcpp */
+                               &fluxi);
+
+        cs_b_diff_flux(idiffp,
+                       thetap,
+                       inc,
+                       pip,
+                       cofafp[face_id],
+                       cofbfp[face_id],
+                       b_visc[face_id],
+                       &fluxi);
+
+        b_flux[face_id] += fluxi;
+      }
 
     });
 
@@ -4517,7 +4611,8 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
         if (i_massflux[face_id] >= 0.) {
           ic = ii;
           id = jj;
-        } else {
+        }
+        else {
           ic = jj;
           id = ii;
         }
@@ -7186,7 +7281,7 @@ cs_beta_limiter_building(int                   f_id,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  cs_real_t* cpro_beta = cs_field_by_id(
+  cs_real_t* cv_limiter = cs_field_by_id(
       cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id")))->val;
 
   cs_real_t *denom_inf, *num_inf, *denom_sup, *num_sup;
@@ -7242,14 +7337,14 @@ cs_beta_limiter_building(int                   f_id,
       beta_sup = cs_math_fmin(beta_sup, 1.);
     }
 
-    cpro_beta[c_id] = cs_math_fmin(beta_inf, beta_sup);
+    cv_limiter[c_id] = cs_math_fmin(beta_inf, beta_sup);
   });
 
   ctx.wait();
 
   /* Synchronize variable */
   if (halo != nullptr)
-    cs_halo_sync(halo, CS_HALO_STANDARD, ctx.use_gpu(), cpro_beta);
+    cs_halo_sync(halo, CS_HALO_STANDARD, ctx.use_gpu(), cv_limiter);
 
   CS_FREE_HD(denom_inf);
   CS_FREE_HD(denom_sup);
@@ -7301,6 +7396,8 @@ cs_beta_limiter_building(int                   f_id,
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] i_flux        interior flux (or nullptr)
+ * \param[in,out] b_flux        boundary flux (or nullptr)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -7319,7 +7416,9 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
-                               cs_real_t         *restrict rhs)
+                               cs_real_t                  *rhs,
+                               cs_real_2_t                 i_flux[],
+                               cs_real_t                   b_flux[])
 {
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -7330,14 +7429,24 @@ cs_convection_diffusion_scalar(int                         idtvar,
     f = cs_field_by_id(f_id);
 
   if (idtvar >= 0) {
-    _convection_diffusion_scalar_unsteady<false>
-      (f, eqp, icvflb, inc, imasac,
-       pvar, pvara,
-       icvfli,
-       bc_coeffs,
-       i_massflux, b_massflux,
-       i_visc, b_visc,
-       nullptr, rhs);
+    if (i_flux == nullptr)
+      _convection_diffusion_scalar_unsteady<false, false>
+        (f, eqp, icvflb, inc, imasac,
+         pvar, pvara,
+         icvfli,
+         bc_coeffs,
+         i_massflux, b_massflux,
+         i_visc, b_visc,
+         nullptr, rhs, i_flux, b_flux);
+    else
+      _convection_diffusion_scalar_unsteady<false, true>
+        (f, eqp, icvflb, inc, imasac,
+         pvar, pvara,
+         icvfli,
+         bc_coeffs,
+         i_massflux, b_massflux,
+         i_visc, b_visc,
+         nullptr, rhs, i_flux, b_flux);
   }
   else {
 
@@ -8131,7 +8240,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
     f = cs_field_by_id(f_id);
 
   if (idtvar >= 0) {
-    _convection_diffusion_scalar_unsteady<true>
+    _convection_diffusion_scalar_unsteady<true, false>
       (f, eqp,
        false, /* icvflb */
        inc, imasac,
@@ -8140,7 +8249,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
        bc_coeffs,
        i_massflux, b_massflux,
        i_visc, b_visc,
-       xcpp, rhs);
+       xcpp, rhs, nullptr, nullptr);
     return;
   }
 

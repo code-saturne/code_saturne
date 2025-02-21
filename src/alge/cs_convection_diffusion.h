@@ -164,6 +164,8 @@ cs_beta_limiter_building(int              f_id,
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] i_flux        interior flux (or nullptr)
+ * \param[in,out] b_flux        boundary flux (or nullptr)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -182,7 +184,9 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
-                               cs_real_t                  *rhs);
+                               cs_real_t                  *rhs,
+                               cs_real_2_t                 i_flux[],
+                               cs_real_t                   b_flux[]);
 
 /*----------------------------------------------------------------------------*/
 /*

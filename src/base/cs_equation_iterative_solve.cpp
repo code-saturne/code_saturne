@@ -1348,6 +1348,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   int *c_disable_flag = mq->c_disable_flag;
 
@@ -1453,6 +1454,46 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    *    second iteration).
    *==========================================================================*/
 
+  /* Prepare the computation of fluxes at faces if needed */
+
+  cs_real_t *i_flux = nullptr, *b_flux = nullptr;
+  cs_real_t *b_flux_k = nullptr, *b_flux_km1 = nullptr;
+  cs_real_2_t *i_flux_0 = nullptr, *i_flux_k = nullptr, *i_flux_km1 = nullptr;
+
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
+
+    const int kiflux = cs_field_key_id("inner_flux_id");
+    const int kbflux = cs_field_key_id("boundary_flux_id");
+
+    int i_flux_id = cs_field_get_key_int(f, kiflux);
+    int b_flux_id = cs_field_get_key_int(f, kbflux);
+
+    if (i_flux_id > -1 && b_flux_id > -1) {
+      assert(idtvar != -1);
+      /* flux is non-conservative with the steady algorithm but flux field is of
+         dimension 1. Forbidden at parameters check */
+
+      i_flux = cs_field_by_id(i_flux_id)->val;
+      b_flux = cs_field_by_id(b_flux_id)->val;
+
+      CS_MALLOC_HD(i_flux_0, n_i_faces, cs_real_2_t, cs_alloc_mode);
+      CS_MALLOC_HD(i_flux_k, n_i_faces, cs_real_2_t, cs_alloc_mode);
+      CS_MALLOC_HD(i_flux_km1, n_i_faces, cs_real_2_t, cs_alloc_mode);
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+        i_flux_0[face_id][0] = 0.;
+        i_flux_0[face_id][1] = 0.;
+        i_flux_k[face_id][0] = 0.;
+        i_flux_k[face_id][1] = 0.;
+      });
+      CS_MALLOC_HD(b_flux_k, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(b_flux_km1, n_b_faces, cs_real_t, cs_alloc_mode);
+      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_flux_k);
+
+      ctx_c.wait();
+    }
+  }
+
   /* Application of the theta-scheme */
 
   /* On calcule le bilan explicite total */
@@ -1476,6 +1517,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     eqp->theta = thetex;
 
+    /* Compute - Con-Diff((1-theta) Y^n )
+     * where Y^n is pvara
+     * Note: this part does not need any update, and will be stored in
+     * smbini */
     cs_balance_scalar(idtvar,
                       f_id,
                       imucpp,
@@ -1495,7 +1540,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
-                      smbrp);
+                      smbrp,
+                      i_flux_0,
+                      b_flux);
 
     eqp->theta = thetap;
 
@@ -1536,6 +1583,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   ctx_c.wait(); /* We now need pvar, computed by ctx_c */
   ctx.wait();   /* We now need smbrp, computed by ctx */
 
+  /* Compute - Con-Diff(theta Y^k )
+   * where Y^k is pvar (possible over iteration for
+   * velocity pressure coupling) */
   cs_balance_scalar(idtvar,
                     f_id,
                     imucpp,
@@ -1555,13 +1605,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     weighb,
                     icvflb,
                     icvfli,
-                    smbrp);
+                    smbrp,
+                    i_flux_k,
+                    b_flux_k);
 
   if (iswdyp >= 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       rhs0[cell_id] = smbrp[cell_id];
-      smbini[cell_id] -= rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
-      smbrp[cell_id]  += smbini[cell_id];
+      smbrp[cell_id]  += smbini[cell_id]
+                       - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
 
       adxkm1[cell_id] = 0.;
       adxk[cell_id] = 0.;
@@ -1573,8 +1625,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   }
   else {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      smbini[cell_id] -= rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
-      smbrp[cell_id]  += smbini[cell_id];
+      smbrp[cell_id]  += smbini[cell_id]
+                       - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
     });
   }
 
@@ -1653,6 +1705,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   int isweep = 1;
 
+  /* Main loop of reconstruction
+   * --------------------------- */
   while ((isweep <= nswmod && residu > epsrsp*rnorm) || isweep == 1) {
 
     /* Solving on the increment: dpvar */
@@ -1662,6 +1716,17 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
         dpvarm1[cell_id] = dpvar[cell_id];
       });
     }
+
+    /* Store last fluxes if needed
+     * (switch pointers) */
+    cs_real_2_t *_temp_i = i_flux_km1;
+    i_flux_km1 = i_flux_k;
+    i_flux_k = _temp_i;
+    cs_arrays_set_value<cs_real_t, 1>(2*n_i_faces, 0., (cs_real_t *)i_flux_k);
+    cs_real_t *_temp_b = b_flux_km1;
+    b_flux_km1 = b_flux_k;
+    b_flux_k = _temp_b;
+    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_flux_k);
 
     /* Solver residual */
     ressol = residu;
@@ -1714,7 +1779,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                         weighb,
                         icvflb,
                         icvfli,
-                        adxk);
+                        adxk,
+                        nullptr,
+                        nullptr);
 
       /* ||E.dx^(k-1)-E.0||^2 */
       nadxkm1 = nadxk;
@@ -1782,30 +1849,29 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     if (iswdyp <= 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += dpvar[cell_id];
-        /* smbini already contains unsteady terms and mass source terms
+        /* smbini does not contain unsteady terms and mass source terms
            of the RHS updated at each sweep */
-        smbini[cell_id] -= rovsdt[cell_id]*dpvar[cell_id];
-        smbrp[cell_id]   = smbini[cell_id];
+        smbrp[cell_id] = smbini[cell_id]
+                       - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
       });
     }
     else if (iswdyp == 1) {
       if (alph < 0.) break;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += alph*dpvar[cell_id];
-        /* smbini already contains unsteady terms and mass source terms
+        /* smbini does not contain unsteady terms and mass source terms
            of the RHS updated at each sweep */
-        smbini[cell_id] -= rovsdt[cell_id]*alph*dpvar[cell_id];
-        smbrp[cell_id]   = smbini[cell_id];
+        smbrp[cell_id] = smbini[cell_id]
+                       - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
       });
     }
     else if (iswdyp >= 2) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += alph*dpvar[cell_id] + beta*dpvarm1[cell_id];
-        /* smbini already contains unsteady terms and mass source terms
+        /* smbini does not contain unsteady terms and mass source terms
            of the RHS updated at each sweep */
-        smbini[cell_id]
-          -= rovsdt[cell_id]*(alph*dpvar[cell_id]+beta*dpvarm1[cell_id]);
-        smbrp[cell_id] = smbini[cell_id];
+        smbrp[cell_id] = smbini[cell_id]
+                       - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
       });
     }
 
@@ -1819,7 +1885,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       cs_beta_limiter_building(f_id, inc, rovsdt);
 
     /* The added convective scalar mass flux is:
-       (thetex*Y_\face-imasac*Y_\celli)*mf.
+       (theta*Y_\face-imasac*Y_\celli)*mf.
        When building the implicit part of the rhs, one
        has to impose 1 on mass accumulation. */
     imasac = 1;
@@ -1845,7 +1911,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
-                      smbrp);
+                      smbrp,
+                      i_flux_k,
+                      b_flux_k);
 
     /* --- Convergence test */
     residu = sqrt(cs_gdot(n_cells, smbrp, smbrp));
@@ -1889,125 +1957,57 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                  var_name,nswmod);
   }
 
-  /* Rebuild final flux at faces */
+  /* Finalize the face fluxes if needed */
+  /* last increment in upwind to fulfill exactly the considered
+     balance equation */
 
-  if (f_id > -1) {
-    f = cs_field_by_id(f_id);
+  if (i_flux != nullptr) {
+    inc  = 1;
+    imasac = 0; /* mass accumulation not taken into account */
 
-    const int kiflux = cs_field_key_id("inner_flux_id");
-    const int kbflux = cs_field_key_id("boundary_flux_id");
+    inc = 0;
+    cs_equation_param_t eqp_loc;
+    int k_id = cs_field_key_id("var_cal_opt");
 
-    int i_flux_id = cs_field_get_key_int(f, kiflux);
-    int b_flux_id = cs_field_get_key_int(f, kbflux);
+    /* copy of the equation param structure in eqp_loc */
+    cs_field_get_key_struct(f, k_id, &eqp_loc);
 
-    if (i_flux_id > -1 && b_flux_id > -1) {
-      assert(idtvar != -1);
-      /* flux is non-conservative with the steady algorithm but flux field is of
-         dimension 1. Forbidden at parameters check */
+    eqp_loc.nswrgr = 0;
+    eqp_loc.blencv = 0.;
 
-      cs_real_t *i_flux = cs_field_by_id(i_flux_id)->val;
-      cs_real_t *b_flux = cs_field_by_id(b_flux_id)->val;
+    cs_face_convection_scalar(idtvar,
+                              f_id,
+                              eqp_loc,
+                              icvflb,
+                              inc,
+                              imasac,
+                              dpvar,
+                              pvara,
+                              icvfli,
+                              bc_coeffs,
+                              i_massflux,
+                              b_massflux,
+                              i_flux_0,
+                              b_flux);
 
-      /* rebuild before-last value of variable */
-      cs_real_t *prev_s_pvar;
-      CS_MALLOC_HD(prev_s_pvar, n_cells_ext, cs_real_t, cs_alloc_mode);
-      ctx_c.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        prev_s_pvar[cell_id] = pvar[cell_id]-dpvar[cell_id];
-      });
+    /* FIXME diffusion part */
 
-      cs_real_2_t *i_flux2;
-      CS_MALLOC_HD(i_flux2, n_i_faces, cs_real_2_t, cs_alloc_mode);
-      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-        i_flux2[face_id][0] = 0.;
-        i_flux2[face_id][1] = 0.;
-      });
+    /* Finalize the convective flux calculation ,
+     * Note that the two sides are equal because imasac=0 */
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      i_flux[face_id] += i_flux_km1[face_id][0] + i_flux_0[face_id][0];
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      b_flux[face_id] += b_flux_km1[face_id];
+    });
 
-      inc  = 1;
-      imasac = 0; /* mass accumulation not taken into account */
+    ctx.wait();
 
-      ctx.wait();
-
-      /* If thetex = 0, no need to do more */
-      if (fabs(thetex) > cs_math_epzero) {
-        thetap = eqp->theta;
-        eqp->theta = thetex;
-
-        cs_face_convection_scalar(idtvar,
-                                  f_id,
-                                  *eqp,
-                                  icvflb,
-                                  inc,
-                                  imasac,
-                                  nullptr, /* pvar == pvara */
-                                  pvara,
-                                  icvfli,
-                                  bc_coeffs,
-                                  i_massflux,
-                                  b_massflux,
-                                  i_flux2,
-                                  b_flux);
-
-        eqp->theta = thetap;
-      }
-
-      ctx_c.wait();
-
-      cs_face_convection_scalar(idtvar,
-                                f_id,
-                                *eqp,
-                                icvflb,
-                                inc,
-                                imasac,
-                                prev_s_pvar,
-                                pvara,
-                                icvfli,
-                                bc_coeffs,
-                                i_massflux,
-                                b_massflux,
-                                i_flux2,
-                                b_flux);
-      CS_FREE_HD(prev_s_pvar);
-
-      /* last increment in upwind to fulfill exactly the considered
-         balance equation */
-
-      inc = 0;
-
-      cs_equation_param_t eqp_loc;
-      int k_id = cs_field_key_id("var_cal_opt");
-
-      /* copy of the equation param structure in eqp_loc */
-      cs_field_get_key_struct(f, k_id, &eqp_loc);
-
-      eqp_loc.nswrgr = 0;
-      eqp_loc.blencv = 0.;
-
-      cs_face_convection_scalar(idtvar,
-                                f_id,
-                                eqp_loc,
-                                icvflb,
-                                inc,
-                                imasac,
-                                dpvar,
-                                pvara,
-                                icvfli,
-                                bc_coeffs,
-                                i_massflux,
-                                b_massflux,
-                                i_flux2,
-                                b_flux);
-
-      /* FIXME diffusion part */
-
-      /* Store the convectif flux,
-       * Note that the two sides are equal if imasac=0 */
-      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        i_flux[face_id] += i_flux2[face_id][0];
-      });
-      ctx.wait();
-
-      CS_FREE_HD(i_flux2);
-    }
+    CS_FREE_HD(i_flux_0);
+    CS_FREE_HD(i_flux_k);
+    CS_FREE_HD(i_flux_km1);
+    CS_FREE_HD(b_flux_k);
+    CS_FREE_HD(b_flux_km1);
   }
 
   /*==========================================================================
@@ -2018,18 +2018,19 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   if (iescap > 0) {
     /*  Computation of the estimator of the current component */
 
-    /* smbini already contains unsteady terms and mass source terms
+    /* smbini does not contain unsteady terms and mass source terms
        of the RHS updated at each sweep */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      smbrp[cell_id] = smbini[cell_id] - rovsdt[cell_id]*dpvar[cell_id];
+      smbrp[cell_id] = smbini[cell_id]
+                     - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
     });
 
     inc = 1;
 
     ctx.wait();
 
-    /* Without relaxation even for a stationnary computation */
+    /* Without relaxation even for a stationary computation */
 
     cs_balance_scalar(idtvar,
                       f_id,
@@ -2050,7 +2051,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
-                      smbrp);
+                      smbrp,
+                      nullptr,
+                      nullptr);
 
     /* Contribution of the current component to the L2 norm stored in eswork */
 

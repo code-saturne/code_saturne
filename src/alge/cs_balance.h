@@ -56,7 +56,7 @@ void
 cs_balance_initialize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Wrapper to the function which adds the explicit part of the
  * convection/diffusion terms of a transport equation of
  * a scalar field \f$ \varia \f$.
@@ -144,6 +144,108 @@ cs_balance_scalar(int                         idtvar,
                   int                         icvflb,
                   const int                   icvfli[],
                   cs_real_t                   smbrp[]);
+
+END_C_DECLS
+
+#if defined(__cplusplus)
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Wrapper to the function which adds the explicit part of the
+ * convection/diffusion terms of a transport equation of
+ * a scalar field \f$ \varia \f$.
+ *
+ * More precisely, the right hand side \f$ Rhs \f$ is updated as
+ * follows:
+ * \f[
+ * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
+ *        \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
+ *      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * - \f$ Rhs \f$ has already been initialized
+ *   before calling cs_balance_scalar!
+ * - mind the minus sign
+ *
+ * Options for the convective scheme:
+ * - blencp = 0: upwind scheme for the advection
+ * - blencp = 1: no upwind scheme except in the slope test
+ * - ischcp = 0: SOLU
+ * - ischcp = 1: centered
+ * - ischcp = 2: SOLU with upwind gradient reconstruction
+ * - ischcp = 3: blending SOLU centered
+ * - ischcp = 4: NVD-TVD
+ * - imucpp = 0: do not multiply the convective part by \f$ C_p \f$
+ * - imucpp = 1: multiply the convective part by \f$ C_p \f$
+ *
+ * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     f_id          field id (or -1)
+ * \param[in]     imucpp        indicator
+ *                               - 0 do not multiply the convectiv term by Cp
+ *                               - 1 do multiply the convectiv term by Cp
+ * \param[in]     imasac        take mass accumulation into account?
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
+ *                              contains variable calculation options
+ * \param[in]     pvar          solved variable (current time step)
+ *                              may be NULL if pvara != NULL
+ * \param[in]     pvara         solved variable (previous time step)
+ *                              may be NULL if pvar != NULL
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at boundary faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at boundary faces for the r.h.s.
+ * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     xcpp          array of specific heat (Cp)
+ * \param[in]     weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
+ * \param[in]     icvflb        global indicator of boundary convection flux
+ *                               - 0 upwind scheme at all boundary faces
+ *                               - 1 imposed flux at some boundary faces
+ * \param[in]     icvfli        boundary face indicator array of convection flux
+ *                               - 0 upwind scheme
+ *                               - 1 imposed flux
+ * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] i_flux        interior flux (or nullptr)
+ * \param[in,out] b_flux        boundary flux (or nullptr)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_balance_scalar(int                         idtvar,
+                  int                         f_id,
+                  int                         imucpp,
+                  int                         imasac,
+                  int                         inc,
+                  cs_equation_param_t        *eqp,
+                  cs_real_t                   pvar[],
+                  const cs_real_t             pvara[],
+                  const cs_field_bc_coeffs_t *bc_coeffs,
+                  const cs_real_t             i_massflux[],
+                  const cs_real_t             b_massflux[],
+                  const cs_real_t             i_visc[],
+                  const cs_real_t             b_visc[],
+                  cs_real_6_t                 viscel[],
+                  const cs_real_t             xcpp[],
+                  const cs_real_2_t           weighf[],
+                  const cs_real_t             weighb[],
+                  int                         icvflb,
+                  const int                   icvfli[],
+                  cs_real_t                   smbrp[],
+                  cs_real_2_t                 i_flux[],
+                  cs_real_t                   b_flux[]);
+
+#endif // defined(__cplusplus)
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!

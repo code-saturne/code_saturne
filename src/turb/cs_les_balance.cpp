@@ -423,7 +423,8 @@ _les_balance_laplacian(cs_real_t   *wa,
                                  b_visc,         /* mass flux (not used) */
                                  i_visc,
                                  b_visc,
-                                 res);
+                                 res,
+                                 nullptr, nullptr);
 
   CS_FREE(coefa);
   CS_FREE(coefb);
