@@ -333,22 +333,29 @@ _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
 
   cs_real_t *cvar_pr = CS_F_(p)->val;
   const cs_real_t *cvara_pr = CS_F_(p)->val_pre;
+  if (   cs_glob_cf_model-> ieos == CS_EOS_IDEAL_GAS
+      || cs_glob_cf_model-> ieos == CS_EOS_GAS_MIX
+      || cs_glob_cf_model-> ieos == CS_EOS_MOIST_AIR) {
+    if (   cs_glob_thermal_model->thermal_variable
+        == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+      cs_field_t *temp = cs_field_by_name_try("temperature");
+      if (temp != nullptr)
+        cs_array_real_copy(n_cells_ext, temp->val, temp->val_pre);
+    }
 
-  if (   cs_glob_thermal_model->thermal_variable
-      == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
-    cs_field_t *temp = cs_field_by_name_try("temperature");
-    if (temp != nullptr)
-      cs_array_real_copy(n_cells_ext, temp->val, temp->val_pre);
+    /* Saving the thermodynamic pressure at time n+1
+     * coherent with the equation of state */
+
+    if (cs_glob_time_scheme->time_order == 2) {
+#     pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+        cvar_pr[c_id] = 2.*cvar_pr[c_id] - cvara_pr[c_id];
+
+      cs_field_current_to_previous(CS_F_(p));
+    }
   }
-
-  /* Saving the thermodynamic pressure at time n+1
-   * coherent with the equation of state */
-
-  if (cs_glob_time_scheme->time_order == 2) {
-#   pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-      cvar_pr[c_id] = 2.*cvar_pr[c_id] - cvara_pr[c_id];
-
+  else {
+    // Save pressure corrected in cs_pressure_correction as previous one.
     cs_field_current_to_previous(CS_F_(p));
   }
 }
@@ -620,16 +627,8 @@ _solve_most(int              n_var,
 
   }  // end while
 
-  if (   cs_glob_cf_model-> ieos == CS_EOS_IDEAL_GAS
-      || cs_glob_cf_model-> ieos == CS_EOS_GAS_MIX
-      || cs_glob_cf_model-> ieos == CS_EOS_MOIST_AIR) {
-    if (cs_glob_velocity_pressure_model->idilat == 2)
-      _update_pressure_temperature_idilat_2(n_cells);
-  }
-  else {
-    // Saving pressure corrected in resopv as previous pressure
-    cs_field_current_to_previous(CS_F_(p));
-  }
+  if (cs_glob_velocity_pressure_model->idilat == 2)
+    _update_pressure_temperature_idilat_2(n_cells);
 
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
