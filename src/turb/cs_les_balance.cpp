@@ -48,7 +48,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
@@ -64,6 +63,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_geom.h"
 #include "alge/cs_gradient.h"
 #include "base/cs_halo.h"
@@ -300,12 +300,12 @@ _les_balance_get_tm_by_scalar_id(int scalar_id,
   cs_field_t *f = nullptr;
   char *buffer;
 
-  BFT_MALLOC(buffer, 32, char);
+  CS_MALLOC(buffer, 32, char);
 
   _les_balance_get_tm_label(scalar_id, name, buffer);
   f = _les_balance_get_tm_by_name((const char *)buffer);
 
-  BFT_FREE(buffer);
+  CS_FREE(buffer);
 
   return f;
 }
@@ -335,10 +335,10 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   cs_field_bc_coeffs_t bc_coeffs_loc; // a voir ci dessous (a=af,b=bf)
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  BFT_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
 
   cs_real_t *coefa = bc_coeffs_loc.a;
   cs_real_t *coefb = bc_coeffs_loc.b;
@@ -390,19 +390,19 @@ _les_balance_laplacian(cs_real_t   *wa,
   }
 
   cs_real_t *c_visc, *i_visc, *b_visc;
-  BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
+  CS_MALLOC(c_visc, n_cells_ext, cs_real_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     c_visc[c_id] = visc;
 
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC(i_visc, n_i_faces, cs_real_t);
+  CS_MALLOC(b_visc, n_b_faces, cs_real_t);
   cs_face_viscosity(m,
                     fvq,
                     0,      /* mean type */
                     c_visc,
                     i_visc,
                     b_visc);
-  BFT_FREE(c_visc);
+  CS_FREE(c_visc);
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
   cs_equation_param_t _eqp = *eqp;
@@ -425,13 +425,13 @@ _les_balance_laplacian(cs_real_t   *wa,
                                  b_visc,
                                  res);
 
-  BFT_FREE(coefa);
-  BFT_FREE(coefb);
-  BFT_FREE(coefaf);
-  BFT_FREE(coefbf);
+  CS_FREE(coefa);
+  CS_FREE(coefb);
+  CS_FREE(coefaf);
+  CS_FREE(coefbf);
 
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     res[c_id] /= cs_glob_mesh_quantities->cell_vol[c_id];
@@ -464,14 +464,14 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
-  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
 
   cs_real_3_t  *coefav = (cs_real_3_t  *)bc_coeffs_v_loc.a;
   cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
-  BFT_MALLOC(i_massflux, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_massflux, n_b_faces, cs_real_t);
+  CS_MALLOC(i_massflux, n_i_faces, cs_real_t);
+  CS_MALLOC(b_massflux, n_b_faces, cs_real_t);
 
   f_id = -1;
   itypfl = 0;
@@ -519,11 +519,11 @@ _les_balance_laplacian(cs_real_t   *wa,
                 b_massflux,
                 res);
 
-  BFT_FREE(coefav);
-  BFT_FREE(coefbv);
+  CS_FREE(coefav);
+  CS_FREE(coefbv);
 
-  BFT_FREE(i_massflux);
-  BFT_FREE(b_massflux);
+  CS_FREE(i_massflux);
+  CS_FREE(b_massflux);
 }
 
 /*----------------------------------------------------------------------------
@@ -559,8 +559,8 @@ _les_balance_compute_gradients(void)
       _les_balance.type & CS_LES_BALANCE_TUI_FULL) {
 
     cs_field_bc_coeffs_t bc_coeffs_loc;
-    BFT_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
-    BFT_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
 
     cs_real_t *coefas = bc_coeffs_loc.a;
     cs_real_t *coefbs = bc_coeffs_loc.b;
@@ -593,8 +593,8 @@ _les_balance_compute_gradients(void)
                        nullptr,
                        (cs_real_3_t *)_gradnut->val);
 
-    BFT_FREE(coefas);
-    BFT_FREE(coefbs);
+    CS_FREE(coefas);
+    CS_FREE(coefbs);
   }
 
   /* Computation of scalar gradients */
@@ -733,8 +733,8 @@ _les_balance_compute_uidktaujk(const void   *input,
 
   velocity = (cs_real_3_t *)CS_F_(vel)->val;
 
-  BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
-  BFT_MALLOC(vel, n_cells, cs_real_3_t);
+  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
+  CS_MALLOC(vel, n_cells, cs_real_3_t);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
@@ -757,8 +757,8 @@ _les_balance_compute_uidktaujk(const void   *input,
     }
   }
 
-  BFT_FREE(diverg);
-  BFT_FREE(vel);
+  CS_FREE(diverg);
+  CS_FREE(vel);
 }
 
 /*----------------------------------------------------------------------------
@@ -1073,8 +1073,8 @@ _les_balance_compute_tdjtauij(const void   *input,
   cs_real_t *diverg;
   cs_real_3_t *w1;
 
-  BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w1, n_cells, cs_real_3_t);
+  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
+  CS_MALLOC(w1, n_cells, cs_real_3_t);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
@@ -1093,8 +1093,8 @@ _les_balance_compute_tdjtauij(const void   *input,
       vals[3*iel+i] = sca->val[iel]*diverg[iel];
   }
 
-  BFT_FREE(diverg);
-  BFT_FREE(w1);
+  CS_FREE(diverg);
+  CS_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1129,8 +1129,8 @@ _les_balance_compute_uidivturflux(const void   *input,
   vel = (cs_real_3_t *)CS_F_(vel)->val;
   sigmas = cs_field_get_key_double(sca, ksigmas);
 
-  BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w1, n_cells, cs_real_3_t);
+  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
+  CS_MALLOC(w1, n_cells, cs_real_3_t);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
@@ -1149,8 +1149,8 @@ _les_balance_compute_uidivturflux(const void   *input,
       vals[3*iel+i] = vel[iel][i]*diverg[iel];
   }
 
-  BFT_FREE(diverg);
-  BFT_FREE(w1);
+  CS_FREE(diverg);
+  CS_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1178,8 +1178,8 @@ _les_balance_compute_tdivturflux(const void   *input,
 
   sigmas = cs_field_get_key_double(sca, ksigmas);
 
-  BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w1, n_cells, cs_real_3_t);
+  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
+  CS_MALLOC(w1, n_cells, cs_real_3_t);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
@@ -1195,8 +1195,8 @@ _les_balance_compute_tdivturflux(const void   *input,
   for (cs_lnum_t iel = 0; iel < n_cells; iel++)
     vals[iel] = sca->val[iel]*diverg[iel];
 
-  BFT_FREE(diverg);
-  BFT_FREE(w1);
+  CS_FREE(diverg);
+  CS_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------
@@ -2268,25 +2268,25 @@ _les_balance_allocate_rij(void)
   /* Initialization */
   cs_les_balance_rij_t *brij = nullptr;
 
-  BFT_MALLOC(brij, 1, cs_les_balance_rij_t);
+  CS_MALLOC(brij, 1, cs_les_balance_rij_t);
 
   /* Allocation of the working arrays  that cannot
      be declared using time moments */
 
-  BFT_MALLOC(brij->prodij, n_cells, cs_real_6_t);
-  BFT_MALLOC(brij->epsij, n_cells, cs_real_6_t);
-  BFT_MALLOC(brij->phiij, n_cells, cs_real_6_t);
-  BFT_MALLOC(brij->difftij, n_cells, cs_real_6_t);
-  BFT_MALLOC(brij->difftpij, n_cells, cs_real_6_t);
-  BFT_MALLOC(brij->convij, n_cells, cs_real_6_t);
-  BFT_MALLOC(brij->difflamij, n_cells, cs_real_6_t);
-  BFT_MALLOC(brij->unstij, n_cells, cs_real_6_t);
+  CS_MALLOC(brij->prodij, n_cells, cs_real_6_t);
+  CS_MALLOC(brij->epsij, n_cells, cs_real_6_t);
+  CS_MALLOC(brij->phiij, n_cells, cs_real_6_t);
+  CS_MALLOC(brij->difftij, n_cells, cs_real_6_t);
+  CS_MALLOC(brij->difftpij, n_cells, cs_real_6_t);
+  CS_MALLOC(brij->convij, n_cells, cs_real_6_t);
+  CS_MALLOC(brij->difflamij, n_cells, cs_real_6_t);
+  CS_MALLOC(brij->unstij, n_cells, cs_real_6_t);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE)
-    BFT_MALLOC(brij->budsgsij, n_cells, cs_real_6_t);
+    CS_MALLOC(brij->budsgsij, n_cells, cs_real_6_t);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL)
-    BFT_MALLOC(brij->budsgsfullij, n_cells, cs_real_69_t);
+    CS_MALLOC(brij->budsgsfullij, n_cells, cs_real_69_t);
 
   return brij;
 }
@@ -2305,40 +2305,40 @@ _les_balance_allocate_tui(void)
   /* Initialization */
   cs_les_balance_tui_t *btui = nullptr;
 
-  BFT_MALLOC(btui, 1, cs_les_balance_tui_t);
+  CS_MALLOC(btui, 1, cs_les_balance_tui_t);
 
   /* Allocation of the working arrays  that cannot
      be declared using time moments */
 
   /* Working arrays */
-  BFT_MALLOC(btui->unstvar, n_cells, cs_real_t);
-  BFT_MALLOC(btui->tptp, n_cells, cs_real_t);
-  BFT_MALLOC(btui->prodvar, n_cells, cs_real_t);
-  BFT_MALLOC(btui->epsvar, n_cells, cs_real_t);
-  BFT_MALLOC(btui->difftvar, n_cells, cs_real_t);
-  BFT_MALLOC(btui->convvar, n_cells, cs_real_t);
-  BFT_MALLOC(btui->difflamvar, n_cells, cs_real_t);
-  BFT_MALLOC(btui->tpuip, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->unstti, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->prodtUi, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->prodtTi, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->phiti, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->epsti, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->difftti, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->diffttpi, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->convti, n_cells, cs_real_3_t);
-  BFT_MALLOC(btui->difflamti, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->unstvar, n_cells, cs_real_t);
+  CS_MALLOC(btui->tptp, n_cells, cs_real_t);
+  CS_MALLOC(btui->prodvar, n_cells, cs_real_t);
+  CS_MALLOC(btui->epsvar, n_cells, cs_real_t);
+  CS_MALLOC(btui->difftvar, n_cells, cs_real_t);
+  CS_MALLOC(btui->convvar, n_cells, cs_real_t);
+  CS_MALLOC(btui->difflamvar, n_cells, cs_real_t);
+  CS_MALLOC(btui->tpuip, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->unstti, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->prodtUi, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->prodtTi, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->phiti, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->epsti, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->difftti, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->diffttpi, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->convti, n_cells, cs_real_3_t);
+  CS_MALLOC(btui->difflamti, n_cells, cs_real_3_t);
 
   if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
-    BFT_MALLOC(btui->budsgsvar, n_cells, cs_real_t);
-    BFT_MALLOC(btui->budsgstui, n_cells, cs_real_3_t);
+    CS_MALLOC(btui->budsgsvar, n_cells, cs_real_t);
+    CS_MALLOC(btui->budsgstui, n_cells, cs_real_3_t);
   }
 
   if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
-    BFT_MALLOC(btui->budsgsvarfull, n_cells, cs_real_6_t);
-    BFT_MALLOC(btui->budsgstuifull, 10, cs_real_3_t *);
+    CS_MALLOC(btui->budsgsvarfull, n_cells, cs_real_6_t);
+    CS_MALLOC(btui->budsgstuifull, 10, cs_real_3_t *);
     for (int ii = 0; ii < 10; ii++)
-      BFT_MALLOC(btui->budsgstuifull[ii], n_cells, cs_real_3_t);
+      CS_MALLOC(btui->budsgstuifull[ii], n_cells, cs_real_3_t);
   }
 
   return btui;
@@ -2507,25 +2507,25 @@ _les_balance_destroy_rij(cs_les_balance_rij_t *brij)
   if (brij == nullptr)
     return brij;
 
-  BFT_FREE(brij->prodij);
-  BFT_FREE(brij->epsij);
-  BFT_FREE(brij->phiij);
-  BFT_FREE(brij->difftij);
-  BFT_FREE(brij->difftpij);
-  BFT_FREE(brij->convij);
-  BFT_FREE(brij->difflamij);
+  CS_FREE(brij->prodij);
+  CS_FREE(brij->epsij);
+  CS_FREE(brij->phiij);
+  CS_FREE(brij->difftij);
+  CS_FREE(brij->difftpij);
+  CS_FREE(brij->convij);
+  CS_FREE(brij->difflamij);
 
-  BFT_FREE(brij->unstij);
+  CS_FREE(brij->unstij);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE) {
-    BFT_FREE(brij->budsgsij);
+    CS_FREE(brij->budsgsij);
   }
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) {
-    BFT_FREE(brij->budsgsfullij);
+    CS_FREE(brij->budsgsfullij);
   }
 
-  BFT_FREE(brij);
+  CS_FREE(brij);
 
   return nullptr;
 }
@@ -2544,40 +2544,40 @@ _les_balance_destroy_tui(cs_les_balance_tui_t **btui)
 
   for (int isca = 0; isca < nscal; isca++) {
 
-    BFT_FREE(btui[isca]->unstvar);
-    BFT_FREE(btui[isca]->tptp);
-    BFT_FREE(btui[isca]->tpuip);
-    BFT_FREE(btui[isca]->prodvar);
-    BFT_FREE(btui[isca]->epsvar);
-    BFT_FREE(btui[isca]->difftvar);
-    BFT_FREE(btui[isca]->convvar);
-    BFT_FREE(btui[isca]->difflamvar);
-    BFT_FREE(btui[isca]->unstti);
-    BFT_FREE(btui[isca]->prodtUi);
-    BFT_FREE(btui[isca]->prodtTi);
-    BFT_FREE(btui[isca]->phiti);
-    BFT_FREE(btui[isca]->epsti);
-    BFT_FREE(btui[isca]->difftti);
-    BFT_FREE(btui[isca]->diffttpi);
-    BFT_FREE(btui[isca]->convti);
-    BFT_FREE(btui[isca]->difflamti);
+    CS_FREE(btui[isca]->unstvar);
+    CS_FREE(btui[isca]->tptp);
+    CS_FREE(btui[isca]->tpuip);
+    CS_FREE(btui[isca]->prodvar);
+    CS_FREE(btui[isca]->epsvar);
+    CS_FREE(btui[isca]->difftvar);
+    CS_FREE(btui[isca]->convvar);
+    CS_FREE(btui[isca]->difflamvar);
+    CS_FREE(btui[isca]->unstti);
+    CS_FREE(btui[isca]->prodtUi);
+    CS_FREE(btui[isca]->prodtTi);
+    CS_FREE(btui[isca]->phiti);
+    CS_FREE(btui[isca]->epsti);
+    CS_FREE(btui[isca]->difftti);
+    CS_FREE(btui[isca]->diffttpi);
+    CS_FREE(btui[isca]->convti);
+    CS_FREE(btui[isca]->difflamti);
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
-      BFT_FREE(btui[isca]->budsgsvar);
-      BFT_FREE(btui[isca]->budsgstui);
+      CS_FREE(btui[isca]->budsgsvar);
+      CS_FREE(btui[isca]->budsgstui);
     }
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
       for (int ii = 0; ii < 10; ii++)
-        BFT_FREE(btui[isca]->budsgstuifull[ii]);
-      BFT_FREE(btui[isca]->budsgstuifull);
-      BFT_FREE(btui[isca]->budsgsvarfull);
+        CS_FREE(btui[isca]->budsgstuifull[ii]);
+      CS_FREE(btui[isca]->budsgstuifull);
+      CS_FREE(btui[isca]->budsgsvarfull);
     }
 
-    BFT_FREE(btui[isca]);
+    CS_FREE(btui[isca]);
   }
 
-  BFT_FREE(btui);
+  CS_FREE(btui);
 
   return btui;
 }
@@ -2606,7 +2606,7 @@ _les_balance_create_rij(void)
 static void
 _les_balance_create_tui(void)
 {
-  BFT_MALLOC(_les_balance.btui, nscal, cs_les_balance_tui_t *);
+  CS_MALLOC(_les_balance.btui, nscal, cs_les_balance_tui_t *);
 
   /* Creation and allocation of the structure containing
      working arrays */
@@ -2666,7 +2666,7 @@ cs_les_balance_create_fields(void)
       if (i_sca > 0) n_scal ++;
     }
 
-    BFT_MALLOC(_gradt, n_scal, cs_field_t*);
+    CS_MALLOC(_gradt, n_scal, cs_field_t*);
 
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
       cs_field_t *f_sca = cs_field_by_id(f_id);
@@ -2675,7 +2675,7 @@ cs_les_balance_create_fields(void)
       if (i_sca > -1) {
         char *name;
         int len = strlen(f_sca->name)+6;
-        BFT_MALLOC(name, len, char);
+        CS_MALLOC(name, len, char);
         snprintf(name, len, "%s_grad", f_sca->name);
 
         int dim = 3;
@@ -2684,7 +2684,7 @@ cs_les_balance_create_fields(void)
                                         CS_MESH_LOCATION_CELLS,
                                         dim,
                                         false);
-        BFT_FREE(name);
+        CS_FREE(name);
       }
     }
   }
@@ -2861,7 +2861,7 @@ cs_les_balance_compute_rij(void)
 
   /* Get the triple corrleations mean UiUjUk */
   cs_real_t **uiujuk;
-  BFT_MALLOC(uiujuk, 10, cs_real_t*);
+  CS_MALLOC(uiujuk, 10, cs_real_t*);
 
   uiujuk[0] = cs_field_by_name("u1u2u3_m")->val;
   uiujuk[1] = cs_field_by_name("u1u1u1_m")->val;
@@ -2877,8 +2877,8 @@ cs_les_balance_compute_rij(void)
   /* Get additional averaged fields */
   cs_real_6_t  **nutdkuiuj;
   cs_real_33_t **uidujdxk;
-  BFT_MALLOC(nutdkuiuj, 3, cs_real_6_t*);
-  BFT_MALLOC(uidujdxk, 3, cs_real_33_t*);
+  CS_MALLOC(nutdkuiuj, 3, cs_real_6_t*);
+  CS_MALLOC(uidujdxk, 3, cs_real_33_t*);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) {
     nutdkuiuj[0] = (cs_real_6_t *)cs_field_by_name("nutd1uiuj_m")->val;
@@ -2896,8 +2896,8 @@ cs_les_balance_compute_rij(void)
 
   cs_field_bc_coeffs_t bc_coeffs;
   cs_field_bc_coeffs_init(&bc_coeffs);
-  BFT_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
 
   cs_real_t *coefas = bc_coeffs.a, *coefbs = bc_coeffs.b;
 
@@ -2915,11 +2915,11 @@ cs_les_balance_compute_rij(void)
                              &halo_type);
 
   /* Working arrays memory allocation */
-  BFT_MALLOC(w1, n_cells, cs_real_3_t);
-  BFT_MALLOC(w2, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w3, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
-  BFT_MALLOC(lapl, n_cells_ext, cs_real_t);
+  CS_MALLOC(w1, n_cells, cs_real_3_t);
+  CS_MALLOC(w2, n_cells_ext, cs_real_t);
+  CS_MALLOC(w3, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
+  CS_MALLOC(lapl, n_cells_ext, cs_real_t);
 
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     for (cs_lnum_t iii = 0; iii < 6; iii++) {
@@ -3220,18 +3220,18 @@ cs_les_balance_compute_rij(void)
     }
   }
 
-  BFT_FREE(uiujuk);
-  BFT_FREE(nutdkuiuj);
-  BFT_FREE(uidujdxk);
+  CS_FREE(uiujuk);
+  CS_FREE(nutdkuiuj);
+  CS_FREE(uidujdxk);
 
-  BFT_FREE(w1);
-  BFT_FREE(w2);
-  BFT_FREE(w3);
-  BFT_FREE(diverg);
-  BFT_FREE(lapl);
+  CS_FREE(w1);
+  CS_FREE(w2);
+  CS_FREE(w3);
+  CS_FREE(diverg);
+  CS_FREE(lapl);
 
-  BFT_FREE(coefas);
-  BFT_FREE(coefbs);
+  CS_FREE(coefas);
+  CS_FREE(coefbs);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3292,15 +3292,15 @@ cs_les_balance_compute_tui(void)
   cs_real_t *diverg, *lapl, *w2;
   cs_real_3_t *w1;
 
-  BFT_MALLOC(w1    , n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(w2    , n_cells_ext, cs_real_t);
-  BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
-  BFT_MALLOC(lapl  , n_cells_ext, cs_real_t);
+  CS_MALLOC(w1    , n_cells_ext, cs_real_3_t);
+  CS_MALLOC(w2    , n_cells_ext, cs_real_t);
+  CS_MALLOC(diverg, n_cells_ext, cs_real_t);
+  CS_MALLOC(lapl  , n_cells_ext, cs_real_t);
 
   cs_field_bc_coeffs_t bc_coeffs;
   cs_field_bc_coeffs_init(&bc_coeffs);
-  BFT_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs.a, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs.b, n_b_faces, cs_real_t);
 
  cs_real_t *coefas = bc_coeffs.a, *coefbs = bc_coeffs.b;
 
@@ -3750,12 +3750,12 @@ cs_les_balance_compute_tui(void)
     }
   }
 
-  BFT_FREE(w1);
-  BFT_FREE(w2);
-  BFT_FREE(diverg);
-  BFT_FREE(coefas);
-  BFT_FREE(coefbs);
-  BFT_FREE(lapl);
+  CS_FREE(w1);
+  CS_FREE(w2);
+  CS_FREE(diverg);
+  CS_FREE(coefas);
+  CS_FREE(coefbs);
+  CS_FREE(lapl);
 }
 
 /*----------------------------------------------------------------------------*/

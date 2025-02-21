@@ -40,8 +40,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_base.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
@@ -49,6 +47,7 @@
 #include "base/cs_field_operator.h"
 #include "alge/cs_gradient.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_rotation.h"
 #include "base/cs_time_step.h"
@@ -172,9 +171,9 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   cs_real_3_t *vortab = nullptr;
   cs_real_33_t *gradv = nullptr;
 
-  BFT_MALLOC(strain, n_cells_ext, cs_real_6_t);
-  BFT_MALLOC(vortab, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(strain, n_cells_ext, cs_real_6_t);
+  CS_MALLOC(vortab, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_field_gradient_vector(CS_F_(vel),
                            false,  /* use_previous_t */
@@ -212,7 +211,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
 
   /* Partially free memory (strain and vortab arrays are deallocated later) */
 
-  BFT_FREE(gradv);
+  CS_FREE(gradv);
 
   /* Computation of:
    * --------------
@@ -227,10 +226,10 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   cs_real_t *eta1 = nullptr;
   cs_real_t *eta2 = nullptr;
 
-  BFT_MALLOC(grdsij, n_cells_ext, cs_real_63_t);
-  BFT_MALLOC(brtild, n_cells, cs_real_t);
-  BFT_MALLOC(eta1, n_cells, cs_real_t);
-  BFT_MALLOC(eta2, n_cells, cs_real_t);
+  CS_MALLOC(grdsij, n_cells_ext, cs_real_63_t);
+  CS_MALLOC(brtild, n_cells, cs_real_t);
+  CS_MALLOC(eta1, n_cells, cs_real_t);
+  CS_MALLOC(eta2, n_cells, cs_real_t);
 
   /* Index connectivity */
 
@@ -450,12 +449,12 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
 
   /* Free memory */
 
-  BFT_FREE(strain);
-  BFT_FREE(vortab);
-  BFT_FREE(grdsij);
-  BFT_FREE(brtild);
-  BFT_FREE(eta1);
-  BFT_FREE(eta2);
+  CS_FREE(strain);
+  CS_FREE(vortab);
+  CS_FREE(grdsij);
+  CS_FREE(brtild);
+  CS_FREE(eta1);
+  CS_FREE(eta2);
 }
 
 /*----------------------------------------------------------------------------*/

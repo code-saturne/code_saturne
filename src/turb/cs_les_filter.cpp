@@ -47,11 +47,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "alge/cs_cell_to_vertex.h"
 #include "base/cs_ext_neighborhood.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -122,8 +122,8 @@ _les_filter_ext_neighborhood(int        stride,
 
   /* Allocate and initialize working buffers */
 
-  BFT_MALLOC(w1, n_elts, cs_real_t);
-  BFT_MALLOC(w2, n_elts, cs_real_t);
+  CS_MALLOC(w1, n_elts, cs_real_t);
+  CS_MALLOC(w2, n_elts, cs_real_t);
 
   /* Case for scalar variable */
   /*--------------------------*/
@@ -275,8 +275,8 @@ _les_filter_ext_neighborhood(int        stride,
       cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, f_val, stride);
   }
 
-  BFT_FREE(w2);
-  BFT_FREE(w1);
+  CS_FREE(w2);
+  CS_FREE(w1);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -316,8 +316,8 @@ cs_les_filter(int        stride,
 
   /* Allocate and initialize working buffer */
 
-  BFT_MALLOC(v_val, mesh->n_vertices*_stride, cs_real_t);
-  BFT_MALLOC(v_weight, mesh->n_vertices, cs_real_t);
+  CS_MALLOC(v_val, mesh->n_vertices*_stride, cs_real_t);
+  CS_MALLOC(v_weight, mesh->n_vertices, cs_real_t);
 
   /* Define filtered variable array */
 
@@ -387,8 +387,8 @@ cs_les_filter(int        stride,
 
   }
 
-  BFT_FREE(v_weight);
-  BFT_FREE(v_val);
+  CS_FREE(v_weight);
+  CS_FREE(v_val);
 
   /* Synchronize variable */
 

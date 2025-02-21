@@ -39,8 +39,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_field.h"
@@ -48,6 +46,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "turb/cs_turbulence_model.h"
@@ -88,7 +87,7 @@ cs_turbulence_ml_mu_t(void)
   cs_real_t coef = cs_math_pow2(cs_turb_xkappa*xlomlg)*sqrt(2.0);
 
   cs_real_33_t *gradv;
-  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_field_gradient_vector(CS_F_(vel),
                            false, // no use_previous_t
@@ -129,7 +128,7 @@ cs_turbulence_ml_mu_t(void)
 
   /* Free temporary array */
 
-  BFT_FREE(gradv);
+  CS_FREE(gradv);
 }
 
 /*----------------------------------------------------------------------------*/

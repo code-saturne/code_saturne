@@ -43,7 +43,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 
 #include "base/cs_array.h"
@@ -62,6 +61,7 @@
 #include "base/cs_log_iteration.h"
 #include "base/cs_mass_source_terms.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -1180,7 +1180,7 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
 
   CS_FREE_HD(grad_pk);
   CS_FREE_HD(rhs);
-  BFT_FREE(rovsdt);
+  CS_FREE(rovsdt);
 
   /* Clipping */
 
@@ -1278,7 +1278,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
   }
 
   /* Allocate arrays */
-  BFT_MALLOC(s2, n_cells_ext, cs_real_t);
+  CS_MALLOC(s2, n_cells_ext, cs_real_t);
 
   cs_field_gradient_vector(f_vel,
                            false, // no use_previous_t
@@ -1369,7 +1369,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
   }
 
   /* Free memory */
-  BFT_FREE(s2);
+  CS_FREE(s2);
 }
 
 /*----------------------------------------------------------------------------*/

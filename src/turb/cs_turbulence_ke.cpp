@@ -43,7 +43,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -59,6 +58,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
+#include "base/cs_mem.h"
 #include "alge/cs_gradient.h"
 #include "lagr/cs_lagr.h"
 #include "base/cs_log.h"
@@ -257,9 +257,9 @@ _tsepls(int       phase_id,
   }
 
   /* Free memory */
-  BFT_FREE(_gradv);
+  CS_FREE(_gradv);
 
-  BFT_FREE(w7);
+  CS_FREE(w7);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2124,8 +2124,8 @@ cs_turbulence_ke(int              phase_id,
   CS_FREE_HD(ce2rc);
   CS_FREE_HD(ce1rc);
 
-  BFT_FREE(tinstk);
-  BFT_FREE(tinste);
+  CS_FREE(tinstk);
+  CS_FREE(tinste);
 
 #if defined(HAVE_ACCEL)
   CS_FREE_HD(_grav);
@@ -2620,7 +2620,7 @@ cs_turbulence_ke_q(int          phase_id,
   cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
 
   if (f_vel->grad == nullptr) {
-    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+    CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
     /* Computation of the velocity gradient */
 
@@ -2723,7 +2723,7 @@ cs_turbulence_ke_q(int          phase_id,
   ctx.wait();
 
   /* Free memory */
-  BFT_FREE(_gradv);
+  CS_FREE(_gradv);
 }
 
 /*----------------------------------------------------------------------------*/

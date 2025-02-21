@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -51,6 +50,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_map.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "mesh/cs_mesh_location.h"
 
@@ -604,9 +604,9 @@ cs_turbulence_bc_init_pointers(void)
   _turb_bc_id.size_alp_bl_t = n_sca_alp_bl;
 
   if (_turb_bc_id.size_ut > 0)
-    BFT_REALLOC(_turb_bc_id.f_ut, n_sca_ut, cs_field_t *);
+    CS_REALLOC(_turb_bc_id.f_ut, n_sca_ut, cs_field_t *);
   if (_turb_bc_id.size_alp_bl_t > 0)
-    BFT_REALLOC(_turb_bc_id.f_alp_bl_t, n_sca_alp_bl, cs_field_t *);
+    CS_REALLOC(_turb_bc_id.f_alp_bl_t, n_sca_alp_bl, cs_field_t *);
 
   n_sca_ut = 0;
   n_sca_alp_bl = 0;
@@ -642,9 +642,9 @@ void
 cs_turbulence_bc_free_pointers(void)
 {
   if (_turb_bc_id.size_ut > 0)
-    BFT_FREE(_turb_bc_id.f_ut);
+    CS_FREE(_turb_bc_id.f_ut);
   if (_turb_bc_id.size_alp_bl_t > 0)
-    BFT_FREE(_turb_bc_id.f_alp_bl_t);
+    CS_FREE(_turb_bc_id.f_alp_bl_t);
 }
 
 /*----------------------------------------------------------------------------*/
