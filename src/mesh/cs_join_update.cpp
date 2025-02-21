@@ -40,7 +40,6 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -48,6 +47,7 @@
 #include "fvm/fvm_periodicity.h"
 
 #include "base/cs_all_to_all.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
 #include "base/cs_sort.h"
@@ -290,12 +290,12 @@ _sync_single_vertices(const cs_join_select_t  *selection,
 
   /* Allocate MPI buffers used for exchanging data */
 
-  BFT_MALLOC(request, c_vertices->n_ranks + s_vertices->n_ranks, MPI_Request);
-  BFT_MALLOC(status, c_vertices->n_ranks + s_vertices->n_ranks, MPI_Status);
+  CS_MALLOC(request, c_vertices->n_ranks + s_vertices->n_ranks, MPI_Request);
+  CS_MALLOC(status, c_vertices->n_ranks + s_vertices->n_ranks, MPI_Status);
 
   /* Synchronization of vertex coordinates */
 
-  BFT_MALLOC(s_buf, 3*s_vertices->n_elts, double);
+  CS_MALLOC(s_buf, 3*s_vertices->n_elts, double);
 
   /* Receive data from distant ranks */
 
@@ -324,7 +324,7 @@ _sync_single_vertices(const cs_join_select_t  *selection,
 
   /* Build c_buf = buffer to send */
 
-  BFT_MALLOC(c_buf, 3*c_vertices->n_elts, double);
+  CS_MALLOC(c_buf, 3*c_vertices->n_elts, double);
 
   for (shift = 0, i = 0; i < c_vertices->n_elts; i++) {
 
@@ -373,11 +373,10 @@ _sync_single_vertices(const cs_join_select_t  *selection,
 
   /* Free memory */
 
-  BFT_FREE(c_buf);
-  BFT_FREE(s_buf);
-  BFT_FREE(request);
-  BFT_FREE(status);
-
+  CS_FREE(c_buf);
+  CS_FREE(s_buf);
+  CS_FREE(request);
+  CS_FREE(status);
 }
 
 /*----------------------------------------------------------------------------
@@ -426,13 +425,13 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   /* Allocate MPI buffers used for exchanging data */
 
-  BFT_MALLOC(request, c_edges->n_ranks + s_edges->n_ranks, MPI_Request);
-  BFT_MALLOC(status, c_edges->n_ranks + s_edges->n_ranks, MPI_Status);
+  CS_MALLOC(request, c_edges->n_ranks + s_edges->n_ranks, MPI_Request);
+  CS_MALLOC(status, c_edges->n_ranks + s_edges->n_ranks, MPI_Status);
 
   /* Get a number of sub-element for each received edge */
 
-  BFT_MALLOC(s_count, s_edges->n_elts, int);
-  BFT_MALLOC(c_count, c_edges->n_elts, int);
+  CS_MALLOC(s_count, s_edges->n_elts, int);
+  CS_MALLOC(c_count, c_edges->n_elts, int);
 
   for (i = 0; i < s_edges->n_elts; i++)
     s_count[i] = 0;
@@ -505,7 +504,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
   /* Define buffer to send whith sub-elements from "coupled" edges to
      "single" edges */
 
-  BFT_MALLOC(c_sub_index, c_edges->n_ranks + 1, int);
+  CS_MALLOC(c_sub_index, c_edges->n_ranks + 1, int);
 
   c_sub_index[0] = 0;
   for (i = 0; i < c_edges->n_ranks; i++) {
@@ -519,8 +518,8 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   c_sub_size = c_sub_index[c_edges->n_ranks];
 
-  BFT_MALLOC(c_sub_gbuf, c_sub_size, cs_gnum_t);
-  BFT_MALLOC(c_sub_coord, 3*c_sub_size, cs_real_t);
+  CS_MALLOC(c_sub_gbuf, c_sub_size, cs_gnum_t);
+  CS_MALLOC(c_sub_coord, 3*c_sub_size, cs_real_t);
 
   shift = 0;
   for (rank = 0; rank < c_edges->n_ranks; rank++) {
@@ -548,7 +547,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   } /* End of loop on ranks */
 
-  BFT_MALLOC(s_sub_index, s_edges->n_ranks + 1, int);
+  CS_MALLOC(s_sub_index, s_edges->n_ranks + 1, int);
 
   s_sub_index[0] = 0;
   for (i = 0; i < s_edges->n_ranks; i++) {
@@ -562,8 +561,8 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   s_sub_size = s_sub_index[s_edges->n_ranks];
 
-  BFT_MALLOC(s_sub_gbuf, s_sub_size, cs_gnum_t);
-  BFT_MALLOC(s_sub_coord, 3*s_sub_size, cs_real_t);
+  CS_MALLOC(s_sub_gbuf, s_sub_size, cs_gnum_t);
+  CS_MALLOC(s_sub_coord, 3*s_sub_size, cs_real_t);
 
   /* Exchange sub-edge definition: global vertex number  */
 
@@ -667,13 +666,13 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   /* Free memory */
 
-  BFT_FREE(c_count);
-  BFT_FREE(c_sub_index);
-  BFT_FREE(c_sub_gbuf);
-  BFT_FREE(c_sub_coord);
-  BFT_FREE(s_sub_index);
-  BFT_FREE(request);
-  BFT_FREE(status);
+  CS_FREE(c_count);
+  CS_FREE(c_sub_index);
+  CS_FREE(c_sub_gbuf);
+  CS_FREE(c_sub_coord);
+  CS_FREE(s_sub_index);
+  CS_FREE(request);
+  CS_FREE(status);
 
   if (s_edges->n_elts > 0) {
 
@@ -681,7 +680,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     /* Update vertices from list of sub elements. Define new vertices */
 
-    BFT_MALLOC(order, s_sub_size, cs_lnum_t);
+    CS_MALLOC(order, s_sub_size, cs_lnum_t);
 
     cs_order_gnum_allocated(nullptr, s_sub_gbuf, order, s_sub_size);
 
@@ -702,11 +701,11 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     }  /* End of loop on received sub-elements */
 
-    BFT_REALLOC(mesh->global_vtx_num,
-                mesh->n_vertices + n_new_vertices, cs_gnum_t);
+    CS_REALLOC(mesh->global_vtx_num,
+               mesh->n_vertices + n_new_vertices, cs_gnum_t);
 
-    BFT_REALLOC(mesh->vtx_coord,
-                3*(mesh->n_vertices + n_new_vertices), cs_real_t);
+    CS_REALLOC(mesh->vtx_coord,
+               3*(mesh->n_vertices + n_new_vertices), cs_real_t);
 
     prev = 0;
     n_new_vertices = 0;
@@ -742,24 +741,24 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     /* Reorder global_vtx_num in order to have an ordered list */
 
-    BFT_REALLOC(order, mesh->n_vertices, cs_lnum_t);
+    CS_REALLOC(order, mesh->n_vertices, cs_lnum_t);
 
     cs_order_gnum_allocated(nullptr,
                             mesh->global_vtx_num,
                             order,
                             mesh->n_vertices);
 
-    BFT_MALLOC(new_vtx_gnum, mesh->n_vertices, cs_gnum_t);
+    CS_MALLOC(new_vtx_gnum, mesh->n_vertices, cs_gnum_t);
 
     for (i = 0; i < mesh->n_vertices; i++)
       new_vtx_gnum[i] = mesh->global_vtx_num[order[i]];
 
-    BFT_FREE(mesh->global_vtx_num);
+    CS_FREE(mesh->global_vtx_num);
     mesh->global_vtx_num = new_vtx_gnum;
 
     /* Define a new mesh->vtx_coord */
 
-    BFT_MALLOC(new_coord, 3*mesh->n_vertices, cs_real_t);
+    CS_MALLOC(new_coord, 3*mesh->n_vertices, cs_real_t);
 
     for (i = 0; i < mesh->n_vertices; i++) {
       vid = order[i];
@@ -767,12 +766,12 @@ _sync_single_edges(const cs_join_select_t   *selection,
         new_coord[3*i+k] = mesh->vtx_coord[3*vid+k];
     }
 
-    BFT_FREE(mesh->vtx_coord);
+    CS_FREE(mesh->vtx_coord);
     mesh->vtx_coord = new_coord;
 
     /* Define a new o2n_vtx_id and o2n_vtx_gnum */
 
-    BFT_MALLOC(inv_order, mesh->n_vertices, cs_lnum_t);
+    CS_MALLOC(inv_order, mesh->n_vertices, cs_lnum_t);
 
     for (i = 0; i < mesh->n_vertices; i++) {
       j = order[i];
@@ -793,7 +792,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     /* Update edge_builder_t structure (v2v_sub_idx and v2v_sub_lst) */
 
-    BFT_MALLOC(new_v2v_sub_idx, edge_builder->n_edges + 1, cs_lnum_t);
+    CS_MALLOC(new_v2v_sub_idx, edge_builder->n_edges + 1, cs_lnum_t);
 
     for (i = 0; i < edge_builder->n_edges; i++)
       new_v2v_sub_idx[i+1] =  edge_builder->v2v_sub_idx[i+1]
@@ -815,8 +814,8 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     /* Update v2v_sub_lst */
 
-    BFT_MALLOC(new_v2v_sub_lst,
-               new_v2v_sub_idx[edge_builder->n_edges], cs_lnum_t);
+    CS_MALLOC(new_v2v_sub_lst,
+              new_v2v_sub_idx[edge_builder->n_edges], cs_lnum_t);
 
     for (i = 0; i < edge_builder->n_edges; i++) {
 
@@ -855,10 +854,10 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     }
 
-    BFT_FREE(order);
-    BFT_FREE(inv_order);
-    BFT_FREE(edge_builder->v2v_sub_idx);
-    BFT_FREE(edge_builder->v2v_sub_lst);
+    CS_FREE(order);
+    CS_FREE(inv_order);
+    CS_FREE(edge_builder->v2v_sub_idx);
+    CS_FREE(edge_builder->v2v_sub_lst);
 
     edge_builder->v2v_sub_idx = new_v2v_sub_idx;
     edge_builder->v2v_sub_lst = new_v2v_sub_lst;
@@ -867,10 +866,9 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   /* Free memory */
 
-  BFT_FREE(s_count);
-  BFT_FREE(s_sub_gbuf);
-  BFT_FREE(s_sub_coord);
-
+  CS_FREE(s_count);
+  CS_FREE(s_sub_gbuf);
+  CS_FREE(s_sub_coord);
 }
 
 #endif /* HAVE_MPI */
@@ -911,11 +909,11 @@ _update_vertices_after_merge(const cs_gnum_t        o2n_vtx_gnum[],
 
   /* Update initial vertices (local and global numbering) */
 
-  BFT_MALLOC(o2n_vtx_id, n_bm_vertices, cs_lnum_t);
-  BFT_MALLOC(join2mesh_vtx_id, n_j_vertices, cs_lnum_t);
-  BFT_MALLOC(tmp_vtx_gnum, n_vertices, cs_gnum_t);
-  BFT_MALLOC(new_vtx_gnum, n_vertices, cs_gnum_t);
-  BFT_MALLOC(order, n_vertices, cs_lnum_t);
+  CS_MALLOC(o2n_vtx_id, n_bm_vertices, cs_lnum_t);
+  CS_MALLOC(join2mesh_vtx_id, n_j_vertices, cs_lnum_t);
+  CS_MALLOC(tmp_vtx_gnum, n_vertices, cs_gnum_t);
+  CS_MALLOC(new_vtx_gnum, n_vertices, cs_gnum_t);
+  CS_MALLOC(order, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_bm_vertices; i++)
     tmp_vtx_gnum[i] = o2n_vtx_gnum[i];
@@ -974,8 +972,8 @@ _update_vertices_after_merge(const cs_gnum_t        o2n_vtx_gnum[],
 
   /* Partial free memory */
 
-  BFT_FREE(tmp_vtx_gnum);
-  BFT_FREE(order);
+  CS_FREE(tmp_vtx_gnum);
+  CS_FREE(order);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (cs_glob_join_log != nullptr) {
@@ -1000,8 +998,8 @@ _update_vertices_after_merge(const cs_gnum_t        o2n_vtx_gnum[],
   mesh->n_vertices = n_am_vertices;
   mesh->n_g_vertices =  new_vtx_gnum[n_am_vertices - 1];
 
-  BFT_REALLOC(new_vtx_gnum, n_am_vertices, cs_gnum_t);
-  BFT_FREE(mesh->global_vtx_num);
+  CS_REALLOC(new_vtx_gnum, n_am_vertices, cs_gnum_t);
+  CS_FREE(mesh->global_vtx_num);
   mesh->global_vtx_num = new_vtx_gnum;
 
 #if defined(HAVE_MPI)
@@ -1022,7 +1020,7 @@ _update_vertices_after_merge(const cs_gnum_t        o2n_vtx_gnum[],
 
   /* Update vtx_coord for initial vertices */
 
-  BFT_MALLOC(new_vtx_coord, 3*n_am_vertices, cs_real_t);
+  CS_MALLOC(new_vtx_coord, 3*n_am_vertices, cs_real_t);
 
   for (i = 0; i < n_bm_vertices; i++)  /* Initialize new vertex coord. */
     for (k = 0; k < 3; k++)
@@ -1034,7 +1032,7 @@ _update_vertices_after_merge(const cs_gnum_t        o2n_vtx_gnum[],
     for (k = 0; k < 3; k++)
       new_vtx_coord[3*join2mesh_vtx_id[i]+k] = j_vertices[i].coord[k];
 
-  BFT_FREE(mesh->vtx_coord);
+  CS_FREE(mesh->vtx_coord);
   mesh->vtx_coord = new_vtx_coord;
 
   /* Return pointer */
@@ -1076,18 +1074,18 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
 
   if (mesh->global_vtx_num == nullptr) {
     tmp_global_vtx_num = true;
-    BFT_MALLOC(mesh->global_vtx_num, n_bs_vertices, cs_gnum_t);
+    CS_MALLOC(mesh->global_vtx_num, n_bs_vertices, cs_gnum_t);
     for (i = 0; i < n_bs_vertices; i++)
       mesh->global_vtx_num[i] = i+1;
   }
 
   /* Update initial vertices (local and global numbering) */
 
-  BFT_MALLOC(o2n_vtx_id, n_bs_vertices, cs_lnum_t);
-  BFT_MALLOC(join2mesh_vtx_id, n_j_vertices, cs_lnum_t);
-  BFT_MALLOC(tmp_vtx_gnum, n_vertices, cs_gnum_t);
-  BFT_MALLOC(new_vtx_gnum, n_vertices, cs_gnum_t);
-  BFT_MALLOC(order, n_vertices, cs_lnum_t);
+  CS_MALLOC(o2n_vtx_id, n_bs_vertices, cs_lnum_t);
+  CS_MALLOC(join2mesh_vtx_id, n_j_vertices, cs_lnum_t);
+  CS_MALLOC(tmp_vtx_gnum, n_vertices, cs_gnum_t);
+  CS_MALLOC(new_vtx_gnum, n_vertices, cs_gnum_t);
+  CS_MALLOC(order, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_bs_vertices; i++)
     tmp_vtx_gnum[i] = mesh->global_vtx_num[i];
@@ -1151,10 +1149,10 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
 
   /* Memory management */
 
-  BFT_FREE(tmp_vtx_gnum);
-  BFT_FREE(order);
-  BFT_REALLOC(new_vtx_gnum, n_as_vertices, cs_gnum_t);
-  BFT_MALLOC(new_vtx_coord, 3*n_as_vertices, cs_real_t);
+  CS_FREE(tmp_vtx_gnum);
+  CS_FREE(order);
+  CS_REALLOC(new_vtx_gnum, n_as_vertices, cs_gnum_t);
+  CS_MALLOC(new_vtx_coord, 3*n_as_vertices, cs_real_t);
 
   mesh->n_vertices = n_as_vertices;
 
@@ -1208,11 +1206,11 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
   /* Free memory */
 
   if (tmp_global_vtx_num)
-    BFT_FREE(mesh->global_vtx_num);
+    CS_FREE(mesh->global_vtx_num);
 
-  BFT_FREE(o2n_vtx_id);
-  BFT_FREE(mesh->vtx_coord);
-  BFT_FREE(mesh->global_vtx_num);
+  CS_FREE(o2n_vtx_id);
+  CS_FREE(mesh->vtx_coord);
+  CS_FREE(mesh->global_vtx_num);
 
   mesh->vtx_coord = new_vtx_coord;
   mesh->global_vtx_num = new_vtx_gnum;
@@ -1247,7 +1245,7 @@ _update_face_state(cs_join_select_t        *selection,
 
   cs_join_state_t  *states = nullptr;
 
-  BFT_MALLOC(states, mesh->n_vertices, cs_join_state_t);
+  CS_MALLOC(states, mesh->n_vertices, cs_join_state_t);
 
   /* Initialize */
 
@@ -1315,8 +1313,7 @@ _update_face_state(cs_join_select_t        *selection,
 
   /* Free memory */
 
-  BFT_FREE(states);
-
+  CS_FREE(states);
 }
 
 /*----------------------------------------------------------------------------
@@ -1344,7 +1341,7 @@ _init_edge_builder(const cs_join_select_t  *join_select,
 
   /* Allocate and initialize edge_builder_t structure */
 
-  BFT_MALLOC(edge_builder, 1, edge_builder_t);
+  CS_MALLOC(edge_builder, 1, edge_builder_t);
 
   edge_builder->n_vertices = mesh->n_vertices;
   edge_builder->n_edges = 0;
@@ -1352,7 +1349,7 @@ _init_edge_builder(const cs_join_select_t  *join_select,
   edge_builder->v2v_sub_idx = nullptr;
   edge_builder->v2v_sub_lst = nullptr;
 
-  BFT_MALLOC(edge_builder->v2v_idx, edge_builder->n_vertices + 1, cs_lnum_t);
+  CS_MALLOC(edge_builder->v2v_idx, edge_builder->n_vertices + 1, cs_lnum_t);
 
   for (i = 0; i < edge_builder->n_vertices + 1; i++)
     edge_builder->v2v_idx[i] = 0;
@@ -1377,7 +1374,7 @@ _init_edge_builder(const cs_join_select_t  *join_select,
 
   }
 
-  BFT_MALLOC(count, edge_builder->n_vertices, cs_lnum_t);
+  CS_MALLOC(count, edge_builder->n_vertices, cs_lnum_t);
 
   for (i = 0; i < edge_builder->n_vertices; i++) {
     edge_builder->v2v_idx[i+1] += edge_builder->v2v_idx[i];
@@ -1388,7 +1385,7 @@ _init_edge_builder(const cs_join_select_t  *join_select,
 
   /* Build vertex -> vertex list */
 
-  BFT_MALLOC(edge_builder->v2v_lst, edge_builder->n_edges, cs_lnum_t);
+  CS_MALLOC(edge_builder->v2v_lst, edge_builder->n_edges, cs_lnum_t);
 
   /* Fill v2v_lst */
 
@@ -1422,7 +1419,7 @@ _init_edge_builder(const cs_join_select_t  *join_select,
 
   /* Free memory */
 
-  BFT_FREE(count);
+  CS_FREE(count);
 
   /* Ordering in order to clean the list */
 
@@ -1457,7 +1454,7 @@ _init_edge_builder(const cs_join_select_t  *join_select,
   }
 
   edge_builder->n_edges = edge_builder->v2v_idx[edge_builder->n_vertices];
-  BFT_REALLOC(edge_builder->v2v_lst, edge_builder->n_edges, cs_lnum_t);
+  CS_REALLOC(edge_builder->v2v_lst, edge_builder->n_edges, cs_lnum_t);
 
   return edge_builder;
 }
@@ -1615,7 +1612,7 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
 
   /* Define a list of new vertices for each initial selected edge */
 
-  BFT_MALLOC(edge_builder->v2v_sub_idx, edge_builder->n_edges + 1, cs_lnum_t);
+  CS_MALLOC(edge_builder->v2v_sub_idx, edge_builder->n_edges + 1, cs_lnum_t);
 
   for (i = 0; i < edge_builder->n_edges + 1; i++)
     edge_builder->v2v_sub_idx[i] = 0;
@@ -1629,8 +1626,8 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
     bm_max = CS_MAX(bm_max, mesh->b_face_vtx_idx[j+1]-mesh->b_face_vtx_idx[j]);
   }
 
-  BFT_MALLOC(am_tmp, am_max + 1, cs_lnum_t);
-  BFT_MALLOC(bm_tmp, bm_max + 1, cs_lnum_t);
+  CS_MALLOC(am_tmp, am_max + 1, cs_lnum_t);
+  CS_MALLOC(bm_tmp, bm_max + 1, cs_lnum_t);
 
   /* Count the number of sub-elements to add to each initial edge */
 
@@ -1737,8 +1734,8 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
   for (i = 0; i < edge_builder->n_edges; i++)
     edge_builder->v2v_sub_idx[i+1] += edge_builder->v2v_sub_idx[i];
 
-  BFT_MALLOC(edge_builder->v2v_sub_lst,
-             edge_builder->v2v_sub_idx[edge_builder->n_edges], cs_lnum_t);
+  CS_MALLOC(edge_builder->v2v_sub_lst,
+            edge_builder->v2v_sub_idx[edge_builder->n_edges], cs_lnum_t);
 
   for (i = 0; i < edge_builder->v2v_sub_idx[edge_builder->n_edges]; i++)
     edge_builder->v2v_sub_lst[i] = -1; /* value = degenerate edge */
@@ -1822,8 +1819,8 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
 
   /* Free memory */
 
-  BFT_FREE(am_tmp);
-  BFT_FREE(bm_tmp);
+  CS_FREE(am_tmp);
+  CS_FREE(bm_tmp);
 }
 
 /*----------------------------------------------------------------------------
@@ -1853,7 +1850,7 @@ _update_selected_face_connect(const cs_join_select_t  *join_select,
   cs_lnum_t  *f2v_idx = *p_f2v_idx;
   cs_lnum_t  *f2v_lst = *p_f2v_lst;
 
-  BFT_MALLOC(new_f2v_idx, n_faces + 1, cs_lnum_t);
+  CS_MALLOC(new_f2v_idx, n_faces + 1, cs_lnum_t);
 
   for (i = 0; i < n_faces + 1; i++)
     new_f2v_idx[i] = 0;
@@ -1895,7 +1892,7 @@ _update_selected_face_connect(const cs_join_select_t  *join_select,
   for (i = 0; i < n_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
-  BFT_MALLOC(new_f2v_lst, new_f2v_idx[n_faces], cs_lnum_t);
+  CS_MALLOC(new_f2v_lst, new_f2v_idx[n_faces], cs_lnum_t);
 
   for (i = 0, select_id = 0; i < n_faces; i++) {
 
@@ -1936,8 +1933,8 @@ _update_selected_face_connect(const cs_join_select_t  *join_select,
 
   } /* End of loop on border faces */
 
-  BFT_FREE(f2v_lst);
-  BFT_FREE(f2v_idx);
+  CS_FREE(f2v_lst);
+  CS_FREE(f2v_idx);
 
   /* Return pointers */
 
@@ -1975,7 +1972,7 @@ _update_adj_face_connect(cs_lnum_t              n_adj_faces,
   cs_lnum_t  *f2v_idx = *p_f2v_idx;
   cs_lnum_t  *f2v_lst = *p_f2v_lst;
 
-  BFT_MALLOC(new_f2v_idx, n_faces+1, cs_lnum_t);
+  CS_MALLOC(new_f2v_idx, n_faces+1, cs_lnum_t);
 
   for (i = 0; i < n_faces + 1; i++)
     new_f2v_idx[i] = 0;
@@ -1983,7 +1980,7 @@ _update_adj_face_connect(cs_lnum_t              n_adj_faces,
   for (i = 0; i < n_faces; i++)
     max = CS_MAX(max, f2v_idx[i+1] - f2v_idx[i]);
 
-  BFT_MALLOC(tmp, max + 1, cs_lnum_t);
+  CS_MALLOC(tmp, max + 1, cs_lnum_t);
 
   /* first: update index (counting phase) */
 
@@ -2070,7 +2067,7 @@ _update_adj_face_connect(cs_lnum_t              n_adj_faces,
   for (i = 0; i < n_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
-  BFT_MALLOC(new_f2v_lst, new_f2v_idx[n_faces], cs_lnum_t);
+  CS_MALLOC(new_f2v_lst, new_f2v_idx[n_faces], cs_lnum_t);
 
   /* second: update list (filling phase) */
 
@@ -2161,9 +2158,9 @@ _update_adj_face_connect(cs_lnum_t              n_adj_faces,
 
   } /* End of loop on faces */
 
-  BFT_FREE(f2v_lst);
-  BFT_FREE(f2v_idx);
-  BFT_FREE(tmp);
+  CS_FREE(f2v_lst);
+  CS_FREE(f2v_idx);
+  CS_FREE(tmp);
 
   /* Return pointers */
 
@@ -2222,8 +2219,8 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
       reduce_size++;
   }
 
-  BFT_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
-  BFT_MALLOC(reduce_ids, reduce_size, cs_lnum_t);
+  CS_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
+  CS_MALLOC(reduce_ids, reduce_size, cs_lnum_t);
 
   reduce_size = 0;
 
@@ -2240,7 +2237,7 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
   cs_lnum_t  n2o_hist_size = n2o_hist->index[n2o_hist->n_elts];
 
   int  *dest_rank;
-  BFT_MALLOC(dest_rank, n2o_hist_size, int);
+  CS_MALLOC(dest_rank, n2o_hist_size, int);
 
   /* Count number of ranks associated to each new face */
 
@@ -2285,14 +2282,14 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
 
   /* Free memory */
 
-  BFT_FREE(reduce_ids);
-  BFT_FREE(reduce_index);
+  CS_FREE(reduce_ids);
+  CS_FREE(reduce_index);
 
   cs_lnum_t  n_b_ents = cs_all_to_all_n_elts_dest(d);
 
   /* Now switch from 1 to 2 entries in send and receive buffers */
 
-  BFT_REALLOC(b_gbuf, n_b_ents*2, cs_gnum_t);
+  CS_REALLOC(b_gbuf, n_b_ents*2, cs_gnum_t);
 
   for (cs_lnum_t i = n_b_ents - 1; i > -1; i--)
     b_gbuf[i*2] = b_gbuf[i];
@@ -2360,8 +2357,8 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
 
   /* Free memory */
 
-  BFT_FREE(p_gbuf);
-  BFT_FREE(b_gbuf);
+  CS_FREE(p_gbuf);
+  CS_FREE(b_gbuf);
 
   cs_all_to_all_destroy(&d);
 }
@@ -2397,13 +2394,13 @@ _get_linked_cell_gnum_and_family(const cs_join_select_t  *join_select,
 
   const int  n_ranks = cs_glob_n_ranks;
 
-  BFT_MALLOC(cell_gnum,
-             n2o_face_hist->index[n2o_face_hist->n_elts],
-             cs_gnum_t);
+  CS_MALLOC(cell_gnum,
+            n2o_face_hist->index[n2o_face_hist->n_elts],
+            cs_gnum_t);
 
-  BFT_MALLOC(face_family,
-             n2o_face_hist->index[n2o_face_hist->n_elts],
-             int);
+  CS_MALLOC(face_family,
+            n2o_face_hist->index[n2o_face_hist->n_elts],
+            int);
 
   if (n_ranks == 1) {
 
@@ -2538,7 +2535,7 @@ _print_error_info(cs_lnum_t               jfnum,
     const  int  rank_id = CS_MAX(cs_glob_rank_id, 0);
 
     len = strlen("JoinDBG_ErrorOrient.dat") + 4 + 1;
-    BFT_MALLOC(fullname, len, char);
+    CS_MALLOC(fullname, len, char);
     sprintf(fullname, "JoinDBG_ErrorOrient%04d.dat", rank_id);
 
     dbg_file = fopen(fullname, "w");
@@ -3028,12 +3025,12 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   mesh->n_b_faces = n_fb_faces;
   mesh->n_g_b_faces = n_fb_faces;
 
-  BFT_MALLOC(new_f2v_idx, n_fb_faces + 1, cs_lnum_t);
-  BFT_MALLOC(new_face_cells, n_fb_faces, cs_lnum_t);
-  BFT_MALLOC(_new_face_family, n_fb_faces, int);
+  CS_MALLOC(new_f2v_idx, n_fb_faces + 1, cs_lnum_t);
+  CS_MALLOC(new_face_cells, n_fb_faces, cs_lnum_t);
+  CS_MALLOC(_new_face_family, n_fb_faces, int);
 
   if (n_ranks > 1)
-    BFT_MALLOC(new_fgnum, n_fb_faces, cs_gnum_t);
+    CS_MALLOC(new_fgnum, n_fb_faces, cs_gnum_t);
 
   max_size = 0;
   for (i = 0; i < n_ib_faces; i++)
@@ -3043,8 +3040,8 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
     max_size = CS_MAX(max_size,
                       jmesh->face_vtx_idx[i+1]-jmesh->face_vtx_idx[i]);
 
-  BFT_MALLOC(gtmp, 2*(max_size+1), cs_gnum_t);
-  BFT_MALLOC(ltmp, max_size, cs_lnum_t);
+  CS_MALLOC(gtmp, 2*(max_size+1), cs_gnum_t);
+  CS_MALLOC(ltmp, max_size, cs_lnum_t);
 
   /* Delete faces included in join_selection. Add other initial faces.
       - face -> vertex index
@@ -3215,8 +3212,8 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
   } /* If n_new_b_faces > 0 */
 
-  BFT_FREE(gtmp);
-  BFT_FREE(ltmp);
+  CS_FREE(gtmp);
+  CS_FREE(ltmp);
 
   assert(mesh->n_b_faces == n_fb_faces);
 
@@ -3226,7 +3223,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   for (i = 0; i < n_fb_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
-  BFT_MALLOC(new_f2v_lst, new_f2v_idx[n_fb_faces], cs_lnum_t);
+  CS_MALLOC(new_f2v_lst, new_f2v_idx[n_fb_faces], cs_lnum_t);
 
   /* Define the face -> vertex connectivity */
 
@@ -3290,17 +3287,17 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
     fvm_io_num_destroy(new_io_num);
 
-    BFT_FREE(mesh->global_b_face_num);
+    CS_FREE(mesh->global_b_face_num);
     mesh->global_b_face_num = new_fgnum;
 
   }
 
   /* Free memory */
 
-  BFT_FREE(mesh->b_face_vtx_idx);
-  BFT_FREE(mesh->b_face_vtx_lst);
-  BFT_FREE(mesh->b_face_cells);
-  BFT_FREE(mesh->b_face_family);
+  CS_FREE(mesh->b_face_vtx_idx);
+  CS_FREE(mesh->b_face_vtx_lst);
+  CS_FREE(mesh->b_face_cells);
+  CS_FREE(mesh->b_face_family);
 
   /* Update structure */
 
@@ -3343,8 +3340,8 @@ _update_families(const cs_join_gset_t    *n2o_face_hist,
 
   assert(n2o_face_hist->n_elts == join_mesh->n_faces);
 
-  BFT_MALLOC(face_family_idx, join_mesh->n_faces + 1, cs_lnum_t);
-  BFT_MALLOC(face_family, n2o_face_hist->index[join_mesh->n_faces], int);
+  CS_MALLOC(face_family_idx, join_mesh->n_faces + 1, cs_lnum_t);
+  CS_MALLOC(face_family, n2o_face_hist->index[join_mesh->n_faces], int);
 
   /* Compact numbering (remove zeroes) */
 
@@ -3380,12 +3377,12 @@ _update_families(const cs_join_gset_t    *n2o_face_hist,
     face_family_idx[i+1] = k;
   }
 
-  BFT_REALLOC(face_family, face_family_idx[join_mesh->n_faces], int);
+  CS_REALLOC(face_family, face_family_idx[join_mesh->n_faces], int);
 
   /* Build new combined families if necessary and flatten element families */
 
   if (mesh->n_families > 0) {
-    BFT_MALLOC(new_face_family, join_mesh->n_faces, int);
+    CS_MALLOC(new_face_family, join_mesh->n_faces, int);
     cs_mesh_group_combine_classes(mesh,
                                   join_mesh->n_faces,
                                   face_family_idx,
@@ -3393,8 +3390,8 @@ _update_families(const cs_join_gset_t    *n2o_face_hist,
                                   new_face_family);
   }
 
-  BFT_FREE(face_family);
-  BFT_FREE(face_family_idx);
+  CS_FREE(face_family);
+  CS_FREE(face_family_idx);
 
   return new_face_family;
 }
@@ -3454,10 +3451,10 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   mesh->n_i_faces = n_fi_faces;
   mesh->n_g_i_faces = n_fi_faces;
 
-  BFT_REALLOC(new_f2v_idx, n_fi_faces + 1, cs_lnum_t);
-  BFT_REALLOC(new_face_cells, n_fi_faces, cs_lnum_2_t);
-  BFT_REALLOC(_new_face_family, n_fi_faces, int);
-  BFT_REALLOC(_new_face_r_gen, n_fi_faces, char);
+  CS_REALLOC(new_f2v_idx, n_fi_faces + 1, cs_lnum_t);
+  CS_REALLOC(new_face_cells, n_fi_faces, cs_lnum_2_t);
+  CS_REALLOC(_new_face_family, n_fi_faces, int);
+  CS_REALLOC(_new_face_r_gen, n_fi_faces, char);
 
   max_size = 0;
   for (i = 0; i < jmesh->n_faces; i++)
@@ -3470,9 +3467,9 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
                       mesh->b_face_vtx_idx[id+1]-mesh->b_face_vtx_idx[id]);
   }
 
-  BFT_MALLOC(dtmp, 6*(max_size+1), double);
-  BFT_MALLOC(gtmp, 2*(max_size+1), cs_gnum_t);
-  BFT_MALLOC(ltmp, max_size, cs_lnum_t);
+  CS_MALLOC(dtmp, 6*(max_size+1), double);
+  CS_MALLOC(gtmp, 2*(max_size+1), cs_gnum_t);
+  CS_MALLOC(ltmp, max_size, cs_lnum_t);
 
   /* Add faces resulting from the joining operation
      - face -> vertex index
@@ -3572,9 +3569,9 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
 
   } /* End of loop on jmesh faces */
 
-  BFT_FREE(dtmp);
-  BFT_FREE(gtmp);
-  BFT_FREE(ltmp);
+  CS_FREE(dtmp);
+  CS_FREE(gtmp);
+  CS_FREE(ltmp);
 
   assert(mesh->n_i_faces == n_fi_faces);
 
@@ -3583,7 +3580,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   for (i = n_ii_faces; i < n_fi_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
-  BFT_REALLOC(new_f2v_lst, new_f2v_idx[n_fi_faces], cs_lnum_t);
+  CS_REALLOC(new_f2v_lst, new_f2v_idx[n_fi_faces], cs_lnum_t);
 
   /* Define the face -> vertex connectivity list */
 
@@ -3608,7 +3605,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
     fvm_io_num_t *new_io_num = nullptr;
     const cs_gnum_t  *new_io_gnum = nullptr;
 
-    BFT_REALLOC(new_fgnum, mesh->n_i_faces, cs_gnum_t);
+    CS_REALLOC(new_fgnum, mesh->n_i_faces, cs_gnum_t);
 
     n_fi_faces = n_ii_faces;
     for (i = 0; i < jmesh->n_faces; i++) {
@@ -3663,7 +3660,7 @@ _clean_vertices(cs_join_param_t   param,
 
   /* Tag vertices really used in the mesh definition */
 
-  BFT_MALLOC(tag, n_i_vertices, cs_lnum_t);
+  CS_MALLOC(tag, n_i_vertices, cs_lnum_t);
 
   for (i = 0; i < n_i_vertices; i++)
     tag[i] = 0;
@@ -3691,7 +3688,7 @@ _clean_vertices(cs_join_param_t   param,
   /* Update global vertex information */
 
   if (n_ranks == 1) /* not more useful for sequential computations */
-    BFT_FREE(mesh->global_vtx_num);
+    CS_FREE(mesh->global_vtx_num);
 
   if (n_ranks > 1) {
 
@@ -3705,7 +3702,7 @@ _clean_vertices(cs_join_param_t   param,
       if (tag[i] > 0)
         mesh->global_vtx_num[n_f_vertices++] = mesh->global_vtx_num[i];
 
-    BFT_REALLOC(mesh->global_vtx_num, n_f_vertices, cs_gnum_t);
+    CS_REALLOC(mesh->global_vtx_num, n_f_vertices, cs_gnum_t);
 
     vtx_io_num = fvm_io_num_create(nullptr,
                                    mesh->global_vtx_num,
@@ -3736,7 +3733,7 @@ _clean_vertices(cs_join_param_t   param,
     }
   }
 
-  BFT_REALLOC(mesh->vtx_coord, 3*mesh->n_vertices, cs_coord_t);
+  CS_REALLOC(mesh->vtx_coord, 3*mesh->n_vertices, cs_coord_t);
 
   /* Update interior face connectivity */
 
@@ -3758,8 +3755,7 @@ _clean_vertices(cs_join_param_t   param,
     }
   }
 
-  BFT_FREE(tag);
-
+  CS_FREE(tag);
 }
 
 /*----------------------------------------------------------------------------
@@ -3988,7 +3984,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t        join_param,
                          join2mesh_vtx_id,
                          edge_builder);
 
-  BFT_FREE(o2n_vtx_gnum); /* Not useful after this point */
+  CS_FREE(o2n_vtx_gnum); /* Not useful after this point */
 
 #if defined(HAVE_MPI)
   if (join_select->do_single_sync == true) {
@@ -4076,11 +4072,11 @@ cs_join_update_mesh_after_merge(cs_join_param_t        join_param,
 
   /* Free memory */
 
-  BFT_FREE(edge_builder->v2v_idx);
-  BFT_FREE(edge_builder->v2v_lst);
-  BFT_FREE(edge_builder->v2v_sub_idx);
-  BFT_FREE(edge_builder->v2v_sub_lst);
-  BFT_FREE(edge_builder);
+  CS_FREE(edge_builder->v2v_idx);
+  CS_FREE(edge_builder->v2v_lst);
+  CS_FREE(edge_builder->v2v_sub_idx);
+  CS_FREE(edge_builder->v2v_sub_lst);
+  CS_FREE(edge_builder);
 
   /* Update initial face connectivity for the remaining faces */
 
@@ -4162,8 +4158,8 @@ cs_join_update_mesh_after_merge(cs_join_param_t        join_param,
 
   /* Free memory */
 
-  BFT_FREE(join2mesh_vtx_id);
-  BFT_FREE(o2n_vtx_id);
+  CS_FREE(join2mesh_vtx_id);
+  CS_FREE(o2n_vtx_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -4214,7 +4210,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
   assert(n2o_face_hist->n_elts == join_mesh->n_faces);
 
-  BFT_MALLOC(new_face_type, join_mesh->n_faces, cs_join_face_type_t);
+  CS_MALLOC(new_face_type, join_mesh->n_faces, cs_join_face_type_t);
 
   for (i = 0; i < join_mesh->n_faces; i++) {
 
@@ -4356,7 +4352,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
     if (n_multiple_bfaces > 0) {
 
-      BFT_MALLOC(multiple_bfaces, n_multiple_bfaces, cs_lnum_t);
+      CS_MALLOC(multiple_bfaces, n_multiple_bfaces, cs_lnum_t);
 
       n_multiple_bfaces = 0;
       for (i = 0; i < join_mesh->n_faces; i++)
@@ -4370,7 +4366,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                               n_multiple_bfaces,
                               multiple_bfaces);
 
-    BFT_FREE(multiple_bfaces);
+    CS_FREE(multiple_bfaces);
 
   }
 
@@ -4393,7 +4389,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                                      join_mesh,
                                      mesh);
 
-  BFT_FREE(old_face_family);
+  CS_FREE(old_face_family);
 
   /*  Update mesh structure:
         - Update first the interior faces because we need the global
@@ -4421,7 +4417,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                         n2o_face_hist,
                         mesh);
 
-  BFT_FREE(new_face_family);
+  CS_FREE(new_face_family);
 
   if (join_param.perio_type != FVM_PERIODICITY_NULL)
     cs_join_perio_split_update(join_param,
@@ -4437,9 +4433,9 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
   /* Free memory */
 
-  BFT_FREE(new_face_type);
-  BFT_FREE(cell_gnum);
-  BFT_FREE(join2mesh_vtx_id);
+  CS_FREE(new_face_type);
+  CS_FREE(cell_gnum);
+  CS_FREE(join2mesh_vtx_id);
 
   /* Post if required */
 
@@ -4523,12 +4519,12 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
     max_connect = CS_MAX(max_connect,
                          mesh->i_face_vtx_idx[i+1] - mesh->i_face_vtx_idx[i]);
 
-  BFT_MALLOC(kill, max_connect + 2, cs_lnum_t);
-  BFT_MALLOC(connect, max_connect + 2, cs_lnum_t);
+  CS_MALLOC(kill, max_connect + 2, cs_lnum_t);
+  CS_MALLOC(connect, max_connect + 2, cs_lnum_t);
 
   if (param.visualization > 1) {
-    BFT_MALLOC(b_clean_faces, b_size, cs_lnum_t);
-    BFT_MALLOC(i_clean_faces, i_size, cs_lnum_t);
+    CS_MALLOC(b_clean_faces, b_size, cs_lnum_t);
+    CS_MALLOC(i_clean_faces, i_size, cs_lnum_t);
   }
 
   /* Border face treatment */
@@ -4565,7 +4561,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
       if (param.visualization > 1) {
         if (n_b_clean_faces + 1 > b_size) {
           b_size *= 2;
-          BFT_REALLOC(b_clean_faces, b_size, cs_lnum_t);
+          CS_REALLOC(b_clean_faces, b_size, cs_lnum_t);
         }
         b_clean_faces[n_b_clean_faces] = i;
       }
@@ -4589,8 +4585,8 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
     mesh->b_face_vtx_idx[i] = mesh->b_face_vtx_idx[i-1];
   mesh->b_face_vtx_idx[0] = 0;
 
-  BFT_REALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_idx[mesh->n_b_faces],
-              cs_lnum_t);
+  CS_REALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_idx[mesh->n_b_faces],
+             cs_lnum_t);
 
   /* Interior face treatment */
 
@@ -4627,7 +4623,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
       if (param.visualization > 1) {
         if (n_i_clean_faces + 1 > i_size) {
           i_size *= 2;
-          BFT_REALLOC(i_clean_faces, i_size, cs_lnum_t);
+          CS_REALLOC(i_clean_faces, i_size, cs_lnum_t);
         }
         i_clean_faces[n_i_clean_faces] = i;
       }
@@ -4651,8 +4647,8 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
     mesh->i_face_vtx_idx[i] = mesh->i_face_vtx_idx[i-1];
   mesh->i_face_vtx_idx[0] = 0;
 
-  BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_idx[mesh->n_i_faces],
-              cs_lnum_t);
+  CS_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_idx[mesh->n_i_faces],
+             cs_lnum_t);
 
   n_g_clean_faces[0] = n_i_clean_faces;
   n_g_clean_faces[1] = n_b_clean_faces;
@@ -4671,8 +4667,8 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
     if (n_g_clean_faces[0] > 0 || n_g_clean_faces[1] > 0) {
 
-      BFT_REALLOC(i_clean_faces, n_i_clean_faces, cs_lnum_t);
-      BFT_REALLOC(b_clean_faces, n_b_clean_faces, cs_lnum_t);
+      CS_REALLOC(i_clean_faces, n_i_clean_faces, cs_lnum_t);
+      CS_REALLOC(b_clean_faces, n_b_clean_faces, cs_lnum_t);
 
       cs_join_post_cleaned_faces(n_i_clean_faces,
                                  i_clean_faces,
@@ -4682,8 +4678,8 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
     }
 
-    BFT_FREE(b_clean_faces);
-    BFT_FREE(i_clean_faces);
+    CS_FREE(b_clean_faces);
+    CS_FREE(i_clean_faces);
 
   } /* visualization > 1 */
 
@@ -4701,9 +4697,8 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
   /* Free memory */
 
-  BFT_FREE(kill);
-  BFT_FREE(connect);
-
+  CS_FREE(kill);
+  CS_FREE(connect);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -46,11 +46,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_log.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -164,8 +164,8 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
   cs_real_t  rdptmp[5];
   const size_t  buf_stride = n_zones;
 
-  BFT_MALLOC(i_buf, n_zones, int);
-  BFT_MALLOC(r_buf, buf_stride*7, cs_real_t);
+  CS_MALLOC(i_buf, n_zones, int);
+  CS_MALLOC(r_buf, buf_stride*7, cs_real_t);
 
   int        *indtp = i_buf;
   cs_real_t  *tzomax = r_buf;
@@ -634,8 +634,8 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
     }
   }
 
-  BFT_FREE(i_buf);
-  BFT_FREE(r_buf);
+  CS_FREE(i_buf);
+  CS_FREE(r_buf);
 }
 
 /*----------------------------------------------------------------------------*/

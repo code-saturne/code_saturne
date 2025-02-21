@@ -46,10 +46,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -304,10 +304,10 @@ _interpolation4d_rcfsk(int       val_cal,
 
   cs_real_t *karray, *kint1, *kint2, *kint3;
 
-  BFT_MALLOC(karray, 2 * 2 * 2 * 2 * nq_rcfsk, cs_real_t);
-  BFT_MALLOC(kint1, 2 * 2 * 2 * nq_rcfsk, cs_real_t);
-  BFT_MALLOC(kint2, 2 * 2 * nq_rcfsk, cs_real_t);
-  BFT_MALLOC(kint3, 2 * nq_rcfsk, cs_real_t);
+  CS_MALLOC(karray, 2 * 2 * 2 * 2 * nq_rcfsk, cs_real_t);
+  CS_MALLOC(kint1, 2 * 2 * 2 * nq_rcfsk, cs_real_t);
+  CS_MALLOC(kint2, 2 * 2 * nq_rcfsk, cs_real_t);
+  CS_MALLOC(kint3, 2 * nq_rcfsk, cs_real_t);
 
   /* number of interpolation points along t & x */
   _gridposnbsg1_rcfsk(t, xco2, xh2o, fvs, itx);
@@ -417,10 +417,10 @@ _interpolation4d_rcfsk(int       val_cal,
   }
 
   /* Free memory */
-  BFT_FREE(karray);
-  BFT_FREE(kint1);
-  BFT_FREE(kint2);
-  BFT_FREE(kint3);
+  CS_FREE(karray);
+  CS_FREE(kint1);
+  CS_FREE(kint2);
+  CS_FREE(kint3);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -454,7 +454,6 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
                       cs_real_t        *restrict aloc,
                       cs_real_t        *restrict alocb)
 {
-
   ipass_rcfsk++;
   if (ipass_rcfsk == 1) { /* Read parameters files */
 
@@ -462,8 +461,12 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
     const char *pathdatadir = cs_base_get_pkgdatadir();
     char        filepath[256];
 
-    BFT_MALLOC(kgdatabase, nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk * nt_rcfsk * nq_rcfsk, cs_real_t);
-    BFT_MALLOC(agdatabase, nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk * nt_rcfsk * nq_rcfsk, cs_real_t);
+    CS_MALLOC(kgdatabase,
+              nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk * nt_rcfsk * nq_rcfsk,
+              cs_real_t);
+    CS_MALLOC(agdatabase,
+              nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk * nt_rcfsk * nq_rcfsk,
+              cs_real_t);
 
     /* Read k-distributions kgdatabase (cm-1) */
     {
@@ -499,7 +502,8 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
       fclose(radfile);
     }
 
-    const int ntot = nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk * nt_rcfsk * nq_rcfsk;
+    const int ntot
+      = nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk * nt_rcfsk * nq_rcfsk;
 
     for (int it = 0; it < ntot; it++)
       kgdatabase[it] *= 100.;
@@ -509,8 +513,8 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
   /* Determination of the local absorption coefficient and local function a */
 
   cs_real_t *kgfsk, *agfsk;
-  BFT_MALLOC(kgfsk, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
-  BFT_MALLOC(agfsk, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  CS_MALLOC(kgfsk, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  CS_MALLOC(agfsk, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
 
   for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
 
@@ -532,8 +536,8 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
     }
   }
 
-  BFT_FREE(kgfsk);
-  BFT_FREE(agfsk);
+  CS_FREE(kgfsk);
+  CS_FREE(agfsk);
 
   /* Determination of the function a for boundary faces  */
 
@@ -542,7 +546,7 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
   cs_real_t  *agb;
   cs_lnum_t  *ifabor = cs_glob_mesh->b_face_cells;
 
-  BFT_MALLOC(agb, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  CS_MALLOC(agb, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
 
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
 
@@ -560,7 +564,7 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
     }
   }
 
-  BFT_FREE(agb);
+  CS_FREE(agb);
 }
 
 /*----------------------------------------------------------------------------*/

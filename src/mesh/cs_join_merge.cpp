@@ -43,7 +43,6 @@
  * Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
@@ -51,6 +50,7 @@
 #include "base/cs_all_to_all.h"
 #include "base/cs_block_dist.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
 #include "mesh/cs_join_post.h"
@@ -298,8 +298,8 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
      for the new vertices.
      First, build a tag associated to each intersection */
 
-  BFT_MALLOC(new_vtx_gnum, n_new_vertices, cs_gnum_t);
-  BFT_MALLOC(inter_tag, 3*n_new_vertices, cs_gnum_t);
+  CS_MALLOC(new_vtx_gnum, n_new_vertices, cs_gnum_t);
+  CS_MALLOC(inter_tag, 3*n_new_vertices, cs_gnum_t);
 
   n_new_vertices = 0;
 
@@ -351,11 +351,11 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
 
   /* Create a new fvm_io_num_t structure */
 
-  BFT_MALLOC(order, n_new_vertices, cs_lnum_t);
+  CS_MALLOC(order, n_new_vertices, cs_lnum_t);
 
   cs_order_gnum_allocated_s(nullptr, inter_tag, 3, order, n_new_vertices);
 
-  BFT_MALLOC(adjacency, 3*n_new_vertices, cs_gnum_t);
+  CS_MALLOC(adjacency, 3*n_new_vertices, cs_gnum_t);
 
   for (i = 0; i < n_new_vertices; i++) {
 
@@ -367,7 +367,7 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
 
   }
 
-  BFT_FREE(inter_tag);
+  CS_FREE(inter_tag);
 
   if (cs_glob_n_ranks > 1) {
 
@@ -418,8 +418,8 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
 
   /* Free memory */
 
-  BFT_FREE(order);
-  BFT_FREE(adjacency);
+  CS_FREE(order);
+  CS_FREE(adjacency);
 
   /* Return pointer */
 
@@ -723,8 +723,8 @@ _parall_tag_init(cs_block_dist_info_t    bi,
 
   /* Allocate and initialize vtx_tag associated to the local rank */
 
-  BFT_MALLOC(glob_vtx_tag, bi.block_size, cs_gnum_t);
-  BFT_MALLOC(prev_glob_vtx_tag, bi.block_size, cs_gnum_t);
+  CS_MALLOC(glob_vtx_tag, bi.block_size, cs_gnum_t);
+  CS_MALLOC(prev_glob_vtx_tag, bi.block_size, cs_gnum_t);
 
   for (cs_lnum_t i = 0; i < bi.block_size; i++) {
     cs_gnum_t gi = i;
@@ -735,10 +735,10 @@ _parall_tag_init(cs_block_dist_info_t    bi,
   /* Create all to all distributor */
 
   int  *dest_rank;
-  BFT_MALLOC(dest_rank, n_vertices, int);
+  CS_MALLOC(dest_rank, n_vertices, int);
 
   cs_gnum_t  *wv_gnum;
-  BFT_MALLOC(wv_gnum, n_vertices, cs_gnum_t);
+  CS_MALLOC(wv_gnum, n_vertices, cs_gnum_t);
 
   for (cs_lnum_t i = 0; i < n_vertices; i++) {
     dest_rank[i] = (work->vertices[i].gnum - 1) % _n_ranks;
@@ -761,7 +761,7 @@ _parall_tag_init(cs_block_dist_info_t    bi,
                                                   false, /* reverse */
                                                   wv_gnum);
 
-  BFT_FREE(wv_gnum);
+  CS_FREE(wv_gnum);
 
   /* Return pointers */
 
@@ -805,8 +805,8 @@ _tag_equiv_vertices(cs_gnum_t              n_g_vertices_tot,
 
   /* Local initialization : we tag each vertex by its global number */
 
-  BFT_MALLOC(prev_vtx_tag, n_vertices, cs_gnum_t);
-  BFT_MALLOC(vtx_tag, n_vertices, cs_gnum_t);
+  CS_MALLOC(prev_vtx_tag, n_vertices, cs_gnum_t);
+  CS_MALLOC(vtx_tag, n_vertices, cs_gnum_t);
 
   for (i = 0; i < work->n_vertices; i++) {
 
@@ -855,8 +855,8 @@ _tag_equiv_vertices(cs_gnum_t              n_g_vertices_tot,
 
     cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
     cs_gnum_t *send_glob_buffer, *recv_glob_buffer;
-    BFT_MALLOC(send_glob_buffer, n_vertices, cs_gnum_t);
-    BFT_MALLOC(recv_glob_buffer, n_recv, cs_gnum_t);
+    CS_MALLOC(send_glob_buffer, n_vertices, cs_gnum_t);
+    CS_MALLOC(recv_glob_buffer, n_recv, cs_gnum_t);
 
     go_on = _global_spread(bi.block_size,
                            d,
@@ -890,11 +890,11 @@ _tag_equiv_vertices(cs_gnum_t              n_g_vertices_tot,
 
     /* Partial free */
 
-    BFT_FREE(glob_vtx_tag);
-    BFT_FREE(prev_glob_vtx_tag);
-    BFT_FREE(send_glob_buffer);
-    BFT_FREE(recv2glob);
-    BFT_FREE(recv_glob_buffer);
+    CS_FREE(glob_vtx_tag);
+    CS_FREE(prev_glob_vtx_tag);
+    CS_FREE(send_glob_buffer);
+    CS_FREE(recv2glob);
+    CS_FREE(recv_glob_buffer);
 
     cs_all_to_all_destroy(&d);
 
@@ -902,7 +902,7 @@ _tag_equiv_vertices(cs_gnum_t              n_g_vertices_tot,
 
 #endif
 
-  BFT_FREE(prev_vtx_tag);
+  CS_FREE(prev_vtx_tag);
 
   if (verbosity > 3) {
     fprintf(logfile,
@@ -986,7 +986,7 @@ _build_parall_merge_structures(const cs_join_mesh_t    *work,
 
   /* Free memory */
 
-  BFT_FREE(recv_gbuf);
+  CS_FREE(recv_gbuf);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (cs_glob_join_log != nullptr) {
@@ -1126,7 +1126,7 @@ _pre_merge(cs_join_param_t     param,
     char  *filename = nullptr;
 
     len = strlen("JoinDBG_InitMergeSet.dat")+1+2+4;
-    BFT_MALLOC(filename, len, char);
+    CS_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_InitMergeSet%04d.dat",
             param.num, CS_MAX(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
@@ -1134,7 +1134,7 @@ _pre_merge(cs_join_param_t     param,
     cs_join_gset_dump(dbg_file, merge_set);
 
     fflush(dbg_file);
-    BFT_FREE(filename);
+    CS_FREE(filename);
     fclose(dbg_file);
   }
 #endif
@@ -1145,11 +1145,11 @@ _pre_merge(cs_join_param_t     param,
     max_n_sub_elts = CS_MAX(max_n_sub_elts,
                             merge_index[i+1] - merge_index[i]);
 
-  BFT_MALLOC(sub_list, max_n_sub_elts, cs_gnum_t);
+  CS_MALLOC(sub_list, max_n_sub_elts, cs_gnum_t);
 
   /* Store initial merge list */
 
-  BFT_MALLOC(init_list, merge_index[merge_set->n_elts], cs_gnum_t);
+  CS_MALLOC(init_list, merge_index[merge_set->n_elts], cs_gnum_t);
 
   for (i = 0; i < merge_index[merge_set->n_elts]; i++)
     init_list[i] = merge_list[i];
@@ -1263,8 +1263,8 @@ _pre_merge(cs_join_param_t     param,
 
   /* Free memory */
 
-  BFT_FREE(sub_list);
-  BFT_FREE(init_list);
+  CS_FREE(sub_list);
+  CS_FREE(init_list);
 
   /* Return pointer */
 
@@ -1839,7 +1839,7 @@ _merge_vertices(cs_join_param_t    param,
     char  *filename = nullptr;
 
     len = strlen("JoinDBG_MergeSet.dat")+1+2+4;
-    BFT_MALLOC(filename, len, char);
+    CS_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_MergeSet%04d.dat",
             param.num, CS_MAX(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
@@ -1847,7 +1847,7 @@ _merge_vertices(cs_join_param_t    param,
     cs_join_gset_dump(dbg_file, merge_set);
 
     fflush(dbg_file);
-    BFT_FREE(filename);
+    CS_FREE(filename);
     fclose(dbg_file);
   }
 #endif /* defined(DEBUG) && !defined(NDEBUG) */
@@ -1888,11 +1888,11 @@ _merge_vertices(cs_join_param_t    param,
 
   /* Temporary buffers allocation */
 
-  BFT_MALLOC(ibuf, 4*max_list_size + vv_max_list_size, cs_lnum_t);
-  BFT_MALLOC(rbuf, vv_max_list_size, cs_real_t);
-  BFT_MALLOC(vbuf, 2*max_list_size, cs_join_vertex_t);
-  BFT_MALLOC(list, max_list_size, cs_gnum_t);
-  BFT_MALLOC(set, max_list_size, cs_join_vertex_t);
+  CS_MALLOC(ibuf, 4*max_list_size + vv_max_list_size, cs_lnum_t);
+  CS_MALLOC(rbuf, vv_max_list_size, cs_real_t);
+  CS_MALLOC(vbuf, 2*max_list_size, cs_join_vertex_t);
+  CS_MALLOC(list, max_list_size, cs_gnum_t);
+  CS_MALLOC(set, max_list_size, cs_join_vertex_t);
 
   /* Merge set of vertices */
 
@@ -1988,7 +1988,7 @@ _merge_vertices(cs_join_param_t    param,
       char  *filename = nullptr;
 
       len = strlen("JoinDBG_EquivMerge.dat")+1+2+4;
-      BFT_MALLOC(filename, len, char);
+      CS_MALLOC(filename, len, char);
       sprintf(filename, "Join%02dDBG_EquivMerge%04d.dat",
               param.num, CS_MAX(cs_glob_rank_id, 0));
       dbg_file = fopen(filename, "w");
@@ -1996,7 +1996,7 @@ _merge_vertices(cs_join_param_t    param,
       cs_join_gset_dump(dbg_file, equiv_gnum);
 
       fflush(dbg_file);
-      BFT_FREE(filename);
+      CS_FREE(filename);
       fclose(dbg_file);
     }
 #endif /* defined(DEBUG) && !defined(NDEBUG) */
@@ -2031,11 +2031,11 @@ _merge_vertices(cs_join_param_t    param,
 
   /* Free memory */
 
-  BFT_FREE(ibuf);
-  BFT_FREE(vbuf);
-  BFT_FREE(rbuf);
-  BFT_FREE(set);
-  BFT_FREE(list);
+  CS_FREE(ibuf);
+  CS_FREE(vbuf);
+  CS_FREE(rbuf);
+  CS_FREE(set);
+  CS_FREE(list);
 
   cs_join_gset_destroy(&equiv_gnum);
 }
@@ -2071,7 +2071,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 
   if (n_ranks == 1) {
 
-    BFT_MALLOC(o2n_vtx_gnum, n_iwm_vertices, cs_gnum_t);
+    CS_MALLOC(o2n_vtx_gnum, n_iwm_vertices, cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < n_iwm_vertices; i++)
       o2n_vtx_gnum[i] = vertices[i].gnum;
@@ -2099,7 +2099,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 
     /* Initialize o2n_vtx_gnum */
 
-    BFT_MALLOC(o2n_vtx_gnum, block_size, cs_gnum_t);
+    CS_MALLOC(o2n_vtx_gnum, block_size, cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < block_size; i++) {
       cs_gnum_t g_id = i;
@@ -2118,7 +2118,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
     /* Build send_list */
 
     cs_gnum_t  *send_glist = nullptr;
-    BFT_MALLOC(send_glist, n_iwm_vertices*2, cs_gnum_t);
+    CS_MALLOC(send_glist, n_iwm_vertices*2, cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < n_iwm_vertices; i++) {
       send_glist[i*2] = iwm_vtx_gnum[i];    /* Old global number */
@@ -2130,7 +2130,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
                                                      false, /* reverse, */
                                                      send_glist);
 
-    BFT_FREE(send_glist);
+    CS_FREE(send_glist);
 
     /* Update o2n_vtx_gnum */
 
@@ -2151,7 +2151,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 
     }
 
-    BFT_FREE(recv_glist);
+    CS_FREE(recv_glist);
 
     cs_all_to_all_destroy(&d);
 
@@ -2191,20 +2191,20 @@ _keep_local_vtx_evolution(cs_lnum_t                n_vertices,
   if (n_vertices == 0)
     return;
 
-  BFT_MALLOC(vtx_gnum, n_vertices, cs_gnum_t);
+  CS_MALLOC(vtx_gnum, n_vertices, cs_gnum_t);
 
   for (i = 0; i < n_vertices; i++)
     vtx_gnum[i] = vertices[i].gnum;
 
   /* Order vertices according to their global numbering */
 
-  BFT_MALLOC(order, n_vertices, cs_lnum_t);
+  CS_MALLOC(order, n_vertices, cs_lnum_t);
 
   cs_order_gnum_allocated(nullptr, vtx_gnum, order, n_vertices);
 
   /* Delete vertices sharing the same global number. Keep only one */
 
-  BFT_MALLOC(o2n_vtx_id, n_vertices, cs_lnum_t);
+  CS_MALLOC(o2n_vtx_id, n_vertices, cs_lnum_t);
 
   prev = vtx_gnum[order[0]];
   o2n_vtx_id[order[0]] = n_am_vertices;
@@ -2231,8 +2231,8 @@ _keep_local_vtx_evolution(cs_lnum_t                n_vertices,
 
   /* Free memory */
 
-  BFT_FREE(order);
-  BFT_FREE(vtx_gnum);
+  CS_FREE(order);
+  CS_FREE(vtx_gnum);
 
   /* Set return pointers */
 
@@ -2352,7 +2352,7 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
   /* Define vtx_glst to compare global vertex numbering */
 
   if (inter_edges->vtx_glst == nullptr)
-    BFT_MALLOC(inter_edges->vtx_glst, inter_edges->index[n_edges], cs_gnum_t);
+    CS_MALLOC(inter_edges->vtx_glst, inter_edges->index[n_edges], cs_gnum_t);
 
   for (i = 0; i < inter_edges->index[n_edges]; i++) {
     v1_id = inter_edges->vtx_lst[i] - 1;
@@ -2427,8 +2427,8 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
 
   assert(inter_edges->index[n_edges] <= init_list_size);
 
-  BFT_REALLOC(inter_edges->vtx_lst, inter_edges->index[n_edges], cs_lnum_t);
-  BFT_REALLOC(inter_edges->abs_lst, inter_edges->index[n_edges], cs_coord_t);
+  CS_REALLOC(inter_edges->vtx_lst, inter_edges->index[n_edges], cs_lnum_t);
+  CS_REALLOC(inter_edges->abs_lst, inter_edges->index[n_edges], cs_coord_t);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
   fprintf(logfile, " AFTER REDUNDANCIES CLEAN\n");
@@ -2449,10 +2449,10 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
 
     new_inter_edges = cs_join_inter_edges_create(n_edges);
 
-    BFT_MALLOC(new_inter_edges->vtx_lst,
-               inter_edges->index[n_edges] + n_adds, cs_lnum_t);
-    BFT_MALLOC(new_inter_edges->abs_lst,
-               inter_edges->index[n_edges] + n_adds, cs_coord_t);
+    CS_MALLOC(new_inter_edges->vtx_lst,
+              inter_edges->index[n_edges] + n_adds, cs_lnum_t);
+    CS_MALLOC(new_inter_edges->abs_lst,
+              inter_edges->index[n_edges] + n_adds, cs_coord_t);
 
     n_adds = 0;
     idx_shift = 0;
@@ -2622,8 +2622,8 @@ _get_faces_to_send(cs_lnum_t         n_faces,
     if (gnum_rank_index[i] < gnum_rank_index[i+1])
       reduce_size++;
 
-  BFT_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
-  BFT_MALLOC(reduce_ids, reduce_size, cs_lnum_t);
+  CS_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
+  CS_MALLOC(reduce_ids, reduce_size, cs_lnum_t);
 
   reduce_size = 0;
   reduce_index[0] = gnum_rank_index[0] + 1;
@@ -2639,8 +2639,8 @@ _get_faces_to_send(cs_lnum_t         n_faces,
 
   }
 
-  BFT_MALLOC(send_rank, n_faces, int);
-  BFT_MALLOC(send_faces, n_faces, cs_lnum_t);
+  CS_MALLOC(send_rank, n_faces, int);
+  CS_MALLOC(send_faces, n_faces, cs_lnum_t);
 
   /* Fill the list of ranks */
 
@@ -2668,8 +2668,8 @@ _get_faces_to_send(cs_lnum_t         n_faces,
 
   }
 
-  BFT_REALLOC(send_rank, n_send, int);
-  BFT_REALLOC(send_faces, n_send, cs_lnum_t);
+  CS_REALLOC(send_rank, n_send, int);
+  CS_REALLOC(send_faces, n_send, cs_lnum_t);
 
   /* Free memory */
 
@@ -2684,9 +2684,9 @@ _get_faces_to_send(cs_lnum_t         n_faces,
   }
 #endif
 
-  BFT_FREE(count);
-  BFT_FREE(reduce_ids);
-  BFT_FREE(reduce_index);
+  CS_FREE(count);
+  CS_FREE(reduce_ids);
+  CS_FREE(reduce_index);
 
   /* Set return pointers */
 
@@ -2756,8 +2756,8 @@ _redistribute_mesh(const cs_gnum_t         gnum_rank_index[],
                           recv_mesh,
                           mpi_comm);
 
-    BFT_FREE(send_faces);
-    BFT_FREE(send_rank);
+    CS_FREE(send_faces);
+    CS_FREE(send_rank);
 
   }
 #endif
@@ -2854,7 +2854,7 @@ cs_join_create_new_vertices(int                     verbosity,
   work->n_vertices += n_new_vertices;
   work->n_g_vertices += n_g_new_vertices;
 
-  BFT_REALLOC(work->vertices, work->n_vertices, cs_join_vertex_t);
+  CS_REALLOC(work->vertices, work->n_vertices, cs_join_vertex_t);
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Prepare sanity checks */
   {
@@ -2947,7 +2947,7 @@ cs_join_create_new_vertices(int                     verbosity,
 
   /* Free memory */
 
-  BFT_FREE(new_vtx_gnum);
+  CS_FREE(new_vtx_gnum);
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity checks */
   for (i = 0; i < work->n_vertices; i++) {
@@ -3056,7 +3056,7 @@ cs_join_merge_vertices(cs_join_param_t        param,
     const cs_gnum_t _n_ranks = n_ranks;
 
     int  *dest_rank = nullptr;
-    BFT_MALLOC(dest_rank, n_vertices, int);
+    CS_MALLOC(dest_rank, n_vertices, int);
 
     for (cs_lnum_t i = 0; i < n_vertices; i++)
       dest_rank[i] = (vtx_tags[i] - 1) % _n_ranks;
@@ -3101,7 +3101,7 @@ cs_join_merge_vertices(cs_join_param_t        param,
                              vtx_merge_data,
                              work->vertices);
 
-    BFT_FREE(vtx_merge_data);
+    CS_FREE(vtx_merge_data);
 
     cs_all_to_all_destroy(&d);
 
@@ -3110,7 +3110,7 @@ cs_join_merge_vertices(cs_join_param_t        param,
 
   /* Free memory */
 
-  BFT_FREE(vtx_tags);
+  CS_FREE(vtx_tags);
 
   cs_join_gset_destroy(&merge_set);
 
@@ -3213,7 +3213,7 @@ cs_join_merge_update_struct(cs_join_param_t          param,
                         n_am_vertices,
                         o2n_vtx_id);
 
-  BFT_FREE(o2n_vtx_id);
+  CS_FREE(o2n_vtx_id);
 
   /* Update local_mesh by redistributing mesh */
 

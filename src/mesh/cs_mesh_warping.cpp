@@ -37,7 +37,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
@@ -47,6 +46,7 @@
 #include "fvm/fvm_writer.h"
 
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_quality.h"
@@ -107,7 +107,7 @@ _select_warped_faces(cs_lnum_t       n_faces,
       if (face_warping[face_id] >= max_warp_angle)
         n_warp_faces++;
 
-    BFT_MALLOC(warp_face_lst, n_warp_faces, cs_lnum_t);
+    CS_MALLOC(warp_face_lst, n_warp_faces, cs_lnum_t);
 
     n_warp_faces = 0;
 
@@ -175,11 +175,11 @@ _cut_warped_faces(cs_mesh_t      *mesh,
   assert(stride == 1 || stride ==2);
   assert(dim == 3);
 
-  BFT_MALLOC(n_sub_elt_lst, n_init_faces, cs_lnum_t);
+  CS_MALLOC(n_sub_elt_lst, n_init_faces, cs_lnum_t);
 
   /* Build flag for each face from list of faces to cut */
 
-  BFT_MALLOC(cut_flag, n_init_faces, char);
+  CS_MALLOC(cut_flag, n_init_faces, char);
 
   for (face_id = 0; face_id < n_init_faces; face_id++)
     cut_flag[face_id] = 0;
@@ -187,7 +187,7 @@ _cut_warped_faces(cs_mesh_t      *mesh,
   for (i = 0; i < *p_n_cut_faces; i++)
     cut_flag[(*p_cut_face_lst)[i] - 1] = 1;
 
-  BFT_FREE(*p_cut_face_lst);
+  CS_FREE(*p_cut_face_lst);
 
   /* First loop: count */
 
@@ -221,18 +221,18 @@ _cut_warped_faces(cs_mesh_t      *mesh,
   *p_n_sub_elt_lst = n_sub_elt_lst;
 
   if (n_cut_faces == 0) {
-    BFT_FREE(cut_flag);
+    CS_FREE(cut_flag);
     return;
   }
 
-  BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_lnum_t);
-  BFT_MALLOC(new_face_vtx_lst, connect_size, cs_lnum_t);
-  BFT_MALLOC(new_face_cells, n_new_faces*stride, cs_lnum_t);
-  BFT_MALLOC(new_face_family, n_new_faces, int);
+  CS_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_lnum_t);
+  CS_MALLOC(new_face_vtx_lst, connect_size, cs_lnum_t);
+  CS_MALLOC(new_face_cells, n_new_faces*stride, cs_lnum_t);
+  CS_MALLOC(new_face_family, n_new_faces, int);
   if (p_face_r_gen != nullptr)
-    BFT_MALLOC(new_face_r_gen, n_new_faces, char);
+    CS_MALLOC(new_face_r_gen, n_new_faces, char);
 
-  BFT_MALLOC(cut_face_lst, n_cut_faces, cs_lnum_t);
+  CS_MALLOC(cut_face_lst, n_cut_faces, cs_lnum_t);
 
   triangle_state = fvm_triangulate_state_create(n_max_face_vertices);
 
@@ -321,14 +321,14 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
   triangle_state = fvm_triangulate_state_destroy(triangle_state);
 
-  BFT_FREE(cut_flag);
+  CS_FREE(cut_flag);
 
-  BFT_FREE(*p_face_vtx_idx);
-  BFT_FREE(*p_face_vtx_lst);
-  BFT_FREE(*p_face_cells);
-  BFT_FREE(*p_face_family);
+  CS_FREE(*p_face_vtx_idx);
+  CS_FREE(*p_face_vtx_lst);
+  CS_FREE(*p_face_cells);
+  CS_FREE(*p_face_family);
   if (p_face_r_gen != nullptr)
-    BFT_FREE(*p_face_r_gen);
+    CS_FREE(*p_face_r_gen);
 
   /* Define returned pointers */
 
@@ -403,7 +403,7 @@ _update_cut_faces_num(cs_mesh_t      *mesh,
 
     global_num = fvm_io_num_get_global_num(new_io_num);
 
-    BFT_REALLOC(*p_global_face_num, n_faces, cs_gnum_t);
+    CS_REALLOC(*p_global_face_num, n_faces, cs_gnum_t);
     size = sizeof(cs_gnum_t) * n_faces;
     memcpy(*p_global_face_num, global_num, size);
 
@@ -562,7 +562,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
 
   /* Compute face warping */
 
-  BFT_MALLOC(b_face_warping, n_init_b_faces, double);
+  CS_MALLOC(b_face_warping, n_init_b_faces, double);
 
   for (cs_lnum_t i = 0; i < n_init_b_faces; i++)
     b_face_warping[i] = 0.;
@@ -573,13 +573,13 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
                              &b_face_cog,
                              &b_face_normal);
 
-  BFT_FREE(b_face_cog);
+  CS_FREE(b_face_cog);
 
   cs_mesh_quality_compute_b_face_warping(mesh,
                                          b_face_normal,
                                          b_face_warping);
 
-  BFT_FREE(b_face_normal);
+  CS_FREE(b_face_normal);
 
   _select_warped_faces(n_init_b_faces,
                        max_warp_angle,
@@ -596,8 +596,8 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
 
   if (n_g_b_cut_faces == 0) {
 
-    BFT_FREE(b_face_lst);
-    BFT_FREE(b_face_warping);
+    CS_FREE(b_face_lst);
+    CS_FREE(b_face_warping);
 
     bft_printf(_("\n No face to cut. Verify the criterion if necessary.\n"));
     return;
@@ -610,7 +610,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
                          b_face_lst,
                          b_face_warping);
 
-  BFT_FREE(b_face_warping);
+  CS_FREE(b_face_warping);
 
   /* Border face treatment */
   /* --------------------- */
@@ -647,7 +647,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
 
   /* Partial memory free */
 
-  BFT_FREE(n_b_sub_elt_lst);
+  CS_FREE(n_b_sub_elt_lst);
 
   /* post processing of the selected faces */
 
@@ -657,7 +657,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
 
   /* Free memory */
 
-  BFT_FREE(b_face_lst);
+  CS_FREE(b_face_lst);
 
   /* Set mesh modification flag */
 

@@ -42,7 +42,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
@@ -52,6 +51,7 @@
 #include "base/cs_all_to_all.h"
 #include "base/cs_block_dist.h"
 #include "base/cs_block_to_part.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
 #include "base/cs_order.h"
@@ -284,8 +284,8 @@ _extract_face_cell(cs_mesh_t         *mesh,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(mesh->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
-  BFT_MALLOC(mesh->b_face_cells, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(mesh->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
+  CS_MALLOC(mesh->b_face_cells, mesh->n_b_faces, cs_lnum_t);
 
   /* Now copy face -> cell connectivity */
 
@@ -345,16 +345,16 @@ _extract_face_vertices(cs_mesh_t         *mesh,
 
   /* Allocate and initialize */
 
-  BFT_MALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces+1, cs_lnum_t);
-  BFT_MALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_lnum_t);
+  CS_MALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces+1, cs_lnum_t);
+  CS_MALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_lnum_t);
 
   mesh->i_face_vtx_idx[0] = 0;
 
-  BFT_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces+1, cs_lnum_t);
+  CS_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces+1, cs_lnum_t);
   mesh->b_face_vtx_idx[0] = 0;
 
   if (mesh->n_b_faces > 0)
-    BFT_MALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_lnum_t);
+    CS_MALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_lnum_t);
 
   /* Now copy face -> vertices connectivity */
 
@@ -430,11 +430,11 @@ _extract_face_gnum(cs_mesh_t         *mesh,
 
   /* Allocate arrays (including temporary arrays) */
 
-  BFT_MALLOC(mesh->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
-  BFT_MALLOC(mesh->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
+  CS_MALLOC(mesh->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
+  CS_MALLOC(mesh->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
 
-  BFT_MALLOC(global_i_face, mesh->n_i_faces, cs_lnum_t);
-  BFT_MALLOC(global_b_face, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(global_i_face, mesh->n_i_faces, cs_lnum_t);
+  CS_MALLOC(global_b_face, mesh->n_b_faces, cs_lnum_t);
 
   /* Now build internal and boundary face lists */
 
@@ -485,8 +485,8 @@ _extract_face_gnum(cs_mesh_t         *mesh,
 
   /* Free remaining temporary arrays */
 
-  BFT_FREE(global_i_face);
-  BFT_FREE(global_b_face);
+  CS_FREE(global_i_face);
+  CS_FREE(global_b_face);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -518,8 +518,8 @@ _extract_face_gc_id(cs_mesh_t  *mesh,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(mesh->i_face_family, mesh->n_i_faces, int);
-  BFT_MALLOC(mesh->b_face_family, mesh->n_b_faces, int);
+  CS_MALLOC(mesh->i_face_family, mesh->n_i_faces, int);
+  CS_MALLOC(mesh->b_face_family, mesh->n_b_faces, int);
 
   /* Now copy face group class (family) id */
 
@@ -560,7 +560,7 @@ _extract_face_r_gen(cs_mesh_t        *mesh,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
+  CS_MALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
 
   /* Now copy face group class (family) id */
 
@@ -593,7 +593,7 @@ _face_ifs_to_interior(cs_interface_set_t  *face_ifs,
 
   /* Build face renumbering */
 
-  BFT_MALLOC(i_face_id, n_faces, cs_lnum_t);
+  CS_MALLOC(i_face_id, n_faces, cs_lnum_t);
 
   for (i = 0; i < n_faces; i++) {
     if (face_type[i] == '\0')
@@ -604,7 +604,7 @@ _face_ifs_to_interior(cs_interface_set_t  *face_ifs,
 
   cs_interface_set_renumber(face_ifs, i_face_id);
 
-  BFT_FREE(i_face_id);
+  CS_FREE(i_face_id);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -642,7 +642,7 @@ _extract_periodic_faces_l(cs_mesh_builder_t  *mb,
 
   /* Build face renumbering */
 
-  BFT_MALLOC(i_face_num, n_faces, cs_gnum_t);
+  CS_MALLOC(i_face_num, n_faces, cs_gnum_t);
 
   for (i = 0; i < n_faces; i++) {
     if (face_type[i] == '\0')
@@ -665,7 +665,7 @@ _extract_periodic_faces_l(cs_mesh_builder_t  *mb,
     }
   }
 
-  BFT_FREE(i_face_num);
+  CS_FREE(i_face_num);
 }
 
 #if defined(HAVE_MPI)
@@ -719,7 +719,7 @@ _f_face_center(cs_lnum_t         n_f_faces,
       n_max_face_vertices = n_face_vertices;
   }
 
-  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
+  CS_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
 
   /* Loop on each face */
 
@@ -830,7 +830,7 @@ _f_face_center(cs_lnum_t         n_f_faces,
     }
   } /* End of loop on faces */
 
-  BFT_FREE(face_vtx_coord);
+  CS_FREE(face_vtx_coord);
 }
 
 /*----------------------------------------------------------------------------
@@ -893,7 +893,7 @@ _precompute_free_face_center(const cs_mesh_builder_t  *mb,
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
-  BFT_MALLOC(_face_vertices, mb->face_vertices_idx[_n_faces], cs_lnum_t);
+  CS_MALLOC(_face_vertices, mb->face_vertices_idx[_n_faces], cs_lnum_t);
 
   cs_block_to_part_global_to_local(mb->face_vertices_idx[_n_faces],
                                    1,
@@ -910,9 +910,9 @@ _precompute_free_face_center(const cs_mesh_builder_t  *mb,
                  _vtx_coord,
                  f_face_center);
 
-  BFT_FREE(_vtx_coord);
-  BFT_FREE(_vtx_num);
-  BFT_FREE(_face_vertices);
+  CS_FREE(_vtx_coord);
+  CS_FREE(_vtx_num);
+  CS_FREE(_face_vertices);
 }
 
 /*----------------------------------------------------------------------------
@@ -984,12 +984,12 @@ _default_face_rank(const cs_mesh_builder_t  *mb,
    *  As those faces are not connected, the main objective of this function
    *  is to ensure some measure of load balancing. */
 
-  BFT_MALLOC(default_rank, _n_faces, int);
+  CS_MALLOC(default_rank, _n_faces, int);
   for (i = 0; i < _n_faces; i++)
     default_rank[i] = -1;
 
-  BFT_MALLOC(free_face_ids, n_free_faces, cs_lnum_t);
-  BFT_MALLOC(free_face_centers, n_free_faces*3, cs_coord_t);
+  CS_MALLOC(free_face_ids, n_free_faces, cs_lnum_t);
+  CS_MALLOC(free_face_centers, n_free_faces*3, cs_coord_t);
 
   n_free_faces = 0;
   for (i = 0; i < _n_faces; i++) {
@@ -1008,7 +1008,7 @@ _default_face_rank(const cs_mesh_builder_t  *mb,
                                                 n_free_faces,
                                                 FVM_IO_NUM_SFC_MORTON_BOX);
 
-  BFT_FREE(free_face_centers);
+  CS_FREE(free_face_centers);
 
   free_face_num = fvm_io_num_get_global_num(free_face_io_num);
 
@@ -1020,7 +1020,7 @@ _default_face_rank(const cs_mesh_builder_t  *mb,
   }
 
   free_face_io_num = fvm_io_num_destroy(free_face_io_num);
-  BFT_FREE(free_face_ids);
+  CS_FREE(free_face_ids);
 
   return default_rank;
 }
@@ -1083,14 +1083,14 @@ _decompose_data_g(cs_mesh_t          *mesh,
     mesh->n_cells = cs_all_to_all_n_elts_dest(d);
 
     cs_gnum_t *b_global_num;
-    BFT_MALLOC(b_global_num, n_block_ents, cs_gnum_t);
+    CS_MALLOC(b_global_num, n_block_ents, cs_gnum_t);
 
     mesh->cell_family = cs_all_to_all_copy_array(d,
                                                  1,
                                                  false, /* reverse */
                                                  mb->cell_gc_id);
 
-    BFT_FREE(mb->cell_gc_id);
+    CS_FREE(mb->cell_gc_id);
 
     cs_gnum_t  gnum_shift = mb->cell_bi.gnum_range[0];
     for (cs_lnum_t i = 0; i < n_block_ents; i++)
@@ -1101,7 +1101,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                                      false, /* reverse */
                                                      b_global_num);
 
-    BFT_FREE(b_global_num);
+    CS_FREE(b_global_num);
 
     cs_all_to_all_destroy(&d);
 
@@ -1110,7 +1110,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
     mesh->n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
 
-    BFT_MALLOC(mesh->global_cell_num, mesh->n_cells, cs_gnum_t);
+    CS_MALLOC(mesh->global_cell_num, mesh->n_cells, cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
       mesh->global_cell_num[i] = mb->cell_bi.gnum_range[0] + i;
@@ -1144,11 +1144,11 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                        &_face_num);
 
   if (default_face_rank != nullptr)
-    BFT_FREE(default_face_rank);
+    CS_FREE(default_face_rank);
 
-  BFT_FREE(mb->cell_rank); /* Not needed anymore */
+  CS_FREE(mb->cell_rank); /* Not needed anymore */
 
-  BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
+  CS_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
 
   /* Face -> cell connectivity */
 
@@ -1158,11 +1158,11 @@ _decompose_data_g(cs_mesh_t          *mesh,
                            mb->face_cells,
                            _face_gcells);
 
-  BFT_FREE(mb->face_cells);
+  CS_FREE(mb->face_cells);
 
   /* Now convert face -> cell connectivity to local cell numbers */
 
-  BFT_MALLOC(_face_cells, _n_faces, cs_lnum_2_t);
+  CS_MALLOC(_face_cells, _n_faces, cs_lnum_2_t);
 
   cs_block_to_part_global_to_local(_n_faces*2,
                                    0,
@@ -1172,11 +1172,11 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                    _face_gcells,
                                    (cs_lnum_t *)_face_cells);
 
-  BFT_FREE(_face_gcells);
+  CS_FREE(_face_gcells);
 
   /* Face family */
 
-  BFT_MALLOC(_face_gc_id, _n_faces, int);
+  CS_MALLOC(_face_gc_id, _n_faces, int);
 
   cs_all_to_all_copy_array(d,
                            1,
@@ -1184,11 +1184,11 @@ _decompose_data_g(cs_mesh_t          *mesh,
                            mb->face_gc_id,
                            _face_gc_id);
 
-  BFT_FREE(mb->face_gc_id);
+  CS_FREE(mb->face_gc_id);
 
   /* Face level */
 
-  BFT_MALLOC(_face_r_gen, _n_faces, char);
+  CS_MALLOC(_face_r_gen, _n_faces, char);
 
   if (mesh->have_r_gen)
     cs_all_to_all_copy_array(d,
@@ -1201,18 +1201,18 @@ _decompose_data_g(cs_mesh_t          *mesh,
       _face_r_gen[i] = 0;
   }
 
-  BFT_FREE(mb->face_r_gen);
+  CS_FREE(mb->face_r_gen);
 
   /* Face connectivity */
 
-  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
+  CS_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
   cs_all_to_all_copy_index(d,
                            true,  /* reverse */
                            mb->face_vertices_idx,
                            _face_vertices_idx);
 
-  BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
+  CS_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
 
   cs_all_to_all_copy_indexed(d,
                              true, /* reverse */
@@ -1221,8 +1221,8 @@ _decompose_data_g(cs_mesh_t          *mesh,
                              _face_vertices_idx,
                              _face_gvertices);
 
-  BFT_FREE(mb->face_vertices_idx);
-  BFT_FREE(mb->face_vertices);
+  CS_FREE(mb->face_vertices_idx);
+  CS_FREE(mb->face_vertices);
 
   cs_all_to_all_destroy(&d);
 
@@ -1250,7 +1250,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                              true, /* reverse */
                                              mb->vertex_coords);
 
-  BFT_FREE(mb->vertex_coords);
+  CS_FREE(mb->vertex_coords);
 
   if (mesh->have_r_gen)
     mesh->vtx_r_gen = cs_all_to_all_copy_array(dv,
@@ -1258,13 +1258,13 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                                true, /* reverse */
                                                mb->vtx_r_gen);
 
-  BFT_FREE(mb->vtx_r_gen);
+  CS_FREE(mb->vtx_r_gen);
 
   cs_all_to_all_destroy(&dv);
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
-  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
+  CS_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
   cs_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
                                    1,
@@ -1274,14 +1274,14 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                    _face_gvertices,
                                    _face_vertices);
 
-  BFT_FREE(_face_gvertices);
+  CS_FREE(_face_gvertices);
 
   /* In case of periodicity, build a cs_interface so as to obtain
      periodic face correspondants in local numbering (periodic couples
      need not be defined by the ranks owning one of the 2 members
      for the interface to be built correctly). */
 
-  BFT_MALLOC(_periodicity_num, mb->n_perio, int);
+  CS_MALLOC(_periodicity_num, mb->n_perio, int);
 
   for (int i = 0; i < mb->n_perio; i++)
     _periodicity_num[i] = i+1;
@@ -1298,18 +1298,18 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
 
   if (mb->n_perio > 0) {
-    BFT_FREE(_periodicity_num);
+    CS_FREE(_periodicity_num);
     for (int i = 0; i < mb->n_perio; i++)
-      BFT_FREE(mb->per_face_couples[i]);
-    BFT_FREE(mb->per_face_couples);
-    BFT_FREE(mb->n_g_per_face_couples);
-    BFT_FREE(mb->n_per_face_couples);
-    BFT_FREE(mb->per_face_bi);
+      CS_FREE(mb->per_face_couples[i]);
+    CS_FREE(mb->per_face_couples);
+    CS_FREE(mb->n_g_per_face_couples);
+    CS_FREE(mb->n_per_face_couples);
+    CS_FREE(mb->per_face_bi);
   }
 
   /* We may now separate interior from boundary faces */
 
-  BFT_MALLOC(face_type, _n_faces, char);
+  CS_MALLOC(face_type, _n_faces, char);
 
   _face_type_g(mesh,
                _n_faces,
@@ -1329,7 +1329,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
                   CS_MPI_GNUM, MPI_SUM, comm);
   }
 
-  BFT_FREE(_face_cells);
+  CS_FREE(_face_cells);
 
   if (mb->n_perio == 0)
     cs_interface_set_destroy(&face_ifs);
@@ -1340,15 +1340,15 @@ _decompose_data_g(cs_mesh_t          *mesh,
                          _face_vertices,
                          face_type);
 
-  BFT_FREE(_face_vertices_idx);
-  BFT_FREE(_face_vertices);
+  CS_FREE(_face_vertices_idx);
+  CS_FREE(_face_vertices);
 
   _extract_face_gnum(mesh,
                      _n_faces,
                      _face_num,
                      face_type);
 
-  BFT_FREE(_face_num);
+  CS_FREE(_face_num);
 
   if (mb->n_perio > 0) {
     _face_ifs_to_interior(face_ifs, _n_faces, face_type);
@@ -1365,15 +1365,15 @@ _decompose_data_g(cs_mesh_t          *mesh,
                       _face_gc_id,
                       face_type);
 
-  BFT_FREE(_face_gc_id);
+  CS_FREE(_face_gc_id);
 
   _extract_face_r_gen(mesh,
                       _n_faces,
                       _face_r_gen,
                       face_type);
-  BFT_FREE(_face_r_gen);
+  CS_FREE(_face_r_gen);
 
-  BFT_FREE(face_type);
+  CS_FREE(face_type);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -1418,30 +1418,30 @@ _decompose_data_l(cs_mesh_t          *mesh,
 
   /* Now copy face -> cell connectivity to local cell numbers */
 
-  BFT_MALLOC(_face_cells, _n_faces, cs_lnum_2_t);
+  CS_MALLOC(_face_cells, _n_faces, cs_lnum_2_t);
 
   for (cs_lnum_t i = 0; i < _n_faces; i++) {
     _face_cells[i][0] = mb->face_cells[i*2] - 1;
     _face_cells[i][1] = mb->face_cells[i*2+1] - 1;
   }
 
-  BFT_FREE(mb->face_cells);
+  CS_FREE(mb->face_cells);
 
   /* Face connectivity */
 
-  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
+  CS_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < _n_faces+1; i++)
     _face_vertices_idx[i] = mb->face_vertices_idx[i];
 
-  BFT_FREE(mb->face_vertices_idx);
+  CS_FREE(mb->face_vertices_idx);
 
-  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
+  CS_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < _face_vertices_idx[_n_faces]; i++)
     _face_vertices[i] = mb->face_vertices[i];
 
-  BFT_FREE(mb->face_vertices);
+  CS_FREE(mb->face_vertices);
 
   /* Vertices */
 
@@ -1455,7 +1455,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
 
   /* We may now separate interior from boundary faces */
 
-  BFT_MALLOC(face_type, _n_faces, char);
+  CS_MALLOC(face_type, _n_faces, char);
 
   _face_type_l(mesh,
                _n_faces,
@@ -1470,7 +1470,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
                      (const cs_lnum_2_t *)_face_cells,
                      face_type);
 
-  BFT_FREE(_face_cells);
+  CS_FREE(_face_cells);
 
   if (mb->n_perio > 0) {
 
@@ -1481,8 +1481,8 @@ _decompose_data_l(cs_mesh_t          *mesh,
                               _n_faces,
                               face_type);
 
-    BFT_FREE(mb->n_g_per_face_couples);
-    BFT_FREE(mb->per_face_bi);
+    CS_FREE(mb->n_g_per_face_couples);
+    CS_FREE(mb->per_face_bi);
 
   }
 
@@ -1492,30 +1492,30 @@ _decompose_data_l(cs_mesh_t          *mesh,
                          _face_vertices,
                          face_type);
 
-  BFT_FREE(_face_vertices_idx);
-  BFT_FREE(_face_vertices);
+  CS_FREE(_face_vertices_idx);
+  CS_FREE(_face_vertices);
 
   _extract_face_gc_id(mesh,
                       _n_faces,
                       mb->face_gc_id,
                       face_type);
 
-  BFT_FREE(mb->face_gc_id);
+  CS_FREE(mb->face_gc_id);
 
   if (mesh->have_r_gen) {
     _extract_face_r_gen(mesh,
                         _n_faces,
                         mb->face_r_gen,
                         face_type);
-    BFT_FREE(mb->face_r_gen);
+    CS_FREE(mb->face_r_gen);
   }
   else {
-    BFT_MALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
+    CS_MALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
     for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
       mesh->i_face_r_gen[i] = 0;
   }
 
-  BFT_FREE(face_type);
+  CS_FREE(face_type);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

@@ -42,7 +42,6 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -60,6 +59,7 @@
 #include "mesh/cs_join_update.h"
 #include "mesh/cs_join_util.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
@@ -103,7 +103,7 @@ _dump_mesh(const  int          join_num,
 
   base_len = strlen(basename);
   len = strlen("log/JoinDBG__.dat")+1+4+2+base_len;
-  BFT_MALLOC(filename, len, char);
+  CS_MALLOC(filename, len, char);
   sprintf(filename, "log%cJoin%02dDBG_%s_%04d.dat", CS_DIR_SEPARATOR,
           join_num, basename, cs_glob_rank_id);
   dbg_file = fopen(filename, "w");
@@ -111,7 +111,7 @@ _dump_mesh(const  int          join_num,
   cs_mesh_dump_file(dbg_file, mesh);
 
   fflush(dbg_file);
-  BFT_FREE(filename);
+  CS_FREE(filename);
   fclose(dbg_file);
 }
 
@@ -135,7 +135,7 @@ _dump_gset(const  int               join_num,
 
   base_len = strlen(basename);
   len = strlen("log/JoinDBG__.dat")+1+4+2+base_len;
-  BFT_MALLOC(filename, len, char);
+  CS_MALLOC(filename, len, char);
   sprintf(filename, "log%cJoin%02dDBG_%s_%04d.dat", CS_DIR_SEPARATOR,
           join_num, basename, cs_glob_rank_id);
   dbg_file = fopen(filename, "w");
@@ -143,7 +143,7 @@ _dump_gset(const  int               join_num,
   cs_join_gset_dump(dbg_file, set);
 
   fflush(dbg_file);
-  BFT_FREE(filename);
+  CS_FREE(filename);
   fclose(dbg_file);
 }
 
@@ -191,8 +191,8 @@ _select_entities(cs_join_t   *this_join,
 
   /* Free arrays and structures needed for selection */
 
-  BFT_FREE(b_face_cog);
-  BFT_FREE(b_face_normal);
+  CS_FREE(b_face_cog);
+  CS_FREE(b_face_normal);
 
   mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
 
@@ -292,14 +292,14 @@ _get_work_struct(cs_join_param_t         param,
 
   if (n_ranks > 1) {
 
-    BFT_MALLOC(mesh_name, strlen("WorkMesh_j_n") + 2 + 5 + 1, char);
+    CS_MALLOC(mesh_name, strlen("WorkMesh_j_n") + 2 + 5 + 1, char);
     sprintf(mesh_name,"%s%02d%s%05d",
             "WorkMesh_j", param.num, "_n", local_rank);
 
   }
   else {
 
-    BFT_MALLOC(mesh_name, strlen("WorkMesh_j") + 2 + 1, char);
+    CS_MALLOC(mesh_name, strlen("WorkMesh_j") + 2 + 1, char);
     sprintf(mesh_name,"%s%02d", "WorkMesh_j", param.num);
 
   }
@@ -327,8 +327,8 @@ _get_work_struct(cs_join_param_t         param,
 
   /* Free memory */
 
-  BFT_FREE(mesh_name);
-  BFT_FREE(intersect_face_gnum);
+  CS_FREE(mesh_name);
+  CS_FREE(intersect_face_gnum);
 
   cs_join_gset_destroy(&face_face_vis);
 
@@ -377,11 +377,11 @@ _build_join_structures(cs_join_t           *this_join,
   /* Define a cs_join_mesh_structure from the selected connectivity */
 
   if (cs_glob_n_ranks > 1) {
-    BFT_MALLOC(mesh_name, strlen("LocalMesh_n") + 5 + 1, char);
+    CS_MALLOC(mesh_name, strlen("LocalMesh_n") + 5 + 1, char);
     sprintf(mesh_name,"%s%05d", "LocalMesh_n", CS_MAX(cs_glob_rank_id, 0));
   }
   else {
-    BFT_MALLOC(mesh_name, strlen("LocalMesh") + 1, char);
+    CS_MALLOC(mesh_name, strlen("LocalMesh") + 1, char);
     sprintf(mesh_name,"%s", "LocalMesh");
   }
 
@@ -396,7 +396,7 @@ _build_join_structures(cs_join_t           *this_join,
                                               mesh->vtx_coord,
                                               mesh->global_vtx_num);
 
-  BFT_FREE(mesh_name);
+  CS_FREE(mesh_name);
 
   if (param.perio_type != FVM_PERIODICITY_NULL)
     cs_join_perio_apply(this_join, loc_jmesh, mesh);
@@ -619,7 +619,7 @@ _intersect_edges(cs_join_t               *this_join,
   /* Memory management: final state for vtx_eset (no more equiv. to get) */
 
   vtx_eset->n_max_equiv = vtx_eset->n_equiv;
-  BFT_REALLOC(vtx_eset->equiv_couple, 2*vtx_eset->n_equiv, cs_lnum_t);
+  CS_REALLOC(vtx_eset->equiv_couple, 2*vtx_eset->n_equiv, cs_lnum_t);
 
   t1 = cs_timer_time();
 
@@ -687,8 +687,8 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   /* Initialize new vertex gnum with old one */
 
-  BFT_MALLOC(new_local_gnum, n_tot_vertices, cs_gnum_t);
-  BFT_MALLOC(dest_rank, n_tot_vertices, int);
+  CS_MALLOC(new_local_gnum, n_tot_vertices, cs_gnum_t);
+  CS_MALLOC(dest_rank, n_tot_vertices, int);
 
   for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
     dest_rank[i] = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
@@ -746,13 +746,13 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
                            b_data,
                            new_local_gnum);
 
-  BFT_FREE(b_data);
+  CS_FREE(b_data);
 
   cs_all_to_all_destroy(&d);
 
   /* Return pointer */
 
-  BFT_FREE(new_gnum_by_block);
+  CS_FREE(new_gnum_by_block);
   *p_o2n_vtx_gnum = new_local_gnum;
 }
 
@@ -801,7 +801,7 @@ _prepare_update_after_merge(cs_join_t          *this_join,
 
     cs_gnum_t  *loc_vtx_gnum = nullptr;
 
-    BFT_MALLOC(loc_vtx_gnum, mesh->n_vertices, cs_gnum_t);
+    CS_MALLOC(loc_vtx_gnum, mesh->n_vertices, cs_gnum_t);
 
     /* Initialize array */
 
@@ -830,7 +830,7 @@ _prepare_update_after_merge(cs_join_t          *this_join,
 
     }
 
-    BFT_FREE(o2n_vtx_gnum);
+    CS_FREE(o2n_vtx_gnum);
     o2n_vtx_gnum = loc_vtx_gnum; /* Without periodic vertices and for
                                     all vertices in cs_mesh_t structure */
 
@@ -854,7 +854,7 @@ _prepare_update_after_merge(cs_join_t          *this_join,
         selection->per_v_couples[2*i+1] = o2n_vtx_gnum[shift];
       }
 
-      BFT_REALLOC(o2n_vtx_gnum, mesh->n_vertices, cs_gnum_t);
+      CS_REALLOC(o2n_vtx_gnum, mesh->n_vertices, cs_gnum_t);
 
     }
 
@@ -935,7 +935,7 @@ _merge_vertices(cs_join_t                *this_join,
     Added vertices from inter. are between [n_init_vertices, n_vertices]
   */
 
-  BFT_MALLOC(iwm_vtx_gnum, n_iwm_vertices, cs_gnum_t);
+  CS_MALLOC(iwm_vtx_gnum, n_iwm_vertices, cs_gnum_t);
 
   for (i = 0; i < n_iwm_vertices; i++)
     iwm_vtx_gnum[i] = (work_jmesh->vertices[i]).gnum;
@@ -973,7 +973,7 @@ _merge_vertices(cs_join_t                *this_join,
 
   /* Free memory */
 
-  BFT_FREE(iwm_vtx_gnum);
+  CS_FREE(iwm_vtx_gnum);
 
   cs_join_inter_edges_destroy(inter_edges);
 
@@ -1594,7 +1594,7 @@ cs_join_add(const char  *sel_criteria,
 {
   /* Allocate and initialize a cs_join_t structure */
 
-  BFT_REALLOC(cs_glob_join_array, cs_glob_n_joinings + 1, cs_join_t *);
+  CS_REALLOC(cs_glob_join_array, cs_glob_n_joinings + 1, cs_join_t *);
 
   cs_glob_join_array[cs_glob_n_joinings]
     = cs_join_create(cs_glob_n_joinings + 1,
@@ -1916,7 +1916,7 @@ cs_join_all(bool  preprocess)
       cs_join_mesh_destroy(&work_jmesh);
       cs_join_mesh_destroy_edges(&work_join_edges);
 
-      BFT_FREE(work_face_normal);
+      CS_FREE(work_face_normal);
 
       /* Clean mesh (delete redundant edge definition) */
 
@@ -2003,7 +2003,7 @@ cs_join_all(bool  preprocess)
       break;
   }
   if (join_id >= cs_glob_n_joinings) {
-    BFT_FREE(cs_glob_join_array);
+    CS_FREE(cs_glob_join_array);
     cs_glob_n_joinings = 0;
   }
 
@@ -2050,7 +2050,7 @@ cs_join_finalize()
     }
   }
 
-  BFT_FREE(cs_glob_join_array);
+  CS_FREE(cs_glob_join_array);
   cs_glob_n_joinings = 0;
 
   if (have_log) {
@@ -2096,7 +2096,7 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
   /* Prepare selection structures */
 
   cs_lnum_t *b_face_list;
-  BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
 
   cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
 
@@ -2153,15 +2153,15 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
 
   /* Free arrays and structures needed for selection */
 
-  BFT_FREE(b_face_cog);
-  BFT_FREE(b_face_normal);
+  CS_FREE(b_face_cog);
+  CS_FREE(b_face_normal);
 
   select_b_faces = fvm_selector_destroy(select_b_faces);
 
   if (_class_defs != nullptr)
     _class_defs = fvm_group_class_set_destroy(_class_defs);
 
-  BFT_FREE(b_face_list);
+  CS_FREE(b_face_list);
 }
 
 /*---------------------------------------------------------------------------*/

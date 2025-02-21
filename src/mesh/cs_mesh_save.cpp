@@ -46,7 +46,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
@@ -55,6 +54,7 @@
 #include "base/cs_base.h"
 #include "base/cs_block_dist.h"
 #include "base/cs_io.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
 #include "mesh/cs_mesh_to_builder.h"
@@ -186,7 +186,7 @@ cs_mesh_save(cs_mesh_t          *mesh,
       MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
-    BFT_MALLOC(_name, ldir + lname + 2, char);
+    CS_MALLOC(_name, ldir + lname + 2, char);
     sprintf(_name, "%s%c%s",
             path, DIR_SEPARATOR, filename);
     name = _name;
@@ -211,7 +211,7 @@ cs_mesh_save(cs_mesh_t          *mesh,
                             echo);
 #endif
 
-  BFT_FREE(_name);
+  CS_FREE(_name);
 
   /* Write data */
   /*------------*/

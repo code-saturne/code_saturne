@@ -47,10 +47,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 
@@ -127,7 +127,7 @@ cs_symmetry_faces_filter_cancel(const cs_mesh_t             *m,
   /* Flag selected faces */
 
   char *flag;
-  BFT_MALLOC(flag, m->n_b_faces, char);
+  CS_MALLOC(flag, m->n_b_faces, char);
 
   for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
     flag[i] = 0;
@@ -136,9 +136,9 @@ cs_symmetry_faces_filter_cancel(const cs_mesh_t             *m,
     flag[face_ids[i]] = 1;
 
   char *c_flag;
-  BFT_MALLOC(c_flag, m->n_cells, char);
+  CS_MALLOC(c_flag, m->n_cells, char);
   cs_real_4_t  *sum;
-  BFT_MALLOC(sum, m->n_cells, cs_real_4_t);
+  CS_MALLOC(sum, m->n_cells, cs_real_4_t);
 
   for (cs_lnum_t i = 0; i < m->n_cells; i++) {
     for (cs_lnum_t j = 0; j < 4; j++)
@@ -162,7 +162,7 @@ cs_symmetry_faces_filter_cancel(const cs_mesh_t             *m,
       c_flag[c_id] = 0;
   }
 
-  BFT_FREE(sum);
+  CS_FREE(sum);
 
   for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
     cs_lnum_t c_id = b_face_cells[f_id];

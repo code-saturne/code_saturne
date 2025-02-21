@@ -41,7 +41,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "cfbl/cs_cf_model.h"
 #include "cfbl/cs_cf_boundary_flux.h"
 #include "cfbl/cs_cf_thermo.h"
@@ -111,8 +111,8 @@ static int *_icvfli = nullptr;
 static void
 _cf_boundary_conditions_finalize(void)
 {
-  BFT_FREE(_ifbet);
-  BFT_FREE(_icvfli);
+  CS_FREE(_ifbet);
+  CS_FREE(_icvfli);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -162,14 +162,14 @@ cs_cf_boundary_conditions(int  bc_type[])
   cs_real_t *w5, *w7, *wbfa, *wbfb;
   cs_real_3_t *bc_vel;
   cs_real_t *bc_en, *bc_pr, *bc_tk;
-  BFT_MALLOC(w5, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w7, n_b_faces, cs_real_t);
-  BFT_MALLOC(wbfa, n_b_faces, cs_real_t);
-  BFT_MALLOC(wbfb, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_vel, n_b_faces, cs_real_3_t);
-  BFT_MALLOC(bc_en, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_pr, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_tk, n_b_faces, cs_real_t);
+  CS_MALLOC(w5, n_cells_ext, cs_real_t);
+  CS_MALLOC(w7, n_b_faces, cs_real_t);
+  CS_MALLOC(wbfa, n_b_faces, cs_real_t);
+  CS_MALLOC(wbfb, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_vel, n_b_faces, cs_real_3_t);
+  CS_MALLOC(bc_en, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_pr, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_tk, n_b_faces, cs_real_t);
 
   cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_pr = CS_F_(p);
@@ -213,9 +213,9 @@ cs_cf_boundary_conditions(int  bc_type[])
 
   // Mixture fractions for the homogeneous two-phase flows
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
-    BFT_MALLOC(bc_fracv, n_b_faces, cs_real_t);
-    BFT_MALLOC(bc_fracm, n_b_faces, cs_real_t);
-    BFT_MALLOC(bc_frace, n_b_faces, cs_real_t);
+    CS_MALLOC(bc_fracv, n_b_faces, cs_real_t);
+    CS_MALLOC(bc_fracm, n_b_faces, cs_real_t);
+    CS_MALLOC(bc_frace, n_b_faces, cs_real_t);
     fracv_icodcl = CS_F_(volume_f)->bc_coeffs->icodcl;
     fracm_icodcl = CS_F_(mass_f)->bc_coeffs->icodcl;
     frace_icodcl = CS_F_(energy_f)->bc_coeffs->icodcl;
@@ -616,18 +616,18 @@ cs_cf_boundary_conditions(int  bc_type[])
 
   /* Free work arrays */
 
-  BFT_FREE(w5);
-  BFT_FREE(w7);
-  BFT_FREE(wbfa);
-  BFT_FREE(wbfb);
-  BFT_FREE(bc_vel);
-  BFT_FREE(bc_en);
-  BFT_FREE(bc_pr);
-  BFT_FREE(bc_tk);
+  CS_FREE(w5);
+  CS_FREE(w7);
+  CS_FREE(wbfa);
+  CS_FREE(wbfb);
+  CS_FREE(bc_vel);
+  CS_FREE(bc_en);
+  CS_FREE(bc_pr);
+  CS_FREE(bc_tk);
 
-  BFT_FREE(bc_fracv);
-  BFT_FREE(bc_fracm);
-  BFT_FREE(bc_frace);
+  CS_FREE(bc_fracv);
+  CS_FREE(bc_fracm);
+  CS_FREE(bc_frace);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -641,8 +641,8 @@ cs_cf_boundary_conditions_init(void)
 {
   cs_base_at_finalize(_cf_boundary_conditions_finalize);
 
-  BFT_REALLOC(_ifbet, cs_glob_mesh->n_b_faces, int);
-  BFT_REALLOC(_icvfli, cs_glob_mesh->n_b_faces, int);
+  CS_REALLOC(_ifbet, cs_glob_mesh->n_b_faces, int);
+  CS_REALLOC(_icvfli, cs_glob_mesh->n_b_faces, int);
 }
 
 /*----------------------------------------------------------------------------*/

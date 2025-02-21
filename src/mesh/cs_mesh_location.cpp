@@ -39,13 +39,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_selector.h"
 
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 
 #include "mesh/cs_mesh.h"
@@ -84,7 +84,7 @@ BEGIN_C_DECLS
  *
  * If non-empty and not containing all elements, a list of elements
  * of the parent mesh belonging to the location should be allocated
- * (using BFT_MALLOC) and defined by this function when called.
+ * (using CS_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
  * \param [in]   m            pointer to associated mesh structure.
@@ -282,9 +282,9 @@ _mesh_location_define(const char               *name,
       _n_mesh_locations_max = 4;
     else
       _n_mesh_locations_max *= 2;
-    BFT_REALLOC(_mesh_location,
-                _n_mesh_locations_max,
-                cs_mesh_location_t);
+    CS_REALLOC(_mesh_location,
+               _n_mesh_locations_max,
+               cs_mesh_location_t);
   }
   _n_mesh_locations++;
 
@@ -359,7 +359,7 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
 
     ml->n_elts[0] = sub_ml->n_elts[0];
     if (sub_ml->elt_list != nullptr) { /* Copy */
-      BFT_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+      CS_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
       memcpy(ml->elt_list, sub_ml->elt_list, ml->n_elts[0]*sizeof(cs_lnum_t));
     }
 
@@ -369,7 +369,7 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
     bool  *flag = nullptr;
 
     /* Initialize flag */
-    BFT_MALLOC(flag, n_elts_max, bool);
+    CS_MALLOC(flag, n_elts_max, bool);
     for (i = 0; i < n_elts_max; i++)
       flag[i] = false;
 
@@ -407,13 +407,13 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
 
     /* Build elt_list */
     if (ml->n_elts[0] != 0 && ml->n_elts[0] != n_elts_max) {
-      BFT_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+      CS_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
       count = 0;
       for (i = 0; i < n_elts_max; i++)
         if (flag[i]) ml->elt_list[count++] = i;
     }
 
-    BFT_FREE(flag);
+    CS_FREE(flag);
 
   } /* If simple case (n_sub_ids = 1 and no complement) or not */
 
@@ -491,20 +491,20 @@ cs_mesh_location_finalize(void)
 {
   int  i;
 
-  BFT_FREE(_explicit_ids);
+  CS_FREE(_explicit_ids);
 
   for (i = 0; i < _n_mesh_locations; i++) {
     cs_mesh_location_t  *ml = _mesh_location + i;
-    BFT_FREE(ml->elt_list);
-    BFT_FREE(ml->select_str);
-    BFT_FREE(ml->sub_ids);
+    CS_FREE(ml->elt_list);
+    CS_FREE(ml->select_str);
+    CS_FREE(ml->sub_ids);
   }
 
   _explicit_ids_size = 0;
   _n_mesh_locations = 0;
   _n_mesh_locations_max = 0;
 
-  BFT_FREE(_mesh_location);
+  CS_FREE(_mesh_location);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -552,7 +552,7 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
     ml->mesh = mesh;
 
     if (ml->elt_list != nullptr)
-      BFT_FREE(ml->elt_list);
+      CS_FREE(ml->elt_list);
 
     switch(ml->type) {
     case CS_MESH_LOCATION_CELLS:
@@ -579,16 +579,16 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
 
     if (ml->select_str != nullptr) {
       if (selector != nullptr) {
-        BFT_MALLOC(ml->elt_list, n_elts_max, cs_lnum_t);
+        CS_MALLOC(ml->elt_list, n_elts_max, cs_lnum_t);
         int c_id = fvm_selector_get_list(selector,
                                          ml->select_str,
                                          0,
                                          ml->n_elts,
                                          ml->elt_list);
         if (ml->n_elts[0] == n_elts_max && ml->elt_list != nullptr)
-          BFT_FREE(ml->elt_list);
+          CS_FREE(ml->elt_list);
         else
-          BFT_REALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+          CS_REALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
         if (fvm_selector_n_missing(selector, c_id) > 0) {
           const char *missing
             = fvm_selector_get_missing(selector, c_id, 0);
@@ -639,7 +639,7 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
     if (id == 0 || explicit_ids_size > _explicit_ids_size) {
       cs_lnum_t s_id = (id == 0) ? 0 : _explicit_ids_size;
       _explicit_ids_size = explicit_ids_size;
-      BFT_REALLOC(_explicit_ids, _explicit_ids_size, cs_lnum_t);
+      CS_REALLOC(_explicit_ids, _explicit_ids_size, cs_lnum_t);
       for (cs_lnum_t i = s_id; i < _explicit_ids_size; i++)
         _explicit_ids[i] = i;
     }
@@ -671,7 +671,7 @@ cs_mesh_location_add(const char                *name,
   cs_mesh_location_t  *ml = _mesh_location + ml_id;
 
   if (criteria != nullptr) {
-    BFT_MALLOC(ml->select_str, strlen(criteria) + 1, char);
+    CS_MALLOC(ml->select_str, strlen(criteria) + 1, char);
     strcpy(ml->select_str, criteria);
   }
 
@@ -744,7 +744,7 @@ cs_mesh_location_add_by_union(const char               *name,
   ml->complement = complement;
   ml->n_sub_ids = n_ml_ids;
   if (ml->n_sub_ids > 0) {
-    BFT_MALLOC(ml->sub_ids, ml->n_sub_ids, int);
+    CS_MALLOC(ml->sub_ids, ml->n_sub_ids, int);
     for (int i = 0; i < ml->n_sub_ids; i++)
       ml->sub_ids[i] = ml_ids[i];
   }

@@ -42,7 +42,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
@@ -51,6 +50,7 @@
 
 #include "base/cs_base.h"
 #include "base/cs_interface.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -142,7 +142,7 @@ cs_mesh_builder_create(void)
 {
   cs_mesh_builder_t  *mb = nullptr;
 
-  BFT_MALLOC(mb, 1, cs_mesh_builder_t);
+  CS_MALLOC(mb, 1, cs_mesh_builder_t);
 
   mb->n_g_faces = 0;
   mb->n_g_face_connect_size = 0;
@@ -208,38 +208,38 @@ cs_mesh_builder_destroy(cs_mesh_builder_t  **mb)
 
     /* Temporary mesh data */
 
-    BFT_FREE(_mb->face_cells);
-    BFT_FREE(_mb->face_vertices_idx);
-    BFT_FREE(_mb->face_vertices);
-    BFT_FREE(_mb->cell_gc_id);
-    BFT_FREE(_mb->face_gc_id);
-    BFT_FREE(_mb->vertex_coords);
+    CS_FREE(_mb->face_cells);
+    CS_FREE(_mb->face_vertices_idx);
+    CS_FREE(_mb->face_vertices);
+    CS_FREE(_mb->cell_gc_id);
+    CS_FREE(_mb->face_gc_id);
+    CS_FREE(_mb->vertex_coords);
 
     /* Refinement features */
 
-    BFT_FREE(_mb->face_r_gen);
-    BFT_FREE(_mb->vtx_r_gen);
+    CS_FREE(_mb->face_r_gen);
+    CS_FREE(_mb->vtx_r_gen);
 
     /* Periodic features */
 
-    BFT_FREE(_mb->periodicity_num);
-    BFT_FREE(_mb->n_per_face_couples);
-    BFT_FREE(_mb->n_g_per_face_couples);
+    CS_FREE(_mb->periodicity_num);
+    CS_FREE(_mb->n_per_face_couples);
+    CS_FREE(_mb->n_g_per_face_couples);
     if (_mb->per_face_couples != nullptr) {
       for (int i = 0; i < _mb->n_perio; i++)
-        BFT_FREE(_mb->per_face_couples[i]);
-      BFT_FREE(_mb->per_face_couples);
+        CS_FREE(_mb->per_face_couples[i]);
+      CS_FREE(_mb->per_face_couples);
     }
 
     /* Optional partitioning info */
 
-    BFT_FREE(_mb->cell_rank);
+    CS_FREE(_mb->cell_rank);
 
     /* Block ranges for parallel distribution */
 
-    BFT_FREE(_mb->per_face_bi);
+    CS_FREE(_mb->per_face_bi);
 
-    BFT_FREE(*mb);
+    CS_FREE(*mb);
   }
 }
 
@@ -328,9 +328,9 @@ cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio
 
   if (mb->n_perio > 0 && mb->n_per_face_couples != nullptr) {
     for (i = 0; i < n_perio; i++)
-      BFT_FREE(mb->per_face_couples[i]);
-    BFT_FREE(mb->n_per_face_couples);
-    BFT_FREE(mb->per_face_couples);
+      CS_FREE(mb->per_face_couples[i]);
+    CS_FREE(mb->n_per_face_couples);
+    CS_FREE(mb->per_face_couples);
   }
 
   mb->n_perio = n_perio;
@@ -341,8 +341,8 @@ cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio
   assert(mb != nullptr);
   assert(mb->n_g_per_face_couples == 0);
 
-  BFT_MALLOC(mb->n_per_face_couples, n_perio, cs_lnum_t);
-  BFT_MALLOC(mb->per_face_couples, n_perio, cs_gnum_t *);
+  CS_MALLOC(mb->n_per_face_couples, n_perio, cs_lnum_t);
+  CS_MALLOC(mb->per_face_couples, n_perio, cs_gnum_t *);
 
   for (i = 0; i < n_perio; i++) {
     mb->n_per_face_couples[i] = 0;
@@ -351,7 +351,7 @@ cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio
 
   /* List direct and reverse transforms */
 
-  BFT_MALLOC(tr_id, n_perio*2, int);
+  CS_MALLOC(tr_id, n_perio*2, int);
 
   for (i = 0; i < n_perio*2; i++) {
     int rev_id = fvm_periodicity_get_reverse_id(periodicity, i);
@@ -377,7 +377,7 @@ cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio
     }
   }
 
-  BFT_MALLOC(recv_num, cs_interface_set_n_elts(face_ifs), cs_gnum_t);
+  CS_MALLOC(recv_num, cs_interface_set_n_elts(face_ifs), cs_gnum_t);
 
   cs_interface_set_copy_array(face_ifs,
                               gnum_type,
@@ -388,10 +388,10 @@ cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio
 
   /* Prepare send buffer (send reverse transformation values) */
 
-  BFT_FREE(send_index);
+  CS_FREE(send_index);
 
   for (i = 0; i < n_perio; i++)
-    BFT_MALLOC(mb->per_face_couples[i], mb->n_per_face_couples[i]*2, cs_gnum_t);
+    CS_MALLOC(mb->per_face_couples[i], mb->n_per_face_couples[i]*2, cs_gnum_t);
 
   /* Reset couples count */
 
@@ -431,8 +431,8 @@ cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio
 
   }
 
-  BFT_FREE(recv_num);
-  BFT_FREE(tr_id);
+  CS_FREE(recv_num);
+  CS_FREE(tr_id);
 
   /* Now sort couples in place for future use (more for consistency
      and ease of verification than absolutely necessary) */

@@ -91,7 +91,7 @@ typedef struct _cs_mesh_location_t cs_mesh_location_t;
  *
  * If non-empty and not containing all elements, a list of elements
  * of the parent mesh belonging to the location should be allocated
- * (using BFT_MALLOC) and defined by this function when called.
+ * (using CS_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
  * Note: if the input pointer is non-null, it must point to valid data

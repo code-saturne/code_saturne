@@ -41,12 +41,12 @@
  * Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_periodicity.h"
 #include "base/cs_block_dist.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
@@ -235,7 +235,6 @@ _face_bbox(const cs_join_mesh_t  *m,
     }
 
   } /* End of loop on face vertices */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -268,7 +267,7 @@ _renumber_local_ordered_i(cs_lnum_t         n_elts,
 
   /* Build a new index */
 
-  BFT_MALLOC(_new_index, n_elts + 1, cs_lnum_t);
+  CS_MALLOC(_new_index, n_elts + 1, cs_lnum_t);
 
   for (i = 0; i < n_elts; i++) {
     o_id = order[i];
@@ -281,7 +280,7 @@ _renumber_local_ordered_i(cs_lnum_t         n_elts,
 
   /* Build a new list */
 
-  BFT_MALLOC(_new_glist, _new_index[n_elts], cs_gnum_t);
+  CS_MALLOC(_new_glist, _new_index[n_elts], cs_gnum_t);
 
   for (i = 0; i < n_elts; i++) {
 
@@ -347,8 +346,8 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
     if (gnum_rank_index[i] < gnum_rank_index[i+1])
       reduce_size++;
 
-  BFT_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
-  BFT_MALLOC(reduce_ids, reduce_size, cs_lnum_t);
+  CS_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
+  CS_MALLOC(reduce_ids, reduce_size, cs_lnum_t);
 
   reduce_size = 0;
   reduce_index[0] = gnum_rank_index[0] + 1;
@@ -383,7 +382,7 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
   for (i = 0; i < n_ranks; i++)
     new_face_rank->index[i+1] += new_face_rank->index[i];
 
-  BFT_MALLOC(new_face_rank->g_list, new_face_rank->index[n_ranks], cs_gnum_t);
+  CS_MALLOC(new_face_rank->g_list, new_face_rank->index[n_ranks], cs_gnum_t);
 
   /* Fill the list of ranks */
 
@@ -415,8 +414,8 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
 
   /* Free memory */
 
-  BFT_FREE(reduce_ids);
-  BFT_FREE(reduce_index);
+  CS_FREE(reduce_ids);
+  CS_FREE(reduce_index);
 
   cs_join_gset_clean(new_face_rank);
 
@@ -424,14 +423,14 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
 
   _n_send = new_face_rank->index[n_ranks];
 
-  BFT_MALLOC(_send_rank, _n_send, int);
+  CS_MALLOC(_send_rank, _n_send, int);
 
   for (i = 0; i < n_ranks; i++) {
     for (j = new_face_rank->index[i]; j < new_face_rank->index[i+1]; j++)
       _send_rank[j] = i;
   }
 
-  BFT_MALLOC(_send_faces, _n_send, cs_lnum_t);
+  CS_MALLOC(_send_faces, _n_send, cs_lnum_t);
 
   for (i = 0; i < _n_send; i++)
     _send_faces[i] = new_face_rank->g_list[i];
@@ -526,7 +525,6 @@ _define_head_and_ext_edges(cs_lnum_t               face_id,
 
   head_edges->n_elts = n_face_vertices;
   ext_edges->n_elts = n_face_vertices;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -546,11 +544,11 @@ _create_face_builder(cs_lnum_t  n_faces)
 
   face_builder_t  *builder = nullptr;
 
-  BFT_MALLOC(builder, 1, face_builder_t);
+  CS_MALLOC(builder, 1, face_builder_t);
 
   builder->n_faces = n_faces;
 
-  BFT_MALLOC(builder->face_index, n_faces + 1, cs_lnum_t);
+  CS_MALLOC(builder->face_index, n_faces + 1, cs_lnum_t);
 
   for (i = 0; i < n_faces + 1; i++)
     builder->face_index[i] = 0;
@@ -585,18 +583,18 @@ _destroy_face_builder(face_builder_t  *builder)
   if (builder == nullptr)
     return nullptr;
 
-  BFT_FREE(builder->face_index);
+  CS_FREE(builder->face_index);
 
   cs_join_rset_destroy(&(builder->subface_index));
   cs_join_rset_destroy(&(builder->subface_connect));
 
   if (builder->subface_gnum != nullptr)
-    BFT_FREE(builder->subface_gnum);
+    CS_FREE(builder->subface_gnum);
 
   if (builder->subface_gconnect != nullptr)
-    BFT_FREE(builder->subface_gconnect);
+    CS_FREE(builder->subface_gconnect);
 
-  BFT_FREE(builder);
+  CS_FREE(builder);
 
   return nullptr;
 }
@@ -1449,7 +1447,7 @@ _get_subface_gnum(face_builder_t         *builder,
 
   /* Allocate the buffer we want to define */
 
-  BFT_MALLOC(builder->subface_gnum, n_subfaces, cs_gnum_t);
+  CS_MALLOC(builder->subface_gnum, n_subfaces, cs_gnum_t);
 
   /* Re-arrange gconnect in order to have for each subface:
       - vertex with the minimal glob. num. in first place,
@@ -1460,8 +1458,8 @@ _get_subface_gnum(face_builder_t         *builder,
   for (i = 0; i < n_subfaces; i++)
     max_size = CS_MAX(max_size, index[i+1] - index[i]);
 
-  BFT_MALLOC(tmp, max_size, cs_gnum_t);
-  BFT_MALLOC(glob_list, index[n_subfaces], cs_gnum_t);
+  CS_MALLOC(tmp, max_size, cs_gnum_t);
+  CS_MALLOC(glob_list, index[n_subfaces], cs_gnum_t);
 
   /* Build glob_list */
 
@@ -1511,7 +1509,7 @@ _get_subface_gnum(face_builder_t         *builder,
   /* Copy glob_list as the new subface global connectivity and
      use it to define a synchronized sub-face connectivity */
 
-  BFT_MALLOC(vgnum, work->n_vertices, cs_gnum_t);
+  CS_MALLOC(vgnum, work->n_vertices, cs_gnum_t);
 
   for (i = 0; i < work->n_vertices; i++)
     vgnum[i] = vertices[i].gnum;
@@ -1533,7 +1531,7 @@ _get_subface_gnum(face_builder_t         *builder,
 
   } /* End of loop on subfaces */
 
-  BFT_FREE(vgnum);
+  CS_FREE(vgnum);
 
   if (cs_glob_n_ranks > 1) { /* Parallel treatment */
 
@@ -1568,9 +1566,9 @@ _get_subface_gnum(face_builder_t         *builder,
 
     builder->n_g_subfaces = fvm_io_num_get_global_count(subface_io_num);
 
-    BFT_FREE(order);
-    BFT_FREE(order_index);
-    BFT_FREE(order_glob_list);
+    CS_FREE(order);
+    CS_FREE(order_index);
+    CS_FREE(order_glob_list);
 
     subface_io_num = fvm_io_num_destroy(subface_io_num);
 
@@ -1608,7 +1606,7 @@ _get_subface_gnum(face_builder_t         *builder,
     }
 #endif
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
   }
 
@@ -1620,8 +1618,8 @@ _get_subface_gnum(face_builder_t         *builder,
 
   /* Free memory */
 
-  BFT_FREE(tmp);
-  BFT_FREE(glob_list);
+  CS_FREE(tmp);
+  CS_FREE(glob_list);
 
 }
 
@@ -1661,13 +1659,13 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
 
   /* Create a new cs_join_mesh_t structure */
 
-  BFT_MALLOC(new_mesh_name, strlen("AfterSplitting_n") + 5 + 1, char);
+  CS_MALLOC(new_mesh_name, strlen("AfterSplitting_n") + 5 + 1, char);
   sprintf(new_mesh_name,"%s%05d", "AfterSplitting_n",
           CS_MAX(cs_glob_rank_id, 0));
 
   new_mesh = cs_join_mesh_create(new_mesh_name);
 
-  BFT_FREE(new_mesh_name);
+  CS_FREE(new_mesh_name);
 
   if (block_size != builder->n_faces)
     bft_error(__FILE__, __LINE__, 0,
@@ -1681,7 +1679,7 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
 
   n_subfaces = builder->face_index[builder->n_faces];
 
-  BFT_MALLOC(order, n_subfaces, cs_lnum_t);
+  CS_MALLOC(order, n_subfaces, cs_lnum_t);
 
   cs_order_gnum_allocated(nullptr, builder->subface_gnum, order, n_subfaces);
 
@@ -1700,7 +1698,7 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
 
   /* Build new cell_gnum array */
 
-  BFT_MALLOC(subfaces, n_new_faces, cs_lnum_t);
+  CS_MALLOC(subfaces, n_new_faces, cs_lnum_t);
 
   prev = 0;
   n_new_faces = 0;
@@ -1723,8 +1721,8 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
   new_mesh->n_faces = n_new_faces;
   new_mesh->n_g_faces = builder->n_g_subfaces;
 
-  BFT_MALLOC(new_mesh->face_gnum, n_new_faces, cs_gnum_t);
-  BFT_MALLOC(new_mesh->face_vtx_idx, n_new_faces + 1, cs_lnum_t);
+  CS_MALLOC(new_mesh->face_gnum, n_new_faces, cs_gnum_t);
+  CS_MALLOC(new_mesh->face_vtx_idx, n_new_faces + 1, cs_lnum_t);
 
   for (i = 0; i < n_new_faces; i++) {
 
@@ -1739,7 +1737,7 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
   for (i = 0; i < n_new_faces; i++)
     new_mesh->face_vtx_idx[i+1] += new_mesh->face_vtx_idx[i];
 
-  BFT_MALLOC(new_mesh->face_vtx_lst,
+  CS_MALLOC(new_mesh->face_vtx_lst,
              new_mesh->face_vtx_idx[n_new_faces],
              cs_lnum_t);
 
@@ -1759,7 +1757,7 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
   new_mesh->n_g_vertices = init_mesh->n_g_vertices;
   new_mesh->n_vertices = init_mesh->n_vertices;
 
-  BFT_MALLOC(new_mesh->vertices, new_mesh->n_vertices, cs_join_vertex_t);
+  CS_MALLOC(new_mesh->vertices, new_mesh->n_vertices, cs_join_vertex_t);
 
   for (i = 0; i < init_mesh->n_vertices; i++)
     new_mesh->vertices[i] = init_mesh->vertices[i];
@@ -1768,8 +1766,8 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
 
   /* Free memory */
 
-  BFT_FREE(subfaces);
-  BFT_FREE(order);
+  CS_FREE(subfaces);
+  CS_FREE(order);
 
   /* Create a structure in which we keep a history of global
      face numbering for each new face */
@@ -1792,8 +1790,8 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
     for (i = 0; i < builder->n_faces + 1; i++)
       o2n_hist->index[i] = builder->face_index[i];
 
-    BFT_MALLOC(o2n_hist->g_list,
-               o2n_hist->index[o2n_hist->n_elts], cs_gnum_t);
+    CS_MALLOC(o2n_hist->g_list,
+              o2n_hist->index[o2n_hist->n_elts], cs_gnum_t);
 
     for (i = 0; i < builder->n_faces; i++) {
 
@@ -2166,8 +2164,8 @@ cs_join_split_faces(cs_join_param_t          param,
 
   /* Free vtx_struct structure */
 
-  BFT_FREE(e2f_idx);
-  BFT_FREE(e2f_lst);
+  CS_FREE(e2f_idx);
+  CS_FREE(e2f_lst);
 
   /* Delete error management lists */
 
@@ -2182,7 +2180,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
     /* Define subface_gconnect */
 
-    BFT_MALLOC(builder->subface_gconnect, sub_connect_size, cs_gnum_t);
+    CS_MALLOC(builder->subface_gconnect, sub_connect_size, cs_gnum_t);
 
     for (j = 0; j < sub_connect_size; j++) {
       vid = builder->subface_connect->array[j] - 1;
@@ -2200,7 +2198,7 @@ cs_join_split_faces(cs_join_param_t          param,
     }
 #endif
 
-    BFT_FREE(builder->subface_gconnect);
+    CS_FREE(builder->subface_gconnect);
 
   }
 
@@ -2298,7 +2296,7 @@ cs_join_split_update_struct(const cs_join_param_t   param,
 
       /* Save the initial global face numbering */
 
-      BFT_MALLOC(init_face_gnum, 2*n_init_faces, cs_gnum_t);
+      CS_MALLOC(init_face_gnum, 2*n_init_faces, cs_gnum_t);
 
       for (i = 0; i < n_init_faces; i++) {
         init_face_gnum[2*i] = _local_mesh->face_gnum[i];
@@ -2312,7 +2310,7 @@ cs_join_split_update_struct(const cs_join_param_t   param,
 
       /* Save the initial global face numbering */
 
-      BFT_MALLOC(init_face_gnum, n_init_faces, cs_gnum_t);
+      CS_MALLOC(init_face_gnum, n_init_faces, cs_gnum_t);
 
       for (i = 0; i < n_init_faces; i++)
         init_face_gnum[i] = _local_mesh->face_gnum[i];
@@ -2338,8 +2336,8 @@ cs_join_split_update_struct(const cs_join_param_t   param,
                           _local_mesh,
                           mpi_comm);
 
-    BFT_FREE(send_faces);
-    BFT_FREE(send_rank);
+    CS_FREE(send_faces);
+    CS_FREE(send_rank);
 
     /* Order face by increasing global number */
 
@@ -2366,7 +2364,7 @@ cs_join_split_update_struct(const cs_join_param_t   param,
     for (i = 0; i < n_init_faces; i++)
       _o2n_hist->g_elts[i] = init_face_gnum[i];
 
-    BFT_FREE(init_face_gnum);
+    CS_FREE(init_face_gnum);
 
     cs_join_gset_block_update(n_g_init_faces,
                               distrib_sync_hist,

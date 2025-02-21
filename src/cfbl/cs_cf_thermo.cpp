@@ -41,13 +41,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -374,7 +374,7 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
     cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
 
-    BFT_MALLOC(gamma, n_elts, cs_real_t);
+    CS_MALLOC(gamma, n_elts, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
@@ -387,7 +387,7 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
                 + 0.5*v2;
     }
 
-    BFT_FREE(gamma);
+    CS_FREE(gamma);
   }
 }
 
@@ -442,7 +442,7 @@ cs_cf_thermo_de_from_pt(cs_real_t   *cp,
     cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
 
-    BFT_MALLOC(gamma, n_elts, cs_real_t);
+    CS_MALLOC(gamma, n_elts, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
@@ -455,7 +455,7 @@ cs_cf_thermo_de_from_pt(cs_real_t   *cp,
                 + 0.5*v2;
     }
 
-    BFT_FREE(gamma);
+    CS_FREE(gamma);
   }
 }
 
@@ -515,7 +515,7 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
     cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
 
-    BFT_MALLOC(gamma, n_elts, cs_real_t);
+    CS_MALLOC(gamma, n_elts, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
@@ -531,7 +531,7 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
       temp[i] = (pres[i]+psginf) / ((gamma[i]-1.)*rho[i]*cv[i]);
     }
 
-    BFT_FREE(gamma);
+    CS_FREE(gamma);
   }
 }
 
@@ -585,7 +585,7 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
   else if (ieos == CS_EOS_GAS_MIX) {
     cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
-    BFT_MALLOC(gamma, n_elts, cs_real_t);
+    CS_MALLOC(gamma, n_elts, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
@@ -597,7 +597,7 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
       ener[i] = (pres[i]+gamma[i]*psginf) / ((gamma[i]-1.)*rho[i]) + 0.5*v2;
     }
 
-    BFT_FREE(gamma);
+    CS_FREE(gamma);
   }
 }
 
@@ -662,7 +662,7 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
   else if (ieos == CS_EOS_GAS_MIX) {
     cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
-    BFT_MALLOC(gamma, n_elts, cs_real_t);
+    CS_MALLOC(gamma, n_elts, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
@@ -678,7 +678,7 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
       temp[i] = (pres[i]+psginf) / ((gamma[i]-1.)*rho[i]*cv[i]);
     }
 
-    BFT_FREE(gamma);
+    CS_FREE(gamma);
   }
   /* homogeneous two phase */
   else if (ieos == CS_EOS_HOMOGENEOUS_TWO_PHASE) {
@@ -753,14 +753,14 @@ cs_cf_thermo_c_square(cs_real_t *cp,
   else if (ieos == CS_EOS_GAS_MIX) {
     cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
-    BFT_MALLOC(gamma, n_elts, cs_real_t);
+    CS_MALLOC(gamma, n_elts, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       c2[i] = gamma[i] * (pres[i]+psginf) / rho[i];
 
-    BFT_FREE(gamma);
+    CS_FREE(gamma);
   }
   else if (ieos == CS_EOS_HOMOGENEOUS_TWO_PHASE){
     for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -818,14 +818,14 @@ cs_cf_thermo_beta(cs_real_t *cp,
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
     cs_real_t *gamma;
-    BFT_MALLOC(gamma, n_elts, cs_real_t);
+    CS_MALLOC(gamma, n_elts, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       beta[i] = pow(rho[i],gamma[i]);
 
-    BFT_FREE(gamma);
+    CS_FREE(gamma);
   }
 }
 
@@ -909,7 +909,7 @@ cs_cf_thermo_s_from_dp(cs_real_t *cp,
     cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
 
-    BFT_MALLOC(gamma, n_elts, cs_real_t);
+    CS_MALLOC(gamma, n_elts, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
@@ -918,7 +918,7 @@ cs_cf_thermo_s_from_dp(cs_real_t *cp,
     for (cs_lnum_t i = 0; i < n_elts; i++)
       entr[i] = (pres[i]+psginf) / pow(rho[i],gamma[i]);
 
-    BFT_FREE(gamma);
+    CS_FREE(gamma);
   }
 }
 

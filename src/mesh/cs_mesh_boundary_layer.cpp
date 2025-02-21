@@ -46,10 +46,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_boundary_zone.h"
+#include "base/cs_mem.h"
+
 #include "cdo/cs_cdo_main.h"
 #include "cdo/cs_domain.h"
 #include "cdo/cs_equation.h"
@@ -106,7 +107,7 @@ static const cs_mesh_extrude_vectors_t  *_extrude_vectors = nullptr;
  *
  * If non-empty and not containing all elements, a list of elements
  * of the parent mesh belonging to the location should be allocated
- * (using BFT_MALLOC) and defined by this function when called.
+ * (using CS_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
  * \param [in]   m            pointer to associated mesh structure.
@@ -132,7 +133,7 @@ _transfer_bl_faces_selection(void              *input,
 
     *n_elts = _n_sel_faces;
 
-    BFT_MALLOC(*elt_ids, _n_sel_faces, cs_lnum_t);
+    CS_MALLOC(*elt_ids, _n_sel_faces, cs_lnum_t);
     memcpy(*elt_ids,
            _extrude_vectors->face_ids,
            _n_sel_faces*sizeof(cs_lnum_t));
@@ -372,7 +373,7 @@ static void
 _prescribe_displacements(const cs_mesh_extrude_vectors_t  *e)
 {
   cs_real_3_t *_c_shift;
-  BFT_MALLOC(_c_shift, e->n_vertices, cs_real_3_t);
+  CS_MALLOC(_c_shift, e->n_vertices, cs_real_3_t);
 # pragma omp parallel for if (e->n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < e->n_vertices; i++) {
     for (cs_lnum_t j = 0; j < 3; j++)
@@ -381,7 +382,7 @@ _prescribe_displacements(const cs_mesh_extrude_vectors_t  *e)
   cs_mesh_deform_prescribe_displacement(e->n_vertices,
                                         e->vertex_ids,
                                         (const cs_real_3_t *)_c_shift);
-  BFT_FREE(_c_shift);
+  CS_FREE(_c_shift);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -551,7 +552,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
       const cs_lnum_t n_vertices = m->n_vertices;
 
       char *vtx_flag;
-      BFT_MALLOC(vtx_flag, n_vertices, char);
+      CS_MALLOC(vtx_flag, n_vertices, char);
 
       /* Flag vertices adjacent to cells with bad volumes */
 
@@ -580,8 +581,8 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
                                                      cell counts */
       }
 
-      BFT_FREE(vtx_flag);
-      BFT_FREE(cell_vol_cmp);
+      CS_FREE(vtx_flag);
+      CS_FREE(cell_vol_cmp);
 
       if (counts[2] > 0) {
 

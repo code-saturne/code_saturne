@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -52,6 +51,7 @@
 #include "base/cs_log.h"
 #include "base/cs_parall.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_time_step.h"
@@ -470,7 +470,7 @@ _pot_gradient_im_f(int               location_id,
   const cs_field_t *f = cs_field_by_name("elec_pot_i");
 
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, m->n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC(grad, m->n_cells_with_ghosts, cs_real_3_t);
 
   cs_field_gradient_scalar(f, false, 1, grad);
 
@@ -489,7 +489,7 @@ _pot_gradient_im_f(int               location_id,
     }
   }
 
-  BFT_FREE(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -524,7 +524,7 @@ _current_im_f(int               location_id,
   const cs_field_t *f = cs_field_by_name("elec_pot_i");
 
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, m->n_cells_with_ghosts, cs_real_3_t);
+  CS_MALLOC(grad, m->n_cells_with_ghosts, cs_real_3_t);
 
   cs_field_gradient_scalar(f, false, 1, grad);
 
@@ -570,7 +570,7 @@ _current_im_f(int               location_id,
     }
   }
 
-  BFT_FREE(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -707,7 +707,7 @@ cs_electrical_model_initialize(void)
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
 
   if (ieljou >= 3)
-    BFT_MALLOC(_transformer, 1, cs_data_joule_effect_t);
+    CS_MALLOC(_transformer, 1, cs_data_joule_effect_t);
 
   _elec_option.ixkabe    = 0;
   _elec_option.ntdcla    = 1;
@@ -752,30 +752,30 @@ cs_electrical_model_finalize(void)
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
   if (ielarc > 0) {
-    BFT_FREE(_elec_properties.th);
-    BFT_FREE(_elec_properties.eh_gas);
-    BFT_FREE(_elec_properties.rhoel);
-    BFT_FREE(_elec_properties.cpel);
-    BFT_FREE(_elec_properties.sigel);
-    BFT_FREE(_elec_properties.visel);
-    BFT_FREE(_elec_properties.xlabel);
-    BFT_FREE(_elec_properties.xkabel);
+    CS_FREE(_elec_properties.th);
+    CS_FREE(_elec_properties.eh_gas);
+    CS_FREE(_elec_properties.rhoel);
+    CS_FREE(_elec_properties.cpel);
+    CS_FREE(_elec_properties.sigel);
+    CS_FREE(_elec_properties.visel);
+    CS_FREE(_elec_properties.xlabel);
+    CS_FREE(_elec_properties.xkabel);
   }
 
   if (ieljou >= 3) {
-    BFT_FREE(_transformer->tenspr);
-    BFT_FREE(_transformer->rnbs);
-    BFT_FREE(_transformer->zr);
-    BFT_FREE(_transformer->zi);
-    BFT_FREE(_transformer->ibrpr);
-    BFT_FREE(_transformer->ibrsec);
-    BFT_FREE(_transformer->tenspr);
-    BFT_FREE(_transformer->uroff);
-    BFT_FREE(_transformer->uioff);
-    BFT_FREE(_transformer);
+    CS_FREE(_transformer->tenspr);
+    CS_FREE(_transformer->rnbs);
+    CS_FREE(_transformer->zr);
+    CS_FREE(_transformer->zi);
+    CS_FREE(_transformer->ibrpr);
+    CS_FREE(_transformer->ibrsec);
+    CS_FREE(_transformer->tenspr);
+    CS_FREE(_transformer->uroff);
+    CS_FREE(_transformer->uioff);
+    CS_FREE(_transformer);
   }
 
-  BFT_FREE(_elec_option.izreca);
+  CS_FREE(_elec_option.izreca);
 }
 
 /*----------------------------------------------------------------------------
@@ -913,16 +913,16 @@ cs_electrical_properties_read(void)
                        * _elec_properties.n_point;
 
       if (nb_line_tot == 8) {
-        BFT_MALLOC(_elec_properties.th,
-                   cs_glob_elec_properties->n_point,
-                   cs_real_t);
-        BFT_MALLOC(_elec_properties.eh_gas,  size, cs_real_t);
-        BFT_MALLOC(_elec_properties.rhoel,  size, cs_real_t);
-        BFT_MALLOC(_elec_properties.cpel,   size, cs_real_t);
-        BFT_MALLOC(_elec_properties.sigel,  size, cs_real_t);
-        BFT_MALLOC(_elec_properties.visel,  size, cs_real_t);
-        BFT_MALLOC(_elec_properties.xlabel, size, cs_real_t);
-        BFT_MALLOC(_elec_properties.xkabel, size, cs_real_t);
+        CS_MALLOC(_elec_properties.th,
+                  cs_glob_elec_properties->n_point,
+                  cs_real_t);
+        CS_MALLOC(_elec_properties.eh_gas,  size, cs_real_t);
+        CS_MALLOC(_elec_properties.rhoel,  size, cs_real_t);
+        CS_MALLOC(_elec_properties.cpel,   size, cs_real_t);
+        CS_MALLOC(_elec_properties.sigel,  size, cs_real_t);
+        CS_MALLOC(_elec_properties.visel,  size, cs_real_t);
+        CS_MALLOC(_elec_properties.xlabel, size, cs_real_t);
+        CS_MALLOC(_elec_properties.xkabel, size, cs_real_t);
       }
 
       if (nb_line_tot < 14)
@@ -1001,16 +1001,16 @@ cs_electrical_properties_read(void)
       if (nb_line_tot == 4) {
         sscanf(str, "%i", &(_transformer->nbtrf));
 
-        BFT_MALLOC(_transformer->tenspr,  cs_glob_transformer->nbtrf, cs_real_t);
-        BFT_MALLOC(_transformer->rnbs,    cs_glob_transformer->nbtrf, cs_real_t);
-        BFT_MALLOC(_transformer->zr,      cs_glob_transformer->nbtrf, cs_real_t);
-        BFT_MALLOC(_transformer->zi,      cs_glob_transformer->nbtrf, cs_real_t);
-        BFT_MALLOC(_transformer->ibrpr,   cs_glob_transformer->nbtrf, int);
-        BFT_MALLOC(_transformer->ibrsec,  cs_glob_transformer->nbtrf, int);
+        CS_MALLOC(_transformer->tenspr,  cs_glob_transformer->nbtrf, cs_real_t);
+        CS_MALLOC(_transformer->rnbs,    cs_glob_transformer->nbtrf, cs_real_t);
+        CS_MALLOC(_transformer->zr,      cs_glob_transformer->nbtrf, cs_real_t);
+        CS_MALLOC(_transformer->zi,      cs_glob_transformer->nbtrf, cs_real_t);
+        CS_MALLOC(_transformer->ibrpr,   cs_glob_transformer->nbtrf, int);
+        CS_MALLOC(_transformer->ibrsec,  cs_glob_transformer->nbtrf, int);
 
         // alloc for boundary conditions
-        BFT_MALLOC(_transformer->uroff,  cs_glob_transformer->nbtrf, cs_real_t);
-        BFT_MALLOC(_transformer->uioff,  cs_glob_transformer->nbtrf, cs_real_t);
+        CS_MALLOC(_transformer->uroff,  cs_glob_transformer->nbtrf, cs_real_t);
+        CS_MALLOC(_transformer->uioff,  cs_glob_transformer->nbtrf, cs_real_t);
       }
 
       if (nb_line_tot > 4 && nb_line_tot <= 4 + cs_glob_transformer->nbtrf * 6) {
@@ -1038,9 +1038,9 @@ cs_electrical_properties_read(void)
 
       if (nb_line_tot == 7 + cs_glob_transformer->nbtrf * 6) {
         sscanf(str, "%i", &(_transformer->nbelec));
-        BFT_MALLOC(_transformer->ielecc,  cs_glob_transformer->nbelec, int);
-        BFT_MALLOC(_transformer->ielect,  cs_glob_transformer->nbelec, int);
-        BFT_MALLOC(_transformer->ielecb,  cs_glob_transformer->nbelec, int);
+        CS_MALLOC(_transformer->ielecc,  cs_glob_transformer->nbelec, int);
+        CS_MALLOC(_transformer->ielect,  cs_glob_transformer->nbelec, int);
+        CS_MALLOC(_transformer->ielecb,  cs_glob_transformer->nbelec, int);
         iesp = 0;
       }
 
@@ -1101,15 +1101,15 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
     cs_real_t *ym, *yvol, *roesp, *visesp, *cpesp;
     cs_real_t *sigesp, *xlabes, *xkabes, *coef;
-    BFT_MALLOC(ym,     n_gas, cs_real_t);
-    BFT_MALLOC(yvol,   n_gas, cs_real_t);
-    BFT_MALLOC(roesp,  n_gas, cs_real_t);
-    BFT_MALLOC(visesp, n_gas, cs_real_t);
-    BFT_MALLOC(cpesp,  n_gas, cs_real_t);
-    BFT_MALLOC(sigesp, n_gas, cs_real_t);
-    BFT_MALLOC(xlabes, n_gas, cs_real_t);
-    BFT_MALLOC(xkabes, n_gas, cs_real_t);
-    BFT_MALLOC(coef,   n_gas * n_gas, cs_real_t);
+    CS_MALLOC(ym,     n_gas, cs_real_t);
+    CS_MALLOC(yvol,   n_gas, cs_real_t);
+    CS_MALLOC(roesp,  n_gas, cs_real_t);
+    CS_MALLOC(visesp, n_gas, cs_real_t);
+    CS_MALLOC(cpesp,  n_gas, cs_real_t);
+    CS_MALLOC(sigesp, n_gas, cs_real_t);
+    CS_MALLOC(xlabes, n_gas, cs_real_t);
+    CS_MALLOC(xkabes, n_gas, cs_real_t);
+    CS_MALLOC(coef,   n_gas * n_gas, cs_real_t);
 
     int ifcsig = cs_field_get_key_int(CS_F_(potr), kivisl);
 
@@ -1368,15 +1368,15 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
     } /* End of loop on cells */
 
-    BFT_FREE(ym);
-    BFT_FREE(yvol);
-    BFT_FREE(roesp);
-    BFT_FREE(visesp);
-    BFT_FREE(cpesp);
-    BFT_FREE(sigesp);
-    BFT_FREE(xlabes);
-    BFT_FREE(xkabes);
-    BFT_FREE(coef);
+    CS_FREE(ym);
+    CS_FREE(yvol);
+    CS_FREE(roesp);
+    CS_FREE(visesp);
+    CS_FREE(cpesp);
+    CS_FREE(sigesp);
+    CS_FREE(xlabes);
+    CS_FREE(xkabes);
+    CS_FREE(coef);
   }
 
   /* now user properties (for joule effect particulary) */
@@ -1402,7 +1402,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
   /* Reconstructed value */
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   /* ----------------------------------------------------- */
   /* first call : J, E => J.E                              */
@@ -1601,7 +1601,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       cs_field_t  *fp = cs_field_by_name_try("vec_potential");
 
       cs_real_33_t *gradv = nullptr;
-      BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+      CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
       cs_field_gradient_vector(fp,
                                false, /* use_previous_t */
@@ -1614,7 +1614,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
         cpro_magfl[iel][2] = -gradv[iel][0][1]+gradv[iel][1][0];
       }
 
-      BFT_FREE(gradv);
+      CS_FREE(gradv);
     }
     else if (ielarc == 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -1660,7 +1660,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
   }
 
   /* Free memory */
-  BFT_FREE(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -1684,7 +1684,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
   cs_real_t *w1;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC(w1, n_cells_ext, cs_real_t);
 
   /* enthalpy source term */
   if (strcmp(name, "enthalpy") == 0) {
@@ -1721,7 +1721,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
     }
   }
 
-  BFT_FREE(w1);
+  CS_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1822,9 +1822,9 @@ cs_elec_add_variable_fields(void)
       char *name = nullptr;
       char *label = nullptr;
       char *suf = nullptr;
-      BFT_MALLOC(name, strlen("esl_fraction_") + 2 + 1, char);
-      BFT_MALLOC(label, strlen("YM_ESL") + 2 + 1, char);
-      BFT_MALLOC(suf, 3, char);
+      CS_MALLOC(name, strlen("esl_fraction_") + 2 + 1, char);
+      CS_MALLOC(label, strlen("YM_ESL") + 2 + 1, char);
+      CS_MALLOC(suf, 3, char);
       strcpy(name, "esl_fraction_");
       strcpy(label, "YM_ESL");
       sprintf(suf, "%02d", gas_id + 1);
@@ -1839,9 +1839,9 @@ cs_elec_add_variable_fields(void)
       cs_field_set_key_double(f, kscmax, 1.);
       cs_field_set_key_int(f, kivisl, 0);
       cs_add_model_field_indexes(f->id);
-      BFT_FREE(name);
-      BFT_FREE(label);
-      BFT_FREE(suf);
+      CS_FREE(name);
+      CS_FREE(label);
+      CS_FREE(suf);
     }
   }
 
@@ -1979,7 +1979,7 @@ cs_elec_add_property_fields(void)
 void
 cs_elec_fields_initialize(const cs_mesh_t   *mesh)
 {
-  BFT_MALLOC(_elec_option.izreca, mesh->n_i_faces, int);
+  CS_MALLOC(_elec_option.izreca, mesh->n_i_faces, int);
   for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
     _elec_option.izreca[i] = 0;
 
@@ -1995,7 +1995,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh)
     cs_real_t hinit = 0.;
     if (ielarc > 0) {
       cs_real_t *ym;
-      BFT_MALLOC(ym, cs_glob_elec_properties->n_gas, cs_real_t);
+      CS_MALLOC(ym, cs_glob_elec_properties->n_gas, cs_real_t);
       ym[0] = 1.;
       if (cs_glob_elec_properties->n_gas > 1)
         for (int i = 1; i < cs_glob_elec_properties->n_gas; i++)
@@ -2003,7 +2003,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh)
 
       cs_real_t tinit = cs_glob_fluid_properties->t0;
       hinit = cs_elec_convert_t_to_h(ym, tinit);
-      BFT_FREE(ym);
+      CS_FREE(ym);
     }
 
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
@@ -2232,7 +2232,7 @@ cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
     const cs_lnum_t *b_face_cells = m->b_face_cells;
 
     cs_real_t *ym;
-    BFT_MALLOC(ym, n_gasses, cs_real_t);
+    CS_MALLOC(ym, n_gasses, cs_real_t);
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
@@ -2248,7 +2248,7 @@ cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
 
     }
 
-    BFT_FREE(ym);
+    CS_FREE(ym);
 
   }
 }
@@ -2344,7 +2344,7 @@ cs_elec_convert_t_to_h_cells(const cs_real_t  t[],
   else {
 
     cs_real_t *ym;
-    BFT_MALLOC(ym, n_gasses, cs_real_t);
+    CS_MALLOC(ym, n_gasses, cs_real_t);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -2358,7 +2358,7 @@ cs_elec_convert_t_to_h_cells(const cs_real_t  t[],
 
     }
 
-    BFT_FREE(ym);
+    CS_FREE(ym);
 
   }
 }
@@ -2403,7 +2403,7 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
     const cs_lnum_t *b_face_cells = m->b_face_cells;
 
     cs_real_t *ym;
-    BFT_MALLOC(ym, n_gasses, cs_real_t);
+    CS_MALLOC(ym, n_gasses, cs_real_t);
 
     for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -2418,7 +2418,7 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
 
     }
 
-    BFT_FREE(ym);
+    CS_FREE(ym);
 
   }
 }
@@ -2501,7 +2501,7 @@ cs_elec_define_functions(void)
                                    nullptr);
 
     const char label[] = "Pot_Gradient_Im";
-    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    CS_MALLOC(f->label, strlen(label) + 1, char);
     strcpy(f->label, label);
 
     f->type = CS_FUNCTION_INTENSIVE;
@@ -2522,7 +2522,7 @@ cs_elec_define_functions(void)
                                    nullptr);
 
     const char label[] = "Current_Im";
-    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    CS_MALLOC(f->label, strlen(label) + 1, char);
     strcpy(f->label, label);
 
     f->type = CS_FUNCTION_INTENSIVE;
@@ -2542,7 +2542,7 @@ cs_elec_define_functions(void)
                                    nullptr);
 
     const char label[] = "Pot_Module";
-    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    CS_MALLOC(f->label, strlen(label) + 1, char);
     strcpy(f->label, label);
 
     f->type = CS_FUNCTION_INTENSIVE;
@@ -2562,7 +2562,7 @@ cs_elec_define_functions(void)
                                    nullptr);
 
     const char label[] = "Pot_Arg";
-    BFT_MALLOC(f->label, strlen(label) + 1, char);
+    CS_MALLOC(f->label, strlen(label) + 1, char);
     strcpy(f->label, label);
 
     f->type = CS_FUNCTION_INTENSIVE;

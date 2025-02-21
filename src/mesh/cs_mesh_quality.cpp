@@ -41,13 +41,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
 #include "base/cs_interface.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_post.h"
@@ -149,7 +149,7 @@ _display_histograms(int        n_steps,
     cs_gnum_t *g_count = _g_count;
 
     if (n_steps > CS_MESH_QUALITY_N_SUBS)
-      BFT_MALLOC(g_count, n_steps, cs_gnum_t);
+      CS_MALLOC(g_count, n_steps, cs_gnum_t);
 
     MPI_Allreduce(count, g_count, n_steps, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
@@ -158,7 +158,7 @@ _display_histograms(int        n_steps,
       count[i] = g_count[i];
 
     if (n_steps > CS_MESH_QUALITY_N_SUBS)
-      BFT_FREE(g_count);
+      CS_FREE(g_count);
 
   }
 
@@ -633,8 +633,8 @@ _build_c2f(const cs_mesh_t   *mesh,
   const int  n_i_faces = mesh->n_i_faces;
   const int  n_b_faces = mesh->n_b_faces;
 
-  BFT_MALLOC(c2f_idx, n_cells + 1, cs_lnum_t);
-  BFT_MALLOC(cell_shift, n_cells, int);
+  CS_MALLOC(c2f_idx, n_cells + 1, cs_lnum_t);
+  CS_MALLOC(cell_shift, n_cells, int);
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_cells; i++)
@@ -663,7 +663,7 @@ _build_c2f(const cs_mesh_t   *mesh,
 
   assert(c2f_idx[n_cells] == idx_size);
 
-  BFT_MALLOC(c2f_ids, idx_size, cs_lnum_t);
+  CS_MALLOC(c2f_ids, idx_size, cs_lnum_t);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
@@ -699,7 +699,7 @@ _build_c2f(const cs_mesh_t   *mesh,
   } /* End of loop on border faces */
 
   /* Free memory */
-  BFT_FREE(cell_shift);
+  CS_FREE(cell_shift);
 
   /* Return pointers */
   *p_c2f_idx = c2f_idx;
@@ -777,8 +777,8 @@ _compute_warp_error(const cs_mesh_t              *mesh,
   } // Loop on cells
 
   /* Free memory */
-  BFT_FREE(c2f_ids);
-  BFT_FREE(c2f_idx);
+  CS_FREE(c2f_ids);
+  CS_FREE(c2f_idx);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -951,7 +951,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     double  *i_face_warping = nullptr, *b_face_warping = nullptr;
 
-    BFT_MALLOC(working_array, n_i_faces + n_b_faces, double);
+    CS_MALLOC(working_array, n_i_faces + n_b_faces, double);
 
     for (i = 0; i < n_i_faces + n_b_faces; i++)
       working_array[i] = 0.;
@@ -1017,7 +1017,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                                    mesh_id);
     }
 
-    BFT_FREE(working_array);
+    CS_FREE(working_array);
 
   } /* End of face warping treatment */
 
@@ -1031,7 +1031,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Only defined on internal faces */
 
-    BFT_MALLOC(working_array, n_i_faces + n_cells_wghosts, double);
+    CS_MALLOC(working_array, n_i_faces + n_cells_wghosts, double);
 
     weighting = working_array;
     offsetting = working_array + n_i_faces;
@@ -1094,7 +1094,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       mesh_id = cs_post_mesh_find_next_with_cat_id(CS_POST_MESH_VOLUME, mesh_id);
     }
 
-    BFT_FREE(working_array);
+    CS_FREE(working_array);
 
   } /* End of off-setting and weighting treatment */
 
@@ -1106,7 +1106,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     double  *i_face_ortho = nullptr, *b_face_ortho = nullptr;
 
-    BFT_MALLOC(working_array, n_i_faces + n_b_faces, double);
+    CS_MALLOC(working_array, n_i_faces + n_b_faces, double);
 
     for (i = 0; i < n_i_faces + n_b_faces; i++)
       working_array[i] = 0.;
@@ -1173,7 +1173,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                                    mesh_id);
     }
 
-    BFT_FREE(working_array);
+    CS_FREE(working_array);
 
   } /* End of non-orthogonality treatment */
 
@@ -1217,7 +1217,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   if (compute_thickness == true && mesh->n_g_b_faces > 0) {
 
     cs_real_t *b_thickness;
-    BFT_MALLOC(b_thickness, mesh->n_b_faces, cs_real_t);
+    CS_MALLOC(b_thickness, mesh->n_b_faces, cs_real_t);
 
     cs_mesh_quantities_b_thickness_f(mesh, mesh_quantities, 0, b_thickness);
 
@@ -1247,7 +1247,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                                    mesh_id);
     }
 
-    BFT_FREE(b_thickness);
+    CS_FREE(b_thickness);
 
   } /* End of boundary cell thickness treatment */
 
@@ -1258,7 +1258,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   if (compute_warp_error == true) {
 
     cs_real_t  *warp_error = nullptr;
-    BFT_MALLOC(warp_error, mesh->n_cells ,cs_real_t);
+    CS_MALLOC(warp_error, mesh->n_cells ,cs_real_t);
 
     _compute_warp_error(mesh, mesh_quantities, warp_error);
 
@@ -1295,7 +1295,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
     if (l2_error > 0) /* May be < 0 in case of negative volumes */
       bft_printf(" L2-error norm induced by warping : %5.3e\n", sqrt(l2_error));
 
-    BFT_FREE(warp_error);
+    CS_FREE(warp_error);
 
   } /* End of cell volume treatment */
 

@@ -40,13 +40,13 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_periodicity.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
 #include "base/cs_sort.h"
@@ -151,10 +151,10 @@ _sync_family_combinations(int   *n_fam,
 
   int *renum = nullptr;
 
-  BFT_MALLOC(_family_idx, _n_fam+1, int);
+  CS_MALLOC(_family_idx, _n_fam+1, int);
   memcpy(_family_idx, *family_idx, (_n_fam+1)*sizeof(int));
 
-  BFT_MALLOC(_family, _family_idx[_n_fam], int);
+  CS_MALLOC(_family, _family_idx[_n_fam], int);
   if (_family != nullptr)
     memcpy(_family, *family, _family_idx[_n_fam]*sizeof(int));
 
@@ -180,17 +180,17 @@ _sync_family_combinations(int   *n_fam,
         int *idx_recv = nullptr, *fam_recv = nullptr;
         int *idx_new = nullptr, *fam_new = nullptr;
 
-        BFT_MALLOC(idx_recv, sizes[0] + 1, int);
+        CS_MALLOC(idx_recv, sizes[0] + 1, int);
         MPI_Recv(idx_recv, sizes[0] + 1, MPI_INT, recv_rank, 2,
                  cs_glob_mpi_comm, &status);
-        BFT_MALLOC(fam_recv, sizes[1], int);
+        CS_MALLOC(fam_recv, sizes[1], int);
         MPI_Recv(fam_recv, sizes[1], MPI_INT, recv_rank, 3,
                  cs_glob_mpi_comm, &status);
 
         /* Merge data */
 
-        BFT_MALLOC(idx_new, _n_fam + sizes[0] + 1, int);
-        BFT_MALLOC(fam_new, _family_idx[_n_fam] + sizes[1], int);
+        CS_MALLOC(idx_new, _n_fam + sizes[0] + 1, int);
+        CS_MALLOC(fam_new, _family_idx[_n_fam] + sizes[1], int);
 
         idx_new[0] = 0;
         i = 0; j = 0;
@@ -238,14 +238,14 @@ _sync_family_combinations(int   *n_fam,
           j += 1;
         }
 
-        BFT_FREE(fam_recv);
-        BFT_FREE(idx_recv);
+        CS_FREE(fam_recv);
+        CS_FREE(idx_recv);
 
-        BFT_REALLOC(idx_new, n_fam_new + 1, int);
-        BFT_REALLOC(fam_new, idx_new[n_fam_new], int);
+        CS_REALLOC(idx_new, n_fam_new + 1, int);
+        CS_REALLOC(fam_new, idx_new[n_fam_new], int);
 
-        BFT_FREE(_family_idx);
-        BFT_FREE(_family);
+        CS_FREE(_family_idx);
+        CS_FREE(_family);
 
         _family_idx = idx_new;
         _family = fam_new;
@@ -286,8 +286,8 @@ _sync_family_combinations(int   *n_fam,
   _n_fam = sizes[0];
 
   if (cs_glob_rank_id != 0) {
-    BFT_REALLOC(_family_idx, sizes[0] + 1, int);
-    BFT_REALLOC(_family, sizes[1], int);
+    CS_REALLOC(_family_idx, sizes[0] + 1, int);
+    CS_REALLOC(_family, sizes[1], int);
   }
 
   MPI_Bcast(_family_idx, sizes[0] + 1, MPI_INT, 0, cs_glob_mpi_comm);
@@ -295,7 +295,7 @@ _sync_family_combinations(int   *n_fam,
 
   /* Finally generate renumbering array */
 
-  BFT_MALLOC(renum, *n_fam, int);
+  CS_MALLOC(renum, *n_fam, int);
 
   for (i = 0; i < *n_fam; i++) {
 
@@ -329,8 +329,8 @@ _sync_family_combinations(int   *n_fam,
     renum[i] = mid_id;
   }
 
-  BFT_FREE(*family_idx);
-  BFT_FREE(*family);
+  CS_FREE(*family_idx);
+  CS_FREE(*family);
 
   *n_fam = _n_fam;
   *family_idx = _family_idx;
@@ -463,10 +463,10 @@ _add_group(cs_mesh_t   *mesh,
 
   if (mesh->n_groups == 0) {
     mesh->n_groups = 1;
-    BFT_MALLOC(mesh->group_idx, 2, int);
+    CS_MALLOC(mesh->group_idx, 2, int);
     mesh->group_idx[0] = 0;
     mesh->group_idx[1] = strlen(name) + 1;
-    BFT_MALLOC(mesh->group, mesh->group_idx[1], char);
+    CS_MALLOC(mesh->group, mesh->group_idx[1], char);
     strcpy(mesh->group, name);
     return 0;
   }
@@ -478,10 +478,10 @@ _add_group(cs_mesh_t   *mesh,
     size_t l = strlen(name) + 1;
     int n_groups_o = mesh->n_groups;
     mesh->n_groups += 1;
-    BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
-    BFT_REALLOC(mesh->group,
-                mesh->group_idx[n_groups_o] + l,
-                char);
+    CS_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+    CS_REALLOC(mesh->group,
+               mesh->group_idx[n_groups_o] + l,
+               char);
     strcpy(mesh->group + mesh->group_idx[n_groups_o], name);
     mesh->group_idx[mesh->n_groups] = mesh->group_idx[n_groups_o] + l;
     cs_mesh_group_clean(mesh);
@@ -555,7 +555,7 @@ _add_gc(cs_mesh_t   *mesh,
     int *f_prv = nullptr;
 
     if (n_f_prv*mesh->n_max_family_items > 0) {
-      BFT_MALLOC(f_prv, n_f_prv * mesh->n_max_family_items, int);
+      CS_MALLOC(f_prv, n_f_prv * mesh->n_max_family_items, int);
       memcpy(f_prv,
              mesh->family_item,
              (n_f_prv * mesh->n_max_family_items)*sizeof(int));
@@ -567,17 +567,17 @@ _add_gc(cs_mesh_t   *mesh,
 
     if (mesh->n_max_family_items == 0) {
       mesh->n_max_family_items = 1;
-      BFT_REALLOC(mesh->family_item,
-                  mesh->n_families*mesh->n_max_family_items,
-                  int);
+      CS_REALLOC(mesh->family_item,
+                 mesh->n_families*mesh->n_max_family_items,
+                 int);
       for (int i = 0; i < mesh->n_families; i++)
         mesh->family_item[i] = 0;
       mesh->family_item[gc_id] = g_id_cmp;
     }
     else {
-      BFT_REALLOC(mesh->family_item,
-                  mesh->n_families*mesh->n_max_family_items,
-                  int);
+      CS_REALLOC(mesh->family_item,
+                 mesh->n_families*mesh->n_max_family_items,
+                 int);
       for (int j = 0; j < mesh->n_max_family_items; j++) {
         for (int i = 0; i < n_f_prv; i++)
           mesh->family_item[mesh->n_families*j+i] = f_prv[n_f_prv*j + i];
@@ -587,7 +587,7 @@ _add_gc(cs_mesh_t   *mesh,
         mesh->family_item[mesh->n_families*j + gc_id - gc_id_shift] = 0;
     }
 
-    BFT_FREE(f_prv);
+    CS_FREE(f_prv);
   }
 
   return gc_id;
@@ -661,7 +661,7 @@ _mesh_group_add(cs_mesh_t        *mesh,
   cs_lnum_t *gc_tmp_idx = nullptr;
   int *gc_tmp = nullptr;
 
-  BFT_MALLOC(gc_tmp_idx, n_elts + 1, cs_lnum_t);
+  CS_MALLOC(gc_tmp_idx, n_elts + 1, cs_lnum_t);
   gc_tmp_idx[0] = 0;
 
   for (cs_lnum_t i = 0; i < n_elts; i++)
@@ -679,7 +679,7 @@ _mesh_group_add(cs_mesh_t        *mesh,
 
   /* Now assign multiple group classes */
 
-  BFT_MALLOC(gc_tmp, gc_tmp_idx[n_elts], int);
+  CS_MALLOC(gc_tmp, gc_tmp_idx[n_elts], int);
   for (cs_lnum_t i = 0; i < n_elts; i++)
     gc_tmp[gc_tmp_idx[i]] = gc_id[i];
   for (cs_lnum_t i = 0; i < n_selected_elts; i++) {
@@ -696,8 +696,8 @@ _mesh_group_add(cs_mesh_t        *mesh,
 
   /* Cleanup */
 
-  BFT_FREE(gc_tmp_idx);
-  BFT_FREE(gc_tmp);
+  CS_FREE(gc_tmp_idx);
+  CS_FREE(gc_tmp);
 
   if (mesh->class_defs != nullptr)
     cs_mesh_update_selectors(mesh);
@@ -732,14 +732,14 @@ cs_mesh_group_clean(cs_mesh_t  *mesh)
 
   /* Order group names */
 
-  BFT_MALLOC(renum, mesh->n_groups, int);
-  BFT_MALLOC(order, mesh->n_groups, int);
+  CS_MALLOC(renum, mesh->n_groups, int);
+  CS_MALLOC(order, mesh->n_groups, int);
 
   _order_groups(mesh, order);
 
   /* Build compact group copy */
 
-  BFT_MALLOC(g_lst, mesh->group_idx[mesh->n_groups], char);
+  CS_MALLOC(g_lst, mesh->group_idx[mesh->n_groups], char);
 
   g_cur = mesh->group + mesh->group_idx[order[0]];
   g_prev = g_cur;
@@ -761,10 +761,10 @@ cs_mesh_group_clean(cs_mesh_t  *mesh)
     renum[order[i]] = n_groups - 1;
   }
 
-  BFT_FREE(order);
+  CS_FREE(order);
 
-  BFT_REALLOC(mesh->group_idx, n_groups + 1, int);
-  BFT_REALLOC(mesh->group, size_tot, char);
+  CS_REALLOC(mesh->group_idx, n_groups + 1, int);
+  CS_REALLOC(mesh->group, size_tot, char);
 
   mesh->n_groups = n_groups;
   memcpy(mesh->group, g_lst, size_tot);
@@ -775,7 +775,7 @@ cs_mesh_group_clean(cs_mesh_t  *mesh)
     mesh->group_idx[i + 1] = mesh->group_idx[i] + j;
   }
 
-  BFT_FREE(g_lst);
+  CS_FREE(g_lst);
 
   /* Now renumber groups in group class description */
 
@@ -787,7 +787,7 @@ cs_mesh_group_clean(cs_mesh_t  *mesh)
       mesh->family_item[j] = - renum[-gc_id - 1] - 1;
   }
 
-  BFT_FREE(renum);
+  CS_FREE(renum);
 
   /* Remove empty group if present (it should appear first now) */
 
@@ -802,8 +802,8 @@ cs_mesh_group_clean(cs_mesh_t  *mesh)
       mesh->n_groups -= 1;
       memmove(mesh->group, mesh->group+1, new_lst_size);
 
-      BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
-      BFT_REALLOC(mesh->group, new_lst_size, char);
+      CS_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+      CS_REALLOC(mesh->group, new_lst_size, char);
 
       for (j = 0; j < size_tot; j++) {
         int gc_id = mesh->family_item[j];
@@ -853,19 +853,19 @@ cs_mesh_group_combine_classes(cs_mesh_t   *mesh,
 
     /* Build ordering of elements by associated families */
 
-    BFT_MALLOC(tmp_gc_id, n_gc_id_values, cs_gnum_t);
+    CS_MALLOC(tmp_gc_id, n_gc_id_values, cs_gnum_t);
 
     for (i = 0; i < n_gc_id_values; i++)
       tmp_gc_id[i] = gc_id[i] + 1;
 
     order = cs_order_gnum_i(nullptr, tmp_gc_id, gc_id_idx, n_elts);
 
-    BFT_FREE(tmp_gc_id);
+    CS_FREE(tmp_gc_id);
 
     /* Build new family array, merging identical definitions */
 
-    BFT_MALLOC(_gc_id_idx, n_elts + 1, int);
-    BFT_MALLOC(_gc_id, gc_id_idx[n_elts], int);
+    CS_MALLOC(_gc_id_idx, n_elts + 1, int);
+    CS_MALLOC(_gc_id, gc_id_idx[n_elts], int);
 
     _gc_id_idx[0] = 0;
 
@@ -906,14 +906,14 @@ cs_mesh_group_combine_classes(cs_mesh_t   *mesh,
       n_prev = n;
     }
 
-    BFT_FREE(order);
+    CS_FREE(order);
 
-    BFT_REALLOC(_gc_id_idx, n_fam + 1, int);
-    BFT_REALLOC(_gc_id, _gc_id_idx[n_fam], int);
+    CS_REALLOC(_gc_id_idx, n_fam + 1, int);
+    CS_REALLOC(_gc_id, _gc_id_idx[n_fam], int);
 
   }
   else {
-    BFT_MALLOC(_gc_id_idx, 1, int);
+    CS_MALLOC(_gc_id_idx, 1, int);
     _gc_id_idx[0] = 0;
   }
 
@@ -931,7 +931,7 @@ cs_mesh_group_combine_classes(cs_mesh_t   *mesh,
         gc_id_merged[i] = mesh->n_families + renum[j] + 1;
     }
 
-    BFT_FREE(renum);
+    CS_FREE(renum);
   }
 
 #endif
@@ -958,9 +958,9 @@ cs_mesh_group_combine_classes(cs_mesh_t   *mesh,
     /* Increase maximum number of definitions and pad it necessary */
 
     if (n_max_family_items > mesh->n_max_family_items) {
-      BFT_REALLOC(mesh->family_item,
-                  mesh->n_families*n_max_family_items,
-                  int);
+      CS_REALLOC(mesh->family_item,
+                 mesh->n_families*n_max_family_items,
+                 int);
       for (i = mesh->n_max_family_items;
            i < n_max_family_items;
            i++) {
@@ -974,9 +974,9 @@ cs_mesh_group_combine_classes(cs_mesh_t   *mesh,
 
     mesh->n_families += n_fam;
 
-    BFT_REALLOC(mesh->family_item,
-                mesh->n_families * mesh->n_max_family_items,
-                int);
+    CS_REALLOC(mesh->family_item,
+               mesh->n_families * mesh->n_max_family_items,
+               int);
     for (j = mesh->n_max_family_items - 1; j > 0; j--) {
       for (i = mesh->n_families - n_fam - 1; i > -1; i--)
         mesh->family_item[mesh->n_families*j + i]
@@ -1000,8 +1000,8 @@ cs_mesh_group_combine_classes(cs_mesh_t   *mesh,
 
   }
 
-  BFT_FREE(_gc_id_idx);
-  BFT_FREE(_gc_id);
+  CS_FREE(_gc_id_idx);
+  CS_FREE(_gc_id);
 }
 
 /*----------------------------------------------------------------------------*/

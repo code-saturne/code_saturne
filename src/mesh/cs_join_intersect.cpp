@@ -45,7 +45,6 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_neighborhood.h"
@@ -57,6 +56,7 @@
 #include "mesh/cs_join_set.h"
 #include "mesh/cs_join_util.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_search.h"
@@ -505,9 +505,9 @@ _add_inter(cs_lnum_t             e1_id,
 
     inter_set->n_max_inter *= 2;
 
-    BFT_REALLOC(inter_set->inter_lst,
-                2*inter_set->n_max_inter,
-                cs_join_inter_t);
+    CS_REALLOC(inter_set->inter_lst,
+               2*inter_set->n_max_inter,
+               cs_join_inter_t);
 
   }
 
@@ -2281,12 +2281,12 @@ cs_join_inter_set_create(cs_lnum_t  init_size)
 {
   cs_join_inter_set_t  *new_set = nullptr;
 
-  BFT_MALLOC(new_set, 1, cs_join_inter_set_t);
+  CS_MALLOC(new_set, 1, cs_join_inter_set_t);
 
   new_set->n_max_inter = init_size; /* default value */
   new_set->n_inter = 0;
 
-  BFT_MALLOC(new_set->inter_lst, 2*new_set->n_max_inter, cs_join_inter_t);
+  CS_MALLOC(new_set->inter_lst, 2*new_set->n_max_inter, cs_join_inter_t);
 
   return new_set;
 }
@@ -2303,8 +2303,8 @@ cs_join_inter_set_destroy(cs_join_inter_set_t  **inter_set)
 {
   if (inter_set != nullptr) {
     if (*inter_set != nullptr) {
-      BFT_FREE((*inter_set)->inter_lst);
-      BFT_FREE(*inter_set);
+      CS_FREE((*inter_set)->inter_lst);
+      CS_FREE(*inter_set);
     }
   }
 }
@@ -2373,27 +2373,24 @@ cs_join_inter_set_dump(FILE                       *f,
 cs_join_inter_edges_t *
 cs_join_inter_edges_create(cs_lnum_t  n_edges)
 {
-  cs_lnum_t  i;
-
   cs_join_inter_edges_t  *inter_edges = nullptr;
-
 
   /* Allocate and initialize structure */
 
-  BFT_MALLOC(inter_edges, 1, cs_join_inter_edges_t);
+  CS_MALLOC(inter_edges, 1, cs_join_inter_edges_t);
 
   inter_edges->n_edges = n_edges;
 
   /* Build inter_edges_idx */
 
-  BFT_MALLOC(inter_edges->index, n_edges + 1, cs_lnum_t);
+  CS_MALLOC(inter_edges->index, n_edges + 1, cs_lnum_t);
 
-  for (i = 0; i < n_edges + 1; i++)
+  for (cs_lnum_t i = 0; i < n_edges + 1; i++)
     inter_edges->index[i] = 0;
 
-  BFT_MALLOC(inter_edges->edge_gnum, n_edges, cs_gnum_t);
+  CS_MALLOC(inter_edges->edge_gnum, n_edges, cs_gnum_t);
 
-  for (i = 0; i < n_edges; i++)
+  for (cs_lnum_t i = 0; i < n_edges; i++)
     inter_edges->edge_gnum[i] = 0;
 
   inter_edges->max_sub_size = 0;
@@ -2470,10 +2467,10 @@ cs_join_inter_edges_define(const cs_join_edges_t      *edges,
 
   /* Fill structures */
 
-  BFT_MALLOC(inter_edges->vtx_lst, lst_size, cs_lnum_t);
-  BFT_MALLOC(inter_edges->abs_lst, lst_size, cs_coord_t);
+  CS_MALLOC(inter_edges->vtx_lst, lst_size, cs_lnum_t);
+  CS_MALLOC(inter_edges->abs_lst, lst_size, cs_coord_t);
 
-  BFT_MALLOC(counter, edges->n_edges, cs_lnum_t);
+  CS_MALLOC(counter, edges->n_edges, cs_lnum_t);
 
   for (i = 0; i < edges->n_edges; i++)
     counter[i] = 0;
@@ -2558,7 +2555,7 @@ cs_join_inter_edges_define(const cs_join_edges_t      *edges,
 
   /* Free memory */
 
-  BFT_FREE(counter);
+  CS_FREE(counter);
 
   /* Return pointer */
 
@@ -2578,12 +2575,12 @@ cs_join_inter_edges_destroy(cs_join_inter_edges_t  **inter_edges)
   if (inter_edges != nullptr) {
     cs_join_inter_edges_t  *ie = *inter_edges;
     if (ie != nullptr) {
-      BFT_FREE(ie->index);
-      BFT_FREE(ie->edge_gnum);
-      BFT_FREE(ie->vtx_lst);
-      BFT_FREE(ie->vtx_glst);
-      BFT_FREE(ie->abs_lst);
-      BFT_FREE(*inter_edges);
+      CS_FREE(ie->index);
+      CS_FREE(ie->edge_gnum);
+      CS_FREE(ie->vtx_lst);
+      CS_FREE(ie->vtx_glst);
+      CS_FREE(ie->abs_lst);
+      CS_FREE(*inter_edges);
     }
   }
 }
@@ -2632,12 +2629,12 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
       assert(inter_edges->abs_lst != nullptr);
 
       size = inter_edges->max_sub_size + 2;
-      BFT_MALLOC(vtx_lst, size, cs_lnum_t);
-      BFT_MALLOC(tag_lst, size, cs_lnum_t);
-      BFT_MALLOC(abs_lst, size, cs_coord_t);
-      BFT_MALLOC(tol_lst, size, double);
+      CS_MALLOC(vtx_lst, size, cs_lnum_t);
+      CS_MALLOC(tag_lst, size, cs_lnum_t);
+      CS_MALLOC(abs_lst, size, cs_coord_t);
+      CS_MALLOC(tol_lst, size, double);
       esize = size*(size-1)/2;
-      BFT_MALLOC(equiv_lst, esize, bool);
+      CS_MALLOC(equiv_lst, esize, bool);
 
       /* Main loop */
 
@@ -2786,11 +2783,11 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
 
       /* Free memory */
 
-      BFT_FREE(vtx_lst);
-      BFT_FREE(tag_lst);
-      BFT_FREE(abs_lst);
-      BFT_FREE(tol_lst);
-      BFT_FREE(equiv_lst);
+      CS_FREE(vtx_lst);
+      CS_FREE(tag_lst);
+      CS_FREE(abs_lst);
+      CS_FREE(tol_lst);
+      CS_FREE(equiv_lst);
 
     } /* inter_edges->index[inter_edges->n_edges] > 0 */
   } /* inter_edges != nullptr */
@@ -2878,7 +2875,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   cs_lnum_t send_inter_list_size = part->index[n_edges];
   exch_inter_t  *send_inter_list;
-  BFT_MALLOC(send_inter_list, send_inter_list_size, exch_inter_t);
+  CS_MALLOC(send_inter_list, send_inter_list_size, exch_inter_t);
 
   for (cs_lnum_t i = 0; i < n_edges; i++) {
 
@@ -2902,7 +2899,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   }
 
   cs_lnum_t *part_index;
-  BFT_MALLOC(part_index, n_edges+1, cs_lnum_t);
+  CS_MALLOC(part_index, n_edges+1, cs_lnum_t);
   for (cs_lnum_t i = 0; i < n_edges+1; i++) {
     part_index[i] = part->index[i] * sizeof(exch_inter_t);
   }
@@ -2916,13 +2913,13 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
                                                            orig_index,
                                                            nullptr));
 
-  BFT_FREE(part_index);
+  CS_FREE(part_index);
 
   for (cs_lnum_t i = 0; i < n_recv+1; i++) {
     orig_index[i] /= sizeof(exch_inter_t);
   }
 
-  BFT_FREE(send_inter_list);
+  CS_FREE(send_inter_list);
 
   cs_all_to_all_destroy(&d);
 
@@ -2954,20 +2951,20 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   }
 
   cs_lnum_t *shift_ref;
-  BFT_MALLOC(shift_ref, block_size, cs_lnum_t);
+  CS_MALLOC(shift_ref, block_size, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < block_size; i++) {
     block->index[i+1] += block->index[i];
     shift_ref[i] = block->index[i];
   }
 
-  BFT_MALLOC(block->vtx_glst,
-             block->index[block_size],
-             cs_gnum_t);
+  CS_MALLOC(block->vtx_glst,
+            block->index[block_size],
+            cs_gnum_t);
 
-  BFT_MALLOC(block->abs_lst,
-             block->index[block_size],
-             cs_coord_t);
+  CS_MALLOC(block->abs_lst,
+            block->index[block_size],
+            cs_coord_t);
 
   /* Second scan: fill buffers */
 
@@ -3003,12 +3000,12 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   } /* End of loop on edge descriptions */
 
-  BFT_FREE(recv_inter_list);
+  CS_FREE(recv_inter_list);
 
   /* Compact block */
 
-  BFT_FREE(orig_gnum);
-  BFT_FREE(orig_index);
+  CS_FREE(orig_gnum);
+  CS_FREE(orig_index);
 
   cs_lnum_t shift = 0;
   for (cs_lnum_t i = 0; i < block_size; i++) {
@@ -3024,19 +3021,19 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   }
 
   cs_lnum_t *new_index;
-  BFT_MALLOC(new_index, block_size + 1, cs_lnum_t);
+  CS_MALLOC(new_index, block_size + 1, cs_lnum_t);
 
   new_index[0] = 0;
   for (cs_lnum_t i = 0; i < block_size; i++)
     new_index[i+1] = new_index[i] + shift_ref[i] - block->index[i];
 
-  BFT_FREE(shift_ref);
-  BFT_FREE(block->index);
+  CS_FREE(shift_ref);
+  CS_FREE(block->index);
 
   block->index = new_index;
 
-  BFT_REALLOC(block->vtx_glst, block->index[block_size], cs_gnum_t);
-  BFT_REALLOC(block->abs_lst, block->index[block_size], cs_coord_t);
+  CS_REALLOC(block->vtx_glst, block->index[block_size], cs_gnum_t);
+  CS_REALLOC(block->abs_lst, block->index[block_size], cs_coord_t);
 
   /* Sort intersection by increasing curvilinear abscissa for each edge */
 
@@ -3125,7 +3122,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   /* Send the number of sub_elements for each requested edge */
 
   cs_lnum_t *block_index;
-  BFT_MALLOC(block_index, send_list_size+1, cs_lnum_t);
+  CS_MALLOC(block_index, send_list_size+1, cs_lnum_t);
 
   block_index[0] = 0;
   for (cs_lnum_t i = 0; i < send_list_size; i++) {
@@ -3145,7 +3142,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   cs_lnum_t send_inter_list_size = block_index[send_list_size];
 
   exch_inter_t *send_inter_list = nullptr;
-  BFT_MALLOC(send_inter_list, send_inter_list_size, exch_inter_t);
+  CS_MALLOC(send_inter_list, send_inter_list_size, exch_inter_t);
 
   for (cs_lnum_t i = 0; i < send_list_size; i++) {
     cs_gnum_t  b_id = orig_gnum[i] - bi.gnum_range[0];
@@ -3160,7 +3157,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
   } /* End of loop on elements to send */
 
-  BFT_FREE(orig_gnum);
+  CS_FREE(orig_gnum);
 
   /* Exchange buffers */
 
@@ -3186,8 +3183,8 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
   /* Partial free memory */
 
-  BFT_FREE(send_inter_list);
-  BFT_FREE(block_index);
+  CS_FREE(send_inter_list);
+  CS_FREE(block_index);
 
   cs_all_to_all_destroy(&d);
 
@@ -3204,10 +3201,10 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
   cs_lnum_t part_indexed_size = part->index[part->n_edges];
 
-  BFT_FREE(part->vtx_lst);
+  CS_FREE(part->vtx_lst);
   part->vtx_lst = nullptr;
-  BFT_REALLOC(part->vtx_glst, part_indexed_size, cs_gnum_t);
-  BFT_REALLOC(part->abs_lst, part_indexed_size, cs_coord_t);
+  CS_REALLOC(part->vtx_glst, part_indexed_size, cs_gnum_t);
+  CS_REALLOC(part->abs_lst, part_indexed_size, cs_coord_t);
 
   for (cs_lnum_t i = 0; i < part_indexed_size; i++) {
     part->vtx_glst[i] = (recv_inter_list[i]).vtx_gnum;
@@ -3216,7 +3213,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
   /* Free memory */
 
-  BFT_FREE(recv_inter_list);
+  CS_FREE(recv_inter_list);
 }
 
 #endif /* HAVE_MPI */
@@ -3270,8 +3267,8 @@ cs_join_intersect_update_struct(int                      verbosity,
 
     /* Order global edge numbering */
 
-    BFT_MALLOC(edge_order, n_edges, cs_lnum_t);
-    BFT_MALLOC(edge_gnum, n_edges, cs_gnum_t);
+    CS_MALLOC(edge_order, n_edges, cs_lnum_t);
+    CS_MALLOC(edge_gnum, n_edges, cs_gnum_t);
 
     cs_order_gnum_allocated(nullptr, edges->gnum, edge_order, n_edges);
 
@@ -3302,10 +3299,10 @@ cs_join_intersect_update_struct(int                      verbosity,
     for (i = 0; i < n_edges; i++)
       new_inter_edges->index[i+1] += new_inter_edges->index[i];
 
-    BFT_MALLOC(new_inter_edges->vtx_glst,
-               new_inter_edges->index[n_edges], cs_gnum_t);
-    BFT_MALLOC(new_inter_edges->abs_lst,
-               new_inter_edges->index[n_edges], cs_coord_t);
+    CS_MALLOC(new_inter_edges->vtx_glst,
+              new_inter_edges->index[n_edges], cs_gnum_t);
+    CS_MALLOC(new_inter_edges->abs_lst,
+              new_inter_edges->index[n_edges], cs_coord_t);
 
     for (i = 0; i < n_edges; i++) {
 
@@ -3325,8 +3322,8 @@ cs_join_intersect_update_struct(int                      verbosity,
 
     /* Partial memory free */
 
-    BFT_FREE(edge_gnum);
-    BFT_FREE(edge_order);
+    CS_FREE(edge_gnum);
+    CS_FREE(edge_order);
 
     cs_join_inter_edges_destroy(&_inter_edges);
 
@@ -3336,13 +3333,13 @@ cs_join_intersect_update_struct(int                      verbosity,
     new_inter_edges = _inter_edges;
 
   if (new_inter_edges->vtx_lst == nullptr)
-    BFT_MALLOC(new_inter_edges->vtx_lst,
-               new_inter_edges->index[n_edges], cs_lnum_t);
+    CS_MALLOC(new_inter_edges->vtx_lst,
+              new_inter_edges->index[n_edges], cs_lnum_t);
 
   /* Order global vertex numbering */
 
-  BFT_MALLOC(vtx_gnum, n_init_vertices, cs_gnum_t);
-  BFT_MALLOC(vtx_order, n_init_vertices, cs_lnum_t);
+  CS_MALLOC(vtx_gnum, n_init_vertices, cs_gnum_t);
+  CS_MALLOC(vtx_order, n_init_vertices, cs_lnum_t);
 
   for (i = 0; i < n_init_vertices; i++)
     vtx_gnum[i] = mesh->vertices[i].gnum;
@@ -3355,7 +3352,7 @@ cs_join_intersect_update_struct(int                      verbosity,
   /* Pre-allocate a buffer to store data on possible new vertices */
 
   max_size = 100;
-  BFT_MALLOC(new_vertices, max_size, cs_join_vertex_t);
+  CS_MALLOC(new_vertices, max_size, cs_join_vertex_t);
 
   /* Fill vtx_lst array of the cs_join_inter_edges_t structure */
 
@@ -3374,7 +3371,7 @@ cs_join_intersect_update_struct(int                      verbosity,
 
         if (n_new_vertices >= max_size) {
           max_size *= 2;
-          BFT_REALLOC(new_vertices, max_size, cs_join_vertex_t);
+          CS_REALLOC(new_vertices, max_size, cs_join_vertex_t);
         }
 
         new_vertices[n_new_vertices]
@@ -3404,9 +3401,9 @@ cs_join_intersect_update_struct(int                      verbosity,
               " during update of the edge definition.\n",
               (long)n_new_vertices, mesh->name);
 
-    BFT_REALLOC(mesh->vertices,
-                n_init_vertices + n_new_vertices,
-                cs_join_vertex_t);
+    CS_REALLOC(mesh->vertices,
+               n_init_vertices + n_new_vertices,
+               cs_join_vertex_t);
 
     for (i = 0; i < n_new_vertices; i++)
       mesh->vertices[n_init_vertices + i] = new_vertices[i];
@@ -3417,9 +3414,9 @@ cs_join_intersect_update_struct(int                      verbosity,
 
   /* Free memory */
 
-  BFT_FREE(vtx_gnum);
-  BFT_FREE(vtx_order);
-  BFT_FREE(new_vertices);
+  CS_FREE(vtx_gnum);
+  CS_FREE(vtx_order);
+  CS_FREE(new_vertices);
 
   /* Returns pointer */
 
@@ -3703,7 +3700,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   /* Allocate temporary extent arrays */
 
-  BFT_MALLOC(f_extents, join_mesh->n_faces*6, cs_coord_t);
+  CS_MALLOC(f_extents, join_mesh->n_faces*6, cs_coord_t);
 
   /* Define each bounding box for the selected faces */
 
@@ -3738,7 +3735,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   /* Retrieve face -> face visibility */
 
-  BFT_MALLOC(face_visibility, 1, cs_join_gset_t);
+  CS_MALLOC(face_visibility, 1, cs_join_gset_t);
 
   assert(sizeof(cs_lnum_t) == sizeof(cs_lnum_t));
 
@@ -3757,7 +3754,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
     char  *filename = nullptr;
 
     len = strlen("JoinDBG_FaceVis.dat")+1+2+4;
-    BFT_MALLOC(filename, len, char);
+    CS_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_FaceVis%04d.dat",
             param.num, CS_MAX(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
@@ -3765,7 +3762,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
     cs_join_gset_dump(dbg_file, face_visibility);
 
     fflush(dbg_file);
-    BFT_FREE(filename);
+    CS_FREE(filename);
     fclose(dbg_file);
   }
 #endif /* defined(DEBUG) && !defined(NDEBUG) */
@@ -3805,7 +3802,7 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
   /* Create a local "face -> edge" connectivity
      First, count number of edges for each face */
 
-  BFT_MALLOC(face2edge_idx, mesh->n_faces + 1, cs_lnum_t);
+  CS_MALLOC(face2edge_idx, mesh->n_faces + 1, cs_lnum_t);
 
   face2edge_idx[0] = 0;
   for (i = 0; i < mesh->n_faces; i++)
@@ -3816,8 +3813,8 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
   /* Build face2edge_lst */
 
-  BFT_MALLOC(face2edge_lst, face2edge_idx[mesh->n_faces], cs_lnum_t);
-  BFT_MALLOC(count, mesh->n_faces, cs_lnum_t);
+  CS_MALLOC(face2edge_lst, face2edge_idx[mesh->n_faces], cs_lnum_t);
+  CS_MALLOC(count, mesh->n_faces, cs_lnum_t);
 
   for (i = 0; i < mesh->n_faces; i++)
     count[i] = 0;
@@ -3917,11 +3914,11 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
   for (i = 0; i < edge_visib->n_elts; i++)
     edge_visib->index[i+1] += edge_visib->index[i];
 
-  BFT_MALLOC(edge_visib->g_list,
-             edge_visib->index[edge_visib->n_elts],
-             cs_gnum_t);
+  CS_MALLOC(edge_visib->g_list,
+            edge_visib->index[edge_visib->n_elts],
+            cs_gnum_t);
 
-  BFT_MALLOC(tmp, size_max, cs_gnum_t);
+  CS_MALLOC(tmp, size_max, cs_gnum_t);
 
   /* Build list */
 
@@ -3966,10 +3963,10 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
   /* Free memory */
 
-  BFT_FREE(face2edge_idx);
-  BFT_FREE(face2edge_lst);
-  BFT_FREE(count);
-  BFT_FREE(tmp);
+  CS_FREE(face2edge_idx);
+  CS_FREE(face2edge_lst);
+  CS_FREE(count);
+  CS_FREE(tmp);
 
   /* Delete redundancies in g_elts, order g_elts and compact data */
 

@@ -37,13 +37,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_base.h"
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
+
 #include "mesh/cs_geom.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_point_location.h"
-#include "base/cs_math.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -94,7 +94,7 @@ _locate_points_in_mesh(cs_lnum_t         n_points,
                                                                m->n_cells,
                                                                nullptr);
   float *distance;
-  BFT_MALLOC(distance, n_points, float);
+  CS_MALLOC(distance, n_points, float);
 
   for (cs_lnum_t i = 0; i < n_points; i++) {
     cell_id[i] = -1;
@@ -111,7 +111,7 @@ _locate_points_in_mesh(cs_lnum_t         n_points,
                            cell_id,
                            distance);
 
-  BFT_FREE(distance);
+  CS_FREE(distance);
 
   location_mesh = fvm_nodal_destroy(location_mesh);
 
@@ -286,7 +286,7 @@ cs_mesh_intersect_segment_cell_select(void        *input,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  BFT_MALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Allocate selection list */
+  CS_MALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Allocate selection list */
 
   /* Mark for each cell */
   /*--------------------*/
@@ -391,8 +391,8 @@ cs_mesh_intersect_segment_cell_select(void        *input,
       _cell_ids[_n_cells++] = cell_id;
   }
 
-  BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
-                                                  but not required) */
+  CS_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
+                                                 but not required) */
 
   /* Set return values */
 
@@ -459,13 +459,13 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  BFT_MALLOC(_cell_ids, _n_cells, cs_lnum_t);   /* Selection list */
-  BFT_MALLOC(_seg_c_len, _n_cells, cs_real_t);  /* Selection list length */
-  BFT_MALLOC(_seg_c_cen, _n_cells, cs_real_3_t);  /* Selection list length */
-  BFT_MALLOC(_in, _n_cells, cs_lnum_t);
-  BFT_MALLOC(_out, _n_cells, cs_lnum_t);
-  BFT_MALLOC(_n_in, _n_cells, cs_lnum_t);
-  BFT_MALLOC(_n_out, _n_cells, cs_lnum_t);
+  CS_MALLOC(_cell_ids, _n_cells, cs_lnum_t);   /* Selection list */
+  CS_MALLOC(_seg_c_len, _n_cells, cs_real_t);  /* Selection list length */
+  CS_MALLOC(_seg_c_cen, _n_cells, cs_real_3_t);  /* Selection list length */
+  CS_MALLOC(_in, _n_cells, cs_lnum_t);
+  CS_MALLOC(_out, _n_cells, cs_lnum_t);
+  CS_MALLOC(_n_in, _n_cells, cs_lnum_t);
+  CS_MALLOC(_n_out, _n_cells, cs_lnum_t);
 
   /* Mark for each cell */
   /*--------------------*/
@@ -741,10 +741,10 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
 
   } /* End loop over the segments */
 
-  BFT_FREE(_in);
-  BFT_FREE(_out);
-  BFT_FREE(_n_in);
-  BFT_FREE(_n_out);
+  CS_FREE(_in);
+  CS_FREE(_out);
+  CS_FREE(_n_in);
+  CS_FREE(_n_out);
 
   /* Now check marked cells and renumber */
   _n_cells = 0;
@@ -758,10 +758,10 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
     }
   }
 
-  BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
-                                                  but not required) */
-  BFT_REALLOC(_seg_c_len, _n_cells, cs_real_t);
-  BFT_REALLOC(_seg_c_cen, _n_cells, cs_real_3_t);
+  CS_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
+                                                 but not required) */
+  CS_REALLOC(_seg_c_len, _n_cells, cs_real_t);
+  CS_REALLOC(_seg_c_cen, _n_cells, cs_real_3_t);
 
   /* Set return values */
 
@@ -819,7 +819,7 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
      including when polyline enters/exists mesh multiple times. */
 
   cs_lnum_t *point_cell_id;
-  BFT_MALLOC(point_cell_id, n_points, cs_lnum_t);
+  CS_MALLOC(point_cell_id, n_points, cs_lnum_t);
 
   _locate_points_in_mesh(n_points,
                          point_coords,
@@ -832,9 +832,9 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
      estimate, toallows checking that realloction is handled correctly. */
 
   cs_lnum_t alloc_size = 10;
-  BFT_MALLOC(_seg_cell_idx, n_points, cs_lnum_t);
-  BFT_MALLOC(_seg_cell, alloc_size, cs_lnum_t);
-  BFT_MALLOC(_seg_cell_fraction, alloc_size, cs_real_t);
+  CS_MALLOC(_seg_cell_idx, n_points, cs_lnum_t);
+  CS_MALLOC(_seg_cell, alloc_size, cs_lnum_t);
+  CS_MALLOC(_seg_cell_fraction, alloc_size, cs_real_t);
 
   /* Build cell to face mapping
      (in the future, this may be avaiable as a mes ajacecy optional feature) */
@@ -842,8 +842,8 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
   cs_lnum_t *cell_face_idx, *cell_face_lst;
   cs_lnum_t *counter = nullptr;
 
-  BFT_MALLOC(counter, n_cells, cs_lnum_t);
-  BFT_MALLOC(cell_face_idx, n_cells + 1, cs_lnum_t);
+  CS_MALLOC(counter, n_cells, cs_lnum_t);
+  CS_MALLOC(cell_face_idx, n_cells + 1, cs_lnum_t);
 
   cell_face_idx[0] = 0;
   for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -868,8 +868,8 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
     cell_face_idx[i+1] += cell_face_idx[i];
 
-  BFT_MALLOC(cell_face_lst,
-             cell_face_idx[m->n_cells], cs_lnum_t);
+  CS_MALLOC(cell_face_lst,
+            cell_face_idx[m->n_cells], cs_lnum_t);
 
   /* Build pass: border faces are < 0 and interior faces > 0 */
 
@@ -891,7 +891,7 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
     counter[c_id] += 1;
   }
 
-  BFT_FREE(counter);
+  CS_FREE(counter);
 
   /* Mark for each cell */
   /*--------------------*/
@@ -969,8 +969,8 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
       if (cur_cell_id == point_cell_id[s_id+1]) {
         if (idx >= alloc_size) {
           alloc_size *= 2;
-          BFT_REALLOC(_seg_cell, alloc_size, cs_lnum_t);
-          BFT_REALLOC(_seg_cell_fraction, alloc_size, cs_real_t);
+          CS_REALLOC(_seg_cell, alloc_size, cs_lnum_t);
+          CS_REALLOC(_seg_cell_fraction, alloc_size, cs_real_t);
         }
 
         _seg_cell[idx] = cur_cell_id;
@@ -1067,8 +1067,8 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
 
       if (idx >= alloc_size) {
         alloc_size *= 2;
-        BFT_REALLOC(_seg_cell, alloc_size, cs_lnum_t);
-        BFT_REALLOC(_seg_cell_fraction, alloc_size, cs_real_t);
+        CS_REALLOC(_seg_cell, alloc_size, cs_lnum_t);
+        CS_REALLOC(_seg_cell_fraction, alloc_size, cs_real_t);
       }
 
       _seg_cell[idx] = cur_cell_id;
@@ -1125,15 +1125,15 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
 
   _seg_cell_idx[n_points-1] = idx;
 
-  BFT_FREE(cell_face_lst);
-  BFT_FREE(cell_face_idx);
-  BFT_FREE(point_cell_id);
+  CS_FREE(cell_face_lst);
+  CS_FREE(cell_face_idx);
+  CS_FREE(point_cell_id);
 
   /* Set return values */
 
   alloc_size = _seg_cell_idx[n_points-1];
-  BFT_REALLOC(_seg_cell, alloc_size, cs_lnum_t);
-  BFT_REALLOC(_seg_cell_fraction, alloc_size, cs_real_t);
+  CS_REALLOC(_seg_cell, alloc_size, cs_lnum_t);
+  CS_REALLOC(_seg_cell_fraction, alloc_size, cs_real_t);
 
   *seg_cell_idx = _seg_cell_idx;
   *seg_cell = _seg_cell;

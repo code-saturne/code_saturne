@@ -60,6 +60,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_mem.h"
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_mass_source_terms.h"
 #include "alge/cs_matrix_building.h"
@@ -406,7 +407,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   /* No contribution of f to the boundary mass flux */
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
   cs_field_bc_coeffs_shallow_copy(bc_coeffs_vel, &bc_coeffs_v_loc);
-  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
 
   cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v_loc.b;
   cs_array_real_fill_zero(9*n_b_faces, (cs_real_t *)coefbv);

@@ -46,7 +46,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -58,6 +57,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_ht_convert.h"
 #include "base/cs_internal_coupling.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -154,7 +154,7 @@ _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
 
     if (n_distant > 0) {
       cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-      BFT_MALLOC(is_solid, n_cells_ext, int);
+      CS_MALLOC(is_solid, n_cells_ext, int);
       for (cs_lnum_t i = 0; i < n_cells_ext; i++)
         is_solid[i] = 0;
       cs_volume_zone_tag_cell_type(CS_VOLUME_ZONE_SOLID, 1, is_solid);
@@ -169,7 +169,7 @@ _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
       }
     }
 
-    BFT_FREE(is_solid);
+    CS_FREE(is_solid);
   }
 }
 
@@ -258,10 +258,10 @@ cs_rad_transfer_bcs(int bc_type[])
 
   int  *isothm;
   cs_real_t *tempk, *text, *twall;
-  BFT_MALLOC(isothm, n_b_faces, int);
-  BFT_MALLOC(tempk, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(text, n_b_faces, cs_real_t);
-  BFT_MALLOC(twall, n_b_faces, cs_real_t);
+  CS_MALLOC(isothm, n_b_faces, int);
+  CS_MALLOC(tempk, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(text, n_b_faces, cs_real_t);
+  CS_MALLOC(twall, n_b_faces, cs_real_t);
 
   /* Map field arrays */
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
@@ -1022,10 +1022,10 @@ cs_rad_transfer_bcs(int bc_type[])
      * convert twall to enthalpy at boundary */
 
     cs_lnum_t *lstfac;
-    BFT_MALLOC(lstfac, n_b_faces, cs_lnum_t);
+    CS_MALLOC(lstfac, n_b_faces, cs_lnum_t);
 
     cs_real_t *wall_enth = nullptr, *ext_enth = nullptr;
-    BFT_MALLOC(wall_enth, n_b_faces, cs_real_t);
+    CS_MALLOC(wall_enth, n_b_faces, cs_real_t);
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
       wall_enth[face_id] = 0.;
 
@@ -1056,7 +1056,7 @@ cs_rad_transfer_bcs(int bc_type[])
     }
 
     if (nlst > 0) {
-      BFT_MALLOC(ext_enth, n_b_faces, cs_real_t);
+      CS_MALLOC(ext_enth, n_b_faces, cs_real_t);
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
         ext_enth[face_id] = 0.;
 
@@ -1109,9 +1109,9 @@ cs_rad_transfer_bcs(int bc_type[])
       }
     }
 
-    BFT_FREE(lstfac);
-    BFT_FREE(ext_enth);
-    BFT_FREE(wall_enth);
+    CS_FREE(lstfac);
+    CS_FREE(ext_enth);
+    CS_FREE(wall_enth);
   }
 
   /* Update boundary temperature field   */
@@ -1135,10 +1135,10 @@ cs_rad_transfer_bcs(int bc_type[])
 
   /* Free memory */
 
-  BFT_FREE(isothm);
-  BFT_FREE(tempk);
-  BFT_FREE(text);
-  BFT_FREE(twall);
+  CS_FREE(isothm);
+  CS_FREE(tempk);
+  CS_FREE(text);
+  CS_FREE(twall);
 }
 
 /*----------------------------------------------------------------------------*/

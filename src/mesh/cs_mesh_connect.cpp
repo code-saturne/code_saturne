@@ -40,9 +40,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_sort.h"
 
@@ -123,7 +123,7 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
   /* Count the number of faces to convert */
 
   cs_lnum_t n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
-  BFT_MALLOC(extr_face_list, n_max_faces, cs_lnum_t);
+  CS_MALLOC(extr_face_list, n_max_faces, cs_lnum_t);
 
   /* Initialize list as marker */
 
@@ -159,7 +159,7 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
     }
   }
 
-  BFT_REALLOC(extr_face_list, extr_face_count, cs_lnum_t);
+  CS_REALLOC(extr_face_list, extr_face_count, cs_lnum_t);
 
   if (include_families) {
     _face_families[0] = mesh->b_face_family;
@@ -190,7 +190,7 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
      face_families,
      nullptr);
 
-  BFT_FREE(extr_face_list);
+  CS_FREE(extr_face_list);
 }
 
 /*----------------------------------------------------------------------------
@@ -220,7 +220,7 @@ _order_nodal_faces(const cs_mesh_t  *mesh,
 
   if (mesh->global_i_face_num != nullptr || mesh->global_b_face_num != nullptr) {
 
-    BFT_MALLOC(num_glob_fac, n_max_faces, cs_gnum_t);
+    CS_MALLOC(num_glob_fac, n_max_faces, cs_gnum_t);
 
     if (mesh->global_b_face_num == nullptr) {
       for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
@@ -254,7 +254,7 @@ _order_nodal_faces(const cs_mesh_t  *mesh,
   fvm_nodal_init_io_num(extr_mesh, num_glob_fac, 2);
 
   if (num_glob_fac != nullptr)
-    BFT_FREE(num_glob_fac);
+    CS_FREE(num_glob_fac);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -304,7 +304,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
   if (extr_cell_id != nullptr)
     n_loc_cells = extr_cell_size;
 
-  BFT_MALLOC(cell_faces_idx, n_loc_cells + 1, cs_lnum_t);
+  CS_MALLOC(cell_faces_idx, n_loc_cells + 1, cs_lnum_t);
 
   for (cell_id = 0; cell_id < n_loc_cells + 1; cell_id++)
     cell_faces_idx[cell_id] = 0;
@@ -351,8 +351,8 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
 
   /* Build array of values */
 
-  BFT_MALLOC(cell_faces_val, cell_faces_idx[n_loc_cells] - 1, cs_lnum_t);
-  BFT_MALLOC(cell_face_count, n_loc_cells, cs_lnum_t);
+  CS_MALLOC(cell_faces_val, cell_faces_idx[n_loc_cells] - 1, cs_lnum_t);
+  CS_MALLOC(cell_face_count, n_loc_cells, cs_lnum_t);
 
   for (cell_id = 0; cell_id < n_loc_cells; cell_id++)
     cell_face_count[cell_id] = 0;
@@ -393,7 +393,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
     }
   }
 
-  BFT_FREE(cell_face_count);
+  CS_FREE(cell_face_count);
 
   /* Return values */
 
@@ -484,16 +484,16 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                 "reconstruction (cs_mesh_connect_cells_to_nodal)."));
 
   if (include_families) {
-    BFT_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
-    BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
+    CS_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
   }
 
   /* Count the number of cells to convert */
 
   if (cell_list != nullptr) {
 
-    BFT_MALLOC(extr_cell_ids, cell_list_size, cs_lnum_t);
-    BFT_MALLOC(extr_cell_idx, mesh->n_cells_with_ghosts, cs_lnum_t);
+    CS_MALLOC(extr_cell_ids, cell_list_size, cs_lnum_t);
+    CS_MALLOC(extr_cell_idx, mesh->n_cells_with_ghosts, cs_lnum_t);
 
     /* Initialize index as marker */
 
@@ -516,7 +516,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
           i_face_list[i_face_count++] = face_id;
         }
       }
-      BFT_REALLOC(i_face_list, i_face_count, cs_lnum_t);
+      CS_REALLOC(i_face_list, i_face_count, cs_lnum_t);
 
       for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
         cs_lnum_t c_id = mesh->b_face_cells[face_id];
@@ -525,7 +525,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
           b_face_list[b_face_count++] = face_id;
         }
       }
-      BFT_REALLOC(b_face_list, b_face_count, cs_lnum_t);
+      CS_REALLOC(b_face_list, b_face_count, cs_lnum_t);
 
     }
 
@@ -557,7 +557,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
           i_face_list[i_face_count++] = face_id;
         }
       }
-      BFT_REALLOC(i_face_list, i_face_count, cs_lnum_t);
+      CS_REALLOC(i_face_list, i_face_count, cs_lnum_t);
 
       for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
         cs_lnum_t c_id = mesh->b_face_cells[face_id];
@@ -566,7 +566,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
           b_face_list[b_face_count++] = face_id;
         }
       }
-      BFT_REALLOC(b_face_list, b_face_count, cs_lnum_t);
+      CS_REALLOC(b_face_list, b_face_count, cs_lnum_t);
 
     }
   }
@@ -580,7 +580,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                  &cell_face_num);
 
   if (extr_cell_idx != nullptr)
-    BFT_FREE(extr_cell_idx);
+    CS_FREE(extr_cell_idx);
 
   /* Build nodal connectivity */
 
@@ -613,7 +613,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
      extr_cell_ids,
      &polyhedra_faces);
 
-  BFT_FREE(extr_cell_ids);
+  CS_FREE(extr_cell_ids);
 
   /* Also add faces bearing families */
 
@@ -639,8 +639,8 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
     _order_nodal_faces(mesh, extr_mesh);
 
-    BFT_FREE(i_face_list);
-    BFT_FREE(b_face_list);
+    CS_FREE(i_face_list);
+    CS_FREE(b_face_list);
   }
 
   fvm_nodal_set_shared_vertices(extr_mesh, mesh->vtx_coord);
@@ -648,10 +648,10 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   /* Free memory */
 
-  BFT_FREE(polyhedra_faces);
+  CS_FREE(polyhedra_faces);
 
-  BFT_FREE(cell_face_idx);
-  BFT_FREE(cell_face_num);
+  CS_FREE(cell_face_idx);
+  CS_FREE(cell_face_num);
 
   /* Sort cells by increasing global number */
 
@@ -765,7 +765,7 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
   /* Mark vertices which may be split (vertices lying on new boundary faces) */
 
   cs_lnum_t  *_v2c_idx;
-  BFT_MALLOC(_v2c_idx, n_vertices+1, cs_lnum_t);
+  CS_MALLOC(_v2c_idx, n_vertices+1, cs_lnum_t);
 
   _v2c_idx[0] = 0;
   for (cs_lnum_t i = 0; i < n_vertices; i++)
@@ -806,10 +806,10 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
   /* Now define selected vertex->cell adjacency */
 
   cs_lnum_t *_v2c;
-  BFT_MALLOC(_v2c, _v2c_idx[n_vertices], cs_lnum_t);
+  CS_MALLOC(_v2c, _v2c_idx[n_vertices], cs_lnum_t);
 
   cs_lnum_t *v2c_count;
-  BFT_MALLOC(v2c_count, n_vertices, cs_lnum_t);
+  CS_MALLOC(v2c_count, n_vertices, cs_lnum_t);
   for (cs_lnum_t i = 0; i < n_vertices; i++)
     v2c_count[i] = 0;
 
@@ -848,7 +848,7 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
     }
   }
 
-  BFT_FREE(v2c_count);
+  CS_FREE(v2c_count);
 
   /* Order and compact adjacency array */
 
@@ -856,7 +856,7 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
 
   cs_lnum_t *tmp_v2c_idx = nullptr;
 
-  BFT_MALLOC(tmp_v2c_idx, n_vertices+1, cs_lnum_t);
+  CS_MALLOC(tmp_v2c_idx, n_vertices+1, cs_lnum_t);
   memcpy(tmp_v2c_idx, _v2c_idx, (n_vertices+1)*sizeof(cs_lnum_t));
 
   cs_lnum_t k = 0;
@@ -877,8 +877,8 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
 
   assert(_v2c_idx[n_vertices] <= tmp_v2c_idx[n_vertices]);
 
-  BFT_FREE(tmp_v2c_idx);
-  BFT_REALLOC(_v2c, _v2c_idx[n_vertices], cs_lnum_t);
+  CS_FREE(tmp_v2c_idx);
+  CS_REALLOC(_v2c, _v2c_idx[n_vertices], cs_lnum_t);
 
   *v2c_idx = _v2c_idx;
   *v2c = _v2c;

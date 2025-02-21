@@ -47,12 +47,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_sort.h"
 
@@ -122,7 +122,7 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 
   cs_lnum_t  *count;
 
-  BFT_MALLOC(count, n_cells, cs_lnum_t);
+  CS_MALLOC(count, n_cells, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_cells; i++)
     count[i] = 0;
@@ -163,7 +163,7 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
     }
   }
 
-  BFT_FREE(count);
+  CS_FREE(count);
 
   /* Sort line elements by column id (for better access patterns) */
 
@@ -175,7 +175,7 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 
     cs_lnum_t *tmp_c2c_idx = nullptr;
 
-    BFT_MALLOC(tmp_c2c_idx, n_cells+1, cs_lnum_t);
+    CS_MALLOC(tmp_c2c_idx, n_cells+1, cs_lnum_t);
     memcpy(tmp_c2c_idx, c2c_idx, (n_cells+1)*sizeof(cs_lnum_t));
 
     cs_lnum_t k = 0;
@@ -196,7 +196,7 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 
     assert(c2c_idx[n_cells] < tmp_c2c_idx[n_cells]);
 
-    BFT_FREE(tmp_c2c_idx);
+    CS_FREE(tmp_c2c_idx);
     CS_REALLOC_HD(c2c, c2c_idx[n_cells], cs_lnum_t, alloc_mode);
     cs_mem_advise_set_read_mostly(c2c);
 
@@ -312,7 +312,7 @@ _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
   cs_lnum_t *c2b_idx = ma->cell_b_faces_idx;
 
   cs_lnum_t *c2b_count;
-  BFT_MALLOC(c2b_count, n_cells, cs_lnum_t);
+  CS_MALLOC(c2b_count, n_cells, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_cells; i++)
     c2b_count[i] = 0;
@@ -339,7 +339,7 @@ _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
     c2b_count[c_id] += 1;
   }
 
-  BFT_FREE(c2b_count);
+  CS_FREE(c2b_count);
 
   /* Sort array */
 
@@ -372,7 +372,7 @@ _update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
   cs_lnum_t *c2b_idx = ma->cell_hb_faces_idx;
 
   cs_lnum_t *c2b_count;
-  BFT_MALLOC(c2b_count, n_cells, cs_lnum_t);
+  CS_MALLOC(c2b_count, n_cells, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_cells; i++)
     c2b_count[i] = 0;
@@ -399,7 +399,7 @@ _update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
     c2b_count[c_id] += 1;
   }
 
-  BFT_FREE(c2b_count);
+  CS_FREE(c2b_count);
 
   /* Sort array */
 
@@ -527,8 +527,8 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
   cs_adjacency_t *c2v = ma->_c2v;
 
   if (c2v->n_elts != m->n_cells)
-    BFT_REALLOC(c2v->idx, m->n_cells+1, cs_lnum_t);
-  BFT_FREE(c2v->ids);
+    CS_REALLOC(c2v->idx, m->n_cells+1, cs_lnum_t);
+  CS_FREE(c2v->ids);
 
   const cs_lnum_t n_cells = m->n_cells;
 
@@ -570,7 +570,7 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
 
   /* Add vertices */
 
-  BFT_REALLOC(c2v->ids, c2v->idx[n_cells], cs_lnum_t);
+  CS_REALLOC(c2v->ids, c2v->idx[n_cells], cs_lnum_t);
 
   cs_lnum_t *ids = c2v->ids;
 
@@ -634,7 +634,7 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
     s_id = e_id;
   }
 
-  BFT_REALLOC(c2v->ids, c2v->idx[n_cells], cs_lnum_t);
+  CS_REALLOC(c2v->ids, c2v->idx[n_cells], cs_lnum_t);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -701,17 +701,17 @@ cs_mesh_adjacencies_finalize(void)
 {
   cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
 
-  BFT_FREE(ma->cell_cells_idx);
-  BFT_FREE(ma->cell_cells);
+  CS_FREE(ma->cell_cells_idx);
+  CS_FREE(ma->cell_cells);
 
-  BFT_FREE(ma->cell_i_faces);
-  BFT_FREE(ma->cell_i_faces_sgn);
+  CS_FREE(ma->cell_i_faces);
+  CS_FREE(ma->cell_i_faces_sgn);
 
-  BFT_FREE(ma->cell_b_faces_idx);
-  BFT_FREE(ma->cell_b_faces);
+  CS_FREE(ma->cell_b_faces_idx);
+  CS_FREE(ma->cell_b_faces);
 
-  BFT_FREE(ma->cell_hb_faces_idx);
-  BFT_FREE(ma->cell_hb_faces);
+  CS_FREE(ma->cell_hb_faces_idx);
+  CS_FREE(ma->cell_hb_faces);
 
   cs_adjacency_destroy(&(ma->_c2f));
 
@@ -940,7 +940,7 @@ cs_adjacency_create(cs_flag_t    flag,
 
   cs_adjacency_t  *adj = nullptr;
 
-  BFT_MALLOC(adj, 1, cs_adjacency_t);
+  CS_MALLOC(adj, 1, cs_adjacency_t);
 
   adj->n_elts = n_elts;
   adj->flag = flag;
@@ -953,14 +953,14 @@ cs_adjacency_create(cs_flag_t    flag,
   if (stride > 0) {
 
     adj->flag |= CS_ADJACENCY_STRIDE;
-    BFT_MALLOC(adj->ids, stride*n_elts, cs_lnum_t);
+    CS_MALLOC(adj->ids, stride*n_elts, cs_lnum_t);
     if (flag & CS_ADJACENCY_SIGNED)
-      BFT_MALLOC(adj->sgn, stride*n_elts, short int);
+      CS_MALLOC(adj->sgn, stride*n_elts, short int);
 
   }
   else {
 
-    BFT_MALLOC(adj->idx, n_elts+1, cs_lnum_t);
+    CS_MALLOC(adj->idx, n_elts+1, cs_lnum_t);
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < adj->n_elts + 1; i++)  adj->idx[i] = 0;
 
@@ -998,7 +998,7 @@ cs_adjacency_create_from_s_arrays(cs_lnum_t    n_elts,
 
   cs_adjacency_t  *adj = nullptr;
 
-  BFT_MALLOC(adj, 1, cs_adjacency_t);
+  CS_MALLOC(adj, 1, cs_adjacency_t);
 
   adj->n_elts = n_elts;
   adj->flag = CS_ADJACENCY_SHARED | CS_ADJACENCY_STRIDE;
@@ -1037,7 +1037,7 @@ cs_adjacency_create_from_i_arrays(cs_lnum_t     n_elts,
 {
   cs_adjacency_t  *adj = nullptr;
 
-  BFT_MALLOC(adj, 1, cs_adjacency_t);
+  CS_MALLOC(adj, 1, cs_adjacency_t);
 
   adj->n_elts = n_elts;
   adj->flag = CS_ADJACENCY_SHARED;
@@ -1073,14 +1073,14 @@ cs_adjacency_destroy(cs_adjacency_t   **p_adj)
   if (!is_shared) {
 
     if (adj->stride < 1)
-      BFT_FREE(adj->idx);
+      CS_FREE(adj->idx);
 
-    BFT_FREE(adj->ids);
+    CS_FREE(adj->ids);
     if (adj->flag & CS_ADJACENCY_SIGNED)
-      BFT_FREE(adj->sgn);
+      CS_FREE(adj->sgn);
   }
 
-  BFT_FREE(adj);
+  CS_FREE(adj);
   *p_adj = nullptr;
 }
 
@@ -1107,7 +1107,7 @@ cs_adjacency_compose(int                      n_c_elts,
   cs_lnum_t  *ctag = nullptr;
   cs_adjacency_t  *a2c = cs_adjacency_create(0, -1, a2b->n_elts);
 
-  BFT_MALLOC(ctag, n_c_elts, cs_lnum_t);
+  CS_MALLOC(ctag, n_c_elts, cs_lnum_t);
 # pragma omp parallel for if (n_c_elts > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_c_elts; i++) ctag[i] = -1;
 
@@ -1200,7 +1200,7 @@ cs_adjacency_compose(int                      n_c_elts,
   for (cs_lnum_t i = 0; i < a2c->n_elts; i++)
     a2c->idx[i+1] += a2c->idx[i];
 
-  BFT_MALLOC(a2c->ids, a2c->idx[a2c->n_elts], cs_lnum_t);
+  CS_MALLOC(a2c->ids, a2c->idx[a2c->n_elts], cs_lnum_t);
 
   /* Reset ctag */
 # pragma omp parallel for if (n_c_elts > CS_THR_MIN)
@@ -1295,7 +1295,7 @@ cs_adjacency_compose(int                      n_c_elts,
 
   assert(shift == a2c->idx[a2c->n_elts]);
 
-  BFT_FREE(ctag);
+  CS_FREE(ctag);
 
   return a2c;
 }
@@ -1341,7 +1341,7 @@ cs_adjacency_concatenate(const cs_adjacency_t *a2b_1,
 
   a2b->idx[0] = 0;
 
-  BFT_MALLOC(a2b->ids, a2b_1->idx[n_elts] + a2b_2->idx[n_elts], cs_lnum_t);
+  CS_MALLOC(a2b->ids, a2b_1->idx[n_elts] + a2b_2->idx[n_elts], cs_lnum_t);
 
   /* Fill ids */
   /* -------- */
@@ -1393,7 +1393,7 @@ cs_adjacency_concatenate(const cs_adjacency_t *a2b_1,
 
   assert(shift == a2b->idx[a2b->n_elts]);
 
-  BFT_REALLOC(a2b->ids, a2b->idx[a2b->n_elts], cs_lnum_t);
+  CS_REALLOC(a2b->ids, a2b->idx[a2b->n_elts], cs_lnum_t);
 
   return a2b;
 }
@@ -1439,7 +1439,7 @@ cs_adjacency_difference(const cs_adjacency_t *a2b_1,
 
   a2b->idx[0] = 0;
 
-  BFT_MALLOC(a2b->ids, a2b_1->idx[n_elts], cs_lnum_t);
+  CS_MALLOC(a2b->ids, a2b_1->idx[n_elts], cs_lnum_t);
 
   /* Fill ids */
   /* -------- */
@@ -1484,7 +1484,7 @@ cs_adjacency_difference(const cs_adjacency_t *a2b_1,
 
   assert(shift == a2b->idx[a2b->n_elts]);
 
-  BFT_REALLOC(a2b->ids, a2b->idx[a2b->n_elts], cs_lnum_t);
+  CS_REALLOC(a2b->ids, a2b->idx[a2b->n_elts], cs_lnum_t);
 
   return a2b;
 }
@@ -1539,16 +1539,16 @@ cs_adjacency_transpose(int                     n_b_elts,
 
   /* Allocate and initialize temporary buffer */
   int  *count = nullptr;
-  BFT_MALLOC(count, n_b_elts, int);
+  CS_MALLOC(count, n_b_elts, int);
 # pragma omp parallel for if (n_b_elts > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_b_elts; i++) count[i] = 0;
 
   /* Build ids */
   /* --------- */
 
-  BFT_MALLOC(b2a->ids, b2a->idx[b2a->n_elts], cs_lnum_t);
+  CS_MALLOC(b2a->ids, b2a->idx[b2a->n_elts], cs_lnum_t);
   if (b2a->flag & CS_ADJACENCY_SIGNED)
-    BFT_MALLOC(b2a->sgn, b2a->idx[b2a->n_elts], short int);
+    CS_MALLOC(b2a->sgn, b2a->idx[b2a->n_elts], short int);
 
   if (a2b->flag & CS_ADJACENCY_STRIDE) {
     if (b2a->flag & CS_ADJACENCY_SIGNED) {
@@ -1616,7 +1616,7 @@ cs_adjacency_transpose(int                     n_b_elts,
   }
 
   /* Free temporary buffer */
-  BFT_FREE(count);
+  CS_FREE(count);
 
   return b2a;
 }
@@ -1705,7 +1705,7 @@ cs_adjacency_remove_self_entries(cs_adjacency_t   *adj)
 
   } /* Loop on index entries */
 
-  BFT_REALLOC(adj->ids, adj->idx[adj->n_elts], cs_lnum_t);
+  CS_REALLOC(adj->ids, adj->idx[adj->n_elts], cs_lnum_t);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1855,10 +1855,10 @@ cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
   const cs_lnum_t  idx_size = c2f->idx[n_cells];
 
   /* Fill arrays */
-  BFT_MALLOC(c2f->ids, idx_size, cs_lnum_t);
-  BFT_MALLOC(c2f->sgn, idx_size, short int);
+  CS_MALLOC(c2f->ids, idx_size, cs_lnum_t);
+  CS_MALLOC(c2f->sgn, idx_size, short int);
 
-  BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
+  CS_MALLOC(cell_shift, n_cells, cs_lnum_t);
   cs_array_lnum_fill_zero(n_cells, cell_shift);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
@@ -1897,7 +1897,7 @@ cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
   } /* End of loop on border faces */
 
   /* Free memory */
-  BFT_FREE(cell_shift);
+  CS_FREE(cell_shift);
 
   return c2f;
 }
@@ -1972,10 +1972,10 @@ cs_mesh_adjacency_c2f_lower(const cs_mesh_t  *m,
   const cs_lnum_t  idx_size = c2f->idx[n_cells];
 
   /* Fill arrays */
-  BFT_MALLOC(c2f->ids, idx_size, cs_lnum_t);
-  BFT_MALLOC(c2f->sgn, idx_size, short int);
+  CS_MALLOC(c2f->ids, idx_size, cs_lnum_t);
+  CS_MALLOC(c2f->sgn, idx_size, short int);
 
-  BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
+  CS_MALLOC(cell_shift, n_cells, cs_lnum_t);
   cs_array_lnum_fill_zero(n_cells, cell_shift);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
@@ -2014,7 +2014,7 @@ cs_mesh_adjacency_c2f_lower(const cs_mesh_t  *m,
   }
 
   /* Free memory */
-  BFT_FREE(cell_shift);
+  CS_FREE(cell_shift);
 
   return c2f;
 }
@@ -2056,9 +2056,9 @@ cs_mesh_adjacency_c2f_boundary(const cs_mesh_t  *m)
   const cs_lnum_t  idx_size = c2f->idx[n_cells];
 
   /* Fill arrays */
-  BFT_MALLOC(c2f->ids, idx_size, cs_lnum_t);
+  CS_MALLOC(c2f->ids, idx_size, cs_lnum_t);
 
-  BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
+  CS_MALLOC(cell_shift, n_cells, cs_lnum_t);
   cs_array_lnum_fill_zero(n_cells, cell_shift);
 
   for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
@@ -2072,7 +2072,7 @@ cs_mesh_adjacency_c2f_boundary(const cs_mesh_t  *m)
   } /* End of loop on border faces */
 
   /* Free memory */
-  BFT_FREE(cell_shift);
+  CS_FREE(cell_shift);
 
   return c2f;
 }
@@ -2121,10 +2121,10 @@ cs_mesh_adjacency_v2v(const cs_mesh_t  *m)
   for (cs_lnum_t i = 0; i < n_vertices; i++) v2v->idx[i+1] += v2v->idx[i];
   assert(m->b_face_vtx_idx[m->n_b_faces] + m->i_face_vtx_idx[m->n_i_faces]
          == v2v->idx[n_vertices]);
-  BFT_MALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
+  CS_MALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
 
   short int  *count = nullptr;
-  BFT_MALLOC(count, n_vertices, short int);
+  CS_MALLOC(count, n_vertices, short int);
   memset(count, 0, n_vertices*sizeof(short int));
 
   /* Treat boundary faces */
@@ -2147,7 +2147,7 @@ cs_mesh_adjacency_v2v(const cs_mesh_t  *m)
                     v2v);
   }
 
-  BFT_FREE(count);
+  CS_FREE(count);
 
   /* Order sub-lists related to each vertex */
 # pragma omp parallel for if (n_vertices > CS_THR_MIN)
@@ -2174,7 +2174,7 @@ cs_mesh_adjacency_v2v(const cs_mesh_t  *m)
 
   }
 
-  BFT_REALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
+  CS_REALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
 
   return v2v;
 }

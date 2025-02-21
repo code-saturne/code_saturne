@@ -42,7 +42,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
@@ -52,6 +51,7 @@
 #include "base/cs_halo_perio.h"
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_boundary.h"
 #include "mesh/cs_mesh_halo.h"
@@ -119,7 +119,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   cs_lnum_t *b_face_cells = m->b_face_cells;
 
   cs_lnum_t *c_o2n;
-  BFT_MALLOC(c_o2n, n_cells_ext, cs_lnum_t);
+  CS_MALLOC(c_o2n, n_cells_ext, cs_lnum_t);
 
   cs_lnum_t n_cells_new = 0;
 
@@ -138,7 +138,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   cs_parall_counter(&n_g_cells_new, 1);
 
   if (n_g_cells_new == m->n_g_cells) {
-    BFT_FREE(c_o2n);
+    CS_FREE(c_o2n);
     return;
   }
 
@@ -164,10 +164,10 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
 
   cs_lnum_t  n_sel_faces = 0;
   cs_lnum_t *sel_faces;
-  BFT_MALLOC(sel_faces, n_i_faces, cs_lnum_t);
+  CS_MALLOC(sel_faces, n_i_faces, cs_lnum_t);
 
   int *b_gc_id;
-  BFT_MALLOC(b_gc_id, n_cells_ext, int);
+  CS_MALLOC(b_gc_id, n_cells_ext, int);
   for (cs_lnum_t i = 0; i < n_cells_ext; i++)
     b_gc_id[i] = default_family_id;
 
@@ -197,7 +197,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
       sel_faces[n_sel_faces++] = i;
   }
 
-  BFT_FREE(b_gc_id);
+  CS_FREE(b_gc_id);
 
   const cs_lnum_t n_b_faces_ini = m->n_b_faces;
 
@@ -205,7 +205,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
                                                n_sel_faces,
                                                sel_faces);
 
-  BFT_FREE(sel_faces);
+  CS_FREE(sel_faces);
 
   i_face_cells = (cs_lnum_2_t *)(m->i_face_cells);
   b_face_cells = m->b_face_cells;
@@ -217,7 +217,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   if (group_name != nullptr) {
 
     cs_lnum_t n_b_add = m->n_b_faces - n_b_faces_ini;
-    BFT_MALLOC(sel_faces, n_b_add, cs_lnum_t);
+    CS_MALLOC(sel_faces, n_b_add, cs_lnum_t);
     cs_lnum_t k = 0;
     for (cs_lnum_t i = 0; i < n_b_add; i++) {
       cs_lnum_t j = n_b_faces_ini + i;
@@ -231,7 +231,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
                               sel_faces);
 
 
-    BFT_FREE(sel_faces);
+    CS_FREE(sel_faces);
 
   }
 
@@ -303,9 +303,12 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   if (m->global_cell_num != nullptr || cs_glob_n_ranks > 1) {
 
     fvm_io_num_t *n_io_num
-      = fvm_io_num_create_from_select(nullptr, m->global_cell_num, n_cells_new, 0);
+      = fvm_io_num_create_from_select(nullptr,
+                                      m->global_cell_num,
+                                      n_cells_new,
+                                      0);
 
-    BFT_FREE(m->global_cell_num);
+    CS_FREE(m->global_cell_num);
 
     m->global_cell_num = fvm_io_num_transfer_global_num(n_io_num);
     m->n_g_cells = fvm_io_num_get_global_count(n_io_num);
@@ -323,7 +326,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   m->n_cells = n_cells_new;
   m->n_cells_with_ghosts = n_cells_new;
 
-  BFT_FREE(c_o2n);
+  CS_FREE(c_o2n);
 
   m->modified |= CS_MESH_MODIFIED;
   if (need_rebalance)
@@ -338,7 +341,8 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
       || m->halo_type == CS_HALO_EXTENDED) {
     cs_halo_type_t halo_type = m->halo_type;
     assert(m == cs_glob_mesh);
-    cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : nullptr;
+    cs_mesh_builder_t *mb = (m == cs_glob_mesh) ?
+      cs_glob_mesh_builder : nullptr;
     cs_mesh_init_halo(m, mb, halo_type, -1, true);
   }
 
@@ -375,7 +379,7 @@ cs_mesh_remove_cells_negative_volume(cs_mesh_t  *m)
                (unsigned long long)n_neg);
 
     char *flag;
-    BFT_MALLOC(flag, m->n_cells, char);
+    CS_MALLOC(flag, m->n_cells, char);
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       if (cell_vol[i] <= 0)
@@ -388,11 +392,11 @@ cs_mesh_remove_cells_negative_volume(cs_mesh_t  *m)
                          flag,
                          "[join_neg_volume]");
 
-    BFT_FREE(flag);
+    CS_FREE(flag);
 
   }
 
-  BFT_FREE(cell_vol);
+  CS_FREE(cell_vol);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -414,7 +418,7 @@ cs_mesh_remove_cells_from_selection_criteria
   cs_lnum_t   n_selected_elts = 0;
   cs_lnum_t  *selected_elts = nullptr;
 
-  BFT_MALLOC(selected_elts, m->n_cells, cs_lnum_t);
+  CS_MALLOC(selected_elts, m->n_cells, cs_lnum_t);
 
   cs_selector_get_cell_list(criteria,
                             &n_selected_elts,
@@ -422,7 +426,7 @@ cs_mesh_remove_cells_from_selection_criteria
 
   /* Set flag values */
   char *flag;
-  BFT_MALLOC(flag, m->n_cells, char);
+  CS_MALLOC(flag, m->n_cells, char);
 
   for (cs_lnum_t i = 0; i < m->n_cells; i++) {
     flag[i] = 0;
@@ -436,13 +440,12 @@ cs_mesh_remove_cells_from_selection_criteria
   cs_mesh_remove_cells(m, flag, group_name);
 
   /* Free pointers */
-  BFT_FREE(selected_elts);
-  BFT_FREE(flag);
+  CS_FREE(selected_elts);
+  CS_FREE(flag);
 
   /* Mark for re-partitioning */
   m->modified |= CS_MESH_MODIFIED_BALANCE;
 }
-
 
 /*----------------------------------------------------------------------------*/
 

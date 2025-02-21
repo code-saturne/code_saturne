@@ -46,10 +46,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -646,17 +646,17 @@ _interpolation4d(cs_real_t trad,
   int nix, nit;
 
   cs_real_t *karray, *kint1, *kint2, *kint3;
-  BFT_MALLOC(karray, ng*4*4*4*4, cs_real_t);
-  BFT_MALLOC(kint1,  ng*4*4*4, cs_real_t);
-  BFT_MALLOC(kint2,  ng*4*4, cs_real_t);
-  BFT_MALLOC(kint3,  ng*4, cs_real_t);
+  CS_MALLOC(karray, ng*4*4*4*4, cs_real_t);
+  CS_MALLOC(kint1,  ng*4*4*4, cs_real_t);
+  CS_MALLOC(kint2,  ng*4*4, cs_real_t);
+  CS_MALLOC(kint3,  ng*4, cs_real_t);
 
   cs_real_t *b, *c, *d, *kg_t2, *kg_x2;
-  BFT_MALLOC(b, 4, cs_real_t);
-  BFT_MALLOC(c, 4, cs_real_t);
-  BFT_MALLOC(d, 4, cs_real_t);
-  BFT_MALLOC(kg_t2, 4, cs_real_t);
-  BFT_MALLOC(kg_x2, 4, cs_real_t);
+  CS_MALLOC(b, 4, cs_real_t);
+  CS_MALLOC(c, 4, cs_real_t);
+  CS_MALLOC(d, 4, cs_real_t);
+  CS_MALLOC(kg_t2, 4, cs_real_t);
+  CS_MALLOC(kg_x2, 4, cs_real_t);
 
   /* Determine positions in x and T
    * in the NB database for interpolation. */
@@ -870,15 +870,15 @@ _interpolation4d(cs_real_t trad,
   }
 
   /* Free memory */
-  BFT_FREE(karray);
-  BFT_FREE(kint1);
-  BFT_FREE(kint2);
-  BFT_FREE(kint3);
-  BFT_FREE(b);
-  BFT_FREE(c);
-  BFT_FREE(d);
-  BFT_FREE(kg_t2);
-  BFT_FREE(kg_x2);
+  CS_FREE(karray);
+  CS_FREE(kint1);
+  CS_FREE(kint2);
+  CS_FREE(kint3);
+  CS_FREE(b);
+  CS_FREE(c);
+  CS_FREE(d);
+  CS_FREE(kg_t2);
+  CS_FREE(kg_x2);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -914,17 +914,17 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
   cs_real_t   *gfskref, *kfskref, *kfsk, *gfsk, *gg1;
   cs_real_t   *kg1, *as, *ag, *aw, *kloctmp;
 
-  BFT_MALLOC(gfskref, ng, cs_real_t);
-  BFT_MALLOC(kfskref, ng, cs_real_t);
-  BFT_MALLOC(gfsk, ng, cs_real_t);
-  BFT_MALLOC(kfsk, ng, cs_real_t);
-  BFT_MALLOC(gg1, ng, cs_real_t);
-  BFT_MALLOC(kg1, ng, cs_real_t);
-  BFT_MALLOC(as, ng, cs_real_t);
+  CS_MALLOC(gfskref, ng, cs_real_t);
+  CS_MALLOC(kfskref, ng, cs_real_t);
+  CS_MALLOC(gfsk, ng, cs_real_t);
+  CS_MALLOC(kfsk, ng, cs_real_t);
+  CS_MALLOC(gg1, ng, cs_real_t);
+  CS_MALLOC(kg1, ng, cs_real_t);
+  CS_MALLOC(as, ng, cs_real_t);
 
-  BFT_MALLOC(ag, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
-  BFT_MALLOC(aw, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
-  BFT_MALLOC(kloctmp, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  CS_MALLOC(ag, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  CS_MALLOC(aw, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  CS_MALLOC(kloctmp, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
 
   cs_field_t *f_bound_t = cs_field_by_name_try("boundary_temperature");
   cs_real_t *tpfsck = f_bound_t->val;
@@ -938,14 +938,14 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     const char *pathdatadir = cs_base_get_pkgdatadir();
     char filepath[256];
 
-    BFT_MALLOC(gi,    ng, cs_real_t);
-    BFT_MALLOC(tt,    nt, cs_real_t);
-    BFT_MALLOC(kpco2, nt, cs_real_t);
-    BFT_MALLOC(kph2o, nt, cs_real_t);
-    BFT_MALLOC(wv,    nband, cs_real_t);
-    BFT_MALLOC(dwv,   nband, cs_real_t);
+    CS_MALLOC(gi,    ng, cs_real_t);
+    CS_MALLOC(tt,    nt, cs_real_t);
+    CS_MALLOC(kpco2, nt, cs_real_t);
+    CS_MALLOC(kph2o, nt, cs_real_t);
+    CS_MALLOC(wv,    nband, cs_real_t);
+    CS_MALLOC(dwv,   nband, cs_real_t);
 
-    BFT_MALLOC(kmfs, nconc * nconc * nt * nt * ng, cs_real_t);
+    CS_MALLOC(kmfs, nconc * nconc * nt * nt * ng, cs_real_t);
 
     /* Read k-distributions */
     {
@@ -1024,19 +1024,19 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     /* Gaussian quadrature */
 
     /* Allocation */
-    BFT_MALLOC(gq, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+    CS_MALLOC(gq, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
     int m = (cs_glob_rad_transfer_params->nwsgg + 1) / 2;
     cs_real_t *p1, *p2, *p3, *pp;
     cs_real_t *z, *z1, *arth;
     bool *unfinished;
-    BFT_MALLOC(p1, m, cs_real_t);
-    BFT_MALLOC(p2, m, cs_real_t);
-    BFT_MALLOC(p3, m, cs_real_t);
-    BFT_MALLOC(pp, m, cs_real_t);
-    BFT_MALLOC(z,  m, cs_real_t);
-    BFT_MALLOC(z1, m, cs_real_t);
-    BFT_MALLOC(arth, m, cs_real_t);
-    BFT_MALLOC(unfinished, m, bool);
+    CS_MALLOC(p1, m, cs_real_t);
+    CS_MALLOC(p2, m, cs_real_t);
+    CS_MALLOC(p3, m, cs_real_t);
+    CS_MALLOC(pp, m, cs_real_t);
+    CS_MALLOC(z,  m, cs_real_t);
+    CS_MALLOC(z1, m, cs_real_t);
+    CS_MALLOC(arth, m, cs_real_t);
+    CS_MALLOC(unfinished, m, bool);
 
     /* Boundaries */
     cs_real_t x1 = 0.0;
@@ -1130,14 +1130,14 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
         = cs_glob_rad_transfer_params->wq[j];
     }
 
-    BFT_FREE(p1);
-    BFT_FREE(p2);
-    BFT_FREE(p3);
-    BFT_FREE(pp);
-    BFT_FREE(z);
-    BFT_FREE(z1);
-    BFT_FREE(arth);
-    BFT_FREE(unfinished);
+    CS_FREE(p1);
+    CS_FREE(p2);
+    CS_FREE(p3);
+    CS_FREE(pp);
+    CS_FREE(z);
+    CS_FREE(z1);
+    CS_FREE(arth);
+    CS_FREE(unfinished);
 
   }
 
@@ -1306,17 +1306,17 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 
   /* free memory */
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max) {
-    BFT_FREE(gi);
-    BFT_FREE(tt);
-    BFT_FREE(kpco2);
-    BFT_FREE(kph2o);
-    BFT_FREE(wv);
-    BFT_FREE(dwv);
-    BFT_FREE(kmfs);
-    BFT_FREE(gq);
+    CS_FREE(gi);
+    CS_FREE(tt);
+    CS_FREE(kpco2);
+    CS_FREE(kph2o);
+    CS_FREE(wv);
+    CS_FREE(dwv);
+    CS_FREE(kmfs);
+    CS_FREE(gq);
   }
 
-  BFT_FREE(kloctmp);
+  CS_FREE(kloctmp);
 }
 
 /*----------------------------------------------------------------------------*/
