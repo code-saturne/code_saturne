@@ -2608,7 +2608,7 @@ cs_central_downwind_cells(const cs_lnum_t    ii,
  * \param[in]     p_d             value at downwind cell
  * \param[in]     local_max_c     local maximum of variable
  * \param[in]     local_min_c     local minimum of variable
- * \param[in]     courant_c       central cell courant number
+ * \param[in]     courant_c       central cell Courant number
  * \param[out]    pif             contribution of i to flux from i to j
  * \param[out]    pjf             contribution of j to flux from i to j
  */
