@@ -623,7 +623,6 @@ cs_atmo_aerosol_nuclea(cs_real_t         *nc,
 void
 cs_atmo_read_aerosol(void)
 {
-  const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   const cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
 
@@ -670,8 +669,8 @@ cs_atmo_read_aerosol(void)
 
   }
 
-  /* printing
-     -------- */
+  /* Logging
+     ------- */
 
   bft_printf("\n===================================================\n");
   bft_printf("printing aerosol numbers\n");
@@ -679,23 +678,24 @@ cs_atmo_read_aerosol(void)
     const int f_id
       = at_chem->species_to_scalar_id[at_chem->n_species + size + jb];
     const cs_field_t *f = cs_field_by_id(f_id);
-    bft_printf("%s : %10.2le\n ", cs_field_get_label(f),
-                                  at_chem->dlconc0[jb + size]);
+    bft_printf("%s : %10.2le\n ",
+               cs_field_get_label(f),
+               at_chem->dlconc0[jb + size]);
   }
 
   bft_printf("\n===================================================\n");
   bft_printf("printing aerosol concentrations\n");
   for (int jb = 0; jb < n_aer; jb++) {
-    bft_printf("Size bin number %10.14le\n", jb);
+    bft_printf("Size bin id %d\n", jb);
     for (int jsp = 0; jsp < nlayer_aer; jsp++) {
       const int f_id
         = at_chem->species_to_scalar_id[at_chem->n_species + jsp*n_aer];
       const cs_field_t *f = cs_field_by_id(f_id);
-      bft_printf("%s : %10.2le\n ", cs_field_get_label(f),
-                                    at_chem->dlconc0[jb + jsp*n_aer]);
+      bft_printf("%s : %10.2le\n ",
+                 cs_field_get_label(f),
+                 at_chem->dlconc0[jb + jsp*n_aer]);
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
