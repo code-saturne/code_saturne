@@ -144,49 +144,6 @@ module cstphy
   !> \addtogroup csttur
   !> \{
 
-  !> \f$ \kappa \f$ Karman constant. (= 0.42)
-  !> Useful if and only if \ref iturb >= 10.
-  !> (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
-  !> LES, v2f or \f$k-\omega\f$)
-  double precision, save :: xkappa = 0.42d0
-
-  !> constant \f$C_\mu\f$ for all the RANS turbulence models
-  !> Warning, different values for the v2f model
-  !> Useful if and only if \ref iturb = 20, 21, 30, 31, 50, 51 or 60
-  !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or \f$k-\omega\f$)
-  real(c_double), pointer, save :: cmu
-
-  !> Coefficient of interfacial coefficient in k-eps,
-  !> used in Lagrange treatment
-  !>
-
-  !> constant of the Rij-epsilon EBRSM
-  double precision, save :: xcl = 0.122d0
-
-  !> constant in the expression of Ce1' for the Rij-epsilon EBRSM
-  double precision, save :: xa1 = 0.1d0
-
-  !> constant of the Rij-epsilon EBRSM
-  double precision, save :: xct = 6.d0
-
-  !> is a characteristic macroscopic
-  !> length of the domain, used for the initialization of the turbulence and
-  !> the potential clipping (with \ref optcal::iclkep "iclkep"=1)
-  !>  - Negative value: not initialized (the code then uses the cubic root of
-  !> the domain volume).
-  !>
-  !> Useful if and only if \ref iturb = 20, 21, 30, 31, 50 or 60 (RANS models)
-  real(c_double), pointer, save :: almax
-
-  !> the characteristic flow velocity,
-  !> used for the initialization of the turbulence.
-  !> Negative value: not initialized.
-  !>
-  !> Useful if and only if \ref iturb = 20, 21, 30, 31, 50 or 60 (RANS model)
-  !> and the turbulence is not initialized somewhere
-  !> else (restart file or subroutine \ref cs\_user\_initialization)
-  real(c_double), pointer, save :: uref
-
   !> constant used in the definition of LES filtering diameter:
   !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}}\f$
   !> \ref xlesfl is a constant used to define, for
@@ -231,9 +188,6 @@ module cstphy
   !>
   !> Useful if and only if \ref iturb = 41
   real(c_double), pointer, save :: xlesfd
-
-  !> minimal control volume
-  double precision, save :: volmin
 
   !> \}
 
@@ -283,28 +237,17 @@ module cstphy
       type(c_ptr), intent(out) :: pther
     end subroutine cs_f_fluid_properties_get_pointers
 
-    ! Interface to C function retrieving pointers to members of the
-    ! RANS turbulence model structure
-
-    subroutine cs_f_turb_reference_values(almax, uref) &
-      bind(C, name='cs_f_turb_reference_values')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: almax , uref
-    end subroutine cs_f_turb_reference_values
-
     !---------------------------------------------------------------------------
 
     ! Interface to C function retrieving pointers to constants of the
     ! turbulence model
 
-    subroutine cs_f_turb_model_constants_get_pointers(cmu,      &
+    subroutine cs_f_turb_model_constants_get_pointers(          &
          xlesfd, xlesfl, ales, bles)                            &
 
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: cmu
       type(c_ptr), intent(out) :: xlesfd, xlesfl
       type(c_ptr), intent(out) :: ales, bles
     end subroutine cs_f_turb_model_constants_get_pointers
@@ -380,22 +323,6 @@ contains
   !> \brief Initialize Fortran RANS turbulence model API.
   !> This maps Fortran pointers to global C structure members.
 
-  subroutine turb_reference_values_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_almax , c_uref
-
-    call cs_f_turb_reference_values(c_almax, c_uref)
-
-    call c_f_pointer(c_almax, almax)
-    call c_f_pointer(c_uref, uref)
-
-  end subroutine turb_reference_values_init
-
   !> \brief Initialize Fortran turbulence model constants.
   !> This maps Fortran pointers to global C real numbers.
 
@@ -406,13 +333,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_cmu
     type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles
 
-    call cs_f_turb_model_constants_get_pointers(c_cmu, c_xlesfd, c_xlesfl,   &
+    call cs_f_turb_model_constants_get_pointers(c_xlesfd, c_xlesfl,   &
                                                 c_ales, c_bles)
 
-    call c_f_pointer(c_cmu   , cmu)
     call c_f_pointer(c_xlesfd, xlesfd)
     call c_f_pointer(c_xlesfl, xlesfl)
     call c_f_pointer(c_ales  , ales  )

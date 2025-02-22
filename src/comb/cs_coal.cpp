@@ -128,15 +128,6 @@ const double cs_coal_epsilon = 1.e-8;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
-cs_f_co_models_init(void);
-
-void
-cs_f_ppincl_combustion_init(void);
-
-void
-cs_f_thch_models_init(void);
-
 /* Additional prototypes for Fortran mappings */
 
 int
@@ -423,12 +414,6 @@ cs_coal_model_set_model(cs_coal_model_type_t  type)
   /* Set finalization callback */
 
   cs_base_at_finalize(_coal_model_finalize);
-
-  /* Set mappings with Fortran */
-
-  cs_f_ppincl_combustion_init();
-  cs_f_co_models_init();
-  cs_f_thch_models_init();
 
   return cm;
 }

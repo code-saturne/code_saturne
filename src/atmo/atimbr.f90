@@ -1408,7 +1408,7 @@ subroutine hydrostatic_pressure
 
 use cstphy, only: tkelvi
 use cstphy, only: rair
-use cstphy, only: gz
+use cstphy, only: gz, rvsra
 use atincl
 
 implicit none
@@ -1506,7 +1506,7 @@ subroutine potential_temperature_and_density
 use cstphy, only: rair
 use cstphy, only: tkelvi
 use cstphy, only: cp0
-use ctincl, only: cp_a, cp_v
+use ctincl, only: cp_a, cp_v, rvsra
 use atincl
 implicit none
 double precision rhum! I prefer bourbon

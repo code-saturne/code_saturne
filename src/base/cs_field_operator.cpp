@@ -105,33 +105,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_field_gradient_scalar(int                    f_id,
-                           int                    use_previous_t,
-                           int                    inc,
-                           cs_real_3_t  *restrict grad);
-
-void
-cs_f_field_gradient_vector(int                     f_id,
-                           int                     use_previous_t,
-                           int                     inc,
-                           cs_real_33_t  *restrict grad);
-
-void
-cs_f_field_gradient_tensor(int                     f_id,
-                           int                     use_previous_t,
-                           int                     inc,
-                           cs_real_63_t  *restrict grad);
-
-void
-cs_f_field_set_volume_average(int       f_id,
-                              cs_real_t va);
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -210,16 +183,11 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
                              true, /* use_previous_t */
                              1,    /* inc */
                              (cs_real_3_t *)grad);
-  else if (dim == 3)
-    cs_field_gradient_vector(f,
-                             true, /* use_previous_t */
-                             1,    /* inc */
-                             (cs_real_33_t *)grad);
 
   else
     bft_error(__FILE__, __LINE__, 0,
               _("Field gradient interpolation for field %s of dimension %d:\n"
-                " not implemented."),
+                " not implemented or callable from Fortran code."),
               f->name, (int)dim);
 
   /* Now interpolated values */
@@ -341,113 +309,6 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
     cs_halo_sync_var(m->halo, halo_type, local_max);
   }
 }
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field or component of vector or
- * tensor field.
- *
- * parameters:
- *   f_id           <-- field id
- *   use_previous_t <-- should we use values from the previous time step ?
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   grad           --> gradient
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_gradient_scalar(int                    f_id,
-                           int                    use_previous_t,
-                           int                    inc,
-                           cs_real_3_t  *restrict grad)
-{
-  bool _use_previous_t = use_previous_t ? true : false;
-
-  const cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_field_gradient_scalar(f,
-                           _use_previous_t,
-                           inc,
-                           grad);
-}
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field or component of vector or
- * tensor field.
- *
- * parameters:
- *   f_id           <-- field id
- *   use_previous_t <-- should we use values from the previous time step ?
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   grad           --> gradient
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_gradient_vector(int                     f_id,
-                           int                     use_previous_t,
-                           int                     inc,
-                           cs_real_33_t  *restrict grad)
-{
-  bool _use_previous_t = use_previous_t ? true : false;
-
-  const cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_field_gradient_vector(f,
-                           _use_previous_t,
-                           inc,
-                           grad);
-}
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field or component of vector or
- * tensor field.
- *
- * parameters:
- *   f_id           <-- field id
- *   use_previous_t <-- should we use values from the previous time step ?
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   grad           --> gradient
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_gradient_tensor(int                     f_id,
-                           int                     use_previous_t,
-                           int                     inc,
-                           cs_real_63_t  *restrict grad)
-{
-  bool _use_previous_t = use_previous_t ? true : false;
-
-  const cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_field_gradient_tensor(f,
-                           _use_previous_t,
-                           inc,
-                           grad);
-}
-
-/*----------------------------------------------------------------------------
- * Shift field values in order to set its spatial average to a given value.
- *
- * parameters:
- *   f_id           <-- field id
- *   va             <-- real value of volume average to be set
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_set_volume_average(int       f_id,
-                              cs_real_t va)
-{
-  cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_field_set_volume_average(f,
-                              va);
-}
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

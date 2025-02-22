@@ -113,24 +113,16 @@ BEGIN_C_DECLS
 
 extern void cs_f_majgeo(const cs_lnum_t    *ncel,
                         const cs_lnum_t    *ncelet,
-                        const cs_lnum_t    *nfac,
                         const cs_lnum_t    *nfabor,
-                        const cs_lnum_2_t   ifacel[],
                         const cs_lnum_t     ifabor[],
                         const cs_real_t     xyzcen[],
-                        const cs_real_t     surfac[],
                         const cs_real_t     surfbo[],
-                        const cs_real_t     suffac[],
                         const cs_real_t     suffbo[],
-                        const cs_real_t     cdgfac[],
                         const cs_real_t     cdgfbo[],
                         const cs_real_t     volume[],
                         const cs_real_t     cell_f_vol[],
-                        const cs_real_t     surfan[],
                         const cs_real_t     surfbn[],
-                        const cs_real_t     suffan[],
                         const cs_real_t     suffbn[],
-                        const cs_real_t     dist[],
                         const cs_real_t     distb[]);
 
 /*============================================================================
@@ -541,24 +533,16 @@ cs_preprocess_mesh_update_fortran(void)
 
   cs_f_majgeo(&(m->n_cells),
               &(m->n_cells_with_ghosts),
-              &(m->n_i_faces),
               &(m->n_b_faces),
-              (const cs_lnum_2_t *)(m->i_face_cells),
               m->b_face_cells,
               (cs_real_t *)mq_g->cell_cen,
-              mq_g->i_face_normal,
               mq_g->b_face_normal,
-              mq->i_face_normal,
               mq->b_face_normal,
-              (cs_real_t *)mq_g->i_face_cog,
               (cs_real_t *)mq_g->b_face_cog,
               mq_g->cell_vol,
               mq->cell_vol,
-              mq_g->i_face_surf,
               mq_g->b_face_surf,
-              mq->i_face_surf,
               mq->b_face_surf,
-              mq_g->i_dist,
               mq_g->b_dist);
 }
 

@@ -21,12 +21,10 @@
 !-------------------------------------------------------------------------------
 
 subroutine majgeo &
- ( ncel2  , ncele2 , nfac2  , nfabo2 ,                            &
-   iface2 , ifabo2 ,                                              &
-   xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
-   cdgfa2 , cdgfb2 ,                                              &
-   volum2 , volf2  , srfan2 , srfbn2 , sffan2 , sffbn2 ,          &
-   dist2  , distb2  )                                             &
+ ( ncel2  , ncele2 , nfabo2 ,                                     &
+   ifabo2 ,                                                       &
+   xyzce2 , surfb2 , suffb2 , cdgfb2 ,                            &
+   volum2 , volf2  , srfbn2 , sffbn2 , distb2  )                  &
 
  bind(C, name="cs_f_majgeo")
 
@@ -43,26 +41,16 @@ subroutine majgeo &
 !__________________!____!_____!________________________________________________!
 ! ncel2            ! i  ! <-- ! nombre de cellules                             !
 ! ncele2           ! i  ! <-- ! nombre d'elements halo compris                 !
-! nfac2            ! i  ! <-- ! nombre de faces internes                       !
 ! nfabo2           ! i  ! <-- ! nombre de faces de bord                        !
 ! ncelb2           ! i  ! <-- ! number of boundary cells
-! iface2           ! ia ! <-- ! interior face->cells connectivity              !
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
-! ifmfb2           ! ia ! <-- ! boundary face family number                    !
-! ifmce2           ! ia ! <-- ! cell family number                             !
 ! xyzce2           ! ra ! <-- ! cell centers                                   !
-! surfa2           ! ra ! <-- ! interior face normals                          !
 ! surfb2           ! ra ! <-- ! boundary face normals                          !
-! suffa2           ! ra ! <-- ! interior fluid face normals                    !
 ! suffb2           ! ra ! <-- ! boundary fluid face normals                    !
-! cdgfa2           ! ra ! <-- ! interior face centers                          !
 ! cdgfb2           ! ra ! <-- ! boundary face centers                          !
 ! volum2           ! ra ! <-- ! cell volumes                                   !
-! srfan2           ! ra ! <-- ! interior face surfaces                         !
 ! srfbn2           ! ra ! <-- ! boundary face surfaces                         !
-! sffan2           ! ra ! <-- ! interior fluid face surfaces                   !
 ! sffbn2           ! ra ! <-- ! boundary fluid face surfaces                   !
-! dist2            ! ra ! <-- ! distance IJ.Nij                                !
 ! distb2           ! ra ! <-- ! likewise for boundary faces                    !
 !__________________!____!_____!________________________________________________!
 
@@ -89,19 +77,15 @@ implicit none
 
 ! Arguments
 
-integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2
+integer(c_int), intent(in) :: ncel2, ncele2, nfabo2
 
-integer(c_int), dimension(2,nfac2), target :: iface2
 integer(c_int), dimension(nfabo2), target :: ifabo2
 
 real(c_double), dimension(3,ncele2), target :: xyzce2
-real(c_double), dimension(3,nfac2), target :: surfa2, cdgfa2
-real(c_double), dimension(3,nfac2), target :: suffa2
 real(c_double), dimension(3,nfabo2), target :: surfb2, cdgfb2
 real(c_double), dimension(3,nfabo2), target :: suffb2
 real(c_double), dimension(ncele2), target :: volum2
 real(c_double), dimension(ncele2), target :: volf2
-real(c_double), dimension(nfac2), target :: srfan2, sffan2, dist2
 real(c_double), dimension(nfabo2), target :: srfbn2, sffbn2, distb2
 
 ! Local variables
@@ -113,14 +97,12 @@ real(c_double), dimension(nfabo2), target :: srfbn2, sffbn2, distb2
 ncel = ncel2
 ncelet = ncele2
 
-nfac = nfac2
 nfabor = nfabo2
 
 !===============================================================================
 ! 2. Define pointers on mesh structure
 !===============================================================================
 
-ifacel_0 => iface2(1:2,1:nfac)
 ifabor_0 => ifabo2(1:nfabor)
 
 xyzcen => xyzce2(1:3,1:ncelet)
@@ -129,22 +111,16 @@ xyzcen => xyzce2(1:3,1:ncelet)
 ! 3. Define pointers on mesh quantities
 !===============================================================================
 
-surfac => surfa2(1:3,1:nfac)
 surfbo => surfb2(1:3,1:nfabor)
-suffac => suffa2(1:3,1:nfac)
 suffbo => suffb2(1:3,1:nfabor)
-cdgfac => cdgfa2(1:3,1:nfac)
 cdgfbo => cdgfb2(1:3,1:nfabor)
 
 volume => volum2(1:ncelet)
 cell_f_vol => volf2(1:ncelet)
 
-surfan => srfan2(1:nfac)
 surfbn => srfbn2(1:nfabor)
-suffan => sffan2(1:nfac)
 suffbn => sffbn2(1:nfabor)
 
-dist => dist2(1:nfac)
 distb => distb2(1:nfabor)
 
 !===============================================================================

@@ -171,32 +171,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Convert enthalpy to temperature for gas combustion.
-
-    function cs_gas_combustion_h_to_t(xespec, enthal) result(temper)  &
-      bind(C, name='cs_combustion_h_to_t')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*) :: xespec
-      real(c_double), value :: enthal
-      real(c_double) :: temper
-    end function cs_gas_combustion_h_to_t
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Convert temperature to enthalpy for gas combustion.
-
-    function cs_gas_combustion_t_to_h(xespec, temper) result(enthal)  &
-      bind(C, name='cs_combustion_t_to_h')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*) :: xespec
-      real(c_double), value :: temper
-      real(c_double) :: enthal
-    end function cs_gas_combustion_t_to_h
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function activating default log.
 
     function cs_log_default_is_active() result(is_active) &
@@ -250,8 +224,8 @@ module cs_c_bindings
     end subroutine cs_intprz
 
     !---------------------------------------------------------------------------
-    !> \brief Compute filters for dynamic models.
 
+    !> \brief Compute filters for dynamic models.
 
     !> \param[in]   dim            stride of array to filter
     !> \param[in]   val            array of values to filter
@@ -535,30 +509,6 @@ module cs_c_bindings
        implicit none
        real(kind=c_double), intent(inout) :: t, p, h
     end subroutine cs_atmo_aerosol_ssh_set_t_p_h
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function to compute the Burke Schumann combustion model
-
-    subroutine cs_burke_schumann() &
-       bind(C, name='cs_burke_schumann')
-       use, intrinsic :: iso_c_binding
-       implicit none
-    end subroutine cs_burke_schumann
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function to compute the enthalpy using the Burke Schumann
-    ! combustion model
-
-    function cs_compute_burke_schumann_enthalpy(t, yspec) &
-       bind(C, name="cs_compute_burke_schumann_enthalpy")
-       use, intrinsic :: iso_c_binding
-       implicit none
-       real(c_double) :: cs_compute_burke_schumann_enthalpy
-       real(c_double), intent(in), value :: t
-       real(c_double), intent(in), dimension(*) :: yspec
-    end function cs_compute_burke_schumann_enthalpy
 
     !---------------------------------------------------------------------------
 

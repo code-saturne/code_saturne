@@ -51,7 +51,6 @@ use optcal
 use cstphy
 use cstnum
 use entsor
-use ppthch
 use coincl
 use ppincl
 use radiat
@@ -1027,11 +1026,9 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use ppthch
 use coincl
 use ppincl
 use field
-use field_operator
 use mesh
 use parall
 use period
@@ -1110,11 +1107,9 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use ppthch
 use coincl
 use ppincl
 use field
-use field_operator
 use mesh
 use parall
 use period

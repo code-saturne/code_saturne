@@ -1051,12 +1051,7 @@ cs_f_turb_model_get_pointers(int     **model,
                              int     **itytur);
 
 void
-cs_f_turb_reference_values(double  **almax,
-                           double  **uref);
-
-void
-cs_f_turb_model_constants_get_pointers(double  **cmu,
-                                       double  **xlesfd,
+cs_f_turb_model_constants_get_pointers(double  **xlesfd,
                                        double  **xlesfl,
                                        double  **ales,
                                        double  **bles);
@@ -1089,26 +1084,6 @@ cs_f_turb_model_get_pointers(int     **iturb,
 }
 
 /*----------------------------------------------------------------------------
- * Get pointers to members of the RANS turbulence functions structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   almax  --> pointer to cs_glob_turb_ref_values->almax
- *   uref   --> pointer to cs_glob_turb_ref_values->uref
- *   xlomlg --> pointer to cs_glob_turb_rans_model->xlomlg
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turb_reference_values(double  **almax,
-                           double  **uref)
-{
-  *almax  = &(_turb_ref_values.almax);
-  *uref   = &(_turb_ref_values.uref);
-}
-
-/*----------------------------------------------------------------------------
  * Get pointers to constants for turbulence models.
  *
  * This function is intended for use by Fortran wrappers, and
@@ -1116,13 +1091,11 @@ cs_f_turb_reference_values(double  **almax,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_turb_model_constants_get_pointers(double  **cmu,
-                                       double  **xlesfd,
+cs_f_turb_model_constants_get_pointers(double  **xlesfd,
                                        double  **xlesfl,
                                        double  **ales,
                                        double  **bles)
 {
-  *cmu    = &cs_turb_cmu;
   *xlesfd= &cs_turb_xlesfd;
   *xlesfl= &cs_turb_xlesfl;
   *ales  = &cs_turb_ales;

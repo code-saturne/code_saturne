@@ -317,8 +317,8 @@ typedef struct {
   /*! Infinitely fast 3-point chemistry model parameters */
 
   double hstoea;        /*< temperature at adiabatic stoichiometry */
-  double hh[9];         /*< tabulated stoichiometric enthalpy (size nmaxhm) */
-  double ff[9];         /*< tabulated richness (size nmaxfm) */
+  double hh[9];         /*< tabulated stoichiometric enthalpy (size nmaxh) */
+  double ff[9];         /*< tabulated richness (size nmaxf) */
   double tfh[9][9];     /*< tabulated richness - stoichiometric enthalpy */
 
   /*! Burke-Schumann parameters */

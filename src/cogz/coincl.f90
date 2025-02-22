@@ -36,50 +36,21 @@ module coincl
 
   !=============================================================================
 
+  !> maximal number of global species
+  integer    ngazgm
+  parameter( ngazgm = 25 )
+
   !--> MODELES DE COMBUSTION
 
   integer(c_int), pointer, save :: cmtype
 
-  ! ---- Grandeurs communes
-
-  ! combustible reaction enthalpy (Pouvoir Calorifique Inferieur)
-  double precision, save, pointer :: pcigas
-
-  ! mass fraction conversion coefficients
-  ! from global species to elementary species
-  double precision, pointer, save :: coefeg(:,:)
-
-  ! mole fraction conversion coefficients
-  ! from global species to elementary species
-  double precision, pointer, save :: compog(:,:)
-
   !--> MODELE FLAMME DE DIFFUSION: CHIMIE 3 POINTS
-
-  ! ---- Grandeurs fournies par l'utilisateur dans usd3pc.f90
-
-  !       TINOXY       --> Temperature d'entree pour l'oxydant en K
-  !       TINFUE       --> Temperature d'entree pour le fuel en K
 
   ! ---- Grandeurs deduites
 
   !       HINOXY       --> Enthalpie massique d'entree pour l'oxydant
   !       HINFUE       --> Enthalpie massique d'entree pour le fuel
-  !       HSTOEA       --> Temperature a la stoechiometrie adiabatique
-  !       NMAXF        --> Nb de points de tabulation en F
-  !       NMAXFM       --> Nb maximal de points de tabulation en F
-  !       NMAXH        --> Nb de points de tabulation en H
-  !       NMAXHM       --> Nb maximal de points de tabulation en H
-  !       HH           --> Enthalpie stoechiometrique tabulee
-  !       FF           --> Richesse tabulee
-  !       TFH(IF,IH)   --> Tabulation richesse - enthalpie stoechiometrique
 
-  integer    nmaxf, nmaxfm, nmaxh, nmaxhm
-  parameter(nmaxf = 9, nmaxh = 9)
-  parameter(nmaxfm = 15, nmaxhm = 15)
-
-  double precision, save :: hstoea
-  double precision, save :: hh(nmaxhm), ff(nmaxfm), tfh(nmaxfm,nmaxhm)
-  real(c_double), pointer, save :: tinfue, tinoxy
   real(c_double), pointer, save :: hinfue, hinoxy
 
   !--> MODELE FLAMME DE DIFFUSION: Steady laminar flamelet
@@ -128,16 +99,7 @@ module coincl
 
   ! --- Soot model
 
-  !     XSOOT : soot fraction production (isoot = 0)
-  !     ROSOOT: soot density
-
-  integer(c_int), pointer, save :: isoot
-  real(c_double), pointer, save :: xsoot, rosoot, lsp_fuel
-
-  ! --- Temperature/Enthalpy conversion
-
-  !> use JANAF or not
-  logical(c_bool), pointer, save :: use_janaf
+  real(c_double), pointer, save :: lsp_fuel
 
   !--> POINTEURS VARIABLES COMBUSTION GAZ
 
@@ -166,9 +128,7 @@ module coincl
   !>  - iym(1): is fuel mass fraction
   !>  - iym(2): oxidiser mass fraction
   !>  - iym(3): product mass fraction
-  !> ibym() contains the matching field ids at boundary faces
   integer, save :: iym(ngazgm)
-  integer, save :: ibym(ngazgm)
 
   !> state variable (temperature)
   integer, save :: itemp = -1
@@ -213,27 +173,20 @@ module coincl
     ! Interface to C function retrieving pointers to members of the
     ! global combustion model flags
 
-    subroutine cs_f_coincl_get_pointers(p_cmtype, p_isoot,     &
+    subroutine cs_f_coincl_get_pointers(p_cmtype,              &
                                         p_ngazfl, p_nki,       &
                                         p_nxr, p_nzm,          &
                                         p_nzvar, p_nlibvar,    &
                                         p_ikimid, p_mode_fp2m, &
-                                        p_use_janaf,           &
-                                        p_coefeg, p_compog,    &
-                                        p_xsoot, p_rosoot,     &
                                         p_lsp_fuel,            &
-                                        p_hinfue, p_hinoxy,    &
-                                        p_pcigas, p_tinfue,    &
-                                        p_tinoxy)        &
+                                        p_hinfue, p_hinoxy)    &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_cmtype, p_isoot, p_ngazfl, p_nki, p_nxr, p_nzm
+      type(c_ptr), intent(out) :: p_cmtype, p_ngazfl, p_nki, p_nxr, p_nzm
       type(c_ptr), intent(out) :: p_nzvar, p_nlibvar, p_ikimid, p_mode_fp2m
-      type(c_ptr), intent(out) :: p_use_janaf
-      type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot, p_lsp_fuel
-      type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
-      type(c_ptr), intent(out) :: p_tinoxy
+      type(c_ptr), intent(out) :: p_lsp_fuel
+      type(c_ptr), intent(out) :: p_hinfue, p_hinoxy
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -273,24 +226,18 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_cmtype, c_isoot, c_ngazfl, c_nki, c_nxr, c_nzm,   &
+    type(c_ptr) :: c_cmtype, c_ngazfl, c_nki, c_nxr, c_nzm,            &
                    c_nzvar, c_nlibvar, c_ikimid, c_mode_fp2m,          &
-                   c_use_janaf, c_coefeg, c_compog, c_xsoot,           &
-                   c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,           &
-                   c_pcigas, c_tinfue, c_tinoxy
+                   c_lsp_fuel, c_hinfue, c_hinoxy
 
-    call cs_f_coincl_get_pointers(c_cmtype, c_isoot, c_ngazfl, c_nki,  &
+    call cs_f_coincl_get_pointers(c_cmtype, c_ngazfl, c_nki,           &
                                   c_nxr, c_nzm, c_nzvar,               &
                                   c_nlibvar, c_ikimid,                 &
-                                  c_mode_fp2m, c_use_janaf,            &
-                                  c_coefeg, c_compog,                  &
-                                  c_xsoot,  c_rosoot,                  &
+                                  c_mode_fp2m,                         &
                                   c_lsp_fuel,                          &
-                                  c_hinfue, c_hinoxy,                  &
-                                  c_pcigas, c_tinfue, c_tinoxy)
+                                  c_hinfue, c_hinoxy)
 
     call c_f_pointer(c_cmtype, cmtype)
-    call c_f_pointer(c_isoot, isoot)
     call c_f_pointer(c_ngazfl, ngazfl)
     call c_f_pointer(c_nki, nki)
     call c_f_pointer(c_nxr, nxr)
@@ -299,17 +246,9 @@ contains
     call c_f_pointer(c_nlibvar, nlibvar)
     call c_f_pointer(c_ikimid, ikimid)
     call c_f_pointer(c_mode_fp2m, mode_fp2m)
-    call c_f_pointer(c_use_janaf, use_janaf)
-    call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
-    call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
-    call c_f_pointer(c_xsoot, xsoot)
-    call c_f_pointer(c_rosoot, rosoot)
     call c_f_pointer(c_lsp_fuel, lsp_fuel)
     call c_f_pointer(c_hinfue, hinfue)
     call c_f_pointer(c_hinoxy, hinoxy)
-    call c_f_pointer(c_pcigas, pcigas)
-    call c_f_pointer(c_tinfue, tinfue)
-    call c_f_pointer(c_tinoxy, tinoxy)
 
   end subroutine co_models_init
 
@@ -424,10 +363,6 @@ contains
       call field_get_id_try('reconstructed_fp2m', irecvr)
 
     endif
-
-    call field_get_id_try('boundary_ym_fuel', ibym(1))
-    call field_get_id_try('boundary_ym_oxydizer', ibym(2))
-    call field_get_id_try('boundary_ym_product', ibym(3))
 
     call field_get_id_try('kabs', ickabs)
     call field_get_id_try('temperature_4', it4m)

@@ -49,16 +49,9 @@ module mesh
   !> number of real cells in the mesh
   integer, save :: ncel = 0
 
-  !> \anchor nfac
-  !> number of internal faces  (see \ref note_2)
-  integer, save :: nfac = 0
-
   !> \anchor nfabor
   !> number of boundary faces (see \ref note_2)
   integer, save :: nfabor = 0
-
-  ! pointer to C array used by ifacel (0 to n-1 numbering)
-  integer, dimension(:,:), pointer :: ifacel_0
 
   ! pointer to C array used by ifabor (0 to n-1 numbering)
   integer, dimension(:), pointer :: ifabor_0
@@ -67,29 +60,15 @@ module mesh
   !> coordinate of the cell centers
   double precision, dimension(:,:), pointer :: xyzcen
 
-  !> \anchor surfac
-  !> surface vector of the internal faces. Its norm is the surface of the face
-  !> and it is oriented from \c ifacel(1,.) to \c ifacel(2,.)
-  double precision, dimension(:,:), pointer :: surfac
-
   !> \anchor surfbo
   !> surface vector of the boundary faces. Its norm is the surface of the face
   !> and it is oriented outwards
   double precision, dimension(:,:), pointer :: surfbo
 
-  !> \anchor suffac
-  !> fluid surface vector of the internal faces. Its norm is the surface of the face
-  !> and it is oriented from \c ifacel(1,.) to \c ifacel(2,.)
-  double precision, dimension(:,:), pointer :: suffac
-
   !> \anchor suffbo
   !> fluid surface vector of the boundary faces. Its norm is the surface of the face
   !> and it is oriented outwards
   double precision, dimension(:,:), pointer :: suffbo
-
-  !> \anchor cdgfac
-  !> coordinates of the centers of the internal faces
-  double precision, dimension(:,:), pointer :: cdgfac
 
   !> \anchor cdgfbo
   !> coordinates of the centers of the boundary faces
@@ -103,29 +82,13 @@ module mesh
   !> fluid volume of each cell
   double precision, dimension(:), pointer :: cell_f_vol
 
-  !> \anchor surfan
-  !> norm of the surface vector of the internal faces
-  double precision, dimension(:), pointer :: surfan
-
   !> \anchor surfbn
   !> norm of the surface of the boundary faces
   double precision, dimension(:), pointer :: surfbn
 
-  !> \anchor suffan
-  !> norm of the fluid surface vector of the internal faces
-  double precision, dimension(:), pointer :: suffan
-
   !> \anchor suffbn
   !> norm of the fluid surface of the boundary faces
   double precision, dimension(:), pointer :: suffbn
-
-  !> \anchor dist
-  !> for every internal face, dot product of the vectors
-  !> \f$ \vect{IJ}\f$ and \f$\vect{n}\f$.  I and J are respectively
-  !> the centers of the first and the second neighboring cell.
-  !> The vector \f$\vect{n}\f$ is the unit vector normal to the face
-  !> and oriented from the first to the second cell
-  double precision, dimension(:), pointer :: dist
 
   !> \anchor distb
   !> For every boundary face, dot product between the vectors
@@ -138,26 +101,6 @@ module mesh
   !=============================================================================
 
 contains
-
-  !=============================================================================
-
-  !> \anchor ifacel
-  !> Index-numbers of the two (only) neighboring cells for each internal face
-
-  elemental pure function ifacel(iside, ifac) result(icel)
-
-    implicit none
-
-    ! Parameters
-
-    integer, intent(in) :: iside, ifac
-    integer             :: icel
-
-    ! Function body
-
-    icel = ifacel_0(iside, ifac) + 1
-
-  end function ifacel
 
   !=============================================================================
 

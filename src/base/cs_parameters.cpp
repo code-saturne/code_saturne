@@ -569,9 +569,6 @@ cs_tree_node_t  *cs_glob_tree = nullptr;
  *============================================================================*/
 
 void
-cs_f_time_scheme_get_pointers(int     **initro);
-
-void
 cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
                                       cs_f_var_cal_opt_t  *vcopt);
 
@@ -782,19 +779,6 @@ _var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global time scheme structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_time_scheme_get_pointers(int     **initro)
-{
-  *initro = &_initro;
-}
 
 /*----------------------------------------------------------------------------
  * Copy values from cs_equation_params structure of a given field

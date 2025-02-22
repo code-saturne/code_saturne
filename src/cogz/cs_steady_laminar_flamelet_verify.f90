@@ -55,7 +55,6 @@ use optcal
 use cstphy
 use entsor
 use cstnum
-use ppthch
 use coincl
 use ppincl
 use radiat

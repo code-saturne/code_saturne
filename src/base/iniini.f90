@@ -109,9 +109,6 @@ call turb_model_init
 call turb_model_constants_init
 call physical_constants_init
 call fluid_properties_init
-call time_scheme_options_init
-call velocity_pressure_options_init
-call turb_reference_values_init
 call radiat_init
 call ctwr_properties_init
 

@@ -49,7 +49,6 @@ libcsmodules_a_SOURCES = \
 base/paramx.f90 \
 base/mesh.f90 \
 base/field.f90 \
-base/field_operator.f90 \
 base/cstphy.f90 \
 base/cstnum.f90 \
 base/dimens.f90 \
@@ -67,7 +66,6 @@ atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
 ctwr/ctincl.f90 \
 pprt/ppincl.f90 \
-pprt/ppthch.f90 \
 cogz/coincl.f90 \
 rayt/radiat.f90
 
@@ -80,9 +78,6 @@ base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
  base/mesh.$(OBJEXT) base/period.$(OBJEXT) base/field.$(OBJEXT)
 
 base/entsor.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT)
-
-base/field_operator.$(OBJEXT): base/paramx.$(OBJEXT) base/dimens.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/optcal.$(OBJEXT) base/field.$(OBJEXT)
 
 base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
 
@@ -110,10 +105,6 @@ cogz/coincl.$(OBJEXT): base/paramx.$(OBJEXT) \
  pprt/ppincl.$(OBJEXT) rayt/radiat.$(OBJEXT)
 
 ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
-
-pprt/ppincl.$(OBJEXT): pprt/ppthch.$(OBJEXT)
-
-pprt/ppthch.$(OBJEXT): base/cstphy.$(OBJEXT)
 
 rayt/radiat.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
  base/optcal.$(OBJEXT) base/numvar.$(OBJEXT)

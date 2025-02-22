@@ -358,31 +358,6 @@ const cs_velocity_pressure_param_t  *cs_glob_velocity_pressure_param
   = &_velocity_pressure_param;
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_velocity_pressure_model_get_pointers(int     **idilat);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global Stokes model structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_velocity_pressure_model_get_pointers(int     **idilat)
-{
-  *idilat = &(_velocity_pressure_model.idilat);
-}
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 

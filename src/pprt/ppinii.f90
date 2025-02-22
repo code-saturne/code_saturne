@@ -38,7 +38,6 @@ subroutine ppinii () &
 use paramx
 use cstnum
 use cstphy
-use ppthch
 use coincl
 use ppincl
 use atincl
@@ -54,7 +53,7 @@ implicit none
 
 ! Local variables
 
-integer         igg, ih, if
+integer         igg
 
 !===============================================================================
 
@@ -71,25 +70,11 @@ call pp_models_init
 !       Variables algebriques ou d'etat
 do igg = 1, ngazgm
   iym(igg) = -1
-  ibym(igg) = -1
 enddo
 
 !===============================================================================
 ! 2. REMPLISSAGE coincl.f90 POUR LA COMBUSTION GAZ
 !===============================================================================
-
-! ---> Modele de flamme de diffusion (chimie 3 points)
-
-hstoea = -grand
-do ih = 1, nmaxhm
-  hh(ih) = -grand
-enddo
-do if = 1, nmaxfm
-  ff(if)= zero
-  do ih = 1, nmaxhm
-    tfh(if,ih) = zero
-  enddo
-enddo
 
 ! ---> Modele de la flamme de diffusion Steady laminar flamelet
 

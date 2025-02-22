@@ -110,24 +110,7 @@ void
 cs_f_coal_model_map(void);
 
 void
-cs_f_ppthch_get_pointers(int     **ngaze,
-                         int     **ngazg,
-                         int     **nato,
-                         int     **nrgaz,
-                         int     **iic,
-                         int     **iico2,
-                         int     **iio2,
-                         double  **wmole,
-                         double  **wmolg,
-                         double  **wmolat,
-                         double  **xco2,
-                         double  **xh2o,
-                         double  **fs,
-                         double  **ckabsg);
-
-void
 cs_f_coincl_get_pointers(int     **model_type,
-                         int     **isoot,
                          int     **ngazfl,
                          int     **nki,
                          int     **nxr,
@@ -136,17 +119,9 @@ cs_f_coincl_get_pointers(int     **model_type,
                          int     **nlibvar,
                          int     **ikimid,
                          int     **mode_fp2m,
-                         bool    **use_janaf,
-                         double  **coefeg,
-                         double  **compog,
-                         double  **xsoot,
-                         double  **rosoot,
                          double  **lsp_fuel,
                          double  **hinfue,
-                         double  **hinoxy,
-                         double  **pcigas,
-                         double  **tinfue,
-                         double  **tinoxy);
+                         double  **hinoxy);
 
 void
 cs_f_combustion_model_get_pointers(double  **srrom);
@@ -160,82 +135,14 @@ cs_f_combustion_model_get_pointers(double  **srrom);
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Get pointers to members of the global physical model flags.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_ppthch_get_pointers(int     **ngaze,
-                         int     **ngazg,
-                         int     **nato,
-                         int     **nrgaz,
-                         int     **iic,
-                         int     **iico2,
-                         int     **iio2,
-                         double  **wmole,
-                         double  **wmolg,
-                         double  **wmolat,
-                         double  **xco2,
-                         double  **xh2o,
-                         double  **fs,
-                         double  **ckabsg)
-{
-  *wmolg  = nullptr;
-  *ckabsg = nullptr;
-
-  if (cs_glob_combustion_gas_model != nullptr) {
-
-    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-
-    *ngaze  = &(cm->n_gas_el_comp);
-    *ngazg  = &(cm->n_gas_species);
-    *nato   = &(cm->n_atomic_species);
-    *nrgaz  = &(cm->n_reactions);
-    *iic    = &(cm->iic);
-    *iio2   = &(cm->iio2);
-    *iico2  = &(cm->iico2);
-    *wmole  = cm->wmole;
-    *wmolg  = cm->wmolg;
-    *wmolat = cm->wmolat;
-    *xco2   = &(cm->xco2);
-    *xh2o   = &(cm->xh2o);
-    *fs     = cm->fs;
-    *ckabsg = (double *)cm->ckabsg;
-
-  }
-  else if (cs_glob_coal_model != nullptr) {
-
-    cs_coal_model_t  *cm = cs_glob_coal_model;
-
-    *ngaze  = &(cm->n_gas_el_comp);
-    *ngazg  = &(cm->n_gas_species);
-    *nato   = &(cm->n_atomic_species);
-    *nrgaz  = &(cm->n_reactions);
-
-    *wmole  = cm->wmole;
-    *wmolat = cm->wmolat;
-    *xco2   = &(cm->xco2);
-    *xh2o   = &(cm->xh2o);
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Get pointers to members of the global physical model (coincl).
  *
  * This function is intended for use by Fortran wrappers, and
  * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   coefeg --> pointer to conversion coefficients
- *   compog --> pointer to conversion coefficients
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_coincl_get_pointers(int     **model_type,
-                         int     **isoot,
                          int     **ngazfl,
                          int     **nki,
                          int     **nxr,
@@ -244,20 +151,11 @@ cs_f_coincl_get_pointers(int     **model_type,
                          int     **nlibvar,
                          int     **ikimid,
                          int     **mode_fp2m,
-                         bool    **use_janaf,
-                         double  **coefeg,
-                         double  **compog,
-                         double  **xsoot,
-                         double  **rosoot,
                          double  **lsp_fuel,
                          double  **hinfue,
-                         double  **hinoxy,
-                         double  **pcigas,
-                         double  **tinfue,
-                         double  **tinoxy)
+                         double  **hinoxy)
 {
   *model_type = nullptr;
-  *isoot  = nullptr;
   *ngazfl = nullptr;
   *nki = nullptr;
   *nxr = nullptr;
@@ -266,24 +164,15 @@ cs_f_coincl_get_pointers(int     **model_type,
   *nlibvar = nullptr;
   *ikimid = nullptr;
   *mode_fp2m = nullptr;
-  *use_janaf = nullptr;
-  *coefeg = nullptr;
-  *compog = nullptr;
-  *xsoot  = nullptr;
-  *rosoot = nullptr;
   *lsp_fuel = nullptr;
   *hinfue = nullptr;
-  *tinfue = nullptr;
   *hinoxy = nullptr;
-  *tinoxy = nullptr;
-  *pcigas = nullptr;
 
   if (cs_glob_combustion_gas_model != nullptr) {
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
     *model_type = (int *)&(cm->type);
-    *isoot  = &(cm->isoot);
     *ngazfl = &(cm->n_gas_fl);
     *nki = &(cm->nki);
     *nxr = &(cm->nxr);
@@ -292,24 +181,9 @@ cs_f_coincl_get_pointers(int     **model_type,
     *nlibvar = &(cm->nlibvar);
     *ikimid = &(cm->ikimid);
     *mode_fp2m = &(cm->mode_fp2m);
-    *use_janaf = &(cm->use_janaf);
-    *coefeg = &(cm->coefeg[0][0]);
-    *compog = &(cm->compog[0][0]);
-    *xsoot  = &(cm->xsoot);
-    *rosoot = &(cm->rosoot);
     *lsp_fuel = &(cm->lsp_fuel);
     *hinfue = &(cm->hinfue);
-    *tinfue = &(cm->tinfue);
     *hinoxy = &(cm->hinoxy);
-    *tinoxy = &(cm->tinoxy);
-    *pcigas = &(cm->pcigas);
-
-  }
-  else if (cs_glob_coal_model != nullptr) {
-
-    cs_coal_model_t  *cm = cs_glob_coal_model;
-
-    *pcigas = &(cm->pcigas);
 
   }
 }

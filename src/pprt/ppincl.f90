@@ -29,8 +29,6 @@ module ppincl
 
   use, intrinsic :: iso_c_binding
 
-  use ppthch
-
   !=============================================================================
 
   implicit none
@@ -243,9 +241,6 @@ module ppincl
   !> enthalpy, if transported or if deduced
   integer, save :: ihm = -1
 
-  !> sub-relaxation coefficient for the density
-  real(c_double), pointer, save :: srrom
-
   !> \}
 
   !=============================================================================
@@ -269,18 +264,6 @@ module ppincl
       implicit none
       type(c_ptr), intent(out) :: p_ippmod
     end subroutine cs_f_physical_model_get_pointers
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global physical model flags
-
-    subroutine cs_f_combustion_model_get_pointers(p_srrom)    &
-      bind(C, name='cs_f_combustion_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: p_srrom
-    end subroutine cs_f_combustion_model_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -313,27 +296,6 @@ contains
     call c_f_pointer(p_ippmod, ippmod, [nmodmx])
 
   end subroutine pp_models_init
-
-  !=============================================================================
-
-  !> \brief Initialize Fortran combustion models properties API.
-  !> This maps Fortran pointers to global C variables.
-
-  subroutine ppincl_combustion_init() &
-    bind(C, name='cs_f_ppincl_combustion_init')
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: p_srrom
-
-    call cs_f_combustion_model_get_pointers(p_srrom)
-
-    call c_f_pointer(p_srrom, srrom)
-
-  end subroutine ppincl_combustion_init
 
   !=============================================================================
 

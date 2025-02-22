@@ -664,7 +664,7 @@ This file replaces `dp_C3P`.
 | 5     | # ...                        |              | Free comment                     |
 | 6     | # No of NGAZG and No ...     |              | Free comment                     |
 | 7     | # NGAZG NPO ...              |              | Free comment                     |
-| 8     | 1 238                        | ngazg \n npo | Number of species \n Number of given temperature points for the tabulated physical properties (npo 6 npot set in ppthch) \n So there will be ngazg blocks of npo lines each |
+| 8     | 1 238                        | ngazg \n npo | Number of species \n Number of given temperature points for the tabulated physical properties (npo 6 npot) \n So there will be ngazg blocks of npo lines each |
 | 9     | # ...                        |              | Free comment                     |
 | 14    | 0                            | ixkabe       | Radiation options for xkabe      |
 | 15    | # ...                        |              | Free comment                     |

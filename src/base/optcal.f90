@@ -41,20 +41,6 @@ module optcal
   !> \{
 
   !----------------------------------------------------------------------------
-  ! Time stepping
-  !----------------------------------------------------------------------------
-
-  !> \defgroup time_stepping Time stepping
-
-  !> \addtogroup time_stepping
-  !> \{
-
-  !> initro : =1 if density read from checkpoint file
-  integer(c_int), pointer, save :: initro
-
-  !> \}
-
-  !----------------------------------------------------------------------------
   ! Space discretisation
   !----------------------------------------------------------------------------
 
@@ -247,11 +233,6 @@ module optcal
   !>    - 4: algorithm for fire
   integer(c_int), pointer, save :: idilat
 
-  !> Improved pressure interpolation scheme.
-  !> See \ref cs_velocity_pressure_param_t::iphydr.
-
-  integer(c_int), pointer, save :: iphydr
-
   !> \}
 
   !----------------------------------------------------------------------------
@@ -307,27 +288,6 @@ module optcal
       implicit none
       type(c_ptr), intent(out) :: iturb, itytur
     end subroutine cs_f_turb_model_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! velocity pressure model options structure
-
-    subroutine cs_f_velocity_pressure_model_get_pointers  &
-      (idilat)  &
-      bind(C, name='cs_f_velocity_pressure_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: idilat
-    end subroutine cs_f_velocity_pressure_model_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global time schemeoptions structure
-
-    subroutine cs_f_time_scheme_get_pointers(initro) &
-      bind(C, name='cs_f_time_scheme_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: initro
-    end subroutine cs_f_time_scheme_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -496,42 +456,6 @@ contains
     call c_f_pointer(c_itytur, itytur)
 
   end subroutine turb_model_init
-
-  !> \brief Initialize Fortran Stokes options API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine velocity_pressure_options_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_idilat
-
-    call cs_f_velocity_pressure_model_get_pointers(c_idilat)
-
-    call c_f_pointer(c_idilat, idilat)
-
-  end subroutine velocity_pressure_options_init
-
-  !> \brief Initialize Fortran time scheme options API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine time_scheme_options_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_initro
-
-    call cs_f_time_scheme_get_pointers(c_initro)
-
-    call c_f_pointer(c_initro, initro)
-
-  end subroutine time_scheme_options_init
 
   !=============================================================================
 
