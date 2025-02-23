@@ -827,7 +827,7 @@ cs_turbulence_ke(int              phase_id,
 
       /* Evaluating the turbulent production */
       prodk[c_id] =   visct*strain_sq[c_id]
-                  - d2s3*rho*xk*divu[c_id];
+                    - d2s3*rho*xk*divu[c_id]
                     - 4.*xqc1*visct*xttke* (skskjsji - d1s3*sijsij*divu[c_id])
                     - 4.*xqc2*visct*xttke* (wkskjsji + skiwjksji)
                     - 4.*xqc3*visct*xttke* (wkwjksji - d1s3*wijwij*divu[c_id]);
@@ -981,7 +981,6 @@ cs_turbulence_ke(int              phase_id,
                            w3,
                            w10);
 
-    const cs_real_t cpale3 = cs_turb_cpale3;
     const cs_real_t cpale4 = cs_turb_cpale4;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1111,7 +1110,6 @@ cs_turbulence_ke(int              phase_id,
       cs_real_t visct = cpro_pcvto[c_id];
       cs_real_t xeps  = cvara_ep[c_id];
       cs_real_t xk    = cvara_k[c_id];
-      cs_real_t ttke  = xk / xeps;
 
       /* Explicit Buoyant terms */
       gk[c_id] = -visct*grad_dot_g[c_id];
@@ -1153,8 +1151,6 @@ cs_turbulence_ke(int              phase_id,
 
     _tsepls(phase_id, w12);
 
-    const int irccor = cs_glob_turb_rans_model->irccor;
-    const cs_real_t ccaze2 = cs_turb_ccaze2;
     const cs_real_t cpale3 = cs_turb_cpale3;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
