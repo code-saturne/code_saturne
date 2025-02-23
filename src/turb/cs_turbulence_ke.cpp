@@ -2620,7 +2620,8 @@ cs_turbulence_ke_q(int          phase_id,
   cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
 
   if (f_vel->grad == nullptr) {
-    CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+    CS_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+    gradv = _gradv;
 
     /* Computation of the velocity gradient */
 
