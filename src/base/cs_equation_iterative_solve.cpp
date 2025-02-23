@@ -494,16 +494,16 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   cs_lnum_t has_dc = mq->has_disable_flag;
   ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    for (cs_lnum_t isou = 0; isou < stride; isou++) {
-      smbini[c_id][isou] = smbrp[c_id][isou];
-      smbrp[c_id][isou] = 0.;
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      smbini[c_id][i] = smbrp[c_id][i];
+      smbrp[c_id][i] = 0.;
     }
   });
 
   /* pvar is initialized on n_cells_ext to avoid a synchronization */
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    for (cs_lnum_t isou = 0; isou < stride; isou++)
-      pvar[c_id][isou] = pvark[c_id][isou];
+    for (cs_lnum_t i = 0; i < stride; i++)
+      pvar[c_id][i] = pvark[c_id][i];
   });
 
   /* Synchronize before next major operation */
@@ -587,8 +587,8 @@ _equation_iterative_solve_strided(int                   idtvar,
     if (f_ex != nullptr) {
       cs_real_3_t *cpro_cv_df_v = (cs_real_3_t *)f_ex->val;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++)
-          cpro_cv_df_v[c_id][isou] = smbrp[c_id][isou];
+        for (cs_lnum_t i = 0; i < stride; i++)
+          cpro_cv_df_v[c_id][i] = smbrp[c_id][i];
       });
     }
   }
@@ -596,19 +596,18 @@ _equation_iterative_solve_strided(int                   idtvar,
   /* Dynamic relaxation */
   if (iswdyp >= 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t isou = 0; isou < stride; isou++) {
-        rhs0[c_id][isou] = smbrp[c_id][isou];
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        rhs0[c_id][i] = smbrp[c_id][i];
 
         cs_real_t diff = 0.;
         for (cs_lnum_t j = 0; j < stride; j++)
-          diff += fimp[c_id][isou][j]*(pvar[c_id][j] - pvara[c_id][j]);
+          diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-        smbini[c_id][isou] -= diff;
-        smbrp[c_id][isou] += smbini[c_id][isou];
+        smbrp[c_id][i] += smbini[c_id][i] - diff;
 
-        adxkm1[c_id][isou] = 0.;
-        adxk[c_id][isou] = 0.;
-        dpvar[c_id][isou] = 0.;
+        adxkm1[c_id][i] = 0.;
+        adxk[c_id][i] = 0.;
+        dpvar[c_id][i] = 0.;
       }
     });
 
@@ -617,15 +616,13 @@ _equation_iterative_solve_strided(int                   idtvar,
   }
   else {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t isou = 0; isou < stride; isou++) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
 
         cs_real_t diff = 0.;
         for (cs_lnum_t j = 0; j < stride; j++)
-          diff += fimp[c_id][isou][j]*(pvar[c_id][j] - pvara[c_id][j]);
+          diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-        smbini[c_id][isou] -= diff;
-
-        smbrp[c_id][isou] += smbini[c_id][isou];
+        smbrp[c_id][i] += smbini[c_id][i] - diff;
       }
     });
   }
@@ -739,8 +736,8 @@ _equation_iterative_solve_strided(int                   idtvar,
     /*  Dynamic relaxation of the system */
     if (iswdyp >= 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
-          dpvarm1[c_id][isou] = dpvar[c_id][isou];
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          dpvarm1[c_id][i] = dpvar[c_id][i];
         }
       });
     }
@@ -771,9 +768,9 @@ _equation_iterative_solve_strided(int                   idtvar,
       lvar = -1;
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
-          adxkm1[c_id][isou] = adxk[c_id][isou];
-          adxk[c_id][isou] = - rhs0[c_id][isou];
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          adxkm1[c_id][i] = adxk[c_id][i];
+          adxk[c_id][i] = - rhs0[c_id][i];
         }
       });
 
@@ -894,56 +891,52 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     if (iswdyp <= 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++)
-          pvar[c_id][isou] += dpvar[c_id][isou];
+        for (cs_lnum_t i = 0; i < stride; i++)
+          pvar[c_id][i] += dpvar[c_id][i];
 
-          /* smbini already contains unsteady terms and mass source terms
+          /* smbini does not contain unsteady terms and mass source terms
            * of the RHS updated at each sweep */
 
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
           cs_real_t diff = 0.;
           for (cs_lnum_t j = 0; j < stride; j++)
-            diff += fimp[c_id][isou][j]*dpvar[c_id][j];
+            diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-          smbini[c_id][isou] -= diff;
-          smbrp[c_id][isou] = smbini[c_id][isou];
+          smbrp[c_id][i] = smbini[c_id][i] - diff;
         }
 
       });
     }
     else if (iswdyp == 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++)
-          pvar[c_id][isou] += alph*dpvar[c_id][isou];
+        for (cs_lnum_t i = 0; i < stride; i++)
+          pvar[c_id][i] += alph*dpvar[c_id][i];
 
-          /* smbini already contains unsteady terms and mass source terms
+          /* smbini does not contain unsteady terms and mass source terms
            * of the RHS updated at each sweep */
 
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
           cs_real_t diff = 0.;
-          for (cs_lnum_t j = 0; j < stride; isou++)
-            diff += fimp[c_id][isou][j]*alph*dpvar[c_id][j];
+          for (cs_lnum_t j = 0; j < stride; i++)
+            diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-          smbini[c_id][isou] -= diff;
-          smbrp[c_id][isou] = smbini[c_id][isou];
+          smbrp[c_id][i] = smbini[c_id][i] - diff;
         }
       });
     }
     else if (iswdyp >= 2) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
-          pvar[c_id][isou] +=   alph*dpvar[c_id][isou]
-                              + beta*dpvarm1[c_id][isou];
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          pvar[c_id][i] +=   alph*dpvar[c_id][i]
+                              + beta*dpvarm1[c_id][i];
         }
 
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
           cs_real_t diff = 0.;
           for (cs_lnum_t j = 0; j < stride; j++)
-            diff += fimp[c_id][isou][j]*(  alph*dpvar[c_id][j]
-                                         + beta*dpvarm1[c_id][j]);
+            diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-          smbini[c_id][isou] -= diff;
-          smbrp[c_id][isou] = smbini[c_id][isou];
+          smbrp[c_id][i] = smbini[c_id][i] - diff;
         }
       });
     }
@@ -1071,16 +1064,16 @@ _equation_iterative_solve_strided(int                   idtvar,
   if (iescap > 0 && stride == 3) {
     /* Computation of the estimator of the current component */
 
-    /* smbini already contains unsteady terms and mass source terms
+    /* smbini does not contain unsteady terms and mass source terms
        of the RHS updated at each sweep */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t isou = 0; isou < stride; isou++) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
         cs_real_t diff = 0.;
-        for (cs_lnum_t jsou = 0; jsou < stride; jsou++)
-          diff += fimp[c_id][isou][jsou]*dpvar[c_id][jsou];
+        for (cs_lnum_t j = 0; j < stride; j++)
+          diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-        smbrp[c_id][isou] = smbini[c_id][isou] - diff;
+        smbrp[c_id][i] = smbini[c_id][i] - diff;
       }
     });
 
@@ -1127,8 +1120,8 @@ _equation_iterative_solve_strided(int                   idtvar,
     /* Contribution of the current component to the L2 norm stored in eswork */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t isou = 0; isou < stride; isou++)
-        eswork[c_id][isou] = cs_math_pow2(smbrp[c_id][isou] / cell_vol[c_id]);
+      for (cs_lnum_t i = 0; i < stride; i++)
+        eswork[c_id][i] = cs_math_pow2(smbrp[c_id][i] / cell_vol[c_id]);
     });
     ctx.wait();
 
