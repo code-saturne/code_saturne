@@ -2911,7 +2911,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
  */
 /*----------------------------------------------------------------------------*/
 
-template <bool is_thermal, bool have_interior_flux>
+template <bool is_thermal, bool store_flux>
 static void
 _convection_diffusion_scalar_unsteady
   (const cs_field_t           *f,
@@ -3308,7 +3308,7 @@ _convection_diffusion_scalar_unsteady
                       - imasac *  _i_massflux*_pvar[jj]);
 
         /* Fluxes without mass accumulation */
-        if (have_interior_flux) {
+        if (store_flux) {
           i_flux[face_id][0] +=  cpi*thetap*(flui*_pvar[ii] + fluj*_pvar[jj]);
           i_flux[face_id][1] +=  cpj*thetap*(flui*_pvar[ii] + fluj*_pvar[jj]);
         }
@@ -3320,7 +3320,7 @@ _convection_diffusion_scalar_unsteady
       fluxi += diff_contrib;
       fluxj += diff_contrib;
       /* Fluxes if needed */
-      if (have_interior_flux) {
+      if (store_flux) {
         i_flux[face_id][0] += diff_contrib;
         i_flux[face_id][1] += diff_contrib;
       }
@@ -3535,7 +3535,7 @@ _convection_diffusion_scalar_unsteady
                       - imasac*_i_massflux*_pvar[jj]);
 
         /* Fluxes without mass accumulation if needed */
-        if (have_interior_flux) {
+        if (store_flux) {
           i_flux[face_id][0] +=  cpi*thetap*(flui*pif + fluj*pjf);
           i_flux[face_id][1] +=  cpj*thetap*(flui*pif + fluj*pjf);
         }
@@ -3548,7 +3548,7 @@ _convection_diffusion_scalar_unsteady
       fluxj += diff_contrib;
 
       /* Fluxes if needed */
-      if (have_interior_flux) {
+      if (store_flux) {
         i_flux[face_id][0] += diff_contrib;
         i_flux[face_id][1] += diff_contrib;
       }
@@ -3711,7 +3711,7 @@ _convection_diffusion_scalar_unsteady
                       - imasac*_i_massflux*_pvar[jj]);
 
         /* Fluxes without mass accumulation if needed */
-        if (have_interior_flux) {
+        if (store_flux) {
           i_flux[face_id][0] +=  cpi*thetap*(flui*pif + fluj*pjf);
           i_flux[face_id][1] +=  cpj*thetap*(flui*pif + fluj*pjf);
         }
@@ -3725,7 +3725,7 @@ _convection_diffusion_scalar_unsteady
       fluxj += diff_contrib;
 
       /* Fluxes if needed */
-      if (have_interior_flux) {
+      if (store_flux) {
         i_flux[face_id][0] += diff_contrib;
         i_flux[face_id][1] += diff_contrib;
       }
@@ -3837,7 +3837,7 @@ _convection_diffusion_scalar_unsteady
       cs_dispatch_sum(&rhs[ii], -fluxi, b_sum_type);
 
       /* Fluxes without mass accumulation if needed */
-      if (b_flux != nullptr) {
+      if (store_flux) {
         fluxi = 0.;
 
         cs_b_upwind_flux(iconvp,
@@ -3946,7 +3946,7 @@ _convection_diffusion_scalar_unsteady
                                 heq,
                                 &fluxi);
 
-        if (b_flux != nullptr)
+        if (store_flux)
           b_flux[face_id] += thetap * fluxi;
 
         rhs[jj] -= thetap * fluxi;
@@ -4022,7 +4022,7 @@ _convection_diffusion_scalar_unsteady
       cs_dispatch_sum(&rhs[ii], -fluxi, b_sum_type);
 
       /* Fluxes without mass accumulation if needed */
-      if (b_flux != nullptr) {
+      if (store_flux) {
         fluxi = 0.;
 
         cs_b_imposed_conv_flux(iconvp,
