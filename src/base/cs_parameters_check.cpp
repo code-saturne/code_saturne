@@ -2565,6 +2565,12 @@ cs_parameters_check(void)
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
+                                "cs_glob_velocity_pressure_model->idilat",
+                                vp_model->idilat,
+                                0, 4);
+
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("while reading input data"),
                                 "cs_glob_velocity_pressure_param->iprco",
                                 vp_param->iprco,
                                 0, 2);
