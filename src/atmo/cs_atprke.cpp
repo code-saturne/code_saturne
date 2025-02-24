@@ -290,7 +290,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
       cs_math_3_dot_product(grad[c_id], grav) / prdtur;
 
     /* Explicit Buoyant terms */
-    gk[c_id] += visct*gravke;
+    gk[c_id] = visct*gravke;
 
     /* Save for post processing */
     if (f_tke_buoy != nullptr)
@@ -470,7 +470,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
     gravke  = gravke_theta[c_id] + gravke_qw[c_id];
 
     /* Explicit Buoyant terms */
-    gk[c_id] += visct*gravke;
+    gk[c_id] = visct*gravke;
 
   }
 
