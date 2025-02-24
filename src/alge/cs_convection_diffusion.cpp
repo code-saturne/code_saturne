@@ -12331,6 +12331,9 @@ cs_cell_courant_number(const cs_field_t    *f,
   });
 
   ctx.wait();
+
+  if (m->halo != nullptr)
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), courant);
 }
 
 /*----------------------------------------------------------------------------*/
