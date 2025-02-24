@@ -2230,7 +2230,6 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   const int isstpp = eqp.isstpc;
   const int iwarnp = eqp.verbosity;
   const int icoupl = eqp.icoupl;
-  cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
   const double blencp = eqp.blencv;
   const double blend_st = eqp.blend_st;
   const double epsrgp = eqp.epsrgr;
@@ -2285,13 +2284,9 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
   cs_real_t *local_min = nullptr;
   cs_real_t *local_max = nullptr;
-  cs_real_t *courant = nullptr;
 
   cs_real_t *df_limiter = nullptr;
-
   cs_real_t *gweight = nullptr;
-
-  const int key_lim_choice = cs_field_key_id("limiter_choice");
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
@@ -2329,17 +2324,12 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
-      limiter_choice = (cs_nvd_type_t)cs_field_get_key_int(f, key_lim_choice);
       CS_MALLOC(local_max, n_cells_ext, cs_real_t);
       CS_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(f_id,
                                     halo_type,
                                     local_max,
                                     local_min);
-      if (limiter_choice >= CS_NVD_VOF_HRIC) {
-        CS_MALLOC(courant, n_cells_ext, cs_real_t);
-        cs_cell_courant_number(f, ctx, courant);
-      }
     }
 
     int df_limiter_id =
@@ -2870,7 +2860,6 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   CS_FREE(gradst);
   CS_FREE(local_max);
   CS_FREE(local_min);
-  CS_FREE(courant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4622,7 +4611,8 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
         if (i_massflux[face_id] >= 0.) {
           ic = ii;
           id = jj;
-        } else {
+        }
+        else {
           ic = jj;
           id = ii;
         }
