@@ -147,6 +147,8 @@ cs_balance_scalar(int                         idtvar,
 
 END_C_DECLS
 
+#if defined(__cplusplus)
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Wrapper to the function which adds the explicit part of the
@@ -240,6 +242,8 @@ cs_balance_scalar(int                         idtvar,
                   cs_real_t                   smbrp[],
                   cs_real_2_t                 i_flux[],
                   cs_real_t                   b_flux[]);
+
+#endif // defined(__cplusplus)
 
 BEGIN_C_DECLS
 
