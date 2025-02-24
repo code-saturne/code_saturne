@@ -1700,6 +1700,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Main loop of reconstruction
    * --------------------------- */
+
   while ((isweep <= nswmod && residu > epsrsp*rnorm) || isweep == 1) {
 
     /* Solving on the increment: dpvar */
@@ -1715,11 +1716,14 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_real_2_t *_temp_i = i_flux_km1;
     i_flux_km1 = i_flux_k;
     i_flux_k = _temp_i;
-    cs_arrays_set_value<cs_real_t, 1>(2*n_i_faces, 0., (cs_real_t *)i_flux_k);
     cs_real_t *_temp_b = b_flux_km1;
     b_flux_km1 = b_flux_k;
     b_flux_k = _temp_b;
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_flux_k);
+    if (i_flux_k != nullptr) {
+      cs_arrays_set_value<cs_real_t, 1>
+        (2*n_i_faces, 0., (cs_real_t *)i_flux_k);
+      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_flux_k);
+    }
 
     /* Solver residual */
     ressol = residu;
