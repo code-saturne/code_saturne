@@ -143,8 +143,9 @@ def main(argv, pkg):
     if cfg.libs['eos'].have:
         eosprefix = cfg.libs['eos'].prefix
         try:
-            from distutils import sysconfig
-            eospath = os.path.join(sysconfig.get_python_lib(0, 0, prefix=eosprefix), 'eos')
+            import sysconfig
+            _eosp = sysconfig.get_path('purelib', 'posix_prefix', vars={'base':eosprefix})
+            eospath = os.path.join(_eosp, 'eos')
         except Exception:
             eospath = ''
 
