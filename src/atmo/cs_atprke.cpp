@@ -172,10 +172,10 @@ _etheq(cs_real_t   pphy,
   /* Compute q */
   cs_real_t q = qw - qldia;
 
-  /* Computesaturation q */
+  /* Compute saturation q */
   cs_real_t qs = cs_air_yw_sat(t-tkelvi, pphy);
 
-  /* Calcul de de */
+  /* Compute de */
   cs_real_t de = (clatev/cp)*pow(p0/pphy, rair/cp) - rvsra*theta;
 
   /* Constants for moddis = 3 */
@@ -229,8 +229,6 @@ _dry_atmosphere(const cs_real_t  cromo[],
                 const cs_real_t  cpro_pcvto[],
                 cs_real_t        gk[])
 {
-  cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
-  const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
@@ -321,7 +319,6 @@ _humid_atmosphere(const cs_real_t  cromo[],
                   cs_real_t        gk[])
 {
   cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
-  const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
