@@ -200,8 +200,8 @@ class Plot(object):
             line_test = ''
         if line_test.find(';') > -1:
             separator = ';'
-        if line_test.find(':') > -1:
-            separator = ';'
+        elif line_test.find(':') > -1:
+            separator = ':'
         elif line_test.find(', ') > -1:
             separator = ', '
         elif line_test.find(' ') > -1:
