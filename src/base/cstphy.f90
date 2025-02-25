@@ -117,15 +117,10 @@ module cstphy
   !> It must be given in Kelvin.
   real(c_double), pointer, save :: t0
 
-  !> Reference internal energy for the barotropic compressible module
-  double precision, save :: eint0
-
   !> reference specific heat.
   !>
-  !> Useful if there is 1 <= n <= nscaus,
-  !> so that \ref optcal::iscalt "iscalt" = n and \ref optcal::itherm "itherm" = 1
-  !> (there is a "temperature" scalar),
-  !> unless the user specifies the specific heat in the user subroutine
+  !> Useful with a thermal model.
+  !> Unless the user specifies the specific heat in the user subroutine
   !> \ref cs_user_physical_properties (\ref cstphy::icp "icp" > 0) with the
   !> compressible module or
   !>  coal combustion, \ref cp0 is also needed even when there is no user scalar.

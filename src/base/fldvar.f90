@@ -95,30 +95,6 @@ end interface
 ! Define main variables
 !======================
 
-! Velocity (components point to same field)
-call map_variable_field_try('velocity', iu)
-iv = iu + 1
-iw = iv + 1
-
-! Pressure
-call map_variable_field_try('pressure', ipr)
-
-! Turbulence
-
-if (itytur.eq.2) then
-  call map_variable_field_try('k', ik)
-  call map_variable_field_try('epsilon', iep)
-else if (itytur.eq.3) then
-  call map_variable_field_try('rij', irij)
-  call map_variable_field_try('epsilon', iep)
-else if (itytur.eq.5) then
-  call map_variable_field_try('k', ik)
-  call map_variable_field_try('epsilon', iep)
-else if (iturb.eq.60) then
-  call map_variable_field_try('k', ik)
-  call map_variable_field_try('omega', iomg)
-endif
-
 ! Number of user variables
 
 nscaus = cs_parameters_n_added_variables()
@@ -987,8 +963,6 @@ subroutine cs_c_add_model_thermal_field_indexes(f_id) &
   f_id0 = f_id
 
   call add_model_field_indexes(f_id0, iscal0)
-
-  iscalt = iscal0
 
   if (itherm .eq. 2) ihm = f_id
 

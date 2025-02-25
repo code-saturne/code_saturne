@@ -164,8 +164,7 @@ const cs_thermal_model_t  *cs_glob_thermal_model = &_thermal_model;
  *============================================================================*/
 
 void
-cs_f_thermal_model_get_pointers(int     **itherm,
-                                int     **itpscl);
+cs_f_thermal_model_get_pointers(int     **itherm);
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -187,15 +186,12 @@ cs_f_thermal_model_get_pointers(int     **itherm,
  *
  * parameters:
  *   itherm  --> pointer to cs_glob_thermal_model->thermal_variable
- *   itpscl  --> pointer to cs_glob_thermal_model->temperature_scale
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_thermal_model_get_pointers(int  **itherm,
-                                int  **itpscl)
+cs_f_thermal_model_get_pointers(int  **itherm)
 {
   *itherm = (int *) &(_thermal_model.thermal_variable);
-  *itpscl = (int *) &(_thermal_model.temperature_scale);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

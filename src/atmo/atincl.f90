@@ -117,9 +117,6 @@ integer, save :: itempc
 !> liquid water content
 integer, save :: iliqwt
 
-!> momentum source term field id (useful when iatmst > 0)
-integer, save :: imomst
-
 !----------------------------------------------------------------------------
 
 ! 2. Data specific to the atmospheric physics

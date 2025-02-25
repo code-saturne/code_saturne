@@ -417,41 +417,6 @@ void
 cs_mesh_sync_var_scal(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
- * Update a scalar array in case of parallelism and/or periodicity,
- * using an extended halo.
- *
- * Note: this function is only present so that a C equivalent to the
- *       Fortran wrappers is available. In C code, directly using the
- *       cs_halo_sync_var() is preferred.
- *
- * parameters:
- *   var  <->  scalar array
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_scal_ext(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
- * Update a vector array in case of parallelism and/or periodicity.
- *
- * parameters:
- *   var  <->  interleaved vector (of dimension 3)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_vect(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
- * Update a symmetric tensor array in case of parallelism and/or periodicity.
- *
- * parameters:
- *   var  <->  symmetric interleaved tensor (of dimension 6)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_sym_tens(cs_real_6_t  *var);
-
-/*----------------------------------------------------------------------------
  * Order family numbers and remove duplicates
  *
  * parameters

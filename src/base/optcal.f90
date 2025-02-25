@@ -160,28 +160,6 @@ module optcal
   !> scalar represents the total energy and not the temperature.
   integer(c_int), pointer, save :: itherm
 
-  !> Temperature scale
-  !> - 0: none
-  !> - 1: Kelvin
-  !> - 2: Celsius
-  !> The distinction between \ref itpscl = 1 or 2 is useful only in case of
-  !> radiation modelling. For calculations without radiation modelling,
-  !> use \ref itpscl = 1 for the temperature.\n
-  !> Useful if and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
-  integer(c_int), pointer, save :: itpscl
-
-  !> Index of the thermal scalar (temperature, energy or enthalpy)
-  !>
-  !> The index of the corresponding variable is isca(iscalt)
-  !> If \ref iscalt = -1, neither the temperature nor the enthalpy is
-  !> represented by a scalar. When a specific physics module is activated
-  !> (gas combustion, pulverised coal, electricity or compressible), the user
-  !> must not modify \ref iscalt (the choice is made automatically). In the
-  !> case of the compressible module, \ref iscalt does not correspond to
-  !> the temperature nor enthalpy but to the total energy}.\n Useful if
-  !> and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
-  integer, save :: iscalt = -1
-
   !> \}
 
   !----------------------------------------------------------------------------
@@ -272,11 +250,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global thermal model structure
 
-    subroutine cs_f_thermal_model_get_pointers(itherm, itpscl) &
+    subroutine cs_f_thermal_model_get_pointers(itherm) &
       bind(C, name='cs_f_thermal_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: itherm, itpscl
+      type(c_ptr), intent(out) :: itherm
     end subroutine cs_f_thermal_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -339,25 +317,6 @@ contains
     endif
 
   end function iscavr
-
-  !> \brief If scalar iscal represents the mean of the square of a scalar
-  !> k, return k; otherwise, return 0.
-
-  function visls0(iscal) result(visls_0)
-
-    use field
-    use numvar
-
-    implicit none
-
-    ! Parameters
-
-    integer, intent(in) :: iscal
-    double precision    :: visls_0
-
-    call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
-
-  end function visls0
 
   !> \brief Initialize isuite
 
@@ -428,12 +387,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_itherm, c_itpscl
+    type(c_ptr) :: c_itherm
 
-    call cs_f_thermal_model_get_pointers(c_itherm, c_itpscl)
+    call cs_f_thermal_model_get_pointers(c_itherm)
 
     call c_f_pointer(c_itherm, itherm)
-    call c_f_pointer(c_itpscl, itpscl)
 
   end subroutine thermal_model_init
 

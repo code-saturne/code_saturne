@@ -50,38 +50,6 @@ module numvar
   !> \addtogroup main_variables
   !> \{
 
-  !> \anchor ipr
-  !> pressure
-  integer, save :: ipr = 0
-
-  !> \anchor iu
-  !> velocity component \f$ u_x \f$
-  integer, save :: iu = 0
-
-  !> \anchor iv
-  !> velocity component \f$ u_y \f$
-  integer, save :: iv = 0
-
-  !> \anchor iw
-  !> velocity component \f$ u_z \f$
-  integer, save :: iw = 0
-
-  !> \anchor ik
-  !> turbulent kinetic energy \f$ k \f$
-  integer, save :: ik = 0
-
-  !> \anchor iep
-  !> turbulent dissipation \f$ \varepsilon \f$
-  integer, save :: iep = 0
-
-  !> \anchor irij
-  !> Reynolds stress tenso \f$ R_{ij} \f$
-  integer, save :: irij = 0
-
-  !> \anchor iomg
-  !> variable \f$ \omega \f$ of the \f$ k-\omega \f$ SST
-  integer, save :: iomg = 0
-
   !> \anchor isca
   !> isca(i) is the index of the scalar i
   integer, save :: isca(nscamx)
@@ -114,26 +82,11 @@ module numvar
   !> dynamic molecular viscosity (in kg/(m.s))
   integer, save :: iviscl = -1
 
-  !> dynamic turbulent viscosity
-  integer, save :: ivisct = -1
-
-  !> interior and boundary convective mass flux key ids of the variables
-  integer, save :: kimasf = -1, kbmasf = -1
-
-  !> constant diffusivity field id key for scalars
-  integer, save :: kvisl0 = -1
-
   !> variable diffusivity field id key for scalars
   integer, save :: kivisl = -1
 
-  !> turbulent schmidt key for scalars
-  integer, save :: ksigmas = -1
-
   !> cell density field ids of the variables
   integer, save :: icrom = -1
-
-  !> boundary density field ids of the variables
-  integer, save :: ibrom = -1
 
   !> \}
 

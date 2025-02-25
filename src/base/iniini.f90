@@ -86,16 +86,9 @@ call field_get_key_id("label", keylbl)
 call field_get_key_id('log', keylog)
 call field_get_key_id('post_vis', keyvis)
 
-call field_get_key_id("inner_mass_flux_id", kimasf)
-call field_get_key_id("boundary_mass_flux_id", kbmasf)
-
 call field_get_key_id("diffusivity_id", kivisl)
-call field_get_key_id("diffusivity_ref", kvisl0)
-
-call field_get_key_id("turbulent_schmidt", ksigmas)
 
 icrom = -1
-ibrom = -1
 
 !===============================================================================
 ! Map Fortran pointers to C global data
