@@ -3,6 +3,9 @@ release 8.2.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix crash or incorrect results when using rotational periodicity on
+  builds with the Intel MKL library or CUDA (missing ghost cell rotation).
+
 - Major fix for missing updates of local time step at time steps where
   log was not active for adaptive and local time steps.
 
