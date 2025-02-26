@@ -2829,7 +2829,7 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
   cs_halo_state_t *hs
     = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
   if (hs != nullptr)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Call MKL function */
 
@@ -2969,7 +2969,7 @@ _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
   cs_halo_state_t *hs
     = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
   if (hs != nullptr)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Call MKL function */
 
