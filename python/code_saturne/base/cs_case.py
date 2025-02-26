@@ -1970,7 +1970,7 @@ class case:
             else:
                 max_time = self.time_limit
         if max_time != None:
-            os.putenv('CS_MAXTIME', str(max_time))
+            os.environ['CS_MAXTIME'] = str(max_time)
 
         # Tell the script it is being called through the main script
         # (implying environment modules are set and the environment loaded)
@@ -1978,7 +1978,7 @@ class case:
         rcfile = cs_exec_environment.get_rcfile(self.package_compute)
 
         if rcfile or self.package_compute.config.env_modules != "no":
-            os.putenv('CS_ENVIRONMENT_SET', 'true')
+            os.environ['CS_ENVIRONMENT_SET'] = 'true'
 
         # Now run the calculation
 
