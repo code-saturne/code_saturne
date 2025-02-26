@@ -4,7 +4,7 @@ Release 8.3.1 (unreleased)
 ### Bug fixes:
 
 - Fix crash or incorrect results when using rotational periodicity on
-  builds with the Intel MKL library (missing ghost cell rotation).
+  builds with the Intel MKL library or CUDA (missing ghost cell rotation).
 
 - Better handling of SIGTERM on clusters in order to allow the code to cleanly
   exit and finish the computation.
