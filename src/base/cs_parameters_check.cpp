@@ -1313,6 +1313,7 @@ cs_parameters_check(void)
              "Gravity g = [%g %g %g] is taken in the turbulence source terms\n"
              "(has_buoyant_term = %d) without solving a thermal variable "
              "or with variable density.\n"),
+           gravity[0], gravity[1], gravity[2],
            cs_glob_turb_rans_model->has_buoyant_term);
     }
   }
