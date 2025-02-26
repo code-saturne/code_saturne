@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -737,6 +737,47 @@ _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
   }
 
   return hs;
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize ghost values prior to matrix.vector product
+ *
+ * parameters:
+ *   matrix        <-- pointer to matrix structure
+ *   x             <-> multipliying vector values (ghost values updated)
+ *----------------------------------------------------------------------------*/
+
+static void
+_pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
+                                cs_halo_state_t     *hs,
+                                cs_real_t           *restrict x)
+{
+  if (hs != nullptr) {
+
+    assert(matrix->halo != nullptr);
+
+    cs_halo_sync_wait(matrix->halo, x, hs);
+
+    /* Synchronize periodic values */
+
+#if !defined(_CS_UNIT_MATRIX_TEST) /* unit tests do not link with full library */
+
+    // FIXME: ensure this is done on the GPU.
+
+    if (matrix->halo->n_transforms > 0) {
+      if (matrix->db_size == 3)
+        cs_halo_perio_sync_var_vect(matrix->halo,
+                                    CS_HALO_STANDARD,
+                                    x,
+                                    matrix->db_size);
+      else if (matrix->db_size == 6)
+        cs_halo_perio_sync_var_sym_tens(matrix->halo,
+                                        CS_HALO_STANDARD,
+                                        x);
+    }
+
+#endif
+  }
 }
 
 #if defined(HAVE_CUSPARSE)
@@ -1754,7 +1795,7 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
 
   if (sync) {
     cs_halo_state_t *hs = _pre_vector_multiply_sync_x_start(matrix, d_x);
-    cs_halo_sync_wait(matrix->halo, d_x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, d_x);
   }
 
   /* Compute SpMV */
@@ -1842,7 +1883,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
   if (sync) {
     cs_halo_state_t *hs = _pre_vector_multiply_sync_x_start(matrix,
                                                             (cs_real_t *)d_x);
-    cs_halo_sync_wait(matrix->halo, (cs_real_t *)d_x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, d_x);
   }
 
   _update_cusparse_map_block_diag(csm, matrix, d_x, d_y);
@@ -1952,7 +1993,7 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
   if (sync) {
     cs_halo_state_t *hs = _pre_vector_multiply_sync_x_start(matrix,
                                                             (cs_real_t *)d_x);
-    cs_halo_sync_wait(matrix->halo, (cs_real_t *)d_x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, d_x);
   }
 
   /* no update_cusparse_map type function call here as only
