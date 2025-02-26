@@ -453,7 +453,6 @@ cs_combustion_d3p_integration(int        indpdf[],
   n_calls++;
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
   const int sub_type = cm->type % 100;
@@ -475,7 +474,6 @@ cs_combustion_d3p_integration(int        indpdf[],
   for (int icg = 0; icg < n_gas_species; icg++)
     cpro_csca[icg] = cm->ym[icg]->val;
 
-  cs_real_t *cvar_fp2m= cm->fp2m->val;
   cs_real_t *cvar_fm = cm->fm->val;
   cs_real_t *cvar_scalt = nullptr;
   if (cm->type %2 == 1)
@@ -582,7 +580,7 @@ cs_combustion_d3p_integration(int        indpdf[],
 
   // Initialization
 
-  cs_array_real_set_scalar(n_cells_ext, cm->hstoea, w1);
+  cs_array_real_set_scalar(n_cells, cm->hstoea, w1);
 
   if (sub_type == 1) {
     _d3phst(n_cells, indpdf, dirmin, dirmax, fdeb, ffin, hrec,
