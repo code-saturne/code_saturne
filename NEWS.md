@@ -1,4 +1,4 @@
-Release 8.3.1 (unreleased)
+Release 8.3.1 (2025-02-27)
 --------------------------
 
 ### Bug fixes:
