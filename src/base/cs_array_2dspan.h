@@ -77,7 +77,7 @@ public:
     _size(0),
     _is_owner(true),
     _full_array(nullptr),
-    _mode(CS_ALLOC_HOST)
+    _mode(cs_alloc_mode)
   {
   }
 
@@ -107,7 +107,7 @@ public:
     _dim2(dim2),
     _size(dim1*dim2),
     _is_owner(true),
-    _mode(CS_ALLOC_HOST)
+    _mode(cs_alloc_mode)
   {
     allocate_(file_name, line_number);
   }
@@ -156,7 +156,7 @@ public:
     cs_lnum_t       dim1,                      /*!<[in] First dimension size */
     cs_lnum_t       dim2,                      /*!<[in] Second dimension size */
     T*              data_array,                /*!<[in] Pointer to data array */
-    cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST /*!<[in] Memory allocation mode,
+    cs_alloc_mode_t alloc_mode = cs_alloc_mode /*!<[in] Memory allocation mode,
                                                         default is HOST. */
   )
   :
@@ -306,7 +306,7 @@ public:
     set_size_(0, 0);
     _is_owner = false;
     _full_array = nullptr;
-    _mode = CS_ALLOC_HOST;
+    _mode = cs_alloc_mode;
   }
 
   /*--------------------------------------------------------------------------*/
