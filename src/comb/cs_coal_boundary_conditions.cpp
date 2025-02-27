@@ -937,7 +937,7 @@ cs_coal_boundary_conditions_inlet_density(void)
   /* Recompute density at coal inlets
      (except for first time step where x20 is not known yet) */
 
-  if (cs_glob_time_step->nt_cur == 1)
+  if (cs_glob_time_step->nt_cur == 0)
     return;
 
   /* Recompute state in case of restart */
