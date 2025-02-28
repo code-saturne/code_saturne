@@ -791,7 +791,7 @@ _face_diff_vel(const cs_mesh_t             *m,
  * \param[in]        crom      density at cells
  * \param[in]        brom      density at boundary faces
  * \param[in, out]   cpro_divr reynolds stress divergence
- * \param[in, out]   c_st_vel  source term of velicity
+ * \param[in, out]   c_st_vel  source term of velocity
  * \param[in, out]   b_stress  boundary stress
  * \param[in, out]   trava     work array for velocity-pressure coupling
  * \param[in, out]   trav      right hand side for the normalizing
@@ -952,8 +952,8 @@ _div_rij(const cs_mesh_t     *m,
     for (cs_lnum_t i = 0; i < 3; i++)
       cpro_divr[c_id][i] *= dvol;
   });
-  ctx.wait();
 
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

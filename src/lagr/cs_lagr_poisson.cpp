@@ -79,20 +79,18 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
-/* -------------------------------------------------------
- *        COMPUTE THE DIVERGENCE OF A VECTEUR
- *       (Simply call the gradient three times)
- * ------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * Compute divergence of a vector
+ *----------------------------------------------------------------------------*/
 
 static void
-diverv (cs_real_t                  *diverg,
-        cs_real_3_t                *u,
-        const cs_field_bc_coeffs_t *bc_coeffs_v)
+_diverv(cs_real_t                   *diverg,
+        cs_real_3_t                 *u,
+        const cs_field_bc_coeffs_t  *bc_coeffs_v)
 {
+  /* Initialization
+     -------------- */
 
-  /* ====================================================================
-   * 1. INITIALISATIONS
-   * ====================================================================*/
   cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells   = cs_glob_mesh->n_cells;
 
@@ -100,9 +98,8 @@ diverv (cs_real_t                  *diverg,
   cs_real_33_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
 
-  /* ====================================================================
-   * Calcul du gradient de U
-   * ====================================================================*/
+  /* Compute velocity gradient
+     ------------------------- */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -122,35 +119,33 @@ diverv (cs_real_t                  *diverg,
                      1.5,                    /* climgp */
                      bc_coeffs_v,
                      u,
-                     nullptr,                   /* weighted gradient */
-                     nullptr,                   /* cpl */
+                     nullptr,                /* weighted gradient */
+                     nullptr,                /* cpl */
                      grad);
 
-  /* ====================================================================
-   * Calcul de la divergence du vecteur
-   * ====================================================================*/
+  /* Compute vector divergence
+     ------------------------- */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     diverg[c_id]  = grad[c_id][0][0] + grad[c_id][1][1] + grad[c_id][2][2];
 
-  /* Free memory     */
+  /* Free memory */
   BFT_FREE(grad);
 }
 
-/*-------------------------------------------------------------------
- *          RESOLUTION D'UNE EQUATION DE POISSON
- *            div[ALPHA grad(PHI)] = div(ALPHA <Up>)
- *-------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Solve Poisson equation
+ *   div[ALPHA grad(PHI)] = div(ALPHA <Up>)
+ *----------------------------------------------------------------------------*/
 
 static void
-_lageqp(cs_real_t   *vitessel,
+_lageqp(cs_real_t   *velocityl,
         cs_real_t   *alphal,
         cs_real_t   *phi,
         const int    itypfb[])
 {
-  /* ====================================================================
-   * 1. INITIALISATION
-   * ====================================================================*/
+  /* Initialization
+     -------------- */
 
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -181,13 +176,12 @@ _lageqp(cs_real_t   *vitessel,
   cs_real_3_t *w;
   BFT_MALLOC(w, n_cells_ext, cs_real_3_t);
 
-  bft_printf(_("   ** RESOLUTION POUR LA VARIABLE Pressure correction"));
+  bft_printf(_("   ** RESOLUTION for the pressure correction variable"));
 
-  /* ====================================================================
-   * 2. TERMES SOURCES
-   * ==================================================================== */
+  /* Source terms
+     ------------ */
 
-  /* --> Initialization   */
+  /* Initialization   */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     smbrs[c_id]  = 0.0;
@@ -196,7 +190,7 @@ _lageqp(cs_real_t   *vitessel,
     phia[c_id]   = 0.0;
   }
 
-  /*     "VITESSE" DE DIFFUSION FACE     */
+  /* Face "diffusion velocity" */
   cs_face_viscosity(m,
                     fvq,
                     cs_glob_space_disc->imvisf,
@@ -204,17 +198,16 @@ _lageqp(cs_real_t   *vitessel,
                     viscf,
                     viscb);
 
-  /* CALCUL  de div(Alpha Up) avant correction     */
+  /* div(Alpha Up) before correction */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     for (cs_lnum_t isou = 0; isou < 3; isou++)
-      w[c_id][isou] = -vitessel[isou + c_id * 3] * alphal[c_id];
+      w[c_id][isou] = -velocityl[isou + c_id * 3] * alphal[c_id];
 
   }
 
-  /* --> Calcul du gradient de W1   */
-  /*     ========================   */
-  /* Allocate temporary arrays */
+  /* Gradient of W1
+     -------------- */
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
@@ -236,23 +229,19 @@ _lageqp(cs_real_t   *vitessel,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     for (cs_lnum_t isou = 0; isou < 3; isou++) {
-
       for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
         coefbw[jsou][isou][f_id] = 0.0;
-
     }
 
   }
 
-  diverv(smbrs, w, &bc_coeffs_v_loc);
+  _diverv(smbrs, w, &bc_coeffs_v_loc);
 
-  /* Free memory */
   BFT_FREE(bc_coeffs_v_loc.a);
   BFT_FREE(bc_coeffs_v_loc.b);
 
-  /* --> Boundary condition for PHI  */
-  /*     ==============================  */
-  /* Allocate temporary arrays */
+  /* Boundary condition for PHI
+     -------------------------- */
 
   cs_field_bc_coeffs_t bc_coeffs_phi_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_phi_loc);
@@ -306,11 +295,8 @@ _lageqp(cs_real_t   *vitessel,
 
   }
 
-  /* ====================================================================
-   * 3. RESOLUTION
-   * ====================================================================   */
-
-  int idtva0 = 0;  /* No steady option here */
+  /* Resolution
+     ---------- */
 
   /* Cancel mass fluxes */
 
@@ -320,7 +306,6 @@ _lageqp(cs_real_t   *vitessel,
   }
 
   /* In the theta-scheme case, set theta to 1 (order 1) */
-
 
   cs_equation_param_t eqp_loc = cs_parameters_equation_param_default();
 
@@ -335,7 +320,7 @@ _lageqp(cs_real_t   *vitessel,
   eqp_loc.imrgra = cs_glob_space_disc->imrgra;
   eqp_loc.imligr = 1;
 
-  cs_equation_iterative_solve_scalar(idtva0,
+  cs_equation_iterative_solve_scalar(0,            /* idtvar */
                                      1,            /* external sub-iteration? */
                                      -1,           /* field_id (not a field) */
                                      "PoissonL",   /* name */
@@ -351,7 +336,7 @@ _lageqp(cs_real_t   *vitessel,
                                      nullptr,         /* viscel */
                                      nullptr,         /* weighf */
                                      nullptr,         /* weighb */
-                                     0,            /* icvflb (all upwind) */
+                                     0,               /* icvflb (all upwind) */
                                      nullptr,         /* icvfli */
                                      rovsdt,
                                      smbrs,
@@ -384,13 +369,13 @@ _lageqp(cs_real_t   *vitessel,
  * Public function definitions
  *============================================================================*/
 
-/*-----------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 /*! \brief Solve Poisson equation for mean particle velocities
  * and correct particle instantaneous velocities
  *
  * \param[in]  itypfb  boundary face type
  */
-/*-----------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_poisson(const int  itypfb[])
@@ -514,5 +499,7 @@ cs_lagr_poisson(const int  itypfb[])
   BFT_FREE(grad);
 
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

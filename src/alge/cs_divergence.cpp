@@ -280,7 +280,8 @@ cs_mass_flux(const cs_mesh_t             *m,
       b_massflux[face_id] = 0.;
     });
 
-  } else if (init != 0) {
+  }
+  else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
@@ -310,27 +311,29 @@ cs_mass_flux(const cs_mesh_t             *m,
         }
       });
       /* With porosity */
-    } else if (porosi != nullptr && porosf == nullptr) {
+    }
+    else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         for (int isou = 0; isou < 3; isou++) {
           qdm[cell_id][isou] = rom[cell_id]*vel[cell_id][isou]*porosi[cell_id];
         }
       });
       /* With anisotropic porosity */
-    } else if (porosi != nullptr && porosf != nullptr) {
+    }
+    else if (porosi != nullptr && porosf != nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        qdm[cell_id][0] = ( porosf[cell_id][0]*vel[cell_id][0]
-                          + porosf[cell_id][3]*vel[cell_id][1]
-                          + porosf[cell_id][5]*vel[cell_id][2] )
-                        * rom[cell_id];
-        qdm[cell_id][1] = ( porosf[cell_id][3]*vel[cell_id][0]
-                          + porosf[cell_id][1]*vel[cell_id][1]
-                          + porosf[cell_id][4]*vel[cell_id][2] )
-                        * rom[cell_id];
-        qdm[cell_id][2] = ( porosf[cell_id][5]*vel[cell_id][0]
-                          + porosf[cell_id][4]*vel[cell_id][1]
-                          + porosf[cell_id][2]*vel[cell_id][2] )
-                        * rom[cell_id];
+        qdm[cell_id][0] = (  porosf[cell_id][0]*vel[cell_id][0]
+                           + porosf[cell_id][3]*vel[cell_id][1]
+                           + porosf[cell_id][5]*vel[cell_id][2])
+                          * rom[cell_id];
+        qdm[cell_id][1] = (  porosf[cell_id][3]*vel[cell_id][0]
+                           + porosf[cell_id][1]*vel[cell_id][1]
+                           + porosf[cell_id][4]*vel[cell_id][2])
+                          * rom[cell_id];
+        qdm[cell_id][2] = (  porosf[cell_id][5]*vel[cell_id][0]
+                           + porosf[cell_id][4]*vel[cell_id][1]
+                           + porosf[cell_id][2]*vel[cell_id][2])
+                          * rom[cell_id];
       });
     }
 
@@ -372,7 +375,7 @@ cs_mass_flux(const cs_mesh_t             *m,
 
   ctx_c.wait();
 
-  /* ---> Periodicity and parallelism treatment */
+  /* Periodicity and parallelism treatment */
 
   if (halo != nullptr)
     cs_halo_sync_r(halo, halo_type, on_device, qdm);
@@ -405,30 +408,30 @@ cs_mass_flux(const cs_mesh_t             *m,
     else if (porosi != nullptr && porosf != nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        coefaq[face_id][0] = ( porosf[cell_id][0]*coefav[face_id][0]
-                             + porosf[cell_id][3]*coefav[face_id][1]
-                             + porosf[cell_id][5]*coefav[face_id][2] )
-                           * romb[face_id];
-        coefaq[face_id][1] = ( porosf[cell_id][3]*coefav[face_id][0]
-                             + porosf[cell_id][1]*coefav[face_id][1]
-                             + porosf[cell_id][4]*coefav[face_id][2] )
-                           * romb[face_id];
-        coefaq[face_id][2] = ( porosf[cell_id][5]*coefav[face_id][0]
-                             + porosf[cell_id][4]*coefav[face_id][1]
-                             + porosf[cell_id][2]*coefav[face_id][2] )
-                           * romb[face_id];
-        f_momentum[face_id][0] = ( porosf[cell_id][0]*vel[cell_id][0]
-                             + porosf[cell_id][3]*vel[cell_id][1]
-                             + porosf[cell_id][5]*vel[cell_id][2] )
-                           * romb[face_id];
-        f_momentum[face_id][1] = ( porosf[cell_id][3]*vel[cell_id][0]
-                             + porosf[cell_id][1]*vel[cell_id][1]
-                             + porosf[cell_id][4]*vel[cell_id][2] )
-                           * romb[face_id];
-        f_momentum[face_id][2] = ( porosf[cell_id][5]*vel[cell_id][0]
-                             + porosf[cell_id][4]*vel[cell_id][1]
-                             + porosf[cell_id][2]*vel[cell_id][2] )
-                           * romb[face_id];
+        coefaq[face_id][0] = (  porosf[cell_id][0]*coefav[face_id][0]
+                              + porosf[cell_id][3]*coefav[face_id][1]
+                              + porosf[cell_id][5]*coefav[face_id][2])
+                             * romb[face_id];
+        coefaq[face_id][1] = (  porosf[cell_id][3]*coefav[face_id][0]
+                              + porosf[cell_id][1]*coefav[face_id][1]
+                              + porosf[cell_id][4]*coefav[face_id][2])
+                             * romb[face_id];
+        coefaq[face_id][2] = (  porosf[cell_id][5]*coefav[face_id][0]
+                              + porosf[cell_id][4]*coefav[face_id][1]
+                              + porosf[cell_id][2]*coefav[face_id][2])
+                             * romb[face_id];
+        f_momentum[face_id][0] = (  porosf[cell_id][0]*vel[cell_id][0]
+                                  + porosf[cell_id][3]*vel[cell_id][1]
+                                  + porosf[cell_id][5]*vel[cell_id][2])
+                                 * romb[face_id];
+        f_momentum[face_id][1] = (  porosf[cell_id][3]*vel[cell_id][0]
+                                  + porosf[cell_id][1]*vel[cell_id][1]
+                                  + porosf[cell_id][4]*vel[cell_id][2])
+                                 * romb[face_id];
+        f_momentum[face_id][2] = (  porosf[cell_id][5]*vel[cell_id][0]
+                                  + porosf[cell_id][4]*vel[cell_id][1]
+                                  + porosf[cell_id][2]*vel[cell_id][2])
+                                 * romb[face_id];
       });
     }
 
@@ -458,24 +461,24 @@ cs_mass_flux(const cs_mesh_t             *m,
     else if (porosi != nullptr && porosf != nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        coefaq[face_id][0] = porosf[cell_id][0]*coefav[face_id][0]
-                           + porosf[cell_id][3]*coefav[face_id][1]
-                           + porosf[cell_id][5]*coefav[face_id][2];
-        coefaq[face_id][1] = porosf[cell_id][3]*coefav[face_id][0]
-                           + porosf[cell_id][1]*coefav[face_id][1]
-                           + porosf[cell_id][4]*coefav[face_id][2];
-        coefaq[face_id][2] = porosf[cell_id][5]*coefav[face_id][0]
-                           + porosf[cell_id][4]*coefav[face_id][1]
-                           + porosf[cell_id][2]*coefav[face_id][2];
-        f_momentum[face_id][0] = ( porosf[cell_id][0]*vel[cell_id][0]
-                             + porosf[cell_id][3]*vel[cell_id][1]
-                             + porosf[cell_id][5]*vel[cell_id][2] );
-        f_momentum[face_id][1] = ( porosf[cell_id][3]*vel[cell_id][0]
-                             + porosf[cell_id][1]*vel[cell_id][1]
-                             + porosf[cell_id][4]*vel[cell_id][2] );
-        f_momentum[face_id][2] = ( porosf[cell_id][5]*vel[cell_id][0]
-                             + porosf[cell_id][4]*vel[cell_id][1]
-                             + porosf[cell_id][2]*vel[cell_id][2] );
+        coefaq[face_id][0] =   porosf[cell_id][0]*coefav[face_id][0]
+                             + porosf[cell_id][3]*coefav[face_id][1]
+                             + porosf[cell_id][5]*coefav[face_id][2];
+        coefaq[face_id][1] =   porosf[cell_id][3]*coefav[face_id][0]
+                             + porosf[cell_id][1]*coefav[face_id][1]
+                             + porosf[cell_id][4]*coefav[face_id][2];
+        coefaq[face_id][2] =   porosf[cell_id][5]*coefav[face_id][0]
+                             + porosf[cell_id][4]*coefav[face_id][1]
+                             + porosf[cell_id][2]*coefav[face_id][2];
+        f_momentum[face_id][0] = (  porosf[cell_id][0]*vel[cell_id][0]
+                                  + porosf[cell_id][3]*vel[cell_id][1]
+                                  + porosf[cell_id][5]*vel[cell_id][2]);
+        f_momentum[face_id][1] = (  porosf[cell_id][3]*vel[cell_id][0]
+                                  + porosf[cell_id][1]*vel[cell_id][1]
+                                  + porosf[cell_id][4]*vel[cell_id][2]);
+        f_momentum[face_id][2] = (  porosf[cell_id][5]*vel[cell_id][0]
+                                  + porosf[cell_id][4]*vel[cell_id][1]
+                                  + porosf[cell_id][2]*vel[cell_id][2]);
       });
     }
 
