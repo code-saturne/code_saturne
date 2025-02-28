@@ -1269,11 +1269,6 @@ _is_notebook(const char *str, double *value)
   if (cs_notebook_parameter_is_present(str, &dummy)) {
     *value  = (double)cs_notebook_parameter_value_by_name(str);
     retcode = true;
-    bft_printf("%s[L%d] - Found token \"%s\" with value = %f\n",
-               __func__,
-               __LINE__,
-               str,
-               *value);
   }
 
   return retcode;
