@@ -186,7 +186,7 @@ cs_coal_boundary_conditions(int  bc_type[]);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coal_boundary_conditions_inlet_density(void);
+cs_coal_boundary_conditions_density(void);
 
 /*----------------------------------------------------------------------------*/
 

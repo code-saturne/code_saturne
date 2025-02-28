@@ -1875,7 +1875,7 @@ cs_coal_physprop(int  *mbrom)
 
   *mbrom = 1;
 
-  cs_coal_boundary_conditions_inlet_density();
+  cs_coal_boundary_conditions_density();
 
   /* Compute the drift velocity if needed
    * ------------------------------------ */

@@ -904,7 +904,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute density at inlets for pulverized coal combustion.
+ * \brief Compute density at boundaries for pulverized coal combustion.
  *
  * This is based on boundary condition definitions, but is called at an
  * earlier stage in the time step.
@@ -912,7 +912,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coal_boundary_conditions_inlet_density(void)
+cs_coal_boundary_conditions_density(void)
 {
   /* Initialization
    * ============== */
@@ -935,9 +935,9 @@ cs_coal_boundary_conditions_inlet_density(void)
   }
 
   /* Recompute density at coal inlets
-     (except for first time step where x20 is not known yet) */
+     (except before or at first time step where x20 is not known yet) */
 
-  if (cs_glob_time_step->nt_cur == 0)
+  if (cs_glob_time_step->nt_cur <= 1)
     return;
 
   /* Recompute state in case of restart */
