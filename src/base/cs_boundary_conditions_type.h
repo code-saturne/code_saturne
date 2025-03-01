@@ -46,15 +46,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_boundary_conditions_type.c
- *
- * \brief Handle boundary condition type codes (\ref itypfb).
- */
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*
- * \brief  Handle boundary condition type code (\ref bc_type).
+ * \brief  Handle boundary condition type code.
  *
  * \param[in]      init      partial treatment (before time loop) if true
  * \param[in,out]  bc_type   type per boundary face

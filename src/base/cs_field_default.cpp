@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_field_default.c
+  \file cs_field_default.cpp
         Field utility functions.
 */
 

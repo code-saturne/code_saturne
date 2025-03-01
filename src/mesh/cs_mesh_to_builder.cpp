@@ -1,5 +1,5 @@
 /*============================================================================
- * \file Define cs_mesh_builder_t fields from cs_mesh_t fields.
+ * Define cs_mesh_builder_t fields from cs_mesh_t fields.
  *============================================================================*/
 
 /*

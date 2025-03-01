@@ -2086,7 +2086,6 @@ _p_gauss_seidel(cs_sles_it_t              *c,
  * \brief Create iterative sparse linear system solver info and context used as
  *        a smoother in a multigrid solver
  *
- * parameters:
  * \param[in]  smoother_type   type of smoother (CG, Jacobi, ...)
  * \param[in]  poly_degree     preconditioning polynomial degree
  *                             (0: diagonal; -1: non-preconditioned;

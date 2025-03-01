@@ -112,7 +112,7 @@ _n_bc_faces(int        bc_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Handle boundary condition type code (\ref bc_type).
+ * \brief  Handle boundary condition type code.
  *
  * \param[in]      init      partial treatment (before time loop) if true
  * \param[in,out]  bc_type   type per boundary face

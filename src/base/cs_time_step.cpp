@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_time_step.c
+  \file cs_time_step.cpp
         base time step data.
 
   \enum cs_time_step_type_t

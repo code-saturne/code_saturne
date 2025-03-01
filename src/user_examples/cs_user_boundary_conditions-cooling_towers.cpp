@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_boundary_conditions.c
+ * \file cs_user_boundary_conditions-cooling_towers.cpp
  *
  * \brief User functions for input of calculation parameters.
  *

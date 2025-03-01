@@ -1377,6 +1377,8 @@ cs_mem_set_omp_target_device_id(int  device_id)
 
 #endif
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 BEGIN_C_DECLS
 
 /*============================================================================

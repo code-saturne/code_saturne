@@ -70,7 +70,7 @@
 #include "alge/cs_matrix_spmv.h"
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_matrix_spmv_cuda.c
+/*! \file cs_matrix_spmv_cuda.cu
  *
  * \brief Sparse Matrix SpMV operations with CUDA.
  */

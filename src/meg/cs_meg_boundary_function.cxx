@@ -53,8 +53,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_boundary_function.cxx
- *
  * \brief This function is used to compute user defined values for fields over
  *        a given boundary zone. The mathematical expression is defined in the
  *        GUI.

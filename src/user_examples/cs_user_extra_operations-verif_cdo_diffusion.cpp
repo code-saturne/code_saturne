@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_extra_operations-verif-diffusion.c
+ * \file cs_user_extra_operations-verif_cdo_diffusion.cpp
  *
  * \brief Additional user-defined post-processing and analysis functions
 */

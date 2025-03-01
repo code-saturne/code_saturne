@@ -135,7 +135,7 @@ char *r_gen_cells;
 char *r_gen_interior_faces;
 
 /*!
-  \var boundary_faces_r_gen
+  \var r_gen_boundary_faces
 
   Refinement generation of boundary faces. This should always be that of
   the adjacent cell.
@@ -148,7 +148,7 @@ char *r_gen_interior_faces;
 char *r_gen_boundary_faces;
 
 /*!
-  \var vertices_r_gen
+  \var r_gen_vertices
 
   Refinement generation of vertices. This is determined and stored
   when refining or coarsening a mesh.

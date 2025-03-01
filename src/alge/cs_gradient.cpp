@@ -92,7 +92,7 @@
  *============================================================================*/
 
 /*!
- * \file cs_gradient.cxx
+ * \file cs_gradient.cpp
  * \brief Gradient reconstruction.
  *
  * Please refer to the

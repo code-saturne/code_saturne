@@ -4764,7 +4764,7 @@ cs_multigrid_log(const void  *context,
  * \param[in]       min_g_rows         global number of rows on coarse grids
  *                                     under which no coarsening occurs
  * \param[in]       p0p1_relax         p0/p1 relaxation_parameter
- * \param[in]       postprocess        if > 0, postprocess coarsening
+ * \param[in]       postprocess_block_size  if > 0, postprocess coarsening
  *                                     (uses coarse row numbers
  *                                      modulo this value)
  */
@@ -4827,7 +4827,7 @@ cs_multigrid_set_coarsening_options_fine_grid
  * \brief Set multigrid parameters for associated iterative solvers.
  *
  * On a GPU, some parameters may be replaced by the closest GPU equivalents.
- * For finer control, use \ref cs_multigrid_set_coarsening_options_d after
+ * For finer control, use \ref cs_multigrid_set_solver_options_d after
  * calling this function to modify parameters for solvers running on device.
  *
  * \param[in, out]  mg                      pointer to multigrid info

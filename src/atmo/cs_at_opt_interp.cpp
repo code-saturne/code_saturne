@@ -1347,7 +1347,7 @@ cs_at_opt_interp_obs_operator(cs_measures_set_t  *ms,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute $\tens{H}\tens{B}\transpose{\tens{H}}$.
+ * \brief Compute \f$\tens{H}\tens{B}\transpose{\tens{H}}\f$.
  *
  * \param[in]  ms  pointer to measures set
  * \param[in]  oi  pointer to an optimal interpolation

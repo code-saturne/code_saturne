@@ -1504,6 +1504,8 @@ cs_f_boundary_conditions_get_pointers(int **itypfb)
  * Semi-private function definitions
  *============================================================================*/
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*----------------------------------------------------------------------------
  * Define automatic turbulence values for open boundaries.
  *----------------------------------------------------------------------------*/

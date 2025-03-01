@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_restart_checkpoint_io.c
+  \file cs_restart_main_and_aux.cpp
         Read and write functions for main and auxiliary checkpoint files.
 */
 
@@ -1269,6 +1269,8 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   cs_restart_destroy(&r);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

@@ -101,7 +101,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles_petsc.c
+  \file cs_sles_petsc.cpp
 
   \brief handling of PETSc-based linear solvers
 

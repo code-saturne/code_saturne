@@ -52,7 +52,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_physical_properties.c
+ * \file cs_user_physical_properties-compressible-flow.cpp
  *
  * \brief User definition of physical properties.
  */

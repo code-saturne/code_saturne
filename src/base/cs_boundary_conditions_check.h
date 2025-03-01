@@ -46,7 +46,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_boundary_conditions_check.c
+/*! \file cs_boundary_conditions_check.cpp
  *
  * \brief Check boundary condition codes.
  */

@@ -46,7 +46,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_boundary_conditions_set_coeffs.c
+/*! \file cs_boundary_conditions_set_coeffs.cpp
  *
  * \brief Translation of the boundary conditions given by the user in a form
  *        that fits to the solver.

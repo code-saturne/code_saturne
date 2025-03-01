@@ -70,7 +70,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_soot_model.c
+  \file cs_soot_model.cpp
         Soot related models.
 */
 
@@ -91,8 +91,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Global variables
  *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.

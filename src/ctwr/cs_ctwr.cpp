@@ -289,7 +289,6 @@ _packing_selection(void              *input,
   *elt_ids = pack_elts;
 }
 
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================

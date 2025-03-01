@@ -88,6 +88,12 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute cell reference pressure
@@ -842,10 +848,14 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   bft_printf("  ** Cooling tower model : rain mass balance\n");
   bft_printf("     ---------------------------------------\n\n");
-  bft_printf("Total mass of rain at previous timestep :   %12.5e kg \n", mass_rain_pre);
-  bft_printf("Total mass of rain at current timestep  :   %12.5e kg \n", mass_rain);
-  bft_printf("Rain mass rate of change in the domain  :   %12.5e kg/s \n", (mass_rain - mass_rain_pre) / cs_glob_time_step->dt_ref);
-  bft_printf("Outgoing rain mass flux through walls   :   %12.5e kg/s \n", mf_rain_walls);
+  bft_printf("Total mass of rain at previous timestep :   %12.5e kg \n",
+             mass_rain_pre);
+  bft_printf("Total mass of rain at current timestep  :   %12.5e kg \n",
+             mass_rain);
+  bft_printf("Rain mass rate of change in the domain  :   %12.5e kg/s \n",
+             (mass_rain - mass_rain_pre) / cs_glob_time_step->dt_ref);
+  bft_printf("Outgoing rain mass flux through walls   :   %12.5e kg/s \n",
+             mf_rain_walls);
 }
 
 /*----------------------------------------------------------------------------*/

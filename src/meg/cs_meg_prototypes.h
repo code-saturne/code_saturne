@@ -56,8 +56,6 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_boundary_function.c
- *
  * \brief This function is used to compute user defined values for fields over
  *        a given boundary zone. The mathematical expression is defined in the
  *        GUI.
@@ -83,8 +81,6 @@ cs_meg_boundary_function(const char       *zone_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_volume_function.c
- *
  * \brief This function is used to compute user defined values for fields over
  *        a given volume zone. The mathematical expression is defined in the
  *        GUI.
@@ -107,8 +103,6 @@ cs_meg_volume_function(const char        *zone_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_initialization.c
- *
  * \brief This function is used for the initalization of fields over a given
  *        volume zone. The mathematical expression is defined in the GUI.
  *
@@ -134,8 +128,6 @@ cs_meg_initialization(const char       *zone_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_source_terms.c
- *
  * \brief This function is used to compute source terms over a volume zone. The
  *        mathematical expression is defined in the GUI.
  *

@@ -145,7 +145,7 @@ BEGIN_C_DECLS
  * \param[in]     rom           cell density
  * \param[in]     romb          density at boundary faces
  * \param[in]     vel           vector variable
- * \param[in]     bc_coeff_v    BC structure for the vector variable
+ * \param[in]     bc_coeffs_v   BC structure for the vector variable
  * \param[in,out] i_massflux    mass flux at interior faces \f$ \dot{m}_\fij \f$
  * \param[in,out] b_massflux    mass flux at boundary faces \f$ \dot{m}_\fib \f$
  */

@@ -73,7 +73,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_combustion_model.c
+  \file cs_combustion_model.cpp
         Combustion  model selection parameters.
 */
 

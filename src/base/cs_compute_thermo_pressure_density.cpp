@@ -265,6 +265,8 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   *new_pther = _new_pther;
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/

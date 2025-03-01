@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_field.c
+  \file cs_field.cpp
         Field management.
 
   \struct cs_field_bc_coeffs_t

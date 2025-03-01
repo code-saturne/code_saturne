@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_mesh.c
+ * \file cs_user_mesh-input-save.cpp
  *
  * \brief Mesh input definition and mesh saving examples.
  *

@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_cf_boundary_flux.c
+  \file cs_cf_boundary_flux.cpp
 
   Compute the flux at the boundary.
 */

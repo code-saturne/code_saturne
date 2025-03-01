@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_time_moment.c
+  \file cs_time_moment.cpp
 
   \brief Temporal moments management.
 

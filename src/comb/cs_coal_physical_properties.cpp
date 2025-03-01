@@ -1595,6 +1595,8 @@ _physical_properties_combustion_drift(cs_lnum_t  n_cells)
   CS_FREE(visco);
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

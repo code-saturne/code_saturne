@@ -446,7 +446,7 @@
 
   \page cs_user_extra_operations_examples_mean_profiles Examples to generate vertical profiles for temperature
 
-  \section cs_user_extra_operations_examples_mean_profiles Example for initialization of mean profile
+  \section cs_user_extra_operations_examples_mean_profiles_init Example for initialization of mean profile
 
   \snippet cs_user_extra_operations-mean_profiles.cpp Initialize
 

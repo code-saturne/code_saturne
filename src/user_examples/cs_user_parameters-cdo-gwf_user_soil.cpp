@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters.c
+ * \file cs_user_parameters-cdo-gwf_user_soil.cpp
  *
  * \brief User functions for input of calculation parameters.
  *

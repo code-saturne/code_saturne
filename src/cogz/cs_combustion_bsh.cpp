@@ -48,7 +48,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_combustion_bsh.c
+  \file cs_combustion_bsh.cpp
         Burke Schumann combustion model.
 */
 
@@ -80,8 +80,6 @@ BEGIN_C_DECLS
 cs_real_t        cs_bsh_coeff_therm[7][2][5];
 static cs_real_t bsh_lib[N_XR][N_Z][N_VAR_BSH];
 static cs_real_t turb_bsh_lib[CS_BSH_NVAR_TURB][N_XR][N_ZVAR][N_Z];
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Private function definitions
@@ -381,7 +379,7 @@ _integral_phi_beta(cs_real_t *z,
   BFT_FREE(phi_);
 }
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions
