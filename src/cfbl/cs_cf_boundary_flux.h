@@ -46,14 +46,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_cf_boundary_flux.c
+/*! \brief Compute the flux at the boundary.
  *
- * \brief Compute the flux at the boundary.
- */
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-/*
  * \param[in]  f_id        face id
  * \param[in]  val_ext_en  Dirichlet value for the total energy
  * \param[in]  val_ext_p   Dirichlet value for the pressure

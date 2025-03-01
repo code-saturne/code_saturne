@@ -2084,7 +2084,7 @@ cs_mesh_adjacency_c2f_boundary(const cs_mesh_t  *m)
  *
  * Adjacent vertices are accessed based on the vertex with lowest id.
  * Another v2v connectivity through cells is possible. Please read the
- * \file cs_cdo_connect.c source code if interested
+ * \ref cs_cdo_connect.cpp source code if interested
  *
  * \param[in]  m  pointer to a cs_mesh_t structure
  *

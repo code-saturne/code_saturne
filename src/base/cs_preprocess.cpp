@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_preprocess.c
+  \file cs_preprocess.cpp
         Handle successive preprocessing operations.
 */
 

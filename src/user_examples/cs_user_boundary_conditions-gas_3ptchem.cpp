@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_boundary_conditions.c
+ * \file cs_user_boundary_conditions-gas_3ptchem.cpp
  *
  * \brief User functions for boundary condition definitions.
  */

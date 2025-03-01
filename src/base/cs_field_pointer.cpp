@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_field_pointer.c
+  \file cs_field_pointer.cpp
         Field pointers and ids for standard and model fields.
 */
 

@@ -62,7 +62,7 @@ typedef struct _cs_multigrid_smoother_t  cs_multigrid_smoother_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create iterative sparse linear system solver info and context used as
  *        a smoother in a multigrid solver
  *
@@ -84,7 +84,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t     smoother_type,
                              int                   n_iter);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Destroy iterative sparse linear system solver info and context used
  *        as a smoother in a multigrid solver
  *

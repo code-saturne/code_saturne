@@ -248,7 +248,7 @@ cs_balance_scalar(int                         idtvar,
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Wrapper to the function which adds the explicit part of the
  * convection/diffusion
  * terms of a transport equation of a vector field \f$ \vect{\varia} \f$.
@@ -347,7 +347,7 @@ cs_balance_vector(int                         idtvar,
                   cs_real_3_t                 smbr[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Wrapper to the function which adds the explicit part of the
  * convection/diffusion
  * terms of a transport equation of a tensor field \f$ \tens{\varia} \f$.

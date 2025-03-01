@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_cf_energy.c
+  \file cs_cf_energy.cpp
 
   Solve the convection/diffusion equation (with eventual source terms)
   for total energy over a time step.

@@ -46,7 +46,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_time_step_compute.c
+/*! \file cs_time_step_compute.cpp
  *
  * \brief Compute the local time step and the local Courant and Fourier number.
  */

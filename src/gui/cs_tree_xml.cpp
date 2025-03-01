@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_tree_xml.c
+  \file cs_tree_xml.cpp
         Tree structure and XML file mapping.
 */
 

@@ -88,7 +88,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- *! \file cs_cf_compute.c
+ *! \file cs_cf_compute.cpp
  *
  * \brief Computations for compressible flows.
 */

@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles_pc.c
+  \file cs_sles_pc_cuda.cu
 
   CUDA implementation of some linear system solver preconditionners.
 */

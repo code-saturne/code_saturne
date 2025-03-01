@@ -259,12 +259,11 @@ cs_nvd_scheme_scalar(const cs_nvd_type_t  limiter,
  *
  * \param[in]  limiter          choice of the NVD scheme
  * \param[in]  i_face_u_normal  unit normal of face ij
- * \param[in]  face_id          the current cell face
  * \param[in]  nvf_p_c          normalised property of the current cell
  * \param[in]  nvf_r_f          normalised distance from the face
  * \param[in]  nvf_r_c          normalised distance from the current cell
  * \param[in]  gradv_c          gradient at central cell
- * \param[in]  courant_c        courant at central cell
+ * \param[in]  c_courant        courant at central cell
  *
  * \return  normalised face scalar
  */
@@ -459,8 +458,8 @@ cs_slope_test(const cs_real_t   pi,
  * \param[in]     i_face_u_normal   face unit normal
  * \param[in]     gradi             gradient at cell i
  * \param[in]     gradj             gradient at cell j
- * \param[in]     grdpai            upwind gradient at cell i
- * \param[in]     grdpaj            upwind gradient at cell j
+ * \param[in]     gradsti           upwind gradient at cell i
+ * \param[in]     gradstj           upwind gradient at cell j
  * \param[in]     i_massflux        mass flux at face (from i to j)
  * \param[out]    testij            value of slope test first criterion
  * \param[out]    tesqck            value of slope test second criterion
@@ -1663,8 +1662,6 @@ cs_i_cd_steady_strided(cs_real_t         bldfrp,
  * \param[in]     gradj          gradient at cell j
  * \param[in]     gradupi        upwind gradient at cell i
  * \param[in]     gradupj        upwind gradient at cell j
- * \param[in]     gradi          gradient at cell i
- * \param[in]     gradj          gradient at cell j
  * \param[in]     pi             value at cell i
  * \param[in]     pj             value at cell j
  * \param[out]    pif            contribution of i to flux from i to j
@@ -1958,7 +1955,7 @@ cs_i_cd_unsteady_strided(cs_real_t         bldfrp,
  * \param[in]     i_dist          distance IJ.Nij
  * \param[in]     cell_ceni       center of gravity coordinates of cell i
  * \param[in]     cell_cenj       center of gravity coordinates of cell j
- * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_u_normal face unit normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
  * \param[in]     diipf           distance II'
  * \param[in]     djjpf           distance JJ'
@@ -3068,11 +3065,10 @@ cs_b_imposed_conv_flux(int         iconvp,
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
  * \param[in]     pipr         relaxed reconstructed value at cell i
- * \param[in]     coefap       explicit boundary coefficient for convection operator
- * \param[in]     coefbp       implicit boundary coefficient for convection operator
  * \param[in]     coface       explicit imposed convective flux value (0 otherwise).
  * \param[in]     cofbce       implicit part of imp. conv. flux value
  * \param[in]     b_massflux   mass flux at boundary face
+ * \param[in]     pfac         value at boundary face
  * \param[in,out] flux         flux at boundary face
  */
 /*----------------------------------------------------------------------------*/
@@ -3197,11 +3193,6 @@ cs_b_upwind_flux(const int        iconvp,
  * \param[in]     bc_type      type of boundary face
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
- * \param[in]     pipr         relaxed reconstructed value at cell i
- * \param[in]     coefa        explicit boundary coefficient for convection
- *                             operator
- * \param[in]     coefb        implicit boundary coefficient for convection
- *                             operator
  * \param[in]     b_massflux   mass flux at boundary face
  * \param[out]    pfac         contribution from BCs
  * \param[in,out] flux         flux at boundary face
@@ -3274,9 +3265,8 @@ cs_b_diff_flux(const int        idiffp,
  *
  * \param[in]     idiffp   diffusion flag
  * \param[in]     thetap   weighting coefficient for the theta-scheme,
- * \param[in]     inc      Not an increment flag
- * \param[in]     pipr     relaxed reconstructed value at cell i
  * \param[in]     b_visc   boundary face surface
+ * \param[in]     pfacd    value at boundary face
  * \param[in,out] flux     flux at boundary face
  */
 /*----------------------------------------------------------------------------*/

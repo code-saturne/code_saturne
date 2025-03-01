@@ -85,7 +85,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_post.c
+  \file cs_post.cpp
 
   \brief Post-processing management.
 

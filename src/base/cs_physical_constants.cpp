@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_physical_constants.c
+  \file cs_physical_constants.cpp
         Base physical constants and fluid properties data.
 */
 

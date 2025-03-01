@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-electric-arcs.c
+ * \file cs_user_initialization-electric-arcs.cpp
  *
  * \brief Electric arcs fields initialization example.
  *

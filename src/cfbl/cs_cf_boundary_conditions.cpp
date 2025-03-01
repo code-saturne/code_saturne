@@ -73,7 +73,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_cf_boundary_conditions.c
+  \file cs_cf_boundary_conditions.cpp
         Compressible flow boundary conditions.
 */
 

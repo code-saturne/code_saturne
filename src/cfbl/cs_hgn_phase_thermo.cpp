@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file cs_hgn_phase_thermo.c
+/*! \file cs_hgn_phase_thermo.cpp
  *
  *  \brief Phase thermodynamic for compressible homogeneous two-phase model.
  *

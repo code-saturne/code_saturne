@@ -90,7 +90,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_parameters.c
+  \file cs_parameters.cpp
         General parameters and options management.
 */
 

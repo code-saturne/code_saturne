@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_mesh.c
+ * \file cs_user_mesh-modify.cpp
  *
  * \brief Mesh modification example.
  *

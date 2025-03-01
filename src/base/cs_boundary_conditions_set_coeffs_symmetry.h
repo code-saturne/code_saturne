@@ -42,7 +42,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_boundary_conditions_set_coeffs_symmetry.c
+/*! \file cs_boundary_conditions_set_coeffs_symmetry.cpp
  *
  * \brief Compute the symmetry boundary condition coefficients.
  */

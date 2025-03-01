@@ -75,9 +75,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_wall_functions.c
+  \file cs_wall_functions.cpp
         Wall functions descriptor and computation.
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_wall_functions_t

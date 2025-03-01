@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_scalar_clipping.c
+  \file cs_scalar_clipping.cpp
 
   \brief Clipping scalar field.
 */

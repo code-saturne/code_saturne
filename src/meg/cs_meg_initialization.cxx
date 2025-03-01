@@ -53,8 +53,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_initialization.cxx
- *
  * \brief This function is used for the initalization of fields over a given
  *        volume zone. The mathematical expression is defined in the GUI.
  *

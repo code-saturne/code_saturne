@@ -483,7 +483,7 @@ cs_multigrid_set_plot_options(cs_multigrid_t  *mg,
                               bool             use_iteration);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Query the global multigrid parameters for parallel grid merging.
  *
  * \param[in]   mg                   pointer to multigrid info and context
@@ -503,7 +503,7 @@ cs_multigrid_get_merge_options(const cs_multigrid_t  *mg,
                                cs_gnum_t             *rows_glob_threshold);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set global multigrid parameters for parallel grid merging behavior.
  *
  * \param[in, out]  mg                   pointer to multigrid info and context
@@ -523,7 +523,7 @@ cs_multigrid_set_merge_options(cs_multigrid_t  *mg,
                                cs_gnum_t        rows_glob_threshold);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a pointer to a grid associated with a given multigrid
  *        setup and level.
  *

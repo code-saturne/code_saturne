@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_physical_model.c
+  \file cs_physical_model.cpp
         Specific physical models selection.
 
   \var cs_physical_model_type_t::CS_JOULE_EFFECT

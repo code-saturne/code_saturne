@@ -85,6 +85,8 @@ BEGIN_C_DECLS
 
 #define CS_COAL_NOXST_NPART  200
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

@@ -53,8 +53,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_immersed_boundaries_volume.cxx
- *
  * \brief This function is used to indicate to compute user defined values
  *        over a given immersed object. The mathematical expression is defined
  *        in the GUI.

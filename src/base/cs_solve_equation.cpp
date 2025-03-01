@@ -118,7 +118,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_convection_diffusion.c
+  \file cs_solve_equation.cpp
 
   \brief This subroutine performs the solving the convection/diffusion
          equation (with eventually source terms and/or drift) for a field

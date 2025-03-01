@@ -71,11 +71,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_equation_param.cxx
+  \file cs_equation_param.cpp
 
   \brief Structure and functions handling the specific settings related
          to a cs_equation_t structure
-
 */
 
 /*============================================================================

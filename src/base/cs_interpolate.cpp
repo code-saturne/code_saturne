@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_interpolate.c
+  \file cs_interpolate.cpp
         Interpolation function handling.
 */
 

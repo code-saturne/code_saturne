@@ -7487,6 +7487,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
  * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
  * \f]
  *
+ * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          pointer to field
  * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux

@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_boundary_conditions.c
+  \file cs_xdef_eval_at_zone.cpp
         Boundary condition handling.
 */
 

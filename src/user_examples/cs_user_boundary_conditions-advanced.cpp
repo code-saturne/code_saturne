@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_boundary_conditions-advanced..c
+ * \file cs_user_boundary_conditions-advanced.cpp
  *
  * \brief User functions for advanced boundary condition definitions.
  */

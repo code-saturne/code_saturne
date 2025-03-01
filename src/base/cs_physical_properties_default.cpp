@@ -101,9 +101,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_physical_properties_default.c
+  \file cs_physical_properties_default.cpp
 
-  Comoute physical properties which are variable in time.
+  Compute physical properties which are variable in time.
 */
 
 /*----------------------------------------------------------------------------*/
@@ -120,15 +120,6 @@ BEGIN_C_DECLS
 
 /*============================================================================
  * Global variables
- *============================================================================*/
-
-/*============================================================================
- * Prototypes for Fortran functions and variables.
- *============================================================================*/
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
  *============================================================================*/
 
 /*============================================================================
@@ -225,7 +216,8 @@ _field_is_constant(const char       *name,
                 "ref=%e, value=%e.\n"
                 "The calculation will not be run.\n"
                 "Check the interface, cs_user_parameters\n"
-                "and cs_user_physical_properties."), name, name, val_ref, val[ii]);
+                "and cs_user_physical_properties."),
+              name, name, val_ref, val[ii]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -921,6 +913,8 @@ _physical_properties_update_models_stage_2(void)
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
     cs_cf_physical_properties();
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions

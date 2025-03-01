@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_fluid_structure_interaction-code_aster.c
+ * \file cs_user_fluid_structure_interaction.cpp
  *
  * \brief User-defined functions dedicated to Fluid-Structure interaction
  *        modeling. Examples for code_aster.

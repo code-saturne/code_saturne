@@ -80,9 +80,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_solve_transported.c
-  * \brief  Resolution of source term convection diffusion equations
-  *         for scalars in a time step.
+ * \file cs_solve_transported_variables.cpp
+ *
+ * \brief  Resolution of source term convection diffusion equations
+ *         for scalars in a time step.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

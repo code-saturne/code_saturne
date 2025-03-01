@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization.c
+ * \file cs_user_initialization-compressible.cpp
  *
  * \brief Initialization prior to solving time steps.
  */
@@ -69,8 +69,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization.c
- *
  * \brief Initialize variables.
  *
  * This function is called at beginning of the computation
