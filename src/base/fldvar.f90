@@ -46,7 +46,6 @@ use cstphy
 use cstnum
 use entsor
 use parall
-use coincl
 use ppincl
 use radiat
 use mesh

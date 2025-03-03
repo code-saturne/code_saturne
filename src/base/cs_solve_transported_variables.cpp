@@ -53,6 +53,7 @@
 #include "cfbl/cs_cf_energy.h"
 #include "cfbl/cs_cf_model.h"
 #include "comb/cs_coal.h"
+#include "cogz/cs_combustion_slfm.h"
 #include "elec/cs_elec_model.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
@@ -101,12 +102,6 @@ BEGIN_C_DECLS
 
 void
 cs_f_kinetics_rates_compute(void);
-
-void
-cs_f_max_mid_min_progvar(const cs_real_t  *zmo,
-                         cs_real_t        *cmax,
-                         cs_real_t        *cmid,
-                         cs_real_t        *cmin);
 
 void
 cs_f_compute_gaseous_chemistry(cs_real_t dt[]);
@@ -358,7 +353,7 @@ cs_solve_transported_variables(int iterns)
                 cs_real_t hint = viscls[c_id] / b_dist[f_id];
 
                 cs_real_t cmax, cmid, cmin;
-                cs_f_max_mid_min_progvar(&fmb, &cmax, &cmid, &cmin);
+                cs_combustion_slfm_max_mid_min_progvar(fmb, &cmax, &cmid, &cmin);
                 cs_real_t pimp = cmid;
                 cs_real_t hext = cs_math_infinite_r;
 

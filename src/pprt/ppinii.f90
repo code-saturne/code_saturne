@@ -38,7 +38,6 @@ subroutine ppinii () &
 use paramx
 use cstnum
 use cstphy
-use coincl
 use ppincl
 use atincl
 use atimbr
@@ -51,48 +50,11 @@ use sshaerosol
 
 implicit none
 
-! Local variables
-
-integer         igg
-
 !===============================================================================
 
 ! Mappings to C
 
 call pp_models_init
-
-!===============================================================================
-! 1. REMPLISSAGE INCLUDE ppincl.h
-!                INCLUDE GENERAL PROPRE A LA PHYSIQUE PARTICULIERE
-!===============================================================================
-
-! ---> Initialisation pour la combustion gaz
-!       Variables algebriques ou d'etat
-do igg = 1, ngazgm
-  iym(igg) = -1
-enddo
-
-!===============================================================================
-! 2. REMPLISSAGE coincl.f90 POUR LA COMBUSTION GAZ
-!===============================================================================
-
-! ---> Modele de la flamme de diffusion Steady laminar flamelet
-
-flamelet_zm    = -1
-flamelet_zvar  = -1
-flamelet_ki    = -1
-flamelet_xr    = -1
-flamelet_temp  = -1
-flamelet_rho   = -1
-flamelet_vis   = -1
-flamelet_dt    = -1
-flamelet_temp2 = -1
-flamelet_hrr   = -1
-
-flamelet_species(:)  = -1
-
-flamelet_c     = -1
-flamelet_omg_c = -1
 
 !===============================================================================
 ! 3. Global variables for atmospheric flows (module atincl.f90)

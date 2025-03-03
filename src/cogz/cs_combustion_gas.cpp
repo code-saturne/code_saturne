@@ -45,6 +45,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_assert.h"
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
@@ -63,17 +64,6 @@
 #include "pprt/cs_combustion_model.h"
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
-
-/* Prototypes for Fortran functions */
-
-extern "C" void
-cs_f_combustion_map_variables(void);
-
-extern "C" void
-cs_f_combustion_map_properties(int iym_c[]);
-
-extern "C" void
-cs_f_steady_laminar_flamelet_verify(int *iok);
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -184,57 +174,6 @@ cs_combustion_gas_model_t  *cs_glob_combustion_gas_model = NULL;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_coini1(void);
-
-void
-cs_f_co_models_init(void);
-
-void
-cs_f_combustion_gas_get_data_file_name(int           name_max,
-                                       const char  **name,
-                                       int          *name_len);
-
-void
-cs_f_init_steady_laminar_flamelet_library(double  **flamelet_library_p);
-
-/*----------------------------------------------------------------------------
- * Initialize steady flamelet library
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * TODO: when Fortran bindings are removed, this function can be simplified,
- * so as to keep only C/C++ part (instead of being removed).
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_init_steady_laminar_flamelet_library(double  **flamelet_library_p)
-{
-  *flamelet_library_p = nullptr;
-
-  if (cs_glob_combustion_gas_model != NULL) {
-
-    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-
-    size_t n = cm->nlibvar * cm->nxr * cm->nki * cm->nzvar * cm->nzm;
-
-    CS_FREE(cm->flamelet_library_p);
-    CS_MALLOC(cm->flamelet_library_p, n, cs_real_t);
-
-    cs_real_t *_flamelet_library = cm->flamelet_library_p;
-    for (size_t i = 0; i < n; i++)
-      _flamelet_library[i] = 0;
-
-    *flamelet_library_p = cm->flamelet_library_p;
-  }
-}
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -252,11 +191,13 @@ _combustion_gas_finalize(void)
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
     CS_FREE(cm->data_file_name);
-    CS_FREE(cm->flamelet_library_p);
+    CS_FREE(cm->radiation_data_file_name);
+    CS_FREE(cm->flamelet_library);
+    CS_FREE(cm->radiation_library);
+    CS_FREE(cm->rho_library);
     CS_FREE(cm);
 
     cs_glob_combustion_gas_model = cm;
-
   }
 }
 
@@ -328,35 +269,6 @@ _add_property_1d(const char  *name,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Return the name of the data file
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   name_max <-- maximum name length
- *   name     --> pointer to associated length
- *   name_len --> length of associated length
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_combustion_gas_get_data_file_name(int           name_max,
-                                       const char  **name,
-                                       int          *name_len)
-{
-  assert(cs_glob_combustion_gas_model != NULL);
-
-  *name = cs_glob_combustion_gas_model->data_file_name;
-  *name_len = strlen(*name);
-  if (*name_len > name_max) {
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Error retrieving thermochemistry data file  (\"%s\"):\n"
-         "Fortran caller name length (%d) is too small for current length %d."),
-       *name, name_max, *name_len);
-  }
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -441,7 +353,8 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   cm->type = type;
 
-  cm->data_file_name = NULL;
+  cm->data_file_name = nullptr;
+  cm->radiation_data_file_name = nullptr;
 
   cm->use_janaf = true;
 
@@ -570,15 +483,30 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->ikimid = 1;
   cm->mode_fp2m = 1;
 
-  cm->flamelet_library_p = nullptr;
+  cm->flamelet_library = nullptr;
+  cm->radiation_library = nullptr;
+  cm->rho_library = nullptr;
+
+  cm->flamelet_zm = -1;
+  cm->flamelet_zvar = -1;;
+  cm->flamelet_xr = -1;
+  cm->flamelet_ki = -1;
+  cm->flamelet_temp = -1;
+  cm->flamelet_rho = -1;
+  cm->flamelet_vis = -1;
+  cm->flamelet_dt = -1;
+  cm->flamelet_temp2 = -1;
+  cm->flamelet_hrr = -1;
+  cm->flamelet_c = -1;
+  cm->flamelet_omg_c = -1;
+
+  cs_array_int_set_value(CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES,
+                         -1,
+                         cm->flamelet_species);
 
   /* Set finalization callback */
 
   cs_base_at_finalize(_combustion_gas_finalize);
-
-  /* Set mappings with Fortran */
-
-  cs_f_co_models_init();
 
   return cm;
 }
@@ -587,7 +515,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 /*!
  * \brief Set the thermochemical data file name.
  *
- * \param[in] file_name  name of the file.
+ * \param[in] file_name      name of the file.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -601,10 +529,74 @@ cs_combustion_gas_set_thermochemical_data_file(const char  *file_name)
               _("%s: gas combustion model not active."), __func__);
 
   BFT_FREE(cm->data_file_name);
+
   if (file_name != NULL) {
     size_t l = strlen(file_name)+1;
     BFT_REALLOC(cm->data_file_name, l, char);
     strncpy(cm->data_file_name, file_name, l);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the thermochemical data file name.
+ *
+ * \param[in] file_name      name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_set_radiation_data_file(const char  *file_name)
+{
+  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  if (cm == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: gas combustion model not active."), __func__);
+
+  BFT_FREE(cm->radiation_data_file_name);
+
+  if (file_name != NULL) {
+    size_t l = strlen(file_name)+1;
+    BFT_REALLOC(cm->radiation_data_file_name, l, char);
+    strncpy(cm->radiation_data_file_name, file_name, l);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize steady flamelet library
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_slfm_init_library(void)
+{
+  if (cs_glob_combustion_gas_model != NULL) {
+
+    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+    size_t n = cm->nlibvar * cm->nxr * cm->nki * cm->nzvar * cm->nzm;
+
+    CS_MALLOC(cm->flamelet_library, n, cs_real_t);
+
+    cs_real_t *_flamelet_library = cm->flamelet_library;
+
+    cs_array_real_fill_zero(n, _flamelet_library);
+
+    size_t n_rho_lib = 5 * cm->nxr * cm->nki * cm->nzvar * cm->nzm;
+
+    CS_MALLOC(cm->rho_library, n_rho_lib, cs_real_t);
+    cs_array_real_fill_zero(n_rho_lib, cm->rho_library);
+
+    if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE) {
+      size_t n_rad_lib = 2 * cs_glob_rad_transfer_params->nwsgg
+                       * cm->nxr * cm->nki * cm->nzvar * cm->nzm;
+
+      CS_MALLOC(cm->radiation_library, n_rad_lib, cs_real_t);
+
+      cs_array_real_fill_zero(n_rad_lib, cm->radiation_library);
+    }
   }
 }
 
@@ -682,8 +674,8 @@ cs_combustion_gas_setup(void)
 
   if (macro_type != CS_COMBUSTION_SLFM)
     fp->ro0 = fp->pther * cm->wmolg[1] / (cs_physical_constants_r * fp->t0);
-
-  cs_f_coini1();
+  else
+    fp->ro0 = cm->flamelet_library[cm->flamelet_rho];
 
   fp->roref = fp->ro0;
 
@@ -699,8 +691,6 @@ cs_combustion_gas_setup(void)
       || macro_type == CS_COMBUSTION_SLFM)
     cs_gui_combustion_gas_model_temperatures();
 
-  cs_f_coini1();
-
   /* Parameter checks
      ---------------- */
 
@@ -714,14 +704,40 @@ cs_combustion_gas_setup(void)
   }
 
   else if (macro_type == CS_COMBUSTION_SLFM) {
-    /* TODO migrate remainder of cs_steady_laminar_flamelet_verify here */
-    int iok = 0;
-    cs_f_steady_laminar_flamelet_verify(&iok);
-    if (iok != 0)
-      cs_parameters_error
-        (CS_ABORT_DELAYED, _(section_name),
-         _("incoherent or incomplete SLFM model parameters\n"
-           "detected in call to cs_steady_laminar_flamelet_verify.\n"));
+    cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                 _(section_name),
+                                 "flamelet_zm", cm->flamelet_zm, -1);
+    cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                 _(section_name),
+                                 "flamelet_zvar", cm->flamelet_zvar, -1);
+    cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                 _(section_name),
+                                 "flamelet_xr", cm->flamelet_xr, -1);
+    cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                 _(section_name),
+                                 "flamelet_temp", cm->flamelet_temp, -1);
+    cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                 _(section_name),
+                                 "flamelet_rho", cm->flamelet_rho, -1);
+    cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                 _(section_name),
+                                 "flamelet_vis", cm->flamelet_vis, -1);
+    cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                 _(section_name),
+                                 "flamelet_dt", cm->flamelet_dt, -1);
+
+    if (cm->type%100 < 2)
+      cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                     _(section_name),
+                                     "flamelet_ki", cm->flamelet_ki, -1);
+    else {
+      cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                     _(section_name),
+                                     "flamelet_c", cm->flamelet_c, -1);
+      cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                     _(section_name),
+                                     "flamelet_omg_c", cm->flamelet_omg_c, -1);
+    }
 
     if (cm->hinfue < - cs_math_big_r)
       cs_parameters_error
@@ -1137,9 +1153,6 @@ cs_combustion_gas_add_variable_fields(void)
       fluid_props->icp = -1;
     }
   }
-
-  // Map to Fortran
-  cs_f_combustion_map_variables();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1290,7 +1303,6 @@ cs_combustion_gas_add_property_fields(void)
       else
         iym_c[i] = -1;
     }
-    cs_f_combustion_map_properties(iym_c);
   }
 }
 

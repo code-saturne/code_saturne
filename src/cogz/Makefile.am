@@ -53,13 +53,13 @@ cs_combustion_boundary_conditions.h \
 cs_combustion_bsh.h \
 cs_combustion_d3p.h \
 cs_combustion_ebu.h \
+cs_combustion_slfm.h \
 cs_combustion_gas.h \
 cs_combustion_ht_convert.h \
 cs_combustion_lw.h \
 cs_combustion_physical_properties.h \
 cs_combustion_read_data.h \
 cs_soot_model.h \
-cs_steady_laminar_flamelet_source_terms.h \
 cs_cogz_headers.h
 
 # Library source files
@@ -70,18 +70,13 @@ cs_combustion_boundary_conditions.cpp \
 cs_combustion_bsh.cpp \
 cs_combustion_d3p.cpp \
 cs_combustion_ebu.cpp \
+cs_combustion_slfm.cpp \
 cs_combustion_gas.cpp \
 cs_combustion_ht_convert.cpp \
 cs_combustion_lw.cpp \
 cs_combustion_physical_properties.cpp \
 cs_combustion_read_data.cpp \
-cs_soot_model.cpp \
-cs_steady_laminar_flamelet_source_terms.cpp \
-coini1.f90 \
-cs_steady_laminar_flamelet_init.f90 \
-cs_steady_laminar_flamelet_physical_prop.f90 \
-cs_steady_laminar_flamelet_verify.f90 \
-cs_steady_laminar_flamelet_read_base.f90
+cs_soot_model.cpp
 
 # Rules for CUDA (not known by Automake)
 

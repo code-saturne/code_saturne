@@ -222,9 +222,11 @@ typedef struct {
 
   cs_combustion_gas_model_type_t  type;  /*!< combustion model type */
 
-  char   *data_file_name;       /* Name of thermochemistry data file */
+  char   *data_file_name;       /*!< Name of thermochemistry data file */
+  char   *radiation_data_file_name;
+                                /*!< Name of radiation data file in case of SLFM */
 
-  bool    use_janaf;            /*! use NIST-JANAF tables for
+  bool    use_janaf;            /*!< use NIST-JANAF tables for
                                     enthalpy/temperature conversion */
 
   int     iic;                  /*!< rank of C in gas composition (base 1) */
@@ -278,10 +280,10 @@ typedef struct {
   /* Pointers to gas combustion fields
      ---------------------------------- */
 
-  cs_field_t  *fm;      /*< mixing rate */
-  cs_field_t  *fp2m;    /*< mixing rate variance */
-  cs_field_t  *fsqm;    /*< second moment of the mixing rate */
-  cs_field_t  *pvm;     /*< transported progress variable (some SFLM variants) */
+  cs_field_t  *fm;      /*< mixing fraction */
+  cs_field_t  *fp2m;    /*< mixing fraction variance */
+  cs_field_t  *fsqm;    /*< second moment of the mixing fraction */
+  cs_field_t  *pvm;     /*< transported progress variable (some SLFM variants) */
   cs_field_t  *ygfm;    /*< fresh gas mass fraction */
   cs_field_t  *yfm;     /*< mass fraction */
   cs_field_t  *yfp2m;   /*< mass fraction variance */
@@ -348,7 +350,24 @@ typedef struct {
   /*! flamelet species names */
   char  flamelet_species_name[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES][13];
 
-  cs_real_t  *flamelet_library_p;  /*!< pointer to flamelet library */
+  cs_real_t  *flamelet_library;  /*!< pointer to flamelet library */
+
+  cs_real_t  *rho_library; /*!< pointer to density library, which is a subset of flamelet_library */
+  cs_real_t  *radiation_library; /*!< pointer to radiation library */
+
+  int flamelet_zm;
+  int flamelet_zvar;
+  int flamelet_xr;
+  int flamelet_ki;
+  int flamelet_temp;
+  int flamelet_rho;
+  int flamelet_vis;
+  int flamelet_dt;
+  int flamelet_temp2;
+  int flamelet_hrr;
+  int flamelet_c;
+  int flamelet_omg_c;
+  int flamelet_species[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
 
 } cs_combustion_gas_model_t;
 
@@ -378,15 +397,26 @@ cs_combustion_gas_model_t  *
 cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type);
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Set the thermochemical data file name.
  *
- * \param[in] file_name  name of the file.
+ * \param[in] file_name     name of the file.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_combustion_gas_set_thermochemical_data_file(const char  *file_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the radiation data file name.
+ *
+ * \param[in] file_name     name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_gas_set_radiation_data_file(const char  *file_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -396,6 +426,15 @@ cs_combustion_gas_set_thermochemical_data_file(const char  *file_name);
 
 void
 cs_combustion_gas_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize steady flamelet library
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_slfm_init_library(void);
 
 /*----------------------------------------------------------------------------*/
 /*

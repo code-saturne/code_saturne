@@ -63,11 +63,6 @@
 #include "pprt/cs_combustion_model.h"
 #include "pprt/cs_physical_model.h"
 
-/* Prototypes for Fortran functions */
-
-extern "C" int
-cs_f_flamelet_rho_idx(void);
-
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -153,7 +148,7 @@ cs_combustion_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
 
   /* Add and initialize coal inlet if not present */
 
-  if (ci == NULL) {
+  if (ci == nullptr) {
     CS_MALLOC(ci, 1, cs_combustion_bc_inlet_t);
 
     ci->zone = zone;
@@ -176,7 +171,7 @@ cs_combustion_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
     /* Link with boundary mechanism;
        This will allow simplifying later loops */
 
-    assert(cs_glob_boundaries != NULL);
+    assert(cs_glob_boundaries != nullptr);
 
     cs_boundary_t *bdy = cs_glob_boundaries;
     if (cs_boundary_id_by_zone_id(bdy, zone->id) < 0)
@@ -664,31 +659,19 @@ cs_combustion_boundary_conditions_density(void)
 
         if (ci->ientfu == 1)
           rho_b_in = pther/(cs_physical_constants_r*cm->tinfue/cm->wmolg[0]);
-        else if (ci->ientox ==1)
+        else if (ci->ientox == 1)
           rho_b_in = pther/(cs_physical_constants_r*cm->tinoxy/cm->wmolg[1]);
 
       }
       else if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] > -1) {
 
-        /* Fortran index:
-         * - if (ci->ientfu == 1)
-         *   flamelet_library(flamelet_rho, 1, 1, 1, nzm)
-         * - if (ci->ientox == 1)
-         *   flamelet_library(flamelet_rho, 1, 1, 1, 1)
-         *
-         *  TODO: to complete C/C++ migration,
-         *        replace call to cs_f_flamelet_rho_idx()
-         *        with "cm->flamelet_rho_idx", or
-         *        add cs_flamelet_library_idx function handling all indexes.
-        */
-
-        int flamelet_rho_idx = cs_f_flamelet_rho_idx();
+        int flamelet_rho_idx = cm->flamelet_rho;
 
         if (ci->ientfu == 1)
-          flamelet_rho_idx += (cm->nzm - 1)*(cm->nzvar)*(cm->nki)*(cm->nxr);
+          flamelet_rho_idx +=
+            (cm->nzm - 1)*(cm->nzvar)*(cm->nki)*(cm->nxr)*(cm->nlibvar);
 
-        rho_b_in = cm->flamelet_library_p[flamelet_rho_idx];
-
+        rho_b_in = cm->flamelet_library[flamelet_rho_idx];
       }
 
       for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {

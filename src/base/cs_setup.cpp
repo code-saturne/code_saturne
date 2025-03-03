@@ -123,9 +123,6 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_steady_laminar_flamelet_read_base(void);
-
-void
 cs_f_usipes(int *nmodpp);
 
 void
@@ -2531,8 +2528,9 @@ _read_specific_physics_data(void)
     cs_combustion_read_data();
 
   /* Diffusion flame - steady laminar flamelet approach */
-  if (pm_flag[CS_COMBUSTION_SLFM] != -1)
-    cs_f_steady_laminar_flamelet_read_base();
+  if (pm_flag[CS_COMBUSTION_SLFM] != -1) {
+    cs_combustion_slfm_read_library();
+  }
 
   /* Pulverized coal combustion */
   if (pm_flag[CS_COMBUSTION_COAL] != -1) {

@@ -141,9 +141,6 @@ cs_f_finalize_imbrication(void);
 void
 cs_f_finalize_chemistry(void);
 
-void
-cs_f_finalize_steady_laminar_flamelet_library(void);
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -940,9 +937,6 @@ cs_time_stepping(void)
       cs_f_finalize_chemistry();
 
   }
-
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0)
-    cs_f_finalize_steady_laminar_flamelet_library();
 
   if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
     cs_gas_mix_finalize();

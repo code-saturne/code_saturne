@@ -46,7 +46,6 @@ use optcal
 use cstnum
 use entsor
 use atincl
-use coincl
 use ppincl
 use field
 use cs_c_bindings
@@ -69,15 +68,6 @@ integer :: iflid
 
 call field_get_id_try('density', icrom)
 call field_get_id_try('molecular_viscosity', iviscl)
-
-! Set itemp if temperature is present as a property
-
-if (itemp .eq. 0) then
-  if (itherm.eq.2 .or. itherm.eq.4) then
-    call field_get_id_try('temperature', iflid)
-    if (iflid.ge.0) itemp = iflid
-  endif
-endif
 
 ! ---> Atmospheric modules:
 if (ippmod(iatmos).ge.0) then

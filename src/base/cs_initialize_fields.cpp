@@ -80,6 +80,7 @@
 #include "cogz/cs_combustion_d3p.h"
 #include "cogz/cs_combustion_ebu.h"
 #include "cogz/cs_combustion_lw.h"
+#include "cogz/cs_combustion_slfm.h"
 #include "comb/cs_coal_initialize.h"
 #include "ctwr/cs_ctwr_initialize.h"
 #include "elec/cs_elec_model.h"
@@ -97,11 +98,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * External function prototypes
  *============================================================================*/
-
-/* Bindings to Fortran routines */
-
-void
-cs_steady_laminar_flamelet_init(void);
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -509,7 +505,7 @@ cs_initialize_fields_stage_1(void)
       cs_combustion_d3p_fields_init0();
 
     if (pm_flag[CS_COMBUSTION_SLFM] >= 0)
-      cs_steady_laminar_flamelet_init();
+      cs_combustion_slfm_fields_init();
 
     if (pm_flag[CS_COMBUSTION_EBU] >= 0)
       cs_combustion_ebu_fields_init();

@@ -58,12 +58,15 @@
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_bsh.h"
 #include "cogz/cs_combustion_ht_convert.h"
-
+#include "rayt/cs_rad_transfer.h"
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cogz/cs_combustion_read_data.h"
+
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -89,6 +92,10 @@
 
 /*============================================================================
  * Global variables
+ *============================================================================*/
+
+/*============================================================================
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -280,15 +287,253 @@ _solve_ax_b_gauss(int               n,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read gas combustion thermophysical data for steady laminar flamelet.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_combustion_slfm_read_thermophysical_library(void)
+{
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  const int nlibvar = cm->nlibvar;
+  const int nzm = cm->nzm;
+  const int nzvar = cm->nzvar;
+  const int nxr = cm->nxr;
+  const int nki = cm->nki;
+
+  const int flamelet_zm = cm->flamelet_zm;
+  const int flamelet_zvar = cm->flamelet_zvar;
+  const int flamelet_ki = cm->flamelet_ki;
+  const int flamelet_xr = cm->flamelet_xr;
+  const int flamelet_c = cm->flamelet_c;
+  const int flamelet_rho = cm->flamelet_rho;
+
+  double *flamelet_library = cm->flamelet_library;
+  double *rho_library = cm->rho_library;
+
+  assert(flamelet_library != nullptr);
+  assert(rho_library != nullptr);
+
+  char *file_name = cm->data_file_name;
+
+  char *buf = nullptr;
+  cs_gnum_t f_size;
+  if (cs_glob_rank_id < 1)
+    f_size = cs_file_size(file_name);
+  cs_parall_bcast(0, 1, CS_GNUM_TYPE, &f_size);
+
+  if (f_size <= 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("File \"%s\" seems empty."), file_name);
+
+  CS_MALLOC(buf, f_size + 1, char);
+
+  cs_file_t *f = cs_file_open_serial(file_name, CS_FILE_MODE_READ);
+  cs_file_read_global(f, buf, 1, f_size);
+  buf[f_size] = '\0';
+  f = cs_file_free(f);
+
+  // Classic steady laminar flamelet tabulation order
+  if (cm->type%100 < 2) {
+    int line_num = 1;
+    char *line = buf, *last = &buf[f_size];
+
+    // Skip the 2 head lines
+    _next_line(file_name, line_num, line, last, false);
+    _next_line(file_name, line_num, line, last, false);
+
+    for (int iki = 0; iki < nki; iki++)
+      for (int ixr = 0; ixr < nxr; ixr++)
+        for (int izvar = 0; izvar < nzvar; izvar++) {
+
+          // skip the 1 seperation line in .Dat
+          _next_line(file_name, line_num, line, last, false);
+
+          for (int iz = 0; iz < nzm; iz++) {
+            int shift = iz*nzvar*nki*nxr*nlibvar
+                         + izvar*nki*nxr*nlibvar
+                               + iki*nxr*nlibvar
+                                   + ixr*nlibvar;
+
+            char* token = strtok(line, " ,\t"); // Delimited by space/comma/tab
+            int idx = 0;
+            while (token != nullptr && idx < nlibvar) {
+              flamelet_library[shift + idx] = atof(token);
+              idx++;
+              token = strtok(nullptr, " ,\t"); // Next token
+            }
+            if (idx != nlibvar) {
+              bft_error(__FILE__, __LINE__, 0,
+               _("%s: error reading flamelet base at line %d."),
+               __func__,  line_num);
+            }
+            _next_line(file_name, line_num, line, last, false);
+          }
+        }
+
+    const int var_sel[5] = {flamelet_zm, flamelet_zvar, flamelet_xr,
+                            flamelet_rho, flamelet_ki};
+
+    const int n_var_local = 5;
+    for (int iz = 0; iz < nzm; iz++)
+      for (int izvar = 0; izvar < nzvar; izvar++)
+        for (int iki = 0; iki < nki; iki++)
+          for (int ixr = 0; ixr < nxr; ixr++) {
+            int shift = iz*nzvar*nki*nxr*n_var_local
+                         + izvar*nki*nxr*n_var_local
+                               + iki*nxr*n_var_local
+                                   + ixr*n_var_local;
+
+            for (int idx = 0; idx < n_var_local; idx++)
+              rho_library[shift + idx] = flamelet_library[shift + var_sel[idx]];
+          }
+  }
+  else { // FPV tabulation order
+    int line_num = 1;
+    char *line = buf, *last = &buf[f_size];
+
+    // Skip the 2 head lines
+    _next_line(file_name, line_num, line, last, false);
+    _next_line(file_name, line_num, line, last, false);
+
+    for (int ixr = 0; ixr < nxr; ixr++)
+      for (int iki = 0; iki < nki; iki++)
+        for (int izvar = 0; izvar < nzvar; izvar++) {
+
+          // skip the 1 seperation line in .Dat
+          _next_line(file_name, line_num, line, last, false);
+
+          for (int iz = 0; iz < nzm; iz++) {
+            int shift = iz*nzvar*nxr*nki*nlibvar
+                         + izvar*nxr*nki*nlibvar
+                               + ixr*nki*nlibvar
+                                   + iki*nlibvar;
+
+            char* token = strtok(line, " ,\t"); // Delimited by space/comma/tab
+
+            int idx = 0;
+            while (token != nullptr && idx < nlibvar) {
+              flamelet_library[shift + idx] = atof(token);
+              idx++;
+              token = strtok(nullptr, " ,\t"); // Next token
+            }
+            if (idx != nlibvar) {
+              bft_error(__FILE__, __LINE__, 0,
+               _("%s: error reading flamelet base at line %d."),
+               __func__,  line_num);
+            }
+            _next_line(file_name, line_num, line, last, false);
+          }
+        }
+
+    const int var_sel[5] = {flamelet_zm, flamelet_zvar, flamelet_xr,
+                            flamelet_rho, flamelet_c};
+    const int n_var_local = 5;
+    for (int iz = 0; iz < nzm; iz++)
+      for (int izvar = 0; izvar < nzvar; izvar++)
+        for (int ixr = 0; ixr < nxr; ixr++)
+          for (int iki = 0; iki < nki; iki++) {
+            int shift = iz*nzvar*nxr*nki*n_var_local
+                         + izvar*nxr*nki*n_var_local
+                               + ixr*nki*n_var_local
+                                   + iki*n_var_local;
+
+            for (int idx = 0; idx < n_var_local; idx++)
+              rho_library[shift + idx] = flamelet_library[shift + var_sel[idx]];
+        }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read absorption/emmission coefficients for steady laminar flamelet.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_combustion_slfm_read_radiation_library(void)
+{
+  if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_NONE)
+    return;
+
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  const int nzm = cm->nzm;
+  const int nzvar = cm->nzvar;
+  const int nxr = cm->nxr;
+  const int nki = cm->nki;
+
+  const int nwsgg = cs_glob_rad_transfer_params->nwsgg;
+  double *radiation_library = cm->radiation_library;
+
+  assert(radiation_library != nullptr);
+
+  char *file_name = cm->radiation_data_file_name;
+
+  char *buf = nullptr;
+  cs_gnum_t f_size;
+  if (cs_glob_rank_id < 1)
+    f_size = cs_file_size(file_name);
+  cs_parall_bcast(0, 1, CS_GNUM_TYPE, &f_size);
+
+  if (f_size <= 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("File \"%s\" seems empty."), file_name);
+
+  CS_MALLOC(buf, f_size + 1, char);
+
+  cs_file_t *f = cs_file_open_serial(file_name, CS_FILE_MODE_READ);
+  cs_file_read_global(f, buf, 1, f_size);
+  buf[f_size] = '\0';
+  f = cs_file_free(f);
+
+  // Classic steady laminar flamelet tabulation order
+  if (cm->type%100 < 2) {
+    int line_num = 1;
+    char *line = buf, *last = &buf[f_size];
+
+    for (int iki = 0; iki < nki; iki++)
+      for (int ixr = 0; ixr < nxr; ixr++)
+        for (int izvar = 0; izvar < nzvar; izvar++)
+          for (int iz = 0; iz < nzm; iz++) {
+            for (int ig = 0; ig < nwsgg; ig++) {
+              int shift = iz*nzvar*nki*nxr*nwsgg*2
+                           + izvar*nki*nxr*nwsgg*2
+                                 + iki*nxr*nwsgg*2
+                                     + ixr*nwsgg*2;
+              sscanf(line, "%lf %lf", &radiation_library[shift],
+                                      &radiation_library[shift + 1]);
+              _next_line(file_name, line_num, line, last, false);
+            }
+          }
+  }
+  else { // FPV tabulation order
+    int line_num = 1;
+    char *line = buf, *last = &buf[f_size];
+
+    for (int ixr = 0; ixr < nxr; ixr++)
+      for (int iki = 0; iki < nki; iki++)
+        for (int izvar = 0; izvar < nzvar; izvar++)
+          for (int iz = 0; iz < nzm; iz++) {
+            for (int ig = 0; ig < nwsgg; ig++) {
+              int shift = iz*nzvar*nxr*nki*nwsgg*2
+                           + izvar*nxr*nki*nwsgg*2
+                                 + ixr*nki*nwsgg*2
+                                     + iki*nwsgg*2;
+              sscanf(line, "%lf %lf", &radiation_library[shift],
+                                      &radiation_library[shift + 1]);
+              _next_line(file_name, line_num, line, last, false);
+            }
+          }
+  }
+}
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
-/*============================================================================
- * Private function definitions
- *============================================================================*/
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -1305,6 +1550,20 @@ cs_combustion_read_data(void)
     }
     cs_log_printf(CS_LOG_SETUP, "\n");
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read necessary libraries for steady laminar flamelet.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_slfm_read_library(void)
+{
+  cs_combustion_slfm_init_library();
+  _combustion_slfm_read_thermophysical_library();
+  _combustion_slfm_read_radiation_library();
 }
 
 /*----------------------------------------------------------------------------*/

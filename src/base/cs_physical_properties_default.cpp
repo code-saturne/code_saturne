@@ -85,6 +85,7 @@
 
 #include "pprt/cs_physical_model.h"
 #include "cogz/cs_combustion_ebu.h"
+#include "cogz/cs_combustion_slfm.h"
 #include "cogz/cs_combustion_physical_properties.h"
 #include "comb/cs_coal_physical_properties.h"
 #include "ctwr/cs_ctwr_physical_properties.h"
@@ -131,9 +132,6 @@ BEGIN_C_DECLS
 
 void
 cs_f_physical_properties2(void);
-
-void
-cs_steady_laminar_flamelet_physical_prop(void);
 
 void
 cs_combustion_lw_physical_prop(void);
@@ -863,12 +861,17 @@ _init_boundary_temperature(void)
  * This is called before the user sets/modifies physical properties which
  * are variable in time
  *
+ * \param[in]     iterns     Navier-Stokes sub-iterations indicator:
+ *                           - if strictly negative, indicate that this
+ *                                function is called outside Navier-Stokes loop
+ *                           - if positive, Navier-Stokes iteration number.
  * \param[in, out]   mbrom   filling indicator of romb
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_physical_properties_update_models_stage_1(int  *mbrom)
+_physical_properties_update_models_stage_1(int   iterns,
+                                           int  *mbrom)
 {
   const int *pm_flag = cs_glob_physical_model_flag;
 
@@ -882,8 +885,7 @@ _physical_properties_update_models_stage_1(int  *mbrom)
     *mbrom = 1;
   }
   else if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
-    cs_combustion_physical_properties_update_d3p();
-    cs_steady_laminar_flamelet_physical_prop();
+    cs_combustion_slfm_physical_properties(iterns);
     *mbrom = 1;
   }
   else if (pm_flag[CS_COMBUSTION_EBU] >= 0) {
@@ -972,7 +974,8 @@ cs_physical_properties_update(int   iterns)
 
   // First computation of physical properties for specific physics
   // BEFORE the user
-  _physical_properties_update_models_stage_1(&mbrom);
+  _physical_properties_update_models_stage_1(iterns,
+                                             &mbrom);
 
   /* Interface code_saturne
      ---------------------- */

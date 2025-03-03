@@ -66,7 +66,6 @@ atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
 ctwr/ctincl.f90 \
 pprt/ppincl.f90 \
-cogz/coincl.f90 \
 rayt/radiat.f90
 
 # Module dependencies (handled manually, as Automake does

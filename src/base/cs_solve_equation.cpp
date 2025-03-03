@@ -101,7 +101,7 @@
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_ebu.h"
 #include "cogz/cs_combustion_lw.h"
-#include "cogz/cs_steady_laminar_flamelet_source_terms.h"
+#include "cogz/cs_combustion_slfm.h"
 #include "cogz/cs_soot_model.h"
 #include "comb/cs_coal_source_terms.h"
 
@@ -869,7 +869,7 @@ _physical_model_source_terms(cs_field_t        *f,
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
     int cm_type = cm->type / 100;
     if (cm_type == CS_COMBUSTION_SLFM)
-      cs_steady_laminar_flamelet_source_terms(f, rhs, fimp);
+      cs_combustion_slfm_source_terms(f, rhs, fimp);
 
     if (cm->isoot >= 1) {
       if (f == cm->fsm || f == cm->npm)
