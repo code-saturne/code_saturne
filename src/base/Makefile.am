@@ -208,7 +208,8 @@ csbase_include_HEADERS += \
 cs_base_cuda.h \
 cs_math_cuda.cuh \
 cs_array_cuda.h \
-cs_cuda_contrib.h
+cs_cuda_contrib.h \
+cs_cuda_reduce.h
 
 noinst_HEADERS += \
 cs_halo_cuda.h

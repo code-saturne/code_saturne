@@ -347,6 +347,46 @@ cs_cuda_get_stream(int  stream_id);
 cudaStream_t
 cs_cuda_get_stream_prefetch(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return stream id in stream pool matching a given CUDA stream.
+ *
+ * If the stream is not presnet in the stream pool, return -1.
+ *
+ * \param [in]  handle to given streams
+ *
+ * \returns if of stream in pool, or -1.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cuda_get_stream_id(cudaStream_t  stream);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return pointers to reduction buffers needed for 2-stage reductions.
+ *
+ * These buffers are used internally by CUDA 2-stage operations, and are
+ * allocated and resized updon demand.
+ *
+ * \param[in]   stream_id   stream id in pool
+ * \param[in]   n_elts      size of arrays
+ * \param[in]   n_elts      size of arrays
+ * \param[in]   elt_size    size of element or structure simultaneously reduced
+ * \param[in]   grid_size   associated grid size
+ * \param[out]  r_grid      first stage reduce buffer
+ * \param[out]  r_reduce    second stage (final result) reduce buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_get_2_stage_reduce_buffers(int            stream_id,
+                                   cs_lnum_t      n_elts,
+                                   size_t         elt_size,
+                                   unsigned int   grid_size,
+                                   void*         &r_grid,
+                                   void*         &r_reduce);
+
 #endif /* defined(__NVCC__) */
 
 BEGIN_C_DECLS

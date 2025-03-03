@@ -84,6 +84,13 @@ int  cs_glob_cuda_n_mp = -1;
 static int            _cs_glob_cuda_n_streams = -1;
 static cudaStream_t  *_cs_glob_cuda_streams = nullptr;
 
+/* Reduce buffers associated with streams in pool */
+
+static unsigned *_r_elt_size = nullptr;
+static unsigned *_r_grid_size = nullptr;
+static void  **_r_reduce = nullptr;
+static void  **_r_grid = nullptr;
+
 static cudaStream_t _cs_glob_stream_pf = 0;
 
 /* Allow graphs for kernel launches ? May interfere with profiling (nsys),
@@ -107,10 +114,19 @@ finalize_streams_(void)
   cs_mem_cuda_set_prefetch_stream(0);
   cudaStreamDestroy(_cs_glob_stream_pf);
 
-  for (int i = 0; i < _cs_glob_cuda_n_streams; i++)
+  for (int i = 0; i < _cs_glob_cuda_n_streams; i++) {
     cudaStreamDestroy(_cs_glob_cuda_streams[i]);
+    CS_FREE(_r_reduce[i]);
+    CS_FREE(_r_grid[i]);
+  }
 
   CS_FREE(_cs_glob_cuda_streams);
+
+  CS_FREE(_r_elt_size);
+  CS_FREE(_r_grid_size);
+  CS_FREE(_r_reduce);
+  CS_FREE(_r_grid);
+
   _cs_glob_cuda_n_streams = 0;
 }
 
@@ -323,8 +339,18 @@ cs_cuda_get_stream(int  stream_id)
   }
 
   CS_REALLOC(_cs_glob_cuda_streams, stream_id+1, cudaStream_t);
-  for (int i = _cs_glob_cuda_n_streams; i < stream_id+1; i++)
+  CS_REALLOC(_r_elt_size, stream_id+1, unsigned);
+  CS_REALLOC(_r_grid_size, stream_id+1, unsigned);
+  CS_REALLOC(_r_reduce, stream_id+1, void *);
+  CS_REALLOC(_r_grid, stream_id+1, void *);
+
+  for (int i = _cs_glob_cuda_n_streams; i < stream_id+1; i++) {
     cudaStreamCreate(&_cs_glob_cuda_streams[i]);
+    _r_elt_size[i] = 0;
+    _r_grid_size[i] = 0;
+    _r_reduce[i] = nullptr;
+    _r_grid[i] = nullptr;
+  }
 
   _cs_glob_cuda_n_streams = stream_id+1;
 
@@ -345,6 +371,77 @@ cudaStream_t
 cs_cuda_get_stream_prefetch(void)
 {
   return _cs_glob_stream_pf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return stream id in stream pool matching a given CUDA stream.
+ *
+ * If the stream is not presnet in the stream pool, return -1.
+ *
+ * \param [in]  handle to given streams
+ *
+ * \returns if of stream in pool, or -1.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cuda_get_stream_id(cudaStream_t  stream)
+{
+  for (int i = 0; i < _cs_glob_cuda_n_streams; i++)
+    if (stream == _cs_glob_cuda_streams[i])
+      return i;
+
+  return -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointers to reduction buffers needed for 2-stage reductions.
+ *
+ * These buffers are used internally by CUDA 2-stage operations, and are
+ * allocated and resized updon demand.
+ *
+ * \param[in]   stream_id   stream id in pool
+ * \param[in]   n_elts      size of arrays
+ * \param[in]   n_elts      size of arrays
+ * \param[in]   elt_size    size of element or structure simultaneously reduced
+ * \param[in]   grid_size   associated grid size
+ * \param[out]  r_grid      first stage reduce buffer
+ * \param[out]  r_reduce    second stage (final result) reduce buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_get_2_stage_reduce_buffers(int            stream_id,
+                                   cs_lnum_t      n_elts,
+                                   size_t         elt_size,
+                                   unsigned int   grid_size,
+                                   void*         &r_grid,
+                                   void*         &r_reduce)
+{
+  assert(stream_id > -1 && stream_id < _cs_glob_cuda_n_streams);
+
+  unsigned int t_grid_size = grid_size * elt_size;
+
+  if (_r_elt_size[stream_id] < elt_size) {
+    _r_elt_size[stream_id] = elt_size;
+    CS_FREE_HD(_r_reduce[stream_id]);
+    unsigned char *b_ptr;
+    CS_MALLOC_HD(b_ptr, elt_size, unsigned char, CS_ALLOC_HOST_DEVICE_SHARED);
+    _r_reduce[stream_id] = b_ptr;
+  }
+
+  if (_r_grid_size[stream_id] < t_grid_size) {
+    _r_grid_size[stream_id] = t_grid_size;
+    CS_FREE(_r_grid[stream_id]);
+    unsigned char *b_ptr;
+    CS_MALLOC_HD(b_ptr, _r_grid_size[stream_id], unsigned char, CS_ALLOC_DEVICE);
+    _r_grid[stream_id] = b_ptr;
+  }
+
+  r_grid = _r_grid[stream_id];
+  r_reduce = _r_reduce[stream_id];
 }
 
 #endif /* defined(__CUDACC__) */

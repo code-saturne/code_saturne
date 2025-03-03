@@ -90,6 +90,32 @@
 /*----------------------------------------------------------------------------*/
 
 /*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+template<size_t stride>
+struct cs_double_n {
+  double r[stride];
+};
+
+template<size_t stride>
+struct cs_reduce_sum_n {    // struct: class with only public members
+  using T = cs_double_n<stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++)
+      a.r[i] = 0.;;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++)
+      a.r[i] += b.r[i];
+  }
+};
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -235,7 +261,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   double epsilp = eqp->epsilo;
   double thetap = eqp->theta;
 
-  const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t  *cell_vol = mq->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
@@ -649,30 +675,32 @@ _equation_iterative_solve_strided(int                   idtvar,
   CS_MALLOC_HD(w1, n_cols, var_t, amode);
   CS_MALLOC_HD(w2, n_cols, var_t, amode);
 
-  cs_real_t *pvar_i;
-  CS_MALLOC_HD(pvar_i, n_cols, cs_real_t, amode);
-
   /* Compute the L2 norm of the variable */
 
-  // FIXME: use cs_array_reduce_wsum_components_l or similar function
-  //        to avoid looping on dimension and extra copy.
-  //        We also need to run this computation on GPU.
+  struct cs_double_n<stride> rd;
+  struct cs_reduce_sum_n<stride> reducer;
 
-  for (cs_lnum_t i = 0; i < stride; i++) {
+  ctx.parallel_for_reduce
+    (n_cells, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<stride> &res) {
+       cs_real_t c_vol = cell_vol[c_id];
+       for (size_t i = 0; i < stride; i++)
+         res.r[i] = pvar[c_id][i] * c_vol;
+     });
+  ctx.wait();
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      pvar_i[c_id] = pvar[c_id][i];
-
-    cs_real_t p_mean = cs_gmean(n_cells, mq->cell_vol, pvar_i);
-
+  cs_real_t p_mean[stride];
+  for (size_t i = 0; i < stride; i++) {
+    p_mean[i] = rd.r[i] / mq->tot_vol;
     if (iwarnp >= 2)
-      bft_printf("Spatial average of X_%d^n = %f\n", i, p_mean);
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      w2[c_id][i] = (pvar[c_id][i] - p_mean);
-
+      bft_printf("Spatial average of X_%d^n = %f\n", i, p_mean[i]);
   }
-  CS_FREE_HD(pvar_i);
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      w2[c_id][i] = (pvar[c_id][i] - p_mean[i]);
+    }
+  });
 
   cs_matrix_vector_multiply(a,
                             (cs_real_t *)w2,

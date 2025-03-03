@@ -61,7 +61,7 @@ struct cs_data_1r_2i {   // struct: class with only public members
   // Members
   cs_real_t r[1];
   cs_lnum_t i[2];
-
+#if 0
   // Constructors
 
   cs_data_1r_2i(void) {}
@@ -70,19 +70,21 @@ struct cs_data_1r_2i {   // struct: class with only public members
                 cs_lnum_t a_i0,
                 cs_lnum_t a_i1)
     : r{a_r0}, i{a_i0, a_i1} {}
-
+#endif
 };
 
 struct cs_reduce_sum1r1i_max1i {    // struct: class with only public members
   using T = cs_data_1r_2i;
 
-  void identity(T &a) const {
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
     a.r[0] =  0.;
     a.i[0] = 0;
     a.i[1] = -INT_MAX;
   }
 
-  void combine(T &a, const T &b) const {
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
     a.r[0] += b.r[0];
     a.i[0] += b.i[0];
     a.i[1] = CS_MAX(a.i[1], b.i[1]);
@@ -118,9 +120,9 @@ _cs_dispatch_test(void)
   cs_real_3_t *a2;
   CS_MALLOC_HD(a2, n/10, cs_real_3_t, amode);
 
-  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+  // cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 #if defined(HAVE_ACCEL)
-  cs_device_context &d_ctx = static_cast<cs_device_context&>(ctx);
+  // cs_device_context &d_ctx = static_cast<cs_device_context&>(ctx);
 #endif
 
   for (int i = 0; i < 3; i++) {
@@ -186,12 +188,12 @@ _cs_dispatch_test(void)
     double s1 = 0;
     ctx.parallel_for_reduce_sum
       (n_sum, s1, [=] CS_F_HOST_DEVICE (cs_lnum_t ii,
-                                        CS_DISPATCH_SUM_DOUBLE &se) {
+                                        CS_DISPATCH_REDUCER_TYPE(double) &sum) {
         cs_real_t x = (ii%10 - 3)*pi;
 #if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
-      {se = (double)x;}
+      {sum += (double)x;}
 #else
-      {se = -(double)x;}
+      {sum += -(double)x;}
 #endif
     });
 
@@ -214,8 +216,10 @@ _cs_dispatch_test(void)
 #endif
         cs_lnum_t y = (ii%10 + 1);
 
-        res = cs_data_1r_2i(x, y, y);
-        //res.r[0] = x, res.i[0] = y, res.i[1] = y;
+        // The following is not allowed with CUDA
+        // (or needs __host__ __device__ constructor).
+        // res = cs_data_1r_2i(x, y, y);
+        res.r[0] = x, res.i[0] = y, res.i[1] = y;
       });
 
     ctx.wait();

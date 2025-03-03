@@ -1,5 +1,5 @@
-#ifndef __CS_DISPATCH_H__
-#define __CS_DISPATCH_H__
+#ifndef CS_DISPATCH_H
+#define CS_DISPATCH_H
 
 /*============================================================================
  * Class to dispatch computation using various runtimes (OpenMP, CUDA, ...)
@@ -53,7 +53,7 @@
 
 #ifdef __NVCC__
 #include "base/cs_base_cuda.h"
-#include "alge/cs_blas_cuda.h"
+#include "base/cs_cuda_reduce.h"
 #include "cs_math_cuda.cuh"
 #endif
 
@@ -72,11 +72,11 @@
 
 #if defined(SYCL_LANGUAGE_VERSION)
 
-#define CS_DISPATCH_SUM_DOUBLE auto
+#define CS_DISPATCH_REDUCER_TYPE(type) auto
 
 #else
 
-#define CS_DISPATCH_SUM_DOUBLE double
+#define CS_DISPATCH_REDUCER_TYPE(type) type
 
 #endif
 
@@ -127,17 +127,17 @@ public:
 
   // Parallel reduction with simple sum.
   // Must be redefined by the child class
-  template <class F, class... Args>
+  template <class T, class F, class... Args>
   decltype(auto)
   parallel_for_reduce_sum
-    (cs_lnum_t n, double& sum, F&& f, Args&&... args) = delete;
+    (cs_lnum_t n, T& sum, F&& f, Args&&... args) = delete;
 
   // Parallel reduction with reducer template.
   // Must be redefined by the child class
-  template <class R, class RO, class F, class... Args>
+  template <class T, class R, class F, class... Args>
   decltype(auto)
   parallel_for_reduce
-    (cs_lnum_t n, R& r, RO& reducer, F&& f, Args&&... args) = delete;
+    (cs_lnum_t n, T& r, R& reducer, F&& f, Args&&... args) = delete;
 
   // Wait upon completion
   // Must be redefined by the child class
@@ -229,6 +229,8 @@ public:
 
 private:
 
+#if defined(HAVE_OPENMP)
+
   // Determine number of threads that should actually be used.
   int
   n_threads(cs_lnum_t   n)
@@ -244,6 +246,8 @@ private:
     }
     return n_t;
   }
+
+#endif
 
   // Determine element range for current thread.
   void
@@ -299,9 +303,7 @@ public:
   template <class F, class... Args>
   bool
   parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-    int n_t = n_threads(n);
-
-#   pragma omp parallel for  num_threads(n_t)
+#   pragma omp parallel for  num_threads(n_threads(n))
     for (cs_lnum_t i = 0; i < n; ++i) {
       f(i, args...);
     }
@@ -349,25 +351,21 @@ public:
   }
 
   //! Plain OpenMP parallel reduction with simple sum.
-  template <class F, class... Args>
+  template <class T, class F, class... Args>
   bool
   parallel_for_reduce_sum(cs_lnum_t n,
-                          double&   sum,
+                          T&        sum,
                           F&&       f,
                           Args&&... args) {
-    int n_t = n_threads(n);
-
     sum = 0;
 
 #if 0
-#   pragma omp parallel for reduction(+:sum) num_threads(n_t)
+#   pragma omp parallel for reduction(+:sum) num_threads(n_threads(n))
     for (cs_lnum_t i = 0; i < n; ++i) {
-      double se;
-      f(i, se, args...);
-      sum += se;
+      f(i, sum, args...);
     }
 #else
-#   pragma omp parallel num_threads(n_t)
+#   pragma omp parallel num_threads(n_threads(n))
     {
       cs_lnum_t s_id, e_id;
       thread_range(n, 4, s_id, e_id);
@@ -383,18 +381,16 @@ public:
       }
 
       for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-        double sum_sblock = 0;
+        T sum_sblock = 0;
 
         for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
           cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid) + s_id;
           cs_lnum_t end_id = start_id + block_size;
           if (end_id > e_id)
             end_id = e_id;
-          double sum_block = 0;
+          T sum_block = 0;
           for (cs_lnum_t i = start_id; i < end_id; i++) {
-            double se;
-            f(i, se, args...);
-            sum_block += se;
+            f(i, sum_block, args...);
           }
           sum_sblock += sum_block;
         }
@@ -411,18 +407,16 @@ public:
   //! OpenMP parallel reduction with general reducer.
   // In case the reduction involves floating-point sums,
   // we use a Superblock / block loop to reduce numerical error.
-  template <class R, class RO, class F, class... Args>
+  template <class T, class R, class F, class... Args>
   bool
   parallel_for_reduce(cs_lnum_t n,
-                      R&        result,
-                      RO&       reducer,
+                      T&        result,
+                      R&        reducer,
                       F&&       f,
                       Args&&... args) {
-    int n_t = n_threads(n);
-
     reducer.identity(result);
 
-#   pragma omp parallel num_threads(n_t)
+#   pragma omp parallel num_threads(n_threads(n))
     {
       cs_lnum_t s_id, e_id;
       thread_range(n, 4, s_id, e_id);
@@ -438,7 +432,7 @@ public:
       }
 
       for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-        R result_sblock;
+        T result_sblock;
         reducer.identity(result_sblock);
 
         for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
@@ -446,7 +440,7 @@ public:
           cs_lnum_t end_id = start_id + block_size;
           if (end_id > e_id)
             end_id = e_id;
-          R result_block;
+          T result_block;
           reducer.identity(result_block);
           for (cs_lnum_t i = start_id; i < end_id; i++) {
             f(i, result_block, args...);
@@ -509,20 +503,22 @@ __global__ void cs_cuda_kernel_parallel_for(cs_lnum_t n, F f, Args... args) {
   }
 }
 
-/* Default kernel that loops over an integer range and calls a device functor.
+/* Default kernel that loops over an integer range and calls a device functor,
+   also reducing a sum over all elements.
    This kernel uses a grid_size-stride loop and thus guarantees that all
    integers are processed, even if the grid is smaller.
    All arguments *must* be passed by value to avoid passing CPU references
    to the GPU. */
 
-template <class F, class... Args>
+template <class T, class F, class... Args>
 __global__ void
 cs_cuda_kernel_parallel_for_reduce_sum(cs_lnum_t   n,
-                                       double     *b_res,
+                                       T          *b_res,
                                        F           f,
                                        Args...     args) {
   // grid_size-stride loop
-  extern double __shared__ stmp[];
+  extern __shared__  int p_stmp[];
+  T *stmp = reinterpret_cast<T *>(p_stmp);
   const cs_lnum_t tid = threadIdx.x;
 
   stmp[tid] = 0;
@@ -534,16 +530,62 @@ cs_cuda_kernel_parallel_for_reduce_sum(cs_lnum_t   n,
 
   switch (blockDim.x) {
   case 1024:
-    cs_blas_cuda_block_reduce_sum<1024, 1>(stmp, tid, b_res);
+    cs_cuda_reduce_block_reduce_sum<1024, 1>(stmp, tid, b_res);
     break;
   case 512:
-    cs_blas_cuda_block_reduce_sum<512, 1>(stmp, tid, b_res);
+    cs_cuda_reduce_block_reduce_sum<512, 1>(stmp, tid, b_res);
     break;
   case 256:
-    cs_blas_cuda_block_reduce_sum<256, 1>(stmp, tid, b_res);
+    cs_cuda_reduce_block_reduce_sum<256, 1>(stmp, tid, b_res);
     break;
   case 128:
-    cs_blas_cuda_block_reduce_sum<128, 1>(stmp, tid, b_res);
+    cs_cuda_reduce_block_reduce_sum<128, 1>(stmp, tid, b_res);
+    break;
+  default:
+    assert(0);
+  }
+}
+
+/* Default kernel that loops over an integer range and calls a device functor.
+   also computing a reduction over all elements.
+   This kernel uses a grid_size-stride loop and thus guarantees that all
+   integers are processed, even if the grid is smaller.
+   All arguments *must* be passed by value to avoid passing CPU references
+   to the GPU. */
+
+template <class T, class R, class F, class... Args>
+__global__ void
+cs_cuda_kernel_parallel_for_reduce(cs_lnum_t   n,
+                                   T          *b_res,
+                                   R          &reducer,
+                                   F           f,
+                                   Args...     args) {
+  // grid_size-stride loop
+  extern __shared__  int p_stmp[];
+  T *stmp = reinterpret_cast<T *>(p_stmp);
+  const cs_lnum_t tid = threadIdx.x;
+
+  reducer.identity(stmp[tid]);
+
+  for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
+       id += blockDim.x * gridDim.x) {
+    T rd;
+    f(id, rd, args...);
+    stmp[tid] = rd;
+  }
+
+  switch (blockDim.x) {
+  case 1024:
+    cs_cuda_reduce_block_reduce<1024, R>(stmp, tid, b_res);
+    break;
+  case 512:
+    cs_cuda_reduce_block_reduce<512, R>(stmp, tid, b_res);
+    break;
+  case 256:
+    cs_cuda_reduce_block_reduce<256, R>(stmp, tid, b_res);
+    break;
+  case 128:
+    cs_cuda_reduce_block_reduce<128, R>(stmp, tid, b_res);
     break;
   default:
     assert(0);
@@ -730,53 +772,58 @@ public:
 
   //! Launch kernel on the GPU with simple sum reduction
   //! The reduction involves an implicit wait().
-  template <class F, class... Args>
+  template <class T, class F, class... Args>
   bool
   parallel_for_reduce_sum(cs_lnum_t n,
-                          double&   sum,
+                          T&        sum,
                           F&&       f,
                           Args&&... args) {
-    sum = 0;
     if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
+
+    sum = 0;
 
     long l_grid_size = grid_size_;
     if (l_grid_size < 1) {
       l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
     }
     if (n == 0) {
-      sum = 0;
       return true;
     }
 
-    double *r_grid_, *r_reduce_;
-    cs_blas_cuda_get_2_stage_reduce_buffers
-      (n, 1, l_grid_size, r_grid_, r_reduce_);
+    int stream_id = cs_cuda_get_stream_id(stream_);
+    if (stream_id < 0)
+      stream_id = 0;
 
-    int smem_size = block_size_ * sizeof(double);
+    T *r_grid_, *r_reduce_;
+    cs_cuda_get_2_stage_reduce_buffers
+      (stream_id, n, sizeof(sum), l_grid_size,
+       (void *&)r_grid_, (void *&)r_reduce_);
+
+    int smem_size = block_size_ * sizeof(T);
     cs_cuda_kernel_parallel_for_reduce_sum
       <<<l_grid_size, block_size_, smem_size, stream_>>>
       (n, r_grid_, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 
     switch (block_size_) {
     case 1024:
-      cs_blas_cuda_reduce_single_block<1024, 1>
+      cs_cuda_reduce_sum_single_block<1024, 1>
         <<<1, block_size_, 0, stream_>>>
         (l_grid_size, r_grid_, r_reduce_);
       break;
     case 512:
-      cs_blas_cuda_reduce_single_block<512, 1>
+      cs_cuda_reduce_sum_single_block<512, 1>
         <<<1, block_size_, 0, stream_>>>
         (l_grid_size, r_grid_, r_reduce_);
       break;
     case 256:
-      cs_blas_cuda_reduce_single_block<256, 1>
+      cs_cuda_reduce_sum_single_block<256, 1>
         <<<1, block_size_, 0, stream_>>>
         (l_grid_size, r_grid_, r_reduce_);
       break;
     case 128:
-      cs_blas_cuda_reduce_single_block<128, 1>
+      cs_cuda_reduce_sum_single_block<128, 1>
         <<<1, block_size_, 0, stream_>>>
         (l_grid_size, r_grid_, r_reduce_);
       break;
@@ -792,16 +839,73 @@ public:
   }
 
   //! Parallel reduction with general reducer.
-  template <class R, class RO, class F, class... Args>
+  template <class T, class R, class F, class... Args>
   bool
   parallel_for_reduce(cs_lnum_t n,
-                      R&        result,
-                      RO&       reducer,
+                      T&        result,
+                      R&        reducer,
                       F&&       f,
                       Args&&... args) {
+    if (device_ < 0 || use_gpu_ == false) {
+      return false;
+    }
 
-    // TODO implement this
-    return false;
+    reducer.identity(result);
+
+    long l_grid_size = grid_size_;
+    if (l_grid_size < 1) {
+      l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
+    }
+    if (n == 0) {
+      return true;
+    }
+
+    int stream_id = cs_cuda_get_stream_id(stream_);
+    if (stream_id < 0)
+      stream_id = 0;
+
+    T *r_grid_, *r_reduce_;
+    cs_cuda_get_2_stage_reduce_buffers
+      (stream_id, n, sizeof(result), l_grid_size,
+       (void *&)r_grid_, (void *&)r_reduce_);
+
+    int smem_size = block_size_ * sizeof(T);
+
+    cs_cuda_kernel_parallel_for_reduce<T, R>
+      <<<l_grid_size, block_size_, smem_size, stream_>>>
+      (n, r_grid_, reducer, static_cast<F&&>(f),
+       static_cast<Args&&>(args)...);
+
+    switch (block_size_) {
+    case 1024:
+      cs_cuda_reduce_single_block<1024, R>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 512:
+      cs_cuda_reduce_single_block<512, R>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 256:
+      cs_cuda_reduce_single_block<256, R>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 128:
+      cs_cuda_reduce_single_block<128, R>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    default:
+      cs_assert(0);
+    }
+
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
+    CS_CUDA_CHECK(cudaGetLastError());
+    result = r_reduce_[0];
+
+    return true;
   }
 
   //! Synchronize associated stream
@@ -935,23 +1039,24 @@ public:
   }
 
   //! Launch kernel with simple sum reduction.
-  template <class F, class... Args>
+  template <class T, class F, class... Args>
   bool
   parallel_for_reduce_sum(cs_lnum_t n,
-                          double&   sum_,
+                          T&        sum_,
                           F&&       f,
                           Args&&... args) {
-    sum_ = 0;
     if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
+    sum_ = 0;
+
     // TODO: use persistent allocation as we do in CUDA BLAS to avoid
     //       excess allocation/deallocation.
-    double *sum_ptr = (double *)sycl::malloc_shared(sizeof(double), queue_);
+    T *sum_ptr = (T *)sycl::malloc_shared(sizeof(T), queue_);
 
     queue_.parallel_for(n,
-                        sycl::reduction(sum_ptr, 0., sycl::plus<double>()),
+                        sycl::reduction(sum_ptr, 0., sycl::plus<T>()),
                         static_cast<F&&>(f),
                         static_cast<Args&&>(args)...).wait();
 
@@ -962,12 +1067,12 @@ public:
     return true;
   }
 
-  //! Parallel reduction with general reducer.
-  template <class R, class RO, class F, class... Args>
+  //! Parallel reduction with general reducer
+  template <class T, class R, class F, class... Args>
   bool
   parallel_for_reduce(cs_lnum_t n,
-                      R&        result,
-                      RO&       reducer,
+                      T&        result,
+                      R&        reducer,
                       F&&       f,
                       Args&&... args) {
 
@@ -1090,17 +1195,17 @@ public:
   }
 
   //! Launch kernel with simple sum reduction.
-  template <class F, class... Args>
+  template <class T, class F, class... Args>
   bool
   parallel_for_reduce_sum(cs_lnum_t n,
-                          double&   sum,
+                          T&        sum,
                           F&&       f,
                           Args&&... args) {
-    sum = 0;
     if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
+    sum = 0;
     //! Distribute to device
 #   pragma omp target teams distribute parallel for reduction(+:sum)
     for (cs_lnum_t i = 0; i < n; ++i) {
@@ -1111,11 +1216,11 @@ public:
   }
 
   //! Parallel reduction with general reducer.
-  template <class R, class RO, class F, class... Args>
+  template <class T, class R, class F, class... Args>
   bool
   parallel_for_reduce(cs_lnum_t n,
-                      R&        result,
-                      RO&       reducer,
+                      T&        result,
+                      R&        reducer,
                       F&&       f,
                       Args&&... args) {
 
@@ -1240,9 +1345,9 @@ public:
   }
 
   // Abort execution if no execution method is available.
-  template <class F, class... Args>
+  template <class T, class F, class... Args>
   bool parallel_for_reduce_sum([[maybe_unused]] cs_lnum_t  n,
-                               [[maybe_unused]] double&    sum,
+                               [[maybe_unused]] T&         sum,
                                [[maybe_unused]] F&&        f,
                                [[maybe_unused]] Args&&...  args) {
     cs_assert(0);
@@ -1250,10 +1355,10 @@ public:
   }
 
   // Abort execution if no execution method is available.
-  template <class R, class RO, class F, class... Args>
+  template <class T, class R, class F, class... Args>
   bool parallel_for_reduce([[maybe_unused]] cs_lnum_t  n,
-                           [[maybe_unused]] R&         result,
-                           [[maybe_unused]] RO&        reducer,
+                           [[maybe_unused]] T&         result,
+                           [[maybe_unused]] R&         reducer,
                            [[maybe_unused]] F&&        f,
                            [[maybe_unused]] Args&&...  args) {
     cs_assert(0);
@@ -1370,6 +1475,7 @@ public:
   /* \brief General parallel computation over elements, with a floating-point
    *        sum reduction.
    *
+   * \tparam T  reduced element type
    * \tparam F  lambda function or functor
    *
    * \param[in]  n    number of elements to compute
@@ -1378,9 +1484,9 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  template <class F, class... Args>
+  template <class T, class F, class... Args>
   auto parallel_for_reduce_sum
-    (cs_lnum_t n, double& sum, F&& f, Args&&... args) {
+    (cs_lnum_t n, T& sum, F&& f, Args&&... args) {
     bool launched = false;
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
@@ -1393,17 +1499,20 @@ public:
   /* \brief General parallel computation over elements, with a
    *        user-defined reduction.
    *
+   * \tparam T  reduced element type
+   * \tparam R  reducer class
    * \tparam F  lambda function or functor
    *
-   * \param[in]  n    number of elements to compute
-   * \param[in]  sum  resulting sum
-   * \param[in]  f    lambda function or functor to execute
+   * \param[in]   n        number of elements to compute
+   * \param[out]  result   resulting sum
+   * \param[in]   reducer  reducer object
+   * \param[in]   f        lambda function or functor to execute
    */
   /*--------------------------------------------------------------------------*/
 
-  template <class R, class RO, class F, class... Args>
+  template <class T, class R, class F, class... Args>
   auto parallel_for_reduce
-    (cs_lnum_t n, R& result, RO& reducer, F&& f, Args&&... args) {
+    (cs_lnum_t n, T& result, R& reducer, F&& f, Args&&... args) {
     bool launched = false;
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
@@ -1717,4 +1826,4 @@ cs_dispatch_sum(T                       *dest,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_DISPATCH_H__ */
+#endif /* CS_DISPATCH_H */
