@@ -682,6 +682,9 @@ _create_variable_fields(void)
         || pm_flag[CS_COMBUSTION_LW] != -1)
       cs_combustion_gas_add_variable_fields();
 
+    if (pm_flag[CS_ATMOSPHERIC] >= 0)
+      cs_atmo_add_variable_fields();
+
     cs_f_ppvarp();
 
     if (pm_flag[CS_JOULE_EFFECT] >= 1 || pm_flag[CS_ELECTRIC_ARCS] >= 1)

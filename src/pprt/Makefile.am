@@ -60,7 +60,6 @@ libcspprt_a_SOURCES = \
 cs_combustion_model.cpp \
 cs_physical_model.cpp \
 ppinii.f90 \
-pptycl.f90 \
 ppvarp.f90
 
 # Rules for CUDA (not known by Automake)

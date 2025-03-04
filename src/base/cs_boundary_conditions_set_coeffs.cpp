@@ -99,6 +99,11 @@
 #include "base/cs_wall_condensation_1d_thermal.h"
 #include "base/cs_rotation.h"
 
+#include "atmo/cs_atmo.h"
+#include "ctwr/cs_ctwr_boundary_conditions.h"
+#include "cogz/cs_combustion_boundary_conditions.h"
+#include "comb/cs_coal_boundary_conditions.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -136,10 +141,6 @@ BEGIN_C_DECLS
 int *
 cs_f_boundary_conditions_get_bc_type(void);
 
-void
-cs_f_pptycl(bool        init,
-            int        *itypfb);
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -154,6 +155,39 @@ cs_f_pptycl(bool        init,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Boundary conditions for specific physical models.
+ *----------------------------------------------------------------------------*/
+
+static void
+_specific_physical_model_bc_types(bool   init,
+                                  int   *itypfb)
+{
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  if (pm_flag[CS_ATMOSPHERIC] >= 0)
+    cs_atmo_bcond();
+
+  if (pm_flag[CS_COOLING_TOWERS] >= 0)
+    cs_ctwr_bcond();
+
+  if (init)
+    return;
+
+  if (   pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_SLFM] >= 0)
+    cs_combustion_boundary_conditions(itypfb);
+
+  else if (pm_flag[CS_COMBUSTION_EBU] >= 0)
+    cs_combustion_boundary_conditions_ebu(itypfb);
+
+  else if (pm_flag[CS_COMBUSTION_LW] >= 0)
+    cs_combustion_boundary_conditions_lw(itypfb);
+
+  if (pm_flag[CS_COMBUSTION_COAL] >= 0)
+    cs_coal_boundary_conditions(itypfb);
+}
 
 /*----------------------------------------------------------------------------
  * Compute boundary condition code for mobile meshes in rotor/stator coupling
@@ -1147,7 +1181,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           && cs_glob_physical_model_flag[CS_GAS_MIX]             == -1
           && cs_glob_physical_model_flag[CS_JOULE_EFFECT]        == -1
           && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1) {
-        cs_f_pptycl(false, bc_type);
+        _specific_physical_model_bc_types(false, bc_type);
       }
 
       if (cs_glob_ale != CS_ALE_NONE)
@@ -3824,7 +3858,7 @@ cs_boundary_conditions_set_coeffs_init(void)
       && cs_glob_physical_model_flag[CS_JOULE_EFFECT]        == -1
       && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1) {
 
-    cs_f_pptycl(true, bc_type);
+    _specific_physical_model_bc_types(true, bc_type);
   }
 
   int *isostd;

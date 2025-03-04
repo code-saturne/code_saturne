@@ -46,13 +46,6 @@ subroutine ppvarp() &
 
 use atchem
 use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use coincl
 use ppincl
 use atincl
 use field
@@ -69,29 +62,13 @@ implicit none
 integer          f_id
 
 !===============================================================================
-! Interfaces
-!===============================================================================
 
-interface
-
-  subroutine cs_atmo_add_variable_fields() &
-    bind(C, name='cs_atmo_add_variable_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_atmo_add_variable_fields
-
-end interface
-
-!===============================================================================
-
-! 6. Atmospheric model
-!---------------------
+! Atmospheric model
 
 if (ippmod(iatmos).ge.0) then
-  call cs_atmo_add_variable_fields()
-
   call init_chemistry_pointers()
-  ! Update scalar id in Fortran no need in c version
+
+  ! Update scalar ids in Fortran; not needed in c version
   if (ippmod(iatmos).eq.2) then
     call field_get_id('ym_water', f_id)
     call field_get_key_int_by_name(f_id, "scalar_id", iymw)

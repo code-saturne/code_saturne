@@ -2541,7 +2541,6 @@ cs_f_atmo_soil_init_arrays(int        *n_soil_cat,
  * Public function definitions
  *============================================================================*/
 
-
 /*----------------------------------------------------------------------------
  * initialize fields, stage 0
  *----------------------------------------------------------------------------*/
@@ -2932,11 +2931,10 @@ cs_atmo_fields_init0(void)
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------
- * Automatic boundary condition for cooling towers
+ * Automatic boundary condition for atmospheric flows
  *----------------------------------------------------------------------------*/
 
 void
@@ -3138,7 +3136,8 @@ cs_atmo_bcond(void)
       }
 
       /* For other species zero Dirichlet conditions are imposed,
-       * unless they have already been treated earlier (eg, in cs_user_boundary_conditions) */
+       * unless they have already been treated earlier
+       (eg, in cs_user_boundary_conditions) */
       for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
         const int f_id =_atmo_chem.species_to_scalar_id[ii];
         cs_field_t *f = cs_field_by_id(f_id);
@@ -3605,11 +3604,16 @@ cs_soil_model(void)
     const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
     cs_real_t *dt = cs_field_by_name("dt")->val;
     /* Post treatment fields */
-    cs_field_t *soil_sensible_heat = cs_field_by_name_try("soil_sensible_heat");
-    cs_field_t *soil_latent_heat = cs_field_by_name_try("soil_latent_heat");
-    cs_field_t *soil_thermal_rad_upward = cs_field_by_name_try("soil_thermal_rad_upward");
-    cs_field_t *soil_thermal_rad_downward = cs_field_by_name_try("soil_thermal_rad_downward");
-    cs_field_t *soil_visible_rad_absorbed = cs_field_by_name_try("soil_visible_rad_absorbed");
+    cs_field_t *soil_sensible_heat
+      = cs_field_by_name_try("soil_sensible_heat");
+    cs_field_t *soil_latent_heat
+      = cs_field_by_name_try("soil_latent_heat");
+    cs_field_t *soil_thermal_rad_upward
+      = cs_field_by_name_try("soil_thermal_rad_upward");
+    cs_field_t *soil_thermal_rad_downward
+      = cs_field_by_name_try("soil_thermal_rad_downward");
+    cs_field_t *soil_visible_rad_absorbed
+      = cs_field_by_name_try("soil_visible_rad_absorbed");
 
     /* Soil related fields */
     cs_field_t *soil_temperature = cs_field_by_name("soil_temperature");
@@ -3657,8 +3661,10 @@ cs_soil_model(void)
     cs_field_current_to_previous(soil_total_water);
 
     /* In case of multi energy balance (MEB) models including PV */
-    cs_field_t *cover_geometry_ratio = cs_field_by_name_try("cover_geometry_ratio");
-    cs_field_t *cover_reflectivity = cs_field_by_name_try("cover_reflectivity");
+    cs_field_t *cover_geometry_ratio
+      = cs_field_by_name_try("cover_geometry_ratio");
+    cs_field_t *cover_reflectivity
+      = cs_field_by_name_try("cover_reflectivity");
     cs_field_t *cover_temperature_radiative
       = cs_field_by_name_try("cover_temperature_radiative");
 
@@ -4071,10 +4077,11 @@ cs_atmo_init_meteo_profiles(void)
 
     if (it == it_max) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("Meteo preprocessor did not converge to find inverse\n"
-                   "of LMO length, current value is %f.\n"
-                   "Please, check reference velocity, reference altitude and ustar\n"),
-                 dlmo);
+      bft_printf
+        (_("Meteo preprocessor did not converge to find inverse\n"
+           "of LMO length, current value is %f.\n"
+           "Please, check reference velocity, reference altitude and ustar\n"),
+         dlmo);
     }
 
     aopt->meteo_dlmo = dlmo;
@@ -4190,7 +4197,8 @@ cs_atmo_init_meteo_profiles(void)
     aopt->meteo_qw0    = qw1
       - aopt->meteo_qwstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
     aopt->meteo_t0     = t1
-      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;//FIXME conversion theta->T
+      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
+      //FIXME conversion theta->T
     aopt->meteo_z0     = z1 * exp(-cs_turb_xkappa * u1
         / aopt->meteo_ustar0);
   }
