@@ -484,8 +484,9 @@ _solve_most(int              n_var,
         && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
       cs_soil_model();
 
-    /* After coefficient are computed, we can easily deduce the terms
+    /* After coefficients are computed, we can easily deduce the terms
        to send for boundaries coupling (such as with Syrthes) */
+
     if (*itrfin == 1 && *itrfup == 1) {
       if (isvhb > -1)
         cs_syr_coupling_send_boundary(hbord, theipb);

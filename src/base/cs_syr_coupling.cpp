@@ -3181,7 +3181,6 @@ cs_syr_coupling_recv_tsolid(int        cpl_id,
 
   else
     _syr_coupling_recv_tsolid(syr_coupling, t_solid, mode);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3252,7 +3251,7 @@ cs_syr_coupling_recv_tf_hf
     if (coupling_ent == nullptr)
       return;
 
-    /* Exchange blcok */
+    /* Exchange block */
     constexpr int n_arrays = 2;
 
     const cs_lnum_t n_cpl_elts = coupling_ent->n_elts;

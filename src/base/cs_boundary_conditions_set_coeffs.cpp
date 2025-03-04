@@ -1,5 +1,6 @@
 /*============================================================================
- * Boundary condition management.
+ * Translation of the boundary conditions given by the user in a form
+ * that fits the solver.
  *============================================================================*/
 
 /*
@@ -107,6 +108,18 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*=============================================================================
+ * Additional Doxygen documentation
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*! \file cs_boundary_conditions_set_coeffs.cpp
+ *
+ * \brief Translation of the boundary conditions given by the user in a form
+ *        that fits the solver.
+ */
+/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
  * Macro definitions
@@ -831,9 +844,9 @@ _boundary_condition_wall_condensation_1d_thermal(void)
  *                               saved at the walls, or -1.
  * \param[in]     itrale        ALE iteration number
  * \param[in]     italim        for ALE
- * \param[in]     itrfin        for ALE
+ * \param[in]     itrfin        Last velocity-pressure sub-iteration indicator
  * \param[in]     ineefl        for ALE
- * \param[in]     itrfup        for ALE
+ * \param[in]     itrfup        Update after velocity-pressure sub-iterations
  * \param[in,out] isostd        indicator for standard outlet
  *                              and reference face index
  * \param[out]    visvdr        dynamic viscosity after V. Driest damping in
@@ -992,8 +1005,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      at boundaries (such as Syrthes), unless we need to do an additional pass
      so as to centralize what is relative to the Syrthes coupling.y
      We place here the  call relative to the Syrthes volume coupling so as
-     to benefit from the lates computed velocity if we loop on U/P.
-     The colume coupling must be called before the surface one to follow
+     to benefit from the latest computed velocity if we loop on U/P.
+     The volume coupling must be called before the surface one to follow
      the communication scheme. */
 
   if (itrfin == 1 && itrfup == 1) {
