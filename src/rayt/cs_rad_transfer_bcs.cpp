@@ -388,13 +388,12 @@ cs_rad_transfer_bcs(int bc_type[])
                                    f_beps->val,
                                    text);
 
-    //FIXME we do the contrary of the message...
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
                     "   ** Information on the radiative module\n"
                     "      -----------------------------------\n"
-                    "    Initialization of the wall temperature\n"
-                    "    with incident flux at walls (qincid).\n"));
+                    "    Initialization of the incident flux at walls\n"
+                    "    with the wall temperature.\n"));
 
     /* twall in Kelvin and qincid in W/m2  */
 

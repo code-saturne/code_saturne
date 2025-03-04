@@ -2,7 +2,8 @@
 #define __CS_BOUNDARY_CONDITIONS_SET_COEFFS_H__
 
 /*============================================================================
- * Boundary condition management.
+ * Translation of the boundary conditions given by the user in a form
+ * that fits the solver.
  *============================================================================*/
 
 /*
@@ -44,14 +45,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*! \file cs_boundary_conditions_set_coeffs.cpp
- *
- * \brief Translation of the boundary conditions given by the user in a form
- *        that fits to the solver.
- */
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -105,9 +98,9 @@ BEGIN_C_DECLS
  *                               saved at the walls, or -1.
  * \param[in]     itrale        ALE iteration number
  * \param[in]     italim        for ALE
- * \param[in]     itrfin        for ALE
+ * \param[in]     itrfin        Last velocity-pressure sub-iteration indicator
  * \param[in]     ineefl        for ALE
- * \param[in]     itrfup        for ALE
+ * \param[in]     itrfup        Update after velocity-pressure sub-iterations
  * \param[in,out] isostd        indicator for standard outlet
  *                              and reference face index
  * \param[in]     dt            time step (per cell)
