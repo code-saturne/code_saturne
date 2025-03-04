@@ -689,11 +689,13 @@ _equation_iterative_solve_strided(int                   idtvar,
      });
   ctx.wait();
 
+  cs_parall_sum_strided<stride>(rd.r);
+
   cs_real_t p_mean[stride];
   for (size_t i = 0; i < stride; i++) {
     p_mean[i] = rd.r[i] / mq->tot_vol;
     if (iwarnp >= 2)
-      bft_printf("Spatial average of X_%d^n = %f\n", i, p_mean[i]);
+      bft_printf("Spatial average of X_%d^n = %f\n", (int)i, p_mean[i]);
   }
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
