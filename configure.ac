@@ -291,20 +291,6 @@ if test "x$auto_flags" = "xyes" ; then
 
 fi
 
-# Add some preprocessor flags to include additional system features
-#------------------------------------------------------------------
-
-case "$host_os" in
-  linux*)
-    CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200809L"
-    ;;
-  darwin*)
-    CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"
-    ;;
-  *)
-    ;;
-esac
-
 # Preprocessor flags for debugging purposes
 
 if test "x$debug" = "xyes"; then
