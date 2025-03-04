@@ -3994,6 +3994,14 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
       fexd[1] = 0.5 * (f_ext[c_id1][1] + f_ext[c_id2][1]);
       fexd[2] = 0.5 * (f_ext[c_id1][2] + f_ext[c_id2][2]);
 
+      cs_real_t d_oi[3], d_oj[3];
+      d_oi[0] = i_face_cog[f_id][0] - cell_cen[c_id1][0];
+      d_oi[1] = i_face_cog[f_id][1] - cell_cen[c_id1][1];
+      d_oi[2] = i_face_cog[f_id][2] - cell_cen[c_id1][2];
+      d_oj[0] = i_face_cog[f_id][0] - cell_cen[c_id2][0];
+      d_oj[1] = i_face_cog[f_id][1] - cell_cen[c_id2][1];
+      d_oj[2] = i_face_cog[f_id][2] - cell_cen[c_id2][2];
+
       /*
         Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                   + (1-\alpha_\ij) \varia_\cellj\f$
@@ -4005,40 +4013,37 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
       cs_real_t pfaci
         =  ktpond
-             * (  (i_face_cog[f_id][0]-cell_cen[c_id1][0])*f_ext[c_id1][0]
-                + (i_face_cog[f_id][1]-cell_cen[c_id1][1])*f_ext[c_id1][1]
-                + (i_face_cog[f_id][2]-cell_cen[c_id1][2])*f_ext[c_id1][2]
+             * (  d_oi[0]*f_ext[c_id1][0]
+                + d_oi[1]*f_ext[c_id1][1]
+                + d_oi[2]*f_ext[c_id1][2]
                 + poro[0])
         +  (1.0 - ktpond)
-             * (  (i_face_cog[f_id][0]-cell_cen[c_id2][0])*f_ext[c_id2][0]
-                + (i_face_cog[f_id][1]-cell_cen[c_id2][1])*f_ext[c_id2][1]
-                + (i_face_cog[f_id][2]-cell_cen[c_id2][2])*f_ext[c_id2][2]
+             * (  d_oj[0]*f_ext[c_id2][0]
+                + d_oj[1]*f_ext[c_id2][1]
+                + d_oj[2]*f_ext[c_id2][2]
                 + poro[1]);
 
       cs_real_t pfacj = pfaci;
+      cs_real_t d_var = c_var[c_id2] - c_var[c_id1];
 
-      pfaci += (1.0-ktpond) * (c_var[c_id2] - c_var[c_id1]);
-      pfacj -=      ktpond  * (c_var[c_id2] - c_var[c_id1]);
+      pfaci += (1.0-ktpond) * d_var;
+      pfacj -=      ktpond  * d_var;
 
       /* Reconstruction part */
       cs_real_t rfac =
-               weight[f_id]
-             * ( (cell_cen[c_id1][0]-i_face_cog[f_id][0])*fexd[0]
-                + (cell_cen[c_id1][1]-i_face_cog[f_id][1])*fexd[1]
-                + (cell_cen[c_id1][2]-i_face_cog[f_id][2])*fexd[2])
-           +  (1.0 - weight[f_id])
-             * ( (cell_cen[c_id2][0]-i_face_cog[f_id][0])*fexd[0]
-                + (cell_cen[c_id2][1]-i_face_cog[f_id][1])*fexd[1]
-                + (cell_cen[c_id2][2]-i_face_cog[f_id][2])*fexd[2])
+               - weight[f_id]      * cs_math_3_dot_product(d_oi, fexd)
+           -  (1.0 - weight[f_id]) * cs_math_3_dot_product(d_oj, fexd)
            + (  dofij[f_id][0] * (r_grad[c_id1][0]+r_grad[c_id2][0])
               + dofij[f_id][1] * (r_grad[c_id1][1]+r_grad[c_id2][1])
               + dofij[f_id][2] * (r_grad[c_id1][2]+r_grad[c_id2][2])) * 0.5;
 
-      cs_real_t rhsv1[3], rhsv2[3];
+      cs_real_t face_normal[3], rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        rhsv1[j] =   (pfaci + rfac) * i_f_face_normal[f_id][j];
-        rhsv2[j] = - (pfacj + rfac) * i_f_face_normal[f_id][j];
+        face_normal[j] = i_f_face_normal[f_id][j];
+        rhsv1[j] =   (pfaci + rfac) * face_normal[j];
+        rhsv2[j] = - (pfacj + rfac) * face_normal[j];
       }
+
       cs_dispatch_sum<3>(grad[c_id1], rhsv1, i_sum_type);
       cs_dispatch_sum<3>(grad[c_id2], rhsv2, i_sum_type);
 
@@ -4067,8 +4072,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           + coefbp[f_id]
               /* (b_face_cog - cell_cen).f_ext, or IF.F_i */
             * (  cs_math_3_distance_dot_product(cell_cen[c_id],
-                                               b_face_cog[f_id],
-                                               f_ext[c_id])
+                                                b_face_cog[f_id],
+                                                f_ext[c_id])
                + poro);
 
       pfac += (coefbp[f_id] - 1.0) * c_var[c_id];
@@ -4136,18 +4141,21 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                  \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
       */
 
-      cs_real_t pfaci = (1.0-ktpond) * (c_var[c_id2] - c_var[c_id1]);
-      cs_real_t pfacj =     -ktpond  * (c_var[c_id2] - c_var[c_id1]);
+      cs_real_t d_var = c_var[c_id2] - c_var[c_id1];
+      cs_real_t pfaci = (1.0-ktpond) * d_var;
+      cs_real_t pfacj =     -ktpond  * d_var;
+
       /* Reconstruction part */
       cs_real_t rfac = 0.5 *
                 ( dofij[f_id][0]*(r_grad[c_id1][0]+r_grad[c_id2][0])
                  +dofij[f_id][1]*(r_grad[c_id1][1]+r_grad[c_id2][1])
                  +dofij[f_id][2]*(r_grad[c_id1][2]+r_grad[c_id2][2]));
 
-      cs_real_t rhsv1[3], rhsv2[3];
+      cs_real_t face_normal[3], rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        rhsv1[j] =   (pfaci + rfac) * i_f_face_normal[f_id][j];
-        rhsv2[j] = - (pfacj + rfac) * i_f_face_normal[f_id][j];
+        face_normal[j] = i_f_face_normal[f_id][j];
+        rhsv1[j] =   (pfaci + rfac) * face_normal[j];
+        rhsv2[j] = - (pfacj + rfac) * face_normal[j];
       }
 
       cs_dispatch_sum<3>(grad[c_id1], rhsv1, i_sum_type);
