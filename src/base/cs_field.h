@@ -148,6 +148,8 @@ typedef struct {
   cs_real_t          *val_f_d_lim; /* face value for diffusion
                                       (limited) */
 
+  cs_real_t          *val_f_pre;   /* previous face value for gradient */
+
 } cs_field_bc_coeffs_t;
 
 /* Field descriptor */

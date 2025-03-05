@@ -668,6 +668,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
   cs_real_3_t *var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
                                       : (cs_real_3_t *)(f->val);
 
+  cs_field_bc_coeffs_t bc_coeffs_loc;
   const cs_field_bc_coeffs_t *bc_coeffs = nullptr;
 
   if (f->bc_coeffs != nullptr) {
@@ -676,6 +677,11 @@ cs_field_gradient_vector(const cs_field_t          *f,
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
         bc_coeffs = f->bc_coeffs;
+        if (use_previous_t) {
+          cs_field_bc_coeffs_init(&bc_coeffs_loc);
+          bc_coeffs_loc.val_f = f->bc_coeffs->val_f_pre;
+          bc_coeffs = &bc_coeffs_loc;
+        }
       }
     }
   }
@@ -741,12 +747,18 @@ cs_field_gradient_tensor(const cs_field_t          *f,
   cs_real_6_t *var = (use_previous_t) ? (cs_real_6_t *)(f->val_pre)
                                       : (cs_real_6_t *)(f->val);
 
-  const cs_field_bc_coeffs_t *bc_coeffs_ts;
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  const cs_field_bc_coeffs_t *bc_coeffs;
   if (f->bc_coeffs != nullptr) {
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
-        bc_coeffs_ts = f->bc_coeffs;
+        bc_coeffs = f->bc_coeffs;
+        if (use_previous_t) {
+          cs_field_bc_coeffs_init(&bc_coeffs_loc);
+          bc_coeffs_loc.val_f = f->bc_coeffs->val_f_pre;
+          bc_coeffs = &bc_coeffs_loc;
+        }
       }
     }
   }
@@ -760,7 +772,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      static_cast<cs_gradient_limit_t>(eqp->imligr),
                      eqp->epsrgr,
                      eqp->climgr,
-                     bc_coeffs_ts,
+                     bc_coeffs,
                      var,
                      grad);
 }
