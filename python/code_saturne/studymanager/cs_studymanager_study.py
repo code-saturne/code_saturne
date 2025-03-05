@@ -2863,6 +2863,13 @@ class Studies(object):
                 if os.path.isdir(make_dir):
                     os.chdir(make_dir)
 
+                    # Generation of keywords and/or readme tex files
+                    # based on metadata within the .xml file
+                    from code_saturne.studymanager.cs_studymanager_metadata import study_metadata
+                    md = study_metadata(self.__pkg, os.path.join(self.__dest, self.__filename))
+                    md.dump_keywords()
+                    md.dump_readme()
+
                     log_pdf = open("make_pdf.log", mode='w')
                     cmd = "make pdf"
                     pdf_retval, t = run_studymanager_command(cmd, log_pdf)
