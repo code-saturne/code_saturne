@@ -180,7 +180,7 @@ _tsepls(int       phase_id,
   /* Computation of the velocity gradient */
   if (f_vel->grad == nullptr)
     cs_field_gradient_vector(f_vel,
-                             false, /* use_previous_t */
+                             true,  /* use_previous_t */
                              1,     /* inc */
                              gradv);
 
@@ -677,7 +677,7 @@ cs_turbulence_ke(int              phase_id,
   /* Computation of the velocity gradient */
   if (f_vel->grad == nullptr)
     cs_field_gradient_vector(f_vel,
-                             false, /* use_previous_t */
+                             true,  /* use_previous_t */
                              1,     /* inc */
                              gradv);
 
@@ -2535,7 +2535,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
   /* Computation of the velocity gradient */
   if (f_vel->grad == nullptr)
     cs_field_gradient_vector(f_vel,
-                             false, /* use_previous_t */
+                             true,  /* use_previous_t */
                              1,     /* inc */
                              gradv);
 
@@ -2626,7 +2626,7 @@ cs_turbulence_ke_q(int          phase_id,
     /* Computation of the velocity gradient */
 
     cs_field_gradient_vector(f_vel,
-                             false, // use_previous_t
+                             true,  // use_previous_t
                              1,     // inc
                              gradv);
   }
