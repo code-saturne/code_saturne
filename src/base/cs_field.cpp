@@ -45,6 +45,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_array.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
 #include "base/cs_mem.h"
@@ -1500,7 +1501,7 @@ cs_f_field_get_label(int           f_id,
 void
 cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
 {
-  bc_coeffs->location_id = 0.0;
+  bc_coeffs->location_id = 0;
 
   bc_coeffs->icodcl = nullptr;
   bc_coeffs->rcodcl1 = nullptr;
@@ -1520,6 +1521,8 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
   bc_coeffs->val_f_lim = nullptr;
   bc_coeffs->val_f_d = nullptr;
   bc_coeffs->val_f_d_lim = nullptr;
+
+  bc_coeffs->val_f_pre = nullptr;
 
   bc_coeffs->hint = nullptr;
   bc_coeffs->_hext = nullptr;
@@ -1551,6 +1554,7 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
   copy->val_f_d = nullptr;
   copy->val_f_lim = nullptr;
   copy->val_f_d_lim = nullptr;
+  copy->val_f_pre = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1592,6 +1596,9 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
     CS_FREE(copy->val_f_d);
   if (copy->val_f_d_lim != ref->val_f_d_lim)
     CS_FREE(copy->val_f_d_lim);
+
+  if (copy->val_f_pre != ref->val_f_pre)
+    CS_FREE(copy->val_f_pre);
 
   if (copy->hint != ref->hint)
     CS_FREE(copy->hint);
@@ -1973,6 +1980,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       f->bc_coeffs->val_f_d = nullptr;
       f->bc_coeffs->val_f_d_lim = nullptr;
 
+      f->bc_coeffs->val_f_pre = nullptr;
+
       CS_MALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
       CS_MALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
 
@@ -2340,50 +2349,33 @@ cs_field_current_to_previous(cs_field_t  *f)
 {
   assert(f != nullptr);
 
-  if (f->n_time_vals > 1) {
+  if (f->n_time_vals < 2)
+    return;
 
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-    const cs_lnum_t _n_elts = n_elts[2];
+  const cs_lnum_t dim = f->dim;
+  const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+  const cs_lnum_t n_vals = n_elts[2] * dim;
 
-#   pragma omp parallel if (_n_elts > CS_THR_MIN)
-    {
-      const int dim = f->dim;
+  if (f->is_owner) {
+    for (int kk = f->n_time_vals - 1; kk > 0; kk--)
+      cs_array_copy(n_vals, f->vals[kk-1], f->vals[kk]);
+  }
+  else {
+    cs_array_copy(n_vals, f->val, f->val_pre);
+  }
 
-      if (f->is_owner) {
-        if (dim == 1) {
-          for (int kk = f->n_time_vals - 1; kk > 0; kk--) {
-#           pragma omp for
-            for (cs_lnum_t ii = 0; ii < _n_elts; ii++)
-              f->vals[kk][ii] = f->vals[kk-1][ii];
-          }
-        }
-        else {
-          for (int kk = f->n_time_vals - 1; kk > 0; kk--) {
-#           pragma omp for
-            for (cs_lnum_t ii = 0; ii < _n_elts; ii++) {
-              for (cs_lnum_t jj = 0; jj < dim; jj++)
-                f->vals[kk][ii*dim + jj] = f->vals[kk-1][ii*dim + jj];
-            }
-          }
-        }
-      }
-      else {
-        if (dim == 1) {
-#         pragma omp for
-          for (cs_lnum_t ii = 0; ii < _n_elts; ii++)
-            f->val_pre[ii] = f->val[ii];
-        }
-        else {
-#         pragma omp for
-          for (cs_lnum_t ii = 0; ii < _n_elts; ii++) {
-            for (cs_lnum_t jj = 0; jj < dim; jj++)
-              f->val_pre[ii*dim + jj] = f->val[ii*dim + jj];
-          }
-        }
-      }
+  if (f->bc_coeffs != nullptr) {
+    if (f->bc_coeffs->val_f != nullptr) {
+      const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+      const cs_lnum_t n_bc_vals
+        = cs_mesh_location_get_n_elts(location_id)[0] * dim;
 
+      if (f->bc_coeffs->val_f_pre == nullptr)
+        CS_MALLOC_HD(f->bc_coeffs->val_f_pre, n_bc_vals, cs_real_t,
+                     cs_alloc_mode);
+
+      cs_array_copy(n_bc_vals, f->bc_coeffs->val_f, f->bc_coeffs->val_f_pre);
     }
-
   }
 }
 
@@ -2427,6 +2419,7 @@ cs_field_destroy_all(void)
       }
       CS_FREE_HD(f->bc_coeffs->val_f);
       CS_FREE_HD(f->bc_coeffs->val_f_d);
+      CS_FREE_HD(f->bc_coeffs->val_f_pre);
       CS_FREE(f->bc_coeffs);
     }
   }
