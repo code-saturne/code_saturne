@@ -132,7 +132,7 @@ _vort_trace(cs_real_t   vort[],
   CS_MALLOC_HD(grad_vel, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   cs_field_gradient_vector(CS_F_(vel),
-                           false, // use_previous_t
+                           true, // use_previous_t
                            1,    // inc
                            grad_vel);
 

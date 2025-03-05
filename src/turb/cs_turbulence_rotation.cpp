@@ -176,7 +176,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   cs_field_gradient_vector(CS_F_(vel),
-                           false,  /* use_previous_t */
+                           true,   /* use_previous_t */
                            1 ,     /* inc */
                            gradv);
 
