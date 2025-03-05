@@ -431,13 +431,13 @@ cs_param_amg_gamg_create(void)
 
   gamgp->n_down_iter   = 1;
   gamgp->down_smoother = CS_PARAM_AMG_GAMG_FORWARD_GS;
-  gamgp->n_up_iter     = 1;
+  gamgp->n_up_iter     = 2;
   gamgp->up_smoother   = CS_PARAM_AMG_GAMG_BACKWARD_GS;
   gamgp->coarse_solver = CS_PARAM_AMG_GAMG_BJACOBI_LU;
 
   /* Advanced options */
 
-  gamgp->threshold = 0.005; // Threshold of small values to drop
+  gamgp->threshold = -1;    // Threshold of small values to drop
                             // (PETSc default = -1: no filtering)
   gamgp->n_agg_levels = 1;  // Number of aggressive levels
                             // (PETSc default = 1)
