@@ -2741,7 +2741,7 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def copy_input(self, i_nodes, s_label, c_label, r_label="RESU"):
+    def copy_input(self, i_nodes, s_label, c_label, run_label, r_label="RESU"):
         """
         Copy input in POST for later description report generation
         """
@@ -2750,14 +2750,14 @@ class Studies(object):
         input_format = ['.png', '.jpg', '.pdf', '.tex', '.jpeg']
 
         for i_node in i_nodes:
-            file_name, run_id, repo, tex = self.__parser.getInput(i_node)
+            file_name, tmp, repo, tex = self.__parser.getInput(i_node)
             input_file = os.path.join(self.__dest, s_label, c_label, r_label,
-                                      run_id, file_name)
+                                      run_label, file_name)
 
             # Input copied in POST/"CURRENT"/CASE/run_id folder
             # file_name can include another folder (ex: datasets/fig.png)
             file_dest = os.path.join(self.__dest, s_label, 'POST', 'CURRENT',
-                                     c_label, run_id, file_name)
+                                     c_label, run_label, file_name)
             dest_folder = os.path.dirname(file_dest)
 
             if os.path.isfile(input_file):
@@ -2835,7 +2835,7 @@ class Studies(object):
                                    "case %s}" % case.label)
                     self.report_input(doc, nodes, case.study, case.label, case.resu)
                     # copy input in POST (TODO: should be moved)
-                    self.copy_input(nodes, case.study, case.label)
+                    self.copy_input(nodes, case.study, case.label, case.run_id)
 
         attached_files.append(doc.close())
 
