@@ -1693,15 +1693,29 @@ class Studies(object):
                                    " REPOSITORY to generate description report"
                                    " of study %s" %study)
 
-            # Copy README file if it exists
-            readme = os.path.join(repo_study, "README")
-            if os.path.isfile(readme):
-                dest_file = os.path.join(dest_study, "README")
-                if os.path.isfile(dest_file):
-                    self.reporting("    /!\ README file is overwritten in %s"
-                                   " use option --dow to disable overwrite"
-                                   %study)
-                shutil.copyfile(readme, dest_file)
+            # Copy README file(s) if it exists
+            # If a README file exists, then only this file is considered
+            #
+            readme_files = [f for f in os.listdir(repo_study) if f.startswith('README')]
+            if 'README' in readme_files:
+                # Keep only this file and ignore the other README* files
+                readme = os.path.join(repo_study, "README")
+                if os.path.isfile(readme):
+                    dest_file = os.path.join(dest_study, "README")
+                    if os.path.isfile(dest_file):
+                        self.reporting(f"    /!\ README file is overwritten in {study}"
+                                       " use option --dow to disable overwrite")
+                    shutil.copyfile(readme, dest_file)
+
+            else:
+                for f in readme_files:
+                    readme = os.path.join(repo_study, f)
+                    if os.path.isfile(readme):
+                        dest_file = os.path.join(dest_study, f)
+                        if os.path.isfile(dest_file):
+                            self.reporting(f"    /!\ {f} file is overwritten in {study}"
+                                           " use option --dow to disable overwrite")
+                        shutil.copyfile(readme, dest_file)
 
         os.chdir(home)
 
