@@ -67,7 +67,6 @@ integer :: iflid
 ! Base properties, always present
 
 call field_get_id_try('density', icrom)
-call field_get_id_try('molecular_viscosity', iviscl)
 
 ! ---> Atmospheric modules:
 if (ippmod(iatmos).ge.0) then

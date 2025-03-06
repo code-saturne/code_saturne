@@ -564,22 +564,6 @@ static cs_solving_info_t _solving_info =
 cs_tree_node_t  *cs_glob_tree = nullptr;
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
-                                      cs_f_var_cal_opt_t  *vcopt);
-
-void
-cs_f_field_set_key_struct_var_cal_opt(int                  f_id,
-                                      cs_f_var_cal_opt_t  *vcopt);
-
-void *
-cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -730,164 +714,6 @@ _log_func_default_var_cal_opt(const void *t)
                 _("Backward differential scheme in time order"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv,
                 _("Relaxation of variables (1 for no relaxation)"));
-}
-
-/*----------------------------------------------------------------------------
- * Copy values from a Fortran var_cal_opt structure to an
- * equation_params_t structure, whose other members are unchanged.
- *
- * parameters:
- *   vcopt  <-- associated Fortran var_cal_opt structure
- *   eqp    <-> associated cs_equation_params_t structure
- *----------------------------------------------------------------------------*/
-
-static void
-_var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
-                                cs_equation_param_t       *eqp)
-{
-  eqp->verbosity = vcopt->iwarni;
-  eqp->iconv  = vcopt->iconv;
-  eqp->istat  = vcopt->istat;
-  eqp->idircl = vcopt->idircl;
-  eqp->ndircl = vcopt->ndircl;
-  eqp->idiff  = vcopt->idiff;
-  eqp->idifft = vcopt->idifft;
-  eqp->idften = vcopt->idften;
-  eqp->iswdyn = vcopt->iswdyn;
-  eqp->ischcv = vcopt->ischcv;
-  eqp->ibdtso = vcopt->ibdtso;
-  eqp->isstpc = vcopt->isstpc;
-  eqp->nswrgr = vcopt->nswrgr;
-  eqp->nswrsm = vcopt->nswrsm;
-  eqp->imvisf = vcopt->imvisf;
-  eqp->imrgra = vcopt->imrgra;
-  eqp->imligr = vcopt->imligr;
-  eqp->ircflu = vcopt->ircflu;
-  eqp->iwgrec = vcopt->iwgrec;
-  eqp->icoupl = vcopt->icoupl;
-
-  eqp->theta = vcopt->theta;
-  eqp->blencv = vcopt->blencv;
-  eqp->blend_st = vcopt->blend_st;
-  eqp->epsilo = vcopt->epsilo;
-  eqp->epsrsm = vcopt->epsrsm;
-  eqp->epsrgr = vcopt->epsrgr;
-  eqp->climgr = vcopt->climgr;
-  eqp->relaxv = vcopt->relaxv;
-}
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Copy values from cs_equation_params structure of a given field
- * to the matching Fortran var_cal_opt structure
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   f_id   associated field id
- *   vcopt  associated structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
-                                      cs_f_var_cal_opt_t  *vcopt)
-{
-  static int c_k_id = -1;
-  if (c_k_id < 0)
-    c_k_id = cs_field_key_id("var_cal_opt");
-
-  auto eqp = reinterpret_cast<const cs_equation_param_t *>
-               (cs_field_get_key_struct_const_ptr(cs_field_by_id(f_id), c_k_id));
-
-  vcopt->iwarni = eqp->verbosity;
-  vcopt->iconv  = eqp->iconv;
-  vcopt->istat  = eqp->istat;
-  vcopt->idircl = eqp->idircl;
-  vcopt->ndircl = eqp->ndircl;
-  vcopt->idiff  = eqp->idiff;
-  vcopt->idifft = eqp->idifft;
-  vcopt->idften = eqp->idften;
-  vcopt->iswdyn = eqp->iswdyn;
-  vcopt->ischcv = eqp->ischcv;
-  vcopt->ibdtso = eqp->ibdtso;
-  vcopt->isstpc = eqp->isstpc;
-  vcopt->nswrgr = eqp->nswrgr;
-  vcopt->nswrsm = eqp->nswrsm;
-  vcopt->imvisf = eqp->imvisf;
-  vcopt->imrgra = eqp->imrgra;
-  vcopt->imligr = eqp->imligr;
-  vcopt->ircflu = eqp->ircflu;
-  vcopt->iwgrec = eqp->iwgrec;
-  vcopt->icoupl = eqp->icoupl;
-
-  vcopt->theta = eqp->theta;
-  vcopt->blencv = eqp->blencv;
-  vcopt->blend_st = eqp->blend_st;
-  vcopt->epsilo = eqp->epsilo;
-  vcopt->epsrsm = eqp->epsrsm;
-  vcopt->epsrgr = eqp->epsrgr;
-  vcopt->climgr = eqp->climgr;
-  vcopt->relaxv = eqp->relaxv;
-}
-
-/*----------------------------------------------------------------------------
- * Copy values from cs_equation_params structure of a given field
- * to the matching Fortran var_cal_opt structure
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   f_id   associated field id
- *   vcopt  associated structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_set_key_struct_var_cal_opt(int                  f_id,
-                                      cs_f_var_cal_opt_t  *vcopt)
-{
-  static int c_k_id = -1;
-  if (c_k_id < 0)
-    c_k_id = cs_field_key_id("var_cal_opt");
-
-  auto eqp = reinterpret_cast<cs_equation_param_t *>
-               (cs_field_get_key_struct_ptr(cs_field_by_id(f_id), c_k_id));
-
-  _var_cal_opt_to_equation_params(vcopt, eqp);
-}
-
-/*----------------------------------------------------------------------------
- * Return a pointer to a cs_equation_params structure initialized from
- * a Fortran var_cal_opt structure.
- *
- * Note that to avoid issues with the structure not being interoperable
- * with Fortran, and its size not being known easily in Fortran either
- * (and subject to change with code maintenance), a pointer to a static
- * variable of this function is returned. This means this function is not
- * thread safe, which should not be an issue, since the functions to which
- * this object is passed are not expected to be either, as they are quite
- * high level and usually include MPI operations on a global communicator.
- *
- * parameters:
- *   vcopt <-- Fortran var_cal_opt
- *
- * returns:
- *   pointer to matching cs_equation_params
- *----------------------------------------------------------------------------*/
-
-void *
-cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt)
-{
-  static cs_equation_param_t eqp;
-  memcpy(&eqp, &_equation_param_default, sizeof(cs_equation_param_t));
-
-  _var_cal_opt_to_equation_params(vcopt, &eqp);
-
-  return &eqp;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1278,11 +1104,7 @@ cs_parameters_n_added_properties(void)
 void
 cs_parameters_create_added_variables(void)
 {
-  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_USER;
-
   for (int i = 0; i < _n_user_variables; i++) {
-
-    cs_field_t *f;
 
     const char *name = (_user_variable_defs + i)->name;
 
@@ -1307,11 +1129,14 @@ cs_parameters_create_added_variables(void)
                     "which refers to yet undefined variable \"%s\"."),
                   name, ref_name);
 
-      f = cs_field_create(name,
-                          field_type,
-                          CS_MESH_LOCATION_CELLS,
-                          f_ref->dim,
-                          true);
+      int fld_id = cs_variable_field_create(name,
+                                            nullptr,
+                                            CS_MESH_LOCATION_CELLS,
+                                            f_ref->dim);
+
+      cs_field_t *f = cs_field_by_id(fld_id);
+      f->type |= CS_FIELD_USER;
+
       int k_var = cs_field_key_id("first_moment_id");
       cs_field_set_key_int(f, k_var, f_ref->id);
       cs_field_lock_key(f, k_var);
@@ -1323,23 +1148,17 @@ cs_parameters_create_added_variables(void)
 
     else {
 
-      f = cs_field_create(name,
-                          field_type,
-                          CS_MESH_LOCATION_CELLS,
-                          (_user_variable_defs + i)->dim,
-                          true);
+      int fld_id = cs_variable_field_create(name,
+                                            nullptr,
+                                            CS_MESH_LOCATION_CELLS,
+                                            (_user_variable_defs + i)->dim);
+
+      cs_field_t *f = cs_field_by_id(fld_id);
+      f->type |= CS_FIELD_USER;
 
     }
 
     CS_FREE((_user_variable_defs + i)->name);
-
-    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-
-    cs_field_set_key_int(f, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(f, cs_field_key_id("post_vis"), post_flag);
-
-    if (f->dim == 3)
-      cs_field_set_key_int(f, cs_field_key_id("coupled"), 1);
 
   }
 

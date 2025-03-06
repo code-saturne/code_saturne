@@ -103,6 +103,33 @@ static cs_real_t   *_rcodcl = nullptr;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Initialize a variable field's associated \ref cs_equation_param_t
+ *
+ * This intermediate function is used to silence an error with
+ * undefinedBehaviorSanitizer, which excpects a function with a "void *"
+ * argument.
+ *
+ * \param[in]  f_id  associated field id
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_variable_equation_param_uninit(cs_field_t  *f)
+{
+  if (f->type & CS_FIELD_VARIABLE) {
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    eqp->isstpc = -999;
+    eqp->nswrsm = -1;
+    eqp->thetav = -1.;
+    eqp->blencv = -1.;
+    eqp->epsilo = -1.;
+    eqp->epsrsm = -1.;
+    eqp->relaxv = -1.;
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -211,6 +238,9 @@ cs_variable_field_create(const char  *name,
 
   if (dim > 1)
     cs_field_set_key_int(f, cs_field_key_id("coupled"), 1);
+
+  if (location_id == CS_MESH_LOCATION_CELLS)
+    _variable_equation_param_uninit(f);
 
   return f->id;
 }

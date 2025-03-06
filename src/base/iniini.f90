@@ -40,14 +40,9 @@ use numvar
 use optcal
 use cstphy
 use entsor
-use pointe
-use parall
-use period
 use ppincl
 use mesh
 use field
-use radiat
-use ctincl
 use cs_c_bindings
 
 !===============================================================================
@@ -79,14 +74,8 @@ interface
 end interface
 
 !===============================================================================
-! 0. Global field keys
+! 0. Global field ids
 !===============================================================================
-
-call field_get_key_id("label", keylbl)
-call field_get_key_id('log', keylog)
-call field_get_key_id('post_vis', keyvis)
-
-call field_get_key_id("diffusivity_id", kivisl)
 
 icrom = -1
 
@@ -97,13 +86,8 @@ icrom = -1
 call atmo_init
 call time_step_init
 call time_step_options_init
-call thermal_model_init
-call turb_model_init
-call turb_model_constants_init
 call physical_constants_init
 call fluid_properties_init
-call radiat_init
-call ctwr_properties_init
 
 !===============================================================================
 ! Get mesh metadata.
@@ -125,8 +109,7 @@ enddo
 ! Scalar to variable mappings
 
 do iscal = 1, nscamx
-  isca  (iscal) = 0
-  iscapp(iscal) = 0
+  isca(iscal) = 0
 enddo
 
 return

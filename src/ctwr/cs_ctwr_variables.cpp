@@ -258,7 +258,6 @@ cs_ctwr_add_variable_fields(void)
     else
       cs_field_set_key_double(f, kscmin, 0.e0);
 
-
     /* Set the class index for the field */
     cs_field_set_key_int(f, keyccl, class_id);
 

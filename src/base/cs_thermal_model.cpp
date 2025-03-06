@@ -158,14 +158,6 @@ static cs_thermal_model_t  _thermal_model = {
 
 const cs_thermal_model_t  *cs_glob_thermal_model = &_thermal_model;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_thermal_model_get_pointers(int     **itherm);
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -177,22 +169,6 @@ cs_f_thermal_model_get_pointers(int     **itherm);
  *============================================================================*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global thermal model structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   itherm  --> pointer to cs_glob_thermal_model->thermal_variable
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_thermal_model_get_pointers(int  **itherm)
-{
-  *itherm = (int *) &(_thermal_model.thermal_variable);
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

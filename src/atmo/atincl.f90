@@ -238,7 +238,6 @@ integer(c_int), pointer, save :: idrayst
 !> grid formed by 1D profiles
 integer, save:: igrid
 
-
 ! 2.6 Arrays specific to the 1D atmospheric radiative module
 !-------------------------------------------------------------------------------
 
@@ -382,6 +381,21 @@ double precision, save:: black_carbon_frac
 !> important should be <= zqq(kmray-1);
 !> in meters : referenced value: zaero=6000
 double precision, save:: zaero
+
+!> Cp of dry air
+real(c_double), pointer, save :: cp_a
+
+!> Cp of water vapor
+real(c_double), pointer, save :: cp_v
+
+!> Atmospheric radiation model:
+!> - Direct Solar the first bit (H2O band)
+!> - Direct Solar O3 band for the second bit
+!> - diFfuse Solar for the third bit (SIR H2O band)
+!> - diFfuse Solar O3 for the fourth bit (SUV O3 band)
+!> - InfraRed for the fifth bitPeriod of the radiation module.
+integer(c_int), pointer, save :: rad_atmo_model
+
 !> \}
 
 !=============================================================================
@@ -537,10 +551,29 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: face_ids
     end subroutine cs_f_atmo_get_soil_zone
 
+    !---------------------------------------------------------------------------
+
+    subroutine cs_air_glob_properties_get_pointers(cp_a, cp_v) &
+        bind(C, name='cs_air_glob_properties_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: cp_a, cp_v
+    end subroutine cs_air_glob_properties_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    subroutine cs_rad_transfer_get_pointers(p_rad_atmo_model)    &
+      bind(C, name='cs_rad_transfer_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_rad_atmo_model
+    end subroutine cs_rad_transfer_get_pointers
+
+    !---------------------------------------------------------------------------
+
   end interface
 
 contains
-
 
   !=============================================================================
 
@@ -630,6 +663,8 @@ contains
     type(c_ptr) :: c_iatsoil, c_tsini, c_isepchemistry, c_w1ini, c_w2ini
     type(c_ptr) :: c_nvert, c_kvert, c_kmx, c_theo_interp, c_ihpm
     type(c_ptr) :: c_aod_o3_tot, c_aod_h2o_tot
+    type(c_ptr) :: c_cp_a, c_cp_v
+    type(c_ptr) :: p_rad_atmo_model
 
     call cs_f_atmo_get_pointers(c_ps,               &
       c_syear, c_squant, c_shour, c_smin, c_ssec,   &
@@ -711,6 +746,16 @@ contains
 
     call c_f_pointer(c_aod_o3_tot,  aod_o3_tot)
     call c_f_pointer(c_aod_h2o_tot, aod_h2o_tot)
+
+    call cs_air_glob_properties_get_pointers(c_cp_a, c_cp_v)
+
+    call c_f_pointer(c_cp_a, cp_a)
+    call c_f_pointer(c_cp_v, cp_v)
+
+    call cs_rad_transfer_get_pointers(p_rad_atmo_model)
+
+    call c_f_pointer(p_rad_atmo_model, rad_atmo_model)
+
     return
 
   end subroutine atmo_init

@@ -51,7 +51,6 @@ use optcal
 use cstphy
 use cstnum
 use parall
-use period
 use pointe
 use ppincl
 use mesh

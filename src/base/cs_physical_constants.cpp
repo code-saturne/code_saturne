@@ -477,9 +477,7 @@ void
 cs_f_physical_constants_get_pointers(double  **gz);
 
 void
-cs_f_fluid_properties_get_pointers(int     **icp,
-                                   int     **irovar,
-                                   double  **ro0,
+cs_f_fluid_properties_get_pointers(double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
                                    double  **t0,
@@ -520,8 +518,6 @@ cs_f_physical_constants_get_pointers(double  **gz)
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   icp      --> pointer to cs_glob_fluid_properties->icp
- *   irovar   --> pointer to cs_glob_fluid_properties->irovar
  *   ro0      --> pointer to cs_glob_fluid_properties->ro0
  *   viscl0   --> pointer to cs_glob_fluid_properties->viscl0
  *   p0       --> pointer to cs_glob_fluid_properties->p0
@@ -534,9 +530,7 @@ cs_f_physical_constants_get_pointers(double  **gz)
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_fluid_properties_get_pointers(int     **icp,
-                                   int     **irovar,
-                                   double  **ro0,
+cs_f_fluid_properties_get_pointers(double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
                                    double  **t0,
@@ -546,8 +540,6 @@ cs_f_fluid_properties_get_pointers(int     **icp,
                                    double  **rvsra,
                                    double  **pther)
 {
-  *icp      = &(_fluid_properties.icp);
-  *irovar   = &(_fluid_properties.irovar);
   *ro0      = &(_fluid_properties.ro0);
   *viscl0   = &(_fluid_properties.viscl0);
   *p0       = &(_fluid_properties.p0);

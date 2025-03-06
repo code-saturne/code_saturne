@@ -54,7 +54,6 @@ use cstphy
 use cstnum
 use entsor
 use parall
-use period
 use ppincl
 use atincl
 use atsoil

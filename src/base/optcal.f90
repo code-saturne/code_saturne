@@ -29,8 +29,6 @@ module optcal
 
   use, intrinsic :: iso_c_binding
 
-  use paramx
-
   implicit none
 
   !=============================================================================
@@ -134,86 +132,6 @@ module optcal
   !> \}
 
   !----------------------------------------------------------------------------
-  ! thermal model
-  !----------------------------------------------------------------------------
-
-  !> \defgroup thermal model
-
-  !> \addtogroup thermal
-  !> \{
-
-  !> thermal model
-  !>    - 0: no thermal model
-  !>    - 1: temperature
-  !>    - 2: enthalpy
-  !>    - 3: total energy (only for compressible module)\n
-  !> When a particular physics module is activated (gas combustion,
-  !> pulverised coal, electricity or compressible), the user must not
-  !> modify \ref itherm (the choice is made automatically: the solved
-  !> variable is either the enthalpy or the total energy). The user is
-  !> also reminded that, in the case of a coupling with SYRTHES, the
-  !> solved thermal variable should be the temperature (\ref itherm = 1).
-  !> More precisely, everything is designed in the code to allow for the
-  !> running of a calculation coupled with SYRTHES with the enthalpy as
-  !> thermal variable. With the compressible model, it is possible to
-  !> carry out calculations coupled with SYRTHES, although the thermal
-  !> scalar represents the total energy and not the temperature.
-  integer(c_int), pointer, save :: itherm
-
-  !> \}
-
-  !----------------------------------------------------------------------------
-  ! turbulence
-  !----------------------------------------------------------------------------
-
-  !> \defgroup turbulence turbulence options
-
-  !> \addtogroup turbulence
-  !> \{
-
-  !> \anchor iturb
-  !> turbulence model
-  !>    - 0: no turbulence model (laminar flow)
-  !>    - 10: mixing length model
-  !>    - 20: standard \f$ k-\varepsilon \f$ model
-  !>    - 21: \f$ k-\varepsilon \f$ model with Linear Production (LP) correction
-  !>    - 30: \f$ R_{ij}-\epsilon \f$ (LRR)
-  !>    - 31: \f$ R_{ij}-\epsilon \f$ (SSG)
-  !>    - 32: \f$ R_{ij}-\epsilon \f$ (EBRSM)
-  !>    - 40: LES (constant Smagorinsky model)
-  !>    - 41: LES ("classical" dynamic Smagorisky model)
-  !>    - 42: LES (WALE)
-  !>    - 50: v2f phi-model
-  !>    - 51: v2f \f$ BL-v^2-k \f$
-  !>    - 60: \f$ k-\omega \f$ SST
-  !>    - 70: Spalart-Allmaras model
-  integer(c_int), pointer, save :: iturb
-
-  !> Class of turbulence model (integer value iturb/10)
-  integer(c_int), pointer, save :: itytur
-
-  !> \}
-
-  !----------------------------------------------------------------------------
-  ! Stokes
-  !----------------------------------------------------------------------------
-
-  !> \defgroup stokes Stokes options
-
-  !> \addtogroup stokes
-  !> \{
-
-  !> Algorithm to take into account the density variation in time
-  !>    - 0: boussinesq algorithm with constant density
-  !>    - 1: dilatable steady algorithm (default)
-  !>    - 2: dilatable unsteady algorithm
-  !>    - 3: low-Mach algorithm
-  !>    - 4: algorithm for fire
-  integer(c_int), pointer, save :: idilat
-
-  !> \}
-
-  !----------------------------------------------------------------------------
   ! Transported scalars parameters
   !----------------------------------------------------------------------------
 
@@ -247,26 +165,6 @@ module optcal
       type(c_ptr), intent(out) :: idtvar
     end subroutine cs_f_time_step_options_get_pointers
 
-    ! Interface to C function retrieving pointers to members of the
-    ! global thermal model structure
-
-    subroutine cs_f_thermal_model_get_pointers(itherm) &
-      bind(C, name='cs_f_thermal_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: itherm
-    end subroutine cs_f_thermal_model_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global turbulence model structure
-
-    subroutine cs_f_turb_model_get_pointers(iturb, itytur) &
-      bind(C, name='cs_f_turb_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: iturb, itytur
-    end subroutine cs_f_turb_model_get_pointers
-
     !---------------------------------------------------------------------------
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
@@ -280,43 +178,6 @@ module optcal
 contains
 
   !=============================================================================
-
-  !> \brief If scalar iscal represents the mean of the square of a scalar
-  !> k, return k; otherwise, return 0.
-
-  function iscavr(iscal) result(iscvr)
-
-    use field
-    use numvar
-
-    implicit none
-
-    ! Parameters
-
-    integer, intent(in) :: iscal
-    integer             :: iscvr
-
-    ! Local arguments
-
-    integer :: f_id
-    integer :: kscavr = -1
-    integer :: keysca = -1
-
-    ! Function body
-
-    iscvr = 0
-
-    if (kscavr .lt. 0) then
-      call field_get_key_id("first_moment_id", kscavr)
-      call field_get_key_id("scalar_id", keysca)
-    endif
-
-    if (kscavr.ge.0) then
-      call field_get_key_int(ivarfl(isca(iscal)), kscavr, f_id)
-      if (f_id.ge.0) call field_get_key_int(f_id, keysca, iscvr)
-    endif
-
-  end function iscavr
 
   !> \brief Initialize isuite
 
@@ -376,44 +237,6 @@ contains
     call c_f_pointer(c_idtvar, idtvar)
 
   end subroutine time_step_options_init
-
-  !> \brief Initialize Fortran thermal model API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine thermal_model_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_itherm
-
-    call cs_f_thermal_model_get_pointers(c_itherm)
-
-    call c_f_pointer(c_itherm, itherm)
-
-  end subroutine thermal_model_init
-
-  !> \brief Initialize Fortran turbulence model API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine turb_model_init
-
-    use, intrinsic :: iso_c_binding
-    use cs_c_bindings
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_iturb, c_itytur
-
-    call cs_f_turb_model_get_pointers(c_iturb, c_itytur)
-
-    call c_f_pointer(c_iturb, iturb)
-    call c_f_pointer(c_itytur, itytur)
-
-  end subroutine turb_model_init
 
   !=============================================================================
 

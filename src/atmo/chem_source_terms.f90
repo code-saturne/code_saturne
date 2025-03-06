@@ -57,7 +57,6 @@ use entsor
 use optcal
 use cstphy
 use parall
-use period
 use mesh
 use field
 use atchem

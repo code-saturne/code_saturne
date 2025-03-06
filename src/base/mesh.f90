@@ -98,6 +98,14 @@ module mesh
   !> oriented to the exterior of the domain
   double precision, dimension(:), pointer :: distb
 
+  !> \addtogroup period
+  !> \{
+
+  !> presence of periodicity.
+  !> - 1: periodicity is activated
+  !> - 0: no periodicity (default value)
+  integer, save :: iperio = 0
+
   !=============================================================================
 
 contains

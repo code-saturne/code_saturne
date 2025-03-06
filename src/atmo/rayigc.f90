@@ -54,7 +54,6 @@ use optcal
 use cstphy
 use entsor
 use parall
-use period
 use ppincl
 use atincl
 use cs_c_bindings

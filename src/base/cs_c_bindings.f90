@@ -82,81 +82,9 @@ module cs_c_bindings
   parameter (VOLUME_ZONE_SOURCE_TERM=8)
   parameter (VOLUME_ZONE_MASS_SOURCE_TERM=16)
 
-  !-----------------------------------------------------------------------------
-
-  type, bind(c)  :: var_cal_opt
-    integer(c_int) :: iwarni
-    integer(c_int) :: iconv
-    integer(c_int) :: istat
-    integer(c_int) :: idircl
-    integer(c_int) :: ndircl
-    integer(c_int) :: idiff
-    integer(c_int) :: idifft
-    integer(c_int) :: idften
-    integer(c_int) :: iswdyn
-    integer(c_int) :: ischcv
-    integer(c_int) :: ibdtso
-    integer(c_int) :: isstpc
-    integer(c_int) :: nswrgr
-    integer(c_int) :: nswrsm
-    integer(c_int) :: imvisf
-    integer(c_int) :: imrgra
-    integer(c_int) :: imligr
-    integer(c_int) :: ircflu
-    integer(c_int) :: iwgrec
-    integer(c_int) :: icoupl
-    real(c_double) :: thetav
-    real(c_double) :: blencv
-    real(c_double) :: blend_st
-    real(c_double) :: epsilo
-    real(c_double) :: epsrsm
-    real(c_double) :: epsrgr
-    real(c_double) :: climgr
-    real(c_double) :: relaxv
-  end type var_cal_opt
-
   !=============================================================================
 
   interface
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function copying a var_cal_opt structure associated
-    ! with a field.
-
-    subroutine cs_f_field_set_key_struct_var_cal_opt(f_id, k_value) &
-      bind(C, name='cs_f_field_set_key_struct_var_cal_opt')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value             :: f_id
-      type(c_ptr), value                :: k_value
-    end subroutine cs_f_field_set_key_struct_var_cal_opt
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function setting a var_cal_opt structure associated
-    ! with a field.
-
-    subroutine cs_f_field_get_key_struct_var_cal_opt(f_id, k_value) &
-      bind(C, name='cs_f_field_get_key_struct_var_cal_opt')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value             :: f_id
-      type(c_ptr), value                :: k_value
-    end subroutine cs_f_field_get_key_struct_var_cal_opt
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function returninng a pointer to a cs_equation_param_t
-    ! structure based on a given var_cal_opt structure.
-
-    function equation_param_from_vcopt(k_value) result(eqp) &
-      bind(C, name='cs_f_equation_param_from_var_cal_opt')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: k_value
-      type(c_ptr)        :: eqp
-    end function equation_param_from_vcopt
 
     !---------------------------------------------------------------------------
 
@@ -264,6 +192,18 @@ module cs_c_bindings
       implicit none
       type(c_ptr), intent(out) :: itypfb
     end subroutine cs_f_boundary_conditions_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function indicating if radiation model is active
+    ! at a given time step
+
+    function cs_rad_time_is_active() result(is_active)  &
+      bind(C, name='cs_rad_time_is_active')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      logical(kind=c_bool) :: is_active
+    end function cs_rad_time_is_active
 
     !---------------------------------------------------------------------------
 
@@ -494,87 +434,6 @@ contains
     iz2 = z_lv(2) + 1
 
   end subroutine intprz
-
-  !=============================================================================
-
-  !> \brief Assign a var_cal_opt for a cs_var_cal_opt_t key to a field.
-
-  !> If the field category is not compatible, a fatal error is provoked.
-
-  !> \param[in]   f_id     field id
-  !> \param[in]   k_value  structure associated with key
-
-  subroutine field_set_key_struct_var_cal_opt(f_id, k_value)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)                   :: f_id
-    type(var_cal_opt), intent(in), target :: k_value
-
-    ! Local variables
-
-    integer(c_int)                 :: c_f_id
-    type(var_cal_opt),pointer      :: p_k_value
-    type(c_ptr)                    :: c_k_value
-    character(len=11+1, kind=c_char) :: c_name
-
-    integer(c_int), save           :: c_k_id = -1
-
-    if (c_k_id .eq. -1) then
-      c_name = "var_cal_opt"//c_null_char
-      c_k_id = cs_f_field_key_id(c_name)
-    endif
-
-    c_f_id = f_id
-
-    p_k_value => k_value
-    c_k_value = c_loc(p_k_value)
-
-    call cs_f_field_set_key_struct_var_cal_opt(c_f_id, c_k_value)
-
-    return
-
-  end subroutine field_set_key_struct_var_cal_opt
-
-  !=============================================================================
-
-  !> \brief Return a pointer to the var_cal_opt structure for cs_var_cal_opt key
-  !> associated with a field.
-
-  !> If the field category is not compatible, a fatal error is provoked.
-
-  !> \param[in]   f_id     field id
-  !> \param[out]  k_value  integer value associated with key id for this field
-
-  subroutine field_get_key_struct_var_cal_opt(f_id, k_value)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)                      :: f_id
-    type(var_cal_opt), intent(out), target :: k_value
-
-    ! Local variables
-
-    integer(c_int)                 :: c_f_id
-    type(var_cal_opt),pointer      :: p_k_value
-    type(c_ptr)                    :: c_k_value
-
-    c_f_id = f_id
-
-    p_k_value => k_value
-    c_k_value = c_loc(p_k_value)
-
-    call cs_f_field_get_key_struct_var_cal_opt(c_f_id, c_k_value)
-
-    return
-
-  end subroutine field_get_key_struct_var_cal_opt
 
   !=============================================================================
 

@@ -54,10 +54,6 @@ module numvar
   !> isca(i) is the index of the scalar i
   integer, save :: isca(nscamx)
 
-  !> \anchor iscapp
-  !> iscapp(i) is the index of the specific physics scalar i
-  integer, save :: iscapp(nscamx)
-
   !> \anchor nscaus
   !> number of user scalars solutions of an advection equation
   integer, save :: nscaus = 0
@@ -78,12 +74,6 @@ module numvar
 
   !> \addtogroup physical_prop
   !> \{
-
-  !> dynamic molecular viscosity (in kg/(m.s))
-  integer, save :: iviscl = -1
-
-  !> variable diffusivity field id key for scalars
-  integer, save :: kivisl = -1
 
   !> cell density field ids of the variables
   integer, save :: icrom = -1

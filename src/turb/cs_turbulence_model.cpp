@@ -1042,67 +1042,6 @@ double cs_turb_xclt = 0.305;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_turb_model_get_pointers(int     **model,
-                             int     **itytur);
-
-void
-cs_f_turb_model_constants_get_pointers(double  **xlesfd,
-                                       double  **xlesfl,
-                                       double  **ales,
-                                       double  **bles);
-
-/*============================================================================
- * Private function definitions
- *============================================================================*/
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global turbulence model structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   iturb  --> pointer to cs_glob_turb_model->model
- *   itytur --> pointer to cs_glob_turb_model->itytur
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turb_model_get_pointers(int     **iturb,
-                             int     **itytur)
-{
-  *iturb  = &(_turb_model.model);
-  *itytur = &(_turb_model.itytur);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to constants for turbulence models.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turb_model_constants_get_pointers(double  **xlesfd,
-                                       double  **xlesfl,
-                                       double  **ales,
-                                       double  **bles)
-{
-  *xlesfd= &cs_turb_xlesfd;
-  *xlesfl= &cs_turb_xlesfl;
-  *ales  = &cs_turb_ales;
-  *bles  = &cs_turb_bles;
-}
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 

@@ -29,6 +29,7 @@
 !> \param[in]   imode        0: reading for dimensions and starting time only
 !>                           1: reading actual meteo data
 !-------------------------------------------------------------------------------
+
 subroutine atlecm (imode) &
   bind(C, name="cs_f_read_meteo_profile")
   use, intrinsic :: iso_c_binding
@@ -38,13 +39,11 @@ subroutine atlecm (imode) &
 !===============================================================================
 
 use paramx
-use pointe
 use entsor
 use cstnum
 use cstphy
 use optcal
 use atincl
-use ctincl, only: cp_a, cp_v
 use cs_c_bindings
 
 !===============================================================================

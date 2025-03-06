@@ -39,12 +39,10 @@ use cstphy
 use cstnum
 use entsor
 use parall
-use period
 use ppincl
 use atincl
 use atsoil
 use field
-use ctincl, only: cp_a, cp_v
 use mesh
 
 implicit none

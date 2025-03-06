@@ -73,29 +73,6 @@ module cstphy
   !> Gravity
   real(c_double), pointer, save :: gy, gz
 
-  !> indicates if the isobaric specific heat \f$C_p\f$ is variable:
-  !>  - 0: constant, no property field is declared
-  !>  - 1: variable, \f$C_p\f$ is declared as a property field\n
-  !> When gas or coal combustion is activated, \ref icp is automatically set to 0
-  !> (constant \f$C_p\f$). With the electric module, it is automatically set to 1.
-  !> The user is not allowed to modify these default choices.\n
-  !> When \ref icp = 1 is specified, the code automatically modifies this value to
-  !> make \ref icp designate the effective index-number of the property "specific heat".
-  !> For each cell iel, the value of \f$C_p\f$ is then specified by the user in the
-  !> appropriate subroutine (\ref cs_user_physical_properties for the standard physics).\n
-  !> Useful if there is at least 1 temperature scalar, or with the compressible module
-  !> for non perfect gases.
-  integer(c_int), pointer, save :: icp
-
-  !> variable density field \f$ \rho \f$:
-  !>    - 1: true, its variation law be given either
-  !> in the GUI, or in the user subroutine
-  !> \ref cs_user_physical_properties .\n
-  !> See \subpage physical_properties for more informations.
-  !>    - 0: false, its value is the reference density
-  !> \ref ro0.
-  integer(c_int), pointer, save :: irovar
-
   !> reference density.\n
   real(c_double), pointer, save :: ro0
 
@@ -120,9 +97,8 @@ module cstphy
   !> reference specific heat.
   !>
   !> Useful with a thermal model.
-  !> Unless the user specifies the specific heat in the user subroutine
-  !> \ref cs_user_physical_properties (\ref cstphy::icp "icp" > 0) with the
-  !> compressible module or
+  !> Unless the user specifies the specific heat in the user function
+  !> \ref cs_user_physical_properties with the compressible module or
   !>  coal combustion, \ref cp0 is also needed even when there is no user scalar.
   !> \note None of the scalars from the specific physics is a temperature.
   !> \note When using the Graphical Interface, \ref cp0 is also used to
@@ -133,58 +109,6 @@ module cstphy
 
   !> Thermodynamic pressure for the current time step
   real(c_double), pointer, save :: pther
-
-  !> \defgroup csttur Module for turbulence constants
-
-  !> \addtogroup csttur
-  !> \{
-
-  !> constant used in the definition of LES filtering diameter:
-  !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}}\f$
-  !> \ref xlesfl is a constant used to define, for
-  !> each cell \f$\omega_i\f$, the width of the (implicit) filter:
-  !> \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$\n
-  !> Useful if and only if \ref iturb = 40 or 41
-  real(c_double), pointer, save :: xlesfl
-
-  !> constant used to define, for each cell \f$Omega_i\f$,
-  !> the width of the (implicit) filter:
-  !>  - \f$\overline{\Delta}=xlesfl(ales*|Omega_i|)^{bles}\f$
-  !>
-  !> Useful if and only if \ref iturb = 40 or 41.
-  real(c_double), pointer, save :: ales
-
-  !> constant used to define, for each cell \f$Omega_i\f$,
-  !>
-  !> the width of the (implicit) filter:
-  !>  - \f$\overline{\Delta}=xlesfl(ales*|Omega_i|)^{bles}\f$
-  !>
-  !> Useful if and only if \ref iturb = 40 or 41
-  real(c_double), pointer, save :: bles
-
-  !> Smagorinsky constant used in the Smagorinsky model for LES.
-  !> The sub-grid scale viscosity is calculated by
-  !> \f$\displaystyle\mu_{sg}=
-  !> \rho C_{smago}^2\bar{\Delta}^2\sqrt{2\bar{S}_{ij}\bar{S}_{ij}}\f$
-  !> where \f$\bar{\Delta}\f$ is the width of the filter
-  !>  and \f$\bar{S}_{ij}\f$ the filtered strain rate.
-  !>
-  !> Useful if and only if \ref iturb = 40
-  !> \note In theory Smagorinsky constant is 0.18.
-  !> For a planar canal plan, 0.065 value is rather taken.
-  real(c_double), pointer, save :: csmago
-
-  !> ratio between
-  !> explicit and explicit filter width for a dynamic model
-  !> constant used to define, for each cell \f$\Omega_i\f$,
-  !> the width of the explicit filter used in the framework of
-  !> the LES dynamic model:
-  !> \f$\widetilde{\overline{\Delta}}=xlesfd\overline{\Delta}\f$.
-  !>
-  !> Useful if and only if \ref iturb = 41
-  real(c_double), pointer, save :: xlesfd
-
-  !> \}
 
   !> \}
 
@@ -211,9 +135,7 @@ module cstphy
     ! Interface to C function retrieving pointers to members of the
     ! global fluid properties structure
 
-    subroutine cs_f_fluid_properties_get_pointers(icp,     &
-                                                  irovar,  &
-                                                  ro0,     &
+    subroutine cs_f_fluid_properties_get_pointers(ro0,     &
                                                   viscl0,  &
                                                   p0,      &
                                                   t0,      &
@@ -225,27 +147,11 @@ module cstphy
       bind(C, name='cs_f_fluid_properties_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: icp, irovar
       type(c_ptr), intent(out) :: ro0, viscl0
       type(c_ptr), intent(out) :: p0, t0, cp0
       type(c_ptr), intent(out) :: rair, rvapor, rvsra
       type(c_ptr), intent(out) :: pther
     end subroutine cs_f_fluid_properties_get_pointers
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function retrieving pointers to constants of the
-    ! turbulence model
-
-    subroutine cs_f_turb_model_constants_get_pointers(          &
-         xlesfd, xlesfl, ales, bles)                            &
-
-      bind(C, name='cs_f_turb_model_constants_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: xlesfd, xlesfl
-      type(c_ptr), intent(out) :: ales, bles
-    end subroutine cs_f_turb_model_constants_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -289,20 +195,16 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_icp, c_irovar
     type(c_ptr) :: c_ro0, c_viscl0, c_p0
     type(c_ptr) :: c_t0, c_cp0
     type(c_ptr) :: c_rair,c_rvapor, c_rvsra
     type(c_ptr) :: c_pther
 
-    call cs_f_fluid_properties_get_pointers(c_icp, c_irovar,                &
-                                            c_ro0, c_viscl0,                &
+    call cs_f_fluid_properties_get_pointers(c_ro0, c_viscl0,                &
                                             c_p0, c_t0, c_cp0,              &
                                             c_rair, c_rvapor, c_rvsra,      &
                                             c_pther)
 
-    call c_f_pointer(c_icp, icp)
-    call c_f_pointer(c_irovar, irovar)
     call c_f_pointer(c_ro0, ro0)
     call c_f_pointer(c_viscl0, viscl0)
     call c_f_pointer(c_p0, p0)
@@ -314,31 +216,6 @@ contains
     call c_f_pointer(c_pther, pther)
 
   end subroutine fluid_properties_init
-
-  !> \brief Initialize Fortran RANS turbulence model API.
-  !> This maps Fortran pointers to global C structure members.
-
-  !> \brief Initialize Fortran turbulence model constants.
-  !> This maps Fortran pointers to global C real numbers.
-
-  subroutine turb_model_constants_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_xlesfd, c_xlesfl, c_ales, c_bles
-
-    call cs_f_turb_model_constants_get_pointers(c_xlesfd, c_xlesfl,   &
-                                                c_ales, c_bles)
-
-    call c_f_pointer(c_xlesfd, xlesfd)
-    call c_f_pointer(c_xlesfl, xlesfl)
-    call c_f_pointer(c_ales  , ales  )
-    call c_f_pointer(c_bles  , bles  )
-
-  end subroutine turb_model_constants_init
 
   !=============================================================================
 

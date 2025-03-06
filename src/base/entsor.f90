@@ -26,6 +26,7 @@
 module entsor
 
   !=============================================================================
+
   use, intrinsic :: iso_c_binding
   use paramx
 
@@ -40,32 +41,6 @@ module entsor
 
   !> standard output
   integer, save :: nfecra
-
-  !> field key for output label (\ref label field keyword).
-  integer, save :: keylbl = -1
-
-  !> field key for logging (\ref log field keyword).
-  integer, save :: keylog = -1
-
-  !> <a name="keyvis"></a>
-  !> field key for postprocessing output (\ref post_vis field keyword).
-  integer, save :: keyvis = -1
-
-  !> \}
-
-  !> \defgroup userfile Additional user files
-
-  !> \addtogroup userfile
-  !> \{
-
-  !> name of the thermochemical data file for combustion.
-  !>
-  !> Useful in case of gas combustion.
-  character(len=64), save :: ficrad
-
-  !> logical unit of the thermochemical data file.
-  !> Useful in case of gas combustion;
-  integer, save :: impfpp = 25
 
   !> \}
 

@@ -40,10 +40,6 @@ $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
-
 AM_LDFLAGS =
 
 # Public header files (to be installed)
@@ -97,5 +93,4 @@ endif
 # Additional rules
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
 	-rm -rf .deps

@@ -47,7 +47,6 @@ use cstnum
 use entsor
 use parall
 use ppincl
-use radiat
 use mesh
 use field
 use cs_c_bindings
@@ -67,7 +66,6 @@ implicit none
 procedure() :: add_variable_field
 procedure() :: add_model_scalar_field
 procedure() :: fldvar_check_nvar
-procedure() :: init_var_cal_opt
 
 interface
 
@@ -83,7 +81,6 @@ end interface
 !===============================================================================
 ! Calcul de nscapp
 ! Verification du nombre de scalaires
-! Construction de iscapp
 ! Calcul de nscal
 
 !  A la sortie de cette section, NSCAL, NSCAUS et NSCAPP sont connus.
@@ -182,7 +179,7 @@ use cs_c_bindings
 
 implicit none
 
-procedure() :: fldvar_check_nvar, init_var_cal_opt
+procedure() :: fldvar_check_nvar
 
 ! Arguments
 
@@ -213,8 +210,6 @@ call fldvar_check_nvar
 ivarfl(ivar) = id
 
 call field_set_key_int(id, keyvar, ivar)
-
-call init_var_cal_opt(id)
 
 if (dim .gt. 1) then
   do ii = 2, dim
@@ -255,7 +250,7 @@ use field
 
 implicit none
 
-procedure() :: fldvar_check_nvar, init_var_cal_opt
+procedure() :: fldvar_check_nvar
 
 ! Arguments
 
@@ -319,7 +314,6 @@ do id = nfld1, nfld2 - 1
 
   call field_set_key_int(id, keyvar, ivar)
   call field_set_key_int(id, keysca, iscal)
-  call init_var_cal_opt(id)
 
   if (dim .gt. 1) then
     do ii = 2, dim
@@ -466,76 +460,6 @@ end subroutine add_model_field
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]  f_id           field id
-!> \param[out] ivar           variable number for defined field
-!_______________________________________________________________________________
-
-subroutine add_variable_field_indexes &
- ( f_id, ivar )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use entsor
-use numvar
-use field
-use cs_c_bindings, only: csexit
-
-!===============================================================================
-
-implicit none
-
-procedure() :: fldvar_check_nvar, init_var_cal_opt
-
-! Arguments
-
-integer, intent(in)  :: f_id
-integer, intent(out) :: ivar
-
-! Local variables
-
-integer  dim, ii
-
-integer, save :: keyvar = -1
-
-! Get field dimension
-
-call field_get_dim(f_id, dim)
-
-if (keyvar.lt.0) then
-  call field_get_key_id("variable_id", keyvar)
-endif
-
-ivar = nvar + 1
-nvar = nvar + dim
-
-! Check we have enough slots
-call fldvar_check_nvar
-
-do ii = 1, dim
-  ivarfl(ivar + ii - 1) = f_id
-enddo
-
-call field_set_key_int(f_id, keyvar, ivar)
-call init_var_cal_opt(f_id)
-
-return
-
-end subroutine add_variable_field_indexes
-
-!===============================================================================
-!
-!> \brief add field indexes associated with a new non-user solved
-!>        scalar variable, with default options
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]  f_id           field id
 !> \param[out] iscal          scalar id for defined field
 !_______________________________________________________________________________
 
@@ -557,7 +481,7 @@ use cs_c_bindings, only: csexit
 
 implicit none
 
-procedure() :: fldvar_check_nvar, fldvar_check_nscapp, init_var_cal_opt
+procedure() :: fldvar_check_nvar, fldvar_check_nscapp
 
 ! Arguments
 
@@ -591,7 +515,6 @@ call fldvar_check_nvar
 call fldvar_check_nscapp
 
 isca(iscal) = ivar
-iscapp(nscapp) = iscal
 
 do ii = 1, dim
   ivarfl(ivar + ii - 1) = f_id
@@ -599,7 +522,6 @@ enddo
 
 call field_set_key_int(f_id, keyvar, ivar)
 call field_set_key_int(f_id, keysca, iscal)
-call init_var_cal_opt(f_id)
 
 return
 
@@ -732,63 +654,6 @@ end subroutine fldvar_check_nvar
 
 !===============================================================================
 
-!> \brief Initialize the given variable calculation option structure with
-!>        legacy values (iniini) allowing to later test user modification.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!_______________________________________________________________________________
-
-subroutine init_var_cal_opt &
- ( id )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use entsor
-use numvar
-use cs_c_bindings
-use field
-use optcal
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-integer id
-
-! Local variables
-type(var_cal_opt) :: vcopt
-
-! Most values set by default at in _var_cal_opt default;
-! see cs_parameters.c
-
-call field_get_key_struct_var_cal_opt(id, vcopt)
-
-! Undefined values, may be modified by cs_parameters_*_complete
-vcopt%isstpc = -999
-vcopt%nswrsm = -1
-vcopt%thetav = -1.d0
-vcopt%blencv = -1.d0
-vcopt%epsilo = -1.d0
-vcopt%epsrsm = -1.d0
-vcopt%relaxv = -1.d0
-
-call field_set_key_struct_var_cal_opt(id, vcopt)
-
-return
-
-end subroutine init_var_cal_opt
-
-!===============================================================================
-
 !> \brief Check nscamx is sufficient for the required number of model scalars.
 !
 !-------------------------------------------------------------------------------
@@ -840,7 +705,7 @@ return
 '@  The number of users scalars                               ',/,&
 '@     requested                       is   NSCAUS = ', i10    ,/,&
 '@  The total number of scalars                               ',/,&
-'@    allowed    in   paramx.h         est  NSCAMX = ', i10    ,/,&
+'@    allowed    in   paramx.f90       is   NSCAMX = ', i10    ,/,&
 '@                                                            ',/,&
 '@  The maximum value possible for NSCAPP                     ',/,&
 '@    with the chosen model is       NSCAMX-NSCAUS = ', i10    ,/,&
@@ -872,27 +737,53 @@ end subroutine fldvar_check_nscapp
 function cs_add_variable_field_indexes(f_id) result(ivar) &
   bind(C, name='cs_add_variable_field_indexes')
 
-  use, intrinsic :: iso_c_binding
-  use cs_c_bindings
+!===============================================================================
+! Module files
+!===============================================================================
 
-  implicit none
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+use cs_c_bindings, only: csexit
 
-  procedure() :: add_variable_field_indexes
+use, intrinsic :: iso_c_binding
 
-  ! Arguments
+!===============================================================================
 
-  integer(c_int), value :: f_id
-  integer(c_int) :: ivar
+implicit none
 
-  ! Local variables
+procedure() :: fldvar_check_nvar
 
-  integer f_id0, ivar0
+! Arguments
 
-  f_id0 = f_id
+integer(c_int), value :: f_id
+integer(c_int) :: ivar
 
-  call add_variable_field_indexes(f_id0, ivar0)
+! Local variables
 
-  ivar = ivar0
+integer  f_id0
+integer  dim, ii, keyvar
+
+f_id0 = f_id
+
+! Get field dimension
+
+call field_get_dim(f_id0, dim)
+
+ivar = nvar + 1
+nvar = nvar + dim
+
+! Check we have enough slots
+call fldvar_check_nvar
+
+do ii = 1, dim
+  ivarfl(ivar + ii - 1) = f_id
+enddo
+
+call field_get_key_id("variable_id", keyvar)
+call field_set_key_int(f_id, keyvar, ivar)
 
 end function cs_add_variable_field_indexes
 
@@ -962,8 +853,6 @@ subroutine cs_c_add_model_thermal_field_indexes(f_id) &
   f_id0 = f_id
 
   call add_model_field_indexes(f_id0, iscal0)
-
-  if (itherm .eq. 2) ihm = f_id
 
 end subroutine cs_c_add_model_thermal_field_indexes
 

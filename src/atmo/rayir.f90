@@ -82,15 +82,12 @@ use optcal
 use cstphy
 use entsor
 use parall
-use period
 use ppincl
 use cs_c_bindings
 use mesh
 use field
-use atincl, only: kmx, sigc, iru, ird
-use ctincl, only: cp_a, cp_v
+use atincl, only: kmx, sigc, iru, ird, cp_a, cp_v, rad_atmo_model
 use cstnum, only: epzero, pi
-use radiat
 use pointe, only: itypfb
 
 !===============================================================================

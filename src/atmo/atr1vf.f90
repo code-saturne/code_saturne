@@ -40,7 +40,6 @@ use optcal
 use cstphy
 use cstnum, only:pi
 use parall
-use period
 use ppincl
 use mesh
 use field

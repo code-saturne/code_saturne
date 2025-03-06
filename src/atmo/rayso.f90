@@ -164,7 +164,6 @@ use optcal
 use cstphy
 use entsor
 use parall
-use period
 use ppincl
 use cs_c_bindings
 use mesh
@@ -172,11 +171,9 @@ use field
 use atincl, only: kmx, nbmett, sigc, squant, xlat, xlon, sold, &
                   solu, piaero_o3,piaero_h2o, &
                   black_carbon_frac,zaero, gaero_o3, gaero_h2o, &
-                  aod_h2o_tot, aod_o3_tot
-use ctincl, only: cp_a, cp_v
+                  aod_h2o_tot, aod_o3_tot, cp_a, cp_v, rad_atmo_model
 use cstnum, only: epzero, pi
 use pointe, only: itypfb
-use radiat
 
 !===============================================================================
 

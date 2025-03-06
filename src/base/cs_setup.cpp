@@ -630,8 +630,6 @@ _create_variable_fields(void)
                                               3,
                                               1);
       f = cs_field_by_id(f_id);
-      // TODO remove this once iuma is not referenced in Fortran anymore
-      cs_add_variable_field_indexes(f->id);
     }
     else
       f = _add_variable_field("mesh_velocity", "Mesh Velocity", 3);

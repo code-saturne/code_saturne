@@ -48,7 +48,6 @@ subroutine atlecc (imode) &
 !===============================================================================
 
 use paramx
-use pointe
 use entsor
 use field
 use cstnum

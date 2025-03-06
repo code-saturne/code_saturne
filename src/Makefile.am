@@ -56,7 +56,6 @@ base/entsor.f90 \
 base/numvar.f90 \
 base/optcal.f90 \
 base/parall.f90 \
-base/period.f90 \
 base/pointe.f90 \
 base/cs_c_bindings.f90 \
 atmo/atincl.f90 \
@@ -64,9 +63,7 @@ atmo/atsoil.f90 \
 atmo/atchem.f90 \
 atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
-ctwr/ctincl.f90 \
-pprt/ppincl.f90 \
-rayt/radiat.f90
+pprt/ppincl.f90
 
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
@@ -74,14 +71,13 @@ rayt/radiat.f90
 base/cstphy.$(OBJEXT): base/paramx.$(OBJEXT)
 
 base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/period.$(OBJEXT) base/field.$(OBJEXT)
+ base/mesh.$(OBJEXT)  base/field.$(OBJEXT)
 
 base/entsor.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT)
 
 base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
 
-base/optcal.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT) \
- base/numvar.$(OBJEXT) base/cstphy.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
+base/optcal.$(OBJEXT): base/cs_c_bindings.$(OBJEXT)
 
 base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/mesh.$(OBJEXT) \
  base/cs_c_bindings.$(OBJEXT)
@@ -95,15 +91,10 @@ atmo/atchem.$(OBJEXT): base/mesh.$(OBJEXT) \
  base/cs_c_bindings.$(OBJEXT)
 
 atmo/atimbr.$(OBJEXT): base/cstphy.$(OBJEXT) base/entsor.$(OBJEXT) \
- atmo/atincl.$(OBJEXT) ctwr/ctincl.$(OBJEXT)
+ atmo/atincl.$(OBJEXT)
 
 atmo/sshaerosol.$(OBJEXT): base/cs_c_bindings.$(OBJEXT) \
  atmo/atchem.$(OBJEXT) base/mesh.$(OBJEXT)
-
-ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
-
-rayt/radiat.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
- base/optcal.$(OBJEXT) base/numvar.$(OBJEXT)
 
 # Additional local targets
 
