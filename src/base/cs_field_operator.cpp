@@ -678,7 +678,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
         bc_coeffs = f->bc_coeffs;
         if (use_previous_t) {
-          cs_field_bc_coeffs_init(&bc_coeffs_loc);
+          cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc);
           bc_coeffs_loc.val_f = f->bc_coeffs->val_f_pre;
           bc_coeffs = &bc_coeffs_loc;
         }
@@ -755,7 +755,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
         bc_coeffs = f->bc_coeffs;
         if (use_previous_t) {
-          cs_field_bc_coeffs_init(&bc_coeffs_loc);
+          cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc);
           bc_coeffs_loc.val_f = f->bc_coeffs->val_f_pre;
           bc_coeffs = &bc_coeffs_loc;
         }
