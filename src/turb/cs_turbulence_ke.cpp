@@ -845,6 +845,7 @@ cs_turbulence_ke(int              phase_id,
                   - d2s3*rho*xk*divu[c_id];
     });
   }
+
   /* Save production for post processing */
   if (f_tke_prod != nullptr) {
     cs_real_t *tke_prod = f_tke_prod->val;
@@ -1125,6 +1126,9 @@ cs_turbulence_ke(int              phase_id,
     CS_FREE_HD(grad);
     CS_FREE_HD(grad_dot_g);
   }
+  else
+    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., gk);
+
 
   /* In v2f, we store the production in prdv2f which will be complete further
      for containing the complete production term */
