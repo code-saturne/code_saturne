@@ -100,9 +100,6 @@ atmo/atimbr.$(OBJEXT): base/cstphy.$(OBJEXT) base/entsor.$(OBJEXT) \
 atmo/sshaerosol.$(OBJEXT): base/cs_c_bindings.$(OBJEXT) \
  atmo/atchem.$(OBJEXT) base/mesh.$(OBJEXT)
 
-cogz/coincl.$(OBJEXT): base/paramx.$(OBJEXT) \
- pprt/ppincl.$(OBJEXT) rayt/radiat.$(OBJEXT)
-
 ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
 
 rayt/radiat.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
