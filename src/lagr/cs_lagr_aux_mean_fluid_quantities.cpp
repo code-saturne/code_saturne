@@ -667,7 +667,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       }
     }
 
-    //TODO add user momentum source terms to grad_pr
+    // TODO add user momentum source terms to grad_pr
 
     /* Compute viscous terms
      * ===================== */

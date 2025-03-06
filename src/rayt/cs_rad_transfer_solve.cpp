@@ -1146,8 +1146,7 @@ _rad_transfer_solve(int bc_type[])
   cs_lnum_t n_b_faces   = cs_glob_mesh->n_b_faces;
   cs_lnum_t n_i_faces   = cs_glob_mesh->n_i_faces;
 
-  cs_real_3_t *b_face_normal
-    = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  const cs_nreal_3_t *b_face_u_normal = cs_glob_mesh_quantities->b_face_u_normal;
   const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
@@ -2160,19 +2159,13 @@ _rad_transfer_solve(int bc_type[])
 
     cs_field_bc_coeffs_t bc_coeffs_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_loc);
-    CS_MALLOC(bc_coeffs_loc.a, 3*n_b_faces, cs_real_t);
-    CS_MALLOC(bc_coeffs_loc.b, 9*n_b_faces, cs_real_t);
+    CS_MALLOC(bc_coeffs_loc.val_f, 3*n_b_faces, cs_real_t);
 
-    cs_real_3_t  *coefaq = (cs_real_3_t  *)bc_coeffs_loc.a;
-    cs_real_33_t *coefbq = (cs_real_33_t *)bc_coeffs_loc.b;
+    cs_real_3_t  *val_f = (cs_real_3_t  *)bc_coeffs_loc.val_f;
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
-        coefaq[ifac][i]
-          = f_fnet->val[ifac] * b_face_normal[ifac][i] / b_face_surf[ifac];
-
-        for (cs_lnum_t j = 0; j < 3; j++)
-          coefbq[ifac][i][j] = 0.;
+        val_f[ifac][i] = f_fnet->val[ifac] * b_face_u_normal[ifac][i];
       }
     }
 
@@ -2211,8 +2204,7 @@ _rad_transfer_solve(int bc_type[])
 
     /* Free memory */
     CS_FREE(grad);
-    CS_FREE(coefbq);
-    CS_FREE(coefaq);
+    CS_FREE(bc_coeffs_loc.val_f);
 
   } /* End of computation of divergence */
 

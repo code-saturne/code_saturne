@@ -465,7 +465,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       cs_balance_vector(idtvar,
                         f_id,
                         imasac,
-                        inc,
+                        1,       /* inc */
                         ivisep,
                         eqp,
                         nullptr, /* pvar == pvara */
@@ -490,7 +490,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       cs_balance_tensor(idtvar,
                         f_id,
                         imasac,
-                        inc,
+                        1,       /* inc */
                         eqp,
                         nullptr, /* pvar == pvara */
                         (const cs_real_6_t *)pvara,
