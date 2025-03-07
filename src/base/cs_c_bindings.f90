@@ -35,55 +35,6 @@ module cs_c_bindings
 
   !=============================================================================
 
-  integer :: MESH_LOCATION_NONE, MESH_LOCATION_CELLS
-  integer :: MESH_LOCATION_INTERIOR_FACES, MESH_LOCATION_BOUNDARY_FACES
-  integer :: MESH_LOCATION_VERTICES, MESH_LOCATION_PARTICLES
-  integer :: MESH_LOCATION_OTHER
-
-  integer :: POST_ON_LOCATION, POST_BOUNDARY_NR, POST_MONITOR
-
-  integer :: RESTART_VAL_TYPE_INT_T, RESTART_VAL_TYPE_REAL_T
-
-  integer :: RESTART_DISABLED, RESTART_MAIN, RESTART_AUXILIARY
-  integer :: RESTART_RAD_TRANSFER, RESTART_LAGR, RESTART_LAGR_STAT
-  integer :: RESTART_1D_WALL_THERMAL, RESTART_LES_INFLOW
-
-  integer :: VOLUME_ZONE_INITIALIZATION, VOLUME_ZONE_POROSITY
-  integer :: VOLUME_ZONE_HEAD_LOSS
-  integer :: VOLUME_ZONE_SOURCE_TERM, VOLUME_ZONE_MASS_SOURCE_TERM
-
-  parameter (MESH_LOCATION_NONE=0)
-  parameter (MESH_LOCATION_CELLS=1)
-  parameter (MESH_LOCATION_INTERIOR_FACES=2)
-  parameter (MESH_LOCATION_BOUNDARY_FACES=3)
-  parameter (MESH_LOCATION_VERTICES=4)
-  parameter (MESH_LOCATION_PARTICLES=5)
-  parameter (MESH_LOCATION_OTHER=6)
-
-  parameter (POST_ON_LOCATION=1)
-  parameter (POST_BOUNDARY_NR=2)
-  parameter (POST_MONITOR=4)
-
-  parameter (RESTART_VAL_TYPE_INT_T=1)
-  parameter (RESTART_VAL_TYPE_REAL_T=3)
-
-  parameter (RESTART_DISABLED=-1)
-  parameter (RESTART_MAIN=0)
-  parameter (RESTART_AUXILIARY=1)
-  parameter (RESTART_RAD_TRANSFER=2)
-  parameter (RESTART_LAGR=3)
-  parameter (RESTART_LAGR_STAT=4)
-  parameter (RESTART_1D_WALL_THERMAL=5)
-  parameter (RESTART_LES_INFLOW=6)
-
-  parameter (VOLUME_ZONE_INITIALIZATION=1)
-  parameter (VOLUME_ZONE_POROSITY=2)
-  parameter (VOLUME_ZONE_HEAD_LOSS=4)
-  parameter (VOLUME_ZONE_SOURCE_TERM=8)
-  parameter (VOLUME_ZONE_MASS_SOURCE_TERM=16)
-
-  !=============================================================================
-
   interface
 
     !---------------------------------------------------------------------------
@@ -153,34 +104,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute filters for dynamic models.
-
-    !> \param[in]   dim            stride of array to filter
-    !> \param[in]   val            array of values to filter
-    !> \param[out]  f_val          array of filtered values
-
-    subroutine les_filter(stride, val, f_val)  &
-      bind(C, name='cs_les_filter')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: stride
-      real(kind=c_double), dimension(*) :: val
-      real(kind=c_double), dimension(*), intent(out) :: f_val
-    end subroutine les_filter
-
-    !---------------------------------------------------------------------------
-
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function creating the bc type and face zone arrays
-
-    subroutine cs_f_boundary_conditions_create() &
-      bind(C, name='cs_boundary_conditions_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_f_boundary_conditions_create
 
     !---------------------------------------------------------------------------
 
@@ -214,21 +138,6 @@ module cs_c_bindings
       implicit none
       integer(c_int) :: flag
     end function cs_restart_present
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function creating a variable field
-
-    function cs_variable_field_create(name, label,                   &
-                                      location_id, dim) result(id)   &
-      bind(C, name='cs_variable_field_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in)  :: name, label
-      integer(c_int), value                                    :: location_id
-      integer(c_int), value                                    :: dim
-      integer(c_int)                                           :: id
-    end function cs_variable_field_create
 
     !---------------------------------------------------------------------------
 
@@ -434,51 +343,6 @@ contains
     iz2 = z_lv(2) + 1
 
   end subroutine intprz
-
-  !=============================================================================
-
-  !> \brief  Add field defining a general solved variable, with default options.
-
-  !> \param[in]  name           field name
-  !> \param[in]  label          field default label, or empty
-  !> \param[in]  location_id    field location type:
-  !>                              0: none
-  !>                              1: cells
-  !>                              2: interior faces
-  !>                              3: interior faces
-  !>                              4: vertices
-  !> \param[in]  dim            field dimension
-  !> \param[out] id             id of defined field
-
-  subroutine variable_field_create(name, label, location_id, dim, id)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in) :: name, label
-    integer, intent(in)          :: location_id, dim
-    integer, intent(out)         :: id
-
-    ! Local variables
-
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-    character(len=len_trim(label)+1, kind=c_char) :: c_label
-    integer(c_int) :: c_location_id, c_dim, c_id
-
-    c_name = trim(name)//c_null_char
-    c_label = trim(label)//c_null_char
-    c_location_id = location_id
-    c_dim = dim
-
-    c_id = cs_variable_field_create(c_name, c_label, c_location_id, c_dim)
-
-    id = c_id
-
-    return
-
-  end subroutine variable_field_create
 
   !=============================================================================
 

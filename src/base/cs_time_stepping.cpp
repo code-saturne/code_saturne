@@ -124,9 +124,6 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_boundary_conditions_init(void);
-
-void
 cs_f_init_chemistry_reacnum(void);
 
 void
@@ -294,7 +291,7 @@ cs_time_stepping(void)
   /* Memory management
      ----------------- */
 
-  cs_f_boundary_conditions_init();
+  cs_boundary_conditions_create();
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
     if (cs_glob_atmo_chemistry->model > 0) {

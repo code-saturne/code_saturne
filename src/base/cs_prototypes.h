@@ -98,17 +98,6 @@ int
 cs_add_model_field_indexes(int  f_id);
 
 /*----------------------------------------------------------------------------
- * Add field indexes associated with a new solved thermal variable,
- * with default options
- *
- * parameters:
- *   f_id <--   field id
- *----------------------------------------------------------------------------*/
-
-void
-cs_add_model_thermal_field_indexes(int  f_id);
-
-/*----------------------------------------------------------------------------
  * Computes the explicit chemical source term for atmospheric chemistry in
  * case of a semi-coupled resolution
  *----------------------------------------------------------------------------*/

@@ -68,19 +68,12 @@ pprt/ppincl.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-base/cstphy.$(OBJEXT): base/paramx.$(OBJEXT)
-
 base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
  base/mesh.$(OBJEXT)  base/field.$(OBJEXT)
-
-base/entsor.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT)
 
 base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
 
 base/optcal.$(OBJEXT): base/cs_c_bindings.$(OBJEXT)
-
-base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/mesh.$(OBJEXT) \
- base/cs_c_bindings.$(OBJEXT)
 
 atmo/atincl.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
  base/mesh.$(OBJEXT) atmo/atsoil.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \

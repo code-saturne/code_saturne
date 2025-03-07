@@ -194,7 +194,7 @@ cs_ctwr_add_variable_fields(void)
                                             1);
 
         f = cs_field_by_id(f_id);
-        cs_add_model_thermal_field_indexes(f->id);
+        cs_add_model_field_indexes(f->id);
       }
 
       /* Variable cp (0 = variable, -1 = constant) since it changed with humidity

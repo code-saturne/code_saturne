@@ -173,7 +173,6 @@ use atincl, only: kmx, nbmett, sigc, squant, xlat, xlon, sold, &
                   black_carbon_frac,zaero, gaero_o3, gaero_h2o, &
                   aod_h2o_tot, aod_o3_tot, cp_a, cp_v, rad_atmo_model
 use cstnum, only: epzero, pi
-use pointe, only: itypfb
 
 !===============================================================================
 
@@ -220,6 +219,9 @@ double precision soil_direct_flux , soil_global_flux
 double precision soil_direct_flux_h2o,  soil_global_flux_h2o
 double precision soil_direct_flux_o3,  soil_global_flux_o3
 logical          is_active
+
+integer, dimension(:), pointer :: itypfb
+type(c_ptr) :: c_itypfb
 
 double precision, allocatable:: fabsh2o(:),fabso3(:),tauc(:)
 double precision, allocatable:: tau(:,:),pic(:,:),ref(:,:)
@@ -1235,6 +1237,10 @@ call field_get_id_try("spectral_rad_incident_flux", f_id)
 is_active = cs_rad_time_is_active()
 
 if (f_id.ge.0.and.is_active) then
+
+  call cs_f_boundary_conditions_get_pointers(c_itypfb)
+  call c_f_pointer(c_itypfb, itypfb, [nfabor])
+
   call field_get_val_v(f_id, bpro_rad_inc)
 
   call field_get_val_v_by_name("rad_absorption_coeff_up", cpro_ck_up)

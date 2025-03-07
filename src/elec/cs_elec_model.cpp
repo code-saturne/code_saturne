@@ -1780,7 +1780,7 @@ cs_elec_add_variable_fields(void)
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_int(f, kivisl, 0);
-    cs_add_model_thermal_field_indexes(f->id);
+    cs_add_model_field_indexes(f->id);
 
     /* set thermal model */
     cs_thermal_model_t *thermal = cs_get_glob_thermal_model();

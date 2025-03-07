@@ -27,9 +27,6 @@ module pointe
 
   !=============================================================================
 
-  use, intrinsic :: iso_c_binding
-  use paramx
-
   implicit none
 
   !=============================================================================
@@ -55,47 +52,6 @@ module pointe
   end type pmapper_double_r1
 
   !> \}
-
-  !=============================================================================
-
-  !> \defgroup coupled_case Specific arrays for the coupled case
-
-  !> \addtogroup coupled_case
-  !> \{
-
-  !> \anchor itypfb
-  !> boundary condition type at the boundary face \c ifac
-  !> (see \ref cs_user_boundary_conditions)
-  integer, dimension(:), pointer, save :: itypfb
-
-  !> \}
-
-  !> \}
-
-contains
-
-  !=============================================================================
-
-  subroutine boundary_conditions_init() &
-    bind(C, name='cs_f_boundary_conditions_init')
-
-    use, intrinsic :: iso_c_binding
-    use mesh
-    use cs_c_bindings
-
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_itypfb
-
-    call cs_f_boundary_conditions_create
-
-    call cs_f_boundary_conditions_get_pointers(c_itypfb)
-
-    call c_f_pointer(c_itypfb, itypfb, [nfabor])
-
-  end subroutine boundary_conditions_init
 
   !=============================================================================
 

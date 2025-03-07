@@ -88,7 +88,6 @@ use mesh
 use field
 use atincl, only: kmx, sigc, iru, ird, cp_a, cp_v, rad_atmo_model
 use cstnum, only: epzero, pi
-use pointe, only: itypfb
 
 !===============================================================================
 
@@ -133,6 +132,9 @@ double precision foirs, foirs1, foirs2
 double precision tlsups, fnss
 double precision var, zent, cpvcpa
 logical          is_active
+
+integer, dimension(:), pointer :: itypfb
+type(c_ptr) :: c_itypfb
 
 double precision, allocatable :: rov(:), roc(:), rol(:), qv0(:), qc(:)
 double precision, allocatable :: qqc(:), qql(:)
@@ -843,6 +845,9 @@ if (f_id.ge.0.and.is_active) then
 
   ! Infra Red radiation incident
   if (iand(rad_atmo_model, 16).eq.16) then
+
+    call cs_f_boundary_conditions_get_pointers(c_itypfb)
+    call c_f_pointer(c_itypfb, itypfb, [nfabor])
 
     c_id = c_id + 1
     do ifac = 1, nfabor

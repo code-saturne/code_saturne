@@ -726,7 +726,7 @@ _create_variable_fields(void)
                                             CS_MESH_LOCATION_CELLS,
                                             1);
         f = cs_field_by_id(f_id);
-        cs_add_model_thermal_field_indexes(f->id);
+        cs_add_model_field_indexes(f->id);
       }
 
       if (fp_id != CS_FIELD_N_POINTERS)

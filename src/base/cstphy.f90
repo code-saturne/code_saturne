@@ -29,8 +29,6 @@ module cstphy
 
   use, intrinsic :: iso_c_binding
 
-  use paramx
-
   implicit none
 
   !=============================================================================

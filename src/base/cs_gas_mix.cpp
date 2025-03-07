@@ -101,9 +101,6 @@ BEGIN_C_DECLS
 int
 cs_add_model_field_indexes(int  f_id);
 
-void
-cs_add_model_thermal_field_indexes(int  f_id);
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -696,7 +693,7 @@ cs_gas_mix_add_variable_fields(void)
 
     f = cs_field_by_id(f_id);
     cs_field_pointer_map(CS_ENUMF_(h), f);
-    cs_add_model_thermal_field_indexes(f->id);
+    cs_add_model_field_indexes(f->id);
   }
 
   f = cs_thermal_model_field();

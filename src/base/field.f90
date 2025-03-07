@@ -89,40 +89,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function creating a field descriptor
-
-    function cs_field_create(name, type_flag, location_id, dim, &
-                             has_previous) result(f) &
-      bind(C, name='cs_field_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
-      integer(c_int), value                                    :: type_flag
-      integer(c_int), value                                    :: location_id
-      integer(c_int), value                                    :: dim
-      logical(c_bool), value                                   :: has_previous
-      type(c_ptr)                                              :: f
-    end function cs_field_create
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function returning or creating a field descriptor
-
-    function cs_field_find_or_create(name, type_flag, location_id, &
-                                     dim, has_previous) result(f) &
-      bind(C, name='cs_field_find_or_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
-      integer(c_int), value                                    :: type_flag
-      integer(c_int), value                                    :: location_id
-      integer(c_int), value                                    :: dim
-      logical(c_bool), value                                   :: has_previous
-      type(c_ptr)                                              :: f
-    end function cs_field_find_or_create
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function obtaining the number of fields
 
     function cs_f_field_n_fields() result(id) &
@@ -261,19 +227,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function assigning a character string for a given key
-    ! to a field.
-
-    subroutine cs_f_field_set_key_str(f_id, c_id, str) &
-      bind(C, name='cs_f_field_set_key_str')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value                                    :: f_id, c_id
-      character(kind=c_char, len=1), dimension(*), intent(in)  :: str
-    end subroutine cs_f_field_set_key_str
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function returning an integer for a given key associated
     ! with a field
 
@@ -302,44 +255,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function returning a string for a given key associated
-    ! with a field.
-
-    subroutine cs_f_field_get_key_str(f_id, k_id, str_max, str, str_len) &
-      bind(C, name='cs_f_field_get_key_str')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value       :: f_id, k_id, str_max
-      type(c_ptr), intent(out)    :: str
-      integer(c_int), intent(out) :: str_len
-    end subroutine cs_f_field_get_key_str
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function copying a structure associated with a field.
-
-    subroutine cs_f_field_set_key_struct(f_id, k_id, k_value) &
-      bind(C, name='cs_f_field_set_key_struct')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value             :: f_id, k_id
-      type(c_ptr), value                :: k_value
-    end subroutine cs_f_field_set_key_struct
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function copying a structure associated with a field.
-
-    subroutine cs_f_field_get_key_struct(f_id, k_id, k_value) &
-      bind(C, name='cs_f_field_get_key_struct')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value             :: f_id, k_id
-      type(c_ptr), value                :: k_value
-    end subroutine cs_f_field_get_key_struct
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function returning a label associated with a field.
 
     subroutine cs_f_field_get_label(f_id, str_max, str, str_len) &
@@ -362,124 +277,6 @@ module field
   !=============================================================================
 
 contains
-
-  !=============================================================================
-
-  !> \brief  Define a field.
-
-  !> \param[in]  name           field name
-  !> \param[in]  type_flag      field categories (may be added)
-  !> \param[in]  location_id    field location type:
-  !>                              0: none
-  !>                              1: cells
-  !>                              2: interior faces
-  !>                              3: interior faces
-  !>                              4: vertices
-  !> \param[in]  dim            field dimension
-  !> \param[in]  has_previous   .true. if values at previous
-  !>                            time step are maintained
-  !> \param[out] id             id of defined field
-
-  subroutine field_create(name, type_flag, location_id, dim, has_previous, &
-                          id)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in) :: name
-    integer, intent(in)          :: type_flag
-    integer, intent(in)          :: location_id
-    integer, intent(in)          :: dim
-    logical, intent(in)          :: has_previous
-    integer, intent(out)         :: id
-
-    ! Local variables
-
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-    integer(c_int) :: c_type_flag
-    integer(c_int) :: c_location_id
-    integer(c_int) :: c_dim
-    logical(c_bool) :: c_has_previous
-    type(c_ptr)     :: f
-
-    c_name = trim(name)//c_null_char
-    c_type_flag = type_flag
-    c_location_id = location_id
-    c_dim = dim
-
-    if (has_previous) then
-      c_has_previous = .true.
-    else
-      c_has_previous = .false.
-    endif
-
-    f = cs_field_create(c_name, c_type_flag, c_location_id, c_dim, &
-                        c_has_previous)
-    id = cs_f_field_id_by_name(c_name)
-
-    return
-
-  end subroutine field_create
-
-  !=============================================================================
-
-  !> \brief  Return the id of a field matching a given name and attributes,
-  !>         creating it if necessary.
-
-  !> If a field with the same name but different attributes is present,
-  !> this is considered an error.
-
-  !> The default number of time values associated with a field created through
-  !> this function is 1. To modify it, use \ref cs_field_set_n_time_vals.
-
-  !> \param[in]  name           field name
-  !> \param[in]  type_flag      field categories (may be added)
-  !> \param[in]  location_id    field location type:
-  !>                              0: none
-  !>                              1: cells
-  !>                              2: interior faces
-  !>                              3: interior faces
-  !>                              4: vertices
-  !> \param[in]  dim            field dimension
-  !> \param[out] id             id of defined field
-
-  subroutine field_find_or_create(name, type_flag, location_id, dim, id)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in) :: name
-    integer, intent(in)          :: type_flag
-    integer, intent(in)          :: location_id
-    integer, intent(in)          :: dim
-    integer, intent(out)         :: id
-
-    ! Local variables
-
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-    integer(c_int) :: c_type_flag
-    integer(c_int) :: c_location_id
-    integer(c_int) :: c_dim
-    logical(c_bool) :: has_previous
-    type(c_ptr)     :: f
-
-    c_name = trim(name)//c_null_char
-    c_type_flag = type_flag
-    c_location_id = location_id
-    c_dim = dim
-    has_previous = .false.
-
-    f = cs_field_find_or_create(c_name, c_type_flag, c_location_id, c_dim, &
-                                has_previous)
-    id = cs_f_field_id_by_name(c_name)
-
-    return
-
-  end subroutine field_find_or_create
 
   !=============================================================================
 
@@ -847,88 +644,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Assign a character string for a given key to a field.
-
-  !> If the key id is not valid, or the value type or field category is not
-  !> compatible, a fatal error is provoked.
-
-  !> \param[in]   f_id  field id
-  !> \param[in]   k_id  id of associated key
-  !> \param[in]   str   string associated with key
-
-  subroutine field_set_key_str(f_id, k_id, str)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)          :: f_id, k_id
-    character(len=*), intent(in) :: str
-
-    ! Local variables
-
-    integer(c_int) :: c_f_id, c_k_id
-    character(len=len_trim(str)+1, kind=c_char) :: c_str
-
-    c_f_id = f_id
-    c_k_id = k_id
-    c_str = trim(str)//c_null_char
-
-    call cs_f_field_set_key_str(c_f_id, c_k_id, c_str)
-
-    return
-
-  end subroutine field_set_key_str
-
-  !=============================================================================
-
-  !> \brief Return a character string for a given key associated with a field.
-
-  !> If the key id is not valid, or the value type or field category is not
-  !> compatible, a fatal error is provoked.
-
-  !> \param[in]   f_id  field id
-  !> \param[in]   k_id  id of associated key
-  !> \param[out]  str   string associated with key
-
-  subroutine field_get_key_str(f_id, k_id, str)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)           :: f_id, k_id
-    character(len=*), intent(out) :: str
-
-    ! Local variables
-
-    integer :: i
-    integer(c_int) :: c_f_id, c_k_id, c_str_max, c_str_len
-    type(c_ptr) :: c_str_p
-    character(kind=c_char, len=1), dimension(:), pointer :: c_str
-
-    c_f_id = f_id
-    c_k_id = k_id
-    c_str_max = len(str)
-
-    call cs_f_field_get_key_str(c_f_id, c_k_id, c_str_max, c_str_p, c_str_len)
-    call c_f_pointer(c_str_p, c_str, [c_str_len])
-
-    do i = 1, c_str_len
-      str(i:i) = c_str(i)
-    enddo
-    do i = c_str_len + 1, c_str_max
-      str(i:i) = ' '
-    enddo
-
-    return
-
-  end subroutine field_get_key_str
-
-  !=============================================================================
-
   !> \brief Return a label associated with a field.
 
   !> If the "label" key has been set for this field, its associated string
@@ -1162,66 +877,6 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1)])
 
   end subroutine field_get_val_prev_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the previous values array of a given scalar field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to previous scalar field values
-
-  subroutine field_get_val_prev2_s(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 3 ! prev2
-    p_rank = 1
-
-    call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1)])
-
-  end subroutine field_get_val_prev2_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the previous values array of a given vector field
-
-  !> \param[in]     field_id  id of given field (which must be vectorial)
-  !> \param[out]    p         pointer to previous vector field values
-
-  subroutine field_get_val_prev_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 2
-    p_rank = 2
-
-    call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_val_prev_v
 
   !=============================================================================
 

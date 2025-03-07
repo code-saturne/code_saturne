@@ -63,8 +63,6 @@ implicit none
 ! Interfaces
 !===============================================================================
 
-procedure() :: add_variable_field
-procedure() :: add_model_scalar_field
 procedure() :: fldvar_check_nvar
 
 interface
@@ -141,85 +139,6 @@ end subroutine
 !===============================================================================
 ! Local functions
 !===============================================================================
-
-!===============================================================================
-
-!> \brief add field defining a general solved variable, with default options
-!
-!> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution log (some advanced writing
-!> levels take into account only the first 16 characters).
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]  name          field name
-!> \param[in]  label         field default label, or empty
-!> \param[in]  dim           field dimension
-!> \param[out] ivar          variable number for defined field
-!_______________________________________________________________________________
-
-subroutine add_variable_field &
- ( name, label, dim, ivar )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use entsor
-use numvar
-use field
-use cs_c_bindings
-
-!===============================================================================
-
-implicit none
-
-procedure() :: fldvar_check_nvar
-
-! Arguments
-
-character(len=*), intent(in) :: name, label
-integer, intent(in)          :: dim
-integer, intent(out)         :: ivar
-
-! Local variables
-
-integer  id, ii
-
-integer, save :: keyvar = -1
-
-! Create field
-
-call variable_field_create(name, label, MESH_LOCATION_CELLS, dim, id)
-
-if (keyvar.lt.0) then
-  call field_get_key_id("variable_id", keyvar)
-endif
-
-ivar = nvar + 1
-nvar = nvar + dim
-
-! Check we have enough slots
-call fldvar_check_nvar
-
-ivarfl(ivar) = id
-
-call field_set_key_int(id, keyvar, ivar)
-
-if (dim .gt. 1) then
-  do ii = 2, dim
-    ivarfl(ivar + ii - 1) = id
-  enddo
-endif
-
-return
-
-end subroutine add_variable_field
 
 !===============================================================================
 
@@ -332,124 +251,6 @@ return
 end subroutine add_user_scalar_fields
 
 !===============================================================================
-
-!> \brief add field defining a non-user solved scalar variable,
-!>        with default options
-!
-!> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution log (some advanced writing
-!> levels take into account only the first 16 characters).
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]  name           field name
-!> \param[in]  label          field default label, or empty
-!> \param[out] iscal          scalar number for defined field
-!_______________________________________________________________________________
-
-subroutine add_model_scalar_field &
- ( name, label, iscal )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use entsor
-use numvar
-use field
-
-!===============================================================================
-
-implicit none
-
-procedure() :: add_model_field
-
-! Arguments
-
-character(len=*), intent(in) :: name, label
-integer, intent(out)         :: iscal
-
-! Local variables
-
-integer  dim
-
-dim = 1
-
-call add_model_field(name, label, dim, iscal)
-
-return
-
-end subroutine add_model_scalar_field
-
-!===============================================================================
-!
-!> \brief add field defining a non-user solved variable,
-!>        with default options
-!
-!> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution log (some advanced writing
-!> levels take into account only the first 16 characters).
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]  name           field name
-!> \param[in]  label          field default label, or empty
-!> \param[in]  dim            field dimension
-!> \param[out] iscal          variable number for defined field
-!_______________________________________________________________________________
-
-subroutine add_model_field &
- ( name, label, dim, iscal )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use entsor
-use numvar
-use field
-use cs_c_bindings
-
-!===============================================================================
-
-implicit none
-
-procedure() :: add_model_field_indexes
-
-! Arguments
-
-character(len=*), intent(in) :: name, label
-integer, intent(in)          :: dim
-integer, intent(out)         :: iscal
-
-! Local variables
-
-integer  id
-integer  location_id
-
-location_id = 1 ! variables defined on cells
-
-! Create field
-
-call variable_field_create(name, label, location_id, dim, id)
-
-call add_model_field_indexes(id, iscal)
-
-return
-
-end subroutine add_model_field
-
-!===============================================================================
 !
 !> \brief add field indexes associated with a new non-user solved
 !>        scalar variable, with default options
@@ -526,65 +327,6 @@ call field_set_key_int(f_id, keysca, iscal)
 return
 
 end subroutine add_model_field_indexes
-
-!===============================================================================
-
-!> \brief Map field defining a general solved variable to Fortran id
-
-!> If field is not available, value is at 0
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]   name          field name
-!> \param[out]  ivar          variable id, or 0
-!_______________________________________________________________________________
-
-subroutine map_variable_field_try &
- ( name, ivar )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use field
-use cs_c_bindings
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-character(len=*), intent(in) :: name
-integer, intent(out)         :: ivar
-
-! Local variables
-
-integer f_id
-integer keyvar
-character(len=len_trim(name)+1, kind=c_char) :: c_name
-
-! Find field id
-
-ivar = 0
-
-c_name = trim(name)//c_null_char
-
-f_id = cs_f_field_id_by_name_try(c_name)
-
-if (f_id .ge. 0) then
-  call field_get_key_id("variable_id", keyvar)
-  call field_get_key_int(f_id, keyvar, ivar)
-endif
-
-return
-
-end subroutine map_variable_field_try
 
 !===============================================================================
 
@@ -822,38 +564,5 @@ function cs_c_add_model_field_indexes(f_id) result(iscal) &
   iscal = iscal0
 
 end function cs_c_add_model_field_indexes
-
-!-------------------------------------------------------------------------------
-!> \brief add field indexes associated with a new solved thermal variable,
-!>        with default options
-!
-!> \param[in]  f_id    field id
-!-------------------------------------------------------------------------------
-
-subroutine cs_c_add_model_thermal_field_indexes(f_id) &
-  bind(C, name='cs_add_model_thermal_field_indexes')
-
-  use, intrinsic :: iso_c_binding
-  use optcal
-  use ppincl
-  use cs_c_bindings
-
-  implicit none
-
-  procedure() :: add_model_field_indexes
-
-  ! Arguments
-
-  integer(c_int), value :: f_id
-
-  ! Local variables
-
-  integer f_id0, iscal0
-
-  f_id0 = f_id
-
-  call add_model_field_indexes(f_id0, iscal0)
-
-end subroutine cs_c_add_model_thermal_field_indexes
 
 !---------------------------------------------------------------------------

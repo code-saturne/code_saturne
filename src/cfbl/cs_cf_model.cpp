@@ -50,7 +50,7 @@
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_physical_properties.h"
-#include "base/cs_prototypes.h"   // for cs_add_model_thermal_field_indexes
+#include "base/cs_prototypes.h"   // for cs_add_model_field_indexes
 #include "base/cs_restart_default.h"
 #include "base/cs_velocity_pressure.h"
 
@@ -221,7 +221,7 @@ cs_cf_add_variable_fields(void)
                                                 "TotEner",
                                                 CS_MESH_LOCATION_CELLS,
                                                 1));
-    cs_add_model_thermal_field_indexes(f->id);
+    cs_add_model_field_indexes(f->id);
 
     cs_field_pointer_map(CS_ENUMF_(e_tot), f);
 

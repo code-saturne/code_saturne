@@ -133,9 +133,6 @@ const double cs_coal_epsilon = 1.e-8;
 int
 cs_add_model_field_indexes(int  f_id);
 
-void
-cs_add_model_thermal_field_indexes(int  f_id);
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -588,7 +585,7 @@ cs_coal_add_variable_fields(void)
                                         CS_MESH_LOCATION_CELLS, 1);
     cs_field_t *f = cs_field_by_id(f_id);
     cs_field_pointer_map(CS_ENUMF_(h), f);
-    cs_add_model_thermal_field_indexes(f->id);
+    cs_add_model_field_indexes(f->id);
 
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax, cs_math_big_r);

@@ -28,7 +28,6 @@ module entsor
   !=============================================================================
 
   use, intrinsic :: iso_c_binding
-  use paramx
 
   implicit none
 
