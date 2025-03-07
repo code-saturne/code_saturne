@@ -3511,6 +3511,11 @@ cs_turbulence_rij(int phase_id)
       cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
       cvar_ep[c_id] = pow(tke, 1.5) / delta; //TODO: ajouter constante ?
     }
+
+    if (m->halo != nullptr)
+      cs_field_synchronize(CS_F_(eps), CS_HALO_STANDARD);
+
+    cs_field_current_to_previous(CS_F_(eps));
   }
 
   /* Clipping
