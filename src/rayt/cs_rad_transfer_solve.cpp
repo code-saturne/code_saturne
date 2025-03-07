@@ -374,9 +374,9 @@ _cs_rad_transfer_sol(int       gg_id,
   cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells   = cs_glob_mesh->n_cells;
 
-  const cs_real_3_t *b_face_normal
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
-  const cs_real_3_t *i_face_normal
+  const cs_nreal_3_t *b_face_u_normal
+    = cs_glob_mesh_quantities->b_face_u_normal;
+  const cs_nreal_3_t *i_face_normal
     = (const cs_real_3_t *)cs_glob_mesh_quantities->i_face_normal;
   const cs_real_t   *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
@@ -560,8 +560,7 @@ _cs_rad_transfer_sol(int       gg_id,
             vect_s[2] = kk * rt_params->vect_s[dir_id][2];
             domegat = rt_params->angsol[dir_id];
             for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-              aa = cs_math_3_dot_product(vect_s, b_face_normal[face_id]);
-              aa /= b_face_surf[face_id];
+              aa = cs_math_3_dot_product(vect_s, b_face_u_normal[face_id]);
               f_snplus->val[face_id] += 0.5 * (-aa + CS_ABS(aa)) * domegat;
             }
           }
@@ -739,8 +738,9 @@ _cs_rad_transfer_sol(int       gg_id,
 
 
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-            flurdb[face_id] =  cs_math_3_dot_product(vect_s,
-                                                     b_face_normal[face_id]);
+            flurdb[face_id] =    cs_math_3_dot_product(vect_s,
+                                                       b_face_u_normal[face_id])
+                               * b_face_surf[face_id];
 
           /* Resolution
              ---------- */
@@ -828,8 +828,7 @@ _cs_rad_transfer_sol(int       gg_id,
           cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[face_id];
-            aa = cs_math_3_dot_product(vect_s, b_face_normal[face_id]);
-            aa /= b_face_surf[face_id];
+            aa = cs_math_3_dot_product(vect_s, b_face_u_normal[face_id]);
             aa = 0.5 * (aa + CS_ABS(aa)) * domegat;
             f_snplus->val[face_id] += aa;
             f_qincid->val[face_id] += aa * radiance[cell_id];
@@ -2155,10 +2154,18 @@ _rad_transfer_solve(int bc_type[])
 
   if (idiver == 1 || idiver == 2) {
 
+    cs_halo_type_t halo_type = CS_HALO_STANDARD;
+    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+    cs_gradient_type_by_imrgra(cs_glob_space_disc->imrgra,
+                               &gradient_type,
+                               &halo_type);
+
     /* Allocate temporary arrays for gradient computation */
 
     cs_field_bc_coeffs_t bc_coeffs_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_loc);
+
     CS_MALLOC(bc_coeffs_loc.val_f, 3*n_b_faces, cs_real_t);
 
     cs_real_3_t  *val_f = (cs_real_3_t  *)bc_coeffs_loc.val_f;
@@ -2168,18 +2175,22 @@ _rad_transfer_solve(int bc_type[])
         val_f[ifac][i] = f_fnet->val[ifac] * b_face_u_normal[ifac][i];
       }
     }
+    if (gradient_type == CS_GRADIENT_GREEN_ITER) {
+      bc_coeffs_loc.a = bc_coeffs_loc.val_f;
+      CS_MALLOC(bc_coeffs_loc.b, 9*n_b_faces, cs_real_t);
+      cs_real_33_t *coefbq = (cs_real_33_t *)bc_coeffs_loc.b;
+      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
+            coefbq[ifac][i][j] = 0.;
+        }
+      }
+    }
 
     cs_real_33_t *grad;
     CS_MALLOC(grad, n_cells_ext, cs_real_33_t);
 
     /* Data for computation of divergence */
-
-    cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-
-    cs_gradient_type_by_imrgra(cs_glob_space_disc->imrgra,
-                               &gradient_type,
-                               &halo_type);
 
     cs_gradient_vector(CS_F_(rad_q)->name,
                        gradient_type,
@@ -2205,6 +2216,7 @@ _rad_transfer_solve(int bc_type[])
     /* Free memory */
     CS_FREE(grad);
     CS_FREE(bc_coeffs_loc.val_f);
+    CS_FREE(bc_coeffs_loc.b);
 
   } /* End of computation of divergence */
 
