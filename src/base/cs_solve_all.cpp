@@ -437,6 +437,12 @@ _solve_most(int              n_var,
   // Total number of cells with condensation source term
   const cs_gnum_t nftcdt = (cs_gnum_t)wall_cond->nfbpcd;
 
+  /* Indicator used to ensure we exit the nterup loop when coupled once
+   * the loop is converged. May otherwise lead to a deadlock in the
+   * coupling exchange functions.
+   */
+  bool convergence_already_reached_once = false;
+
   while (iterns <= cs_glob_velocity_pressure_param->nterup) {
 
     // Call user BCs and computes BC coefficients
@@ -599,12 +605,23 @@ _solve_most(int              n_var,
 
       // If is the last iteration : inslst = 1
       if (   icvrge == 1
+          || convergence_already_reached_once
           || iterns == cs_glob_velocity_pressure_param->nterup) {
+
         /* If we need to do a new iteration for SYRTHES,
          * radiation, 1D thermal wall...
          * and that we are at the last iteration in ALE!
 
-         *...then, we reset the convergence indicators to zero */
+         *...then, we reset the convergence indicators to zero
+         FIXME However, there are no garantee that the next
+         inner iterations will lead to convergence (ie icvrge == 1).
+         If the inner iterations continues, it would lead to a
+         misbehaviour when coupling for instance with SYRTHES.
+         So once convergence has been reached once, we do not allow
+         to continue the inner iterations. */
+
+        convergence_already_reached_once = true;
+
         if (*itrfup == 0 && *itrfin == 1) {
           *itrfup = 1;
           icvrge = 0;
