@@ -791,6 +791,7 @@ cs_mo_psim(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0            roughness
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \param[in]  prt           Turbulent Prandtl number
  *
  * \return                   factor
  */
@@ -799,7 +800,8 @@ cs_mo_psim(cs_real_t              z,
 cs_real_t
 cs_mo_psih(cs_real_t              z,
            cs_real_t              z0,
-           cs_real_t              dlmo);
+           cs_real_t              dlmo,
+           cs_real_t              prt);
 
 /*----------------------------------------------------------------------------*/
 /*!

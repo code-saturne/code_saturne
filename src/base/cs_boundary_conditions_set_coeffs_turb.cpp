@@ -578,7 +578,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       else {
         /* Dry atmosphere, Monin Obukhov */
         const cs_real_t coef_moh
-          = cs_mo_psih(distbf + rough_t, rough_t, bdlmo[f_id]);
+          = cs_mo_psih(distbf + rough_t, rough_t, bdlmo[f_id], turb_schmidt);
         /* T+ */
         tplus = coef_moh / xkappa;
       }

@@ -1002,11 +1002,12 @@ _mo_psim_n(cs_real_t              z,
 static cs_real_t
 _mo_psih_n(cs_real_t              z,
            cs_real_t              z0,
-           cs_real_t              dlmo)
+           cs_real_t              dlmo,
+           cs_real_t              prt)
 {
   CS_UNUSED(dlmo);
 
-  return log(z/z0);
+  return prt*log(z/z0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1353,7 +1354,8 @@ _mo_psim_s(cs_real_t              z,
 static cs_real_t
 _mo_psih_s(cs_real_t              z,
            cs_real_t              z0,
-           cs_real_t              dlmo)
+           cs_real_t              dlmo,
+           cs_real_t              prt)
 {
   cs_real_t x = z * dlmo;
   cs_real_t x0 = z0 * dlmo;
@@ -1365,13 +1367,13 @@ _mo_psih_s(cs_real_t              z,
       cs_real_t a = 5.3;
       cs_real_t b = 1.1;
 
-      return log(z/z0) + a*log(x + pow((1. + pow(x,b)),1./b))
+      return prt*log(z/z0) + a*log(x + pow((1. + pow(x,b)),1./b))
         - a*log(x0 + pow((1. + pow(x0,b)),1./b));
     }
 
   case CS_ATMO_UNIV_FN_HOGSTROM:
     {
-      cs_real_t a = 0.95;
+      cs_real_t a = prt; /* Prt should be 0.95 to be coherent with Hogstrom */
       cs_real_t b = 7.8;
 
       return a*log(z/z0) + b*(x - x0);
@@ -1379,7 +1381,7 @@ _mo_psih_s(cs_real_t              z,
 
   case CS_ATMO_UNIV_FN_BUSINGER:
     {
-      cs_real_t a = 0.74;
+      cs_real_t a = prt; /* Prt should be 0.74 to be coherent with Businger */
       cs_real_t b = 4.7;
 
       return a*log(z/z0) + b*(x - x0);
@@ -1392,7 +1394,8 @@ _mo_psih_s(cs_real_t              z,
       cs_real_t c = 5.;
       cs_real_t d = 0.35;
 
-      return log(z/z0) + pow((1. + 2./3. * a * x),3./2.)
+      /* Note: prt should be 1. to be coherent with Hartogensis */
+      return prt*log(z/z0) + pow((1. + 2./3. * a * x),3./2.)
         + b*(x - c/d)*exp(-d*x) - pow((1. + 2./3. * a * x0),3./2.)
         - b*(x0 - c/d)*exp(-d*x0);
     }
@@ -1467,13 +1470,15 @@ _mo_psim_u(cs_real_t              z,
 static cs_real_t
 _mo_psih_u(cs_real_t              z,
            cs_real_t              z0,
-           cs_real_t              dlmo)
+           cs_real_t              dlmo,
+           cs_real_t              prt)
 {
    switch (cs_glob_atmo_option->meteo_phih_u) {
 
      case CS_ATMO_UNIV_FN_HOGSTROM:
        {
-         cs_real_t a = 0.95;
+         /* Prt should be 0.95 to be coherent with Hogstrom */
+         cs_real_t a = prt;
          cs_real_t b = 11.6;
          cs_real_t e = 0.5;
          cs_real_t x = pow((1. - b*z*dlmo), e);
@@ -1484,7 +1489,8 @@ _mo_psih_u(cs_real_t              z,
 
    case  CS_ATMO_UNIV_FN_BUSINGER:
      {
-       cs_real_t a = 0.74;
+       /* Prt should be 0.74 to be coherent with Businger */
+       cs_real_t a = prt;
        cs_real_t b = 9.;
        cs_real_t e = 0.5;
        cs_real_t x = pow((1. - b*z*dlmo), e);
@@ -1495,7 +1501,8 @@ _mo_psih_u(cs_real_t              z,
 
    case  CS_ATMO_UNIV_FN_CARL:
      {
-       cs_real_t a = 0.74;
+       /* Prt should be 0.74 to be coherent with Carl */
+       cs_real_t a = prt;
        cs_real_t b = 16.;
        cs_real_t e = 0.5;
        cs_real_t x = pow((1. - b*z*dlmo), e);
@@ -1609,6 +1616,7 @@ cs_mo_psim(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \param[in]  prt           Turbulent Prandtl number
  *
  * \return                   factor
  */
@@ -1617,17 +1625,18 @@ cs_mo_psim(cs_real_t              z,
 cs_real_t
 cs_mo_psih(cs_real_t              z,
            cs_real_t              z0,
-           cs_real_t              dlmo)
+           cs_real_t              dlmo,
+           cs_real_t              prt)
 {
   cs_real_t dlmoneutral = 1.e-12;
   cs_real_t coef;
 
   if (CS_ABS(dlmo) < dlmoneutral)
-    coef = _mo_psih_n(z, z0, dlmo);
+    coef = _mo_psih_n(z, z0, dlmo, prt);
   else if (dlmo >= 0.)
-    coef = _mo_psih_s(z, z0, dlmo);
+    coef = _mo_psih_s(z, z0, dlmo, prt);
   else
-    coef = _mo_psih_u(z, z0, dlmo);
+    coef = _mo_psih_u(z, z0, dlmo, prt);
 
   return coef;
 }
@@ -1671,10 +1680,15 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
   /* Initial LMO */
   *dlmo = 0.;
 
+  cs_real_t prt = 1.;
+  if (CS_F_(t) != nullptr)
+    prt = cs_field_get_key_double(CS_F_(t),
+                                  cs_field_key_id("turbulent_schmidt"));
+
   /* Call universal functions */
   cs_real_t zref = z+z0;
   cs_real_t coef_mom = cs_mo_psim(zref,z0, *dlmo);
-  cs_real_t coef_moh = cs_mo_psih(zref,z0, *dlmo);
+  cs_real_t coef_moh = cs_mo_psih(zref,z0, *dlmo, prt);
 
   /* Initial ustar and tstar */
   *ustar = kappa * du / coef_mom;
@@ -1709,7 +1723,7 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
 
     /* Evaluate universal functions */
     coef_mom = cs_mo_psim((z+z0),z0, *dlmo);
-    coef_moh = cs_mo_psih(z+z0,z0, *dlmo);
+    coef_moh = cs_mo_psih(z+z0,z0, *dlmo, prt);
 
     /* Update ustarr */
     *ustar = kappa*du/coef_mom;
@@ -4013,6 +4027,17 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t zref = aopt->meteo_zref;
   bool is_humid = (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2);
 
+  cs_real_t prt = 1.;
+  if (CS_F_(t) != nullptr)
+    prt = cs_field_get_key_double(CS_F_(t),
+                                  cs_field_key_id("turbulent_schmidt"));
+
+  cs_real_t scht = 1.;
+  cs_field_t *f_qw = cs_field_by_name_try("ym_water");
+  if (f_qw != nullptr)
+    scht = cs_field_get_key_double(f_qw,
+                                   cs_field_key_id("turbulent_schmidt"));
+
   if (!is_humid)
     aopt->meteo_qwstar = 0.;
 
@@ -4185,8 +4210,8 @@ cs_atmo_init_meteo_profiles(void)
         dlmos = dlmou;
       }
       cs_real_t ustaru  = kappa * du1u2 / (cs_mo_psim(z2, z1, dlmos));
-      cs_real_t tstaru  = kappa * dt1t2 / (cs_mo_psih(z2, z1, dlmos));
-      cs_real_t qwstaru = kappa * dqw1qw2 / (cs_mo_psih(z2, z1, dlmos));
+      cs_real_t tstaru  = kappa * dt1t2 / (cs_mo_psih(z2, z1, dlmos, prt));
+      cs_real_t qwstaru = kappa * dqw1qw2 / (cs_mo_psih(z2, z1, dlmos, scht));
       /* Note: rvsra - 1 = 0.61 */
       dlmou = kappa * (g / tmoy) * (tstaru
                                    + (phys_pro->rvsra - 1.) * tmoy * qwstaru)
@@ -4203,13 +4228,14 @@ cs_atmo_init_meteo_profiles(void)
     /* Update ustar and tstar */
     aopt->meteo_dlmo   = dlmou;
     aopt->meteo_ustar0 = kappa * du1u2 / (cs_mo_psim(z2, z1, dlmou));
-    aopt->meteo_tstar  = kappa * dt1t2 / (cs_mo_psih(z2, z1, dlmou));
-    aopt->meteo_qwstar = kappa * dqw1qw2 / (cs_mo_psih(z2, z1, dlmou));
+    aopt->meteo_tstar  = kappa * dt1t2 / (cs_mo_psih(z2, z1, dlmou, prt));
+    aopt->meteo_qwstar = kappa * dqw1qw2 / (cs_mo_psih(z2, z1, dlmou, scht));
     aopt->meteo_evapor = aopt->meteo_qwstar * (ustar0 * phys_pro->ro0);
-    aopt->meteo_qw0    = qw1
-      - aopt->meteo_qwstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;
+    //FIXME conversion theta->T
     aopt->meteo_t0     = t1
-      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo) / kappa;//FIXME conversion theta->T
+      - aopt->meteo_tstar * cs_mo_psih(z1 + z0, z0, dlmo, prt) / kappa;
+    aopt->meteo_qw0    = qw1
+      - aopt->meteo_qwstar * cs_mo_psih(z1 + z0, z0, dlmo, scht) / kappa;
     aopt->meteo_z0     = z1 * exp(-cs_turb_xkappa * u1
         / aopt->meteo_ustar0);
   }
@@ -4397,8 +4423,8 @@ cs_atmo_compute_meteo_profiles(void)
 
     /* Potential temperature profile
      * Note: same roughness as dynamics */
-    cpro_met_potemp[cell_id] =   theta0
-                               + tstar / kappa * cs_mo_psih(z+z0, z0, dlmo);
+    cpro_met_potemp[cell_id] = theta0
+                             + tstar / kappa * cs_mo_psih(z+z0, z0, dlmo,prt);
 
     /* Richardson flux number profile */
     // Note : ri_f = z/(Pr_t L) * phih/phim^2 = z/Lmo / phim
@@ -4442,13 +4468,20 @@ cs_atmo_compute_meteo_profiles(void)
   cs_parall_min(1, CS_REAL_TYPE, &u_met_min);
   cs_parall_min(1, CS_REAL_TYPE, &theta_met_min);
   if (f_met_qw != nullptr) {
+    cs_real_t scht = 1.;
+    cs_field_t *f_qw = cs_field_by_name_try("ym_water");
+    if (f_qw != nullptr)
+      scht = cs_field_get_key_double(f_qw,
+                                     cs_field_key_id("turbulent_schmidt"));
+
+
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
       cs_real_t z_grd = 0.;
       if (z_ground != nullptr)
         z_grd = z_ground[cell_id];
       cs_real_t z = cell_cen[cell_id][2] - z_grd;
       f_met_qw->val[cell_id]
-        = qw0 + qwstar / kappa * cs_mo_psih(z + z0, z0, dlmo);
+        = qw0 + qwstar / kappa * cs_mo_psih(z + z0, z0, dlmo, scht);
     }
   }
 
