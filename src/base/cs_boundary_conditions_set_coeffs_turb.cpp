@@ -321,6 +321,13 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   if (f_scal_b != nullptr)
     bvar_s = f_scal_b->val;
 
+  /* variable in I', initialized by bvar_s */
+  cs_real_t *var_ip = nullptr;
+  if (f_sc == f_th)
+    var_ip = theipb;
+  else if (f_scal_b != nullptr)
+    var_ip = f_scal_b->val;
+
   /* Does the scalar behave as a temperature ? */
   int iscacp = cs_field_get_key_int(f_sc, kscacp);
 
@@ -479,8 +486,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       /* Correction for non-neutral condition in atmospheric flows */
       hflui *= bcfnns[f_id];
 
-      /* Compute yk/T+ *PrT, take stability into account */
-      yptp[f_id] = hflui / prdtl;
+      /* Compute yk/T+, take stability into account */
+      yptp[f_id] = hflui / prdtl / turb_schmidt;
 
       /* Compute
          lambda/y * Pr_l *yk/T+ = lambda / nu * Pr_l * uk / T+ = rho cp uk / T+
@@ -491,12 +498,12 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       /* User exchange coefficient */
       if (icodcl_sc[f_id] == 15) {
         hflui = rcodcl2_sc[f_id];
-        yptp[f_id] = hflui / prdtl * distbf / rkl;
+        yptp[f_id] = hflui / prdtl * distbf / rkl / turb_schmidt;
       }
 
     }
     else {
-      /* y+/T+ *PrT */
+      /* y+/T+ */
       yptp[f_id] = rkl / (cpp * visclc);   /* 1.0 / prdtl; */
       hflui = hint[f_id];
     }
@@ -573,7 +580,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       if (iwalfs != CS_WALL_F_S_MONIN_OBUKHOV) {
 
         /* T+ = (T_I - T_w) / Tet */
-        tplus = log((distbf + rough_t) / rough_t) / (xkappa * bcfnns[f_id]);
+        tplus = turb_schmidt
+              * log((distbf + rough_t) / rough_t) / (xkappa * bcfnns[f_id]);
       }
       else {
         /* Dry atmosphere, Monin Obukhov */
@@ -642,7 +650,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
                              cs_math_fmax(1.0, sqrt(mut_lm_dmut))
                              / (yplus + dplus));
 
-            cofimp = 1.0 -   yptp[f_id] * turb_schmidt
+            cofimp = 1.0 -   yptp[f_id]
               / xkappa * (2.0 * rcprod - 1.0 / (2.0 * yplus + dplus));
           }
           /* In the viscous sub-layer */
@@ -859,14 +867,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
               || icodcl_sc[f_id] == 6
               || icodcl_sc[f_id] == 15)) {
 
-        phit = (f_sc == f_th) ?
-          cofaf_sc[f_id] + cofbf_sc[f_id] * theipb[f_id] :
-          cofaf_sc[f_id] + cofbf_sc[f_id] * bvar_s[f_id];
+        phit = cofaf_sc[f_id] + cofbf_sc[f_id] * var_ip[f_id];
       }
       else if (icodcl_sc[f_id] == 1 && icodcl_vel[f_id] == 5) {
-        phit = (f_sc == f_th) ?
-                heq * (theipb[f_id] - pimp):
-                heq * (bvar_s[f_id] - pimp);
+        phit = heq * (var_ip[f_id] - pimp);
       }
       else if (icodcl_vel[f_id] == 6 && icodcl_sc[f_id] == 6) {
         phit = cofaf_sc[f_id] + cofbf_sc[f_id] * theipb[f_id];
@@ -883,11 +887,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
           phit = heq * (theipb[f_id] - dist_theipb[f_id]);
       }
 
-      const cs_real_t var = (icodcl_vel[f_id] == 5) ? uk : buet[f_id];
-      /* FIXME Should be uk rather than ustar? */
-
+      /* Note: past version was uet instead of uk for rough wall functions */
       const cs_real_t tet
-        = phit / (romc * cpp *cs_math_fmax(var, cs_math_epzero));
+        = phit / (romc * cpp *cs_math_fmax(uk, cs_math_epzero));
 
       if (b_f_id >= 0)
         bvar_s[f_id] -= tplus * tet;
