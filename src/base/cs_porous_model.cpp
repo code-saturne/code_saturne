@@ -295,10 +295,12 @@ cs_porous_model_set_has_disable_flag(int  flag)
       /* Use fluid quantities */
       cs_glob_mesh_quantities = mq_f;
     }
+
+    /* Update Fortran pointer quantities */
+    cs_preprocess_mesh_update_fortran();
   }
 
-  /* Update Fortran pointer quantities */
-  cs_preprocess_mesh_update_fortran();
+  cs_glob_mesh_quantities->has_disable_flag = flag;
 }
 
 /*----------------------------------------------------------------------------*/
