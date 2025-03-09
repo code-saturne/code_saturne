@@ -58,6 +58,7 @@
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_fp_exception.h"
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
@@ -1827,12 +1828,16 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       }
       else if (isweep == 2) {
         beta = 0.;
-        alph = -paxkrk/CS_MAX(nadxk, 1e-30*rnorm2);
+        cs_fp_exception_disable_trap();
+        alph = -paxkrk/fmax(nadxk, 1e-30*rnorm2);
+        cs_fp_exception_restore_trap();
         if (isnan(alph))
           alph = 0;
       }
       else {
-        alph = -(paxkrk + beta*paxm1ax)/CS_MAX(nadxk, 1e-30*rnorm2);
+        cs_fp_exception_disable_trap();
+        alph = -(paxkrk + beta*paxm1ax)/fmax(nadxk, 1e-30*rnorm2);
+        cs_fp_exception_restore_trap();
         if (isnan(alph))
           alph = 0;
       }
