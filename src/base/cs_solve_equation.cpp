@@ -1669,9 +1669,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
     cvark_var = f->val;
   }
 
-  int iescap = 0, icvflb = 0;
-
-
   /* all boundary convective flux with upwind */
   cs_real_t normp = -1.0;
 
@@ -1682,7 +1679,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      iterns,
                                      f->id,
                                      nullptr,
-                                     iescap,
+                                     0,       // iescap
                                      imucpp,
                                      normp,
                                      eqp,
@@ -1698,8 +1695,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      viscce,
                                      weighf,
                                      weighb,
-                                     icvflb,
-                                     nullptr,
+                                     0,       // icvflb,
+                                     nullptr, // icvfli
                                      fimp,
                                      rhs,
                                      cvar_var,
@@ -2246,14 +2243,12 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* Solve
      ===== */
 
-  int iescap = 0, icvflb = 0, ivissv = 0;
-
   cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                      iterns,
                                      f->id,
                                      nullptr,
-                                     ivissv,
-                                     iescap,
+                                     0,  // ivissv,
+                                     0,  // iescap,
                                      eqp,
                                      cvara_var,
                                      cvara_var,
@@ -2269,7 +2264,7 @@ cs_solve_equation_vector(cs_field_t       *f,
                                      viscce,
                                      weighf,
                                      weighb,
-                                     icvflb,
+                                     0,  // icvflb,
                                      nullptr,
                                      fimp,
                                      rhs,
