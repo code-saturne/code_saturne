@@ -59,6 +59,7 @@
 #include "ctwr/cs_ctwr.h"
 #include "ctwr/cs_ctwr_source_terms.h"
 #include "alge/cs_divergence.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_drift_convective_flux.h"
 #include "elec/cs_elec_model.h"
 #include "base/cs_equation_iterative_solve.h"
@@ -1677,6 +1678,19 @@ cs_solve_equation_scalar(cs_field_t        *f,
                              fimp,
                              rhs);
 
+  /* Cancel RHS in disabled cells in case spurious terms were added
+     by "generic" code */
+
+  if (fvq->has_disable_flag) {
+    cs_dispatch_context ctx;
+    int *c_disable_flag = fvq->c_disable_flag;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (c_disable_flag[c_id])
+        rhs[c_id] = 0;
+    });
+    ctx.wait();
+  }
+
   /* Solve
    * ===== */
 
@@ -2263,6 +2277,21 @@ cs_solve_equation_vector(cs_field_t       *f,
                              bmasfl,
                              (cs_real_t *) fimp,
                              (cs_real_t *) rhs);
+
+  /* Cancel RHS in disabled cells in case spurious terms were added
+     by "generic" code */
+
+  if (fvq->has_disable_flag) {
+    cs_dispatch_context ctx;
+    int *c_disable_flag = fvq->c_disable_flag;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (c_disable_flag[c_id]) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          rhs[c_id][j] = 0;
+      }
+    });
+    ctx.wait();
+  }
 
   /* Solve
      ===== */

@@ -1312,8 +1312,8 @@ _update_fluid_vel(const cs_mesh_t             *m,
                   const cs_real_t              dt[],
                   const cs_real_t              crom[],
                   const cs_real_t              cromk1[],
-                  cs_real_t                    imasfl[],
-                  cs_real_t                    bmasfl[],
+                  const cs_real_t              imasfl[],
+                  const cs_real_t              bmasfl[],
                   cs_real_t                    coefa_dp[],
                   cs_real_3_t                  vel[],
                   cs_real_3_t                  dfrcxt[],
@@ -3049,6 +3049,18 @@ _velocity_prediction(const cs_mesh_t             *m,
     });
   }
 
+  /* Cancel RHS in disabled cells in case spurious terms were added
+     by "generic" code */
+
+  if (has_disable_flag) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (c_disable_flag[c_id]) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          smbr[c_id][j] = 0;
+      }
+    });
+  }
+
   /* Solver parameters
      ----------------- */
 
@@ -3233,6 +3245,8 @@ _velocity_prediction(const cs_mesh_t             *m,
    * RHS residual of (U^{n+1}, P^{n+1}) + rho*volume*(U^{n+1} - U^n)/dt */
 
   else if (iappel == 2) {
+
+    ctx.wait();
 
     /* No relaxation for steady case */
     int idtva0 = 0;
