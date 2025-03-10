@@ -466,7 +466,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             if label == "":
                 label = item.label
             if item not in self.noderoot.values():
-                if item.item.variable != _calculator_group:
+                if item.item.value != _calculator_group:
                     self.mdl.setVariableLabel(item.item.label, label)
                 else:
                     self.calculator.setName(label)
