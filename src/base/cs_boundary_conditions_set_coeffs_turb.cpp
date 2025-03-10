@@ -272,16 +272,13 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     }
   }
 
-  cs_real_t *bpro_rough = nullptr;
   cs_real_t *bpro_rough_t = nullptr;
   cs_field_t *f_rough = cs_field_by_name_try("boundary_roughness");
   cs_field_t *f_rough_t = cs_field_by_name_try("boundary_thermal_roughness");
 
-  if (f_rough != nullptr) {
-    bpro_rough = f_rough->val;
+  if (f_rough != nullptr)
     /* same thermal roughness if not specified */
     bpro_rough_t = f_rough->val;
-  }
 
   if (f_rough_t != nullptr)
     bpro_rough_t = f_rough_t->val;
@@ -473,7 +470,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       /* Note: to make things clearer yplus is always
          "y uk /nu" even for rough modelling. And the roughness correction is
          multiplied afterwards where needed. */
-      const cs_real_t rough_t = (bpro_rough_t != nullptr) ? bpro_rough_t[f_id] : 0;
+      const cs_real_t rough_t = (f_rough != nullptr) ? bpro_rough_t[f_id] : 0;
 
       cs_wall_functions_scalar(cs_glob_wall_functions->iwalfs,
                                xnuii,
@@ -598,8 +595,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       if (model != CS_TURB_NONE && icodcl_sc[f_id] == 6) {
         /* 1/T+ */
         const cs_real_t dtplus = 1.0 / tplus;
-        /* Note uet was used instead of uk before, which was not correct */
-        hflui = romc * cpp * uk * dtplus;
+        /* FIXME apparently buet should be buk */
+        hflui = romc * cpp * buet[f_id] * dtplus;
 
         /* Neumann on the scalar, with wall function (for post-processing) */
       }
@@ -680,11 +677,11 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
         /* Monin obukhov */
         else {
           const cs_real_t rough_t = bpro_rough_t[f_id];
-          const cs_real_t rough_d = bpro_rough[f_id];
 
           /* To approximately respect thermal turbulent
              production with 2 hypothesis */
-          const cs_real_t coef_mom = cs_mo_phim(distbf + rough_d, bdlmo[f_id]);
+          //FIXME should be dynamic roughness
+          const cs_real_t coef_mom = cs_mo_phim(distbf + rough_t, bdlmo[f_id]);
           const cs_real_t coef_mohh
             = cs_mo_phih (2.0 * distbf + rough_t, bdlmo[f_id], turb_schmidt);
 
