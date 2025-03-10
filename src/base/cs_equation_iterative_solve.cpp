@@ -810,9 +810,10 @@ _equation_iterative_solve_strided(int                   idtvar,
       cs_halo_sync_r(halo, ctx.use_gpu(), dpvar);
 
       /* update with dpvar */
-      cs_update_face_value_strided<stride>(ctx, nullptr, bc_coeffs, inc, eqp, dpvar,
-                                           val_ip, val_f, val_f_lim,
-                                           val_f_d, val_f_d_lim);
+      cs_update_face_value_strided<stride>
+        (ctx, nullptr, bc_coeffs, inc, eqp, dpvar,
+         val_ip, val_f, val_f_lim,
+         val_f_d, val_f_d_lim);
 
       if (stride == 3)
         cs_balance_vector(idtvar,
