@@ -1531,7 +1531,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
   }
 
   /* RT0 update from the mass fluxes */
-  else { /* vp_param->irevmc != 0) */
+  else if (vp_param->irevmc == 1) {
 
     cs_arrays_set_value<cs_real_t, 1>(3*n_cells_ext, 0.,(cs_real_t *)vel);
 

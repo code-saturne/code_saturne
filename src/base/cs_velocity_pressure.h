@@ -110,7 +110,9 @@ typedef struct {
 
   int         irevmc;         /* reconstruction of the velocity field with the
                                  updated pressure option
-                                 - 0: default */
+                                 - 0: using the gradient of pressure increment (default)
+                                 - 1: update from the mass fluxes
+                                 - 2: no velocity update (only mass fluxes are updated) */
 
   int         iifren;         /* indicates the presence of a Bernoulli boundary
                                  face (automatically computed)

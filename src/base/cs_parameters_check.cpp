@@ -2581,7 +2581,7 @@ cs_parameters_check(void)
                                   _("while reading input data"),
                                   "cs_glob_velocity_pressure_param->irevmc",
                                   vp_param->irevmc,
-                                  0, 2);
+                                  0, 3);
 
     cs_real_t arakfr = vp_param->arak;
     if (cs_glob_time_step_options->idtvar < 0) {

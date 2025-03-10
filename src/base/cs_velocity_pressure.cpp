@@ -196,7 +196,9 @@ BEGIN_C_DECLS
 
   \var  cs_velocity_pressure_param_t::irevmc
         reconstruction of the velocity field with the updated pressure option
-        - 0: standard gradient of pressure increment (default)
+        - 0: using the gradient of pressure increment (default)
+        - 1: update from the mass fluxes
+        - 2: no velocity update (only mass fluxes are updated)
 
   \var  cs_velocity_pressure_param_t::iifren
         indicates the presence of a Bernoulli boundary face (automatically
