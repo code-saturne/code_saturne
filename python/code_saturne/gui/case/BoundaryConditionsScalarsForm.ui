@@ -677,7 +677,7 @@
             <item>
              <widget class="QLabel" name="labelSyrthesInstance">
               <property name="text">
-               <string>SYRTHES instance</string>
+               <string>Coupled CHT instance</string>
               </property>
              </widget>
             </item>

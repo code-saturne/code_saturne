@@ -26,7 +26,7 @@
      </widget>
      <widget class="ConjugateHeatTransferView" name="conjugateHeatTransferTab">
       <attribute name="title">
-       <string>Syrthes coupling</string>
+       <string>Conjugate Heat Transfer coupling</string>
       </attribute>
      </widget>
      <widget class="FluidStructureInteractionView" name="fluidStructureInteractionTab">

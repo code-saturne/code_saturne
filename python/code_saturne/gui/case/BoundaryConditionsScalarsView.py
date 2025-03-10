@@ -239,7 +239,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                                           'exchange_coefficient_formula')
             self.modelTypeMeteo.addItem(self.tr("Exchange coefficient (user law)"),
                                         'exchange_coefficient_formula')
-            self.modelTypeThermal.addItem(self.tr("SYRTHES coupling"), "syrthes_coupling")
+            self.modelTypeThermal.addItem(self.tr("CHT coupling"), "syrthes_coupling")
 
         elif self.nature == 'groundwater':
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')

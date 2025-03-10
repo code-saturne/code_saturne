@@ -146,7 +146,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
                 self.__modelEnergy.addItem(self.tr("Temperature"), 'timp_K')
                 self.__modelEnergy.addItem(self.tr("Temperature (user law)"), 'timp_K_formula')
             self.__modelEnergy.addItem(self.tr("Saturation enthalpy"), 'hsat_P')
-            self.__modelEnergy.addItem(self.tr("SYRTHES coupling"), "syrthes_coupling")
+            self.__modelEnergy.addItem(self.tr("CHT coupling"), "syrthes_coupling")
 
         if _nature in ['inlet', 'outlet']:
             if MainFieldsModel(self.case).getFieldFromId(self.__currentField).enthalpy_model != 'off' :
