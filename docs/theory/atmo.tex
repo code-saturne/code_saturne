@@ -416,7 +416,7 @@ The associated emissivities are:
   {\begin{array}{l l}
     0.0676\ast \left( 0.01022+u_{C02} \right)^{0.421}-0.00982 &\text{ for }
   u_{CO_{2}} < \SI{1}{cm}/STP \\
-    0.24\, {log}_{10}\left( 0.0676+u_{CO_{2}} \right)+0.622 &\text{ for } u_{CO_{2}}\ge \SI{1}{cm}/STP
+    0.24\, {\log}_{10}\left( 0.0676+u_{CO_{2}} \right)+0.622 &\text{ for } u_{CO_{2}}\ge \SI{1}{cm}/STP
  \end{array}} \right.
 \end{equation}
 
@@ -425,7 +425,7 @@ T_{15\mu }\left( u_{H_{2}O} \right)=\left\{
   {\begin{array}{l l}
     1.33-0.832\left( 0.0286+\frac{u_{H_{2}O}}{10.} \right)^{0.26} &\text{ for } {\,
   u}_{H_{2}O} < \SI{20}{ kg.m^{-2}} \\
- 0.33-0.2754\, \left( {log}_{10}\left( \frac{u_{H_{2}O}}{10.} \right)-0.3011
+ 0.33-0.2754\, \left( {\log}_{10}\left( \frac{u_{H_{2}O}}{10.} \right)-0.3011
     \right) &\text{ for } {\, u}_{H_{2}O}\ge \SI{20}{ kg.m^{-2}}
  \end{array}} \right.
 \end{equation}
@@ -1376,8 +1376,8 @@ altitude and $L$ is the Obukhov length:
 \begin{equation}
 \label{eq:atmo:eq8}
 L = \dfrac{-u_{\star}^{3}}{
-  \kappa \dfrac{g}{T_{0}} \, Q_{0}
-  +0.61T_{0} E_{0}
+  \kappa \dfrac{g}{T_{0}} \left( Q_{0}
+  +0.61 T_{0} E_{0} \right)
 },
 \end{equation}
 where T$_{0}$ is the mean temperature in the surface layer (z$_{2}$-z$_{1}$
@@ -1425,34 +1425,34 @@ with $\zeta_{1}= $ z$_{1}$/L, $\zeta_{2}= $ z$_{2}$/L, b$_{m\, }= $ 15.
 \subparagraph{Neutral or stable cases:}
 
 0 \textless $\zeta_{1}$ \textless $\zeta_{2}$ \textless 0.5:
-$\Psi_{m} =log\frac{z_{2} }{z_{1} }+b_{m} \left( {\zeta_{2} -\zeta_{1} } \right)$,
+$\Psi_{m} =\log\frac{z_{2} }{z_{1} }+b_{m} \left( {\zeta_{2} -\zeta_{1} } \right)$,
 
 0.5 \textless $\zeta_{2}$ \textless 10:
-$\Psi_{m} =c_{1m} log(2\zeta_{2})+\frac{4.25}{\zeta_{2}}-\frac{0.5}{\zeta_{2}^{2}}-log(2\zeta_{1} )-b_{m} \zeta_{1} -c_{2m} $
+$\Psi_{m} =c_{1m} \log(2\zeta_{2})+\frac{4.25}{\zeta_{2}}-\frac{0.5}{\zeta_{2}^{2}}-\log(2\zeta_{1} )-b_{m} \zeta_{1} -c_{2m} $
 
 $\zeta_{2\quad }>\quad 10:
 \quad
 \Psi_{m} =d_{1m} \zeta_{2}
-+c_{1m} log\left( {2\zeta_{2} }
-\right)-\mbox{11.165}-log(2\zeta_{1}
++c_{1m} \log\left( {2\zeta_{2} }
+\right)-\mbox{11.165}-\log(2\zeta_{1}
 )-b_{m} \zeta_{1}
 $
 \newline
 with $\quad b_{m} = 4.7, c_{1m} = 7.85, c_{2m} = 4.15, d_{1m} = 0.7435$
 
-In the case of \cite{Cheng:2005}, $\Psi_{m\, }$ may be expressed as:
+In the case of \cite{Cheng:2005}, $\Psi_{m\, }$ is expressed as:
 
-0 \textless $\zeta_{1}$ \textless $\zeta_{2}$:$_{\, }\Psi_{m} =alog\frac{z_{2} }{z_{1}
-}-\mbox{a}\,\,log\left( {\zeta+\left( {1+\zeta^{b}} \right)^{\frac{1}{b}}} \right)_{\, }$ with a
-$=$ 6.1 and b $=$ 2.5
+0 \textless $\zeta_{1}$ \textless $\zeta_{2}$:$_{\, }\Psi_{m} =a \log\frac{z_{2} }{z_{1}
+}-\mbox{a}\,\,\log\left( {\zeta+\left( {1+\zeta^{b}} \right)^{\frac{1}{b}}} \right)_{\, }$ with $a
+=$ 6.1 and $b =$ 2.5
 
 \paragraph{The thermal profiles $\Psi_{h}$}
 
 \subparagraph{Unstable case:}
 
 $\zeta_{2 }< \zeta_{1}$ \textless 0: $\Psi_{h}
-=\mbox{a}_{h} \left( {log\left( {\frac{z_{2}
-}{z_{1} }} \right)-\mbox{2log}\left(
+=\mbox{a}_{h} \left( {\log\left( {\frac{z_{2}
+}{z_{1} }} \right)-\mbox{2\log}\left(
 {\frac{1+\Psi_{2} }{1+\Psi_{1}
 }} \right)} \right)$,
 
@@ -1463,14 +1463,14 @@ where $\Psi_{2} =1-b_{h} \zeta_{2} )^{1/2}$ and $\Psi_{1}
 \subparagraph{Stable cases:}
 
 $\zeta_{2 }> \zeta_{1}$ \textgreater 0: $\Psi_{h}
-=alog\frac{z_{2} }{z_{1} }+b(\zeta_{2} -\zeta_{1} )$ ,
+=a\log\frac{z_{2} }{z_{1} }+b(\zeta_{2} -\zeta_{1} )$ ,
 
 with a$_{h\, }=$ 0.74, $b_{h\, }= $ 4.7 for \cite{Businger:1971}
 
-In the case of \cite{Cheng:2005}, $\Psi_{h}$ may be expressed as:
+In the case of \cite{Cheng:2005}, $\Psi_{h}$ is expressed as:
 
-0 \textless $\zeta_{1}$ \textless $\zeta_{2}$:$_{\, \, }\Psi_{h} =alog\frac{z_{2} }{z_{1}
-}-c\,\,log\left( {\zeta+\left( {1+\zeta^{d}} \right)^{\frac{1}{d}}} \right)_{\, }$with c
+0 \textless $\zeta_{1}$ \textless $\zeta_{2}$:$_{\, \, }\Psi_{h} =a \log\frac{z_{2} }{z_{1}
+}-c\,\,\log\left( {\zeta+\left( {1+\zeta^{d}} \right)^{\frac{1}{d}}} \right)_{\, }$with c
 $=$ 5.3 and d $=$ 1.1.
 
 \begin{table}[htbp]
