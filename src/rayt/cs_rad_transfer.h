@@ -148,9 +148,9 @@ typedef struct {
   int           imrcfsk;   /*!< RCFSK model (0: off, 1: on) */
   double        xnp1mx;
   int           idiver;    /*!< Explicit radiative source term computation mode
-                               -1: no renormalization
-                                0: Semi-analytic (mandatory if transparent)
-                                1: Conservative
+                               -1: no renormalization (forced if tranparent)
+                                0: Semi-analytic
+                                1: Conservative (deprecated)
                                 2: Corrected semi-analytic (to be conservative)
                                REMARK: if transparent, idiver = -1
                                automatically in DOM */

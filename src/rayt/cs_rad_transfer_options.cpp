@@ -111,10 +111,10 @@ cs_rad_transfer_options(void)
   /* Pointer with shorter syntax ... */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
-  /* -> nrphas: for pulverized coal and fuel combustion:
-   *            nrphas = 1 (gas) + number of classes (particles or droplets) */
+  /* nrphas: for pulverized coal and fuel combustion:
+   *         nrphas = 1 (gas) + number of classes (particles or droplets) */
 
-  /* -> For pulverized coal combustion:   */
+  /* For pulverized coal combustion:   */
 
   if (cs_glob_coal_model != nullptr) {
     rt_params->nrphas += cs_glob_coal_model->nclacp;
@@ -123,18 +123,24 @@ cs_rad_transfer_options(void)
   /* Default initializations
    * ----------------------- */
 
-  /* ->  Restart computation (read restart) */
-
   rt_params->restart = (cs_restart_present()) ? 1 : 0;
 
-  /* ->  Explicit radiative source term computation mode
-   *            = 0 => Semi-analytic (mandatory if transparent)
-   *            = 1 => Conservative
-   *            = 2 => Corrected semi-analytic (to be conservative)
-   *     REMARK: if transparent, idiver = -1 automatically in raydom  */
+  /* Explicit radiative source term computation mode
+   * - 0 => Semi-analytic (mandatory if transparent)
+   * - 1 => Conservative
+   * - 2 => Corrected semi-analytic (to be conservative)
+   *
+   * REMARK: if transparent, idiver is automatically reset to -1
+   *         in _rad_transfer_solve. */
 
-  if (rt_params->atmo_model == CS_RAD_ATMO_3D_NONE)
-    rt_params->idiver = 2;
+  if (   rt_params->atmo_model == CS_RAD_ATMO_3D_NONE
+      && (rt_params->idiver == 0 || rt_params->idiver == 1)) {
+    cs_parameters_error(CS_WARNING,
+                        _("in Radiative module"),
+                        "Using the semi-analytic (idiver = 0)\n"
+                        "or conservative (idiver = 1) explicit source term\n"
+                        "computation mode is not recommended.\n");
+  }
 
   if (rt_params->imoadf == 1)
     rt_params->nwsgg = 8;
