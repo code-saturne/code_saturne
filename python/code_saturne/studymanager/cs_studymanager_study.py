@@ -2714,7 +2714,8 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def report_input(self, doc, i_nodes, s_label, c_label=None, r_label="RESU"):
+    def report_input(self, doc, i_nodes, s_label, c_label=None, r_label="RESU",
+                     run_label=None):
         """
         Add input to report detailed.
         """
@@ -2733,7 +2734,7 @@ class Studies(object):
                 dd = ""
 
             if c_label:
-                fd = os.path.join(dd, s_label, c_label, r_label)
+                fd = os.path.join(dd, s_label, c_label, r_label, run_label)
             else:
                 fd = os.path.join(dd, s_label, 'POST')
 
@@ -2850,7 +2851,8 @@ class Studies(object):
                 if nodes:
                     doc.appendLine("\\subsection{Results for "
                                    "case %s}" % case.label)
-                    self.report_input(doc, nodes, case.study, case.label, case.resu)
+                    self.report_input(doc, nodes, case.study, case.label,
+                                      case.resu, case.run_id)
                     # copy input in POST (TODO: should be moved)
                     self.copy_input(nodes, case.study, case.label, case.run_id)
 
