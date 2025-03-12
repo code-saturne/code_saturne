@@ -838,7 +838,7 @@ class ImmersedBoundariesModel(Variables, Model):
         if not exp:
             exp = """indicator = 1;\n"""
 
-        req = [('indicator', 'Solid object indicator (1 is fluid, 0 is solid)')]
+        req = [('indicator', 'Solid object indicator (1 is solid, 0 is fluid)')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
