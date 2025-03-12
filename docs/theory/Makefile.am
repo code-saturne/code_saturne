@@ -32,7 +32,7 @@ TEXOTHERS = \
 algebr.tex \
 apintr.tex \
 atmo.tex \
-bilsc2.tex \
+cs_balance.tex \
 bndcnd.tex \
 cavitation.tex \
 cs_turbulence_ke.tex \
@@ -44,7 +44,7 @@ cfxtcl.tex \
 clptrg.tex \
 clptur.tex \
 clsyvt.tex \
-codits.tex \
+cs_equation_iterative_solve.tex \
 combustion_coal.tex \
 combustion_gas.tex \
 combustion_intro.tex \

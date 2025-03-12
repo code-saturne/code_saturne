@@ -191,7 +191,7 @@ The term which requires boundary conditions is the one containing the
 velocity derivative in the normal direction to the wall\footnote{The transpose gradient term is treated in \fort{visecv}
 and thus will not be considered here.}~:
 $(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$. It appears on the
-right-hand side of the usual momentum equation (see \fort{bilsc2} and \fort{cs\_velocity\_prediction}).
+right-hand side of the usual momentum equation (see \fort{cs\_balance} and \fort{cs\_velocity\_prediction}).
 
 In the case where the  $k-\varepsilon$  model tends to surestimate
 the production of turbulent kinetic energy, the length scale of the model,
@@ -269,7 +269,7 @@ Finally, one can also make the wall velocity appear in the final expression~:
 
 A first pair of coefficients $A_{flux}$ and $B_{flux}$ can then be deduced
 (for each component of the velocity separately) and it is used only
- to compute the tangential stress dependent term  (see \fort{bilsc2})~:
+ to compute the tangential stress dependent term  (see \fort{cs\_balance})~:
 \begin{equation}
 \begin{array}{l}
 \text{\bf Coefficients associated with  the "flux" boundary conditions of the velocity } (k-\varepsilon)\\
@@ -397,7 +397,7 @@ u^r_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left[max\left(1,
 A second pair of coefficients $A_{grad}$ and $B_{grad}$ can then be deduced
 (for each velocity component separately). It is used when the velocity
 gradient is necessary (except for the terms depending on the tangential shear,
-those being treated in \fort{bilsc2} using $A_{flux}$ and $B_{flux}$)~:
+those being treated in \fort{cs\_balance} using $A_{flux}$ and $B_{flux}$)~:
 \begin{equation}
 \begin{array}{l}
 \text{\bf Coefficients associated to the "gradient" boundary conditions of }\\

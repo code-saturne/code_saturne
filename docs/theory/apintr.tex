@@ -27,7 +27,7 @@
 %
 Each sub-section of this document is associated with an important
 subroutine. The full list of the subroutines described here is the
-following: \fort{bilsc2} \fort{clptur} \fort{clsyvt} \fort{codits} %
+following: \fort{cs\_balance} \fort{clptur} \fort{clsyvt} \fort{cs\_equation\_iterative\_solve} %
 \fort{condli} \fort{cs\_solve\_equation\_scalar} \fort{gradrc} \fort{inimas} %
 \fort{cs\_face\_diffusion\_potential} \fort{matrix} \fort{cs\_solve\_navier\_stokes} \fort{cs\_velocity\_prediction} %
 \fort{resopv} \fort{cs\_turbulence\_ke} \fort{turrij} \fort{viscfa} \fort{visort} %
@@ -38,8 +38,8 @@ step. This calling tree is only partial. In particular, it does not account
 for the number of calls to each subroutine. Also, for the sake of clarity,
 no reference has been made to the subroutines dedicated to the gradient
 calculation (\fort{gradmc}, \fort{gradrc}), which are called very often. For
-the same reason, the calls to \fort{bilsc2} (advection fluxes) and %
-\fort{matrix} (matrix calculation) which are made from within \fort{codits}
+the same reason, the calls to \fort{cs\_balance} (advection fluxes) and %
+\fort{matrix} (matrix calculation) which are made from within \fort{cs\_equation\_iterative\_solve}
 (treatment of an advection equation with source terms) have not been
 reported.
 
@@ -52,12 +52,12 @@ below:\newline
 \textbf{Least squares method}\newline
 \hspace*{1cm}\fort{gradmc}\newline
 \textbf{Convective schemes}\newline
-\hspace*{1cm}\fort{bilsc2}\newline
+\hspace*{1cm}\fort{cs\_balance}\newline
 \textbf{Wall-laws} (for velocity and temperature)\newline
 \hspace*{1cm}\fort{clptur}\newline
 \hspace*{1cm}\fort{condli}\newline
 \textbf{System solve} (incremental method)\newline
-\hspace*{1cm}\fort{codits}\newline
+\hspace*{1cm}\fort{cs\_equation\_iterative\_solve}\newline
 \textbf{Calculation of the values at the faces} (not exhaustive)\newline
 \hspace*{1cm}\fort{viscfa}\newline
 \hspace*{1cm}\fort{visort}\newline
@@ -65,7 +65,7 @@ below:\newline
 Finally, for the reader wishing to become more familiar with the methods
 implemented in \CS, it is recommended to begin with the study of the
 advection equation for a scalar (\fort{cs\_solve\_equation\_scalar}) which is solved iteratively
-using an incremental method (\fort{codits}). It will then be useful to look
+using an incremental method (\fort{cs\_equation\_iterative\_solve}). It will then be useful to look
 at \fort{cs\_solve\_navier\_stokes} which briefly presents the solution of the system made up
 of the mass and momentum equations.
 
@@ -86,7 +86,7 @@ the \newline
 \hspace*{4,5cm} \hspace*{1cm} transposed gradient of the velocity\newline
 \hspace*{2,5cm}\fort{viscfa} \hspace*{1cm} calculation of the viscosity at
 the faces\newline
-\hspace*{2,5cm}\fort{codits} \hspace*{1cm} iterative solution of the system
+\hspace*{2,5cm}\fort{cs\_equation\_iterative\_solve} \hspace*{1cm} iterative solution of the system
 using an incremental method\newline
 \hspace*{1,5cm}\textbf{Pressure correction}\newline
 \hspace*{2,0cm}\fort{resopv} \newline
@@ -105,22 +105,22 @@ rate\newline
 \underline{\textbf{$k-\varepsilon$ model}}\newline
 \hspace*{1cm}\fort{cs\_turbulence\_ke}\newline
 \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}preliminary steps before...\newline
-\hspace*{1,5cm}\fort{bilsc2} \hspace*{1,5cm}...source terms coupling\newline
+\hspace*{1,5cm}\fort{cs\_balance} \hspace*{1,5cm}...source terms coupling\newline
 \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}calculation of the viscosity at
 the faces\newline
-\hspace*{1,5cm}\fort{codits} \hspace*{1cm}iterative solution of the systems
+\hspace*{1,5cm}\fort{cs\_equation\_iterative\_solve} \hspace*{1cm}iterative solution of the systems
 using an incremental method\newline
 \underline{\textbf{Reynolds stress model}}\newline
 \hspace*{1cm}\fort{turrij}\newline
 \hspace*{1,5cm}\fort{visort} \hspace*{1cm}calculation of the viscosity at
 the faces\newline
-\hspace*{1,5cm}\fort{codits} \hspace*{1cm}iterative solution of the systems
+\hspace*{1,5cm}\fort{cs\_equation\_iterative\_solve} \hspace*{1cm}iterative solution of the systems
 using an incremental method\newline
 \underline{\textbf{Equations for the scalars}}\newline
 \hspace*{1cm}\fort{cs\_solve\_equation\_scalar}\newline
 \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}calculation of the viscosity at
 the faces\newline
-\hspace*{1,5cm}\fort{codits} \hspace*{1cm}iterative solution of the systems
+\hspace*{1,5cm}\fort{cs\_equation\_iterative\_solve} \hspace*{1cm}iterative solution of the systems
 using an incremental method\newline
 \caption{Partial and simplified calling tree associated with the successive
 stages within a time step.}

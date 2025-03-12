@@ -32,7 +32,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Le but de ce sous-programme, appel\'e par \fort{codits} et \fort{cs\_solve\_equation\_scalar}, est de construire la
+Le but de ce sous-programme, appel\'e par \fort{cs\_equation\_iterative\_solve} et \fort{cs\_solve\_equation\_scalar}, est de construire la
 matrice de convection/diffusion, incluant les contributions ad\'equates des termes sources,
 intervenant dans le membre de gauche d'\'equations discr\'etis\'ees telles que
 celle de la
@@ -44,7 +44,7 @@ Le type d'\'equation consid\'er\'ee est, pour la variable scalaire $a$ :
 \displaystyle \frac{\partial }{\partial x}\left(\beta\,\frac{\partial a}{\partial x}\right) = 0
 \end{equation}
 La matrice ne s'applique qu'aux termes non reconstruits, les autres \'etant pris en compte au second membre et
-trait\'es dans le sous-programme \fort{bilsc2}. La partie
+trait\'es dans le sous-programme \fort{cs\_balance}. La partie
 convective, lorsqu'elle existe, est issue du sch\'ema upwind pur, quelque soit
 le type de sch\'ema convectif choisi par l'utilisateur. En effet, c'est, \`a
 l'heure actuelle, la seule fa\c con d'obtenir un op\'erateur lin\'eaire à

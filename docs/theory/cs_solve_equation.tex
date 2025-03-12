@@ -195,7 +195,7 @@ T_s^{\,pd,\,exp}=
 $f=\widetilde{{a"}^2}$}
 \end{cases}
 \end{equation}
-On rappelle que, pour un scalaire $f$, le sous-programme \fort{codits}
+On rappelle que, pour un scalaire $f$, le sous-programme \fort{cs\_equation\_iterative\_solve}
 r\'{e}sout une \'{e}quation du type suivant
 \label{Base_Covofi_Eq_Codits}
 \begin{equation}
@@ -212,7 +212,7 @@ en temps (hormis contributions de la convection diffusion explicite provenant du
 $\theta$-sch\'ema) et $f_s^{imp}\,f^{n+1}$ repr\'esente les termes lin\'eaires
 en $f^{n+1}$ dans l'\'equation discr\'etis\'ee en temps.\\
 On r\'{e}\'{e}crit l'\'{e}quation (\ref{Base_Covofi_Eq_scal_tempo}) sous la forme (\ref{Base_Covofi_Eq_scal_final})
-qui est ensuite r\'{e}solue par \fort{codits}.
+qui est ensuite r\'{e}solue par \fort{cs\_equation\_iterative\_solve}.
 \begin{equation}
 \label{Base_Covofi_Eq_scal_final}
 \begin{array}{c}
@@ -291,7 +291,7 @@ $\star$ Sinon, la partie implicte en $-\Gamma\,f$ va dans \var{ROVSDT}, et tout 
 appel \`a \fort{divmas} et ajout de sa contribution dans \var{SMBRS}, et dans
 \var{ROVSDT} apr\`{e}s multiplication par $\theta$\footnote{cette op\'{e}ration est
 faite quel que soit le sch\'{e}ma en temps de façon \`{a} rester coh\'{e}rent avec ce qui
-est fait dans \fort{bilsc2}}.
+est fait dans \fort{cs\_balance}}.
 
 \item ajout du terme instationnaire \`{a} \var{ROVSDT}.
 
@@ -323,7 +323,7 @@ $1+\theta_S$ \`{a} \var{SMBRS}, dans le cas o\`{u} les termes sources sont extra
 valeurs aux faces par appel au sous-programme \fort{viscfa}.
 
 \item r\'{e}solution de l'\'{e}quation compl\`{e}te (avec les termes de convection
-diffusion) par un appel au sous-programme \fort{codits} avec
+diffusion) par un appel au sous-programme \fort{cs\_equation\_iterative\_solve} avec
 $f_s^{exp}=\var{SMBRS}$ et $f_s^{imp}=\var{ROVSDT}$.
 
 \item ajustement (clipping) du scalaire ou de la fluctuation du scalaire en
@@ -396,7 +396,7 @@ T_s^{\,exp} + T_s^{\,imp}\,f^{n}+\dive(\,\rho
 \etape{Int\'{e}gration du terme de convection-diffusion}
 Dans ce sous-programme, les points litigieux sont dus \`{a} l'int\'{e}gration du
 terme de convection-diffusion. On renvoie donc le lecteur au sous-programme
-\fort{bilsc2} qui les explicite.
+\fort{cs\_balance} qui les explicite.
 %\pagebreak
 \clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
