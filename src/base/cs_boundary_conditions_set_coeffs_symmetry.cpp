@@ -480,7 +480,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   const int keysca  = cs_field_key_id("scalar_id");
   const int kturt   = cs_field_key_id("turbulent_flux_model");
 
-  const int itytur = cs_glob_turb_model->itytur;
+  const int order = cs_glob_turb_model->order;
   const int idirsm = cs_glob_turb_rans_model->idirsm;
   const int n_fields = cs_field_n_fields();
 
@@ -488,7 +488,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
      =============== */
 
   cs_real_6_t *visten = nullptr;
-  if (itytur == 3 && idirsm == 1) {
+  if (order == CS_TURB_SECOND_ORDER && idirsm == 1) {
     cs_field_t *f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
     visten = (cs_real_6_t *)f_a_t_visc->val;
   }
@@ -543,7 +543,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
     cs_real_t eloglo[3][3], alpha[6][6];
 
-    if (itytur == 3) {
+    if (order == CS_TURB_SECOND_ORDER) {
 
       /* Relative tangential velocity */
 
@@ -610,7 +610,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
     /* Geometrical quantity */
     const cs_real_t distbf = b_dist[f_id];
 
-    const cs_real_t hint = (itytur == 3) ? visclc / distbf
+    const cs_real_t hint = (order == CS_TURB_SECOND_ORDER) ? visclc / distbf
                                          : (visclc + visctc) / distbf;
 
     /* Gradient BCs */
@@ -648,7 +648,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
     /* Boundary conditions on Rij (partially implicited)
        ================================================= */
 
-    if (itytur == 3) {
+    if (order == CS_TURB_SECOND_ORDER) {
 
       cs_field_t *rij = CS_F_(rij);
       cs_equation_param_t *eqp_rij = cs_field_get_equation_param(rij);
@@ -785,7 +785,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
         }
       }
 
-    } /* if (itytur == 3) */
+    } /* if (order == CS_TURB_SECOND_ORDER) */
 
   } /* End loop on boundary faces */
 
