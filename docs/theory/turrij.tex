@@ -306,13 +306,13 @@ _{\text {partie extra-diagonale}}
 
 La partie extra-diagonale sera prise totalement explicite et interviendra donc
 dans l'expression regroupant les termes purement explicites $f_s^{\,exp}$ du
-second membre de \fort{codits}.\\
+second membre de \fort{cs\_equation\_iterative\_solve}.\\
 Pour la partie diagonale, on introduit la composante normale du gradient de la
 variable principale $R_{ij}$. Cette  contribution normale sera trait\'ee en
-implicite pour la variable et interviendra \`a la fois dans l'expression de la matrice simplifi\'ee du syst\`eme r\'esolu par \fort{codits} et dans
-le second membre trait\'e par \fort{bilsc2}. La
+implicite pour la variable et interviendra \`a la fois dans l'expression de la matrice simplifi\'ee du syst\`eme r\'esolu par \fort{cs\_equation\_iterative\_solve} et dans
+le second membre trait\'e par \fort{cs\_balance}. La
 contribution tangentielle sera, elle, purement explicite et donc prise en compte
-dans $f_s^{\,exp}$ intervenant dans le second membre de \fort{codits}.\\
+dans $f_s^{\,exp}$ intervenant dans le second membre de \fort{cs\_equation\_iterative\_solve}.\\
 On a :
 \begin{equation}
 \displaystyle
@@ -466,12 +466,12 @@ l'ordre  les
 \'equations de $R_{11}$, $R_{22}$, $R_{33}$, $R_{12}$, $R_{13}$ et $R_{23}$ par
 l'appel au sous-programme \fort{resrij}.\\
 La r\'esolution se fait par incr\'ement $\delta {R}_{ij}^{\,n+1,k+1}$ , en utilisant la m\^eme m\'ethode que
-celle d\'ecrite dans le sous-programme \fort{codits}. On adopte ici les m\^emes notations.
+celle d\'ecrite dans le sous-programme \fort{cs\_equation\_iterative\_solve}. On adopte ici les m\^emes notations.
 \var{SMBR} est le second membre du syst\`eme \`a inverser, syst\`eme portant sur
 les incr\'ements de la variable. \var{ROVSDT} repr\'esente la diagonale de la
 matrice, hors convection/diffusion.\\
 On va r\'esoudre l'\'equation (\ref{Base_Turrij_Eq_Temp_Rij}) sous forme incr\'ementale en
-utilisant \fort{codits}, soit :
+utilisant \fort{cs\_equation\_iterative\_solve}, soit :
 \begin{equation}\label{Base_Turrij_Eq_Temp_deltaRij}
 \begin{array}{ll}
 &\displaystyle \underbrace{\left(\frac {\rho^n_L}{\Delta t^n}
@@ -490,7 +490,7 @@ relatives \`a la matrice simplifi\'ee de \fort{matrix}\footnotemark}} \\
 &-\,\underbrace{\displaystyle\int_{\Omega_l} \left(
 \dive\,[\,(\rho\,\vect{u})^n\,R^{\,n+1,p}_{ij} - (\mu^n\,+ \gamma^n\,)\,
 \grad{R^{\,n+1,p}_{ij}}\,]\right)\,d\Omega}_{\text {convection et diffusion
-trait\'ees par \fort{bilsc2}}}\\
+trait\'ees par \fort{cs\_balance}}}\\
 &+\displaystyle \int_{\Omega_l} \left[\,\mathcal{P}^{\,n+1,p}_{ij} + \mathcal{G}^{\,n+1,p}_{ij}
 - \displaystyle\rho^n \,C_1\,\frac{\varepsilon^n}{k^n}\left[R^{\,n+1,p}_{ij}-
 \frac{2}{3}\,k^n\,\delta_{ij}\right] + \phi^{\,n+1,p}_{ij,2} +
@@ -538,18 +538,18 @@ Tous ces termes sont calcul\'es comme suit :
 \begin{itemize}
 \item Terme de gauche de l'\'equation (\ref{Base_Turrij_Eq_Temp_deltaRij})\\
 Dans \fort{resrij} est calcul\'ee la variable \var{ROVSDT}. Les autres
-termes sont compl\'et\'es par \fort{codits}, lors de la construction de la matrice simplifi\'ee , {\it via} un
+termes sont compl\'et\'es par \fort{cs\_equation\_iterative\_solve}, lors de la construction de la matrice simplifi\'ee , {\it via} un
 appel au sous-programme \fort{matrix}. La quantit\'e
  $(\mu^n_{\,lm} + \gamma^n_{\,lm})$ \`a la face $lm$ est calcul\'ee lors de l'appel \`a
 \fort{visort}.\\
 \item Second membre de l'\'equation (\ref{Base_Turrij_Eq_Temp_deltaRij})\\
 Le premier terme non d\'etaill\'e est calcul\'e par le sous-programme
-\fort{bilsc2}, qui applique le sch\'ema convectif choisi par l'utilisateur, qui
+\fort{cs\_balance}, qui applique le sch\'ema convectif choisi par l'utilisateur, qui
 reconstruit ou non selon le souhait de l'utilisateur les gradients intervenants
 dans la convection-diffusion.\\
 Les termes sans accolade sont, eux, compl\`etement explicites et ajout\'es au fur et
 \`a mesure dans \var{SMBR} pour former
-l'expression $f^{\,exp}_s$ de \fort{codits}.
+l'expression $f^{\,exp}_s$ de \fort{cs\_equation\_iterative\_solve}.
 \end{itemize}
 On d\'ecrit ci-dessous les \'etapes de \fort{resrij} :
 \begin{itemize}
@@ -692,7 +692,7 @@ Vois(l)}\left[\ \tens{E}^n\,\grad{R}^{\,n}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,l
 composante normale  du  gradient de $R_{ij}$ aux faces sera implicite.} :\\
 Comme on l'a d\'eja vu, une partie de cette contribution sera trait\'ee en
 implicite (celle relative \`a la composante normale du gradient) et donc
-ajout\'ee au second membre par \fort{bilsc2} ; l'autre
+ajout\'ee au second membre par \fort{cs\_balance} ; l'autre
 partie sera explicite et prise en compte dans $f_s^{\,exp}$.
 \begin{itemize}
 \item [$\star$] On effectue une boucle d'indice \var{IEL} sur les cellules
@@ -776,7 +776,7 @@ $\var{SMBR} = \var{SMBR} + \var{W1}$
 \end{itemize}
 \item Calcul de la viscosit\'e orthotrope $\gamma^n_{\,lm}$ \`a la face $lm$ de la variable principale
 $R^{\,n}_{ij}$\\
-Ce calcul permet au sous-programme \fort{codits} de compl\'eter le second membre
+Ce calcul permet au sous-programme \fort{cs\_equation\_iterative\_solve} de compl\'eter le second membre
 \var{SMBR} par :
 \begin{equation}
 \begin{array} {ll}
@@ -788,7 +788,7 @@ S_{\,lm}\\
 & = \sum\limits_{m\in Vois(l)}(\,\mu^n_{\,lm}\, + \,\gamma^n_{\,lm}\,)\,\left(\grad{R}^{\,n}_{ij}\,.\,\vect{n}_{\,lm}\right)S_{\,lm}
 \end{array}
 \end{equation}
-sans pr\'eciser la nature de la face $lm$, {\it via} l'appel \`a \fort{bilsc2}  et de disposer de la quantit\'e
+sans pr\'eciser la nature de la face $lm$, {\it via} l'appel \`a \fort{cs\_balance}  et de disposer de la quantit\'e
 $(\mu^n_{\,lm}\, + \gamma^n_{\,lm})$ pour construire sa
 matrice simplifi\'ee.\\
 \begin{itemize}
@@ -814,7 +814,7 @@ $ \gamma^n_{\,lm} = (\tens{D}^{\,n}\,\vect{n}_{\,lm}).\vect{n}_{\,lm}$ aux faces
 Le r\'esultat est stock\'e dans les tableaux \var{VISCF} et \var{VISCB}.
 \end{itemize}
 
-\item appel de \fort{codits} pour la r\'esolution de l'\'equation de
+\item appel de \fort{cs\_equation\_iterative\_solve} pour la r\'esolution de l'\'equation de
 convection/diffusion/termes sources de la variable $R_{ij}$. Le terme source est
 \var{SMBR}, la viscosit\'e \var{VISCF} aux faces purement internes (
 resp. \var{VISCB} aux faces de bord) et \var{FLUMAS} le flux de masse interne
@@ -897,7 +897,7 @@ Ce calcul n'a lieu que si $\var{IGRARI()} = 1$.
 \right]$ est calcul\'e exactement de la m\^eme mani\`ere que pour les tensions
 de Reynolds $R_{ij}$ en rempla\c cant $\tens{A}$ par $\tens{A'}$.
 
-\item Appel de \fort{codits} pour la r\'esolution de l'\'equation de
+\item Appel de \fort{cs\_equation\_iterative\_solve} pour la r\'esolution de l'\'equation de
 convection/diffusion/termes sources de la variable principale $\varepsilon$. Le
 r\'esultat $\varepsilon^{\,n+1}$ est stock\'e dans le tableau \var{RTP} des
 variables mises \`a jour.

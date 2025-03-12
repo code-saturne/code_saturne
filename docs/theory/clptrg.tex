@@ -184,7 +184,7 @@ conditions is the one that contains the normal derivative of the velocity at the
 this being\footnote{The transpose gradient term is dealt with in \fort{visecv}
 and will not be considered here.}: $(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$.
 It appears in the second member of the usual
-momentum equation (see \fort{bilsc2} and \fort{cs\_velocity\_prediction}).
+momentum equation (see \fort{cs\_balance} and \fort{cs\_velocity\_prediction}).
 
 When the $k-\varepsilon$ model shows a tendency to overestimate the turbulent kinetic
 energy production, the length scale of the model, $L_{k-\varepsilon}$, can become
@@ -261,7 +261,7 @@ Lastly, it is also possible to make the wall velocity appear in the final expres
 
 A first pair of coefficients $A_{flux}$ and $B_{flux}$ is thence inferred (separately
 for each velocity component) and is only used in the calculation of the tangential
-stress dependent term (see \fort{bilsc2}):
+stress dependent term (see \fort{cs\_balance}):
 \begin{equation}
 \begin{array}{l}
 \text{\bf Coefficients associated with the flux-type boundary conditions on the
@@ -370,7 +370,7 @@ u^r_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left[max\left(1,2d\sqrt{\displayst
 
 A second pair of coefficients, $A_{grad}$ and $B_{grad}$, is thereby inferred (separately
 for each velocity component) and is used (with the exception of the terms depending on the
-tangential stress, these being treated in \fort{bilsc2} using the coefficients $A_{flux}$
+tangential stress, these being treated in \fort{cs\_balance} using the coefficients $A_{flux}$
 and $B_{flux}$)whenever the velocity gradient is required:
 \begin{equation}
 \begin{array}{l}

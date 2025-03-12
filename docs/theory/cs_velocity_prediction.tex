@@ -130,7 +130,7 @@ mass term if $\vect{u}_{\,i} \ne \vect{u}$.
 All terms appearing in the conservation of momentum equation, apart from
 the convection and diffusion terms, are computed in this subroutine and
 transmitted to the
-subroutine \fort{codits} which solves the full equation (convection-diffusion with source terms).
+subroutine \fort{cs\_equation\_iterative\_solve} which solves the full equation (convection-diffusion with source terms).
 
 See the \doxygenfile{cs\_velocity\_prediction.c.html}{programmers reference of the dedicated subroutine} for further details.
 
@@ -282,7 +282,7 @@ f_s^{exp}\left\{
 \end{array}
 \end{equation}
 
-from which the equation solved by the subroutine \fort{codits} is obtained:
+from which the equation solved by the subroutine \fort{cs\_equation\_iterative\_solve} is obtained:
 \begin{equation}\begin{array}{c}
 \displaystyle
 f_s^{\,imp}(\vect {\widetilde{u}}^{n+1}-\vect {u}^{n}) + \theta\, \dive(\vect{\widetilde{u}}^{n+1} \otimes (\rho
@@ -293,7 +293,7 @@ f_s^{\,imp}(\vect {\widetilde{u}}^{n+1}-\vect {u}^{n}) + \theta\, \dive(\vect{\w
 + \vect{f}_{\,s}^{\,exp}
 \end{array}
 \end{equation}
-The spatial discretization scheme is elaborated further in the section relating to the subroutine \fort{codits}.\\
+The spatial discretization scheme is elaborated further in the section relating to the subroutine \fort{cs\_equation\_iterative\_solve}.\\
 
 
 
@@ -324,7 +324,7 @@ leads to inconsistency (loss of coherence) in the numerical treatment of the pro
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The conservation of momentum equation is solved in a decoupled manner. The integration of the different terms has therefore been carried out in order to treat separately the equations obtained for each component of the velocity.\\
-For each of these components, the second member $f_s^{exp}$ of the system  (\ref{Base_Predvv_eq_di2}), the implicit terms of the system (with the exception of the convection-diffusion terms) and the term representing the total viscosity at the  internal\footnote{value required for the integration of the diffusion term in \fort{codits}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} and boundary faces is calculated in the subroutine \fort{cs\_velocity\_prediction}. These terms are then transmitted to the subroutine \fort{codits} which constructs and then solves the resulting complete system of equations, with the convection-diffusion terms, for each component of the velocity.
+For each of these components, the second member $f_s^{exp}$ of the system  (\ref{Base_Predvv_eq_di2}), the implicit terms of the system (with the exception of the convection-diffusion terms) and the term representing the total viscosity at the  internal\footnote{value required for the integration of the diffusion term in \fort{cs\_equation\_iterative\_solve}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} and boundary faces is calculated in the subroutine \fort{cs\_velocity\_prediction}. These terms are then transmitted to the subroutine \fort{cs\_equation\_iterative\_solve} which constructs and then solves the resulting complete system of equations, with the convection-diffusion terms, for each component of the velocity.
 \\\\
 The normalized residual for convergence of the solution of the system for the pressure correction (\fort{resopv}) is calculated in
 \fort{cs\_velocity\_prediction}. It is defined as the norm of magnitude
@@ -420,7 +420,7 @@ During this step, the array \var{TRAV} is used as a working array while the call
 \etape{Calculation of the viscosity term at the faces
 $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$}
 The calculation of the total viscosity term at the faces is performed by the subroutine \fort{viscfa} and the solutions stored in the arrays \var{VISCF} and \var{VISCB} for the internal and boundary faces respectively.\\
-During integration of the convection-diffusion terms in the subroutine \fort{codits}, the non-reconstructed terms, integrated in the matrix $\tens{EM}$, are singled out from the full set of terms (unreconstructed +
+During integration of the convection-diffusion terms in the subroutine \fort{cs\_equation\_iterative\_solve}, the non-reconstructed terms, integrated in the matrix $\tens{EM}$, are singled out from the full set of terms (unreconstructed +
 reconstruction gradients) associated to the operator $\mathcal{E}$ (nonlinear)\footnote{ Ensuring coherence with the definition of the operators $\mathcal{EM}$ and $\mathcal{E}$ employed in \fort{cs\_solve\_navier\_stokes} }.
 Likewise, we differentiate between the total viscosity at the faces used in $\mathcal{E}$, arrays \var{VISCF} and \var{VISCB}, and the total viscosity at the faces employed in $\tens{EM}$, arrays \var{VISCFI} and \var{VISCBI}.\\
 For turbulent viscosity models and in LES, these two arrays are identical and contain $\mu_t+\mu$.
@@ -439,7 +439,7 @@ For each of these components:\\
 
 \item The mass accumulation term ($\dive(\rho \vect {u})$) is calculated by calling the subroutine \fort{divmas} with the mass flux as argument. During the first iteration of the subroutine \fort{cs\_solve\_navier\_stokes},
 the term corresponding to the explicit contribution of the mass accumulation ($\vect{u}^{n}\ \dive(\rho \vect{u})$) is added to \var{TRAVA} or to \var{TRAV}. The vector \var{ROVSDT} is initialized by $\theta\,\dive(\rho \vect{u})$ (to remain coherent with the approach implemented in the subroutine
-\fort{bilsc2}) after which the contribution of the non-stationary term ($\displaystyle
+\fort{cs\_balance}) after which the contribution of the non-stationary term ($\displaystyle
 \frac{\rho}{\Delta t}$) is added to the latter.\\
 
 \item The vector \var{ROVSDT} is next completed with the contribution of the user-defined implicit source terms (stored in \var{XIMPA}) and with that of the head loss term ($\rho\,\tens{K}_{\,d}$) should $\var{NCEPDP}>0$.\\
@@ -460,9 +460,9 @@ $$\var{SMBR}=\var{TRAVA}+\var{TRAV}$$
 \item If a specific physics (lagrangian, electric arc, ...) is taken into account, its contribution is directly added to \var{SMBR}.
 \\
 \item The solution of the linear system is computed by the subroutine
-\fort{codits}, taking as argument \var{ROVSDT} and \var{SMBR}.\\
+\fort{cs\_equation\_iterative\_solve}, taking as argument \var{ROVSDT} and \var{SMBR}.\\
 
-\item When strengthened transient velocity-pressure coupling ($\ \var{IPUCOU} = 1\ $) (only available with a first-order scheme, where there is neither source term extrapolation nor iteration over \fort{cs\_solve\_navier\_stokes}) is implemented, \fort{codits} solves the following equation:
+\item When strengthened transient velocity-pressure coupling ($\ \var{IPUCOU} = 1\ $) (only available with a first-order scheme, where there is neither source term extrapolation nor iteration over \fort{cs\_solve\_navier\_stokes}) is implemented, \fort{cs\_equation\_iterative\_solve} solves the following equation:
 \begin{equation}\label{Base_Predvv_Eq_Tdir}
 \tens{EM}_{\,\var{DIR}}\,.\, (\tens{RHO}^{\,n})^{-1}\,.\,\vect{T}_{\,\var{DIR}} =
 \tens{\Omega}\,.\,\vect{1}
@@ -470,7 +470,7 @@ $$\var{SMBR}=\var{TRAVA}+\var{TRAV}$$
 with $\tens{RHO}^n$ the diagonal tensor of element $\rho^{n}_{IEL}$,
 $\tens{\Omega}$ the diagonal tensor of element $|\Omega_{IEL}|$ and $\vect{1}$ denoting the
 vector whose components are all equal to one.\\
-Inversion of the system by \fort{codits} yields
+Inversion of the system by \fort{cs\_equation\_iterative\_solve} yields
 $(\tens{RHO}^{\,n})^{-1}\,.\,\vect{T}_{\,\var{DIR}}$, which is subsequently multiplied by $\tens{RHO}^{\,n}$
 to obtain $\vect{T}_{\,\var{DIR}}$.
 This process is repeated for each component \var{DIR} of the velocity. $\vect{T}_{\,\var{DIR}}$

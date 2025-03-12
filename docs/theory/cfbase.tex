@@ -864,7 +864,7 @@ n'est pas une suite)  \\
                  &                  &                &
         & Apr\`es \fort{cfmsvs}, on annule la viscosit\'e aux faces de bord
                 pour que le flux de masse soit bien celui souhait\'e \\
-                 & \fort{codits}  &                &
+                 & \fort{cs\_equation\_iterative\_solve}  &                &
         & R\'esolution du syst\`eme portant sur la masse volumique \\
                  & \fort{clpsca}  &                &
         & Impression des bornes et clipping \'eventuel (pas de clipping en standard)  \\
@@ -921,11 +921,11 @@ n'est pas une suite)  \\
 
 %\newpage
 
-Le sous-programme \fort{cfbsc3} est similaire \`a \fort{bilsc2}, mais il produit
+Le sous-programme \fort{cfbsc3} est similaire \`a \fort{cs\_balance}, mais il produit
 des flux aux faces et n'est \'ecrit que pour un sch\'ema upwind, \`a l'ordre 1
 en temps (ce qui est coh\'erent avec les choix faits dans l'algorithme compressible).
 
-Le sous-programme \fort{cfbsc2} est similaire \`a \fort{bilsc2}, mais
+Le sous-programme \fort{cfbsc2} est similaire \`a \fort{cs\_balance}, mais
 n'est \'ecrit que pour un sch\'ema d'ordre 1 en
 temps.
 %et fait encore appara\^itre la variable IITURB au lieu de IITYTU (il
@@ -937,9 +937,9 @@ Ce sous-programme est appel\'e pour la r\'esolution de l'\'equation de
 la quantit\'e de mouvement et de l'\'equation de l'\'energie.
 On pourra se reporter \`a la documentation du sous-programme \fort{cfxtcl}.
 
-Le sous-programme \fort{cfcdts} est similaire \`a \fort{codits} mais fait appel
-\`a \fort{cfbsc2} et non pas \`a \fort{bilsc2}.
-Il diff\`ere de \fort{codits} par quelques autres d\'etails qui ne sont pas
+Le sous-programme \fort{cfcdts} est similaire \`a \fort{cs\_equation\_iterative\_solve} mais fait appel
+\`a \fort{cfbsc2} et non pas \`a \fort{cs\_balance}.
+Il diff\`ere de \fort{cs\_equation\_iterative\_solve} par quelques autres d\'etails qui ne sont pas
 g\^enants dans l'imm\'ediat~:
 initialisation de PVARA et de SMBINI,
 %nombre d'it\'erations pour le second membre (NSWRSM-1 au lieu de NSWRSM),
@@ -948,7 +948,7 @@ initialisation de PVARA et de SMBINI,
 ordre en temps (ordre 2 non pris en compte).
 %Mis \`a part pour l'ordre en temps (l'algorithme
 %compressible est \`a l'ordre 1), il serait bon de modifier \fort{cfcdts} pour
-%qu'il soit conforme \`a  \fort{codits}.
+%qu'il soit conforme \`a  \fort{cs\_equation\_iterative\_solve}.
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -966,16 +966,16 @@ des autres sous-programmes du module compressible).
 \item Assurer la coh\'erence des sous-programmes suivants (ou, \'eventuellement,
 les fusionner pour \'eviter qu'ils ne divergent)~:
         \begin{itemize}
-        \item \fort{cfcdts} et \fort{codits},
+        \item \fort{cfcdts} et \fort{cs\_equation\_iterative\_solve},
 %(actuellement pour PVARA et
 %                SMBINI, mais \`a plus long terme pour \'eviter que les
 %                deux sous-programmes ne divergent),
 % propose en patch 1.2.1
-%        \item \fort{cfcdts} et \fort{codits}
+%        \item \fort{cfcdts} et \fort{cs\_equation\_iterative\_solve}
 %                (au moins pour PVARA, SMBINI, NSWRSM,
 %                IRESLP, RNORM),
-        \item \fort{cfbsc2} et \fort{bilsc2},
-        \item \fort{cfbsc3} et \fort{bilsc2}.
+        \item \fort{cfbsc2} et \fort{cs\_balance},
+        \item \fort{cfbsc3} et \fort{cs\_balance}.
         \end{itemize}
 % propose en patch 1.2.1
 %        \item Remplacer la valeur 100 par 90 pour ICCFTH dans \fort{uscfth}

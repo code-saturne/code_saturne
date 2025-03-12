@@ -20,9 +20,9 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{bilsc2}
+\programme{cs\_balance}
 
-\hypertarget{bilsc2}{}
+\hypertarget{cs\_balance}{}
 
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -31,7 +31,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-In this subroutine, called by \texttt{codits} and \texttt{cs\_turbulence\_ke}, the
+In this subroutine, called by \texttt{cs\_equation\_iterative\_solve} and \texttt{cs\_turbulence\_ke}, the
 contributions to the explicit budget of the reconstructed (on
 non-orthogonal meshes and if the user chooses to) convective and
 diffusive terms of the right-hand side of a convection/diffusion
@@ -201,7 +201,7 @@ $\bullet \ $ \var{IDIFFP}, from array \var{IDIFF} ; indicates if the diffusion o
 taken into account or not.\\
 \hspace*{1cm}$ = 0$ : no diffusion\\
 \hspace*{1cm}$ = 1$ : diffusion\\
- $\bullet \ $ \var{IUPWIN} indicates locally, in \fort{bilsc2} (to avoid unnecessary calculations) whether a pure upwind scheme is chosen  or not for the considered variables to be convected. \\
+ $\bullet \ $ \var{IUPWIN} indicates locally, in \fort{cs\_balance} (to avoid unnecessary calculations) whether a pure upwind scheme is chosen  or not for the considered variables to be convected. \\
 \hspace*{1cm}$ = 0$ : no pure upwind\\
 \hspace*{1cm}$ = 1$ : pure upwind is used\\
 $\bullet \ $ \var{ISCHCP}, from array \var{ISCHCV} ; indicates which type of second order convection scheme is used on orthogonal meshes for the considered variable to convect  (only useful if $\var{BLENCP}>0\ $).\\

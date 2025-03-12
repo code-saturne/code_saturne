@@ -20,10 +20,10 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{codits}\label{ap:codits}
+\programme{cs\_equation\_iterative\_solve}\label{ap:cs_equation_iterative_solve}
 %
 
-\hypertarget{codits}{}
+\hypertarget{cs\_equation\_iterative\_solve}{}
 
 \vspace{1cm}
 %-------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ selected for the respective quantities\footnote{cf. \fort{introd}}.
 \\
 The discretisation of the convection and diffusion terms in non-orthogonal grids creates numerical difficulties, notably with respect to the reconstruction terms and the slope test. These are circumvented by using an iterative process for which the limit, if there is one, is the solution of the previous equation.
 
-See the \doxygenanchor{cs__equation__iterative__solve_8c.html\#codits}{programmers reference of the dedicated subroutine}
+See the \doxygenanchor{cs__equation__iterative__solve_8c.html\#cs\_equation\_iterative\_solve}{programmers reference of the dedicated subroutine}
 for further details.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -141,14 +141,14 @@ are able to overcome the computational difficulty that arises when dealing
 with the convection (discretised using numerical schemes that can lead to the
 introduction of nonlinearities) and/or reconstruction terms. The user-specified scheme for the
 convection (which may be nonlinear should the slope test be activated) as
-well as the reconstruction terms will be evaluated at the iteration $k$ and treated on the right-hand side {\it via} the subroutine \fort{bilsc2}, while the non-reconstructed terms are taken at iteration $k+1$ and hence represent the unknowns
-of the linear system solved by \fort{codits}\footnote{cf. the subroutine
+well as the reconstruction terms will be evaluated at the iteration $k$ and treated on the right-hand side {\it via} the subroutine \fort{cs\_balance}, while the non-reconstructed terms are taken at iteration $k+1$ and hence represent the unknowns
+of the linear system solved by \fort{cs\_equation\_iterative\_solve}\footnote{cf. the subroutine
 \fort{cs\_solve\_navier\_stokes}.}.\\
 
 We assume moreover that the sequence $(a^{n+1,\,k})_k$ converges to the solution
 $a^{n+1}$ of equation (\ref{Base_Codits_Eq_ref_small}), {\it i.e.}
 $\lim\limits_{k\rightarrow\infty} \delta a^{n+1,\,k}\,=\,0$, for any given value of $n$.\\
-The equation solved by \fort{codits} is the abovementioned (\ref{Base_Codits_Eq_Codits}). The
+The equation solved by \fort{cs\_equation\_iterative\_solve} is the abovementioned (\ref{Base_Codits_Eq_Codits}). The
 matrix $\tens{EM}_{\,n}$, which is associated to the operator $\mathcal{EM}_{n}$, has to be
 inverted; the nonlinear terms are placed on the right-hand side, but in explicit form
 (index $k$ of $a^{n+1,\,k}$) and thus cease to pose a problem.
@@ -163,10 +163,10 @@ priori} arbitrary, ($\mathcal{EM}_{n}$ has to be linear and the sequence
  $(a^{n+1,\,k})_{k\in\mathbb{N}}$ must converge for any given $n$), one of the options in the
 $R_{ij}-\varepsilon$ models ($\var{IRIJNU}=1$) consists in forcing the viscosity $\mu_{\,tot}^n$,
 that appears in the expression of $\mathcal{EM}_{n}$ to take the value
-$\mu_{\,laminar}^n + \mu_{\,turbulent}^n$ when \fort{codits} is called by the subroutine \fort{cs\_solve\_navier\_stokes} for the velocity prediction step.  There is no physical reason for doing so (only the laminar viscosity $\mu_{\,laminar}^n$ is supposed to appear), however this can have a stabilising effect in certain cases without there being any concomitant effect on the limit-values of the sequence $(a^{n+1,\,k})_k$.\\
+$\mu_{\,laminar}^n + \mu_{\,turbulent}^n$ when \fort{cs\_equation\_iterative\_solve} is called by the subroutine \fort{cs\_solve\_navier\_stokes} for the velocity prediction step.  There is no physical reason for doing so (only the laminar viscosity $\mu_{\,laminar}^n$ is supposed to appear), however this can have a stabilising effect in certain cases without there being any concomitant effect on the limit-values of the sequence $(a^{n+1,\,k})_k$.\\
 
 \minititre{Remark 2}
-When \fort{codits} is used for strengthened transient velocity-pressure coupling
+When \fort{cs\_equation\_iterative\_solve} is used for strengthened transient velocity-pressure coupling
 (\var{IPUCOU}=1), a single iteration $k$ is made by initialising the sequence $(a^{n+1,\,k})_{k\in\mathbb{N}}$ to zero. The Dirichlet type boundary conditions are cancelled (we have $\var{INC}\,=\,0$) and the right-hand side is equal to $\rho |\Omega_i|$, which allows us to obtain a diagonal-type approximation of $\tens{EM}_{n}$, needed for the velocity correction step \footnote{cf. subroutine \fort{resopv}.}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -185,12 +185,12 @@ bi-conjugate gradient stabilised method ($BICGStab$) for asymmetric matrices.  D
 \fort{matrix}\footnote{ Remember that in \fort{matrix}, regardless of the user's choice, a first-order in space upwind scheme is always used to treat the convection and there is no reconstruction for
 the diffusive flux. The user's choice of numerical scheme for the convection is only applied for the integration
 of the convection terms of $\mathcal{E}_{n}$, on the right-hand side of
-(\ref{Base_Codits_Eq_Codits}), which computed in the subroutine \fort{bilsc2}.}. The implicit terms corresponding to the diagonal part of the matrix and hence to the zeroth-order linear differential contributions in $a^{n+1}$,({\it i.e.} $f_s^{imp}$), are stored in the array \var{ROVSDT} (realized before the subroutine calls \fort{codits}).\\
+(\ref{Base_Codits_Eq_Codits}), which computed in the subroutine \fort{cs\_balance}.}. The implicit terms corresponding to the diagonal part of the matrix and hence to the zeroth-order linear differential contributions in $a^{n+1}$,({\it i.e.} $f_s^{imp}$), are stored in the array \var{ROVSDT} (realized before the subroutine calls \fort{cs\_equation\_iterative\_solve}).\\
 - creation of the grid hierarchy if the multigrid algorithm is used
 ($ \var{IMGRP}\,>0 $).\\
-- call to \fort{bilsc2} to take the explicit convection-diffusion into account should
+- call to \fort{cs\_balance} to take the explicit convection-diffusion into account should
  $\theta \ne 0$.\\
-- loop over the number of iterations from 1 to $\var{NSWRSM}$ (which is called $\var{NSWRSP}$ in \fort{codits}).
+- loop over the number of iterations from 1 to $\var{NSWRSM}$ (which is called $\var{NSWRSP}$ in \fort{cs\_equation\_iterative\_solve}).
 The iterations are represented by $k$, which is designated \var{ISWEEP} in the code and defines the indices of the sequence $(a^{n+1,\,k})_k$ and of $(\delta a^{n+1,\,k})_k$.\\
 The right-hand side is split into two parts:\\
 \hspace*{1cm}{\tiny$\blacksquare$}\ a term that is affine in $a^{n+1,\,k-1}$, easily updated during the course of the incremental-iterative resolution procedure, which is written as:
@@ -199,7 +199,7 @@ The right-hand side is split into two parts:\\
 \end{equation}
 \\
 \hspace*{1cm}{\tiny$\blacksquare$}\ the terms arising from the
-convection/diffusion computation (with reconstruction) performed by \fort{bilsc2}.\\
+convection/diffusion computation (with reconstruction) performed by \fort{cs\_balance}.\\
 \begin{equation}\notag
 - \theta\,\left[\,\dive\left((\rho \underline{u})\,a^{n+1,\,k-1}\right)- \dive\left(\mu_{\,tot}\,\grad a^{n+1,\,k-1}\right)\right]
 \end{equation}
@@ -210,13 +210,13 @@ The loop in $k$ is then the following:
 the explicit convection-diffusion terms $\var{SMBINI}$; as for the whole right-hand side corresponding
 to $\mathcal{E}_{n}(a^{n+1,\,k-1})$, it is stored in the array $\var{SMBRP}$,
 initialised by $\var{SMBINI}$ and completed with the reconstructed
-convection-diffusion terms by a call to the subroutine \fort{bilsc2}.\\
+convection-diffusion terms by a call to the subroutine \fort{cs\_balance}.\\
 At iteration $k$, $\var{SMBINI}$ noted  $\var{SMBINI}^{\,k}$ is equal to:\\
 \begin{equation}\notag
 \var{SMBINI}^{\,k}\  = f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}(\,a^{n+1,\,k-1} - a^n\,) \\
 \end{equation}
 \\
-$\bullet$ Before starting the loop over $k$, a first call to the subroutine \fort{bilsc2} with $\var{THETAP}=1-\theta$ serves to take the explicit part (from the time advancement scheme) of the convection-diffusion terms into account.
+$\bullet$ Before starting the loop over $k$, a first call to the subroutine \fort{cs\_balance} with $\var{THETAP}=1-\theta$ serves to take the explicit part (from the time advancement scheme) of the convection-diffusion terms into account.
 \begin{equation}\notag
 \displaystyle
 \var{SMBRP}^{\,0} = f_s^{\,exp} -(1-\theta)\,[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,]\\
@@ -237,7 +237,7 @@ This calculation is thus represented by a corresponding sequence of operations o
 \begin{equation}\notag
 \var{SMBINI}^{\,1}\ =\ \var{SMBINI}^{\,0} - \var{ROVSDT}\,*(\,\var{PVAR}-\,\var{PVARA})
 \end{equation}
-and $\var{SMBRP}^{\,1}$ is completed by a second call to the subroutine \fort{bilsc2} with $\var{THETAP}=\theta$, so that the implicit part of the convection-diffusion computation is added to the right-hand side.
+and $\var{SMBRP}^{\,1}$ is completed by a second call to the subroutine \fort{cs\_balance} with $\var{THETAP}=\theta$, so that the implicit part of the convection-diffusion computation is added to the right-hand side.
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBRP}^{\,1} & = \var{SMBINI}^{\,1} -\theta\,\left[\,\dive((\rho \underline{u})\,a^{n+1,\,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,\,0})\,\right]\\
@@ -257,7 +257,7 @@ Hence, the equivalent array formula:
 \begin{equation}\notag
 \var{SMBINI}^{\,2}\ =\ \var{SMBINI}^{\,1} - \var{ROVSDT}\,*\,\var{DPVAR}^{\,1}
 \end{equation}
-the call to the subroutine \fort{bilsc2} being systematically made thereafter with $\var{THETAP}=\theta$, we likewise obtain:
+the call to the subroutine \fort{cs\_balance} being systematically made thereafter with $\var{THETAP}=\theta$, we likewise obtain:
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBRP}^{\,2}\ &=\ \var{SMBINI}^{\,2}-\theta\left[\dive\left((\rho \underline{u})\,a^{n+1,\,1}\right)- \dive\left(\mu_{\,tot}\,\grad \,a^{n+1,\,1}\right)\right]\\
@@ -270,7 +270,7 @@ a^{n+1,\,1}=\var{PVAR}^{\,1}=\var{PVAR}^{\,0}+\var{DPVAR}^{\,1}=a^{n+1,\,0}+\del
 $\bullet$ for iteration $k+1$,\\
 The array $\var{SMBINI}^{\,k+1}$ initialises the entire right side
 $\var{SMBRP}^{\,k+1}$ to which will be added the convective and diffusive contributions
-{\it via} the subroutine \fort{bilsc2}.\\
+{\it via} the subroutine \fort{cs\_balance}.\\
 The array formula is given by:
 \begin{equation}\notag
 \begin{array}{ll}
@@ -278,7 +278,7 @@ The array formula is given by:
 \end{array}
 \end{equation}
 Then follows the computation and the addition of the reconstructed convection-diffusion terms of
-$-\  \mathcal{E}_{n}(a^{n+1,\,k})$, by a call to the \fort{bilsc2} subroutine. Remember
+$-\  \mathcal{E}_{n}(a^{n+1,\,k})$, by a call to the \fort{cs\_balance} subroutine. Remember
 that the convection is taken into account at this step by the user-specified numerical scheme
 (first-order accurate in space upwind scheme, centred scheme with second-order spatial discretisation, second-order
 linear upwind "SOLU" scheme or a weighted average (blending) of one of the second-order schemes (either centred or SOLU) and the first-order upwind scheme, with potential use of a slope test).\\
@@ -341,7 +341,7 @@ taken into account, or abandoning it altogether.\\
 The quantity defined as criterion for the convergence test is also needs to be reviewed and potentially simplified.
 
 \etape{Consideration of $T_s^{imp}$}
-During the resolution of the equation by \fort{codits}, the \var{ROVSDT} array has
+During the resolution of the equation by \fort{cs\_equation\_iterative\_solve}, the \var{ROVSDT} array has
 two functions: it serves to compute the diagonal elements of the matrix (by calling
 \fort{matrix}) and it serves to update the right-hand side at each
 sub-iteration of the incremental resolution. However, if $T_s^{imp}$ is positive,
@@ -353,4 +353,4 @@ manner ($T_s^{exp}+T_s^{imp}a^n$), whereas the advantage of the incremental
 approach is precisely that it allows for almost total implicitization of the solution
 ($T_s^{exp}+T_s^{imp}a^{n+1,k_{fin}-1}$, where $k_{fin}$ is
 the final sub-iteration executed).\\
-To achieve this, would require defining two \var{ROVSDT} arrays in \fort{codits}.
+To achieve this, would require defining two \var{ROVSDT} arrays in \fort{cs\_equation\_iterative\_solve}.
