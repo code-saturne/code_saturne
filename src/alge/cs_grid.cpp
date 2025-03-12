@@ -120,6 +120,8 @@ struct _cs_grid_t {
   bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
   bool                use_faces;    /* True if face information is present */
+  bool                use_xa;       /* True if face-based extra-diagonal
+                                       are available */
 
   cs_lnum_t           db_size;      /* Block sizes for diagonal */
   cs_lnum_t           eb_size;      /* Block sizes for extra diagonal */
@@ -466,6 +468,7 @@ _coarse_init(const cs_grid_t  *f,
   c->symmetric = f->symmetric;
   c->conv_diff = f->conv_diff;
   c->use_faces = f->use_faces;
+  c->use_xa = f->use_xa;
   c->db_size = f->db_size;
   c->eb_size = f->eb_size;
 
@@ -7390,6 +7393,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   g->conv_diff = conv_diff;
   g->symmetric = cs_matrix_is_symmetric(a);
   g->use_faces = false;
+  g->use_xa = false;
 
   g->db_size = db_size;
   g->eb_size = eb_size;
@@ -7434,6 +7438,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
     g->xa= cs_matrix_get_extra_diagonal(a);
     g->face_cell = face_cell;
     g->use_faces = true;
+    if (face_normal != nullptr)
+      g->use_xa = true;
   }
   else if (g->symmetric) {
     if (cell_cen != nullptr && cell_face_sgn != nullptr)
@@ -7561,6 +7567,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
   g->level = 0;
   g->symmetric = cs_matrix_is_symmetric(g->matrix);
   g->use_faces = false;
+  g->use_xa = false;
 
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(g->matrix);
   const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(g->matrix);
@@ -7933,6 +7940,8 @@ cs_grid_coarsen(const cs_grid_t      *f,
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
+  assert(f != nullptr);
+
   int recurse = 0;
   cs_lnum_t isym = 2;
   bool conv_diff = f->conv_diff;
@@ -7948,10 +7957,8 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   bool msr_gather = false;
   if (fine_matrix_type == CS_MATRIX_MSR && f->symmetric) {
-    if (f->xa == nullptr || f->face_normal == nullptr) {
-      if (f->n_rows > 0)
-        msr_gather = true;
-    }
+    if (f->use_xa == false)
+      msr_gather = true;
     else {
       const char *s_gather = getenv("CS_MG_GATHER");
       if (s_gather != nullptr)
@@ -7963,8 +7970,6 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   const cs_lnum_t db_size = f->db_size;
   const cs_lnum_t db_stride = db_size * db_size;
-
-  assert(f != nullptr);
 
   /* Initialization */
 
