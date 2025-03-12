@@ -1345,7 +1345,12 @@ class Case(Dico, XMLDocument):
         """
         # return self['saved'] == "no"
 
-        s = self.toIOString()
+        d = XMLDocument().parseString(self.toPrettyString())
+        d.xmlCleanHiddenDefaults(d.root())
+        self.xmlCleanEmptyLines(d.root())
+        d.xmlCleanHighLevelBlank(d.root())
+        s = d.toString()
+
         if s == self.xml_saved:
             return False
         else:
