@@ -75,7 +75,7 @@ typedef struct {
    *  - Else, array of size ncells + 1, containing vertex coordinates.
    */
   cs_real_t               *s;
-} _cs_mesh_cartesian_direction_t ;
+} _cs_mesh_cartesian_direction_t;
 
 /*----------------------------------------------------------------------------*/
 /* Cartesian mesh parameters structure */
@@ -1044,6 +1044,7 @@ cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t  *mp,
                "which was allready defined.\n",
                idim);
     bft_printf_flush();
+    CS_FREE(mp->params[idim]->s);
     CS_FREE(mp->params[idim]);
   }
 
