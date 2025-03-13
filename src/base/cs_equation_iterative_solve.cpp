@@ -98,6 +98,105 @@
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize boundary condition coefficients solve arrays.
+ *
+ * \param[in, out]  c          reference to structure to initialize.
+ * \param[in]       n_b_faces  number of boundary faces
+ * \param[in]       stride     variable dimension
+ * \param[in]       amode      allocation mode
+ * \param[in]       limiter    is a limiter active ?
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c,
+                      cs_lnum_t              n_b_faces,
+                      cs_lnum_t              stride,
+                      cs_alloc_mode_t        amode,
+                      bool                   limiter)
+{
+  c.val_ip = nullptr;
+  c.val_f = nullptr;
+  c.val_f_lim = nullptr;
+  c.val_f_d = nullptr;
+  c.val_f_d_lim = nullptr;
+
+  CS_MALLOC_HD(c.val_ip, stride*n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(c.val_f, stride*n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(c.val_f_d, stride*n_b_faces, cs_real_t, amode);
+
+  if (limiter == false) {
+    c.val_f_lim = c.val_f;
+    c.val_f_d_lim = c.val_f_d;
+  }
+  else {
+    CS_MALLOC_HD(c.val_f_lim, stride*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(c.val_f_d_lim, stride*n_b_faces, cs_real_t, amode);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free boundary condition coefficients solve arrays.
+ *
+ * \param[in, out]  c          reference to structure to initialize.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_clear_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c)
+{
+  if (c.val_f_lim != c.val_f) {
+    CS_FREE_HD(c.val_f_lim);
+    CS_FREE_HD(c.val_f_d_lim);
+  }
+  else {
+    c.val_f_lim = nullptr;
+    c.val_f_d_lim = nullptr;
+  }
+
+  CS_FREE_HD(c.val_ip);
+  CS_FREE_HD(c.val_f);
+  CS_FREE_HD(c.val_f_d);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate BC coefficients face values if needed.
+ *
+ * \param[in, out]  bc_coeffs  pointer to boundary conditions coefficients.
+ * \param[in]       n_b_faces  number of boundary faces
+ * \param[in]       dim        associated field dimension
+ * \param[in]       amode      allocation mode
+ * \param[in]       limiter    is a limiter active ?
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ensure_bc_coeffs_allocated(cs_field_bc_coeffs_t  *bc_coeffs,
+                            cs_lnum_t              n_b_faces,
+                            cs_lnum_t              dim,
+                            cs_alloc_mode_t        amode,
+                            bool                   limiter)
+{
+  if (bc_coeffs->val_f != nullptr || n_b_faces == 0)
+    return;
+
+  CS_MALLOC_HD(bc_coeffs->val_f, dim*n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(bc_coeffs->val_f_d, dim*n_b_faces, cs_real_t, amode);
+
+  if (limiter == false) {
+    bc_coeffs->val_f_lim = bc_coeffs->val_f;
+    bc_coeffs->val_f_d_lim = bc_coeffs->val_f_d;
+  }
+  else {
+    CS_MALLOC_HD(bc_coeffs->val_f_lim, dim*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bc_coeffs->val_f_d_lim, dim*n_b_faces, cs_real_t, amode);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function solves an advection diffusion equation with source terms
  * for one time step for the vector variable \f$ \vect{a} \f$.
  *
@@ -203,7 +302,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                                   cs_equation_param_t  *eqp,
                                   const cs_real_t       pvara[][stride],
                                   const cs_real_t       pvark[][stride],
-                                  const cs_field_bc_coeffs_t *bc_coeffs,
+                                  cs_field_bc_coeffs_t *bc_coeffs,
                                   const cs_real_t       i_massflux[],
                                   const cs_real_t       b_massflux[],
                                   const cs_real_t       i_viscm[],
@@ -388,32 +487,23 @@ _equation_iterative_solve_strided(int                   idtvar,
    * second iteration).
    *===========================================================================*/
 
-  cs_bc_coeffs_solve_t *bc_coeffs_solve;
-  CS_MALLOC(bc_coeffs_solve, 1, cs_bc_coeffs_solve_t);
-
-  CS_MALLOC_HD(bc_coeffs_solve->val_ip, stride*n_b_faces, cs_real_t, amode);
-  CS_MALLOC_HD(bc_coeffs_solve->val_f, stride*n_b_faces, cs_real_t, amode);
-  CS_MALLOC_HD(bc_coeffs_solve->val_f_d, stride*n_b_faces, cs_real_t, amode);
-
   /* Allocate non reconstructed face value only if presence of limiter */
 
   const int ircflp = eqp->ircflu;
   const int ircflb = (ircflp > 0) ? eqp->b_diff_flux_rc : 0;
 
-  if (df_limiter_id == -1 && ircflb == 1) {
-    bc_coeffs_solve->val_f_lim = bc_coeffs_solve->val_f;
-    bc_coeffs_solve->val_f_d_lim =  bc_coeffs_solve->val_f_d;
-  }
-  else {
-    CS_MALLOC_HD(bc_coeffs_solve->val_f_lim, stride*n_b_faces, cs_real_t, amode);
-    CS_MALLOC_HD(bc_coeffs_solve->val_f_d_lim, stride*n_b_faces, cs_real_t, amode);
-  }
+  cs_bc_coeffs_solve_t bc_coeffs_solve;
+  _init_bc_coeffs_solve(bc_coeffs_solve,
+                        n_b_faces,
+                        stride,
+                        amode,
+                        (df_limiter_id > -1 || ircflb != 1));
 
-  var_t *val_ip = (var_t *)bc_coeffs_solve->val_ip;
-  var_t *val_f = (var_t *)bc_coeffs_solve->val_f;
-  var_t *val_f_lim = (var_t *)bc_coeffs_solve->val_f_lim;
-  var_t *val_f_d =  (var_t *)bc_coeffs_solve->val_f_d;
-  var_t *val_f_d_lim =  (var_t *)bc_coeffs_solve->val_f_d_lim;
+  var_t *val_ip = (var_t *)bc_coeffs_solve.val_ip;
+  var_t *val_f = (var_t *)bc_coeffs_solve.val_f;
+  var_t *val_f_lim = (var_t *)bc_coeffs_solve.val_f_lim;
+  var_t *val_f_d =  (var_t *)bc_coeffs_solve.val_f_d;
+  var_t *val_f_d_lim =  (var_t *)bc_coeffs_solve.val_f_d_lim;
 
   /* Application of the theta-scheme */
 
@@ -446,7 +536,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                         nullptr, /* pvar == pvara */
                         (const cs_real_3_t *)pvara,
                         bc_coeffs,
-                        bc_coeffs_solve,
+                        &bc_coeffs_solve,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -470,7 +560,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                         nullptr, /* pvar == pvara */
                         (const cs_real_6_t *)pvara,
                         bc_coeffs,
-                        bc_coeffs_solve,
+                        &bc_coeffs_solve,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -546,7 +636,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_3_t *)pvar,
                       (const cs_real_3_t *)pvara,
                       bc_coeffs,
-                      bc_coeffs_solve,
+                      &bc_coeffs_solve,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -570,7 +660,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_6_t *)pvar,
                       (const cs_real_6_t *)pvara,
                       bc_coeffs,
-                      bc_coeffs_solve,
+                      &bc_coeffs_solve,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -798,7 +888,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                           (cs_real_3_t *)dpvar,
                           nullptr, /* dpvar */
                           bc_coeffs,
-                          bc_coeffs_solve,
+                          &bc_coeffs_solve,
                           i_massflux,
                           b_massflux,
                           i_visc,
@@ -822,7 +912,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                           (cs_real_6_t *)dpvar,
                           nullptr, /* dpvar */
                           bc_coeffs,
-                          bc_coeffs_solve,
+                          &bc_coeffs_solve,
                           i_massflux,
                           b_massflux,
                           i_visc,
@@ -985,7 +1075,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_3_t *)pvar,
                         (const cs_real_3_t *)pvara,
                         bc_coeffs,
-                        bc_coeffs_solve,
+                        &bc_coeffs_solve,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -1009,7 +1099,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_6_t *)pvar,
                         (const cs_real_6_t *)pvara,
                         bc_coeffs,
-                        bc_coeffs_solve,
+                        &bc_coeffs_solve,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -1110,7 +1200,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_3_t *)pvar,
                       (const cs_real_3_t *)pvara,
                       bc_coeffs,
-                      bc_coeffs_solve,
+                      &bc_coeffs_solve,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -1139,6 +1229,12 @@ _equation_iterative_solve_strided(int                   idtvar,
   /*==========================================================================
    * Store face value for gradient and diffusion
    *==========================================================================*/
+
+  _ensure_bc_coeffs_allocated(bc_coeffs,
+                              n_b_faces,
+                              stride,
+                              cs_alloc_mode,
+                              (df_limiter_id > -1 || ircflb != 1));
 
   var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
   var_t *val_f_lim_updated = (var_t *)bc_coeffs->val_f_lim;
@@ -1179,15 +1275,8 @@ _equation_iterative_solve_strided(int                   idtvar,
     CS_FREE_HD(dpvarm1);
     CS_FREE_HD(rhs0);
   }
-  if (val_f_lim != val_f) {
-    CS_FREE_HD(val_f_lim);
-    CS_FREE_HD(val_f_d_lim);
-  }
-  CS_FREE_HD(val_ip);
-  CS_FREE_HD(val_f);
-  CS_FREE_HD(val_f_d);
 
-  CS_FREE_HD(bc_coeffs_solve);
+  _clear_bc_coeffs_solve(bc_coeffs_solve);
 }
 
 #endif /* cplusplus */
@@ -2158,7 +2247,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               \c pvara (usually \c pvar= \c pvara)
- * \param[in]      bc_coeffs_v   boundary condition structure for the variable
+ * \param[in, out] bc_coeffs_v   boundary condition structure for the variable
  * \param[in]      i_massflux    mass flux at interior faces
  * \param[in]      b_massflux    mass flux at boundary faces
  * \param[in]      i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -2200,7 +2289,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    cs_equation_param_t  *eqp,
                                    const cs_real_t       pvara[][3],
                                    const cs_real_t       pvark[][3],
-                                   const cs_field_bc_coeffs_t *bc_coeffs_v,
+                                   cs_field_bc_coeffs_t *bc_coeffs_v,
                                    const cs_real_t       i_massflux[],
                                    const cs_real_t       b_massflux[],
                                    const cs_real_t       i_viscm[],
@@ -2306,7 +2395,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               pvara (usually pvar=pvara)
- * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
+ * \param[in,out] bc_coeffs_ts  boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -2341,7 +2430,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                    cs_equation_param_t        *eqp,
                                    const cs_real_t             pvara[][6],
                                    const cs_real_t             pvark[][6],
-                                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                                   cs_field_bc_coeffs_t       *bc_coeffs_ts,
                                    const cs_real_t             i_massflux[],
                                    const cs_real_t             b_massflux[],
                                    const cs_real_t             i_viscm[],

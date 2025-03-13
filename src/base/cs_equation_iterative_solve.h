@@ -236,7 +236,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               \c pvara (usually \c pvar= \c pvara)
- * \param[in]      bc_coeffs_v   boundary condition structure for the variable
+ * \param[in, out] bc_coeffs_v   boundary condition structure for the variable
  * \param[in]      i_massflux    mass flux at interior faces
  * \param[in]      b_massflux    mass flux at boundary faces
  * \param[in]      i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -278,7 +278,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    cs_equation_param_t  *eqp,
                                    const cs_real_t       pvara[][3],
                                    const cs_real_t       pvark[][3],
-                                   const cs_field_bc_coeffs_t *bc_coeffs_v,
+                                   cs_field_bc_coeffs_t *bc_coeffs_v,
                                    const cs_real_t       i_massflux[],
                                    const cs_real_t       b_massflux[],
                                    const cs_real_t       i_viscm[],
@@ -355,7 +355,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               pvara (usually pvar=pvara)
- * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
+ * \param[in,out] bc_coeffs_ts  boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -390,7 +390,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                    cs_equation_param_t        *eqp,
                                    const cs_real_t             pvara[][6],
                                    const cs_real_t             pvark[][6],
-                                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                                   cs_field_bc_coeffs_t       *bc_coeffs_ts,
                                    const cs_real_t             i_massflux[],
                                    const cs_real_t             b_massflux[],
                                    const cs_real_t             i_viscm[],
