@@ -205,10 +205,14 @@ _ensure_bc_coeffs_allocated(cs_field_bc_coeffs_t  *bc_coeffs,
                             cs_alloc_mode_t        amode,
                             bool                   limiter)
 {
-  if (bc_coeffs->val_f != nullptr || n_b_faces == 0)
+  if (bc_coeffs->val_f_d != nullptr || n_b_faces == 0)
     return;
 
-  CS_MALLOC_HD(bc_coeffs->val_f, dim*n_b_faces, cs_real_t, amode);
+  // bc_coeffs->val_f may have been allocated separately
+  // (i.e. upon initialization or restart).
+  if (bc_coeffs->val_f == nullptr)
+    CS_MALLOC_HD(bc_coeffs->val_f, dim*n_b_faces, cs_real_t, amode);
+
   CS_MALLOC_HD(bc_coeffs->val_f_d, dim*n_b_faces, cs_real_t, amode);
 
   if (limiter == false) {
