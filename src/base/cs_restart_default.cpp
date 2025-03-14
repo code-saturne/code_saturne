@@ -2139,7 +2139,7 @@ cs_restart_read_variables(cs_restart_t               *r,
   if (_read_flag != read_flag)
     CS_FREE(_read_flag);
 
-  bft_printf(_("  Read variables from restart: %s\n"),
+  bft_printf(_(" Read variables from: %s\n"),
              cs_restart_get_name(r));
 }
 

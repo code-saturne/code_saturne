@@ -47,6 +47,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
 #include "atmo/cs_atmo.h"
@@ -202,12 +203,11 @@ _write_main_checkpoint(void)
 static cs_map_name_to_id_t *
 _read_main_checkpoint(void)
 {
-  cs_log_printf(CS_LOG_DEFAULT, "   READING THE MAIN RESTART FILE\n");
-
   /* Open file */
   cs_restart_t *r = cs_restart_create("main.csc", nullptr, CS_RESTART_MODE_READ);
 
-  cs_log_printf(CS_LOG_DEFAULT, " Start reading\n");
+  cs_log_printf(CS_LOG_DEFAULT,
+                " Start reading from %s\n", cs_restart_get_name(r));
 
   cs_real_t dummy_real = -99999.;
 
@@ -224,18 +224,18 @@ _read_main_checkpoint(void)
   if (retval != CS_RESTART_SUCCESS) {
     retval = cs_restart_check_if_restart_from_ncfd(r);
     if (retval == 0) {
-      cs_log_warning(_("STOP WHILE READING THE MAIN RESTART FILE\n\n"
-                       "  WRONG FILE TYPE\n\n"
-                       "The file \"main.csc\" does not look like a proper\n"
-                       "  main restart file.\n\n"
-                       "The calculation cannot be executed.\n\n"
-                       "Please make sure the file used as a restart file\n"
-                       "  actually is a correct main restart file.\n"));
-      cs_exit(EXIT_FAILURE);
+      bft_error(__FILE__, __LINE__, 0,
+                _("The \"%s\" file does not seem to be a proper\n"
+                  "  main restart file.\n\n"
+                  "The calculation cannot be executed.\n\n"
+                  "Please make sure the file used as a restart file\n"
+                  "  actually is a correct main restart file.\n"),
+                cs_restart_get_name(r));
     }
   }
 
   /* Check base locations */
+
   bool match_cell, match_i_face, match_b_face, match_vertex;
   cs_restart_check_base_location(r,
                                  &match_cell,
@@ -245,13 +245,13 @@ _read_main_checkpoint(void)
 
   /* For the moment only cell location is tested */
   if (match_cell == false) {
-    cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
-                     "  INCONSISTANT RESTART AND CHECKPOINT DATA\n\n"
-                     "The number of cells has changed\n\n"
-                     "The calculation cannot be executed.\n\n"
-                     "Please make sure the file used as restart file does\n"
-                     "    correspond to your case\n"));
-    cs_exit(EXIT_FAILURE);
+    bft_error(__FILE__, __LINE__, 0,
+              _("In main restart file\n\n"
+                "  Incoherent PREVIOUS and CURRENT data\n\n"
+                "The number of cells was modified\n\n"
+                "The run can not be executed.\n\n"
+                "Verify that the restart file used corresponds to"
+                " the present case."));
   }
 
   /* Read field info */
@@ -260,9 +260,9 @@ _read_main_checkpoint(void)
 
   cs_log_printf(CS_LOG_DEFAULT, " Reading dimensions complete\n");
 
-  /* ------------------------------- */
-  /* Read options and stop if needed */
-  /* ------------------------------- */
+  /* Read options and stop if needed
+     ------------------------------- */
+
   int nb_errors = 0;
 
   int dummy_int = 0;
@@ -290,55 +290,44 @@ _read_main_checkpoint(void)
 
   /* Exit if error */
   if (nb_errors != 0) {
-    cs_log_warning(_("STOP WHILE READING THE MAIN RESTART FILE\n\n"
-                     "  ERROR READING THE TEMPORAL INFORMATION\n\n"
-                     "The computation cannot be executed.\n\n"
-                     "Please check the integrity of the file used as\n"
-                     "    restart file\n"));
-    cs_exit(EXIT_FAILURE);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error reading the restart time information\n\n"
+                "The computation cannot be executed.\n\n"
+                "Please check the integrity of the restart file\n"));
   }
 
   /* Stop if requested time/iterations number is too small */
   if (cs_glob_time_step->t_max >= 0.) {
     if (cs_glob_time_step->t_prev > cs_glob_time_step->t_max) {
-      cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
-                       "  PREVIOUS TIME t_prev = %12.4e\n"
-                       "  TIME WANTED   t_max  = %12.4e\n\n"
-                       "The requested time, t_max, has to be greater than\n"
-                       "  the already simulated time t_prev.\n\n"
-                       "The calculation cannot be executed.\n\n"
-                       "Please check (increase) t_max.\n"
-                       "Please make sure the file used as restart file does\n"
-                       "      correspond to your case.\n"),
-                      cs_glob_time_step->t_prev,
-                      cs_glob_time_step->t_max);
-      cs_exit(EXIT_FAILURE);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Previous time in restart:   t_prev = %12.4e\n"
+                  "Time requested in this run: t_max = %12.4e\n\n"
+                  "The requested time, t_max, must be greater than\n"
+                  "  the previously simulated time t_prev.\n\n"
+                  "The calculation cannot be executed.\n\n"
+                  "Please check (increase) t_max."),
+                cs_glob_time_step->t_prev,
+                cs_glob_time_step->t_max);
     }
   }
   else if (cs_glob_time_step->nt_prev > cs_glob_time_step->nt_max) {
-    cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
-                     "  NUMBER OF THE PREVIOUS TIME STEP nt_prev = %d\n"
-                     "  NUMBER OF TIME STEPS WANTED      nt_max  = %d\n\n"
-                     "The requested number of time steps (absolute),\n"
-                     "  nt_max, has to be greater than\n"
-                     "  the number of time steps already run, t_prev.\n\n"
-                     "The calculation cannot be executed.\n\n"
-                     "Please check (increase) nt_max.\n"
-                     "Please make sure the file used as restart file does\n"
-                     "      correspond to your case.\n"),
-                    cs_glob_time_step->nt_prev,
-                    cs_glob_time_step->nt_max);
-    cs_exit(EXIT_FAILURE);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Previous time steps in restart:   nt_prev = %d\n"
+                "Time steps requested in this run: nt_max = %d\n\n"
+                "The requested number of time steps (absolute),\n"
+                "  nt_max, must to be greater than\n"
+                "  the number of time steps already run, t_prev.\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Please check (increase) nt_max."),
+              cs_glob_time_step->nt_prev,
+              cs_glob_time_step->nt_max);
   }
 
   cs_log_printf(CS_LOG_DEFAULT,
-                _("  Reading the previous time step number \n"
-                  "  (restarting computation)  nt_prev = %d\n"),
-                cs_glob_time_step->nt_prev);
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("  Reading the previous time step value \n"
-                  "  (restarting computation)   t_prev = %12.4e\n"),
+                _(" Restart time information \n"
+                  "  nt_prev = %d\n"
+                  "  t_prev  = %12.4e\n"),
+                cs_glob_time_step->nt_prev,
                 cs_glob_time_step->t_prev);
 
   /* ALE */
@@ -349,38 +338,35 @@ _read_main_checkpoint(void)
 
   if (retval != CS_RESTART_SUCCESS) {
     if (cs_glob_ale != CS_ALE_NONE) {
-      cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
-                       "  ERROR AT READING THE INDICATOR OF ALE METHOD\n\n"
-                       "The read restart file might come from a previous\n"
-                       "  version of Code Saturne, without ALE.\n"
+      cs_log_warning(_("Error reading the restart indicator of ALE method\n\n"
                        "The calculation will be executed but\n"
                        "  ALE data will be reset.\n"
                        "Please check the integrity of the file used as\n"
-                       "    restart file, however.\n"));
+                       "    restart file.\n"));
     }
   }
   else
     ale_ = (cs_ale_type_t)dummy_int;
 
   /* Auxiliary file needs to be read if previous computation was already
-   * using ALE.
-   */
+   * using ALE. */
+
   if (cs_glob_ale != CS_ALE_NONE &&
       ale_ != CS_ALE_NONE &&
       cs_glob_restart_auxiliary->read_auxiliary != 1) {
-      cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
-                     "  IALE INDICATOR OF THE PREVIOUS CALCULATION = %d\n"
-                     "  IALE INDICATOR OF THE CURRECT CALCULATION  = %d\n\n"
-                     "The coordinates of the mesh nodes need to be read again.\n"
-                     "  They are stored in the auxiliary restart file.\n"
-                     "Therefore the ILEAUX indicator needs to be equal to 1.\n"
-                     "Its current value is ILEAUX = %d\n\n"
-                     "The calculation cannot be executed.\n\n"
-                     "Please check the value of ILEAUX.\n"),
-                   ale_,
-                   cs_glob_ale,
-                   cs_glob_restart_auxiliary->read_auxiliary);
-    cs_exit(EXIT_FAILURE);
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("In the main restart file:\n\n"
+         "  ALE indicator of the previous calculation = %d\n"
+         "  ALE indicator of the currect calculation  = %d\n\n"
+         "The coordinates of the mesh nodes need to be read.\n"
+         "  They are stored in the auxiliary restart file.\n"
+         "Therefore the \"cs_glob_restart_auxiliary->read_auxiliary\"\n"
+         "indicator needs to be equal to 1 (its current value is = %d).\n\n"
+         "The calculation cannot be executed.\n"),
+       ale_,
+       cs_glob_ale,
+       cs_glob_restart_auxiliary->read_auxiliary);
   }
 
   /* VoF */
@@ -389,26 +375,21 @@ _read_main_checkpoint(void)
 
   if (retval != CS_RESTART_SUCCESS) {
     if (cs_glob_vof_parameters->vof_model & CS_VOF_ENABLED)
-      cs_log_warning(_("ERROR WHILE READING THE MAIN RESTART FILE\n\n"
-                       "  ERROR READING THE INDICATOR OF THE\n"
-                       "  VOLUME OF FLUID METHOD\n\n"
-                       "The read restart file might come from a previous\n"
-                       "  version of code_saturne, without VOF.\n"
-                       "The calculation will be executed but\n"
-                       "  Volume of Fluid method data will be reset.\n"
-                       "Please check the integrity of the file used as\n"
-                       "    restart file, however.\n"));
+      cs_log_warning
+        (_("VoF (Volume of Fluid) indicator not present in main restart file.\n"
+           "The calculation will be executed but\n"
+           "  the Volume of Fluid method data will be reset.\n"
+           "Please check the integrity of the restart file.\n"));
   }
 
-  /* Instant de maillage mobile precedent (rotor/stator) */
+  /* Previous mobile mesh time (rotor/stator) */
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
     cs_turbomachinery_restart_read(r);
 
   cs_log_printf(CS_LOG_DEFAULT, " Reading options complete\n");
 
-  /* -------------- */
-  /* Read variables */
-  /* -------------- */
+  /* Read variables
+     -------------- */
 
   cs_restart_read_variables(r, old_field_map, 0, nullptr);
 
@@ -431,9 +412,9 @@ _read_main_checkpoint(void)
 
   cs_restart_read_fields(r, CS_RESTART_MAIN);
 
-  /* ------------------------------- */
-  /* Read atmospheric chemistry data */
-  /* ------------------------------- */
+  /* Read atmospheric chemistry data
+     ------------------------------- */
+
   if (cs_glob_atmo_chemistry->model > 0 ||
       cs_glob_atmo_chemistry->aerosol_model != CS_ATMO_AEROSOL_OFF) {
     dummy_int = 1;
@@ -443,9 +424,8 @@ _read_main_checkpoint(void)
       cs_atmo_chemistry_initialization_deactivate();
   }
 
-  /* ---------- */
-  /* Close file */
-  /* ---------- */
+  /* Close file
+     ---------- */
 
   cs_restart_destroy(&r);
 
@@ -459,8 +439,9 @@ _read_main_checkpoint(void)
 static void
 _write_auxiliary_checkpoint(void)
 {
-  cs_log_printf(CS_LOG_DEFAULT, "** Writing the auxiliary restart file\n");
-  cs_log_printf(CS_LOG_DEFAULT, "   ----------------------------------\n");
+  cs_log_printf(CS_LOG_DEFAULT,
+                "** Writing the auxiliary restart file\n"
+                "   ----------------------------------\n");
 
   cs_restart_t *r = cs_restart_create("auxiliary.csc",
                                       nullptr,
@@ -472,9 +453,8 @@ _write_auxiliary_checkpoint(void)
   int dummy_int = 400000;
   _WRITE_INT_VAL("code_saturne:checkpoint:auxiliary:version");
 
-  /* ---------- */
-  /* Dimensions */
-  /* ---------- */
+  /* Dimensions
+     ---------- */
 
   /* Variable time step indicator */
   dummy_int = (int)cs_glob_time_step_options->idtvar;
@@ -488,18 +468,17 @@ _write_auxiliary_checkpoint(void)
 
   cs_log_printf(CS_LOG_DEFAULT, " End writing the dimensions and options\n");
 
-  /* ----------------- */
-  /* Writing variables */
-  /* ----------------- */
+  /* Writing variables
+     ----------------- */
 
-  /* Point de reference pour la pression totale
-   * On n'ecrit que si XYZP0 a ete specifie par l'utilisateur ou
-   * calcule a partir de faces de sorties ou de Dirichlet
-   */
+  /* Reference point for total pressure.
+   * Output only if xyzp0 was specified by the user or
+   * computed based on output or Dirichlet faces. */
+
   cs_fluid_properties_t *cgfp = cs_get_glob_fluid_properties();
   dummy_int = cgfp->ixyzp0;
   if (cgfp->ixyzp0== 1) {
-    cs_restart_write_section(r,"ref_presstot01", 0 , 3,
+    cs_restart_write_section(r, "ref_presstot01", 0 , 3,
                              CS_TYPE_cs_real_t,
                              cgfp->xyzp0);
   }
@@ -603,9 +582,8 @@ _write_auxiliary_checkpoint(void)
     cs_log_printf(CS_LOG_DEFAULT, " End writing the ALE data\n");
   }
 
-  /* ---------------------------------------- */
-  /* Combustion related fields and structures */
-  /* ---------------------------------------- */
+  /* Combustion related fields and structures
+     ---------------------------------------- */
 
   /* 3 points model */
 
@@ -644,7 +622,7 @@ _write_auxiliary_checkpoint(void)
     dummy_real = cm->tinoxy;
     _WRITE_REAL_VAL("tinoxy_slfm");
 
-    // numéro des zones
+    // Zone numbers
     cs_restart_write_section(r,
                              "num_zone_fb_slfm",
                              3,
@@ -672,6 +650,7 @@ _write_auxiliary_checkpoint(void)
   }
 
   /* LWC model */
+
   if (cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0) {
     const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
@@ -712,9 +691,7 @@ _write_auxiliary_checkpoint(void)
     cs_log_printf(CS_LOG_DEFAULT, " End writing combustion information (CP)\n");
   }
 
-  /* ------------------------------------------------------- */
-  /* Grandeurs complementaires pour les versions electriques */
-  /* ------------------------------------------------------- */
+  /* Electric arcs model data */
 
   if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0 ||
       cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0) {
@@ -753,13 +730,12 @@ _write_auxiliary_checkpoint(void)
 static void
 _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 {
-  cs_log_printf(CS_LOG_DEFAULT, "      READING THE AUXILIARY RESTART FILE\n");
-
   cs_restart_t *r = cs_restart_create("auxiliary.csc",
                                       nullptr,
                                       CS_RESTART_MODE_READ);
 
-  cs_log_printf(CS_LOG_DEFAULT, " Start reading\n");
+  cs_log_printf(CS_LOG_DEFAULT,
+                " Start reading from %s\n", cs_restart_get_name(r));
 
   /* Check restart file */
   cs_real_t dummy_real = -99999.;
@@ -773,16 +749,16 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                      &dummy_real);
 
   if (retval != CS_RESTART_SUCCESS) {
-    cs_log_warning(_("STOP READING THE AUXILIARY RESTART FILE\n\n"
-                     "  WRONG FILE TYPE\n\n"
-                     "The file \"auxiliary.csc\" does not look like a proper\n"
-                     "  auxiliary restart file.\n\n"
-                     "The calculation cannot be executed.\n\n"
-                     "Please make sure the file used as a restart file\n"
-                     "  actually is a correct auxiliary restart file.\n"
-                     "If necessary, it is possible to deactivate the reading\n"
-                     "  of the auxiliary restart file by ILEAUX = 0.\n"));
-    cs_exit(EXIT_FAILURE);
+    bft_error(__FILE__, __LINE__, 0,
+              _("The \"%s\" file does not seem to be a proper\n"
+                "  auxiliary restart file.\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Please ensure the file used as a restart file\n"
+                "  actually is a correct auxiliary restart file.\n"
+                "If necessary, it is possible to deactivate the reading\n"
+                "  of the auxiliary restart file by setting\n"
+                "  cs_glob_restart_auxiliary->write_auxiliary."),
+                cs_restart_get_name(r));
   }
 
   /* Check base locations */
@@ -794,15 +770,16 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                  &match_vertex);
 
   if (!match_cell) {
-    cs_log_warning(_("STOP READING THE AUXILIARY RESTART FILE\n\n"
-                     "  INCOHERENT PREVIOUS NAD ACTUAL DATA\n\n"
-                     "The number of cells was modified\n\n"
-                     "The run can not be executed.\n\n"
-                     "Verify that the restart file used corresponds to\n"
-                     "    the present case.\n"
-                     "If necessary, it is possible to deactivate the reading\n"
-                     "  of the auxiliary restart file by ILEAUX = 0.\n"));
-    cs_exit(EXIT_FAILURE);
+    bft_error(__FILE__, __LINE__, 0,
+              _("In auxiliary restart file\n\n"
+                "  Incoherent PREVIOUS and CURRENT data\n\n"
+                "The number of cells was modified\n\n"
+                "The run can not be executed.\n\n"
+                "Verify that the restart file used corresponds to"
+                " the present case.\n"
+                "If necessary, it is possible to deactivate the reading\n"
+                "  of the auxiliary restart file by setting\n"
+                "  cs_glob_restart_auxiliary->write_auxiliary."));
   }
 
   bool face_states_[2] = {match_i_face, match_b_face};
@@ -811,8 +788,8 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   for (int i = 0; i < 2; i++) {
     if (!face_states_[i]) {
       cs_log_warning
-        (_("STOP READING THE AUXILIARY RESTART FILE\n\n"
-           "  PREVIOUS and PRESENT INPUT DATA ARE DIFFERENT\n\n"
+        (_("In the auxiliary restart file\n\n"
+           "  PREVIOUS and CURRENT input data are different\n\n"
            "The number of %s faces has been modified\n\n"
            "The run can continue but the data on the\n"
            "  %s faces will not be reread in the suite file.\n"
@@ -844,12 +821,11 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   if (retval != CS_RESTART_SUCCESS) {
     if (cs_glob_ale != CS_ALE_NONE)
       cs_log_warning
-        (_("ERROR WHILE READING THE AUXILIARY RESTART FILE\n\n"
-           "  ERROR WHEN READING THE INDICATOR OF THE ALE METHOD\n\n"
+        (_("In the auxiliary restart file, the ALE method indicator"
+           " is not available\n"
            "It is possible that the file read corresponds to an old\n"
            "  version of code_saturne, without the ALE method.\n"
-           "The run will be executed with reinitialising all ALE data.\n\n"
-           "Verify that the restart file used has not been damaged.\n"));
+           "The run will be executed, reinitializing all ALE data.\n"));
   }
 
   if (cs_glob_ale_need_init == -999) {
@@ -870,20 +846,18 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   if (retval != CS_RESTART_SUCCESS) {
     if (cs_glob_vof_parameters->vof_model & CS_VOF_ENABLED)
       cs_log_warning
-        (_("ERROR WHILE READING THE AUXILIARY RESTART FILE\n\n"
-           "  ERROR WHEN READING THE INDICATOR OF THE VOF MODEL\n\n"
-           "It is possible that the file read corresponds to an old\n"
-           "  version of code_saturne, without the VOF model.\n"
-           "The run will be executed with reinitialising all\n"
-           "  VOF model data.\n\n"
-           "Verify that the restart file used has not been damaged.\n"));
+        (_("In the auxiliary restart file, the VoF method indicator"
+           " is not available\n"
+           "It is possible that the file read corresponds to an older\n"
+           "  version of code_saturne, without the VoF model.\n"
+           "The run will be executed with reinitializing all\n"
+           "  VoF model data.\n"));
   }
 
   cs_log_printf(CS_LOG_DEFAULT, " Finished reading options.\n");
 
-  /* ------------------- */
-  /* Physical properties */
-  /* ------------------- */
+  /* Physical properties
+     ------------------- */
 
   cs_fluid_properties_t *cgfp = cs_get_glob_fluid_properties();
 
@@ -942,9 +916,8 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   cs_log_printf(CS_LOG_DEFAULT, " Finished reading physical properties.\n");
 
-  /* -------------------- */
-  /* Time step quantities */
-  /* -------------------- */
+  /* Time step quantities
+     -------------------- */
 
   dummy_int = 0;
   retval = _READ_INT_VAL("indic_dt_variable");
@@ -975,9 +948,8 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                        "Continuing with default values.\n"));
   }
 
-  /* ----------- */
-  /* Mass fluxes */
-  /* ----------- */
+  /* Mass fluxes
+     ----------- */
 
   if (match_i_face || match_b_face) {
     /* Read fluxes */
@@ -1022,32 +994,29 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     }
   }
 
-  /* ------------------- */
-  /* Boundary conditions */
-  /* ------------------- */
+  /* Boundary conditions
+     ------------------- */
 
   if (match_b_face) {
     cs_restart_read_bc_coeffs(r);
     cs_log_printf(CS_LOG_DEFAULT, " Finished reading boundary conditions.\n");
   }
 
-  /* ------------ */
-  /* Source terms */
-  /* ------------ */
+  /* Source terms
+     ------------ */
 
-  cs_restart_read_linked_fields(r, old_field_map, "source_term_prev_id", nullptr);
+  cs_restart_read_linked_fields
+    (r, old_field_map, "source_term_prev_id", nullptr);
   cs_log_printf(CS_LOG_DEFAULT, " Finished reading source terms.\n");
 
-  /* ------------ */
-  /* Time moments */
-  /* ------------ */
+  /* Time moments
+     ------------ */
 
   cs_time_moment_restart_read(r);
 
-  /* -------------------------------------------------------------------- */
   /* Wall temperature associated to the condensation model with or without
-   * the 1D thermal model tag1D */
-  /* -------------------------------------------------------------------- */
+   * the 1D thermal model tag1D
+   *- -------------------------------------------------------------------- */
 
   cs_wall_condensation_t *wco = cs_get_glob_wall_condensation();
   if (wco->icondb == 0 ) {
@@ -1096,9 +1065,8 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     CS_FREE(tmp);
   }
 
-  /* ------------------- */
-  /* ALE vertex movement */
-  /* ------------------- */
+  /* ALE vertex displacement
+     ----------------------- */
 
   if (cs_glob_ale != CS_ALE_NONE && ale_aux_id > 0) {
     cs_ale_restart_read(r);
@@ -1107,9 +1075,8 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     cs_log_printf(CS_LOG_DEFAULT, " Finished reading ALE information.\n");
   }
 
-  /* ----------------------- */
-  /* Combustion related data */
-  /* ----------------------- */
+  /* Combustion related data
+     ----------------------- */
 
   /* 3 Points model */
 
@@ -1190,6 +1157,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   }
 
   /* LWC */
+
   if (cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0) {
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
@@ -1211,6 +1179,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   }
 
   /* Pulverized coal */
+
   if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
     cs_coal_model_t  *cm = cs_glob_coal_model;
     const char *_prefix = "masse_volumique_charbon";
@@ -1230,7 +1199,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     }
   }
 
-  /* Electric arc model */
+  /* Electric arcs model */
 
   if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0 ||
       cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0) {
@@ -1256,16 +1225,13 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     cs_log_printf(CS_LOG_DEFAULT, " Finished reading electric information.\n");
   }
 
-
-  /* -------------------------------- */
-  /* Read fields based on restart key */
-  /* -------------------------------- */
+  /* Read fields based on restart key
+     -------------------------------- */
 
   cs_restart_read_fields(r, CS_RESTART_AUXILIARY);
 
-  /* ---------- */
-  /* Close file */
-  /* ---------- */
+  /* Close file
+     ---------- */
 
   cs_restart_destroy(&r);
 }
@@ -1302,6 +1268,11 @@ cs_restart_main_and_aux_write(void)
 void
 cs_restart_main_and_aux_read(void)
 {
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n"
+                " Restart:\n"
+                " --------\n\n");
+
   /* Read main checkpoint file */
   cs_map_name_to_id_t *old_field_map = _read_main_checkpoint();
 
