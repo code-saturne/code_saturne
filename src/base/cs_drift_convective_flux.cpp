@@ -455,7 +455,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          viscce[c_id] += viscce[c_id] + visls_0 / crom[c_id];
+          viscce[c_id] += visls_0 / crom[c_id];
 
       }
 
