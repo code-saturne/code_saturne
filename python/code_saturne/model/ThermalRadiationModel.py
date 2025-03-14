@@ -62,7 +62,7 @@ class ThermalRadiationModel(Variables, Model):
 
         self.radiativeModels = ('off', 'dom', 'p-1')
         self.optionsList = [0, 1, 2]
-        self.optionsListRenorm = [-1, 0, 1, 2]
+        self.optionsListRenorm = [-1, 2]
 
         self.c_prop = {}
         self.b_prop = {}
@@ -389,7 +389,11 @@ class ThermalRadiationModel(Variables, Model):
     def setTrs(self, idiver):
         """ Put value of IDIVER for advanced options """
         self.isIntInList(idiver, self.optionsListRenorm)
-        self.node_ray.xmlSetData('thermal_radiative_source_term', idiver)
+        name = 'thermal_radiative_source_term'
+        if idiver != self._defaultValues()['idiver']:
+            self.node_ray.xmlSetData(name, idiver)
+        else:
+            self.node_ray.xmlRemoveChild(name)
 
 
     def getThermalRadiativeModel(self):

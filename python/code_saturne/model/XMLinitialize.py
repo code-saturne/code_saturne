@@ -2065,6 +2065,12 @@ class XMLinit(BaseXmlInit):
                 if n['model'] == 'off':
                     n.xmlRemoveNode()
 
+            n = nModels.xmlGetNode('radiative_transfer')
+            if n:
+                idiver = n.xmlGetInt('thermal_radiative_source_term')
+                if idiver in (0, 1):
+                    n.xmlRemoveChild('thermal_radiative_source_term')
+
         return
 
 #-------------------------------------------------------------------------------
