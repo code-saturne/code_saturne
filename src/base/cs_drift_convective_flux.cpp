@@ -55,6 +55,7 @@
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "alge/cs_convection_diffusion.h"
+#include "base/cs_dispatch.h"
 #include "alge/cs_divergence.h"
 #include "alge/cs_face_viscosity.h"
 #include "base/cs_field_default.h"
@@ -108,8 +109,8 @@ static int class_id_max = 0;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
-                            cs_real_t                    b_mass_flux[])
+cs_drift_boundary_mass_flux(const cs_mesh_t  *m,
+                            cs_real_t         b_mass_flux[])
 {
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
@@ -127,6 +128,7 @@ cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
     (rho Vs)_f = sum_classes (rho x2 V2)_f
     Warning in case of ALE or turbomachinary...
    ---------------------------------------------------------------- */
+
   for (int jcla = 1; jcla < class_id_max; jcla++) {
 
     char var_name[15];
@@ -151,18 +153,18 @@ cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
         /* Pointer to the Boundary mass flux */
         cs_real_t *b_mass_flux2 = cs_field_by_id(b_flmass_id)->val;
 
-#       pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        cs_dispatch_context ctx;
 
+        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
           /* Only for walls and outgoing values */
           if (   (   bc_type[face_id] != CS_SMOOTHWALL
                   && bc_type[face_id] != CS_ROUGHWALL)
               || b_mass_flux2[face_id] < 0.)
-            continue;
+            return; // contine in loop
 
           cs_lnum_t c_id = b_face_cells[face_id];
           b_mass_flux[face_id] += x2[c_id] * b_mass_flux2[face_id];
-        }
+        });
       }
     }
   }
@@ -214,7 +216,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   const cs_real_t *dt = CS_F_(dt)->val;
   const int model  = cs_glob_turb_model->model;
   const int itytur = cs_glob_turb_model->itytur;
-  const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
+  const cs_real_t *gravity = cs_glob_physical_constants->gravity;
   const int idtvar = cs_glob_time_step_options->idtvar;
   const int *bc_type = cs_glob_bc_type;
 
@@ -275,16 +277,16 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
   cs_real_t *w1, *viscce;
   cs_real_3_t *dudt;
-  CS_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC(dudt, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(dudt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  CS_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.af, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_loc.a,  n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.b,  n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.af, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *coefap = bc_coeffs_loc.a;
   cs_real_t *coefbp = bc_coeffs_loc.b;
@@ -293,22 +295,26 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
   cs_field_bc_coeffs_t bc_coeffs1_loc;
   cs_field_bc_coeffs_init(&bc_coeffs1_loc);
-  CS_MALLOC(bc_coeffs1_loc.a, 3*n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs1_loc.b, 9*n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs1_loc.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs1_loc.b, 9*n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_3_t  *coefa1 = (cs_real_3_t  *)bc_coeffs1_loc.a;
   cs_real_33_t *coefb1 = (cs_real_33_t *)bc_coeffs1_loc.b;
 
   cs_real_t *i_visc, *flumas;
-  CS_MALLOC(i_visc, n_i_faces, cs_real_t);
-  CS_MALLOC(flumas, n_i_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(flumas, n_i_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *b_visc, *flumab;
-  CS_MALLOC(flumab, n_b_faces, cs_real_t);
-  CS_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(flumab, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
-  CS_MALLOC(i_mass_flux_gas, n_i_faces, cs_real_t);
-  CS_MALLOC(b_mass_flux_gas, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(i_mass_flux_gas, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_mass_flux_gas, n_b_faces, cs_real_t, cs_alloc_mode);
+
+  cs_dispatch_context ctx;
+
+  const cs_real_t gxyz[3] = {gravity[0], gravity[1], gravity[2]};
 
   if (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) {
 
@@ -376,26 +382,24 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       if (f_vdp_i != nullptr) {
         vdp_i = (cs_real_3_t *)f_vdp_i->val;
 
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           const cs_real_t rho = crom[c_id];
           // FIXME should by multiplied by (1-x2) or x1
           cpro_drift[c_id][0] = rho * vdp_i[c_id][0];
           cpro_drift[c_id][1] = rho * vdp_i[c_id][1];
           cpro_drift[c_id][2] = rho * vdp_i[c_id][2];
-
-        }
+        });
       }
     }
 
     else if (icla >= 0 && cpro_taup != nullptr && cpro_drift != nullptr) {
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t rho = crom[c_id];
         cpro_drift[c_id][0] = rho * cpro_taup[c_id] * gxyz[0];
         cpro_drift[c_id][1] = rho * cpro_taup[c_id] * gxyz[1];
         cpro_drift[c_id][2] = rho * cpro_taup[c_id] * gxyz[2];
-      }
+      });
 
     }
 
@@ -412,25 +416,23 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
       if (itytur == 3) {
 
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_real_t rtrace = cs_math_6_trace(rij[c_id]);
 
           /* Correction by Omega */
           const cs_real_t omega = cpro_taup[c_id] / cpro_taufpt[c_id];
           /* FIXME: use idifft or not? */
           viscce[c_id] = 1.0/3.0 * cpro_taup[c_id] / (1.0 + omega) * rtrace;
-        }
+        });
 
       }
       else if (itytur == 2 || itytur == 5 || model == CS_TURB_K_OMEGA) {
 
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           /* Correction by Omega */
           const cs_real_t omega = cpro_taup[c_id] / cpro_taufpt[c_id];
           viscce[c_id] = 2.0/3.0 * cpro_taup[c_id] / (1.0 + omega) * k[c_id];
-        }
+        });
 
       }
 
@@ -443,9 +445,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
       if (ifcvsl >= 0) {
 
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           viscce[c_id] += cpro_viscls[c_id] / crom[c_id];
+        });
 
       }
       else {
@@ -453,13 +455,14 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         const int kvisl0 = cs_field_key_id("diffusivity_ref");
         const cs_real_t visls_0 = cs_field_get_key_double(f_sc, kvisl0);
 
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           viscce[c_id] += visls_0 / crom[c_id];
-
+        });
       }
 
     } /* End thermophoresis */
+
+    ctx.wait();
 
     if (   (iscdri & CS_DRIFT_SCALAR_TURBOPHORESIS)
         || (iscdri & CS_DRIFT_SCALAR_THERMOPHORESIS)) {
@@ -478,10 +481,21 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                         b_visc);
 
       /* Homogeneous Neumann BC */
-#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        cs_boundary_conditions_set_neumann_scalar_hmg(face_id,
-                                                      &bc_coeffs_loc);
+      {
+        /* Code from cs_boundary_conditions_set_neumann_scalar_hmg
+           expanded here to allow generation on GPU */
+        cs_real_t *a = bc_coeffs_loc.a;
+        cs_real_t *b = bc_coeffs_loc.b;
+        cs_real_t *af = bc_coeffs_loc.a;
+        cs_real_t *bf = bc_coeffs_loc.bf;
+
+        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+          a[face_id] = 0; b[face_id] = 1;
+          af[face_id] = 0; bf[face_id] = 0;
+        });
+      }
+
+      ctx.wait();
 
       /* The computed convective flux has the dimension of rho*velocity */
 
@@ -514,14 +528,13 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
     if (iscdri & CS_DRIFT_SCALAR_CENTRIFUGALFORCE) {
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t rhovdt = crom[c_id] * cell_vol[c_id] / dt[c_id];
 
         dudt[c_id][0] = - rhovdt * (vel[c_id][0]-vel_pre[c_id][0]);
         dudt[c_id][1] = - rhovdt * (vel[c_id][1]-vel_pre[c_id][1]);
         dudt[c_id][2] = - rhovdt * (vel[c_id][2]-vel_pre[c_id][2]);
-      }
+      });
 
       /* Reset i_visc and b_visc */
       cs_array_real_fill_zero(n_i_faces, i_visc);
@@ -567,8 +580,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
       /* Warning: cs_balance_vector adds "-( grad(u) . rho u)" */
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         cpro_drift[c_id][0] =   cpro_drift[c_id][0]
                               + cpro_taup[c_id]*dudt[c_id][0]/cell_vol[c_id];
@@ -578,7 +590,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
         cpro_drift[c_id][2] =   cpro_drift[c_id][2]
                               + cpro_taup[c_id]*dudt[c_id][2]/cell_vol[c_id];
-      }
+
+      });
 
     } /* End centrifugalforce */
 
@@ -604,23 +617,19 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       /* Homogeneous Neumann at the boundary */
       if (iscdri & CS_DRIFT_SCALAR_ZERO_BNDY_FLUX) {
 
-#       pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-
+        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
           for (cs_lnum_t i = 0; i < 3; i++) {
             coefa1[face_id][i] = 0.0;
 
             for (cs_lnum_t j = 0; j < 3; j++)
               coefb1[face_id][i][j] = 0.0;
           }
-        }
+        });
 
       }
       else if (iscdri & CS_DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS) {
 
-#       pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-
+        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
           for (cs_lnum_t i = 0; i < 3; i++) {
             coefa1[face_id][i] = 0.0;
 
@@ -632,12 +641,11 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
               coefb1[face_id][i][i] = 1.0;
 
           }
-        }
+        });
       }
       else {
 
-#       pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
           for (cs_lnum_t i = 0; i < 3; i++) {
             coefa1[face_id][i] = 0.0;
 
@@ -646,9 +654,10 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
             coefb1[face_id][i][i] = 1.0;
           }
-        }
+        });
 
       }
+      ctx.wait();
 
       cs_mass_flux(mesh,
                    fvq,
@@ -669,13 +678,13 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                    flumas, flumab);
 
       /* Update the convective flux, exception for the Gas "class" */
-#     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         i_mass_flux[face_id] = i_mass_flux_mix[face_id] + flumas[face_id];
+      });
 
-#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         b_mass_flux[face_id] = b_mass_flux_mix[face_id] + flumab[face_id];
+      });
 
     } /* End: not drift scalar imposed mass flux */
 
@@ -710,8 +719,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
           /* Pointer to the Boundary mass flux */
           cs_real_t *b_mass_flux2 = cs_field_by_id(b_flmass_id)->val;
 
-#         pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-          for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+          ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
             /* Upwind value of x2 at the face, consistent with the
                other transport equations */
@@ -723,17 +731,15 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
             i_mass_flux[face_id] -= x2[c_id_up] * i_mass_flux2[face_id];
 
-          }
+          });
 
-#         pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-          for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-
+          ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
             /* TODO Upwind value of x2 at the face, consistent with the
                other transport equations
                !if (bmasfl[face_id]>=0.d0) */
             cs_lnum_t c_id_up = b_face_cells[face_id];
             b_mass_flux[face_id] -= x2[c_id_up] * b_mass_flux2[face_id];
-          }
+          });
         }
       }
 
@@ -742,8 +748,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
          Warning, x1 at the face must be computed so that it is consistent
          with an upwind scheme on (rho V1) */
 
-#     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
         /* Upwind value of x2 at the face, consistent with the
            other transport equations */
@@ -754,10 +759,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
         i_mass_flux[face_id] /= x1[c_id_up];
 
-      }
+      });
 
-#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
         /* Upwind value of x1 at the face, consistent with the
            other transport equations */
@@ -768,36 +772,38 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         else
           b_mass_flux[face_id] /= x1[c_id_up];
 
-      }
+      });
     } /* End continuous phase */
 
   } /* End drift scalar add drift flux */
 
   /* Mass aggregation term of the additional part "div(rho(u_p-u_f))"
      ---------------------------------------------------------------- */
+
   if (!(iscdri & CS_DRIFT_SCALAR_NO_MASS_AGGREGATION)) {
     /* Recompute the difference between mixture and the class */
     if (iscdri & CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX) {
-#     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         flumas[face_id] = - i_mass_flux_mix[face_id];
+      });
 
-#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         flumab[face_id] = - b_mass_flux_mix[face_id];
+      });
     }
     else {
-#     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         flumas[face_id] = i_mass_flux[face_id] - i_mass_flux_mix[face_id];
+      });
 
-#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         flumab[face_id] = b_mass_flux[face_id] - b_mass_flux_mix[face_id];
+      });
     }
+    ctx.wait();
 
     cs_real_t *divflu;
-    CS_MALLOC(divflu, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(divflu, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     cs_divergence(mesh,
                   1, /* init */
@@ -813,31 +819,30 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     /* mass aggregation term */
     if (f_sc->dim == 1) {
       cs_real_t *cvara_var = f_sc->val_pre;
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         fimp[c_id] += iconvp*divflu[c_id];
         rhs[c_id] -= iconvp*divflu[c_id]*cvara_var[c_id];
-      }
+      });
     }
     else {
       assert(f_sc->dim == 3);
       cs_real_3_t *cvara_var = (cs_real_3_t *)f_sc->val_pre;
       cs_real_3_t *_rhs= (cs_real_3_t *)rhs;
       cs_real_33_t *_fimp= (cs_real_33_t *)fimp;
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t i = 0; i < f_sc->dim; i++) {
           _fimp[c_id][i][i] += iconvp*divflu[c_id];
           _rhs[c_id][i] -= iconvp*divflu[c_id]*cvara_var[c_id][i];
         }
-      }
+      });
     }
+    ctx.wait();
 
     /* Free memory */
     CS_FREE(divflu);
   }
 
-  CS_FREE_HD(viscce);
+  CS_FREE(viscce);
   CS_FREE(dudt);
   CS_FREE(w1);
   CS_FREE(i_visc);

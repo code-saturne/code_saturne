@@ -45,8 +45,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "fvm/fvm_writer.h"
-
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_boundary_conditions.h"
 #include "alge/cs_convection_diffusion.h"
@@ -776,19 +775,15 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -1008,7 +1003,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     }
 
   /* Non-reconstructed value */
-  } else {
+  }
+  else {
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       /* Associated boundary cell */
       cs_lnum_t c_id = b_face_cells[f_id];
@@ -1018,16 +1014,14 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   int inc = 1;
 
-  /* Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
+  /* Compute the gradient for convective scheme
+     (the slope test, limiter, SOLU, etc) */
   cs_real_3_t *gradup = nullptr;
   cs_real_3_t *gradst = nullptr;
   if (eqp->blencv > 0 && eqp->isstpc == 0) {
-    CS_MALLOC(gradst, n_cells_ext, cs_real_3_t);
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-      gradst[c_id][0] = 0.;
-      gradst[c_id][1] = 0.;
-      gradst[c_id][2] = 0.;
-    }
+    CS_MALLOC_HD(gradst, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext*3, 0., (cs_real_t*)gradst);
+
     /* Slope test gradient */
     if (eqp->iconv > 0)
       cs_slope_test_gradient(field_id,
@@ -1045,12 +1039,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      or Roe and Sweby limiters */
   if (eqp->blencv > 0
       && (eqp->ischcv==2 || eqp->ischcv==4)) {
-    CS_MALLOC(gradup, n_cells_ext, cs_real_3_t);
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-      gradup[c_id][0] = 0.;
-      gradup[c_id][1] = 0.;
-      gradup[c_id][2] = 0.;
-    }
+    CS_MALLOC_HD(gradup, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext*3, 0., (cs_real_t*)gradup);
 
     if (eqp->iconv > 0)
       cs_upwind_gradient(field_id,
@@ -1069,11 +1059,11 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   int imvisf = eqp->imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
-  CS_MALLOC(i_visc, n_i_faces, cs_real_t);
-  CS_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *c_visc = nullptr;
-  CS_MALLOC(c_visc, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
   const int kivisl
     = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
   if (kivisl != -1) {
