@@ -96,13 +96,11 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
 
         # Combo models
 
-        self.modelTSRay  = ComboModel(self.comboBoxTSRay, 4, 1)
+        self.modelTSRay  = ComboModel(self.comboBoxTSRay, 2, 1)
         self.modelPrintT = ComboModel(self.comboBoxPrintT, 3, 1)
         self.modelPrintL = ComboModel(self.comboBoxPrintL, 3, 1)
 
         self.modelTSRay.addItem('-1', '-1')
-        self.modelTSRay.addItem('0', '0')
-        self.modelTSRay.addItem('1', '1')
         self.modelTSRay.addItem('2', '2')
 
         self.modelPrintT.addItem('0', '0')
@@ -607,6 +605,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         dialog = ThermalRadiationAdvancedDialogView(self, self.case, default)
         if dialog.exec_():
             result = dialog.get_result()
+            print(result)
             log.debug("slotAdvancedOptions -> %s" % str(result))
             self.rmdl.setFrequency(result['frequency'])
             self.rmdl.setTrs(result['idiver'])
