@@ -2926,6 +2926,9 @@ cs_time_moment_restart_use_main(int  use_main)
 void
 cs_time_moment_restart_read(cs_restart_t  *restart)
 {
+  if (_n_moment_wa < 1)
+    return;
+
   int retcode;
 
   /* Initialize */
