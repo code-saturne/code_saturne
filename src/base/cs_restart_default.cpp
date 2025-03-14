@@ -113,7 +113,8 @@ BEGIN_C_DECLS
 const char *_coeff_name[] = {"bc_coeffs::a", "bc_coeffs::b",
                              "bc_coeffs::af", "bc_coeffs::bf",
                              "bc_coeffs::ad", "bc_coeffs::bd",
-                             "bc_coeffs::ac", "bc_coeffs::bc"};
+                             "bc_coeffs::ac", "bc_coeffs::bc",
+                             "bc_coeffs::val_f::0", "bc_coeffs::val_f::1"};
 
 const char _ntb_prefix[] = "notebook::";
 
@@ -2680,32 +2681,36 @@ cs_restart_write_linked_fields(cs_restart_t  *r,
 void
 cs_restart_read_bc_coeffs(cs_restart_t  *r)
 {
-  int c_id, f_id;
-
-  int errcount = 0;
+  const cs_mesh_t *m = cs_glob_mesh;
   const int coupled_key_id = cs_field_key_id_try("coupled");
   const int n_fields = cs_field_n_fields();
-  char old_name_xx[128] = "", old_name_yy[128] = "", old_name_zz[128] = "";
-  char old_name_xy[128] = "", old_name_yz[128] = "", old_name_xz[128] = "";
   const int kr = cs_field_key_id_try("restart_name");
+  int errcount = 0;
 
   /* Loop on all fields, to search for those defined on all cells
      and with BC coefficients */
 
-  for (f_id = 0; f_id < n_fields; f_id++) {
+  for (int f_id = 0; f_id < n_fields; f_id++) {
 
     const cs_field_t  *f = cs_field_by_id(f_id);
 
     if (   f->location_id == CS_MESH_LOCATION_CELLS
         && f->bc_coeffs != nullptr) {
 
+      const char *name = nullptr;
+      if (kr > -1)
+        name = cs_field_get_key_str(f, kr);
+      if (name == nullptr)
+        name = f->name;
+
       /* Check for presence of coefficients */
 
       int coupled = 0;
+      if (f->dim > 1 && coupled_key_id > -1)
+        coupled = cs_field_get_key_int(f, coupled_key_id);
+
       int n_loc_vals = 1;
-
-      int32_t coeff_p[] = {0, 0, 0, 0, 0, 0, 0, 0};
-
+      int32_t coeff_p[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
       cs_real_t *p[] = {f->bc_coeffs->a,
                         f->bc_coeffs->b,
                         f->bc_coeffs->af,
@@ -2713,9 +2718,13 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
                         f->bc_coeffs->ad,
                         f->bc_coeffs->bd,
                         f->bc_coeffs->ac,
-                        f->bc_coeffs->bc};
+                        f->bc_coeffs->bc,
+                        f->bc_coeffs->val_f,
+                        f->bc_coeffs->val_f_pre};
 
-      for (c_id = 0; c_id < 8; c_id++) {
+      /* Classical coef a/b/c... */
+
+      for (int c_id = 0; c_id < 8; c_id++) {
         if (p[c_id] != nullptr) {
           coeff_p[c_id] = 1;
           /* avoid double reads/writes in case of aliasing */
@@ -2726,25 +2735,27 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
         }
       }
 
-      cs_parall_max(8, CS_INT32, coeff_p);
+      int c_id_start = 0, c_id_end = 8;
+      if (f->dim > 1 && coupled) {
+        c_id_start = 8;
+        c_id_end = 10;
+      }
+      else
+        cs_parall_max(8, CS_INT32, coeff_p);
 
-      if (f->dim > 1 && coupled_key_id > -1)
-        coupled = cs_field_get_key_int(f, coupled_key_id);
-
-      for (c_id = 0; c_id < 8; c_id++) {
-        int retval;
-        char *sec_name = nullptr;
-        cs_real_t *c = p[c_id];
-        const char *name = nullptr;
-        if (kr > -1)
-          name = cs_field_get_key_str(f, kr);
-        if (name == nullptr)
-          name = f->name;
-        if (coeff_p[c_id] == 0)
+      for (int c_id = c_id_start; c_id < c_id_end; c_id++) {
+        if (c_id < 8 && coeff_p[c_id] == 0)
           continue;
 
+        int retval;
+        char *sec_name = nullptr;
+
         if (coupled) {
-          if (c_id %2 == 0)
+          // Note that we should never reach the second case
+          // here since c_id_start = 8 in this case; we leave
+          // this be temporarily in case we need to restore
+          // checkpoint/restart of bc_coeffs->b coeffcients here.
+          if (c_id %2 == 0 || c_id >= 8)
             n_loc_vals = f->dim;
           else
             n_loc_vals = f->dim * f->dim;
@@ -2760,50 +2771,34 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
 
         retval = cs_restart_check_section(r,
                                           sec_name,
-                                          f->location_id,
+                                          CS_MESH_LOCATION_BOUNDARY_FACES,
                                           f->dim,
                                           CS_TYPE_cs_real_t);
 
-        if (f->dim == 6 && retval == CS_RESTART_ERR_EXISTS) {
-          sprintf(sec_name, "rij::%s", _coeff_name[c_id]);
-            snprintf(old_name_xx, 127, "r11::%s", _coeff_name[c_id]);
-            snprintf(old_name_yy, 127, "r22::%s", _coeff_name[c_id]);
-            snprintf(old_name_zz, 127, "r33::%s", _coeff_name[c_id]);
-            snprintf(old_name_xy, 127, "r12::%s", _coeff_name[c_id]);
-            snprintf(old_name_yz, 127, "r23::%s", _coeff_name[c_id]);
-            snprintf(old_name_xz, 127, "r13::%s", _coeff_name[c_id]);
-          if (c_id %2 == 0) {
-            retval =  cs_restart_read_real_6_t_compat(r,
-                                                      sec_name,
-                                                      old_name_xx,
-                                                      old_name_yy,
-                                                      old_name_zz,
-                                                      old_name_xy,
-                                                      old_name_yz,
-                                                      old_name_xz,
-                                                      f->location_id,
-                                                      (cs_real_6_t *)(f->val));
+        if (retval == CS_RESTART_SUCCESS) {
+
+          if (p[c_id] == nullptr && m->n_b_faces > 0) {
+            cs_lnum_t n_vals = (cs_lnum_t)(f->dim)*m->n_b_faces;
+            if (c_id == 8) {
+              CS_MALLOC_HD(f->bc_coeffs->val_f, n_vals, cs_real_t,
+                           cs_alloc_mode);
+              p[c_id] = f->bc_coeffs->val_f;
+            }
+            else {
+              assert(c_id == 9);
+              CS_MALLOC_HD(f->bc_coeffs->val_f_pre, n_vals, cs_real_t,
+                           cs_alloc_mode);
+              p[c_id] = f->bc_coeffs->val_f_pre;
+            }
           }
-          else {
-             retval =  cs_restart_read_real_66_t_compat(r,
-                                                        sec_name,
-                                                        old_name_xx,
-                                                        old_name_yy,
-                                                        old_name_zz,
-                                                        old_name_xy,
-                                                        old_name_yz,
-                                                        old_name_xz,
-                                                        f->location_id,
-                                                        (cs_real_66_t *)(f->val));
-          }
-        }
-        else {
+
           retval = cs_restart_read_section(r,
                                            sec_name,
-                                           3, /* location_id */
+                                           CS_MESH_LOCATION_BOUNDARY_FACES,
                                            n_loc_vals,
                                            CS_TYPE_cs_real_t,
-                                           c);
+                                           p[c_id]);
+
         }
         if (retval != CS_RESTART_SUCCESS)
           errcount += 1;
@@ -2822,7 +2817,6 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
                  "could not be read from a restart file;\n"
                  "they will be initialized with default values.\n\n"));
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2854,9 +2848,11 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
       /* Check for presence of coefficients */
 
       int coupled = 0;
-      int n_loc_vals = 1;
+      if (f->dim > 1 && coupled_key_id > -1)
+        coupled = cs_field_get_key_int(f, coupled_key_id);
 
-      int32_t coeff_p[] = {0, 0, 0, 0, 0, 0, 0, 0};
+      int n_loc_vals = 1;
+      int32_t coeff_p[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
       cs_real_t *p[] = {f->bc_coeffs->a,
                         f->bc_coeffs->b,
                         f->bc_coeffs->af,
@@ -2864,9 +2860,17 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
                         f->bc_coeffs->ad,
                         f->bc_coeffs->bd,
                         f->bc_coeffs->ac,
-                        f->bc_coeffs->bc};
+                        f->bc_coeffs->bc,
+                        f->bc_coeffs->val_f,
+                        f->bc_coeffs->val_f_pre};
 
-      for (c_id = 0; c_id < 8; c_id++) {
+      int c_id_start = 0, c_id_end = 8;
+      if (f->dim > 1 && coupled) {
+        c_id_start = 8;
+        c_id_end = 10;
+      }
+
+      for (c_id = c_id_start; c_id < c_id_end; c_id++) {
         if (p[c_id] != nullptr) {
           coeff_p[c_id] = 1;
           /* avoid double reads/writes in case of aliasing */
@@ -2877,12 +2881,9 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
         }
       }
 
-      cs_parall_max(8, CS_INT32, coeff_p);
+      cs_parall_max(c_id_end-c_id_start, CS_INT32, coeff_p+c_id_start);
 
-      if (f->dim > 1 && coupled_key_id > -1)
-        coupled = cs_field_get_key_int(f, coupled_key_id);
-
-      for (c_id = 0; c_id < 8; c_id++) {
+      for (c_id = c_id_start; c_id < c_id_end; c_id++) {
 
         char *sec_name = nullptr;
 
@@ -2892,7 +2893,11 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
           continue;
 
         if (coupled) {
-          if (c_id %2 == 0)
+          // Note that we should never reach the second case
+          // here since c_id_start = 8 in this case; we leave
+          // this be temporarily in case we need to restore
+          // checkpoint/restart of bc_coeffs->b coeffcients here.
+          if (c_id %2 == 0 || c_id >= 8)
             n_loc_vals = f->dim;
           else
             n_loc_vals = f->dim * f->dim;
@@ -2908,7 +2913,7 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
 
         cs_restart_write_section(r,
                                  sec_name,
-                                 3, /* location_id */
+                                 CS_MESH_LOCATION_BOUNDARY_FACES,
                                  n_loc_vals,
                                  CS_TYPE_cs_real_t,
                                  c);
