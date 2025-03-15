@@ -4471,19 +4471,7 @@ cs_solve_navier_stokes(const int        iterns,
   cs_bad_cells_regularisation_vector(vel, 1);
 
   /* Update velocity boundary face value */
-  cs_real_3_t *val_f_updated = (cs_real_3_t *)bc_coeffs_vel->val_f;
-  cs_real_3_t *val_f_lim_updated = (cs_real_3_t *)bc_coeffs_vel->val_f_lim;
-  cs_real_3_t *val_f_d_updated = (cs_real_3_t *)bc_coeffs_vel->val_f_d;
-  cs_real_3_t *val_f_d_lim_updated = (cs_real_3_t *)bc_coeffs_vel->val_f_d_lim;
-
-  cs_real_3_t *val_ip;
-  CS_MALLOC_HD(val_ip, m->n_b_faces, cs_real_3_t, cs_alloc_mode);
-
-  cs_update_face_value_strided(ctx, CS_F_(vel), bc_coeffs_vel, 1, eqp_u,
-                               vel, val_ip, val_f_updated, val_f_lim_updated,
-                               val_f_d_updated, val_f_d_lim_updated);
-
-  CS_FREE_HD(val_ip);
+  cs_boundary_conditions_update_bc_coeff_face_values(ctx, CS_F_(vel), vel);
 
   /* Mass flux initialization for VOF algorithm */
   if (vof_param->vof_model > 0) {
