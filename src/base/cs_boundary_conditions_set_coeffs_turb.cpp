@@ -265,11 +265,11 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     if (itstar != nullptr)
       tstarp = itstar->val;
-  }
 
-  if (eqp_sc->icoupl > 0) {
-    CS_MALLOC(dist_theipb, n_b_faces, cs_real_t);
-    cs_ic_field_dist_data_by_face_id(f_sc->id, 1, theipb, dist_theipb);
+    if (eqp_sc->icoupl > 0) {
+      CS_MALLOC(dist_theipb, n_b_faces, cs_real_t);
+      cs_ic_field_dist_data_by_face_id(f_sc->id, 1, theipb, dist_theipb);
+    }
   }
 
   cs_real_t *bpro_rough = nullptr;
@@ -710,7 +710,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
       /* Set coef for coupled face just to ensure relevant saving
          of bfconv if rad transfer activated */
-      if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == 5) {
+      if (dist_theipb != nullptr && icodcl_vel[f_id] == 5) {
         if (cpl_faces[f_id]) {
           /* Flux BCs */
           cofaf_sc[f_id] = - heq * dist_theipb[f_id];
