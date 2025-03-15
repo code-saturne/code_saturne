@@ -2492,6 +2492,29 @@ cs_parameters_eqp_complete(void)
     cs_field_set_key_int(CS_F_(eps), kclipp, 1);
   }
 
+  /* Setup time control for dynamic variables
+     FIXME: this should be improved by defining lists
+     of dynamic varaibles in a more maintainable manner
+     (or better, defining an appropriate field type flag). */
+
+  cs_time_control_t *vp_tc
+    = &(cs_get_glob_velocity_pressure_param()->time_control);
+
+  cs_field_pointer_id_t  dyn_ids[14]
+    = {CS_ENUMF_(p), CS_ENUMF_(vel),
+       CS_ENUMF_(k), CS_ENUMF_(eps), CS_ENUMF_(rij),
+       CS_ENUMF_(phi), CS_ENUMF_(f_bar), CS_ENUMF_(alp_bl), CS_ENUMF_(omg),
+       CS_ENUMF_(nusa), CS_ENUMF_(hybrid_blend),
+       CS_ENUMF_(mesh_u), CS_ENUMF_(void_f), CS_ENUMF_(vol_f)};
+
+  for (int i = 0; i < 14; i++) {
+    cs_field_t *f = cs_glob_field_pointers[dyn_ids[i]].f;
+    if (f != nullptr) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp != nullptr)
+        eqp->time_control = vp_tc;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
