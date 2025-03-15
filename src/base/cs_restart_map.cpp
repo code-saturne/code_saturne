@@ -99,6 +99,9 @@ static bool _apply_mesh_deformation = false;
 static char *_mesh_input_path = nullptr;
 static float _tolerance[2] = {0, 0.1};
 
+/* Save previous section check function */
+static cs_restart_check_section_t   *_check_section_f  = nullptr;
+
 /* Save previous section read function */
 static cs_restart_read_section_t   *_read_section_f  = nullptr;
 
@@ -251,6 +254,55 @@ _interpolate_vtx(ple_locator_t          *locator,
                                      0);
 
   CS_FREE(send_var);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check the presence of a usable section in a restart file.
+ *
+ * \param[in]       restart          associated restart file pointer
+ * \param[in, out]  context          associated context
+ * \param[in]       sec_name         section name
+ * \param[in]       location_id      id of corresponding location
+ * \param[in]       n_location_vals  number of values per location (interlaced)
+ * \param[in]       val_type         value type
+ *
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_check_section_interpolate(cs_restart_t           *restart,
+                           void                   *context,
+                           const char             *sec_name,
+                           int                     location_id,
+                           int                     n_location_vals,
+                           cs_restart_val_type_t   val_type)
+{
+  CS_UNUSED(context);
+
+  int retval = CS_RESTART_ERR_EXISTS;
+
+  retval = _check_section_f(restart,
+                            context,
+                            sec_name,
+                            location_id,
+                            n_location_vals,
+                            val_type);
+
+  if (retval == CS_RESTART_SUCCESS) {
+
+    ple_locator_t  *locator = nullptr;
+    if (location_id < 5)
+      locator = _locator[location_id - 1];
+
+    if (locator == nullptr)
+      retval = CS_RESTART_ERR_NO_MAP;
+
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -636,6 +688,8 @@ cs_restart_map_build(void)
   /* Set associated read function if not already set */
 
   if (_read_section_f == nullptr) {
+    _check_section_f
+      = cs_restart_set_check_section_func(_check_section_interpolate);
     _read_section_f
       = cs_restart_set_read_section_func(_read_section_interpolate);
   }
@@ -662,6 +716,8 @@ cs_restart_map_free(void)
     _nodal_src = fvm_nodal_destroy(_nodal_src);
 
   if (_read_section_f != nullptr) {
+    (void)cs_restart_set_check_section_func(_check_section_f);
+    _check_section_f = nullptr;
     (void)cs_restart_set_read_section_func(_read_section_f);
     _read_section_f = nullptr;
 
