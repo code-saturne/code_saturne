@@ -857,7 +857,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _physical_model_source_terms(cs_field_t        *f,
                              cs_real_t          rhs[],
                              cs_real_t          fimp[])
