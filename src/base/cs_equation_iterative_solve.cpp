@@ -52,6 +52,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "alge/cs_balance.h"
 #include "alge/cs_blas.h"
 #include "alge/cs_convection_diffusion.h"
@@ -184,45 +185,6 @@ _clear_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c)
   CS_FREE_HD(c.val_ip);
   CS_FREE_HD(c.val_f);
   CS_FREE_HD(c.val_f_d);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate BC coefficients face values if needed.
- *
- * \param[in, out]  bc_coeffs  pointer to boundary conditions coefficients.
- * \param[in]       n_b_faces  number of boundary faces
- * \param[in]       dim        associated field dimension
- * \param[in]       amode      allocation mode
- * \param[in]       limiter    is a limiter active ?
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_ensure_bc_coeffs_allocated(cs_field_bc_coeffs_t  *bc_coeffs,
-                            cs_lnum_t              n_b_faces,
-                            cs_lnum_t              dim,
-                            cs_alloc_mode_t        amode,
-                            bool                   limiter)
-{
-  if (bc_coeffs->val_f_d != nullptr || n_b_faces == 0)
-    return;
-
-  // bc_coeffs->val_f may have been allocated separately
-  // (i.e. upon initialization or restart).
-  if (bc_coeffs->val_f == nullptr)
-    CS_MALLOC_HD(bc_coeffs->val_f, dim*n_b_faces, cs_real_t, amode);
-
-  CS_MALLOC_HD(bc_coeffs->val_f_d, dim*n_b_faces, cs_real_t, amode);
-
-  if (limiter == false) {
-    bc_coeffs->val_f_lim = bc_coeffs->val_f;
-    bc_coeffs->val_f_d_lim = bc_coeffs->val_f_d;
-  }
-  else {
-    CS_MALLOC_HD(bc_coeffs->val_f_lim, dim*n_b_faces, cs_real_t, amode);
-    CS_MALLOC_HD(bc_coeffs->val_f_d_lim, dim*n_b_faces, cs_real_t, amode);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -552,9 +514,9 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     eqp->theta = thetex;
 
-    cs_update_face_value_strided<stride>(ctx, f, bc_coeffs, inc, eqp, pvara,
-                                         val_ip, val_f, val_f_lim,
-                                         val_f_d, val_f_d_lim);
+    cs_boundary_conditions_update_bc_coeff_face_values<stride>
+      (ctx, f, bc_coeffs, inc, eqp, pvara,
+       val_ip, val_f, val_f_lim, val_f_d, val_f_d_lim);
 
     if (stride == 3)
       cs_balance_vector(idtvar,
@@ -640,9 +602,9 @@ _equation_iterative_solve_strided(int                   idtvar,
     inc = 0;
   }
 
-  cs_update_face_value_strided<stride>(ctx, f, bc_coeffs, inc, eqp, pvar,
-                                       val_ip, val_f, val_f_lim,
-                                       val_f_d, val_f_d_lim);
+  cs_boundary_conditions_update_bc_coeff_face_values<stride>
+    (ctx, f, bc_coeffs, inc, eqp, pvar,
+     val_ip, val_f, val_f_lim, val_f_d, val_f_d_lim);
 
   /*  Incrementation and rebuild of right hand side */
 
@@ -904,10 +866,9 @@ _equation_iterative_solve_strided(int                   idtvar,
       cs_halo_sync_r(halo, ctx.use_gpu(), dpvar);
 
       /* update with dpvar */
-      cs_update_face_value_strided<stride>
+      cs_boundary_conditions_update_bc_coeff_face_values<stride>
         (ctx, nullptr, bc_coeffs, inc, eqp, dpvar,
-         val_ip, val_f, val_f_lim,
-         val_f_d, val_f_d_lim);
+         val_ip, val_f, val_f_lim, val_f_d, val_f_d_lim);
 
       if (stride == 3)
         cs_balance_vector(idtvar,
@@ -1088,9 +1049,9 @@ _equation_iterative_solve_strided(int                   idtvar,
     imasac = 1;
 
     /* Update face value for gradient and convection-diffusion */
-    cs_update_face_value_strided<stride>(ctx, f, bc_coeffs, inc, eqp, pvar,
-                                         val_ip, val_f, val_f_lim,
-                                         val_f_d, val_f_d_lim);
+    cs_boundary_conditions_update_bc_coeff_face_values<stride>
+      (ctx, f, bc_coeffs, inc, eqp, pvar,
+       val_ip, val_f, val_f_lim, val_f_d, val_f_d_lim);
 
     if (stride == 3)
       cs_balance_vector(idtvar,
@@ -1208,11 +1169,12 @@ _equation_iterative_solve_strided(int                   idtvar,
     /* need to recompute face value if below increment is zero
        else the face value is given from the last iweep iteration */
     if (inc == 0) {
-      cs_update_face_value_strided<stride>(ctx, f, bc_coeffs,
-                                           1, // inc
-                                           eqp, pvar,
-                                           val_ip, val_f, val_f_lim,
-                                           val_f_d, val_f_d_lim);
+      cs_boundary_conditions_update_bc_coeff_face_values<stride>
+        (ctx, f, bc_coeffs,
+         1, // inc
+         eqp, pvar,
+         val_ip, val_f, val_f_lim,
+         val_f_d, val_f_d_lim);
     }
     inc = 1;
 
@@ -1257,20 +1219,22 @@ _equation_iterative_solve_strided(int                   idtvar,
    * Store face value for gradient and diffusion
    *==========================================================================*/
 
-  _ensure_bc_coeffs_allocated(bc_coeffs,
-                              n_b_faces,
-                              stride,
-                              cs_alloc_mode,
-                              (df_limiter_id > -1 || ircflb != 1));
+  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+    (bc_coeffs,
+     n_b_faces,
+     stride,
+     cs_alloc_mode,
+     (df_limiter_id > -1 || ircflb != 1));
 
   var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
   var_t *val_f_lim_updated = (var_t *)bc_coeffs->val_f_lim;
   var_t *val_f_d_updated = (var_t *)bc_coeffs->val_f_d;
   var_t *val_f_d_lim_updated = (var_t *)bc_coeffs->val_f_d_lim;
 
-  cs_update_face_value_strided<stride>(ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
-                                       val_f_updated, val_f_lim_updated,
-                                       val_f_d_updated, val_f_d_lim_updated);
+  cs_boundary_conditions_update_bc_coeff_face_values<stride>
+    (ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
+     val_f_updated, val_f_lim_updated,
+     val_f_d_updated, val_f_d_lim_updated);
 
   /*==========================================================================
    * Free solver setup
@@ -2505,268 +2469,3 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
-#ifdef __cplusplus
-
-/*============================================================================
- * Public C++ function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update face value for gradient and diffusion when solving
- *         in increment
- *
- * \param[in]      ctx          reference to dispatch context
- * \param[in]      f            pointer to field
- * \param[in]      bc_coeffs    boundary condition structure for the variable
- * \param[in]      bc_coeffs_solve_v  boundary conditions structure when solving
- * \param[in]      inc          0 if an increment, 1 otherwise
- * \param[in]      halo_type    halo type (extended or not)
- * \param[in]      var          variable values at cell centers
- * \param[in,out]  var_ip       boundary variable values at I' position
- * \param[in,out]  var_f        face values for the gradient computation
- * \param[in,out]  var_f_lim    face values for the gradient computation
- *                              (with limiter)
- * \param[in,out]  var_f_d      face values for the diffusion computation
- * \param[in,out]  var_f_d_lim  face values for the diffusion computation
- *                              (with limiter)
- */
-/*----------------------------------------------------------------------------*/
-
-template <cs_lnum_t stride>
-void
-cs_update_face_value_strided
-  (cs_dispatch_context        &ctx,
-   cs_field_t                 *f,
-   const cs_field_bc_coeffs_t *bc_coeffs,
-   const int                   inc,
-   const cs_equation_param_t  *eqp,
-   const cs_real_t             pvar[][stride],
-   cs_real_t                   val_ip[][stride],
-   cs_real_t                   val_f[][stride],
-   cs_real_t                   val_f_lim[][stride],
-   cs_real_t                   val_f_d[][stride],
-   cs_real_t                   val_f_d_lim[][stride])
-{
-  cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
-
-  using var_t = cs_real_t[stride];
-  using m_t = cs_real_t[stride][stride];
-
-  /* Choose gradient type */
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
-  cs_gradient_type_by_imrgra(eqp->imrgra,
-                             &gradient_type,
-                             &halo_type);
-
-  cs_real_t *gweight = nullptr;
-  cs_real_t *df_limiter = nullptr;
-  cs_internal_coupling_t *cpl = nullptr;
-  var_t *val_ip_lim = nullptr;
-
-  /* Get the calculation option from the field */
-  if (f != nullptr) {
-
-    /* internal coupling */
-    if (eqp->icoupl > 0) {
-      const int coupling_key_id = cs_field_key_id("coupling_entity");
-      int coupling_id = cs_field_get_key_int(f, coupling_key_id);
-      cpl = cs_internal_coupling_by_id(coupling_id);
-    }
-
-    /* gradient weighting */
-    if ((f->type & CS_FIELD_VARIABLE) && eqp->iwgrec == 1) {
-      if (eqp->idiff > 0) {
-        int key_id = cs_field_key_id("gradient_weighting_id");
-        int diff_id = cs_field_get_key_int(f, key_id);
-        if (diff_id > -1) {
-          cs_field_t *weight_f = cs_field_by_id(diff_id);
-          gweight = weight_f->val;
-          cs_field_synchronize(weight_f, halo_type);
-        }
-      }
-    }
-
-    /* diffusion limiter */
-    int df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
-
-    /* variable at I'position with diffusion limiter */
-    if (df_limiter != nullptr)
-      CS_MALLOC_HD(val_ip_lim, n_b_faces, var_t, cs_alloc_mode);
-  }
-
-  /* gradient clipping on boundary */
-  cs_real_t b_climgr = (eqp->imligr < 0) ? -1.0 : eqp->b_climgr;
-
-  cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
-
-  /* Mute coefa when inc = 0 */
-  if (inc == 0 && cpl == nullptr) {
-
-    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
-    cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
-
-    CS_MALLOC_HD(bc_coeffs_loc->a, stride*m->n_b_faces,
-                 cs_real_t, cs_alloc_mode);
-
-    var_t *bc_coeffs_a_loc = (var_t *)bc_coeffs_loc->a;
-
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      for (cs_lnum_t i = 0; i < stride; i++)
-        bc_coeffs_a_loc[face_id][i] = 0;
-
-    bc_coeffs = bc_coeffs_loc;
-  }
-
-  /* For internal coupling, find field BC Coefficients
-     matching the current variable.
-     FIXME: this should also work with the iterative gradient,
-     but needs extra checking. */
-
-  /* Update of local BC. coefficients for internal coupling */
-  if (cpl != nullptr) {
-
-    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
-    cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
-
-    CS_MALLOC(bc_coeffs_loc->a, stride*n_b_faces, cs_real_t);
-    CS_MALLOC(bc_coeffs_loc->af, stride*n_b_faces, cs_real_t);
-
-    var_t *bc_coeff_a = (var_t *)bc_coeffs->a;
-    var_t *bc_coeffs_cpl_a = (var_t *)bc_coeffs_loc->a;
-    var_t *bc_coeff_af = (var_t *)bc_coeffs->af;
-    var_t *bc_coeffs_cpl_af = (var_t *)bc_coeffs_loc->af;
-
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        bc_coeffs_cpl_a[face_id][i] = inc * bc_coeff_a[face_id][i];
-        bc_coeffs_cpl_af[face_id][i] = inc * bc_coeff_af[face_id][i];
-      }
-    }
-
-    bc_coeffs = bc_coeffs_loc;
-
-    cs_internal_coupling_update_bc_coeff_strided<stride>(bc_coeffs,
-                                                         cpl,
-                                                         halo_type,
-                                                         b_climgr,
-                                                         df_limiter,
-                                                         pvar,
-                                                         gweight);
-  }
-
-  /* Compute variable at position I' from bc_coeffs */
-
-  cs_gradient_boundary_iprime_lsq_strided<stride>(m,
-                                                  mq,
-                                                  n_b_faces,
-                                                  nullptr,
-                                                  halo_type,
-                                                  b_climgr,
-                                                  df_limiter,
-                                                  bc_coeffs,
-                                                  gweight,
-                                                  pvar,
-                                                  val_ip,
-                                                  val_ip_lim);
-
-  /* Boundary conditions */
-  var_t *coefa = (var_t *)bc_coeffs->a;
-  var_t *cofaf = (var_t *)bc_coeffs->af;
-  m_t *coefb = (m_t *)bc_coeffs->b;
-  m_t *cofbf = (m_t *)bc_coeffs->bf;
-
-  /* Compute face value for gradient and diffusion computation */
-
-  const int ircflp = eqp->ircflu;
-  const int ircflb = (ircflp > 0) ? eqp->b_diff_flux_rc : 0;
-
-  if (ircflb == 0) { // no reconstruction for flux (I = I_prime)
-
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      const cs_lnum_t c_id = b_face_cells[face_id];
-
-      // reconstruction for gradient (use of variable at I' position)
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        val_f[face_id][i] = coefa[face_id][i];
-        val_f_d[face_id][i] = cofaf[face_id][i];
-
-        for (cs_lnum_t j = 0; j < stride; j++) {
-          val_f[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
-          val_f_d[face_id][i] += cofbf[face_id][j][i]*val_ip[face_id][j];
-        }
-      }
-
-      /* ircflb = 0 (no reconstruction for flux,
-                     use of variable at I position) */
-
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        val_f_lim[face_id][i] = coefa[face_id][i];
-        val_f_d_lim[face_id][i] = cofaf[face_id][i];
-
-        for (cs_lnum_t j = 0; j < stride; j++) {
-          val_f_lim[face_id][i] += coefb[face_id][j][i]*pvar[c_id][j];
-          val_f_d_lim[face_id][i] += cofbf[face_id][j][i]*pvar[c_id][j];
-        }
-      }
-    });
-  }
-
-  else if (ircflb > 0) {
-
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-
-      // reconstruction for gradient (use of variable at I' position)
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        val_f[face_id][i] = coefa[face_id][i];
-        val_f_d[face_id][i] = cofaf[face_id][i];
-
-        for (cs_lnum_t j = 0; j < stride; j++) {
-          val_f[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
-          val_f_d[face_id][i] += cofbf[face_id][j][i]*val_ip[face_id][j];
-        }
-      }
-
-      /* ircflb = 1 (reconstruction for flux,
-                     use of variable at I position)
-         In this case:
-         bc_coeffs_solve->val_f_lim = bc_coeffs_solve->val_f;
-         bc_coeffs_solve->val_f_d_lim =  bc_coeffs_solve->val_f_d; */
-
-      if (df_limiter != nullptr) { // otherwise addresses are shared
-
-        for (cs_lnum_t i = 0; i < stride; i++) {
-          // limiter (variable at I' position)
-          val_f_lim[face_id][i] = coefa[face_id][i];
-          val_f_d_lim[face_id][i] = cofaf[face_id][i];
-
-          for (cs_lnum_t j = 0; j < stride; j++) {
-            val_f_lim[face_id][i] += coefb[face_id][j][i]*val_ip_lim[face_id][j];
-            val_f_d_lim[face_id][i] += cofbf[face_id][j][i]*val_ip_lim[face_id][j];
-          }
-        }
-      }
-    });
-  }
-
-  ctx.wait();
-
-  if (bc_coeffs_loc != nullptr) {
-    CS_FREE_HD(bc_coeffs_loc->a);
-     if (cpl != nullptr)
-       CS_FREE_HD(bc_coeffs_loc->af);
-    CS_FREE(bc_coeffs_loc);
-  }
-  CS_FREE_HD(val_ip_lim);
-}
-
-#endif /* cplusplus */

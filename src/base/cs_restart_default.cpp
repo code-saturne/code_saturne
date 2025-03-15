@@ -2737,7 +2737,11 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
 
       int c_id_start = 0, c_id_end = 8;
       if (f->dim > 1 && coupled) {
-        c_id_start = 8;
+        // c_id_start could be 8, in most cases, but we may still
+        // use legacy coefficients in some user-defined functions,
+        // so as long as they are not moved from the bc_coeffs_t structure,
+        // handle them here.
+        c_id_start = 0;
         c_id_end = 10;
       }
       else
@@ -2751,10 +2755,6 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
         char *sec_name = nullptr;
 
         if (coupled) {
-          // Note that we should never reach the second case
-          // here since c_id_start = 8 in this case; we leave
-          // this be temporarily in case we need to restore
-          // checkpoint/restart of bc_coeffs->b coeffcients here.
           if (c_id %2 == 0 || c_id >= 8)
             n_loc_vals = f->dim;
           else
@@ -2772,7 +2772,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
         retval = cs_restart_check_section(r,
                                           sec_name,
                                           CS_MESH_LOCATION_BOUNDARY_FACES,
-                                          f->dim,
+                                          n_loc_vals,
                                           CS_TYPE_cs_real_t);
 
         if (retval == CS_RESTART_SUCCESS) {
@@ -2866,7 +2866,11 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
 
       int c_id_start = 0, c_id_end = 8;
       if (f->dim > 1 && coupled) {
-        c_id_start = 8;
+        // c_id_start could be 8, in most cases, but we may still
+        // use legacy coefficients in some user-defined functions,
+        // so as long as they are not moved from the bc_coeffs_t structure,
+        // handle them here.
+        c_id_start = 0;
         c_id_end = 10;
       }
 
@@ -2893,10 +2897,6 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
           continue;
 
         if (coupled) {
-          // Note that we should never reach the second case
-          // here since c_id_start = 8 in this case; we leave
-          // this be temporarily in case we need to restore
-          // checkpoint/restart of bc_coeffs->b coeffcients here.
           if (c_id %2 == 0 || c_id >= 8)
             n_loc_vals = f->dim;
           else

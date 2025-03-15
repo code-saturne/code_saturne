@@ -37,6 +37,11 @@
 #include "bft/bft_error.h"
 #include "base/cs_field.h"
 #include "base/cs_math.h"
+#include "cdo/cs_equation_param.h"
+
+#ifdef __cplusplus
+#include "base/cs_dispatch.h"
+#endif
 
 /*----------------------------------------------------------------------------*/
 
@@ -1142,5 +1147,89 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_tensor
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#ifdef __cplusplus
+
+/*============================================================================
+ * Public C++ function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Update face value for gradient and diffusion when solving
+ *         in increment.
+ *
+ * \param[in]      ctx          reference to dispatch context
+ * \param[in]      f            pointer to field
+ * \param[in]      bc_coeffs    boundary condition structure for the variable
+ * \param[in]      inc          0 if an increment, 1 otherwise
+ * \param[in]      halo_type    halo type (extended or not)
+ * \param[in]      var          variable values at cell centers
+ * \param[in,out]  var_ip       boundary variable values at I' position
+ * \param[in,out]  var_f        face values for the gradient computation
+ * \param[in,out]  var_f_lim    face values for the gradient computation
+ *                              (with limiter)
+ * \param[in,out]  var_f_d      face values for the diffusion computation
+ * \param[in,out]  var_f_d_lim  face values for the diffusion computation
+ *                              (with limiter)
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_boundary_conditions_update_bc_coeff_face_values
+  (cs_dispatch_context        &ctx,
+   cs_field_t                 *f,
+   const cs_field_bc_coeffs_t *bc_coeffs,
+   const int                   inc,
+   const cs_equation_param_t  *eqp,
+   const cs_real_t             pvar[][stride],
+   cs_real_t                   val_ip[][stride],
+   cs_real_t                   val_f[][stride],
+   cs_real_t                   val_f_lim[][stride],
+   cs_real_t                   val_f_d[][stride],
+   cs_real_t                   val_f_d_lim[][stride]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Update boundary coefficient face values for gradient and diffusion
+ *         when solving for a given field.
+ *
+ * \param[in]       ctx    reference to dispatch context
+ * \param[in, out]  f      pointer to field
+ * \param[in]       pvar   variable values at cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_boundary_conditions_update_bc_coeff_face_values
+  (cs_dispatch_context  &ctx,
+   cs_field_t           *f,
+   const cs_real_t       pvar[][stride]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate BC coefficients face values if needed.
+ *
+ * \param[in, out]  bc_coeffs  pointer to boundary conditions coefficients.
+ * \param[in]       n_b_faces  number of boundary faces
+ * \param[in]       dim        associated field dimension
+ * \param[in]       amode      allocation mode
+ * \param[in]       limiter    is a limiter active ?
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+  (cs_field_bc_coeffs_t  *bc_coeffs,
+   cs_lnum_t              n_b_faces,
+   cs_lnum_t              dim,
+   cs_alloc_mode_t        amode,
+   bool                   limiter);
+
+#endif /* cplusplus */
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_BOUNDARY_CONDITIONS_SET_COEFFS_H__ */
