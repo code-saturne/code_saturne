@@ -2058,6 +2058,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
     cs_time_control_t *vp_tc =
       &(vp_param->time_control);
 
+    // FIXME: we should save the last active time step rather than access members
+    // of the time control structure here, as this code can be broken by changes
+    // in the time_control structure, defeating its purpose.
+    // We might first need to save time stamps or similar info in checkpoints to
+    // handle this correctly in case of restarts.
+
     if (vp_tc->last_nt == ts->nt_cur -1)
       is_previous_active = true;
     else if (vp_tc->last_nt == ts->nt_cur) {
