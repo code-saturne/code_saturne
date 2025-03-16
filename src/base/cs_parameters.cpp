@@ -1907,6 +1907,13 @@ cs_parameters_global_complete(void)
     cs_time_step_define_nt_max(10);
   }
 
+  if (time_scheme->iccvfg == 1) {
+    cs_velocity_pressure_param_t *vp_param
+      = cs_get_glob_velocity_pressure_param();
+    cs_time_control_t *vp_tc = &(vp_param->time_control);
+    cs_time_control_init_by_time_step(vp_tc, -1, -1, -1, false, false);
+  }
+
   /* Physical properties */
   int iviext = cs_field_get_key_int(f_mu, key_t_ext_id);
   if (fabs(time_scheme->thetvi+999.) > cs_math_epzero) {

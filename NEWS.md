@@ -3,6 +3,9 @@ Release 8.3.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix handling of restart or computation with frozen velocity field
+  (some updates were done anyways).
+
 - Fix incorrect Rij boundary condition reconstruction when irijrb == 1
   and flux reconstruction is active for Rij.
 
