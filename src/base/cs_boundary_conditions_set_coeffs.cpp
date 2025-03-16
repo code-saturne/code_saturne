@@ -1169,6 +1169,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       tstarp = itstar->val;
       cs_array_real_fill_zero(n_b_faces, tstarp);
     }
+
     /*--------------------------------------------------------------------------
      * 3) Treatment of types of bcs given by bc_type
      *--------------------------------------------------------------------------*/
@@ -1211,7 +1212,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
     cs_boundary_conditions_check(bc_type,
                                  ale_bc_type);
-
 
     /*--------------------------------------------------------------------------
      * 5) Compute the temperature or the enthalpy in i' for boundary cells
@@ -3549,6 +3549,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   } /* End other scalars */
 
   if (_active_dyn) {
+
     /*--------------------------------------------------------------------------
      * 14) Mesh velocity (ALE module):
      *     Dirichlet and Neumann and convective outlet
