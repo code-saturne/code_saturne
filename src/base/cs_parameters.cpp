@@ -1659,6 +1659,13 @@ cs_parameters_global_complete(void)
     cs_time_step_define_nt_max(10);
   }
 
+  if (time_scheme->iccvfg == 1) {
+    cs_velocity_pressure_param_t *vp_param
+      = cs_get_glob_velocity_pressure_param();
+    cs_time_control_t *vp_tc = &(vp_param->time_control);
+    vp_tc->interval_nt = -1;
+  }
+
   /* Physical properties */
   int iviext = cs_field_get_key_int(f_mu, key_t_ext_id);
   if (fabs(time_scheme->thetvi+999.) > cs_math_epzero) {
@@ -2494,7 +2501,7 @@ cs_parameters_eqp_complete(void)
 
   /* Setup time control for dynamic variables
      FIXME: this should be improved by defining lists
-     of dynamic varaibles in a more maintainable manner
+     of dynamic variables in a more maintainable manner
      (or better, defining an appropriate field type flag). */
 
   cs_time_control_t *vp_tc

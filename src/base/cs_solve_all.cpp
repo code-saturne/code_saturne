@@ -439,14 +439,15 @@ _solve_most(int              n_var,
 
   /* Indicator used to ensure we exit the nterup loop when coupled once
    * the loop is converged. May otherwise lead to a deadlock in the
-   * coupling exchange functions.
-   */
+   * coupling exchange functions. */
   bool convergence_already_reached_once = false;
 
   while (iterns <= cs_glob_velocity_pressure_param->nterup) {
 
-    if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
-      // Call user BCs and computes BC coefficients
+    // Call user BCs and compute BC coefficients
+
+    if (   cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE
+        || cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev+1) {
       cs_boundary_conditions_set_coeffs(n_var,
                                         iterns,
                                         isvhb,
@@ -460,6 +461,9 @@ _solve_most(int              n_var,
                                         hbord,
                                         theipb,
                                         nftcdt);
+    }
+
+    if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
 
       if (nftcdt > 0) {
         cs_real_t *coefap = th_f->bc_coeffs->a;
