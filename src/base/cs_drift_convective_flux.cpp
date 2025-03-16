@@ -486,7 +486,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
            expanded here to allow generation on GPU */
         cs_real_t *a = bc_coeffs_loc.a;
         cs_real_t *b = bc_coeffs_loc.b;
-        cs_real_t *af = bc_coeffs_loc.a;
+        cs_real_t *af = bc_coeffs_loc.af;
         cs_real_t *bf = bc_coeffs_loc.bf;
 
         ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
