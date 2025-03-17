@@ -120,6 +120,7 @@ cs_user_mesh-groups_from_free_faces.cpp \
 cs_user_mesh-input-save.cpp \
 cs_user_mesh-joining.cpp \
 cs_user_mesh-modify.cpp \
+cs_user_mesh-multiblock_cartesian.cpp \
 cs_user_mesh-periodicity.cpp \
 cs_user_mesh-quality.cpp \
 cs_user_paramedmem_coupling-base.cpp \
