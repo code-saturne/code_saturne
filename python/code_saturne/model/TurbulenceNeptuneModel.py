@@ -43,7 +43,7 @@ class TurbulenceModelsDescription:
     reverseCouplingModels = ['k-epsilon', 'k-epsilon_linear_production',
                              'rij-epsilon_ssg', 'rij-epsilon_ebrsm']
 
-    dispersedTurbulenceModels = ['none', 'q2-q12-tchen', 'q2-q12', 'r2-q12', 'r2-r12-tchen']
+    dispersedTurbulenceModels = ['none', 'q2-q12-tchen', 'r2-q12', 'q2-q12', 'r2-r12-tchen']
 
     bubblyFlowsTurbulenceModels = ["none", "q2-q12-tchen", "r2-r12-tchen"]
     dropletFlowsTurbulenceModels = ["none", "q2-q12", "r2-q12"]

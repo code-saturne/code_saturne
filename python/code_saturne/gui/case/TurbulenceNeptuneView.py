@@ -345,7 +345,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
             self.mdl.setTurbulenceModel(FieldId, self.dicoV2M[new_pmodel])
 
             # Security check for models which cannot have a formula on inlet!
-            if new_pmodel in ['mixing length', 'Q2-Q12 Tchen', 'R2-R12 Tchen']:
+            if new_pmodel in ['mixing length', 'Qp-Qfp Tchen', 'Rp-Rfp Tchen']:
                 from code_saturne.model.LocalizationModel import LocalizationModel
                 from code_saturne.model.BoundaryNeptune import Boundary
 
@@ -448,10 +448,10 @@ class TurbulenceView(QWidget, Ui_Turbulence):
                        "k-epsilon_linear_production" : 'k-epsilon linear production',
                        "les_smagorinsky"             : 'LES (Smagorinsky)',
                        "les_wale"                    : 'LES (WALE)',
-                       "q2-q12-tchen"                : 'Q2-Q12 Tchen',
-                       "q2-q12"                      : 'Q2-Q12',
-                       "r2-q12"                      : 'R2-Q12',
-                       "r2-r12-tchen"                : 'R2-R12 Tchen',
+                       "q2-q12-tchen"                : 'Qp-Qfp Tchen',
+                       "q2-q12"                      : 'Qp-Qfp',
+                       "r2-q12"                      : 'Rp-Qfp',
+                       "r2-r12-tchen"                : 'Rp-Rfp Tchen',
                        "separate_phase"              : 'separate phase',
                        "separate_phase_cond"         : 'separate phase cond',
                        "small_inclusions"            : 'small inclusions',
@@ -467,10 +467,10 @@ class TurbulenceView(QWidget, Ui_Turbulence):
                        "k-epsilon linear production" : 'k-epsilon_linear_production',
                        "LES (Smagorinsky)"           : 'les_smagorinsky',
                        "LES (WALE)"                  : 'les_wale',
-                       "Q2-Q12 Tchen"                : 'q2-q12-tchen',
-                       "Q2-Q12"                      : 'q2-q12',
-                       "R2-Q12"                      : 'r2-q12',
-                       "R2-R12 Tchen"                : 'r2-r12-tchen',
+                       "Qp-Qfp Tchen"                : 'q2-q12-tchen',
+                       "Qp-Qfp"                      : 'q2-q12',
+                       "Rp-Qfp"                      : 'r2-q12',
+                       "Rp-Rfp Tchen"                : 'r2-r12-tchen',
                        "separate phase"              : 'separate_phase',
                        "separate phase cond"         : 'separate_phase_cond',
                        "small inclusions"            : 'small_inclusions',
