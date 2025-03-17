@@ -383,6 +383,7 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
         for user in self.mdl.getFunctionsNamesList():
             self.tableModelCalc.newItem(user)
 
+        self.current_id = None
         self.current_name = None
         self._updatePostView()
 
@@ -415,6 +416,7 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
         Modify postprocessing formula
         """
 
+        self._updateCurrentName()
         exp, req, sca, sym = self.mdl.getFunctionFormulaComponents(self.current_name)
 
         exa = "{} = 1.;".format(self.current_name)
@@ -446,9 +448,22 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
         _id = self.tableViewUserCalculator.currentIndex();
 
         row_id = _id.row()
-        self.current_name = self.tableModelCalc.getData(_id)[0]
+        self.current_id = _id
+
+        self._updateCurrentName()
 
         self._updatePostView()
+
+
+    def _updateCurrentName(self):
+        """
+        Update current variable name
+        """
+
+        if self.current_id != None:
+            self.current_name = self.tableModelCalc.getData(self.current_id)[0]
+        else:
+            self.current_name = None
 
 
     def _updatePostView(self):
