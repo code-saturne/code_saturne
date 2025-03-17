@@ -2744,8 +2744,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
         c_id_start = 0;
         c_id_end = 10;
       }
-      else
-        cs_parall_max(8, CS_INT32, coeff_p);
+      cs_parall_max(8, CS_INT32, coeff_p);
 
       for (int c_id = c_id_start; c_id < c_id_end; c_id++) {
         if (c_id < 8 && coeff_p[c_id] == 0)
