@@ -69,6 +69,36 @@
 
   \snippet cs_user_mesh-input-save.cpp mesh_restart_1
 
+  \section cs_user_mesh_h_cs_user_mesh_cartesian Cartesian mesh generation
+
+  Users may generate cartesian meshes directly with the code, through the
+  GUI or with the corresponding \ref cs_user_mesh_cartesian_define function.
+
+  For example, a user may create a simple cartesian mesh with constant
+  step sizes :
+
+  \snippet cs_user_mesh-cartesian.cpp mesh_cartesian_1
+
+  More advanced, user defined coordinates or laws may also be defined in this
+  function :
+
+  \snippet cs_user_mesh-cartesian.cpp mesh_cartesian_2
+
+  Finally, it is also possible to define a mesh based on data stored in a csv
+  file :
+
+  \snippet cs_user_mesh-cartesian.cpp mesh_cartesian_3
+
+  Moreover, a mesh composed of multiple cartesian blocks may also be created.
+  Doing so requires combining a call to \ref cs_user_mesh_cartesian_define , such as:
+
+  \snippet cs_user_mesh-multiblock_cartesian.cpp mesh_multiblock_cartesian_1
+
+  and also calling a joining operation to "glue" the different blocks, either
+  in the GUI or using \ref cs_user_join :
+
+  \snippet cs_user_mesh-multiblock_cartesian.cpp mesh_multiblock_cartesian_join
+
   \section cs_user_mesh_h_cs_user_mesh_modifiy  General mesh modifications
 
   Mesh modifications not available through specialized functions
