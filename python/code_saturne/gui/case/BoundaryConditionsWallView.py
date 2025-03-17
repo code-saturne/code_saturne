@@ -83,7 +83,7 @@ class BoundaryConditionsWallView(QWidget, Ui_BoundaryConditionsWall) :
         self.__WallModel = ComboModel(self.comboBoxWallModel, 5, 1)
         self.__WallModel.addItem(self.tr("adherence"), "adherence")
         self.__WallModel.addItem(self.tr("friction"), "friction")
-        self.__WallModel.addItem(self.tr("dU2/dn = 0"), "du2_dn")
+        self.__WallModel.addItem(self.tr("dUp/dn = 0"), "du2_dn")
         self.__WallModel.addItem(self.tr("dVR/dn = 0"), "dvr_dn")
         self.__WallModel.addItem(self.tr("droplet friction"), "droplet_friction")
 

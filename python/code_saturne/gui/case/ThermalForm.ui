@@ -546,7 +546,7 @@
    <item row="3" column="0">
     <widget class="QGroupBox" name="groupBoxParticlesRadiation">
      <property name="title">
-      <string>Inter-particles radiative model</string>
+      <string>Inter-particles Rosseland radiative model</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
