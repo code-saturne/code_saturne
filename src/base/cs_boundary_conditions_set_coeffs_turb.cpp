@@ -579,8 +579,11 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       /* Modified wall function from Louis */
       if (iwalfs != CS_WALL_F_S_MONIN_OBUKHOV) {
 
-        /* T+ = (T_I - T_w) / Tet */
-        tplus = turb_schmidt
+        /* T+ = (T_I - T_w) / Tet
+         * TODO: this formula should be multiplied by turb_schmidt
+         * but we keep this formula to be consistent with Louis legacy
+         * formulation. */
+        tplus = 1.
               * log((distbf + rough_t) / rough_t) / (xkappa * bcfnns[f_id]);
       }
       else {
@@ -2388,7 +2391,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         const cs_real_t yplus_t
           = yk / (exp(-xkappa * 5.2) + uk *brough_t / xnuii);
         /* 1/T+ for neutral */
-        const cs_real_t dtplus = xkappa / log(yplus_t);
+        const cs_real_t dtplus = xkappa / log(yplus_t) / turb_prandtl;
 
         _atmo_cls(f_id,
                   utau,
