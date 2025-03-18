@@ -83,9 +83,10 @@ BEGIN_C_DECLS
 struct _cdo_fspec_t {
 
   std::array<int, 3> XYZ; /* Direct permutation of the ref. axis such that nZ
-                  is maximal */
+                             is maximal */
   cs_nvec3_t         q;   /* face surface and its unit normal */
-  double omega; /* P = Point belonging to the face omega = - < n, P> */
+  double         omega;   /* P = Point belonging to the face, then
+                             omega = - < n, P> */
 
   _cdo_fspec_t()
   {
@@ -95,7 +96,12 @@ struct _cdo_fspec_t {
   }
 };
 
-typedef struct { /* Face sub-quantities */
+/* struct _cdo_fsubq_t
+ *
+ * Face sub-quantities
+ */
+
+typedef struct {
 
   double  F1;
   double  Fa;
@@ -107,8 +113,13 @@ typedef struct { /* Face sub-quantities */
 
 } _cdo_fsubq_t;
 
-typedef struct { /* These quantities are the integral of q on the plane
-                    (alpha, beta) where the face is projected */
+/* struct _cdo_projq_t
+ *
+ * These quantities are the integral of q on the plane
+ * (alpha, beta) where the face is projected
+ */
+
+typedef struct {
 
   double  p1;     /* q = 1 */
   double  pa;     /* q = alpha */
@@ -360,7 +371,7 @@ _get_proj_quantities(cs_lnum_t                 f_id,
 
   /* Scan edges which belong to the current face */
 
-  for (cs_lnum_t  i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
+  for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
     short int  e_sgn = f2e->sgn[i];
     cs_lnum_t  e_id = f2e->ids[i];
@@ -1145,6 +1156,7 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
 
     if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_BARYC_CENTER)
       cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_MEANV_CENTER;
+
   }
 
   /* 1) Initialize shared quantities */
@@ -1153,7 +1165,8 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   /* Face-related quantities */
   /* ----------------------- */
 
-  /* Shared quantities related to faces (interior and border) */
+  /* By default, one shares most of the mesh quantities related to faces
+     (interior and border) between CDO schemes and the legacy part */
 
   cdoq->n_i_faces       = m->n_i_faces;
   cdoq->i_face_u_normal = mq->i_face_u_normal;
@@ -1456,15 +1469,11 @@ cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t *cdoq,
 {
   if (cdoq == nullptr || c2f == nullptr)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: A mandatory structure is not allocated.\n",
-              __func__);
+              " %s: A mandatory structure is not allocated.\n", __func__);
 
   if (cdoq->pvol_fc == nullptr) {
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              " %s: The quantity has to be calculated before.\n",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The quantity has to be calculated before.\n", __func__);
   }
 
   return cdoq->pvol_fc;
@@ -1476,11 +1485,11 @@ cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t *cdoq,
  *        This volume corresponds to a pyramid with base f and apex x_f
  *        The computed quantity is scanned with the c2f adjacency
  *
- * \param[in]      cdoq        pointer to cs_cdo_quantities_t structure
- * \param[in]      c2f         pointer to the cell --> faces connectivity
- * \param[in, out] p_pvol_fc   double pointer to the face volume in each cell
- *                             If not allocated before calling this function,
- *                             one allocates the array storing the volumes
+ * \param[in]      cdoq       pointer to cs_cdo_quantities_t structure
+ * \param[in]      c2f        pointer to the cell --> faces connectivity
+ * \param[in, out] p_pvol_fc  double pointer to the face volume in each cell
+ *                            If not allocated before calling this function,
+ *                            one allocates the array storing the volumes
  */
 /*----------------------------------------------------------------------------*/
 
