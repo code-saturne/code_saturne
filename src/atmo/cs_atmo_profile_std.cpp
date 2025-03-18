@@ -89,6 +89,11 @@ BEGIN_C_DECLS
 /*!
  * \brief compute standard atmospheric profile (Holton p 374)
  *
+ * Note:
+ * - standard pressure is 101325Pa
+ * - standard temperature is 288.15K
+ * - standard density is 1.225 kg/m^3
+ *
  * \param[in]       z_ref      reference altitude in m
  * \param[in]       p_ref      reference pressure
  * \param[in]       t_ref      reference temperature
