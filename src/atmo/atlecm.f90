@@ -75,6 +75,7 @@ double precision ztop, zzmax, tlkelv, pptop, dum
 double precision rhum,q0,q1
 double precision cpvcpa
 double precision pres, temp, qv
+double precision p_ref, t_ref
 
 character(len=80) :: ccomnt,oneline
 character(len=1)  :: csaute
@@ -320,13 +321,20 @@ else
     ztop = 11000.d0
     ii = nbmett
     zzmax = (int(ztmet(ii))/1000)*1000.d0
+    p_ref = 101325.d0
+    t_ref = 288.15d0
     do while(zzmax.le.(ztop-1000.d0))
       zzmax = zzmax + 1000.d0
       ii = ii + 1
       ztmet(ii) = zzmax
       ! standard temperature profile above the domaine
-      call atmstd(ztmet(nbmett), p0, ttmet(nbmett,itp)+tkelvi, &
-                  ztmet(ii), dum, tlkelv, dum)
+      if (ihpm.eq.0) then
+        call atmstd(ztmet(nbmett), p0, ttmet(nbmett,itp)+tkelvi, &
+                    ztmet(ii), dum, tlkelv, dum)
+      else ! if (ihpm.eq.1) then
+       call atmstd(0.d0, p_ref, t_ref, &
+                   ztmet(ii), dum, tlkelv, dum)
+      endif
       ttmet(ii,itp) = tlkelv - tkelvi
       if (iqv0.eq.0) then
         qvmet(ii,itp) = 0.d0   ! standard atmosphere: q=0
@@ -355,6 +363,8 @@ if (imode.eq.1) then
 
   phmet(1, itp) = xyp_met(3, itp)
   rscp = rair/cp0
+  p_ref = 101325.d0
+  t_ref = 288.15d0
 
   if (ihpm.eq.0) then
     phmet(1,itp) = xyp_met(3, itp)
@@ -380,7 +390,7 @@ if (imode.eq.1) then
     enddo
   else
     ! Standard pressure profile above the domain
-    call atmstd (0.d0, p0, t0, &
+    call atmstd (0.d0, p_ref, t_ref, &
                  ztmet(nbmaxt), pptop, dum, dum)
     phmet(nbmaxt,itp) = pptop
     do k = nbmaxt-1, 1, -1

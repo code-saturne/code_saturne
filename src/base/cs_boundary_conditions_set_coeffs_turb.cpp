@@ -674,7 +674,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
         if (iwalfs != CS_WALL_F_S_MONIN_OBUKHOV) {
           cofimp = 1.0 - heq / hint[f_id];
         }
-        /* Monin obukhov */
+        /* Monin Obukhov */
         else {
           const cs_real_t rough_t = bpro_rough_t[f_id];
 
@@ -865,15 +865,13 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       if (   icodcl_vel[f_id] == 5
           && (   icodcl_sc[f_id] == 5
               || icodcl_sc[f_id] == 6
-              || icodcl_sc[f_id] == 15)) {
+              || icodcl_sc[f_id] == 15)
+         || (icodcl_vel[f_id] == 6 && icodcl_sc[f_id] == 6)) {
 
         phit = cofaf_sc[f_id] + cofbf_sc[f_id] * var_ip[f_id];
       }
       else if (icodcl_sc[f_id] == 1 && icodcl_vel[f_id] == 5) {
         phit = heq * (var_ip[f_id] - pimp);
-      }
-      else if (icodcl_vel[f_id] == 6 && icodcl_sc[f_id] == 6) {
-        phit = cofaf_sc[f_id] + cofbf_sc[f_id] * theipb[f_id];
       }
       /* Imposed flux with wall function for post-processing */
       else if (icodcl_sc[f_id] == 3)
@@ -1506,7 +1504,7 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
           The boundary term for velocity gradient is implicit
           modified for non neutral boundary layer (in uplus) */
 
-        *cofimp  = cs_math_fmin(cs_math_fmax(1 - 1/(xkappa*uplus) * rcprod, 0),
+        *cofimp  = cs_math_fmin(cs_math_fmax(1. - 1./(xkappa*uplus) * rcprod, 0),
                                 1);
 
         /* The term (rho*uet*uk) is implicit */
@@ -1713,7 +1711,7 @@ _atmo_cls(const cs_lnum_t  f_id,
   //const cs_real_t q0 = (tpot1 - tpot2) * (*uet) * dtplus * (*cfnns);
   /* FIXME tet should be output as uet is... */
 
-  /* Compute local Monin-Obukhov inverse length for log
+  /* Compute local Obukhov inverse length for log
      1/L =  Ri / (z Phim) */
   *dlmo = rib * sqrt(fm) / (distbf + rough_d);
 }
@@ -1803,6 +1801,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const int kscavr = cs_field_key_id("first_moment_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   const int kdflim = cs_field_key_id("diffusion_limiter_id");
+
+  cs_real_t turb_prandtl = 1.;
+  if (f_th != nullptr)
+    turb_prandtl = cs_field_get_key_double(f_th, ksigmas);
 
   /* Type of wall functions for scalar */
   const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
@@ -2050,12 +2052,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   }
 
   /* Pointers to specific fields */
-  cs_real_t *byplus = nullptr, *bdplus = nullptr, *bdlmo = nullptr; //*buk = nullptr
+  cs_real_t *byplus = nullptr, *bdplus = nullptr, *bdlmo = nullptr;
   CS_MALLOC(byplus, n_b_faces, cs_real_t);
   CS_MALLOC(bdplus, n_b_faces, cs_real_t);
   CS_MALLOC(bdlmo, n_b_faces, cs_real_t);
-
-  // CS_MALLOC(buk, n_b_faces, cs_real_t);
 
   /* Correction for atmospheric wall functions */
 
@@ -2356,28 +2356,31 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
          * times a shift for smooth regime
          *
          * Rough regime reads:
-         *   T+ = 1/kappa ln(y/rough_t) = 1/kappa ln(y/zeta) + 8.5
-         *                              = 1/kappa ln[y/zeta * exp(8.5 kappa)]
+         *   T+ = Prt/kappa ln(y/rough_t) = Prt * (ln(y/zeta)/kappa + 8.5)
+         *      = Prt/kappa ln[y/zeta * exp(8.5 kappa)]
          *
          * Note zeta_t = rough_t * exp(8.5 kappa)
          *
+         * Question: is 8.5 really in factor of Prt?
+         *
          * Smooth regime reads:
-         * T+ = 1/kappa ln(y uk/nu) + 5.2 = 1/kappa ln[y uk*exp(5.2 kappa) / nu]
+         * T+ = Prt *(ln(y uk/nu)/kappa + 5.2)
+         *    = Prt/kappa ln[y uk*exp(5.2 kappa) / nu]
          *
          * Mixed regime reads:
-         *   T+ = 1/kappa ln[y uk*exp(5.2 kappa)/(nu + alpha uk zeta)]
-         *      = 1/kappa ln[  y uk*exp(5.2 kappa)
+         *   T+ = Prt/kappa ln[y uk*exp(5.2 kappa)/(nu + alpha uk zeta)]
+         *      = Prt/kappa ln[  y uk*exp(5.2 kappa)
          *                   / (nu + alpha uk rough_t * exp(8.5 kappa))]
-         *      = 1/kappa ln[  y uk*exp(5.2 kappa)
+         *      = Prt/kappa ln[  y uk*exp(5.2 kappa)
          *                   / (nu + alpha uk rough_t * exp(8.5 kappa))]
          * with
          *   alpha * exp(8.5 kappa) / exp(5.2 kappa) = 1
          * ie
          *   alpha = exp(-(8.5-5.2) kappa) = 0.25
          * so
-         *   T+ = 1/kappa ln[  y uk*exp(5.2 kappa)
+         *   T+ = Prt/kappa ln[  y uk*exp(5.2 kappa)
          *                   / (nu + uk rough_t * exp(5.2 kappa))]
-         *      = 1/kappa ln[y+k / (exp(-5.2 kappa) + uk rough_t/nu)]
+         *      = Prt/kappa ln[y+k / (exp(-5.2 kappa) + uk rough_t/nu)]
          */
 
         /* shifted y+ */
@@ -2526,20 +2529,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     else if (icodcl_vel[f_id] == 6)
       uplus = utau / uet;
 
-    /* Store u_star and uk if needed */
-    if (boundary_ustar != nullptr && icodcl_vel[f_id] == 5)
-      bpro_ustar[f_id] = uet;
-
     /* Rough wall: one velocity scale: set uk to uet */
     if (cs_glob_wall_functions->iwallf <= 2 && icodcl_vel[f_id] == 6)
       uk = uet;
-
-    if(boundary_uk != nullptr && icodcl_vel[f_id] == 5)
-      bpro_uk[f_id] = uk;
-
-    /* Save yplus if post-processed or condensation modelling */
-    if (f_yplus != nullptr)
-      yplbr[f_id] = yplus;
 
     uetmax  = cs_math_fmax(uet, uetmax);
     uetmin  = cs_math_fmin(uet, uetmin);
@@ -3731,9 +3723,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     }
 
+    /* Save for future use or post-processing */
     byplus[f_id] = yplus;
     bdplus[f_id] = dplus;
     bpro_ustar[f_id] = uet;
+    /* Save yplus if post-processed or condensation modelling */
+    if (f_yplus != nullptr)
+      yplbr[f_id] = yplus;
 
     /* FIXME note taken into account yet in cs_wall_functions_scalar, cfnns */
     bcfnns[f_id] = (icodcl_vel[f_id] == 5) ? 1.0 : cfnns;
