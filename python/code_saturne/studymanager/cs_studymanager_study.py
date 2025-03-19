@@ -1669,6 +1669,10 @@ class Studies(object):
                     shutil.rmtree(des)
                 try:
                     shutil.copytree(ref, des)
+                    # if file is present, remove write-up.pdf in destination
+                    writeup = os.path.join(des, "write-up.pdf")
+                    if os.path.isfile(writeup):
+                        os.remove(writeup)
                 except:
                     self.reporting("    /!\ ERROR while copying REPORT folder"
                                    " in %s" %study)
@@ -1697,7 +1701,6 @@ class Studies(object):
 
             # Copy README file(s) if it exists
             # If a README file exists, then only this file is considered
-            #
             readme_files = [f for f in os.listdir(repo_study) if f.startswith('README')]
             if 'README' in readme_files:
                 # Keep only this file and ignore the other README* files
