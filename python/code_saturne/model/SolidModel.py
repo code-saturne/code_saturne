@@ -45,13 +45,23 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         TurbulenceModel.__init__(self, case)
         self.case = case
         self.XMLThermo = self.case.xmlGetNode('thermophysical_models')
+        self.ipp_node = self.XMLThermo.xmlGetNode('solid_particles_properties')
         self.__XMLNodefields = self.XMLThermo.xmlInitNode('fields')
+
+    def __init_node(self):
+        """
+        Private method to initialize if needed the needed node.
+        """
+
+        if self.ipp_node == None:
+            self.ipp_node = self.XMLThermo.xmlInitNode('solid_particles_properties')
 
 
     def defaultValues(self):
         default = TurbulenceModel.defaultValues(self)
 
         default['compaction']    = 0.64
+        default['frictional_threshold'] = 0.6
         default['elasticity']    = 0.9
         default['friction']      = "none"
         default['granular']      = "none"
@@ -164,7 +174,8 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         """
         self.isPositiveFloat(value)
 
-        self.XMLThermo.xmlSetData('solid_compaction', value)
+        self.__init_node()
+        self.ipp_node.xmlSetData('solid_compaction', value)
 
 
     @Variables.noUndo
@@ -173,61 +184,89 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         put values for compaction.
         """
-        value = self.XMLThermo.xmlGetDouble('solid_compaction')
-        if value is None :
-           value = self.defaultValues()['compaction']
-           self.setCompaction(value)
+        value = self.defaultValues()['compaction']
+        if self.ipp_node:
+            value = self.ipp_node.xmlGetDouble('solid_compaction')
+            if value == None:
+                value = self.defaultValues()['compaction']
+
         return value
 
 
     @Variables.undoLocal
-    def setElastCoeff(self, value):
+    def setMinFrictionalThreshold(self, value):
+        """
+        Public method.
+        Set value for minimal frictional threshold.
+        """
+        self.isPositiveFloat(value)
+
+        self.__init_node()
+        self.ipp_node.xmlSetData('min_frictional_threshold', value)
+
+
+    @Variables.noUndo
+    def getMinFrictionalThreshold(self):
+        """
+        Public method.
+        Get value for minimal frictional threshold.
+        """
+
+        value = self.defaultValues()['frictional_threshold']
+        if self.ipp_node:
+            value = self.ipp_node.xmlGetDouble('min_frictional_threshold')
+            if value == None:
+                value = self.defaultValues()['frictional_threshold']
+
+        return value
+
+
+    @Variables.undoLocal
+    def setElastCoeff(self, f_id, value):
         """
         Set elasticity coefficient.
         """
-        self.isPositiveFloat(value)
-        self.XMLThermo.xmlSetData('solid_elasticity_coefficient', value)
+        self.isPositiveFloat(float(value))
+        self.__init_node()
+        self.ipp_node.xmlSetData('elasticity_coefficient', value, field_id=f_id)
 
 
     @Variables.noUndo
-    def getElastCoeff(self):
+    def getElastCoeff(self, f_id):
         """
         Get elasticity coefficient
         """
-        value = self.XMLThermo.xmlGetDouble('solid_elasticity_coefficient')
-        if value is None:
+        if self.ipp_node:
+            value = self.ipp_node.xmlGetDouble('elasticity_coefficient', field_id=f_id)
+            if value == None:
+                value = self.defaultValues()['elasticity']
+        else:
             value = self.defaultValues()['elasticity']
-            self.setElastCoeff(value)
 
         return value
 
 
     @Variables.undoLocal
-    def setCouplingStatus(self, fieldId, status):
+    def setCouplingStatus(self, status):
         """
         put polydispersed coupling status
         """
-        self.mainFieldsModel.isFieldIdValid(fieldId)
         self.isOnOff(status)
 
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        node.xmlSetData('polydispersed', status)
+        node = self.XMLThermo.xmlInitNode('solid_particles_properties')
+        self.__init_node()
+        self.ipp_node.xmlSetData('polydispersion', status)
 
 
     @Variables.noUndo
-    def getCouplingStatus(self, fieldId):
+    def getCouplingStatus(self):
         """
         get polydispersed coupling status
         """
-        self.mainFieldsModel.isFieldIdValid(fieldId)
+        status = self.defaultValues()['polydispersed']
+        if self.ipp_node:
+            status = self.ipp_node.xmlGetString('polydiserpsion')
 
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-
-        ChildNode = node.xmlGetChildNode('polydispersed')
-        if ChildNode is None:
-           status = self.defaultValues()['polydispersed']
-           self.setCouplingStatus(fieldId, status)
-        status = node.xmlGetString('polydispersed')
         return status
 
 

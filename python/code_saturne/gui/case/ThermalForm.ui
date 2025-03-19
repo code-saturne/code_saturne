@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>889</width>
-    <height>694</height>
+    <height>790</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -555,17 +555,7 @@
       <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="labelEmissivity">
-        <property name="text">
-         <string>Emission coefficient</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="lineEditEmissivity"/>
-      </item>
-      <item row="0" column="2">
+      <item row="0" column="3">
        <spacer name="horizontalSpacer_5">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -577,6 +567,19 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLineEdit" name="lineEditEmissivity"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelEmissivity">
+        <property name="text">
+         <string>Emission coefficient</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboBoxEmissivity"/>
       </item>
      </layout>
     </widget>

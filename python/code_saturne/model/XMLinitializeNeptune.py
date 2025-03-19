@@ -49,6 +49,7 @@ from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 from code_saturne.model.NeptuneWallTransferModel import NeptuneWallTransferModel
 from code_saturne.model.NucleateBoilingModel import NucleateBoilingModel
+from code_saturne.model.ThermalParticlesRadiationModel import ThermalParticlesRadiationModel
 
 from code_saturne.model.EosWrapper import eosWrapper
 
@@ -926,12 +927,79 @@ class XMLinitNeptune(BaseXmlInit):
                     node["conv_field"] = old_f_id
                     node["field_id"] = "none"
 
+        # Update particles emissivity coefficients
+        tprm = ThermalParticlesRadiationModel(self.case)
+        ipp_node = None
+        if tprm.isActivated == 'on':
+            tm_node = self.case.xmlGetNode('thermophysical_models')
+            irt_node = tm_node.xmlGetNode('interparticles_radiative_transfer')
+
+            if irt_node:
+                ipp_node = tm_node.xmlInitNode('solid_particles_properties')
+                e_node_list = irt_node.xmlGetChildNodeList('emissivity')
+                if len(e_node_list) == 1:
+                    ipp_irt_node = ipp_node.xmlInitNode('particles_radiative_transfer')
+
+                    val_e = irt_node.xmlGetChildString('emissivity')
+                    irt_node.xmlRemoveChild('emissivity')
+
+                    mfm = MainFieldsModel(self.case)
+                    for field in mfm.getSolidPhaseList():
+                        ipp_irt_node.xmlSetData('emissivity', val_e, field_id = field.f_id)
+
+                irt_node.xmlRemoveNode()
+
+        # Update polydispersion
+        _has_polydispersion = False
+        mfm = MainFieldsModel(self.case)
+        tm_node = self.case.xmlGetNode('thermophysical_models')
+        flds_node = tm_node.xmlGetNode('fields')
+        for f in mfm.getSolidPhaseList():
+            nn = flds_node.xmlGetChildNode('field', field_id=f.f_id)
+            node_poly = nn.xmlGetChildNode('polydispersed')
+            if node_poly:
+                if nn.xmlGetString('polydispersed') == 'on':
+                    _has_polydispersion = True
+                node_poly.xmlRemoveNode()
+
+        if _has_polydispersion:
+            # Only create node if needed, since default is 'off'
+            ipp_node = tm_node.xmlInitNode('solid_particles_properties')
+            ipp_node.xmlSetData('polydispersion', 'on')
+
+        # Particles compaction
+        sc_node = tm_node.xmlGetChildNode('solid_compaction')
+        if sc_node != None:
+            sc_val = tm_node.xmlGetDouble('solid_compaction')
+            sc_node.xmlRemoveNode()
+            if not ipp_node:
+                ipp_node = tm_node.xmlInitNode('solid_particles_properties')
+            ipp_node.xmlSetData('solid_compaction', sc_val)
+
+        # Particles elasticity
+        if tm_node.xmlGetChildNode('solid_elasticity_coefficient'):
+            sec_val = tm_node.xmlGetDouble('solid_elasticity_coefficient')
+            tm_node.xmlRemoveChild('solid_elasticity_coefficient')
+
+            if not ipp_node:
+                ipp_node = tm_node.xmlInitNode('solid_particles_properties')
+
+            for f in mfm.getSolidPhaseList():
+                ipp_node.xmlSetData('elasticity_coefficient', sec_val, field_id=f.f_id)
+
+
+        # Threshold
+        if ipp_node:
+            if not ipp_node.xmlGetNode('min_frictional_threshold'):
+                ipp_node.xmlSetData('min_frictional_threshold', 0.6)
+
         return
 
     def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """
+        self.__backwardCompatibilityTo_9_0()
         return;
 
 #-------------------------------------------------------------------------------

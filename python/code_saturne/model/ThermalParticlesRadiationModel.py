@@ -59,7 +59,6 @@ class ThermalParticlesRadiationModel(Variables, Model):
 
         # Default values
         self._isActivated = "off"
-        self._emissivity = "1.0"
 
         tm_node = self.case.xmlGetNode('thermophysical_models')
         self.xml_node = tm_node.xmlInitNode("interparticles_radiative_transfer")
@@ -68,8 +67,7 @@ class ThermalParticlesRadiationModel(Variables, Model):
         self.read_xml()
 
     def initialize_xml(self):
-        for childNode, value in zip(["status", "emissivity"],
-                [self._isActivated, self._emissivity]):
+        for childNode, value in zip(["status"], [self._isActivated]):
             if self.xml_node.xmlGetChildNode(childNode) == None:
                 self.xml_node.xmlInitChildNode(childNode)
                 self.xml_node.xmlSetData(childNode, value)
@@ -78,22 +76,24 @@ class ThermalParticlesRadiationModel(Variables, Model):
     def read_xml(self):
         values = []
         self._isActivated = self.xml_node.xmlGetChildString("status")
-        self._emissivity= self.xml_node.xmlGetChildString("emissivity")
 
     @property
     def isActivated(self):
         return self._isActivated
-
-    @property
-    def emissivity(self):
-        return self._emissivity
 
     @isActivated.setter
     def isActivated(self, status):
         self.xml_node.xmlSetData("status", status)
         self._isActivated = status
 
-    @emissivity.setter
-    def emissivity(self, value):
-        self.xml_node.xmlSetData("emissivity", value)
-        self._emissivity = value
+    def setEmissivity(self, field_id, value):
+        if field_id:
+            self.xml_node.xmlSetData('emissivity', value, field_id=field_id)
+
+    def getEmissivity(self, field_id):
+        retval = None
+
+        if field_id:
+            retval = self.xml_node.xmlGetChildString("emissivity", field_id=field_id)
+
+        return retval

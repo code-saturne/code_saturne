@@ -265,6 +265,17 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.__setFluidRadiation__(model)
 
         # inter-particles radiation model
+        self._current_particle_f_id = None
+        self.modelParticleFields = ComboModel(self.comboBoxEmissivity, 1, 1)
+        for field in MainFieldsModel(self.case).getSolidPhaseList():
+            label = field.label
+            name = field.f_id
+            self.modelParticleFields.addItem(self.tr(label), name)
+            if self._current_particle_f_id == None:
+                self._current_particle_f_id = name
+
+        self.comboBoxEmissivity.activated[str].connect(self.slotEmissivityField)
+
         self.partRadiationModel = ThermalParticlesRadiationModel(self.case)
         self.__setParticlesRadiation__()
 
@@ -280,6 +291,13 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         self.case.undoStartGlobal()
 
+    def _update_emissivity_line(self):
+        """
+        """
+        val = self.partRadiationModel.getEmissivity(self._current_particle_f_id)
+        if val == None:
+            val = 1.0 # default
+        self.lineEditEmissivity.setText(val)
 
     def __setParticlesRadiation__(self):
         """
@@ -300,7 +318,8 @@ class ThermalView(QWidget, Ui_ThermalForm):
         else:
             self.groupBoxParticlesRadiation.setChecked(False)
             self.slotActivateParticlesRadiation(False)
-        self.lineEditEmissivity.setText(self.partRadiationModel.emissivity)
+
+        self._update_emissivity_line()
 
 
     def slotActivateParticlesRadiation(self, status):
@@ -316,7 +335,8 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
     def slotSetEmissivity(self, value):
         if self.lineEditEmissivity.validator().state == QValidator.Acceptable:
-            self.partRadiationModel.emissivity = value
+            field_id = self._current_particle_f_id
+            self.partRadiationModel.setEmissivity(field_id, value)
 
     def __setFluidRadiation__(self, model):
         """
@@ -475,6 +495,16 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.__setFluidRadiation__(th)
         self.browser.configureTree(self.case)
 
+
+    @pyqtSlot(str)
+    def slotEmissivityField(self, text):
+        """
+        Update current field id for particles radiaitive model.
+        """
+        f_id = self.modelParticleFields.dicoV2M[str(text)]
+        self._current_particle_f_id = f_id
+
+        self._update_emissivity_line()
 
     @pyqtSlot(str)
     def slotFluidRadiativeTransfer(self):
