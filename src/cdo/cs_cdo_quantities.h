@@ -62,13 +62,19 @@ BEGIN_C_DECLS
  * \var CS_CDO_QUANTITIES_SATURNE_CENTER
  * Center is the one defined in cs_mesh_quantities_t (i.e. the one
  * used in the legacy Finite Volume scheme).
+ *
+ * \var CS_CDO_QUANTITIES_SUBDIV_CENTER
+ * Center is computed to thanks to an implicit face/cell subdivision into
+ * tetrahedra. This may be useful to handle properly meshes with non-planar
+ * faces
  */
 
 typedef enum {
 
   CS_CDO_QUANTITIES_MEANV_CENTER,
   CS_CDO_QUANTITIES_BARYC_CENTER,
-  CS_CDO_QUANTITIES_SATURNE_CENTER
+  CS_CDO_QUANTITIES_SATURNE_CENTER,
+  CS_CDO_QUANTITIES_SUBDIV_CENTER,
 
 } cs_cdo_quantities_cell_center_algo_t;
 
@@ -150,10 +156,10 @@ typedef struct { /* Specific mesh quantities */
   /* Cell-based quantities */
   /* ===================== */
 
-  cs_lnum_t         n_cells;        /* Local number of cells */
-  cs_gnum_t         n_g_cells;      /* Global number of cells */
-  cs_real_t        *cell_centers;   /* May be shared according to options */
-  const cs_real_t  *cell_vol;       /* Shared with cs_mesh_quantities_t */
+  cs_lnum_t         n_cells;        // Local number of cells
+  cs_gnum_t         n_g_cells;      // Global number of cells
+  cs_real_t        *cell_centers;   // May be shared according to options
+  cs_real_t        *cell_vol;       // Can be shared with cs_mesh_quantities_t
 
   cs_quant_info_t   cell_info;
 
@@ -179,17 +185,17 @@ typedef struct { /* Specific mesh quantities */
      See \ref cs_quant_set_face_nvec for more details.
   */
 
-  const cs_nreal_3_t  *i_face_u_normal;  /* Shared with cs_mesh_quantities_t */
-  const cs_real_t     *i_face_normal;    /* Shared with cs_mesh_quantities_t */
-  const cs_real_t     *i_face_center;    /* Shared with cs_mesh_quantities_t */
-  const cs_real_t     *i_face_surf;      /* Shared with cs_mesh_quantities_t */
-  const cs_real_t     *i_dist;           /* Shared with cs_mesh_quantities_t */
+  cs_nreal_3_t     *i_face_u_normal;  // Can be shared with cs_mesh_quantities_t
+  cs_real_t        *i_face_normal;    // Can be shared with cs_mesh_quantities_t
+  cs_real_t        *i_face_surf;      // Can be shared with cs_mesh_quantities_t
+  cs_real_t        *i_face_center;    // Can be shared with cs_mesh_quantities_t
+  const cs_real_t  *i_dist;           // Always shared with cs_mesh_quantities_t
 
-  const cs_nreal_3_t  *b_face_u_normal;  /* Unit normal of boundary faces. */
-  const cs_real_t     *b_face_normal;    /* Shared with cs_mesh_quantities_t */
-  const cs_real_t     *b_face_center;    /* Shared with cs_mesh_quantities_t */
-  const cs_real_t     *b_face_surf;      /* Shared with cs_mesh_quantities_t */
-  const cs_real_t     *b_dist;           /* Shared with cs_mesh_quantities_t */
+  cs_nreal_3_t     *b_face_u_normal;  // Can be shared with cs_mesh_quantities_t
+  cs_real_t        *b_face_normal;    // Can be shared with cs_mesh_quantities_t
+  cs_real_t        *b_face_surf;      // Can be shared with cs_mesh_quantities_t
+  cs_real_t        *b_face_center;    // Can be shared with cs_mesh_quantities_t
+  const cs_real_t  *b_dist;           // Always shared with cs_mesh_quantities_t
 
   cs_flag_cartesian_axis_t *face_axis; /* Enum for normal direction of faces
                                         * Not always allocated
@@ -252,7 +258,8 @@ typedef struct { /* Specific mesh quantities */
                                       * adjacency structure */
 
   const cs_real_t  *vtx_coord;       /* Coordinates of the mesh vertices.
-                                      * Shared with the cs_mesh_t structure */
+                                      * Always shared with the global cs_mesh_t
+                                      * structure */
 
   /* Dual volume related to the dual cell associated in a one-to-one pairing to
    * each vertex. This quantity has been synchronized in case of parallel
