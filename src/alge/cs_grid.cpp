@@ -2287,6 +2287,73 @@ _append_face_data(cs_grid_t   *g,
     g->n_faces = 0;
   }
 
+  /* Merge shared faces */
+
+  if (g->n_faces > 0) {
+
+    const cs_lnum_t n_faces_o = g->n_faces;
+    cs_lnum_2_t *face_cells = g->_face_cell;
+
+    bool *dup;
+    CS_MALLOC(dup, g->n_faces, bool);
+    dup[0] = false;
+
+    /* Identify duplicate faces */
+
+    cs_lnum_t  *order;
+    CS_MALLOC(order, g->n_faces, cs_lnum_t);
+    cs_order_lnum_allocated_s(nullptr, nullptr, 2, order, n_faces_o);
+
+    for (cs_lnum_t i = 1; i < n_faces_o; i++) {
+      cs_lnum_t j = order[i-1], k = order[i];
+      if (   face_cells[j][0] == face_cells[k][0]
+          && face_cells[j][1] == face_cells[k][1])
+        dup[k] = true;
+    }
+
+    CS_FREE(order);
+
+    /* Now remove duplicate entries */
+
+    cs_lnum_t j = 1;
+    for (cs_lnum_t i = 1; i < n_faces_o; i++) {
+      if (dup[i] == true || j == i)
+        continue;
+      face_cells[j][0] = face_cells[i][0];
+      face_cells[j][1] = face_cells[i][1];
+      if (g->symmetric == true)
+        g->_xa[j] = g->_xa[i];
+      else {
+        g->_xa[j*2] = g->_xa[i*2];
+        g->_xa[j*2+1] = g->_xa[i*2+1];
+      }
+      if (g->relaxation > 0) {
+        g->_xa0[j] = g->_xa0[i];
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          g->_face_normal[j*3+k] = g->_face_normal[i*3+k];
+          g->xa0ij[j*3+k] = g->xa0ij[i*3+k];
+        }
+      }
+      j++;
+    }
+
+    if (j < n_faces_o) {
+      g->n_faces = j;
+
+      CS_REALLOC(g->_face_cell, g->n_faces, cs_lnum_2_t);
+      if (g->symmetric == true)
+        CS_REALLOC(g->_xa, g->n_faces, cs_real_t);
+      else
+        CS_REALLOC(g->_xa, g->n_faces*2, cs_real_t);
+      if (g->relaxation > 0) {
+        CS_REALLOC(g->_face_normal, g->n_faces*3, cs_real_t);
+        CS_REALLOC(g->_xa0, g->n_faces, cs_real_t);
+        CS_REALLOC(g->xa0ij, g->n_faces*3, cs_real_t);
+      }
+    }
+
+  }
+
   g->face_cell = (const cs_lnum_2_t  *)(g->_face_cell);
   g->xa = g->_xa;
   if (g->relaxation > 0) {
@@ -2495,6 +2562,8 @@ _merge_grids(cs_grid_t  *g,
   if (g->merge_sub_size > 1) {
     _append_cell_data(g);
     _append_face_data(g, n_faces, face_list);
+    CS_FREE(g->cell_face);
+    CS_FREE(g->cell_face_sgn);
   }
   _sync_merged_cell_data(g);
 
@@ -7218,6 +7287,8 @@ _matrix_from_native(cs_matrix_type_t   cm_type,
                              g->xa);
 
   g->matrix = g->_matrix;
+
+  g->use_xa = true;
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
