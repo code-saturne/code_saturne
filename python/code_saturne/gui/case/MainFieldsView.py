@@ -333,7 +333,7 @@ class StandardItemModelMainFields(QStandardItemModel):
                          self.tr("Phase of\nfield"),
                          self.tr("Interfacial criterion"),
                          self.tr("Carrier phase"),
-                         self.tr("Compressible"),
+                         self.tr("Variable density"),
                          self.tr("Energy\nresolution")]
 
         self.setColumnCount(len(self.headers))

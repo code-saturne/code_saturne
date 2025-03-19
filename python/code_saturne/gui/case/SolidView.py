@@ -125,6 +125,10 @@ class SolidView(QWidget, Ui_Solid):
         validatorComp.setExclusiveMin(True)
         self.lineEditCompaction.setValidator(validatorComp)
 
+        validatorFricThres = DoubleValidator(self.lineEditFrictonalThres, min = 0.0)
+        validatorFricThres.setExclusiveMin(True)
+        self.lineEditFrictonalThres.setValidator(validatorFricThres)
+
         validatorElast = DoubleValidator(self.lineEditElastCoef, min = 0.0)
         validatorElast.setExclusiveMin(False)
         self.lineEditElastCoef.setValidator(validatorElast)
@@ -135,8 +139,22 @@ class SolidView(QWidget, Ui_Solid):
         self.comboBoxGranular.activated[str].connect(self.slotGranular)
         self.comboBoxKinetic.activated[str].connect(self.slotKinetic)
         self.lineEditCompaction.textChanged[str].connect(self.slotCompaction)
+        self.lineEditFrictonalThres.textChanged[str].connect(self.slotFrictionalThreshold)
         self.lineEditElastCoef.textChanged[str].connect(self.slotSetElasticity)
         self.checkBoxCoupling.clicked[bool].connect(self.slotCoupling)
+
+        # Show / hide polydispersed parameter
+        has_qp_qfp = False
+        for field in self.mdl.mainFieldsModel.getSolidPhaseList():
+            if self.mdl.getTurbulenceModel(field.f_id) == "q2-q12":
+                has_qp_qfp = True
+
+        self.labelCoupling.setVisible(has_qp_qfp)
+        self.checkBoxCoupling.setVisible(has_qp_qfp)
+        if has_qp_qfp:
+            isCoupling = self.mdl.getCouplingStatus() == "on"
+            self.checkBoxCoupling.setChecked(isCoupling)
+
 
         # Initialize widget
         self.initializeVariables(self.currentid)
@@ -190,13 +208,23 @@ class SolidView(QWidget, Ui_Solid):
 
 
     @pyqtSlot(str)
+    def slotFrictionalThreshold(self, var):
+        """
+        Setter slot.
+        """
+        if self.lineEditFrictonalThres.validator().state == QValidator.Acceptable:
+            value = from_qvariant(var, float)
+            self.mdl.setMinFrictionalThreshold(value)
+
+
+    @pyqtSlot(str)
     def slotSetElasticity(self, var):
         """
         Set elasiticity coefficient
         """
         if self.lineEditElastCoef.validator().state == QValidator.Acceptable:
             value = from_qvariant(var, float)
-            self.mdl.setElastCoeff(value)
+            self.mdl.setElastCoeff(value, self.currentid)
 
 
     def initializeVariables(self, fieldId):
@@ -208,7 +236,10 @@ class SolidView(QWidget, Ui_Solid):
         value = self.mdl.getCompaction()
         self.lineEditCompaction.setText(str(value))
 
-        self.lineEditElastCoef.setText(str(self.mdl.getElastCoeff()))
+        value_min_fric = self.mdl.getMinFrictionalThreshold()
+        self.lineEditFrictonalThres.setText(str(value_min_fric))
+
+        self.lineEditElastCoef.setText(str(self.mdl.getElastCoeff(fieldId)))
 
         model = self.mdl.getFrictionModel(fieldId)
         self.modelFriction.setItem(str_model=model)
@@ -219,17 +250,6 @@ class SolidView(QWidget, Ui_Solid):
         model = self.mdl.getKineticModel(fieldId)
         self.modelKinetic.setItem(str_model = model)
 
-        if self.mdl.getTurbulenceModel(fieldId) == "q2-q12" :
-            self.labelCoupling.show()
-            self.checkBoxCoupling.show()
-
-            isCoupling = self.mdl.getCouplingStatus(fieldId) == "on"
-            self.checkBoxCoupling.setChecked(isCoupling)
-
-        else :
-            self.labelCoupling.hide()
-            self.checkBoxCoupling.hide()
-
 
     @pyqtSlot(bool)
     def slotCoupling(self, checked):
@@ -239,5 +259,5 @@ class SolidView(QWidget, Ui_Solid):
         status = 'off'
         if checked:
             status = 'on'
-        self.mdl.setCouplingStatus(self.currentid, status)
+        self.mdl.setCouplingStatus(status)
 
