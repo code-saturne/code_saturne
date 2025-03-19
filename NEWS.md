@@ -1,3 +1,11 @@
+Release 8.3.2 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix incorrect Rij boundary condition reconstruction when irijrb == 1
+  and flux reconstruction is active for Rij.
+
 Release 8.3.1 (2025-02-27)
 --------------------------
 
