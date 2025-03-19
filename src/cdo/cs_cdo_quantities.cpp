@@ -1065,6 +1065,400 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!  \brief Update cell quantities when one assumes that there are non-planar
+ *          faces. One builds an implicit tetrahedral subdivision in each cell.
+ *          This subdivision relies on an implicit subdivision of each face
+ *          into triangles.
+ *
+ * \param[in]     fvq   pointer to a cs_mesh_quantities_t structure
+ * \param[in]     topo  pointer to a cs_cdo_connect_t structure
+ * \param[in,out] cdoq  pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
+                               const cs_cdo_connect_t     *topo,
+                               cs_cdo_quantities_t        *cdoq)
+{
+  const cs_adjacency_t *c2f = topo->c2f;
+  const cs_adjacency_t *c2v = topo->c2v;
+  const cs_adjacency_t *f2e = topo->f2e;
+  const cs_adjacency_t *e2v = topo->e2v;
+  assert(c2f != nullptr && c2v != nullptr && f2e != nullptr && e2v != nullptr);
+
+  double vol_tot = 0;
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    const int n_cell_vertices = c2v->idx[c_id+1] - c2v->idx[c_id];
+    const cs_real_t *ref_xc = (const cs_real_t *)fvq->cell_cen + 3*c_id;
+
+    cs_real_t *new_xc = cdoq->cell_centers + 3*c_id;
+
+    if (n_cell_vertices == 4) { // Copy mesh quantities
+
+      vol_tot += fvq->cell_vol[c_id];
+      cdoq->cell_vol[c_id] = fvq->cell_vol[c_id];
+
+      for (int k = 0; k < 3; k++)
+        new_xc[k] = ref_xc[k];
+
+    }
+    else { // Perform an implicit subdivision into tetrahedra
+
+      cs_real_t volc = 0;
+      new_xc[0] = 0., new_xc[1] = 0., new_xc[2] = 0.;
+
+      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+
+        const cs_lnum_t f_id = c2f->ids[i];
+        const int n_face_vertices = f2e->idx[f_id+1] - f2e->idx[f_id];
+        const cs_real_t *xf = cs_quant_get_face_center(f_id, cdoq);
+
+        if (n_face_vertices == 3) {
+
+          // Volume of the tetrathedron: 1/3 * base * height
+
+          const cs_real_t *nf = cs_quant_get_face_vector_area(f_id, cdoq);
+
+          cs_real_t xfc[3];
+          for (int k = 0; k < 3; k++)
+            xfc[k] = ref_xc[k] - xf[k];
+
+          const double voltet = cs_math_1ov3 * fabs(_dp3(nf, xfc));
+
+          volc += voltet;
+
+          // Contribution to the cell barycenter
+
+          cs_lnum_t v0, v1, v2;
+          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, f2e->idx[f_id],
+                                         &v0, &v1, &v2);
+          const cs_real_t *xv0 = cdoq->vtx_coord + 3*v0;
+          const cs_real_t *xv1 = cdoq->vtx_coord + 3*v1;
+          const cs_real_t *xv2 = cdoq->vtx_coord + 3*v2;
+
+          for (int k = 0; k < 3; k++)
+            new_xc[k] += 0.25*voltet * (ref_xc[k] + xv0[k] + xv1[k] + xv2[k]);
+
+        }
+        else {
+
+          for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
+
+            const cs_lnum_t e_id = f2e->ids[j];
+            const cs_real_t *xv0 = cdoq->vtx_coord + 3*e2v->ids[2*e_id];
+            const cs_real_t *xv1 = cdoq->vtx_coord + 3*e2v->ids[2*e_id+1];
+
+            const double voltet = cs_math_voltet(xv0, xv1, xf, ref_xc);
+
+            volc += voltet;
+            for (int k = 0; k < 3; k++)
+              new_xc[k] += 0.25*voltet * (ref_xc[k] + xv0[k] + xv1[k] + xf[k]);
+
+          }
+
+        } // Not a triangle face
+
+      } // Loop on cell faces
+
+      vol_tot += volc;
+      cdoq->cell_vol[c_id] = volc;
+
+      // The new cell barycenter is computed as a weighted sum of the barycenters
+      // of the tetrahedral subdivision
+
+      assert(volc > 0);
+      const double inv_volc = 1./volc;
+      for (int k = 0; k < 3; k++)
+        new_xc[k] *= inv_volc;
+
+    } // Implicit subdivision
+
+  } // Loop on cells
+
+  cdoq->vol_tot = vol_tot;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the face quantities for a given face using the reference point
+ *        as a guess for the face barycenter.
+ *
+ * \param[in]      n_faces       number of faces to deal with
+ * \param[in]      f2v_idx       face --> vertices index
+ * \param[in]      f2v_ids       list of face --> vertices ids
+ * \param[in]      ref_f_surf    initial face surfaces
+ * \param[in]      ref_f_normal  initial normal vector of faces
+ * \param[in]      ref_f_u_norm  initial unit normal vector of faces
+ * \param[in]      ref_f_center  face centers
+ * \param[in]      xyz           vertex coordinates
+ * \param[in, out] f_center      updated face centers
+ * \param[in, out] f_surf        updated face surfaces
+ * \param[in, out] f_normal      updated normal vector of faces
+ * \param[in, out] f_u_norm      updated unit normal vector of faces
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_subdiv_face_from_ref(int                 n_face_vertices,
+                      const cs_lnum_t    *f2v_ids,
+                      const cs_real_t    *xyz,
+                      const cs_real_t     ref_xf[3],
+                      cs_real_t           new_xf[3],
+                      cs_real_t          *new_surf,
+                      cs_real_t           new_normal[3],
+                      cs_nreal_t          new_u_norm[3])
+{
+  cs_nvec3_t  nfq;
+
+  *new_surf = 0;
+  new_normal[0] = new_normal[1] = new_normal[2] = 0;
+  new_xf[0] = new_xf[1] = new_xf[2] = 0.;
+
+  for (int t = 0; t < n_face_vertices; t++) {
+
+    const cs_real_t *xv0 = xyz + 3*f2v_ids[t];
+    const cs_real_t *xv1 = xyz + 3*f2v_ids[(t+1)%n_face_vertices];
+
+    cs_real_t u[3], v[3], cp[3];
+    for (int k = 0; k < 3; k++) {
+      u[k] = xv0[k] - ref_xf[k];
+      v[k] = xv1[k] - ref_xf[k];
+    }
+
+    cs_math_3_cross_product(u, v, cp);
+
+    const double tef_surf = 0.5*_n3(cp);
+
+    for (int k = 0; k < 3; k++)
+      new_normal[k] += 0.5*cp[k];
+
+    *new_surf += tef_surf;
+    for (int k = 0; k < 3; k++)
+      new_xf[k] += tef_surf * cs_math_1ov3 * (xv0[k] + xv1[k] + ref_xf[k]);
+
+  }
+
+  cs_nvec3(new_normal, &nfq);
+  assert(nfq.meas > 0);
+
+  const double inv_surff = 1./(*new_surf);
+  for (int k = 0; k < 3; k++) {
+    new_u_norm[k] = nfq.unitv[k];
+    new_xf[k] *= inv_surff;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update face quantities thanks to an implicit subdivision of each face
+ *        into triangles. An iterative process is used to compute a new face
+ *        center (useful with warped face for instance).
+ *
+ * \param[in]      n_faces       number of faces to deal with
+ * \param[in]      f2v_idx       face --> vertices index
+ * \param[in]      f2v_ids       list of face --> vertices ids
+ * \param[in]      ref_f_surf    initial face surfaces
+ * \param[in]      ref_f_normal  initial normal vector of faces
+ * \param[in]      ref_f_u_norm  initial unit normal vector of faces
+ * \param[in]      ref_f_center  face centers
+ * \param[in]      xyz           vertex coordinates
+ * \param[in, out] f_center      updated face centers
+ * \param[in, out] f_surf        updated face surfaces
+ * \param[in, out] f_normal      updated normal vector of faces
+ * \param[in, out] f_u_norm      updated unit normal vector of faces
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_subdiv_face_quantities(cs_lnum_t           n_faces,
+                               const cs_lnum_t    *f2v_idx,
+                               const cs_lnum_t    *f2v_ids,
+                               const cs_real_t    *ref_f_surf,
+                               const cs_real_t    *ref_f_normal,
+                               const cs_nreal_3_t *ref_f_u_norm,
+                               const cs_real_3_t  *ref_f_center,
+                               const cs_real_t    *xyz,
+                               cs_real_t          *f_center,
+                               cs_real_t          *f_surf,
+                               cs_real_t          *f_normal,
+                               cs_nreal_3_t       *f_u_norm)
+{
+  // A triangle face is always planar so that there is nothing else to do
+
+  for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
+
+    const cs_lnum_t s_id = f2v_idx[f_id];
+    const cs_lnum_t e_id = f2v_idx[f_id + 1];
+    const cs_lnum_t n_face_vertices = e_id - s_id;
+
+    if (n_face_vertices == 3) { // Copy mesh quantities
+
+      for (int k = 0; k < 3; k++) {
+        f_u_norm[f_id][k] = ref_f_u_norm[f_id][k];
+        f_normal[3*f_id+k] = ref_f_normal[3*f_id+k];
+        f_center[3*f_id+k] = ref_f_center[f_id][k];
+      }
+
+      f_surf[f_id] = ref_f_surf[f_id];
+
+    }
+    else { // Subdivision into triangles
+
+      cs_real_t *new_xf = f_center + 3*f_id;
+      cs_real_t ref_xf[3], delta_xf[3];
+
+      int iter = 0;
+      double tol = FLT_MAX;
+
+      const int n_max_iter = 10;
+      const double tol_eps = 1e-9;
+      const cs_lnum_t *_f2v = f2v_ids + s_id;
+
+      for (int k = 0; k < 3; k++)
+        ref_xf[k] = ref_f_center[f_id][k];
+
+      while (iter < n_max_iter && tol > tol_eps) {
+
+        _subdiv_face_from_ref(n_face_vertices, _f2v, xyz,
+                              ref_xf,
+                              new_xf,
+                              f_surf + f_id,
+                              f_normal + 3*f_id,
+                              f_u_norm[f_id]);
+
+        for (int k = 0; k < 3; k++)
+          delta_xf[k] = new_xf[k] - ref_xf[k];
+
+        tol = _n3(delta_xf)*sqrt(1./f_surf[f_id]);
+        iter++;
+
+        for (int k = 0; k < 3; k++)
+          ref_xf[k] = new_xf[k];
+
+      } // While loop
+
+      if (tol > 1e-6 && iter == n_max_iter) {
+
+        // Switch to the reference quantities since the algorithm does not
+        // succeed to converge
+
+        cs_log_printf(CS_LOG_WARNINGS,
+                      "%s>> Face %d (%5.3e; %5.3e; %5.3e)"
+                      " --> Switch to the previous quantities\n", __func__, f_id,
+                      ref_f_center[f_id][0],
+                      ref_f_center[f_id][1],
+                      ref_f_center[f_id][2]);
+
+        f_surf[f_id] = ref_f_surf[f_id];
+        for (int k = 0; k < 3; k++) {
+          f_u_norm[f_id][k] = ref_f_u_norm[f_id][k];
+          f_normal[3*f_id+k] = ref_f_normal[3*f_id+k];
+          f_center[3*f_id+k] = ref_f_center[f_id][k];
+        }
+
+      }
+
+    } // Not a triangle
+
+  } // Loop on faces
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Algorithm for computing face and cell quantities when one assumes
+ *        that there are non-planar faces. One uses the face center given by
+ *        the mesh quantities. One builds a tetrahedral subdivision of each
+ *        cell which relies on a subdivision of each face into triangles. The
+ *        apex of each face triangle is the face center.
+ *
+ * \param[in]     mesh        pointer to a cs_mesh_t structure
+ * \param[in]     fvq       pointer to a cs_mesh_quantities_t structure
+ * \param[in]     topo  pointer to a cs_cdo_connect_t structure
+ * \param[in,out] cdoq    pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_subdiv_algorithm(const cs_mesh_t            *mesh,
+                  const cs_mesh_quantities_t *fvq,
+                  const cs_cdo_connect_t     *topo,
+                  cs_cdo_quantities_t        *cdoq)
+{
+  // Update quantities related to boundary faces
+
+  cs_nreal_3_t *b_face_u_normal = nullptr;
+  cs_real_t    *b_face_normal = nullptr;
+  cs_real_t    *b_face_surf = nullptr;
+  cs_real_t    *b_face_center = nullptr;
+
+  // Reset pointers related to boundary face quantities
+
+  BFT_MALLOC(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t);
+  BFT_MALLOC(b_face_normal, 3*mesh->n_b_faces, cs_real_t);
+  BFT_MALLOC(b_face_surf, mesh->n_b_faces, cs_real_t);
+  BFT_MALLOC(b_face_center, 3*mesh->n_b_faces, cs_real_t);
+
+  cdoq->b_face_u_normal = b_face_u_normal;
+  cdoq->b_face_normal = b_face_normal;
+  cdoq->b_face_surf = b_face_surf;
+  cdoq->b_face_center = b_face_center;
+
+  _update_subdiv_face_quantities(mesh->n_b_faces,
+                                 mesh->b_face_vtx_idx,
+                                 mesh->b_face_vtx_lst,
+                                 fvq->b_face_surf,
+                                 fvq->b_face_normal,
+                                 fvq->b_face_u_normal,
+                                 fvq->b_face_cog,
+                                 mesh->vtx_coord,
+                                 cdoq->b_face_center,
+                                 cdoq->b_face_surf,
+                                 cdoq->b_face_normal,
+                                 cdoq->b_face_u_normal);
+
+  // Update quantities related to interior faces
+
+  cs_nreal_3_t *i_face_u_normal = nullptr;
+  cs_real_t    *i_face_normal = nullptr;
+  cs_real_t    *i_face_surf = nullptr;
+  cs_real_t    *i_face_center = nullptr;
+
+  // Reset pointers related to boundary face quantities
+
+  BFT_MALLOC(i_face_u_normal, mesh->n_i_faces, cs_nreal_3_t);
+  BFT_MALLOC(i_face_normal, 3*mesh->n_i_faces, cs_real_t);
+  BFT_MALLOC(i_face_surf, mesh->n_i_faces, cs_real_t);
+  BFT_MALLOC(i_face_center, 3*mesh->n_i_faces, cs_real_t);
+
+  cdoq->i_face_u_normal = i_face_u_normal;
+  cdoq->i_face_normal = i_face_normal;
+  cdoq->i_face_surf = i_face_surf;
+  cdoq->i_face_center = i_face_center;
+
+  _update_subdiv_face_quantities(mesh->n_i_faces,
+                                 mesh->i_face_vtx_idx,
+                                 mesh->i_face_vtx_lst,
+                                 fvq->i_face_surf,
+                                 fvq->i_face_normal,
+                                 fvq->i_face_u_normal,
+                                 fvq->i_face_cog,
+                                 mesh->vtx_coord,
+                                 cdoq->i_face_center,
+                                 cdoq->i_face_surf,
+                                 cdoq->i_face_normal,
+                                 cdoq->i_face_u_normal);
+
+  // Update the cell volume and the cell center. It relies on the subdivision
+  // into triangles of each face and on the cell subdivision into tetrahedra
+  // hinging on the face sudvision
+
+  _update_subdiv_cell_quantities(fvq, topo, cdoq);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1205,24 +1599,32 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
 
   cdoq->n_cells   = n_cells;
   cdoq->n_g_cells = m->n_g_cells;
-  cdoq->cell_vol  = mq->cell_vol;
 
-  /* Compute the cell centers */
+  /* Compute the cell centers (and more in the case of subdivisions) */
 
   switch (cs_cdo_cell_center_algo) {
 
   case CS_CDO_QUANTITIES_SATURNE_CENTER:
+    cdoq->cell_vol  = mq->cell_vol;
     cdoq->cell_centers = (cs_real_t *)mq->cell_cen; /* shared */
     break;
 
   case CS_CDO_QUANTITIES_BARYC_CENTER:
+    cdoq->cell_vol  = mq->cell_vol;
     BFT_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
     _mirtich_algorithm(m, mq, topo, cdoq);
     break;
 
   case CS_CDO_QUANTITIES_MEANV_CENTER:
+    cdoq->cell_vol  = mq->cell_vol;
     BFT_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
     _vtx_algorithm(topo, cdoq);
+    break;
+
+  case CS_CDO_QUANTITIES_SUBDIV_CENTER:
+    BFT_MALLOC(cdoq->cell_vol, n_cells, cs_real_t);
+    BFT_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
+    _subdiv_algorithm(m, mq, topo, cdoq);
     break;
 
   } /* Cell center algorithm */
@@ -1285,6 +1687,21 @@ cs_cdo_quantities_free(cs_cdo_quantities_t *cdoq)
   if (cs_cdo_cell_center_algo != CS_CDO_QUANTITIES_SATURNE_CENTER)
     BFT_FREE(cdoq->cell_centers);
 
+  if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_SUBDIV_CENTER) {
+
+    BFT_FREE(cdoq->b_face_u_normal);
+    BFT_FREE(cdoq->b_face_normal);
+    BFT_FREE(cdoq->b_face_surf);
+    BFT_FREE(cdoq->b_face_center);
+
+    BFT_FREE(cdoq->i_face_u_normal);
+    BFT_FREE(cdoq->i_face_normal);
+    BFT_FREE(cdoq->i_face_surf);
+    BFT_FREE(cdoq->i_face_center);
+
+    BFT_FREE(cdoq->cell_vol);
+  }
+
   /* Face-related quantities */
 
   BFT_FREE(cdoq->dedge_vector);
@@ -1334,6 +1751,10 @@ cs_cdo_quantities_log_summary(const cs_cdo_quantities_t *cdoq)
   case CS_CDO_QUANTITIES_MEANV_CENTER:
     cs_log_printf(CS_LOG_SETUP,
                   " * Cell.Center.Algo: Mean-value of vertices\n");
+    break;
+
+  case CS_CDO_QUANTITIES_SUBDIV_CENTER:
+    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Tetra. subdiv.\n");
     break;
 
   } /* Cell center algorithm */
