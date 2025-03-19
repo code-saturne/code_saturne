@@ -1195,7 +1195,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     cs_equation_param_t *eqp_rij = cs_field_get_equation_param(CS_F_(rij));
 
     if (nt_cur > 1 && irijrb == 1 && eqp_rij->ircflu == 1) {
-      cs_field_gradient_boundary_iprime_tensor(vel,
+      cs_field_gradient_boundary_iprime_tensor(CS_F_(rij),
                                                true, /* use_previous_t */
                                                n_b_faces,
                                                NULL,

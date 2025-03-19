@@ -3,6 +3,9 @@ release 8.2.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix incorrect Rij boundary condition reconstruction when irijrb == 1
+  and flux reconstruction is active for Rij.
+
 - Fix crash or incorrect results when using rotational periodicity on
   builds with the Intel MKL library or CUDA (missing ghost cell rotation).
 
