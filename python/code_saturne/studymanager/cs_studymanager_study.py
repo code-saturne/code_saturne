@@ -1988,8 +1988,12 @@ class Studies(object):
 
                             # add exclusive option to batch template for
                             # computation with at least 6 processes
+                            # force same processor otherwise
                             if nproc+1 > 5:
                                 cmd += "#SBATCH --exclusive\n"
+                            else:
+                                cmd += "#SBATCH --nodes=1\n"
+                                cmd += "#SBATCH --ntasks-per-core=1\n"
 
                             # add user defined options if needed
                             if self.__slurm_batch_args:
