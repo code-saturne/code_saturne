@@ -1813,7 +1813,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
     }
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for reduction(+:n_upwind)
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -3764,16 +3764,15 @@ _convection_diffusion_scalar_unsteady
     cs_gnum_t n_upwind = 0;
     if (i_upwind != nullptr) {
 #     pragma omp parallel for reduction(+:n_upwind)
-      for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+      for (cs_lnum_t i = 0; i < n_i_faces; i++)
         n_upwind += i_upwind[i];
-      }
-      cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
       n_upwind = m->n_g_i_faces;
 
     /* Sum number of clippings */
-    cs_parall_counter(&n_upwind, 1);
+    if (!pure_upwind)
+      cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
@@ -4825,13 +4824,13 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
       for (cs_lnum_t i = 0; i < n_i_faces; i++) {
         n_upwind += i_upwind[i];
       }
-      cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
       n_upwind = m->n_g_i_faces;
 
     /* Sum number of clippings */
-    cs_parall_counter(&n_upwind, 1);
+    if (!pure_upwind)
+      cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
@@ -7006,10 +7005,12 @@ _convection_diffusion_unsteady_strided
       for (int i = 0; i < n_i_faces; i++) {
         n_upwind += i_upwind[i];
       }
-      cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
       n_upwind = m->n_g_i_faces;
+
+    if (!pure_upwind)
+      cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
