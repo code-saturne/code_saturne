@@ -91,48 +91,42 @@ possible parallelism, programming for accelerators may be done using either:
 - Languages designed specifically for HPC, such as [Chapel](https://chapel-lang.org).
 
 - Domain-specific languages (DSL), which are usually based on a form of preprocessing
-  to generate complex code in a mainstream language from simpler patterns tailored
-  to a application domain.
+  to generate complex code in a mainstream language from simpler patterns tailored to a application domain.
 
 Note that the mainstream language extensions listed above, as well as Kokkos,
-and many DSLs are all based on C++.
+and many DSLs are all based on C++, which is the main driver for switching
+code_saturne from C to C++.
 
-None of these approches is currently as ubiquitous or portable as the C and
-C++ basis with host-based OpenMP directives on which most of code_saturne
-is built:
+None of the approches listed above is currently as ubiquitous or portable as the C++ basis with host-based OpenMP directives on which most of code_saturne
+is built.
 
-- OpenMP would be expected to be the most portable solution here, but handling of
-  accelerators was quite incomplete up until OpenMP 5.2 (and should be further
-  improved in OpenMP 6.0), and most compilers installed on our machines do not
-  yet support this version of the standard.
+- OpenMP would be expected to be the most portable solution here, but handling of accelerators was quite incomplete up until OpenMP 5.2, and
+various attempts at using OpenMP offload over the year have stumbled
+on compiler and toolchain robustness issues and dissapointing performance.
 
-- OpenACC currently has more mature accelerator offload support than openMP, but
-  seems supported by fewer vendors, so it could be considered mainly as a
-  short-term approach.
+- OpenACC seems supported by very few vendors, and shared experiences
+from other codes using OpenACC have shown that this approach compiler
+and hardware dependence is very strong here, with limited actual portability.
 
 - Kokkos is well established, but would add a critical and very intrusive
-  dependency on all architectures, so is avoided for now.
+  dependency on all architectures, so is avoided for now, though will be
+  tested in the context of code_saturne.
 
-### Selected programming models
+### Selected programming model
 
 Given these constraints, the current strategy regarding accelerator support is
 the following:
 
-- Use CUDA for the most common hot-spots (sparse linear-system solutions and
-  gradient reconstruction), so as to benefit from previous work on the code,
-  albeit in a non-portable manner.
+- Use CUDA for the most common hot-spots on NVIDIA GPUs (sparse linear-system solutions and gradient reconstruction), so as to benefit from previous work on the code, albeit in a non-portable manner.
 
-- Use OpenMP offload when available in other parts of the code
-  (requiring a recent compiler to actually use accelerated devices, but allowed
-  (and at worst ignored) also on base code).
+- Use a Lambda-based `parallel_for` construct allowing multiple back-ends:
+  - Loop-based OpenMP on CPU (always available).
+  - CUDA kernel on NVIDIA GPUs.
+  - SYCL kernel on all supported systems.
+  - OpenMP offload (partial) on supported GPUs.
+  - Can be extended.
 
-- Possibly migrate some code to C++, or DPC++ if this standard gains traction,
-  to be able to benefit from convergence or at least similarity of C++-based
-  approaches. This could be the preferred long-term solution.
-
-- Use the aforementioned memory management wrappers from \ref cs_base_accel.cxx
-  so as to be able to combine approaches and manage arrays used in accelerated
-  algorithms from non-accelerated functions in other sections of the code.
+  This mechanism uses Lambda functions to allow generation of code for the appropriate device.
 
 Host-level parallelism
 ----------------------
@@ -154,16 +148,14 @@ Device-level parallelism
 Various devices may be considerd, but the main targets are currently
 GPGPUs.
 
-As mentioned above, exploiting parallelism can be based on CUDA, DPC++,
+As mentioned above, exploiting parallelism can be based on CUDA, SYCL,
 or OpenMP directives.
 
 Note that parallelism on GPGPU's is usually based on massive multi-threading,
-where operations on an array may usually be divided into a series of
+in which operations on an array may be divided into a series of
 chunks (blocs), where each block is scheduled to run on available processors
 (ideally in unspecified order), and computation of a given block is
 itself multi-threaded.
 
 Computational kernels launched on a device from the host are usually at least
-in part asynchronous with the host (at least with CUDA and OneAPI/DPC++),
-so that parallelism between the host and device may be exploited when the
-algorithm allows this.
+in part asynchronous with the host, so that parallelism between the host and device may be exploited when algorithm allows this.

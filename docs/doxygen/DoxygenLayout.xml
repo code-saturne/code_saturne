@@ -38,6 +38,7 @@
       <tab type="user" visible="yes" url="@ref cs_ug_smgr_slurm" title="How to submit cases on cluster"/>
     </tab>
     <tab type="usergroup" visible="yes" url="@ref cs_dg_developer_guide" title="Developer guide">
+      <tab type="user" visible="yes" url="@ref cs_dg_programming_languages" title="Programming languages"/>
       <tab type="user" visible="yes" url="@ref cs_dg_coding_style" title="Coding style guidelines"/>
       <tab type="user" visible="yes" url="@ref cs_dg_common_constructs" title="Common constructs"/>
       <tab type="user" visible="yes" url="@ref cs_dg_node_level_parallelism" title="Node-level parallelism"/>

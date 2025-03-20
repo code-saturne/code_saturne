@@ -25,6 +25,8 @@ itself and for writing user-defined functions.
 
 [TOC]
 
+\subpage cs_dg_programming_languages
+
 \subpage cs_dg_coding_style
 
 \subpage cs_dg_common_constructs
@@ -40,3 +42,4 @@ itself and for writing user-defined functions.
 \subpage cs_dg_debugging
 
 \subpage cs_dg_profiling
+

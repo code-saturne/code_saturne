@@ -73,17 +73,17 @@ C++ parallel programming
 C and C++ basics
 ================
 
-A very brief comparison of equivalent C Syntax is provided here,
-which may be useful for those already familiar with one or the other.
+A few C/C++ syntax elements are provided here. This list is not exhaustive,
+but contains elements most often used in code_saturne.
 
 <table>
 <tr><th> <th> C
 <tr><td>
 Basic types
 <td>
-```{.c}
+```{.cpp}
 char
-_Bool, bool
+bool
 int
 float
 double
@@ -492,6 +492,31 @@ void g(void) {
   ...
 }
 ```
+- In C++, functions can pass arguments either by value or by reference.
+  - By default, the behavior is the same as in C (pass by value).
+  - Using `&` before an argument's name, that argument will be passed by
+    reference.
+
+Example of call by mixed semantics:
+```{.cpp}
+/* callee function */
+void f(double x,              // by value
+       double &y) {           // by reference
+  x = x/2;
+  y = x;
+}
+
+/* caller function */
+void g(void) {
+  double x = 10, y = 1.;  // initialization
+
+  f(x, y);                // call to f
+
+  // now x = 10, y = 5.
+
+  ...
+}
+```
 
 ### C function pointers
 
@@ -588,6 +613,13 @@ on several rules.
     type casting in C allows use of either (with a different precision).
   - Applying them to integers would lead to non-natural rounding and
     overflow behavior.
+  - They cannot be used on a GPU.
+  The C++ language also defines `std::max(T x, T y)` which will work with
+  any base type (and classes which define a `>` type relation), but man
+  not work on a GPU.
+- For floating-point values of type `cs_real_t`, code_saturne defines
+  `cs_math_fmax` which is prefered as it avoids the side effects of macros
+  but will work on a GPU.
 
 ### Preprocessors in various programming languages
 
@@ -694,8 +726,7 @@ Some ambiguous constructions lead to what is called _undefined behavior_.
 
 - Example: incorrect character string usage
   ```{.c}
-char *p = "code_saturne"; // forbidden in C++11,
-                          // obsolete in C++98/C++03
+char *p = "code_saturne"; // forbidden in C++.
 p[0] = 'C'; // undefined behavior due to above
             // (but works with most compilers)
   ```
@@ -798,3 +829,15 @@ bft_printf(const char  *const format,
 
 Various decorators exist, but we do not use them much in code_saturne,
 as they are _not portable_.
+
+C++ attributes
+--------------
+
+C++ allows a more portable alternative to C decorators, called
+[attributes](https://en.cppreference.com/w/cpp/language/attributes).
+
+Attributes most often used in code_saturne include `[[fallthrough]]`, which
+indicates that if a `swich`/`case` entry continues to the next case without a
+`break` statement, this is intentional, and the compiler should not emit a
+warning, and `[[maybe_unused]]`, which also avoids a comppiler warning if a
+function parameter is not used in a given case).
