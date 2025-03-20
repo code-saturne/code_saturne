@@ -601,11 +601,11 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     }
     else {
       rho[cell_id] = cs_air_rho_humidair(x[cell_id],
-                                           rho0,
-                                           pphy,
-                                           t0,
-                                           molmassrat,
-                                           t_h[cell_id]);
+                                         rho0,
+                                         pphy,
+                                         t0,
+                                         molmassrat,
+                                         t_h[cell_id]);
     }
 
     /* If mixture model activated, humid air density is stored in associated
