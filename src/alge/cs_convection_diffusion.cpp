@@ -166,14 +166,11 @@ _beta_limiter_denom(cs_field_t                 *f,
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
 
@@ -493,10 +490,8 @@ _beta_limiter_num(cs_field_t                 *f,
   const cs_mesh_t  *m = cs_glob_mesh;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -673,19 +668,15 @@ _slope_test_gradient_h
 
   const cs_lnum_t n_cells = m->n_cells;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /* Cast to the parent class to obtain info on the parent class.
@@ -791,17 +782,14 @@ _slope_test_gradient_d
 
   const cs_lnum_t n_cells = m->n_cells;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
@@ -924,19 +912,15 @@ _slope_test_gradient_strided_h
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
 
   /* Cast to the parent class to obtain info on the parent class.
      On host, we know this is not necessary and we use a simple
@@ -1061,17 +1045,14 @@ _slope_test_gradient_strided_d
 
   const cs_lnum_t n_cells = m->n_cells;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
     fvq->c_disable_flag : nullptr;
 
@@ -1358,19 +1339,15 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -2216,7 +2193,6 @@ _face_convection_scalar_steady(const cs_field_t           *f,
                                cs_real_t                   i_conv_flux[][2],
                                cs_real_t                   b_conv_flux[])
 {
-
   cs_real_t *coefap = bc_coeffs->a;
   cs_real_t *coefbp = bc_coeffs->b;
 
@@ -2252,11 +2228,9 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal  = fvq->i_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -2968,11 +2942,9 @@ _convection_diffusion_scalar_unsteady
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -4149,11 +4121,9 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -5047,11 +5017,10 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_3_t *restrict cell_cen = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -5788,11 +5757,9 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -7722,8 +7689,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 #endif
 
   if (ivisep == 1 && eqp.idiff == 1) {
-    const cs_lnum_t *restrict b_face_cells
-      = (const cs_lnum_t *)m->b_face_cells;
+    const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
     const int *bc_type = cs_glob_bc_type;
 
     /* We do not know what condition to put in the inlets and the outlets, so we
@@ -7870,10 +7836,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
     const cs_lnum_t n_cells = m->n_cells;
 
-    const cs_lnum_2_t *restrict i_face_cells
-      = (const cs_lnum_2_t *)m->i_face_cells;
-    const cs_lnum_t *restrict b_face_cells
-      = (const cs_lnum_t *)m->b_face_cells;
+    const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+    const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
     const cs_real_t *restrict weight = fvq->weight;
     const cs_real_t *restrict i_dist = fvq->i_dist;
@@ -8116,7 +8080,6 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                (const cs_real_6_t *)bc_coeffs_ts->val_f :
                                (const cs_real_6_t *)bc_coeffs_solve_ts->val_f;
 
-
     cs_gradient_tensor_synced_input(var_name,
                                     gradient_type,
                                     halo_type,
@@ -8351,20 +8314,15 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
   /* Local variables */
 
@@ -8603,9 +8561,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
             diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
-                                  + visci[1][i]*i_face_normal[face_id][1]
-                                  + visci[2][i]*i_face_normal[face_id][2]);
+                        - fikdvi*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                  + visci[1][i]*i_face_u_normal[face_id][1]
+                                  + visci[2][i]*i_face_u_normal[face_id][2])
+                                *i_face_surf[face_id];
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -8624,9 +8583,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
             djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
-                        + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
-                                  + viscj[1][i]*i_face_normal[face_id][1]
-                                  + viscj[2][i]*i_face_normal[face_id][2]);
+                        + fjkdvi*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                  + viscj[1][i]*i_face_u_normal[face_id][1]
+                                  + viscj[2][i]*i_face_u_normal[face_id][2])
+                                *i_face_surf[face_id];
           }
 
           /* p in I" and J" */
@@ -8704,9 +8664,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
             diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
-                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
-                                  + visci[1][i]*i_face_normal[face_id][1]
-                                  + visci[2][i]*i_face_normal[face_id][2]);
+                        - fikdvi*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                  + visci[1][i]*i_face_u_normal[face_id][1]
+                                  + visci[2][i]*i_face_u_normal[face_id][2])
+                                *i_face_surf[face_id];
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -8724,10 +8685,11 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
-            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
-                               + viscj[1][i]*i_face_normal[face_id][1]
-                               + viscj[2][i]*i_face_normal[face_id][2] );
+            djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
+                        + fjkdvi*( viscj[0][i]*i_face_u_normal[face_id][0]
+                                  + viscj[1][i]*i_face_u_normal[face_id][1]
+                                  + viscj[2][i]*i_face_u_normal[face_id][2])
+                                *i_face_surf[face_id];
           }
 
           /* p in I" and J" */
@@ -8796,9 +8758,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
         /* II" = IF + FI" */
         for (int i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
-                                + visci[1][i]*b_face_normal[face_id][1]
-                                + visci[2][i]*b_face_normal[face_id][2]);
+                      - fikdvi*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                + visci[1][i]*b_face_u_normal[face_id][1]
+                                + visci[2][i]*b_face_u_normal[face_id][2])
+                              *b_face_surf[face_id];
         }
 
         cs_real_t pippr = pir + bldfrp*(  grad[ii][0]*diippf[0]
@@ -8855,9 +8818,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
         /* II" = IF + FI" */
         for (int i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
-                                + visci[1][i]*b_face_normal[face_id][1]
-                                + visci[2][i]*b_face_normal[face_id][2]);
+                      - fikdvi*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                + visci[1][i]*b_face_u_normal[face_id][1]
+                                + visci[2][i]*b_face_u_normal[face_id][2])
+                              *b_face_surf[face_id];
         }
 
         cs_real_t pipp = pi + bldfrp*(  grad[ii][0]*diippf[0]
@@ -8948,9 +8912,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
         /* II" = IF + FI" */
         for (int i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]
-                    - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
-                             + visci[1][i]*b_face_normal[face_id][1]
-                             + visci[2][i]*b_face_normal[face_id][2] );
+                    - fikdvi*( visci[0][i]*b_face_u_normal[face_id][0]
+                             + visci[1][i]*b_face_u_normal[face_id][1]
+                             + visci[2][i]*b_face_u_normal[face_id][2])
+                            *b_face_surf[face_id];
         }
 
         viscj[0][0] = viscce_local[jj][0];
@@ -8972,9 +8937,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
         for (int i = 0; i < 3; i++) {
           djjppf[i] =    b_face_cog[face_id][i]
                       - cell_cen[ii][i]-cpl->ci_cj_vect[jj][i]
-                      + fjkdvi*(  viscj[0][i]*b_face_normal[face_id][0]
-                                + viscj[1][i]*b_face_normal[face_id][1]
-                                + viscj[2][i]*b_face_normal[face_id][2]);
+                      + fjkdvi*(  viscj[0][i]*b_face_u_normal[face_id][0]
+                                + viscj[1][i]*b_face_u_normal[face_id][1]
+                                + viscj[2][i]*b_face_u_normal[face_id][2])
+                              *b_face_surf[face_id];
         }
 
         /* p in I" and J" */
@@ -9095,13 +9061,10 @@ cs_anisotropic_left_diffusion_vector
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
@@ -9482,11 +9445,11 @@ cs_anisotropic_left_diffusion_vector
           cs_lnum_t jj = i_face_cells[face_id][1];
 
           cs_real_t pnd = weight[face_id];
-          cs_real_t secvis = i_secvis[face_id];
-
           cs_real_t grdtrv
             =        pnd*(gradv[ii][0][0]+gradv[ii][1][1]+gradv[ii][2][2])
               + (1.-pnd)*(gradv[jj][0][0]+gradv[jj][1][1]+gradv[jj][2][2]);
+
+          cs_real_t flux0 = i_secvis[face_id] * grdtrv * i_face_surf[face_id];
 
           cs_real_t ipjp[3];
           const cs_nreal_t *n = i_face_u_normal[face_id];
@@ -9497,7 +9460,7 @@ cs_anisotropic_left_diffusion_vector
 
           for (int i = 0; i < 3; i++) {
 
-            cs_real_t flux = secvis*grdtrv*i_f_face_normal[face_id][i];
+            cs_real_t flux = flux0*i_face_u_normal[face_id][i];
 
             /* We need to compute (K grad(u)^T) .I'J'
                which is equal to I'J' . (grad(u) . K^T)
@@ -9618,20 +9581,15 @@ cs_anisotropic_right_diffusion_vector
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
   const cs_real_3_t *val_f = (const cs_real_3_t *)bc_coeffs_solve_v->val_f;
   const cs_real_3_t  *cofafv = (const cs_real_3_t  *)bc_coeffs_v->af;
@@ -9807,14 +9765,14 @@ cs_anisotropic_right_diffusion_vector
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          cs_real_t fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
 
           /* II" = IF + FI" */
           for (cs_lnum_t i = 0; i < 3; i++) {
             diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
-                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
-                                  + visci[1][i]*i_face_normal[face_id][1]
-                                  + visci[2][i]*i_face_normal[face_id][2]);
+                        - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                    + visci[1][i]*i_face_u_normal[face_id][1]
+                                    + visci[2][i]*i_face_u_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -9828,14 +9786,14 @@ cs_anisotropic_right_diffusion_vector
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          cs_real_t fjkdvi = weighf[face_id][1];
+          cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
 
           /* JJ" = JF + FJ" */
           for (cs_lnum_t i = 0; i < 3; i++) {
             djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
-                               + viscj[1][i]*i_face_normal[face_id][1]
-                               + viscj[2][i]*i_face_normal[face_id][2] );
+                      + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                  + viscj[1][i]*i_face_u_normal[face_id][1]
+                                  + viscj[2][i]*i_face_u_normal[face_id][2]);
           }
 
           for (cs_lnum_t isou = 0; isou < 3; isou++) {
@@ -9911,14 +9869,14 @@ cs_anisotropic_right_diffusion_vector
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          cs_real_t fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
 
           /* II" = IF + FI" */
           for (cs_lnum_t i = 0; i < 3; i++) {
             diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
-                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
-                                  + visci[1][i]*i_face_normal[face_id][1]
-                                  + visci[2][i]*i_face_normal[face_id][2]);
+                        - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                    + visci[1][i]*i_face_u_normal[face_id][1]
+                                    + visci[2][i]*i_face_u_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -9932,14 +9890,14 @@ cs_anisotropic_right_diffusion_vector
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          cs_real_t fjkdvi = weighf[face_id][1];
+          cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
 
           /* JJ" = JF + FJ" */
           for (cs_lnum_t i = 0; i < 3; i++) {
             djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
-                        + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
-                                  + viscj[1][i]*i_face_normal[face_id][1]
-                                  + viscj[2][i]*i_face_normal[face_id][2]);
+                        + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                    + viscj[1][i]*i_face_u_normal[face_id][1]
+                                    + viscj[2][i]*i_face_u_normal[face_id][2]);
           }
 
           for (cs_lnum_t isou = 0; isou < 3; isou++) {
@@ -10008,14 +9966,14 @@ cs_anisotropic_right_diffusion_vector
         visci[0][2] = viscce[ii][5];
 
         /* IF.Ki.S / ||Ki.S||^2 */
-        cs_real_t fikdvi = weighb[face_id];
+        cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
 
         /* II" = IF + FI" */
         for (cs_lnum_t i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
-                                + visci[1][i]*b_face_normal[face_id][1]
-                                + visci[2][i]*b_face_normal[face_id][2]);
+                      - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                  + visci[1][i]*b_face_u_normal[face_id][1]
+                                  + visci[2][i]*b_face_u_normal[face_id][2]);
         }
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
           pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
@@ -10074,14 +10032,14 @@ cs_anisotropic_right_diffusion_vector
         visci[0][2] = viscce[ii][5];
 
         /* IF.Ki.S / ||Ki.S||^2 */
-        cs_real_t fikdvi = weighb[face_id];
+        cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
 
         /* II" = IF + FI" */
         for (cs_lnum_t i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
-                                + visci[1][i]*b_face_normal[face_id][1]
-                                + visci[2][i]*b_face_normal[face_id][2]);
+                      - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                  + visci[1][i]*b_face_u_normal[face_id][1]
+                                  + visci[2][i]*b_face_u_normal[face_id][2]);
         }
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
           pipp[isou] = pi[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
@@ -10178,14 +10136,14 @@ cs_anisotropic_right_diffusion_vector
         visci[0][2] = viscce[ii][5];
 
         /* IF.Ki.S / ||Ki.S||^2 */
-        cs_real_t fikdvi = weighb[face_id];
+        cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
 
         /* II" = IF + FI" */
         for (cs_lnum_t i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]
-                    - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
-                             + visci[1][i]*b_face_normal[face_id][1]
-                             + visci[2][i]*b_face_normal[face_id][2] );
+                    - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                + visci[1][i]*b_face_u_normal[face_id][1]
+                                + visci[2][i]*b_face_u_normal[face_id][2]);
         }
 
         viscj[0][0] = viscce_local[jj][0];
@@ -10200,16 +10158,16 @@ cs_anisotropic_right_diffusion_vector
 
         /* FJ.Kj.S / ||Kj.S||^2
          * weighb_local defined with vector JF and surface -S */
-        cs_real_t fjkdvi = weighb_local[jj];
+        cs_real_t fjkdvi_s = weighb_local[jj] * b_face_surf[face_id];
 
         /* JJ" = JF + FJ"
          *   */
         for (cs_lnum_t i = 0; i < 3; i++) {
           djjppf[i] =   b_face_cog[face_id][i]
                       - cell_cen[ii][i] - cpl->ci_cj_vect[jj][i]
-                       + fjkdvi*(  viscj[0][i]*b_face_normal[face_id][0]
-                                 + viscj[1][i]*b_face_normal[face_id][1]
-                                 + viscj[2][i]*b_face_normal[face_id][2]);
+                       + fjkdvi_s*(  viscj[0][i]*b_face_u_normal[face_id][0]
+                                   + viscj[1][i]*b_face_u_normal[face_id][1]
+                                   + viscj[2][i]*b_face_u_normal[face_id][2]);
         }
 
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
@@ -10239,7 +10197,6 @@ cs_anisotropic_right_diffusion_vector
       CS_FREE(weighb_local);
 
     }
-
 
   } /* idtvar */
 
@@ -10330,20 +10287,15 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
   /* Local variables */
 
@@ -10538,14 +10490,14 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          cs_real_t fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
             diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
-                               + visci[1][i]*i_face_normal[face_id][1]
-                               + visci[2][i]*i_face_normal[face_id][2] );
+                      - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                  + visci[1][i]*i_face_u_normal[face_id][1]
+                                  + visci[2][i]*i_face_u_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -10559,14 +10511,14 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          cs_real_t fjkdvi = weighf[face_id][1];
+          cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
             djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
-                        + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
-                                  + viscj[1][i]*i_face_normal[face_id][1]
-                                  + viscj[2][i]*i_face_normal[face_id][2]);
+                        + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                    + viscj[1][i]*i_face_u_normal[face_id][1]
+                                    + viscj[2][i]*i_face_u_normal[face_id][2]);
           }
 
           for (int isou = 0; isou < 6; isou++) {
@@ -10642,14 +10594,14 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          cs_real_t fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
             diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
-                        - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
-                                  + visci[1][i]*i_face_normal[face_id][1]
-                                  + visci[2][i]*i_face_normal[face_id][2]);
+                        - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                    + visci[1][i]*i_face_u_normal[face_id][1]
+                                    + visci[2][i]*i_face_u_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -10663,14 +10615,14 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          cs_real_t fjkdvi = weighf[face_id][1];
+          cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
             djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
-                               + viscj[1][i]*i_face_normal[face_id][1]
-                               + viscj[2][i]*i_face_normal[face_id][2] );
+                      + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                  + viscj[1][i]*i_face_u_normal[face_id][1]
+                                  + viscj[2][i]*i_face_u_normal[face_id][2]);
           }
 
           for (int isou = 0; isou < 6; isou++) {
@@ -10736,14 +10688,14 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
         visci[0][2] = viscce[ii][5];
 
         /* IF.Ki.S / ||Ki.S||^2 */
-        cs_real_t fikdvi = weighb[face_id];
+        cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
 
         /* II" = IF + FI" */
         for (int i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
-                                + visci[1][i]*b_face_normal[face_id][1]
-                                + visci[2][i]*b_face_normal[face_id][2]);
+                      - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                  + visci[1][i]*b_face_u_normal[face_id][1]
+                                  + visci[2][i]*b_face_u_normal[face_id][2]);
         }
         for (int isou = 0; isou < 6; isou++) {
           pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
@@ -10800,14 +10752,14 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
         visci[0][2] = viscce[ii][5];
 
         /* IF.Ki.S / ||Ki.S||^2 */
-        cs_real_t fikdvi = weighb[face_id];
+        cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
 
         /* II" = IF + FI" */
         for (int i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
-                                + visci[1][i]*b_face_normal[face_id][1]
-                                + visci[2][i]*b_face_normal[face_id][2]);
+                      - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                  + visci[1][i]*b_face_u_normal[face_id][1]
+                                  + visci[2][i]*b_face_u_normal[face_id][2]);
         }
         for (int isou = 0; isou < 6; isou++) {
           pipp[isou] = pi[isou] + bldfrp * (  grad[ii][isou][0]*diippf[0]
@@ -10920,10 +10872,8 @@ cs_face_diffusion_potential(const int                   f_id,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
@@ -11232,20 +11182,15 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
   /* Local variables */
 
@@ -11472,14 +11417,14 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
         bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
       /* IF.Ki.S / ||Ki.S||^2 */
-      cs_real_t fikdvi = weighf[face_id][0];
+      cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
 
       /* II" = IF + FI" */
       for (int i = 0; i < 3; i++) {
         diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
-                    - fikdvi * (  visci[0][i]*i_face_normal[face_id][0]
-                                + visci[1][i]*i_face_normal[face_id][1]
-                                + visci[2][i]*i_face_normal[face_id][2]);
+                    - fikdvi_s * (  visci[0][i]*i_face_u_normal[face_id][0]
+                                  + visci[1][i]*i_face_u_normal[face_id][1]
+                                  + visci[2][i]*i_face_u_normal[face_id][2]);
       }
 
       viscj[0][0] = viscce[jj][0];
@@ -11493,14 +11438,14 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       viscj[0][2] = viscce[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
-      double fjkdvi = weighf[face_id][1];
+      double fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
 
       /* JJ" = JF + FJ" */
       for (int i = 0; i < 3; i++) {
         djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
-                    + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
-                              + viscj[1][i]*i_face_normal[face_id][1]
-                              + viscj[2][i]*i_face_normal[face_id][2]);
+                    + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                + viscj[1][i]*i_face_u_normal[face_id][1]
+                                + viscj[2][i]*i_face_u_normal[face_id][2]);
       }
 
       /* p in I" and J" */
@@ -11540,14 +11485,14 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       visci[0][2] = viscce[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
-      cs_real_t fikdvi = weighb[face_id];
+      cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
 
       /* II" = IF + FI" */
       for (int i = 0; i < 3; i++) {
         diippf[i] =   b_face_cog[face_id][i] - cell_cen[ii][i]
-                    - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
-                              + visci[1][i]*b_face_normal[face_id][1]
-                              + visci[2][i]*b_face_normal[face_id][2]);
+                    - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                + visci[1][i]*b_face_u_normal[face_id][1]
+                                + visci[2][i]*b_face_u_normal[face_id][2]);
       }
 
       double pipp = pi + bldfrp * cs_math_3_dot_product(grad[ii], diippf);
@@ -11642,10 +11587,8 @@ cs_diffusion_potential(const int                   f_id,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
@@ -11801,6 +11744,9 @@ cs_diffusion_potential(const int                   f_id,
                                     gweight, /* Weighted gradient */
                                     nullptr, /* internal coupling */
                                     grad);
+
+    double r2 = sqrt(cs_gdot(n_cells*3, (cs_real_t *)grad, (cs_real_t *)grad));
+    bft_printf("grad phyd: %10.14le\n", r2);
 
     if (_pvar != pvar)
       CS_FREE(_pvar);
@@ -11974,20 +11920,15 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *)fvq->i_face_normal;
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
   /* Local variables */
 
