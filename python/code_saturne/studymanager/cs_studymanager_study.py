@@ -479,12 +479,6 @@ class Case(object):
 
         log_run = open(log_path, mode='w')
 
-        if self.no_restart:
-            fail_info = 'CANCELLED due to unusable restart'
-            log_lines += ['      * prepare run folder: {0} --> {1}'.format(self.title, fail_info)]
-            log_lines += ['        - see ' + self.depends]
-            return log_lines
-
         if self.subdomains:
             if not os.path.isdir(self.label):
                 os.mkdir(self.label)
@@ -1749,6 +1743,10 @@ class Studies(object):
                     msg = global_graph.add_node(case)
                     if msg:
                         self.reporting("Warning in global graph: " + msg)
+
+                if case.no_restart:
+                    self.reporting(" WARNING: " + case.title + " was cancelled.")
+                    self.reporting(" The restart folder seems problematic. See " + case.depends)
 
         # extract the sub graph based on filters and tags
         if filter_level is not None or filter_n_procs is not None:
