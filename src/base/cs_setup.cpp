@@ -1762,12 +1762,21 @@ _additional_fields_stage_2(void)
     cs_field_set_key_int(f, keyvis, 0);
 
     /* Elliptic equation (no convection, no time term) */
+    cs_equation_param_t *eqp_pr = cs_field_get_equation_param(CS_F_(p));
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->iconv = 0;
     eqp->istat = 0;
     eqp->nswrsm = 2;
     eqp->idifft = 0;
     eqp->relaxv = 1.; /* No relaxation even for steady algorithm */
+
+    /* Align some options with pressure equation */
+    eqp->verbosity = eqp_pr->verbosity;
+    eqp->nswrgr = eqp_pr->nswrgr;
+    eqp->epsrgr = eqp_pr->epsrgr;
+    eqp->climgr = eqp_pr->climgr;
+    eqp->b_climgr = eqp_pr->b_climgr;
+    eqp->b_gradient_r = eqp_pr->b_gradient_r;
   }
 
   /* Head losses weighting field in case of Lagrangian deposition and
