@@ -122,7 +122,7 @@ cs_user_mesh_cartesian_define(void)
 
     /* Geometric step for Y direction,
      * arguments are the same of the Parabolic law:
-     * CS_MESH_CARTESIAN_PARABOLIC
+     * CS_MESH_CARTESIAN_PARABOLIC_LAW
      */
     cs_mesh_cartesian_define_dir_params(mp, /* Pointer to mesh parameters */
                                         1, /* Direction index */
