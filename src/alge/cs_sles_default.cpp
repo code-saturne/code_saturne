@@ -669,7 +669,9 @@ cs_sles_default_get_matrix(int          f_id,
 {
   cs_matrix_t *a = nullptr;
 
+#if defined(HAVE_PETSC)
   const cs_mesh_t *m = cs_glob_mesh;
+#endif
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   /* Check if this system has already been setup */
