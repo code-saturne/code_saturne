@@ -139,7 +139,7 @@ _sles_default_native(int                f_id,
 
   if (name != nullptr) {
 
-    if (!strcmp(name, "potential")) {   /* predfl.f90 */
+    if (!strcmp(name, "potential")) {   /* _cs_mass_flux_prediction */
       /* Copy from pressure if possible */
       cs_field_t *cvar_p = (cs_field_by_name_try("pressure"));
       cs_sles_t *src = nullptr;
@@ -156,10 +156,10 @@ _sles_default_native(int                f_id,
       sles_it_type = CS_SLES_FCG;
       multigrid = 1;
     }
-    else if (!strcmp(name, "Prhydro")) { /* prehyd.f90 */
+    else if (!strcmp(name, "Prhydro")) { /* _hydrostatic_pressure_prediction */
       sles_it_type = CS_SLES_FCG;
     }
-    else if (!strcmp(name, "Pr compress")) { /* cs_pressure_correction.c */
+    else if (!strcmp(name, "Pr compress")) { /* cs_pressure_correction.cpp */
       sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
     }
     else if (!strcmp(name, "PoissonL")) { /* _lageqp */
