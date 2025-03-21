@@ -557,13 +557,14 @@ else
     qqqqc = qqqc(i) + xqqcinf
 
     call rayive(tvsups, dtvsups, qqqqv, qv0(i), qqqqc, qc(i), romray(i))
-    foirs = sig*(a3+(1.-(1.+fn*(taul-1.))*(tvsups-acsups(i)))*t4zt)
 
-    ! upward fluxes estimation (sum of direct part and reflected part)
+    foirs = sig*(a3+(1.d0-(1.d0+fn*(taul-1.d0))*(tvsups-acsups(i)))*t4zt)
+
+    ! Upward fluxes estimation (sum of direct part and reflected part)
     if (i.gt.k1) then
       call rayive(tauv, dtauv, qqqv(i), qv0(k1), qqqc(i), qc(k1), romray(k1))
 
-      ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
+      ufir(i) = sig*ufir(i)+emis*sig*t41+(1.d0-emis)*foirs
     else
       ufir(k1) = (1.d0-emis)*foir+emis*sig*t41
     endif
@@ -704,7 +705,8 @@ else
                            + taul*dul*(tauv - aco2(k,kk)))*dz0(kk-1)
     enddo
 
-    ! a3: contribution from the upward flux reflected by the ground
+    ! a3: contribution of the upward flux reflected at the ground
+    ! Modification of Ponnulakshmi and al. (2009)
     a3 = 0.d0
     do kk = k1+1, kmray
       qqqqv = qqqv(k) + qqv(kk)
@@ -728,7 +730,7 @@ else
                            +taul*dul*(tauv-aco2s(k,kk)))*dz0(kk-1)
     enddo
 
-    ! contribution from z to infinite
+    ! contribution from z to infinity
     qqqqv = xqqvinf - qqqv(k)
     qqqqc = xqqcinf - qqqc(k)
     qqqql = xqqlinf - qqql(k)
@@ -771,7 +773,7 @@ else
 
     fnss=fnerir(k)
     do ineb=k1,kmray
-       fnss=max(fnss,fnerir(ineb))
+      fnss=max(fnss,fnerir(ineb))
     enddo
 
     if(fnss.lt.1.d-3) then
@@ -785,7 +787,7 @@ else
     ! Formula follows Ponnulakshmi and al. (2009)
     rayi(k) =  ctray*(a1 - a2 + t4zt*((1.d0 + fns*(tlsup - 1.d0))             &
              *(dacsup(k) - dtvsup) + dul*tlsup*(tvsup - acsup(k)))            &
-             -(1.d0-emis)*(a3+t4zt*((1.d0+fnss*(tlsups-1.d0))                 &
+             -(1.d0-emis)*(a3 + t4zt*((1.d0 + fnss*(tlsups-1.d0))             &
              *(dtvsups-dacsups(k))-dul*tlsups*(tvsups-acsups(k)))))
 
     ! Save for 3D

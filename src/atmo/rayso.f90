@@ -214,10 +214,6 @@ double precision gama1,gama2,kt,gas,fas
 double precision omega, var, zent
 double precision cpvcpa
 double precision dzx, dy
-! For postprocessing
-double precision soil_direct_flux , soil_global_flux
-double precision soil_direct_flux_h2o,  soil_global_flux_h2o
-double precision soil_direct_flux_o3,  soil_global_flux_o3
 logical          is_active
 
 integer, dimension(:), pointer :: itypfb
@@ -1086,7 +1082,8 @@ if (muzero.gt.epzero) then
     dfs(k) = dfsh2o(k) + dfso3(k)
     ufs(k) = ufsh2o(k) + ufso3(k)
 
-    ! direct radiation mod (sum of vapor water band and O3 band)
+    ! direct radiation and diffuse mod (sum of vapor water band and O3 band)
+    ! Direct
     drfs(k) = ddfsh2o(k)+ddfso3(k)
     ! diffuse radiation (estmated by difference between global and direct)
     dddsh2o(k) = dfsh2o(k)-ddfsh2o(k)
@@ -1103,12 +1100,6 @@ if (muzero.gt.epzero) then
   ! solar heating of the ground surface by the downward global flux
   fos=dfs(k1)*(1.d0-albe)
 
-  soil_direct_flux=drfs(k1)
-  soil_global_flux=dfs(k1)
-  soil_direct_flux_h2o=ddfsh2o(k1)
-  soil_global_flux_h2o=dfsh2o(k1)
-  soil_direct_flux_o3=ddfso3(k1)
-  soil_global_flux_o3=dfso3(k1)
 
   ! Calculation of absorption coefficient ckup and ckdown useful
   ! for 3D simulation
@@ -1129,24 +1120,29 @@ if (muzero.gt.epzero) then
       g_apc_sir(k) = 0.d0
     else
       picapc=(pic_h2o(k)*tauc(k)+piaero_h2o*tauah2o(k))/tauapc
-      w0_sir(k) = picapc
+
       ! if we take into account asymmetry factor for forward diffuse radiation
       ! Note apc means aerosols+clouds
-      gapc=(pic_h2o(k)*tauc(k)*gch2o(k)+piaero_h2o*tauah2o(k)*gaero_h2o)/tauapc*picapc
+      gapc=(pic_h2o(k)*tauc(k)*gch2o(k)+piaero_h2o*tauah2o(k)*gaero_h2o)/(tauapc*picapc)
+
+      ! Save values without Jospeh correction for 3D
       g_apc_sir(k) = gapc
+      w0_sir(k) = picapc
       ! absorption and forward diffusion
-      ckapcf=(1.d0-picapc*(1.d0+gapc)/2.d0)*tauapc/(deltaz*mui)
+      ckapcf = tauapc/deltaz
+
+      ! direct do not take Joseph correction into account
       ckapcd=tauapc/(deltaz*muzero_cor)
-      ck_aero_h2of=(1.d0-piaero_h2o)*tauah2o(k)/(deltaz*mui)
+      ck_aero_h2of = tauah2o(k)/deltaz
       ck_aero_h2od=tauah2o(k)/(deltaz*muzero_cor)
     endif
 
-    ckup_sir_f(k) = (ckup_sir_f(k) + ck_aero_h2of)*(1.d0-fneray(k)) + &
-      (ckup_sir_f(k)+ckapcf)*(fneray(k))
-    ckdown_sir_r(k) = (ckdown_sir_r(k) + ck_aero_h2od)*(1.d0-fneray(k)) + &
-      (ckdown_sir_r(k)+ckapcd)*(fneray(k))
-    ckdown_sir_f(k) = (ckdown_sir_f(k) + ck_aero_h2of)*(1.d0-fneray(k)) + &
-      (ckdown_sir_f(k)+ckapcf)*(fneray(k))
+    ckup_sir_f(k) = ckup_sir_f(k) + ck_aero_h2of*(1.d0-fneray(k)) &
+                  + ckapcf * fneray(k)
+    ckdown_sir_r(k) = ckdown_sir_r(k) + ck_aero_h2od*(1.d0-fneray(k))  &
+                    + ckapcd*fneray(k)
+    ckdown_sir_f(k) = ckdown_sir_f(k) + ck_aero_h2of*(1.d0-fneray(k))  &
+                    + ckapcf * fneray(k)
   enddo
 
   ! SUV band
@@ -1162,25 +1158,26 @@ if (muzero.gt.epzero) then
       w0_suv(k) = 0.d0
       g_apc_suv(k) = 0.d0
     else
-      picapc=(pic_o3(k)*tauc(k)+piaero_o3*tauao3(k))/tauapc
-      w0_suv(k) = picapc
+      picapc=(pic_o3(k)*tauc(k) + piaero_o3*tauao3(k))/tauapc
       ! if we take into account asymmetry factor for forward diffuse radiation
-      gapc=(pic_o3(k)*tauc(k)*gco3(k)+piaero_o3*tauao3(k)*gaero_o3)/tauapc*picapc
+      gapc=(pic_o3(k)*tauc(k)*gco3(k)+piaero_o3*tauao3(k)*gaero_o3)/(tauapc*picapc)
+      ! direct do not take Joseph correction into account
+      ckapcd=tauapc/(deltaz*muzero_cor)
+      w0_suv(k) = picapc
       g_apc_suv(k) = gapc
       ! absorption and forward diffusion
-      ckapcf=(1.d0-picapc*(1.d0+gapc)/2.d0)*tauapc/(deltaz*mui)
-      ckapcd=tauapc/(deltaz*muzero_cor)
-      ck_aero_o3f=(1.d0-piaero_o3)*tauao3(k)/(deltaz*mui)
+      ckapcf=tauapc/deltaz
+      ck_aero_o3f=tauao3(k)/deltaz
       ck_aero_o3d=tauao3(k)/(deltaz*muzero_cor)
     endif
 
-    ckup_suv_f(k) = (ckup_suv_f(k)+ck_aero_o3f)*(1.d0-fneray(k))+&
-      (ckup_suv_f(k)+ckapcf)*(fneray(k))
-    ckdown_suv_r(k) = (ckdown_suv_r(k) +  ck_aero_o3d)*(1.d0-fneray(k))+&
-      (ckdown_suv_r(k)+ckapcd)*(fneray(k))
+    ckup_suv_f(k) = ckup_suv_f(k) + ck_aero_o3f*(1.d0-fneray(k))&
+                  + ckapcf * fneray(k)
+    ckdown_suv_r(k) = ckdown_suv_r(k) + ck_aero_o3d*(1.d0-fneray(k)) &
+                    + ckapcd * fneray(k)
 
-    ckdown_suv_f(k) = (ckdown_suv_f(k) +  ck_aero_o3f)*(1.d0-fneray(k))+&
-      (ckdown_suv_f(k)+ckapcf)*(fneray(k))
+    ckdown_suv_f(k) = ckdown_suv_f(k) + ck_aero_o3f*(1.d0-fneray(k))&
+                    + ckapcf * fneray(k)
   enddo
 
   !In addition a source term has to be added in 3D for diffuse radiation
@@ -1221,12 +1218,6 @@ else
 
   enddo
   fos = 0.d0
-  soil_direct_flux = 0.d0
-  soil_global_flux = 0.d0
-  soil_direct_flux_h2o=0.0
-  soil_global_flux_h2o=0.0
-  soil_direct_flux_o3=0.0
-  soil_global_flux_o3=0.0
 endif
 
 ! Compute Boundary conditions for the 3D (Director diFfuse) Solar radiance
@@ -1577,7 +1568,8 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  !> \brief Computes ozone concentration for a given altitude
+  !> \brief Computes ozone amount above a given altitude
+  ! See LH74 equation (17)
 
   !> \param[in]   zh          altitude
 
@@ -1608,7 +1600,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  !> \brief Aborption function of the solar radiation by water vapor
+  !> \brief Absorption function of the solar radiation by water vapor
 
   !> \param[in]       y       optical depth for water vapor
 
@@ -1634,7 +1626,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  !> \brief Aborption derivative-function of the solar radiation by water vapor
+  !> \brief Absorption derivative-function of the solar radiation by water vapor
 
   !> \param[in]       y       optical depth for water vapor
   !> \param[in]       dy      TODO?
@@ -1658,7 +1650,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  !> \brief Aborption function of the solar radiation by ozone
+  !> \brief Absorption function of the solar radiation by ozone
 
   !> \param[in]       x       optical depth for ozone
 
