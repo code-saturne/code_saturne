@@ -789,7 +789,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
   const cs_halo_t *halo = m->halo;
 
-  if (clip_mode < 0)
+  if (clip_mode < 0 || climgp < 0)
     return;
 
   /* The gradient and the variable must be already synchronized */
@@ -5065,7 +5065,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
 
   const cs_halo_t *halo = m->halo;
 
-  if (clip_mode < 0)
+  if (clip_mode < 0 || climgp < 0)
     return;
 
   /* The gradient and the variable must be already synchronized */

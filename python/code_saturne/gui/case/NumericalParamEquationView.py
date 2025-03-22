@@ -785,19 +785,19 @@ class GradientTypeDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
-    def __init__(self, parent=None, boundary=False):
+    def __init__(self, parent=None, category='c_gradient_r'):
         super(GradientTypeDelegate, self).__init__(parent)
         self.parent = parent
-        self.boundary = boundary
+        self.category = category
 
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         row = index.row()
-        if self.boundary:
-            editor.addItem("Automatic")
-        else:
+        if self.category == 'c_gradient_r':
             editor.addItem("Global")
+        else:
+            editor.addItem("Automatic")
         editor.addItem("Green Iter")
         editor.addItem("LSQ")
         editor.addItem("LSQ Ext")
@@ -814,10 +814,7 @@ class GradientTypeDelegate(QItemDelegate):
                 "green_lsq": 4, "green_lsq_ext": 5,
                 "green_vtx": 6}
         row = index.row()
-        if self.boundary:
-            string = index.model().dataScheme[row]['b_gradient_r']
-        else:
-            string = index.model().dataScheme[row]['c_gradient_r']
+        string = index.model().dataScheme[row][self.category]
         idx = dico[string]
         comboBox.setCurrentIndex(idx)
 
@@ -921,11 +918,13 @@ class StandardItemModelGradient(QStandardItemModel):
         self.populateModel()
         self.headers = [self.tr("Name"),
                         self.tr("Volume\nGradient"),
+                        self.tr("Reconstruction\nGradient"),
                         self.tr("Boundary\nReconstruction"),
                         self.tr("Fixed-point\nThreshold"),
                         self.tr("Limiter\nType"),
                         self.tr("Limiter\nFactor")]
-        self.keys = ['name', 'c_gradient_r', 'b_gradient_r', 'epsrgr',
+        self.keys = ['name', 'c_gradient_r', 'b_gradient_r',
+                     'd_gradient_r', 'epsrgr',
                      'imligr', 'climgr']
         self.setColumnCount(len(self.headers))
 
@@ -940,6 +939,14 @@ class StandardItemModelGradient(QStandardItemModel):
         self.tooltips = [
             self.tr("Equation parameter: 'imrgra'\n\n"
                     "Gradient reconstruction scheme\n\n"
+                    "- Green Iter: Green-Gauss with iterative face value reconstruction\n"
+                    "- LSQ: least-squares on standard (face-adjacent) neighborhood\n"
+                    "- LSQ Ext: least-squares on extended neighborhood\n"
+                    "- Green LSQ: Green-Gauss with LSQ gradient face values\n"
+                    "- Green LSQ Ext: Green-Gauss with LSQ Ext gradient face values\n"
+                    "- Green VTX: Green-Gauss with vertex interpolated face values."),
+            self.tr("Equation parameter: 'd_gradient_r'\n\n"
+                    "Reconstruction gradient for diffusion;\n"
                     "- Green Iter: Green-Gauss with iterative face value reconstruction\n"
                     "- LSQ: least-squares on standard (face-adjacent) neighborhood\n"
                     "- LSQ Ext: least-squares on extended neighborhood\n"
@@ -995,6 +1002,7 @@ class StandardItemModelGradient(QStandardItemModel):
             dico = {}
             dico['name']  = name
             dico['c_gradient_r'] = self.NPE.getCellGradientType(name)
+            dico['d_gradient_r'] = self.NPE.getDiffusionGradientType(name)
             dico['b_gradient_r'] = self.NPE.getBoundaryGradientType(name)
             dico['epsrgr'] = self.NPE.getGradientEpsilon(name)
             dico['imligr'] = self.NPE.getGradientLimiter(name)
@@ -1019,17 +1027,17 @@ class StandardItemModelGradient(QStandardItemModel):
 
         if role == Qt.ToolTipRole:
             col = index.column()
-            if col > 0 and col < 6:
+            if col > 0 and col < 7:
                 return self.tooltips[col-1]
             elif col > 0:
                 return self.tr("code_saturne keyword: " + key)
 
         elif role == Qt.DisplayRole:
-            if column in (1, 2):
+            if column in (1, 2, 3):
                 return self.dicoM2V[dico[key]]
-            elif column == 4:
-                return self.dicoM2V_imligr[dico[key]]
             elif column == 5:
+                return self.dicoM2V_imligr[dico[key]]
+            elif column == 6:
                 if self.dataScheme[row]['imligr'] != 'none':
                     return dico[key]
                 else:
@@ -1055,7 +1063,7 @@ class StandardItemModelGradient(QStandardItemModel):
 
         if column == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif column == 5:
+        elif column == 6:
             if self.dataScheme[row]['imligr'] != 'none':
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
@@ -1093,16 +1101,21 @@ class StandardItemModelGradient(QStandardItemModel):
             self.NPE.setBoundaryGradientType(name, b_gradient_r)
 
         elif column == 3:
+            d_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['d_gradient_r'] = d_gradient_r
+            self.NPE.setDiffusionGradientType(name, d_gradient_r)
+
+        elif column == 4:
             v = from_qvariant(value, float)
             self.dataScheme[row]['epsrgr'] = v
             self.NPE.setGradientEpsilon(name, v)
 
-        elif column == 4:
+        elif column == 5:
             imligr = self.dicoV2M_imligr[str(from_qvariant(value, to_text_string))]
             self.dataScheme[row]['imligr'] = imligr
             self.NPE.setGradientLimiter(name, imligr)
 
-        elif column == 5:
+        elif column == 6:
             if value != "":
                 v = from_qvariant(value, float)
                 self.dataScheme[row]['climgr'] = v
@@ -1626,17 +1639,22 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         delegateIMRGRA = GradientTypeDelegate(self.tableViewGradient)
         self.tableViewGradient.setItemDelegateForColumn(1, delegateIMRGRA)
 
-        delegateIMRGRB = GradientTypeDelegate(self.tableViewGradient, boundary=True)
-        self.tableViewGradient.setItemDelegateForColumn(2, delegateIMRGRB)
+        delegateIMRGRD = GradientTypeDelegate(self.tableViewGradient,
+                                              category='d_gradient_r')
+        self.tableViewGradient.setItemDelegateForColumn(2, delegateIMRGRD)
+
+        delegateIMRGRB = GradientTypeDelegate(self.tableViewGradient,
+                                              category='b_gradient_r')
+        self.tableViewGradient.setItemDelegateForColumn(3, delegateIMRGRB)
 
         delegateEPSRGR = GradientFloatDelegate(self.tableViewGradient, 1.0)
-        self.tableViewGradient.setItemDelegateForColumn(3, delegateEPSRGR)
+        self.tableViewGradient.setItemDelegateForColumn(4, delegateEPSRGR)
 
         delegateIMLIGR = GradientLimiterDelegate(self.tableViewGradient)
-        self.tableViewGradient.setItemDelegateForColumn(4, delegateIMLIGR)
+        self.tableViewGradient.setItemDelegateForColumn(5, delegateIMLIGR)
 
         delegateCLIMGR = GradientFloatDelegate(self.tableViewGradient)
-        self.tableViewGradient.setItemDelegateForColumn(5, delegateCLIMGR)
+        self.tableViewGradient.setItemDelegateForColumn(6, delegateCLIMGR)
 
         # Clipping
         self.modelClipping = StandardItemModelClipping(self, self.NPE)

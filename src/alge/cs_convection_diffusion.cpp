@@ -1312,9 +1312,6 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
-  const int nswrgp = eqp.nswrgr;
-  const int imrgra = eqp.imrgra;
-  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int ischcp = eqp.ischcv;
@@ -1323,8 +1320,6 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   const int icoupl = eqp.icoupl;
   const double blencp = eqp.blencv;
   const double blend_st = eqp.blend_st;
-  const double epsrgp = eqp.epsrgr;
-  const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
   const double thetap = eqp.theta;
 
@@ -1403,7 +1398,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -1508,13 +1503,13 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    nswrgp,
+                                    eqp.nswrgr,
                                     0, /* hyd_p_flag */
                                     w_stride,
-                                    iwarnp,
-                                    imligp,
-                                    epsrgp,
-                                    climgp,
+                                    eqp.verbosity,
+                                    (cs_gradient_limit_t)eqp.imligr,
+                                    eqp.epsrgr,
+                                    eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
@@ -2198,8 +2193,6 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
   const int iconvp = eqp.iconv;
   const int nswrgp = eqp.nswrgr;
-  const int imrgra = eqp.imrgra;
-  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int ischcp = eqp.ischcv;
@@ -2208,8 +2201,6 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   const int icoupl = eqp.icoupl;
   const double blencp = eqp.blencv;
   const double blend_st = eqp.blend_st;
-  const double epsrgp = eqp.epsrgr;
-  const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
 
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -2277,7 +2268,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -2384,10 +2375,10 @@ _face_convection_scalar_steady(const cs_field_t           *f,
                                     nswrgp,
                                     0, /* hyd_p_flag */
                                     w_stride,
-                                    iwarnp,
-                                    imligp,
-                                    epsrgp,
-                                    climgp,
+                                    eqp.verbosity,
+                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    eqp.epsrgr,
+                                    eqp.climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
@@ -2913,9 +2904,6 @@ _convection_diffusion_scalar_unsteady
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
-  const int nswrgp = eqp.nswrgr;
-  const int imrgra = eqp.imrgra;
-  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int ischcp = eqp.ischcv;
@@ -2925,8 +2913,6 @@ _convection_diffusion_scalar_unsteady
   cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
   const double blencp = eqp.blencv;
   const double blend_st = eqp.blend_st;
-  const double epsrgp = eqp.epsrgr;
-  const double climgp = eqp.climgr;
   const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -3005,7 +2991,7 @@ _convection_diffusion_scalar_unsteady
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -3130,13 +3116,13 @@ _convection_diffusion_scalar_unsteady
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    nswrgp,
+                                    eqp.nswrgr,
                                     0, /* hyd_p_flag */
                                     w_stride,
-                                    iwarnp,
-                                    imligp,
-                                    epsrgp,
-                                    climgp,
+                                    eqp.verbosity,
+                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    eqp.epsrgr,
+                                    eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
@@ -4094,8 +4080,6 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
   const int iconvp = eqp.iconv;
   const int nswrgp = eqp.nswrgr;
-  const int imrgra = eqp.imrgra;
-  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int ischcp = eqp.ischcv;
@@ -4105,8 +4089,6 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
   const double blencp = eqp.blencv;
   const double blend_st = eqp.blend_st;
-  const double epsrgp = eqp.epsrgr;
-  const double climgp = eqp.climgr;
   const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -4176,7 +4158,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -4292,10 +4274,10 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
                                     nswrgp,
                                     0, /* hyd_p_flag */
                                     w_stride,
-                                    iwarnp,
-                                    imligp,
-                                    epsrgp,
-                                    climgp,
+                                    eqp.verbosity,
+                                    (cs_gradient_limit_t)eqp.imligr,
+                                    eqp.epsrgr,
+                                    eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
@@ -4992,7 +4974,6 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
-  const int imrgra = eqp.imrgra;
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int ischcp = eqp.ischcv;
@@ -5063,7 +5044,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -5705,21 +5686,24 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 /*----------------------------------------------------------------------------*/
 
 static void
-_convection_diffusion_tensor_steady(cs_field_t                  *f,
-                                    const char                  *var_name,
-                                    const cs_equation_param_t   &eqp,
-                                    int                          icvflb,
-                                    int                          inc,
-                                    cs_real_6_t                 *pvar,
-                                    const cs_real_6_t           *pvara,
-                                    const cs_field_bc_coeffs_t  *bc_coeffs_ts,
-                                    const cs_bc_coeffs_solve_t  *bc_coeffs_solve_ts,
-                                    const cs_real_t              i_massflux[],
-                                    const cs_real_t              b_massflux[],
-                                    const cs_real_t              i_visc[],
-                                    const cs_real_t              b_visc[],
-                                    cs_real_63_t                *grad,
-                                    cs_real_6_t                 *rhs)
+_convection_diffusion_tensor_steady
+(
+ cs_field_t                  *f,
+ const char                  *var_name,
+ const cs_equation_param_t   &eqp,
+ int                          icvflb,
+ int                          inc,
+ cs_real_6_t                 *pvar,
+ const cs_real_6_t           *pvara,
+ const cs_field_bc_coeffs_t  *bc_coeffs_ts,
+ const cs_bc_coeffs_solve_t  *bc_coeffs_solve_ts,
+ const cs_real_t              i_massflux[],
+ const cs_real_t              b_massflux[],
+ const cs_real_t              i_visc[],
+ const cs_real_t              b_visc[],
+ cs_real_63_t                *grad,
+ cs_real_6_t                 *rhs
+)
 {
   const cs_real_6_t  *coefa = (const cs_real_6_t  *)bc_coeffs_ts->a;
   const cs_real_66_t *coefb = (const cs_real_66_t *)bc_coeffs_ts->b;
@@ -5732,7 +5716,6 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
-  const int imrgra = eqp.imrgra;
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int ischcp = eqp.ischcv;
@@ -5791,7 +5774,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -7658,7 +7641,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-  cs_gradient_type_by_imrgra(eqp.imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -7751,7 +7734,6 @@ cs_convection_diffusion_vector(int                         idtvar,
       }
     }
 
-    const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
     const cs_real_3_t  *restrict _pvar
       = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
@@ -7765,9 +7747,9 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     inc,
                                     eqp.nswrgr,
                                     eqp.verbosity,
-                                    imligp,
+                                    (cs_gradient_limit_t)(eqp.imligr),
                                     eqp.epsrgr,
-                                    eqp.climgr,
+                                    eqp.d_climgr,
                                     bc_coeffs_v,
                                     (const cs_real_3_t *)_pvar,
                                     val_f,
@@ -8040,7 +8022,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-  cs_gradient_type_by_imrgra(eqp.imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -8088,7 +8070,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                     eqp.verbosity,
                                     imligp,
                                     eqp.epsrgr,
-                                    eqp.climgr,
+                                    eqp.d_climgr,
                                     bc_coeffs_ts,
                                     _pvar,
                                     val_f,
@@ -8291,14 +8273,12 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   const cs_real_t *cofbfp = bc_coeffs->bf;
 
   const int nswrgp = eqp.nswrgr;
-  const int imrgra = eqp.imrgra;
   const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int iwarnp = eqp.verbosity;
   const int icoupl = eqp.icoupl;
   const double epsrgp = eqp.epsrgr;
-  const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
   const double thetap = eqp.theta;
 
@@ -8363,7 +8343,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -8485,7 +8465,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    climgp,
+                                    eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
@@ -9036,16 +9016,10 @@ cs_anisotropic_left_diffusion_vector
    const cs_real_t             i_secvis[],
    cs_real_3_t       *restrict rhs)
 {
-  const int nswrgp = eqp.nswrgr;
   const int idiffp = eqp.idiff;
-  const int imrgra = eqp.imrgra;
-  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
-  const int iwarnp = eqp.verbosity;
   const int icoupl = eqp.icoupl;
-  const double epsrgp = eqp.epsrgr;
-  const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
   const double thetap = eqp.theta;
 
@@ -9108,7 +9082,7 @@ cs_anisotropic_left_diffusion_vector
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -9152,7 +9126,6 @@ cs_anisotropic_left_diffusion_vector
                                        &faces_distant);
   }
 
-
   /* 2. Compute the diffusive part with reconstruction technics */
 
   /* Compute the gradient of the current variable if needed */
@@ -9163,11 +9136,11 @@ cs_anisotropic_left_diffusion_vector
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    nswrgp,
-                                    iwarnp,
-                                    imligp,
-                                    epsrgp,
-                                    climgp,
+                                    eqp.nswrgr,
+                                    eqp.verbosity,
+                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    eqp.epsrgr,
+                                    eqp.d_climgr,
                                     bc_coeffs_v,
                                     _pvar,
                                     val_f,
@@ -9557,15 +9530,10 @@ cs_anisotropic_right_diffusion_vector
    const cs_real_t              weighb[],
    cs_real_3_t        *restrict rhs)
 {
-  const int nswrgp = eqp.nswrgr;
   const int imrgra = eqp.imrgra;
-  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
-  const int iwarnp = eqp.verbosity;
   const int icoupl = eqp.icoupl;
-  const double epsrgp = eqp.epsrgr;
-  const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
   const double thetap = eqp.theta;
 
@@ -9685,11 +9653,11 @@ cs_anisotropic_right_diffusion_vector
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    nswrgp,
-                                    iwarnp,
-                                    imligp,
-                                    epsrgp,
-                                    climgp,
+                                    eqp.nswrgr,
+                                    eqp.verbosity,
+                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    eqp.epsrgr,
+                                    eqp.d_climgr,
                                     bc_coeffs_v,
                                     _pvar,
                                     val_f,
@@ -10264,14 +10232,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   const cs_real_6_t  *cofaf = (const cs_real_6_t  *)bc_coeffs_ts->af;
   const cs_real_66_t *cofbf = (const cs_real_66_t *)bc_coeffs_ts->bf;
 
-  const int nswrgp = eqp.nswrgr;
-  const int imrgra = eqp.imrgra;
-  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
-  const int iwarnp = eqp.verbosity;
-  const double epsrgp = eqp.epsrgr;
-  const double climgp = eqp.climgr;
   const double relaxp = eqp.relaxv;
   const double thetap = eqp.theta;
 
@@ -10321,7 +10283,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -10411,11 +10373,11 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    nswrgp,
-                                    iwarnp,
-                                    imligp,
-                                    epsrgp,
-                                    climgp,
+                                    eqp.nswrgr,
+                                    eqp.verbosity,
+                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    eqp.epsrgr,
+                                    eqp.d_climgr,
                                     bc_coeffs_ts,
                                     _pvar,
                                     val_f,
@@ -10823,7 +10785,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
  * \param[in]     iwgrp         indicator
  *                               - 1 weight gradient by vicosity*porosity
  *                               - weighting determined by field options
- * \param[in]     iwarnp        verbosity
+ * \param[in]     verbosity     verbosity
  * \param[in]     epsrgp        relative precision for the gradient
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
@@ -10852,7 +10814,7 @@ cs_face_diffusion_potential(const int                   f_id,
                             int                         imligp,
                             int                         iphydp,
                             int                         iwgrp,
-                            int                         iwarnp,
+                            int                         verbosity,
                             double                      epsrgp,
                             double                      climgp,
                             cs_real_3_t       *restrict frcxt,
@@ -11020,7 +10982,7 @@ cs_face_diffusion_potential(const int                   f_id,
                                     nswrgp,
                                     iphydp,
                                     w_stride,
-                                    iwarnp,
+                                    verbosity,
                                     (cs_gradient_limit_t)imligp,
                                     epsrgp,
                                     climgp,

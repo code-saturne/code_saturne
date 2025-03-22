@@ -102,6 +102,7 @@ class NumericalParamEquationModel(Model):
         self.default = {}
         self.default['verbosity'] = 0
         self.default['c_gradient_r'] = 'global'
+        self.default['d_gradient_r'] = 'automatic'
         self.default['b_gradient_r'] = 'automatic'
         self.default['epsrgr'] = 1e-4
         self.default['imligr'] = 'none'
@@ -690,6 +691,33 @@ class NumericalParamEquationModel(Model):
             node.xmlRemoveChild('boundary_gradient_type')
         else:
             node.xmlSetData('boundary_gradient_type', value)
+
+
+    @Variables.noUndo
+    def getDiffusionGradientType(self, name):
+        """
+        Return diffusion reconstruction gradient type for specified variable.
+        """
+        node = self._getSchemeNameNode(name)
+        value = node.xmlGetString('diffusion_gradient_type')
+        if not value:
+            value = self.default['d_gradient_r']
+
+        return value
+
+
+    @Variables.undoGlobal
+    def setDiffusionGradientType(self, name, value):
+        """
+        Set diffusion reconstruction gradient type for specified variable.
+        """
+        self.isInList(value, ('automatic', 'green_iter', 'lsq', 'lsq_ext',
+                              'green_lsq', 'green_lsq_ext', 'green_vtx'))
+        node = self._getSchemeNameNode(name)
+        if value == self.default['d_gradient_r']:
+            node.xmlRemoveChild('diffusion_gradient_type')
+        else:
+            node.xmlSetData('diffusion_gradient_type', value)
 
 
     @Variables.noUndo

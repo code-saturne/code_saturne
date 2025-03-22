@@ -961,8 +961,11 @@ cs_equation_param_create(const char         *name,
   eqp->epsilo = 1.e-5;
   eqp->epsrsm = 1.e-4;
   eqp->epsrgr = 1.e-4;
-  eqp->climgr = 1.5;
+  eqp->climgr = -1;
+  eqp->d_climgr = 1.5;
+  eqp->b_climgr = 1.;
   eqp->relaxv = 1.;
+  eqp->d_gradient_r = 2;
   eqp->b_gradient_r = 2;
   eqp->b_diff_flux_rc = 1;
 

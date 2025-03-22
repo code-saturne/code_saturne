@@ -2102,12 +2102,13 @@ cs_parameters_check(void)
                                     eqp->imligr,
                                     -1, 2);
 
-      cs_parameters_is_greater_double(CS_ABORT_DELAYED,
-                                      _(f_desc),
-                                      "equation param climgr "
-                                      "(gradient limitation coefficient)",
-                                      eqp->climgr,
-                                      1.);
+      if (eqp->climgr >= 0)
+        cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                        _(f_desc),
+                                        "equation param climgr "
+                                        "(gradient limitation coefficient)",
+                                        eqp->climgr,
+                                        1.);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),

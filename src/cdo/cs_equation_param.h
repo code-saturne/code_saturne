@@ -426,16 +426,22 @@ typedef struct {
    * (when \ref imrgra = 0).
    *
    * \var climgr
-   * For least squares gradients, volumic factor of gradient limitation
-   * (high value means little limitation).\n
-   * Relevant for all the variables using least-squares gradients for which
-   * \ref imligr > CS_GRADIENT_LIMIT_NONE.
+   * Volume gradient limitation factor (high value means little limitation,
+   * negative value means no limitation).\n
+   * Relevant when \ref imligr > CS_GRADIENT_LIMIT_NONE.
+   * Recommended only for least-squares gradients, as applying a limitation
+   * factor breaks the locally conservative property of Gauss gradients.
+   *
+   * \var d_climgr
+   * Diffusion reconstruction gradient limitation factor (high value means
+   * little limitation, negative value means no limitation).\n
+   * Relevant when \ref imligr > CS_GRADIENT_LIMIT_NONE.
    *
    * \var b_climgr
-   * For least squares gradients, boundary factor of gradient limitation
-   * (high value means little limitation).\n
-   * Relevant for all the variables using least-squares gradients for which
-   * \ref imligr > CS_GRADIENT_LIMIT_NONE.
+   * For least-squares gradient-based boundary reconstruction, factor of gradient
+   * limitation (high value means little limitation, no limitation if negative).
+   * A (default) value of 1 ensures the reconstructed value is with bounds of
+   * adjacent cell values.
    *
    * \var relaxv
    * Relaxation coefficient for the associated variable. This relaxation
@@ -453,14 +459,19 @@ typedef struct {
    * (\f$ k-\epsilon \f$, v2f or \f$ k-\omega \f$ models without coupling) with
    * the unsteady algorithm. Always used with the steady algorithm.
    *
+   * \var d_gradient_r
+   * Type of gradient for diffusion reconstruction
+   * Same codes as for \ref imrgra
+   * (default is 2: least-squares, using extended neighborhood if available)
+   *
    * \var b_gradient_r
    * Type of boundary gradient reconstruction
    * Same codes as for \ref imrgra
    * (default is 2: least-squares, using extended neighborhood if available)
    *
    * \var b_diff_flux_rc
-   * Indicate whether the fluxes (convective and diffusive) and boundary conditions
-   * at the faces should be reconstructed:
+   * Indicate whether the fluxes (convective and diffusive) and boundary
+   * conditions at the faces should be reconstructed:
    * - 0: no reconstruction
    * - 1: reconstruction
    * - Finer-grained limiters may be added in the future.
@@ -496,9 +507,11 @@ typedef struct {
   double epsrsm;
   double epsrgr;
   double climgr;
+  cs_real_t d_climgr;
   cs_real_t b_climgr;
   double relaxv;
 
+  int  d_gradient_r;
   int  b_gradient_r;
   int  b_diff_flux_rc;
 
@@ -519,7 +532,7 @@ typedef struct {
    * Pointers to the definitions of the boundary conditions
    *
    * \var default_enforcement
-   * Type of strategy to enforce an essential boundary conditions (Dirichlet for
+   * Type of strategy to enforce an essential boundary condition (Dirichlet for
    * instance) when no predefined strategy is prescribed.  See \ref
    * cs_param_bc_enforce_t for more details.
    *

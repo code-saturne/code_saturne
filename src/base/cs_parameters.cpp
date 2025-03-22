@@ -389,9 +389,11 @@ static cs_equation_param_t _equation_param_default
    .epsilo = 1.e-5,
    .epsrsm = 1.e-4,
    .epsrgr = 1.e-4,
-   .climgr = 1.5,
+   .climgr = -1.,
+   .d_climgr = 1.5,
    .b_climgr = 1.,
    .relaxv = 1.,
+   .d_gradient_r = 2,
    .b_gradient_r = 2,
    .b_diff_flux_rc = 1,
 
@@ -445,12 +447,13 @@ static cs_equation_param_t _equation_param_default
    .incremental_algo_type = CS_PARAM_N_NL_ALGOS,
    .incremental_algo_cvg =
    {.atol = -1., .rtol = -1., .dtol = -1., .n_max_iter = -1},
-   .incremental_relax_factor = -1.,
-   .incremental_anderson_param = {.n_max_dir = 0, .starting_iter = 0,
-     .max_cond = -1., .beta = 0., .dp_type = CS_PARAM_N_DOTPROD_TYPES },
-    .time_control_owner = false,
-    .time_control = nullptr
-  };
+    .incremental_relax_factor = -1.,
+    .incremental_anderson_param = {.n_max_dir = 0, .starting_iter = 0,
+                                   .max_cond = -1., .beta = 0.,
+                                   .dp_type = CS_PARAM_N_DOTPROD_TYPES},
+   .time_control_owner = false,
+   .time_control = nullptr
+};
 
 /* Space discretisation options structure and associated pointer */
 
@@ -577,9 +580,11 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrsm", _t->epsrsm);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "d_climgr", _t->d_climgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "b_climgr", _t->b_climgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv);
 
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "d_gradient_r", _t->d_gradient_r);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "b_gradient_r", _t->b_gradient_r);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "b_diff_flux_rc", _t->b_diff_flux_rc);
 }

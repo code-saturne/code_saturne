@@ -865,10 +865,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       cs_real_t phit = 0.0;
 
       /* Wall function */
-      if (   icodcl_vel[f_id] == 5
-          && (   icodcl_sc[f_id] == 5
-              || icodcl_sc[f_id] == 6
-              || icodcl_sc[f_id] == 15)
+      if (  (   icodcl_vel[f_id] == 5
+             && (   icodcl_sc[f_id] == 5
+                 || icodcl_sc[f_id] == 6
+                 || icodcl_sc[f_id] == 15))
          || (icodcl_vel[f_id] == 6 && icodcl_sc[f_id] == 6)) {
 
         phit = cofaf_sc[f_id] + cofbf_sc[f_id] * var_ip[f_id];
