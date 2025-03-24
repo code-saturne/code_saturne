@@ -697,7 +697,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
       if (st_def->meta & CS_FLAG_DUAL) {
 
         bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid type of definition for a source term in CDOVB",
+                  "%s: Invalid type of definition for a source term in CDOVCB",
                   __func__);
 
         /* TODO:
@@ -728,7 +728,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
         default:
           bft_error(__FILE__, __LINE__, 0,
-                    " Invalid type of definition for a source term in CDOVB");
+                    " Invalid type of definition for a source term in CDOVCB");
           break;
 
         } /* switch def_type */
