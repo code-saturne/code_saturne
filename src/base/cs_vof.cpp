@@ -60,6 +60,7 @@
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_reducers.h"
 #include "base/cs_rotation.h"
 #include "alge/cs_sles_default.h"
 #include "base/cs_turbomachinery.h"
@@ -1045,6 +1046,7 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
   cs_real_t *cpro_rom = CS_F_(rho)->val;
   cs_real_t *cproa_rom = CS_F_(rho)->val_pre;
   cs_real_t *bpro_rom = CS_F_(rho_b)->val;
+  const cs_real_t *dt = CS_F_(dt)->val;
 
   int icorio = cs_glob_physical_constants->icorio;
   cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
@@ -1144,16 +1146,21 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
     CS_FREE_HD(b_massflux_abs);
   }
 
-  /* Unsteady term  and mass budget */
+  /* Unsteady term and mass budget */
 
   cs_real_t glob_m_budget = 0.;
-  // TODO: Reduction for GPU
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t tinsro =  cell_f_vol[c_id]
-                      * (cpro_rom[c_id]-cproa_rom[c_id]) / CS_F_(dt)->val[c_id];
 
-    glob_m_budget += tinsro + divro[c_id];
-  }
+  ctx.parallel_for_reduce_sum
+    (n_cells, glob_m_budget, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t c_id,
+      CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+
+      cs_real_t tinsro = cell_f_vol[c_id] * (cpro_rom[c_id]-cproa_rom[c_id]) / dt[c_id];
+
+      sum += (tinsro + divro[c_id]);
+  });
+
+  ctx.wait();
 
   cs_parall_sum(1, CS_REAL_TYPE, &glob_m_budget);
 
@@ -1477,11 +1484,17 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   const cs_real_t delta = 1.e-8/pow(tot_vol/n_g_cells,(1./3.));
 
   /* Compute the max of flux/Surf over the entire domain */
-  cs_real_t maxfluxsurf = 0.; // TODO: Max reduction for GPU
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    if (maxfluxsurf < std::abs(i_volflux[f_id])/i_face_surf[f_id])
-      maxfluxsurf = std::abs(i_volflux[f_id])/i_face_surf[f_id];
-  }
+  cs_real_t maxfluxsurf;
+  struct cs_reduce_max1r reducer;
+
+  ctx.parallel_for_reduce
+    (n_i_faces, maxfluxsurf, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t f_id, cs_real_t &res) {
+
+    res = cs_math_fabs(i_volflux[f_id])/i_face_surf[f_id];
+  });
+
+  ctx.wait();
 
   cs_parall_max(1, CS_REAL_TYPE, &maxfluxsurf);
 
@@ -2048,21 +2061,21 @@ cs_vof_solve_void_fraction(int  iterns)
   /* Clipping: only if min/max principle is not satisfied for cavitation
      ------------------------------------------------------------------- */
 
-  cs_lnum_t iclmax = 0;
-  cs_lnum_t iclmin = 0;
-
   if (  (i_vof_mass_transfer != 0 && dt[0] > dtmaxg)
       || i_vof_mass_transfer == 0) {
 
     /* Compute min and max */
-    cs_real_t vmin = cvar_voidf[0];
-    cs_real_t vmax = cvar_voidf[0];
+    struct cs_data_2r rd;
+    struct cs_reduce_min1r_max1r reducer;
 
-    // TODO: max reduction on GPU
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      vmin = cs_math_fmin(vmin, cvar_voidf[c_id]);
-      vmax = cs_math_fmax(vmax, cvar_voidf[c_id]);
-    }
+    ctx.parallel_for_reduce
+      (n_cells, rd, reducer,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_2r &res) {
+      res.r[0] = cvar_voidf[c_id];
+      res.r[1] = cvar_voidf[c_id];
+    });
+
+    ctx.wait();
 
     /* Get the min and max clipping */
 
@@ -2080,37 +2093,48 @@ cs_vof_solve_void_fraction(int  iterns)
       cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., voidf_clipped);
     }
 
+    struct cs_data_2i rd_sum;
+    rd_sum.i[0] = 0;
+    rd_sum.i[1] = 0;
+    struct cs_reduce_sum2i reducer_sum;
+
     if (scmaxp > scminp) {
-#     pragma omp parallel for reduction(+:iclmax, iclmin)  \
-        if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      ctx.parallel_for_reduce
+        (n_cells, rd_sum, reducer_sum,
+         [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_2i &res) {
+
+        res.i[0] = 0, res.i[1] = 0;
+
         if (cvar_voidf[c_id] > scmaxp) {
-          iclmax += + 1;
+          res.i[0] = 1;
 
           if (clip_voidf_id >= 0)
             voidf_clipped[c_id] = cvar_voidf[c_id] - scmaxp;
 
           cvar_voidf[c_id] = scmaxp;
         }
+
         if (cvar_voidf[c_id] < scminp) {
-          iclmin += 1;
+          res.i[1] = 1;
 
           if (clip_voidf_id >= 0)
             voidf_clipped[c_id] = cvar_voidf[c_id] - scminp;
 
           cvar_voidf[c_id] = scminp;
         }
-      }
+      });
 
+      ctx.wait();
     }
 
     cs_log_iteration_clipping_field(volf2->id,
-                                    iclmin,
-                                    iclmax,
-                                    &vmin,
-                                    &vmax,
-                                    &iclmin,
-                                    &iclmax);
+                                    rd_sum.i[1],
+                                    rd_sum.i[0],
+                                    &rd.r[0],
+                                    &rd.r[1],
+                                    &rd_sum.i[1],
+                                    &rd_sum.i[0]);
 
   }
 

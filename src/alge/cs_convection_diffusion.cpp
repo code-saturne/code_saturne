@@ -3718,19 +3718,21 @@ _convection_diffusion_scalar_unsteady
   ctx.wait();
 
   if (eqp.verbosity >= 2) {
-
     cs_gnum_t n_upwind = 0;
+
     if (i_upwind != nullptr) {
-#     pragma omp parallel for reduction(+:n_upwind)
-      for (cs_lnum_t i = 0; i < n_i_faces; i++)
-        n_upwind += i_upwind[i];
+      ctx.parallel_for_reduce_sum
+        (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
+         (cs_lnum_t i,
+          CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
+        sum += i_upwind[i];
+      });
+
+      ctx.wait();
+      cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
       n_upwind = m->n_g_i_faces;
-
-    /* Sum number of clippings */
-    if (!pure_upwind)
-      cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
@@ -4769,20 +4771,21 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   } /* pure upwind, without slope test, with slope test */
 
   if (eqp.verbosity >= 2 && iconvp == 1) {
-
     cs_gnum_t n_upwind = 0;
+
     if (i_upwind != nullptr) {
-#     pragma omp parallel for reduction(+:n_upwind)
-      for (cs_lnum_t i = 0; i < n_i_faces; i++) {
-        n_upwind += i_upwind[i];
-      }
+      ctx.parallel_for_reduce_sum
+        (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
+         (cs_lnum_t i,
+          CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
+        sum += i_upwind[i];
+      });
+
+      ctx.wait();
+      cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
       n_upwind = m->n_g_i_faces;
-
-    /* Sum number of clippings */
-    if (!pure_upwind)
-      cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
@@ -5447,11 +5450,18 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
   if (iwarnp >= 2 && i_upwind != nullptr) {
     cs_gnum_t n_upwind = 0;
     const cs_lnum_t n_i_faces = m->n_i_faces;
-#   pragma omp parallel for reduction(+:n_upwind)
-    for (int i = 0; i < n_i_faces; i++) {
-      n_upwind += i_upwind[i];
+
+    if (i_upwind != nullptr) {
+      ctx.parallel_for_reduce_sum
+        (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
+         (cs_lnum_t i,
+          CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
+        sum += i_upwind[i];
+      });
+
+      ctx.wait();
+      cs_parall_counter(&n_upwind, 1);
     }
-    cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
@@ -6950,17 +6960,20 @@ _convection_diffusion_unsteady_strided
 
   if (eqp.verbosity >= 2) {
     cs_gnum_t n_upwind = 0;
+
     if (i_upwind != nullptr) {
-#     pragma omp parallel for reduction(+:n_upwind)
-      for (int i = 0; i < n_i_faces; i++) {
-        n_upwind += i_upwind[i];
-      }
+      ctx.parallel_for_reduce_sum
+        (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
+         (cs_lnum_t i,
+          CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
+        sum += i_upwind[i];
+      });
+
+      ctx.wait();
+      cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
       n_upwind = m->n_g_i_faces;
-
-    if (!pure_upwind)
-      cs_parall_counter(&n_upwind, 1);
 
     bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,

@@ -151,6 +151,7 @@ cs_probe.h \
 cs_prototypes.h \
 cs_random.h \
 cs_range_set.h \
+cs_reducers.h \
 cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
