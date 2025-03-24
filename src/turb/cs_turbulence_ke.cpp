@@ -1109,8 +1109,6 @@ cs_turbulence_ke(int              phase_id,
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t rho   = cromo[c_id];
       cs_real_t visct = cpro_pcvto[c_id];
-      cs_real_t xeps  = cvara_ep[c_id];
-      cs_real_t xk    = cvara_k[c_id];
 
       /* Explicit Buoyant terms */
       gk[c_id] = -visct*grad_dot_g[c_id];
@@ -1128,7 +1126,6 @@ cs_turbulence_ke(int              phase_id,
   }
   else
     cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., gk);
-
 
   /* In v2f, we store the production in prdv2f which will be complete further
      for containing the complete production term */
@@ -1832,7 +1829,7 @@ cs_turbulence_ke(int              phase_id,
   }
 
   /* k-Epsilon coupling (kecou == 1)
-   * ================================*/
+   * =============================== */
 
   /* Second order is not taken into account */
   if (cs_glob_turb_rans_model->ikecou == 1) {
@@ -1891,7 +1888,7 @@ cs_turbulence_ke(int              phase_id,
   }
 
   /* Finalization of the Right Hand Side when activating 2nd time order
-   * ===================================================================*/
+   * ================================================================== */
 
   if (istprv >= 0) {
     cs_real_t thetp1 = 1. + thets;
