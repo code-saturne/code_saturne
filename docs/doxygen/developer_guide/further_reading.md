@@ -600,7 +600,7 @@ on several rules.
 
 ### C Preprocessor macros in code_saturne
 
-- code_saturne defines several preprocessor macros, among which the following:
+code_saturne defines several preprocessor macros, among which the following:
   - \ref CS_ABS(a): absolute value of a
   - \ref CS_MAX(a, b): maximum of a and b
   - \ref CS_MIN(a, b): minimum of a and b
@@ -610,16 +610,41 @@ on several rules.
   `double fmaxf(float x, float y)`;
   - They do not have multiple macro argument evaluation side effects
   - They are applicable only to `double` or `float` values, though automatic
-    type casting in C allows use of either (with a different precision).
+    type casting in C allows use of either (with a different precision, and
+    a possible performance penalty).
   - Applying them to integers would lead to non-natural rounding and
     overflow behavior.
-  - They cannot be used on a GPU.
   The C++ language also defines `std::max(T x, T y)` which will work with
-  any base type (and classes which define a `>` type relation), but man
+  any base type (and classes which define a `>` type relation), but may
   not work on a GPU.
 - For floating-point values of type `cs_real_t`, code_saturne defines
   `cs_math_fmax` which is prefered as it avoids the side effects of macros
-  but will work on a GPU.
+  and will work on a GPU.
+
+Two macros of special importance are:
+  - \ref BEGIN_C_DECLS
+    - In C++, expands to
+      ```extern "C" {```
+    - Empty in C.
+  - \ref END_C_DECLS
+    - In C++, expands to
+      ```}```
+    - Empty in C.
+
+Using `extern "C"` in C++ tells the C++ compiler to generate C-linkable code,
+with no [name mangling](https://en.wikipedia.org/wiki/Name_mangling).
+Code enclosed in these sections can be called from C code.
+If a header file includes C++ contructs with no C equivalents, that
+code must also be protected by an
+```{.cpp}
+#ifdef __cplusplus
+...
+#endif
+```
+sequence so as to be ignored by the C compiler.
+Starting with code_saturne 9.1, we will not try to ensure C compatibility
+anymore, so these constructs are important mainly in regard to versions
+9.0 and older.
 
 ### Preprocessors in various programming languages
 
