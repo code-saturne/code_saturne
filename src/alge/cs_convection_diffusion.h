@@ -1002,7 +1002,6 @@ END_C_DECLS
  * \param[in]     f_id         field id
  * \param[in]     ctx          Reference to dispatch context
  * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
  * \param[out]    grdpa        upwind gradient
  * \param[in]     pvar         values
@@ -1015,7 +1014,6 @@ void
 cs_slope_test_gradient(int                         f_id,
                        cs_dispatch_context        &ctx,
                        int                         inc,
-                       cs_halo_type_t              halo_type,
                        const cs_real_3_t          *grad,
                        cs_real_3_t                *grdpa,
                        const cs_real_t            *pvar,
@@ -1065,6 +1063,8 @@ void
 cs_cell_courant_number(const cs_field_t     *f,
                        cs_dispatch_context  &ctx,
                        cs_real_t            *courant);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* cplusplus */
 

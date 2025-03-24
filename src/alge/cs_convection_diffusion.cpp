@@ -179,7 +179,6 @@ _beta_limiter_denom(cs_field_t                 *f,
 
   const int ischcp = eqp->ischcv;
   const int ircflp = eqp->ircflu;
-  const int imrgra = eqp->imrgra;
   const cs_real_t thetap = eqp->theta;
   const cs_real_t blencp = eqp->blencv;
 
@@ -203,7 +202,7 @@ _beta_limiter_denom(cs_field_t                 *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -1164,7 +1163,6 @@ _slope_test_gradient_strided_d
  * been synchronized.
  *
  * \param[in]     ctx          Reference to dispatch context
- * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
  * \param[out]    grdpa        upwind gradient
  * \param[in]     pvar         values
@@ -1177,7 +1175,6 @@ template <cs_lnum_t stride>
 static void
 _slope_test_gradient_strided
   (cs_dispatch_context         &ctx,
-   const cs_halo_type_t         halo_type,
    const cs_real_t              grad[][stride][3],
    cs_real_t                  (*restrict grdpa)[stride][3],
    const cs_real_t              pvar[][stride],
@@ -1225,7 +1222,7 @@ _slope_test_gradient_strided
 
   if (m->halo != nullptr)
     _sync_strided_gradient_halo<stride>(m,
-                                        halo_type,
+                                        CS_HALO_STANDARD,
                                         use_gpu,
                                         grdpa);
 
@@ -1547,7 +1544,6 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
       cs_slope_test_gradient(f_id,
                              ctx,
                              inc,
-                             halo_type,
                              (const cs_real_3_t *)grad,
                              gradst,
                              _pvar,
@@ -2138,7 +2134,6 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   CS_FREE(grad);
   CS_FREE(gradup);
   CS_FREE(gradst);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2268,7 +2263,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp.imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -2416,7 +2411,6 @@ _face_convection_scalar_steady(const cs_field_t           *f,
       cs_slope_test_gradient(f_id,
                              ctx,
                              inc,
-                             halo_type,
                              (const cs_real_3_t *)grad,
                              gradst,
                              _pvar,
@@ -3161,7 +3155,6 @@ _convection_diffusion_scalar_unsteady
       cs_slope_test_gradient(f_id,
                              ctx,
                              inc,
-                             halo_type,
                              (const cs_real_3_t *)grad,
                              gradst,
                              _pvar,
@@ -4317,7 +4310,6 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
       cs_slope_test_gradient(f_id,
                              ctx,
                              inc,
-                             halo_type,
                              (const cs_real_3_t *)grad,
                              gradst,
                              _pvar,
@@ -5042,15 +5034,6 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
   cs_real_33_t *grdpa = nullptr;
 
-  /* Choose gradient type */
-
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-
-  cs_gradient_type_by_imrgra(eqp.imrgra,
-                             &gradient_type,
-                             &halo_type);
-
   const cs_real_3_t  *restrict _pvar
     = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
@@ -5081,7 +5064,6 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
     CS_MALLOC_HD(grdpa, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
     _slope_test_gradient_strided<3>(ctx,
-                                    halo_type,
                                     (const cs_real_33_t *)grad,
                                     grdpa,
                                     _pvar,
@@ -5779,15 +5761,6 @@ _convection_diffusion_tensor_steady
 
   cs_real_63_t *grdpa = nullptr;
 
-  /* Choose gradient type */
-
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-
-  cs_gradient_type_by_imrgra(eqp.imrgra,
-                             &gradient_type,
-                             &halo_type);
-
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
@@ -5821,7 +5794,6 @@ _convection_diffusion_tensor_steady
     CS_MALLOC(grdpa, n_cells_ext, cs_real_63_t);
 
     _slope_test_gradient_strided<6>(ctx,
-                                    halo_type,
                                     (const cs_real_63_t *)grad,
                                     grdpa,
                                     _pvar,
@@ -6379,15 +6351,11 @@ _convection_diffusion_unsteady_strided
 
   cs_alloc_mode_t amode = ctx.alloc_mode(true);
 
-  /* Choose gradient type */
-
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
   if (pvar != nullptr && halo != nullptr) {
-    cs_halo_sync_r(m->halo, halo_type, ctx.use_gpu(), pvar);
+    cs_halo_sync_r(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), pvar);
   }
   if (pvara == nullptr)
     pvara = (const var_t *)pvar;
@@ -6427,7 +6395,6 @@ _convection_diffusion_unsteady_strided
     CS_MALLOC_HD(grdpa, n_cells_ext, grad_t, amode);
 
     _slope_test_gradient_strided<stride>(ctx,
-                                         halo_type,
                                          (const grad_t *)grad,
                                          grdpa,
                                          _pvar,
@@ -9543,7 +9510,6 @@ cs_anisotropic_right_diffusion_vector
    const cs_real_t              weighb[],
    cs_real_3_t        *restrict rhs)
 {
-  const int imrgra = eqp.imrgra;
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int icoupl = eqp.icoupl;
@@ -9610,7 +9576,7 @@ cs_anisotropic_right_diffusion_vector
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(imrgra,
+  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
@@ -12373,7 +12339,6 @@ cs_cell_courant_number(const cs_field_t    *f,
  * \param[in]     f_id         field id
  * \param[in]     ctx          Reference to dispatch context
  * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
  * \param[out]    grdpa        upwind gradient
  * \param[in]     pvar         values
@@ -12386,7 +12351,6 @@ void
 cs_slope_test_gradient(int                         f_id,
                        cs_dispatch_context        &ctx,
                        int                         inc,
-                       cs_halo_type_t              halo_type,
                        const cs_real_3_t          *grad,
                        cs_real_3_t                *grdpa,
                        const cs_real_t            *pvar,
@@ -12437,7 +12401,7 @@ cs_slope_test_gradient(int                         f_id,
   /* Synchronization for parallelism or periodicity */
 
   if (m->halo != nullptr) {
-    cs_halo_sync_r(m->halo, halo_type, use_gpu, grdpa);
+    cs_halo_sync_r(m->halo, CS_HALO_STANDARD, use_gpu, grdpa);
   }
 
   if (cs_glob_timer_kernels_flag > 0) {
