@@ -122,7 +122,7 @@ _variable_equation_param_uninit(cs_field_t  *f)
 
     eqp->isstpc = -999;
     eqp->nswrsm = -1;
-    eqp->thetav = -1.;
+    eqp->theta = -1.;
     eqp->blencv = -1.;
     eqp->epsilo = -1.;
     eqp->epsrsm = -1.;

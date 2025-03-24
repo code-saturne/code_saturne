@@ -2242,7 +2242,7 @@ _additional_fields_stage_2(void)
     eqp->idifft = 0;
     eqp->idften = 1;
     eqp->relaxv = 1.; // No relaxation, even for steady algorithm
-    eqp->thetav = 1;
+    eqp->theta = 1;
 
     _add_property_field("meteo_density",
                         "Meteo density",

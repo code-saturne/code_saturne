@@ -1960,7 +1960,7 @@ _pressure_correction_fv(int                   iterns,
   /* Pressure norm */
   cs_real_t rnormp = sqrt(cs_gdot(n_cells, res, res));
 
-  if (eqp_p->iwarni >= 2)
+  if (eqp_p->verbosity >= 2)
     cs_log_printf(CS_LOG_DEFAULT,
                   _(" %-16s : normed residuals = %14.6e\n"),
                   f_p->name, rnormp);
@@ -2353,7 +2353,7 @@ _pressure_correction_fv(int                   iterns,
     /*  Writing */
     sinfo->n_it += niterf;
 
-    if (eqp_p->iwarni >= 2) {
+    if (eqp_p->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _(fmt_sweep_residual_relax),
                      f_p->name, isweep, residual, eqp_p->relaxv);
@@ -2375,7 +2375,7 @@ _pressure_correction_fv(int                   iterns,
     sinfo->res_norm = 0.;
 
   /*  Writing */
-  if (eqp_p->iwarni >= 1) {
+  if (eqp_p->verbosity >= 1) {
     if (residual <= eqp_p->epsrsm*rnormp)
       cs_log_printf(CS_LOG_DEFAULT,
                     _(fmt_sweep_residual_info),

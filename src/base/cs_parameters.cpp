@@ -324,50 +324,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Structure of variable calculation options mappable to Fortran
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-
-  int     iwarni;
-  int     iconv;
-  int     istat;
-  int     idircl;
-  int     ndircl;
-  int     idiff;
-  int     idifft;
-  int     idften;
-  int     iswdyn;
-  int     ischcv;
-  int     ibdtso;
-  int     isstpc;
-  int     nswrgr;
-  int     nswrsm;
-  int     imvisf;
-  int     imrgra;
-  int     imligr;
-  int     ircflu;
-  int     iwgrec;       /* gradient calculation
-                           - 0: standard (default)
-                           - 1: weighted (could be used with imvisf = 1) */
-  int     icoupl;       /* internal coupling
-                           - -1: not coupled (default)
-                           -  1: coupled                                 */
-
-  double  theta;
-  double  blencv;
-  double  blend_st;
-  double  epsilo;
-  double  epsrsm;
-  double  epsrgr;
-  double  climgr;
-  double  relaxv;
-
-} cs_f_var_cal_opt_t;
-
-/*----------------------------------------------------------------------------*/
-
 /* Definition of user variable */
 
 typedef struct {
@@ -427,7 +383,7 @@ static cs_equation_param_t _equation_param_default
    .ircflu = 1,
    .iwgrec = 0,
    .icoupl = -1,
-   {.theta = 1},
+   .theta = 1,
    .blencv = 1.,
    .blend_st = 0.,
    .epsilo = 1.e-5,

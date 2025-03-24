@@ -489,10 +489,7 @@ typedef struct {
   int ircflu;
   int iwgrec;
   int icoupl;
-  union {
-    double theta;
-    double thetav;   /* deprecated */
-  };
+  double theta;
   double blencv;
   double blend_st;
   double epsilo;
