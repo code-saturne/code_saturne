@@ -148,8 +148,8 @@ pression est impos\'e \`a partir du profil de pression hydrostatique.
 \bigskip
 
 {\bf Vitesse et turbulence}~: traitement standard (voir la documentation des
-sous-programmes \fort{condli}
-et \fort{clptur}).
+sous-programmes \fort{cs\_boundary\_conditions}
+et \fort{cs\_boundary\_conditions\_set\_coeffs\_turb}).
 
 {\bf Scalaires passifs}~: traitement standard
 (flux nul par d\'efaut impos\'e dans \fort{typecl}).
@@ -1205,8 +1205,8 @@ avec la valeur pr\'ec\'edente de $\rho_{rus\,{b}_{ik}}$, on a~:
 
 Pour le flux de diffusion d'\'energie, les conditions aux limites sont
 impos\'ees de mani\`ere similaire \`a ce qui est d\'ecrit dans
-la documentation de \fort{clptur} et de
-\fort{condli}. La figure~(\ref{Cfbl_Cfxtcl_fig_flux_cfxtcl}) rappelle quelques notations
+la documentation de \fort{cs\_boundary\_conditions\_set\_coeffs\_turb} et de
+\fort{cs\_boundary\_conditions}. La figure~(\ref{Cfbl_Cfxtcl_fig_flux_cfxtcl}) rappelle quelques notations
 usuelles et l'\'equation~(\ref{Cfbl_Cfxtcl_eq_flux_cfxtcl}) traduit la conservation du flux
 normal au bord pour la variable $f$.
 
@@ -1244,7 +1244,7 @@ f_{b,int}
 \end{equation}
 
 Les coefficients d'\'echange sont d\'efinis comme suit\footnote{On rappelle que, comme
-dans \fort{condli}, $\alpha$ d\'esigne $\lambda+C_p\,\frac{\mu_t}{\sigma_t}$
+dans \fort{cs\_boundary\_conditions}, $\alpha$ d\'esigne $\lambda+C_p\,\frac{\mu_t}{\sigma_t}$
 si $f$ est la temp\'erature,
 $\frac{\lambda}{C_p}+\frac{\mu_t}{\sigma_t}$ si $f$ repr\'esente l'enthalpie.
 Le coefficient $C$ repr\'esente $C_p$ pour la temp\'erature et vaut
@@ -1455,7 +1455,7 @@ aurait fourni une valeur \`a imposer en Dirichlet),
 Les types de fronti\`ere (\var{ITYPFB}) et les valeurs n\'ecessaires
 (\var{ICODCL}, \var{RCODCL}) sont impos\'es par l'utilisateur dans \fort{uscfcl}.
 
-On convertit ensuite ces donn\'ees dans \fort{condli} pour qu'elles
+On convertit ensuite ces donn\'ees dans \fort{cs\_boundary\_conditions} pour qu'elles
 soient directement utilisables lors du calcul des matrices et des seconds membres.
 
 Pour cela, \fort{cfxtcl} permet de r\'ealiser le calcul des valeurs de bord et,
@@ -1471,8 +1471,8 @@ le sous-programme \fort{typecl} compl\`ete quelques valeurs par d\'efaut
 de \var{ICODCL} et de \var{RCODCL}, en particulier pour les scalaires passifs.
 
 Apr\`es \fort{cfxtcl} et \fort{typecl}, les tableaux \var{ICODCL} et \var{RCODCL}
-sont complets. Ils sont utilis\'es dans la suite de \fort{condli} et en particulier
-dans \fort{clptur} pour construire les tableaux \var{COEFA} et \var{COEFB}
+sont complets. Ils sont utilis\'es dans la suite de \fort{cs\_boundary\_conditions} et en particulier
+dans \fort{cs\_boundary\_conditions\_set\_coeffs\_turb} pour construire les tableaux \var{COEFA} et \var{COEFB}
 (pour l'\'energie, on dispose de deux couples (\var{COEFA}, \var{COEFB}) afin de
 traiter les parois).
 
@@ -1655,7 +1655,7 @@ stocke dans \var{RCODCL(IFAC,ISCA(IENERG),1)} (on ne reconstruit pas les
 valeurs de $u^2$ et $\varepsilon_{sup}$ au bord, cf. \S\ref{Cfbl_Cfxtcl_prg_a_traiter}).
 
 \`A partir de ces valeurs de \var{ICODCL} et \var{RCODCL},
-on renseigne ensuite dans \fort{clptur}
+on renseigne ensuite dans \fort{cs\_boundary\_conditions\_set\_coeffs\_turb}
 les tableaux de conditions aux limites  permettant le calcul du flux~:
 \var{COEFA(*,ICLRTP(ISCA(IENERG),ICOEFF))} et
 \var{COEFB(*,ICLRTP(ISCA(IENERG),ICOEFF))} (noter
@@ -1679,7 +1679,7 @@ on transf\`ere la valeur du flux de  \var{RCODCL(IFAC,ISCA(ITEMPK),3)}
 \`a \var{RCODCL(IFAC,ISCA(IENERG),3)}.
 
 \`A partir de ces valeurs de \var{ICODCL} et \var{RCODCL},
-on renseigne ensuite dans \fort{condli} les tableaux de conditions aux limites
+on renseigne ensuite dans \fort{cs\_boundary\_conditions} les tableaux de conditions aux limites
 permettant le calcul du flux,
 \var{COEFA(*,ICLRTP(ISCA(IENERG),ICOEFF))} et
 \var{COEFB(*,ICLRTP(ISCA(IENERG),ICOEFF))} (noter
@@ -1709,7 +1709,7 @@ o\`u l'utilisateur aurait besoin d'en calculer le gradient.
 
 Pour les fronti\`eres qui ne sont pas des parois \`a temp\'erature ou
 \`a flux thermique impos\'e, les conditions aux limites de l'\'energie et
-de la temp\'erature sont compl\'et\'ees classiquement dans \fort{condli} selon
+de la temp\'erature sont compl\'et\'ees classiquement dans \fort{cs\_boundary\_conditions} selon
 les choix faits dans \fort{cfxtcl} pour \var{ICODCL} et \var{RCODCL}.
 
 En particulier,
@@ -1777,7 +1777,7 @@ lors des reconstructions sur maillage non orthogonal.
 %le rapport $\displaystyle\frac{C_p}{C_v}$, mais il serait
 %souhaitable de corriger en ce sens le calcul de \var{W1} pour \fort{viscfa} dans
 %le sous-programme \fort{cfener} et le calcul similaire de \var{HINT} dans
-%\fort{condli} et \fort{clptur} (RAS pour les conversions en couplage avec \syrthes).
+%\fort{cs\_boundary\_conditions} et \fort{cs\_boundary\_conditions\_set\_coeffs\_turb} (RAS pour les conversions en couplage avec \syrthes).
 
 Apporter un compl\'ement de test sur une cavit\'e ferm\'ee
 sans vitesse et sans gravit\'e, avec flux de bord ou temp\'erature de bord impos\'ee.

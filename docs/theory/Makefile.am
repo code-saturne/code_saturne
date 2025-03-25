@@ -42,7 +42,7 @@ cfmsvl.tex \
 cfqdmv.tex \
 cfxtcl.tex \
 clptrg.tex \
-clptur.tex \
+cs_boundary_conditions_set_coeffs_turb.tex \
 clsyvt.tex \
 cs_equation_iterative_solve.tex \
 combustion_coal.tex \
@@ -50,14 +50,14 @@ combustion_gas.tex \
 combustion_intro.tex \
 combustion_thermo.tex \
 comprs.tex \
-condli.tex \
+cs_boundary_conditions.tex \
 cs_solve_equation.tex \
 elbase.tex \
 ext_neighborhood.tex \
 goveqn.tex \
 gradrc.tex \
 ground_water.tex \
-inimas.tex \
+cs_mass_flux.tex \
 introd.tex \
 itrmas.tex \
 lagrangian.tex \
@@ -67,13 +67,13 @@ mesh_quality.tex \
 cs_solve_navier_stokes.tex \
 operat.tex \
 cs_velocity_prediction.tex \
-resopv.tex \
+cs_pressure_correction.tex \
 spadis.tex \
 timstp.tex \
 turbul.tex \
 summary.tex \
-turrij.tex \
-viscfa.tex \
+cs_turbulence_rij.tex \
+cs_face_viscosity.tex \
 visort.tex \
 visecv.tex
 

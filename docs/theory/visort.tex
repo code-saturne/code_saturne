@@ -32,9 +32,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Dans ce sous-programme est calcul\'e le coefficient de diffusion ``orthotrope'' aux faces. Ce type de coefficient se rencontre pour la diffusion de $R_{\,ij}$ et
-$\varepsilon$ en $R_{\,ij}-\varepsilon$ ( {\it cf.} \fort{turrij}), ainsi que pour la
+$\varepsilon$ en $R_{\,ij}-\varepsilon$ ( {\it cf.} \fort{cs\_turbulence\_rij}), ainsi que pour la
 correction de pression dans le cadre de l'algorithme avec couplage
-vitesse-pression renforcé (\fort{resopv}).\\
+vitesse-pression renforcé (\fort{cs\_pressure\_correction}).\\
 Ce coefficient fait intervenir la valeur de la viscosité aux faces multipliée par
 le rapport surface de la face sur la distance alg\'ebrique $\overline{I'J'}$,
 rapport résultant de l'intégration du terme de diffusion.
@@ -95,7 +95,7 @@ est :
 \item n\'eglig\'ee dans le cas du calcul des échelles de temps relatives au
 couplage vitesse-pression renforcé,
 \item trait\'ee en explicite dans les termes de diffusion de
-$R_{\,ij}-\varepsilon$ (\emph{cf.} \fort{turrij}).\\
+$R_{\,ij}-\varepsilon$ (\emph{cf.} \fort{cs\_turbulence\_rij}).\\
 \end{itemize}
 L'intégration implicite du terme de diffusion s'\'ecrit :
 \begin{equation}

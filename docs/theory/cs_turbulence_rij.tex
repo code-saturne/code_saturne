@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{turrij}
+\programme{cs\_turbulence\_rij}
 \label{ap:turrij}
 
 \hypertarget{turrij}{}
@@ -410,7 +410,7 @@ Le dernier terme est implicite relativement \`a la variable $\varepsilon$ et cor
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-La num\'ero de la phase trait\'ee fait partie des arguments de \fort{turrij}. On
+La num\'ero de la phase trait\'ee fait partie des arguments de \fort{cs\_turbulence\_rij}. On
 omettra volontairement de le pr\'eciser dans ce qui suit, on indiquera par $(\ )$ la
 notion de tableau s'y rattachant.
 
@@ -924,7 +924,7 @@ fois la valeur obtenue au pas de temps pr\'ec\'edent.} contient l'option $\var{I
 Sauf mention explicite, $\phi$ repr\'esentera une tension de Reynolds ou la dissipation turbulente ($\phi = R_{ij} \ \text{ou} \ \varepsilon$).
 
 \begin{itemize}
-\item {La vitesse utilis\'ee pour le calcul de la production est explicite. Est-ce qu'une implicitation peut am\'eliorer la pr\'ecision temporelle de $\phi$ \footnote{Cette remarque peut \^etre g\'en\'eralis\'ee. En effet, peut-on envisager d'actualiser les variables d\'ej\`a r\'esolues (sans r\'eactualiser les variables turbulentes apr\`es leur r\'esolution)? Ceci obligerait \`a modifier les sous-programmes tels que \fort{condli} qui sont appel\'es au d\'ebut de la boucle en temps.} ?}
+\item {La vitesse utilis\'ee pour le calcul de la production est explicite. Est-ce qu'une implicitation peut am\'eliorer la pr\'ecision temporelle de $\phi$ \footnote{Cette remarque peut \^etre g\'en\'eralis\'ee. En effet, peut-on envisager d'actualiser les variables d\'ej\`a r\'esolues (sans r\'eactualiser les variables turbulentes apr\`es leur r\'esolution)? Ceci obligerait \`a modifier les sous-programmes tels que \fort{cs\_boundary\_conditions} qui sont appel\'es au d\'ebut de la boucle en temps.} ?}
 \item {Dans quelle mesure le terme d'\'echo de paroi est-il valide ? En effet, ce terme est remis en question par certains auteurs.}
 \item {On peut envisager la r\'esolution d'un syst\`eme hyperbolique pour les
 tensions de Reynolds afin d'introduire un couplage avec le champ de vitesse.}

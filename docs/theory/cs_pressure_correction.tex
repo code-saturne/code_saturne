@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{resopv}\label{ap:resopv}
+\programme{cs\_pressure\_correction}\label{ap:resopv}
 
 \hypertarget{resopv}{}
 
@@ -33,7 +33,7 @@
 The velocity projection (or pressure correction) step is effected in this subroutine, called from \fort{cs\_solve\_navier\_stokes}. The equation of motion (prediction) is solved in \fort{cs\_velocity\_prediction} with a fully explicit treatment of the pressure term. The resulting velocity field does not satisfy the continuity equation. Two correction algorithms are proposed:
 \begin{enumerate}
 \item The algorithm that we will call "weak velocity-pressure coupling". This algorithm is implemented extensively in industrial source codes. It only couples the velocity and the pressure through the mass term (it is the algorithm proposed by default). It consists of a \textit{SIMPLEC}-type algorithm, similar to \textit{SIMPLE} although the latter  accounts for the simplified diagonals of the convection, diffusion and implicit source terms in addition to the mass term.
-\item The strengthened velocity-pressure coupling algorithm (option \var{IPUCOU  = 1}). This algorithm couples the velocity and pressure through all of the terms (convection, diffusion and implicit source terms) of the equation of motion, though it is still approximate. In practice, the advantage of this algorithm is that it allows large time steps without entirely decoupling the velocity and the pressure.
+\item The strengthened velocity-pressure coupling algorithm (option \var{ipucou  = 1}). This algorithm couples the velocity and pressure through all of the terms (convection, diffusion and implicit source terms) of the equation of motion, though it is still approximate. In practice, the advantage of this algorithm is that it allows large time steps without entirely decoupling the velocity and the pressure.
 \end{enumerate}
 
 Taking $\delta p$ as the pressure increment ({\it i.e.} $p^{n+1} = p^n+\delta p$) and $\widetilde{\vect{u}}$ the velocity field resulting from the prediction step, from a continuous point of view the projection step essentially comes down to solving a Poisson equation for the pressure:
@@ -354,7 +354,7 @@ The facet gradients, denoted $(\grad{(\delta{p})^k})_{\,f_{\,ij}}$ and $(\grad{(
 \section*{Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-We present hereafter the algorithm as it is written in \fort{resopv}.
+We present hereafter the algorithm as it is written in \fort{cs\_pressure\_correction}.
 
 $\vect{T}^n$ designates an array of dimension $3$ containing the local time steps in each direction (for use with ''strengthened velocity-pressure coupling"). We keep the same notation for the ''weak velocity-pressure coupling" algorithm although in this case the time steps are equal in the three spatial directions.
 
@@ -363,8 +363,8 @@ $\vect{T}^n$ designates an array of dimension $3$ containing the local time step
 \item calculation of the diffusion coefficient at the cell faces for use in the Laplacian of pressure (the diffusion coefficient uses the calculation time step or that of the ''strengthened velocity-pressure coupling" algorithm). One of two cases will apply, depending on the algorithm selected by the user for the velocity-pressure coupling:
 
 \begin{enumerate}
-\item Call to \fort{viscfa} with a total viscosity equal to the time step $\Delta t_I^n$ for the "weak velocity-pressure coupling" algorithm (\var{IPUCOU} = 0),
-\item Call to \fort{visort} with a diagonal total viscosity for the "strengthened velocity-pressure coupling" algorithm (\var{IPUCOU} = 1). It is at this level that $\widetilde{T}^n_{\,ij}$ is calculated. The equivalent time steps calculated in the subroutine \fort{cs\_velocity\_prediction} beforehand are stored in the array \var{TPUCOU}.
+\item Call to \fort{viscfa} with a total viscosity equal to the time step $\Delta t_I^n$ for the "weak velocity-pressure coupling" algorithm (\var{ipucou} = 0),
+\item Call to \fort{visort} with a diagonal total viscosity for the "strengthened velocity-pressure coupling" algorithm (\var{ipucou} = 1). It is at this level that $\widetilde{T}^n_{\,ij}$ is calculated. The equivalent time steps calculated in the subroutine \fort{cs\_velocity\_prediction} beforehand are stored in the array \var{TPUCOU}.
 \end{enumerate}
 
 \item Call to \fort{matrix} for construction of the pressure diffusion matrix (without the reconstruction terms which cannot be taken into account if we wish to preserve a sparse matrix structure) using the previously calculated viscosity and the array \var{COEFB} of pressure boundary conditions $p^n$ (we impose a homogeneous Neumann condition on $\delta p$ for a Neumann condition on $p$ and \textit{vice versa}.
@@ -372,14 +372,14 @@ $\vect{T}^n$ designates an array of dimension $3$ containing the local time step
 \end{itemize}
 
 \etape{Calculation of the normalized residual \var{RNORMP}}
-Since version 1.1.0.s, this step is accomplished within the subroutine \fort{cs\_velocity\_prediction} and the normalized residual transmitted \textit{via} the variable RNORMP(IPHAS).
+Since version 1.1.0.s, this step is accomplished within the subroutine \fort{cs\_velocity\_prediction} and the normalized residual transmitted \textit{via} the variable RNORMP.
 
 At this level of \CS \, the array \var{TRAV} contains the second member obtained from \fort{cs\_velocity\_prediction} without the user source terms. The computational procedure for the calculation of \var{RNORMP} is enumerated below:
 
 \begin{enumerate}
 
 \item $\displaystyle \var{TRAV}(I) = \widetilde{\vect{u}}_{\,I} - \frac {\Delta t^n_I} {\rho_I \ |\Omega_i|} \var{TRAV}(I) + \frac{(\rho_I - \rho_0 ) \Delta t^n_I }{\rho_I} \vect{g}$,
-\item Call to \fort{inimas} to compute the mass flux of the vector $\var{TRAV}$ (we calculated at each face  $\displaystyle \rho_{\,ij} \ \var{TRAV}_{\,ij}\,.\,\vect{S}_{\,ij}$, where $\vect{S}$ is the surface vector ). We set the total number of sweeps (or iterations) to $1$ (\var{NSWRP} = 1), which means that there is no reconstruction of the gradients during this run through \fort{inimas} (to save computation time). The boundary condition arrays passed into \fort{inimas} contain those of the velocity $\vect{u}^n$.
+\item Call to \fort{cs\_mass\_flux} to compute the mass flux of the vector $\var{TRAV}$ (we calculated at each face  $\displaystyle \rho_{\,ij} \ \var{TRAV}_{\,ij}\,.\,\vect{S}_{\,ij}$, where $\vect{S}$ is the surface vector ). We set the total number of sweeps (or iterations) to $1$ (\var{NSWRP} = 1), which means that there is no reconstruction of the gradients during this run through \fort{cs\_mass\_flux} (to save computation time). The boundary condition arrays passed into \fort{cs\_mass\_flux} contain those of the velocity $\vect{u}^n$.
 \item Call to \fort{divmas} to compute the divergence at each cell of the above mass flux, which is stored in the working are \var{W1}.
 \item The mass source terms stored in the array \var{SMACEL} are added to \var{W1}.
 \begin{equation}
@@ -402,7 +402,7 @@ $$ \var{TRAV}(I) = \widetilde{\vect{u}}_{\,I} + \frac{\var{ARAK}}{\rho_I} \ \ten
 
 \var{ARAK} represents the "Arakawa" coefficient, so-named within the code, whose default setting is $1$ although this value can be modified by the user in \fort{usini1}. To simplify the notations, we define $\var{ARAK} = \alpha_{\,Arak}$.
 
-\item Call to \fort{inimas} which calculates the mass flux in \var{TRAV}. The boundary conditions applied in this case are those of the velocity (\textit{cf.} subroutine \fort{cs\_solve\_navier\_stokes}). This is still just an approximation of the boundary conditions contained in \var{TRAV}. The mass flux (\textit{cf.} subroutine \fort{inimas} for further details concerning the calculation at the boundary faces) is thus equal to:
+\item Call to \fort{cs\_mass\_flux} which calculates the mass flux in \var{TRAV}. The boundary conditions applied in this case are those of the velocity (\textit{cf.} subroutine \fort{cs\_solve\_navier\_stokes}). This is still just an approximation of the boundary conditions contained in \var{TRAV}. The mass flux (\textit{cf.} subroutine \fort{cs\_mass\_flux} for further details concerning the calculation at the boundary faces) is thus equal to:
 
 $$m_{\,ij} = \left[\rho \widetilde{\vect{u}}+ \displaystyle \alpha_{\,Arak}\ \tens{T}^n\ \grad(p^n)\right]_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$$
 
@@ -489,7 +489,7 @@ There are a number of outstanding issues that still need to be resolved:
 \item We could verify the normalized residual calculation (see \fort{cs\_velocity\_prediction}).
 
 \item When computing the mass flux of $\displaystyle \widetilde{u}+
-\frac{\alpha}{\rho}\ \tens{T}\ \grad{p^n}$ in \fort{inimas}, we use the boundary conditions of the velocity at the time level $n$. The validity of this approach remains to be clarified, particularly for the
+\frac{\alpha}{\rho}\ \tens{T}\ \grad{p^n}$ in \fort{cs\_mass\_flux}, we use the boundary conditions of the velocity at the time level $n$. The validity of this approach remains to be clarified, particularly for the
 boundary conditions at the outlet. More generally, further analysis of the boundary conditions of the variables in
 \fort{cs\_solve\_navier\_stokes} is required. This issue is linked to the problem highlighted at the end of \fort{visecv}.
 
