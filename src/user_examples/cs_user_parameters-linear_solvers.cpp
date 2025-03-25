@@ -429,13 +429,14 @@ cs_user_linear_solvers(void)
                                              nullptr,
                                              CS_MULTIGRID_V_CYCLE);
 
-    cs_multigrid_set_coarsening_options(mg,
-                                        3,                             /* aggregation_limit (default 3) */
-                                        CS_GRID_COARSENING_DEFAULT,    /* coarsening_type (default 0) */
-                                        10,                            /* n_max_levels (default 25) */
-                                        30,                            /* min_g_cells (default 30) */
-                                        0.95,                          /* P0P1 relaxation (default 0.95) */
-                                        20);                           /* postprocessing (default 0) */
+    cs_multigrid_set_coarsening_options
+      (mg,
+       3,                             /* aggregation_limit (default 3) */
+       CS_GRID_COARSENING_DEFAULT,    /* coarsening_type (default 0) */
+       10,                            /* n_max_levels (default 25) */
+       30,                            /* min_g_cells (default 30) */
+       0.95,                          /* P0P1 relaxation (default 0.95) */
+       20);                           /* postprocessing (default 0) */
 
     cs_multigrid_set_solver_options
       (mg,
