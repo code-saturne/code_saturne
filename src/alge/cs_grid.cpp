@@ -544,9 +544,10 @@ _aggregation_stats_log(const cs_grid_t  *f,
   }
 #endif
 
-  bft_printf("       aggregation min = %ld; max = %ld; mean = %8.2f\n",
-             (long)aggr_min, (long)aggr_max,
-             (double)aggr_tot/(double)c_n_rows_g);
+  if (c_n_rows_g > 0)  // May be locally 0 in case of grid merging
+    bft_printf("       aggregation min = %ld; max = %ld; mean = %8.2f\n",
+               (long)aggr_min, (long)aggr_max,
+               (double)aggr_tot/(double)c_n_rows_g);
 
   cs_lnum_t aggr_count = aggr_max - aggr_min + 1;
 
@@ -2134,11 +2135,9 @@ _sync_merged_cell_data(cs_grid_t  *g)
  * Append face arrays and counts for grid grouping and merging.
  *
  * parameters:
- *   g           <-> pointer to grid structure being merged
- *   n_faces     <-- number of faces to append
- *   new_cel_num <-> new cell numbering for local cells
- *                   in: defined for local cells
- *                   out: updated also for halo cells
+ *   g         <-> pointer to grid structure being merged
+ *   n_faces   <-- number of faces to append
+ *   face_list <-> list of faces to append
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2286,73 +2285,6 @@ _append_face_data(cs_grid_t   *g,
     }
 
     g->n_faces = 0;
-  }
-
-  /* Merge shared faces */
-
-  if (g->n_faces > 0) {
-
-    const cs_lnum_t n_faces_o = g->n_faces;
-    cs_lnum_2_t *face_cells = g->_face_cell;
-
-    bool *dup;
-    CS_MALLOC(dup, g->n_faces, bool);
-    dup[0] = false;
-
-    /* Identify duplicate faces */
-
-    cs_lnum_t  *order;
-    CS_MALLOC(order, g->n_faces, cs_lnum_t);
-    cs_order_lnum_allocated_s(nullptr, nullptr, 2, order, n_faces_o);
-
-    for (cs_lnum_t i = 1; i < n_faces_o; i++) {
-      cs_lnum_t j = order[i-1], k = order[i];
-      if (   face_cells[j][0] == face_cells[k][0]
-          && face_cells[j][1] == face_cells[k][1])
-        dup[k] = true;
-    }
-
-    CS_FREE(order);
-
-    /* Now remove duplicate entries */
-
-    cs_lnum_t j = 1;
-    for (cs_lnum_t i = 1; i < n_faces_o; i++) {
-      if (dup[i] == true || j == i)
-        continue;
-      face_cells[j][0] = face_cells[i][0];
-      face_cells[j][1] = face_cells[i][1];
-      if (g->symmetric == true)
-        g->_xa[j] = g->_xa[i];
-      else {
-        g->_xa[j*2] = g->_xa[i*2];
-        g->_xa[j*2+1] = g->_xa[i*2+1];
-      }
-      if (g->relaxation > 0) {
-        g->_xa0[j] = g->_xa0[i];
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          g->_face_normal[j*3+k] = g->_face_normal[i*3+k];
-          g->xa0ij[j*3+k] = g->xa0ij[i*3+k];
-        }
-      }
-      j++;
-    }
-
-    if (j < n_faces_o) {
-      g->n_faces = j;
-
-      CS_REALLOC(g->_face_cell, g->n_faces, cs_lnum_2_t);
-      if (g->symmetric == true)
-        CS_REALLOC(g->_xa, g->n_faces, cs_real_t);
-      else
-        CS_REALLOC(g->_xa, g->n_faces*2, cs_real_t);
-      if (g->relaxation > 0) {
-        CS_REALLOC(g->_face_normal, g->n_faces*3, cs_real_t);
-        CS_REALLOC(g->_xa0, g->n_faces, cs_real_t);
-        CS_REALLOC(g->xa0ij, g->n_faces*3, cs_real_t);
-      }
-    }
-
   }
 
   g->face_cell = (const cs_lnum_2_t  *)(g->_face_cell);
@@ -2525,14 +2457,14 @@ _merge_grids(cs_grid_t  *g,
 
     for (face_id = 0; face_id < g->n_faces; face_id++) {
       bool use_face = true;
-      cs_lnum_t ii = g->face_cell[face_id][0] - g->n_rows + 1;
-      cs_lnum_t jj = g->face_cell[face_id][1] - g->n_rows + 1;
-      if (ii > 0) {
-        if (halo_cell_flag[ii - 1] == false)
+      cs_lnum_t ii = g->face_cell[face_id][0] - g->n_rows;
+      cs_lnum_t jj = g->face_cell[face_id][1] - g->n_rows;
+      if (ii > -1) {
+        if (halo_cell_flag[ii] == false)
           use_face = false;
       }
-      else if (jj > 0) {
-        if (halo_cell_flag[jj - 1] == false)
+      else if (jj > -1) {
+        if (halo_cell_flag[jj] == false)
           use_face = false;
       }
       if (use_face == true)
@@ -5283,7 +5215,7 @@ _verify_matrix(const cs_grid_t  *g)
   CS_FREE(val);
 
 #if defined(HAVE_MPI)
-  if (cs_glob_mpi_comm != MPI_COMM_NULL) {
+  if (g->comm != MPI_COMM_NULL) {
     cs_real_t _vmin = vmin, _vmax = vmax;
     MPI_Allreduce(&_vmin, &vmin, 1, CS_MPI_REAL, MPI_MIN, g->comm);
     MPI_Allreduce(&_vmax, &vmax, 1, CS_MPI_REAL, MPI_MAX, g->comm);
@@ -7200,7 +7132,8 @@ _native_from_msr(cs_grid_t  *g)
                            &x_val);
 
   {
-    CS_FREE(g->_da);
+    if (g->_da != d_val)
+      CS_FREE(g->_da);
     CS_MALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
     g->da = g->_da;
 
@@ -8316,16 +8249,6 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     /* Project coarsening */
 
-    if (c->use_faces) {
-      CS_FREE(cc->coarse_face);
-      CS_FREE(cc->_face_cell);
-      cc->face_cell = nullptr;
-      if (msr_gather == false)
-        _coarsen_face_cell(f, cc);
-      else if (c->relaxation > 0)
-        _compute_coarse_quantities_msr_with_faces(f, c, verbosity);
-    }
-
     _project_coarse_row_to_parent(cc);
     CS_FREE_HD(cc->coarse_row);
     cc->coarse_row = c->coarse_row;
@@ -8352,14 +8275,15 @@ cs_grid_coarsen(const cs_grid_t      *f,
     if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
         || c->n_g_rows < merge_rows_glob_threshold) {
       cs_matrix_type_t cm_type = cs_matrix_get_type(c->matrix);
-      if (c->_xa == nullptr && c->n_faces > 0)
+      if (cm_type != CS_MATRIX_NATIVE)
         _native_from_msr(c);
       _merge_grids(c, merge_stride, verbosity);
       if (c->_matrix != nullptr) {
         cs_matrix_destroy(&(c->_matrix));
         cs_matrix_structure_destroy(&(c->matrix_struct));
       }
-      _matrix_from_native(cm_type, c);
+      if (cm_type != CS_MATRIX_NATIVE)
+        _matrix_from_native(cm_type, c);
     }
   }
 
