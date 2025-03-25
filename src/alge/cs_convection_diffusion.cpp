@@ -11683,9 +11683,6 @@ cs_diffusion_potential(const int                   f_id,
                                     nullptr, /* internal coupling */
                                     grad);
 
-    double r2 = sqrt(cs_gdot(n_cells*3, (cs_real_t *)grad, (cs_real_t *)grad));
-    bft_printf("grad phyd: %10.14le\n", r2);
-
     if (_pvar != pvar)
       CS_FREE(_pvar);
 
