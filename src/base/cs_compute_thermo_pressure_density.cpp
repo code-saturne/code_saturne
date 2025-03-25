@@ -124,8 +124,6 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
 {
   const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
-  const int *bc_type = cs_glob_bc_type;
-
   const cs_lnum_t ncmast = cs_glob_wall_condensation->ncmast;
   const cs_lnum_t nfbpcd = cs_glob_wall_condensation->nfbpcd;
   const cs_lnum_t *ifbpcd = cs_glob_wall_condensation->ifbpcd;
@@ -145,19 +143,15 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   if (CS_F_(rho)->n_time_vals > 1)
     cromo = CS_F_(rho)->val_pre;
 
-  cs_real_t debin  = 0.0;
-  cs_real_t debout = 0.0;
-  cs_real_t debtot = 0.0;
+  double debtot = 0.0;
 
   cs_dispatch_context ctx;
 
   ctx.parallel_for_reduce_sum(n_b_faces, debtot,
       [=] CS_F_HOST_DEVICE(cs_lnum_t face_id,
-      CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+      CS_DISPATCH_REDUCER_TYPE(double) &sum) {
      sum -= bmasfl[face_id];
   });
-
-  ctx.wait();
 
   // Computation of the inlet mass flux imposed on the cells volume
 
@@ -173,7 +167,7 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
 
   ctx.parallel_for_reduce_sum(ncetsm, debtot,
     [=] CS_F_HOST_DEVICE(cs_lnum_t i,
-    CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+    CS_DISPATCH_REDUCER_TYPE(double) &sum) {
     cs_lnum_t c_id = icetsm[i];
     sum += smacel[i]*cell_vol[c_id];
   });
@@ -186,7 +180,7 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
 
   ctx.parallel_for_reduce_sum(nfbpcd, debtot,
     [=] CS_F_HOST_DEVICE(cs_lnum_t i,
-    CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+    CS_DISPATCH_REDUCER_TYPE(double) &sum) {
     cs_lnum_t face_id = ifbpcd[i];
     sum += b_face_surf[face_id]*spcond[i];
   });
@@ -202,17 +196,17 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
 
     ctx.parallel_for_reduce_sum(ncmast, debtot,
       [=] CS_F_HOST_DEVICE(cs_lnum_t i,
-      CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+      CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       const cs_lnum_t c_id = ltmast[i];
       const cs_lnum_t v_id = izmast[i];
-      const cs_real_t surfbm
-        = volume_surf[v_id]*cell_vol[c_id]/volume_measure[v_id];
+      const cs_real_t surfbm =   volume_surf[v_id]*cell_vol[c_id]
+                               / volume_measure[v_id];
       sum += surfbm*svcond[i];
     });
   }
   ctx.wait();
 
-  cs_parall_sum(1, CS_REAL_TYPE, &debtot);
+  cs_parall_sum(1, CS_DOUBLE, &debtot);
 
   /* Global leak
      ----------- */
@@ -235,24 +229,22 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   if ((cs_restart_present() == 0) && (cs_glob_time_step->nt_cur == 1))
     cs_array_copy(n_cells, crom, cromo);
 
-  cs_real_t romoy, roamoy;
-
-  struct  cs_data_2r rd;
-  struct  cs_reduce_sum2r reducer;
+  struct cs_data_2r rd;
+  struct cs_reduce_sum2r reducer;
 
   ctx.parallel_for_reduce
     (n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
      (cs_lnum_t c_id, cs_data_2r &res) {
-      res.r[0] = crom[c_id]*cell_vol[c_id];
-      res.r[1] = cromo[c_id]*cell_vol[c_id];
-    });
+    res.r[0] = crom[c_id]*cell_vol[c_id];
+    res.r[1] = cromo[c_id]*cell_vol[c_id];
+  });
+
   ctx.wait();
 
-  romoy = rd.r[0];
-  roamoy = rd.r[1];
+  cs_parall_sum(2, CS_REAL_TYPE, rd.r);
 
-  cs_parall_sum(1, CS_REAL_TYPE, &romoy);
-  cs_parall_sum(1, CS_REAL_TYPE, &roamoy);
+  cs_real_t romoy = rd.r[0];
+  cs_real_t roamoy = rd.r[1];
 
   // Compute the thermodynamic pressure p_ther^(n+1)
   const cs_real_t dt = CS_F_(dt)->val[0];

@@ -7601,14 +7601,6 @@ cs_convection_diffusion_vector(int                         idtvar,
     var_name = (const char *)(f->name);
   }
 
-  cs_internal_coupling_t *cpl = nullptr;
-  if (eqp.icoupl > 0) {
-    assert(f_id != -1);
-    const int coupling_key_id = cs_field_key_id("coupling_entity");
-    int coupling_id = cs_field_get_key_int(f, coupling_key_id);
-    cpl = cs_internal_coupling_by_id(coupling_id);
-  }
-
   /* Parallel or device dispatch */
 
   cs_dispatch_context ctx;
