@@ -311,7 +311,6 @@ cs_gradient_scalar_synced_input(const char                    *var_name,
  * \param[in]   bc_coeffs_v     boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or nullptr
- * \param[in]   cpl             associated internal coupling, or nullptr
  * \param[out]  grad            gradient
                                 (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
@@ -331,7 +330,6 @@ cs_gradient_vector_synced_input(const char                    *var_name,
                                 const cs_real_t                var[][3],
                                 const cs_real_t                val_f[][3],
                                 const cs_real_t                c_weight[],
-                                const cs_internal_coupling_t  *cpl,
                                 cs_real_t                      grad[][3][3]);
 
 /*----------------------------------------------------------------------------*/

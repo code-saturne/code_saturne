@@ -7734,7 +7734,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     (const cs_real_3_t *)_pvar,
                                     val_f,
                                     gweight, /* weighted gradient */
-                                    cpl,
                                     (cs_real_33_t *)grad);
 
   }
@@ -9125,7 +9124,6 @@ cs_anisotropic_left_diffusion_vector
                                     _pvar,
                                     val_f,
                                     nullptr, /* weighted gradient */
-                                    cpl,
                                     gradv);
 
   }
@@ -9641,7 +9639,6 @@ cs_anisotropic_right_diffusion_vector
                                     _pvar,
                                     val_f,
                                     nullptr, /* weighted gradient */
-                                    cpl,
                                     grad);
 
   }
