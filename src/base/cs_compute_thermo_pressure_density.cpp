@@ -48,6 +48,7 @@
 
 #include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
+#include "base/cs_dispatch.h"
 #include "cdo/cs_domain.h"
 #include "cdo/cs_equation.h"
 #include "base/cs_field.h"
@@ -61,6 +62,7 @@
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_reducers.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_wall_condensation.h"
@@ -147,20 +149,15 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   cs_real_t debout = 0.0;
   cs_real_t debtot = 0.0;
 
-  // Computation of mass flux imposed on the boundary faces
+  cs_dispatch_context ctx;
 
-# pragma omp parallel for reduction(-:debin, debout) if (n_b_faces > CS_THR_MIN)
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    if (   (bc_type[face_id] == CS_INLET)
-        || (bc_type[face_id] == CS_CONVECTIVE_INLET)    )
-      // the inlet mass flux integrated in space
-      debin -= bmasfl[face_id];
-    else if (   (bc_type[face_id] == CS_OUTLET)
-             || (bc_type[face_id] == CS_FREE_INLET)    )
-       debout -= bmasfl[face_id];
-  }
+  ctx.parallel_for_reduce_sum(n_b_faces, debtot,
+      [=] CS_F_HOST_DEVICE(cs_lnum_t face_id,
+      CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+     sum -= bmasfl[face_id];
+  });
 
-  debtot = debin + debout;
+  ctx.wait();
 
   // Computation of the inlet mass flux imposed on the cells volume
 
@@ -174,21 +171,25 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
                                       &smacel,
                                       nullptr);
 
-  for (cs_lnum_t ii = 0; ii < ncetsm; ii++) {
-    const cs_lnum_t c_id = icetsm[ii];
-    debtot += smacel[ii] * cell_vol[c_id];
-  }
+  ctx.parallel_for_reduce_sum(ncetsm, debtot,
+    [=] CS_F_HOST_DEVICE(cs_lnum_t i,
+    CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+    cs_lnum_t c_id = icetsm[i];
+    sum += smacel[i]*cell_vol[c_id];
+  });
 
   /* Flow rate computation associated to the condensation phenomena
      -------------------------------------------------------------- */
 
   /* Sink source term associated to
      the surface condensation modelling */
-# pragma omp parallel for reduction(+:debtot) if (nfbpcd > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
-    const cs_lnum_t face_id = ifbpcd[ii];
-    debtot += b_face_surf[face_id] * spcond[ii];
-  }
+
+  ctx.parallel_for_reduce_sum(nfbpcd, debtot,
+    [=] CS_F_HOST_DEVICE(cs_lnum_t i,
+    CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+    cs_lnum_t face_id = ifbpcd[i];
+    sum += b_face_surf[face_id]*spcond[i];
+  });
 
   /* Sink source term associated to
      the metal structures condensation modelling */
@@ -199,14 +200,17 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
     const cs_real_t *volume_measure
       = cs_glob_wall_cond_0d_thermal->volume_measure;
 
-    for (cs_lnum_t ii = 0; ii < ncmast; ii++) {
-      const cs_lnum_t c_id = ltmast[ii];
-      const cs_lnum_t v_id = izmast[ii];
+    ctx.parallel_for_reduce_sum(ncmast, debtot,
+      [=] CS_F_HOST_DEVICE(cs_lnum_t i,
+      CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+      const cs_lnum_t c_id = ltmast[i];
+      const cs_lnum_t v_id = izmast[i];
       const cs_real_t surfbm
         = volume_surf[v_id]*cell_vol[c_id]/volume_measure[v_id];
-      debtot += surfbm*svcond[ii];
-    }
+      sum += surfbm*svcond[i];
+    });
   }
+  ctx.wait();
 
   cs_parall_sum(1, CS_REAL_TYPE, &debtot);
 
@@ -231,14 +235,21 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   if ((cs_restart_present() == 0) && (cs_glob_time_step->nt_cur == 1))
     cs_array_real_copy(n_cells, crom, cromo);
 
-  // initialization
-  cs_real_t romoy  = 0.0;
-  cs_real_t roamoy = 0.0;
-# pragma omp parallel reduction(+:romoy, roamoy) if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      romoy += crom[c_id]*cell_vol[c_id];
-      roamoy += cromo[c_id]*cell_vol[c_id];
-  }
+    cs_real_t romoy, roamoy;
+
+  struct  cs_data_2r rd;
+  struct  cs_reduce_sum2r reducer;
+
+  ctx.parallel_for_reduce
+    (n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t c_id, cs_data_2r &res) {
+      res.r[0] = crom[c_id]*cell_vol[c_id];
+      res.r[1] = cromo[c_id]*cell_vol[c_id];
+    });
+  ctx.wait();
+
+  romoy = rd.r[0];
+  roamoy = rd.r[1];
 
   cs_parall_sum(1, CS_REAL_TYPE, &romoy);
   cs_parall_sum(1, CS_REAL_TYPE, &roamoy);

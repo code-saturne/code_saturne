@@ -122,6 +122,22 @@ struct cs_reduce_sum2i {
   }
 };
 
+struct cs_reduce_sum2r {
+  using T = cs_data_2r;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.r[0] = 0;
+    a.r[1] = 0;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.r[0] += b.r[0];
+    a.r[1] += b.r[1];
+  }
+};
+
 /*============================================================================
  * Templated function definitions
  *============================================================================*/

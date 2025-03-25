@@ -832,18 +832,18 @@ cs_wall_condensation_create(void)
     _wall_cond.nvolumes = 1;
 
   // Mesh related quantities
-  CS_MALLOC(_wall_cond.ifbpcd, _wall_cond.nfbpcd, cs_lnum_t);
-  CS_MALLOC(_wall_cond.itypcd, _wall_cond.nfbpcd * n_var, cs_lnum_t);
-  CS_MALLOC(_wall_cond.izzftcd, _wall_cond.nfbpcd, cs_lnum_t);
-  CS_MALLOC(_wall_cond.spcond, _wall_cond.nfbpcd * n_var, cs_real_t);
-  CS_MALLOC(_wall_cond.hpcond, _wall_cond.nfbpcd, cs_real_t);
-  CS_MALLOC(_wall_cond.twall_cond, _wall_cond.nfbpcd, cs_real_t);
-  CS_MALLOC(_wall_cond.thermal_condensation_flux, _wall_cond.nfbpcd, cs_real_t);
-  CS_MALLOC(_wall_cond.convective_htc, _wall_cond.nfbpcd, cs_real_t);
-  CS_MALLOC(_wall_cond.condensation_htc, _wall_cond.nfbpcd, cs_real_t);
-  CS_MALLOC(_wall_cond.total_htc, _wall_cond.nfbpcd, cs_real_t);
-  CS_MALLOC(_wall_cond.flthr, _wall_cond.nfbpcd, cs_real_t);
-  CS_MALLOC(_wall_cond.dflthr, _wall_cond.nfbpcd, cs_real_t);
+  CS_MALLOC_HD(_wall_cond.ifbpcd, _wall_cond.nfbpcd, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.itypcd, _wall_cond.nfbpcd * n_var, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.izzftcd, _wall_cond.nfbpcd, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.spcond, _wall_cond.nfbpcd * n_var, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.hpcond, _wall_cond.nfbpcd, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.twall_cond, _wall_cond.nfbpcd, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.thermal_condensation_flux, _wall_cond.nfbpcd, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.convective_htc, _wall_cond.nfbpcd, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.condensation_htc, _wall_cond.nfbpcd, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.total_htc, _wall_cond.nfbpcd, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.flthr, _wall_cond.nfbpcd, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.dflthr, _wall_cond.nfbpcd, cs_real_t, cs_alloc_mode);
 
   // Zone related quantities
   CS_MALLOC(_wall_cond.izcophc, _wall_cond.nzones, cs_lnum_t);
@@ -888,11 +888,11 @@ cs_wall_condensation_create(void)
     _wall_cond.zprojcond[3 * i + 2] = 0.0;
   }
 
-  CS_MALLOC(_wall_cond.ltmast, _wall_cond.ncmast, cs_lnum_t);
-  CS_MALLOC(_wall_cond.itypst, _wall_cond.ncmast * n_var, cs_lnum_t);
-  CS_MALLOC(_wall_cond.svcond, _wall_cond.ncmast * n_var, cs_real_t);
-  CS_MALLOC(_wall_cond.izmast, _wall_cond.ncmast, cs_lnum_t);
-  CS_MALLOC(_wall_cond.flxmst, _wall_cond.ncmast, cs_real_t);
+  CS_MALLOC_HD(_wall_cond.ltmast, _wall_cond.ncmast, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.itypst, _wall_cond.ncmast * n_var, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.svcond, _wall_cond.ncmast * n_var, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.izmast, _wall_cond.ncmast, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(_wall_cond.flxmst, _wall_cond.ncmast, cs_real_t, cs_alloc_mode);
   CS_MALLOC(_wall_cond.itagms, _wall_cond.nvolumes, cs_lnum_t);
 
   cs_array_lnum_fill_zero(_wall_cond.ncmast, _wall_cond.ltmast);
@@ -986,11 +986,9 @@ cs_wall_condensation_initialize(void)
      a 1-D thermal model with implicit numerical scheme */
   wall_cond->nztag1d = 0;
   for (cs_lnum_t iz = 0; iz < wall_thermal->nzones; iz++) {
-    for (cs_lnum_t ii = 0; ii < wall_cond->nfbpcd; ii++) {
-      if (wall_cond->izzftcd[ii] == iz && wall_cond->iztag1d[iz] == 1)
-        wall_cond->nztag1d
-          = cs_math_fmax(wall_cond->iztag1d[iz], wall_cond->nztag1d);
-    }
+    if (wall_cond->iztag1d[iz] == 1)
+      wall_cond->nztag1d
+        = cs_math_fmax(wall_cond->iztag1d[iz], wall_cond->nztag1d);
   }
 
   cs_parall_max(1, CS_INT_TYPE, &wall_cond->nztag1d);

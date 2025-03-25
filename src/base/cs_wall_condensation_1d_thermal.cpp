@@ -297,9 +297,9 @@ cs_wall_condensation_0d_thermal_create(cs_lnum_t nvolumes, cs_lnum_t ncmast)
   CS_MALLOC(_wall_cond_0d_thermal.volume_cp, nvolumes, cs_real_t);
   CS_MALLOC(_wall_cond_0d_thermal.volume_lambda, nvolumes, cs_real_t);
   CS_MALLOC(_wall_cond_0d_thermal.volume_mass, nvolumes, cs_real_t);
-  CS_MALLOC(_wall_cond_0d_thermal.volume_surf, nvolumes, cs_real_t);
+  CS_MALLOC_HD(_wall_cond_0d_thermal.volume_surf, nvolumes, cs_real_t, cs_alloc_mode);
   CS_MALLOC(_wall_cond_0d_thermal.volume_t0, nvolumes, cs_real_t);
-  CS_MALLOC(_wall_cond_0d_thermal.volume_measure, nvolumes, cs_real_t);
+  CS_MALLOC_HD(_wall_cond_0d_thermal.volume_measure, nvolumes, cs_real_t, cs_alloc_mode);
 
   memset(_wall_cond_0d_thermal.volume_t, 0, ncmast * sizeof(cs_real_2_t));
   cs_array_real_fill_zero(nvolumes, _wall_cond_0d_thermal.volume_thickness);
