@@ -241,7 +241,7 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
 
   ctx.wait();
 
-  cs_parall_sum(2, CS_REAL_TYPE, rd.r);
+  cs_parall_sum(2, CS_DOUBLE, rd.r);
 
   cs_real_t romoy = rd.r[0];
   cs_real_t roamoy = rd.r[1];
@@ -319,12 +319,17 @@ cs_compute_thermo_pressure_density(void)
   cs_user_physical_properties_td_pressure(&new_pther);
 
   fp->pther = new_pther;
+  const cs_real_t ratio_pth = fp->pther/fp->pthera;
+
+  cs_dispatch_context ctx;
 
   /* Thermodynamic pressure and density computation
      ---------------------------------------------- */
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    crom[c_id] = fp->pther/fp->pthera*crom[c_id];
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    crom[c_id] = ratio_pth*crom[c_id];
+  });
+
+  ctx.wait();
 
   if (m->halo != nullptr)
     cs_halo_sync_var(m->halo, CS_HALO_STANDARD, crom);
@@ -332,25 +337,28 @@ cs_compute_thermo_pressure_density(void)
   /* Update the density at the boundary face
    * with cell value for severe accident low-Mach algorithm */
   if (cs_glob_velocity_pressure_model->idilat == 3)
-#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       const cs_lnum_t c_id = b_face_cells[face_id];
       brom[face_id] = crom[c_id];
-    }
+    });
   // else with boundary values
   else
-#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      brom[face_id] = fp->pther/fp->pthera*brom[face_id];
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      brom[face_id] = ratio_pth*brom[face_id];
+    });
 
   /* Change the reference variable rho0
      ---------------------------------- */
   cs_real_t ro0moy = 0.0;
-# pragma omp parallel for reduction(+:ro0moy) if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    ro0moy += crom[c_id]*cell_vol[c_id];
+  ctx.parallel_for_reduce_sum(n_cells, ro0moy,
+    [=] CS_F_HOST_DEVICE(cs_lnum_t c_id,
+     CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+    sum += crom[c_id]*cell_vol[c_id];
+  });
 
-  cs_parall_sum(1, CS_REAL_TYPE, &ro0moy);
+  ctx.wait();
+
+  cs_parall_sum(1, CS_DOUBLE, &ro0moy);
 
   fp->ro0 = ro0moy/cs_glob_mesh_quantities->tot_vol;
 
@@ -364,7 +372,6 @@ cs_compute_thermo_pressure_density(void)
                  "%10.16lf       %10.16lf     %10.16lf     %10.16lf     %10.16lf\n",
                  cs_glob_time_step->t_cur, fp->pther, fp->pthera,
                  (fp->pther-fp->pthera)/CS_F_(dt)->val[0], fp->ro0);
-
 }
 
 /*----------------------------------------------------------------------------*/
