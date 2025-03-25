@@ -1285,7 +1285,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _build_cdofb_scheme(const cs_param_advection_scheme_t scheme,
                     int                               dim,
                     const cs_cell_mesh_t             *cm,
@@ -1385,7 +1385,7 @@ _build_cdofb_scheme(const cs_param_advection_scheme_t scheme,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _build_cdofb_csv(const cs_cell_mesh_t *cm, cs_cell_builder_t *cb, cs_sdm_t *adv)
 {
   const short int  c = cm->n_fc; /* current cell's location in the matrix */

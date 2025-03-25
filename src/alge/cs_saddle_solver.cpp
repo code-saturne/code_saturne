@@ -175,40 +175,6 @@ _scalar_scaling(cs_saddle_solver_t  *solver,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute array index bounds for a local thread.
- *
- * When called inside an OpenMP parallel section, this will return the
- * start an past-the-end indexes for the array range assigned to that thread.
- * In other cases, the start index is 1, and the past-the-end index is n;
- *
- * \param[in]  n      size of an array
- * \param[out] s_id   start index for the current thread
- * \param[out] e_id   past-the-end index for the current thread
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_thread_range(cs_lnum_t   n,
-              cs_lnum_t  *s_id,
-              cs_lnum_t  *e_id)
-{
-#if defined(HAVE_OPENMP)
-  int t_id = omp_get_thread_num();
-  int n_t = omp_get_num_threads();
-  cs_lnum_t t_n = (n + n_t - 1) / n_t;
-  *s_id =  t_id    * t_n;
-  *e_id = (t_id+1) * t_n;
-  *s_id = cs_align(*s_id, CS_CL);
-  *e_id = cs_align(*e_id, CS_CL);
-  if (*e_id > n) *e_id = n;
-#else
-  *s_id = 0;
-  *e_id = n;
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Dot product between two arrays with DoFs on interfaces.
  *        One assumes that input arrays are in a "scattered" distribution One
  *        switches to a "gather" view for the dot product and then moves back

@@ -109,17 +109,20 @@ cs_user_lagr_in(cs_lagr_particle_set_t             *particles,
   /* Changes to selected attributes to define coal
      --------------------------------------------- */
 
+  constexpr int n_max_layers = 5;
+
   const int  n_layers = cs_glob_lagr_model->n_temperature_layers;
+  assert(n_layers <= n_max_layers);
 
   int        coal_id = 0;
   cs_real_t  cp = zis->cp;
   cs_real_t  water_mass_f = 0.0, density = 0;
   cs_real_t  initial_diameter = 0, shrinking_diameter = 0;
 
-  cs_real_t  temperature[n_layers];
-  cs_real_t  coal_mass_fraction[n_layers];
-  cs_real_t  coke_density[n_layers];
-  cs_real_t  coke_mass_fraction[n_layers];
+  cs_real_t  temperature[n_max_layers];
+  cs_real_t  coal_mass_fraction[n_max_layers];
+  cs_real_t  coke_density[n_max_layers];
+  cs_real_t  coke_mass_fraction[n_max_layers];
 
   for (int l_id = 0; l_id < n_layers; l_id++) {
     temperature[l_id] = 0;

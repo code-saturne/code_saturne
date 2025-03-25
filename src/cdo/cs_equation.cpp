@@ -3451,8 +3451,6 @@ cs_equation_compute_boundary_diff_flux(const cs_equation_t       *eq,
 
   const char fmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
                       " This functionality is not available for this scheme.";
-  const char lmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
-                      " This mesh location is not available for this scheme.";
 
   if (eq == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
