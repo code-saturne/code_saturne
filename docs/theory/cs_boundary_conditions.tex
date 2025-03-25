@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{condli}
+\programme{cs\_boundary\_conditions}
 
 \hypertarget{condli}{}
 
@@ -38,7 +38,7 @@ value of the convected variable at the boundary when the latter is entering
 the domain in the sens of the characteristic curves of the system (in the sens
 of the velocity, in the case of the single equation of a simple scalar:
  sufficient interpretation in the current framework of
-\CS\footnote{except with the compressible module, see. \fort{cfxtcl}})~;
+\CS\footnote{except with the compressible module, see. \fort{cs\_cf\_boundary\_conditions}})~;
 \item calculation of the diffusion terms (second order derivative
 in space):
 a method to determine the value of the first order spatial derivatives
@@ -52,7 +52,7 @@ gradient terms in the Navier-Stokes equations).
 \end{itemize}
 These considerations only concern the computational variables
 (velocity, pressure, Reynolds tensor,
-scalars solution of a convection-diffussion equation). For these variables
+scalars solution of a convection-diffusion equation). For these variables
 \footnote{
 The other variables
 (the physical properties for instance) have a different treatment which will
@@ -61,18 +61,18 @@ directly the values at the boundary. This information is then stored~; one
 is referred to \fort{cs\_user\_physical\_properties} or \fort{cs\_physical\_properties\_update} for more information).
 },
 the user has to define the boundary conditions at every boundary face
-(\fort{usclim}).
+(\fort{cs\_user\_boundary\_conditions}).
 
 
-The \fort{condli} subroutine transforms the data provided by the user
-(in \fort{usclim}) into an internal format of representation of the boundary
+The \fort{cs\_boundary\_conditions} subroutine transforms the data provided by the user
+(in \fort{cs\_user\_boundary\_conditions}) into an internal format of representation of the boundary
  conditions. Verifications of the completeness and coherence are also
-performed (in \fort{vericl}). More particularly, the smooth-wall boundary conditions
- (\fort{clptur}), the rough-wall boundary conditions (\fort{clptrg})
+performed (in \fort{cs\_boundary\_conditions\_check}). More particularly, the smooth-wall boundary conditions
+ (\fort{cs\_boundary\_conditions\_set\_coeffs\_turb}), the rough-wall boundary conditions (\fort{clptrg})
 and the symmetry boundary conditions for the velocities and
-the Reynolds stress tensor (\fort{clsyvt}) are treated in dedicated subroutines.
+the Reynolds stress tensor (\fort{cs\_boundary\_conditions\_set\_coeffs\_symmetry}) are treated in dedicated subroutines.
 
-The \fort{condli} subroutine
+The \fort{cs\_boundary\_conditions} subroutine
 provides as an output pairs of coefficients
 $A_b$ and $B_b$
 for each variable~$f$ and for each boudary face.
@@ -162,7 +162,7 @@ velocity and pressure, two cases can occur:
         \item[-] one can impose, as when the mass flux is outgoing, a homogeneous Neumann condition (this is not a desirable situation, since the information carried on the boundary faces then comes from {\it the downstream} of the local flow). This is the case by default if no value is given for the Dirichlet.
         \end{itemize}
 \end{itemize}
-\item [$\bullet$] {\bf CS\_SMOOTHWALL}: refer to \fort{clptur} (or to \fort{clptrg} for rough walls) for a description of the treatment of the boundary conditions of the wall (assumed to be impermeable to
+\item [$\bullet$] {\bf CS\_SMOOTHWALL}: refer to \fort{cs\_boundary\_conditions\_set\_coeffs\_turb} (or to \fort{clptrg} for rough walls) for a description of the treatment of the boundary conditions of the wall (assumed to be impermeable to
 fluid). Briefly, we can say here
 that a wall law approach is used to impose the constraint
 tangential on speed. The wall may slide\footnote{We must then provide
@@ -175,7 +175,7 @@ In the case of couplings with \syrthes, \CS
 receives a wall temperature and sends a heat flux (decomposed as a pseudo interior temperature
 and exchange coefficient to allow relaxation).
 The standard pressure condition is a homogeneous Neumann condition.
-\item [$\bullet$] {\bf CS\_SYMMETRY}: corresponds to homogeneous Neumann conditions for scalar quantities and to classical symmetry conditions for vectors (velocity) and tensors (Reynolds voltages): see \fort{clsyvt}.
+\item [$\bullet$] {\bf CS\_SYMMETRY}: corresponds to homogeneous Neumann conditions for scalar quantities and to classical symmetry conditions for vectors (velocity) and tensors (Reynolds voltages): see \fort{cs\_boundary\_conditions\_set\_coeffs\_symmetry}.
 \end{itemize}
 
 \etape{Representation of specific boundary conditions in \fort{cs\_user\_boundary\_conditions}\vspace{0,3cm}}
@@ -199,7 +199,7 @@ In any case, it should be ensured that a boundary condition has been defined for
 boundary face and variable.
 
 Compatibility conditions also exist between the different
-variables~(see \fort{vericl}):
+variables~(see \fort{cs\_boundary\_conditions\_check}):
 \begin{itemize}
 \item [-] between, wall, symmetry or free exit, it is important that all the
 velocity components have the same type of condition~;
@@ -327,7 +327,7 @@ we can write (see figure \ref{Base_Condli_fig_flux_condli}):
 The ratio between the coefficient $h_{b}$ and the coefficient $h_{int}$ accounts for
 the importance of crossing the near-boundary zone and is of particular importance in
 the case of walls along which a boundary layer develops (whose properties are then taken
-into account by $h_{b}$: see \fort{clptur}).
+into account by $h_{b}$: see \fort{cs\_boundary\_conditions\_set\_coeffs\_turb}).
 In the simpler framework considered here, we will limit ourselves to
 case $h_{b}=h_{int}$ and $f_{b,ext}=f_{b,int}=f_{b}$.
 The relation (\ref{Base_Condli_eq_flux_condli}) is then written:

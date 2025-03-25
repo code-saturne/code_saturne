@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{clsyvt}
+\programme{cs\_boundary\_conditions\_set\_coeffs\_symmetry}
 
 \hypertarget{clsyvt}{}
 
@@ -35,11 +35,11 @@ The aim of this subroutine is to fill the arrays of boundary conditions
  (\var{COEFA} and \var{COEFB}) of the velocity and of the Reynolds stress tensor,
 for the symmetry boundary faces.
 These conditions are express relatively naturally in the local coordinate system
-of the boundary face. The function of \fort{clsyvt} is then to transform these
+of the boundary face. The function of \fort{cs\_boundary\_conditions\_set\_coeffs\_symmetry} is then to transform these
 natural boundary conditions (expressed in the local coordinate sytem) in the
 general coordinate sytem, and then to possibly partly implicit them.
 
-It should be noted that the part of the subroutine  \fort{clptur} (for the wall
+It should be noted that the part of the subroutine  \fort{cs\_boundary\_conditions\_set\_coeffs\_turb} (for the wall
 boundary conditions) relative to the writing in the local coordinate system and to
 the rotation is totally identical.
 
@@ -290,9 +290,9 @@ or
 \renewcommand{\arraystretch}{1.}
 
 
-For the symmetry faces which are treated by \fort{clsyvt}, the
+For the symmetry faces which are treated by \fort{cs\_boundary\_conditions\_set\_coeffs\_symmetry}, the
 coefficient $B$ is 1. However a similar treatment is applied in
-\fort{clptur} for the wall faces, and in this $B$ is zero. This
+\fort{cs\_boundary\_conditions\_set\_coeffs\_turb} for the wall faces, and in this $B$ is zero. This
 parameter has to be specified when \code{cs\_turbulence\_bc\_rij\_transform} is called
 (see \S\ref{Base_Clsyvt_prg_meo}).
 
@@ -360,25 +360,25 @@ $\bullet\ ${\sc Total explicitation}\\
 \label{Base_Clsyvt_prg_meo}%
 \etape{Beginning of the loop}
 
-Beginnning of the loop on all the boundary faces  \var{IFAC} with
+Beginning of the loop on all the boundary faces  \var{IFAC} with
 symmetry conditions.
 A face is considered as a symmetry face if
-\var{ICODCL(IFAC,IU)} is 4. The tests in \fort{vericl} are designed
- for  \var{ICODCL} to be equal to 4 for \var{IU} if and only if it is equal
+\var{icodcl} is 4. The tests in \fort{cs\_boundary\_conditions\_check} are designed
+ for  \var{icodcl} to be equal to 4 for the velocity field if and only if it is equal
 to 4 for the other components of the velocity and for the components of $\tens{R}$
 (if necessary)\\.
 
 The value 0 is given to  \var{ISYMPA}, which identifies the face as a
 wall or symmetry face (a face where the mass flux will be set to zero as
-explained in \fort{inimas}).
+explained in \fort{cs\_mass\_flux}).
 
 \etape{Calculation of the basis vectors}
 The normal vector $\vect{n}$ is stored in \var{(RNX,RNY,RNZ)}.\\
-$\vect{u}_{I'}$ is calculated in \fort{CONDLI}, passed {\em via} \var{COEFU},
+$\vect{u}_{I'}$ is calculated in \fort{cs\_boundary\_conditions}, passed {\em via} \var{COEFU},
 and stored in \var{(UPX,UPY,UPZ)}.
 
 \etape{Case with $R_{ij}-\varepsilon$}
-With the $R_{ij}-\varepsilon$ model (\var{ITURB}=30 or 31), the vectors
+With the $R_{ij}-\varepsilon$ model, the vectors
  $\vect{t}$ and $\vect{b}$ must be calculated explicitly
 (we use $\matt{P}$, not simply $\matt{A}$).
 They are stored in \var{(TX,TY,TZ)} and
@@ -394,7 +394,7 @@ $B$ of equation \ref{Base_Clsyvt_eq_clRij}.
 The arrays \var{COEFA} and \var{COEFB} are filled following directly
 equations \ref{Base_Clsyvt_eq_clU}, \ref{Base_Clsyvt_eq_clRimp} and \ref{Base_Clsyvt_eq_clRexp}.\\
 \var{RIJIPB(IFAC,.)} corresponds to the vector $\mat{S}_{I'}^\prime$, computed in
-\fort{condli}, and passed as an argument to \var{clsyvt}.
+\fort{cs\_boundary\_conditions}, and passed as an argument to \var{cs\_boundary\_conditions\_set\_coeffs\_symmetry}.
 
 \etape{Filling the arrays \var{COEFAF} and \var{COEFBF}}
 If they are defined, the arrays \var{COEFAF} and \var{COEFBF}
@@ -409,7 +409,7 @@ are filled. They contain the same values as \var{COEFA} and
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \minititre{Proof of the orthogonality of matrix $\matt{A}$}
 
-All the notations used in paragraphe 2 are kept. We have:
+All the notations used in paragraph 2 are kept. We have:
 \begin{eqnarray}
 (^t\matt{A}\,.\,\matt{A})_{ij}
 & = & \sum_{k=1}^9\comp{A}_{ki}\comp{A}_{kj}\nonumber\\
@@ -484,7 +484,7 @@ and 9.
 
 To compute $\comp{D}_{ij}$, we can choose a value of $m$ to satisfy
 $s(m)=i$ and sum all the $\comp{C}_{mn}$ to have $s(n)=j$. The choice of $m$
-is irrelevent. We can also compute the sum over all $m$ so that  $s(m)=i$ and then
+is irrelevant. We can also compute the sum over all $m$ so that  $s(m)=i$ and then
 divide by the number of such values of $m$. We will use this method.
 
 We define $N(i)$ the number of integers $m$ between 1 and 9 so that $s(m)=i$ ($N(i)$ is equal to $1$ or $2$).
@@ -507,7 +507,7 @@ then $q(m)=r(m)=i$ and $q(n)=r(n)=j$. Thus \\
 (\delta_{k1}+ B\delta_{k3}+\delta_{k5}+ B\delta_{k7}+\delta_{k9})
 \end{equation}
 When $k$ belongs to $\{1,5,9\}$, $q(k)=r(k)$ belongs to $\{1,2,3\}$. And for $k=3$ or
-$k=7$, $q(k)=1$ and $r(k)=3$, or the inverse (and for $k$ even the
+$k=7$, $q(k)=1$ and $r(k)=3$, or the inverse (and for $k$ even
 the sum of Kronecker symbol is zero). Finally we have:
 \begin{equation}
 \comp{D}_{ij}=\sum_{k=1}^3\comp{P}_{ik}^2\comp{P}_{jk}^2

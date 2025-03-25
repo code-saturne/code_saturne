@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{clptrg}
+\programme{cs\_boundary\_conditions\_set\_coeffs\_turb}
 
 \hypertarget{clptrg}{}
 
@@ -37,13 +37,13 @@ conditions.
 The wall boundary conditions discussed herein are taken to include all the boundary conditions
 for the velocity, the turbulent quantities ($k$, $\varepsilon$), the temperature when it has
 a prescribed value at the wall (or the enthalpy and more generally
-the {\it VarScalaires}\footnote{As in \fort{condli},{\it VarScalaire} will be used to designate
+the {\it VarScalaires}\footnote{As in \fort{cs\_boundary\_conditions},{\it VarScalaire} will be used to designate
 any variable, solution of a convection-diffusion equation, apart from the velocity, pressure and
 the turbulent quantities $k$, $\varepsilon$.  The designation {\it VarScalaire} may be employed
 particularly in relation to the temperature, the enthalpy or to a passive scalar.},
 to be treated at the wall by applying a similarity law for the associated boundary layer.
 For the {\it VarScalaires} especially, when the boundary conditions at the wall are
-of the Neumann type (homogeneous or not), they are treated in \fort{condli} and hence will
+of the Neumann type (homogeneous or not), they are treated in \fort{cs\_boundary\_conditions} and hence will
 not be discussed in this section. In particular, the boundary conditions of the  {\it VarScalaires}
 representing the flux variance of other {\it VarScalaires} are not addressed here because
 their treatment at the wall is of the homogeneous Neumann type.
@@ -476,7 +476,7 @@ A_\varepsilon&=I'F\displaystyle\frac{ u_k^3}{\kappa\, (I'F/2 + z_0)^2}&\text{ et
 Only the boundary conditions with a prescribed value (at the wall or in the near-wall
 region with, eventually, an external transfer coefficient) are addressed herein. We
 draw on the notations taken from figure \ref{fig_flux_clptur} and the general presentation
-provided in \fort{condli}, the essential elements of which are resumed below.
+provided in \fort{cs\_boundary\_conditions}, the essential elements of which are resumed below.
 
 The conservative form of the normal flux at the boundary for the variable $f$ is written:
 \begin{equation}\label{eq_flux_clptur}
@@ -514,7 +514,7 @@ f_{b,int} =
 
 The only remaining unknown in the expression (\ref{eq_fbint_clptur}) is $h_{b}$, with $h_{int}$
 being a numerical value consistent with the calculation method used to compute the face
-gradients and specified in \fort{condli} ($h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$). The
+gradients and specified in \fort{cs\_boundary\_conditions} ($h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$). The
 value of $h_{b}$ must relate the flux to the difference between the values of $f_{I'}$ and $f_{b,ext}$
 taking the boundary layer into account (the profile of $f$ is not always linear):
 \begin{equation}
@@ -525,7 +525,7 @@ The theoretical considerations and their application are presented below, using 
 notations. In particular, the Prandtl-Schmidt number is noted
 $\sigma=\displaystyle\frac{\nu\,\rho\,C}{\alpha}$.
 When the scalar $f$ under consideration is the temperature,
-we have (see \fort{condli}):
+we have (see \fort{cs\_boundary\_conditions}):
 \begin{list}{$\bullet$}{}
 \item $C=C_p$ (specific heat capacity),
 \item $\alpha=\lambda$ (molecular conductivity),

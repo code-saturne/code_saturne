@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{cfbl**}\label{ap:cfbase}
+\programme{cs\_cf\_**}\label{ap:cfbase}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -722,7 +722,7 @@ thermique impos\'e.
         & Branchement des physiques particuli\`eres pour la lecture du fichier de donn\'ees \'eventuel \\
                 &                 & \fort{ppvarp} &                &
         & Branchement des physiques particuli\`eres pour le positionnement des inconnues \\
-                &                 &                 & \fort{cfvarp} &
+                &                 &                 & \fort{cs\_cf\_add\_variable\_fields} &
         & Positionnement des inconnues sp\'ecifiques au module compressible \\
                 &                 &                 &               & \fort{uscfth}
         & Appelé avec ICCFTH=-1, pour indiquer que $C_p$ et $C_v$ sont constants ou variables\\
@@ -822,7 +822,7 @@ n'est pas une suite)  \\
                 et place de \fort{usclim}, m\^eme pour les variables qui ne sont
                 pas sp\'ecifiques au module compressible) \\
 
-\fort{condli}         &                  &                &
+\fort{cs\_boundary\_conditions}         &                  &                &
         & Traitement des conditions aux limites\\
                 & \fort{pptycl} &                &
         & Branchement des physiques particuli\`eres pour le traitement des conditions aux limites \\

@@ -343,7 +343,7 @@ The calculation of the normalized residual is therefore carried out in two stage
 
 The quantity $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ is calculated at the beginning of \fort{cs\_velocity\_prediction} and the complement $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ added at the end of \fort{cs\_velocity\_prediction}.
 
-The pressure gradient at the cells is thus first computed at instant $n-1+\theta$ by a call to \fort{grdcel}. The subroutine \fort{inimas} is then used to evaluate $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ at the faces (of surface $S$ and normal $\vect{n}$). On entry into \fort{inimas}, the working array \var{TRAV} contains $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$; when exiting this subroutine, the \var{VISCF} and \var{VISCB} arrays contain the value of $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ at the internal and boundary faces respectively.
+The pressure gradient at the cells is thus first computed at instant $n-1+\theta$ by a call to \fort{grdcel}. The subroutine \fort{cs\_mass\_flux} is then used to evaluate $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ at the faces (of surface $S$ and normal $\vect{n}$). On entry into \fort{cs\_mass\_flux}, the working array \var{TRAV} contains $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$; when exiting this subroutine, the \var{VISCF} and \var{VISCB} arrays contain the value of $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ at the internal and boundary faces respectively.
 
 We then use \fort{divmas} takes the value of $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$ at the cells from the contents of \var{VISCF} and \var{VISCB} and places it into the array \var{XNORMP}.
 
@@ -352,7 +352,7 @@ Lastly, the contribution $\int\limits_{\Omega_{iel}}{ -\Gamma^{n} d\Omega}$ of t
 For $\rho\,\widetilde{\vect{u}} + \Delta t \grad{P}$, we apply the velocity boundary conditions. For the computation of
 $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$, the boundary conditions for the pressure gradient (or more precisely for $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$) are therefore the homogenized boundary conditions of the velocity. The pressure gradient (or rather $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$) is consequently assumed to be zero normal to the walls and the inlets and to remain constant in the direction normal to symmetries and to the outlets.
 
-In addition, to save computation time when passing through \fort{inimas}, the face values on non-orthogonal meshes are evaluated merely to first-order accuracy in space (no reconstruction: \var{NSWRP=1}). Local accuracy is moreover of no particular interest as the aim here is simply to determine a normalized global residual.
+In addition, to save computation time when passing through \fort{cs\_mass\_flux}, the face values on non-orthogonal meshes are evaluated merely to first-order accuracy in space (no reconstruction: \var{NSWRP=1}). Local accuracy is moreover of no particular interest as the aim here is simply to determine a normalized global residual.
 
 The computation of the residual will be completed at the end of \fort{cs\_velocity\_prediction}.
 
@@ -362,7 +362,7 @@ The computation of the residual will be completed at the end of \fort{cs\_veloci
 During this first step, we use the array \var{XNORMP(NCELET)} to compute the quantity $$\dive(\Delta t \,\grad{P^{n-1+\theta}})-\Gamma$$ integrated over each cell \var{IEL} of the mesh ($\Omega_{iel}$), which is expressed as:
 $$\var{XNORMP(IEL)}=\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}})-\Gamma
 d\Omega}$$
-This operation is carried out by successively implementing \fort{inimas}
+This operation is carried out by successively implementing \fort{cs\_mass\_flux}
 (calculation at the faces in \var{VISCF} and \var{VISCB} of $\Delta t\,\grad{P^{n-1+\theta}}$ using the contents of the working array \var{TRAV}=$\frac{\Delta t}{\rho} \grad{P^{n-1+\theta}}$ together with homogeneous velocity boundary conditions and without reconstruction) followed by \fort{divmas} (computation in \var{XNORMP} of the integral over the cells).  With a simple loop, we then add the mass source term contribution $\Gamma$.
 This calculation is completed at the end of \fort{cs\_velocity\_prediction}.\\
 
@@ -406,7 +406,7 @@ If $\var{IGRHOK}=0$, this term is expected to be implicitly taken into account i
 {\tiny$\blacksquare$} Second order models:\\
 Computation of the term $-\dive(\rho \tens{R})$ is implemented in two steps. A call is first made to the subroutine \fort{divrij}, which projects the vector $\tens{R}.\vect{e}_{\var{DIR}}$ onto the cell faces along the direction \var{DIR}, following which we then call the subroutine \fort{divmas} to compute the divergence.\\
 \linebreak
-\item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \vect\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \vect {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, where \var{IPHAS} is the number of the phase treated) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{cs\_solve\_navier\_stokes}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
+\item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \vect\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \vect {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE} = 1) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{cs\_solve\_navier\_stokes}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
 \\
 \item The terms corresponding to the velocity head losses ($\rho \tens{K}
 {u}$), if there are any (\ $\var{NCEPDP}> 0$\ ), are calculated by the subroutine \fort{st\_exp\_head\_loss} at the first iteration over \fort{cs\_solve\_navier\_stokes}. They are decomposed into two parts:\\
@@ -491,12 +491,12 @@ $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u^{n+1}}})d\Omega}$.
 
 To do so, we follow the same procedure used previously to compute the integral
 $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$. A call to
-\fort{inimas} enables to obtain
+\fort{cs\_mass\_flux} enables to obtain
 $\rho\,S\,\widetilde{\vect{u}}^{n+1}\cdot\widetilde{\vect{n}}$ at the faces calculated from the of
 $\widetilde{\vect{u}}^{n+1}$ known at the cells (array \var{RTP}). The boundary conditions
-employed in \fort{inimas} are naturally those of the velocity. As beforehand, evaluation of the face values is only up to first-order in space on non-orthogonal meshes (no reconstruction~: \var{NSWRP=1}) in order to save computation time when passing through \fort{inimas}. The subroutine \fort{divmas} is then used to compute the divergence $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ at the cells, which is then added directly to \var{XNORMP}.
+employed in \fort{cs\_mass\_flux} are naturally those of the velocity. As beforehand, evaluation of the face values is only up to first-order in space on non-orthogonal meshes (no reconstruction~: \var{NSWRP=1}) in order to save computation time when passing through \fort{cs\_mass\_flux}. The subroutine \fort{divmas} is then used to compute the divergence $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ at the cells, which is then added directly to \var{XNORMP}.
 
-Lastly, the normalized residual is determined and then stored in \var{RNORMP(IIPHAS)} by a call to \fort{prodsc}  (which computes the sum of the squares of the values at the faces contained in \var{XNORMP} and then takes the square root of the result).\\
+Lastly, the normalized residual is determined and then stored in \var{RNORMP} by a call to \fort{prodsc}  (which computes the sum of the squares of the values at the faces contained in \var{XNORMP} and then takes the square root of the result).\\
 
 
 \newpage

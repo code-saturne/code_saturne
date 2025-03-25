@@ -536,19 +536,20 @@ B_{\fib} \varia_{\celli} + B_{\fib} \grad_{\celli} \varia \cdot \left(\centip - 
 Bringing $\grad_{\celli} \varia$ terms all together on the left hand side, we have:
 %
 \begin{equation}\label{eq:gradrc_recontruit}
-\begin{array}{r c l}
+\begin{array}{r l c l}
 \displaystyle
-\norm{\vol{\celli}} \grad_{\celli} \varia -
-\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2} \grad_\celli \varia \cdot \left( \left(\centf - \cento\right) \otimes \vect{S}_{\bij} \right)-
+  \norm{\vol{\celli}} \grad_{\celli} \varia &-
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2} \grad_\celli \varia \cdot \left( \left(\centf - \cento\right) \otimes \vect{S}_{\bij} \right) \\
+  &-
 \sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \grad_\celli \varia \cdot \left( \left(\centip - \centi\right)  \otimes \vect{S}_{\ib} \right)
-&=&
+  &=&
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}}\left[
 (\alpha_{\bij} \varia_{\celli} + (1 - \alpha_{\bij}) \varia_{\cellj})\right] \vect{S}_{\bij} \\
-&+&
+&&+&
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \grad_{\cellj} \varia \cdot \left( \left(\centf - \cento\right) \otimes \vect{S}_{\bij} \right) \\
-&+&
+  &&+&
 \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia_{\celli} \right] \vect{S}_{\ib}.
 \end{array}
@@ -598,19 +599,20 @@ all terms with $\grad_{\cellj} \varia$ are explicit, we then use the series $\le
 and the associated system is:
 
 \begin{equation}\label{eq:gradrc_recontruit_comp2}
-\begin{array}{r c l}
+\begin{array}{ l}
 \displaystyle
 \grad_{\celli}^{k+1} \varia \cdot \left[\norm{\vol{\celli}} \tens{1} -
 \sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \left(\centf - \cento\right) \otimes \vect{S}_{\bij} -
 \sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \left(\centip - \centi\right)  \otimes \vect{S}_{\ib}  \right]
-&=&
+\\
+  =
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}}\left[
 (\alpha_{\bij} \varia_\celli + (1 - \alpha_{\bij}) \varia_{\cellj})\right] \vect{S}_{\bij} \\
-&+&
++
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \grad_{\cellj}^k \varia \cdot \left( \left(\centf - \cento\right) \otimes \vect{S}_{\bij} \right) \\
-&+&
++
 \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia_{\celli} \right] \vect{S}_{\ib},
 \end{array}
@@ -622,21 +624,21 @@ or, as the following relationship stands:
 \end{equation*}
 
 \begin{equation}\label{eq:gradrc_recontruit_increment}
-\begin{array}{r c l}
+\begin{array}{l}
 \displaystyle
 \delta \grad_{\celli}^{k+1} \varia \cdot \left[\norm{\vol{\celli}} \tens{1} -
 \sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \left(\centf - \cento\right) \otimes \vect{S}_{\bij} -
 \sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib}  \left(\centip - \centi\right)  \otimes \vect{S}_{\ib}  \right]
-&=&
+\\=
 \displaystyle
  -\norm{\vol{\celli}}  \grad_{\celli}^{k} \varia +
 \sum\limits_{\fij \in \Facei{\celli}}\left[
 (\alpha_{\bij} \varia_{\celli} + (1 - \alpha_{\bij}) \varia_{\cellj})\right] \vect{S}_{\bij} \\
-&+&
++
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2}
 \left(\grad_{\celli}^k \varia + \grad_{\cellj}^k \varia \right) \cdot \left( \left(\centf - \cento\right) \otimes \vect{S}_{\bij} \right) \\
-&+&
++
 \displaystyle
 \sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib}
             + B_{\fib} \left( \varia_{\celli} + \grad_{\celli}^k \varia \cdot \left(\centip - \centi\right) \right) \right] \vect{S}_{\ib}.
@@ -1422,11 +1424,11 @@ is formulated as the minimization of the function:
 
 \paragraph{Internal faces.} One can write:
 \begin{align*}
-	&&\grad_{\fij}{p^\star}\cdot\vect{d}_{\bij} \\
-	&=&\frac{1}{\norm{\centj-\centi}}\left(p_{\cellj}^\star-p_{\celli}^\star\right) \\
-	&=&\frac{1}{\norm{\centj-\centi}}\left(p_{\cellj}-p_{\celli}-p_{\cellj}^{h}+p_{\celli}^{h}\right) \\
-	&=&\frac{1}{\norm{\centj-\centi}}\left(p_{\cellj}-p_{\celli}-p_{\face}^{h}-\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}+p_{\face}^{h}+\left(\centi-\centf\right)\cdot\vect{f}_{\celli}\right) \\
-	&=&\frac{1}{\norm{\centj-\centi}}\left(p_{\cellj}-p_{\celli}+\left(\centi-\centf\right)\cdot\vect{f}_{\celli}-\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}\right)
+	\grad_{\fij}{p^\star}\cdot\vect{d}_{\bij}
+	&=\frac{1}{\norm{\centj-\centi}}\left(p_{\cellj}^\star-p_{\celli}^\star\right) \\
+	&=\frac{1}{\norm{\centj-\centi}}\left(p_{\cellj}-p_{\celli}-p_{\cellj}^{h}+p_{\celli}^{h}\right) \\
+	&=\frac{1}{\norm{\centj-\centi}}\left(p_{\cellj}-p_{\celli}-p_{\face}^{h}-\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}+p_{\face}^{h}+\left(\centi-\centf\right)\cdot\vect{f}_{\celli}\right) \\
+	&=\frac{1}{\norm{\centj-\centi}}\left(p_{\cellj}-p_{\celli}+\left(\centi-\centf\right)\cdot\vect{f}_{\celli}-\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}\right)
 \end{align*}
 
 \paragraph{Boundary faces.} Considering only Dirichlet and Neumann conditions,
@@ -1438,11 +1440,11 @@ For an homogeneous Neumann condition $A^{g}_{\fib}=0$ and $B^{g}_{\fib}=0$ so th
 $\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib}=0$. For a Dirichlet condition
 $B^{g}_{\fib}=0$ and one gets:
 \begin{align*}
-	&&\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib} \\ &=&\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}^\star-p_{\cellip}^\star\right) \\
-	&=&\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}-p_{\celli'}-p_{\fib}^{h}+p_{\celli'}^{h}\right) \\
-	&=&\frac{1}{\norm{\centfb-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\cdot\grad_{\celli}{p}-\left(\centfb-\centip\right)\cdot\vect{f}_{\celli}\right) \\
-	&=&\frac{1}{\norm{\centfb-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\grad_{\celli}{p^\star}-\left(\centip-\centi\right)\cdot\vect{f}_{\celli}-\left(\centfb-\centip\right)\cdot\vect{f}_{\celli}\right) \\
-	&=&\frac{1}{\norm{\centf-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\cdot\grad_{\celli}{p^\star}-\left(\centfb-\centi\right)\cdot\vect{f}_{\celli}\right)
+	\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib} \\ &=&\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}^\star-p_{\cellip}^\star\right) \\
+	&=\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}-p_{\celli'}-p_{\fib}^{h}+p_{\celli'}^{h}\right) \\
+	&=\frac{1}{\norm{\centfb-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\cdot\grad_{\celli}{p}-\left(\centfb-\centip\right)\cdot\vect{f}_{\celli}\right) \\
+	&=\frac{1}{\norm{\centfb-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\grad_{\celli}{p^\star}-\left(\centip-\centi\right)\cdot\vect{f}_{\celli}-\left(\centfb-\centip\right)\cdot\vect{f}_{\celli}\right) \\
+	&=\frac{1}{\norm{\centf-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\cdot\grad_{\celli}{p^\star}-\left(\centfb-\centi\right)\cdot\vect{f}_{\celli}\right)
 \end{align*}
 Hence, one is minimizing
 \begin{align*}

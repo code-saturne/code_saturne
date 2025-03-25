@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{clptur}
+\programme{cs\_boundary\_conditions\_set\_coeffs\_turb}
 
 \hypertarget{clptur}{}
 
@@ -32,7 +32,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 This subroutine is dedicated to the calculation of the wall boundary conditions. The notations introduced in \var{CONDLI} for the general boundary conditions will be used.
 
-The wall boundary conditions refer to all the boundary conditions for the velocity, the turbulent variables ($k$, $\varepsilon$, $R_{ij}$), the temperature when it has a prescribed value at the wall (or the enthalpy and more generally the {\it VarScalaires}\footnote{As in \fort{condli} the {\it VarScalaire} are any solution of a convection-diffusion equation apart from the velocity, the pressure and the turbulent variables  $k$, $\varepsilon$ and $R_{ij}$. More specifically, the name {\it VarScalaire} can refer to the temperature, the enthalpy or a passive scalar.  } to treat at the wall by using a similarity law for the associated boundary layer). For the {\it VarScalaire} in particular, when the boundary conditions at the wall are of Neumann type (homogeneous or not), they are treated in  \fort{condli} and don't present them here. In particular, the boundary conditions of the {\it VarScalaires} are not treated here because their treatment at the wall is of homogeneous Neumann type.
+The wall boundary conditions refer to all the boundary conditions for the velocity, the turbulent variables ($k$, $\varepsilon$, $R_{ij}$), the temperature when it has a prescribed value at the wall (or the enthalpy and more generally the {\it VarScalaires}\footnote{As in \fort{cs\_boundary\_conditions} the {\it VarScalaire} are any solution of a convection-diffusion equation apart from the velocity, the pressure and the turbulent variables  $k$, $\varepsilon$ and $R_{ij}$. More specifically, the name {\it VarScalaire} can refer to the temperature, the enthalpy or a passive scalar.  } to treat at the wall by using a similarity law for the associated boundary layer). For the {\it VarScalaire} in particular, when the boundary conditions at the wall are of Neumann type (homogeneous or not), they are treated in  \fort{cs\_boundary\_conditions} and don't present them here. In particular, the boundary conditions of the {\it VarScalaires} are not treated here because their treatment at the wall is of homogeneous Neumann type.
 
 We present the calculation of the pair of coefficients $A_b$ and $B_b$ which are used during the computation of certain discretized terms of the equations to solve, and which allow in particular to determine a value associated with the boundary faces $f_{b,int}$ (at a point located at the "centre" of the boundary face, the barycentre of its vertices) using the formulae   $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ is the value of the variable at point $I'$, the projection of the centre of the boundary cell onto the line normal to the boundary face and passing through its centre~: see figure~\ref{Base_Clptur_fig_flux_clptur}).
 
@@ -738,7 +738,7 @@ Only the boundary conditions when a boundary value is imposed
 are treated here.
 The reader is referred to the notations in figure
 \ref{Base_Clptur_fig_flux_clptur} and to the general presentation provided in
-\fort{condli} (in what follows only the most essential part of the
+\fort{cs\_boundary\_conditions} (in what follows only the most essential part of the
 presentation is repeated).
 
 The conservation of the normal flux at the boundary for variable $f$ writes~:
@@ -778,7 +778,7 @@ f_{b,int} =
 The only remaining unknown in expression (\ref{Base_Clptur_eq_fbint_clptur})
 is the value of $h_{b}$, since  $h_{int}$ has a numerical value which
 is coherent with the face gradient computation options detailed in
- \fort{condli} ($h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$).
+ \fort{cs\_boundary\_conditions} ($h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$).
 The value of  $h_{b}$ must relate the flux to the values
 $f_{I'}$ and $f_{b,ext}$ by taking into account the boundary layer
 (the profile of $f$ is not always linear)~:
@@ -791,7 +791,7 @@ The following considerations are presented using the general notations.
 In particular, the Prandtl-Schmidt number writes
 $\sigma=\displaystyle\frac{\nu\,\rho\,C}{\alpha}$.
 When the considered scalar $f$ is the temperature,
-we have (see \fort{condli})
+we have (see \fort{cs\_boundary\_conditions})
 \begin{list}{$\bullet$}{}
 \item $C=C_p$ (specific heat capacity),
 \item $\alpha=\lambda$ (molecular conductivity),

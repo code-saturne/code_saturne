@@ -27,11 +27,10 @@
 %
 Each sub-section of this document is associated with an important
 subroutine. The full list of the subroutines described here is the
-following: \fort{cs\_balance} \fort{clptur} \fort{clsyvt} \fort{cs\_equation\_iterative\_solve} %
-\fort{condli} \fort{cs\_solve\_equation\_scalar} \fort{gradrc} \fort{inimas} %
+following: \fort{cs\_balance} \fort{cs\_boundary\_conditions\_set\_coeffs\_turb} \fort{cs\_boundary\_conditions\_set\_coeffs\_symmetry} \fort{cs\_equation\_iterative\_solve} %
+\fort{cs\_boundary\_conditions} \fort{cs\_solve\_equation\_scalar} \fort{gradrc} \fort{cs\_mass\_flux} %
 \fort{cs\_face\_diffusion\_potential} \fort{matrix} \fort{cs\_solve\_navier\_stokes} \fort{cs\_velocity\_prediction} %
-\fort{resopv} \fort{cs\_turbulence\_ke} \fort{turrij} \fort{viscfa} \fort{visort} %
-\fort{visecv}.
+\fort{cs\_pressure\_correction} \fort{cs\_turbulence\_ke} \fort{cs\_turbulence\_rij} \fort{cs\_face\_viscosity}.
 
 The table~\ref{Base_Introd_simple_calling_tree} presents their sequence within a time
 step. This calling tree is only partial. In particular, it does not account
@@ -54,13 +53,12 @@ below:\newline
 \textbf{Convective schemes}\newline
 \hspace*{1cm}\fort{cs\_balance}\newline
 \textbf{Wall-laws} (for velocity and temperature)\newline
-\hspace*{1cm}\fort{clptur}\newline
-\hspace*{1cm}\fort{condli}\newline
+\hspace*{1cm}\fort{cs\_boundary\_conditions\_set\_coeffs\_turb}\newline
+\hspace*{1cm}\fort{cs\_boundary\_conditions}\newline
 \textbf{System solve} (incremental method)\newline
 \hspace*{1cm}\fort{cs\_equation\_iterative\_solve}\newline
 \textbf{Calculation of the values at the faces} (not exhaustive)\newline
-\hspace*{1cm}\fort{viscfa}\newline
-\hspace*{1cm}\fort{visort}\newline
+\hspace*{1cm}\fort{cs\_face\_viscosity}\newline
 
 Finally, for the reader wishing to become more familiar with the methods
 implemented in \CS, it is recommended to begin with the study of the
@@ -72,31 +70,31 @@ of the mass and momentum equations.
 \begin{table}[htp]
 \underline{\textbf{Calculation of the physical properties}}\newline
 \underline{\textbf{Boundary Conditions}}\newline
-\hspace*{1cm}\fort{condli} \newline
-\hspace*{1,5cm}\fort{clptur} \hspace*{1cm} ``turbulent'' conditions at the
+\hspace*{1cm}\fort{cs\_boundary\_conditions} \newline
+\hspace*{1,5cm}\fort{cs\_boundary\_conditions\_set\_coeffs\_turb} \hspace*{1cm} ``turbulent'' conditions at the
 wall\newline
-\hspace*{1,5cm}\fort{clsyvt} \hspace*{1cm} symmetry conditions for the
+\hspace*{1,5cm}\fort{cs\_boundary\_conditions\_set\_coeffs\_symmetry} \hspace*{1cm} symmetry conditions for the
 vectors and the tensors\newline
 \underline{\textbf{Navier-Stokes solution}}\newline
 \hspace*{1cm}\fort{cs\_solve\_navier\_stokes}\newline
 \hspace*{1,5cm}\textbf{Velocity prediction}\newline
 \hspace*{2,0cm}\fort{cs\_velocity\_prediction} \newline
-\hspace*{2,5cm}\fort{visecv} \hspace*{1cm} momentum source terms related to
+\hspace*{2,5cm}\fort{cs\_face\_viscosity\_secondary} \hspace*{1cm} momentum source terms related to
 the \newline
 \hspace*{4,5cm} \hspace*{1cm} transposed gradient of the velocity\newline
-\hspace*{2,5cm}\fort{viscfa} \hspace*{1cm} calculation of the viscosity at
+\hspace*{2,5cm}\fort{cs\_face\_viscosity} \hspace*{1cm} calculation of the viscosity at
 the faces\newline
 \hspace*{2,5cm}\fort{cs\_equation\_iterative\_solve} \hspace*{1cm} iterative solution of the system
 using an incremental method\newline
 \hspace*{1,5cm}\textbf{Pressure correction}\newline
-\hspace*{2,0cm}\fort{resopv} \newline
-\hspace*{2,5cm}\fort{viscfa} \hspace*{1cm}calculation of the time step at
+\hspace*{2,0cm}\fort{cs\_pressure\_correction} \newline
+\hspace*{2,5cm}\fort{cs\_face\_viscosity} \hspace*{1cm}calculation of the time step at
 the faces...\newline
-\hspace*{2,5cm}\fort{visort} \hspace*{1,5cm} ...according to the selected
+\hspace*{2,5cm} \hspace*{1,5cm} ...according to the selected
 options\newline
 \hspace*{2,5cm}\fort{matrix} \hspace*{1cm}calculation of the Poisson
 equation matrix\newline
-\hspace*{2,5cm}\fort{inimas} \hspace*{1cm}initialisation of the mass flow
+\hspace*{2,5cm}\fort{cs\_mass\_flux} \hspace*{1cm}initialisation of the mass flow
 rate\newline
 \hspace*{2,5cm}\fort{cs\_face\_diffusion\_potential} \hspace*{1cm}update of the mass flow rate%
 \newline
@@ -104,21 +102,21 @@ rate\newline
 \hspace*{3,2cm} \hspace*{1cm}standard method\newline
 \underline{\textbf{$k-\varepsilon$ model}}\newline
 \hspace*{1cm}\fort{cs\_turbulence\_ke}\newline
-\hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}preliminary steps before...\newline
+\hspace*{1,5cm}\fort{cs\_face\_viscosity} \hspace*{1cm}preliminary steps before...\newline
 \hspace*{1,5cm}\fort{cs\_balance} \hspace*{1,5cm}...source terms coupling\newline
-\hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}calculation of the viscosity at
+\hspace*{1,5cm}\fort{cs\_face\_viscosity} \hspace*{1cm}calculation of the viscosity at
 the faces\newline
 \hspace*{1,5cm}\fort{cs\_equation\_iterative\_solve} \hspace*{1cm}iterative solution of the systems
 using an incremental method\newline
 \underline{\textbf{Reynolds stress model}}\newline
-\hspace*{1cm}\fort{turrij}\newline
-\hspace*{1,5cm}\fort{visort} \hspace*{1cm}calculation of the viscosity at
+\hspace*{1cm}\fort{cs\_turbulence\_rij}\newline
+\hspace*{1,5cm}\fort{cs\_face\_viscosity} \hspace*{1cm}calculation of the viscosity at
 the faces\newline
 \hspace*{1,5cm}\fort{cs\_equation\_iterative\_solve} \hspace*{1cm}iterative solution of the systems
 using an incremental method\newline
 \underline{\textbf{Equations for the scalars}}\newline
 \hspace*{1cm}\fort{cs\_solve\_equation\_scalar}\newline
-\hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}calculation of the viscosity at
+\hspace*{1,5cm}\fort{cs\_face\_viscosity} \hspace*{1cm}calculation of the viscosity at
 the faces\newline
 \hspace*{1,5cm}\fort{cs\_equation\_iterative\_solve} \hspace*{1cm}iterative solution of the systems
 using an incremental method\newline
