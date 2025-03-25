@@ -1021,14 +1021,12 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const cs_real_t *restrict cell_f_vol = mq->cell_vol;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *restrict i_face_cog = mq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *)mq->i_face_normal;
@@ -1131,16 +1129,6 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
     b_massflux = b_massflux_abs;
   }
 
-  /* (Absolute) Mass flux divergence */
-
-  cs_real_t *divro;
-  CS_MALLOC_HD(divro, n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
-  cs_divergence(m,
-                1, /* initialize to 0 */
-                i_massflux,
-                b_massflux,
-                divro);
-
   if (icorio == 1 || iturbo > CS_TURBOMACHINERY_NONE) {
     CS_FREE_HD(i_massflux_abs);
     CS_FREE_HD(b_massflux_abs);
@@ -1148,28 +1136,41 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
 
   /* Unsteady term and mass budget */
 
-  cs_real_t glob_m_budget = 0.;
+  if (cs_log_default_is_active()) {
 
-  ctx.parallel_for_reduce_sum
-    (n_cells, glob_m_budget, [=] CS_F_HOST_DEVICE
-     (cs_lnum_t c_id,
-      CS_DISPATCH_REDUCER_TYPE(cs_real_t) &sum) {
+    /* (Absolute) Mass flux divergence */
+
+    cs_real_t *divro;
+    CS_MALLOC_HD(divro, n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+    cs_divergence(m,
+                  1, /* initialize to 0 */
+                  i_massflux,
+                  b_massflux,
+                  divro);
+
+    double glob_m_budget = 0.;
+
+    ctx.parallel_for_reduce_sum
+      (n_cells, glob_m_budget, [=] CS_F_HOST_DEVICE
+       (cs_lnum_t c_id,
+        CS_DISPATCH_REDUCER_TYPE(double) &sum) {
 
       cs_real_t tinsro = cell_f_vol[c_id] * (cpro_rom[c_id]-cproa_rom[c_id]) / dt[c_id];
 
       sum += (tinsro + divro[c_id]);
-  });
+    });
 
-  ctx.wait();
+    ctx.wait();
 
-  cs_parall_sum(1, CS_REAL_TYPE, &glob_m_budget);
+    cs_parall_sum(1, CS_DOUBLE, &glob_m_budget);
 
-  if (cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT,
                   _("   ** VOF model, mass balance: %12.4e\n\n"),
                   glob_m_budget);
 
-  CS_FREE_HD(divro);
+    CS_FREE_HD(divro);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
