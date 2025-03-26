@@ -62,6 +62,10 @@ struct cs_data_2r {
   cs_real_t r[2];
 };
 
+struct cs_data_4r {
+  cs_real_t r[4];
+};
+
 // 2 cs_lnum_t
 
 struct cs_data_2i {
@@ -101,6 +105,26 @@ struct cs_reduce_min1r_max1r {
   combine(volatile T &a, volatile const T &b) const {
     a.r[0] = CS_MIN(a.r[0], b.r[0]);
     a.r[1] = CS_MAX(a.r[1], b.r[1]);
+  }
+};
+
+struct cs_reduce_min2r_max2r {
+  using T = cs_data_4r;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.r[0] =  cs_math_infinite_r;
+    a.r[1] = -cs_math_infinite_r;
+    a.r[2] =  cs_math_infinite_r;
+    a.r[3] = -cs_math_infinite_r;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.r[0] = CS_MIN(a.r[0], b.r[0]);
+    a.r[1] = CS_MAX(a.r[1], b.r[1]);
+    a.r[2] = CS_MIN(a.r[2], b.r[2]);
+    a.r[3] = CS_MAX(a.r[3], b.r[3]);
   }
 };
 
