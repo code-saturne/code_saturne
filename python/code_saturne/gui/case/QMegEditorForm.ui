@@ -360,7 +360,7 @@
               <item row="8" column="1">
                <widget class="QPushButton" name="pushButton_pi">
                 <property name="text">
-                 <string>Pi</string>
+                 <string>pi</string>
                 </property>
                </widget>
               </item>
