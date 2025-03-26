@@ -238,7 +238,7 @@ The following rules should be followed:
   `n_elt_groups_`.
 
 - Global identifier names are prefixed by the matching library prefix,
-  such as `cs_=` or `BFT_`.
+  such as `cs_=` or `CS_`.
 
 - Local (static) variable and function should be prefixed by an underscore
   character.
@@ -320,11 +320,11 @@ Standard C function         | code_saturne macro or function | Header
 `exit` on error             | \ref bft_error                 | \ref bft_error.h
 `printf`                    | \ref bft_printf                | \ref bft_printf.h
 `printf` (to standard logs) | \ref cs_log_printf             | \ref cs_log.h
-`malloc`                    | \ref BFT_MALLOC                | \ref bft_mem.h
+`malloc`                    | \ref CS_MALLOC                 | \ref cs_mem.h
 ` `                         | \ref CS_MALLOC_HD              | \ref cs_base_accel.h
-`realloc`                   | \ref BFT_REALLOC               | \ref bft_mem.h
+`realloc`                   | \ref CS_REALLOC                | \ref cs_mem.h
 ` `                         | \ref CS_REALLOC_HD             | \ref cs_base_accel.h
-`free`                      | \ref BFT_FREE                  | \ref bft_mem.h
+`free`                      | \ref CS_FREE                   | \ref cs_mem.h
 ` `                         | \ref CS_FREE_HD                | \ref cs_base_accel.h
 
 Internationalization

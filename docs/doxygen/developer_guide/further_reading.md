@@ -536,7 +536,7 @@ Memory management
 Explicit memory allocation operations return pointers
 
 - Using the `malloc`, `realloc`, and `free` functions or similar
-  - In code_saturne, the \ref BFT_MALLOC, \ref BFT_REALLOC, and \ref BFT_FREE
+  - In code_saturne, the \ref CS_MALLOC, \ref CS_REALLOC, and \ref CS_FREE
     functions add type and result checking and instrumentation.
 - Explicit allocation as described above is usually done on a memory area called the
   [heap](https://en.wikipedia.org/wiki/Memory_management#HEAP), which is a large,
@@ -550,7 +550,7 @@ Explicit memory allocation operations return pointers
     `performance.log` file.
 - Automatic allocation of variables and fixed-size arrays is done on a smaller
   memory area called the [stack](https://en.wikipedia.org/wiki/Stack_(abstract_data_type))
-  - Does not incurr any overhead (fast).
+  - Does not incur any overhead (fast).
   - Automatically freed when variable goes out of scope.
   - Overwrites on the stack may crash even your debugger...
     - they also may crash _Valgrind_, but can be detected with the
@@ -618,7 +618,7 @@ code_saturne defines several preprocessor macros, among which the following:
   any base type (and classes which define a `>` type relation), but may
   not work on a GPU.
 - For floating-point values of type `cs_real_t`, code_saturne defines
-  `cs_math_fmax` which is prefered as it avoids the side effects of macros
+  `cs_math_fmax` which is preferred as it avoids the side effects of macros
   and will work on a GPU.
 
 Two macros of special importance are:
@@ -709,7 +709,7 @@ The C scoping rules also allow definition of global variables.
   file in which it is declared.
   - Another similar variable in another file would be completely independent.
 - If global visibility is desired, the definition should be unique,
-  and the variable defined using the the `extern` qualifier.
+  and the variable defined using the `extern` qualifier.
 - An `extern const` qualifier may be used to make the variable read only.
   - Useful for pointers to structures, allowing safe reading of structure
     members, but modification only though a specific function (see
