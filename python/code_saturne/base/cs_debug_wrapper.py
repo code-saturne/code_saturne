@@ -555,10 +555,13 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
     # Start building command to run
 
     if debugger_ui in ['terminal', 'cgdb']:
-        cmd_string = str(debugger)
-        for c in cmd:
-            cmd_string += ' ' + enquote_arg(str(c))
-        cmd = [term, '-e', cmd_string]
+        if 'gnome-terminal' in term:
+            cmd = [term, '--', debugger] + cmd
+        else:
+            cmd_string = str(debugger)
+            for c in cmd:
+                cmd_string += ' ' + enquote_arg(str(c))
+            cmd = [term, '-e', cmd_string]
 
     elif debugger_ui == 'gdbgui':
         cmd.insert(0, debugger)
