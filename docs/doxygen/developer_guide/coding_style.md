@@ -33,7 +33,7 @@ file to a more current style (in which case the other guidelines should be
 followed), try to remain consistent with the style in the current file.
 
 For new files, use recently updated or reference examples, such as
-`src/base/cs_field.c` and  `src/base/cs_field.h` for C, `src/base/cs_array.cpp`,
+`src/base/cs_field.cpp` and  `src/base/cs_field.h`, `src/base/cs_array.cpp`,
 and `src/base/cs_array.h` for C++.
 
 If you consider your preferred coding style is better than the one used is
