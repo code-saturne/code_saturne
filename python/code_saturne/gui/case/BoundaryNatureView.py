@@ -114,7 +114,7 @@ class StandardItemModelLocalization(QStandardItemModel):
         """
         """
         QStandardItemModel.__init__(self)
-        self.headers = [self.tr("Label"),
+        self.headers = [self.tr("Name"),
                         self.tr("Nature")]
         self.setColumnCount(len(self.headers))
 

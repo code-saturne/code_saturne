@@ -218,7 +218,7 @@ class DefineZonesTableModel(QStandardItemModel):
         """
         """
         QStandardItemModel.__init__(self)
-        self.headers = [self.tr("Label"),
+        self.headers = [self.tr("Name"),
                         self.tr("Zone"),
                         self.tr("Selection criteria")]
         self.setColumnCount(len(self.headers))
