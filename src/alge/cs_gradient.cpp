@@ -8933,7 +8933,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
   if (hyd_p_flag == 1) {
     bool on_device = cs_mem_is_device_ptr(f_ext);
     const cs_halo_t *halo = cs_glob_mesh->halo;
-    cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, f_ext);
+    cs_halo_sync_r(halo, halo_type, on_device, f_ext);
   }
 
   t0 = cs_timer_time();
