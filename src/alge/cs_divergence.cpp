@@ -181,15 +181,13 @@ cs_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   cs_real_2_t *i_f_face_factor;
   cs_real_t *b_f_face_factor;
 
@@ -229,8 +227,7 @@ cs_mass_flux(const cs_mesh_t             *m,
   }
 
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
-  const cs_real_3_t *restrict dofij
-    = (const cs_real_3_t *)fvq->dofij;
+  const cs_real_3_t *restrict dofij = fvq->dofij;
 
   char var_name[64];
 
@@ -306,7 +303,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     /* Without porosity */
     if (porosi == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (int isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           qdm[cell_id][isou] = rom[cell_id]*vel[cell_id][isou];
         }
       });
@@ -314,7 +311,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     }
     else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (int isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           qdm[cell_id][isou] = rom[cell_id]*vel[cell_id][isou]*porosi[cell_id];
         }
       });
@@ -344,7 +341,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     /* Without porosity */
     if (porosi == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (int isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           qdm[cell_id][isou] = vel[cell_id][isou];
         }
       });
@@ -352,7 +349,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     }
     else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (int isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           qdm[cell_id][isou] = vel[cell_id][isou]*porosi[cell_id];
         }
       });
@@ -387,7 +384,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     if (porosi == nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (int isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           coefaq[face_id][isou] = romb[face_id]*coefav[face_id][isou];
           f_momentum[face_id][isou] = romb[face_id]*vel[cell_id][isou];
         }
@@ -396,7 +393,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (int isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           coefaq[face_id][isou] = romb[face_id]
                                  *coefav[face_id][isou]*porosi[cell_id];
           f_momentum[face_id][isou] =  romb[face_id]*vel[cell_id][isou]
@@ -443,7 +440,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     if (porosi == nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (int isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           coefaq[face_id][isou] = coefav[face_id][isou];
           f_momentum[face_id][isou] = vel[cell_id][isou];
         }
@@ -452,7 +449,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (int isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
           coefaq[face_id][isou] = coefav[face_id][isou]*porosi[cell_id];
           f_momentum[face_id][isou] = vel[cell_id][isou]*porosi[cell_id];
         }
@@ -499,10 +496,12 @@ cs_mass_flux(const cs_mesh_t             *m,
       cs_real_t w_i = weight[face_id] * i_f_face_factor[_p][0];
       cs_real_t w_j = (1. - weight[face_id]) * i_f_face_factor[_p][1];
       /* u, v, w Components */
-      for (int isou = 0; isou < 3; isou++) {
-        i_massflux[face_id] += (w_i * qdm[ii][isou] + w_j * qdm[jj][isou])
-                              * i_f_face_normal[face_id][isou];
+      cs_real_t q = 0;
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        q +=   (w_i * qdm[ii][isou] + w_j * qdm[jj][isou])
+             * i_face_u_normal[face_id][isou];
       }
+      i_massflux[face_id] += q * i_face_surf[face_id];
     });
 
     /* Boundary faces */
@@ -510,16 +509,17 @@ cs_mass_flux(const cs_mesh_t             *m,
     ctx_c.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t _p = is_p*face_id;
       /* u, v, w Components */
-      for (int isou = 0; isou < 3; isou++) {
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
         double pfac = inc*coefaq[face_id][isou];
 
         /* coefbv is a matrix */
-        for (int jsou = 0; jsou < 3; jsou++) {
+        for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
           pfac += coefbv[face_id][jsou][isou]*f_momentum[face_id][jsou];
         }
         pfac *= b_f_face_factor[_p];
 
-        b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
+        b_massflux[face_id] +=   pfac * b_face_surf[face_id]
+                               * b_face_u_normal[face_id][isou];
       }
     });
   }
@@ -561,27 +561,27 @@ cs_mass_flux(const cs_mesh_t             *m,
       cs_lnum_t jj = i_face_cells[face_id][1];
       cs_lnum_t _p = is_p*face_id;
 
-      double dofx = dofij[face_id][0];
-      double dofy = dofij[face_id][1];
-      double dofz = dofij[face_id][2];
+      const cs_real_t *f_dofij = dofij[face_id];
 
       cs_real_t w_i = weight[face_id] * i_f_face_factor[_p][0];
       cs_real_t w_j = (1. - weight[face_id]) * i_f_face_factor[_p][1];
 
       /* Terms along U, V, W */
-      for (int isou = 0; isou < 3; isou++) {
 
-        i_massflux[face_id] = i_massflux[face_id]
-          /* Non-reconstructed term */
-          + (w_i * qdm[ii][isou] + w_j * qdm[jj][isou]
+      cs_real_t q = 0.;
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        q     /* Non-reconstructed term */
+          += (w_i * qdm[ii][isou] + w_j * qdm[jj][isou]
 
-             /*  --->     ->    -->      ->
-                 (Grad(rho U ) . OFij ) . Sij FIXME for discontinuous porous modelling */
-             + 0.5*(grdqdm[ii][isou][0] +grdqdm[jj][isou][0])*dofx
-             + 0.5*(grdqdm[ii][isou][1] +grdqdm[jj][isou][1])*dofy
-             + 0.5*(grdqdm[ii][isou][2] +grdqdm[jj][isou][2])*dofz
-             )*i_f_face_normal[face_id][isou];
+                /*  --->     ->    -->      ->
+                 *  (Grad(rho U ) . OFij ) . Sij
+                 * FIXME for discontinuous porous modelling */
+              + 0.5*(  (grdqdm[ii][isou][0] + grdqdm[jj][isou][0])*f_dofij[0]
+                     + (grdqdm[ii][isou][1] + grdqdm[jj][isou][1])*f_dofij[1]
+                     + (grdqdm[ii][isou][2] + grdqdm[jj][isou][2])*f_dofij[2]))
+             * i_face_u_normal[face_id][isou];
       }
+      i_massflux[face_id] += q * i_face_surf[face_id];
 
     });
 
@@ -592,26 +592,25 @@ cs_mass_flux(const cs_mesh_t             *m,
       cs_lnum_t _p = is_p*face_id;
 
       /* Terms along U, V, W */
-      for (int isou = 0; isou < 3; isou++) {
-
-        double pfac = inc*coefaq[face_id][isou];
+      cs_real_t q = 0;
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        cs_real_t pfac = inc*coefaq[face_id][isou];
 
         /* coefu is a matrix */
-        for (int jsou = 0; jsou < 3; jsou++) {
+        for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
 
-          double pip = f_momentum[face_id][jsou]
-                     + grdqdm[ii][jsou][0]*diipb[face_id][0]
-                     + grdqdm[ii][jsou][1]*diipb[face_id][1]
-                     + grdqdm[ii][jsou][2]*diipb[face_id][2];
+          double pip =   f_momentum[face_id][jsou]
+                       + grdqdm[ii][jsou][0]*diipb[face_id][0]
+                       + grdqdm[ii][jsou][1]*diipb[face_id][1]
+                       + grdqdm[ii][jsou][2]*diipb[face_id][2];
 
           pfac += coefbv[face_id][jsou][isou]*pip;
 
         }
 
-        pfac *= b_f_face_factor[_p];
-
-        b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
+        q += pfac * b_face_u_normal[face_id][isou];
       }
+      b_massflux[face_id] += q * b_f_face_factor[_p] * b_face_surf[face_id];
     });
   }
 
@@ -712,18 +711,15 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
-  const cs_real_3_t *restrict dofij
-    = (const cs_real_3_t *)fvq->dofij;
+  const cs_real_3_t *restrict dofij = fvq->dofij;
 
   /* Local variables */
 
@@ -781,11 +777,11 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
   if (init == 1) {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-      for (int i = 0; i < 3; i++)
+      for (cs_lnum_t i = 0; i < 3; i++)
         i_massflux[face_id][i] = 0.;
     });
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-      for (int i = 0; i < 3; i++)
+      for (cs_lnum_t i = 0; i < 3; i++)
         b_massflux[face_id][i] = 0.;
     });
 
@@ -814,7 +810,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     /* Without porosity */
     if (porosi == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-         for (int isou = 0; isou < 6; isou++) {
+         for (cs_lnum_t isou = 0; isou < 6; isou++) {
            c_mass_var[cell_id][isou] = c_rho[cell_id]*c_var[cell_id][isou];
          }
       });
@@ -822,7 +818,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     /* With porosity */
     else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           c_mass_var[cell_id][isou] =   c_rho[cell_id]*c_var[cell_id][isou]
                                       * porosi[cell_id];
         }
@@ -835,7 +831,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                                c_var[cell_id],
                                c_mass_var[cell_id]);
 
-        for (int isou = 0; isou < 6; isou++)
+        for (cs_lnum_t isou = 0; isou < 6; isou++)
           c_mass_var[cell_id][isou] *= c_rho[cell_id];
       });
     }
@@ -848,7 +844,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     /* Without porosity */
     if (porosi == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           c_mass_var[cell_id][isou] = c_var[cell_id][isou];
         }
       });
@@ -856,7 +852,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     /* With porosity */
     else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           c_mass_var[cell_id][isou] = c_var[cell_id][isou]*porosi[cell_id];
         }
       });
@@ -885,7 +881,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     if (porosi == nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           coefaq[face_id][isou] = b_rho[face_id]*coefav[face_id][isou];
           b_mass_var[face_id][isou] = b_rho[face_id]*c_var[cell_id][isou];
         }
@@ -895,7 +891,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           coefaq[face_id][isou] = b_rho[face_id]
                                  *coefav[face_id][isou]*porosi[cell_id];
           b_mass_var[face_id][isou] =   b_rho[face_id]*c_var[cell_id][isou]
@@ -912,14 +908,14 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                                coefav[face_id],
                                coefaq[face_id]);
 
-        for (int isou = 0; isou < 6; isou++)
+        for (cs_lnum_t isou = 0; isou < 6; isou++)
           coefaq[face_id][isou] *= b_rho[face_id];
 
         cs_math_sym_33_product(porosf[cell_id],
                                c_var[cell_id],
                                b_mass_var[face_id]);
 
-        for (int isou = 0; isou < 6; isou++)
+        for (cs_lnum_t isou = 0; isou < 6; isou++)
           b_mass_var[face_id][isou] *= b_rho[face_id];
 
       });
@@ -934,7 +930,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     if (porosi == nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           coefaq[face_id][isou] = coefav[face_id][isou];
           b_mass_var[face_id][isou] = c_var[cell_id][isou];
         }
@@ -944,7 +940,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           coefaq[face_id][isou] = coefav[face_id][isou]*porosi[cell_id];
           b_mass_var[face_id][isou] = c_var[cell_id][isou]*porosi[cell_id];
         }
@@ -983,33 +979,43 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
       cs_real_t w_i = weight[face_id];
       cs_real_t w_j = (1. - weight[face_id]);
 
-      cs_real_6_t f_mass_var;
-
-      for (int isou = 0; isou < 6; isou++)
+      cs_real_t f_mass_var[6];
+      for (cs_lnum_t isou = 0; isou < 6; isou++)
         f_mass_var[isou] = w_i * c_mass_var[ii][isou] + w_j * c_mass_var[jj][isou];
 
+      cs_real_t i_face_normal[3];
+      for (cs_lnum_t isou = 0; isou < 3; isou++)
+        i_face_normal[isou] =   i_face_u_normal[face_id][isou]
+                              * i_face_surf[face_id];
+
       cs_math_sym_33_3_product_add(f_mass_var,
-                                   i_f_face_normal[face_id],
+                                   i_face_normal,
                                    i_massflux[face_id]);
+
     });
 
     /* Boundary faces */
 
     ctx_c.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-        cs_real_6_t f_mass_var;
+      cs_real_t f_mass_var[6];
 
-        /* var_f = a + b * var_i */
-        for (int isou = 0; isou < 6; isou++)
-          f_mass_var[isou] = inc*coefaq[face_id][isou];
+      /* var_f = a + b * var_i */
+      for (cs_lnum_t isou = 0; isou < 6; isou++)
+        f_mass_var[isou] = inc*coefaq[face_id][isou];
 
-        cs_math_66_6_product_add(coefbv[face_id],
-                                 b_mass_var[face_id],
-                                 f_mass_var);
+      cs_math_66_6_product_add(coefbv[face_id],
+                               b_mass_var[face_id],
+                               f_mass_var);
 
-        cs_math_sym_33_3_product_add(f_mass_var,
-                                     b_f_face_normal[face_id],
-                                     b_massflux[face_id]);
+      cs_real_t b_face_normal[3];
+      for (cs_lnum_t isou = 0; isou < 3; isou++)
+        b_face_normal[isou] =   b_face_u_normal[face_id][isou]
+                              * b_face_surf[face_id];
+
+      cs_math_sym_33_3_product_add(f_mass_var,
+                                   b_face_normal,
+                                   b_massflux[face_id]);
 
     });
   }
@@ -1097,8 +1103,13 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
           + 0.5*(c_grad_mvar[ii][isou][1] +c_grad_mvar[jj][isou][1])*dofij[face_id][1]
           + 0.5*(c_grad_mvar[ii][isou][2] +c_grad_mvar[jj][isou][2])*dofij[face_id][2];
 
+      cs_real_t i_face_normal[3];
+      for (cs_lnum_t isou = 0; isou < 3; isou++)
+        i_face_normal[isou] =   i_face_u_normal[face_id][isou]
+                              * i_face_surf[face_id];
+
       cs_math_sym_33_3_product_add(f_mass_var,
-                                   i_f_face_normal[face_id],
+                                   i_face_normal,
                                    i_massflux[face_id]);
 
     });
@@ -1111,11 +1122,11 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
       cs_real_t f_mass_var[6];
 
       /* var_f = a + b * var_I' */
-      for (int isou = 0; isou < 6; isou++)
+      for (cs_lnum_t isou = 0; isou < 6; isou++)
         f_mass_var[isou] = inc*coefaq[face_id][isou];
 
       /* Add the reconstruction to get value in I' */
-      for (int jsou = 0; jsou < 6; jsou++)
+      for (cs_lnum_t jsou = 0; jsou < 6; jsou++)
         b_mass_var[face_id][jsou] += c_grad_mvar[ii][jsou][0]*diipb[face_id][0]
                                    + c_grad_mvar[ii][jsou][1]*diipb[face_id][1]
                                    + c_grad_mvar[ii][jsou][2]*diipb[face_id][2];
@@ -1124,8 +1135,13 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                                b_mass_var[face_id],
                                f_mass_var);
 
+      cs_real_t b_face_normal[3];
+      for (cs_lnum_t isou = 0; isou < 3; isou++)
+        b_face_normal[isou] =   b_face_u_normal[face_id][isou]
+                              * b_face_surf[face_id];
+
       cs_math_sym_33_3_product_add(f_mass_var,
-                                   b_f_face_normal[face_id],
+                                   b_face_normal,
                                    b_massflux[face_id]);
 
     });
@@ -1142,7 +1158,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     cs_lnum_t *b_sym_flag = fvq->b_sym_flag;
     ctx_c.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       if (b_sym_flag[face_id] == 0) {
-        for (int isou = 0; isou < 3; isou++)
+        for (cs_lnum_t isou = 0; isou < 3; isou++)
           b_massflux[face_id][isou] = 0.;
       }
     });
@@ -1187,10 +1203,8 @@ cs_divergence(const cs_mesh_t          *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   /* Parallel or device dispatch */
 
@@ -1265,10 +1279,8 @@ cs_tensor_divergence(const cs_mesh_t            *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   cs_dispatch_context ctx;
 
@@ -1281,7 +1293,7 @@ cs_tensor_divergence(const cs_mesh_t            *m,
 
   if (init >= 1) {
      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      for (int isou = 0; isou < 3; isou++) {
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
         diverg[cell_id][isou] = 0.;
       }
     });
@@ -1300,7 +1312,7 @@ cs_tensor_divergence(const cs_mesh_t            *m,
     cs_lnum_t jj = i_face_cells[face_id][1];
     cs_real_3_t flux_p, flux_m;
 
-    for (int isou = 0; isou < 3; isou++) {
+    for (cs_lnum_t isou = 0; isou < 3; isou++) {
       flux_p[isou] =  i_massflux[face_id][isou];
       flux_m[isou] = -i_massflux[face_id][isou];
     }
@@ -1372,12 +1384,9 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
 
@@ -1422,8 +1431,6 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     b_poro_duq = _f_ext;
 
   }
-
-  /*==========================================================================*/
 
   /*==========================================================================
     1. Initialization
@@ -1473,12 +1480,8 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_lnum_t ii = b_face_cells[face_id];
       cs_lnum_t _p = is_p*face_id;
 
-      /* To avoid division by 0, no division by the fluid surface */
-
-      cs_real_3_t normal;
-      cs_math_3_normalize(b_face_normal[face_id], normal);
-
-      cs_real_t poro = b_poro_duq[_p];
+      const cs_nreal_t *normal = b_face_u_normal[face_id];
+      const cs_real_t poro = b_poro_duq[_p];
 
       b_massflux[face_id] += b_visc[face_id] * cofbfp[face_id] *
         ( cs_math_3_dot_product(frcxt[ii], normal) * b_dist[face_id] + poro );
@@ -1486,7 +1489,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     });
 
   /*==========================================================================
-    3. Update mass flux with reconstruction technics
+    3. Update mass flux with reconstruction method
     ==========================================================================*/
 
   }
@@ -1531,11 +1534,8 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_lnum_t ii = b_face_cells[face_id];
       cs_lnum_t _p = is_p*face_id;
 
-      /* To avoid division by 0, no division by the fluid surface */
-      cs_real_3_t normal;
-      cs_math_3_normalize(b_face_normal[face_id], normal);
-
-      cs_real_t poro = b_poro_duq[_p];
+      const cs_nreal_t *normal = b_face_u_normal[face_id];
+      const cs_real_t poro = b_poro_duq[_p];
 
       b_massflux[face_id] += b_visc[face_id] * cofbfp[face_id] *
         (cs_math_3_dot_product(frcxt[ii], normal) * b_dist[face_id] + poro);
@@ -1602,19 +1602,14 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict b_dist = fvq->b_dist;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -1656,7 +1651,6 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       b_massflux[face_id] = 0.;
     });
-
   }
   else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
@@ -1700,11 +1694,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
       cs_lnum_t ii = b_face_cells[face_id];
-
-      /* To avoid division by 0, no division by the fluid surface */
-      cs_real_3_t normal;
-      cs_math_3_normalize(b_face_normal[face_id], normal);
-
+      const cs_nreal_t *normal = b_face_u_normal[face_id];
 
       b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
                             * cofbfp[face_id]
@@ -1730,7 +1720,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     else if (porosi != nullptr && porosf == nullptr) {
       CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, amode);
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
         }
       });
@@ -1777,14 +1767,14 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
       visci[0][2] = viscce[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
-      double fikdvi = weighf[face_id][0];
+      double fikdvi = weighf[face_id][0] * i_face_surf[face_id];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] =  i_face_cog[face_id][i]-cell_cen[ii][i]
-                   - fikdvi*(  visci[0][i]*i_f_face_normal[face_id][0]
-                             + visci[1][i]*i_f_face_normal[face_id][1]
-                             + visci[2][i]*i_f_face_normal[face_id][2] );
+                   - fikdvi*(  visci[0][i]*i_face_u_normal[face_id][0]
+                             + visci[1][i]*i_face_u_normal[face_id][1]
+                             + visci[2][i]*i_face_u_normal[face_id][2]);
       }
 
       viscj[0][0] = viscce[jj][0];
@@ -1798,14 +1788,14 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
       viscj[0][2] = viscce[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
-      double fjkdvi = weighf[face_id][1];
+      double fjkdvi = weighf[face_id][1] * i_face_surf[face_id];
 
       /* JJ" = JF + FJ" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
-                    + fjkdvi*(  viscj[0][i]*i_f_face_normal[face_id][0]
-                              + viscj[1][i]*i_f_face_normal[face_id][1]
-                              + viscj[2][i]*i_f_face_normal[face_id][2] );
+                    + fjkdvi*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                              + viscj[1][i]*i_face_u_normal[face_id][1]
+                              + viscj[2][i]*i_face_u_normal[face_id][2]);
       }
 
       i_massflux[face_id] =  i_massflux[face_id]
@@ -1839,10 +1829,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
       cs_lnum_t ii = b_face_cells[face_id];
-
-      /* To avoid division by 0, no division by the fluid surface */
-      cs_real_3_t normal;
-      cs_math_3_normalize(b_face_normal[face_id], normal);
+      const cs_nreal_t *normal = b_face_u_normal[face_id];
 
       /* FIXME: wrong if dirichlet and viscce is really a tensor */
       b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
