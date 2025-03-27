@@ -10084,7 +10084,7 @@
        x="7573"
        class="TextPosition"><tspan
          style="fill:#808080;stroke:none"
-         id="tspan4898">cs_user_boundary_conditions.f90</tspan></tspan></tspan></text>
+         id="tspan4898">cs_user_boundary_conditions.cpp</tspan></tspan></tspan></text>
 
        </g>
       </g>
@@ -10114,7 +10114,7 @@
        x="7573"
        class="TextPosition"><tspan
          style="fill:#808080;stroke:none"
-         id="tspan4911">cs_user_parameters.c</tspan></tspan></tspan></text>
+         id="tspan4911">cs_user_parameters.cpp</tspan></tspan></tspan></text>
 
        </g>
       </g>
