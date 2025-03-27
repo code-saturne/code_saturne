@@ -867,55 +867,6 @@ cs_param_sles_set_precond(const char       *keyval,
     } /* End of switch */
 
   }
-  else if (strcmp(keyval, "amg_block") == 0 ||
-           strcmp(keyval, "block_amg") == 0) {
-
-    slesp->precond = CS_PARAM_PRECOND_AMG;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
-    slesp->need_flexible      = true;
-
-    cs_param_solver_class_t  ret_class =
-      cs_param_sles_check_class(slesp->solver_class);
-
-    /* Set the default AMG choice according to the class of solver */
-
-    switch (ret_class) {
-
-    case CS_PARAM_SOLVER_CLASS_CS:
-      cs_param_sles_amg_inhouse_reset(slesp, false, false); // precond; v-cycle
-      break;
-
-    case CS_PARAM_SOLVER_CLASS_PETSC:
-      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-      break;
-
-    case CS_PARAM_SOLVER_CLASS_HYPRE:
-      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-
-      if (cs_param_sles_hypre_from_petsc())
-        slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-      else { /* No block is used in this case */
-
-        slesp->solver_class = CS_PARAM_SOLVER_CLASS_HYPRE;
-        slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-
-        cs_base_warn(__FILE__, __LINE__);
-        cs_log_printf(CS_LOG_WARNINGS,
-                      "%s(): SLES \"%s\". Switch to HYPRE.\n"
-                      "No block preconditioner will be used.",
-                      __func__, sles_name);
-        cs_log_printf_flush(CS_LOG_WARNINGS);
-
-      }
-      break;
-
-    default:
-      ierr = 2;
-      return ierr;
-
-    } /* End of switch */
-
-  }
   else if (strcmp(keyval, "mumps") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_MUMPS;
