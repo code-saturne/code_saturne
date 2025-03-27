@@ -933,7 +933,7 @@ cs_user_parameters(cs_domain_t *domain)
       = cs_get_glob_velocity_pressure_param();
     cs_time_control_t *vp_tc =
       &(vp_param->time_control);
-    vp_tc->interval_nt = -1;
+    cs_time_control_init_by_time_step(vp_tc, -1, -1, -1, false, false);
   }
   /*! [param_iccvfg] */
 
