@@ -3,6 +3,10 @@ Release 8.3.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix crashes or instability in parallel when using least-squares or
+  Gauss + least-sqaures gradients with extended neigborhood for
+  the pressure and hydrostatic pressure equations.
+
 - Fix handling of restart or computation with frozen velocity field
   (some updates were done anyways).
 
