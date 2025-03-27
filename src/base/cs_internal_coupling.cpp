@@ -241,6 +241,7 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   CS_FREE(cpl->c_tag);
   CS_FREE(cpl->faces_local);
   CS_FREE(cpl->faces_distant);
+  CS_FREE(cpl->ci_cj_vect);
   CS_FREE(cpl->coupled_faces);
   CS_FREE(cpl->cells_criteria);
   CS_FREE(cpl->faces_criteria);
@@ -248,6 +249,54 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   CS_FREE(cpl->exterior_faces_group_name);
   CS_FREE(cpl->volume_zone_ids);
   ple_locator_destroy(cpl->locator);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute cell centers vectors IJ on coupled faces
+ *
+ * parameters:
+ *   cpl <-- pointer to coupling entity
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_ci_cj_vect(const cs_internal_coupling_t  *cpl)
+{
+  cs_lnum_t face_id, cell_id;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  cs_real_3_t *ci_cj_vect = cpl->ci_cj_vect;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  const cs_real_3_t *cell_cen = mq->cell_cen;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  /* Exchange cell center location */
+
+  cs_real_t *cell_cen_local = nullptr;
+  CS_MALLOC(cell_cen_local, 3 * n_local, cs_real_t);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           3, /* dimension */
+                                           (const cs_real_t *)mq->cell_cen,
+                                           cell_cen_local);
+
+  /* Compute IJ vectors */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+
+    for (cs_lnum_t jj = 0; jj < 3; jj++) {
+      cs_real_t xxd = cell_cen_local[3*ii + jj];
+      cs_real_t xxl = cell_cen[cell_id][jj];
+      ci_cj_vect[ii][jj] = xxd - xxl;
+    }
+  }
+
+  /* Free memory */
+  CS_FREE(cell_cen_local);
 }
 
 /*----------------------------------------------------------------------------
@@ -302,6 +351,8 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
   cpl->faces_distant = nullptr;
 
   cpl->coupled_faces = nullptr;
+
+  cpl->ci_cj_vect = nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -635,6 +686,10 @@ _locator_initialize(cs_mesh_t               *m,
     cpl->faces_distant[i] = faces_distant_num[i] - 1;
 
   /* Geometric quantities */
+
+  CS_MALLOC(cpl->ci_cj_vect, cpl->n_local, cs_real_3_t);
+
+  _compute_ci_cj_vect(cpl);
 
   CS_MALLOC(cpl->coupled_faces, m->n_b_faces, bool);
 }

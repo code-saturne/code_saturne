@@ -90,14 +90,8 @@ typedef struct {
   /* Face i is coupled in this entity if coupled_faces[i] = true */
   bool *coupled_faces;
 
-  /* Geometrical weights around coupling interface */
-  cs_real_t *g_weight;
-
   /* IJ vectors */
   cs_real_3_t *ci_cj_vect;
-
-  /* OF vectors  */
-  cs_real_3_t *offset_vect;
 
 } cs_internal_coupling_t;
 
