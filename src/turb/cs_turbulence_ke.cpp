@@ -2355,8 +2355,8 @@ cs_turbulence_ke_clip(int        phase_id,
     cs_log_iteration_clipping_field(id,
                                     rd_sum.i[ii],
                                     0,
-                                    rd.r + ii,
-                                    rd.r + ii,
+                                    rd.r + 2*ii,
+                                    rd.r + 2*ii + 1,
                                     rd_sum.i + ii,
                                     iclpmx);
   }
