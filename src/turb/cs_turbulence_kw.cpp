@@ -68,6 +68,7 @@
 #include "base/cs_physical_constants.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_reducers.h"
 #include "base/cs_rotation.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
@@ -1551,25 +1552,21 @@ cs_turbulence_kw(int phase_id)
 
   /* Compute Min/Max before clipping, for logging */
 
-  cs_real_t *cvar_var = nullptr;
-  cs_real_t vrmax[2];
-  cs_real_t vrmin[2];
+  struct cs_data_4r rd;
+  struct cs_reduce_min2r_max2r reducer;
 
-  const double l_threshold = 1.e12;
-  for (int ii = 0; ii < 2; ii++) {
-    if (ii == 0)
-      cvar_var = cvar_k;
-    else if (ii == 1)
-      cvar_var = cvar_omg;
+  ctx.parallel_for_reduce
+    (n_cells, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_4r &res) {
 
-    vrmin[ii] =  l_threshold;
-    vrmax[ii] = -l_threshold;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_real_t var = cvar_var[c_id];
-      vrmin[ii] = CS_MIN(vrmin[ii], var);
-      vrmax[ii] = CS_MAX(vrmax[ii], var);
-    }
-  }
+    res.r[0] = cvar_k[c_id];
+    res.r[1] = cvar_k[c_id];
+    res.r[2] = cvar_omg[c_id];
+    res.r[3] = cvar_omg[c_id];
+
+  });
+
+  ctx.wait();
 
   /* Simply clip k and omega by absolute value */
 
@@ -1592,60 +1589,60 @@ cs_turbulence_kw(int phase_id)
   if (clip_w_id >= 0)
     cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., cpro_w_clipped);
 
-  cs_lnum_t iclipk[1] = {0};
-  cs_lnum_t iclipw = 0;
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  struct cs_data_2i rd_sum;
+  rd_sum.i[0] = 0;
+  rd_sum.i[1] = 0;
+  struct cs_reduce_sum2i reducer_sum;
+
+  ctx.parallel_for_reduce
+    (n_cells, rd_sum, reducer_sum, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t c_id, cs_data_2i &res) {
+
+    res.i[0] = 0, res.i[1] = 0;
+
     cs_real_t xk = cvar_k[c_id];
     cs_real_t xw = cvar_omg[c_id];
     if (fabs(xk) <= epz2) {
-      iclipk[0] = iclipk[0] + 1;
+      res.i[0] = 1;
       if (clip_k_id >= 0)
         cpro_k_clipped[c_id] = epz2 - xk;
       cvar_k[c_id] = epz2;
     } else if (xk <= 0.) {
-      iclipk[0] = iclipk[0] + 1;
+      res.i[0] = 1;
       if (clip_k_id >= 0)
         cpro_k_clipped[c_id] = - xk;
       cvar_k[c_id] = -xk;
     }
     if (fabs(xw) <= epz2) {
-      iclipw = iclipw + 1;
+      res.i[1] = 1;
       if (clip_w_id >= 0)
         cpro_w_clipped[c_id] = epz2 - xw;
       cvar_omg[c_id] = epz2;
     } else if  (xw <= 0.) {
-      iclipw = iclipw + 1;
+      res.i[1] = 1;
       if (clip_w_id >= 0)
         cpro_w_clipped[c_id] = - xw;
       cvar_omg[c_id] = -xw;
     }
-  }
+  });
+
+  ctx.wait();
 
   /* Save number of clippings for log */
   cs_lnum_t iclpkmx[1] = {0};
   int id;
-  cs_real_t v_min[1];
-  cs_real_t v_max[1];
-  cs_lnum_t iclip;
   for (int ii = 0; ii < 2; ii++ ) {
-    if (ii == 0) {
+    if (ii == 0)
       id = f_k->id;
-      v_min[0] = vrmin[ii];
-      v_max[0] = vrmax[ii];
-      iclip = iclipk[0];
-    } else if (ii == 1) {
+    else if (ii == 1)
       id = f_omg->id;
-      v_min[0] = vrmin[ii];
-      v_max[0] = vrmax[ii];
-      iclip = iclipw;
-    }
 
     cs_log_iteration_clipping_field(id,
-                                    iclip,
+                                    rd_sum.i[ii],
                                     0,
-                                    v_min,
-                                    v_max,
-                                    iclipk,
+                                    rd.r + 2*ii,
+                                    rd.r + 2*ii + 1,
+                                    rd_sum.i,
                                     iclpkmx);
   }
 
