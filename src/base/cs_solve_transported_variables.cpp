@@ -47,7 +47,7 @@
 #include "bft/bft_printf.h"
 
 #include "atmo/cs_atmo.h"
-#include "atmo/cs_atmo_aerosol.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "base/cs_base.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "cfbl/cs_cf_energy.h"

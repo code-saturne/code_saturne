@@ -54,7 +54,7 @@ cs_air_props.h \
 cs_at_opt_interp.h \
 cs_at_data_assim.h \
 cs_atmo.h \
-cs_atmo_aerosol.h \
+cs_atmo_chemistry.h \
 cs_atmo_aerosol_ssh.h \
 cs_atmo_headers.h \
 cs_atmo_profile_std.h \
@@ -79,7 +79,7 @@ cs_air_props.cpp \
 cs_at_opt_interp.cpp \
 cs_at_data_assim.cpp \
 cs_atmo.cpp \
-cs_atmo_aerosol.cpp \
+cs_atmo_chemistry.cpp \
 cs_atmo_aerosol_ssh.cpp \
 cs_atmo_profile_std.cpp \
 cs_atmo_source_terms.cpp \

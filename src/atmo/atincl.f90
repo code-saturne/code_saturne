@@ -426,11 +426,7 @@ integer(c_int), pointer, save :: rad_atmo_model
         compute_z_ground, iatmst, theo_interp,                          &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, distribution_model,                              &
-        ichemistry, isepchemistry, nespg, nrg,                          &
-        chem_with_photo,                                                &
-        iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
-        init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
-        nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                         &
+        imeteo, nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                 &
         meteo_zi, iatsoil,                                              &
         nvertv, kvert, kmx, tsini, tprini, qvsini, ihpm, iqv0,          &
         nfatr1, w1ini, w2ini, sigc, idrayi, idrayst, aod_o3_tot,        &
@@ -440,16 +436,12 @@ integer(c_int), pointer, save :: rad_atmo_model
       implicit none
       type(c_ptr), intent(out) :: ps, sigc
       type(c_ptr), intent(out) :: compute_z_ground, iatmst, theo_interp
-      type(c_ptr), intent(out) :: ichemistry, isepchemistry, nespg, nrg
       type(c_ptr), intent(out) :: sedimentation_model, deposition_model
       type(c_ptr), intent(out) :: nucleation_model
       type(c_ptr), intent(out) :: subgrid_model, distribution_model
       type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
       type(c_ptr), intent(out) :: longitude, latitude
       type(c_ptr), intent(out) :: x_l93, y_l93, idrayi, idrayst
-      type(c_ptr), intent(out) :: iaerosol, frozen_gas_chem
-      type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
-      type(c_ptr), intent(out) :: n_aero, n_sizebin, chem_with_photo
       type(c_ptr), intent(out) :: imeteo
       type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, iatra1, nbmaxt
       type(c_ptr), intent(out) :: meteo_zi, iqv0, w1ini, w2ini
@@ -490,6 +482,7 @@ integer(c_int), pointer, save :: rad_atmo_model
          bind(C, name='cs_f_atmo_arrays_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
+
       integer(c_int), dimension(2) :: dim_nd_nt, dim_ntx_nt, dim_nd_3, dim_nt_3
       integer(c_int), dimension(2) ::  dim_xyvert, dim_kmx2, dim_kmx_nvert
       type(c_ptr), intent(out) :: p_zdmet, p_ztmet, p_xyp_met
@@ -512,7 +505,20 @@ integer(c_int), pointer, save :: rad_atmo_model
       type(c_ptr), intent(out) :: p_soil_totwat
       type(c_ptr), intent(out) :: p_soil_pressure
       type(c_ptr), intent(out) :: p_soil_density
+
     end subroutine cs_f_atmo_arrays_get_pointers
+
+    subroutine cs_f_atmo_chem_get_pointers(ichemistry, isepchemistry, nespg, nrg,                    &
+                                           chem_with_photo, iaerosol, frozen_gas_chem,               &
+                                           init_gas_with_lib, init_aero_with_lib, n_aero, n_sizebin) &
+      bind(C, name='cs_f_atmo_chem_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ichemistry, isepchemistry, nespg, nrg
+      type(c_ptr), intent(out) :: chem_with_photo, iaerosol, frozen_gas_chem
+      type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
+      type(c_ptr), intent(out) :: n_aero, n_sizebin
+    end subroutine cs_f_atmo_chem_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -639,24 +645,20 @@ contains
   subroutine atmo_init
 
     use, intrinsic :: iso_c_binding
-    use atchem
     use atsoil
-    use sshaerosol
     use cs_c_bindings
 
     implicit none
 
     ! Local variables
     type(c_ptr) :: c_ps
-    type(c_ptr) :: c_compute_z_ground, c_iatmst, c_model, c_nrg, c_nespg
+    type(c_ptr) :: c_compute_z_ground, c_iatmst, c_nrg, c_nespg
     type(c_ptr) :: c_sedimentation_model, c_deposition_model, c_nucleation_model
     type(c_ptr) :: c_subgrid_model
     type(c_ptr) :: c_distribution_model
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
     type(c_ptr) :: c_longitude, c_latitude
     type(c_ptr) :: c_xl93, c_yl93, c_sigc
-    type(c_ptr) :: c_modelaero, c_frozen_gas_chem, c_nlayer, c_nsize
-    type(c_ptr) :: c_init_gas_with_lib, c_init_aero_with_lib, c_chem_with_photo
     type(c_ptr) :: c_imeteo, c_iqv0, c_idrayi, c_idrayst
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
     type(c_ptr) :: c_meteo_zi, c_tprini, c_qvsini, c_nfatr1
@@ -673,13 +675,7 @@ contains
       c_compute_z_ground, c_iatmst, c_theo_interp,  &
       c_sedimentation_model, c_deposition_model,    &
       c_nucleation_model, c_subgrid_model,          &
-      c_distribution_model,                         &
-      c_model, c_isepchemistry,                     &
-      c_nespg, c_nrg, c_chem_with_photo,            &
-      c_modelaero, c_frozen_gas_chem,               &
-      c_init_gas_with_lib,                          &
-      c_init_aero_with_lib, c_nlayer,               &
-      c_nsize, c_imeteo,                            &
+      c_distribution_model, c_imeteo,               &
       c_nbmetd, c_nbmett, c_nbmetm, c_iatra1,       &
       c_nbmaxt, c_meteo_zi, c_iatsoil,              &
       c_nvert, c_kvert, c_kmx, c_tsini, c_tprini,   &
@@ -709,17 +705,6 @@ contains
     call c_f_pointer(c_subgrid_model, modsub)
     call c_f_pointer(c_distribution_model, moddis)
 
-    call c_f_pointer(c_model, ichemistry)
-    call c_f_pointer(c_isepchemistry, isepchemistry)
-    call c_f_pointer(c_nespg, nespg)
-    call c_f_pointer(c_nrg, nrg)
-    call c_f_pointer(c_chem_with_photo, photolysis)
-    call c_f_pointer(c_modelaero, iaerosol)
-    call c_f_pointer(c_frozen_gas_chem, nogaseouschemistry)
-    call c_f_pointer(c_init_gas_with_lib, init_gas_with_lib)
-    call c_f_pointer(c_init_aero_with_lib, init_aero_with_lib)
-    call c_f_pointer(c_nlayer, nlayer_aer)
-    call c_f_pointer(c_nsize, n_aer)
     call c_f_pointer(c_imeteo, imeteo)
     call c_f_pointer(c_nbmetd, nbmetd)
     call c_f_pointer(c_nbmett, nbmett)
@@ -759,6 +744,41 @@ contains
     return
 
   end subroutine atmo_init
+
+  subroutine atmo_init_chem
+    use atchem
+    use sshaerosol
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+
+    implicit none
+
+    ! Local variables
+    type(c_ptr) :: c_model, c_isepchemistry
+    type(c_ptr) :: c_nespg, c_nrg, c_chem_with_photo
+    type(c_ptr) :: c_modelaero, c_frozen_gas_chem
+    type(c_ptr) :: c_init_gas_with_lib
+    type(c_ptr) :: c_init_aero_with_lib, c_nlayer, c_nsize
+
+    call cs_f_atmo_chem_get_pointers(c_model, c_isepchemistry,                     &
+                                     c_nespg, c_nrg, c_chem_with_photo,            &
+                                     c_modelaero, c_frozen_gas_chem,               &
+                                     c_init_gas_with_lib,                          &
+                                     c_init_aero_with_lib, c_nlayer, c_nsize)
+
+    call c_f_pointer(c_model, ichemistry)
+    call c_f_pointer(c_isepchemistry, isepchemistry)
+    call c_f_pointer(c_nespg, nespg)
+    call c_f_pointer(c_nrg, nrg)
+    call c_f_pointer(c_chem_with_photo, photolysis)
+    call c_f_pointer(c_modelaero, iaerosol)
+    call c_f_pointer(c_frozen_gas_chem, nogaseouschemistry)
+    call c_f_pointer(c_init_gas_with_lib, init_gas_with_lib)
+    call c_f_pointer(c_init_aero_with_lib, init_aero_with_lib)
+    call c_f_pointer(c_nlayer, nlayer_aer)
+    call c_f_pointer(c_nsize, n_aer)
+
+  end subroutine atmo_init_chem
 
 !===============================================================================
 

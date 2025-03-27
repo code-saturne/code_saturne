@@ -74,7 +74,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "atmo/cs_atmo.h"
-#include "atmo/cs_atmo_aerosol.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_aerosol_ssh.h"
 
 /*----------------------------------------------------------------------------*/

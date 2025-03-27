@@ -43,7 +43,7 @@
 #include "bft/bft_error.h"
 
 #include "atmo/cs_atmo.h"
-#include "atmo/cs_atmo_aerosol.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo_profile_std.h"
 #include "atmo/cs_air_props.h"

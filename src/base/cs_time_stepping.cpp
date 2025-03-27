@@ -49,12 +49,13 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_chemistry.h"
+#include "atmo/cs_at_data_assim.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_1d_wall_thermal_check.h"
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
-#include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "cdo/cs_cdo_main.h"

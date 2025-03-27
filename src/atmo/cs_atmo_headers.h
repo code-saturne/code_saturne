@@ -31,8 +31,8 @@
 
 #include "atmo/cs_air_props.h"
 #include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo_aerosol.h"
 #include "atmo/cs_atmo_aerosol_ssh.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_at_opt_interp.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_profile_std.h"

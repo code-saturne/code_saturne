@@ -47,10 +47,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "bft/bft_error.h"
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
-#include "atmo/cs_atmo.h"
 #include "base/cs_boundary_conditions.h"
 #include "comb/cs_coal.h"
 #include "cogz/cs_combustion_gas.h"

@@ -47,7 +47,7 @@
 #include "base/cs_assert.h"
 #include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo.h"
-#include "atmo/cs_atmo_aerosol.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_source_terms.h"
 #include "atmo/cs_atmo_profile_std.h"
 #include "alge/cs_blas.h"

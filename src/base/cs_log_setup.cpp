@@ -43,6 +43,7 @@
 
 #include "base/cs_ale.h"
 #include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "base/cs_base.h"
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_zone.h"

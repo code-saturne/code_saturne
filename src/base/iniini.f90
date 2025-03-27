@@ -84,6 +84,7 @@ icrom = -1
 !===============================================================================
 
 call atmo_init
+call atmo_init_chem
 call time_step_init
 call time_step_options_init
 call physical_constants_init

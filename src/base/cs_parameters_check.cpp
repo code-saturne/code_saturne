@@ -44,6 +44,7 @@
 #include "bft/bft_error.h"
 
 #include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_ale.h"
 #include "base/cs_base.h"
