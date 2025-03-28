@@ -108,10 +108,10 @@ _field_name_aux(const char *field_radical, const int index)
 {
   char *field_name;
   if (index > -1) {
-    BFT_MALLOC(field_name, strlen(field_radical) + 2 + 1, char);
+    CS_MALLOC(field_name, strlen(field_radical) + 2 + 1, char);
     sprintf(field_name, "%s_%1d", field_radical, index + 1);
   } else {
-    BFT_MALLOC(field_name, strlen(field_radical) + 1, char);
+    CS_MALLOC(field_name, strlen(field_radical) + 1, char);
     sprintf(field_name, "%s", field_radical);
   }
   return field_name;
@@ -139,6 +139,7 @@ _field_name_aux(const char *field_radical, const int index)
  * \param[out] grad_cov_sk     gradient of particle velocity seen covariance
  */
 /*----------------------------------------------------------------------------*/
+
 void
 compute_particle_covariance_gradient(int          iprev,
                                      int          phase_id,
@@ -160,7 +161,7 @@ compute_particle_covariance_gradient(int          iprev,
 
   /* Now compute the gradients */
   cs_real_t *f_inter_cov;
-  BFT_MALLOC(f_inter_cov, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(f_inter_cov, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
 
   /* Get the variable we want to compute the gradients
    * from (covariance velocity seen/velocity) */
@@ -234,9 +235,9 @@ compute_particle_covariance_gradient(int          iprev,
                         grad_cov_sk[i]);
   }
 
-  BFT_FREE(f_inter_cov);
-  return;
+  CS_FREE(f_inter_cov);
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute anisotropic fluid quantities for complete model (modpl == 1).
@@ -520,7 +521,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       f_name = _field_name_aux("lagr_velocity_gradient", phase_id);
       cs_real_33_t *cpro_vgradlagr
         = (cs_real_33_t *)(cs_field_by_name(f_name)->val);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       if (cpro_vgradlagr != nullptr && grad_vel != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -555,7 +556,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
     assert(turb_model != nullptr);
     if (turb_model->order <= CS_TURB_FIRST_ORDER
         && cs_glob_turb_rans_model->igrhok == 0) {
-      BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
+      CS_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
       int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
       const cs_real_t *cvar_k = extra->cvar_k->vals[time_id];
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -636,7 +637,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                        grad_pr);
 
     if (wpres != solved_pres)
-      BFT_FREE(wpres);
+      CS_FREE(wpres);
 
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
       if(cs_glob_velocity_pressure_model->idilat == 0) {
@@ -687,8 +688,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       const cs_lnum_t n_i_faces = m->n_i_faces;
 
       cs_real_t *i_visc, *b_visc;
-      BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-      BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+      CS_MALLOC(i_visc, n_i_faces, cs_real_t);
+      CS_MALLOC(b_visc, n_b_faces, cs_real_t);
 
       cs_face_viscosity(m,
                         mq,
@@ -700,8 +701,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       cs_real_t *i_massflux = nullptr;
       cs_real_t *b_massflux = nullptr;
 
-      BFT_MALLOC(i_massflux, n_i_faces, cs_real_t);
-      BFT_MALLOC(b_massflux, n_b_faces, cs_real_t);
+      CS_MALLOC(i_massflux, n_i_faces, cs_real_t);
+      CS_MALLOC(b_massflux, n_b_faces, cs_real_t);
       cs_array_real_fill_zero(n_i_faces, i_massflux);
       cs_array_real_fill_zero(n_b_faces, b_massflux);
 
@@ -715,7 +716,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       if (f_visc_forces != nullptr)
         div_mu_gradvel = (cs_real_3_t *)f_visc_forces->val;
       else {
-        BFT_MALLOC(_div_mu_gradvel,m->n_cells_with_ghosts, cs_real_3_t);
+        CS_MALLOC(_div_mu_gradvel,m->n_cells_with_ghosts, cs_real_3_t);
         div_mu_gradvel = _div_mu_gradvel;
       }
 
@@ -726,8 +727,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
       //TODO: compute it
       if (vp_model->ivisse == 1) {
-        BFT_MALLOC(i_secvis, n_i_faces, cs_real_t);
-        BFT_MALLOC(b_secvis, n_b_faces, cs_real_t);
+        CS_MALLOC(i_secvis, n_i_faces, cs_real_t);
+        CS_MALLOC(b_secvis, n_b_faces, cs_real_t);
       }
 
       cs_array_real_fill_zero(3*n_cells_with_ghosts, (cs_real_t *)div_mu_gradvel);
@@ -769,13 +770,13 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
         }
       }
 
-      BFT_FREE(i_massflux);
-      BFT_FREE(b_massflux);
-      BFT_FREE(_div_mu_gradvel);
-      BFT_FREE(i_visc);
-      BFT_FREE(b_visc);
-      BFT_FREE(i_secvis);
-      BFT_FREE(b_secvis);
+      CS_FREE(i_massflux);
+      CS_FREE(b_massflux);
+      CS_FREE(_div_mu_gradvel);
+      CS_FREE(i_visc);
+      CS_FREE(b_visc);
+      CS_FREE(i_secvis);
+      CS_FREE(b_secvis);
     }
 
     /* Compute velocity gradient

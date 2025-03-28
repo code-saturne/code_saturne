@@ -357,7 +357,7 @@ _define_particle_datatype(const cs_lagr_attribute_map_t  *p_am)
 
   /* Mark bytes with associated type */
 
-  BFT_MALLOC(cs_type, tot_extents, cs_datatype_t);
+  CS_MALLOC(cs_type, tot_extents, cs_datatype_t);
 
   for (i = 0; i < tot_extents; i++)
     cs_type[i] = CS_CHAR;
@@ -414,9 +414,9 @@ _define_particle_datatype(const cs_lagr_attribute_map_t  *p_am)
 
   /* Assign types */
 
-  BFT_MALLOC(blocklengths, count, int);
-  BFT_MALLOC(types, count, MPI_Datatype);
-  BFT_MALLOC(displacements, count, MPI_Aint);
+  CS_MALLOC(blocklengths, count, int);
+  CS_MALLOC(types, count, MPI_Datatype);
+  CS_MALLOC(displacements, count, MPI_Aint);
 
   count = 0;
 
@@ -441,10 +441,10 @@ _define_particle_datatype(const cs_lagr_attribute_map_t  *p_am)
 
   MPI_Type_commit(&new_type);
 
-  BFT_FREE(displacements);
-  BFT_FREE(types);
-  BFT_FREE(blocklengths);
-  BFT_FREE(cs_type);
+  CS_FREE(displacements);
+  CS_FREE(types);
+  CS_FREE(blocklengths);
+  CS_FREE(cs_type);
 
   MPI_Type_commit(&new_type);
 
@@ -486,7 +486,7 @@ _create_lagr_halo(size_t  extents)
   const cs_halo_t  *halo = mesh->halo;
   const cs_lnum_t  n_halo_cells = halo->n_elts[CS_HALO_EXTENDED];
 
-  BFT_MALLOC(lagr_halo, 1, cs_lagr_halo_t);
+  CS_MALLOC(lagr_halo, 1, cs_lagr_halo_t);
 
   assert(n_halo_cells == halo->index[2*halo->n_c_domains]);
   assert(n_halo_cells == mesh->n_ghost_cells);
@@ -496,31 +496,31 @@ _create_lagr_halo(size_t  extents)
 
   /* Allocate buffers to enable the exchange between communicating ranks */
 
-  BFT_MALLOC(lagr_halo->send_shift, halo->n_c_domains, cs_lnum_t);
-  BFT_MALLOC(lagr_halo->send_count, halo->n_c_domains, cs_lnum_t);
-  BFT_MALLOC(lagr_halo->recv_shift, halo->n_c_domains, cs_lnum_t);
-  BFT_MALLOC(lagr_halo->recv_count, halo->n_c_domains, cs_lnum_t);
+  CS_MALLOC(lagr_halo->send_shift, halo->n_c_domains, cs_lnum_t);
+  CS_MALLOC(lagr_halo->send_count, halo->n_c_domains, cs_lnum_t);
+  CS_MALLOC(lagr_halo->recv_shift, halo->n_c_domains, cs_lnum_t);
+  CS_MALLOC(lagr_halo->recv_count, halo->n_c_domains, cs_lnum_t);
 
   lagr_halo->send_buf_size = CS_LAGR_MIN_COMM_BUF_SIZE;
 
-  BFT_MALLOC(lagr_halo->send_buf,
-             lagr_halo->send_buf_size * extents,
-             unsigned char);
+  CS_MALLOC(lagr_halo->send_buf,
+            lagr_halo->send_buf_size * extents,
+            unsigned char);
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
 
     cs_lnum_t  request_size = 2 * halo->n_c_domains;
 
-    BFT_MALLOC(lagr_halo->request, request_size, MPI_Request);
-    BFT_MALLOC(lagr_halo->status,  request_size, MPI_Status);
+    CS_MALLOC(lagr_halo->request, request_size, MPI_Request);
+    CS_MALLOC(lagr_halo->status,  request_size, MPI_Status);
 
   }
 #endif
 
   /* Fill rank */
 
-  BFT_MALLOC(lagr_halo->rank, n_halo_cells, cs_lnum_t);
+  CS_MALLOC(lagr_halo->rank, n_halo_cells, cs_lnum_t);
 
   for (rank = 0; rank < halo->n_c_domains; rank++) {
 
@@ -533,7 +533,7 @@ _create_lagr_halo(size_t  extents)
 
   /* Fill transform_id */
 
-  BFT_MALLOC(lagr_halo->transform_id, n_halo_cells, cs_lnum_t);
+  CS_MALLOC(lagr_halo->transform_id, n_halo_cells, cs_lnum_t);
 
   for (i = 0; i < n_halo_cells; i++)
     lagr_halo->transform_id[i] = -1; /* Undefined transformation */
@@ -570,9 +570,9 @@ _create_lagr_halo(size_t  extents)
 
   /* Fill dist_cell_id */
 
-  BFT_MALLOC(lagr_halo->dist_cell_id, n_halo_cells, cs_lnum_t);
+  CS_MALLOC(lagr_halo->dist_cell_id, n_halo_cells, cs_lnum_t);
 
-  BFT_MALLOC(cell_id, mesh->n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(cell_id, mesh->n_cells_with_ghosts, cs_lnum_t);
 
   for (i = 0; i < mesh->n_cells_with_ghosts; i++)
     cell_id[i] = i;
@@ -584,7 +584,7 @@ _create_lagr_halo(size_t  extents)
 
   /* Free memory */
 
-  BFT_FREE(cell_id);
+  CS_FREE(cell_id);
 
   return lagr_halo;
 }
@@ -603,24 +603,24 @@ _delete_lagr_halo(cs_lagr_halo_t   **halo)
 
     cs_lagr_halo_t *h = *halo;
 
-    BFT_FREE(h->rank);
-    BFT_FREE(h->transform_id);
-    BFT_FREE(h->dist_cell_id);
+    CS_FREE(h->rank);
+    CS_FREE(h->transform_id);
+    CS_FREE(h->dist_cell_id);
 
-    BFT_FREE(h->send_shift);
-    BFT_FREE(h->send_count);
-    BFT_FREE(h->recv_shift);
-    BFT_FREE(h->recv_count);
+    CS_FREE(h->send_shift);
+    CS_FREE(h->send_count);
+    CS_FREE(h->recv_shift);
+    CS_FREE(h->recv_count);
 
 #if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
-      BFT_FREE(h->request);
-      BFT_FREE(h->status);
+      CS_FREE(h->request);
+      CS_FREE(h->status);
     }
 #endif
 
-    BFT_FREE(h->send_buf);
-    BFT_FREE(*halo);
+    CS_FREE(h->send_buf);
+    CS_FREE(*halo);
   }
 }
 
@@ -648,7 +648,7 @@ _resize_lagr_halo(cs_lagr_halo_t  *lag_halo,
     while (n_halo < n_send_particles)
       n_halo *= 2;
     lag_halo->send_buf_size = n_halo;
-    BFT_REALLOC(lag_halo->send_buf, n_halo*tot_extents, unsigned char);
+    CS_REALLOC(lag_halo->send_buf, n_halo*tot_extents, unsigned char);
   }
 
   /* If decrease is allowed, do it progressively, and with a wide
@@ -657,7 +657,7 @@ _resize_lagr_halo(cs_lagr_halo_t  *lag_halo,
   else if (n_halo > n_send_particles*16) {
     n_halo /= 8;
     lag_halo->send_buf_size = n_halo;
-    BFT_REALLOC(lag_halo->send_buf, n_halo*tot_extents, unsigned char);
+    CS_REALLOC(lag_halo->send_buf, n_halo*tot_extents, unsigned char);
   }
 
   /* Otherwise, keep current size */
@@ -684,7 +684,7 @@ _init_track_builder(cs_lnum_t  n_particles_max,
     return nullptr;
 
   cs_lagr_track_builder_t  *builder = nullptr;
-  BFT_MALLOC(builder, 1, cs_lagr_track_builder_t);
+  CS_MALLOC(builder, 1, cs_lagr_track_builder_t);
 
   /* Ensure a cell->face connectivity is defined */
 
@@ -746,7 +746,7 @@ _destroy_track_builder(cs_lagr_track_builder_t  *builder)
 
   /* Destroy the builder structure */
 
-  BFT_FREE(builder);
+  CS_FREE(builder);
 
   return nullptr;
 }
@@ -2254,12 +2254,12 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
   cs_real_3_t *null_vagaus = nullptr;
   cs_real_33_t *bx = nullptr;
   if (resol_sde && cell_wise_integ == 1) {
-    BFT_MALLOC(taup, n_phases, cs_real_t);
-    BFT_MALLOC(tlag, n_phases, cs_real_3_t);
-    BFT_MALLOC(piil, n_phases, cs_real_3_t);
-    BFT_MALLOC(vagaus, n_phases + 2, cs_real_3_t);
-    BFT_MALLOC(null_vagaus, n_phases + 2, cs_real_3_t);
-    BFT_MALLOC(bx, n_phases, cs_real_33_t);
+    CS_MALLOC(taup, n_phases, cs_real_t);
+    CS_MALLOC(tlag, n_phases, cs_real_3_t);
+    CS_MALLOC(piil, n_phases, cs_real_3_t);
+    CS_MALLOC(vagaus, n_phases + 2, cs_real_3_t);
+    CS_MALLOC(null_vagaus, n_phases + 2, cs_real_3_t);
+    CS_MALLOC(bx, n_phases, cs_real_33_t);
     for (int phase_id = 0; phase_id < n_phases + 2; phase_id++) {
       for (int i = 0; i < 3; i++)
         null_vagaus[phase_id][i] = 0.;
@@ -2951,12 +2951,12 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
     }
   } /* End of while : local displacement */
 
-  BFT_FREE(taup);
-  BFT_FREE(tlag);
-  BFT_FREE(piil);
-  BFT_FREE(bx);
-  BFT_FREE(vagaus);
-  BFT_FREE(null_vagaus);
+  CS_FREE(taup);
+  CS_FREE(tlag);
+  CS_FREE(piil);
+  CS_FREE(bx);
+  CS_FREE(vagaus);
+  CS_FREE(null_vagaus);
 
   assert(particle_state != CS_LAGR_PART_TO_SYNC);
   return particle_state;
@@ -3633,7 +3633,7 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++)
       _tracking_info(particles, p_id)->tracking_step_id = 1;
   }
-  BFT_FREE(rot_m);
+  CS_FREE(rot_m);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n Particle set after %s\n", __func__);
@@ -3660,8 +3660,8 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles)
   unsigned char *swap_buffer;
   size_t swap_buffer_size = p_am->extents * ((size_t)n_particles);
 
-  BFT_MALLOC(cell_idx, n_cells+1, cs_lnum_t);
-  BFT_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
+  CS_MALLOC(cell_idx, n_cells+1, cs_lnum_t);
+  CS_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
 
   /* Cell index (count first) */
 
@@ -3718,8 +3718,8 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles)
 
   }
 
-  BFT_FREE(swap_buffer);
-  BFT_FREE(cell_idx);
+  CS_FREE(swap_buffer);
+  CS_FREE(cell_idx);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n Particle set after %s\n", __func__);
@@ -3845,11 +3845,11 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
   cs_real_3_t *vagaus = nullptr;
   cs_real_33_t *bx = nullptr;
   if (resol_sde && cell_wise_integ == 0) {
-    BFT_MALLOC(taup, n_phases, cs_real_t);
-    BFT_MALLOC(tlag, n_phases, cs_real_3_t);
-    BFT_MALLOC(piil, n_phases, cs_real_3_t);
-    BFT_MALLOC(vagaus, n_phases + 2, cs_real_3_t);
-    BFT_MALLOC(bx, n_phases, cs_real_33_t);
+    CS_MALLOC(taup, n_phases, cs_real_t);
+    CS_MALLOC(tlag, n_phases, cs_real_3_t);
+    CS_MALLOC(piil, n_phases, cs_real_3_t);
+    CS_MALLOC(vagaus, n_phases + 2, cs_real_3_t);
+    CS_MALLOC(bx, n_phases, cs_real_33_t);
   }
 
   int nor = 1;
@@ -3864,9 +3864,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
      * Reinit of t_st_... after cs_lagr_coupling as lagr_st_vel used in piil*/
     if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
         && cs_glob_lagr_time_scheme->t_order == 1) {
-      BFT_MALLOC(list_taup, particles->n_particles, cs_real_t);
-      BFT_MALLOC(list_force_p, particles->n_particles, cs_real_3_t);
-      BFT_MALLOC(list_tempct, particles->n_particles, cs_real_2_t);
+      CS_MALLOC(list_taup, particles->n_particles, cs_real_t);
+      CS_MALLOC(list_force_p, particles->n_particles, cs_real_3_t);
+      CS_MALLOC(list_tempct, particles->n_particles, cs_real_2_t);
     }
     for (cs_lnum_t p_id = 0; p_id < particles->n_particles; p_id++) {
       unsigned char *particle = particles->p_buffer + p_am->extents * p_id;
@@ -3971,9 +3971,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                                 list_tempct[p_id]);
 
       }
-      BFT_FREE(list_taup);
-      BFT_FREE(list_force_p);
-      BFT_FREE(list_tempct);
+      CS_FREE(list_taup);
+      CS_FREE(list_force_p);
+      CS_FREE(list_tempct);
     }
   } /* end resol_sde */
 
@@ -4059,9 +4059,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
       && resol_sde) {
 
     if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
-      BFT_MALLOC(list_taup, particles->n_particles, cs_real_t);
-      BFT_MALLOC(list_force_p, particles->n_particles, cs_real_3_t);
-      BFT_MALLOC(list_tempct, particles->n_particles, cs_real_2_t);
+      CS_MALLOC(list_taup, particles->n_particles, cs_real_t);
+      CS_MALLOC(list_force_p, particles->n_particles, cs_real_3_t);
+      CS_MALLOC(list_tempct, particles->n_particles, cs_real_2_t);
     }
 
     cs_real_t dtp = cs_glob_lagr_time_step->dtp;
@@ -4152,14 +4152,14 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
       }
     }
   }
-  BFT_FREE(list_taup);
-  BFT_FREE(list_force_p);
-  BFT_FREE(list_tempct);
-  BFT_FREE(taup);
-  BFT_FREE(tlag);
-  BFT_FREE(piil);
-  BFT_FREE(bx);
-  BFT_FREE(vagaus);
+  CS_FREE(list_taup);
+  CS_FREE(list_force_p);
+  CS_FREE(list_tempct);
+  CS_FREE(taup);
+  CS_FREE(tlag);
+  CS_FREE(piil);
+  CS_FREE(bx);
+  CS_FREE(vagaus);
 
   /* Deposition sub-model additional loop */
 

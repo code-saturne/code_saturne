@@ -143,9 +143,9 @@ _porcel(cs_real_t         mdiam[],
   cs_real_t    *masflu, *depvol;
 
   cs_field_t *f_wall_dist = cs_field_by_name("wall_distance");
-  BFT_MALLOC(q, ncelet, cs_real_3_t);
-  BFT_MALLOC(masflu, ncelet, cs_real_t);
-  BFT_MALLOC(depvol, ncelet, cs_real_t);
+  CS_MALLOC(q, ncelet, cs_real_3_t);
+  CS_MALLOC(masflu, ncelet, cs_real_t);
+  CS_MALLOC(depvol, ncelet, cs_real_t);
 
   /* Compute  n = Grad(DISTPW)/|Grad(DISTPW)|
    * ======================================== */
@@ -274,9 +274,9 @@ _porcel(cs_real_t         mdiam[],
 
   /* Free memory */
 
-  BFT_FREE(masflu);
-  BFT_FREE(depvol);
-  BFT_FREE(q);
+  CS_FREE(masflu);
+  CS_FREE(depvol);
+  CS_FREE(q);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -333,7 +333,7 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
    * ====================================================================*/
 
   cs_real_t *mdiam;
-  BFT_MALLOC(mdiam, ncelet, cs_real_t);
+  CS_MALLOC(mdiam, ncelet, cs_real_t);
 
   /* cs_lnum_t poro_id; */
   /* field_get_id_try ("clogging_porosity", &poro_id); */
@@ -343,7 +343,7 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
 
   cs_real_t *lporo;
   if (f_poro == nullptr)
-    BFT_MALLOC(lporo, ncelet, cs_real_t);
+    CS_MALLOC(lporo, ncelet, cs_real_t);
   else
     lporo = f_poro->val;
 
@@ -382,9 +382,9 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
   }
 
   if (f_poro == nullptr)
-    BFT_FREE(lporo);
+    CS_FREE(lporo);
 
-  BFT_FREE(mdiam);
+  CS_FREE(mdiam);
 }
 
 /*----------------------------------------------------------------------------*/

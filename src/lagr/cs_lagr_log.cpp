@@ -685,7 +685,7 @@ cs_lagr_log_iteration(void)
 
   cs_real_t *flow_rate;
   int flow_rate_size = bdy_cond->n_zones*n_stats;
-  BFT_MALLOC(flow_rate, flow_rate_size, cs_real_t);
+  CS_MALLOC(flow_rate, flow_rate_size, cs_real_t);
 
   for (int i = 0; i < flow_rate_size; i++)
     flow_rate[i] = bdy_cond->particle_flow_rate[i];
@@ -746,7 +746,7 @@ cs_lagr_log_iteration(void)
 
   cs_log_separator(CS_LOG_DEFAULT);
 
-  BFT_FREE(flow_rate);
+  CS_FREE(flow_rate);
 
   /* Boundary statistics  */
 

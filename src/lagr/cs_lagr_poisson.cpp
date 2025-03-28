@@ -96,7 +96,7 @@ _diverv(cs_real_t                   *diverg,
 
   /* Allocate work arrays */
   cs_real_33_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_33_t);
 
   /* Compute velocity gradient
      ------------------------- */
@@ -130,7 +130,7 @@ _diverv(cs_real_t                   *diverg,
     diverg[c_id]  = grad[c_id][0][0] + grad[c_id][1][1] + grad[c_id][2][2];
 
   /* Free memory */
-  BFT_FREE(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -163,18 +163,18 @@ _lageqp(cs_real_t   *velocityl,
 
   /* Allocate temporary arrays */
 
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
-  BFT_MALLOC(smbrs, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
-  BFT_MALLOC(fmala, n_i_faces, cs_real_t);
-  BFT_MALLOC(fmalb, n_b_faces, cs_real_t);
-  BFT_MALLOC(phia, n_cells_ext, cs_real_t);
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC(viscf, n_i_faces, cs_real_t);
+  CS_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC(smbrs, n_cells_ext, cs_real_t);
+  CS_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  CS_MALLOC(fmala, n_i_faces, cs_real_t);
+  CS_MALLOC(fmalb, n_b_faces, cs_real_t);
+  CS_MALLOC(phia, n_cells_ext, cs_real_t);
+  CS_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
   /* Allocate work arrays */
   cs_real_3_t *w;
-  BFT_MALLOC(w, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(w, n_cells_ext, cs_real_3_t);
 
   bft_printf(_("   ** RESOLUTION for the pressure correction variable"));
 
@@ -211,8 +211,8 @@ _lageqp(cs_real_t   *velocityl,
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
-  BFT_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
 
   cs_real_3_t  *coefaw = (cs_real_3_t  *)bc_coeffs_v_loc.a;
   cs_real_33_t *coefbw = (cs_real_33_t *)bc_coeffs_v_loc.b;
@@ -237,8 +237,8 @@ _lageqp(cs_real_t   *velocityl,
 
   _diverv(smbrs, w, &bc_coeffs_v_loc);
 
-  BFT_FREE(bc_coeffs_v_loc.a);
-  BFT_FREE(bc_coeffs_v_loc.b);
+  CS_FREE(bc_coeffs_v_loc.a);
+  CS_FREE(bc_coeffs_v_loc.b);
 
   /* Boundary condition for PHI
      -------------------------- */
@@ -246,10 +246,10 @@ _lageqp(cs_real_t   *velocityl,
   cs_field_bc_coeffs_t bc_coeffs_phi_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_phi_loc);
 
-  BFT_MALLOC(bc_coeffs_phi_loc.a,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_phi_loc.b,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_phi_loc.af, n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_phi_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_phi_loc.a,  n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_phi_loc.b,  n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_phi_loc.af, n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_phi_loc.bf, n_b_faces, cs_real_t);
 
   cs_real_t *coefap = bc_coeffs_phi_loc.a;
   cs_real_t *coefbp = bc_coeffs_phi_loc.b;
@@ -347,20 +347,20 @@ _lageqp(cs_real_t   *velocityl,
 
   /* Free memory */
 
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
-  BFT_FREE(smbrs);
-  BFT_FREE(rovsdt);
-  BFT_FREE(fmala);
-  BFT_FREE(fmalb);
-  BFT_FREE(phia);
-  BFT_FREE(w);
-  BFT_FREE(dpvar);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
+  CS_FREE(smbrs);
+  CS_FREE(rovsdt);
+  CS_FREE(fmala);
+  CS_FREE(fmalb);
+  CS_FREE(phia);
+  CS_FREE(w);
+  CS_FREE(dpvar);
 
-  BFT_FREE(coefap);
-  BFT_FREE(coefbp);
-  BFT_FREE(cofafp);
-  BFT_FREE(cofbfp);
+  CS_FREE(coefap);
+  CS_FREE(coefbp);
+  CS_FREE(cofafp);
+  CS_FREE(cofbfp);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -387,7 +387,7 @@ cs_lagr_poisson(const int  itypfb[])
   /* Allocate a temporary array     */
 
   cs_real_t *phil;
-  BFT_MALLOC(phil, n_cells_ext, cs_real_t);
+  CS_MALLOC(phil, n_cells_ext, cs_real_t);
 
   /* Initialization */
 
@@ -419,13 +419,13 @@ cs_lagr_poisson(const int  itypfb[])
   /* Compute gradient of phi corrector */
 
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
 
-  BFT_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
-  BFT_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
+  CS_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);
   cs_real_t *coefap = bc_coeffs_loc.a;
   cs_real_t *coefbp = bc_coeffs_loc.b;
 
@@ -460,9 +460,9 @@ cs_lagr_poisson(const int  itypfb[])
                      nullptr, /* internal coupling */
                      grad);
 
-  BFT_FREE(coefap);
-  BFT_FREE(coefbp);
-  BFT_FREE(phil);
+  CS_FREE(coefap);
+  CS_FREE(coefbp);
+  CS_FREE(phil);
 
   /* Correct mean velocities */
 
@@ -496,8 +496,7 @@ cs_lagr_poisson(const int  itypfb[])
 
   /* Free memory */
 
-  BFT_FREE(grad);
-
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/

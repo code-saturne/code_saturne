@@ -294,7 +294,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
   cs_lagr_attribute_map_t  *p_am;
 
-  BFT_MALLOC(p_am, 1, cs_lagr_attribute_map_t);
+  CS_MALLOC(p_am, 1, cs_lagr_attribute_map_t);
 
   /* Start of buffer is used for private tracking state info */
 
@@ -309,8 +309,8 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
   using  lagr_attr_ptrdiff_t = ptrdiff_t[CS_LAGR_N_ATTRIBUTES];
   using  lagr_attr_int_t = int[CS_LAGR_N_ATTRIBUTES];
 
-  BFT_MALLOC(p_am->displ, 2, lagr_attr_ptrdiff_t);
-  BFT_MALLOC(p_am->count, 2, lagr_attr_int_t);
+  CS_MALLOC(p_am->displ, 2, lagr_attr_ptrdiff_t);
+  CS_MALLOC(p_am->count, 2, lagr_attr_int_t);
 
   p_am->source_term_displ = nullptr;
 
@@ -324,7 +324,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
     }
   }
 
-  BFT_MALLOC(order, CS_LAGR_N_ATTRIBUTES, cs_lnum_t);
+  CS_MALLOC(order, CS_LAGR_N_ATTRIBUTES, cs_lnum_t);
 
   cs_order_lnum_allocated_s(nullptr,
                             (const cs_lnum_t *)attr_keys,
@@ -417,7 +417,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
   if (cs_glob_lagr_time_scheme->t_order > 1) {
 
-    BFT_MALLOC(p_am->source_term_displ, CS_LAGR_N_ATTRIBUTES, ptrdiff_t);
+    CS_MALLOC(p_am->source_term_displ, CS_LAGR_N_ATTRIBUTES, ptrdiff_t);
 
     /* loop again on ordered attributes */
 
@@ -441,7 +441,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
   }
 
-  BFT_FREE(order);
+  CS_FREE(order);
 
   return p_am;
 }
@@ -456,12 +456,12 @@ _destroy_attr_map(cs_lagr_attribute_map_t  **p_am)
   if (*p_am != nullptr) {
     cs_lagr_attribute_map_t  *_p_am = *p_am;
 
-    BFT_FREE(_p_am->source_term_displ);
+    CS_FREE(_p_am->source_term_displ);
 
-    BFT_FREE(_p_am->displ);
-    BFT_FREE(_p_am->count);
+    CS_FREE(_p_am->displ);
+    CS_FREE(_p_am->count);
 
-    BFT_FREE(*p_am);
+    CS_FREE(*p_am);
   }
 }
 
@@ -486,9 +486,9 @@ _create_particle_set(cs_lnum_t                       n_particles_max,
   if (n_particles_max == 0)
     return nullptr;
 
-  BFT_MALLOC(new_set, 1, cs_lagr_particle_set_t);
+  CS_MALLOC(new_set, 1, cs_lagr_particle_set_t);
 
-  BFT_MALLOC(new_set->p_buffer, n_particles_max * p_am->extents, unsigned char);
+  CS_MALLOC(new_set->p_buffer, n_particles_max * p_am->extents, unsigned char);
 
   new_set->n_particles = 0;
   new_set->n_part_new = 0;
@@ -530,9 +530,9 @@ _destroy_particle_set(cs_lagr_particle_set_t **set)
   if (set != nullptr) {
 
     cs_lagr_particle_set_t *_set = *set;
-    BFT_FREE(_set->p_buffer);
+    CS_FREE(_set->p_buffer);
 
-    BFT_FREE(*set);
+    CS_FREE(*set);
   }
 }
 
@@ -640,9 +640,9 @@ _particle_set_resize(cs_lagr_particle_set_t   *particle_set,
     while (particle_set->n_particles_max < n_particles_max_min)
       particle_set->n_particles_max *= _reallocation_factor;
 
-    BFT_REALLOC(particle_set->p_buffer,
-                particle_set->n_particles_max * particle_set->p_am->extents,
-                unsigned char);
+    CS_REALLOC(particle_set->p_buffer,
+               particle_set->n_particles_max * particle_set->p_am->extents,
+               unsigned char);
 
     retval = 1;
   }

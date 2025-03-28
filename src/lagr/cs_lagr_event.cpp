@@ -203,7 +203,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_E_ATTRIBUTES][3])
 
   cs_lagr_event_attribute_map_t  *e_am;
 
-  BFT_MALLOC(e_am, 1, cs_lagr_event_attribute_map_t);
+  CS_MALLOC(e_am, 1, cs_lagr_event_attribute_map_t);
 
   e_am->lb = 0;
   e_am->extents = e_am->lb;
@@ -217,7 +217,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_E_ATTRIBUTES][3])
     e_am->count[attr] = 1;
   }
 
-  BFT_MALLOC(order, CS_LAGR_N_E_ATTRIBUTES, cs_lnum_t);
+  CS_MALLOC(order, CS_LAGR_N_E_ATTRIBUTES, cs_lnum_t);
 
   cs_order_lnum_allocated_s(nullptr,
                             (const cs_lnum_t *)attr_keys,
@@ -274,7 +274,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_E_ATTRIBUTES][3])
 
   e_am->extents = _align_extents(e_am->extents);
 
-  BFT_FREE(order);
+  CS_FREE(order);
 
   return e_am;
 }
@@ -287,7 +287,7 @@ static void
 _destroy_attr_map(cs_lagr_event_attribute_map_t  **e_am)
 {
   if (*e_am != nullptr) {
-    BFT_FREE(*e_am);
+    CS_FREE(*e_am);
   }
 }
 
@@ -312,9 +312,9 @@ _create_event_set(cs_lnum_t                             n_events_max,
   if (n_events_max == 0)
     return nullptr;
 
-  BFT_MALLOC(new_set, 1, cs_lagr_event_set_t);
+  CS_MALLOC(new_set, 1, cs_lagr_event_set_t);
 
-  BFT_MALLOC(new_set->e_buffer, n_events_max * e_am->extents, unsigned char);
+  CS_MALLOC(new_set->e_buffer, n_events_max * e_am->extents, unsigned char);
 
   new_set->n_events     = 0;
   new_set->n_events_max = n_events_max;
@@ -465,7 +465,7 @@ cs_lagr_event_initialize(void)
     }
   }
 
-  BFT_REALLOC(_mapped_part_attr, _n_mapped_part_attr, int);
+  CS_REALLOC(_mapped_part_attr, _n_mapped_part_attr, int);
   _n_mapped_part_attr = 0;
 
   for (i = 0; i < n_attrs; i++) {
@@ -522,7 +522,7 @@ cs_lagr_event_finalize(void)
   if (_boundary_events != nullptr)
     cs_lagr_event_set_destroy(&_boundary_events);
 
-  BFT_FREE(_mapped_part_attr);
+  CS_FREE(_mapped_part_attr);
   _n_mapped_part_attr = 0;
 
   _destroy_attr_map(&_e_attr_map);
@@ -605,9 +605,9 @@ cs_lagr_event_set_destroy(cs_lagr_event_set_t  **events)
   if (events != nullptr) {
 
     cs_lagr_event_set_t *_set = *events;
-    BFT_FREE(_set->e_buffer);
+    CS_FREE(_set->e_buffer);
 
-    BFT_FREE(*events);
+    CS_FREE(*events);
   }
 }
 
@@ -689,9 +689,9 @@ cs_lagr_event_set_resize(cs_lagr_event_set_t  *event_set,
 
   event_set->n_events_max = min_size;
 
-  BFT_REALLOC(event_set->e_buffer,
-              event_set->n_events_max * event_set->e_am->extents,
-              unsigned char);
+  CS_REALLOC(event_set->e_buffer,
+             event_set->n_events_max * event_set->e_am->extents,
+             unsigned char);
 }
 
 /*----------------------------------------------------------------------------*/

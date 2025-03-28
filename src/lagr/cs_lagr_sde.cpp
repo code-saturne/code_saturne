@@ -218,7 +218,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
   const cs_temperature_scale_t t_scl = cs_glob_thermal_model->temperature_scale;
 
   const cs_real_3_t **cvar_vel = nullptr;
-  BFT_MALLOC(cvar_vel, n_phases, const cs_real_3_t *);
+  CS_MALLOC(cvar_vel, n_phases, const cs_real_3_t *);
   for (int phase_id = 0; phase_id < n_phases; phase_id++)
     cvar_vel[phase_id] =
       (const cs_real_3_t *)(extra_i[phase_id].vel->vals[_prev_id]);
@@ -257,14 +257,14 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
   cs_real_3_t *piil_r = nullptr;
   cs_real_3_t *tlag_r = nullptr;
   cs_real_3_t *taup_r = nullptr;
-  BFT_MALLOC(lambda, n_phases, cs_real_t);
-  BFT_MALLOC(loc_fluid_vel, n_phases, cs_real_3_t);
-  BFT_MALLOC(part_vel_seen_r, n_phases, cs_real_3_t);
-  BFT_MALLOC(old_part_vel_seen_r, n_phases, cs_real_3_t);
-  BFT_MALLOC(fluid_vel_r, n_phases, cs_real_3_t);
-  BFT_MALLOC(piil_r, n_phases, cs_real_3_t);
-  BFT_MALLOC(tlag_r, n_phases, cs_real_3_t);
-  BFT_MALLOC(taup_r, n_phases, cs_real_3_t);
+  CS_MALLOC(lambda, n_phases, cs_real_t);
+  CS_MALLOC(loc_fluid_vel, n_phases, cs_real_3_t);
+  CS_MALLOC(part_vel_seen_r, n_phases, cs_real_3_t);
+  CS_MALLOC(old_part_vel_seen_r, n_phases, cs_real_3_t);
+  CS_MALLOC(fluid_vel_r, n_phases, cs_real_3_t);
+  CS_MALLOC(piil_r, n_phases, cs_real_3_t);
+  CS_MALLOC(tlag_r, n_phases, cs_real_3_t);
+  CS_MALLOC(taup_r, n_phases, cs_real_3_t);
 
   /* Integrate SDE's over particles
    * Note: new particles will be integrated at the next time step, otherwise
@@ -981,15 +981,15 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       }
     }
   }
-  BFT_FREE(lambda);
-  BFT_FREE(loc_fluid_vel);
-  BFT_FREE(part_vel_seen_r);
-  BFT_FREE(old_part_vel_seen_r);
-  BFT_FREE(fluid_vel_r);
-  BFT_FREE(piil_r);
-  BFT_FREE(tlag_r);
-  BFT_FREE(taup_r);
-  BFT_FREE(cvar_vel);
+  CS_FREE(lambda);
+  CS_FREE(loc_fluid_vel);
+  CS_FREE(part_vel_seen_r);
+  CS_FREE(old_part_vel_seen_r);
+  CS_FREE(fluid_vel_r);
+  CS_FREE(piil_r);
+  CS_FREE(tlag_r);
+  CS_FREE(taup_r);
+  CS_FREE(cvar_vel);
 }
 
 /*----------------------------------------------------------------------------*/

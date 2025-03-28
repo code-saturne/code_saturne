@@ -176,7 +176,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
 
     /* Build cel filter */
 
-    BFT_MALLOC(cell_flag, mesh->n_cells, bool);
+    CS_MALLOC(cell_flag, mesh->n_cells, bool);
 
     for (i = 0; i < mesh->n_cells; i++)
       cell_flag[i] = false;
@@ -230,7 +230,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
   }
 
   if (cell_flag != nullptr)
-    BFT_FREE(cell_flag);
+    CS_FREE(cell_flag);
 
   *n_particles = p_count;
 }

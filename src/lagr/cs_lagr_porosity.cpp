@@ -123,7 +123,7 @@ cs_lagr_porosity(void)
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
 
   cs_real_t *covered_surface = nullptr;
-  BFT_MALLOC(covered_surface, mesh->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(covered_surface, mesh->n_cells_with_ghosts, cs_real_t);
 
   /* Initialization */
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
@@ -191,7 +191,7 @@ cs_lagr_porosity(void)
     }
   }
 
-  BFT_FREE(covered_surface);
+  CS_FREE(covered_surface);
 }
 
 /*----------------------------------------------------------------------------*/

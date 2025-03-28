@@ -294,7 +294,7 @@ _cs_lagr_post(void                  *input,
     cs_real_t  threshold = cs_glob_lagr_stat_options->threshold;
 
     cs_real_t *val;
-    BFT_MALLOC(val, nfabor, cs_real_t);
+    CS_MALLOC(val, nfabor, cs_real_t);
 
     for (int irf = 0; irf < cs_glob_lagr_dim->n_boundary_stats; irf++) {
 
@@ -326,7 +326,7 @@ _cs_lagr_post(void                  *input,
 
     }
 
-    BFT_FREE(val);
+    CS_FREE(val);
 
   }
 }

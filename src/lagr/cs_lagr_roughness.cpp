@@ -157,10 +157,10 @@ roughness_init (const cs_real_t   *water_permit,
   /* Allocate memory for the temperature and Debye length arrays */
 
   if (cs_lagr_roughness_param->temperature == nullptr)
-    BFT_MALLOC(cs_lagr_roughness_param->temperature, mesh->n_cells, cs_real_t);
+    CS_MALLOC(cs_lagr_roughness_param->temperature, mesh->n_cells, cs_real_t);
 
   if (cs_lagr_roughness_param->debye_length == nullptr)
-    BFT_MALLOC(cs_lagr_roughness_param->debye_length, mesh->n_cells, cs_real_t);
+    CS_MALLOC(cs_lagr_roughness_param->debye_length, mesh->n_cells, cs_real_t);
 
   /* Store the temperature */
 
@@ -197,8 +197,8 @@ roughness_init (const cs_real_t   *water_permit,
 void
 cs_lagr_roughness_finalize()
 {
-  BFT_FREE(cs_lagr_roughness_param->temperature);
-  BFT_FREE(cs_lagr_roughness_param->debye_length);
+  CS_FREE(cs_lagr_roughness_param->temperature);
+  CS_FREE(cs_lagr_roughness_param->debye_length);
 }
 
 /*----------------------------------------------------------------------------

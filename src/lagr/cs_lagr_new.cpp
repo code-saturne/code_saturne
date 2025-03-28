@@ -745,7 +745,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       && cval_t == nullptr
       && cval_h != nullptr) {
 
-    BFT_MALLOC(_cval_t, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+    CS_MALLOC(_cval_t, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
     cs_ht_convert_h_to_t_cells(cval_h, _cval_t);
     cval_t = _cval_t;
   }
@@ -784,9 +784,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   cs_real_3_t  **vagaus = nullptr;
   cs_real_t *temp_vagaus = nullptr;
 
-  BFT_MALLOC(vagaus, n_phases, cs_real_3_t *);
+  CS_MALLOC(vagaus, n_phases, cs_real_3_t *);
   for (int phase_id = 0; phase_id < n_phases; phase_id++)
-    BFT_MALLOC(vagaus[phase_id], n, cs_real_3_t);
+    CS_MALLOC(vagaus[phase_id], n, cs_real_3_t);
 
   cs_real_3_t *temp_vel_fluc_coef = nullptr;
   cs_real_t *var_temp_corel_coef = nullptr;
@@ -800,11 +800,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
             || extra->temperature_variance != nullptr)
           &&  extra->temperature != nullptr) {
         if (extra->temperature_turbulent_flux != nullptr)
-          BFT_MALLOC(temp_vel_fluc_coef, n_cells, cs_real_3_t);
+          CS_MALLOC(temp_vel_fluc_coef, n_cells, cs_real_3_t);
         if (extra->temperature_variance != nullptr)
-          BFT_MALLOC(var_temp_corel_coef, n_cells, cs_real_t);
+          CS_MALLOC(var_temp_corel_coef, n_cells, cs_real_t);
 
-        BFT_MALLOC(temp_vagaus, n, cs_real_t);
+        CS_MALLOC(temp_vagaus, n, cs_real_t);
         cs_random_normal(n, temp_vagaus);
       }
     }
@@ -820,11 +820,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   cs_real_33_t **eig_vec = nullptr;
   cs_real_3_t **eig_val = nullptr;
 
-  BFT_MALLOC(eig_vec, n_phases, cs_real_33_t *);
-  BFT_MALLOC(eig_val, n_phases, cs_real_3_t *);
+  CS_MALLOC(eig_vec, n_phases, cs_real_33_t *);
+  CS_MALLOC(eig_val, n_phases, cs_real_3_t *);
   for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-    BFT_MALLOC(eig_vec[phase_id], n_cells, cs_real_33_t);
-    BFT_MALLOC(eig_val[phase_id], n_cells, cs_real_3_t);
+    CS_MALLOC(eig_vec[phase_id], n_cells, cs_real_33_t);
+    CS_MALLOC(eig_val[phase_id], n_cells, cs_real_3_t);
   }
 
   /* First stage: compute cell values
@@ -955,7 +955,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
      ------------------------------------------- */
 
   cs_real_3_t *loc_fluid_vel = nullptr;
-  BFT_MALLOC(loc_fluid_vel, n_phases, cs_real_3_t);
+  CS_MALLOC(loc_fluid_vel, n_phases, cs_real_3_t);
 
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
 
@@ -1598,7 +1598,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   } /* End loop over new particles */
 
-  BFT_FREE(loc_fluid_vel);
+  CS_FREE(loc_fluid_vel);
 
   /* Update weights to have the correct flow rate
      -------------------------------------------- */
@@ -1644,18 +1644,18 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   }
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-    BFT_FREE(vagaus[phase_id]);
-    BFT_FREE(eig_vec[phase_id]);
-    BFT_FREE(eig_val[phase_id]);
+    CS_FREE(vagaus[phase_id]);
+    CS_FREE(eig_vec[phase_id]);
+    CS_FREE(eig_val[phase_id]);
   }
 
-  BFT_FREE(_cval_t);
-  BFT_FREE(vagaus);
-  BFT_FREE(eig_vec);
-  BFT_FREE(eig_val);
-  BFT_FREE(var_temp_corel_coef);
-  BFT_FREE(temp_vel_fluc_coef);
-  BFT_FREE(temp_vagaus);
+  CS_FREE(_cval_t);
+  CS_FREE(vagaus);
+  CS_FREE(eig_vec);
+  CS_FREE(eig_val);
+  CS_FREE(var_temp_corel_coef);
+  CS_FREE(temp_vel_fluc_coef);
+  CS_FREE(temp_vagaus);
 }
 
 /*----------------------------------------------------------------------------*/

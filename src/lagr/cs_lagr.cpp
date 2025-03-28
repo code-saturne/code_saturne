@@ -353,7 +353,7 @@ cs_lagr_extra_module_t *cs_glob_lagr_extra_module = nullptr;
 /* initialize for all the continuous phases */
 static void _lagr_map_field_initialize(cs_lnum_t n_phases)
 {
-  BFT_REALLOC(_lagr_extra_module, n_phases, cs_lagr_extra_module_t);
+  CS_REALLOC(_lagr_extra_module, n_phases, cs_lagr_extra_module_t);
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     _lagr_extra_module[phase_id].n_phases = n_phases;
     _lagr_extra_module[phase_id].iturb = 0;
@@ -461,10 +461,10 @@ static char *_field_name(const char *field_radical, const int index)
   char *field_name;
 
   if (index > -1) {
-    BFT_MALLOC(field_name, strlen(field_radical) + 2 + 1, char);
+    CS_MALLOC(field_name, strlen(field_radical) + 2 + 1, char);
     sprintf(field_name, "%s_%1d", field_radical, index + 1);
   } else {
-    BFT_MALLOC(field_name, strlen(field_radical) + 1, char);
+    CS_MALLOC(field_name, strlen(field_radical) + 1, char);
     sprintf(field_name, "%s", field_radical);
   }
 
@@ -500,48 +500,48 @@ _lagr_map_fields_default(void)
        * And free the name */
       f_name = _field_name("lagr_velocity", phase_id);
       _lagr_extra_module[phase_id].vel = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       /* TODO: not correctly defined for LES */
       f_name = _field_name("lagr_k", phase_id);
       _lagr_extra_module[phase_id].cvar_k = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("lagr_gradk", phase_id);
       _lagr_extra_module[phase_id].cvar_gradk = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("lagr_rij", phase_id);
       _lagr_extra_module[phase_id].cvar_rij = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("lagr_gradrij", phase_id);
       _lagr_extra_module[phase_id].cvar_gradrij = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("lagr_epsilon", phase_id);
       _lagr_extra_module[phase_id].cvar_ep = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("lagr_density", phase_id);
       _lagr_extra_module[phase_id].cromf = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("molecular_viscosity", phase_id);
       _lagr_extra_module[phase_id].viscl = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("lagr_alpha", phase_id);
       _lagr_extra_module[phase_id].alpha = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("lagr_velocity_gradient", phase_id);
       _lagr_extra_module[phase_id].ustar = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       f_name = _field_name("lagr_time", phase_id);
       _lagr_extra_module[phase_id].lagr_time = cs_field_by_name_try(f_name);
-      BFT_FREE(f_name);
+      CS_FREE(f_name);
 
       _lagr_extra_module[phase_id].cvar_omg = nullptr;
       _lagr_extra_module[phase_id].scal_t
@@ -677,7 +677,7 @@ _zone_injection_set_init(int                        location_id,
   else {
 
     cs_lagr_injection_set_t *_zis  = *injection_sets;
-    BFT_REALLOC(_zis, set_id+1, cs_lagr_injection_set_t);
+    CS_REALLOC(_zis, set_id+1, cs_lagr_injection_set_t);
 
     for (int i = *n_injection_sets; i <= set_id; i++) {
 
@@ -719,7 +719,7 @@ _update_zone_data_struct(cs_lagr_zone_data_t  **zone_data,
   cs_lagr_zone_data_t  *zd = *zone_data;
 
   if (*zone_data == nullptr) {
-    BFT_MALLOC(zd, 1, cs_lagr_zone_data_t);
+    CS_MALLOC(zd, 1, cs_lagr_zone_data_t);
     zd->location_id = location_id;
     zd->n_zones = 0;
     zd->zone_type = nullptr;
@@ -732,10 +732,10 @@ _update_zone_data_struct(cs_lagr_zone_data_t  **zone_data,
 
   if (zd->n_zones < n_zones) {
     int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
-    BFT_REALLOC(zd->zone_type, n_zones, int);
-    BFT_REALLOC(zd->n_injection_sets, n_zones, int);
-    BFT_REALLOC(zd->injection_set, n_zones, cs_lagr_injection_set_t *);
-    BFT_REALLOC(zd->particle_flow_rate, n_zones*n_stats, cs_real_t);
+    CS_REALLOC(zd->zone_type, n_zones, int);
+    CS_REALLOC(zd->n_injection_sets, n_zones, int);
+    CS_REALLOC(zd->injection_set, n_zones, cs_lagr_injection_set_t *);
+    CS_REALLOC(zd->particle_flow_rate, n_zones*n_stats, cs_real_t);
     for (int i = zd->n_zones; i < n_zones; i++) {
       zd->zone_type[i] = -1;
       zd->n_injection_sets[i] = 0;
@@ -761,9 +761,9 @@ _create_internal_cond_struct(void)
   cs_lagr_internal_condition_t *internal_cond = nullptr;
   cs_mesh_t *mesh = cs_glob_mesh;
 
-  BFT_MALLOC(internal_cond, 1, cs_lagr_internal_condition_t);
+  CS_MALLOC(internal_cond, 1, cs_lagr_internal_condition_t);
 
-  BFT_MALLOC(internal_cond->i_face_zone_id, mesh->n_i_faces, int);
+  CS_MALLOC(internal_cond->i_face_zone_id, mesh->n_i_faces, int);
 
   for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
     internal_cond->i_face_zone_id[i] = -1;
@@ -784,7 +784,7 @@ _update_boundary_face_type(void)
 
   const cs_mesh_t *mesh = cs_glob_mesh;
 
-  BFT_REALLOC(bcs->elt_type, mesh->n_b_faces, char);
+  CS_REALLOC(bcs->elt_type, mesh->n_b_faces, char);
 
   for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
     bcs->elt_type[i] = 0;
@@ -806,14 +806,14 @@ _update_boundary_face_type(void)
 
   {
     int *bc_flag;
-    BFT_MALLOC(bc_flag, mesh->n_b_faces, int);
+    CS_MALLOC(bc_flag, mesh->n_b_faces, int);
 
     for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
       bc_flag[i] = bcs->elt_type[i];
 
     cs_boundary_conditions_error(bc_flag, _("Lagrangian boundary type"));
 
-    BFT_FREE(bc_flag);
+    CS_FREE(bc_flag);
   }
 }
 
@@ -973,8 +973,7 @@ cs_lagr_init_arrays(void)
   assert(bound_stat == nullptr);
 
   if (n_boundary_stats > 0)
-    BFT_MALLOC(bound_stat, n_b_faces * n_boundary_stats, cs_real_t);
-
+    CS_MALLOC(bound_stat, n_b_faces * n_boundary_stats, cs_real_t);
 }
 
 /*----------------------------------------------------------------------------
@@ -988,30 +987,30 @@ cs_lagr_finalize(void)
 
   if (n_boundary_stats > 0) {
     assert(bound_stat != nullptr);
-    BFT_FREE(bound_stat);
+    CS_FREE(bound_stat);
   }
 
-  BFT_FREE(cs_glob_lagr_precipitation_model->nbprec);
-  BFT_FREE(cs_glob_lagr_precipitation_model->solub);
+  CS_FREE(cs_glob_lagr_precipitation_model->nbprec);
+  CS_FREE(cs_glob_lagr_precipitation_model->solub);
 
-  BFT_FREE(cs_glob_lagr_precipitation_model->mp_diss);
+  CS_FREE(cs_glob_lagr_precipitation_model->mp_diss);
 
   /* geometry */
 
-  BFT_FREE(cs_glob_lagr_b_face_proj);
+  CS_FREE(cs_glob_lagr_b_face_proj);
 
   /* encrustation pointers */
 
-  BFT_FREE(cs_glob_lagr_encrustation->enc1);
-  BFT_FREE(cs_glob_lagr_encrustation->enc2);
-  BFT_FREE(cs_glob_lagr_encrustation->tprenc);
-  BFT_FREE(cs_glob_lagr_encrustation->visref);
+  CS_FREE(cs_glob_lagr_encrustation->enc1);
+  CS_FREE(cs_glob_lagr_encrustation->enc2);
+  CS_FREE(cs_glob_lagr_encrustation->tprenc);
+  CS_FREE(cs_glob_lagr_encrustation->visref);
 
   /* boundary interaction pointers */
 
   for (int i = 0; i < cs_glob_lagr_dim->n_boundary_stats; i++)
-    BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd[i]);
-  BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd);
+    CS_FREE(cs_glob_lagr_boundary_interactions->nombrd[i]);
+  CS_FREE(cs_glob_lagr_boundary_interactions->nombrd);
 
   /* Statistics */
 
@@ -1030,22 +1029,22 @@ cs_lagr_finalize(void)
   /* Fluid gradients */
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   for (int phase_id = 0; phase_id < extra->n_phases; phase_id++) {
-    BFT_FREE(extra[phase_id].grad_pr);
-    BFT_FREE(extra[phase_id].grad_vel);
+    CS_FREE(extra[phase_id].grad_pr);
+    CS_FREE(extra[phase_id].grad_vel);
 
     for (int i = 0; i < 9; i++) {
-      BFT_FREE(extra[phase_id].grad_cov_skp[i]);
+      CS_FREE(extra[phase_id].grad_cov_skp[i]);
     }
     for (int i = 0; i < 6; i++) {
-      BFT_FREE(extra[phase_id].grad_cov_sk[i]);
+      CS_FREE(extra[phase_id].grad_cov_sk[i]);
     }
-    BFT_FREE(extra[phase_id].grad_lagr_time);
-    BFT_FREE(extra[phase_id].grad_tempf);
-    BFT_FREE(extra[phase_id].grad_lagr_time_r_et);
-    BFT_FREE(extra[phase_id].anisotropic_lagr_time);
-    BFT_FREE(extra[phase_id].anisotropic_bx);
+    CS_FREE(extra[phase_id].grad_lagr_time);
+    CS_FREE(extra[phase_id].grad_tempf);
+    CS_FREE(extra[phase_id].grad_lagr_time_r_et);
+    CS_FREE(extra[phase_id].anisotropic_lagr_time);
+    CS_FREE(extra[phase_id].anisotropic_bx);
   }
-  BFT_FREE(cs_glob_lagr_extra_module);
+  CS_FREE(cs_glob_lagr_extra_module);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1521,7 +1520,7 @@ cs_lagr_get_internal_conditions(void)
     cs_glob_lagr_internal_conditions = _create_internal_cond_struct();
 
   if (cs_glob_lagr_internal_conditions->i_face_zone_id == nullptr) {
-    BFT_MALLOC(cs_glob_lagr_internal_conditions->i_face_zone_id,
+    CS_MALLOC(cs_glob_lagr_internal_conditions->i_face_zone_id,
                cs_glob_mesh->n_i_faces,
                int);
 
@@ -1600,16 +1599,16 @@ cs_lagr_finalize_zone_conditions(void)
 
     if (zd != nullptr) {
 
-      BFT_FREE(zd->zone_type);
+      CS_FREE(zd->zone_type);
       for (int j = 0; j < zd->n_zones; j++)
-        BFT_FREE(zd->injection_set[j]);
-      BFT_FREE(zd->injection_set);
-      BFT_FREE(zd->n_injection_sets);
+        CS_FREE(zd->injection_set[j]);
+      CS_FREE(zd->injection_set);
+      CS_FREE(zd->n_injection_sets);
 
-      BFT_FREE(zd->elt_type);
-      BFT_FREE(zd->particle_flow_rate);
+      CS_FREE(zd->elt_type);
+      CS_FREE(zd->particle_flow_rate);
 
-      BFT_FREE(zda[i]);
+      CS_FREE(zda[i]);
 
     }
 
@@ -1626,8 +1625,8 @@ void cs_lagr_finalize_internal_cond(void)
     = cs_glob_lagr_internal_conditions;
 
   if (internal_cond != nullptr) {
-    BFT_FREE(internal_cond->i_face_zone_id);
-    BFT_FREE(internal_cond);
+    CS_FREE(internal_cond->i_face_zone_id);
+    CS_FREE(internal_cond);
   }
 }
 
@@ -1743,13 +1742,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
   if (   lagr_model->clogging == 1
       || lagr_model->roughness == 1
       || lagr_model->dlvo == 1)
-    BFT_MALLOC(tempp, mesh->n_cells, cs_real_t);
+    CS_MALLOC(tempp, mesh->n_cells, cs_real_t);
 
   ipass ++;
 
   static cs_real_t *vislen = nullptr;
   if ((lagr_model->deposition == 1) && (ipass == 1)) {
-    BFT_MALLOC(vislen, n_b_faces, cs_real_t);
+    CS_MALLOC(vislen, n_b_faces, cs_real_t);
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
       vislen[ifac] = -cs_math_big_r;
   }
@@ -2098,7 +2097,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     /* The previous value of rij exists when cs is used but not
      * when ncfd is used */
-    /* TODO : Maybe can be replaced with extra_i[phase_id].cvar_rij->n_time_vals > 1) ? 1 : 0; */
+    /* TODO :
+       Maybe can be replaced with
+       extra_i[phase_id].cvar_rij->n_time_vals > 1) ? 1 : 0; */
     const int prev_exist = cs_glob_lagr_model->cs_used;
 
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
@@ -2114,41 +2115,41 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* First pass allocate and compute it */
       if (extra_i[phase_id].grad_pr == nullptr) {
         const cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
-        BFT_MALLOC(extra_i[phase_id].grad_pr, ncelet, cs_real_3_t);
+        CS_MALLOC(extra_i[phase_id].grad_pr, ncelet, cs_real_3_t);
 
         // TODO : check if the pressure and velocity allocs can be removed
-        if ((    cs_glob_lagr_time_scheme->interpol_field != 0
-            || cs_glob_lagr_time_scheme->extended_t_scheme != 0)
-          && cs_glob_lagr_model->idistu == 1)
-          BFT_MALLOC(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t);
+        if (  (    cs_glob_lagr_time_scheme->interpol_field != 0
+               || cs_glob_lagr_time_scheme->extended_t_scheme != 0)
+            && cs_glob_lagr_model->idistu == 1)
+          CS_MALLOC(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t);
 
         if (   cs_glob_lagr_model->modcpl > 0
-          || cs_glob_lagr_model->shape > 0
-          || cs_glob_lagr_time_scheme->interpol_field != 0)
-          BFT_MALLOC(extra_i[phase_id].grad_vel, ncelet, cs_real_33_t);
+            || cs_glob_lagr_model->shape > 0
+            || cs_glob_lagr_time_scheme->interpol_field != 0)
+          CS_MALLOC(extra_i[phase_id].grad_vel, ncelet, cs_real_33_t);
 
         if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
             && extra->temperature != nullptr
             && cs_glob_lagr_time_scheme->interpol_field > 0
             && phase_id == 0)
-          BFT_MALLOC(extra_i[phase_id].grad_tempf, ncelet, cs_real_3_t);
+          CS_MALLOC(extra_i[phase_id].grad_tempf, ncelet, cs_real_3_t);
 
         /* Allocate the gradients of second order statistics */
         for (int i = 0; i < 9; i++)
-          BFT_MALLOC(extra_i[phase_id].grad_cov_skp[i], ncelet, cs_real_3_t);
+          CS_MALLOC(extra_i[phase_id].grad_cov_skp[i], ncelet, cs_real_3_t);
         for (int i = 0; i < 6; i++)
-          BFT_MALLOC(extra_i[phase_id].grad_cov_sk[i], ncelet, cs_real_3_t);
+          CS_MALLOC(extra_i[phase_id].grad_cov_sk[i], ncelet, cs_real_3_t);
 
         if (   cs_glob_lagr_time_scheme->extended_t_scheme !=0
             && cs_glob_lagr_model->idistu == 1) {
-            BFT_MALLOC(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t);
+            CS_MALLOC(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t);
             if (cs_glob_lagr_model->modcpl == 1)
-              BFT_MALLOC(extra_i[phase_id].grad_lagr_time_r_et, ncelet, cs_real_3_t);
+              CS_MALLOC(extra_i[phase_id].grad_lagr_time_r_et, ncelet, cs_real_3_t);
         }
 
         if (cs_glob_lagr_model->modcpl > 0) {
-          BFT_MALLOC(extra_i[phase_id].anisotropic_lagr_time, ncelet, cs_real_3_t);
-          BFT_MALLOC(extra_i[phase_id].anisotropic_bx, ncelet, cs_real_3_t);
+          CS_MALLOC(extra_i[phase_id].anisotropic_lagr_time, ncelet, cs_real_3_t);
+          CS_MALLOC(extra_i[phase_id].anisotropic_bx, ncelet, cs_real_3_t);
         }
         cs_lagr_aux_mean_fluid_quantities(0,
                                           phase_id,
@@ -2161,25 +2162,27 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                           extra_i[phase_id].grad_lagr_time_r_et,
                                           extra_i[phase_id].grad_lagr_time);
       }
-      else if (   cs_glob_lagr_time_scheme->iilagr
-                    != CS_LAGR_FROZEN_CONTINUOUS_PHASE
+      else if (   (   cs_glob_lagr_time_scheme->iilagr
+                   != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
                && is_previous_active) {
 
         if (mesh->time_dep >= CS_MESH_TRANSIENT_CONNECT) {
           cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-          BFT_REALLOC(extra_i[phase_id].grad_pr, n_cells_ext, cs_real_3_t);
+          CS_REALLOC(extra_i[phase_id].grad_pr, n_cells_ext, cs_real_3_t);
           if (extra_i[phase_id].grad_vel != nullptr)
-            BFT_REALLOC(extra_i[phase_id].grad_vel, n_cells_ext, cs_real_33_t);
+            CS_REALLOC(extra_i[phase_id].grad_vel, n_cells_ext, cs_real_33_t);
           if (extra_i[phase_id].grad_tempf != nullptr)
-            BFT_REALLOC(extra_i[phase_id].grad_tempf, n_cells_ext, cs_real_3_t);
-        if (extra_i[phase_id].anisotropic_lagr_time != nullptr)
-          BFT_REALLOC(extra_i[phase_id].anisotropic_lagr_time, n_cells_ext, cs_real_3_t);
-        if (extra_i[phase_id].anisotropic_bx != nullptr)
-          BFT_REALLOC(extra_i[phase_id].anisotropic_bx, n_cells_ext, cs_real_3_t);
-        if (extra_i[phase_id].grad_lagr_time_r_et != nullptr)
-          BFT_REALLOC(extra_i[phase_id].grad_lagr_time_r_et, n_cells_ext, cs_real_3_t);
+            CS_REALLOC(extra_i[phase_id].grad_tempf, n_cells_ext, cs_real_3_t);
+          if (extra_i[phase_id].anisotropic_lagr_time != nullptr)
+            CS_REALLOC(extra_i[phase_id].anisotropic_lagr_time, n_cells_ext,
+                       cs_real_3_t);
+          if (extra_i[phase_id].anisotropic_bx != nullptr)
+            CS_REALLOC(extra_i[phase_id].anisotropic_bx, n_cells_ext, cs_real_3_t);
+          if (extra_i[phase_id].grad_lagr_time_r_et != nullptr)
+            CS_REALLOC(extra_i[phase_id].grad_lagr_time_r_et, n_cells_ext,
+                       cs_real_3_t);
           if (extra_i[phase_id].grad_lagr_time != nullptr)
-            BFT_REALLOC(extra_i[phase_id].grad_lagr_time, n_cells_ext, cs_real_3_t);
+            CS_REALLOC(extra_i[phase_id].grad_lagr_time, n_cells_ext, cs_real_3_t);
         }
 
         /* TODO compute carrier field at current and previous time step
@@ -2243,8 +2246,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
       n_occupied_cells
         = _get_n_occupied_cells(p_set, 0, p_set->n_particles);
 
-      BFT_MALLOC(occupied_cell_ids, n_occupied_cells, cs_lnum_t);
-      BFT_MALLOC(particle_list, n_occupied_cells+1, cs_lnum_t);
+      CS_MALLOC(occupied_cell_ids, n_occupied_cells, cs_lnum_t);
+      CS_MALLOC(particle_list, n_occupied_cells+1, cs_lnum_t);
 
       _occupied_cells(p_set, 0, p_set->n_particles,
                       n_occupied_cells,
@@ -2261,7 +2264,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* Initialize lists (ids of cells and particles) */
       cs_lnum_t *cell_particle_idx;
 
-      BFT_MALLOC(cell_particle_idx, n_occupied_cells+1, cs_lnum_t);
+      CS_MALLOC(cell_particle_idx, n_occupied_cells+1, cs_lnum_t);
       cell_particle_idx[0] = 0;
 
       cs_lnum_t enter_parts = p_set->n_particles;
@@ -2301,8 +2304,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         /* Create buffers for deleted particles */
         unsigned char * swap_buffer, *deleted_buffer;
-        BFT_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
-        BFT_MALLOC(deleted_buffer, swap_buffer_deleted, unsigned char);
+        CS_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
+        CS_MALLOC(deleted_buffer, swap_buffer_deleted, unsigned char);
 
         /* Update buffer for existing particles */
         cs_lnum_t count_del = 0, count_swap = 0;
@@ -2328,8 +2331,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                + p_set->p_am->extents * (local_size-deleted_parts+start_part),
                deleted_buffer, swap_buffer_deleted);
 
-        BFT_FREE(deleted_buffer);
-        BFT_FREE(swap_buffer);
+        CS_FREE(deleted_buffer);
+        CS_FREE(swap_buffer);
 
         /* Treat fragmentation */
         init_particles = p_set->n_particles;
@@ -2357,11 +2360,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
                     cell_particle_idx);
       p_set->n_particles += cell_particle_idx[n_occupied_cells];
 
-      BFT_FREE(cell_particle_idx);
+      CS_FREE(cell_particle_idx);
     }
 
-    BFT_FREE(occupied_cell_ids);
-    BFT_FREE(particle_list);
+    CS_FREE(occupied_cell_ids);
+    CS_FREE(particle_list);
 
     /* Reverse coupling: initialize source terms
        -------------------------------------- */
@@ -2567,12 +2570,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   if (   lagr_model->deposition == 1
       && ts->nt_cur == ts->nt_max)
-    BFT_FREE(vislen);
+    CS_FREE(vislen);
 
   if (   lagr_model->clogging == 1
       || lagr_model->roughness == 1
       || lagr_model->dlvo == 1)
-    BFT_FREE(tempp);
+    CS_FREE(tempp);
 }
 
 /*----------------------------------------------------------------------------*/

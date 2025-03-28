@@ -418,7 +418,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   /* Create local array (containing the class and particle index) */
   cs_lnum_2_t *interf;
 
-  BFT_MALLOC(interf, lnum_particles, cs_lnum_2_t);
+  CS_MALLOC(interf, lnum_particles, cs_lnum_2_t);
 
   for (cs_lnum_t i = start_particle; i < end_particle; ++i) {
     interf[i-start_particle][0]
@@ -653,7 +653,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
   /* Store class and index of newly created particles */
   cs_lnum_2_t *interf_agglo;
-  BFT_MALLOC(interf_agglo, newpart, cs_lnum_2_t);
+  CS_MALLOC(interf_agglo, newpart, cs_lnum_2_t);
 
   for (cs_lnum_t i = 0; i < newpart; i++) {
     cs_lnum_t curr_class = cs_lagr_particles_get_lnum
@@ -671,21 +671,21 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   cs_lnum_2_t  *interf_tot;
   cs_lnum_t tot_size = lnum_particles+newpart;
 
-  BFT_MALLOC(interf_tot, tot_size, cs_lnum_2_t);
+  CS_MALLOC(interf_tot, tot_size, cs_lnum_2_t);
 
   /* Merge arrays of existing particles and particles
      created by agglomeration */
   cs_lagr_agglo_merge_arrays(interf, interf_agglo,
                              lnum_particles, newpart,
                              interf_tot);
-  BFT_FREE(interf_agglo);
-  BFT_FREE(interf);
+  CS_FREE(interf_agglo);
+  CS_FREE(interf);
 
   cs_lnum_t nb_cls = _get_nb_classes(interf_tot, tot_size);
 
   cs_lnum_t* cls_gaps;
 
-  BFT_MALLOC(cls_gaps, tot_size+1, cs_lnum_t);
+  CS_MALLOC(cls_gaps, tot_size+1, cs_lnum_t);
 
   _gaps_classes(interf_tot, tot_size,
                 nb_cls, cls_gaps);
@@ -790,8 +790,8 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
     }
   }
 
-  BFT_FREE(cls_gaps);
-  BFT_FREE(interf_tot);
+  CS_FREE(cls_gaps);
+  CS_FREE(interf_tot);
 
   p_set->n_particles += newpart;
 

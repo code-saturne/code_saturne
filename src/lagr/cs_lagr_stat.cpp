@@ -1359,7 +1359,7 @@ _ensure_init_wa(cs_lagr_moment_wa_t  *mwa)
       && mwa->f_id < 0) {
 
     cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
-    BFT_MALLOC(mwa->val, n_w_elts, cs_real_t);
+    CS_MALLOC(mwa->val, n_w_elts, cs_real_t);
     for (cs_lnum_t i = 0; i < n_w_elts; i++)
       mwa->val[i] = 0.;
 
@@ -1706,7 +1706,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
 
   /* Now read main metadata */
 
-  BFT_MALLOC(_restart_info, 1, cs_lagr_moment_restart_info_t);
+  CS_MALLOC(_restart_info, 1, cs_lagr_moment_restart_info_t);
 
   cs_lagr_moment_restart_info_t  *ri = _restart_info;
 
@@ -1724,12 +1724,12 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
     ri->n_moments = sizes[1];
   }
   else {
-    BFT_FREE(_restart_info);
+    CS_FREE(_restart_info);
     return;
   }
 
-  BFT_MALLOC(ri->name, ri->n_moments, const char*);
-  BFT_MALLOC(ri->name_buf, sizes[2] + 1, char);
+  CS_MALLOC(ri->name, ri->n_moments, const char*);
+  CS_MALLOC(ri->name_buf, sizes[2] + 1, char);
 
   retcode = cs_restart_read_section(r,
                                     "lagr_stats:names",
@@ -1747,9 +1747,9 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
     }
   }
 
-  BFT_MALLOC(ri->wa_location_id, ri->n_wa, int);
-  BFT_MALLOC(ri->wa_nt_start, ri->n_wa, int);
-  BFT_MALLOC(ri->wa_t_start, ri->n_wa, cs_real_t);
+  CS_MALLOC(ri->wa_location_id, ri->n_wa, int);
+  CS_MALLOC(ri->wa_nt_start, ri->n_wa, int);
+  CS_MALLOC(ri->wa_t_start, ri->n_wa, cs_real_t);
 
   cs_restart_read_section(r,
                           "lagr_stats:wa:location_id",
@@ -1777,14 +1777,14 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
 
   /* Information on moments proper */
 
-  BFT_MALLOC(ri->m_type, ri->n_moments, int);
-  BFT_MALLOC(ri->class_id, ri->n_moments, int);
-  BFT_MALLOC(ri->location_id, ri->n_moments, int);
-  BFT_MALLOC(ri->dimension, ri->n_moments, int);
-  BFT_MALLOC(ri->wa_id, ri->n_moments, int);
-  BFT_MALLOC(ri->l_id, ri->n_moments, int);
-  BFT_MALLOC(ri->stat_type, ri->n_moments, int);
-  BFT_MALLOC(ri->group, ri->n_moments, int);
+  CS_MALLOC(ri->m_type, ri->n_moments, int);
+  CS_MALLOC(ri->class_id, ri->n_moments, int);
+  CS_MALLOC(ri->location_id, ri->n_moments, int);
+  CS_MALLOC(ri->dimension, ri->n_moments, int);
+  CS_MALLOC(ri->wa_id, ri->n_moments, int);
+  CS_MALLOC(ri->l_id, ri->n_moments, int);
+  CS_MALLOC(ri->stat_type, ri->n_moments, int);
+  CS_MALLOC(ri->group, ri->n_moments, int);
 
   retcode = cs_restart_read_section(r,
                                     "lagr_stats:group",
@@ -1904,23 +1904,23 @@ _restart_info_free(void)
 
   if (ri != nullptr) {
 
-    BFT_FREE(ri->l_id);
-    BFT_FREE(ri->wa_id);
-    BFT_FREE(ri->group);
-    BFT_FREE(ri->stat_type);
-    BFT_FREE(ri->dimension);
-    BFT_FREE(ri->location_id);
-    BFT_FREE(ri->m_type);
-    BFT_FREE(ri->class_id);
+    CS_FREE(ri->l_id);
+    CS_FREE(ri->wa_id);
+    CS_FREE(ri->group);
+    CS_FREE(ri->stat_type);
+    CS_FREE(ri->dimension);
+    CS_FREE(ri->location_id);
+    CS_FREE(ri->m_type);
+    CS_FREE(ri->class_id);
 
-    BFT_FREE(ri->wa_t_start);
-    BFT_FREE(ri->wa_nt_start);
-    BFT_FREE(ri->wa_location_id);
+    CS_FREE(ri->wa_t_start);
+    CS_FREE(ri->wa_nt_start);
+    CS_FREE(ri->wa_location_id);
 
-    BFT_FREE(ri->name_buf);
-    BFT_FREE(ri->name);
+    CS_FREE(ri->name_buf);
+    CS_FREE(ri->name);
 
-    BFT_FREE(ri);
+    CS_FREE(ri);
 
     _restart_info = ri;
   }
@@ -2009,7 +2009,7 @@ _init_vars_attribute(void)
 {
   if (_base_stat_activate == nullptr) {
     const int n_stat_types = _n_stat_types();
-    BFT_MALLOC(_base_stat_activate, n_stat_types, int);
+    CS_MALLOC(_base_stat_activate, n_stat_types, int);
     for (int i = 0; i < n_stat_types; i++)
       _base_stat_activate[i] = -1;
   }
@@ -2147,7 +2147,7 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
       _n_lagr_moments_wa_max = 2;
     else
       _n_lagr_moments_wa_max *= 2;
-    BFT_REALLOC(_lagr_moments_wa, _n_lagr_moments_wa_max, cs_lagr_moment_wa_t);
+    CS_REALLOC(_lagr_moments_wa, _n_lagr_moments_wa_max, cs_lagr_moment_wa_t);
   }
 
   /* Now initialize members */
@@ -2348,7 +2348,7 @@ _find_or_add_moment(int                       location_id,
     else
       _n_lagr_moments_max *= 2;
 
-    BFT_REALLOC(_lagr_moments, _n_lagr_moments_max, cs_lagr_moment_t);
+    CS_REALLOC(_lagr_moments, _n_lagr_moments_max, cs_lagr_moment_t);
 
   }
 
@@ -2466,7 +2466,7 @@ _find_or_add_mesh_stat(int                       location_id,
     else
       _n_lagr_mesh_stats_max *= 2;
 
-    BFT_REALLOC(_lagr_mesh_stats, _n_lagr_mesh_stats_max, cs_lagr_mesh_stat_t);
+    CS_REALLOC(_lagr_mesh_stats, _n_lagr_mesh_stats_max, cs_lagr_mesh_stat_t);
 
   }
 
@@ -2642,7 +2642,7 @@ _compute_current_weight_m(cs_lagr_moment_wa_t  *mwa,
   if (n_w_elts == 1)
     w = w0;
   else {
-    BFT_MALLOC(w, n_w_elts, cs_real_t);
+    CS_MALLOC(w, n_w_elts, cs_real_t);
   }
 
   /* Base weight */
@@ -2756,7 +2756,7 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
   cs_lnum_t  wa_stride = (n_w_elts > 1) ? 1 : 0;
 
   cs_real_t *restrict x;
-  BFT_MALLOC(x, nd, cs_real_t);
+  CS_MALLOC(x, nd, cs_real_t);
 
   mt->m_data_func(mt->data_input, nullptr, mt->location_id, mt->class_id, x);
 
@@ -2835,7 +2835,7 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
 
   mt->nt_cur = nt_cur;
 
-  BFT_FREE(x);
+  CS_FREE(x);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3010,7 +3010,7 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
 
               cs_real_t *pval = nullptr;
               if (mt->p_data_func != nullptr) {
-                BFT_MALLOC(pval, mt->data_dim, cs_real_t);
+                CS_MALLOC(pval, mt->data_dim, cs_real_t);
                 mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
               }
               else
@@ -3117,7 +3117,7 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
               } /* End of test if moment is a variance or a mean */
 
               if (mt->p_data_func != nullptr)
-                BFT_FREE(pval);
+                CS_FREE(pval);
             } /* End of test if particle is in a cell
                  and if particle class corresponds to moment class */
 
@@ -3204,7 +3204,7 @@ _cs_lagr_stat_update_all_mesh_moments(void)
     if (is_incremented_wa_sum == false && m_weight != nullptr) {
       _update_wa_m(mwa, m_weight);
       if (m_weight != m_w0)
-        BFT_FREE(m_weight);
+        CS_FREE(m_weight);
     }
   } /* End of loop on active weight accumulators */
 }
@@ -3251,10 +3251,10 @@ _free_all_moments(void)
 
   for (i = 0; i < _n_lagr_moments; i++) {
     cs_lagr_moment_t *mt = _lagr_moments + i;
-    BFT_FREE(mt->name);
+    CS_FREE(mt->name);
   }
 
-  BFT_FREE(_lagr_moments);
+  CS_FREE(_lagr_moments);
 
   _n_lagr_moments = 0;
   _n_lagr_moments_max = 0;
@@ -3271,10 +3271,10 @@ _free_all_wa(void)
 {
   for (int i = 0; i < _n_lagr_moments_wa; i++) {
     cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
-    BFT_FREE(mwa->val);
+    CS_FREE(mwa->val);
   }
 
-  BFT_FREE(_lagr_moments_wa);
+  CS_FREE(_lagr_moments_wa);
 
   _n_lagr_moments_wa = 0;
   _n_lagr_moments_wa_max = 0;
@@ -3287,7 +3287,7 @@ _free_all_wa(void)
 static void
 _free_all_mesh_stats(void)
 {
-  BFT_FREE(_lagr_mesh_stats);
+  CS_FREE(_lagr_mesh_stats);
 
   _n_lagr_mesh_stats = 0;
   _n_lagr_mesh_stats_max = 0;
@@ -3474,7 +3474,7 @@ _stat_moment_define(const char                *name,
                                   prev_id);
 
   mt = _lagr_moments + moment_id;
-  BFT_FREE(mt->name); /* in case previously defined as sub-moment */
+  CS_FREE(mt->name); /* in case previously defined as sub-moment */
 
   /* matching field */
 
@@ -3537,7 +3537,7 @@ _stat_moment_define(const char                *name,
       snprintf(s, 64, "<auto_mean_particle_stat_%d>",
                l_id);
       s[63] = '\0';
-      BFT_MALLOC(mt->name, strlen(s)+1, char);
+      CS_MALLOC(mt->name, strlen(s)+1, char);
       strcpy(mt->name, s);
     }
 
@@ -4228,7 +4228,7 @@ cs_lagr_stat_activate(int  stat_type)
   /* Setup flag if not already done */
 
   if (_base_stat_activate == nullptr) {
-    BFT_MALLOC(_base_stat_activate, n_stat_types, int);
+    CS_MALLOC(_base_stat_activate, n_stat_types, int);
     for (int i = 0; i < n_stat_types; i++)
       _base_stat_activate[i] = -1;
   }
@@ -4682,13 +4682,13 @@ cs_lagr_stat_initialize(void)
                           mt->dim,
                           have_previous);
       mt->f_id = f->id;
-      BFT_FREE(mt->name);
+      CS_FREE(mt->name);
     }
   }
 
   /* Activation status not needed after this stage */
 
-  BFT_FREE(_base_stat_activate);
+  CS_FREE(_base_stat_activate);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4993,7 +4993,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
              for every new moment inside the current class */
 
           if (m_weight == nullptr && l_wa_sum == nullptr)
-            BFT_MALLOC(l_wa_sum, n_w_elts, cs_real_t);
+            CS_MALLOC(l_wa_sum, n_w_elts, cs_real_t);
 
           for (cs_lnum_t j = 0; j < n_w_elts; j++)
             l_wa_sum[j]= g_wa_sum[j];
@@ -5027,7 +5027,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
 
           cs_real_t *pval = nullptr, *_pval = nullptr;
           if (mt->e_data_func != nullptr) {
-            BFT_MALLOC(_pval, mt->data_dim, cs_real_t);
+            CS_MALLOC(_pval, mt->data_dim, cs_real_t);
             pval = _pval;
           }
 
@@ -5172,7 +5172,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
 
           } /* end of loop on events */
 
-          BFT_FREE(_pval);
+          CS_FREE(_pval);
 
           mt->nt_cur = ts->nt_cur;
           if (mt->m_type == CS_LAGR_MOMENT_VARIANCE)
@@ -5190,12 +5190,12 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
     if (l_wa_sum != nullptr) {
       for (cs_lnum_t i = 0; i < n_w_elts; i++)
         g_wa_sum[i] = l_wa_sum[i];
-      BFT_FREE(l_wa_sum);
+      CS_FREE(l_wa_sum);
     }
     else if (m_weight != nullptr) {
       _update_wa_m(mwa, m_weight);
       if (m_weight != m_w0)
-        BFT_FREE(m_weight);
+        CS_FREE(m_weight);
     }
     else if (n_w_elts > 0) { /* Case where accumulator has no moments */
 
@@ -5453,10 +5453,10 @@ cs_lagr_stat_log_iteration(void)
   cs_gnum_t *n_g_elts;
   double *vmin, *vmax, *vsum;
 
-  BFT_MALLOC(n_g_elts, n_active_wa, cs_gnum_t);
-  BFT_MALLOC(vmin, n_active_wa, double);
-  BFT_MALLOC(vmax, n_active_wa, double);
-  BFT_MALLOC(vsum, n_active_wa, double);
+  CS_MALLOC(n_g_elts, n_active_wa, cs_gnum_t);
+  CS_MALLOC(vmin, n_active_wa, double);
+  CS_MALLOC(vmax, n_active_wa, double);
+  CS_MALLOC(vsum, n_active_wa, double);
 
   n_active_wa = 0;
 
@@ -5526,10 +5526,10 @@ cs_lagr_stat_log_iteration(void)
     }
   }
 
-  BFT_FREE(vsum);
-  BFT_FREE(vmax);
-  BFT_FREE(vmin);
-  BFT_FREE(n_g_elts);
+  CS_FREE(vsum);
+  CS_FREE(vmax);
+  CS_FREE(vmin);
+  CS_FREE(n_g_elts);
 
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
@@ -5560,8 +5560,8 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
   /* General information */
   /* ------------------- */
 
-  BFT_MALLOC(active_wa_id, _n_lagr_moments_wa, int);
-  BFT_MALLOC(active_moment_id, _n_lagr_moments + _n_lagr_moments_wa, int);
+  CS_MALLOC(active_wa_id, _n_lagr_moments_wa, int);
+  CS_MALLOC(active_moment_id, _n_lagr_moments + _n_lagr_moments_wa, int);
 
   /* Check for active moments */
 
@@ -5601,8 +5601,8 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
   }
 
   if (n_active_moments < 1) {
-    BFT_FREE(active_wa_id);
-    BFT_FREE(active_moment_id);
+    CS_FREE(active_wa_id);
+    CS_FREE(active_moment_id);
     return;
   }
 
@@ -5612,8 +5612,8 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
   int *names_idx;
   char *names;
 
-  BFT_MALLOC(names_idx, n_active_moments + 1, int);
-  BFT_MALLOC(names, names_max_size, char);
+  CS_MALLOC(names_idx, n_active_moments + 1, int);
+  CS_MALLOC(names, names_max_size, char);
 
   names_idx[0] = 0;
 
@@ -5634,7 +5634,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
       if (names_idx[j] + l > names_max_size) {
         while (names_idx[j] + l > names_max_size)
           names_max_size *= 2;
-        BFT_REALLOC(names, names_max_size, char);
+        CS_REALLOC(names, names_max_size, char);
       }
       strcpy(names + names_idx[i], name);
       names[names_idx[j] + l - 1] = '\0';
@@ -5656,7 +5656,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
       if (names_idx[j] + l > names_max_size) {
         while (names_idx[j] + l > names_max_size)
           names_max_size *= 2;
-        BFT_REALLOC(names, names_max_size, char);
+        CS_REALLOC(names, names_max_size, char);
       }
       strcpy(names + names_idx[j], name);
       names[names_idx[j] + l - 1] = '\0';
@@ -5684,14 +5684,14 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
                            CS_TYPE_char,
                            names);
 
-  BFT_FREE(names_idx);
-  BFT_FREE(names);
+  CS_FREE(names_idx);
+  CS_FREE(names);
 
   /* Information on moment weight accumulators */
 
-  BFT_MALLOC(location_id, n_active_wa, int);
-  BFT_MALLOC(nt_start, n_active_wa, int);
-  BFT_MALLOC(t_start, n_active_wa, cs_real_t);
+  CS_MALLOC(location_id, n_active_wa, int);
+  CS_MALLOC(nt_start, n_active_wa, int);
+  CS_MALLOC(t_start, n_active_wa, cs_real_t);
 
   for (int i = 0; i < _n_lagr_moments_wa; i++) {
     int j = active_wa_id[i];
@@ -5724,9 +5724,9 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
                            CS_TYPE_cs_real_t,
                            t_start);
 
-  BFT_FREE(t_start);
-  BFT_FREE(nt_start);
-  BFT_FREE(location_id);
+  CS_FREE(t_start);
+  CS_FREE(nt_start);
+  CS_FREE(location_id);
 
   /* To be decided for wa save, already in lagout */
   for (int i = 0; i < _n_lagr_moments_wa; i++) {
@@ -5756,14 +5756,14 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
 
   /* Information on moments proper */
 
-  BFT_MALLOC(m_type, n_active_moments, int);
-  BFT_MALLOC(class_id, n_active_moments, int);
-  BFT_MALLOC(location_id, n_active_moments, int);
-  BFT_MALLOC(dimension, n_active_moments, int);
-  BFT_MALLOC(wa_id, n_active_moments, int);
-  BFT_MALLOC(l_id, n_active_moments, int);
-  BFT_MALLOC(stat_type, n_active_moments, int);
-  BFT_MALLOC(stat_group, n_active_moments, int);
+  CS_MALLOC(m_type, n_active_moments, int);
+  CS_MALLOC(class_id, n_active_moments, int);
+  CS_MALLOC(location_id, n_active_moments, int);
+  CS_MALLOC(dimension, n_active_moments, int);
+  CS_MALLOC(wa_id, n_active_moments, int);
+  CS_MALLOC(l_id, n_active_moments, int);
+  CS_MALLOC(stat_type, n_active_moments, int);
+  CS_MALLOC(stat_group, n_active_moments, int);
 
   for (int i = 0; i < _n_lagr_moments; i++) {
     int j = active_moment_id[i];
@@ -5855,14 +5855,14 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
                            CS_TYPE_int,
                            stat_type);
 
-  BFT_FREE(l_id);
-  BFT_FREE(wa_id);
-  BFT_FREE(dimension);
-  BFT_FREE(location_id);
-  BFT_FREE(m_type);
-  BFT_FREE(class_id);
-  BFT_FREE(stat_type);
-  BFT_FREE(stat_group);
+  CS_FREE(l_id);
+  CS_FREE(wa_id);
+  CS_FREE(dimension);
+  CS_FREE(location_id);
+  CS_FREE(m_type);
+  CS_FREE(class_id);
+  CS_FREE(stat_type);
+  CS_FREE(stat_group);
 
   /* Write of moments value */
 
@@ -5885,8 +5885,8 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
 
   }
 
-  BFT_FREE(active_moment_id);
-  BFT_FREE(active_wa_id);
+  CS_FREE(active_moment_id);
+  CS_FREE(active_wa_id);
 }
 
 /*----------------------------------------------------------------------------*/

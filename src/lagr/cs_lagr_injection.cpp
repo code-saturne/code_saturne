@@ -162,7 +162,7 @@ _distribute_particles(cs_gnum_t         n_g_particles,
 
   cs_real_t *elt_cm_weight = nullptr;
 
-  BFT_MALLOC(elt_cm_weight, n_elts, cs_real_t);
+  CS_MALLOC(elt_cm_weight, n_elts, cs_real_t);
 
   if (elt_id != nullptr) {
     if (elt_profile != nullptr) {
@@ -219,8 +219,8 @@ _distribute_particles(cs_gnum_t         n_g_particles,
 
     if (l_rank == r_rank) {
 
-      BFT_MALLOC(n_rank_particles, n_ranks, cs_lnum_t);
-      BFT_MALLOC(cm_weight, n_ranks, double);
+      CS_MALLOC(n_rank_particles, n_ranks, cs_lnum_t);
+      CS_MALLOC(cm_weight, n_ranks, double);
 
       for (int i = 0; i < n_ranks; i++)
         n_rank_particles[i] = 0;
@@ -255,14 +255,14 @@ _distribute_particles(cs_gnum_t         n_g_particles,
 
       }
 
-      BFT_FREE(cm_weight);
+      CS_FREE(cm_weight);
     }
 
     MPI_Scatter(n_rank_particles, 1, CS_MPI_LNUM,
                 &n_particles, 1, CS_MPI_LNUM,
                 r_rank, cs_glob_mpi_comm);
 
-    BFT_FREE(n_rank_particles);
+    CS_FREE(n_rank_particles);
   }
 
 #endif /* defined(HAVE_MPI) */
@@ -290,7 +290,7 @@ _distribute_particles(cs_gnum_t         n_g_particles,
     elt_particle_idx[e_id+1] += 1;
   }
 
-  BFT_FREE(elt_cm_weight);
+  CS_FREE(elt_cm_weight);
 
   /* transform count to index */
 
@@ -588,7 +588,7 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
 
   cs_lnum_t n_p_new = face_particle_idx[n_faces];
 
-  BFT_MALLOC(particle_face_id, n_p_new, cs_lnum_t);
+  CS_MALLOC(particle_face_id, n_p_new, cs_lnum_t);
 
   /* Loop on zone elements where particles are injected */
 
@@ -612,9 +612,6 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
  *
  * \param[in,out]  p_set             particle set
  * \param[in]      zis               injection data for this zone and set
- * \param[in]      time_id           time step indicator for fields
- *                                     0: use fields at current time step
- *                                     1: use fields at previous time step
  * \param[in]      n_elts            number of elements in zone
  * \param[in]      face_ids          matching face ids if zone is a boundary
  * \param[in]      elt_particle_idx  starting id of new particles for a given
@@ -625,7 +622,6 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
 static void
 _init_particles(cs_lagr_particle_set_t         *p_set,
                 const cs_lagr_injection_set_t  *zis,
-                int                             time_id,
                 cs_lnum_t                       n_elts,
                 const cs_lnum_t                *face_ids,
                 const cs_lnum_t                 elt_particle_idx[])
@@ -967,7 +963,7 @@ cs_lagr_injection(int        time_id,
 
   cs_lnum_t n_elts_m = CS_MAX(mesh->n_b_faces, mesh->n_cells);
   cs_lnum_t *elt_particle_idx = nullptr;
-  BFT_MALLOC(elt_particle_idx, n_elts_m+1, cs_lnum_t);
+  CS_MALLOC(elt_particle_idx, n_elts_m+1, cs_lnum_t);
 
   /* Loop in injection type (boundary, volume) */
 
@@ -1032,7 +1028,7 @@ cs_lagr_injection(int        time_id,
 
         cs_real_t *elt_profile = nullptr;
         if (zis->injection_profile_func != nullptr) {
-          BFT_MALLOC(elt_profile, n_z_elts, cs_real_t);
+          CS_MALLOC(elt_profile, n_z_elts, cs_real_t);
           zis->injection_profile_func(zis->zone_id,
                                       zis->location_id,
                                       zis->injection_profile_input,
@@ -1048,7 +1044,7 @@ cs_lagr_injection(int        time_id,
                                                    elt_profile,
                                                    elt_particle_idx);
 
-        BFT_FREE(elt_profile);
+        CS_FREE(elt_profile);
 
         assert(n_inject == elt_particle_idx[n_z_elts]);
 
@@ -1079,7 +1075,7 @@ cs_lagr_injection(int        time_id,
                         z_elt_ids,
                         elt_particle_idx);
 
-        BFT_FREE(elt_profile);
+        CS_FREE(elt_profile);
 
         p_set->n_particles += n_inject;
 
@@ -1095,7 +1091,6 @@ cs_lagr_injection(int        time_id,
 
           _init_particles(p_set,
                           zis,
-                          time_id,
                           n_z_elts,
                           z_elt_ids,
                           elt_particle_idx);
@@ -1111,8 +1106,8 @@ cs_lagr_injection(int        time_id,
           */
           cs_lnum_t *saved_cell_id;
           cs_real_3_t *saved_coords;
-          BFT_MALLOC(saved_cell_id, n_inject, cs_lnum_t);
-          BFT_MALLOC(saved_coords, n_inject, cs_real_3_t);
+          CS_MALLOC(saved_cell_id, n_inject, cs_lnum_t);
+          CS_MALLOC(saved_coords, n_inject, cs_real_3_t);
 
           for (cs_lnum_t p_id = p_set->n_particles - n_inject;
                p_id < p_set->n_particles;
@@ -1211,8 +1206,8 @@ cs_lagr_injection(int        time_id,
            "current to previous" in the tracking stage.
           */
           if (prev_n_inject != n_inject) {
-            BFT_REALLOC(saved_cell_id, n_inject, cs_lnum_t);
-            BFT_REALLOC(saved_coords, n_inject, cs_real_3_t);
+            CS_REALLOC(saved_cell_id, n_inject, cs_lnum_t);
+            CS_REALLOC(saved_coords, n_inject, cs_real_3_t);
           }
 
           for (cs_lnum_t p_id = p_set->n_particles - n_inject;
@@ -1285,8 +1280,8 @@ cs_lagr_injection(int        time_id,
 
           }
 
-          BFT_FREE(saved_coords);
-          BFT_FREE(saved_cell_id);
+          CS_FREE(saved_coords);
+          CS_FREE(saved_cell_id);
 
           /* Add particle tracking events for boundary injection */
 
@@ -1337,7 +1332,7 @@ cs_lagr_injection(int        time_id,
 
           }
 
-          BFT_FREE(particle_face_ids);
+          CS_FREE(particle_face_ids);
 
         }
 
@@ -1379,7 +1374,7 @@ cs_lagr_injection(int        time_id,
 
   } /* end of loop on zone types (boundary/volume) */
 
-  BFT_FREE(elt_particle_idx);
+  CS_FREE(elt_particle_idx);
 
   /* Update global particle counters */
 

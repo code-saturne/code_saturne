@@ -137,14 +137,14 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
   // TODO : move to a global initialization routine for alloc and free
 
   if (mp_diss == nullptr)
-    BFT_MALLOC(mp_diss, mesh->n_cells_with_ghosts * preci->nbrclas, cs_real_t);
+    CS_MALLOC(mp_diss, mesh->n_cells_with_ghosts * preci->nbrclas, cs_real_t);
   if (solub == nullptr)
-    BFT_MALLOC(solub, mesh->n_cells_with_ghosts, cs_real_t);
+    CS_MALLOC(solub, mesh->n_cells_with_ghosts, cs_real_t);
 
   cs_real_t *mp_preci;
   cs_lnum_t *part_tot;
-  BFT_MALLOC(mp_preci, mesh->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(part_tot, mesh->n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(mp_preci, mesh->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(part_tot, mesh->n_cells_with_ghosts, cs_lnum_t);
 
   /* reference diameter taken from first injection (FIXME) */
 
@@ -258,8 +258,8 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
 
   }
 
-  BFT_FREE(mp_preci);
-  BFT_FREE(part_tot);
+  CS_FREE(mp_preci);
+  CS_FREE(part_tot);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -291,14 +291,14 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
   /* number of dissolved particles */
   cs_lnum_t *nbdiss;
-  BFT_MALLOC(nbdiss, preci->nbrclas, cs_lnum_t);
+  CS_MALLOC(nbdiss, preci->nbrclas, cs_lnum_t);
 
   cs_real_t *mp;
-  BFT_MALLOC(mp, preci->nbrclas, cs_real_t);
+  CS_MALLOC(mp, preci->nbrclas, cs_real_t);
 
   /* mass of dissolved particles */
   cs_real_t *mp_diss_t;
-  BFT_MALLOC(mp_diss_t, mesh->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC(mp_diss_t, mesh->n_cells_with_ghosts, cs_real_t);
 
   /* number of precipated particles */
   cs_lnum_t nbprec_tot = 0;
@@ -331,7 +331,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
   }
 
   cs_lnum_t *cell;
-  BFT_MALLOC(cell, nbprec2, cs_lnum_t);
+  CS_MALLOC(cell, nbprec2, cs_lnum_t);
 
   for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
 
@@ -477,10 +477,10 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
   p_set->n_particles += nbprec_tot;
 
-  BFT_FREE(cell);
-  BFT_FREE(nbdiss);
-  BFT_FREE(mp);
-  BFT_FREE(mp_diss_t);
+  CS_FREE(cell);
+  CS_FREE(nbdiss);
+  CS_FREE(mp);
+  CS_FREE(mp_diss_t);
 }
 
 /*----------------------------------------------------------------------------*/

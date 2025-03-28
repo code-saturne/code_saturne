@@ -134,16 +134,16 @@ _copy_boundary_varname(int          ipp,
 
   if (cs_glob_lagr_boundary_interactions->nombrd == nullptr) {
 
-    BFT_MALLOC(cs_glob_lagr_boundary_interactions->nombrd,
-               nvplmx,
-               char *);
+    CS_MALLOC(cs_glob_lagr_boundary_interactions->nombrd,
+              nvplmx,
+              char *);
     for (int i = 0; i < nvplmx; i++)
       cs_glob_lagr_boundary_interactions->nombrd[i] = nullptr;
   }
 
   l = strlen(varname);
 
-  BFT_REALLOC(cs_glob_lagr_boundary_interactions->nombrd[ipp], l + 1, char);
+  CS_REALLOC(cs_glob_lagr_boundary_interactions->nombrd[ipp], l + 1, char);
 
   strcpy(cs_glob_lagr_boundary_interactions->nombrd[ipp], varname);
 }
@@ -156,21 +156,21 @@ static void
 _init_lagr_encrustation_pointers(void)
 {
   if (cs_glob_lagr_encrustation->enc1 == nullptr)
-    BFT_MALLOC(cs_glob_lagr_encrustation->enc1,
-               cs_glob_lagr_const_dim->ncharm2,
-               cs_real_t);
+    CS_MALLOC(cs_glob_lagr_encrustation->enc1,
+              cs_glob_lagr_const_dim->ncharm2,
+              cs_real_t);
   if (cs_glob_lagr_encrustation->enc2 == nullptr)
-    BFT_MALLOC(cs_glob_lagr_encrustation->enc2,
-               cs_glob_lagr_const_dim->ncharm2,
-               cs_real_t);
+    CS_MALLOC(cs_glob_lagr_encrustation->enc2,
+              cs_glob_lagr_const_dim->ncharm2,
+              cs_real_t);
   if (cs_glob_lagr_encrustation->tprenc == nullptr)
-    BFT_MALLOC(cs_glob_lagr_encrustation->tprenc,
-               cs_glob_lagr_const_dim->ncharm2,
-               cs_real_t);
+    CS_MALLOC(cs_glob_lagr_encrustation->tprenc,
+              cs_glob_lagr_const_dim->ncharm2,
+              cs_real_t);
   if (cs_glob_lagr_encrustation->visref == nullptr)
-    BFT_MALLOC(cs_glob_lagr_encrustation->visref,
-               cs_glob_lagr_const_dim->ncharm2,
-               cs_real_t);
+    CS_MALLOC(cs_glob_lagr_encrustation->visref,
+              cs_glob_lagr_const_dim->ncharm2,
+              cs_real_t);
 
   for (int icha = 0; icha < cs_glob_lagr_const_dim->ncharm2; icha++) {
 

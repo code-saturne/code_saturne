@@ -438,8 +438,8 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
   cs_lnum_t  *p_cell_id;
   cs_real_t  *p_coords;
 
-  BFT_MALLOC(p_cell_id, n_particles, cs_lnum_t);
-  BFT_MALLOC(p_coords, n_particles*3, cs_real_t);
+  CS_MALLOC(p_cell_id, n_particles, cs_lnum_t);
+  CS_MALLOC(p_coords, n_particles*3, cs_real_t);
 
   sec_code = cs_restart_read_particles(r,
                                        particles_location_id,
@@ -461,8 +461,8 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
   }
 
-  BFT_FREE(p_cell_id);
-  BFT_FREE(p_coords);
+  CS_FREE(p_cell_id);
+  CS_FREE(p_coords);
 
   if (sec_code == CS_RESTART_SUCCESS)
     retval = 1;
@@ -513,7 +513,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
         /* Now read global numbers (1 to n, 0 for none) */
 
         cs_gnum_t *gnum_read = nullptr;
-        BFT_MALLOC(gnum_read, p_set->n_particles, cs_gnum_t);
+        CS_MALLOC(gnum_read, p_set->n_particles, cs_gnum_t);
 
         snprintf(sec_name, 127, "particle_%s::vals::0", "neighbor_face_num");
         _legacy_section_name(attr, old_name);
@@ -583,7 +583,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
           assert(cell_b_faces != nullptr);
         }
 
-        BFT_FREE(gnum_read);
+        CS_FREE(gnum_read);
 
         _set_particle_values(p_set,
                              attr,
@@ -598,7 +598,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
       if (size > max_size) {
         max_size = size;
-        BFT_REALLOC(vals, max_size*n_particles, unsigned char);
+        CS_REALLOC(vals, max_size*n_particles, unsigned char);
       }
 
       int n_sections = stride;
@@ -661,7 +661,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
   }
 
-  BFT_FREE(vals);
+  CS_FREE(vals);
 
   return retval;
 }
@@ -707,8 +707,8 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
   cs_lnum_t  *p_cell_id;
   cs_real_t  *p_coords;
 
-  BFT_MALLOC(p_cell_id, n_particles, cs_lnum_t);
-  BFT_MALLOC(p_coords, n_particles*3, cs_real_t);
+  CS_MALLOC(p_cell_id, n_particles, cs_lnum_t);
+  CS_MALLOC(p_coords, n_particles*3, cs_real_t);
 
   cs_lagr_get_particle_values(p_set, CS_LAGR_COORDS, CS_REAL_TYPE,
                               3, -1, n_particles, nullptr, p_coords);
@@ -724,8 +724,8 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
                                  p_cell_id,
                                  p_coords);
 
-  BFT_FREE(p_cell_id);
-  BFT_FREE(p_coords);
+  CS_FREE(p_cell_id);
+  CS_FREE(p_coords);
 
   retval = 1;
 
@@ -769,7 +769,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
                                     vals);
 
         cs_gnum_t *gnum_write = nullptr;
-        BFT_MALLOC(gnum_write, p_set->n_particles, cs_gnum_t);
+        CS_MALLOC(gnum_write, p_set->n_particles, cs_gnum_t);
 
         const cs_gnum_t *g_b_face_num = cs_glob_mesh->global_b_face_num;
         if (g_b_face_num != nullptr) {
@@ -800,7 +800,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
                                  CS_TYPE_cs_gnum_t,
                                  gnum_write);
 
-        BFT_FREE(gnum_write);
+        CS_FREE(gnum_write);
 
         retval += 1;
       }
@@ -810,7 +810,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
 
       if (size > max_size) {
         max_size = size;
-        BFT_REALLOC(vals, max_size*n_particles, unsigned char);
+        CS_REALLOC(vals, max_size*n_particles, unsigned char);
       }
 
       int n_sections = stride;
@@ -857,7 +857,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
 
   }
 
-  BFT_FREE(vals);
+  CS_FREE(vals);
 
   return retval;
 }
