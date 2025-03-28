@@ -1167,7 +1167,7 @@ _equation_iterative_solve_strided(int                   idtvar,
     ctx.wait();
 
     /* need to recompute face value if below increment is zero
-       else the face value is given from the last iweep iteration */
+       else the face value is given from the last isweep iteration */
     if (inc == 0) {
       cs_boundary_conditions_update_bc_coeff_face_values<stride>
         (ctx, f, bc_coeffs,
