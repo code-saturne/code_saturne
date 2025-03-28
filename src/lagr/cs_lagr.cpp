@@ -2210,8 +2210,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                  extra_i[phase_id].grad_lagr_time);
 
         if (cs_glob_lagr_model->cs_used == 0)
-          compute_particle_covariance_gradient(iprev,
-                                               phase_id,
+          compute_particle_covariance_gradient(phase_id,
                                                extra_i[phase_id].grad_cov_skp,
                                                extra_i[phase_id].grad_cov_sk);
       }

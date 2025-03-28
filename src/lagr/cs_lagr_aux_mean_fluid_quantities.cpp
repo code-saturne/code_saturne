@@ -129,9 +129,6 @@ _field_name_aux(const char *field_radical, const int index)
  *  - particle velocity and particle velocity seen covariance
  *  - particle velocity seen variance
  *
- * \param[in]  iprev           time step indicator for fields
- *                               0: use fields at current time step
- *                               1: use fields at previous time step
  * \param[in]  phase_id        carrier phase id
  * \param[out] grad_cov_skp    gradient of particle velocity and
  *                             particle velocity seen covariance
@@ -141,8 +138,7 @@ _field_name_aux(const char *field_radical, const int index)
 /*----------------------------------------------------------------------------*/
 
 void
-compute_particle_covariance_gradient(int          iprev,
-                                     int          phase_id,
+compute_particle_covariance_gradient(int          phase_id,
                                      cs_real_3_t *grad_cov_skp[9],
                                      cs_real_3_t *grad_cov_sk[6])
 {
@@ -175,7 +171,7 @@ compute_particle_covariance_gradient(int          iprev,
                             0,
                             -phase_id-1);
 
-  for (int i = 0; i < 9; i++){
+  for (cs_lnum_t i = 0; i < 9; i++){
     for (int iel_ = 0; iel_ < mesh->n_cells; iel_++){
       f_inter_cov[iel_] = stat_cov_skp->val[9 * iel_ + i];
     }
@@ -532,8 +528,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
         }
       }
     }
-    compute_particle_covariance_gradient(iprev,
-                                         phase_id,
+    compute_particle_covariance_gradient(phase_id,
                                          extra_i[phase_id].grad_cov_skp,
                                          extra_i[phase_id].grad_cov_sk);
   }
@@ -791,8 +786,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
     }
   }
 
-    /* Compute temperature gradient
-       ========================= */
+  /* Compute temperature gradient
+     ============================ */
 
   if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
       && extra->temperature != nullptr
@@ -853,7 +848,6 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
      *
      * The other possibility would be to compute b_i everywhere
      * (taking <u_pi> from the statistic "correctly" initialized)
-     *
      */
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {

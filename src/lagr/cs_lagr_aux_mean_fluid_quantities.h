@@ -85,9 +85,6 @@ compute_anisotropic_prop(int            iprev,
  *  - particle velocity and particle velocity seen covariance
  *  - particle velocity seen variance
  *
- * \param[in]  iprev           time step indicator for fields
- *                               0: use fields at current time step
- *                               1: use fields at previous time step
  * \param[in]  phase_id        carrier phase id
  * \param[out] grad_cov_skp    gradient of particle velocity and
  *                             particle velocity seen covariance
@@ -95,9 +92,9 @@ compute_anisotropic_prop(int            iprev,
  * \param[out] grad_cov_sk     gradient of particle velocity seen covariance
  */
 /*----------------------------------------------------------------------------*/
+
 void
-compute_particle_covariance_gradient(int iprev,
-                                     int phase_id,
+compute_particle_covariance_gradient(int phase_id,
                                      cs_real_3_t *grad_cov_skp[9],
                                      cs_real_3_t *grad_cov_sk[6]);
 
