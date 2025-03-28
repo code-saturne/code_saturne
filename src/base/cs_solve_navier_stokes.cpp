@@ -908,8 +908,8 @@ _div_rij(const cs_mesh_t     *m,
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_real_t surf = b_face_surf[f_id];
       cs_real_t dsurf = (surf > 1e-24) ? 1./surf : 0.0;
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        b_stress[f_id][ii] += tflmab[f_id][ii] * dsurf;
+      for (cs_lnum_t i = 0; i < 3; i++)
+        b_stress[f_id][i] += tflmab[f_id][i] * dsurf;
     });
   }
 
@@ -1427,10 +1427,10 @@ _update_fluid_vel(const cs_mesh_t             *m,
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           const cs_real_t dtsrom = thetap*dt[c_id] / crom[c_id];
           const cs_real_t rhok1drhok = cromk1[c_id] / crom[c_id];
-          for (cs_lnum_t isou = 0; isou < 3; isou++)
-            vel[c_id][isou] =   vel[c_id][isou] * rhok1drhok
-                              + dtsrom*(  dfrcxt[c_id][isou]
-                                        - cpro_gradp[c_id][isou]);
+          for (cs_lnum_t i = 0; i < 3; i++)
+            vel[c_id][i] =   vel[c_id][i] * rhok1drhok
+                              + dtsrom*(  dfrcxt[c_id][i]
+                                        - cpro_gradp[c_id][i]);
         });
       }
 
@@ -1493,9 +1493,9 @@ _update_fluid_vel(const cs_mesh_t             *m,
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           const cs_real_t dtsrom = thetap*dt[c_id] / crom[c_id];
           const cs_real_t rhok1drhok = cromk1[c_id] / crom[c_id];
-          for (cs_lnum_t isou = 0; isou < 3; isou++) {
-            vel[c_id][isou] =   vel[c_id][isou] * rhok1drhok
-                              - dtsrom * cpro_gradp[c_id][isou];
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            vel[c_id][i] =   vel[c_id][i] * rhok1drhok
+                              - dtsrom * cpro_gradp[c_id][i];
 
           }
         });
@@ -2353,8 +2353,8 @@ _velocity_prediction(const cs_mesh_t             *m,
                                                      gxyz)
               - pred0;
 
-      for (cs_lnum_t isou = 0; isou < 3; isou++)
-        b_stress[f_id][isou] += pfac*b_face_u_normal[f_id][isou];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        b_stress[f_id][i] += pfac*b_face_u_normal[f_id][i];
     });
   }
 
@@ -2573,8 +2573,8 @@ _velocity_prediction(const cs_mesh_t             *m,
 
         xkb = coefa_k[f_id] + coefb_k[f_id]*xkb;
         xkb = d2s3 * crom[c_id] * xkb;
-        for (cs_lnum_t isou = 0; isou < 3; isou++)
-          b_stress[f_id][isou] += xkb*b_face_u_normal[f_id][isou];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          b_stress[f_id][i] += xkb*b_face_u_normal[f_id][i];
       });
     }
     ctx.wait();
@@ -4611,8 +4611,8 @@ cs_solve_navier_stokes(const int        iterns,
     if (iestot != nullptr) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t rovolsdt = crom[c_id] * cell_f_vol[c_id] / dt[c_id];
-        for (cs_lnum_t isou = 0; isou < 3; isou++)
-          trav[c_id][isou] = rovolsdt * (vela[c_id][isou] - vel[c_id][isou]);
+        for (cs_lnum_t i = 0; i < 3; i++)
+          trav[c_id][i] = rovolsdt * (vela[c_id][i] - vel[c_id][i]);
       });
       ctx.wait();
 
