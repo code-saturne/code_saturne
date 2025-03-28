@@ -204,15 +204,9 @@ typedef struct {
   /*! \var verbosity
    *  Verbosity for the resolution (0 or 1 for a reasonable log size,  2 or more
    * for troubleshooting).
-   *
-   * \var iwarni
-   * \deprecated use verbosity instead (iwarni is an alias to verbosity)
    */
 
-  union {
-    int                       verbosity;
-    int                       iwarni;
-  };
+  int                         verbosity;
 
   /*! \var flag
    *  Flag to know if unsteady or diffusion or convection or reaction

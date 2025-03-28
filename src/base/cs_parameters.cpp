@@ -356,7 +356,7 @@ static cs_equation_param_t _equation_param_default
    .name = nullptr,
    .type = CS_EQUATION_N_TYPES,
    .dim = 1,
-   {.verbosity = 0},
+   .verbosity = 0,
 
    .flag = 0,
    .post_flag = 0,
