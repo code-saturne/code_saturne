@@ -39,7 +39,7 @@ documentation to be consistent. They are strongly recommended:
   you should add to the `csbiblio.bib` file located in the `doc/style` directory.
 - Write in English (UK for the theory manual, US for the rest,
   for consistence with existing documentation).
-- Use the existing style of code_saturne, that is to say use the `csdoc.csl`
+- Use the existing style of code\_saturne, that is to say use the `csdoc.csl`
   class (for long documents as a report) `csshortdoc.cls` class
   (for short documents as an article).
 - Respect \f$ \mbox{\LaTeX} \f$ philosophy, as it is designed to make sensible spacing
@@ -58,7 +58,7 @@ Macros
 ------
 
 The `\CS` macro in the `csdoc.sty` package is used to allow a short
-syntax and typeset the code_saturne name in a proper and consistant manner.
+syntax and typeset the code\_saturne name in a proper and consistant manner.
 
 The available macros for mathematical symbols are available through
 the `csmacros.sty` package.
@@ -98,7 +98,7 @@ the `csmacros.sty` package.
 </table>
 
 Many macros are dedicated to discretized quantity notations used throughout
-code_saturne. The following table lists the main ones, but may not be complete,
+code\_saturne. The following table lists the main ones, but may not be complete,
 so checking the actual contents of `csmacros.sty` is always recommened.
 
 <table>

@@ -25,7 +25,7 @@
 Programming languages {#sec_prg_programming_languages}
 =====================
 
-Code_saturne is written mostly in C++, but was only recently converted from C,
+The code\_saturne tool is written mostly in C++, but was only recently converted from C,
 so most programming constructs encountered in the code will be Very
 similar to C rather than "modern" C++.
 
@@ -49,7 +49,7 @@ Subsets of C++ not (or rarely) used in code_saturne.
 ----------------------------------------------------
 
 - Class methods.
-  Since most of code_saturne was only recently converted to C++, although
+  Since most of code\_saturne was only recently converted to C++, although
   many structures use an object-oriented approach, they are still only defined as C structures and do not (yet)
   use a C++ method syntax.
   - For example, given a `cs_field_t` structure `*f`, we can call
@@ -57,7 +57,7 @@ Subsets of C++ not (or rarely) used in code_saturne.
   - For the same reason, constructors and destructors are explicit.
 
 - Inheritance.
-  For the same reasons, code_saturne does do not currently use class inheritance. Class inheritance may be used in the future, though
+  For the same reasons, code\_saturne does do not currently use class inheritance. Class inheritance may be used in the future, though
   caution must be used with virtual methods, to avoid performance
   issues (i.e. these must be used only for high-level contructs
   and operations).

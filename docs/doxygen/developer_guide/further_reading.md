@@ -58,8 +58,10 @@ C programming
   - *MPI* and *OpenMP* Courses may also be found on the main course material page:
     [MPI_OpenMP](http://www.idris.fr/formations/supports_de_cours.html)
 
-For visualization of code execution (Python, C, C++, and more), the following educational tool is
-very nice: https://pythontutor.com.
+C++ programming
+- Complete book on [Modern C++ programming](https://github.com/federico-busato/Modern-CPP-Programming) and associated subjects.
+  This book touches on many interesting subjects, and is quite easy to read despite its large size.
+- Another [Modern C++ for Absolute Beginners](https://github.com/jonalexjm/Books-C-and-C-plus/blob/main/Modern%20C%2B%2B%20For%20Absolute%20Beginners.pdf) book.
 
 C++ parallel programming
 - For parallel C++ programming allowing offload to accelerator devices, an
@@ -69,6 +71,9 @@ C++ parallel programming
   used in CUDA.
 - Note that this requires C++17, and as more and more systems include compilers
   supporting C++20, newer constructs may be an option in the near future.
+
+For visualization of code execution (Python, C, C++, and more), the following educational tool is
+very nice: https://pythontutor.com.
 
 C and C++ basics
 ================
@@ -108,7 +113,7 @@ Logical expressions
 ==  !=
 ```
 <tr><td>
-Function/subroutine call
+Function call
 <td>
 ```{.c}
 x = f(y);
@@ -171,8 +176,8 @@ printf("%d", tab[1][0]); // 4
 It is important to keep in mind that C passes arguments by copy (so changing argument values in C has not effect unless that argument is a pointer or array
 (see following sections), while in Fortran, variables are passed by reference, allowing their modification directly.
 
-C language
-==========
+C and C++ languages
+===================
 
 C variable declarations
 -----------------------
@@ -204,10 +209,13 @@ C allows defining additional types, as well as structures.
 - the `_t` postfix is a convention, which is recognized
   by some text editors (such as Emacs) for syntax coloring.
 
+C++ adds the `using` syntax. For example, with a _stride_ template parameter:
+- `using grad_t = cs_real_t[stride][3];`
+
 Pointers and arrays
 -------------------
 
-Understanding pointers is essential in C
+Understanding pointers is essential in C, and still very useful in C++.
 
 - In any language, variables are stored in memory.
 - C allows access not only to a variable's value, but to its memory location
@@ -323,6 +331,66 @@ It also has some disadvantages:
 - Access is more cumbersome, requiring functions.
 - Due to function call overheads, many calls to simple functions in a loop are
   more costly than  direct access, or than a function which loops internally
+
+C++ classes
+-----------
+
+C++ classes are an extension of C structures, providing:
+- Functions associated to a structure (_methods_, or _member functions_).
+- Automatic initialization and destruction of a structure and its members.
+- Finer control on structure member access (`public` and `private` qualifiers),
+  which are an alternative to using either fully opaque of fully accessible
+  C structures.
+- A class may be _inherited_ from another, allowing the extension of adaptation
+  of the base class while automatically reusing all unspecified (i.e. _overriden_)
+  elements of that base class.
+
+In C++, a `class` whoses members are all public and a `struct` are identical
+(so a C++ `struct` is an extension of a C `struct`, as it can contain
+specific constructors, destructors, and member functions.
+
+```{.cpp}
+class cs_simple_class {
+public:
+  int       n;           /* number of elements */
+  double   *val;         /* list of element values */
+
+public:
+  // Constructor
+  cs_simple_class(int  n_elts) : n(n_elts) : {
+    CS_MALLOC(val, n, double);
+  }
+
+  // Destructor
+  ~cs_simple_class() {
+    CS_FREE(val);
+  }
+
+  // Dot product
+  double
+  dot() {
+    return cdot(n, val, val);
+  }
+};
+```
+
+Constructors have the same name as a class, and no return type. Multiple
+constructors with different arguments may be defined, when multiple
+construction methods are desired.
+Destructors have the same name as a class, preceded by `~`.
+
+Other member functions can have any name, as a regular function.
+
+A given instance of a class is called an _object_. For example
+```{.cpp}
+cs_simple_class a(n);
+```
+instanciates an object `a`, automatically calling its constructor.
+
+Member functions can be called as follows:
+```{.cpp}
+double r = a.dot();
+```
 
 C storage class specifiers
 --------------------------

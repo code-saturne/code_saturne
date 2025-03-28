@@ -27,7 +27,7 @@ In this section, some specific aspects of the build system are described.
 Base tools {#sec_prg_build_base}
 ==========
 
-The code_saturne build system is based mostly on the
+The code\_saturne build system is based mostly on the
 [GNU Autotools](https://www.gnu.org/software/automake/manual/html_node/Autotools-Introduction.html#Autotools-Introduction),
 and provides a traditional `configure`, `make`, `make install` sequence).
 
@@ -53,11 +53,11 @@ Specific adaptations
   not be available.
 
 - Though Autotools allow both in-tree and out of tree builds, only
-  out-of tree builds are recommended and supported for code_saturne, as
+  out-of tree builds are recommended and supported for code\_saturne, as
   specified in the install documentation. In-tree builds might work,
   but they will pollute the source tree with generated files, prohibit
   multiple builds (such as side-by-side debug and production builds).
-  No precaution is taken in code_saturne to avoid name conflicts between
+  No precaution is taken in code\_saturne to avoid name conflicts between
   provided files and generated files, since this is not an issue with
   out-of-tree builds.
 
@@ -66,10 +66,10 @@ Specific adaptations
   be handled explicitly. Using recursive make, they are build first
   based on rules in the `src/Makefile.am` Automake template
   (whereas most files to be compiled are listed in sub-directories).
-  As Fortran is progressively being replaced by C in code_saturne, new
+  As Fortran is progressively being replaced by C in code\_saturne, new
   modules are rarely added, limiting the inconvenience.
 
-- Since code_saturne is managed through Python scripts, many settings
+- Since code\_saturne is managed through Python scripts, many settings
   detected at configure and build time are saved for use in Python through
   some specific files, output by `configure` (`bin/cs_config.py` and the
   intermediate `config/code_saturne_build.cfg.in` file) and `make install`
@@ -82,14 +82,14 @@ Specific adaptations
   libraries, but unfortunately decides that it is always right, even when
   it is wrong. In addition, it does not handle some compilers or
   languages, such as CUDA. So Libtool was removed from the
-  code_saturne build system in August 2022 (for version 7.3).
+  code\_saturne build system in August 2022 (for version 7.3).
   Shared libraries are now handled through addtional Automake
   rules and a `build-aux/cs_link_library.py` helper script.
 
-- Since code_saturne allows for user-defined functions and subroutines,
+- Since code\_saturne allows for user-defined functions and subroutines,
   a specific solution is required for those.
 
-- All *m4* files specific to code_saturne are found in `m4`, and prefixed
+- All *m4* files specific to code\_saturne are found in `m4`, and prefixed
   by `cs_` (so may be listed as `m4/cs_*.m4`). Other m4 files in the same
   directory are generated or copied by `automake`.
 
@@ -145,7 +145,7 @@ The following logic is also applied in the `build_aux/cs_version.py` script:
 Roadmap
 -------
 
-  The GNU Autotools provide some nice features, and the code_saturne build
+  The GNU Autotools provide some nice features, and the code\_saturne build
   system represents a large amount of work over multiple years, but this system
   is showing its age, and perhaps not evolving well enough to suit current
   needs.
@@ -167,7 +167,7 @@ Roadmap
       thus be run in a specific directory, making it a bit more tricky to use.
     - It requires learning a specific language. Perhaps not more complicated
       than the *m4* scripts used in Autotools, but still one more than the
-      main programming languages used in code_saturne.
+      main programming languages used in code\_saturne.
     - We have not tested/evaluated the generation of configuration files
       (such as `config/code_saturne_build.cfg`) yet.
     - The caching behavior can lead to subtle issues.
@@ -177,12 +177,12 @@ Roadmap
         equivalent with CMake does not seem so straightforward.
     - It requires a CMake installation (though it is now almost ubiquitous).
     - On the advantages side, it does not require regenerating `configure`
-      and `Makefile.in` files (using `sbin/bootstrap` in code_saturne) when
+      and `Makefile.in` files (using `sbin/bootstrap` in code\_saturne) when
       CMake files are modified.
 
   - [Meson](https://mesonbuild.com/) seems like an interesting system,
     used by some large projects, and has the advantage of being based on
-    Python, which is already familiar to most code_saturne developers.
+    Python, which is already familiar to most code\_saturne developers.
     - A disadvantage is that its reliance on the
       [Ninja](https://ninja-build.org/) build system, adds an installation
       and build dependency.
@@ -238,7 +238,7 @@ programs and libraries, not for individual object files. Another workaround
 would be to use rules for built (generated) sources.
 
 When not using Libtool, Automake assumes archive (`.a`) form libraries, so
-flags for position-independent code are added specifically in the code_saturne
+flags for position-independent code are added specifically in the code\_saturne
 build configuration (and can be adapted in `config/cs_auto_flags.sh`).
 
 To build libraries, a `build-aux/cs_link_library.py` helper script is used.

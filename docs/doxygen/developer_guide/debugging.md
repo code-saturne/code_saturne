@@ -89,10 +89,10 @@ the situation can lead to one or more orders of magnitude in time savings.
 
   * Sometimes, a bit of luck...
 
-- code_saturne tries to help, so always check for
+- code\_saturne tries to help, so always check for
   <span style="color:rgb(254,88,21)"> **error messages** </span>
 
-  * In code_saturne, <span style="color:rgb(48,119,16)"><b>`error*`</b></span>,
+  * In code\_saturne, <span style="color:rgb(48,119,16)"><b>`error*`</b></span>,
     <span style="color:rgb(48,119,16)"><b>`run_solver.log`</b></span>,
     messages in batch output logs (or in the console) should be checked.
 
@@ -206,7 +206,7 @@ including C, C++, and Fortran.
   more detailed and useful information when the program was compiled
   with debugging info. The matching compiler option is usually
   <span style="color:rgb(48,119,16)">`-g`</span>, and in the
-  case of code_saturne, is provided using the
+  case of code\_saturne, is provided using the
   <span style="color:rgb(48,119,16)">`--enable-debug`</span>
   configure option at installation.
 
@@ -278,7 +278,7 @@ a good potential successor to DDD. It is based on a web-browser interface,
 
 Full integrated development environments (including Qt Creator,
 Visual Studio Code, Eclipse, Kdevelop, Anjuta) are outside the
-scope of this documentation. Most members of the code_saturne development
+scope of this documentation. Most members of the code\_saturne development
 team mostly use lighter, less integrated tools, so will not be able
 to provide recommendations regarding their use.
 
@@ -293,7 +293,7 @@ here (though feedback and recommendations around these tools are welcome).
 
 The [LLDB](https://lldb.llvm.org) debugger is an interesting competitor to GDB,
 with a different (similar but more verbose) syntax. Is is not as widely
-available yet, and is not yet handled by the code_saturne debug scripts,
+available yet, and is not yet handled by the code\_saturne debug scripts,
 though a user familiar with it could of course set it up.
 
 The Valgrind tool suite
@@ -351,7 +351,7 @@ For the most common errors, use
 <span style="color:rgb(48,119,16)">AddressSanitizer</span>,
 a fast memory error detector.
 
-- For the code_saturne configure options, this means
+- For the code\_saturne configure options, this means
   <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=address`</span>
   <span style="color:rgb(48,119,16)">`CXXFLAGS=-fsanitize=address`</span>
   <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=address`</span>
@@ -392,7 +392,7 @@ as division by zero, some memory errors, integer overflows, and more.
   and even in some cases specify
   <span style="color:rgb(48,119,16)">`LD_LIBRARY_FLAGS`</span>
 
-- For the code_saturne configure options, this means
+- For the code\_saturne configure options, this means
   <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=undefined`</span>
   <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=undefined`</span>
   <span style="color:rgb(48,119,16)">`LDFLAGS=-fsanitize=undefined`</span>
@@ -409,7 +409,7 @@ Application to code_saturne
 Starting the code_saturne solver under a debugger  {#code_saturne_debug_launch_set}
 -------------------------------------------------
 
-Several ways of setting code_saturne to run under a debugger are possible:
+Several ways of setting code\_saturne to run under a debugger are possible:
 
 - Using the GUI, set options in
     <span style="color: rgb(0,91,187)">Run computation/Advanced options`</span>
@@ -568,7 +568,7 @@ many directories and waiting for pre-processing before each run.
 - Add the debugger commands to this to run (unless already done
   through the GUI or user script).
 
-  * To make this easier, code_saturne provides a
+  * To make this easier, code\_saturne provides a
     <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script, in the
     <span style="color: rgb(0,91,187)">`python/code_saturne/base`</span> directory
     of the source tree (and in the
@@ -591,7 +591,7 @@ many directories and waiting for pre-processing before each run.
 
 ### Running under Vim or Neovim
 
-The code_saturne debug wrapper does not yet support launching GDB under Vim
+The code\_saturne debug wrapper does not yet support launching GDB under Vim
 or Neovim.
 
 Various examples of use of debugging with Vim are found on the web, explaining
@@ -608,7 +608,7 @@ Parallel Debugging
 Parallel Debugging: MPI
 -----------------------
 
-Debugging parallel code_saturne runs is not very different from
+Debugging parallel code\_saturne runs is not very different from
 debugging serial runs, though stepping through a program may be
 more cumbersome unless a parallel debugger is used.
 
@@ -689,7 +689,7 @@ When no true parallel debugger is available, serial debuggers may be used.
       will launch MPI ranks 2 and 5 under a debugger, while other ranks will
       be run normally.
 
-For code_saturne under GDB, to determine a given process's rank, type:
+For code\_saturne under GDB, to determine a given process's rank, type:
 <span style="color: rgb(48,119,16)">`print cs_glob_rank_id`</span>
 
 Parallel Debugging: OpenMP
