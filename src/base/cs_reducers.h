@@ -81,7 +81,7 @@ struct cs_reduce_max1r {
 
   CS_F_HOST_DEVICE void
   identity(cs_real_t &a) const {
-    a = -cs_math_infinite_r;
+    a = -HUGE_VAL;
   }
 
   CS_F_HOST_DEVICE void
@@ -97,8 +97,8 @@ struct cs_reduce_min1r_max1r {
 
   CS_F_HOST_DEVICE void
   identity(T &a) const {
-    a.r[0] =  cs_math_infinite_r;
-    a.r[1] = -cs_math_infinite_r;
+    a.r[0] =  HUGE_VAL;
+    a.r[1] = -HUGE_VAL;
   }
 
   CS_F_HOST_DEVICE void
@@ -113,10 +113,10 @@ struct cs_reduce_min2r_max2r {
 
   CS_F_HOST_DEVICE void
   identity(T &a) const {
-    a.r[0] =  cs_math_infinite_r;
-    a.r[1] = -cs_math_infinite_r;
-    a.r[2] =  cs_math_infinite_r;
-    a.r[3] = -cs_math_infinite_r;
+    a.r[0] =  HUGE_VAL;
+    a.r[1] = -HUGE_VAL;
+    a.r[2] =  HUGE_VAL;
+    a.r[3] = -HUGE_VAL;
   }
 
   CS_F_HOST_DEVICE void
