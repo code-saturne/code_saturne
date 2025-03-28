@@ -295,7 +295,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cs_glob_physical_model_flag[CS_COMBUSTION_LW] = -1;
 
   if (type == CS_COMBUSTION_GAS_NONE) {
-    BFT_FREE(cs_glob_combustion_gas_model);
+    CS_FREE(cs_glob_combustion_gas_model);
     return NULL;
   }
 
@@ -319,7 +319,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   cs_combustion_gas_model_t  *cm;
 
-  BFT_MALLOC(cm, 1, cs_combustion_gas_model_t);
+  CS_MALLOC(cm, 1, cs_combustion_gas_model_t);
   memset(cm, 0, sizeof(cs_combustion_gas_model_t));
 
   cs_glob_combustion_gas_model = cm;
@@ -528,11 +528,11 @@ cs_combustion_gas_set_thermochemical_data_file(const char  *file_name)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: gas combustion model not active."), __func__);
 
-  BFT_FREE(cm->data_file_name);
+  CS_FREE(cm->data_file_name);
 
   if (file_name != NULL) {
     size_t l = strlen(file_name)+1;
-    BFT_REALLOC(cm->data_file_name, l, char);
+    CS_REALLOC(cm->data_file_name, l, char);
     strncpy(cm->data_file_name, file_name, l);
   }
 }
@@ -554,11 +554,11 @@ cs_combustion_gas_set_radiation_data_file(const char  *file_name)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: gas combustion model not active."), __func__);
 
-  BFT_FREE(cm->radiation_data_file_name);
+  CS_FREE(cm->radiation_data_file_name);
 
   if (file_name != NULL) {
     size_t l = strlen(file_name)+1;
-    BFT_REALLOC(cm->radiation_data_file_name, l, char);
+    CS_REALLOC(cm->radiation_data_file_name, l, char);
     strncpy(cm->radiation_data_file_name, file_name, l);
   }
 }
@@ -1292,17 +1292,6 @@ cs_combustion_gas_add_property_fields(void)
     cm->ckabs = _add_property_1d("kabs", "KABS");
     cm->t4m = _add_property_1d("temperature_4", "Temp4");
     cm->t3m = _add_property_1d("temperature_3", "Temp3");
-  }
-
-  // Map to Fortran
-  {
-    int iym_c[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
-    for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
-      if (cm->ym[i] != nullptr)
-        iym_c[i] = cm->ym[i]->id;
-      else
-        iym_c[i] = -1;
-    }
   }
 }
 

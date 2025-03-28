@@ -854,7 +854,6 @@ cs_parameters_check(void)
 
   const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
-  const cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
 
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
     return; /* Avoid the detection of false setting errors when using

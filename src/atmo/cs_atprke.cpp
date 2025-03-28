@@ -248,14 +248,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
 
   /* Allocate work arrays */
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
-
-  cs_real_t *cvara_k = nullptr, *cvara_ep = nullptr;
-
-  if (CS_F_(k) != nullptr) {
-    cvara_k  =  (cs_real_t *)CS_F_(k)->val_pre;
-    cvara_ep =  (cs_real_t *)CS_F_(eps)->val_pre;
-  }
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   /* Compute potential temperature derivatives
      ======================================== */
@@ -272,20 +265,16 @@ _dry_atmosphere(const cs_real_t  cromo[],
 
   /* TKE Production by gravity term G */
 
-  cs_real_t rho, visct, xeps, xk, ttke, gravke;
+  cs_real_t rho, visct, gravke;
   cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
   cs_field_t *f_beta = cs_field_by_name("thermal_expansion");
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     rho    = cromo[c_id];
     visct  = cpro_pcvto[c_id];
-    xeps   = cvara_ep[c_id];
-    xk     = cvara_k[c_id];
-    ttke   = xk / xeps;
     cs_real_t beta = f_beta->val[c_id];
 
-    gravke = beta *
-      cs_math_3_dot_product(grad[c_id], grav) / prdtur;
+    gravke = beta * cs_math_3_dot_product(grad[c_id], grav) / prdtur;
 
     /* Explicit Buoyant terms */
     gk[c_id] = visct*gravke;
@@ -295,7 +284,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
       f_tke_buoy->val[c_id] = visct*gravke/rho;
   }
 
-  BFT_FREE(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -307,15 +296,13 @@ _dry_atmosphere(const cs_real_t  cromo[],
  * model in the context of the atmospheric module
  * g = g*grad(theta)/prdtur/theta
  *
- * \param[in]       cromo       density
  * \param[in]       cpro_pcvto  turbulent viscosity
  * \param[in, out]  gk          explicit part of the buoyancy term (for k)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_humid_atmosphere(const cs_real_t  cromo[],
-                  const cs_real_t  cpro_pcvto[],
+_humid_atmosphere(const cs_real_t  cpro_pcvto[],
                   cs_real_t        gk[])
 {
   cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
@@ -342,14 +329,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   /* Allocate work arrays */
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
-
-  cs_real_t *cvara_k = nullptr, *cvara_ep = nullptr;
-
-  if (CS_F_(k) != nullptr) {
-    cvara_k  =  (cs_real_t *)CS_F_(k)->val_pre;
-    cvara_ep =  (cs_real_t *)CS_F_(eps)->val_pre;
-  }
+  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
   /* Compute potential temperature derivatives
      ======================================== */
@@ -357,10 +337,10 @@ _humid_atmosphere(const cs_real_t  cromo[],
   /* compute the production term in case of humid atmosphere
    * ie. when iatmos eq 2 */
   cs_real_t *etheta, *eq, *gravke_theta, *gravke_qw;
-  BFT_MALLOC(etheta, n_cells_ext, cs_real_t);
-  BFT_MALLOC(eq, n_cells_ext, cs_real_t);
-  BFT_MALLOC(gravke_theta, n_cells_ext, cs_real_t);
-  BFT_MALLOC(gravke_qw, n_cells_ext, cs_real_t);
+  CS_MALLOC(etheta, n_cells_ext, cs_real_t);
+  CS_MALLOC(eq, n_cells_ext, cs_real_t);
+  CS_MALLOC(gravke_theta, n_cells_ext, cs_real_t);
+  CS_MALLOC(gravke_qw, n_cells_ext, cs_real_t);
 
   /* Computation of the gradient of the potentalp_bl temperature */
 
@@ -454,15 +434,11 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   /* Finalization */
 
-  cs_real_t rho, visct, xeps, xk, ttke, gravke;
+  cs_real_t visct, gravke;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    rho   = cromo[c_id];
     visct = cpro_pcvto[c_id];
-    xeps  = cvara_ep[c_id];
-    xk    = cvara_k[c_id];
-    ttke  = xk / xeps;
 
     gravke  = gravke_theta[c_id] + gravke_qw[c_id];
 
@@ -471,12 +447,12 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   }
 
-  BFT_FREE(etheta);
-  BFT_FREE(eq);
-  BFT_FREE(gravke_theta);
-  BFT_FREE(gravke_qw);
+  CS_FREE(etheta);
+  CS_FREE(eq);
+  CS_FREE(gravke_theta);
+  CS_FREE(gravke_qw);
 
-  BFT_FREE(grad);
+  CS_FREE(grad);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -528,8 +504,7 @@ cs_atmo_buoyancy_ke_prod(cs_real_t  gk[])
                     gk);
 
   else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
-    _humid_atmosphere(cromo,
-                      cpro_pcvto,
+    _humid_atmosphere(cpro_pcvto,
                       gk);
 }
 
