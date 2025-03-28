@@ -195,11 +195,11 @@ _numerical_double_parameters(const char  *param,
 {
   cs_tree_node_t *tn = NULL;
   char *path0 = NULL;
-  BFT_MALLOC(path0, strlen("numerical_parameters/") + strlen(param) + 1, char);
+  CS_MALLOC(path0, strlen("numerical_parameters/") + strlen(param) + 1, char);
   strcpy(path0, "numerical_parameters/");
   strcat(path0, param);
   tn = cs_tree_get_node(cs_glob_tree, path0);
-  BFT_FREE(path0);
+  CS_FREE(path0);
 
   /* value not changed if path not found */
   cs_gui_node_get_real(tn, value);
@@ -1518,8 +1518,8 @@ _ensure_zones_order(void)
 
     /* Build ordering array */
 
-    BFT_MALLOC(z_ids, n_v_zones, cs_lnum_t);
-    BFT_MALLOC(order, n_v_zones, cs_lnum_t);
+    CS_MALLOC(z_ids, n_v_zones, cs_lnum_t);
+    CS_MALLOC(order, n_v_zones, cs_lnum_t);
 
     /* Loop on volume condition zones */
 
@@ -1560,8 +1560,8 @@ _ensure_zones_order(void)
     tn_tail->next = tn_parent->children;
     tn_parent->children = tn_head;
 
-    BFT_FREE(order);
-    BFT_FREE(z_ids);
+    CS_FREE(order);
+    CS_FREE(z_ids);
   }
 
   /* Boundary zones */
@@ -1603,9 +1603,9 @@ _ensure_zones_order(void)
 
     /* Build ordering array */
 
-    BFT_MALLOC(z_ids, n_b_zones, cs_lnum_t);
-    BFT_MALLOC(order, n_b_zones, cs_lnum_t);
-    BFT_MALLOC(tn_bcs, n_b_zones, cs_tree_node_t *);
+    CS_MALLOC(z_ids, n_b_zones, cs_lnum_t);
+    CS_MALLOC(order, n_b_zones, cs_lnum_t);
+    CS_MALLOC(tn_bcs, n_b_zones, cs_tree_node_t *);
 
     /* Loop on volume condition zones */
 
@@ -1624,7 +1624,7 @@ _ensure_zones_order(void)
 
     cs_order_lnum_allocated(NULL, z_ids, order, n_b_zones);
 
-    BFT_FREE(z_ids);
+    CS_FREE(z_ids);
 
     /* Now loop on zones in id order */
 
@@ -1652,8 +1652,8 @@ _ensure_zones_order(void)
     tn_tail->next = tn_parent->children;
     tn_parent->children = tn_head;
 
-    BFT_FREE(order);
-    BFT_FREE(tn_bcs);
+    CS_FREE(order);
+    CS_FREE(tn_bcs);
   }
 }
 
@@ -2264,9 +2264,9 @@ cs_gui_finalize(void)
   /* Clean MEG contexts */
 
   for (int i = 0; i < _n_v_meg_contexts; i++)
-    BFT_FREE(_v_meg_contexts[i]);
+    CS_FREE(_v_meg_contexts[i]);
 
-  BFT_FREE(_v_meg_contexts);
+  CS_FREE(_v_meg_contexts);
 }
 
 /*----------------------------------------------------------------------------
@@ -2538,11 +2538,11 @@ cs_gui_groundwater_property_laws(int  permeability,
           /* get kd for current scalar and current zone */
           char *kdname = NULL;
           int len = strlen(f->name) + 4;
-          BFT_MALLOC(kdname, len, char);
+          CS_MALLOC(kdname, len, char);
           strcpy(kdname, f->name);
           strcat(kdname, "_kd");
           cs_field_t *fkd = cs_field_by_name_try(kdname);
-          BFT_FREE(kdname);
+          CS_FREE(kdname);
 
           cs_real_t kd_val = 0., diff_val = 0.;
           cs_tree_node_t *tn_s = cs_tree_get_node(tn_zl, "scalar");
@@ -2860,7 +2860,7 @@ void cs_gui_initial_conditions(void)
                                          // have be done
 
           cs_real_t *ini_vals = NULL;
-          BFT_MALLOC(ini_vals, c_vel->dim * n_cells, cs_real_t);
+          CS_MALLOC(ini_vals, c_vel->dim * n_cells, cs_real_t);
 
           cs_meg_initialization(z->name,
                                 n_cells,
@@ -2876,7 +2876,7 @@ void cs_gui_initial_conditions(void)
                                     ini_vals,
                                     c_vel->val);
 
-          BFT_FREE(ini_vals);
+          CS_FREE(ini_vals);
 
         }
 
@@ -2895,7 +2895,7 @@ void cs_gui_initial_conditions(void)
 
           if (c != NULL && formula != NULL) {
             cs_real_t *ini_vals = NULL;
-            BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
+            CS_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
 
             cs_meg_initialization(z->name,
                                   n_cells,
@@ -2910,7 +2910,7 @@ void cs_gui_initial_conditions(void)
                                       CS_ARRAY_SUBSET_OUT,
                                       ini_vals,
                                       c->val);
-            BFT_FREE(ini_vals);
+            CS_FREE(ini_vals);
           }
 
         }
@@ -2928,7 +2928,7 @@ void cs_gui_initial_conditions(void)
 
           if (formula != NULL) {
             cs_real_t *ini_vals = NULL;
-            BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
+            CS_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
             cs_meg_initialization(z->name,
                                   n_cells,
                                   cell_ids,
@@ -2942,7 +2942,7 @@ void cs_gui_initial_conditions(void)
                                       CS_ARRAY_SUBSET_OUT,
                                       ini_vals,
                                       c->val);
-            BFT_FREE(ini_vals);
+            CS_FREE(ini_vals);
           }
 
         }
@@ -2994,7 +2994,7 @@ void cs_gui_initial_conditions(void)
 
 
             cs_real_t *ini_vals = NULL;
-            BFT_MALLOC(ini_vals, n_ini_vals*n_cells, cs_real_t);
+            CS_MALLOC(ini_vals, n_ini_vals*n_cells, cs_real_t);
             cs_meg_initialization(z->name,
                                   n_cells,
                                   cell_ids,
@@ -3097,7 +3097,7 @@ void cs_gui_initial_conditions(void)
               bft_error(__FILE__, __LINE__, 0,
                         _("Invalid turbulence model: %s.\n"), model);
 
-            BFT_FREE(ini_vals);
+            CS_FREE(ini_vals);
 
           }
         }
@@ -3123,7 +3123,7 @@ void cs_gui_initial_conditions(void)
 
           if (formula_sca != NULL) {
             cs_real_t *ini_vals = NULL;
-            BFT_MALLOC(ini_vals, n_cells, cs_real_t);
+            CS_MALLOC(ini_vals, n_cells, cs_real_t);
             cs_meg_initialization(z->name,
                                   n_cells,
                                   cell_ids,
@@ -3137,7 +3137,7 @@ void cs_gui_initial_conditions(void)
                                       CS_ARRAY_SUBSET_OUT,
                                       ini_vals,
                                       c->val);
-            BFT_FREE(ini_vals);
+            CS_FREE(ini_vals);
           }
           /* If no formula was provided, the previous field values are
              kept (allowing mode-specific automatic initialization). */
@@ -3165,7 +3165,7 @@ void cs_gui_initial_conditions(void)
 
             if (formula_sca != NULL) {
               cs_real_t *ini_vals = NULL;
-              BFT_MALLOC(ini_vals, n_cells*f->dim, cs_real_t);
+              CS_MALLOC(ini_vals, n_cells*f->dim, cs_real_t);
               cs_meg_initialization(z->name,
                                     n_cells,
                                     cell_ids,
@@ -3179,7 +3179,7 @@ void cs_gui_initial_conditions(void)
                                         CS_ARRAY_SUBSET_OUT,
                                         ini_vals,
                                         f->val);
-              BFT_FREE(ini_vals);
+              CS_FREE(ini_vals);
             }
           }
         }
@@ -3222,7 +3222,7 @@ void cs_gui_initial_conditions(void)
 
             if (formula_meteo != NULL) {
               cs_real_t *ini_vals = NULL;
-              BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
+              CS_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
               cs_meg_initialization(z->name,
                                     n_cells,
                                     cell_ids,
@@ -3236,7 +3236,7 @@ void cs_gui_initial_conditions(void)
                                         CS_ARRAY_SUBSET_OUT,
                                         ini_vals,
                                         c->val);
-              BFT_FREE(ini_vals);
+              CS_FREE(ini_vals);
             }
 
             /* else:
@@ -3281,7 +3281,7 @@ void cs_gui_initial_conditions(void)
 
             if (formula_comb != NULL) {
               cs_real_t *ini_vals = NULL;
-              BFT_MALLOC(ini_vals, c_comb->dim*n_cells, cs_real_t);
+              CS_MALLOC(ini_vals, c_comb->dim*n_cells, cs_real_t);
               cs_meg_initialization(z->name,
                                     n_cells,
                                     cell_ids,
@@ -3289,13 +3289,13 @@ void cs_gui_initial_conditions(void)
                                     c_comb->name,
                                     ini_vals);
 
-            cs_array_real_copy_subset(n_cells,
-                                      c_comb->dim,
-                                      cell_ids,
-                                      CS_ARRAY_SUBSET_OUT,
-                                      ini_vals,
-                                      c_comb->val);
-            BFT_FREE(ini_vals);
+              cs_array_real_copy_subset(n_cells,
+                                        c_comb->dim,
+                                        cell_ids,
+                                        CS_ARRAY_SUBSET_OUT,
+                                        ini_vals,
+                                        c_comb->val);
+              CS_FREE(ini_vals);
             }
           }
 
@@ -3353,7 +3353,7 @@ void cs_gui_initial_conditions(void)
 
               if (formula != NULL && c != NULL) {
                 cs_real_t *ini_vals = NULL;
-                BFT_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
+                CS_MALLOC(ini_vals, c->dim*n_cells, cs_real_t);
 
                 cs_meg_initialization(z->name,
                                       n_cells,
@@ -3368,7 +3368,7 @@ void cs_gui_initial_conditions(void)
                                           CS_ARRAY_SUBSET_OUT,
                                           ini_vals,
                                           c->val);
-                BFT_FREE(ini_vals);
+                CS_FREE(ini_vals);
               }
             }
 
@@ -3595,7 +3595,7 @@ cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
 
       if (formula != NULL) {
         cs_real_t *st_vals = NULL;
-        BFT_MALLOC(st_vals, 12*n_cells, cs_real_t);
+        CS_MALLOC(st_vals, 12*n_cells, cs_real_t);
 
         const cs_real_3_t *restrict cell_cen = cs_glob_mesh_quantities->cell_cen;
 
@@ -3658,7 +3658,7 @@ cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
 
         }
 
-        BFT_FREE(st_vals);
+        CS_FREE(st_vals);
       }
     }
   }
@@ -3922,19 +3922,19 @@ cs_gui_partition(void)
 
   if (s_list != NULL) {
     char *buf;
-    BFT_MALLOC(buf, strlen(s_list)+1, char);
+    CS_MALLOC(buf, strlen(s_list)+1, char);
     strcpy(buf, s_list);
     char *p = strtok(buf, " \t,;");
     while (p != NULL) {
       int np = atoi(p);
       if (np > 1) {
-        BFT_REALLOC(add_parts, n_add_parts + 1, int);
+        CS_REALLOC(add_parts, n_add_parts + 1, int);
         add_parts[n_add_parts] = np;
         n_add_parts += 1;
       }
       p = strtok(NULL, " \t,;");
     }
-    BFT_FREE(buf);
+    CS_FREE(buf);
   }
 
   /* Set options */
@@ -3948,7 +3948,7 @@ cs_gui_partition(void)
 
   if (n_add_parts > 0) {
     cs_partition_add_partitions(n_add_parts, add_parts);
-    BFT_FREE(add_parts);
+    CS_FREE(add_parts);
   }
 }
 
@@ -4370,14 +4370,14 @@ cs_gui_properties_value_by_fluid_id(const int    fluid_id,
 
   const char *prefix = "value_";
   size_t len = strlen(prefix) + 1;
-  BFT_MALLOC(label, len+1, char);
+  CS_MALLOC(label, len+1, char);
 
   sprintf(label, "%s%1i", prefix, fluid_id);
 
   tn = cs_tree_get_node(tn, label);
   cs_gui_node_get_real(tn, value);
 
-  BFT_FREE(label);
+  CS_FREE(label);
 }
 
 /*----------------------------------------------------------------------------
@@ -4588,7 +4588,7 @@ cs_gui_time_moments(void)
     int n_m_fields = cs_tree_get_node_count(tn, "var_prop");
 
     int *m_f_id;
-    BFT_MALLOC(m_f_id, n_m_fields*2, int);
+    CS_MALLOC(m_f_id, n_m_fields*2, int);
     int *m_c_id = m_f_id + n_m_fields;
 
     int j = 0;
@@ -4626,7 +4626,7 @@ cs_gui_time_moments(void)
                                        restart_name);
 
     m_c_id = NULL;
-    BFT_FREE(m_f_id);
+    CS_FREE(m_f_id);
 
   }
 
@@ -5097,8 +5097,8 @@ cs_gui_zones(void)
   /* Build ordering array to check zones are defined in increasing id order */
 
   cs_lnum_t *order = NULL, *z_ids = NULL;
-  BFT_MALLOC(order, n_v_zones, cs_lnum_t);
-  BFT_MALLOC(z_ids, n_v_zones, cs_lnum_t);
+  CS_MALLOC(order, n_v_zones, cs_lnum_t);
+  CS_MALLOC(z_ids, n_v_zones, cs_lnum_t);
 
   /* Loop on volume condition zones */
 
@@ -5168,8 +5168,8 @@ cs_gui_zones(void)
     cs_volume_zone_define(name, criteria, type_flag);
   }
 
-  BFT_FREE(order);
-  BFT_FREE(z_ids);
+  CS_FREE(order);
+  CS_FREE(z_ids);
 
   /* Boundary zones */
   /*--------------- */
@@ -5416,7 +5416,7 @@ cs_gui_internal_coupling(void)
 
     int j = 0;
     int *z_ids;
-    BFT_MALLOC(z_ids, n_solid_zones, int);
+    CS_MALLOC(z_ids, n_solid_zones, int);
 
     for (int i = 0; i < n_zones; i++) {
       const cs_zone_t  *z = cs_volume_zone_by_id(i);
@@ -5427,7 +5427,7 @@ cs_gui_internal_coupling(void)
     int coupling_id = cs_internal_coupling_n_couplings();
 
     cs_internal_coupling_add_volume_zones(n_solid_zones, z_ids);
-    BFT_FREE(z_ids);
+    CS_FREE(z_ids);
 
     {
       cs_internal_coupling_t *cpl = cs_internal_coupling_by_id(coupling_id);
@@ -5479,9 +5479,9 @@ cs_gui_add_volume_meg_context(const  cs_zone_t   *zone,
                               const  cs_field_t  *fields[],
                               const  int          n_fields)
 {
-  BFT_REALLOC(_v_meg_contexts,
-              _n_v_meg_contexts+1,
-              cs_gui_volume_meg_context_t *);
+  CS_REALLOC(_v_meg_contexts,
+             _n_v_meg_contexts+1,
+             cs_gui_volume_meg_context_t *);
 
   /* Allocate field pointers at end of structure (be careful of alignment) */
 
@@ -5493,7 +5493,7 @@ cs_gui_add_volume_meg_context(const  cs_zone_t   *zone,
     n_contexts += 1;
 
   cs_gui_volume_meg_context_t  *meg_context = NULL;
-  BFT_MALLOC(meg_context, n_contexts, cs_gui_volume_meg_context_t);
+  CS_MALLOC(meg_context, n_contexts, cs_gui_volume_meg_context_t);
 
   meg_context->zone = zone;
 
@@ -5565,7 +5565,7 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
 
       if (formula != NULL) {
         cs_real_t *st_vals = NULL;
-        BFT_MALLOC(st_vals, 2*n_cells, cs_real_t);
+        CS_MALLOC(st_vals, 2*n_cells, cs_real_t);
 
         cs_meg_source_terms(z->name,
                             n_cells,
@@ -5592,7 +5592,7 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
                         - non_linear * tsimp[c_id] * pvar[c_id];
         }
 
-        BFT_FREE(st_vals);
+        CS_FREE(st_vals);
       }
     }
   }
@@ -5650,7 +5650,7 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
 
       if (formula != NULL) {
         cs_real_t *st_vals = NULL;
-        BFT_MALLOC(st_vals, 2*n_cells, cs_real_t);
+        CS_MALLOC(st_vals, 2*n_cells, cs_real_t);
 
         cs_meg_source_terms(z->name,
                             n_cells,
@@ -5668,7 +5668,7 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
                       - tsimp[c_id] * pvar[c_id];
         }
 
-        BFT_FREE(st_vals);
+        CS_FREE(st_vals);
       }
     }
   }
@@ -5712,14 +5712,14 @@ cs_gui_time_tables(void)
         node = cs_tree_node_get_child(n, "col_ids");
         const char *ids_r = cs_tree_node_get_value_str(node);
         char *ids;
-        BFT_MALLOC(ids, strlen(ids_r) + 1, char);
+        CS_MALLOC(ids, strlen(ids_r) + 1, char);
         strcpy(ids, ids_r);
 
         /* Parse line and count number of columns */
         char *token = strtok(ids, ",");
         while (token != NULL) {
           n_columns += 1;
-          BFT_REALLOC(col_ids, n_columns, int);
+          CS_REALLOC(col_ids, n_columns, int);
           sscanf(token, "%d", col_ids + (n_columns - 1));
 
           token = strtok(NULL, ",");
@@ -5729,7 +5729,7 @@ cs_gui_time_tables(void)
         for (int col_id = 0; col_id < n_columns; col_id++)
           col_ids[col_id] -= 1;
 
-        BFT_FREE(ids);
+        CS_FREE(ids);
 
       }
     }
@@ -5742,7 +5742,7 @@ cs_gui_time_tables(void)
                                                              col_ids,
                                                              true);
 
-    BFT_FREE(col_ids);
+    CS_FREE(col_ids);
 
     /* Time offset */
     node = cs_tree_node_get_child(n, "time_offset_choice");
@@ -5761,7 +5761,7 @@ cs_gui_time_tables(void)
       const char *hl_r = cs_tree_node_get_value_str(node);
 
       char *hl;
-      BFT_MALLOC(hl, strlen(hl_r)+1, char);
+      CS_MALLOC(hl, strlen(hl_r)+1, char);
       strcpy(hl, hl_r);
 
       int n_headers = 0;
@@ -5771,8 +5771,8 @@ cs_gui_time_tables(void)
       char *token = strtok(hl, ",");
       while (token != NULL) {
         n_headers += 1;
-        BFT_REALLOC(headers, n_headers, char *);
-        BFT_MALLOC(headers[n_headers - 1], strlen(token) + 1, char);
+        CS_REALLOC(headers, n_headers, char *);
+        CS_MALLOC(headers[n_headers - 1], strlen(token) + 1, char);
         strcpy(headers[n_headers - 1], token);
 
         token = strtok(NULL, ",");
@@ -5783,14 +5783,13 @@ cs_gui_time_tables(void)
 
       /* Free */
       for (int i = 0; i < n_headers; i++)
-        BFT_FREE(headers[i]);
-      BFT_FREE(headers);
+        CS_FREE(headers[i]);
+      CS_FREE(headers);
 
-      BFT_FREE(hl);
+      CS_FREE(hl);
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -5938,10 +5937,7 @@ cs_gui_physical_variable(void)
       }
     }
   }
-
 }
-
-
 
 /*----------------------------------------------------------------------------*/
 

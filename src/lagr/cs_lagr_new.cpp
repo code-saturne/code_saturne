@@ -338,7 +338,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
 
     if (n_vertices > n_vertices_max) {
       n_vertices_max = n_vertices*2;
-      BFT_REALLOC(acc_surf_r, n_vertices_max, cs_real_t);
+      CS_REALLOC(acc_surf_r, n_vertices_max, cs_real_t);
     }
 
     _face_sub_surfaces(n_vertices,
@@ -377,7 +377,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
 
   }
 
-  BFT_FREE(acc_surf_r);
+  CS_FREE(acc_surf_r);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -446,8 +446,8 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
     if (n_cell_faces > n_faces_max) {
       n_faces_max = n_cell_faces*2;
-      BFT_REALLOC(cell_subface_index, n_faces_max+1, cs_lnum_t);
-      BFT_REALLOC(acc_vol_r, n_faces_max, cs_real_t);
+      CS_REALLOC(cell_subface_index, n_faces_max+1, cs_lnum_t);
+      CS_REALLOC(acc_vol_r, n_faces_max, cs_real_t);
     }
 
     cell_subface_index[0] = 0;
@@ -505,7 +505,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
       if (cell_subface_index[i+1] > n_divisions_max) {
         n_divisions_max = cell_subface_index[i+1]*2;
-        BFT_REALLOC(acc_surf_r, n_divisions_max, cs_real_t);
+        CS_REALLOC(acc_surf_r, n_divisions_max, cs_real_t);
       }
 
       cs_real_t f_surf
@@ -640,9 +640,9 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
   } /* end of loop on cells */
 
-  BFT_FREE(acc_surf_r);
-  BFT_FREE(acc_vol_r);
-  BFT_FREE(cell_subface_index);
+  CS_FREE(acc_surf_r);
+  CS_FREE(acc_vol_r);
+  CS_FREE(cell_subface_index);
 }
 
 /*----------------------------------------------------------------------------*/

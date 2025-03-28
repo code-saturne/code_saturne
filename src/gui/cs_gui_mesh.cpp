@@ -540,7 +540,7 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
 
     int *vtx_is_fixed = NULL;
 
-    BFT_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
+    CS_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
 
     /* Get fixed boundary vertices flag */
 
@@ -554,7 +554,7 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
 
     /* Free memory */
 
-    BFT_FREE(vtx_is_fixed);
+    CS_FREE(vtx_is_fixed);
 
   }
 }
@@ -584,7 +584,7 @@ cs_gui_mesh_boundary(cs_mesh_t  *mesh)
 
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = NULL;
-    BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
+    CS_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
 
     cs_selector_get_i_face_list(selector,
                                 &n_selected_faces,
@@ -594,7 +594,7 @@ cs_gui_mesh_boundary(cs_mesh_t  *mesh)
                             n_selected_faces,
                             selected_faces);
 
-    BFT_FREE(selected_faces);
+    CS_FREE(selected_faces);
 
   }
 }
@@ -631,7 +631,7 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
 
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = NULL;
-    BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(selector,
                                 &n_selected_faces,
@@ -645,7 +645,7 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
                              n_selected_faces,
                              selected_faces);
 
-    BFT_FREE(selected_faces);
+    CS_FREE(selected_faces);
 
 #if _XML_DEBUG_
     bft_printf("%s ==>\n", __func__);

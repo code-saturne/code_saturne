@@ -111,7 +111,7 @@ cs_lagr_geom(void)
   const cs_real_3_t *vtx_coord
     = (const cs_real_3_t *)(cs_glob_mesh->vtx_coord);
 
-  BFT_REALLOC(cs_glob_lagr_b_face_proj, mesh->n_b_faces, cs_real_33_t);
+  CS_REALLOC(cs_glob_lagr_b_face_proj, mesh->n_b_faces, cs_real_33_t);
 
 /* ==============================================================================*/
 /* 1. The reference frame chang matrix is:

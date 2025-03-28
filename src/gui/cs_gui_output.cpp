@@ -618,8 +618,8 @@ _define_profiles(void)
       int i = n_writers;
 
       n_writers += 1;
-      BFT_REALLOC(w_i_vals, n_writers*3, int);
-      BFT_REALLOC(w_r_vals, n_writers, cs_real_t);
+      CS_REALLOC(w_i_vals, n_writers*3, int);
+      CS_REALLOC(w_r_vals, n_writers, cs_real_t);
       w_i_vals[i*3] = output_format;
       w_i_vals[i*3+1] = output_at_end;
       w_i_vals[i*3+2] = output_frequency;
@@ -656,7 +656,7 @@ _define_profiles(void)
       n_coords = v_np[0];
 
     cs_real_3_t *coords;
-    BFT_MALLOC(coords, n_coords, cs_real_3_t);
+    CS_MALLOC(coords, n_coords, cs_real_3_t);
 
     /* Be debugger-friendly in case cs_meg_post_profiles does not handle
        this well (if generation is wrong or missing) */
@@ -674,7 +674,7 @@ _define_profiles(void)
                                        coords,
                                        NULL);
 
-    BFT_FREE(coords);
+    CS_FREE(coords);
 
     cs_probe_set_assign_curvilinear_abscissa(pset, NULL);
 
@@ -728,8 +728,8 @@ _define_profiles(void)
 
   }
 
-  BFT_FREE(w_i_vals);
-  BFT_FREE(w_r_vals);
+  CS_FREE(w_i_vals);
+  CS_FREE(w_r_vals);
 }
 
 /*----------------------------------------------------------------------------
@@ -750,7 +750,7 @@ _selection_func_boundary_cells(void        *input,
    * It will be deallocated afterwards by the calling function. */
 
   cs_lnum_t *_cell_list = NULL;
-  BFT_MALLOC(_cell_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
+  CS_MALLOC(_cell_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_cells_list(criteria, n_elts, _cell_list);
 
@@ -811,7 +811,7 @@ cs_gui_output(void)
   int *moment_id = NULL;
   const int n_moments = cs_time_moment_n_moments();
   if (n_moments > 0) {
-    BFT_MALLOC(moment_id, n_fields, int);
+    CS_MALLOC(moment_id, n_fields, int);
     for (int f_id = 0; f_id < n_fields; f_id++)
       moment_id[f_id] = -1;
     for (int m_id = 0; m_id < n_moments; m_id++) {
@@ -838,7 +838,7 @@ cs_gui_output(void)
     }
   }
 
-  BFT_FREE(moment_id);
+  CS_FREE(moment_id);
 
   /* User functions */
   for (int f_id = 0; f_id < cs_function_n_functions(); f_id++) {
@@ -1039,7 +1039,7 @@ cs_gui_postprocess_meshes(void)
 
     int n_writers = cs_tree_get_node_count(tn, "writer");
     int *writer_ids = NULL;
-    BFT_MALLOC(writer_ids, n_writers, int);
+    CS_MALLOC(writer_ids, n_writers, int);
     n_writers = 0;
     for (cs_tree_node_t *tn_w = cs_tree_get_node(tn, "writer");
          tn_w != NULL;
@@ -1119,7 +1119,7 @@ cs_gui_postprocess_meshes(void)
                                     n_writers, writer_ids);
     }
 
-    BFT_FREE(writer_ids);
+    CS_FREE(writer_ids);
   }
 
   /* Probe definitions */
@@ -1129,14 +1129,14 @@ cs_gui_postprocess_meshes(void)
   if (n_probes > 0) {
 
     char **probe_labels;
-    BFT_MALLOC(probe_labels, n_probes, char *);
+    CS_MALLOC(probe_labels, n_probes, char *);
     for (int ii = 0; ii < n_probes; ii++)
-      BFT_MALLOC(probe_labels[ii], 128, char);
+      CS_MALLOC(probe_labels[ii], 128, char);
 
     const char *coord_node_name[] = {"probe_x", "probe_y", "probe_z"};
 
     cs_real_3_t *p_coords;
-    BFT_MALLOC(p_coords, n_probes, cs_real_3_t);
+    CS_MALLOC(p_coords, n_probes, cs_real_3_t);
 
     int i = 0;
     for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "probe");
@@ -1180,11 +1180,11 @@ cs_gui_postprocess_meshes(void)
       cs_probe_set_option(pset, "interpolation", "1");
 
 
-    BFT_FREE(p_coords);
+    CS_FREE(p_coords);
 
     for (int ii = 0; ii < n_probes; ii++)
-      BFT_FREE(probe_labels[ii]);
-    BFT_FREE(probe_labels);
+      CS_FREE(probe_labels[ii]);
+    CS_FREE(probe_labels);
 
   }
 

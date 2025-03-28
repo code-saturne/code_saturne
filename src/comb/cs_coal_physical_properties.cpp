@@ -754,30 +754,30 @@ _physprop1(const  cs_real_t  f1m[],
      ----------------- */
 
   int *intpdf;
-  BFT_MALLOC(intpdf, n_cells, int);
+  CS_MALLOC(intpdf, n_cells, int);
 
   cs_real_t *ffuel, *dfuel, *doxyd, *pdfm1;
   cs_real_t *pdfm2, *hrec, *cx1m, *cx2m, *wmchx1, *wmchx2;
   cs_real_t *af1, *af2;
-  BFT_MALLOC(ffuel, n_cells, cs_real_t);
-  BFT_MALLOC(dfuel, n_cells, cs_real_t);
-  BFT_MALLOC(doxyd, n_cells, cs_real_t);
-  BFT_MALLOC(pdfm1, n_cells, cs_real_t);
-  BFT_MALLOC(pdfm2, n_cells, cs_real_t);
-  BFT_MALLOC(hrec, n_cells, cs_real_t);
-  BFT_MALLOC(cx1m, n_cells, cs_real_t);
-  BFT_MALLOC(cx2m, n_cells, cs_real_t);
-  BFT_MALLOC(wmchx1, n_cells, cs_real_t);
-  BFT_MALLOC(wmchx2, n_cells, cs_real_t);
-  BFT_MALLOC(af1, n_cells*n_gas_sp, cs_real_t);
-  BFT_MALLOC(af2, n_cells*n_gas_sp, cs_real_t);
+  CS_MALLOC(ffuel, n_cells, cs_real_t);
+  CS_MALLOC(dfuel, n_cells, cs_real_t);
+  CS_MALLOC(doxyd, n_cells, cs_real_t);
+  CS_MALLOC(pdfm1, n_cells, cs_real_t);
+  CS_MALLOC(pdfm2, n_cells, cs_real_t);
+  CS_MALLOC(hrec, n_cells, cs_real_t);
+  CS_MALLOC(cx1m, n_cells, cs_real_t);
+  CS_MALLOC(cx2m, n_cells, cs_real_t);
+  CS_MALLOC(wmchx1, n_cells, cs_real_t);
+  CS_MALLOC(wmchx2, n_cells, cs_real_t);
+  CS_MALLOC(af1, n_cells*n_gas_sp, cs_real_t);
+  CS_MALLOC(af2, n_cells*n_gas_sp, cs_real_t);
 
   cs_real_t *fs3no = nullptr, *fs4no = nullptr, *yfs4no = nullptr;
 
   if (cm->ieqnox == 1) {
-    BFT_MALLOC(fs3no, n_cells, cs_real_t);
-    BFT_MALLOC(fs4no, n_cells, cs_real_t);
-    BFT_MALLOC(yfs4no, n_cells*n_gas_sp, cs_real_t);
+    CS_MALLOC(fs3no, n_cells, cs_real_t);
+    CS_MALLOC(fs4no, n_cells, cs_real_t);
+    CS_MALLOC(yfs4no, n_cells*n_gas_sp, cs_real_t);
   }
 
   // Pointer to CHx1 and CHx2
@@ -798,9 +798,9 @@ _physprop1(const  cs_real_t  f1m[],
      ------------------------- */
 
   cs_real_t *fmini, *fmaxi, *tpdf;
-  BFT_MALLOC(fmini, n_cells, cs_real_t);
-  BFT_MALLOC(fmaxi, n_cells, cs_real_t);
-  BFT_MALLOC(tpdf, n_cells_ext, cs_real_t);
+  CS_MALLOC(fmini, n_cells, cs_real_t);
+  CS_MALLOC(fmaxi, n_cells, cs_real_t);
+  CS_MALLOC(tpdf, n_cells_ext, cs_real_t);
 
   # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (auto c_id = 0; c_id < n_cells; c_id++) {
@@ -814,9 +814,9 @@ _physprop1(const  cs_real_t  f1m[],
   cs_combustion_dirac_pdf(n_cells, intpdf, tpdf, ffuel, fvp2m, fmini, fmaxi,
                           doxyd, dfuel, pdfm1, pdfm2, hrec);
 
-  BFT_FREE(tpdf);
-  BFT_FREE(fmini);
-  BFT_FREE(fmaxi);
+  CS_FREE(tpdf);
+  CS_FREE(fmini);
+  CS_FREE(fmaxi);
 
   ipass++;
 
@@ -1147,24 +1147,24 @@ _physprop1(const  cs_real_t  f1m[],
   }
 
   // Free work arrays
-  BFT_FREE(intpdf);
-  BFT_FREE(ffuel);
-  BFT_FREE(dfuel);
-  BFT_FREE(doxyd);
-  BFT_FREE(pdfm1);
-  BFT_FREE(pdfm2);
-  BFT_FREE(hrec);
-  BFT_FREE(cx1m);
-  BFT_FREE(cx2m);
-  BFT_FREE(wmchx1);
-  BFT_FREE(wmchx2);
-  BFT_FREE(af1);
-  BFT_FREE(af2);
+  CS_FREE(intpdf);
+  CS_FREE(ffuel);
+  CS_FREE(dfuel);
+  CS_FREE(doxyd);
+  CS_FREE(pdfm1);
+  CS_FREE(pdfm2);
+  CS_FREE(hrec);
+  CS_FREE(cx1m);
+  CS_FREE(cx2m);
+  CS_FREE(wmchx1);
+  CS_FREE(wmchx2);
+  CS_FREE(af1);
+  CS_FREE(af2);
 
   if (cm->ieqnox == 1) {
-    BFT_FREE(fs3no);
-    BFT_FREE(fs4no);
-    BFT_FREE(yfs4no);
+    CS_FREE(fs3no);
+    CS_FREE(fs4no);
+    CS_FREE(yfs4no);
   }
 }
 

@@ -237,19 +237,19 @@ cs_gui_radiative_transfers_finalize(void)
   if (_boundary != NULL) {
     int zones = _boundary->n_zones;
     for (int i = 0; i < zones; i++) {
-      BFT_FREE(_boundary->label[i]);
-      BFT_FREE(_boundary->nature[i]);
+      CS_FREE(_boundary->label[i]);
+      CS_FREE(_boundary->nature[i]);
     }
-    BFT_FREE(_boundary->label);
-    BFT_FREE(_boundary->nature);
-    BFT_FREE(_boundary->type);
-    BFT_FREE(_boundary->emissivity);
-    BFT_FREE(_boundary->thickness);
-    BFT_FREE(_boundary->thermal_conductivity);
-    BFT_FREE(_boundary->external_temp);
-    BFT_FREE(_boundary->internal_temp);
-    BFT_FREE(_boundary->conduction_flux);
-    BFT_FREE(_boundary);
+    CS_FREE(_boundary->label);
+    CS_FREE(_boundary->nature);
+    CS_FREE(_boundary->type);
+    CS_FREE(_boundary->emissivity);
+    CS_FREE(_boundary->thickness);
+    CS_FREE(_boundary->thermal_conductivity);
+    CS_FREE(_boundary->external_temp);
+    CS_FREE(_boundary->internal_temp);
+    CS_FREE(_boundary->conduction_flux);
+    CS_FREE(_boundary);
   }
 }
 
@@ -468,18 +468,18 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
     int n_zones = cs_tree_get_node_count(cs_glob_tree,
                                          "boundary_conditions/boundary");
 
-    BFT_MALLOC(_boundary, 1, cs_radiative_transfer_boundary_t);
+    CS_MALLOC(_boundary, 1, cs_radiative_transfer_boundary_t);
     _boundary->n_zones = n_zones;
 
-    BFT_MALLOC(_boundary->label,                n_zones, char *);
-    BFT_MALLOC(_boundary->nature,               n_zones, char *);
-    BFT_MALLOC(_boundary->type,                 n_zones, int);
-    BFT_MALLOC(_boundary->emissivity,           n_zones, double);
-    BFT_MALLOC(_boundary->thickness,            n_zones, double);
-    BFT_MALLOC(_boundary->thermal_conductivity, n_zones, double);
-    BFT_MALLOC(_boundary->external_temp,        n_zones, double);
-    BFT_MALLOC(_boundary->internal_temp,        n_zones, double);
-    BFT_MALLOC(_boundary->conduction_flux,      n_zones, double);
+    CS_MALLOC(_boundary->label,                n_zones, char *);
+    CS_MALLOC(_boundary->nature,               n_zones, char *);
+    CS_MALLOC(_boundary->type,                 n_zones, int);
+    CS_MALLOC(_boundary->emissivity,           n_zones, double);
+    CS_MALLOC(_boundary->thickness,            n_zones, double);
+    CS_MALLOC(_boundary->thermal_conductivity, n_zones, double);
+    CS_MALLOC(_boundary->external_temp,        n_zones, double);
+    CS_MALLOC(_boundary->internal_temp,        n_zones, double);
+    CS_MALLOC(_boundary->conduction_flux,      n_zones, double);
 
     /* loop on boundary zones */
 
@@ -495,10 +495,10 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
       const char *nature = cs_tree_node_get_tag(tn, "nature");
       const char *label = cs_tree_node_get_tag(tn, "label");
 
-      BFT_MALLOC(_boundary->label[z_id], strlen(label)+1, char);
+      CS_MALLOC(_boundary->label[z_id], strlen(label)+1, char);
       strcpy(_boundary->label[z_id], label);
 
-      BFT_MALLOC(_boundary->nature[z_id], strlen(nature)+1, char);
+      CS_MALLOC(_boundary->nature[z_id], strlen(nature)+1, char);
       strcpy(_boundary->nature[z_id], nature);
 
       /* Default initialization */

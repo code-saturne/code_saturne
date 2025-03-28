@@ -676,7 +676,7 @@ cs_tree_xml_read(cs_tree_node_t  *r,
   /* Read buffer */
 
   cs_xml_t *doc = NULL;
-  BFT_MALLOC(doc, 1, cs_xml_t);
+  CS_MALLOC(doc, 1, cs_xml_t);
 
   cs_gnum_t f_size;
   if (cs_glob_rank_id < 1)
@@ -688,7 +688,7 @@ cs_tree_xml_read(cs_tree_node_t  *r,
               _("File \"%s\" seems empty."), path);
 
   doc->size = f_size;
-  BFT_MALLOC(doc->buf, doc->size + 1, char);
+  CS_MALLOC(doc->buf, doc->size + 1, char);
   doc->buffer_name = path;
   doc->byte = 0;
   doc->line = 1;
@@ -719,8 +719,8 @@ cs_tree_xml_read(cs_tree_node_t  *r,
     } while (s != NULL);
   }
 
-  BFT_FREE(doc->buf);
-  BFT_FREE(doc);
+  CS_FREE(doc->buf);
+  CS_FREE(doc);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   cs_tree_dump(CS_LOG_DEFAULT, 0, r);

@@ -188,7 +188,7 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
 
   /* Evaluate formula using meg */
   cs_real_t *bc_vals = nullptr;
-  BFT_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
+  CS_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
   cs_meg_boundary_function(z->name,
                            z->n_elts,
                            z->elt_ids,
@@ -219,7 +219,7 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
     }
   }
 
-  BFT_FREE(bc_vals);
+  CS_FREE(bc_vals);
 }
 
 /*-----------------------------------------------------------------------------
@@ -248,7 +248,7 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
 
   /* Evaluate formula using meg */
   cs_real_t *bc_vals = nullptr;
-  BFT_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
+  CS_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
   cs_meg_boundary_function(z->name,
                            z->n_elts,
                            z->elt_ids,
@@ -266,7 +266,7 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
   }
 
   /* Free memory */
-  BFT_FREE(bc_vals);
+  CS_FREE(bc_vals);
 }
 
 /*-----------------------------------------------------------------------------
@@ -776,7 +776,7 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
 
       /* Evaluate formula using meg */
       cs_real_t *retvals = nullptr;
-      BFT_MALLOC(retvals, 3 * bz->n_elts, cs_real_t);
+      CS_MALLOC(retvals, 3 * bz->n_elts, cs_real_t);
       cs_meg_boundary_function(bz->name,
                                bz->n_elts,
                                bz->elt_ids,

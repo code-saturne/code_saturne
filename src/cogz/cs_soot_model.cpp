@@ -272,8 +272,8 @@ cs_soot_production(int        f_id,
     if (f_id == CS_F_(fsm)->id) {
 
       cs_real_t *wsf, *wso;
-      BFT_MALLOC(wsf, n_cells, cs_real_t);
-      BFT_MALLOC(wso, n_cells, cs_real_t);
+      CS_MALLOC(wsf, n_cells, cs_real_t);
+      CS_MALLOC(wso, n_cells, cs_real_t);
 
       cs_array_real_fill_zero(n_cells, wso);
       cs_array_real_fill_zero(n_cells, wsf);
@@ -311,8 +311,8 @@ cs_soot_production(int        f_id,
       }
 
       /* Free memory */
-      BFT_FREE(wsf);
-      BFT_FREE(wso);
+      CS_FREE(wsf);
+      CS_FREE(wso);
 
     }
 

@@ -916,7 +916,7 @@ cs_ctwr_source_term(int              f_id,
 
   /* Table to track cells belonging to packing zones */
   cs_lnum_t  *packing_cell;
-  BFT_MALLOC(packing_cell, m->n_cells_with_ghosts, int);
+  CS_MALLOC(packing_cell, m->n_cells_with_ghosts, int);
 # pragma omp parallel for if (m->n_cells> CS_THR_MIN)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     packing_cell[cell_id] = -1;
@@ -1654,7 +1654,7 @@ cs_ctwr_source_term(int              f_id,
 
   } /* End of solve_rain variable check */
 
-  BFT_FREE(packing_cell);
+  CS_FREE(packing_cell);
 }
 
 /*----------------------------------------------------------------------------*/

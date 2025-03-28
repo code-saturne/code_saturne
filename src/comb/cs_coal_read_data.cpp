@@ -295,8 +295,8 @@ cs_coal_read_data(void)
   const int  ngazem = CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS;
   const int  npot = CS_COMBUSTION_COAL_MAX_TABULATION_POINTS;
   double *ehcoel, *cpcoel;
-  BFT_MALLOC(ehcoel, ngazem * npot, double);
-  BFT_MALLOC(cpcoel, ngazem * npot, double);
+  CS_MALLOC(ehcoel, ngazem * npot, double);
+  CS_MALLOC(cpcoel, ngazem * npot, double);
 
   const int n_coals = cm->n_coals;
 
@@ -471,7 +471,7 @@ cs_coal_read_data(void)
                                            wmolce,
                                            cm->th);
 
-  BFT_FREE(cpcoel);
+  CS_FREE(cpcoel);
 
   /* Compute enthalpy - temperature tabulation for gas mix */
 
@@ -826,7 +826,7 @@ cs_coal_read_data(void)
     }
   }
 
-  BFT_FREE(ehcoel);
+  CS_FREE(ehcoel);
 
   /* Coke = CH(gamma)O(delta)N(kappa)S(zeta) */
 

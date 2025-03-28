@@ -166,7 +166,7 @@ _write_liquid_vars(void                  *input,
                                                             cell volume */
 
     cs_real_t *val;
-    BFT_MALLOC(val, mesh->n_cells, cs_real_t);
+    CS_MALLOC(val, mesh->n_cells, cs_real_t);
 
     /* Value on all cells */
 
@@ -187,10 +187,10 @@ _write_liquid_vars(void                  *input,
 
     if (cell_ids != nullptr) {
       cs_real_t *_val;
-      BFT_MALLOC(_val, n_cells, cs_real_t);
+      CS_MALLOC(_val, n_cells, cs_real_t);
       for (cs_lnum_t i = 0; i < n_cells; i++)
         _val[i] = val[cell_ids[i]];
-      BFT_FREE(val);
+      CS_FREE(val);
       val = _val;
     }
 
@@ -208,7 +208,7 @@ _write_liquid_vars(void                  *input,
                       nullptr,   /* boundary face values */
                       ts);
 
-    BFT_FREE(val);
+    CS_FREE(val);
   }
 }
 
@@ -237,7 +237,7 @@ _packing_selection(void              *input,
   const cs_ctwr_zone_t **cts = (const cs_ctwr_zone_t **)input;
 
   bool  *is_packing = nullptr;
-  BFT_MALLOC(is_packing, m->n_cells, bool);
+  CS_MALLOC(is_packing, m->n_cells, bool);
 
 #   pragma omp parallel for if (m->n_cells> CS_THR_MIN)
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
@@ -272,7 +272,7 @@ _packing_selection(void              *input,
   if (n_pack_elts < m->n_cells) {
 
     /* Fill list  */
-    BFT_MALLOC(pack_elts, n_pack_elts, cs_lnum_t);
+    CS_MALLOC(pack_elts, n_pack_elts, cs_lnum_t);
 
     cs_lnum_t shift = 0;
     for (cs_lnum_t i = 0; i < m->n_cells; i++)
@@ -282,7 +282,7 @@ _packing_selection(void              *input,
 
   } /* Build elt_ids */
 
-  BFT_FREE(is_packing);
+  CS_FREE(is_packing);
 
   /* Return pointers */
   *n_elts = n_pack_elts;
@@ -390,11 +390,11 @@ cs_ctwr_define(const char           zone_criteria[],
 
   /* Define  a new exchange zone */
 
-  BFT_MALLOC(ct, 1, cs_ctwr_zone_t);
+  CS_MALLOC(ct, 1, cs_ctwr_zone_t);
 
   ct->criteria = nullptr;
   if (zone_criteria != nullptr) {
-    BFT_MALLOC(ct->criteria, strlen(zone_criteria)+1, char);
+    CS_MALLOC(ct->criteria, strlen(zone_criteria)+1, char);
     strcpy(ct->criteria, zone_criteria);
   }
   ct->num = _n_ct_zones + 1;
@@ -407,12 +407,12 @@ cs_ctwr_define(const char           zone_criteria[],
   if (z_id > -1) {
     z = cs_volume_zone_by_id(z_id);
     length = strlen(z->name) + 1;
-    BFT_MALLOC(ct->name, length, char);
+    CS_MALLOC(ct->name, length, char);
     strcpy(ct->name, z->name);
   }
   else {
     length = strlen("cooling_towers_") + 3;
-    BFT_MALLOC(ct->name, length, char);
+    CS_MALLOC(ct->name, length, char);
     sprintf(ct->name, "cooling_towers_%02d", ct->num);
   }
   ct->file_name = nullptr;
@@ -473,7 +473,7 @@ cs_ctwr_define(const char           zone_criteria[],
 
   if (_n_ct_zones >= _n_ct_zones_max) {
     _n_ct_zones_max = (_n_ct_zones_max + 1);
-    BFT_REALLOC(_ct_zone, _n_ct_zones_max, cs_ctwr_zone_t *);
+    CS_REALLOC(_ct_zone, _n_ct_zones_max, cs_ctwr_zone_t *);
   }
 
   /* Add it to exchange zones array */
@@ -485,7 +485,7 @@ cs_ctwr_define(const char           zone_criteria[],
     length = strlen("cooling_towers_balance.") + 2 + 1;
     for (int _num = ct->num; _num > 99; _num /= 10)
       length += 1;
-    BFT_MALLOC(ct->file_name, length, char);
+    CS_MALLOC(ct->file_name, length, char);
     sprintf(ct->file_name, "cooling_towers_balance.%02d", ct->num);
 
     FILE *f = fopen(ct->file_name, "a");
@@ -735,20 +735,20 @@ cs_ctwr_all_destroy(void)
   for (int id = 0; id < _n_ct_zones; id++) {
 
     cs_ctwr_zone_t  *ct = _ct_zone[id];
-    BFT_FREE(ct->criteria);
-    BFT_FREE(ct->name);
-    BFT_FREE(ct->file_name);
-    BFT_FREE(ct->inlet_faces_ids);
-    BFT_FREE(ct->outlet_faces_ids);
-    BFT_FREE(ct->outlet_cells_ids);
-    BFT_FREE(ct);
+    CS_FREE(ct->criteria);
+    CS_FREE(ct->name);
+    CS_FREE(ct->file_name);
+    CS_FREE(ct->inlet_faces_ids);
+    CS_FREE(ct->outlet_faces_ids);
+    CS_FREE(ct->outlet_cells_ids);
+    CS_FREE(ct);
 
   }
 
   _n_ct_zones_max = 0;
   _n_ct_zones = 0;
 
-  BFT_FREE(_ct_zone);
+  CS_FREE(_ct_zone);
 }
 
 /*----------------------------------------------------------------------------*/

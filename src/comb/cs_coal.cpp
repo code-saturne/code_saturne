@@ -148,7 +148,7 @@ cs_add_model_field_indexes(int  f_id);
 static void
 _coal_model_finalize(void)
 {
-  BFT_FREE(cs_glob_coal_model);
+  CS_FREE(cs_glob_coal_model);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -302,7 +302,7 @@ cs_coal_model_set_model(cs_coal_model_type_t  type)
   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = type;
 
   if (type == CS_COMBUSTION_COAL_NONE) {
-    BFT_FREE(cs_glob_coal_model);
+    CS_FREE(cs_glob_coal_model);
     return NULL;
   }
   else if (cs_glob_coal_model != NULL) {
@@ -314,7 +314,7 @@ cs_coal_model_set_model(cs_coal_model_type_t  type)
 
   cs_coal_model_t *cm = NULL;
 
-  BFT_MALLOC(cm, 1, cs_coal_model_t);
+  CS_MALLOC(cm, 1, cs_coal_model_t);
   memset(cm, 0, sizeof(cs_coal_model_t));
 
   cs_glob_coal_model = cm;

@@ -120,8 +120,8 @@ _destroy_inlet(void  *ci_p)
 
     cs_coal_bc_inlet_t *ci = (cs_coal_bc_inlet_t *)ci_p;
 
-    BFT_FREE(ci->state);
-    BFT_FREE(ci);
+    CS_FREE(ci->state);
+    CS_FREE(ci);
 
   }
 
@@ -270,7 +270,7 @@ cs_coal_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
   /* Add and initialize coal inlet if not present */
 
   if (ci == NULL) {
-    BFT_MALLOC(ci, 1, cs_coal_bc_inlet_t);
+    CS_MALLOC(ci, 1, cs_coal_bc_inlet_t);
 
     ci->zone = zone;
 
@@ -293,7 +293,7 @@ cs_coal_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
 
     /* Add state-tracking structure */
 
-    BFT_MALLOC(ci->state, 1, cs_coal_bc_inlet_state_t);
+    CS_MALLOC(ci->state, 1, cs_coal_bc_inlet_state_t);
     for (int i = 0; i < CS_COMBUSTION_COAL_MAX_CLASSES; i++)
       ci->state->x20[i] = 0;
 
@@ -406,7 +406,7 @@ cs_coal_boundary_conditions(int  bc_type[])
     const cs_field_t *f_bulk_age = cs_field_by_name_try("age");
 
     if (f_bulk_age != NULL) {
-      BFT_MALLOC(age_rcodcl1, cm->nclacp, cs_real_t *);
+      CS_MALLOC(age_rcodcl1, cm->nclacp, cs_real_t *);
 
       for (int icla = 0; icla < cm->nclacp; icla++) {
         char name[20];
@@ -899,7 +899,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
   /* Cleanup */
 
-  BFT_FREE(age_rcodcl1);
+  CS_FREE(age_rcodcl1);
 }
 
 /*----------------------------------------------------------------------------*/

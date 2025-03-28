@@ -332,12 +332,12 @@ _integral_phi_beta(cs_real_t *z,
   eps = 1.0e-6;
 
   dim_zz = m0 + 2 * n0 * (cs_lnum_t)log10(0.1 / eps) + 1;
-  BFT_MALLOC(zz, dim_zz, cs_real_t);
+  CS_MALLOC(zz, dim_zz, cs_real_t);
   for (ii = 0; ii < dim_zz; ii++) {
     zz[ii] = 0.0;
   }
 
-  BFT_MALLOC(phi_, dim_zz, cs_real_t);
+  CS_MALLOC(phi_, dim_zz, cs_real_t);
   for (ii = 0; ii < dim_zz; ii++) {
     phi_[ii] = 0.0;
   }
@@ -375,8 +375,8 @@ _integral_phi_beta(cs_real_t *z,
 
   *phi_integral = sum1 + sum2 + sum3;
 
-  BFT_FREE(zz);
-  BFT_FREE(phi_);
+  CS_FREE(zz);
+  CS_FREE(phi_);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
