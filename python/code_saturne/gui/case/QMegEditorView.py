@@ -325,7 +325,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
         self.pushButton_curl_close.clicked.connect(lambda :self._addOperator("}"))
 
         self.pushButton_power.clicked.connect(lambda :self._addOperator("^"))
-        self.pushButton_pi.clicked.connect(lambda :self._addOperator("Pi"))
+        self.pushButton_pi.clicked.connect(lambda :self._addOperator("pi"))
 
         self.pushButton_if.clicked.connect(lambda :self._addOperator("if ()"))
 
