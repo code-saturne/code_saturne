@@ -78,9 +78,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define EPZERO  1.E-12
-#define RINFIN  1.E+30
-
 #if !defined(HUGE_VAL)
 #define HUGE_VAL  1.E+12
 #endif
@@ -1635,8 +1632,6 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   /* Computation of the characteristic scale of the synthetic eddies */
   /*-----------------------------------------------------------------*/
 
-  constexpr cs_real_t c_1ov3 = 1./3.;
-
   cs_real_3_t  *length_scale;
   CS_MALLOC(length_scale, n_points, cs_real_3_t);
 
@@ -1665,7 +1660,8 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
         length_scale[point_id][coo_id]
           = fmax(length_scale[point_id][coo_id], length_scale_min);
 
-        if (fabs(length_scale[point_id][coo_id]-length_scale_min) < EPZERO)
+        if (cs_math_fabs(length_scale[point_id][coo_id]-length_scale_min)
+            < cs_math_epzero)
           count[coo_id]++;
 
       }
@@ -1689,8 +1685,8 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
           cs_lnum_t vtx_id = mesh->b_face_vtx_lst[j];
           length_scale_min
             = fmax(length_scale_min,
-                   2.*fabs(mq->cell_cen[cell_id][coo_id]
-                           - mesh->vtx_coord[3*vtx_id + coo_id]));
+                   2.*cs_math_fabs(mq->cell_cen[cell_id][coo_id]
+                                   - mesh->vtx_coord[3*vtx_id + coo_id]));
         }
 
         length_scale[point_id][coo_id]
@@ -1702,7 +1698,8 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
         length_scale[point_id][coo_id]
           = CS_MAX(length_scale[point_id][coo_id], length_scale_min);
 
-        if (CS_ABS(length_scale[point_id][coo_id] - length_scale_min) < EPZERO)
+        if (cs_math_fabs(length_scale[point_id][coo_id] - length_scale_min)
+            < cs_math_epzero)
           count[coo_id]++;
 
       }
@@ -1724,7 +1721,8 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
         ls_max = CS_MAX(length_scale[point_id][coo_id], ls_max);
 
-        if (CS_ABS(ls_max - length_scale[point_id][coo_id]) < EPZERO) {
+        if (cs_math_fabs(ls_max - length_scale[point_id][coo_id])
+            < cs_math_epzero) {
           for (cs_lnum_t j = 0; j < 3; j++)
             xyzmax[j] = point_coordinates[point_id][j];
         }

@@ -2186,16 +2186,20 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
     _statistical_weight_name(stat_group, class_id, name);
 
     /* Precaution in case of multiple such fields
-       (possible only in advanced cased with different start times) */
-    int sub_id = 0;
+       (possible only in advanced cases with different start times) */
+    short int sub_id = 0;
     while (cs_field_by_name_try(name) != nullptr) {
       _statistical_weight_name(stat_group, class_id, name);
       sub_id++;
+      char id_str[8];
+      snprintf(id_str, 7, "_%d", sub_id); id_str[7] = '\0';
       int l = strlen(name);
-      if (l > 59)
-        l = 59; /* truncate */
-      snprintf(name+l, 4, "_%d", sub_id);
-      name[l+4] = '\0';
+      int li = strlen(id_str);
+      if (l+li > 63) {
+        l = 63-li; /* truncate */
+      }
+      snprintf(name+l, li, "_%d", sub_id);
+      name[l+li] = '\0';
     }
 
     /* if cell_wise_integ is used save the stats at previous time */

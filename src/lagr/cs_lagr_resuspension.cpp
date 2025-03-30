@@ -180,7 +180,9 @@ cs_lagr_resuspension(void)
   cs_lagr_extra_module_t *extra = extra_i;
 
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+    = (const cs_real_3_t *)fvq->i_face_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = fvq->b_face_u_normal;
 
   cs_lagr_event_set_t  *events = nullptr;
 
@@ -328,8 +330,6 @@ cs_lagr_resuspension(void)
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
 
-              cs_real_t norm_face = fvq->b_face_surf[face_id];
-
               cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
               cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
@@ -339,8 +339,8 @@ cs_lagr_resuspension(void)
 
               for (cs_lnum_t id = 0; id < 3; id++) {
                 part_vel[id] *= norm_reent / norm_velocity * cos(angle_reent);
-                part_vel[id] -= norm_reent * sin(angle_reent) / norm_face
-                  * fvq->b_face_normal[face_id * 3 +id];
+                part_vel[id] -= norm_reent * sin(angle_reent)
+                  * b_face_u_normal[face_id][id];
               }
 
               /* Update of the number and weight of resuspended particles     */

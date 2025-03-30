@@ -624,8 +624,6 @@ _assign_empty_mesh(cs_medcoupling_mesh_t *pmmesh)
   med_mesh->finishInsertingCells();
 }
 
-#endif /* HAVE_MEDCOUPLING - BEGINNING OF PRIVATE FUNCTIONS */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get pointer to cs_medcoupling_mesh_t based on selection criteria
@@ -655,8 +653,6 @@ _get_mesh_from_criteria(const char  *selection_criteria,
 
   return m;
 }
-
-#if defined(HAVE_MEDCOUPLING)
 
 /*----------------------------------------------------------------------------*/
 /*!
