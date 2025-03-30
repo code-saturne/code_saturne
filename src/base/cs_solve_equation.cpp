@@ -1030,7 +1030,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
   cs_real_t *fimp, *rhs;
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
-  //CS_MALLOC(fimp, n_cells_ext, cs_real_t);
 
   cs_array_real_fill_zero(n_cells, rhs);
   cs_array_real_fill_zero(n_cells, fimp);
@@ -1531,7 +1530,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Initialize turbulent diffusivity for SGDH model */
   cs_real_t *sgdh_diff;
   CS_MALLOC_HD(sgdh_diff, n_cells_ext, cs_real_t, cs_alloc_mode);
-  //CS_MALLOC(sgdh_diff, n_cells_ext, cs_real_t);
 
   _init_sgdh_diff(f, sgdh_diff);
 

@@ -67,10 +67,10 @@ BEGIN_C_DECLS
  * Note: for Eddy Viscosity Models, the TKE may be included in the
  * solved pressure.
  *
- * \param[in]     m      pointer to mesh structure
- * \param[in]     mq     pointer to mesh quantities structure
- * \param[in]     fp     pointer to fluid properties structure
- * \param[in]     gxyz   gravity
+ * \param[in]   m       pointer to mesh structure
+ * \param[in]   mq      pointer to mesh quantities structure
+ * \param[in]   fp      pointer to fluid properties structure
+ * \param[in]   gxyz_h  gravity (on host)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -79,7 +79,7 @@ cs_solve_navier_stokes_update_total_pressure
   (const cs_mesh_t              *m,
    const cs_mesh_quantities_t   *mq,
    const cs_fluid_properties_t  *fp,
-   const cs_real_t               gxyz[3]);
+   const cs_real_t               gxyz_h[3]);
 
 /*----------------------------------------------------------------------------*/
 /*
