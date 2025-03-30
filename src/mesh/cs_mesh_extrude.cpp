@@ -1334,7 +1334,7 @@ _add_side_faces(cs_mesh_t           *m,
       cs_lnum_t vsid0 = v_s_id[vid0], vsid1 = v_s_id[vid1];
       cs_lnum_t n_v_sub0 = n_v_shift[vsid0+1] - n_v_shift[vsid0];
       cs_lnum_t n_v_sub1 = n_v_shift[vsid1+1] - n_v_shift[vsid1];
-      cs_lnum_t n_f_tria = CS_ABS(n_v_sub1 - n_v_sub0);
+      cs_lnum_t n_f_tria = cs::abs(n_v_sub1 - n_v_sub0);
       n_tria += n_f_tria;
       n_quad += n_f_sub - n_f_tria;
     }
@@ -1399,7 +1399,7 @@ _add_side_faces(cs_mesh_t           *m,
       cs_lnum_t n_v_sub0 = n_v_shift[vsid0+1] - n_v_shift[vsid0];
       cs_lnum_t n_v_sub1 = n_v_shift[vsid1+1] - n_v_shift[vsid1];
 
-      cs_lnum_t n_v_diff = CS_ABS(n_v_sub1 - n_v_sub0);
+      cs_lnum_t n_v_diff = cs::abs(n_v_sub1 - n_v_sub0);
 
       /* Face -> vertices connectivity;
          when edge vertices do not have the same extrusion count,

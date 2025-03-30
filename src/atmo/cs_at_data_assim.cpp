@@ -413,7 +413,8 @@ cs_at_data_assim_log(cs_measures_set_t     *ms,
           break;
         }
         if (ic < oi->measures_idx[(ii+1)*ms->dim+kk]
-            && (oi->steady > 0 || CS_ABS(oi->times[ic] - oi->times_read[jj]) < 1.e-12)) {
+            && (   oi->steady > 0
+                || cs::abs(oi->times[ic] - oi->times_read[jj]) < 1.e-12)) {
           bft_printf("%.2f ", ms->measures[ic]);
           ic++;
         }

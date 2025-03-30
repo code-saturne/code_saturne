@@ -130,7 +130,7 @@ cs_rad_transfer_source_terms(cs_real_t  rhs[],
       const cs_real_t *tempc = cs_field_by_name("real_temperature")->val;
       const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        rad_st_impl[c_id] = CS_MAX(-rad_st_impl[c_id], 0.0);
+        rad_st_impl[c_id] = cs::max(-rad_st_impl[c_id], 0.0);
         cs_real_t cor_factor = pottemp[c_id] / (tempc[c_id] + tkelvi);
         fimp[c_id] += cor_factor * rad_st_impl[c_id] * cell_vol[c_id];
         rhs[c_id] += cor_factor * rad_st_expl[c_id] * cell_vol[c_id];
@@ -142,7 +142,7 @@ cs_rad_transfer_source_terms(cs_real_t  rhs[],
          cs_glob_rad_transfer_params->imrcfsk == 1
          but this did not seem consistent */
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        rad_st_impl[c_id] = CS_MAX(-rad_st_impl[c_id], 0.0);
+        rad_st_impl[c_id] = cs::max(-rad_st_impl[c_id], 0.0);
         fimp[c_id] += rad_st_impl[c_id] * cell_vol[c_id];
         rhs[c_id] += rad_st_expl[c_id] * cell_vol[c_id];
       }

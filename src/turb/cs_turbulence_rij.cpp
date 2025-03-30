@@ -225,7 +225,7 @@ _sign(cs_real_t  a,
 {
   cs_real_t sgn = (b < 0) ? - 1 : 1;
 
-  return (sgn * cs_math_fabs(a));
+  return (sgn * cs::abs(a));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -262,8 +262,8 @@ _clip_alpha(const int          f_id,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_real_t var = cvar_al[c_id];
-    vmin[0] = cs_math_fmin(vmin[0], var);
-    vmax[0] = cs_math_fmax(vmax[0], var);
+    vmin[0] = cs::min(vmin[0], var);
+    vmax[0] = cs::max(vmax[0], var);
   }
 
   /* Clipping (edit to avoid exactly zero values) */
@@ -328,20 +328,20 @@ _rij_min_max(cs_lnum_t        n_cells,
 
     for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++) {
       for (cs_lnum_t ii = 0; ii < 6; ii++) {
-        t_vmin[ii] = cs_math_fmin(t_vmin[ii], cvar_rij[c_id][ii]);
-        t_vmax[ii] = cs_math_fmax(t_vmax[ii], cvar_rij[c_id][ii]);
+        t_vmin[ii] = cs::min(t_vmin[ii], cvar_rij[c_id][ii]);
+        t_vmax[ii] = cs::max(t_vmax[ii], cvar_rij[c_id][ii]);
       }
     }
     for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++) {
-      t_vmin[6] = cs_math_fmin(t_vmin[6], cvar_ep[c_id]);
-      t_vmax[6] = cs_math_fmax(t_vmax[6], cvar_ep[c_id]);
+      t_vmin[6] = cs::min(t_vmin[6], cvar_ep[c_id]);
+      t_vmax[6] = cs::max(t_vmax[6], cvar_ep[c_id]);
     }
 
     #pragma omp critical
     {
       for (int ii = 0; ii < 7; ii++) {
-        vmin[ii] = cs_math_fmin(vmin[ii], t_vmin[ii]);
-        vmax[ii] = cs_math_fmax(vmax[ii], t_vmax[ii]);
+        vmin[ii] = cs::min(vmin[ii], t_vmin[ii]);
+        vmax[ii] = cs::max(vmax[ii], t_vmax[ii]);
       }
     }
   }
@@ -701,11 +701,11 @@ _rij_echo(int              phase_id,
      *   For each calculation mode: same code, test
      *   Apart from the loop */
 
-    const cs_real_t distxn = cs_math_fmax(w_dist[c_id], cs_math_epzero); //FIXME
+    const cs_real_t distxn = cs::max(w_dist[c_id], cs_math_epzero); //FIXME
     const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
     cs_real_t bb =   cmu075 * pow(trrij, 1.5)
                    / (xkappa * cvara_ep[c_id] * distxn);
-    bb = cs_math_fmin(bb, 1.0);
+    bb = cs::min(bb, 1.0);
 
     for (cs_lnum_t ij = 0; ij < 6; ij++)
       rhs[c_id][ij] += cromo[c_id] * cell_f_vol[c_id] * w6[ij] * bb;
@@ -1007,7 +1007,7 @@ _gravity_st_epsilon(int              phase_id,
       const cs_real_t xttkmg
         = xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
 
-      time_scale = cs_math_fmax(time_scale, xttkmg);
+      time_scale = cs::max(time_scale, xttkmg);
 
       /* Calculation of the mixed time scale for EB thermal
        *  flux models (Dehoux, 2017) */
@@ -1031,7 +1031,7 @@ _gravity_st_epsilon(int              phase_id,
     }
     else {
       rhs[c_id] +=   ce3
-                   * cs_math_fmax(0., g_up_rhop/time_scale) * cell_f_vol[c_id];
+                   * cs::max(0., g_up_rhop/time_scale) * cell_f_vol[c_id];
     }
   });
 
@@ -1224,16 +1224,16 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     /* Compute the maximal eigenvalue (in terms of norm!) of S */
     cs_real_t eigen_vals[3];
     _sym_33_eigen(sym_strain, eigen_vals);
-    cs_real_t eigen_max = cs_math_fabs(eigen_vals[0]);
+    cs_real_t eigen_max = cs::abs(eigen_vals[0]);
     for (cs_lnum_t i = 1; i < 3; i++)
-      eigen_max = cs_math_fmax(cs_math_fabs(eigen_max),
-                               cs_math_fabs(eigen_vals[i]));
+      eigen_max = cs::max(cs::abs(eigen_max),
+                          cs::abs(eigen_vals[i]));
 
     /* Constant for the dissipation */
     cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
 
     /* Identity constant */
-    impl_id_cst = -d1s3 * crij2 * cs_math_fmin(trprod, 0);
+    impl_id_cst = -d1s3 * crij2 * cs::min(trprod, 0);
 
     /* Linear constant */
     impl_lin_cst = eigen_max * (1.0 - crij2); /* Production + Phi2 */
@@ -2135,10 +2135,10 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       /* Compute the maximal eigenvalue (in terms of norm!) of S */
       cs_real_t eigen_vals[3];
       _sym_33_eigen(sym_strain, eigen_vals);
-      cs_real_t eigen_max = cs_math_fabs(eigen_vals[0]);
+      cs_real_t eigen_max = cs::abs(eigen_vals[0]);
       for (cs_lnum_t i = 1; i < 3; i++)
-        eigen_max = cs_math_fmax(cs_math_fabs(eigen_max),
-                                 cs_math_fabs(eigen_vals[i]));
+        eigen_max = cs::max(cs::abs(eigen_max),
+                            cs::abs(eigen_vals[i]));
 
       /* Constant for the dissipation */
       const cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
@@ -2146,14 +2146,14 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       if (model == CS_TURB_RIJ_EPSILON_SSG) {
 
         /* Identity constant for phi3 */
-        const cs_real_t cphi3impl = cs_math_fabs(cssgr2 - cssgr3*sqrt(aii));
+        const cs_real_t cphi3impl = cs::abs(cssgr2 - cssgr3*sqrt(aii));
 
         /* Identity constant */
-        impl_id_cst = - d2s3 * cssgr1 * cs_math_fmin(trprod, 0)
+        impl_id_cst = - d2s3 * cssgr1 * cs::min(trprod, 0)
                       - d1s3 * cssgs2 * cvara_ep[c_id] * aii
                       + cphi3impl * trrij * eigen_max
                       + 2. * d2s3 * cssgr4 * trrij * eigen_max
-                      + d2s3 * trrij * cssgr4 * cs_math_fmax(aklskl, 0);
+                      + d2s3 * trrij * cssgr4 * cs::max(aklskl, 0);
 
         /* Linear constant */
         impl_lin_cst = eigen_max * (crijeps + cssgr4 + cssgr5);
@@ -2178,7 +2178,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         const cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
 
         /* Phi3 constant */
-        const cs_real_t cphi3impl = cs_math_fabs(cebmr2 - cebmr3*sqrt(aii));
+        const cs_real_t cphi3impl = cs::abs(cebmr2 - cebmr3*sqrt(aii));
 
         /* PhiWall + epsilon_wall constants for EBRSM */
         const cs_real_t cphiw_impl = 6 * (1 - alpha3)
@@ -2188,10 +2188,10 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
          * are split into the linear part (A*R) and Id part (A*Id). */
 
         /* Identity constant */
-        impl_id_cst =   alpha3*(-d2s3 * cebmr1 * cs_math_fmin(trprod, 0)
+        impl_id_cst =   alpha3*(-d2s3 * cebmr1 * cs::min(trprod, 0)
                       + cphi3impl * trrij * eigen_max
                       + 2 * d2s3 * cebmr4 * trrij * eigen_max
-                      + d2s3 * trrij * cebmr4 * cs_math_fmax(aklskl, 0));
+                      + d2s3 * trrij * cebmr4 * cs::max(aklskl, 0));
 
         /* Linear constant */
         impl_lin_cst
@@ -2274,7 +2274,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         /* Implicit terms */
         w2[c_id] =  crom[c_id] * cell_f_vol[c_id] / trrij
                   * (  cssgs1 * cvara_ep[c_id]
-                     + cssgr1 * cs_math_fmax(trprod, 0));
+                     + cssgr1 * cs::max(trprod, 0));
 
       }
       else { /* cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM */
@@ -2331,7 +2331,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
          * \f$ \alpha^3 \f$*/
         w2[c_id] = crom[c_id] * cell_f_vol[c_id]
                    * (  cebms1 * cvara_ep[c_id] / trrij * alpha3
-                      + cebmr1 * cs_math_fmax(trprod/trrij, 0) * alpha3
+                      + cebmr1 * cs::max(trprod/trrij, 0) * alpha3
                       + epsijw_imp);
 
       } /* End of test on turbulence model */
@@ -2567,7 +2567,7 @@ _solve_epsilon(int              phase_id,
   else {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       rhs[c_id]  += fimp[c_id]*cvara_ep[c_id];
-      fimp[c_id]  = cs_math_fmax(-fimp[c_id], cs_math_zero_threshold);
+      fimp[c_id]  = cs::max(-fimp[c_id], cs_math_zero_threshold);
     });
   }
 
@@ -2596,8 +2596,8 @@ _solve_epsilon(int              phase_id,
       rhs[c_id]  += ce4 * st_eps / k;
 
       /* equiv:                    -cs_turb_ce4 * st_eps * / (k/eps) */
-      fimp[c_id] += cs_math_fmax(-ce4 * st_eps / k * cvara_ep[c_id],
-                                 cs_math_zero_threshold);
+      fimp[c_id] += cs::max(-ce4 * st_eps / k * cvara_ep[c_id],
+                            cs_math_zero_threshold);
     });
   }
   ctx.wait();
@@ -2693,7 +2693,7 @@ _solve_epsilon(int              phase_id,
       const cs_real_t xttke = trrij / cvara_ep[c_id];
       const cs_real_t xttkmg
         = xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
-      const cs_real_t xttdrb = cs_math_fmax(xttke, xttkmg);
+      const cs_real_t xttdrb = cs::max(xttke, xttkmg);
 
       const cs_real_t prdeps = trprod / cvara_ep[c_id];
       const cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
@@ -2722,9 +2722,7 @@ _solve_epsilon(int              phase_id,
 
       /* Production (explicit, a part might be implicit) */
       const cs_real_t cromo_vol = cromo[c_id] * cell_f_vol[c_id];
-      fimp[c_id]
-        += cs_math_fmax(- cromo_vol * ce1 * trprod / trrij,
-                        0.0);
+      fimp[c_id] += cs::max(- cromo_vol * ce1 * trprod / trrij, 0.0);
       w1[c_id] = cromo_vol * ce1 / xttke * trprod;
 
       /* Dissipation (implicit) */
@@ -3030,7 +3028,7 @@ cs_turbulence_rij(int phase_id)
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
         for (cs_lnum_t kl = 0; kl < 6; kl++) {
           rhs[c_id][ij] += fimp[c_id][ij][kl] * cvara_rij[c_id][kl];
-          fimp[c_id][ij][kl] = cs_math_fmax(-fimp[c_id][ij][kl], 0.);
+          fimp[c_id][ij][kl] = cs::max(-fimp[c_id][ij][kl], 0.);
         }
       }
     });
@@ -3153,8 +3151,8 @@ cs_turbulence_rij(int phase_id)
 
       /* y+ is bounded by 400, because in the Reichard profile,
        * it corresponds to saturation (u>uref) */
-      cvar_al[c_id] = cs_math_fmax(cs_math_fmin(cvar_al[c_id], (1.-exp(-8.))),
-                                   0.);
+      cvar_al[c_id] = cs::max(cs_math_fmin(cvar_al[c_id], (1.-exp(-8.))),
+                              0.);
       /* Magnitude and unit vector of the Alpha gradient */
       cs_real_t xnal[3];
       cs_real_t xnoral = cs_math_3_norm(grad[c_id]);
@@ -3177,19 +3175,19 @@ cs_turbulence_rij(int phase_id)
        * conserved */
       cs_real_t limiter = 1.0;
       if (xunorm > 1.e-12 * uref)
-        limiter = cs_math_fmin(   utaurf / xunorm
-                               * (  2.5 * log(1.+0.4*ypa)
-                                  + 7.80*(  1. - exp(-ypa/11.0)
+        limiter = cs::min(   utaurf / xunorm
+                          * (  2.5 * log(1.+0.4*ypa)
+                             + 7.80*(  1. - exp(-ypa/11.0)
                                           - (ypa/11.)*exp(-0.33*ypa))),
-                                  1.0);
+                          1.0);
 
       for (cs_lnum_t i = 0; i < 3; i++)
         vel[c_id][i] = limiter * vel[c_id][i];
 
       const cs_real_t ut2 = 0.050 * uref;
       cvar_ep[c_id] =   cs_math_pow3(utaurf)
-                      * cs_math_fmin(1. / (xkappa * 15.0 * nu0 / utaurf),
-                                     1. / (xkappa * ya));
+                      * cs::min(1. / (xkappa * 15.0 * nu0 / utaurf),
+                                1. / (xkappa * ya));
       const cs_real_t tke =     cvar_ep[c_id] * 0.5 / nu0*cs_math_pow2(ya)
                               * cs_math_pow2(exp(-ypa/25.))
                             +   cs_math_pow2(ut2) / 0.3
@@ -3297,7 +3295,7 @@ cs_turbulence_rij(int phase_id)
       cs_real_t st_i = cell_f_vol[c_id] * lag_st_i[c_id];
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
         rhs[c_id][ij] += cell_f_vol[c_id] * lagr_st_rij[c_id][ij];
-        fimp[c_id][ij][ij] += cs_math_fmax(-st_i, 0.);
+        fimp[c_id][ij][ij] += cs::max(-st_i, 0.);
       }
     });
     ctx.wait();
@@ -3393,8 +3391,8 @@ cs_turbulence_rij(int phase_id)
   if (cs_glob_turb_rans_model->irijnu == 2) {
     cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      viscf[face_id] = cs_math_fmax(0.5 * ipro_rusanov[face_id],
-                                    viscf[face_id]);
+      viscf[face_id] = cs::max(0.5 * ipro_rusanov[face_id],
+                               viscf[face_id]);
     });
 
     const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
@@ -3686,7 +3684,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                                * pow(cs_math_pow3(xnu)/cvara_ep[c_id], d1s4);
 
       /* Durbin length scale */
-      const cs_real_t xlldrb = c_durbin_l*cs_math_fmax(xllke, xllkmg);
+      const cs_real_t xlldrb = c_durbin_l*cs::max(xllke, xllkmg);
 
       const cs_real_t l2 = cs_math_pow2(xlldrb);
 
@@ -3956,7 +3954,7 @@ cs_turbulence_rij_clip(int        phase_id,
   cs_parall_max(3, CS_REAL_TYPE, rijmax);
 
   const cs_real_t trref = rijmax[0] + rijmax[1] + rijmax[2];
-  const cs_real_t rijref = cs_math_fmax(trref/3., cs_math_epzero);
+  const cs_real_t rijref = cs::max(trref/3., cs_math_epzero);
 
   cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
@@ -4023,8 +4021,8 @@ cs_turbulence_rij_clip(int        phase_id,
           cs_real_t eigen_min = eigen_vals[0];
           cs_real_t eigen_max = eigen_vals[0];
           for (cs_lnum_t i = 1; i < 3; i++) {
-            eigen_min = cs_math_fmin(eigen_min, eigen_vals[i]);
-            eigen_max = cs_math_fmax(eigen_max, eigen_vals[i]);
+            eigen_min = cs::min(eigen_min, eigen_vals[i]);
+            eigen_max = cs::max(eigen_max, eigen_vals[i]);
           }
 
           /* If negative eigenvalue, return to isotropy */
@@ -4034,9 +4032,9 @@ cs_turbulence_rij_clip(int        phase_id,
 
             is_clipped = 1;
 
-            eigen_min = cs_math_fmin(eigen_min, -eigen_tol);
+            eigen_min = cs::min(eigen_min, -eigen_tol);
             cs_real_t eigen_offset
-              = cs_math_fmin(-eigen_min/(1.0/3.0-eigen_min)+0.1, 1.0);
+              = cs::min(-eigen_min/(1.0/3.0-eigen_min)+0.1, 1.0);
 
             for (cs_lnum_t ij = 0; ij < 6; ij++) {
               cvar_rij[c_id][ij] = (1.0-eigen_offset)*cvar_rij[c_id][ij];
@@ -4070,7 +4068,7 @@ cs_turbulence_rij_clip(int        phase_id,
           }
 
           const cs_real_t rijmin = sqrt(cvar_var1*cvar_var2);
-          if (rijmin < cs_math_fabs(cvar_rij[c_id][ij])) {
+          if (rijmin < cs::abs(cvar_rij[c_id][ij])) {
             is_clipped = 1;
             if (cpro_rij_clipped != nullptr)
               cpro_rij_clipped[c_id][ij] = cvar_rij[c_id][ij];
@@ -4096,18 +4094,18 @@ cs_turbulence_rij_clip(int        phase_id,
           continue;
         }
 
-        if (cs_math_fabs(cvar_ep[c_id]) < epz2) {
+        if (cs::abs(cvar_ep[c_id]) < epz2) {
           t_iclep[0]++;
           if (cpro_eps_clipped != nullptr)
-            cpro_eps_clipped[c_id] = cs_math_fabs(cvar_ep[c_id]-epz2);
-          cvar_ep[c_id] = cs_math_fmax(cvar_ep[c_id],epz2);
+            cpro_eps_clipped[c_id] = cs::abs(cvar_ep[c_id]-epz2);
+          cvar_ep[c_id] = cs::max(cvar_ep[c_id],epz2);
         }
         else if (cvar_ep[c_id] <= 0) {
           t_iclep[0]++;
           if (cpro_eps_clipped != nullptr)
-            cpro_eps_clipped[c_id] = 2*cs_math_fabs(cvar_ep[c_id]);
-          cvar_ep[c_id] = cs_math_fmin(cs_math_fabs(cvar_ep[c_id]),
-                                       varrel*cs_math_fabs(cvara_ep[c_id]));
+            cpro_eps_clipped[c_id] = 2*cs::abs(cvar_ep[c_id]);
+          cvar_ep[c_id] = cs::min(cs::abs(cvar_ep[c_id]),
+                                  varrel*cs::abs(cvara_ep[c_id]));
         }
 
       }
@@ -4221,7 +4219,7 @@ cs_turbulence_rij_mu_t(int  phase_id)
           xrnn += xrij[i][j]*xnal[j]*xnal[i];
       }
       xrnn = (1.-alpha3)*xrnn + alpha3*xk;
-      xrnn = cs_math_fmax(xrnn, 1.e-12);
+      xrnn = cs::max(xrnn, 1.e-12);
 
       visct[c_id] = crom[c_id] * cmu * xrnn * xk / xe;
     });
@@ -4298,7 +4296,7 @@ cs_turbulence_rij_compute_rusanov(void)
                                                       i_face_normal[face_id]);
     r_nn_1 *= cs_math_pow2(cvar_rho[c_id1]); // to have rho in it
 
-    cs_real_t rnn = cs_math_fmax(cs_math_fabs(r_nn_0), cs_math_fabs(r_nn_1));
+    cs_real_t rnn = cs::max(cs::abs(r_nn_0), cs::abs(r_nn_1));
 
     /* The part of U.n is already in the material upwind scheme */
     ipro_rusanov[face_id] = sqrt(2.0 * rnn);
@@ -4316,7 +4314,7 @@ cs_turbulence_rij_compute_rusanov(void)
     /* The part of U.n is already in the material upwind scheme */
     if (   bc_type[face_id] == CS_SMOOTHWALL || bc_type[face_id] == CS_ROUGHWALL
         || bc_type[face_id] == CS_SYMMETRY)
-      bpro_rusanov[face_id] = sqrt(2.*cs_math_fabs(r_nn_0));
+      bpro_rusanov[face_id] = sqrt(2.*cs::abs(r_nn_0));
     else
       bpro_rusanov[face_id] = 0.;
 

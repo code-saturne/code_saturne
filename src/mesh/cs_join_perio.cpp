@@ -142,7 +142,7 @@ _redistribute_mesh(cs_join_param_t         param,
   cs_join_mesh_t  *work_mesh = *p_work_mesh;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
 
   /* sanity checks */
 

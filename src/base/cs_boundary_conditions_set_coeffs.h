@@ -168,7 +168,7 @@ cs_boundary_conditions_set_neumann_scalar(cs_lnum_t             f_id,
   cs_real_t *bf = bc_coeffs->bf;
 
   /* Gradient BCs */
-  a[f_id] = -qimp/cs_math_fmax(hint, 1.e-300);
+  a[f_id] = -qimp/cs::max(hint, 1.e-300);
   b[f_id] = 1.;
 
   /* Flux BCs */
@@ -287,18 +287,17 @@ cs_boundary_conditions_set_neumann_vector_aniso(cs_lnum_t             f_id,
 
   /* Gradient BCs */
   cs_math_sym_33_3_product(invh, qimpv, a[f_id]);
-  for (int isou = 0; isou < 3; isou++)
+  for (cs_lnum_t isou = 0; isou < 3; isou++)
     a[f_id][isou] = -a[f_id][isou];
 
   b[f_id][0][0] = 1.0, b[f_id][0][1] = 0.0, b[f_id][0][2] = 0.0;
   b[f_id][1][0] = 0.0, b[f_id][1][1] = 1.0, b[f_id][1][2] = 0.0;
   b[f_id][2][0] = 0.0, b[f_id][2][1] = 0.0, b[f_id][2][2] = 1.0;
 
-  for (int isou = 0; isou < 3; isou++) {
-
+  for (cs_lnum_t isou = 0; isou < 3; isou++) {
     /* Flux BCs */
     af[f_id][isou] = qimpv[isou];
-    for (int jsou = 0; jsou < 3; jsou++)
+    for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
       bf[f_id][isou][jsou] = 0.0;
   }
 }
@@ -324,7 +323,7 @@ cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
   for (int isou = 0; isou < 6; isou++) {
 
     /* Gradient BC */
-    a[isou] = -qimpts[isou]/cs_math_fmax(hint, 1.e-300);
+    a[isou] = -qimpts[isou]/cs::max(hint, 1.e-300);
     for (int jsou = 0; jsou < 6; jsou++) {
       if (jsou == isou)
         b[isou][jsou] = 1.0;
@@ -628,12 +627,12 @@ cs_boundary_conditions_set_generalized_sym_vector
   for (int isou = 0; isou < 3; isou++) {
 
     /* Gradient BCs */
-    a[f_id][isou] = - qimpv[isou]/cs_math_fmax(hint, 1.e-300);
+    a[f_id][isou] = - qimpv[isou]/cs::max(hint, 1.e-300);
     /* "[1 -n(x)n] Qimp / hint" is divided into two */
     for (int jsou = 0; jsou < 3; jsou++) {
 
       a[f_id][isou] = a[f_id][isou] + normal[isou]*normal[jsou]
-        * (pimpv[jsou] + qimpv[jsou] / cs_math_fmax(hint, 1.e-300));
+        * (pimpv[jsou] + qimpv[jsou] / cs::max(hint, 1.e-300));
 
       if (jsou == isou)
         b[f_id][isou][jsou] = 1.0 - normal[isou] * normal[jsou];
@@ -713,7 +712,7 @@ cs_boundary_conditions_set_generalized_dirichlet_vector
     for (int jsou = 0; jsou < 3; jsou++) {
 
       a[f_id][isou] = a[f_id][isou] - normal[isou]*normal[jsou]
-        * (pimpv[jsou] + qimpv[jsou] / cs_math_fmax(hint, 1.e-300));
+        * (pimpv[jsou] + qimpv[jsou] / cs::max(hint, 1.e-300));
 
       b[f_id][isou][jsou] = normal[isou] * normal[jsou];
     }

@@ -164,7 +164,7 @@ _update_extents(const cs_mesh_t    *m,
   for (cs_lnum_t j = 0; j < n_cell_faces; j++) {
 
     cs_lnum_t orient = cell_face_num[j] > 0 ? 1 : -1;
-    cs_lnum_t f_id = CS_ABS(cell_face_num[j]) - 1;
+    cs_lnum_t f_id = cs::abs(cell_face_num[j]) - 1;
     if (f_id < m->n_b_faces) {
       f_vtx_idx = m->b_face_vtx_idx;
       f_vtx = m->b_face_vtx_lst;
@@ -183,8 +183,8 @@ _update_extents(const cs_mesh_t    *m,
       cs_lnum_t v_id = (orient > 0) ? f_vtx[f_s_id + k] : f_vtx[f_e_id -1 -k];
       const cs_real_t *coo = m->vtx_coord + v_id*3;
       for (cs_lnum_t l = 0; l < 3; l++) {
-        extents[l] = CS_MIN(extents[l], coo[l]);
-        extents[l+3] = CS_MAX(extents[l+3], coo[l]);
+        extents[l] = cs::min(extents[l], coo[l]);
+        extents[l+3] = cs::max(extents[l+3], coo[l]);
       }
     }
 
@@ -286,7 +286,7 @@ _build_cell(const cs_mesh_t              *m,
   for (cs_lnum_t j = 0; j < n_cell_faces; j++) {
 
     cs_lnum_t orient = cell_face_num[j] > 0 ? 1 : -1;
-    cs_lnum_t f_id = CS_ABS(cell_face_num[j]) - 1;
+    cs_lnum_t f_id = cs::abs(cell_face_num[j]) - 1;
     if (f_id < m->n_b_faces) {
       f_vtx_idx = m->b_face_vtx_idx;
       f_vtx = m->b_face_vtx_lst;
@@ -696,7 +696,7 @@ _cad_intersect(const cs_mesh_t        *m,
           cs_real_t *f_f_center = nullptr;
 
           cs_lnum_t face_num = cell_face_num[s_id + j];
-          cs_lnum_t f_id = CS_ABS(face_num) - 1;
+          cs_lnum_t f_id = cs::abs(face_num) - 1;
           if (f_id < m->n_b_faces) {
             f_porosity = b_face_porosity + f_id;
             if (b_face_f_center != nullptr)

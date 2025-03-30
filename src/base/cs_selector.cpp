@@ -41,6 +41,7 @@
 #include "fvm/fvm_selector.h"
 
 #include "base/cs_halo.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -801,7 +802,7 @@ cs_selector_get_perio_face_list(int         perio_num,
 
   *n_i_faces = 0;
   for (ii = 0; ii < cs_glob_mesh->n_i_faces; ii++) {
-    if (CS_ABS(face_perio_num[ii]) == perio_num) {
+    if (cs::abs(face_perio_num[ii]) == perio_num) {
       i_face_id[*n_i_faces] = ii;
       *n_i_faces += 1;
     }

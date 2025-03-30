@@ -448,7 +448,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       /* Take I so that I"F= eps*||FI||*Ki.n when I" is not in cell i
          NB: eps =1.d-1 must be consistent
          with `cs_face_anisotropic_viscosity_scalar`. */
-      fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distbf);
+      fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distbf);
 
       hint[f_id] = viscis / fikis;
     }
@@ -566,7 +566,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
       /* T+ = (T_I - T_w) / Tet */
       if (fabs(yptp[f_id]) > 1e-24)  // TODO improve this test
-        tplus = cs_math_fmax(yplus, cs_math_epzero) / yptp[f_id];
+        tplus = cs::max(yplus, cs_math_epzero) / yptp[f_id];
       else
         tplus = HUGE_VAL;
     }
@@ -609,7 +609,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     } /* End hflui computation */
 
     /* Compute heq for smooth and rough wall */
-    if (   cs_math_fabs(hext) > 0.5*cs_math_infinite_r
+    if (   cs::abs(hext) > 0.5*cs_math_infinite_r
         || (icodcl_sc[f_id] == 15 && icodcl_vel[f_id] == 5)) {
       heq = hflui;
       if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == 5) {
@@ -646,12 +646,12 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
             const cs_real_t mut_lm_dmut
               = (cs_mesh_quantities_cell_is_active(fvq, c_id) == 1) ?
-                 xmutlm/cs_math_fmax(visctc,1.e-12*visclc) : 0.0;
+                 xmutlm/cs::max(visctc,1.e-12*visclc) : 0.0;
 
             const cs_real_t rcprod
-              = cs_math_fmin(xkappa,
-                             cs_math_fmax(1.0, sqrt(mut_lm_dmut))
-                             / (yplus + dplus));
+              = cs::min(xkappa,
+                          cs::max(1.0, sqrt(mut_lm_dmut))
+                        / (yplus + dplus));
 
             cofimp = 1.0 -   yptp[f_id]
               / xkappa * (2.0 * rcprod - 1.0 / (2.0 * yplus + dplus));
@@ -698,7 +698,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       }
 
       /* To be coherent with a wall function, clip it to 0 */
-      cofimp = cs_math_fmax(cofimp, 0.0);
+      cofimp = cs::max(cofimp, 0.0);
 
       /* Gradient BCs */
       coefa_sc[f_id] = (1.0 - cofimp) * pimp;
@@ -890,7 +890,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
       /* Note: past version was uet instead of uk for rough wall functions */
       const cs_real_t tet
-        = phit / (romc * cpp *cs_math_fmax(uk, cs_math_epzero));
+        = phit / (romc * cpp *cs::max(uk, cs_math_epzero));
 
       if (b_f_id >= 0)
         bvar_s[f_id] -= tplus * tet;
@@ -902,10 +902,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
         tstarp[f_id] = tet;
 
       if (f_sc == f_th) {
-        *tetmax = cs_math_fmax(tet, *tetmax);
-        *tetmin = cs_math_fmin(tet, *tetmin);
-        *tplumx = cs_math_fmax(tplus, *tplumx);
-        *tplumn = cs_math_fmin(tplus, *tplumn);
+        *tetmax = cs::max(tet, *tetmax);
+        *tetmin = cs::min(tet, *tetmin);
+        *tplumx = cs::max(tplus, *tplumx);
+        *tplumn = cs::min(tplus, *tplumn);
       }
 
     }
@@ -1140,7 +1140,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
     rcodcn = cs_math_3_dot_product(rcodcxyz, n);
 
     cs_real_t heq = 0.0;
-    if (cs_math_fabs(hext) > 0.5*cs_math_infinite_r || icodcl_v[f_id] == 15)
+    if (cs::abs(hext) > 0.5*cs_math_infinite_r || icodcl_v[f_id] == 15)
       heq = hflui;
     else
       heq = hflui * hext / (hflui + hext);
@@ -1158,9 +1158,9 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
         if (yplus >= ypth && model != CS_TURB_NONE) {
           const cs_real_t xmutlm = cs_turb_xkappa * visclc * (yplus + dplus);
           const cs_real_t rcprod
-            = cs_math_fmin(cs_turb_xkappa,
-                             cs_math_fmax(1.0, sqrt(xmutlm/visctc))
-                           / (yplus+dplus));
+            = cs::min(cs_turb_xkappa,
+                        cs::max(1.0, sqrt(xmutlm/visctc))
+                      / (yplus+dplus));
 
           cofimp =   1.0 - yptp * turb_schmidt / cs_turb_xkappa
                    * (2.0 * rcprod - 1.0 / (2.0 * yplus + dplus));
@@ -1173,7 +1173,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
         cofimp = 1.0 - heq / hint[f_id];
 
       /* To be coherent with a wall function, clip it to 0 */
-      cofimp = cs_math_fmax(cofimp, 0.0);
+      cofimp = cs::max(cofimp, 0.0);
 
       /* Coupled solving of the velocity components */
 
@@ -1319,9 +1319,9 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
 
       if (yplus > cs_math_epzero) { /* TODO use iuntur == 1 */
         /*FIXME not valid for rough */
-        cs_real_t rcprod = cs_math_fmin(xkappa,
-                                 cs_math_fmax(1.0,sqrt(mut_lm_dmut))
-                               / (yplus+dplus));
+        cs_real_t rcprod = cs::min(xkappa,
+                                     cs::max(1.0,sqrt(mut_lm_dmut))
+                                   / (yplus+dplus));
 
         *uiptn =   utau - distbf * uet * uk * romc / xkappa / visclc
                  * (2.0 * rcprod - 1.0 / (2.0 * yplus + dplus));
@@ -1466,10 +1466,10 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
         const cs_real_t var
           =  2.0 * sqrt(xmutlm/visctc) - distb0/distbf/(2.0 + rough_d / distb0);
 
-        cs_real_t rcprod = distbf / distb0 * cs_math_fmax(1.0, var);
+        cs_real_t rcprod = distbf / distb0 * cs::max(1.0, var);
 
         /* Ground apparent velocity (for log only) */
-        *uiptn  = cs_math_fmax(utau - uet/xkappa * rcprod, 0.0);
+        *uiptn  = cs::max(utau - uet/xkappa * rcprod, 0.0);
         *iuntur = 1;
         *nlogla = *nlogla + 1;
 
@@ -1477,12 +1477,12 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
            The boundary term for velocity gradient is implicit
            modified for non neutral boundary layer (in uplus) */
 
-        *cofimp  = cs_math_fmax(1.0 - 1.0/(xkappa*uplus) * rcprod, 0.0);
+        *cofimp  = cs::max(1.0 - 1.0/(xkappa*uplus) * rcprod, 0.0);
 
         /*The term (rho*uet*uk) is implicit */
 
         /* TODO merge with MO without this max */
-        const cs_real_t rcflux = cs_math_fmax(xmutlm, visctc) / distb0;
+        const cs_real_t rcflux = cs::max(xmutlm, visctc) / distb0;
 
         *hflui = rcflux / (xkappa * uplus);
       }
@@ -1499,7 +1499,7 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
                  - coef_momm / (2.0 + rough_d / distbf);
 
         /* Ground apparent velocity (for log only) */
-        *uiptn  = cs_math_fmax(utau - uet/xkappa * rcprod, 0.0);
+        *uiptn  = cs::max(utau - uet/xkappa * rcprod, 0.0);
         *iuntur = 1;
         *nlogla = *nlogla + 1;
 
@@ -1507,8 +1507,8 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
           The boundary term for velocity gradient is implicit
           modified for non neutral boundary layer (in uplus) */
 
-        *cofimp  = cs_math_fmin(cs_math_fmax(1. - 1./(xkappa*uplus) * rcprod, 0),
-                                1);
+        *cofimp  = cs::min(cs::max(1. - 1./(xkappa*uplus) * rcprod, 0),
+                           1);
 
         /* The term (rho*uet*uk) is implicit */
         *hflui = romc * uk / uplus;
@@ -1665,7 +1665,7 @@ _atmo_cls(const cs_lnum_t  f_id,
 
   /* NB: rib = 0 if thermal flux conditions are imposed and tpot1 not defined */
   cs_real_t rib;
-  if (cs_math_fabs(utau) < cs_math_epzero || icodcl_th[f_id] == 3)
+  if (cs::abs(utau) < cs_math_epzero || icodcl_th[f_id] == 3)
     rib = 0.0;
   else
     rib = 2*gredu*distbf*(tpotv2 - tpotv1)/(tpotv1 + tpotv2)/utau/utau;
@@ -1681,17 +1681,17 @@ _atmo_cls(const cs_lnum_t  f_id,
   }
   else {
     /* Unstable case */
-    fmden1 = (yplus_t + 1.0) * cs_math_fabs(rib);
+    fmden1 = (yplus_t + 1.0) * cs::abs(rib);
     fmden2 = 1.0 + 3.0 * b * c * duplus *dtplus * sqrt(fmden1);
     fm = 1.0 - 2.0 * b * rib / fmden2;
     fhden = 3.0 * b * c * duplus * dtplus * sqrt(yplus_t + 1.0);
-    fh = 1.0 - (3.0*b*rib)/(1.0 + fhden * sqrt(cs_math_fabs(rib)));
+    fh = 1.0 - (3.0*b*rib)/(1.0 + fhden * sqrt(cs::abs(rib)));
   }
 
   if (fm <= cs_math_epzero)
     fm = cs_math_epzero;
 
-  if (cs_math_fabs(fh) <= cs_math_epzero)
+  if (cs::abs(fh) <= cs_math_epzero)
     fh = cs_math_epzero;
 
   if ((1.0-rib) > cs_math_epzero) {
@@ -2033,7 +2033,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   cs_real_t alpha_rnn;
   if (   model == CS_TURB_RIJ_EPSILON_LRR
-      && cs_math_fabs(cs_turb_crij2) <= cs_math_epzero
+      && cs::abs(cs_turb_crij2) <= cs_math_epzero
       && cs_turb_crij1 > 1.0) {
     /* Alpha constant for a realisable BC for R12 with the Rotta model */
     alpha_rnn = 1.0 / sqrt(cs_turb_crij_c0 + 2.0);
@@ -2212,7 +2212,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
        in 1 or 2 velocity scales
        and uk based on ek */
 
-    if (cs_math_fabs(utau) < cs_math_epzero)
+    if (cs::abs(utau) < cs_math_epzero)
       utau = cs_math_epzero;
 
     const cs_real_t xnuii  = visclc / romc;
@@ -2509,8 +2509,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* Coupled solving of the velocity components
            The boundary term for velocity gradient is implicit
            modified for non neutral boundary layer (in uplus) */
-        cofimp  = cs_math_fmin(cs_math_fmax(1-1/(xkappa*_uplus) * rcprod, 0),
-                               1);
+        cofimp  = cs::min(cs::max(1-1/(xkappa*_uplus) * rcprod, 0),
+                          1);
         yk = distbf * uk / xnuii;
 
       }
@@ -2527,7 +2527,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       uplus = utau / uet;
 
       /* y+/U+ for non neutral is recomputed */
-      ypup = yk / cs_math_fmax(uplus, cs_math_epzero);
+      ypup = yk / cs::max(uplus, cs_math_epzero);
     }
     else if (icodcl_vel[f_id] == 6)
       uplus = utau / uet;
@@ -2536,14 +2536,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     if (cs_glob_wall_functions->iwallf <= 2 && icodcl_vel[f_id] == 6)
       uk = uet;
 
-    uetmax  = cs_math_fmax(uet, uetmax);
-    uetmin  = cs_math_fmin(uet, uetmin);
-    ukmax   = cs_math_fmax(uk, ukmax);
-    ukmin   = cs_math_fmin(uk, ukmin);
-    yplumx  = cs_math_fmax(yplus, yplumx);
-    yplumn  = cs_math_fmin(yplus, yplumn);
-    dlmomin = cs_math_fmin(dlmo, dlmomin);
-    dlmomax = cs_math_fmax(dlmo, dlmomax);
+    uetmax  = cs::max(uet, uetmax);
+    uetmin  = cs::min(uet, uetmin);
+    ukmax   = cs::max(uk, ukmax);
+    ukmin   = cs::min(uk, ukmin);
+    yplumx  = cs::max(yplus, yplumx);
+    yplumn  = cs::min(yplus, yplumn);
+    dlmomin = cs::min(dlmo, dlmomin);
+    dlmomax = cs::max(dlmo, dlmomax);
 
     /* Save turbulent subgrid viscosity after van Driest damping in LES
        care is taken to not dampen it twice at boundary cells having more
@@ -2596,8 +2596,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                              &uiptn);
 
     /* Min and Max and counter of reversal layer */
-    uiptmn = cs_math_fmin(uiptn * iuntur, uiptmn);
-    uiptmx = cs_math_fmax(uiptn * iuntur, uiptmx);
+    uiptmn = cs::min(uiptn * iuntur, uiptmn);
+    uiptmx = cs::max(uiptn * iuntur, uiptmx);
 
     if (uiptn * iuntur < - cs_math_epzero)
       iuiptn = iuiptn + 1;
@@ -2998,7 +2998,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
            NB: eps =1.d-1 must be consistent
            with `cs_face_anisotropic_viscosity_scalar`. */
-        fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distfi);
+        fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distfi);
 
         hint = viscis / fikis;
       }
@@ -3183,7 +3183,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           /* take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
                nb: eps =1.d-1 must be consistent
                with `cs_face_anisotropic_viscosity_scalar`. */
-            fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distbf);
+            fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distbf);
 
             hint = viscis / fikis;
         }

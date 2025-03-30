@@ -59,6 +59,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_parall.h"
@@ -714,7 +715,7 @@ _matrix_check_compare(cs_lnum_t        n_elts,
   double dmax = 0.0;
 
   for (ii = 0; ii < n_elts; ii++) {
-    double d = CS_ABS(y[ii] - yr[ii]);
+    double d = cs::abs(y[ii] - yr[ii]);
     if (d > dmax)
       dmax = d;
   }

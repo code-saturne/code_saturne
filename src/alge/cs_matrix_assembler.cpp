@@ -46,6 +46,7 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_rank_neighbors.h"
 #include "base/cs_sort.h"
@@ -163,8 +164,8 @@ _display_rank_histogram(cs_log_t  log_id,
   count_max = r_count[0];
   count_min = r_count[0];
   for (i = 1; i < n_counts; i++) {
-    count_min = CS_MIN(count_min, r_count[i]);
-    count_max = CS_MAX(count_max, r_count[i]);
+    count_min = cs::min(count_min, r_count[i]);
+    count_max = cs::max(count_max, r_count[i]);
   }
 
   cs_log_printf(log_id, _("    minimum count =         %10d\n"), count_min);
@@ -178,7 +179,7 @@ _display_rank_histogram(cs_log_t  log_id,
   if (count_max - count_min > 0) {
 
     if (count_max-count_min < n_steps)
-      n_steps = CS_MAX(1, floor(count_max-count_min));
+      n_steps = cs::max(1, floor(count_max-count_min));
 
     step = (double)(count_max - count_min) / n_steps;
 
@@ -1380,7 +1381,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
               && (!ma->separate_diag || l_c_id != l_r_id)) {
 
             if (n_l_insert >= n_l_insert_max) {
-              n_l_insert_max = CS_MAX(n_l_insert_max*2, 16);
+              n_l_insert_max = cs::max(n_l_insert_max*2, 16);
               CS_REALLOC(l_insert, n_l_insert_max, cs_lnum_2_t);
             }
 

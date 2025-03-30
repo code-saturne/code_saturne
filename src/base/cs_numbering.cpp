@@ -325,9 +325,9 @@ _estimate_imbalance(const cs_numbering_t  *numbering)
       for (t_id = 0; t_id < n_threads; t_id++) {
         cs_lnum_t n_t_elts =   group_index[(t_id*n_groups + g_id)*2 + 1]
                              - group_index[(t_id*n_groups + g_id)*2];
-        n_t_elts = CS_MAX(n_t_elts, 0);
+        n_t_elts = cs::max(n_t_elts, 0);
         n_t_elts_sum += n_t_elts;
-        n_t_elts_max = CS_MAX(n_t_elts, n_t_elts_max);
+        n_t_elts_max = cs::max(n_t_elts, n_t_elts_max);
       }
 
       n_elts += n_t_elts_sum;

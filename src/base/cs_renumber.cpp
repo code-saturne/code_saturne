@@ -508,7 +508,7 @@ _cs_renumber_update_cells(cs_mesh_t  *mesh,
   cs_lnum_t  *face_cells_tmp = nullptr;
   cs_lnum_t  *new_cell_id = nullptr;
 
-  cs_lnum_t  face_cells_max_size = CS_MAX(mesh->n_i_faces*2, mesh->n_b_faces);
+  cs_lnum_t  face_cells_max_size = cs::max(mesh->n_i_faces*2, mesh->n_b_faces);
   const cs_lnum_t  n_cells = mesh->n_cells;
 
   /* If no renumbering is present, return */
@@ -979,8 +979,8 @@ _compute_local_minmax_gnum(cs_lnum_t        n_vals,
   cs_gnum_t  _min = var[0], _max = var[0];
 
   for (i = 1; i < n_vals; i++) {
-    _min = CS_MIN(_min, var[i]);
-    _max = CS_MAX(_max, var[i]);
+    _min = cs::min(_min, var[i]);
+    _max = cs::max(_max, var[i]);
   }
 
   if (min != nullptr)  *min = _min;
@@ -1030,7 +1030,7 @@ _display_histograms_gnum(int               n_vals,
   if (val_max - val_min > 0) {
 
     if (val_max-val_min < n_steps)
-      n_steps = CS_MAX(1, floor(val_max-val_min));
+      n_steps = cs::max(1, floor(val_max-val_min));
 
     step = (double)(val_max - val_min) / n_steps;
 
@@ -1347,7 +1347,7 @@ _classify_cells_by_neighbor(const cs_mesh_t  *mesh,
         if (c_id >= mesh->n_cells) {
           int min_class = halo_class[c_id - mesh->n_cells];
           int adj_c_id = mesh->i_face_cells[face_id][(s_id+1)%2];
-          cell_class[adj_c_id] = CS_MAX(cell_class[adj_c_id], min_class);
+          cell_class[adj_c_id] = cs::max(cell_class[adj_c_id], min_class);
         }
       }
     }
@@ -2058,7 +2058,7 @@ _renum_face_multipass_redistribute(int                          n_i_threads,
          current thread. */
 
       int f_t_id1 = t_id1 + g_id*n_i_threads;
-      cs_lnum_t fl_id_max = CS_MIN(t_face_last[t_id1], faces_list_size - 1);
+      cs_lnum_t fl_id_max = cs::min(t_face_last[t_id1], faces_list_size - 1);
 
       for (fl_id_end = t_face_last[t_id];
             (   fl_id_end <= fl_id_max
@@ -2069,7 +2069,7 @@ _renum_face_multipass_redistribute(int                          n_i_threads,
           n_t_faces_move += 1;
       }
 
-      fl_id_end = CS_MIN(fl_id_end, faces_list_size - 1);
+      fl_id_end = cs::min(fl_id_end, faces_list_size - 1);
 
       while (   fl_id_end >= t_face_last[t_id]
              && fl_id_end > 0
@@ -2510,8 +2510,8 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   for (g_id = 0; g_id < _n_groups; g_id++) {
     for (int t_id = 0; t_id < n_i_threads; t_id++) {
       _group_index[(t_id*_n_groups + g_id)*2] = f_id;
-      f_id = CS_MAX(_group_index[(t_id*_n_groups + g_id)*2+1],
-                    f_id);
+      f_id = cs::max(_group_index[(t_id*_n_groups + g_id)*2+1],
+                     f_id);
     }
   }
 
@@ -2644,7 +2644,7 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
   subset_size = mesh->n_b_faces / n_b_threads;
   if (mesh->n_b_faces % n_b_threads > 0)
     subset_size++;
-  subset_size = CS_MAX(subset_size, min_subset_size);
+  subset_size = cs::max(subset_size, min_subset_size);
 
   /* Build then adjust group / thread index */
 
@@ -2969,7 +2969,7 @@ _renum_b_faces_for_vectorizing(cs_mesh_t  *mesh,
   cs_lnum_t nfanp1 = 0;
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    nfamax = CS_MAX(nfamax, irhss[cell_id]);
+    nfamax = cs::max(nfamax, irhss[cell_id]);
     if (irhss[cell_id] == nregib+1)
       nfanp1 += 1;
   }
@@ -3119,7 +3119,7 @@ _log_bandwidth_info(const cs_mesh_t  *mesh,
     cs_lnum_t cid0 = i_face_cells[face_id][0];
     cs_lnum_t cid1 = i_face_cells[face_id][1];
 
-    cs_lnum_t distance = CS_ABS(cid1 - cid0);
+    cs_lnum_t distance = cs::abs(cid1 - cid0);
 
     if (distance > bandwidth)
       bandwidth = distance;
@@ -4014,8 +4014,8 @@ _part_scotch(const cs_mesh_t  *mesh,
     n_cells = mesh->cell_numbering->n_no_adj_halo_elts;
 
   for (i = n_cells; i < n_graph_cells; i++) {
-    int part_id = ceil((double)i / (double)n_cells) * n_parts - 1;
-    cell_part[i] = CS_MIN(part_id, n_parts - 1);
+    SCOTCH_Num part_id = ceil((double)i / (double)n_cells) * n_parts - 1;
+    cell_part[i] = cs::min(part_id, n_parts - 1);
   }
 
 #if SCOTCH_VERSION >= 6
@@ -5338,7 +5338,7 @@ _renumber_i_test(cs_mesh_t  *mesh)
 
           if (adj_halo) {
             mesh->i_face_numbering->n_no_adj_halo_groups
-              = CS_MIN(mesh->i_face_numbering->n_no_adj_halo_groups, g_id+1);
+              = cs::min(mesh->i_face_numbering->n_no_adj_halo_groups, g_id+1);
           }
 
         }

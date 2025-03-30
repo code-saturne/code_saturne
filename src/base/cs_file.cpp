@@ -395,7 +395,7 @@ _access_method(cs_file_access_t  m,
 
 #if defined(HAVE_MPI)
 #  if !defined(HAVE_MPI_IO)
-  _m = CS_MAX(_m, CS_FILE_STDIO_PARALLEL);
+  _m = cs::max(_m, CS_FILE_STDIO_PARALLEL);
 #  endif
   if (cs_glob_mpi_comm == MPI_COMM_NULL)
     _m = CS_FILE_STDIO_SERIAL;
@@ -479,9 +479,9 @@ _serializer_init(cs_file_serializer_t  *s,
     if (s->rank_id == 0) {
       int i;
       cs_lnum_t _max_block_size = 0;
-      cs_lnum_t _buf_block_size = CS_MAX((cs_lnum_t)buf_block_size, l_count);
+      cs_lnum_t _buf_block_size = cs::max((cs_lnum_t)buf_block_size, l_count);
       for (i = 0; i < s->n_ranks; i++)
-        _max_block_size = CS_MAX(_max_block_size, s->count[i]);
+        _max_block_size = cs::max(_max_block_size, s->count[i]);
       if (_max_block_size > _buf_block_size)
         CS_MALLOC(s->recv_buf, _max_block_size*size, unsigned char);
       else
@@ -1326,7 +1326,7 @@ _file_read_block_s(cs_file_t  *f,
       /* Allocate exchange buffer */
 
       for (dist_rank = 1; dist_rank < f->n_ranks; dist_rank++)
-        _buf_size = CS_MAX(_buf_size, counts[dist_rank]);
+        _buf_size = cs::max(_buf_size, counts[dist_rank]);
 
       CS_MALLOC(_buf, _buf_size*size, unsigned char);
 

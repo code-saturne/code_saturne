@@ -287,7 +287,7 @@ _p1_projection(cs_measures_set_t  *ms,
 
   cs_lnum_t n_max_size = 0;
   for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
-    n_max_size = CS_MAX(proj_idx[ii+1], n_max_size);
+    n_max_size = cs::max(proj_idx[ii+1], n_max_size);
     proj_idx[ii+1] += proj_idx[ii];
   }
 
@@ -1492,7 +1492,7 @@ cs_at_opt_interp_get_active_obs(cs_measures_set_t   *ms,
              jj < oi->measures_idx[m_dim*(ii+1)+kk];
              jj++) {
           cs_real_t dt = ts->t_cur - oi->times[jj];
-          if (CS_ABS(dt) > CS_ABS(deltat))
+          if (cs::abs(dt) > cs::abs(deltat))
             break;
           deltat = dt;
           oi->active_time[m_dim*ii+kk] = jj;
@@ -1547,7 +1547,7 @@ cs_at_opt_interp_get_active_obs(cs_measures_set_t   *ms,
 
         cs_real_t sum = 0.;
         for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
-          sum += CS_ABS(oi->time_weights[m_dim*ii+kk] - temp[m_dim*ii+kk]);
+          sum += cs::abs(oi->time_weights[m_dim*ii+kk] - temp[m_dim*ii+kk]);
         }
         BFT_FREE(temp);
         (*inverse)[kk] = (sum > 1.e-6); // FIXME define tolerance

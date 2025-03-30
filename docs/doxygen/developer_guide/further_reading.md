@@ -635,15 +635,10 @@ on several rules.
    - `#include`, `#if`, `#ifdef`, `#ifndef`, `#define`,
 - Allows defining _macros_
   - Using a common coding convention, we write them in capitals.
-
-```{.c}
-#define CS_MIN(a,b)   ((a) < (b) ?  (a) : (b))
-```
-
   - No need for `;` at the end of the line (or statement).
-- Do not define macros if another solution is possible
-  - Avoid arguments with side effects; for example,
-    `CS_MIN(f(x),g(x))` calls either `f(x)` or `g(x)` twice...
+- Avoid macros for math operations, as they may have side effects
+  (such as calling a function multiple times), and make debugging
+  more difficult.
 
 - Some macros are predefined; to know them, the solution is compiler
   dependent. With *gcc*, the following command is
@@ -669,25 +664,8 @@ on several rules.
 ### C Preprocessor macros in code_saturne
 
 code_saturne defines several preprocessor macros, among which the following:
-  - \ref CS_ABS(a): absolute value of a
-  - \ref CS_MAX(a, b): maximum of a and b
-  - \ref CS_MIN(a, b): minimum of a and b
   - \ref CS_F_(fname): access to field structure of field with
     canonical name `name`.
-- Note: the C language also defines `double fmax(double x, double y)` and
-  `double fmaxf(float x, float y)`;
-  - They do not have multiple macro argument evaluation side effects
-  - They are applicable only to `double` or `float` values, though automatic
-    type casting in C allows use of either (with a different precision, and
-    a possible performance penalty).
-  - Applying them to integers would lead to non-natural rounding and
-    overflow behavior.
-  The C++ language also defines `std::max(T x, T y)` which will work with
-  any base type (and classes which define a `>` type relation), but may
-  not work on a GPU.
-- For floating-point values of type `cs_real_t`, code_saturne defines
-  `cs_math_fmax` which is preferred as it avoids the side effects of macros
-  and will work on a GPU.
 
 Two macros of special importance are:
   - \ref BEGIN_C_DECLS
@@ -725,18 +703,18 @@ C variable and function scoping
 
 Variables may have a local scope:
 
-```{.c}
+```{.cpp}
 int f(int n, double x[]) {
   int i;
   i = 6;
   {
-    int i, j; /* i masks previous definition */
+    int i, j; // i masks previous definition
     for (i = 0, j = 1; i < n; i++, j+= rand())
       x[i] += j;
   }
   /* i = 6 again */
   {
-    int j; /* the previous definition is unknown here ! */
+    int j; // the previous definition is unknown here !
     for (j = 0; j < n; j++)
       x[j] += 1.;
   }
@@ -754,7 +732,7 @@ int f(int n, double x[]) {
 Since the C99 standard, variables may be defined in a
 function body, or even in a control structure:
 
-```{.c}
+```{.cpp}
 int f(int n, double x[]) {
   int i;
   i = 6;

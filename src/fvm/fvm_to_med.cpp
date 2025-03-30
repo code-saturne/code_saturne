@@ -66,6 +66,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
@@ -864,7 +865,7 @@ _get_connect_section_size(const fvm_to_med_writer_t   *writer,
 
         for (i = 0; i < section->n_elements; i++) {
           for (j = f_idx[i]; j < f_idx[i+1]; j++) {
-            f_id = CS_ABS(f_num[j]) - 1;
+            f_id = cs::abs(f_num[j]) - 1;
             l_connect_size += v_idx[f_id + 1] - v_idx[f_id];
           }
         }
@@ -952,8 +953,8 @@ _get_connect_buffer_size(const fvm_to_med_writer_t   *writer,
       connect_section_size += _get_connect_section_size(writer,
                                                         current_section);
 
-    global_connect_buffer_size = CS_MAX(connect_section_size,
-                                        global_connect_buffer_size);
+    global_connect_buffer_size = cs::max(connect_section_size,
+                                         global_connect_buffer_size);
 
     current_section = current_section->next;
 
@@ -1961,7 +1962,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
   if (have_tesselation) {
     CS_MALLOC(part_values,
-              CS_MAX(part_size, (cs_lnum_t)block_sub_size),
+              cs::max(part_size, (cs_lnum_t)block_sub_size),
               med_int);
     MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM,
              writer->comm);
@@ -2785,8 +2786,8 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
                                       nullptr,
                                       &n_sub_elts_max);
 
-      buffer_size = CS_MAX(n_sub_elts_max, n_sub_elts/4 + 1);
-      buffer_size = CS_MAX(256, buffer_size);
+      buffer_size = cs::max(n_sub_elts_max, n_sub_elts/4 + 1);
+      buffer_size = cs::max((size_t)256, buffer_size);
 
       CS_MALLOC(sub_elt_vertex_num, buffer_size * stride, cs_lnum_t);
 
@@ -3342,7 +3343,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
       cs_lnum_t elt_v_count = 0;
 
       for (cs_lnum_t i = face_index[elt_id]; i < face_index[elt_id + 1]; i++) {
-        cs_lnum_t face_id = CS_ABS(section->face_num[i]) - 1;
+        cs_lnum_t face_id = cs::abs(section->face_num[i]) - 1;
         cs_lnum_t n_f_vertices =   section->vertex_index[face_id + 1]
                                  - section->vertex_index[face_id];
         elt_v_count += n_f_vertices;
@@ -3595,7 +3596,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
            i_face_idx < section->face_index[i_elt + 1];
            i_face_idx++) {
 
-        face_id = CS_ABS(section->face_num[i_face_idx]) - 1;
+        face_id = cs::abs(section->face_num[i_face_idx]) - 1;
 
         med_face_lengths[i_face] = (  (med_int)section->vertex_index[face_id + 1]
                                     - (med_int)section->vertex_index[face_id]);

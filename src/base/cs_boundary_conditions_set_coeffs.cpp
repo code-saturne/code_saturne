@@ -1774,7 +1774,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           /* take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
              nb: eps =1.d-1 must be consistent
              with `cs_face_anisotropic_viscosity_scalar`. */
-          fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distbf);
+          fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distbf);
 
           hint = viscis / surf / fikis;
           if (cs_glob_vof_parameters->vof_model > 0)
@@ -2136,7 +2136,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             /* take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
                nb: eps =1.d-1 must be consistent
                with `cs_face_anisotropic_viscosity_scalar`. */
-            fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distfi);
+            fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distfi);
 
             hint = viscis / surf / fikis;
           }
@@ -2315,7 +2315,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
                  NB: eps =1.d-1 must be consistent
                  with `cs_face_anisotropic_viscosity_scalar`. */
-              fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distfi);
+              fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distfi);
 
               hint = viscis / surf / fikis;
             }
@@ -2994,7 +2994,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
                NB: eps =1.d-1 must be consistent
                with `cs_face_anisotropic_viscosity_scalar`. */
-            fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distfi);
+            fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distfi);
 
             hint = viscis / surf / fikis;
 

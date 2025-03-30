@@ -504,7 +504,7 @@ _build_interlaced_ma(int                      stride,
   cs_lnum_t  n_x = x2x->n_elts;
   cs_lnum_t  max_size = 0;
   for (cs_lnum_t i = 0; i < n_x; i++)
-    max_size = CS_MAX(max_size, x2x->idx[i+1] - x2x->idx[i]);
+    max_size = cs::max(max_size, x2x->idx[i+1] - x2x->idx[i]);
 
   /* We increment the max. size to take into account the diagonal entry */
 
@@ -2122,29 +2122,29 @@ cs_cdo_system_allocate_assembly(void)
 
     cs_cdo_system_block_info_t  bi = b->info;
 
-    max_ddim = CS_MAX(max_ddim, bi.stride);
-    max_edim = CS_MAX(max_edim, bi.stride);
+    max_ddim = cs::max(max_ddim, bi.stride);
+    max_edim = cs::max(max_edim, bi.stride);
 
     switch (bi.location) {
 
     case CS_FLAG_LOCATION_PRIMAL_VTX:
     case CS_FLAG_LOCATION_DUAL_CELL:
-      n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_vbyc);
+      n_max_cw_dofs = cs::max(n_max_cw_dofs, connect->n_max_vbyc);
       break;
 
     case CS_FLAG_LOCATION_PRIMAL_EDGE:
     case CS_FLAG_LOCATION_DUAL_FACE:
-      n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_ebyc);
+      n_max_cw_dofs = cs::max(n_max_cw_dofs, connect->n_max_ebyc);
       break;
 
     case CS_FLAG_LOCATION_PRIMAL_FACE:
     case CS_FLAG_LOCATION_DUAL_EDGE:
-      n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_fbyc);
+      n_max_cw_dofs = cs::max(n_max_cw_dofs, connect->n_max_fbyc);
       break;
 
     case CS_FLAG_LOCATION_MAC_PRIMAL_FACE:
       /* 30 is the maximum number of connected faces to a cell */
-      n_max_cw_dofs = CS_MAX(n_max_cw_dofs, 30);
+      n_max_cw_dofs = cs::max(n_max_cw_dofs, 30);
       break;
 
     default:

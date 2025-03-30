@@ -1067,7 +1067,7 @@ cs_combustion_slfm_physical_properties(int   iterns)
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
       cs_real_t had = cvar_fm[c_id]*hinfue + (1.0-cvar_fm[c_id])*hinoxy;
-      cpro_xr[c_id] = CS_MAX(-(cvar_scalt[c_id] - had), 0.0);
+      cpro_xr[c_id] = cs::max(-(cvar_scalt[c_id] - had), 0.0);
     });
   }
   else {
@@ -1084,7 +1084,7 @@ cs_combustion_slfm_physical_properties(int   iterns)
     ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
       cs_real_t cmax, cmid, cmin;
       cs_combustion_slfm_max_mid_min_progvar(cvar_fm[c_id], &cmax, &cmid, &cmin);
-      cvar_progvar[c_id] = CS_MIN(cvar_progvar[c_id], cmax);
+      cvar_progvar[c_id] = cs::min(cvar_progvar[c_id], cmax);
     });
   }
   else {
@@ -1323,10 +1323,11 @@ cs_combustion_scalar_dissipation_rate(const cs_field_t   *f,
   if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
       const cs_real_t delta_les = cs_turb_xlesfl *
-                                  pow(cs_turb_ales*cell_vol[c_id],cs_turb_bles);
+                                  pow(cs_turb_ales*cell_vol[c_id], cs_turb_bles);
 
       cs_real_t dnom = coef_k*delta_les*delta_les*cpro_rho[c_id];
-      cpro_totki[c_id] = (cpro_viscls[c_id] + cpro_turb_diff[c_id])/dnom*fp2m[c_id];
+      cpro_totki[c_id] =   (cpro_viscls[c_id] + cpro_turb_diff[c_id])
+                         / dnom*fp2m[c_id];
     });
   }
 }
@@ -1354,8 +1355,8 @@ cs_combustion_reconstruct_variance(const cs_real_t   *fm,
 
   cs_host_context ctx;
   ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
-      recvr[c_id] = fsqm[c_id] - fm[c_id]*fm[c_id];
-      recvr[c_id] = CS_MAX(CS_MIN(recvr[c_id], fm[c_id]*(1.0 - fm[c_id])),0.0);
+    recvr[c_id] = fsqm[c_id] - fm[c_id]*fm[c_id];
+    recvr[c_id] = cs::max(cs::min(recvr[c_id], fm[c_id]*(1.0 - fm[c_id])), 0.0);
   });
 }
 
@@ -1596,7 +1597,7 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
 
         const cs_real_t cimp = 0.;
         smbrs[c_id]  += cexp + cimp * scal_pre[c_id];
-        rovsdt[c_id] += cs_math_fmax(-cimp, 0.);
+        rovsdt[c_id] += cs::max(-cimp, 0.);
       }
 
       CS_FREE(grad);
@@ -1621,7 +1622,7 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
 
         const cs_real_t cimp = 0.;
         smbrs[c_id]  += cexp + cimp * scal_pre[c_id];
-        rovsdt[c_id] += cs_math_fmax(-cimp, 0.);
+        rovsdt[c_id] += cs::max(-cimp, 0.);
       }
     }
 
@@ -1637,7 +1638,7 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
         const cs_real_t cimp = 0.;
 
         smbrs[c_id]  += cexp + cimp * scal_pre[c_id];
-        rovsdt[c_id] += cs_math_fmax(-cimp, 0.);
+        rovsdt[c_id] += cs::max(-cimp, 0.);
       }
 
     }

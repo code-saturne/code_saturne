@@ -382,11 +382,11 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
       /* Computation of stilde = sqrt(2.S_ij.S_ij)
          *          and wtilde = sqrt(W_ij.W_ij/2) */
 
-      stilde = CS_MAX(sqrt(eta1[c_id] * 2.), 1.e-15);
-      wtilde = CS_MAX(sqrt(eta2[c_id] * 0.5), 1.e-15);
+      stilde = cs::max(sqrt(eta1[c_id] * 2.), 1.e-15);
+      wtilde = cs::max(sqrt(eta2[c_id] * 0.5), 1.e-15);
 
-      xk = CS_MAX(cvara_k[c_id], 1.e-15);
-      xe = CS_MAX(cvara_ep[c_id], 1.e-15);
+      xk = cs::max(cvara_k[c_id], 1.e-15);
+      xe = cs::max(cvara_ep[c_id], 1.e-15);
       rotild = xe/wtilde/xk;
       brtild[c_id] = -brtild[c_id]*xk/xe/pow(stilde,3.);
 
@@ -398,7 +398,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
                     * (  tanh(cs_turb_ccazb*brtild[c_id] + cs_turb_ccazc)
                        - cs_turb_ccazd);
 
-      ce2rc[c_id] = CS_MAX(ce2rc[c_id], 0.);
+      ce2rc[c_id] = cs::max(ce2rc[c_id], 0.);
     }
 
   }
@@ -412,13 +412,13 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
 
       /* Computation of stilde = 2.S_ij.S_ij and wtilde = 2.W_ij.W_ij */
 
-      stilde = CS_MAX(sqrt(eta1[c_id] * 2.), 1.e-15);
-      wtilde = CS_MAX(sqrt(eta2[c_id] * 2.), 1.e-15);
+      stilde = cs::max(sqrt(eta1[c_id] * 2.), 1.e-15);
+      wtilde = cs::max(sqrt(eta2[c_id] * 2.), 1.e-15);
 
       cs_real_t echtm2 = stilde;
 
       if (cs_glob_turb_model->model == CS_TURB_K_OMEGA)
-        echtm2 = CS_MAX(echtm2, cs_turb_cmu*cs_math_pow2(cvara_omg[c_id]));
+        echtm2 = cs::max(echtm2, cs_turb_cmu*cs_math_pow2(cvara_omg[c_id]));
 
       brtild[c_id] = brtild[c_id] / sqrt(wtilde*cs_math_pow3(echtm2));
 
@@ -430,7 +430,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
                      * (1. - cs_turb_cssr3*atan(cs_turb_cssr2*brtild[c_id]))
                      - cs_turb_cssr1;
 
-      rotfct[c_id] = CS_MIN(CS_MAX((double)rotfct[c_id],0.),1.25);
+      rotfct[c_id] = cs::min(cs::max((double)rotfct[c_id],0.), 1.25);
 
     }
   }

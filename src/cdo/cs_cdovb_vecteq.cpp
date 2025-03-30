@@ -150,7 +150,7 @@ _vvb_create_cell_builder(const cs_cdo_connect_t   *connect)
   memset(cb->ids, 0, n_vc*sizeof(int));
 
   int  size = n_ec*(n_ec+1);
-  size = CS_MAX(4*n_ec + 3*n_vc, size);
+  size = cs::max(4*n_ec + 3*n_vc, size);
   BFT_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(cs_real_t));
 

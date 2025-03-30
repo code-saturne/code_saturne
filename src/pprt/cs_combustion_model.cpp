@@ -414,8 +414,8 @@ cs_combustion_dirac_pdf(cs_lnum_t         n_cells,
 
   if (log_active) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      fp2mmin1 = cs_math_fmin(fp2mmin1, fp2m[c_id]);
-      fp2mmax1 = cs_math_fmax(fp2mmax1, fp2m[c_id]);
+      fp2mmin1 = cs::min(fp2mmin1, fp2m[c_id]);
+      fp2mmax1 = cs::max(fp2mmax1, fp2m[c_id]);
     }
   }
 
@@ -432,8 +432,8 @@ cs_combustion_dirac_pdf(cs_lnum_t         n_cells,
 
     cs_real_t fp2mmin2 = HUGE_VALF, fp2mmax2 = -HUGE_VALF;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      fp2mmin2 = cs_math_fmin(fp2mmin2, fp2m[c_id]);
-      fp2mmax2 = cs_math_fmax(fp2mmax2, fp2m[c_id]);
+      fp2mmin2 = cs::min(fp2mmin2, fp2m[c_id]);
+      fp2mmax2 = cs::max(fp2mmax2, fp2m[c_id]);
     }
     cs_real_t rval[4] = {-fp2mmin1, fp2mmax1, -fp2mmin2, fp2mmax2};
     cs_parall_max(4, CS_REAL_TYPE, rval);

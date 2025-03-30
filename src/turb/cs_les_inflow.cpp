@@ -1660,7 +1660,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
         length_scale[point_id][coo_id]
           = fmax(length_scale[point_id][coo_id], length_scale_min);
 
-        if (cs_math_fabs(length_scale[point_id][coo_id]-length_scale_min)
+        if (cs::abs(length_scale[point_id][coo_id]-length_scale_min)
             < cs_math_epzero)
           count[coo_id]++;
 
@@ -1684,9 +1684,9 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
              j++) {
           cs_lnum_t vtx_id = mesh->b_face_vtx_lst[j];
           length_scale_min
-            = fmax(length_scale_min,
-                   2.*cs_math_fabs(mq->cell_cen[cell_id][coo_id]
-                                   - mesh->vtx_coord[3*vtx_id + coo_id]));
+            = cs::max(length_scale_min,
+                      2.*cs::abs(mq->cell_cen[cell_id][coo_id]
+                                 - mesh->vtx_coord[3*vtx_id + coo_id]));
         }
 
         length_scale[point_id][coo_id]
@@ -1696,9 +1696,9 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
           = 0.5*length_scale[point_id][coo_id];
 
         length_scale[point_id][coo_id]
-          = CS_MAX(length_scale[point_id][coo_id], length_scale_min);
+          = cs::max(length_scale[point_id][coo_id], length_scale_min);
 
-        if (cs_math_fabs(length_scale[point_id][coo_id] - length_scale_min)
+        if (cs::abs(length_scale[point_id][coo_id] - length_scale_min)
             < cs_math_epzero)
           count[coo_id]++;
 
@@ -1719,9 +1719,9 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
       for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
 
-        ls_max = CS_MAX(length_scale[point_id][coo_id], ls_max);
+        ls_max = cs::max(length_scale[point_id][coo_id], ls_max);
 
-        if (cs_math_fabs(ls_max - length_scale[point_id][coo_id])
+        if (cs::abs(ls_max - length_scale[point_id][coo_id])
             < cs_math_epzero) {
           for (cs_lnum_t j = 0; j < 3; j++)
             xyzmax[j] = point_coordinates[point_id][j];
@@ -1779,14 +1779,14 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
       box_min_coord[coo_id]
-        = cs_math_fmin(box_min_coord[coo_id],
-                         point_coordinates[point_id][coo_id]
-                       - length_scale[point_id][coo_id]);
+        = cs::min(box_min_coord[coo_id],
+                    point_coordinates[point_id][coo_id]
+                  - length_scale[point_id][coo_id]);
 
       box_max_coord[coo_id]
-        = cs_math_fmax(box_max_coord[coo_id],
-                         point_coordinates[point_id][coo_id]
-                       + length_scale[point_id][coo_id]);
+        = cs::max(box_max_coord[coo_id],
+                    point_coordinates[point_id][coo_id]
+                  + length_scale[point_id][coo_id]);
 
     }
 
@@ -2029,8 +2029,8 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
         distance[coo_id] =
-          CS_ABS(point_coordinates[point_id][coo_id]
-                 - inflow->position[struct_id][coo_id]);
+          cs::abs(point_coordinates[point_id][coo_id]
+                  - inflow->position[struct_id][coo_id]);
 
       if (   distance[0] < length_scale[point_id][0]
           && distance[1] < length_scale[point_id][1]

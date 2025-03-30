@@ -532,7 +532,7 @@ cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
 
   // Error = sum off-diagonal elements
   cs_real_t error
-    = cs_math_fabs(m[0][1]) + cs_math_fabs(m[0][2]) + cs_math_fabs(m[1][2]);
+    = cs::abs(m[0][1]) + cs::abs(m[0][2]) + cs::abs(m[1][2]);
 
   // Iterative solution
   for (int i_sweep = 0; (i_sweep < 50) && (error > tol_err); i_sweep++) {
@@ -541,7 +541,7 @@ cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
     for (int id1 = 0; id1 < 2; id1 ++) {
       for (int id2 = id1+1; id2 < 3; id2 ++) {
         // After 4 sweeps, skip rotation if off-diagonal element is small
-        if (cs_math_fabs(m[id1][id2]) < epsilon) {
+        if (cs::abs(m[id1][id2]) < epsilon) {
           if (i_sweep > 4)
             m[id1][id2] = 0.0;
         }
@@ -550,11 +550,11 @@ cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
           cs_real_t val1, val2, val3, val4, val5;    // Declare five variables val.
           // Get val1
           cs_real_t diff = eig_val[id2] - eig_val[id1];
-          if (cs_math_fabs(m[id1][id2]) < epsilon)
+          if (cs::abs(m[id1][id2]) < epsilon)
             val1 = m[id1][id2] / diff;
           else {
             cs_real_t theta = 0.5 * diff / m[id1][id2];
-            val1 = 1.0 / (cs_math_fabs(theta)+sqrt(1.0+cs_math_pow2(theta)));
+            val1 = 1.0 / (cs::abs(theta)+sqrt(1.0+cs_math_pow2(theta)));
             if ( theta < 0 )
               val1 = -val1;
           }
@@ -591,7 +591,7 @@ cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
     }
 
     // Update the error
-    error = cs_math_fabs(m[0][1]) + cs_math_fabs(m[0][2]) + cs_math_fabs(m[1][2]);
+    error = cs::abs(m[0][1]) + cs::abs(m[0][2]) + cs::abs(m[1][2]);
   }
 
   /* Sort eigenvalues and eigenvectors with ascending order */

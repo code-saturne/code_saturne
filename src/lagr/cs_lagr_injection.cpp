@@ -116,7 +116,7 @@ _segment_binary_search(cs_lnum_t     n,
   cs_lnum_t end_id = n-1;
   cs_lnum_t mid_id = (end_id - start_id) / 2;
 
-  x = CS_MIN(x, a[end_id]); /* precaution: force in range */
+  x = cs::min(x, a[end_id]); /* precaution: force in range */
 
   while (start_id < end_id) {
     if (a[mid_id] < x)
@@ -842,7 +842,7 @@ cs_lagr_injection(int        time_id,
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
 
-  time_id = CS_MIN(time_id, extra->vel->n_time_vals -1);
+  time_id = cs::min(time_id, extra->vel->n_time_vals -1);
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -961,7 +961,7 @@ cs_lagr_injection(int        time_id,
   /* Now inject new particles
      ------------------------ */
 
-  cs_lnum_t n_elts_m = CS_MAX(mesh->n_b_faces, mesh->n_cells);
+  cs_lnum_t n_elts_m = cs::max(mesh->n_b_faces, mesh->n_cells);
   cs_lnum_t *elt_particle_idx = nullptr;
   CS_MALLOC(elt_particle_idx, n_elts_m+1, cs_lnum_t);
 

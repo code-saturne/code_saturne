@@ -1413,7 +1413,7 @@ cs_mo_phim(cs_real_t              z,
   cs_real_t dlmoneutral = 1.e-12;
   cs_real_t coef;
 
-  if (CS_ABS(dlmo) < dlmoneutral)
+  if (cs::abs(dlmo) < dlmoneutral)
     coef = _mo_phim_n(z,dlmo);
   else if (dlmo >= 0.)
     coef = _mo_phim_s(z,dlmo);
@@ -1443,7 +1443,7 @@ cs_mo_phih(cs_real_t              z,
   cs_real_t dlmoneutral = 1.e-12;
   cs_real_t coef;
 
-  if (CS_ABS(dlmo) < dlmoneutral)
+  if (cs::abs(dlmo) < dlmoneutral)
     coef = _mo_phih_n(z,dlmo,prt);
   else if (dlmo >= 0.)
     coef = _mo_phih_s(z,dlmo,prt);
@@ -1473,7 +1473,7 @@ cs_mo_psim(cs_real_t              z,
   cs_real_t dlmoneutral = 1.e-12;
   cs_real_t coef;
 
-  if (CS_ABS(dlmo) < dlmoneutral)
+  if (cs::abs(dlmo) < dlmoneutral)
     coef = _mo_psim_n(z, z0, dlmo);
   else if (dlmo >= 0.)
     coef = _mo_psim_s(z, z0, dlmo);
@@ -1505,7 +1505,7 @@ cs_mo_psih(cs_real_t              z,
   cs_real_t dlmoneutral = 1.e-12;
   cs_real_t coef;
 
-  if (CS_ABS(dlmo) < dlmoneutral)
+  if (cs::abs(dlmo) < dlmoneutral)
     coef = _mo_psih_n(z, z0, dlmo, prt);
   else if (dlmo >= 0.)
     coef = _mo_psih_s(z, z0, dlmo, prt);
@@ -1897,9 +1897,9 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   int n_level = 0, n_level_t = 0;
   int n_times = 0;
   if (_atmo_option.meteo_profile) {
-    n_level = CS_MAX(1, _atmo_option.met_1d_nlevels_d);
-    n_level_t = CS_MAX(1, _atmo_option.met_1d_nlevels_max_t);
-    n_times = CS_MAX(1, _atmo_option.met_1d_ntimes);
+    n_level = cs::max(1, _atmo_option.met_1d_nlevels_d);
+    n_level_t = cs::max(1, _atmo_option.met_1d_nlevels_max_t);
+    n_times = cs::max(1, _atmo_option.met_1d_ntimes);
   }
 
   if (_atmo_option.z_dyn_met == nullptr)
@@ -1963,8 +1963,8 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   n_level = 0;
   int n_vert = 0;
   if (_atmo_option.radiative_model_1d != 0) {
-    n_level = CS_MAX(1, _atmo_option.rad_1d_nlevels_max);
-    n_vert = CS_MAX(1, _atmo_option.rad_1d_nvert);
+    n_level = cs::max(1, _atmo_option.rad_1d_nlevels_max);
+    n_vert = cs::max(1, _atmo_option.rad_1d_nvert);
   }
 
   if (         _atmo_option.rad_1d_xy == nullptr)
@@ -2263,7 +2263,7 @@ cs_atmo_fields_init0(void)
     cs_f_read_meteo_profile(imode);
 
     /* Check latitude / longitude from meteo file */
-    int n_times = CS_MAX(1, at_opt->met_1d_ntimes);
+    int n_times = cs::max(1, at_opt->met_1d_ntimes);
     cs_real_t xyp_met_max = at_opt->xyp_met[0];
     for (int i = 0; i < n_times; i++) {
       if (at_opt->xyp_met[3 * i] > xyp_met_max)
@@ -2706,7 +2706,7 @@ cs_atmo_bcond(void)
 
     const int id_type = 2; // interpolation on boundary faces
     const cs_lnum_t n_b_faces_max
-      = (cs_lnum_t)cs_math_fmax(100.0, (cs_real_t)n_b_faces);
+      = (cs_lnum_t)cs::max(100.0, (cs_real_t)n_b_faces);
 
     cs_summon_cressman(cs_glob_time_step->t_cur);
 
@@ -3215,7 +3215,7 @@ cs_atmo_bcond(void)
     if (icodcl_theta != nullptr) {
 
       if (icodcl_theta[face_id] < 0)
-        icodcl_theta[face_id] = CS_ABS(icodcl_theta[face_id]);
+        icodcl_theta[face_id] = cs::abs(icodcl_theta[face_id]);
       else if ((icodcl_theta[face_id] == 1
             || icodcl_theta[face_id] == 5 || icodcl_theta[face_id] == 6)
          && rcodcl1_theta[face_id] < 0.5 * cs_math_infinite_r) {
@@ -3518,14 +3518,14 @@ cs_soil_model(void)
       cs_real_t w1_den = 1.
         + 1. / (tau_1/dtref + soil_water_ratio->val[soil_id]);
       cs_real_t w1_new = w1_num / w1_den;
-      w1_new = CS_MAX(w1_new, w1_min);
-      w1_new = CS_MIN(w1_new, w1_max);
+      w1_new = cs::max(w1_new, w1_min);
+      w1_new = cs::min(w1_new, w1_max);
       cs_real_t w2_num = soil_w2->val[soil_id] * tau_1
         + w1_new * dtref * soil_water_ratio->val[soil_id];
       cs_real_t w2_den = tau_1 + dtref * soil_water_ratio->val[soil_id];
       cs_real_t w2_new = w2_num / w2_den;
-      w2_new = CS_MAX(w2_new, w2_min);
-      w2_new = CS_MIN(w2_new, w2_max);
+      w2_new = cs::max(w2_new, w2_min);
+      w2_new = cs::min(w2_new, w2_max);
 
       soil_w1->val[soil_id] = w1_new;
       soil_w2->val[soil_id] = w2_new;
@@ -3687,7 +3687,7 @@ cs_atmo_init_meteo_profiles(void)
   /* Compute reference q_l, theta_liq and rho */
   cs_real_t t_c = aopt->meteo_t0 - cs_physical_constants_celsius_to_kelvin;
   cs_real_t q_sat = cs_air_yw_sat(t_c, aopt->meteo_psea);
-  aopt->meteo_ql0 = CS_MAX(aopt->meteo_qw0 - q_sat, 0.);
+  aopt->meteo_ql0 = cs::max(aopt->meteo_qw0 - q_sat, 0.);
   cs_real_t rvsra = phys_pro->rvsra;
   cs_real_t rhum = rair*(1. + (rvsra - 1.)*(aopt->meteo_qw0 - aopt->meteo_ql0)
                         - aopt->meteo_ql0);
@@ -3743,7 +3743,7 @@ cs_atmo_init_meteo_profiles(void)
     int it;
     int it_max = 1000;
     for (it = 0;
-         it < it_max && CS_ABS(error) > tol && 0.5*(dl_max - dl_min) > tol;
+         it < it_max && cs::abs(error) > tol && 0.5*(dl_max - dl_min) > tol;
          it++) {
       cs_real_t dl_mid = 0.5 * (dl_min + dl_max);
 
@@ -3757,7 +3757,7 @@ cs_atmo_init_meteo_profiles(void)
       /* The solution is between min and mid */
       if (error_min * error_mid < 0) {
         dl_max = dl_mid;
-        if (CS_ABS(error_min) < CS_ABS(error_mid)) {
+        if (cs::abs(error_min) < cs::abs(error_mid)) {
           dlmo = dl_min;
           error = error_min;
         }
@@ -3772,7 +3772,7 @@ cs_atmo_init_meteo_profiles(void)
                                          z0,
                                          dl_max) / kappa - up;
         dl_min = dl_mid;
-        if (CS_ABS(error_mid) < CS_ABS(error_max)) {
+        if (cs::abs(error_mid) < cs::abs(error_max)) {
           dlmo = dl_mid;
           error = error_mid;
         }
@@ -3879,7 +3879,7 @@ cs_atmo_init_meteo_profiles(void)
     cs_real_t dlmos = 0.; /* dlmos = dlmo starts */
     cs_real_t dlmou = 0.; /* dlmou = dlmo updated */
     cs_real_t err   = 1.; /* in order to enter the loop */
-    for (it = 0; it < it_max && CS_ABS(err) > tol; it++) {
+    for (it = 0; it < it_max && cs::abs(err) > tol; it++) {
       if (it != 0) {
         dlmos = dlmou;
       }
@@ -4106,13 +4106,13 @@ cs_atmo_compute_meteo_profiles(void)
 
     /* TKE profile */
     cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
-      * sqrt(1. - CS_MIN(ri_f, 1.));
+      * sqrt(1. - cs::min(ri_f, 1.));
 
     if (f_met_rij != nullptr) {
       cs_real_t vel_dir[3];
       cs_math_3_normalize(cpro_met_vel[cell_id], vel_dir);
 
-      cs_real_t axz = -sqrt(cmu / (1. - CS_MIN(ri_f, ri_max)));
+      cs_real_t axz = -sqrt(cmu / (1. - cs::min(ri_f, ri_max)));
       cs_real_t k_in = cpro_met_k[cell_id];
       cpro_met_rij[cell_id][0] = 2. / 3. * k_in;
       cpro_met_rij[cell_id][1] = 2. / 3. * k_in;
@@ -4124,7 +4124,7 @@ cs_atmo_compute_meteo_profiles(void)
 
     /* epsilon profile */
     cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / (kappa * (z+z0))
-       * cs_mo_phim(z+z0, dlmo)*(1.-CS_MIN(ri_f, 1.));
+       * cs_mo_phim(z+z0, dlmo)*(1.-cs::min(ri_f, 1.));
 
     /* Very stable cases */
     if (ri_f > ri_max) {
@@ -4191,16 +4191,16 @@ cs_atmo_compute_meteo_profiles(void)
                                      * cs_mo_phih(z_lim+z0, dlmo, prt)
                                      * (-1./(z+z0) + 1./(z_lim+z0));
        /* TKE profile
-          ri_max is necessarily lower than 1, but CS_MIN might be useful if
+          ri_max is necessarily lower than 1, but cs::min might be useful if
           that changes in the future */
         cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
-          * sqrt(1. - CS_MIN(ri_max, 1.));
+          * sqrt(1. - cs::min(ri_max, 1.));
 
         if (f_met_rij != nullptr) {
           cs_real_t vel_dir[3];
           cs_math_3_normalize(cpro_met_vel[cell_id], vel_dir);
 
-          cs_real_t axz = -sqrt(cmu / (1. - CS_MIN(ri_max, 1.)));
+          cs_real_t axz = -sqrt(cmu / (1. - cs::min(ri_max, 1.)));
           cs_real_t k_in = cpro_met_k[cell_id];
           cpro_met_rij[cell_id][0] = 2. / 3. * k_in;
           cpro_met_rij[cell_id][1] = 2. / 3. * k_in;
@@ -4211,8 +4211,9 @@ cs_atmo_compute_meteo_profiles(void)
         }
 
         /* epsilon profile */
-        cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / kappa  * dlmo_var[cell_id]
-         * (1- CS_MIN(ri_max, 1.)) / CS_MIN(ri_max, 1.);
+        cpro_met_eps[cell_id]
+          =   cs_math_pow3(ustar0) / kappa  * dlmo_var[cell_id]
+            * (1- cs::min(ri_max, 1.)) / cs::min(ri_max, 1.);
       }
     }
   }
@@ -4787,7 +4788,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 
   /* 5 - compute solar azimut */
   *omega = 0.;
-  if (CS_ABS(sin(*za)) > cs_math_epzero) {
+  if (cs::abs(sin(*za)) > cs_math_epzero) {
     /* Cosinus of the zimut angle */
     cs_real_t co = (sin(decl)*cos(flat)-cos(decl)*sin(flat)*cos(hr))/sin(*za);
     *omega = acos(co);

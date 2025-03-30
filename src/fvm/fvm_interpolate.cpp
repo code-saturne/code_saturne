@@ -169,7 +169,7 @@ fvm_interpolate_vtx_data(const fvm_nodal_t       *this_nodal,
         for (cs_lnum_t j = section->face_index[elt_id];
              j < section->face_index[elt_id + 1]; j++) {
 
-          cs_lnum_t  f_id = CS_ABS(section->face_num[j]) - 1;
+          cs_lnum_t  f_id = cs::abs(section->face_num[j]) - 1;
           for (cs_lnum_t k = section->vertex_index[f_id];
                k < section->vertex_index[f_id + 1]; k++) {
 

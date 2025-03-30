@@ -130,7 +130,7 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cb->ids, n_dofs, int);
   memset(cb->ids, 0, n_dofs*sizeof(int));
 
-  int  size = CS_MAX(n_fc*n_dofs, 6*n_dofs);
+  int  size = cs::max(n_fc*n_dofs, 6*n_dofs);
   BFT_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(double));
 

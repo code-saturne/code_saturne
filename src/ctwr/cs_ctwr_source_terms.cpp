@@ -107,7 +107,7 @@ _lewis_factor(const int        evap_model,
     /* Poppe evaporation model
        Compute Lewis factor using Bosnjakovic hypothesis
        NB: clippings ensuring xi > 1 and le_f > 0 */
-    cs_real_t xi = (molmassrat + x_s_tl)/(molmassrat + CS_MIN(x, x_s_tl));
+    cs_real_t xi = (molmassrat + x_s_tl)/(molmassrat + cs::min(x, x_s_tl));
     if ((xi - 1.) < 1.e-15)
       le_f = pow(0.866,(2./3.));
     else
@@ -116,7 +116,6 @@ _lewis_factor(const int        evap_model,
 
   return le_f;
 }
-
 
 /*----------------------------------------------------------------------------
  * Compute the evaporation mass source in a packing cell, gives the proper
@@ -147,7 +146,7 @@ _evap_packing(cs_ctwr_zone_t *ct, /*Cooling tower (packing) zone */
   int zone_type = ct->type;
 
   /* For correlations, T_h cannot be greater than T_l */
-  cs_real_t temp_h = CS_MIN(t_h, t_l_p);
+  cs_real_t temp_h = cs::min(t_h, t_l_p);
 
   /* Saturation humidity at humid air temperature */
   cs_real_t x_s_th = cs_air_x_sat(temp_h, pref);
@@ -176,11 +175,11 @@ _evap_packing(cs_ctwr_zone_t *ct, /*Cooling tower (packing) zone */
 
   if (zone_type == CS_CTWR_COUNTER_CURRENT) {
     /* Counter flow packing */
-    v_air = CS_ABS(cs_math_3_dot_product(vel_h, vertical));
+    v_air = cs::abs(cs_math_3_dot_product(vel_h, vertical));
   }
   else if (zone_type == CS_CTWR_CROSS_CURRENT) {
     /* Cross flow packing */
-    v_air = CS_ABS(cs_math_3_dot_product(vel_h, horizontal));
+    v_air = cs::abs(cs_math_3_dot_product(vel_h, horizontal));
   }
 
   /* Dry air flux */
@@ -210,8 +209,8 @@ _evap_packing(cs_ctwr_zone_t *ct, /*Cooling tower (packing) zone */
     *mass_source = *beta_x_ai * (x_s_tl - x_s_th);
     *mass_source_oy = beta_x_ai_oy * (x_s_tl - x_s_th);
   }
-  *mass_source = CS_MAX(*mass_source, 0.);
-  *mass_source_oy = CS_MAX(*mass_source_oy, 0.);
+  *mass_source = cs::max(*mass_source, 0.);
+  *mass_source_oy = cs::max(*mass_source_oy, 0.);
 }
 
 /*----------------------------------------------------------------------------
@@ -238,7 +237,7 @@ _evap_rain(cs_air_fluid_props_t *air_prop,
            cs_real_t *mass_source_oy)
 {
   /* For correlations, T_h cannot be greater than T_p */
-  cs_real_t temp_h = CS_MIN(t_h, t_l_r);
+  cs_real_t temp_h = cs::min(t_h, t_l_r);
 
   /* Saturation humidity at the temperature of the humid air */
   cs_real_t x_s_th = cs_air_x_sat(temp_h, pref);
@@ -312,8 +311,8 @@ _evap_rain(cs_air_fluid_props_t *air_prop,
     *mass_source = *beta_x_ai * (x_s_tl - x_s_th);
     *mass_source_oy = beta_x_ai_oy * (x_s_tl - x_s_th);
   }
-  *mass_source = CS_MAX(*mass_source, 0.);
-  *mass_source_oy = CS_MAX(*mass_source_oy, 0.);
+  *mass_source = cs::max(*mass_source, 0.);
+  *mass_source_oy = cs::max(*mass_source_oy, 0.);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -588,7 +587,7 @@ cs_ctwr_volume_mass_injection_evap_rain_dof_func
                 &(mass_source),
                 &(mass_source_oy));
 
-            mass_source = CS_MAX(mass_source, 0.);
+            mass_source = cs::max(mass_source, 0.);
 
             retval[cell_id] = mass_source;
             /* Saving evaporation rate for post-processing */
@@ -1059,7 +1058,7 @@ cs_ctwr_source_term(int              f_id,
            // l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
           }
 
-          imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
+          imp_st[cell_id] += cs::max(l_imp_st, 0.);
           exp_st[cell_id] += l_exp_st;
         }
 
@@ -1102,7 +1101,7 @@ cs_ctwr_source_term(int              f_id,
           }
           /* Because we deal with an increment */
           exp_st[cell_id] += l_exp_st;
-          imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
+          imp_st[cell_id] += cs::max(l_imp_st, 0.);
 
           /* Saving thermal power for post-processing */
           thermal_power_pack[cell_id] = -(l_exp_st + l_imp_st * f_var[cell_id])
@@ -1225,7 +1224,7 @@ cs_ctwr_source_term(int              f_id,
             if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
               //l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
             }
-            imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
+            imp_st[cell_id] += cs::max(l_imp_st, 0.);
             exp_st[cell_id] += l_exp_st;
           }
 
@@ -1257,7 +1256,7 @@ cs_ctwr_source_term(int              f_id,
             }
             /* Because we deal with an increment */
             exp_st[cell_id] += l_exp_st;
-            imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
+            imp_st[cell_id] += cs::max(l_imp_st, 0.);
 
             /* Saving thermal power for post-processing */
             if (t_l_r[cell_id] > 0.) {
@@ -1409,26 +1408,26 @@ cs_ctwr_source_term(int              f_id,
           //TODO : Add rain leak portion inside packing
           if (f_id == cfld_yp->id) {
             if (packing_cell[cell_id_0] != -1) {
-              imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
-              exp_st[cell_id_0] -=   CS_MAX(imasfl_r[face_id], 0)
+              imp_st[cell_id_0] += cs::max(imasfl_r[face_id], 0.);
+              exp_st[cell_id_0] -=   cs::max(imasfl_r[face_id], 0)
                                    * f_var[cell_id_0];
             }
             if (packing_cell[cell_id_1] != -1) {
-              imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
-              exp_st[cell_id_1] -=   CS_MAX(-imasfl_r[face_id], 0)
+              imp_st[cell_id_1] += cs::max(-imasfl_r[face_id], 0.);
+              exp_st[cell_id_1] -=   cs::max(-imasfl_r[face_id], 0)
                                    * f_var[cell_id_1];
             }
           }
 
           if (f_id == cfld_yh_rain->id) {
             if (packing_cell[cell_id_0] != -1) {
-              imp_st[cell_id_0] += CS_MAX(imasfl_r[face_id], 0.);
-              exp_st[cell_id_0] -=   CS_MAX(imasfl_r[face_id], 0)
+              imp_st[cell_id_0] += cs::max(imasfl_r[face_id], 0.);
+              exp_st[cell_id_0] -=   cs::max(imasfl_r[face_id], 0)
                                    * f_var[cell_id_0];
             }
             if (packing_cell[cell_id_1] != -1) {
-              imp_st[cell_id_1] += CS_MAX(-imasfl_r[face_id], 0.);
-              exp_st[cell_id_1] -=   CS_MAX(-imasfl_r[face_id], 0)
+              imp_st[cell_id_1] += cs::max(-imasfl_r[face_id], 0.);
+              exp_st[cell_id_1] -=   cs::max(-imasfl_r[face_id], 0)
                                    * f_var[cell_id_1];
             }
           }
@@ -1436,23 +1435,23 @@ cs_ctwr_source_term(int              f_id,
           /* Liquid source term in packing zones from rain */
           if (f_id == CS_F_(y_l_pack)->id) {
             if (packing_cell[cell_id_0] != -1) {
-              exp_st[cell_id_0] +=   CS_MAX(imasfl_r[face_id], 0)
+              exp_st[cell_id_0] +=   cs::max(imasfl_r[face_id], 0)
                                    * cfld_yp->val[cell_id_0];
             }
             if (packing_cell[cell_id_1] != -1) {
-              exp_st[cell_id_1] +=   CS_MAX(-imasfl_r[face_id], 0)
+              exp_st[cell_id_1] +=   cs::max(-imasfl_r[face_id], 0)
                                    * cfld_yp->val[cell_id_1];
             }
           }
 
           if (f_id == CS_F_(yh_l_pack)->id) {
             if (packing_cell[cell_id_0] != -1) {
-              exp_st[cell_id_0] +=   CS_MAX(imasfl_r[face_id], 0)
+              exp_st[cell_id_0] +=   cs::max(imasfl_r[face_id], 0)
                                    * cfld_yh_rain->val[cell_id_0];
             }
 
             if (packing_cell[cell_id_1] != -1) {
-              exp_st[cell_id_1] +=   CS_MAX(-imasfl_r[face_id], 0)
+              exp_st[cell_id_1] +=   cs::max(-imasfl_r[face_id], 0)
                                    * cfld_yh_rain->val[cell_id_1];
             }
           }
@@ -1619,7 +1618,7 @@ cs_ctwr_source_term(int              f_id,
               /* Droplet deformation / elongation */
               cs_real_t e_tau = 1. / (1. + 0.148 * pow(e_o, 0.85));
               //FIXME : check positivity of E
-              cs_real_t e =   1. - cs_math_pow2(CS_MIN(v_drop / v_term, 1.))
+              cs_real_t e =   1. - cs_math_pow2(cs::min(v_drop / v_term, 1.))
                             * (1. - e_tau);
 
               /* Total drag coefficient for deformed drop */

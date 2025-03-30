@@ -258,7 +258,7 @@ _get_work_struct(cs_join_param_t         param,
   cs_join_edges_t  *work_edges = nullptr;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
 
   /*
     Build a bounding box for each selected face.
@@ -378,7 +378,7 @@ _build_join_structures(cs_join_t           *this_join,
 
   if (cs_glob_n_ranks > 1) {
     CS_MALLOC(mesh_name, strlen("LocalMesh_n") + 5 + 1, char);
-    sprintf(mesh_name,"%s%05d", "LocalMesh_n", CS_MAX(cs_glob_rank_id, 0));
+    sprintf(mesh_name,"%s%05d", "LocalMesh_n", cs::max(cs_glob_rank_id, 0));
   }
   else {
     CS_MALLOC(mesh_name, strlen("LocalMesh") + 1, char);
@@ -1446,7 +1446,7 @@ _join_performance_log(const cs_join_t  *this_join)
 
   if (cs_glob_n_ranks > 1 || stats->n_calls > 1) {
 
-    cs_gnum_t n = CS_MAX(stats->n_calls, 1);
+    cs_gnum_t n = cs::max(stats->n_calls, 1);
 
     if (stats->n_calls > 1)
       strncpy(buf, _("                                   rank mean"), 79);

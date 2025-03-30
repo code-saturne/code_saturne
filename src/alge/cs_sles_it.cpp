@@ -46,6 +46,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_math.h"
 #include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -460,7 +461,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
@@ -508,7 +509,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = (CS_ABS(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
+    beta = (cs::abs(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
     rk_gkm1 = rk_gk;
 
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
@@ -519,7 +520,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
@@ -672,9 +673,9 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
 
     if (n_iter > 0) {
 
-      cs_real_t gk_rk1 = (CS_ABS(rho_km1) > DBL_MIN) ? gamma_k / rho_km1 : 0.;
+      cs_real_t gk_rk1 = (cs::abs(rho_km1) > DBL_MIN) ? gamma_k / rho_km1 : 0.;
       cs_real_t rho_k = beta_k - gamma_k * gk_rk1;
-      cs_real_t ak_rk = (CS_ABS(rho_k) > DBL_MIN) ? alpha_k / rho_k : 0.;
+      cs_real_t ak_rk = (cs::abs(rho_k) > DBL_MIN) ? alpha_k / rho_k : 0.;
 
 #     pragma omp parallel if(n_rows > CS_THR_MIN)
       {
@@ -696,7 +697,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
     else { /* n_iter == 0 */
 
       cs_real_t rho_k = beta_k;
-      cs_real_t ak_rk = (CS_ABS(rho_k) > DBL_MIN) ? alpha_k / rho_k : 0.;
+      cs_real_t ak_rk = (cs::abs(rho_k) > DBL_MIN) ? alpha_k / rho_k : 0.;
 
 #     pragma omp parallel if(n_rows > CS_THR_MIN)
       {
@@ -851,7 +852,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
@@ -901,7 +902,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = (CS_ABS(rk_gk_m1) > DBL_MIN) ? (rk_gk - rkm1_gk) / rk_gk_m1 : 0.;
+    beta = (cs::abs(rk_gk_m1) > DBL_MIN) ? (rk_gk - rkm1_gk) / rk_gk_m1 : 0.;
     rk_gk_m1 = rk_gk;
 
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
@@ -912,7 +913,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
@@ -1060,7 +1061,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     n_iter = 1;
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
     rk_gkm1 = ro_0;
@@ -1113,13 +1114,13 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = (CS_ABS(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
+    beta = (cs::abs(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
     rk_gkm1 = rk_gk;
 
     ro_1 = gk_sk - beta*beta*ro_1;
     ro_0 = rk_gk;
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
@@ -1249,7 +1250,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
@@ -1294,7 +1295,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = (CS_ABS(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
+    beta = (cs::abs(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
     rk_rkm1 = rk_rk;
 
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
@@ -1305,7 +1306,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
@@ -1446,7 +1447,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     n_iter = 1;
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
     rk_rkm1 = ro_0;
@@ -1497,13 +1498,13 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = (CS_ABS(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
+    beta = (cs::abs(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
     rk_rkm1 = rk_rk;
 
     ro_1 = rk_sk - beta*beta*ro_1;
     ro_0 = rk_rk;
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
@@ -2275,7 +2276,7 @@ _breakdown(cs_sles_it_t                 *c,
 {
   bool retval = false;
 
-  if (CS_ABS(coeff) < epsilon) {
+  if (cs::abs(coeff) < epsilon) {
 
     bft_printf
       (_("\n\n"
@@ -2483,7 +2484,7 @@ _bi_cgstab(cs_sles_it_t              *c,
                    residual, n_iter, &cvg))
       break;
 
-    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha = ro_0 * d_ro_1;
 
     /* Final update of vx and rk */

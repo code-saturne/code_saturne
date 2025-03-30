@@ -1205,7 +1205,7 @@ cs_combustion_gas_add_property_fields(void)
         cm->recvr = _add_property_1d("reconstructed_fp2m", "rec_fp2m");
 
       if (cm->n_gas_fl > 0) {
-        int n = CS_MIN(cm->n_gas_fl, CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES - 1);
+        int n = cs::min(cm->n_gas_fl, CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES - 1);
         for (int i = 0; i < n; i++) {
           char name[64], label[64];
           snprintf(name, 64, "fraction_%s", cm->flamelet_species_name[i]);

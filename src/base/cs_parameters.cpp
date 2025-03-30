@@ -54,6 +54,7 @@
 #include "alge/cs_gradient.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_math.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_post.h"
 #include "base/cs_parall.h"
@@ -1495,7 +1496,7 @@ cs_parameters_add_boundary_temperature(void)
 
         int k_vis = cs_field_key_id("post_vis");
         int f_vis = cs_field_get_key_int(f, k_vis);
-        f_vis = CS_MAX(f_vis, 1);
+        f_vis = cs::max(f_vis, 1);
         cs_field_set_key_int(bf, k_vis, f_vis);
 
       }
@@ -2300,7 +2301,7 @@ cs_parameters_eqp_complete(void)
       }
     }
     if (eqp_vel != nullptr)
-      vp_param->arak = vp_param->arak/CS_MAX(eqp_vel->relaxv, cs_math_epzero);
+      vp_param->arak = vp_param->arak/cs::max(eqp_vel->relaxv, cs_math_epzero);
   }
 
   /* With a staggered approach, no Rhie and Chow correction is needed. */
@@ -2333,7 +2334,7 @@ cs_parameters_eqp_complete(void)
         }
         /* Minimum for variances is 0 or greater */
         /* Set min clipping to 0 */
-        scminp = CS_MAX(0., scminp);
+        scminp = cs::max(0., scminp);
         cs_field_set_key_double(f_sca, kscmin, scminp);
       }
     }

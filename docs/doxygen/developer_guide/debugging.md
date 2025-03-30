@@ -366,7 +366,7 @@ a fast memory error detector.
 
 - Note that the resulting code will not be usable under Valgrind.
 
-- Uninitialized values are not detected by Address Sanitizer (but
+- Uninitialized values are not detected by AddressSanitizer (but
   may be detected by UndefinedBehaviorSanitizer).
 
 - Out-of-bounds errors for arrays on stack (fixed size, usually small)
@@ -508,9 +508,14 @@ Do do the same using the ddd front-end:
 ddd valgrind --vgdb-error=1
 ```
 
-To run under gdb with preset brekpoints at bft_error and exit functions:
+To run under gdb with preset breakpoints at bft_error and exit functions:
 ```
 gdb --asan-bp --breakpoints=bft_error,exit
+```
+
+To run under gdb with a breakpoint for ubsan (UndefinedBehaviorSanitizer):
+```
+gdb --asan-bp --breakpoints=__ubsan::Diag::~Diag
 ```
 
 To debug under gdbgui:

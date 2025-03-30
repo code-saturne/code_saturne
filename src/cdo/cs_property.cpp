@@ -3484,7 +3484,7 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
 
       int  dim_a = cs_property_get_dim(a);
       int  dim_b = cs_property_get_dim(b);
-      int  dim_ab = CS_MAX(dim_a, dim_b);
+      int  dim_ab = cs::max(dim_a, dim_b);
 
       cs_real_t *tmp_val = nullptr;
       BFT_MALLOC(tmp_val, n_b_faces*dim_ab, cs_real_t);

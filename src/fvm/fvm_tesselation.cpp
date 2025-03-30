@@ -98,6 +98,7 @@
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_triangulate.h"
 
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 
@@ -284,7 +285,7 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
     cs_coord_t triangle_surface = 0.;
     const cs_coord_t *current_coords = nullptr;
 
-    face_id = CS_ABS(ts->face_num[i]) - 1;
+    face_id = cs::abs(ts->face_num[i]) - 1;
 
     n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
 
@@ -429,10 +430,10 @@ _solve_ax_b_4(double            a[4][4],
     /* Seek best pivot */
 
     k_pivot = i;
-    abs_pivot = CS_ABS(_a[i][i]);
+    abs_pivot = cs::abs(_a[i][i]);
 
     for (k = i+1; k < 4; k++) {
-      abs_a_ki = CS_ABS(_a[k][i]);
+      abs_a_ki = cs::abs(_a[k][i]);
       if (abs_a_ki > abs_pivot) {
         abs_pivot = abs_a_ki;
         k_pivot = k;
@@ -520,7 +521,7 @@ _polyhedron_vertices(const fvm_tesselation_t   *ts,
     /* Loop on face vertices */
     /*-----------------------*/
 
-    face_id = CS_ABS(ts->face_num[i]) - 1;
+    face_id = cs::abs(ts->face_num[i]) - 1;
 
     n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
 
@@ -1274,7 +1275,7 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
          j < ts->face_index[i+1];
          j++) {
 
-      face_id = CS_ABS(ts->face_num[j]) - 1;
+      face_id = cs::abs(ts->face_num[j]) - 1;
 
       n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
 
@@ -1672,7 +1673,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
          k < ts->face_index[i+1];
          k++) {
 
-      face_id = CS_ABS(ts->face_num[k]) - 1;
+      face_id = cs::abs(ts->face_num[k]) - 1;
 
       n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
       vertex_id = ts->vertex_index[face_id];
@@ -1848,7 +1849,7 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
          k < ts->face_index[j+1];
          k++) {
 
-      face_id = CS_ABS(ts->face_num[k]) - 1;
+      face_id = cs::abs(ts->face_num[k]) - 1;
 
       n_vertices = ts->vertex_index[face_id+1] - ts->vertex_index[face_id];
       vertex_id = ts->vertex_index[face_id];
@@ -2082,7 +2083,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
     cs_lnum_t   max_face_id = 0;
     for (j = 0; j < n_elements; j++) {
       for (k = face_index[j]; k < face_index[j+1]; k++) {
-        face_id = CS_ABS(face_num[k]) - 1;
+        face_id = cs::abs(face_num[k]) - 1;
         if (face_id > max_face_id)
           max_face_id = face_id;
       }

@@ -1273,7 +1273,7 @@ _sat_coupling_send_bnd_data
       cs_real_t *_r23 = rvdis[ipos + 2];
       for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
         cs_real_t r0 =   -1.0 * trav1[e_id] * trav1[e_id] * cs_turb_cmu
-                       / cs_math_fmax(1.e-10, trav2[e_id]);
+                       / cs::max(1.e-10, trav2[e_id]);
 
         _r12[e_id] = r0 * (trav3[e_id] + trav5[e_id]);
         _r13[e_id] = r0 * (trav4[e_id] + trav7[e_id]);
@@ -1301,7 +1301,7 @@ _sat_coupling_send_bnd_data
       for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
         _k[e_id] = trav1[e_id];
         _om[e_id] =   trav2[e_id]
-                    / (cs_turb_cmu * cs_math_fmax(1.e-10, trav1[e_id]));
+                    / (cs_turb_cmu * cs::max(1.e-10, trav1[e_id]));
       }
 
       ipos += 2;
@@ -1384,7 +1384,7 @@ _sat_coupling_send_bnd_data
       for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
         cs_real_t k = 0.5*(trav1[e_id] + trav2[e_id] + trav3[e_id]);
         _k[e_id] = k;
-        _om[e_id] = trav7[e_id] / (cs_turb_cmu * cs_math_fmax(1.e-10, k));
+        _om[e_id] = trav7[e_id] / (cs_turb_cmu * cs::max(1.e-10, k));
       }
 
       ipos += 2;
@@ -1517,7 +1517,7 @@ _sat_coupling_send_bnd_data
       cs_real_t *_r13 = rvdis[ipos + 1];
       cs_real_t *_r23 = rvdis[ipos + 2];
       for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
-        cs_real_t r0 = -1.0 * trav1[e_id] / cs_math_fmax(1.e-10, trav2[e_id]);
+        cs_real_t r0 = -1.0 * trav1[e_id] / cs::max(1.e-10, trav2[e_id]);
 
         _r12[e_id] = r0 * (trav3[e_id] + trav5[e_id]);
         _r13[e_id] = r0 * (trav4[e_id] + trav7[e_id]);
@@ -2529,7 +2529,7 @@ cs_sat_coupling_array_exchange(int         cpl_id,
 
   if (distant == false) {
 
-    nbr = CS_MIN(nbrdis, nbrloc);
+    nbr = cs::min(nbrdis, nbrloc);
 
     for (cs_lnum_t ind = 0; ind < nbr; ind++)
       varloc[ind] = vardis[ind];

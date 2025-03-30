@@ -432,7 +432,7 @@ cs_gui_particles_model(void)
    */
   if (cs_glob_lagr_model->modcpl > 0)
     cs_glob_lagr_model->modcpl
-      = CS_MAX(cs_glob_lagr_model->modcpl, cs_glob_lagr_stat_options->idstnt);
+      = cs::max(cs_glob_lagr_model->modcpl, cs_glob_lagr_stat_options->idstnt);
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);

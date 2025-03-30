@@ -65,6 +65,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
@@ -182,7 +183,7 @@ _print_stats(long    n_runs,
                   cs_glob_mpi_comm);
 
     /* global flops multiplier */
-    fmg = n_runs / (1.e9 * CS_MAX(glob_max[0], 1));
+    fmg = n_runs / (1.e9 * cs::max(glob_max[0], 1));
 
     glob_sum[0] /= n_runs;
     glob_min[0] /= n_runs;
@@ -291,7 +292,7 @@ _mat_vec_exdiag_native_v1(cs_lnum_t            n_faces,
        face_id < n_faces;
        face_id += l1_cache_size) {
 
-    kk_max = CS_MIN((n_faces - face_id), l1_cache_size);
+    kk_max = cs::min((n_faces - face_id), l1_cache_size);
 
     /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
@@ -656,7 +657,7 @@ _matrix_check_compare(cs_lnum_t        n_elts,
   double dmax = 0.0;
 
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
-    double d = CS_ABS(y[ii] - yr[ii]);
+    double d = cs::abs(y[ii] - yr[ii]);
     if (d > dmax)
       dmax = d;
   }

@@ -53,6 +53,7 @@
 #include "base/cs_flag_check.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -520,7 +521,7 @@ cs_volume_zone_build_all(bool  mesh_modified)
         cs_zone_t *z = _zones[i];
         for (cs_lnum_t j = 0; j < z->n_elts; j++) {
           cs_lnum_t c_id = z->elt_ids[j];
-          int z_id_prev = CS_ABS(_zone_id[c_id]);
+          int z_id_prev = cs::abs(_zone_id[c_id]);
           if (z_id_prev == 0)
             _zone_id[c_id] = z->id;
           else if (   _zones[z_id_prev]->allow_overlay

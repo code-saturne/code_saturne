@@ -1084,7 +1084,7 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
     uni = cs_math_3_dot_product(vel[cell_id], b_face_u_normal[face_id]);
 
     cs_real_t deltap = pinf-pri;
-    cs_real_t res = CS_ABS(deltap/(pinf+psginf));
+    cs_real_t res = cs::abs(deltap/(pinf+psginf));
     /*  Rarefaction case */
     if (deltap < 0. || res < cs_math_epzero) {
 
@@ -1544,7 +1544,7 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
       bc_pr[face_id] = pstat;
 
       /*  Pressure residual */
-      res = CS_ABS((pstat - old_pstat) / ptot);
+      res = cs::abs((pstat - old_pstat) / ptot);
 
       /*  Prepare next iteration */
       old_pstat = pstat;

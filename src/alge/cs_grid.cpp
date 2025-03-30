@@ -66,6 +66,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
@@ -526,8 +527,8 @@ _aggregation_stats_log(const cs_grid_t  *f,
   cs_gnum_t aggr_tot = 0;
 
   for (cs_lnum_t i = 0; i < c_n_rows; i++) {
-    aggr_min = CS_MIN(aggr_min, c_aggr_count[i]);
-    aggr_max = CS_MAX(aggr_max, c_aggr_count[i]);
+    aggr_min = cs::min(aggr_min, c_aggr_count[i]);
+    aggr_max = cs::max(aggr_max, c_aggr_count[i]);
     aggr_tot += c_aggr_count[i];
   }
 
@@ -2945,9 +2946,9 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
 
         for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
           cs_real_t xv = x_val[jj];
-          sum += CS_ABS(xv);
+          sum += cs::abs(xv);
           if (xv < 0)
-            a_max[ii] = cs_math_fmax(a_max[ii], -xv);
+            a_max[ii] = cs::max(a_max[ii], -xv);
         }
 
         /* Check if the line seems ignored or not */
@@ -2982,7 +2983,7 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
         for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
           cs_real_t xv = x_val[jj];
           if (xv < 0)
-            a_max[ii] = cs_math_fmax(a_max[ii], -xv);
+            a_max[ii] = cs::max(a_max[ii], -xv);
         }
 
         a_m[ii] = 0;
@@ -3349,14 +3350,14 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
     cs_real_t xv0 = x_val[e_id*isym];
     cs_real_t xv1 = x_val[(e_id+1)*isym-1];
     if (ii < f_n_rows) {
-      sum[ii] += CS_ABS(xv0);
+      sum[ii] += cs::abs(xv0);
       if (xv0 < 0.)
-        maxi[ii] = cs_math_fmax(maxi[ii], -xv0);
+        maxi[ii] = cs::max(maxi[ii], -xv0);
     }
     if (jj < f_n_rows) {
-      sum[jj] += CS_ABS(xv1);
+      sum[jj] += cs::abs(xv1);
       if (xv1 < 0.)
-        maxi[jj] = cs_math_fmax(maxi[jj], -xv1);
+        maxi[jj] = cs::max(maxi[jj], -xv1);
     }
   }
 
@@ -3378,7 +3379,7 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
 
     npass++;
     _max_aggregation++;
-    _max_aggregation = CS_MIN(_max_aggregation, max_aggregation);
+    _max_aggregation = cs::min(_max_aggregation, max_aggregation);
 
     /* Pairwise aggregation */
 
@@ -3405,7 +3406,7 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
       cs_real_t xv = x_val[e_id*isym];
 
       if (isym == 2)
-        xv = cs_math_fmax(xv, x_val[e_id*2 + 1]);
+        xv = cs::max(xv, x_val[e_id*2 + 1]);
 
       /* Test if ii and jj are strongly negatively coupled and at */
       /* least one of them is not already in an aggregate. */
@@ -3598,7 +3599,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
           const cs_real_t  xv = x_val[jj];
           if (xv < 0.) {
             sum -= xv;
-            maxi[ii] = cs_math_fmax(maxi[ii], -xv);
+            maxi[ii] = cs::max(maxi[ii], -xv);
           }
           else {
             sum += xv;
@@ -3616,7 +3617,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
         for (cs_lnum_t jj = row_index[ii]; jj < row_index[ii+1]; jj++) {
           const cs_real_t  xv = x_val[jj];
           if (xv < 0.)
-            maxi[ii] = cs_math_fmax(maxi[ii], -xv);
+            maxi[ii] = cs::max(maxi[ii], -xv);
         }
       }
     }
@@ -4556,7 +4557,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     npass++;
     n_faces = r_n_faces;
     _max_aggregation++;
-    _max_aggregation = CS_MIN(_max_aggregation, max_aggregation);
+    _max_aggregation = cs::min(_max_aggregation, max_aggregation);
 
 #   pragma omp parallel for if(n_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
@@ -4602,9 +4603,9 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
         cs_real_t aggr_crit;
 
         if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-          cs_real_t f_xa0 = cs_math_fmax(-_f_xa[ix0], 0.);
-          cs_real_t f_xa1 = cs_math_fmax(-_f_xa[ix1], 0.);
-          aggr_crit = cs_math_fmax(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
+          cs_real_t f_xa0 = cs::max(-_f_xa[ix0], 0.);
+          cs_real_t f_xa1 = cs::max(-_f_xa[ix1], 0.);
+          aggr_crit = cs::max(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
         }
         else {
           cs_real_t f_xa0_xa1 =  _f_xa[ix0] * _f_xa[ix1];
@@ -4788,7 +4789,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   /* aggregation queue: local column id, index in matrix, and
      index of symmetric element if needed */
   const cs_lnum_t ag_queue_stride = (1+isym);
-  cs_lnum_t ag_work_size = CS_MAX(f_nnz*ag_queue_stride, f_n_rows);
+  cs_lnum_t ag_work_size = cs::max(f_nnz*ag_queue_stride, f_n_rows);
   cs_lnum_t *ag_work;
   CS_MALLOC(ag_work, ag_work_size, cs_lnum_t);
   cs_lnum_t *ag_queue = ag_work;
@@ -4944,9 +4945,9 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
           cs_real_t aggr_crit;
 
           if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-            cs_real_t f_xa0 = cs_math_fmax(-x_val[ix0], 0.);
-            cs_real_t f_xa1 = cs_math_fmax(-x_val[ix1], 0.);
-            aggr_crit = cs_math_fmax(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
+            cs_real_t f_xa0 = cs::max(-x_val[ix0], 0.);
+            cs_real_t f_xa1 = cs::max(-x_val[ix1], 0.);
+            aggr_crit = cs::max(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
           }
           else {
             cs_real_t f_xa0_xa1 =  x_val[ix0] * x_val[ix1];
@@ -5064,9 +5065,9 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
         cs_real_t aggr_crit;
 
         if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-          cs_real_t f_xa0 = cs_math_fmax(-x_val[ix0], 0.);
-          cs_real_t f_xa1 = cs_math_fmax(-x_val[ix1], 0.);
-          aggr_crit = cs_math_fmax(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
+          cs_real_t f_xa0 = cs::max(-x_val[ix0], 0.);
+          cs_real_t f_xa1 = cs::max(-x_val[ix1], 0.);
+          aggr_crit = cs::max(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
         }
         else {
           cs_real_t f_xa0_xa1 =  x_val[ix0] * x_val[ix1];
@@ -5362,10 +5363,10 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
   for (cs_lnum_t c_face = 0; c_face < n_faces; c_face++) {
     cs_lnum_t ic = face_cell[c_face][0];
     cs_lnum_t jc = face_cell[c_face][1];
-    w3[ic] = cs_math_fmax(fabs(xa[c_face*isym]), w3[ic]);
-    w4[ic] = cs_math_fmin(fabs(xa[c_face*isym]), w4[ic]);
-    w3[jc] = cs_math_fmax(fabs(xa[(c_face +1)*isym -1]), w3[jc]);
-    w4[jc] = cs_math_fmin(fabs(xa[(c_face +1)*isym -1]), w4[jc]);
+    w3[ic] = cs::max(fabs(xa[c_face*isym]), w3[ic]);
+    w4[ic] = cs::min(fabs(xa[c_face*isym]), w4[ic]);
+    w3[jc] = cs::max(fabs(xa[(c_face +1)*isym -1]), w3[jc]);
+    w4[jc] = cs::min(fabs(xa[(c_face +1)*isym -1]), w4[jc]);
   }
 
   for (cs_lnum_t ic = 0; ic < n_cells; ic++)
@@ -5397,8 +5398,8 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
   if (interp == 1) {
     double rmin = HUGE_VAL, rmax = -HUGE_VAL;
     for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
-      rmin = cs_math_fmin(rmin, xa[face_id*isym] / xa0[face_id]);
-      rmax = cs_math_fmax(rmax, xa[face_id*isym] / xa0[face_id]);
+      rmin = cs::min(rmin, xa[face_id*isym] / xa0[face_id]);
+      rmax = cs::max(rmax, xa[face_id*isym] / xa0[face_id]);
     }
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
     if (comm != MPI_COMM_NULL) {
@@ -5498,13 +5499,13 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 
     for (cs_lnum_t r_idx = s_id; r_idx < e_id; r_idx++) {
       cs_real_t v = x_val[r_idx];
-      w3 = cs_math_fmax(fabs(v), w3);
-      w4 = cs_math_fmin(fabs(v), w4);
+      w3 = cs::max(fabs(v), w3);
+      w4 = cs::min(fabs(v), w4);
 
       if (cell_face != nullptr) {
         cs_real_t v_o_v0 = v / xa0[cell_face[r_idx]];
-        rmin = cs_math_fmin(rmin, v_o_v0);
-        rmax = cs_math_fmax(rmax, v_o_v0);
+        rmin = cs::min(rmin, v_o_v0);
+        rmax = cs::max(rmax, v_o_v0);
       }
     }
 
@@ -7879,7 +7880,7 @@ cs_grid_get_n_cols_max(const cs_grid_t  *g)
   cs_lnum_t retval = 0;
 
   if (g != nullptr)
-    retval = CS_MAX(g->n_cols_ext, g->n_elts_r[1]);
+    retval = cs::max(g->n_cols_ext, g->n_elts_r[1]);
 
   return retval;
 }

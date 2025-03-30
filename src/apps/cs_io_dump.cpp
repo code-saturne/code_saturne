@@ -54,6 +54,7 @@
 #include <errno.h>
 #include <locale.h>
 #include <stdarg.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1949,7 +1950,7 @@ _compare_floats(_cs_io_t         *inp1,
     if (delta < 0.0)
       delta = -delta;
     if (delta > f_threshold) {
-      double delta_r = delta / CS_MAX(CS_ABS(cmp1[i]), CS_ABS(cmp2[i]));
+      double delta_r = delta / fmax(fabs(cmp1[i]), fabs(cmp2[i]));
       n_diffs++;
       if (delta > f_stats[0])
         f_stats[0] = delta;

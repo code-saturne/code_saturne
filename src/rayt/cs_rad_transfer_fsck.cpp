@@ -49,6 +49,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -490,14 +491,14 @@ _splmi(int        n,
     }
 
     /* calculate first values for al and be by 3-point difference */
-    if (CS_ABS(delta[0]) < eps)
+    if (cs::abs(delta[0]) < eps)
       al[0] =  (  pow((h[0] + h[1]), 2.0) * y[1]
                 - pow (h[0], 2.0) * y[2]
                 - h[1] * (2.0 * h[0] + h[1]) * y[0])
               / (h[1] * (h[0] + h[1]) * (y[1] - y[0]));
 
     for (int i = 1; i < nm1; i++) {
-      if (CS_ABS(delta[0]) < eps)
+      if (cs::abs(delta[0]) < eps)
         al[i] =  (  pow(h[i - 1], 2.0) * y[i + 1]
                   + (pow(h[i], 2.0) - pow(h[i - 1], 2.0)) * y[i]
                   -  pow(h[i], 2.0) * y[i - 1])
@@ -506,14 +507,14 @@ _splmi(int        n,
 
     int nm2 = n - 2;
     for (int i = 0; i < nm2; i++) {
-      if (CS_ABS(delta[0]) < eps)
+      if (cs::abs(delta[0]) < eps)
         be[i] = (pow(h[i], 2.0) * y[i + 2]
                  + (pow(h[i + 1], 2.0) - pow(h[i], 2.0)) * y[i + 1]
                  - pow(h[i + 1], 2.0) * y[i])
                 / (h[i + 1] * (h[i] + h[i + 1]) * (y[i + 1] - y[i]));
     }
 
-    if (CS_ABS(delta[0]) < eps) {
+    if (cs::abs(delta[0]) < eps) {
       be[n - 2] =  (  h[n - 3] * (2.0 * h[n - 2] + h[n - 3]) * y[n - 1]
                     - pow((h[n - 2] + h[n - 3]), 2.0) * y[n - 2]
                     + pow(h[n - 2], 2.0) * y[n - 3])
@@ -593,14 +594,14 @@ _simple_interpg(int        nxy,
     for (int i = ibgn; i < nxy; i++) {
 
       if (xi[iq] < xx[0]) {
-        yi[iq] = yy[0] * xi[iq] / CS_MAX(1e-09, xx[0]);
+        yi[iq] = yy[0] * xi[iq] / cs::max(1e-09, xx[0]);
         break;
       }
       else if (xi[iq] > xx[nxy])
         yi[iq] = yy[nxy];
 
       /* interpolate */
-      if (CS_ABS(xi[iq] - xx[i]) / (xx[i] + 1e-15) < 0.001) {
+      if (cs::abs(xi[iq] - xx[i]) / (xx[i] + 1e-15) < 0.001) {
         yi[iq] = yy[i];
         ibgn = i;
         break;
@@ -608,14 +609,14 @@ _simple_interpg(int        nxy,
       else if (xx[i] > xi[iq]) {
         yi[iq] =   yy[i - 1]
                  + (yy[i] - yy[i - 1]) * (xi[iq] - xx[i - 1])
-                                      / CS_MAX(1e-09, (xx[i] - xx[i - 1]));
+                                      / cs::max(1e-09, (xx[i] - xx[i - 1]));
         ibgn = i;
         break;
       }
     }
   }
 
-  if (CS_ABS(xi[ni] - xx[nxy]) / (xx[nxy] + 1e-15) < 0.001)
+  if (cs::abs(xi[ni] - xx[nxy]) / (xx[nxy] + 1e-15) < 0.001)
     yi[ni] = yy[nxy];
 }
 
@@ -1096,7 +1097,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
         pp[j] = n * (z[j] * p1[j] - p2[j]) / (z[j] * z[j] - 1.0);
         z1[j] = z[j];
         z[j]  = z1[j] - p1[j] / pp[j];
-        unfinished[j] = (CS_ABS(z[j] - z1[j]) > eps);
+        unfinished[j] = (cs::abs(z[j] - z1[j]) > eps);
       }
 
       /* check if we should continue */

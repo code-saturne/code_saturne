@@ -972,7 +972,7 @@ _pressure_correction_fv(int                   iterns,
                NB: eps =1.d-1 must be consistent
                with `cs_face_anisotropic_viscosity_scalar`. */
 
-            fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*b_dist[f_id]);
+            fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*b_dist[f_id]);
 
             hint = viscis/b_face_surf[f_id]/fikis;
 
@@ -1451,7 +1451,7 @@ _pressure_correction_fv(int                   iterns,
         cs_lnum_t c_id_0 = i_face_cells[f_id][0];
         cs_lnum_t c_id_1 = i_face_cells[f_id][1];
         cs_real_t dtm = 0.5 * (dt[c_id_0]+dt[c_id_1]);
-        cs_real_t porosf = cs_math_fmin(c_porosity[c_id_0], c_porosity[c_id_1]);
+        cs_real_t porosf = cs::min(c_porosity[c_id_0], c_porosity[c_id_1]);
         imasfl[f_id] =   taui[f_id] / dtm
                        * imasfla[f_id]+porosf*taui[f_id]*sti[f_id]
                        * i_f_face_surf[f_id];
@@ -1488,7 +1488,7 @@ _pressure_correction_fv(int                   iterns,
         /* Neumann_scalar BC */
 
         // Gradient BCs
-        coefa_dp[f_id] = -dimp/cs_math_fmax(hint, 1.e-300);
+        coefa_dp[f_id] = -dimp/cs::max(hint, 1.e-300);
         coefb_dp[f_id] = 1.;
 
         // Flux BCs
@@ -2369,7 +2369,7 @@ _pressure_correction_fv(int                   iterns,
         -------------------------- */
 
   /* For logging */
-  if (cs_math_fabs(rnormp) > 0.)
+  if (cs::abs(rnormp) > 0.)
     sinfo->res_norm = residual/rnormp;
   else
     sinfo->res_norm = 0.;
@@ -2399,7 +2399,7 @@ _pressure_correction_fv(int                   iterns,
     const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      c_estim_der[c_id] = cs_math_fabs(rhs[c_id]) / cell_vol[c_id];
+      c_estim_der[c_id] = cs::abs(rhs[c_id]) / cell_vol[c_id];
     });
   }
   f_err_est = cs_field_by_name_try("est_error_der_2");
@@ -2408,7 +2408,7 @@ _pressure_correction_fv(int                   iterns,
     const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      c_estim_der[c_id] = cs_math_fabs(rhs[c_id]) / sqrt(cell_vol[c_id]);
+      c_estim_der[c_id] = cs::abs(rhs[c_id]) / sqrt(cell_vol[c_id]);
     });
   }
 

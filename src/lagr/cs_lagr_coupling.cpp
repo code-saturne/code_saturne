@@ -533,8 +533,8 @@ cs_lagr_coupling_finalize(void)
       if (t_st_t_i != nullptr)
         t_st_t_i[c_id] = 0.0;
     }
-    lag_st->vmax = CS_MAX(tauv, lag_st->vmax);
-    lag_st->tmamax = CS_MAX(taum, lag_st->tmamax);
+    lag_st->vmax = cs::max(tauv, lag_st->vmax);
+    lag_st->tmamax = cs::max(taum, lag_st->tmamax);
   }
 
   /* Time average of source terms

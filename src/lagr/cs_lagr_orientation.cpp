@@ -118,15 +118,15 @@ _mean_stretching_phase_spheroid(const cs_real_t dtp,
                           {0.0, 1.0, 0.0},
                           {0.0, 0.0, 1.0}};
   cs_real_t tol_err = 1.0e-12;
-  cs_real_33_t mat_loc ;
+  cs_real_33_t mat_loc;
   mat_loc[0][0] = Lambda * (gradvf_sym[0][0]) + beta;
-  mat_loc[0][1] = Lambda *  gradvf_sym[0][1] ;
-  mat_loc[0][2] = Lambda *  gradvf_sym[0][2] ;
-  mat_loc[1][0] = Lambda *  gradvf_sym[1][0] ;
+  mat_loc[0][1] = Lambda *  gradvf_sym[0][1];
+  mat_loc[0][2] = Lambda *  gradvf_sym[0][2];
+  mat_loc[1][0] = Lambda *  gradvf_sym[1][0];
   mat_loc[1][1] = Lambda * (gradvf_sym[1][1]) + beta;
-  mat_loc[1][2] = Lambda *  gradvf_sym[1][2] ;
-  mat_loc[2][0] = Lambda *  gradvf_sym[2][0] ;
-  mat_loc[2][1] = Lambda *  gradvf_sym[2][1] ;
+  mat_loc[1][2] = Lambda *  gradvf_sym[1][2];
+  mat_loc[2][0] = Lambda *  gradvf_sym[2][0];
+  mat_loc[2][1] = Lambda *  gradvf_sym[2][1];
   mat_loc[2][2] = Lambda * (gradvf_sym[2][2]) + beta;
   cs_math_33_eig_val_vec(mat_loc, tol_err, eig_val, eig_vec);
 
@@ -416,12 +416,12 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t   ip,
 
   /* Detect singularity to be handled
    * (division by 0 when the fiber is aligned with z direction) */
-  cs_real_t singularity_threshold = 1.0e-6 ;
+  cs_real_t singularity_threshold = 1.0e-6;
   cs_real_t singularity_value = 1.0 - cs_math_pow2(orient_loc[2]);
 
   /* Handle the case where the orientation is nearly aligned with z
      (division by 0) */
-  if (cs_math_fabs(singularity_value) < singularity_threshold) {
+  if (cs::abs(singularity_value) < singularity_threshold) {
     // Define the reference to singularity
     cs_real_t ax_singularity[3] = {0.0, 1.0, 0.0};
     // Get vector for rotation
@@ -468,20 +468,20 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t   ip,
     /* From spherical to cartesian coordinates theta in [0,pi], phi in [0,2pi) */
 
     // Start by a modulo operation (to have theta and phi in [-2pi,2pi]
-    theta = fmod(theta, 2.0*cs_math_pi) ;
-    phi = fmod(phi, 2.0*cs_math_pi) ;
+    theta = fmod(theta, 2.0*cs_math_pi);
+    phi = fmod(phi, 2.0*cs_math_pi);
 
     // Handle cases where theta is not in [0,pi]
     if (theta > cs_math_pi) {
-         theta = 2.0*cs_math_pi - theta ;
-         phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi) ;
+         theta = 2.0*cs_math_pi - theta;
+         phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
     }
     else if ( (-cs_math_pi < theta) & (theta < 0.0) ){
-         theta = -theta ;
-         phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi) ;
+         theta = -theta;
+         phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
     }
     else if ( (-2.0*cs_math_pi < theta) & (theta < -cs_math_pi) ){
-         theta = 2.0*cs_math_pi - cs_math_fabs(theta) ;
+         theta = 2.0*cs_math_pi - cs::abs(theta);
     }
     if (phi < 0.0)
       phi = 2*cs_math_pi + phi;
@@ -511,20 +511,20 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t   ip,
     /* From spherical to cartesian coordinates theta in [0,pi], phi in [0,2pi) */
 
     // Start by a modulo operation (to have theta and phi in [-2pi,2pi]
-    theta = fmod(theta, 2.0*cs_math_pi) ;
-    phi = fmod(phi, 2.0*cs_math_pi) ;
+    theta = fmod(theta, 2.0*cs_math_pi);
+    phi = fmod(phi, 2.0*cs_math_pi);
 
     // Handle cases where theta is not in [0,pi]
     if (theta > cs_math_pi) {
-      theta = 2*cs_math_pi - theta ;
+      theta = 2*cs_math_pi - theta;
       phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
     }
-    else if ( (-cs_math_pi < theta) & (theta < 0.0) ){
-      theta = -theta ;
+    else if ((-cs_math_pi < theta) & (theta < 0.0)) {
+      theta = -theta;
       phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
     }
-    else if ( (-2.0*cs_math_pi < theta) & (theta < -cs_math_pi) ){
-      theta = 2.0*cs_math_pi - cs_math_fabs(theta) ;
+    else if ((-2.0*cs_math_pi < theta) & (theta < -cs_math_pi)){
+      theta = 2.0*cs_math_pi - cs::abs(theta);
     }
     if (phi < 0.0)
       phi = 2*cs_math_pi + phi;

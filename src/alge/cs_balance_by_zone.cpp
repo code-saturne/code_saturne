@@ -54,6 +54,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -1467,7 +1468,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     cs_real_t beta = blencp;
     /* Beta blending coefficient ensuring positivity of the scalar */
     if (isstpp == 2) {
-      beta = CS_MAX(CS_MIN(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
+      beta = cs::max(cs::min(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
     }
 
     int bldfrp = ircflp;
@@ -2998,7 +2999,7 @@ cs_flux_through_surface(const char         *scalar_name,
     cs_real_t beta = blencp;
     /* Beta blending coefficient ensuring positivity of the scalar */
     if (isstpp == 2) {
-      beta = CS_MAX(CS_MIN(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
+      beta = cs::max(cs::min(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
     }
 
     int bldfrp = ircflp;

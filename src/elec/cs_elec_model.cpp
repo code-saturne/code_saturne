@@ -1465,8 +1465,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (int i = 0; i < 3; i++) {
-          vrmin[i] = CS_MIN(vrmin[i], grad[iel][i]);
-          vrmax[i] = CS_MAX(vrmax[i], grad[iel][i]);
+          vrmin[i] = cs::min(vrmin[i], grad[iel][i]);
+          vrmax[i] = cs::max(vrmax[i], grad[iel][i]);
         }
       }
 
@@ -1487,8 +1487,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (int i = 0; i < 3; i++) {
-          vrmin[i] = CS_MIN(vrmin[i], -c_prop->val[iel] * grad[iel][i]);
-          vrmax[i] = CS_MAX(vrmax[i], -c_prop->val[iel] * grad[iel][i]);
+          vrmin[i] = cs::min(vrmin[i], -c_prop->val[iel] * grad[iel][i]);
+          vrmax[i] = cs::max(vrmax[i], -c_prop->val[iel] * grad[iel][i]);
         }
       }
 
@@ -1548,8 +1548,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (int i = 0; i < 3; i++) {
-            vrmin[i] = CS_MIN(vrmin[i], grad[iel][0]);
-            vrmax[i] = CS_MAX(vrmax[i], grad[iel][0]);
+            vrmin[i] = cs::min(vrmin[i], grad[iel][0]);
+            vrmax[i] = cs::max(vrmax[i], grad[iel][0]);
           }
         }
 
@@ -1571,8 +1571,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (int i = 0; i < 3; i++) {
-            vrmin[i] = CS_MIN(vrmin[i], -c_propi->val[iel] * grad[iel][i]);
-            vrmax[i] = CS_MAX(vrmax[i], -c_propi->val[iel] * grad[iel][i]);
+            vrmin[i] = cs::min(vrmin[i], -c_propi->val[iel] * grad[iel][i]);
+            vrmax[i] = cs::max(vrmax[i], -c_propi->val[iel] * grad[iel][i]);
           }
         }
 
@@ -1644,8 +1644,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (int i = 0; i < 3; i++) {
-          vrmin[i] = CS_MIN(vrmin[i], cpro_magfl[iel][i]);
-          vrmax[i] = CS_MAX(vrmax[i], cpro_magfl[iel][i]);
+          vrmin[i] = cs::min(vrmin[i], cpro_magfl[iel][i]);
+          vrmax[i] = cs::max(vrmax[i], cpro_magfl[iel][i]);
         }
       }
 
@@ -1708,8 +1708,8 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
         double valmax = w1[0];
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          valmin = CS_MIN(valmin, w1[iel]);
-          valmax = CS_MAX(valmax, w1[iel]);
+          valmin = cs::min(valmin, w1[iel]);
+          valmax = cs::max(valmax, w1[iel]);
         }
 
         cs_parall_min(1, CS_DOUBLE, &valmin);
@@ -2048,7 +2048,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       cs_parall_sum(1, CS_DOUBLE, &somje);
 
       coepot = cs_glob_elec_option->couimp * cs_glob_elec_option->pot_diff
-              / CS_MAX(somje, cs_math_epzero);
+              / cs::max(somje, cs_math_epzero);
       coepoa = coepot;
 
       if (coepot > 1.5)
@@ -2112,7 +2112,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
         else
           dtjm = dtj;
         dtjm = fabs(dtjm);
-        dtj = CS_MIN(dtj, dtjm);
+        dtj = cs::min(dtj, dtjm);
       }
       cs_parall_min(1, CS_DOUBLE, &dtj);
       bft_printf("DTJ %15.8E\n", dtj);
@@ -2163,7 +2163,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
 
     cs_parall_sum(1, CS_DOUBLE, &somje);
 
-    coepot = cs_glob_elec_option->puisim / CS_MAX(somje, cs_math_epzero);
+    coepot = cs_glob_elec_option->puisim / cs::max(somje, cs_math_epzero);
     double coefav = coepot;
 
     if (coepot > 1.5)

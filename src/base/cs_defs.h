@@ -689,6 +689,77 @@ cs_get_thread_id(void)
  * Public C++ templates
  *============================================================================*/
 
+namespace cs {
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Return absolute value of a number.
+ *
+ * This function is overloaded in cs_math.h for floating-point values.
+ *
+ * \tparam T value type
+ *
+ * \param[in]  a  value
+ *
+ * \return absolute value of a
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline T
+abs(const T  a)
+{
+  return ((a) <  0  ? -(a) : (a));
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Return minimum of two values.
+ *
+ * This function is overloaded in cs_math.h for floating-point values.
+ *
+ * \tparam T value type
+ *
+ * \param[in]  a   first value
+ * \param[in]  b   second value
+ *
+ * \return minimum of a and b
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline T
+min(const T  a,
+    const T  b)
+{
+  return ((a) < (b) ?  (a) : (b));
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Return maximum of two values.
+ *
+ * This function is overloaded in cs_math.h for floating-point values.
+ *
+ * \tparam T value type
+ *
+ * \param[in]  a   first value
+ * \param[in]  b   second value
+ *
+ * \return maximum of a and b
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline T
+max(const T  a,
+    const T  b)
+{
+  return ((a) > (b) ?  (a) : (b));
+}
+
+} // namespace cs
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get the cs_datatype_t from a typename

@@ -1859,13 +1859,13 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           if (extra->grad_tempf != nullptr ) {
             cs_real_t grad_n = cs_math_3_dot_product(extra->grad_tempf[cell_id],
                                                      face_norm);
-            if (CS_ABS(grad_n) < cs_math_epzero)
+            if (cs::abs(grad_n) < cs_math_epzero)
               rnt_ov_rnn = 0;
             else if (grad_n < 0.)
               rnt_ov_rnn *= -1.;
           }
           else if (extra->tstar != nullptr) { //define only at walls
-            if (CS_ABS(extra->tstar->val[face_id]) < cs_math_epzero)
+            if (cs::abs(extra->tstar->val[face_id]) < cs_math_epzero)
               rnt_ov_rnn = 0;
             else if (extra->tstar->val[face_id] < 0.)
               rnt_ov_rnn *= -1.;
@@ -2271,7 +2271,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
     = cs_glob_lagr_time_scheme->max_track_propagation_loops;
   /* particle displaced at init can be moved from any cell to any cell*/
   if (!resol_sde)
-    max_propagation_loops = CS_MAX(mesh->n_cells, max_propagation_loops);
+    max_propagation_loops = cs::max(mesh->n_cells, max_propagation_loops);
 
   /* local loops on the cell within a given proc
    * if either the deterministic virtual partiner or the stochastic particle
@@ -2615,7 +2615,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
     }
 
     cs_real_t remain_time = 1.;
-    t_intersect = CS_MIN(CS_ABS(rel_disp_intersect), 1.);
+    t_intersect = cs::min(cs::abs(rel_disp_intersect), 1.);
     /* may be use for cell-wise integration when rebound at boundary occurs */
     sum_t_intersect += t_intersect * (1. - sum_t_intersect);
 
@@ -3981,8 +3981,8 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
   int  max_perio_or_rank_crossed =
     cs_glob_lagr_time_scheme->max_perio_or_rank_crossed;
   if (!resol_sde)
-    max_perio_or_rank_crossed = CS_MAX(cs_glob_n_ranks,
-                                       max_perio_or_rank_crossed);
+    max_perio_or_rank_crossed = cs::max(cs_glob_n_ranks,
+                                        max_perio_or_rank_crossed);
   /* Main loop on particles: global propagation */
   while (continue_displacement) {
 
@@ -4340,7 +4340,7 @@ cs_lagr_test_wall_cell(const void                     *particle,
       const cs_nreal_t *normal = b_face_u_normal[f_id];
 
       /* [(x_f - x_p) . n ] / L */
-      cs_real_t dist_norm = CS_ABS(
+      cs_real_t dist_norm = cs::abs(
           cs_math_3_distance_dot_product(b_face_cog[f_id],
                                          particle_coord,
                                          normal)) / visc_length[f_id];

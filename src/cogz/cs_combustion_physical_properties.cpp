@@ -141,7 +141,7 @@ _physical_properties_update_bsh(const cs_combustion_gas_model_t  *cm)
     cs_real_t c_fm = cvar_fm[c_id];
     if (rt_model != CS_RAD_TRANSFER_NONE) {
       cs_real_t had = c_fm*hinfue + (1.-c_fm)*hinoxy;
-      kir = cs_math_fmax(-(cvar_h[c_id] - had), 0.0);
+      kir = cs::max(-(cvar_h[c_id] - had), 0.0);
     }
     else
       kir = 0.;

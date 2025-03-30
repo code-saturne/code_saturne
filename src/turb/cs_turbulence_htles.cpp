@@ -176,9 +176,9 @@ cs_turbulence_htles(void)
   cs_real_t *hybrid_fd_coeff = cs_field_by_name("hybrid_blend")->val;
 
   /* TEMP - TIME AVERAGED */
-  cs_real_t time_mean = CS_MAX(cs_glob_turb_hybrid_model->n_iter_mean
-                               * cs_glob_time_step->dt_ref,
-                               cs_glob_turb_hybrid_model->time_mean);
+  cs_real_t time_mean = cs::max(cs_glob_turb_hybrid_model->n_iter_mean
+                                * cs_glob_time_step->dt_ref,
+                                cs_glob_turb_hybrid_model->time_mean);
 
   cs_real_3_t *mean_vel = (cs_real_3_t *)cs_field_by_name("velocity_mean")->val;
   cs_real_3_t *mean_ui2 = (cs_real_3_t *)cs_field_by_name("ui2_mean")->val;
@@ -194,7 +194,7 @@ cs_turbulence_htles(void)
     cs_real_t xdmax = dlt_max[c_id];
 
     /* Dt divided by the exponential time filter width */
-    cs_real_t factor = dt[c_id] / CS_MIN(time_mean, cs_glob_time_step->t_cur);
+    cs_real_t factor = dt[c_id] / cs::min(time_mean, cs_glob_time_step->t_cur);
 
     /* Time averaged velocity magnitude */
     mean_u[c_id] += factor * (cs_math_3_norm(vel[c_id]) - mean_u[c_id]);
@@ -234,27 +234,27 @@ cs_turbulence_htles(void)
     /* Shielding function */
     cs_real_t xfs = 1.0;
     if (cs_glob_turb_hybrid_model->ishield == 1) {
-      cs_real_t xdist  = CS_MAX(w_dist[c_id], cs_math_epzero);
+      cs_real_t xdist  = cs::max(w_dist[c_id], cs_math_epzero);
       cs_real_t xsik   = 45.0 * pow(xnu, 0.75)/(pow(xpsi0*xepsm, 0.25)*xdist);
       cs_real_t xsid   = pow(3.0, 1.0/6.0)*xdmax/xdist;
-      xfs = 1.0 - tanh(CS_MAX(pow(xsik, 8.0),pow(xsid, 6.0)));
+      xfs = 1.0 - tanh(cs::max(pow(xsik, 8.0),pow(xsid, 6.0)));
     }
 
     /* Analytic energy ratio r */
     cs_real_t xbt0   = cs_turb_chtles_bt0;
     cs_real_t xdelta = pow(cell_f_vol[c_id], 1./3.);
     cs_real_t xus = xum + sqrt(d2s3)*sqrt(xkt);
-    cs_real_t xwc = CS_MIN(cs_math_pi/dt[c_id], xus*cs_math_pi/xdelta);
+    cs_real_t xwc = cs::min(cs_math_pi/dt[c_id], xus*cs_math_pi/xdelta);
     cs_real_t xrk = 1.0/xbt0 * pow(xus/sqrt(xkt), d2s3)
       *pow(xwc*xkt/(xpsi0*xepsm), -d2s3);
 
     /* Energy ratio */
     cs_real_t xr = 1.0;
     if (cs_glob_turb_hybrid_model->ishield == 1) {
-      xr  = (1.0 - xfs) + xfs*CS_MIN(1.0, xrk);
+      xr  = (1.0 - xfs) + xfs*cs::min(1.0, xrk);
     }
     else if (cs_glob_turb_hybrid_model->ishield == 0) {
-      xr  = CS_MIN(1.0, xrk);
+      xr  = cs::min(1.0, xrk);
     }
 
     /* Hybrid scheme (same for ICC) */
@@ -537,7 +537,7 @@ cs_htles_initialization(void) {
           cs_real_t dxyz = sqrt(pow(cnx,2) + pow(cny, 2) + pow(cnz, 2));
 
           /* Delta_max of the cell */
-          dmax = CS_MAX(dmax, dxyz);
+          dmax = cs::max(dmax, dxyz);
         }
       }
     }

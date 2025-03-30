@@ -951,7 +951,7 @@ cs_ctwr_log_balance(void)
     ct->q_l_in /= ct->surface_in;
     ct->p_out /= ct->surface_in;
 
-    if (CS_ABS(ct->q_h_out) > 1e-10) {
+    if (cs::abs(ct->q_h_out) > 1e-10) {
       ct->t_h_out /= ct->q_h_out;
       ct->h_h_out /= ct->q_h_out;
     }
@@ -1009,7 +1009,7 @@ cs_ctwr_log_balance(void)
     ct->q_l_out /= ct->surface_out;
     ct->p_in /= ct->surface_out;
 
-    if (CS_ABS(ct->q_h_in) > 1e-10) {
+    if (cs::abs(ct->q_h_in) > 1e-10) {
       ct->t_h_in /= ct->q_h_in;
       ct->h_h_in /= ct->q_h_in;
     }
@@ -1017,10 +1017,10 @@ cs_ctwr_log_balance(void)
 
     /* Writings */
     if (cs_glob_rank_id <= 0) {
-      if (CS_ABS(ct->h_l_in - ct->h_l_out)> 1.e-6) {
+      if (cs::abs(ct->h_l_in - ct->h_l_out) > 1.e-6) {
         FILE *f = fopen(ct->file_name, "a");
-        cs_real_t aux = cs_math_fabs(  (ct->h_h_out - ct->h_h_in)
-            / (ct->h_l_in - ct->h_l_out));
+        cs_real_t aux = cs::abs(  (ct->h_h_out - ct->h_h_in)
+                                / (ct->h_l_in - ct->h_l_out));
         fprintf(f,
             "%10f\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t"
             "%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\n",

@@ -59,6 +59,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
@@ -186,9 +187,9 @@ _display_histogram_txt(cs_real_t                   var_min,
   fprintf(w->f, _("    minimum value =         %10.5e\n"), (double)var_min);
   fprintf(w->f, _("    maximum value =         %10.5e\n\n"), (double)var_max);
 
-  var_step = CS_ABS(var_max - var_min) / w->n_sub;
+  var_step = cs::abs(var_max - var_min) / w->n_sub;
 
-  if (CS_ABS(var_max - var_min) > 0.) {
+  if (cs::abs(var_max - var_min) > 0.) {
 
     /* Number of elements in each subdivision */
 
@@ -226,7 +227,7 @@ _display_histogram_tex(cs_real_t                   var_min,
                        fvm_to_histogram_writer_t  *w,
                        char                       *var_name)
 {
-  double var_step = CS_ABS(var_max - var_min) / w->n_sub;
+  double var_step = cs::abs(var_max - var_min) / w->n_sub;
   int i;
 
   if (var_step > 0) {
@@ -295,8 +296,8 @@ _compute_local_minmax(cs_lnum_t        n_vals,
   cs_real_t  _min = DBL_MAX, _max = -DBL_MAX;
 
   for (i = 0; i < n_vals; i++) {
-    _min = CS_MIN(_min, var[i]);
-    _max = CS_MAX(_max, var[i]);
+    _min = cs::min(_min, var[i]);
+    _max = cs::max(_max, var[i]);
   }
 
   *min = _min;
@@ -406,9 +407,9 @@ _histogram(cs_lnum_t                    n_vals,
   for (j = 0; j < w->n_sub; j++)
     count[j] = 0;
 
-  if (CS_ABS(max - min) > 0.) {
+  if (cs::abs(max - min) > 0.) {
 
-    step = CS_ABS(max - min) / w->n_sub;
+    step = cs::abs(max - min) / w->n_sub;
 
     /* Loop on values */
 

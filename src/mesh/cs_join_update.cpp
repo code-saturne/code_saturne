@@ -280,7 +280,7 @@ _sync_single_vertices(const cs_join_select_t  *selection,
   MPI_Status   *status = nullptr;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  loc_rank = cs::max(cs_glob_rank_id, 0);
 
   bft_printf("\n  Synchronization of the \"single\" elements after the merge"
              " step.\n");
@@ -417,7 +417,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
   MPI_Status   *status = nullptr;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  loc_rank = cs::max(cs_glob_rank_id, 0);
   const cs_join_sync_t  *s_edges = selection->s_edges;
   const cs_join_sync_t  *c_edges = selection->c_edges;
 
@@ -1269,7 +1269,7 @@ _update_face_state(cs_join_select_t        *selection,
     for (j = s; j < e; j++) {
 
       v_state = states[mesh->b_face_vtx_lst[j]];
-      f_state = CS_MAX(f_state, v_state);
+      f_state = cs::max(f_state, v_state);
       if (v_state == CS_JOIN_STATE_NEW)
         have_new = true;
 
@@ -1296,7 +1296,7 @@ _update_face_state(cs_join_select_t        *selection,
     for (j = s; j < e; j++) {
 
       v_state = states[mesh->i_face_vtx_lst[j]];
-      f_state = CS_MAX(f_state, v_state);
+      f_state = cs::max(f_state, v_state);
       if (v_state == CS_JOIN_STATE_NEW)
         have_new = true;
 
@@ -1618,12 +1618,12 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
     edge_builder->v2v_sub_idx[i] = 0;
 
   for (i = 0; i < join_mesh->n_faces; i++)
-    am_max = CS_MAX(am_max,
-                    join_mesh->face_vtx_idx[i+1]-join_mesh->face_vtx_idx[i]);
+    am_max = cs::max(am_max,
+                     join_mesh->face_vtx_idx[i+1]-join_mesh->face_vtx_idx[i]);
 
   for (i = 0; i < join_select->n_faces; i++) {
     j = join_select->faces[i] - 1;
-    bm_max = CS_MAX(bm_max, mesh->b_face_vtx_idx[j+1]-mesh->b_face_vtx_idx[j]);
+    bm_max = cs::max(bm_max, mesh->b_face_vtx_idx[j+1]-mesh->b_face_vtx_idx[j]);
   }
 
   CS_MALLOC(am_tmp, am_max + 1, cs_lnum_t);
@@ -1715,7 +1715,7 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
                         (int)n_subs, (long)edge_builder->v2v_sub_idx[edge_id+1]);
             else
               edge_builder->v2v_sub_idx[edge_id+1] =
-                CS_MAX(n_subs, edge_builder->v2v_sub_idx[edge_id+1]);
+                cs::max(n_subs, edge_builder->v2v_sub_idx[edge_id+1]);
 
           }
 
@@ -1978,7 +1978,7 @@ _update_adj_face_connect(cs_lnum_t              n_adj_faces,
     new_f2v_idx[i] = 0;
 
   for (i = 0; i < n_faces; i++)
-    max = CS_MAX(max, f2v_idx[i+1] - f2v_idx[i]);
+    max = cs::max(max, f2v_idx[i+1] - f2v_idx[i]);
 
   CS_MALLOC(tmp, max + 1, cs_lnum_t);
 
@@ -2200,7 +2200,7 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  loc_rank = cs::max(cs_glob_rank_id, 0);
   const cs_gnum_t  *gnum_rank_index = join_select->compact_rank_index;
   const cs_gnum_t  loc_rank_s = join_select->compact_rank_index[loc_rank];
   const cs_gnum_t  loc_rank_e = join_select->compact_rank_index[loc_rank+1];
@@ -2532,7 +2532,7 @@ _print_error_info(cs_lnum_t               jfnum,
     FILE  *dbg_file = nullptr;
     char  *fullname = nullptr;
 
-    const  int  rank_id = CS_MAX(cs_glob_rank_id, 0);
+    const  int  rank_id = cs::max(cs_glob_rank_id, 0);
 
     len = strlen("JoinDBG_ErrorOrient.dat") + 4 + 1;
     CS_MALLOC(fullname, len, char);
@@ -3017,7 +3017,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   cs_gnum_t  *new_fgnum = nullptr, *gtmp = nullptr;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  rank = cs::max(cs_glob_rank_id, 0);
   const cs_gnum_t  rank_start = join_select->compact_rank_index[rank] + 1;
   const cs_gnum_t  rank_end = join_select->compact_rank_index[rank+1] + 1;
 
@@ -3034,11 +3034,11 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
   max_size = 0;
   for (i = 0; i < n_ib_faces; i++)
-    max_size = CS_MAX(max_size,
-                      mesh->b_face_vtx_idx[i+1]-mesh->b_face_vtx_idx[i]);
+    max_size = cs::max(max_size,
+                       mesh->b_face_vtx_idx[i+1]-mesh->b_face_vtx_idx[i]);
   for (i = 0; i < jmesh->n_faces; i++)
-    max_size = CS_MAX(max_size,
-                      jmesh->face_vtx_idx[i+1]-jmesh->face_vtx_idx[i]);
+    max_size = cs::max(max_size,
+                       jmesh->face_vtx_idx[i+1]-jmesh->face_vtx_idx[i]);
 
   CS_MALLOC(gtmp, 2*(max_size+1), cs_gnum_t);
   CS_MALLOC(ltmp, max_size, cs_lnum_t);
@@ -3441,7 +3441,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   char  *_new_face_r_gen = mesh->i_face_r_gen;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  rank = cs::max(cs_glob_rank_id, 0);
   const cs_gnum_t  rank_start = join_select->compact_rank_index[rank] + 1;
   const cs_gnum_t  rank_end = join_select->compact_rank_index[rank+1] + 1;
 
@@ -3459,12 +3459,12 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   max_size = 0;
   for (i = 0; i < jmesh->n_faces; i++)
     if (new_face_type[i] == CS_JOIN_FACE_INTERIOR)
-      max_size = CS_MAX(max_size,
-                        jmesh->face_vtx_idx[i+1]-jmesh->face_vtx_idx[i]);
+      max_size = cs::max(max_size,
+                         jmesh->face_vtx_idx[i+1]-jmesh->face_vtx_idx[i]);
   for (i = 0; i < join_select->n_faces; i++) {
     id = join_select->faces[i] - 1;
-    max_size = CS_MAX(max_size,
-                      mesh->b_face_vtx_idx[id+1]-mesh->b_face_vtx_idx[id]);
+    max_size = cs::max(max_size,
+                       mesh->b_face_vtx_idx[id+1]-mesh->b_face_vtx_idx[id]);
   }
 
   CS_MALLOC(dtmp, 6*(max_size+1), double);
@@ -3883,7 +3883,7 @@ _discard_extra_multiple_b_faces(cs_join_param_t          join_param,
   if (join_param.perio_type != FVM_PERIODICITY_NULL)
     return n_discard;
 
-  const int  rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  rank = cs::max(cs_glob_rank_id, 0);
   const cs_gnum_t  rank_start = join_select->compact_rank_index[rank] + 1;
   const cs_gnum_t  rank_end = join_select->compact_rank_index[rank+1] + 1;
 
@@ -4512,12 +4512,12 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
   FILE *logfile = cs_glob_join_log;
 
   for (i = 0; i < mesh->n_b_faces; i++)
-    max_connect = CS_MAX(max_connect,
-                         mesh->b_face_vtx_idx[i+1] - mesh->b_face_vtx_idx[i]);
+    max_connect = cs::max(max_connect,
+                          mesh->b_face_vtx_idx[i+1] - mesh->b_face_vtx_idx[i]);
 
   for (i = 0; i < mesh->n_i_faces; i++)
-    max_connect = CS_MAX(max_connect,
-                         mesh->i_face_vtx_idx[i+1] - mesh->i_face_vtx_idx[i]);
+    max_connect = cs::max(max_connect,
+                          mesh->i_face_vtx_idx[i+1] - mesh->i_face_vtx_idx[i]);
 
   CS_MALLOC(kill, max_connect + 2, cs_lnum_t);
   CS_MALLOC(connect, max_connect + 2, cs_lnum_t);

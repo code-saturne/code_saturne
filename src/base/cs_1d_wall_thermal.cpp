@@ -199,8 +199,8 @@ _1d_wall_thermal_local_models_init(void)
 
   /* Computation of nmxt1d */
   for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
-    _1d_wall_thermal.nmxt1d = CS_MAX(_1d_wall_thermal.local_models[ii].nppt1d,
-                                     _1d_wall_thermal.nmxt1d);
+    _1d_wall_thermal.nmxt1d = cs::max(_1d_wall_thermal.local_models[ii].nppt1d,
+                                      _1d_wall_thermal.nmxt1d);
   }
 
   /* if necessary, sum over all the processors */
@@ -546,8 +546,8 @@ cs_1d_wall_thermal_read(void)
 
   /* Computation of nmxt1d */
   for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
-    _1d_wall_thermal.nmxt1d = CS_MAX(_1d_wall_thermal.local_models[ii].nppt1d,
-                                     _1d_wall_thermal.nmxt1d);
+    _1d_wall_thermal.nmxt1d = cs::max(_1d_wall_thermal.local_models[ii].nppt1d,
+                                      _1d_wall_thermal.nmxt1d);
   }
 
   /* if necessary, sum over all the processors */
@@ -1186,10 +1186,10 @@ cs_1d_wall_thermal_log(void)
     cs_real_t Tp_f = (_1d_wall_thermal.local_models[ii].t)[0];
     cs_lnum_t nppt1d = _1d_wall_thermal.local_models[ii].nppt1d;
     cs_real_t Tp_ext  = (_1d_wall_thermal.local_models[ii].t)[nppt1d-1];
-    Tp_f_min = cs_math_fmin(Tp_f_min, Tp_f);
-    Tp_f_max = cs_math_fmax(Tp_f_max, Tp_f);
-    Tp_ext_min = cs_math_fmin(Tp_ext_min, Tp_ext);
-    Tp_ext_max = cs_math_fmax(Tp_ext_max, Tp_ext);
+    Tp_f_min = cs::min(Tp_f_min, Tp_f);
+    Tp_f_max = cs::max(Tp_f_max, Tp_f);
+    Tp_ext_min = cs::min(Tp_ext_min, Tp_ext);
+    Tp_ext_max = cs::max(Tp_ext_max, Tp_ext);
   }
 
   if (cs_glob_rank_id >= 0) {

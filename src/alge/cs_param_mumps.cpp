@@ -42,6 +42,7 @@
 
 #include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
@@ -256,7 +257,7 @@ cs_param_mumps_log(const char              *name,
 
   if (mumpsp->ir_steps != 0)
     cs_log_printf(CS_LOG_SETUP, "  * %s | Iterative_Refinement:      %d\n",
-                  name, CS_ABS(mumpsp->ir_steps));
+                  name, cs::abs(mumpsp->ir_steps));
 
   if (fabs(mumpsp->blr_threshold) > FLT_MIN)
     cs_log_printf(CS_LOG_SETUP, "  * %s | BLR_threshold:             %e\n",

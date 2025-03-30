@@ -234,13 +234,12 @@ cs_user_ibm_modify(const cs_mesh_t            *mesh,
       np[idim] = c_w_face_normal[c_id][idim];
 
     cs_real_t nn = c_w_face_surf[c_id];
-    nn = cs_math_fmax(nn, 1.e-20);
+    nn = cs::max(nn, 1.e-20);
 
     for (int idim = 0; idim < 3; idim++)
       np[idim] /= nn;
 
-    cs_real_t cc = cs_math_3_dot_product(convective_term[c_id], np);
-    cc = cs_math_fabs(cc);
+    cs_real_t cc = cs::abs(cs_math_3_dot_product(convective_term[c_id], np));
     source_term[c_id] = cc;
   }
 
@@ -276,12 +275,12 @@ cs_user_ibm_modify(const cs_mesh_t            *mesh,
     if (pori > 0.9999 && porj < 0.0001) {
       cs_real_t surfi = c_w_face_surf[c_id0];
       cs_real_t ci = source_term[c_id0];
-      cs_real_t gama = coeff * ci / cs_math_fmax(porj, 0.5);
+      cs_real_t gama = coeff * ci / cs::max(porj, 0.5);
       CS_F_(poro)->val[c_id1] += gama * surfi / (ros * cell_vol[c_id1]) * dt;
     } else if (porj > 0.9999 && pori < 0.0001) {
       cs_real_t surfj = c_w_face_surf[c_id1];
       cs_real_t cj = source_term[c_id1];
-      cs_real_t gama = coeff * cj / cs_math_fmax(pori, 0.5);
+      cs_real_t gama = coeff * cj / cs::max(pori, 0.5);
       CS_F_(poro)->val[c_id0] += gama * surfj / (ros * cell_vol[c_id0]) * dt;
     }
   }
@@ -290,7 +289,7 @@ cs_user_ibm_modify(const cs_mesh_t            *mesh,
     cs_real_t surf = c_w_face_surf[c_id];
     cs_real_t cc = source_term[c_id];
     cs_real_t por = por_init[c_id];
-    cs_real_t gama = coeff * cc / cs_math_fmax(por, 0.5);
+    cs_real_t gama = coeff * cc / cs::max(por, 0.5);
     CS_F_(poro)->val[c_id] += gama * surf / (ros * cell_vol[c_id]) * dt;
   }
 

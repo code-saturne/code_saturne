@@ -117,7 +117,7 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
   memset(cb->ids, 0, n_max*sizeof(int));
 
   int  size = n_max*(n_max+1);
-  size = CS_MAX(7*n_max, size);
+  size = cs::max(7*n_max, size);
   BFT_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(cs_real_t));
 

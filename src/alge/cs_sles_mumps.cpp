@@ -62,6 +62,7 @@
 
 #include "base/cs_array.h"
 #include "base/cs_base.h"
+#include "base/cs_math.h"
 #include "base/cs_log.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_halo.h"
@@ -2337,8 +2338,8 @@ _automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
     if (status >= 0)
       max_mem_space = sys.freeram/(1024*1024*sys.mem_unit);
 
-    unsigned long  mem_space = 90*CS_MIN(2*max_estimated_mem,
-                                         max_mem_space) / 100;
+    unsigned long  mem_space = 90*cs::min(2*max_estimated_mem,
+                                          max_mem_space) / 100;
 
     mumps->ICNTL(23) = mem_space;
 
@@ -2621,8 +2622,8 @@ _automatic_smumps_settings_before_facto(const cs_param_sles_t *slesp,
     if (status >= 0)
       max_mem_space = sys.freeram/(1024*1024*sys.mem_unit);
 
-    unsigned long  mem_space = 90*CS_MIN(2*max_estimated_mem,
-                                         max_mem_space) / 100;
+    unsigned long  mem_space = 90*cs::min(2*max_estimated_mem,
+                                          max_mem_space) / 100;
 
     mumps->ICNTL(23) = mem_space;
 

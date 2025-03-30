@@ -738,7 +738,7 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
 
             double  c_l_max = c_l[v_id] + m_pcp[j]/(theta_c*pvol_vc[j]);
 
-            c_l_max = CS_MIN(c_star, c_l_max);
+            c_l_max = cs::min(c_star, c_l_max);
             delta_m = theta_c*(c_l_max - c_l[v_id])*pvol_vc[j];
             m_pcp[j] -= delta_m;
             m_l_vc[j] += delta_m;

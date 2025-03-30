@@ -289,7 +289,7 @@ _free_surface(const cs_domain_t  *domain,
         0.5 * (b_face_cog[face_id][2] - vtx_coord[v_id0][2])
           + 0.5 * (b_face_cog[face_id][2] - vtx_coord[v_id1][2])
       };
-      cs_real_t dz = CS_ABS(cs_math_3_dot_product(normal, e_cog));
+      cs_real_t dz = cs::abs(cs_math_3_dot_product(normal, e_cog));
       cs_real_3_t e_cog_hor;
       cs_math_3_orthogonal_projection(normal, e_cog, e_cog_hor);
       cs_real_t dx = cs_math_3_norm(e_cog_hor);
@@ -297,8 +297,8 @@ _free_surface(const cs_domain_t  *domain,
       if (dz > dx)
         f_need_filter = 1;
 
-      f_has_max = CS_MAX(f_has_max, _is_loc_max[v_id0]);
-      f_has_min = CS_MAX(f_has_min, _is_loc_min[v_id0]);
+      f_has_max = cs::max(f_has_max, _is_loc_max[v_id0]);
+      f_has_min = cs::max(f_has_min, _is_loc_min[v_id0]);
     }
 
     if ((f_has_max > 0.5 && f_has_min > 0.5) || f_need_filter == 1) {

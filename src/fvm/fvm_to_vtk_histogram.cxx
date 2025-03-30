@@ -75,6 +75,7 @@
 
 #include "fvm/fvm_to_histogram.h"
 
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
@@ -115,7 +116,7 @@ fvm_to_vtk_display_histogram_png(cs_real_t                   var_min,
                                  fvm_to_histogram_writer_t  *w,
                                  char                       *var_name)
 {
-  double var_step = CS_ABS(var_max - var_min) / w->n_sub;
+  double var_step = cs::abs(var_max - var_min) / w->n_sub;
 
   /* If non-zero histogram */
   if (var_step > 0) {

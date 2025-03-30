@@ -127,11 +127,11 @@ _coal_solve_matrix(int     ndim,
 
   for (int ii = 0; ii < ndim; ii++) {
     int iw = ii;
-    double ww = cs_math_fabs(aa[ii*ndim + ii]);
+    double ww = cs::abs(aa[ii*ndim + ii]);
     for (int jj = ii; jj < ndim; jj++) {
-      if (cs_math_fabs(aa[ii*ndim + jj]) > ww) {
+      if (cs::abs(aa[ii*ndim + jj]) > ww) {
         iw = jj;
-        ww = cs_math_fabs(aa[ii*ndim + jj]);
+        ww = cs::abs(aa[ii*ndim + jj]);
       }
     }
     if (ww <= epsil)  {
@@ -159,7 +159,7 @@ _coal_solve_matrix(int     ndim,
   }
 
   if (retcode != 1) {
-    if (cs_math_fabs(aa[ndim*ndim - 1]) < epsil) {
+    if (cs::abs(aa[ndim*ndim - 1]) < epsil) {
       retcode = 1;
     }
     else {

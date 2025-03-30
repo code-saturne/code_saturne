@@ -91,7 +91,7 @@ cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
 
   /*alpha_c=0.35;
     lbd0=4.0e-4;
-    delta_sat=CS_ABS(alpha-alpha_eq);
+    delta_sat=cs::abs(alpha-alpha_eq);
     epsilon_a=alpha/alpha_c;
     tps_relax=lbd0   *   exp(-delta_sat*delta_sat/1.0e-3)   *   exp(-epsilon_a*epsilon_a*epsilon_a);*/
 
@@ -101,7 +101,7 @@ cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
 
   /*alpha_c=0.42;
     lbd0=3.0e-5;
-    delta_sat=CS_ABS(alpha-alpha_eq);
+    delta_sat=cs::abs(alpha-alpha_eq);
     epsilon_a=alpha/alpha_c;
     tps_relax=lbd0   *   exp(-delta_sat*delta_sat/5.e-4)  *   exp(-epsilon_a*epsilon_a);*/
 }

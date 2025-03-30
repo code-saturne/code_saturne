@@ -338,7 +338,7 @@ cs_local_time_step_compute(int  itrale)
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         w3[c_id] = cs_math_3_dot_product(grad[c_id], gxyz) / crom[c_id];
-        w3[c_id] = 1.0 / sqrt(cs_math_fmax(cs_math_epzero, w3[c_id]));
+        w3[c_id] = 1.0 / sqrt(cs::max(cs_math_epzero, w3[c_id]));
       }
 
       /* Free memory */
@@ -400,7 +400,7 @@ cs_local_time_step_compute(int  itrale)
             cs_real_t d_vol = (cs_mesh_quantities_cell_is_active(fvq, c_id)) ?
               1.0 / cell_f_vol[c_id] : 0;
             w1[c_id] =   coumax
-                       / cs_math_fmax(dam[c_id] * d_vol, cs_math_epzero);
+                       / cs::max(dam[c_id] * d_vol, cs_math_epzero);
           }
 
         }
@@ -411,8 +411,8 @@ cs_local_time_step_compute(int  itrale)
             cs_real_t d_vol = (cs_mesh_quantities_cell_is_active(fvq, c_id)) ?
               1.0 / cell_f_vol[c_id] : 0;
             w1[c_id] =   coumax
-                       / cs_math_fmax(dam[c_id] * d_vol / crom[c_id],
-                                      cs_math_epzero);
+                       / cs::max(dam[c_id] * d_vol / crom[c_id],
+                                 cs_math_epzero);
           }
 
         }
@@ -421,7 +421,7 @@ cs_local_time_step_compute(int  itrale)
         if (idtvar == CS_TIME_STEP_ADAPTIVE)  {
           cs_real_t w1min = cs_math_big_r;
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            w1min = cs_math_fmin(w1min, w1[c_id]);
+            w1min = cs::min(w1min, w1[c_id]);
 
           cs_parall_min(1, CS_REAL_TYPE, &w1min);
 
@@ -461,7 +461,7 @@ cs_local_time_step_compute(int  itrale)
           cs_real_t d_vol = (cs_mesh_quantities_cell_is_active(fvq, c_id)) ?
             1.0 / cell_f_vol[c_id] : 0;
           cs_real_t w2_l = dam[c_id] * d_vol / crom[c_id];
-          w2[c_id] = foumax / cs_math_fmax(w2_l, cs_math_epzero);
+          w2[c_id] = foumax / cs::max(w2_l, cs_math_epzero);
         }
 
         /* Uniform time step: we take the minimum of the constraint */
@@ -469,7 +469,7 @@ cs_local_time_step_compute(int  itrale)
         if (idtvar == 1) {
           cs_real_t w2min = cs_math_big_r;
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            w2min = cs_math_fmin(w2min, w2[c_id]);
+            w2min = cs::min(w2min, w2[c_id]);
 
           cs_parall_min(1, CS_REAL_TYPE, &w2min);
 
@@ -497,7 +497,7 @@ cs_local_time_step_compute(int  itrale)
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           dam[c_id] =   cflmmx
-                      / cs_math_fmax(wcf[c_id], cs_math_epzero);
+                      / cs::max(wcf[c_id], cs_math_epzero);
         }
 
         /* Uniform time step: we take the minimum of ther constraint */
@@ -505,7 +505,7 @@ cs_local_time_step_compute(int  itrale)
         if (idtvar == CS_TIME_STEP_ADAPTIVE) {
           cs_real_t w3min = cs_math_big_r;
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            w3min = cs_math_fmin(w3min, dam[c_id]);
+            w3min = cs::min(w3min, dam[c_id]);
 
           cs_parall_min(1, CS_REAL_TYPE, &w3min);
 
@@ -527,7 +527,7 @@ cs_local_time_step_compute(int  itrale)
 
         if (icou == 1 && ifou == 1) {
           for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-            w1[c_id] = cs_math_fmin(w1[c_id], w2[c_id]);
+            w1[c_id] = cs::min(w1[c_id], w2[c_id]);
         }
         else if (icou == 0 && ifou == 1) {
           for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
@@ -539,7 +539,7 @@ cs_local_time_step_compute(int  itrale)
 
         if (icoucf == 1) {
           for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-            w1[c_id] = cs_math_fmin(w1[c_id], dam[c_id]);
+            w1[c_id] = cs::min(w1[c_id], dam[c_id]);
         }
 
         /* Time step computation
@@ -552,7 +552,7 @@ cs_local_time_step_compute(int  itrale)
 
           if (w1[c_id] >= dt[c_id]) {
             const cs_real_t unpvdt = 1.0 + cs_glob_time_step_options->varrdt;
-            dt[c_id] = cs_math_fmin(unpvdt*dt[c_id], w1[c_id]);
+            dt[c_id] = cs::min(unpvdt*dt[c_id], w1[c_id]);
           }
           else
             dt[c_id] = w1[c_id];
@@ -577,8 +577,8 @@ cs_local_time_step_compute(int  itrale)
         cs_real_t vmax = dt[0];
 
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          vmin = cs_math_fmin(vmin, dt[c_id]);
-          vmax = cs_math_fmax(vmax, dt[c_id]);
+          vmin = cs::min(vmin, dt[c_id]);
+          vmax = cs::max(vmax, dt[c_id]);
           if (dt[c_id] > w3[c_id])  {
             nclptr = nclptr + 1;
             dt[c_id] = w3[c_id];
@@ -598,7 +598,7 @@ cs_local_time_step_compute(int  itrale)
         if (idtvar == CS_TIME_STEP_ADAPTIVE) {
           cs_real_t w3min = cs_math_big_r;
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            w3min = cs_math_fmin(w3min, dt[c_id]);
+            w3min = cs::min(w3min, dt[c_id]);
 
           cs_parall_min(1, CS_REAL_TYPE, &w3min);
 
@@ -670,8 +670,8 @@ cs_local_time_step_compute(int  itrale)
 
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-          vmin = cs_math_fmin(vmin, dt[c_id]);
-          vmax = cs_math_fmax(vmax, dt[c_id]);
+          vmin = cs::min(vmin, dt[c_id]);
+          vmax = cs::max(vmax, dt[c_id]);
 
           if (dt[c_id] > dtmax) {
             icfmax = icfmax + 1;
@@ -765,8 +765,8 @@ cs_local_time_step_compute(int  itrale)
           }
         }
 
-        const cs_lnum_t min_c = cs_math_fmax(icfmin, 0);
-        const cs_lnum_t max_c = cs_math_fmax(icfmax, 0);
+        const cs_lnum_t min_c = cs::max(icfmin, 0);
+        const cs_lnum_t max_c = cs::max(icfmax, 0);
 
         cs_real_t xyzmin[3];
         xyzmin[0] = cell_f_cen[min_c][0];
@@ -830,7 +830,7 @@ cs_local_time_step_compute(int  itrale)
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       dt[c_id] =   relaxv * crom[c_id] * cell_f_vol[c_id]
-                 / cs_math_fmax(dt[c_id], cs_math_epzero);
+                 / cs::max(dt[c_id], cs_math_epzero);
     }
 
   }
@@ -1116,8 +1116,8 @@ cs_courant_fourier_compute(void)
         }
       }
 
-      const cs_lnum_t min_c = cs_math_fmax(icfmin, 0);
-      const cs_lnum_t max_c = cs_math_fmax(icfmax, 0);
+      const cs_lnum_t min_c = cs::max(icfmin, 0);
+      const cs_lnum_t max_c = cs::max(icfmax, 0);
 
       cs_real_t xyzmin[3];
       xyzmin[0] = cell_f_cen[min_c][0];

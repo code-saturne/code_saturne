@@ -241,7 +241,7 @@ cs_parameters_error_header(cs_parameter_error_behavior_t   err_behavior,
 
   for (size_t i = 0; i < 80 && i < l; i++)
     underline[i] = '-';
-  underline[CS_MIN(l,80)] = '\0';
+  underline[cs::min(l, (size_t)80)] = '\0';
   cs_log_printf(log_id, "%s\n", underline);
 
   if (err_behavior > CS_WARNING)
@@ -693,7 +693,7 @@ cs_parameters_is_in_list_double(cs_parameter_error_behavior_t   err_behavior,
 
   if (enum_values != nullptr) {
     for (int i = 0; i < enum_size; i++) {
-      if (CS_ABS(param_value - enum_values[i]) > cs_math_epzero)
+      if (cs::abs(param_value - enum_values[i]) > cs_math_epzero)
         return;
     }
   }
@@ -744,7 +744,7 @@ cs_parameters_is_equal_double(cs_parameter_error_behavior_t   err_behavior,
                               double                          param_value,
                               double                          std_value)
 {
-  if (CS_ABS(param_value-std_value) > cs_math_epzero) {
+  if (cs::abs(param_value-std_value) > cs_math_epzero) {
 
     cs_parameters_error_header(err_behavior, section_desc);
 
@@ -2127,15 +2127,16 @@ cs_parameters_check(void)
       CS_FREE(f_desc);
 
       if (   eqp->ischcv == 0
-          && CS_ABS(eqp->blencv) > cs_math_epzero) {
+          && cs::abs(eqp->blencv) > cs_math_epzero) {
         f_desc = _field_section_desc(f, "Second order linear upwind "
-                                        "enabled for variable ");
+                                        "enabled for variable");
 
-        cs_parameters_is_equal_int(CS_ABORT_DELAYED,
-                                   _(f_desc),
-                                   "equation param ircflu (fluxes reconstruction)",
-                                   eqp->ircflu,
-                                   1);
+        cs_parameters_is_equal_int
+          (CS_ABORT_DELAYED,
+           _(f_desc),
+           "equation param ircflu (fluxes reconstruction)",
+           eqp->ircflu,
+           1);
 
         CS_FREE(f_desc);
       }

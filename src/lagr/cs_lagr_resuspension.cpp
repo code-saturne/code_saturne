@@ -500,7 +500,7 @@ cs_lagr_resuspension(void)
           else {
             cs_random_poisson(1, ncont_pp, &ncont);
           }
-          ncont = CS_MAX(1, ncont);
+          ncont = cs::max(1, ncont);
           cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES,
                                     ncont);
 

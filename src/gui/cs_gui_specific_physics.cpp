@@ -48,26 +48,30 @@
 
 #include "fvm/fvm_selector.h"
 
-#include "atmo/cs_atmo.h"
 #include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_math.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_properties.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_selector.h"
+#include "base/cs_vof.h"
+
+#include "gui/cs_gui_util.h"
+#include "gui/cs_gui.h"
+
+#include "mesh/cs_mesh.h"
+
+#include "pprt/cs_physical_model.h"
+#include "atmo/cs_atmo.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_thermal_system.h"
 #include "cfbl/cs_cf_model.h"
 #include "comb/cs_coal.h"
 #include "cogz/cs_combustion_gas.h"
-#include "gui/cs_gui_util.h"
-#include "gui/cs_gui.h"
-#include "mesh/cs_mesh.h"
-#include "base/cs_field.h"
-#include "base/cs_field_pointer.h"
-#include "cdo/cs_param_cdo.h"
-#include "base/cs_parameters.h"
-#include "pprt/cs_physical_model.h"
-#include "base/cs_selector.h"
-#include "base/cs_physical_properties.h"
-#include "base/cs_physical_constants.h"
-#include "rayt/cs_rad_transfer.h"
-#include "cdo/cs_thermal_system.h"
 #include "elec/cs_elec_model.h"
-#include "base/cs_vof.h"
+#include "rayt/cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1299,13 +1303,13 @@ cs_gui_coal_model(void)
     for (int ioxy = 0; ioxy < cm->noxyd; ioxy++) {
       cs_real_t coef = 100.;
       if (cm->oxyo2[ioxy] > 0.)
-        coef = CS_MIN(coef, cm->oxyo2[ioxy]);
+        coef = cs::min(coef, cm->oxyo2[ioxy]);
       if (cm->oxyn2[ioxy] > 0.)
-        coef = CS_MIN(coef, cm->oxyn2[ioxy]);
+        coef = cs::min(coef, cm->oxyn2[ioxy]);
       if (cm->oxyh2o[ioxy] > 0.)
-        coef = CS_MIN(coef, cm->oxyh2o[ioxy]);
+        coef = cs::min(coef, cm->oxyh2o[ioxy]);
       if (cm->oxyco2[ioxy] > 0.)
-        coef = CS_MIN(coef, cm->oxyco2[ioxy]);
+        coef = cs::min(coef, cm->oxyco2[ioxy]);
 
       cm->oxyo2 [ioxy] /= coef;
       cm->oxyn2 [ioxy] /= coef;

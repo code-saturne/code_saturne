@@ -50,6 +50,7 @@
 #include "base/cs_all_to_all.h"
 #include "base/cs_block_dist.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
@@ -535,7 +536,7 @@ _spread_tag(cs_lnum_t              n_vertices,
 
     if (v1_gnum != v2_gnum) {
 
-      cs_gnum_t  min_gnum = CS_MIN(v1_gnum, v2_gnum);
+      cs_gnum_t  min_gnum = cs::min(v1_gnum, v2_gnum);
 
       vtx_tag[v1_id] = min_gnum;
       vtx_tag[v2_id] = min_gnum;
@@ -647,7 +648,7 @@ _global_spread(cs_lnum_t              block_size,
 
   for (cs_lnum_t i = 0; i < n_recv; i++) {
     cs_lnum_t  cur_id = recv2glob[i];
-    glob_vtx_tag[cur_id] = CS_MIN(glob_vtx_tag[cur_id], recv_glob_buffer[i]);
+    glob_vtx_tag[cur_id] = cs::min(glob_vtx_tag[cur_id], recv_glob_buffer[i]);
   }
 
   int local_value = _is_spread_not_converged(block_size,
@@ -682,7 +683,7 @@ _global_spread(cs_lnum_t              block_size,
     /* Update vtx_tag */
 
     for (cs_lnum_t i = 0; i < n_vertices; i++)
-      vtx_tag[i] = CS_MIN(send_glob_buffer[i], vtx_tag[i]);
+      vtx_tag[i] = cs::min(send_glob_buffer[i], vtx_tag[i]);
 
     return true;
 
@@ -718,7 +719,7 @@ _parall_tag_init(cs_block_dist_info_t    bi,
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
   const cs_gnum_t  _n_ranks = n_ranks, _local_rank = local_rank;
 
   /* Allocate and initialize vtx_tag associated to the local rank */
@@ -837,7 +838,7 @@ _tag_equiv_vertices(cs_gnum_t              n_g_vertices_tot,
     cs_gnum_t  *glob_vtx_tag = nullptr, *prev_glob_vtx_tag = nullptr;
     cs_gnum_t  *recv2glob;
 
-    const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+    const int  local_rank = cs::max(cs_glob_rank_id, 0);
 
     cs_block_dist_info_t  bi = cs_block_dist_compute_sizes(local_rank,
                                                            n_ranks,
@@ -1054,9 +1055,9 @@ _compute_merged_vertex(cs_lnum_t               n_elts,
 
   for (i = 0; i < n_elts; i++) {
 
-    mvtx.tolerance = CS_MIN(set[i].tolerance, mvtx.tolerance);
-    mvtx.gnum = CS_MIN(set[i].gnum, mvtx.gnum);
-    mvtx.state = CS_MAX(set[i].state, mvtx.state);
+    mvtx.tolerance = cs::min(set[i].tolerance, mvtx.tolerance);
+    mvtx.gnum = cs::min(set[i].gnum, mvtx.gnum);
+    mvtx.state = cs::max(set[i].state, mvtx.state);
 
     /* Compute the resulting coordinates of the merged vertices */
 
@@ -1128,7 +1129,7 @@ _pre_merge(cs_join_param_t     param,
     len = strlen("JoinDBG_InitMergeSet.dat")+1+2+4;
     CS_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_InitMergeSet%04d.dat",
-            param.num, CS_MAX(cs_glob_rank_id, 0));
+            param.num, cs::max(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
 
     cs_join_gset_dump(dbg_file, merge_set);
@@ -1142,8 +1143,8 @@ _pre_merge(cs_join_param_t     param,
   /* Compute the max. size of a sub list */
 
   for (i = 0; i < merge_set->n_elts; i++)
-    max_n_sub_elts = CS_MAX(max_n_sub_elts,
-                            merge_index[i+1] - merge_index[i]);
+    max_n_sub_elts = cs::max(max_n_sub_elts,
+                             merge_index[i+1] - merge_index[i]);
 
   CS_MALLOC(sub_list, max_n_sub_elts, cs_gnum_t);
 
@@ -1190,9 +1191,9 @@ _pre_merge(cs_join_param_t     param,
         }
         else {
 
-          min_tol = CS_MIN(v1.tolerance, v2.tolerance);
+          min_tol = cs::min(v1.tolerance, v2.tolerance);
           limit = min_tol * pmf;
-          deltat = CS_ABS(v1.tolerance - v2.tolerance);
+          deltat = cs::abs(v1.tolerance - v2.tolerance);
 
           if (deltat < limit) {
 
@@ -1350,7 +1351,7 @@ _iter_subset_building(cs_lnum_t               set_size,
 
       if (state[k] == 1) { /* v1 - v2 are in tolerance each other */
 
-        int _min = CS_MIN(subset_num[i1], subset_num[i2]);
+        int _min = cs::min(subset_num[i1], subset_num[i2]);
 
         subset_num[i1] = _min;
         subset_num[i2] = _min;
@@ -1841,7 +1842,7 @@ _merge_vertices(cs_join_param_t    param,
     len = strlen("JoinDBG_MergeSet.dat")+1+2+4;
     CS_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_MergeSet%04d.dat",
-            param.num, CS_MAX(cs_glob_rank_id, 0));
+            param.num, cs::max(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
 
     cs_join_gset_dump(dbg_file, merge_set);
@@ -1867,7 +1868,7 @@ _merge_vertices(cs_join_param_t    param,
 
   for (i = 0; i < merge_set->n_elts; i++) {
     list_size = merge_index[i+1] - merge_index[i];
-    max_list_size = CS_MAX(max_list_size, list_size);
+    max_list_size = cs::max(max_list_size, list_size);
   }
   vv_max_list_size = ((max_list_size-1)*max_list_size)/2;
 
@@ -1950,7 +1951,7 @@ _merge_vertices(cs_join_param_t    param,
         for (j = 0; j < list_size; j++)
           vertices[list[j]] = set[j];
 
-        n_max_loops = CS_MAX(n_max_loops, n_loops);
+        n_max_loops = cs::max(n_max_loops, n_loops);
 
         if (verbosity > 3) { /* Display information */
           fprintf(logfile, "\n  %3d loop(s) to get consistent subsets\n",
@@ -1990,7 +1991,7 @@ _merge_vertices(cs_join_param_t    param,
       len = strlen("JoinDBG_EquivMerge.dat")+1+2+4;
       CS_MALLOC(filename, len, char);
       sprintf(filename, "Join%02dDBG_EquivMerge%04d.dat",
-              param.num, CS_MAX(cs_glob_rank_id, 0));
+              param.num, cs::max(cs_glob_rank_id, 0));
       dbg_file = fopen(filename, "w");
 
       cs_join_gset_dump(dbg_file, equiv_gnum);
@@ -2084,7 +2085,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 
     cs_lnum_t  block_size = 0;
 
-    const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+    const int  local_rank = cs::max(cs_glob_rank_id, 0);
 
     cs_block_dist_info_t  bi = cs_block_dist_compute_sizes(local_rank,
                                                            n_ranks,
@@ -2283,9 +2284,9 @@ _count_new_sub_edge_elts(cs_lnum_t                     edge_id,
 
         if (v2_num <= n_iwm_vertices) { /* (v1,v2) is an initial edge */
 
-          sub_edge_id = CS_ABS(cs_join_mesh_get_edge(v1_num,
-                                                     v2_num,
-                                                     edges))-1;
+          sub_edge_id = cs::abs(cs_join_mesh_get_edge(v1_num,
+                                                      v2_num,
+                                                      edges)) - 1;
           assert(sub_edge_id != -1);
           _start = inter_edges->index[sub_edge_id];
           _end = inter_edges->index[sub_edge_id+1];
@@ -2422,8 +2423,8 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
 
   for (i = 0; i < n_edges; i++)
     inter_edges->max_sub_size =
-            CS_MAX(inter_edges->max_sub_size,
-                       inter_edges->index[i+1] - inter_edges->index[i]);
+            cs::max(inter_edges->max_sub_size,
+                    inter_edges->index[i+1] - inter_edges->index[i]);
 
   assert(inter_edges->index[n_edges] <= init_list_size);
 
@@ -2481,7 +2482,7 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
               if (v2_num <= n_iwm_vertices) { /* (v1,v2) is an initial edge */
 
                 sub_edge_id =
-                  CS_ABS(cs_join_mesh_get_edge(v1_num, v2_num, edges))-1;
+                  cs::abs(cs_join_mesh_get_edge(v1_num, v2_num, edges)) - 1;
                 assert(sub_edge_id != -1);
 
                 _start = inter_edges->index[sub_edge_id];
@@ -2531,8 +2532,8 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
     inter_edges->max_sub_size = 0;
 
     for (i = 0; i < n_edges; i++)
-      inter_edges->max_sub_size = CS_MAX(inter_edges->max_sub_size,
-                                         inter_edges->index[i+1]);
+      inter_edges->max_sub_size = cs::max(inter_edges->max_sub_size,
+                                          inter_edges->index[i+1]);
 
   } /* End if n_adds > 0 */
 
@@ -2599,7 +2600,7 @@ _get_faces_to_send(cs_lnum_t         n_faces,
   cs_lnum_t  *reduce_ids = nullptr, *count = nullptr;
   cs_gnum_t  *reduce_index = nullptr;
 
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
   const int  n_ranks = cs_glob_n_ranks;
 
   /* Sanity checks */
@@ -2910,11 +2911,11 @@ cs_join_create_new_vertices(int                     verbosity,
                            new_vtx_gnum[shift],
                            &(edges->def[2*inter2.edge_id]),
                            work);
-      tol_min = CS_MIN(tol_min, v2.tolerance);
+      tol_min = cs::min(tol_min, v2.tolerance);
 
     }
     else
-      tol_min = CS_MIN(tol_min, work->vertices[v2_num-1].tolerance);
+      tol_min = cs::min(tol_min, work->vertices[v2_num-1].tolerance);
 
     /* A new vertex has a tolerance equal to the minimal tolerance
        between the two vertices implied in the intersection */

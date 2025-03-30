@@ -50,6 +50,7 @@
 
 #include "base/cs_log.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -257,7 +258,7 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
       }
 
       cs_real_t rapp   = detep / twall[ifac];
-      cs_real_t abrapp = CS_ABS(rapp);
+      cs_real_t abrapp = cs::abs(rapp);
 
       /* Relaxation */
       if (abrapp >= tx) {
@@ -267,7 +268,7 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
       else
         twall[ifac] += detep;
 
-      rapmax = CS_MAX(rapmax, abrapp);
+      rapmax = cs::max(rapmax, abrapp);
       if (rapp <= 0.0)
         nmoins++;
       else
@@ -296,7 +297,7 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
       /* Computation */
       cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
       twall[ifac] =  (hfconp[ifac] * tempkp[iel] - th_rcodcl3[ifac])
-                     / CS_MAX(hfconp[ifac], cs_math_epzero);
+                     / cs::max(hfconp[ifac], cs_math_epzero);
 
       qconv = flconp[ifac];
       qrayt = 0.0;
@@ -331,8 +332,8 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
         qcmin  = qconv;
         qrmin  = qrayt;
       }
-      tzomax[log_z_id] = CS_MAX(tzomax[log_z_id], twall[ifac]);
-      tzomin[log_z_id] = CS_MIN(tzomin[log_z_id], twall[ifac]);
+      tzomax[log_z_id] = cs::max(tzomax[log_z_id], twall[ifac]);
+      tzomin[log_z_id] = cs::min(tzomin[log_z_id], twall[ifac]);
     }
 
   }

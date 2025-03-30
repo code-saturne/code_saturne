@@ -60,6 +60,7 @@
 
 #include "base/cs_file.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_notebook.h"
 #include "base/cs_parall.h"
@@ -364,7 +365,7 @@ _comm_read_sock_r0(const cs_control_comm_t  *comm,
 
   while (start_id < n_bytes) {
 
-    size_t end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
+    size_t end_id = cs::min(start_id + SSIZE_MAX, n_bytes);
     size_t n_loc = end_id - start_id;
 
     if (comm->trace != nullptr) {
@@ -450,7 +451,7 @@ _comm_read_sock(const cs_control_comm_t  *comm,
 
     while (start_id < n_bytes) {
 
-      size_t end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
+      size_t end_id = cs::min(start_id + SSIZE_MAX, n_bytes);
       size_t n_loc = end_id - start_id;
 
       if (comm->trace != nullptr) {
@@ -561,7 +562,7 @@ _comm_write_sock(cs_control_comm_t  *comm,
 
   while (start_id < n_bytes) {
 
-    end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
+    end_id = cs::min(start_id + SSIZE_MAX, n_bytes);
     n_loc = end_id - start_id;
 
     ret = write(comm->socket, _rec + start_id, n_loc);
@@ -1568,9 +1569,9 @@ _control_postprocess(const cs_time_step_t   *ts,
       if (_read_next_opt_int(s, &writer_id) == 0)
         writer_id = 0;
       if (nt >= 0)
-        nt = CS_MAX(nt, ts->nt_cur);
+        nt = cs::max(nt, ts->nt_cur);
       else
-        nt = CS_MAX(nt, -ts->nt_cur);
+        nt = cs::max(nt, -ts->nt_cur);
       cs_post_add_writer_t_step(writer_id, nt);
       bft_printf("  %-32s %12d %12d\n",
                  "postprocess_time_step", nt, writer_id);
@@ -1583,9 +1584,9 @@ _control_postprocess(const cs_time_step_t   *ts,
       if (_read_next_opt_int(s, &writer_id) == 0)
         writer_id = 0;
       if (t >= 0)
-        t = CS_MAX(t, ts->t_cur);
+        t = cs::max(t, ts->t_cur);
       else
-        t = CS_MAX(t, -ts->t_cur);
+        t = cs::max(t, -ts->t_cur);
       bft_printf("  %-32s %12.5g %12d\n",
                  "postprocess_time_value", t, writer_id);
       cs_post_add_writer_t_value(writer_id, t);
@@ -1616,7 +1617,7 @@ _control_time_moment(const cs_time_step_t   *ts,
     if (_read_next_int(cur_line, s, &nt) > 0) {
       if (_read_next_opt_int(s, &moment_id) == 0)
         moment_id = 0;
-      nt = CS_MAX(nt, ts->nt_cur);
+      nt = cs::max(nt, ts->nt_cur);
       cs_time_moment_set_start_time(moment_id, nt);
       bft_printf("  %-32s %12d %12d\n",
                  "time_moment_time_step", nt, moment_id);
@@ -1628,7 +1629,7 @@ _control_time_moment(const cs_time_step_t   *ts,
     if (_read_next_double(true, cur_line, s, &t) > 0) {
       if (_read_next_opt_int(s, &moment_id) == 0)
         moment_id = 0;
-      t = CS_MAX(t, ts->t_cur);
+      t = cs::max(t, ts->t_cur);
       bft_printf("  %-32s %12.5g %12d\n",
                  "postprocess_time_value", t, moment_id);
       cs_time_moment_set_start_time(moment_id, t);
@@ -1736,25 +1737,25 @@ _parse_control_buffer(const char          *name,
 
     nt_max = -1;
     if (sscanf(s, "%i", &nt_max) > 0)
-      nt_max = CS_MAX(nt_max, 0);
+      nt_max = cs::max(nt_max, 0);
     else if (strncmp(s, "max_time_step ", 14) == 0) {
       if (_read_next_int(cur_line, const_cast<const char **>(&s),
                          &nt_max) > 0)
-        nt_max = CS_MAX(nt_max, 0);
+        nt_max = cs::max(nt_max, 0);
     }
     else if (strncmp(s, "time_step_limit ", 16) == 0) {
       if (_read_next_int(cur_line, const_cast<const char **>(&s),
                          &nt_max) > 0) {
-        nt_max = CS_MAX(nt_max, 0);
+        nt_max = cs::max(nt_max, 0);
         if (ts->nt_max > -1)
-          nt_max = CS_MIN(nt_max + ts->nt_prev, ts->nt_max);
+          nt_max = cs::min(nt_max + ts->nt_prev, ts->nt_max);
         else
           nt_max = nt_max + ts->nt_prev;
       }
     }
 
     if (nt_max > -1) {
-      nt_max = CS_MAX(nt_max, ts->nt_cur);
+      nt_max = cs::max(nt_max, ts->nt_cur);
       cs_time_step_define_nt_max(nt_max);
       bft_printf("  %-32s %12d (%s %d)\n",
                  "max_time_step", ts->nt_max, _("current:"), ts->nt_cur);
@@ -1763,7 +1764,7 @@ _parse_control_buffer(const char          *name,
       double t_max;
       if (_read_next_double(true, cur_line, const_cast<const char **>(&s),
                             &t_max) > 0)
-        t_max = CS_MAX(t_max, ts->t_cur);
+        t_max = cs::max(t_max, ts->t_cur);
       cs_time_step_define_t_max(t_max);
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
                  "max_time_value", ts->t_max, _("current:"), ts->t_cur);
@@ -1772,7 +1773,7 @@ _parse_control_buffer(const char          *name,
       double wt_max;
       if (_read_next_double(true, cur_line, const_cast<const char **>(&s),
                             &wt_max) > 0)
-        wt_max = CS_MAX(wt_max, cs_timer_wtime());
+        wt_max = cs::max(wt_max, cs_timer_wtime());
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
                  "max_wall_time", wt_max, _("current:"),
                  cs_resource_get_wt_limit());
@@ -1822,7 +1823,7 @@ _parse_control_buffer(const char          *name,
       int nt = -1;
       if (_read_next_int(cur_line, const_cast<const char **>(&s), &nt) > 0) {
         if (nt > -1)
-          _flush_nt = CS_MAX(nt, ts->nt_cur);
+          _flush_nt = cs::max(nt, ts->nt_cur);
         else
           _flush_nt = -1;
       }
@@ -1870,8 +1871,8 @@ _parse_control_buffer(const char          *name,
       /* Use binary exchanges for multiple variables here,
          to minimize number of messages */
 
-      int n_notebook_vals = CS_MAX(_n_input_notebook_vars,
-                                   _n_output_notebook_vars);
+      int n_notebook_vals = cs::max(_n_input_notebook_vars,
+                                    _n_output_notebook_vars);
 
       if (n_notebook_vals > 0) {
         double *notebook_vals = nullptr;

@@ -991,7 +991,7 @@ cs_gas_mix_physical_properties(void)
     }
 
     // Clipping
-    y_d[c_id] = cs_math_fmax(y_d[c_id], x_0);
+    y_d[c_id] = cs::max(y_d[c_id], x_0);
 
     // Finalize the computation of the Mixture molar mass
     mix_mol_mas[c_id] += y_d[c_id]/s_d.mol_mas;
@@ -1300,7 +1300,7 @@ cs_gas_mix_initialization(void)
     if ((y_d[c_id] > 1.0) || (y_d[c_id] < 0.0))
       iok++;
 
-    y_d[c_id] = cs_math_fmin(cs_math_fmax(y_d[c_id], 0.0), 1.0);
+    y_d[c_id] = cs::min(cs::max(y_d[c_id], 0.0), 1.0);
 
     // specific heat (Cp_m0) of the gas mixture
     cpro_cp[c_id] += y_d[c_id]*s_d.cp;

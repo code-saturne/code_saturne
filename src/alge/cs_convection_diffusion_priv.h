@@ -284,7 +284,7 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t     limiter,
   cs_real_t blend, high_order, low_order, ratio;
 
   /* Compute gradient angle indicator */
-  cs_real_t dotp = cs_math_fabs(cs_math_3_dot_product(gradv_c, i_face_u_normal));
+  cs_real_t dotp = cs::abs(cs_math_3_dot_product(gradv_c, i_face_u_normal));
   cs_real_t sgrad = cs_math_3_norm(gradv_c);
   cs_real_t denom = sgrad;
 
@@ -2656,7 +2656,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
   const cs_real_t grad2c = ((p_d - p_c)/dist_dc - gradc)/dist_dc;
 
   cs_real_t p_u = p_c + (grad2c*dist_cu - gradc)*dist_cu;
-  p_u = cs_math_fmax(cs_math_fmin(p_u, local_max_c), local_min_c);
+  p_u = cs::max(cs::min(p_u, local_max_c), local_min_c);
 
   /* Compute the normalised distances */
   const cs_real_t nvf_r_f = (dist_fc+dist_cu)/dist_du;
@@ -2664,19 +2664,21 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
 
   /* Check for the bounds of the NVD diagram and compute the face
      property according to the selected NVD scheme */
-  const cs_real_t _small = cs_math_epzero
-                         * (CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d));
+  const cs_real_t _small
+    = cs_math_epzero * (cs::abs(p_u) + cs::abs(p_c) + cs::abs(p_d));
 
-  if (CS_ABS(p_d-p_u) <= _small) {
+  if (cs::abs(p_d-p_u) <= _small) {
     *pif = p_c;
     *pjf = p_c;
-  } else {
+  }
+  else {
     const cs_real_t nvf_p_c = (p_c - p_u)/(p_d - p_u);
 
     if (nvf_p_c <= 0. || nvf_p_c >= 1.) {
       *pif = p_c;
       *pjf = p_c;
-    } else {
+    }
+    else {
       cs_real_t nvf_p_f;
 
       /* Highly compressive NVD scheme for VOF */
@@ -2696,7 +2698,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
       }
 
       *pif = p_u + nvf_p_f*(p_d - p_u);
-      *pif = cs_math_fmax(cs_math_fmin(*pif, local_max_c), local_min_c);
+      *pif = cs::max(cs::min(*pif, local_max_c), local_min_c);
 
       cs_blend_f_val(beta,
                      p_c,

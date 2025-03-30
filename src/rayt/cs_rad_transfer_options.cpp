@@ -23,7 +23,6 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -50,6 +49,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -395,7 +395,7 @@ cs_rad_transfer_log_setup(void)
        N_("1 (standard solver log)"),
        N_("2 (detailed solver logging)")};
 
-  int iimlum = CS_MIN(2, CS_MAX(cs_glob_rad_transfer_params->verbosity, 0));
+  int iimlum = cs::min(2, cs::max(cs_glob_rad_transfer_params->verbosity, 0));
 
   cs_log_printf(CS_LOG_SETUP,
                   _("    verbosity:        %s\n"),

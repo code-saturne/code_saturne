@@ -232,7 +232,7 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->forc_pred);
 
   for (int i = 0; i < 3; i++) {
-    CS_MALLOC(ast_cpl->tmp[i], 3 * CS_MAX(nb_dyn, nb_for), cs_real_t);
+    CS_MALLOC(ast_cpl->tmp[i], 3 * cs::max(nb_dyn, nb_for), cs_real_t);
   }
 }
 
@@ -407,7 +407,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   cs_real_t       *values;
   const cs_mesh_t *m      = cs_glob_mesh;
-  cs_lnum_t        n_vals = CS_MAX(m->n_b_faces, m->n_vertices) * 3;
+  cs_lnum_t        n_vals = cs::max(m->n_b_faces, m->n_vertices) * 3;
   CS_MALLOC(values, n_vals, cs_real_t);
   cs_arrays_set_value<cs_real_t, 1>(n_vals, 0., values);
 

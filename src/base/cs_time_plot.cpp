@@ -136,7 +136,7 @@ _ensure_buffer_size(cs_time_plot_t  *p,
   /* Write data to line buffer */
 
   if (p->buffer_size < min_size) {
-    p->buffer_size = CS_MAX(1, p->buffer_size);
+    p->buffer_size = cs::max((size_t)1, p->buffer_size);
     while (p->buffer_size < min_size)
       p->buffer_size *= 2;
     CS_REALLOC(p->buffer, p->buffer_size, char);

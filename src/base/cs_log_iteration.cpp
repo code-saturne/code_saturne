@@ -900,7 +900,7 @@ _log_fields_and_functions(void)
       else if (f_dim > 3)
         l_name_width += 4;
 
-      max_name_width = CS_MAX(max_name_width, l_name_width);
+      max_name_width = cs::max(max_name_width, l_name_width);
 
       /* Position in log */
 
@@ -996,7 +996,7 @@ _log_fields_and_functions(void)
 
     /* Print headers */
 
-    max_name_width = CS_MIN(max_name_width, 63);
+    max_name_width = cs::min(max_name_width, (size_t)63);
 
     const char *loc_name = _(cs_mesh_location_get_name(loc_id));
     size_t loc_name_w = cs_log_strlen(loc_name);
@@ -1191,8 +1191,8 @@ _log_sstats(void)
 
     for (stat_id = sstat_cat_start; stat_id < sstat_cat_end; stat_id++) {
       int loc_id = _sstats[stat_id].loc_id;
-      loc_min = CS_MIN(loc_min, loc_id);
-      loc_max = CS_MAX(loc_max, loc_id);
+      loc_min = cs::min(loc_min, loc_id);
+      loc_max = cs::max(loc_max, loc_id);
     }
 
     for (int loc_id = loc_min; loc_id <= loc_max; loc_id++) {
@@ -1260,10 +1260,10 @@ _log_sstats(void)
           const char *stat_name
             = cs_map_name_to_id_reverse(_name_map, _sstats[stat_id].name_id);
           size_t name_width = strlen(stat_name);
-          max_name_width = CS_MAX(max_name_width, name_width);
+          max_name_width = cs::max(max_name_width, name_width);
         }
       }
-      max_name_width = CS_MIN(max_name_width, 63);
+      max_name_width = cs::min(max_name_width, (size_t)63);
 
       cs_log_printf(CS_LOG_DEFAULT,
                     _("\n"
@@ -1530,16 +1530,16 @@ _log_clips(void)
       l_name_width += 3;
     else if (f_dim > 3)
       l_name_width += 4;
-    max_name_width = CS_MAX(max_name_width, l_name_width);
+    max_name_width = cs::max(max_name_width, l_name_width);
 
   }
 
   if (type_idx[2] - type_idx[1] > 0) {
     size_t v_name_w = cs_log_strlen(_("value"));
-    max_name_width = CS_MAX(max_name_width, v_name_w);
+    max_name_width = cs::max(max_name_width, v_name_w);
   }
 
-  max_name_width = CS_MIN(max_name_width, 63);
+  max_name_width = cs::min(max_name_width, (size_t)63);
 
   /* Loop on types */
 
@@ -1848,12 +1848,12 @@ cs_log_equation_convergence_info_write(void)
      * updated at each time step (only when logging)
      * NOTE: it should be added in the bindings again
      * if needed */
-    sinfo->l2residual = sqrt(cs_math_fabs(varres[0]));
+    sinfo->l2residual = sqrt(cs::abs(varres[0]));
 
     char var_log[128];
     snprintf(var_log, 127, "%12.5e %7d   %12.5e %12.5e %12.5e",
              sinfo->rhs_norm, sinfo->n_it, sinfo->res_norm,
-             dervar[0], sqrt(cs_math_fabs(varres[0])));
+             dervar[0], sqrt(cs::abs(varres[0])));
 
     strcat(chain, var_log);
 

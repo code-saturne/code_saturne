@@ -58,6 +58,7 @@
 #include "base/cs_log.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_halo.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
@@ -1328,7 +1329,7 @@ cs_sles_amgx_setup(void               *context,
 
     double dmax = 0.0;
     for (cs_lnum_t ii = 0; ii < n_r; ii++) {
-      double d = CS_ABS(y[ii] - z[ii]);
+      double d = cs::abs(y[ii] - z[ii]);
       if (d > dmax)
         dmax = d;
     }

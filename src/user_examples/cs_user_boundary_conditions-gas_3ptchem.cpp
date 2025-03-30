@@ -228,7 +228,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
       const cs_lnum_t c_id = b_face_cells[face_id];
 
       cs_real_t uref2 = cs_math_3_square_norm(cvar_vel[c_id]);
-      uref2 = cs_math_fmax(uref2, cs_math_epzero);
+      uref2 = cs::max(uref2, cs_math_epzero);
 
       cs_turbulence_bc_inlet_turb_intensity(face_id, uref2, xitur, xdh);
 

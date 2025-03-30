@@ -503,7 +503,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   cs_real_t thetex = 1. - thetap;
 
   /* If thetex=0, no need to add anything */
-  if (cs_math_fabs(thetex) > cs_math_epzero) {
+  if (cs::abs(thetex) > cs_math_epzero) {
     inc = 1;
 
     /* The added convective scalar mass flux is:
@@ -806,7 +806,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   sinfo.rhs_norm = rnorm;
 
   /* Warning: for Weight Matrix, one and only one sweep is done. */
-  int nswmod = CS_MAX(eqp->nswrsm, 1);
+  int nswmod = cs::max(eqp->nswrsm, 1);
 
   cs_sles_t *sc = cs_sles_find_or_add(f_id, var_name);
 
@@ -957,10 +957,10 @@ _equation_iterative_solve_strided(int                   idtvar,
       }
       else if (isweep == 2) {
         beta = 0.;
-        alph = -paxkrk/cs_math_fmax(nadxk, 1.e-30*rnorm2);
+        alph = -paxkrk/cs::max(nadxk, 1.e-30*rnorm2);
       }
       else {
-        alph = -(paxkrk + beta*paxm1ax)/cs_math_fmax(nadxk, 1.e-30*rnorm2);
+        alph = -(paxkrk + beta*paxm1ax)/cs::max(nadxk, 1.e-30*rnorm2);
       }
 
       /* Writing */
@@ -1121,7 +1121,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   /* --- Reconstruction loop (end) */
 
   /* Writing: convergence */
-  if (cs_math_fabs(rnorm)/sqrt(cs_real_t(stride)) > cs_math_epzero)
+  if (cs::abs(rnorm)/sqrt(cs_real_t(stride)) > cs_math_epzero)
     sinfo.res_norm = residu/rnorm;
   else
     sinfo.res_norm = 0.;
@@ -1777,7 +1777,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   CS_FREE_HD(w1);
 
   /* Warning: for weight matrix, one and only one sweep is done. */
-  int nswmod = CS_MAX(eqp->nswrsm, 1);
+  int nswmod = cs::max(eqp->nswrsm, 1);
 
   /* Reconstruction loop (beginning) */
   if (iterns <= 1)

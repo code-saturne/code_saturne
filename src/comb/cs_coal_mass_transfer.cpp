@@ -692,13 +692,13 @@ cs_coal_mass_transfer(void)
           }
 
           if (yv >= 1.) {
-            yymax = cs_math_fmax(yymax, yv);
+            yymax = cs::max(yymax, yv);
             npyv++;
             yv= 0.99;
           }
 
-          yvmin = cs_math_fmin(yvmin, yv);
-          yvmax = cs_math_fmax(yvmax, yv);
+          yvmin = cs::min(yvmin, yv);
+          yvmax = cs::max(yvmax, yv);
 
           if (yv > eps_cp && yv < 1.) {
             npoin3++;
@@ -720,8 +720,8 @@ cs_coal_mass_transfer(void)
           cpro_csec[c_id] = 0.;
         }
 
-        tmax = cs_math_fmax(cpro_csec[c_id], tmax);
-        tmin = cs_math_fmin(cpro_csec[c_id], tmin);
+        tmax = cs::max(cpro_csec[c_id], tmax);
+        tmin = cs::min(cpro_csec[c_id], tmin);
 
       } /* Loop on cells */
 

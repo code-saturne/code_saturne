@@ -300,7 +300,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
-      xyz[i] = cs_math_fmax(cvar_vel[c_id][i], xyz[i]);
+      xyz[i] = cs::max(cvar_vel[c_id][i], xyz[i]);
   }
 
   /* global maximum */
@@ -323,7 +323,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (int i = 0; i < 3; i++)
-      xyz[i] = cs_math_fmin(cvar_vel[c_id][i], xyz[i]);
+      xyz[i] = cs::min(cvar_vel[c_id][i], xyz[i]);
   }
 
   /* global maximum */

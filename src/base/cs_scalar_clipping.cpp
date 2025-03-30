@@ -176,8 +176,8 @@ cs_scalar_clipping(cs_field_t  *f)
     vmax[i] = -HUGE_VAL;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      vmin[i] = cs_math_fmin(cvar_scal[f->dim * c_id + i], vmin[i]);
-      vmax[i] = cs_math_fmax(cvar_scal[f->dim * c_id + i], vmax[i]);
+      vmin[i] = cs::min(cvar_scal[f->dim * c_id + i], vmin[i]);
+      vmax[i] = cs::max(cvar_scal[f->dim * c_id + i], vmax[i]);
     }
   }
 

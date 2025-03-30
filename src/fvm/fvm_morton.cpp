@@ -141,7 +141,7 @@ _a_ge_b(fvm_morton_code_t  code_a,
         fvm_morton_code_t  code_b)
 {
   int i, a, b, a_diff, b_diff;
-  int l = CS_MAX(code_a.L, code_b.L);
+  int l = cs::max(code_a.L, code_b.L);
 
   a_diff = l - code_a.L;
   b_diff = l - code_b.L;
@@ -195,7 +195,7 @@ _a_gt_b(fvm_morton_code_t  code_a,
         fvm_morton_code_t  code_b)
 {
   int i, a, b, a_diff, b_diff;
-  int l = CS_MAX(code_a.L, code_b.L);
+  int l = cs::max(code_a.L, code_b.L);
 
   a_diff = l - code_a.L;
   b_diff = l - code_b.L;
@@ -411,7 +411,6 @@ _evaluate_distribution(int          n_ranges,
                        cs_gnum_t   *distribution,
                        double       optim)
 {
-  int  i;
   double  d_low = 0, d_up = 0, fit = 0;
 
   /*
@@ -421,12 +420,12 @@ _evaluate_distribution(int          n_ranges,
      distribution is greater than optimum.
   */
 
-  for (i = 0; i < n_ranges; i++) {
+  for (int i = 0; i < n_ranges; i++) {
 
     if (distribution[i] > optim)
-      d_up = CS_MAX(d_up, distribution[i] - optim);
+      d_up = cs::max(d_up, distribution[i] - optim);
     else
-      d_low = CS_MAX(d_low, optim - distribution[i]);
+      d_low = cs::max(d_low, optim - distribution[i]);
 
   }
 
@@ -918,10 +917,10 @@ fvm_morton_get_global_extents(int               dim,
 
   for (i = 0; i < n_extents; i++) {
     for (j = 0; j < (size_t)dim; j++) {
-      g_extents[j]     = CS_MIN(g_extents[j],
-                                extents[i*dim*2 + j]);
-      g_extents[j+dim] = CS_MAX(g_extents[j + dim],
-                                extents[i*dim*2 + j + dim]);
+      g_extents[j]     = cs::min(g_extents[j],
+                                 extents[i*dim*2 + j]);
+      g_extents[j+dim] = cs::max(g_extents[j + dim],
+                                 extents[i*dim*2 + j + dim]);
     }
   }
 
@@ -951,7 +950,6 @@ fvm_morton_encode(int               dim,
                   fvm_morton_int_t  level,
                   const cs_coord_t  coords[])
 {
-  int  i;
   fvm_morton_code_t  morton_code;
 
   fvm_morton_int_t  refinement = 1u << level;
@@ -963,8 +961,12 @@ fvm_morton_encode(int               dim,
   morton_code.X[1] = 0;
   morton_code.X[2] = 0;
 
-  for (i = 0; i < dim; i++)
-    morton_code.X[i] = CS_MIN(floor(coords[i]*refinement), refinement - 1);
+  for (int i = 0; i < dim; i++) {
+    assert(coords[i] >= 0.);
+    assert(coords[i] <= 1.);
+    morton_code.X[i] = cs::min((fvm_morton_int_t)floor(coords[i]*refinement),
+                               refinement - 1);
+  }
 
   return morton_code;
 }
@@ -1001,7 +1003,7 @@ fvm_morton_encode_coords(int                dim,
   for (i = 0; i < (size_t)dim; i++) {
     s[i] = extents[i];
     d[i] = extents[i+dim] - extents[i];
-    d_max = CS_MAX(d_max, d[i]);
+    d_max = cs::max(d_max, d[i]);
   }
 
   for (i = 0; i < (size_t)dim; i++) { /* Reduce effective dimension */
@@ -1016,7 +1018,8 @@ fvm_morton_encode_coords(int                dim,
       m_code[i].L = level;
       for (j = 0; j < 3; j++) {
         n[j] = (coords[i*dim + j] - s[j]) / d[j];
-        m_code[i].X[j] = CS_MIN(floor(n[j]*refinement), refinement - 1);
+        m_code[i].X[j] = cs::min((fvm_morton_int_t)floor(n[j]*refinement),
+                                 refinement - 1);
       }
     }
     break;
@@ -1026,7 +1029,8 @@ fvm_morton_encode_coords(int                dim,
       m_code[i].L = level;
       for (j = 0; j < 2; j++) {
         n[j] = (coords[i*dim + j] - s[j]) / d[j];
-        m_code[i].X[j] = CS_MIN(floor(n[j]*refinement), refinement - 1);
+        m_code[i].X[j] = cs::min((fvm_morton_int_t)floor(n[j]*refinement),
+                                 refinement - 1);
       }
       m_code[i].X[2] = 0;
     }
@@ -1036,7 +1040,8 @@ fvm_morton_encode_coords(int                dim,
     for (i = 0; i < n_coords; i++) {
       m_code[i].L = level;
       n[0] = (coords[i] - s[0]) / d[0];
-      m_code[i].X[0] = CS_MIN(floor(n[0]*refinement), refinement - 1);
+      m_code[i].X[0] = cs::min((fvm_morton_int_t)floor(n[0]*refinement),
+                               refinement - 1);
       m_code[i].X[1] = 0;
       m_code[i].X[2] = 0;
     }

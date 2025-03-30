@@ -608,7 +608,7 @@ cs_cf_convective_mass_flux(int  iterns)
     */
 
     const cs_real_t qimp = cofaf_p[f_id];
-    wbfa[f_id] = -qimp / cs_math_fmax(hint, 1e-300);
+    wbfa[f_id] = -qimp / cs::max(hint, 1e-300);
     wbfb[f_id] = 1.0;
   }
 
@@ -768,7 +768,7 @@ cs_cf_convective_mass_flux(int  iterns)
       smbrs[c_id] =    smbrs[c_id]
                     -  eqp_p->istat * (cell_f_vol[c_id] / dt[c_id])
                     * (cvar_pr[c_id] - cvar_pr_pre[c_id])
-                    * cs_math_fmax(0, cs_math_fmin(eqp_p->nswrsm-2, 1));
+                    * cs::max(0, cs::min(eqp_p->nswrsm-2, 1));
     }
     const cs_real_t sclnor = sqrt(cs_gdot(n_cells, smbrs, smbrs));
     cs_log_printf(CS_LOG_DEFAULT,

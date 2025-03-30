@@ -322,7 +322,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     cs_random_normal(1, &rtmp);
 
     tmp = (int)nmoyag + sqrt(nmoyag) * rtmp;
-    tmp = CS_MAX(0, tmp);
+    tmp = cs::max(0, tmp);
 
     cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, tmp);
 
@@ -351,7 +351,7 @@ cs_lagr_adh(cs_lnum_t   ip,
       cs_random_normal(1, &rtmp);
 
       nbasg = (int)nmoyag + sqrt (nmoyag) * rtmp;
-      nbasg = CS_MAX(0, nbasg);
+      nbasg = cs::max(0, nbasg);
 
     }
     else {
@@ -364,7 +364,7 @@ cs_lagr_adh(cs_lnum_t   ip,
 
     }
 
-    nbasg = CS_MAX(1, nbasg);
+    nbasg = cs::max(1, nbasg);
 
   }
   else {
@@ -391,7 +391,7 @@ cs_lagr_adh(cs_lnum_t   ip,
       cs_random_normal(1, &rtmp);
 
       tmp = (int)nmoyap + sqrt(nmoyap) * rtmp;
-      tmp = CS_MAX(0, tmp);
+      tmp = cs::max(0, tmp);
 
       cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, tmp);
 
@@ -419,7 +419,7 @@ cs_lagr_adh(cs_lnum_t   ip,
         cs_random_normal(1, &rtmp);
 
         nbasp = (int)nmoyap + sqrt (nmoyap) * rtmp;
-        nbasp = CS_MAX(0, nbasp);
+        nbasp = cs::max(0, nbasp);
 
         cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, nbasp);
 
@@ -433,7 +433,7 @@ cs_lagr_adh(cs_lnum_t   ip,
 
       }
 
-      nbasp = CS_MAX(1, nbasp);
+      nbasp = cs::max(1, nbasp);
 
     }
     else {
@@ -444,7 +444,7 @@ cs_lagr_adh(cs_lnum_t   ip,
 
     /* Determination of the minimal distance between the particle and the plate */
 
-    dismin = rayasp * CS_MIN (1.0, cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES));
+    dismin = rayasp * cs::min (1.0, cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES));
 
   }
  /* 2nd case: contact with large-scale asperities */
@@ -461,7 +461,7 @@ cs_lagr_adh(cs_lnum_t   ip,
       cs_random_normal(1, &rtmp);
 
       tmp = (int)nmoyap + sqrt(nmoyap) * rtmp;
-      tmp = CS_MAX(0, tmp);
+      tmp = cs::max(0, tmp);
 
       cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, tmp);
 
@@ -489,7 +489,7 @@ cs_lagr_adh(cs_lnum_t   ip,
         cs_random_normal(1, &rtmp);
 
         nbasp = (int)nmoyap + sqrt (nmoyap) * rtmp;
-        nbasp = CS_MAX(0, nbasp);
+        nbasp = cs::max(0, nbasp);
 
       }
       else {
@@ -502,7 +502,7 @@ cs_lagr_adh(cs_lnum_t   ip,
 
       }
 
-      nbasp = CS_MAX(1, nbasp);
+      nbasp = cs::max(1, nbasp);
 
     }
     else
@@ -515,7 +515,7 @@ cs_lagr_adh(cs_lnum_t   ip,
                                *cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES));
 
     /* Determination of the minimal distance between the particle and the plate */
-    dismin = rayasp * CS_MIN(1.0, nbasp * 1.0) + rayasg * CS_MIN (1.0, nbasg * 1.0);
+    dismin = rayasp * cs::min(1.0, nbasp * 1.0) + rayasg * cs::min (1.0, nbasg * 1.0);
 
   }
 
@@ -598,7 +598,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     *adhesion_energ = 0.0;
 
   else
-    *adhesion_energ = CS_ABS(*adhesion_energ);
+    *adhesion_energ = cs::abs(*adhesion_energ);
 
   /*  Calculation of adhesion torques exerted on the particle */
   cs_real_t rtmp;
@@ -684,10 +684,10 @@ cs_lagr_adh_pp(cs_real_t   dpart,
 
   }
 
-  *adhesion_force = CS_MAX( -(udlvor[1] - udlvor[0]) / (2.0 * step), 0.0);
-
-  *adhesion_energ  = CS_MAX(-udlvor[0], 0.0);
-
+  *adhesion_force = cs::max( -(udlvor[1] - udlvor[0]) / (2.0 * step), 0.0);
+  *adhesion_energ  = cs::max(-udlvor[0], 0.0);
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

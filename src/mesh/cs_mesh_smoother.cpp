@@ -50,6 +50,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_all_to_all.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 
@@ -127,8 +128,8 @@ _compute_minmax(cs_lnum_t           n_vals,
   cs_real_t  _min = DBL_MAX, _max = -DBL_MAX;
 
   for (cs_lnum_t i = 0; i < n_vals; i++) {
-    _min = CS_MIN(_min, var[i]);
-    _max = CS_MAX(_max, var[i]);
+    _min = cs::min(_min, var[i]);
+    _max = cs::max(_max, var[i]);
   }
 
 #if defined(HAVE_MPI)
@@ -194,9 +195,9 @@ _display_histograms(int           n_steps,
   bft_printf(_("    minimum value =         %10.5e\n"), (double)min);
   bft_printf(_("    maximum value =         %10.5e\n\n"), (double)max);
 
-  var_step = CS_ABS(var_max - var_min) / n_steps;
+  var_step = cs::abs(var_max - var_min) / n_steps;
 
-  if (CS_ABS(var_max - var_min) > 0.) {
+  if (cs::abs(var_max - var_min) > 0.) {
 
     /* Number of elements in each subdivision */
 
@@ -250,9 +251,9 @@ _histogram(cs_lnum_t             n_vals,
   for (j = 0; j < n_steps; j++)
     count[j] = 0;
 
-  if (CS_ABS(max - min) > 0.) {
+  if (cs::abs(max - min) > 0.) {
 
-    step = CS_ABS(max - min) / n_steps;
+    step = cs::abs(max - min) / n_steps;
 
     /* Loop on values */
 
@@ -309,9 +310,9 @@ _int_face_histogram(const cs_mesh_t      *mesh,
   for (j = 0; j < n_steps; j++)
     count[j] = 0;
 
-  if (CS_ABS(max - min) > 0.) {
+  if (cs::abs(max - min) > 0.) {
 
-    step = CS_ABS(max - min) / n_steps;
+    step = cs::abs(max - min) / n_steps;
 
     /* Loop on faces */
 
@@ -403,8 +404,8 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
 
       length = _compute_distance(a, b);
       tolerance = length * fraction;
-      vtx_tolerance[vtx_id1] = CS_MIN(vtx_tolerance[vtx_id1], tolerance);
-      vtx_tolerance[vtx_id2] = CS_MIN(vtx_tolerance[vtx_id2], tolerance);
+      vtx_tolerance[vtx_id1] = cs::min(vtx_tolerance[vtx_id1], tolerance);
+      vtx_tolerance[vtx_id2] = cs::min(vtx_tolerance[vtx_id2], tolerance);
 
     }
 
@@ -420,8 +421,8 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
 
     length = _compute_distance(a, b);
     tolerance = length * fraction;
-    vtx_tolerance[vtx_id1] = CS_MIN(vtx_tolerance[vtx_id1], tolerance);
-    vtx_tolerance[vtx_id2] = CS_MIN(vtx_tolerance[vtx_id2], tolerance);
+    vtx_tolerance[vtx_id1] = cs::min(vtx_tolerance[vtx_id1], tolerance);
+    vtx_tolerance[vtx_id2] = cs::min(vtx_tolerance[vtx_id2], tolerance);
 
   } /* End of loop on faces */
 
@@ -452,7 +453,7 @@ _get_global_tolerance(cs_mesh_t            *mesh,
   const cs_gnum_t  *io_gnum = mesh->global_vtx_num;
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
   const int  n_ranks = cs_glob_n_ranks;
 
   /* Define a fvm_io_num_t structure on vertices */
@@ -500,7 +501,7 @@ _get_global_tolerance(cs_mesh_t            *mesh,
 
   for (i = 0; i < n_recv; i++) {
     vtx_id = recv_glist[i] - first_vtx_gnum;
-    g_vtx_tolerance[vtx_id] = CS_MIN(g_vtx_tolerance[vtx_id], recv_list[i]);
+    g_vtx_tolerance[vtx_id] = cs::min(g_vtx_tolerance[vtx_id], recv_list[i]);
   }
 
   /* Replace local vertex tolerance by the new computed global tolerance */
@@ -697,8 +698,8 @@ _unwarping_mvt(cs_mesh_t            *mesh,
 
   for (i = 0; i < mesh->n_vertices; i++)
     for (coord_id = 0; coord_id < 3; coord_id++)
-      loc_vtx_mvt[3*i + coord_id] = CS_MIN(loc_vtx_mvt[3*i + coord_id],
-                                           vtx_tolerance[i]);
+      loc_vtx_mvt[3*i + coord_id] = cs::min(loc_vtx_mvt[3*i + coord_id],
+                                            vtx_tolerance[i]);
 
   return maxwarp;
 }

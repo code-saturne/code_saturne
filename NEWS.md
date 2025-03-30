@@ -14,6 +14,10 @@ Master (not on release branches yet)
     was too limited for future uses of the Burke-Schuman model for
     fire modeling (gas combustion), so `idilat` 2 should be used now.
 
+### Architectural changes:
+- Use templated C++ functions instead of CS_MIN, CS_MAX, and CS_ABS
+  macros, for better safety and performance.
+
 Release 9.0.0 (unreleased)
 --------------------------
 

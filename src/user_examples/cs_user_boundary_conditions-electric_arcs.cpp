@@ -162,9 +162,9 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
           || (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS)) {
 
         cs_real_t uref2 =  0;
-        for(int ii = 0; ii < 3; ii++)
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
           uref2 += cs_math_pow2(rcodcl1_vel[n_b_faces*ii +face_id]);
-        uref2 = cs_math_fmax(uref2, 1.e-12);
+        uref2 = cs::max(uref2, 1.e-12);
 
         /* Turbulence example computed using equations valid for a pipe.
 

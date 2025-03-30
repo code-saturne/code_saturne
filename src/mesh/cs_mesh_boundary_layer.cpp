@@ -49,6 +49,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_boundary_zone.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 
 #include "cdo/cs_cdo_main.h"
@@ -330,9 +331,9 @@ _expand_limit(const cs_mesh_t  *m,
       cs_lnum_t c_id0 = m->i_face_cells[f_id][0];
       cs_lnum_t c_id1 = m->i_face_cells[f_id][0];
       if (c_id0 > -1 && c_id0 < n_cells)
-        cell_vol_cmp[c_id0] = CS_MIN(cell_vol_cmp[c_id0], -1);
+        cell_vol_cmp[c_id0] = cs::min(cell_vol_cmp[c_id0], -1);
       if (c_id1 > -1 && c_id1 < n_cells)
-        cell_vol_cmp[c_id1] = CS_MIN(cell_vol_cmp[c_id0], -1);
+        cell_vol_cmp[c_id1] = cs::min(cell_vol_cmp[c_id0], -1);
     }
   }
 
@@ -347,7 +348,7 @@ _expand_limit(const cs_mesh_t  *m,
     if (flag_cells) {
       cs_lnum_t c_id0 = m->b_face_cells[f_id];
       if (c_id0 > -1 && c_id0 < n_cells)
-        cell_vol_cmp[c_id0] = CS_MIN(cell_vol_cmp[c_id0], -1);
+        cell_vol_cmp[c_id0] = cs::min(cell_vol_cmp[c_id0], -1);
     }
 
   }

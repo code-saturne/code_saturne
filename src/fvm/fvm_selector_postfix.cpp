@@ -47,6 +47,7 @@
 
 #include "fvm/fvm_defs.h"
 
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_notebook.h"
 
@@ -2621,7 +2622,7 @@ _eval_plane(const fvm_selector_postfix_t  *pf,
     double epsilon = *((double *)(pf->elements + *i));
     assert(pf_type == PF_FLOAT);
     *i += _postfix_float_size;
-    if (CS_ABS(pfunc) < epsilon)
+    if (cs::abs(pfunc) < epsilon)
       retval = true;
   }
 

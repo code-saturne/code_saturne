@@ -380,7 +380,7 @@ cs_porous_model_auto_face_porosity(void)
       cs_lnum_t c_id0 = i_face_cells[face_id][0];
       cs_lnum_t c_id1 = i_face_cells[face_id][1];
 
-      cs_real_t face_porosity = CS_MIN(cpro_porosi[c_id0], cpro_porosi[c_id1]);
+      cs_real_t face_porosity = cs::min(cpro_porosi[c_id0], cpro_porosi[c_id1]);
 
       for (cs_lnum_t i = 0; i < 3; i++)
         i_f_face_normal[face_id][i] = face_porosity * i_face_normal[face_id][i];
@@ -562,7 +562,7 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
       i_f_face_surf[face_id] = 0.;
     }
     else {
-      cs_real_t face_porosity = CS_MIN(f->val[c_id0], f->val[c_id1]);
+      cs_real_t face_porosity = cs::min(f->val[c_id0], f->val[c_id1]);
 
       for (cs_lnum_t i = 0; i < 3; i++)
         i_f_face_normal[face_id][i] = face_porosity * i_face_normal[face_id][i];

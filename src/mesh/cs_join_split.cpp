@@ -46,6 +46,7 @@
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_periodicity.h"
 #include "base/cs_block_dist.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_order.h"
@@ -229,8 +230,8 @@ _face_bbox(const cs_join_mesh_t  *m,
       double  v_min = vertices[vid].coord[k] - tol;
       double  v_max = vertices[vid].coord[k] + tol;
 
-      f_min[k] = CS_MIN(f_min[k], v_min);
-      f_max[k] = CS_MAX(f_max[k], v_max);
+      f_min[k] = cs::min(f_min[k], v_min);
+      f_max[k] = cs::max(f_max[k], v_max);
 
     }
 
@@ -879,7 +880,7 @@ _find_next(cs_join_param_t         param,
       if (vid3 != vid1) {
 
         bool  is_in_bbox = true;
-        cs_lnum_t  connect_eid = CS_ABS(edges->edge_lst[i]) - 1;
+        cs_lnum_t  connect_eid = cs::abs(edges->edge_lst[i]) - 1;
 
         /* Test if the connected vertex is inside the face */
 
@@ -1004,7 +1005,7 @@ _find_next(cs_join_param_t         param,
     if (tst_dbg && cs_glob_join_log != nullptr)
       fprintf(cs_glob_join_log, " [Result] >> next_vtx: %llu; next_edge: %llu\n",
               (unsigned long long)vertices[*next_vertex-1].gnum,
-              (unsigned long long)edges->gnum[CS_ABS(*next_edge)-1]);
+              (unsigned long long)edges->gnum[cs::abs(*next_edge)-1]);
 #endif
 
   } /* End if n_connect_vertices > 2 */
@@ -1029,7 +1030,7 @@ _find_next(cs_join_param_t         param,
       fprintf(cs_glob_join_log,
               " [Result] >> next_vtx: %llu; next_edge: %llu (ONLY 2)\n",
               (unsigned long long)vertices[*next_vertex-1].gnum,
-              (unsigned long long)edges->gnum[CS_ABS(*next_edge)-1]);
+              (unsigned long long)edges->gnum[cs::abs(*next_edge)-1]);
 #endif
 
   }
@@ -1143,7 +1144,7 @@ _split_face(cs_lnum_t               fid,
 
       cs_lnum_t  head_edge_num = _head_edges->array[head_edge_shift];
       cs_lnum_t  edge_num = head_edge_num;
-      cs_lnum_t  edge_id = CS_ABS(edge_num) - 1;
+      cs_lnum_t  edge_id = cs::abs(edge_num) - 1;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg && logfile != nullptr)
@@ -1226,11 +1227,11 @@ _split_face(cs_lnum_t               fid,
 
         for (i1 = 0; i1 < _subface_edges->n_elts - 1; i1++) {
 
-          cs_lnum_t e1 = CS_ABS(_subface_edges->array[i1]);
+          cs_lnum_t e1 = cs::abs(_subface_edges->array[i1]);
 
           for (i2 = i1 + 1; i2 < _subface_edges->n_elts; i2++) {
 
-            cs_lnum_t e2 = CS_ABS(_subface_edges->array[i2]);
+            cs_lnum_t e2 = cs::abs(_subface_edges->array[i2]);
 
             if (e1 == e2) { /* Returns pointers */
 
@@ -1253,7 +1254,7 @@ _split_face(cs_lnum_t               fid,
         /* Clean _head_edges if next_edge belongs to this list */
 
         for (j = 0; j < _head_edges->n_elts; j++)
-          if (CS_ABS(next_edge) == CS_ABS(_head_edges->array[j]))
+          if (cs::abs(next_edge) == cs::abs(_head_edges->array[j]))
             break;
 
         if (j != _head_edges->n_elts) {
@@ -1270,7 +1271,7 @@ _split_face(cs_lnum_t               fid,
         /* Test if next_edge is in _ext_edges */
 
         for (i_ext = 0; i_ext < _ext_edges->n_elts; i_ext++)
-          if (CS_ABS(next_edge) == CS_ABS(_ext_edges->array[i_ext]))
+          if (cs::abs(next_edge) == cs::abs(_ext_edges->array[i_ext]))
             break;
 
         if (i_ext != 0 && i_ext == _ext_edges->n_elts) {
@@ -1281,7 +1282,7 @@ _split_face(cs_lnum_t               fid,
                If yes : delete it. */
 
           for (i_int = 0; i_int < _int_edges->n_elts; i_int++)
-            if (CS_ABS(next_edge) == CS_ABS(_int_edges->array[i_int]))
+            if (cs::abs(next_edge) == cs::abs(_int_edges->array[i_int]))
               break;
 
           if (i_int == _int_edges->n_elts) { /* Add next_edge to the list */
@@ -1456,7 +1457,7 @@ _get_subface_gnum(face_builder_t         *builder,
   */
 
   for (i = 0; i < n_subfaces; i++)
-    max_size = CS_MAX(max_size, index[i+1] - index[i]);
+    max_size = cs::max(max_size, index[i+1] - index[i]);
 
   CS_MALLOC(tmp, max_size, cs_gnum_t);
   CS_MALLOC(glob_list, index[n_subfaces], cs_gnum_t);
@@ -1661,7 +1662,7 @@ _update_mesh_after_split(cs_block_dist_info_t    bi,
 
   CS_MALLOC(new_mesh_name, strlen("AfterSplitting_n") + 5 + 1, char);
   sprintf(new_mesh_name,"%s%05d", "AfterSplitting_n",
-          CS_MAX(cs_glob_rank_id, 0));
+          cs::max(cs_glob_rank_id, 0));
 
   new_mesh = cs_join_mesh_create(new_mesh_name);
 
@@ -1856,13 +1857,14 @@ cs_join_split_faces(cs_join_param_t          param,
   cs_join_gset_t  *_old2new_history = nullptr;
   cs_join_rset_t  *open_cycle = nullptr, *edge_traversed_twice = nullptr;
   cs_join_rset_t  *loop_limit = nullptr, *head_edges = nullptr;
-  cs_join_rset_t  *subface_edges = nullptr, *ext_edges = nullptr, *int_edges = nullptr;
+  cs_join_rset_t  *subface_edges = nullptr;
+  cs_join_rset_t  *ext_edges = nullptr, *int_edges = nullptr;
   face_builder_t  *builder = nullptr;
   cs_join_mesh_t  *w = *work;
 
   const cs_lnum_t  n_init_faces = w->n_faces;
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
 
   assert(w != nullptr);
   assert(edges != nullptr);

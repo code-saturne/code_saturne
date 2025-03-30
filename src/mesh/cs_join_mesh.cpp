@@ -47,6 +47,7 @@
 #include "fvm/fvm_nodal_order.h"
 
 #include "base/cs_all_to_all.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
@@ -257,8 +258,8 @@ _compute_tolerance2(const cs_real_t   vtx_coords[],
 
   for (i = 0; i < n_faces; i++) {
     int  fid = face_lst[i] - 1;
-    n_max_face_vertices = CS_MAX(n_max_face_vertices,
-                                 f2v_idx[fid+1] - f2v_idx[fid]);
+    n_max_face_vertices = cs::max(n_max_face_vertices,
+                                  f2v_idx[fid+1] - f2v_idx[fid]);
   }
 
   CS_MALLOC(face_connect, n_max_face_vertices + 1, int);
@@ -302,11 +303,11 @@ _compute_tolerance2(const cs_real_t   vtx_coords[],
 
       int  vid = face_connect[k];
 
-      tolerance = fraction * CS_MIN(edge_quantities[4*k+3],
-                                    edge_quantities[4*(k+1)+3]);
+      tolerance = fraction * cs::min(edge_quantities[4*k+3],
+                                     edge_quantities[4*(k+1)+3]);
       sine = _compute_sine(k, edge_quantities);
 
-      vtx_tolerance[vid] = CS_MIN(vtx_tolerance[vid], sine*tolerance);
+      vtx_tolerance[vid] = cs::min(vtx_tolerance[vid], sine*tolerance);
 
     }
 
@@ -364,8 +365,8 @@ _compute_tolerance1(const cs_real_t   vtx_coords[],
 
       length = _compute_length(a, b);
       tolerance = length * fraction;
-      vtx_tolerance[vtx_id1] = CS_MIN(vtx_tolerance[vtx_id1], tolerance);
-      vtx_tolerance[vtx_id2] = CS_MIN(vtx_tolerance[vtx_id2], tolerance);
+      vtx_tolerance[vtx_id1] = cs::min(vtx_tolerance[vtx_id1], tolerance);
+      vtx_tolerance[vtx_id2] = cs::min(vtx_tolerance[vtx_id2], tolerance);
 
     }
 
@@ -381,8 +382,8 @@ _compute_tolerance1(const cs_real_t   vtx_coords[],
 
     length = _compute_length(a, b);
     tolerance = length * fraction;
-    vtx_tolerance[vtx_id1] = CS_MIN(vtx_tolerance[vtx_id1], tolerance);
-    vtx_tolerance[vtx_id2] = CS_MIN(vtx_tolerance[vtx_id2], tolerance);
+    vtx_tolerance[vtx_id1] = cs::min(vtx_tolerance[vtx_id1], tolerance);
+    vtx_tolerance[vtx_id2] = cs::min(vtx_tolerance[vtx_id2], tolerance);
 
   } /* End of loop on faces */
 }
@@ -465,7 +466,7 @@ _get_global_tolerance(cs_lnum_t            n_vertices,
   const cs_gnum_t  *part_gnum = fvm_io_num_get_global_num(select_vtx_io_num);
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
   const int  n_ranks = cs_glob_n_ranks;
 
   cs_block_dist_info_t
@@ -514,7 +515,7 @@ _get_global_tolerance(cs_lnum_t            n_vertices,
 
   for (cs_lnum_t i = 0; i < n_recv; i++) {
     cs_lnum_t vtx_id = block_gnum[i] - first_vtx_gnum;
-    g_vtx_tolerance[vtx_id] = CS_MIN(g_vtx_tolerance[vtx_id], recv_tolerance[i]);
+    g_vtx_tolerance[vtx_id] = cs::min(g_vtx_tolerance[vtx_id], recv_tolerance[i]);
   }
 
   /* Replace local vertex tolerance by the new computed global tolerance */
@@ -789,7 +790,7 @@ _get_send_faces(const cs_gnum_t   gnum_rank_index[],
 
   MPI_Comm  comm = cs_glob_mpi_comm;
 
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
 
   /* Sanity checks */
 
@@ -1140,7 +1141,7 @@ _count_new_added_vtx_to_edge(cs_lnum_t               v1_id,
   /* Find the related edge */
 
   edge_num = cs_join_mesh_get_edge(v1_id+1, v2_id+1, edges);
-  edge_id = CS_ABS(edge_num) - 1;
+  edge_id = cs::abs(edge_num) - 1;
 
   if (v1_id == v2_id)
     bft_error(__FILE__, __LINE__, 0,
@@ -1210,7 +1211,7 @@ _add_new_vtx_to_edge(cs_lnum_t               v1_id,
     /* Find the related edge */
 
     edge_num = cs_join_mesh_get_edge(v1_id+1, v2_id+1, edges);
-    edge_id = CS_ABS(edge_num) - 1;
+    edge_id = cs::abs(edge_num) - 1;
     e_start = edge_index[edge_id];
     e_end = edge_index[edge_id+1];
 
@@ -2383,7 +2384,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
 
   assert(n_ranks > 1);
   assert(mesh != nullptr);
@@ -2392,7 +2393,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 
   cs_gnum_t l_max_gnum = 0, g_max_gnum = 0;
   for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
-    l_max_gnum = CS_MAX(l_max_gnum, mesh->vertices[i].gnum);
+    l_max_gnum = cs::max(l_max_gnum, mesh->vertices[i].gnum);
 
   MPI_Allreduce(&l_max_gnum, &g_max_gnum, 1, CS_MPI_GNUM, MPI_MAX, mpi_comm);
 
@@ -2457,7 +2458,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 
     /* Get min tolerance */
     for (i = start; i < end; i++)
-      min_tol = CS_MIN(min_tol, recv_vertices[order[i]].tolerance);
+      min_tol = cs::min(min_tol, recv_vertices[order[i]].tolerance);
 
     /* Set min tolerance to all vertices sharing the same global number */
     for (i = start; i < end; i++)
@@ -3281,8 +3282,8 @@ cs_join_mesh_get_face_normal(const cs_join_mesh_t  *mesh)
   /* Compute n_max_vertices */
 
   for (i = 0; i < mesh->n_faces; i++)
-    n_max_vertices = CS_MAX(n_max_vertices,
-                            mesh->face_vtx_idx[i+1] - mesh->face_vtx_idx[i]);
+    n_max_vertices = cs::max(n_max_vertices,
+                             mesh->face_vtx_idx[i+1] - mesh->face_vtx_idx[i]);
 
   CS_MALLOC(face_vtx_coord, 3*(n_max_vertices+1), cs_real_t);
 
@@ -3403,8 +3404,8 @@ cs_join_mesh_get_edge_face_adj(const cs_join_mesh_t   *mesh,
   /* Compute n_max_vertices */
 
   for (i = 0; i < n_faces; i++)
-    n_max_vertices = CS_MAX(n_max_vertices,
-                            mesh->face_vtx_idx[i+1]-mesh->face_vtx_idx[i]);
+    n_max_vertices = cs::max(n_max_vertices,
+                             mesh->face_vtx_idx[i+1]-mesh->face_vtx_idx[i]);
 
   CS_MALLOC(face_connect, n_max_vertices + 1, cs_lnum_t);
   CS_MALLOC(counter, n_edges, cs_lnum_t);
@@ -3443,7 +3444,7 @@ cs_join_mesh_get_edge_face_adj(const cs_join_mesh_t   *mesh,
 
       assert(k != edges->vtx_idx[vtx_id1+1]);
 
-      _edge_face_idx[CS_ABS(edges->edge_lst[k])] += 1;
+      _edge_face_idx[cs::abs(edges->edge_lst[k])] += 1;
 
     } /* End of loop on vertices of the face */
 
@@ -3475,7 +3476,7 @@ cs_join_mesh_get_edge_face_adj(const cs_join_mesh_t   *mesh,
         if (edges->adj_vtx_lst[k] == face_connect[j+1])
           break;
 
-      edge_id = CS_ABS(edges->edge_lst[k]) - 1;
+      edge_id = cs::abs(edges->edge_lst[k]) - 1;
       shift = _edge_face_idx[edge_id] + counter[edge_id];
       _edge_face_lst[shift] = i+1;
       counter[edge_id] += 1;

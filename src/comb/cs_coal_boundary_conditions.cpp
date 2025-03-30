@@ -224,7 +224,7 @@ _recompute_inlet_state(void)
           /* Calculation of total X2 per zone
              Small correction in case of a closed inlet */
 
-          if (cs_math_fabs(qimpc) < cs_math_epzero)
+          if (cs::abs(qimpc) < cs_math_epzero)
             ci->state->x20[icla] = 0.;
           else
             ci->state->x20[icla] =   ci->qimpcp[icha] / qimpc
@@ -567,7 +567,7 @@ cs_coal_boundary_conditions(int  bc_type[])
           /* Calculation of total X2 per zone
              Small correction in case of a closed inlet */
 
-          if (cs_math_fabs(qimpc) < cs_math_epzero)
+          if (cs::abs(qimpc) < cs_math_epzero)
             ci->state->x20[icla] = 0.;
           else
             ci->state->x20[icla] =   ci->qimpcp[icha] / qimpc

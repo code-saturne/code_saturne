@@ -185,8 +185,8 @@ cs_user_porosity(cs_domain_t   *domain)
       cs_lnum_t jj = i_face_cells[f_id][1];
 
       cs_real_t face_porosity
-        = CS_MAX(i_f_face_surf[f_id] / i_face_surf[f_id],
-                 cs_math_epzero);
+        = cs::max(i_f_face_surf[f_id] / i_face_surf[f_id],
+                  cs_math_epzero);
 
       mq->i_f_face_factor[f_id][0] = cell_porosity[ii] / face_porosity;
       mq->i_f_face_factor[f_id][1] = cell_porosity[jj] / face_porosity;

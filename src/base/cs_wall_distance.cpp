@@ -221,8 +221,8 @@ cs_wall_distance(int iterns)
         cs_boundary_conditions_set_neumann_scalar_hmg(f_id,
                                                       bc_coeffs_wd);
 
-      cs_real_t d =   cs_math_fabs(a_prev - coefa_wd[f_id])
-                    + cs_math_fabs(b_prev - coefb_wd[f_id]);
+      cs_real_t d =   cs::abs(a_prev - coefa_wd[f_id])
+                    + cs::abs(b_prev - coefb_wd[f_id]);
 
       if (d > 1e-12)
         have_diff = 1;
@@ -495,7 +495,7 @@ cs_wall_distance(int iterns)
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    dpvar[c_id] = cs_math_fmax(wall_dist[c_id], 0.0);
+    dpvar[c_id] = cs::max(wall_dist[c_id], 0.0);
 
     /* Save working field for the next time step */
     if (f_w_dist_aux_pre != nullptr)
@@ -556,8 +556,8 @@ cs_wall_distance(int iterns)
   cs_real_t _dismin =  cs_math_big_r;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    _dismin = cs_math_fmin(wall_dist[c_id], _dismin);
-    _dismax = cs_math_fmax(wall_dist[c_id], _dismax);
+    _dismin = cs::min(wall_dist[c_id], _dismin);
+    _dismax = cs::max(wall_dist[c_id], _dismax);
   }
 
   if (cs_glob_rank_id > -1)  {
@@ -891,8 +891,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
     if (   bc_type[f_id] == CS_SMOOTHWALL
         || bc_type[f_id] == CS_ROUGHWALL) {
 
-      xusnmx = cs_math_fmax(xusnmx, coefa_yp[f_id]);
-      xusnmn = cs_math_fmin(xusnmn, coefa_yp[f_id]);
+      xusnmx = cs::max(xusnmx, coefa_yp[f_id]);
+      xusnmn = cs::min(xusnmn, coefa_yp[f_id]);
     }
   }
 
@@ -906,10 +906,10 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   else {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-      cs_real_t usna = yplus[c_id] / cs_math_fmax(w_dist[c_id],
-                                                  cs_math_epzero);
-      usna = cs_math_fmax(usna, xusnmn);
-      usna = cs_math_fmin(usna, xusnmx);
+      cs_real_t usna = yplus[c_id] / cs::max(w_dist[c_id],
+                                             cs_math_epzero);
+      usna = cs::max(usna, xusnmn);
+      usna = cs::min(usna, xusnmx);
 
       dvarp[c_id] = usna;
     }
@@ -1005,13 +1005,13 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
     /* Clipping: essential if you initialize with (u * /nu) of
        the previous time step */
 
-    dvarp[c_id] = cs_math_fmax(dvarp[c_id], xusnmn);
-    dvarp[c_id] = cs_math_fmin(dvarp[c_id], xusnmx);
+    dvarp[c_id] = cs::max(dvarp[c_id], xusnmn);
+    dvarp[c_id] = cs::min(dvarp[c_id], xusnmx);
 
     yplus[c_id] = dvarp[c_id] * w_dist[c_id];
 
-    dismin = cs_math_fmin(yplus[c_id], dismin);
-    dismax = cs_math_fmax(yplus[c_id], dismax);
+    dismin = cs::min(yplus[c_id], dismin);
+    dismax = cs::max(yplus[c_id], dismax);
 
   }
 
@@ -1116,8 +1116,8 @@ cs_wall_distance_geometric(void)
   cs_real_t dismin =  cs_math_big_r;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    dismin = cs_math_fmin(wall_dist[c_id], dismin);
-    dismax = cs_math_fmax(wall_dist[c_id], dismax);
+    dismin = cs::min(wall_dist[c_id], dismin);
+    dismax = cs::max(wall_dist[c_id], dismax);
   }
 
   cs_log_printf

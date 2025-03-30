@@ -46,6 +46,7 @@
 #include "base/cs_all_to_all.h"
 #include "base/cs_base.h"
 #include "base/cs_block_dist.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 
@@ -5086,7 +5087,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MIN(v[elt_id * stride + l], p[k * stride + l]);
+                cs::min(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
         else {
@@ -5094,7 +5095,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id + l * n_elts] =
-                CS_MIN(v[elt_id + l * n_elts], p[k * stride + l]);
+                cs::min(v[elt_id + l * n_elts], p[k * stride + l]);
           }
         }
         j += itf->size;
@@ -5112,7 +5113,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MIN(v[elt_id * stride + l], p[k * stride + l]);
+                cs::min(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
         else {
@@ -5120,7 +5121,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id + l * n_elts] =
-                CS_MIN(p[k * stride + l], v[elt_id + l * n_elts]);
+                cs::min(p[k * stride + l], v[elt_id + l * n_elts]);
           }
         }
         j += itf->size;
@@ -5138,7 +5139,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MIN(v[elt_id * stride + l], p[k * stride + l]);
+                cs::min(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
         else {
@@ -5146,7 +5147,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id + l * n_elts] =
-                CS_MIN(v[elt_id + l * n_elts], p[k * stride + l]);
+                cs::min(v[elt_id + l * n_elts], p[k * stride + l]);
           }
         }
         j += itf->size;
@@ -5164,7 +5165,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MIN(v[elt_id * stride + l], p[k * stride + l]);
+                cs::min(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
         else {
@@ -5172,7 +5173,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id + l * n_elts] =
-                CS_MIN(v[elt_id + l * n_elts], p[k * stride + l]);
+                cs::min(v[elt_id + l * n_elts], p[k * stride + l]);
           }
         }
         j += itf->size;
@@ -5190,7 +5191,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MIN(v[elt_id * stride + l], p[k * stride + l]);
+              cs::min(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5198,7 +5199,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MIN(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::min(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5216,7 +5217,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MIN(v[elt_id * stride + l], p[k * stride + l]);
+              cs::min(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5224,7 +5225,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MIN(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::min(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5242,7 +5243,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MIN(v[elt_id * stride + l], p[k * stride + l]);
+              cs::min(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5250,7 +5251,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MIN(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::min(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5268,7 +5269,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MIN(v[elt_id * stride + l], p[k * stride + l]);
+              cs::min(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5276,7 +5277,7 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MIN(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::min(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5359,7 +5360,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
         else {
@@ -5367,7 +5368,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id + l * n_elts] =
-                CS_MAX(v[elt_id + l * n_elts], p[k * stride + l]);
+                cs::max(v[elt_id + l * n_elts], p[k * stride + l]);
           }
         }
         j += itf->size;
@@ -5385,7 +5386,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
         else {
@@ -5393,7 +5394,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id + l * n_elts] =
-                CS_MAX(p[k * stride + l], v[elt_id + l * n_elts]);
+                cs::max(p[k * stride + l], v[elt_id + l * n_elts]);
           }
         }
         j += itf->size;
@@ -5411,7 +5412,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
         else {
@@ -5419,7 +5420,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (l = 0; l < stride; l++)
               v[elt_id + l * n_elts] =
-                CS_MAX(v[elt_id + l * n_elts], p[k * stride + l]);
+                cs::max(v[elt_id + l * n_elts], p[k * stride + l]);
           }
         }
         j += itf->size;
@@ -5437,7 +5438,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+              cs::max(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5445,7 +5446,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MAX(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::max(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5463,7 +5464,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+              cs::max(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5471,7 +5472,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MAX(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::max(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5489,7 +5490,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+              cs::max(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5497,7 +5498,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MAX(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::max(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5515,7 +5516,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+              cs::max(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5523,7 +5524,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MAX(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::max(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5541,7 +5542,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id * stride + l] =
-              CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+              cs::max(v[elt_id * stride + l], p[k * stride + l]);
         }
       }
       else {
@@ -5549,7 +5550,7 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
           cs_lnum_t elt_id = itf->elt_id[k];
           for (l = 0; l < stride; l++)
             v[elt_id + l * n_elts] =
-              CS_MAX(v[elt_id + l * n_elts], p[k * stride + l]);
+              cs::max(v[elt_id + l * n_elts], p[k * stride + l]);
         }
       }
       j += itf->size;
@@ -5678,15 +5679,15 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (cs_lnum_t l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
           else {
             for (cs_lnum_t k = s_id; k < e_id; k++) {
               cs_lnum_t elt_id = itf->elt_id[k];
               for (cs_lnum_t l = 0; l < stride; l++)
-                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
-                                              p[k*stride + l]);
+                v[elt_id + l*n_elts] = cs::max(v[elt_id + l*n_elts],
+                                               p[k*stride + l]);
             }
           }
         }
@@ -5701,15 +5702,15 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (cs_lnum_t l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
           else {
             for (cs_lnum_t k = s_id; k < e_id; k++) {
               cs_lnum_t elt_id = itf->elt_id[k];
               for (cs_lnum_t l = 0; l < stride; l++)
-                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
-                                              p[k*stride + l]);
+                v[elt_id + l*n_elts] = cs::max(v[elt_id + l*n_elts],
+                                               p[k*stride + l]);
             }
           }
         }
@@ -5724,15 +5725,15 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (cs_lnum_t l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
           else {
             for (cs_lnum_t k = s_id; k < e_id; k++) {
               cs_lnum_t elt_id = itf->elt_id[k];
               for (cs_lnum_t l = 0; l < stride; l++)
-                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
-                                              p[k*stride + l]);
+                v[elt_id + l*n_elts] = cs::max(v[elt_id + l*n_elts],
+                                               p[k*stride + l]);
             }
           }
         }
@@ -5747,15 +5748,15 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (cs_lnum_t l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
           else {
             for (cs_lnum_t k = s_id; k < e_id; k++) {
               cs_lnum_t elt_id = itf->elt_id[k];
               for (cs_lnum_t l = 0; l < stride; l++)
-                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
-                                              p[k*stride + l]);
+                v[elt_id + l*n_elts] = cs::max(v[elt_id + l*n_elts],
+                                               p[k*stride + l]);
             }
           }
         }
@@ -5770,15 +5771,15 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (cs_lnum_t l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
           else {
             for (cs_lnum_t k = s_id; k < e_id; k++) {
               cs_lnum_t elt_id = itf->elt_id[k];
               for (cs_lnum_t l = 0; l < stride; l++)
-                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
-                                              p[k*stride + l]);
+                v[elt_id + l*n_elts] = cs::max(v[elt_id + l*n_elts],
+                                               p[k*stride + l]);
             }
           }
         }
@@ -5793,15 +5794,15 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (cs_lnum_t l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
           else {
             for (cs_lnum_t k = s_id; k < e_id; k++) {
               cs_lnum_t elt_id = itf->elt_id[k];
               for (cs_lnum_t l = 0; l < stride; l++)
-                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
-                                              p[k*stride + l]);
+                v[elt_id + l*n_elts] = cs::max(v[elt_id + l*n_elts],
+                                               p[k*stride + l]);
             }
           }
         }
@@ -5816,15 +5817,15 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (cs_lnum_t l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
           else {
             for (cs_lnum_t k = s_id; k < e_id; k++) {
               cs_lnum_t elt_id = itf->elt_id[k];
               for (cs_lnum_t l = 0; l < stride; l++)
-                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
-                                              p[k*stride + l]);
+                v[elt_id + l*n_elts] = cs::max(v[elt_id + l*n_elts],
+                                               p[k*stride + l]);
             }
           }
         }
@@ -5839,15 +5840,15 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
             cs_lnum_t elt_id = itf->elt_id[k];
             for (cs_lnum_t l = 0; l < stride; l++)
               v[elt_id * stride + l] =
-                CS_MAX(v[elt_id * stride + l], p[k * stride + l]);
+                cs::max(v[elt_id * stride + l], p[k * stride + l]);
           }
         }
           else {
             for (cs_lnum_t k = s_id; k < e_id; k++) {
               cs_lnum_t elt_id = itf->elt_id[k];
               for (cs_lnum_t l = 0; l < stride; l++)
-                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
-                                              p[k*stride + l]);
+                v[elt_id + l*n_elts] = cs::max(v[elt_id + l*n_elts],
+                                               p[k*stride + l]);
             }
           }
         }
@@ -6046,7 +6047,7 @@ cs_interface_tag_local_matches(const cs_interface_t     *itf,
                                cs_gnum_t                 tag_value,
                                cs_gnum_t                *tag)
 {
-  int l_rank = CS_MAX(cs_glob_rank_id, 0);
+  int l_rank = cs::max(cs_glob_rank_id, 0);
 
   if (itf->rank != l_rank)
     return;
@@ -6082,7 +6083,7 @@ cs_interface_tag_local_matches(const cs_interface_t     *itf,
     cs_lnum_t e_id = tr_index[tr_id+2];
 
     for (cs_lnum_t j = s_id; j < e_id; j++) {
-      cs_lnum_t k = CS_MAX(itf->elt_id[j], match_id[j]);
+      cs_lnum_t k = cs::max(itf->elt_id[j], match_id[j]);
       tag[k] = tag_value;
     }
 

@@ -133,8 +133,8 @@ _compute_min_max(cs_lnum_t       n_vals,
   cs_real_t _min = DBL_MAX, _max = -DBL_MAX;
 
   for (cs_lnum_t i = 0; i < n_vals; i++) {
-    _min = CS_MIN(_min, var[i]);
-    _max = CS_MAX(_max, var[i]);
+    _min = cs::min(_min, var[i]);
+    _max = cs::max(_max, var[i]);
   }
 
 #if defined(HAVE_MPI)
@@ -581,7 +581,7 @@ _compute_histogram(user_histogram_t  *histogram,
 
   cs_lnum_t n_loop = 1;
   cs_real_t bandwidth_variation
-    = CS_ABS(bandwidth - bandwidth_update) / bandwidth;
+    = cs::abs(bandwidth - bandwidth_update) / bandwidth;
 
   /*perform a loop to try top optimize bandwidth*/
   while (n_loop < 10 && bandwidth_variation > 0.05 && IQR > DBL_EPSILON
@@ -621,8 +621,8 @@ _compute_histogram(user_histogram_t  *histogram,
 
     bandwidth_update = (max - min) / ((cs_real_t)n_bins);
 
-    bandwidth_variation = CS_ABS(bandwidth - bandwidth_update) / bandwidth;
-    IQR_var             = CS_ABS(IQR - IQR_pre) / IQR;
+    bandwidth_variation = cs::abs(bandwidth - bandwidth_update) / bandwidth;
+    IQR_var             = cs::abs(IQR - IQR_pre) / IQR;
 
     n_loop++;
   }
@@ -656,7 +656,7 @@ _output_histogram_ot([[maybe_unused]]user_histogram_t  *histogram,
   for (int b_id = 0; b_id < n_bins; b_id++) {
     h_i[b_id] = histogram->h_i[b_id];
     l_i[b_id] = histogram->l_i[b_id];
-    min_li    = CS_MIN(l_i[b_id], min_li);
+    min_li    = cs::min(l_i[b_id], min_li);
   }
 
   if (min_li < DBL_EPSILON * 1e4)
@@ -1190,7 +1190,7 @@ _set_layers_stl_mesh(user_profile_t  *profile,
   /* plane size is calculated to be enveloppe of cell selected size*/
   cs_real_t i_size     = (profile->max_i - profile->min_i);
   cs_real_t j_size     = (profile->max_j - profile->min_j);
-  cs_real_t plane_size = CS_MAX(i_size, j_size) * 1.5;
+  cs_real_t plane_size = cs::max(i_size, j_size) * 1.5;
 
   // Calculate center  of each planes
   cs_real_3_t O_planes_coord[6];
@@ -2648,8 +2648,8 @@ user_profile_compute(user_profile_t  *profile)
     profile->mean_f[l_id] = histogram->mean;
     profile->sd_f[l_id]   = histogram->sd;
 
-    min_field = CS_MIN(min_field, histogram->min);
-    max_field = CS_MAX(max_field, histogram->max);
+    min_field = cs::min(min_field, histogram->min);
+    max_field = cs::max(max_field, histogram->max);
   }
 
   /*update min and max field over all layer and all MPI ranks*/

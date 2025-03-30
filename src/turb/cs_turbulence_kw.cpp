@@ -414,8 +414,8 @@ cs_turbulence_kw(int phase_id)
       smbrk[c_id] += usimpk[c_id]*cvara_k[c_id];
       smbrw[c_id] += usimpw[c_id]*cvara_omg[c_id];
       /* Implicit part */
-      tinstk[c_id] += cs_math_fmax(-usimpk[c_id], 0.);
-      tinstw[c_id] += cs_math_fmax(-usimpw[c_id], 0.);
+      tinstk[c_id] += cs::max(-usimpk[c_id], 0.);
+      tinstw[c_id] += cs::max(-usimpw[c_id], 0.);
     });
   }
 
@@ -514,7 +514,7 @@ cs_turbulence_kw(int phase_id)
       cs_real_t xgdw2sw =  cs_math_3_square_norm(grado[c_id])
                          / cs_math_pow2(cvar_omg[c_id]);
 
-      maxgdsv[c_id] = CS_MAX(xgdk2sk, xgdw2sw);
+      maxgdsv[c_id] = cs::max(xgdk2sk, xgdw2sw);
 
       /* Viscosity for the following computation of the velocity Laplacian */
       w1[c_id] = 1.;
@@ -806,12 +806,12 @@ cs_turbulence_kw(int phase_id)
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t visct = cpro_pcvto[c_id];
       cs_real_t rho = cromo[c_id];
-      prodw[c_id] += visct*cs_math_fmax(-grad_dot_g[c_id], 0.);
+      prodw[c_id] += visct*cs::max(-grad_dot_g[c_id], 0.);
       prodk[c_id] -= visct*grad_dot_g[c_id];
 
       /* Implicit Buoyant terms when negative */
       tinstk[c_id]
-        += CS_MAX(cell_f_vol[c_id]*visct/cvara_k[c_id]*grad_dot_g[c_id], 0.);
+        += cs::max(cell_f_vol[c_id]*visct/cvara_k[c_id]*grad_dot_g[c_id], 0.);
 
       /* Save for post processing */
       if (f_tke_buoy != nullptr)
@@ -889,7 +889,7 @@ cs_turbulence_kw(int phase_id)
         cs_real_t xxf1   = xf1[c_id];
         cs_real_t xgamma = xxf1 * ckwgm1 + (1. - xxf1)*ckwgm2;
         cs_real_t xbeta  = xxf1 * ckwbt1 + (1. - xxf1)*ckwbt2;
-        cs_real_t xdist  = CS_MAX(w_dist[c_id], cs_math_epzero);
+        cs_real_t xdist  = cs::max(w_dist[c_id], cs_math_epzero);
         cs_real_t xlt    = sqrt(xk) / (cmu*xw);
         cs_real_t xdelta = pow(cell_f_vol[c_id], 1./3.);
 
@@ -905,7 +905,7 @@ cs_turbulence_kw(int phase_id)
           xfd    = 1. - tanh(pow(8.*xrd, 3));
         }
 
-        cs_real_t xdiff  = CS_MAX(xlt - (cddes * xdelta), 0.);
+        cs_real_t xdiff  = cs::max(xlt - (cddes * xdelta), 0.);
         cs_real_t fhybr  = xlt/(xlt - xfd*xdiff);
         /* fhybr is stored so that it can be used after */
         w1[c_id]= fhybr;
@@ -962,7 +962,7 @@ cs_turbulence_kw(int phase_id)
                                   / ((xbeta/cmu)-xgamma))
                            * pow(volume[c_id], 1./3.);
         cs_real_t lvk = xkappa*sqrt(xsij2 / d2uidxi2[c_id]);
-        cs_real_t lvksas = CS_MAX(lvkmin, lvk);
+        cs_real_t lvksas = cs::max(lvkmin, lvk);
         cs_real_t lmod = sqrt(xk)/(pow(cmu,0.25)*xw);
 
         cs_real_t xqsas = fmax(  ro * csas_eta2 * xkappa * xsij2
@@ -1094,10 +1094,10 @@ cs_turbulence_kw(int phase_id)
         /* Implicit source terms on k,
          * Note: we implicit lag_st_k if negative */
         tinstk[c_id] += fmax(-st_k/cvara_k[c_id], 0.);
-        tinstk[c_id] += CS_MAX(-st_i, 0.);
+        tinstk[c_id] += cs::max(-st_i, 0.);
 
         /* Implicit source terms on omega */
-        tinstw[c_id] += CS_MAX(-ce4 * st_k / cvara_k[c_id], 0.);
+        tinstw[c_id] += cs::max(-ce4 * st_k / cvara_k[c_id], 0.);
 
       });
 
@@ -1383,7 +1383,7 @@ cs_turbulence_kw(int phase_id)
       cs_real_t romvsd     = 1./(ro*volume[c_id]);
       smbrk[c_id] = smbrk[c_id]*romvsd;
       smbrw[c_id] = smbrw[c_id]*romvsd;
-      cs_real_t divp23 = d2s3*cs_math_fmax(cpro_divukw[c_id], 0.);
+      cs_real_t divp23 = d2s3*cs::max(cpro_divukw[c_id], 0.);
       cs_real_t produc = w1[c_id]*cpro_s2kw[c_id] + grad_dot_g[c_id];
       cs_real_t xk = cvara_k[c_id];
       cs_real_t xw = cvara_omg[c_id];
@@ -1919,7 +1919,7 @@ cs_turbulence_kw_mu_t(int phase_id)
 
       if (hybrid_turb == CS_HYBRID_HTLES) {
         xw *= psi[c_id];
-        xf2 *= CS_MAX(cs_math_epzero, 1. - blend[c_id]);
+        xf2 *= cs::max(cs_math_epzero, 1. - blend[c_id]);
       }
       visct[c_id] =   rom*ckwa1*xk
                     / fmax(ckwa1*xw, sqrt(cpro_s2kw[c_id])*xf2);

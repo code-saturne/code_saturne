@@ -643,7 +643,7 @@ cs_notebook_log(void)
   if (_max_size_name < 1)
     for (int i = 0; i < _n_entries; i++) {
       log_needed = _entries[i]->log;
-      _max_size_name = CS_MAX(_max_size_name, strlen(_entries[i]->name));
+      _max_size_name = cs::max(_max_size_name, strlen(_entries[i]->name));
     }
 
   if (log_needed) {

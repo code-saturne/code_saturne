@@ -306,7 +306,7 @@ _turb_flux_st(const char          *name,
            * (      alpha  * (c1trit/xttdrbt - c2trit*gradv[c_id][i][i])
               + (1.-alpha) * (xxc1*xnal[i]*xnal[i]/xttdrbw));
 
-       fimp[c_id][i][i] += cs_math_fmax(imp_term, 0);
+       fimp[c_id][i][i] += cs::max(imp_term, 0);
 
        /* Production terms
         *----------------- */
@@ -355,7 +355,7 @@ _turb_flux_st(const char          *name,
        imp_term =   cell_f_vol[c_id] * crom[c_id]
                   * (1.-alpha)/xttdrbw * (xxc2+xxc3*xnal[i]*xnal[i]);
 
-       fimp[c_id][i][i] += cs_math_fmax(imp_term, 0);
+       fimp[c_id][i][i] += cs::max(imp_term, 0);
 
        if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
            && rans_mdl->has_buoyant_term == 1) {
@@ -376,7 +376,7 @@ _turb_flux_st(const char          *name,
            imp_term =   cell_f_vol[c_id] * crom[c_id]
              * grav[i] * cpro_beta[c_id] * cvara_tt[c_id] / wptp;
 
-           fimp[c_id][i][i] += cs_math_fmax(imp_term, 0);
+           fimp[c_id][i][i] += cs::max(imp_term, 0);
          }
        }
 
@@ -569,9 +569,9 @@ _thermal_flux_and_diff(cs_field_t         *f,
             temp[ii] -=  ctheta*xtt*cs_turb_xiafm
                         *xut[c_id][jj]*gradv[c_id][ii][jj];
           else
-            temp[ii] -= cs_math_fmin(  ctheta*xtt*cs_turb_xiafm*xut[c_id][jj]
-                                     * gradv[c_id][ii][jj],
-                                     0);
+            temp[ii] -= cs::min(  ctheta*xtt*cs_turb_xiafm*xut[c_id][jj]
+                                * gradv[c_id][ii][jj],
+                                0.);
         }
       }
 
@@ -594,9 +594,9 @@ _thermal_flux_and_diff(cs_field_t         *f,
                         + ctheta*gamma_eb*xnal[ii]*xnal[jj]*xut[c_id][jj];
           else
             temp[ii] -=   ctheta
-                        * cs_math_fmin(tmp1 +  gamma_eb*xnal[ii]
-                                              *xnal[jj]*xut[c_id][jj],
-                                       0);
+                        * cs::min(tmp1 +  gamma_eb*xnal[ii]
+                                         *xnal[jj]*xut[c_id][jj],
+                                  0);
         }
       }
 
@@ -633,7 +633,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
       /* AFM */
       if (turb_flux_model == 20) {
         coeff_imp
-          = 1.+cs_math_fmax(ctheta*xtt*cs_turb_xiafm*gradv[c_id][ii][ii], 0);
+          = 1.+cs::max(ctheta*xtt*cs_turb_xiafm*gradv[c_id][ii][ii], 0);
 
         xut[c_id][ii] = xut[c_id][ii]/coeff_imp;
         temp[ii] = temp[ii]/coeff_imp;
@@ -645,9 +645,9 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
       /* EB-AFM */
       else if (turb_flux_model == 21) {
-        coeff_imp = 1. + cs_math_fmax(  ctheta*xtt*xi_ebafm*gradv[c_id][ii][ii]
-                                      + ctheta*gamma_eb*xnal[ii]*xnal[ii],
-                                      0);
+        coeff_imp = 1. + cs::max(  ctheta*xtt*xi_ebafm*gradv[c_id][ii][ii]
+                                 + ctheta*gamma_eb*xnal[ii]*xnal[ii],
+                                 0.);
 
         xut[c_id][ii] = xut[c_id][ii]/coeff_imp;
         temp[ii] = temp[ii] / coeff_imp;
@@ -883,8 +883,8 @@ _solve_rit(const cs_field_t     *f,
           rhs_ut[c_id][i] += fimp[c_id][i][j]*xuta[c_id][j];
         }
         /* Diagonal */
-        fimp[c_id][i][i] = cs_math_fmax(-fimp[c_id][i][i],
-                                        cs_math_zero_threshold);
+        fimp[c_id][i][i] = cs::max(-fimp[c_id][i][i],
+                                   cs_math_zero_threshold);
       }
     }
   }

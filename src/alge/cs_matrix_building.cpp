@@ -459,7 +459,7 @@ _coeffs_msr(const cs_mesh_t            *m,
 
       if (c2f_sgn[cidx] > 0) {
 
-        cs_real_t flui =  0.5*(_i_massflux - cs_math_fabs(_i_massflux));
+        cs_real_t flui =  0.5*(_i_massflux - cs::abs(_i_massflux));
 
         // When solving the temperature, multiply convective part by Cp
         cs_real_t cpi = (is_thermal) ? xcpp[c_id] : 1.0;
@@ -476,7 +476,7 @@ _coeffs_msr(const cs_mesh_t            *m,
       }
       else {
 
-        cs_real_t fluj = -0.5*(_i_massflux + cs_math_fabs(_i_massflux));
+        cs_real_t fluj = -0.5*(_i_massflux + cs::abs(_i_massflux));
 
         // When solving the temperature, multiply convective part by Cp
         cs_real_t cpj = (is_thermal) ? xcpp[c2c[cidx]] : 1.0;
@@ -504,7 +504,7 @@ _coeffs_msr(const cs_mesh_t            *m,
     cs_lnum_t ii = b_face_cells[f_id];
 
     cs_real_t _b_massflux = b_massflux[f_id];
-    cs_real_t flui = 0.5*(_b_massflux - cs_math_fabs(_b_massflux));
+    cs_real_t flui = 0.5*(_b_massflux - cs::abs(_b_massflux));
 
     // When solving the temperature, multiply convective part by Cp
     cs_real_t cpi = (is_thermal) ? xcpp[ii] : 1.0;
@@ -616,7 +616,7 @@ _coeffs_msr(const cs_mesh_t            *m,
 
       if (c2f_sgn[cidx] > 0) {
 
-        cs_real_t flui =  0.5*(_i_massflux - cs_math_fabs(_i_massflux));
+        cs_real_t flui =  0.5*(_i_massflux - cs::abs(_i_massflux));
 
         // Computation of extradiagonal terms
         cs_real_t xai = thetap*(flui -idiffp*i_visc[f_id]);
@@ -635,7 +635,7 @@ _coeffs_msr(const cs_mesh_t            *m,
       }
       else {
 
-        cs_real_t fluj = -0.5*(_i_massflux + cs_math_fabs(_i_massflux));
+        cs_real_t fluj = -0.5*(_i_massflux + cs::abs(_i_massflux));
 
         // When solving the temperature, multiply convective part by Cp
 
@@ -666,7 +666,7 @@ _coeffs_msr(const cs_mesh_t            *m,
 
     cs_real_t _b_massflux = b_massflux[f_id];
     cs_lnum_t ii = b_face_cells[f_id];
-    cs_real_t flui = 0.5*(_b_massflux - cs_math_fabs(_b_massflux));
+    cs_real_t flui = 0.5*(_b_massflux - cs::abs(_b_massflux));
 
     cs_real_t bfac[stride*stride];
 
@@ -814,7 +814,7 @@ _coeffs_msr_porous(const cs_mesh_t            *m,
 
       if (c2f_sgn[cidx] > 0) {
 
-        cs_real_t flui = 0.5*(_i_massflux - cs_math_fabs(_i_massflux))
+        cs_real_t flui = 0.5*(_i_massflux - cs::abs(_i_massflux))
                          - idiffp*i_visc[f_id];
         cs_real_t ffm1 = (i_f_face_factor[f_id][1] - 1.);
 
@@ -830,7 +830,7 @@ _coeffs_msr_porous(const cs_mesh_t            *m,
       }
       else {
 
-        cs_real_t fluj = -0.5*(_i_massflux + cs_math_fabs(_i_massflux))
+        cs_real_t fluj = -0.5*(_i_massflux + cs::abs(_i_massflux))
                          - idiffp*i_visc[f_id];
         cs_real_t ffm1 = (i_f_face_factor[f_id][0] - 1.);
 
@@ -861,9 +861,9 @@ _coeffs_msr_porous(const cs_mesh_t            *m,
 
     cs_real_t flu[2] = {
       /* (m_ij)^+ */
-      0.5 * (b_massflux[f_id] + cs_math_fabs(b_massflux[f_id])),
+      0.5 * (b_massflux[f_id] + cs::abs(b_massflux[f_id])),
       /* (m_ij)^- */
-      0.5 * (b_massflux[f_id] - cs_math_fabs(b_massflux[f_id]))
+      0.5 * (b_massflux[f_id] - cs::abs(b_massflux[f_id]))
     };
 
     cs_real_t n_b_n
@@ -1098,8 +1098,8 @@ _matrix_scalar(const cs_mesh_t            *m,
     cs_lnum_t jj = i_face_cells[f_id][1];
 
     cs_real_t _i_massflux = i_massflux[f_id];
-    cs_real_t flui =  0.5*(_i_massflux - cs_math_fabs(_i_massflux));
-    cs_real_t fluj = -0.5*(_i_massflux + cs_math_fabs(_i_massflux));
+    cs_real_t flui =  0.5*(_i_massflux - cs::abs(_i_massflux));
+    cs_real_t fluj = -0.5*(_i_massflux + cs::abs(_i_massflux));
 
     cs_real_t cpi = 1.0, cpj = 1.0;
     /* When solving the temperature, the convective part is multiplied by Cp */
@@ -1136,7 +1136,7 @@ _matrix_scalar(const cs_mesh_t            *m,
     cs_lnum_t ii = b_face_cells[f_id];
 
     cs_real_t _b_massflux = b_massflux[f_id];
-    cs_real_t flui = 0.5*(_b_massflux - cs_math_fabs(_b_massflux));
+    cs_real_t flui = 0.5*(_b_massflux - cs::abs(_b_massflux));
 
     cs_real_t cpi = 1.0;
     /* When solving the temperature, the convective part is multiplied by Cp */
@@ -1361,8 +1361,8 @@ _matrix_strided(const cs_mesh_t            *m,
       cs_lnum_t ii = i_face_cells[f_id][0];
       cs_lnum_t jj = i_face_cells[f_id][1];
 
-      cs_real_t flu[2] = {0.5*iconvp*(_i_massflux - cs_math_fabs(_i_massflux)),
-                         -0.5*iconvp*(_i_massflux + cs_math_fabs(_i_massflux))};
+      cs_real_t flu[2] = {0.5*iconvp*(_i_massflux - cs::abs(_i_massflux)),
+                         -0.5*iconvp*(_i_massflux + cs::abs(_i_massflux))};
 
       /* Computation of extradiagonal terms */
       /*
@@ -1408,9 +1408,9 @@ _matrix_strided(const cs_mesh_t            *m,
       cs_lnum_t jj = i_face_cells[f_id][1];
 
       cs_real_t flu[2] = {
-         0.5 * iconvp * (_i_massflux - cs_math_fabs(_i_massflux))
+         0.5 * iconvp * (_i_massflux - cs::abs(_i_massflux))
           - idiffp*i_visc[f_id],
-        -0.5 * iconvp * (_i_massflux + cs_math_fabs(_i_massflux))
+        -0.5 * iconvp * (_i_massflux + cs::abs(_i_massflux))
           - idiffp*i_visc[f_id]
       };
 
@@ -1488,9 +1488,9 @@ _matrix_strided(const cs_mesh_t            *m,
 
       cs_real_t flu[2] = {
         /* (m_ij)^+ */
-        iconvp * 0.5 * (b_massflux[f_id] + cs_math_fabs(b_massflux[f_id])),
+        iconvp * 0.5 * (b_massflux[f_id] + cs::abs(b_massflux[f_id])),
         /* (m_ij)^- */
-        iconvp * 0.5 * (b_massflux[f_id] - cs_math_fabs(b_massflux[f_id]))
+        iconvp * 0.5 * (b_massflux[f_id] - cs::abs(b_massflux[f_id]))
       };
 
       cs_real_t n_b_n
@@ -1536,7 +1536,7 @@ _matrix_strided(const cs_mesh_t            *m,
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
       cs_real_t _b_massflux = b_massflux[f_id];
       cs_lnum_t ii = b_face_cells[f_id];
-      cs_real_t flui = 0.5*(_b_massflux - cs_math_fabs(_b_massflux));
+      cs_real_t flui = 0.5*(_b_massflux - cs::abs(_b_massflux));
 
       cs_real_t bfac[stride*stride];
 
@@ -1776,8 +1776,8 @@ _matrix_anisotropic_diffusion_strided
     cs_lnum_t jj = i_face_cells[f_id][1];
 
     cs_real_t flu[2] = {
-       iconvp * 0.5*(i_massflux[f_id] - cs_math_fabs(i_massflux[f_id])),
-      -iconvp * 0.5*(i_massflux[f_id] + cs_math_fabs(i_massflux[f_id]))
+       iconvp * 0.5*(i_massflux[f_id] - cs::abs(i_massflux[f_id])),
+      -iconvp * 0.5*(i_massflux[f_id] + cs::abs(i_massflux[f_id]))
     };
 
     /* Computation of extradiagonal terms */
@@ -1847,9 +1847,9 @@ _matrix_anisotropic_diffusion_strided
 
       cs_real_t flu[2] = {
          /* (m_ij)^+ */
-         iconvp * 0.5 * (b_massflux[f_id] + cs_math_fabs(b_massflux[f_id])),
+         iconvp * 0.5 * (b_massflux[f_id] + cs::abs(b_massflux[f_id])),
          /* (m_ij)^- */
-         iconvp * 0.5 * (b_massflux[f_id] - cs_math_fabs(b_massflux[f_id]))
+         iconvp * 0.5 * (b_massflux[f_id] - cs::abs(b_massflux[f_id]))
       };
 
       cs_real_t n_b_n
@@ -1893,7 +1893,7 @@ _matrix_anisotropic_diffusion_strided
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
       cs_lnum_t ii = b_face_cells[f_id];
-      cs_real_t flui = 0.5*(b_massflux[f_id] - cs_math_fabs(b_massflux[f_id]));
+      cs_real_t flui = 0.5*(b_massflux[f_id] - cs::abs(b_massflux[f_id]));
       cs_real_t bfac[stride*stride];
 
       for (cs_lnum_t i = 0; i < stride; i++) {

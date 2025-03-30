@@ -1099,9 +1099,10 @@ cs_parall_sum_strided
     for (int i = 0; i < Stride; i++)
       w[i] = first[i];
 
-    for (size_t i = 0; i < n_vals; i++)
+    for (int i = 0; i < n_vals; i++) {
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
+    }
 
     cs_parall_sum(work_size, datatype, w);
 

@@ -537,8 +537,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
               += _porosity_from_scan_opt.transformation_matrix[j][k] * xyz[k];
 
           /* Compute bounding box*/
-          min_vec[j] = CS_MIN(min_vec[j], point_coords[i][j]);
-          max_vec[j] = CS_MAX(max_vec[j], point_coords[i][j]);
+          min_vec[j] = cs::min(min_vec[j], point_coords[i][j]);
+          max_vec[j] = cs::max(max_vec[j], point_coords[i][j]);
         }
 
         /* When colors are written as int, Paraview interprets them in [0, 255]
@@ -562,8 +562,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
       /* Update global bounding box */
       for (int j = 0; j < 3; j++) {
-        min_vec_tot[j] = CS_MIN(min_vec[j], min_vec_tot[j]);
-        max_vec_tot[j] = CS_MAX(max_vec[j], max_vec_tot[j]);
+        min_vec_tot[j] = cs::min(min_vec[j], min_vec_tot[j]);
+        max_vec_tot[j] = cs::max(max_vec[j], max_vec_tot[j]);
       }
 
       if (n_read_points > 0)
@@ -1285,7 +1285,7 @@ cs_compute_porosity_from_scan(void)
                                        nullptr);
 
     for (cs_lnum_t c_id = 0; c_id< m->n_cells; c_id++)
-      f->val[c_id] = CS_MAX(f->val[c_id], pvar[c_id]);
+      f->val[c_id] = cs::max(f->val[c_id], pvar[c_id]);
 
     /* Parallel synchronisation */
     cs_halo_sync(m->halo, false, f->val);

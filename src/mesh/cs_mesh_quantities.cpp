@@ -153,8 +153,8 @@ _proj_solid_vtx_to_plane(const cs_real_t  v0[3],
 
   cs_math_3_normalize(v01, v01);
   cs_real_t edgde_dot_nw = cs_math_3_dot_product(v01, nw);
-  cs_real_t vone_dot_nw = CS_MAX(cs_math_3_dot_product(v1, nw), 0.);
-  cs_real_t proj_factor; // = (  cs_math_fmax(cs_math_3_dot_product(v01, nw), 0.)
+  cs_real_t vone_dot_nw = cs::max(cs_math_3_dot_product(v1, nw), 0.);
+  cs_real_t proj_factor; // = (  cs::max(cs_math_3_dot_product(v01, nw), 0.)
                          //     > cs_math_epzero) ?
   if (edgde_dot_nw <= 0)
     proj_factor = 0.;
@@ -185,7 +185,7 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
+  const cs_lnum_t n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
 
   const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
 
@@ -1002,11 +1002,11 @@ _correct_cell_face_center(const cs_mesh_t    *mesh,
                                                   i_face_normal[face_id]);
 
       double lambda = 0.5;
-      if (CS_ABS(ps2) > 1.e-20)
+      if (cs::abs(ps2) > 1.e-20)
         lambda = ps1 / ps2;
 
-      lambda = CS_MAX(lambda, 1./3.);
-      lambda = CS_MIN(lambda, 2./3.);
+      lambda = cs::max(lambda, 1./3.);
+      lambda = cs::min(lambda, 2./3.);
 
       /* F = I + lambda * IJ */
       for (cs_lnum_t i = 0; i < 3; i++)
@@ -1101,7 +1101,7 @@ _correct_cell_face_center(const cs_mesh_t    *mesh,
 
         //FIXME
         if (vol >= 0)
-          vol = CS_MAX(vol,1.e-20);
+          vol = cs::max(vol,1.e-20);
 
         double a1 = dxidxj[cell_id][0][0] / vol;
         double a2 = dxidxj[cell_id][0][1] / vol;
@@ -1118,16 +1118,17 @@ _correct_cell_face_center(const cs_mesh_t    *mesh,
                                     + a3 * (a4*a8 - a7*a5));
 
         //FIXME
-        determinant[cell_id] = CS_MAX(determinant[cell_id],1.e-20);
-        determinant[cell_id] = CS_MIN(determinant[cell_id],1./determinant[cell_id]);
+        determinant[cell_id] = cs::max(determinant[cell_id], 1.e-20);
+        determinant[cell_id] = cs::min(determinant[cell_id],
+                                       1./determinant[cell_id]);
 
         /* M-matrix structure control */
-        double mmatrice1a = a1 - CS_ABS(a2) - CS_ABS(a3);
-        double mmatrice1b = a1 - CS_ABS(a4) - CS_ABS(a7);
-        double mmatrice2a = a5 - CS_ABS(a4) - CS_ABS(a6);
-        double mmatrice2b = a5 - CS_ABS(a2) - CS_ABS(a8);
-        double mmatrice3a = a9 - CS_ABS(a7) - CS_ABS(a8);
-        double mmatrice3b = a9 - CS_ABS(a6) - CS_ABS(a3);
+        double mmatrice1a = a1 - cs::abs(a2) - cs::abs(a3);
+        double mmatrice1b = a1 - cs::abs(a4) - cs::abs(a7);
+        double mmatrice2a = a5 - cs::abs(a4) - cs::abs(a6);
+        double mmatrice2b = a5 - cs::abs(a2) - cs::abs(a8);
+        double mmatrice3a = a9 - cs::abs(a7) - cs::abs(a8);
+        double mmatrice3b = a9 - cs::abs(a6) - cs::abs(a3);
 
         if (   mmatrice1a <= 0. || mmatrice1b <= 0.
             || mmatrice2a <= 0. || mmatrice2b <= 0.
@@ -1203,7 +1204,7 @@ _compute_cell_quantities(const cs_mesh_t      *mesh,
   /* Mesh connectivity */
 
   const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const  cs_lnum_t  n_b_faces = CS_MAX(mesh->n_b_faces, mesh->n_b_faces_all);
+  const  cs_lnum_t  n_b_faces = cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
   const  cs_lnum_t  n_cells = mesh->n_cells;
   const  cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const  cs_lnum_2_t  *i_face_cells
@@ -1333,7 +1334,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
                          cs_real_3_t         cell_cen[])
 {
   const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const  cs_lnum_t  n_b_faces = CS_MAX(mesh->n_b_faces, mesh->n_b_faces_all);
+  const  cs_lnum_t  n_b_faces = cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
 
   const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
@@ -1495,7 +1496,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
 
           double det_inv = cocg11 * a11 + cocg21 * a12 + cocg31 * a13;
 
-          if (CS_ABS(det_inv) >= 1.e-15) {
+          if (cs::abs(det_inv) >= 1.e-15) {
             det_inv = 1. / det_inv;
 
             aainv[0][0] = a11 * det_inv;
@@ -1616,7 +1617,7 @@ _compute_cell_volume(const cs_mesh_t   *mesh,
                      const cs_real_3_t  cell_cen[],
                      cs_real_t          cell_vol[])
 {
-  const cs_lnum_t  n_b_faces = CS_MAX(mesh->n_b_faces, mesh->n_b_faces_all);
+  const cs_lnum_t  n_b_faces = cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
   const cs_real_t  a_third = 1.0/3.0;
 
   /* Initialization */
@@ -1688,10 +1689,10 @@ _cell_bad_volume_correction(const cs_mesh_t   *mesh,
       const cs_real_t vol2 = cell_vol[cell_id2];
 
       if (vol2 > 0.)
-        vol_neib_max[cell_id1] = CS_MAX(vol_neib_max[cell_id1], vol2);
+        vol_neib_max[cell_id1] = cs::max(vol_neib_max[cell_id1], vol2);
 
       if (vol1 > 0.)
-        vol_neib_max[cell_id2] = CS_MAX(vol_neib_max[cell_id2], vol1);
+        vol_neib_max[cell_id2] = cs::max(vol_neib_max[cell_id2], vol1);
     }
 
     /* Previous value of 0.2 sometimes leads to computation divergence */
@@ -1699,8 +1700,8 @@ _cell_bad_volume_correction(const cs_mesh_t   *mesh,
     const cs_real_t critmin = 0.01;
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      cell_vol[cell_id] = CS_MAX(cell_vol[cell_id],
-                                 critmin * vol_neib_max[cell_id]);
+      cell_vol[cell_id] = cs::max(cell_vol[cell_id],
+                                  critmin * vol_neib_max[cell_id]);
 
     if (mesh->halo != nullptr)
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, cell_vol);
@@ -1732,8 +1733,8 @@ _cell_volume_reductions(const cs_mesh_t  *mesh,
   *tot_vol = 0.;
 
   for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
-    *min_vol = CS_MIN(*min_vol, cell_vol[cell_id]);
-    *max_vol = CS_MAX(*max_vol, cell_vol[cell_id]);
+    *min_vol = cs::min(*min_vol, cell_vol[cell_id]);
+    *max_vol = cs::max(*max_vol, cell_vol[cell_id]);
     *tot_vol = *tot_vol + cell_vol[cell_id];
   }
 }
@@ -1793,7 +1794,7 @@ _compute_face_distances(cs_lnum_t         n_i_faces,
                                                      cell_cen[cell_id2],
                                                      u_normal);
 
-    if (CS_ABS(i_dist[face_id]) > 1e-20) {
+    if (cs::abs(i_dist[face_id]) > 1e-20) {
       /* Distance between the face center of gravity
          and the neighbor cell center
          and dot-product with the normal */
@@ -1830,7 +1831,7 @@ _compute_face_distances(cs_lnum_t         n_i_faces,
       const cs_real_t critmin = 0.01;
       if (i_dist[face_id] < critmin * distmax) {
         w_count[0] += 1;
-        i_dist[face_id] = cs_math_fmax(i_dist[face_id], critmin * distmax);
+        i_dist[face_id] = cs::max(i_dist[face_id], critmin * distmax);
       }
 
       /* Clippings due to null surface */
@@ -1847,8 +1848,8 @@ _compute_face_distances(cs_lnum_t         n_i_faces,
       }
 
       /* Clipping of weighting */
-      weight[face_id] = cs_math_fmax(weight[face_id], 0.001);
-      weight[face_id] = cs_math_fmin(weight[face_id], 0.999);
+      weight[face_id] = cs::max(weight[face_id], 0.001);
+      weight[face_id] = cs::min(weight[face_id], 0.999);
     }
   }
 
@@ -2424,7 +2425,7 @@ _compute_fluid_solid_cell_quantities
 {
   /* Mesh connectivity */
 
-  //const cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
+  //const cs_lnum_t  n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
@@ -2595,7 +2596,7 @@ _compute_unit_normals(const cs_mesh_t       *m,
                       cs_mesh_quantities_t  *mq)
 {
   cs_lnum_t  n_i_faces = m->n_i_faces;
-  cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
+  cs_lnum_t  n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
 
   const cs_real_3_t *i_face_normal = (const cs_real_3_t *)mq->i_face_normal;
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
@@ -3024,7 +3025,7 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
                                       cs_mesh_quantities_t  *mq)
 {
   cs_lnum_t  n_i_faces = m->n_i_faces;
-  cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
+  cs_lnum_t  n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
   cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
 
   const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
@@ -3257,24 +3258,22 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 {
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
-  const cs_lnum_t * i_face_vtx_idx
-    = (const cs_lnum_t *)m->i_face_vtx_idx;
-  const cs_lnum_t * b_face_vtx_idx
-    = (const cs_lnum_t *)m->b_face_vtx_idx;
-  const cs_lnum_t * b_face_vtx_lst
-    = (const cs_lnum_t *)m->b_face_vtx_lst;
-  const cs_real_3_t *restrict vtx_coord
-    = (const cs_real_3_t *)m->vtx_coord;
-  const cs_real_3_t *restrict i_face_cog = (const cs_real_3_t *)mq_g->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog = (const cs_real_3_t *)mq_g->b_face_cog;
+  const cs_lnum_t * i_face_vtx_idx = m->i_face_vtx_idx;
+  const cs_lnum_t * b_face_vtx_idx = m->b_face_vtx_idx;
+  const cs_lnum_t * b_face_vtx_lst = m->b_face_vtx_lst;
+  const cs_real_3_t *restrict vtx_coord = (const cs_real_3_t *)m->vtx_coord;
+  const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq_g->b_face_cog;
 
-  cs_real_3_t *restrict cell_f_cen      = (cs_real_3_t *)mq_f->cell_cen;
-  cs_real_3_t *restrict i_f_face_cog    = (cs_real_3_t *)mq_f->i_face_cog;
-  cs_real_3_t *restrict b_f_face_cog    = (cs_real_3_t *)mq_f->b_face_cog;
+  cs_real_t *restrict cell_g_vol        = mq_g->cell_vol;
+  cs_real_t *restrict cell_f_vol        = mq_f->cell_vol;
+  cs_real_3_t *restrict cell_f_cen      = mq_f->cell_cen;
+  cs_real_3_t *restrict i_f_face_cog    = mq_f->i_face_cog;
+  cs_real_3_t *restrict b_f_face_cog    = mq_f->b_face_cog;
   cs_real_3_t *restrict i_f_face_normal = (cs_real_3_t *)mq_f->i_face_normal;
   cs_real_3_t *restrict b_f_face_normal = (cs_real_3_t *)mq_f->b_face_normal;
   cs_real_3_t *restrict c_w_face_normal = (cs_real_3_t *)mq_f->c_w_face_normal;
-  cs_real_t *restrict c_w_face_surf     = (cs_real_t *)mq_f->c_w_face_surf;
+  cs_real_t *restrict c_w_face_surf     = mq_f->c_w_face_surf;
   cs_real_3_t *restrict c_w_face_cog    = (cs_real_3_t *)mq_f->c_w_face_cog;
   cs_field_t *f_poro = cs_field_by_name("porosity");
 
@@ -3380,7 +3379,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     cs_lnum_t n_w_vtx = 0;
 
     /* First guess of fluid volume */
-    mq_f->cell_vol[c_id] = (1 - mq_f->c_disable_flag[c_id]) * mq_g->cell_vol[c_id];
+    cell_f_vol[c_id] = (1 - mq_f->c_disable_flag[c_id]) * cell_g_vol[c_id];
 
     /* Interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
@@ -3896,7 +3895,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
           else { /* Fluid or wall vertex */
 
             for (cs_lnum_t i = 0; i < 3; i++)
-              f_vtx_coord[f_vtx_count][i] = vc[loc_id[1]][i] + cen_points[c_id][i];
+              f_vtx_coord[f_vtx_count][i]
+                = vc[loc_id[1]][i] + cen_points[c_id][i];
 
             f_vtx_count++;
 
@@ -5125,14 +5125,14 @@ cs_mesh_quantities_cell_extents(const cs_mesh_t  *m,
       const cs_real_t *coo = m->vtx_coord + vtx_id*3;
       if (c_id_0 > -1) {
         for (cs_lnum_t k = 0; k < 3; k++) {
-          bbox[c_id_0][k] = CS_MIN(bbox[c_id_0][k], coo[k]);
-          bbox[c_id_0][k+3] = CS_MAX(bbox[c_id_0][k+3], coo[k]);
+          bbox[c_id_0][k] = cs::min(bbox[c_id_0][k], coo[k]);
+          bbox[c_id_0][k+3] = cs::max(bbox[c_id_0][k+3], coo[k]);
         }
       }
       if (c_id_1 > -1) {
         for (cs_lnum_t k = 0; k < 3; k++) {
-          bbox[c_id_1][k] = CS_MIN(bbox[c_id_1][k], coo[k]);
-          bbox[c_id_1][k+3] = CS_MAX(bbox[c_id_1][k+3], coo[k]);
+          bbox[c_id_1][k] = cs::min(bbox[c_id_1][k], coo[k]);
+          bbox[c_id_1][k+3] = cs::max(bbox[c_id_1][k+3], coo[k]);
         }
       }
     }
@@ -5149,8 +5149,8 @@ cs_mesh_quantities_cell_extents(const cs_mesh_t  *m,
       const cs_real_t *coo = m->vtx_coord + vtx_id*3;
       if (c_id > -1) {
         for (cs_lnum_t k = 0; k < 3; k++) {
-          bbox[c_id][k] = CS_MIN(bbox[c_id][k], coo[k]);
-          bbox[c_id][k+3] = CS_MAX(bbox[c_id][k+3], coo[k]);
+          bbox[c_id][k] = cs::min(bbox[c_id][k], coo[k]);
+          bbox[c_id][k+3] = cs::max(bbox[c_id][k+3], coo[k]);
         }
       }
     }

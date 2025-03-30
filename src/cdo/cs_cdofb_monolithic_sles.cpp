@@ -176,7 +176,7 @@ _build_shared_structures_full_system(cs_cdo_system_block_t  *block,
   for (cs_lnum_t f = 0; f < n_faces; f++) {
     int  sten
       = 9*(f2f->idx[f+1]-f2f->idx[f] + 1) + 6*(f2c->idx[f+1]-f2c->idx[f]);
-    max_sten = CS_MAX(max_sten, sten);
+    max_sten = cs::max(max_sten, sten);
   }
 
   cs_gnum_t *grows = nullptr, *gcols = nullptr;
@@ -532,14 +532,14 @@ _gkb_init_context(cs_saddle_solver_t              *solver,
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
   const cs_matrix_t  *m11 = cs_cdo_system_get_matrix(sh, 0);
-  const cs_lnum_t  max_b11_size = CS_MAX(cs_matrix_get_n_columns(m11), n1_dofs);
+  const cs_lnum_t  max_b11_size = cs::max(cs_matrix_get_n_columns(m11), n1_dofs);
 
   BFT_MALLOC(ctx->w, max_b11_size, cs_real_t);
   BFT_MALLOC(ctx->v, max_b11_size, cs_real_t);
 
   /* Rk: rhs_tilda stores quantities in space X1 and X2 alternatively */
 
-  BFT_MALLOC(ctx->rhs_tilda, CS_MAX(n1_dofs, n2_dofs), cs_real_t);
+  BFT_MALLOC(ctx->rhs_tilda, cs::max(n1_dofs, n2_dofs), cs_real_t);
 
   /* Convergence members (energy norm estimation) */
 
@@ -554,13 +554,13 @@ _gkb_init_context(cs_saddle_solver_t              *solver,
   else if (gamma < 10)
     ctx->zeta_size = tt;
   else if (gamma < 100)
-    ctx->zeta_size = CS_MAX(1, tt - 1);
+    ctx->zeta_size = cs::max(1, tt - 1);
   else if (gamma < 1e3)
-    ctx->zeta_size = CS_MAX(1, tt - 2);
+    ctx->zeta_size = cs::max(1, tt - 2);
   else if (gamma < 1e4)
-    ctx->zeta_size = CS_MAX(1, tt - 3);
+    ctx->zeta_size = cs::max(1, tt - 3);
   else
-    ctx->zeta_size = CS_MAX(1, tt - 4);
+    ctx->zeta_size = cs::max(1, tt - 4);
 
   BFT_MALLOC(ctx->zeta_array, ctx->zeta_size, cs_real_t);
   for (int i = 0; i < ctx->zeta_size; i++)
@@ -636,8 +636,8 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
   ctx->m11 = cs_cdo_system_get_matrix(sh, 0);
-  ctx->b11_max_size = CS_MAX(cs_matrix_get_n_columns(ctx->m11),
-                             solver->n1_scatter_dofs);
+  ctx->b11_max_size = cs::max(cs_matrix_get_n_columns(ctx->m11),
+                              solver->n1_scatter_dofs);
 
   /* Buffers of size n1_scatter_dofs */
 
@@ -655,7 +655,7 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
 
   cs_lnum_t  size = solver->n2_scatter_dofs;
   if (cs_glob_n_ranks > 1)
-    size = CS_MAX(size, connect->n_cells_with_ghosts);
+    size = cs::max(size, connect->n_cells_with_ghosts);
   BFT_MALLOC(ctx->gk, size, cs_real_t);
 
   // No scaling for an augmentation term with Uzawa-CG
@@ -683,8 +683,8 @@ _simple_init_context(cs_saddle_solver_t                *solver,
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
   ctx->m11 = cs_cdo_system_get_matrix(sh, 0);
-  ctx->b11_max_size = CS_MAX(cs_matrix_get_n_columns(ctx->m11),
-                             solver->n1_scatter_dofs);
+  ctx->b11_max_size = cs::max(cs_matrix_get_n_columns(ctx->m11),
+                              solver->n1_scatter_dofs);
 
   /* Buffers of size n1_scatter_dofs */
 
@@ -1234,8 +1234,8 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
   /* Update the context after the matrix building */
 
   ctx->m11 = cs_cdo_system_get_matrix(sh, 0);
-  ctx->b11_max_size = CS_MAX(cs_matrix_get_n_columns(ctx->m11),
-                             solver->n1_scatter_dofs);
+  ctx->b11_max_size = cs::max(cs_matrix_get_n_columns(ctx->m11),
+                              solver->n1_scatter_dofs);
 
   /* Prepare the solution array at faces. It has to be allocated to a greater
    * size in case of parallelism in order to allow for a correct matrix-vector

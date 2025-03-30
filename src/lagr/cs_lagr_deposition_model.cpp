@@ -298,7 +298,7 @@ _dep_sweep(cs_real_t *dx,
 
   else if (yplusa < *dintrf) {
 
-    cs_real_t dtp1 = (*dintrf - yplusa) * lvisq / CS_ABS(*vpart);
+    cs_real_t dtp1 = (*dintrf - yplusa) * lvisq / cs::abs(*vpart);
     *dx *= (*dintrf - *yplus) / (yplusa - *yplus);
     cs_real_t dxaux     = *dx;
     cs_real_t ypluss    = *yplus;
@@ -501,11 +501,11 @@ _dep_diffusion_phases(cs_real_t *dx,
            - 2.0 * aux4 * *tlag2 * taup * taup * (1.0 - aux1 * aux2);
   omega2      = aux8 * omega2;
 
-  if (CS_ABS(gama2) > cs_math_epzero) {
+  if (cs::abs(gama2) > cs_math_epzero) {
 
     p21  = omegam / sqrt (gama2);
     p22  = omega2 - cs_math_pow2(p21);
-    p22  = sqrt (CS_MAX(0.0, p22));
+    p22  = sqrt (cs::max(0.0, p22));
 
   }
   else {
@@ -545,7 +545,7 @@ _dep_diffusion_phases(cs_real_t *dx,
     p32  = 0.0;
 
   p33    = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
-  p33    = sqrt (CS_MAX(0.0, p33));
+  p33    = sqrt (cs::max(0.0, p33));
   ter5p  = p31 * vagaus[0] + p32 * vagaus[1] + p33 * vagaus[2];
 
   /* ====================================================================
@@ -771,7 +771,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t ucarbr = kdifbrtp * kdifbr * 0.5 * l2p;
   cs_real_t xcarbr =   cs_math_pow2(kdifbrtp)
                      * (dtl - l1p * (2.0 + l1p) * 0.5 * taup);
-  cs_real_t ubr    = sqrt (CS_MAX(ucarbr, 0.0));
+  cs_real_t ubr    = sqrt (cs::max(ucarbr, 0.0));
 
   /* ---------------------------------------------------
    * Deterministic terms computation
@@ -807,20 +807,20 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    * -----------------------------------------------------*/
 
   /*  P11 Computation     */
-  cs_real_t p11 = sqrt (CS_MAX(0.0, pgam2));
+  cs_real_t p11 = sqrt (cs::max(0.0, pgam2));
   cs_real_t p21;
 
   /*  P21 and P22 computations */
-  if (CS_ABS(p11) > cs_math_epzero)
+  if (cs::abs(p11) > cs_math_epzero)
     p21  = pgagga / p11;
   else
     p21  = 0.0;
 
-  cs_real_t p22 = sqrt (CS_MAX (0.0, ggam2 - cs_math_pow2(p21)));
+  cs_real_t p22 = sqrt (cs::max(0.0, ggam2 - cs_math_pow2(p21)));
 
   /*  P31, P32 and P33 computations */
   cs_real_t p31;
-  if (CS_ABS(p11) > cs_math_epzero) {
+  if (cs::abs(p11) > cs_math_epzero) {
     p31  = pgaome / p11;
   }
   else {
@@ -828,12 +828,12 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   }
 
   cs_real_t p32;
-  if (CS_ABS(p22) > cs_math_epzero)
+  if (cs::abs(p22) > cs_math_epzero)
     p32  = (ggaome - p21 * p31) / p22;
   else
     p32  = 0.0;
 
-  cs_real_t p33 = sqrt(CS_MAX(0.0, ome2 - p31*p31 - p32*p32));
+  cs_real_t p33 = sqrt(cs::max(0.0, ome2 - p31*p31 - p32*p32));
 
   /* ----------------------------------------------------------
    *  Brownian motion term
@@ -842,12 +842,12 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t p11br  = ubr;
 
   cs_real_t p21br;
-  if (CS_ABS(p11br) > cs_math_epzero)
+  if (cs::abs(p11br) > cs_math_epzero)
     p21br = xiubr / p11br;
   else
     p21br = 0.0;
 
-  cs_real_t p22br  = sqrt (CS_MAX (xcarbr - cs_math_pow2(p21br), 0.0));
+  cs_real_t p22br  = sqrt (cs::max(xcarbr - cs_math_pow2(p21br), 0.0));
 
   /* ----------------------------------------------------------
    *  The random terms are consequently:
@@ -992,15 +992,15 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
        * -----------------------------------------------------*/
 
       /*  P11 computation     */
-      p11 = sqrt (CS_MAX (0.0, pgam2));
+      p11 = sqrt (cs::max(0.0, pgam2));
 
       /*  P21 and P22 computation  */
-      if (CS_ABS(p11) > cs_math_epzero)
+      if (cs::abs(p11) > cs_math_epzero)
         p21 = pgagga / p11;
       else
         p21 = 0.0;
 
-      p22 = sqrt (CS_MAX (0.0, ggam2 - cs_math_pow2(p21)));
+      p22 = sqrt (cs::max(0.0, ggam2 - cs_math_pow2(p21)));
 
       /* ----------------------------------------------------------
        *  The random terms are:

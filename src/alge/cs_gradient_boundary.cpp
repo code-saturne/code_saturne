@@ -390,8 +390,8 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
           cocg[5] += dc[0]*dc[2]*ddc;
 
           cs_real_t var_j = var[c_id1];
-          var_min = cs_math_fmin(var_min, var_j);
-          var_max = cs_math_fmax(var_max, var_j);
+          var_min = cs::min(var_min, var_j);
+          var_max = cs::max(var_max, var_j);
 
           cs_real_t pfac = (var_j - var_i) * ddc;
           for (cs_lnum_t ll = 0; ll < 3; ll++)
@@ -422,8 +422,8 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
                               / (c_weight[c_id] + c_weight[c_id1]);
 
           cs_real_t var_j = var[c_id1];
-          var_min = cs_math_fmin(var_min, var_j);
-          var_max = cs_math_fmax(var_max, var_j);
+          var_min = cs::min(var_min, var_j);
+          var_max = cs::max(var_max, var_j);
 
           cs_real_t pfac = (var_j - var_i) * ddc;
           for (cs_lnum_t ll = 0; ll < 3; ll++)
@@ -459,8 +459,8 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 
       /* Use unreconstructed value for limiter */
       cs_real_t var_f = a + b*var_i;
-      var_min = cs_math_fmin(var_min, var_f);
-      var_max = cs_math_fmax(var_max, var_f);
+      var_min = cs::min(var_min, var_f);
+      var_max = cs::max(var_max, var_f);
 
       cs_real_t unddij = 1. / b_dist[c_f_id];
       cs_real_t umcbdd = (1. - b) * unddij;
@@ -711,8 +711,8 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
 
       /* Use unreconstructed value for limiter */
       cs_real_t var_f = a + b*var_i;
-      var_min = cs_math_fmin(var_min, var_f);
-      var_max = cs_math_fmax(var_max, var_f);
+      var_min = cs::min(var_min, var_f);
+      var_max = cs::max(var_max, var_f);
 
       cs_real_t unddij = 1. / b_dist[c_f_id];
       cs_real_t umcbdd = (1. - b) * unddij;
@@ -974,8 +974,8 @@ cs_gradient_boundary_iprime_lsq_strided
               rhs[kk][ll] += dc[ll] * pfac;
           }
           for (cs_lnum_t ll = 0; ll < stride; ll++) {
-            var_min[ll] = cs_math_fmin(var_min[ll], var_j[ll]);
-            var_max[ll] = cs_math_fmax(var_max[ll], var_j[ll]);
+            var_min[ll] = cs::min(var_min[ll], var_j[ll]);
+            var_max[ll] = cs::max(var_max[ll], var_j[ll]);
           }
 
         }
@@ -1011,8 +1011,8 @@ cs_gradient_boundary_iprime_lsq_strided
           }
 
           for (cs_lnum_t ll = 0; ll < stride; ll++) {
-            var_min[ll] = cs_math_fmin(var_min[ll], var_j[ll]);
-            var_max[ll] = cs_math_fmax(var_max[ll], var_j[ll]);
+            var_min[ll] = cs::min(var_min[ll], var_j[ll]);
+            var_max[ll] = cs::max(var_max[ll], var_j[ll]);
           }
         }
       }
@@ -1074,8 +1074,8 @@ cs_gradient_boundary_iprime_lsq_strided
       }
 
       for (cs_lnum_t ll = 0; ll < stride; ll++) {
-        var_min[ll] = cs_math_fmin(var_min[ll], var_f[ll]);
-        var_max[ll] = cs_math_fmax(var_max[ll], var_f[ll]);
+        var_min[ll] = cs::min(var_min[ll], var_f[ll]);
+        var_max[ll] = cs::max(var_max[ll], var_f[ll]);
       }
 
       for (cs_lnum_t kk = 0; kk < stride; kk++) {
@@ -1144,7 +1144,7 @@ cs_gradient_boundary_iprime_lsq_strided
 
    /* Refine boundary value estimation iteratively to account for bc_coeffs */
 
-    if (cs_math_fabs(b_sum) > 0) {
+    if (cs::abs(b_sum) > 0) {
 
       /* Compute norms for convergence testing. Note that we prefer to
          test convergence based on the variable at I' rather than of the
@@ -1309,7 +1309,7 @@ cs_gradient_boundary_iprime_lsq_strided
     if (var_iprime_lim != nullptr) {
 
       assert(df_limiter != nullptr);
-      cs_real_t clip_d = cs_math_fmax(df_limiter[c_id], 0.);
+      cs_real_t clip_d = cs::max(df_limiter[c_id], 0.);
 
       // Apply diffusion limiter
       for (cs_lnum_t ii = 0; ii < stride; ii++) {

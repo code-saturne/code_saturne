@@ -53,6 +53,7 @@
 #include "base/cs_halo_perio.h"
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh_halo.h"
 #include "base/cs_numbering.h"
@@ -143,8 +144,8 @@ _compute_local_minmax(cs_lnum_t        n_vals,
   cs_lnum_t  _min = var[0], _max = var[0];
 
   for (i = 1; i < n_vals; i++) {
-    _min = CS_MIN(_min, var[i]);
-    _max = CS_MAX(_max, var[i]);
+    _min = cs::min(_min, var[i]);
+    _max = cs::max(_max, var[i]);
   }
 
   if (min != nullptr)  *min = _min;
@@ -191,7 +192,7 @@ _display_histograms(cs_lnum_t        n_vals,
   if (val_max - val_min > 0) {
 
     if (val_max-val_min < n_steps)
-      n_steps = CS_MAX(1, floor(val_max-val_min));
+      n_steps = cs::max(1., floor(val_max-val_min));
 
     step = (double)(val_max - val_min) / n_steps;
 

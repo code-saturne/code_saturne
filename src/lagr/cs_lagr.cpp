@@ -53,11 +53,9 @@
 
 #include "base/cs_array.h"
 #include "base/cs_base.h"
-
 #include "base/cs_field.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
-
 #include "base/cs_math.h"
 #include "mesh/cs_mesh_location.h"
 
@@ -1794,7 +1792,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
           cs_real_t romf   = extra->cromf->val[iel];
           cs_real_t visccf = extra->viscl->val[iel] / romf;
 
-          cs_real_t _ustar = CS_MAX(extra->ustar->val[ifac], 1e-15);
+          cs_real_t _ustar = cs::max(extra->ustar->val[ifac], 1e-15);
 
           cs_real_t surfb = b_face_surf[ifac];
           ustarmoy     = ustarmoy + surfb * _ustar;
@@ -2440,8 +2438,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
           cs_real_t p_depo_time
             = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
           cs_real_t p_consol_height
-            = CS_MIN(cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
-                     cs_glob_lagr_consolidation_model->rate_consol * p_depo_time);
+            = cs::min(cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
+                      cs_glob_lagr_consolidation_model->rate_consol * p_depo_time);
           cs_lagr_particles_set_real(p_set, npt,
                                      CS_LAGR_CONSOL_HEIGHT, p_consol_height);
           cs_lagr_particles_set_real(p_set, npt, CS_LAGR_DEPO_TIME,

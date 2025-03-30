@@ -1339,7 +1339,7 @@ cs_internal_coupling_matrix_add_ids(int                     coupling_id,
   cs_gnum_t g_col_id[800];
 
   cs_gnum_t *g_id_l, *g_id_d;
-  CS_MALLOC(g_id_l, CS_MAX(n_local, n_distant), cs_gnum_t);
+  CS_MALLOC(g_id_l, cs::max(n_local, n_distant), cs_gnum_t);
   CS_MALLOC(g_id_d, n_local, cs_gnum_t);
 
   /* local to global preparation and exchange */
@@ -1429,7 +1429,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   /* local to global preparation and exchange */
 
   cs_gnum_t *g_id_l, *g_id_d;
-  CS_MALLOC(g_id_l, CS_MAX(n_local, n_distant), cs_gnum_t);
+  CS_MALLOC(g_id_l, cs::max(n_local, n_distant), cs_gnum_t);
   CS_MALLOC(g_id_d, n_local, cs_gnum_t);
 
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {

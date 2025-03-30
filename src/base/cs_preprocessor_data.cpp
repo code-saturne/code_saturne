@@ -2048,7 +2048,7 @@ _read_data(int                 file_id,
                     _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
         else {
           perio_num = atoi(header.sec_name + strlen("periodicity_type_"));
-          n_perio_read = CS_MAX(n_perio_read, perio_num);
+          n_perio_read = cs::max(n_perio_read, perio_num);
           cs_io_read_global(&header, &perio_type, pp_in);
         }
 
@@ -2370,7 +2370,7 @@ cs_preprocessor_check_perio(void)
 
   for (int i = 0; i < _n_mesh_files; i++) {
     retval = _read_perio_info((_mesh_file_info + i)->filename);
-    perio_flag = CS_MAX(retval, perio_flag);
+    perio_flag = cs::max(retval, perio_flag);
   }
 
   _mesh_reader_destroy(&mr);

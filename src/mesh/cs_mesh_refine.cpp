@@ -309,7 +309,7 @@ _compute_face_r_level(cs_lnum_t        n_v,
   } while (v_count < _n_v);
 
   for (cs_lnum_t i = 0; i < _n_v; i++)
-    retval = CS_MAX(retval, _r_gen[i]);
+    retval = cs::max(retval, _r_gen[i]);
 
   if (_r_gen != r_gen)
     CS_FREE(_r_gen);
@@ -1688,8 +1688,8 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
        which is not further refined here, no need to subdivide it a
        second time. */
 
-    char f_r_level_ini = CS_MAX(f_c_r_level_ini[0], f_c_r_level_ini[1]);
-    char f_r_level_next = CS_MAX(f_c_r_level_next[0], f_c_r_level_next[1]);
+    char f_r_level_ini = cs::max(f_c_r_level_ini[0], f_c_r_level_ini[1]);
+    char f_r_level_next = cs::max(f_c_r_level_next[0], f_c_r_level_next[1]);
 
     if (f_r_level_next > f_r_level_ini) {
       subdivide = true;
@@ -1850,8 +1850,8 @@ _build_edge_vertices(cs_mesh_t             *m,
             m->vtx_coord[(id2+k)*3 + l] = r * (  m->vtx_coord[id0*3 + l]
                                                + m->vtx_coord[id1*3 + l]);
           m->global_vtx_num[id2+k] = gnum_shift + g_e_v_num[j] + (cs_gnum_t)k;
-          m->vtx_r_gen[id2+k] = CS_MAX(m->vtx_r_gen[id0],
-                                       m->vtx_r_gen[id1]) + 1;
+          m->vtx_r_gen[id2+k] = cs::max(m->vtx_r_gen[id0],
+                                        m->vtx_r_gen[id1]) + 1;
         }
       }
     }
@@ -1871,8 +1871,8 @@ _build_edge_vertices(cs_mesh_t             *m,
           for (cs_lnum_t l = 0; l < 3; l++)
             m->vtx_coord[(id2+k)*3 + l] = r * (  m->vtx_coord[id0*3 + l]
                                                + m->vtx_coord[id1*3 + l]);
-          m->vtx_r_gen[id2+k] = CS_MAX(m->vtx_r_gen[id0],
-                                       m->vtx_r_gen[id1]) + 1;
+          m->vtx_r_gen[id2+k] = cs::max(m->vtx_r_gen[id0],
+                                        m->vtx_r_gen[id1]) + 1;
         }
       }
     }
@@ -1884,7 +1884,7 @@ _build_edge_vertices(cs_mesh_t             *m,
 
   }
 
-  m->n_vertices = CS_MAX(m->n_vertices, e_v_idx[n_edges]);
+  m->n_vertices = cs::max(m->n_vertices, e_v_idx[n_edges]);
 }
 
 /*----------------------------------------------------------------------------
@@ -4944,7 +4944,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_MALLOC(c_r_flag, m->n_cells_with_ghosts, cs_mesh_refine_type_t);
 
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
-    c_r_flag[i] = static_cast<cs_mesh_refine_type_t>(CS_MAX(0, cell_flag[i]));
+    c_r_flag[i] = static_cast<cs_mesh_refine_type_t>(cs::max(0, cell_flag[i]));
   for (cs_lnum_t i = m->n_cells; i < m->n_cells_with_ghosts; i++)
     c_r_flag[i] = CS_REFINE_NONE;
 

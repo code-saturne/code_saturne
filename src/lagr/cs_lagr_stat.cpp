@@ -2191,8 +2191,8 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
     while (cs_field_by_name_try(name) != nullptr) {
       _statistical_weight_name(stat_group, class_id, name);
       sub_id++;
-      char id_str[8];
-      snprintf(id_str, 7, "_%d", sub_id); id_str[7] = '\0';
+      char id_str[9];
+      snprintf(id_str, 8, "_%d", sub_id); id_str[8] = '\0';
       int l = strlen(name);
       int li = strlen(id_str);
       if (l+li > 63) {
@@ -2782,7 +2782,7 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
       for (cs_lnum_t je = 0; je < n_elts; je++) {
         double delta[3], delta_n[3], r[3], m_n[3];
         const cs_lnum_t k = je*wa_stride;
-        const double wa_sum_n = CS_MAX(w[k] + wa_sum[k], 1e-100);
+        const double wa_sum_n = cs::max(w[k] + wa_sum[k], 1e-100);
         for (cs_lnum_t l = 0; l < 3; l++) {
           cs_lnum_t jl = je*6 + l, jml = je*3 + l;
           delta[l]   = x[jml] - m[jml];
@@ -2815,7 +2815,7 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
     else { /* simple variance */
       for (cs_lnum_t j = 0; j < nd; j++) {
         const cs_lnum_t k = (j*wa_stride) / mt->dim;
-        double wa_sum_n = CS_MAX(w[k] + wa_sum[k], 1e-100);
+        double wa_sum_n = cs::max(w[k] + wa_sum[k], 1e-100);
         double delta = x[j] - m[j];
         double r = delta * (w[k] / wa_sum_n);
         double m_n = m[j] + r;
@@ -2831,7 +2831,7 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
 
     for (cs_lnum_t j = 0; j < nd; j++) {
       const cs_lnum_t k = (j*wa_stride) / mt->dim;
-      double wa_sum_n = CS_MAX(w[k] + wa_sum[k], 1e-100);
+      double wa_sum_n = cs::max(w[k] + wa_sum[k], 1e-100);
       val[j] += (x[j] - val[j]) * (w[k] / wa_sum_n);
     }
 
@@ -3024,7 +3024,7 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
 
               /* update weight sum with new particle weight */
               new_wa_sum = prev_wa_sum + p_weight;
-              const cs_real_t wa_sum_n = CS_MAX(new_wa_sum, 1e-100);
+              const cs_real_t wa_sum_n = cs::max(new_wa_sum, 1e-100);
 
               /* The carrier phase is in component id */
               int carrier_phase = -mt->component_id - 1;
@@ -4288,8 +4288,8 @@ cs_lagr_stat_activate_time_moment(int                    stat_type,
   cs_lagr_stat_activate(stat_type);
 
   int level = (moment >= CS_LAGR_MOMENT_VARIANCE) ? 3 : 2;
-  _base_stat_activate[stat_type] = CS_MAX(_base_stat_activate[stat_type],
-                                          level);
+  _base_stat_activate[stat_type] = cs::max(_base_stat_activate[stat_type],
+                                           level);
 }
 
 /*----------------------------------------------------------------------------*/

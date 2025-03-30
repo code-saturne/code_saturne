@@ -139,6 +139,8 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
   /*! [example_1] */
 
+  cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
+
   zn = cs_boundary_zone_by_name("1 and X <= 1.0");
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
 
@@ -148,9 +150,9 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     bc_type[face_id] = CS_ESICF;
 
     /* Velocity */
-    CS_F_(vel)->bc_coeffs->rcodcl1[face_id] = 5.0;
-    CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*1 + face_id] = 0;
-    CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*2 + face_id] = 0;
+    vel_rcodcl1[face_id] = 5.0;
+    vel_rcodcl1[n_b_faces*1 + face_id] = 0;
+    vel_rcodcl1[n_b_faces*2 + face_id] = 0;
 
     /* Pressure, Density, Temperature, Total Specific Energy
 
@@ -175,10 +177,9 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     /* Turbulence */
 
     cs_real_t uref2 =  0;
-    for(int ii = 0; ii < CS_F_(vel)->dim; ii++)
-      uref2 += cs_math_pow2(CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*ii +face_id]);
-    cs_parall_sum(1, CS_REAL_TYPE, &uref2);
-    uref2 = cs_math_fmax(uref2, 1.e-12);
+    for (cs_lnum_t ii = 0; ii < 3; ii++)
+      uref2 += cs_math_pow2(vel_rcodcl1[n_b_faces*ii +face_id]);
+    uref2 = cs::max(uref2, 1.e-12);
 
     /* Turbulence example computed using equations valid for a pipe.
 
@@ -261,9 +262,8 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
      CS_F_(e_tot)->bc_coeffs->rcodcl1[face_id] = 294465.0;
 
      /* Direction of the velocity: normal to inlet faces */
-     for(int ii = 0; ii < CS_F_(vel)->dim; ii++)
-       CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*ii +face_id]
-         = -b_face_normal[face_id][ii];
+     for (cs_lnum_t ii = 0; ii < 3; ii++)
+       vel_rcodcl1[n_b_faces*ii +face_id]= -b_face_normal[face_id][ii];
 
      /* Turbulence (no turbulence)*/
 
@@ -314,7 +314,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
       * The velocity will be projected in a plane tangent to the wall.
       * In the following example, we prescribe Ux = 1. */
 
-     CS_F_(vel)->bc_coeffs->rcodcl1[face_id] = 1.0;
+     vel_rcodcl1[face_id] = 1.0;
 
      /* Prescribed temperature
       *

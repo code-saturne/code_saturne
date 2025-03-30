@@ -129,7 +129,7 @@ _build_is_for_fieldsplit(cs_saddle_solver_t  *solver,
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
 
   PetscInt  *indices = nullptr;
-  PetscMalloc1(CS_MAX(n1_dofs, n2_dofs), &indices);
+  PetscMalloc1(cs::max(n1_dofs, n2_dofs), &indices);
 
   /* IndexSet for the (1,1)-block of DoFs */
 

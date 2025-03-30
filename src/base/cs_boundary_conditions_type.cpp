@@ -1385,7 +1385,7 @@ cs_boundary_conditions_type(bool  init,
                 if (err_flags[0] < 2) {
                   err_flags[0] = err_flags[0] + 2;
                   /* last field id */
-                  err_flags[1] = CS_MAX(err_flags[1], f->id);
+                  err_flags[1] = cs::max(err_flags[1], f->id);
                 }
               }
             }

@@ -876,7 +876,7 @@ _fill_send_halo(cs_mesh_t                 *mesh,
                                            vtx_checker,
                                            face_checker);
 
-          cell_type = CS_MIN(face_type, cell_type);
+          cell_type = cs::min(face_type, cell_type);
 
         } /* If the face is an internal face */
 
@@ -1354,10 +1354,10 @@ _get_list_buffer_size(const cs_interface_set_t  *ifs)
 
     if (tr_index != nullptr)
       for (j = 0; j < tr_index_size; j++)
-        max_lst_size = CS_MAX(max_lst_size, tr_index[j+1] - tr_index[j]);
+        max_lst_size = cs::max(max_lst_size, tr_index[j+1] - tr_index[j]);
     else
-      max_lst_size = CS_MAX(max_lst_size,
-                            (cs_lnum_t)cs_interface_size(interface));
+      max_lst_size = cs::max(max_lst_size,
+                             (cs_lnum_t)cs_interface_size(interface));
 
   } /* End of loop on interfaces */
 
@@ -2028,7 +2028,7 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
   for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
     if (halo->c_domain_rank[rank_id] != local_rank) {
       n_send_elts = halo->send_index[2*rank_id+2]- halo->send_index[2*rank_id];
-      send_buffer_size = CS_MAX(send_buffer_size, n_send_elts);
+      send_buffer_size = cs::max(send_buffer_size, n_send_elts);
     }
   }
 

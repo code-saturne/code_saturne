@@ -1428,10 +1428,10 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 #if defined(HAVE_OPENMP)
       int t_id = omp_get_thread_num();
       snprintf(filename, 127, "neighborhood_reduce_r%04d_t%02d.txt",
-               CS_MAX(cs_glob_rank_id, 0), t_id);
+               cs::max(cs_glob_rank_id, 0), t_id);
 #else
       snprintf(filename, 127, "neighborhood_reduce_r%04d.txt",
-               CS_MAX(cs_glob_rank_id, 0));
+               cs::max(cs_glob_rank_id, 0));
 #endif
       filename[127] = '\0';
       dbg_trace = fopen(filename, "w");
@@ -1451,7 +1451,7 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 
       cs_lnum_t n_c_selected_in_ext = 0;
 
-      cs_lnum_t n_c_min_true = CS_MIN(n_c, n_c_min);
+      cs_lnum_t n_c_min_true = cs::min(n_c, n_c_min);
 
       if (n_c > n_max_c) {
         n_max_c = n_c*2;
@@ -2180,8 +2180,8 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
     cs_lnum_t n_c_ini = e_id - s_id;
     cs_lnum_t n_c_red = 0;
-    n_n_min[0] = CS_MIN(n_n_min[0], n_c_ini);
-    n_n_max[0] = CS_MAX(n_n_max[0], n_c_ini);
+    n_n_min[0] = cs::min(n_n_min[0], n_c_ini);
+    n_n_max[0] = cs::max(n_n_max[0], n_c_ini);
 
     for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -2196,8 +2196,8 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
     s_id = e_id;
     cell_cells_idx[cell_id+1] = j;
 
-    n_n_min[1] = CS_MIN(n_n_min[1], n_c_red);
-    n_n_max[1] = CS_MAX(n_n_max[1], n_c_red);
+    n_n_min[1] = cs::min(n_n_min[1], n_c_red);
+    n_n_max[1] = cs::max(n_n_max[1], n_c_red);
 
   } /* End of loop on cells */
 

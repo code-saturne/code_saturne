@@ -309,7 +309,7 @@ static inline void _compute_slice
       cs_math_3_cross_product(si->normal, face_normal[f_id], nxn);
       cs_real_t norm_nxn = cs_math_3_norm(nxn);
 
-      if (cs_math_fabs(d_face_plane) < 1.e-8 && norm_nxn < 1.e-8) {
+      if (cs::abs(d_face_plane) < 1.e-8 && norm_nxn < 1.e-8) {
         if (c_id1 < n_cells)
           si->surface[c_id1] *= 0.5;
 
@@ -1037,7 +1037,7 @@ cs_real_t cs_medcoupling_slice_scalar_mean_weighted
     cs_real_t work[2] = {_int_l, _weight_l};
     cs_parall_sum(2, CS_REAL_TYPE, work);
 
-    if (cs_math_fabs(work[1]) < 1.e-12)
+    if (cs::abs(work[1]) < 1.e-12)
       retval = work[0];
     else
       retval = work[0] / work[1];

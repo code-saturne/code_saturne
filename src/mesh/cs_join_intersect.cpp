@@ -57,6 +57,7 @@
 #include "mesh/cs_join_util.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "base/cs_math.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_search.h"
@@ -264,8 +265,8 @@ _get_face_extents(const cs_lnum_t          face_start,
     cs_join_vertex_t  vtx = vertices[vtx_id];
 
     for (j = 0; j < 3; j++) {
-      extents[j] = CS_MIN(extents[j], vtx.coord[j] - vtx.tolerance);
-      extents[3 + j] = CS_MAX(extents[3 + j], vtx.coord[j] + vtx.tolerance);
+      extents[j] = cs::min(extents[j], vtx.coord[j] - vtx.tolerance);
+      extents[3 + j] = cs::max(extents[3 + j], vtx.coord[j] + vtx.tolerance);
     }
 
   } /* End of loop on face->vertices connectivity */
@@ -575,7 +576,7 @@ _break_equivalence(cs_lnum_t         n_elts,
       assert(rtf12 < 1.0);
       assert(rtf21 < 1.0);
 
-      _rtf = CS_MAX(rtf12, rtf21);
+      _rtf = cs::max(rtf12, rtf21);
       if (_rtf > rtf) {
         i1_save = i1;
         rtf = _rtf;
@@ -902,7 +903,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
    *
    */
 
-  cross_norm2 = CS_ABS(a * c - b * b);
+  cross_norm2 = cs::abs(a * c - b * b);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (tst_dbg && logfile != nullptr)
@@ -944,7 +945,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
         /* If tests are OK, we are on an interior point for E1 and E2 */
 
-        d2_e1e2 = CS_ABS(s*(a*s + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
+        d2_e1e2 = cs::abs(s*(a*s + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
         d_limit_e1 = (1.0-s) * p1e1.tolerance + s * p2e1.tolerance;
         d_limit_e2 = (1.0-t) * p1e2.tolerance + t * p2e2.tolerance;
         d2_limit_e1 = d_limit_e1 * d_limit_e1;
@@ -1126,7 +1127,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
   if (t > -fraction && t < 1.0 + fraction) { /* filter */
 
-    d2_e1e2 = CS_ABS((a + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
+    d2_e1e2 = cs::abs((a + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
 
     assert(d2_e1e2 >= -1.e-8);
 
@@ -1154,7 +1155,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
         if (t < 0.0) { /* Test intersection P2E1-P1E2 */
 
-          d2_e1e2 = CS_ABS(a + 2.0*d + f);
+          d2_e1e2 = cs::abs(a + 2.0*d + f);
           d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
@@ -1182,7 +1183,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         }
         else if (t > 1.0) { /* Test intersection P2E1-P2E2 */
 
-          d2_e1e2 = CS_ABS(a + 2.0*(b + d + e) + c + f);
+          d2_e1e2 = cs::abs(a + 2.0*(b + d + e) + c + f);
           d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
@@ -1256,7 +1257,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
 
-      d2_e1e2 = CS_ABS(s*(a*s + 2.0*d) + f);
+      d2_e1e2 = cs::abs(s*(a*s + 2.0*d) + f);
       d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
@@ -1326,7 +1327,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
 
-      d2_e1e2 = CS_ABS(s*(a*s + 2.0*(b + d)) + c + 2.0*e + f);
+      d2_e1e2 = cs::abs(s*(a*s + 2.0*(b + d)) + c + 2.0*e + f);
       d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
@@ -1393,8 +1394,8 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
     else { /* A choice between interior or extremity intersection
               has to be done */
 
-      double  ds = CS_ABS(ext_inter[2] - ext_inter[0]);
-      double  dt = CS_ABS(ext_inter[3] - ext_inter[1]);
+      double  ds = cs::abs(ext_inter[2] - ext_inter[0]);
+      double  dt = cs::abs(ext_inter[3] - ext_inter[1]);
 
       assert(n_ext_inter == 2);
 
@@ -1743,7 +1744,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
   if (t > -fraction && t < 1.0 + fraction) { /* filter */
 
-    d2_e1e2 = CS_ABS((a + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
+    d2_e1e2 = cs::abs((a + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
 
     assert(d2_e1e2 >= -1.e-8);
 
@@ -1771,7 +1772,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
         if (t < 0.0) { /* Test intersection P2E1-P1E2 */
 
-          d2_e1e2 = CS_ABS(a + 2.0*d + f);
+          d2_e1e2 = cs::abs(a + 2.0*d + f);
           d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
@@ -1800,7 +1801,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         }
         else if (t > 1.0) { /* Test intersection P2E1-P2E2 */
 
-          d2_e1e2 = CS_ABS(a + 2.0*(b + d + e) + c + f);
+          d2_e1e2 = cs::abs(a + 2.0*(b + d + e) + c + f);
           d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
@@ -1880,7 +1881,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
 
-      d2_e1e2 = CS_ABS(s*(a*s + 2.0*d) + f);
+      d2_e1e2 = cs::abs(s*(a*s + 2.0*d) + f);
       d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
@@ -1953,7 +1954,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
 
-      d2_e1e2 = CS_ABS(s*(a*s + 2.0*(b + d)) + c + 2.0*e + f);
+      d2_e1e2 = cs::abs(s*(a*s + 2.0*(b + d)) + c + 2.0*e + f);
       d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
@@ -2035,7 +2036,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
      */
 
     double  inv_cross_norm2;
-    double  cross_norm2 = CS_ABS(a * c - b * b);
+    double  cross_norm2 = cs::abs(a * c - b * b);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     if (tst_dbg && logfile != nullptr)
@@ -2070,7 +2071,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         inv_cross_norm2 = 1.0 / cross_norm2;
         s *= inv_cross_norm2;
         t *= inv_cross_norm2;
-        d2_e1e2 = CS_ABS(s*(a*s + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
+        d2_e1e2 = cs::abs(s*(a*s + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
         d_limit_e1 = (1.0-s) * p1e1.tolerance + s * p2e1.tolerance;
         d_limit_e2 = (1.0-t) * p1e2.tolerance + t * p2e2.tolerance;
         d2_limit_e1 = d_limit_e1 * d_limit_e1;
@@ -2202,7 +2203,7 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
 
   *box_dim = dim;
 
-  stats->bbox_layout = CS_MAX(stats->bbox_layout, dim);
+  stats->bbox_layout = cs::max(stats->bbox_layout, dim);
 
   if (stats->n_calls < 1) {
     stats->bbox_depth[1] = depth[1];
@@ -2215,43 +2216,43 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
   }
 
   stats->bbox_depth[0] += depth[0];
-  stats->bbox_depth[1] = CS_MIN(stats->bbox_depth[1],
-                                (cs_gnum_t)depth[1]);
-  stats->bbox_depth[2] = CS_MAX(stats->bbox_depth[2],
-                                (cs_gnum_t)depth[2]);
+  stats->bbox_depth[1] = cs::min(stats->bbox_depth[1],
+                                 (cs_gnum_t)depth[1]);
+  stats->bbox_depth[2] = cs::max(stats->bbox_depth[2],
+                                 (cs_gnum_t)depth[2]);
 
   stats->n_leaves[0] += _n_leaves[0];
-  stats->n_leaves[1] = CS_MIN(stats->n_leaves[1],
+  stats->n_leaves[1] = cs::min(stats->n_leaves[1],
                                (cs_gnum_t)_n_leaves[1]);
-  stats->n_leaves[2] = CS_MAX(stats->n_leaves[2],
-                              (cs_gnum_t)_n_leaves[2]);
+  stats->n_leaves[2] = cs::max(stats->n_leaves[2],
+                               (cs_gnum_t)_n_leaves[2]);
 
   stats->n_boxes[0] += _n_boxes[0];
-  stats->n_boxes[1] = CS_MIN(stats->n_boxes[1],
-                             (cs_gnum_t)_n_boxes[1]);
-  stats->n_boxes[2] = CS_MAX(stats->n_boxes[2],
-                             (cs_gnum_t)_n_boxes[2]);
+  stats->n_boxes[1] = cs::min(stats->n_boxes[1],
+                              (cs_gnum_t)_n_boxes[1]);
+  stats->n_boxes[2] = cs::max(stats->n_boxes[2],
+                              (cs_gnum_t)_n_boxes[2]);
 
   stats->n_th_leaves[0] += _n_threshold_leaves[0];
-  stats->n_th_leaves[1] = CS_MIN(stats->n_th_leaves[1],
-                                 (cs_gnum_t)_n_threshold_leaves[1]);
-  stats->n_th_leaves[2] = CS_MAX(stats->n_th_leaves[2],
-                                 (cs_gnum_t)_n_threshold_leaves[2]);
+  stats->n_th_leaves[1] = cs::min(stats->n_th_leaves[1],
+                                  (cs_gnum_t)_n_threshold_leaves[1]);
+  stats->n_th_leaves[2] = cs::max(stats->n_th_leaves[2],
+                                  (cs_gnum_t)_n_threshold_leaves[2]);
 
   stats->n_leaf_boxes[0] += _n_leaf_boxes[0];
-  stats->n_leaf_boxes[1] = CS_MIN(stats->n_leaf_boxes[1],
-                                  (cs_gnum_t)_n_leaf_boxes[1]);
-  stats->n_leaf_boxes[2] = CS_MAX(stats->n_leaf_boxes[2],
-                                  (cs_gnum_t)_n_leaf_boxes[2]);
+  stats->n_leaf_boxes[1] = cs::min(stats->n_leaf_boxes[1],
+                                   (cs_gnum_t)_n_leaf_boxes[1]);
+  stats->n_leaf_boxes[2] = cs::max(stats->n_leaf_boxes[2],
+                                   (cs_gnum_t)_n_leaf_boxes[2]);
 
   stats->box_mem_final[0] += _mem_final[0];
-  stats->box_mem_final[1] = CS_MIN(stats->box_mem_final[1], _mem_final[1]);
-  stats->box_mem_final[2] = CS_MAX(stats->box_mem_final[2], _mem_final[2]);
+  stats->box_mem_final[1] = cs::min(stats->box_mem_final[1], _mem_final[1]);
+  stats->box_mem_final[2] = cs::max(stats->box_mem_final[2], _mem_final[2]);
 
   stats->box_mem_required[0] += _mem_required[0];
-  stats->box_mem_required[1] = CS_MIN(stats->box_mem_required[1],
+  stats->box_mem_required[1] = cs::min(stats->box_mem_required[1],
                                        (cs_gnum_t)_mem_required[1]);
-  stats->box_mem_required[2] = CS_MAX(stats->box_mem_required[2],
+  stats->box_mem_required[2] = cs::max(stats->box_mem_required[2],
                                        (cs_gnum_t)_mem_required[2]);
 
   CS_TIMER_COUNTER_ADD(stats->t_box_build, stats->t_box_build, box_time);
@@ -2457,7 +2458,7 @@ cs_join_inter_edges_define(const cs_join_edges_t      *edges,
 
     cs_lnum_t  n_sub_inter = inter_edges->index[i+1];
 
-    max_n_sub_inter = CS_MAX(max_n_sub_inter, n_sub_inter);
+    max_n_sub_inter = cs::max(max_n_sub_inter, n_sub_inter);
     inter_edges->index[i+1] += inter_edges->index[i];
 
   }
@@ -2741,7 +2742,7 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
                     (long)i+1, (long)n_breaks);
         }
 
-        n_max_breaks = CS_MAX(n_max_breaks, n_breaks);
+        n_max_breaks = cs::max(n_max_breaks, n_breaks);
 
         /* Add new equivalences */
 
@@ -3040,7 +3041,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   cs_lnum_t  _max = 0;
 
   for (cs_lnum_t i = 0; i < block_size; i++)
-    _max = CS_MAX(_max, new_index[i+1] - new_index[i]);
+    _max = cs::max(_max, new_index[i+1] - new_index[i]);
 
   block->max_sub_size = _max;
 
@@ -3194,7 +3195,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
   for (cs_lnum_t i = 0; i < part->n_edges; i++) {
     cs_lnum_t nsub = part->index[i+1] - part->index[i];
-    max_sub_size = CS_MAX(max_sub_size, nsub);
+    max_sub_size = cs::max(max_sub_size, nsub);
   }
 
   part->max_sub_size = max_sub_size;
@@ -3756,7 +3757,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
     len = strlen("JoinDBG_FaceVis.dat")+1+2+4;
     CS_MALLOC(filename, len, char);
     sprintf(filename, "Join%02dDBG_FaceVis%04d.dat",
-            param.num, CS_MAX(cs_glob_rank_id, 0));
+            param.num, cs::max(cs_glob_rank_id, 0));
     dbg_file = fopen(filename, "w");
 
     cs_join_gset_dump(dbg_file, face_visibility);
@@ -3832,7 +3833,7 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
       shift = face2edge_idx[i] + count[i];
       count[i] += 1;
-      face2edge_lst[shift] = CS_ABS(edge_num);
+      face2edge_lst[shift] = cs::abs(edge_num);
 
     }
 
@@ -3842,7 +3843,7 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
     shift = face2edge_idx[i] + count[i];
     count[i] += 1;
-    face2edge_lst[shift] = CS_ABS(edge_num);
+    face2edge_lst[shift] = cs::abs(edge_num);
 
   } /* End of loop on faces */
 
@@ -3895,7 +3896,7 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
     }
 
-    size_max = CS_MAX(size, size_max);
+    size_max = cs::max(size, size_max);
 
     for (j = start; j < end; j++) {
 

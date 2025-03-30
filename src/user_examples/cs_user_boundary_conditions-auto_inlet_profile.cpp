@@ -186,7 +186,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
       cs_real_t uref2 = 0;
       for (int ii = 0; ii< CS_F_(vel)->dim; ii++)
         uref2 += pow(CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*ii + face_id], 2);
-      uref2 = cs_math_fmax(uref2, 1e-12);
+      uref2 = cs::max(uref2, 1e-12);
 
       /* Turbulence example computed using equations valid for a pipe.
 

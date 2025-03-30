@@ -50,6 +50,7 @@
 #include "base/cs_defs.h"
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
+#include "base/cs_math.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_pressure_correction.h"
@@ -431,8 +432,8 @@ _initialize_time_step(cs_time_step_t         *ts,
 
     /* Update time_options */
 
-    double dtmin = CS_MIN(ts_opt->dtmin, dt_init);
-    double dtmax = CS_MAX(ts_opt->dtmax, dt_init);
+    double dtmin = cs::min(ts_opt->dtmin, dt_init);
+    double dtmax = cs::max(ts_opt->dtmax, dt_init);
 
     ts_opt->dtmin = dtmin;
     ts_opt->dtmax = dtmax;
@@ -472,8 +473,8 @@ _define_current_time_step(cs_time_step_t           *ts,
 
     /* Update time_options */
 
-    double  dtmin = CS_MIN(ts_opt->dtmin, ts->dt[0]);
-    double  dtmax = CS_MAX(ts_opt->dtmax, ts->dt[0]);
+    double  dtmin = cs::min(ts_opt->dtmin, ts->dt[0]);
+    double  dtmax = cs::max(ts_opt->dtmax, ts->dt[0]);
 
     ts_opt->dtmin = dtmin;
     ts_opt->dtmax = dtmax;

@@ -1107,7 +1107,7 @@ cs_coal_rad_transfer_st(const cs_field_t  *f,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    cpro_tsri[c_id] = cs_math_fmax(-cpro_tsri[c_id], 0.);
+    cpro_tsri[c_id] = cs::max(-cpro_tsri[c_id], 0.);
 
     if (cval_x_p[c_id] > cs_math_epzero) {
       /* Explicit part */

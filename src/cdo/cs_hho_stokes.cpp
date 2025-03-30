@@ -172,11 +172,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       memset(cb->ids, 0, (n_fc + 1)*sizeof(int));
 
       /* For post-processing errors = 38 */
-      size = CS_MAX(38, n_fc*(n_fc+1));
+      size = cs::max(38, n_fc*(n_fc+1));
       BFT_MALLOC(cb->values, size, double);
       memset(cb->values, 0, size*sizeof(cs_real_t));
 
-      size = CS_MAX(2*n_fc, 15);
+      size = cs::max(2*n_fc, 15);
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
@@ -204,12 +204,12 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
                               --> 45 + 9 = 54
          or the factorization of the cell_cell block of size 4 --> 10
       */
-      size = CS_MAX(54, (3*n_fc + 4)*2);
+      size = cs::max(54, (3*n_fc + 4)*2);
       BFT_MALLOC(cb->values, size, double);
       memset(cb->values, 0, size*sizeof(cs_real_t));
 
       /* Store Gauss points and tensor.n_f products */
-      size = CS_MAX(15, 5 + n_fc);
+      size = cs::max(15, 5 + n_fc);
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
@@ -240,7 +240,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
                                --> tmp buffer for facto = n = 19
                               --> 190 + 19 = 209
       */
-      size = CS_MAX(209, 2*(6*n_fc + 20));
+      size = cs::max(209, 2*(6*n_fc + 20));
       BFT_MALLOC(cb->values, size, double);
       memset(cb->values, 0, size*sizeof(cs_real_t));
 

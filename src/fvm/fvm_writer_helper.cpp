@@ -514,7 +514,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
   if (have_tesselation) {
     CS_MALLOC(part_values,
-              (  CS_MAX(part_size, (cs_lnum_t)block_sub_size)
+              (  cs::max(part_size, (cs_lnum_t)block_sub_size)
                * elt_size*convert_dim),
               unsigned char);
     MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, h->comm);
@@ -719,7 +719,7 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
   const int convert_dim = (h->interlace == CS_INTERLACE) ? h->field_dim : 1;
 
   CS_MALLOC(values,
-            (  CS_MAX(n_elements, (cs_lnum_t)sub_size)
+            (  cs::max(n_elements, (cs_lnum_t)sub_size)
              * elt_size*convert_dim),
             unsigned char);
 
@@ -1665,8 +1665,8 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
       h->input_size  += section->n_elements;
       h->output_size += n_sub_elements;
 
-      h->n_sub_elements_max = CS_MAX(h->n_sub_elements_max,
-                                     n_sub_elements_max);
+      h->n_sub_elements_max = cs::max(h->n_sub_elements_max,
+                                      n_sub_elements_max);
 
       /* continue with next section */
 
@@ -1819,11 +1819,11 @@ fvm_writer_field_helper_get_size(const fvm_writer_field_helper_t  *helper,
 
     if (h->n_sub_elements_max > 1) {
       min_size = h->n_sub_elements_max * FVM_WRITER_MIN_SUB_ELEMENTS;
-      min_size = CS_MIN(min_size, h->output_size);
+      min_size = cs::min(min_size, h->output_size);
     }
 
     if (h->output_size > 0)
-      min_size = CS_MAX(FVM_WRITER_MIN_ELEMENTS, min_size);
+      min_size = cs::max((size_t)FVM_WRITER_MIN_ELEMENTS, min_size);
 
     if (min_size > h->output_size)
       min_size = h->output_size;
@@ -1949,8 +1949,8 @@ fvm_writer_field_helper_step_el(fvm_writer_field_helper_t   *helper,
 
     if (export_section->type == section->type) {
 
-      end_id = CS_MIN(h->start_id + (cs_lnum_t)output_buffer_base_size,
-                      section->n_elements);
+      end_id = cs::min(h->start_id + (cs_lnum_t)output_buffer_base_size,
+                       section->n_elements);
 
       fvm_convert_array(src_dim,
                         src_dim_shift,
@@ -1991,9 +1991,9 @@ fvm_writer_field_helper_step_el(fvm_writer_field_helper_t   *helper,
                                       nullptr,
                                       &n_sub_elements_max);
 
-      output_buffer_size_min = CS_MIN(output_buffer_size_min,
-                                      (  n_sub_elements_max
-                                       * FVM_WRITER_MIN_SUB_ELEMENTS));
+      output_buffer_size_min = cs::min(output_buffer_size_min,
+                                       (  n_sub_elements_max
+                                        * FVM_WRITER_MIN_SUB_ELEMENTS));
 
       /* The buffer passed to this function should not be too small,
          as its size should have been computed in a consistent manner,
@@ -2139,7 +2139,7 @@ fvm_writer_field_helper_step_nl(fvm_writer_field_helper_t   *helper,
     cs_lnum_t n_entities = mesh->n_vertices;
 
     end_id = h->start_id + (output_buffer_size / stride);
-    end_id = CS_MIN(end_id, n_entities);
+    end_id = cs::min(end_id, n_entities);
 
     fvm_convert_array(src_dim,
                       src_dim_shift,
@@ -2188,7 +2188,7 @@ fvm_writer_field_helper_step_nl(fvm_writer_field_helper_t   *helper,
           h->start_id -= start_id_prev;
 
           end_id = h->start_id + (output_buffer_size / stride);
-          end_id = CS_MIN(end_id, h->start_id + n_vertices_section);
+          end_id = cs::min(end_id, h->start_id + n_vertices_section);
 
           slice_output_size = end_id - h->start_id;
 

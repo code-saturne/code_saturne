@@ -1794,8 +1794,8 @@ cs_coal_physprop(int  *mbrom)
     cs_real_t ff3min = HUGE_VAL, ff3max = -HUGE_VAL;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      ff3max = cs_math_fmax(ff3max, f3m[c_id]);
-      ff3min = cs_math_fmin(ff3min, f3m[c_id]);
+      ff3max = cs::max(ff3max, f3m[c_id]);
+      ff3min = cs::min(ff3min, f3m[c_id]);
     }
 
     cs_log_printf(CS_LOG_DEFAULT,

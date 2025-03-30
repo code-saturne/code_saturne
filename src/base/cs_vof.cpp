@@ -1248,7 +1248,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   cs_real_t *cvar_voidf = CS_F_(void_f)->val;
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
-    pvar[c_id] = cs_math_fmin(cs_math_fmax(1.-cvar_voidf[c_id], 0.), 1.);
+    pvar[c_id] = cs::min(cs::max(1.-cvar_voidf[c_id], 0.), 1.);
   });
 
   ctx.wait();
@@ -1492,7 +1492,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     (n_i_faces, maxfluxsurf, reducer,
      [=] CS_F_HOST_DEVICE (cs_lnum_t f_id, cs_real_t &res) {
 
-    res = cs_math_fabs(i_volflux[f_id])/i_face_surf[f_id];
+    res = cs::abs(i_volflux[f_id])/i_face_surf[f_id];
   });
 
   ctx.wait();
@@ -1506,8 +1506,8 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     cs_lnum_t cell_id2 = i_face_cells[f_id][1];
 
     cs_real_t fluxfactor
-      = cs_math_fmin(cdrift*std::abs(i_volflux[f_id])/i_face_surf[f_id],
-                     maxfluxsurf);
+      = cs::min(cdrift*std::abs(i_volflux[f_id])/i_face_surf[f_id],
+                maxfluxsurf);
 
     cs_real_t gradface[3], normalface[3];
 
@@ -1907,7 +1907,7 @@ cs_vof_solve_void_fraction(int  iterns)
       else
         dtmaxl = rho1 * (1.0 - cvara_voidf[c_id]) / gamcav[c_id];
 
-      dtmaxg = cs_math_fmin(dtmaxl, dtmaxg);
+      dtmaxg = cs::min(dtmaxl, dtmaxg);
 
     }
 
@@ -2219,8 +2219,8 @@ cs_cavitation_compute_source_term(const cs_real_t  pressure[],
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const cs_real_t w = voidf[c_id] * (1. - voidf[c_id]);
-    cs_real_t condens = -cond * cs_math_fmax(0., pressure[c_id] - presat) * w;
-    cs_real_t vaporis = -cvap * cs_math_fmin(0., pressure[c_id] - presat) * w;
+    cs_real_t condens = -cond * cs::max(0., pressure[c_id] - presat) * w;
+    cs_real_t vaporis = -cvap * cs::min(0., pressure[c_id] - presat) * w;
 
     gamcav[c_id] = condens + vaporis;
 

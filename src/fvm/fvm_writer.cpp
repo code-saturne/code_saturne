@@ -1226,8 +1226,8 @@ fvm_writer_init(const char             *name,
   this_writer->options = tmp_options;
   tmp_options = nullptr;
 
-  this_writer->time_dep = CS_MIN(time_dependency,
-                                 this_writer->format->max_time_dep);
+  this_writer->time_dep = cs::min(time_dependency,
+                                  this_writer->format->max_time_dep);
 
   CS_TIMER_COUNTER_INIT(this_writer->mesh_time);
   CS_TIMER_COUNTER_INIT(this_writer->field_time);

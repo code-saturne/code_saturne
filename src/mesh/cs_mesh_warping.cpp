@@ -197,7 +197,7 @@ _cut_warped_faces(cs_mesh_t      *mesh,
     idx_end = (*p_face_vtx_idx)[face_id + 1];
 
     n_face_vertices = idx_end - idx_start;
-    n_max_face_vertices = CS_MAX(n_max_face_vertices, n_face_vertices);
+    n_max_face_vertices = cs::max(n_max_face_vertices, n_face_vertices);
 
     if (cut_flag[face_id] != 0) {
 

@@ -137,7 +137,7 @@ _secant_tsat(cs_real_t pr, cs_real_t tini)
   int iterm = 100;
   cs_real_t eps = 1.e-10;
   for (int iter = 0; iter < iterm; iter++) {
-    if (CS_ABS(fn) < eps) break;
+    if (cs::abs(fn) < eps) break;
     tnp = tnp - fnp / dfn;
     fnp = _tsat_function(tnp, pr);
     dfn = (fnp - fn) / (tnp - tn);
@@ -364,8 +364,8 @@ _dicho_eq(cs_real_t  e,
       ftmp = _eq_function(e, v, ptmp, form);
 
       /* FIXME avoid hard coded precision */
-      if (iter >= 1 && CS_ABS(ptmp-ptmpm1) < 1.e-8*CS_ABS(ptmp)) break;
-      if (CS_ABS(ftmp) < 1.e-8) break;
+      if (iter >= 1 && cs::abs(ptmp-ptmpm1) < 1.e-8*cs::abs(ptmp)) break;
+      if (cs::abs(ftmp) < 1.e-8) break;
 
       if (fmin * ftmp < 0) {
         pmax = ptmp;
@@ -697,8 +697,8 @@ cs_hgn_thermo_ie(cs_real_t alpha,
   /* Initial guess for the quasi-Newton method. */
 
   cs_real_t tsat = cs_hgn_thermo_saturation_temp(pctau);
-  cs_real_t en = CS_MAX(cs_hgn_phase_thermo_internal_energy_tp(tsat, pctau, 0),
-                        cs_hgn_phase_thermo_internal_energy_tp(tsat, pctau, 1));
+  cs_real_t en = cs::max(cs_hgn_phase_thermo_internal_energy_tp(tsat, pctau, 0),
+                         cs_hgn_phase_thermo_internal_energy_tp(tsat, pctau, 1));
 
   cs_real_t tp, pn;
   cs_hgn_thermo_pt(alpha, y, z, en, v, &tp, &pn);
@@ -711,7 +711,7 @@ cs_hgn_thermo_ie(cs_real_t alpha,
     cs_real_t fn = (pn-pr);
 
     /* FIXME avoid hard coded precision */
-    if (CS_ABS(fn / pr) < 1.e-10)
+    if (cs::abs(fn / pr) < 1.e-10)
       break;
 
     cs_real_t pnpde;
@@ -719,7 +719,7 @@ cs_hgn_thermo_ie(cs_real_t alpha,
     cs_real_t df = (pnpde - pn) / de;
 
     /* FIXME avoid hard coded precision */
-    if (CS_ABS(df) < 1.e-8)
+    if (cs::abs(df) < 1.e-8)
       break;
 
     en = en-fn/df;

@@ -448,7 +448,7 @@ cs_cf_energy(int f_sc_id)
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     rhs[c_id] += rovsdt[c_id] * energy[c_id];
-    rovsdt[c_id] = cs_math_fmax(-rovsdt[c_id], 0.0);
+    rovsdt[c_id] = cs::max(-rovsdt[c_id], 0.0);
   }
 
   /* Mass source terms
@@ -1127,7 +1127,7 @@ cs_cf_energy(int f_sc_id)
       rhs[c_id] =   rhs[c_id]
                     - eqp_e->istat*(crom[c_id]/dt[c_id])*cell_f_vol[c_id]
                     * (energy[c_id] - energy_pre[c_id])
-                    * cs_math_fmax(0., cs_math_fmin(eqp_e->nswrsm - 2., 1.));
+                    * cs::max(0., cs::min(eqp_e->nswrsm - 2., 1.));
 
     const cs_real_t sclnor = sqrt(cs_gdot(n_cells, rhs, rhs));
 

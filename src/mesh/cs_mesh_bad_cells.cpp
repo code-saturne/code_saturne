@@ -675,8 +675,8 @@ _to_regularize(const cs_mesh_t             *mesh,
       probleme = 1;
     }
     else {
-      determinant = CS_MAX(determinant, 1.e-10);
-      determinant = CS_MAX(determinant, 1./determinant);
+      determinant = cs::max(determinant, 1.e-10);
+      determinant = cs::max(determinant, 1./determinant);
       if (determinant > 2)
         probleme = 1;
     }

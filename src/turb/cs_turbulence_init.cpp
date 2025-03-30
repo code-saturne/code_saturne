@@ -272,14 +272,14 @@ cs_turbulence_init_clip_and_verify(void)
       cs_real_t v_max[2] = {-HUGE_VAL, -HUGE_VAL};
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        v_min[0] = cs_math_fmin(v_min[0], cvar_phi[c_id]);
-        v_max[0] = cs_math_fmax(v_max[0], cvar_phi[c_id]);
+        v_min[0] = cs::min(v_min[0], cvar_phi[c_id]);
+        v_max[0] = cs::max(v_max[0], cvar_phi[c_id]);
       }
       if (turb_model->model == CS_TURB_V2F_BL_V2K) {
         cs_real_t *cvar_al = CS_F_(alp_bl)->val;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          v_min[1] = cs_math_fmin(v_min[1], cvar_al[c_id]);
-          v_max[1] = cs_math_fmax(v_max[1], cvar_al[c_id]);
+          v_min[1] = cs::min(v_min[1], cvar_al[c_id]);
+          v_max[1] = cs::max(v_max[1], cvar_al[c_id]);
         }
         n_minmax = 2;
       }
@@ -334,17 +334,17 @@ cs_turbulence_init_clip_and_verify(void)
     int n_minmax = 4;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      v_min[0] = cs_math_fmin(v_min[0], cvar_rij[c_id][0]);
-      v_min[1] = cs_math_fmin(v_min[1], cvar_rij[c_id][1]);
-      v_min[2] = cs_math_fmin(v_min[2], cvar_rij[c_id][2]);
-      v_min[3] = cs_math_fmin(v_min[3], cvar_ep[c_id]);
+      v_min[0] = cs::min(v_min[0], cvar_rij[c_id][0]);
+      v_min[1] = cs::min(v_min[1], cvar_rij[c_id][1]);
+      v_min[2] = cs::min(v_min[2], cvar_rij[c_id][2]);
+      v_min[3] = cs::min(v_min[3], cvar_ep[c_id]);
     }
 
     if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_real_t *cvar_al = CS_F_(alp_bl)->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        v_min[4] = cs_math_fmin(v_min[4], cvar_al[c_id]);
-        al_max[0] = cs_math_fmax(al_max[0], cvar_al[c_id]);
+        v_min[4] = cs::min(v_min[4], cvar_al[c_id]);
+        al_max[0] = cs::max(al_max[0], cvar_al[c_id]);
       }
       n_minmax = 5;
     }
@@ -397,8 +397,8 @@ cs_turbulence_init_clip_and_verify(void)
     cs_real_t f_min[2] = {HUGE_VAL, HUGE_VAL};
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      f_min[0] = cs_math_fmin(f_min[0], cvar_k[c_id]);
-      f_min[1] = cs_math_fmin(f_min[1], cvar_omg[c_id]);
+      f_min[0] = cs::min(f_min[0], cvar_k[c_id]);
+      f_min[1] = cs::min(f_min[1], cvar_omg[c_id]);
     }
     cs_parall_min(2, CS_REAL_TYPE, f_min);
 
@@ -423,7 +423,7 @@ cs_turbulence_init_clip_and_verify(void)
     cs_real_t nu_min = HUGE_VAL;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      nu_min = cs_math_fmin(nu_min, cvar_nusa[c_id]);
+      nu_min = cs::min(nu_min, cvar_nusa[c_id]);
     }
     cs_parall_min(1, CS_REAL_TYPE, &nu_min);
 

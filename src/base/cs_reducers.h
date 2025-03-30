@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -86,7 +87,7 @@ struct cs_reduce_max1r {
 
   CS_F_HOST_DEVICE void
   combine(volatile cs_real_t &a, volatile const cs_real_t &b) const {
-    a = CS_MAX(a, b);
+    a = cs::max(a, b);
   }
 };
 
@@ -103,8 +104,8 @@ struct cs_reduce_min1r_max1r {
 
   CS_F_HOST_DEVICE void
   combine(volatile T &a, volatile const T &b) const {
-    a.r[0] = CS_MIN(a.r[0], b.r[0]);
-    a.r[1] = CS_MAX(a.r[1], b.r[1]);
+    a.r[0] = cs::min(a.r[0], b.r[0]);
+    a.r[1] = cs::max(a.r[1], b.r[1]);
   }
 };
 
@@ -121,10 +122,10 @@ struct cs_reduce_min2r_max2r {
 
   CS_F_HOST_DEVICE void
   combine(volatile T &a, volatile const T &b) const {
-    a.r[0] = CS_MIN(a.r[0], b.r[0]);
-    a.r[1] = CS_MAX(a.r[1], b.r[1]);
-    a.r[2] = CS_MIN(a.r[2], b.r[2]);
-    a.r[3] = CS_MAX(a.r[3], b.r[3]);
+    a.r[0] = cs::min(a.r[0], b.r[0]);
+    a.r[1] = cs::max(a.r[1], b.r[1]);
+    a.r[2] = cs::min(a.r[2], b.r[2]);
+    a.r[3] = cs::max(a.r[3], b.r[3]);
   }
 };
 

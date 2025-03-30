@@ -239,8 +239,8 @@ cs_cf_boundary_rusanov(const cs_lnum_t  f_id,
 
   const cs_real_t b_c = sqrt(b_c2);
   const cs_real_t c_c = sqrt(c_c2);
-  const cs_real_t rrus = cs_math_fmax(cs_math_fabs(b_vel_n) + b_c,
-                                      cs_math_fabs(c_vel_n) + c_c);
+  const cs_real_t rrus = cs::max(cs::abs(b_vel_n) + b_c,
+                                 cs::abs(c_vel_n) + c_c);
 
   /* boundary mass flux computed with Rusanov scheme */
 

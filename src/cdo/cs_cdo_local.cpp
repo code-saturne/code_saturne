@@ -143,7 +143,7 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
       = cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
     BFT_MALLOC(cs_cdo_local_kbuf[t_id],
-               CS_MAX(connect->v_max_cell_range, connect->e_max_cell_range) + 1,
+               cs::max(connect->v_max_cell_range, connect->e_max_cell_range) + 1,
                short int);
   }
 #else
@@ -156,7 +156,7 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
     = cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
   BFT_MALLOC(cs_cdo_local_kbuf[0],
-             CS_MAX(connect->v_max_cell_range, connect->e_max_cell_range)+1,
+             cs::max(connect->v_max_cell_range, connect->e_max_cell_range)+1,
              short int);
 
 #endif /* openMP */
@@ -330,7 +330,7 @@ cs_cell_sys_create(int   n_max_dofbyc,
 
   /* Robin */
 
-  int  n_rob_size = n_robin_parameters*CS_MAX(n_max_dofbyc, n_max_fbyc);
+  int  n_rob_size = n_robin_parameters*cs::max(n_max_dofbyc, n_max_fbyc);
   csys->has_robin = false;
   csys->rob_values = nullptr;
   BFT_MALLOC(csys->rob_values, n_rob_size, double);
@@ -382,7 +382,7 @@ cs_cell_sys_reset(int              n_fbyc,
   memset(csys->dir_values, 0, s);
   memset(csys->neu_values, 0, s);
   memset(csys->rob_values, 0,
-         CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
+         cs::max(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
 }
 
 /*----------------------------------------------------------------------------*/

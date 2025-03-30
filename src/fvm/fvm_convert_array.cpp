@@ -105,7 +105,7 @@ _convert_array_float_to_float(const int                     src_dim,
   size_t  i, k, l, min_dim;
   cs_lnum_t   j, p_id;
 
-  min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
+  min_dim = (size_t)(cs::min((src_dim - src_dim_shift), dest_dim));
 
   /* If source data is interlaced */
 
@@ -234,7 +234,7 @@ _convert_array_float_to_double(const int                     src_dim,
   size_t  i, k, l, min_dim;
   cs_lnum_t   j, p_id;
 
-  min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
+  min_dim = (size_t)(cs::min((src_dim - src_dim_shift), dest_dim));
 
   /* If source data is interlaced */
 
@@ -363,7 +363,7 @@ _convert_array_double_to_float(const int                     src_dim,
   size_t  i, k, l, min_dim;
   cs_lnum_t   j, p_id;
 
-  min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
+  min_dim = (size_t)(cs::min((src_dim - src_dim_shift), dest_dim));
 
   /* If source data is interlaced */
 
@@ -492,7 +492,7 @@ _convert_array_double_to_double(const int                     src_dim,
   size_t  i, k, l, min_dim;
   cs_lnum_t   j, p_id;
 
-  min_dim = (size_t)(CS_MIN((src_dim - src_dim_shift), dest_dim));
+  min_dim = (size_t)(cs::min((src_dim - src_dim_shift), dest_dim));
 
   /* If source data is interlaced */
 

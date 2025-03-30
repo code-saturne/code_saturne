@@ -208,7 +208,7 @@ _cell_equiv(cs_mesh_t  *m,
       cs_lnum_t c_id1 = m->i_face_cells[f_id][1];
       if (   m->i_face_r_gen[f_id] == c_r_level[c_id0]
           && m->i_face_r_gen[f_id] == c_r_level[c_id1]) {
-        cs_lnum_t min_equiv = CS_MIN(c_equiv[c_id0], c_equiv[c_id1]);
+        cs_lnum_t min_equiv = cs::min(c_equiv[c_id0], c_equiv[c_id1]);
         if (c_equiv[c_id0] > min_equiv) {
           c_equiv[c_id0] = min_equiv;
           reloop = 1;
@@ -515,7 +515,7 @@ _merge_cells(cs_mesh_t       *m,
   if (m->halo != nullptr) {
     if (m->n_init_perio > 0) {
       const cs_gnum_t n_g_faces = m->n_g_i_faces + m->n_g_b_faces;
-      int rank_id = CS_MAX(cs_glob_rank_id, 0);
+      int rank_id = cs::max(cs_glob_rank_id, 0);
       mb = cs_mesh_builder_create();
       cs_mesh_builder_define_block_dist(mb,
                                         rank_id,
@@ -905,7 +905,7 @@ _i_faces_equiv(cs_mesh_t  *m,
       if (c_id_0 != c_id_prev) {
         f_id_eq = c2f->ids[s_id_c];
         for (cs_lnum_t k = s_id_c; k < j; k++)
-          f_id_eq = CS_MIN(f_id_eq, c2f->ids[k]);
+          f_id_eq = cs::min(f_id_eq, c2f->ids[k]);
         for (cs_lnum_t k = s_id_c; k < j; k++) {
           cs_lnum_t f_id = c2f->ids[k];
           _i_f_o2n[f_id] = f_id_eq;
@@ -920,7 +920,7 @@ _i_faces_equiv(cs_mesh_t  *m,
       f_id_eq = c2f->ids[s_id_c];
 
       for (cs_lnum_t k = s_id_c; k < e_id; k++)
-        f_id_eq = CS_MIN(f_id_eq, c2f->ids[k]);
+        f_id_eq = cs::min(f_id_eq, c2f->ids[k]);
       for (cs_lnum_t k = s_id_c; k < e_id; k++) {
         cs_lnum_t f_id = c2f->ids[k];
         _i_f_o2n[f_id] = f_id_eq;
@@ -1198,7 +1198,7 @@ _filter_b_face_equiv(cs_lnum_t                    n_faces,
           cs_lnum_t f_id_eq = s->e2f[j];
           cs_lnum_t eq_0 = face_equiv[f_id_eq];
           cs_lnum_t eq_1 = face_equiv[f_id];
-          cs_lnum_t eq_lo = CS_MIN(eq_0, eq_1);
+          cs_lnum_t eq_lo = cs::min(eq_0, eq_1);
           for (cs_lnum_t k = 0; k < n_faces; k++) {
             cs_lnum_t l = face_ids[k];
             if (face_equiv[l] == eq_0 || face_equiv[l] == eq_1)
@@ -1656,10 +1656,10 @@ _filter_vertices(cs_mesh_t  *m,
       for (cs_lnum_t i = s_id; i < e_id; i++) {
         cs_lnum_t v_id_1 = v2v->ids[i];
         cs_gnum_t g_v_id_1 = m->global_vtx_num[v_id_1];
-        v_adj_min[v_id] = CS_MIN(v_adj_min[v_id], g_v_id_1);
-        v_adj_min[v_id_1] = CS_MIN(v_adj_min[v_id_1], g_v_id);
-        v_adj_max[v_id] = CS_MAX(v_adj_max[v_id], g_v_id_1);
-        v_adj_max[v_id_1] = CS_MAX(v_adj_max[v_id_1], g_v_id);
+        v_adj_min[v_id] = cs::min(v_adj_min[v_id], g_v_id_1);
+        v_adj_min[v_id_1] = cs::min(v_adj_min[v_id_1], g_v_id);
+        v_adj_max[v_id] = cs::max(v_adj_max[v_id], g_v_id_1);
+        v_adj_max[v_id_1] = cs::max(v_adj_max[v_id_1], g_v_id);
         v_n_count[v_id_1] += 1;
       }
     }

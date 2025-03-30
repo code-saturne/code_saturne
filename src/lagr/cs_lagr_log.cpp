@@ -48,7 +48,6 @@
 #include "bft/bft_mem.h"
 
 #include "base/cs_log.h"
-
 #include "base/cs_math.h"
 
 #include "mesh/cs_mesh.h"
@@ -164,8 +163,8 @@ _lagr_min_max_boundary_stats(int         s_id,
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
       *nbrfac = *nbrfac + 1;
-      *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id]);
-      *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id]);
+      *gmax = cs::max(*gmax, bound_stat[ifac + n_b_faces * s_id]);
+      *gmin = cs::min(*gmin, bound_stat[ifac + n_b_faces * s_id]);
     }
   }
 }
@@ -694,7 +693,7 @@ cs_lagr_log_iteration(void)
 
   for (int z_id = 0; z_id < bdy_cond->n_zones; z_id++) {
 
-    if (CS_ABS(flow_rate[z_id*n_stats]) > 0.) {
+    if (cs::abs(flow_rate[z_id*n_stats]) > 0.) {
 
       const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
       const char *chcond;
@@ -733,7 +732,7 @@ cs_lagr_log_iteration(void)
                     z->name, chcond);
 
       for (int j = 1; j < n_stats; j++) {
-        if (CS_ABS(flow_rate[z_id*n_stats + j]) > 0)
+        if (cs::abs(flow_rate[z_id*n_stats + j]) > 0)
           cs_log_printf(CS_LOG_DEFAULT,
                         "         %3d   %12.5e\n",
                         j,

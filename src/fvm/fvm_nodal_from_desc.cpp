@@ -137,7 +137,7 @@ _is_prism_or_poly(const cs_lnum_t    cell_id,
 
   for (idx = idx_start; idx < idx_end; idx++) {
 
-    face_id = CS_ABS(cell_face_num[idx]) - 1;
+    face_id = cs::abs(cell_face_num[idx]) - 1;
 
     for (fl = n_face_lists - 1; face_id < face_list_shift[fl]; fl--);
     assert(fl > -1);
@@ -257,7 +257,7 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
 
   for (idx = idx_start; idx < idx_end; idx++) {
 
-    face_id = CS_ABS(cell_face_num[idx]) - 1;
+    face_id = cs::abs(cell_face_num[idx]) - 1;
 
     for (fl = n_face_lists - 1; face_id < face_list_shift[fl]; fl--);
     assert(fl > -1);
@@ -957,7 +957,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
     for (idx = idx_start; idx < idx_end; idx++) {
 
-      face_id = CS_ABS(cell_face_num[idx]) - 1;
+      face_id = cs::abs(cell_face_num[idx]) - 1;
 
       /* Mark only used values for now, local_face_num[] values
          will be computed later by looping on faces so that
@@ -1015,7 +1015,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
     for (idx = idx_start; idx < idx_end; idx++) {
 
-      face_id = CS_ABS(cell_face_num[idx]) - 1;
+      face_id = cs::abs(cell_face_num[idx]) - 1;
       sgn = (cell_face_num[idx] > 0) ? 1 : -1;
 
       this_section->_face_num[num_count++]

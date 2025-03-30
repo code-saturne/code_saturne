@@ -55,6 +55,7 @@
 #include "base/cs_function.h"
 #include "lagr/cs_lagr_extract.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "lagr/cs_lagr_query.h"
 #include "meg/cs_meg_prototypes.h"
@@ -671,7 +672,7 @@ _add_writer_ts(cs_post_writer_t  *w,
                int                nt)
 {
   int prev_id;
-  int nt_abs = CS_ABS(nt);
+  int nt_abs = cs::abs(nt);
 
   if (w->ot == nullptr)
     w->ot = _writer_times_create();
@@ -730,7 +731,7 @@ _add_writer_tv(cs_post_writer_t  *w,
                double             t)
 {
   int prev_id;
-  double t_abs = CS_ABS(t);
+  double t_abs = cs::abs(t);
 
   if (w->ot == nullptr)
     w->ot = _writer_times_create();
@@ -4698,8 +4699,8 @@ cs_post_define_particles_mesh(int          mesh_id,
 
   post_mesh->add_groups = false;
 
-  post_mesh->density = CS_MIN(density, 1.);
-  post_mesh->density = CS_MAX(post_mesh->density, 0.);
+  post_mesh->density = cs::min(density, 1.);
+  post_mesh->density = cs::max(post_mesh->density, 0.);
 
   if (auto_variables)
     post_mesh->cat_id = CS_POST_MESH_VOLUME;

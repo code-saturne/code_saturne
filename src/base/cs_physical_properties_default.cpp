@@ -175,7 +175,7 @@ _cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t drho = (rho1 - rho2);
     const cs_real_t p_void = pow(1.0 - cvar_voidf[c_id], mcav);
-    const cs_real_t rho_max = cs_math_fmax(crom[c_id], cs_math_epzero);
+    const cs_real_t rho_max = cs::max(crom[c_id], cs_math_epzero);
 
     const cs_real_t frho = (rho2 + p_void*drho) / rho_max;
     visct[c_id] = frho*visct[c_id];
@@ -343,7 +343,7 @@ _compute_anisotropic_turbulent_viscosity(cs_lnum_t                   n_cells,
         const cs_real_t ttke  = trrij/cvar_ep[c_id];
         const cs_real_t xttkmg
           = cs_turb_xct*sqrt(viscl[c_id]/crom[c_id]/cvar_ep[c_id]);
-        const cs_real_t xttdrb = cs_math_fmax(ttke, xttkmg);
+        const cs_real_t xttdrb = cs::max(ttke, xttkmg);
         const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
         const cs_real_t rottke  = cs_turb_csrij * crom[c_id] * xttdrb * c_act;
 
@@ -377,7 +377,7 @@ _compute_anisotropic_turbulent_viscosity(cs_lnum_t                   n_cells,
             // Durbin scale
             const cs_real_t xttkmg
               = cs_turb_xct*sqrt(viscl[c_id]/crom[c_id]/cvar_ep[c_id]);
-            const cs_real_t xttdrb = cs_math_fmax(ttke, xttkmg);
+            const cs_real_t xttdrb = cs::max(ttke, xttkmg);
             // FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
             const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
             const cs_real_t rottke = cs_turb_csrij * crom[c_id] * xttdrb * c_act;
@@ -480,15 +480,15 @@ _clip_rho_mu_cp(bool                         first_pass,
     varmx[ii] = cpro_var[0];
     varmn[ii] = cpro_var[0];
     for (cs_lnum_t c_id = 1; c_id < n_cells; c_id++) {
-      varmx[ii] = cs_math_fmax(varmx[ii], cpro_var[c_id]);
-      varmn[ii] = cs_math_fmin(varmn[ii], cpro_var[c_id]);
+      varmx[ii] = cs::max(varmx[ii], cpro_var[c_id]);
+      varmn[ii] = cs::min(varmn[ii], cpro_var[c_id]);
     }
   }
 
   // Min and max at boundary density
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    varmx[0] = cs_math_fmax(varmx[0], brom[face_id]);
-    varmn[0] = cs_math_fmin(varmn[0], brom[face_id]);
+    varmx[0] = cs::max(varmx[0], brom[face_id]);
+    varmn[0] = cs::min(varmn[0], brom[face_id]);
   }
 
   cs_parall_max(n_fields, CS_REAL_TYPE, varmx);
@@ -583,8 +583,8 @@ _check_log_scalar_diff(const bool        first_pass,
 
     if (cpro_vis != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        vismax[s_id] = cs_math_fmax(vismax[s_id], cpro_vis[c_id]);
-        vismin[s_id] = cs_math_fmin(vismin[s_id], cpro_vis[c_id]);
+        vismax[s_id] = cs::max(vismax[s_id], cpro_vis[c_id]);
+        vismin[s_id] = cs::min(vismin[s_id], cpro_vis[c_id]);
       }
       cs_parall_max(1, CS_REAL_TYPE, &vismax[s_id]);
       cs_parall_min(1, CS_REAL_TYPE, &vismin[s_id]);
@@ -641,7 +641,7 @@ _check_log_scalar_diff(const bool        first_pass,
 
   cs_real_t varmn = cpro_beta[0];
   for (cs_lnum_t c_id = 1; c_id < n_cells; c_id++)
-    varmn = cs_math_fmin(varmn, cpro_beta[c_id]);
+    varmn = cs::min(varmn, cpro_beta[c_id]);
   cs_parall_min(1, CS_REAL_TYPE, &varmn);
 
   if (varmn < 0.0) {
@@ -687,8 +687,8 @@ _check_log_mesh_diff(bool       first_pass,
       cs_real_t varmx = cpro_visma_v[0][ii];
       cs_real_t varmn = cpro_visma_v[0][ii];
       for (cs_lnum_t c_id = 1; c_id < n_cells; c_id++) {
-        varmx = cs_math_fmax(varmx, cpro_visma_v[c_id][ii]);
-        varmn = cs_math_fmin(varmn, cpro_visma_v[c_id][ii]);
+        varmx = cs::max(varmx, cpro_visma_v[c_id][ii]);
+        varmn = cs::min(varmn, cpro_visma_v[c_id][ii]);
       }
 
       cs_parall_max(1, CS_REAL_TYPE, &varmx);
@@ -727,8 +727,8 @@ _check_log_mesh_diff(bool       first_pass,
     cs_real_t varmn = cpro_visma_s[0];
 
     for (cs_lnum_t c_id = 1; c_id < n_cells; c_id++) {
-      varmx = cs_math_fmax(varmx, cpro_visma_s[c_id]);
-      varmn = cs_math_fmin(varmn, cpro_visma_s[c_id]);
+      varmx = cs::max(varmx, cpro_visma_s[c_id]);
+      varmn = cs::min(varmn, cpro_visma_s[c_id]);
     }
 
     cs_parall_max(1, CS_REAL_TYPE, &varmx);

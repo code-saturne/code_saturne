@@ -376,7 +376,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
   switch (space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
-    size = CS_MAX(4*n_ec + 3*n_vc, n_ec*(n_ec+1));
+    size = cs::max(4*n_ec + 3*n_vc, n_ec*(n_ec+1));
     BFT_MALLOC(cb->values, size, double);
     memset(cb->values, 0, size*sizeof(cs_real_t));
 
@@ -407,7 +407,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
   case CS_SPACE_SCHEME_CDOEB:
     {
-      int  n_ent = CS_MAX(n_fc, n_ec);
+      int  n_ent = cs::max(n_fc, n_ec);
 
       size = n_ent*(n_ent+1);
       BFT_MALLOC(cb->values, size, double);

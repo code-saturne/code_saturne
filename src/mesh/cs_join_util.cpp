@@ -336,7 +336,7 @@ _compact_face_gnum_selection(cs_lnum_t   n_select_faces,
   cs_gnum_t  *_reduce_gnum_index = *reduce_gnum_index;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
 
   assert(_reduce_gnum_index == nullptr);
 
@@ -708,7 +708,7 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
 
   cs_datatype_t int_type = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
 
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
   const cs_lnum_t  *local_id = nullptr;
   const cs_interface_t  *interface = nullptr;
 
@@ -1536,7 +1536,7 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
   MPI_Status  *status  = nullptr;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
   const cs_lnum_t  *local_id = nullptr, *distant_id = nullptr;
   const int  n_interfaces = cs_interface_set_size(ifs);
   const cs_interface_t  *interface = nullptr;
@@ -1805,7 +1805,7 @@ _filter_edge_element(cs_join_select_t   *selection,
   MPI_Status   *status = nullptr;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  loc_rank = cs::max(cs_glob_rank_id, 0);
 
   assert(cs_glob_n_ranks > 1);
   assert(c_edges != nullptr);

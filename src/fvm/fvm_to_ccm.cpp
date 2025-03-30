@@ -2354,8 +2354,8 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
      faces to avoid counting loop */
 
   const cs_lnum_t n_max_faces
-    = CS_MAX(b_mesh->i_face_vtx_connect_size + b_mesh->n_i_faces,
-             b_mesh->b_face_vtx_connect_size + b_mesh->n_b_faces);
+    = cs::max(b_mesh->i_face_vtx_connect_size + b_mesh->n_i_faces,
+              b_mesh->b_face_vtx_connect_size + b_mesh->n_b_faces);
 
   CS_MALLOC(face_connect, n_max_faces, cs_ccm_num_t);
 

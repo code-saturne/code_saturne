@@ -62,6 +62,7 @@
 #include "alge/cs_grid.h"
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_spmv_cuda.h"
@@ -621,8 +622,8 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
 static void
 _multigrid_performance_log(const cs_multigrid_t *mg)
 {
-  unsigned long long n_builds_denom = CS_MAX(mg->info.n_calls[0], 1);
-  unsigned long long n_solves_denom = CS_MAX(mg->info.n_calls[1], 1);
+  unsigned long long n_builds_denom = cs::max(mg->info.n_calls[0], 1u);
+  unsigned long long n_solves_denom = cs::max(mg->info.n_calls[1], 1u);
   int n_lv_min = mg->info.n_levels[1];
   int n_lv_max = mg->info.n_levels[2];
   int n_lv_mean = (int)(mg->info.n_levels_tot / n_builds_denom);
@@ -920,8 +921,8 @@ _multigrid_add_level(cs_multigrid_t  *mg,
   if (mgd->n_levels == mgd->n_levels_alloc) {
 
     /* Max previous */
-    unsigned int n_lv_max_prev = CS_MAX(mg->info.n_levels[2],
-                                        mgd->n_levels);
+    unsigned int n_lv_max_prev = cs::max(mg->info.n_levels[2],
+                                         mgd->n_levels);
 
     if (mgd->n_levels_alloc == 0) {
       mgd->n_levels_alloc = n_lv_max_prev;
@@ -3124,7 +3125,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   for (level = 1; level < (int)(mgd->n_levels); level++) {
     cs_lnum_t n_cols_max
       = cs_grid_get_n_cols_max(mgd->grid_hierarchy[level]);
-    wr_size = CS_MAX(wr_size, (size_t)(n_cols_max*db_size));
+    wr_size = cs::max(wr_size, (size_t)(n_cols_max*db_size));
     wr_size = CS_SIMD_SIZE(wr_size);
   }
 

@@ -291,7 +291,7 @@ cs_join_post_mesh(const char            *mesh_name,
   fvm_nodal_t  *post_mesh = nullptr;
   fvm_writer_t  *writer = _cs_join_post_param.writer;
 
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs::max(cs_glob_rank_id, 0);
   const cs_lnum_t  face_list_shift[2] = {0, join_mesh->n_faces};
   const cs_lnum_t  *face_vertex_idx[1] = {join_mesh->face_vtx_idx};
   const cs_lnum_t  *face_vertex_lst[1] = {join_mesh->face_vtx_lst};
@@ -711,7 +711,7 @@ cs_join_post_dump_mesh(const char            *basename,
   char  *fullname = nullptr;
 
   const  int  n_ranks = cs_glob_n_ranks;
-  const  int  rank_id = CS_MAX(cs_glob_rank_id, 0);
+  const  int  rank_id = cs::max(cs_glob_rank_id, 0);
 
   /* Define a specific name for the output */
 

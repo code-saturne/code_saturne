@@ -462,7 +462,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
     // FIXME make it global for the zone as restart...
     for (int sweep = 0;
-         sweep < 100 && CS_ABS(reynolds - reynolds_old) > 0.001;
+         sweep < 100 && cs::abs(reynolds - reynolds_old) > 0.001;
          sweep++) {
       reynolds_old = reynolds;
       v_lim =   pow(droplet_diam, 2.) * rho_l
@@ -639,7 +639,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     /* one of neigh. cells is in packing */
     if (packing_cell[cell_id_1] != -1 || packing_cell[cell_id_2] != -1) {
 
-      int ct_id = CS_MAX(packing_cell[cell_id_1], packing_cell[cell_id_2]);
+      int ct_id = cs::max(packing_cell[cell_id_1], packing_cell[cell_id_2]);
       cs_ctwr_zone_t *ct = _ct_zone[ct_id];
 
       /* Vertical (align with gravity) component of the surface vector */

@@ -188,7 +188,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
      periodicity on the same rank, rank + 2 for interfaces
      with different ranks) */
 
-  int l_rank = CS_MAX(cs_glob_rank_id, 0);
+  int l_rank = cs::max(cs_glob_rank_id, 0);
 
   for (int i = 0; i < ifs_size; i++) {
 
@@ -205,7 +205,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
 
     int itf_rank = cs_interface_rank(itf);
 
-    cs_gnum_t max_rank = CS_MAX(l_rank, itf_rank) + 2;
+    cs_gnum_t max_rank = cs::max(l_rank, itf_rank) + 2;
 
     const cs_lnum_t *elt_ids = cs_interface_get_elt_ids(itf);
 
@@ -213,7 +213,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
        of elements to lowest rank, 2nd half to highest rank */
 
     if (balance) {
-      cs_gnum_t min_rank= CS_MIN(l_rank, itf_rank) + 2;
+      cs_gnum_t min_rank= cs::min(l_rank, itf_rank) + 2;
       cs_lnum_t mid_id = (start_id + end_id) / 2;
       for (cs_lnum_t j = start_id; j < mid_id; j++) {
         cs_lnum_t k = elt_ids[j];
@@ -227,7 +227,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
 
     for (cs_lnum_t j = start_id; j < end_id; j++) {
       cs_lnum_t k = elt_ids[j];
-      g_id[k] = CS_MAX(g_id[k], max_rank);
+      g_id[k] = cs::max(g_id[k], max_rank);
     }
 
     /* Special case for local periodicity; for even (reverse)
@@ -445,7 +445,7 @@ _interface_set_zero_local_periodicity(const cs_interface_set_t  *ifs,
 {
   int ifs_size = cs_interface_set_size(ifs);
   const cs_interface_t *itf = nullptr;
-  int rank = CS_MAX(cs_glob_rank_id, 0);
+  int rank = cs::max(cs_glob_rank_id, 0);
 
   for (int i = 0; i < ifs_size; i++) {
     const cs_interface_t *_itf = cs_interface_set_get(ifs, i);

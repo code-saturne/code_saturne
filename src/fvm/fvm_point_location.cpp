@@ -425,7 +425,7 @@ _locate_by_extents_1d(cs_lnum_t         elt_num,
     elt_coord =   (cur_coord - 0.5*(extents[1] + extents[0]))
                 / (            0.5*(extents[1] - extents[0]));
 
-    elt_coord = CS_ABS(elt_coord);
+    elt_coord = cs::abs(elt_coord);
 
     if (elt_coord > elt_coord_max)
       elt_coord_max = elt_coord;
@@ -491,7 +491,7 @@ _locate_in_extents(const cs_lnum_t    elt_num,
       elt_coord =   (cur_coord - 0.5*(extents[k+dim] + extents[k]))
                   / (            0.5*(extents[k+dim] - extents[k]));
 
-      elt_coord = CS_ABS(elt_coord);
+      elt_coord = cs::abs(elt_coord);
 
       if (elt_coord > elt_coord_max)
         elt_coord_max = elt_coord;
@@ -1589,12 +1589,12 @@ _locate_on_triangles_3d(cs_lnum_t           elt_num,
 
     /* epsilon2 is based on maximum edge length (squared) */
 
-    tmp_max = CS_MAX(vv, ww);
+    tmp_max = cs::max(vv, ww);
 
     if (tolerance < 0.)
       epsilon2 = HUGE_VAL;
     else
-      epsilon2 = CS_MAX(uu, tmp_max) * tolerance2;
+      epsilon2 = cs::max(uu, tmp_max) * tolerance2;
 
     /* Loop on points resulting from extent query */
 
@@ -1768,7 +1768,7 @@ _locate_on_triangles_2d(cs_lnum_t           elt_num,
 
       for (j = 0; j < 3; j++){
 
-        dist = 2.*CS_ABS(shapef[j] - 0.5);
+        dist = 2.*cs::abs(shapef[j] - 0.5);
 
         if (max_dist < dist)
           max_dist = dist;
@@ -1875,7 +1875,7 @@ _locate_in_tetra(cs_lnum_t         elt_num,
 
     for (j = 0; j < 4; j++){
 
-      dist = 2.*CS_ABS(shapef[j] - 0.5);
+      dist = 2.*cs::abs(shapef[j] - 0.5);
 
       if (max_dist < dist)
         max_dist = dist;
@@ -2248,7 +2248,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
 
           for (j = 0; j < 3; j++){
 
-            dist = 2.*CS_ABS(uvw[j] - 0.5);
+            dist = 2.*cs::abs(uvw[j] - 0.5);
 
             if (max_dist < dist)
               max_dist = dist;
@@ -2264,7 +2264,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
 
           for (j = 0; j < n_vertices; j++){
 
-            dist = 2.*CS_ABS(shapef[j] - 0.5);
+            dist = 2.*cs::abs(shapef[j] - 0.5);
 
           if (max_dist < dist)
             max_dist = dist;
@@ -2377,7 +2377,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
     for (j = this_section->face_index[i];
          j < this_section->face_index[i + 1];
          j++) {
-      face_id = CS_ABS(this_section->face_num[j]) - 1;
+      face_id = cs::abs(this_section->face_num[j]) - 1;
       for (k = this_section->vertex_index[face_id];
            k < this_section->vertex_index[face_id + 1];
            k++) {
@@ -2434,7 +2434,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
 
       const cs_lnum_t *_vertex_num;
 
-      face_id = CS_ABS(this_section->face_num[j]) - 1;
+      face_id = cs::abs(this_section->face_num[j]) - 1;
 
       n_vertices = (  this_section->vertex_index[face_id + 1]
                     - this_section->vertex_index[face_id]);
@@ -3503,7 +3503,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
         for (cs_lnum_t j = section->face_index[elt_id];
              j < section->face_index[elt_id + 1]; j++) {
 
-          cs_lnum_t  f_id = CS_ABS(section->face_num[j]) - 1;
+          cs_lnum_t  f_id = cs::abs(section->face_num[j]) - 1;
           for (cs_lnum_t k = section->vertex_index[f_id];
                k < section->vertex_index[f_id + 1]; k++) {
 

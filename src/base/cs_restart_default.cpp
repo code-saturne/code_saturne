@@ -1588,15 +1588,15 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
             cs_real_t eigen_min = eigen_vals[0];
             cs_real_t eigen_max = eigen_vals[0];
             for (int i = 1; i < 3; i++) {
-              eigen_min = CS_MIN(eigen_min, eigen_vals[i]);
-              eigen_max = CS_MAX(eigen_max, eigen_vals[i]);
+              eigen_min = cs::min(eigen_min, eigen_vals[i]);
+              eigen_max = cs::max(eigen_max, eigen_vals[i]);
             }
 
             /* If negative eigen value, return to isotropy */
             if (   eigen_min <= (eigen_tol*eigen_max)
                 || eigen_min < cs_math_epzero) {
 
-              eigen_min = CS_MIN(eigen_min, - eigen_tol);
+              eigen_min = cs::min(eigen_min, - eigen_tol);
               cs_real_t eigen_offset
                 = fmin(- eigen_min / (1./3. - eigen_min) + 0.1, 1.);
 

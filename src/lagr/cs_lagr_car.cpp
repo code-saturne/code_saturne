@@ -158,7 +158,7 @@ cs_lagr_car(int                iprev,
   cs_lagr_extra_module_t *extra = extra_i;
   int n_phases = extra->n_phases;
 
-  iprev = CS_MIN(iprev, extra->vel->n_time_vals -1);
+  iprev = cs::min(iprev, extra->vel->n_time_vals -1);
 
   /* Initialization
      ---------------*/
@@ -319,8 +319,8 @@ cs_lagr_car(int                iprev,
 
         for (cs_lnum_t id = 0; id < 3; id++) {
           tlag[id]  =
-            CS_MAX(extra_i[phase_id].anisotropic_lagr_time[cell_id][id],
-                   cs_math_epzero);
+            cs::max(extra_i[phase_id].anisotropic_lagr_time[cell_id][id],
+                    cs_math_epzero);
           cs_real_t bxi = extra_i[phase_id].anisotropic_bx[cell_id][id];
           if (bxi > 0.0)
             bx[id][nor-1] = sqrt(bxi);
@@ -341,7 +341,7 @@ cs_lagr_car(int                iprev,
          */
         if (cs_glob_lagr_time_scheme->extended_t_scheme !=0 && phase_id == 0) {
           for (cs_lnum_t id = 0; id < 3; id++) {
-            if (CS_ABS(tlag[id] - *taup)
+            if (cs::abs(tlag[id] - *taup)
                 < cs_math_epzero * *taup)
               beta[id] = 0.;
             else
@@ -353,7 +353,7 @@ cs_lagr_car(int                iprev,
       }
       else { // fluid particles
         tlag[0] = extra_i[phase_id].lagr_time->val[cell_id];
-        tlag[0] = CS_MAX(tlag[0], cs_math_epzero);
+        tlag[0] = cs::max(tlag[0], cs_math_epzero);
 
         if (cs_glob_lagr_model->idiffl == 0) {
           cs_real_t uvwdif = 0.;
@@ -372,7 +372,7 @@ cs_lagr_car(int                iprev,
         /* Compute beta_i in the global referential */
         if (cs_glob_lagr_time_scheme->extended_t_scheme !=0 && phase_id == 0) {
           for (cs_lnum_t id = 0; id < 3; id++) {
-            if (CS_ABS(tlag[id] - *taup)
+            if (cs::abs(tlag[id] - *taup)
                 < cs_math_epzero * *taup)
               beta[id] = 0.;
             else

@@ -59,6 +59,7 @@
 #include "fvm/fvm_morton.h"
 
 #include "base/cs_all_to_all.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
@@ -1375,8 +1376,8 @@ _adjust_extents(cs_coord_t  extents[6],
   const double epsilon = 1e-12;
 
   for (i = 0; i < 3; i++) {
-    double  w = fabs(extents[i+3] - extents[i]);
-    max_width = CS_MAX(max_width, w);
+    double  w = cs::abs(extents[i+3] - extents[i]);
+    max_width = cs::max(max_width, w);
   }
 
   for (i = 0; i < 3; i++) {

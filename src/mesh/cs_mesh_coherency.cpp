@@ -44,6 +44,7 @@
 
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -221,8 +222,8 @@ cs_mesh_coherency_check(void)
       const cs_real_t *coord = vtx_coord + (3*vtx_id);
 
       for (j = 0; j < 3; j++) {
-        _min[j] = CS_MIN(_min[j], coord[j]);
-        _max[j] = CS_MAX(_max[j], coord[j]);
+        _min[j] = cs::min(_min[j], coord[j]);
+        _max[j] = cs::max(_max[j], coord[j]);
       }
 
     }
@@ -232,8 +233,8 @@ cs_mesh_coherency_check(void)
       cell_id = i_face_cells[face_id][j];
 
       for (k = 0; k < 3; k++) {
-        emin[cell_id][k] = CS_MIN(emin[cell_id][k], _min[k]);
-        emax[cell_id][k] = CS_MAX(emax[cell_id][k], _max[k]);
+        emin[cell_id][k] = cs::min(emin[cell_id][k], _min[k]);
+        emax[cell_id][k] = cs::max(emax[cell_id][k], _max[k]);
       }
 
     }
@@ -256,15 +257,15 @@ cs_mesh_coherency_check(void)
       const cs_real_t *coord = vtx_coord + (3*vtx_id);
 
       for (j = 0; j < 3; j++) {
-        _min[j] = CS_MIN(_min[j], coord[j]);
-        _max[j] = CS_MAX(_max[j], coord[j]);
+        _min[j] = cs::min(_min[j], coord[j]);
+        _max[j] = cs::max(_max[j], coord[j]);
       }
 
       cell_id = b_face_cells[face_id];
 
       for (j = 0; j < 3; j++) {
-        emin[cell_id][j] = CS_MIN(emin[cell_id][j], _min[j]);
-        emax[cell_id][j] = CS_MAX(emax[cell_id][j], _max[j]);
+        emin[cell_id][j] = cs::min(emin[cell_id][j], _min[j]);
+        emax[cell_id][j] = cs::max(emax[cell_id][j], _max[j]);
       }
 
     }
@@ -332,8 +333,8 @@ cs_mesh_coherency_check(void)
 
       for (cell_id = mesh->n_cells; cell_id < n_cells_with_ghosts; cell_id++) {
         for (j = 0; j < 3; j++) {
-          emin[cell_id][j] = CS_MIN(emin[cell_id][j], c_coords[cell_id][j]);
-          emax[cell_id][j] = CS_MAX(emax[cell_id][j], c_coords[cell_id][j]);
+          emin[cell_id][j] = cs::min(emin[cell_id][j], c_coords[cell_id][j]);
+          emax[cell_id][j] = cs::max(emax[cell_id][j], c_coords[cell_id][j]);
         }
       }
 

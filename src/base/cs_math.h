@@ -413,6 +413,91 @@ cs_math_3_cross_product(const T       u[3],
   uv[2] = u[0]*v[1] - u[1]*v[0];
 }
 
+namespace cs {
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Return absolute value of a number.
+ *
+ * Specialized versions for floating point numbers should be faster than
+ * base version from cs_defs.h.
+ *
+ * \param[in]  a  value
+ *
+ * \return absolute value of a
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline double
+abs(const double  a)
+{
+  return fabs(a);
+}
+
+CS_F_HOST_DEVICE inline float
+abs(const float  a)
+{
+  return fabsf(a);
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Return minimum of two values.
+ *
+ * Specialized versions for floating point numbers should be faster than
+ * base version from cs_defs.h.
+ *
+ * \param[in]  a   first value
+ * \param[in]  b   second value
+ *
+ * \return minimum of a and b
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline double
+min(const double  a,
+    const double  b)
+{
+  return fmin(a, b);
+}
+
+CS_F_HOST_DEVICE inline float
+min(const float  a,
+    const float  b)
+{
+  return fminf(a, b);
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Return maximum of two values.
+ *
+ * Specialized versions for floating point numbers should be faster than
+ * base version from cs_defs.h.
+ *
+ * \param[in]  a   first value
+ * \param[in]  b   second value
+ *
+ * \return maximum of a and b
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline double
+max(const double  a,
+    const double  b)
+{
+  return fmax(a, b);
+}
+
+CS_F_HOST_DEVICE inline float
+max(const float  a,
+    const float  b)
+{
+  return fmaxf(a, b);
+}
+
+} // namespace cs
+
 #endif // defined(__cplusplus)
 
 BEGIN_C_DECLS

@@ -1867,7 +1867,7 @@ _write_header(const char     *sec_name,
 
   /* Now write header data */
 
-  write_size = CS_MAX((cs_file_off_t)(outp->header_size), header_vals[0]);
+  write_size = cs::max((cs_file_off_t)(outp->header_size), header_vals[0]);
 
   n_written = cs_file_write_global(outp->f,
                                    outp->buffer,

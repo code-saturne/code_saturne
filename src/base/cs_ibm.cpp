@@ -224,7 +224,7 @@ _geom_face_fraction(cs_real_t alphai,
   delta = bb*bb - 4.*aa*cc;
 
   if (delta >= 0.) {
-    if (cs_math_fabs(aa) < 1.e-20) {
+    if (cs::abs(aa) < 1.e-20) {
       return 0.5;
     }
     else {
@@ -392,19 +392,18 @@ _tetra_vol(cs_real_3_t x1,
            cs_real_3_t x3,
            cs_real_3_t x4)
 {
-
   constexpr cs_real_t c_1ov6 = 1./6.;
 
   /* Volume of the tetrahedron x1, x2, x3, x4 */
-  cs_real_t tetra_vol = cs_math_fabs(( (x1[0]-x4[0])*(x2[1]-x4[1])
-                                     - (x1[1]-x4[1])*(x2[0]-x4[0]) )
-                                     * (x3[2]-x4[2])
+  cs_real_t tetra_vol = cs::abs(   ((x1[0]-x4[0])*(x2[1]-x4[1])
+                                    - (x1[1]-x4[1])*(x2[0]-x4[0]))
+                                    * (x3[2]-x4[2])
                                  + (   (x1[1]-x4[1])*(x2[2]-x4[2])
-                                     - (x1[2]-x4[2])*(x2[1]-x4[1]) )
-                                     * (x3[0]-x4[0])
+                                    - (x1[2]-x4[2])*(x2[1]-x4[1]))
+                                    * (x3[0]-x4[0])
                                  + (   (x1[2]-x4[2])*(x2[0]-x4[0])
-                                     - (x1[0]-x4[0])*(x2[2]-x4[2]) )
-                                     * (x3[1]-x4[1]) )
+                                    - (x1[0]-x4[0])*(x2[2]-x4[2]))
+                                    * (x3[1]-x4[1]) )
                                  * c_1ov6;
 
   return tetra_vol;
@@ -1264,8 +1263,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         cs_real_t l12t = cs_math_3_norm(dx12);
         cs_real_t lamb12 = l12 / l12t;
-        lamb12 = cs_math_fmax(lamb12, 0.);
-        lamb12 = cs_math_fmin(lamb12, 1.);
+        lamb12 = cs::max(lamb12, 0.);
+        lamb12 = cs::min(lamb12, 1.);
 
         for (int i = 0; i < 3; i++)
           dx12[i] *= lamb12;
@@ -1276,8 +1275,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         cs_real_t l13t = cs_math_3_norm(dx13);
         cs_real_t lamb13 = l13 / l13t;
-        lamb13 = cs_math_fmax(lamb13, 0.);
-        lamb13 = cs_math_fmin(lamb13, 1.);
+        lamb13 = cs::max(lamb13, 0.);
+        lamb13 = cs::min(lamb13, 1.);
 
         for (int i = 0; i < 3; i++)
           dx13[i] *= lamb13;
@@ -1302,8 +1301,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         cs_real_t l12t = cs_math_3_norm(dx12);
         cs_real_t lamb12 = l12 / l12t;
-        lamb12 = cs_math_fmax(lamb12, 0.);
-        lamb12 = cs_math_fmin(lamb12, 1.);
+        lamb12 = cs::max(lamb12, 0.);
+        lamb12 = cs::min(lamb12, 1.);
 
         for (int i =  0; i < 3; i++)
           dx12[i] *= lamb12;
@@ -1314,8 +1313,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         cs_real_t l23t = cs_math_3_norm(dx23);
         cs_real_t lamb23 = l23 / l23t;
-        lamb23 = cs_math_fmax(lamb23, 0.);
-        lamb23 = cs_math_fmin(lamb23, 1.);
+        lamb23 = cs::max(lamb23, 0.);
+        lamb23 = cs::min(lamb23, 1.);
         for (int i =  0; i < 3; i++)
           dx23[i] *= lamb23;
 
@@ -1339,8 +1338,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         cs_real_t l13t = cs_math_3_norm(dx13);
         cs_real_t lamb13 = l13 / l13t;
-        lamb13 = cs_math_fmax(lamb13, 0.);
-        lamb13 = cs_math_fmin(lamb13, 1.);
+        lamb13 = cs::max(lamb13, 0.);
+        lamb13 = cs::min(lamb13, 1.);
 
         for (int i = 0; i < 3; i++)
           dx13[i] *= lamb13;
@@ -1351,8 +1350,8 @@ _tri_surf_trunc(cs_real_3_t x1,
 
         cs_real_t l23t = cs_math_3_norm(dx23);
         cs_real_t lamb23 = l23 / l23t;
-        lamb23 = cs_math_fmax(lamb23, 0.);
-        lamb23 = cs_math_fmin(lamb23, 1.);
+        lamb23 = cs::max(lamb23, 0.);
+        lamb23 = cs::min(lamb23, 1.);
 
         for (int i = 0; i < 3; i++)
           dx23[i] *=lamb23;
@@ -1809,7 +1808,6 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
                            const cs_mesh_quantities_t *mesh_quantities,
                            int  *comp_cell)
 {
-
   cs_lnum_t n_cells     = mesh->n_cells;
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_i_faces   = mesh->n_i_faces;
@@ -1845,6 +1843,9 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
   cs_array_lnum_fill_zero(n_cells_ext, nbvtx);
   cs_array_lnum_fill_zero(n_cells_ext, nbvtx_in);
   cs_array_lnum_fill_zero(n_cells_ext, cog_in);
+
+  cs_real_t *poro_val = CS_F_(poro)->val;
+  const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
 
   for (int v_id = 0; v_id < mesh->n_vertices; v_id++)
     node_in[v_id] = -1;
@@ -1937,12 +1938,12 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
     if (comp_cell[c_id] > 0)
-      CS_F_(poro)->val[c_id] = 0.;
+      poro_val[c_id] = 0.;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     if (comp_cell[c_id] > 0)
       if (nbvtx_in[c_id] == 0 && cog_in[c_id] == 0)
-        CS_F_(poro)->val[c_id] = 1.;
+        poro_val[c_id] = 1.;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id0 = i_face_cells[f_id][0];
@@ -1991,13 +1992,13 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
         if (computi) {
           _tetra_vol_cutcell(&voltot, x1, x2, xf, xi, t_cur,
                             icut, num_objecti);
-          CS_F_(poro)->val[c_id0] += voltot;
+          poro_val[c_id0] += voltot;
         }
 
         if (computj) {
           _tetra_vol_cutcell(&voltot, x1, x2, xf, xj, t_cur,
                             icut, num_objectj);
-          CS_F_(poro)->val[c_id1] += voltot;
+          poro_val[c_id1] += voltot;
         }
       }
 
@@ -2014,12 +2015,12 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
 
       if (computi) {
         _tetra_vol_cutcell(&voltot, x1, x2, xf, xi, t_cur, icut, num_objecti);
-        CS_F_(poro)->val[c_id0] += voltot;
+        poro_val[c_id0] += voltot;
       }
 
       if (computj) {
         _tetra_vol_cutcell(&voltot, x1, x2, xf, xj, t_cur, icut, num_objectj);
-        CS_F_(poro)->val[c_id1] += voltot;
+        poro_val[c_id1] += voltot;
       }
     }
   }
@@ -2056,7 +2057,7 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
         }
 
         _tetra_vol_cutcell(&voltot, x1, x2, xf, xi, t_cur, icut, num_objecti);
-        CS_F_(poro)->val[c_id] += voltot;
+        poro_val[c_id] += voltot;
       }
 
       cs_lnum_t vtx_id1
@@ -2071,19 +2072,19 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
       }
 
       _tetra_vol_cutcell(&voltot, x1, x2, xf, xi, t_cur, icut, num_objecti);
-      CS_F_(poro)->val[c_id] += voltot;
+      poro_val[c_id] += voltot;
     }
   }
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     if (comp_cell[c_id] > 0)
       if (nbvtx_in[c_id] != 0 || cog_in[c_id] != 0) {
-        CS_F_(poro)->val[c_id] /= cell_vol[c_id];
-        CS_F_(poro)->val[c_id] = cs_math_fmax(CS_F_(poro)->val[c_id], 0.);
-        CS_F_(poro)->val[c_id] = cs_math_fmin(CS_F_(poro)->val[c_id], 1.);
+        poro_val[c_id] /= cell_vol[c_id];
+        poro_val[c_id] = cs::max(poro_val[c_id], 0.);
+        poro_val[c_id] = cs::min(poro_val[c_id], 1.);
 
-        if (CS_F_(poro)->val[c_id] < 1.e-5)
-          CS_F_(poro)->val[c_id] = 0.;
+        if (poro_val[c_id] < 1.e-5)
+          poro_val[c_id] = 0.;
       }
   }
 
@@ -2160,6 +2161,9 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
 
   cs_real_t *porbis;
   CS_MALLOC(porbis, n_cells_ext, cs_real_t);
+
+  cs_real_t *poro_val = CS_F_(poro)->val;
+  const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
     if (comp_cell[c_id] > 0 || comp_all_cog) {
@@ -2341,15 +2345,15 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     if (comp_cell[c_id] > 0 || comp_all_cog) {
       for (int i = 0; i < 3; i++)
-        cell_f_cen[c_id][i] /= cs_math_fmax(porbis[c_id],
-                                            cs_math_epzero * cell_vol[c_id]);
+        cell_f_cen[c_id][i] /= cs::max(porbis[c_id],
+                                       cs_math_epzero * cell_vol[c_id]);
       for (int i = 0; i < 3; i++)
-        cell_s_cen[c_id][i] /= cs_math_fmax(cell_vol[c_id]-porbis[c_id],
-                                            cs_math_epzero * cell_vol[c_id]);
+        cell_s_cen[c_id][i] /= cs::max(cell_vol[c_id]-porbis[c_id],
+                                       cs_math_epzero * cell_vol[c_id]);
 
       porbis[c_id] /= cell_vol[c_id];
-      porbis[c_id] = cs_math_fmax( porbis[c_id], 0.);
-      porbis[c_id] = cs_math_fmin( porbis[c_id], 1.);
+      porbis[c_id] = cs::max( porbis[c_id], 0.);
+      porbis[c_id] = cs::min( porbis[c_id], 1.);
 
       if (porbis[c_id] < 1.e-5) {
         porbis[c_id] = 0.;
@@ -2445,7 +2449,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
       cell_s_cen[c_id][2] = cell_cen[c_id][2];
     }
 
-    if (CS_F_(poro)->val[c_id] > 1.-1.e-5) {
+    if (poro_val[c_id] > 1.-1.e-5) {
       for (int i = 0; i < 3; i++)
         cell_s_cen[c_id][i] = cell_cen[c_id][i];
       for (int i = 0; i < 3; i++)
@@ -2470,13 +2474,13 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
     cs_real_t volpor = 0.;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       if (comp_cell[c_id] > 0)
-        volpor += cell_vol[c_id] * CS_F_(poro)->val[c_id];
+        volpor += cell_vol[c_id] * poro_val[c_id];
 
     cs_parall_sum(1, CS_REAL_TYPE, &volpor);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       if (comp_cell[c_id] > 0)
-        CS_F_(poro)->val[c_id] = porbis[c_id];
+        poro_val[c_id] = porbis[c_id];
 
     if (cs_ibm->ensure_isovol)
       for (int iter = 1; iter < 4; iter++) {
@@ -2485,8 +2489,8 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
 
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           if (comp_cell[c_id] > 0) {
-            cs_real_t porloc =  CS_F_(poro)->val[c_id];
-            cs_real_t pump = cs_math_fabs(porloc * (1. - porloc));
+            cs_real_t porloc =  poro_val[c_id];
+            cs_real_t pump = cs::abs(porloc * (1. - porloc));
             aa += pump * cell_vol[c_id];
             bb += porloc * cell_vol[c_id];
           }
@@ -2494,15 +2498,15 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
         cs_parall_sum(1, CS_REAL_TYPE, &aa);
         cs_parall_sum(1, CS_REAL_TYPE, &bb);
 
-        cs_real_t beta = (volpor - bb) / cs_math_fmax(aa, 1.e-20);
+        cs_real_t beta = (volpor - bb) / cs::max(aa, 1.e-20);
 
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           if (comp_cell[c_id] > 0) {
-            cs_real_t porloc = CS_F_(poro)->val[c_id];
-            cs_real_t pump = cs_math_fabs(porloc * (1. - porloc));
-            CS_F_(poro)->val[c_id] += beta * pump;
-            CS_F_(poro)->val[c_id] = cs_math_fmax(CS_F_(poro)->val[c_id], 0.);
-            CS_F_(poro)->val[c_id] = cs_math_fmin(CS_F_(poro)->val[c_id], 1.);
+            cs_real_t porloc = poro_val[c_id];
+            cs_real_t pump = cs::abs(porloc * (1. - porloc));
+            poro_val[c_id] += beta * pump;
+            poro_val[c_id] = cs::max(poro_val[c_id], 0.);
+            poro_val[c_id] = cs::min(poro_val[c_id], 1.);
           }
       }
 
@@ -2545,10 +2549,13 @@ _compute_b_fac_porosity(const cs_mesh_t            *mesh,
 
   int icut = cs_ibm->nb_cut_cells;
 
+  cs_real_t *poro_val = CS_F_(poro)->val;
+  const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
+
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     cs_lnum_t c_id = b_face_cells[f_id];
 
-    bfpro_poro[f_id] = 0.5*(c_poro[c_id] + CS_F_(poro)->val_pre[c_id]);
+    bfpro_poro[f_id] = 0.5*(c_poro[c_id] + poro_val_pre[c_id]);
 
     cs_real_3_t cog;
     for (int i = 0; i < 3; i++)
@@ -2616,15 +2623,15 @@ _compute_b_fac_porosity(const cs_mesh_t            *mesh,
       surfpor += _tri_surf_trunc(x1, por1, x2, por2, cog, porc, icut);
 
       cs_real_t porb = surfpor / surftot;
-      bfpro_poro[f_id] = cs_math_fmin(porb, c_poro[c_id]);
+      bfpro_poro[f_id] = cs::min(porb, c_poro[c_id]);
     }
 
     /* Porosity treatment in the solid */
     if (cs_ibm->solid_porosity[c_id] > 1.e-5) {
       cs_real_t porb =  bfpro_poro[f_id];
-      cs_real_t porbis = cs_math_fmin(cs_ibm->solid_porosity[c_id],
-                                      c_poro[c_id]);
-      bfpro_poro[f_id] = cs_math_fmax(porb, porbis);
+      cs_real_t porbis = cs::min(cs_ibm->solid_porosity[c_id],
+                                 c_poro[c_id]);
+      bfpro_poro[f_id] = cs::max(porb, porbis);
     }
 
     /* 2D cases treatment */
@@ -2673,27 +2680,29 @@ _compute_i_fac_porosity(const cs_mesh_t            *mesh,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_i_faces   = mesh->n_i_faces;
 
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const cs_real_3_t *i_face_cog
-    = (const cs_real_3_t *)mesh_quantities->i_face_cog;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
+  const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
+  const cs_real_3_t *cell_cen = mesh_quantities->cell_cen;
+
+  cs_real_t *poro_val = CS_F_(poro)->val;
+  const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id0 = i_face_cells[f_id][0];
     cs_lnum_t c_id1 = i_face_cells[f_id][1];
 
-    cs_real_t pori = 0.5 * (c_poro[c_id0] + CS_F_(poro)->val_pre[c_id0]);
-    cs_real_t porj = 0.5 * (c_poro[c_id1] + CS_F_(poro)->val_pre[c_id1]);
+    cs_real_t pori = 0.5 * (c_poro[c_id0] + poro_val_pre[c_id0]);
+    cs_real_t porj = 0.5 * (c_poro[c_id1] + poro_val_pre[c_id1]);
 
     cs_real_t sizei = cs_math_3_distance(i_face_cog[f_id], cell_cen[c_id0]);
     cs_real_t sizej = cs_math_3_distance(i_face_cog[f_id], cell_cen[c_id1]);
 
     cs_real_t porij = _geom_face_fraction(pori, porj, sizei, sizej);
 
-    cs_real_t porimin = cs_math_fmax(c_poro[c_id0],
-                                     CS_F_(poro)->val_pre[c_id0]);
-    cs_real_t porjmin = cs_math_fmax(c_poro[c_id1],
-                                     CS_F_(poro)->val_pre[c_id1]);
+    cs_real_t porimin = cs::max(c_poro[c_id0],
+                                poro_val_pre[c_id0]);
+    cs_real_t porjmin = cs::max(c_poro[c_id1],
+                                poro_val_pre[c_id1]);
 
     if (porij < 1.e-6 || porimin < 1.e-6 || porjmin < 1.e-6)
       porij = 0.;
@@ -2778,7 +2787,7 @@ _compute_iso_vol_porosity(const cs_mesh_t            *mesh,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       if (comp_cell[c_id] > 0) {
         cs_real_t porloc = c_poro[c_id];
-        cs_real_t pump = cs_math_fabs(porloc * (1. - porloc));
+        cs_real_t pump = cs::abs(porloc * (1. - porloc));
         aa += pump * cell_vol[c_id];
         bb += porloc * cell_vol[c_id];
       }
@@ -2786,15 +2795,15 @@ _compute_iso_vol_porosity(const cs_mesh_t            *mesh,
     cs_parall_sum(1, CS_DOUBLE, &aa);
     cs_parall_sum(1, CS_DOUBLE, &bb);
 
-    cs_real_t beta = (volpor - bb) / cs_math_fmax(aa, 1.e-20);
+    cs_real_t beta = (volpor - bb) / cs::max(aa, 1.e-20);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       if (comp_cell[c_id] > 0) {
         cs_real_t porloc = c_poro[c_id];
-        cs_real_t pump = cs_math_fabs(porloc * (1. - porloc));
+        cs_real_t pump = cs::abs(porloc * (1. - porloc));
         c_poro[c_id] += beta * pump;
-        c_poro[c_id] = cs_math_fmax(c_poro[c_id], 0.);
-        c_poro[c_id] = cs_math_fmin(c_poro[c_id], 1.);
+        c_poro[c_id] = cs::max(c_poro[c_id], 0.);
+        c_poro[c_id] = cs::min(c_poro[c_id], 1.);
       }
 
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, c_poro);
@@ -3029,28 +3038,22 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
   const cs_lnum_t *c2f = ma->cell_i_faces;
 
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)cs_glob_mesh_quantities_g->cell_cen;
-  const cs_real_3_t *cell_f_cen
-    = (const cs_real_3_t *)mesh_quantities->cell_cen;
-  cs_real_3_t *cell_s_cen = (cs_real_3_t *)mesh_quantities->cell_s_cen;
-  const cs_real_3_t *i_face_cog
-    = (const cs_real_3_t *)mesh_quantities->i_face_cog;
+  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities_g->cell_cen;
+  const cs_real_3_t *cell_f_cen = mesh_quantities->cell_cen;
+  cs_real_3_t *cell_s_cen = mesh_quantities->cell_s_cen;
+  const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
   const cs_real_3_t *i_face_normal
     = (const cs_real_3_t *)mesh_quantities->i_face_normal;
   const cs_real_t *i_face_surf  = mesh_quantities->i_face_surf;
-  const cs_real_3_t *b_face_cog
-    = (const cs_real_3_t *)mesh_quantities->b_face_cog;
+  const cs_real_3_t *b_face_cog = mesh_quantities->b_face_cog;
   const cs_real_3_t *b_face_normal
     = (const cs_real_3_t *)mesh_quantities->b_face_normal;
   const cs_real_t *b_face_surf  = mesh_quantities->b_face_surf;
-  const cs_real_t *c_w_face_surf
-    = (const cs_real_t *)mesh_quantities->c_w_face_surf;
+  const cs_real_t *c_w_face_surf = mesh_quantities->c_w_face_surf;
   const cs_real_3_t *c_w_face_normal
     = (const cs_real_3_t *)mesh_quantities->c_w_face_normal;
-  cs_real_3_t *c_w_face_cog
-    = (cs_real_3_t *)mesh_quantities->c_w_face_cog;
-  cs_real_t *c_w_dist_inv = (cs_real_t *)mesh_quantities->c_w_dist_inv;
+  cs_real_3_t *c_w_face_cog = (cs_real_3_t *)mesh_quantities->c_w_face_cog;
+  cs_real_t *c_w_dist_inv = mesh_quantities->c_w_dist_inv;
   cs_real_t *i_f_weight = mesh_quantities->weight;
 
   const cs_lnum_t *i_face_vtx_idx = mesh->i_face_vtx_idx;
@@ -3058,6 +3061,9 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   const cs_lnum_t *b_face_vtx_idx = mesh->b_face_vtx_idx;
   const cs_lnum_t *b_face_vtx = mesh->b_face_vtx_lst;
   const cs_real_3_t *vtx_crd = (const cs_real_3_t *)mesh->vtx_coord;
+
+  cs_real_t *poro_val = CS_F_(poro)->val;
+  const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id0 = i_face_cells[f_id][0];
@@ -3076,10 +3082,10 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
     }
 
     cs_real_t lambda = 0.5;
-    if (cs_math_fabs(den) > 1.e-20)
+    if (cs::abs(den) > 1.e-20)
       lambda = num / den;
 
-    lambda = cs_math_fmin(cs_math_fmax(lambda, 0.001), 0.999);
+    lambda = cs::min(cs::max(lambda, 0.001), 0.999);
     cs_real_t weight_loc = 1. - lambda;
 
     cs_real_t i_face_normal_unit[3];
@@ -3087,12 +3093,12 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
       i_face_normal_unit[idim] = i_face_normal[f_id][idim]/i_face_surf[f_id];
 
     cs_real_t dist_ipjp
-      = cs_math_fabs(cs_math_3_distance_dot_product(xip, xjp,
-                                                    i_face_normal_unit));
-    dist_ipjp = cs_math_fmax(dist_ipjp, 0.5 * dist[f_id]);
+      = cs::abs(cs_math_3_distance_dot_product(xip, xjp,
+                                               i_face_normal_unit));
+    dist_ipjp = cs::max(dist_ipjp, 0.5 * dist[f_id]);
 
-    weight_loc = cs_math_fmax(weight_loc, 0.05);
-    i_f_weight[f_id] = cs_math_fmin(weight_loc, 0.95);
+    weight_loc = cs::max(weight_loc, 0.05);
+    i_f_weight[f_id] = cs::min(weight_loc, 0.95);
   }
 
   // TODO: Check
@@ -3128,9 +3134,9 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
     }
 
     cs_real_t lambda = 0.5;
-    if (cs_math_fabs(den) > 1.e-20)
+    if (cs::abs(den) > 1.e-20)
       lambda = num / den;
-    lambda = cs_math_fmin(cs_math_fmax(lambda, 0.001), 0.999);
+    lambda = cs::min(cs::max(lambda, 0.001), 0.999);
     cs_real_t weight_loc = 1. - lambda;
 
     if (i_poro[f_id] < 0.99)
@@ -3211,7 +3217,7 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
       if (v_poro[v_id] < pornmax) {
         cs_real_t pds = (pornmax - v_poro[v_id]) / (pornmax - pornmin);
-        pds = cs_math_fmin(pds, 1.);
+        pds = cs::min(pds, 1.);
 
         for (int idim = 0; idim < 3; idim++)
           coord_node_out[c_id0][idim] += pds * (1. - v_poro[v_id])
@@ -3226,18 +3232,18 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
       }
 
       for (int idim = 0; idim < 3; idim++)
-        coord_node_min[c_id0][idim] = cs_math_fmin(coord_node_min[c_id0][idim],
-                                                   vtx_crd[v_id][idim]);
+        coord_node_min[c_id0][idim] = cs::min(coord_node_min[c_id0][idim],
+                                              vtx_crd[v_id][idim]);
       for (int idim = 0; idim < 3; idim++)
-        coord_node_min[c_id1][idim] = cs_math_fmin(coord_node_min[c_id1][idim],
-                                                   vtx_crd[v_id][idim]);
+        coord_node_min[c_id1][idim] = cs::min(coord_node_min[c_id1][idim],
+                                              vtx_crd[v_id][idim]);
 
       for (int idim = 0; idim < 3; idim++)
-        coord_node_max[c_id0][idim] = cs_math_fmax(coord_node_max[c_id0][idim],
-                                                   vtx_crd[v_id][idim]);
+        coord_node_max[c_id0][idim] = cs::max(coord_node_max[c_id0][idim],
+                                              vtx_crd[v_id][idim]);
       for (int idim = 0; idim < 3; idim++)
-        coord_node_max[c_id1][idim] = cs_math_fmax(coord_node_max[c_id1][idim],
-                                                   vtx_crd[v_id][idim]);
+        coord_node_max[c_id1][idim] = cs::max(coord_node_max[c_id1][idim],
+                                              vtx_crd[v_id][idim]);
     }
   } /* End of loop on internal faces */
 
@@ -3251,7 +3257,7 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
       if (v_poro[v_id] < pornmax) {
         cs_real_t pds = (pornmax - v_poro[v_id]) / (pornmax - pornmin);
-        pds = cs_math_fmin(pds, 1.);
+        pds = cs::min(pds, 1.);
 
         for (int idim = 0; idim < 3; idim++)
           coord_node_out[c_id][idim] += pds * (1. - v_poro[v_id])
@@ -3261,19 +3267,19 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
       }
 
       for (int idim = 0; idim < 3; idim++)
-        coord_node_min[c_id][idim] = cs_math_fmin(coord_node_min[c_id][idim],
-                                                  vtx_crd[v_id][idim]);
+        coord_node_min[c_id][idim] = cs::min(coord_node_min[c_id][idim],
+                                             vtx_crd[v_id][idim]);
 
       for (int idim = 0; idim < 3; idim++)
-        coord_node_max[c_id][idim] = cs_math_fmax(coord_node_max[c_id][idim],
-                                                  vtx_crd[v_id][idim]);
+        coord_node_max[c_id][idim] = cs::max(coord_node_max[c_id][idim],
+                                             vtx_crd[v_id][idim]);
     }
   } /* End of loop on boundary faces */
 
   /* Finalization */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     for (int idim = 0; idim < 3; idim++)
-      coord_node_out[c_id][idim] /= cs_math_fmax(denom2[c_id], 1.e-20);
+      coord_node_out[c_id][idim] /= cs::max(denom2[c_id], 1.e-20);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (int i = 0; i < 3; i++)
@@ -3324,8 +3330,8 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
                      * (coord_node_out[c_id][i] - cell_cen[c_id][i]);
 
       for (int i = 0; i < 3; i++) {
-        xp[i] = cs_math_fmax(xp[i], coord_node_min[c_id][i]);
-        xp[i] = cs_math_fmin(xp[i], coord_node_max[c_id][i]);
+        xp[i] = cs::max(xp[i], coord_node_min[c_id][i]);
+        xp[i] = cs::min(xp[i], coord_node_max[c_id][i]);
       }
 
       for (int i = 0; i < 3; i++)
@@ -3347,14 +3353,14 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
   /* Readjustment of cog_cut */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)   {
-    cs_real_t poro = 0.5*(CS_F_(poro)->val_pre[c_id] + CS_F_(poro)->val[c_id]);
+    cs_real_t poro = 0.5*(poro_val_pre[c_id] + poro_val[c_id]);
 
     if (poro > 1.e-6 && poro < 1. - 1.e-6) {
       cs_real_3_t nxyz;
       for (int i = 0; i < 3; i++)
         nxyz[i] = c_w_face_normal[c_id][i];
 
-      cs_real_t nn = cs_math_fmax(cs_math_3_norm(nxyz), 1.e-20);
+      cs_real_t nn = cs::max(cs_math_3_norm(nxyz), 1.e-20);
 
       for (int i = 0; i < 3; i++)
         nxyz[i] /= nn;
@@ -3388,11 +3394,11 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
                            (cs_real_t *)cell_s_cen, 3);
 
   // Compute the "characteristic size" vector of each cell
-  cs_real_3_t *cell_length3D, *weight3D;
-  CS_MALLOC(cell_length3D, n_cells_ext, cs_real_3_t);
-  CS_MALLOC(weight3D, n_cells_ext, cs_real_3_t);
-  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)cell_length3D);
-  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)weight3D);
+  cs_real_3_t *cell_length_3d, *weight_3d;
+  CS_MALLOC(cell_length_3d, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(weight_3d, n_cells_ext, cs_real_3_t);
+  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)cell_length_3d);
+  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)weight_3d);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id0 = i_face_cells[f_id][0];
@@ -3401,15 +3407,15 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
     cs_real_t i_face_normal_unit_cp = 0.;
     for (int idim = 0; idim < 3; idim++) {
       i_face_normal_unit_cp = i_face_normal[f_id][idim]/i_face_surf[f_id];
-      cell_length3D[c_id0][idim]
-        += cs_math_fabs((cell_cen[c_id1][idim] - cell_cen[c_id0][idim])
-                        * i_face_normal_unit_cp);
-      cell_length3D[c_id1][idim]
-        += cs_math_fabs((cell_cen[c_id1][idim] - cell_cen[c_id0][idim])
-                        * i_face_normal_unit_cp);
+      cell_length_3d[c_id0][idim]
+        += cs::abs((cell_cen[c_id1][idim] - cell_cen[c_id0][idim])
+                   * i_face_normal_unit_cp);
+      cell_length_3d[c_id1][idim]
+        += cs::abs((cell_cen[c_id1][idim] - cell_cen[c_id0][idim])
+                   * i_face_normal_unit_cp);
 
-      weight3D[c_id0][idim] += cs_math_fabs(i_face_normal_unit_cp);
-      weight3D[c_id1][idim] += cs_math_fabs(i_face_normal_unit_cp);
+      weight_3d[c_id0][idim] += cs::abs(i_face_normal_unit_cp);
+      weight_3d[c_id1][idim] += cs::abs(i_face_normal_unit_cp);
     }
   }
 
@@ -3419,16 +3425,16 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
     cs_real_t b_face_normal_unit_cp = 0.;
     for (int idim = 0; idim < 3; idim++) {
       b_face_normal_unit_cp = b_face_normal[f_id][idim]/b_face_surf[f_id];
-      cell_length3D[c_id][idim]
-        += cs_math_fabs(2. * (b_face_cog[f_id][idim] - cell_cen[c_id][idim])
-                        * b_face_normal_unit_cp);
-      weight3D[c_id][idim] += cs_math_fabs(b_face_normal_unit_cp);
+      cell_length_3d[c_id][idim]
+        += cs::abs(2. * (b_face_cog[f_id][idim] - cell_cen[c_id][idim])
+                   * b_face_normal_unit_cp);
+      weight_3d[c_id][idim] += cs::abs(b_face_normal_unit_cp);
     }
   }
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     for (int i = 0; i < 3; i++)
-      cell_length3D[c_id][i] /= weight3D[c_id][i];
+      cell_length_3d[c_id][i] /= weight_3d[c_id][i];
 
   /* c_w_dist_inv : inverse distance from new cell_cog to immersed wall cog */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -3440,46 +3446,46 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
     }
 
     cs_real_t nn = c_w_face_surf[c_id];
-    nn = cs_math_fmax(nn, 1.e-20);
+    nn = cs::max(nn, 1.e-20);
 
     for (int idim = 0; idim < 3; idim++)
       npx[idim] /= nn;
 
     cs_real_t dwall
-      = cs_math_fabs(cs_math_3_distance_dot_product(xpp, xip, npx));
+      = cs::abs(cs_math_3_distance_dot_product(xpp, xip, npx));
 
-    cs_real_t poro = 0.5*(CS_F_(poro)->val[c_id] + CS_F_(poro)->val_pre[c_id]);
+    cs_real_t poro = 0.5*(poro_val[c_id] + poro_val_pre[c_id]);
 
-    npx[0] = cs_math_fmax(cs_math_fabs(npx[0]), 1.e-20);
-    npx[1] = cs_math_fmax(cs_math_fabs(npx[1]), 1.e-20);
-    npx[2] = cs_math_fmax(cs_math_fabs(npx[2]), 1.e-20);
+    npx[0] = cs::max(cs::abs(npx[0]), 1.e-20);
+    npx[1] = cs::max(cs::abs(npx[1]), 1.e-20);
+    npx[2] = cs::max(cs::abs(npx[2]), 1.e-20);
 
-    cs_real_t lambdax = cell_length3D[c_id][0] / npx[0];
-    cs_real_t lambday = cell_length3D[c_id][1] / npx[1];
-    cs_real_t lambdaz = cell_length3D[c_id][2] / npx[2];
+    cs_real_t lambdax = cell_length_3d[c_id][0] / npx[0];
+    cs_real_t lambday = cell_length_3d[c_id][1] / npx[1];
+    cs_real_t lambdaz = cell_length_3d[c_id][2] / npx[2];
 
-    cs_real_t lambda = cs_math_fmin(lambdax, lambday);
-    lambda = cs_math_fmin(lambda, lambdaz);
+    cs_real_t lambda = cs::min(lambdax, lambday);
+    lambda = cs::min(lambda, lambdaz);
 
     cs_real_t dcell_geom_max
-      = sqrt(  cell_length3D[c_id][0]*cell_length3D[c_id][0]
-             + cell_length3D[c_id][1]*cell_length3D[c_id][1]
-             + cell_length3D[c_id][2]*cell_length3D[c_id][2]);
+      = sqrt(  cell_length_3d[c_id][0]*cell_length_3d[c_id][0]
+             + cell_length_3d[c_id][1]*cell_length_3d[c_id][1]
+             + cell_length_3d[c_id][2]*cell_length_3d[c_id][2]);
 
-    cs_real_t dcell_geom = cs_math_fmin(lambda,dcell_geom_max) * 0.5
-                         * cs_math_fmax(poro,1.e-3);
+    cs_real_t dcell_geom = cs::min(lambda,dcell_geom_max) * 0.5
+                         * cs::max(poro,1.e-3);
 
     c_w_dist_inv[c_id]
-      = 1./cs_math_fmax(dwall, 0.5 * dcell_geom);
+      = 1./cs::max(dwall, 0.5 * dcell_geom);
     c_w_dist_inv[c_id]
-      = cs_math_fmax(c_w_dist_inv[c_id], 1./(3. * dcell_geom));
+      = cs::max(c_w_dist_inv[c_id], 1./(3. * dcell_geom));
 
   }
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, c_w_dist_inv);
 
-  CS_FREE(cell_length3D);
-  CS_FREE(weight3D);
+  CS_FREE(cell_length_3d);
+  CS_FREE(weight_3d);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3944,10 +3950,14 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
                                 gradp);
 
     /* Initialize porosity at the previous value */
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-      CS_F_(poro)->val_pre[c_id] = CS_F_(poro)->val[c_id];
 
-    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(poro)->val_pre);
+    cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
+    cs_real_t *poro_val = CS_F_(poro)->val;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      poro_val_pre[c_id] = poro_val[c_id];
+
+    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, poro_val_pre);
 
     /* List of cells for which one has to recompute porosity -> comp_cell */
     int *comp_cell;
@@ -3967,8 +3977,8 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
         _compute_cell_cut_porosity(mesh, mesh_quantities, comp_cell);
 
         for(int c_id = 0; c_id < n_cells_ext; c_id++)
-          if (CS_F_(poro)->val[c_id] < 1.e-4)
-            CS_F_(poro)->val[c_id] = 0.;
+          if (poro_val[c_id] < 1.e-4)
+            poro_val[c_id] = 0.;
 
       /* Compute cell porosity from a file */
       /* Object logic in this section */
@@ -3980,7 +3990,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
         /* Some initialization */
         for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-          CS_F_(poro)->val[c_id] = 1.;
+          poro_val[c_id] = 1.;
 
         /* Local declarations */
         cs_real_t *obj_vol_f_tot = nullptr;
@@ -4003,12 +4013,12 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
         /* Once total volume of solids in each cell is computed,
          * substract the result from the porosity. */
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          CS_F_(poro)->val[c_id] -= obj_vol_f_tot[c_id];
+          poro_val[c_id] -= obj_vol_f_tot[c_id];
 
         /* Clip sync porosity values */
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          CS_F_(poro)->val[c_id] =
-            cs_math_fmin(cs_math_fmax(CS_F_(poro)->val[c_id], 0.), 1.);
+          poro_val[c_id] =
+            cs::min(cs::max(poro_val[c_id], 0.), 1.);
 
         cs_field_synchronize(CS_F_(poro), CS_HALO_STANDARD);
 
@@ -4027,7 +4037,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
       if (cs_ibm->ensure_isovol)
         if (!cs_ibm->porosity_user_source_term_modification)
           _compute_iso_vol_porosity(mesh, mesh_quantities,
-                                    CS_F_(poro)->val, comp_cell);
+                                    poro_val, comp_cell);
 
     /* Porosity projection at vertices */
     cs_real_t *v_poro;
@@ -4049,13 +4059,13 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
       if (   cs_glob_time_step->nt_cur <= 1
           && _porosity_ibm_opt.porosity_mode == CS_IBM_FIXED_SOLID)
         for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-          CS_F_(poro)->val_pre[c_id] = CS_F_(poro)->val[c_id];
+          poro_val_pre[c_id] = poro_val[c_id];
 
       /* Projection at vertices */
       cs_real_t *c_poro;
       CS_MALLOC(c_poro, n_cells_ext, cs_real_t);
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-        c_poro[c_id] = 0.5*(CS_F_(poro)->val_pre[c_id] + CS_F_(poro)->val[c_id]);
+        c_poro[c_id] = 0.5*(poro_val_pre[c_id] + poro_val[c_id]);
 
       cs_cell_to_vertex(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, false, nullptr,
                         c_poro, nullptr, v_poro);
@@ -4064,7 +4074,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
       /* Compute cell centers of gravity */
       _compute_cell_cog(mesh, mesh_quantities,
-                        v_poro, CS_F_(poro)->val, comp_cell);
+                        v_poro, poro_val, comp_cell);
 
       /* One guarantees the same volume at each iteration
        * for cells whose porosity did not change */
@@ -4072,19 +4082,19 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
         if (cs_ibm->ensure_isovol)
           if (!cs_ibm->porosity_user_source_term_modification)
             _compute_iso_vol_porosity(mesh, mesh_quantities,
-                                      CS_F_(poro)->val, comp_cell);
+                                      poro_val, comp_cell);
 
       /* Take into account inner porosity of solid */
       _compute_solid_porosity(mesh, mesh_quantities,
-                              CS_F_(poro)->val, comp_cell);
+                              poro_val, comp_cell);
 
       /* Boundary face porosity */
       _compute_b_fac_porosity(mesh, mesh_quantities,
-                              CS_F_(poro)->val, v_poro, bfpro_poro);
+                              poro_val, v_poro, bfpro_poro);
 
       /* Internal face porosity */
       _compute_i_fac_porosity(mesh, mesh_quantities,
-                              CS_F_(poro)->val, v_poro, ifpro_poro);
+                              poro_val, v_poro, ifpro_poro);
 
       /* Compute solid surface vector */
       _compute_solid_surface_vector(mesh, mesh_quantities,
@@ -4092,7 +4102,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
       /* Compute cog solid face + weight + dist + dist_wall */
       _compute_solid_surface_cog(mesh, mesh_quantities,
-                                 CS_F_(poro)->val, v_poro,
+                                 poro_val, v_poro,
                                 ifpro_poro, bfpro_poro);
     }
 
@@ -4120,13 +4130,16 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
   }
 
   /* Porosity */
+
+  cs_real_t *poro_val = CS_F_(poro)->val;
+
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    cs_real_t porosity = CS_F_(poro)->val[c_id];
+    cs_real_t porosity = poro_val[c_id];
     if (porosity < cs_math_epzero) {
-      CS_F_(poro)->val[c_id] = 0.;
+      poro_val[c_id] = 0.;
       mesh_quantities->c_disable_flag[c_id] = 1;
     }
-    cell_f_vol[c_id] = CS_F_(poro)->val[c_id] * cell_vol[c_id];
+    cell_f_vol[c_id] = poro_val[c_id] * cell_vol[c_id];
   }
 }
 

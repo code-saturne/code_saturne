@@ -45,6 +45,7 @@
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_bad_cells.h"
@@ -100,8 +101,8 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
-      varmin = CS_MIN(varmin, var[cell_id]);
-      varmax = CS_MAX(varmax, var[cell_id]);
+      varmin = cs::min(varmin, var[cell_id]);
+      varmax = cs::max(varmax, var[cell_id]);
     }
 
   cs_parall_min(1, CS_DOUBLE, &varmin);
@@ -123,7 +124,7 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
 
     double surf = surfn[face_id];
     double vol = 0.5 * (volume[cell_id1] + volume[cell_id2]);
-    surf = CS_MAX(surf, 0.1*vol/dist[face_id]);
+    surf = cs::max(surf, 0.1*vol/dist[face_id]);
     double ssd = surf / dist[face_id];
 
     dam[cell_id1] += ssd;
@@ -173,8 +174,8 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
                  "potential_regularisation_scalar", niterf, ressol, rnorm);
   //FIXME use less!
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    var[cell_id] = CS_MIN(var[cell_id], varmax);
-    var[cell_id] = CS_MAX(var[cell_id], varmin);
+    var[cell_id] = cs::min(var[cell_id], varmax);
+    var[cell_id] = cs::max(var[cell_id], varmin);
   }
 
   if (mesh->halo != nullptr)
@@ -236,8 +237,8 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
       for (int i = 0; i < 3; i++) {
-        varmin[i] = CS_MIN(varmin[i], var[cell_id][i]);
-        varmax[i] = CS_MAX(varmax[i], var[cell_id][i]);
+        varmin[i] = cs::min(varmin[i], var[cell_id][i]);
+        varmax[i] = cs::max(varmax[i], var[cell_id][i]);
       }
     }
 
@@ -268,7 +269,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
     //FIXME usefull?
     double surf = surfn[face_id];
     double vol = 0.5 * (volume[cell_id1] + volume[cell_id2]);
-    surf = CS_MAX(surf, 0.1*vol/dist[face_id]);
+    surf = cs::max(surf, 0.1*vol/dist[face_id]);
     double ssd = surf / dist[face_id];
 
     for (int i = 0; i < 3; i++) {
@@ -352,8 +353,8 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
 #if 1
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int i = 0; i < 3; i++) {
-      var[cell_id][i] = CS_MIN(var[cell_id][i], varmax[i]);
-      var[cell_id][i] = CS_MAX(var[cell_id][i], varmin[i]);
+      var[cell_id][i] = cs::min(var[cell_id][i], varmax[i]);
+      var[cell_id][i] = cs::max(var[cell_id][i], varmin[i]);
     }
   }
 #endif
@@ -415,8 +416,8 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
       for (int i = 0; i < 6; i++) {
-        varmin[i] = CS_MIN(varmin[i], var[cell_id][i]);
-        varmax[i] = CS_MAX(varmax[i], var[cell_id][i]);
+        varmin[i] = cs::min(varmin[i], var[cell_id][i]);
+        varmax[i] = cs::max(varmax[i], var[cell_id][i]);
       }
     }
 
@@ -447,7 +448,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
     //FIXME usefull?
     double surf = surfn[face_id];
     double vol = 0.5 * (volume[cell_id1] + volume[cell_id2]);
-    surf = CS_MAX(surf, 0.1*vol/dist[face_id]);
+    surf = cs::max(surf, 0.1*vol/dist[face_id]);
     double ssd = surf / dist[face_id];
 
     for (int i = 0; i < 6; i++) {
@@ -538,8 +539,8 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
 #if 1
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int i = 0; i < 6; i++) {
-      var[cell_id][i] = CS_MIN(var[cell_id][i], varmax[i]);
-      var[cell_id][i] = CS_MAX(var[cell_id][i], varmin[i]);
+      var[cell_id][i] = cs::min(var[cell_id][i], varmax[i]);
+      var[cell_id][i] = cs::max(var[cell_id][i], varmin[i]);
     }
   }
 #endif
@@ -595,8 +596,8 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
       for (int i = 0; i < 9; i++) {
-        varmin[i] = CS_MIN(varmin[i], var[cell_id][i]);
-        varmax[i] = CS_MAX(varmax[i], var[cell_id][i]);
+        varmin[i] = cs::min(varmin[i], var[cell_id][i]);
+        varmax[i] = cs::max(varmax[i], var[cell_id][i]);
       }
     }
 
@@ -627,7 +628,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
     //FIXME usefull?
     double surf = surfn[face_id];
     double vol = 0.5 * (volume[cell_id1] + volume[cell_id2]);
-    surf = CS_MAX(surf, 0.1*vol/dist[face_id]);
+    surf = cs::max(surf, 0.1*vol/dist[face_id]);
     double ssd = surf / dist[face_id];
 
     for (int i = 0; i < 9; i++) {
@@ -717,8 +718,8 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
 #if 1
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int i = 0; i < 9; i++) {
-      var[cell_id][i] = CS_MIN(var[cell_id][i], varmax[i]);
-      var[cell_id][i] = CS_MAX(var[cell_id][i], varmin[i]);
+      var[cell_id][i] = cs::min(var[cell_id][i], varmax[i]);
+      var[cell_id][i] = cs::max(var[cell_id][i], varmin[i]);
     }
   }
 #endif

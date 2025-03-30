@@ -352,7 +352,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
       cs_real_t hintt[6] = {0., 0., 0., 0., 0., 0.};
 
       if (eqp_v->idften & CS_ISOTROPIC_DIFFUSION) { // a voir (zero)
-        hintt[0] =   (eqp_v->idifft * cs_math_fmax(visct[c_id], 0)
+        hintt[0] =   (eqp_v->idifft * cs::max(visct[c_id], 0)
                    / turb_schmidt + rkl) / distbf;
 
         hintt[1] = hintt[0];
@@ -701,7 +701,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
         /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
            NB: eps =1.d-1 must be consistent with
            cs_face_anisotropic_viscosity_scalar */
-        fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*distbf);
+        fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distbf);
 
         hint_rij = viscis / fikis;
       }

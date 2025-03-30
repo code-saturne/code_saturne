@@ -1589,7 +1589,7 @@ _ensure_zones_order(void)
       int z_t_id = atoi(id_s);
       if (z_t_id != id + 1)
         need_reorder = true;
-      z_id_max = CS_MAX(z_id_max, z_t_id);
+      z_id_max = cs::max(z_id_max, z_t_id);
     }
 
   }
@@ -4307,7 +4307,7 @@ cs_gui_porous_model(void)
       tn = cs_tree_get_node(tn, "model");
       const char *mdl = cs_tree_node_get_value_str(tn);
 
-      cs_glob_porous_model = CS_MAX(1, cs_glob_porous_model);
+      cs_glob_porous_model = cs::max(1, cs_glob_porous_model);
       if (mdl) {
         if (cs_gui_strcmp(mdl, "anisotropic"))
           cs_glob_porous_model = 2;

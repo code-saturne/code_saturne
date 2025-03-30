@@ -44,7 +44,9 @@
 #include "base/cs_block_to_part.h"
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_conditions.h"
+#ifdef __cplusplus
 #include "base/cs_boundary_conditions_set_coeffs.h"
+#endif
 #include "base/cs_boundary_zone.h"
 #include "base/cs_coupling.h"
 #include "base/cs_defs.h"

@@ -113,8 +113,8 @@ _compute_local_minmax(cs_lnum_t        n_vals,
   cs_real_t  _min = DBL_MAX, _max = -DBL_MAX;
 
   for (i = 0; i < n_vals; i++) {
-    _min = CS_MIN(_min, var[i]);
-    _max = CS_MAX(_max, var[i]);
+    _min = cs::min(_min, var[i]);
+    _max = cs::max(_max, var[i]);
   }
 
   *min = _min;
@@ -169,9 +169,9 @@ _display_histograms(int        n_steps,
   bft_printf(_("    minimum value =         %10.5e\n"), (double)var_min);
   bft_printf(_("    maximum value =         %10.5e\n\n"), (double)var_max);
 
-  var_step = CS_ABS(var_max - var_min) / n_steps;
+  var_step = cs::abs(var_max - var_min) / n_steps;
 
-  if (CS_ABS(var_max - var_min) > 0.) {
+  if (cs::abs(var_max - var_min) > 0.) {
 
     /* Number of elements in each subdivision */
 
@@ -240,9 +240,9 @@ _histogram(cs_lnum_t        n_vals,
   for (j = 0; j < n_steps; j++)
     count[j] = 0;
 
-  if (CS_ABS(max - min) > 0.) {
+  if (cs::abs(max - min) > 0.) {
 
-    step = CS_ABS(max - min) / n_steps;
+    step = cs::abs(max - min) / n_steps;
 
     /* Loop on values */
 
@@ -312,9 +312,9 @@ _int_face_histogram(const cs_mesh_t  *mesh,
   for (j = 0; j < n_steps; j++)
     count[j] = 0;
 
-  if (CS_ABS(max - min) > 0.) {
+  if (cs::abs(max - min) > 0.) {
 
-    step = CS_ABS(max - min) / n_steps;
+    step = cs::abs(max - min) / n_steps;
 
     /* Loop on faces */
 
@@ -409,7 +409,7 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
     coef1 = _DOT_PRODUCT_3D(v1, face_normal)/coef0;
     coef2 = _DOT_PRODUCT_3D(v2, face_normal)/coef0;
 
-    weighting[face_id] = CS_MAX(coef1, coef2);
+    weighting[face_id] = cs::max(coef1, coef2);
 
     /* Compute center offsetting coefficient */
     /*---------------------------------------*/
@@ -420,9 +420,9 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
     }
     double of_s = _MODULE_3D(v1) * _MODULE_3D(v2);
 
-    offsetting[cell1] = CS_MIN(offsetting[cell1],
+    offsetting[cell1] = cs::min(offsetting[cell1],
         1. - pow(of_s / fabs(mesh_quantities->cell_vol[cell1]), 1./3.));
-    offsetting[cell2] = CS_MIN(offsetting[cell2],
+    offsetting[cell2] = cs::min(offsetting[cell2],
         1. - pow(of_s / fabs(mesh_quantities->cell_vol[cell2]), 1./3.));
 
   } /* End of loop on faces */
@@ -486,8 +486,8 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
       vect[i] = cell_center2[i] - cell_center1[i];
 
     cos_alpha = _COSINE_3D(vect, face_normal);
-    cos_alpha = CS_ABS(cos_alpha);
-    cos_alpha = CS_MIN(cos_alpha, 1);
+    cos_alpha = cs::abs(cos_alpha);
+    cos_alpha = cs::min(cos_alpha, 1);
 
     if (cos_alpha < 1.)
       i_face_ortho[face_id] = acos(cos_alpha) * rad_to_deg;
@@ -529,8 +529,8 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
       vect[i] = face_center[i] - cell_center1[i];
 
     cos_alpha = _COSINE_3D(vect, face_normal);
-    cos_alpha = CS_ABS(cos_alpha);
-    cos_alpha = CS_MIN(cos_alpha, 1);
+    cos_alpha = cs::abs(cos_alpha);
+    cos_alpha = cs::min(cos_alpha, 1);
 
     if (cos_alpha < 1.)
       b_face_ortho[face_id] = acos(cos_alpha) * rad_to_deg;
@@ -584,8 +584,8 @@ _get_face_warping(cs_lnum_t        idx_start,
                - vertex_coords[vertex_id1*dim + i];
 
     edge_cos_alpha = _COSINE_3D(vect, face_normal);
-    edge_cos_alpha = CS_ABS(edge_cos_alpha);
-    cos_alpha = CS_MAX(cos_alpha, edge_cos_alpha);
+    edge_cos_alpha = cs::abs(edge_cos_alpha);
+    cos_alpha = cs::max(cos_alpha, edge_cos_alpha);
 
   }
 
@@ -601,9 +601,9 @@ _get_face_warping(cs_lnum_t        idx_start,
              - vertex_coords[vertex_id1*dim + i];
 
   edge_cos_alpha = _COSINE_3D(vect, face_normal);
-  edge_cos_alpha = CS_ABS(edge_cos_alpha);
-  cos_alpha = CS_MAX(cos_alpha, edge_cos_alpha);
-  cos_alpha = CS_MIN(cos_alpha, 1.);
+  edge_cos_alpha = cs::abs(edge_cos_alpha);
+  cos_alpha = cs::max(cos_alpha, edge_cos_alpha);
+  cos_alpha = cs::min(cos_alpha, 1.);
 
   *face_warping = 90. - acos(cos_alpha) * rad_to_deg;
 

@@ -106,9 +106,9 @@ _evaluate_distribution(cs_lnum_t    n_ranges,
   for (cs_lnum_t i = 0; i < n_ranges; i++) {
 
     if (distribution[i] > optim)
-      d_up = CS_MAX(d_up, distribution[i] - optim);
+      d_up = cs::max(d_up, distribution[i] - optim);
     else
-      d_low = CS_MAX(d_low, optim - distribution[i]);
+      d_low = cs::max(d_low, optim - distribution[i]);
 
   }
 

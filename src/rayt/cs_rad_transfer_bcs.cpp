@@ -57,6 +57,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_ht_convert.h"
 #include "base/cs_internal_coupling.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -473,7 +474,7 @@ cs_rad_transfer_bcs(int bc_type[])
         if (isothm[face_id] == -1) {
           nrferr[2]++;
           icoerr[2]    = face_zone_id[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
       else {
@@ -481,7 +482,7 @@ cs_rad_transfer_bcs(int bc_type[])
             && isothm[face_id] != cs_glob_rad_transfer_params->ifinfe) {
           nrferr[3]++;
           icoerr[3]    =  face_zone_id[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
     }
@@ -498,7 +499,7 @@ cs_rad_transfer_bcs(int bc_type[])
           nrferr[4]++;
           icoerr[4]    = face_zone_id[face_id];
           rvferr[0]    = f_beps->val[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
 
@@ -514,7 +515,7 @@ cs_rad_transfer_bcs(int bc_type[])
           rvferr[3]    = f_bxlam->val[face_id];
           rvferr[4]    = f_bepa->val[face_id];
           rvferr[5]    = text[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
 
@@ -527,7 +528,7 @@ cs_rad_transfer_bcs(int bc_type[])
           rvferr[7]    = f_bxlam->val[face_id];
           rvferr[8]    = f_bepa->val[face_id];
           rvferr[9]    = text[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
 
@@ -537,7 +538,7 @@ cs_rad_transfer_bcs(int bc_type[])
           nrferr[7]++;
           icoerr[7]    = face_zone_id[face_id];
           rvferr[11]   = f_beps->val[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
 
@@ -547,7 +548,7 @@ cs_rad_transfer_bcs(int bc_type[])
           nrferr[13]++;
           icoerr[15]   = face_zone_id[face_id];
           rvferr[25]   = f_beps->val[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
 
@@ -557,7 +558,7 @@ cs_rad_transfer_bcs(int bc_type[])
         nrferr[8]++;
         icoerr[9]    = face_zone_id[face_id];
         icoerr[10]   = rad_bc_code;
-        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+        bc_type[face_id] = -cs::abs(bc_type[face_id]);
       }
     }
 
@@ -574,7 +575,7 @@ cs_rad_transfer_bcs(int bc_type[])
           rvferr[14]   = f_bxlam->val[face_id];
           rvferr[15]   = f_bepa->val[face_id];
           rvferr[16]   = text[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
 
@@ -583,7 +584,7 @@ cs_rad_transfer_bcs(int bc_type[])
           nrferr[10]++;
           icoerr[12]   = face_zone_id[face_id];
           rvferr[17]   = f_beps->val[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
         f_beps->val[face_id] = 0.;
       }
@@ -597,7 +598,7 @@ cs_rad_transfer_bcs(int bc_type[])
           rvferr[18]   = f_bxlam->val[face_id];
           rvferr[19]   = f_bepa->val[face_id];
           rvferr[20]   = text[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
       }
 
@@ -612,7 +613,7 @@ cs_rad_transfer_bcs(int bc_type[])
           rvferr[22]   = f_bxlam->val[face_id];
           rvferr[23]   = f_bepa->val[face_id];
           rvferr[24]   = text[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+          bc_type[face_id] = -cs::abs(bc_type[face_id]);
         }
         f_beps->val[face_id] = 0.;
       }
@@ -1288,7 +1289,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
           cs_real_t normal[3];
           cs_math_3_normalize(b_face_normal[face_id], normal);
           cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s, normal);
-          if (CS_ABS(vs_dot_n) < cs_math_epzero) /* entering */
+          if (cs::abs(vs_dot_n) < cs_math_epzero) /* entering */
             neumann = false;
 
           /* Top of the domain */
@@ -1349,7 +1350,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
       }
       /* Error if there are forgotten faces */
       else
-        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+        bc_type[face_id] = -cs::abs(bc_type[face_id]);
 
     }
 
@@ -1412,7 +1413,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
       /* 2.4 - Stop if there are forgotten faces
        *       ---------------------------------  */
       else
-        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+        bc_type[face_id] = -cs::abs(bc_type[face_id]);
     }
   }
 
@@ -1426,7 +1427,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     if (coefap[face_id] <= xlimit)
-      bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+      bc_type[face_id] = -cs::abs(bc_type[face_id]);
   }
 
   cs_boundary_conditions_error(bc_type, "Radiance BC values");

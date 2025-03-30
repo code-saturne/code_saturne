@@ -178,7 +178,7 @@ _face_sub_surfaces(cs_lnum_t        n_vertices,
 
   /* Normalize */
 
-  cs_real_t sd = CS_ABS(s);
+  cs_real_t sd = cs::abs(s);
 
   if (sd >= epsilon) {
     for (cs_lnum_t tri_id = 0; tri_id < n_vertices; tri_id++)
@@ -523,7 +523,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
       }
       fh *= v_mult;
 
-      t_vol += CS_ABS(fh);
+      t_vol += cs::abs(fh);
       acc_vol_r[i] = t_vol;
 
       if (fh <= 0 || f_surf <= 0)

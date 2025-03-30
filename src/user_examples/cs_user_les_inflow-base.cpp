@@ -272,7 +272,7 @@ cs_user_les_inflow_advanced(const cs_zone_t  *zone,
       vel_l[i][2] = 1.1;
 
       cs_real_t uref2 = cs_math_3_square_norm(vel_l[i]);
-      uref2 = cs_math_fmax(uref2, 1e-12);
+      uref2 = cs::max(uref2, 1e-12);
 
       /* Hydraulic diameter */
       const cs_real_t x_hd = 0.075;

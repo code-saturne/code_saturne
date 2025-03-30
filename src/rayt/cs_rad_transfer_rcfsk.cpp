@@ -522,10 +522,10 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
       kgfsk[i] = 0.;
     }
 
-    const cs_real_t tloc    = CS_MAX(teloc[iel], 300.0);
-    const cs_real_t xh2oloc = CS_MAX(ph2o[iel], 1e-5);
-    const cs_real_t xco2loc = CS_MAX(pco2[iel], 1e-5);
-    const cs_real_t sootloc = CS_MIN(CS_MAX(fvsloc[iel], 1e-15), 1e-5);
+    const cs_real_t tloc    = cs::max(teloc[iel], 300.0);
+    const cs_real_t xh2oloc = cs::max(ph2o[iel], 1e-5);
+    const cs_real_t xco2loc = cs::max(pco2[iel], 1e-5);
+    const cs_real_t sootloc = cs::min(cs::max(fvsloc[iel], 1e-15), 1e-5);
 
     _interpolation4d_rcfsk(2, tloc, xco2loc, xh2oloc, sootloc, kgfsk);
     _interpolation4d_rcfsk(1, tloc, xco2loc, xh2oloc, sootloc, agfsk);
@@ -552,10 +552,10 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
 
     const cs_lnum_t cell_id = ifabor[ifac];
 
-    const cs_real_t tbord   = CS_MAX(tpfsck[ifac], 300.0);
-    const cs_real_t xh2oloc = CS_MAX(ph2o[cell_id], 1e-5);
-    const cs_real_t xco2loc = CS_MAX(pco2[cell_id], 1e-5);
-    const cs_real_t sootloc = CS_MIN(CS_MAX(fvsloc[cell_id], 1e-15), 1.e-5);
+    const cs_real_t tbord   = cs::max(tpfsck[ifac], 300.0);
+    const cs_real_t xh2oloc = cs::max(ph2o[cell_id], 1e-5);
+    const cs_real_t xco2loc = cs::max(pco2[cell_id], 1e-5);
+    const cs_real_t sootloc = cs::min(cs::max(fvsloc[cell_id], 1e-15), 1.e-5);
 
     _interpolation4d_rcfsk(1, tbord, xco2loc, xh2oloc, sootloc, agb);
 

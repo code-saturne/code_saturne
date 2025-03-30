@@ -229,15 +229,15 @@ cs_dilatable_scalar_diff_st(int iterns)
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           vistot[c_id] = visls_0
-            + eqp_sc->idifft*xcpp[c_id]*cs_math_fmax(visct[c_id], 0.)
-            / turb_schmidt;
+            +   eqp_sc->idifft*xcpp[c_id]*cs::max(visct[c_id], 0.)
+              / turb_schmidt;
       }
       else {
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           vistot[c_id] = viscls[c_id]
-            + eqp_sc->idifft*xcpp[c_id]*cs_math_fmax(visct[c_id], 0.)
-            / turb_schmidt;
+            +   eqp_sc->idifft*xcpp[c_id]*cs::max(visct[c_id], 0.)
+              / turb_schmidt;
       }
 
       cs_face_viscosity(mesh,

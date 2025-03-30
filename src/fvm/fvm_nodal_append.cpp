@@ -140,7 +140,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
     for (i = 0;
          i < this_section->face_index[this_section->n_elements];
          i++) {
-      _face_num = CS_ABS(this_section->face_num[i]);
+      _face_num = cs::abs(this_section->face_num[i]);
       if (_face_num > this_section->n_faces)
         this_section->n_faces = _face_num;
     }
@@ -216,7 +216,7 @@ _map_to_section(cs_lnum_t       n_elements,
     for (i = 0;
          i < this_section->face_index[this_section->n_elements];
          i++) {
-      _face_num = CS_ABS(this_section->face_num[i]);
+      _face_num = cs::abs(this_section->face_num[i]);
       if (_face_num > this_section->n_faces)
         this_section->n_faces = _face_num;
     }

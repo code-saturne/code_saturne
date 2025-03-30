@@ -53,6 +53,7 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
@@ -567,7 +568,7 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
   /* Vertex coordinates */
   /*--------------------*/
 
-  CS_MALLOC(coords_tmp, CS_MAX(n_vertices, n_extra_vertices), float);
+  CS_MALLOC(coords_tmp, cs::max(n_vertices, n_extra_vertices), float);
 
   _write_string(f, "coordinates");
   _write_int(f, n_vertices + n_extra_vertices);
@@ -1349,7 +1350,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
     k = 0;
     for (i = 0; i < section->n_elements; i++) {
       for (j = section->face_index[i]; j < section->face_index[i+1]; j++) {
-        face_id = CS_ABS(section->face_num[j]) - 1;
+        face_id = cs::abs(section->face_num[j]) - 1;
         face_length = (  section->vertex_index[face_id+1]
                        - section->vertex_index[face_id]);
         part_face_len[k++] = face_length;
@@ -1434,7 +1435,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
       for (i = 0; i < section->n_elements; i++) {
         cell_length = 0;
         for (j = section->face_index[i]; j < section->face_index[i+1]; j++) {
-          face_id = CS_ABS(section->face_num[j]) - 1;
+          face_id = cs::abs(section->face_num[j]) - 1;
           face_length = (  section->vertex_index[face_id+1]
                          - section->vertex_index[face_id]);
           cell_length += face_length;
@@ -1453,7 +1454,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
       for (i = 0; i < section->n_elements; i++) {
         cell_length = 0;
         for (j = section->face_index[i]; j < section->face_index[i+1]; j++) {
-          face_id = CS_ABS(section->face_num[j]) - 1;
+          face_id = cs::abs(section->face_num[j]) - 1;
           face_length = (  section->vertex_index[face_id+1]
                          - section->vertex_index[face_id]);
           cell_length += face_length + 1;
@@ -2457,9 +2458,9 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
                                    &min_output_buffer_size);
 
   output_buffer_size = input_size / 4;
-  output_buffer_size = CS_MAX(output_buffer_size, min_output_buffer_size);
-  output_buffer_size = CS_MAX(output_buffer_size, 128);
-  output_buffer_size = CS_MIN(output_buffer_size, output_size);
+  output_buffer_size = cs::max(output_buffer_size, min_output_buffer_size);
+  output_buffer_size = cs::max(output_buffer_size, (size_t)128);
+  output_buffer_size = cs::min(output_buffer_size, output_size);
 
   CS_MALLOC(output_buffer, output_buffer_size, float);
 

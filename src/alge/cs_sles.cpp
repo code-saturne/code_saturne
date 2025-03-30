@@ -55,6 +55,7 @@
 #include "base/cs_log.h"
 #include "base/cs_halo.h"
 #include "base/cs_map.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
@@ -706,8 +707,8 @@ _needs_solving(const  char        *name,
 
   if (r[1] < 1e-60) {
 
-    double _precision = CS_MIN(_cs_sles_epzero, /* prefer to err on the side */
-                               precision);      /* of caution... */
+    double _precision = cs::min(_cs_sles_epzero, /* prefer to err on the side */
+                                precision);      /* of caution... */
 
     *residual = sqrt(r[0]);
 
@@ -1054,7 +1055,7 @@ cs_sles_log(cs_log_t  log_type)
     size_t l = cs_log_strlen(header);
     char ul[128];
 
-    l = CS_MIN(l, 127);
+    l = cs::min(l, (size_t)127);
     for (size_t ll = 0; ll < l; ll++)
       ul[ll] = '-';
     ul[l] = '\0';
@@ -1099,7 +1100,7 @@ cs_sles_log(cs_log_t  log_type)
       }
 
       char ul[128];
-      l = CS_MIN(l, 127);
+      l = cs::min(l, (size_t)127);
       for (size_t ll = 0; ll < l; ll++)
         ul[ll] = '-';
       ul[l] = '\0';

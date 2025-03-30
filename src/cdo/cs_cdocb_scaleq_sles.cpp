@@ -170,7 +170,7 @@ _build_shared_structures_full_system(cs_cdo_system_block_t  *block)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
     int  sten =
       f2f->idx[f+1]-f2f->idx[f] + 1 + 2*(f2c->idx[f+1] - f2c->idx[f]);
-    max_stencil = CS_MAX(max_stencil, sten);
+    max_stencil = cs::max(max_stencil, sten);
   }
 
   cs_gnum_t *grows = nullptr, *gcols = nullptr;
@@ -501,14 +501,14 @@ _gkb_init_context(cs_saddle_solver_t              *solver,
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
   const cs_matrix_t  *m11 = cs_cdo_system_get_matrix(sh, 0);
-  const cs_lnum_t  max_b11_size = CS_MAX(cs_matrix_get_n_columns(m11), n1_dofs);
+  const cs_lnum_t  max_b11_size = cs::max(cs_matrix_get_n_columns(m11), n1_dofs);
 
   BFT_MALLOC(ctx->w, max_b11_size, cs_real_t);
   BFT_MALLOC(ctx->v, max_b11_size, cs_real_t);
 
   /* Rk: rhs_tilda stores quantities in space X1 and X2 alternatively */
 
-  BFT_MALLOC(ctx->rhs_tilda, CS_MAX(n1_dofs, n2_dofs), cs_real_t);
+  BFT_MALLOC(ctx->rhs_tilda, cs::max(n1_dofs, n2_dofs), cs_real_t);
 
   /* Convergence members (energy norm estimation) */
 
@@ -523,13 +523,13 @@ _gkb_init_context(cs_saddle_solver_t              *solver,
   else if (gamma < 10)
     ctx->zeta_size = tt;
   else if (gamma < 100)
-    ctx->zeta_size = CS_MAX(1, tt - 1);
+    ctx->zeta_size = cs::max(1, tt - 1);
   else if (gamma < 1e3)
-    ctx->zeta_size = CS_MAX(1, tt - 2);
+    ctx->zeta_size = cs::max(1, tt - 2);
   else if (gamma < 1e4)
-    ctx->zeta_size = CS_MAX(1, tt - 3);
+    ctx->zeta_size = cs::max(1, tt - 3);
   else
-    ctx->zeta_size = CS_MAX(1, tt - 4);
+    ctx->zeta_size = cs::max(1, tt - 4);
 
   BFT_MALLOC(ctx->zeta_array, ctx->zeta_size, cs_real_t);
   for (int i = 0; i < ctx->zeta_size; i++)
@@ -966,8 +966,8 @@ cs_cdocb_scaleq_sles_block_krylov(cs_saddle_solver_t  *solver,
   /* Update the context after the matrix building */
 
   ctx->m11 = cs_cdo_system_get_matrix(sh, 0);
-  ctx->b11_max_size = CS_MAX(cs_matrix_get_n_columns(ctx->m11),
-                             solver->n1_scatter_dofs);
+  ctx->b11_max_size = cs::max(cs_matrix_get_n_columns(ctx->m11),
+                              solver->n1_scatter_dofs);
 
   /* Prepare the solution array at faces. It has to be allocated to a greater
    * size in case of parallelism in order to allow for a correct matrix-vector

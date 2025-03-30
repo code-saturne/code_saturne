@@ -320,9 +320,9 @@ _src_terms(const cs_real_t    dt[],
     /* Implicitation of the negative source terms of the SA equation.
        NB: this term may be negative, and if so, then we explicit it. */
 
-    st_imp[i] = (cs_math_fmax((  cs_turb_csaw1*fw*nusa/cs_math_pow2(distbf)
-                               - csab1r[i]*taussa),
-                              0.0))
+    st_imp[i] = (cs::max((  cs_turb_csaw1*fw*nusa/cs_math_pow2(distbf)
+                          - csab1r[i]*taussa),
+                         0.0))
                 * rho * cell_f_vol[i];
 
   }
@@ -360,8 +360,8 @@ _clip(cs_lnum_t  n_cells)
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_real_t xnu = cvar_nusa[c_id];
-    xnu_min = cs_math_fmin(xnu_min, xnu);
-    xnu_max = cs_math_fmax(xnu_max, xnu);
+    xnu_min = cs::min(xnu_min, xnu);
+    xnu_max = cs::max(xnu_max, xnu);
   }
 
   /* "Standard" clipping  NUSA > 0 */
@@ -533,7 +533,7 @@ cs_turbulence_sa(void)
   else {
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       rhs_sa[i] += cvara_nusa[i]*st_imp[i] + st_exp[i];
-      imp_sa[i] += cs_math_fmax(st_imp[i], cs_math_epzero);
+      imp_sa[i] += cs::max(st_imp[i], cs_math_epzero);
     }
   }
 

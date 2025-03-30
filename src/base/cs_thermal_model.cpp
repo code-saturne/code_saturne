@@ -1018,7 +1018,7 @@ cs_thermal_model_newton_t(int               method,
         xcvv = cva * (1. - yw[c_id]) + cvv *yv_ + cvl *(yw[c_id] - yv_);
         // Estimate new temperature
         cs_real_t em_ = temp[c_id] * xcvv + l00 *yv_;
-        cs_real_t errort = cs_math_fabs(th_scal[c_id] - em_);
+        cs_real_t errort = cs::abs(th_scal[c_id] - em_);
 
         while (errort > epsy) {
           cs_real_t demdt = cs_thermal_model_demdt_ecsnt(pres,
@@ -1038,7 +1038,7 @@ cs_thermal_model_newton_t(int               method,
           //yv_ = cs_air_yw_sat(tc_, pres);
           xcvv = cva * (1 - yw[c_id]) + cvv *yv_ + cvl *(yw[c_id] - yv_);
           em_ = temp[c_id] *xcvv + l00 *yv_;
-          errort = cs_math_fabs(th_scal[c_id] - em_);
+          errort = cs::abs(th_scal[c_id] - em_);
         }
 
         if (yv_ > yw[c_id]) {
@@ -1058,7 +1058,7 @@ cs_thermal_model_newton_t(int               method,
           xcvv = cva * (1. - yw[c_id]) + cvv * yv_ + cvl * (yw[c_id] - yv_);
           // Estimate new temperature
           cs_real_t em_ = temp[c_id] * xcvv + l00 * yv_;
-          cs_real_t errort = cs_math_fabs(th_scal[c_id] - em_);
+          cs_real_t errort = cs::abs(th_scal[c_id] - em_);
 
           while (errort > epsy) {
             cs_real_t demdt = cs_thermal_model_demdt_ecsnt(pres,
@@ -1079,7 +1079,7 @@ cs_thermal_model_newton_t(int               method,
             //yv_ = cs_air_yw_sat(tc_, pres);
             xcvv = cva * (1. - yw[c_id]) + cvv *yv_ + cvl * (yw[c_id] - yv_);
             em_ = temp[c_id] *xcvv + l00 *yv_;
-            errort = cs_math_fabs(th_scal[c_id] - em_);
+            errort = cs::abs(th_scal[c_id] - em_);
           }
 
           if (yv_ > yw[c_id]) {

@@ -52,8 +52,7 @@
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "mesh/cs_mesh.h"
-#include "base/cs_log.h"
-#include "base/cs_map.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parall.h"
@@ -1330,8 +1329,8 @@ cs_field_local_extrema_scalar(int              f_id,
   /* Bounded by the global extrema */
 # pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
-    local_max[ii] = CS_MIN(local_max[ii], scalar_max);
-    local_min[ii] = CS_MAX(local_min[ii], scalar_min);
+    local_max[ii] = cs::min(local_max[ii], scalar_max);
+    local_min[ii] = cs::max(local_min[ii], scalar_min);
   }
 }
 

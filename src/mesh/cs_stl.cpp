@@ -221,9 +221,9 @@ _triangle_box_intersect(const cs_real_t  box_extents[6],
 
       // Projection of the box on the seperated axis
       // computation of the "radius" r
-      cs_real_t r = h[0] * CS_ABS(axis[0])
-                  + h[1] * CS_ABS(axis[1])
-                  + h[2] * CS_ABS(axis[2]);
+      cs_real_t r = h[0] * cs::abs(axis[0])
+                  + h[1] * cs::abs(axis[1])
+                  + h[2] * cs::abs(axis[2]);
 
       cs_real_t pmin = fmin(p[0], fmin(p[1], p[2]));
       cs_real_t pmax = fmax(p[0], fmax(p[1], p[2]));
@@ -244,9 +244,9 @@ _triangle_box_intersect(const cs_real_t  box_extents[6],
   for (int dir = 0; dir < 3; dir ++)
     p[dir] = cs_math_3_dot_product(n, v[dir]);
 
-  cs_real_t r = h[0] * CS_ABS(n[0])
-              + h[1] * CS_ABS(n[1])
-              + h[2] * CS_ABS(n[2]);
+  cs_real_t r = h[0] * cs::abs(n[0])
+              + h[1] * cs::abs(n[1])
+              + h[2] * cs::abs(n[2]);
 
   cs_real_t pmin = fmin(p[0], fmin(p[1],p[2]));
   cs_real_t pmax = fmax(p[0], fmax(p[1],p[2]));
@@ -337,8 +337,8 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
     cs_real_t xn2 = cs_math_3_distance_dot_product(vtx[v2], plane, plane+3);
 
     /* If [v1, v2] (almost) tangent then add v2 projected on the plane */
-    if (cs_math_fabs(xn1) <= tolerance_v1
-        && (cs_math_fabs(xn2) <= tolerance_v2)) {
+    if (cs::abs(xn1) <= tolerance_v1
+        && (cs::abs(xn2) <= tolerance_v2)) {
       assert(j <= nb_vtx_max);
       for (cs_lnum_t dir = 0; dir < 3; dir++)
         new_vtx[j][dir] = vtx[v2][dir] + xn2 * plane[dir+3];
@@ -367,7 +367,7 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
          if its close project it on to the plane */
       if (xn2 >= -tolerance_v2) {
         assert(j <= nb_vtx_max);
-        bool v2_close = cs_math_fabs(xn2) < tolerance_v2;
+        bool v2_close = cs::abs(xn2) < tolerance_v2;
         for (cs_lnum_t dir = 0; dir < 3; dir++)
           new_vtx[j][dir] = vtx[v2][dir] + v2_close * xn2 * plane[dir+3];
         j++;
@@ -434,12 +434,12 @@ _triangle_box_surface_intersection(const cs_real_t  box_extents[6],
   bbox[3] = -HUGE_VAL; bbox[4] = -HUGE_VAL; bbox[5] = -HUGE_VAL;
 
   for (int vtx_id = 0; vtx_id < 3; vtx_id ++) {
-    bbox[0] = CS_MIN(bbox[0], tria_coords[vtx_id][0]);
-    bbox[3] = CS_MAX(bbox[3], tria_coords[vtx_id][0]);
-    bbox[1] = CS_MIN(bbox[1], tria_coords[vtx_id][1]);
-    bbox[4] = CS_MAX(bbox[4], tria_coords[vtx_id][1]);
-    bbox[2] = CS_MIN(bbox[2], tria_coords[vtx_id][2]);
-    bbox[5] = CS_MAX(bbox[5], tria_coords[vtx_id][2]);
+    bbox[0] = cs::min(bbox[0], tria_coords[vtx_id][0]);
+    bbox[3] = cs::max(bbox[3], tria_coords[vtx_id][0]);
+    bbox[1] = cs::min(bbox[1], tria_coords[vtx_id][1]);
+    bbox[4] = cs::max(bbox[4], tria_coords[vtx_id][1]);
+    bbox[2] = cs::min(bbox[2], tria_coords[vtx_id][2]);
+    bbox[5] = cs::max(bbox[5], tria_coords[vtx_id][2]);
   }
 
   if (   bbox[0] >= box_extents[0]
@@ -524,12 +524,12 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
   bbox[3] = -HUGE_VAL; bbox[4] = -HUGE_VAL; bbox[5] = -HUGE_VAL;
 
   for (int vtx_id = 0; vtx_id < 3; vtx_id ++) {
-    bbox[0] = CS_MIN(bbox[0], tria_coords[vtx_id][0]);
-    bbox[3] = CS_MAX(bbox[3], tria_coords[vtx_id][0]);
-    bbox[1] = CS_MIN(bbox[1], tria_coords[vtx_id][1]);
-    bbox[4] = CS_MAX(bbox[4], tria_coords[vtx_id][1]);
-    bbox[2] = CS_MIN(bbox[2], tria_coords[vtx_id][2]);
-    bbox[5] = CS_MAX(bbox[5], tria_coords[vtx_id][2]);
+    bbox[0] = cs::min(bbox[0], tria_coords[vtx_id][0]);
+    bbox[3] = cs::max(bbox[3], tria_coords[vtx_id][0]);
+    bbox[1] = cs::min(bbox[1], tria_coords[vtx_id][1]);
+    bbox[4] = cs::max(bbox[4], tria_coords[vtx_id][1]);
+    bbox[2] = cs::min(bbox[2], tria_coords[vtx_id][2]);
+    bbox[5] = cs::max(bbox[5], tria_coords[vtx_id][2]);
   }
 
   if (   bbox[0] >= box_extents[0]
@@ -638,12 +638,12 @@ _tetra_vol(cs_real_t x1[3],
   constexpr cs_real_t c_1ov6 = 1./6.;
   cs_real_t tetra_vol;
 
-  tetra_vol =  cs_math_fabs((  (x1[0]-x4[0])*(x2[1]-x4[1])
-                             - (x1[1]-x4[1])*(x2[0]-x4[0])) * (x3[2]-x4[2])
-                         + (   (x1[1]-x4[1])*(x2[2]-x4[2])
-                             - (x1[2]-x4[2])*(x2[1]-x4[1])) * (x3[0]-x4[0])
-                         + (   (x1[2]-x4[2])*(x2[0]-x4[0])
-                             - (x1[0]-x4[0])*(x2[2]-x4[2])) * (x3[1]-x4[1]));
+  tetra_vol =  cs::abs(  (  (x1[0]-x4[0])*(x2[1]-x4[1])
+                           - (x1[1]-x4[1])*(x2[0]-x4[0])) * (x3[2]-x4[2])
+                       + (   (x1[1]-x4[1])*(x2[2]-x4[2])
+                           - (x1[2]-x4[2])*(x2[1]-x4[1])) * (x3[0]-x4[0])
+                       + (   (x1[2]-x4[2])*(x2[0]-x4[0])
+                           - (x1[0]-x4[0])*(x2[2]-x4[2])) * (x3[1]-x4[1]));
 
   tetra_vol *= c_1ov6;
 
@@ -770,7 +770,7 @@ _plane_segment_intersection(cs_real_t x1[3],
     cs_real_t num = cs_math_3_distance_dot_product(x2, a, n);
 
     cs_real_t lambda = 1.0;
-    if (cs_math_fabs(den) > 1.e-20)
+    if (cs::abs(den) > 1.e-20)
       lambda = num / den;
 
     length *= lambda;
@@ -782,7 +782,7 @@ _plane_segment_intersection(cs_real_t x1[3],
     cs_real_t num = cs_math_3_distance_dot_product(x1, a, n);
 
     cs_real_t lambda = 1.0;
-    if (cs_math_fabs(den) > 1.e-20)
+    if (cs::abs(den) > 1.e-20)
       lambda = num / den;
 
     length *= lambda;
@@ -1870,12 +1870,12 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 
   for (cs_lnum_t i = 0; i < n_tria_stl; i++) {
     for (int vtx_id = 0; vtx_id < 3; vtx_id ++) {
-      bbox[i][0] = CS_MIN(bbox[i][0], stl_mesh->coords[3*i + vtx_id][0]);
-      bbox[i][3] = CS_MAX(bbox[i][3], stl_mesh->coords[3*i + vtx_id][0]);
-      bbox[i][1] = CS_MIN(bbox[i][1], stl_mesh->coords[3*i + vtx_id][1]);
-      bbox[i][4] = CS_MAX(bbox[i][4], stl_mesh->coords[3*i + vtx_id][1]);
-      bbox[i][2] = CS_MIN(bbox[i][2], stl_mesh->coords[3*i + vtx_id][2]);
-      bbox[i][5] = CS_MAX(bbox[i][5], stl_mesh->coords[3*i + vtx_id][2]);
+      bbox[i][0] = cs::min(bbox[i][0], stl_mesh->coords[3*i + vtx_id][0]);
+      bbox[i][3] = cs::max(bbox[i][3], stl_mesh->coords[3*i + vtx_id][0]);
+      bbox[i][1] = cs::min(bbox[i][1], stl_mesh->coords[3*i + vtx_id][1]);
+      bbox[i][4] = cs::max(bbox[i][4], stl_mesh->coords[3*i + vtx_id][1]);
+      bbox[i][2] = cs::min(bbox[i][2], stl_mesh->coords[3*i + vtx_id][2]);
+      bbox[i][5] = cs::max(bbox[i][5], stl_mesh->coords[3*i + vtx_id][2]);
     }
   }
 
@@ -2285,8 +2285,8 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
       cs_real_t nn = cs_math_3_norm(n_plan);
 
       for (int k = 0; k < 3; k++) {
-        n_plan[k] /= cs_math_fmax(nn, 1.e-20);
-        p_plan[k] /= cs_math_fmax(surftot, 1.e-20);
+        n_plan[k] /= cs::max(nn, 1.e-20);
+        p_plan[k] /= cs::max(surftot, 1.e-20);
       }
 
       /* Mean plane definition storage */
@@ -2423,12 +2423,12 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
 
   } // End loop on boundary faces
 
-  /* Normalisation and clipping of the porosity field */
+  /* Normalization and clipping of the porosity field */
   for (cs_lnum_t i = 0; i < n_selected_cells; i++) {
     cs_lnum_t cell_id = selected_cells[i];
     porosity[cell_id] /= volume[cell_id];
-    porosity[cell_id] = CS_MAX(porosity[cell_id],0.0);
-    porosity[cell_id] = CS_MIN(porosity[cell_id],1.0);
+    porosity[cell_id] = cs::max(porosity[cell_id], 0.);
+    porosity[cell_id] = cs::min(porosity[cell_id], 1.);
 
     if (porosity[cell_id] < 1.e-5)
       porosity[cell_id] = 0.0;

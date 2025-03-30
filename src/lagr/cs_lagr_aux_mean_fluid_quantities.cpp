@@ -56,6 +56,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_math.h"
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_tracking.h"
 #include "lagr/cs_lagr_stat.h"
@@ -360,7 +361,7 @@ compute_anisotropic_prop(int            iprev,
               + ((ktil- energi[cell_id]/ bbi[i])
                 * 2.0 / 3.0)) / anisotropic_lagr_time[cell_id][i];
           anisotropic_bx[cell_id][i] =
-              CS_MAX(anisotropic_bx[cell_id][i], cs_math_epzero);
+              cs::max(anisotropic_bx[cell_id][i], cs_math_epzero);
         }
         if (grad_lagr_time_r_et != nullptr) {
           cs_real_33_t trans_m;
@@ -854,7 +855,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       if (dissip[cell_id] > 0.0 && energi[cell_id] > 0.0) {
 
         cs_real_t tl  = cl * energi[cell_id] / dissip[cell_id];
-        tl  = CS_MAX(tl, cs_math_epzero);
+        tl  = cs::max(tl, cs_math_epzero);
 
         lagr_time->val[cell_id] = tl;
 

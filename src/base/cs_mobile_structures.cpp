@@ -1512,7 +1512,7 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
                                  ms->dtstr);
 
     for (int i = 0; i < n_int_structs; i++) {
-      if (CS_ABS(dt_calc - ms->dtstr[i]) / dt_calc > 1e-10) {
+      if (cs::abs(dt_calc - ms->dtstr[i]) / dt_calc > 1e-10) {
         bft_error(__FILE__,
                   __LINE__,
                   0,
@@ -1813,7 +1813,7 @@ cs_mobile_structures_restart_read(cs_restart_t  *r)
      data. If we have less structures than previously, we only
      read the only the required data. */
 
-  int n_struct_read = CS_MIN(n_str_prev[0], n_str[0]);
+  int n_struct_read = cs::min(n_str_prev[0], n_str[0]);
 
   for (int str_id = 0; str_id < n_struct_read; str_id++) {
 

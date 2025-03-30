@@ -151,8 +151,8 @@ _clip_v2f(cs_lnum_t  n_cells,
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     cs_real_t var = cvar_phi[i];
-    vmin[0] = cs_math_fmin(vmin[0], var);
-    vmax[0] = cs_math_fmax(vmax[0], var);
+    vmin[0] = cs::min(vmin[0], var);
+    vmax[0] = cs::max(vmax[0], var);
   }
 
   if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
@@ -160,8 +160,8 @@ _clip_v2f(cs_lnum_t  n_cells,
     vmax[1] = -cs_math_big_r;
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       cs_real_t var = cvar_al[i];
-      vmin[1] = cs_math_fmin(vmin[1], var);
-      vmax[1] = cs_math_fmax(vmax[1], var);
+      vmin[1] = cs::min(vmin[1], var);
+      vmax[1] = cs::max(vmax[1], var);
     }
   }
 
@@ -493,7 +493,7 @@ _solve_eq_fbr_al(const int         istprv,
       const cs_real_t x_nu = cpro_pcvlo[i]/x_rho;
       const cs_real_t tt_ke = x_k / x_e;
       const cs_real_t tt_min = cs_turb_cv2fct*sqrt(x_nu/x_e);
-      const cs_real_t time_scale = cs_math_fmax(tt_ke, tt_min);
+      const cs_real_t time_scale = cs::max(tt_ke, tt_min);
 
       const cs_real_t c1 =  cs_turb_cv2fc1 - 1.;
       const cs_real_t x_p = cvara_phi[i] - d2s3;
@@ -555,7 +555,7 @@ _solve_eq_fbr_al(const int         istprv,
       const cs_real_t ll_ke = pow(x_k, 1.5)/x_e;
       const cs_real_t ll_min
         = cs_turb_cv2fet*pow(cs_math_pow3(x_nu)/x_e, 0.25);
-      l2 = cs_math_pow2(cs_turb_cv2fcl*cs_math_fmax(ll_ke, ll_min));
+      l2 = cs_math_pow2(cs_turb_cv2fcl*cs::max(ll_ke, ll_min));
     }
     else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
       if (cs_glob_turb_model->hybrid_turb == 4) {
@@ -755,7 +755,7 @@ _solve_eq_phi(const int           istprv,
   else {
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       rhs[i] += rovsdt[i]*cvara_phi[i];
-      rovsdt[i] = cs_math_fmax(-rovsdt[i], 0.);
+      rovsdt[i] = cs::max(-rovsdt[i], 0.);
     }
   }
 
@@ -899,7 +899,7 @@ _solve_eq_phi(const int           istprv,
   if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
-      const cs_real_t prdv2f_m = cs_math_fmax(prdv2f[i], 0.0);
+      const cs_real_t prdv2f_m = cs::max(prdv2f[i], 0.0);
       rhs[i] -= cell_f_vol[i] * prdv2f[i] * cvara_phi[i] / cvara_k[i];
       rovsdt[i] += cell_f_vol[i] * prdv2f_m / cvara_k[i] * thetap;
     }
@@ -911,7 +911,7 @@ _solve_eq_phi(const int           istprv,
     for (cs_lnum_t i = 0; i < n_cells; i++) {
 
       const cs_real_t x_rho = cromo[i];
-      const cs_real_t prdv2f_m = cs_math_fmax(prdv2f[i], 0.0);
+      const cs_real_t prdv2f_m = cs::max(prdv2f[i], 0.0);
       const cs_real_t al_3 = cs_math_pow3(cvara_al[i]);
 
       if (cs_glob_turb_model->hybrid_turb == 4) {
@@ -1329,7 +1329,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
       const cs_real_t ttmin = cs_turb_cv2fct * sqrt(xnu/(psi[c_id] * xe));
 
       /*  ft1 is not taken into account in LES mode (1/(1-xrc)->infty) */
-      cs_real_t xfs2 = (s2[c_id] * CS_MAX(cs_math_epzero, 1. - blend[c_id]));
+      cs_real_t xfs2 = (s2[c_id] * cs::max(cs_math_epzero, 1. - blend[c_id]));
       const cs_real_t ft1 = f1 / xfs2;
       const cs_real_t ft2
         = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin))*cvar_phi[c_id];

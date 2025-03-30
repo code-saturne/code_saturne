@@ -61,6 +61,7 @@
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
+#include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_thermal_model.h"
@@ -198,6 +199,11 @@ cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
 void
 cs_f_read_aerosol(void);
 
+void
+cs_f_ssh_dimensions(int  *spack_n_species,
+                    int  *n_reactions,
+                    int  *n_photolysis);
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -295,7 +301,6 @@ cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
   *molar_mass = (_atmo_chem.molar_mass);
   *chempoint = (_atmo_chem.chempoint);
 }
-
 
 void
 cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum)
@@ -400,13 +405,7 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.y_conc_profiles);
   BFT_FREE(_atmo_chem.dlconc0);
   BFT_FREE(_atmo_chem.species_profiles_to_field_id);
-
 }
-
-void
-cs_f_ssh_dimensions(int  *spack_n_species,
-                    int  *n_reactions,
-                    int  *n_photolysis);
 
 /*============================================================================
  * Private function definitions
@@ -449,7 +448,7 @@ _hypser(cs_real_t  a,
   const int maxiter = 10000;
   const cs_real_t error = 1.e-08;
 
-  if (cs_math_fabs(x) >= 1)
+  if (cs::abs(x) >= 1)
     bft_error(__FILE__, __LINE__, 0,
               "%s\n"
               "The x parameter should verify |x| < 1,  x = %12.5e",
@@ -466,7 +465,7 @@ _hypser(cs_real_t  a,
     fac = fac*x/nn;
     hypser = fac + temp;
 
-    if (cs_math_fabs(hypser - temp) <= error)
+    if (cs::abs(hypser - temp) <= error)
       return hypser;
 
     aa += 1;
@@ -754,10 +753,10 @@ cs_atmo_aerosol_nuclea(cs_real_t         *nc,
               sursat = pow((cons1/cons2)/yy, 1./(constk + 2.));
             }
 
-            if (cs_math_fabs(tmpsur - sursat) > 1.e-2)
+            if (cs::abs(tmpsur - sursat) > 1.e-2)
               bft_error(__FILE__, __LINE__, 0,
-              " WARNING: Maximum saturation has not converged\n"
-                "Residue = %12.5e", cs_math_fabs(tmpsur - sursat));
+                        "Maximum saturation has not converged\n"
+                        "Residue = %12.5e", cs::abs(tmpsur - sursat));
 
             nuc = constc*pow(sursat, constk)*_hypgeo(constmu,
                                                      constk/2,
@@ -766,8 +765,8 @@ cs_atmo_aerosol_nuclea(cs_real_t         *nc,
                                                      cs_math_pow2(sursat));
             if (nuc < 0.)
               bft_error(__FILE__, __LINE__, 0,
-              _(" ERROR: Cohard and Pindy model (1998).\n"
-                " The nucleation is negative."));
+                        _("Cohard and Pindy model (1998).\n"
+                          "The nucleation is negative."));
           }
 
           /* 1.3  Model of Abdul-Razzak and al. (1998)
@@ -916,7 +915,7 @@ cs_atmo_aerosol_nuclea(cs_real_t         *nc,
           } /* end nucleation model */
 
           /* 2. Compute difference */
-          nuc = cs_math_fmax(nuc - nc[c_id], 0.0);
+          nuc = cs::max(nuc - nc[c_id], 0.0);
         }
         else {
           nuc = 0.0;
@@ -1092,7 +1091,6 @@ cs_atmo_set_aero_conc_file_name(const char *file_name)
 void
 cs_atmo_init_chemistry(void)
 {
-
   /* Initialization of the chemical scheme
      quasi steady equilibrium NOx scheme */
   if (_atmo_chem.model == 1) {
@@ -1333,13 +1331,12 @@ cs_atmo_init_chemistry(void)
                         &n_photolysis);
 
     if (spack_n_species != _atmo_chem.n_species)
-      bft_error(__FILE__, __LINE__, 0,
-                "    WARNING:   STOP WHILE READING INPUT DATA\n"
-                "    =========\n"
-                "The number of gaseous species read from the SPACK file\n"
-                "is not equal to the one read in the SPACK source file\n");
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("In atmospheric chemistry inpu data"),
+         _("The number of gaseous species read from the SPACK file\n"
+           "is not equal to the one read in the SPACK source file."));
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1485,7 +1482,6 @@ cs_atmo_declare_chem_from_spack(void)
     /* Scalar field, store in isca_chem/species_to_scalar_id (FORTRAN/C) array */
     _atmo_chem.species_to_scalar_id[i]
       = cs_add_model_field_indexes(_atmo_chem.species_to_field_id[i]);
-
   }
 }
 
@@ -1514,7 +1510,6 @@ cs_atmo_chemistry_need_initialization(void)
 {
   return _init_atmo_chemistry;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1626,7 +1621,6 @@ cs_atmo_aerosol_log_setup(void)
        cs_glob_atmo_chemistry->aero_file_name);
   }
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

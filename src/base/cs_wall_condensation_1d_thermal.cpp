@@ -50,6 +50,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
@@ -420,8 +421,8 @@ cs_wall_condensation_0d_thermal_solve()
         lambda[vol_id] * surf[vol_id] /
         (thickness[vol_id] / 2.0 * mass[vol_id] * cp[vol_id] / 2.0);
 
-      tau_min = CS_MIN(tau_min, 1.0 / inv_tau);
-      tau_max = CS_MAX(tau_max, 1.0 / inv_tau);
+      tau_min = cs::min(tau_min, 1.0 / inv_tau);
+      tau_max = cs::max(tau_max, 1.0 / inv_tau);
 
       /* Solve a 0-D unsteady conduction problem at the fluid and
        * the symmetry frontiers with both equations given t_0 and t_1
@@ -436,11 +437,11 @@ cs_wall_condensation_0d_thermal_solve()
       /* Compute t_1(n+1) near the symmetry */
       t[ii][1] = t_sym + dt[c_id] * inv_tau * (t_wall - t_sym);
 
-      tmin[0] = CS_MIN(tmin[0], t[ii][0]);
-      tmin[1] = CS_MIN(tmin[1], t[ii][1]);
+      tmin[0] = cs::min(tmin[0], t[ii][0]);
+      tmin[1] = cs::min(tmin[1], t[ii][1]);
 
-      tmax[0] = CS_MAX(tmax[0], t[ii][0]);
-      tmax[1] = CS_MAX(tmax[1], t[ii][1]);
+      tmax[0] = cs::max(tmax[0], t[ii][0]);
+      tmax[1] = cs::max(tmax[1], t[ii][1]);
     }
   }
 
@@ -703,10 +704,10 @@ cs_wall_condensation_1d_thermal_compute_temperature(void)
       continue;
 
     const cs_lnum_t kk = znmur[iz] - 1;
-    tpminf[iz]         = cs_math_fmin(tpminf[iz], ztmur[ii]);
-    tpmaxf[iz]         = cs_math_fmax(tpmaxf[iz], ztmur[ii]);
-    tpminp[iz]         = cs_math_fmin(tpminp[iz], ztmur[ii + kk * nfbpcd]);
-    tpmaxp[iz]         = cs_math_fmax(tpmaxp[iz], ztmur[ii + kk * nfbpcd]);
+    tpminf[iz]         = cs::min(tpminf[iz], ztmur[ii]);
+    tpmaxf[iz]         = cs::max(tpmaxf[iz], ztmur[ii]);
+    tpminp[iz]         = cs::min(tpminp[iz], ztmur[ii + kk * nfbpcd]);
+    tpmaxp[iz]         = cs::max(tpmaxp[iz], ztmur[ii + kk * nfbpcd]);
   }
 
   cs_parall_min(nzones, CS_REAL_TYPE, tpminf);

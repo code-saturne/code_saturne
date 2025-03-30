@@ -1383,10 +1383,10 @@ cs_cdo_connect_allocate_cw_buffer(const cs_cdo_connect_t *connect)
 {
   int n_vc = connect->n_max_vbyc;
   int max_ent
-    = 3 * CS_MAX(n_vc + 1,
-                 CS_MAX(connect->n_max_ebyc, connect->n_max_fbyc + 1));
+    = 3 * cs::max(n_vc + 1,
+                  cs::max(connect->n_max_ebyc, connect->n_max_fbyc + 1));
 
-  cs_cdo_connect_cw_buffer_size = CS_MAX(n_vc * (n_vc + 1) / 2, max_ent);
+  cs_cdo_connect_cw_buffer_size = cs::max(n_vc * (n_vc + 1) / 2, max_ent);
 
   BFT_MALLOC(cs_cdo_connect_cw_buffer, cs_glob_n_threads, double *);
 

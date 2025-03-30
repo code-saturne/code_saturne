@@ -47,6 +47,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_math.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -307,7 +308,7 @@ cs_resource_get_max_timestep(int   ts_cur,
         t_lim_flag = _t_remain(&wt_rem);
       else if (r_time_method == 2) {
         /* Use initially allocated time */
-        wt_rem = CS_MAX((wtrem0 - wt_cur), 0.);
+        wt_rem = cs::max((wtrem0 - wt_cur), 0.);
       }
 
       if (_wt_limit > 0) {

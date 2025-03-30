@@ -50,6 +50,7 @@
 #include "alge/cs_blas.h"
 #include "cdo/cs_cdo_solve.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "cdo/cs_saddle_system.h"
@@ -3667,7 +3668,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
   /* Prepare the solution and rhs arrays given to the solver */
 
   cs_real_t  *sol = nullptr;
-  CS_MALLOC(sol, CS_MAX(n_cols, n_scatter_dofs), cs_real_t);
+  CS_MALLOC(sol, cs::max(n_cols, n_scatter_dofs), cs_real_t);
 
   cs_real_t  *b = nullptr;
   CS_MALLOC(b, n_scatter_dofs, cs_real_t);
@@ -4495,7 +4496,7 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
   /* Prepare the solution and rhs arrays given to the solver */
 
   cs_real_t  *sol = nullptr;
-  CS_MALLOC(sol, CS_MAX(n_cols, n_scatter_dofs), cs_real_t);
+  CS_MALLOC(sol, cs::max(n_cols, n_scatter_dofs), cs_real_t);
 
   cs_real_t  *b = nullptr;
   CS_MALLOC(b, n_scatter_dofs, cs_real_t);

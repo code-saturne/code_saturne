@@ -438,7 +438,7 @@ fvm_hilbert_encode_coords(int                 dim,
 
   for (i = 0; i < dim; i++) {
     d[i] = extents[i+dim] - extents[i];
-    d_max = CS_MAX(d_max, d[i]);
+    d_max = cs::max(d_max, d[i]);
   }
 
   for (i = 0; i < dim; i++) {

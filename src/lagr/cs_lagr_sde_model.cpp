@@ -547,7 +547,7 @@ _lagsec(cs_lnum_t         npt,
 
     /* Compute diffused water source term */
 
-    aux3      = CS_MAX(1.0 - aux2, precis);
+    aux3      = cs::max(1.0 - aux2, precis);
     fwattot   =   cs_math_pi * prev_p_diam * diftl0 * sherw
                 * log((1.0 - extra->x_eau->val[cell_id]) / aux3);
 
@@ -564,10 +564,10 @@ _lagsec(cs_lnum_t         npt,
     for (cs_lnum_t l_id = l_id_wat; l_id >= 0; l_id--) {
 
       /* cannot dry more than water present */
-      fwat[l_id] = CS_MIN (mwater[l_id] / dt_part , fwat_remain);
+      fwat[l_id] = cs::min(mwater[l_id] / dt_part , fwat_remain);
 
       /* Update flux remaining to evaporate */
-      fwat_remain = CS_MAX (0.0, fwat_remain - fwat[l_id]);
+      fwat_remain = cs::max(0.0, fwat_remain - fwat[l_id]);
 
     }
 
@@ -582,11 +582,11 @@ _lagsec(cs_lnum_t         npt,
 
       else
         /* Cannot condense more than water on 1 layer */
-        fwat[l_id] = CS_MAX (-(mwat_max - mwater[l_id]) / dt_part,
+        fwat[l_id] = cs::max(-(mwat_max - mwater[l_id]) / dt_part,
                              fwat_remain);
 
       /* Flux remain a condenser  */
-      fwat_remain = CS_MIN (0.0, fwat_remain - fwat[l_id]);
+      fwat_remain = cs::min(0.0, fwat_remain - fwat[l_id]);
 
     }
 
@@ -672,7 +672,7 @@ _lagsec(cs_lnum_t         npt,
 
         /* limit flux */
         if (fwat[l_id] > fwatsat[l_id])
-          fwat[l_id]  = CS_MAX(0.0, fwatsat[l_id]);
+          fwat[l_id]  = cs::max(0.0, fwatsat[l_id]);
 
       }
       else
@@ -699,7 +699,7 @@ _lagsec(cs_lnum_t         npt,
       if (!limiter) { /* limit flux */
 
         if (fwatsat[l_id] > fwat[l_id])
-          fwat[l_id]  = CS_MIN(0.0, fwatsat[l_id]);
+          fwat[l_id]  = cs::min(0.0, fwatsat[l_id]);
 
       }
       else
@@ -1126,10 +1126,10 @@ _lagich(const cs_lnum_t       npt,
   for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++) {
 
     if (l_id == nlayer - 1)
-      mwater[l_id] = CS_MAX(0.0, aux1);
+      mwater[l_id] = cs::max(0.0, aux1);
 
     else
-      mwater[l_id] = CS_MAX(0.0, CS_MIN(aux1, mwat_max));
+      mwater[l_id] = cs::max(0.0, cs::min(aux1, mwat_max));
 
     aux1 -= mwater[l_id];
 
@@ -1596,7 +1596,7 @@ _lewis_factor(const int        evap_model,
     /* Poppe evaporation model
        Compute Lewis factor using Bosnjakovic hypothesis
        NB: clippings ensuring xi > 1 and xlew > 0 */
-    cs_real_t xi = (molmassrat + x_s_tl)/(molmassrat + CS_MIN(x, x_s_tl));
+    cs_real_t xi = (molmassrat + x_s_tl)/(molmassrat + cs::min(x, x_s_tl));
     if ((xi - 1.) < 1.e-15)
       xlew = pow(0.866,(2./3.));
     else

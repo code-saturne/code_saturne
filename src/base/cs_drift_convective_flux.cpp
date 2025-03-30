@@ -211,7 +211,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   const int iscdri = cs_field_get_key_int(f_sc, keydri);
   const int icla = cs_field_get_key_int(f_sc, keyccl);
 
-  class_id_max = CS_MAX(icla, class_id_max);
+  class_id_max = cs::max(icla, class_id_max);
 
   const cs_real_t *dt = CS_F_(dt)->val;
   const int model  = cs_glob_turb_model->model;

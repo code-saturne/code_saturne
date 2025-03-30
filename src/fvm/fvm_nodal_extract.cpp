@@ -334,7 +334,7 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
 
       double f_center[3], f_normal[3], f_surface;
 
-      cs_lnum_t face_id = CS_ABS(this_section->face_num[j]) - 1;
+      cs_lnum_t face_id = cs::abs(this_section->face_num[j]) - 1;
       cs_lnum_t v_index_start = this_section->vertex_index[face_id];
       cs_lnum_t v_index_end = this_section->vertex_index[face_id + 1];
       cs_lnum_t n_vertices = v_index_end - v_index_start;
@@ -749,7 +749,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
       for (j = this_section->face_index[i];
            j < this_section->face_index[i + 1];
            j++) {
-        face_id = CS_ABS(this_section->face_num[j]) - 1;
+        face_id = cs::abs(this_section->face_num[j]) - 1;
         for (k = this_section->vertex_index[face_id];
              k < this_section->vertex_index[face_id + 1];
              k++) {
@@ -1311,7 +1311,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
         cs_lnum_t start_face_id = section->face_index[i];
         cs_lnum_t end_face_id = section->face_index[i+1];
         for (j = start_face_id; j < end_face_id; j++) {
-          cs_lnum_t face_id = CS_ABS(section->face_num[j]) - 1;
+          cs_lnum_t face_id = cs::abs(section->face_num[j]) - 1;
           cs_lnum_t start_id = section->vertex_index[face_id];
           cs_lnum_t end_id = section->vertex_index[face_id+1];
           for (k = start_id; k < end_id; k++)
@@ -1384,7 +1384,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
         cs_lnum_t start_face_id = section->face_index[i];
         cs_lnum_t end_face_id = section->face_index[i+1];
         for (j = start_face_id; j < end_face_id; j++) {
-          cs_lnum_t face_id = CS_ABS(section->face_num[j]) - 1;
+          cs_lnum_t face_id = cs::abs(section->face_num[j]) - 1;
           cs_lnum_t start_id = section->vertex_index[face_id];
           cs_lnum_t end_id = section->vertex_index[face_id+1];
           for (k = start_id; k < end_id; k++) {

@@ -1819,8 +1819,8 @@ _log_norm(const cs_mesh_t                *m,
       if (cs_glob_vof_parameters->vof_model > 0)
         rnorm = fabs(ivolfl[face_id]) / i_f_face_surf[face_id];
     }
-    rnorma = cs_math_fmax(rnorma, rnorm);
-    rnormi = cs_math_fmin(rnormi, rnorm);
+    rnorma = cs::max(rnorma, rnorm);
+    rnormi = cs::min(rnormi, rnorm);
   }
   cs_parall_min(1, CS_REAL_TYPE, &rnormi);
   cs_parall_max(1, CS_REAL_TYPE, &rnorma);
@@ -2789,7 +2789,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION) {
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        viscf[f_id] = cs_math_fmax(viscf[f_id], 0.5*ipro_rusanov[f_id]);
+        viscf[f_id] = cs::max(viscf[f_id], 0.5*ipro_rusanov[f_id]);
       });
     }
 
@@ -2799,8 +2799,8 @@ _velocity_prediction(const cs_mesh_t             *m,
         for (cs_lnum_t ii = 0; ii < 3; ii++) {
           for (cs_lnum_t jj = 0; jj < 3; jj++)
             viscf[9*f_id+3*jj+ii]
-              = cs_math_fmax(viscf[9*f_id+3*jj+ii],
-                             0.5*ipro_rusanov[f_id]*n[ii]*n[jj]);
+              = cs::max(viscf[9*f_id+3*jj+ii],
+                        0.5*ipro_rusanov[f_id]*n[ii]*n[jj]);
         }
       });
     }
@@ -2904,7 +2904,7 @@ _velocity_prediction(const cs_mesh_t             *m,
           for (cs_lnum_t jj = 0; jj < 3; jj++) {
             cs_real_t _tsimp_ij =
               (ii == jj) ?
-              cs_math_fmax(-tsimp[c_id][ii][jj], 0.0) : -tsimp[c_id][ii][jj];
+              cs::max(-tsimp[c_id][ii][jj], 0.0) : -tsimp[c_id][ii][jj];
             fimp[c_id][ii][jj] += _tsimp_ij;
           }
         }
@@ -3031,7 +3031,7 @@ _velocity_prediction(const cs_mesh_t             *m,
         = cs_field_by_name("lagr_st_imp_velocity")->val;
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cs_real_t st = cell_f_vol[c_id] * cs_math_fmax(-lagr_st_imp_vel[c_id], 0.0);
+        cs_real_t st = cell_f_vol[c_id] * cs::max(-lagr_st_imp_vel[c_id], 0.0);
         for (cs_lnum_t i = 0; i < 3; i++)
           fimp[c_id][i][i] += st;
       });
@@ -3339,8 +3339,8 @@ _velocity_prediction(const cs_mesh_t             *m,
       cs_real_t rnormx = -1.0, rnormn = HUGE_VAL;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t vitnor = cs_math_3_norm(vel[c_id]);
-        rnormx = cs_math_fmax(rnormx, vitnor);
-        rnormn = cs_math_fmin(rnormn, vitnor);
+        rnormx = cs::max(rnormx, vitnor);
+        rnormn = cs::min(rnormn, vitnor);
       }
 
       cs_parall_max(1, CS_REAL_TYPE, &rnormx);
@@ -3470,7 +3470,7 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
     /* Neumann for scalar dp */
 
     // Gradient BCs
-    coefap[f_id] = -qimp/cs_math_fmax(hint, 1.e-300);
+    coefap[f_id] = -qimp/cs::max(hint, 1.e-300);
     coefbp[f_id] = 1.;
 
     // Flux BCs
@@ -4585,7 +4585,7 @@ cs_solve_navier_stokes(const int        iterns,
       }
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        c_estim[c_id] = cs_math_fabs(c_estim[c_id]) / cell_f_vol[c_id];
+        c_estim[c_id] = cs::abs(c_estim[c_id]) / cell_f_vol[c_id];
       });
     }
 

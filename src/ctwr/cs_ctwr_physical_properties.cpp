@@ -387,8 +387,8 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   cs_real_t h_max = -1.e12;
   cs_real_t h_min = 1.e12;
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    h_min = CS_MIN(h_min,h_h[cell_id]);
-    h_max = CS_MAX(h_max,h_h[cell_id]);
+    h_min = cs::min(h_min,h_h[cell_id]);
+    h_max = cs::max(h_max,h_h[cell_id]);
   }
 
   /* Parallel synchronization */
@@ -802,7 +802,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
                  + ct->relax * (ct->t_l_out + ct->delta_t);
 
       /* Clipping between 0 and 100 */
-      ct->t_l_bc = CS_MAX(CS_MIN(ct->t_l_bc, 100.), 0.);
+      ct->t_l_bc = cs::max(cs::min(ct->t_l_bc, 100.), 0.);
     }
   }
 

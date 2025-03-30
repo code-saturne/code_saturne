@@ -84,15 +84,11 @@ cs_user_porosity(cs_domain_t   *domain)
   cs_mesh_quantities_t *mq = domain->mesh_quantities;
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
 
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq_g->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq_g->b_face_cog;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)mq_g->cell_cen;
+  const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq_g->b_face_cog;
+  const cs_real_3_t *restrict cell_cen = mq_g->cell_cen;
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *)mq_g->i_face_normal;
   cs_real_3_t *restrict i_f_face_normal
@@ -177,8 +173,8 @@ cs_user_porosity(cs_domain_t   *domain)
       cs_lnum_t jj = i_face_cells[face_id][1];
 
       cs_real_t face_porosity
-        = cs_math_fmax(i_f_face_surf[face_id] / i_face_surf[face_id],
-                       cs_math_epzero);
+        = cs::max(i_f_face_surf[face_id] / i_face_surf[face_id],
+                  cs_math_epzero);
 
       mq->i_f_face_factor[face_id][0] = cpro_porosi[ii] / face_porosity;
       mq->i_f_face_factor[face_id][1] = cpro_porosi[jj] / face_porosity;

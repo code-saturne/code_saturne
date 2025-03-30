@@ -433,7 +433,7 @@ _crystal_create_meta_i(size_t            n_elts,
 
   /* Create associated MPI datatype */
 
-  cr->mpi_type_size = CS_MIN(cr->comp_size, cr->elt_size);
+  cr->mpi_type_size = cs::min(cr->comp_size, cr->elt_size);
   while (cr->comp_size % cr->mpi_type_size || cr->elt_size % cr->mpi_type_size)
     cr->mpi_type_size--;
 

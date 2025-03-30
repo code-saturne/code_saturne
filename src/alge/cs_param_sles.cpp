@@ -48,6 +48,7 @@
 
 #include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "cdo/cs_param_cdo.h"
 
@@ -1907,7 +1908,7 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
   mumpsp->keep_ordering = keep_ordering;
   mumpsp->mem_coef = mem_coef;
   mumpsp->blr_threshold = blr_threshold;
-  mumpsp->ir_steps = CS_MAX(ir_steps, -ir_steps);
+  mumpsp->ir_steps = cs::max(ir_steps, -ir_steps);
   mumpsp->mem_usage = mem_usage;
   mumpsp->advanced_optim = advanced_optim;
 }

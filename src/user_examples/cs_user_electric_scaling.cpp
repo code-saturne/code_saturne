@@ -126,8 +126,8 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
       double zelec = CS_FI_(curre, 2)->val[iel] / c_prop->val[iel];
 
       w1[iel] = pow(xelec * xelec + yelec * yelec + zelec * zelec, 0.5);
-      amex = CS_MIN(amex, w1[iel]);
-      aiex = CS_MAX(amex, w1[iel]);
+      amex = cs::min(amex, w1[iel]);
+      aiex = cs::max(amex, w1[iel]);
     }
     cs_parall_min(1, CS_DOUBLE, &amex);
     cs_parall_max(1, CS_DOUBLE, &aiex);
@@ -208,7 +208,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 
     if (fabs(somje) > 1.-20)
       coepot = cs_glob_elec_option->couimp * cs_glob_elec_option->pot_diff
-              / CS_MAX(somje, cs_math_epzero);
+              / cs::max(somje, cs_math_epzero);
 
     bft_printf("imposed current %14.5E, Dpot %14.5E, Somje %14.5E\n",
                cs_glob_elec_option->couimp,
@@ -218,9 +218,9 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
     double elcou = 0.;
     for (int ifac = 0; ifac < nfac; ifac++) {
       if (fabs(surfac[ifac][0]) < 1.e-8 && fabs(surfac[ifac][1]) < 1.e-8 &&
-               cdgfac[ifac][2] > 0.05e-2 &&     cdgfac[ifac][2] < 0.08e-2) {
+          cdgfac[ifac][2] > 0.05e-2 &&     cdgfac[ifac][2] < 0.08e-2) {
         int iel = mesh->i_face_cells[ifac][0];
-            elcou += CS_FI_(curre, 2)->val[iel] * surfac[ifac][2];
+        elcou += CS_FI_(curre, 2)->val[iel] * surfac[ifac][2];
       }
     }
 
@@ -251,7 +251,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
       else
         dtjm = dtj;
       dtjm = fabs(dtjm);
-      dtj = CS_MIN(dtj, dtjm);
+      dtj = cs::min(dtj, dtjm);
     }
     cs_parall_min(1, CS_DOUBLE, &dtj);
 

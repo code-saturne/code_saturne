@@ -481,7 +481,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       cs_real_t xw1 = - crom[c_id]*cpro_cgch[c_id]*cell_f_vol[c_id];
 
       // Explicit and implicit parts of source terms
-      rovsdt[c_id] += rovsdt[c_id] + cs_math_fmax(xw1, 0);
+      rovsdt[c_id] += rovsdt[c_id] + cs::max(xw1, 0);
       smbrs[c_id]  -= xw1*cvara_var[c_id];
     }
 
@@ -544,7 +544,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       // Compute the explicit part of the Source term
       cs_real_t imp_st = -3./2. * exp_st * cvara_xckcl[c_id];
 
-      rovsdt[c_id] += cs_math_fmax(exp_st, 0.);
+      rovsdt[c_id] += cs::max(exp_st, 0.);
       smbrs[c_id] += char_formation + imp_st;
 
     }
@@ -579,7 +579,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           cs_real_t xw1 =  crom[c_id]*cpro_csec[c_id]*cell_f_vol[c_id]
                           *(1./cpro_x2[c_id])*one_d_xwatch;
 
-          rovsdt[c_id] += cs_math_fmax(xw1, 0);
+          rovsdt[c_id] += cs::max(xw1, 0);
           smbrs[c_id]  -= xw1 * cvara_var[c_id];
         }
       }
@@ -1401,10 +1401,10 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       cs_real_t xxco2 = cpro_yco2[c_id]/wmole[ico2] * cpro_rom1[c_id];
       cs_real_t xxh2o = cpro_yh2o[c_id]/wmole[ih2o] * cpro_rom1[c_id];
 
-      xxco  = cs_math_fmax(xxco, 0);
-      xxo2  = cs_math_fmax(xxo2, 0);
-      xxco2 = cs_math_fmax(xxco2, 0);
-      xxh2o = cs_math_fmax(xxh2o, 0);
+      xxco  = cs::max(xxco, 0);
+      xxo2  = cs::max(xxo2, 0);
+      xxco2 = cs::max(xxco2, 0);
+      xxh2o = cs::max(xxh2o, 0);
 
       cs_real_t sqh2o = sqrt(xxh2o);
 
@@ -1436,7 +1436,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         //  We look for the solution by bisection.
 
         cs_real_t anmr0 = 0.;
-        cs_real_t anmr1 = cs_math_fmin(xcom, 2.*xo2m);
+        cs_real_t anmr1 = cs::min(xcom, 2.*xo2m);
         cs_real_t anmr2 = 0.5*(anmr0+anmr1);
         int iterch = 0;
         cs_real_t fn2 = 1.;
@@ -1466,7 +1466,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
             }
             else if (fn0*fn1 > 0.) {
               iterch = itermx;
-              anmr2 = cs_math_fmin(xcom, 2.*xo2m);
+              anmr2 = cs::min(xcom, 2.*xo2m);
               nbarre = nbarre + 1;
             }
             iterch = iterch + 1;
@@ -1475,8 +1475,8 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           if (iterch >= itermx)
             nberic = nberic + 1;
           else
-            nbimax = CS_MAX(nbimax, iterch);
-          err1mx = cs_math_fmax(err1mx, fn2);
+            nbimax = cs::max(nbimax, iterch);
+          err1mx = cs::max(err1mx, fn2);
 
           xco2eq = anmr2;
           // xcoeq  = xcom - anmr2;
@@ -1490,7 +1490,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       }
 
       else {
-        xco2eq = cs_math_fmin(xcom, 2.*xo2m);
+        xco2eq = cs::min(xcom, 2.*xo2m);
         // xo2eq  = xo2m - 0.5*xco2eq;
         // xcoeq  = xcom - xco2eq;
       }
@@ -1505,7 +1505,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         // dissociation
         xden = xkm;
       }
-      if (cs_math_fabs(xden) > 0.) {
+      if (cs::abs(xden) > 0.) {
 
         cs_real_t tauchi = 1./xden;
         cs_real_t tautur = cvara_k[c_id]/cvara_ep[c_id];
@@ -1529,7 +1529,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         }
 
         w1[c_id] = cell_f_vol[c_id]*crom[c_id]/(tauchi+tautur);
-        rovsdt[c_id] += cs_math_fmax(w1[c_id], 0);
+        rovsdt[c_id] += cs::max(w1[c_id], 0);
 
       }
 
@@ -1672,8 +1672,8 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           tfuel[c_id] = cpro_temp[c_id];
         }
 
-        tfuelmin = cs_math_fmin(tfuel[c_id], tfuelmin);
-        tfuelmax = cs_math_fmax(tfuel[c_id], tfuelmax);
+        tfuelmin = cs::min(tfuel[c_id], tfuelmin);
+        tfuelmax = cs::max(tfuel[c_id], tfuelmax);
       }
 
       if (log_active) {

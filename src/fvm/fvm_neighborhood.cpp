@@ -181,25 +181,23 @@ static void
 _update_bt_statistics(_box_tree_stats_t     *bts,
                       const fvm_box_tree_t  *bt)
 {
-  int dim;
-  size_t i;
   size_t mem_required[3];
 
   assert(bts != nullptr);
 
-  dim = fvm_box_tree_get_stats(bt,
-                               bts->depth,
-                               bts->n_leaves,
-                               bts->n_boxes,
-                               bts->n_threshold_leaves,
-                               bts->n_leaf_boxes,
-                               bts->mem_used,
-                               mem_required);
+  int dim = fvm_box_tree_get_stats(bt,
+                                   bts->depth,
+                                   bts->n_leaves,
+                                   bts->n_boxes,
+                                   bts->n_threshold_leaves,
+                                   bts->n_leaf_boxes,
+                                   bts->mem_used,
+                                   mem_required);
 
   bts->dim = dim;
 
-  for (i = 0; i < 3; i++)
-    bts->mem_required[i] = CS_MAX(bts->mem_required[i], mem_required[i]);
+  for (size_t i = 0; i < 3; i++)
+    bts->mem_required[i] = cs::max(bts->mem_required[i], mem_required[i]);
 }
 
 #if defined(HAVE_MPI)
