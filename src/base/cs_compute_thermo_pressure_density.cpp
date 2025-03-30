@@ -147,11 +147,12 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
 
   cs_dispatch_context ctx;
 
-  ctx.parallel_for_reduce_sum(n_b_faces, debtot,
-      [=] CS_F_HOST_DEVICE(cs_lnum_t face_id,
-      CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-     sum -= bmasfl[face_id];
-  });
+  ctx.parallel_for_reduce_sum
+    (n_b_faces, debtot,
+     [=] CS_F_HOST_DEVICE(cs_lnum_t face_id,
+                          CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+       sum -= bmasfl[face_id];
+     });
 
   // Computation of the inlet mass flux imposed on the cells volume
 
