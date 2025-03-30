@@ -95,11 +95,11 @@ public:
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
  __has_builtin(__builtin_FILE)
-    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
-    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
 #else
-    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
-    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
 #endif
   )
   :
@@ -114,7 +114,7 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Constructor method with allocation method provided.
+   * \brief Constructor method with specified allocation method.
    */
   /*--------------------------------------------------------------------------*/
 
@@ -127,11 +127,11 @@ public:
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
   __has_builtin(__builtin_FILE)
-    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
-    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
 #else
-    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
-    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
 #endif
   )
   :
@@ -183,11 +183,11 @@ public:
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
   __has_builtin(__builtin_FILE)
-    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
-    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
 #else
-    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
-    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
 #endif
   )
   {
@@ -356,11 +356,11 @@ public:
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
   __has_builtin(__builtin_FILE)
-    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
-    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
 #else
-    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
-    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
 #endif
   )
   {
@@ -395,11 +395,11 @@ public:
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
   __has_builtin(__builtin_FILE)
-    const char *file_name   = __builtin_FILE(), /*!<[in] File initiating the call for logging */
-    const int   line_number = __builtin_LINE()  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
 #else
-    const char *file_name   = __FILE__, /*!<[in] File initiating the call for logging */
-    const int   line_number = __LINE__  /*!<[in] Line initiating the call for logging */
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
 #endif
   )
   {
@@ -620,8 +620,8 @@ private:
   void
   allocate_
   (
-    const char *file_name,  /*!<[in] File initiating the call for logging */
-    const int   line_number /*!<[in] Line initiating the call for logging */
+    const char *file_name,  /*!<[in] Caller file (for log) */
+    const int   line_number /*!<[in] Caller line (for log) */
   )
   {
     const char *_ptr_name = "_full_array";
@@ -643,8 +643,8 @@ private:
   void
   reallocate_
   (
-    const char *file_name,  /*!<[in] File initiating the call for logging */
-    const int   line_number /*!<[in] Line initiating the call for logging */
+    const char *file_name,  /*!<[in] Caller file (for log) */
+    const int   line_number /*!<[in] Caller line (for log) */
   )
   {
     /* If not owner no-op */
