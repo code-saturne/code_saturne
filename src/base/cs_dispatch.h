@@ -570,6 +570,11 @@ cs_cuda_kernel_parallel_for_reduce(cs_lnum_t   n,
   for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
        id += blockDim.x * gridDim.x) {
     T rd;
+    /* It would be safer to call reducer.identyity() here in case all
+       values of rd are not set for each thread, but this might incurr
+       a small performance penalty, and is redundant in most cases,
+       so we consider all values of rd must be set by the caller. */
+    // reducer.identity(rd);
     f(id, rd, args...);
     stmp[tid] = rd;
   }
