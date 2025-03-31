@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,8 @@
 #include <limits.h>
 #include <math.h>
 
+#include <new>  // For placement new
+
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
@@ -52,23 +54,21 @@
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_triangulate.h"
 
+#include "base/cs_assert.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
+
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_order.h"
-#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "mesh/cs_mesh_refine.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -152,6 +152,499 @@ typedef enum {
 
 } cs_mesh_refine_type_t;
 
+/*=============================================================================
+ * Local Type Definitions
+ *============================================================================*/
+
+typedef struct {
+
+  cs_lnum_t v0;    // id of first vertex
+  cs_lnum_t v1;    // id of second vertex
+  int16_t   f0;    // local id of first face
+  int16_t   f1;    // local id of second face
+  int16_t   c0;    // local id of first sub-cell
+  int16_t   c1;    // local id of second sub-cell
+
+} _mrh_edge_t;
+
+/*----------------------------------------------------------------------------
+ * Compare mesh refinement helper edges (qsort function).
+ *
+ * parameters:
+ *   a <-> pointer to first edge
+ *   b <-> pointer to second edge
+ *
+ * returns:
+ *   result of lexicographical comparison of edge vertices
+ *----------------------------------------------------------------------------*/
+
+static int
+_rh_edge_compare(const void  *a,
+                 const void  *b)
+{
+  int retval = 1;
+
+  const _mrh_edge_t *e_a = (const _mrh_edge_t *)a;
+  const _mrh_edge_t *e_b = (const _mrh_edge_t *)b;
+
+  if (e_a->v0 < e_b->v0)
+    retval = -1;
+  else if (e_a->v0 == e_b->v0) {
+    if (e_a->v1 < e_b->v1)
+      retval = -1;
+    else if (e_a->v1 == e_b->v1)
+      retval = 0;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Compare mesh refinement helper edges-sub-cells connectivity
+ * (qsort function).
+ *
+ * parameters:
+ *   a <-> pointer to first edge
+ *   b <-> pointer to second edge
+ *
+ * returns:
+ *   result of lexicographical comparison of edge vertices
+ *----------------------------------------------------------------------------*/
+
+static int
+_rh_edge_compare_s_cells(const void  *a,
+                         const void  *b)
+{
+  int retval = 1;
+
+  const _mrh_edge_t *e_a = (const _mrh_edge_t *)a;
+  const _mrh_edge_t *e_b = (const _mrh_edge_t *)b;
+
+  int16_t c_a[2], c_b[2];
+  if (e_a->c0 < e_a->c1) {
+    c_a[0] = e_a->c0;
+    c_a[1] = e_a->c1;
+  }
+  else {
+    c_a[0] = e_a->c1;
+    c_a[1] = e_a->c0;
+  }
+  if (e_b->c0 < e_b->c1) {
+    c_b[0] = e_b->c0;
+    c_b[1] = e_b->c1;
+  }
+  else {
+    c_b[0] = e_b->c1;
+    c_b[1] = e_b->c0;
+  }
+
+  if (c_a[0] < c_b[0])
+    retval = -1;
+  else if (c_a[0] == c_b[0]) {
+    if (c_a[1] < c_b[1])
+      retval = -1;
+    else if (c_a[1] == c_b[1]) {
+      retval = 0;
+    }
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * State of current face merging (working structure)
+ *----------------------------------------------------------------------------*/
+
+class cs_cell_refine_helper {
+
+public:
+
+  int16_t       n_sub_cells;      /* current triangle vertices list */
+
+  int16_t       n_faces;          /* number of exterior faces */
+  int           n_edges;          /* number of exterior edges */
+  int           n_vtx;            /* number of vertices */
+  int           c_i_f2v_size;     /* size of interior faces to vertex
+                                     connectivity (includes extra -1 per face) */
+
+  int           n_faces_max;      /* current max face allocation */
+  int           n_edges_max;      /* current max edges allocation */
+  int           n_vtx_max;        /* max number of vertices */
+
+  cs_lnum_t     c_vtx_id;         /* center vertex id, or -1 */
+
+  char          f_r_range[2];     /* min and max face refinement levels */
+
+  int16_t      *e_f2c;            /* exterior face to sub-cell id */
+  _mrh_edge_t  *edges;            /* edges -> vertices and exterior faces */
+
+  cs_lnum_t    *vtx_id;           /* vertices list */
+  int          *vtx_valence;      /* vertices valence */
+
+  /*--------------------------------------------------------------------------
+   * Constructor
+   *--------------------------------------------------------------------------*/
+
+  cs_cell_refine_helper()
+  {
+    n_sub_cells = 0;
+    n_faces = 0;
+    n_edges = 0;
+    n_vtx = 0;
+    c_i_f2v_size = 0;
+    n_faces_max = 32;
+    n_edges_max = 64;
+    n_vtx_max = 32;
+    f_r_range[0] = 0, f_r_range[1] = 0;
+
+    c_vtx_id = -1;
+
+    CS_MALLOC(e_f2c, n_faces_max, int16_t);
+
+    CS_MALLOC(edges, n_edges_max, _mrh_edge_t);
+
+    CS_MALLOC(vtx_id, n_vtx_max, cs_lnum_t);
+    CS_MALLOC(vtx_valence, n_vtx_max, int);
+  }
+
+  /*--------------------------------------------------------------------------
+   * Destructor
+   *--------------------------------------------------------------------------*/
+
+  ~cs_cell_refine_helper()
+  {
+    CS_FREE(vtx_valence);
+    CS_FREE(vtx_id);
+
+    CS_FREE(edges);
+
+    CS_FREE(e_f2c);
+  }
+
+  /*--------------------------------------------------------------------------
+   * Reset for new cell
+   *--------------------------------------------------------------------------*/
+
+  void
+  reset_for_new_cell()
+  {
+    n_sub_cells = 0;
+    n_faces = 0;
+    n_edges = 0;
+    n_vtx = 0;
+    c_i_f2v_size = 0;
+    f_r_range[0] = 0, f_r_range[1] = 0;
+  }
+
+  /*--------------------------------------------------------------------------
+   * Set central vertex id
+   *--------------------------------------------------------------------------*/
+
+  inline void
+  set_center_vtx(cs_lnum_t  id)
+  {
+    c_vtx_id = id;
+  }
+
+  /*--------------------------------------------------------------------------
+   * Add a face
+   *--------------------------------------------------------------------------*/
+
+  void
+  add_face(int        orient,       // 1 for outwards normal, -1 for inwards
+           char       r_level,      // face refinement level
+           cs_lnum_t  n_f_vtx,      // number of face vertices
+           const cs_lnum_t  f_vtx_ids[])  // face vertex ids
+  {
+    // Reallocate if needed (with margin)
+
+    if (n_faces + n_f_vtx > n_faces_max) {
+      n_faces_max *= 2;
+      CS_REALLOC(e_f2c, n_faces_max, int16_t);
+    }
+    if (n_edges + n_f_vtx > n_edges_max) {
+      n_edges_max *= 2;
+      CS_REALLOC(edges, n_edges_max, _mrh_edge_t);
+    }
+    if (n_vtx + n_f_vtx > n_vtx_max) {
+      n_vtx_max *= 2;
+      CS_REALLOC(vtx_id, n_vtx_max, cs_lnum_t);
+      CS_REALLOC(vtx_valence, n_vtx_max, int);
+    }
+
+    e_f2c[n_faces] = n_faces;
+
+    if (n_faces == 0) {
+      f_r_range[0] = r_level;
+      f_r_range[1] = r_level;
+    }
+    else {
+      if (r_level < f_r_range[0])
+        f_r_range[0] = r_level;
+      if (r_level > f_r_range[1])
+        f_r_range[1] = r_level;
+    }
+
+    cs_lnum_t s_id = n_edges;
+    cs_lnum_t e_id = s_id;
+    if (orient == 1) {
+      for (cs_lnum_t i = 0; i < n_f_vtx; i++) {
+        edges[e_id].v0 = f_vtx_ids[i];
+        edges[e_id].v1 = f_vtx_ids[(i+1)%n_f_vtx];
+        edges[e_id].f0 = n_faces;
+        edges[e_id].f1 = -1;
+        edges[e_id].c0 = n_faces;
+        edges[e_id].c1 = -1;
+        e_id++;
+      }
+    }
+    else {
+      for (cs_lnum_t i = n_f_vtx-1; i > -1; i--) {
+        edges[e_id].v0 = f_vtx_ids[(i+1)%n_f_vtx];
+        edges[e_id].v1 = f_vtx_ids[i];
+        edges[e_id].f0 = n_faces;
+        edges[e_id].f1 = -1;
+        edges[e_id].c0 = n_faces;
+        edges[e_id].c1 = -1;
+        e_id++;
+      }
+    }
+    n_edges = e_id;
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      if (edges[i].v1 < edges[i].v0) {
+        _mrh_edge_t es = edges[i];
+        edges[i].v0 = edges[i].v1;
+        edges[i].v1 = es.v0;
+        edges[i].f0 = edges[i].f1;
+        edges[i].f1 = es.f0;
+        edges[i].c0 = edges[i].c1;
+        edges[i].c1 = es.c0;
+      }
+    }
+
+    n_faces += 1;
+  }
+
+  /*--------------------------------------------------------------------------
+   * Add interior face for cell refinement with center vertex scheme
+   *
+   * \param[out]  c_n_s_cells      number of sub-cells
+   * \param[out]  c_n_i_faces      number of added interior faces
+   * \param[out]  c_i_faces_size   size of added interior faces connectivity
+   * \param[out]  i_f2c_pre        temp. cell to interior faces connect
+   * \param[out]  i_f2v_pre        temp. interior faces to vertices connect,
+   *                               with each face "closed" with a -1 value.
+   *--------------------------------------------------------------------------*/
+
+  void
+  build_interior_face_with_center_vertex(cs_lnum_t   s_id,
+                                         cs_lnum_t   e_id,
+                                         cs_lnum_t   &c_n_i_faces,
+                                         cs_lnum_t   &c_i_faces_size,
+                                         int16_t      i_f2c_pre[][2],
+                                         cs_lnum_t    i_f2v_pre[])
+
+  {
+    cs_lnum_t *f2v_pre = i_f2v_pre + c_i_f2v_size;
+
+    int e0 = 0;
+    cs_lnum_t j = 1;
+
+    cs_lnum_t v0 = cs::min(edges[s_id].v0, edges[s_id].v1);
+    f2v_pre[0] = v0;
+
+    /* In case of single edge, simply start face with smallest vertex id */
+
+    if (e_id - s_id == 1) {
+      _mrh_edge_t *e = edges + s_id;
+      if (e->v0 == v0) {
+        f2v_pre[1] = e->v1;
+      }
+      else {
+        f2v_pre[1] = e->v0;
+      }
+      j = 2;
+    }
+
+    /* In case of multiple edges sharing faces, link edges from s_id to e_id;
+       first (reference) edge is that with lowest vertex id */
+
+    else {
+      int n_e = e_id - s_id;
+      constexpr int n_f_vtx_max = 16;
+      cs_lnum_t edge_queue[n_f_vtx_max];
+
+      /* Search for vertex with smallest id */
+      for (cs_lnum_t i = s_id+1; i < e_id; i++) {
+        cs_lnum_t v1 = cs::min(edges[i].v0, edges[i].v1);
+        if (v1 < v0) {
+          v0 = v1;
+          e0 = i - s_id;
+        }
+      }
+
+      int edge_queue_size = n_e;
+      for (int i = 0; i < n_e; i++)
+        edge_queue[i] = s_id + (e0 + i)%n_e;
+
+      /* Now build list of vertices, searching for next vertex in queue */
+      while (edge_queue_size > 0) {
+        cs_lnum_t v1 = -1;
+        for (int i = 0; i < edge_queue_size; i++) {
+          _mrh_edge_t *e = edges + edge_queue[i];
+          if (e->v0 == v0)
+            v1 = e->v1;
+          else if (e->v1 == v0)
+            v1 = e->v0;
+          if (v1 != -1) {
+            f2v_pre[j] = v1;
+            j++;
+            edge_queue[i] = edge_queue[edge_queue_size - 1];
+            edge_queue_size -= 1;
+            break;
+          }
+        }
+        v0 = v1;
+        if (v1 == -1)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Error connecting edges with adjacent faces."));
+      }
+
+    }
+
+    assert(j == e_id - s_id + 1);
+
+    /* Now close contour with cell center */
+
+    f2v_pre[j++] = c_vtx_id;
+    c_i_faces_size += j; // size in final connectivity
+
+    /* Mark end of face */
+    f2v_pre[j] = -1;
+    c_i_f2v_size += j+1; // size in temporary connectivity
+
+    /* Update indexes and metadata */
+
+    _mrh_edge_t *e = edges + s_id + (cs_lnum_t)e0;
+    cs_lnum_t k = (e->v1 > e->v0) ? 1 : 0;
+
+    i_f2c_pre[c_n_i_faces][(0+k)%2] = e->c0;
+    i_f2c_pre[c_n_i_faces][(1+k)%2] = e->c1;
+
+    n_sub_cells = cs::max(n_sub_cells,
+                          (int16_t)(cs::max(e->c0, e->c1) + 1));
+
+    c_n_i_faces += 1;
+  }
+
+  /*--------------------------------------------------------------------------
+   * Refine cell using scheme with central vertex
+   *
+   * \param[out]  c_n_s_cells      number of sub-cells
+   * \param[out]  c_n_i_faces      number of added interior faces
+   * \param[out]  c_i_faces_size   size of added interior faces connectivity
+   * \param[out]  e_f2c_pre        temp. exterior faces to cell connect
+   *                               (size: n_faces member value)
+   * \param[out]  i_f2c_pre        temp. interior faces to cells connect
+   * \param[out]  i_f2v_pre        temp. interior faces to vertices connect,
+   *                               with each face "closed" with a -1 value.
+   *--------------------------------------------------------------------------*/
+
+  void
+  refine_cell_with_center_vertex(cs_lnum_t   &c_n_s_cells,
+                                 cs_lnum_t   &c_n_i_faces,
+                                 cs_lnum_t   &c_i_faces_size,
+                                 int16_t      e_f2c_pre[],
+                                 int16_t      i_f2c_pre[][2],
+                                 cs_lnum_t    i_f2v_pre[])
+
+  {
+    cs_lnum_t c_n_s_cells_max = c_n_s_cells;
+    cs_lnum_t c_n_i_faces_max = c_n_i_faces;
+    cs_lnum_t c_i_faces_size_max = c_i_faces_size;
+
+    c_n_s_cells = 0;
+    c_n_i_faces = 0;
+    c_i_faces_size = 0;
+
+    // Reorder and merge edges
+    // -----------------------
+
+    qsort(edges, n_edges, sizeof(_mrh_edge_t), &_rh_edge_compare);
+
+    cs_lnum_t count = (n_edges > 0) ? 1 : 0;
+
+    for (cs_lnum_t i = 1; i < n_edges; i++) {
+      _mrh_edge_t *e_p = edges + (count - 1);
+      if (edges[i].v0 == e_p->v0 && edges[i].v1 == e_p->v1) {
+        if (edges[i].f0 != -1) {
+          assert(edges[i].f1 == -1);
+          cs_assert(e_p->f0 == -1 && e_p->f1 != -1);
+          e_p->f0 = edges[i].f0;
+          e_p->c0 = edges[i].c0;
+        }
+        else {
+          assert(edges[i].f1 != -1);
+          cs_assert(e_p->f0 != -1 && e_p->f1 == -1);
+          e_p->f1 = edges[i].f1;
+          e_p->c1 = edges[i].c1;
+        }
+      }
+      else {
+        edges[count] = edges[i];
+        count++;
+      }
+    }
+    n_edges = count;
+
+    // Filter edges which for which no faces are generated
+    // ---------------------------------------------------
+    // Associated cell indexes need to be updated, as this
+    // amounts to merging 2 adjacent pyramidal cells.
+
+    // TODO (improve algorithm here)
+
+    // Now reorder edges based on sub-cells adjacency
+    // -----------------------------------------------
+
+    qsort(edges, n_edges, sizeof(_mrh_edge_t), &_rh_edge_compare_s_cells);
+
+    // Now buid faces
+
+    c_i_faces_size = 0;
+
+    cs_lnum_t s_id = 0;
+    for (cs_lnum_t i = 1; i < n_edges; i++) {
+      _mrh_edge_t *e_c = edges + i;
+      _mrh_edge_t *e_p = edges + (i - 1);
+      if (_rh_edge_compare_s_cells(e_c, e_p) != 0) {
+        build_interior_face_with_center_vertex(s_id, i,
+                                               c_n_i_faces,
+                                               c_i_faces_size,
+                                               i_f2c_pre,
+                                               i_f2v_pre);
+        s_id = i;
+      }
+    }
+    if (s_id < n_edges-1)
+      build_interior_face_with_center_vertex(s_id, n_edges,
+                                             c_n_i_faces,
+                                             c_i_faces_size,
+                                             i_f2c_pre,
+                                             i_f2v_pre);
+
+    c_n_s_cells = n_sub_cells;
+
+    for (int16_t i = 0; i < n_faces; i++)
+      e_f2c_pre[i] = e_f2c[i];
+
+    assert(c_n_s_cells_max >= c_n_s_cells);
+    assert(c_n_i_faces_max >= c_n_i_faces);
+    assert(c_i_faces_size_max >= c_i_faces_size);
+  }
+};
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function pointer to subdivide a given cell, updating faces.
@@ -182,13 +675,15 @@ typedef void
                    const cs_lnum_t               i_face_o2n_idx[],
                    const cs_lnum_t               b_face_o2n_idx[],
                    cs_adjacency_t               *c2f,
-                   cs_lnum_t                     c2f2v_start[],
+                   const cs_lnum_t               c2f2v_start[],
                    const cs_lnum_t               c_v_idx[],
                    const cs_lnum_t               c_f_n_idx[]);
 
 /*============================================================================
  * Static global variables.
  *============================================================================*/
+
+constexpr int _n_f_vtx_max = 96;
 
 static cs_mesh_refine_type_t _refine_tria_type = CS_REFINE_TRIA;
 
@@ -203,7 +698,7 @@ static cs_mesh_refine_type_t _refine_tria_type = CS_REFINE_TRIA;
  * The counts array values are assumed shifted by one, that is
  * count[i] is stored in elt_idx[i+1]
  *
- * The value if elt_idx[0] is unchanged, so can be set to 0 or another
+ * The value of elt_idx[0] is unchanged, so can be set to 0 or another
  * (shift) value by the caller.
  *
  * \param[in]       n_elts      number of elements
@@ -1169,15 +1664,23 @@ _cell_r_types(const cs_mesh_t              *m,
  * The cells->faces adjacency is updated as faces are locally renumbered
  * in canonical order for known cell types.
  *
- * \param[in]       m                        pointer to mesh structure
- * \param[in, out]  c2f                      cells->faces adjacency (boundary
- *                                           face first, interior face ids
- *                                           shifted)
- * \param[in]       n_b_f_ini                old number of boundary faces
- * \param[in]       c_r_flag                 cell refinement type
- * \param[in]       b_face_o2n_idx           boundary subface index
- * \param[in]       i_face_o2n_idx           interior subface index
- * \param[out]      c_n_s_cells              number of sub-cells
+ * For polyhedral refinement schemes, the computation of these sizes is more
+ * complex, so an overestimate is used here, and a separate pass will be
+ * done do subdivide those cells. To mark such cells, the maximum estimation
+ * of the number of sub-cells is multiplied by -1.
+ *
+ * \param[in]       m               pointer to mesh structure
+ * \param[in, out]  c2f             cells->faces adjacency (boundary faces
+ *                                  first, interior face ids shifted)
+ * \param[in]       n_b_f_ini       old number of boundary faces
+ * \param[in]       c_r_flag        cell refinement type
+ * \param[in]       b_face_o2n_idx  boundary subface index
+ * \param[in]       i_face_o2n_idx  interior subface index
+ * \param[out]      c_poly_s_idx    index in polyhedral division
+ *                                  (0 for simple cells, 1 for poly)
+ * \param[out]      c_poly_f_idx    index in polyhedral division
+ *                                  (0 for simple cells, n_faces for poly)
+ * \param[out]      c_n_s_cells     number of sub-cells
  * \param[out]      c_n_i_faces     number of added interior faces
  * \param[out]      c_i_faces_size  size of added interior faces connectivity
  */
@@ -1190,6 +1693,7 @@ _new_cells_i_faces_count(const cs_mesh_t            *m,
                          const cs_mesh_refine_type_t c_r_flag[],
                          const cs_lnum_t             b_face_o2n_idx[],
                          const cs_lnum_t             i_face_o2n_idx[],
+                         cs_lnum_t         *restrict c_poly_s_idx,
                          cs_lnum_t         *restrict c_n_s_cells,
                          cs_lnum_t         *restrict c_n_i_faces,
                          cs_lnum_t         *restrict c_i_faces_size)
@@ -1198,7 +1702,7 @@ _new_cells_i_faces_count(const cs_mesh_t            *m,
 
   /* Counts for standard subdivition types */
 
-  cs_lnum_t n_sub_cells[CS_REFINE_N_TYPES];          /* sub-elements */
+  cs_lnum_t n_sub_cells[CS_REFINE_N_TYPES];    /* sub-elements */
   cs_lnum_t n_type_faces[CS_REFINE_N_TYPES];   /* additional faces */
   cs_lnum_t n_type_size[CS_REFINE_N_TYPES];    /* added connectivity size */
 
@@ -1236,6 +1740,8 @@ _new_cells_i_faces_count(const cs_mesh_t            *m,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     const cs_mesh_refine_type_t rf = c_r_flag[cell_id];
 
+    c_poly_s_idx[cell_id] = 0;
+
     if (rf != CS_REFINE_POLYHEDRON) {
       c_n_s_cells[cell_id] = n_sub_cells[rf];
       c_n_i_faces[cell_id] = n_type_faces[rf];
@@ -1246,35 +1752,34 @@ _new_cells_i_faces_count(const cs_mesh_t            *m,
       cs_lnum_t n_s_cells = 0;
       cs_lnum_t n_i_faces = 0;
 
-      const cs_lnum_t s_id_c = c2f->idx[cell_id];
-      const cs_lnum_t e_id_c = c2f->idx[cell_id+1];
+      const cs_lnum_t s_id = c2f->idx[cell_id];
+      const cs_lnum_t e_id = c2f->idx[cell_id+1];
 
-      const cs_lnum_t n_cell_faces = e_id_c - s_id_c;
+      const cs_lnum_t n_cell_faces = e_id - s_id;
 
       for (cs_lnum_t i = 0; i < n_cell_faces; i++) {
-        cs_lnum_t f_id_o = c2f->ids[s_id_c + i];
-
-        cs_lnum_t s_id, e_id;
-        const cs_lnum_t *f_vtx_idx;
-
-        if (f_id_o < n_b_f_ini) {
-          s_id = b_face_o2n_idx[f_id_o];
-          e_id = b_face_o2n_idx[f_id_o + 1];
-          f_vtx_idx = m->b_face_vtx_idx;
+        cs_lnum_t f_id = c2f->ids[s_id + i];
+        const cs_lnum_t *o2n_idx, *vtx_idx;
+        if (f_id < n_b_f_ini) {
+          o2n_idx = b_face_o2n_idx;
+          vtx_idx = m->b_face_vtx_idx;
         }
         else {
-          s_id = i_face_o2n_idx[f_id_o - n_b_f_ini];
-          e_id = i_face_o2n_idx[f_id_o - n_b_f_ini + 1];
-          f_vtx_idx = m->i_face_vtx_idx;
+          f_id -= n_b_f_ini;
+          o2n_idx = i_face_o2n_idx;
+          vtx_idx = m->i_face_vtx_idx;
         }
+        cs_lnum_t s_f_idx = o2n_idx[f_id];
+        cs_lnum_t e_f_idx = o2n_idx[f_id+1];
 
-        n_s_cells += e_id - s_id;
-        for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++)
-          n_i_faces += f_vtx_idx[f_id+1] - f_vtx_idx[f_id];
+        n_s_cells += e_f_idx - s_f_idx;
+        // sub-faces are contiguous, so sum of face sizes does not need loop
+        n_i_faces += vtx_idx[e_f_idx] - vtx_idx[s_f_idx];
       }
 
       assert(n_i_faces%2 == 0);
 
+      c_poly_s_idx[cell_id] = 1;
       c_n_s_cells[cell_id] = n_s_cells;
       c_n_i_faces[cell_id] = n_i_faces/2;         /* each face shared */
       c_i_faces_size[cell_id] = n_i_faces/2 * 3;  /* triangle faces */
@@ -1282,6 +1787,88 @@ _new_cells_i_faces_count(const cs_mesh_t            *m,
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate polyhedral cell refinement temporary connnectivity arrays.
+ *
+ * The cells->faces adjacency is updated as faces are locally renumbered
+ * in canonical order for known cell types.
+ *
+ * For polyhedral refinement schemes, the computation of these sizes is more
+ * complex, so an overestimate is used here, and a separate pass will be
+ * done do subdivide those cells. To mark such cells, the maximum estimation
+ * of the number of sub-cells is multiplied by -1.
+ *
+ * \param[in]   n_cells_ini      number of initial cells
+ * \param[in]   c_poly_s_idx     index in polyhedral division
+ * \param[in]   c_n_e_faces      max number of exterior faces per cell
+ *                               (also max number of sub-cells)
+ * \param[in]   c_n_i_faces      max number of added interior faces per cell
+ * \param[in]   c_i_faces_size   max size of added interior faces connectivity
+ * \param[out]  c_o_id           old cell id
+ * \param[out]  e_f2c_pre_idx    temp. exterior faces to cell index
+ * \param[out]  e_f2c_pre        temp. exterior faces to cell connect
+ * \param[out]  i_f2c_pre_idx    temp. interior faces to cells index
+ * \param[out]  i_f2c_pre        temp. interior faces to cells connect
+ * \param[out]  i_f2v_pre_idx    temp interior faces to vertices index
+ * \param[out]  i_f2v_pre        temp interior faces to vertices connect.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_new_cells_poly_pre_alloc(cs_lnum_t          n_cells_ini,
+                          const cs_lnum_t   *restrict c_poly_s_idx,
+                          const cs_lnum_t   *restrict c_n_e_faces,
+                          const cs_lnum_t   *restrict c_n_i_faces,
+                          const cs_lnum_t   *restrict c_i_faces_size,
+                          cs_lnum_t         *&c_o_id,
+                          cs_lnum_t         *&e_f2c_pre_idx,
+                          int16_t           *&e_f2c_pre,
+                          cs_lnum_t         *&i_f2c_pre_idx,
+                          int16_t           *&i_f2c_pre,
+                          cs_lnum_t         *&i_f2v_pre_idx,
+                          cs_lnum_t         *&i_f2v_pre
+)
+{
+  cs_lnum_t n_poly_r_cells = c_poly_s_idx[n_cells_ini];
+
+  CS_MALLOC(c_o_id, n_poly_r_cells, cs_lnum_t);
+  CS_MALLOC(e_f2c_pre_idx, n_poly_r_cells+1, cs_lnum_t);
+  CS_MALLOC(i_f2c_pre_idx, n_poly_r_cells+1, cs_lnum_t);
+  CS_MALLOC(i_f2v_pre_idx, n_poly_r_cells+1, cs_lnum_t);
+
+  e_f2c_pre_idx[0] = 0;
+  i_f2c_pre_idx[0] = 0;
+  i_f2v_pre_idx[0] = 0;
+
+  int n_threads = cs_parall_n_threads(n_cells_ini, CS_THR_MIN);
+
+# pragma omp parallel for  num_threads(n_threads)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ini; cell_id++) {
+    cs_lnum_t s_idx = c_poly_s_idx[cell_id];
+    cs_lnum_t e_idx = c_poly_s_idx[cell_id+1];
+
+    /* For temporary cell interior faces to vertices connectivity,
+       each face's connectivity will be closed by a -1 value,
+       so one extra value per face is needed (hence + c_n_i_faces[cell_id]). */
+
+    if (e_idx > s_idx) {
+      c_o_id[s_idx] = cell_id;
+      e_f2c_pre_idx[s_idx+1] = c_n_e_faces[cell_id];
+      i_f2c_pre_idx[s_idx+1] = c_n_i_faces[cell_id] + 1;
+      i_f2v_pre_idx[s_idx+1] = c_i_faces_size[cell_id] + c_n_i_faces[cell_id];
+    }
+  }
+
+  _counts_to_index(n_poly_r_cells, e_f2c_pre_idx);
+  _counts_to_index(n_poly_r_cells, i_f2c_pre_idx);
+  _counts_to_index(n_poly_r_cells, i_f2v_pre_idx);
+
+  CS_MALLOC(e_f2c_pre, e_f2c_pre_idx[n_poly_r_cells], int16_t);
+  CS_MALLOC(i_f2c_pre, i_f2c_pre_idx[n_poly_r_cells]*2, int16_t);
+  CS_MALLOC(i_f2v_pre, i_f2v_pre_idx[n_poly_r_cells], cs_lnum_t);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1491,33 +2078,62 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
 
   cs_mesh_refine_type_t _f_flag = f_r_flag[f_id];
 
-  /* Flag edges */
+  char _vtx_r_gen_f[64];
+  char *vtx_r_gen_f = _vtx_r_gen_f;
+  if (n_fv > 64) {
+    CS_MALLOC(vtx_r_gen_f, n_fv, char);
+  }
 
-  cs_lnum_t n_corner = 0, n_fv_c = n_fv;
-
-  int up = 0;
+  int last_corner_idx = 0;
   cs_lnum_t v0 = f2v_lst[0];
   char r_lv0 = vtx_r_gen[v0];
-  if (r_lv0 > f_r_level)
-    up += 1;
 
-  char r_lv_1st = r_lv0;
-  cs_lnum_t v_1st = 0;
+  /* Copy to local array for cheaper access, as multiple
+     passes may be needed */
 
   for (cs_lnum_t i = 0; i < n_fv; i++) {
-
-    cs_lnum_t v1 = f2v_lst[(i+1)%n_fv];
-    char r_lv1 = vtx_r_gen[v1];
-
-    if (r_lv1 > f_r_level) {
-      up += 1;
+    cs_lnum_t j = f2v_lst[i];
+    char r_lv = vtx_r_gen[j];
+    vtx_r_gen_f[i] = r_lv;
+    if (r_lv < r_lv0) {
+      last_corner_idx = i;
+      r_lv0 = r_lv;
     }
-    else {
-      n_corner++;
-      if (up == 1)
-        up -= 1;
+  }
 
-      if (r_lv0 <= f_r_level) {
+  /* Rotate list if needed */
+
+  if (last_corner_idx > 0) {
+    cs_lnum_t _f2v_lst_o[64];
+    cs_lnum_t *f2v_lst_o = _f2v_lst_o;
+    if (n_fv > 64)
+      CS_MALLOC(f2v_lst_o, n_fv, cs_lnum_t);
+    memcpy(f2v_lst_o, f2v_lst, n_fv*sizeof(cs_lnum_t));
+    for (cs_lnum_t i = 0; i < n_fv; i++) {
+      cs_lnum_t j = f2v_lst_o[(i+last_corner_idx)%n_fv];
+      f2v_lst[i] = j;
+    }
+    if (f2v_lst_o != _f2v_lst_o)
+      CS_FREE(f2v_lst_o);
+  }
+
+  /* Flag edges */
+
+  cs_lnum_t n_corner = 0, n_mid = 0, n_fv_c = n_fv;
+
+  v0 = f2v_lst[0];
+  r_lv0 = vtx_r_gen[v0];
+
+  last_corner_idx = 0;  // Last corner
+
+  for (cs_lnum_t i = 0; i < n_fv; i++) {
+    int idx1 = (i+1)%n_fv, idx2 = (i+2)%n_fv;
+    cs_lnum_t v1 = f2v_lst[idx1];
+    char r_lv1 = vtx_r_gen_f[idx1], r_lv2 = vtx_r_gen_f[idx2];
+
+    if (r_lv1 <= f_r_level) {  // Corner
+      n_corner += 1;
+      if (last_corner_idx == i) {
         cs_lnum_t vr, vc;
         if (v0 < v1) {
           vr = v0; vc = v1;
@@ -1530,44 +2146,33 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
         e_v_idx[edge_id + 1] = 1;
         n_fv_c += 1;
       }
+      last_corner_idx = idx1;
     }
 
-    if (r_lv1 < r_lv_1st) {
-      v_1st = i+1;
-      r_lv_1st = r_lv1;
-    }
+    else if (r_lv1 > r_lv0 && r_lv1 < r_lv2) // Pre-existing mid-point
+      n_mid += 1;
 
+    // Prepare for next vertex.
     v0 = v1;
-    r_lv0= r_lv1;
-
+    r_lv0 = r_lv1;
   }
 
-  /* Rotate list if needed */
+  if (vtx_r_gen_f != _vtx_r_gen_f)
+    CS_FREE(vtx_r_gen_f);
 
-  if (v_1st > 0) {
-    cs_lnum_t _f2v_lst_o[32];
-    cs_lnum_t *f2v_lst_o = _f2v_lst_o;
-    if (n_fv > 32)
-      CS_MALLOC(f2v_lst_o, n_fv*2, cs_lnum_t);
-    memcpy(f2v_lst_o, f2v_lst, n_fv*sizeof(cs_lnum_t));
-    for (cs_lnum_t i = 0; i < n_fv; i++)
-      f2v_lst[i] = f2v_lst_o[(i+v_1st)%n_fv];
-    if (f2v_lst_o != _f2v_lst_o)
-      CS_FREE(f2v_lst_o);
-  }
+  /* Determine specific template */
 
-  /* determine specific template */
+  n_fv_c += n_mid;
 
   if (_f_flag == CS_REFINE_DEFAULT) {
-    switch(n_corner) {
-    case 3:
+    _f_flag = CS_REFINE_POLYGON_Q;
+    if (n_corner == 3 && n_fv == 3 && n_fv_c == 6) {
       _f_flag = _refine_tria_type;
-      break;
-    case 4:
+    }
+    else if (n_corner == 4 && n_fv == 4 && n_fv_c == 8) {
       _f_flag = CS_REFINE_QUAD;
-      break;
-    default:
-      _f_flag = CS_REFINE_POLYGON_Q;
+    }
+    if (_f_flag == CS_REFINE_POLYGON_Q) {
       if (n_fv_c != n_corner*2) {
         _f_flag = CS_REFINE_POLYGON;
       }
@@ -1598,6 +2203,7 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
  * \param[in]       vtx_r_gen     vertex refinement generation
  * \param[in]       c_r_level     cell refinement level
  * \param[in]       c_r_flag      cell refinement flag
+ * \param[in, out]  f_r_level     face refinement level
  * \param[in, out]  f_r_flag      face refinement flag
  * \param[in, out]  e_v_idx       for each edge, start index of added vertices
  * \param[in, out]  f_v_idx       for each face, start index of added vertices
@@ -1616,6 +2222,7 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
                               const char                    vtx_r_gen[],
                               const char                    c_r_level[],
                               const cs_mesh_refine_type_t   c_r_flag[],
+                              char                          f_r_level[],
                               cs_mesh_refine_type_t         f_r_flag[],
                               cs_lnum_t                     e_v_idx[],
                               cs_lnum_t                     f_v_idx[],
@@ -1625,6 +2232,8 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
   cs_gnum_t n_g_edges = 0;
 
   const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -1633,7 +2242,7 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
 
   /* Loop on boundary faces */
 
-  for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     bool subdivide = false;
 
@@ -1643,6 +2252,7 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
         subdivide = true;
         f_r_flag[f_id] = CS_REFINE_DEFAULT;
       }
+      f_r_level[f_id] = c_r_level[c_id];
     }
 
     if (subdivide) {
@@ -1664,23 +2274,17 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
 
   /* Loop on interior faces */
 
-  for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
     bool subdivide = false;
 
     char f_c_r_level_ini[2], f_c_r_level_next[2];
     for (cs_lnum_t i = 0; i < 2; i++) {
       cs_lnum_t c_id = i_face_cells[f_id][i];
-      if (c_id < n_cells) {
-        f_c_r_level_ini[i] = c_r_level[c_id];
-        f_c_r_level_next[i] = f_c_r_level_ini[i];
-        if (c_r_flag[c_id] > CS_REFINE_NONE)
-          f_c_r_level_next[i] += 1;
-      }
-      else {
-        f_c_r_level_ini[i] = 0;
-        f_c_r_level_next[i] = 0;
-      }
+      f_c_r_level_ini[i] = c_r_level[c_id];
+      f_c_r_level_next[i] = f_c_r_level_ini[i];
+      if (c_r_flag[c_id] > CS_REFINE_NONE)
+        f_c_r_level_next[i] += 1;
     }
 
     /* If a face is shared with a cell with higher refinement level,
@@ -1690,9 +2294,10 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
     char f_r_level_ini = cs::max(f_c_r_level_ini[0], f_c_r_level_ini[1]);
     char f_r_level_next = cs::max(f_c_r_level_next[0], f_c_r_level_next[1]);
 
+    f_r_level[n_b_faces + f_id] = f_r_level_ini;
     if (f_r_level_next > f_r_level_ini) {
       subdivide = true;
-      f_r_flag[f_id + m->n_b_faces] = CS_REFINE_DEFAULT;
+      f_r_flag[n_b_faces + f_id] = CS_REFINE_DEFAULT;
     }
 
     if (subdivide) {
@@ -2341,7 +2946,7 @@ _build_vertices_gnum(cs_mesh_t       *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Count new faces and face vertices
+ * \brief Count new faces and face vertices for non-subdivided face
  *
  * \param[in] n_fv     number of vertices for this face
  * \param[in] f2v_lst  face vertices list
@@ -2353,7 +2958,7 @@ _build_vertices_gnum(cs_mesh_t       *m,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_lnum_t
-_count_face_edge_vertices_new(const cs_lnum_t        n_fv,
+_count_face_edge_vertices_new(cs_lnum_t              n_fv,
                               const cs_lnum_t        f2v_lst[],
                               const cs_adjacency_t  *v2v,
                               const cs_lnum_t        e_v_idx[])
@@ -2361,29 +2966,90 @@ _count_face_edge_vertices_new(const cs_lnum_t        n_fv,
   cs_lnum_t n_new = n_fv;
 
   for (cs_lnum_t i = 0; i < n_fv; i++) {
-
     cs_lnum_t v0 = f2v_lst[i];
     cs_lnum_t v1 = f2v_lst[(i+1)%n_fv];
 
-    if (v1 < v0) {
-      cs_lnum_t vt = v0;
-      v0 = v1;
-      v1 = vt;
-    }
-
-    cs_lnum_t s_id = v2v->idx[v0];
-    cs_lnum_t e_id = v2v->idx[v0+1];
-
-    for (cs_lnum_t j = s_id; j < e_id; j++) {
-      if (v2v->ids[j] == v1) {
-        n_new += e_v_idx[j+1] - e_v_idx[j];
-        break;
-      }
-    }
-
+    cs_lnum_t edge_id = _v2v_edge_id(v0, v1, v2v);
+    n_new += (e_v_idx[edge_id+1] - e_v_idx[edge_id]);
   }
 
   return n_new;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Count new face vertices and edge mid-points.
+ *
+ * Whenever a edge is refined, the added vertex has a level higher than its
+ * adjacent vertices, so we can identify "non-corner" vertices in this way.
+ *
+ * \param[in]   n_fv       number of vertices for this face
+ * \param[in]   f2v_lst    face vertices list
+ * \param[in]   v2v        vertex adjacency
+ * \param[in]   vtx_r_gen  vertices refinement generation
+ * \param[in]   e_v_idx    for each edge, start index of added vertices
+ *
+ * \param[out]  n_new      number of vertices in subdivided perimeter
+ * \param[out]  n_corner   number of corner points in subdivided perimeter
+ * \param[out]  n_mid      number of mid-points in subdivided perimeter
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_count_face_edge_vertices_sub(int                    n_fv,
+                              char                   f_r_level,
+                              const cs_lnum_t        f2v_lst[],
+                              const cs_adjacency_t  *v2v,
+                              const char             vtx_r_gen[],
+                              const cs_lnum_t        e_v_idx[],
+                              cs_lnum_t             &n_new,
+                              cs_lnum_t             &n_corner,
+                              cs_lnum_t             &n_mid)
+{
+  n_new = n_fv, n_corner = 0, n_mid = 0;
+
+  cs_lnum_t v0 = f2v_lst[0];
+  char r_lv0 = vtx_r_gen[v0];
+
+  /* Corners should have a refinement generation lower or equal
+     to the initial face refinement level, so can be identified
+     using this property. In case edges are subdivided multiple
+     times, a mid-point should be the vertex with highest
+     refinement generation between 2 corners.
+
+     Note that no face vertex should have a lower refinement
+     generation than the first one, as we have rotated its vertices
+     to ensure this in a prior step (in _flag_faces_and_edges).
+  */
+
+  cs_lnum_t last_corner_idx = 0;
+
+  for (cs_lnum_t i = 0; i < n_fv; i++) {
+    cs_lnum_t v1 = f2v_lst[(i+1)%n_fv];
+    char r_lv1 = vtx_r_gen[v1];
+
+    cs_lnum_t edge_id = _v2v_edge_id(v0, v1, v2v);
+    assert(edge_id > -1);
+
+    cs_lnum_t n_ev = (e_v_idx[edge_id+1] - e_v_idx[edge_id]);
+    n_new += n_ev;
+
+    if (r_lv0 <= f_r_level) {
+      n_corner += 1;
+      if (r_lv1 <= f_r_level && n_ev > 0)
+        n_mid += 1;
+      last_corner_idx = i;
+    }
+    else {
+      /* Actual midpoint might not directly follow corner,
+         but there can only be one midpoint between 2 corners. */
+      if (i == last_corner_idx+1)
+        n_mid += 1;
+    }
+
+    r_lv0 = r_lv1; // for next loop iteration
+    v0 = v1;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2392,8 +3058,10 @@ _count_face_edge_vertices_new(const cs_lnum_t        n_fv,
  *
  * \param[in]       n_fv           number of vertices for this face
  * \param[in, out]  f_r_flag       face refinement type flag
- * \param[in    ]   f2v_lst_o      old face vertices list
+ * \param[in]       f_r_level_o    old face refinement level
+ * \param[in]       f2v_lst_o      old face vertices list
  * \param[in]       v2v            vertex adjacency
+ * \param[in]       vtx_r_gen      vertices refinement generation
  * \param[in]       e_v_idx        for each edge, start index of added vertices
  * \param[out]      n_sub          number of sub-faces
  * \param[out]      connect_size   associated connectivity size
@@ -2403,13 +3071,24 @@ _count_face_edge_vertices_new(const cs_lnum_t        n_fv,
 static void
 _subdivided_face_sizes(const cs_lnum_t          n_fv,
                        cs_mesh_refine_type_t    f_r_flag,
+                       const char               f_r_level_o,
                        const cs_lnum_t          f2v_lst_o[],
                        const cs_adjacency_t    *v2v,
+                       const char               vtx_r_gen[],
                        const cs_lnum_t          e_v_idx[],
                        cs_lnum_t               *n_sub,
                        cs_lnum_t               *connect_size)
 {
   switch(f_r_flag) {
+  case CS_REFINE_NONE:
+    {
+      *n_sub = 1;
+      *connect_size = _count_face_edge_vertices_new(n_fv,
+                                                    f2v_lst_o,
+                                                    v2v,
+                                                    e_v_idx);
+    }
+    break;
   case CS_REFINE_TRIA:
     *n_sub = 4;
     *connect_size = 12;
@@ -2424,18 +3103,24 @@ _subdivided_face_sizes(const cs_lnum_t          n_fv,
     break;
   default:
     {
-      cs_lnum_t n_fv_tot = _count_face_edge_vertices_new(n_fv,
-                                                         f2v_lst_o,
-                                                         v2v,
-                                                         e_v_idx);
+      cs_lnum_t n_fv_tot, n_corner, n_mid;
+      _count_face_edge_vertices_sub(n_fv,
+                                    f_r_level_o,
+                                    f2v_lst_o,
+                                    v2v,
+                                    vtx_r_gen,
+                                    e_v_idx,
+                                    n_fv_tot,
+                                    n_corner,
+                                    n_mid);
       switch(f_r_flag) {
       case CS_REFINE_POLYGON_T:
         *n_sub = n_fv_tot;
         *connect_size = n_fv_tot*3;
         break;
       case CS_REFINE_POLYGON_Q:
-        *n_sub = n_fv_tot / 2;
-        *connect_size = n_fv_tot*2;
+        *n_sub = n_corner;
+        *connect_size = n_fv_tot + n_mid*2;
         break;
       case CS_REFINE_POLYGON:
         *n_sub = n_fv_tot-2;
@@ -2485,11 +3170,13 @@ _v2v_mid_vtx_id(cs_lnum_t              v0,
  * \param[in]      f_id           id for this face
  * \param[in]      n_fv           number of vertices for this face
  * \param[in]      f_r_flag       face refinement type flag
+ * \param[in]      f_r_level_o    old face refinement level
  * \param[in]      f2v_lst_o      old face vertices list
  * \param[in]      v2v            vertex adjacency
  * \param[in]      e_v_idx        for each edge, start index of added vertices
  * \param[in]      f_v_idx        for each face, start index of added vertices
  * \param[in]      vtx_coords     mesh vertex coordinates
+ * \param[in]      vtx_r_gen      vertices refinement generation
  * \param[in,out]  t_state        triangulation state if needed
  * \param[in,out]  f2v_idx_n      new faces to vertices index, initialized for
  *                                first vertex
@@ -2501,11 +3188,13 @@ static void
 _subdivide_face(cs_lnum_t                 f_id,
                 cs_lnum_t                 n_fv,
                 cs_mesh_refine_type_t     f_r_flag,
+                char                      f_r_level_o,
                 const cs_lnum_t           f2v_lst_o[],
                 const cs_adjacency_t     *v2v,
                 const cs_lnum_t           e_v_idx[],
                 const cs_lnum_t           f_v_idx[],
                 const cs_real_t           vtx_coords[],
+                const char                vtx_r_gen[],
                 fvm_triangulate_state_t  *t_state,
                 cs_lnum_t                 f2v_idx_n[],
                 cs_lnum_t                 f2v_lst_n[])
@@ -2677,19 +3366,95 @@ _subdivide_face(cs_lnum_t                 f_id,
 
       case CS_REFINE_POLYGON_Q:
         {
-          assert(n_fv_c%2 == 0);
+          /* Corners should have a refinement generation lower or equal
+             to the initial face refinement level, so can be identified
+             using this property. In case edges are subdivided multiple
+             times, a mid-point should be the vertex with lowest
+             refinement generation between 2 corners.
 
-          cs_lnum_t n_corner = n_fv_c / 2;
-          cs_lnum_t vc = f_v_idx[f_id];
+             Note that no face vertex should have a lower refinement
+             generation than the first one, as we have rotated its vertices
+             to ensure this in a prior step (in _flag_faces_and_edges).
+          */
 
-          for (cs_lnum_t i = 0; i < n_corner; i++) {
-            f2v_idx_n[i+1]     = f2v_idx_n[0] + i*4;
+          cs_lnum_t mid_idx_first = n_fv_c-1;
+          char r_lv_min = 127;  // Maximum allowable value (for unlocated).
 
-            f2v_lst_n[i*4]     = f2v_lst_c[i*2];
-            f2v_lst_n[i*4 + 1] = f2v_lst_c[(i*2+1)%n_fv_c];
-            f2v_lst_n[i*4 + 2] = vc;
-            f2v_lst_n[i*4 + 3] = f2v_lst_c[(i*2-1+n_fv_c)%n_fv_c];
+          /* First corner: find mid-point of previous segment */
+
+          {
+            for (cs_lnum_t i = n_fv_c-1; i > 0; i--) {
+              cs_lnum_t v_id = f2v_lst_c[i];
+              char r_lv = vtx_r_gen[v_id];
+              if (r_lv <= f_r_level_o)
+                break;
+              else if (r_lv < r_lv_min) {
+                r_lv_min = r_lv;
+                mid_idx_first = i;
+              }
+            }
           }
+
+          cs_lnum_t idx_c0 = 0;
+          cs_lnum_t idx_mid0 = mid_idx_first;
+          cs_lnum_t idx_mid1 = 1;
+
+          cs_lnum_t n_corner = 0;
+          cs_lnum_t n = 0;
+          r_lv_min = 127; // Reset for next search.
+
+          /* Now loop on face vertices */
+
+          for (cs_lnum_t i = 1; i < mid_idx_first; i++) {
+
+            cs_lnum_t v_id = f2v_lst_c[i];
+            char r_lv = vtx_r_gen[v_id];
+
+            // Reached corner: mid-point between this corner and
+            // The previous one should be known
+            if (r_lv <= f_r_level_o) {
+              cs_lnum_t idx_c1 = i;
+              cs_lnum_t idx_c2 = (idx_c0 > 0) ? idx_c0 : n_fv_c;
+
+              for (cs_lnum_t j = idx_c0; j <= idx_mid1; j++) {
+                f2v_lst_n[n++] = f2v_lst_c[j];
+              }
+              f2v_lst_n[n++] = f_v_idx[f_id];
+              for (cs_lnum_t j = idx_mid0; j < idx_c2; j++) {
+                f2v_lst_n[n++] = f2v_lst_c[j];
+              }
+              f2v_idx_n[n_corner + 1] = f2v_idx_n[0] + n;
+              n_corner += 1;
+
+              // Prepare for next corner
+              r_lv_min = 127;
+              idx_mid0 = idx_mid1;
+              idx_c0 = idx_c1;
+            }
+
+            // Non-corner point; might be a mid-point.
+            else if (r_lv < r_lv_min) {
+              r_lv_min = r_lv;
+              idx_mid1 = i;
+            }
+
+          }
+
+          // Last corner
+          {
+            idx_mid1  = mid_idx_first;
+
+            for (cs_lnum_t j = idx_c0; j <= idx_mid1; j++) {
+              f2v_lst_n[n++] = f2v_lst_c[j];
+            }
+            f2v_lst_n[n++] = f_v_idx[f_id];
+            for (cs_lnum_t j = idx_mid0; j < idx_c0; j++) {
+              f2v_lst_n[n++] = f2v_lst_c[j];
+            }
+            f2v_idx_n[n_corner + 1] = f2v_idx_n[0] + n;
+            n_corner += 1;
+          }
+
         }
         break;
 
@@ -2708,20 +3473,24 @@ _subdivide_face(cs_lnum_t                 f_id,
 /*!
  * \brief Compute connectivity sizes for a given faces set
  *
- * \param[in]       v2v         vertex->vertex adjacency
- * \param[in]       e_v_idx     for each edge, start index of added vertices
- * \param[in]       f_v_idx     for each face, start index of added vertices
- * \param[in]       n_faces     number of faces
- * \param[in]       f_r_flag    face refinement type flag
- * \param[in]       f2v_idx     face->vertices index
- * \param[in]       f2v_lst     face->vertices connectivity
- * \param[out]      f_o2n_idx   old to new faces index
+ * \param[in]       v2v          vertex->vertex adjacency
+ * \param[in]       vtx_r_gen    vertices refinement generation
+ * \param[in]       f_r_level_o  old faces refinement level
+ * \param[in]       e_v_idx      for each edge, start index of added vertices
+ * \param[in]       f_v_idx      for each face, start index of added vertices
+ * \param[in]       n_faces      number of faces
+ * \param[in]       f_r_flag     face refinement type flag
+ * \param[in]       f2v_idx      face->vertices index
+ * \param[in]       f2v_lst      face->vertices connectivity
+ * \param[out]      f_o2n_idx    old to new faces index
  * \param[out]      f_o2n_connect_size   old to new faces connectivity size
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _subdivided_faces_sizes(const cs_adjacency_t       *v2v,
+                        const char                  vtx_r_gen[],
+                        const char                  f_r_level_o[],
                         const cs_lnum_t             e_v_idx[],
                         cs_lnum_t                   n_faces,
                         const cs_mesh_refine_type_t f_r_flag[],
@@ -2740,8 +3509,10 @@ _subdivided_faces_sizes(const cs_adjacency_t       *v2v,
 
     _subdivided_face_sizes(n_fv,
                            f_r_flag[f_id],
+                           f_r_level_o[f_id],
                            f2v_lst + s_id,
                            v2v,
+                           vtx_r_gen,
                            e_v_idx,
                            f_o2n_idx + f_id + 1,
                            f_o2n_connect_size + f_id +1);
@@ -3071,7 +3842,7 @@ _subdivide_cell_tria_faces(const cs_mesh_t    *m,
                            const cs_lnum_t     i_face_o2n_idx[],
                            const cs_lnum_t     b_face_o2n_idx[],
                            cs_adjacency_t     *c2f,
-                           cs_lnum_t           c2f2v_start[],
+                           const cs_lnum_t     c2f2v_start[],
                            const cs_lnum_t     c_id_shift[][4],
                            cs_lnum_t           tria_vtx[][6])
 {
@@ -3180,7 +3951,7 @@ _subdivide_cell_tria_q_faces(const cs_mesh_t  *m,
                              const cs_lnum_t     i_face_o2n_idx[],
                              const cs_lnum_t     b_face_o2n_idx[],
                              cs_adjacency_t     *c2f,
-                             cs_lnum_t           c2f2v_start[],
+                             const cs_lnum_t     c2f2v_start[],
                              const cs_lnum_t     c_id_shift[][3],
                              cs_lnum_t           tria_vtx[][7])
 {
@@ -3289,7 +4060,7 @@ _subdivide_cell_quad_faces(const cs_mesh_t    *m,
                            const cs_lnum_t     i_face_o2n_idx[],
                            const cs_lnum_t     b_face_o2n_idx[],
                            cs_adjacency_t     *c2f,
-                           cs_lnum_t           c2f2v_start[],
+                           const cs_lnum_t     c2f2v_start[],
                            const cs_lnum_t     c_id_shift[][4],
                            cs_lnum_t           quad_vtx[][9])
 {
@@ -3384,7 +4155,7 @@ _subdivide_cell_tetra(const cs_mesh_t              *m,
                       const cs_lnum_t               i_face_o2n_idx[],
                       const cs_lnum_t               b_face_o2n_idx[],
                       cs_adjacency_t               *c2f,
-                      cs_lnum_t                     c2f2v_start[],
+                      const cs_lnum_t               c2f2v_start[],
                       const cs_lnum_t               c_v_idx[],
                       const cs_lnum_t               c_f_n_idx[])
 {
@@ -3530,7 +4301,7 @@ _subdivide_cell_tetra_h(const cs_mesh_t              *m,
                         const cs_lnum_t               i_face_o2n_idx[],
                         const cs_lnum_t               b_face_o2n_idx[],
                         cs_adjacency_t               *c2f,
-                        cs_lnum_t                     c2f2v_start[],
+                        const cs_lnum_t               c2f2v_start[],
                         const cs_lnum_t               c_v_idx[],
                         const cs_lnum_t               c_f_n_idx[])
 {
@@ -3662,7 +4433,7 @@ _subdivide_cell_pyram(const cs_mesh_t              *m,
                       const cs_lnum_t               i_face_o2n_idx[],
                       const cs_lnum_t               b_face_o2n_idx[],
                       cs_adjacency_t               *c2f,
-                      cs_lnum_t                     c2f2v_start[],
+                      const cs_lnum_t               c2f2v_start[],
                       const cs_lnum_t               c_v_idx[],
                       const cs_lnum_t               c_f_n_idx[])
 {
@@ -3787,7 +4558,7 @@ _subdivide_cell_prism(const cs_mesh_t              *m,
                       const cs_lnum_t               i_face_o2n_idx[],
                       const cs_lnum_t               b_face_o2n_idx[],
                       cs_adjacency_t               *c2f,
-                      cs_lnum_t                     c2f2v_start[],
+                      const cs_lnum_t               c2f2v_start[],
                       const cs_lnum_t               c_v_idx[],
                       const cs_lnum_t               c_f_n_idx[])
 {
@@ -3915,7 +4686,7 @@ _subdivide_cell_hexa(const cs_mesh_t              *m,
                      const cs_lnum_t               i_face_o2n_idx[],
                      const cs_lnum_t               b_face_o2n_idx[],
                      cs_adjacency_t               *c2f,
-                     cs_lnum_t                     c2f2v_start[],
+                     const cs_lnum_t               c2f2v_start[],
                      const cs_lnum_t               c_v_idx[],
                      const cs_lnum_t               c_f_n_idx[])
 {
@@ -4170,10 +4941,118 @@ _add_or_match_interior_face_triangle(const cs_mesh_t   *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Subdivide a given polyhedron, updating faces.
+ * \brief Pre-refine polyhedral cell.
  *
- * The cells->faces adjacency is updated as faces are locally renumbered
- * in canonical order for known cell types.
+ * Here, the actual refinement is determined, but stored to temporary
+ * structures, as the total sizes and associated indexes for the refined
+ * mesh are not known yet.
+ *
+ * \param[in]       m               pointer to mesh structure
+ * \param[in]       c2f             cells->faces adjacency (boundary faces
+ *                                  first, interior face ids shifted)
+ * \param[in, out]  crh             cell refinement helper
+ * \param[in]       c_id            cell id
+ * \param[in]       n_b_f_ini       old number of boundary faces
+ * \param[in]       c_r_flag        cell refinement type
+ * \param[in]       c_r_level       previous cell refinement level
+ * \param[in]       c_v_idx         for each cell, start index of added vertices
+ * \param[in]       b_face_o2n_idx  boundary subface index
+ * \param[in]       i_face_o2n_idx  interior subface index
+ * \param[in]       f_r_level_o  old faces refinement level
+ * \param[out]      c_n_s_cells     number of sub-cells
+ * \param[out]      c_n_i_faces     number of added interior faces
+ * \param[out]      c_i_faces_size  size of added interior faces connectivity
+ * \param[out]      e_f2c_pre       temp. exterior faces to cell connect
+ * \param[out]      i_f2c_pre       temp. cell to interior faces connect
+ * \param[out]      i_f2v_pre       temp interior faces to vertices connect.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pre_refine_poly_cell(const cs_mesh_t            *m,
+                      const cs_adjacency_t       *c2f,
+                      cs_cell_refine_helper      *crh,
+                      cs_lnum_t                   c_id,
+                      cs_lnum_t                   n_b_f_ini,
+                      cs_mesh_refine_type_t       c_r_flag,
+                      char                        c_r_level,
+                      const cs_lnum_t             b_face_o2n_idx[],
+                      const cs_lnum_t             i_face_o2n_idx[],
+                      const cs_lnum_t             c_v_idx[],
+                      const char                  f_r_level_o[],
+                      cs_lnum_t                  &c_n_s_cells,
+                      cs_lnum_t                  &c_n_i_faces,
+                      cs_lnum_t                  &c_i_faces_size,
+                      int16_t                     e_f2c_pre[],
+                      int16_t                     i_f2c_pre[][2],
+                      cs_lnum_t                   i_f2v_pre[])
+{
+  crh->reset_for_new_cell();
+  crh->set_center_vtx(c_v_idx[c_id]);
+
+  const cs_lnum_t s_id_c = c2f->idx[c_id];
+  const cs_lnum_t e_id_c = c2f->idx[c_id+1];
+
+  const cs_lnum_t n_cell_faces = e_id_c - s_id_c;
+
+  cs_lnum_t e_f2c_count = 0;  // counter for number of exterior faces
+
+  for (cs_lnum_t i = 0; i < n_cell_faces; i++) {
+    cs_lnum_t f_id_o = c2f->ids[s_id_c + i];
+    int sgn = c2f->sgn[s_id_c + i];
+    char f_r_level = f_r_level_o[f_id_o];
+
+    const cs_lnum_t *o2n_idx, *vtx_idx, *vtx_lst;
+    if (f_id_o < n_b_f_ini) {
+      o2n_idx = b_face_o2n_idx;
+      vtx_idx = m->b_face_vtx_idx;
+      vtx_lst = m->b_face_vtx_lst;
+    }
+    else {
+      f_id_o -= n_b_f_ini;
+      o2n_idx = i_face_o2n_idx;
+      vtx_lst = m->i_face_vtx_lst;
+      vtx_idx = m->i_face_vtx_idx;
+    }
+    cs_lnum_t s_f_idx = o2n_idx[f_id_o];
+    cs_lnum_t e_f_idx = o2n_idx[f_id_o+1];
+
+    if (e_f_idx - s_f_idx > 1)
+      f_r_level += 1;
+
+    for (cs_lnum_t j = s_f_idx; j < e_f_idx; j++) {
+
+      cs_lnum_t f_id_n = j;
+      cs_lnum_t v_s_id = vtx_idx[f_id_n];
+      cs_lnum_t v_e_id = vtx_idx[f_id_n+1];
+
+      crh->add_face(sgn,
+                    f_r_level,
+                    v_e_id - v_s_id,
+                    vtx_lst + v_s_id);
+
+      e_f2c_count++;
+
+    }
+
+  }
+
+  if (c_r_flag == CS_REFINE_POLYHEDRON)
+    crh->refine_cell_with_center_vertex(c_n_s_cells,
+                                        c_n_i_faces,
+                                        c_i_faces_size,
+                                        e_f2c_pre,
+                                        i_f2c_pre,
+                                        i_f2v_pre);
+  else
+    cs_assert(0);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Refine polyhedral cell.
+ *
+ * Here, the refinement stored in temporary structures, is applied.
  *
  * \param[in, out]  m             pointer to mesh structure
  * \param[in]       cell_id       (old) cell id (0 to n-1)
@@ -4182,110 +5061,102 @@ _add_or_match_interior_face_triangle(const cs_mesh_t   *m,
  * \param[in]       i_face_o2n_idx  old to new interior faces index
  * \param[in]       b_face_o2n_idx  old to new boundary faces index
  * \param[in]       c2f           cells->faces adjacency (boundary faces first)
- * \param[in]       c2f2v_start   start id for adjacent face vertices
- *                                definitions (initialized to 0)
  * \param[in]       c_v_idx       for each cell, start index of added vertices
  * \param[in]       c_f_n_idx     cells to new faces index
+ * \param[in]       e_f2c_pre     temp. exterior faces to cell connect
+ * \param[in]       i_f2c_pre     temp. interior faces to cell connect
+ * \param[in]       i_f2v_pre     temp interior faces to vertices connect.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_subdivide_cell_polyhedron(const cs_mesh_t              *m,
-                           cs_lnum_t                     cell_id,
-                           cs_lnum_t                     n_b_f_ini,
-                           const cs_lnum_t               c_o2n_idx[],
-                           const cs_lnum_t               i_face_o2n_idx[],
-                           const cs_lnum_t               b_face_o2n_idx[],
-                           cs_adjacency_t               *c2f,
-                           cs_lnum_t                     c2f2v_start[],
-                           const cs_lnum_t               c_v_idx[],
-                           const cs_lnum_t               c_f_n_idx[])
+_refine_poly_cell(const cs_mesh_t            *m,
+                  cs_lnum_t                   cell_id,
+                  cs_lnum_t                   n_b_f_ini,
+                  const cs_lnum_t             c_o2n_idx[],
+                  const cs_lnum_t             i_face_o2n_idx[],
+                  const cs_lnum_t             b_face_o2n_idx[],
+                  cs_adjacency_t             *c2f,
+                  const cs_lnum_t             c_f_n_idx[],
+                  cs_lnum_t                   c_n_e_faces,
+                  const int16_t               e_f2c_pre[],
+                  const int16_t               i_f2c_pre[][2],
+                  const cs_lnum_t             i_f2v_pre[])
 {
-  CS_UNUSED(c2f2v_start);
-
   const cs_lnum_t s_id_c = c2f->idx[cell_id];
   const cs_lnum_t e_id_c = c2f->idx[cell_id+1];
 
   const cs_lnum_t n_cell_faces = e_id_c - s_id_c;
 
-  /* Case of general polyhedra, split into cones (pyramids, tetrahedra, ...) */
+  const cs_lnum_t c_id_n = c_o2n_idx[cell_id];
 
-  const cs_lnum_t c_vtx_id = c_v_idx[cell_id];
+  /* Update exterior faces to cell connectivity
+     ------------------------------------------ */
 
-  cs_lnum_t new_cell_id = c_o2n_idx[cell_id];
-  cs_lnum_t i_face_end = c_f_n_idx[cell_id];
+  cs_lnum_t e_f2c_count = 0;  // counter for number of exterior faces
 
   for (cs_lnum_t i = 0; i < n_cell_faces; i++) {
-
     cs_lnum_t f_id_o = c2f->ids[s_id_c + i];
-    short int sgn = c2f->sgn[s_id_c + i];
-
-    cs_lnum_t i0, i1;  /* edge vertex order */
-    if (sgn > 0) {
-      i0 = 1;
-      i1 = 0;
-    }
-    else {
-      i0 = 0;
-      i1 = 1;
-    }
-
-    cs_lnum_t s_id, e_id;
-    const cs_lnum_t *f_vtx_idx, *f_vtx;
-
-    cs_lnum_t c_id = new_cell_id;
+    int sgn = c2f->sgn[s_id_c + i];
 
     if (f_id_o < n_b_f_ini) {
-      s_id = b_face_o2n_idx[f_id_o];
-      e_id = b_face_o2n_idx[f_id_o + 1];
-      f_vtx_idx = m->b_face_vtx_idx;
-      f_vtx = m->b_face_vtx_lst;
-      assert(sgn > 0);
-      for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++) {
-        assert(m->b_face_cells[f_id] == c_o2n_idx[cell_id]);
-        m->b_face_cells[f_id] = c_id;
-        c_id++;
+      cs_lnum_t s_f_idx = b_face_o2n_idx[f_id_o];
+      cs_lnum_t e_f_idx = b_face_o2n_idx[f_id_o+1];
+      for (cs_lnum_t f_id = s_f_idx; f_id < e_f_idx; f_id++) {
+        m->b_face_cells[f_id] = c_id_n + (cs_lnum_t)(e_f2c_pre[e_f2c_count]);
+        e_f2c_count++;
       }
     }
     else {
-      s_id = i_face_o2n_idx[f_id_o - n_b_f_ini];
-      e_id = i_face_o2n_idx[f_id_o - n_b_f_ini + 1];
-      f_vtx_idx = m->i_face_vtx_idx;
-      f_vtx = m->i_face_vtx_lst;
+      f_id_o -= n_b_f_ini;
+      cs_lnum_t s_f_idx = i_face_o2n_idx[f_id_o];
+      cs_lnum_t e_f_idx = i_face_o2n_idx[f_id_o+1];
       cs_lnum_t j = (sgn > 0) ? 0 : 1;
-      for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++) {
-        assert(m->i_face_cells[f_id][j] == c_o2n_idx[cell_id]);
-        m->i_face_cells[f_id][j] = c_id;
-        c_id++;
+      for (cs_lnum_t f_id = s_f_idx; f_id < e_f_idx; f_id++) {
+        m->i_face_cells[f_id][j] = c_id_n + (cs_lnum_t)(e_f2c_pre[e_f2c_count]);
+        e_f2c_count++;
       }
     }
 
-    /* Add interior faces */
+  }
 
-    c_id = new_cell_id;
+  assert(e_f2c_count == c_n_e_faces);
 
-    for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++) {
+  /* Now add new interior faces to cell connectivity
+     ----------------------------------------------- */
 
-      cs_lnum_t s_id_f = f_vtx_idx[f_id];
-      cs_lnum_t e_id_f = f_vtx_idx[f_id+1];
-      cs_lnum_t n_f_vtx = e_id_f - s_id_f;
-      cs_lnum_t vtx_id[3];
-      for (cs_lnum_t j = 0; j < n_f_vtx; j++) {
-        vtx_id[i0] = f_vtx[s_id_f + j];
-        vtx_id[i1] = f_vtx[s_id_f + (j+1)%n_f_vtx];
-        vtx_id[2] = c_vtx_id;
-        assert(vtx_id[1] != vtx_id[2]);
-        _add_or_match_interior_face_triangle(m,
-                                             c_id,
-                                             vtx_id,
-                                             c_f_n_idx + cell_id,
-                                             &i_face_end);
+  cs_lnum_t *i_face_vtx_lst = m->i_face_vtx_lst;
+  cs_lnum_t j = 0;
+
+  cs_lnum_t cf_s_id = c_f_n_idx[cell_id];
+  cs_lnum_t cf_e_id = c_f_n_idx[cell_id+1];
+
+  for (cs_lnum_t f_id = cf_s_id, i_f_idx = 0;
+       f_id < cf_e_id;
+       f_id++, i_f_idx++) {
+
+    cs_lnum_t s_id = m->i_face_vtx_idx[f_id];
+
+    for (cs_lnum_t i = s_id; true; i++) {
+      cs_lnum_t k = i_f2v_pre[j++];
+      if (k > -1)
+        i_face_vtx_lst[i] = k;
+      else {
+#if defined(DEBUG) && !defined(NDEBUG)
+        if (m->i_face_vtx_idx[f_id+1] == -1)
+          m->i_face_vtx_idx[f_id+1] = i; // end of face
+        else {
+          assert(m->i_face_vtx_idx[f_id+1] == i);
+        }
+#else
+        m->i_face_vtx_idx[f_id+1] = i; // end of face
+#endif
+        break;
       }
-      c_id++;
-
     }
 
-    new_cell_id = c_id;
+    for (cs_lnum_t k = 0; k < 2; k++)
+      m->i_face_cells[f_id][k] = c_id_n + i_f2c_pre[i_f_idx][k];
 
   }
 }
@@ -4311,6 +5182,12 @@ _subdivide_cell_polyhedron(const cs_mesh_t              *m,
  *                                or nullptr
  * \param[in]  c_r_flag           cell refinement type
  * \param[in]  c_r_level          cell refinement level
+ * \param[in]  e_f2c_pre_idx      temp. exterior faces to cell index
+ * \param[in]  e_f2c_pre          temp. exterior faces to cell connect
+ * \param[in]  i_f2c_pre_idx      temp. interior faces to cells index
+ * \param[in]  i_f2c_pre          temp. interior faces to cells connect
+ * \param[in]  i_f2v_pre_idx      temp interior faces to vertices index
+ * \param[in]  i_f2v_pre          temp interior faces to vertices connect.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4326,7 +5203,14 @@ _subdivide_cells(const cs_mesh_t              *m,
                  const cs_lnum_t               c_v_idx[],
                  const cs_lnum_t               c_f_n_idx[],
                  const cs_mesh_refine_type_t   c_r_flag[],
-                 const char                    c_r_level[])
+                 const char                    c_r_level[],
+                 cs_lnum_t                    *c_poly_s_idx,
+                 const cs_lnum_t              *e_f2c_pre_idx,
+                 const int16_t                *e_f2c_pre,
+                 const cs_lnum_t              *i_f2c_pre_idx,
+                 const int16_t                *i_f2c_pre,
+                 const cs_lnum_t              *i_f2v_pre_idx,
+                 const cs_lnum_t              *i_f2v_pre)
 {
   subdivide_cell_t  *c_r_func[CS_REFINE_N_TYPES];
 
@@ -4338,7 +5222,9 @@ _subdivide_cells(const cs_mesh_t              *m,
   c_r_func[CS_REFINE_PYRAM] = _subdivide_cell_pyram;
   c_r_func[CS_REFINE_PRISM] = _subdivide_cell_prism;
   c_r_func[CS_REFINE_HEXA] = _subdivide_cell_hexa;
-  c_r_func[CS_REFINE_POLYHEDRON] = _subdivide_cell_polyhedron;
+
+  using c2f_pre_t = int16_t[2];
+  const c2f_pre_t *_i_f2c_pre = reinterpret_cast<const c2f_pre_t *>(i_f2c_pre);
 
 # pragma omp for schedule(dynamic, CS_CL_SIZE)
   for (cs_lnum_t c_id = 0; c_id < n_c_ini; c_id++) {
@@ -4360,11 +5246,38 @@ _subdivide_cells(const cs_mesh_t              *m,
       for (cs_lnum_t f_id = c_f_n_idx[c_id]; f_id < e_id; f_id++)
         m->i_face_r_gen[f_id] = c_r_level[c_id] + 1;
     }
+    else if (c_r_flag[c_id] != CS_REFINE_NONE) {
+      cs_lnum_t c_idx = c_poly_s_idx[c_id];
 
-    else if (c_r_flag[c_id] != CS_REFINE_NONE)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Unhandled cell refinement type: %d"), c_r_flag[c_id]);
+      if (c_poly_s_idx[c_id+1] != c_idx+1) { // true if helper is used
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Unhandled cell refinement type: %d"), c_r_flag[c_id]);
+        continue;
+      }
 
+      cs_lnum_t c_n_e_faces = e_f2c_pre_idx[c_idx+1] - e_f2c_pre_idx[c_idx];
+      assert(   i_f2c_pre_idx[c_idx+1] - i_f2c_pre_idx[c_idx]
+             >= c_f_n_idx[c_id+1] - c_f_n_idx[c_id]);
+
+      _refine_poly_cell(m,
+                        c_id,
+                        n_b_f_ini,
+                        c_o2n_idx,
+                        i_face_o2n_idx,
+                        b_face_o2n_idx,
+                        c2f,
+                        c_f_n_idx,
+                        c_n_e_faces,
+                        e_f2c_pre + e_f2c_pre_idx[c_idx],
+                        _i_f2c_pre + i_f2c_pre_idx[c_idx],
+                        i_f2v_pre + i_f2v_pre_idx[c_idx]);
+
+    }
+
+  }
+
+  for (cs_lnum_t i = 0; i < m->n_i_faces+1; i++) {
+    if (m->i_face_vtx_idx[i] < -1) printf("a\n");
   }
 }
 
@@ -4377,12 +5290,14 @@ _subdivide_cells(const cs_mesh_t              *m,
  *
  * \param[in]       v2v                vertex->vertex adjacency
  * \param[in]       vtx_coords         mesh vertex coordinates
+ * \param[in]       vtx_r_gen          vertices refinement generation
  * \param[in]       e_v_idx            for each edge, start index of
  *                                     added vertices
  * \param[in]       f_v_idx            for each face, start index of
  *                                     added vertices
  * \param[in]       n_faces            number of faces
  * \param[in]       f_r_flag           face refinement type flag
+ * \param[in]       f_r_level_o        old faces refinement level
  * \param[in, out]  f_o2n_idx          old to new faces index
  * \param[in, out]  f_o2n_connect_idx  old to new faces connectivity index
  *                                     (count in)
@@ -4396,10 +5311,12 @@ _subdivide_cells(const cs_mesh_t              *m,
 static cs_lnum_t
 _update_face_connectivity(const cs_adjacency_t         *v2v,
                           const cs_real_t               vtx_coords[],
+                          const char                    vtx_r_gen[],
                           const cs_lnum_t               e_v_idx[],
                           const cs_lnum_t               f_v_idx[],
                           cs_lnum_t                     n_faces,
                           const cs_mesh_refine_type_t   f_r_flag[],
+                          const char                    f_r_level_o[],
                           const cs_lnum_t               f_o2n_idx[],
                           cs_lnum_t                     f_o2n_connect_idx[],
                           cs_lnum_t                    *f2v_idx[],
@@ -4449,11 +5366,13 @@ _update_face_connectivity(const cs_adjacency_t         *v2v,
       _subdivide_face(f_id,
                       n_fv,
                       f_r_flag[f_id],
+                      f_r_level_o[f_id],
                       f2v_lst_o + s_id,
                       v2v,
                       e_v_idx,
                       f_v_idx,
                       vtx_coords,
+                      vtx_r_gen,
                       t_state,
                       _f2v_idx + f_o2n_idx[f_id],
                       _f2v_lst + f_o2n_connect_idx[f_id]);
@@ -4671,7 +5590,6 @@ _o2n_idx_update_cell_arrays(cs_mesh_t        *m,
 static void
 _o2n_idx_update_i_face_arrays(cs_mesh_t        *m,
                               const cs_lnum_t   o2n_idx[])
-
 {
   const cs_lnum_t n_old = m->n_i_faces;
   const cs_lnum_t n_new = o2n_idx[n_old];
@@ -4809,6 +5727,10 @@ _o2n_idx_update_cell_i_face_arrays(cs_mesh_t        *m,
     cs_lnum_t s_id = c_i_face_idx[c_id];
     cs_lnum_t e_id = c_i_face_idx[c_id+1];
     cs_lnum_t connect_size = c_i_faces_size[c_id];
+#if defined(DEBUG) && !defined(NDEBUG)
+    for (cs_lnum_t i = s_id+1; i < e_id; i++)
+      i_face_vtx_idx[i] = -1;
+#endif
     i_face_vtx_idx[e_id] = i_face_vtx_idx[s_id] + connect_size;
   }
 
@@ -4834,7 +5756,32 @@ _o2n_idx_update_cell_i_face_arrays(cs_mesh_t        *m,
   m->i_face_vtx_connect_size = m->i_face_vtx_idx[n_new];
 }
 
+/*----------------------------------------------------------------------------
+ * Free cell refinement helpers.
+ *
+ * parameters:
+ *   n        <--  number of mesh refinement helpers
+ *   helpers  <->  reference to helpers array
+ *----------------------------------------------------------------------------*/
+
+static void
+_free_cell_refine_helpers(int                      n,
+                          cs_cell_refine_helper  *&helpers)
+{
+  for (int i = 0; i < n; i++) {
+    // Explicit destructor call to free associated arrays.
+    cs_cell_refine_helper *crh = helpers + i;
+    crh->~cs_cell_refine_helper();
+  }
+
+  CS_FREE(helpers);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -5015,14 +5962,17 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   /* Mark required edges and faces,
      determining face and edge subdivision types */
 
+  char *f_r_level_ini;
+  CS_MALLOC(f_r_level_ini, n_f_ini, char);
+
   cs_gnum_t *g_edges_num = nullptr;
   if (cs_glob_n_ranks > 1)
     CS_MALLOC(g_edges_num, n_edges, cs_gnum_t);
 
   cs_gnum_t n_g_edges
     = _new_edge_and_face_vertex_ids(m, check_convex, v2v,
-                                    m->vtx_r_gen, c_r_level,
-                                    c_r_flag, f_r_flag,
+                                    m->vtx_r_gen, c_r_level, c_r_flag,
+                                    f_r_level_ini, f_r_flag,
                                     e_v_idx, f_v_idx, g_edges_num,
                                     n_add_vtx);
 
@@ -5146,6 +6096,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_MALLOC(b_face_o2n_connect_idx, m->n_b_faces + 1, cs_lnum_t);
 
   _subdivided_faces_sizes(v2v,
+                          m->vtx_r_gen,
+                          f_r_level_ini,
                           e_v_idx,
                           m->n_b_faces,
                           f_r_flag,
@@ -5160,6 +6112,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_MALLOC(i_face_o2n_connect_idx, m->n_i_faces + 1, cs_lnum_t);
 
   _subdivided_faces_sizes(v2v,
+                          m->vtx_r_gen,
+                          f_r_level_ini + m->n_b_faces,
                           e_v_idx,
                           m->n_i_faces,
                           f_r_flag + m->n_b_faces,
@@ -5177,10 +6131,12 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   _update_face_connectivity(v2v,
                             m->vtx_coord,
+                            m->vtx_r_gen,
                             e_v_idx,
                             f_v_idx,
                             m->n_b_faces,
                             f_r_flag,
+                            f_r_level_ini,
                             b_face_o2n_idx,
                             b_face_o2n_connect_idx,
                             &(m->b_face_vtx_idx),
@@ -5190,10 +6146,12 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   _update_face_connectivity(v2v,
                             m->vtx_coord,
+                            m->vtx_r_gen,
                             e_v_idx,
                             f_v_idx + m->n_b_faces,
                             m->n_i_faces,
                             f_r_flag + m->n_b_faces,
+                            f_r_level_ini + m->n_b_faces,
                             i_face_o2n_idx,
                             i_face_o2n_connect_idx,
                             &(m->i_face_vtx_idx),
@@ -5217,12 +6175,15 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
      because they were built to be transformed as indexes, with
      initial values shifted by 1). */
 
+  cs_lnum_t *c_poly_s_idx;
   cs_lnum_t *c_o2n_idx, *c_i_face_idx, *c_i_faces_size;
 
+  CS_MALLOC(c_poly_s_idx, n_c_ini+1, cs_lnum_t);
   CS_MALLOC(c_o2n_idx, n_c_ini + 1, cs_lnum_t);
   CS_MALLOC(c_i_face_idx, n_c_ini + 1, cs_lnum_t);
   CS_MALLOC(c_i_faces_size, n_c_ini, cs_lnum_t);
 
+  c_poly_s_idx[0] = 0;
   c_o2n_idx[0] = 0;
   c_i_face_idx[0] = m->n_i_faces;
 
@@ -5232,9 +6193,72 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                            c_r_flag,
                            b_face_o2n_idx,
                            i_face_o2n_idx,
+                           c_poly_s_idx + 1,
                            c_o2n_idx + 1,
                            c_i_face_idx + 1,
                            c_i_faces_size);
+
+  _counts_to_index(n_c_ini, c_poly_s_idx);
+
+  /* If more complex subdivision is needed, allocate required
+     structures and precompute division. */
+
+  cs_lnum_t *c_o_id = nullptr;
+  cs_lnum_t *e_f2c_pre_idx = nullptr, *i_f2c_pre_idx = nullptr;
+  int16_t *e_f2c_pre = nullptr, *i_f2c_pre = nullptr;
+  cs_lnum_t *i_f2v_pre_idx = nullptr, *i_f2v_pre = nullptr;
+
+  cs_lnum_t n_poly_r_cells = c_poly_s_idx[n_c_ini];
+  if (n_poly_r_cells > 0) {
+    _new_cells_poly_pre_alloc(n_c_ini,
+                              c_poly_s_idx,
+                              c_o2n_idx + 1,    // also number of exterior faces
+                              c_i_face_idx + 1, // still a count at this stage
+                              c_i_faces_size,
+                              c_o_id,
+                              e_f2c_pre_idx,
+                              e_f2c_pre,
+                              i_f2c_pre_idx,
+                              i_f2c_pre,
+                              i_f2v_pre_idx,
+                              i_f2v_pre);
+
+    int n_threads_r = cs_parall_n_threads(n_poly_r_cells, 1);
+
+    cs_cell_refine_helper *r_helpers;
+    CS_MALLOC(r_helpers, n_threads_r, cs_cell_refine_helper);
+    for (int i = 0; i < n_threads_r; i++)
+      new(r_helpers+i) cs_cell_refine_helper();
+
+    using c2f_pre_t = int16_t[2];
+
+#   pragma omp parallel for schedule(dynamic) num_threads(n_threads_r)
+    for (cs_lnum_t c_idx = 0; c_idx < n_poly_r_cells; c_idx++) {
+      cs_cell_refine_helper *crh = r_helpers + cs_get_thread_id();
+
+      cs_lnum_t c_id = c_o_id[c_idx];
+
+      _pre_refine_poly_cell(m,
+                            c2f,
+                            crh,
+                            c_id,
+                            n_b_f_ini,
+                            c_r_flag[c_id],
+                            c_r_level[c_id],
+                            b_face_o2n_idx,
+                            i_face_o2n_idx,
+                            c_v_idx,
+                            f_r_level_ini,
+                            c_o2n_idx[c_id+1],     // c_n_s_cells
+                            c_i_face_idx[c_id+1],  // c_n_i_faces
+                            c_i_faces_size[c_id],
+                            e_f2c_pre + e_f2c_pre_idx[c_idx],
+                            ((c2f_pre_t *)i_f2c_pre) + i_f2c_pre_idx[c_idx],
+                            i_f2v_pre + i_f2v_pre_idx[c_idx]);
+    }
+
+    _free_cell_refine_helpers(n_threads_r, r_helpers);
+  }
 
   _counts_to_index(n_c_ini, c_o2n_idx);
   _counts_to_index(n_c_ini, c_i_face_idx);
@@ -5259,13 +6283,29 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                    c_v_idx,
                    c_i_face_idx,
                    c_r_flag,
-                   c_r_level);
+                   c_r_level,
+                   c_poly_s_idx,
+                   e_f2c_pre_idx, e_f2c_pre,
+                   i_f2c_pre_idx, i_f2c_pre,
+                   i_f2v_pre_idx, i_f2v_pre);
 
   t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[8]), &t1, &t2);
   t1 = t2;
 
   /* Cleanup*/
+
+  CS_FREE(i_f2v_pre);
+  CS_FREE(i_f2v_pre_idx);
+  CS_FREE(i_f2c_pre);
+  CS_FREE(i_f2c_pre_idx);
+  CS_FREE(e_f2c_pre);
+  CS_FREE(e_f2c_pre_idx);
+
+  CS_FREE(c_o_id);
+  CS_FREE(c_poly_s_idx);
+
+  CS_FREE(f_r_level_ini);
 
   CS_FREE(c2f2v_start);
 

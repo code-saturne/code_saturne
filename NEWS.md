@@ -1,6 +1,20 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### Architectural changes:
+
+- Mesh refinement: restuctured handling of polyhedral cells refinement,
+  based on the hypothesis than in most cases, only a small subset of all
+  cells require refinement with a polyhedra template, but that this refinement
+  is more complex and costly than that of other types of cells.
+  * Add a `cs_cell_refine_helper` class which can handle local refinement
+    of a single polyhedron, allowing future refinement template improvements
+    independently from the array sizes computation stage.
+  * Preallocate arrays specific to polyhedra which must be refined.
+  * At the counting stage, the refinement of polyhedra is actually computed
+    (using a `cs_cell_refine_helper` object per thread), and stored in buffers.
+  * At the actual refinement stage, data is copied.
+
 Release 9.1.0 (2025-12-30)
 --------------------------
 
