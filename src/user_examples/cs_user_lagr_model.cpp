@@ -321,6 +321,10 @@ cs_user_lagr_model(void)
    *  at the location of the particles */
   cs_glob_lagr_time_scheme->interpol_field = 0;
 
+  /* Activation (=1) or not (=0) of the time-step-robust algorithm
+   * (Balvet et al. 2023) */
+  cs_glob_lagr_time_scheme->cell_wise_integ = 1;
+
   /* Two-way coupling: (iilagr = CS_LAGR_TWOWAY_COUPLING)
      ------------------------------ */
 
