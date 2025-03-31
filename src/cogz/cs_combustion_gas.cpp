@@ -1061,6 +1061,7 @@ cs_combustion_gas_add_property_fields(void)
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
   _add_property_1d("temperature", "Temperature");
+  cm->t2m = _add_property_1d("temperature_2", "Temperature_2");
 
   if (cm->type/100 != CS_COMBUSTION_SLFM) {
     cm->ym[0] = _add_property_1d("ym_fuel", "Ym_Fuel");
@@ -1074,8 +1075,6 @@ cs_combustion_gas_add_property_fields(void)
     /* Diffusion flame with steady laminar flamelet approach
        ----------------------------------------------------- */
     {
-      cm->t2m = _add_property_1d("temperature_2", "Temperature_2");
-
       /* In case of the classical steady laminar flamelet model,
          A progress variable is defined as propriety, measuring approximately
          the products (the progress as well)

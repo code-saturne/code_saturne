@@ -125,7 +125,7 @@ _physical_properties_update_bsh(const cs_combustion_gas_model_t  *cm)
   cs_real_t *cpro_rho = CS_F_(rho)->val;
 
   cs_real_t *cvar_h = nullptr;
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == 1)
+  if (cm->type%2 == 1)
     cvar_h = CS_F_(h)->val;
 
   cs_real_t *cpro_t4m = nullptr;
