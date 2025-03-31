@@ -170,20 +170,21 @@ class TexWriter(object):
         Build the pdf file, and clean the temporary files.
         """
         cmd = "pdflatex " + self.__filename + ".tex"
-        log_name = "make_pdf.log"
+        log_name = "make_figure.log"
         log_file = open(log_name, mode='w')
         error, time = run_studymanager_command(cmd, log_file)
         log_file.close()
 
-        if not error:
-            os.remove(log_name)
-            for suffixe in ["tex", "log", "aux"]:
+        for suffixe in ["tex", "log", "aux"]:
                 f = self.__filename + "." + suffixe
                 if os.path.isfile(f):
                     os.remove(self.__filename + "." + suffixe)
+
+        if not error:
+            os.remove(log_name)
         else:
-            print(" /!\ ERROR during pdf generation. See %s\n",
-                  log_name)
+            print("    /!\ ERROR during detailed report generation. See " + 
+                  self.__filename + ".log\n")
 
         return self.__filename + ".pdf"
 
