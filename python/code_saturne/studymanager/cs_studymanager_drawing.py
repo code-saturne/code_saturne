@@ -588,7 +588,7 @@ class Plotter(object):
 
     #---------------------------------------------------------------------------
 
-    def plot_study(self, study_object, list_cases, disable_tex, default_fmt):
+    def plot_study(self, dest, study_object, list_cases, disable_tex, default_fmt):
         """
         Method used to plot all plots from a I{study} (all cases).
         @param study_object: study object: C{Study}
@@ -600,7 +600,15 @@ class Plotter(object):
         # initialization necessary in case of several studies
         self.curves = []
 
+        # store all messages
+        msg = ""
+
         study_label = study_object.label
+
+        # open log file related to generation of figures for a given study
+        log_name = "smgr_draw_" + study_label + ".log"
+        log_path = os.path.join(dest, log_name)
+        log_draw = open(log_path, mode='w')
 
         # disable tex in Matplotlib (use Mathtext instead)
         rcParams['text.usetex'] = not disable_tex
@@ -625,7 +633,8 @@ class Plotter(object):
 
                     f = os.path.join(case.run_dir, "monitoring", dest, file_name)
                     if not os.path.isfile(f):
-                        print("    This probes file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
+                        msg += "    This probes file does not exist: %s \
+                                (last call with path: %s)\n" % (file_name, f)
 
                     else:
                         for ycol in range(2, self.__number_of_column(f) + 1):
@@ -646,8 +655,8 @@ class Plotter(object):
                             break
 
                     if not iok:
-                        print("\nThis file does not exist: %s\n"
-                              "(last call with path: %s)\n" % (file_name, f))
+                        msg += "    This file does not exist: %s  \
+                                (last call with path: %s)\n" % (file_name, f)
 
                     else:
                         for nn in plots:
@@ -666,13 +675,13 @@ class Plotter(object):
                     f = os.path.join(dd, study_label, "POST", file_name)
 
                     if not os.path.isfile(f):
-                        raise ValueError("\nThis file does not exist: %s\n"
-                                         " (call with path: %s)\n" % (file_name, f))
-
-                    for nn in plots:
-                        curve = Plot(nn, self.parser, f)
-                        curve.setMeasurement(False)
-                        self.curves.append(curve)
+                        msg += "    This file does not exist: %s \
+                                (last call with path: %s)\n" % (file_name, f)
+                    else:
+                        for nn in plots:
+                            curve = Plot(nn, self.parser, f)
+                            curve.setMeasurement(False)
+                            self.curves.append(curve)
 
         subplots = []
         for node in self.parser.getSubplots(study_label):
@@ -689,7 +698,7 @@ class Plotter(object):
                         missing_sps.append(sp)
 
         for sp in missing_sps:
-            print("    ERROR: subplot " + str(sp) + " referenced but not defined.")
+            msg += "    ERROR: subplot " + str(sp) + " referenced but not defined.\n"
 
         self.figures = []
 
@@ -720,11 +729,21 @@ class Plotter(object):
             # save the figure
             try:
                 self.__save(f, figure)
-            except Exception:
-                print("    /!\ ERROR while saving figure " + f)
+            except Exception as e:
+                log_draw.write(e.args[0])
 
         # close current figure
         plt.close()
+
+        # close draw log file
+        log_draw.close()
+
+        if os.path.getsize(log_path) > 0:
+            msg += "    /!\ ERRORS during figure generation. See %s\n" %log_path
+        else:
+            os.remove(log_path)
+
+        return msg
 
     #---------------------------------------------------------------------------
 

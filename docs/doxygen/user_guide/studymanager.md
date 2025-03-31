@@ -940,20 +940,24 @@ SMGR produces several files in the **destination** directory:
 
 - `studymanager.log`: standard output of SMGR;
 - `smgr.xml` or name given in FILE (-f) option: udpated SMGR parameters file,
-  useful to restart the script if an error occurs;
+  useful to restart the script if an error occurs.
 
 Only available with option `-r, --run`:
 - `run_case.log`: generated in all `STUDY/CASE/RESU/run_id` folders, summary of
-  the creation and the run of the case;
+  the creation and the run of the case.
 
 Only available with option`-p, --post`:
 - `report_figures.pdf`: list of the generated figures;
 - `smgr_post_pro.log` can be found in case of error during post-processing;
-- `make_pdf.log` and `report_figures.tex/.log/.aux` can be found in case of
-  error during generation of `report_figures.pdf`.
+- `make_figures.log` can be found in case of error during generation of
+  `report_figures.pdf`;
+- `smgr_draw_STUDY.log` can be found in case of error during generation of
+  figures defined in related smgr xml file.
 
 Only available with option`--report`:
-- `write-up.pdf` : description report file in `STUDY/REPORT`
+- `write-up.pdf` : description report file in `STUDY/REPORT`;
+- `make_report_STUDY.log` can be found in case of error during generation of
+  the description report.
 
 SMGR can produce or modify several files in the **repository** directory:
 

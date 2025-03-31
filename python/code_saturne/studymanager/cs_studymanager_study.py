@@ -2690,10 +2690,13 @@ class Studies(object):
                 # submit previous study
                 if previous_study_name and list_cases:
                     self.reporting('  o Plot study: ' + previous_study_name)
-                    self.__plotter.plot_study(previous_study_object,
-                                              list_cases,
-                                              self.__dis_tex,
-                                              self.__default_fmt)
+                    error = self.__plotter.plot_study(self.__dest,
+                                                      previous_study_object,
+                                                      list_cases,
+                                                      self.__dis_tex,
+                                                      self.__default_fmt)
+                    if error:
+                        self.reporting(error)
                     list_cases = []
 
                 # store actual study name and object
@@ -2707,10 +2710,13 @@ class Studies(object):
         # final study
         if previous_study_name and list_cases:
             self.reporting('  o Plot study: ' + previous_study_name)
-            self.__plotter.plot_study(previous_study_object,
-                                      list_cases,
-                                      self.__dis_tex,
-                                      self.__default_fmt)
+            error = self.__plotter.plot_study(self.__dest,
+                                              previous_study_object,
+                                              list_cases,
+                                              self.__dis_tex,
+                                              self.__default_fmt)
+            if error:
+                self.reporting(error)
 
         self.reporting('')
 
@@ -2860,6 +2866,8 @@ class Studies(object):
 
         attached_files.append(doc.close())
 
+        self.reporting('')
+
         return attached_files
 
     #---------------------------------------------------------------------------
@@ -2894,7 +2902,9 @@ class Studies(object):
                     md.dump_keywords()
                     md.dump_readme()
 
-                    log_pdf = open("make_pdf.log", mode='w')
+                    log_name = "make_report_" + case.study + ".log"
+                    log_path = os.path.join(self.__dest, log_name)
+                    log_pdf = open(log_path, mode='w')
                     cmd = "make pdf"
                     pdf_retval, t = run_studymanager_command(cmd, log_pdf)
                     log_pdf.close()
@@ -2903,10 +2913,10 @@ class Studies(object):
                     if os.path.isfile(report_pdf):
                         self.reporting('    - write-up.pdf file was generated ' + \
                                        'in ' + case.study + "/REPORT folder.")
+                        os.remove(log_path)
                     else:
-                        self.reporting('    - ERROR: write-up.pdf file was not ' + \
-                                       'generated. See write-up.log and ' + \
-                                       'make_pdf.log in REPORT folder.')
+                        self.reporting('    /!\ ERROR: write-up.pdf file was not ' + \
+                                       'generated. See ' + log_path)
 
                 else:
                     self.reporting('    - No REPORT folder: generation of ' + \
