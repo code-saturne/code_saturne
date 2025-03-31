@@ -264,20 +264,21 @@ class ThermalView(QWidget, Ui_ThermalForm):
         # ---------------
         self.__setFluidRadiation__(model)
 
-        # inter-particles radiation model
-        self._current_particle_f_id = None
-        self.modelParticleFields = ComboModel(self.comboBoxEmissivity, 1, 1)
-        for field in MainFieldsModel(self.case).getSolidPhaseList():
-            label = field.label
-            name = field.f_id
-            self.modelParticleFields.addItem(self.tr(label), name)
-            if self._current_particle_f_id == None:
-                self._current_particle_f_id = name
+        # inter-particles radiation model [NCFD]
+        if self.case.module_name() == 'neptune_cfd':
+            self._current_particle_f_id = None
+            self.modelParticleFields = ComboModel(self.comboBoxEmissivity, 1, 1)
+            for field in MainFieldsModel(self.case).getSolidPhaseList():
+                label = field.label
+                name = field.f_id
+                self.modelParticleFields.addItem(self.tr(label), name)
+                if self._current_particle_f_id == None:
+                    self._current_particle_f_id = name
 
-        self.comboBoxEmissivity.activated[str].connect(self.slotEmissivityField)
+            self.comboBoxEmissivity.activated[str].connect(self.slotEmissivityField)
 
-        self.partRadiationModel = ThermalParticlesRadiationModel(self.case)
-        self.__setParticlesRadiation__()
+            self.partRadiationModel = ThermalParticlesRadiationModel(self.case)
+            self.__setParticlesRadiation__()
 
         # Soot model
         # ---------------
