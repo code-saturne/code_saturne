@@ -123,7 +123,7 @@ _physical_properties_update_bsh(const cs_combustion_gas_model_t  *cm)
   if (rt_model != CS_RAD_TRANSFER_NONE)
     cpro_t4m = cs_field_by_name("temperature_4")->val;
 
-  cs_real_t *cpro_t2m = cs_field_by_name("temperature_2")->val;
+  cs_real_t *cpro_t2m = cm->t2m->val;
 
   cs_real_t *cpro_fuel = cs_field_by_name("ym_fuel")->val;
   cs_real_t *cpro_oxyd = cs_field_by_name("ym_oxyd")->val;
