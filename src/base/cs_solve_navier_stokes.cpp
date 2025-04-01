@@ -1113,7 +1113,7 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
  * \param[in]       crom        density at cells
  * \param[in]       croma       density at cells at the previous time
  * \param[in]       cromaa      density at cells at the two previous time
- * \param[in]       gxyz        gravity
+ * \param[in]       gxyz_h      gravity (on host)
  * \param[in]       vela        velocity at the previous time
  * \param[in]       tsexp       explicite source term
  * \param[in]       frcxt       external forces
@@ -1135,7 +1135,7 @@ _ext_forces(const cs_mesh_t                *m,
             const cs_real_t                crom[],
             const cs_real_t                croma[],
             const cs_real_t                cromaa[],
-            const cs_real_3_t              gxyz,
+            const cs_real_t                gxyz_h[3],
             const cs_real_3_t              vela[],
             const cs_real_3_t              tsexp[],
             const cs_real_3_t              frcxt[],
@@ -1159,6 +1159,8 @@ _ext_forces(const cs_mesh_t                *m,
 
   int has_disable_flag = mq->has_disable_flag;
   int *c_disable_flag = mq->c_disable_flag;
+
+  const cs_real_t gxyz[3] = {gxyz_h[0], gxyz_h[1], gxyz_h[2]};
 
   /* Boussinesq approximation */
   if (cs_glob_velocity_pressure_model->idilat == 0) {
