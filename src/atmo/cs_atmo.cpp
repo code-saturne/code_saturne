@@ -5011,6 +5011,12 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.rad_1d_qw0);
   BFT_FREE(_atmo_option.rad_1d_p0);
   BFT_FREE(_atmo_option.rad_1d_rho0);
+  BFT_FREE(_atmo_option.rad_1d_aerosols);
+  BFT_FREE(_atmo_option.rad_1d_fn);
+  BFT_FREE(_atmo_option.rad_1d_nc);
+  BFT_FREE(_atmo_option.rad_1d_qv);
+  BFT_FREE(_atmo_option.rad_1d_ql);
+  BFT_FREE(_atmo_option.rad_1d_qw);
 
   BFT_FREE(_atmo_option.soil_cat_r1);
   BFT_FREE(_atmo_option.soil_cat_r2);
