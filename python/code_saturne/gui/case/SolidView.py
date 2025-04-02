@@ -84,7 +84,6 @@ class SolidView(QWidget, Ui_Solid):
         self.mdl = SolidModel(self.case)
 
         if self.mdl.mainFieldsModel.getSolidPhaseList() == []:
-            self.groupBoxField.hide()
             self.groupBoxInteractions.hide()
             self.groupBoxGeneral.hide()
             self.labelNoParticles.show()
