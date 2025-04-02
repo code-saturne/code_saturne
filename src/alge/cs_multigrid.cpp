@@ -377,6 +377,10 @@ static int _k_cycle_hpc_recurse_threshold = 256; /* under this size, coarsest
 static unsigned int _grid_max_level_for_device = 1; /* grids over this level are
                                                        solved on host only */
 
+/* Force GPU settings (for CPU/GPU comparisons) */
+
+constexpr bool _force_gpu_settings = false;
+
 /*============================================================================
  * Private function prototypes for recursive
  *============================================================================*/
@@ -424,7 +428,7 @@ _multigrid_info_init(cs_multigrid_info_t *info)
   info->n_max_iter[4] = 0;
   info->n_max_iter[5] = 0;
 
-  if (cs_get_device_id() > -1) {
+  if (cs_get_device_id() > -1 || _force_gpu_settings) {
     info->n_max_iter[3] = 2;
     info->n_max_iter[4] = 10;
     info->n_max_iter[5] = 10000;
@@ -2048,7 +2052,7 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
     }
 
     int k = 0;
-    if (   cs_get_device_id() > -1
+    if (   (cs_get_device_id() > -1 || _force_gpu_settings)
         && i <= _grid_max_level_for_device)
       k = 3;
 
@@ -2138,7 +2142,7 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
     i = n_levels - 1;
 
     int k = 0;
-    if (   cs_get_device_id() > -1
+    if (   (cs_get_device_id() > -1 || _force_gpu_settings)
         && i <= _grid_max_level_for_device)
       k = 3;
 
@@ -4897,7 +4901,7 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
   info->precision_mult[1] = precision_mult_ascent;
   info->precision_mult[2] = precision_mult_coarse;
 
-  if (cs_get_device_id() > -1) {
+  if (cs_get_device_id() > -1 || _force_gpu_settings) {
     for (int i = 0; i < 3; i++) {
       info->type[i+3] = info->type[i];
       info->n_max_iter[i+3] = info->n_max_iter[i];
@@ -4990,7 +4994,7 @@ cs_multigrid_set_solver_options_d(cs_multigrid_t     *mg,
                                   int                 poly_degree_ascent,
                                   int                 poly_degree_coarse)
 {
-  if (mg == nullptr || cs_get_device_id() < 0)
+  if (mg == nullptr || (cs_get_device_id() < 0 && _force_gpu_settings == false))
     return;
 
   cs_multigrid_info_t  *info = &(mg->info);
