@@ -67,10 +67,18 @@ struct cs_data_4r {
   cs_real_t r[4];
 };
 
+struct cs_data_14r {
+  cs_real_t r[14];
+};
+
 // 2 cs_lnum_t
 
 struct cs_data_2i {
   cs_lnum_t i[2];
+};
+
+struct cs_data_7i {
+  cs_lnum_t i[7];
 };
 
 /* Reduction
@@ -129,6 +137,26 @@ struct cs_reduce_min2r_max2r {
   }
 };
 
+struct cs_reduce_min7r_max7r {
+  using T = cs_data_14r;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (int i = 0; i < 7; i++) {
+      a.r[i] =  HUGE_VAL;
+      a.r[i + 7] = -HUGE_VAL;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (int i = 0; i < 7; i++) {
+      a.r[i] = cs::min(a.r[i], b.r[i]);
+      a.r[i + 7] = cs::max(a.r[i + 7], b.r[i + 7]);
+    }
+  }
+};
+
 // Sum and sum
 
 struct cs_reduce_sum2i {
@@ -144,6 +172,22 @@ struct cs_reduce_sum2i {
   combine(volatile T &a, volatile const T &b) const {
     a.i[0] += b.i[0];
     a.i[1] += b.i[1];
+  }
+};
+
+struct cs_reduce_sum7i {
+  using T = cs_data_7i;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (int j = 0; j < 7; j++)
+      a.i[j] = 0;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (int j = 0; j < 7; j++)
+      a.i[j] += b.i[j];
   }
 };
 
