@@ -214,7 +214,7 @@ class cs_math_parser:
                     if quotes[0] == '"':
                         quotes.pop(0)
                     else:
-                        quotes.insert(0, "'")
+                        quotes.insert(0, '"')
 
                 if quotes[0] != ' ':
                     if quotes[0] == 'e' and l[c_id] in whitespace:
