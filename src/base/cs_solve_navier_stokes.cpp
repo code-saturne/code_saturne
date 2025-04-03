@@ -2798,11 +2798,11 @@ _velocity_prediction(const cs_mesh_t             *m,
     else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
         const cs_nreal_t *n = i_face_u_normal[f_id];
-        for (cs_lnum_t ii = 0; ii < 3; ii++) {
-          for (cs_lnum_t jj = 0; jj < 3; jj++)
-            viscf[9*f_id+3*jj+ii]
-              = cs::max(viscf[9*f_id+3*jj+ii],
-                        0.5*ipro_rusanov[f_id]*n[ii]*n[jj]);
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
+            viscf[9*f_id+3*j+i]
+              = cs::max(viscf[9*f_id+3*j+i],
+                        0.5*ipro_rusanov[f_id]*n[i]*n[j]);
         }
       });
     }
@@ -2810,9 +2810,9 @@ _velocity_prediction(const cs_mesh_t             *m,
     const cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       const cs_nreal_t *n = b_face_u_normal[f_id];
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t jj = 0; jj < 3; jj++)
-          cofbfv[f_id][ii][jj] += bpro_rusanov[f_id]*n[ii]*n[jj];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          cofbfv[f_id][i][j] += bpro_rusanov[f_id]*n[i]*n[j];
       }
     });
   }
@@ -2858,9 +2858,9 @@ _velocity_prediction(const cs_mesh_t             *m,
     cs_real_3_t *trav_p = (vp_param->nterup > 1) ? trava : trav;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t jj = 0; jj < 3; jj++)
-          trav_p[c_id][ii] += tsimp[c_id][ii][jj] * vela[c_id][jj];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          trav_p[c_id][i] += tsimp[c_id][i][j] * vela[c_id][j];
       }
     });
     ctx.wait();
@@ -2902,12 +2902,12 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     else {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t ii = 0; ii < 3; ii++) {
-          for (cs_lnum_t jj = 0; jj < 3; jj++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             cs_real_t _tsimp_ij =
-              (ii == jj) ?
-              cs::max(-tsimp[c_id][ii][jj], 0.0) : -tsimp[c_id][ii][jj];
-            fimp[c_id][ii][jj] += _tsimp_ij;
+              (i == j) ?
+              cs::max(-tsimp[c_id][i][j], 0.0) : -tsimp[c_id][i][j];
+            fimp[c_id][i][j] += _tsimp_ij;
           }
         }
       });
@@ -3222,10 +3222,10 @@ _velocity_prediction(const cs_mesh_t             *m,
 
       ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t rom = crom[c_id];
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dttens[c_id][ii] = rom*vect[c_id][ii];
-        for (cs_lnum_t ii = 3; ii < 6; ii++)
-          dttens[c_id][ii] = 0;
+        for (cs_lnum_t ij = 0; ij < 3; ij++)
+          dttens[c_id][ij] = rom*vect[c_id][ij];
+        for (cs_lnum_t ij = 3; ij < 6; ij++)
+          dttens[c_id][ij] = 0;
       });
 
       ctx.wait();
@@ -3237,8 +3237,8 @@ _velocity_prediction(const cs_mesh_t             *m,
     if (iespre != nullptr) {
       c_estim = iespre->val;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          c_estim[c_id] += eswork[c_id][ii];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          c_estim[c_id] += eswork[c_id][i];
       });
 
     }
@@ -3299,8 +3299,8 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       c_estim[c_id] = 0;
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        c_estim[c_id] += cs_math_pow2(smbr[c_id][ii] / cell_f_vol[c_id]);
+      for (cs_lnum_t i = 0; i < 3; i++)
+        c_estim[c_id] += cs_math_pow2(smbr[c_id][i] / cell_f_vol[c_id]);
     });
   }
 
@@ -3317,8 +3317,8 @@ _velocity_prediction(const cs_mesh_t             *m,
     cs_real_3_t *pre_vel = (cs_real_3_t *)f->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        pre_vel[c_id][ii] = vel[c_id][ii];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        pre_vel[c_id][i] = vel[c_id][i];
       }
     });
   }
@@ -4021,8 +4021,8 @@ cs_solve_navier_stokes(const int        iterns,
         const int ind = has_disable_flag * c_id;
         const int is_active = (1 - (has_disable_flag * c_disable_flag[ind]));
         const cs_real_t drom =  (crom[c_id] - ro0) * is_active;
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          dfrcxt[c_id][ii] = drom * gxyz[ii] - frcxt[c_id][ii]*is_active;
+        for (cs_lnum_t i = 0; i < 3; i++)
+          dfrcxt[c_id][i] = drom * gxyz[i] - frcxt[c_id][i]*is_active;
       });
 
       ctx.wait(); // needed for the following synchronization
@@ -4332,14 +4332,14 @@ cs_solve_navier_stokes(const int        iterns,
       /* Gradient boundary conditions (Dirichlet) */
       const cs_real_t vrn = cs_math_3_dot_product(vr, ufn);
 
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        coefau[face_id][ii] =   (1. - coftur[face_id]) * (vr[ii] - vrn*ufn[ii])
-                              + vrn*ufn[ii];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        coefau[face_id][i] =   (1. - coftur[face_id]) * (vr[i] - vrn*ufn[i])
+                              + vrn*ufn[i];
 
       /* Flux boundary conditions (Dirichlet) */
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        cofafu[face_id][ii] = -hfltur[face_id] * (vr[ii] - vrn*ufn[ii])
-                              -hint*vrn*ufn[ii];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        cofafu[face_id][i] = -hfltur[face_id] * (vr[i] - vrn*ufn[i])
+                              -hint*vrn*ufn[i];
     }
 
     const cs_real_t t2 = cs_timer_wtime();
