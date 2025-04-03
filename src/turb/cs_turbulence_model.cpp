@@ -1593,15 +1593,13 @@ cs_turb_model_log_setup(void)
       cs_log_printf(CS_LOG_SETUP, _("\n"));
 
   }
-  else if (   turb_model->model == CS_TURB_RIJ_EPSILON_LRR
-           || turb_model->model == CS_TURB_RIJ_EPSILON_SSG
-           || turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
+  else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    uref:             %14.5e (Characteristic velocity)\n"
                     "    reinit_turb:      %14d (Advanced re-init)\n"
                     "    irijco:           %14d (Coupled resolution)\n"
-                    "    irijnu:           %14d (Matrix stabilization)\n"
+                    "    irijnu:           %14d (1: Stabilization, 2: Rusanov)\n"
                     "    irijrb:           %14d (Reconstruct at boundaries)\n"
                     "    has_buoyant_term: %14d (Account for gravity)\n"
                     "    iclsyr:           %14d (Symmetry implicitation)\n"
@@ -1640,11 +1638,6 @@ cs_turb_model_log_setup(void)
                       "    idifre:      %14d (Handle diffusion tensor)\n"),
                     cs_glob_turb_rans_model->irijec,
                     cs_glob_turb_rans_model->idifre);
-    }
-    else if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
-      cs_log_printf(CS_LOG_SETUP,
-                    _("    reinit_turb: %14d (turbulence reinitialization)\n"),
-                    cs_glob_turb_rans_model->reinit_turb);
     }
 
   }
