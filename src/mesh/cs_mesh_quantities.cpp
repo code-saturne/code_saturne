@@ -132,11 +132,12 @@ static int _n_computations = 0;
  * Project solid vertices to a plane
  *
  * parameters:
- *   v0   <--  fluid vertex
- *   v1   <--  solid vertex
- *   nw   <--  plane normal
+ *   v0   <--  fluid vertex (local reference frame relative to pw)
+ *   v1   <--  solid vertex (local reference frame relative to pw)
+ *   nw   <--  plane normal (supposed unitary)
  *   pw   <--  point on the plane
- *   vout <->  projected vertex on the plane
+ *   vout <->  projected vertex v1 on the plane, parallel to v1-v0
+ *             Warning: is in global reference frame
  *----------------------------------------------------------------------------*/
 
 static void
@@ -151,18 +152,16 @@ _proj_solid_vtx_to_plane(const cs_real_t  v0[3],
   for (cs_lnum_t i = 0; i < 3; i++)
     v01[i] = v1[i] - v0[i];
 
-  cs_math_3_normalize(v01, v01);
   cs_real_t edgde_dot_nw = cs_math_3_dot_product(v01, nw);
   cs_real_t vone_dot_nw = cs::max(cs_math_3_dot_product(v1, nw), 0.);
-  cs_real_t proj_factor; // = (  cs::max(cs_math_3_dot_product(v01, nw), 0.)
-                         //     > cs_math_epzero) ?
+  cs_real_t proj_factor;
+
   if (edgde_dot_nw <= 0)
     proj_factor = 0.;
   if (vone_dot_nw  > edgde_dot_nw)
     proj_factor = 1.;
   else
     proj_factor = vone_dot_nw / edgde_dot_nw;
-    // cs_math_3_dot_product(v1, nw) /cs_math_3_dot_product(v01, nw) : 0.;
 
   for (cs_lnum_t i = 0; i < 3; i++)
     vout[i] = (v1[i] + pw[i]) - proj_factor * v01[i];
