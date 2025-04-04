@@ -79,6 +79,7 @@
 #include "alge/cs_gradient.h"
 #include "alge/cs_gradient_boundary.h"
 #include "alge/cs_multigrid.h"
+#include "base/cs_reducers.h"
 #include "alge/cs_matrix_building.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_sles.h"

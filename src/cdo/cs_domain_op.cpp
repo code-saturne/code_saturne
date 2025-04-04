@@ -45,6 +45,7 @@
 #include "cdo/cs_advection_field.h"
 #include "base/cs_array_reduce.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "base/cs_dispatch.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_equation_param.h"
 #include "gwf/cs_gwf.h"
@@ -143,7 +144,8 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
 {
   cs_real_t  _min = array[0], _max = array[0], _sum = 0.;
 
-  cs_array_reduce_simple_stats_l(
+  cs_dispatch_context ctx;
+  cs_array_reduce_simple_stats_l(ctx,
     cdoq->n_cells, 1, nullptr, array, &_min, &_max, &_sum);
 
   /* Parallel treatment */

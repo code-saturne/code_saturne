@@ -723,6 +723,8 @@ _log_fields_and_functions(void)
     }
   }
 
+  cs_dispatch_context ctx;
+
   /* Loop on locations */
 
   for (int loc_id = 0; loc_id < n_locations; loc_id++) {
@@ -754,7 +756,7 @@ _log_fields_and_functions(void)
       case CS_MESH_LOCATION_INTERIOR_FACES:
         n_g_elts = m->n_g_i_faces;
         weight = mq->i_face_surf;
-        cs_array_reduce_sum_l(_n_elts, 1, nullptr, weight, &total_weight);
+        cs_array_reduce_sum_l<1>(ctx, _n_elts, nullptr, weight, &total_weight);
         cs_parall_sum(1, CS_DOUBLE, &total_weight);
         have_weight = 1;
         break;
@@ -762,7 +764,7 @@ _log_fields_and_functions(void)
       case CS_MESH_LOCATION_BOUNDARY_FACES:
         n_g_elts = m->n_g_b_faces;
         weight = mq->b_face_surf;
-        cs_array_reduce_sum_l(_n_elts, 1, nullptr, weight, &total_weight);
+        cs_array_reduce_sum_l<1>(ctx, _n_elts, nullptr, weight, &total_weight);
         cs_parall_sum(1, CS_DOUBLE, &total_weight);
         have_weight = 1;
         break;
@@ -803,7 +805,7 @@ _log_fields_and_functions(void)
           }
 
           if (have_weight) {
-            cs_array_reduce_sum_l(_n_elts, 1, elt_ids, weight, &total_weight);
+            cs_array_reduce_sum_l<1>(ctx, _n_elts, elt_ids, weight, &total_weight);
             cs_parall_sum(1, CS_DOUBLE, &total_weight);
           }
         }
@@ -920,7 +922,8 @@ _log_fields_and_functions(void)
       }
 
       if (use_weight) {
-        cs_array_reduce_simple_stats_l_w(_n_elts,
+        cs_array_reduce_simple_stats_l_w(ctx,
+                                         _n_elts,
                                          f_dim,
                                          nullptr,
                                          elt_ids,
@@ -959,7 +962,8 @@ _log_fields_and_functions(void)
           _n_cur_elts = m->vtx_range_set->n_elts[0];
         }
 
-        cs_array_reduce_simple_stats_l(_n_cur_elts,
+        cs_array_reduce_simple_stats_l(ctx,
+                                       _n_cur_elts,
                                        f_dim,
                                        nullptr,
                                        field_val,
@@ -1165,6 +1169,10 @@ _log_sstats(void)
   cs_parall_sum(_sstats_val_size, CS_DOUBLE, vsum);
   cs_parall_sum(_sstats_val_size, CS_DOUBLE, wsum);
 
+  /* Create dispatch context */
+
+  cs_dispatch_context ctx;
+
   /* Loop on statistics */
 
   int sstat_cat_start = 0;
@@ -1229,7 +1237,7 @@ _log_sstats(void)
           n_g_elts = m->n_g_i_faces;
           weight = mq->i_face_surf;
           if (_interior_surf < 0) {
-            cs_array_reduce_sum_l(_n_elts, 1, nullptr, weight, &_interior_surf);
+            cs_array_reduce_sum_l<1>(ctx, _n_elts, nullptr, weight, &_interior_surf);
             cs_parall_sum(1, CS_DOUBLE, &_interior_surf);
             if (_interior_surf < 0) _interior_surf = 0; /* just to be safe */
           }
@@ -1240,7 +1248,7 @@ _log_sstats(void)
           n_g_elts = m->n_g_b_faces;
           weight = mq->b_face_surf;
           if (_boundary_surf < 0) {
-            cs_array_reduce_sum_l(_n_elts, 1, nullptr, weight, &_boundary_surf);
+            cs_array_reduce_sum_l<1>(ctx, _n_elts, nullptr, weight, &_boundary_surf);
             cs_parall_sum(1, CS_DOUBLE, &_boundary_surf);
             if (_boundary_surf < 0) _boundary_surf = 0; /* just to be safe */
           }
@@ -1973,7 +1981,7 @@ cs_log_iteration_add_array(const char                     *name,
                            const char                     *category,
                            const cs_mesh_location_type_t   loc_id,
                            bool                            is_intensive,
-                           int                             dim,
+                           const int                       dim,
                            const cs_real_t                 val[])
 {
   /* Initialize if necessary */
@@ -2086,8 +2094,11 @@ cs_log_iteration_add_array(const char                     *name,
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);
   const cs_lnum_t *elt_list = cs_mesh_location_get_elt_ids_try(loc_id);
 
+  cs_dispatch_context ctx;
+
   if (have_weight)
-    cs_array_reduce_simple_stats_l_w(n_elts[0],
+    cs_array_reduce_simple_stats_l_w(ctx,
+                                     n_elts[0],
                                      dim,
                                      elt_list,
                                      elt_list,
@@ -2098,7 +2109,8 @@ cs_log_iteration_add_array(const char                     *name,
                                      _sstats_vsum + v_idx,
                                      _sstats_wsum + v_idx);
   else {
-    cs_array_reduce_simple_stats_l(n_elts[0],
+    cs_array_reduce_simple_stats_l(ctx,
+                                   n_elts[0],
                                    dim,
                                    elt_list,
                                    val,

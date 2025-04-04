@@ -213,7 +213,7 @@ struct cs_reduce_sum2r {
 };
 
 template<size_t stride>
-struct cs_reduce_sum_n {    // struct: class with only public members
+struct cs_reduce_sum_n {
   using T = cs_double_n<stride>;
 
   CS_F_HOST_DEVICE void
@@ -226,6 +226,116 @@ struct cs_reduce_sum_n {    // struct: class with only public members
   combine(volatile T &a, volatile const T &b) const {
     for (size_t i = 0; i < stride; i++)
       a.r[i] += b.r[i];
+  }
+};
+
+template<size_t stride>
+struct cs_reduce_min_max_sum_nr {
+  using T = cs_double_n<3*stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = HUGE_VAL;
+      a.r[stride + i] = -HUGE_VAL;
+      a.r[2*stride + i] = 0.;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = cs::min(a.r[i], b.r[i]);
+      a.r[stride + i] = cs::max(a.r[stride + i], b.r[stride + i]);
+      a.r[2*stride + i] += b.r[2*stride + i];
+    }
+  }
+};
+
+template<size_t stride>
+struct cs_reduce_min_max_sum_nr_with_norm {
+  using T = cs_double_n<3*(stride + 1)>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    const size_t _stride = stride + 1;
+    for (size_t i = 0; i < _stride; i++) {
+      a.r[i] = HUGE_VAL;
+      a.r[_stride + i] = -HUGE_VAL;
+      a.r[2*_stride + i] = 0.;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+
+    const size_t _stride = stride + 1;
+
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = cs::min(a.r[i], b.r[i]);
+      a.r[_stride + i] = cs::max(a.r[_stride + i], b.r[_stride + i]);
+      a.r[2*_stride + i] += b.r[2*_stride + i];
+    }
+    a.r[_stride - 1] = cs::min(a.r[_stride - 1], b.r[_stride - 1]);
+    a.r[2*_stride - 1] = cs::max(a.r[2*_stride - 1], b.r[2*_stride - 1]);
+    a.r[3*_stride - 1] += b.r[3*_stride - 1];
+  }
+};
+
+template<size_t stride>
+struct cs_reduce_min_max_weighted_sum_nr {
+  using T = cs_double_n<4*stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = HUGE_VAL;
+      a.r[stride + i] = -HUGE_VAL;
+      a.r[2*stride + i] = 0.;
+      a.r[3*stride + i] = 0.;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = cs::min(a.r[i], b.r[i]);
+      a.r[stride + i] = cs::max(a.r[stride + i], b.r[stride + i]);
+      a.r[2*stride + i] += b.r[2*stride + i];
+      a.r[3*stride + i] += b.r[3*stride + i];
+    }
+  }
+};
+
+template<size_t stride>
+struct cs_reduce_min_max_weighted_sum_nr_with_norm {
+  using T = cs_double_n<4*(stride + 1)>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    const size_t _stride = stride + 1;
+    for (size_t i = 0; i < _stride; i++) {
+      a.r[i] = HUGE_VAL;
+      a.r[_stride + i] = -HUGE_VAL;
+      a.r[2*_stride + i] = 0.;
+      a.r[3*_stride + i] = 0.;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+
+    const size_t _stride = stride + 1;
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = cs::min(a.r[i], b.r[i]);
+      a.r[_stride + i] = cs::max(a.r[_stride + i], b.r[_stride + i]);
+      a.r[2*_stride + i] += b.r[2*_stride + i];
+      a.r[3*_stride + i] += b.r[3*_stride + i];
+    }
+    a.r[_stride - 1] = cs::min(a.r[_stride - 1], b.r[_stride - 1]);
+    a.r[2*_stride - 1] = cs::max(a.r[2*_stride - 1], b.r[2*_stride - 1]);
+    a.r[3*_stride - 1] += b.r[3*_stride - 1];
+    a.r[4*_stride - 1] += b.r[4*_stride - 1];
   }
 };
 

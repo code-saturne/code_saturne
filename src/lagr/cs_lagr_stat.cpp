@@ -51,6 +51,7 @@
 #include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_file.h"
 #include "base/cs_math.h"
 #include "mesh/cs_mesh.h"
@@ -5425,6 +5426,8 @@ cs_lagr_stat_log_iteration(void)
                   "  ** Particle moment accumulated weights\n"
                   "     -----------------------------------\n"));
 
+  cs_dispatch_context ctx;
+
   /* Info for accumulators on non-global locations */
 
   char tmp_s[5][64] =  {"", "", "", "", ""};
@@ -5479,7 +5482,8 @@ cs_lagr_stat_log_iteration(void)
         if (   loc_type == CS_MESH_LOCATION_CELLS
             || loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
           n_g_elts[n_active_wa] = n_elts;
-        cs_array_reduce_simple_stats_l(n_elts,
+        cs_array_reduce_simple_stats_l(ctx,
+                                       n_elts,
                                        1,
                                        nullptr,
                                        val,

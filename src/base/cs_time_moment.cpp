@@ -47,6 +47,7 @@
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
@@ -2741,6 +2742,7 @@ cs_time_moment_log_iteration(void)
                   "  ** Temporal moment accumulated weights\n"
                   "     -----------------------------------\n"));
 
+  cs_dispatch_context ctx;
   /* Info for accumulators on global locations */
 
   if (n_active_wa[0] > 0) {
@@ -2839,7 +2841,8 @@ cs_time_moment_log_iteration(void)
         else
           n_g_elts[n_active_wa[1]] = 0;
         _ensure_init_weight_accumulator(mwa);
-        cs_array_reduce_simple_stats_l(n_elts,
+        cs_array_reduce_simple_stats_l(ctx,
+                                       n_elts,
                                        1,
                                        nullptr,
                                        mwa->val,

@@ -50,6 +50,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array_reduce.h"
+#include "base/cs_reducers.h"
+#include "base/cs_dispatch.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -100,121 +102,6 @@ _sbloc_sizes(cs_lnum_t   n,
 
   cs_lnum_t n_b = block_size * *n_sblocks;
   *blocks_in_sblocks = (n + n_b - 1) / n_b;
-}
-
-/*----------------------------------------------------------------------------
- * Compute sum of a 1-dimensional array.
- *
- * The algorithm here is similar to that used for blas.
- *
- * parameters:
- *   n        <-- local number of elements
- *   v        <-- pointer to values (size: n)
- *
- * returns:
- *   resulting sum
- *----------------------------------------------------------------------------*/
-
-static double
-_cs_real_sum_1d(cs_lnum_t        n,
-                const cs_real_t  v[])
-{
-  double v_sum = 0.;
-
-# pragma omp parallel reduction(+:v_sum) if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_real_t *_v = v + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s = 0.;
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c = 0.;
-        for (cs_lnum_t i = start_id; i < end_id; i++)
-          c += _v[i];
-        s += c;
-      }
-
-      v_sum += s;
-
-    }
-
-  }
-
-  return v_sum;
-}
-
-/*----------------------------------------------------------------------------
- * Compute sum of a subset of a 1-dimensional array.
- *
- * The algorithm here is similar to that used for blas.
- *
- * parameters:
- *   n        <-- local number of elements
- *   vl       <-- pointer to elements list
- *   v        <-- pointer to values (size: n)
- *
- * returns:
- *   resulting sum
- *----------------------------------------------------------------------------*/
-
-static double
-_cs_real_sum_1d_iv(cs_lnum_t        n,
-                   const cs_lnum_t  vl[],
-                   const cs_real_t  v[])
-{
-  double v_sum = 0.;
-
-# pragma omp parallel reduction(+:v_sum) if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_lnum_t *_vl = vl + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s = 0.;
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c = 0.;
-        for (cs_lnum_t li = start_id; li < end_id; li++) {
-          c += v[_vl[li]];
-        }
-        s += c;
-      }
-
-      v_sum += s;
-
-    }
-
-  }
-
-  return v_sum;
 }
 
 /*----------------------------------------------------------------------------
@@ -634,7 +521,7 @@ _cs_real_wsum_components_1d_iv(cs_lnum_t        n,
 }
 
 /*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum) of a 1-dimensional array.
+ * Compute simple local stats (minima, maxima, sum) of a strided array.
  *
  * The algorithm here is similar to that used for blas, but computes several
  * quantities simultaneously for better cache behavior
@@ -647,157 +534,38 @@ _cs_real_wsum_components_1d_iv(cs_lnum_t        n,
  *   vsum     --> resulting sum
  *----------------------------------------------------------------------------*/
 
+template <size_t stride>
 static void
-_cs_real_sstats_1d(cs_lnum_t         n,
-                   const cs_real_t   v[],
-                   double           *vmin,
-                   double           *vmax,
-                   double           *vsum)
+_cs_real_sstats(cs_dispatch_context  ctx,
+                cs_lnum_t            n,
+                const cs_real_t      v[],
+                double              *vmin,
+                double              *vmax,
+                double              *vsum)
 {
-  *vmin = HUGE_VAL;
-  *vmax = -HUGE_VAL;
-  *vsum = 0.;
+  struct cs_double_n<3*stride> rd;
+  struct cs_reduce_min_max_sum_nr<stride> reducer;
 
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_real_t *_v = v + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin = HUGE_VAL;
-    cs_real_t lmax = -HUGE_VAL;
-
-    double lsum = 0.;
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s = 0.;
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c = 0.;
-        for (cs_lnum_t i = start_id; i < end_id; i++) {
-          c += _v[i];
-          if (_v[i] < lmin)
-            lmin = _v[i];
-          if (_v[i] > lmax)
-            lmax = _v[i];
-        }
-        s += c;
-      }
-
-      lsum += s;
-
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<3*stride> &res) {
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*i + k];
+      res.r[stride + k] = v[stride*i + k];
+      res.r[2*stride + k] = v[stride*i + k];
     }
+  });
 
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += lsum;
-    }
+  ctx.wait();
 
+  for (size_t k = 0; k < stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[stride + k];
+    vsum[k] = rd.r[2*stride + k];
   }
 }
 
 /*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum) of a
- * subset of a 1-dimensional array.
- *
- * The algorithm here is similar to that used for blas, but computes several
- * quantities simultaneously for better cache behavior
- *
- * parameters:
- *   n        <-- local number of elements
- *   vl       <-- pointer to elements list
- *   v        <-- pointer to element values (size: n)
- *   vmin     --> resulting min
- *   vmax     --> resulting max
- *   vsum     --> resulting sum
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_real_sstats_1d_iv(cs_lnum_t         n,
-                      const cs_lnum_t   vl[],
-                      const cs_real_t   v[],
-                      double           *vmin,
-                      double           *vmax,
-                      double           *vsum)
-{
-  *vmin = HUGE_VAL;
-  *vmax = -HUGE_VAL;
-  *vsum = 0.;
-
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_lnum_t *_vl = vl + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin = HUGE_VAL;
-    cs_real_t lmax = -HUGE_VAL;
-
-    double lsum = 0.;
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s = 0.;
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c = 0.;
-        for (cs_lnum_t li = start_id; li < end_id; li++) {
-          cs_lnum_t i = _vl[li];
-          c += v[i];
-          if (v[i] < lmin)
-            lmin = v[i];
-          if (v[i] > lmax)
-            lmax = v[i];
-        }
-        s += c;
-      }
-
-      lsum += s;
-
-    }
-
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += lsum;
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum, weighted sum) of a
- * 1-dimensional array.
+ * Compute simple local stats (minima, maxima, sum) of a strided array.
  *
  * The algorithm here is similar to that used for blas, but computes several
  * quantities simultaneously for better cache behavior
@@ -805,267 +573,39 @@ _cs_real_sstats_1d_iv(cs_lnum_t         n,
  * parameters:
  *   n        <-- local number of elements
  *   v        <-- pointer to values (size: n)
- *   w        <-- pointer to weights (size: n)
  *   vmin     --> resulting min
  *   vmax     --> resulting max
  *   vsum     --> resulting sum
- *   wsum     --> resulting weighted sum
  *----------------------------------------------------------------------------*/
 
+template <size_t stride>
 static void
-_cs_real_sstats_1d_w(cs_lnum_t         n,
-                     const cs_real_t   v[],
-                     const cs_real_t   w[],
-                     double           *vmin,
-                     double           *vmax,
-                     double           *vsum,
-                     double           *wsum)
+_cs_real_sstats_iv(cs_dispatch_context  ctx,
+                   cs_lnum_t            n,
+                   const cs_lnum_t     *vl,
+                   const cs_real_t      v[],
+                   double              *vmin,
+                   double              *vmax,
+                   double              *vsum)
 {
-  *vmin = HUGE_VAL;
-  *vmax = -HUGE_VAL;
-  *vsum = 0.;
-  *wsum = 0.;
+  struct cs_double_n<3*stride> rd;
+  struct cs_reduce_min_max_sum_nr<stride> reducer;
 
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_real_t *_v = v + s_id;
-    const cs_real_t *_w = w + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin = HUGE_VAL;
-    cs_real_t lmax = -HUGE_VAL;
-
-    double lsum[2] = {0., 0.};
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s[2] = {0., 0.};
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c[2] = {0., 0.};
-        for (cs_lnum_t i = start_id; i < end_id; i++) {
-          c[0] += _v[i];
-          c[1] += _v[i]*_w[i];
-          if (_v[i] < lmin)
-            lmin = _v[i];
-          if (_v[i] > lmax)
-            lmax = _v[i];
-        }
-        s[0] += c[0];
-        s[1] += c[1];
-      }
-
-      lsum[0] += s[0];
-      lsum[1] += s[1];
-
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<3*stride> &res) {
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*vl[i] + k];
+      res.r[stride + k] = v[stride*vl[i] + k];
+      res.r[2*stride + k] = v[stride*vl[i] + k];
     }
+  });
 
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += lsum[0];
-      *wsum += lsum[1];
-    }
+  ctx.wait();
 
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum, weighted sum) of a
- * 1-dimensional array using an element list relative to weights.
- *
- * The algorithm here is similar to that used for blas, but computes several
- * quantities simultaneously for better cache behavior
- *
- * parameters:
- *   n        <-- local number of elements
- *   wl       <-- pointer to element weights list
- *   v        <-- pointer to values (size: n)
- *   w        <-- pointer to elements weights
- *   vmin     --> resulting min
- *   vmax     --> resulting max
- *   vsum     --> resulting sum
- *   wsum     --> resulting weighted sum
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_real_sstats_1d_w_iw(cs_lnum_t         n,
-                        const cs_lnum_t   wl[],
-                        const cs_real_t   v[],
-                        const cs_real_t   w[],
-                        double           *vmin,
-                        double           *vmax,
-                        double           *vsum,
-                        double           *wsum)
-{
-  *vmin = HUGE_VAL;
-  *vmax = -HUGE_VAL;
-  *vsum = 0.;
-  *wsum = 0.;
-
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_lnum_t *_wl = wl + s_id;
-    const cs_real_t *_v = v + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin = HUGE_VAL;
-    cs_real_t lmax = -HUGE_VAL;
-
-    double lsum[2] = {0., 0.};
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s[2] = {0., 0.};
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c[2] = {0., 0.};
-        for (cs_lnum_t i = start_id; i < end_id; i++) {
-          c[0] += _v[i];
-          c[1] += _v[i]*w[_wl[i]];
-          if (_v[i] < lmin)
-            lmin = _v[i];
-          if (_v[i] > lmax)
-            lmax = _v[i];
-        }
-        s[0] += c[0];
-        s[1] += c[1];
-      }
-
-      lsum[0] += s[0];
-      lsum[1] += s[1];
-
-    }
-
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += lsum[0];
-      *wsum += lsum[1];
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum, weighted sum) of a
- * subset of a 1-dimensional array.
- *
- * The algorithm here is similar to that used for blas, but computes several
- * quantities simultaneously for better cache behavior
- *
- * parameters:
- *   n        <-- local number of elements
- *   vl       <-- pointer to element list
- *   v        <-- pointer to field values (size: n)
- *   w        <-- pointer to weight values (size: n)
- *   vmin     --> resulting min
- *   vmax     --> resulting max
- *   vsum     --> resulting sum
- *   wsum     --> resulting weighted sum
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_real_sstats_1d_w_iv(cs_lnum_t         n,
-                        const cs_lnum_t   vl[],
-                        const cs_real_t   v[],
-                        const cs_real_t   w[],
-                        double           *vmin,
-                        double           *vmax,
-                        double           *vsum,
-                        double           *wsum)
-{
-  *vmin = HUGE_VAL;
-  *vmax = -HUGE_VAL;
-  *vsum = 0.;
-  *wsum = 0.;
-
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_lnum_t *_vl = vl + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin = HUGE_VAL;
-    cs_real_t lmax = -HUGE_VAL;
-
-    double lsum[2] = {0., 0.};
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s[2] = {0., 0.};
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c[2] = {0., 0.};
-        for (cs_lnum_t li = start_id; li < end_id; li++) {
-          cs_lnum_t i = _vl[li];
-          c[0] += v[i];
-          c[1] += v[i]*w[i];
-          if (v[i] < lmin)
-            lmin = v[i];
-          if (v[i] > lmax)
-            lmax = v[i];
-        }
-        s[0] += c[0];
-        s[1] += c[1];
-      }
-
-      lsum[0] += s[0];
-      lsum[1] += s[1];
-
-    }
-
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += lsum[0];
-      *wsum += lsum[1];
-    }
-
+  for (size_t k = 0; k < stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[stride + k];
+    vsum[k] = rd.r[2*stride + k];
   }
 }
 
@@ -1681,7 +1221,56 @@ _cs_real_minmax_3d(cs_lnum_t           n,
 }
 
 /*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum) of a 3d
+ * Compute simple local stats (minima, maxima, sum, and vector norm) of a
+ * strided array's components and norm.
+ *
+ * The array is interleaved.
+ *
+ * The algorithm here is similar to that used for blas, but computes several
+ * quantities simultaneously for better cache behavior
+ *
+ * parameters:
+ *   ctx      <-- cs_dispatch_context struct from higer level
+ *   n        <-- local number of elements
+ *   v        <-- pointer to field values (size: n*stride)
+ *   vmin     --> resulting min array (size: stride + 1)
+ *   vmax     --> resulting max array (size: stride + 1)
+ *   vsum     --> resulting sum array (size: stride + 1)
+ *----------------------------------------------------------------------------*/
+
+template <size_t stride>
+static void
+_cs_real_sstats_with_norm(cs_dispatch_context  ctx,
+                          cs_lnum_t            n,
+                          const cs_real_t      v[],
+                          double               vmin[],
+                          double               vmax[],
+                          double               vsum[])
+{
+  const size_t _stride = stride + 1;
+  struct cs_double_n<3*_stride> rd;
+  struct cs_reduce_min_max_sum_nr_with_norm<stride> reducer;
+
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<3*_stride> &res) {
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*i + k];
+      res.r[_stride + k] = v[stride*i + k];
+      res.r[2*_stride + k] = v[stride*i + k];
+    }
+  });
+
+  ctx.wait();
+
+  for (size_t k = 0; k < _stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[_stride + k];
+    vsum[k] = rd.r[2*_stride + k];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute simple local stats (minima, maxima, sum) of a subset of a strided
  * array's components and norm.
  *
  * The array is interleaved.
@@ -1690,100 +1279,215 @@ _cs_real_minmax_3d(cs_lnum_t           n,
  * quantities simultaneously for better cache behavior
  *
  * parameters:
+ *   ctx      <-- cs_dispatch_context struct from higer level
  *   n        <-- local number of elements
- *   v        <-- pointer to field values (size: n*3)
- *   vmin     --> resulting min array (size: 4)
- *   vmax     --> resulting max array (size: 4)
- *   vsum     --> resulting sum array (size: 4)
+ *   vl       <-- pointer to element list
+ *   v        <-- pointer to field values (size: n*stride)
+ *   vmin     --> resulting min array (size: stride + 1)
+ *   vmax     --> resulting max array (size: stride + 1)
+ *   vsum     --> resulting sum array (size: stride + 1)
  *----------------------------------------------------------------------------*/
 
+template <size_t stride>
 static void
-_cs_real_sstats_3d(cs_lnum_t          n,
-                   const cs_real_3_t  v[],
-                   double             vmin[4],
-                   double             vmax[4],
-                   double             vsum[4])
+_cs_real_sstats_with_norm_iv(cs_dispatch_context  ctx,
+                             cs_lnum_t            n,
+                             const cs_lnum_t      vl[],
+                             const cs_real_t      v[],
+                             double              *vmin,
+                             double              *vmax,
+                             double              *vsum)
 {
-  for (cs_lnum_t j = 0; j < 4; j++) {
-    vmin[j] = HUGE_VAL;
-    vmax[j] = -HUGE_VAL;
-    vsum[j] = 0.;
-  }
+  const size_t _stride = stride + 1;
+  struct cs_double_n<3*_stride> rd;
+  struct cs_reduce_min_max_sum_nr_with_norm<stride> reducer;
 
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_real_3_t *_v = v + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin[4], lmax[4];
-    for (cs_lnum_t j = 0; j < 4; j++) {
-      lmin[j] = HUGE_VAL;
-      lmax[j] = -HUGE_VAL;
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<3*_stride> &res) {
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*vl[i] + k];
+      res.r[_stride + k] = v[stride*vl[i] + k];
+      res.r[2*_stride + k] = v[stride*vl[i] + k];
     }
+  });
 
-    double lsum[4] = {0., 0., 0., 0.};
+  ctx.wait();
 
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s[4] = {0., 0., 0., 0.};
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c[4] = {0., 0., 0., 0.};
-        for (cs_lnum_t i = start_id; i < end_id; i++) {
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            c[j]   += _v[i][j];
-            if (_v[i][j] < lmin[j])
-              lmin[j] = _v[i][j];
-            if (_v[i][j] > lmax[j])
-              lmax[j] = _v[i][j];
-          }
-          double v_norm = sqrt(  _v[i][0]*_v[i][0]
-                               + _v[i][1]*_v[i][1]
-                               + _v[i][2]*_v[i][2]);
-          c[3] += v_norm;
-          if (v_norm < lmin[3])
-            lmin[3] = v_norm;
-          if (v_norm > lmax[3])
-            lmax[3] = v_norm;
-        }
-
-        for (cs_lnum_t j = 0; j < 4; j++)
-          s[j] += c[j];
-      }
-
-      for (cs_lnum_t j = 0; j < 4; j++)
-        lsum[j] += s[j];
-
-    }
-
-#   pragma omp critical
-    {
-      for (cs_lnum_t j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += lsum[j];
-      }
-    }
-
+  for (size_t k = 0; k < _stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[_stride + k];
+    vsum[k] = rd.r[2*_stride + k];
   }
 }
 
 /*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum) of a subset of a 3d
+ * Compute simple local stats (minima, maxima, sum, weighted sum) of a strided
+ * array's components.
+ *
+ * The array is interleaved.
+ *
+ * The algorithm here is similar to that used for blas, but computes several
+ * quantities simultaneously for better cache behavior
+ *
+ * parameters:
+ *   ctx      <-- cs_dispatch_context struct from higer level
+ *   n        <-- local number of elements
+ *   v        <-- pointer to field values (size: n*stride)
+ *   w        <-- pointer to weight values (size: n)
+ *   vmin     --> resulting min array (size: stride)
+ *   vmax     --> resulting max array (size: stride)
+ *   vsum     --> resulting sum array (size: stride)
+ *   wsum     --> resulting weighted sum array (size: stride)
+ *----------------------------------------------------------------------------*/
+
+template <size_t stride>
+static void
+_cs_real_sstats_weighted(cs_dispatch_context  ctx,
+                         cs_lnum_t            n,
+                         const cs_real_t      v[],
+                         const cs_real_t      w[],
+                         double               vmin[],
+                         double               vmax[],
+                         double               vsum[],
+                         double               wsum[])
+{
+  struct cs_double_n<4*stride> rd;
+  struct cs_reduce_min_max_weighted_sum_nr<stride> reducer;
+
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<4*stride> &res) {
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*i + k];
+      res.r[stride + k] = v[stride*i + k];
+      res.r[2*stride + k] = v[stride*i + k];
+      res.r[3*stride + k] = w[i]*v[stride*i + k];
+    }
+  });
+
+  ctx.wait();
+
+  for (size_t k = 0; k < stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[stride + k];
+    vsum[k] = rd.r[2*stride + k];
+    wsum[k] = rd.r[3*stride + k];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute simple local stats (minima, maxima, sum, weighted sum) of a strided
+ * array's components.
+ *
+ * The array is interleaved.
+ *
+ * The algorithm here is similar to that used for blas, but computes several
+ * quantities simultaneously for better cache behavior
+ *
+ * parameters:
+ *   ctx      <-- cs_dispatch_context struct from higer level
+ *   n        <-- local number of elements
+ *   vl       <-- pointer to element list
+ *   v        <-- pointer to field values (size: n*stride)
+ *   w        <-- pointer to weight values (size: n)
+ *   vmin     --> resulting min array (size: stride)
+ *   vmax     --> resulting max array (size: stride)
+ *   vsum     --> resulting sum array (size: stride)
+ *   wsum     --> resulting weighted sum array (size: stride)
+ *----------------------------------------------------------------------------*/
+
+template <size_t stride>
+static void
+_cs_real_sstats_weighted_iv(cs_dispatch_context  ctx,
+                            cs_lnum_t            n,
+                            const cs_lnum_t      vl[],
+                            const cs_real_t      v[],
+                            const cs_real_t      w[],
+                            double               vmin[],
+                            double               vmax[],
+                            double               vsum[],
+                            double               wsum[])
+{
+  struct cs_double_n<4*stride> rd;
+  struct cs_reduce_min_max_weighted_sum_nr<stride> reducer;
+
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<4*stride> &res) {
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*vl[i] + k];
+      res.r[stride + k] = v[stride*vl[i] + k];
+      res.r[2*stride + k] = v[stride*vl[i] + k];
+      res.r[3*stride + k] = w[vl[i]]*v[stride*vl[i] + k];
+    }
+  });
+
+  ctx.wait();
+
+  for (size_t k = 0; k < stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[stride + k];
+    vsum[k] = rd.r[2*stride + k];
+    wsum[k] = rd.r[3*stride + k];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute simple local stats (minima, maxima, sum, weighted sum) of a strided
+ * array's components.
+ *
+ * The array is interleaved.
+ *
+ * The algorithm here is similar to that used for blas, but computes several
+ * quantities simultaneously for better cache behavior
+ *
+ * parameters:
+ *   ctx      <-- cs_dispatch_context struct from higer level
+ *   n        <-- local number of elements
+ *   wl       <-- pointer to element list
+ *   v        <-- pointer to field values (size: n*stride)
+ *   w        <-- pointer to weight values (size: n)
+ *   vmin     --> resulting min array (size: stride)
+ *   vmax     --> resulting max array (size: stride)
+ *   vsum     --> resulting sum array (size: stride)
+ *   wsum     --> resulting weighted sum array (size: stride)
+ *----------------------------------------------------------------------------*/
+
+template <size_t stride>
+static void
+_cs_real_sstats_weighted_iw(cs_dispatch_context  ctx,
+                            cs_lnum_t            n,
+                            const cs_lnum_t      wl[],
+                            const cs_real_t      v[],
+                            const cs_real_t      w[],
+                            double               vmin[],
+                            double               vmax[],
+                            double               vsum[],
+                            double               wsum[])
+{
+  struct cs_double_n<4*stride> rd;
+  struct cs_reduce_min_max_weighted_sum_nr<stride> reducer;
+
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<4*stride> &res) {
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*i + k];
+      res.r[stride + k] = v[stride*i + k];
+      res.r[2*stride + k] = v[stride*i + k];
+      res.r[3*stride + k] = w[wl[i]]*v[stride*i + k];
+    }
+  });
+
+  ctx.wait();
+
+  for (size_t k = 0; k < stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[stride + k];
+    vsum[k] = rd.r[2*stride + k];
+    wsum[k] = rd.r[3*stride + k];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute simple local stats (minima, maxima, sum, weighted sum) of a strided
  * array's components and norm.
  *
  * The array is interleaved.
@@ -1792,216 +1496,125 @@ _cs_real_sstats_3d(cs_lnum_t          n,
  * quantities simultaneously for better cache behavior
  *
  * parameters:
+ *   ctx      <-- cs_dispatch_context struct from higer level
+ *   n        <-- local number of elements
+ *   v        <-- pointer to field values (size: n*stride)
+ *   w        <-- pointer to weight values (size: n)
+ *   vmin     --> resulting min array (size: stride + 1)
+ *   vmax     --> resulting max array (size: stride + 1)
+ *   vsum     --> resulting sum array (size: stride + 1)
+ *   wsum     --> resulting weighted sum array (size: stride + 1)
+ *----------------------------------------------------------------------------*/
+
+template <size_t stride>
+static void
+_cs_real_sstats_weighted_with_norm(cs_dispatch_context  ctx,
+                                   cs_lnum_t            n,
+                                   const cs_real_t      v[],
+                                   const cs_real_t      w[],
+                                   double               vmin[],
+                                   double               vmax[],
+                                   double               vsum[],
+                                   double               wsum[])
+{
+  /* stride + 1 due to computing the vector norm */
+  const size_t _stride = stride + 1;
+  struct cs_double_n<4*_stride> rd;
+  struct cs_reduce_min_max_weighted_sum_nr_with_norm<stride> reducer;
+
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<4*_stride> &res) {
+    double norm = 0.;
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*i + k];
+      res.r[_stride + k] = v[stride*i + k];
+      res.r[2*_stride + k] = v[stride*i + k];
+      res.r[3*_stride + k] = w[i]*v[stride*i + k];
+      norm += v[stride*i + k]*v[stride*i + k];
+    }
+    res.r[_stride - 1] = sqrt(norm);
+    res.r[2*_stride - 1] = sqrt(norm);
+    res.r[3*_stride - 1] = sqrt(norm);
+    res.r[4*_stride - 1] = w[i]*sqrt(norm);
+  });
+
+  ctx.wait();
+
+  for (size_t k = 0; k < _stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[_stride + k];
+    vsum[k] = rd.r[2*_stride + k];
+    wsum[k] = rd.r[3*_stride + k];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute simple local stats (minima, maxima, sum, weighted sum) of a strided
+ * array's components and norm.
+ *
+ * The array is interleaved.
+ *
+ * The algorithm here is similar to that used for blas, but computes several
+ * quantities simultaneously for better cache behavior
+ *
+ * parameters:
+ *   ctx      <-- cs_dispatch_context struct from higer level
  *   n        <-- local number of elements
  *   vl       <-- pointer to element list
- *   v        <-- pointer to field values (size: n*3)
- *   vmin     --> resulting min array (size: 4)
- *   vmax     --> resulting max array (size: 4)
- *   vsum     --> resulting sum array (size: 4)
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_real_sstats_3d_iv(cs_lnum_t          n,
-                      const cs_lnum_t    vl[],
-                      const cs_real_3_t  v[],
-                      double             vmin[4],
-                      double             vmax[4],
-                      double             vsum[4])
-{
-  for (cs_lnum_t j = 0; j < 4; j++) {
-    vmin[j] = HUGE_VAL;
-    vmax[j] = -HUGE_VAL;
-    vsum[j] = 0.;
-  }
-
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_lnum_t *_vl = vl + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin[4], lmax[4];
-    for (cs_lnum_t j = 0; j < 4; j++) {
-      lmin[j] = HUGE_VAL;
-      lmax[j] = -HUGE_VAL;
-    }
-
-    double lsum[4] = {0., 0., 0., 0.};
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s[4] = {0., 0., 0., 0.};
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c[4] = {0., 0., 0., 0.};
-        for (cs_lnum_t li = start_id; li < end_id; li++) {
-          cs_lnum_t i = _vl[li];
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            c[j]   += v[i][j];
-            if (v[i][j] < lmin[j])
-              lmin[j] = v[i][j];
-            if (v[i][j] > lmax[j])
-              lmax[j] = v[i][j];
-          }
-          double v_norm = sqrt(  v[i][0]*v[i][0]
-                               + v[i][1]*v[i][1]
-                               + v[i][2]*v[i][2]);
-          c[3] += v_norm;
-          if (v_norm < lmin[3])
-            lmin[3] = v_norm;
-          if (v_norm > lmax[3])
-            lmax[3] = v_norm;
-        }
-
-        for (cs_lnum_t j = 0; j < 4; j++)
-          s[j] += c[j];
-      }
-
-      for (cs_lnum_t j = 0; j < 4; j++)
-        lsum[j] += s[j];
-
-    }
-
-#   pragma omp critical
-    {
-      for (cs_lnum_t j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += lsum[j];
-      }
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum, weighted sum) of a 3d
- * field array's components and norm.
- *
- * The array is interleaved.
- *
- * The algorithm here is similar to that used for blas, but computes several
- * quantities simultaneously for better cache behavior
- *
- * parameters:
- *   n        <-- local number of elements
- *   v        <-- pointer to field values (size: n*3)
+ *   v        <-- pointer to field values (size: n*stride)
  *   w        <-- pointer to weight values (size: n)
- *   vmin     --> resulting min array (size: 4)
- *   vmax     --> resulting max array (size: 4)
- *   vsum     --> resulting sum array (size: 4)
- *   wsum     --> resulting weighted sum array (size: 4)
+ *   vmin     --> resulting min array (size: stride + 1)
+ *   vmax     --> resulting max array (size: stride + 1)
+ *   vsum     --> resulting sum array (size: stride + 1)
+ *   wsum     --> resulting weighted sum array (size: stride + 1)
  *----------------------------------------------------------------------------*/
 
+template <size_t stride>
 static void
-_cs_real_sstats_3d_w(cs_lnum_t          n,
-                     const cs_real_3_t  v[],
-                     const cs_real_t    w[],
-                     double             vmin[4],
-                     double             vmax[4],
-                     double             vsum[4],
-                     double             wsum[4])
+_cs_real_sstats_weighted_with_norm_iv(cs_dispatch_context  ctx,
+                                      cs_lnum_t            n,
+                                      const cs_lnum_t      vl[],
+                                      const cs_real_t      v[],
+                                      const cs_real_t      w[],
+                                      double               vmin[],
+                                      double               vmax[],
+                                      double               vsum[],
+                                      double               wsum[])
 {
-  for (cs_lnum_t j = 0; j < 4; j++) {
-    vmin[j] = HUGE_VAL;
-    vmax[j] = -HUGE_VAL;
-    vsum[j] = 0.;
-    wsum[j] = 0.;
-  }
+  /* stride + 1 due to computing the vector norm */
+  const size_t _stride = stride + 1;
+  struct cs_double_n<4*_stride> rd;
+  struct cs_reduce_min_max_weighted_sum_nr_with_norm<stride> reducer;
 
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_real_3_t *_v = v + s_id;
-    const cs_real_t *_w = w + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin[4], lmax[4];
-    for (cs_lnum_t j = 0; j < 4; j++) {
-      lmin[j] = HUGE_VAL;
-      lmax[j] = -HUGE_VAL;
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<4*_stride> &res) {
+    double norm = 0.;
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*vl[i] + k];
+      res.r[_stride + k] = v[stride*vl[i] + k];
+      res.r[2*_stride + k] = v[stride*vl[i] + k];
+      res.r[3*_stride + k] = w[vl[i]]*v[stride*vl[i] + k];
+      norm += v[stride*vl[i] + k]*v[stride*vl[i] + k];
     }
+    res.r[_stride - 1] = sqrt(norm);
+    res.r[2*_stride - 1] = sqrt(norm);
+    res.r[3*_stride - 1] = sqrt(norm);
+    res.r[4*_stride - 1] = w[vl[i]]*sqrt(norm);
+  });
 
-    double lsum[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+  ctx.wait();
 
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
-        for (cs_lnum_t i = start_id; i < end_id; i++) {
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            c[j]   += _v[i][j];
-            c[j+4] += _v[i][j]*_w[i];
-            if (_v[i][j] < lmin[j])
-              lmin[j] = _v[i][j];
-            if (_v[i][j] > lmax[j])
-              lmax[j] = _v[i][j];
-          }
-          double v_norm = sqrt(  _v[i][0]*_v[i][0]
-                               + _v[i][1]*_v[i][1]
-                               + _v[i][2]*_v[i][2]);
-          c[3] += v_norm;
-          c[7] += v_norm*_w[i];
-          if (v_norm < lmin[3])
-            lmin[3] = v_norm;
-          if (v_norm > lmax[3])
-            lmax[3] = v_norm;
-        }
-
-        for (cs_lnum_t j = 0; j < 8; j++)
-          s[j] += c[j];
-      }
-
-      for (cs_lnum_t j = 0; j < 8; j++)
-        lsum[j] += s[j];
-
-    }
-
-#   pragma omp critical
-    {
-      for (cs_lnum_t j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += lsum[j];
-        wsum[j] += lsum[4+j];
-      }
-    }
-
+  for (size_t k = 0; k < _stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[_stride + k];
+    vsum[k] = rd.r[2*_stride + k];
+    wsum[k] = rd.r[3*_stride + k];
   }
 }
 
 /*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum, weighted sum) of a 3d
- * field array's components and norm  using an element list relative
- * to weights.
+ * Compute simple local stats (minima, maxima, sum, weighted sum) of a strided
+ * array's components and norm.
  *
  * The array is interleaved.
  *
@@ -2009,220 +1622,57 @@ _cs_real_sstats_3d_w(cs_lnum_t          n,
  * quantities simultaneously for better cache behavior
  *
  * parameters:
+ *   ctx      <-- cs_dispatch_context struct from higer level
  *   n        <-- local number of elements
- *   wl       <-- pointer to weights list
- *   v        <-- pointer to element values (size: n*3)
- *   w        <-- pointer to weight values
- *   vmin     --> resulting min array (size: 4)
- *   vmax     --> resulting max array (size: 4)
- *   vsum     --> resulting sum array (size: 4)
- *   wsum     --> resulting weighted sum array (size: 4)
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_real_sstats_3d_w_iw(cs_lnum_t          n,
-                        const cs_lnum_t    wl[],
-                        const cs_real_3_t  v[],
-                        const cs_real_t    w[],
-                        double             vmin[4],
-                        double             vmax[4],
-                        double             vsum[4],
-                        double             wsum[4])
-{
-  for (cs_lnum_t j = 0; j < 4; j++) {
-    vmin[j] = HUGE_VAL;
-    vmax[j] = -HUGE_VAL;
-    vsum[j] = 0.;
-    wsum[j] = 0.;
-  }
-
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_lnum_t *_wl = wl + s_id;
-    const cs_real_3_t *_v = v + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin[4], lmax[4];
-    for (cs_lnum_t j = 0; j < 4; j++) {
-      lmin[j] = HUGE_VAL;
-      lmax[j] = -HUGE_VAL;
-    }
-
-    double lsum[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
-
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
-        for (cs_lnum_t i = start_id; i < end_id; i++) {
-          cs_real_t wi = w[_wl[i]];
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            c[j]   += _v[i][j];
-            c[j+4] += _v[i][j]*wi;
-            if (_v[i][j] < lmin[j])
-              lmin[j] = _v[i][j];
-            if (_v[i][j] > lmax[j])
-              lmax[j] = _v[i][j];
-          }
-          double v_norm = sqrt(  _v[i][0]*_v[i][0]
-                               + _v[i][1]*_v[i][1]
-                               + _v[i][2]*_v[i][2]);
-          c[3] += v_norm;
-          c[7] += v_norm*wi;
-          if (v_norm < lmin[3])
-            lmin[3] = v_norm;
-          if (v_norm > lmax[3])
-            lmax[3] = v_norm;
-        }
-
-        for (cs_lnum_t j = 0; j < 8; j++)
-          s[j] += c[j];
-      }
-
-      for (cs_lnum_t j = 0; j < 8; j++)
-        lsum[j] += s[j];
-
-    }
-
-#   pragma omp critical
-    {
-      for (cs_lnum_t j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += lsum[j];
-        wsum[j] += lsum[4+j];
-      }
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum, weighted sum) of a
- * subset of a 3d field array's components and norm.
- *
- * The array is interleaved.
- *
- * The algorithm here is similar to that used for blas, but computes several
- * quantities simultaneously for better cache behavior
- *
- * parameters:
- *   n        <-- local number of elements
- *   vl       <-- pointer to element list
- *   v        <-- pointer to element values (size: n*3)
+ *   wl       <-- pointer to element list
+ *   v        <-- pointer to field values (size: n*stride)
  *   w        <-- pointer to weight values (size: n)
- *   vmin     --> resulting min array (size: 4)
- *   vmax     --> resulting max array (size: 4)
- *   vsum     --> resulting sum array (size: 4)
- *   wsum     --> resulting weighted sum array (size: 4)
+ *   vmin     --> resulting min array (size: stride + 1)
+ *   vmax     --> resulting max array (size: stride + 1)
+ *   vsum     --> resulting sum array (size: stride + 1)
+ *   wsum     --> resulting weighted sum array (size: stride + 1)
  *----------------------------------------------------------------------------*/
 
+template <size_t stride>
 static void
-_cs_real_sstats_3d_w_iv(cs_lnum_t          n,
-                        const cs_lnum_t    vl[],
-                        const cs_real_3_t  v[],
-                        const cs_real_t    w[],
-                        double             vmin[4],
-                        double             vmax[4],
-                        double             vsum[4],
-                        double             wsum[4])
+_cs_real_sstats_weighted_with_norm_iw(cs_dispatch_context  ctx,
+                                      cs_lnum_t            n,
+                                      const cs_lnum_t      wl[],
+                                      const cs_real_t      v[],
+                                      const cs_real_t      w[],
+                                      double               vmin[],
+                                      double               vmax[],
+                                      double               vsum[],
+                                      double               wsum[])
 {
-  for (cs_lnum_t j = 0; j < 4; j++) {
-    vmin[j] = HUGE_VAL;
-    vmax[j] = -HUGE_VAL;
-    vsum[j] = 0.;
-    wsum[j] = 0.;
-  }
+  /* stride + 1 due to computing the vector norm */
+  const size_t _stride = stride + 1;
+  struct cs_double_n<4*_stride> rd;
+  struct cs_reduce_min_max_weighted_sum_nr_with_norm<stride> reducer;
 
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_lnum_t *_vl = vl + s_id;
-
-    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
-    cs_lnum_t n_sblocks, blocks_in_sblocks;
-
-    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
-
-    cs_real_t lmin[4], lmax[4];
-    for (cs_lnum_t j = 0; j < 4; j++) {
-      lmin[j] = HUGE_VAL;
-      lmax[j] = -HUGE_VAL;
+  ctx.parallel_for_reduce(n, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<4*_stride> &res) {
+    double norm = 0.;
+    for (size_t k = 0; k < stride; k++) {
+      res.r[k] = v[stride*i + k];
+      res.r[_stride + k] = v[stride*i + k];
+      res.r[2*_stride + k] = v[stride*i + k];
+      res.r[3*_stride + k] = w[wl[i]]*v[stride*i + k];
+      norm += v[stride*i + k]*v[stride*i + k];
     }
+    res.r[_stride - 1] = sqrt(norm);
+    res.r[2*_stride - 1] = sqrt(norm);
+    res.r[3*_stride - 1] = sqrt(norm);
+    res.r[4*_stride - 1] = w[wl[i]]*sqrt(norm);
+  });
 
-    double lsum[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+  ctx.wait();
 
-    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
-
-      double s[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
-
-      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
-        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
-        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        if (end_id > _n)
-          end_id = _n;
-        double c[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
-        for (cs_lnum_t l_id = start_id; l_id < end_id; l_id++) {
-          cs_lnum_t i = _vl[l_id];
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            c[j]   += v[i][j];
-            c[j+4] += v[i][j]*w[i];
-            if (v[i][j] < lmin[j])
-              lmin[j] = v[i][j];
-            if (v[i][j] > lmax[j])
-              lmax[j] = v[i][j];
-          }
-          double v_norm = sqrt(  v[i][0]*v[i][0]
-                               + v[i][1]*v[i][1]
-                               + v[i][2]*v[i][2]);
-          c[3] += v_norm;
-          c[7] += v_norm*w[i];
-          if (v_norm < lmin[3])
-            lmin[3] = v_norm;
-          if (v_norm > lmax[3])
-            lmax[3] = v_norm;
-        }
-
-        for (cs_lnum_t j = 0; j < 8; j++)
-          s[j] += c[j];
-      }
-
-      for (cs_lnum_t j = 0; j < 8; j++)
-        lsum[j] += s[j];
-
-    }
-
-#   pragma omp critical
-    {
-      for (cs_lnum_t j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += lsum[j];
-        wsum[j] += lsum[4+j];
-      }
-    }
-
+  for (size_t k = 0; k < _stride; k++) {
+    vmin[k] = rd.r[k];
+    vmax[k] = rd.r[_stride + k];
+    vsum[k] = rd.r[2*_stride + k];
+    wsum[k] = rd.r[3*_stride + k];
   }
 }
 
@@ -3239,64 +2689,72 @@ cs_array_reduce_minmax(cs_lnum_t          n,
 }
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute sums of an n-dimensional cs_real_t array's components.
+ * \brief  Compute simple local stats (minima, maxima, sum) of an
+ * n-dimensional cs_real_t array's components.
  *
- * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
  * The array is interleaved.
  *
  * For arrays of dimension 3, the statistics relative to the norm
  * are also computed, and added at the end of the statistics arrays
  * (which must be size dim+1).
  *
- * The algorithm here is similar to that used for BLAS.
+ * The algorithm here is similar to that used for BLAS, but computes several
+ * quantities simultaneously for better cache behavior
  *
+ * \param[in]   ctx         cs_dispatch_context struct from higher level
  * \param[in]   n_elts      number of local elements
- * \param[in]   dim         local array dimension (max: 9)
  * \param[in]   v_elt_list  optional list of parent elements on which values
  *                          are defined, or nullptr
  * \param[in]   v           pointer to array values
+ * \param[out]  vmin        resulting min array (size: dim, or 4 if dim = 3)
+ * \param[out]  vmax        resulting max array (size: dim, or 4 if dim = 3)
  * \param[out]  vsum        resulting sum array (size: dim, or 4 if dim = 3)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_reduce_sum_l(cs_lnum_t         n_elts,
-                      int               dim,
-                      const cs_lnum_t  *v_elt_list,
-                      const cs_real_t   v[],
-                      double            vsum[])
+cs_array_reduce_simple_stats_l(cs_dispatch_context  ctx,
+                               const cs_lnum_t      n_elts,
+                               const int            dim,
+                               const cs_lnum_t     *v_elt_list,
+                               const cs_real_t      v[],
+                               double               vmin[],
+                               double               vmax[],
+                               double               vsum[])
 {
   /* If all values are defined on same list */
 
   if (v_elt_list == nullptr) {
     if (dim == 1)
-      vsum[0] = _cs_real_sum_1d(n_elts, v);
+      _cs_real_sstats<1>(ctx, n_elts, v, vmin, vmax, vsum);
     else if (dim == 3)
-      bft_error(__FILE__, __LINE__, 0,
-                _("_cs_real_sum_3d not implemented yet\n"));
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("_cs_real_sum_nd not implemented yet\n"));
+      _cs_real_sstats_with_norm<3>(ctx, n_elts, v, vmin, vmax, vsum);
+    else if (dim == 6)
+      _cs_real_sstats_with_norm<6>(ctx, n_elts, v, vmin, vmax, vsum);
+    else /* dim is only known at runtime, so can not be template parameter */
+      _cs_real_sstats_nd(n_elts, dim, nullptr, v, vmin, vmax, vsum);
   }
 
   /* If values are defined on parent list */
 
   else {
     if (dim == 1)
-      vsum[0] = _cs_real_sum_1d_iv(n_elts, v_elt_list, v);
+      _cs_real_sstats_iv<1>(ctx, n_elts, v_elt_list, v, vmin, vmax, vsum);
     else if (dim == 3)
-      bft_error(__FILE__, __LINE__, 0,
-                _("_cs_real_sum_3d_iv not implemented yet\n"));
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("_cs_real_sum_nd_iv not implemented yet\n"));
+      _cs_real_sstats_with_norm_iv<3>(ctx, n_elts, v_elt_list,
+          v, vmin, vmax, vsum);
+    else if (dim == 6)
+      _cs_real_sstats_with_norm_iv<6>(ctx, n_elts, v_elt_list,
+          v, vmin, vmax, vsum);
+    else /* dim is only known at runtime, so can not be template parameter */
+      _cs_real_sstats_nd(n_elts, dim, v_elt_list, v, vmin, vmax, vsum);
   }
 }
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3517,66 +2975,6 @@ cs_array_reduce_minmax_l(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute simple local stats (minima, maxima, sum) of an
- * n-dimensional cs_real_t array's components.
- *
- * The maximum allowed dimension is 10.
- * The array is interleaved.
- *
- * For arrays of dimension 3, the statistics relative to the norm
- * are also computed, and added at the end of the statistics arrays
- * (which must be size dim+1).
- *
- * The algorithm here is similar to that used for BLAS, but computes several
- * quantities simultaneously for better cache behavior
- *
- * \param[in]   n_elts      number of local elements
- * \param[in]   dim         local array dimension (max: 10)
- * \param[in]   v_elt_list  optional list of parent elements on which values
- *                          are defined, or nullptr
- * \param[in]   v           pointer to array values
- * \param[out]  vmin        resulting min array (size: dim, or 4 if dim = 3)
- * \param[out]  vmax        resulting max array (size: dim, or 4 if dim = 3)
- * \param[out]  vsum        resulting sum array (size: dim, or 4 if dim = 3)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
-                               int               dim,
-                               const cs_lnum_t  *v_elt_list,
-                               const cs_real_t   v[],
-                               double            vmin[],
-                               double            vmax[],
-                               double            vsum[])
-{
-  /* If all values are defined on same list */
-
-  if (v_elt_list == nullptr) {
-    if (dim == 1)
-      _cs_real_sstats_1d(n_elts, v, vmin, vmax, vsum);
-    else if (dim == 3)
-      _cs_real_sstats_3d(n_elts, (const cs_real_3_t *)v,
-                         vmin, vmax, vsum);
-    else
-      _cs_real_sstats_nd(n_elts, dim, nullptr, v, vmin, vmax, vsum);
-  }
-
-  /* If values are defined on parent list */
-
-  else {
-    if (dim == 1)
-      _cs_real_sstats_1d_iv(n_elts, v_elt_list, v, vmin, vmax, vsum);
-    else if (dim == 3)
-      _cs_real_sstats_3d_iv(n_elts, v_elt_list, (const cs_real_3_t *)v,
-                            vmin, vmax, vsum);
-    else
-      _cs_real_sstats_nd(n_elts, dim, v_elt_list, v, vmin, vmax, vsum);
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute simple local stats (minima, maxima, sum, weighted sum) of
  * an n-dimensional cs_real_t array's components for a given mesh location.
  *
@@ -3590,6 +2988,7 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
  * The algorithm here is similar to that used for BLAS, but computes several
  * quantities simultaneously for better cache behavior
  *
+ * \param[in]   ctx         cs_dispatch_context struct from higher level
  * \param[in]   n_elts      number of local elements
  * \param[in]   dim         local array dimension (max: 10)
  * \param[in]   v_elt_list  optional list of parent elements on which values
@@ -3608,54 +3007,66 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_reduce_simple_stats_l_w(cs_lnum_t         n_elts,
-                                 int               dim,
-                                 const cs_lnum_t  *v_elt_list,
-                                 const cs_lnum_t  *w_elt_list,
-                                 const cs_real_t   v[],
-                                 const cs_real_t   w[],
-                                 double            vmin[],
-                                 double            vmax[],
-                                 double            vsum[],
-                                 double            wsum[])
+cs_array_reduce_simple_stats_l_w(cs_dispatch_context  ctx,
+                                 cs_lnum_t            n_elts,
+                                 int                  dim,
+                                 const cs_lnum_t     *v_elt_list,
+                                 const cs_lnum_t     *w_elt_list,
+                                 const cs_real_t      v[],
+                                 const cs_real_t      w[],
+                                 double               vmin[],
+                                 double               vmax[],
+                                 double               vsum[],
+                                 double               wsum[])
 {
   /* If all values are defined on same list */
 
   if (v_elt_list == nullptr && w_elt_list == nullptr) {
     if (dim == 1)
-      _cs_real_sstats_1d_w(n_elts, v, w, vmin, vmax, vsum, wsum);
+      _cs_real_sstats_weighted<1>(ctx, n_elts, v, w, vmin, vmax, vsum, wsum);
     else if (dim == 3)
-      _cs_real_sstats_3d_w(n_elts, (const cs_real_3_t *)v, w,
-                           vmin, vmax, vsum, wsum);
-    else
+      _cs_real_sstats_weighted_with_norm<3>(ctx, n_elts, v, w,
+          vmin, vmax, vsum, wsum);
+    else if (dim == 6)
+      _cs_real_sstats_weighted_with_norm<6>(ctx, n_elts, v, w,
+          vmin, vmax, vsum, wsum);
+    else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd_w(n_elts, dim, nullptr, nullptr, v, w,
-                           vmin, vmax, vsum, wsum);
+          vmin, vmax, vsum, wsum);
   }
 
   /* If weights are defined on parent list */
 
   else if (v_elt_list == nullptr) { /* w_elt_list != nullptr */
     if (dim == 1)
-      _cs_real_sstats_1d_w_iw(n_elts, w_elt_list, v, w, vmin, vmax, vsum, wsum);
+      _cs_real_sstats_weighted_iw<1>(ctx, n_elts, w_elt_list,
+          v, w, vmin, vmax, vsum, wsum);
     else if (dim == 3)
-      _cs_real_sstats_3d_w_iw(n_elts, w_elt_list, (const cs_real_3_t *)v, w,
-                              vmin, vmax, vsum, wsum);
-    else
+      _cs_real_sstats_weighted_with_norm_iw<3>(ctx, n_elts, w_elt_list, v, w,
+          vmin, vmax, vsum, wsum);
+    else if (dim == 6)
+      _cs_real_sstats_weighted_with_norm_iw<6>(ctx, n_elts, w_elt_list, v, w,
+          vmin, vmax, vsum, wsum);
+    else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd_w(n_elts, dim, nullptr, w_elt_list, v, w,
-                           vmin, vmax, vsum, wsum);
+          vmin, vmax, vsum, wsum);
   }
 
   /* If weights are defined on parent list */
 
   else { /* v_elt_list != nullptr */
     if (dim == 1)
-      _cs_real_sstats_1d_w_iv(n_elts, v_elt_list, v, w, vmin, vmax, vsum, wsum);
+      _cs_real_sstats_weighted_iv<1>(ctx, n_elts, v_elt_list,
+          v, w, vmin, vmax, vsum, wsum);
     else if (dim == 3)
-      _cs_real_sstats_3d_w_iv(n_elts, v_elt_list, (const cs_real_3_t *)v, w,
-                             vmin, vmax, vsum, wsum);
-    else
+      _cs_real_sstats_weighted_with_norm_iv<3>(ctx, n_elts, v_elt_list, v, w,
+          vmin, vmax, vsum, wsum);
+    else if (dim == 6)
+      _cs_real_sstats_weighted_with_norm_iv<6>(ctx, n_elts, v_elt_list, v, w,
+          vmin, vmax, vsum, wsum);
+    else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd_w(n_elts, dim, v_elt_list, nullptr, v, w,
-                           vmin, vmax, vsum, wsum);
+          vmin, vmax, vsum, wsum);
   }
 }
 

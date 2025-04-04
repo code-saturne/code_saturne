@@ -32,7 +32,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-#include "mesh/cs_mesh.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_reducers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -67,16 +68,64 @@ cs_array_reduce_minmax(cs_lnum_t          n,
                        cs_real_t         &vmin,
                        cs_real_t         &vmax);
 
-#endif // __cplusplus
-
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute sums of an n-dimensional cs_real_t array's components.
+ *
+ * The array is interleaved.
+ *
+ * The algorithm here is similar to that used for BLAS.
+ *
+ * Template parmeters.
+ *              stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *
+ * \param[in]   ctx         cs_dispatch_context struct from higer level
+ * \param[in]   n_elts      number of local elements
+ * \param[in]   v_elt_list  optional list of parent elements on which values
+ *                          are defined, or nullptr
+ * \param[in]   v           pointer to array values
+ * \param[out]  vsum        resulting strided sum array
+ * */
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
+template <size_t stride>
+void
+cs_array_reduce_sum_l(cs_dispatch_context ctx,
+                      cs_lnum_t           n_elts,
+                      const cs_lnum_t    *v_elt_list,
+                      const cs_real_t     v[],
+                      double              vsum[])
+{
+  struct cs_double_n<stride> rd;
+  struct cs_reduce_sum_n<stride> reducer;
 
-/*----------------------------------------------------------------------------
- * Compute sums of an n-dimensional cs_real_t array's components.
+  /* If all values are defined on same list */
+  if (v_elt_list == nullptr) {
+    ctx.parallel_for_reduce(n_elts, rd, reducer,
+      [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<stride> &res) {
+      for (size_t k = 0; k < stride; k++)
+        res.r[k] = v[stride*i + k];
+    });
+  }
+  /* If values are defined on parent list */
+  else {
+    ctx.parallel_for_reduce(n_elts, rd, reducer,
+      [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<stride> &res) {
+      for (size_t k = 0; k < stride; k++)
+        res.r[k] = v[stride*v_elt_list[i] + k];
+    });
+  }
+  ctx.wait();
+
+  for (size_t k = 0; k < stride; k++)
+    vsum[k] = rd.r[k];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute simple local stats (minima, maxima, sum) of an
+ * n-dimensional cs_real_t array's components.
  *
- * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
  * The array is interleaved.
  *
  * For arrays of dimension 3, the statistics relative to the norm
@@ -84,27 +133,34 @@ BEGIN_C_DECLS
  * (which must be size dim+1).
  *
  * The algorithm here is similar to that used for BLAS, but computes several
- * quantities simultaneously for better cache behavior.
+ * quantities simultaneously for better cache behavior
  *
- * Note that for locations with elements shared across ranks
- * (such as interior faces and vertices), sums may be incorrect as
- * contributions from multiple ranks may be counted several times.
- *
- * parameters:
- *   n_elts     <-- number of local elements
- *   v_elt_list <-- optional list of parent elements on which values
- *                  are defined, or NULL
- *   dim        <-- local array dimension (max: 9)
- *   v          <-- pointer to array values
- *   vsum       --> resulting sum array (size: dim, or 4 if dim = 3)
- *----------------------------------------------------------------------------*/
+ * \param[in]   ctx         cs_dispatch_context struct from higher level
+ * \param[in]   n_elts      number of local elements
+ * \param[in]   dim         local array dimension (max: 10)
+ * \param[in]   v_elt_list  optional list of parent elements on which values
+ *                          are defined, or nullptr
+ * \param[in]   v           pointer to array values
+ * \param[out]  vmin        resulting min array (size: dim, or 4 if dim = 3)
+ * \param[out]  vmax        resulting max array (size: dim, or 4 if dim = 3)
+ * \param[out]  vsum        resulting sum array (size: dim, or 4 if dim = 3)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_array_reduce_sum_l(cs_lnum_t         n_elts,
-                      int               dim,
-                      const cs_lnum_t  *v_elt_list,
-                      const cs_real_t   v[],
-                      double            vsum[]);
+cs_array_reduce_simple_stats_l(cs_dispatch_context  ctx,
+                               const cs_lnum_t      n_elts,
+                               const int            dim,
+                               const cs_lnum_t     *v_elt_list,
+                               const cs_real_t      v[],
+                               double               vmin[],
+                               double               vmax[],
+                               double               vsum[]);
+#endif // __cplusplus
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -216,44 +272,6 @@ cs_array_reduce_minmax_l(cs_lnum_t         n_elts,
                          cs_real_t         vmin[],
                          cs_real_t         vmax[]);
 
-/*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum) of an
- * n-dimensional cs_real_t array's components.
- *
- * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
- * The array is interleaved.
- *
- * For arrays of dimension 3, the statistics relative to the norm
- * are also computed, and added at the end of the statistics arrays
- * (which must be size dim+1).
- *
- * The algorithm here is similar to that used for BLAS, but computes several
- * quantities simultaneously for better cache behavior.
- *
- * Note that for locations with elements shared across ranks
- * (such as interior faces and vertices), sums may be incorrect as
- * contributions from multiple ranks may be counted several times.
- *
- * parameters:
- *   n_elts     <-- number of local elements
- *   dim        <-- local array dimension (max: 9)
- *   v_elt_list <-- optional list of parent elements on which values
- *                  are defined, or NULL
- *   v          <-- pointer to array values
- *   vmin       --> resulting min array (size: dim, or 4 if dim = 3)
- *   vmax       --> resulting max array (size: dim, or 4 if dim = 3)
- *   vsum       --> resulting sum array (size: dim, or 4 if dim = 3)
- *----------------------------------------------------------------------------*/
-
-void
-cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
-                               int               dim,
-                               const cs_lnum_t  *v_elt_list,
-                               const cs_real_t   v[],
-                               double            vmin[],
-                               double            vmax[],
-                               double            vsum[]);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute simple local stats (minima, maxima, sum, weighted sum) of
@@ -270,6 +288,7 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
  * quantities simultaneously for better cache behavior
  *
  * parameters:
+ *   ctx        <-- cs_dispatch_context struct from higher level
  *   n_elts     <-- number of local elements
  *   dim        <-- local array dimension (max: 9)
  *   v_elt_list <-- optional list of parent elements on which values
@@ -288,16 +307,17 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_reduce_simple_stats_l_w(cs_lnum_t         n_elts,
-                                 int               dim,
-                                 const cs_lnum_t  *v_elt_list,
-                                 const cs_lnum_t  *w_elt_list,
-                                 const cs_real_t   v[],
-                                 const cs_real_t   w[],
-                                 double            vmin[],
-                                 double            vmax[],
-                                 double            vsum[],
-                                 double            wsum[]);
+cs_array_reduce_simple_stats_l_w(cs_dispatch_context ctx,
+                                 cs_lnum_t           n_elts,
+                                 int                 dim,
+                                 const cs_lnum_t    *v_elt_list,
+                                 const cs_lnum_t    *w_elt_list,
+                                 const cs_real_t     v[],
+                                 const cs_real_t     w[],
+                                 double              vmin[],
+                                 double              vmax[],
+                                 double              vsum[],
+                                 double              wsum[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

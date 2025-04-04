@@ -792,6 +792,8 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
   if (clip_mode < 0 || climgp < 0)
     return;
 
+  cs_dispatch_context ctx;
+
   /* The gradient and the variable must be already synchronized */
 
   cs_real_t *restrict clip_factor = _get_clip_factor_try(var_name);
@@ -997,7 +999,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
     cs_gnum_t n_clip = 0;
     cs_real_t min_factor = 0, max_factor = 0, mean_factor = 0;
 
-    cs_array_reduce_simple_stats_l(n_cells, 1, nullptr, clip_factor,
+    cs_array_reduce_simple_stats_l(ctx, n_cells, 1, nullptr, clip_factor,
                                    &min_factor,
                                    &max_factor,
                                    &mean_factor);
@@ -4991,6 +4993,8 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   if (clip_mode < 0 || climgp < 0)
     return;
 
+  cs_dispatch_context ctx;
+
   /* The gradient and the variable must be already synchronized */
 
   cs_real_t *restrict clip_factor = _get_clip_factor_try(var_name);
@@ -5225,7 +5229,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
     cs_gnum_t n_clip = 0;
     cs_real_t min_factor = 0, max_factor = 0, mean_factor = 0;
 
-    cs_array_reduce_simple_stats_l(n_cells, 1, nullptr, clip_factor,
+    cs_array_reduce_simple_stats_l(ctx, 1, n_cells, nullptr, clip_factor,
                                    &min_factor,
                                    &max_factor,
                                    &mean_factor);
