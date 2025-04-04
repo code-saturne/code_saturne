@@ -4726,20 +4726,6 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
   /* Vertex values are not needed after this stage */
 
-  cs_real_t mean[4] = {0, 0, 0, 0};
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    mean[0] += c_var[i];
-  mean[0] /= n_cells;
-  for (cs_lnum_t i = 0; i < m->n_vertices; i++)
-    mean[1] += v_var[i];
-  mean[1] /= m->n_vertices;
-  for (cs_lnum_t i = 0; i < m->n_i_faces; i++)
-    mean[2] += i_f_var[i];
-  mean[2] /= m->n_i_faces;
-  for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
-    mean[3] += b_f_var[i];
-  mean[3] /= m->n_b_faces;
-
   CS_FREE(v_var);
 
   /* Case with hydrostatic pressure
