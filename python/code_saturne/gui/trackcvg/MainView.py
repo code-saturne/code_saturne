@@ -1214,7 +1214,7 @@ class MainView(object):
                         itt.status     = nn.getAttribute('status')
                         itt.subplot_id = int(nn.getAttribute('subplot_id'))
             self.lineEditTime.setText(str(self.timeRefresh))
-            self.timer.start(self.timeRefresh * 1000)
+            self.timer.start(int(self.timeRefresh * 1000))
             self.spinBox.setValue(int(self.subplotNumber))
 
 
