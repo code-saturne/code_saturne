@@ -7224,6 +7224,57 @@ _matrix_from_native(cs_matrix_type_t   cm_type,
 
   g->use_xa = true;
 
+  /* Also build arrays for gather algorithm */
+  {
+    const cs_lnum_t *c2c_idx, *c2c;
+    cs_matrix_get_msr_arrays(g->matrix,
+                             &c2c_idx, &c2c,
+                             nullptr, nullptr);
+
+    const cs_lnum_t n_rows = g->n_rows;
+    const cs_lnum_t n_faces = g->n_faces;
+    const cs_lnum_t nnz = cs_matrix_get_n_entries(g->_matrix);
+
+    cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(g->_matrix);
+    cs_lnum_t *c2i;
+    short int *sgn;
+    CS_MALLOC_HD(c2i, nnz, cs_lnum_t, amode);
+    CS_MALLOC_HD(sgn, nnz, short int, amode);
+    g->cell_face = c2i;
+    g->cell_face_sgn = sgn;
+
+    const cs_lnum_2_t *face_cells = g->face_cell;
+
+    for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
+      cs_lnum_t i = face_cells[face_id][0];
+      cs_lnum_t j = face_cells[face_id][1];
+
+      cs_lnum_t s_id, e_id;
+
+      if (i < n_rows) {
+        s_id = c2c_idx[i];
+        e_id = c2c_idx[i+1];
+        for (cs_lnum_t k = s_id; k < e_id; k++) {
+          if (c2c[k] == j) {
+            c2i[k] = face_id;
+            sgn[k] = 1;
+          }
+        }
+      }
+
+      if (j < n_rows) {
+        s_id = c2c_idx[j];
+        e_id = c2c_idx[j+1];
+        for (cs_lnum_t k = s_id; k < e_id; k++) {
+          if (c2c[k] == i) {
+            c2i[k] = face_id;
+            sgn[k] = -1;
+          }
+        }
+      }
+    }
+  }
+
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
       t_stop = std::chrono::high_resolution_clock::now();
