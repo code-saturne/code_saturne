@@ -298,7 +298,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         val = self.partRadiationModel.getEmissivity(self._current_particle_f_id)
         if val == None:
             val = 1.0 # default
-        self.lineEditEmissivity.setText(val)
+        self.lineEditEmissivity.setText(str(val))
 
     def __setParticlesRadiation__(self):
         """
