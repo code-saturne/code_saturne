@@ -147,6 +147,20 @@ typedef struct {
   cs_real_t          *val_f_d;     /* face value for diffusion */
   cs_real_t          *val_f_d_lim; /* face value for diffusion
                                       (limited) */
+  cs_real_t         *ib_g_wall_cor;/* wall gradient correction factor for
+                                      immersed boundaries */
+  cs_real_t         *ib_val_ext;   /* external value for
+                                      immersed boundaries */
+  int               *ib_bc_code;   /* Indicator of the type of bc
+                                      for Immersed boundaries */
+  cs_real_t         *ib_qimp;      /* flux value to impose for immersed
+                                      boundaries */
+  cs_real_t         *ib_hint;      /* Immersed boundary exchange coefficient */
+  cs_real_t         *ib_hext;      /* Immersed boundary coefficient provided
+                                      externally from an analytical or
+                                      experimental correlation */
+  int               *wall_law;     /* To store fortran indicator iuntur
+                                      0 in the viscous sublayer */
 
   cs_real_t          *val_f_pre;   /* previous face value for gradient */
 

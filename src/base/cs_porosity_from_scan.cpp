@@ -115,10 +115,13 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .transformation_matrix = {{1., 0., 0., 0.},
                             {0., 1., 0., 0.},
                             {0., 0., 1., 0.}},
+  .direction_vector = {0., 0., -1.},
+  .type_fill = CS_FILL_RADIAL,
   .nb_sources = 0,
   .sources = nullptr,
   .source_c_ids = nullptr,
   .threshold = 4,
+  .n_agglomeration = 1,
   .porosity_threshold = 1e-12,
   .convection_porosity_threshold = 0.5,
   .use_staircase = false,
@@ -243,6 +246,7 @@ _solid_plane_from_points(const cs_mesh_t   *m,
                          cs_real_t          c_w_face_normal[][3])
 {
   const cs_real_t threshold = _porosity_from_scan_opt.threshold;
+  const cs_real_t n_agglomeration = _porosity_from_scan_opt.n_agglomeration;
   cs_real_t tol_err = 1.0e-12;
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
@@ -1142,44 +1146,28 @@ cs_compute_porosity_from_scan(void)
   CS_MALLOC_HD(pvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
-  /* Loop over sources */
-  for (int s_id = 0; s_id < nb_sources; s_id++) {
+  cs_real_t direction_vector[3] = {_porosity_from_scan_opt.direction_vector[0],
+                                   _porosity_from_scan_opt.direction_vector[1],
+                                   _porosity_from_scan_opt.direction_vector[2]};
 
-    int rank_source;
-    cs_geom_closest_point(m->n_cells,
-                          (const cs_real_3_t *)mq_g->cell_cen,
-                          _porosity_from_scan_opt.sources[s_id],
-                          &(source_c_ids[s_id]),
-                          &rank_source);
+  const cs_fill_type_t type_fill = _porosity_from_scan_opt.type_fill;
 
-    cs_real_t source_cen[3];
-
-    if (source_c_ids[s_id] > -1) {
-      for (int i = 0; i < 3; i++)
-        source_cen[i] = cell_cen[source_c_ids[s_id]][i];
-    }
-
-    cs_parall_bcast(rank_source, 3, CS_REAL_TYPE, source_cen);
-
-    /* Compute the mass flux due to V = e_r
+  if (type_fill == CS_FILL_DIRECTION) {
+    /* Compute the mass flux due to V = -e_z
      *=====================================*/
 
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-      cs_real_t x0xf[3] = {
-        i_face_cog[face_id][0] - source_cen[0],
-        i_face_cog[face_id][1] - source_cen[1],
-        i_face_cog[face_id][2] - source_cen[2]
-      };
+      cs_real_t x0xf[3] = {direction_vector[0],
+                           direction_vector[1],
+                           direction_vector[2]};
       i_massflux[face_id] = cs_math_3_dot_product(x0xf,
                                                   i_f_face_normal[face_id]);
     }
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-      cs_real_t x0xf[3] = {
-        b_face_cog[face_id][0] - source_cen[0],
-        b_face_cog[face_id][1] - source_cen[1],
-        b_face_cog[face_id][2] - source_cen[2]
-      };
+      cs_real_t x0xf[3] = {direction_vector[0],
+                           direction_vector[1],
+                           direction_vector[2]};
 
       b_massflux[face_id] = cs_math_3_dot_product(x0xf,
                                                   b_f_face_normal[face_id]);
@@ -1194,8 +1182,8 @@ cs_compute_porosity_from_scan(void)
       if (b_massflux[face_id] <= 0.) {
 
        eqp->ndircl = 1;
-       cs_real_t hint = 1. / mq_g->b_dist[face_id];
-       cs_real_t pimp = 0.;
+       cs_real_t hint = 1. / mq->b_dist[face_id];
+       cs_real_t pimp = 1.;
 
        cs_boundary_conditions_set_dirichlet_scalar(face_id,
                                                    f->bc_coeffs,
@@ -1205,7 +1193,7 @@ cs_compute_porosity_from_scan(void)
       }
       else {
 
-        cs_real_t hint = 1. / mq_g->b_dist[face_id];
+        cs_real_t hint = 1. / mq->b_dist[face_id];
         cs_real_t qimp = 0.;
 
         cs_boundary_conditions_set_neumann_scalar(face_id,
@@ -1215,18 +1203,11 @@ cs_compute_porosity_from_scan(void)
 
       }
     }
-
     /* Matrix
      *=======*/
 
     for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++)
       rovsdt[c_id] = 0.;
-
-    /* Penalisation term for the source
-     * in parallel, only one rank takes that
-     * */
-    if (source_c_ids[s_id] > -1)
-      rovsdt[source_c_ids[s_id]] = mq_g->cell_vol[source_c_ids[s_id]];
 
     /* Even if there is no Dirichlet, the system is well-posed
      * so no need of diagonal reinforcement */
@@ -1240,14 +1221,10 @@ cs_compute_porosity_from_scan(void)
       pvar[c_id] = 0.;
     }
 
-    /* in parallel, only one rank takes that */
-    if (source_c_ids[s_id] > -1)
-      rhs[source_c_ids[s_id]] = mq_g->cell_vol[source_c_ids[s_id]];
-
     /* Norm
      *======*/
 
-    cs_real_t norm = mq_g->tot_vol;
+    cs_real_t norm = mq->tot_vol;
 
     /* Solving
      *=========*/
@@ -1285,12 +1262,162 @@ cs_compute_porosity_from_scan(void)
                                        nullptr);
 
     for (cs_lnum_t c_id = 0; c_id< m->n_cells; c_id++)
-      f->val[c_id] = cs::max(f->val[c_id], pvar[c_id]);
+      f->val[c_id] = CS_MAX(f->val[c_id], pvar[c_id]);
 
     /* Parallel synchronisation */
     cs_halo_sync(m->halo, false, f->val);
+  }
+  else if (type_fill == CS_FILL_RADIAL) {
+    /* Loop over sources */
+    for (int s_id = 0; s_id < nb_sources; s_id++) {
 
-  } /* End loop over sources */
+      int rank_source;
+      cs_geom_closest_point(m->n_cells,
+                            (const cs_real_3_t *)mq_g->cell_cen,
+                            _porosity_from_scan_opt.sources[s_id],
+                            &(source_c_ids[s_id]),
+                            &rank_source);
+
+      cs_real_t source_cen[3];
+
+      if (source_c_ids[s_id] > -1) {
+        for (int i = 0; i < 3; i++)
+          source_cen[i] = cell_cen[source_c_ids[s_id]][i];
+      }
+
+      cs_parall_bcast(rank_source, 3, CS_REAL_TYPE, source_cen);
+
+      /* Compute the mass flux due to V = e_r
+       *=====================================*/
+
+      for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+        cs_real_t x0xf[3] = {
+          i_face_cog[face_id][0] - source_cen[0],
+          i_face_cog[face_id][1] - source_cen[1],
+          i_face_cog[face_id][2] - source_cen[2]
+        };
+        i_massflux[face_id] = cs_math_3_dot_product(x0xf,
+                                                    i_f_face_normal[face_id]);
+      }
+
+      for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+        cs_real_t x0xf[3] = {
+          b_face_cog[face_id][0] - source_cen[0],
+          b_face_cog[face_id][1] - source_cen[1],
+          b_face_cog[face_id][2] - source_cen[2]
+        };
+
+        b_massflux[face_id] = cs_math_3_dot_product(x0xf,
+                                                    b_f_face_normal[face_id]);
+      }
+
+      /* Boundary conditions
+       *====================*/
+
+      /* homogeneous Neumann except if ingoing flux */
+      for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+        /* Dirichlet BCs */
+        if (b_massflux[face_id] <= 0.) {
+
+          eqp->ndircl = 1;
+          cs_real_t hint = 1. / mq_g->b_dist[face_id];
+          cs_real_t pimp = 0.;
+
+          cs_boundary_conditions_set_dirichlet_scalar(face_id,
+                                                      f->bc_coeffs,
+                                                      pimp,
+                                                      hint,
+                                                      cs_math_infinite_r);
+        }
+        else {
+
+          cs_real_t hint = 1. / mq_g->b_dist[face_id];
+          cs_real_t qimp = 0.;
+
+          cs_boundary_conditions_set_neumann_scalar(face_id,
+                                                    f->bc_coeffs,
+                                                    qimp,
+                                                    hint);
+
+        }
+      }
+
+      /* Matrix
+       *=======*/
+
+      for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++)
+        rovsdt[c_id] = 0.;
+
+      /* Penalisation term for the source
+       * in parallel, only one rank takes that
+       * */
+      if (source_c_ids[s_id] > -1)
+        rovsdt[source_c_ids[s_id]] = mq_g->cell_vol[source_c_ids[s_id]];
+
+      /* Even if there is no Dirichlet, the system is well-posed
+       * so no need of diagonal reinforcement */
+      eqp->ndircl = 1;
+
+      /* Right hand side and initial guess
+       *==================================*/
+
+      for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
+        rhs[c_id] = 0.;
+        pvar[c_id] = 0.;
+      }
+
+      /* in parallel, only one rank takes that */
+      if (source_c_ids[s_id] > -1)
+        rhs[source_c_ids[s_id]] = mq_g->cell_vol[source_c_ids[s_id]];
+
+      /* Norm
+       *======*/
+
+      cs_real_t norm = mq_g->tot_vol;
+
+      /* Solving
+       *=========*/
+
+      /* In case of a theta-scheme, set theta = 1;
+         no relaxation in steady case either */
+
+      cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
+                                         -1,  /* no over loops */
+                                         f->id,
+                                         nullptr,
+                                         0,   /* iescap */
+                                         0,   /* imucpp */
+                                         norm,
+                                         eqp,
+                                         f->val_pre,
+                                         f->val,
+                                         f->bc_coeffs,
+                                         i_massflux,
+                                         b_massflux,
+                                         i_massflux, /* viscosity, not used */
+                                         b_massflux, /* viscosity, not used */
+                                         i_massflux, /* viscosity, not used */
+                                         b_massflux, /* viscosity, not used */
+                                         nullptr,
+                                         nullptr,
+                                         nullptr,
+                                         0, /* icvflb (upwind) */
+                                         nullptr,
+                                         rovsdt,
+                                         rhs,
+                                         pvar,
+                                         dpvar,
+                                         nullptr,
+                                         nullptr);
+
+      for (cs_lnum_t c_id = 0; c_id< m->n_cells; c_id++)
+        f->val[c_id] = cs::max(f->val[c_id], pvar[c_id]);
+
+      /* Parallel synchronisation */
+      cs_halo_sync(m->halo, false, f->val);
+
+    } /* End loop over sources */
+  }
 
   /* Finalization */
 
@@ -1322,10 +1449,19 @@ cs_compute_porosity_from_scan(void)
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
 
-    if (cs_math_3_dot_product(grdporo[c_id], c_w_face_normal[c_id]) > 0.0) {
-      for (cs_lnum_t i = 0; i < 3; i++)
-        c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
+    if (type_fill == CS_FILL_RADIAL) {
+      if (cs_math_3_dot_product(grdporo[c_id], c_w_face_normal[c_id]) > 0.0) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
+      }
     }
+    else if (type_fill == CS_FILL_DIRECTION) {
+      if (cs_math_3_dot_product(direction_vector, c_w_face_normal[c_id]) < 0.0) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
+      }
+    }
+
   }
 
   // Porosity

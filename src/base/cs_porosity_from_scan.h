@@ -76,6 +76,13 @@ typedef enum {
 
 } cs_ibm_cog_location_t;
 
+typedef enum {
+
+  CS_FILL_RADIAL = 0,
+  CS_FILL_DIRECTION = 1,
+
+} cs_fill_type_t;
+
 typedef struct {
   bool  compute_porosity_from_scan;
   char *file_names;
@@ -89,10 +96,15 @@ typedef struct {
      coordinates transformation matrix,
      with last row = [0 0 0 1]) */
   cs_real_34_t transformation_matrix;
+  /*! To define the direction of fill,
+      by default it is filled from top (z-direction).*/
+  cs_real_3_t direction_vector;
+  cs_fill_type_t type_fill;
   int   nb_sources;
   cs_real_3_t *sources;
   cs_lnum_t *source_c_ids;
   cs_lnum_t threshold;
+  cs_lnum_t n_agglomeration;
   cs_real_t porosity_threshold;
   cs_real_t convection_porosity_threshold;
   bool      use_staircase;

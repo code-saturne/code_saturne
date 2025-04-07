@@ -1286,11 +1286,13 @@ cs_boundary_conditions_type(bool  init,
 
     cs_field_t *f_yplus = cs_field_by_name_try("yplus");
     cs_field_t *f_zground = cs_field_by_name_try("z_ground");
+    cs_field_t *f_poro = cs_field_by_name_try("porosity");
 
     const int kscavr = cs_field_key_id("first_moment_id");
 
     int inlet_types[2] = {CS_INLET, CS_CONVECTIVE_INLET};
     int inlet_codes[2] = {1, 13};
+
 
     for (int field_id = 0; field_id < n_fields; field_id++) {
 
@@ -1360,11 +1362,19 @@ cs_boundary_conditions_type(bool  init,
 
             else if (rcodcl1[f_id] > 0.5*cs_math_infinite_r) {
               const cs_real_t flumbf = b_massflux[f_id];
-              /* Outgoing flux or yplus or z_ground */
+              /* Outgoing flux or yplus or z_ground or porosity */
               if (   flumbf >= - cs_math_epzero
                   || f == f_yplus
                   || f == f_zground) {
                 icodcl[f_id] = 3;
+                for (cs_lnum_t k = 0; k < f->dim; k++) {
+                  rcodcl1[k*n_b_faces+f_id] = 0.;
+                  rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
+                  rcodcl3[k*n_b_faces+f_id] = 0.;
+                }
+              }
+              else if (   flumbf <= 0. && f == f_poro) {
+                icodcl[f_id] = 1;
                 for (cs_lnum_t k = 0; k < f->dim; k++) {
                   rcodcl1[k*n_b_faces+f_id] = 0.;
                   rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;

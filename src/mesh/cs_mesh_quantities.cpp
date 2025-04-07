@@ -4255,19 +4255,20 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
       const cs_lnum_t f_id = cell_i_faces[cidx];
       const short int sign = cell_i_faces_sgn[cidx];
+      const cs_lnum_t side = (cell_i_faces_sgn[cidx]+2)%3;
 
-      const cs_real_t face_norm = cs_math_3_norm(i_f_face_normal[f_id]);
+      const cs_real_t face_norm = cs_math_3_norm(i_f_face_cell_normal[f_id][side]);
       if (face_norm > 0.0)
         is_active_cell = true;
 
       for (cs_lnum_t i = 0; i < 3; i++) {
 
-        c_w_face_normal[c_id][i] -= sign*i_f_face_normal[f_id][i];
+        c_w_face_normal[c_id][i] -= sign*i_f_face_cell_normal[f_id][side][i];
 
-        const cs_real_t xfmxc = (i_f_face_cog[f_id][i] - cell_f_cen[c_id][i]);
+        const cs_real_t xfmxc = (i_f_face_cog_dual[f_id][side][i] - cell_f_cen[c_id][i]);
 
         for (cs_lnum_t j = 0; j < 3; j++)
-          xpsn[c_id][i][j] += sign*xfmxc*i_f_face_normal[f_id][j];
+          xpsn[c_id][i][j] += sign*xfmxc*i_f_face_cell_normal[f_id][side][j];
       }
     } /* End loop on adjacent cells */
 
@@ -4316,7 +4317,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   const cs_real_t m_identity[3][3] = {{1., 0., 0.,}, {0., 1., 0.}, {0., 0., 1.}};
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
-
     cs_real_t xc[3] = {mq_f->cell_cen[c_id][0],
                        mq_f->cell_cen[c_id][1],
                        mq_f->cell_cen[c_id][2]};
