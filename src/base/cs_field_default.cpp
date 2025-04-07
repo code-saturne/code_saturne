@@ -107,7 +107,7 @@ static cs_real_t   *_rcodcl = nullptr;
  * Initialize a variable field's associated \ref cs_equation_param_t
  *
  * This intermediate function is used to silence an error with
- * undefinedBehaviorSanitizer, which excpects a function with a "void *"
+ * undefinedBehaviorSanitizer, which expects a function with a "void *"
  * argument.
  *
  * \param[in]  f_id  associated field id

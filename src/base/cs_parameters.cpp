@@ -531,7 +531,7 @@ cs_tree_node_t  *cs_glob_tree = nullptr;
  * Free the contents of a \ref cs_equation_param_t
  *
  * This intermediate function is used to silence an error with
- * undefinedBehaviorSanitizer, which excpects a function with a "void *"
+ * undefinedBehaviorSanitizer, which expects a function with a "void *"
  * argument.
  *
  * \param[in, out] p  pointer to a \ref cs_equation_param_t
