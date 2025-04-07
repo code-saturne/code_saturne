@@ -874,32 +874,39 @@ public:
       (stream_id, n, sizeof(result), l_grid_size,
        (void *&)r_grid_, (void *&)r_reduce_);
 
-    int smem_size = block_size_ * sizeof(T);
+    int l_block_size = block_size_;
+    int smem_size = l_block_size * sizeof(T);
+    while (smem_size > 0x19000 && l_block_size > 128) {
+      // We shoud have a runtime failure if even blocks of size 128
+      // are too large relative to the available shared memory.
+      l_block_size /= 2;
+      smem_size = l_block_size * sizeof(T);
+    }
 
     cs_cuda_kernel_parallel_for_reduce<T, R>
-      <<<l_grid_size, block_size_, smem_size, stream_>>>
+      <<<l_grid_size, l_block_size, smem_size, stream_>>>
       (n, r_grid_, reducer, static_cast<F&&>(f),
        static_cast<Args&&>(args)...);
 
-    switch (block_size_) {
+    switch (l_block_size) {
     case 1024:
       cs_cuda_reduce_single_block<1024, R>
-        <<<1, block_size_, 0, stream_>>>
+        <<<1, l_block_size, smem_size, stream_>>>
         (l_grid_size, r_grid_, r_reduce_);
       break;
     case 512:
       cs_cuda_reduce_single_block<512, R>
-        <<<1, block_size_, 0, stream_>>>
+        <<<1, l_block_size, smem_size, stream_>>>
         (l_grid_size, r_grid_, r_reduce_);
       break;
     case 256:
       cs_cuda_reduce_single_block<256, R>
-        <<<1, block_size_, 0, stream_>>>
+        <<<1, l_block_size, smem_size, stream_>>>
         (l_grid_size, r_grid_, r_reduce_);
       break;
     case 128:
       cs_cuda_reduce_single_block<128, R>
-        <<<1, block_size_, 0, stream_>>>
+        <<<1, l_block_size, smem_size, stream_>>>
         (l_grid_size, r_grid_, r_reduce_);
       break;
     default:

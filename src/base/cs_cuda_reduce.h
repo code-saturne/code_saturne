@@ -427,7 +427,8 @@ cs_cuda_reduce_single_block(size_t   n,
                             T       *g_idata,
                             T       *g_odata)
 {
-  __shared__ T sdata[blockSize];
+  extern __shared__  int p_stmp[];
+  T *sdata = reinterpret_cast<T *>(p_stmp);
   R  reducer;
 
   size_t tid = threadIdx.x;
