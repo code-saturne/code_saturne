@@ -98,6 +98,9 @@ static cudaStream_t _cs_glob_stream_pf = 0;
 
 bool cs_glob_cuda_allow_graph = false;
 
+// Shared memory size ber block (based on know GPUs, queried later).
+size_t cs_glob_cuda_shared_mem_per_block = 0x19000;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -475,6 +478,8 @@ cs_base_cuda_device_info(cs_log_t  log_id)
     struct cudaDeviceProp prop;
     CS_CUDA_CHECK(cudaGetDeviceProperties(&prop, i));
     unsigned long long mem = prop.totalGlobalMem / 1000000;
+
+    cs_glob_cuda_shared_mem_per_block = prop.sharedMemPerBlock;
 
     cs_log_printf
       (log_id,
