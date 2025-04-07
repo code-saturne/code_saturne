@@ -77,7 +77,7 @@ The expected computation time can be specified in the SMGR xml file.
 In this case, the run _Grid1_ has an expected computation time of 2 hours and 15
 minutes and the one of _Grid2_ is 5 hours.
 
-It can also be specified in the run.cfg file a given case.
+It can also be specified in the run.cfg file of a given case.
 
 ```{.sh}
 [cronos]
@@ -90,10 +90,16 @@ expected_time: 00:30
 n_procs: 8
 expected_time: 02:00
 
+[cronos/tag=Fine]
+
+n_procs: 12
+expected_time: 08:00
+
 ``` 
 
-In this case, all runs have an expected computation time of 30 minutes, except
-the one of the run _mesh2_ that is 2 hours.
+In this case, runs have an expected computation time of 30 minutes, except
+the run _mesh2_ (2 hours) and runs that have the tag _Fine_ (8 hours). Specific
+resource defined with _run_id_ dominates over _tag_.
 
 Remark: As for the number of process (`n_procs`), the expected time specified in
 SMGR xml file dominates over those specified in run.cfg files.
