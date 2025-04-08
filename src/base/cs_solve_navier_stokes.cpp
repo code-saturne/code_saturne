@@ -404,14 +404,20 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                              dt,
                              rhs);
 
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        rhs[cell_id] = - divu[cell_id] - rhs[cell_id];
+      double rd2;
+      ctx.parallel_for_reduce_sum(n_cells, rd2, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t cell_id,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+        cs_real_t rhs_c = - divu[cell_id] - rhs[cell_id];
+        rhs[cell_id] = rhs_c;
+        sum += rhs_c*rhs_c;
       });
 
       ctx.wait(); // needed to compute the CPU residual
 
       /* Convergence test */
-      residual = sqrt(cs_gdot(n_cells, rhs, rhs));
+      cs_parall_sum(1, CS_DOUBLE, &rd2);
+      residual = sqrt(rd2);
 
       if (eqp->verbosity > 1) {
         cs_real_t r = (rnorm >= cs_math_epzero) ? residual/rnorm : residual;

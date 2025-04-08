@@ -926,10 +926,11 @@ cs_turbulence_ke(int              phase_id,
   cs_real_t *coefap = nullptr, *coefbp = nullptr;
   cs_real_t *cofafp = nullptr, *cofbfp = nullptr;
 
+  cs_real_t *w10 = nullptr;
+
   /* Calculation of Ceps2* */
   if (model == CS_TURB_V2F_BL_V2K) {
 
-    cs_real_t *w10 = nullptr;
     CS_MALLOC_HD(w10, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -999,10 +1000,10 @@ cs_turbulence_ke(int              phase_id,
                           * xcr_m1);
     });
 
-    CS_FREE_HD(w10);
   }
 
   ctx.wait();
+  CS_FREE_HD(w10);
 
   /* Compute the buoyancy term
    ======================================================== */

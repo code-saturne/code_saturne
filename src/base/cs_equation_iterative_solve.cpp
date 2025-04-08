@@ -53,43 +53,42 @@
 
 #include "base/cs_array.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
-#include "alge/cs_balance.h"
-#include "alge/cs_blas.h"
-#include "alge/cs_convection_diffusion.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_field_operator.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_halo.h"
+#include "base/cs_internal_coupling.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "base/cs_field.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_gradient_boundary.h"
-#include "base/cs_internal_coupling.h"
-#include "mesh/cs_mesh_quantities.h"
-#include "alge/cs_multigrid.h"
 #include "base/cs_parameters.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_reducers.h"
 #include "base/cs_timer.h"
 #include "base/cs_parall.h"
+
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+
+#include "alge/cs_balance.h"
+#include "alge/cs_blas.h"
+#include "alge/cs_convection_diffusion.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_gradient_boundary.h"
+#include "alge/cs_multigrid.h"
 #include "alge/cs_matrix_building.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_default.h"
-
-#include "cs_field_operator.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_equation_iterative_solve.h"
-
-/*----------------------------------------------------------------------------*/
 
 /*============================================================================
  * Type definitions
@@ -775,29 +774,44 @@ _equation_iterative_solve_strided(int                   idtvar,
                sqrt(cs_gdot(stride*n_cells, _smbrp, _smbrp)));
   }
 
+  cs_real_t rnorm2;
+
   if (has_dc == 1) {
     int *c_disable_flag = mq->c_disable_flag;
 
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    ctx.parallel_for_reduce_sum(n_cells, rnorm2, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      cs_real_t c_sum = 0;
       /* Remove contributions from penalized cells */
-      for (cs_lnum_t i = 0; i < stride; i++)
-        w1[c_id][i] += smbrp[c_id][i];
-
-      if (c_disable_flag[c_id] != 0)
+      if (c_disable_flag[c_id] != 0) {
         for (cs_lnum_t i = 0; i < stride; i++)
           w1[c_id][i] = 0.;
+      }
+      else {
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          w1[c_id][i] += smbrp[c_id][i];
+          c_sum += cs_math_pow2(w1[c_id][i]);
+        }
+      }
+      sum += c_sum;
     });
   }
   else {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t i = 0; i < stride; i++)
+    ctx.parallel_for_reduce_sum(n_cells, rnorm2, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      cs_real_t c_sum = 0;
+      for (cs_lnum_t i = 0; i < stride; i++) {
         w1[c_id][i] += smbrp[c_id][i];
+        c_sum += cs_math_pow2(w1[c_id][i]);
+      }
+      sum += c_sum;
     });
   }
 
   ctx.wait();
-
-  cs_real_t rnorm2 = cs_gdot(stride*n_cells, (cs_real_t *)w1, (cs_real_t *)w1);
+  cs_parall_sum(1, CS_DOUBLE, &rnorm2);
   cs_real_t rnorm = sqrt(rnorm2);
 
   CS_FREE_HD(w1);
@@ -919,21 +933,43 @@ _equation_iterative_solve_strided(int                   idtvar,
       /* ||E.dx^(k-1)-E.0||^2 */
       cs_real_t nadxkm1 = nadxk;
 
-      /* ||E.dx^k-E.0||^2 */
-      nadxk = cs_gdot(stride*n_cells, (cs_real_t *)adxk, (cs_real_t *)adxk);
+      struct cs_data_2r rd2;
+      struct cs_reduce_sum2r reducer2;
 
-      /* < E.dx^k-E.0; r^k > */
-      cs_real_t paxkrk = cs_gdot(stride*n_cells,
-                                 (cs_real_t *)smbrp,
-                                 (cs_real_t *)adxk);
+      ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
+                              (cs_lnum_t c_id, cs_data_2r &sum) {
+        sum.r[0] = 0.;
+        sum.r[1] = 0.;
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          sum.r[0] += adxk[c_id][i] * adxk[c_id][i];
+          sum.r[1] += smbrp[c_id][i] * adxk[c_id][i];
+        }
+      });
+
+      ctx.wait();
+      cs_parall_sum(2, CS_DOUBLE, rd2.r);
+
+      nadxk = rd2.r[0];              /* ||E.dx^k-E.0||^2 */
+      cs_real_t paxkrk = rd2.r[1];   /* < E.dx^k-E.0; r^k > */
 
       /* Relaxation with respect to dx^k and dx^(k-1) */
       if (iswdyp >= 2) {
-        /* < E.dx^(k-1)-E.0; r^k > */
-        paxm1rk = cs_gdot(stride*n_cells, (cs_real_t *)smbrp, (cs_real_t *)adxkm1);
 
-        /* < E.dx^(k-1)-E.0; E.dx^k-E.0 > */
-        paxm1ax = cs_gdot(stride*n_cells, (cs_real_t *)adxk, (cs_real_t *)adxkm1);
+        ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id, cs_data_2r &sum) {
+          sum.r[0] = 0.;
+          sum.r[1] = 0.;
+          for (cs_lnum_t i = 0; i < stride; i++) {
+            sum.r[0] = smbrp[c_id][i] * adxkm1[c_id][i];
+            sum.r[1] = adxk[c_id][i] * adxkm1[c_id][i];
+          }
+        });
+
+        ctx.wait();
+        cs_parall_sum(2, CS_DOUBLE, rd2.r);
+
+        paxm1rk = rd2.r[0];   // < E.dx^(k-1)-E.0; r^k >
+        paxm1ax = rd2.r[1];   // < E.dx^(k-1)-E.0; E.dx^k -E.0 >
 
         if (   (nadxkm1 > 1.e-30*rnorm2)
             && (nadxk*nadxkm1 - cs_math_pow2(paxm1ax)) > 1.e-30*rnorm2)

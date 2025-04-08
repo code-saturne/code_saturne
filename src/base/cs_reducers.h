@@ -60,11 +60,11 @@ END_C_DECLS
 // 2 reals
 
 struct cs_data_2r {
-  cs_real_t r[2];
+  double r[2];
 };
 
 struct cs_data_4r {
-  cs_real_t r[4];
+  double r[4];
 };
 
 struct cs_data_14r {
