@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>605</width>
-    <height>826</height>
+    <width>678</width>
+    <height>936</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -120,7 +120,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Use mesh output from the Preprocessor or from a previous run.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Use existing mesh input</string>
+             <string>Use existing mesh input directory</string>
             </property>
            </widget>
           </item>
