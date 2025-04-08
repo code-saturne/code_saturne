@@ -653,47 +653,47 @@ cs_ctwr_build_all(void)
     } /* End check mixture model on */
   } /* End loop over ctwr zones */
 
-    /* 2) RAIN ZONES :
-     *    - Mass injection due to evaporation of rain drops (only if not mixture model)
-     *    - Mass injection from rain leaking from packings (only if mixture model on)
-    */
+  /* 2) RAIN ZONES :
+   *    - Mass injection due to evaporation of rain drops (only if not mixture model)
+   *    - Mass injection from rain leaking from packings (only if mixture model on)
+   */
 
-    /* Define the zones with source terms */
-    if (ct_opt->has_rain) {
-      /* Select zone 0 for all cells */
-      const cs_zone_t *z = cs_volume_zone_by_id(0);
+  /* Define the zones with source terms */
+  if (ct_opt->has_rain) {
+    /* Select zone 0 for all cells */
+    const cs_zone_t *z = cs_volume_zone_by_id(0);
 
-      cs_equation_param_t *eqp =
-        cs_field_get_equation_param(CS_F_(p));
+    cs_equation_param_t *eqp =
+      cs_field_get_equation_param(CS_F_(p));
 
-      if (ct_opt->mixture_model) { /* Mixture model is on
-                                      -> leaking rain contributes to bulk mass */
-        cs_equation_add_volume_mass_injection_by_dof_func
-          (eqp,
-           z->name,
-           cs_flag_primal_cell,
-           cs_ctwr_volume_mass_injection_rain_dof_func,
-           nullptr);
+    if (ct_opt->mixture_model) { /* Mixture model is on
+                                    -> leaking rain contributes to bulk mass */
+      cs_equation_add_volume_mass_injection_by_dof_func
+        (eqp,
+         z->name,
+         cs_flag_primal_cell,
+         cs_ctwr_volume_mass_injection_rain_dof_func,
+         nullptr);
 
-        /* Rain mass fraction */
-        cs_field_t *f_yp = cs_field_by_name("x_p_01");
-        eqp = cs_field_get_equation_param(f_yp);
+      /* Rain mass fraction */
+      cs_field_t *f_yp = cs_field_by_name("x_p_01");
+      eqp = cs_field_get_equation_param(f_yp);
 
-        /* Set value of ingoing rain */
-        cs_real_t y_in = 1.;
-        cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &y_in);
+      /* Set value of ingoing rain */
+      cs_real_t y_in = 1.;
+      cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &y_in);
 
-        /* Rain enthalpy (yp.hp) */
-        cs_field_t *f_yphp = cs_field_by_name("ymh_l_r");
-        eqp = cs_field_get_equation_param(f_yphp);
-        cs_equation_add_volume_mass_injection_by_dof_func(eqp,
-            z->name,
-            cs_flag_primal_cell,
-            cs_ctwr_volume_mass_injection_yh_rain_dof_func,
-            nullptr);
-      }
+      /* Rain enthalpy (yp.hp) */
+      cs_field_t *f_yphp = cs_field_by_name("ymh_l_r");
+      eqp = cs_field_get_equation_param(f_yphp);
+      cs_equation_add_volume_mass_injection_by_dof_func(eqp,
+          z->name,
+          cs_flag_primal_cell,
+          cs_ctwr_volume_mass_injection_yh_rain_dof_func,
+          nullptr);
+    }
 
-      else { /* If mixture model is not activated */
+    else { /* If mixture model is not activated */
       /* Set the bulk mass source term function (associated to pressure field)
        * related to water evaporation from rain drops */
       cs_equation_add_volume_mass_injection_by_dof_func
@@ -709,7 +709,7 @@ cs_ctwr_build_all(void)
       /* Value is set to 1 because the extra mass is pure water */
       cs_real_t yw_in = 1.;
       cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &yw_in);
-      }
+    }
    }
 
   /* Post-processing: multiply enthalpy by fraction */

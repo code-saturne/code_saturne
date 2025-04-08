@@ -543,7 +543,6 @@ cs_ctwr_volume_mass_injection_evap_rain_dof_func
   cs_real_t *evap_rate_rain = nullptr;
   evap_rate_rain = cs_field_by_name("evaporation_rate_rain")->val;
 
-
   int evap_model = ct_opt->evap_model;
 
   if (ct_opt->rain_evap) {
