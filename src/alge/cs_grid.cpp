@@ -2188,7 +2188,8 @@ _append_face_data(cs_grid_t   *g,
 
     if (g->relaxation > 0) {
 
-      CS_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
+      if (g->_face_normal != nullptr)
+        CS_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
 
       CS_REALLOC(g->_xa0, n_faces_tot, cs_real_t);
       CS_REALLOC(g->xa0ij, n_faces_tot*3, cs_real_t);
@@ -2214,8 +2215,9 @@ _append_face_data(cs_grid_t   *g,
 
       if (g->relaxation > 0) {
 
-        MPI_Recv(g->_face_normal + g->n_faces*3, n_recv*3,
-                 CS_MPI_REAL, dist_rank, tag, comm, &status);
+        if (g->_face_normal != nullptr)
+          MPI_Recv(g->_face_normal + g->n_faces*3, n_recv*3,
+                   CS_MPI_REAL, dist_rank, tag, comm, &status);
 
         MPI_Recv(g->_xa0 + g->n_faces, n_recv,
                  CS_MPI_REAL, dist_rank, tag, comm, &status);
@@ -2239,6 +2241,7 @@ _append_face_data(cs_grid_t   *g,
 
     for (face_id = 0; face_id < n_faces; face_id++) {
       cs_lnum_t p_face_id = face_list[face_id];
+      assert(face_id <= p_face_id);
       g->_face_cell[face_id][0] = g->_face_cell[p_face_id][0];
       g->_face_cell[face_id][1] = g->_face_cell[p_face_id][1];
       if (g->symmetric == true)
@@ -2248,9 +2251,11 @@ _append_face_data(cs_grid_t   *g,
         g->_xa[face_id*2+1] = g->_xa[p_face_id*2+1];
       }
       if (g->relaxation > 0) {
-        g->_face_normal[face_id*3] = g->_face_normal[p_face_id*3];
-        g->_face_normal[face_id*3 + 1] = g->_face_normal[p_face_id*3 + 1];
-        g->_face_normal[face_id*3 + 2] = g->_face_normal[p_face_id*3 + 2];
+        if (g->_face_normal != nullptr) {
+          g->_face_normal[face_id*3] = g->_face_normal[p_face_id*3];
+          g->_face_normal[face_id*3 + 1] = g->_face_normal[p_face_id*3 + 1];
+          g->_face_normal[face_id*3 + 2] = g->_face_normal[p_face_id*3 + 2];
+        }
         g->_xa0[face_id] = g->_xa0[p_face_id];
         g->xa0ij[face_id*3] = g->xa0ij[p_face_id*3];
         g->xa0ij[face_id*3 + 1] = g->xa0ij[p_face_id*3 + 1];
@@ -2271,9 +2276,11 @@ _append_face_data(cs_grid_t   *g,
     CS_FREE(g->_xa);
 
     if (g->relaxation > 0) {
-      MPI_Send(g->_face_normal, n_faces*3, CS_MPI_REAL,
-               g->merge_sub_root, tag, comm);
-      CS_FREE(g->_face_normal);
+      if (g->_face_normal != nullptr) {
+        MPI_Send(g->_face_normal, n_faces*3, CS_MPI_REAL,
+                 g->merge_sub_root, tag, comm);
+        CS_FREE(g->_face_normal);
+      }
 
       MPI_Send(g->_xa0, n_faces, CS_MPI_REAL,
                g->merge_sub_root, tag, comm);
@@ -2290,6 +2297,7 @@ _append_face_data(cs_grid_t   *g,
   g->face_cell = (const cs_lnum_2_t  *)(g->_face_cell);
   g->xa = g->_xa;
   if (g->relaxation > 0) {
+    CS_FREE(g->_face_normal);
     g->face_normal = g->_face_normal;
     g->xa0 = g->_xa0;
   }
@@ -5678,9 +5686,11 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
           cs_lnum_t c_face = c_coarse_face[face_id] -1;
 
           c_xa0[c_face] += f_xa0[face_id];
-          c_face_normal[3*c_face]    += f_face_normal[3*face_id];
-          c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
-          c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
+          if (f_face_normal != nullptr) {
+            c_face_normal[3*c_face]    += f_face_normal[3*face_id];
+            c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
+            c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
+          }
           c_xa0ij[3*c_face]    += f_xa0[face_id] * dij[0];
           c_xa0ij[3*c_face +1] += f_xa0[face_id] * dij[1];
           c_xa0ij[3*c_face +2] += f_xa0[face_id] * dij[2];
@@ -5689,9 +5699,11 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
           cs_lnum_t c_face = -c_coarse_face[face_id] -1;
 
           c_xa0[c_face] += f_xa0[face_id];
-          c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
-          c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
-          c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
+          if (f_face_normal != nullptr) {
+            c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
+            c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
+            c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
+          }
           c_xa0ij[3*c_face]    -= f_xa0[face_id] * dij[0];
           c_xa0ij[3*c_face +1] -= f_xa0[face_id] * dij[1];
           c_xa0ij[3*c_face +2] -= f_xa0[face_id] * dij[2];
@@ -5713,9 +5725,11 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
           cs_lnum_t c_face = c_coarse_face[face_id] -1;
 
           c_xa0[c_face] += f_xa0[face_id];
-          c_face_normal[3*c_face]    += f_face_normal[3*face_id];
-          c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
-          c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
+          if (f_face_normal != nullptr) {
+            c_face_normal[3*c_face]    += f_face_normal[3*face_id];
+            c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
+            c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
+          }
           c_xa0ij[3*c_face]    += f_xa0ij[3*face_id];
           c_xa0ij[3*c_face +1] += f_xa0ij[3*face_id +1];
           c_xa0ij[3*c_face +2] += f_xa0ij[3*face_id +2];
@@ -5724,9 +5738,11 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
           cs_lnum_t c_face = -c_coarse_face[face_id] -1;
 
           c_xa0[c_face] += f_xa0[face_id];
-          c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
-          c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
-          c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
+          if (f_face_normal != nullptr) {
+            c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
+            c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
+            c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
+          }
           c_xa0ij[3*c_face]    -= f_xa0ij[3*face_id];
           c_xa0ij[3*c_face +1] -= f_xa0ij[3*face_id +1];
           c_xa0ij[3*c_face +2] -= f_xa0ij[3*face_id +2];
@@ -5735,6 +5751,11 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       }
 
     } /* Fine grid level */
+
+    if (f_face_normal == nullptr) {
+      CS_FREE(coarse_grid->_face_normal);
+      coarse_grid->face_normal = nullptr;
+    }
 
     /* Matrix initialized to c_xa0 */
 
@@ -5756,16 +5777,27 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       cs_lnum_t ic = c_face_cell[c_face][0];
       cs_lnum_t jc = c_face_cell[c_face][1];
 
-      dsigjg =   (  c_cell_cen[3*jc]
-                  - c_cell_cen[3*ic])    * c_face_normal[3*c_face]
-               + (  c_cell_cen[3*jc +1]
-                  - c_cell_cen[3*ic +1]) * c_face_normal[3*c_face +1]
-               + (  c_cell_cen[3*jc +2]
-                  - c_cell_cen[3*ic +2]) * c_face_normal[3*c_face +2];
+      if (f_face_normal != nullptr) {
+        dsigjg =   (  c_cell_cen[3*jc]
+                    - c_cell_cen[3*ic])    * c_face_normal[3*c_face]
+                 + (  c_cell_cen[3*jc +1]
+                    - c_cell_cen[3*ic +1]) * c_face_normal[3*c_face +1]
+                 + (  c_cell_cen[3*jc +2]
+                    - c_cell_cen[3*ic +2]) * c_face_normal[3*c_face +2];
 
-      dsxaij =   c_xa0ij[3*c_face]    * c_face_normal[3*c_face]
-               + c_xa0ij[3*c_face +1] * c_face_normal[3*c_face +1]
-               + c_xa0ij[3*c_face +2] * c_face_normal[3*c_face +2];
+        dsxaij =   c_xa0ij[3*c_face]    * c_face_normal[3*c_face]
+                 + c_xa0ij[3*c_face +1] * c_face_normal[3*c_face +1]
+                 + c_xa0ij[3*c_face +2] * c_face_normal[3*c_face +2];
+      }
+      else {
+        cs_real_t dij[3] = {c_cell_cen[3*jc] - c_cell_cen[3*jc],
+                            c_cell_cen[3*jc + 1] - c_cell_cen[3*jc + 1],
+                            c_cell_cen[3*jc + 2] - c_cell_cen[3*jc + 2]};
+        dsigjg = cs_math_3_dot_product(dij, dij);
+        dsxaij =   c_xa0ij[3*c_face]    * dij[0]
+                 + c_xa0ij[3*c_face +1] * dij[1]
+                 + c_xa0ij[3*c_face +2] * dij[2];
+      }
 
       if (fabs(dsigjg) > EPZERO) {
 
@@ -7009,8 +7041,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
           if (fabs(dsigjg) > cs_math_epzero) {
             const cs_real_t dsxaij
-              = cs_math_3_dot_product(c_xa0ij[c_face_id],
-                                      c_face_normal[c_face_id]);
+              = cs_math_3_dot_product(c_xa0ij[c_face_id], dijc);
             const cs_real_t agij = dsxaij/dsigjg;
 
             if (agij >= c_x_val_c && agij <= 0.) {
@@ -8038,6 +8069,9 @@ cs_grid_coarsen(const cs_grid_t      *f,
   c->relaxation = relaxation_parameter;
   if (f->use_faces == false && c->relaxation > 0)
     c->relaxation = 0;
+
+  if (c->relaxation <= 0. &&fine_matrix_type != CS_MATRIX_NATIVE)
+    c->use_faces = false;
 
   /* Ensure default is available */
 
