@@ -30,6 +30,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2448,18 +2449,20 @@ _setup_hierarchy(void             *context,
 
         if (mg->caller_n_ranks > 1) {
 
-          int lcount[2], gcount[2];
+          int lcount[4], gcount[4];
           int n_c_min, n_c_max, n_f_min, n_f_max;
 
           lcount[0] = n_rows; lcount[1] = n_entries;
-          MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MAX,
+          if (n_rows > 0) {
+            lcount[2] = -n_rows; lcount[3] = -n_entries;
+          }
+          else {
+            lcount[2] = -INT_MAX; lcount[3] = -INT_MAX;
+          }
+          MPI_Allreduce(lcount, gcount, 4, MPI_INT, MPI_MAX,
                         mg->caller_comm);
           n_c_max = gcount[0]; n_f_max = gcount[1];
-
-          lcount[0] = n_rows; lcount[1] = n_entries;
-          MPI_Allreduce(lcount, gcount, 2, MPI_INT, MPI_MIN,
-                        mg->caller_comm);
-          n_c_min = gcount[0]; n_f_min = gcount[1];
+          n_c_min = -gcount[2]; n_f_min = -gcount[3];
 
           bft_printf
             (_("                                  total       min        max\n"
@@ -3893,8 +3896,8 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
       cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2 + 1]);
 
 #if defined(HAVE_CUDA) && defined(PROFILE_MG_CUDA)
-    sprintf(nvtx_name, "Ascent smoothe %d", level);
-    nvtxRangePushA(nvtx_name);
+      sprintf(nvtx_name, "Ascent smoothe %d", level);
+      nvtxRangePushA(nvtx_name);
 #endif
 
       c_cvg = mg_sles->solve_func(mg_sles->context,
