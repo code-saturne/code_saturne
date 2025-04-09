@@ -73,7 +73,8 @@
 #include "alge/cs_matrix_tuning.h"
 #include "alge/cs_matrix_util.h"
 #include "base/cs_order.h"
-#include "base/cs_prototypes.h"
+#include "base/cs_parall.h"
+#include "base/cs_reducers.h"
 #include "alge/cs_sles.h"
 #include "base/cs_sort.h"
 
@@ -2297,7 +2298,6 @@ _append_face_data(cs_grid_t   *g,
   g->face_cell = (const cs_lnum_2_t  *)(g->_face_cell);
   g->xa = g->_xa;
   if (g->relaxation > 0) {
-    CS_FREE(g->_face_normal);
     g->face_normal = g->_face_normal;
     g->xa0 = g->_xa0;
   }
@@ -5247,8 +5247,8 @@ _verify_matrix(const cs_grid_t  *g)
 
 static void
 _verify_grid_quantities_native(const cs_grid_t  *grid,
-                               cs_gnum_t         n_clips_min,
-                               cs_gnum_t         n_clips_max,
+                               cs_lnum_t         n_clips_min,
+                               cs_lnum_t         n_clips_max,
                                int               interp)
 {
   int isym = 2;
@@ -5268,13 +5268,12 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
   if (grid->symmetric == true)
     isym = 1;
 
+  cs_gnum_t n_clips[2] = {(cs_gnum_t)n_clips_min, (cs_gnum_t)n_clips_max};
+
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
   MPI_Comm comm = grid->comm;
   if (comm != MPI_COMM_NULL) {
-    cs_gnum_t n_clips[2] = {n_clips_min, n_clips_max};
     MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
-    n_clips_min = n_clips[0];
-    n_clips_max = n_clips[0];
   }
 #endif
 
@@ -5283,8 +5282,8 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
                "       matrix < xag0 on %10llu faces\n"
                "              > 0    on %10llu faces\n",
                __func__,
-               (unsigned long long)n_clips_min,
-               (unsigned long long)n_clips_max);
+               (unsigned long long)n_clips[0],
+               (unsigned long long)n_clips[1]);
 
   if (db_size > 1)  /* blocs not handled yet */
     return;
@@ -5367,27 +5366,26 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
 
 static void
 _verify_grid_quantities_msr(const cs_grid_t  *grid,
-                            cs_gnum_t         n_clips_min,
-                            cs_gnum_t         n_clips_max,
+                            cs_lnum_t         n_clips_min,
+                            cs_lnum_t         n_clips_max,
                             int               interp)
 {
+  cs_gnum_t n_clips[2] = {(cs_gnum_t)n_clips_min, (cs_gnum_t)n_clips_max};
+
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
   MPI_Comm comm = grid->comm;
   if (comm != MPI_COMM_NULL) {
-    cs_gnum_t n_clips[2] = {n_clips_min, n_clips_max};
     MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
-    n_clips_min = n_clips[0];
-    n_clips_max = n_clips[0];
   }
 #endif
 
-  if (n_clips_min+n_clips_max > 0)
+  if (n_clips[0]+n_clips[1] > 0)
     bft_printf("\n     %s:\n"
                "       matrix < xag0 on %10llu faces\n"
                "              > 0    on %10llu faces\n",
                __func__,
-               (unsigned long long)n_clips_min,
-               (unsigned long long)n_clips_max);
+               (unsigned long long)n_clips[0],
+               (unsigned long long)n_clips[1]);
 
   const cs_lnum_t db_size = grid->db_size;
 
@@ -5562,7 +5560,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   cs_lnum_t *c_coarse_row = coarse_grid->coarse_row;
   cs_lnum_t *c_coarse_face = coarse_grid->coarse_face;
 
-  cs_gnum_t n_clips_min = 0, n_clips_max = 0;
+  cs_lnum_t n_clips_min = 0, n_clips_max = 0;
 
   cs_real_t *f_xa0ij = fine_grid->xa0ij;
 
@@ -5962,7 +5960,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   cs_lnum_t *c_coarse_row = coarse_grid->coarse_row;
   cs_lnum_t *c_coarse_face = coarse_grid->coarse_face;
 
-  cs_gnum_t n_clips_min = 0, n_clips_max = 0;
+  cs_lnum_t n_clips_min = 0, n_clips_max = 0;
 
   cs_real_t *f_xa0ij = fine_grid->xa0ij;
 
@@ -6349,6 +6347,13 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   /* Assign values
      ------------- */
 
+  cs_dispatch_context ctx;
+  if (fine_grid->alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+  if (ctx.use_gpu() == false)
+    ctx.set_n_cpu_threads(n_f_threads);
+
   cs_lnum_t c_nnz = c_row_index[c_n_rows];
 
   cs_real_t *restrict c_d_val, *restrict c_x_val;
@@ -6359,8 +6364,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 
   if (db_size == 1) {
 
-    #pragma omp parallel for num_threads(n_f_threads)
-    for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
+    ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ic) {
 
       const cs_lnum_t s_id = c_row_index[ic];
       const cs_lnum_t n_cols = c_row_index[ic+1] - s_id;
@@ -6399,7 +6403,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
         } /* Loop in fine columns */
       } /* Loop on fine rows */
 
-    } /* OpenMP loop on coarse rows */
+    }); /* Parallel for on coarse rows */
 
   }
 
@@ -6407,8 +6411,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 
   else {
 
-    #pragma omp parallel for num_threads(n_f_threads)
-    for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
+    ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ic) {
 
       const cs_lnum_t s_id = c_row_index[ic];
       const cs_lnum_t n_cols = c_row_index[ic+1] - s_id;
@@ -6465,7 +6468,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
         } /* Loop in fine columns */
       } /* Loop on fine rows */
 
-    } /* OpenMP loop on coarse rows */
+    }); /* Parallel for on coarse rows */
 
   }
 
@@ -6499,7 +6502,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
  *
  * Also build direct a fine to coarse MSR matrix index.
  *
- * Though thie can be computed on the fly, in cases whare multiple passes
+ * Though this can be computed on the fly, in cases whare multiple passes
  * are required, this will avoid extra searches.
  *
  * Whether running searches multiple times on the coarse structure,
@@ -7118,18 +7121,16 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   /* Optional verification */
 
   if (verbosity > 3) {
-    cs_lnum_t n_clips_min = 0, n_clips_max = 0;
-    #pragma omp parallel for num_threads(n_c_threads) \
-      reduction(+:n_clips_min, n_clips_max)
-    for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
-      n_clips_min += n_clips[ic*2];
-      n_clips_max += n_clips[ic*2 + 1];
-    }
+    struct cs_data_2i rd;
+    struct cs_reduce_sum2i reducer;
+    ctx.parallel_for_reduce(c_n_rows, rd, reducer, [=] CS_F_HOST_DEVICE
+                            (cs_lnum_t ic, cs_data_2i &res) {
+      res.i[0] = n_clips[ic*2];
+      res.i[1] = n_clips[ic*2 + 1];
+    });
+    ctx.wait();
 
-    _verify_grid_quantities_msr(c,
-                                n_clips_min,
-                                n_clips_max,
-                                1);
+    _verify_grid_quantities_msr(c, rd.i[0], rd.i[1], 1);
 
     CS_FREE(n_clips);
   }
@@ -7525,8 +7526,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
     g->xa= cs_matrix_get_extra_diagonal(a);
     g->face_cell = face_cell;
     g->use_faces = true;
-    if (face_normal != nullptr)
-      g->use_xa = true;
+    g->use_xa = true;
   }
   else if (g->symmetric) {
     if (cell_cen != nullptr && cell_face_sgn != nullptr)
@@ -8203,7 +8203,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
     }
 
     /* We could have xa0 point to xa if symmetric, but this would require
-       caution in CRSTGR to avoid overwriting. */
+       caution to avoid overwriting. */
 
     CS_MALLOC(c->_xa0, c->n_faces*isym, cs_real_t);
     c->xa0 = c->_xa0;
