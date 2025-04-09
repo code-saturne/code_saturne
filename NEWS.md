@@ -1,6 +1,11 @@
 Release 9.0.1 (yyyy-mm-dd)
 --------------------------
 
+### User changes:
+
+- Add the "FOR_RANGE" operator to MEG formulae editor. This commit
+  was mistakenly left out from v9.0.0.
+
 ### Numerics:
 
 - Fix LU factorization of "cs_sdm_t" matrix.
