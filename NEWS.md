@@ -3,6 +3,12 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Add a "FOR_RANGE" operator to the mathematical equations editor of the GUI.
+  Users can now define "for" loops in the formulae in the GUI using the
+  following syntax : "FOR_RANGE(var_name, var_start, var_stop)".
+  For example, "FOR_RANGE(i, 0, 5)" will be translated in to
+  "for (int i = 0; i < 5; i++)"
+
 - Removed last remaining Fortran user-defined functions
   (cs_f_user_boundary_conditions, cs_f_user_extra_operations,
   cs_user_f_initialization, usppmo, usipsu, and usipes).
