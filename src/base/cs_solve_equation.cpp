@@ -45,23 +45,12 @@
 
 #include "base/cs_array.h"
 #include "base/cs_assert.h"
-#include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo.h"
-#include "atmo/cs_atmo_chemistry.h"
-#include "atmo/cs_atmo_source_terms.h"
-#include "atmo/cs_atmo_profile_std.h"
 #include "alge/cs_blas.h"
 #include "base/cs_boundary_conditions.h"
 #include "alge/cs_bw_time_diff.h"
-#include "cfbl/cs_cf_model.h"
-#include "comb/cs_coal.h"
-#include "pprt/cs_combustion_model.h"
-#include "ctwr/cs_ctwr.h"
-#include "ctwr/cs_ctwr_source_terms.h"
 #include "alge/cs_divergence.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_drift_convective_flux.h"
-#include "elec/cs_elec_model.h"
 #include "base/cs_equation_iterative_solve.h"
 #include "alge/cs_face_viscosity.h"
 #include "base/cs_field.h"
@@ -70,7 +59,6 @@
 #include "base/cs_field_pointer.h"
 #include "alge/cs_gradient.h"
 #include "gui/cs_gui.h"
-#include "atmo/cs_intprf.h"
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_precipitation_model.h"
 #include "base/cs_math.h"
@@ -85,6 +73,7 @@
 #include "base/cs_prototypes.h"
 #include "rayt/cs_rad_transfer.h"
 #include "rayt/cs_rad_transfer_source_terms.h"
+#include "base/cs_reducers.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_scalar_clipping.h"
 #include "base/cs_syr_coupling.h"
@@ -99,12 +88,24 @@
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_functions.h"
 
+#include "pprt/cs_combustion_model.h"
+#include "atmo/cs_at_data_assim.h"
+#include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_chemistry.h"
+#include "atmo/cs_atmo_source_terms.h"
+#include "atmo/cs_atmo_profile_std.h"
+#include "atmo/cs_intprf.h"
+#include "cfbl/cs_cf_model.h"
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_ebu.h"
 #include "cogz/cs_combustion_lw.h"
 #include "cogz/cs_combustion_slfm.h"
 #include "cogz/cs_soot_model.h"
+#include "comb/cs_coal.h"
 #include "comb/cs_coal_source_terms.h"
+#include "ctwr/cs_ctwr.h"
+#include "ctwr/cs_ctwr_source_terms.h"
+#include "elec/cs_elec_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -504,6 +505,8 @@ _diffusion_terms_scalar(const cs_field_t           *f,
   cs_real_2_t *_weighf = nullptr;
   cs_real_6_t *_viscce = nullptr;
 
+  cs_dispatch_context ctx;
+
   /* AFM model or DFM models: add div(Cp*rho*T'u') to rhs
    * Compute T'u' for GGDH */
   if (scalar_turb_flux_model_type >= 1) {
@@ -550,10 +553,10 @@ _diffusion_terms_scalar(const cs_field_t           *f,
         cs_array_set_value_real(n_cells, 1, 0., w1);
       }
 
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         w1[c_id] += xcpp[c_id]*sgdh_diff[c_id];
-      }
+      });
+      ctx.wait();
     }
 
     if (cpro_wgrec_s != nullptr) {
@@ -592,49 +595,54 @@ _diffusion_terms_scalar(const cs_field_t           *f,
       visten = (cs_real_6_t *)f_vis->val;
     }
 
-    if (   (scalar_turb_flux_model == 11)
-        || (scalar_turb_flux_model == 21)
-        || (scalar_turb_flux_model == 20)) {
-      if (cpro_viscls == nullptr) {
-#       pragma omp parallel for if(n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          const cs_real_t tmp = eqp->idifft*xcpp[c_id];
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            _viscce[c_id][ii] = tmp*vistet[c_id][ii] + visls_0;
-          for (cs_lnum_t ii = 3; ii < 6; ii++)
-            _viscce[c_id][ii] = tmp*vistet[c_id][ii];
-        }
-      }
-      else {
-#       pragma omp parallel for if(n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          const cs_real_t tmp = eqp->idifft*xcpp[c_id];
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            _viscce[c_id][ii] = tmp*vistet[c_id][ii] + cpro_viscls[c_id];
-          for (cs_lnum_t ii = 3; ii < 6; ii++)
-            _viscce[c_id][ii] = tmp*vistet[c_id][ii];
-        }
-      }
+    if (eqp->idifft == 0) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          _viscce[c_id][ii] = 0.;
+      });
     }
     else {
-      if (cpro_viscls == nullptr) {
-#       pragma omp parallel for if(n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          const cs_real_t temp = eqp->idifft*xcpp[c_id]*ctheta/cs_turb_csrij;
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            _viscce[c_id][ii] = temp*visten[c_id][ii] + visls_0;
-          for (cs_lnum_t ii = 3; ii < 6; ii++)
-            _viscce[c_id][ii] = temp*visten[c_id][ii];
+      if (   (scalar_turb_flux_model == 11)
+          || (scalar_turb_flux_model == 21)
+          || (scalar_turb_flux_model == 20)) {
+        if (cpro_viscls == nullptr) {
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            const cs_real_t tmp = xcpp[c_id];
+            for (cs_lnum_t ii = 0; ii < 3; ii++)
+              _viscce[c_id][ii] = tmp*vistet[c_id][ii] + visls_0;
+            for (cs_lnum_t ii = 3; ii < 6; ii++)
+              _viscce[c_id][ii] = tmp*vistet[c_id][ii];
+          });
+        }
+        else {
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            const cs_real_t tmp = xcpp[c_id];
+            for (cs_lnum_t ii = 0; ii < 3; ii++)
+              _viscce[c_id][ii] = tmp*vistet[c_id][ii] + cpro_viscls[c_id];
+            for (cs_lnum_t ii = 3; ii < 6; ii++)
+              _viscce[c_id][ii] = tmp*vistet[c_id][ii];
+          });
         }
       }
       else {
-#       pragma omp parallel for if(n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          const cs_real_t tmp = eqp->idifft*xcpp[c_id]*ctheta/cs_turb_csrij;
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            _viscce[c_id][ii] = tmp*visten[c_id][ii] + cpro_viscls[c_id];
-          for (cs_lnum_t ii = 3; ii < 6; ii++)
-            _viscce[c_id][ii] = tmp*visten[c_id][ii];
+        const cs_real_t csrij = cs_turb_csrij;
+        if (cpro_viscls == nullptr) {
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            const cs_real_t temp = xcpp[c_id]*ctheta/csrij;
+            for (cs_lnum_t ii = 0; ii < 3; ii++)
+              _viscce[c_id][ii] = temp*visten[c_id][ii] + visls_0;
+            for (cs_lnum_t ii = 3; ii < 6; ii++)
+              _viscce[c_id][ii] = temp*visten[c_id][ii];
+          });
+        }
+        else {
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            const cs_real_t tmp = xcpp[c_id]*ctheta/csrij;
+            for (cs_lnum_t ii = 0; ii < 3; ii++)
+              _viscce[c_id][ii] = tmp*visten[c_id][ii] + cpro_viscls[c_id];
+            for (cs_lnum_t ii = 3; ii < 6; ii++)
+              _viscce[c_id][ii] = tmp*visten[c_id][ii];
+          });
         }
       }
     }
@@ -975,6 +983,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const int ivar = cs_field_get_key_int(f, keyvar);
   const int iscal = cs_field_get_key_int(f, keysca);
 
+  cs_dispatch_context ctx;
+
   /* We might have a time step multiplier */
 
   cs_real_t *dtr = nullptr;
@@ -984,9 +994,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     if (fabs(cdtvar - 1.0) > cs_math_epzero) {
       CS_MALLOC(dtr, n_cells_ext, cs_real_t);
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         dtr[c_id] = dt[c_id] * cdtvar;
+      });
+      ctx.wait();
+
       dt = dtr;
     }
   }
@@ -1142,8 +1154,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_real_t thets = cs_field_get_key_double(f, kthetss);
 
   if (st_prv_id > -1) {
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t smbexp = cproa_scal_st[c_id];
       /* If the scalar is not buoyant no need of saving the current source term,
        * save directly the previous one */
@@ -1153,18 +1164,17 @@ cs_solve_equation_scalar(cs_field_t        *f,
       rhs[c_id] = fimp[c_id]*cvara_var[c_id] - thets * smbexp;
       /* Diagonal */
       fimp[c_id] *= -thetv;
-    }
+    });
   }
 
   /* If we do not extrapolate the ST: */
   else {
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* User source term */
       rhs[c_id] += fimp[c_id] * cvara_var[c_id];
       /* Diagonal */
       fimp[c_id] = cs::max(-fimp[c_id], 0.0);
-    }
+    });
   }
 
   /* Add thermodynamic pressure variation for the low-Mach algorithm */
@@ -1174,9 +1184,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if ((idilat == 3 || ipthrm == 1) && is_thermal_model_field) {
     const cs_real_t pther = fluid_props->pther;
     const cs_real_t pthera = fluid_props->pthera;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       rhs[c_id] += (pther - pthera) / dt[c_id]*cell_f_vol[c_id];
+    });
   }
+
+  ctx.wait();
 
   /* If solving the internal energy equation:
      Add to the RHS -pdiv(u) + tau:u
@@ -1249,8 +1262,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
       cs_array_real_copy(n_cells, viscl, vistot);
     else {
       const cs_real_t *visct = CS_F_(mu_t)->val;
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         vistot[c_id] = viscl[c_id] + visct[c_id];
+      });
     }
 
     cs_field_gradient_vector(CS_F_(vel), false, 1, gradv);
@@ -1260,6 +1274,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     /* Parallelism and periodicity: vel already synchronized;
        gradient (below) is always synchronized. */
 
+    ctx.wait();
     cs_halo_sync_var(m->halo, CS_HALO_STANDARD, vistot);
 
     /* Get pressure gradient, including the pressure increment gradient */
@@ -1330,7 +1345,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
     _physical_model_source_terms(f, rhs, fimp);
 
-  /*  Rayonnement
+  /*  Radiative model
    *  2nd order not handled */
   cs_real_t *cpro_tsscal = nullptr;
   if (idilat > 3) {
@@ -1347,8 +1362,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
       /* Store the explicit radiative source term */
       if (idilat > 3) {
         const cs_real_t *cpro_tsre1 = cs_field_by_name("rad_st")->val;
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cpro_tsscal[c_id] += cpro_tsre1[c_id]*cell_f_vol[c_id];
+        });
       }
     }
 
@@ -1365,8 +1381,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
       if (f == cs_field_by_name_try("x_c_h")) {
         const cs_real_t *cpro_tsre1 = cs_field_by_name("rad_st")->val;
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           rhs[c_id] += volume[c_id]*cpro_tsre1[c_id];
+        });
 
         for (int icla = 0; icla < nclacp; icla++) {
           char f_rad[64], f_xp[64];
@@ -1374,8 +1391,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
           snprintf(f_rad, 64, "rad_st_%02d", icla+2); f_rad[63] = '\0';
           const cs_real_t *cpro_tsre = cs_field_by_name_try(f_rad)->val;
           const cs_real_t *cpro_x2icla = cs_field_by_name_try(f_xp)->val;
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
             rhs[c_id] -= volume[c_id]*cpro_tsre[c_id]*cpro_x2icla[c_id];
+          });
         }
       }
     }
@@ -1412,10 +1430,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
       cs_array_set_value_real(n_cells, 1, fluid_props->cp0, xcpp);
     if (iscacp == 2) {
       cs_real_t rair = fluid_props->r_pg_cnst;
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         xcpp[c_id] -= rair;
+      });
     }
   }
+  ctx.wait();
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, xcpp);
 
   /* Lagrangien (couplage retour thermique)
@@ -1427,18 +1447,19 @@ cs_solve_equation_scalar(cs_field_t        *f,
         && (th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE)) {
       cs_real_t *ste = cs_field_by_name("lagr_st_temperature")->val;
       cs_real_t *sti = cs_field_by_name("lagr_st_imp_temperature")->val;
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rhs[c_id] += ste[c_id] * cell_f_vol[c_id];
         fimp[c_id] += cs::max(sti[c_id], 0.0) * cell_f_vol[c_id];
-      }
+      });
     }
     /* When solving in enthalpy, no clear way to implicit Lagrangian source
      * term */
     if (   is_thermal_model_field
         && th_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
       cs_real_t *ste = cs_field_by_name("lagr_st_temperature")->val;
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rhs[c_id] += ste[c_id] * cell_f_vol[c_id];
+      });
     }
 
   }
@@ -1557,8 +1578,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   if (st_prv_id > -1) {
     const cs_real_t thetp1 = 1 + thets;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       rhs[c_id] += thetp1 * cpro_st[c_id];
+    });
+    ctx.wait();
   }
 
   /* Compressible algorithm
@@ -1618,17 +1641,18 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Add Rusanov fluxes */
   if (cs_glob_turb_rans_model->irijnu == 2) {
     cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+    ctx.parallel_for(m->n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       viscf[face_id] += 0.5 * ipro_rusanov[face_id];
-    }
+    });
     //TODO add boundary terms?
   }
 
   CS_FREE(sgdh_diff);
 
   if (eqp->istat == 1) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       fimp[c_id] += xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
+    });
   }
 
   /* Scalar with a Drift:
@@ -1659,7 +1683,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
      by "generic" code */
 
   if (fvq->has_disable_flag) {
-    cs_dispatch_context ctx;
     int *c_disable_flag = fvq->c_disable_flag;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       if (c_disable_flag[c_id])
@@ -1733,8 +1756,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
     /* Perfect gas, compute temperature from the internal energy */
 
     if (th_cf_model->ieos == CS_EOS_IDEAL_GAS) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         tempk[c_id] = cvar_var[c_id] / xcvv[c_id];
+      });
+      ctx.wait();
     }
 
     /* Humid air module */
@@ -1836,28 +1861,43 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   if ((idilat > 3) && (itspdv == 1)) {
 
-    cs_real_t xe = 0, xk = 0;
+    if (turb_model->itytur == 2 || turb_model->itytur == 5) {
+      const cs_real_t *xk = CS_F_(k)->val_pre;
+      const cs_real_t *xe = CS_F_(eps)->val_pre;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      if (   turb_model->itytur == 2
-          || turb_model->itytur == 5) {
-        xk = CS_F_(k)->val_pre[c_id];
-        xe = CS_F_(eps)->val_pre[c_id];
-      }
-      else if (turb_model->itytur == 3) {
-        const cs_real_6_t *cvara_rij = (const cs_real_6_t*)CS_F_(rij)->val_pre;
-        xe = CS_F_(eps)->val_pre[c_id];
-        xk = 0.5*(cvara_rij[c_id][0] + cvara_rij[c_id][1] + cvara_rij[c_id][2]);
-      }
-      else if (turb_model->model == CS_TURB_K_OMEGA) {
-        xk = CS_F_(k)->val_pre[c_id];
-        xe = cs_turb_cmu*CS_F_(omg)->val_pre[c_id];
-      }
-      const cs_real_t rhovst =   xcpp[c_id] * crom[c_id] * xe / (xk * rvarfl)
-                               * cell_f_vol[c_id];
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        const cs_real_t rhovst =   xcpp[c_id] * crom[c_id] * xe[c_id]
+                                 / (xk[c_id] * rvarfl)
+                                 * cell_f_vol[c_id];
+        cpro_tsscal[c_id] -= rhovst * cvar_var[c_id];
+      });
+    }
 
-      cpro_tsscal[c_id] -= rhovst * cvar_var[c_id];
+    else if (turb_model->itytur == 3) {
+      const cs_real_6_t *cvara_rij = (const cs_real_6_t*)CS_F_(rij)->val_pre;
+      const cs_real_t *xe = CS_F_(eps)->val_pre;
 
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cs_real_t xk = 0.5*cs_math_6_trace(cvara_rij[c_id]);
+        const cs_real_t rhovst =   xcpp[c_id] * crom[c_id] * xe[c_id]
+                                 / (xk * rvarfl)
+                                 * cell_f_vol[c_id];
+        cpro_tsscal[c_id] -= rhovst * cvar_var[c_id];
+      });
+    }
+
+    else if (turb_model->model == CS_TURB_K_OMEGA) {
+      const cs_real_t *xk = CS_F_(k)->val_pre;
+      const cs_real_t *xomg = CS_F_(omg)->val_pre;
+      const cs_real_t cmu = cs_turb_cmu;
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        const cs_real_t xe = cmu*xomg[c_id];
+        const cs_real_t rhovst =   xcpp[c_id] * crom[c_id] * xe
+                                 / (xk[c_id] * rvarfl)
+                                 * cell_f_vol[c_id];
+        cpro_tsscal[c_id] -= rhovst * cvar_var[c_id];
+      });
     }
   }
 
@@ -1866,39 +1906,50 @@ cs_solve_equation_scalar(cs_field_t        *f,
       && cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE
       && is_thermal_model_field) {
     const cs_real_t *cpro_tsri1 = cs_field_by_name("rad_st_implicit")->val;
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t  dvar = cvar_var[c_id]-cvara_var[c_id];
       cpro_tsscal[c_id] -= cpro_tsri1[c_id]*dvar*cell_f_vol[c_id];
-    }
+    });
   }
 
   /* Explicit balance
    * (See cs_equation_iterative_solve_scalar: remove the increment)
-   * This should be valid with thr theta scheme on source terms. */
+   * This should be valid with the theta scheme on source terms. */
   if (eqp->verbosity > 1) {
-    int ibcl = 0;
-    if (eqp->nswrsm > 1)
-      ibcl = 1;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      rhs[c_id] -= eqp->istat*xcpp[c_id]*(pcrom[c_id]/dt[c_id])
-        *cell_f_vol[c_id]*(cvar_var[c_id]-cvara_var[c_id])*ibcl;
-    const cs_real_t sclnor = sqrt(cs_gdot(n_cells,rhs,rhs));
-
+    double sclnor = 0;
+    if (eqp->nswrsm > 1 && eqp->istat) {
+      ctx.parallel_for_reduce_sum(n_cells, sclnor, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t c_id,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+        cs_real_t rhs_c =   rhs[c_id]
+                          -  xcpp[c_id]*(pcrom[c_id]/dt[c_id])
+                            *cell_f_vol[c_id]*(cvar_var[c_id]-cvara_var[c_id]);
+        sum += cs_math_pow2(rhs_c);
+      });
+      ctx.wait();
+      cs_parall_sum(1, CS_DOUBLE, &sclnor);
+      sclnor = sqrt(sclnor);
+    }
     bft_printf("%s: EXPLICIT BALANCE = %14.5e\n\n",f->name, sclnor);
   }
 
   /* Log in case of velocity/pressure inner iterations */
   if ((iterns > 0) && (eqp->verbosity > 1)) {
-    cs_real_t *errork;
-    CS_MALLOC(errork, n_cells_ext, cs_real_t);
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      errork[c_id] = cvar_var[c_id] - cvark_var[c_id];
+    struct cs_double_n<3> rd;
+    struct cs_reduce_sum_n<3> reducer;
 
-    double l2errork = sqrt(cs_gres(n_cells, cell_f_vol, errork, errork));
-    CS_FREE(errork);
+    ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
+                            (cs_lnum_t c_id, cs_double_n<3> &sum) {
+      sum.r[0] =   cs_math_pow2(cvar_var[c_id] - cvark_var[c_id])
+                 * cell_f_vol[c_id];
+      sum.r[1] = cs_math_pow2(cvara_var[c_id]) * cell_f_vol[c_id];
+      sum.r[2] = cell_f_vol[c_id];
+    });
+    ctx.wait();
+    cs_parall_sum(3, CS_DOUBLE, rd.r);
 
-    double l2norm = sqrt(cs_gres(n_cells, cell_f_vol, cvara_var, cvara_var));
+    double l2errork = sqrt(rd.r[0] / rd.r[2]);
+    double l2norm = sqrt(rd.r[1] / rd.r[2]);
     double dl2norm = 1.0;
     if (l2norm > 0.)
       dl2norm = 1.0/l2norm;
@@ -1963,6 +2014,8 @@ cs_solve_equation_vector(cs_field_t       *f,
     return;
   }
 
+  cs_dispatch_context ctx;
+
   /* We might have a time step multiplier */
 
   cs_real_t *dtr = nullptr;
@@ -1972,9 +2025,9 @@ cs_solve_equation_vector(cs_field_t       *f,
 
     if (fabs(cdtvar - 1.0) > cs_math_epzero) {
       CS_MALLOC(dtr, n_cells_ext, cs_real_t);
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         dtr[c_id] = dt[c_id] * cdtvar;
+      });
       dt = dtr;
     }
   }
@@ -2256,7 +2309,6 @@ cs_solve_equation_vector(cs_field_t       *f,
      by "generic" code */
 
   if (fvq->has_disable_flag) {
-    cs_dispatch_context ctx;
     int *c_disable_flag = fvq->c_disable_flag;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       if (c_disable_flag[c_id]) {

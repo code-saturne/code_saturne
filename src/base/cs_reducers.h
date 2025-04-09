@@ -81,6 +81,11 @@ struct cs_data_7i {
   cs_lnum_t i[7];
 };
 
+template<size_t stride>
+struct cs_double_n {
+  double r[stride];
+};
+
 /* Reduction
    --------- */
 
@@ -204,6 +209,23 @@ struct cs_reduce_sum2r {
   combine(volatile T &a, volatile const T &b) const {
     a.r[0] += b.r[0];
     a.r[1] += b.r[1];
+  }
+};
+
+template<size_t stride>
+struct cs_reduce_sum_n {    // struct: class with only public members
+  using T = cs_double_n<stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++)
+      a.r[i] = 0.;;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++)
+      a.r[i] += b.r[i];
   }
 };
 

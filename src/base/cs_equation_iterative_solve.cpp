@@ -94,28 +94,6 @@
  * Type definitions
  *============================================================================*/
 
-template<size_t stride>
-struct cs_double_n {
-  double r[stride];
-};
-
-template<size_t stride>
-struct cs_reduce_sum_n {    // struct: class with only public members
-  using T = cs_double_n<stride>;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    for (size_t i = 0; i < stride; i++)
-      a.r[i] = 0.;;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    for (size_t i = 0; i < stride; i++)
-      a.r[i] += b.r[i];
-  }
-};
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -337,8 +315,8 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   int inc, niterf;
   int lvar, imasac;
-  cs_real_t residu, ressol;
-  cs_real_t nadxk, paxm1rk, paxm1ax;
+  double residu, ressol;
+  double nadxk, paxm1rk, paxm1ax;
 
   cs_real_t alph = 0., beta = 0.;
 
@@ -677,7 +655,10 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   /* Dynamic relaxation */
   if (iswdyp >= 1) {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      cs_real_t c_sum = 0;
       for (cs_lnum_t i = 0; i < stride; i++) {
         rhs0[c_id][i] = smbrp[c_id][i];
 
@@ -686,18 +667,23 @@ _equation_iterative_solve_strided(int                   idtvar,
           diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
         smbrp[c_id][i] += smbini[c_id][i] - diff;
+        c_sum += cs_math_pow2(smbrp[c_id][i]);
 
         adxkm1[c_id][i] = 0.;
         adxk[c_id][i] = 0.;
         dpvar[c_id][i] = 0.;
       }
+      sum += c_sum;
     });
 
     /* ||A.dx^0||^2 = 0 */
     nadxk = 0.;
   }
   else {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      cs_real_t c_sum = 0;
       for (cs_lnum_t i = 0; i < stride; i++) {
 
         cs_real_t diff = 0.;
@@ -705,14 +691,17 @@ _equation_iterative_solve_strided(int                   idtvar,
           diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
         smbrp[c_id][i] += smbini[c_id][i] - diff;
+        c_sum += cs_math_pow2(smbrp[c_id][i]);
       }
+      sum += c_sum;
     });
   }
 
   ctx.wait();
+  cs_parall_sum(1, CS_DOUBLE, &residu);
 
   /* --- Right hand side residual */
-  residu = sqrt(cs_gdot(stride*n_cells, (cs_real_t *)smbrp, (cs_real_t *)smbrp));
+  residu = sqrt(residu);
 
   /* Normalization residual
      (L2-norm of B.C. + source terms + non-orthogonality terms)
@@ -736,13 +725,12 @@ _equation_iterative_solve_strided(int                   idtvar,
   struct cs_double_n<stride> rd;
   struct cs_reduce_sum_n<stride> reducer;
 
-  ctx.parallel_for_reduce
-    (n_cells, rd, reducer,
-     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<stride> &res) {
-       cs_real_t c_vol = cell_vol[c_id];
-       for (size_t i = 0; i < stride; i++)
-         res.r[i] = pvar[c_id][i] * c_vol;
-     });
+  ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
+                          (cs_lnum_t c_id, cs_double_n<stride> &res) {
+    cs_real_t c_vol = cell_vol[c_id];
+    for (size_t i = 0; i < stride; i++)
+      res.r[i] = pvar[c_id][i] * c_vol;
+  });
   ctx.wait();
 
   cs_parall_sum_strided<stride>(rd.r);
@@ -764,17 +752,29 @@ _equation_iterative_solve_strided(int                   idtvar,
                             (cs_real_t *)w2,
                             (cs_real_t *)w1);
 
-  ctx.wait(); // matrix vector multiply uses the same stream as the ctx
+  // ctx.wait(); // matrix vector multiply uses the same stream as the ctx
 
   if (iwarnp >= 2) {
-    const cs_real_t *_w1 = (cs_real_t *)w1, *_smbrp = (cs_real_t *)smbrp;
-    bft_printf("L2 norm ||AX^n|| = %f\n",
-               sqrt(cs_gdot(stride*n_cells, _w1, _w1)));
-    bft_printf("L2 norm ||B^n|| = %f\n",
-               sqrt(cs_gdot(stride*n_cells, _smbrp, _smbrp)));
+    struct cs_data_2r rd2;
+    struct cs_reduce_sum2r reducer2;
+
+    ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
+                            (cs_lnum_t c_id, cs_data_2r &sum) {
+      sum.r[0] = 0.;
+      sum.r[1] = 0.;
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        sum.r[0] += w1[c_id][i] * w1[c_id][i];
+        sum.r[1] += smbrp[c_id][i] * smbrp[c_id][i];
+      }
+    });
+    ctx.wait();
+    cs_parall_sum(2, CS_DOUBLE, rd2.r);
+
+    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(rd2.r[0]));
+    bft_printf("L2 norm ||B^n|| = %f\n",  sqrt(rd2.r[1]));
   }
 
-  cs_real_t rnorm2;
+  double rnorm2;
 
   if (has_dc == 1) {
     int *c_disable_flag = mq->c_disable_flag;
@@ -960,8 +960,8 @@ _equation_iterative_solve_strided(int                   idtvar,
           sum.r[0] = 0.;
           sum.r[1] = 0.;
           for (cs_lnum_t i = 0; i < stride; i++) {
-            sum.r[0] = smbrp[c_id][i] * adxkm1[c_id][i];
-            sum.r[1] = adxk[c_id][i] * adxkm1[c_id][i];
+            sum.r[0] += smbrp[c_id][i] * adxkm1[c_id][i];
+            sum.r[1] += adxk[c_id][i] * adxkm1[c_id][i];
           }
         });
 
@@ -1136,9 +1136,18 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_6_t *)smbrp);
 
     /* --- Convergence test */
-    residu = sqrt(cs_gdot(stride*n_cells,
-                          (cs_real_t *)smbrp,
-                          (cs_real_t *)smbrp));
+    ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      cs_real_t c_sum = 0;
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        c_sum += cs_math_pow2(smbrp[c_id][i]);
+      }
+      sum += c_sum;
+    });
+    ctx.wait();
+    cs_parall_sum(1, CS_DOUBLE, &residu);
+    residu = sqrt(residu);
 
     /* Writing */
     sinfo.n_it = sinfo.n_it + niterf;
@@ -1728,11 +1737,13 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     b_flux_k);
 
   if (iswdyp >= 1) {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+    ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t cell_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       rhs0[cell_id] = smbrp[cell_id];
       smbrp[cell_id]  += smbini[cell_id]
                        - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
-
+      sum += cs_math_pow2(smbrp[cell_id]);
       adxkm1[cell_id] = 0.;
       adxk[cell_id] = 0.;
       dpvar[cell_id] = 0.;
@@ -1742,16 +1753,20 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     nadxk = 0.;
   }
   else {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+    ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t cell_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       smbrp[cell_id]  += smbini[cell_id]
                        - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
+      sum += cs_math_pow2(smbrp[cell_id]);
     });
   }
 
   ctx.wait();
+  cs_parall_sum(1, CS_DOUBLE, &residu);
 
   /* --- Right hand side residual */
-  residu = sqrt(cs_gdot(n_cells, smbrp, smbrp));
+  residu = sqrt(residu);
 
   if (normp > 0.)
     rnorm = normp;
@@ -1791,19 +1806,33 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     CS_FREE_HD(w2);
 
     if (iwarnp >= 2) {
-      bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(n_cells, w1, w1)));
-      bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(n_cells, smbrp, smbrp)));
+      struct cs_data_2r rd2;
+      struct cs_reduce_sum2r reducer2;
+      ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
+                              (cs_lnum_t c_id, cs_data_2r &sum) {
+        sum.r[0] = cs_math_pow2(w1[c_id]);
+        sum.r[1] = cs_math_pow2(smbrp[c_id]);
+      });
+      ctx.wait();
+      cs_parall_sum(2, CS_DOUBLE, rd2.r);
+      bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(rd2.r[0]));
+      bft_printf("L2 norm ||B^n|| = %f\n",  sqrt(rd2.r[1]));
     }
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+
+    ctx.parallel_for_reduce_sum(n_cells, rnorm2, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t cell_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       w1[cell_id] += smbrp[cell_id];
       /* Remove contributions from penalized cells */
       if (has_dc * c_disable_flag[has_dc * cell_id] != 0)
         w1[cell_id] = 0.;
+
+      sum += cs_math_pow2(w1[cell_id]);
     });
 
     ctx.wait();
+    cs_parall_sum(1, CS_DOUBLE, &rnorm2);
 
-    rnorm2 = cs_gdot(n_cells, w1, w1);
     rnorm = sqrt(rnorm2);
   }
 
@@ -1908,20 +1937,33 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       /* ||E.dx^(k-1)-E.0||^2 */
       nadxkm1 = nadxk;
 
-      /* ||E.dx^k-E.0||^2 */
-      nadxk = cs_gdot(n_cells, adxk, adxk);
+      struct cs_data_2r rd2;
+      struct cs_reduce_sum2r reducer2;
+      ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
+                              (cs_lnum_t c_id, cs_data_2r &sum) {
+        sum.r[0] = adxk[c_id] * adxk[c_id];
+        sum.r[1] = smbrp[c_id] * adxk[c_id];
+      });
+      ctx.wait();
+      cs_parall_sum(2, CS_DOUBLE, rd2.r);
 
-      /* < E.dx^k-E.0; r^k > */
-      paxkrk = cs_gdot(n_cells, smbrp, adxk);
+      nadxk = rd2.r[0];    /* ||E.dx^k-E.0||^2 */
+      paxkrk = rd2.r[1];   /* < E.dx^k-E.0; r^k > */
 
       /* Relaxation with respect to dx^k and dx^(k-1) */
       if (iswdyp >= 2) {
 
-        /* < E.dx^(k-1)-E.0; r^k > */
-        paxm1rk = cs_gdot(n_cells, smbrp, adxkm1);
+        ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id, cs_data_2r &sum) {
+          sum.r[0] = smbrp[c_id] * adxkm1[c_id];
+          sum.r[1] = adxk[c_id] * adxkm1[c_id];
+        });
 
-        /* < E.dx^(k-1)-E.0; E.dx^k-E.0 > */
-        paxm1ax = cs_gdot(n_cells, adxk, adxkm1);
+        ctx.wait();
+        cs_parall_sum(2, CS_DOUBLE, rd2.r);
+
+        paxm1rk = rd2.r[0];   // < E.dx^(k-1)-E.0; r^k >
+        paxm1ax = rd2.r[1];   // < E.dx^(k-1)-E.0; E.dx^k -E.0 >
 
         if (   nadxkm1 > 1e-30*rnorm2
             && (nadxk*nadxkm1-pow(paxm1ax,2)) > 1e-30*rnorm2)
@@ -2042,7 +2084,14 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       b_flux_k);
 
     /* --- Convergence test */
-    residu = sqrt(cs_gdot(n_cells, smbrp, smbrp));
+    ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      sum += cs_math_pow2(smbrp[c_id]);
+    });
+    ctx.wait();
+    cs_parall_sum(1, CS_DOUBLE, &residu);
+    residu = sqrt(residu);
 
     /* Writing */
     sinfo.n_it = sinfo.n_it + niterf;
