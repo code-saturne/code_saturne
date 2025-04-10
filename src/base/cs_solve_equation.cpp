@@ -597,7 +597,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
 
     if (eqp->idifft == 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          _viscce[c_id][ii] = visls_0;
+        for (cs_lnum_t ii = 3; ii < 6; ii++)
           _viscce[c_id][ii] = 0.;
       });
     }
