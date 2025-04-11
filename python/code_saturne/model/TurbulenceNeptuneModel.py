@@ -289,7 +289,7 @@ class TurbulenceModel(Variables, Model):
         else:
             if field.enthalpy_model == 'off':
                 node['turb_flux'] = 'none'
-            elif node['turb_flux'] == 'none':
+            elif node['turb_flux'] is None:
                node['turb_flux'] = 'sgdh'
 
 
