@@ -382,16 +382,21 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     i_vf = cs_field_by_name_try("inner_face_velocity");
     if (i_vf != nullptr) {
-      cs_arrays_set_value<cs_real_t, 1>(3*n_i_faces, 0., i_vf->val);
+      ctx.parallel_for(3*n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        i_vf->val[face_id] = 0.;
+      });
       i_pvar = (var_t *)i_vf->val;
     }
 
     b_vf = cs_field_by_name_try("boundary_face_velocity");
     if (b_vf != nullptr) {
-      cs_arrays_set_value<cs_real_t, 1>(3*n_b_faces, 0., b_vf->val);
+      ctx.parallel_for(3*n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        b_vf->val[face_id] = 0.;
+      });
       b_pvar = (var_t *)b_vf->val;
     }
 
+    ctx.wait();
   }
 
   /* solving info */
@@ -1616,7 +1621,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       });
       CS_MALLOC_HD(b_flux_k, n_b_faces, cs_real_t, cs_alloc_mode);
       CS_MALLOC_HD(b_flux_km1, n_b_faces, cs_real_t, cs_alloc_mode);
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_flux_k);
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        b_flux_k[face_id] = 0.;
+      });
 
       ctx_c.wait();
     }
@@ -1875,9 +1882,14 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     b_flux_km1 = b_flux_k;
     b_flux_k = _temp_b;
     if (i_flux_k != nullptr) {
-      cs_arrays_set_value<cs_real_t, 1>
-        (2*n_i_faces, 0., (cs_real_t *)i_flux_k);
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_flux_k);
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        i_flux_k[face_id][0] = 0.;
+        i_flux_k[face_id][1] = 0.;
+      });
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        b_flux_k[face_id] = 0.;
+      });
+      ctx.wait();
     }
 
     /* Solver residual */

@@ -845,7 +845,9 @@ _pressure_correction_fv(int                   iterns,
 
   /* Standard initialization */
 
-  cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., iflux);
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    iflux[f_id] = 0.;
+  });
 
   if (vp_param->staggered == 0) {
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -1067,7 +1069,10 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *rovsdt;
   CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-  cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, 0., rovsdt);
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    rovsdt[c_id] = 0.;
+  });
+  ctx.wait();
 
   /* Compressible scheme implicit part;
      Getting the thermal parameters */
@@ -1400,7 +1405,11 @@ _pressure_correction_fv(int                   iterns,
   }
 
   else {
-    cs_arrays_set_value<cs_real_t, 1>(3*n_cells, 0., (cs_real_t *)wrk);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        wrk[c_id][ii] = 0.;
+      }
+    });
   }
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -2687,7 +2696,9 @@ _pressure_correction_fv(int                   iterns,
     if (f_cflp != nullptr) {
       cflp = f_cflp->val;
 
-      cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, 0., cflp);
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cflp[c_id] = 0.;
+      });
 
       ctx.wait();
 

@@ -273,7 +273,9 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   cs_real_t *pot;
   CS_MALLOC_HD(pot, n_cells_ext, cs_real_t, cs_alloc_mode);
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., pot);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    pot[c_id] = 0.;
+  });
 
   /* Face diffusibility scalar */
 
@@ -293,10 +295,15 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                       b_visc);
   }
   else {
-    cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., i_visc);
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_visc);
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      i_visc[face_id] = 0.;
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      b_visc[face_id] = 0.;
+    });
   }
 
+  ctx.wait();
   cs_matrix_t *a = cs_sles_default_get_matrix(CS_F_(p)->id, nullptr, 1, 1, true);
 
   cs_matrix_compute_coeffs(a,
@@ -326,7 +333,11 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
    * dpot    is the increment of the potential between sweeps
    * divu    is the inital divergence of the mass flux */
 
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., pot, pota);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    pot[c_id] = 0.;
+    pota[c_id] = 0.;
+  });
+  ctx.wait();
 
   /* (Test to modify if needed: must be sctricly greater than
    * the test in the conjugate gradient) */
@@ -351,7 +362,10 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
     /* Solving on the increment dpot */
 
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., dpot);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      dpot[c_id] = 0.;
+    });
+    ctx.wait();
 
     int n_iter = 0;
 
@@ -776,14 +790,24 @@ _face_diff_vel(const cs_mesh_t             *m,
 
     if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
         && cs_glob_turb_rans_model->irijnu == 1) {
-
-      cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., viscf, viscfi);
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., viscb, viscbi);
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscf[face_id] = 0.;
+        viscfi[face_id] = 0.;
+      });
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscb[face_id] = 0.;
+        viscbi[face_id] = 0.;
+      });
     }
     else {
-      cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., viscf);
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., viscb);
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscf[face_id] = 0.;
+      });
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscb[face_id] = 0.;
+      });
     }
+    ctx.wait();
   }
 
 }
@@ -881,10 +905,9 @@ _div_rij(const cs_mesh_t     *m,
 
     /* Boundary conditions: homogeneous Neumann */
 
-    cs_arrays_set_value<cs_real_t, 1>(6*n_b_faces, 0., (cs_real_t *)coefat);
-
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       for (cs_lnum_t jj = 0; jj < 6; jj++) {
+        coefat[face_id][jj] = 0.;
         for (cs_lnum_t kk = 0; kk < 6; kk++)
           coefbt[face_id][jj][kk] = 0.;
         coefbt[face_id][jj][jj] = 1.;
@@ -1541,7 +1564,10 @@ _update_fluid_vel(const cs_mesh_t             *m,
   /* RT0 update from the mass fluxes */
   else if (vp_param->irevmc == 1) {
 
-    cs_arrays_set_value<cs_real_t, 1>(3*n_cells_ext, 0.,(cs_real_t *)vel);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        vel[c_id][ii] = 0.;
+    });
 
     /* vel = 1 / (rho Vol) SUM mass_flux (X_f - X_i) */
     if (vof_param->vof_model == 0) {
@@ -2178,8 +2204,14 @@ _velocity_prediction(const cs_mesh_t             *m,
     tsimp = loctsimp;
   }
 
-  cs_arrays_set_value<cs_real_t, 1>(3*n_cells, 0., (cs_real_t *)tsexp);
-  cs_arrays_set_value<cs_real_t, 1>(9*n_cells, 0., (cs_real_t *)tsimp);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
+      tsexp[c_id][ii] = 0.;
+      for (cs_lnum_t jj = 0; jj < 3; jj++)
+        tsimp[c_id][ii][jj] = 0.;
+    }
+  });
+  ctx.wait();
 
   /* The computation of explicit and implicit source terms is performed
    * at the first iteration only.
@@ -2372,7 +2404,10 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (iappel == 1)
     /* Initialization
      * NB: at the second call, trav contains the temporal increment */
-    cs_arrays_set_value<cs_real_t, 1>(3*n_cells, 0., (cs_real_t *) trav);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        trav[c_id][ii] = 0.;
+    });
 
   /* FIXME : "rho g" will be second order only if extrapolated */
 
@@ -2521,7 +2556,13 @@ _velocity_prediction(const cs_mesh_t             *m,
     });
   }
   else {
-    cs_arrays_set_value<cs_real_t, 1>(9*n_cells, 0., (cs_real_t *)fimp);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++) {
+          fimp[c_id][ii][jj] = 0.;
+        }
+      }
+    });
   }
 
   ctx.wait();
@@ -2845,15 +2886,21 @@ _velocity_prediction(const cs_mesh_t             *m,
   cs_real_t *c_estim = nullptr;
   if (iappel == 1 && iespre != nullptr) {
     c_estim = iespre->val;
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., c_estim);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      c_estim[c_id] = 0.;
+    });
   }
 
   if (iappel == 2) {
     c_estim = cs_field_by_name_try("est_error_tot_2")->val;
     if (c_estim != nullptr) {
-      cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., c_estim);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        c_estim[c_id] = 0.;
+      });
     }
   }
+
+  ctx.wait();
 
   /* Use user source terms
      --------------------- */
@@ -4466,8 +4513,13 @@ cs_solve_navier_stokes(const int        iterns,
 
   /* Mass flux initialization for VOF algorithm */
   if (vof_param->vof_model > 0) {
-    cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., imasfl);
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., bmasfl);
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      imasfl[face_id] = 0.;
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      bmasfl[face_id] = 0.;
+    });
+    ctx.wait();
   }
 
   /* In the ALE framework, we add the mesh velocity */

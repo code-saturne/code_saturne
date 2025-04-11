@@ -147,11 +147,12 @@ cs_coal_mass_transfer(void)
     cs_real_t *cpro_cgch = cs_field_by_id(cm->igmdch[class_id])->val;
     cs_real_t *cpro_cght = cs_field_by_id(cm->igmhet[class_id])->val;
 
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0.,
-                                      cpro_cgd1,
-                                      cpro_cgd2,
-                                      cpro_cgch,
-                                      cpro_cght);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+      cpro_cgd1[c_id] = 0.;
+      cpro_cgd2[c_id] = 0.;
+      cpro_cgch[c_id] = 0.;
+      cpro_cght[c_id] = 0.;
+    });
   }
 
   // Calculation of mass density of the gas mixture
@@ -160,7 +161,10 @@ cs_coal_mass_transfer(void)
 
   // Calculation of x2=sum(X2i) and x2sro2 = sum(X2i/Rho2i)
 
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., x2, x2srho2);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+    x2[c_id] = 0.;
+    x2srho2[c_id] = 0.;
+  });
 
   for (int class_id = 0; class_id < cm->nclacp; class_id++) {
 

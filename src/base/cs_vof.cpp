@@ -1848,16 +1848,11 @@ cs_vof_solve_void_fraction(int  iterns)
   /* Theta related to void fraction */
   //const cs_real_t thetv = eqp_vol->theta; /* UNUSED */
 
-  /* Initialization */
-
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., smbrs);
-
-  /* Arbitrary initialization (no diffusion for void fraction) */
-
-  cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 1.0, i_visc);
-  cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 1.0, b_visc);
-
-  /* Initialize void fraction convection flux */
+  /*  Arbitrary initialization :
+   * - RHS at 0
+   * - No diffusion for void fraction (visc = 1)
+   *   convection flux at 0
+   */
 
   const int kiflux = cs_field_key_id("inner_flux_id");
   const int kbflux = cs_field_key_id("boundary_flux_id");
@@ -1868,8 +1863,21 @@ cs_vof_solve_void_fraction(int  iterns)
   cs_real_t *icflux = cs_field_by_id(icflux_id)->val;
   cs_real_t *bcflux = cs_field_by_id(bcflux_id)->val;
 
-  cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., icflux);
-  cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., bcflux);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    smbrs[c_id] = 0.;
+  });
+
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    i_visc[face_id] = 1.;
+    icflux[face_id] = 0.;
+  });
+
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    b_visc[face_id] = 1.;
+    bcflux[face_id] = 0.;
+  });
+
+  ctx.wait();
 
   /* Preliminary computations
      ------------------------ */
@@ -2091,7 +2099,10 @@ cs_vof_solve_void_fraction(int  iterns)
 
     if (clip_voidf_id >= 0) {
       voidf_clipped = cs_field_by_id(clip_voidf_id)->val;
-      cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., voidf_clipped);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        voidf_clipped[c_id] = 0.;
+      });
+      ctx.wait();
     }
 
     struct cs_data_2i rd_sum;

@@ -1021,7 +1021,12 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_3_t *gradst = nullptr;
   if (eqp->blencv > 0 && eqp->isstpc == 0) {
     CS_MALLOC_HD(gradst, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext*3, 0., (cs_real_t*)gradst);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        gradst[c_id][0] = 0.;
+        gradst[c_id][1] = 0.;
+        gradst[c_id][2] = 0.;
+    });
+    ctx.wait();
 
     /* Slope test gradient */
     if (eqp->iconv > 0)
@@ -1040,7 +1045,12 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   if (eqp->blencv > 0
       && (eqp->ischcv==2 || eqp->ischcv==4)) {
     CS_MALLOC_HD(gradup, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext*3, 0., (cs_real_t*)gradup);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        gradup[c_id][0] = 0.;
+        gradup[c_id][1] = 0.;
+        gradup[c_id][2] = 0.;
+    });
+    ctx.wait();
 
     if (eqp->iconv > 0)
       cs_upwind_gradient(field_id,
