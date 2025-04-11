@@ -1406,7 +1406,7 @@ _pressure_correction_fv(int                   iterns,
 
   else {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (int ii = 0; ii < 3; ii++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
         wrk[c_id][ii] = 0.;
       }
     });

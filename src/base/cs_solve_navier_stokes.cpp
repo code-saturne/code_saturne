@@ -1565,7 +1565,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
   else if (vp_param->irevmc == 1) {
 
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (int ii = 0; ii < 3; ii++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
         vel[c_id][ii] = 0.;
     });
 
@@ -2205,9 +2205,9 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    for (int ii = 0; ii < 3; ii++) {
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
       tsexp[c_id][ii] = 0.;
-      for (int jj = 0; jj < 3; jj++)
+      for (cs_lnum_t jj = 0; jj < 3; jj++)
         tsimp[c_id][ii][jj] = 0.;
     }
   });
@@ -2405,7 +2405,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* Initialization
      * NB: at the second call, trav contains the temporal increment */
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (int ii = 0; ii < 3; ii++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
         trav[c_id][ii] = 0.;
     });
 

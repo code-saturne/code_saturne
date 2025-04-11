@@ -195,9 +195,10 @@ _tsepls(int       phase_id,
   for (cs_lnum_t i = 0; i < 3; i++) {
 
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (int ii = 0; ii < 3; ii++)
-        for (int jj = 0; jj < 3; jj++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
           w7[c_id][ii][jj] = 0.;
+      }
     });
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {

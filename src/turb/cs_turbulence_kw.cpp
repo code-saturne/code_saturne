@@ -1622,7 +1622,12 @@ cs_turbulence_kw(int phase_id)
     cpro_w_clipped = cs_field_by_id(clip_w_id)->val;
   }
 
-  //FIXME: Should these two calls be merged with the parallel_for_reduce below ?
+  /* These two kernels are optional, and are activated only if the user
+   * is explicitly asking to postprocess the clipped cells.
+   * Hence, to reduce the size of the main kernel, called all the time,
+   * we keep these separated from the following "parallel_for_reducer"
+   * kernel.
+   */
   if (clip_k_id >= 0) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cpro_k_clipped[c_id] = 0.;
