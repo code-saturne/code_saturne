@@ -3557,12 +3557,6 @@ cs_setup(void)
   /* Initialize modules before user has access */
   _init_setup();
 
-  int nmodpp = 0;
-  for (int i = 1; i < CS_N_PHYSICAL_MODEL_TYPES; i++) {
-    if (cs_glob_physical_model_flag[i] > -1)
-      nmodpp++;
-  }
-
   /* User input, variable definitions */
   _init_user();
 
