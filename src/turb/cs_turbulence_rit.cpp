@@ -875,6 +875,7 @@ _solve_rit(const cs_field_t     *f,
 
   /* If we do not extrapolate the source terms */
   else {
+    const cs_real_t zero_threshold = cs_math_zero_threshold;
 #   pragma omp parallel if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
@@ -884,7 +885,7 @@ _solve_rit(const cs_field_t     *f,
         }
         /* Diagonal */
         fimp[c_id][i][i] = cs::max(-fimp[c_id][i][i],
-                                   cs_math_zero_threshold);
+                                   zero_threshold);
       }
     }
   }

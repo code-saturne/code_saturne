@@ -1068,7 +1068,7 @@ public:
     T *sum_ptr = (T *)sycl::malloc_shared(sizeof(T), queue_);
 
     queue_.parallel_for(n,
-                        sycl::reduction(sum_ptr, 0., sycl::plus<T>()),
+                        sycl::reduction(sum_ptr, (T)0, sycl::plus<T>()),
                         static_cast<F&&>(f),
                         static_cast<Args&&>(args)...).wait();
 

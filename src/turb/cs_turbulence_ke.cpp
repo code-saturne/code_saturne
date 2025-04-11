@@ -2276,7 +2276,7 @@ cs_turbulence_ke_clip(int        phase_id,
               cpro_e_clipped[c_id] = xepmin - xe;
             cvar_ep[c_id] = xepmin;
           }
-          sum += 1;
+          sum += (cs_gnum_t)1;
         }
       });
 
@@ -2304,7 +2304,7 @@ cs_turbulence_ke_clip(int        phase_id,
             if (clip_e_id >= 0)
               cpro_e_clipped[c_id] = xepm - xe;
           }
-          sum += 1;
+          sum += (cs_gnum_t)1;
         }
       });
 

@@ -3718,7 +3718,7 @@ _convection_diffusion_scalar_unsteady
         (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
          (cs_lnum_t i,
           CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
-        sum += i_upwind[i];
+        sum += (cs_gnum_t)i_upwind[i];
       });
 
       ctx.wait();
@@ -4770,7 +4770,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
         (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
          (cs_lnum_t i,
           CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
-        sum += i_upwind[i];
+        sum += (cs_gnum_t)i_upwind[i];
       });
 
       ctx.wait();
@@ -5438,7 +5438,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
         (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
          (cs_lnum_t i,
           CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
-        sum += i_upwind[i];
+        sum += (cs_gnum_t)i_upwind[i];
       });
 
       ctx.wait();
@@ -6933,7 +6933,7 @@ _convection_diffusion_unsteady_strided
         (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
          (cs_lnum_t i,
           CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
-        sum += i_upwind[i];
+        sum += (cs_gnum_t)i_upwind[i];
       });
 
       ctx.wait();

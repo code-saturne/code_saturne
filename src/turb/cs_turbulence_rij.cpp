@@ -2526,9 +2526,10 @@ _solve_epsilon(int              phase_id,
     });
   }
   else {
+    const cs_real_t zero_threshold = cs_math_zero_threshold;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       rhs[c_id]  += fimp[c_id]*cvara_ep[c_id];
-      fimp[c_id]  = cs::max(-fimp[c_id], cs_math_zero_threshold);
+      fimp[c_id]  = cs::max(-fimp[c_id], zero_threshold);
     });
   }
 
@@ -2541,6 +2542,7 @@ _solve_epsilon(int              phase_id,
       && (cs_glob_lagr_source_terms->ltsdyn == 1)) {
 
     const cs_real_t ce4 = cs_turb_ce4;
+    const cs_real_t zero_threshold = cs_math_zero_threshold;
 
     const cs_real_6_t *lagr_st_rij
       = (const cs_real_6_t *)cs_field_by_name("lagr_st_rij")->val;
@@ -2558,7 +2560,7 @@ _solve_epsilon(int              phase_id,
 
       /* equiv:                    -cs_turb_ce4 * st_eps * / (k/eps) */
       fimp[c_id] += cs::max(-ce4 * st_eps / k * cvara_ep[c_id],
-                            cs_math_zero_threshold);
+                            zero_threshold);
     });
   }
   ctx.wait();

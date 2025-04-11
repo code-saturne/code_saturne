@@ -1624,14 +1624,14 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
 
   cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 
+#if defined(HAVE_CUDA)
+
   void *_send_buf = cs_halo_sync_pack_init_state(halo,
                                                  sync_mode,
                                                  data_type,
                                                  stride,
                                                  send_buf,
                                                  _hs);
-
-#if defined(HAVE_CUDA)
 
   void *val_host_ptr = cs_cuda_get_host_ptr(val);
   void *_send_buf_d = (send_buf != nullptr) ?
