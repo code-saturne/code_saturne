@@ -2439,18 +2439,22 @@ cs_multigrid_smoother_solve(void                *context,
 
   /* Only call solver for "active" ranks */
 
+  bool local_solve = true;
 #if defined(HAVE_MPI)
-  if (c->caller_n_ranks < 2 || c->comm != MPI_COMM_NULL) {
+  if (c->comm == MPI_COMM_NULL) {
+    cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+    if (n_rows == 0) {
+      local_solve = false;
+    }
+  }
 #endif
 
+  if (local_solve) {
     cvg = c->solve(c,
                    a, diag_block_size, &convergence,
                    rhs, vx_ini, vx,
                    aux_size, aux_vectors);
-
-#if defined(HAVE_MPI)
   }
-#endif
 
   /* Update return values */
 
