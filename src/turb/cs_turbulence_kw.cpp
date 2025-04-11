@@ -361,10 +361,15 @@ cs_turbulence_kw(int phase_id)
   CS_MALLOC_HD(usimpk, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(usimpw, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0.,
-                                    smbrk, smbrw,
-                                    usimpk, usimpw,
-                                    tinstk, tinstw);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    smbrk[c_id] = 0.;
+    smbrw[c_id] = 0.;
+    usimpk[c_id] = 0.;
+    usimpw[c_id] = 0.;
+    tinstk[c_id] = 0.;
+    tinstw[c_id] = 0.;
+  });
+  ctx.wait();
 
   cs_user_source_terms(domain,
                        f_k->id,
@@ -538,7 +543,12 @@ cs_turbulence_kw(int phase_id)
 
     cs_real_3_t *vel_laplacian;
     CS_MALLOC_HD(vel_laplacian, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-    cs_arrays_set_value<cs_real_t, 1>(3*n_cells_ext, 0., (cs_real_t *)vel_laplacian);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      vel_laplacian[c_id][0] = 0.;
+      vel_laplacian[c_id][1] = 0.;
+      vel_laplacian[c_id][2] = 0.;
+    });
+    ctx.wait();
 
     cs_balance_vector(cs_glob_time_step_options->idtvar,
                       -1, /* f_id */
@@ -765,7 +775,10 @@ cs_turbulence_kw(int phase_id)
       /* BCs on rho: Dirichlet ROMB
          NB: viscb is used as COEFB */
 
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., viscb);
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscb[face_id] = 0.;
+      });
+      ctx.wait();
 
       cs_halo_type_t halo_type = CS_HALO_STANDARD;
       cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -825,7 +838,10 @@ cs_turbulence_kw(int phase_id)
     CS_FREE_HD(grad);
   }
   else {
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., grad_dot_g);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      grad_dot_g[c_id] = 0.;
+    });
+    ctx.wait();
   }
 
   /* Finalization of explicit and implicit source terms
@@ -1238,7 +1254,13 @@ cs_turbulence_kw(int phase_id)
     CS_MALLOC_HD(w6, n_cells_ext, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(w7, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., w5, w6);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      w5[c_id] = 0.;
+      w6[c_id] = 0.;
+    });
+    /* No wait here, since its called in the following if/else test for the
+     * next ctx calls.
+     */
 
     /* Handle k */
 
@@ -1263,8 +1285,13 @@ cs_turbulence_kw(int phase_id)
 
     }
     else {
-      cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., viscf);
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., viscb);
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscf[face_id] = 0.;
+      });
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscb[face_id] = 0.;
+      });
+      ctx.wait();
     }
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
@@ -1318,8 +1345,13 @@ cs_turbulence_kw(int phase_id)
 
     }
     else {
-      cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., viscf);
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., viscb);
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscf[face_id] = 0.;
+      });
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscb[face_id] = 0.;
+      });
+      ctx.wait();
     }
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
@@ -1450,10 +1482,13 @@ cs_turbulence_kw(int phase_id)
                       viscb);
 
   } else {
-
-    cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., viscf);
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., viscb);
-
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      viscf[face_id] = 0.;
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      viscb[face_id] = 0.;
+    });
+    ctx.wait();
   }
 
   /* Solve k */
@@ -1510,10 +1545,13 @@ cs_turbulence_kw(int phase_id)
                       viscb);
   }
   else {
-
-    cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., viscf);
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., viscb);
-
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      viscf[face_id] = 0.;
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      viscb[face_id] = 0.;
+    });
+    ctx.wait();
   }
 
   /* Solve omega */
@@ -1584,10 +1622,22 @@ cs_turbulence_kw(int phase_id)
     cpro_w_clipped = cs_field_by_id(clip_w_id)->val;
   }
 
-  if (clip_k_id >= 0)
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., cpro_k_clipped);
-  if (clip_w_id >= 0)
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., cpro_w_clipped);
+  /* These two kernels are optional, and are activated only if the user
+   * is explicitly asking to postprocess the clipped cells.
+   * Hence, to reduce the size of the main kernel, called all the time,
+   * we keep these separated from the following "parallel_for_reducer"
+   * kernel.
+   */
+  if (clip_k_id >= 0) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cpro_k_clipped[c_id] = 0.;
+    });
+  }
+  if (clip_w_id >= 0) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cpro_w_clipped[c_id] = 0.;
+    });
+  }
 
   struct cs_data_2i rd_sum;
   rd_sum.i[0] = 0;

@@ -396,7 +396,9 @@ cs_thermal_model_c_square(const cs_real_t  cp[],
     });
   }
   else {
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., dc2);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      dc2[c_id] = 0.;
+    });
   }
 
   ctx.wait();
@@ -858,7 +860,9 @@ cs_thermal_model_cv(cs_real_t  *xcvv)
     }
   }
   else { /* quid when ieos = CS_EOS_MOIST_AIR */
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 1.0, xcvv);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      xcvv[c_id] = 0.;
+    });
   }
 
   ctx.wait(); // needed for CPU cs_solve_equation.c
@@ -1201,7 +1205,10 @@ cs_thermal_model_pdivu(cs_real_t  smbrs[])
 
   cs_real_t *pdivu;
   CS_MALLOC_HD(pdivu, n_cells_ext, cs_real_t, cs_alloc_mode);
-  cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, 0., pdivu);
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    pdivu[c_id] = 0.;
+  });
+  ctx.wait();
 
   cs_real_t *i_massflux
     = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;

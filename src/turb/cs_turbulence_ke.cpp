@@ -194,7 +194,12 @@ _tsepls(int       phase_id,
 
   for (cs_lnum_t i = 0; i < 3; i++) {
 
-    cs_arrays_set_value<cs_real_t, 1>(9*n_cells_ext, 0., (cs_real_t *)w7);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
+          w7[c_id][ii][jj] = 0.;
+      }
+    });
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_real_t duidxk[3], njsj[3];
@@ -1062,7 +1067,10 @@ cs_turbulence_ke(int              phase_id,
       /* BCs on rho: Dirichlet ROMB
          NB: viscb is used as COEFB */
 
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0.0, viscb);
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscb[face_id] = 0.;
+      });
+      ctx.wait();
 
       cs_halo_type_t halo_type = CS_HALO_STANDARD;
       cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -1126,8 +1134,11 @@ cs_turbulence_ke(int              phase_id,
     CS_FREE_HD(grad);
     CS_FREE_HD(grad_dot_g);
   }
-  else
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., gk);
+  else {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      gk[c_id] = 0.;
+    });
+  }
 
   /* In v2f, we store the production in prdv2f which will be complete further
      for containing the complete production term */
@@ -1234,8 +1245,11 @@ cs_turbulence_ke(int              phase_id,
     CS_MALLOC_HD(bc_coeffs_sqs_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(bc_coeffs_sqs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
 
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., bc_coeffs_sqs_loc.a);
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 1., bc_coeffs_sqs_loc.b);
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      bc_coeffs_sqs_loc.a[face_id] = 0.;
+      bc_coeffs_sqs_loc.b[face_id] = 1.;
+    });
+    ctx.wait();
 
     cs_gradient_type_by_imrgra(eqp_k->imrgra,
                                &gradient_type,
@@ -1485,8 +1499,13 @@ cs_turbulence_ke(int              phase_id,
    *    Going out of the step we keep              strain_sq, divu,
    * ==========================================================================*/
 
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0.,
-                                    usimpk, usimpe, usexpk, usexpe);
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    usimpk[c_id] = 0.;
+    usimpe[c_id] = 0.;
+    usexpk[c_id] = 0.;
+    usexpe[c_id] = 0.;
+  });
+  ctx.wait();
 
   cs_user_source_terms(domain,
                        f_k->id,
@@ -1687,7 +1706,11 @@ cs_turbulence_ke(int              phase_id,
 
   if (cs_glob_turb_rans_model->ikecou == 1) {
 
-    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, 0., usexpk, usexpe);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      usexpk[c_id] = 0.;
+      usexpe[c_id] = 0.;
+    });
+    ctx.wait();
 
     /* Handle k */
 
@@ -1722,10 +1745,13 @@ cs_turbulence_ke(int              phase_id,
 
     }
     else {
-
-      cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0.0, viscf);
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0.0, viscb);
-
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscf[face_id] = 0.;
+      });
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscb[face_id] = 0.;
+      });
+      ctx.wait();
     }
     cs_equation_param_t eqp_k_loc = *eqp_k;
     eqp_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
@@ -1785,10 +1811,13 @@ cs_turbulence_ke(int              phase_id,
 
     }
     else {
-
-      cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0.0, viscf);
-      cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0.0, viscb);
-
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscf[face_id] = 0.;
+      });
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        viscb[face_id] = 0.;
+      });
+      ctx.wait();
     }
 
     cs_equation_param_t eqp_eps_loc = *eqp_eps;
@@ -1950,10 +1979,13 @@ cs_turbulence_ke(int              phase_id,
 
   }
   else {
-
-    cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0.0, viscf);
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0.0, viscb);
-
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      viscf[face_id] = 0.;
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      viscb[face_id] = 0.;
+    });
+    ctx.wait();
   }
 
   /* Solve k */
@@ -2031,10 +2063,13 @@ cs_turbulence_ke(int              phase_id,
                       viscb);
   }
   else {
-
-    cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0.0, viscf);
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0.0, viscb);
-
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      viscf[face_id] = 0.;
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      viscb[face_id] = 0.;
+    });
+    ctx.wait();
   }
 
   /* Solve epsilon */
