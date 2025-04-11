@@ -11,7 +11,7 @@ Release 8.0.5 (unreleased)
 - Better handling of SIGTERM on clusters in order to allow the code to cleanly
   exit and finish the computation.
 
-- GUI: allow setting reference temperature < 0 with Celsisu scale.
+- GUI: allow setting reference temperature < 0 with Celsius scale.
 
 - Fix for LES SEM in volume mode (memory leak and incorrect array access).
 
