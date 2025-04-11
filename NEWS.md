@@ -3,6 +3,9 @@ Release 8.0.5 (unreleased)
 
 ### Bug fixes:
 
+- Fix cells or faces selection using box[] operator when not
+  aligned with Cartesion axes.
+
 - Fix recognition of " in MEG Editor formula parser
 
 - Better handling of SIGTERM on clusters in order to allow the code to cleanly
