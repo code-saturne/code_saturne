@@ -278,6 +278,28 @@ cs_matrix_structure_create_from_assembler(cs_matrix_type_t        type,
 void
 cs_matrix_structure_destroy(cs_matrix_structure_t  **ms);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Release arrays describing an MSR matrix structure.
+ *
+ * Ownership is provided back to the caller, if pointers are provided.
+ * If the matrix does not own a given array, a nullptr value is returned
+ * for that array.
+ *
+ * This function only works for an MSR matrix (i.e. there is
+ * no automatic conversion from another matrix type).
+ *
+ * \param[in, out]   ms         pointer to matrix structure
+ * \param[out]       row_index  MSR row index, or null
+ * \param[out]       col_id     MSR column id, or null
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_structure_release_msr_arrays(cs_matrix_structure_t   *ms,
+                                       cs_lnum_t              **row_index,
+                                       cs_lnum_t              **col_id);
+
 /*----------------------------------------------------------------------------
  * Create a matrix container using a given structure.
  *
@@ -913,6 +935,32 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
                          const cs_lnum_t    **col_id,
                          const cs_real_t    **d_val,
                          const cs_real_t    **x_val);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Release arrays describing a matrix in MSR format.
+ *
+ * Ownership is provided back to the caller, if pointers are provided.
+ * If the matrix does not own a given array, a nullptr value is returned
+ * for that array.
+ *
+ * This function only works for an MSR matrix (i.e. there is
+ * no automatic conversion from another matrix type).
+ *
+ * \param[in, out]   matrix     pointer to matrix structure
+ * \param[out]       row_index  MSR row index, or null
+ * \param[out]       col_id     MSR column id, or null
+ * \param[out]       d_val      diagonal values, or null
+ * \param[out]       x_val      extra-diagonal values, or null
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_release_msr_arrays(cs_matrix_t    *matrix,
+                             cs_lnum_t    **row_index,
+                             cs_lnum_t    **col_id,
+                             cs_real_t    **d_val,
+                             cs_real_t    **x_val);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -35,10 +35,6 @@
 
 #include "base/cs_base.h"
 
-/*---------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *===========================================================================*/
@@ -54,6 +50,68 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Public function prototypes
  *===========================================================================*/
+
+#if defined(__cplusplus)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Sort an array "a" and apply the sort to its associated array "b"
+ *
+ * Sort is realized thanks to a shell sort (Knuth algorithm).
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ *
+ * \param[in]        l  left bound
+ * \param[in]        r  right bound
+ * \param[in, out]   a  array to sort
+ * \param[in, out]   b  associated array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U>
+void
+cs_sort_coupled_shell(cs_lnum_t   l,
+                      cs_lnum_t   r,
+                      T           a[],
+                      U           b[])
+{
+  cs_lnum_t  size = r - l;
+
+  if (size == 0)
+    return;
+
+  /* Compute stride */
+  cs_lnum_t  h;
+  for (h = 1; h <= size/9; h = 3*h+1) ;
+
+  /* Sort array */
+  for ( ; h > 0; h /= 3) {
+
+    for (cs_lnum_t i = l+h; i < r; i++) {
+
+      T  va = a[i];
+      U  vb = b[i];
+
+      cs_lnum_t j = i;
+      while ( (j >= l+h) && (va < a[j-h]) ) {
+        a[j] = a[j-h];
+        b[j] = b[j-h];
+        j -= h;
+      }
+      a[j] = va;
+      b[j] = vb;
+
+    } /* Loop on array elements */
+
+  } /* End of loop on stride */
+}
+
+#endif // (__cplusplus)
+
+/*---------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Sort an array "a" between its left bound "l" and its right bound "r"

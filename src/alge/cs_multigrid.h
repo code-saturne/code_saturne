@@ -524,6 +524,38 @@ cs_multigrid_set_merge_options(cs_multigrid_t  *mg,
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Query the global multigrid parameters for parallel grid merging.
+ *
+ * \param[in]   mg              pointer to multigrid info and context
+ * \param[out]  n_max_ranks     maximum number of MPI ranks for bottom grid
+ * \param[out]  max_row_factor  maximum acceptable mean ratio of merged rows
+ *                              (per MPI rank) to finest rows.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_get_merge_bottom_options(const cs_multigrid_t  *mg,
+                                      int                   *n_max_ranks,
+                                      float                 *max_row_factor);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set global multigrid parameters for parallel grid merging behavior.
+ *
+ * \param[in, out]  mg              pointer to multigrid info and context
+ * \param[in]       n_max_ranks     maximum number of MPI ranks for bottom grid
+ * \param[in]       max_row_factor  maximum acceptable mean ratio of merged rows
+ *                                  (per MPI rank) to finest rows.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_merge_bottom_options(cs_multigrid_t  *mg,
+                                      int              n_max_ranks,
+                                      float            max_row_factor);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Return a pointer to a grid associated with a given multigrid
  *        setup and level.
  *

@@ -343,6 +343,26 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
                           int               verbosity);
 
 /*----------------------------------------------------------------------------
+ * Merge bottom grid over adjacent ranks, to reduce communicator size.
+ *
+ * If this would lead to a mean number of rows exceeding a given threshold,
+ * no merging is done.
+ *
+ * parameters:
+ *   g                <-- Grid structure
+ *   verbosity        <-- Verbosity level
+ *   n_max_ranks      <-- Maximum number of MPI ranks for bottom grid
+ *   max_row_factor   <-- maximum acceptable mean ratio of merged rows
+ *                        (per MPI rank) to finest rows.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_merge_bottom(cs_grid_t      *g,
+                     int             verbosity,
+                     int             n_max_ranks,
+                     float           max_row_factor);
+
+/*----------------------------------------------------------------------------
  * Project coarse grid row numbers to base grid.
  *
  * If a global coarse grid row number is larger than max_num, its

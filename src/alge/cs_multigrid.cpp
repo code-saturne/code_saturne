@@ -331,21 +331,26 @@ struct _cs_multigrid_t {
 
   cs_multigrid_info_t         info;         /* Base multigrid info */
 
+# if defined(HAVE_MPI)
+
   /* Communicator used for reduction operations
      (if left at nullptr, main communicator will be used) */
-
-# if defined(HAVE_MPI)
 
   MPI_Comm comm;
   MPI_Comm caller_comm;
 
-# endif
+  int      caller_n_ranks;
+
+  /* Coarse grid rank merging options */
+
+  int      merge_stride;
+  int      merge_bottom_n_max_ranks;
+  float    merge_bottom_max_row_factor;
 
   cs_gnum_t merge_mean_threshold;
   cs_gnum_t merge_glob_threshold;
 
-  int      merge_stride;
-  int      caller_n_ranks;
+# endif
 
   /* Data available between "setup" and "solve" states */
 
@@ -544,7 +549,7 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
   }
 
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
+  if (cs_glob_n_ranks > 1) {
     cs_log_printf(CS_LOG_SETUP,
                   _("\n"
                     "  Rank merge parameters:\n"
@@ -554,6 +559,15 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
                   mg->merge_stride,
                   (int)(mg->merge_mean_threshold),
                   (unsigned long long)(mg->merge_glob_threshold));
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("\n"
+                    "  Bottom rank merge parameters:\n"
+                    "    max ranks:                      %d\n"
+                    "    max row factor                  %f\n\n"),
+                  mg->merge_bottom_n_max_ranks,
+                  (double)(mg->merge_bottom_max_row_factor));
+  }
 #endif
 
   cs_log_printf(CS_LOG_SETUP,
@@ -960,6 +974,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
   /* Add new grid to hierarchy */
 
   mgd->grid_hierarchy[mgd->n_levels] = grid;
+  mg->info.n_levels[0] = mgd->n_levels + 1;
 
   if (mg->post_row_num != nullptr) {
     int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
@@ -975,13 +990,30 @@ _multigrid_add_level(cs_multigrid_t  *mg,
       mg->post_row_rank[ii] = nullptr;
   }
 
-  /* Update associated info */
+  /* Ready for next level */
 
-  {
+  mgd->n_levels += 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Update information after adding grids to multigrid structure hierarchy.
+ *
+ * parameters:
+ *   mg   <-- multigrid structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_level_info(cs_multigrid_t  *mg)
+{
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
+  for (unsigned lv = 0; lv < mgd->n_levels; lv++) {
+    const cs_grid_t *grid = mgd->grid_hierarchy[lv];
+
     int  n_ranks;
     cs_lnum_t  n_rows, n_rows_with_ghosts, n_entries;
     cs_gnum_t  n_g_rows;
-    cs_multigrid_level_info_t  *lv_info = mg->lv_info + mgd->n_levels;
+    cs_multigrid_level_info_t  *lv_info = mg->lv_info + lv;
 
     cs_grid_get_info(grid,
                      nullptr,
@@ -993,8 +1025,6 @@ _multigrid_add_level(cs_multigrid_t  *mg,
                      &n_rows_with_ghosts,
                      &n_entries,
                      &n_g_rows);
-
-    mg->info.n_levels[0] = mgd->n_levels + 1;
 
     lv_info->n_ranks[0] = n_ranks;
     if (lv_info->n_ranks[1] > (unsigned)n_ranks)
@@ -1014,7 +1044,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
     lv_info->n_elts[1][0] = n_rows_with_ghosts;
     lv_info->n_elts[2][0] = n_entries;
 
-    for (ii = 0; ii < 3; ii++) {
+    for (unsigned ii = 0; ii < 3; ii++) {
       if (lv_info->n_elts[ii][1] > lv_info->n_elts[ii][0])
         lv_info->n_elts[ii][1] = lv_info->n_elts[ii][0];
       else if (lv_info->n_elts[ii][2] < lv_info->n_elts[ii][0])
@@ -1032,7 +1062,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
                     mg->caller_comm);
       MPI_Allreduce(loc_sizes, max_sizes, 3, CS_MPI_GNUM, MPI_MAX,
                     mg->caller_comm);
-      for (ii = 0; ii < 3; ii++) {
+      for (unsigned ii = 0; ii < 3; ii++) {
         if (tot_sizes[ii] > 0)
           lv_info->imbalance[ii][0] = (  max_sizes[ii]
                                        / (tot_sizes[ii]*1.0/n_ranks)) - 1.0;
@@ -1052,7 +1082,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
     if (lv_info->n_calls[0] == 0) {
       lv_info->n_ranks[1] = n_ranks;
       lv_info->n_g_rows[1] = n_g_rows;
-      for (ii = 0; ii < 3; ii++) {
+      for (unsigned ii = 0; ii < 3; ii++) {
         lv_info->n_elts[ii][1] = lv_info->n_elts[ii][0];
 #if defined(HAVE_MPI)
         lv_info->imbalance[ii][1] = lv_info->imbalance[ii][0];
@@ -1062,10 +1092,6 @@ _multigrid_add_level(cs_multigrid_t  *mg,
 
     lv_info->n_calls[0] += 1;
   }
-
-  /* Ready for next level */
-
-  mgd->n_levels += 1;
 }
 
 /*----------------------------------------------------------------------------
@@ -1751,9 +1777,9 @@ _multigrid_create_k_cycle_bottom(cs_multigrid_t  *parent)
   mg->caller_n_ranks = cs_glob_n_ranks;
 
 #if defined(HAVE_MPI)
+  mg->merge_stride = _k_cycle_hpc_merge_stride;
   mg->merge_mean_threshold = 0;
   mg->merge_glob_threshold = 1;
-  mg->merge_stride = _k_cycle_hpc_merge_stride;
 #endif
 
 #if defined(HAVE_MPI)
@@ -2498,6 +2524,20 @@ _setup_hierarchy(void             *context,
     t1 = t2;
 
   }
+
+  if (mg->merge_bottom_n_max_ranks < cs_glob_n_ranks) {
+    cs_multigrid_setup_data_t *mgd = mg->setup_data;
+    cs_grid_merge_bottom(mgd->grid_hierarchy[mgd->n_levels-1],
+                         verbosity,
+                         mg->merge_bottom_n_max_ranks,
+                         mg->merge_bottom_max_row_factor);
+
+    t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t1, &t2);
+    t1 = t2;
+  }
+
+  _update_level_info(mg);
 
   /* Print final info */
 
@@ -4561,9 +4601,12 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   if (mg->caller_n_ranks < 2) {
     mg->comm = MPI_COMM_NULL;
   }
+  mg->merge_stride = 1;
+  mg->merge_bottom_n_max_ranks = cs_glob_n_ranks;
+  mg->merge_bottom_max_row_factor = 1.0;
+
   mg->merge_mean_threshold = 300;
   mg->merge_glob_threshold = 500;
-  mg->merge_stride = 1;
 #endif
 
   mg->f_settings_threshold = -1;
@@ -5852,6 +5895,57 @@ cs_multigrid_set_merge_options(cs_multigrid_t  *mg,
     mg->merge_stride = cs_glob_n_ranks;
   mg->merge_mean_threshold = rows_mean_threshold;
   mg->merge_glob_threshold = rows_glob_threshold;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query the global multigrid parameters for parallel grid merging.
+ *
+ * \param[in]   mg              pointer to multigrid info and context
+ * \param[out]  n_max_ranks     maximum number of MPI ranks for bottom grid
+ * \param[out]  max_row_factor  maximum acceptable mean ratio of merged rows
+ *                              (per MPI rank) to finest rows.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_get_merge_bottom_options(const cs_multigrid_t  *mg,
+                                      int                   *n_max_ranks,
+                                      float                 *max_row_factor)
+{
+#if defined(HAVE_MPI)
+  if (n_max_ranks != nullptr)
+    *n_max_ranks = mg->merge_bottom_n_max_ranks;
+  if (max_row_factor != nullptr)
+    *max_row_factor = mg->merge_bottom_max_row_factor;
+#else
+  if (n_max_ranks != nullptr)
+    *n_max_ranks = 1;
+  if (max_row_factor != nullptr)
+    *max_row_factor = 1.
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set global multigrid parameters for parallel grid merging behavior.
+ *
+ * \param[in, out]  mg              pointer to multigrid info and context
+ * \param[in]       n_max_ranks     maximum number of MPI ranks for bottom grid
+ * \param[in]       max_row_factor  maximum acceptable mean ratio of merged rows
+ *                                  (per MPI rank) to finest rows.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_merge_bottom_options(cs_multigrid_t  *mg,
+                                      int              n_max_ranks,
+                                      float            max_row_factor)
+{
+#if defined(HAVE_MPI)
+  mg->merge_bottom_n_max_ranks = cs::min(n_max_ranks, cs_glob_n_ranks);
+  mg->merge_bottom_max_row_factor = max_row_factor;
 #endif
 }
 

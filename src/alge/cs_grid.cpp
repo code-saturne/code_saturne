@@ -1618,7 +1618,7 @@ _append_halos(cs_grid_t   *g,
 
     /* Now build ordered list and renumbering array */
 
-    int prev_rank_tr_id = -1, local_rank = cs_glob_rank_id;
+    int prev_rank_tr_id = -1;
     cs_lnum_t prev_src_id = -1, n_elts_m = 0;
 
     cs_lnum_t *halo_o2n;
@@ -2019,43 +2019,19 @@ _append_face_data(cs_grid_t   *g,
 }
 
 /*----------------------------------------------------------------------------
- * Merge grids on several ranks to a grid on a single rank
- *
- * The coarse grid must previously have been initialized with _coarse_init()
- * and its coarsening indicator determined (at least for the local cells;
- * it is extended to halo cells here if necessary).
- *
- * - Periodic faces are not handled yet
+ * Compute stride and ranks when merging grids on several ranks to a smaller
+ * number of ranks.
  *
  * parameters:
  *   g            <-- Pointer to grid structure
  *   merge_stride <-- Associated merge stride
- *   verbosity    <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 static void
-_merge_grids(cs_grid_t  *g,
-             int         merge_stride,
-             int         verbosity)
+_compute_merge_stride_and_ranks(cs_grid_t  *g,
+                                int         merge_stride)
 {
-  std::chrono::high_resolution_clock::time_point tm_start;
-  if (cs_glob_timer_kernels_flag > 0)
-    tm_start = std::chrono::high_resolution_clock::now();
-
   int base_rank = cs_glob_rank_id;
-  cs_lnum_t cell_shift = 0;
-  cs_lnum_t n_faces = 0;
-  cs_lnum_t *new_cell_id = nullptr, *face_list = nullptr;
-  bool  *halo_cell_flag = nullptr;
-  MPI_Comm comm = cs_glob_mpi_comm;
-  MPI_Status status;
-
-  static const int tag = 'm'+'e'+'r'+'g'+'e';
-
-  if (merge_stride < 2)
-    return;
-
-  /* Determine rank in merged group */
 
   g->merge_sub_size = merge_stride;
   g->merge_stride = g->next_merge_stride;
@@ -2077,6 +2053,45 @@ _merge_grids(cs_grid_t  *g,
     if (merge_sub_root + g->merge_sub_size > merge_size)
       g->merge_sub_size = merge_size - merge_sub_root;
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Merge grids on several ranks to a grid on a single rank
+ *
+ * The coarse grid must previously have been initialized with _coarse_init()
+ * and its coarsening indicator determined (at least for the local cells;
+ * it is extended to halo cells here if necessary).
+ *
+ * parameters:
+ *   g            <-- Pointer to grid structure
+ *   merge_stride <-- Associated merge stride
+ *   verbosity    <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+static void
+_merge_grids(cs_grid_t  *g,
+             int         merge_stride,
+             int         verbosity)
+{
+  std::chrono::high_resolution_clock::time_point tm_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    tm_start = std::chrono::high_resolution_clock::now();
+
+  cs_lnum_t cell_shift = 0;
+  cs_lnum_t n_faces = 0;
+  cs_lnum_t *new_cell_id = nullptr, *face_list = nullptr;
+  bool  *halo_cell_flag = nullptr;
+  MPI_Comm comm = cs_glob_mpi_comm;
+  MPI_Status status;
+
+  static const int tag = 'm'+'e'+'r'+'g'+'e';
+
+  if (merge_stride < 2)
+    return;
+
+  /* Determine rank in merged group */
+
+  _compute_merge_stride_and_ranks(g, merge_stride);
 
   if (g->next_merge_stride > 1) {
     if (g->n_ranks % merge_stride)
@@ -2222,6 +2237,455 @@ _merge_grids(cs_grid_t  *g,
   _sync_merged_cell_data(g);
 
   CS_FREE(face_list);
+
+  if (verbosity > 3)
+    bft_printf("      merged to %ld (from %ld) rows\n\n",
+               (long)g->n_rows, (long)g->n_elts_r[0]);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      tm_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(tm_stop - tm_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, g->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Build coarse grid matrix in the MSR format given the 4 necessary arrays.
+ *
+ * parameters:
+ *   c           <-> coarse grid structure
+ *   symmetric   <-- symmetry flag
+ *   c_row_index <-- MSR row index (0 to n-1)
+ *   c_col_id    <-- MSR column id (0 to n-1)
+ *   c_d_val     <-- diagonal values
+ *   c_x_val     <-- extradiagonal values
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_coarse_matrix_msr(cs_grid_t *c,
+                         bool       symmetric,
+                         cs_lnum_t *c_row_index,
+                         cs_lnum_t *c_col_id,
+                         cs_real_t *c_d_val,
+                         cs_real_t *c_x_val)
+{
+  cs_matrix_structure_t  *ms
+    = cs_matrix_structure_create_msr(CS_MATRIX_MSR,
+                                     true, /* transfer */
+                                     true, /* have_diag */
+                                     true, /* ordered */
+                                     c->n_rows,
+                                     c->n_cols_ext,
+                                     &c_row_index,
+                                     &c_col_id,
+                                     c->halo,
+                                     nullptr);
+
+  c->matrix_struct = ms;
+
+  c->_matrix = cs_matrix_create(c->matrix_struct);
+  c->matrix = c->_matrix;
+
+  const cs_lnum_t *_c_row_index, *_c_col_id;
+
+  cs_matrix_get_msr_arrays(c->matrix,
+                           &_c_row_index, &_c_col_id,
+                           nullptr, nullptr);
+
+  cs_matrix_transfer_coefficients_msr(c->_matrix,
+                                      symmetric,
+                                      c->db_size,
+                                      c->eb_size,
+                                      _c_row_index,
+                                      _c_col_id,
+                                      &c_d_val,
+                                      &c_x_val);
+}
+
+/*----------------------------------------------------------------------------
+ * Create a distributed matrix structure from a native matrix structure.
+ *
+ * Note that the structure created maps global cell numbers to the given
+ * existing face -> cell connectivity array, so it must be destroyed before
+ * this array (usually the code's global cell numbering) is freed.
+ *
+ * parameters:
+ *   n     <-- number of elements
+ *   index <-> count (shifted by 1) in, index out (size: n+1)
+ *----------------------------------------------------------------------------*/
+
+static void
+_count_to_index(cs_lnum_t  n,
+                cs_lnum_t  index[])
+{
+  for (cs_lnum_t i = 0; i < n; i++)
+    index[i+1] += index[i];
+}
+
+/*----------------------------------------------------------------------------
+ * Prune MSR arrays to remove duplicate columns.
+ *
+ * This should occur only after discarding periodicity info, which only makes
+ * sense for scalar matrices.
+ *
+ * parameters:
+ *   matrix     <-- pointer to grid structure
+ *   o2n        <-- optional old to new column ids, or null
+ *   row_index  --> matrix row index
+ *   col_id     --> matrix column ids
+ *   d_val      --> matrix diagonal values
+ *   x_val      --> matrix extradiagonal values
+ *----------------------------------------------------------------------------*/
+
+static void
+_matrix_pruned_msr_arrays(cs_grid_t *          g,
+                          const cs_lnum_t *    o2n,
+                          cs_lnum_t *         &row_index,
+                          cs_lnum_t *         &col_id,
+                          cs_real_t *         &d_val,
+                          cs_real_t *         &x_val)
+{
+  std::chrono::high_resolution_clock::time_point tm_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    tm_start = std::chrono::high_resolution_clock::now();
+
+  cs_matrix_t *matrix = g->_matrix;
+  cs_alloc_mode_t alloc_mode = cs_matrix_get_alloc_mode(matrix);
+
+  cs_assert(cs_matrix_get_diag_block_size(matrix) == 1);
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(matrix);
+
+  cs_matrix_release_msr_arrays(matrix,
+                               &row_index,
+                               &col_id,
+                               &d_val,
+                               &x_val);
+
+  if (d_val == nullptr)
+    d_val = g->_da;
+  if (x_val == nullptr)
+    d_val = g->_xa;
+
+  if (row_index == nullptr && col_id == nullptr) {
+    cs_matrix_structure_release_msr_arrays(g->matrix_struct,
+                                           &row_index,
+                                           &col_id);
+  }
+
+  g->da = nullptr;
+  g->_da = nullptr;
+  g->xa = nullptr;
+  g->_xa = nullptr;
+
+  cs_lnum_t *c_row_index;
+  CS_MALLOC_HD(c_row_index, n_rows+1, cs_lnum_t, alloc_mode);
+  c_row_index[0] = 0;
+
+  int n_threads = cs_parall_n_threads(n_rows, CS_THR_MIN);
+  bool need_compact = false;
+
+  if (o2n != nullptr) {
+    cs_lnum_t nnz = row_index[n_rows];
+
+#   pragma omp parallel  num_threads(n_threads)
+    for (cs_lnum_t i = 0; i < nnz; i++) {
+      col_id[i] = o2n[col_id[i]];
+    }
+  }
+
+# pragma omp parallel  num_threads(n_threads)
+  for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
+    cs_lnum_t *restrict row_col_id = col_id + row_index[row_id];
+    cs_real_t *restrict row_val = x_val + row_index[row_id];
+    cs_lnum_t n_row_elts = row_index[row_id+1] - row_index[row_id];
+    bool unordered = false;
+    for (cs_lnum_t i = 1; i < n_row_elts; i++) {
+      if (row_col_id[i] <= row_col_id[i-1])
+        unordered = true;
+    }
+    c_row_index[row_id + 1] = n_row_elts;
+
+    if (unordered) {
+      cs_sort_coupled_shell(0, n_row_elts, row_col_id, row_val);
+      cs_lnum_t j = 0;
+      for (cs_lnum_t i = 1; i < n_row_elts; i++) {
+        if (row_col_id[i] > row_col_id[j]) {
+          j += 1;
+          row_col_id[j] = row_col_id[i];
+          row_val[j] = row_val[i];
+        }
+        else
+          row_val[j] += row_val[i];
+      }
+      c_row_index[row_id] = j+1;
+      if (j+1 < n_row_elts)
+        need_compact = true;  /* no issue here for possible thread race, as
+                                 this can only take one value */
+    }
+  }
+
+  if (need_compact) {
+    _count_to_index(n_rows, c_row_index);
+    cs_lnum_t nnz = c_row_index[n_rows];
+
+    cs_lnum_t *c_col_id;
+    cs_real_t *c_x_val;
+    CS_MALLOC_HD(c_col_id, nnz, cs_lnum_t, alloc_mode);
+    CS_MALLOC_HD(c_x_val, nnz, cs_real_t, alloc_mode);
+
+#   pragma omp parallel  num_threads(n_threads)
+    for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
+      const cs_lnum_t src_shift = row_index[row_id];
+      const cs_lnum_t dst_shift = c_row_index[row_id];
+      const cs_lnum_t n_row_elts = c_row_index[row_id+1] - c_row_index[row_id];
+      for (cs_lnum_t i = 0; i < n_row_elts; i++) {
+        c_col_id[dst_shift + i] = col_id[src_shift + i];
+        c_x_val[dst_shift + i] = x_val[src_shift + i];
+      }
+    }
+
+    CS_FREE(c_row_index);
+    CS_FREE(col_id);
+    CS_FREE(x_val);
+
+    row_index = c_row_index;
+    col_id = c_col_id;
+    x_val = c_x_val;
+  }
+  else
+    CS_FREE(c_row_index);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      tm_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(tm_stop - tm_start);
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total = %ld\n", elapsed.count());
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Merge bottom grids on several ranks to a grid on a single rank
+ *
+ * parameters:
+ *   g            <-- Pointer to grid structure
+ *   merge_stride <-- Associated merge stride
+ *   verbosity    <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+static void
+_merge_bottom_grids_to_single(cs_grid_t  *g,
+                              int         verbosity)
+{
+  std::chrono::high_resolution_clock::time_point tm_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    tm_start = std::chrono::high_resolution_clock::now();
+
+  if (g->db_size > 1)
+    return;
+
+  if (g->comm == MPI_COMM_NULL)
+    return;
+
+  if (g->n_ranks < 2)
+    return;
+
+  cs_alloc_mode_t alloc_mode = cs_matrix_get_alloc_mode(g->matrix);
+
+  const cs_lnum_t n_rows = g->n_rows;
+  cs_lnum_t base_shift = 0;
+
+  int base_rank = cs_glob_rank_id, n_ranks = cs_glob_n_ranks;
+  MPI_Comm_rank(g->comm, &base_rank);
+  MPI_Comm_size(g->comm, &n_ranks);
+  MPI_Exscan(&n_rows, &base_shift, 1, CS_MPI_LNUM, MPI_SUM, g->comm);
+
+  /* Compute and exchange new row_ids */
+
+  cs_lnum_t *new_row_id;
+  CS_MALLOC(new_row_id, g->n_cols_ext, cs_lnum_t);
+  for (cs_lnum_t j = 0; j < n_rows; j++)
+    new_row_id[j] = base_shift + j;
+
+  cs_halo_sync_untyped(g->halo,
+                       CS_HALO_STANDARD,
+                       sizeof(cs_lnum_t),
+                       new_row_id);
+
+  /* Access matrix MSR vectors */
+
+  cs_lnum_t  nnz = 0;
+  cs_lnum_t  *row_index = nullptr, *col_id = nullptr;
+  cs_real_t  *d_val = nullptr, *x_val = nullptr;
+
+  if (g->_matrix != nullptr) {
+    _matrix_pruned_msr_arrays(g,
+                              new_row_id,
+                              row_index,
+                              col_id,
+                              d_val,
+                              x_val);
+    nnz = row_index[n_rows];
+  }
+
+  CS_FREE(new_row_id);
+
+  cs_matrix_destroy(&(g->_matrix));
+  g->matrix = nullptr;
+  cs_matrix_structure_destroy(&(g->matrix_struct));
+  if (g->_halo != nullptr)
+    cs_halo_destroy(&(g->_halo));
+  g->halo = nullptr;
+
+  /* Discard geometric data */
+
+  cs_grid_free_quantities(g);
+  CS_FREE(g->_face_cell);
+  CS_FREE(g->cell_face);
+  CS_FREE(g->cell_face_sgn);
+
+  /* Determine rank in merged group */
+
+  _compute_merge_stride_and_ranks(g, g->n_ranks);
+
+  if (verbosity > 2) {
+    bft_printf("\n"
+               "    merging level %2d grid:\n"
+               "      merge_stride = %d; new ranks = %d\n",
+               g->level, g->merge_stride, g->n_ranks);
+    if (verbosity > 3)
+      bft_printf("      sub_root = %d; sub_rank = %d; sub_size = %d\n",
+                 g->merge_sub_root, g->merge_sub_rank, g->merge_sub_size);
+  }
+
+  /* Compute number of coarse cells in new grid;
+     local cell numbers will be shifted by cell_shift in the merged grid */
+
+  cs_lnum_t *rank_index = nullptr;
+
+  if (base_rank == 0) {
+    CS_MALLOC(g->merge_cell_idx, g->merge_sub_size + 1, cs_lnum_t);
+    CS_MALLOC(rank_index, (n_ranks+1)*2, cs_lnum_t);
+    rank_index[0] = 0; rank_index[1] = 0;
+  }
+
+  cs_lnum_t counts[2] = {g->n_rows, nnz};
+
+  MPI_Gather(counts, 2, CS_MPI_LNUM, rank_index+2, 2, CS_MPI_LNUM,
+             0, g->comm);
+
+  if (base_rank == 0) {
+    rank_index[2] = g->n_rows; rank_index[3] = nnz;
+    g->merge_cell_idx[0] = 0; g->merge_cell_idx[1] = g->n_rows;
+    for (int i = 1; i < n_ranks; i++) {
+      rank_index[(i+1)*2] += rank_index[i*2];
+      rank_index[(i+1)*2+1] += rank_index[i*2 + 1];
+      g->merge_cell_idx[i + 1] = rank_index[(i+1)*2];
+    }
+  }
+
+  /* Now return computed info to grids that will be merged */
+
+  MPI_Scatter(rank_index, 2, CS_MPI_LNUM, counts, 2, CS_MPI_LNUM,
+              0, g->comm);
+
+  /* Now update row index based on local shifts */
+
+  if (base_rank > 0) {
+    for (cs_lnum_t j = 0; j < n_rows+1; j++)
+      row_index[j] += counts[1];
+  }
+
+  /* Now send matrix data to root rank */
+
+  int *recvcounts = nullptr, *displs = nullptr;
+  int n_send = 0;
+
+  if (base_rank == 0) {
+    g->n_rows = rank_index[n_ranks*2];
+    g->n_cols_ext = rank_index[n_ranks*2 + 1];
+
+    assert(g->n_g_rows == (cs_gnum_t)(g->n_rows));
+
+    CS_REALLOC_HD(row_index, rank_index[n_ranks*2] + 1, cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(col_id, rank_index[n_ranks*2 + 1], cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(d_val, rank_index[n_ranks*2], cs_real_t, alloc_mode);
+    CS_REALLOC_HD(x_val, rank_index[n_ranks*2 + 1], cs_real_t, alloc_mode);
+
+    CS_MALLOC(recvcounts, n_ranks, int);
+    CS_MALLOC(displs, n_ranks, int);
+
+    recvcounts[0] = 0;
+    displs[0] = 0;
+    for (int i = 1; i < n_ranks; i++) {
+      recvcounts[i] = rank_index[2*(i+1)] - rank_index[2*i];
+      displs[i] = rank_index[2*i];
+    }
+  }
+  else {
+    n_send = g->n_rows;
+  }
+
+  MPI_Gatherv(row_index+1, n_send, CS_MPI_LNUM,
+              row_index+1, recvcounts, displs, CS_MPI_LNUM,
+              0, g->comm);
+
+  MPI_Gatherv(d_val, n_send, CS_MPI_REAL,
+              d_val, recvcounts, displs, CS_MPI_REAL,
+              0, g->comm);
+
+  if (base_rank == 0) {
+    for (int i = 1; i < n_ranks; i++) {
+      recvcounts[i] = rank_index[2*(i+1) + 1] - rank_index[2*i + 1];
+      displs[i] = rank_index[2*i + 1];
+    }
+    CS_FREE(rank_index);
+  }
+  else {
+    n_send = nnz;
+  }
+
+  MPI_Gatherv(col_id, n_send, CS_MPI_LNUM,
+              col_id, recvcounts, displs, CS_MPI_LNUM,
+              0, g->comm);
+
+  MPI_Gatherv(x_val, n_send, CS_MPI_REAL,
+              x_val, recvcounts, displs, CS_MPI_REAL,
+              0, g->comm);
+
+  CS_FREE(recvcounts);
+  CS_FREE(displs);
+
+  if (base_rank > 0) {
+    g->n_rows = 0;
+    g->n_cols_ext = 0;
+
+    CS_FREE(row_index);
+    CS_MALLOC_HD(row_index, 1, cs_lnum_t, g->alloc_mode);
+    row_index[0] = 0;
+    CS_FREE(col_id);
+    CS_FREE(d_val);
+    CS_FREE(x_val);
+  }
+
+  _build_coarse_matrix_msr(g,
+                           g->symmetric,
+                           row_index,
+                           col_id,
+                           d_val,
+                           x_val);
+
+  /* The matrix is now on a single rank */
+
+  g->n_ranks = 1;
+  g->comm = MPI_COMM_NULL;
 
   if (verbosity > 3)
     bft_printf("      merged to %ld (from %ld) rows\n\n",
@@ -5187,59 +5651,6 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 }
 
 /*----------------------------------------------------------------------------
- * Build coarse grid matrix in the MSR format given the 4 necessary arrays.
- *
- * parameters:
- *   c           <-> coarse grid structure
- *   symmetric   <-- symmetry flag
- *   c_row_index <-- MSR row index (0 to n-1)
- *   c_col_id    <-- MSR column id (0 to n-1)
- *   c_d_val     <-- diagonal values
- *   c_x_val     <-- extradiagonal values
- *----------------------------------------------------------------------------*/
-
-static void
-_build_coarse_matrix_msr(cs_grid_t *c,
-                         bool       symmetric,
-                         cs_lnum_t *c_row_index,
-                         cs_lnum_t *c_col_id,
-                         cs_real_t *c_d_val,
-                         cs_real_t *c_x_val)
-{
-  cs_matrix_structure_t  *ms
-    = cs_matrix_structure_create_msr(CS_MATRIX_MSR,
-                                     true, /* transfer */
-                                     true, /* have_diag */
-                                     true, /* ordered */
-                                     c->n_rows,
-                                     c->n_cols_ext,
-                                     &c_row_index,
-                                     &c_col_id,
-                                     c->halo,
-                                     nullptr);
-
-  c->matrix_struct = ms;
-
-  c->_matrix = cs_matrix_create(c->matrix_struct);
-  c->matrix = c->_matrix;
-
-  const cs_lnum_t *_c_row_index, *_c_col_id;
-
-  cs_matrix_get_msr_arrays(c->matrix,
-                           &_c_row_index, &_c_col_id,
-                           nullptr, nullptr);
-
-  cs_matrix_transfer_coefficients_msr(c->_matrix,
-                                      symmetric,
-                                      c->db_size,
-                                      c->eb_size,
-                                      _c_row_index,
-                                      _c_col_id,
-                                      &c_d_val,
-                                      &c_x_val);
-}
-
-/*----------------------------------------------------------------------------
  * Build a coarse level from a finer level using face->cells connectivity
  *
  * parameters:
@@ -7442,14 +7853,16 @@ cs_grid_free_quantities(cs_grid_t  *g)
 {
   assert(g != nullptr);
 
-  if (cs_matrix_get_type(g->matrix) != CS_MATRIX_NATIVE) {
-    CS_FREE(g->_face_cell);
-    g->face_cell = nullptr;
-    CS_FREE(g->_xa);
-    g->xa = nullptr;
-    if (cs_matrix_get_type(g->matrix) == CS_MATRIX_CSR) {
-      CS_FREE(g->_da);
-      g->da = nullptr;
+  if (g->_matrix != nullptr) {
+    if (cs_matrix_get_type(g->_matrix) != CS_MATRIX_NATIVE) {
+      CS_FREE(g->_face_cell);
+      g->face_cell = nullptr;
+      CS_FREE(g->_xa);
+      g->xa = nullptr;
+      if (cs_matrix_get_type(g->matrix) == CS_MATRIX_CSR) {
+        CS_FREE(g->_da);
+        g->da = nullptr;
+      }
     }
   }
 
@@ -7717,6 +8130,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *   merge_rows_glob_threshold  <-- global number of rows under which
  *                                  merging should be applied
  *   relaxation_parameter       <-- P0/P1 relaxation factor
+ *   discard_mesh_association   <-- If true, discard mesh association info
  *
  * returns:
  *   coarse grid structure
@@ -8226,6 +8640,52 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
   /* Return new (coarse) grid */
 
   return c;
+}
+
+/*----------------------------------------------------------------------------
+ * Merge bottom grid over adjacent ranks, to reduce communicator size.
+ *
+ * If this would lead to a mean number of rows exceeding a given threshold,
+ * no merging is done.
+ *
+ * parameters:
+ *   g                <-- Grid structure
+ *   verbosity        <-- Verbosity level
+ *   n_max_ranks      <-- Maximum number of MPI ranks for bottom grid
+ *   max_row_factor   <-- maximum acceptable mean ratio of merged rows
+ *                        (per MPI rank) to finest rows.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_merge_bottom(cs_grid_t      *g,
+                     int             verbosity,
+                     int             n_max_ranks,
+                     float           max_row_factor)
+{
+#if defined(HAVE_MPI)
+
+  n_max_ranks = cs::min(g->n_ranks, n_max_ranks);
+  float n_mean_rows_at_root;
+  {
+    const cs_grid_t * rg = _root_grid(g);
+    n_mean_rows_at_root = (float)(rg->n_g_rows) / (float)(rg->n_ranks);
+  }
+
+  float n_mean_rows = (float)(g->n_g_rows) / (float)(n_max_ranks);
+  if (n_mean_rows / n_mean_rows_at_root > max_row_factor)
+    return;
+
+  if (n_max_ranks == 1) {
+    _merge_bottom_grids_to_single(g, verbosity);
+  }
+
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: not yet implemented for merge to multiple ranks.\n",
+              __func__);
+  }
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
