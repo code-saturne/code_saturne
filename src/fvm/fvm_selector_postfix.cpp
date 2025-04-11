@@ -296,6 +296,23 @@ static const size_t _postfix_float_size
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * compute mixed product of a, b, c.
+ *
+ * parameters:
+ *   a, b , c      <-- vectors
+ *----------------------------------------------------------------------------*/
+
+static inline double
+_mixed_product(const double a[3],
+               const double b[3],
+               const double c[3]) {
+
+  return  a[0] * (b[1]*c[2] - b[2]*c[1])
+        + a[1] * (b[2]*c[0] - b[0]*c[2])
+        + a[2] * (b[0]*c[1] - b[1]*c[0]);
+}
+
+/*----------------------------------------------------------------------------
  * Add an operator definition to a parser.
  *
  * parameters:
@@ -2674,18 +2691,24 @@ _eval_box(const fvm_selector_postfix_t  *pf,
       retval = true;
   }
   else {
-    double _coords[3], l12, l22, l32, dp1, dp2, dp3;
-    _coords[0] = coords[0] - val[0];
-    _coords[1] = coords[1] - val[1];
-    _coords[2] = coords[2] - val[2];
-    l12 = val[3]*val[3] + val[4]*val[4] + val[5]*val[5];
-    l22 = val[6]*val[6] + val[7]*val[7] + val[8]*val[8];
-    l32 = val[9]*val[9] + val[10]*val[10] + val[11]*val[11];
-    dp1 = _coords[0]*val[3] + _coords[1]*val[4] + _coords[2]*val[5];
-    dp2 = _coords[0]*val[6] + _coords[1]*val[7] + _coords[2]*val[8];
-    dp3 = _coords[0]*val[9] + _coords[1]*val[10] + _coords[2]*val[11];
-    if (   dp1 >= 0   && dp2 >= 0   && dp3 >= 0
-        && dp1 <= l12 && dp2 <= l22 && dp3 <= l32)
+    /* v - x0: the coordinate in the local reference frame of the box */
+    double _v[] = {coords[0] - val[0],
+                   coords[1] - val[1],
+                   coords[2] - val[2]};
+    /* dx1, dx2, dx3 */
+    double _d1[] = {val[3], val[4], val[5]};
+    double _d2[] = {val[6], val[7], val[8]};
+    double _d3[] = {val[9], val[10], val[11]};
+
+    double vol = _mixed_product(_d1, _d2, _d3);
+    assert(fabs(vol) > 0.);
+
+    double a = _mixed_product(_v,  _d2, _d3)/vol;
+    double b = _mixed_product(_d1, _v,  _d3)/vol;
+    double c = _mixed_product(_d1, _d2, _v )/vol;
+
+    if (   a >= 0. && b >= 0. && c >= 0.
+        && a <= 1. && b <= 1. && c <= 1.)
       retval = true;
   }
 
