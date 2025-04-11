@@ -47,7 +47,6 @@
 
 #include "base/cs_array.h"
 #include "base/cs_log.h"
-#include "base/cs_array.h"
 #include "base/cs_map.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
@@ -1864,8 +1863,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        CS_MALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
-        CS_MALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t,
+                     cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t,
+                     cs_alloc_mode);
       }
       else {
         f->bc_coeffs->ad = nullptr;
@@ -1873,8 +1874,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        CS_MALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
-        CS_MALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t,
+                     cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t,
+                     cs_alloc_mode);
       }
       else {
         f->bc_coeffs->ac = nullptr;
@@ -1891,8 +1894,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (cs_glob_porous_model == 3) {
-        const cs_lnum_t *n_elts_cell =
-          cs_mesh_location_get_n_elts(CS_MESH_LOCATION_CELLS);
+        const cs_lnum_t *n_elts_cell
+          = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_CELLS);
         CS_MALLOC(f->bc_coeffs->ib_bc_code, n_elts_cell[0], int);
         CS_MALLOC(f->bc_coeffs->ib_g_wall_cor, n_elts_cell[0], cs_real_t);
         CS_MALLOC(f->bc_coeffs->ib_val_ext, a_mult*n_elts_cell[0], cs_real_t);
@@ -1927,8 +1930,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        CS_REALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
-        CS_REALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t,
+                      cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t,
+                      cs_alloc_mode);
       }
       else {
         CS_FREE_HD(f->bc_coeffs->ad);
@@ -1936,8 +1941,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        CS_REALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
-        CS_REALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t,
+                      cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t,
+                      cs_alloc_mode);
       }
       else {
         CS_FREE_HD(f->bc_coeffs->ac);
