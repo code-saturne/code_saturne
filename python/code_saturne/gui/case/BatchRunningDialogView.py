@@ -966,9 +966,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         if job_walltime != None:
             seconds = job_walltime
-            minutes = seconds / 60
-            hours = minutes / 60
-            days = hours / 24
+            minutes = seconds // 60
+            hours = minutes // 60
+            days = hours // 24
             seconds = seconds % 60
             minutes = minutes % 60
             hours = hours % 24
