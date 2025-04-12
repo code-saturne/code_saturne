@@ -2514,12 +2514,6 @@ cs_parameters_check(void)
                                     "cs_glob_turb_rans_model->irijec",
                                     cs_glob_turb_rans_model->irijec,
                                     0, 2);
-
-      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                    _("while reading input data"),
-                                    "cs_glob_turb_rans_model->idifre",
-                                    cs_glob_turb_rans_model->idifre,
-                                    0, 2);
     }
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
