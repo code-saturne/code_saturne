@@ -248,10 +248,6 @@ typedef struct {
   int           irijec;       /* wall echo term of R
                                  - 1: true
                                  - 0: false (default) */
-  int           idifre;       /* whole treatment of the diagonal part of the
-                                 diffusion tensor of R and epsilon
-                                 - 1: true (default)
-                                 - 0: simplified treatment */
   int           iclsyr;       /* partial implicitation of symmetry BCs of R
                                  - 1: true (default)
                                  - 0: false */

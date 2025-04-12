@@ -239,11 +239,6 @@ BEGIN_C_DECLS
         In addition, their use induces an increase in the calculation time.\n
         The wall echo terms imply the calculation of the distance to the wall
         for every cell in the domain.
-  \var  cs_turb_rans_model_t::idifre
-        whole treatment of the diagonal part of the diffusion tensor of \f$
-        \tens{R} \f$ and \f$ \varepsilon \f$
-        - 1: true (default)
-        - 0: simplified treatment
   \var  cs_turb_rans_model_t::iclsyr
         partial implicitation of symmetry BCs of \f$ \tens{R} \f$
         - 1: true (default)
@@ -393,7 +388,6 @@ _turb_rans_model =
   .irijnu     =    0,
   .irijrb     =    0,
   .irijec     =    0,
-  .idifre     =    1,
   .iclsyr     =    1,
   .iclptr     =    0,
   .ikwcln     =    1,
@@ -1074,7 +1068,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **irijnu,
                                   int     **irijrb,
                                   int     **irijec,
-                                  int     **idifre,
                                   int     **iclsyr,
                                   int     **iclptr);
 
@@ -1148,7 +1141,6 @@ cs_f_turb_model_get_pointers(int     **iturb,
  *   irijnu --> pointer to cs_glob_turb_rans_model->irijnu
  *   irijrb --> pointer to cs_glob_turb_rans_model->irijrb
  *   irijec --> pointer to cs_glob_turb_rans_model->irijec
- *   idifre --> pointer to cs_glob_turb_rans_model->idifre
  *   iclsyr --> pointer to cs_glob_turb_rans_model->iclsyr
  *   iclptr --> pointer to cs_glob_turb_rans_model->iclptr
  *----------------------------------------------------------------------------*/
@@ -1165,7 +1157,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **irijnu,
                                   int     **irijrb,
                                   int     **irijec,
-                                  int     **idifre,
                                   int     **iclsyr,
                                   int     **iclptr)
 {
@@ -1180,7 +1171,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
   *irijnu = &(_turb_rans_model.irijnu);
   *irijrb = &(_turb_rans_model.irijrb);
   *irijec = &(_turb_rans_model.irijec);
-  *idifre = &(_turb_rans_model.idifre);
   *iclsyr = &(_turb_rans_model.iclsyr);
   *iclptr = &(_turb_rans_model.iclptr);
 }
@@ -1858,10 +1848,8 @@ cs_turb_model_log_setup(void)
 
     if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR) {
       cs_log_printf(CS_LOG_SETUP,
-                    _("    irijec:      %14d (Wall echo terms)\n"
-                      "    idifre:      %14d (Handle diffusion tensor)\n"),
-                    cs_glob_turb_rans_model->irijec,
-                    cs_glob_turb_rans_model->idifre);
+                    _("    irijec:      %14d (Wall echo terms)\n"),
+                    cs_glob_turb_rans_model->irijec);
     }
     else if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_log_printf(CS_LOG_SETUP,

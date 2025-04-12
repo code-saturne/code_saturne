@@ -427,12 +427,6 @@ module optcal
   !> for every cell in the domain.
   integer(c_int), pointer, save :: irijec
 
-  !> whole treatment of the diagonal part of the diffusion tensor of
-  !> \f$ \tens{R} \f$ and \f$ \varepsilon \f$
-  !>    - 1: true (default)
-  !>    - 0: simplified treatment
-  integer(c_int), pointer, save :: idifre
-
   !> partial implicitation of symmetry BCs of \f$ \tens{R} \f$
   !>    - 1: true (default)
   !>    - 0: false
@@ -689,7 +683,7 @@ module optcal
                                                  iclkep, igrhok,  &
                                                  ikecou, reinit_turb, &
                                                  irijco, irijnu,  &
-                                                 irijrb, irijec, idifre, &
+                                                 irijrb, irijec,         &
                                                  iclsyr, iclptr)         &
       bind(C, name='cs_f_turb_rans_model_get_pointers')
       use, intrinsic :: iso_c_binding
@@ -697,7 +691,7 @@ module optcal
       type(c_ptr), intent(out) :: irccor, itycor, idirsm, iclkep, igrhok
       type(c_ptr), intent(out) :: ikecou, reinit_turb, irijco
       type(c_ptr), intent(out) :: irijnu, irijrb
-      type(c_ptr), intent(out) :: irijec, idifre, iclsyr, iclptr
+      type(c_ptr), intent(out) :: irijec, iclsyr, iclptr
     end subroutine cs_f_turb_rans_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -986,14 +980,14 @@ contains
 
     type(c_ptr) :: c_irccor, c_itycor, c_idirsm, c_iclkep, c_igrhok
     type(c_ptr) :: c_ikecou, c_reinit_turb, c_irijco, c_irijnu
-    type(c_ptr) :: c_irijrb, c_irijec, c_idifre
+    type(c_ptr) :: c_irijrb, c_irijec
     type(c_ptr) :: c_iclsyr, c_iclptr
 
     call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_idirsm, &
                                             c_iclkep, c_igrhok, &
                                             c_ikecou, c_reinit_turb, &
                                             c_irijco, c_irijnu, &
-                                            c_irijrb, c_irijec, c_idifre, &
+                                            c_irijrb, c_irijec, &
                                             c_iclsyr, c_iclptr)
 
     call c_f_pointer(c_irccor, irccor)
@@ -1007,7 +1001,6 @@ contains
     call c_f_pointer(c_irijnu, irijnu)
     call c_f_pointer(c_irijrb, irijrb)
     call c_f_pointer(c_irijec, irijec)
-    call c_f_pointer(c_idifre, idifre)
     call c_f_pointer(c_iclsyr, iclsyr)
     call c_f_pointer(c_iclptr, iclptr)
 
