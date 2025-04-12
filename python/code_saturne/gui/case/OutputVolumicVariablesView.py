@@ -405,21 +405,22 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             newItem = TreeItem(item, "", parentItem)
             parentItem.appendChild(newItem)
 
-        # Calculator functions
-        for func in self.calculator.getFunctionsNamesList(location="cells"):
-            row = self.rowCount()
-            parentItem = self.noderoot[_calculator_group]
-            printing = self.calculator.getPrintingStatus(func)
+        # Calculator functions (do no exist for current handling of error indicators)
+        if self.calculator:
+            for func in self.calculator.getFunctionsNamesList(location="cells"):
+                row = self.rowCount()
+                parentItem = self.noderoot[_calculator_group]
+                printing = self.calculator.getPrintingStatus(func)
 
-            if not _is_post_active:
-                self.calculator.setPostStatus("off")
-            post = self.calculator.getPostStatus(func)
+                if not _is_post_active:
+                    self.calculator.setPostStatus("off")
+                post = self.calculator.getPostStatus(func)
 
-            monitor = self.calculator.getMonitorStatus(func)
+                monitor = self.calculator.getMonitorStatus(func)
 
-            item = item_class(func, func, printing, post, monitor, _calculator_group)
-            newItem = TreeItem(item, "", parentItem)
-            parentItem.appendChild(newItem)
+                item = item_class(func, func, printing, post, monitor, _calculator_group)
+                newItem = TreeItem(item, "", parentItem)
+                parentItem.appendChild(newItem)
 
         # update parent item
         for item in self.rootItem.childItems:
