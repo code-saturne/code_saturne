@@ -1,3 +1,11 @@
+Release 8.0.6 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- GUI: fix crash with some batch file templates due to old Python2
+  division syntax.
+
 Release 8.0.5 (2025-06-28)
 --------------------------
 
