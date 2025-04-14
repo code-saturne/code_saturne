@@ -1819,7 +1819,7 @@ fvm_writer_field_helper_get_size(const fvm_writer_field_helper_t  *helper,
 
     if (h->n_sub_elements_max > 1) {
       min_size = h->n_sub_elements_max * FVM_WRITER_MIN_SUB_ELEMENTS;
-      min_size = cs::min(min_size, h->output_size);
+      min_size = cs::min(min_size, (size_t)(h->output_size));
     }
 
     if (h->output_size > 0)
