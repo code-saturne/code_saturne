@@ -992,11 +992,18 @@ class case:
         if src.startswith(cs_pkg_dir):
             return
 
-        # Copy single file
+        # Copy single file, unless already present
 
         dest = os.path.join(self.result_dir, os.path.basename(src))
         if os.path.isfile(src) and os.path.abspath(src) != os.path.abspath(dest):
-            shutil.copy2(src, dest)
+            batch_file_already_present = False
+            runcase = os.path.join(self.result_dir, 'runcase')
+            if os.path.isfile(runcase):
+                import filecmp
+                if filecmp.cmp(src, runcase):
+                    batch_file_already_present = True
+            if not batch_file_already_present:
+                shutil.copy2(src, dest)
 
     #---------------------------------------------------------------------------
 
