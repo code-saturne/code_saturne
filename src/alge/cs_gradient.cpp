@@ -2474,6 +2474,11 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   cs_cocg_6_t  *restrict cocgb = nullptr;
   cs_cocg_6_t  *restrict cocg = nullptr;
 
+  /* Weighting requires face weights, so cannot be applied consistently
+     with an extended neighborhhood. */
+  if (c_weight != nullptr)
+    halo_type = CS_HALO_STANDARD;
+
 #if defined(HAVE_CUDA)
   bool accel = (cs_get_device_id() > -1) ? true : false;
 #else
@@ -2731,6 +2736,11 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
+
+  /* Weighting requires face weights, so cannot be applied consistently
+     with an extended neighborhhod.  */
+  if (c_weight_s != nullptr)
+    halo_type = CS_HALO_STANDARD;
 
   cs_dispatch_context ctx;
   cs_dispatch_context ctx_b;
@@ -3119,6 +3129,11 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
 
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
+
+  /* Weighting requires face weights, so cannot be applied consistently
+     with an extended neighborhhood. */
+  if (c_weight_s != nullptr)
+    halo_type = CS_HALO_STANDARD;
 
   const cs_real_t *coefap = bc_coeffs->a;
   const cs_real_t *coefbp = bc_coeffs->b;
