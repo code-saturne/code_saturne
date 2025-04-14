@@ -2040,6 +2040,7 @@ cs_restart_read_variables(cs_restart_t               *r,
       else if (t_id_flag > 0)
         t_id_s = 1;
 
+      int t_id_last = -1;
       for (int t_id = t_id_s; t_id < t_id_e; t_id++) {
         int t_mask = (t_id == 0) ? 1 : 2 << (t_id-1);
         if (_read_flag[f->id] & t_mask)
@@ -2047,8 +2048,25 @@ cs_restart_read_variables(cs_restart_t               *r,
 
         int retval = cs_restart_read_field_vals(r, f_id, t_id);
 
-        if (retval == CS_RESTART_SUCCESS)
+        if (retval == CS_RESTART_SUCCESS) {
           _read_flag[f_id] += t_mask;
+          t_id_last = t_id;
+        }
+      }
+
+      /* In case we do not read older values, initialize them with the oldest
+         values read. */
+
+      if (t_id_last > -1 && t_id_e < f->n_time_vals) {
+        for (int t_id = t_id_last+1; t_id < f->n_time_vals; t_id++) {
+          int t_mask = (t_id == 0) ? 1 : 2 << (t_id-1);
+          if (_read_flag[f->id] & t_mask) /* Do not overwrite if already read */
+            continue;
+          cs_lnum_t n_elts = cs_mesh_location_get_n_elts(f->location_id)[2];
+          cs_lnum_t n_vals = (cs_lnum_t)(f->dim)*n_elts;
+          cs_array_copy(n_vals, f->vals[t_id_last], f->vals[t_id]);
+        }
+
       }
 
     }
@@ -3267,12 +3285,24 @@ cs_restart_read_fields(cs_restart_t       *r,
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
+    int t_id_last = -1;
     if (cs_field_get_key_int(f, restart_file_key_id) == r_id) {
       const int n_vals_to_reads = cs_field_get_key_int(f, n_restart_vals_key);
       for (int i = 0; i < n_vals_to_reads; i++) {
         int retval = cs_restart_read_field_vals(r, f_id, i);
         if (retval != CS_RESTART_SUCCESS)
           w_count += 1;
+        else
+          t_id_last = i;
+      }
+      /* If we do not read older values, initialize them with the oldest
+         values read. */
+      if (t_id_last < 0)
+        continue;
+      for (int t_id = n_vals_to_reads; t_id < f->n_time_vals; t_id++) {
+        cs_lnum_t n_elts = cs_mesh_location_get_n_elts(f->location_id)[2];
+        cs_lnum_t n_vals = (cs_lnum_t)(f->dim)*n_elts;
+        cs_array_copy(n_vals, f->vals[t_id_last], f->vals[t_id]);
       }
     }
   }
