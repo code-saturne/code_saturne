@@ -4206,8 +4206,7 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
@@ -4338,12 +4337,8 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
       cs_real_t unddij = 1. / b_dist[f_id];
       cs_real_t umcbdd = (1. -bc_coeff_b[f_id]) * unddij;
 
-      cs_real_t normal[3];
-      /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalize(b_face_normal[f_id], normal);
-
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        dsij[ll] = normal[ll] + umcbdd*diipb[f_id][ll];
+        dsij[ll] = b_face_u_normal[f_id][ll] + umcbdd*diipb[f_id][ll];
 
       /* (b_face_cog - cell_cen).f_ext, or IF.F_i */
       cs_real_t c_f_ext
@@ -9400,20 +9395,10 @@ cs_gradient_porosity_balance(int inc)
   cs_real_t *b_f_face_factor = mq->b_f_face_factor;
   cs_real_t *i_massflux = cs_field_by_name("inner_mass_flux")->val;
   cs_real_t *b_massflux = cs_field_by_name("boundary_mass_flux")->val;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)mq_g->i_face_normal;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)mq_g->b_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq_g->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq_g->b_face_u_normal;
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
-  const cs_real_t *restrict i_f_face_surf = mq->i_face_surf;
-  const cs_real_t *restrict i_face_surf = mq_g->i_face_surf;
-  const cs_real_t *restrict b_f_face_surf = mq->b_face_surf;
-  const cs_real_t *restrict b_face_surf = mq_g->b_face_surf;
 
   const int *restrict c_disable_flag = mq->c_disable_flag;
   cs_lnum_t has_dc = mq->has_disable_flag; /* Has cells disabled? */
@@ -9460,9 +9445,7 @@ cs_gradient_porosity_balance(int inc)
           cs_lnum_t ii = i_face_cells[f_id][0];
           cs_lnum_t jj = i_face_cells[f_id][1];
 
-          cs_real_3_t normal;
-
-          cs_math_3_normalize(i_face_normal[f_id], normal);
+          const cs_nreal_t *normal = i_face_u_normal[f_id];
 
           cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
           cs_real_t *vel_j = &(CS_F_(vel)->val_pre[3*jj]);
@@ -9477,17 +9460,16 @@ cs_gradient_porosity_balance(int inc)
              Not the case if coupled */
           if (   has_dc * c_disable_flag[has_dc * ii] == 0
               && has_dc * c_disable_flag[has_dc * jj] == 0)
-            d_f_surf = 1. / std::max(i_f_face_surf[f_id],
-                                     cs_math_epzero * i_face_surf[f_id]);
+            d_f_surf = 1.;
 
           i_poro_duq_0[f_id] = veli_dot_n * i_massflux[f_id] * d_f_surf;
           i_poro_duq_1[f_id] = velj_dot_n * i_massflux[f_id] * d_f_surf;
 
           for (cs_lnum_t i = 0; i < 3; i++) {
             c_poro_div_duq[ii][i] +=   i_poro_duq_0[f_id]
-                                     * i_f_face_normal[f_id][i];
+                                     * i_face_u_normal[f_id][i];
             c_poro_div_duq[jj][i] -=   i_poro_duq_1[f_id]
-                                    * i_f_face_normal[f_id][i];
+                                     * i_face_u_normal[f_id][i];
           }
         }
       }
@@ -9505,9 +9487,7 @@ cs_gradient_porosity_balance(int inc)
 
         cs_lnum_t ii = b_face_cells[f_id];
 
-        cs_real_3_t normal;
-
-        cs_math_3_normalize(b_face_normal[f_id], normal);
+        const cs_nreal_t *normal = b_face_u_normal[f_id];
 
         cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
 
@@ -9518,14 +9498,13 @@ cs_gradient_porosity_balance(int inc)
         /* Is the cell disabled (for solid or porous)?
            Not the case if coupled */
         if (has_dc * c_disable_flag[has_dc * ii] == 0)
-          d_f_surf = 1. / std::max(b_f_face_surf[f_id],
-                                   cs_math_epzero * b_face_surf[f_id]);
+          d_f_surf = 1.;
 
         b_poro_duq[f_id] = veli_dot_n * b_massflux[f_id] * d_f_surf;
 
         for (cs_lnum_t i = 0; i < 3; i++)
           c_poro_div_duq[ii][i] +=   b_poro_duq[f_id]
-                                   * b_f_face_normal[f_id][i];
+                                   * b_face_u_normal[f_id][i];
       }
 
       /* Finalization of cell terms */
