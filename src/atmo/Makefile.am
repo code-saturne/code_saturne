@@ -67,7 +67,6 @@ cs_intprf.h
 
 noinst_LIBRARIES = libcsatmo.a
 libcsatmo_a_SOURCES = \
-atlecc.f90 \
 atlecm.f90 \
 atmsol.f90 \
 atr1vf.f90 \

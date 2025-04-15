@@ -472,8 +472,6 @@ cs_f_atmo_soil_init_arrays(int       *n_soil_cat,
 void
 cs_f_read_meteo_profile(int imode);
 
-void
-cs_f_read_chemistry_profile(const int imode);
 
 /*============================================================================
  * Private function definitions
@@ -2290,7 +2288,7 @@ cs_atmo_fields_init0(void)
 
     // Second reading of chemical profiles file
     int imode = 1;
-    cs_f_read_chemistry_profile(imode);
+    cs_atmo_read_chemistry_profile(imode);
 
     /* Check latitude / longitude from chemistry file */
     cs_real_t xy_chem[2] = {at_chem->x_conc_profiles[0],

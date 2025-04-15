@@ -178,6 +178,13 @@ module atchem
       integer(c_int),value :: imode
     end subroutine atlecm
 
+    subroutine cs_atmo_read_chemistry_profile(mode) &
+      bind(C, name="cs_atmo_read_chemistry_profile")
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int),value :: mode
+    end subroutine cs_atmo_read_chemistry_profile
+
   end interface
 
   !=============================================================================
@@ -281,7 +288,7 @@ contains
     call c_f_pointer(p_nbchmz, nbchmz)
     call c_f_pointer(p_nespgi, nespgi)
 
-    call atlecc(imode)
+    call cs_atmo_read_chemistry_profile(imode)
 
     ! Dynamical allocations
 

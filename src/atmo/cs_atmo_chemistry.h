@@ -314,6 +314,17 @@ cs_atmo_read_aerosol(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reads the chemistry profile data for the atmospheric chemistry
+ *
+ * \param[in] mode    if false reading of dimensions only else reading of data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_read_chemistry_profile(int mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function set the file name of the aerosol concentration file.
  *
  * \param[in] file_name  name of the file.

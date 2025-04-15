@@ -352,10 +352,10 @@ cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
                                         cs_real_t **ychem,
                                         cs_real_t **conv_factor_jac)
 {
-  const int nespg = _atmo_chem.n_species;
+  const int nespg   = _atmo_chem.n_species;
   const int _nbchmz = _atmo_chem.n_z_profiles;
   const int _nbchim = _atmo_chem.nt_step_profiles;
-  const int size = _atmo_chem.n_species*_nbchmz*_nbchim;
+  const int size    = _atmo_chem.n_species*_nbchmz*_nbchim;
 
   if (_atmo_chem.conc_profiles == nullptr)
     BFT_MALLOC(_atmo_chem.conc_profiles, size, cs_real_t);
@@ -1019,6 +1019,239 @@ cs_atmo_read_aerosol(void)
                  at_chem->dlconc0[jb + jsp*n_aer]);
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reads the chemistry profile data for the atmospheric chemistry
+ *
+ * \param[in] mode    if false reading of dimensions only else reading of data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_read_chemistry_profile(int mode)
+{
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  const int n_fields = cs_field_n_fields();
+
+  FILE *file = nullptr;
+  char chaine[100] = "";
+  static bool switch_to_labels;
+  int species_profiles_to_fid[_atmo_chem.n_species_profiles];
+  const char *name = _atmo_chem.chem_conc_file_name;
+
+  if (name != nullptr)
+    file = fopen(name, "r");
+
+  if (mode == 1) {
+
+    bft_printf("reading of concentration profiles data\n");
+
+    for (int itp = 0; itp < _atmo_chem.nt_step_profiles; itp++) {
+
+      int year, quant, hour, minute, second;
+
+      // read time
+      while (strcmp(chaine, "second") != 0)
+        fscanf(file, "%s", chaine);
+      fscanf(file, "%d %d %d %d %d",
+             &year, &quant, &hour, &minute, &second);
+
+      if (second < 0 || quant > 366)
+        cs_parameters_error
+          (CS_ABORT_IMMEDIATE,
+           _("Error opening the chemistry profile file"),
+           _("verify input format (integer, real)\n"
+             "The computation will not be run"));
+
+      if (at_opt->syear < 0.0) {
+        at_opt->syear  = year;
+        at_opt->squant = quant;
+        at_opt->shour  = hour;
+        at_opt->smin   = minute;
+        at_opt->ssec   = (cs_real_t)second;
+      }
+
+      /* Compute the julian day for the starting day of the simulation
+       * (julian day at 12h) */
+      const cs_real_t sjday
+        = at_opt->squant + ( ( 1461 * (at_opt->syear + 4800 + (1 - 14) / 12))/4
+                             + (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12
+                             - (3 * ((at_opt->syear + 4900 + (1-14)/12) / 100))/4
+                             + 1 - 32075 ) - 1;
+      const cs_real_t jday
+        = quant + (  (1461*(year+4800+(1-14)/12))/4
+                     + (367*(1-2-12*((1-14) / 12))) / 12
+                     - (3 * ((year+4900+(1-14)/12)/100)) / 4
+                     +  1-32075) - 1;
+
+      _atmo_chem.t_conc_profiles[itp] = (jday - sjday)*86400.0
+        + (hour - at_opt->shour)*3600.0
+        + (minute - at_opt->smin)*60.0  + (second - at_opt->ssec);
+
+      if (itp > 0)
+        if (_atmo_chem.t_conc_profiles[itp] < _atmo_chem.t_conc_profiles[itp-1])
+                  cs_parameters_error
+                    (CS_ABORT_IMMEDIATE,
+                     _("Error in the chemistry profile file:\n"),
+                     _("check that the chronogical order of"
+                       "the profiles are respected"));
+
+      while (strcmp(chaine, "domaine") != 0)
+        fscanf(file, "%s", chaine);
+
+      /* reading the position of the profile
+         -----------------------------------*/
+      fscanf(file, "%lf %lf",
+             &_atmo_chem.x_conc_profiles[itp],
+             &_atmo_chem.y_conc_profiles[itp]);
+
+      char labels[100] = "";
+
+      if (_atmo_chem.init_gas_with_lib) {
+
+        /* read the concentrations
+           ----------------------- */
+        const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+        const cs_real_t ro0 = (1e3*phys_pro->ro0);
+
+        _atmo_chem.z_conc_profiles[0] = 0.0;
+        cs_atmo_aerosol_get_gas(_atmo_chem.conc_profiles);
+
+        for (int ii = 0; ii < _atmo_chem.n_species_profiles; ii++)
+          _atmo_chem.conc_profiles[ii] = _atmo_chem.conc_profiles[ii]/ro0;
+
+      }
+      else {
+        if (_atmo_chem.n_species_profiles > 0) {
+          if (switch_to_labels) {
+
+            while (strcmp(chaine, "initialisées") != 0)
+              fscanf(file, "%s", chaine);
+            int nbchim = 0;
+            fscanf(file, "%d", &nbchim);
+            fscanf(file, "%s", chaine);
+            while (strcmp(chaine, "initialisées") != 0)
+              fscanf(file, "%s", chaine);
+            for (int ii = 0; ii < _atmo_chem.n_species_profiles; ii++) {
+              fscanf(file, "%s", labels);
+              if (strcmp(labels, "") == 0) {
+                cs_parameters_error
+                  (CS_ABORT_IMMEDIATE,
+                   _("ATMOSPHERIC CHEMISTRY FROM SPACK:\n"),
+                   _("Could not identify the given species label\n"
+                     "Given species label :%s"), labels);
+              }
+              else {
+                for (int f_id = 0; f_id < n_fields; f_id++) {
+                  const cs_field_t *f = cs_field_by_id(f_id);
+                  const char *f_label = cs_field_get_label(f);
+                  if (strcmp(labels, f_label) != 0)
+                    continue;
+                  species_profiles_to_fid[ii] = f_id;
+                }
+              }
+            }
+            cs_f_atmo_chem_initialize_species_profiles_to_fid
+              (species_profiles_to_fid);
+          }
+
+          int nbchmz = 0;
+          cs_real_t zconctemp[_atmo_chem.n_species_profiles+1];
+
+          while (strcmp(chaine, "concentrations") != 0)
+            fscanf(file, "%s", chaine);
+          fscanf(file, "%d", &nbchmz);
+
+          nbchmz = _atmo_chem.n_z_profiles;
+          const int size = nbchmz*_atmo_chem.nt_step_profiles;
+          for (int ii = 0; ii < _atmo_chem.n_z_profiles; ii++) {
+            for (int jj = 0; jj < _atmo_chem.n_species_profiles+1; jj++)
+              fscanf(file, "%lf", &zconctemp[jj]);
+            _atmo_chem.z_conc_profiles[ii] = zconctemp[0];
+
+            for (int kk = 1; kk < _atmo_chem.n_species_profiles+1; kk++)
+              _atmo_chem.conc_profiles[ii+(itp)*nbchmz+(kk-1)*size] = zconctemp[kk];
+          }
+        } // fin test nespgi
+
+      } //fin test init_gas_with_lib
+
+      /* logging and initialaze species profiles
+         --------------------------------------- */
+
+      if (itp == 0) {
+        bft_printf("===================================================\n");
+        bft_printf("printing concentration profiles\n");
+      }
+
+      bft_printf("year, quant-day, hour, minute, second\n");
+      bft_printf("%d  %d  %d  %d  %10.2lf\n", year, quant, hour, minute, second);
+      bft_printf("t_conc_profiles: %10.4lf\n", _atmo_chem.t_conc_profiles[itp]);
+
+      bft_printf("\n");
+      const int nbchmz = _atmo_chem.n_z_profiles;
+      const int size = nbchmz*_atmo_chem.nt_step_profiles;
+      bft_printf("zproc,");
+      for (int kk = 0; kk < _atmo_chem.n_species_profiles; kk++) {
+        cs_field_t *f = cs_field_by_id(species_profiles_to_fid[kk]);
+        const char *f_label = cs_field_get_label(f);
+        bft_printf(" %s,",f_label);
+      }
+      bft_printf("\n");
+      for (int ii = 0; ii < _atmo_chem.n_z_profiles; ii++) {
+        bft_printf("%10.2lf ",  _atmo_chem.z_conc_profiles[ii]);
+        for (int kk = 0; kk < _atmo_chem.n_species_profiles; kk++) {
+          bft_printf("%10.5lf ",
+                     _atmo_chem.conc_profiles[ii+(itp)*nbchmz+(kk-1)*size]);
+
+        }
+        bft_printf("\n");
+      }
+
+    } // end loop on time
+
+  }
+  else {
+
+    _atmo_chem.nt_step_profiles = 1;
+    bft_printf("reading of dimensions for concentration profiles\n");
+
+    if (_atmo_chem.init_gas_with_lib) {
+
+      _atmo_chem.n_z_profiles = 1;
+      _atmo_chem.n_species_profiles = _atmo_chem.n_species;
+      return;
+
+    }
+    else {
+      while (strcmp(chaine, "initialisées") != 0)
+        fscanf(file, "%s", chaine);
+      fscanf(file, "%d", &_atmo_chem.n_species_profiles);
+
+      if (_atmo_chem.n_species_profiles < 0) {
+        switch_to_labels = true;
+        _atmo_chem.n_species_profiles = -_atmo_chem.n_species_profiles;
+      }
+      else
+        switch_to_labels = false;
+
+      while (strcmp(chaine, "concentrations") != 0)
+        fscanf(file, "%s", chaine);
+      fscanf(file, "%d", &_atmo_chem.n_z_profiles);
+      if (_atmo_chem.n_z_profiles < 2)
+        cs_parameters_error
+                    (CS_ABORT_IMMEDIATE,
+                     _("Error in the chemistry profile file:\n"),
+                     _("the number of concentrations measurements\n"
+                       " must be larger than 2"));
+    }
+
+  }
+
+  if (file != nullptr)
+    fclose(file);
 }
 
 /*----------------------------------------------------------------------------*/
