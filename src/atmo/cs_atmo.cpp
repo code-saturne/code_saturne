@@ -2880,7 +2880,7 @@ cs_atmo_bcond(void)
       /* For gaseous species which have not been treated earlier
          (for example species not present in the third gaseous scheme,
          which can be treated in usatcl of with the file chemistry)
-         zero dirichlet conditions are imposed */
+         zero Dirichlet conditions are imposed */
       for (int ii = 0; ii < nespg; ii++) {
         const int f_id = at_chem->species_to_scalar_id[ii];
         cs_field_t *f = cs_field_by_id(f_id);
@@ -3124,7 +3124,7 @@ cs_atmo_bcond(void)
         /* Turbulence inlet */
         cs_turbulence_bc_set_uninit_inlet(face_id, k_in, rij_loc, eps_in);
 
-        /* Thermal scalar and humide atmosphere variables */
+        /* Thermal scalar and humid atmosphere variables */
         if (f_th != nullptr) {
 
           if (rcodcl1_theta[face_id] > 0.5 * cs_math_infinite_r)
@@ -3143,7 +3143,6 @@ cs_atmo_bcond(void)
                     cs_glob_atmo_option->qw_met,
                     z_in,
                     cs_glob_time_step->t_cur);
-
 
               else
                 qw_in = cpro_met_qv[cell_id];
