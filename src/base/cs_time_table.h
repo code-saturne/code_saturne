@@ -50,6 +50,21 @@ typedef struct _cs_time_table_t cs_time_table_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get column id corresponding to a given header/label.
+ *
+ * \param[in] table pointer to time table
+ * \param[in] name  name of the header/column
+ *
+ * \return index of the corresponding column. -1 if not found.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_table_column_id_by_name(const cs_time_table_t *table,
+                                const char            *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Try to get time table based on name.
  *
  * \param[in] name Name of time table
