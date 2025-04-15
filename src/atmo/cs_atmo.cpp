@@ -3982,6 +3982,9 @@ cs_atmo_compute_meteo_profiles(void)
   cs_mesh_t *m = domain->mesh;
   cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
+  const int *restrict c_disable_flag = (mq->has_disable_flag) ?
+    mq->c_disable_flag : nullptr;
+
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)mq->cell_cen;
 
@@ -4081,8 +4084,9 @@ cs_atmo_compute_meteo_profiles(void)
   /* Profiles */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
-    if (mq->c_disable_flag[cell_id] == 1)
-      continue;
+    if (c_disable_flag != nullptr)
+      if (c_disable_flag[cell_id] == 1)
+        continue;
 
     cs_real_t z_grd = 0.;
     if (z_ground != nullptr)
@@ -4367,31 +4371,33 @@ cs_atmo_z_ground_compute(void)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     rhs[cell_id] = 0.;
 
-  /*Dirichlet condition on immersed boundaries*/
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    /*Geomtric quantities */
-    const cs_real_t solid_surf = c_w_face_surf[c_id];
-    const cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
-                                  0.:
-                                  1. / c_w_dist_inv[c_id];
-    const cs_real_t pyr_vol = wall_dist * solid_surf;
+  /*Dirichlet condition on immersed boundaries */
+  if (c_w_face_surf != nullptr) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells ; c_id++) {
+      /* Geomtric quantities */
+      const cs_real_t solid_surf = c_w_face_surf[c_id];
+      const cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
+                                    0.:
+                                    1. / c_w_dist_inv[c_id];
+      const cs_real_t pyr_vol = wall_dist * solid_surf;
 
-    eqp_p->ndircl = 1;
-    cs_real_t hint = c_w_dist_inv[c_id];
-    cs_real_t pimp = cs_math_3_dot_product(c_w_face_cog[c_id], normal);
+      eqp_p->ndircl = 1;
+      cs_real_t hint = c_w_dist_inv[c_id];
+      cs_real_t pimp = cs_math_3_dot_product(c_w_face_cog[c_id], normal);
 
-    f->bc_coeffs->ib_g_wall_cor[c_id] = 0.;
-    f->bc_coeffs->ib_val_ext[c_id] = pimp;
-    f->bc_coeffs->ib_hint[c_id] = hint;
-    f->bc_coeffs->ib_qimp[c_id] = 0.;
+      f->bc_coeffs->ib_g_wall_cor[c_id] = 0.;
+      f->bc_coeffs->ib_val_ext[c_id] = pimp;
+      f->bc_coeffs->ib_hint[c_id] = hint;
+      f->bc_coeffs->ib_qimp[c_id] = 0.;
 
-    cs_real_t tsimp = fmax(- cs_math_3_dot_product(c_w_face_normal[c_id], normal), 0.);
+      cs_real_t tsimp = fmax(- cs_math_3_dot_product(c_w_face_normal[c_id], normal), 0.);
 
-    rhs[c_id] += tsimp * (pimp - f->val[c_id]); //explicit term
-    rovsdt[c_id] += cs::max(tsimp, 0.); //implicit term
+      rhs[c_id] += tsimp * (pimp - f->val[c_id]); //explicit term
+      rovsdt[c_id] += cs::max(tsimp, 0.); //implicit term
 
-    norm += cs_math_pow2(pimp) * c_w_face_surf[c_id];
-    ground_surf += c_w_face_surf[c_id];
+      norm += cs_math_pow2(pimp) * c_w_face_surf[c_id];
+      ground_surf += c_w_face_surf[c_id];
+    }
   }
 
   cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));

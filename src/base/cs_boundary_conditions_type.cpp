@@ -745,6 +745,7 @@ cs_boundary_conditions_type(bool  init,
           const int met_1d_nlevels_t = cs_glob_atmo_option->met_1d_nlevels_t;
           const int met_1d_ntimes = cs_glob_atmo_option->met_1d_ntimes;
 
+          //TODO altitude relative ??
           const cs_real_t xuent = cs_intprf(met_1d_nlevels_t,
                                             met_1d_ntimes,
                                             cs_glob_atmo_option->z_temp_met,
