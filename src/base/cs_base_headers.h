@@ -99,6 +99,7 @@
 #include "base/cs_probe.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_random.h"
+#include "base/cs_reducers.h"
 #include "base/cs_renumber.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_map.h"
