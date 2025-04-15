@@ -145,39 +145,6 @@ _time_table_by_name_try(const char *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get column id corresponding to a given header/label.
- *
- * \param[in] table pointer to time table
- * \param[in] name  name of the header/column
- *
- * \return index of the corresponding column. -1 if not found.
- */
-/*----------------------------------------------------------------------------*/
-
-static int
-_time_table_column_id_by_name(const cs_time_table_t *table,
-                              const char            *name)
-{
-  assert(table != nullptr);
-  assert(name != nullptr);
-  assert(table->headers != nullptr);
-
-  if (table->headers == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: table \"%s\" has no defined headers.\n"), table->name);
-
-  int retval = -1;
-  for (int i = 0; i < table->n_cols; i++) {
-    if (strcmp(name, table->headers[i]) == 0) {
-      retval = i;
-      break;
-    }
-  }
-
-  return retval;
-}
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Allocate a new time table pointer and returns it
  *
  * \param[in] name  name of the new time table
@@ -278,6 +245,40 @@ _time_table_compute_value(cs_time_table_t *table,
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get column id corresponding to a given header/label.
+ *
+ * \param[in] table pointer to time table
+ * \param[in] name  name of the header/column
+ *
+ * \return index of the corresponding column. -1 if not found.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_table_column_id_by_name(const cs_time_table_t *table,
+                                const char            *name)
+{
+  assert(table != nullptr);
+  assert(name != nullptr);
+  assert(table->headers != nullptr);
+
+  if (table->headers == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: table \"%s\" has no defined headers.\n"), table->name);
+
+  int retval = -1;
+  for (int i = 0; i < table->n_cols; i++) {
+    if (strcmp(name, table->headers[i]) == 0) {
+      retval = i;
+      break;
+    }
+  }
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -540,7 +541,7 @@ cs_time_table_set_time_from_label(cs_time_table_t *table,
 {
   assert(table != nullptr);
 
-  const int t_id = _time_table_column_id_by_name(table, time_label);
+  const int t_id = cs_time_table_column_id_by_name(table, time_label);
 
   if (t_id > -1)
     table->time_col_id = t_id;
@@ -548,6 +549,24 @@ cs_time_table_set_time_from_label(cs_time_table_t *table,
     bft_error(__FILE__, __LINE__, 0,
               _("Error: table \"%s\" has no column with header \"%s\"\n"),
               table->name, time_label);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the column id for time based on a label (if it exists)
+ *
+ * \param[in,out] table       Pointer to time table structure
+ * \param[in]     time_label  Label to identify index of column used as time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_table_set_time_from_label_try(cs_time_table_t *table,
+                                      const char      *time_label)
+{
+  assert(table != nullptr);
+
+  table->time_col_id = cs_time_table_column_id_by_name(table, time_label);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -676,7 +695,7 @@ cs_time_table_compute_time_value_by_label(const char *name,
 
   cs_time_table_t *table = cs_time_table_by_name(name);
 
-  int _id = _time_table_column_id_by_name(table, label);
+  int _id = cs_time_table_column_id_by_name(table, label);
 
   cs_time_table_update_position(table, t, overwrite_prev);
 
@@ -739,7 +758,7 @@ cs_time_table_compute_n_time_values_by_label(const char *name,
   cs_time_table_update_position(table, t, overwrite_prev);
 
   for (int i = 0; i < n_cols; i++) {
-    int _id = _time_table_column_id_by_name(table, labels[i]);
+    int _id = cs_time_table_column_id_by_name(table, labels[i]);
     retvals[i] = _time_table_compute_value(table, _id);
   }
 }
