@@ -63,7 +63,7 @@ def version_from_news(srcdir):
     version = [-1]
     release = [-1, '', '', '']
 
-    f = open(os.path.join(srcdir, "NEWS.md"))
+    f = open(os.path.join(srcdir, "NEWS.md"), encoding="utf-8")
     lines = f.readlines()
     f.close()
 
