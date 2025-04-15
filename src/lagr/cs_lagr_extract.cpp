@@ -123,7 +123,6 @@ cs_lagr_get_n_particles(void)
  *
  * \param[in]   n_cells          number of cells in filter
  * \param[in]   cell_list        optional list of containing cells filter
- *                               (1 to n numbering)
  * \param[in]   density          if < 1, fraction of particles to select
  * \param[out]  n_particles      number of selected particles, or nullptr
  * \param[out]  particle_list    particle_list (1 to n numbering), or nullptr
@@ -183,7 +182,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
 
     if (cell_list != nullptr) {
       for (i = 0; i < n_cells; i++)
-        cell_flag[cell_list[i] - 1] = true;
+        cell_flag[cell_list[i]] = true;
     }
     else {
       for (i = 0; i < n_cells; i++)

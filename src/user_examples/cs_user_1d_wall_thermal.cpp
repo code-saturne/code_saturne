@@ -120,8 +120,8 @@ cs_user_1d_wall_thermal(int iappel)
 
     /* Get the list of boundary faces that will be coupled */
 
-    cs_selector_get_b_face_num_list("2 or 3 or 5 or 6 or 7 or 8 or 9 or 10",
-                                    &nlelt, lstelt);
+    cs_selector_get_b_face_list("2 or 3 or 5 or 6 or 7 or 8 or 9 or 10",
+                                &nlelt, lstelt);
 
     izone++;
 
@@ -129,8 +129,8 @@ cs_user_1d_wall_thermal(int iappel)
 
     for (cs_lnum_t ilelt = 0 ; ilelt < nlelt ; ilelt++) {
       cs_lnum_t ifac = lstelt[ilelt];
-      wall_thermal->izft1d[ifac-1] = izone;
-      if (iappel == 2) wall_thermal->ifpt1d[ifbt1d] = ifac;
+      wall_thermal->izft1d[ifac] = izone;
+      if (iappel == 2) wall_thermal->ifpt1d[ifbt1d] = ifac+1;
       ifbt1d++;
     }
   }

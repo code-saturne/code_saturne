@@ -1889,7 +1889,7 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
         n_cells = mesh->n_cells;
       else {
         CS_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
-        cs_selector_get_cell_num_list(criteria, &n_cells, cell_list);
+        cs_selector_get_cell_list(criteria, &n_cells, cell_list);
       }
       if (n_cells < mesh->n_cells || post_mesh->density < 1.) {
         CS_MALLOC(particle_list, n_particles, cs_lnum_t);

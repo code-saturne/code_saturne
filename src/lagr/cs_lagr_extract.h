@@ -82,7 +82,6 @@ cs_lagr_get_n_particles(void);
  * parameters:
  *   n_cells         <-- number of cells in filter
  *   cell_list       <-- optional list of containing cells filter
- *                       (1 to n numbering)
  *   density         <-- if < 1, fraction of particles to select
  *   n_particles     --> number of selected particles, or NULL
  *   particle_list   --> particle_list (1 to n numbering), or NULL
