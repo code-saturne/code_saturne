@@ -1,4 +1,4 @@
-﻿Master (not on release branches yet)
+Master (not on release branches yet)
 ------------------------------------
 
 ### User changes:
