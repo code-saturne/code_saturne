@@ -283,6 +283,7 @@ cs_user_model(void)
                               CS_NAVSTO_COUPLING_MONOLITHIC,
                               /* Post flag */
                               CS_NAVSTO_POST_VELOCITY_DIVERGENCE   |
+                              CS_NAVSTO_POST_KINETIC_ENERGY        |
                               0);
   }
   /*! [param_cdo_navsto_activate] */
