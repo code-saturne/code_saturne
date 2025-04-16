@@ -3609,7 +3609,7 @@ cs_setup(void)
   cs_gui_boundary_conditions_define(NULL);
 
   /* Some final settings */
-  cs_gui_output();
+  cs_gui_output(cs_glob_domain);
 
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
     /* Avoid a second spurious call to this function
