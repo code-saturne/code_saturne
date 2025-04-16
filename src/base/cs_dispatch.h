@@ -816,7 +816,7 @@ public:
     if (retcode != cudaSuccess)
       bft_error(__FILE__, __LINE__, 0,
                 "[CUDA error] %d: %s\n"
-                "with grid size %d, block size %d, shared memory size %d.",
+                "with grid size %ld, block size %ld, shared memory size %d.",
                 retcode, ::cudaGetErrorString(retcode),
                 l_grid_size, block_size_, smem_size);
 #endif
@@ -851,9 +851,9 @@ public:
     if (retcode != cudaSuccess)
       bft_error(__FILE__, __LINE__, 0,
                 "[CUDA error] %d: %s\n"
-                "with grid size %d, block size %d, shared memory size %d.",
+                "with grid size %ld, block size %ld, shared memory size %d.",
                 retcode, ::cudaGetErrorString(retcode),
-                l_grid_size, block_size_, smem_size);
+                l_grid_size, block_size_, (int)smem_size);
 #endif
 
     CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
@@ -920,7 +920,7 @@ public:
     if (retcode != cudaSuccess)
       bft_error(__FILE__, __LINE__, 0,
                 "[CUDA error] %d: %s\n"
-                "with grid size %d, block size %d, shared memory size %d.",
+                "with grid size %ld, block size %d, shared memory size %d.",
                 retcode, ::cudaGetErrorString(retcode),
                 l_grid_size, l_block_size, smem_size);
 #endif
@@ -955,9 +955,9 @@ public:
     if (retcode != cudaSuccess)
       bft_error(__FILE__, __LINE__, 0,
                 "[CUDA error] %d: %s\n"
-                "with grid size %d, block size %d, shared memory size %d.",
+                "with grid size %ld, block size %d, shared memory size %d.",
                 retcode, ::cudaGetErrorString(retcode),
-                l_grid_size, l_block_size, smem_size);
+                l_grid_size, l_block_size, (int)smem_size);
 #endif
 
     CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
