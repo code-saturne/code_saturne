@@ -63,9 +63,10 @@ typedef struct {
   int  ientgb;              /*!< Burned gas indicator */
 
   cs_real_t  fment;         /*!< Mixture fraction */
-  cs_real_t  tkent;         /*!< Inlet temperaturen in K */
+  cs_real_t  tkent;         /*!< Inlet temperature in K */
 
-  cs_real_t  tgf;           /*!< Inlet temperaturen in K */
+  cs_real_t  tgf;           /*!< Fres gas temperature in K for
+                              premixed flame and dilution */
 
 } cs_combustion_bc_inlet_t;
 
