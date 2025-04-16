@@ -256,44 +256,52 @@ _cdofb_weight_func(const cs_param_advection_scheme_t scheme,
                    const cs_real_t                   coeff)
 {
   switch (scheme) {
-    case CS_PARAM_ADVECTION_SCHEME_UPWIND: {
+  case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+    {
       return 0.5 * (std::abs(beta) + beta);
-    } break;
+    }
+    break;
 
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE: {
-      return 0.5 * beta;
-    } break;
-
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED: {
-      return 0.0;
-    } break;
-
-    case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND: {
-      return (1.0 - upwind_ratio) * 0. +
-             upwind_ratio * 0.5 * (std::abs(beta) + beta);
-    } break;
-
-    case CS_PARAM_ADVECTION_SCHEME_SG: /* Sharfetter-Gummel */ {
-      const cs_real_t pe_2  = 0.5 * coeff * beta;
-      cs_real_t       ratio = 0.;
-      if (std::abs(pe_2) > cs_math_zero_threshold) {
-        if (pe_2 < -50.) {
-          ratio = -1.0;
-        }
-        else {
-          ratio = pe_2 * (1.0 / tanh(pe_2) + 1.0) - 1.0;
-        }
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE:
+      {
+        return 0.5 * beta;
       }
+      break;
 
-      return ratio / coeff;
-    } break;
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+      {
+        return 0.0;
+      }
+      break;
+
+    case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
+      {
+        return (1.0 - upwind_ratio) * 0. +
+          upwind_ratio * 0.5 * (std::abs(beta) + beta);
+      }
+      break;
+
+    case CS_PARAM_ADVECTION_SCHEME_SG: /* Sharfetter-Gummel */
+      {
+        const cs_real_t pe_2  = 0.5 * coeff * beta;
+        cs_real_t       ratio = 0.;
+        if (std::abs(pe_2) > cs_math_zero_threshold) {
+          if (pe_2 < -50.) {
+            ratio = -1.0;
+          }
+          else {
+            ratio = pe_2 * (1.0 / tanh(pe_2) + 1.0) - 1.0;
+          }
+        }
+
+        return ratio / coeff;
+      }
+      break;
 
     default:
-      bft_error(__FILE__,
-                __LINE__,
-                0,
-                " Incompatible type of algorithm to compute the weight of"
-                " upwind.");
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Incompatible type of algorithm to compute the weight of"
+                " upwind.", __func__);
 
   } /* Switch on the type of function to return */
 
