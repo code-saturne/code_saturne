@@ -491,16 +491,12 @@ cs_base_cuda_device_info(cs_log_t  log_id)
         (log_id,
          _("                       Compute capability: %d.%d\n"
            "                       Memory: %llu %s\n"
-           "                       Shared memory per block (kB): %d\n"
            "                       Multiprocessors: %d\n"
-           "                       Max threads per Multiprocessor: %d\n"
            "                       Integrated: %d\n"
            "                       Unified addressing: %d\n"),
          prop.major, prop.minor,
          mem, _("MB"),
-         (int)prop.sharedMemPerBlock/1024,
          prop.multiProcessorCount,
-         prop.maxThreadsPerMultiProcessor,
          prop.integrated,
          prop.unifiedAddressing);
 

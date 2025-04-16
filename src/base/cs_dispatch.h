@@ -903,7 +903,7 @@ public:
         bft_error(__FILE__, __LINE__, 0,
                   "Type of size %d exceeds capacity of "
                   "CUDA shared memory (%d).",
-                  sizeof(T), cs_glob_cuda_shared_mem_per_block);
+                  (int)sizeof(T), cs_glob_cuda_shared_mem_per_block);
       l_block_size /= 2;
       smem_size = l_block_size * sizeof(T);
     }
