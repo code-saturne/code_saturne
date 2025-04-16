@@ -4274,7 +4274,6 @@ cs_atmo_z_ground_compute(void)
 
   /* Quantities required to account for the immersed walls*/
   const cs_lnum_t  n_cells = m->n_cells;
-  const cs_real_t *cell_vol = mq->cell_vol;
   const cs_real_t *c_w_face_surf = mq->c_w_face_surf;
   const cs_real_3_t *c_w_face_normal = (const cs_real_3_t *)mq->c_w_face_normal;
   const cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
@@ -4369,16 +4368,9 @@ cs_atmo_z_ground_compute(void)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     rhs[cell_id] = 0.;
 
-  /*Dirichlet condition on immersed boundaries */
+  /* Dirichlet condition on immersed boundaries */
   if (c_w_face_surf != nullptr) {
     for (cs_lnum_t c_id = 0; c_id < n_cells ; c_id++) {
-      /* Geomtric quantities */
-      const cs_real_t solid_surf = c_w_face_surf[c_id];
-      const cs_real_t wall_dist  = (c_w_dist_inv[c_id] < DBL_MIN) ?
-                                    0.:
-                                    1. / c_w_dist_inv[c_id];
-      const cs_real_t pyr_vol = wall_dist * solid_surf;
-
       eqp_p->ndircl = 1;
       cs_real_t hint = c_w_dist_inv[c_id];
       cs_real_t pimp = cs_math_3_dot_product(c_w_face_cog[c_id], normal);

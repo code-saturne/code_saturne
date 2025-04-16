@@ -1845,7 +1845,6 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
   cs_array_lnum_fill_zero(n_cells_ext, cog_in);
 
   cs_real_t *poro_val = CS_F_(poro)->val;
-  const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
 
   for (int v_id = 0; v_id < mesh->n_vertices; v_id++)
     node_in[v_id] = -1;
@@ -2163,7 +2162,6 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   CS_MALLOC(porbis, n_cells_ext, cs_real_t);
 
   cs_real_t *poro_val = CS_F_(poro)->val;
-  const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
     if (comp_cell[c_id] > 0 || comp_all_cog) {
@@ -2549,7 +2547,6 @@ _compute_b_fac_porosity(const cs_mesh_t            *mesh,
 
   int icut = cs_ibm->nb_cut_cells;
 
-  cs_real_t *poro_val = CS_F_(poro)->val;
   const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -2684,7 +2681,6 @@ _compute_i_fac_porosity(const cs_mesh_t            *mesh,
   const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
   const cs_real_3_t *cell_cen = mesh_quantities->cell_cen;
 
-  cs_real_t *poro_val = CS_F_(poro)->val;
   const cs_real_t *poro_val_pre = CS_F_(poro)->val_pre;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
