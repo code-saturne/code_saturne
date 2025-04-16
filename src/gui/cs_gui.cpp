@@ -2121,6 +2121,7 @@ cs_gui_checkpoint_parameters(void)
   cs_gui_node_get_child_int(tn, "restart_rescue", &nt_interval);
 
   cs_restart_checkpoint_set_interval(nt_interval, t_interval, wt_interval);
+  cs_glob_domain->restart_nt = nt_interval;
 
   cs_gui_node_get_child_status_int
     (tn, "restart_with_auxiliary",
