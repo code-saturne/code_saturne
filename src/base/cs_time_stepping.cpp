@@ -642,7 +642,7 @@ cs_time_stepping(void)
   do {
 
     if (ts->t_max > 0 && ts->t_max > ts->t_cur) {
-      ts->nt_max = ts->nt_cur + (int)((ts->t_max-ts->t_cur)/ts->dt_ref);
+      ts->nt_max = ts->nt_cur + nearbyint((ts->t_max-ts->t_cur)/ts->dt_ref);
 
       if (ts->nt_max <= ts->nt_cur)
         ts->nt_max = ts->nt_cur + 1;
