@@ -1137,7 +1137,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   bool _active_dyn = cs_time_control_is_active(vp_tc, ts);
   if (_active_dyn) {
     /* Allocate temporary arrays */
-    CS_MALLOC(velipb, n_b_faces, cs_real_3_t);
+    CS_MALLOC_HD(velipb, n_b_faces, cs_real_3_t, cs_alloc_mode);
 
     /* coefa and coefb are required to compute the cell gradients for the wall
        turbulent boundary conditions.
@@ -4276,18 +4276,20 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
     bc_coeffs = bc_coeffs_loc;
 
-    cs_internal_coupling_update_bc_coeff_strided<stride>(bc_coeffs,
-                                                         cpl,
-                                                         halo_type,
-                                                         b_climgr,
-                                                         df_limiter,
-                                                         pvar,
-                                                         gweight);
+    cs_internal_coupling_update_bc_coeffs_strided<stride>(ctx,
+                                                          bc_coeffs,
+                                                          cpl,
+                                                          halo_type,
+                                                          b_climgr,
+                                                          df_limiter,
+                                                          pvar,
+                                                          gweight);
   }
 
   /* Compute variable at position I' from bc_coeffs */
 
-  cs_gradient_boundary_iprime_lsq_strided<stride>(m,
+  cs_gradient_boundary_iprime_lsq_strided<stride>(ctx,
+                                                  m,
                                                   mq,
                                                   n_b_faces,
                                                   nullptr,

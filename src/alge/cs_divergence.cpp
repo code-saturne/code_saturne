@@ -1038,7 +1038,8 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     CS_MALLOC_HD(val_f, n_b_faces, cs_real_6_t, amode);
     CS_MALLOC_HD(val_ip_g, n_b_faces, cs_real_6_t, amode);
 
-    cs_gradient_boundary_iprime_lsq_strided<6>(m,
+    cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
+                                               m,
                                                fvq,
                                                n_b_faces,
                                                nullptr,

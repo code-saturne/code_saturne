@@ -7159,14 +7159,17 @@ _gradient_scalar(const char                    *var_name,
     inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
                  uncoupled faces, and bc_coeff_a used for coupled faces. */
 
+    cs_dispatch_context ctx;
+
     cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
-    cs_internal_coupling_update_bc_coeff_s(bc_coeffs,
-                                           cpl,
-                                           halo_type,
-                                           w_stride,
-                                           _clip_coeff,
-                                           var,
-                                           c_weight);
+    cs_internal_coupling_update_bc_coeffs_s(ctx,
+                                            bc_coeffs,
+                                            cpl,
+                                            halo_type,
+                                            w_stride,
+                                            _clip_coeff,
+                                            var,
+                                            c_weight);
 
     cpl = nullptr;  /* Coupling not needed in lower functions in this case.
                      * TODO check for reconstruction case */
@@ -8386,14 +8389,17 @@ cs_gradient_vector(const char                    *var_name,
       inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
                    uncoupled faces, and bc_coeff_a used for coupled faces. */
 
+      cs_dispatch_context ctx;
+
       cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
-      cs_internal_coupling_update_bc_coeff_strided<3>(bc_coeffs_v,
-                                                      cpl,
-                                                      halo_type,
-                                                      _clip_coeff,
-                                                      nullptr,
-                                                      var,
-                                                      c_weight);
+      cs_internal_coupling_update_bc_coeffs_strided<3>(ctx,
+                                                       bc_coeffs_v,
+                                                       cpl,
+                                                       halo_type,
+                                                       _clip_coeff,
+                                                       nullptr,
+                                                       var,
+                                                       c_weight);
 
       cpl = nullptr;  /* Coupling not needed in lower functions in this case. */
     }
@@ -8431,8 +8437,11 @@ cs_gradient_vector(const char                    *var_name,
 
       CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_3_t, cs_alloc_mode);
 
+      cs_dispatch_context ctx;
+
       /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
-      cs_gradient_boundary_iprime_lsq_strided<3>(mesh,
+      cs_gradient_boundary_iprime_lsq_strided<3>(ctx,
+                                                 mesh,
                                                  fvq,
                                                  n_b_faces,
                                                  nullptr,
@@ -8471,7 +8480,10 @@ cs_gradient_vector(const char                    *var_name,
         CS_MALLOC_HD(val_ip, n_b_faces, cs_real_3_t, cs_alloc_mode);
         CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_3_t, cs_alloc_mode);
 
-        cs_gradient_boundary_iprime_lsq_strided<3>(mesh,
+        cs_dispatch_context ctx;
+
+        cs_gradient_boundary_iprime_lsq_strided<3>(ctx,
+                                                   mesh,
                                                    fvq,
                                                    n_b_faces,
                                                    nullptr,
@@ -8633,8 +8645,11 @@ cs_gradient_tensor(const char                  *var_name,
 
       CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_6_t, cs_alloc_mode);
 
+      cs_dispatch_context ctx;
+
       /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
-      cs_gradient_boundary_iprime_lsq_strided<6>(mesh,
+      cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
+                                                 mesh,
                                                  fvq,
                                                  n_b_faces,
                                                  nullptr,
@@ -8668,8 +8683,11 @@ cs_gradient_tensor(const char                  *var_name,
         cs_real_6_t  *coefav = (cs_real_6_t  *)bc_coeffs_ts->a;
         cs_real_66_t *coefbv = (cs_real_66_t *)bc_coeffs_ts->b;
 
+        cs_dispatch_context ctx;
+
         /* Compute var_iprime */
-        cs_gradient_boundary_iprime_lsq_strided<6>(mesh,
+        cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
+                                                   mesh,
                                                    fvq,
                                                    n_b_faces,
                                                    nullptr,

@@ -45,6 +45,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "alge/cs_gradient.h"
@@ -874,7 +875,10 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
 
     cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->climgr;
 
-    cs_gradient_boundary_iprime_lsq_s(m,
+    cs_dispatch_context  ctx;
+
+    cs_gradient_boundary_iprime_lsq_s(ctx,
+                                      m,
                                       fvq,
                                       n_faces,
                                       face_ids,
@@ -1037,7 +1041,10 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                                (const cs_real_3_t *)f->val_pre
                              : (const cs_real_3_t *)f->val;
 
-    cs_gradient_boundary_iprime_lsq_strided<3>(m,
+    cs_dispatch_context  ctx;
+
+    cs_gradient_boundary_iprime_lsq_strided<3>(ctx,
+                                               m,
                                                fvq,
                                                n_faces,
                                                face_ids,
@@ -1181,7 +1188,10 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                                (const cs_real_6_t *)f->val_pre
                              : (const cs_real_6_t *)f->val;
 
-    cs_gradient_boundary_iprime_lsq_strided<6>(m,
+    cs_dispatch_context  ctx;
+
+    cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
+                                               m,
                                                fvq,
                                                n_faces,
                                                face_ids,

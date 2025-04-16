@@ -1,5 +1,5 @@
-#ifndef __CS_GRADIENT_BOUNDARY_H__
-#define __CS_GRADIENT_BOUNDARY_H__
+#ifndef CS_GRADIENT_BOUNDARY_H
+#define CS_GRADIENT_BOUNDARY_H
 
 /*============================================================================
  * Gradient reconstruction at boundaries.
@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_halo.h"
 #include "mesh/cs_mesh.h"
@@ -39,7 +40,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
+#ifdef __cplusplus
 
 /*=============================================================================
  * Local Macro definitions
@@ -58,7 +59,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the values of a scalar at boundary face I' positions
  *         using least-squares interpolation.
  *
@@ -81,23 +82,25 @@ BEGIN_C_DECLS
  *   normals are not orthogonal to II' can also provide a significant
  *   contribution to the normal.
  *
+ * \param[in]   ctx             Reference to dispatch context
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
- *                              values, or NULL for all
+ *                              values, or null for all
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeffs       boundary condition structure, or NULL
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure, or null
+ * \param[in]   c_weight        cell variable weight, or null
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
+cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
+                                  const cs_mesh_t               *m,
                                   const cs_mesh_quantities_t    *fvq,
                                   cs_lnum_t                      n_faces,
                                   const cs_lnum_t               *face_ids,
@@ -109,7 +112,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
                                   cs_real_t                     *var_iprime);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the values of a scalar at boundary face I' positions
  *         using least-squares interpolation with anisotropic weighting.
  *
@@ -121,22 +124,24 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
  *
  * \remark The same remark applies as for \ref cs_gradient_boundary_iprime_lsq_s.
  *
+ * \param[in]   ctx             Reference to dispatch context
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
- *                              values, or NULL for all
+ *                              values, or null for all
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeffs       boundary condition structure, or NULL
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure
+ * \param[in]   c_weight        cell variable weight, or null
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
+cs_gradient_boundary_iprime_lsq_s_ani(cs_dispatch_context           &ctx,
+                                      const cs_mesh_t               *m,
                                       const cs_mesh_quantities_t    *fvq,
                                       cs_lnum_t                   n_faces,
                                       const cs_lnum_t            *face_ids,
@@ -147,17 +152,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
                                       cs_real_t                  *var_iprime);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#ifdef __cplusplus
-
-/*============================================================================
- * Public C++ function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the values of a vector at boundary face I' positions
  *         using least-squares interpolation.
  *
@@ -180,6 +175,7 @@ END_C_DECLS
  *
  * The same logic is applied as for \ref cs_gradient_boundary_iprime_lsq_s.
  *
+ * \param[in]   ctx             Reference to dispatch context
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   n_faces         number of faces at which to compute values
@@ -188,17 +184,21 @@ END_C_DECLS
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   b_clip_coeff    boundary clipping (limiter) coefficient
  *                              (no limiter if < 0)
+ * \param[in]   df_limiter      diffusion clipping (limiter) field
+ *                              (no limiter if nullptr)
  * \param[in]   bc_coeffs       boundary condition structure, or NULL
  * \param[in]   c_weight        cell variable weight, or NULL
- * \param[in]   var             variable values et cell centers
- * \param[out]  var_iprime      variable values et face iprime locations
+ * \param[in]   var             variable values at cell centers
+ * \param[out]  var_iprime      variable values at face iprime locations
+ * \param[out]  var_iprime_lim  limited variable values at face iprime locations
  */
 /*----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
 void
 cs_gradient_boundary_iprime_lsq_strided
-  (const cs_mesh_t            *m,
+  (cs_dispatch_context        &ctx,
+   const cs_mesh_t            *m,
    const cs_mesh_quantities_t *fvq,
    cs_lnum_t                   n_faces,
    const cs_lnum_t            *face_ids,
@@ -211,6 +211,8 @@ cs_gradient_boundary_iprime_lsq_strided
    cs_real_t                   var_iprime[][stride],
    cs_real_t                   var_iprime_lim[][stride]);
 
+/*----------------------------------------------------------------------------*/
+
 #endif /* cplusplus */
 
-#endif /* __CS_GRADIENT_BOUNDARY__ */
+#endif /* CS_GRADIENT_BOUNDARY */
