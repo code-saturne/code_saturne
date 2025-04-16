@@ -1532,10 +1532,11 @@ _cs_real_sstats_weighted_with_norm(cs_dispatch_context  ctx,
       res.r[3*_stride + k] = w[i]*v[stride*i + k];
       norm += v[stride*i + k]*v[stride*i + k];
     }
-    res.r[_stride - 1] = sqrt(norm);
-    res.r[2*_stride - 1] = sqrt(norm);
-    res.r[3*_stride - 1] = sqrt(norm);
-    res.r[4*_stride - 1] = w[i]*sqrt(norm);
+    norm = sqrt(norm);
+    res.r[_stride - 1] = norm;
+    res.r[2*_stride - 1] = norm;
+    res.r[3*_stride - 1] = norm;
+    res.r[4*_stride - 1] = w[i]*norm;
   });
 
   ctx.wait();
@@ -3026,13 +3027,13 @@ cs_array_reduce_simple_stats_l_w(cs_dispatch_context  ctx,
       _cs_real_sstats_weighted<1>(ctx, n_elts, v, w, vmin, vmax, vsum, wsum);
     else if (dim == 3)
       _cs_real_sstats_weighted_with_norm<3>(ctx, n_elts, v, w,
-          vmin, vmax, vsum, wsum);
+                                            vmin, vmax, vsum, wsum);
     else if (dim == 6)
       _cs_real_sstats_weighted_with_norm<6>(ctx, n_elts, v, w,
-          vmin, vmax, vsum, wsum);
+                                            vmin, vmax, vsum, wsum);
     else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd_w(n_elts, dim, nullptr, nullptr, v, w,
-          vmin, vmax, vsum, wsum);
+                           vmin, vmax, vsum, wsum);
   }
 
   /* If weights are defined on parent list */
