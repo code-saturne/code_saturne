@@ -3,6 +3,9 @@ Release 8.3.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix output state (postprocessing) for physical properties (rho, cp, lambda),
+  when defined in the GUI for the HTSolver.
+
 - Fix crashes or instability in parallel when using least-squares or
   Gauss + least-sqaures gradients with extended neigborhood for
   the pressure and hydrostatic pressure equations.

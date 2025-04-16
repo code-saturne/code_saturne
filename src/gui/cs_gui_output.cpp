@@ -256,14 +256,18 @@ _property_post(const char          *field_type,
   cs_gui_node_get_status_int(cs_tree_node_get_child
                                (tn, "postprocessing_recording"),
                              &f_post);
-  if (f_post != 0)
-    f->log |= CS_POST_ON_LOCATION;
-
   cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "probes_recording"),
                              &f_monitor);
 
+  if (f_post != 0 || f_monitor != 0) {
+    f->post_vis = 1;
+  }
+
+  if (f_post != 0)
+    f->post_vis |= CS_POST_ON_LOCATION;
+
   if (f_monitor != 0)
-    f->log |= CS_POST_MONITOR;
+    f->post_vis |= CS_POST_MONITOR;
 
 }
 
