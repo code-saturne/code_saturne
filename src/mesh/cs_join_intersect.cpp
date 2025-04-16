@@ -2173,7 +2173,7 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
   int  depth[3];
   cs_lnum_t  _n_leaves[3], _n_boxes[3];
   cs_lnum_t  _n_threshold_leaves[3], _n_leaf_boxes[3];
-  size_t  _mem_final[3], _mem_required[3];
+  cs_gnum_t  _mem_final[3], _mem_required[3];
   double  build_wtime, build_cpu_time, query_wtime, query_cpu_time;
 
   int dim = fvm_neighborhood_get_box_stats(face_neighborhood,
@@ -2251,9 +2251,9 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
 
   stats->box_mem_required[0] += _mem_required[0];
   stats->box_mem_required[1] = cs::min(stats->box_mem_required[1],
-                                       (cs_gnum_t)_mem_required[1]);
+                                       _mem_required[1]);
   stats->box_mem_required[2] = cs::max(stats->box_mem_required[2],
-                                       (cs_gnum_t)_mem_required[2]);
+                                       _mem_required[2]);
 
   CS_TIMER_COUNTER_ADD(stats->t_box_build, stats->t_box_build, box_time);
   CS_TIMER_COUNTER_ADD(stats->t_box_build, stats->t_box_build, build_time);
