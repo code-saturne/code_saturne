@@ -811,6 +811,16 @@ public:
       <<<l_grid_size, block_size_, smem_size, stream_>>>
       (n, r_grid_, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 
+#if defined(DEBUG) || !defined(NDEBUG)
+    cudaError_t retcode = cudaGetLastError();
+    if (retcode != cudaSuccess)
+      bft_error(__FILE__, __LINE__, 0,
+                "[CUDA error] %d: %s\n"
+                "with grid size %d, block size %d, shared memory size %d.",
+                retcode, ::cudaGetErrorString(retcode),
+                l_grid_size, block_size_, smem_size);
+#endif
+
     switch (block_size_) {
     case 1024:
       cs_cuda_reduce_sum_single_block<1024, 1>
@@ -835,6 +845,16 @@ public:
     default:
       cs_assert(0);
     }
+
+#if defined(DEBUG) || !defined(NDEBUG)
+    retcode = cudaGetLastError();
+    if (retcode != cudaSuccess)
+      bft_error(__FILE__, __LINE__, 0,
+                "[CUDA error] %d: %s\n"
+                "with grid size %d, block size %d, shared memory size %d.",
+                retcode, ::cudaGetErrorString(retcode),
+                l_grid_size, block_size_, smem_size);
+#endif
 
     CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
     CS_CUDA_CHECK(cudaGetLastError());
@@ -876,17 +896,34 @@ public:
 
     int l_block_size = block_size_;
     int smem_size = l_block_size * sizeof(T);
-    while (smem_size > 0x19000 && l_block_size > 128) {
-      // We shoud have a runtime failure if even blocks of size 128
+    while (smem_size > cs_glob_cuda_shared_mem_per_block) {
+      // We should have a runtime failure if even blocks of size 64
       // are too large relative to the available shared memory.
+      if (l_block_size < 2)
+        bft_error(__FILE__, __LINE__, 0,
+                  "Type of size %d exceeds capacity of "
+                  "CUDA shared memory (%d).",
+                  sizeof(T), cs_glob_cuda_shared_mem_per_block);
       l_block_size /= 2;
       smem_size = l_block_size * sizeof(T);
     }
+
+    cudaError_t retcode = cudaSuccess;
 
     cs_cuda_kernel_parallel_for_reduce<T, R>
       <<<l_grid_size, l_block_size, smem_size, stream_>>>
       (n, r_grid_, reducer, static_cast<F&&>(f),
        static_cast<Args&&>(args)...);
+
+#if defined(DEBUG) || !defined(NDEBUG)
+    retcode = cudaGetLastError();
+    if (retcode != cudaSuccess)
+      bft_error(__FILE__, __LINE__, 0,
+                "[CUDA error] %d: %s\n"
+                "with grid size %d, block size %d, shared memory size %d.",
+                retcode, ::cudaGetErrorString(retcode),
+                l_grid_size, l_block_size, smem_size);
+#endif
 
     switch (l_block_size) {
     case 1024:
@@ -912,6 +949,16 @@ public:
     default:
       cs_assert(0);
     }
+
+#if defined(DEBUG) || !defined(NDEBUG)
+    retcode = cudaGetLastError();
+    if (retcode != cudaSuccess)
+      bft_error(__FILE__, __LINE__, 0,
+                "[CUDA error] %d: %s\n"
+                "with grid size %d, block size %d, shared memory size %d.",
+                retcode, ::cudaGetErrorString(retcode),
+                l_grid_size, l_block_size, smem_size);
+#endif
 
     CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
     CS_CUDA_CHECK(cudaGetLastError());

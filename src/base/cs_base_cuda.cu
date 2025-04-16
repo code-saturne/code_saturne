@@ -99,7 +99,7 @@ static cudaStream_t _cs_glob_stream_pf = 0;
 bool cs_glob_cuda_allow_graph = false;
 
 // Shared memory size ber block (based on know GPUs, queried later).
-size_t cs_glob_cuda_shared_mem_per_block = 0x19000;
+int cs_glob_cuda_shared_mem_per_block = 48*1024;
 
 /*============================================================================
  * Private function definitions
@@ -491,12 +491,16 @@ cs_base_cuda_device_info(cs_log_t  log_id)
         (log_id,
          _("                       Compute capability: %d.%d\n"
            "                       Memory: %llu %s\n"
+           "                       Shared memory per block (kB): %d\n"
            "                       Multiprocessors: %d\n"
+           "                       Max threads per Multiprocessor: %d\n"
            "                       Integrated: %d\n"
            "                       Unified addressing: %d\n"),
          prop.major, prop.minor,
          mem, _("MB"),
+         (int)prop.sharedMemPerBlock/1024,
          prop.multiProcessorCount,
+         prop.maxThreadsPerMultiProcessor,
          prop.integrated,
          prop.unifiedAddressing);
 
