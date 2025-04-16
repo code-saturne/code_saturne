@@ -3,6 +3,8 @@ Release 8.3.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix listing output frequency setting for HTSolver when defined in the GUI.
+
 - Fix output state (postprocessing) for physical properties (rho, cp, lambda),
   when defined in the GUI for the HTSolver.
 
