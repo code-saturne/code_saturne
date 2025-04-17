@@ -2533,7 +2533,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   /* Absorption coefficient for different modules */
 
   if (pm_flag[CS_COMBUSTION_3PT] >= 0)
-    cs_rad_transfer_rcfsk_absorption(tempk, ckg, kgi, agi, w_gg);
+    cs_rad_transfer_rcfsk_absorption(tempk, kgi, agi, w_gg);
 
   if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
     for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
