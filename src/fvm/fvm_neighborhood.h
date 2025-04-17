@@ -251,8 +251,8 @@ fvm_neighborhood_get_box_stats(const fvm_neighborhood_t  *n,
                                cs_lnum_t                  n_boxes[3],
                                cs_lnum_t                  n_threshold_leaves[3],
                                cs_lnum_t                  n_leaf_boxes[3],
-                               size_t                     mem_final[3],
-                               size_t                     mem_required[3]);
+                               uint64_t                   mem_final[3],
+                               uint64_t                   mem_required[3]);
 
 /*----------------------------------------------------------------------------
  * Return timing information.

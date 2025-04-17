@@ -958,7 +958,7 @@ cs_param_amg_inhouse_log(const char                    *name,
   cs_log_printf(CS_LOG_SETUP, "%s   max_levels:             %d\n",
                 prefix, amgp->max_levels      );
   cs_log_printf(CS_LOG_SETUP, "%s   min_n_g_rows:           %lu\n",
-                prefix, amgp->min_n_g_rows);
+                prefix, (unsigned long)amgp->min_n_g_rows);
   cs_log_printf(CS_LOG_SETUP, "%s   p0p1_relax:             %f\n",
                 prefix, amgp->p0p1_relax);
   cs_log_printf(CS_LOG_SETUP, "%s   aggregation_limit:      %d\n",

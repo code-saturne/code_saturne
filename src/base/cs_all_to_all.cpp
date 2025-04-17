@@ -3632,9 +3632,9 @@ cs_all_to_all_log_finalize(void)
   cs_log_separator(CS_LOG_PERFORMANCE);
 
   if (cs_glob_n_ranks > 1 && _n_trace > 0) {
-    cs_gnum_t *_all_to_all_sum;
+    uint64_t *_all_to_all_sum;
     CS_MALLOC(_all_to_all_sum, _n_trace*9, uint64_t);
-    cs_gnum_t *_all_to_all_max;
+    uint64_t *_all_to_all_max;
     CS_MALLOC(_all_to_all_max, _n_trace*9, uint64_t);
 
     MPI_Allreduce(_all_to_all_trace, _all_to_all_sum, _n_trace*9, MPI_UINT64_T,

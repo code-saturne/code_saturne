@@ -88,8 +88,8 @@ typedef struct {
   cs_gnum_t  n_boxes[3];             /* number of boxes */
   cs_gnum_t  n_th_leaves[3];         /* number leaves over threshold */
   cs_gnum_t  n_leaf_boxes[3];        /* number of boxes per leaf */
-  cs_gnum_t  box_mem_final[3];       /* final box memory required */
-  cs_gnum_t  box_mem_required[3];    /* memory required */
+  uint64_t   box_mem_final[3];       /* final box memory required */
+  uint64_t   box_mem_required[3];    /* memory required */
 
   cs_timer_counter_t  t_box_build;   /* box build times */
   cs_timer_counter_t  t_box_query;   /* box query times */

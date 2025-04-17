@@ -207,7 +207,7 @@ cs_cf_check_pressure(cs_real_t *pres,
               _("Error in thermodynamics computations for compressible flows\n"
                 ":\n"
                 "Negative values of the pressure were encountered in %lu"
-                " cells.\n"), ierr);
+                " cells.\n"), (unsigned long)ierr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -248,7 +248,7 @@ cs_cf_check_internal_energy(cs_real_t   *ener,
               _("Error in thermodynamics computations for compressible flows\n"
                 ":\n"
                 "Negative values of the internal energy were encountered in %lu"
-                " cells.\n"), ierr);
+                " cells.\n"), (unsigned long)ierr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -283,7 +283,7 @@ cs_cf_check_density(cs_real_t *rho,
               _("Error in thermodynamics computations for compressible flows\n"
                 ":\n"
                 "Negative values of the density were encountered in %lu"
-                " cells.\n"), ierr);
+                " cells.\n"), (unsigned long)ierr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -299,14 +299,11 @@ void
 cs_cf_check_temperature(cs_real_t *temp,
                         cs_lnum_t n_elts)
 {
-  /* Local variables */
-  cs_gnum_t ierr;
-
   /* Verification of the values of the temperature
      Stop if a negative value is detected (since the temperature has been
      provided by the user, one potential cause is a wrong user
      initialization). */
-  ierr = 0;
+  cs_gnum_t ierr = 0;
   for (cs_lnum_t i = 0; i < n_elts; i++)
     if (temp[i] <= cs_math_epzero)
       ierr++;
@@ -318,7 +315,7 @@ cs_cf_check_temperature(cs_real_t *temp,
               _("Error in thermodynamics computations for compressible flows\n"
                 ":\n"
                 "Negative values of the temperature were encountered in %lu"
-                " cells.\n"), ierr);
+                " cells.\n"), (unsigned long)ierr);
 }
 
 /*----------------------------------------------------------------------------*/

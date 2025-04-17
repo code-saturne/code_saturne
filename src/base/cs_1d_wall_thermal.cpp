@@ -668,7 +668,9 @@ cs_1d_wall_thermal_read(void)
                   "\n"
                   "Verify that the restart file corresponds to a\n"
                   "restart file for the 1D-wall thermal module.\n"
-                  "Verify uspt1d.\n"), mfpt1t, _1d_wall_thermal.nfpt1t);
+                  "Verify uspt1d.\n"),
+                (unsigned long)mfpt1t,
+                (unsigned long)_1d_wall_thermal.nfpt1t);
 
     /* Coherency check between read NFPT1D/IFPT1D and the ones from USPT1D
        One already knows that the number of faces are equal, it is then

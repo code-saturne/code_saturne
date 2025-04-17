@@ -366,7 +366,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   if (n_g_clip_yw_min >= 1 || n_g_clip_yw_max >= 1) {
     bft_printf("WARNING : clipping on water mass fraction at restart in"
                "cs_ctwr_restart_field_vars : min_clip = %lu, max_clip = %lu\n",
-                n_g_clip_yw_min, n_g_clip_yw_max);
+               (unsigned long)n_g_clip_yw_min, (unsigned long)n_g_clip_yw_max);
   }
 
   /* Loop over exchange zones */
@@ -661,7 +661,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     // Need to update since a_0 is variable as a function of T and humidity
     therm_diff_h[cell_id] = lambda_h;
 
- }
+  }
   cs_gnum_t n_g_clip_count[4] = {(cs_gnum_t)nclip_yw_min,
                                  (cs_gnum_t)nclip_yw_max,
                                  (cs_gnum_t)nclip_yr_min,
@@ -672,13 +672,15 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   /* Printing clips in listing */
   if (n_g_clip_count[0] >= 1 || n_g_clip_count[1] >= 1) {
     bft_printf("WARNING : clipping on rain mass fraction"
-               "in cs_ctwr_phyvar_update : min_clip = %lu, max_clip = %lu\n",
-               n_g_clip_count[0], n_g_clip_count[1]);
+               "in cs_ctwr_phyvar_update: min_clip = %lu, max_clip = %lu\n",
+               (unsigned long)n_g_clip_count[0],
+               (unsigned long)n_g_clip_count[1]);
   }
   if (n_g_clip_count[2] >= 1 || n_g_clip_count[2] >= 1) {
     bft_printf("WARNING : clipping on water mass fraction"
-                "in cs_ctwr_phyvar_update : min_clip = %lu, max_clip = %lu\n",
-                n_g_clip_count[2], n_g_clip_count[3]);
+                "in cs_ctwr_phyvar_update: min_clip = %lu, max_clip = %lu\n",
+               (unsigned long)n_g_clip_count[2],
+               (unsigned long)n_g_clip_count[3]);
   }
 
   /* If solving rain velocity */
@@ -690,8 +692,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     /* Drops terminal velocity fields */
     cs_field_t *vg_lim_p = cs_field_by_name(vg_lim_name);
     cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
-      cs_glob_physical_constants->gravity[1],
-      cs_glob_physical_constants->gravity[2]};
+                           cs_glob_physical_constants->gravity[1],
+                           cs_glob_physical_constants->gravity[2]};
     cs_field_t *cfld_taup = cs_field_by_composite_name(cfld_yp->name,"drift_tau");
     cs_real_t *cpro_taup = nullptr;
     if (cfld_taup != nullptr)
@@ -792,8 +794,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
         ct->q_l_out += sign * y_l_p[cell_id_l] * liq_mass_flow[face_id];
       }
 
-      cs_parall_sum(1, CS_REAL_TYPE, &(ct->t_l_out));
-      cs_parall_sum(1, CS_REAL_TYPE, &(ct->q_l_out));
+      cs_parall_sum_scalars(ct->t_l_out, ct->q_l_out);
 
       ct->t_l_out /= ct->q_l_out;
 
@@ -843,9 +844,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       }
     }
 
-    cs_parall_sum(1, CS_REAL_TYPE, &mass_rain_pre);
-    cs_parall_sum(1, CS_REAL_TYPE, &mass_rain);
-    cs_parall_sum(1, CS_REAL_TYPE, &mf_rain_walls);
+    cs_parall_sum_scalars(mass_rain_pre, mass_rain, mf_rain_walls);
 
     bft_printf("  ** Cooling tower model: rain mass balance\n");
     bft_printf("     --------------------------------------\n\n");

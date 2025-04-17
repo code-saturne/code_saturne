@@ -2173,7 +2173,7 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
   int  depth[3];
   cs_lnum_t  _n_leaves[3], _n_boxes[3];
   cs_lnum_t  _n_threshold_leaves[3], _n_leaf_boxes[3];
-  cs_gnum_t  _mem_final[3], _mem_required[3];
+  uint64_t  _mem_final[3], _mem_required[3];
   double  build_wtime, build_cpu_time, query_wtime, query_cpu_time;
 
   int dim = fvm_neighborhood_get_box_stats(face_neighborhood,
