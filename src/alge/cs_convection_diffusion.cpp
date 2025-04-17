@@ -10884,22 +10884,20 @@ cs_face_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-    ctx_i.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    ctx_i.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      cs_dispatch_sum(&i_massflux[face_id],
-                      i_visc[face_id]*(pvar[ii] - pvar[jj]),
-                      i_sum_type);
+      i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
     });
 
     /* Mass flow through boundary faces */
 
-    ctx_b.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
       cs_real_t pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
-      cs_dispatch_sum(&b_massflux[face_id], b_visc[face_id]*pfac, b_sum_type);
+      b_massflux[face_id] += b_visc[face_id]*pfac;
     });
 
     ctx_i.wait();
@@ -10968,7 +10966,7 @@ cs_face_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-    ctx_i.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    ctx_i.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
@@ -10988,19 +10986,18 @@ cs_face_diffusion_potential(const int                   f_id,
                               + (  dpxf *dijx + dpyf*dijy + dpzf*dijz)
                                  * i_f_face_surf[face_id]/i_dist[face_id];
 
-      cs_dispatch_sum(&i_massflux[face_id], f_mass_flux, i_sum_type);
+      i_massflux[face_id] += f_mass_flux;
     });
 
     /* Mass flow through boundary faces */
 
-    ctx_b.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-
+    ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
 
       cs_real_t pip = pvar[ii] + cs_math_3_dot_product(grad[ii], diipb[face_id]);
       cs_real_t pfac = inc*cofafp[face_id] + cofbfp[face_id]*pip;
 
-      cs_dispatch_sum(&b_massflux[face_id], b_visc[face_id]*pfac, b_sum_type);
+      b_massflux[face_id] += b_visc[face_id]*pfac;
     });
 
     ctx_i.wait();

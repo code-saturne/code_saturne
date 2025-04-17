@@ -179,6 +179,7 @@ cs_mass_flux(const cs_mesh_t             *m,
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
@@ -270,13 +271,12 @@ cs_mass_flux(const cs_mesh_t             *m,
   /* Momentum computation */
 
   if (init == 1) {
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       i_massflux[face_id] = 0.;
     });
-    ctx_c.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       b_massflux[face_id] = 0.;
     });
-
   }
   else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
@@ -489,7 +489,7 @@ cs_mass_flux(const cs_mesh_t             *m,
 
     /* Interior faces */
 
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
       cs_lnum_t _p = is_p*face_id;
@@ -506,7 +506,7 @@ cs_mass_flux(const cs_mesh_t             *m,
 
     /* Boundary faces */
 
-    ctx_c.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t _p = is_p*face_id;
       /* u, v, w Components */
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
@@ -556,7 +556,7 @@ cs_mass_flux(const cs_mesh_t             *m,
 
     /* Mass flow through interior faces */
 
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
       cs_lnum_t _p = is_p*face_id;
@@ -582,12 +582,11 @@ cs_mass_flux(const cs_mesh_t             *m,
              * i_face_u_normal[face_id][isou];
       }
       i_massflux[face_id] += q * i_face_surf[face_id];
-
     });
 
-     /* Mass flow through boundary faces */
+    /* Mass flow through boundary faces */
 
-    ctx_c.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
       cs_lnum_t _p = is_p*face_id;
 
@@ -1226,7 +1225,6 @@ cs_divergence(const cs_mesh_t          *m,
   else if (init < 0)
     bft_error(__FILE__, __LINE__, 0, _("invalid value of init"));
 
-
   /*==========================================================================
     2. Integration on internal faces
     ==========================================================================*/
@@ -1236,9 +1234,9 @@ cs_divergence(const cs_mesh_t          *m,
     cs_lnum_t jj = i_face_cells[face_id][1];
 
     if (ii < n_cells)
-      cs_dispatch_sum(&diverg[ii], i_massflux[face_id], i_sum_type);
+      cs_dispatch_sum(&diverg[ii],  i_massflux[face_id], i_sum_type);
     if (jj < n_cells)
-      cs_dispatch_sum(&diverg[jj],-i_massflux[face_id], i_sum_type);
+      cs_dispatch_sum(&diverg[jj], -i_massflux[face_id], i_sum_type);
   });
 
   /*==========================================================================
