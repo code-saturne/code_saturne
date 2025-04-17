@@ -8355,6 +8355,10 @@ cs_gradient_vector(const char                    *var_name,
   /* Compute face value for gradient
      ------------------------------- */
 
+  std::chrono::high_resolution_clock::time_point t_start, t_bc;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_real_3_t *val_ip = nullptr, *val_f = nullptr;
   cs_real_3_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
 
@@ -8519,6 +8523,16 @@ cs_gradient_vector(const char                    *var_name,
         val_f = val_f_wrk;
       }
     }
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_bc = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed;
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_bc - t_start);
+    printf("%d: %s, bcs update = %ld\n",
+           cs_glob_rank_id, __func__,
+           elapsed.count());
   }
 
   /* Compute gradient */

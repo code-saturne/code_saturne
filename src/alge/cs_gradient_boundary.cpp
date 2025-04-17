@@ -27,15 +27,17 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
+
+#include <cmath>
+#include <chrono>
 
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <math.h>
 #include <float.h>
 
 #if defined(HAVE_MPI)
@@ -733,6 +735,11 @@ cs_gradient_boundary_iprime_lsq_strided
    cs_real_t                   var_iprime[][stride],
    cs_real_t                   var_iprime_lim[][stride])
 {
+  std::chrono::high_resolution_clock::time_point t_start, t_stop;
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   /* Initialization */
   using a_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
@@ -1223,6 +1230,16 @@ cs_gradient_boundary_iprime_lsq_strided
       var_iprime[f_idx][ii] = var_ip[ii];
 
   }); /* End of loop on selected faces */
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed;
+    printf("%d: %s", cs_glob_rank_id, __func__);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(" = %ld\n", elapsed.count());
+  }
 }
 
 // Force instanciation
