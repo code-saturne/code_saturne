@@ -8401,6 +8401,9 @@ cs_gradient_vector(const char                    *var_name,
                                                        var,
                                                        c_weight);
 
+
+      ctx.wait();
+
       cpl = nullptr;  /* Coupling not needed in lower functions in this case. */
     }
   }
@@ -8414,13 +8417,15 @@ cs_gradient_vector(const char                    *var_name,
     cs_field_bc_coeffs_t bc_coeffs_v_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
 
-    CS_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
-    CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+    CS_MALLOC_HD(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t, cs_alloc_mode);
 
     bc_coeff_loc_a = (cs_real_3_t  *)bc_coeffs_v_loc.a;
     bc_coeff_loc_b = (cs_real_33_t *)bc_coeffs_v_loc.b;
 
-    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+    cs_dispatch_context ctx;
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         bc_coeff_loc_a[i][j] = 0;
         for (cs_lnum_t k = 0; k < 3; k++)
@@ -8428,7 +8433,7 @@ cs_gradient_vector(const char                    *var_name,
 
         bc_coeff_loc_b[i][j][j] = 1;
       }
-    }
+    });
 
     bc_coeffs_v = &bc_coeffs_v_loc;
 
@@ -8436,8 +8441,6 @@ cs_gradient_vector(const char                    *var_name,
       // else only above standard coefa&b are used
 
       CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_3_t, cs_alloc_mode);
-
-      cs_dispatch_context ctx;
 
       /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
       cs_gradient_boundary_iprime_lsq_strided<3>(ctx,
@@ -8456,6 +8459,9 @@ cs_gradient_vector(const char                    *var_name,
 
       val_f = val_f_hmg;
     }
+
+    ctx.wait();
+
   }
   else { // bc_coeffs_v != nullptr, enter here for cpl
 
@@ -8499,15 +8505,16 @@ cs_gradient_vector(const char                    *var_name,
         cs_real_3_t  *coefa = (cs_real_3_t  *)bc_coeffs_v->a;
         cs_real_33_t *coefb = (cs_real_33_t *)bc_coeffs_v->b;
 
-        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-
+        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
           for (cs_lnum_t i = 0; i < 3; i++) {
             val_f_wrk[face_id][i] = inc*coefa[face_id][i];
             for (cs_lnum_t j = 0; j < 3; j++) {
               val_f_wrk[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
             }
           }
-        } /* End loop on boundary faces */
+        }); /* End loop on boundary faces */
+
+        ctx.wait();
 
         val_f = val_f_wrk;
       }
