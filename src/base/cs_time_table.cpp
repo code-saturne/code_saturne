@@ -43,6 +43,7 @@
 #include "base/cs_defs.h"
 #include "base/cs_file.h"
 #include "base/cs_file_csv_parser.h"
+#include "base/cs_log.h"
 #include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
@@ -566,7 +567,13 @@ cs_time_table_set_time_from_label_try(cs_time_table_t *table,
 {
   assert(table != nullptr);
 
-  table->time_col_id = cs_time_table_column_id_by_name(table, time_label);
+  const int t_id = cs_time_table_column_id_by_name(table, time_label);
+  if (t_id > -1)
+    table->time_col_id = t_id;
+  else
+    cs_log_warning(_("%s: label \"%s\" does not exist in table \"%s\".\n"
+                     "Time column id will not be updated!\n"),
+                   __func__, time_label, table->name);
 }
 
 /*----------------------------------------------------------------------------*/
