@@ -90,6 +90,7 @@
 #include "base/cs_porous_model.h"
 #include "base/cs_pressure_correction.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_reducers.h"
 #include "base/cs_rotation.h"
 #include "base/cs_sat_coupling.h"
 #include "alge/cs_sles_default.h"
@@ -1743,74 +1744,69 @@ _log_norm(const cs_mesh_t                *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq_g->cell_cen;
+  const cs_real_3_t *cell_cen = mq_g->cell_cen;
   const cs_real_t *i_face_surf = mq_g->i_face_surf;
   const cs_real_t *i_f_face_surf = mq->i_face_surf;
   const cs_real_t *b_face_surf = mq_g->b_face_surf;
   const cs_real_t *b_f_face_surf = mq->b_face_surf;
 
+  const unsigned vof_model = cs_glob_vof_parameters->vof_model;
+
   cs_log_printf(CS_LOG_DEFAULT,
                 _(" AFTER CONTINUITY PRESSURE\n"
                   " -------------------------\n"));
-  cs_real_t rnorm = -1.0, rnormt = -1.0;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    rnorm = fmax(rnorm, fabs(cvar_pr[c_id]));
+  cs_dispatch_context ctx;
+
+  struct cs_data_double_int_n<4> rd;
+  struct cs_reduce_minmaxloc_n<2> reducer;
+
+  ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
+                          (cs_lnum_t c_id, cs_data_double_int_n<4> &res)
+  {
+    res.r[0] = cs::abs(cvar_pr[c_id]);
+    res.r[1] = cs_math_3_norm(cvar_vel[c_id]);
+    res.r[2] = res.r[0];
+    res.r[3] = res.r[1];
+    res.i[0] = c_id; res.i[1] = c_id;
+    res.i[2] = c_id; res.i[3] = c_id;
+  });
+
+  ctx.wait();
+
+  cs_real_t rnorm = rd.r[2], rnormt = rd.r[3];
+  cs_lnum_t imaxt = rd.i[3];
+
   cs_parall_max(1, CS_REAL_TYPE, &rnorm);
-
   bft_printf("Max. pressure, %12.4e, (max. absolute value)\n", rnorm);
 
-  rnorm = -1.0;
-  cs_lnum_t imax = 1, imaxt = -1;
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t vitnor = cs_math_3_norm(cvar_vel[c_id]);
-   if (vitnor >= rnormt) {
-     imaxt  = c_id;
-     rnormt = vitnor;
-   }
-  }
-  if (rnormt > rnorm) {
-    imax = imaxt;
-    rnorm = rnormt;
+  cs_real_t xyzmax[3] = {0, 0, 0};
+  if (imaxt > -1) {
+    for (int i = 0; i < 3; i++)
+      xyzmax[i] = cell_cen[imaxt][i];
   }
 
-  cs_real_t xyzmax[3] = {cell_cen[imax][0],
-                         cell_cen[imax][1],
-                         cell_cen[imax][2]};
-
-  cs_parall_max_loc_vals(3, &rnorm, xyzmax);
+  cs_parall_max_loc_vals(3, &rnormt, xyzmax);
 
   bft_printf("Max. velocity, %12.4e, in, %11.3e, %11.3e, %11.3e\n",
-             rnorm, xyzmax[0], xyzmax[1], xyzmax[2]);
+             rnormt, xyzmax[0], xyzmax[1], xyzmax[2]);
 
-  cs_lnum_t imin = 1, imint = 1;
-  rnorm = cs_math_3_norm(cvar_vel[0]);
-  rnormt = rnorm;
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t vitnor = cs_math_3_norm(cvar_vel[c_id]);
-     if (vitnor <= rnormt) {
-       imint  = c_id;
-       rnormt = vitnor;
-     }
-  }
-  if (rnormt < rnorm) {
-    imin = imint;
-    rnorm = rnormt;
+  rnormt = rd.r[1];
+  cs_lnum_t imint = rd.i[1];
+
+  cs_real_t xyzmin[3] = {0, 0, 0};
+  if (imint > -1) {
+    for (int i = 0; i < 3; i++)
+      xyzmin[i] = cell_cen[imint][i];
   }
 
-  cs_real_t xyzmin[3] = {cell_cen[imin][0],
-                         cell_cen[imin][1],
-                         cell_cen[imin][2]};
-
-  cs_parall_min_loc_vals(3, &rnorm, xyzmin);
+  cs_parall_min_loc_vals(3, &rnormt, xyzmin);
 
   bft_printf("Min. velocity,%12.4e, in, %11.3e, %11.3e, %11.3e\n",
-             rnorm, xyzmin[0], xyzmin[1], xyzmin[2]);
+             rnormt, xyzmin[0], xyzmin[1], xyzmin[2]);
 
   const cs_real_t *ivolfl = nullptr, *bvolfl = nullptr;
 
@@ -1823,7 +1819,7 @@ _log_norm(const cs_mesh_t                *m,
     cs_halo_sync(m->halo, false, porosi);
   }
 
-  if (cs_glob_vof_parameters->vof_model > 0) {
+  if (vof_model > 0) {
     const int kimasf = cs_field_key_id("inner_mass_flux_id");
     const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
     const int ivolfl_id
@@ -1835,10 +1831,12 @@ _log_norm(const cs_mesh_t                *m,
     bvolfl = cs_field_by_id(bvolfl_id)->val;
   }
 
-  cs_real_t rnormi = cs_math_big_r;
-  cs_real_t rnorma = -cs_math_big_r;
+  struct cs_data_double_n<2> rd_f;
+  struct cs_reduce_minmax_n<1> reducer_f;
 
-  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+  ctx.parallel_for_reduce(n_i_faces, rd_f, reducer_f, [=] CS_F_HOST_DEVICE
+                          (cs_lnum_t face_id, cs_data_double_n<2> &res)
+  {
     const cs_lnum_t c_id1 = i_face_cells[face_id][0];
     const cs_lnum_t c_id2 = i_face_cells[face_id][1];
     cs_real_t rhom;
@@ -1847,56 +1845,69 @@ _log_norm(const cs_mesh_t                *m,
     else
       rhom = (crom[c_id1] + crom[c_id2])*0.5;
     /* Deal with null fluid section */
-    rnorm = 0.;
+    cs_real_t nrm = 0.;
     if (i_f_face_surf[face_id] / i_face_surf[face_id] > cs_math_epzero) {
-      rnorm = fabs(imasfl[face_id]) / (i_f_face_surf[face_id]*rhom);
-      if (cs_glob_vof_parameters->vof_model > 0)
-        rnorm = fabs(ivolfl[face_id]) / i_f_face_surf[face_id];
+      nrm = fabs(imasfl[face_id]) / (i_f_face_surf[face_id]*rhom);
+      if (vof_model > 0)
+        nrm = fabs(ivolfl[face_id]) / i_f_face_surf[face_id];
     }
-    rnorma = cs::max(rnorma, rnorm);
-    rnormi = cs::min(rnormi, rnorm);
-  }
-  cs_parall_min(1, CS_REAL_TYPE, &rnormi);
-  cs_parall_max(1, CS_REAL_TYPE, &rnorma);
+    res.r[0] = nrm;
+    res.r[1] = nrm;
+  });
+
+  ctx.wait();
+
+  rd_f.r[1] *= -1.; // Permute sign to group min/mas as 2  times min
+  cs_parall_min(2, CS_DOUBLE, rd_f.r);
+  rd_f.r[1] *= -1.;
 
   bft_printf(" Max. velocity at interior faces %12.4e; min. %12.4e\n",
-             rnorma, rnormi);
+             rd_f.r[1], rd_f.r[0]);
 
-  rnormi = cs_math_big_r;
-  rnorma = -cs_math_big_r;
-
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+  ctx.parallel_for_reduce(n_b_faces, rd_f, reducer_f, [=] CS_F_HOST_DEVICE
+                          (cs_lnum_t face_id, cs_data_double_n<2> &res)
+  {
+    cs_real_t nrm = 0;
     if (bvolfl != nullptr) {
       /*  Deal with null fluid section */
-      rnorm = 0;
       if (b_f_face_surf[face_id] / b_face_surf[face_id] > cs_math_epzero)
-        rnorm = bvolfl[face_id] / (b_f_face_surf[face_id]);
+        nrm = bvolfl[face_id] / (b_f_face_surf[face_id]);
     }
     else {
       const cs_lnum_t c_id = b_face_cells[face_id];
       if ((iporos == 1) || (iporos == 2))
-        rnorm = bmasfl[face_id]
+        nrm = bmasfl[face_id]
                / (b_face_surf[face_id]*brom[face_id]*porosi[c_id]);
       else {
-      /* Deal with null fluid section */
-        rnorm = 0;
-        if (mq->b_face_surf[face_id]/mq_g->b_face_surf[face_id] > cs_math_epzero)
-          rnorm = bmasfl[face_id]/(mq->b_face_surf[face_id]*brom[face_id]);
+        /* Deal with null fluid section */
+        if (b_f_face_surf[face_id]/b_face_surf[face_id] > cs_math_epzero)
+          nrm = bmasfl[face_id]/(b_f_face_surf[face_id]*brom[face_id]);
       }
+      res.r[0] = nrm;
+      res.r[1] = nrm;
     }
-        rnorma = fmax(rnorma, rnorm);
-        rnormi = fmin(rnormi, rnorm);
-  }
-  cs_parall_min(1, CS_REAL_TYPE, &rnormi);
-  cs_parall_max(1, CS_REAL_TYPE, &rnorma);
+  });
+
+  ctx.wait();
+
+  rd_f.r[1] *= -1.; // Permute sign to group min/mas as 2  times min
+  cs_parall_min(2, CS_DOUBLE, rd_f.r);
+  rd_f.r[1] *= -1.;
 
   bft_printf(" Max. velocity at boundary faces %12.4e; min. %12.4e\n",
-             rnorma, rnormi);
+             rd_f.r[1], rd_f.r[0]);
 
-  rnorm = cs_sum(n_b_faces, bmasfl);
-  cs_parall_sum(1, CS_REAL_TYPE, &rnorm);
+  double bmf = 0.0;
+  ctx.parallel_for_reduce_sum
+    (n_b_faces, bmf, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t f_id, CS_DISPATCH_REDUCER_TYPE(double) &s) {
+      s += bmasfl[f_id];
+    });
+  ctx.wait();
 
-  bft_printf(" Mass balance  at boundary: %14.6e\n", rnorm);
+  cs_parall_sum(1, CS_REAL_TYPE, &bmf);
+
+  bft_printf(" Mass balance  at boundary: %14.6e\n", bmf);
   bft_printf(" ----------------------------------------\n");
 
   const cs_velocity_pressure_param_t *vp_param = cs_glob_velocity_pressure_param;
@@ -4067,8 +4078,7 @@ cs_solve_navier_stokes(const int        iterns,
        (only for the first call; the second one is for error estimators) */
     if (vp_param->iphydr == 1) {
       const cs_real_t ro0 = fluid_props->ro0;
-      const cs_real_t gxyz[3] = {gxyz_h[0], gxyz_h[1], gxyz_h[2]}
-;
+      const cs_real_t gxyz[3] = {gxyz_h[0], gxyz_h[1], gxyz_h[2]};
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         //const int is_active = cs_mesh_quantities_cell_is_active(mq, c_id);
         const int ind = has_disable_flag * c_id;
@@ -4351,8 +4361,7 @@ cs_solve_navier_stokes(const int        iterns,
     const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
     const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
-    const cs_real_3_t *restrict b_face_cog
-      = (const cs_real_3_t *)mq->b_face_cog;
+    const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -4703,14 +4712,16 @@ cs_solve_navier_stokes(const int        iterns,
 
     const cs_real_t *cell_f_vol = mq->cell_vol;
 
-    cs_real_t xnrtmp = 0;
-#   pragma omp parallel for reduction(+:xnrtmp) if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_real_t xduvw[3] = {vel[c_id][0] - velk[c_id][0],
-                            vel[c_id][1] - velk[c_id][1],
-                            vel[c_id][2] - velk[c_id][2]};
-      xnrtmp += cs_math_3_dot_product(xduvw, xduvw) * cell_f_vol[c_id];
-    }
+    double xnrtmp = 0.0;
+    ctx.parallel_for_reduce_sum
+      (n_cells, xnrtmp,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id,
+                             CS_DISPATCH_REDUCER_TYPE(double) &xnr) {
+         cs_real_t xduvw[3] = {vel[c_id][0] - velk[c_id][0],
+                               vel[c_id][1] - velk[c_id][1],
+                               vel[c_id][2] - velk[c_id][2]};
+         xnr += cs_math_3_dot_product(xduvw, xduvw) * cell_f_vol[c_id];
+       });
     cs_parall_sum(1, CS_REAL_TYPE, &xnrtmp);
     vp_param->xnrmu = xnrtmp;
 

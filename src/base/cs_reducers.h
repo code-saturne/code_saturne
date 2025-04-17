@@ -84,6 +84,19 @@ struct cs_double_n {
   double r[stride];
 };
 
+template<size_t stride>
+struct cs_data_double_n {
+  double r[stride];
+};
+
+// Combined
+
+template<size_t stride>
+struct cs_data_double_int_n {
+  double     r[stride];
+  cs_lnum_t  i[stride];
+};
+
 /* Reduction
    --------- */
 
@@ -334,6 +347,65 @@ struct cs_reduce_min_max_weighted_sum_nr_with_norm {
     a.r[2*_stride - 1] = cs::max(a.r[2*_stride - 1], b.r[2*_stride - 1]);
     a.r[3*_stride - 1] += b.r[3*_stride - 1];
     a.r[4*_stride - 1] += b.r[4*_stride - 1];
+  }
+};
+
+// Strided min/max;
+// The first half of the structure is used for min,
+// the second for max.
+// Only the first half needs to be set by the user, as combine
+// handles the rest.
+
+template<size_t stride>
+struct cs_reduce_minmax_n {
+  using T = cs_data_double_n<stride*2>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = HUGE_VAL;
+      a.r[stride + i] = -HUGE_VAL;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++) {
+      // Do not use stride for b, as only the first half needs to be set.
+      a.r[i] = cs::min(a.r[i], b.r[i]);
+      a.r[stride+i] = cs::max(a.r[stride+i], b.r[stride+i]);
+    }
+  }
+};
+
+// Strided min/max/loc;
+
+template<size_t stride>
+struct cs_reduce_minmaxloc_n {
+  using T = cs_data_double_int_n<stride*2>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = HUGE_VAL;
+      a.r[stride + i] = -HUGE_VAL;
+      a.i[i] = -1.;
+      a.i[stride + i] = -1.;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++) {
+      if (a.r[i] > b.r[i]) {
+        a.r[i] = b.r[i];
+        a.i[i] = b.i[i];
+      }
+      if (a.r[stride + i] < b.r[stride + i]) {
+        a.r[stride + i] = b.r[stride + i];
+        a.i[stride + i] = b.i[stride + i];
+      }
+    }
   }
 };
 

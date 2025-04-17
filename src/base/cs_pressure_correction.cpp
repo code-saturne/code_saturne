@@ -2917,11 +2917,14 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
                  imasfl, bmasfl);
   }
 
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     imasfl[f_id] += arak*ipotfl[f_id];
+  });
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     bmasfl[f_id] += arak*bpotfl[f_id];
+  });
+  ctx.wait();
 
   /*
    * Solving
