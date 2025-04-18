@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -21,22 +21,20 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import configparser
 import os
-import os.path
 import sys
 
 from code_saturne.base.cs_case_domain import *
 from code_saturne.base.cs_case import *
-from code_saturne.base import cs_exec_environment
 from code_saturne.base import cs_run_conf
 from code_saturne.base import cs_runcase
 
-#===============================================================================
+# ===============================================================================
 # Main function for code coupling execution
-#===============================================================================
+# ===============================================================================
 
 def coupling(package,
              domains,
@@ -50,6 +48,7 @@ def coupling(package,
     use_syrthes = False
     use_neptune = False
     use_cathare = False
+    use_aster = False
     use_py_code = False
 
     # Use alternate compute (back-end) package if defined
@@ -65,6 +64,7 @@ def coupling(package,
     syr_domains = []
     nep_domains = []
     cat_domains = []
+    ast_domains = []
     py_domains = []
 
     if domains is None:
@@ -185,6 +185,31 @@ def coupling(package,
             use_syrthes = True
             syr_domains.append(dom)
 
+        elif solver_s == "code_aster":
+
+            if not config.has_option("install", "aster"):
+                raise RunCaseError(
+                    "Error: a code_aster installation is not defined in the configuration file."
+                )
+
+            try:
+                solver_path = f"{config.get('install', 'aster')}/bin/run_aster"
+                dom = aster_domain(
+                    package,
+                    name=domain_s,
+                    solver_path=solver_path,
+                    script_name=d.get("script"),
+                    n_procs_weight=d.get("n_procs_weight"),
+                    n_procs_min=d.get("n_procs_min"),
+                    n_procs_max=d.get("n_procs_max"),
+                )
+            except Exception:
+                err_str = f"Cannot create code_aster case with domain {domain_s} and n_procs_weight = {d.get('n_procs_weight')}."
+                raise RunCaseError(err_str)
+
+            use_aster = True
+            ast_domains.append(dom)
+
         elif solver_s == 'cathare':
 
             # Current version using Cathare2: the cathare case is converted to a
@@ -236,14 +261,16 @@ def coupling(package,
 
     # Now handle case for the corresponding calculation domain(s).
 
-    c = case(package,
-             package_compute = package_compute,
-             case_dir = casedir,
-             dest_dir = dest_dir,
-             staging_dir = staging_dir,
-             domains = sat_domains + nep_domains + cat_domains,
-             syr_domains = syr_domains,
-             py_domains = py_domains)
+    c = case(
+        package,
+        package_compute=package_compute,
+        case_dir=casedir,
+        dest_dir=dest_dir,
+        staging_dir=staging_dir,
+        domains=sat_domains + nep_domains + cat_domains + ast_domains,
+        syr_domains=syr_domains,
+        py_domains=py_domains,
+    )
 
     if verbose:
         msg = ' Coupling execution between: \n'
@@ -255,12 +282,14 @@ def coupling(package,
             msg += '   o neptune_cfd  [' + str(len(nep_domains)) + ' domain(s)];\n'
         if use_cathare == True:
             msg += '   o CATHARE2     [' + str(len(cat_domains)) + ' domain(s)];\n'
+        if use_aster == True:
+            msg += "   o code_aster   [" + str(len(ast_domains)) + " domain(s)];\n"
         if use_py_code == True:
             msg += '   o Python Script  [' + str(len(py_domains)) + ' domain(s)];\n'
         sys.stdout.write(msg+'\n')
 
     return c
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

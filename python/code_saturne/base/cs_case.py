@@ -508,6 +508,11 @@ class case:
                 if d.name is None:
                     raise RunCaseError(err_str)
 
+        self.n_domains_aster = 0
+        for d in self.domains:
+            if isinstance(d, aster_domain):
+                self.n_domains_aster += 1
+
         # Names, directories, and files in case structure:
         # associate case domains and set case directory
 
@@ -1457,7 +1462,7 @@ class case:
                         s.write('\n')
 
         # Handle python coupling
-        if self.n_domains_python > 0:
+        if self.n_domains_python > 0 or self.n_domains_aster > 0:
             cs_exec_environment.write_script_comment(s, \
                 'Export paths necessary for python coupling.\n')
             pydir = self.package_compute.get_dir("pythondir")
@@ -1609,7 +1614,7 @@ class case:
 
         return s_path
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def update_scripts_tmp(self, src, dest, caption=None):
 
@@ -1656,7 +1661,7 @@ class case:
         except Exception:
             pass
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def add_exec_dir_stamp(self):
 
@@ -1669,7 +1674,7 @@ class case:
         f.write(self.exec_dir + '\n')
         f.close()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def clear_exec_dir_stamp(self):
 
@@ -1683,7 +1688,7 @@ class case:
         except Exception:
             pass
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def exceeded_time_limit(self):
 
@@ -1697,7 +1702,7 @@ class case:
         else:
             return False
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_run_id(self,
                    run_id = None):
@@ -1721,7 +1726,7 @@ class case:
                 self.run_id = run_id_base + '_' + str(j)
                 self.define_result_dir()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def prepare_data(self,
                      force_id = False):
@@ -1778,7 +1783,7 @@ class case:
             return 1
 
         # Setup data
-        #===========
+        # ===========
 
         sys.stdout.write('Preparing calculation data\n'
                          '--------------------------\n\n')
@@ -1817,7 +1822,7 @@ class case:
         else:
             return 0
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def init_prepared_data(self):
 
@@ -1832,7 +1837,7 @@ class case:
         for d in self.domains:
             d.init_staged_data()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def preprocess(self,
                    n_procs = None,
@@ -1857,7 +1862,7 @@ class case:
         self.update_scripts_tmp('prepared', 'preprocessing')
 
         # Determine execution environment
-        #================================
+        # ================================
         # (priority for n_procs, in increasing order:
         # resource manager, method argument).
 
@@ -1888,7 +1893,7 @@ class case:
         self.print_procs_distribution()
 
         # Preprocessing
-        #==============
+        # ==============
 
         sys.stdout.write('Preprocessing calculation\n'
                          '-------------------------\n\n')
@@ -1944,7 +1949,7 @@ class case:
         else:
             return 0
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def run_solver(self):
 
@@ -2047,7 +2052,7 @@ class case:
 
         return retcode
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def save_results(self):
 
@@ -2109,7 +2114,7 @@ class case:
 
         return memory_leak
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def run(self,
             n_procs = None,
@@ -2345,7 +2350,7 @@ class case:
 
         return retcode
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def suggest_id(self,
                    run_id_prefix = None,
@@ -2403,6 +2408,6 @@ class case:
 
         return run_id
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

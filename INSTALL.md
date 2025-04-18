@@ -235,7 +235,7 @@ so as to be usable across sessions.
 Global configuration file
 -------------------------
 
-For some systems (such as when using a batch system or coupling with SYRTHES),
+For some systems (such as when using a batch system or coupling with SYRTHES or code_aster),
 additional post-install step may be required. In this case, copy
 Copy or rename the `<install-prefix>/etc/code_saturne.cfg.template` to \\
 `<install-prefix>/etc/code_saturne.cfg`,
@@ -262,6 +262,8 @@ This is useful for example for:
   while moving or copying cases from one system to another.
 
 * Defining the path to a SYRTHES installation to enable conjugate heat transfer.
+
+* Defining the path to a code_aster installation to enable fluid-structure interaction.
 
 * All default MPI execution commands and options may be overridden using the
   `mpi` section. Note that only the options defined in this section
@@ -703,6 +705,9 @@ The list of third-party software usable with code_saturne is provided here:
 * The [SYRTHES](https://www.edf.fr/en/the-edf-group/inventing-the-future-of-energy/r-d-global-expertise/our-offers/simulation-softwares/syrthes)
   code may be used for conjugate heat transfer.
 
+* The [code_aster](https://www.edf.fr/groupe-edf/inventer-l-avenir-de-l-energie/r-d-un-savoir-faire-mondial/nos-offres/codes-de-calcul/code-aster)
+  code may be used for fluid-structure interaction.
+
 For developers, the GNU Autotools (Autoconf and Automake)
 will be necessary. To build the documentation, pdfLaTeX,
 and Doxygen are needed, and dot (from Graphviz) recommended.
@@ -1034,6 +1039,15 @@ the same major version of the PLE library from
 code_saturne. If SYRTHES is installed after code_saturne, the simplest solution
 is to configure its build to use the PLE library from the existing
 code_saturne install.
+
+### Coupling with code_aster
+
+Coupling with code_aster requires defining the path to a code_aster installation
+at the post-install stage (in the `code_saturne.cfg` file).
+
+Both code_saturne and code_aster must use the same MPI library, and must use
+the same major version of the PLE library from
+code_saturne (only the python package is used).
 
 Specific build types
 ====================

@@ -31,7 +31,8 @@ and MED formats. In-situ postprocessing is available using the
 code_saturne can be coupled in parallel to EDF's thermal software
 [SYRTHES](https://www.edf.fr/en/the-edf-group/world-s-largest-power-company/activities/research-and-development/scientific-communities/simulation-softwares?logiciel=10818)
 (conjugate heat transfer). It can also produce output usable by EDF's structural
-analysis software [code_aster](https://code-aster.org), in particular in the
+analysis software [code_aster](https://code-aster.org) or coupled directly for
+fluid-structure interaction, in particular in the
 [SALOME platform](https://www.salome-platform.org/). SYRTHES and
 code_aster are developed by EDF and distributed under a GNU GPL licence.
 The atmospheric model can include chemistry modeling based on the

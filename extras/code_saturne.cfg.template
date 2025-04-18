@@ -44,6 +44,10 @@
 ### (e.g. <cathare_home>/mod5.1).
 # cathare =
 
+### Set the location to the code_aster installation directory
+### (e.g. <aster_home>/aster-17.x.yy/arch/<arch>).
+# aster =
+
 ### Optional path to sourcable shell environment initialization file
 ### (similar to .profile or .bashrc, specific to code_saturne).
 # rcfile =

@@ -60,7 +60,7 @@ Configuration file {#cs_user_configuration_file}
 A configuration file for code_saturne is available in `${install_prefix}/etc`.
 This file can be useful as a post-install step for computing environments using a
 batch system, for separate front-end and compute systems (such as some Cray systems),
-or for coupling with Syrthes (see the installation documentation for more details).
+or for coupling with Syrthes and code_aster (see the installation documentation for more details).
 
 A user may define a local configuration, by copying
 `${install_prefix}/etc/code_saturne.cfg` (if present)

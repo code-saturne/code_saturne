@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -21,7 +21,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 """
 This module describes the script used to create a study/case for code_saturne.
@@ -36,9 +36,9 @@ and the following classes:
 - class
 """
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Library modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import os, sys, shutil, stat
 import types, string, re, fnmatch
@@ -49,9 +49,9 @@ from code_saturne.base import cs_exec_environment
 from code_saturne.base import cs_run_conf
 from code_saturne.base import cs_runcase
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Process the passed command line arguments
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def process_cmd_line(argv, pkg):
     """
@@ -105,6 +105,15 @@ def process_cmd_line(argv, pkg):
                       metavar="<py_case>",
                       help="create a new Python script case.")
 
+    parser.add_option(
+        "--aster",
+        dest="ast_case_names",
+        type="string",
+        metavar="<ast_cases>",
+        action="append",
+        help="create new code_aster case(s).",
+    )
+
     parser.set_defaults(use_ref=False)
     parser.set_defaults(study_name=None)
     parser.set_defaults(case_names=[])
@@ -112,6 +121,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(verbose=1)
     parser.set_defaults(n_sat=1)
     parser.set_defaults(syr_case_names=[])
+    parser.set_defaults(ast_case_names=None)
     parser.set_defaults(cat_case_name=None)
     parser.set_defaults(py_case_name=None)
 
@@ -123,19 +133,22 @@ def process_cmd_line(argv, pkg):
         else:
             options.case_names = ["CASE1"]
 
-    return study(pkg,
-                 options.study_name,
-                 cases=options.case_names,
-                 syr_case_names=options.syr_case_names,
-                 cat_case_name=options.cat_case_name,
-                 py_case_name=options.py_case_name,
-                 copy=options.copy,
-                 use_ref=options.use_ref,
-                 verbose=options.verbose)
+    return study(
+        pkg,
+        options.study_name,
+        cases=options.case_names,
+        syr_case_names=options.syr_case_names,
+        ast_case_names=options.ast_case_names,
+        cat_case_name=options.cat_case_name,
+        py_case_name=options.py_case_name,
+        copy=options.copy,
+        use_ref=options.use_ref,
+        verbose=options.verbose,
+    )
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Assign executable mode (chmod +x) to a file
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def set_executable(filename):
     """
@@ -153,9 +166,9 @@ def set_executable(filename):
 
     return
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Remove executable mode (chmod -x) from a file or files inside a directory
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def unset_executable(path):
     """
@@ -179,9 +192,9 @@ def unset_executable(path):
 
     return
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Create local launch script
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def create_local_launcher(pkg, path=None):
     """
@@ -245,22 +258,25 @@ fi
     fd.close()
     set_executable(local_script)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Definition of a class for a study
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class study:
 
-    def __init__(self,
-                 package,
-                 study_name,
-                 cases=[],
-                 syr_case_names=[],
-                 cat_case_name=None,
-                 py_case_name=None,
-                 copy=None,
-                 use_ref=False,
-                 verbose=0):
+    def __init__(
+        self,
+        package,
+        study_name,
+        cases=[],
+        syr_case_names=[],
+        ast_case_name=None,
+        cat_case_name=None,
+        py_case_name=None,
+        copy=None,
+        use_ref=False,
+        verbose=0,
+    ):
         """
         Initialize the structure for a study.
         """
@@ -285,11 +301,13 @@ class study:
         for c in syr_case_names:
             self.syr_case_names.append(c)
 
+        self.ast_case_name = ast_case_name
+
         self.cat_case_name = cat_case_name
 
         self.py_case_name = py_case_name
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def create(self):
         """
@@ -316,6 +334,10 @@ class study:
         if len(self.syr_case_names) > 0:
             self.create_syrthes_cases(repbase)
 
+        # Creating code_aster case
+        if self.ast_case_name is not None:
+            self.create_aster_case(repbase)
+
         # Creating Cathare case
         if self.cat_case_name is not None:
             self.create_cathare_case(repbase)
@@ -325,15 +347,19 @@ class study:
             self.create_python_case(repbase)
 
         # Creating coupling structures
-        if len(self.cases) + len(self.syr_case_names) > 1 \
-           or self.cat_case_name or self.py_case_name:
+        if (
+            len(self.cases) + len(self.syr_case_names) > 1
+            or self.ast_case_name
+            or self.cat_case_name
+            or self.py_case_name
+        ):
             self.create_coupling(repbase)
             create_local_launcher(self.package, repbase)
 
         if repbase != cur_dir:
             os.chdir(cur_dir)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def create_syrthes_cases(self, repbase):
         """
@@ -354,7 +380,20 @@ class study:
 
         os_environ = os_env_save
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
+
+    def create_aster_case(self, repbase):
+        """
+        Create and initialize code_aster case directories.
+        """
+
+        cs_exec_environment.source_aster_env(self.package)
+        import code_aster
+
+        os.chdir(repbase)
+        self.create_case(self.ast_case_name)
+
+    # ---------------------------------------------------------------------------
 
     def create_cathare_case(self, repbase):
         """
@@ -364,7 +403,7 @@ class study:
         os.chdir(repbase)
         self.create_case(self.cat_case_name)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def create_python_case(self, repbase):
         """
@@ -388,7 +427,7 @@ class study:
             if not os.path.isdir(d):
                 os.mkdir(d)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def create_coupling(self, repbase):
         """
@@ -427,6 +466,15 @@ class study:
             # Last entry is for additional SYRTHES options
             # (ex.: postprocessing with '-v ens' or '-v med')
 
+        if self.ast_case_name is not None:
+
+            c = os.path.normpath(self.ast_case_name)
+            base_c = os.path.basename(c)
+
+            coupled_domains.append(
+                {"solver": "code_aster", "domain": base_c, "script": "run_aster"}
+            )
+
         if self.cat_case_name is not None:
 
             c = os.path.normpath(self.cat_case_name)
@@ -436,7 +484,6 @@ class study:
                                     'domain': base_c,
                                     'cathare_case_file':' jdd_case.dat',
                                     'neptune_cfd_domain': 'NEPTUNE'})
-
 
         if self.py_case_name is not None:
 
@@ -463,7 +510,7 @@ class study:
         self.__coupled_run_cfg__(distrep = repbase,
                                  coupled_domains = coupled_domains)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def create_case(self, casename):
         """
@@ -610,7 +657,7 @@ class study:
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __coupled_run_cfg__(self,
                           distrep,
@@ -637,13 +684,12 @@ class study:
             for key in dom.keys():
                 run_conf.set(dom_name, key, dom[key])
 
-
         if domains != "":
             run_conf.set('setup', 'coupled_domains', domains)
 
         run_conf.save()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __build_run_cfg__(self,
                           distrep,
@@ -670,7 +716,7 @@ class study:
 
         run_conf.save()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def dump(self):
         """
@@ -700,9 +746,9 @@ class study:
                 print("  " + c)
         print()
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Creation of the case of study directory tree
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def main(argv, pkg):
     """
@@ -727,6 +773,6 @@ def main(argv, pkg):
 if __name__ == "__main__":
     main(sys.argv[1:], None)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -21,31 +21,28 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import configparser
-import datetime
 import fnmatch
 import os
 import os.path
 import sys
 import shutil
-import stat
 
 from code_saturne.base import cs_compile
 from code_saturne.base import cs_xml_reader
 
 from code_saturne.base.cs_exec_environment import run_command
-from code_saturne.base.cs_exec_environment import enquote_arg, separate_args
+from code_saturne.base.cs_exec_environment import enquote_arg
 from code_saturne.base.cs_exec_environment import get_ld_library_path_additions
 from code_saturne.base.cs_exec_environment import source_syrthes_env
-from code_saturne.base.cs_exec_environment import write_shell_shebang
 
 from code_saturne.base.cs_meg_to_c import meg_to_c_interpreter
 
-#===============================================================================
+# ===============================================================================
 # Utility functions
-#===============================================================================
+# ===============================================================================
 
 def any_to_str(arg):
     """Transform single values or lists to a whitespace-separated string"""
@@ -60,7 +57,7 @@ def any_to_str(arg):
     else:
         return str(arg)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def make_clean_dir(path):
     """
@@ -74,7 +71,7 @@ def make_clean_dir(path):
         for f in l:
             os.remove(os.path.join(path, f))
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class RunCaseError(Exception):
     """Base class for exception handling."""
@@ -91,16 +88,16 @@ class RunCaseError(Exception):
 #   def __repr__(self):
 #       return "%s(*%s)" % (self.__class__.__name__, repr(self.args))
 
-#===============================================================================
+# ===============================================================================
 # Classes
-#===============================================================================
+# ===============================================================================
 
 class base_domain:
     """
     Base class from which classes handling running case should inherit.
     """
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __init__(self,
                  package,                    # main package
@@ -165,7 +162,7 @@ class base_domain:
 
         self.error_long = ''
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __str__(self):
 
@@ -198,7 +195,7 @@ class base_domain:
 
         return pformat(a)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __input_path_abs_dir__(self, path):
 
@@ -233,7 +230,7 @@ class base_domain:
 
         return os.path.join(self.case_dir, path)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_case_dir(self, case_dir, staging_dir = None):
 
@@ -261,7 +258,7 @@ class base_domain:
             self.data_dir = self.case_dir
             self.src_dir = None
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_exec_dir(self, exec_dir):
 
@@ -276,7 +273,7 @@ class base_domain:
         if not os.path.isdir(self.exec_dir):
             os.makedirs(self.exec_dir)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_result_dir(self, name, given_dir = None, dest_root_dir=None):
         """
@@ -297,7 +294,7 @@ class base_domain:
         if not os.path.isdir(self.result_dir):
             os.makedirs(self.result_dir)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_data(self):
         """
@@ -306,7 +303,7 @@ class base_domain:
 
         return
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def init_staged_data(self):
         """
@@ -317,14 +314,14 @@ class base_domain:
 
         return
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def prepare_data(self):
         """
         Prepare data in the execution directory prior to run
         """
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_result(self, name, purge=False):
         """
@@ -375,7 +372,7 @@ class base_domain:
                 else:
                     shutil.rmtree(src)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def check_memory_log(self):
         """
@@ -383,7 +380,7 @@ class base_domain:
         """
         pass # Nothing to do for base method
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def purge_result(self, name):
         """
@@ -405,7 +402,7 @@ class base_domain:
         elif os.path.isdir(f):
             shutil.rmtree(f)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def get_n_procs(self):
         """
@@ -416,7 +413,7 @@ class base_domain:
 
         return [self.n_procs, self.n_procs_min, self.n_procs_max]
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_n_procs(self, n_procs):
         """
@@ -425,7 +422,7 @@ class base_domain:
 
         self.n_procs = n_procs
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def solver_command(self, need_abs_path=False):
         """
@@ -440,7 +437,7 @@ class base_domain:
 
         return enquote_arg(self.exec_dir), enquote_arg(exec_path), ''
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def solver_set_env_command(self):
         """
@@ -450,7 +447,7 @@ class base_domain:
 
         return None
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def summary_info(self, s):
         """
@@ -472,12 +469,12 @@ class base_domain:
         if exec_dir != result_dir:
             s.write('    exec. dir.   : ' + self.exec_dir + '\n')
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class domain(base_domain):
     """Handle running case."""
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __init__(self,
                  package,                     # main package
@@ -553,7 +550,7 @@ class domain(base_domain):
         # MEG expression generator
         self.mci = None
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __set_case_parameters__(self):
 
@@ -623,7 +620,7 @@ class domain(base_domain):
         if type(self.meshes) != list:
             self.meshes = [self.meshes,]
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __set_auto_restart__(self):
         """
@@ -657,7 +654,7 @@ class domain(base_domain):
 
         return
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __xml_case_initialize__(self, path, apply_filters=False):
         """
@@ -718,7 +715,7 @@ class domain(base_domain):
 
         return case
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def for_domain_str(self):
 
@@ -727,7 +724,7 @@ class domain(base_domain):
         else:
             return 'for domain ' + str(self.name)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def read_parameter_file(self, param):
         """
@@ -748,7 +745,7 @@ class domain(base_domain):
 
             self.param = param
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_data(self):
         """
@@ -825,7 +822,7 @@ class domain(base_domain):
 
         self.__set_case_parameters__()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def init_staged_data(self):
         """
@@ -859,7 +856,7 @@ class domain(base_domain):
             if os.path.exists(restart_input_mesh):
                 self.mesh_input = restart_input_mesh
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def symlink(self, target, link=None, check_type=None):
         """
@@ -905,7 +902,7 @@ class domain(base_domain):
                     shutil.rmtree(link)
                 shutil.copytree(target, link)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def needs_compile(self):
         """
@@ -942,7 +939,7 @@ class domain(base_domain):
 
         return needs_comp
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def compile_and_link(self):
         """
@@ -1013,7 +1010,7 @@ class domain(base_domain):
                     self.copy_result(f)
                 self.error = 'compile or link'
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def prepare_data(self):
         """
@@ -1189,7 +1186,7 @@ class domain(base_domain):
 
         self.data_is_staged = True
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def preprocess(self):
         """
@@ -1370,7 +1367,7 @@ class domain(base_domain):
 
         return retcode
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def solver_command(self, need_abs_path=False):
         """
@@ -1401,7 +1398,7 @@ class domain(base_domain):
 
         return wd, exec_path, args
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_results(self):
         """
@@ -1495,7 +1492,7 @@ class domain(base_domain):
         for f in dir_files:
             self.copy_result(f, purge)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def check_memory_log(self):
         """
@@ -1540,7 +1537,7 @@ class domain(base_domain):
         else:
             return 0
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def summary_info(self, s):
         """
@@ -1556,7 +1553,7 @@ class domain(base_domain):
         if self.exec_solver:
             s.write('    solver       : ' + self.solver_path + '\n')
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # SYRTHES coupling
 
@@ -1638,7 +1635,7 @@ class syrthes_domain(base_domain):
 
         self.env_sh_cmd = 'source ' + syr_profile + ' > /dev/null 2>&1\n'
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __paths_save__(self):
 
@@ -1649,7 +1646,7 @@ class syrthes_domain(base_domain):
 
         return path_save
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __paths_restore__(self, path_save):
 
@@ -1657,7 +1654,7 @@ class syrthes_domain(base_domain):
             if path_save[p]:
                 os.environ[p] = path_save[p]
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_case_dir(self, case_dir, staging_dir = None):
 
@@ -1668,7 +1665,7 @@ class syrthes_domain(base_domain):
         self.data_dir = self.case_dir
         self.src_dir = self.case_dir
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_exec_dir(self, exec_dir):
 
@@ -1682,7 +1679,7 @@ class syrthes_domain(base_domain):
         if not os.path.isdir(self.exec_dir):
             os.mkdir(self.exec_dir)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def solver_command(self, need_abs_path=False):
         """
@@ -1712,7 +1709,7 @@ class syrthes_domain(base_domain):
 
         return wd, exec_path, args
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def solver_set_env_command(self):
         """
@@ -1722,7 +1719,7 @@ class syrthes_domain(base_domain):
 
         return self.env_sh_cmd
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __init_syrthes_case__(self):
         """
@@ -1755,15 +1752,15 @@ class syrthes_domain(base_domain):
                         self.logfile = logfile
                 i = l.find('NBPROC_COND=')
                 if i > -1:
-                     try:
+                    try:
                         self.n_procs_ref = int(l[i + 12:].strip())
-                     except Exception:
+                    except Exception:
                         pass
                 i = l.find('NBPROC_RAD=')
                 if i > -1:
-                     try:
+                    try:
                         self.n_procs_radiation_ref = int(l[i + 11:].strip())
-                     except Exception:
+                    except Exception:
                         pass
 
         # Build command-line arguments
@@ -1812,7 +1809,7 @@ class syrthes_domain(base_domain):
 
         self.__paths_restore__(paths_top)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def prepare_data(self):
         """
@@ -1868,7 +1865,7 @@ class syrthes_domain(base_domain):
 
         sys.stdout.write('\n')
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def preprocess(self):
         """
@@ -1897,7 +1894,7 @@ class syrthes_domain(base_domain):
             err_str = '\n  Error during the SYRTHES preprocessing step\n'
             raise RunCaseError(err_str)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_results(self):
         """
@@ -1937,7 +1934,7 @@ class syrthes_domain(base_domain):
             err_str = '\n   Error saving SYRTHES results\n'
             raise RunCaseError(err_str)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def summary_info(self, s):
         """
@@ -1948,7 +1945,7 @@ class syrthes_domain(base_domain):
 
         s.write('    SYRTHES      : ' + self.solver_path + '\n')
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # Cathare coupling
 
@@ -1957,7 +1954,7 @@ class cathare_domain(domain):
     Class specific to coupling with CATHARE.
     """
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __init__(self,
                  package,                     # main package
@@ -1992,7 +1989,7 @@ class cathare_domain(domain):
         self.cathare_case_file = cathare_case_file
         self.neptune_cfd_dom   = neptune_cfd_dom
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def read_parameter_file(self, param):
 
@@ -2039,7 +2036,7 @@ class cathare_domain(domain):
             solver_name = "nc_solver" + self.package_compute.config.exeext
             self.solver_path = os.path.join(solver_dir, solver_name)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def compile_cathare2_lib(self):
         """
@@ -2114,7 +2111,7 @@ class cathare_domain(domain):
 
         os.chdir(orig)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def compile_and_link(self):
         """
@@ -2127,7 +2124,7 @@ class cathare_domain(domain):
         # Then compile NCFD source files if needed
         super(cathare_domain, self).compile_and_link()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def solver_command(self, need_abs_path=False):
         """
@@ -2140,37 +2137,41 @@ class cathare_domain(domain):
 
         return wd, exec_path, args
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # Coupling with a general Python-based code
 
 class python_domain(base_domain):
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
-    def __init__(self,
-                 package,
-                 cmd_line = None,
-                 name = None,
-                 script_name = 'partner_script.py',
-                 log_file = None,
-                 n_procs_weight = None,
-                 n_procs_min = 1,
-                 n_procs_max = None,
-                 n_threads = 1):
+    def __init__(
+        self,
+        package,
+        cmd_line=None,
+        name=None,
+        script_name="partner_script.py",
+        log_file=None,
+        n_procs_weight=None,
+        n_procs_min=1,
+        n_procs_max=None,
+        n_threads=1,
+    ):
 
-        base_domain.__init__(self,
-                             package,
-                             'Python script',
-                             name,
-                             n_procs_weight,
-                             n_procs_min,
-                             n_procs_max)
+        base_domain.__init__(
+            self,
+            package,
+            "Python script",
+            name,
+            n_procs_weight,
+            n_procs_min,
+            n_procs_max,
+        )
 
         self.cmd_line = cmd_line
-        self.logfile  = log_file
+        self.logfile = log_file
         if self.logfile is None:
-            self.logfile = 'python.log'
+            self.logfile = "python.log"
 
         self.data_file = None
 
@@ -2180,24 +2181,24 @@ class python_domain(base_domain):
 
         self.script_name = script_name
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
-    def set_case_dir(self, case_dir, staging_dir = None):
+    def set_case_dir(self, case_dir, staging_dir=None):
 
         base_domain.set_case_dir(self, case_dir, staging_dir)
 
         self.data_dir = os.path.join(self.case_dir, "DATA")
-        self.src_dir  = None
+        self.src_dir = None
         self.result_dir = os.path.join(self.case_dir, "RESU")
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_exec_dir(self, exec_dir):
 
         if os.path.isabs(exec_dir):
             self.exec_dir = exec_dir
         else:
-            self.exec_dir = os.path.join(self.case_dir, 'RESU', exec_dir)
+            self.exec_dir = os.path.join(self.case_dir, "RESU", exec_dir)
 
         self.exec_dir = os.path.join(self.exec_dir, self.name)
 
@@ -2253,33 +2254,155 @@ class python_domain(base_domain):
         executable path, and associated command-line arguments.
         """
 
-        wd = enquote_arg(self.exec_dir)              # Working directory
+        wd = enquote_arg(self.exec_dir)  # Working directory
 
         # Executable
 
         script_name = self.script_name
         if need_abs_path and not os.path.isabs(script_name):
-            script_name = os.path.join(self.exec_dir,
-                                       os.path.basename(script_name))
+            script_name = os.path.join(self.exec_dir, os.path.basename(script_name))
 
-        exec_path = enquote_arg(self.solver_path) + ' ' + enquote_arg(script_name)
+        exec_path = enquote_arg(self.solver_path) + " " + enquote_arg(script_name)
 
         # Build kernel command-line arguments
 
-        args = ''
+        args = ""
 
         if self.data_file:
-            args += ' -d ' + enquote_arg(self.data_file)
+            args += " -d " + enquote_arg(self.data_file)
 
-        args += ' -n ' + str(self.n_procs)
+        args += " -n " + str(self.n_procs)
 
-        args += ' --name ' + enquote_arg(self.name)
+        args += " --name " + enquote_arg(self.name)
 
         # Output to a logfile
-        args += ' --log ' + enquote_arg(self.logfile)
+        args += " --log " + enquote_arg(self.logfile)
 
         return wd, exec_path, args
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
+
+# Coupling with code_aster
+
+
+class aster_domain(base_domain):
+
+    # ---------------------------------------------------------------------------
+
+    def __init__(
+        self,
+        package,
+        cmd_line=None,
+        name=None,
+        solver_path="run_aster",
+        script_name=None,
+        log_file="code_aster.log",
+        n_procs_weight=None,
+        n_procs_min=1,
+        n_procs_max=None,
+    ):
+
+        base_domain.__init__(
+            self,
+            package,
+            "code_aster",
+            name,
+            n_procs_weight,
+            n_procs_min,
+            n_procs_max,
+        )
+
+        self.cmd_line = cmd_line
+        self.logfile = log_file
+
+        self.data_file = None
+
+        self.solver_path = solver_path
+        self.exec_solver = True
+        self.script_name = script_name
+
+        if script_name is None:
+            raise RunCaseError("Script name is empty.")
+
+    # ---------------------------------------------------------------------------
+
+    def set_case_dir(self, case_dir, staging_dir=None):
+
+        base_domain.set_case_dir(self, case_dir, staging_dir)
+
+        self.data_dir = os.path.join(self.case_dir, "DATA")
+        self.src_dir = None
+        self.result_dir = os.path.join(self.case_dir, "RESU")
+
+    # ---------------------------------------------------------------------------
+
+    def copy_data(self):
+        """
+        Copy data to run directory
+        """
+
+        dir_files = os.listdir(self.data_dir)
+
+        for f in dir_files:
+            src = os.path.join(self.data_dir, f)
+            if os.path.isfile(src):
+                shutil.copy2(src, os.path.join(self.exec_dir, f))
+
+    # ---------------------------------------------------------------------------
+
+    def preprocess(self):
+        """
+        Preprocess dummy function: Does nothing for a standard python script
+        """
+
+        # Nothing to do
+
+    # ---------------------------------------------------------------------------
+
+    def copy_results(self):
+        """
+        Copy results dummy function: Does nothing for a standard python script
+        """
+        # Nothing to do
+        return
+
+    # ---------------------------------------------------------------------------
+
+    def summary_info(self, s):
+        """
+        output summary data into file s
+        """
+
+        base_domain.summary_info(self, s)
+
+    # ---------------------------------------------------------------------------
+
+    def solver_command(self, need_abs_path=False):
+        """
+        Returns a tuple indicating the script's working directory,
+        executable path, and associated command-line arguments.
+        """
+
+        # Working directory
+
+        wd = enquote_arg(self.exec_dir)
+
+        # Executable
+
+        exec_path = enquote_arg(self.solver_path)
+
+        # Build kernel command-line arguments
+
+        args = " "
+        args += enquote_arg(self.script_name)
+        if self.logfile:
+            logpath = self.exec_dir + "/" + self.logfile
+            args += " > " + enquote_arg(logpath)
+
+        return wd, exec_path, args
+
+
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

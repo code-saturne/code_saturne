@@ -79,7 +79,7 @@ Below are typical contents of a case directory *Case1* in a study *Study*:
 
 ### Coupled computation hierarchy {#case_structure_coupled_hierarchy}
 
-For coupled calculations, whether with code_saturne itself or Syrthes, each coupled
+For coupled calculations, whether with code_saturne itself or Syrthes or code_aster, each coupled
 calculation domain is defined by its own directory (bearing the same name as the
 domain), but results are placed in a `RESU COUPLING` directory, with a sub-directory
 for each run, itself containing one sub-directory per coupled domain.
@@ -652,7 +652,7 @@ specifications) even if the domain name is not.
 * `solver`
 
   Defines the solver type; currently allowed names (case-independent) are:
-  `code_saturne`, `neptune_cfd`, `SYRTHES`, `CATHARE`, `python_code`.
+  `code_saturne`, `neptune_cfd`, `SYRTHES`, `CATHARE`, `code_aster`, `python_code`.
   Additional allowed or required keywords may depend on the solver
   type.
 
