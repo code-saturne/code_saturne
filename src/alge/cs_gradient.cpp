@@ -4551,14 +4551,13 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   cs_real_t *v_var;
   CS_MALLOC(v_var, m->n_vertices, cs_real_t);
 
-  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
-                    0, /* verbosity */
-                    1, /* var_dim */
-                    0, /* tr_dim */
-                    c_weight,
-                    c_var,
-                    b_f_var,
-                    v_var);
+  cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
+                       0, /* verbosity */
+                       0, /* tr_dim */
+                       c_weight,
+                       c_var,
+                       b_f_var,
+                       v_var);
 
   /* Interpolate to face-based values
      -------------------------------- */
@@ -6711,14 +6710,13 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
   var_t *v_var;
   CS_MALLOC(v_var, m->n_vertices, var_t);
 
-  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
-                    0, /* verbosity */
-                    stride, /* var_dim */
-                    0,
-                    c_weight,
-                    (const cs_real_t *)c_var,
-                    (const cs_real_t *)val_f,
-                    (cs_real_t *)v_var);
+  cs_cell_to_vertex<stride>(CS_CELL_TO_VERTEX_LR,
+                            0, /* verbosity */
+                            0,
+                            c_weight,
+                            (const cs_real_t *)c_var,
+                            (const cs_real_t *)val_f,
+                            (cs_real_t *)v_var);
 
   /* Interpolate to face-based values
      -------------------------------- */

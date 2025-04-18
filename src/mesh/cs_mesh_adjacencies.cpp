@@ -528,7 +528,7 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
 
   if (c2v->n_elts != m->n_cells)
     CS_REALLOC_HD(c2v->idx, m->n_cells+1, cs_lnum_t, cs_alloc_mode);
-  CS_FREE_HD(c2v->ids);
+  CS_FREE(c2v->ids);
 
   const cs_lnum_t n_cells = m->n_cells;
 
@@ -940,7 +940,7 @@ cs_adjacency_create(cs_flag_t    flag,
 
   cs_adjacency_t  *adj = nullptr;
 
-  CS_MALLOC(adj, 1, cs_adjacency_t);
+  CS_MALLOC_HD(adj, 1, cs_adjacency_t, cs_alloc_mode);
 
   adj->n_elts = n_elts;
   adj->flag = flag;

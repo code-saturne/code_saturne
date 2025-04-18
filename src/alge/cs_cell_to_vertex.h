@@ -35,11 +35,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Type definition
@@ -82,6 +82,8 @@ extern const char *cs_cell_to_vertex_type_name[];
 void
 cs_cell_to_vertex_free(void);
 
+END_C_DECLS
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Interpolate cell values to vertex values.
@@ -97,10 +99,10 @@ cs_cell_to_vertex_free(void);
  */
 /*----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 void
 cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
                   int                        verbosity,
-                  cs_lnum_t                  var_dim,
                   bool                       ignore_rot_perio,
                   const cs_real_t            c_weight[],
                   const cs_real_t            c_var[],
@@ -108,7 +110,5 @@ cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
                   cs_real_t                  v_var[]);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CELL_TO_VERTEX__ */

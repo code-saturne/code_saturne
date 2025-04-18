@@ -4054,8 +4054,8 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
         c_poro[c_id] = 0.5*(poro_val_pre[c_id] + poro_val[c_id]);
 
-      cs_cell_to_vertex(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, false, nullptr,
-                        c_poro, nullptr, v_poro);
+      cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_SHEPARD, 0, false, nullptr,
+                           c_poro, nullptr, v_poro);
 
       CS_FREE(c_poro);
 

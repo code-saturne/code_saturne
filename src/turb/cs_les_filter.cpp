@@ -316,23 +316,21 @@ cs_les_filter_scalar(const cs_real_t  val[],
 
   /* Define filtered variable array */
 
-  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
-                    0,
-                    1,    /* v_val dimension */
-                    true, /* ignore periodicity of rotation */
-                    cell_vol,
-                    val,
-                    nullptr,
-                    v_val);
+  cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
+                       0,
+                       true, /* ignore periodicity of rotation */
+                       cell_vol,
+                       val,
+                       nullptr,
+                       v_val);
 
-  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
-                    0,
-                    1,
-                    true, /* ignore periodicity of rotation */
-                    nullptr,
-                    cell_vol,
-                    nullptr,
-                    v_weight);
+  cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
+                       0,
+                       true, /* ignore periodicity of rotation */
+                       nullptr,
+                       cell_vol,
+                       nullptr,
+                       v_weight);
 
   /* Build cell average */
 
@@ -414,23 +412,21 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
 
   /* Define filtered variable array */
 
-  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
-                    0,
-                    stride,
-                    true, /* ignore periodicity of rotation */
-                    cell_vol,
-                    reinterpret_cast<const cs_real_t *>(val),
-                    nullptr,
-                    reinterpret_cast<cs_real_t *>(v_val));
+  cs_cell_to_vertex<stride>(CS_CELL_TO_VERTEX_LR,
+                            0,
+                            true, /* ignore periodicity of rotation */
+                            cell_vol,
+                            reinterpret_cast<const cs_real_t *>(val),
+                            nullptr,
+                            reinterpret_cast<cs_real_t *>(v_val));
 
-  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
-                    0,
-                    1,
-                    true, /* ignore periodicity of rotation */
-                    nullptr,
-                    cell_vol,
-                    nullptr,
-                    v_weight);
+  cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
+                       0,
+                       true, /* ignore periodicity of rotation */
+                       nullptr,
+                       cell_vol,
+                       nullptr,
+                       v_weight);
 
   /* Build cell average */
 
