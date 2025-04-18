@@ -2754,10 +2754,6 @@ cs_array_reduce_simple_stats_l(cs_dispatch_context  ctx,
 }
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute weighted sums of an n-dimensional cs_real_t array's
  * components.
@@ -3247,4 +3243,3 @@ cs_array_scatter_reduce_norms_l(cs_lnum_t          n_src_elts,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS

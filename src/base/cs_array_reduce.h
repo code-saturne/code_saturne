@@ -1,5 +1,5 @@
-#ifndef __CS_ARRAY_REDUCE_H__
-#define __CS_ARRAY_REDUCE_H__
+#ifndef CS_ARRAY_REDUCE_H
+#define CS_ARRAY_REDUCE_H
 
 /*============================================================================
  * Common array reduction operations.
@@ -156,12 +156,6 @@ cs_array_reduce_simple_stats_l(cs_dispatch_context  ctx,
                                double               vmin[],
                                double               vmax[],
                                double               vsum[]);
-
-/*----------------------------------------------------------------------------*/
-
-#endif // __cplusplus
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -419,6 +413,6 @@ cs_array_scatter_reduce_norms_l(cs_lnum_t          n_src_elts,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+#endif // __cplusplus
 
-#endif /* __CS_ARRAY_REDUCE_H__ */
+#endif /*CS_ARRAY_REDUCE_H */
