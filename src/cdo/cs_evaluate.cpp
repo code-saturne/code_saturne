@@ -1409,8 +1409,6 @@ cs_evaluate_array_reduction(int                     dim,
   if (array == nullptr)
     return;
 
-  assert(cs_cdo_quant != nullptr && cs_cdo_connect != nullptr);
-
   /* Get reduced quantities for this array and for this MPI rank */
 
   cs_real_t  dummy[8] = {0, 0, 0, 0, 0, 0, 0, 0};
