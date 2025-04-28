@@ -1824,7 +1824,7 @@ cs_log_equation_convergence_info_write(void)
       const cs_real_t *val = f->val, *val_pre = f->val_pre;
 
       struct cs_double_n<2> rd;
-      struct cs_reduce_sum_n<2> reducer;
+      struct cs_reduce_sum_nr<2> reducer;
       ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
                               (cs_lnum_t c_id, cs_double_n<2> &sum) {
         cs_real_t d_c = 0;
@@ -1847,7 +1847,7 @@ cs_log_equation_convergence_info_write(void)
     /* L2 time normalized residual */
 
     struct cs_double_n<3> rd;
-    struct cs_reduce_sum_n<3> reducer;
+    struct cs_reduce_sum_nr<3> reducer;
     const cs_real_t *val = f->val, *val_pre = f->val_pre;
 
     ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE

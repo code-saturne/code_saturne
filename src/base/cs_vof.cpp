@@ -2074,12 +2074,12 @@ cs_vof_solve_void_fraction(int  iterns)
       || i_vof_mass_transfer == 0) {
 
     /* Compute min and max */
-    struct cs_data_2r rd;
-    struct cs_reduce_min1r_max1r reducer;
+    struct cs_double_n<2> rd;
+    struct cs_reduce_min_max_nr<1> reducer;
 
     ctx.parallel_for_reduce
       (n_cells, rd, reducer,
-       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_2r &res) {
+       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<2> &res) {
       res.r[0] = cvar_voidf[c_id];
       res.r[1] = cvar_voidf[c_id];
     });
@@ -2105,16 +2105,16 @@ cs_vof_solve_void_fraction(int  iterns)
       ctx.wait();
     }
 
-    struct cs_data_2i rd_sum;
+    struct cs_int_n<2> rd_sum;
     rd_sum.i[0] = 0;
     rd_sum.i[1] = 0;
-    struct cs_reduce_sum2i reducer_sum;
+    struct cs_reduce_sum_ni<2> reducer_sum;
 
     if (scmaxp > scminp) {
 
       ctx.parallel_for_reduce
         (n_cells, rd_sum, reducer_sum,
-         [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_2i &res) {
+         [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_int_n<2> &res) {
 
         res.i[0] = 0, res.i[1] = 0;
 

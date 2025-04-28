@@ -2220,11 +2220,11 @@ _pressure_correction_fv(int                   iterns,
                                            weighf, weighb,
                                            adxk);
 
-      struct cs_data_2r rd;
-      struct cs_reduce_sum2r reducer;
+      struct cs_double_n<2> rd;
+      struct cs_reduce_sum_nr<2> reducer;
 
       ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
-                              (cs_lnum_t c_id, cs_data_2r &sum) {
+                              (cs_lnum_t c_id, cs_double_n<2> &sum) {
         adxk[c_id] = - adxk[c_id];
 
         sum.r[0] = adxk[c_id] * adxk[c_id];
@@ -2252,7 +2252,7 @@ _pressure_correction_fv(int                   iterns,
       if (eqp_p->iswdyn >= 2) {
 
         ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
-                                (cs_lnum_t c_id, cs_data_2r &sum) {
+                                (cs_lnum_t c_id, cs_double_n<2> &sum) {
           sum.r[0] = rhs[c_id] * adxkm1[c_id];
           sum.r[1] = adxk[c_id] * adxkm1[c_id];
         });

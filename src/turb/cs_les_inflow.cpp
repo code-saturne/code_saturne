@@ -396,12 +396,12 @@ _rescale_flowrate(cs_lnum_t         n_points,
   const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
   const cs_real_t *b_face_surf = mq->b_face_surf;
 
-  struct cs_data_2d rd_sum_2d;
-  struct cs_reduce_sum2d reducer_sum_2d;
+  struct cs_double_n<2> rd_sum_2d;
+  struct cs_reduce_sum_nr<2> reducer_sum_2d;
 
   ctx.parallel_for_reduce
     (n_points, rd_sum_2d, reducer_sum_2d,
-     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_2d &res) {
+     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_double_n<2> &res) {
 
     cs_lnum_t face_id = face_ids[point_id];
     cs_lnum_t cell_id = b_face_cells[face_id];
@@ -412,16 +412,16 @@ _rescale_flowrate(cs_lnum_t         n_points,
     cs_real_t dot_product
       = b_face_surf[face_id] * cs_math_3_dot_product(fluct, normal);
 
-    res.d[0] = density[cell_id]*dot_product;
-    res.d[1] = b_face_surf[face_id];
+    res.r[0] = density[cell_id]*dot_product;
+    res.r[1] = b_face_surf[face_id];
   });
 
   ctx.wait();
 
-  cs_parall_sum(2, CS_DOUBLE, rd_sum_2d.d);
+  cs_parall_sum(2, CS_DOUBLE, rd_sum_2d.r);
 
-  double mass_flow_rate = rd_sum_2d.d[0];
-  double area = rd_sum_2d.d[1];
+  double mass_flow_rate = rd_sum_2d.r[0];
+  double area = rd_sum_2d.r[1];
 
   ctx.parallel_for(n_points, [=] CS_F_HOST_DEVICE (cs_lnum_t point_id) {
 
@@ -1645,6 +1645,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   const cs_lnum_t *b_face_vtx_lst = mesh->b_face_vtx_lst;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_t *cell_vol = mq->cell_vol;
 
   cs_dispatch_context ctx;
 
@@ -1654,22 +1655,22 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   cs_real_3_t *length_scale;
   CS_MALLOC_HD(length_scale, n_points, cs_real_3_t, cs_alloc_mode);
 
-  struct cs_data_3g rd_sum_3g;
-  struct cs_reduce_sum3g reducer_sum_3g;
+  struct cs_int_n<3> rd_sum_3i;
+  struct cs_reduce_sum_ni<3> reducer_sum_3i;
 
   if (inflow->volume_mode == 1) { //Generate turbulence over the whole domain
 
     ctx.parallel_for_reduce
-      (n_points, rd_sum_3g, reducer_sum_3g,
-       [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_3g &res) {
+      (n_points, rd_sum_3i, reducer_sum_3i,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_int_n<3> &res) {
 
-      res.g[0] = 0, res.g[1] = 0, res.g[2] = 0;
+      res.i[0] = 0, res.i[1] = 0, res.i[2] = 0;
 
       // TODO: add a mesh algorithm to compute better estimation of longest
       // and shortest cell lengths (would also be useful for HTLES and
       // possibly other models.
 
-      cs_real_t length_scale_min = 2.*cbrt(mq->cell_vol[point_id]);
+      cs_real_t length_scale_min = 2.*cbrt(cell_vol[point_id]);
 
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
@@ -1685,17 +1686,17 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
         if (cs::abs(length_scale[point_id][coo_id]-length_scale_min)
             < cs_math_epzero) {
-          res.g[coo_id] = 1;
+          res.i[coo_id] = 1;
         }
       }
     });
   }
   else {
     ctx.parallel_for_reduce
-      (n_points, rd_sum_3g, reducer_sum_3g,
-       [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_3g &res) {
+      (n_points, rd_sum_3i, reducer_sum_3i,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_int_n<3> &res) {
 
-      res.g[0] = 0, res.g[1] = 0, res.g[2] = 0;
+      res.i[0] = 0, res.i[1] = 0, res.i[2] = 0;
 
       cs_lnum_t face_id = elt_ids[point_id];
       cs_lnum_t cell_id = b_face_cells[face_id];
@@ -1725,7 +1726,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
         if (cs::abs(length_scale[point_id][coo_id] - length_scale_min)
             < cs_math_epzero)
-          res.g[coo_id] = 1;
+          res.i[coo_id] = 1;
 
       }
     });
@@ -1738,12 +1739,12 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
-      struct cs_data_4r rd_4r;
-      cs_reduce_max1r_bcast3r reducer_max1r_bcast3r;
+      struct cs_float_n<4> rd_4r;
+      cs_reduce_max1float_bcast3float reducer_max1r_bcast3r;
 
       ctx.parallel_for_reduce
         (n_points, rd_4r, reducer_max1r_bcast3r,
-         [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_4r &res) {
+         [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_float_n<4> &res) {
 
         res.r[3] = length_scale[point_id][coo_id];
 
@@ -1756,8 +1757,8 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
       ctx.wait();
 
       cs_real_t xyzmax[3] = {rd_4r.r[0], rd_4r.r[1], rd_4r.r[2]};
-
-      cs_parall_max_loc_vals(3, &rd_4r.r[3], xyzmax);
+      cs_real_t max = rd_4r.r[3];
+      cs_parall_max_loc_vals(3, &max, xyzmax);
 
       cs_real_t ls_max = rd_4r.r[3];
 
@@ -1770,11 +1771,15 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
     bft_printf(_("Number of min. clippings (eddy size equals grid size):\n"));
 
-    cs_parall_counter(rd_sum_3g.g, 3);
+    cs_gnum_t count[3] = {static_cast<unsigned long>(rd_sum_3i.i[0]),
+                          static_cast<unsigned long>(rd_sum_3i.i[1]),
+                          static_cast<unsigned long>(rd_sum_3i.i[2])};
+
+    cs_parall_counter(count, 3);
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
       bft_printf(_("   sigma_%c clipped %ld times\n"),
-                 direction[coo_id], (long)rd_sum_3g.g[coo_id]);
+                 direction[coo_id], (long)count[coo_id]);
 
     bft_printf(_("\n"));
   }
@@ -1782,12 +1787,12 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   /* Definition of the box on which eddies are generated */
   /*-----------------------------------------------------*/
 
-  struct cs_data_3r_3r rd_3r_3r;
-  struct cs_reduce_min3r_max3r reducer_3r_3r;
+  struct cs_data_3float_3float rd_3r_3r;
+  struct cs_reduce_min3float_max3float reducer_3r_3r;
 
   ctx.parallel_for_reduce
     (n_points, rd_3r_3r, reducer_3r_3r,
-     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_3r_3r &res) {
+     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_3float_3float &res) {
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
       res.r1[coo_id] =  point_coordinates[point_id][coo_id]
@@ -1800,8 +1805,8 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
   ctx.wait();
 
-  cs_parall_min(3, CS_REAL_TYPE, rd_3r_3r.r1);
-  cs_parall_max(3, CS_REAL_TYPE, rd_3r_3r.r2);
+  cs_parall_min(3, CS_FLOAT, rd_3r_3r.r1);
+  cs_parall_max(3, CS_FLOAT, rd_3r_3r.r2);
 
   cs_real_t box_min_coord[3] = {rd_3r_3r.r1[0], rd_3r_3r.r1[1], rd_3r_3r.r1[2]};
   cs_real_t box_max_coord[3] = {rd_3r_3r.r2[0], rd_3r_3r.r2[1], rd_3r_3r.r2[2]};
@@ -1893,27 +1898,27 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
   ctx.wait();
 
-  struct cs_data_4d rd_sum_4d;
-  struct cs_reduce_sum4d reducer_sum_4d;
+  struct cs_double_n<4> rd_sum_4d;
+  struct cs_reduce_sum_nr<4> reducer_sum_4d;
 
   ctx.parallel_for_reduce
     (n_points, rd_sum_4d, reducer_sum_4d,
-     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_data_4d &res) {
+     [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_double_n<4> &res) {
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-      res.d[coo_id] = vel_m_l[point_id][coo_id]*weight[point_id];
+      res.r[coo_id] = vel_m_l[point_id][coo_id]*weight[point_id];
 
-    res.d[3] = weight[point_id];
+    res.r[3] = weight[point_id];
   });
 
   ctx.wait();
 
   CS_FREE(weight);
 
-  cs_parall_sum(4, CS_DOUBLE, rd_sum_4d.d);
+  cs_parall_sum(4, CS_DOUBLE, rd_sum_4d.r);
 
-  cs_real_t weight_tot = rd_sum_4d.d[3];
-  cs_real_t vel_m[3] = {rd_sum_4d.d[0], rd_sum_4d.d[1], rd_sum_4d.d[2]};
+  cs_real_t weight_tot = rd_sum_4d.r[3];
+  cs_real_t vel_m[3] = {rd_sum_4d.r[0], rd_sum_4d.r[1], rd_sum_4d.r[2]};
 
   for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
     vel_m[coo_id] /= weight_tot;

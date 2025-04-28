@@ -2222,15 +2222,15 @@ cs_turbulence_ke_clip(int        phase_id,
   /* Save min and max for log
    * ======================== */
 
-  struct cs_data_4r rd;
-  struct cs_reduce_min2r_max2r reducer;
+  struct cs_double_n<4> rd;
+  struct cs_reduce_min_max_nr<2> reducer;
 
   ctx.parallel_for_reduce
     (n_cells, rd, reducer,
-     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_4r &res) {
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<4> &res) {
     res.r[0] = cvar_k[c_id];
-    res.r[1] = cvar_k[c_id];
-    res.r[2] = cvar_ep[c_id];
+    res.r[1] = cvar_ep[c_id];
+    res.r[2] = cvar_k[c_id];
     res.r[3] = cvar_ep[c_id];
   });
 
@@ -2333,16 +2333,16 @@ cs_turbulence_ke_clip(int        phase_id,
   /* "standard" clipping ICLKEP = 0
    * ============================== */
 
-  struct cs_data_2i rd_sum;
+  struct cs_int_n<2> rd_sum;
   rd_sum.i[0] = 0;
   rd_sum.i[1] = 0;
-  struct cs_reduce_sum2i reducer_sum;
+  struct cs_reduce_sum_ni<2> reducer_sum;
 
   if (cs_glob_turb_rans_model->iclkep == 0) {
 
     ctx.parallel_for_reduce
       (n_cells, rd_sum, reducer_sum, [=] CS_F_HOST_DEVICE
-       (cs_lnum_t c_id, cs_data_2i &res) {
+       (cs_lnum_t c_id, cs_int_n<2> &res) {
 
       res.i[0] = 0, res.i[1] = 0;
 
@@ -2379,22 +2379,25 @@ cs_turbulence_ke_clip(int        phase_id,
   }
 
   cs_lnum_t iclpmx[1] = {0};
-  int id;
 
-  for (int ii = 0; ii < 2; ii++ ) {
-    if (ii == 0)
-      id = f_k->id;
-    else if (ii == 1)
-      id = f_eps->id;
+  /* log for k */
+  cs_log_iteration_clipping_field(f_k->id,
+                                  rd_sum.i[0],
+                                  0,
+                                  &rd.r[0],
+                                  &rd.r[2],
+                                  &rd_sum.i[0],
+                                  iclpmx);
 
-    cs_log_iteration_clipping_field(id,
-                                    rd_sum.i[ii],
-                                    0,
-                                    rd.r + 2*ii,
-                                    rd.r + 2*ii + 1,
-                                    rd_sum.i + ii,
-                                    iclpmx);
-  }
+  /* log for eps */
+  cs_log_iteration_clipping_field(f_eps->id,
+                                  rd_sum.i[1],
+                                  0,
+                                  &rd.r[1],
+                                  &rd.r[3],
+                                  &rd_sum.i[1],
+                                  iclpmx);
+
 }
 
 /*----------------------------------------------------------------------------*/

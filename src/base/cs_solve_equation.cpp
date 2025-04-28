@@ -1938,7 +1938,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Log in case of velocity/pressure inner iterations */
   if ((iterns > 0) && (eqp->verbosity > 1)) {
     struct cs_double_n<3> rd;
-    struct cs_reduce_sum_n<3> reducer;
+    struct cs_reduce_sum_nr<3> reducer;
 
     ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
                             (cs_lnum_t c_id, cs_double_n<3> &sum) {

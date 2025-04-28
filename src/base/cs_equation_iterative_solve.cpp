@@ -729,7 +729,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   /* Compute the L2 norm of the variable */
 
   struct cs_double_n<stride> rd;
-  struct cs_reduce_sum_n<stride> reducer;
+  struct cs_reduce_sum_nr<stride> reducer;
 
   ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
                           (cs_lnum_t c_id, cs_double_n<stride> &res) {
@@ -761,11 +761,11 @@ _equation_iterative_solve_strided(int                   idtvar,
   // ctx.wait(); // matrix vector multiply uses the same stream as the ctx
 
   if (iwarnp >= 2) {
-    struct cs_data_2r rd2;
-    struct cs_reduce_sum2r reducer2;
+    struct cs_double_n<2> rd2;
+    struct cs_reduce_sum_nr<2> reducer2;
 
     ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
-                            (cs_lnum_t c_id, cs_data_2r &sum) {
+                            (cs_lnum_t c_id, cs_double_n<2> &sum) {
       sum.r[0] = 0.;
       sum.r[1] = 0.;
       for (cs_lnum_t i = 0; i < stride; i++) {
@@ -939,11 +939,11 @@ _equation_iterative_solve_strided(int                   idtvar,
       /* ||E.dx^(k-1)-E.0||^2 */
       cs_real_t nadxkm1 = nadxk;
 
-      struct cs_data_2r rd2;
-      struct cs_reduce_sum2r reducer2;
+      struct cs_double_n<2> rd2;
+      struct cs_reduce_sum_nr<2> reducer2;
 
       ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
-                              (cs_lnum_t c_id, cs_data_2r &sum) {
+                              (cs_lnum_t c_id, cs_double_n<2> &sum) {
         sum.r[0] = 0.;
         sum.r[1] = 0.;
         for (cs_lnum_t i = 0; i < stride; i++) {
@@ -962,7 +962,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       if (iswdyp >= 2) {
 
         ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
-                                (cs_lnum_t c_id, cs_data_2r &sum) {
+                                (cs_lnum_t c_id, cs_double_n<2> &sum) {
           sum.r[0] = 0.;
           sum.r[1] = 0.;
           for (cs_lnum_t i = 0; i < stride; i++) {
@@ -1814,15 +1814,17 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     CS_FREE_HD(w2);
 
     if (iwarnp >= 2) {
-      struct cs_data_2r rd2;
-      struct cs_reduce_sum2r reducer2;
+      struct cs_double_n<2> rd2;
+      struct cs_reduce_sum_nr<2> reducer2;
+
       ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
-                              (cs_lnum_t c_id, cs_data_2r &sum) {
+                              (cs_lnum_t c_id, cs_double_n<2> &sum) {
         sum.r[0] = cs_math_pow2(w1[c_id]);
         sum.r[1] = cs_math_pow2(smbrp[c_id]);
       });
       ctx.wait();
       cs_parall_sum(2, CS_DOUBLE, rd2.r);
+
       bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(rd2.r[0]));
       bft_printf("L2 norm ||B^n|| = %f\n",  sqrt(rd2.r[1]));
     }
@@ -1950,10 +1952,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       /* ||E.dx^(k-1)-E.0||^2 */
       nadxkm1 = nadxk;
 
-      struct cs_data_2r rd2;
-      struct cs_reduce_sum2r reducer2;
+      struct cs_double_n<2> rd2;
+      struct cs_reduce_sum_nr<2> reducer2;
       ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
-                              (cs_lnum_t c_id, cs_data_2r &sum) {
+                              (cs_lnum_t c_id, cs_double_n<2> &sum) {
         sum.r[0] = adxk[c_id] * adxk[c_id];
         sum.r[1] = smbrp[c_id] * adxk[c_id];
       });
@@ -1967,7 +1969,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       if (iswdyp >= 2) {
 
         ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
-                                (cs_lnum_t c_id, cs_data_2r &sum) {
+                                (cs_lnum_t c_id, cs_double_n<2> &sum) {
           sum.r[0] = smbrp[c_id] * adxkm1[c_id];
           sum.r[1] = adxk[c_id] * adxkm1[c_id];
         });

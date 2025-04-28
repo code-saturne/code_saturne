@@ -487,12 +487,12 @@ cs_les_mu_t_smago_dyn(void)
 
   if (eqp->verbosity >= 1) {
 
-    struct cs_data_1d2r rd;
-    struct cs_reduce_sum1d_min1r_max1r reducer;
+    struct cs_data_1double_2float rd;
+    struct cs_reduce_sum1double_min1float_max1float reducer;
 
     ctx.parallel_for_reduce
       (n_cells, rd, reducer,
-       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_1d2r &res) {
+       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_1double_2float &res) {
 
       res.d[0] = cpro_smago[c_id]*cell_vol[c_id];
       res.r[0] = cpro_smago[c_id];
@@ -501,8 +501,8 @@ cs_les_mu_t_smago_dyn(void)
 
     ctx.wait();
 
-    cs_parall_min(1, CS_REAL_TYPE, &rd.r[0]);
-    cs_parall_max(1, CS_REAL_TYPE, &rd.r[1]);
+    cs_parall_min(1, CS_FLOAT, &rd.r[0]);
+    cs_parall_max(1, CS_FLOAT, &rd.r[1]);
     cs_parall_sum(1, CS_DOUBLE, &rd.d[0]);
     cs_parall_counter(&iclipc, 1);
 

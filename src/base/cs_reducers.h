@@ -55,54 +55,40 @@
 /* Structures for reduction
    ------------------------ */
 
-// 2 reals
+// real
 
-struct cs_data_2r {
-  double r[2];
-};
-
-struct cs_data_4r {
-  double r[4];
-};
-
-struct cs_data_14r {
-  cs_real_t r[14];
-};
-
-struct cs_data_3r_3r {
-  cs_real_t r1[3];
-  cs_real_t r2[3];
-};
-
-struct cs_data_2d {
-  double d[2];
-};
-
-struct cs_data_4d {
-  double d[4];
-};
-
-// 2 cs_lnum_t
-
-struct cs_data_2i {
-  cs_lnum_t i[2];
-};
-
-struct cs_data_7i {
-  cs_lnum_t i[7];
+template<size_t stride>
+struct cs_float_n {
+  float r[stride];
 };
 
 template<size_t stride>
 struct cs_double_n {
   double r[stride];
-
-struct cs_data_3g {
-  cs_gnum_t g[3];
 };
 
-struct cs_data_1d2r {
+// integer
+
+template<size_t stride>
+struct cs_int_n {
+  cs_lnum_t i[stride];
+};
+
+// various types
+
+struct cs_data_1int_2float {
+  cs_lnum_t i[1];
+  float     r[2];
+};
+
+struct cs_data_1double_2float {
   double d[1];
-  cs_real_t r[2];
+  float  r[2];
+};
+
+struct cs_data_3float_3float {
+  float r1[3];
+  float r2[3];
 };
 
 template<size_t stride>
@@ -121,7 +107,7 @@ struct cs_data_double_int_n {
 /* Reduction
    --------- */
 
-// Max (real case)
+// Max (1 real)
 
 struct cs_reduce_max1r {
 
@@ -136,68 +122,10 @@ struct cs_reduce_max1r {
   }
 };
 
-// Min and max
-
-struct cs_reduce_min1r_max1r {
-  using T = cs_data_2r;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    a.r[0] =  HUGE_VAL;
-    a.r[1] = -HUGE_VAL;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    a.r[0] = cs::min(a.r[0], b.r[0]);
-    a.r[1] = cs::max(a.r[1], b.r[1]);
-  }
-};
-
-struct cs_reduce_min2r_max2r {
-  using T = cs_data_4r;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    a.r[0] =  HUGE_VAL;
-    a.r[1] = -HUGE_VAL;
-    a.r[2] =  HUGE_VAL;
-    a.r[3] = -HUGE_VAL;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    a.r[0] = cs::min(a.r[0], b.r[0]);
-    a.r[1] = cs::max(a.r[1], b.r[1]);
-    a.r[2] = cs::min(a.r[2], b.r[2]);
-    a.r[3] = cs::max(a.r[3], b.r[3]);
-  }
-};
-
-struct cs_reduce_min7r_max7r {
-  using T = cs_data_14r;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    for (int i = 0; i < 7; i++) {
-      a.r[i] =  HUGE_VAL;
-      a.r[i + 7] = -HUGE_VAL;
-    }
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    for (int i = 0; i < 7; i++) {
-      a.r[i] = cs::min(a.r[i], b.r[i]);
-      a.r[i + 7] = cs::max(a.r[i + 7], b.r[i + 7]);
-    }
-  }
-};
-
 // Min (3 reals) and Max (3 reals)
 
-struct cs_reduce_min3r_max3r {
-  using T = cs_data_3r_3r;
+struct cs_reduce_min3float_max3float {
+  using T = cs_data_3float_3float;
 
   CS_F_HOST_DEVICE void
   identity(T &a) const {
@@ -223,113 +151,10 @@ struct cs_reduce_min3r_max3r {
   }
 };
 
-// Min, max (cs_real_t), sum (double) and sum (cs_gnum_t)
-
-struct cs_reduce_sum1d_min1r_max1r {
-  using T = cs_data_1d2r;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    a.d[0] = 0.0;
-
-    a.r[0] =  cs_math_infinite_r;
-    a.r[1] = -cs_math_infinite_r;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    a.d[0] += b.d[0];
-
-    a.r[0] = cs::min(a.r[0], b.r[0]);
-    a.r[1] = cs::max(a.r[1], b.r[1]);
-  }
-};
-
-// Sum and sum
-
-struct cs_reduce_sum2i {
-  using T = cs_data_2i;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    a.i[0] = 0;
-    a.i[1] = 0;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    a.i[0] += b.i[0];
-    a.i[1] += b.i[1];
-  }
-};
-
-struct cs_reduce_sum7i {
-  using T = cs_data_7i;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    for (int j = 0; j < 7; j++)
-      a.i[j] = 0;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    for (int j = 0; j < 7; j++)
-      a.i[j] += b.i[j];
-  }
-};
-
-struct cs_reduce_sum3g {
-  using T = cs_data_3g;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    a.g[0] = 0;
-    a.g[1] = 0;
-    a.g[2] = 0;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    a.g[0] += b.g[0];
-    a.g[1] += b.g[1];
-    a.g[2] += b.g[2];
-});
-
-struct cs_reduce_sum2r {
-  using T = cs_data_2r;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    a.r[0] = 0.;
-    a.r[1] = 0.;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    a.r[0] += b.r[0];
-    a.r[1] += b.r[1];
-  }
-};
-
-struct cs_reduce_sum2d {
-  using T = cs_data_2d;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    a.d[0] = 0.;
-    a.d[1] = 0.;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    a.d[0] += b.d[0];
-    a.d[1] += b.d[1];
-  }
-});
+// n_sum for double
 
 template<size_t stride>
-struct cs_reduce_sum_n {
+struct cs_reduce_sum_nr {
   using T = cs_double_n<stride>;
 
   CS_F_HOST_DEVICE void
@@ -344,6 +169,50 @@ struct cs_reduce_sum_n {
       a.r[i] += b.r[i];
   }
 };
+
+// n_sum for integer
+
+template<size_t stride>
+struct cs_reduce_sum_ni {
+  using T = cs_int_n<stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++)
+      a.i[i] = 0.;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++)
+      a.i[i] += b.i[i];
+  }
+};
+
+// n_min_max
+
+template<size_t stride>
+struct cs_reduce_min_max_nr {
+  using T = cs_double_n<2*stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = HUGE_VAL;
+      a.r[stride + i] = -HUGE_VAL;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = cs::min(a.r[i], b.r[i]);
+      a.r[stride + i] = cs::max(a.r[stride + i], b.r[stride + i]);
+    }
+  }
+};
+
+// n min_max_sum
 
 template<size_t stride>
 struct cs_reduce_min_max_sum_nr {
@@ -368,25 +237,45 @@ struct cs_reduce_min_max_sum_nr {
   }
 };
 
-struct cs_reduce_sum4d {
-  using T = cs_data_4d;
+struct cs_reduce_min1float_max1float_sum1int {
+  using T = cs_data_1int_2float;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+      a.r[0] = HUGE_VAL;
+      a.r[1] = -HUGE_VAL;
+      a.i[0] = 0;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+      a.r[0] = cs::min(a.r[0], b.r[0]);
+      a.r[1] = cs::max(a.r[1], b.r[1]);
+      a.i[0] += b.r[0];
+  }
+};
+
+// Min, max (float) and sum (double)
+
+struct cs_reduce_sum1double_min1float_max1float {
+  using T = cs_data_1double_2float;
 
   CS_F_HOST_DEVICE void
   identity(T &a) const {
     a.d[0] = 0.0;
-    a.d[1] = 0.0;
-    a.d[2] = 0.0;
-    a.d[3] = 0.0;
+
+    a.r[0] =  cs_math_infinite_r;
+    a.r[1] = -cs_math_infinite_r;
   }
 
   CS_F_HOST_DEVICE void
   combine(volatile T &a, volatile const T &b) const {
     a.d[0] += b.d[0];
-    a.d[1] += b.d[1];
-    a.d[2] += b.d[2];
-    a.d[3] += b.d[3];
+
+    a.r[0] = cs::min(a.r[0], b.r[0]);
+    a.r[1] = cs::max(a.r[1], b.r[1]);
   }
-});
+};
 
 template<size_t stride>
 struct cs_reduce_min_max_sum_nr_with_norm {
@@ -417,30 +306,6 @@ struct cs_reduce_min_max_sum_nr_with_norm {
     a.r[3*_stride - 1] += b.r[3*_stride - 1];
   }
 };
-
-struct cs_reduce_max1r_bcast3r {
-  using T = cs_data_4r;
-
-  CS_F_HOST_DEVICE void
-  identity(T &a) const {
-    a.r[3] = -cs_math_infinite_r;
-
-    a.r[0] = 0.;
-    a.r[1] = 0.;
-    a.r[2] = 0.;
-  }
-
-  CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
-    if (a.r[3] < b.r[3]) {
-      a.r[3] = b.r[3]; // a=max(a,b)
-
-      a.r[0] = b.r[0];
-      a.r[1] = b.r[1];
-      a.r[2] = b.r[2];
-    }
-  }
-});
 
 template<size_t stride>
 struct cs_reduce_min_max_weighted_sum_nr {
@@ -497,6 +362,30 @@ struct cs_reduce_min_max_weighted_sum_nr_with_norm {
     a.r[2*_stride - 1] = cs::max(a.r[2*_stride - 1], b.r[2*_stride - 1]);
     a.r[3*_stride - 1] += b.r[3*_stride - 1];
     a.r[4*_stride - 1] += b.r[4*_stride - 1];
+  }
+};
+
+struct cs_reduce_max1float_bcast3float {
+  using T = cs_float_n<4>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.r[3] = -cs_math_infinite_r;
+
+    a.r[0] = 0.;
+    a.r[1] = 0.;
+    a.r[2] = 0.;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    if (a.r[3] < b.r[3]) {
+      a.r[3] = b.r[3]; // a=max(a,b)
+
+      a.r[0] = b.r[0];
+      a.r[1] = b.r[1];
+      a.r[2] = b.r[2];
+    }
   }
 };
 

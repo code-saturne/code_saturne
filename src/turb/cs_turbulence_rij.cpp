@@ -3904,12 +3904,12 @@ cs_turbulence_rij_clip(int        phase_id,
 
   /* Compute and store Min Max values for the log. */
 
-  struct cs_data_14r rd;
-  struct cs_reduce_min7r_max7r reducer;
+  struct cs_double_n<14> rd;
+  struct cs_reduce_min_max_nr<7> reducer;
 
   ctx.parallel_for_reduce
     (n_cells, rd, reducer,
-     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_14r &res) {
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<14> &res) {
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
       res.r[ii] = cvar_rij[c_id][ii];
       res.r[ii + 7] = cvar_rij[c_id][ii];
@@ -3957,15 +3957,16 @@ cs_turbulence_rij_clip(int        phase_id,
     c_is_solid = c_is_solid_ref;
 
   cs_lnum_t iclep = 0;
-  struct cs_data_7i rd_sum;
+  struct cs_int_n<7> rd_sum;
+  struct cs_reduce_sum_ni<7> reducer_sum;
+
   for (int j = 0; j < 7; j++)
     rd_sum.i[j] = 0.;
-  struct cs_reduce_sum7i reducer_sum;
 
   if (is_rij_clipped > -1) {
     ctx.parallel_for_reduce
       (n_cells, rd_sum, reducer_sum, [=] CS_F_HOST_DEVICE
-       (cs_lnum_t c_id, cs_data_7i &res) {
+       (cs_lnum_t c_id, cs_int_n<7> &res) {
 
        for (int j = 0; j < 7; j++)
          res.i[j] = 0;

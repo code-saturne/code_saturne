@@ -97,7 +97,7 @@ cs_array_reduce_sum_l(cs_dispatch_context ctx,
                       double              vsum[])
 {
   struct cs_double_n<stride> rd;
-  struct cs_reduce_sum_n<stride> reducer;
+  struct cs_reduce_sum_nr<stride> reducer;
 
   /* If all values are defined on same list */
   if (v_elt_list == nullptr) {

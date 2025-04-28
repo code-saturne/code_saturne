@@ -7095,10 +7095,10 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   /* Optional verification */
 
   if (verbosity > 3) {
-    struct cs_data_2i rd;
-    struct cs_reduce_sum2i reducer;
+    struct cs_int_n<2> rd;
+    struct cs_reduce_sum_ni<2> reducer;
     ctx.parallel_for_reduce(c_n_rows, rd, reducer, [=] CS_F_HOST_DEVICE
-                            (cs_lnum_t ic, cs_data_2i &res) {
+                            (cs_lnum_t ic, cs_int_n<2> &res) {
       res.i[0] = n_clips[ic*2];
       res.i[1] = n_clips[ic*2 + 1];
     });
@@ -9166,4 +9166,3 @@ cs_grid_prolong_row_var(cs_dispatch_context  &ctx,
 }
 
 /*----------------------------------------------------------------------------*/
-
