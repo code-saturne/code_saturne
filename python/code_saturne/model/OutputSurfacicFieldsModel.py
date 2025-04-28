@@ -39,7 +39,8 @@ class OutputSurfacicFieldsModel(Model):
         self.case = case
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.XMLNodeproperty = self.node_models.xmlInitNode('properties')
-        self.listNodeSurface = self._getListOfSurfacicProperties()
+        self.listNodeSurface = self._getListOfSurfacicProperties() \
+                             + self._getListOfSurfacicUserScalars()
 
         self.dicoLabelName = {} # AZ test
         self.list_name = []     #AZ
@@ -65,6 +66,21 @@ class OutputSurfacicFieldsModel(Model):
         for node in self.XMLNodeproperty.xmlGetNodeList('property'):
             if node['support']  and node['support'] == "boundary":
                 nodeList.append(node)
+        return nodeList
+
+
+    def _getListOfSurfacicUserScalars(self):
+        """
+        Private method: return list of user scalars defined on boundaries.
+        """
+
+        nodeList = []
+        node_addscalar = self.case.xmlGetNode("additional_scalars")
+        if node_addscalar:
+            for node in node_addscalar.xmlGetNodeList('property'):
+                if node and node['support'] == 'boundary':
+                    nodeList.append(node)
+
         return nodeList
 
 
