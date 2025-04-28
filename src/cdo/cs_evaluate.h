@@ -74,31 +74,31 @@ cs_evaluate_init_sharing(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute reduced quantities for an array of size equal to dim * n_x
- *         The computed quantities are synchronized in parallel.
+ * \brief Compute reduced quantities for an array of size equal to dim * n_x
+ *        The computed quantities are synchronized in parallel.
  *
- * \param[in]      dim     local array dimension (max: 3)
- * \param[in]      n_x     number of elements
- * \param[in]      array   array to analyze
- * \param[in]      w_x     weight to apply (may be set to  null)
- * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
- * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
- * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
- * \param[in, out] asum    (weighted) sum of absolute values (same size as wsum)
- * \param[in, out] ssum    (weighted) sum of squared values (same size as wsum)
+ * \param[in]      dim    local array dimension (max: 3)
+ * \param[in]      n_x    number of elements
+ * \param[in]      array  array to analyze
+ * \param[in]      w_x    weight to apply (may be set to  nullptr)
+ * \param[in, out] min    resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max    resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] wsum   (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum   (weighted) sum of absolute values (same size as wsum)
+ * \param[in, out] ssum   (weighted) sum of squared values (same size as wsum)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_array_reduction(int                     dim,
-                            cs_lnum_t               n_x,
-                            const cs_real_t        *array,
-                            const cs_real_t        *w_x,
-                            cs_real_t              *min,
-                            cs_real_t              *max,
-                            cs_real_t              *wsum,
-                            cs_real_t              *asum,
-                            cs_real_t              *ssum);
+cs_evaluate_array_reduction(int              dim,
+                            cs_lnum_t        n_x,
+                            const cs_real_t *array,
+                            const cs_real_t *w_x,
+                            cs_real_t       *min,
+                            cs_real_t       *max,
+                            cs_real_t       *wsum,
+                            cs_real_t       *asum,
+                            cs_real_t       *ssum);
 
 /*----------------------------------------------------------------------------*/
 /*!

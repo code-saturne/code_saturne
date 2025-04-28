@@ -1380,31 +1380,31 @@ cs_evaluate_init_sharing(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute reduced quantities for an array of size equal to dim * n_x
- *         The computed quantities are synchronized in parallel.
+ * \brief Compute reduced quantities for an array of size equal to dim * n_x
+ *        The computed quantities are synchronized in parallel.
  *
- * \param[in]      dim     local array dimension (max: 3)
- * \param[in]      n_x     number of elements
- * \param[in]      array   array to analyze
- * \param[in]      w_x     weight to apply (may be set to  nullptr)
- * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
- * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
- * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
- * \param[in, out] asum    (weighted) sum of absolute values (same size as wsum)
- * \param[in, out] ssum    (weighted) sum of squared values (same size as wsum)
+ * \param[in]      dim    local array dimension (max: 3)
+ * \param[in]      n_x    number of elements
+ * \param[in]      array  array to analyze
+ * \param[in]      w_x    weight to apply (may be set to  nullptr)
+ * \param[in, out] min    resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max    resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] wsum   (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum   (weighted) sum of absolute values (same size as wsum)
+ * \param[in, out] ssum   (weighted) sum of squared values (same size as wsum)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_array_reduction(int                     dim,
-                            cs_lnum_t               n_x,
-                            const cs_real_t        *array,
-                            const cs_real_t        *w_x,
-                            cs_real_t              *min,
-                            cs_real_t              *max,
-                            cs_real_t              *wsum,
-                            cs_real_t              *asum,
-                            cs_real_t              *ssum)
+cs_evaluate_array_reduction(int              dim,
+                            cs_lnum_t        n_x,
+                            const cs_real_t *array,
+                            const cs_real_t *w_x,
+                            cs_real_t       *min,
+                            cs_real_t       *max,
+                            cs_real_t       *wsum,
+                            cs_real_t       *asum,
+                            cs_real_t       *ssum)
 {
   if (array == nullptr)
     return;
@@ -1433,36 +1433,36 @@ cs_evaluate_array_reduction(int                     dim,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute reduced quantities for an array attached to either vertex,
- *         face or edge DoFs
- *         The weight to apply to each entity x is scanned using the adjacency
- *         structure. array size is equal to dim * n_x
- *         The computed quantities are synchronized in parallel.
+ * \brief Compute reduced quantities for an array attached to either vertex,
+ *        face or edge DoFs
+ *        The weight to apply to each entity x is scanned using the adjacency
+ *        structure. array size is equal to dim * n_x
+ *        The computed quantities are synchronized in parallel.
  *
- * \param[in]      dim     local array dimension (max: 3)
- * \param[in]      n_x     number of elements
- * \param[in]      array   array to analyze
- * \param[in]      c2x     pointer to the associated cs_adjacency_t structure
- * \param[in]      w_x     weight to apply (may be set to  nullptr)
- * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
- * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
- * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
- * \param[in, out] asum    (weighted) sum of absolute values (same size as wsum)
- * \param[in, out] ssum    (weighted) sum of squared values (same size as wsum)
+ * \param[in]      dim    local array dimension (max: 3)
+ * \param[in]      n_x    number of elements
+ * \param[in]      array  array to analyze
+ * \param[in]      c2x    pointer to the associated cs_adjacency_t structure
+ * \param[in]      w_x    weight to apply (may be set to  nullptr)
+ * \param[in, out] min    resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max    resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] wsum   (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum   (weighted) sum of absolute values (same size as wsum)
+ * \param[in, out] ssum   (weighted) sum of squared values (same size as wsum)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_scatter_array_reduction(int                     dim,
-                                    cs_lnum_t               n_x,
-                                    const cs_real_t        *array,
-                                    const cs_adjacency_t   *c2x,
-                                    const cs_real_t        *w_x,
-                                    cs_real_t              *min,
-                                    cs_real_t              *max,
-                                    cs_real_t              *wsum,
-                                    cs_real_t              *asum,
-                                    cs_real_t              *ssum)
+cs_evaluate_scatter_array_reduction(int                   dim,
+                                    cs_lnum_t             n_x,
+                                    const cs_real_t      *array,
+                                    const cs_adjacency_t *c2x,
+                                    const cs_real_t      *w_x,
+                                    cs_real_t            *min,
+                                    cs_real_t            *max,
+                                    cs_real_t            *wsum,
+                                    cs_real_t            *asum,
+                                    cs_real_t            *ssum)
 {
   if (array == nullptr)
     return;
@@ -1470,15 +1470,13 @@ cs_evaluate_scatter_array_reduction(int                     dim,
     bft_error(__FILE__, __LINE__, 0,
               " %s: One needs an adjacency.\n", __func__);
 
-  assert(cs_cdo_quant != nullptr && cs_cdo_connect != nullptr);
-
   /* Get the min/max for this MPI rank */
 
   cs_array_reduce_minmax_l(n_x, dim, nullptr, array, min, max);
 
   /* Get reduced quantities for this array and for this MPI rank */
 
-  cs_array_scatter_reduce_norms_l(cs_cdo_quant->n_cells,
+  cs_array_scatter_reduce_norms_l(cs_shared_mesh->n_cells,
                                   c2x->idx,
                                   c2x->ids,
                                   nullptr, /* filter list */
