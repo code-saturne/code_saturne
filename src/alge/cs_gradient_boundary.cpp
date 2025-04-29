@@ -423,8 +423,6 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
     var_iprime[f_idx] = var_ip;
 
   });
-
-  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -675,8 +673,6 @@ cs_gradient_boundary_iprime_lsq_s_ani(cs_dispatch_context           &ctx,
     var_iprime[f_idx] = var_ip;
 
   });
-
-  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1828,6 +1828,9 @@ cs_internal_coupling_update_bc_coeffs_s
       }
     }
 
+    /* Wait for var_distant computed in cs_gradient_boundary_iprime_lsq_s */
+    ctx.wait();
+
     cs_internal_coupling_exchange_var(cpl,
                                       1,
                                       (cs_real_t *)var_distant,

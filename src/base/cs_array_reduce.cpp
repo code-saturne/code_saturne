@@ -1253,11 +1253,17 @@ _cs_real_sstats_with_norm(cs_dispatch_context  ctx,
 
   ctx.parallel_for_reduce(n, rd, reducer,
     [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<3*_stride> &res) {
+    double norm = 0.;
     for (size_t k = 0; k < stride; k++) {
       res.r[k] = v[stride*i + k];
       res.r[_stride + k] = v[stride*i + k];
       res.r[2*_stride + k] = v[stride*i + k];
+      norm += v[stride*i + k]*v[stride*i + k];
     }
+    norm = sqrt(norm);
+    res.r[_stride - 1] = norm;
+    res.r[2*_stride - 1] = norm;
+    res.r[3*_stride - 1] = norm;
   });
 
   ctx.wait();
@@ -1304,11 +1310,17 @@ _cs_real_sstats_with_norm_iv(cs_dispatch_context  ctx,
 
   ctx.parallel_for_reduce(n, rd, reducer,
     [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_double_n<3*_stride> &res) {
+    double norm = 0.;
     for (size_t k = 0; k < stride; k++) {
       res.r[k] = v[stride*vl[i] + k];
       res.r[_stride + k] = v[stride*vl[i] + k];
       res.r[2*_stride + k] = v[stride*vl[i] + k];
+      norm += v[stride*vl[i] + k]*v[stride*vl[i] + k];
     }
+    norm = sqrt(norm);
+    res.r[_stride - 1] = norm;
+    res.r[2*_stride - 1] = norm;
+    res.r[3*_stride - 1] = norm;
   });
 
   ctx.wait();
@@ -1597,10 +1609,11 @@ _cs_real_sstats_weighted_with_norm_iv(cs_dispatch_context  ctx,
       res.r[3*_stride + k] = w[vl[i]]*v[stride*vl[i] + k];
       norm += v[stride*vl[i] + k]*v[stride*vl[i] + k];
     }
-    res.r[_stride - 1] = sqrt(norm);
-    res.r[2*_stride - 1] = sqrt(norm);
-    res.r[3*_stride - 1] = sqrt(norm);
-    res.r[4*_stride - 1] = w[vl[i]]*sqrt(norm);
+    norm = sqrt(norm);
+    res.r[_stride - 1] = norm;
+    res.r[2*_stride - 1] = norm;
+    res.r[3*_stride - 1] = norm;
+    res.r[4*_stride - 1] = w[vl[i]]*norm;
   });
 
   ctx.wait();
@@ -1661,10 +1674,11 @@ _cs_real_sstats_weighted_with_norm_iw(cs_dispatch_context  ctx,
       res.r[3*_stride + k] = w[wl[i]]*v[stride*i + k];
       norm += v[stride*i + k]*v[stride*i + k];
     }
-    res.r[_stride - 1] = sqrt(norm);
-    res.r[2*_stride - 1] = sqrt(norm);
-    res.r[3*_stride - 1] = sqrt(norm);
-    res.r[4*_stride - 1] = w[wl[i]]*sqrt(norm);
+    norm = sqrt(norm);
+    res.r[_stride - 1] = norm;
+    res.r[2*_stride - 1] = norm;
+    res.r[3*_stride - 1] = norm;
+    res.r[4*_stride - 1] = w[wl[i]]*norm;
   });
 
   ctx.wait();
@@ -3242,4 +3256,3 @@ cs_array_scatter_reduce_norms_l(cs_lnum_t          n_src_elts,
 }
 
 /*----------------------------------------------------------------------------*/
-

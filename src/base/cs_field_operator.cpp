@@ -889,6 +889,8 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
                                       var,
                                       var_iprime);
 
+    ctx.wait();
+
   }
   else {
 
