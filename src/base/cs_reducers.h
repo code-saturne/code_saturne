@@ -81,6 +81,11 @@ struct cs_data_1int_2float {
   float     r[2];
 };
 
+struct cs_data_2int_2float {
+  cs_lnum_t i[2];
+  float     r[2];
+};
+
 struct cs_data_1double_2float {
   double d[1];
   float  r[2];
@@ -237,6 +242,8 @@ struct cs_reduce_min_max_sum_nr {
   }
 };
 
+// Min (1 real), max (1 real) and sum (1 int)
+
 struct cs_reduce_min1float_max1float_sum1int {
   using T = cs_data_1int_2float;
 
@@ -252,6 +259,28 @@ struct cs_reduce_min1float_max1float_sum1int {
       a.r[0] = cs::min(a.r[0], b.r[0]);
       a.r[1] = cs::max(a.r[1], b.r[1]);
       a.i[0] += b.r[0];
+  }
+};
+
+// Min (1 real), max (1 real) and sum (2 int)
+
+struct cs_reduce_min1float_max1float_sum2int {
+  using T = cs_data_2int_2float;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.r[0] =  cs_math_infinite_r;
+    a.r[1] = -cs_math_infinite_r;
+    a.i[0] = 0;
+    a.i[1] = 0;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.r[0] = cs::min(a.r[0], b.r[0]);
+    a.r[1] = cs::max(a.r[1], b.r[1]);
+    a.i[0] += b.r[0];
+    a.i[1] += b.r[1];
   }
 };
 
@@ -413,6 +442,27 @@ struct cs_reduce_minmax_n {
       // Do not use stride for b, as only the first half needs to be set.
       a.r[i] = cs::min(a.r[i], b.r[i]);
       a.r[stride+i] = cs::max(a.r[stride+i], b.r[stride+i]);
+    }
+  }
+};
+
+// Strided min:
+
+template<size_t stride>
+struct cs_reduce_min_nr {
+  using T = cs_data_double_n<stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = HUGE_VAL;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = cs::min(a.r[i], b.r[i]);
     }
   }
 };

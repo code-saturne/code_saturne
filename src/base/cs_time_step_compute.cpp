@@ -60,6 +60,7 @@
 #include "alge/cs_matrix_building.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_reducers.h"
 
 #include "pprt/cs_physical_model.h"
 #include "cfbl/cs_cf_model.h"
@@ -121,6 +122,9 @@ cs_local_time_step_compute(int  itrale)
   const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *cell_f_cen = (const cs_real_3_t *)fvq->cell_cen;
 
+  cs_lnum_t has_dc = fvq->has_disable_flag;
+  int *c_disable_flag = fvq->c_disable_flag;
+
   cs_real_t *dt = CS_F_(dt)->val;
   const int nt_cur = cs_glob_time_step->nt_cur;
   int nt_max = cs_glob_time_step->nt_max;
@@ -143,9 +147,11 @@ cs_local_time_step_compute(int  itrale)
   cs_field_t *f_courant_number = cs_field_by_name_try("courant_number");
   cs_field_t *f_fourier_number = cs_field_by_name_try("fourier_number");
 
+  int v_iconv = eqp_vel->iconv;
+  int v_idiff = eqp_vel->idiff;
+  int v_idifft = eqp_vel->idifft;
+
   if (idtvar == CS_TIME_STEP_CONSTANT) {
-    int v_iconv = eqp_vel->iconv;
-    int v_idiff = eqp_vel->idiff;
     bool need_compute = false;
     if (   (v_iconv >= 1 && f_courant_number != nullptr)
         || (v_idiff >= 1  && f_fourier_number != nullptr))
@@ -158,6 +164,8 @@ cs_local_time_step_compute(int  itrale)
     if (need_compute == false)
       return;
   }
+
+  cs_dispatch_context ctx;
 
   /* Pointers to the mass fluxes */
 
@@ -186,13 +194,13 @@ cs_local_time_step_compute(int  itrale)
 
   cs_real_t *i_visc, *b_visc, *dam;
   CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC(dam, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  CS_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *coefbt = bc_coeffs_loc.b;
   cs_real_t *cofbft = bc_coeffs_loc.bf;
@@ -200,13 +208,13 @@ cs_local_time_step_compute(int  itrale)
   /* Allocate other arrays, depending on user options */
   cs_real_t *wcf = nullptr;
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    CS_MALLOC(wcf, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(wcf, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Allocate work arrays */
   cs_real_t *w1, *w2, *w3;
   CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC(w2, n_cells_ext, cs_real_t);
-  CS_MALLOC(w3, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w3, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -224,10 +232,11 @@ cs_local_time_step_compute(int  itrale)
      ------------------------------------ */
 
   if (eqp_vel->idiff >= 1) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      w1[c_id] = viscl[c_id] + eqp_vel->idifft*visct[c_id];
-    }
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      w1[c_id] = viscl[c_id] + v_idifft * visct[c_id];
+    });
+
+    ctx.wait();
 
     cs_face_viscosity(mesh,
                       fvq,
@@ -237,8 +246,12 @@ cs_local_time_step_compute(int  itrale)
                       b_visc);
   }
   else {
-    cs_array_real_set_scalar(n_i_faces, 0.0, i_visc);
-    cs_array_real_set_scalar(n_b_faces, 0.0, b_visc);
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      i_visc[f_id] = 0.;
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      b_visc[f_id] = 0.;
+    });
   }
 
   /* Boundary condition for matrdt
@@ -246,13 +259,12 @@ cs_local_time_step_compute(int  itrale)
 
   if (idtvar >= 0) {
 
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       if (b_mass_flux_vel[f_id] < 0.0) {
         const cs_lnum_t c_id = b_face_cells[f_id];
-        const cs_real_t hint
-          = eqp_vel->idiff*(  viscl[c_id]
-                            + eqp_vel->idifft*visct[c_id])/b_dist[f_id];
+        const cs_real_t hint = v_idiff*(  viscl[c_id]
+                                        + v_idifft*visct[c_id])/b_dist[f_id];
         coefbt[f_id] = 0.0;
         cofbft[f_id] = hint;
       }
@@ -260,7 +272,7 @@ cs_local_time_step_compute(int  itrale)
         coefbt[f_id] = 1.0;
         cofbft[f_id] = 0.0;
       }
-    }
+    });
 
   }
   else {
@@ -275,12 +287,14 @@ cs_local_time_step_compute(int  itrale)
     cs_real_33_t *coefb_vel = (cs_real_33_t *)vel->bc_coeffs->b;
     cs_real_33_t *cofbf_vel = (cs_real_33_t *)vel->bc_coeffs->bf;
 
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       coefbt[f_id] = cs_math_33_trace(coefb_vel[f_id]) * mult;
       cofbft[f_id] = cs_math_33_trace(cofbf_vel[f_id]) * mult;
-    }
+    });
 
   }
+
+  ctx.wait();
 
   /* Steady algorithm
      ---------------- */
@@ -297,14 +311,19 @@ cs_local_time_step_compute(int  itrale)
 
       /* Allocate a temporary array for the gradient calculation */
       cs_real_3_t *grad;
-      CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+      CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
       cs_field_bc_coeffs_t bc_coeffs_rho;
       cs_field_bc_coeffs_init(&bc_coeffs_rho);
 
-      CS_MALLOC(bc_coeffs_rho.b, n_b_faces, cs_real_t);
+      CS_MALLOC_HD(bc_coeffs_rho.b, n_b_faces, cs_real_t, cs_alloc_mode);
       cs_real_t *coefbr = bc_coeffs_rho.b;
-      cs_array_real_set_scalar(n_b_faces, 0.0, coefbr);
+
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefbr[f_id] = 0.;
+      });
+
+      ctx.wait();
 
       bc_coeffs_rho.a = CS_F_(rho_b)->val;
 
@@ -335,15 +354,16 @@ cs_local_time_step_compute(int  itrale)
                          nullptr, /* cpl */
                          grad);
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         w3[c_id] = cs_math_3_dot_product(grad[c_id], gxyz) / crom[c_id];
         w3[c_id] = 1.0 / sqrt(cs::max(cs_math_epzero, w3[c_id]));
-      }
+      });
+
+      ctx.wait();
 
       /* Free memory */
-      CS_FREE(grad);
-      CS_FREE(coefbr);
+      CS_FREE_HD(grad);
+      CS_FREE_HD(coefbr);
 
     }
 
@@ -395,37 +415,46 @@ cs_local_time_step_compute(int  itrale)
           /* Compute w1 = time step verifying CFL constraint
              given by the user */
 
-#         pragma omp parallel for if (n_cells > CS_THR_MIN)
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-            cs_real_t d_vol = (cs_mesh_quantities_cell_is_active(fvq, c_id)) ?
-              1.0 / cell_f_vol[c_id] : 0;
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            cs_real_t d_vol = (has_dc * c_disable_flag[has_dc * c_id] == 0) ?
+                               1.0 / cell_f_vol[c_id] : 0;
             w1[c_id] =   coumax
                        / cs::max(dam[c_id] * d_vol, cs_math_epzero);
-          }
+          });
 
         }
         else {
 
-#         pragma omp parallel for if (n_cells > CS_THR_MIN)
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-            cs_real_t d_vol = (cs_mesh_quantities_cell_is_active(fvq, c_id)) ?
-              1.0 / cell_f_vol[c_id] : 0;
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            cs_real_t d_vol = (has_dc * c_disable_flag[has_dc * c_id] == 0) ?
+                               1.0 / cell_f_vol[c_id] : 0;
             w1[c_id] =   coumax
                        / cs::max(dam[c_id] * d_vol / crom[c_id],
                                  cs_math_epzero);
-          }
+          });
 
         }
 
         /* Uniform time step: we take the minimum of the constraint */
         if (idtvar == CS_TIME_STEP_ADAPTIVE)  {
-          cs_real_t w1min = cs_math_big_r;
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            w1min = cs::min(w1min, w1[c_id]);
 
-          cs_parall_min(1, CS_REAL_TYPE, &w1min);
+          cs_data_double_n<1> w1min;
+          struct cs_reduce_min_nr<1> reducer;
 
-          cs_array_real_set_scalar(n_cells, w1min, w1);
+          ctx.parallel_for_reduce
+            (n_cells, w1min, reducer,
+             [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_double_n<1> &res) {
+               res.r[0] = w1[c_id];
+          });
+
+          ctx.wait();
+
+          cs_parall_min(1, CS_REAL_TYPE, &w1min.r[0]);
+
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+            w1[c_id] = w1min.r[0];
+          });
+
         }
 
       }
@@ -456,24 +485,35 @@ cs_local_time_step_compute(int  itrale)
         /* Compute W2 = variable time step verifying the maximum
            Fourier number specified by the user */
 
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          cs_real_t d_vol = (cs_mesh_quantities_cell_is_active(fvq, c_id)) ?
-            1.0 / cell_f_vol[c_id] : 0;
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+          cs_real_t d_vol = (has_dc * c_disable_flag[has_dc * c_id] == 0) ?
+                             1.0 / cell_f_vol[c_id] : 0;
           cs_real_t w2_l = dam[c_id] * d_vol / crom[c_id];
           w2[c_id] = foumax / cs::max(w2_l, cs_math_epzero);
-        }
+        });
 
         /* Uniform time step: we take the minimum of the constraint */
 
         if (idtvar == 1) {
-          cs_real_t w2min = cs_math_big_r;
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            w2min = cs::min(w2min, w2[c_id]);
 
-          cs_parall_min(1, CS_REAL_TYPE, &w2min);
+          cs_data_double_n<1> w2min;
+          struct cs_reduce_min_nr<1> reducer;
 
-          cs_array_real_set_scalar(n_cells, w2min, w2);
+          ctx.parallel_for_reduce
+            (n_cells, w2min, reducer,
+             [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_double_n<1> &res) {
+               res.r[0] = w2[c_id];
+          });
+
+          ctx.wait();
+
+          cs_parall_min(1, CS_REAL_TYPE, &w2min.r[0]);
+
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+            w2[c_id] = w2min.r[0];
+          });
+
+          ctx.wait();
         }
 
       }
@@ -494,22 +534,30 @@ cs_local_time_step_compute(int  itrale)
            CFL constraint specified by the user */
 
         const cs_real_t cflmmx = cs_glob_time_step_options->cflmmx;
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
           dam[c_id] =   cflmmx
                       / cs::max(wcf[c_id], cs_math_epzero);
-        }
+        });
 
         /* Uniform time step: we take the minimum of ther constraint */
 
         if (idtvar == CS_TIME_STEP_ADAPTIVE) {
-          cs_real_t w3min = cs_math_big_r;
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            w3min = cs::min(w3min, dam[c_id]);
+          cs_data_double_n<1> w3min;
+          struct cs_reduce_min_nr<1> reducer;
 
-          cs_parall_min(1, CS_REAL_TYPE, &w3min);
+          ctx.parallel_for_reduce
+            (n_cells, w3min, reducer,
+             [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_double_n<1> &res) {
+               res.r[0] = dam[c_id];
+          });
 
-          cs_array_real_set_scalar(n_cells, w3min, dam);
+          ctx.wait();
+
+          cs_parall_min(1, CS_REAL_TYPE, &w3min.r[0]);
+
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+            dam[c_id] = w3min.r[0];
+          });
         }
 
       }
@@ -520,46 +568,45 @@ cs_local_time_step_compute(int  itrale)
       /* The minimum of the two if they exist, and
          the existing one if there is only one */
 
-#     pragma omp parallel if (n_cells > CS_THR_MIN)
-      {
-        cs_lnum_t s_id, e_id;
-        cs_parall_thread_range(n_cells, sizeof(cs_real_t), &s_id, &e_id);
-
-        if (icou == 1 && ifou == 1) {
-          for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
+      if (icou == 1 && ifou == 1) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
             w1[c_id] = cs::min(w1[c_id], w2[c_id]);
+        });
+      }
+      else if (icou == 0 && ifou == 1) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+          w1[c_id] = w2[c_id];
+        });
+      }
+
+      /* For compressible flows, the limitation associated with
+         density must be taken into account. */
+
+      if (icoucf == 1) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+          w1[c_id] = cs::min(w1[c_id], dam[c_id]);
+        });
+      }
+
+      /* Time step computation
+         ----------------------- */
+
+      /*  Progressive increase of the time step.
+          Immediate time step down */
+
+      cs_real_t varrdt = cs_glob_time_step_options->varrdt;
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+
+        if (w1[c_id] >= dt[c_id]) {
+          const cs_real_t unpvdt = 1.0 + varrdt;
+          dt[c_id] = cs::min(unpvdt*dt[c_id], w1[c_id]);
         }
-        else if (icou == 0 && ifou == 1) {
-          for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-            w1[c_id] = w2[c_id];
-        }
+        else
+          dt[c_id] = w1[c_id];
+      });
 
-        /* For compressible flows, the limitation associated with
-           density must be taken into account. */
-
-        if (icoucf == 1) {
-          for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-            w1[c_id] = cs::min(w1[c_id], dam[c_id]);
-        }
-
-        /* Time step computation
-           ----------------------- */
-
-        /*  Progressive increase of the time step.
-            Immediate time step down */
-
-        for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++) {
-
-          if (w1[c_id] >= dt[c_id]) {
-            const cs_real_t unpvdt = 1.0 + cs_glob_time_step_options->varrdt;
-            dt[c_id] = cs::min(unpvdt*dt[c_id], w1[c_id]);
-          }
-          else
-            dt[c_id] = w1[c_id];
-
-        }
-
-      }  /* End of OpenMP section */
+      ctx.wait();
 
       /* We limit by the max "thermal" time step
          --------------------------------------- */
@@ -571,38 +618,57 @@ cs_local_time_step_compute(int  itrale)
 
         /* Clip the time step to DTTMAX (display in cs_log_iteration.c) */
 
-        cs_lnum_t nclptr = 0;
+        struct cs_data_1int_2float rd;
+        struct cs_reduce_min1float_max1float_sum1int reducer;
 
-        cs_real_t vmin = dt[0];
-        cs_real_t vmax = dt[0];
+        ctx.parallel_for_reduce
+          (n_cells, rd, reducer,
+           [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_1int_2float &res) {
 
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          vmin = cs::min(vmin, dt[c_id]);
-          vmax = cs::max(vmax, dt[c_id]);
-          if (dt[c_id] > w3[c_id])  {
-            nclptr = nclptr + 1;
+          res.r[0] = dt[c_id];
+          res.r[1] = dt[c_id];
+          res.i[0] = 0;
+
+          if (dt[c_id] > w3[c_id]) {
+            res.i[0] = 1;
             dt[c_id] = w3[c_id];
           }
 
-        }
+        });
+
+        ctx.wait();
+
+        cs_real_t vmin = rd.r[0];
+        cs_real_t vmax = rd.r[1];
 
         cs_log_iteration_clipping("dt (clip/dtrho)",
                                   1,
                                   0,
-                                  nclptr,
+                                  rd.i[0],
                                   &vmin,
                                   &vmax);
 
         /* Uniform time step: we reuniform the time step */
 
         if (idtvar == CS_TIME_STEP_ADAPTIVE) {
-          cs_real_t w3min = cs_math_big_r;
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-            w3min = cs::min(w3min, dt[c_id]);
+          cs_data_double_n<1> w3min;
+          struct cs_reduce_min_nr<1> reducer_min;
 
-          cs_parall_min(1, CS_REAL_TYPE, &w3min);
+          ctx.parallel_for_reduce
+            (n_cells, w3min, reducer_min,
+             [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_double_n<1> &res) {
+               res.r[0] = dt[c_id];
+          });
 
-          cs_array_real_set_scalar(n_cells, w3min, dt);
+          ctx.wait();
+
+          cs_parall_min(1, CS_REAL_TYPE, &w3min.r[0]);
+
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+            dt[c_id] = w3min.r[0];
+          });
+
+          ctx.wait();
         }
 
       }
@@ -610,22 +676,20 @@ cs_local_time_step_compute(int  itrale)
       /* Clip the time step with respect to DTMIN and DTMAX
          --------------------------------------------------- */
 
-      cs_lnum_t icfmin = 0;
-      cs_lnum_t icfmax = 0;
-
       const cs_real_t dtmax = cs_glob_time_step_options->dtmax;
       const cs_real_t dtmin = cs_glob_time_step_options->dtmin;
 
       if (idtvar == CS_TIME_STEP_ADAPTIVE) {
 
+        cs_lnum_t icfmin = n_cells;
+        cs_lnum_t icfmax = n_cells;
+
         cs_real_t dtloc = dt[0];
         if (dtloc > dtmax) {
           dtloc = dtmax;
-          icfmax = n_cells;
         }
-        if (dtloc < cs_glob_time_step_options->dtmin) {
-          dtloc = cs_glob_time_step_options->dtmin;
-          icfmin = n_cells;
+        if (dtloc < dtmin) {
+          dtloc = dtmin;
         }
 
         int ntcam1 = nt_cur - 1;
@@ -660,51 +724,69 @@ cs_local_time_step_compute(int  itrale)
           }
         }
 
-        cs_array_real_set_scalar(n_cells, dtloc, dt);
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+            dt[c_id] = dtloc;
+        });
 
+        if (eqp_p->verbosity >= 2) {
+          cs_gnum_t cpt[2] = { (cs_gnum_t)icfmin, (cs_gnum_t)icfmax };
+          cs_parall_counter(cpt, 2);
+
+          cs_log_printf
+            (CS_LOG_DEFAULT,
+             _("\nDT CLIPPING: %llu at %11.4e, %llu at %11.4e\n"),
+             (unsigned long long)cpt[0], dtmin,
+             (unsigned long long)cpt[1], dtmax);
+        }
       }
       else {
 
-        cs_real_t vmin = dt[0];
-        cs_real_t vmax = dt[0];
+        struct cs_data_2int_2float rd;
+        struct cs_reduce_min1float_max1float_sum2int reducer;
 
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for_reduce
+          (n_cells, rd, reducer,
+           [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_2int_2float &res) {
 
-          vmin = cs::min(vmin, dt[c_id]);
-          vmax = cs::max(vmax, dt[c_id]);
+          res.r[0] = dt[c_id];
+          res.r[1] = dt[c_id];
+          res.i[0] = 0;
+          res.i[1] = 0;
 
           if (dt[c_id] > dtmax) {
-            icfmax = icfmax + 1;
+            res.i[1] = 1;
             dt[c_id] = dtmax;
           }
           if (dt[c_id] < dtmin) {
-            icfmin = icfmin + 1;
+            res.i[0] = 1;
             dt[c_id] = dtmin;
           }
+        });
 
-        }
+        ctx.wait();
+
+        cs_real_t vmin = rd.r[0];
+        cs_real_t vmax = rd.r[1];
 
         cs_log_iteration_clipping_field(CS_F_(dt)->id,
-                                        icfmin,
-                                        icfmax,
+                                        rd.i[0],
+                                        rd.i[1],
                                         &vmin,
                                         &vmax,
-                                        &icfmin,
-                                        &icfmax);
+                                        &rd.i[0],
+                                        &rd.i[1]);
 
+        if (eqp_p->verbosity >= 2) {
+          cs_gnum_t cpt[2] = { (cs_gnum_t)rd.i[0], (cs_gnum_t)rd.i[1] };
+          cs_parall_counter(cpt, 2);
+
+          cs_log_printf
+            (CS_LOG_DEFAULT,
+             _("\nDT CLIPPING: %llu at %11.4e, %llu at %11.4e\n"),
+             (unsigned long long)cpt[0], dtmin,
+             (unsigned long long)cpt[1], dtmax);
+        }
       }
-
-      if (eqp_p->verbosity >= 2) {
-        cs_gnum_t cpt[2] = { (cs_gnum_t)icfmin, (cs_gnum_t)icfmax };
-        cs_parall_counter(cpt, 2);
-
-        cs_log_printf
-          (CS_LOG_DEFAULT,
-           _("\nDT CLIPPING: %llu at %11.4e, %llu at %11.4e\n"),
-           (unsigned long long)cpt[0], dtmin,
-           (unsigned long long)cpt[1], dtmax);
-      }
-
     }
 
     /* Ratio DT/DTmax related to density effect (display in cs_log_iteration) */
@@ -713,11 +795,13 @@ cs_local_time_step_compute(int  itrale)
         && log_is_active) {
 
       cs_real_t *dtsdt0;
-      CS_MALLOC(dtsdt0, n_cells, cs_real_t);
+      CS_MALLOC_HD(dtsdt0, n_cells, cs_real_t, cs_alloc_mode);
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         dtsdt0[c_id] = dt[c_id] / w3[c_id];
+      });
+
+      ctx.wait();
 
       cs_log_iteration_add_array("Dt/Dtrho max",
                                  "criterion",
@@ -726,7 +810,7 @@ cs_local_time_step_compute(int  itrale)
                                  1,
                                  dtsdt0);
 
-      CS_FREE(dtsdt0);
+      CS_FREE_HD(dtsdt0);
 
     }
 
@@ -736,14 +820,11 @@ cs_local_time_step_compute(int  itrale)
     if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
         && (log_is_active || eqp_p->verbosity >= 2)) {
 
-      cs_real_t cfmax = -HUGE_VAL;
-      cs_real_t cfmin =  HUGE_VAL;
-      cs_lnum_t icfmax = -1;
-      cs_lnum_t icfmin = -1;
-
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         w2[c_id] = wcf[c_id] * dt[c_id];
+      });
+
+      ctx.wait();
 
       cs_log_iteration_add_array("CFL / Mass",
                                  "criterion",
@@ -754,19 +835,39 @@ cs_local_time_step_compute(int  itrale)
 
       if (eqp_p->verbosity >= 2) {
 
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          if (w2[c_id] <= cfmin) {
+        struct cs_data_double_int_n<2> rd;
+        struct cs_reduce_minmaxloc_n<1> reducer;
+
+        /*cs_real_t cfmax = -HUGE_VAL;
+        cs_real_t cfmin =  HUGE_VAL;
+        cs_lnum_t icfmax = -1;
+        cs_lnum_t icfmin = -1;*/
+
+        ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id, cs_data_double_int_n<2> &res) {
+
+          res.r[0] = w2[c_id];
+          res.r[1] = w2[c_id];
+          res.i[0] = c_id;
+          res.i[1] = c_id;
+
+          /*if (w2[c_id] <= cfmin) {
             cfmin = w2[c_id];
             icfmin = c_id;
           }
           if (w2[c_id] >= cfmax) {
             cfmax = w2[c_id];
             icfmax = c_id;
-          }
-        }
+          }*/
+        });
 
-        const cs_lnum_t min_c = cs::max(icfmin, 0);
-        const cs_lnum_t max_c = cs::max(icfmax, 0);
+        ctx.wait();
+
+        cs_real_t cfmin = rd.r[0];
+        cs_real_t cfmax = rd.r[1];
+
+        const cs_lnum_t min_c = cs::max(rd.i[0], 0);
+        const cs_lnum_t max_c = cs::max(rd.i[1], 0);
 
         cs_real_t xyzmin[3];
         xyzmin[0] = cell_f_cen[min_c][0];
@@ -783,8 +884,8 @@ cs_local_time_step_compute(int  itrale)
           cs_parall_max_loc_vals(3, &cfmax, xyzmax);
         }
 
-        int icflag [2] = {icfmin, icfmax};
-        cs_parall_max(2, CS_INT_TYPE, icflag);
+        cs_lnum_t icflag [2] = {rd.i[0], rd.i[1]};
+        cs_parall_max(2, CS_LNUM_TYPE, icflag);
 
         if (icflag[1] > -1)
           cs_log_printf
@@ -827,26 +928,27 @@ cs_local_time_step_compute(int  itrale)
                         dt);
 
     const cs_real_t relaxv = eqp_vel->relaxv;
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       dt[c_id] =   relaxv * crom[c_id] * cell_f_vol[c_id]
                  / cs::max(dt[c_id], cs_math_epzero);
-    }
+    });
 
   }
+
+  ctx.wait();
 
   /* Free memory */
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
   CS_FREE_HD(w1);
 
-  CS_FREE(dam);
-  CS_FREE(wcf);
-  CS_FREE(w2);
-  CS_FREE(w3);
+  CS_FREE_HD(dam);
+  CS_FREE_HD(wcf);
+  CS_FREE_HD(w2);
+  CS_FREE_HD(w3);
 
-  CS_FREE(bc_coeffs_loc.b);
-  CS_FREE(bc_coeffs_loc.bf);
+  CS_FREE_HD(bc_coeffs_loc.b);
+  CS_FREE_HD(bc_coeffs_loc.bf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -873,6 +975,9 @@ cs_courant_fourier_compute(void)
   const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *cell_f_cen = (const cs_real_3_t *)fvq->cell_cen;
 
+  cs_lnum_t has_dc = fvq->has_disable_flag;
+  int *c_disable_flag = fvq->c_disable_flag;
+
   const int idtvar = cs_glob_time_step_options->idtvar;
 
   cs_real_t *dt = CS_F_(dt)->val;
@@ -887,18 +992,23 @@ cs_courant_fourier_compute(void)
   cs_field_t *f_courant_number = cs_field_by_name_try("courant_number");
   cs_field_t *f_fourier_number = cs_field_by_name_try("fourier_number");
 
+  const int v_idiff = eqp_vel->idiff;
+  const int v_idifft = eqp_vel->idifft;
+
   if (   !(eqp_vel->iconv >= 1 && f_courant_number != nullptr)
-      && !(eqp_vel->idiff >= 1  && f_fourier_number != nullptr)
-      && !(   (eqp_vel->iconv >= 1 || eqp_vel->idiff >= 1)
+      && !(v_idiff >= 1  && f_fourier_number != nullptr)
+      && !(   (eqp_vel->iconv >= 1 || v_idiff >= 1)
            && (eqp_vel->verbosity >= 2 || log_is_active))
       && !(   cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
            && (eqp_vel->verbosity >= 2 || log_is_active))
       && !(   idtvar != CS_TIME_STEP_CONSTANT
            || (   (eqp_vel->verbosity >= 2 || log_is_active)
-               && (   eqp_vel->idiff >= 1
+               && (   v_idiff >= 1
                    || eqp_vel->iconv >= 1
                    || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0))))
     return;
+
+  cs_dispatch_context ctx;
 
   /* Pointers to the mass fluxes */
 
@@ -927,12 +1037,12 @@ cs_courant_fourier_compute(void)
   cs_real_t *i_visc, *b_visc, *dam;
   CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC(dam, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  CS_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.bf, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *coefbt = bc_coeffs_loc.b;
   cs_real_t *cofbft = bc_coeffs_loc.bf;
@@ -958,8 +1068,11 @@ cs_courant_fourier_compute(void)
 
   if (eqp_vel->idiff >= 1) {
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      w1[c_id] = viscl[c_id] + eqp_vel->idifft*visct[c_id];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      w1[c_id] = viscl[c_id] + v_idifft * visct[c_id];
+    });
+
+    ctx.wait();
 
     cs_face_viscosity(mesh,
                       fvq,
@@ -969,8 +1082,12 @@ cs_courant_fourier_compute(void)
                       b_visc);
   }
   else {
-    cs_array_real_set_scalar(n_i_faces, 0.0, i_visc);
-    cs_array_real_set_scalar(n_b_faces, 0.0, b_visc);
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      i_visc[f_id] = 0.;
+    });
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      b_visc[f_id] = 0.;
+    });
   }
 
   /* Boundary condition for matrdt
@@ -978,14 +1095,13 @@ cs_courant_fourier_compute(void)
 
   if (idtvar >= 0) {
 
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       if (b_mass_flux_vel[f_id] < 0.0) {
         const cs_lnum_t c_id = b_face_cells[f_id];
 
-        const cs_real_t hint
-          =   eqp_vel->idiff*(viscl[c_id]
-            + eqp_vel->idifft*visct[c_id])/b_dist[f_id];
+        const cs_real_t hint = v_idiff*(  viscl[c_id]
+                                        + v_idifft*visct[c_id])/b_dist[f_id];
 
         coefbt[f_id] = 0.0;
         cofbft[f_id] = hint;
@@ -994,7 +1110,7 @@ cs_courant_fourier_compute(void)
         coefbt[f_id] = 1.0;
         cofbft[f_id] = 0.0;
       }
-    }
+    });
 
   }
   else {
@@ -1009,12 +1125,14 @@ cs_courant_fourier_compute(void)
     cs_real_33_t *coefb_vel = (cs_real_33_t *)vel->bc_coeffs->b;
     cs_real_33_t *cofbf_vel = (cs_real_33_t *)vel->bc_coeffs->bf;
 
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       coefbt[f_id] = cs_math_33_trace(coefb_vel[f_id]) * mult;
       cofbft[f_id] = cs_math_33_trace(cofbf_vel[f_id]) * mult;
-    }
+    });
 
   }
+
+  ctx.wait();
 
   /* 1: Compute Courant number for log
      2: Compute VoF Courant number for log
@@ -1069,55 +1187,70 @@ cs_courant_fourier_compute(void)
                         b_visc,
                         dam);
 
-    /* Compute min and max Courant numbers */
-    cs_real_t cfmax = -HUGE_VAL;
-    cs_real_t cfmin =  HUGE_VAL;
-    cs_lnum_t icfmax = -1;
-    cs_lnum_t icfmin = -1;
-
     cs_real_t *cpro_tab = cpro_tab_list[i];
 
     if (i != 1) {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t d_vol = (cs_mesh_quantities_cell_is_active(fvq, c_id)) ?
-          1.0 / cell_f_vol[c_id] : 0;
-        cpro_tab[c_id]
-          = dam[c_id] * d_vol * dt[c_id] / crom[c_id];
-      }
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cs_real_t d_vol = (has_dc * c_disable_flag[has_dc * c_id] == 0) ?
+                           1.0 / cell_f_vol[c_id] : 0;
+
+        cpro_tab[c_id] = dam[c_id] * d_vol * dt[c_id] / crom[c_id];
+      });
     }
     else if (i == 1) { /* Volume courant */
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t d_vol = (cs_mesh_quantities_cell_is_active(fvq, c_id)) ?
-          1.0 / cell_f_vol[c_id] : 0;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cs_real_t d_vol = (has_dc * c_disable_flag[has_dc * c_id] == 0) ?
+                           1.0 / cell_f_vol[c_id] : 0;
+
         cpro_tab[c_id] = dam[c_id] * d_vol * dt[c_id];
-      }
+      });
     }
 
-    if (i == 3)
+    if (i == 3) {
+      ctx.wait();
+
       cs_log_iteration_add_array("Courant/Fourier",
                                  "criterion",
                                  CS_MESH_LOCATION_CELLS,
                                  true,
                                  1,
                                  cpro_tab);
+    }
 
     if (eqp_vel->verbosity >= 2) {
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        if (cpro_tab[c_id] <= cfmin) {
+      /* Compute min and max Courant numbers */
+
+      struct cs_data_double_int_n<2> rd;
+      struct cs_reduce_minmaxloc_n<1> reducer_bcast;
+
+      ctx.parallel_for_reduce
+        (n_cells, rd, reducer_bcast,
+         [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_double_int_n<2> &res) {
+
+        res.r[0] = cpro_tab[c_id];
+        res.r[1] = cpro_tab[c_id];
+
+        res.i[0] = c_id;
+        res.i[1] = c_id;
+
+        /*if (cpro_tab[c_id] <= cfmin) {
           cfmin = cpro_tab[c_id];
           icfmin = c_id;
         }
         if (cpro_tab[c_id] >= cfmax) {
           cfmax = cpro_tab[c_id];
           icfmax = c_id;
-        }
-      }
+        }*/
+      });
 
-      const cs_lnum_t min_c = cs::max(icfmin, 0);
-      const cs_lnum_t max_c = cs::max(icfmax, 0);
+      ctx.wait();
+
+      cs_real_t cfmin = rd.r[0];
+      cs_real_t cfmax = rd.r[1];
+
+      const cs_lnum_t min_c = cs::max(rd.i[0], 0);
+      const cs_lnum_t max_c = cs::max(rd.i[1], 0);
 
       cs_real_t xyzmin[3];
       xyzmin[0] = cell_f_cen[min_c][0];
@@ -1134,8 +1267,8 @@ cs_courant_fourier_compute(void)
         cs_parall_max_loc_vals(3, &cfmax, xyzmax);
       }
 
-      int icflag [2] = {icfmin, icfmax};
-      cs_parall_max(2, CS_INT_TYPE, icflag);
+      cs_lnum_t icflag[2] = {rd.i[0], rd.i[1]};
+      cs_parall_max(2, CS_LNUM_TYPE, icflag);
 
       if (icflag[1] > -1)
         cs_log_printf
@@ -1155,16 +1288,20 @@ cs_courant_fourier_compute(void)
                       info[i]);
 
     }
+
+    ctx.wait();
   }
+
+  //ctx.wait();
 
   /* Free memory */
   CS_FREE_HD(w1);
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
 
-  CS_FREE(dam);
-  CS_FREE(bc_coeffs_loc.b);
-  CS_FREE(bc_coeffs_loc.bf);
+  CS_FREE_HD(dam);
+  CS_FREE_HD(bc_coeffs_loc.b);
+  CS_FREE_HD(bc_coeffs_loc.bf);
 }
 
 /*----------------------------------------------------------------------------*/
