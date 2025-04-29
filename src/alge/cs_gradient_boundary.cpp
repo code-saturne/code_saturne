@@ -114,7 +114,7 @@ const cs_real_t _eps_r_2 = 1e-3 * 1e-3;
  *   cocg               <-> cocg covariance matrix for given cell
  *----------------------------------------------------------------------------*/
 
-static inline void
+static CS_F_HOST_DEVICE inline void
 _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
                             const cs_lnum_t   cell_hb_faces_idx[],
                             const cs_lnum_t   cell_hb_faces[],
@@ -423,6 +423,8 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
     var_iprime[f_idx] = var_ip;
 
   });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -673,6 +675,8 @@ cs_gradient_boundary_iprime_lsq_s_ani(cs_dispatch_context           &ctx,
     var_iprime[f_idx] = var_ip;
 
   });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1230,6 +1234,8 @@ cs_gradient_boundary_iprime_lsq_strided
       var_iprime[f_idx][ii] = var_ip[ii];
 
   }); /* End of loop on selected faces */
+
+  ctx.wait();
 
   if (cs_glob_timer_kernels_flag > 0) {
     t_stop = std::chrono::high_resolution_clock::now();
