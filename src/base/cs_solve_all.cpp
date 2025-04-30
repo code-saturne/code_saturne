@@ -264,12 +264,18 @@ _solve_coupled_vel_p_variables_equation(const int        iterns,
   if (eqp_vel->verbosity > 0) {
     bft_printf
       (_(" ------------------------------------------------------------\n\n"
-         "  SOLVING ENERGY AND SCALARS EQUATIONS\n"
-         "  ====================================\n\n"));
+         "  SOLVING ENERGY AND SCALAR EQUATIONS\n"
+         "  ===================================\n\n"));
   }
+
+  if (cs_glob_velocity_pressure_model->fluid_solid)
+    cs_porous_model_set_has_disable_flag(0);
 
   // Update coupled with dynamic scalar(s)
   cs_solve_transported_variables(iterns);
+
+  if (cs_glob_velocity_pressure_model->fluid_solid)
+    cs_porous_model_set_has_disable_flag(1);
 
   // Diffusion terms for weakly compressible algorithm
   if (cs_glob_velocity_pressure_model->idilat > 3)
@@ -1191,8 +1197,8 @@ cs_solve_all(int  itrale)
     if (eqp_vel->verbosity > 0) {
       bft_printf
         (_(" ------------------------------------------------------------\n\n"
-           "  SOLVING ENERGY AND SCALARS EQUATIONS\n"
-           "  ==================================\n\n"));
+           "  SOLVING ENERGY AND SCALAR EQUATIONS\n"
+           "  ===================================\n\n"));
     }
 
     // Update non-buoyant scalar(s)
