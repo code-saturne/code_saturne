@@ -600,7 +600,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
   const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t  nbr_fac = mesh->n_i_faces;
   const cs_lnum_t  nbr_fbr = mesh->n_b_faces;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   const cs_lnum_t   *b_face_cells = mesh->b_face_cells;
   const cs_nreal_3_t *restrict i_face_u_normal
     = mesh_quantities->i_face_u_normal;

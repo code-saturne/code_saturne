@@ -10816,8 +10816,6 @@ cs_face_diffusion_potential(const int                   f_id,
   if (ctx_b.use_gpu())
     ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
-  cs_dispatch_sum_type_t i_sum_type = ctx_i.get_parallel_for_i_faces_sum_type(m);
-  cs_dispatch_sum_type_t b_sum_type = ctx_b.get_parallel_for_b_faces_sum_type(m);
 
   const bool on_device = ctx_i.use_gpu();
 

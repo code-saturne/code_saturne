@@ -189,8 +189,7 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
 
   const cs_lnum_t  *b_face_cells = m->b_face_cells;
-  const cs_lnum_2_t *restrict i_face_cells =
-    (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -1206,8 +1205,7 @@ _compute_cell_quantities(const cs_mesh_t      *mesh,
   const  cs_lnum_t  n_b_faces = cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
   const  cs_lnum_t  n_cells = mesh->n_cells;
   const  cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const  cs_lnum_2_t  *i_face_cells
-    = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const  cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
   const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
 
   /* Checking */
@@ -1337,8 +1335,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
 
   const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
-  const  cs_lnum_2_t  *i_face_cells
-    = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const  cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
   const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
 
   /* First pass of verification */
@@ -3188,11 +3185,11 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
                               n_cells_with_ghosts,
                               n_i_faces,
                               n_b_faces,
-                              (const cs_lnum_2_t *)(m->i_face_cells),
+                              m->i_face_cells,
                               m->b_face_cells,
-                              (cs_real_3_t *)(mq->cell_cen),
-                              (cs_real_3_t *)(mq->i_face_cog),
-                              (cs_real_3_t *)(mq->b_face_cog),
+                              mq->cell_cen,
+                              mq->i_face_cog,
+                              mq->b_face_cog,
                               (cs_real_3_t *)(mq->i_face_normal),
                               (cs_real_3_t *)(mq->b_face_normal));
 
@@ -4137,16 +4134,16 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   _compute_face_distances(m->n_i_faces,
                           m->n_b_faces,
-                          (const cs_lnum_2_t *)(m->i_face_cells),
-                          (const cs_lnum_t *)(m->b_face_cells),
-                          (const cs_nreal_3_t *)(mq_f->i_face_u_normal),
+                          m->i_face_cells,
+                          m->b_face_cells,
+                          mq_f->i_face_u_normal,
                           (const cs_real_3_t *)(mq_f->i_face_normal),
-                          (const cs_nreal_3_t *)(mq_f->b_face_u_normal),
+                          mq_f->b_face_u_normal,
                           (const cs_real_3_t *)(mq_f->b_face_normal),
-                          (const cs_real_3_t *)(mq_f->i_face_cog),
-                          (const cs_real_3_t *)(mq_f->b_face_cog),
-                          (const cs_real_3_t *)(mq_f->cell_cen),
-                          (const cs_real_t *)(mq_f->cell_vol),
+                          mq_f->i_face_cog,
+                          mq_f->b_face_cog,
+                          mq_f->cell_cen,
+                          mq_f->cell_vol,
                           mq_f->i_dist,
                           mq_f->b_dist,
                           mq_f->weight);
@@ -4154,7 +4151,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   _compute_face_vectors(m->dim,
                         m->n_i_faces,
                         m->n_b_faces,
-                        (const cs_lnum_2_t *)(m->i_face_cells),
+                        m->i_face_cells,
                         m->b_face_cells,
                         mq_f->i_face_u_normal,
                         mq_f->b_face_u_normal,
@@ -4571,11 +4568,11 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   _compute_face_sup_vectors
     (m->n_cells,
      m->n_i_faces,
-     (const cs_lnum_2_t *)(m->i_face_cells),
+     m->i_face_cells,
      mq->i_face_u_normal,
      (const cs_real_3_t *)(mq->i_face_normal),
-     (const cs_real_3_t *)(mq->i_face_cog),
-     (const cs_real_3_t *)(mq->cell_cen),
+     mq->i_face_cog,
+     mq->cell_cen,
      mq->cell_vol,
      mq->i_dist,
      mq->diipf,
@@ -4719,11 +4716,11 @@ cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
   _compute_face_sup_vectors
     (mesh->n_cells,
      mesh->n_i_faces,
-     (const cs_lnum_2_t *)(mesh->i_face_cells),
+     mesh->i_face_cells,
      mesh_quantities->i_face_u_normal,
      (const cs_real_3_t *)(mesh_quantities->i_face_normal),
-     (const cs_real_3_t *)(mesh_quantities->i_face_cog),
-     (const cs_real_3_t *)(mesh_quantities->cell_cen),
+     mesh_quantities->i_face_cog,
+     mesh_quantities->cell_cen,
      mesh_quantities->cell_vol,
      mesh_quantities->i_dist,
      mesh_quantities->diipf,
@@ -4878,8 +4875,7 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
   const  cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const  cs_lnum_t  n_cells = mesh->n_cells;
   const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
-  const  cs_lnum_2_t  *i_face_cells
-    = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const  cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
   const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
 
   /* Return if ther is not enough data (Solcom case except rediative module

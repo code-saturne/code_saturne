@@ -633,7 +633,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   const cs_real_t *b_dist = mq->b_dist;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   const cs_real_t *b_face_surf = mq->b_face_surf;
 
   const cs_halo_t *halo = mesh->halo;

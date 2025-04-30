@@ -96,7 +96,7 @@
 #include "alge/cs_sles_default.h"
 #include "base/cs_thermal_model.h"
 #include "turb/cs_turbulence_ke.h"
-//#include "base/cs_time_step.h"
+#include "base/cs_time_step.h"
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
@@ -593,7 +593,6 @@ _st_exp_head_loss(cs_lnum_t          ncepdc,
   });
 
   ctx.wait();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -620,20 +619,16 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   const cs_real_3_t  *restrict b_face_normal
     = (const cs_real_3_t  *) mq->b_face_normal;
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *) mq->i_face_normal;
 
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq->b_face_cog;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
+  const cs_real_3_t *restrict i_face_cog = mq->i_face_cog;
 
   const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
@@ -1012,10 +1007,8 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   const cs_lnum_t *i_face_vtx_idx = m->i_face_vtx_idx;
   const cs_lnum_t *i_face_vtx_lst = m->i_face_vtx_lst;
@@ -1357,16 +1350,12 @@ _update_fluid_vel(const cs_mesh_t             *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq->b_face_cog;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *restrict i_face_cog = mq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   int has_disable_flag = mq->has_disable_flag;
   int *c_disable_flag = mq->c_disable_flag;

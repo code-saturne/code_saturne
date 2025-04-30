@@ -1814,16 +1814,13 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
   cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
   cs_lnum_t *b_face_cells = mesh->b_face_cells;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   cs_real_t *cell_vol  = mesh_quantities->cell_vol;
 
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)mesh_quantities->cell_cen;
-  const cs_real_3_t *i_face_cog
-    = (const cs_real_3_t *)mesh_quantities->i_face_cog;
-  const cs_real_3_t *b_face_cog
-    = (const cs_real_3_t *)mesh_quantities->b_face_cog;
+  const cs_real_3_t *cell_cen = mesh_quantities->cell_cen;
+  const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
+  const cs_real_3_t *b_face_cog = mesh_quantities->b_face_cog;
 
   const cs_lnum_t *i_face_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t *i_face_vtx = mesh->i_face_vtx_lst;
@@ -2121,18 +2118,15 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
   cs_lnum_t *b_face_cells = mesh->b_face_cells;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   cs_real_t *cell_vol = mesh_quantities->cell_vol;
 
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)cs_glob_mesh_quantities_g->cell_cen;
-  cs_real_3_t *cell_f_cen = (cs_real_3_t *)mesh_quantities->cell_cen;
-  cs_real_3_t *cell_s_cen = (cs_real_3_t *)mesh_quantities->cell_s_cen;
-  const cs_real_3_t *i_face_cog
-    = (const cs_real_3_t *)mesh_quantities->i_face_cog;
-  const cs_real_3_t *b_face_cog
-    = (const cs_real_3_t *)mesh_quantities->b_face_cog;
+  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities_g->cell_cen;
+  cs_real_3_t *cell_f_cen = mesh_quantities->cell_cen;
+  cs_real_3_t *cell_s_cen = mesh_quantities->cell_s_cen;
+  const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
+  const cs_real_3_t *b_face_cog = mesh_quantities->b_face_cog;
 
   const cs_lnum_t *i_face_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t *i_face_vtx = mesh->i_face_vtx_lst;
@@ -2826,8 +2820,8 @@ _compute_solid_porosity(const cs_mesh_t            *mesh,
   cs_lnum_t n_cells     = mesh->n_cells;
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)cs_glob_mesh_quantities_g->cell_cen;
-  cs_real_3_t *cell_f_cen = (cs_real_3_t *)mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities_g->cell_cen;
+  cs_real_3_t *cell_f_cen = mesh_quantities->cell_cen;
 
   cs_array_real_fill_zero(n_cells_ext, cs_ibm->solid_porosity);
 
@@ -2885,7 +2879,7 @@ _compute_cell_list_porosity(const cs_mesh_t            *mesh,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_i_faces   = mesh->n_i_faces;
 
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   const cs_lnum_t *i_face_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t *i_face_vtx = mesh->i_face_vtx_lst;
@@ -2949,14 +2943,13 @@ _compute_solid_surface_vector(const cs_mesh_t            *mesh,
   cs_lnum_t n_i_faces   = mesh->n_i_faces;
   cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_3_t *i_face_normal
     = (const cs_real_3_t *)mesh_quantities->i_face_normal;
   const cs_real_3_t *b_face_normal
     = (const cs_real_3_t *)mesh_quantities->b_face_normal;
-  cs_real_t *c_w_face_surf
-    = (cs_real_t *)mesh_quantities->c_w_face_surf;
+  cs_real_t *c_w_face_surf = mesh_quantities->c_w_face_surf;
   cs_real_3_t *c_w_face_normal
     = (cs_real_3_t *)mesh_quantities->c_w_face_normal;
 
@@ -3024,7 +3017,7 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
   cs_lnum_t *b_face_cells = mesh->b_face_cells;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   cs_real_t *cell_vol = mesh_quantities->cell_vol;
   cs_real_t *dist = mesh_quantities->i_dist;
@@ -3595,7 +3588,6 @@ _free_ibm_object(cs_ibm_object_t *obj)
     obj->cutcell_func = nullptr;
 
   CS_FREE(obj);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3872,8 +3864,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
   cs_lnum_t n_cells     = mesh->n_cells;
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
-  const cs_real_3_t *cell_f_cen
-    = (const cs_real_3_t *)mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_f_cen = mesh_quantities->cell_cen;
   cs_real_t *cell_vol = cs_glob_mesh_quantities_g->cell_vol;
   cs_real_t *cell_f_vol = mesh_quantities->cell_vol;
 
@@ -4156,7 +4147,6 @@ cs_ibm_object_compute_cut_porosity(const cs_lnum_t    c_id,
                                    const cs_real_t    t,
                                    const int          num_object)
 {
-
   int retval = 0;
 
   for (int i = 0; i < cs_ibm->n_objects; i++) {
@@ -4193,8 +4183,7 @@ cs_ibm_add_object_from_file(const char          *name,
 {
   CS_UNUSED(solve_fsi);
 
-  int obj_id = _add_ibm_object(name,
-                               method);
+  int obj_id = _add_ibm_object(name, method);
 
   cs_ibm_object_t *obj = cs_ibm_object_by_id(obj_id);
 
@@ -4297,7 +4286,6 @@ cs_ibm_stl_define_ext_points(const char      *name,
                              const int        n_pts,
                              cs_real_t       *pts_coords)
 {
-
   cs_ibm_object_t *obj = cs_ibm_object_by_name(name);
 
   if (obj->method != CS_IBM_ALGO_STL)
@@ -4307,7 +4295,6 @@ cs_ibm_stl_define_ext_points(const char      *name,
   cs_stl_set_porosity_seed(obj->stl,
                            n_pts,
                            pts_coords);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4570,7 +4557,6 @@ cs_ibm_object_transform_from_init(cs_ibm_object_t *obj,
   }
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the volume fraction of an object over all cells.
@@ -4667,8 +4653,9 @@ void cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities)
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
   int n_v_zones = cs_volume_zone_n_zones();
 
-  cs_tree_node_t *tn_p = cs_tree_get_node(cs_glob_tree,
-                                   "thermophysical_models/porosities/porosity");
+  cs_tree_node_t *tn_p
+    = cs_tree_get_node(cs_glob_tree,
+                       "thermophysical_models/porosities/porosity");
 
   /* Loop on all zones */
   for (int i = 0; i < n_v_zones; i++) {

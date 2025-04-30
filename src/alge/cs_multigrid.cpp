@@ -5162,7 +5162,7 @@ cs_multigrid_setup_conv_diff(void               *context,
     = cs_grid_create_from_shared(mesh->n_i_faces,
                                  diag_block_size,
                                  extra_diag_block_size,
-                                 (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                 mesh->i_face_cells,
                                  a,
                                  conv_diff);
 

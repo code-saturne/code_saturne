@@ -368,8 +368,7 @@ cs_porous_model_auto_face_porosity(void)
 
   {
     const cs_lnum_t n_i_faces = m->n_i_faces;
-    const cs_lnum_2_t *i_face_cells
-      = (const cs_lnum_2_t *)m->i_face_cells;
+    const cs_lnum_2_t *i_face_cells = m->i_face_cells;
 
     const cs_real_3_t *restrict i_face_normal
       = (const cs_real_3_t *)mq_g->i_face_normal;
@@ -455,7 +454,7 @@ cs_porous_model_clip(void)
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   cs_real_t *porosi = cs_field_by_name("porosity")->val;
@@ -529,14 +528,14 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
 
   const cs_real_3_t *restrict i_face_normal = (cs_real_3_t *)mq_g->i_face_normal;
   const cs_real_3_t *restrict b_face_normal = (cs_real_3_t *)mq_g->b_face_normal;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   cs_real_t *restrict cell_f_vol = mq->cell_vol;
   cs_real_3_t *restrict i_f_face_normal = (cs_real_3_t *)mq->i_face_normal;
   cs_real_3_t *restrict b_f_face_normal = (cs_real_3_t *)mq->b_face_normal;
-  cs_real_t *restrict i_f_face_surf = (cs_real_t *)mq->i_face_surf;
-  cs_real_t *restrict b_f_face_surf = (cs_real_t *)mq->b_face_surf;
+  cs_real_t *restrict i_f_face_surf = mq->i_face_surf;
+  cs_real_t *restrict b_f_face_surf = mq->b_face_surf;
 
   /* Pointer to porosity field */
   cs_field_t *f = cs_field_by_name("porosity");

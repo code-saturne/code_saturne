@@ -86,12 +86,10 @@ cs_user_extra_operations(cs_domain_t     *domain)
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
   const cs_lnum_t n_i_faces = domain->mesh->n_i_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)domain->mesh->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = domain->mesh->i_face_cells;
 
   const cs_real_t *cell_vol = domain->mesh_quantities->cell_vol;
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)domain->mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_cen = domain->mesh_quantities->cell_cen;
 
   const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
 

@@ -713,10 +713,8 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
   const cs_real_t *restrict dt = CS_F_(dt)->val;
   const cs_lnum_t n_cells = m->n_cells;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *alphafij = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
 
@@ -1238,10 +1236,8 @@ cs_thermal_model_pdivu(cs_real_t  smbrs[])
   const cs_real_t thetv = eqp_u->theta;
   //cs_real_t _coef = 1. + 2. * (1. - thetv);
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   /* Case for humid air */
 

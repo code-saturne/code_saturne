@@ -2687,7 +2687,7 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
    * Note: new particles will be integrated at the next time step, otherwise
    * positions might be overwritten */
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
   int imposed_motion = cs_lagr_particles_get_flag(p_set, p_id,
                                                   CS_LAGR_PART_IMPOSED_MOTION);

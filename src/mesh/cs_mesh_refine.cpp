@@ -1626,9 +1626,8 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
 
   const cs_lnum_t n_cells = m->n_cells;
 
-  const cs_lnum_2_t *restrict i_face_cells =
-    (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   const cs_real_3_t *vtx_coords = (const cs_real_3_t *)m->vtx_coord;
 
@@ -4914,8 +4913,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++)
       c_r_level[i] = 0;
 
-    const cs_lnum_2_t *restrict i_face_cells =
-      (const cs_lnum_2_t *)m->i_face_cells;
+    const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
 
     for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
       for (cs_lnum_t i = 0; i < 2; i++) {

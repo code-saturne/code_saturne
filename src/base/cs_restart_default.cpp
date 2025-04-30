@@ -1509,7 +1509,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
     if (itytur_old != 4) { /* restart from RANS */
 
       const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-      const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+      const cs_real_3_t *cell_cen = mq->cell_cen;
 
       cs_real_3_t *v_vel = (cs_real_3_t *)(CS_F_(vel)->vals[t_id]);
 
@@ -2434,8 +2434,6 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
                               const char                 *key,
                               int                         read_flag[])
 {
-  int retcode;
-
   /* Initialization */
 
   int n_required = 0, n_legacy_read = 0;
@@ -2482,11 +2480,11 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
 
   /* Read metadata */
 
-  retcode = cs_restart_check_section(r,
-                                     sec_name,
-                                     CS_MESH_LOCATION_NONE,
-                                     n_o_fields,
-                                     CS_TYPE_int);
+  int retcode = cs_restart_check_section(r,
+                                         sec_name,
+                                         CS_MESH_LOCATION_NONE,
+                                         n_o_fields,
+                                         CS_TYPE_int);
 
   /* Try to read in compatibility mode if section not found */
 
@@ -2847,15 +2845,13 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
 void
 cs_restart_write_bc_coeffs(cs_restart_t  *r)
 {
-  int c_id, f_id;
-
   const int coupled_key_id = cs_field_key_id_try("coupled");
   const int n_fields = cs_field_n_fields();
 
   /* Loop on all fields, to search for those defined on all cells
      and with BC coefficients */
 
-  for (f_id = 0; f_id < n_fields; f_id++) {
+  for (int f_id = 0; f_id < n_fields; f_id++) {
 
     const cs_field_t  *f = cs_field_by_id(f_id);
 
@@ -2891,7 +2887,7 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
         c_id_end = 10;
       }
 
-      for (c_id = c_id_start; c_id < c_id_end; c_id++) {
+      for (int c_id = c_id_start; c_id < c_id_end; c_id++) {
         if (p[c_id] != nullptr) {
           coeff_p[c_id] = 1;
           /* avoid double reads/writes in case of aliasing */
@@ -2904,7 +2900,7 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
 
       cs_parall_max(c_id_end-c_id_start, CS_INT32, coeff_p+c_id_start);
 
-      for (c_id = c_id_start; c_id < c_id_end; c_id++) {
+      for (int c_id = c_id_start; c_id < c_id_end; c_id++) {
 
         char *sec_name = nullptr;
 

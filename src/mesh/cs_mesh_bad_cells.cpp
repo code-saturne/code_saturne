@@ -629,11 +629,11 @@ _to_regularize(const cs_mesh_t             *mesh,
   cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_i_faces = mesh->n_i_faces;
   cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
 
-  const cs_real_3_t *cdgfac = (const cs_real_3_t *) mq->i_face_cog;
-  const cs_real_3_t *cdgfbo = (const cs_real_3_t *) mq->b_face_cog;
+  const cs_real_3_t *cdgfac = mq->i_face_cog;
+  const cs_real_3_t *cdgfbo = mq->b_face_cog;
   const cs_real_3_t *i_face_normal = (const cs_real_3_t *) mq->i_face_normal;
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *) mq->b_face_normal;
 

@@ -181,7 +181,6 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
 void
 cs_user_extra_operations(cs_domain_t *domain)
 {
-
   {
     /*![medcpl_slice_mean]*/
     /* Compute mean of a scalar over the slice "slice_OZ" */
@@ -204,8 +203,8 @@ cs_user_extra_operations(cs_domain_t *domain)
 
   {
     /*![medcpl_slice_integral_weighted]*/
-    /* Compute Tbulk of a disc slice.
-     * Tbulk = Int(T * cp * rho * <u|n>) / Int(cp * rho * <u|n>)
+    /* Compute t_bulk of a disc slice.
+     * t_bulk = Int(T * cp * rho * <u|n>) / Int(cp * rho * <u|n>)
      */
 
     const cs_lnum_t n_cells = domain->mesh->n_cells;
@@ -217,15 +216,14 @@ cs_user_extra_operations(cs_domain_t *domain)
 
     cs_real_3_t *cvar_vel = (cs_real_3_t *)CS_F_(vel)->val;
 
-    cs_real_t Tbulk = cs_medcoupling_slice_scalar_mean_weighted("disc1",
-                                                                CS_F_(t)->val,
-                                                                rho_cp,
-                                                                cvar_vel);
+    cs_real_t t_bulk = cs_medcoupling_slice_scalar_mean_weighted("disc1",
+                                                                 CS_F_(t)->val,
+                                                                 rho_cp,
+                                                                 cvar_vel);
 
     CS_FREE(rho_cp);
     /*![medcpl_slice_integral_weighted]*/
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -813,7 +813,7 @@ cs_solve_all(int  itrale)
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   const cs_equation_param_t *eqp_p
     = cs_field_get_equation_param_const(CS_F_(p));

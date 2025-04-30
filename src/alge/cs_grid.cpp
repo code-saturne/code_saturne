@@ -165,21 +165,21 @@ struct _cs_grid_t {
 
   /* Face to cell date (if owner); uses same index as MSR matrix */
 
-  cs_lnum_t    *cell_face;           /* Cell to faces adjacency */
-  short int    *cell_face_sgn;       /* Cell to faces orientation */
+  cs_lnum_t    *cell_face;          /* Cell to faces adjacency */
+  short int    *cell_face_sgn;      /* Cell to faces orientation */
 
   /* Geometric data */
 
   cs_real_t         relaxation;     /* P0/P1 relaxation parameter */
-  const cs_real_t  *cell_cen;       /* Cell center (shared) */
-  cs_real_t        *_cell_cen;      /* Cell center (private) */
+  const cs_real_3_t  *cell_cen;     /* Cell center (shared) */
+  cs_real_3_t        *_cell_cen;    /* Cell center (private) */
 
-  const cs_real_t  *cell_vol;       /* Cell volume (shared) */
-  cs_real_t        *_cell_vol;      /* Cell volume (private) */
+  const cs_real_t    *cell_vol;     /* Cell volume (shared) */
+  cs_real_t          *_cell_vol;    /* Cell volume (private) */
 
-  const cs_real_t  *face_normal;    /* Surface normal of internal faces.
+  const cs_real_t    *face_normal;  /* Surface normal of internal faces.
                                        (shared; L2 norm = face area) */
-  cs_real_t        *_face_normal;   /* Surface normal of internal faces.
+  cs_real_t          *_face_normal; /* Surface normal of internal faces.
                                        (private; L2 norm = face area) */
 
   /* Parallel / periodic halo */
@@ -2031,7 +2031,7 @@ _append_cell_data(cs_grid_t  *g)
     g->n_cols_ext = g->n_rows + g->halo->n_elts[0];
 
     if (g->relaxation > 0) {
-      CS_REALLOC(g->_cell_cen, g->n_cols_ext * 3, cs_real_t);
+      CS_REALLOC(g->_cell_cen, g->n_cols_ext, cs_real_3_t);
       CS_REALLOC(g->_cell_vol, g->n_cols_ext, cs_real_t);
     }
 
@@ -2098,11 +2098,8 @@ _sync_merged_cell_data(cs_grid_t  *g)
   if (g->halo != nullptr) {
 
     if (g->relaxation > 0) {
-      cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_cell_cen, 3);
-      if (g->halo->n_transforms > 0)
-        cs_halo_perio_sync_coords(g->halo, CS_HALO_STANDARD, g->_cell_cen);
-
-      cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_cell_vol);
+      cs_halo_sync_r(g->halo, CS_HALO_STANDARD, false, g->_cell_cen);
+      cs_halo_sync(g->halo, CS_HALO_STANDARD, false, g->_cell_vol);
     }
 
     cs_lnum_t db_stride = g->db_size*g->db_size;
@@ -2271,7 +2268,7 @@ _append_face_data(cs_grid_t   *g,
     g->n_faces = 0;
   }
 
-  g->face_cell = (const cs_lnum_2_t  *)(g->_face_cell);
+  g->face_cell = g->_face_cell;
   g->xa = g->_xa;
   if (g->relaxation > 0) {
     g->face_normal = g->_face_normal;
@@ -5129,36 +5126,36 @@ _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
   cs_lnum_t *c_coarse_row = coarse_grid->coarse_row;
 
   cs_real_t *c_cell_vol = coarse_grid->_cell_vol;
-  cs_real_t *c_cell_cen = coarse_grid->_cell_cen;
+  cs_real_3_t *c_cell_cen = coarse_grid->_cell_cen;
 
   const cs_real_t *f_cell_vol = fine_grid->cell_vol;
-  const cs_real_t *f_cell_cen = fine_grid->cell_cen;
+  const cs_real_3_t *f_cell_cen = fine_grid->cell_cen;
 
   /* Compute volume and center of coarse cells */
 
 # pragma omp parallel for if(c_n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t ic = 0; ic < c_n_cells_ext; ic++) {
     c_cell_vol[ic] = 0.;
-    c_cell_cen[3*ic]    = 0.;
-    c_cell_cen[3*ic +1] = 0.;
-    c_cell_cen[3*ic +2] = 0.;
+    c_cell_cen[ic][0] = 0.;
+    c_cell_cen[ic][1] = 0.;
+    c_cell_cen[ic][2] = 0.;
   }
 
   for (cs_lnum_t ii = 0; ii < f_n_cells; ii++) {
     cs_lnum_t ic = c_coarse_row[ii];
     if (ic > -1) {
       c_cell_vol[ic] += f_cell_vol[ii];
-      c_cell_cen[3*ic]    += f_cell_vol[ii]*f_cell_cen[3*ii];
-      c_cell_cen[3*ic +1] += f_cell_vol[ii]*f_cell_cen[3*ii +1];
-      c_cell_cen[3*ic +2] += f_cell_vol[ii]*f_cell_cen[3*ii +2];
+      c_cell_cen[ic][0] += f_cell_vol[ii]*f_cell_cen[ii][0];
+      c_cell_cen[ic][1] += f_cell_vol[ii]*f_cell_cen[ii][1];
+      c_cell_cen[ic][2] += f_cell_vol[ii]*f_cell_cen[ii][2];
     }
   }
 
 # pragma omp parallel for if(c_n_cells > CS_THR_MIN)
   for (cs_lnum_t ic = 0; ic < c_n_cells; ic++) {
-    c_cell_cen[3*ic]    /= c_cell_vol[ic];
-    c_cell_cen[3*ic +1] /= c_cell_vol[ic];
-    c_cell_cen[3*ic +2] /= c_cell_vol[ic];
+    c_cell_cen[ic][0]    /= c_cell_vol[ic];
+    c_cell_cen[ic][1] /= c_cell_vol[ic];
+    c_cell_cen[ic][2] /= c_cell_vol[ic];
   }
 }
 
@@ -5538,7 +5535,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
   cs_real_t *f_xa0ij = fine_grid->xa0ij;
 
-  cs_real_t *c_cell_cen = coarse_grid->_cell_cen;
+  cs_real_3_t *c_cell_cen = coarse_grid->_cell_cen;
   cs_real_t *c_face_normal = coarse_grid->_face_normal;
 
   cs_real_t *c_xa0 = coarse_grid->_xa0;
@@ -5553,7 +5550,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
 
   const cs_real_t *f_face_normal = fine_grid->face_normal;
-  const cs_real_t *f_cell_cen = fine_grid->cell_cen;
+  const cs_real_3_t *f_cell_cen = fine_grid->cell_cen;
   const cs_real_t *f_xa0 = fine_grid->xa0;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
@@ -5750,21 +5747,21 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       cs_lnum_t jc = c_face_cell[c_face][1];
 
       if (f_face_normal != nullptr) {
-        dsigjg =   (  c_cell_cen[3*jc]
-                    - c_cell_cen[3*ic])    * c_face_normal[3*c_face]
-                 + (  c_cell_cen[3*jc +1]
-                    - c_cell_cen[3*ic +1]) * c_face_normal[3*c_face +1]
-                 + (  c_cell_cen[3*jc +2]
-                    - c_cell_cen[3*ic +2]) * c_face_normal[3*c_face +2];
+        dsigjg =   (  c_cell_cen[jc][0]
+                    - c_cell_cen[ic][0])    * c_face_normal[3*c_face]
+                 + (  c_cell_cen[jc][1]
+                    - c_cell_cen[ic][1]) * c_face_normal[3*c_face +1]
+                 + (  c_cell_cen[jc][2]
+                    - c_cell_cen[ic][2]) * c_face_normal[3*c_face +2];
 
         dsxaij =   c_xa0ij[3*c_face]    * c_face_normal[3*c_face]
                  + c_xa0ij[3*c_face +1] * c_face_normal[3*c_face +1]
                  + c_xa0ij[3*c_face +2] * c_face_normal[3*c_face +2];
       }
       else {
-        cs_real_t dij[3] = {c_cell_cen[3*jc] - c_cell_cen[3*jc],
-                            c_cell_cen[3*jc + 1] - c_cell_cen[3*jc + 1],
-                            c_cell_cen[3*jc + 2] - c_cell_cen[3*jc + 2]};
+        cs_real_t dij[3] = {c_cell_cen[jc][0] - c_cell_cen[jc][0],
+                            c_cell_cen[jc][1] - c_cell_cen[jc][1],
+                            c_cell_cen[jc][2] - c_cell_cen[jc][2]};
         dsigjg = cs_math_3_dot_product(dij, dij);
         dsxaij =   c_xa0ij[3*c_face]    * dij[0]
                  + c_xa0ij[3*c_face +1] * dij[1]
@@ -5938,7 +5935,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   cs_real_t *f_xa0ij = fine_grid->xa0ij;
 
-  cs_real_t *c_cell_cen = coarse_grid->_cell_cen;
+  cs_real_3_t *c_cell_cen = coarse_grid->_cell_cen;
   cs_real_t *c_face_normal = coarse_grid->_face_normal;
 
   cs_real_t *c_xa0 = coarse_grid->_xa0;
@@ -6138,12 +6135,12 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
       ic = c_face_cell[c_face][0];
       jc = c_face_cell[c_face][1];
 
-      dsigjg =   (  c_cell_cen[3*jc]
-                  - c_cell_cen[3*ic])    * c_face_normal[3*c_face]
-               + (  c_cell_cen[3*jc +1]
-                  - c_cell_cen[3*ic +1]) * c_face_normal[3*c_face +1]
-               + (  c_cell_cen[3*jc +2]
-                  - c_cell_cen[3*ic +2]) * c_face_normal[3*c_face +2];
+      dsigjg =   (  c_cell_cen[jc][0]
+                  - c_cell_cen[ic][0])    * c_face_normal[3*c_face]
+               + (  c_cell_cen[jc][1]
+                  - c_cell_cen[ic][1]) * c_face_normal[3*c_face +1]
+               + (  c_cell_cen[jc][2]
+                  - c_cell_cen[ic][2]) * c_face_normal[3*c_face +2];
 
       dsxaij =   c_xa0ij[3*c_face]    * c_face_normal[3*c_face]
                + c_xa0ij[3*c_face +1] * c_face_normal[3*c_face +1]
@@ -6722,10 +6719,10 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
 
   /* Add to coarse grid */
 
-  c->_cell_cen = (cs_real_t *)c_cell_cen;
+  c->_cell_cen = c_cell_cen;
   c->cell_cen = c->_cell_cen;
 
-  c->_cell_vol = (cs_real_t *)c_cell_vol;
+  c->_cell_vol = c_cell_vol;
   c->cell_vol = c->_cell_vol;
 
   c->_face_normal = (cs_real_t *)c_face_normal;
@@ -6748,11 +6745,8 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
   /* Synchronize grid's geometric quantities */
 
   if (c->halo != nullptr) {
-    cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_cell_cen, 3);
-    if (c->halo->n_transforms > 0)
-      cs_halo_perio_sync_coords(c->halo, CS_HALO_STANDARD, c->_cell_cen);
-
-    cs_halo_sync_var(c->halo, CS_HALO_STANDARD, c->_cell_vol);
+    cs_halo_sync_r(c->halo, CS_HALO_STANDARD, false, c->_cell_cen);
+    cs_halo_sync(c->halo, CS_HALO_STANDARD, false, c->_cell_vol);
   }
 
   if (cs_glob_timer_kernels_flag > 0) {
@@ -7178,7 +7172,7 @@ _native_from_msr(cs_grid_t  *g)
     g->n_faces = n_edges;
     CS_REALLOC(g->_face_cell, n_edges, cs_lnum_2_t);
     CS_REALLOC(g->_xa, eb_stride*n_edges, cs_real_t);
-    g->face_cell = (const cs_lnum_2_t *)(g->_face_cell);
+    g->face_cell = g->_face_cell;
     g->xa = g->_xa;
   }
   else
@@ -7485,8 +7479,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                                  &cell_vol,
                                  &face_normal);
 
-  g->cell_cen = (const cs_real_t *)cell_cen;
-  g->cell_vol = (const cs_real_t *)cell_vol;
+  g->cell_cen = cell_cen;
+  g->cell_vol = cell_vol;
   g->face_normal = (const cs_real_t *)face_normal;
 
   g->halo = cs_matrix_get_halo(a);
@@ -8162,7 +8156,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
     CS_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
     c->xa = c->_xa;
 
-    CS_MALLOC(c->_cell_cen, c->n_cols_ext*3, cs_real_t);
+    CS_MALLOC(c->_cell_cen, c->n_cols_ext, cs_real_3_t);
     c->cell_cen = c->_cell_cen;
 
     CS_MALLOC(c->_cell_vol, c->n_cols_ext, cs_real_t);
@@ -8195,11 +8189,8 @@ cs_grid_coarsen(const cs_grid_t      *f,
     /* Synchronize grid's geometric quantities */
 
     if (c->halo != nullptr) {
-      cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_cell_cen, 3);
-      if (c->halo->n_transforms > 0)
-        cs_halo_perio_sync_coords(c->halo, CS_HALO_STANDARD, c->_cell_cen);
-
-      cs_halo_sync_var(c->halo, CS_HALO_STANDARD, c->_cell_vol);
+      cs_halo_sync_r(c->halo, CS_HALO_STANDARD, false, c->_cell_cen);
+      cs_halo_sync(c->halo, CS_HALO_STANDARD, false, c->_cell_vol);
     }
 
     /* Build matrix */
@@ -8291,8 +8282,8 @@ cs_grid_coarsen(const cs_grid_t      *f,
                                    nullptr,
                                    c->cell_face,
                                    c->cell_face_sgn,
-                                   (const cs_real_3_t *)c->cell_cen,
-                                   (const cs_real_t *)c->cell_vol,
+                                   c->cell_cen,
+                                   c->cell_vol,
                                    (const cs_real_3_t *)c->_face_normal);
 
     /* Build coarser grid from coarse grid */
@@ -8353,8 +8344,8 @@ cs_grid_coarsen(const cs_grid_t      *f,
                                    nullptr,
                                    c->cell_face,
                                    c->cell_face_sgn,
-                                   (const cs_real_3_t *)c->cell_cen,
-                                   (const cs_real_t *)c->cell_vol,
+                                   c->cell_cen,
+                                   c->cell_vol,
                                    (const cs_real_3_t *)c->_face_normal);
 
   /* Optional verification */

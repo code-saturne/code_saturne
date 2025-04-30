@@ -260,7 +260,7 @@ _update_matrix_struct(cs_matrix_type_t  t)
                                        mesh->n_cells,
                                        mesh->n_cells_with_ghosts,
                                        mesh->n_i_faces,
-                                       (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                       mesh->i_face_cells,
                                        mesh->halo,
                                        mesh->i_face_numbering);
     }
@@ -273,7 +273,7 @@ _update_matrix_struct(cs_matrix_type_t  t)
                                      mesh->n_cells,
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,
-                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                     mesh->i_face_cells,
                                      mesh->halo,
                                      mesh->i_face_numbering);
     }
@@ -323,7 +323,7 @@ _create_assembler(int  coupling_id)
 
   const cs_lnum_t     n_rows = m->n_cells;
   const cs_lnum_t     n_edges = m->n_i_faces;
-  const cs_lnum_2_t  *edges = (const cs_lnum_2_t *)(m->i_face_cells);
+  const cs_lnum_2_t  *edges = m->i_face_cells;
 
   /* Global cell ids, based on range/scan */
 
@@ -434,7 +434,7 @@ cs_matrix_vector_native_multiply(bool              symmetric,
                              db_size,
                              eb_size,
                              m->n_i_faces,
-                             (const cs_lnum_2_t *)m->i_face_cells,
+                             m->i_face_cells,
                              dam,
                              xam);
 
@@ -995,7 +995,7 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
   const cs_lnum_t     n_rows = mesh->n_cells;
   const cs_lnum_t     n_cols_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t     n_edges = mesh->n_i_faces;
-  const cs_lnum_2_t  *edges = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const cs_lnum_2_t  *edges = mesh->i_face_cells;
 
   cs_lnum_t s0 = 2;
   cs_lnum_t s1 = 1;

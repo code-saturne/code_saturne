@@ -950,10 +950,8 @@ _sym_matrix_scalar(const cs_mesh_t            *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
@@ -1009,7 +1007,6 @@ _sym_matrix_scalar(const cs_mesh_t            *m,
   }
 
   ctx.wait();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1075,10 +1072,8 @@ _matrix_scalar(const cs_mesh_t            *m,
   const cs_real_t *cofbfp = bc_coeffs->bf;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
@@ -1208,10 +1203,8 @@ _sym_matrix_strided(const cs_mesh_t            *m,
   using b_t = cs_real_t[stride][stride];
   const b_t *cofbfp = (const b_t *)bc_coeffs_v->bf;
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -1319,10 +1312,8 @@ _matrix_strided(const cs_mesh_t            *m,
                 cs_real_t        (*restrict xa)[2])
 {
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
   const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
   cs_real_2_t *i_f_face_factor;
@@ -1619,10 +1610,8 @@ _sym_matrix_anisotropic_diffusion_strided
   const b_t *cofbfp = (const b_t *)bc_coeffs_v->bf;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -1734,10 +1723,8 @@ _matrix_anisotropic_diffusion_strided
 )
 {
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
   const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
@@ -2005,7 +1992,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
       || need_xa) {
 
     const cs_lnum_t n_edges = m->n_i_faces;
-    const cs_lnum_2_t *edges = (const cs_lnum_2_t *)(m->i_face_cells);
+    const cs_lnum_2_t *edges = m->i_face_cells;
 
     const int isym = (iconvp == 1) ? 2 : 1;
 
@@ -2344,7 +2331,7 @@ cs_matrix_compute_coeffs
       || (cs_glob_porous_model == 3 && stride == 3)) { // should be test on vel ?
 
     const cs_lnum_t n_edges = m->n_i_faces;
-    const cs_lnum_2_t *edges = (const cs_lnum_2_t *)(m->i_face_cells);
+    const cs_lnum_2_t *edges = m->i_face_cells;
     const int isym = (iconvp == 1) ? 2 : 1;
 
     b_t *da;
@@ -3091,10 +3078,8 @@ cs_matrix_time_step(const cs_mesh_t            *m,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   /* 1. Initialization */
 

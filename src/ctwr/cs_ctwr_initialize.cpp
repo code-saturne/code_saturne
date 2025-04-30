@@ -576,8 +576,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
   const cs_nreal_3_t *restrict i_face_u_normal
     = cs_glob_mesh_quantities->i_face_u_normal;
-  const cs_lnum_2_t *i_face_cells =
-    (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
+  const cs_lnum_2_t *i_face_cells = cs_glob_mesh->i_face_cells;
 
   const cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;

@@ -2166,12 +2166,12 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
 
   cs_stl_mesh_t *stl = stl_mesh;
 
-  const cs_real_t *volume   = (const cs_real_t *)mq->cell_vol;
-  const cs_real_3_t *xyzcen = (const cs_real_3_t *)mq->cell_cen;
-  const cs_real_3_t *cdgfac = (const cs_real_3_t *)mq->i_face_cog;
-  const cs_real_3_t *cdgfbo = (const cs_real_3_t *)mq->b_face_cog;
-  const cs_lnum_2_t *ifacel = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *ifabor   = (const cs_lnum_t *)m->b_face_cells;
+  const cs_real_t *volume   = mq->cell_vol;
+  const cs_real_3_t *xyzcen = mq->cell_cen;
+  const cs_real_3_t *cdgfac = mq->i_face_cog;
+  const cs_real_3_t *cdgfbo = mq->b_face_cog;
+  const cs_lnum_2_t *ifacel = m->i_face_cells;
+  const cs_lnum_t *ifabor   = m->b_face_cells;
 
   /* If no reference point outside the STL file is given
    * by the user, the porosity computation will fail */

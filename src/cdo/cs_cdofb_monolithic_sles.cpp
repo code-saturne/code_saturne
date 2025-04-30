@@ -387,8 +387,7 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
   const cs_mesh_t  *mesh = cs_shared_mesh;
   const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = mesh->i_face_cells;
 
   /* Native format for the Schur approximation matrix */
 

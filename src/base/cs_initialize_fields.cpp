@@ -634,7 +634,7 @@ cs_initialize_fields_stage_1(void)
     }
 
     if (uprtot > 0) {
-      const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+      const cs_real_3_t *cell_cen = mq->cell_cen;
 
       /* Copy global arrays to local ones to enable lambda capture for dispatch */
       const cs_real_t ro0 = fp->ro0;

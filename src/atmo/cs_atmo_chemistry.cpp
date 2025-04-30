@@ -1187,7 +1187,7 @@ cs_atmo_read_chemistry_profile(int mode)
       }
 
       bft_printf("year, quant-day, hour, minute, second\n");
-      bft_printf("%d  %d  %d  %d  %10.2lf\n", year, quant, hour, minute, second);
+      bft_printf("%d  %d  %d  %d  %d\n", year, quant, hour, minute, second);
       bft_printf("t_conc_profiles: %10.4lf\n", _atmo_chem.t_conc_profiles[itp]);
 
       bft_printf("\n");

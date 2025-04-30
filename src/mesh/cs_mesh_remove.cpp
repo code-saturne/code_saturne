@@ -115,7 +115,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   cs_lnum_t n_i_faces = m->n_i_faces;
   cs_lnum_t n_b_faces = m->n_b_faces;
-  cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)(m->i_face_cells);
+  cs_lnum_2_t *i_face_cells = m->i_face_cells;
   cs_lnum_t *b_face_cells = m->b_face_cells;
 
   cs_lnum_t *c_o2n;
@@ -207,7 +207,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
 
   CS_FREE(sel_faces);
 
-  i_face_cells = (cs_lnum_2_t *)(m->i_face_cells);
+  i_face_cells = m->i_face_cells;
   b_face_cells = m->b_face_cells;
   n_i_faces = m->n_i_faces;
   n_b_faces = m->n_b_faces;

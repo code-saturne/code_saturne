@@ -1606,7 +1606,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   }
 
   _count_b_faces_to_add(mesh->n_cells,
-                        (const cs_lnum_2_t  *)mesh->i_face_cells,
+                        mesh->i_face_cells,
                         mesh->i_face_vtx_idx,
                         face_id,
                         n_faces,

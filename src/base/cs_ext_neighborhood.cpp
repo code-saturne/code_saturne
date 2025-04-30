@@ -254,9 +254,6 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
                                cs_lnum_t         **const p_cell_i_faces_idx,
                                cs_lnum_t         **const p_cell_i_faces_lst)
 {
-
-  cs_lnum_t  i, j, j1, j2;
-
   cs_lnum_t  *cell_faces_count = nullptr;
   cs_lnum_t  *cell_faces_idx = nullptr;
   cs_lnum_t  *cell_faces_lst = nullptr;
@@ -265,7 +262,7 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
 
   CS_MALLOC(cell_faces_idx, mesh->n_cells + 1, cs_lnum_t);
 
-  for (i = 0; i < mesh->n_cells + 1; i++)
+  for (cs_lnum_t i = 0; i < mesh->n_cells + 1; i++)
     cell_faces_idx[i] = 0;
 
   /* Count number of faces per cell (we assign the temporary counter
@@ -275,9 +272,9 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
   /* Note: test if j < mesh->n_cells on internal faces to ignore
      parallel and/or periodic ghost cells */
 
-  for (i = 0; i < mesh->n_i_faces; i++) {
-    j1 = mesh->i_face_cells[i][0];
-    j2 = mesh->i_face_cells[i][1];
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
+    cs_lnum_t j1 = mesh->i_face_cells[i][0];
+    cs_lnum_t j2 = mesh->i_face_cells[i][1];
     if (j1 < mesh->n_cells)
       cell_faces_idx[j1 + 1] += 1;
     if (j2 < mesh->n_cells)
@@ -287,7 +284,7 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
   /* Build position index */
 
   cell_faces_idx[0] = 0;
-  for (j = 0; j < mesh->n_cells; j++)
+  for (cs_lnum_t j = 0; j < mesh->n_cells; j++)
     cell_faces_idx[j + 1] += cell_faces_idx[j];
 
   /* Build array of values */
@@ -295,12 +292,12 @@ _get_cell_i_faces_connectivity(const cs_mesh_t          *mesh,
   CS_MALLOC(cell_faces_lst, cell_faces_idx[mesh->n_cells], cs_lnum_t);
   CS_MALLOC(cell_faces_count, mesh->n_cells, cs_lnum_t);
 
-  for (i = 0; i < mesh->n_cells; i++)
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
     cell_faces_count[i] = 0;
 
-  for (i = 0; i < mesh->n_i_faces; i++) {
-    j1 = mesh->i_face_cells[i][0];
-    j2 = mesh->i_face_cells[i][1];
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
+    cs_lnum_t j1 = mesh->i_face_cells[i][0];
+    cs_lnum_t j2 = mesh->i_face_cells[i][1];
     if (j1 < mesh->n_cells) {
       cell_faces_lst[cell_faces_idx[j1] + cell_faces_count[j1]] = i;
       cell_faces_count[j1] += 1;
@@ -335,9 +332,6 @@ _get_cell_b_faces_connectivity(const cs_mesh_t          *mesh,
                                cs_lnum_t         **const p_cell_b_faces_idx,
                                cs_lnum_t         **const p_cell_b_faces_lst)
 {
-
-  cs_lnum_t  i, j, j1;
-
   cs_lnum_t  *cell_faces_count = nullptr;
   cs_lnum_t  *cell_faces_idx = nullptr;
   cs_lnum_t  *cell_faces_lst = nullptr;
@@ -346,7 +340,7 @@ _get_cell_b_faces_connectivity(const cs_mesh_t          *mesh,
 
   CS_MALLOC(cell_faces_idx, mesh->n_cells + 1, cs_lnum_t);
 
-  for (i = 0; i < mesh->n_cells + 1; i++)
+  for (cs_lnum_t i = 0; i < mesh->n_cells + 1; i++)
     cell_faces_idx[i] = 0;
 
   /* Count number of faces per cell (we assign the temporary counter
@@ -356,8 +350,8 @@ _get_cell_b_faces_connectivity(const cs_mesh_t          *mesh,
   /* Note: test if j < mesh->n_cells on internal faces to ignore
      parallel and/or periodic ghost cells */
 
-  for (i = 0; i < mesh->n_b_faces; i++) {
-    j1 = mesh->b_face_cells[i];
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
+    cs_lnum_t j1 = mesh->b_face_cells[i];
     if (j1 < mesh->n_cells)
       cell_faces_idx[j1 + 1] += 1;
   }
@@ -365,7 +359,7 @@ _get_cell_b_faces_connectivity(const cs_mesh_t          *mesh,
   /* Build position index */
 
   cell_faces_idx[0] = 0;
-  for (j = 0; j < mesh->n_cells; j++)
+  for (cs_lnum_t j = 0; j < mesh->n_cells; j++)
     cell_faces_idx[j + 1] += cell_faces_idx[j];
 
   /* Build array of values */
@@ -373,11 +367,11 @@ _get_cell_b_faces_connectivity(const cs_mesh_t          *mesh,
   CS_MALLOC(cell_faces_lst, cell_faces_idx[mesh->n_cells], cs_lnum_t);
   CS_MALLOC(cell_faces_count, mesh->n_cells, cs_lnum_t);
 
-  for (i = 0; i < mesh->n_cells; i++)
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
     cell_faces_count[i] = 0;
 
-  for (i = 0; i < mesh->n_b_faces; i++) {
-    j1 = mesh->b_face_cells[i];
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
+    cs_lnum_t j1 = mesh->b_face_cells[i];
     if (j1 < mesh->n_cells) {
       cell_faces_lst[cell_faces_idx[j1] + cell_faces_count[j1]] = i;
       cell_faces_count[j1] += 1;
@@ -406,11 +400,6 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
                           cs_lnum_t  *p_vtx_cells_idx[],
                           cs_lnum_t  *p_vtx_cells_lst[])
 {
-  cs_lnum_t  i, j, idx;
-  cs_lnum_t  vtx_id, face_id, cell_id;
-
-  bool      already_seen;
-
   cs_lnum_t  vtx_cells_connect_size = 0;
 
   cs_lnum_t  *vtx_faces_idx = nullptr, *vtx_faces_lst = nullptr;
@@ -420,42 +409,42 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
   const cs_lnum_t  n_faces = mesh->n_i_faces;
   const cs_lnum_t  *face_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t  *face_vtx_lst = mesh->i_face_vtx_lst;
-  const cs_lnum_2_t  *face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
 
   cs_lnum_t  vtx_cells_estimated_connect_size = 3 * n_vertices;
 
   CS_MALLOC(vtx_cells_idx, n_vertices + 1, cs_lnum_t);
   CS_MALLOC(vtx_faces_idx, n_vertices + 1, cs_lnum_t);
 
-  for (vtx_id = 0; vtx_id < n_vertices + 1; vtx_id++) {
+  for (cs_lnum_t vtx_id = 0; vtx_id < n_vertices + 1; vtx_id++) {
     vtx_cells_idx[vtx_id] = 0;
     vtx_faces_idx[vtx_id] = 0;
   }
 
   /* Define vtx -> faces connectivity index */
 
-  for (face_id = 0; face_id < n_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
 
-    for (i = face_vtx_idx[face_id]; i < face_vtx_idx[face_id+1]; i++) {
-      vtx_id = face_vtx_lst[i];
+    for (cs_lnum_t i = face_vtx_idx[face_id]; i < face_vtx_idx[face_id+1]; i++) {
+      cs_lnum_t vtx_id = face_vtx_lst[i];
       vtx_faces_idx[vtx_id + 1] += 1;
     }
 
   } /* End of loop on faces */
 
   vtx_faces_idx[0] = 0;
-  for (vtx_id = 0; vtx_id < n_vertices; vtx_id++)
+  for (cs_lnum_t vtx_id = 0; vtx_id < n_vertices; vtx_id++)
     vtx_faces_idx[vtx_id + 1] += vtx_faces_idx[vtx_id];
 
   /* Allocation and definiton of "vtx -> faces" connectivity list */
 
   CS_MALLOC(vtx_faces_lst, vtx_faces_idx[n_vertices], cs_lnum_t);
 
-  for (face_id = 0; face_id < n_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
 
-    for (i = face_vtx_idx[face_id]; i < face_vtx_idx[face_id+1]; i++) {
+    for (cs_lnum_t i = face_vtx_idx[face_id]; i < face_vtx_idx[face_id+1]; i++) {
 
-      vtx_id = face_vtx_lst[i];
+      cs_lnum_t vtx_id = face_vtx_lst[i];
       vtx_faces_lst[vtx_faces_idx[vtx_id]] = face_id;
       vtx_faces_idx[vtx_id] += 1;
 
@@ -463,7 +452,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   } /* End of loop on faces */
 
-  for (vtx_id = n_vertices; vtx_id > 0; vtx_id--)
+  for (cs_lnum_t vtx_id = n_vertices; vtx_id > 0; vtx_id--)
     vtx_faces_idx[vtx_id] = vtx_faces_idx[vtx_id-1];
   vtx_faces_idx[0] = 0;
 
@@ -474,18 +463,18 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   vtx_cells_idx[0] = 0;
 
-  for (vtx_id = 0; vtx_id < n_vertices; vtx_id++) {
+  for (cs_lnum_t vtx_id = 0; vtx_id < n_vertices; vtx_id++) {
 
-    for (i = vtx_faces_idx[vtx_id]; i < vtx_faces_idx[vtx_id+1]; i++) {
+    for (cs_lnum_t i = vtx_faces_idx[vtx_id]; i < vtx_faces_idx[vtx_id+1]; i++) {
 
-      face_id = vtx_faces_lst[i];
+      cs_lnum_t face_id = vtx_faces_lst[i];
 
-      for (j = 0; j < 2; j++) { /* For the cells sharing this face */
+      for (cs_lnum_t j = 0; j < 2; j++) { /* For the cells sharing this face */
 
-        cell_id = face_cells[face_id][j];
+        cs_lnum_t cell_id = face_cells[face_id][j];
 
-        already_seen = false;
-        idx = vtx_cells_idx[vtx_id];
+        bool already_seen = false;
+        cs_lnum_t idx = vtx_cells_idx[vtx_id];
 
         while ((already_seen == false) && (idx < vtx_cells_connect_size)) {
           if (cell_id == vtx_cells_lst[idx])
@@ -523,7 +512,6 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
 
   *p_vtx_cells_idx = vtx_cells_idx;
   *p_vtx_cells_lst = vtx_cells_lst;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -966,7 +954,7 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
-  const cs_lnum_2_t  *face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
   const cs_lnum_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
 
@@ -1178,7 +1166,7 @@ _neighborhood_reduce_anomax(cs_mesh_t             *mesh,
   const cs_real_t non_ortho_max = _non_ortho_max * cs_math_pi / 180;
 
   const cs_lnum_t  n_faces = mesh->n_i_faces;
-  const cs_lnum_2_t  *face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const cs_lnum_2_t  *face_cells = mesh->i_face_cells;
 
   const cs_real_t  cos_ij_fn_min = cos(non_ortho_max);
   const cs_real_3_t  *cell_cen = mesh_quantities->cell_cen;
@@ -1372,11 +1360,11 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
 
   const cs_lnum_t n_cells = mesh->n_cells;
 
-  const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
   const cs_real_3_t  *cell_cen = mq->cell_cen;
-  const cs_real_3_t  *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
-  const cs_real_3_t  *i_face_cog = (const cs_real_3_t *)mq->i_face_cog;
-  const cs_real_t    *cell_vol = (const cs_real_t *)mq->cell_vol;
+  const cs_real_3_t  *b_face_cog = mq->b_face_cog;
+  const cs_real_3_t  *i_face_cog = mq->i_face_cog;
+  const cs_real_t    *cell_vol = mq->cell_vol;
   const cs_lnum_t  *i_f2v_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t  *b_f2v_idx = mesh->b_face_vtx_idx;
 
@@ -1724,9 +1712,9 @@ _neighborhood_reduce_cell_center_opposite(cs_mesh_t             *mesh,
 
   const cs_lnum_t n_cells = mesh->n_cells;
 
-  const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const cs_real_3_t  *cell_cen = (const cs_real_3_t *)mq->cell_cen;
-  const cs_real_3_t  *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
+  const cs_real_3_t  *cell_cen = mq->cell_cen;
+  const cs_real_3_t  *b_face_cog = mq->b_face_cog;
 
   /* Get "cell -> faces" connectivity for the local mesh */
 

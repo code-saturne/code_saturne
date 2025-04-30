@@ -469,11 +469,10 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)mesh->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *b_face_cog = fvq->b_face_cog;
+  const cs_real_3_t *cell_cen = fvq->cell_cen;
   const cs_real_t   *b_dist = fvq->b_dist;
   int *isympa = fvq->b_sym_flag;
 

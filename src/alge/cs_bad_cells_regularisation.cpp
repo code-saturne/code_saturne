@@ -88,7 +88,7 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_i_faces = mesh->n_i_faces;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
   auto *dist = mq->i_dist;
@@ -215,7 +215,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_i_faces = mesh->n_i_faces;
   cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
@@ -400,7 +400,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_i_faces = mesh->n_i_faces;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
   double *dist = mq->i_dist;
@@ -580,7 +580,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_i_faces = mesh->n_i_faces;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
   double *dist = mq->i_dist;

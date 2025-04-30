@@ -807,13 +807,13 @@ cs_function_evaluate(const cs_function_t   *f,
       = cs_mesh_location_get_type(location_id);
     const cs_real_t *base_coords = nullptr;
     if (loc_type == CS_MESH_LOCATION_CELLS)
-      base_coords = (const cs_real_t *)(mq->cell_cen);
+      base_coords = reinterpret_cast<const cs_real_t *>(mq->cell_cen);
     else if (loc_type == CS_MESH_LOCATION_INTERIOR_FACES)
-      base_coords = (const cs_real_t *)(mq->i_face_cog);
+      base_coords = reinterpret_cast<const cs_real_t *>(mq->i_face_cog);
     else if (loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
-      base_coords = (const cs_real_t *)(mq->b_face_cog);
+      base_coords = reinterpret_cast<const cs_real_t *>(mq->b_face_cog);
     else if (loc_type == CS_MESH_LOCATION_VERTICES)
-      base_coords = (const cs_real_t *)(cs_glob_mesh->vtx_coord);
+      base_coords = cs_glob_mesh->vtx_coord;
 
     f->analytic_func(t_cur,
                      n_elts,

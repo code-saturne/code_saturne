@@ -622,8 +622,7 @@ cs_ctwr_volume_mass_injection_rain_dof_func
  cs_real_t                         *retval)
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)(m->i_face_cells);
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
 
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
@@ -728,8 +727,7 @@ cs_ctwr_volume_mass_injection_yh_rain_dof_func
  cs_real_t                        *retval)
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)(m->i_face_cells);
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
 
   assert(n_elts == m->n_cells); /* all cells zone only */
   if (dense_output == false)
@@ -822,8 +820,7 @@ cs_ctwr_source_term(int              f_id,
                     cs_real_t        imp_st[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)(m->i_face_cells);
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;

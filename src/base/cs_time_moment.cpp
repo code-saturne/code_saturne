@@ -1339,8 +1339,7 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
       break;
     case CS_MESH_LOCATION_INTERIOR_FACES:
       {
-        const cs_lnum_2_t *i_face_cells
-          = (const cs_lnum_2_t *)mesh->i_face_cells;
+        const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
         if (elt_list == nullptr) {
           for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
             cs_lnum_t c_id_0 = i_face_cells[f_id][0];

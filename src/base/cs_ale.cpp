@@ -1188,8 +1188,8 @@ cs_ale_project_displacement(const int           ale_bc_type[],
   const cs_lnum_t  n_i_faces = m->n_i_faces;
   const int dim = m->dim;
   const cs_real_3_t *restrict vtx_coord  = (const cs_real_3_t *)m->vtx_coord;
-  const cs_real_3_t *restrict cell_cen   = (const cs_real_3_t *)mq->cell_cen;
-  const cs_real_3_t *restrict b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *restrict cell_cen   = mq->cell_cen;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   CS_MALLOC(vtx_counter, n_vertices, cs_real_t);
   CS_MALLOC(vtx_interior_indicator, n_vertices, bool);

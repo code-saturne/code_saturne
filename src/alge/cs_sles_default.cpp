@@ -325,7 +325,7 @@ _sles_setup_matrix_native(int                  f_id,
                                db_size,
                                eb_size,
                                m->n_i_faces,
-                               (const cs_lnum_2_t *)(m->i_face_cells),
+                               m->i_face_cells,
                                da,
                                xa);
 
@@ -413,7 +413,7 @@ _sles_setup_matrix_native(int                  f_id,
                              db_size,
                              eb_size,
                              m->n_i_faces,
-                             (const cs_lnum_2_t *)(m->i_face_cells),
+                             m->i_face_cells,
                              da,
                              xa);
 
@@ -428,8 +428,8 @@ _sles_setup_matrix_native(int                  f_id,
                                    ma->cell_cells_idx,
                                    ma->cell_i_faces,
                                    ma->cell_i_faces_sgn,
-                                   (const cs_real_3_t *)mq->cell_cen,
-                                   (const cs_real_t *)mq->cell_vol,
+                                   mq->cell_cen,
+                                   mq->cell_vol,
                                    (const cs_real_3_t *)mq->i_face_normal);
   }
 
@@ -494,8 +494,8 @@ _sles_setup_matrix_by_assembler(int               f_id,
                                  nullptr,
                                  nullptr,
                                  nullptr,
-                                 (const cs_real_3_t *)mq->cell_cen,
-                                 (const cs_real_t *)mq->cell_vol,
+                                 mq->cell_cen,
+                                 mq->cell_vol,
                                  nullptr);
 
   cs_matrix_default_set_tuned(a);
@@ -716,8 +716,8 @@ cs_sles_default_get_matrix(int          f_id,
                                    nullptr,
                                    nullptr,
                                    nullptr,
-                                   (const cs_real_3_t *)mq->cell_cen,
-                                   (const cs_real_t *)mq->cell_vol,
+                                   mq->cell_cen,
+                                   mq->cell_vol,
                                    nullptr);
 
     cs_matrix_set_need_xa(a, false);
@@ -823,8 +823,8 @@ cs_sles_default_get_matrix(int          f_id,
                                    ma->cell_cells_idx,
                                    ma->cell_i_faces,
                                    ma->cell_i_faces_sgn,
-                                   (const cs_real_3_t *)mq->cell_cen,
-                                   (const cs_real_t *)mq->cell_vol,
+                                   mq->cell_cen,
+                                   mq->cell_vol,
                                    (const cs_real_3_t *)mq->i_face_normal);
 
   }
@@ -911,7 +911,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                  diag_block_size,
                                  extra_diag_block_size,
                                  m->n_i_faces,
-                                 (const cs_lnum_2_t *)(m->i_face_cells),
+                                 m->i_face_cells,
                                  da,
                                  xa);
 
@@ -925,8 +925,8 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                      ma->cell_cells_idx,
                                      ma->cell_i_faces,
                                      ma->cell_i_faces_sgn,
-                                     (const cs_real_3_t *)mq->cell_cen,
-                                     (const cs_real_t *)mq->cell_vol,
+                                     mq->cell_cen,
+                                     mq->cell_vol,
                                      (const cs_real_3_t *)mq->i_face_normal);
 
     }

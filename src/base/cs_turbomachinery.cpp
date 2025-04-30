@@ -988,7 +988,7 @@ _update_mesh(bool     restart_mode,
       {
         int i;
         cs_lnum_t f_id;
-        cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)cs_glob_mesh->i_face_cells;
+        cs_lnum_2_t *i_face_cells = cs_glob_mesh->i_face_cells;
         const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
         for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
           for (i = 0; i < 2; i++) {

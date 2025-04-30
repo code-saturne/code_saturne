@@ -1379,8 +1379,7 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = mesh->i_face_cells;
 
   cs_lnum_t n_no_adj_halo = 0;
 
@@ -2375,7 +2374,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
                                  g_id,
                                  faces_list_assign_size,
                                  faces_list,
-                                 (const cs_lnum_2_t *restrict)l_face_cells,
+                                 l_face_cells,
                                  f_t_id,
                                  n_t_faces,
                                  t_face_last,
@@ -2389,7 +2388,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
                                        redistribute_relaxation_factor,
                                        faces_list_assign_size,
                                        faces_list,
-                                       (const cs_lnum_2_t *restrict)l_face_cells,
+                                       l_face_cells,
                                        f_t_id,
                                        n_t_faces,
                                        t_face_last,
@@ -2570,7 +2569,7 @@ _renum_i_faces_no_share_cell_in_block(cs_mesh_t    *mesh,
   _independent_face_groups(max_group_size,
                            mesh->n_cells_with_ghosts,
                            mesh->n_i_faces,
-                           (const cs_lnum_2_t *)(mesh->i_face_cells),
+                           mesh->i_face_cells,
                            new_to_old_i,
                            n_i_groups,
                            &i_group_size);
@@ -2702,7 +2701,7 @@ _renum_i_faces_for_vectorizing(cs_mesh_t  *mesh,
   int retval = -1;
 
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   /* Initialize variables to avoid compiler warnings */
 
@@ -3106,8 +3105,7 @@ _log_bandwidth_info(const cs_mesh_t  *mesh,
   cs_gnum_t profile = 0;
   cs_lnum_t *max_distance = nullptr;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = mesh->i_face_cells;
 
   CS_MALLOC(max_distance, mesh->n_cells_with_ghosts, cs_lnum_t);
 

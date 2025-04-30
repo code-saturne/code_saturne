@@ -1453,9 +1453,9 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
 
   const cs_real_t tot_vol = mq->tot_vol;
-  const cs_real_t *i_face_surf = (const cs_real_t *)mq->i_face_surf;
-  const cs_real_3_t *i_face_u_normal = (const cs_real_3_t *)mq->i_face_u_normal;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_real_t *i_face_surf = mq->i_face_surf;
+  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
 
   cs_dispatch_context ctx;
 
@@ -1579,8 +1579,7 @@ cs_vof_drift_term(int                        imrgra,
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
 

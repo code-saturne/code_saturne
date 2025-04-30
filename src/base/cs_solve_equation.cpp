@@ -965,8 +965,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   const cs_real_t *volume = mq_g->cell_vol;
   const cs_real_t *cell_f_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_wall_condensation_t *wall_condensation = cs_glob_wall_condensation;

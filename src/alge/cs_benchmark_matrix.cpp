@@ -1106,7 +1106,7 @@ _matrix_time_test(int                          n_time_runs,
                                    _d_block_size,
                                    _e_block_size,
                                    n_faces,
-                                   (const cs_lnum_2_t *)face_cell,
+                                   face_cell,
                                    da,
                                    xa);
       }

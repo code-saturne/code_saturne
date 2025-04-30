@@ -66,7 +66,7 @@ _smoothe(const cs_mesh_t            *mesh,
   cs_lnum_t n_cells     = mesh->n_cells;
   cs_lnum_t n_i_faces   = mesh->n_i_faces;
 
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   cs_real_t *cell_vol  = mesh_quantities->cell_vol;
 
   cs_real_t *den, *val2;
@@ -136,17 +136,15 @@ cs_user_ibm_modify(const cs_mesh_t            *mesh,
   cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
   cs_lnum_t *b_face_cells = mesh->b_face_cells;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   cs_real_t *cell_vol = mesh_quantities->cell_vol;
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_cen = mesh_quantities->cell_cen;
   const cs_real_3_t *i_face_normal
     = (const cs_real_3_t *)mesh_quantities->i_face_normal;
   const cs_real_3_t *c_w_face_normal
     = (const cs_real_3_t *)mesh_quantities->c_w_face_normal;
-  const cs_real_t *c_w_face_surf
-    = (const cs_real_t *)mesh_quantities->c_w_face_surf;
+  const cs_real_t *c_w_face_surf = mesh_quantities->c_w_face_surf;
   /*!< [loc_var_def_init] */
 
   /*!< [example_1] */

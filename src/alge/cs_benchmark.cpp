@@ -343,9 +343,7 @@ _mat_vec_exdiag_native_v2(bool                 accel,
                           cs_real_t           *restrict y)
 {
   const cs_mesh_t *m = cs_glob_mesh;
-
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
 
   cs_dispatch_context ctx;
   if (accel == false)
@@ -1155,7 +1153,7 @@ cs_benchmark(int  mpi_trace_mode)
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_v = cs_glob_mesh_quantities;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   size_t n_cells = mesh->n_cells;
   size_t n_cells_ext = mesh->n_cells_with_ghosts;

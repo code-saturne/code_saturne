@@ -175,8 +175,7 @@ cs_user_porosity(cs_domain_t   *domain)
   /* Four set face factor */
 
   if (mq->i_f_face_factor != nullptr) {
-    const cs_lnum_2_t *i_face_cells
-      = (const cs_lnum_2_t *)m->i_face_cells;
+    const cs_lnum_2_t *i_face_cells = m->i_face_cells;
     const cs_real_t *i_face_surf = mq->i_face_surf;
     const cs_real_t *i_f_face_surf = mq->i_f_face_surf;
 

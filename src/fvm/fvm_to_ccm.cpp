@@ -1050,7 +1050,7 @@ _count_faces_perio_g(const cs_mesh_t      *b_mesh,
 
   if (b_mesh->periodicity != nullptr) {
 
-    const cs_lnum_2_t *face_cells = (const cs_lnum_2_t *)(b_mesh->i_face_cells);
+    const cs_lnum_2_t *face_cells = b_mesh->i_face_cells;
 
     for (i = 0; i < b_mesh->n_i_faces; i++) {
       if (   cell_gnum[face_cells[i][0]] == 0
@@ -2348,7 +2348,7 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
 
   const cs_lnum_t *face_vtx_idx = b_mesh->i_face_vtx_idx;
   const cs_lnum_t *face_vtx_lst = b_mesh->i_face_vtx_lst;
-  const cs_lnum_2_t *face_cells = (const cs_lnum_2_t *)(b_mesh->i_face_cells);
+  const cs_lnum_2_t *face_cells = b_mesh->i_face_cells;
 
   /* Allocate array large enough for both periodic boundary + true interior
      faces to avoid counting loop */

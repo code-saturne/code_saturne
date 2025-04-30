@@ -174,9 +174,9 @@ cs_xdef_eval_at_zone(const cs_xdef_t *def,
       const cs_mesh_quantities_t *mq          = cs_glob_mesh_quantities;
       const cs_real_3_t          *base_coords = nullptr;
       if (def->support == CS_XDEF_SUPPORT_BOUNDARY)
-        base_coords = (const cs_real_3_t *)(mq->b_face_cog);
+        base_coords = mq->b_face_cog;
       else if (def->support == CS_XDEF_SUPPORT_VOLUME)
-        base_coords = (const cs_real_3_t *)(mq->cell_cen);
+        base_coords = mq->cell_cen;
 
       ac->func(t_eval,
                n_elts,

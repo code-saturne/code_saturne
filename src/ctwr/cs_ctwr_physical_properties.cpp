@@ -425,10 +425,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
                       cs_real_t  t0,
                       cs_real_t  p0)
 {
-  const cs_lnum_2_t *i_face_cells =
-    (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
-  const cs_lnum_t *b_face_cells
-    = (const cs_lnum_t *)(cs_glob_mesh->b_face_cells);
+  const cs_lnum_2_t *i_face_cells = cs_glob_mesh->i_face_cells;
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
   const cs_halo_t *halo = cs_glob_mesh->halo;
 
   const int *bc_type = cs_glob_bc_type;
