@@ -5788,8 +5788,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
     }
 
     /* Possible P1 matrix / P0 matrix relaxation defined
-       by the user in cs_user_parameters.c
-       (using cs_multigrid_set_coarsening_options) */
+       by the user (using cs_multigrid_set_coarsening_options) */
 
     if (isym == 1) {
       for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++)
