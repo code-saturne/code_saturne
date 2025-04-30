@@ -758,6 +758,33 @@ max(const T  a,
   return ((a) > (b) ?  (a) : (b));
 }
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Clamp function for a given scalar value.
+ *
+ * This function is overloaded in cs_math.h for floating-point values.
+ *
+ * \tparam T value type
+ *
+ * \param[in] x    initial value
+ * \param[in] xmin min value for clamping
+ * \param[in] xmax max value for clamping
+ *
+ * \return clamped value which is 'x' if xmin < x < xmax or lower/upper bound
+ * otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline T
+clamp(const T x,
+      const T xmin,
+      const T xmax)
+{
+  T x_tmp = ((xmin) > (x) ?  (xmin) : (x));
+  return ((xmax) < (x_tmp) ?  (xmax) : (x_tmp));
+}
+
 } // namespace cs
 
 /*----------------------------------------------------------------------------*/

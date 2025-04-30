@@ -496,6 +496,38 @@ max(const float  a,
   return fmaxf(a, b);
 }
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Clamp function for a given scalar value.
+ *
+ * Specialized versions for floating point numbers should be faster than
+ * base version from cs_defs.h.
+ *
+ * \param[in] x    initial value
+ * \param[in] xmin min value for clamping
+ * \param[in] xmax max value for clamping
+ *
+ * \return clamped value which is 'x' if xmin < x < xmax or lower/upper bound
+ * otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline double
+clamp(const double x,
+      const double xmin,
+      const double xmax)
+{
+  return fmin(xmax, fmax(xmin, x));
+}
+
+CS_F_HOST_DEVICE inline float
+clamp(const float x,
+      const float xmin,
+      const float xmax)
+{
+  return fminf(xmax, fmaxf(xmin, x));
+}
+
 } // namespace cs
 
 #endif // defined(__cplusplus)
