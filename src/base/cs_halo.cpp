@@ -478,10 +478,8 @@ _halo_sync_complete_one_sided(const cs_halo_t  *halo,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-BEGIN_C_DECLS
-
 /*============================================================================
- * Public C function definitions
+ * Public C++ function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -821,34 +819,32 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 /*!
  * \brief Create a halo structure from distant element distant ranks and ids.
  *
- * \remark  This function does not handle periodicity. For most matrix-vector,
- *          products and similar operations, periodicity of translation an
- *          even rotation could be handled with no specific halo information,
- *          simply by assigning an equivalence between two periodic elements.
- *          For rotation, this would require also applying a rotation through
- *          the matrix coefficients (this would have the advantage of being
- *          compatible with external libraries). An alternative would be
- *          to add rotation information to a given halo as a second stage,
- *          through a specialized operator which can be added in the future.
- *
  * \param[in]  rn              associated rank neighbors info
  * \param[in]  n_local_elts    number of elements for local rank
  * \param[in]  n_distant_elts  number of distant elements for local rank
- * \param[in]  elt_rank_id     distant element rank index in rank neighbors,
+ * \param[in]  elt_rank_idx    distant element rank index in rank neighbors,
  *                             ordered by rank (size: n_distant_elts)
  * \param[in]  elt_id          distant element id (at distant rank),
  *                             ordered by rank (size: n_distant_elts)
+ * \param[in]  elt_tr_id       distant element transform id (-1 for
+ *                             non-periodic elements), null if non-periodic
+ * \param[in]  periodicity     optional periodicity, or null
  *
  * \return  pointer to created cs_halo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_halo_t *
-cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
-                                   cs_lnum_t                   n_local_elts,
-                                   cs_lnum_t                   n_distant_elts,
-                                   const int                   elt_rank_id[],
-                                   const cs_lnum_t             elt_id[])
+cs_halo_create_from_rank_neighbors
+(
+  const cs_rank_neighbors_t  *rn,
+  cs_lnum_t                   n_local_elts,
+  cs_lnum_t                   n_distant_elts,
+  const int                   elt_rank_idx[],
+  const cs_lnum_t             elt_id[],
+  const int16_t               elt_tr_id[],
+  const fvm_periodicity_t    *periodicity
+)
 {
   cs_halo_t  *halo = nullptr;
 
@@ -859,9 +855,13 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 
   halo->n_rotations = 0;
 
-  halo->periodicity = nullptr;
+  halo->periodicity = periodicity;
   halo->send_perio_lst = nullptr;
   halo->perio_lst = nullptr;
+
+  if (periodicity != nullptr) {
+    halo->n_transforms = fvm_periodicity_get_n_transforms(periodicity);
+  }
 
 #if defined(HAVE_MPI)
   halo->c_domain_group = MPI_GROUP_NULL;
@@ -882,27 +882,54 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   /* Count elements for each rank;
      check they are are ordered lexicographically */
 
-  cs_lnum_t *rank_count;
-  CS_MALLOC(rank_count, rn->size*2, cs_lnum_t);
-  for (int i = 0; i < rn->size; i++)
-    rank_count[i] = 0;
+  int tr_mult = (elt_tr_id != nullptr) ? halo->n_transforms + 1 : 1;
 
-  int rank_prev = -1;
-  int elt_prev = -1;
-  for (cs_lnum_t i = 0; i < n_distant_elts; i++) {
-    int rank_id = elt_rank_id[i];
-    if (   rank_id < rank_prev
-        || (rank_id == rank_prev && elt_id[i] <= elt_prev))
-      bft_error
-        (__FILE__, __LINE__, 0,
-         "%s:\n"
-         "  Rank and distant element ids passed to this function must\n"
-         "  be lexicographically ordered; this is not the case here.",
-         __func__);
-    rank_count[rank_id] += 1;
-    rank_prev = rank_id;
-    elt_prev = elt_id[i];
+  cs_lnum_t rank_tr_count_size = rn->size * tr_mult;
+  cs_lnum_t *rank_tr_count;
+  CS_MALLOC(rank_tr_count, rank_tr_count_size*2, cs_lnum_t);
+  for (int i = 0; i < rank_tr_count_size; i++)
+    rank_tr_count[i] = 0;
+
+  bool ordered = true;
+
+  /* Check that the input data is correctly ordered. */
+
+  if (elt_tr_id == nullptr) {
+    int rank_idx_prev = -1;
+    cs_lnum_t elt_prev = -1;
+    for (cs_lnum_t i = 0; i < n_distant_elts; i++) {
+      int rank_idx = elt_rank_idx[i];
+      if (   rank_idx < rank_idx_prev
+          || (rank_idx == rank_idx_prev && elt_id[i] <= elt_prev))
+        ordered = false;
+      rank_tr_count[rank_idx] += 1;
+      rank_idx_prev = rank_idx;
+      elt_prev = elt_id[i];
+    }
   }
+  else {
+    int rank_tr_idx_prev = -1;
+    cs_lnum_t elt_prev = -1;
+    for (cs_lnum_t i = 0; i < n_distant_elts; i++) {
+      int rank_idx = elt_rank_idx[i];
+      int rank_tr_idx = rank_idx*tr_mult + elt_tr_id[i] + 1;
+      assert(rank_tr_idx > -1 && rank_tr_idx < rank_tr_count_size);
+      if (   rank_tr_idx < rank_tr_idx_prev
+          || (rank_tr_idx == rank_tr_idx_prev && elt_id[i] <= elt_prev))
+        ordered = false;
+      rank_tr_count[rank_tr_idx] += 1;
+      rank_tr_idx_prev = rank_tr_idx;
+      elt_prev = elt_id[i];
+    }
+  }
+
+  if (ordered == false)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       "%s:\n"
+       "  Rank and distant element ids passed to this function must\n"
+       "  be lexicographically ordered; this is not the case here.",
+       __func__);
 
   /* Now exchange counts with neighboring elements */
 
@@ -919,8 +946,8 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   const int local_rank = cs::max(cs_glob_rank_id, 0);
 
   for (int i = 0; i < rn->size; i++) {
-    MPI_Irecv(rank_count + rn->size + i,
-              1,
+    MPI_Irecv(rank_tr_count + rank_tr_count_size + tr_mult*i,
+              tr_mult,
               CS_MPI_LNUM,
               rn->rank[i],
               local_rank,
@@ -929,8 +956,8 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   }
 
   for (int i = 0; i < rn->size; i++) {
-    MPI_Isend(rank_count + i,
-              1,
+    MPI_Isend(rank_tr_count + tr_mult*i,
+              tr_mult,
               CS_MPI_LNUM,
               rn->rank[i],
               rn->rank[i],
@@ -951,15 +978,21 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 
   halo->n_c_domains = 0;
   for (int i = 0; i < rn->size; i++) {
-    if (rank_count[i] + rank_count[rn->size + i] > 0) {
+    const cs_lnum_t *tr_count = rank_tr_count + tr_mult*i;
+    cs_lnum_t r_count = 0, s_count = 0;
+    for (int j = 0; j < tr_mult; j++) {
+      r_count += tr_count[j];
+      s_count += tr_count[rank_tr_count_size + j];
+    }
+    if (r_count + s_count > 0) {
       halo->n_c_domains += 1;
       if (rn->rank[i] == local_rank) {
         loc_r_index = i;
         loc_r_displ = r_displ;
-        assert(rank_count[i] == rank_count[rn->size + i]);
+        assert(r_count == s_count);
       }
-      r_displ += rank_count[i];
-      recv_count += rank_count[rn->size + i];
+      r_displ += r_count;
+      recv_count += s_count;
     }
   }
 
@@ -971,42 +1004,82 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
                _halo_buffer_alloc_mode);
   CS_MALLOC(halo->index, halo->n_c_domains*2+1, cs_lnum_t);
 
-  halo->n_c_domains = 0;
   send_count = 0;
   recv_count = 0;
 
   halo->index[0] = 0;
   halo->send_index[0] = 0;
 
-  if (loc_r_index > -1) {
-    halo->c_domain_rank[0] = local_rank;
-    cs_lnum_t  l_count = rank_count[loc_r_index];
-    for (cs_lnum_t i = 0; i < l_count; i++)
-      halo->send_list[i] = elt_id[loc_r_displ + i];
-    send_count += l_count;
-    recv_count += l_count;
-    halo->n_c_domains = 1;
+  if (tr_mult > 1) {
+    const int n_transforms = halo->n_transforms;
+    const cs_lnum_t  perio_lst_size = 2*n_transforms * 2*halo->n_c_domains;
+
+    CS_MALLOC(halo->perio_lst, perio_lst_size, cs_lnum_t);
+    CS_MALLOC(halo->send_perio_lst, perio_lst_size, cs_lnum_t);
+
+    cs_lnum_t *perio_lst = halo->perio_lst;
+    cs_lnum_t *send_perio_lst = halo->send_perio_lst;
+    for (cs_lnum_t i = 0; i < perio_lst_size; i++) {
+      perio_lst[i] = 0;
+      send_perio_lst[i] = 0;
+    }
+  }
+
+  /* Build indexes. */
+
+  int d_idx = 0;
+
+  for (int rn_idx = 0; rn_idx < rn->size; rn_idx++) {
+    int i = rn_idx;
+    if (loc_r_index > -1) { // local halo first
+      if (rn_idx == 0)
+        i = loc_r_index;
+      else if (rn_idx <= loc_r_index)
+        i = rn_idx - 1;
+    }
+
+    const cs_lnum_t *r_tr_count = rank_tr_count + tr_mult*i;
+    const cs_lnum_t *s_tr_count = r_tr_count + rank_tr_count_size;
+    cs_lnum_t r_count = 0, s_count = 0;
+    for (int j = 0; j < tr_mult; j++) {
+      r_count += r_tr_count[j];
+      s_count += s_tr_count[j];
+    }
+    if (r_count + s_count == 0)
+      continue;
+
+    halo->c_domain_rank[d_idx] = rn->rank[i];
+    recv_count += r_count;
+    send_count += s_count;
     for (int j = 1; j < 3; j++) {
-      halo->index[j] = recv_count;
-      halo->send_index[j] = send_count;
+      halo->index[d_idx*2 + j] = recv_count;
+      halo->send_index[d_idx*2 + j] = send_count;
     }
-  }
 
-  for (int i = 0; i < rn->size; i++) {
-    if (   rank_count[i] + rank_count[rn->size + i] > 0
-        && rn->rank[i] != local_rank) {
-      halo->c_domain_rank[halo->n_c_domains] = rn->rank[i];
-      recv_count += rank_count[i];
-      send_count += rank_count[rn->size + i];
-      for (int j = 1; j < 3; j++) {
-        halo->index[halo->n_c_domains*2 + j] = recv_count;
-        halo->send_index[halo->n_c_domains*2 + j] = send_count;
+    if (tr_mult > 1) {
+      cs_lnum_t *perio_lst = halo->perio_lst;
+      cs_lnum_t *send_perio_lst = halo->send_perio_lst;
+      cs_lnum_t r_shift = halo->index[d_idx*2] + r_tr_count[0];
+      cs_lnum_t s_shift = halo->send_index[d_idx*2] + s_tr_count[0];
+      for (int j = 1; j < tr_mult; j++) {
+        int tr_id = j-1;
+        int tr_shift = 4 * (halo->n_c_domains*tr_id + d_idx);
+        perio_lst[tr_shift] = r_shift;
+        perio_lst[tr_shift+1] = r_tr_count[j];
+        r_shift += r_tr_count[j];
+        perio_lst[tr_shift+2] = r_shift;
+        send_perio_lst[tr_shift] = s_shift;
+        send_perio_lst[tr_shift+1] = s_tr_count[j];
+        s_shift += s_tr_count[j];
+        send_perio_lst[tr_shift+2] = s_shift;
       }
-      halo->n_c_domains += 1;
     }
+
+    d_idx += 1;
   }
 
-  CS_FREE(rank_count);
+  assert(d_idx == halo->n_c_domains);
+  CS_FREE(rank_tr_count);
 
   for (int i = 0; i < CS_HALO_N_TYPES; i++)
     halo->n_send_elts[i] = send_count;
@@ -1049,6 +1122,14 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
                 &(request[request_count++]));
   }
 
+  /* Local (self) halo first if present */
+
+  if (loc_r_index > -1) {
+    cs_lnum_t s_shift = halo->index[0];
+    cs_lnum_t s_size  = halo->index[1] - s_shift;
+    memcpy(halo->send_list, elt_id + loc_r_displ, s_size * sizeof(cs_lnum_t));
+  }
+
   MPI_Waitall(request_count, request, status);
 
   CS_FREE(request);
@@ -1059,6 +1140,41 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   cs_halo_create_complete(halo);
 
   return halo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo structure from distant element distant ranks and ids.
+ *
+ * \param[in]  rn              associated rank neighbors info
+ * \param[in]  n_local_elts    number of elements for local rank
+ * \param[in]  n_distant_elts  number of distant elements for local rank
+ * \param[in]  elt_rank_idx    distant element rank index in rank neighbors,
+ *                             ordered by rank (size: n_distant_elts)
+ * \param[in]  elt_id          distant element id (at distant rank),
+ *                             ordered by rank (size: n_distant_elts)
+ *
+ * \return  pointer to created cs_halo_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_t *
+cs_halo_create_from_rank_neighbors
+(
+  const cs_rank_neighbors_t  *rn,
+  cs_lnum_t                   n_local_elts,
+  cs_lnum_t                   n_distant_elts,
+  const int                   elt_rank_idx[],
+  const cs_lnum_t             elt_id[]
+)
+{
+  return cs_halo_create_from_rank_neighbors(rn,
+                                            n_local_elts,
+                                            n_distant_elts,
+                                            elt_rank_idx,
+                                            elt_id,
+                                            nullptr,
+                                            nullptr);
 }
 
 #endif /* HAVE_MPI */
@@ -1109,6 +1225,8 @@ cs_halo_destroy(cs_halo_t  **halo)
   if (_n_halos == 0)
     cs_halo_state_destroy(&_halo_state);
 }
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!

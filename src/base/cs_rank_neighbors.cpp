@@ -509,7 +509,7 @@ cs_rank_neighbors_to_index(const cs_rank_neighbors_t  *n,
 /*!
  * \brief Symmetrize a rank neighborhood structure.
  *
- * This is a collective operation ,which ensures that if rank i has j among
+ * This is a collective operation, which ensures that if rank i has j among
  * its neighbors, then j will also jave i among its neighbors.
  *
  * \param[in, out]  n     pointer to rank neighborhood structure

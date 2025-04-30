@@ -122,7 +122,7 @@ typedef struct {
                                  n_elts[1] = extended + standard elements */
 
   cs_lnum_t  *index;        /* Index on halo sections;
-                               Size = 2*n_c_domains. For each rank, we
+                               Size = 2*n_c_domains + 1. For each rank, we
                                have an index for the standard halo and one
                                for the extended halo. */
 
@@ -131,7 +131,7 @@ typedef struct {
                                  - start index,
                                  - number of elements. */
 
-  /* Organisation of perio_lst:
+  /* Organization of perio_lst:
 
          -------------------------------------------------
     T1:  |   |   |   |   |   |   |   |   |   |   |   |   |
@@ -181,6 +181,9 @@ typedef struct _cs_halo_state_t  cs_halo_state_t;
  * Global static variables
  *============================================================================*/
 
+END_C_DECLS
+#ifdef __cplusplus
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -199,7 +202,7 @@ cs_halo_t *
 cs_halo_create(const cs_interface_set_t  *ifs);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Ready halo for use.
  *
  * This function should be called after building a halo using the
@@ -216,7 +219,7 @@ void
 cs_halo_create_complete(cs_halo_t  *halo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a halo structure, given a reference halo.
  *
  * \param[in]  ref  pointer to reference halo
@@ -231,24 +234,47 @@ cs_halo_create_from_ref(const cs_halo_t  *ref);
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a halo structure from distant element distant ranks and ids.
- *
- * \remark  This function does not handle periodicity. For most matrix-vector,
- *          products and similar operations, periodicity of translation an
- *          even rotation could be handled with no specific halo information,
- *          simply by assigning an equivalence between two periodic elements.
- *          For rotation, this would require also applying a rotation through
- *          the matrix coefficients (this would have the advantage of being
- *          compatible with external libraries). An alternative would be
- *          to add rotation information to a given halo as a second stage,
- *          through a specialized operator which can be added in the future.
  *
  * \param[in]  rn              associated rank neighbors info
  * \param[in]  n_local_elts    number of elements for local rank
  * \param[in]  n_distant_elts  number of distant elements for local rank
- * \param[in]  elt_rank_id     distant element rank index in rank neighbors,
+ * \param[in]  elt_rank_idx    distant element rank index in rank neighbors,
  *                             ordered by rank (size: n_distant_elts)
+ * \param[in]  elt_id          distant element id (at distant rank),
+ *                             ordered by rank (size: n_distant_elts)
+ * \param[in]  elt_tr_id       distant element transform id (-1 for
+ *                             non-periodic elements), null if non-periodic
+ * \param[in]  periodicity     optional periodicity, or null
+ *
+ * \return  pointer to created cs_halo_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_t *
+cs_halo_create_from_rank_neighbors
+(
+  const cs_rank_neighbors_t  *rn,
+  cs_lnum_t                   n_local_elts,
+  cs_lnum_t                   n_distant_elts,
+  const int                   elt_rank_idx[],
+  const cs_lnum_t             elt_id[],
+  const int16_t               elt_tr_id[],
+  const fvm_periodicity_t    *periodicity
+);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo structure from distant element distant ranks and ids.
+ *
+ * \param[in]  rn              associated rank neighbors info
+ * \param[in]  n_local_elts    number of elements for local rank
+ * \param[in]  n_distant_elts  number of distant elements for local rank
+ * \param[in]  elt_rank_idx    distant element rank index in rank neighbors,
+ *                             ordered by rank (size: n_distant_elts)
+ * \param[in]  elt_tr_id       distant element transform id, or null
+ *                             (-1 for non-periodic elements)
  * \param[in]  elt_id          distant element id (at distant rank),
  *                             ordered by rank (size: n_distant_elts)
  *
@@ -257,11 +283,14 @@ cs_halo_create_from_ref(const cs_halo_t  *ref);
 /*----------------------------------------------------------------------------*/
 
 cs_halo_t *
-cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
-                                   cs_lnum_t                   n_local_elts,
-                                   cs_lnum_t                   n_distant_elts,
-                                   const int                   elt_rank_id[],
-                                   const cs_lnum_t             elt_id[]);
+cs_halo_create_from_rank_neighbors
+(
+  const cs_rank_neighbors_t  *rn,
+  cs_lnum_t                   n_local_elts,
+  cs_lnum_t                   n_distant_elts,
+  const int                   elt_rank_idx[],
+  const cs_lnum_t             elt_id[]
+);
 
 #endif /* HAVE_MPI */
 
@@ -275,6 +304,11 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 
 void
 cs_halo_destroy(cs_halo_t  **halo);
+
+/*----------------------------------------------------------------------------*/
+
+#endif // __cplusplus
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!

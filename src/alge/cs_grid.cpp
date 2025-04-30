@@ -440,6 +440,28 @@ _create_grid(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Return to pointer to root of a given grid.
+ *
+ * parameters:
+ *   g  <-- Pointer to current grid
+ *
+ * return:
+ *   pointer to grid's root in current hierarchy
+ *----------------------------------------------------------------------------*/
+
+const cs_grid_t *
+_root_grid(cs_grid_t  *g)
+{
+  const cs_grid_t  *r = g;
+
+  while (r->parent != nullptr) {
+    r = r->parent;
+  }
+
+  return r;
+}
+
+/*----------------------------------------------------------------------------
  * Initialize coarse grid from fine grid
  *
  * This creates au quasi-empty grid structure, with only symmetry and
@@ -790,7 +812,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
     for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
       cs_lnum_t start = halo->index[2*rank_id];
-      cs_lnum_t length = halo->index[2*rank_id + 2] - halo->index[2*rank_id];
+      cs_lnum_t length = halo->index[2*rank_id + 1] - halo->index[2*rank_id];
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
@@ -821,7 +843,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
         cs_lnum_t start = halo->send_index[2*rank_id];
-        cs_lnum_t length =   halo->send_index[2*rank_id + 2]
+        cs_lnum_t length =   halo->send_index[2*rank_id + 1]
                            - halo->send_index[2*rank_id];
 
         MPI_Isend(coarse_send + start,
@@ -858,7 +880,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
         = coarse_row + halo->n_local_elts + halo->index[2*local_rank_id];
 
       cs_lnum_t start = halo->send_index[2*local_rank_id];
-      cs_lnum_t length =   halo->send_index[2*local_rank_id + 2]
+      cs_lnum_t length =   halo->send_index[2*local_rank_id + 1]
                          - halo->send_index[2*local_rank_id];
 
 #     pragma omp parallel for if(length > CS_THR_MIN)
@@ -867,6 +889,14 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
     }
 
+  }
+
+  {
+    cs_lnum_t *_coarse_row = coarse_row + halo->n_local_elts;
+    for (int ii = 0; ii < halo->n_elts[0]; ii++) {
+      assert(_coarse_row[ii] > -1);
+      assert(_coarse_row[ii] < halo->n_local_elts + halo->n_elts[0]);
+    }
   }
 }
 
@@ -946,7 +976,7 @@ _coarsen_halo(const cs_grid_t   *f,
     start_end_id[0] = f_halo->send_index[domain_id*2];
 
     if (f_halo->n_transforms == 0)
-      start_end_id[1] = f_halo->send_index[(domain_id+1)*2];
+      start_end_id[1] = f_halo->send_index[domain_id*2 + 1];
     else
       start_end_id[1] = f_halo->send_perio_lst[4*domain_id];
 
@@ -976,6 +1006,8 @@ _coarsen_halo(const cs_grid_t   *f,
       /* Build halo renumbering */
 
       for (cs_lnum_t ii = start_id; ii < end_id; ii++) {
+        assert(   f_halo->send_list[ii] >= 0
+               && f_halo->send_list[ii] < f_halo->n_local_elts);
         cs_lnum_t jj = coarse_row[f_halo->send_list[ii]] + 1;
         if (sub_num[jj] == -1) {
           sub_num[jj] = sub_count;
@@ -1032,7 +1064,7 @@ _coarsen_halo(const cs_grid_t   *f,
     start_end_id[0] = f_halo->index[domain_id*2];
 
     if (f_halo->n_transforms == 0)
-      start_end_id[1] = f_halo->index[(domain_id+1)*2];
+      start_end_id[1] = f_halo->index[domain_id*2 + 1];
     else
       start_end_id[1] = f_halo->perio_lst[4*domain_id];
 
@@ -1138,6 +1170,8 @@ _coarsen_halo(const cs_grid_t   *f,
       /* Build halo renumbering */
 
       for (cs_lnum_t ii = start_id; ii < end_id; ii++) {
+        assert(   f_halo->send_list[ii] >= 0
+               && f_halo->send_list[ii] < f_halo->n_local_elts);
         cs_lnum_t jj = coarse_row[f_halo->send_list[ii]] + 1;
         if (sub_num[jj] == -1) {
           sub_num[jj] = sub_count;
@@ -1314,10 +1348,11 @@ _coarse_row_count_and_halo(const cs_grid_t   *f,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    if (f->comm != MPI_COMM_NULL) {
+    MPI_Comm comm = _root_grid(c)->comm;
+    if (comm != MPI_COMM_NULL) {
       cs_gnum_t _c_n_rows = c_n_rows;
       MPI_Allreduce(&_c_n_rows, &(c->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM,
-                    f->comm);
+                    comm);
     }
   }
 #endif
@@ -1337,140 +1372,6 @@ _coarse_row_count_and_halo(const cs_grid_t   *f,
 }
 
 #if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Merge halo info after appending arrays.
- *
- * parameters:
- *   h                 <-> Pointer to halo structure
- *   alloc_mode        <-- Memory allocation mode
- *   new_src_cell_num  <-> new list of cells the senders should provide
- *----------------------------------------------------------------------------*/
-
-static void
-_rebuild_halo_send_lists(cs_halo_t        *h,
-                         cs_alloc_mode_t   alloc_mode,
-                         cs_lnum_t         new_src_cell_id[])
-{
-  int n_sections = 1 + h->n_transforms;
-  int request_count = 0;
-  cs_lnum_t *send_buf = nullptr, *recv_buf = nullptr;
-  MPI_Status *status = nullptr;
-  MPI_Request *request = nullptr;
-
-  CS_MALLOC(status, h->n_c_domains*2, MPI_Status);
-  CS_MALLOC(request, h->n_c_domains*2, MPI_Request);
-  CS_MALLOC(send_buf, h->n_c_domains*n_sections, cs_lnum_t);
-  CS_MALLOC(recv_buf, h->n_c_domains*n_sections, cs_lnum_t);
-
-  /* Exchange sizes */
-
-  for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++)
-    MPI_Irecv(recv_buf + rank_id*n_sections,
-              n_sections,
-              CS_MPI_LNUM,
-              h->c_domain_rank[rank_id],
-              h->c_domain_rank[rank_id],
-              cs_glob_mpi_comm,
-              &(request[request_count++]));
-
-  /* Send data to distant ranks */
-
-  for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-    send_buf[rank_id*n_sections]
-      = h->index[2*(rank_id+1)] - h->index[2*rank_id];
-    for (int tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-      send_buf[rank_id*n_sections + tr_id + 1]
-        = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1];
-    }
-    MPI_Isend(send_buf + rank_id*n_sections,
-              n_sections,
-              CS_MPI_LNUM,
-              h->c_domain_rank[rank_id],
-              cs_glob_rank_id,
-              cs_glob_mpi_comm,
-              &(request[request_count++]));
-  }
-
-  /* Wait for all exchanges */
-
-  MPI_Waitall(request_count, request, status);
-  request_count = 0;
-
-  /* Update sizes */
-
-  CS_MALLOC_HD(h->send_index, h->n_c_domains*2 + 1, cs_lnum_t, CS_ALLOC_HOST);
-  h->send_index[0] = 0;
-  for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-    h->send_index[rank_id*2 + 1]
-      = h->send_index[rank_id*2] + recv_buf[rank_id*n_sections];
-    h->send_index[rank_id*2 + 2] = h->send_index[rank_id*2 + 1];
-  }
-
-  /* Update send_perio_lst in case of transforms */
-
-  if (h->n_transforms > 0) {
-    CS_MALLOC(h->send_perio_lst, h->n_c_domains*h->n_transforms*4, cs_lnum_t);
-    for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-      cs_lnum_t n_cur_vals = recv_buf[rank_id*n_sections];
-      for (int tr_id = 0; tr_id < h->n_transforms; tr_id++)
-        n_cur_vals -= recv_buf[rank_id*n_sections + 1 + tr_id];
-      n_cur_vals += h->send_index[rank_id*2];
-      for (int tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-        cs_lnum_t n_tr_vals = recv_buf[rank_id*n_sections + 1 + tr_id];
-        h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id] = n_cur_vals;
-        h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1] = n_tr_vals;
-        n_cur_vals += n_tr_vals;
-        h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 2] = n_cur_vals;
-        h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 3] = 0;
-      }
-    }
-  }
-
-  CS_FREE(send_buf);
-  CS_FREE(recv_buf);
-
-  h->n_send_elts[0] = h->send_index[h->n_c_domains*2];
-  h->n_send_elts[1] = h->n_send_elts[0];
-
-  CS_MALLOC_HD(h->send_list, h->n_send_elts[0], cs_lnum_t,
-               alloc_mode);
-
-  /* Receive data from distant ranks */
-
-  for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-    cs_lnum_t start = h->send_index[2*rank_id];
-    cs_lnum_t length = h->send_index[2*rank_id + 1] - h->send_index[2*rank_id];
-    MPI_Irecv(h->send_list + start,
-              length,
-              CS_MPI_LNUM,
-              h->c_domain_rank[rank_id],
-              h->c_domain_rank[rank_id],
-              cs_glob_mpi_comm,
-              &(request[request_count++]));
-  }
-
-  /* Send data to distant ranks */
-
-  for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-    cs_lnum_t start = h->index[2*rank_id];
-    cs_lnum_t length = h->index[2*rank_id + 1] - h->index[2*rank_id];
-    MPI_Isend(new_src_cell_id + start,
-              length,
-              CS_MPI_LNUM,
-              h->c_domain_rank[rank_id],
-              cs_glob_rank_id,
-              cs_glob_mpi_comm,
-              &(request[request_count++]));
-  }
-
-  /* Wait for all exchanges */
-
-  MPI_Waitall(request_count, request, status);
-
-  CS_FREE(request);
-  CS_FREE(status);
-}
 
 /*----------------------------------------------------------------------------
  * Empty a halo that is only useful for global synchronization
@@ -1501,284 +1402,6 @@ _empty_halo(cs_halo_t  *h)
 }
 
 /*----------------------------------------------------------------------------
- * Merge halo info after appending arrays.
- *
- * parameters:
- *   h                 <-> pointer to halo structure
- *   loc_rank_id       <-- local rank id
- *   n_new_cells       <-- number of new local cells
- *   new_src_cell_id   <-> in: new halo sender cell id matching halo cell;
- *                         out: new list of cells the senders should provide
- *                              (same numbers, merged and possibly reordered)
- *   new_halo_cell_id --> new cell id for each halo cell
- *                         (< n_new_cells for cells that have become local,
- *                         >= n_new_cells for cells still in halo)
- *----------------------------------------------------------------------------*/
-
-static void
-_merge_halo_data(cs_halo_t   *h,
-                 int          loc_rank_id,
-                 cs_lnum_t    n_new_cells,
-                 cs_lnum_t    new_src_cell_id[],
-                 cs_lnum_t    new_halo_cell_id[])
-{
-  const int  stride = (h->n_transforms > 0) ? 3 : 2;
-  const int  n_c_domains_ini = h->n_c_domains;
-  const int  n_sections = h->n_transforms + 1;
-
-  cs_lnum_t   n_elts_ini = h->n_elts[0];
-
-  if (h->n_elts[0] + h->n_send_elts[0] < 1) {
-    _empty_halo(h);
-    return;
-  }
-
-  /* Order list by rank, transform, and new element number */
-
-  cs_gnum_t  *tmp_num = nullptr;
-  CS_MALLOC(tmp_num, n_elts_ini*stride, cs_gnum_t);
-
-  for (int rank_idx = 0; rank_idx < n_c_domains_ini; rank_idx++) {
-    int c_rank_id = h->c_domain_rank[rank_idx];
-    if (c_rank_id == loc_rank_id) {
-      h->c_domain_rank[rank_idx] = -1; /* to appear first */
-      c_rank_id = -1;
-    }
-
-    for (cs_lnum_t ii = h->index[rank_idx*2];
-         ii < h->index[(rank_idx+1)*2];
-         ii++)
-      tmp_num[ii*stride] = c_rank_id + 1;
-  }
-
-  if (stride == 2) {
-    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++)
-      tmp_num[ii*2 + 1] = new_src_cell_id[ii];
-  }
-  else { /* if (stride == 3) */
-
-    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
-      tmp_num[ii*3 + 1] = 0;
-      tmp_num[ii*3 + 2] = new_src_cell_id[ii];
-    }
-
-    for (int rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
-      for (int tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-        cs_lnum_t ii_0 = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
-        cs_lnum_t ii_1 = ii_0 + h->perio_lst[  h->n_c_domains*4*tr_id
-                                             + 4*rank_id + 1];
-        for (cs_lnum_t ii = ii_0; ii < ii_1; ii++)
-          tmp_num[ii*3 + 1] = tr_id + 1;
-      }
-    }
-  }
-
-  /* Rebuild lists and build renumbering.
-
-     As the send and receive indexes might not contain exactly the same
-     list of distant ranks (at least in case of periodicity), we must be careful
-     not to neighbor information here, so we only remove duplicates in the
-     current list. */
-
-  {
-    int j = 0;
-    cs_sort_int_shell(0, h->n_c_domains, h->c_domain_rank);
-
-    for (int i = 1; i < h->n_c_domains; i++) {
-      if (h->c_domain_rank[i] != h->c_domain_rank[j]) {
-        j++;
-        h->c_domain_rank[j] = h->c_domain_rank[i];
-      }
-    }
-
-    h->n_c_domains = j+1;
-    CS_REALLOC(h->c_domain_rank, h->n_c_domains, int);
-  }
-
-  cs_lnum_t *section_idx = nullptr;
-
-  cs_lnum_t *order = cs_order_gnum_s(nullptr, tmp_num, stride, n_elts_ini);
-
-  for (int i = 0; i < h->n_c_domains*2 + 1; i++)
-    h->index[i] = 0;
-  h->n_elts[0] = 0;
-  h->n_elts[1] = 0;
-
-  cs_lnum_t prev_src_id = 0;
-
-  if (stride == 2) {
-
-    int prev_rank_id = -1, rank_idx = -1;
-
-    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
-
-      bool is_same = true;
-      cs_lnum_t cur_id = order[ii];
-
-      int rank_id = tmp_num[cur_id*2] - 1;
-      cs_lnum_t src_id = tmp_num[cur_id*2 + 1];
-
-      if (rank_id != -1) { /* local rank */
-
-        if (rank_id != prev_rank_id) {
-          if (rank_idx > -1)
-            h->index[rank_idx*2+1] = h->n_elts[0];
-          rank_idx++;
-          while (   h->c_domain_rank[rank_idx] != rank_id
-                 && rank_idx < h->n_c_domains)
-            rank_idx++;
-          assert(rank_idx < h->n_c_domains);
-          is_same = false;
-        }
-        if (src_id != prev_src_id)
-          is_same = false;
-
-        if (is_same == false) {
-          new_src_cell_id[h->n_elts[0]] = src_id;
-          h->n_elts[0] += 1;
-        }
-
-        new_halo_cell_id[cur_id] = n_new_cells + h->n_elts[0] - 1;
-
-        prev_rank_id = rank_id;
-        prev_src_id = src_id;
-
-      }
-      else { /* local rank */
-        new_halo_cell_id[cur_id] = tmp_num[cur_id*2 + 1];
-        assert(new_halo_cell_id[cur_id] < n_new_cells);
-      }
-    }
-
-    if (rank_idx > -1)
-      h->index[rank_idx*2+1] = h->n_elts[0];
-
-  }
-  else { /* if (stride == 3) */
-
-    int prev_rank_id = -2, rank_idx = -1;
-    cs_lnum_t section_idx_size = 0;
-
-    int prev_section_id = -1;
-
-    /* Index will be initialized as count */
-
-    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
-
-      bool is_same = true;
-      cs_lnum_t cur_id = order[ii];
-
-      int rank_id = tmp_num[cur_id*3] - 1;
-      int section_id = tmp_num[cur_id*3 + 1];
-      cs_lnum_t src_id = tmp_num[cur_id*3 + 2];
-
-      if (rank_id != -1 || tmp_num[cur_id*3 + 1] != 0) {
-
-        if (rank_id != prev_rank_id) {
-          if (rank_idx > -1)
-            h->index[rank_idx*2+1] = h->n_elts[0];
-          rank_idx++;
-          while (   h->c_domain_rank[rank_idx] != rank_id
-                 && rank_idx < h->n_c_domains)
-            rank_idx++;
-          assert(rank_idx < h->n_c_domains);
-          is_same = false;
-        }
-        if (section_id != prev_section_id)
-          is_same = false;
-        if (src_id != prev_src_id)
-          is_same = false;
-
-        if (is_same == false) {
-          new_src_cell_id[h->n_elts[0]] = src_id;
-          h->n_elts[0] += 1;
-          while (rank_idx*n_sections + section_id + 1 >= section_idx_size) {
-            cs_lnum_t section_idx_size_prv = section_idx_size;
-            section_idx_size
-              = (section_idx_size_prv > 0) ? section_idx_size_prv*2 : 16;
-            CS_REALLOC(section_idx, section_idx_size, cs_lnum_t);
-            for (cs_lnum_t sid = section_idx_size_prv;
-                 sid < section_idx_size;
-                 sid++)
-              section_idx[sid] = 0;
-          };
-          section_idx[rank_idx*n_sections + section_id + 1] += 1;
-        }
-
-        new_halo_cell_id[cur_id] = n_new_cells + h->n_elts[0] - 1;
-
-        prev_rank_id = rank_id;
-        prev_section_id = section_id;
-        prev_src_id = src_id;
-
-      }
-      else { /* if (rank_id == -1 && tmp_num[cur_id*3 + 1] == 0) */
-        new_halo_cell_id[cur_id] = tmp_num[cur_id*3 + 2];
-        assert(new_halo_cell_id[cur_id] < n_new_cells);
-      }
-
-    }
-
-    if (rank_idx > -1)
-      h->index[rank_idx*2+1] = h->n_elts[0];
-
-    /* Transform count to index */
-
-    section_idx_size = n_sections * h->n_c_domains + 1;
-    for (cs_lnum_t sid = 1; sid < section_idx_size; sid++)
-      section_idx[sid] += section_idx[sid - 1];
-  }
-
-  CS_FREE(order);
-  CS_FREE(tmp_num);
-
-  /* Restore local rank in connected domains list */
-
-  for (int i = 0; i < h->n_c_domains; i++) {
-    if (h->c_domain_rank[i] == -1)
-      (h->c_domain_rank[i] = loc_rank_id);
-  }
-
-  /* Update transforms list */
-
-  if (h->n_transforms > 0) {
-
-    for (int tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-      for (int rank_idx = 0; rank_idx < h->n_c_domains; rank_idx++) {
-        int section_id = rank_idx*n_sections + tr_id + 1;
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx]
-          = section_idx[section_id];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 1]
-          = section_idx[section_id + 1] - section_idx[section_id];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 2]
-          = section_idx[section_id + 1];
-        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + 3]
-          = 0;
-      }
-    }
-
-    CS_FREE(section_idx);
-
-  }
-
-  /* Free and resize memory */
-
-  CS_REALLOC(h->index, h->n_c_domains*2+1, cs_lnum_t);
-  if (h->n_transforms > 0)
-    CS_REALLOC(h->perio_lst,
-               h->n_c_domains * h->n_transforms * 4,
-               cs_lnum_t);
-
-  h->n_elts[1] = h->n_elts[0];
-  h->index[h->n_c_domains*2] = h->n_elts[0];
-  for (int i = 1; i < h->n_c_domains; i++) {
-    if (h->index[i*2+1] == 0)
-      h->index[i*2+1] = h->index[i*2-1];
-    h->index[i*2] = h->index[i*2-1];
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Append halo info for grid grouping and merging.
  *
  * parameters:
@@ -1793,9 +1416,12 @@ _append_halos(cs_grid_t   *g,
               cs_lnum_t   *new_cell_id)
 {
   int *recv_count = nullptr;
-  cs_lnum_t *new_src_cell_id = nullptr, *new_halo_cell_id = nullptr;
+  cs_lnum_t *new_src_cell_id = nullptr;
 
   cs_halo_t *h = g->_halo;
+
+  if (h == nullptr)
+    return;
 
   MPI_Status status;
   MPI_Comm  comm = cs_glob_mpi_comm;
@@ -1803,28 +1429,18 @@ _append_halos(cs_grid_t   *g,
   const int n_transforms = h->n_transforms;
   static const int tag = 'a'+'p'+'p'+'e'+'n'+'d'+'_'+'h';
 
-  /* Remove send indexes, which will be rebuilt */
-
-  h->n_send_elts[0] = 0;
-  h->n_send_elts[1] = 0;
-  CS_FREE_HD(h->send_list);
-  CS_FREE_HD(h->send_index);
-  CS_FREE(h->send_perio_lst);
-
   if (g->merge_sub_size == 0) {
     _empty_halo(h);
     return;
   }
 
-  /* Adjust numbering */
-
-  for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-    int init_rank_id = h->c_domain_rank[rank_id];
-    h->c_domain_rank[rank_id]
-      = init_rank_id - (init_rank_id % g->next_merge_stride);
-  }
-
   int counts[3] = {h->n_c_domains, h->n_local_elts, h->n_elts[0]};
+
+  /* local copy of halo sizes */
+
+  int n_c_domains = h->n_c_domains;
+  cs_lnum_t n_local_elts = h->n_local_elts;
+  cs_lnum_t n_elts = h->n_elts[0];
 
   /* Exchange counters needed for concatenation */
 
@@ -1847,23 +1463,30 @@ _append_halos(cs_grid_t   *g,
      so as to have blocs of fixed n_transforms size, easier
      to work with for append + merge operations */
 
+  int *perio_lst_tr = nullptr;
   if (n_transforms > 0) {
-    cs_lnum_t *perio_list_tr;
-    CS_MALLOC(perio_list_tr, h->n_c_domains*n_transforms*4, cs_lnum_t);
-    for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+    CS_MALLOC(perio_lst_tr, counts[0]*n_transforms*2, cs_lnum_t);
+    for (int rank_idx = 0; rank_idx < h->n_c_domains; rank_idx++) {
       for (int tr_id = 0; tr_id < n_transforms; tr_id++) {
-        for (int k = 0; k < 4; k++)
-          perio_list_tr[n_transforms*4*rank_id + 4*tr_id + k]
-            = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + k];
+        for (int k = 0; k < 2; k++)
+          perio_lst_tr[(n_transforms*rank_idx + tr_id)*2 + k]
+            = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_idx + k];
       }
     }
-    memcpy(h->perio_lst,
-           perio_list_tr,
-           h->n_c_domains*n_transforms*4*sizeof(cs_lnum_t));
-    CS_FREE(perio_list_tr);
+    CS_FREE(h->perio_lst);
   }
 
-  /* Reallocate arrays for receiving rank and append data */
+  /* Adjust numbering */
+
+  int *c_domain_rank;
+  int n_domain_ranks = (g->merge_sub_rank == 0) ? counts[0] : h->n_c_domains;
+  CS_MALLOC(c_domain_rank, n_domain_ranks, int);
+
+  for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+    int init_rank_id = h->c_domain_rank[rank_id];
+    c_domain_rank[rank_id]
+      = init_rank_id - (init_rank_id % g->next_merge_stride);
+  }
 
   if (g->merge_sub_rank == 0) {
 
@@ -1873,46 +1496,44 @@ _append_halos(cs_grid_t   *g,
          ii++, jj++)
       new_src_cell_id[jj] = new_cell_id[ii];
 
-    CS_REALLOC(h->c_domain_rank, counts[0], int);
+    /* Reallocate index for receiving append data (local part is unmodified) */
     CS_REALLOC(h->index, counts[0]*2 + 1, cs_lnum_t);
-    CS_REALLOC(h->perio_lst, counts[0]*n_transforms*4, cs_lnum_t);
 
     for (int rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
       int n_c_domains_r = recv_count[rank_id*3 + 0];
       cs_lnum_t n_recv = recv_count[rank_id*3 + 2];
 
-      cs_lnum_t index_shift = h->index[2*h->n_c_domains];
+      cs_lnum_t index_shift = h->index[2*n_c_domains];
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
-      MPI_Recv(h->c_domain_rank + h->n_c_domains, n_c_domains_r,
+      MPI_Recv(c_domain_rank + n_c_domains, n_c_domains_r,
                MPI_INT, dist_rank, tag, comm, &status);
-      MPI_Recv(new_src_cell_id + h->n_elts[0], n_recv,
+      MPI_Recv(new_src_cell_id + n_elts, n_recv,
                CS_MPI_LNUM, dist_rank, tag, comm, &status);
-      MPI_Recv(h->index + h->n_c_domains*2, n_c_domains_r*2+1,
+      MPI_Recv(h->index + n_c_domains*2, n_c_domains_r*2+1,
                CS_MPI_LNUM, dist_rank, tag, comm, &status);
 
-      for (cs_lnum_t ii = 0, jj = h->n_c_domains*2;
+      for (cs_lnum_t ii = 0, jj = n_c_domains*2;
            ii < n_c_domains_r*2+1;
            ii++, jj++)
         h->index[jj] += index_shift;
 
       if (n_transforms > 0) {
-        MPI_Recv(h->perio_lst + h->n_c_domains*n_transforms*4,
-                 n_c_domains_r*n_transforms*4,
+        MPI_Recv(perio_lst_tr + n_c_domains*n_transforms*2,
+                 n_c_domains_r*n_transforms*2,
                  CS_MPI_LNUM, dist_rank, tag, comm, &status);
-        for (cs_lnum_t ii = 0, jj = h->n_c_domains*n_transforms*4;
-             ii < n_c_domains_r*n_transforms*4;
+        for (cs_lnum_t ii = 0, jj = n_c_domains*n_transforms*2;
+             ii < n_c_domains_r*n_transforms*2;
              ii+=2, jj+=2)
-          h->perio_lst[jj] += index_shift;
+          perio_lst_tr[jj] += index_shift;
       }
 
       /* Update halo sizes */
 
-      h->n_local_elts += recv_count[rank_id*3 + 1];
-      h->n_c_domains += n_c_domains_r;
-      h->n_elts[0] += n_recv;
-      h->n_elts[1] = h->n_elts[0];
+      n_local_elts += recv_count[rank_id*3 + 1];
+      n_c_domains += n_c_domains_r;
+      n_elts += n_recv;
     }
 
   }
@@ -1922,7 +1543,7 @@ _append_halos(cs_grid_t   *g,
     for (cs_lnum_t ii = g->n_rows, jj = 0; ii < g->n_cols_ext; ii++, jj++)
       new_src_cell_id[jj] = new_cell_id[ii];
 
-    MPI_Send(h->c_domain_rank, h->n_c_domains, MPI_INT,
+    MPI_Send(c_domain_rank, h->n_c_domains, MPI_INT,
              g->merge_sub_root, tag, comm);
     MPI_Send(new_src_cell_id, h->n_elts[0], CS_MPI_LNUM,
              g->merge_sub_root, tag, comm);
@@ -1930,80 +1551,198 @@ _append_halos(cs_grid_t   *g,
              g->merge_sub_root, tag, comm);
 
     if (n_transforms > 0)
-      MPI_Send(h->perio_lst, h->n_c_domains*n_transforms*4,
+      MPI_Send(perio_lst_tr, h->n_c_domains*n_transforms*2,
                CS_MPI_LNUM, g->merge_sub_root, tag, comm);
 
-    _empty_halo(h);
   }
 
-  /* Cleanup halo and set pointer for coarsening (sub_root) ranks*/
-
-  if (h != nullptr) {
-
-    /* In case of periodic transforms, transpose perio list back to its
-       standard order */
-
-    if (n_transforms > 0) {
-      cs_lnum_t *perio_list_tr;
-      CS_MALLOC(perio_list_tr, h->n_c_domains*n_transforms*4, cs_lnum_t);
-      for (int tr_id = 0; tr_id < n_transforms; tr_id++) {
-        for (int rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-          for (int k = 0; k < 4; k++)
-            perio_list_tr[h->n_c_domains*4*tr_id + 4*rank_id + k]
-              = h->perio_lst[n_transforms*4*rank_id + 4*tr_id + k];
-        }
-      }
-      memcpy(h->perio_lst,
-             perio_list_tr,
-             h->n_c_domains*n_transforms*4*sizeof(cs_lnum_t));
-      CS_FREE(perio_list_tr);
-    }
-
-    /* Now merge data */
-
-    CS_MALLOC(new_halo_cell_id, h->n_elts[0], cs_lnum_t);
-
-    _merge_halo_data(h,
-                     cs_glob_rank_id,
-                     counts[1],
-                     new_src_cell_id,
-                     new_halo_cell_id);
-
-    _rebuild_halo_send_lists(h, g->alloc_mode, new_src_cell_id);
-
-  }
-
-  if (new_src_cell_id != nullptr)
-    CS_FREE(new_src_cell_id);
-
-  g->halo = h;
-  g->_halo = h;
-
-  /* Finally, update halo section of cell renumbering array */
+  /* Order list by rank, transform, and new element number */
 
   if (g->merge_sub_rank == 0) {
+
+    const int  n_c_domains_ini = n_c_domains;
+    const cs_lnum_t n_elts_ini = n_elts;
+
+    int *elt_rank_idx;
+    cs_lnum_t *elt_id;
+    CS_MALLOC(elt_rank_idx, n_elts_ini, int);
+    CS_MALLOC(elt_id, n_elts_ini, cs_lnum_t);
+
+    int16_t *elt_tr_id = nullptr;
+    if (n_transforms > 0)
+      CS_MALLOC(elt_tr_id, n_elts_ini, int16_t);
+
+    cs_lnum_t tr_mult = n_transforms+1;
+    cs_lnum_t  *tmp_num = nullptr;
+    CS_MALLOC(tmp_num, n_elts_ini*2, cs_lnum_t);
+
+    for (int rank_idx = 0; rank_idx < n_c_domains_ini; rank_idx++) {
+      int c_rank_id = c_domain_rank[rank_idx];
+      /* use -2 instead of -1 for local rank so that division of
+         c_rank_id*tr_mult + tr_id by tr_mult is < 0 */
+      if (c_rank_id == cs_glob_rank_id) {
+        c_rank_id = -2;
+        c_domain_rank[rank_idx] = -1;
+      }
+
+      for (cs_lnum_t ii = h->index[rank_idx*2];
+           ii < h->index[rank_idx*2+1];
+           ii++)
+        tmp_num[ii*2] = c_rank_id * tr_mult;
+    }
+
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
+      tmp_num[ii*2 + 1] = new_src_cell_id[ii];
+    }
+
+    if (n_transforms > 0) {
+      for (int rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
+        for (int tr_id = 0; tr_id < n_transforms; tr_id++) {
+          cs_lnum_t s_id = perio_lst_tr[n_transforms*2*rank_id + 2*tr_id];
+          cs_lnum_t e_id =   s_id
+                           + perio_lst_tr[n_transforms*2*rank_id + 2*tr_id + 1];
+          cs_lnum_t tr_num_shift = (tr_id + 1);
+          for (cs_lnum_t ii = s_id; ii < e_id; ii++)
+            tmp_num[ii*2] += tr_num_shift;
+        }
+      }
+      CS_FREE(perio_lst_tr);
+    }
+
+    /* Now order elements based on rank, transform, and id */
+
+    cs_lnum_t *order;
+    CS_MALLOC(order, n_elts_ini*2, cs_lnum_t);
+
+    cs_order_lnum_allocated_s(nullptr, tmp_num, 2, order, n_elts_ini);
+
+    /* Now build ordered list and renumbering array */
+
+    int prev_rank_tr_id = -1, local_rank = cs_glob_rank_id;
+    cs_lnum_t prev_src_id = -1, n_elts_m = 0;
+
+    cs_lnum_t *halo_o2n;
+    CS_MALLOC(halo_o2n, n_elts_ini, int);
+
+    for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
+      bool is_same = true;
+      cs_lnum_t cur_id = order[ii];
+
+      cs_lnum_t rank_tr_id = tmp_num[cur_id*2];
+      int rank_id = rank_tr_id / tr_mult;
+      int tr_id = (int16_t)(rank_tr_id % tr_mult) - 1;
+      if (rank_tr_id < 0) {
+        rank_id = -1;
+        tr_id = (int16_t)((2*tr_mult+rank_tr_id) % tr_mult) - 1;
+      }
+      cs_lnum_t src_id = tmp_num[cur_id*2 + 1];
+
+      /* If element is local, not in halo anymore */
+
+      if (rank_id == -1 && tr_id == -1) {
+        halo_o2n[cur_id] = src_id;
+      }
+
+      /* Otherwise, element in new halo */
+
+      else {
+        if (rank_tr_id != prev_rank_tr_id || src_id != prev_src_id)
+          is_same = false;
+
+        if (is_same == false) {
+          elt_rank_idx[n_elts_m] = rank_id;
+          elt_id[n_elts_m] = src_id;
+          if (elt_tr_id != nullptr)
+            elt_tr_id[n_elts_m] = tr_id;
+
+          n_elts_m++;
+        }
+
+        halo_o2n[cur_id] = n_local_elts + n_elts_m - 1;
+
+      }
+
+      prev_rank_tr_id = rank_tr_id;
+      prev_src_id = src_id;
+    }
+
+    /* Update halo section of cell renumbering array */
 
     cs_lnum_t n_send = recv_count[2];
     cs_lnum_t send_shift = n_send;
 
     for (cs_lnum_t ii = 0; ii < n_send; ii++)
-      new_cell_id[g->n_rows + ii] = new_halo_cell_id[ii];
+      new_cell_id[g->n_rows + ii] = halo_o2n[ii];
 
-    for (int rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
-      int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
-      int n_send_r = recv_count[rank_id*3 + 2];
-      MPI_Send(new_halo_cell_id + send_shift, n_send_r, CS_MPI_LNUM,
+    for (int rank_idx = 1; rank_idx < g->merge_sub_size; rank_idx++) {
+      int dist_rank = g->merge_sub_root + g->merge_stride*rank_idx;
+      int n_send_r = recv_count[rank_idx*3 + 2];
+      MPI_Send(halo_o2n + send_shift, n_send_r, CS_MPI_LNUM,
                dist_rank, tag, comm);
-      send_shift += n_send;
+      send_shift += n_send_r;
     }
 
+    CS_FREE(halo_o2n);
+    CS_FREE(order);
+    CS_FREE(tmp_num);
     CS_FREE(recv_count);
-  }
-  else if (g->merge_sub_size > 1)
-    MPI_Recv(new_cell_id + g->n_rows, g->n_cols_ext - g->n_rows,
-             CS_MPI_LNUM, g->merge_sub_root, tag, comm, &status);
 
-  CS_FREE(new_halo_cell_id);
+    /* Now we do not need the unmerged halo data anymore, so can rebuild
+       the new (merged) halo */
+
+    const fvm_periodicity_t *periodicity = h->periodicity;
+    cs_halo_destroy(&h);
+
+    cs_rank_neighbors_t *rn
+      = cs_rank_neighbors_create(n_c_domains, c_domain_rank);
+
+    if (rn->size > 0) { // expected to be always true here.
+      int r_idx = 0, r_id = rn->rank[0];
+      for (cs_lnum_t i = 0; i < n_elts_m; i++) {
+        int elt_r_id = elt_rank_idx[i];
+        while (elt_r_id > r_id) {
+          r_idx++;
+          assert(r_idx < rn->size);
+          r_id = rn->rank[r_idx];
+        }
+        elt_rank_idx[i] = r_idx;
+      }
+
+      if (rn->rank[0] < 0)
+        rn->rank[0] = cs_glob_rank_id;
+    }
+
+    h = cs_halo_create_from_rank_neighbors(rn,
+                                           n_local_elts,
+                                           n_elts_m,
+                                           elt_rank_idx,
+                                           elt_id,
+                                           elt_tr_id,
+                                           periodicity);
+
+    cs_rank_neighbors_destroy(&rn);
+
+    CS_FREE(elt_tr_id);
+    CS_FREE(elt_id);
+    CS_FREE(elt_rank_idx);
+
+  }
+
+  else {
+    CS_FREE(perio_lst_tr);
+
+    if (g->merge_sub_size > 1)
+      MPI_Recv(new_cell_id + g->n_rows, g->n_cols_ext - g->n_rows,
+               CS_MPI_LNUM, g->merge_sub_root, tag, comm, &status);
+
+    cs_halo_destroy(&h);
+  }
+
+  CS_FREE(new_src_cell_id);
+  CS_FREE(c_domain_rank);
+
+  g->halo = h;
+  g->_halo = h;
 }
 
 /*----------------------------------------------------------------------------
@@ -5751,7 +5490,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
       if (f_face_normal != nullptr) {
         dsigjg =   (  c_cell_cen[jc][0]
-                    - c_cell_cen[ic][0])    * c_face_normal[3*c_face]
+                    - c_cell_cen[ic][0]) * c_face_normal[3*c_face]
                  + (  c_cell_cen[jc][1]
                     - c_cell_cen[ic][1]) * c_face_normal[3*c_face +1]
                  + (  c_cell_cen[jc][2]
@@ -7136,11 +6875,8 @@ _native_from_msr(cs_grid_t  *g)
                            &d_val,
                            &x_val);
 
-  {
-    if (g->_da != d_val)
-      CS_FREE(g->_da);
-    CS_MALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
-    g->da = g->_da;
+  if (g->_da != d_val) {
+    CS_REALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
 
     for (cs_lnum_t i = 0; i < n_rows; i++) {
       for (cs_lnum_t l = 0; l < eb_stride; l++)
@@ -7152,6 +6888,7 @@ _native_from_msr(cs_grid_t  *g)
         g->_da[i*db_stride + l] = 0;
     }
   }
+  g->da = g->_da;
 
   if (g->symmetric) {
     CS_REALLOC(g->_face_cell, row_index[n_rows], cs_lnum_2_t);
@@ -8155,6 +7892,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     /* Allocate permanent arrays in coarse grid */
 
+    assert(c->_da == nullptr);
     CS_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
     c->da = c->_da;
 
@@ -8376,6 +8114,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   /* Return new (coarse) grid */
 
+  //cs_grid_dump(c);
   return c;
 }
 
@@ -8450,6 +8189,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 
   else if (f->use_faces) {
 
+    assert(c->_da == nullptr);
     CS_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
     c->da = c->_da;
 
