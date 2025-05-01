@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -154,7 +154,7 @@ typedef void
  * Static global variables
  *============================================================================*/
 
-cs_thermal_table_t *cs_glob_thermal_table = NULL;
+static cs_thermal_table_t *cs_glob_thermal_table = NULL;
 
 static cs_timer_counter_t   _physprop_lib_t_tot;   /* Total time in physical
                                                       property library calls */
@@ -446,6 +446,23 @@ cs_thermal_table_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get current thermal table plane
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_phys_prop_thermo_plane_type_t
+cs_thermal_table_get_thermo_plane(void)
+{
+  if (cs_glob_thermal_table != NULL) {
+    return cs_glob_thermal_table->thermo_plane;
+  }
+  else {
+    return CS_PHYS_PROP_PLANE_PH; /* default */
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get backend set for CoolProp.
  *
  * Returns NULL if CoolProp is not used or backend not set yet.
@@ -499,9 +516,11 @@ cs_physical_properties_set_coolprop_backend(const char  *backend)
   if (backend == NULL)
     backend = "HEOS";
 
-  size_t l = strlen(backend);
-  BFT_REALLOC(_cs_coolprop_backend, l+1, char);
-  strcpy(_cs_coolprop_backend, backend);
+  if (backend != _cs_coolprop_backend) {
+    size_t l = strlen(backend);
+    BFT_REALLOC(_cs_coolprop_backend, l+1, char);
+    strcpy(_cs_coolprop_backend, backend);
+  }
 
   if (cs_glob_thermal_table != NULL) {
 
@@ -992,7 +1011,6 @@ cs_physical_property_get_ref_value(const char  *name)
   return pty->ref_value;
 
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
