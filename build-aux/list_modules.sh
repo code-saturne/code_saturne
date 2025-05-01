@@ -25,6 +25,7 @@ if test "x$MODULESHOME" != "x" ; then
       source "$MODULESHOME/init/profile.sh"
     fi
 
+    export LMOD_PAGER=none
     module purge
 
     while test "x$try_modules" != "x$try_modules_p" ;

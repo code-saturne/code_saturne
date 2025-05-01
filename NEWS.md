@@ -3,6 +3,8 @@ Release 8.0.5 (unreleased)
 
 ### Bug fixes:
 
+- Fix crash in CoolProp call when using enthalpy thermal model.
+
 - Fix cells or faces selection using box[] operator when not
   aligned with Cartesion axes.
 

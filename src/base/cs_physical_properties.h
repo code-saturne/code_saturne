@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -36,6 +36,10 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
 
 typedef enum {
 
@@ -88,6 +92,13 @@ cs_thermal_table_set(const char                        *material,
 
 void
 cs_thermal_table_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Get current thermal table plane
+ *----------------------------------------------------------------------------*/
+
+cs_phys_prop_thermo_plane_type_t
+cs_thermal_table_get_thermo_plane(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

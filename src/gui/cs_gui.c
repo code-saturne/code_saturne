@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -363,33 +363,38 @@ _physical_property_thermal_law(cs_field_t           *c_prop,
   const cs_real_t *thermodynamic_pressure = &_p0;
   const cs_real_t *_thermal_f_val = NULL;
 
-  /* For variable density flows with pressure dependent density (idilat > 1)
-   * we use total pressure values insted of the reference pressue P0. */
-
-  cs_field_t *p_tot_field = cs_field_by_name_try("total_pressure");
-  if (p_tot_field != NULL && cs_glob_velocity_pressure_model->idilat > 1) {
-    thermodynamic_pressure = p_tot_field->val;
-    thermodynamic_pressure_stride = 1;
-  }
-
-  if (CS_F_(t) != NULL) {
-    if (CS_F_(t)->type & CS_FIELD_VARIABLE)
-      _thermal_f_val = CS_F_(t)->val;
-  }
-  else if (CS_F_(h) != NULL) {
-    if (CS_F_(h)->type & CS_FIELD_VARIABLE)
-      _thermal_f_val = CS_F_(h)->val;
-  }
-  else if (CS_F_(e_tot) != NULL) {
-    if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
-      _thermal_f_val = CS_F_(e_tot)->val;
+  if (CS_F_(e_tot) != NULL) {
+    if (CS_F_(e_tot)->type & CS_FIELD_VARIABLE) {
       thermodynamic_pressure = CS_F_(p)->val;
       thermodynamic_pressure_stride = 1;
     }
   }
   else {
-    thermal_f_val_stride = 0;
-    _thermal_f_val = &_t0;
+    /* For variable density flows with pressure dependent density (idilat > 1)
+     * we use total pressure values instead of the reference pressue P0. */
+    cs_field_t *p_tot_field = cs_field_by_name_try("total_pressure");
+    if (p_tot_field != NULL && cs_glob_velocity_pressure_model->idilat > 1) {
+      thermodynamic_pressure = p_tot_field->val;
+      thermodynamic_pressure_stride = 1;
+    }
+  }
+
+  cs_phys_prop_thermo_plane_type_t thermo_plane
+    = cs_thermal_table_get_thermo_plane();
+
+  if (thermo_plane == CS_PHYS_PROP_PLANE_PH) {
+    if (CS_F_(h) != NULL) {
+      _thermal_f_val = CS_F_(h)->val;
+    }
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_PT) {
+    if (CS_F_(t) != NULL) {
+      _thermal_f_val = CS_F_(t)->val;
+    }
+    else {
+      thermal_f_val_stride = 0;
+      _thermal_f_val = &_t0;
+    }
   }
 
   cs_phys_prop_compute(property,
