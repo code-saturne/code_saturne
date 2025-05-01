@@ -434,6 +434,23 @@ cs_thermal_table_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get current thermal table plane
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_phys_prop_thermo_plane_type_t
+cs_thermal_table_get_thermo_plane(void)
+{
+  if (cs_glob_thermal_table != NULL) {
+    return cs_glob_thermal_table->thermo_plane;
+  }
+  else {
+    return CS_PHYS_PROP_PLANE_PH; /* default */
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get backend set for CoolProp.
  *
  * Returns null if CoolProp is not used or backend not set yet.
