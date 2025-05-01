@@ -387,46 +387,48 @@ _physical_property_thermal_law(cs_field_t           *c_prop,
   const cs_real_t *thermodynamic_pressure = &_p0;
   const cs_real_t *_thermal_f_val = NULL;
 
-#if 0
-  /* For variable density flows with pressure dependent density (idilat > 1)
-     we would like to use total pressure values instead of the
-     reference pressue P0.
-
-     But it seems that basing the density law on a non-constant pressure
-     contradicts the hypothesis of the dilatale model, and in any case,
-     divergence has been observed when doing so with libraries such as
-     EOS or Coolprop.
-
-     TODO: enable using the thermodynamic pressure for library-based
-     density computations with compressible flows (which currenly use
-     their own density laws).
- */
-
-  cs_field_t *p_tot_field = cs_field_by_name_try("total_pressure");
-  if (p_tot_field != NULL && cs_glob_velocity_pressure_model->idilat > 1) {
-    thermodynamic_pressure = p_tot_field->val;
-    thermodynamic_pressure_stride = 1;
-  }
-#endif
-
-  if (CS_F_(t) != NULL) {
-    if (CS_F_(t)->type & CS_FIELD_VARIABLE)
-      _thermal_f_val = CS_F_(t)->val;
-  }
-  else if (CS_F_(h) != NULL) {
-    if (CS_F_(h)->type & CS_FIELD_VARIABLE)
-      _thermal_f_val = CS_F_(h)->val;
-  }
-  else if (CS_F_(e_tot) != NULL) {
-    if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
-      _thermal_f_val = CS_F_(e_tot)->val;
+  if (CS_F_(e_tot) != NULL) {
+    if (CS_F_(e_tot)->type & CS_FIELD_VARIABLE) {
       thermodynamic_pressure = CS_F_(p)->val;
       thermodynamic_pressure_stride = 1;
     }
   }
+
+#if 0
   else {
-    thermal_f_val_stride = 0;
-    _thermal_f_val = &_t0;
+    /* For variable density flows with pressure dependent density (idilat > 1)
+       we would like to use total pressure values instead of the
+       reference pressue P0.
+
+       But it seems that basing the density law on a non-constant pressure
+       contradicts the hypothesis of the dilatale model, and in any case,
+       divergence has been observed when doing so with libraries such as
+       EOS or Coolprop. */
+
+    cs_field_t *p_tot_field = cs_field_by_name_try("total_pressure");
+    if (p_tot_field != NULL && cs_glob_velocity_pressure_model->idilat > 1) {
+      thermodynamic_pressure = p_tot_field->val;
+      thermodynamic_pressure_stride = 1;
+    }
+  }
+#endif
+
+  cs_phys_prop_thermo_plane_type_t thermo_plane
+    = cs_thermal_table_get_thermo_plane();
+
+  if (thermo_plane == CS_PHYS_PROP_PLANE_PH) {
+    if (CS_F_(h) != NULL) {
+      _thermal_f_val = CS_F_(h)->val;
+    }
+  }
+  else if (thermo_plane == CS_PHYS_PROP_PLANE_PT) {
+    if (CS_F_(t) != NULL) {
+      _thermal_f_val = CS_F_(t)->val;
+    }
+    else {
+      thermal_f_val_stride = 0;
+      _thermal_f_val = &_t0;
+    }
   }
 
   cs_phys_prop_compute(property,
