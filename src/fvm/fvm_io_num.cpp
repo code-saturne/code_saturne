@@ -636,9 +636,8 @@ _fvm_io_num_global_max_unordered(const fvm_io_num_t  *const this_io_num,
 /*----------------------------------------------------------------------------
  * Global ordering associated with an I/O numbering structure.
  *
- * The structure should contain an initial ordering, which should
- * be sorted, but need not be contiguous. On output, the numbering
- * will be contiguous.
+ * The structure should contain an initial ordering, which need not be
+ * contiguous. On output, the numbering will be contiguous.
  *
  * As an option, a number of sub-entities per initial entity may be
  * given, in which case sub-entities of a same entity will have contiguous
@@ -814,7 +813,8 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   /* Get final maximum global number value */
 
-  this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
+  this_io_num->global_count
+    = _fvm_io_num_global_max_unordered(this_io_num, comm);
 }
 
 /*----------------------------------------------------------------------------
