@@ -2044,7 +2044,7 @@ _append_cell_data(cs_grid_t  *g)
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
       if (g->relaxation > 0) {
-        MPI_Recv(g->_cell_cen + g->merge_cell_idx[rank_id]*3, n_recv*3,
+        MPI_Recv(g->_cell_cen + g->merge_cell_idx[rank_id], n_recv*3,
                  CS_MPI_REAL, dist_rank, tag, comm, &status);
 
         MPI_Recv(g->_cell_vol + g->merge_cell_idx[rank_id], n_recv,
@@ -2098,7 +2098,10 @@ _sync_merged_cell_data(cs_grid_t  *g)
   if (g->halo != nullptr) {
 
     if (g->relaxation > 0) {
-      cs_halo_sync_r(g->halo, CS_HALO_STANDARD, false, g->_cell_cen);
+      cs_real_t *cell_cen = (cs_real_t *)(g->_cell_cen);
+      cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, cell_cen, 3);
+      if (g->halo->n_transforms > 0)
+        cs_halo_perio_sync_coords(g->halo, CS_HALO_STANDARD, cell_cen);
       cs_halo_sync(g->halo, CS_HALO_STANDARD, false, g->_cell_vol);
     }
 
@@ -6744,7 +6747,10 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
   /* Synchronize grid's geometric quantities */
 
   if (c->halo != nullptr) {
-    cs_halo_sync_r(c->halo, CS_HALO_STANDARD, false, c->_cell_cen);
+    cs_real_t *cell_cen = (cs_real_t *)(c->_cell_cen);
+    cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, cell_cen, 3);
+    if (c->halo->n_transforms > 0)
+      cs_halo_perio_sync_coords(c->halo, CS_HALO_STANDARD, cell_cen);
     cs_halo_sync(c->halo, CS_HALO_STANDARD, false, c->_cell_vol);
   }
 
@@ -8188,7 +8194,10 @@ cs_grid_coarsen(const cs_grid_t      *f,
     /* Synchronize grid's geometric quantities */
 
     if (c->halo != nullptr) {
-      cs_halo_sync_r(c->halo, CS_HALO_STANDARD, false, c->_cell_cen);
+      cs_real_t *cell_cen = (cs_real_t *)(c->_cell_cen);
+      cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, cell_cen, 3);
+      if (c->halo->n_transforms > 0)
+        cs_halo_perio_sync_coords(c->halo, CS_HALO_STANDARD, cell_cen);
       cs_halo_sync(c->halo, CS_HALO_STANDARD, false, c->_cell_vol);
     }
 
