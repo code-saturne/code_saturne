@@ -1782,7 +1782,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
   for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
     cs_lnum_t length = (  halo->index[2*rank_id + end_shift]
-                        - halo->index[2*rank_id]) * stride;
+                        - halo->index[2*rank_id]);
 
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
@@ -1791,7 +1791,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
         unsigned char *dest = _val_dest + start*elt_size;
 
         MPI_Irecv(dest,
-                  length*_hs->stride,
+                  length*stride,
                   mpi_datatype,
                   halo->c_domain_rank[rank_id],
                   halo->c_domain_rank[rank_id],
