@@ -681,15 +681,17 @@ cs_local_time_step_compute(int  itrale)
 
       if (idtvar == CS_TIME_STEP_ADAPTIVE) {
 
-        cs_lnum_t icfmin = n_cells;
-        cs_lnum_t icfmax = n_cells;
+        cs_lnum_t icfmin = 0;
+        cs_lnum_t icfmax = 0;
 
         cs_real_t dtloc = dt[0];
         if (dtloc > dtmax) {
           dtloc = dtmax;
+          icfmax = n_cells;
         }
         if (dtloc < dtmin) {
           dtloc = dtmin;
+          icfmin = n_cells;
         }
 
         int ntcam1 = nt_cur - 1;
@@ -838,11 +840,6 @@ cs_local_time_step_compute(int  itrale)
         struct cs_data_double_int_n<2> rd;
         struct cs_reduce_minmaxloc_n<1> reducer;
 
-        /*cs_real_t cfmax = -HUGE_VAL;
-        cs_real_t cfmin =  HUGE_VAL;
-        cs_lnum_t icfmax = -1;
-        cs_lnum_t icfmin = -1;*/
-
         ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
                                 (cs_lnum_t c_id, cs_data_double_int_n<2> &res) {
 
@@ -851,14 +848,6 @@ cs_local_time_step_compute(int  itrale)
           res.i[0] = c_id;
           res.i[1] = c_id;
 
-          /*if (w2[c_id] <= cfmin) {
-            cfmin = w2[c_id];
-            icfmin = c_id;
-          }
-          if (w2[c_id] >= cfmax) {
-            cfmax = w2[c_id];
-            icfmax = c_id;
-          }*/
         });
 
         ctx.wait();
@@ -1234,14 +1223,6 @@ cs_courant_fourier_compute(void)
         res.i[0] = c_id;
         res.i[1] = c_id;
 
-        /*if (cpro_tab[c_id] <= cfmin) {
-          cfmin = cpro_tab[c_id];
-          icfmin = c_id;
-        }
-        if (cpro_tab[c_id] >= cfmax) {
-          cfmax = cpro_tab[c_id];
-          icfmax = c_id;
-        }*/
       });
 
       ctx.wait();
@@ -1291,8 +1272,6 @@ cs_courant_fourier_compute(void)
 
     ctx.wait();
   }
-
-  //ctx.wait();
 
   /* Free memory */
   CS_FREE_HD(w1);
