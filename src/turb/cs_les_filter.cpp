@@ -121,7 +121,8 @@ _les_filter_ext_neighborhood_scalar(cs_dispatch_context  &ctx,
 
   /* Synchronize variable */
 
-  cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, const_cast<cs_real_t *>(val));
+  cs_halo_sync(mesh->halo, CS_HALO_EXTENDED, ctx.use_gpu(),
+               const_cast<cs_real_t *>(val));
 
   /* Define filtered variable array */
 
@@ -162,7 +163,7 @@ _les_filter_ext_neighborhood_scalar(cs_dispatch_context  &ctx,
   /* Synchronize variable */
 
   ctx.wait();
-  cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_val);
+  cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);
 }
 
 END_C_DECLS

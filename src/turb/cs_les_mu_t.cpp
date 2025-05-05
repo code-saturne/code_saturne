@@ -474,8 +474,8 @@ cs_les_mu_t_smago_dyn(void)
     ctx.wait();
 
     /* Parallel sync */
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_k->val);
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_eps->val);
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_k->val);
 
     /* Update previous values */
     cs_field_current_to_previous(f_eps);
@@ -818,8 +818,8 @@ cs_les_mu_t_smago_const(void)
     ctx.wait();
 
     /* Parallel sync */
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_k->val);
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_eps->val);
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_k->val);
 
     /* Update previous values */
     cs_field_current_to_previous(f_eps);
@@ -981,8 +981,8 @@ cs_les_mu_t_wale(void)
     ctx.wait();
 
     /* Parallel sync */
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_eps->val);
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, f_k->val);
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_eps->val);
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_k->val);
 
     /* Update previous values */
     cs_field_current_to_previous(f_eps);

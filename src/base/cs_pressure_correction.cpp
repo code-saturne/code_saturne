@@ -2952,6 +2952,8 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
     sum += cs_math_pow2(divu[c_id]);
   });
 
+  ctx.wait();
+
   /* Compute and set the right-hand side residual */
 
   cs_parall_sum(1, CS_DOUBLE, &rd2);

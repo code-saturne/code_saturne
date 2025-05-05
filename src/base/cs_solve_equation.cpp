@@ -1991,6 +1991,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
 
   const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
@@ -2024,11 +2025,14 @@ cs_solve_equation_vector(cs_field_t       *f,
     const int keycdt = cs_field_key_id("time_step_factor");
     const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
 
-    if (fabs(cdtvar - 1.0) > cs_math_epzero) {
-      CS_MALLOC(dtr, n_cells_ext, cs_real_t);
+    if (cs::abs(cdtvar - 1.0) > cs_math_epzero) {
+      CS_MALLOC_HD(dtr, n_cells_ext, cs_real_t, cs_alloc_mode);
+
       ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         dtr[c_id] = dt[c_id] * cdtvar;
       });
+
+      ctx.wait();
       dt = dtr;
     }
   }
@@ -2051,11 +2055,17 @@ cs_solve_equation_vector(cs_field_t       *f,
   cs_real_3_t *rhs;
   cs_real_33_t *fimp;
 
-  CS_MALLOC(fimp, n_cells_ext, cs_real_33_t);
-  CS_MALLOC(rhs, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(fimp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
-  cs_array_real_fill_zero(9*n_cells_ext, (cs_real_t *)fimp);
-  cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)rhs);
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      fimp[c_id][i][i] = 0.;
+      rhs[c_id][i] = 0.;
+    }
+  });
+
+  ctx.wait();
 
   /* User source terms
    * ----------------- */
@@ -2087,13 +2097,14 @@ cs_solve_equation_vector(cs_field_t       *f,
                 _("%s: source term field %s\n"
                   "for field %s should be dimension 3."),
                 __func__, f_st->name, f->name);
+
     cpro_vect_st = (cs_real_3_t *)f_st->val;
-    cs_array_real_copy(3*n_cells,
-                       (const cs_real_t *)rhs,
-                       (cs_real_t *)cpro_vect_st);
+    cs_array_copy<cs_real_t>(3*n_cells,
+                             (const cs_real_t *)rhs,
+                             (cs_real_t *)cpro_vect_st);
+
     /* Handle parallelism and periodicity */
-    bool on_device = cs_mem_is_device_ptr(cpro_vect_st);
-    cs_halo_sync_r(m->halo, on_device, cpro_vect_st);
+    cs_halo_sync_r(m->halo, ctx.use_gpu(), cpro_vect_st);
   }
 
   /* If we extrapolate source terms:
@@ -2111,31 +2122,34 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   if (st_prv_id > -1) {
     cproa_vect_st = (cs_real_3_t *)cs_field_by_id(st_prv_id)->val;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t smbexp[3];
       for (cs_lnum_t j = 0; j < 3; ++j) {
         smbexp[j] = cproa_vect_st[c_id][j];
         /* User explicit source terms */
         cproa_vect_st[c_id][j] = rhs[c_id][j];
         rhs[c_id][j] =   fimp[c_id][j][j] * cvara_var[c_id][j]
-                         - thets*smbexp[j];
+                       - thets*smbexp[j];
         /* Diagonal */
         fimp[c_id][j][j] = -thetv*fimp[c_id][j][j];
       }
-    }
+    });
   }
 
   /* If we do not extrapolate the ST: */
   else {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         /* User explicit source terms */
         rhs[c_id][j] += fimp[c_id][j][j] * cvara_var[c_id][j];
         /* Diagonal */
         fimp[c_id][j][j] = cs::max(-fimp[c_id][j][j], 0);
       }
-    }
+    });
   }
+
+  ctx.wait();
 
   /* Specific physical models; order 2 not handled */
 
@@ -2189,10 +2203,10 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   if (st_prv_id > -1) {
     const cs_real_t thetp1 = 1.0 + thets;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t j = 0; j < 3; j++)
         rhs[c_id][j] += thetp1 * cproa_vect_st[c_id][j];
-    }
+    });
   }
 
   /* Compressible algorithm
@@ -2243,16 +2257,21 @@ cs_solve_equation_vector(cs_field_t       *f,
                             &viscce);
   }
   else {
-    cs_array_real_fill_zero(m->n_i_faces, viscf);
-    cs_array_real_fill_zero(n_b_faces, viscb);
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      viscf[f_id] = 0.;
+    });
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      viscb[f_id] = 0.;
+    });
   }
 
   /* Add Rusanov fluxes */
   if (cs_glob_turb_rans_model->irijnu == 2) {
     cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       viscf[face_id] += 0.5 * ipro_rusanov[face_id];
-    }
+    });
 
     const cs_real_3_t *restrict b_face_normal
       = (const cs_real_3_t *)fvq->b_face_normal;
@@ -2262,7 +2281,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     // cs_real_3_t  *cofafp = (cs_real_3_t *)f->bc_coeffs->af;
     cs_real_33_t *cofbfp = (cs_real_33_t *)f->bc_coeffs->bf;
 
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_real_t n[3];
       cs_math_3_normalize(b_face_normal[face_id], n);
 
@@ -2273,15 +2292,17 @@ cs_solve_equation_vector(cs_field_t       *f,
           //TODO? cofafp[face_id][i] -= bij * coefap[face_id][j];
         }
       }
-    }
+    });
   }
 
   if (eqp->istat == 1) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t j = 0; j < 3; j++)
         fimp[c_id][j][j] += pcrom[c_id] * cell_f_vol[c_id] / dt[c_id];
-    }
+    });
   }
+
+  ctx.wait();
 
   /* Scalar with a Drift: compute the convective flux
    * ------------------------------------------------ */
@@ -2303,8 +2324,8 @@ cs_solve_equation_vector(cs_field_t       *f,
     cs_drift_convective_flux(f,
                              imasfl,
                              bmasfl,
-                             (cs_real_t *) fimp,
-                             (cs_real_t *) rhs);
+                             (cs_real_t *)fimp,
+                             (cs_real_t *)rhs);
 
   /* Cancel RHS in disabled cells in case spurious terms were added
      by "generic" code */
@@ -2365,17 +2386,29 @@ cs_solve_equation_vector(cs_field_t       *f,
       ibcl = 1;
 
     if (eqp->istat == 1) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           rhs[c_id][j] -=   (pcrom[c_id] / dt[c_id]) * cell_f_vol[c_id]
-                            * (cvar_var[c_id][j] - cvara_var[c_id][j]) * ibcl;
+                          * (cvar_var[c_id][j] - cvara_var[c_id][j]) * ibcl;
         }
-      }
+      });
     }
-    const cs_real_t sclnor = sqrt(cs_gdot(3*n_cells,
-                                          (const cs_real_t *)rhs,
-                                          (const cs_real_t *)rhs));
 
+    cs_real_t sclnor = 0.;
+
+    ctx.parallel_for_reduce_sum(n_cells, sclnor, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      cs_real_t c_sum = 0;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        c_sum += cs_math_pow2(rhs[c_id][i]);
+      }
+      sum += c_sum;
+    });
+
+    ctx.wait();
+    cs_parall_sum(1, CS_DOUBLE, &sclnor);
+    sclnor = sqrt(sclnor);
     bft_printf("%s: EXPLICIT BALANCE = %14.5e\n\n",f->name, sclnor);
   }
 
