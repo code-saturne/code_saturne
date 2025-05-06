@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -20,7 +20,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 """
 This module defines the values of reference.
@@ -29,22 +29,22 @@ This module contains the following classes and function:
 - FluidStructureInteractionModel
 """
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Library modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import unittest
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Application modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.model.XMLvariables import  Model, Variables
 from code_saturne.model.XMLmodel     import  ModelTest
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Constants class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class Constants:
     """
@@ -72,7 +72,6 @@ class Constants:
         except(KeyError):
             raise AttributeError('A instance has no attribute %s' % attr)
 
-
     def __setattr__(self, attr, value):
         """
         Set an attributs
@@ -82,9 +81,9 @@ class Constants:
         else:
             self.__dict__[attr] = value
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Constant class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 const = Constants()
 
@@ -95,9 +94,9 @@ const.displacement_prediction_beta           = 'displacement_prediction_beta'
 const.stress_prediction_alpha                = 'stress_prediction_alpha'
 const.monitor_point_synchronisation          = 'monitor_point_synchronisation'
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Mobile Mesh model class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class FluidStructureInteractionModel(Model):
     """
@@ -121,9 +120,9 @@ class FluidStructureInteractionModel(Model):
         self.__defaults[const.stress_prediction_alpha] = 2
         self.__defaults[const.monitor_point_synchronisation] = 'off'
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # MaxIterations
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     @Variables.undoLocal
     def setMaxIterations(self, value):
@@ -134,7 +133,6 @@ class FluidStructureInteractionModel(Model):
         self.isGreaterOrEqual(value, 1)
         self.__node_ale.xmlSetData(const.max_iterations_implicitation, value)
 
-
     @Variables.noUndo
     def getMaxIterations(self):
         """
@@ -143,9 +141,9 @@ class FluidStructureInteractionModel(Model):
         return self.__getIntData(const.max_iterations_implicitation,
                                  self.setMaxIterations)
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Precision
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     @Variables.undoLocal
     def setPrecision(self, value):
@@ -155,7 +153,6 @@ class FluidStructureInteractionModel(Model):
         self.isGreater(value, 0.0)
         self.__node_ale.xmlSetData(const.implicitation_precision, value)
 
-
     @Variables.noUndo
     def getPrecision(self):
         """
@@ -164,9 +161,9 @@ class FluidStructureInteractionModel(Model):
         return self.__getDoubleData(const.implicitation_precision,
                                     self.setPrecision)
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # DisplacementPredictionAlpha
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     @Variables.undoLocal
     def setDisplacementPredictionAlpha(self, value):
@@ -174,7 +171,6 @@ class FluidStructureInteractionModel(Model):
         Set value of isplacement prediction alpha into xml file.
         """
         self.__node_ale.xmlSetData(const.displacement_prediction_alpha, value)
-
 
     @Variables.noUndo
     def getDisplacementPredictionAlpha(self):
@@ -184,9 +180,9 @@ class FluidStructureInteractionModel(Model):
         return self.__getDoubleData(const.displacement_prediction_alpha,
                                     self.setDisplacementPredictionAlpha)
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # DisplacementPredictionBeta
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     @Variables.undoLocal
     def setDisplacementPredictionBeta(self, value):
@@ -194,7 +190,6 @@ class FluidStructureInteractionModel(Model):
         Set value of isplacement prediction beta into xml file.
         """
         self.__node_ale.xmlSetData(const.displacement_prediction_beta, value)
-
 
     @Variables.noUndo
     def getDisplacementPredictionBeta(self):
@@ -204,9 +199,9 @@ class FluidStructureInteractionModel(Model):
         return self.__getDoubleData(const.displacement_prediction_beta,
                                     self.setDisplacementPredictionBeta)
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # StressPredictionAlpha
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     @Variables.undoLocal
     def setStressPredictionAlpha(self, value):
@@ -214,7 +209,6 @@ class FluidStructureInteractionModel(Model):
         Set value of stress prediction alpha into xml file.
         """
         self.__node_ale.xmlSetData(const.stress_prediction_alpha, value)
-
 
     @Variables.noUndo
     def getStressPredictionAlpha(self):
@@ -224,9 +218,9 @@ class FluidStructureInteractionModel(Model):
         return self.__getDoubleData(const.stress_prediction_alpha,
                                     self.setStressPredictionAlpha)
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Structure time plots
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     @Variables.undoLocal
     def setInternalStructuresTimePlot(self, value):
@@ -234,7 +228,6 @@ class FluidStructureInteractionModel(Model):
         Set activation status of structure time plots into xml file.
         """
         self.__setOnOffXML(const.monitor_point_synchronisation, value)
-
 
     @Variables.noUndo
     def getInternalStructuresTimePlot(self):
@@ -244,9 +237,9 @@ class FluidStructureInteractionModel(Model):
         return self.__getOnOffXML(const.monitor_point_synchronisation,
                                   self.setInternalStructuresTimePlot)
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # code_aster log verbosity
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     @Variables.undoLocal
     def setAstVerbosity(self, value):
@@ -275,14 +268,13 @@ class FluidStructureInteractionModel(Model):
         node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
         if node_ast:
             s = node_ast.xmlGetChildString("verbosity")
-            print(s)
-            if s != None:
+            if s:
                 return int(s)
         return 1  # default
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # code_aster visualization
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     @Variables.undoLocal
     def setAstVisualization(self, value):
@@ -311,14 +303,13 @@ class FluidStructureInteractionModel(Model):
         node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
         if node_ast:
             s = node_ast.xmlGetChildString("visualization")
-            print(s)
-            if s != None:
+            if s:
                 return int(s)
         return 1  # default
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Helper functions
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     def __getStringData(self, name, setFunction):
         """
@@ -327,7 +318,6 @@ class FluidStructureInteractionModel(Model):
         value = self.__node_ale.xmlGetString(name)
         return self.__getDefaultDataIfNone(value, name, setFunction)
 
-
     def __getDoubleData(self, name, setFunction):
         """
         Get double value from xml file.
@@ -335,14 +325,12 @@ class FluidStructureInteractionModel(Model):
         value = self.__node_ale.xmlGetDouble(name)
         return self.__getDefaultDataIfNone(value, name, setFunction)
 
-
     def __getIntData(self, name, setFunction):
         """
         Get int value from xml file.
         """
         value = self.__node_ale.xmlGetInt(name)
         return self.__getDefaultDataIfNone(value, name, setFunction)
-
 
     def __getDefaultDataIfNone(self, value, name, setFunction):
         """
@@ -353,7 +341,6 @@ class FluidStructureInteractionModel(Model):
             setFunction(value)
         return value
 
-
     def __setOnOffXML(self, name, value):
         """
         Set value of 'on'/'off' xml attribute
@@ -361,7 +348,6 @@ class FluidStructureInteractionModel(Model):
         Model().isInList(value, [ 'on', 'off'])
         xmlNode = self.__node_ale.xmlInitNode(name)
         xmlNode['status'] = value
-
 
     def __getOnOffXML(self, name, setFunction):
         """
@@ -372,16 +358,15 @@ class FluidStructureInteractionModel(Model):
 
         return self.__getDefaultDataIfNone(value, name, setFunction)
 
-
     def getNodeALE(self):
         """
         Return the node ALE
         """
         return self.__node_ale
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # FluidStructureInteraction test case
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class FluidStructureInteractionTestCase(ModelTest):
     """
@@ -481,6 +466,6 @@ def runTest():
     runner = unittest.TextTestRunner()
     runner.run(suite())
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
