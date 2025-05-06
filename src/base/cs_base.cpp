@@ -1273,7 +1273,7 @@ cs_base_mpi_init(int    *argc,
   char *s;
 
   int arg_id = 0, flag = 0;
-  int use_mpi = false;
+  bool use_mpi = false;
 
   if (getenv("PMIX_RANK") != nullptr)
     use_mpi = true;
