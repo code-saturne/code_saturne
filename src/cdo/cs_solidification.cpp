@@ -5200,17 +5200,24 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
     const cs_real_t  *gl = solid->g_l_field->val;
 
     cs_real_t  integr = 0;
+    cs_real_t  vol_tot = 0.; // May be different from quant->vol_tot if
+                             // there are cells with tag CS_FLAG_SOLID_CELL
+
     for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
+
       if (connect->cell_flag[i] & CS_FLAG_SOLID_CELL)
         continue;
+
       integr += (1 - gl[i])*quant->cell_vol[i];
+      vol_tot += quant->cell_vol[i];
+
     }
 
     /* Parallel reduction */
 
-    cs_parall_sum(1, CS_REAL_TYPE, &integr);
+    cs_parall_sum_scalars(integr, vol_tot);
 
-    output_values[n_output_values] = integr/quant->vol_tot;
+    output_values[n_output_values] = integr/vol_tot;
     n_output_values++;
 
   }
@@ -5228,18 +5235,26 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
       const cs_real_t  inv_cref = 1./alloy->ref_concentration;
 
       cs_real_t  si = 0;
+      cs_real_t  vol_tot = 0.; // May be different from quant->vol_tot if
+                               // there are cells with tag CS_FLAG_SOLID_CELL
+
       for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
+
         if (connect->cell_flag[i] & CS_FLAG_SOLID_CELL)
           continue;
-        double  c = (c_bulk[i] - alloy->ref_concentration)*inv_cref;
+
+        const double c = (c_bulk[i] - alloy->ref_concentration)*inv_cref;
+
         si += c*c*quant->cell_vol[i];
+        vol_tot += quant->cell_vol[i];
+
       }
 
       /* Parallel reduction */
 
-      cs_parall_sum(1, CS_REAL_TYPE, &si);
+      cs_parall_sum_scalars(si, vol_tot);
 
-      output_values[n_output_values] = sqrt(si/quant->vol_tot);
+      output_values[n_output_values] = sqrt(si/vol_tot);
       n_output_values++;
 
     }
