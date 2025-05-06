@@ -66,6 +66,7 @@ class VolumicZoneNatureModel(QAbstractTableModel):
         self._data = []
         self._model2View = {}
         self._view2Model = {}
+        self._solid_idx = -1
         self.defineHeaders()
         self.extractDataFromModel()
 
@@ -78,6 +79,9 @@ class VolumicZoneNatureModel(QAbstractTableModel):
             for nature in zones[0].getNatureList():
                 self._headers.append(self._model2View[nature])
             self._headers.sort(key=sort_headers)
+
+            if "Solid" in self._headers:
+                self._solid_idx = self._headers.index("Solid")
 
     def extractDataFromModel(self):
         for zone in self._zoneModel.getZones():
@@ -166,7 +170,11 @@ class VolumicZoneNatureModel(QAbstractTableModel):
         if col == 0:
             return base_flags  # lock first column
         else:
-            return base_flags | Qt.ItemIsUserCheckable
+            # For HTSolver deactivate "Solid" option
+            if col == self._solid_idx:
+                return Qt.ItemIsSelectable
+            else:
+                return base_flags | Qt.ItemIsUserCheckable
 
 
 # Helper functions
