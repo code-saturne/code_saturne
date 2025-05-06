@@ -3021,6 +3021,16 @@ class WallBoundary(Boundary) :
         if scalarNode['type'] == 'thermal' and choice != "syrthes_coupling":
             self.__deleteSyrthesNodes()
 
+
+    def delete(self):
+        """
+        Delete boundary while ensuring cleanup of Syrthes related nodes.
+        """
+
+        self.__deleteSyrthesNodes()
+        super().delete()
+
+
     @Variables.noUndo
     def getScalarValue(self, name, choice) :
         """

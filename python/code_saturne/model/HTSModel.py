@@ -127,7 +127,7 @@ class HTSModel(Variables, Model):
     @Variables.noUndo
     def getHTSName(self):
         """
-        Get name for void fraction scalar
+        Get name for thermal scalar
         """
         name = 'off'
         if self.node_hts:
