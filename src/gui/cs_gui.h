@@ -462,7 +462,7 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
                            cs_real_t         *tsimp);
 
 /*----------------------------------------------------------------------------
- * Define user thermal scalar source terms
+ * Compute user defined thermal scalar source terms (GUI)
  *----------------------------------------------------------------------------*/
 
 void
@@ -470,6 +470,15 @@ cs_gui_thermal_source_terms(cs_field_t        *f,
                             const cs_real_t   *pvar,
                             cs_real_t         *tsexp,
                             cs_real_t         *tsimp);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Define thermal scalar source terms as xdef
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_thermal_source_terms_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

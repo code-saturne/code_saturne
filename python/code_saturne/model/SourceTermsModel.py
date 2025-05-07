@@ -50,6 +50,7 @@ from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.TimeTablesModel import TimeTablesModel
+from code_saturne.model.HTSModel import HTSModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -346,8 +347,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         if not exp:
             exp = self.getDefaultThermalFormula(scalar)
 
-        req = [('S', 'Explicit thermal source term (W/m^3)'),
-               ('dS', 'Thermal source term derivative (W/m^3/[thermal scalar])')]
+        req = [('S', 'Explicit thermal source term (W/m^3)')]
+        # If HTSolver no implicit component
+        if HTSModel(self.case).getHTSModel() == "off":
+            req.append(('dS', 'Thermal source term derivative (W/m^3/[thermal scalar])'))
+
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),

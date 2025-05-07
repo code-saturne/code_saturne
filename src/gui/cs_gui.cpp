@@ -5600,7 +5600,7 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
 }
 
 /*----------------------------------------------------------------------------
- * Define user thermal scalar source terms
+ * Compute user defined thermal scalar source terms (GUI)
  *----------------------------------------------------------------------------*/
 
 void
@@ -5673,6 +5673,71 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
       }
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define thermal scalar source terms as xdef
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_thermal_source_terms_setup(void)
+{
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+#endif
+
+  /* Currently only used in CDO thermal solver */
+  if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
+
+    int n_zones = cs_volume_zone_n_zones();
+
+    for (int z_id = 0; z_id < n_zones; z_id++) {
+      const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+
+      if (!(z->type & CS_VOLUME_ZONE_SOURCE_TERM))
+        continue;
+
+      /* species source term */
+      if (_zone_id_is_type(z->id, "thermal_source_term")) {
+        cs_tree_node_t *tn
+          = cs_tree_get_node(cs_glob_tree,
+                             "thermophysical_models/source_terms/thermal_formula");
+        char z_id_str[32];
+        snprintf(z_id_str, 31, "%d", z->id);
+        while (tn != NULL) {
+
+          const char *name = cs_gui_node_get_tag(tn, "name");
+          const char *zone_id = cs_gui_node_get_tag(tn, "zone_id");
+          if (   cs_gui_strcmp(name, "temperature")
+              && cs_gui_strcmp(zone_id, z_id_str))
+            break;
+          tn = cs_tree_node_get_next_of_name(tn);
+        }
+        const char *formula = cs_tree_node_get_value_str(tn);
+
+        if (formula != NULL) {
+          cs_meg_xdef_input_t *_input
+            = cs_meg_xdef_wrapper_add_input(CS_MEG_SOURCE_TERM_FUNC,
+                                            z_id,
+                                            CS_MESH_LOCATION_CELLS,
+                                            1, /* For HTSolver only explicit source term */
+                                            "temperature",
+                                            "thermal_source_term");
+
+          cs_equation_param_t  *eqp =
+            cs_equation_param_by_name(CS_THERMAL_EQNAME);
+          cs_equation_add_source_term_by_analytic(eqp,
+                                                  z->name,
+                                                  cs_meg_xdef_wrapper,
+                                                  _input);
+        }
+      }
+    }
+  }
+
+  return;
 }
 
 /*----------------------------------------------------------------------------*/

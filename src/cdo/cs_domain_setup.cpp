@@ -719,6 +719,7 @@ cs_domain_setup_finalize(cs_domain_t  *domain)
    * --> Source term
    */
 
+  cs_gui_thermal_source_terms_setup();
   cs_user_boundary_conditions_setup(domain);
   cs_user_finalize_setup(domain);
 
