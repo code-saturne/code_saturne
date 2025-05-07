@@ -550,7 +550,7 @@ typedef enum {
  * Macros for function type qualifiers
  *----------------------------------------------------------------------------*/
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 
 #define CS_F_HOST __host__
 #define CS_F_DEVICE __device__

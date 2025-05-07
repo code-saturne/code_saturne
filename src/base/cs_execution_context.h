@@ -246,7 +246,7 @@ private:
   int _comm_n_ranks; /*!< Number of ranks inside the MPI communicator */
   int _thread_id;    /*!< Thread id */
 
-#if defined(__NVCC__)
+#if defined(__CUDACC__)
   cudaStream_t _stream; /*!< CUDA stream */
 
 #elif defined(SYCL_LANGUAGE_VERSION)

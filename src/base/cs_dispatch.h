@@ -51,7 +51,7 @@
 #include "base/cs_assert.h"
 #include "base/cs_mem.h"
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 #include "base/cs_base_cuda.h"
 #include "base/cs_cuda_reduce.h"
 #include "cs_math_cuda.cuh"
@@ -486,7 +486,7 @@ public:
 
 };
 
-#if defined(__NVCC__)
+#if defined(__CUDACC__)
 
 /* Default kernel that loops over an integer range and calls a device functor.
    This kernel uses a grid_size-stride loop and thus guarantees that all
@@ -1322,7 +1322,7 @@ public:
 
 };
 
-#endif  // __NVCC__ or SYCL or defined(HAVE_OPENMP_TARGET)
+#endif  // __CUDACC__ or SYCL or defined(HAVE_OPENMP_TARGET)
 
 /*!
  * Context to group unused options and catch missing execution paths.
@@ -1337,7 +1337,7 @@ public:
   cs_void_context(void)
   {}
 
-#if !defined(__NVCC__)
+#if !defined(__CUDACC__)
 
   /* Fill-in for CUDA methods, so as to allow using these methods
      in final cs_dispatch_context even when CUDA is not available,
@@ -1359,9 +1359,9 @@ public:
   set_cuda_device([[maybe_unused]] int  device_id) {
   }
 
-#endif  // __NVCC__
+#endif  // !defined(__CUDACC__)
 
-#if    !defined(__NVCC__) \
+#if    !defined(__CUDACC__) \
     && !defined(SYCL_LANGUAGE_VERSION) \
     && !defined(HAVE_OPENMP_TARGET)
 
@@ -1390,7 +1390,7 @@ public:
     return CS_ALLOC_HOST;
   }
 
-#endif  // ! __NVCC__ && ! SYCL_LANGUAGE_VERSION && ! defined(HAVE_OPENMP_TARGET)
+#endif  // ! __CUDACC__ && ! SYCL_LANGUAGE_VERSION && ! defined(HAVE_OPENMP_TARGET)
 
 public:
 
@@ -1655,7 +1655,7 @@ public:
 /*----------------------------------------------------------------------------*/
 
 class cs_dispatch_context : public cs_combined_context<
-#if   defined(__NVCC__) \
+#if   defined(__CUDACC__) \
   || defined(SYCL_LANGUAGE_VERSION) \
   || defined(HAVE_OPENMP_TARGET)
   cs_device_context,
@@ -1667,7 +1667,7 @@ class cs_dispatch_context : public cs_combined_context<
 
 private:
   using base_t = cs_combined_context<
-#if   defined(__NVCC__) \
+#if   defined(__CUDACC__) \
    || defined(SYCL_LANGUAGE_VERSION) \
    || defined(HAVE_OPENMP_TARGET)
   cs_device_context,
