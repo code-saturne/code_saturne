@@ -68,6 +68,9 @@
 #include "base/cs_ibm.h"
 #include "base/cs_initialize_fields.h"
 #include "base/cs_log_iteration.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_save.h"
+#include "mesh/cs_mesh_adaptive_refinement.h"
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -658,6 +661,16 @@ cs_time_stepping(void)
     }
 
     bool mesh_modified = false;
+
+
+    /* Adaptive Mesh Refinement (AMR) operations */
+    if (  cs_glob_amr_info->is_set
+      && (ts->nt_cur % cs_glob_amr_info->n_freq == 0)
+      && ts->nt_cur != 1){
+      cs_adaptive_refinement_step();
+      mesh_modified = true;
+    }
+
     cs_volume_zone_build_all(mesh_modified);
     cs_boundary_zone_build_all(mesh_modified);
 

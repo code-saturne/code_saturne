@@ -62,7 +62,11 @@
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_adaptive_refinement.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -5961,10 +5965,11 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
      6: subdivide faces connectivity
      7: compute added interior faces indexing
      8: subdivide cells
+     9: Adaptive Mesh Refinement (fields reallocation, interpolation,...)
   */
 
-  cs_timer_counter_t  timers[9];
-  for (int i = 0; i < 9; i++)
+  cs_timer_counter_t  timers[10];
+  for (int i = 0; i < 10; i++)
     CS_TIMER_COUNTER_INIT(timers[i]);
 
   cs_lnum_t n_v_ini = m->n_vertices;
@@ -5991,6 +5996,13 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   m->verbosity = mv_save;
 
+  /* Set have_r_gen to true before any refinement operations
+   * so that the b_face_r_c_idx indicator for coarsening is
+   * computed before any refinement operations. */
+
+  m->have_r_gen = true;
+  cs_mesh_update_auxiliary(m);
+
   if (m->verbosity > 0) {
     cs_log_printf(CS_LOG_DEFAULT, "\n");
     cs_log_separator(CS_LOG_DEFAULT);
@@ -5999,6 +6011,24 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[1]), &t0, &t1);
+
+  /* Before any refinement operations, we need to 
+   * save, at least, velocity gradient for mass 
+   * flux interpolations. */
+  cs_real_3_t *o_cog = nullptr;
+  if (cs_glob_amr_info->is_set) {
+    cs_adaptive_refinement_update_gradients();
+    CS_MALLOC(o_cog, m->n_cells, cs_real_3_t);
+    const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+    for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+      o_cog[c_id][0] = cell_cen[c_id][0];
+      o_cog[c_id][1] = cell_cen[c_id][1];
+      o_cog[c_id][2] = cell_cen[c_id][2];
+    }
+  }
+
+  cs_timer_t t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[8]), &t1, &t2);
 
   /* Compute some mesh quantities */
 
@@ -6014,25 +6044,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     CS_MALLOC(m->i_face_r_gen, m->n_i_faces, char);
     for (cs_lnum_t i = 0; i < m->n_i_faces; i++)
       m->i_face_r_gen[i] = 0;
-  }
-
-  if (m->b_face_r_c_idx == nullptr) {
-    CS_MALLOC(m->b_face_r_c_idx, m->n_b_faces, char);
-
-    /* Build cell->faces connectivity to group associated faces */
-    cs_adjacency_t *c2f = cs_mesh_adjacency_c2f_boundary(m);
-
-    for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
-      cs_lnum_t s_id = c2f->idx[c_id];
-      cs_lnum_t e_id = c2f->idx[c_id+1];
-      cs_lnum_t n_loc_b_faces = e_id - s_id;
-      for (cs_lnum_t f_b_loc = 0; f_b_loc < n_loc_b_faces; f_b_loc++){
-        cs_lnum_t f_id = c2f->ids[s_id + f_b_loc];
-        m->b_face_r_c_idx[f_id] = f_b_loc;
-      }
-    }
-
-    cs_adjacency_destroy(&c2f);
   }
 
   /* Determine current cell refinement level */
@@ -6142,7 +6153,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                                     e_v_idx, f_v_idx, g_edges_num,
                                     n_add_vtx);
 
-  cs_timer_t t2 = cs_timer_time();
+  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[2]), &t1, &t2);
   t1 = t2;
 
@@ -6457,6 +6468,79 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[8]), &t1, &t2);
   t1 = t2;
+  
+  /* Rebuild ghosts (has to be done before fields update
+   *in case of AMR ) */
+
+  mv_save = m->verbosity;
+  m->verbosity = -1;
+
+  if (   m->n_domains > 1 || m->n_init_perio > 0
+      || m->halo_type == CS_HALO_EXTENDED) {
+    cs_halo_type_t halo_type = m->halo_type;
+    cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : nullptr;
+    cs_mesh_init_halo(m, mb, halo_type, -1, true);
+  }
+
+  cs_mesh_update_auxiliary(m);
+
+  m->verbosity = mv_save;
+
+  /* Update fields : memory reallocation and interpolation */
+
+  if (cs_glob_amr_info->is_set) {
+
+   /* At this step we are able to recompute mesh_quantities */
+    cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+    cs_glob_mesh_quantities   = cs_mesh_quantities_create();
+    cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
+    cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+    /* We need to rebuilt mesh locations, in order to
+       properly reallocate fields (espacially bc_coeffs) */
+    cs_mesh_init_selectors();
+    cs_mesh_location_build(m, -1);
+
+    cs_amr_refinement_interpolation_t *_realloc_and_interp_fields =
+      cs_glob_amr_info->fields_interp_refinement_func;
+    cs_lnum_t n_i_f_ini = n_f_ini - n_b_f_ini;
+
+    /*As mass flux required interpolated velocity, interpolation for
+     * fields oin cells has to be done first */
+
+    _realloc_and_interp_fields(m,
+                               CS_MESH_LOCATION_CELLS,
+                               n_c_ini,
+                               c_o2n_idx,
+                               nullptr,
+                               o_cog,
+                               mq->cell_cen,
+                               mq->cell_vol);
+
+    _realloc_and_interp_fields(m,
+                               CS_MESH_LOCATION_INTERIOR_FACES,
+                               n_i_f_ini,
+                               i_face_o2n_idx,
+                               c_i_face_idx,
+                               nullptr,
+                               nullptr,
+                               mq->i_face_surf);
+
+    _realloc_and_interp_fields(m,
+                               CS_MESH_LOCATION_BOUNDARY_FACES,
+                               n_b_f_ini,
+                               b_face_o2n_idx,
+                               nullptr,
+                               nullptr,
+                               nullptr,
+                               mq->b_face_surf);
+
+    CS_FREE(o_cog);
+  }
+
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[9]), &t1, &t2);
+  t1 = t2;
 
   /* Cleanup*/
 
@@ -6492,24 +6576,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_FREE(c_r_flag);
   CS_FREE(f_r_flag);
 
-  m->have_r_gen = true;
   m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
-
-  /* Rebuild ghosts */
-
-  mv_save = m->verbosity;
-  m->verbosity = -1;
-
-  if (   m->n_domains > 1 || m->n_init_perio > 0
-      || m->halo_type == CS_HALO_EXTENDED) {
-    cs_halo_type_t halo_type = m->halo_type;
-    cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : nullptr;
-    cs_mesh_init_halo(m, mb, halo_type, -1, true);
-  }
-
-  cs_mesh_update_auxiliary(m);
-
-  m->verbosity = mv_save;
 
   t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[1]), &t1, &t2);
@@ -6534,6 +6601,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
          "  Subdivide faces:                              %.3g\n"
          "  Build added interior faces indexing:          %.3g\n"
          "  Subdivide cells                               %.3g\n\n"
+         "  AMR oprations:                                %.3g\n\n"
          "  Total:                                        %.3g\n"),
        (double)(timers[1].nsec*1.e-9),
        (double)(timers[2].nsec*1.e-9),
@@ -6543,6 +6611,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
        (double)(timers[6].nsec*1.e-9),
        (double)(timers[7].nsec*1.e-9),
        (double)(timers[8].nsec*1.e-9),
+       (double)(timers[9].nsec*1.e-9),
        (double)(timers[0].nsec*1.e-9));
     cs_log_printf(CS_LOG_PERFORMANCE, "\n");
     cs_log_separator(CS_LOG_PERFORMANCE);

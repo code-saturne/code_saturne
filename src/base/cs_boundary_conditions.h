@@ -259,6 +259,14 @@ cs_boundary_conditions_create_legacy_zone_data(void);
 void
 cs_boundary_conditions_create(void);
 
+/*----------------------------------------------------------------------------
+ * Reallocate the boundary conditions face type and face zone arrays
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_realloc(void);
+
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Update the legacy boundary conditions face type and face zone arrays.
