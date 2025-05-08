@@ -779,22 +779,24 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                     tmp_s[2],
                     lv_info->n_elts[2][3] / n_lv_builds,
                     lv_info->n_elts[2][1], lv_info->n_elts[2][2]);
-      cs_log_strpad(tmp_s[0], _("Rows imbalance:"), 34, 64);
-      cs_log_strpad(tmp_s[1], _("Columns + ghosts imbalance:"), 34, 64);
-      cs_log_strpad(tmp_s[2], _("entries imbalance"), 34, 64);
-      cs_log_printf(CS_LOG_PERFORMANCE,
-                    "    %-34s %12.3f %12.3f %12.3f\n"
-                    "    %-34s %12.3f %12.3f %12.3f\n"
-                    "    %-34s %12.3f %12.3f %12.3f\n",
-                    tmp_s[0],
-                    lv_info->imbalance[0][3] / n_lv_builds,
-                    lv_info->imbalance[0][1], lv_info->imbalance[0][2],
-                    tmp_s[1],
-                    lv_info->imbalance[1][3] / n_lv_builds,
-                    lv_info->imbalance[1][1], lv_info->imbalance[1][2],
-                    tmp_s[2],
-                    lv_info->imbalance[2][3] / n_lv_builds,
-                    lv_info->imbalance[2][1], lv_info->imbalance[2][2]);
+      if (lv_info->n_ranks[2] > 1) {
+        cs_log_strpad(tmp_s[0], _("Rows imbalance:"), 34, 64);
+        cs_log_strpad(tmp_s[1], _("Columns + ghosts imbalance:"), 34, 64);
+        cs_log_strpad(tmp_s[2], _("entries imbalance"), 34, 64);
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      "    %-34s %12.3f %12.3f %12.3f\n"
+                      "    %-34s %12.3f %12.3f %12.3f\n"
+                      "    %-34s %12.3f %12.3f %12.3f\n",
+                      tmp_s[0],
+                      lv_info->imbalance[0][3] / n_lv_builds,
+                      lv_info->imbalance[0][1], lv_info->imbalance[0][2],
+                      tmp_s[1],
+                      lv_info->imbalance[1][3] / n_lv_builds,
+                      lv_info->imbalance[1][1], lv_info->imbalance[1][2],
+                      tmp_s[2],
+                      lv_info->imbalance[2][3] / n_lv_builds,
+                      lv_info->imbalance[2][1], lv_info->imbalance[2][2]);
+      }
     }
 
 #endif
