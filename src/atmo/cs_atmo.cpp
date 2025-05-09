@@ -98,6 +98,8 @@
 #include "base/cs_velocity_pressure.h"
 #include "atmo/cs_intprf.h"
 
+#include "base/cs_porosity_from_scan.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -4262,6 +4264,7 @@ cs_atmo_z_ground_compute(void)
   const cs_domain_t *domain = cs_glob_domain;
   const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
+  const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_real_3_t *restrict i_face_normal =
      (const cs_real_3_t *)mq->i_face_normal;
@@ -4271,6 +4274,23 @@ cs_atmo_z_ground_compute(void)
     = (const cs_real_3_t *)mq->b_face_cog;
 
   const int *bc_type = cs_glob_bc_type;
+
+  /* Quantities required for use_staircase = true */
+  const cs_real_t *restrict i_face_surf =
+     (const cs_real_t *)mq_g->i_face_surf;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *)mq_g->i_face_cog;
+  const cs_real_3_t *restrict i_face_u_normal
+    = (const cs_real_3_t *)mq_g->i_face_u_normal;
+  const cs_real_3_t *restrict i_face_normal_g =
+     (const cs_real_3_t *)mq_g->i_face_normal;
+
+  const cs_real_3_t *restrict cell_cen = mq->cell_cen;
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *c2c = ma->cell_cells;
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+  const short int *cell_i_faces_sgn = ma->cell_i_faces_sgn;
 
   /* Quantities required to account for the immersed walls*/
   const cs_lnum_t  n_cells = m->n_cells;
@@ -4368,25 +4388,70 @@ cs_atmo_z_ground_compute(void)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     rhs[cell_id] = 0.;
 
-  /* Dirichlet condition on immersed boundaries */
-  if (c_w_face_surf != nullptr) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells ; c_id++) {
-      eqp_p->ndircl = 1;
-      cs_real_t hint = c_w_dist_inv[c_id];
-      cs_real_t pimp = cs_math_3_dot_product(c_w_face_cog[c_id], normal);
+  if (cs_glob_porosity_from_scan_opt->use_staircase) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      if (mq->c_disable_flag[c_id] != 0)
+        continue;
 
-      f->bc_coeffs->ib_g_wall_cor[c_id] = 0.;
-      f->bc_coeffs->ib_val_ext[c_id] = pimp;
-      f->bc_coeffs->ib_hint[c_id] = hint;
-      f->bc_coeffs->ib_qimp[c_id] = 0.;
+      /* Interior faces */
+      const cs_lnum_t s_id_i = c2c_idx[c_id];
+      const cs_lnum_t e_id_i = c2c_idx[c_id+1];
 
-      cs_real_t tsimp = fmax(- cs_math_3_dot_product(c_w_face_normal[c_id], normal), 0.);
+      /* Loop on interior faces of cell c_id */
+      for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+        const cs_lnum_t face_id = cell_i_faces[cidx];
+        const short int sign = cell_i_faces_sgn[cidx];
 
-      rhs[c_id] += tsimp * (pimp - f->val[c_id]); //explicit term
-      rovsdt[c_id] += cs::max(tsimp, 0.); //implicit term
+        const cs_lnum_t c_id_adj = c2c[cidx]; /*adjacent cell address*/
 
-      norm += cs_math_pow2(pimp) * c_w_face_surf[c_id];
-      ground_surf += c_w_face_surf[c_id];
+        if (mq->c_disable_flag[c_id_adj] != 1)
+          continue;
+
+        cs_real_t i_wall_dist
+          = - sign * cs_math_3_distance_dot_product(cell_cen[c_id_adj],
+                                                    i_face_cog[face_id],
+                                                    i_face_u_normal[face_id]);
+
+        cs_real_t wall_dist_inv = (i_wall_dist < DBL_MIN) ?
+                                   0.:
+                                   1./i_wall_dist;
+
+        eqp_p->ndircl = 1;
+        cs_real_t hint = wall_dist_inv;
+        cs_real_t pimp = cs_math_3_dot_product(i_face_cog[face_id], normal);
+
+        cs_real_t tsimp
+          = fmax(- sign * cs_math_3_dot_product(i_face_normal_g[face_id], normal), 0.);
+
+        rhs[c_id] += tsimp * (pimp - f->val[c_id]); //explicit term
+        rovsdt[c_id] += cs::max(tsimp, 0.); //implicit term
+
+        norm += cs_math_pow2(pimp) * i_face_surf[face_id];
+        ground_surf += i_face_surf[face_id];
+      } /* loop on interior faces */
+    } /* loop on cells */
+  }
+  else {
+    /* Dirichlet condition on immersed boundaries */
+    if (c_w_face_surf != nullptr) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells ; c_id++) {
+        eqp_p->ndircl = 1;
+        cs_real_t hint = c_w_dist_inv[c_id];
+        cs_real_t pimp = cs_math_3_dot_product(c_w_face_cog[c_id], normal);
+
+        f->bc_coeffs->ib_g_wall_cor[c_id] = 0.;
+        f->bc_coeffs->ib_val_ext[c_id] = pimp;
+        f->bc_coeffs->ib_hint[c_id] = hint;
+        f->bc_coeffs->ib_qimp[c_id] = 0.;
+
+        cs_real_t tsimp = fmax(- cs_math_3_dot_product(c_w_face_normal[c_id], normal), 0.);
+
+        rhs[c_id] += tsimp * (pimp - f->val[c_id]); //explicit term
+        rovsdt[c_id] += cs::max(tsimp, 0.); //implicit term
+
+        norm += cs_math_pow2(pimp) * c_w_face_surf[c_id];
+        ground_surf += c_w_face_surf[c_id];
+      }
     }
   }
 
