@@ -1449,14 +1449,14 @@ cs_compute_porosity_from_scan(void)
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
 
-    if (type_fill == CS_FILL_RADIAL) {
-      if (cs_math_3_dot_product(grdporo[c_id], c_w_face_normal[c_id]) > 0.0) {
-        for (cs_lnum_t i = 0; i < 3; i++)
-          c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
-      }
+    if (cs_math_3_dot_product(grdporo[c_id], c_w_face_normal[c_id]) > 0.0) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
     }
-    else if (type_fill == CS_FILL_DIRECTION) {
-      if (cs_math_3_dot_product(direction_vector, c_w_face_normal[c_id]) < 0.0) {
+
+    if (type_fill == CS_FILL_DIRECTION) {
+      if (cs_math_3_dot_product(direction_vector, c_w_face_normal[c_id])
+          < -0.1*cs_math_3_norm(c_w_face_normal[c_id])) {
         for (cs_lnum_t i = 0; i < 3; i++)
           c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
       }
