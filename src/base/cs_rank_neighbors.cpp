@@ -292,12 +292,18 @@ _cs_rank_neighbors_init_sort(cs_rank_neighbors_t  *n,
      array to sort). */
 
   size_t n_elts_0 = 0;
-  int r_prev = -1;
-  for (size_t i = 0; i < n_elts; i++) {
-    if (elt_rank[i] != r_prev) {
-      n->rank[n_elts_0] = elt_rank[i];
-      n_elts_0 += 1;
-      r_prev = elt_rank[i];
+
+  if (n_elts > 0) {
+    int r_prev = elt_rank[0];
+    n->rank[0] = elt_rank[0];
+    n_elts_0 = 1;
+
+    for (size_t i = 1; i < n_elts; i++) {
+      if (elt_rank[i] != r_prev) {
+        n->rank[n_elts_0] = elt_rank[i];
+        n_elts_0 += 1;
+        r_prev = elt_rank[i];
+      }
     }
   }
 
@@ -308,12 +314,16 @@ _cs_rank_neighbors_init_sort(cs_rank_neighbors_t  *n,
   /* Remove duplicates */
 
   n->size = 0;
-  r_prev = -1;
-  for (size_t i = 0; i < n_elts_0; i++) {
-    if (n->rank[i] != r_prev) {
-      n->rank[n->size] = n->rank[i];
-      n->size += 1;
-      r_prev = n->rank[i];
+  if (n_elts_0 > 0) {
+    int r_prev = n->rank[0];
+    n->size = 1;
+
+    for (size_t i = 1; i < n_elts_0; i++) {
+      if (n->rank[i] != r_prev) {
+        n->rank[n->size] = n->rank[i];
+        n->size += 1;
+        r_prev = n->rank[i];
+      }
     }
   }
   CS_REALLOC(n->rank, n->size, int);
