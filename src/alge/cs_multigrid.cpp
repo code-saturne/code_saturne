@@ -4560,7 +4560,6 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   mg->caller_n_ranks = cs_glob_n_ranks;
   if (mg->caller_n_ranks < 2) {
     mg->comm = MPI_COMM_NULL;
-    mg->caller_comm = cs_glob_mpi_comm;
   }
   mg->merge_mean_threshold = 300;
   mg->merge_glob_threshold = 500;
