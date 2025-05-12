@@ -890,14 +890,6 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
     }
 
   }
-
-  {
-    cs_lnum_t *_coarse_row = coarse_row + halo->n_local_elts;
-    for (int ii = 0; ii < halo->n_elts[0]; ii++) {
-      assert(_coarse_row[ii] > -1);
-      assert(_coarse_row[ii] < halo->n_local_elts + halo->n_elts[0]);
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------
