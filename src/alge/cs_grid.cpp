@@ -812,7 +812,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
     for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
       cs_lnum_t start = halo->index[2*rank_id];
-      cs_lnum_t length = halo->index[2*rank_id + 1] - halo->index[2*rank_id];
+      cs_lnum_t length = halo->index[2*rank_id + 2] - halo->index[2*rank_id];
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
@@ -843,7 +843,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
         cs_lnum_t start = halo->send_index[2*rank_id];
-        cs_lnum_t length =   halo->send_index[2*rank_id + 1]
+        cs_lnum_t length =   halo->send_index[2*rank_id + 2]
                            - halo->send_index[2*rank_id];
 
         MPI_Isend(coarse_send + start,
@@ -880,7 +880,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
         = coarse_row + halo->n_local_elts + halo->index[2*local_rank_id];
 
       cs_lnum_t start = halo->send_index[2*local_rank_id];
-      cs_lnum_t length =   halo->send_index[2*local_rank_id + 1]
+      cs_lnum_t length =   halo->send_index[2*local_rank_id + 2]
                          - halo->send_index[2*local_rank_id];
 
 #     pragma omp parallel for if(length > CS_THR_MIN)
@@ -968,7 +968,7 @@ _coarsen_halo(const cs_grid_t   *f,
     start_end_id[0] = f_halo->send_index[domain_id*2];
 
     if (f_halo->n_transforms == 0)
-      start_end_id[1] = f_halo->send_index[domain_id*2 + 1];
+      start_end_id[1] = f_halo->send_index[(domain_id+1)*2];
     else
       start_end_id[1] = f_halo->send_perio_lst[4*domain_id];
 
@@ -1056,7 +1056,7 @@ _coarsen_halo(const cs_grid_t   *f,
     start_end_id[0] = f_halo->index[domain_id*2];
 
     if (f_halo->n_transforms == 0)
-      start_end_id[1] = f_halo->index[domain_id*2 + 1];
+      start_end_id[1] = f_halo->index[(domain_id+1)*2];
     else
       start_end_id[1] = f_halo->perio_lst[4*domain_id];
 
@@ -1578,7 +1578,7 @@ _append_halos(cs_grid_t   *g,
       }
 
       for (cs_lnum_t ii = h->index[rank_idx*2];
-           ii < h->index[rank_idx*2+1];
+           ii < h->index[rank_idx*2+2];
            ii++)
         tmp_num[ii*2] = c_rank_id * tr_mult;
     }
