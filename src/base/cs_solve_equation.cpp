@@ -2060,7 +2060,8 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++) {
-      fimp[c_id][i][i] = 0.;
+      for (cs_lnum_t j = 0; j < 3; j++)
+        fimp[c_id][i][j] = 0.;
       rhs[c_id][i] = 0.;
     }
   });
