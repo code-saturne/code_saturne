@@ -78,7 +78,7 @@ struct cs_reduce_sum1r1i_max1i {    // struct: class with only public members
 
   CS_F_HOST_DEVICE void
   identity(T &a) const {
-    a.r[0] =  0.;
+    a.r[0] = 0.;
     a.i[0] = 0;
     a.i[1] = -INT_MAX;
   }
@@ -263,3 +263,5 @@ main(int argc, char *argv[])
 
   exit(EXIT_SUCCESS);
 }
+
+/*----------------------------------------------------------------------------*/

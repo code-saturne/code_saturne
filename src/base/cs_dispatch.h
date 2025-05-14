@@ -675,6 +675,11 @@ public:
     device_ = cs_base_cuda_get_device();
   }
 
+#if 0    // Operators adding in process of cs_dispatch_queue addition,
+         // then marked as useless and removed.
+         // Not totally removed for now, but "quarantined", to be removed
+         // once we are sure they are not missed.
+
   //! Copy/move and assignment operators.
 
   cs_device_context(cs_device_context const &) = default;
@@ -686,6 +691,8 @@ public:
 
   cs_device_context &
   operator = (cs_device_context &&) = default;
+
+#endif
 
   //! Change grid_size configuration, but keep the stream and device
   //
@@ -1917,8 +1924,8 @@ cs_dispatch_sum(T                       *dest,
 
 #endif // __CUDA_ARCH__
 
-#endif /* __cplusplus */
-
 /*----------------------------------------------------------------------------*/
+
+#endif /* __cplusplus */
 
 #endif /* CS_DISPATCH_H */
