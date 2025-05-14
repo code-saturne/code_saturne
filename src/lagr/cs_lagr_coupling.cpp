@@ -409,10 +409,10 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
                                                         CS_LAGR_TEMPERATURE);
 
 
-      t_st_t_e[c_id] += - (p_mass * p_tmp * p_cp
+    t_st_t_e[c_id] += - (p_mass * p_tmp * p_cp
                           - prev_p_mass * prev_p_tmp * prev_p_cp
                           ) / dtp * p_stat_w * dvol;
-      t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
+    t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
                       / tempct[1];
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
@@ -444,7 +444,7 @@ void
 cs_lagr_coupling_finalize(void)
 {
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
-  cs_lnum_t ncel = cs_glob_mesh->n_cells;
+  cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
   bool is_time_averaged = (   cs_glob_lagr_time_scheme->isttio == 1
@@ -486,11 +486,11 @@ cs_lagr_coupling_finalize(void)
          (difficult to write something for v2, which loses its meaning as
        "Rij component") */
 
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         t_st_k[c_id] -= cs_math_3_dot_product(vel[c_id], t_st_vel[c_id]);
     }
     else if (extra->itytur == 3) {
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         for (cs_lnum_t ij = 0; ij < 6; ij++) {
           cs_lnum_t i = _iv2t[ij];
           cs_lnum_t j = _jv2t[ij];
@@ -501,7 +501,7 @@ cs_lagr_coupling_finalize(void)
       }
     }
   }
-  for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     cs_real_t mf   = cell_vol[c_id] * extra->cromf->val[c_id];
     cs_real_t tauv = volp[c_id] / cell_vol[c_id];
@@ -559,7 +559,7 @@ cs_lagr_coupling_finalize(void)
 
     if (f_st_p != nullptr) {
       st_p = f_st_p->val;
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         st_p[c_id]
           = (t_st_p[c_id] + (lag_st->npts - 1.0) * st_p[c_id])
           / lag_st->npts;
@@ -568,7 +568,7 @@ cs_lagr_coupling_finalize(void)
 
     if (f_st_vel != nullptr) {
       st_vel = (cs_real_3_t*)(f_st_vel->val);
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           st_vel[c_id][j]
             =    (t_st_vel[c_id][j] + (lag_st->npts - 1.0) * st_vel[c_id][j])
@@ -579,7 +579,7 @@ cs_lagr_coupling_finalize(void)
 
     if (f_st_imp_vel != nullptr) {
       st_imp_vel = f_st_imp_vel->val;
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         st_imp_vel[c_id]
           = (t_st_imp_vel[c_id] + (lag_st->npts - 1.0) * st_imp_vel[c_id])
           / lag_st->npts;
@@ -588,7 +588,7 @@ cs_lagr_coupling_finalize(void)
 
     if (f_st_k != nullptr) {
       st_k = f_st_k->val;
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         st_k[c_id]
           = (t_st_k[c_id] + (lag_st->npts - 1.0) * st_k[c_id])
           / lag_st->npts;
@@ -597,7 +597,7 @@ cs_lagr_coupling_finalize(void)
 
     if (f_st_rij != nullptr) {
       st_rij = (cs_real_6_t*)f_st_rij->val;
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         for (cs_lnum_t j = 0; j < 6; j++) {
           st_rij[c_id][j]
             =    (t_st_rij[c_id][j] + (lag_st->npts - 1.0) * st_rij[c_id][j])
@@ -608,16 +608,23 @@ cs_lagr_coupling_finalize(void)
 
     if (f_st_t_e != nullptr) {
       st_t_e = f_st_t_e->val;
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         st_t_e[c_id]
           = (t_st_t_e[c_id] + (lag_st->npts - 1.0) * st_t_e[c_id])
           / lag_st->npts;
+      }
+
+      /* Save TIME AVERAGED thermal power of rain if needed for post-processing */
+      cs_field_t *f_th_power_rain = cs_field_by_name_try("thermal_power_rain");
+      if (f_th_power_rain != nullptr) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          f_th_power_rain->val[c_id] += st_t_e[c_id];
       }
     }
 
     if (f_st_t_i != nullptr) {
       st_t_i = f_st_t_i->val;
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         st_t_i[c_id]
           = (t_st_t_i[c_id] + (lag_st->npts - 1.0) * st_t_i[c_id])
           / lag_st->npts;
@@ -644,6 +651,17 @@ cs_lagr_coupling_finalize(void)
 
     if (t_st_t_i != st_t_i)
       CS_FREE(t_st_t_i);
+
+  }
+
+  else {
+    /* Save thermal power of rain if needed for post-processing */
+    cs_field_t *f_th_power_rain = cs_field_by_name_try("thermal_power_rain");
+    if (f_th_power_rain != nullptr) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        f_th_power_rain->val[c_id] += t_st_t_e[c_id];
+    }
+
   }
 
   CS_FREE(volp);
