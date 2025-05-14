@@ -657,6 +657,18 @@ public:
     device_ = cs_base_cuda_get_device();
   }
 
+  //! Copy/move and assignment operators.
+
+  cs_device_context(cs_device_context const &) = default;
+
+  cs_device_context(cs_device_context &&) = default;
+
+  cs_device_context &
+  operator = (cs_device_context const &) = default;
+
+  cs_device_context &
+  operator = (cs_device_context &&) = default;
+
   //! Change grid_size configuration, but keep the stream and device
   //
   // \param[in]  grid_size   CUDA grid size, or -1 for automatic choice
