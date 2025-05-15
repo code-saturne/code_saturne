@@ -516,9 +516,9 @@ _do_monitoring(const cs_cdo_quantities_t *quant,
 
     cs_log_printf(CS_LOG_DEFAULT,
                   "### Solidification monitoring: liquid/mushy/solid states\n"
-                  "  * Solid    | %6.2f%% for %9lu cells;\n"
-                  "  * Mushy    | %6.2f%% for %9lu cells;\n"
-                  "  * Liquid   | %6.2f%% for %9lu cells;\n",
+                  "  * Solid    | %6.2f%% vol. | %9lu cells\n"
+                  "  * Mushy    | %6.2f%% vol. | %9lu cells\n"
+                  "  * Liquid   | %6.2f%% vol. | %9lu cells\n",
                   solid->state_ratio[CS_SOLIDIFICATION_STATE_SOLID],
                   solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID],
                   solid->state_ratio[CS_SOLIDIFICATION_STATE_MUSHY],
@@ -528,7 +528,7 @@ _do_monitoring(const cs_cdo_quantities_t *quant,
 
     if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
       cs_log_printf(CS_LOG_DEFAULT,
-                    "  * Eutectic | %6.2f%% for %9lu cells;\n",
+                    "  * Eutectic | %6.2f%% vol. | %9lu cells\n",
                     solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
                     solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC]);
 
