@@ -126,8 +126,9 @@ cs_local_time_step_compute(int  itrale)
   int *c_disable_flag = fvq->c_disable_flag;
 
   cs_real_t *dt = CS_F_(dt)->val;
-  const int nt_cur = cs_glob_time_step->nt_cur;
-  int nt_max = cs_glob_time_step->nt_max;
+
+  /* Get non const pointer to time_step structure */
+  cs_time_step_t *ts = cs_get_glob_time_step();
 
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
 
@@ -694,11 +695,11 @@ cs_local_time_step_compute(int  itrale)
           icfmin = n_cells;
         }
 
-        int ntcam1 = nt_cur - 1;
+        int ntcam1 = ts->nt_cur - 1;
 
         cs_coupling_sync_apps(0,      /* flags */
                               ntcam1,
-                              &nt_max,
+                              &(ts->nt_max),
                               &dtloc);
 
         cs_log_iteration_clipping_field(CS_F_(dt)->id,
@@ -709,8 +710,7 @@ cs_local_time_step_compute(int  itrale)
                                         &icfmin,
                                         &icfmax);
 
-        int nt_prev = cs_glob_time_step->nt_prev;
-        if (itrale > 0 && nt_max > nt_prev) {
+        if (itrale > 0 && ts->nt_max > ts->nt_prev) {
           cs_time_step_update_dt(dtloc);
 
           if (log_is_active) {
@@ -721,7 +721,7 @@ cs_local_time_step_compute(int  itrale)
                  " INSTANT %18.9e   TIME STEP NUMBER %15d\n"
                  " ================================="
                  "============================\n\n\n"),
-               cs_glob_time_step->t_cur, nt_cur);
+               ts->t_cur, ts->nt_cur);
 
           }
         }
