@@ -463,14 +463,16 @@ _monitor_cell_state(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform the monitoring dedicated to the solidification module
+ * \brief Perform the monitoring dedicated to the solidification module
  *
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in] quant  pointer to a cs_cdo_quantities_t structure
+ * \param[in] print  true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_do_monitoring(const cs_cdo_quantities_t   *quant)
+_do_monitoring(const cs_cdo_quantities_t *quant,
+               bool                       print)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   assert(solid->temperature != nullptr);
@@ -503,14 +505,14 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
 
   } /* Loop on cells */
 
-  /* Finalize the monitoring step*/
+  /* Finalize the monitoring step */
 
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_REAL_TYPE, solid->state_ratio);
   const double  inv_voltot = 100./quant->vol_tot;
   for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
     solid->state_ratio[i] *= inv_voltot;
 
-  if (cs_log_default_is_active()) {
+  if (cs_log_default_is_active() && print) {
 
     cs_log_printf(CS_LOG_DEFAULT,
                   "### Solidification monitoring: liquid/mushy/solid states\n"
@@ -530,7 +532,7 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
                     solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
                     solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC]);
 
-  } /* If log active */
+  } /* If log active and one requests to print information into a log file */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5089,6 +5091,10 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
     break; /* Nothing to do */
 
   } /* Switch on model */
+
+  /* Perform the monitoring */
+
+  _do_monitoring(quant, false);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5144,8 +5150,11 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 
   /* Perform the monitoring */
 
+  bool print_log = false;
   if (solid->verbosity > 0)
-    _do_monitoring(quant);
+    print_log = true;
+
+  _do_monitoring(quant, print_log);
 }
 
 /*----------------------------------------------------------------------------*/
