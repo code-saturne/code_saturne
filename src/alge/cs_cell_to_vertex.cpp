@@ -442,7 +442,6 @@ END_C_DECLS
  *
  * \param[in]   method      interpolation method
  * \param[in]   verbosity   verbosity level
- * \param[in]   stride     variable dimension
  * \param[in]   tr_ignore   if > 0, ignore periodicity with rotation;
  *                          if > 1, ignore all periodic transforms
  * \param[in]   c_weight    cell weight, or nullptr
@@ -844,7 +843,6 @@ cs_cell_to_vertex_free(void)
  *
  * \param[in]       method            interpolation method
  * \param[in]       verbosity         verbosity level
- * \param[in]       var_dim           variable dimension
  * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
  * \param[in]       c_weight          cell weight, or nullptr
  * \param[in]       c_var             base cell-based variable
