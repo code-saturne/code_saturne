@@ -105,14 +105,9 @@ def process_cmd_line(argv, pkg):
                       metavar="<py_case>",
                       help="create a new Python script case.")
 
-    parser.add_option(
-        "--aster",
-        dest="ast_case_names",
-        type="string",
-        metavar="<ast_cases>",
-        action="append",
-        help="create new code_aster case(s).",
-    )
+    parser.add_option("--aster", dest="ast_case_name", type="string",
+                      metavar="<ast_case>",
+                      help="create new code_aster case.")
 
     parser.set_defaults(use_ref=False)
     parser.set_defaults(study_name=None)
@@ -121,7 +116,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(verbose=1)
     parser.set_defaults(n_sat=1)
     parser.set_defaults(syr_case_names=[])
-    parser.set_defaults(ast_case_names=None)
+    parser.set_defaults(ast_case_name=None)
     parser.set_defaults(cat_case_name=None)
     parser.set_defaults(py_case_name=None)
 
@@ -138,7 +133,7 @@ def process_cmd_line(argv, pkg):
         options.study_name,
         cases=options.case_names,
         syr_case_names=options.syr_case_names,
-        ast_case_names=options.ast_case_names,
+        ast_case_name=options.ast_case_name,
         cat_case_name=options.cat_case_name,
         py_case_name=options.py_case_name,
         copy=options.copy,
