@@ -300,7 +300,7 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
                             tr_ignore,
                             w_sum);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -310,9 +310,9 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
       w[j] /= w_sum[v_id];
     }
 
-  }
+  });
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     cs_lnum_t s_id = f2v_idx[f_id];
     cs_lnum_t e_id = f2v_idx[f_id+1];
@@ -322,7 +322,9 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
       wb[j] /= w_sum[v_id];
     }
 
-  }
+  });
+
+  ctx.wait();
 
   CS_FREE(w_sum);
 }
@@ -878,29 +880,29 @@ cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
 
 template void
 cs_cell_to_vertex<1>(cs_cell_to_vertex_type_t  method,
-                  int                          verbosity,
-                  bool                         ignore_rot_perio,
-                  const cs_real_t *restrict    c_weight,
-                  const cs_real_t *restrict    c_var,
-                  const cs_real_t *restrict    b_var,
-                  cs_real_t *restrict          v_var);
+                     int                       verbosity,
+                     bool                      ignore_rot_perio,
+                     const cs_real_t *restrict c_weight,
+                     const cs_real_t *restrict c_var,
+                     const cs_real_t *restrict b_var,
+                     cs_real_t *restrict       v_var);
 
 template void
 cs_cell_to_vertex<3>(cs_cell_to_vertex_type_t  method,
-                  int                          verbosity,
-                  bool                         ignore_rot_perio,
-                  const cs_real_t *restrict    c_weight,
-                  const cs_real_t *restrict    c_var,
-                  const cs_real_t *restrict    b_var,
-                  cs_real_t *restrict          v_var);
+                     int                       verbosity,
+                     bool                      ignore_rot_perio,
+                     const cs_real_t *restrict c_weight,
+                     const cs_real_t *restrict c_var,
+                     const cs_real_t *restrict b_var,
+                     cs_real_t *restrict       v_var);
 
 template void
 cs_cell_to_vertex<6>(cs_cell_to_vertex_type_t  method,
-                  int                          verbosity,
-                  bool                         ignore_rot_perio,
-                  const cs_real_t *restrict    c_weight,
-                  const cs_real_t *restrict    c_var,
-                  const cs_real_t *restrict    b_var,
-                  cs_real_t *restrict          v_var);
+                     int                       verbosity,
+                     bool                      ignore_rot_perio,
+                     const cs_real_t *restrict c_weight,
+                     const cs_real_t *restrict c_var,
+                     const cs_real_t *restrict b_var,
+                     cs_real_t *restrict       v_var);
 
 /*----------------------------------------------------------------------------*/

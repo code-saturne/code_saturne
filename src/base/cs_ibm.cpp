@@ -2147,8 +2147,8 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   cs_real_t *c_poro;
   CS_MALLOC(c_poro, n_cells_ext, cs_real_t);
 
-  cs_vertex_to_cell(CS_VERTEX_TO_CELL_SHEPARD, 0, 1, nullptr,
-                    v_poro, c_poro);
+  cs_vertex_to_cell<1>(CS_VERTEX_TO_CELL_SHEPARD, 0, nullptr,
+                       v_poro, c_poro);
 
   cs_real_t voltot = 0.;
 

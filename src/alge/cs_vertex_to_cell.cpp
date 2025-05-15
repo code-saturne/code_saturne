@@ -50,6 +50,8 @@
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
+#include "base/cs_array.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
@@ -131,20 +133,23 @@ _vertex_to_cell_w_unweighted(void)
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_adjacency_t  *c2v = cs_glob_mesh_adjacencies->c2v;
 
+  cs_dispatch_context ctx;
+
   const cs_lnum_t n_cells = m->n_cells;
 
   const cs_lnum_t *c2v_idx = c2v->idx;
 
   cs_weight_t *w = _weights_vtc[CS_VERTEX_TO_CELL_UNWEIGHTED];
-  CS_REALLOC(w, n_cells, cs_weight_t);
+  CS_REALLOC_HD(w, n_cells, cs_weight_t, cs_alloc_mode);
 
   _set_vtc[CS_VERTEX_TO_CELL_UNWEIGHTED] = true;
   _weights_vtc[CS_VERTEX_TO_CELL_UNWEIGHTED] = w;
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     w[c_id] = 1. / (c2v_idx[c_id+1]-c2v_idx[c_id]);
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -160,33 +165,36 @@ _vertex_to_cell_w_inv_distance(void)
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_adjacency_t  *c2v = cs_glob_mesh_adjacencies->c2v;
 
+  cs_dispatch_context ctx;
+
   const cs_lnum_t n_cells = m->n_cells;
+
+  cs_real_t *vtx_coord = m->vtx_coord;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   const cs_lnum_t *c2v_idx = c2v->idx;
   const cs_lnum_t *c2v_ids = c2v->ids;
 
   cs_weight_t *w = _weights_vtc[CS_VERTEX_TO_CELL_SHEPARD];
-  cs_real_t   *w_sum;
-  CS_REALLOC(w, c2v_idx[n_cells], cs_weight_t);
-  CS_MALLOC(w_sum, n_cells, cs_real_t);
+  cs_real_t *w_sum;
+  CS_REALLOC_HD(w, c2v_idx[n_cells], cs_weight_t, cs_alloc_mode);
+  CS_MALLOC_HD(w_sum, n_cells, cs_real_t, cs_alloc_mode);
 
   _set_vtc[CS_VERTEX_TO_CELL_SHEPARD] = true;
   _weights_vtc[CS_VERTEX_TO_CELL_SHEPARD] = w;
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    w_sum[i] = 0;
+  cs_array_real_fill_zero(n_cells, w_sum);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    const cs_real_t *c_coo = mq->cell_cen[c_id];
+    const cs_real_t *c_coo = cell_cen[c_id];
 
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
 
     for (cs_lnum_t j = s_id; j < e_id; j++) {
       cs_lnum_t v_id = c2v_ids[j];
-      cs_real_t *v_coo = m->vtx_coord + v_id*3;
+      cs_real_t *v_coo = vtx_coord + v_id*3;
       cs_real_t d = cs_math_3_distance(v_coo, c_coo);
       if (d <= DBL_MIN) {
         w[j] = 1;
@@ -199,9 +207,9 @@ _vertex_to_cell_w_inv_distance(void)
       }
     }
 
-  }
+  });
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -210,7 +218,9 @@ _vertex_to_cell_w_inv_distance(void)
       w[j] /= w_sum[c_id];
     }
 
-  }
+  });
+
+  ctx.wait();
 
   CS_FREE(w_sum);
 }
@@ -228,30 +238,33 @@ _vertex_to_cell_f_lsq(void)
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_adjacency_t  *c2v = cs_glob_mesh_adjacencies->c2v;
 
+  cs_dispatch_context ctx;
+
   const cs_lnum_t n_cells = m->n_cells;
 
   const cs_lnum_t *c2v_idx = c2v->idx;
   const cs_lnum_t *c2v_ids = c2v->ids;
 
+  const cs_real_t *vtx_coord = m->vtx_coord;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
+
   cs_lnum_t  w_size = n_cells*10;
 
   cs_weight_t *w = _weights_vtc[CS_VERTEX_TO_CELL_LR];
-  CS_MALLOC(w, w_size, cs_real_t);
+  CS_MALLOC_HD(w, w_size, cs_real_t, cs_alloc_mode);
 
   _set_vtc[CS_VERTEX_TO_CELL_LR] = true;
   _weights_vtc[CS_VERTEX_TO_CELL_LR] = w;
 
-# pragma omp parallel for if(w_size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < w_size; i++)
-    w[i] = 0;
+  cs_array_real_fill_zero(w_size, w);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t *c_coo = mq->cell_cen[c_id];
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    const cs_real_t *c_coo = cell_cen[c_id];
     cs_lnum_t s_id = c2v_idx[c_id];
     cs_lnum_t e_id = c2v_idx[c_id+1];
     for (cs_lnum_t j = s_id; j < e_id; j++) {
       cs_lnum_t v_id = c2v_ids[j];
-      const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+      const cs_real_t *v_coo = vtx_coord + v_id*3;
       cs_real_t r_coo[3]
         = {v_coo[0]-c_coo[0], v_coo[1]-c_coo[1], v_coo[2]-c_coo[2]};
       cs_real_t  *_a = w + c_id*10;
@@ -266,180 +279,19 @@ _vertex_to_cell_f_lsq(void)
       _a[8] += r_coo[2];            // a32
       _a[9] += 1;                   // a33
     }
-  }
+  });
+
+  ctx.wait();
 
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     cs_math_sym_44_factor_ldlt(w + c_id*10);
+
+  ctx.wait();
+
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Interpolate vertex values to cell values for a scalar arrray.
- *
- * \param[in]  method       interpolation method
- * \param[in]  verbosity    verbosity level
- * \param[in]  v_weight     vertex weight, or nullptr
- * \param[in]  v_var        base vertex-based variable
- * \param[out] c_var        cell-based variable
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_vertex_to_cell_scalar(cs_vertex_to_cell_type_t   method,
-                       int                        verbosity,
-                       const cs_real_t *restrict  v_weight,
-                       const cs_real_t *restrict  v_var,
-                       cs_real_t *restrict        c_var)
-{
-  CS_UNUSED(verbosity);
-
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_adjacency_t  *c2v = cs_mesh_adjacencies_cell_vertices();
-
-  const cs_lnum_t n_cells = m->n_cells;
-
-  const cs_lnum_t *c2v_idx = c2v->idx;
-  const cs_lnum_t *c2v_ids = c2v->ids;
-
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    c_var[c_id] = 0;
-
-  switch(method) {
-
-  case CS_VERTEX_TO_CELL_UNWEIGHTED:
-    {
-      if (v_weight == nullptr) {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          cs_lnum_t s_id = c2v_idx[c_id];
-          cs_lnum_t e_id = c2v_idx[c_id+1];
-          for (cs_lnum_t j = s_id; j < e_id; j++) {
-            cs_lnum_t v_id = c2v_ids[j];
-            c_var[c_id] += v_var[v_id];
-          }
-        }
-
-        if (! _set_vtc[CS_VERTEX_TO_CELL_UNWEIGHTED])
-          _vertex_to_cell_w_unweighted();
-
-        const cs_weight_t *w = _weights_vtc[CS_VERTEX_TO_CELL_UNWEIGHTED];
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          c_var[c_id] *= w[c_id];
-      }
-      else {
-        cs_real_t *c_w;
-        CS_MALLOC(c_w, n_cells, cs_real_t);
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          c_w[c_id] = 0;
-          cs_lnum_t s_id = c2v_idx[c_id];
-          cs_lnum_t e_id = c2v_idx[c_id+1];
-          for (cs_lnum_t j = s_id; j < e_id; j++) {
-            cs_lnum_t v_id = c2v_ids[j];
-            c_var[c_id] += v_var[v_id]*v_weight[v_id];
-            c_w[c_id] += v_weight[v_id];
-          }
-        }
-
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          c_var[c_id] /= c_w[c_id];
-
-        CS_FREE(c_w);
-      }
-    }
-    break;
-
-  case CS_VERTEX_TO_CELL_SHEPARD:
-    {
-      if (! _set_vtc[CS_VERTEX_TO_CELL_SHEPARD])
-        _vertex_to_cell_w_inv_distance();
-
-      const cs_weight_t *w = _weights_vtc[CS_VERTEX_TO_CELL_SHEPARD];
-
-      cs_real_t *c_w = nullptr;
-      if (v_weight != nullptr) {
-        CS_MALLOC(c_w, n_cells, cs_real_t);
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          c_w[c_id] = 0;
-      }
-
-      if (v_weight == nullptr) {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          cs_lnum_t s_id = c2v_idx[c_id];
-          cs_lnum_t e_id = c2v_idx[c_id+1];
-          for (cs_lnum_t j = s_id; j < e_id; j++) {
-            cs_lnum_t v_id = c2v_ids[j];
-            c_var[c_id] += v_var[v_id] * w[j];
-          }
-        }
-      }
-      else {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          cs_lnum_t s_id = c2v_idx[c_id];
-          cs_lnum_t e_id = c2v_idx[c_id+1];
-          for (cs_lnum_t j = s_id; j < e_id; j++) {
-            cs_lnum_t v_id = c2v_ids[j];
-            c_var[c_id] += v_var[v_id] * w[j] * v_weight[v_id];
-            c_w[c_id] += w[j] * v_weight[v_id];
-          }
-        }
-      }
-
-      if (v_weight != nullptr) {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          c_var[c_id] /= c_w[c_id];
-        CS_FREE(c_w);
-      }
-
-    }
-    break;
-
-  case CS_VERTEX_TO_CELL_LR:
-    {
-      if (! _set_vtc[CS_VERTEX_TO_CELL_LR])
-        _vertex_to_cell_f_lsq();
-
-      cs_real_t  *rhs;
-      cs_lnum_t  rhs_size = n_cells*4;
-      CS_MALLOC(rhs, rhs_size, cs_real_t);
-      for (cs_lnum_t i = 0; i < rhs_size; i++)
-        rhs[i] = 0;
-
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t *c_coo = mq->cell_cen[c_id];
-        cs_lnum_t s_id = c2v_idx[c_id];
-        cs_lnum_t e_id = c2v_idx[c_id+1];
-        for (cs_lnum_t j = s_id; j < e_id; j++) {
-          cs_lnum_t v_id = c2v_ids[j];
-          cs_real_t _v_var = v_var[v_id];
-          const cs_real_t *v_coo = m->vtx_coord + v_id*3;
-          cs_real_t r_coo[3]
-            = {v_coo[0]-c_coo[0], v_coo[1]-c_coo[1], v_coo[2]-c_coo[2]};
-          cs_real_t  *_rhs = rhs + c_id*4;
-          _rhs[0] += r_coo[0] * _v_var;
-          _rhs[1] += r_coo[1] * _v_var;
-          _rhs[2] += r_coo[2] * _v_var;
-          _rhs[3] += _v_var;
-        }
-      }
-
-      const cs_weight_t *ldlt = _weights_vtc[CS_VERTEX_TO_CELL_LR];
-
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t  *_ldlt = ldlt + c_id*10;
-        const cs_real_t  *_rhs = rhs + c_id*4;
-        c_var[c_id] = cs_math_sym_44_partial_solve_ldlt(_ldlt, _rhs);
-      }
-
-      CS_FREE(rhs);
-    }
-    break;
-  default:
-    break;
-  }
-}
+END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -447,17 +299,16 @@ _vertex_to_cell_scalar(cs_vertex_to_cell_type_t   method,
  *
  * \param[in]   method      interpolation method
  * \param[in]   verbosity   verbosity level
- * \param[in]   var_dim     variable dimension
  * \param[in]   v_weight    vertex weight, or nullptr
  * \param[in]   v_var       base vertex-based variable
  * \param[out]  c_var       cell-based variable
  */
 /*----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 static void
 _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
                         int                        verbosity,
-                        cs_lnum_t                  var_dim,
                         const cs_real_t *restrict  v_weight,
                         const cs_real_t *restrict  v_var,
                         cs_real_t *restrict        c_var)
@@ -468,61 +319,65 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_adjacency_t  *c2v = cs_mesh_adjacencies_cell_vertices();
 
+  cs_dispatch_context ctx;
+
   const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_real_t *vtx_coord = m->vtx_coord;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   const cs_lnum_t *c2v_idx = c2v->idx;
   const cs_lnum_t *c2v_ids = c2v->ids;
 
-  const cs_lnum_t n_c_values = n_cells*var_dim;
+  const cs_lnum_t n_c_values = n_cells*stride;
 
-# pragma omp parallel for if(n_c_values > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_c_values; c_id++)
-    c_var[c_id] = 0;
+  cs_array_real_fill_zero(n_c_values, c_var);
 
   switch(method) {
 
   case CS_VERTEX_TO_CELL_UNWEIGHTED:
     {
       if (v_weight == nullptr) {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = c2v_ids[j];
-            for (cs_lnum_t k = 0; k < var_dim; k++)
-              c_var[c_id*var_dim + k] += v_var[v_id*var_dim + k];
+            for (cs_lnum_t k = 0; k < stride; k++)
+              c_var[c_id*stride + k] += v_var[v_id*stride + k];
           }
-        }
+        });
+        ctx.wait();
 
         if (! _set_vtc[CS_VERTEX_TO_CELL_UNWEIGHTED])
           _vertex_to_cell_w_unweighted();
 
         const cs_weight_t *w = _weights_vtc[CS_VERTEX_TO_CELL_UNWEIGHTED];
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          for (cs_lnum_t k = 0; k < var_dim; k++)
-            c_var[c_id*var_dim + k] *= w[c_id];
-        }
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          for (cs_lnum_t k = 0; k < stride; k++)
+            c_var[c_id*stride + k] *= w[c_id];
+        });
       }
       else {
         cs_real_t *c_w;
-        CS_MALLOC(c_w, n_cells, cs_real_t);
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          c_w[c_id] = 0;
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        CS_MALLOC_HD(c_w, n_cells, cs_real_t, cs_alloc_mode);
+        cs_array_real_fill_zero(n_cells, c_w);
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = c2v_ids[j];
-            for (cs_lnum_t k = 0; k < var_dim; k++)
-              c_var[c_id*var_dim + k] += v_var[v_id*var_dim + k] * v_weight[v_id];
+            for (cs_lnum_t k = 0; k < stride; k++)
+              c_var[c_id*stride + k] += v_var[v_id*stride + k] * v_weight[v_id];
             c_w[c_id] += v_weight[v_id];
           }
-        }
+        });
 
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          for (cs_lnum_t k = 0; k < var_dim; k++)
-            c_var[c_id*var_dim + k] /= c_w[c_id];
-        }
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          for (cs_lnum_t k = 0; k < stride; k++)
+            c_var[c_id*stride + k] /= c_w[c_id];
+        });
+        ctx.wait();
 
         CS_FREE(c_w);
       }
@@ -538,42 +393,45 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
 
       cs_real_t *c_w = nullptr;
       if (v_weight != nullptr) {
-        CS_MALLOC(c_w, n_cells, cs_real_t);
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          c_w[c_id] = 0;
+        CS_MALLOC_HD(c_w, n_cells, cs_real_t, cs_alloc_mode);
+        cs_array_real_fill_zero(n_cells, c_w);
       }
 
       if (v_weight == nullptr) {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = c2v_ids[j];
-            for (cs_lnum_t k = 0; k < var_dim; k++)
-              c_var[c_id*var_dim + k] += v_var[v_id*var_dim + k] * w[j];
+            for (cs_lnum_t k = 0; k < stride; k++)
+              c_var[c_id*stride + k] += v_var[v_id*stride + k] * w[j];
           }
-        }
+        });
       }
       else {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = c2v_ids[j];
-            for (cs_lnum_t k = 0; k < var_dim; k++)
-              c_var[c_id*var_dim + k] +=   v_var[v_id*var_dim + k] * w[j]
+            for (cs_lnum_t k = 0; k < stride; k++)
+              c_var[c_id*stride + k] +=   v_var[v_id*stride + k] * w[j]
                                          * v_weight[v_id];
             c_w[c_id] += w[j] * v_weight[v_id];
           }
-        }
+        });
       }
 
       if (v_weight != nullptr) {
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-          for (cs_lnum_t k = 0; k < var_dim; k++)
-            c_var[c_id*var_dim+k] /= c_w[c_id];
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          for (cs_lnum_t k = 0; k < stride; k++)
+            c_var[c_id*stride+k] /= c_w[c_id];
+        });
+        ctx.wait();
         CS_FREE(c_w);
       }
+
+      ctx.wait();
 
     }
     break;
@@ -584,41 +442,44 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
         _vertex_to_cell_f_lsq();
 
       cs_real_t  *rhs;
-      cs_lnum_t  rhs_size = n_cells*4*var_dim;
-      CS_MALLOC(rhs, rhs_size, cs_real_t);
-      for (cs_lnum_t i = 0; i < rhs_size; i++)
-        rhs[i] = 0;
+      cs_lnum_t  rhs_size = n_cells*4*stride;
+      CS_MALLOC_HD(rhs, rhs_size, cs_real_t, cs_alloc_mode);
+      cs_array_real_fill_zero(rhs_size, rhs);
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t *c_coo = mq->cell_cen[c_id];
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        const cs_real_t *c_coo = cell_cen[c_id];
         cs_lnum_t s_id = c2v_idx[c_id];
         cs_lnum_t e_id = c2v_idx[c_id+1];
         for (cs_lnum_t j = s_id; j < e_id; j++) {
           cs_lnum_t v_id = c2v_ids[j];
-          const cs_real_t *_v_var = v_var + v_id*var_dim;
-          const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+          const cs_real_t *_v_var = v_var + v_id*stride;
+          const cs_real_t *v_coo = vtx_coord + v_id*3;
           cs_real_t r_coo[3]
             = {v_coo[0]-c_coo[0], v_coo[1]-c_coo[1], v_coo[2]-c_coo[2]};
-          for (cs_lnum_t k = 0; k < var_dim; k++) {
-            cs_real_t  *_rhs = rhs + c_id*4*var_dim + k*4;
+          for (cs_lnum_t k = 0; k < stride; k++) {
+            cs_real_t  *_rhs = rhs + c_id*4*stride + k*4;
             _rhs[0] += r_coo[0] * _v_var[k];
             _rhs[1] += r_coo[1] * _v_var[k];
             _rhs[2] += r_coo[2] * _v_var[k];
             _rhs[3] += _v_var[k];
           }
         }
-      }
+      });
+
+      ctx.wait();
 
       const cs_weight_t *ldlt = _weights_vtc[CS_VERTEX_TO_CELL_LR];
 
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t  *_ldlt = ldlt + c_id*10;
-        for (cs_lnum_t k = 0; k < var_dim; k++) {
-          const cs_real_t  *_rhs = rhs + c_id*4*var_dim + k*4;
-          c_var[c_id*var_dim + k] = cs_math_sym_44_partial_solve_ldlt(_ldlt, _rhs);
+        for (cs_lnum_t k = 0; k < stride; k++) {
+          const cs_real_t  *_rhs = rhs + c_id*4*stride + k*4;
+          c_var[c_id*stride + k] = cs_math_sym_44_partial_solve_ldlt(_ldlt, _rhs);
         }
       }
+
+      ctx.wait();
 
       CS_FREE(rhs);
     }
@@ -626,6 +487,7 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
   default:
     break;
   }
+  ctx.wait();
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -655,7 +517,6 @@ cs_vertex_to_cell_free(void)
  *
  * \param[in]       method            interpolation method
  * \param[in]       verbosity         verbosity level
- * \param[in]       var_dim           variable dimension
  * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
  * \param[in]       v_weight          vertex weight, or nullptr
  * \param[in]       v_var             base vertex-based variable
@@ -663,32 +524,30 @@ cs_vertex_to_cell_free(void)
  */
 /*----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 void
 cs_vertex_to_cell(cs_vertex_to_cell_type_t   method,
                   int                        verbosity,
-                  cs_lnum_t                  var_dim,
                   const cs_real_t *restrict  v_weight,
                   const cs_real_t *restrict  v_var,
                   cs_real_t *restrict        c_var)
 {
   CS_UNUSED(verbosity);
 
-  if (var_dim == 1)
-    _vertex_to_cell_scalar(method,
-                           verbosity,
-                           v_weight,
-                           v_var,
-                           c_var);
-
-  else
-    _vertex_to_cell_strided(method,
-                            verbosity,
-                            var_dim,
-                            v_weight,
-                            v_var,
-                            c_var);
+  _vertex_to_cell_strided<stride>(method,
+                                  verbosity,
+                                  v_weight,
+                                  v_var,
+                                  c_var);
 }
 
-/*----------------------------------------------------------------------------*/
+// Force instanciation
 
-END_C_DECLS
+template void
+cs_vertex_to_cell<1>(cs_vertex_to_cell_type_t   method,
+                     int                        verbosity,
+                     const cs_real_t *restrict  v_weight,
+                     const cs_real_t *restrict  v_var,
+                     cs_real_t *restrict        c_var);
+
+/*----------------------------------------------------------------------------*/

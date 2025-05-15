@@ -82,29 +82,28 @@ extern const char *cs_vertex_to_cell_type_name[];
 void
 cs_vertex_to_cell_free(void);
 
+END_C_DECLS
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Interpolate vertex values to cell values.
  *
  * \param[in]       method            interpolation method
  * \param[in]       verbosity         verbosity level
- * \param[in]       var_dim           variable dimension
  * \param[in]       v_weight          vertex weight, or NULL
  * \param[in]       v_var             base vertex-based variable
  * \param[out]      c_var             cell-based variable
  */
 /*----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 void
 cs_vertex_to_cell(cs_vertex_to_cell_type_t   method,
                   int                        verbosity,
-                  cs_lnum_t                  var_dim,
                   const cs_real_t            v_weight[],
                   const cs_real_t            v_var[],
                   cs_real_t                  c_var[]);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_VERTEX_TO_CELL__ */
