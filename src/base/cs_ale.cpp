@@ -111,13 +111,14 @@ typedef struct {
 
   /* Pointer on a list of arrays of selected vertices for each zone associated
      to a definition by array \ref CS_XDEF_BY_ARRAY for
-     CS_BOUNDARY_ALE_IMPOSED_VEL and CS_BOUNDARY_ALE_IMPOSED_DISP (definitions
-     by value or by a sliding condition are excluded. The position of the array
-     in the list is given implicitly and is related to the order in which the
-     boundary conditions are defined. (cf. \ref cs_ale_setup_boundaries
-     definition for more details). The aim of this list of arrays is to speed-up
-     the settings of the boundary conditions by avoiding doing several times the
-     same enforcement. */
+     CS_BOUNDARY_ALE_IMPOSED_VEL, CS_BOUNDARY_ALE_IMPOSED_DISP,
+     CS_BOUNDARY_ALE_INTERNAL_COUPLING and CS_BOUNDARY_ALE_EXTERNAL_COUPLING
+     (definitions by value or by a sliding condition are excluded. The position
+     of the array in the list is given implicitly and is related to the order
+     in which the boundary conditions are defined. (cf. \ref
+     cs_ale_setup_boundaries definition for more details). The aim of this list
+     of arrays is to speed-up the settings of the boundary conditions by
+     avoiding doing several times the same enforcement. */
 
   int           n_selections;   /* Number of selections */
   cs_lnum_t    *n_vertices;     /* Number of vertices in each selections  */
@@ -650,7 +651,8 @@ _update_bcs(const cs_domain_t  *domain,
       break;
 
     case CS_BOUNDARY_ALE_IMPOSED_DISP:
-      {
+    case CS_BOUNDARY_ALE_INTERNAL_COUPLING:
+    case CS_BOUNDARY_ALE_EXTERNAL_COUPLING: {
       const cs_real_3_t *restrict disale = (const cs_real_3_t *)(f_displ->val);
       const cs_real_t invdt = 1. / domain->time_step->dt_ref; /* JB: dt[0] ? */
 
@@ -773,6 +775,8 @@ _update_bcs_free_surface(const cs_domain_t  *domain)
 
       /* Treated elsewhere, only increased selected_id */
       case CS_BOUNDARY_ALE_IMPOSED_DISP:
+      case CS_BOUNDARY_ALE_INTERNAL_COUPLING:
+      case CS_BOUNDARY_ALE_EXTERNAL_COUPLING:
         select_id++;
         break;
 
@@ -1755,6 +1759,8 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
       break;
 
     case CS_BOUNDARY_ALE_IMPOSED_DISP:
+    case CS_BOUNDARY_ALE_INTERNAL_COUPLING:
+    case CS_BOUNDARY_ALE_EXTERNAL_COUPLING:
       cs_equation_add_bc_by_array(eqp,
                                   CS_BC_DIRICHLET,
                                   z->name,
@@ -1785,9 +1791,13 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
       break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Boundary for ALE not allowed  %s."),
-                __func__, z->name);
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                _(" %s: Boundary type %d for ALE not allowed for %s."),
+                __func__,
+                domain->ale_boundaries->types[b_id],
+                z->name);
     }
 
   }

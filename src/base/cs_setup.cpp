@@ -2373,7 +2373,7 @@ _additional_fields_stage_2(void)
   }
 
   /* In case of ALE or postprocessing, ensure boundary forces are tracked */
-  if (cs_glob_ale > CS_ALE_NONE) {
+  if (cs_glob_ale != CS_ALE_NONE) {
     cs_field_find_or_create("boundary_stress",
                             CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS,
                             CS_MESH_LOCATION_BOUNDARY_FACES,
@@ -2621,7 +2621,7 @@ _init_user(void)
   if (cs_glob_ale == CS_ALE_CDO)
     cs_ale_activate();
 
-  if (cs_glob_ale == CS_ALE_LEGACY)
+  if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_mobile_mesh_structures_add();
 
   /* Read thermomechanical data for specific physics */
@@ -3288,7 +3288,7 @@ _additional_fields_stage_3(void)
   /* Change some field settings
      -------------------------- */
 
-  if (cs_glob_ale > CS_ALE_NONE) {
+  if (cs_glob_ale != CS_ALE_NONE) {
     cs_field_t *f_imasf
       = cs_field_by_id(cs_field_get_key_int(CS_F_(p), k_imasf));
     cs_field_set_n_time_vals(f_imasf, 2);
