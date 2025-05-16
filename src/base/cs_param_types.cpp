@@ -118,6 +118,8 @@ static const char
     N_("Upwind with the Scharfetter-Gummel weight function"),
     N_("Upwind"),
     N_("Centered with DDE stabilisation"),
+    N_("Centered (v8 algorithm/Fb schemes)"),
+    N_("Upwind (v8 algorithm/Fb schemes)"),
   };
 
 static const char
