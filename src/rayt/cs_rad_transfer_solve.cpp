@@ -1429,8 +1429,8 @@ _rad_transfer_solve(int bc_type[])
 
   /* TODO: check if joule effect and gas mix should be handled by
      this function; with the previous test based on
-     "ippmod(iphpar) >= 2", they were handled here, but this may
-     have been a bug. */
+     "cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 2",
+     they were handled here, but this may have been a bug. */
 
   if (   pm_flag[CS_COMBUSTION_3PT] >= 0
       || pm_flag[CS_COMBUSTION_SLFM] >= 0

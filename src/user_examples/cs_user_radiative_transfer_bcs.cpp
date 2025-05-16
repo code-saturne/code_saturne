@@ -109,7 +109,7 @@ BEGIN_C_DECLS
  *
  * \param[in, out]  domain        pointer to a cs_domain_t structure
  * \param[in]       bc_type       boundary face types
- * \param[out]      isothp        boundary face type for radiative transfer
+ * \param[in, out]  isothp        boundary face type for radiative transfer
  * \param[out]      tmin          min allowed value of the wall temperature
  * \param[out]      tmax          max allowed value of the wall temperature
  * \param[in]       tx            relaxation coefficient (0 < tx < 1)
@@ -264,15 +264,15 @@ cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
    *        XLAMP
    *        -----(Tparop-Textp) = fixed conduction flux     (W/m2)
    *        EPAP
-   *                         = RODCL(FACE_ID,IVAR,3)
+   *                            = rodcl3[face_id]
 
    *       If the conduction flux is zero then the wall is adiabatic.
-   *       The array RCODCL(FACE_ID,IVAR,3) has the value of the flux.
+   *       The array bc_coeffs->rcodcl3[face] has the value of the flux.
    *       Flux density (< 0 if gain for the fluid)
    *         For temperatures T,    in Watt/m2:
-   *            RCODCL(FACE_ID,IVAR,3) = CP*(VISCLS+VISCT/SIGMAS) * GRAD T
+   *            rcodcl3[face] = Cp*(viscls+visct/sigmas) * Grad T
    *         For enthalpies H,      in Watt/m2:
-   *            RCODCL(FACE_ID,IVAR,3) =    (VISCLS+VISCT/SIGMAS) * GRAD H
+   *            rcodcl3[face] =    (viscls+visct/sigmas) * Grad H
    */
 
   /*< [example_4]*/
@@ -310,14 +310,14 @@ cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
    *        XLAMP
    *        -----(Tparop-Textp) = fixed conduction flux and EPSP = 0
    *        EPAP
-   *                         = RODCL(FACE_ID,IVAR,3)
+   *                            = rodcl3[face]
 
    *       If the conduction flux is zero then the wall is adiabatic.
    *       Flux density (< 0 if gain for the fluid)
    *         For temperatures T,    in Watt/m2:
-   *            RCODCL(FACE_ID,IVAR,3) = CP*(VISCLS+VISCT/SIGMAS) * GRAD T
+   *            rcodcl3[face] = Cp*(viscls+visct/sigmas) * Grad T
    *         For enthalpies H,      in Watt/m2:
-   *            RCODCL(FACE_ID,IVAR,3) =    (VISCLS+VISCT/SIGMAS) * GRAD H
+   *            rcodcl3[face] =    (viscls+visct/sigmas) * Grad H
    */
 
   /*< [example_5]*/
