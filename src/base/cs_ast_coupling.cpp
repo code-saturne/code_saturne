@@ -502,9 +502,13 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 {
   const cs_time_step_t *ts = cs_glob_time_step;
 
-  int       nbpdtm = ts->nt_max;
+  cs_real_t ttmax  = ts->t_max;
   cs_real_t ttinit = ts->t_prev;
   int       idtvar = cs_glob_time_step_options->idtvar;
+
+  if (ttmax < ttinit) {
+    ttmax = ttinit + ts->nt_max * ts->dt_ref;
+  }
 
   /* Allocate global coupling structure */
 
@@ -639,12 +643,12 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
     /* Send data */
 
-    cs_calcium_write_int(cpl->aci.root_rank, 0, "NBPDTM", 1, &nbpdtm);
     cs_calcium_write_int(cpl->aci.root_rank, 0, "NBSSIT", 1, &(cpl->nbssit));
     cs_calcium_write_int(cpl->aci.root_rank, 0, "TADAPT", 1, &idtvar);
 
     cs_calcium_write_double(cpl->aci.root_rank, 0, "EPSILO", 1, &(cpl->epsilo));
     cs_calcium_write_double(cpl->aci.root_rank, 0, "TTINIT", 1, &ttinit);
+    cs_calcium_write_double(cpl->aci.root_rank, 0, "TTMAX", 1, &ttmax);
     cs_calcium_write_double(cpl->aci.root_rank, 0, "PDTREF", 1, &(cpl->dtref));
   }
 }
