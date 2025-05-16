@@ -1391,6 +1391,241 @@ _mo_psih_u(cs_real_t              z,
    }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute hydro pressure profile  (Laplace integration)
+ *
+ *        If hydrostatic_pressure_model = 0 (default) : bottom to top Laplace
+ *        integration based on pressure atsea level
+ *        If hydrostatic_pressure_model = 1 top to bottom Laplace integration
+ *        based on pressure at the top of the domain (z_temp_met[nbmaxt])
+ *        for the standard atmosphere
+ *
+ * \param[in]  itp            index on numbers of time steps of meteo profil
+ * \param[in]  ih2o           flag to take into account the humidity
+ * \param[in]  fp             pointer sturture to fluid properties
+ * \param[in]  at_opt         pointer sturture to atmopheric option
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+ _compute_hydro_pressure_profile(int                    itp,
+                                 int                    ih2o,
+                                 cs_fluid_properties_t  *fp,
+                                 cs_atmo_option_t       *at_opt)
+{
+  const int nbmaxt = at_opt->met_1d_nlevels_max_t;
+
+  const cs_real_t t_ref = 288.150;
+  const cs_real_t p_ref = 101325.0;
+  const cs_real_t gz = cs_glob_physical_constants->gravity[2];
+  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  at_opt->hyd_p_met[itp*nbmaxt] = at_opt->xyp_met[2 + itp*3];
+
+  cs_real_2_t q_01;
+  if (at_opt->hydrostatic_pressure_model == 0) {
+    for (int kk = 1; kk < nbmaxt; kk++) {
+      const cs_real_t tmoy = 0.5*(  at_opt->temp_met[kk-1+itp*nbmaxt]
+                                  + at_opt->temp_met[kk+itp*nbmaxt]) + tkelvi;
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+        // take liquid water into account
+        cs_real_t l_w0 = cs_air_yw_sat(at_opt->temp_met [kk-1 + itp*nbmaxt],
+                                       at_opt->hyd_p_met[kk-1 + itp*nbmaxt]);
+        cs_real_t l_w1 = cs_air_yw_sat(at_opt->temp_met [kk + itp*nbmaxt],
+                                       at_opt->hyd_p_met[kk-1 + itp*nbmaxt]);
+        /* !in  l_w1 =  ...hyd_p_met[kk-1 + itp*nbmaxt] is not a mistake:
+           we can not use hyd_p_met[kk + itp*nbmaxt] since this is what we
+           want to estimate */
+        q_01[0] = fmin(at_opt->qw_met[kk-1 + itp*nbmaxt], l_w0);
+        q_01[1] = fmin(at_opt->qw_met[kk + itp*nbmaxt], l_w1);
+      }
+      else {
+        q_01[0] = at_opt->qw_met[kk-1 + itp*nbmaxt];
+        q_01[1] = at_opt->qw_met[kk + itp*nbmaxt];
+      }
+
+      const cs_real_t rhmoy
+        = fp->r_pg_cnst*(1.0 + (fp->rvsra-1.0)*(q_01[0] + q_01[1])/2.0*ih2o);
+      const cs_real_t rap
+        = -fabs(gz)*(at_opt->z_temp_met[kk]-at_opt->z_temp_met[kk-1])/rhmoy/tmoy;
+      at_opt->hyd_p_met[kk + itp*nbmaxt]
+        = at_opt->hyd_p_met[kk-1 + itp*nbmaxt]*exp(rap);
+    }
+  }
+  else {
+    // Standard pressure profile above the domain
+    cs_real_t dum1, dum2, pptop;
+    cs_atmo_profile_std(0., /* z_ref */
+                        p_ref,
+                        t_ref,
+                        at_opt->z_temp_met[nbmaxt-1],
+                        &pptop, &dum1, &dum2);
+    at_opt->hyd_p_met[(itp+1)*nbmaxt - 1] = pptop;
+
+    for (int kk = nbmaxt - 2; kk > -1; kk--) {
+      const cs_real_t tmoy = 0.5*(  at_opt->temp_met[kk+1+itp*nbmaxt]
+                                  + at_opt->temp_met[kk+itp*nbmaxt]) + tkelvi;
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+        // take liquid water into account
+        cs_real_t l_w0 = cs_air_yw_sat(at_opt->temp_met [kk + itp*nbmaxt],
+                                       at_opt->hyd_p_met[kk+1 + itp*nbmaxt]);
+        cs_real_t l_w1 = cs_air_yw_sat(at_opt->temp_met [kk+1 + itp*nbmaxt],
+                                       at_opt->hyd_p_met[kk+1 + itp*nbmaxt]);
+        /* !in  l_w0 =  ... hyd_p_met[kk+1 + itp*nbmaxt] is not a mistake:
+           we can not use hyd_p_met[kk+1 + itp*nbmaxt] since this is what we
+           want to estimate */
+        q_01[0] = fmin(at_opt->qw_met[kk + itp*nbmaxt], l_w0);
+        q_01[1] = fmin(at_opt->qw_met[kk+1 + itp*nbmaxt], l_w1);
+      }
+      else {
+        q_01[0] = at_opt->qw_met[kk + itp*nbmaxt];
+        q_01[1] = at_opt->qw_met[kk+1 + itp*nbmaxt];
+      }
+
+      const cs_real_t rhmoy
+        = fp->r_pg_cnst*(1.0 + (fp->rvsra-1.0)*(q_01[0] + q_01[1])/2.0*ih2o);
+      const cs_real_t rap
+        = fabs(gz)*(at_opt->z_temp_met[kk+1]-at_opt->z_temp_met[kk])/rhmoy/tmoy;
+      at_opt->hyd_p_met[kk + itp*nbmaxt]
+        = at_opt->hyd_p_met[kk+1 + itp*nbmaxt]*exp(rap);
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the pot. temperature profile and the density profile
+ *
+ * \param[in]  itp            index on numbers of time steps of meteo profil
+ * \param[in]  ih2o           flag to take into account the humidity
+ * \param[in]  fp             pointer sturture to fluid properties
+ * \param[in]  at_opt         pointer sturture to atmopheric option
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_pot_temperature_density_profile(int                    itp,
+                                         int                    ih2o,
+                                         cs_fluid_properties_t  *fp,
+                                         cs_atmo_option_t       *at_opt)
+{
+  const int nbmaxt = at_opt->met_1d_nlevels_max_t;
+  cs_air_fluid_props_t *ct_prop = cs_glob_air_props;
+
+  const cs_real_t cpvcpa = ct_prop->cp_v / ct_prop->cp_a;
+
+  const cs_real_t cst = fp->rvsra - 1.0;
+  const cs_real_t rscp = fp->r_pg_cnst/fp->cp0;
+  const cs_real_t cst1 = fp->rvsra - cpvcpa;
+  const cs_real_t ps = cs_glob_atmo_constants->ps;
+  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  for (int kk = 0; kk < nbmaxt; kk++) {
+
+    const cs_real_t rhum
+      = fp->r_pg_cnst*(1.0+(cst)*at_opt->qw_met[kk + itp*nbmaxt]*ih2o);
+
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY)
+      at_opt->rho_met[kk + itp*nbmaxt]
+        = at_opt->hyd_p_met[itp*nbmaxt]
+                  /(at_opt->temp_met[kk + itp*nbmaxt] + tkelvi)/rhum;
+    else
+      at_opt->rho_met[kk + itp*nbmaxt]
+        = at_opt->hyd_p_met[kk+itp*nbmaxt]
+                  /(at_opt->temp_met[kk + itp*nbmaxt] + tkelvi)/rhum;
+    const cs_real_t _rscp
+      = rscp*(1.0 + cst1*at_opt->qw_met[kk + itp*nbmaxt]*ih2o);
+    at_opt->pot_t_met[kk + itp*nbmaxt] = (at_opt->temp_met[kk + itp*nbmaxt]+tkelvi)
+                                         *pow((ps/at_opt->hyd_p_met[kk + itp*nbmaxt]), _rscp);
+
+    printf(" comp pot temp_dens    %10.12lf        %10.17lf\n",
+           at_opt->pot_t_met[kk + itp*nbmaxt],
+           at_opt->rho_met[kk + itp*nbmaxt]);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print informations read in meteo profil file
+ *
+ * \param[in]  itp            index on numbers of time steps of meteo profil
+ * \param[in]  date           array contains date (year hour ...)
+ * \param[in]  at_opt         pointer sturture to atmopheric option
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_log_meteo_profile(int                    itp,
+                   const int              date[],
+                   cs_atmo_option_t       *at_opt)
+{
+  if (at_opt->meteo_profile != 1)
+    return;
+
+  const int nbmetd = at_opt->met_1d_nlevels_d;
+  const int nbmaxt = at_opt->met_1d_nlevels_max_t;
+
+  if (itp == 0)
+    bft_printf("===================================================\n"
+               "printing meteo profiles\n");
+  bft_printf("year, quant-day, hour, minute, second\n"
+             "%d  %d  %d %d  %10.2lf\n", date[0], date[1],
+                                         date[2], date[3], (cs_real_t)date[4]);
+  bft_printf("time_met[%d]\n%lf\n",itp, at_opt->time_met[itp]);
+  bft_printf("z_dyn_met  u_met  v_met  ek_met ep_met\n");
+  for (int ii = 0; ii < nbmetd; ii++)
+    bft_printf("%10.5lf  %10.5lf  %10.5lf  %10.5lf %10.5lf\n",
+               at_opt->z_dyn_met[ii],
+               at_opt->u_met [ii + itp*nbmetd],
+               at_opt->v_met [ii + itp*nbmetd],
+               at_opt->ek_met[ii + itp*nbmetd],
+               at_opt->ep_met[ii + itp*nbmetd]);
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY)
+    bft_printf("===================================================\n"
+               "WARNING : option  constant density                 \n"
+               "WARNING : thermal profile will be ignored          \n"
+               "===================================================\n");
+
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+    bft_printf("z_temp_met  temp_met  pot_t_met rho_met hyd_p_met"
+               "  qw_met  qsat  ndrop_met\n");
+    for (int ii = 0; ii < nbmaxt; ii++) {
+      const cs_real_t qsat = cs_air_yw_sat(at_opt->temp_met [ii + itp*nbmaxt],
+                                           at_opt->hyd_p_met[ii + itp*nbmaxt]);
+      bft_printf("%10.5lf  %10.5lf  %10.5lf  %10.5lf %10.5lf %10.5lf"
+                 "  %10.5lf %10.5lf\n",
+                 at_opt->z_temp_met[ii],
+                 at_opt->temp_met[ii + itp*nbmaxt],
+                 at_opt->pot_t_met[ii + itp*nbmaxt],
+                 at_opt->rho_met[ii + itp*nbmaxt],
+                 at_opt->hyd_p_met[ii + itp*nbmaxt],
+                 at_opt->qw_met[ii + itp*nbmaxt],
+                 qsat,
+                 at_opt->ndrop_met[ii + itp*nbmaxt]);
+    }
+  }
+  else {
+    bft_printf("z_temp_met  temp_met  pot_t_met rho_met hyd_p_met"
+               "  qw_met  qsat  ndrop_met\n");
+    for (int ii = 0; ii < nbmaxt; ii++) {
+      bft_printf("%10.5lf  %10.5lf  %10.5lf  %10.5lf %10.5lf %10.5lf\n",
+                 at_opt->z_temp_met[ii],
+                 at_opt->temp_met[ii + itp*nbmaxt],
+                 at_opt->pot_t_met[ii + itp*nbmaxt],
+                 at_opt->rho_met[ii + itp*nbmaxt],
+                 at_opt->hyd_p_met[ii + itp*nbmaxt],
+                 at_opt->qw_met[ii + itp*nbmaxt]);
+    }
+  }
+
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -2260,7 +2495,7 @@ cs_atmo_fields_init0(void)
 
   if (at_opt->meteo_profile == 1) {
     int imode = 1;
-    cs_f_read_meteo_profile(imode);
+    cs_atmo_read_meteo_profile(imode);
 
     /* Check latitude / longitude from meteo file */
     int n_times = cs::max(1, at_opt->met_1d_ntimes);
@@ -5041,6 +5276,374 @@ cs_atmo_log_setup(void)
        _univ_fn_name[cs_glob_atmo_option->meteo_phih_u]);
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reads the meteo profile data for the atmospheric
+ *
+ * \param[in]  mode     0: reading for dimensions and starting time only
+ *                      1: reading actual meteo data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_read_meteo_profile(int mode)
+{
+  cs_atmo_option_t *at_opt = &_atmo_option;
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+
+  int ih2o = 0;
+  int itp = -1;
+  char line[256];
+  const char *name = at_opt->meteo_file_name;
+
+  FILE *file = fopen(name, "r");
+
+  // flag to take into account the humidity
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+    ih2o = 1;
+
+
+  if (mode == 1)
+    bft_printf("Reading meteo profiles data\n");
+  else
+    bft_printf("Reading dimensions for meteo profiles\n");
+
+  while (fgets(line, 256, file) != nullptr) {
+
+    itp ++;
+
+    /* Read the comments
+     * ------------------ */
+    char *s = line;
+    char fisrt_caracter = *s;
+    while(fisrt_caracter == '/') {
+      fgets(line, 256, file);
+      char *_s = line;
+      fisrt_caracter = *_s;
+    }
+
+    /* Read the time of the profile
+       ---------------------------- */
+
+    /* clean line */
+    for (int i = 0; line[i] != '\0'; i++) {
+      if (line[i] == ',')
+        line[i] = ' ';
+      if (line[i] == 'd')
+        line[i] = 'e';
+    }
+
+    cs_real_t seconde = -1.0;
+    int year = -1, quant = -1, hour = -1, minute = -1;
+    sscanf(line, "%d %d %d %d %lf", &year, &quant, &hour, &minute, &seconde);
+
+    if (seconde < 0.0 || quant > 366)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("WARNING:   CHECKING INPUT DATA (cs_atmo_read_meteo_profile) \n"),
+         _("    =========\n"
+           "               ATMOSPHERIC SPECIFIC PHYSICS\n"
+           "    Error in the date of meteo profile file:\n"
+           "    Check the format (integers,real) for the date\n"));
+
+    /* if the date and time are not completed in cs_user_model
+     * the date and time of the first meteo profile are taken as the
+     * starting time of the simulation */
+    if (at_opt->syear < 0.0) {
+      at_opt->syear  = year;
+      at_opt->squant = quant;
+      at_opt->shour  = hour;
+      at_opt->smin   = minute;
+      at_opt->ssec   = seconde;
+    }
+
+    if (mode == 1) {
+      /* Compute the julian day for the starting day of the simulation
+       * (julian day at 12h) */
+      const cs_real_t sjday
+        = at_opt->squant + ( ( 1461 * (at_opt->syear + 4800 + (1 - 14) / 12))/4
+                             + (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12
+                             - (3 * ((at_opt->syear + 4900 + (1-14)/12) / 100))/4
+                             + 1 - 32075 ) - 1;
+      const cs_real_t jday
+        = quant + (  (1461*(year+4800+(1-14)/12))/4
+                     + (367*(1-2-12*((1-14) / 12))) / 12
+                     - (3 * ((year+4900+(1-14)/12)/100)) / 4
+                     +  1-32075) - 1;
+
+      at_opt->time_met[itp] = (jday - sjday)*86400.0
+                            + (hour - at_opt->shour)*3600.0
+                            + (  minute - at_opt->smin)*60.0
+                              + (seconde - at_opt->ssec);
+
+      if (itp > 0)
+        if (at_opt->time_met[itp] < at_opt->time_met[itp-1])
+          cs_parameters_error
+            (CS_ABORT_IMMEDIATE,
+             _("Error in the meteo profile file:\n"),
+             _("check that the chronogical order of"
+               "the profiles are respected"));
+
+    }
+
+    /* Read the position of the profile
+       -------------------------------- */
+    fgets(line, 256, file);
+    s = line;
+    fisrt_caracter = *s;
+    while(fisrt_caracter == '/') {
+      fgets(line, 256, file);
+      char *_s = line;
+      fisrt_caracter = *_s;
+    }
+
+    if (mode == 1) {
+      /* clean line */
+      for (int i = 0; line[i] != '\0'; i++) {
+        if (line[i] == ',')
+          line[i] = ' ';
+        if (line[i] == 'd')
+          line[i] = 'e';
+      }
+      sscanf(line, "%lf %lf", &at_opt->xyp_met[3*itp],
+                              &at_opt->xyp_met[1 + 3*itp]);
+    }
+
+    /* Read the sea-level pressure
+       --------------------------- */
+    fgets(line, 256, file);
+    s = line;
+    fisrt_caracter = *s;
+    while(fisrt_caracter == '/') {
+      fgets(line, 256, file);
+      char *_s = line;
+      fisrt_caracter = *_s;
+    }
+
+    cs_real_t pres = -1.0;
+    sscanf(line, "%lf", &pres);
+    if (itp == 0)
+      fp->p0 = pres;
+    if (mode == 1)
+      at_opt->xyp_met[2 + 3*itp] = pres;
+
+    /* Read the temperature and humidity profiles
+       ------------------------------------------ */
+    fgets(line, 256, file);
+    s = line;
+    fisrt_caracter = *s;
+    while(fisrt_caracter == '/') {
+      fgets(line, 256, file);
+      char *_s = line;
+      fisrt_caracter = *_s;
+    }
+
+    if (mode == 0) {
+      cs_real_t zzmax, temp, qv;
+      sscanf(line, " %d", &at_opt->met_1d_nlevels_t);
+      for (int ii = 0; ii < at_opt->met_1d_nlevels_t; ii++) {
+        fgets(line, 256, file);
+        /* clean line */
+        for (int i = 0; line[i] != '\0'; i++) {
+          if (line[i] == ',')
+            line[i] = ' ';
+          if (line[i] == 'd')
+            line[i] = 'e';
+        }
+        sscanf(line, " %lf %lf %lf", &zzmax, &temp, &qv);
+        if(ii == 0 && itp == 0) {
+          fp->t0 = temp + cs_physical_constants_celsius_to_kelvin;
+          const cs_real_t rhum = fp->r_pg_cnst*(1.0+(fp->rvsra-1.0)*qv*ih2o);
+          fp->ro0 = fp->p0 / fp->t0 /rhum;
+        }
+      }
+
+      /* Computes met_1d_nlevels_max_t */
+      at_opt->met_1d_nlevels_max_t = at_opt->met_1d_nlevels_t;
+      if (at_opt->radiative_model_1d == 1) {
+        const cs_real_t ztop = 11000.0;
+        while(zzmax <= (ztop-1000.0)) {
+          zzmax += 1000.0;
+          at_opt->met_1d_nlevels_max_t += 1;
+        }
+      }
+
+    }
+
+    else {
+
+      for (int ii = 0; ii < at_opt->met_1d_nlevels_t; ii++) {
+
+        fgets(line, 256, file);
+        /* clean line */
+        for (int i = 0; line[i] != '\0'; i++) {
+          if (line[i] == ',')
+            line[i] = ' ';
+          if (line[i] == 'd')
+            line[i] = 'e';
+        }
+
+        //  Altitude, temperature, humidite
+        if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+          sscanf(line, " %le %le %le %le", &at_opt->z_temp_met[ii],
+                 &at_opt->temp_met[ii + itp*at_opt->met_1d_nlevels_t],
+                 &at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t],
+                 &at_opt->ndrop_met[ii + itp*at_opt->met_1d_nlevels_t]);
+        }
+        else {
+          sscanf(line, " %le %le %le", &at_opt->z_temp_met[ii],
+                 &at_opt->temp_met[ii + itp*at_opt->met_1d_nlevels_t],
+                 &at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t]);
+        }
+        // Initialize p0, rho0 and theta0 at the first level
+        if (itp == 0 && ii == 0) {
+          const cs_real_t qv = at_opt->qw_met[0];
+          fp->t0 = at_opt->temp_met[0] + cs_physical_constants_celsius_to_kelvin;
+          const cs_real_t rhum = fp->r_pg_cnst*(1.0+(fp->rvsra-1.0)*qv*ih2o);
+          fp->ro0 = fp->p0 / fp->t0 /rhum;
+        }
+
+        // Check the unity of the specific humidity (kg/kg) when used
+        if (   at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t] > 0.1
+            || at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t] < 0.0 )
+          cs_parameters_error
+            (CS_ABORT_IMMEDIATE,
+             _("Error in the meteo profile file:\n"),
+             _("the values for the specific humidity are not realistic"
+               " check the unity (kg/kg)"));
+        if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+          if (at_opt->ndrop_met[ii + itp*at_opt->met_1d_nlevels_t] < 0.0)
+            cs_parameters_error
+            (CS_ABORT_IMMEDIATE,
+             _("Error in the meteo profile file:\n"),
+             _("Number of droplets read  <  0"
+               "The computation will not be run"));
+
+      } // end for
+
+      /* If 1D radiative model, complete the
+         temperatureand humidity profiles up to 11000m */
+      if (at_opt->radiative_model_1d == 1) {
+        int ii = at_opt->met_1d_nlevels_t - 1;
+        cs_real_t tlkelv, dum;
+        const cs_real_t ztop  = 11000.00;
+        const cs_real_t p_ref = 101325.0;
+        const cs_real_t t_ref = 288.1500;
+        cs_real_t zzmax = ((int)at_opt->z_temp_met[ii]/1000)*1000.0;
+        while(zzmax <= (ztop-1000.0)) {
+          ii ++;
+          zzmax += 1000.0;
+          at_opt->z_temp_met[ii] = zzmax;
+          // standard temperature profile above the domaine
+          int _size = at_opt->met_1d_nlevels_t-1+itp*at_opt->met_1d_nlevels_max_t;
+          cs_real_t ttmet = at_opt->temp_met[_size]
+                          + cs_physical_constants_celsius_to_kelvin;
+          if (at_opt->hydrostatic_pressure_model == 0)
+            cs_atmo_profile_std(at_opt->z_temp_met[at_opt->met_1d_nlevels_max_t - 1],
+                                fp->p0,
+                                ttmet,
+                                at_opt->z_temp_met[ii],
+                                &dum,
+                                &tlkelv,
+                                &dum);
+          else
+            cs_atmo_profile_std(0.0,
+                                p_ref,
+                                t_ref,
+                                at_opt->z_temp_met[ii],
+                                &dum,
+                                &tlkelv,
+                                &dum);
+          at_opt->temp_met[ii + itp*at_opt->met_1d_nlevels_max_t]
+            = tlkelv - cs_physical_constants_celsius_to_kelvin;
+          if (at_opt->qv_profile == 0)
+            at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_max_t] = 0.0;
+          else
+            at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_max_t]
+              = at_opt->qw_met[_size]
+              * exp((  at_opt->z_temp_met[at_opt->met_1d_nlevels_t-1]
+                      -at_opt->z_temp_met[ii])/2.5e3);
+
+          at_opt->ndrop_met[ii + itp*at_opt->met_1d_nlevels_max_t] = 0.0;
+        } // end while
+
+      }
+
+    } // if (mode == 1)
+
+    if (mode == 1) {
+
+      _compute_hydro_pressure_profile(itp, ih2o, fp, at_opt);
+
+      _compute_pot_temperature_density_profile(itp, ih2o, fp, at_opt);
+    }
+
+    /* Read the velocity profile
+       ------------------------- */
+    fgets(line, 256, file);
+    s = line;
+    fisrt_caracter = *s;
+    while(fisrt_caracter == '/') {
+      fgets(line, 256, file);
+      char *_s = line;
+      fisrt_caracter = *_s;
+    }
+
+    /* clean line */
+    for (int i = 0; line[i] != '\0'; i++) {
+      if (line[i] == ',')
+        line[i] = ' ';
+      if (line[i] == 'd')
+        line[i] = 'e';
+    }
+
+    if (mode == 0) {
+      sscanf(line, " %d", &at_opt->met_1d_nlevels_d);
+      for (int ii = 0; ii < at_opt->met_1d_nlevels_d; ii++)
+        fgets(line, 256, file);
+
+      if (at_opt->met_1d_nlevels_d < 2 || at_opt->met_1d_nlevels_t < 2)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("WARNING: STOP WHILE READING INPUT DATA (cs_atmo_read_meteo_profile)\n"),
+           _("    =========\n"
+             "               ATMOSPHERIC SPECIFIC PHYSICS\n"
+             "    Error in the date of meteo profile file:\n"
+             " the number of temperature or velocity measurements must be larger 2\n"));
+    }
+    else {
+      const int nbmetd = at_opt->met_1d_nlevels_d;
+      for (int ii = 0; ii < nbmetd; ii++) {
+        fgets(line, 256, file);
+        for (int i = 0; line[i] != '\0'; i++) {
+          if (line[i] == ',')
+            line[i] = ' ';
+          if (line[i] == 'd')
+            line[i] = 'e';
+        }
+        sscanf(line, " %le %le  %le %le %le", &at_opt->z_dyn_met[ii],
+                                              &at_opt->u_met[ii + itp*nbmetd],
+                                              &at_opt->v_met[ii + itp*nbmetd],
+                                              &at_opt->ek_met[ii + itp*nbmetd],
+                                              &at_opt->ep_met[ii + itp*nbmetd]);
+      }
+    }
+
+    /* Printings
+       --------- */
+    if (mode == 1) {
+      const int date[5] = {year, quant, hour, minute, (int)seconde};
+      _log_meteo_profile(itp, date, at_opt);
+    }
+
+  } // end loop
+
+  if (mode == 0)
+    at_opt->met_1d_ntimes = itp + 1;
+
+  fclose(file);
 }
 
 /*----------------------------------------------------------------------------*/

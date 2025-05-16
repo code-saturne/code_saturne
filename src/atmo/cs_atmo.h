@@ -630,6 +630,19 @@ cs_atmo_hydrostatic_profiles_compute(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reads the meteo profile data for the atmospheric
+ *
+ * \param[in]  mode     0: reading for dimensions and starting time only
+ *                      1: reading actual meteo data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_read_meteo_profile(int mode);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Universal function phim for neutral, stable and unstable
  *
  * \param[in]  z             altitude

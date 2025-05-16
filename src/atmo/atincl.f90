@@ -577,6 +577,13 @@ integer(c_int), pointer, save :: rad_atmo_model
 
     !---------------------------------------------------------------------------
 
+    subroutine cs_atmo_read_meteo_profile(mode) &
+      bind(C, name='cs_atmo_read_meteo_profile')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: mode
+    end subroutine cs_atmo_read_meteo_profile
+
   end interface
 
 contains
@@ -820,7 +827,7 @@ integer(c_int), dimension(2) :: dim_nd_3, dim_nt_3
 integer(c_int), dimension(2) :: dim_xyvert, dim_kmx2, dim_kmx_nvert
 
 if (imeteo.eq.1) then
-  call atlecm(0)
+  call cs_atmo_read_meteo_profile(0)
 endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
