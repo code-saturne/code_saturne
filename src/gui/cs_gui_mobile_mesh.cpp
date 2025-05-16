@@ -139,6 +139,43 @@ _ale_visc_type(cs_tree_node_t  *tn_ale)
 }
 
 /*-----------------------------------------------------------------------------
+ * Return value for ALE solver
+ *
+ * parameters:
+ *   tn_ale    <-- tree node associated with ALE
+ *
+ * return:
+ *   CS_ALE_LEGACY for legacy, CS_ALE_CDO for cdo
+ *----------------------------------------------------------------------------*/
+
+static cs_ale_type_t
+_ale_solver(cs_tree_node_t *tn_ale)
+{
+  int ale_status = 0;
+  cs_gui_node_get_status_int(tn_ale, &ale_status);
+
+  if (ale_status == 0) {
+    return CS_ALE_NONE;
+  }
+
+  cs_ale_type_t msolver = CS_ALE_LEGACY;
+
+  cs_tree_node_t *tn_mv = cs_tree_get_node(tn_ale, "ale_solver");
+
+  const char *type = cs_tree_node_get_tag(tn_mv, "type");
+  if (type != nullptr) {
+    if (strcmp(type, "legacy") != 0) {
+      if (strcmp(type, "cdo") == 0)
+        msolver = CS_ALE_CDO;
+      else
+        bft_error(__FILE__, __LINE__, 0, "invalid ALE solver: %s", type);
+    }
+  }
+
+  return msolver;
+}
+
+/*-----------------------------------------------------------------------------
  * Get the ale boundary formula
  *
  * parameters:
@@ -462,9 +499,7 @@ cs_gui_ale_params(void)
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
 
-  int ale_status = cs_glob_ale;  /* use copy to avoid any int/enum issues */
-  cs_gui_node_get_status_int(tn, &ale_status);
-  cs_glob_ale = (cs_ale_type_t)ale_status;
+  cs_glob_ale = _ale_solver(tn);
 
   if (cs_glob_ale != CS_ALE_NONE) {
     cs_gui_node_get_child_int(tn, "fluid_initialization_sub_iterations",
@@ -490,8 +525,8 @@ cs_gui_ale_params(void)
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--cs_glob_ale_info->type = %i\n", ale_status);
-  if (ale_status > 0) {
+  bft_printf("--cs_glob_ale_info->type = %i\n", (int)cs_glob_ale);
+  if (cs_glob_ale != CS_ALE_NONE) {
     bft_printf("--nalinf = %i\n", cs_glob_ale_n_ini_f);
     bft_printf("--nalimx = %i\n", cs_glob_mobile_structures_n_iter_max);
     bft_printf("--epalim = %g\n", cs_glob_mobile_structures_i_eps);

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -20,7 +20,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 """
 This module defines the values of reference.
@@ -29,23 +29,23 @@ This module contains the following classes and function:
 - MobileMeshView
 """
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Library modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import logging
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Third-party modules
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.gui.base.QtCore    import *
 from code_saturne.gui.base.QtGui     import *
 from code_saturne.gui.base.QtWidgets import *
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Application modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.gui.base.Toolbox   import GuiParam
 from code_saturne.gui.case.MobileMeshForm  import Ui_MobileMeshForm
@@ -55,17 +55,17 @@ from code_saturne.model.MobileMeshModel import MobileMeshModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # log config
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 logging.basicConfig()
 log = logging.getLogger("MobileMeshView")
 log.setLevel(GuiParam.DEBUG)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Main class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class MobileMeshView(QWidget, Ui_MobileMeshForm):
     """
@@ -136,8 +136,15 @@ if (xray2 < xr2) {
         self.modelVISCOSITY.addItem(self.tr("isotropic"), 'isotrop')
         self.modelVISCOSITY.addItem(self.tr("orthotropic"), 'orthotrop')
 
+        # Combo model ALESOLVER
+        self.modelALESOLVER = ComboModel(self.comboBoxALESOLVER, 2, 1)
+
+        self.modelALESOLVER.addItem(self.tr("legacy"), "legacy")
+        self.modelALESOLVER.addItem(self.tr("cdo"), "cdo")
+
         # Connections
         self.lineEditNALINF.textChanged[str].connect(self.slotNalinf)
+        self.comboBoxALESOLVER.activated[str].connect(self.slotALESolverType)
         self.comboBoxVISCOSITY.activated[str].connect(self.slotViscosityType)
         self.pushButtonFormula.clicked.connect(self.slotFormula)
 
@@ -148,6 +155,8 @@ if (xray2 < xr2) {
         # Settings
         nalinf = self.mdl.getSubIterations()
         self.lineEditNALINF.setText(str(nalinf))
+        solver = self.mdl.getALESolver()
+        self.modelALESOLVER.setItem(str_model=solver)
         value = self.mdl.getViscosity()
         self.modelVISCOSITY.setItem(str_model=value)
         exp = self.mdl.getFormula()
@@ -159,7 +168,6 @@ if (xray2 < xr2) {
 
         self.case.undoStartGlobal()
 
-
     @pyqtSlot(str)
     def slotNalinf(self, text):
         """
@@ -168,7 +176,6 @@ if (xray2 < xr2) {
         if self.lineEditNALINF.validator().state == QValidator.Acceptable:
             nalinf = from_qvariant(text, int)
             self.mdl.setSubIterations(nalinf)
-
 
     @pyqtSlot(str)
     def slotViscosityType(self, text):
@@ -186,6 +193,21 @@ if (xray2 < xr2) {
             self.pushButtonFormula.setStyleSheet("background-color: red")
         return visco
 
+    @pyqtSlot(str)
+    def slotALESolverType(self, text):
+        """
+        Input ALE solver : legacy or cdo.
+        """
+        self.ale_solver = self.modelALESOLVER.dicoV2M[str(text)]
+        solver = self.ale_solver
+        self.mdl.setALESolver(solver)
+        exp = self.mdl.getFormula()
+        if exp:
+            self.pushButtonFormula.setStyleSheet("background-color: green")
+            self.pushButtonFormula.setToolTip(exp)
+        else:
+            self.pushButtonFormula.setStyleSheet("background-color: red")
+        return solver
 
     @pyqtSlot()
     def slotFormula(self):
@@ -218,6 +240,6 @@ if (xray2 < xr2) {
             self.pushButtonFormula.setToolTip(result)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

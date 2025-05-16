@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -20,7 +20,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 """
 This module defines the values of reference.
@@ -30,15 +30,15 @@ This module contains the following classes and function:
 - MobileMeshTestCase
 """
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Library modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import sys, unittest
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Application modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.model.Common import *
 from code_saturne.model.XMLvariables import Variables, Model
@@ -48,9 +48,9 @@ from code_saturne.model.Boundary import Boundary
 from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.NotebookModel import NotebookModel
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Mobil Mesh model class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class MobileMeshModel(Model):
     """
@@ -65,7 +65,6 @@ class MobileMeshModel(Model):
         # Notebook
         self.notebook = NotebookModel(self.case)
 
-
     def __defaultInitialValues(self):
         """
         Return in a dictionnary which contains default values.
@@ -76,6 +75,7 @@ class MobileMeshModel(Model):
         default['formula_isotrop']  = 'mesh_viscosity = 1;'
         default['formula_orthotrop'] = 'mesh_viscosity[X] = 1;\nmesh_viscosity[Y] = 1;\nmesh_viscosity[Z] = 1;'
         default['ale_method']  = 'off'
+        default["ale_solver"] = "legacy"
 
         return default
 
@@ -99,7 +99,6 @@ class MobileMeshModel(Model):
 
         return d
 
-
     def __getMobileMeshNode(self):
         """
         Return ALE node, creating it if needed.
@@ -108,7 +107,6 @@ class MobileMeshModel(Model):
         node_ale = node_models.xmlInitChildNode('ale_method')
 
         return node_ale
-
 
     def __getMobileMeshNodeTry(self):
         """
@@ -120,7 +118,6 @@ class MobileMeshModel(Model):
             node_ale = node_models.xmlGetChildNode('ale_method')
 
         return node_ale
-
 
     def isMobileMeshCompatible(self):
         """
@@ -137,7 +134,6 @@ class MobileMeshModel(Model):
 
         return compat
 
-
     def __setVariablesandProperties(self):
         """
         Set variables and properties if ALE method is activated.
@@ -148,11 +144,10 @@ class MobileMeshModel(Model):
         for d in mvc:
             node_ale.xmlInitChildNode('property', name=d['name'], label=d['label'])
 
-#        # find node for property / choice and set to default value if require
-#        node = node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
+        #        # find node for property / choice and set to default value if require
+        #        node = node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
 
         self.__updateNodeViscosity()
-
 
     def __updateNodeViscosity(self, previous_visc = None):
         """
@@ -179,7 +174,6 @@ class MobileMeshModel(Model):
             fd = self.getDefaultFormula()
             self.setFormula(fd)
 
-
     def __removeVariablesandProperties(self):
         """
         Remove variables and properties if ALE method is disabled.
@@ -188,7 +182,6 @@ class MobileMeshModel(Model):
         if node_ale:
             node_ale.xmlRemoveChild('variable')
             node_ale.xmlRemoveChild('property')
-
 
     @Variables.noUndo
     def getMethod(self):
@@ -202,7 +195,6 @@ class MobileMeshModel(Model):
         if not status:
             status = self.__defaultInitialValues()['ale_method']
         return status
-
 
     @Variables.undoGlobal
     def setMethod(self, status):
@@ -234,7 +226,6 @@ class MobileMeshModel(Model):
             if old_status and old_status != status:
                 node_out.setWriterTimeDependency("-1", typ)
 
-
     @Variables.undoLocal
     def setSubIterations(self, value):
         """
@@ -245,7 +236,6 @@ class MobileMeshModel(Model):
 
         node_ale = self.__getMobileMeshNode()
         node_ale.xmlSetData('fluid_initialization_sub_iterations', value)
-
 
     @Variables.noUndo
     def getSubIterations(self):
@@ -259,7 +249,6 @@ class MobileMeshModel(Model):
         if not nalinf:
             nalinf = self.__defaultInitialValues()['nalinf']
         return nalinf
-
 
     @Variables.undoGlobal
     def setViscosity(self, value):
@@ -275,7 +264,6 @@ class MobileMeshModel(Model):
         node['type'] = value
         self.__updateNodeViscosity(prev_val)
 
-
     @Variables.noUndo
     def getViscosity(self):
         """
@@ -290,6 +278,32 @@ class MobileMeshModel(Model):
 
         return iortvm
 
+    @Variables.undoGlobal
+    def setALESolver(self, value):
+        """
+        Set value of ALE solver into xml file.
+        """
+        self.isInList(value, ["legacy", "cdo"])
+        prev_val = None
+        if value != self.getALESolver():
+            prev_val = self.getALESolver()
+        node_ale = self.__getMobileMeshNode()
+        node = node_ale.xmlInitChildNode("ale_solver")
+        node["type"] = value
+
+    @Variables.noUndo
+    def getALESolver(self):
+        """
+        Get value of ALE solver from xml file.
+        """
+        solver = self.__defaultInitialValues()["ale_solver"]
+        node_ale = self.__getMobileMeshNodeTry()
+        if node_ale:
+            node = node_ale.xmlGetChildNode("ale_solver")
+        if node:
+            solver = node["type"]
+
+        return solver
 
     @Variables.undoLocal
     def setFormula(self, value):
@@ -298,7 +312,6 @@ class MobileMeshModel(Model):
         """
         node_ale = self.__getMobileMeshNode()
         node_ale.xmlSetData('formula', value)
-
 
     @Variables.noUndo
     def getFormula(self):
@@ -312,7 +325,6 @@ class MobileMeshModel(Model):
         if not formula:
             formula = self.getDefaultFormula()
         return formula
-
 
     @Variables.noUndo
     def getFormulaViscComponents(self):
@@ -337,7 +349,6 @@ class MobileMeshModel(Model):
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-
         return exp, req, [], symbols
 
     @Variables.noUndo
@@ -349,9 +360,9 @@ class MobileMeshModel(Model):
         return self.__defaultInitialValues()['formula_'+ viscosity ]
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # MobileMesh Model test case
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class MobileMeshTestCase(ModelTest):
     """
@@ -441,6 +452,6 @@ def runTest():
     runner = unittest.TextTestRunner()
     runner.run(suite())
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
