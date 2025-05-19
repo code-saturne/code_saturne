@@ -315,7 +315,8 @@ cs_mem_cuda_copy_h2d_async(void        *dst,
                            const void  *src,
                            size_t       size)
 {
-  CS_CUDA_CHECK(cudaMemcpyAsync(dst, src, size, cudaMemcpyHostToDevice));
+  CS_CUDA_CHECK(cudaMemcpyAsync(dst, src, size, cudaMemcpyHostToDevice,
+                _cs_glob_stream_pf));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -363,7 +364,8 @@ cs_mem_cuda_copy_d2h_async(void        *dst,
                            const void  *src,
                            size_t       size)
 {
-  CS_CUDA_CHECK(cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToHost));
+  CS_CUDA_CHECK(cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToHost,
+                                _cs_glob_stream_pf));
 }
 
 /*----------------------------------------------------------------------------*/

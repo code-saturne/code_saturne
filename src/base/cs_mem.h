@@ -653,13 +653,13 @@ END_C_DECLS
 #if defined(__cplusplus) && defined(HAVE_ACCEL)
 
 template <class T>
-inline const T *
-cs_get_device_ptr_const(T *ptr)
+inline T *
+cs_get_device_ptr(T *ptr)
 {
-  const void *ptr_v
-    = cs_get_device_ptr_const(reinterpret_cast<void *>(ptr));
+  void *ptr_v
+    = cs_get_device_ptr(reinterpret_cast<void *>(ptr));
 
-  return (const T *)ptr_v;
+  return (T *)ptr_v;
 }
 
 #endif // __cplusplus && HAVE_ACCEL
@@ -1003,6 +1003,40 @@ cs_sync_h2d(const void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Start synchronization of data from host to device.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  host pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_h2d_start(const void  *ptr);
+
+#else
+
+static inline void
+cs_sync_h2d_start(const void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Synchronize data from device to host.
  *
  * If separate allocations are used on the host and device
@@ -1037,6 +1071,40 @@ cs_sync_d2h(void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Start synchronization of data from device to host
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
+ *
+ * Depending on the allocaton type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_d2h_start(void  *ptr);
+
+#else
+
+static inline void
+cs_sync_d2h_start(void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Synchronize data from device to host, only if needed.
  *
  * If separate allocations are used on the host and device
@@ -1063,6 +1131,40 @@ cs_sync_d2h_if_needed(void  *ptr);
 
 static inline void
 cs_sync_d2h_if_needed(void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Start synchronization of data from device to host, only if needed.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * No operation occurs if the provided pointer was not allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_d2h_if_needed_start(void  *ptr);
+
+#else
+
+static inline void
+cs_sync_d2h_if_needed_start(void  *ptr)
 {
   CS_UNUSED(ptr);
 }
@@ -1127,6 +1229,27 @@ cs_prefetch_d2h(void    *ptr,
 {
   CS_UNUSED(ptr);
   CS_UNUSED(size);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wait for asynchronous memory operations between device and
+ *             pinned host memory to finish.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_mem_hd_async_wait(void);
+
+#else
+
+static inline void
+cs_mem_hd_async_wait(void)
+{
 }
 
 #endif

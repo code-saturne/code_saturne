@@ -73,6 +73,7 @@
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_CUDA)
+#include "base/cs_base_cuda.h"
 #include "base/cs_mem_cuda_priv.h"
 #endif
 
@@ -413,6 +414,7 @@ _cs_mem_error_handler_default(const char  *file_name,
  *-----------------------------------------------------------------------------*/
 
 static int  _cs_mem_global_init_mode = 0;
+static int  _n_async_copies_in_progress = 0;
 
 static FILE *_cs_mem_global_file = nullptr;
 
@@ -1349,6 +1351,115 @@ _free_hd_device(void        *ptr,
     omp_target_free(ptr, _omp_target_device_id);
 
 #endif
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize data from device to host
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * No operation occurs if the provided pointer was not allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  me  reference to memory info block
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sync_d2h(cs_mem_block_t &me)
+{
+  switch (me.mode) {
+
+  case CS_ALLOC_HOST_DEVICE:
+    [[fallthrough]];
+  case CS_ALLOC_HOST_DEVICE_PINNED:
+    #if defined(HAVE_CUDA)
+    {
+      cs_mem_cuda_copy_d2h(me.host_ptr, me.device_ptr, me.size);
+    }
+    #elif defined(SYCL_LANGUAGE_VERSION)
+    {
+      cs_glob_sycl_queue.memcpy(me.host_ptr, me.device_ptr, me.size);
+    }
+    #elif defined(HAVE_OPENMP_TARGET)
+    {
+      omp_target_memcpy(me.host_ptr, me.device_ptr, me.size, 0, 0,
+                        omp_get_initial_device(), _omp_target_device_id);
+    }
+    #endif
+    break;
+
+  default:
+    break;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Start synchronize data from device to host, using asynchronous
+ *        copies if relevant.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * No operation occurs if the provided pointer was not allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  me  reference to memory info block
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sync_d2h_start(cs_mem_block_t &me)
+{
+  switch (me.mode) {
+
+  case CS_ALLOC_HOST_DEVICE:
+    #if defined(HAVE_CUDA)
+    {
+      cs_mem_cuda_copy_d2h(me.host_ptr, me.device_ptr, me.size);
+    }
+    #elif defined(SYCL_LANGUAGE_VERSION)
+    {
+      cs_glob_sycl_queue.memcpy(me.host_ptr, me.device_ptr, me.size);
+    }
+    #elif defined(HAVE_OPENMP_TARGET)
+    {
+      omp_target_memcpy(me.host_ptr, me.device_ptr, me.size, 0, 0,
+                        omp_get_initial_device(), _omp_target_device_id);
+    }
+    #endif
+    break;
+
+  case CS_ALLOC_HOST_DEVICE_PINNED:
+    #if defined(HAVE_CUDA)
+    {
+      cs_mem_cuda_copy_d2h_async(me.host_ptr, me.device_ptr, me.size);
+      _n_async_copies_in_progress += 1;
+    }
+    #elif defined(SYCL_LANGUAGE_VERSION)
+    {
+      cs_glob_sycl_queue.memcpy(me.host_ptr, me.device_ptr, me.size);
+    }
+    #elif defined(HAVE_OPENMP_TARGET)
+    {
+      _n_async_copies_in_progress += 1;
+      char *host_ptr = (char *)me.host_ptr;
+      #pragma omp target exit data map(from:host_ptr[:me.size]) \
+        nowait device(_omp_target_device_id)
+    }
+    #endif
+    break;
+
+  default:
+    break;
 
   }
 }
@@ -2711,6 +2822,92 @@ cs_sync_h2d(const void  *ptr)
     break;
 
   case CS_ALLOC_HOST_DEVICE:
+    [[fallthrough]];
+  case CS_ALLOC_HOST_DEVICE_PINNED:
+    #if defined(HAVE_CUDA)
+    {
+      cs_mem_cuda_copy_h2d(me.device_ptr, me.host_ptr, me.size);
+    }
+    #elif defined(SYCL_LANGUAGE_VERSION)
+    {
+      cs_glob_sycl_queue.memcpy(me.device_ptr, me.host_ptr, me.size);
+    }
+    #elif defined(HAVE_OPENMP_TARGET)
+    {
+      omp_target_memcpy(me.device_ptr, me.host_ptr, me.size, 0, 0,
+                        _omp_target_device_id, omp_get_initial_device());
+    }
+    #endif
+    break;
+
+  case CS_ALLOC_HOST_DEVICE_SHARED:
+    if (_ignore_prefetch)
+      return;
+
+    #if defined(HAVE_CUDA)
+    {
+      cs_mem_cuda_prefetch_h2d(me.device_ptr, me.size);
+    }
+    #elif defined(SYCL_LANGUAGE_VERSION)
+    {
+      cs_glob_sycl_queue.prefetch(me.device_ptr, me.size);
+    }
+    #elif defined(HAVE_OPENMP_TARGET)
+    {
+      char *host_ptr = (char *)me.host_ptr;
+      #pragma omp target enter data map(to:host_ptr[:me.size]) \
+        nowait device(_omp_target_device_id)
+    }
+    #endif
+    break;
+
+  case CS_ALLOC_DEVICE:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on device only."),
+              __func__, ptr);
+    break;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Start synchronization of data from host to device.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  host pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sync_h2d_start(const void  *ptr)
+{
+  if (ptr == nullptr)
+    return;
+
+  cs_mem_block_t me = _get_block_info(ptr);
+
+  if (me.device_ptr == nullptr)
+    me.device_ptr = const_cast<void *>(cs_get_device_ptr_const(ptr));
+
+  switch (me.mode) {
+
+  case CS_ALLOC_HOST:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on host only."),
+              __func__, ptr);
+    break;
+
+  case CS_ALLOC_HOST_DEVICE:
     #if defined(HAVE_CUDA)
     {
       cs_mem_cuda_copy_h2d(me.device_ptr, me.host_ptr, me.size);
@@ -2731,6 +2928,7 @@ cs_sync_h2d(const void  *ptr)
     #if defined(HAVE_CUDA)
     {
       cs_mem_cuda_copy_h2d_async(me.device_ptr, me.host_ptr, me.size);
+      _n_async_copies_in_progress += 1;
     }
     #elif defined(SYCL_LANGUAGE_VERSION)
     {
@@ -2738,6 +2936,7 @@ cs_sync_h2d(const void  *ptr)
     }
     #elif defined(HAVE_OPENMP_TARGET)
     {
+      _n_async_copies_in_progress += 1;
       char *host_ptr = (char *)me.device_ptr;
       #pragma omp target enter data map(to:host_ptr[:me.size]) \
         nowait device(_omp_target_device_id)
@@ -2802,77 +3001,38 @@ cs_sync_d2h(void  *ptr)
 
   cs_mem_block_t me = _get_block_info(ptr);
 
-  switch (me.mode) {
+  _sync_d2h(me);
+}
 
-  case CS_ALLOC_HOST:
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: %p allocated on host only."),
-              __func__, ptr);
-    break;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Start synchronization of data from device to host
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * No operation occurs if the provided pointer was not allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
 
-  case CS_ALLOC_HOST_DEVICE:
-    #if defined(HAVE_CUDA)
-    {
-      cs_mem_cuda_copy_d2h(me.host_ptr, me.device_ptr, me.size);
-    }
-    #elif defined(SYCL_LANGUAGE_VERSION)
-    {
-      cs_glob_sycl_queue.memcpy(me.host_ptr, me.device_ptr, me.size);
-    }
-    #elif defined(HAVE_OPENMP_TARGET)
-    {
-      omp_target_memcpy(me.host_ptr, me.device_ptr, me.size, 0, 0,
-                        omp_get_initial_device(), _omp_target_device_id);
-    }
-    #endif
-    break;
+void
+cs_sync_d2h_start(void  *ptr)
+{
+  if (ptr == nullptr)
+    return;
 
-  case CS_ALLOC_HOST_DEVICE_PINNED:
-    #if defined(HAVE_CUDA)
-    {
-      cs_mem_cuda_copy_d2h_async(me.host_ptr, me.device_ptr, me.size);
-    }
-    #elif defined(SYCL_LANGUAGE_VERSION)
-    {
-      cs_glob_sycl_queue.memcpy(me.host_ptr, me.device_ptr, me.size);
-    }
-    #elif defined(HAVE_OPENMP_TARGET)
-    {
-      char *host_ptr = (char *)me.host_ptr;
-      #pragma omp target exit data map(from:host_ptr[:me.size]) \
-        nowait device(_omp_target_device_id)
-    }
-    #endif
-    break;
+  cs_mem_block_t me = _get_block_info(ptr);
 
-  case CS_ALLOC_HOST_DEVICE_SHARED:
-    if (_ignore_prefetch)
-      return;
-
-    #if defined(HAVE_CUDA)
-    {
-      cs_mem_cuda_prefetch_d2h(me.host_ptr, me.size);
-    }
-    #elif defined(SYCL_LANGUAGE_VERSION)
-    {
-      cs_glob_sycl_queue.prefetch(me.host_ptr, me.size);
-    }
-    #elif defined(HAVE_OPENMP_TARGET)
-    {
-      char *host_ptr = (char *)me.host_ptr;
-      #pragma omp target exit data map(from:host_ptr[:me.size]) \
-        nowait device(_omp_target_device_id)
-    }
-    #endif
-    break;
-
-  case CS_ALLOC_DEVICE:
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: %p allocated on device only."),
-              __func__, ptr);
-    break;
-
-  }
+  if (me.mode > CS_ALLOC_HOST)
+    _sync_d2h_start(me);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2902,47 +3062,39 @@ cs_sync_d2h_if_needed(void  *ptr)
 
   cs_mem_block_t me = _get_block_info_try(ptr);
 
-  switch (me.mode) {
+  if (me.mode > CS_ALLOC_HOST)
+    _sync_d2h_start(me);
+}
 
-  case CS_ALLOC_HOST_DEVICE:
-    #if defined(HAVE_CUDA)
-    {
-      cs_mem_cuda_copy_d2h(me.host_ptr, me.device_ptr, me.size);
-    }
-    #elif defined(SYCL_LANGUAGE_VERSION)
-    {
-      cs_glob_sycl_queue.memcpy(me.host_ptr, me.device_ptr, me.size);
-    }
-    #elif defined(HAVE_OPENMP_TARGET)
-    {
-      omp_target_memcpy(me.host_ptr, me.device_ptr, me.size, 0, 0,
-                        omp_get_initial_device(), _omp_target_device_id);
-    }
-    #endif
-    break;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Start synchronization of data from device to host, only if needed.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * No operation occurs if the provided pointer was not allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
 
-  case CS_ALLOC_HOST_DEVICE_PINNED:
-    #if defined(HAVE_CUDA)
-    {
-      cs_mem_cuda_copy_d2h_async(me.host_ptr, me.device_ptr, me.size);
-    }
-    #elif defined(SYCL_LANGUAGE_VERSION)
-    {
-      cs_glob_sycl_queue.memcpy(me.host_ptr, me.device_ptr, me.size);
-    }
-    #elif defined(HAVE_OPENMP_TARGET)
-    {
-      char *host_ptr = (char *)me.host_ptr;
-      #pragma omp target exit data map(from:host_ptr[:me.size]) \
-        nowait device(_omp_target_device_id)
-    }
-    #endif
-    break;
+void
+cs_sync_d2h_if_needed_start(void  *ptr)
+{
+  if (ptr == nullptr)
+    return;
 
-  default:
-    break;
+  cs_mem_block_t me = _get_block_info_try(ptr);
 
-  }
+  if (me.mode > CS_ALLOC_HOST)
+    _sync_d2h_start(me);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3128,6 +3280,34 @@ cs_copy_d2d(void        *dest,
                     _omp_target_device_id, _omp_target_device_id);
 
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wait for asynchronous memory operations between device and
+ *             pinned host memory to finish.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_hd_async_wait(void)
+{
+  if (_n_async_copies_in_progress > 0) {
+
+#if defined(HAVE_CUDA)
+
+    CS_CUDA_CHECK(cudaStreamSynchronize(cs_cuda_get_stream_prefetch()));
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+    cs_glob_sycl_queue.wait();
+
+#elif defined(HAVE_OPENMP_TARGET)
+
+#endif
+
+  }
+  _n_async_copies_in_progress = 0;
 }
 
 /*----------------------------------------------------------------------------*/
