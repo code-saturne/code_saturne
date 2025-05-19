@@ -927,6 +927,13 @@ _coarsen_halo(const cs_grid_t   *f,
   c->halo = c_halo;
   c->_halo = c_halo;
 
+  cs_alloc_mode_t halo_alloc_mode = cs_check_device_ptr(c_halo->send_index);
+  if (c->alloc_mode == CS_ALLOC_HOST && halo_alloc_mode > CS_ALLOC_HOST) {
+    halo_alloc_mode = CS_ALLOC_HOST;
+    CS_REALLOC_HD(c_halo->send_index, 2*c_halo->n_c_domains + 1, cs_lnum_t,
+                  halo_alloc_mode);
+  }
+
   /* Initialize coarse halo counters */
 
   c_halo->n_local_elts = c_n_rows;
@@ -1119,7 +1126,7 @@ _coarsen_halo(const cs_grid_t   *f,
   /*-------------------------*/
 
   CS_MALLOC_HD(c_halo->send_list, c_halo->n_send_elts[0], cs_lnum_t,
-               cs_check_device_ptr(c_halo->send_index));
+               halo_alloc_mode);
 
   c_halo->n_send_elts[0] = 0;
 
@@ -1220,10 +1227,9 @@ _coarsen_halo(const cs_grid_t   *f,
   c_halo->index[2*domain_count] = c_halo->index[2*c_halo->n_c_domains];
   c_halo->send_index[2*domain_count] = c_halo->send_index[2*c_halo->n_c_domains];
 
-  CS_REALLOC_HD(c_halo->index, domain_count*2+1, cs_lnum_t,
-                cs_check_device_ptr(c_halo->index));
+  CS_REALLOC(c_halo->index, domain_count*2+1, cs_lnum_t);
   CS_REALLOC_HD(c_halo->send_index, domain_count*2+1, cs_lnum_t,
-                cs_check_device_ptr(c_halo->send_index));
+                halo_alloc_mode);
 
   if (domain_count < c_halo->n_c_domains && n_sections > 0) {
 
@@ -1280,9 +1286,11 @@ _coarsen_halo(const cs_grid_t   *f,
   c_halo->n_c_domains = domain_count;
   CS_REALLOC(c_halo->c_domain_rank, c_halo->n_c_domains, int);
 
-  if (cs_check_device_ptr(c_halo->send_index) > CS_ALLOC_HOST) {
-    cs_sync_h2d(c_halo->send_index);
-    cs_sync_h2d(c_halo->send_list);
+  if (halo_alloc_mode > CS_ALLOC_HOST) {
+    cs_sync_h2d_start(c_halo->send_index);
+    cs_sync_h2d_start(c_halo->send_list);
+    if (halo_alloc_mode == CS_ALLOC_HOST_DEVICE_PINNED)
+      cs_mem_hd_async_wait();
   }
 
   /* Free memory */
