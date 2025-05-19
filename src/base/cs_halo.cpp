@@ -643,9 +643,12 @@ cs_halo_create_complete(cs_halo_t  *halo)
 #if defined(HAVE_MPI)
 
   /* Make buffer available on device if relevant */
-  if (cs_check_device_ptr(halo->send_index) > CS_ALLOC_HOST) {
-    cs_sync_h2d(halo->send_index);
-    cs_sync_h2d(halo->send_list);
+  cs_alloc_mode_t halo_alloc_mode = cs_check_device_ptr(halo->send_index);
+  if (halo_alloc_mode > CS_ALLOC_HOST) {
+    cs_sync_h2d_start(halo->send_index);
+    cs_sync_h2d_start(halo->send_list);
+    if (halo_alloc_mode == CS_ALLOC_HOST_DEVICE_PINNED)
+      cs_mem_hd_async_wait();
   }
 
   /* Create group for one-sided communication */
@@ -748,9 +751,9 @@ cs_halo_create_complete(cs_halo_t  *halo)
 cs_halo_t *
 cs_halo_create_from_ref(const cs_halo_t  *ref)
 {
-  cs_lnum_t  i;
-
   cs_halo_t  *halo = nullptr;
+
+  cs_alloc_mode_t halo_alloc_mode = cs_check_device_ptr(ref->send_index);
 
   CS_MALLOC(halo, 1, cs_halo_t);
 
@@ -766,14 +769,14 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 
   CS_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
-  for (i = 0; i < halo->n_c_domains; i++)
+  for (int i = 0; i < halo->n_c_domains; i++)
     halo->c_domain_rank[i] = ref->c_domain_rank[i];
 
   CS_MALLOC_HD(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t,
-               _halo_buffer_alloc_mode);
+               halo_alloc_mode);
   CS_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
 
-  for (i = 0; i < 2*halo->n_c_domains + 1; i++) {
+  for (int i = 0; i < 2*halo->n_c_domains + 1; i++) {
     halo->send_index[i] = 0;
     halo->index[i] = 0;
   }
@@ -788,7 +791,7 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
     CS_MALLOC(halo->send_perio_lst, perio_lst_size, cs_lnum_t);
     CS_MALLOC(halo->perio_lst, perio_lst_size, cs_lnum_t);
 
-    for (i = 0; i < perio_lst_size; i++) {
+    for (int i = 0; i < perio_lst_size; i++) {
       halo->send_perio_lst[i] = 0;
       halo->perio_lst[i] = 0;
     }

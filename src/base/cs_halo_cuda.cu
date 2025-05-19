@@ -196,7 +196,7 @@ cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
                               void              *send_buffer)
 {
   const size_t block_size = halo->std_send_block_size;
-  const cs_lnum_t *send_list = halo->send_list;
+  const cs_lnum_t *send_list = cs_get_device_ptr_const(halo->send_list);
   const cs_lnum_t *send_blocks = nullptr;
 
   size_t n_send = 0, n_blocks = 0;
