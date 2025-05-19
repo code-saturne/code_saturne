@@ -36,6 +36,8 @@ Release 8.0.5 (unreleased)
 
 ### Architectural changes:
 
+- Fix paging issue at configure time with current lmod versions.
+
 - Fix spurious: "sh: scl: line 1: syntax error: unexpected end of file"
   and "sh: error importing function definition for `scl'" messages in
   environments with LMOD modules.
