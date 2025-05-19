@@ -541,8 +541,7 @@ _pressure_correction_fv(int                   iterns,
 
   const cs_real_3_t *restrict cell_cen = mq_g->cell_cen;
   const cs_real_3_t *restrict b_face_cog = mq_g->b_face_cog;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)mq_g->b_face_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq_g->b_face_u_normal;
   const cs_real_t *restrict b_dist = mq_g->b_dist;
   const cs_real_t *restrict b_face_surf = mq_g->b_face_surf;
   const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
@@ -951,7 +950,7 @@ _pressure_correction_fv(int                   iterns,
           else if (idften & CS_ANISOTROPIC_DIFFUSION) {
 
             cs_real_t visci[3][3], dist[3];
-            const cs_real_t *n = b_face_normal[f_id];
+            const cs_nreal_t *n = b_face_u_normal[f_id];
 
             visci[0][0] = vitenp[c_id][0];
             visci[1][1] = vitenp[c_id][1];
@@ -990,7 +989,7 @@ _pressure_correction_fv(int                   iterns,
 
             fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*b_dist[f_id]);
 
-            hint = viscis/b_face_surf[f_id]/fikis;
+            hint = viscis/fikis;
 
           }
 
@@ -1009,11 +1008,11 @@ _pressure_correction_fv(int                   iterns,
 
           if (bc_type[f_id] == CS_FREE_INLET) {
 
-            /* Boundary mass flux of the predicted velocity */
+            /* Boundary mass flux intensity of the predicted velocity */
             cs_real_t bpmasf = cs_math_3_dot_product(vel[c_id],
-                                                     b_face_normal[f_id]);
+                                                     b_face_u_normal[f_id]);
 
-            /* Ingoing mass Flux, Bernoulli relation ship is used */
+            /* Ingoing mass Flux, Bernoulli relationship is used */
             if (bpmasf <= 0) {
 
               /* Head loss of the fluid outside the domain, between infinity and
@@ -1026,7 +1025,7 @@ _pressure_correction_fv(int                   iterns,
 
               cs_real_t pimp = coefa_dp[f_id] - cvar_pr[c_id]
                                -   0.5 * (1. + kpdc) * bmasfl[f_id]*bpmasf
-                                 / cs_math_pow2(b_face_surf[f_id]);
+                                 / cs::abs(b_face_surf[f_id]);
 
               /* Convective_outlet BC */
 
