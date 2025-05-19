@@ -308,7 +308,7 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
   cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *cell_cen = fvq->cell_cen;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;

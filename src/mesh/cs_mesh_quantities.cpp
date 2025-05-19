@@ -2229,22 +2229,17 @@ _b_thickness(const cs_mesh_t             *m,
              const cs_mesh_quantities_t  *mq,
              cs_real_t                    b_thickness[])
 {
-  const cs_real_3_t  *cell_cen
-    = (const cs_real_3_t  *)(mq->cell_cen);
-  const cs_real_3_t  *b_face_cog
-    = (const cs_real_3_t  *)(mq->b_face_cog);
-  const cs_real_3_t  *b_face_normal
-    = (const cs_real_3_t  *)(mq->b_face_normal);
-  const cs_real_t  *b_face_surf
-    = (const cs_real_t *)(mq->b_face_surf);
+  const cs_real_3_t  *cell_cen = mq->cell_cen;
+  const cs_real_3_t  *b_face_cog = mq->b_face_cog;
+  const cs_nreal_3_t  *b_face_u_normal = mq->b_face_u_normal;
 
   for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
     cs_lnum_t c_id = m->b_face_cells[f_id];
     b_thickness[f_id]
-      = (  (b_face_cog[f_id][0] - cell_cen[c_id][0])*b_face_normal[f_id][0]
-         + (b_face_cog[f_id][1] - cell_cen[c_id][1])*b_face_normal[f_id][1]
-         + (b_face_cog[f_id][2] - cell_cen[c_id][2])*b_face_normal[f_id][2])
-        * 2.0 / b_face_surf[f_id];
+      = (  (b_face_cog[f_id][0] - cell_cen[c_id][0])*b_face_u_normal[f_id][0]
+         + (b_face_cog[f_id][1] - cell_cen[c_id][1])*b_face_u_normal[f_id][1]
+         + (b_face_cog[f_id][2] - cell_cen[c_id][2])*b_face_u_normal[f_id][2])
+        * 2.0;
   }
 }
 

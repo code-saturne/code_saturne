@@ -253,8 +253,7 @@ cs_interpolate_from_location_p1(void                *input,
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *cell_cen = fvq->cell_cen;
 
   cs_halo_type_t halo_type
     = (m->cell_cells_idx != nullptr) ? CS_HALO_EXTENDED : CS_HALO_STANDARD;

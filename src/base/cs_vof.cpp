@@ -1202,10 +1202,9 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
 
   const cs_real_t *restrict pond = mq->weight;
-  const cs_real_3_t *restrict i_face_u_normal
-    = (const cs_real_3_t *)mq->i_face_u_normal;
-  const cs_real_3_t *restrict dofij = (const cs_real_3_t *)mq->dofij;
-  const cs_real_t *restrict i_face_surf = (const cs_real_t *)mq->i_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq->i_face_u_normal;
+  const cs_real_3_t *restrict dofij = mq->dofij;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
 
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));

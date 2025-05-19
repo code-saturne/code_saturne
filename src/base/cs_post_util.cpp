@@ -266,8 +266,7 @@ cs_cell_segment_intersect_probes_define(void          *input,
   const cs_real_t dx1[3] = {sx[3]-sx[0], sx[4]-sx[1], sx[5]-sx[2]};
   const cs_real_t s_norm2 = cs_math_3_square_norm(dx1);
 
-  const cs_real_3_t  *cell_cen
-    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
+  const cs_real_3_t  *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   cs_lnum_t n_cells = 0;
   cs_lnum_t *cell_ids = nullptr;

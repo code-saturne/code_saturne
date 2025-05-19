@@ -231,8 +231,7 @@ _order_by_direction(void)
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
   int kdir = 0;
 
@@ -380,8 +379,7 @@ _cs_rad_transfer_sol(int       gg_id,
     = (const cs_real_3_t *)cs_glob_mesh_quantities->i_face_normal;
   const cs_real_t   *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
-  const cs_real_t *cell_vol
-    = (const cs_real_t *)cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_real_t c_stefan = cs_physical_constants_stephan;
   const cs_real_t onedpi  = 1.0 / cs_math_pi;

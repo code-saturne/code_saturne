@@ -258,8 +258,8 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   const cs_halo_t *halo = m->halo;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
-  const cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *cell_cen = fvq->cell_cen;
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
 

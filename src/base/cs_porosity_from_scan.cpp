@@ -727,8 +727,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       _incremental_solid_plane_from_points(m,
                                            n_points_dist,
                                            dist_loc,
-                                           (const cs_real_t   *)f_nb_scan->val,
-                                           (const cs_real_3_t *)mq_g->cell_cen,
+                                           (const cs_real_t *)f_nb_scan->val,
+                                           mq_g->cell_cen,
                                            (const cs_real_3_t *)dist_coords,
                                            mom_mat);
 
@@ -1100,12 +1100,9 @@ cs_compute_porosity_from_scan(void)
 
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)mq_g->cell_cen;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq_g->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq_g->b_face_cog;
+  const cs_real_3_t *restrict cell_cen = mq_g->cell_cen;
+  const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq_g->b_face_cog;
 
   cs_real_3_t *restrict i_f_face_normal =
      (cs_real_3_t *)mq->i_face_normal;
@@ -1273,7 +1270,7 @@ cs_compute_porosity_from_scan(void)
 
       int rank_source;
       cs_geom_closest_point(m->n_cells,
-                            (const cs_real_3_t *)mq_g->cell_cen,
+                            mq_g->cell_cen,
                             _porosity_from_scan_opt.sources[s_id],
                             &(source_c_ids[s_id]),
                             &rank_source);

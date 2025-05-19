@@ -742,10 +742,8 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   const cs_real_3_t *restrict cell_cen = mq_g->cell_cen;
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *)mq_g->i_face_normal;
-  const cs_real_t *restrict i_face_surf
-    = (const cs_real_t *)mq_g->i_face_surf;
-  const cs_real_t *restrict i_f_face_surf
-    = (const cs_real_t *)fvq->i_face_surf;
+  const cs_real_t *restrict i_face_surf = mq_g->i_face_surf;
+  const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *)mq_g->b_face_normal;
   const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;

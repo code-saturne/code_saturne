@@ -613,7 +613,7 @@ cs_combustion_boundary_conditions_density(void)
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_nreal_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *f_n = mq->b_face_u_normal;
   const cs_real_3_t *cvar_vel = (cs_real_3_t *)CS_F_(vel)->val;
 
   const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
@@ -709,7 +709,7 @@ cs_combustion_boundary_conditions_density_ebu_lw(void)
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_nreal_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *f_n = mq->b_face_u_normal;
   const cs_real_3_t *cvar_vel = (cs_real_3_t *)CS_F_(vel)->val;
 
   const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;

@@ -796,7 +796,7 @@ _dof_vel_const_uniform_normal(cs_lnum_t         n_elts,
                               cs_real_t        *retval)
 {
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *f_n = mq->b_face_u_normal;
 
   cs_boundary_conditions_open_t *c = (cs_boundary_conditions_open_t *)input;
 
@@ -1017,7 +1017,7 @@ _vel_profile_constant_uniform_normal(int               location_id,
   cs_real_3_t *vals = (cs_real_3_t *)vals_p;
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *f_n = mq->b_face_u_normal;
 
   cs_boundary_conditions_open_t  *c
     = (cs_boundary_conditions_open_t *)input;
@@ -1554,7 +1554,7 @@ cs_boundary_conditions_open_turb(void)
 
     if (c->turb_compute > CS_BC_TURB_NONE) {
 
-      const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+      const cs_nreal_3_t *f_n = mq->b_face_u_normal;
       const cs_zone_t *z = c->zone;
       const cs_real_t dh = c->hyd_diameter;
 

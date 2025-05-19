@@ -327,7 +327,7 @@ _compute_gradient(const cs_mesh_t                *m,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   if (r3max < 1.0e-10) {
     cs_array_real_fill_zero(3*n_cells, (cs_real_t*)grad1);
@@ -623,7 +623,7 @@ cs_atmo_scalar_source_term(int              f_id,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_real_t *cell_vol = mq->cell_vol;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   cs_field_t *th_f = cs_thermal_model_field();
   const cs_field_t *fld = cs_field_by_id(f_id);

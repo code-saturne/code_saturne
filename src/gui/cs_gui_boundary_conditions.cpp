@@ -370,7 +370,7 @@ _meg_flow_rate(int               location_id,
   assert(location_id == CS_MESH_LOCATION_NONE);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *face_cen = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *face_cen = mq->b_face_cog;
 
   cs_boundary_conditions_open_t  *c
     = (cs_boundary_conditions_open_t *)input;
@@ -502,7 +502,7 @@ _vel_profile_by_meg_norm(int               location_id,
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_nreal_3_t *f_n = mq->b_face_u_normal;
-  const cs_real_3_t *face_cen = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *face_cen = mq->b_face_cog;
 
   cs_boundary_conditions_open_t  *c
     = (cs_boundary_conditions_open_t *)input;
@@ -598,7 +598,7 @@ _vel_profile_by_meg_dir(int               location_id,
          == CS_MESH_LOCATION_BOUNDARY_FACES);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *face_cen = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *face_cen = mq->b_face_cog;
 
   cs_boundary_conditions_open_t  *c
     = (cs_boundary_conditions_open_t *)input;
@@ -951,7 +951,7 @@ _dof_meg_t2h(cs_lnum_t         n_elts,
 
   assert(n_elts == c->zone->n_elts && elt_ids == c->zone->elt_ids);
 
-  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *face_cen = cs_glob_mesh_quantities->b_face_cog;
 
   cs_real_t *t_loc = NULL;
   CS_MALLOC(t_loc, n_elts, cs_real_t);
@@ -1070,8 +1070,7 @@ _dof_meg_elec_rescaled(cs_lnum_t         n_elts,
 
   const cs_real_t joule_coef = cs_glob_elec_option->coejou;
 
-  const cs_real_3_t *face_cen
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *face_cen = cs_glob_mesh_quantities->b_face_cog;
 
   cs_real_t *v_loc = NULL;
   CS_MALLOC(v_loc, n_elts, cs_real_t);
@@ -1314,8 +1313,7 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
   const cs_lnum_t dim = c->dim;
   const cs_lnum_t stride = 1 + dim + dim*dim;
 
-  const cs_real_3_t *face_cen
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *face_cen = cs_glob_mesh_quantities->b_face_cog;
 
   if (dim > 3)
     bft_error(__FILE__, __LINE__, 0,
@@ -2690,8 +2688,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  const cs_real_3_t *face_cen
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *face_cen = cs_glob_mesh_quantities->b_face_cog;
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
 
@@ -3597,7 +3594,7 @@ cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
   cs_gui_boundary_meg_context_t  *c
     = (cs_gui_boundary_meg_context_t *)input;
 
-  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *face_cen = cs_glob_mesh_quantities->b_face_cog;
 
   const cs_lnum_t dim = c->dim;
 

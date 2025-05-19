@@ -393,7 +393,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
 
   }
 
-  /* Just after scalai */
+  /* Just after cs_solve_transported_variables */
   else if (iappel == 5) {
 
     /*----------------------------------------------------------------------

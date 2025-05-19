@@ -475,7 +475,7 @@ cs_solve_transported_variables(int iterns)
 
     /* Variances and scalars
 
-    iscavr: scalaire/variance
+    iscavr: scalar/variance
     itspdv: computation of additional production and dissipation terms, or not
            (itspdv = 1 : yes, 0 : no)
 

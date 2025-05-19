@@ -161,7 +161,7 @@ _free_surface(const cs_domain_t  *domain,
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *)mq->b_face_normal;
-  const cs_real_3_t *restrict b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   /* Boundary mass flux */
   int iflmab = cs_field_get_key_int(CS_F_(vel),
@@ -500,7 +500,7 @@ _update_bcs(const cs_domain_t  *domain,
 
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
   const cs_real_3_t *restrict vtx_coord  = (const cs_real_3_t *)m->vtx_coord;
-  const cs_real_3_t *restrict b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   cs_field_t *f_displ = cs_field_by_name("mesh_displacement");
 
@@ -892,7 +892,7 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
-  const cs_real_t *b_dist = (const cs_real_t *)mq->b_dist;
+  const cs_real_t *b_dist = mq->b_dist;
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 

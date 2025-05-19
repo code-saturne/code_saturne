@@ -1231,7 +1231,7 @@ _relative_pressure_f(int               location_id,
   cs_real_t *p_rel = reinterpret_cast<cs_real_t *>(vals);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)(mq->cell_cen);
+  const cs_real_3_t *cell_cen = mq->cell_cen;
   const cs_real_t *cvar_pr = cs_field_by_name("pressure")->val;
   const cs_real_t *cpro_rho = cs_field_by_name("density")->val;
 
@@ -1296,7 +1296,7 @@ _relative_velocity_f(int               location_id,
   cs_real_3_t *v_rel = reinterpret_cast<cs_real_3_t *>(vals);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)(mq->cell_cen);
+  const cs_real_3_t *cell_cen = mq->cell_cen;
   const cs_real_3_t *cvar_vel
     = (const cs_real_3_t *)cs_field_by_name("velocity")->val;
 

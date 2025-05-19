@@ -3985,8 +3985,7 @@ cs_atmo_compute_meteo_profiles(void)
   const int *restrict c_disable_flag = (mq->has_disable_flag) ?
     mq->c_disable_flag : nullptr;
 
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *restrict cell_cen = mq->cell_cen;
 
   /* In the log */
   bft_printf(" Computing meteo profiles from large scale meteo data\n\n");
@@ -4266,24 +4265,21 @@ cs_atmo_z_ground_compute(void)
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
-  const cs_real_3_t *restrict i_face_normal =
-     (const cs_real_3_t *)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal =
-     (const cs_real_3_t *)mq->b_face_normal;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *)mq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   const int *bc_type = cs_glob_bc_type;
 
   /* Quantities required for use_staircase = true */
-  const cs_real_t *restrict i_face_surf =
-     (const cs_real_t *)mq_g->i_face_surf;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq_g->i_face_cog;
-  const cs_real_3_t *restrict i_face_u_normal
-    = (const cs_real_3_t *)mq_g->i_face_u_normal;
-  const cs_real_3_t *restrict i_face_normal_g =
-     (const cs_real_3_t *)mq_g->i_face_normal;
+  const cs_real_t *restrict i_face_surf = mq_g->i_face_surf;
+  const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;
+  const cs_nreal_3_t *restrict i_face_u_normal
+    = mq_g->i_face_u_normal;
+  const cs_real_3_t *restrict i_face_normal_g
+    = (const cs_real_3_t *)mq_g->i_face_normal;
 
   const cs_real_3_t *restrict cell_cen = mq->cell_cen;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
@@ -4417,7 +4413,6 @@ cs_atmo_z_ground_compute(void)
                                    1./i_wall_dist;
 
         eqp_p->ndircl = 1;
-        cs_real_t hint = wall_dist_inv;
         cs_real_t pimp = cs_math_3_dot_product(i_face_cog[face_id], normal);
 
         cs_real_t tsimp

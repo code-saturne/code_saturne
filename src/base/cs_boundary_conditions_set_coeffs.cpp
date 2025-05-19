@@ -204,7 +204,7 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_real_3_t *b_face_cog = fvq->b_face_cog;
 
   const int *bc_type = cs_glob_bc_type;
   const int *irotce  = cs_turbomachinery_get_cell_rotor_num();
@@ -2822,12 +2822,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       int turb_flux_model = cs_field_get_key_int(f_scal, kturt);
       int turb_flux_model_type = turb_flux_model / 10;
 
-      /* --- Indicateur de prise en compte de Cp ou non
-         (selon si le scalaire (scalaire associe pour une fluctuation)
-         doit etre ou non traite comme une temperature)
-         Si le scalaire est une variance et que le
-         scalaire associe n'est pas resolu, on suppose alors qu'il
-         doit etre traite comme un scalaire passif (defaut IHCP = 0)*/
+      /* Indicate if Cp is used as a multiplier for a given scalar
+         based on whether it (or its base scalar in case of a variance)
+         is handled like a temperature. */
       cs_lnum_t ihcp = 0;
       const int kscavr = cs_field_key_id("first_moment_id");
       const int iscavr = cs_field_get_key_int(f_scal, kscavr);
@@ -2937,8 +2934,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
           dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
 
-          /* --- Prise en compte de Cp ou CV
-             (dans le Cas compressible ihcp=0) */
+          /* Handle Cp or CV (in the compressible case, ihcp=0) */
 
           cs_real_t cpp = 1.0;
           if (ihcp == 1)
@@ -2949,7 +2945,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             cpp = cpro_cv[c_id];
 
           cs_real_t rkl;
-          /* --- Viscosite variable ou non */
+          /* variable or constant viscosity */
           if (ifcvsl < 0)
             rkl = visls_0;
           else

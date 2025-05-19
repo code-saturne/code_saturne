@@ -131,7 +131,7 @@ _gaussian(const cs_mesh_t             *m,
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   const cs_real_6_t *cvar_rij = nullptr;
   const cs_real_t *cvar_k = nullptr, *cvar_ep = nullptr;
@@ -945,7 +945,7 @@ cs_atmo_physical_properties_update(void)
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
 
   const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
 

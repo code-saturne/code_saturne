@@ -86,7 +86,8 @@ type(pmapper_double_r1), dimension(:), allocatable :: cvara_espg
 !===============================================================================
 
 ! If gaseous chemistry is computed with the external library SSH-aerosol
-! The source term was estimated at the beginning of scalai
+! The source term was estimated at the beginning of
+! cs_solve_transported_variables.
 ! We update the source term and return directly
 if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
   ! This is not ready yet

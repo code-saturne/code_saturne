@@ -2182,10 +2182,8 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 

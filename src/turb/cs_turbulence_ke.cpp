@@ -452,8 +452,8 @@ cs_turbulence_ke(int              phase_id,
     f_vel = CS_FI_(vel, phase_id);
   }
 
-  const cs_real_t *cvisct = (const cs_real_t *)f_mut->val;
-  const cs_real_t *viscl = (const cs_real_t *)f_mu->val;
+  const cs_real_t *cvisct = f_mut->val;
+  const cs_real_t *viscl = f_mu->val;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");

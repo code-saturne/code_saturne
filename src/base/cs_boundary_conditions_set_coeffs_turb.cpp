@@ -152,8 +152,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_real_3_t *cell_cen = fvq->cell_cen;
+  const cs_real_3_t *b_face_cog = fvq->b_face_cog;
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -1791,8 +1791,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const cs_lnum_t *b_face_cells = m->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *b_face_cog = fvq->b_face_cog;
+  const cs_real_3_t *cell_cen = fvq->cell_cen;
 
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
   cs_field_t *f_th = cs_thermal_model_field();
@@ -1926,10 +1926,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   const cs_real_t *cpro_cp = nullptr;
   if (icp >= 0)
-    cpro_cp = (const cs_real_t *)CS_F_(cp)->val;
+    cpro_cp = CS_F_(cp)->val;
 
-  cs_field_t *f_k = nullptr, *f_eps = nullptr, *f_rij = nullptr, *f_alpha = nullptr;
-  cs_field_t *f_phi = nullptr, *f_f_bar = nullptr, *f_omg = nullptr, *f_nusa = nullptr;
+  cs_field_t *f_k = nullptr, *f_eps = nullptr, *f_rij = nullptr;
+  cs_field_t *f_alpha = nullptr, *f_phi = nullptr, *f_f_bar = nullptr;
+  cs_field_t *f_omg = nullptr, *f_nusa = nullptr;
   cs_equation_param_t *eqp_rij = nullptr, *eqp_eps = nullptr, *eqp_nusa = nullptr;
 
   /* Turbulence variables */
@@ -3235,7 +3236,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
           else { /* Only for smooth wall */
 
-            const cs_real_t *cvar_ep = (const cs_real_t *)f_eps->val;
+            const cs_real_t *cvar_ep = f_eps->val;
 
             pimp = pimp + cvar_ep[c_id];
             pimp = pimp * cfnne;

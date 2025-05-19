@@ -2467,7 +2467,7 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
     int ref_rank;
 
     cs_geom_closest_point(m->n_cells,
-                          (const cs_real_3_t *)(mq->cell_cen),
+                          mq->cell_cen,
                           xyz_ref,
                           &ref_id,
                           &ref_rank);

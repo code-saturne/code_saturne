@@ -1032,9 +1032,9 @@ cs_physical_properties_update(int   iterns)
     if (cs_glob_fluid_properties->ivivar == 0) {
       const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
       _field_is_constant("The molecular viscosity",
-                          n_cells,
-                          (const cs_real_t *)CS_F_(mu)->val,
-                          viscl0);
+                         n_cells,
+                         CS_F_(mu)->val,
+                         viscl0);
     }
   }
 

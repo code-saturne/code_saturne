@@ -252,10 +252,8 @@ cs_wall_distance(int iterns)
   }
 
   /* Immersed boundaries */
-  const cs_real_t *c_w_face_surf
-    = (const cs_real_t *)mq->c_w_face_surf;
-  const cs_real_t *c_w_dist_inv
-    = (const cs_real_t *)mq->c_w_dist_inv;
+  const cs_real_t *c_w_face_surf = mq->c_w_face_surf;
+  const cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
 
   if (c_w_face_surf != nullptr && c_w_dist_inv != nullptr) {
     have_diff = 0;
@@ -1074,8 +1072,8 @@ cs_wall_distance_geometric(void)
 
   const cs_lnum_t n_cells       = mesh->n_cells;
   const cs_lnum_t n_b_faces     = mesh->n_b_faces;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
-  const cs_real_3_t *cell_cen   = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *b_face_cog = fvq->b_face_cog;
+  const cs_real_3_t *cell_cen   = fvq->cell_cen;
 
   // Usually one would not use MPI here but just in case...
   if (mesh->halo != nullptr)

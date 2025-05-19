@@ -583,8 +583,8 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *cpl)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
+  const cs_real_3_t *b_face_cog = mq->b_face_cog;
   const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
   /* Removing the connectivity and localization informations in case of

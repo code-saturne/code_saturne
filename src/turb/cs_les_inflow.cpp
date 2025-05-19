@@ -823,8 +823,7 @@ cs_les_inflow_compute(void)
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   cs_dispatch_context ctx;
 
@@ -1644,7 +1643,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   const cs_lnum_t *b_face_vtx_idx = mesh->b_face_vtx_idx;
   const cs_lnum_t *b_face_vtx_lst = mesh->b_face_vtx_lst;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
   const cs_real_t *cell_vol = mq->cell_vol;
 
   cs_dispatch_context ctx;

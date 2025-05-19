@@ -162,8 +162,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
 {
   const cs_lnum_t dim = f->dim;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
+  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
   /* Currently possible only for fields on cell location */
 

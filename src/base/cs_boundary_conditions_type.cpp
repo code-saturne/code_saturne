@@ -130,8 +130,8 @@ cs_boundary_conditions_type(bool  init,
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
-  const cs_real_3_t *cell_cen  = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
+  const cs_real_3_t *cell_cen  = fvq->cell_cen;
+  const cs_real_3_t *b_face_cog = fvq->b_face_cog;
   cs_velocity_pressure_param_t *vp_param
     = cs_get_glob_velocity_pressure_param();
 

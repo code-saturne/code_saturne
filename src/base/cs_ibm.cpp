@@ -4650,7 +4650,7 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
 
 void cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities)
 {
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_cen = mesh_quantities->cell_cen;
   int n_v_zones = cs_volume_zone_n_zones();
 
   cs_tree_node_t *tn_p

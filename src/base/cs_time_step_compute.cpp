@@ -962,7 +962,7 @@ cs_courant_fourier_compute(void)
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *cell_f_vol = fvq->cell_vol;
-  const cs_real_3_t *cell_f_cen = (const cs_real_3_t *)fvq->cell_cen;
+  const cs_real_3_t *cell_f_cen = fvq->cell_cen;
 
   cs_lnum_t has_dc = fvq->has_disable_flag;
   int *c_disable_flag = fvq->c_disable_flag;
