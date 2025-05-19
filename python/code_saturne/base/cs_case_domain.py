@@ -424,7 +424,7 @@ class base_domain:
 
     # ---------------------------------------------------------------------------
 
-    def solver_command(self, need_abs_path=False):
+    def solver_command(self, n_tot_procs=None, need_abs_path=False):
         """
         Returns a tuple indicating the solver's working directory,
         executable path, and associated command-line arguments.
@@ -1369,7 +1369,7 @@ class domain(base_domain):
 
     # ---------------------------------------------------------------------------
 
-    def solver_command(self, need_abs_path=False):
+    def solver_command(self, n_tot_procs=None, need_abs_path=False):
         """
         Returns a tuple indicating the solver's working directory,
         executable path, and associated command-line arguments.
@@ -1377,8 +1377,9 @@ class domain(base_domain):
 
         # Working directory and solver path from base class
 
-        wd, exec_path, args = \
-            base_domain.solver_command(self, need_abs_path)
+        wd, exec_path, args = base_domain.solver_command(
+            self, n_tot_procs, need_abs_path
+        )
 
         # Build kernel command-line arguments
 
@@ -1681,7 +1682,7 @@ class syrthes_domain(base_domain):
 
     # ---------------------------------------------------------------------------
 
-    def solver_command(self, need_abs_path=False):
+    def solver_command(self, n_tot_procs=None, need_abs_path=False):
         """
         Returns a tuple indicating SYRTHES's working directory,
         executable path, and associated command-line arguments.
@@ -1689,8 +1690,9 @@ class syrthes_domain(base_domain):
 
         # Working directory and solver path from base class
 
-        wd, exec_path, args = \
-            base_domain.solver_command(self, need_abs_path)
+        wd, exec_path, args = base_domain.solver_command(
+            self, n_tot_procs, need_abs_path
+        )
 
         # Build Syrthes command-line arguments
 
@@ -2126,16 +2128,18 @@ class cathare_domain(domain):
 
     # ---------------------------------------------------------------------------
 
-    def solver_command(self, need_abs_path=False):
+    def solver_command(self, n_tot_procs=None, need_abs_path=False):
         """
         Returns a tuple indicating the script's working directory,
         executable path, and associated command-line arguments.
         """
 
-        wd, exec_path, args \
-            = super(cathare_domain, self).solver_command(need_abs_path)
+        wd, exec_path, args = super(cathare_domain, self).solver_command(
+            n_tot_procs, need_abs_path
+        )
 
         return wd, exec_path, args
+
 
 # -------------------------------------------------------------------------------
 
@@ -2205,7 +2209,7 @@ class python_domain(base_domain):
         if not os.path.isdir(self.exec_dir):
             os.mkdir(self.exec_dir)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_data(self):
         """
@@ -2219,7 +2223,7 @@ class python_domain(base_domain):
             if os.path.isfile(src):
                 shutil.copy2(src, os.path.join(self.exec_dir, f))
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def preprocess(self):
         """
@@ -2228,7 +2232,7 @@ class python_domain(base_domain):
 
         # Nothing to do
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_results(self):
         """
@@ -2237,7 +2241,7 @@ class python_domain(base_domain):
         # Nothing to do
         return
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def summary_info(self, s):
         """
@@ -2246,9 +2250,9 @@ class python_domain(base_domain):
 
         base_domain.summary_info(self, s)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
-    def solver_command(self, need_abs_path=False):
+    def solver_command(self, n_tot_procs=None, need_abs_path=False):
         """
         Returns a tuple indicating the script's working directory,
         executable path, and associated command-line arguments.
@@ -2378,11 +2382,13 @@ class aster_domain(base_domain):
 
     # ---------------------------------------------------------------------------
 
-    def solver_command(self, need_abs_path=False):
+    def solver_command(self, n_tot_procs=int, need_abs_path=False):
         """
         Returns a tuple indicating the script's working directory,
         executable path, and associated command-line arguments.
         """
+
+        assert not need_abs_path
 
         # Working directory
 
@@ -2395,8 +2401,16 @@ class aster_domain(base_domain):
         # Build kernel command-line arguments
 
         args = " "
-        args += enquote_arg(self.script_name)
+        # set proc0 to save results correctly
+        args += f" --proc0-is={n_tot_procs-self.n_procs}"
         if self.logfile:
+            # only proc0 write log file
+            args += " --only-proc0"
+        # name of export file
+        args += " " + enquote_arg(self.script_name)
+
+        if self.logfile:
+            # write log in a separate file
             logpath = self.exec_dir + "/" + self.logfile
             args += " > " + enquote_arg(logpath)
 

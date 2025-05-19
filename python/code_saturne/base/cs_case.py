@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -21,7 +21,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import configparser
 import datetime, time
@@ -45,9 +45,9 @@ kib_unit_mult = {'K': 1.,
                  'P': 1024. ** 4,
                  'E': 1024. ** 5}
 
-#===============================================================================
+# ===============================================================================
 # Utility classes and functions
-#===============================================================================
+# ===============================================================================
 
 class case_state(Enum):
     "Enumeration for case state handling"
@@ -63,7 +63,7 @@ class case_state(Enum):
     EXCEEDED_TIME_LIMIT = 2
     FAILED = 3
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def check_exec_dir_stamp(d):
 
@@ -86,12 +86,12 @@ def check_exec_dir_stamp(d):
 
     return retval
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Check if an execution directory is inside a standard case structure
 #
 # This may not be the case if a separate staging directory or destination
 # directory has been specified.
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def is_exec_dir_in_case(case_dir, exec_dir):
     """
@@ -115,7 +115,7 @@ def is_exec_dir_in_case(case_dir, exec_dir):
 
     return in_case
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def get_case_dir(case=None, param=None, coupling=None, id=None):
 
@@ -202,7 +202,7 @@ def get_case_dir(case=None, param=None, coupling=None, id=None):
 
     return casedir, staging_dir
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 def get_case_state(run_dir, coupling=False, run_timeout=3600):
 
@@ -426,14 +426,14 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
 
     return state, info
 
-#===============================================================================
+# ===============================================================================
 # Main class
-#===============================================================================
+# ===============================================================================
 
 class case:
     """Base class from which classes handling running case should inherit."""
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __init__(self,
                  package,                     # main package
@@ -600,7 +600,7 @@ class case:
         self.error = ''
         self.error_long = ''
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __define_dest_dir__(self):
 
@@ -610,7 +610,7 @@ class case:
                                         self.dest_dir)
                 self.dest_dir = os.path.abspath(dest_dir)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def print_procs_distribution(self):
 
@@ -637,7 +637,7 @@ class case:
 
         sys.stdout.write('\n')
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def distribute_procs(self, n_procs=None):
 
@@ -767,7 +767,7 @@ class case:
 
         return n_procs_tot
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def define_exec_dir(self):
         """
@@ -787,7 +787,7 @@ class case:
                 self.define_result_dir()
             self.exec_dir = self.result_dir
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_exec_dir(self, force=False):
         """
@@ -816,7 +816,7 @@ class case:
         for d in self.domains:
             d.set_exec_dir(self.exec_dir)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def define_result_dir(self):
 
@@ -837,7 +837,7 @@ class case:
 
         self.result_dir = os.path.join(r, self.run_id)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_result_dir(self, force=True):
 
@@ -864,7 +864,7 @@ class case:
                              self.result_dir,
                              dest_root_dir=dest_root_dir)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def summary_init(self, exec_env):
 
@@ -934,7 +934,7 @@ class case:
 
         s.close()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def summary_finalize(self):
 
@@ -959,7 +959,7 @@ class case:
 
         s.close()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_log(self, name):
         """
@@ -977,7 +977,7 @@ class case:
             if self.error == '':
                 os.remove(src)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_script(self):
         """
@@ -1010,7 +1010,7 @@ class case:
             if not batch_file_already_present:
                 shutil.copy2(src, dest)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def copy_top_run_conf(self):
         """
@@ -1025,7 +1025,7 @@ class case:
         if os.path.isfile(src) and src != dest:
             shutil.copy2(src, dest)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def solver_script_path(self):
         """
@@ -1033,7 +1033,7 @@ class case:
         """
         return os.path.join(self.exec_dir, self.package.runsolver)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def debug_wrapper_args(self):
         """
@@ -1053,7 +1053,7 @@ class case:
         debug_args += dbg_wrapper_path + ' '
         return debug_args
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_solver_mpmd_mpiexec(self, n_procs, mpi_env, tool_args=''):
         """
@@ -1065,7 +1065,7 @@ class case:
         app_id = 0
 
         for d in self.domains:
-            s_args = d.solver_command()
+            s_args = d.solver_command(n_tot_procs=n_procs)
             if len(cmd) > 0:
                 cmd += ' : '
             cmd += '-n ' + str(d.n_procs) \
@@ -1075,7 +1075,7 @@ class case:
 
         return cmd
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_solver_mpmd_configfile(self,
                                         n_procs,
@@ -1091,7 +1091,7 @@ class case:
         app_id = 0
 
         for d in self.domains:
-            s_args = d.solver_command()
+            s_args = d.solver_command(n_tot_procs=n_procs)
             cmd = '-n ' + str(d.n_procs) \
                 + ' -wdir ' + os.path.basename(s_args[0]) \
                 + ' ' + tool_args + s_args[1] + s_args[2] + '\n'
@@ -1102,7 +1102,7 @@ class case:
 
         return e_path
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_solver_mpmd_configfile_srun(self,
                                              n_procs,
@@ -1122,7 +1122,7 @@ class case:
         rank_id = 0
 
         for d in self.domains:
-            s_args = d.solver_command(need_abs_path=True)
+            s_args = d.solver_command(n_tot_procs=n_procs, need_abs_path=True)
 
             cmd = '%d-%d\t' % (rank_id, rank_id + d.n_procs - 1) \
                    + tool_args + s_args[1] + s_args[2] \
@@ -1135,7 +1135,7 @@ class case:
 
         return e_path
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_solver_mpmd_configfile_ccc_mprun(self,
                                                   n_procs,
@@ -1152,7 +1152,7 @@ class case:
         app_id = 0
 
         for d in self.domains:
-            s_args = d.solver_command()
+            s_args = d.solver_command(n_tot_procs=n_procs)
             cmd = str(d.n_procs) +' ' \
                     + ' bash -c "' \
                     + ' cd ' + os.path.basename(s_args[0]) + ' &&' \
@@ -1165,7 +1165,7 @@ class case:
 
         return e_path
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_solver_mpmd_script(self, n_procs,
                                     mpi_env,
@@ -1200,7 +1200,7 @@ class case:
         for d in self.domains:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
-            s_args = d.solver_command()
+            s_args = d.solver_command(n_tot_procs=n_procs)
             e.write('  cd ' + s_args[0] + '\n')
             env_load_sh = d.solver_set_env_command()
             if env_load_sh:
@@ -1226,7 +1226,7 @@ class case:
 
         return e_path
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def solver_script_body(self, n_procs, mpi_env, s):
         """
@@ -1382,7 +1382,7 @@ class case:
 
             s.write(mpi_cmd + e_path + '\n')
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_solver_script(self, exec_env):
         """
