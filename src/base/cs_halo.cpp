@@ -1858,7 +1858,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 
     else if (cs_glob_n_ranks > 1) {
       size_t pack_size = halo->n_send_elts[CS_HALO_EXTENDED] * elt_size;
-      size_t recv_size = halo->n_elts[_hs->sync_mode] * elt_size;
+      size_t recv_size = halo->n_elts[CS_HALO_EXTENDED] * elt_size;
 
       /* When array passed is defined on device but is not shared, use separate
          (smaller) CPU buffer for receive (as we cannot know whether a matching
