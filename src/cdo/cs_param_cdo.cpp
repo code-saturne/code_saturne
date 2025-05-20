@@ -127,6 +127,14 @@ cs_param_cdo_log(void)
     break;
 
   default:
+
+  case CS_PARAM_CDO_MODE_NS_WITH_FV:
+    cs_log_printf(
+      CS_LOG_DEFAULT,
+      "\n -msg- CDO/HHO/MAC module is activated for NSE *** Experimental ***"
+      "\n -msg- CDO/HHO module with FV schemes mode\n");
+    break;
+
   case CS_PARAM_CDO_MODE_OFF:
     cs_log_printf(CS_LOG_DEFAULT,
                   "\n -msg- CDO/HHO/MAC module is not activated\n");
@@ -179,6 +187,64 @@ cs_param_cdo_setup_log(void)
 
   }
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tell if FVM is used to solve main equations
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_fv_main(void)
+{
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF ||
+      cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV) {
+    return true;
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tell if FVM and CDO are used
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_cdo_and_fv(void)
+{
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV ||
+      cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV) {
+    return true;
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tell if CDO is only used
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_cdo_only(void)
+{
+  return cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tell if FVM is oly used
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_fv_only(void)
+{
+  return cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF;
+};
 
 /*----------------------------------------------------------------------------*/
 

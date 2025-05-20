@@ -293,6 +293,7 @@ cs_turbulence_param_create(void)
   tbp->rans_param = cs_get_glob_turb_rans_model();
   tbp->les_param = cs_get_glob_turb_les_model();
   tbp->reference_values = cs_get_glob_turb_ref_values();
+  tbp->shared_from_legacy = true;
 
   return tbp;
 }
@@ -403,61 +404,85 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
 
   /* Set field metadata */
 
-  const int  log_key = cs_field_key_id("log");
-  const int  post_key = cs_field_key_id("post_vis");
-  const bool  has_previous = false;
+  const int  log_key         = cs_field_key_id("log");
+  const int  post_key        = cs_field_key_id("post_vis");
+  const bool has_previous    = false;
   const int  field_post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  int        location_id     = cs_mesh_location_get_id_by_name("cells");
 
-  int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
-  int  location_id = cs_mesh_location_get_id_by_name("cells");
+  if (tbp->shared_from_legacy) {
+    int field_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
 
-  tbs->mu_t_field = cs_field_find_or_create(CS_NAVSTO_TURB_VISCOSITY,
-                                            field_mask,
-                                            location_id,
-                                            1, /* dimension */
-                                            has_previous);
+    tbs->mu_t_field = cs_field_find_or_create(CS_NAVSTO_TURB_VISCOSITY,
+                                              field_mask,
+                                              location_id,
+                                              1, /* dimension */
+                                              has_previous);
 
-  /* Set default value for keys related to log and post-processing */
+    tbs->mu_t = cs_property_by_name(CS_NAVSTO_TURB_VISCOSITY);
+  }
+  else {
+    int field_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
 
-  cs_field_set_key_int(tbs->mu_t_field, log_key, 1);
-  cs_field_set_key_int(tbs->mu_t_field, post_key, field_post_flag);
+    tbs->mu_t_field = cs_field_find_or_create(CS_NAVSTO_TURB_VISCOSITY,
+                                              field_mask,
+                                              location_id,
+                                              1, /* dimension */
+                                              has_previous);
 
-  /* Properties (shared) */
+    /* Set default value for keys related to log and post-processing */
 
-  tbs->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
-  tbs->mu_tot = cs_property_by_name(CS_NAVSTO_TOTAL_VISCOSITY);
-  tbs->mu_l = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
+    cs_field_set_key_int(tbs->mu_t_field, log_key, 1);
+    cs_field_set_key_int(tbs->mu_t_field, post_key, field_post_flag);
 
-  assert(tbs->rho != nullptr && tbs->mu_l != nullptr && tbs->mu_tot != nullptr);
+    /* Properties (shared) */
 
-  /* Add a mu_t property and define it with the associated field */
+    tbs->rho    = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+    tbs->mu_tot = cs_property_by_name(CS_NAVSTO_TOTAL_VISCOSITY);
+    tbs->mu_l   = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
 
-  tbs->mu_t = cs_property_add(CS_NAVSTO_TURB_VISCOSITY, CS_PROPERTY_ISO);
+    assert(tbs->rho != nullptr && tbs->mu_l != nullptr &&
+           tbs->mu_tot != nullptr);
 
-  cs_property_def_by_field(tbs->mu_t, tbs->mu_t_field);
+    /* Add a mu_t property and define it with the associated field */
+
+    tbs->mu_t = cs_property_add(CS_NAVSTO_TURB_VISCOSITY, CS_PROPERTY_ISO);
+
+    cs_property_def_by_field(tbs->mu_t, tbs->mu_t_field);
+  }
 
   /* Set function pointers and initialize the context structure */
 
-  switch (model->model) {
+  if (!tbp->shared_from_legacy) {
+    switch (model->model) {
+      case CS_TURB_K_EPSILON:
+      case CS_TURB_K_EPSILON_LIN_PROD:
+        tbs->init_context = cs_turb_init_k_eps_context;
+        tbs->free_context = cs_turb_free_k_eps_context;
+        tbs->compute      = cs_turb_compute_k_eps;
+        tbs->update       = cs_turb_update_k_eps;
 
-  case CS_TURB_K_EPSILON:
-  case CS_TURB_K_EPSILON_LIN_PROD:
-    tbs->init_context = cs_turb_init_k_eps_context;
-    tbs->free_context = cs_turb_free_k_eps_context;
-    tbs->compute = cs_turb_compute_k_eps;
-    tbs->update = cs_turb_update_k_eps;
+        tbs->context = tbs->init_context(model);
+        break;
 
-    tbs->context = tbs->init_context(model);
-    break;
+      case CS_TURB_NONE:
+        break;
 
-  case CS_TURB_NONE:
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid turbulence model with CDO schemes.\n"
-              " Please check your settings.", __func__);
-    break;
+      default:
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  " %s: Invalid turbulence model with CDO schemes.\n"
+                  " Please check your settings.",
+                  __func__);
+        break;
+    }
+  }
+  else {
+    tbs->init_context = nullptr;
+    tbs->free_context = nullptr;
+    tbs->compute      = nullptr;
+    tbs->update       = cs_turb_update_shared_legacy;
   }
 }
 
@@ -505,6 +530,10 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                            tbs->mu_tot_array,
                            false, /* definition is owner ? */
                            true); /* full length */
+
+  if (tbp->shared_from_legacy) {
+    return;
+  }
 
   /* Last setup for each turbulence model */
 
@@ -577,6 +606,21 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
               " Please check your settings.", __func__);
     break;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Indicate whether use Legacy solved turbulent viscosity
+ * \param[in, out] tbs        pointer to the turbulence main structure
+ * \param[in]      is_shared  boolean parameter to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_set_shared_from_fv(cs_turbulence_t *tbs, bool is_shared)
+{
+  cs_turbulence_param_t *tbp = tbs->param;
+  tbp->shared_from_legacy    = is_shared;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -806,6 +850,55 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
   /* Free memory */
 
   BFT_FREE(rho);
+  BFT_FREE(mu_l);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update for the current time step the new state for the turbulence
+ *         model. directly update the turbulent viscosity from Legacy.
+ *
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  structure managing the time stepping
+ * \param[in]      tbs        pointer to a \ref cs_turbulence_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
+                             const cs_cdo_connect_t    *connect,
+                             const cs_cdo_quantities_t *quant,
+                             const cs_time_step_t      *time_step,
+                             const cs_turbulence_t     *tbs)
+{
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+
+  if (tbs == nullptr)
+    return;
+
+  const cs_lnum_t n_cells = mesh->n_cells;
+  cs_real_t      *mu_t    = tbs->mu_t_field->val;
+
+  /* Get laminar viscosity values in each cell */
+
+  int        mu_stride = 0;
+  cs_real_t *mu_l      = nullptr;
+  cs_property_iso_get_cell_values(time_step->t_cur,
+                                  tbs->mu_l,
+                                  &mu_stride,
+                                  &mu_l);
+
+  /* Compute mu_t in each cell and define mu_tot = mu_t + mu_l */
+
+#pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    tbs->mu_tot_array[cell_id] = mu_t[cell_id] + mu_l[cell_id * mu_stride];
+  }
+
+  /* Free memory */
   BFT_FREE(mu_l);
 }
 

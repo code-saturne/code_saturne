@@ -360,6 +360,28 @@ _add_variable_field
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add a variable field resolved in CDO.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_field_t *
+_add_variable_cdo_field(const char *f_name, const char *f_label, int dim)
+{
+  bool        has_previous = true;
+  cs_field_t *f =
+    cs_field_by_id(cs_variable_cdo_field_create(f_name,
+                                                f_label,
+                                                CS_MESH_LOCATION_CELLS,
+                                                dim,
+                                                has_previous));
+
+  cs_add_variable_field_indexes(f->id);
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add a model scalar field.
  */
 /*----------------------------------------------------------------------------*/
@@ -490,7 +512,9 @@ _create_variable_fields(void)
   /*! Velocity */
 
   {
-    cs_field_t *f = _add_variable_field("velocity", "Velocity", 3);
+    cs_field_t *f = cs_param_cdo_has_fv_main()
+                      ? _add_variable_field("velocity", "Velocity", 3)
+                      : _add_variable_cdo_field("velocity", "Velocity", 3);
     cs_field_set_key_int(f, keycpl, 1);
     cs_field_pointer_map(CS_ENUMF_(vel), f);
   }
@@ -498,7 +522,9 @@ _create_variable_fields(void)
   /* Pressure */
 
   {
-    cs_field_t *f = _add_variable_field("pressure", "Pressure", 1);
+    cs_field_t *f = cs_param_cdo_has_fv_main()
+                      ? _add_variable_field("pressure", "Pressure", 1)
+                      : _add_variable_cdo_field("pressure", "Pressure", 1);
     cs_field_pointer_map(CS_ENUMF_(p), f);
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -803,9 +829,14 @@ _create_property_fields(void)
      create field hybrid_blend which contains the local blending factor. */
 
   {
-    cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
-    if (eqp_u->ischcv == 3 || turb_model->hybrid_turb > 0) {
-      _add_property_field("hybrid_blend", "Hybrid blending function", 1, false);
+    if (cs_param_cdo_has_fv_main()) {
+      cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
+      if (eqp_u->ischcv == 3 || turb_model->hybrid_turb > 0) {
+        _add_property_field("hybrid_blend",
+                            "Hybrid blending function",
+                            1,
+                            false);
+      }
     }
 
     if (turb_model->hybrid_turb == 3) {
@@ -1292,7 +1323,9 @@ _additional_fields_stage_1(void)
      This table is NDIM in general and NDIM+1 if one extrapolates the source
      terms of the void fraction equation of the VOF algorithm. */
   if (time_scheme->isno2t > 0) {
-    _add_source_term_prev_field(CS_F_(vel));
+    if (cs_param_cdo_has_fv_main()) {
+      _add_source_term_prev_field(CS_F_(vel));
+    }
     if (cs_glob_vof_parameters->vof_model > 0)
       _add_source_term_prev_field(CS_F_(void_f));
   }
@@ -1577,43 +1610,43 @@ _additional_fields_stage_1(void)
     }
   }
 
-  /* Transient velocity/pressure coupling, postprocessing field
-     (variant used for computation is a tensorial field, not this one) */
+  if (cs_param_cdo_has_fv_main()) {
+    /* Transient velocity/pressure coupling, postprocessing field
+       (variant used for computation is a tensorial field, not this one) */
 
-  int ncpdct = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_HEAD_LOSS);
+    int ncpdct = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_HEAD_LOSS);
 
-  const cs_velocity_pressure_param_t *vp_param
-    = cs_glob_velocity_pressure_param;
+    const cs_velocity_pressure_param_t *vp_param =
+      cs_glob_velocity_pressure_param;
 
-  if (vp_param->ipucou != 0 || ncpdct > 0 || cs_glob_porous_model == 2) {
+    if (vp_param->ipucou != 0 || ncpdct > 0 || cs_glob_porous_model == 2) {
+      cs_field_t *f = cs_field_create("dttens",
+                                      CS_FIELD_INTENSIVE,
+                                      CS_MESH_LOCATION_CELLS,
+                                      6,
+                                      false);
+      if (vp_param->ipucou != 0 || ncpdct > 0)
+        cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
+      cs_field_set_key_int(f, keylog, 1);
+      if (cs_glob_porous_model == 2) {
+        int kwgrec = cs_field_key_id("gradient_weighting_id");
+        cs_field_set_key_int(CS_F_(p), kwgrec, f->id);
+      }
 
-    cs_field_t *f = cs_field_create("dttens",
-                                    CS_FIELD_INTENSIVE,
-                                    CS_MESH_LOCATION_CELLS,
-                                    6,
-                                    false);
-    if (vp_param->ipucou != 0 || ncpdct > 0)
-      cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
-    cs_field_set_key_int(f, keylog, 1);
-    if (cs_glob_porous_model == 2) {
-      int kwgrec = cs_field_key_id("gradient_weighting_id");
-      cs_field_set_key_int(CS_F_(p), kwgrec, f->id);
+      /* Tensorial diffusivity */
+
+      if (cs_glob_porous_model == 2) {
+        cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
+        eqp->idften              = CS_ANISOTROPIC_LEFT_DIFFUSION;
+      }
+
+      /* Diagonal cell tensor for the pressure solving when needed */
+
+      if (vp_param->ipucou == 1 || ncpdct > 0 || cs_glob_porous_model == 2) {
+        cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
+        eqp->idften              = CS_ANISOTROPIC_LEFT_DIFFUSION;
+      }
     }
-
-    /* Tensorial diffusivity */
-
-    if (cs_glob_porous_model == 2) {
-      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
-      eqp->idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
-    }
-
-    /* Diagonal cell tensor for the pressure solving when needed */
-
-    if (vp_param->ipucou == 1 || ncpdct > 0 || cs_glob_porous_model == 2) {
-      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
-      eqp->idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
-    }
-
   }
 
   /* Map to field pointers
@@ -3583,7 +3616,7 @@ cs_setup(void)
                              &time_scheme->iccvfg);
   cs_lagr_add_fields();
 
-  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
+  if (cs_param_cdo_has_fv_main()) {
     /* Additional fields if not in CDO mode only */
     _additional_fields_stage_2();
 
@@ -3598,7 +3631,7 @@ cs_setup(void)
 
   /* Those additional fields have to be called after
    * cs_parameters_eqp_complete  */
-  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
+  if (cs_param_cdo_has_fv_main())
     _additional_fields_stage_4();
 
   /* Time moments called after additional creation */
@@ -3611,19 +3644,17 @@ cs_setup(void)
   /* Some final settings */
   cs_gui_output(cs_glob_domain);
 
-  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
-    /* Avoid a second spurious call to this function
-     * called in the C part if CDO is activated */
-    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF) {
-      cs_user_boundary_conditions_setup(cs_glob_domain);
-      cs_user_finalize_setup(cs_glob_domain);
-    }
+  /* Avoid a second spurious call to this function
+   * called in the C part if CDO is activated */
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF) {
+    cs_user_boundary_conditions_setup(cs_glob_domain);
+    cs_user_finalize_setup(cs_glob_domain);
   }
 
   cs_parameters_output_complete();
 
   /* Coherency checks */
-  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
+  if (cs_param_cdo_has_fv_main())
     cs_parameters_check();
 
   cs_log_printf(CS_LOG_DEFAULT,

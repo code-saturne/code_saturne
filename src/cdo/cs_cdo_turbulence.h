@@ -92,6 +92,12 @@ typedef struct {
 
   cs_turb_ref_values_t       *reference_values;
 
+  /*! \var shared_from_legacy
+   *  Indicate if the turbulence computing is done in Legacy and turbulent
+   *  viscosity is shared (Only for 1st order models)
+   */
+  bool shared_from_legacy;
+
 } cs_turbulence_param_t;
 
 /*! \struct cs_turbulence_t
@@ -377,6 +383,17 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Indicate whether use Legacy solved turbulent viscosity
+ * \param[in, out] tbs        pointer to the turbulence main structure
+ * \param[in]      is_shared  boolean parameter to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_set_shared_from_fv(cs_turbulence_t *tbs, bool is_shared);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize the values of quantities related to a turbulence model.
  *
  * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
@@ -464,6 +481,26 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
                      const cs_turbulence_t        *tbs);
 
 /*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update for the current time step the new state for the turbulence
+ *         model. directly update the turbulent viscosity from Legacy.
+ *
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  structure managing the time stepping
+ * \param[in]      tbs        pointer to a \ref cs_turbulence_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
+                             const cs_cdo_connect_t    *connect,
+                             const cs_cdo_quantities_t *quant,
+                             const cs_time_step_t      *time_step,
+                             const cs_turbulence_t     *tbs);
 
 END_C_DECLS
 

@@ -96,7 +96,10 @@ typedef enum {
 
   CS_PARAM_CDO_MODE_OFF     = -1,  /* CDO schemes are not used */
   CS_PARAM_CDO_MODE_WITH_FV =  1,  /* CDO and legacy FV schemes are used */
-  CS_PARAM_CDO_MODE_ONLY    =  2   /* Only CDO schemes are used */
+  CS_PARAM_CDO_MODE_NS_WITH_FV = 2,   /* CDO schemes activated for NSE
+                                         and legacy FV schemes for
+                                         other equations */
+  CS_PARAM_CDO_MODE_ONLY = 3          /* Only CDO schemes are used */
 
 } cs_param_cdo_mode_t;
 
@@ -148,6 +151,42 @@ cs_param_cdo_log(void);
 
 void
 cs_param_cdo_setup_log(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tell if FVM is used to solve main equations
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_fv_main(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tell if FVM and CDO are used
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_cdo_and_fv(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tell if CDO is only used
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_cdo_only(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tell if FVM is oly used
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_fv_only(void);
 
 /*----------------------------------------------------------------------------*/
 

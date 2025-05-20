@@ -40,37 +40,30 @@
 
 #include "bft/bft_printf.h"
 
+#include "atmo/cs_atmo.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
-#include "base/cs_ast_coupling.h"
-#include "atmo/cs_atmo.h"
-#include "base/cs_array.h"
 #include "base/cs_assert.h"
+#include "base/cs_ast_coupling.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_coupling.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_compute_thermo_pressure_density.h"
-#include "ctwr/cs_ctwr_source_terms.h"
 #include "base/cs_dilatable_scalar_diff_st.h"
 #include "base/cs_fan.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_head_losses.h"
-#include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_head_losses.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_physical_properties_default.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_porous_model.h"
-#include "rayt/cs_rad_transfer.h"
-#include "rayt/cs_rad_transfer_solve.h"
+#include "base/cs_prototypes.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_solve_navier_stokes.h"
 #include "base/cs_solve_transported_variables.h"
@@ -78,6 +71,18 @@
 #include "base/cs_thermal_model.h"
 #include "base/cs_theta_scheme.h"
 #include "base/cs_time_step_compute.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_volume_mass_injection.h"
+#include "base/cs_wall_condensation.h"
+#include "base/cs_wall_condensation_1d_thermal.h"
+#include "base/cs_wall_distance.h"
+#include "cdo/cs_navsto_system.h"
+#include "ctwr/cs_ctwr_source_terms.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_head_losses.h"
+#include "pprt/cs_physical_model.h"
+#include "rayt/cs_rad_transfer.h"
+#include "rayt/cs_rad_transfer_solve.h"
 #include "turb/cs_turbulence_htles.h"
 #include "turb/cs_turbulence_ke.h"
 #include "turb/cs_turbulence_kw.h"
@@ -85,11 +90,6 @@
 #include "turb/cs_turbulence_rij.h"
 #include "turb/cs_turbulence_sa.h"
 #include "turb/cs_turbulence_v2f.h"
-#include "base/cs_velocity_pressure.h"
-#include "base/cs_volume_mass_injection.h"
-#include "base/cs_wall_distance.h"
-#include "base/cs_wall_condensation_1d_thermal.h"
-#include "base/cs_wall_condensation.h"
 
 #include "cfbl/cs_cf_model.h"
 
@@ -683,6 +683,30 @@ _solve_most(int              n_var,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Transfer mass flux array from CDO to FV
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_transfer_mass_flux_cdo_to_fv()
+{
+  const cs_lnum_t n_i_faces = cs_glob_domain->mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = cs_glob_domain->mesh->n_b_faces;
+
+  const int  kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int  kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  cs_real_t *b_massflux =
+    cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+  cs_real_t *i_massflux =
+    cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+
+  const cs_real_t *mass_flux_array = cs_navsto_get_mass_flux(false);
+  cs_array_copy(n_i_faces, mass_flux_array, i_massflux);
+  cs_array_copy(n_b_faces, mass_flux_array + n_i_faces, b_massflux);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Solve all turbulence equations.
  *
  * \param[in]  n_cells      number of cells
@@ -818,8 +842,9 @@ cs_solve_all(int  itrale)
   const cs_equation_param_t *eqp_p
     = cs_field_get_equation_param_const(CS_F_(p));
 
-  const cs_equation_param_t *eqp_vel
-    = cs_field_get_equation_param_const(CS_F_(vel));
+  const cs_equation_param_t *eqp_vel =
+    cs_param_cdo_has_fv_main() ? cs_field_get_equation_param_const(CS_F_(vel))
+                               : cs_equation_param_by_name("momentum");
 
   const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
 
@@ -1105,8 +1130,9 @@ cs_solve_all(int  itrale)
     cs_wall_condensation_compute(htot_cond);
   }
 
-  bool must_return = false;
-  bool need_new_solve = true;
+  bool must_return    = false;
+  bool need_new_solve = cs_param_cdo_has_fv_main();
+
   cs_time_control_t *vp_tc
     = &(cs_get_glob_velocity_pressure_param()->time_control);
   const cs_time_step_t *ts = cs_glob_time_step;
@@ -1153,6 +1179,10 @@ cs_solve_all(int  itrale)
     }
 
   } // End loop on need_new_solve (_solve_most)
+
+  /* In case of NS equations being solved by CDO, transfer mass flux*/
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV)
+    _transfer_mass_flux_cdo_to_fv();
 
   /* Computation on non-frozen velocity field, continued */
 
