@@ -325,13 +325,14 @@ struct _cs_matrix_t {
      Cells and faces here do not need to be primary mesh elements,
      but could be dual mesh elements of some sort */
 
-  const cs_lnum_t    *c2f_idx;         /* Cell to faces index (shared) */
-  const cs_lnum_t    *c2f;             /* Cell to faces adjacency (shared) */
-  const short int    *c2f_sgn;         /* Cell to faces orientation (shared) */
+  const cs_lnum_t     *c2f_idx;        /* Cell to faces index (shared) */
+  const cs_lnum_t     *c2f;            /* Cell to faces adjacency (shared) */
+  const short int     *c2f_sgn;        /* Cell to faces orientation (shared) */
 
-  const cs_real_3_t  *cell_cen;        /* Cell center (shared) */
-  const cs_real_t    *cell_vol;        /* Cell volume (shared) */
-  const cs_real_3_t  *face_normal;     /* Face normal (shared) */
+  const cs_real_3_t   *cell_cen;       /* Cell center (shared) */
+  const cs_real_t     *cell_vol;       /* Cell volume (shared) */
+  const cs_nreal_3_t  *face_u_normal;  /* Face unit normal (shared) */
+  const cs_real_t     *face_surf;      /* Face surface (shared) */
 
   /* Pointer to private data */
 

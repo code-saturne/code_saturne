@@ -525,8 +525,9 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t mat_class,
                                  ma->cell_i_faces,
                                  ma->cell_i_faces_sgn,
                                  (const cs_real_3_t *)quant->cell_centers,
-                                 (const cs_real_t *)quant->cell_vol,
-                                 (const cs_real_3_t *)quant->i_face_normal);
+                                 quant->cell_vol,
+                                 quant->i_face_u_normal,
+                                 quant->i_face_surf);
 
   /* Return the associated matrix and set the pointers to return
    * Return arrays (to be freed when the algorithm is converged) */

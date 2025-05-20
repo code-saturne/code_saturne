@@ -4011,7 +4011,8 @@ _matrix_create(cs_matrix_type_t  type,
 
   m->cell_cen = nullptr;
   m->cell_vol = nullptr;
-  m->face_normal = nullptr;
+  m->face_u_normal = nullptr;
+  m->face_surf = nullptr;
 
   /* Mapping to external libraries */
 
@@ -6084,13 +6085,14 @@ cs_matrix_release_msr_arrays(cs_matrix_t    *matrix,
  * The arrays passed to the matrix are shared, so should have a lifetime
  * at least as long as the matrix.
  *
- * \param[in, out]   matrix       pointer to matrix structure
- * \param[in]        c2f_idx      cell to faces index, or nullptr
- * \param[in]        c2f          cell to faces adjacency, or nullptr
- * \param[in]        c2f_sgn      cell to faces adjacency sign, or nullptr
- * \param[in]        cell_cen     cell center coordinates
- * \param[in]        cell_vol     cell volumes
- * \param[in]        face_normal  face normal, or nullptr
+ * \param[in, out]   matrix         pointer to matrix structure
+ * \param[in]        c2f_idx        cell to faces index, or nullptr
+ * \param[in]        c2f            cell to faces adjacency, or nullptr
+ * \param[in]        c2f_sgn        cell to faces adjacency sign, or nullptr
+ * \param[in]        cell_cen       cell center coordinates
+ * \param[in]        cell_vol       cell volumes
+ * \param[in]        face_u_normal  face unit normal, or nullptr
+ * \param[in]        face_surf      face surface, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -6101,7 +6103,8 @@ cs_matrix_set_mesh_association(cs_matrix_t         *matrix,
                                const short int     *c2f_sgn,
                                const cs_real_3_t   *cell_cen,
                                const cs_real_t     *cell_vol,
-                               const cs_real_3_t   *face_normal)
+                               const cs_nreal_3_t  *face_u_normal,
+                               const cs_real_t     *face_surf)
 {
   matrix->c2f_idx = c2f_idx;
   matrix->c2f = c2f;
@@ -6109,7 +6112,8 @@ cs_matrix_set_mesh_association(cs_matrix_t         *matrix,
 
   matrix->cell_cen = cell_cen;
   matrix->cell_vol = cell_vol;
-  matrix->face_normal = face_normal;
+  matrix->face_u_normal = face_u_normal;
+  matrix->face_surf = face_surf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6118,24 +6122,26 @@ cs_matrix_set_mesh_association(cs_matrix_t         *matrix,
  *
  * This may be useful for multigrid smoothing.
  *
- * \param[in]   matrix       pointer to matrix structure
- * \param[out]  c2f_idx      cell to faces index, or nullptr
- * \param[out]  c2f          cell to faces adjacency, or nullptr
- * \param[out]  c2f_sgn      cell to faces adjacency sign, or nullptr
- * \param[out]  cell_cen     cell center coordinates, or nullptr
- * \param[out]  cell_vol     cell volumes, or nullptr
- * \param[out]  face_normal  face normas, or nullptr
+ * \param[in]   matrix         pointer to matrix structure
+ * \param[out]  c2f_idx        cell to faces index, or nullptr
+ * \param[out]  c2f            cell to faces adjacency, or nullptr
+ * \param[out]  c2f_sgn        cell to faces adjacency sign, or nullptr
+ * \param[out]  cell_cen       cell center coordinates, or nullptr
+ * \param[out]  cell_vol       cell volumes, or nullptr
+ * \param[out]  face_u_normal  face unit normal, or nullptr
+ * \param[out]  face_surf      face surface, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_get_mesh_association(const cs_matrix_t   *matrix,
-                               const cs_lnum_t    **c2f_idx,
-                               const cs_lnum_t    **c2f,
-                               const short int    **c2f_sgn,
-                               const cs_real_3_t  **cell_cen,
-                               const cs_real_t    **cell_vol,
-                               const cs_real_3_t  **face_normal)
+cs_matrix_get_mesh_association(const cs_matrix_t    *matrix,
+                               const cs_lnum_t     **c2f_idx,
+                               const cs_lnum_t     **c2f,
+                               const short int     **c2f_sgn,
+                               const cs_real_3_t   **cell_cen,
+                               const cs_real_t     **cell_vol,
+                               const cs_nreal_3_t  **face_u_normal,
+                               const cs_real_t     **face_surf)
 {
   if (c2f_idx != nullptr)
     *c2f_idx = matrix->c2f_idx;
@@ -6148,8 +6154,10 @@ cs_matrix_get_mesh_association(const cs_matrix_t   *matrix,
     *cell_cen = matrix->cell_cen;
   if (cell_vol != nullptr)
     *cell_vol = matrix->cell_vol;
-  if (face_normal != nullptr)
-    *face_normal = matrix->face_normal;
+  if (face_u_normal != nullptr)
+    *face_u_normal = matrix->face_u_normal;
+  if (face_surf != nullptr)
+    *face_surf = matrix->face_surf;
 }
 
 /*----------------------------------------------------------------------------*/

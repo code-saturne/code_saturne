@@ -963,7 +963,7 @@ cs_matrix_release_msr_arrays(cs_matrix_t    *matrix,
                              cs_real_t    **x_val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate mesh information with a matrix.
  *
  * This may be useful for multigrid smoothing.
@@ -977,13 +977,14 @@ cs_matrix_release_msr_arrays(cs_matrix_t    *matrix,
  * The arrays passed to the matrix are shared, so should have a lifetime
  * at least as long as the matrix.
  *
- * \param[in, out]   matrix       pointer to matrix structure
- * \param[in]        c2f_idx      cell to faces index, or nullptr
- * \param[in]        c2f          cell to faces adjacency, or nullptr
- * \param[in]        c2f_sgn      cell to faces adjacency sign, or nullptr
- * \param[in]        cell_cen     cell center coordinates
- * \param[in]        cell_vol     cell volumes
- * \param[in]        face_normal  face normal, or nullptr
+ * \param[in, out]   matrix         pointer to matrix structure
+ * \param[in]        c2f_idx        cell to faces index, or nullptr
+ * \param[in]        c2f            cell to faces adjacency, or nullptr
+ * \param[in]        c2f_sgn        cell to faces adjacency sign, or nullptr
+ * \param[in]        cell_cen       cell center coordinates
+ * \param[in]        cell_vol       cell volumes
+ * \param[in]        face_u_normal  face unit normal, or nullptr
+ * \param[in]        face_surf      face surface, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -994,32 +995,35 @@ cs_matrix_set_mesh_association(cs_matrix_t         *matrix,
                                const short int     *c2f_sgn,
                                const cs_real_3_t   *cell_cen,
                                const cs_real_t     *cell_vol,
-                               const cs_real_3_t   *face_normal);
+                               const cs_nreal_3_t  *face_u_normal,
+                               const cs_real_t     *face_surf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Query mesh information that me be associated with a matrix.
  *
  * This may be useful for multigrid smoothing.
  *
- * \param[in]   matrix       pointer to matrix structure
- * \param[out]  c2f_idx      cell to faces index, or nullptr
- * \param[out]  c2f          cell to faces adjacency, or nullptr
- * \param[out]  c2f_sgn      cell to faces adjacency sign, or nullptr
- * \param[out]  cell_cen     cell center coordinates, or nullptr
- * \param[out]  cell_vol     cell volumes, or nullptr
- * \param[out]  face_normal  face normas, or nullptr
+ * \param[in]   matrix         pointer to matrix structure
+ * \param[out]  c2f_idx        cell to faces index, or nullptr
+ * \param[out]  c2f            cell to faces adjacency, or nullptr
+ * \param[out]  c2f_sgn        cell to faces adjacency sign, or nullptr
+ * \param[out]  cell_cen       cell center coordinates, or nullptr
+ * \param[out]  cell_vol       cell volumes, or nullptr
+ * \param[out]  face_u_normal  face unit normal, or nullptr
+ * \param[out]  face_surf      face surface, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_get_mesh_association(const cs_matrix_t   *matrix,
-                               const cs_lnum_t    **c2f_idx,
-                               const cs_lnum_t    **c2f,
-                               const short int    **c2f_sgn,
-                               const cs_real_3_t  **cell_cen,
-                               const cs_real_t    **cell_vol,
-                               const cs_real_3_t  **face_normal);
+cs_matrix_get_mesh_association(const cs_matrix_t    *matrix,
+                               const cs_lnum_t     **c2f_idx,
+                               const cs_lnum_t     **c2f,
+                               const short int     **c2f_sgn,
+                               const cs_real_3_t   **cell_cen,
+                               const cs_real_t     **cell_vol,
+                               const cs_nreal_3_t  **face_normal,
+                               const cs_real_t     **face_surf);
 
 /*----------------------------------------------------------------------------
  * Assign functions based on a variant to a given matrix.
