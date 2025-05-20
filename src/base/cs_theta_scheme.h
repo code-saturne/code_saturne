@@ -59,7 +59,19 @@ BEGIN_C_DECLS
  *---------------------------------------------------------------------------*/
 
 void
-cs_theta_scheme_update_var(const cs_lnum_t  iappel);
+cs_theta_scheme_update_var_stage1(void);
+
+void
+cs_theta_scheme_update_var_stage2(void);
+
+void
+cs_theta_scheme_update_var_stage3(void);
+
+void
+cs_theta_scheme_update_var_stage4(void);
+
+void
+cs_theta_scheme_update_var_stage5(void);
 
 /*---------------------------------------------------------------------------*/
 

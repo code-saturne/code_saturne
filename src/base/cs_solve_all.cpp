@@ -628,7 +628,7 @@ _solve_most(int              n_var,
 
       if (   cs_glob_time_scheme->istmpf == 2
           && cs_glob_velocity_pressure_param->itpcol == 1)
-        cs_theta_scheme_update_var(3);
+        cs_theta_scheme_update_var_stage3();
 
       // If is the last iteration : inslst = 1
       if (   icvrge == 1
@@ -659,7 +659,7 @@ _solve_most(int              n_var,
 
         // For explicit mass flux
         if (cs_glob_time_scheme->istmpf == 0 && inslst == 0)
-          cs_theta_scheme_update_var(3);
+          cs_theta_scheme_update_var_stage3();
       }
 
     } // End velocity computation
@@ -1000,7 +1000,7 @@ cs_solve_all(int  itrale)
 
   // If itrale = 0, we are initializing ALE; do not touch the mass flux either.
   if (itrale > 0)
-    cs_theta_scheme_update_var(1);
+    cs_theta_scheme_update_var_stage1();
 
   /* Update location of code_saturne/code_saturne coupling interfaces
      ---------------------------------------------------------------- */
@@ -1026,7 +1026,7 @@ cs_solve_all(int  itrale)
   cs_physical_properties_update(-1);
 
   if (itrale > 0)
-    cs_theta_scheme_update_var(2);
+    cs_theta_scheme_update_var_stage2();
 
   /* Compute head loss coeffs.
      we do it even if there is no head loss on the local rank in case
@@ -1207,9 +1207,9 @@ cs_solve_all(int  itrale)
 
   if (_active_dyn) {
 
-    // We pass in cs_theta_scheme_update_var only in explicit
+    // We pass in cs_theta_scheme_update_var_stage only in explicit
     if (cs_glob_time_scheme->istmpf == 0)
-      cs_theta_scheme_update_var(4);
+      cs_theta_scheme_update_var_stage4();
 
     /* Solve turbulence
        ---------------- */
@@ -1264,7 +1264,7 @@ cs_solve_all(int  itrale)
   /* Handle mass flux, viscosity, density, and specific heat for theta-scheme
      ------------------------------------------------------------------------ */
 
-  cs_theta_scheme_update_var(5);
+  cs_theta_scheme_update_var_stage5();
 
   /* Update flow through fans
      ------------------------ */

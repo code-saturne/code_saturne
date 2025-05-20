@@ -176,7 +176,7 @@ typedef struct {
 static cs_mobile_structures_t  *_mobile_structures = nullptr;
 
 /* Arrays allowing return to initial state at end of ALE iteration.
- * - Mass flux: save at the first call of cs_theta_scheme_update_var.
+ * - Mass flux: save at the first call of cs_theta_scheme_update_var_stage.
  * - Gradient BC's for P and U (since we use a reconstruction to compute
  *   the real BC's); this part might not really be necessary.
  * - The initial pressure (since the initial pressure is also overwritten when
