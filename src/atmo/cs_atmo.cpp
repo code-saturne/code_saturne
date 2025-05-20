@@ -4408,10 +4408,6 @@ cs_atmo_z_ground_compute(void)
                                                     i_face_cog[face_id],
                                                     i_face_u_normal[face_id]);
 
-        cs_real_t wall_dist_inv = (i_wall_dist < DBL_MIN) ?
-                                   0.:
-                                   1./i_wall_dist;
-
         eqp_p->ndircl = 1;
         cs_real_t pimp = cs_math_3_dot_product(i_face_cog[face_id], normal);
 
