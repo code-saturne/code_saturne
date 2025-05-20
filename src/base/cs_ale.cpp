@@ -1896,16 +1896,18 @@ cs_ale_restart_read(cs_restart_t  *r)
 
   /* Geometric parameters must be recalculated */
 
-  const cs_lnum_t n_vtx_3 = cs_glob_mesh->n_vertices;
+  const cs_lnum_t n_vtx = cs_glob_mesh->n_vertices;
 
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  cs_real_t *displp = f_displ->val;
-  cs_real_t *coordp = cs_glob_mesh->vtx_coord;
-  cs_real_t *coord0 = cs_field_by_name("vtx_coord0")->val;
+  cs_real_3_t *disale = (cs_real_3_t *)f_displ->val;
+  cs_real_3_t *coordp = (cs_real_3_t *)cs_glob_mesh->vtx_coord;
+  cs_real_3_t *coord0 = (cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
 
-  #pragma omp parallel for if (n_vtx_3 > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_vtx_3; i++) {
-    coordp[i] = coord0[i] + displp[i];
+  #pragma omp parallel for if (n_vtx > CS_THR_MIN)
+  for (cs_lnum_t v_id = 0; v_id < n_vtx; v_id++) {
+    for (cs_lnum_t idim = 0; idim < 3; idim++) {
+      coordp[v_id][idim] = coord0[v_id][idim] + disale[v_id][idim];
+    }
   }
 
   cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
