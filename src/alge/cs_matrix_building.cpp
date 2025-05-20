@@ -3072,14 +3072,12 @@ cs_matrix_time_step(const cs_mesh_t            *m,
 
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   /* 1. Initialization */
 
@@ -3088,87 +3086,61 @@ cs_matrix_time_step(const cs_mesh_t            *m,
               _("invalid value of isym"));
   }
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     da[c_id] = 0.;
-  }
-  if (n_cells_ext > n_cells) {
-#   pragma omp parallel for if (n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = n_cells; c_id < n_cells_ext; c_id++) {
-      da[c_id] = 0.;
-    }
-  }
+  });
 
   /* 2. Computation of extradiagonal terms unnecessary */
 
   /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
   if (isym == 2) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      cs_lnum_t c_id1 = i_face_cells[f_id][0];
+      cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             f_id++) {
+      cs_real_t fluj =-0.5*(i_massflux[f_id] + cs::abs(i_massflux[f_id]));
+      cs_real_t flui = 0.5*(i_massflux[f_id] - cs::abs(i_massflux[f_id]));
 
-          cs_lnum_t ii = i_face_cells[f_id][0];
-          cs_lnum_t jj = i_face_cells[f_id][1];
+      cs_real_t xaifa2 = iconvp*fluj -idiffp*i_visc[f_id];
+      cs_real_t xaifa1 = iconvp*flui -idiffp*i_visc[f_id];
 
-          cs_real_t fluj =-0.5*(i_massflux[f_id] + fabs(i_massflux[f_id]));
-          cs_real_t flui = 0.5*(i_massflux[f_id] - fabs(i_massflux[f_id]));
+      if (c_id1 < n_cells)
+        cs_dispatch_sum(&da[c_id1], -xaifa2, i_sum_type);
+      if (c_id2 < n_cells)
+        cs_dispatch_sum(&da[c_id2], -xaifa1, i_sum_type);
+    });
+  }
+  else {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      cs_lnum_t c_id1 = i_face_cells[f_id][0];
+      cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-          cs_real_t xaifa2 = iconvp*fluj -idiffp*i_visc[f_id];
-          cs_real_t xaifa1 = iconvp*flui -idiffp*i_visc[f_id];
-          da[ii] -= xaifa2;
-          da[jj] -= xaifa1;
+      cs_real_t flui = 0.5*(i_massflux[f_id] - cs::abs(i_massflux[f_id]));
+      cs_real_t xaifa1 = iconvp*flui -idiffp*i_visc[f_id];
 
-        }
-      }
-    }
-
-  } else {
-
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             f_id++) {
-
-          cs_lnum_t ii = i_face_cells[f_id][0];
-          cs_lnum_t jj = i_face_cells[f_id][1];
-
-          cs_real_t flui = 0.5*(i_massflux[f_id] - fabs(i_massflux[f_id]));
-
-          cs_real_t xaifa1 = iconvp*flui -idiffp*i_visc[f_id];
-          da[ii] -= xaifa1;
-          da[jj] -= xaifa1;
-
-        }
-      }
-    }
-
+      if (c_id1 < n_cells)
+        cs_dispatch_sum(&da[c_id1], -xaifa1, i_sum_type);
+      if (c_id2 < n_cells)
+        cs_dispatch_sum(&da[c_id2], -xaifa1, i_sum_type);
+    });
   }
 
   /* 4. Contribution of border faces to the diagonal */
 
-# pragma omp parallel for if (m->n_b_faces > CS_THR_MIN)
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
-    for (cs_lnum_t f_id = b_group_index[t_id*2];
-         f_id < b_group_index[t_id*2 + 1];
-         f_id++) {
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+    cs_lnum_t c_id = b_face_cells[f_id];
 
-      cs_lnum_t ii = b_face_cells[f_id];
+    cs_real_t flui =  0.5*(b_massflux[f_id] - cs::abs(b_massflux[f_id]));
+    cs_real_t fluj = -0.5*(b_massflux[f_id] + cs::abs(b_massflux[f_id]));
 
-      cs_real_t flui =  0.5*(b_massflux[f_id] - fabs(b_massflux[f_id]));
-      cs_real_t fluj = -0.5*(b_massflux[f_id] + fabs(b_massflux[f_id]));
+    cs_real_t bfac =   iconvp*(-fluj + flui*coefbp[f_id])
+                     + idiffp*b_visc[f_id]*cofbfp[f_id];
 
-      da[ii] +=   iconvp*(-fluj + flui*coefbp[f_id])
-                + idiffp*b_visc[f_id]*cofbfp[f_id];
+    cs_dispatch_sum(&da[c_id], bfac, b_sum_type);
+  });
 
-    }
-  }
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
