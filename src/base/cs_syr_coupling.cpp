@@ -1977,8 +1977,7 @@ _init_all_mpi_syr(int  *n_unmatched,
   /* Loop on applications */
 
   // Set possible options
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY &&
-      cs_thermal_system_is_activated())
+  if (cs_param_cdo_has_cdo_only() && cs_thermal_system_is_activated())
     _is_cdo_thermal = 1;
 
   const char *_sat_partner = _is_cdo_thermal

@@ -371,7 +371,7 @@ _domain_post(void                      *input,
   CS_UNUSED(b_face_ids);
   CS_UNUSED(time_step);
 
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
+  if (cs_param_cdo_has_fv_only())
     return;
 
   if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
@@ -537,7 +537,7 @@ cs_domain_post(cs_domain_t  *domain)
 
     /* Basic statistic related to variables */
 
-    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
+    if (cs_param_cdo_has_cdo_only())
       cs_log_iteration(); /* Otherwise called from the FORTRAN part */
 
   } /* Needs a new log */

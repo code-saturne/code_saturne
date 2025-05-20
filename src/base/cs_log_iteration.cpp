@@ -1724,7 +1724,7 @@ cs_log_iteration(void)
 void
 cs_log_equation_convergence_info_write(void)
 {
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
+  if (cs_param_cdo_has_cdo_only())
     return;
 
   const int n_fields = cs_field_n_fields();

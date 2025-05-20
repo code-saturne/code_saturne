@@ -654,17 +654,14 @@ cs_domain_setup_initialize(cs_domain_t *domain)
 
     /* Switch off the turbulence modelling if in CDO mode only */
 
-    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
-
+    if (cs_param_cdo_has_cdo_only()) {
       cs_turb_model_t  *turb = cs_get_glob_turb_model();
 
       turb->model = CS_TURB_NONE;          /* laminar flow */
       turb->itytur = 0;                    /* deprecated */
       turb->hybrid_turb = CS_HYBRID_NONE;
-      turb->type = CS_TURB_NONE;
-
+      turb->type        = CS_TURB_NONE;
     }
-
   }
 
   if (cs_solidification_is_activated())
@@ -901,7 +898,7 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   cs_log_printf(CS_LOG_SETUP, " * Number of advection fields           %3d\n",
                 cs_advection_field_get_n_fields());
 
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
+  if (cs_param_cdo_has_fv_only())
     return;
 
   cs_domain_cdo_context_t  *cc = domain->cdo_context;

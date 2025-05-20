@@ -295,8 +295,7 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 static void
 _solve_steady_state_domain(cs_domain_t  *domain)
 {
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
-
+  if (cs_param_cdo_has_cdo_only()) {
     /* Otherwise log is called from the FORTRAN part */
 
     if (!cs_equation_needs_steady_state_solve()) {
@@ -733,7 +732,7 @@ cs_cdo_solve_unsteady_state_domain(void)
 void
 cs_cdo_initialize_setup(cs_domain_t   *domain)
 {
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
+  if (cs_param_cdo_has_fv_only())
     return;
 
   /* Timer statistics */
@@ -809,7 +808,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   domain->mesh = m;
   domain->mesh_quantities = mq;
 
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
+  if (cs_param_cdo_has_fv_only())
     return;
 
   cs_timer_t  t0 = cs_timer_time();
@@ -951,7 +950,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 void
 cs_cdo_finalize(cs_domain_t    *domain)
 {
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
+  if (cs_param_cdo_has_fv_only())
     return;
 
   /* Timer statistics */
@@ -1088,7 +1087,7 @@ cs_cdo_is_initialized(bool  *setup,
 void
 cs_cdo_main(cs_domain_t   *domain)
 {
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF)
+  if (cs_param_cdo_has_fv_only())
     return;
 
   if (cs_equation_get_n_equations() < 1) {

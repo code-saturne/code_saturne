@@ -856,7 +856,7 @@ cs_parameters_check(void)
   const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
 
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
+  if (cs_param_cdo_has_cdo_only())
     return; /* Avoid the detection of false setting errors when using
                CDO schemes */
 

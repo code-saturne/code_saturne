@@ -351,8 +351,7 @@ _run(void)
      may have the option of assigning a name to this instance. */
 
 #if defined(HAVE_MPI)
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY &&
-      cs_thermal_system_is_activated()) {
+  if (cs_param_cdo_has_cdo_only() && cs_thermal_system_is_activated()) {
     const char app_type[] = "Code_Saturne::CDO_THERMAL " CS_APP_VERSION;
     cs_coupling_discover_mpi_apps(opts.app_name, app_type);
   }
@@ -473,9 +472,7 @@ _run(void)
       /* Choose between standard and user solver */
 
       if (cs_user_solver_set() == 0) {
-
-        if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
-
+        if (cs_param_cdo_has_cdo_only()) {
           /* Only C language is called within CDO */
 
           cs_base_fortran_bft_printf_to_c();
@@ -492,7 +489,6 @@ _run(void)
           /* Return to the default behavior */
 
           cs_base_fortran_bft_printf_to_f();
-
         }
         else {
 

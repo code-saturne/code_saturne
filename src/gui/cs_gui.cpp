@@ -5406,7 +5406,7 @@ cs_gui_internal_coupling(void)
 
   if (n_solid_zones < 1)
     return;
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY)
+  if (cs_param_cdo_has_cdo_only())
     return;  /* The current rationale is not compatible with CDO up to now */
 
   cs_tree_node_t *node_int_cpl

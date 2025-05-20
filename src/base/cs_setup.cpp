@@ -3646,7 +3646,7 @@ cs_setup(void)
 
   /* Avoid a second spurious call to this function
    * called in the C part if CDO is activated */
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF) {
+  if (cs_param_cdo_has_fv_only()) {
     cs_user_boundary_conditions_setup(cs_glob_domain);
     cs_user_finalize_setup(cs_glob_domain);
   }
