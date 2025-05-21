@@ -3067,78 +3067,131 @@ cs_matrix_time_step(const cs_mesh_t            *m,
                     const cs_real_t             b_visc[],
                     cs_real_t         *restrict da)
 {
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  cs_mesh_adjacencies_update_cell_i_faces();
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const short int *c2f_sgn = ma->cell_i_faces_sgn;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+
   const cs_real_t *coefbp = bc_coeffs->b;
   const cs_real_t *cofbfp = bc_coeffs->bf;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
-
   cs_dispatch_context ctx;
-  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
-  /* 1. Initialization */
+  /* With convection
+     --------------- */
 
-  if (isym != 1 && isym != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
-  }
+  if (iconvp == 1) {
 
-  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    da[c_id] = 0.;
-  });
+    /* Contribution of the extra-diagonal terms to the diagonal */
 
-  /* 2. Computation of extradiagonal terms unnecessary */
+    if (isym == 2) {
 
-  /* 3. Contribution of the extra-diagonal terms to the diagonal */
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cs_real_t _da = 0.;
 
-  if (isym == 2) {
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-      cs_lnum_t c_id1 = i_face_cells[f_id][0];
-      cs_lnum_t c_id2 = i_face_cells[f_id][1];
+        /* Loop on interior faces */
+        const cs_lnum_t s_id_i = c2c_idx[c_id];
+        const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
 
-      cs_real_t fluj =-0.5*(i_massflux[f_id] + cs::abs(i_massflux[f_id]));
-      cs_real_t flui = 0.5*(i_massflux[f_id] - cs::abs(i_massflux[f_id]));
+        for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+          const cs_lnum_t f_id = cell_i_faces[cidx];
 
-      cs_real_t xaifa2 = iconvp*fluj -idiffp*i_visc[f_id];
-      cs_real_t xaifa1 = iconvp*flui -idiffp*i_visc[f_id];
+          cs_real_t _i_massflux = i_massflux[f_id];
 
-      if (c_id1 < n_cells)
-        cs_dispatch_sum(&da[c_id1], -xaifa2, i_sum_type);
-      if (c_id2 < n_cells)
-        cs_dispatch_sum(&da[c_id2], -xaifa1, i_sum_type);
+          if (c2f_sgn[cidx] > 0) {
+            cs_real_t fluj = -0.5*(_i_massflux + cs::abs(_i_massflux));
+            _da -= fluj -idiffp*i_visc[f_id];
+          }
+          else {
+            cs_real_t flui =  0.5*(_i_massflux - cs::abs(_i_massflux));
+            _da -= flui -idiffp*i_visc[f_id];
+          }
+        }
+
+        da[c_id] = _da;
+      });
+
+    }
+    else { // if (isym == 1)
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cs_real_t _da = 0.;
+
+        /* Loop on interior faces */
+        const cs_lnum_t s_id_i = c2c_idx[c_id];
+        const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+
+        for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+          const cs_lnum_t f_id = cell_i_faces[cidx];
+          cs_real_t _i_massflux = i_massflux[f_id];
+          cs_real_t flui =  0.5*(_i_massflux - cs::abs(_i_massflux));
+          _da -= flui -idiffp*i_visc[f_id];
+        }
+
+        da[c_id] = _da;
+      });
+
+    }
+
+    /* Contribution of boundary faces to the diagonal */
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+
+      cs_lnum_t ii = b_face_cells[f_id];
+
+      cs_real_t _b_massflux = b_massflux[f_id];
+      cs_real_t flui =  0.5*(_b_massflux - cs::abs(_b_massflux));
+      cs_real_t fluj = -0.5*(_b_massflux + cs::abs(_b_massflux));
+
+      cs_real_t bfac =   (-fluj + flui*coefbp[f_id])
+                       + idiffp*b_visc[f_id]*cofbfp[f_id];
+
+      cs_dispatch_sum(&da[ii], bfac, b_sum_type);
+
     });
+
   }
-  else {
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-      cs_lnum_t c_id1 = i_face_cells[f_id][0];
-      cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-      cs_real_t flui = 0.5*(i_massflux[f_id] - cs::abs(i_massflux[f_id]));
-      cs_real_t xaifa1 = iconvp*flui -idiffp*i_visc[f_id];
+  /* Without convection
+     ------------------ */
 
-      if (c_id1 < n_cells)
-        cs_dispatch_sum(&da[c_id1], -xaifa1, i_sum_type);
-      if (c_id2 < n_cells)
-        cs_dispatch_sum(&da[c_id2], -xaifa1, i_sum_type);
+  else {  // if iconvp == 0
+
+    /* Contribution of the extra-diagonal terms to the diagonal */
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cs_real_t _da = 0.;
+
+      if (idiffp > 0) {
+        /* Loop on interior faces */
+        const cs_lnum_t s_id_i = c2c_idx[c_id];
+        const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+
+        for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+          const cs_lnum_t f_id = cell_i_faces[cidx];
+          _da -= -idiffp*i_visc[f_id];
+        }
+      }
+
+      da[c_id] = _da;
     });
+
+    /* Contribution of boundary faces to the diagonal */
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      cs_lnum_t ii = b_face_cells[f_id];
+      cs_real_t bfac = idiffp*b_visc[f_id]*cofbfp[f_id];
+
+      cs_dispatch_sum(&da[ii], bfac, b_sum_type);
+    });
+
   }
-
-  /* 4. Contribution of border faces to the diagonal */
-
-  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-    cs_lnum_t c_id = b_face_cells[f_id];
-
-    cs_real_t flui =  0.5*(b_massflux[f_id] - cs::abs(b_massflux[f_id]));
-    cs_real_t fluj = -0.5*(b_massflux[f_id] + cs::abs(b_massflux[f_id]));
-
-    cs_real_t bfac =   iconvp*(-fluj + flui*coefbp[f_id])
-                     + idiffp*b_visc[f_id]*cofbfp[f_id];
-
-    cs_dispatch_sum(&da[c_id], bfac, b_sum_type);
-  });
 
   ctx.wait();
 }
