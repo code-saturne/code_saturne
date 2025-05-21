@@ -5682,7 +5682,6 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   cs_real_t *f_xa0ij = fine_grid->xa0ij;
 
   cs_real_3_t *c_cell_cen = coarse_grid->_cell_cen;
-  cs_real_3_t *c_face_normal = coarse_grid->face_normal;
 
   cs_real_t *c_xa0 = coarse_grid->_xa0;
   cs_real_t *c_xa0ij = coarse_grid->xa0ij;
@@ -5695,6 +5694,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
 
+  const cs_real_t *f_face_surf = nullptr;
+  const cs_nreal_3_t *f_face_u_normal = nullptr;
   const cs_real_3_t *f_face_normal = fine_grid->face_normal;
   const cs_real_3_t *f_cell_cen = fine_grid->cell_cen;
   const cs_real_t *f_xa0 = fine_grid->xa0;
@@ -5705,6 +5706,21 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
   if (fine_grid->symmetric == true)
     isym = 1;
+
+  if (fine_grid->level == 0)
+    cs_matrix_get_mesh_association(fine_grid->matrix,
+                                   nullptr,
+                                   nullptr,
+                                   nullptr,
+                                   nullptr,
+                                   nullptr,
+                                   &f_face_u_normal,
+                                   &f_face_surf);
+
+  if (f_face_normal == nullptr && f_face_u_normal == nullptr)
+    CS_FREE(coarse_grid->face_normal);
+
+  cs_real_3_t *c_face_normal = coarse_grid->face_normal;
 
   /*  Finalize computation of matrix in c_da, c_xa
    *
@@ -5767,10 +5783,12 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
 #   pragma omp parallel for if(c_n_faces*6 > CS_THR_MIN)
     for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
+      if (c_face_normal != nullptr) {
+        c_face_normal[c_face][0] = 0.;
+        c_face_normal[c_face][1] = 0.;
+        c_face_normal[c_face][2] = 0.;
+      }
       c_xa0[c_face] = 0.;
-      c_face_normal[c_face][0] = 0.;
-      c_face_normal[c_face][1] = 0.;
-      c_face_normal[c_face][2] = 0.;
       c_xa0ij[3*c_face]    = 0.;
       c_xa0ij[3*c_face +1] = 0.;
       c_xa0ij[3*c_face +2] = 0.;
@@ -5779,9 +5797,6 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
     /* With fine grid level 0, compute f_xa0 and f_xa0ij on the fly */
 
     if (fine_grid->level == 0) {
-
-      const cs_real_t *f_face_surf;
-      const cs_nreal_3_t *f_face_u_normal;
 
       cs_matrix_get_mesh_association(fine_grid->matrix,
                                      nullptr,
@@ -5871,10 +5886,6 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       }
 
     } /* Fine grid level */
-
-    if (f_face_normal == nullptr) {
-      CS_FREE(coarse_grid->face_normal);
-    }
 
     /* Matrix initialized to c_xa0 */
 
