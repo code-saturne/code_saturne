@@ -97,6 +97,7 @@ class HTSModel(Variables, Model):
             self.node_hts['model'] = model
             if self.node_vp:
                 self.node_vp.xmlRemoveChild('variable')
+
                 self.node_vp.xmlRemoveChild('property')
             #ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
             for v in self.var_list:

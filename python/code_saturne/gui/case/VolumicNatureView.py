@@ -42,6 +42,7 @@ from code_saturne.gui.base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.InternalCouplingModel import InternalCouplingModel
+from code_saturne.model.HTSModel import HTSModel
 from code_saturne.gui.case.VolumicNatureForm import Ui_VolumicNatureForm
 
 # -------------------------------------------------------------------------------
@@ -171,7 +172,7 @@ class VolumicZoneNatureModel(QAbstractTableModel):
             return base_flags  # lock first column
         else:
             # For HTSolver deactivate "Solid" option
-            if col == self._solid_idx:
+            if col == self._solid_idx and HTSModel(self._zoneModel.case).getHTSModel() != 'off':
                 return Qt.ItemIsSelectable
             else:
                 return base_flags | Qt.ItemIsUserCheckable
