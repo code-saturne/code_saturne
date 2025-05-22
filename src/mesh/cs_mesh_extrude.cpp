@@ -2211,6 +2211,10 @@ cs_mesh_extrude_constant(cs_mesh_t        *m,
                          cs_lnum_t         n_faces,
                          const cs_lnum_t   faces[])
 {
+  // We do not handle isolated faces yet here.
+  if (m->n_g_free_faces > 0)
+    cs_mesh_discard_free_faces(m);
+
   cs_mesh_extrude_face_info_t *efi = cs_mesh_extrude_face_info_create(m);
 
   cs_mesh_extrude_set_info_by_zone(efi,
