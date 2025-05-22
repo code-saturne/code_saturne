@@ -51,18 +51,19 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_real_t   humidity0;       /* Reference humidity */
-  cs_real_t   cp_a;            /* Specific heat of dry air */
-  cs_real_t   cp_v;            /* Specific heat of vapor */
-  cs_real_t   cp_l;            /* Specific heat of liquid water */
-  cs_real_t   hv0;             /* Chaleur latente */
-  cs_real_t   rho_l;           /* Masse volumique de l eau */
-  cs_real_t   lambda_h;        /* Humid air conductivity */
-  cs_real_t   lambda_l;        /* Water conductivity */
-  cs_real_t   droplet_diam;    /* Drop diameter for rain zones */
-  cs_real_t   molmass_rat;     /* Ratio of the molar mass (H2O) over the
+  cs_real_t   humidity0;       /*! Reference humidity */
+  cs_real_t   cp_a;            /*! Specific heat of dry air */
+  cs_real_t   cp_v;            /*! Specific heat of vapor */
+  cs_real_t   cp_l;            /*! Specific heat of liquid water */
+  cs_real_t   hv0;             /*! Latent heat */
+  cs_real_t   rho_l;           /*! liquid water density */
+  cs_real_t   lambda_h;        /*! Humid air conductivity */
+  cs_real_t   lambda_l;        /*! Water conductivity */
+  cs_real_t   droplet_diam;    /*! Drop diameter for rain zones */
+  cs_real_t   molar_mass_dry_air; /*! Molar mass of dry air constant (Kg/mol) */
+  cs_real_t   molmass_rat;     /*! Ratio of the molar mass (H2O) over the
                                   molar mass (air) */
-  cs_real_t   sigma;           /* Surface tension between water and air */
+  cs_real_t   sigma;           /*! Surface tension between water and air */
 
 } cs_air_fluid_props_t;
 

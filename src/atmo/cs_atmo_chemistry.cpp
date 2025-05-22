@@ -204,6 +204,42 @@ cs_f_ssh_dimensions(int  *spack_n_species,
                     int  *n_reactions,
                     int  *n_photolysis);
 
+void
+cs_f_fexchem_1(int       nespg,
+               int       nrg,
+               cs_real_t dlconc[],
+               cs_real_t rk[],
+               cs_real_t source[],
+               cs_real_t conv_factor[],
+               cs_real_t dchema[]);
+
+void
+cs_f_fexchem_2(int       nespg,
+               int       nrg,
+               cs_real_t dlconc[],
+               cs_real_t rk[],
+               cs_real_t source[],
+               cs_real_t conv_factor[],
+               cs_real_t dchema[]);
+
+void
+cs_f_fexchem_3(int       nespg,
+               int       nrg,
+               cs_real_t dlconc[],
+               cs_real_t rk[],
+               cs_real_t source[],
+               cs_real_t conv_factor[],
+               cs_real_t dchema[]);
+
+void
+cs_f_fexchem_4(int       nespg,
+               int       nrg,
+               cs_real_t dlconc[],
+               cs_real_t rk[],
+               cs_real_t source[],
+               cs_real_t conv_factor[],
+               cs_real_t dchema[]);
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -1872,6 +1908,94 @@ cs_atmo_chem_initialize_dlconc0(void)
   const int size = n_aer*(1+nlayer_aer);
 
   BFT_MALLOC(_atmo_chem.dlconc0, size, cs_real_t);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Computes the explicit chemical source term for atmospheric
+ *         chemistry in case of a semi-coupled resolution
+ *
+ * \param[in]     iscal         scalar number
+ * \param[out]    st_exp        explicit part of the source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chem_exp_source_terms(int          iscal,
+                              cs_real_t    st_exp[])
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  const cs_atmo_chemistry_t *atmo_chem = cs_glob_atmo_chemistry;
+  const int nrg = atmo_chem->n_reactions;
+  const int nespg = atmo_chem->n_species;
+
+  const cs_real_t navo = cs_physical_constants_avogadro;
+
+  /* If gaseous chemistry is computed with the external library SSH-aerosol
+   * The source term was estimated at the beginning of
+   * cs_solve_transported_variables.
+   * We update the source term and return directly */
+
+  if (atmo_chem->aerosol_model != CS_ATMO_AEROSOL_OFF)
+    cs_parameters_error
+      (CS_ABORT_IMMEDIATE,
+       _("Partially coupled chemistry combined with external"),
+       _(" aerosol library not implemented yet\n"));
+
+  cs_real_t conv_factor[nespg], source[nespg];
+  cs_real_t rk[nrg], dlconc[nespg], dchema[nespg];
+
+  const cs_real_t *cpro_rho = CS_F_(rho)->val;
+  const cs_real_t *reacnum = atmo_chem->reacnum;
+
+  cs_real_t **cvara_espg = nullptr;
+  CS_MALLOC(cvara_espg, nespg, cs_real_t *);
+
+  /* Arrays of pointers containing the fields values for each species */
+  for (int ii = 0; ii < nespg; ii++) {
+    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[ii]);
+    cvara_espg[ii] = f->val_pre;
+  }
+
+  const int idx_chema
+    = atmo_chem->chempoint[iscal-atmo_chem->species_to_scalar_id[0]] - 1;
+
+  for (int c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t rho = cpro_rho[c_id];
+
+    // Filling working array rk
+    for (int ii = 0; ii < nrg; ii++)
+      rk[ii] = reacnum[ii*n_cells+ c_id];
+
+    // Filling working arrays
+    for (int ii = 0; ii < nespg; ii++) {
+      const int idx = atmo_chem->chempoint[ii] - 1;
+      source[ii] = 0.0;
+      dlconc[idx] = cvara_espg[ii][c_id];
+      conv_factor[idx] = rho*navo*(1.0e-9)/atmo_chem->molar_mass[ii];
+    }
+
+    // Computation of C(Xn)
+    if (atmo_chem->model == 1)
+      cs_f_fexchem_1(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+    else if (atmo_chem->model == 2)
+      cs_f_fexchem_2(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+    else if (atmo_chem->model == 3)
+      cs_f_fexchem_3(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+    else if (atmo_chem->model == 4)
+      cs_f_fexchem_4(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+
+    /*Adding source term to st_exp
+     * The first nespg user scalars are supposed to be chemical species
+     * TODO: try to implicit the ST */
+    st_exp[c_id] += rho*cell_vol[c_id]*dchema[idx_chema];
+  }
+
+  CS_FREE(cvara_espg);
+
 }
 
 /*----------------------------------------------------------------------------*/

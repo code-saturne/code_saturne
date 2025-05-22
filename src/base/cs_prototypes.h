@@ -97,16 +97,6 @@ cs_add_variable_field_indexes(int  f_id);
 int
 cs_add_model_field_indexes(int  f_id);
 
-/*----------------------------------------------------------------------------
- * Computes the explicit chemical source term for atmospheric chemistry in
- * case of a semi-coupled resolution
- *----------------------------------------------------------------------------*/
-
-void
-cs_atmo_chem_source_terms(int         iscal,
-                          cs_real_t   st_exp[],
-                          cs_real_t   st_imp[]);
-
 /*----------------------------------------------------------------------------*/
 /*! \brief  Prepare for the cressman interpolation of the variables
  *

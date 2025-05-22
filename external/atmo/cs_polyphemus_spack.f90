@@ -112,15 +112,17 @@ end subroutine kinetic_4
 !> \param[out]    chem              chemical production terms for every species
 !______________________________________________________________________________
 
-subroutine fexchem_4(ns,nr,y,rk,zcsourc,convers_factor,chem)
+subroutine fexchem_4(ns,nr,y,rk,zcsourc,convers_factor,chem) &
+  bind(C, name='cs_f_fexchem_4')
+  use, intrinsic :: iso_c_binding
 
 implicit none
 
 ! Arguments
-
-integer nr,ns
-double precision rk(nr),y(ns),chem(ns),zcsourc(ns)
-double precision convers_factor(ns)
+integer(c_int), value :: ns, nr
+real(kind=c_double), dimension(*), intent(in) :: y, rk
+real(kind=c_double), dimension(*), intent(inout) :: chem
+real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
 
 ! Activate volumic source terms
 

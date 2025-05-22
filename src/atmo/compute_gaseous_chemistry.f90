@@ -63,8 +63,6 @@ implicit none
 
 !===============================================================================
 
-procedure() :: fexchem_1, fexchem_2, fexchem_3, fexchem_4, chem_roschem
-
 ! Arguments
 
 real(c_double), dimension(*), intent(in) :: dt

@@ -1163,7 +1163,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       const int *isca_chem = atmo_chem->species_to_scalar_id;
       const int nespg = atmo_chem->n_species;
       if ((isca_chem[0] <= iscal) && (iscal <= isca_chem[nespg-1]))
-        cs_atmo_chem_source_terms(iscal, rhs, fimp);
+        cs_atmo_chem_exp_source_terms(iscal, rhs);
     }
 
   }

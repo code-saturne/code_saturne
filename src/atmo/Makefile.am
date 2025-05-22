@@ -71,7 +71,6 @@ atmsol.f90 \
 atr1vf.f90 \
 chem_roschem.f90 \
 chem_solvelu.f90 \
-chem_source_terms.f90 \
 compute_gaseous_chemistry.f90 \
 cs_air_props.cpp \
 cs_at_opt_interp.cpp \

@@ -75,6 +75,7 @@ static cs_air_fluid_props_t _props = {
   .lambda_h = 0.0242,
   .lambda_l = 0.006,
   .droplet_diam = 5.0e-3,
+  .molar_mass_dry_air = 28.9647e-3,
   .molmass_rat = 0.621973644, /* 18.01528 / 28.9647 (usual value 0.622) */
   .sigma = 0.073 /* Usual value for air / water surface tension */
 };

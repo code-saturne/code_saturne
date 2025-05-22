@@ -144,7 +144,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-/* Pointer to atmo chemistry structure */
+/*! Pointer to atmo chemistry structure */
 extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 
 /*============================================================================
@@ -344,6 +344,20 @@ cs_atmo_set_aero_conc_file_name(const char *file_name);
 
 void
 cs_atmo_set_chem_conc_file_name(const char *file_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Computes the explicit chemical source term for atmospheric
+ *         chemistry in case of a semi-coupled resolution
+ *
+ * \param[in]     iscal         scalar number
+ * \param[out]    st_exp        explicit part of the source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chem_exp_source_terms(int          iscal,
+                              cs_real_t    st_exp[]);
 
 /*----------------------------------------------------------------------------*/
 

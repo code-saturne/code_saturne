@@ -189,19 +189,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Computes the explicit chemical source term for atmospheric chemistry
-    ! in case of a semi-coupled resolution
-
-     subroutine chem_source_terms(iscal, st_exp, st_imp) &
-       bind(C, name='cs_atmo_chem_source_terms')
-       use, intrinsic :: iso_c_binding
-       implicit none
-       integer(c_int), value :: iscal
-       real(kind=c_double), dimension(*), intent(inout) :: st_exp, st_imp
-     end subroutine chem_source_terms
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for data assimilation (atmospheric module)
 
     subroutine cs_at_data_assim_initialize()                        &
@@ -281,12 +268,45 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    subroutine atlecc (imode) &
-      bind(C, name="cs_f_read_chemistry_profile")
+    subroutine fexchem_1(ns, nr, y, rk, zcsourc, convers_factor, chem) &
+      bind(C, name='cs_f_fexchem_1')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: imode
-    end subroutine atlecc
+      integer(c_int), value :: ns, nr
+      real(kind=c_double), dimension(*), intent(in) :: y, rk
+      real(kind=c_double), dimension(*), intent(inout) :: chem
+      real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+    end subroutine fexchem_1
+
+    subroutine fexchem_2(ns, nr, y, rk, zcsourc, convers_factor, chem) &
+      bind(C, name='cs_f_fexchem_2')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns, nr
+      real(kind=c_double), dimension(*), intent(in) :: y, rk
+      real(kind=c_double), dimension(*), intent(inout) :: chem
+      real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+    end subroutine fexchem_2
+
+    subroutine fexchem_3(ns, nr, y, rk, zcsourc, convers_factor, chem) &
+      bind(C, name='cs_f_fexchem_3')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns, nr
+      real(kind=c_double), dimension(*), intent(in) :: y, rk
+      real(kind=c_double), dimension(*), intent(inout) :: chem
+      real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+    end subroutine fexchem_3
+
+    subroutine fexchem_4(ns, nr, y, rk, zcsourc, convers_factor, chem) &
+      bind(C, name='cs_f_fexchem_4')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns, nr
+      real(kind=c_double), dimension(*), intent(in) :: y, rk
+      real(kind=c_double), dimension(*), intent(inout) :: chem
+      real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+    end subroutine fexchem_4
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
