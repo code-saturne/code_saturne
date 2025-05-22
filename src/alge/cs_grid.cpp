@@ -6168,7 +6168,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
       }
       else {
         c_face = - c_face -1;
-        sgn = 1.;
+        sgn = -1.;
       }
       const cs_real_t sgn_surf = sgn*f_face_surf[face_id];
 
@@ -6199,7 +6199,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
       }
       else {
         c_face = - c_face -1;
-        sgn = 1.;
+        sgn = -1.;
       }
 
       c_xa0[2*c_face]         += f_xa0[2*face_id];
