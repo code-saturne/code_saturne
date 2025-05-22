@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Remove isolated faces if present before mesh extrusion.
+
 - FMI: send return output values from solver to controller at end
   of time step, rather than beginning of next one.
 
