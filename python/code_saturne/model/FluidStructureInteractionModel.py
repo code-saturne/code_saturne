@@ -246,19 +246,10 @@ class FluidStructureInteractionModel(Model):
         """
         Set code_aster logging level in xml file.
         """
-        default = 1
         node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
         if not node_ast:
-            if value == default:
-                return
-            else:
-                node_ast = self.__node_ale.xmlInitChildNode('code_aster_coupling')
-        if value != default:
-            node_ast.xmlSetData("verbosity", value)
-        else:
-            n = node_ast.xmlGetChildNode('verbosity')
-            if n:
-                n.xmlRemoveNode()
+            node_ast = self.__node_ale.xmlInitChildNode("code_aster_coupling")
+        node_ast.xmlSetData("verbosity", value)
 
     @Variables.noUndo
     def getAstVerbosity(self):
@@ -281,19 +272,10 @@ class FluidStructureInteractionModel(Model):
         """
         Set code_aster logging level in xml file.
         """
-        default = 1
         node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
         if not node_ast:
-            if value == default:
-                return
-            else:
-                node_ast = self.__node_ale.xmlInitChildNode('code_aster_coupling')
-        if value != default:
-            node_ast.xmlSetData("visualization", value)
-        else:
-            n = node_ast.xmlGetChildNode('visualization')
-            if n:
-                n.xmlRemoveNode()
+            node_ast = self.__node_ale.xmlInitChildNode("code_aster_coupling")
+        node_ast.xmlSetData("visualization", value)
 
     @Variables.noUndo
     def getAstVisualization(self):
