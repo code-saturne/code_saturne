@@ -3946,7 +3946,7 @@ _cs_post_define_probe_mesh(int                    mesh_id,
 
     if (   all_elts
         && (time_varying == false || post_mesh_cmp->time_varying == true)) {
-      if (post_mesh->location_id == post_mesh_cmp->location_id) {
+      if (post_mesh->ent_flag[ent_flag_id] > 0) {
         post_mesh->locate_ref = i;
         break;
       }
