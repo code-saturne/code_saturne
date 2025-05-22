@@ -219,7 +219,10 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   if (dp > 0.0)
     rho = fp->ro0;
 
-  debtot -= dp/fabs(dp) * fp->sleak * sqrt(2.0*rho/fp->kleak*fabs(dp));
+  cs_real_t sign = (fabs(dp) >= cs_math_epzero) ?
+                    dp/fabs(dp) : 1;
+
+  debtot -= sign * fp->sleak * sqrt(2.0*rho/fp->kleak*fabs(dp));
 
   // for the first time step : rho^(n-1) = rho^(n)
   if ((cs_restart_present() == 0) && (cs_glob_time_step->nt_cur == 1))
