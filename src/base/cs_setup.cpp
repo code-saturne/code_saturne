@@ -3616,7 +3616,7 @@ cs_setup(void)
                              &time_scheme->iccvfg);
   cs_lagr_add_fields();
 
-  if (cs_param_cdo_has_fv_main()) {
+  if (!cs_param_cdo_has_cdo_only()) {
     /* Additional fields if not in CDO mode only */
     _additional_fields_stage_2();
 

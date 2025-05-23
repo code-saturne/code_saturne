@@ -293,7 +293,13 @@ cs_turbulence_param_create(void)
   tbp->rans_param = cs_get_glob_turb_rans_model();
   tbp->les_param = cs_get_glob_turb_les_model();
   tbp->reference_values = cs_get_glob_turb_ref_values();
-  tbp->shared_from_legacy = true;
+
+  if (cs_param_cdo_has_cdo_and_fv()) {
+    tbp->shared_from_legacy = true;
+  }
+  else {
+    tbp->shared_from_legacy = false;
+  }
 
   return tbp;
 }
@@ -419,7 +425,15 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
                                               1, /* dimension */
                                               has_previous);
 
+    /* Properties (shared) */
+
+    tbs->rho    = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+    tbs->mu_tot = cs_property_by_name(CS_NAVSTO_TOTAL_VISCOSITY);
+    tbs->mu_l   = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
     tbs->mu_t = cs_property_by_name(CS_NAVSTO_TURB_VISCOSITY);
+
+    assert(tbs->rho != nullptr && tbs->mu_l != nullptr &&
+           tbs->mu_tot != nullptr && tbs->mu_t != nullptr);
   }
   else {
     int field_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
@@ -531,6 +545,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                            false, /* definition is owner ? */
                            true); /* full length */
 
+  /* Turbulence model is computed by FV */
   if (tbp->shared_from_legacy) {
     return;
   }

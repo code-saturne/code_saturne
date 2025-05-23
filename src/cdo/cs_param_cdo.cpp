@@ -160,6 +160,10 @@ cs_param_cdo_setup_log(void)
   case CS_PARAM_CDO_MODE_WITH_FV:
     cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on with legacy FV**\n");
     break;
+  case CS_PARAM_CDO_MODE_NS_WITH_FV:
+    cs_log_printf(CS_LOG_SETUP,
+                  " * CDO mode: **on with turbulence legacy FV**\n");
+    break;
   case CS_PARAM_CDO_MODE_ONLY:
     cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on, stand-alone**\n");
     break;
