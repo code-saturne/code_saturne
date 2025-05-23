@@ -33,6 +33,10 @@
 
 #include "base/cs_defs.h"
 
+#if defined(__cplusplus)
+#include "base/cs_dispatch.h"
+#endif
+
 #include "base/cs_halo.h"
 #include "base/cs_numbering.h"
 #include "alge/cs_matrix_assembler.h"
@@ -137,6 +141,42 @@ extern const char  *cs_matrix_fill_type_name[];
 /*! Operation type type names for partial SpMV functions */
 
 extern const char  *cs_matrix_spmv_type_name[];
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+/*=============================================================================
+ * Public C++ function prototypes
+ *============================================================================*/
+
+#if defined(__cplusplus)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x
+ *
+ * This function includes a halo update of x prior to multiplication by A.
+ *
+ * \param[in, out]  ctx      reference to dispatch context
+ * \param[in]       matrix   pointer to matrix structure
+ * \param[in, out]  x        multiplying vector values
+ *                           (ghost values updated)
+ * \param[out]      y        resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
+                          const            cs_matrix_t          *matrix,
+                          cs_real_t                              x[],
+                          cs_real_t                              y[]);
+
+/*----------------------------------------------------------------------------*/
+
+#endif // defined(__cplusplus)
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes

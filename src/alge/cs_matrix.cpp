@@ -119,6 +119,7 @@
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_priv.h"
 #include "alge/cs_matrix_spmv.h"
+#include "alge/cs_matrix_spmv_cuda.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -186,6 +187,18 @@ const char  *cs_matrix_spmv_type_name[] = {"y ← A.x",
 /* Tuning parameters */
 
 cs_lnum_t _base_assembler_thr_min = 128;
+
+/* Format strings */
+
+const char _msg_missing_spmv[]
+  = N_("%s: Matrix of type: %s is missing a vector multiply\n"
+       "function for fill type %s.");
+
+#if defined(HAVE_ACCEL)
+static const char _msg_missing_spmv_d[]
+  = N_("%s: Matrix of type: %s is missing a device vector multiply\n"
+       "function for fill type %s.");
+#endif
 
 /*============================================================================
  * Private function definitions
@@ -472,7 +485,6 @@ _set_coeffs_native(cs_matrix_t *matrix,
  *
  * parameters:
  *   matrix <-- pointer to matrix structure
- *   ctx    <-> Reference to dispatch context
  *   da     --> diagonal (pre-allocated, size: n_rows)
  *----------------------------------------------------------------------------*/
 
@@ -4095,6 +4107,83 @@ _matrix_create(cs_matrix_type_t  type,
  *============================================================================*/
 
 /*============================================================================
+ * Public C++ function definitions
+ *============================================================================*/
+
+END_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x
+ *
+ * This function includes a halo update of x prior to multiplication by A.
+ *
+ * \param[in, out]  ctx      reference to dispatch context
+ * \param[in]       matrix   pointer to matrix structure
+ * \param[in, out]  x        multiplying vector values
+ *                           (ghost values updated)
+ * \param[out]      y        resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
+                          const            cs_matrix_t          *matrix,
+                          cs_real_t                              x[],
+                          cs_real_t                              y[])
+{
+  auto nocst_matrix = const_cast<cs_matrix_t *>(matrix);
+
+  cs_matrix_vector_product_t  *spmv_func;
+
+  // Run on device ?
+
+#if defined(HAVE_ACCEL)
+
+  if (ctx.use_gpu()) {
+
+    spmv_func = matrix->vector_multiply_d[matrix->fill_type][0];
+
+#if defined(HAVE_CUDA)
+    cudaStream_t prev_stream = cs_matrix_spmv_cuda_get_stream();
+    cs_matrix_spmv_cuda_set_stream(ctx.cuda_stream());
+#endif
+
+    if (spmv_func != nullptr)
+      spmv_func(nocst_matrix, false, true, x, y);
+    else
+      bft_error(__FILE__, __LINE__, 0, _(_msg_missing_spmv_d),
+                __func__, cs_matrix_get_type_name(matrix),
+                cs_matrix_fill_type_name[matrix->fill_type]);
+
+#if defined(HAVE_CUDA)
+    cs_matrix_spmv_cuda_set_stream(prev_stream);
+#endif
+
+    return;
+  }
+
+  // Run on host
+  spmv_func = matrix->vector_multiply_h[matrix->fill_type][0];
+
+#else
+
+  spmv_func = matrix->vector_multiply[matrix->fill_type][0];
+
+#endif //defined(HAVE_ACCEL)
+
+  if (spmv_func != nullptr)
+    spmv_func(nocst_matrix, false, true, x, y);
+
+    else
+      bft_error(__FILE__, __LINE__, 0, _(_msg_missing_spmv),
+                __func__, cs_matrix_get_type_name(matrix),
+                cs_matrix_fill_type_name[matrix->fill_type]);
+}
+
+BEGIN_C_DECLS
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -6225,9 +6314,7 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
 #endif
   }
   else
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: Matrix of type: %s is missing a vector multiply\n"
-                "function for fill type %s."),
+    bft_error(__FILE__, __LINE__, 0, _(_msg_missing_spmv),
               __func__, cs_matrix_get_type_name(matrix),
               cs_matrix_fill_type_name[matrix->fill_type]);
 }
@@ -6265,9 +6352,7 @@ cs_matrix_vector_multiply_d(const cs_matrix_t   *matrix,
   }
 
   else
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: Matrix of type: %s is missing a device vector multiply\n"
-                "function for fill type %s."),
+    bft_error(__FILE__, __LINE__, 0, _(_msg_missing_spmv_d),
               __func__, cs_matrix_get_type_name(matrix),
               cs_matrix_fill_type_name[matrix->fill_type]);
 }

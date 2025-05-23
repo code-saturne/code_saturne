@@ -559,7 +559,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
   cs_lnum_t has_dc = mq->has_disable_flag;
-  ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++) {
       smbini[c_id][i] = smbrp[c_id][i];
       smbrp[c_id][i] = 0.;
@@ -567,7 +567,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   });
 
   /* pvar is initialized on n_cells_ext to avoid a synchronization */
-  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  ctx_c.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++)
       pvar[c_id][i] = pvark[c_id][i];
   });
@@ -754,7 +754,8 @@ _equation_iterative_solve_strided(int                   idtvar,
     }
   });
 
-  cs_matrix_vector_multiply(a,
+  cs_matrix_vector_multiply(ctx,
+                            a,
                             (cs_real_t *)w2,
                             (cs_real_t *)w1);
 
@@ -789,15 +790,10 @@ _equation_iterative_solve_strided(int                   idtvar,
                                 (cs_lnum_t c_id,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       cs_real_t c_sum = 0;
-      /* Remove contributions from penalized cells */
-      if (c_disable_flag[c_id] != 0) {
-        for (cs_lnum_t i = 0; i < stride; i++)
-          w1[c_id][i] = 0.;
-      }
-      else {
+      /* Ignore contributions from penalized cells */
+      if (c_disable_flag[c_id] == 0) {
         for (cs_lnum_t i = 0; i < stride; i++) {
-          w1[c_id][i] += smbrp[c_id][i];
-          c_sum += cs_math_pow2(w1[c_id][i]);
+          c_sum += cs_math_pow2(w1[c_id][i] + smbrp[c_id][i]);
         }
       }
       sum += c_sum;
@@ -809,8 +805,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       cs_real_t c_sum = 0;
       for (cs_lnum_t i = 0; i < stride; i++) {
-        w1[c_id][i] += smbrp[c_id][i];
-        c_sum += cs_math_pow2(w1[c_id][i]);
+        c_sum += cs_math_pow2(w1[c_id][i] + smbrp[c_id][i]);
       }
       sum += c_sum;
     });
@@ -1478,7 +1473,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   if (!_need_solve)
     return;
 
-  const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t  *cell_vol = mq->cell_vol;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -1798,7 +1793,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_real_t *w2;
     CS_MALLOC_HD(w2, n_cols, cs_real_t, cs_alloc_mode);
 
-    cs_real_t p_mean = cs_gmean(n_cells, mq->cell_vol, pvar);
+    double p_mean;
+    ctx.parallel_for_reduce_sum(n_cells, p_mean, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      sum += pvar[c_id] * cell_vol[c_id];
+    });
+    ctx.wait();
+    cs_parall_sum(1, CS_DOUBLE, &p_mean);
+    p_mean /= mq->tot_vol;
 
     if (iwarnp >= 2)
       bft_printf("Spatial average of X^n = %f\n", p_mean);
@@ -1807,9 +1810,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       w2[cell_id] = (pvar[cell_id]-p_mean);
     });
 
-    ctx.wait();
+    cs_matrix_vector_multiply(ctx, a, w2, w1);
 
-    cs_matrix_vector_multiply(a, w2, w1);
+    ctx.wait();
 
     CS_FREE_HD(w2);
 
@@ -1832,12 +1835,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     ctx.parallel_for_reduce_sum(n_cells, rnorm2, [=] CS_F_HOST_DEVICE
                                 (cs_lnum_t cell_id,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-      w1[cell_id] += smbrp[cell_id];
-      /* Remove contributions from penalized cells */
-      if (has_dc * c_disable_flag[has_dc * cell_id] != 0)
-        w1[cell_id] = 0.;
-
-      sum += cs_math_pow2(w1[cell_id]);
+      /* Ignore contributions from penalized cells */
+      if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
+        sum += cs_math_pow2(w1[cell_id] + smbrp[cell_id]);
     });
 
     ctx.wait();
