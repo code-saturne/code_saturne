@@ -2355,7 +2355,7 @@ cs_parameters_check(void)
                                 cs_glob_wall_functions->iwallf,
                                 0, 8);
 
-  if (cs_glob_wall_functions->iwallf > 2) {
+  if (cs_glob_wall_functions->iwallf > CS_WALL_F_1SCALE_LOG) {
     const int itytur_vals[5] = {2, 3, 5, 6, 7};
 
     cs_parameters_is_in_list_int(CS_ABORT_DELAYED,

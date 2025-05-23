@@ -1291,7 +1291,7 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
   const int type = cs_glob_turb_model->type;
 
   /* Deprecated power law (Werner & Wengle) */
-  if (cs_glob_wall_functions->iwallf == 1) {
+  if (cs_glob_wall_functions->iwallf == CS_WALL_F_1SCALE_POWER) {
     *uiptn  =    utau + uet * cs_turb_apow * cs_turb_bpow
               * pow(yplus, cs_turb_bpow)*(pow(2, cs_turb_bpow - 1) - 2);
   }
@@ -2523,7 +2523,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     cs_real_t uplus = 0.0;
     if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1
-        && (iwalfs == 2 || iwalfs == 3) && icodcl_vel[f_id] == 5) {
+        && (iwalfs == CS_WALL_F_S_LOUIS || iwalfs == CS_WALL_F_S_MONIN_OBUKHOV)
+        && icodcl_vel[f_id] == 5) {
 
       uplus = utau / uet;
 
@@ -2534,7 +2535,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       uplus = utau / uet;
 
     /* Rough wall: one velocity scale: set uk to uet */
-    if (cs_glob_wall_functions->iwallf <= 2 && icodcl_vel[f_id] == 6)
+    if (cs_glob_wall_functions->iwallf <= CS_WALL_F_1SCALE_LOG &&
+        icodcl_vel[f_id] == 6)
       uk = uet;
 
     uetmax  = cs::max(uet, uetmax);
@@ -2693,7 +2695,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
            --------------------------------- */
 
         cs_real_t pimp = 0.0, hint = 0.0;
-        if (cs_glob_wall_functions->iwallf == 0)
+        if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED)
           /* No wall functions forced by user */
           pimp = 0.;
         else
@@ -2713,7 +2715,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
            --------------------------------------------- */
         const cs_real_t pimp_lam = 0.;
 
-        if (cs_glob_wall_functions->iwallf == 0) {
+        if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED) {
           /* No wall functions forced by user */
           pimp = pimp_lam;
         }
@@ -2751,7 +2753,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         if (f_tlag != nullptr) {
 
-          if (cs_glob_wall_functions->iwallf == 0) {
+          if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED) {
             /* No wall functions forced by user */
             pimp = 0.;
           }
@@ -2782,7 +2784,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
            --------------------------------- */
 
         cs_real_t pimp = 0.0, hint = 0.0;
-        if (cs_glob_wall_functions->iwallf == 0)
+        if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED)
           /* No wall functions forces by user */
           pimp = 0.;
         else
@@ -2801,7 +2803,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* Dirichlet Boundary Condition on epsilon
            --------------------------------------- */
 
-        if (cs_glob_wall_functions->iwallf != 0) {
+        if (cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED) {
 
           const cs_real_t pimp_lam
             = 2 * visclc / romc * cvar_k[c_id] / (distbf * distbf);
@@ -2833,7 +2835,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         if (f_tlag != nullptr) {
 
-          if (cs_glob_wall_functions->iwallf == 0)
+          if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED)
             /* No wall functions forced by user*/
             pimp = 0.;
           else {
@@ -2914,7 +2916,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         if (f_tlag != nullptr) {
 
-          if (cs_glob_wall_functions->iwallf == 0)
+          if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED)
             /* No wall functions forced by user */
             pimp = 0.;
           else {
@@ -3033,7 +3035,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                && (   model == CS_TURB_RIJ_EPSILON_LRR
                    || model == CS_TURB_RIJ_EPSILON_SSG))
             || (   model == CS_TURB_RIJ_EPSILON_EBRSM
-                && cs_glob_wall_functions->iwallf != 0
+                && cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED
                 && yplus > cs_math_epzero)
             || icodcl_vel[f_id] == 6) {
 
@@ -3253,7 +3255,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
           if (f_tlag != nullptr) {
 
-            if (cs_glob_wall_functions->iwallf == 0) {
+            if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED) {
               /* No wall functions forced by user */
               pimp = 0.;
             }
@@ -3295,7 +3297,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
           cs_real_t pimp = 0.0;
 
-          if (cs_glob_wall_functions->iwallf != 0) {
+          if (cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED) {
             /* Use k at I' */
             const cs_real_t xkip
               = 0.5 * (rijipb[f_id][0] + rijipb[f_id][1] + rijipb[f_id][2]);
@@ -3337,7 +3339,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
           if (f_tlag != nullptr) {
 
-            if (cs_glob_wall_functions->iwallf == 0) {
+            if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED) {
               /* No wall functions forced by user */
               pimp = 0;
             }
@@ -3366,7 +3368,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           /* Dirichlet Boundary Condition
              ---------------------------- */
 
-          if (cs_glob_wall_functions->iwallf != 0) {
+          if (cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED) {
 
             if (yplus > cs_math_epzero) {
               const cs_real_t ypsd  = 0.5 * (yplus + dplus);
@@ -3653,7 +3655,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       if (f_tlag != nullptr) {
 
-        if (cs_glob_wall_functions->iwallf == 0)
+        if (cs_glob_wall_functions->iwallf == CS_WALL_F_DISABLED)
           /* No wall functions forced by user */
           pimp = 0.;
         else {

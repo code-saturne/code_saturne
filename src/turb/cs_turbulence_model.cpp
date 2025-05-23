@@ -1519,7 +1519,7 @@ cs_turb_model_log_setup(void)
        N_("Two scales smooth/rough"),
        N_("All y+")};
 
-  if (wall_fns->iwallf >= 0)
+  if (wall_fns->iwallf != CS_WALL_F_UNSET)
     cs_log_printf(CS_LOG_SETUP,
                   _("    iwallf                      (wall function:\n"
                     "                                 %s)\n"),
@@ -1532,7 +1532,7 @@ cs_turb_model_log_setup(void)
        N_("Monin Obukhov (atmo flows)"),
        N_("smooth/rough")};
 
-  if (wall_fns->iwalfs >= 0)
+  if (wall_fns->iwalfs != CS_WALL_F_S_UNSET)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    iwalfs                      (Scalar wall function:\n"
