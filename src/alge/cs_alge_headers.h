@@ -35,7 +35,9 @@
 #include "alge/cs_benchmark.h"
 #include "alge/cs_blas.h"
 #include "alge/cs_bw_time_diff.h"
+#ifdef __cplusplus
 #include "alge/cs_cell_to_vertex.h"
+#endif
 #include "alge/cs_convection_diffusion.h"
 #include "alge/cs_divergence.h"
 #include "alge/cs_face_viscosity.h"
@@ -61,7 +63,9 @@
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
+#ifdef __cplusplus
 #include "alge/cs_vertex_to_cell.h"
+#endif
 
 #if defined(HAVE_HYPRE)
 #include "alge/cs_sles_hypre.h"
