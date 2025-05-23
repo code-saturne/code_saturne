@@ -209,22 +209,22 @@ _compute_tensorial_time_step(const cs_mesh_t   *m,
                              const cs_lnum_t    icepdc[],
                              const cs_real_6_t  ckupdc[])
 {
+  cs_dispatch_context ctx;
+
   const cs_lnum_t  n_cells = m->n_cells;
 
   const cs_real_t *dt = CS_F_(dt)->val;
   cs_real_6_t *dttens = (cs_real_6_t *)cs_field_by_name("dttens")->val;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (int ii = 0; ii < 3; ii++)
       dttens[c_id][ii] = dt[c_id];
     for (int ii = 3; ii < 6; ii++)
       dttens[c_id][ii] = 0.0;
-  }
+  });
 
   // dttens = (1/dt + Kpdc)^-1
-# pragma omp parallel for if (ncepdc > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < ncepdc; ii++) {
+  ctx.parallel_for(ncepdc, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     const cs_lnum_t c_id = icepdc[ii];
     const cs_real_t hdls[6] = {ckupdc[ii][0] + 1.0/dt[c_id],
                                ckupdc[ii][1] + 1.0/dt[c_id],
@@ -234,7 +234,9 @@ _compute_tensorial_time_step(const cs_mesh_t   *m,
                                ckupdc[ii][5]};
 
     cs_math_sym_33_inv_cramer(hdls, dttens[c_id]);
-  }
+  });
+
+  ctx.wait();
 
   if (m->halo != nullptr) {
     cs_halo_sync_r(m->halo, false, dttens);
@@ -255,6 +257,8 @@ static void
 _solve_coupled_vel_p_variables_equation(const int        iterns,
                                         const cs_lnum_t  n_cells)
 {
+  cs_dispatch_context ctx;
+
   if (cs_glob_velocity_pressure_model->n_buoyant_scal < 1)
     return;
 
@@ -317,9 +321,13 @@ _solve_coupled_vel_p_variables_equation(const int        iterns,
         = cs_field_get_key_int(f, key_buoyant_id);
       if (coupled_with_vel_p_fld != 1)
         continue;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         f->val[c_id] = f->val[c_id]*rho_mass->val[c_id]/crom[c_id];
+      });
+
+      ctx.wait();
+
     }
   }
 }
@@ -335,6 +343,8 @@ _solve_coupled_vel_p_variables_equation(const int        iterns,
 static void
 _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
 {
+  cs_dispatch_context ctx;
+
   assert(cs_glob_velocity_pressure_model->idilat == 2);
 
   cs_real_t *cvar_pr = CS_F_(p)->val;
@@ -353,9 +363,11 @@ _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
      * coherent with the equation of state */
 
     if (cs_glob_time_scheme->time_order == 2) {
-#     pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cvar_pr[c_id] = 2.*cvar_pr[c_id] - cvara_pr[c_id];
+      });
+
+      ctx.wait();
 
       cs_field_current_to_previous(CS_F_(p));
     }
@@ -735,6 +747,8 @@ _solve_turbulence(cs_lnum_t   n_cells,
                   cs_lnum_t   n_cells_ext,
                   int         verbosity)
 {
+  cs_dispatch_context ctx;
+
   if (   verbosity > 0
       && (   cs_glob_turb_model->itytur == 2
           || cs_glob_turb_model->itytur == 3
@@ -773,11 +787,11 @@ _solve_turbulence(cs_lnum_t   n_cells,
         = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
       const cs_real_t relaxe
         = cs_field_get_equation_param_const(CS_F_(eps))->relaxv;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cvar_k[c_id] = relaxk*cvar_k[c_id] + (1.0-relaxk)*cvara_k[c_id];
         cvar_ep[c_id] = relaxe*cvar_ep[c_id] + (1.0-relaxe)*cvara_ep[c_id];
-      }
+      });
+      ctx.wait();
     }
 
     // HTLES
@@ -802,11 +816,11 @@ _solve_turbulence(cs_lnum_t   n_cells,
         = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
       const cs_real_t relaxw
         = cs_field_get_equation_param_const(CS_F_(omg))->relaxv;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cvar_k[c_id]   = relaxk*cvar_k[c_id] + (1.0-relaxk)*cvara_k[c_id];
         cvar_omg[c_id] = relaxw*cvar_omg[c_id] + (1.0-relaxw)*cvara_omg[c_id];
-      }
+      });
+      ctx.wait();
     }
 
     // HTLES
@@ -820,10 +834,11 @@ _solve_turbulence(cs_lnum_t   n_cells,
     if (cs_glob_time_step_options->idtvar > CS_TIME_STEP_STEADY) {
       const cs_real_t relaxn
         = cs_field_get_equation_param_const(CS_F_(nusa))->relaxv;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cvar_nusa[c_id]
           = relaxn*cvar_nusa[c_id]+(1.0-relaxn)*cvara_nusa[c_id];
+      });
+      ctx.wait();
     }
   }
 }
