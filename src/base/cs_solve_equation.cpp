@@ -2098,7 +2098,8 @@ cs_solve_equation_vector(cs_field_t       *f,
      so iterns >=1; otherwise it is outside of the loop and iterns = -1. */
 
   const int key_coupled_with_vel_p = cs_field_key_id_try("coupled_with_vel_p");
-  const int coupled_with_vel_p_fld = cs_field_get_key_int(f, key_coupled_with_vel_p);
+  const int coupled_with_vel_p_fld
+    = cs_field_get_key_int(f, key_coupled_with_vel_p);
 
   if (   (coupled_with_vel_p_fld == 1 && iterns == -1)
       || (coupled_with_vel_p_fld == 0 && iterns != -1)) {
@@ -2149,7 +2150,8 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++) {
-      fimp[c_id][i][i] = 0.;
+      for (cs_lnum_t j = 0; j < 3; j++)
+        fimp[c_id][i][j] = 0.;
       rhs[c_id][i] = 0.;
     }
   });
