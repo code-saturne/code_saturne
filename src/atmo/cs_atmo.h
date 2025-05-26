@@ -846,6 +846,26 @@ cs_soil_model(void);
 
 /*----------------------------------------------------------------------------*/
 
+
+void
+cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
+                        int               *n_soil_cat,
+                        const cs_lnum_t  **elt_ids);
+
+
+void
+cs_atmo_soil_init_arrays(int        *n_soil_cat,
+                         cs_real_t  **csol,
+                         cs_real_t  **rugdyn,
+                         cs_real_t  **rugthe,
+                         cs_real_t  **albedo,
+                         cs_real_t  **emissi,
+                         cs_real_t  **vegeta,
+                         cs_real_t  **c1w,
+                         cs_real_t  **c2w,
+                         cs_real_t  **r1,
+                         cs_real_t  **r2);
+
 END_C_DECLS
 
 #endif /* __CS_ATMO_H__ */

@@ -52,6 +52,7 @@
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_at_data_assim.h"
+#include "atmo/cs_atmo_sol.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_1d_wall_thermal_check.h"
 #include "base/cs_ale.h"
@@ -126,9 +127,6 @@ BEGIN_C_DECLS
 
 void
 cs_f_init_chemistry_reacnum(void);
-
-void
-cs_f_atmsol(void);
 
 void
 cs_f_finalize_meteo(void);
@@ -464,7 +462,7 @@ cs_time_stepping(void)
      --------------------------------------------- */
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0)
-    cs_f_atmsol();
+    cs_atmsol();
 
   /* Initialization for the Hybrid Temporal LES model (HTLES)
      -------------------------------------------------------- */

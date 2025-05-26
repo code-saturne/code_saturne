@@ -459,17 +459,17 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
                                    int       **id_theta);
 
 void
-cs_f_atmo_soil_init_arrays(int       *n_soil_cat,
-                           cs_real_t **csol,
-                           cs_real_t **rugdyn,
-                           cs_real_t **rugthe,
-                           cs_real_t **albedo,
-                           cs_real_t **emissi,
-                           cs_real_t **vegeta,
-                           cs_real_t **c1w,
-                           cs_real_t **c2w,
-                           cs_real_t **r1,
-                           cs_real_t **r2);
+cs_atmo_soil_init_arrays(int       *n_soil_cat,
+                         cs_real_t **csol,
+                         cs_real_t **rugdyn,
+                         cs_real_t **rugthe,
+                         cs_real_t **albedo,
+                         cs_real_t **emissi,
+                         cs_real_t **vegeta,
+                         cs_real_t **c1w,
+                         cs_real_t **c2w,
+                         cs_real_t **r1,
+                         cs_real_t **r2);
 
 void
 cs_f_read_meteo_profile(int imode);
@@ -2414,45 +2414,46 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
 }
 
 void
-cs_f_atmo_soil_init_arrays(int        *n_soil_cat,
-                           cs_real_t  **csol,
-                           cs_real_t  **rugdyn,
-                           cs_real_t  **rugthe,
-                           cs_real_t  **albedo,
-                           cs_real_t  **emissi,
-                           cs_real_t  **vegeta,
-                           cs_real_t  **c1w,
-                           cs_real_t  **c2w,
-                           cs_real_t  **r1,
-                           cs_real_t  **r2)
+cs_atmo_soil_init_arrays(int        *n_soil_cat,
+                         cs_real_t  **csol,
+                         cs_real_t  **rugdyn,
+                         cs_real_t  **rugthe,
+                         cs_real_t  **albedo,
+                         cs_real_t  **emissi,
+                         cs_real_t  **vegeta,
+                         cs_real_t  **c1w,
+                         cs_real_t  **c2w,
+                         cs_real_t  **r1,
+                         cs_real_t  **r2)
+ /* The dimension is n_soil_cat + 1 because the element at index 0 is kept unused. */
 {
   if (_atmo_option.soil_cat_roughness == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_roughness, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_roughness, *n_soil_cat+1, cs_real_t);
   if (_atmo_option.soil_cat_thermal_inertia == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_thermal_inertia, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_thermal_inertia, *n_soil_cat+1, cs_real_t);
   if (_atmo_option.soil_cat_thermal_roughness == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_thermal_roughness, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_thermal_roughness, *n_soil_cat+1, cs_real_t);
 
   if (_atmo_option.soil_cat_albedo == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_albedo, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_albedo, *n_soil_cat+1, cs_real_t);
 
   if (_atmo_option.soil_cat_emissi == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_emissi, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_emissi, *n_soil_cat+1, cs_real_t);
 
   if (_atmo_option.soil_cat_vegeta == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_vegeta, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_vegeta, *n_soil_cat+1, cs_real_t);
 
   if (_atmo_option.soil_cat_w1 == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_w1, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_w1, *n_soil_cat+1, cs_real_t);
 
   if (_atmo_option.soil_cat_w2 == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_w2, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_w2, *n_soil_cat+1, cs_real_t);
 
   if (_atmo_option.soil_cat_r1 == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_r1, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_r1, *n_soil_cat+1, cs_real_t);
 
   if (_atmo_option.soil_cat_r2 == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_r2, *n_soil_cat, cs_real_t);
+    BFT_MALLOC(_atmo_option.soil_cat_r2, *n_soil_cat+1, cs_real_t);
 
   *rugdyn = _atmo_option.soil_cat_roughness;
   *csol   = _atmo_option.soil_cat_thermal_inertia;

@@ -60,6 +60,10 @@ cs_atmo_headers.h \
 cs_atmo_profile_std.h \
 cs_atmo_source_terms.h \
 cs_atmo_variables.h \
+cs_atmo_soliva.h \
+cs_atmo_solcat.h \
+cs_atmo_solmoy.h \
+cs_atmo_sol.h \
 cs_atprke.h \
 cs_intprf.h
 
@@ -67,7 +71,6 @@ cs_intprf.h
 
 noinst_LIBRARIES = libcsatmo.a
 libcsatmo_a_SOURCES = \
-atmsol.f90 \
 atr1vf.f90 \
 chem_roschem.f90 \
 chem_solvelu.f90 \
@@ -81,16 +84,17 @@ cs_atmo_aerosol_ssh.cpp \
 cs_atmo_profile_std.cpp \
 cs_atmo_source_terms.cpp \
 cs_atmo_variables.cpp \
+cs_atmo_soliva.cpp \
+cs_atmo_solcat.cpp \
+cs_atmo_solmoy.cpp \
+cs_atmo_sol.cpp \
 cs_atprke.cpp \
 cs_intprf.cpp \
 kinrates.f90 \
 rayigc.f90 \
 rayir.f90 \
 rayive.f90 \
-rayso.f90 \
-solcat.f90 \
-soliva.f90 \
-solmoy.f90
+rayso.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

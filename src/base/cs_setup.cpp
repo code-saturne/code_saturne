@@ -91,6 +91,7 @@
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_variables.h"
 #include "atmo/cs_at_data_assim.h"
+#include "atmo/cs_atmo_solcat.h"
 #include "cfbl/cs_cf_thermo.h"
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_read_data.h"
@@ -136,9 +137,6 @@ cs_f_ppvarp(void);
 
 void
 cs_f_add_user_scalar_fields(void);
-
-void
-cs_f_solcat(int iappel);
 
 void
 cs_f_fldprp(void);
@@ -2760,7 +2758,7 @@ _init_user(void)
 
     /* Advanced init/allocation for the soil model */
     if (cs_glob_atmo_option->soil_cat >= 0)
-      cs_f_solcat(1);
+      cs_atmo_soil_cat(1);
   }
 
   /* If thermal solver, set appropriate flags for coupling if needed,
