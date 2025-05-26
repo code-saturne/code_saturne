@@ -2253,8 +2253,7 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
   cs_lnum_t n_f_cells = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_faces = mesh->n_i_faces;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = mesh->i_face_cells;
 
   double redistribute_relaxation_factor = 0.5;
 
