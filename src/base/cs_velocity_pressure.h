@@ -155,8 +155,8 @@ typedef struct {
 
   int         rcfact;         /* Indicates the factor of the Rhie and Chow
                                  filter
-                                 - 1: dt (default)
-                                 - 0: 1/A_u */
+                                 - 0: dt (default)
+                                 - 1: 1/A_u */
 
   int         staggered;      /* indicates if one works with the 1D staggered
                                  scheme
