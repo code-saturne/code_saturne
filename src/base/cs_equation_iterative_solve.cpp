@@ -358,9 +358,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   cs_alloc_mode_t amode = ctx.alloc_mode(true);
 
   /* Allocate temporary arrays */
-  m_t *dam;
   var_t *smbini, *dpvar;
-  CS_MALLOC_HD(dam, n_cells_ext, m_t, amode);
   CS_MALLOC_HD(smbini, n_cells_ext, var_t, amode);
   CS_MALLOC_HD(dpvar, n_cells_ext, var_t, amode);
 
@@ -1282,15 +1280,11 @@ _equation_iterative_solve_strided(int                   idtvar,
      val_f_updated, val_f_lim_updated,
      val_f_d_updated, val_f_d_lim_updated);
 
-  /*==========================================================================
-   * Free solver setup
-   *==========================================================================*/
-
-  cs_sles_free(sc);
-  cs_matrix_release(&a);
+  /* Save diagonal in case we want to use it */
 
   if (stride == 3) {
-    /* Save diagonal in case we want to use it */
+    const m_t *dam = reinterpret_cast<const m_t *>(cs_matrix_get_diagonal(a));
+
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t i = 0; i < stride; i++)
         for (cs_lnum_t j = 0; j < stride; j++)
@@ -1300,10 +1294,16 @@ _equation_iterative_solve_strided(int                   idtvar,
     ctx.wait();
   }
 
+  /*==========================================================================
+   * Free solver setup
+   *==========================================================================*/
+
+  cs_sles_free(sc);
+  cs_matrix_release(&a);
+
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(dam);
   CS_FREE_HD(smbini);
   CS_FREE_HD(dpvar);
   if (iswdyp >= 1) {
