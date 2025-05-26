@@ -4108,8 +4108,6 @@ cs_turbulence_rij_clip(int        phase_id,
 
   ctx.wait();
 
-  cs_parall_sum(1, CS_GNUM_TYPE, &iclep);
-
   CS_FREE(c_is_solid_zone_flag);
 
   /* Store number of clippings for logging */
