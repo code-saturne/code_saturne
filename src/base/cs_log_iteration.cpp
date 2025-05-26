@@ -2182,7 +2182,7 @@ cs_log_iteration_clipping_field(int               f_id,
 
   _add_clipping(-1, f_id, f->dim,
                 n_clip_min, n_clip_max,
-                min_pre_clip, max_pre_clip,n_clip_min_comp,n_clip_max_comp);
+                min_pre_clip, max_pre_clip, n_clip_min_comp, n_clip_max_comp);
 }
 
 /*----------------------------------------------------------------------------*/
