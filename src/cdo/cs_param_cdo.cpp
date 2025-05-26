@@ -211,6 +211,23 @@ cs_param_cdo_has_fv_main(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Tell if CDO is used to solve main equations
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_cdo_has_cdo_main(void)
+{
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY ||
+      cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV) {
+    return true;
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Tell if FVM and CDO are used
  */
 /*----------------------------------------------------------------------------*/

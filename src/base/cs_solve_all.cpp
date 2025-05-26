@@ -370,6 +370,35 @@ _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
 /*!
  * \brief Loop on all solver equation except turbulence.
  *
+ * \param[out] italim         implicit coupling iteration number
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_wall_distance(const int iterns)
+{
+  /*  Wall distance is computed if:
+   *   - it has to be updated
+   *   - we need it
+   * In case there is no wall, distance is a big value. */
+  if (cs_glob_wall_distance_options->need_compute == 1 &&
+      cs_glob_wall_distance_options->is_up_to_date == 0) {
+    if (cs_glob_wall_distance_options->method == 2) {
+      cs_wall_distance_geometric();
+    }
+    else {
+      cs_wall_distance(iterns);
+    }
+    // Wall distance is not updated except if ALE is switched on
+    if (cs_glob_ale == CS_ALE_NONE)
+      cs_get_glob_wall_distance_options()->is_up_to_date = 1;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Loop on all solver equation except turbulence.
+ *
  * \param[out] vel_verbosity  verbosity for velocity
  * \param[out] italim         implicit coupling iteration number
  * \param[out] itrfin         indicator for last iteration of implicit coupling
@@ -534,21 +563,7 @@ _solve_most(int              n_var,
      * In ALE, this computation is done only for the first step */
 
     if (*italim == 1) {
-      /*  Wall distance is computed if:
-       *   - it has to be updated
-       *   - we need it
-       * In case there is no wall, distance is a big value. */
-      if (   cs_glob_wall_distance_options->need_compute == 1
-          && cs_glob_wall_distance_options->is_up_to_date == 0) {
-
-        if (cs_glob_wall_distance_options->method != 2)
-          cs_wall_distance(iterns);
-        else if (cs_glob_wall_distance_options->method == 2)
-          cs_wall_distance_geometric();
-        // Wall distance is not updated except if ALE is switched on
-        if (cs_glob_ale == CS_ALE_NONE)
-          cs_get_glob_wall_distance_options()->is_up_to_date = 1;
-      }
+      _compute_wall_distance(iterns);
     }
 
     /* Compute y+ if needed and Van Driest damping */
@@ -562,7 +577,7 @@ _solve_most(int              n_var,
     if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
       _must_return = true;
 
-    if (cs_glob_ale > CS_ALE_NONE)
+    if (cs_glob_ale != CS_ALE_NONE)
       if (itrale == 0) {
         _must_return = true;
         cs_ale_solve_mesh_velocity(iterns);
@@ -1181,8 +1196,12 @@ cs_solve_all(int  itrale)
   } // End loop on need_new_solve (_solve_most)
 
   /* In case of NS equations being solved by CDO, transfer mass flux*/
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV)
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV) {
+    if (italim == 1) {
+      _compute_wall_distance(-1);
+    }
     _transfer_mass_flux_cdo_to_fv();
+  }
 
   /* Computation on non-frozen velocity field, continued */
 

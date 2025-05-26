@@ -275,8 +275,7 @@ cs_turbulence_kw(int phase_id)
   if (f_tke_buoy != nullptr)
     tke_buoy = f_tke_buoy->val;
 
-  const cs_equation_param_t *eqp_k
-    = cs_field_get_equation_param_const(f_k);
+  const cs_equation_param_t *eqp_k = cs_field_get_equation_param_const(f_k);
 
   const cs_equation_param_t *eqp_w
     = cs_field_get_equation_param_const(f_omg);

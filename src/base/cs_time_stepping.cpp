@@ -538,7 +538,7 @@ cs_time_stepping(void)
   /* Solve CDO module(s) or user-defined equations using CDO schemes
      --------------------------------------------------------------- */
 
-  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV) {
+  if (cs_param_cdo_has_cdo_and_fv()) {
     /* FV and CDO activated */
     cs_cdo_solve_steady_state_domain();
   }
@@ -704,9 +704,10 @@ cs_time_stepping(void)
       /* Solve CDO module(s) or user-defined equations using CDO schemes
          --------------------------------------------------------------- */
 
-      if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV)
+      if (cs_param_cdo_has_cdo_and_fv()) {
         /* FV and CDO activated */
         cs_cdo_solve_unsteady_state_domain();
+      }
 
       /* Lagrangian module
          ----------------- */
