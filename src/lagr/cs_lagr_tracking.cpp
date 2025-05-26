@@ -2168,7 +2168,6 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                    const bool                      resol_sde,
                    cs_lnum_t                      *nresnew)
 {
-
   cs_real_t fluid_vel[3] = {0, 0, 0};
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
@@ -2201,7 +2200,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
   /* location tracked  may be different of the integrated position */
   cs_real_3_t  next_location;
 
-  /* Usefull to avoid oscillation at face */
+  /* Useful to avoid oscillation at face */
   cs_lnum_t save_old_cell_id = -1;
   cs_real_t dt_incremented_in_subiter;
 

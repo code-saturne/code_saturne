@@ -376,7 +376,7 @@ class ComboModel:
     dicoV2M: correspondance between strings in Qt view and strings in parameters
     dicoM2V: correspondance between strings in parameters and strings in Qt view
 
-    items: tuple which contains all model strings (usefull to get its index in the model)
+    items: tuple which contains all model strings (useful to get its index in the model)
     """
     def __init__(self, combo, rows=0, columns=0):
         """

@@ -98,7 +98,7 @@ typedef struct {
                   // normalized)
   cs_real_t *pos_n;       // position of the center of each layer (normalized)
   cs_lnum_t  n_layers;    // number of layer of the profile
-  cs_real_t  progression; // progression parameter : only usefull for geometric
+  cs_real_t  progression; // progression parameter : only useful for geometric
                          // and parabolic laws
   cs_real_t *l_thick; // array of thickness (one per layer)
   cs_lnum_t *n_cells; // number of cells per layers without stl immersion

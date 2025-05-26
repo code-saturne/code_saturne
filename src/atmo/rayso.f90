@@ -323,7 +323,7 @@ do k = 1,kmray
   w0_suv(k) = 0.d0
   g_apc_sir(k) = 0.d0
   g_apc_suv(k) = 0.d0
-  ! TODO usefull ?
+  ! TODO useful ?
   if (qlray(k).lt.epsc) then
     qlray(k) = 0.d0
     fneray(k)=0.d0
@@ -572,7 +572,7 @@ if (muzero.gt.epzero) then
     ! Calculation of SSA and Asymmetry factor for clouds using- Nielsen 2014
     ! Note only the first two bands are taken, the third only is
     ! approximately 0
-    ! Usefull for gas assymmetry, for albedo, either Chuang if BC, or Nielsen
+    ! Useful for gas assymmetry, for albedo, either Chuang if BC, or Nielsen
     pioco3_1 = 1.d0 - 33.d-9*req
     pioco3_2 = 1.d0 - 1.d-7*req
 

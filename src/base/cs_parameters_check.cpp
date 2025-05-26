@@ -2327,7 +2327,7 @@ cs_parameters_check(void)
     cs_parameters_is_equal_int(CS_WARNING,
                                _("while reading input data,\n"
                                  "extended scheme in Lagrangian modelling "
-                                 "is usefull only if turbulent dispersion "
+                                 "is useful only if turbulent dispersion "
                                  "is considered"),
                                "cs_glob_lagr_model->idistu",
                                cs_glob_lagr_model->idistu,

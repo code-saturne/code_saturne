@@ -266,7 +266,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
     xam[face_id] = 0.;
 
-    //FIXME usefull?
+    //FIXME useful?
     double surf = surfn[face_id];
     double vol = 0.5 * (volume[cell_id1] + volume[cell_id2]);
     surf = cs::max(surf, 0.1*vol/dist[face_id]);
@@ -445,7 +445,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
     xam[face_id] = 0.;
 
-    //FIXME usefull?
+    //FIXME useful?
     double surf = surfn[face_id];
     double vol = 0.5 * (volume[cell_id1] + volume[cell_id2]);
     surf = cs::max(surf, 0.1*vol/dist[face_id]);
@@ -625,7 +625,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
     xam[face_id] = 0.;
 
-    //FIXME usefull?
+    //FIXME useful?
     double surf = surfn[face_id];
     double vol = 0.5 * (volume[cell_id1] + volume[cell_id2]);
     surf = cs::max(surf, 0.1*vol/dist[face_id]);

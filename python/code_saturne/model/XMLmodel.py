@@ -24,7 +24,7 @@
 
 """
 This module defines the XML data model in which the user defines the physical
-options of the treated case. This module defines also a very usefull
+options of the treated case. This module defines also a very useful
 function for the NavigatorTree display updating, taking into account
 the current options selected by the user.
 

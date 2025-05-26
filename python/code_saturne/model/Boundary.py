@@ -1902,7 +1902,7 @@ class CoalInletBoundary(InletBoundary) :
     def deleteCoalFlow(self, coal, nbCoals):
         """
         Delete coal with name = coal.
-        Usefull only for CoalCombustionView.
+        Useful only for CoalCombustionView.
         """
         Model().isInt(coal)
         Model().isInt(nbCoals)
@@ -1921,7 +1921,7 @@ class CoalInletBoundary(InletBoundary) :
     def __renameCoalFlow(self, coal):
         """
         coaln become coaln-1.
-        Usefull only for CoalCombustionView.
+        Useful only for CoalCombustionView.
        """
         Model().isInt(coal)
 
@@ -1935,7 +1935,7 @@ class CoalInletBoundary(InletBoundary) :
 
     def updateCoalRatios(self, coal):
         """
-        Delete ratio with name = classe. Usefull only for CoalCombustionView.
+        Delete ratio with name = classe. Useful only for CoalCombustionView.
         """
         Model().isInt(coal)
 

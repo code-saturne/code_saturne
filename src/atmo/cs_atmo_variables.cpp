@@ -850,7 +850,7 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Soil deep T");
 
-    /* Fields usefull for heat budget plot on the soil boundary */
+    /* Fields useful for heat budget plot on the soil boundary */
     f = cs_field_create("soil_sensible_heat",
                         field_type,
                         z->location_id,

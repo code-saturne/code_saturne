@@ -136,7 +136,7 @@ typedef struct {
 
   int        state;                 /* current state (actually an enum) */
 
-  int        integ_tracked_loc;     /* usefull when using cell_wise_integ
+  int        integ_tracked_loc;     /* useful when using cell_wise_integ
                                        0 : determnistic virtual partner tracked
                                        1 : stochastic particle tracked
                                        2 : particle tracking finished*/

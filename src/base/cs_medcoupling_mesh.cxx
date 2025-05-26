@@ -796,7 +796,7 @@ _select_from_criteria(cs_mesh_t              *csmesh,
  *
  * \param[in] csmesh    pointer to the cs_mesh_t struct to copy data from
  * \param[in] pmmesh    pointer to the cs_medcoupling_mesh_t for copy
- * \param[in] use_bbox  flag indicating if a reduced bounding is used. Usefull
+ * \param[in] use_bbox  flag indicating if a reduced bounding is used. Useful
  *                      for interpolation to reduce the matrix sice.
  *                      0: Do not use a reduced bbox
  *                      1: Use a reduced bbox

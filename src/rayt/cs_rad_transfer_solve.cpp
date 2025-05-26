@@ -634,7 +634,7 @@ _cs_rad_transfer_sol(int       gg_id,
           }
 
           /* Update boundary condition coefficients
-           * Note: In Atmo, emissivity is usefull only for InfraRed
+           * Note: In Atmo, emissivity is useful only for InfraRed
            * */
           cs_real_t *bpro_eps = nullptr;
           if ( rt_params->atmo_model == CS_RAD_ATMO_3D_NONE
