@@ -148,6 +148,7 @@ cs_preprocess.h \
 cs_preprocessor_data.h \
 cs_pressure_correction.h \
 cs_probe.h \
+cs_profiling.h \
 cs_prototypes.h \
 cs_random.h \
 cs_range_set.h \

@@ -2340,7 +2340,7 @@ cs_matrix_compute_coeffs
     CS_MALLOC_HD(da, m->n_cells_with_ghosts, b_t, amode);
     CS_MALLOC_HD(xa, nnd, cs_real_t, amode);
 
-    cs_matrix_wrapper(iconvp,
+    cs_matrix_wrapper<stride>(iconvp,
                       idiffp,
                       tensorial_diffusion,
                       ndircp,

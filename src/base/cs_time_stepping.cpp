@@ -86,6 +86,7 @@
 #include "base/cs_porous_model.h"
 #include "base/cs_post.h"
 #include "base/cs_post_default.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "rayt/cs_rad_transfer.h"
 #include "rayt/cs_rad_transfer_restart.h"
@@ -171,6 +172,8 @@ cs_f_finalize_chemistry(void);
 void
 cs_time_stepping(void)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_t *m = cs_glob_mesh;
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -982,6 +985,8 @@ cs_time_stepping_read_checkpoint(void)
 void
 cs_time_stepping_write_checkpoint(bool  checkpoint_mesh)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_restart_main_and_aux_write();
 
   if (checkpoint_mesh)

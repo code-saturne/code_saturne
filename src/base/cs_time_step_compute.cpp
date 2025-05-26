@@ -25,6 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_profiling.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -55,6 +56,7 @@
 #include "base/cs_log_iteration.h"
 #include "base/cs_mem.h"
 #include "base/cs_physical_constants.h"
+#include "base/cs_profiling.h"
 #include "base/cs_vof.h"
 #include "alge/cs_face_viscosity.h"
 #include "alge/cs_matrix_building.h"
@@ -110,6 +112,8 @@ BEGIN_C_DECLS
 void
 cs_local_time_step_compute(int  itrale)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
@@ -952,6 +956,8 @@ cs_local_time_step_compute(int  itrale)
 void
 cs_courant_fourier_compute(void)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 

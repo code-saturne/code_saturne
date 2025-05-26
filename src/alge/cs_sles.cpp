@@ -64,6 +64,7 @@
 #include "alge/cs_matrix_util.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
+#include "base/cs_profiling.h"
 #include "base/cs_timer.h"
 #include "base/cs_timer_stats.h"
 #include "base/cs_time_step.h"
@@ -1746,6 +1747,8 @@ cs_sles_solve(cs_sles_t           *sles,
               size_t               aux_size,
               void                *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_timer_t t0 = cs_timer_time();
 
   if (sles->context == nullptr)

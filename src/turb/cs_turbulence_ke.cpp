@@ -43,6 +43,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_profiling.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -71,6 +72,7 @@
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_porous_model.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
 #include "base/cs_rotation.h"
@@ -286,6 +288,8 @@ void
 cs_turbulence_ke(int              phase_id,
                  cs_real_t       *prdv2f)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
   cs_mesh_quantities_t  *mq_g = cs_glob_mesh_quantities_g;

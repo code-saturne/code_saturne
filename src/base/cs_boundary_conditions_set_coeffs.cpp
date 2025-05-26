@@ -85,6 +85,7 @@
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "rayt/cs_rad_transfer.h"
 #include "rayt/cs_rad_transfer_bcs.h"
@@ -545,6 +546,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                   cs_real_t  theipb[],
                                   int        nftcdt)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
@@ -593,6 +596,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   /*--------------------------------------------------------------------------
    * 0) User calls
    *--------------------------------------------------------------------------*/
+
+  CS_PROFILE_MARK_LINE();
 
   cs_boundary_conditions_reset();
 
@@ -731,6 +736,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    * 1) Variables
    *--------------------------------------------------------------------------*/
 
+  CS_PROFILE_MARK_LINE();
+
   cs_real_3_t *velipb = nullptr;
 
   cs_turb_model_type_t model
@@ -747,6 +754,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   /*--------------------------------------------------------------------------
    * 2) initializations
    *--------------------------------------------------------------------------*/
+
+  CS_PROFILE_MARK_LINE();
 
   /* Map field arrays */
   cs_field_t *vel = CS_F_(vel);
@@ -817,6 +826,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      * 3) Treatment of types of bcs given by bc_type
      *--------------------------------------------------------------------------*/
 
+    CS_PROFILE_MARK_LINE();
+
     {
       if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
         cs_cf_boundary_conditions(bc_type);
@@ -858,6 +869,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      * 4) Check the consistency of the bcs
      *--------------------------------------------------------------------------*/
 
+    CS_PROFILE_MARK_LINE();
+
     cs_boundary_conditions_check(bc_type,
                                  ale_bc_type);
 
@@ -874,6 +887,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      *
      * This could be done outside the loop.
      *--------------------------------------------------------------------------*/
+
+    CS_PROFILE_MARK_LINE();
 
     {
       /* For the Syrthes coupling or 1d thermal module
@@ -1071,6 +1086,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      *    symmetry or wall faces with wall functions boundary conditions
      *--------------------------------------------------------------------------*/
 
+    CS_PROFILE_MARK_LINE();
+
     /* Indicator for symmetries or wall with wall functions */
 
     int iclsym = 0, ipatur = 0, ipatrg = 0;
@@ -1163,6 +1180,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      * we use visvdr to restore the correct value.
      *--------------------------------------------------------------------------*/
 
+    CS_PROFILE_MARK_LINE();
+
     if (type == CS_TURB_LES && cs_glob_turb_les_model->idries == 1) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         visvdr[c_id] = -999.0;
@@ -1184,6 +1203,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      * We need velipb and rijipb.
      *--------------------------------------------------------------------------*/
 
+    CS_PROFILE_MARK_LINE();
+
     for (cs_lnum_t i = 0; i < n_b_faces; i++)
       isympa[i] = 1;
 
@@ -1195,6 +1216,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     /*--------------------------------------------------------------------------
      * 9) velocity: Dirichlet, Neumann and convective outlet
      *--------------------------------------------------------------------------*/
+
+    CS_PROFILE_MARK_LINE();
 
     { /* Dirichlet and Neumann */
 
@@ -1341,6 +1364,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     /*--------------------------------------------------------------------------
      * 10) Pressure: Dirichlet and Neumann and convective outlet
      *--------------------------------------------------------------------------*/
+
+    CS_PROFILE_MARK_LINE();
 
     {
       cs_field_t *p = CS_F_(p);
@@ -1546,6 +1571,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      * 11) void fraction (VOF): Dirichlet and Neumann and convective outlet
      *--------------------------------------------------------------------------*/
 
+    CS_PROFILE_MARK_LINE();
+
     if (cs_glob_vof_parameters->vof_model > 0) {
 
       cs_field_t *volf2 = CS_F_(void_f);
@@ -1614,6 +1641,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     /*----------------------------------------------------------------------------
       12. turbulent quantities: Dirichlet and Neumann and convective outlet
       --------------------------------------------------------------------------*/
+
+    CS_PROFILE_MARK_LINE();
 
     { /* k-epsilon and k-omega */
 
@@ -2514,6 +2543,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    *     Dirichlet and Neumann and convective outlet
    *--------------------------------------------------------------------------*/
 
+  CS_PROFILE_MARK_LINE();
   {
     const cs_real_t *cpro_cv = nullptr, *cpro_cp = nullptr;
 
@@ -3290,6 +3320,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      *     Dirichlet and Neumann and convective outlet
      *--------------------------------------------------------------------------*/
 
+    CS_PROFILE_MARK_LINE();
+
     if (cs_glob_ale == CS_ALE_LEGACY) {
 
       cs_field_t *m_vel = cs_field_by_name("mesh_velocity");
@@ -3398,6 +3430,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
      * 15) Compute stresses at boundary (step 1 of 5)
      *--------------------------------------------------------------------------*/
 
+    CS_PROFILE_MARK_LINE();
+
     if (f_b_stress != nullptr && iterns == 1) {
 
       cs_real_3_t  *cofaf_vel = (cs_real_3_t  *)vel->bc_coeffs->af;
@@ -3432,6 +3466,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     /*--------------------------------------------------------------------------
      * 16) Update of boundary temperature when saved and not a variable.
      *--------------------------------------------------------------------------*/
+
+    CS_PROFILE_MARK_LINE();
 
     if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
@@ -3896,7 +3932,6 @@ END_C_DECLS
  *                              (with limiter)
  */
 /*----------------------------------------------------------------------------*/
-
 template <cs_lnum_t stride>
 void
 cs_boundary_conditions_update_bc_coeff_face_values
@@ -3911,6 +3946,8 @@ cs_boundary_conditions_update_bc_coeff_face_values
    cs_real_t                   val_f_d[][stride],
    cs_real_t                   val_f_d_lim[][stride])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -3920,12 +3957,15 @@ cs_boundary_conditions_update_bc_coeff_face_values
   using var_t = cs_real_t[stride];
   using m_t = cs_real_t[stride][stride];
 
+  CS_PROFILE_MARK_LINE();
+
   /* Choose gradient type */
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
   cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
+  CS_PROFILE_MARK_LINE();
 
   cs_real_t *gweight = nullptr;
   cs_real_t *df_limiter = nullptr;
@@ -3937,14 +3977,17 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
     /* internal coupling */
     if (eqp->icoupl > 0) {
+      CS_PROFILE_MARK_LINE();
       const int coupling_key_id = cs_field_key_id("coupling_entity");
       int coupling_id = cs_field_get_key_int(f, coupling_key_id);
       cpl = cs_internal_coupling_by_id(coupling_id);
     }
+    CS_PROFILE_MARK_LINE();
 
     /* gradient weighting */
     if ((f->type & CS_FIELD_VARIABLE) && eqp->iwgrec == 1) {
       if (eqp->idiff > 0) {
+        CS_PROFILE_MARK_LINE();
         int key_id = cs_field_key_id("gradient_weighting_id");
         int diff_id = cs_field_get_key_int(f, key_id);
         if (diff_id > -1) {
@@ -3954,12 +3997,14 @@ cs_boundary_conditions_update_bc_coeff_face_values
         }
       }
     }
+    CS_PROFILE_MARK_LINE();
 
     /* diffusion limiter */
     int df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
+    CS_PROFILE_MARK_LINE();
 
     /* variable at I' position with diffusion limiter */
     if (df_limiter != nullptr)
@@ -3973,7 +4018,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
   /* Mute coefa when inc = 0 */
   if (inc == 0 && cpl == nullptr) {
-
+    CS_PROFILE_MARK_LINE();
     CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
     cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
 
@@ -3992,7 +4037,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   /* Update of local BC. coefficients for internal coupling */
 
   if (cpl != nullptr) {
-
+    CS_PROFILE_MARK_LINE();
     CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
     cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
 
@@ -4012,7 +4057,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
     }
 
     bc_coeffs = bc_coeffs_loc;
-
+    CS_PROFILE_MARK_LINE();
     cs_internal_coupling_update_bc_coeffs_strided<stride>(ctx,
                                                           bc_coeffs,
                                                           cpl,
@@ -4022,6 +4067,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                                           pvar,
                                                           gweight);
   }
+  CS_PROFILE_MARK_LINE();
 
   /* Compute variable at position I' from bc_coeffs */
 
@@ -4039,6 +4085,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                                   val_ip,
                                                   val_ip_lim);
 
+  CS_PROFILE_MARK_LINE();
   /* Boundary conditions */
   var_t *coefa = (var_t *)bc_coeffs->a;
   var_t *cofaf = (var_t *)bc_coeffs->af;
@@ -4051,6 +4098,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   const int ircflb = (ircflp > 0) ? eqp->b_diff_flux_rc : 0;
 
   if (ircflb == 0) { // no reconstruction for flux (I = I_prime)
+    CS_PROFILE_MARK_LINE();
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       const cs_lnum_t c_id = b_face_cells[face_id];
@@ -4080,6 +4128,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   }
 
   else if (ircflb > 0) {
+    CS_PROFILE_MARK_LINE();
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
@@ -4115,6 +4164,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   }
 
   ctx.wait();
+  CS_PROFILE_MARK_LINE();
 
   if (bc_coeffs_loc != nullptr) {
     CS_FREE_HD(bc_coeffs_loc->a);
@@ -4122,7 +4172,9 @@ cs_boundary_conditions_update_bc_coeff_face_values
        CS_FREE_HD(bc_coeffs_loc->af);
     CS_FREE(bc_coeffs_loc);
   }
+
   CS_FREE_HD(val_ip_lim);
+  CS_PROFILE_MARK_LINE();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4156,12 +4208,12 @@ cs_boundary_conditions_update_bc_coeff_face_values
      we use a delayed allocation te defauld to Neumann more easily
      when some arrays are not defined (and want to avoid cases where
      the array is defined but not up to date). */
-
+     CS_PROFILE_MARK_LINE();
   if (f->bc_coeffs->val_f_d == nullptr && m->n_b_faces > 0) {
     const int df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
     const int ircflb = (eqp->ircflu > 0) ? eqp->b_diff_flux_rc : 0;
-
+    CS_PROFILE_MARK_LINE();
     cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
       (f->bc_coeffs,
        m->n_b_faces,
@@ -4173,7 +4225,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   var_t *val_f = reinterpret_cast<var_t *>(f->bc_coeffs->val_f);
   var_t *val_f_d = reinterpret_cast<var_t *>(f->bc_coeffs->val_f_d);
   var_t *val_f_d_lim = reinterpret_cast<var_t *>(f->bc_coeffs->val_f_d_lim);
-
+  CS_PROFILE_MARK_LINE();
   cs_boundary_conditions_update_bc_coeff_face_values<stride>
     (ctx,
      f, f->bc_coeffs,
@@ -4183,7 +4235,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
      val_ip,
      val_f,
      val_f_d, val_f_d_lim);
-
+     CS_PROFILE_MARK_LINE();
   CS_FREE_HD(val_ip);
 }
 

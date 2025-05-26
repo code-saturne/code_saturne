@@ -42,6 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_profiling.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -57,6 +58,7 @@
 #include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parall.h"
+#include "base/cs_profiling.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_location.h"
@@ -966,6 +968,8 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                                          const cs_lnum_t   *face_ids,
                                          cs_real_3_t        var_iprime[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 

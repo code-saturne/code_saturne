@@ -48,6 +48,7 @@
 
 #include "base/cs_math.h"
 #include "base/cs_parall.h"
+#include "base/cs_profiling.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -4791,6 +4792,8 @@ cs_sles_it_solve(void                *context,
                  size_t               aux_size,
                  void                *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
@@ -5019,6 +5022,8 @@ cs_sles_it_solve(void                *context,
 void
 cs_sles_it_free(void  *context)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
   if (c == nullptr)

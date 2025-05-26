@@ -62,6 +62,7 @@
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_physical_properties_default.h"
+#include "base/cs_profiling.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_sat_coupling.h"
@@ -758,6 +759,7 @@ _solve_turbulence(cs_lnum_t   n_cells,
                   cs_lnum_t   n_cells_ext,
                   int         verbosity)
 {
+  CS_PROFILE_FUNC_RANGE();
   cs_dispatch_context ctx;
 
   if (   verbosity > 0
@@ -871,6 +873,8 @@ _solve_turbulence(cs_lnum_t   n_cells,
 void
 cs_solve_all()
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 

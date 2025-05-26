@@ -89,6 +89,7 @@
 #include "pprt/cs_physical_model.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_pressure_correction.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
 #include "base/cs_rotation.h"
@@ -3612,6 +3613,8 @@ cs_solve_navier_stokes(const int        iterns,
                        cs_real_3_t     *trava)
 
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 

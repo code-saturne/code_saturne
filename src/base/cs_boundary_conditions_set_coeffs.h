@@ -34,9 +34,11 @@
 
 #include "base/cs_defs.h"
 
+#include "base/cs_profiling.h"
 #include "bft/bft_error.h"
 #include "base/cs_field.h"
 #include "base/cs_math.h"
+#include "base/cs_profiling.h"
 #include "cdo/cs_equation_param.h"
 
 #ifdef __cplusplus
@@ -298,6 +300,7 @@ cs_boundary_conditions_set_dirichlet_vector(cs_lnum_t             f_id,
                                             cs_real_t             hint,
                                             const cs_real_t       hextv[3])
 {
+  CS_PROFILE_FUNC_RANGE();
 
   cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
   cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;

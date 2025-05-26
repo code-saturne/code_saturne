@@ -60,6 +60,7 @@
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "pprt/cs_physical_model.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_range_set.h"
 #include "base/cs_reducers.h"
@@ -650,6 +651,8 @@ _log_clip_info(const char        *prefix,
 static void
 _log_fields_and_functions(void)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   int log_count;
 
   int log_count_max = 0;
@@ -1724,6 +1727,8 @@ cs_log_iteration(void)
 void
 cs_log_equation_convergence_info_write(void)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   if (cs_param_cdo_has_cdo_only())
     return;
 

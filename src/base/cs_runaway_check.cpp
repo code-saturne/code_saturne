@@ -50,6 +50,7 @@
 #include "base/cs_math.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
+#include "base/cs_profiling.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -185,6 +186,8 @@ _update_check_bounds(cs_log_check_bounds_t *cb)
 int
 cs_runaway_check(void)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   int retval = 0;
 
   if (_check_bounds.f_id > -1) {

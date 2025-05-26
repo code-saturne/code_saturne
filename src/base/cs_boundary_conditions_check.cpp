@@ -53,6 +53,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
+#include "base/cs_profiling.h"
 #include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
@@ -130,6 +131,8 @@ cs_boundary_conditions_check(int  bc_type[],
                              int  ale_bc_type[])
 
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const int n_fields = cs_field_n_fields();

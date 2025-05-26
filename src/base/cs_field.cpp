@@ -42,6 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_profiling.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -52,6 +53,7 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_porous_model.h"
+#include "base/cs_profiling.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -2210,6 +2212,8 @@ cs_field_set_values(cs_field_t  *f,
 void
 cs_field_current_to_previous(cs_field_t  *f)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   assert(f != nullptr);
 
   if (f->n_time_vals < 2)

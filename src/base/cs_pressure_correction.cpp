@@ -61,6 +61,7 @@
 #include "base/cs_physical_constants.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_post.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
 #include "base/cs_sat_coupling.h"
@@ -529,6 +530,8 @@ _pressure_correction_fv(int                   iterns,
                         cs_real_t             i_visc[],
                         cs_real_t             b_visc[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 

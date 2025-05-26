@@ -74,6 +74,7 @@
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_porous_model.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_timer.h"
 #include "base/cs_velocity_pressure.h"
@@ -10703,6 +10704,8 @@ cs_face_diffusion_potential(const int                   f_id,
                             cs_real_t         *restrict i_massflux,
                             cs_real_t         *restrict b_massflux)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_real_t *cofafp = bc_coeffs->af;
   cs_real_t *cofbfp = bc_coeffs->bf;
 
@@ -11417,6 +11420,8 @@ cs_diffusion_potential(const int                   f_id,
                        cs_real_t                   visel[],
                        cs_real_t         *restrict diverg)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_real_t *cofafp = bc_coeffs->af;
   cs_real_t *cofbfp = bc_coeffs->bf;
 

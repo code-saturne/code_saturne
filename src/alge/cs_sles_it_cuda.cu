@@ -73,6 +73,7 @@ namespace cg = cooperative_groups;
 #include "alge/cs_matrix_priv.h"
 #include "alge/cs_matrix_spmv_cuda.h"
 #include "base/cs_mem.h"
+#include "base/cs_profiling.h"
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
 #include "alge/cs_sles_it_priv.h"
@@ -1249,6 +1250,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg= CS_SLES_ITERATING;
   unsigned n_iter = 0;
 
@@ -1782,6 +1785,8 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
                     size_t                     aux_size,
                     void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   bool local_stream = false;
