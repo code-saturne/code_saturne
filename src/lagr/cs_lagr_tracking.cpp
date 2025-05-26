@@ -2202,7 +2202,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
   /* Useful to avoid oscillation at face */
   cs_lnum_t save_old_cell_id = -1;
-  cs_real_t dt_incremented_in_subiter;
+  cs_real_t dt_incremented_in_subiter = 0.;
 
   int cell_wise_integ = cs_glob_lagr_time_scheme->cell_wise_integ;
 
@@ -2283,7 +2283,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
       n_loops_local++) {
 
     cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                   CS_LAGR_CELL_ID);
+                                                  CS_LAGR_CELL_ID);
     cs_lagr_particle_set_lnum_n(particle, p_am, 1, CS_LAGR_CELL_ID, cell_id);
 
     assert(cell_id < mesh->n_cells);
@@ -2354,8 +2354,8 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                                             force_p,
                                             beta);
       dt_incremented_in_subiter = 0.;
-
     }
+
     /* track the integrated position of the stochastic particle */
     for(int k = 0 ; k < 3 ; k++)
       next_location[k] = particle_coord[k];
@@ -2896,7 +2896,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                                                 tempct);
 
       /* Increment stat in the previous cell */
-      if(    cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt)
+      if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt)
         cs_lagr_stat_update_all_incr(particles, p_id,
                                      dt_incr /cs_glob_lagr_time_step->dtp);
 
