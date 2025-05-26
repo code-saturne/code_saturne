@@ -1885,6 +1885,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
     cs_parall_max(1, CS_REAL_TYPE, &qliqmax);
 
     if (qliqmax > 1.e-8) {
+      /* Force execution on host, as some functions called are not
+         available yet on GPU */
+      cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+
       /* First : diagnose the droplet number
        * nucleation : when liquid water present calculate the
        * number of condensation nucleii (ncc) and if the droplet number (nc)
@@ -1896,7 +1900,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         const cs_real_t p0 = fluid_props->p0;
         const cs_real_t t0 = fluid_props->t0;
 
-        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_real_t _pphy, dum;
           /* Warning CUDA: The below function is HOST */
           cs_atmo_profile_std(0., /* z_ref */
@@ -1914,7 +1918,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         const cs_real_t *time_met = cs_glob_atmo_option->time_met;
         const cs_real_t *hyd_p_met = cs_glob_atmo_option->hyd_p_met;
 
-        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           /* Warning CUDA: The below function is HOST */
           pphy[c_id] = cs_intprf(nbmett,
                                  nbmetm,
@@ -1944,7 +1948,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                              cpro_rad_cool);
       CS_FREE(pphy);
 
-    } // qliqmax.gt.1.e-8
+    } // qliqmax > 1.e-8
   } // for humid atmosphere physics only
 
   if ((idilat > 3) && (itspdv == 1)) {
