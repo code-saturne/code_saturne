@@ -2728,7 +2728,7 @@ _clean_halo(cs_mesh_t  *mesh)
 
   CS_MALLOC(new_c_domain_rank, n_real_c_domains, cs_lnum_t);
 
-  CS_ALLOC_HD(new_index, 2*n_real_c_domains+1, cs_lnum_t, halo_alloc_mode);
+  CS_MALLOC_HD(new_index, 2*n_real_c_domains+1, cs_lnum_t, halo_alloc_mode);
 
   if (n_transforms > 0)
     CS_MALLOC(new_perio_lst, 4*n_transforms*n_real_c_domains, cs_lnum_t);

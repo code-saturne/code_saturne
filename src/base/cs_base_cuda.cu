@@ -265,7 +265,7 @@ cs_cuda_copy_d2d(void        *dst,
  * \brief Get host pointer for a managed or device pointer.
  *
  * This function can be called with a pointer inside an allocated block of
- * memory, so is not retricted to values returned by CS_ALLOC_HD.
+ * memory, so is not restricted to values returned by CS_MALLOC_HD.
  *
  * This makes it possible to check whether a pointer to an array inside
  * a larger array is shared or accessible from the device only
