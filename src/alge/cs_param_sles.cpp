@@ -218,6 +218,61 @@ _check_amg_type(cs_param_sles_t   *slesp)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the setting related to the HPDDM is consistent with the
+ *        solver class. If an issue is detected, try to solve it whith the
+ *        nearest option.
+ *
+ * \param[in, out] slesp    pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_hpddm_type(cs_param_sles_t *slesp)
+{
+  if (slesp == nullptr)
+    return;
+  if (slesp->precond != CS_PARAM_PRECOND_HPDDM)
+    return;
+
+  switch (slesp->solver_class) {
+    case CS_PARAM_SOLVER_CLASS_PETSC:
+#if defined(HAVE_PETSC)
+      if (slesp->precond_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
+        bft_error(
+          __FILE__,
+          __LINE__,
+          0,
+          " %s(): System \"%s\": Incompatible setting detected with HPDDM.\n"
+          " Please check your installation settings.\n",
+          __func__,
+          slesp->name);
+      }
+
+#else /* PETSC is not available */
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s(): System \"%s\" PETSc is not available.\n"
+                " Please check your installation settings.\n",
+                __func__,
+                slesp->name);
+#endif
+      break;
+
+    default:
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s(): System \"%s\" Incompatible setting detected.\n"
+                " Please check your installation settings.\n",
+                __func__,
+                slesp->name);
+      break; /* Nothing to do */
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -921,7 +976,7 @@ cs_param_sles_set_precond(const char       *keyval,
 
   }
   else if (strcmp(keyval, "hpddm") == 0) {
-
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->precond  = CS_PARAM_PRECOND_HPDDM;
     slesp->amg_type = CS_PARAM_AMG_NONE;
 
@@ -1046,7 +1101,9 @@ cs_param_sles_set_solver_class(const char       *keyval,
       _check_amg_type(slesp);
       cs_param_sles_gamg_reset(slesp);
     }
-
+    else if (slesp->precond == CS_PARAM_PRECOND_HPDDM) {
+      _check_hpddm_type(slesp);
+    }
   }
 
   return ierr;

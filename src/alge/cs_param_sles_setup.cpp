@@ -978,8 +978,7 @@ _petsc_pchpddm_hook(const char            *prefix,
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
-    _petsc_cmd(true, prefix_pc, "p", "2");
-
+    _petsc_cmd(true, prefix_pc, "p", "1");
   }
   else {
 
@@ -1017,8 +1016,7 @@ _petsc_pchpddm_hook(const char            *prefix,
     _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
     _petsc_cmd(true, prefix_pc, "mat_type", "baij");
-    _petsc_cmd(true, prefix_pc, "p", "2");
-
+    _petsc_cmd(true, prefix_pc, "p", "1");
   }
 }
 #endif // PETSC_HAVE_HPDDM
