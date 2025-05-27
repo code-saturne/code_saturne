@@ -5355,7 +5355,7 @@ _compute_coarse_cell_quantities(const cs_grid_t  *fine_grid,
 
 # pragma omp parallel for if(c_n_cells > CS_THR_MIN)
   for (cs_lnum_t ic = 0; ic < c_n_cells; ic++) {
-    c_cell_cen[ic][0]    /= c_cell_vol[ic];
+    c_cell_cen[ic][0] /= c_cell_vol[ic];
     c_cell_cen[ic][1] /= c_cell_vol[ic];
     c_cell_cen[ic][2] /= c_cell_vol[ic];
   }
@@ -5828,15 +5828,15 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
           sgn = 1.;
         }
         else {
-          c_face = - c_face -1;
-          sgn = 1.;
+          c_face = -c_face - 1;
+          sgn = -1.;
         }
 
         cs_lnum_t ii = f_face_cell[face_id][0];
         cs_lnum_t jj = f_face_cell[face_id][1];
         cs_real_t sdij[3];
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          sdij[kk] = sgn * (f_cell_cen[jj*3 + kk] - f_cell_cen[ii*3 + kk]);
+          sdij[kk] = sgn * (f_cell_cen[jj][kk] - f_cell_cen[ii][kk]);
 
         c_xa0[c_face] += f_xa0[face_id];
         if (f_face_u_normal != nullptr) {
@@ -5870,8 +5870,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
           sgn = 1.;
         }
         else {
-          c_face = - c_face -1;
-          sgn = 1.;
+          c_face = -c_face - 1;
+          sgn = -1.;
         }
 
         c_xa0[c_face] += f_xa0[face_id];
@@ -6165,16 +6165,20 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
       if (c_face > 0 ) {
         c_face -= 1;
         sgn = 1.;
+
+        c_xa0[2*c_face]    += f_xa0[2*face_id];
+        c_xa0[2*c_face +1] += f_xa0[2*face_id +1];
       }
       else {
-        c_face = - c_face -1;
+        c_face = -c_face - 1;
         sgn = -1.;
+
+        c_xa0[2*c_face]    += f_xa0[2*face_id +1];
+        c_xa0[2*c_face +1] += f_xa0[2*face_id];
       }
       const cs_real_t sgn_surf = sgn*f_face_surf[face_id];
 
-      c_xa0[2*c_face]         += f_xa0[2*face_id];
-      c_xa0[2*c_face +1]      += f_xa0[2*face_id +1];
-      c_xa0_diff[c_face]      += f_xa0_diff[face_id];
+      c_xa0_diff[c_face] += f_xa0_diff[face_id];
       for (cs_lnum_t k = 0; k < 3; k++)
         c_face_normal[c_face][k] += f_face_u_normal[face_id][k] * sgn_surf;
       c_xa0ij[3*c_face]    += sgn*f_xa0ij[3*face_id];
@@ -6196,15 +6200,19 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
       if (c_face > 0 ) {
         c_face -= 1;
         sgn = 1.;
+
+        c_xa0[2*c_face]    += f_xa0[2*face_id];
+        c_xa0[2*c_face +1] += f_xa0[2*face_id +1];
       }
       else {
-        c_face = - c_face -1;
+        c_face = -c_face - 1;
         sgn = -1.;
+
+        c_xa0[2*c_face]    += f_xa0[2*face_id +1];
+        c_xa0[2*c_face +1] += f_xa0[2*face_id];
       }
 
-      c_xa0[2*c_face]         += f_xa0[2*face_id];
-      c_xa0[2*c_face +1]      += f_xa0[2*face_id +1];
-      c_xa0_diff[c_face]      += f_xa0_diff[face_id];
+      c_xa0_diff[c_face] += f_xa0_diff[face_id];
       if (f_face_normal != nullptr) {
         for (cs_lnum_t k = 0; k < 3; k++)
           c_face_normal[c_face][k] += sgn * f_face_normal[face_id][k];
