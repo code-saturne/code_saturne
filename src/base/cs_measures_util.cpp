@@ -378,14 +378,16 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
                            *ms->inf_radius[jj*3   ];
         cs_real_t dist_y = (xyz_cen[ii][1] - ms->coords[jj*3 +1])
                            *ms->inf_radius[jj*3 +1];
-        cs_real_t dist_z = (xyz_cen[ii][2] - ms->coords[jj*3 +2])
-                           *ms->inf_radius[jj*3 +2];
 
-        cs_real_t r2 = dist_x*dist_x + dist_y*dist_y + dist_z*dist_z;
+        cs_real_t r2 = 0.25*(dist_x*dist_x + dist_y*dist_y);
 
         cs_real_t weight = 0.;
-        if (r2/4. <= 700.)
-          weight = exp(-r2/4.);
+        /* P0 interpolation for z, take the two levels such that
+         * z[lev] <= xyz_cen[ii][2] and z[lev+1] >= xyz_cen[ii][2] */
+        if (r2 <= 700.
+          && ms->coords[jj*3 +2]    <= xyz_cen[ii][2]
+          && ms->coords[(jj+1)*3 +2] > xyz_cen[ii][2])
+          weight = exp(-r2);
 
         total_weight += weight;
         interpolated_value += (ms->measures[jj])*weight;
