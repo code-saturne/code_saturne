@@ -2249,6 +2249,8 @@ _merge_grids(cs_grid_t  *g,
   }
 }
 
+#endif /* defined(HAVE_MPI) */
+
 /*----------------------------------------------------------------------------
  * Build coarse grid matrix in the MSR format given the 4 necessary arrays.
  *
@@ -2301,6 +2303,8 @@ _build_coarse_matrix_msr(cs_grid_t *c,
                                       &c_d_val,
                                       &c_x_val);
 }
+
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Create a distributed matrix structure from a native matrix structure.
