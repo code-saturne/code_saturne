@@ -23,8 +23,7 @@
 subroutine majgeo &
  ( ncel2  , ncele2 , nfabo2 ,                                     &
    ifabo2 ,                                                       &
-   xyzce2 , surfb2 , suffb2 , cdgfb2 ,                            &
-   volum2 , volf2  , srfbn2 , sffbn2 , distb2  )                  &
+   xyzce2 , cdgfb2 , srfbn2 )                                     &
 
  bind(C, name="cs_f_majgeo")
 
@@ -42,16 +41,10 @@ subroutine majgeo &
 ! ncel2            ! i  ! <-- ! nombre de cellules                             !
 ! ncele2           ! i  ! <-- ! nombre d'elements halo compris                 !
 ! nfabo2           ! i  ! <-- ! nombre de faces de bord                        !
-! ncelb2           ! i  ! <-- ! number of boundary cells
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
 ! xyzce2           ! ra ! <-- ! cell centers                                   !
-! surfb2           ! ra ! <-- ! boundary face normals                          !
-! suffb2           ! ra ! <-- ! boundary fluid face normals                    !
 ! cdgfb2           ! ra ! <-- ! boundary face centers                          !
-! volum2           ! ra ! <-- ! cell volumes                                   !
 ! srfbn2           ! ra ! <-- ! boundary face surfaces                         !
-! sffbn2           ! ra ! <-- ! boundary fluid face surfaces                   !
-! distb2           ! ra ! <-- ! likewise for boundary faces                    !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -82,11 +75,8 @@ integer(c_int), intent(in) :: ncel2, ncele2, nfabo2
 integer(c_int), dimension(nfabo2), target :: ifabo2
 
 real(c_double), dimension(3,ncele2), target :: xyzce2
-real(c_double), dimension(3,nfabo2), target :: surfb2, cdgfb2
-real(c_double), dimension(3,nfabo2), target :: suffb2
-real(c_double), dimension(ncele2), target :: volum2
-real(c_double), dimension(ncele2), target :: volf2
-real(c_double), dimension(nfabo2), target :: srfbn2, sffbn2, distb2
+real(c_double), dimension(3,nfabo2), target :: cdgfb2
+real(c_double), dimension(nfabo2), target :: srfbn2
 
 ! Local variables
 
@@ -111,17 +101,9 @@ xyzcen => xyzce2(1:3,1:ncelet)
 ! 3. Define pointers on mesh quantities
 !===============================================================================
 
-surfbo => surfb2(1:3,1:nfabor)
-suffbo => suffb2(1:3,1:nfabor)
 cdgfbo => cdgfb2(1:3,1:nfabor)
 
-volume => volum2(1:ncelet)
-cell_f_vol => volf2(1:ncelet)
-
 surfbn => srfbn2(1:nfabor)
-suffbn => sffbn2(1:nfabor)
-
-distb => distb2(1:nfabor)
 
 !===============================================================================
 

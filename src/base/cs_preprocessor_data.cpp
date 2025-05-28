@@ -2143,45 +2143,6 @@ _read_data(int                 file_id,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-int
-cs_f_preprocessor_data_check_perio(void);
-
-/*============================================================================
- *  Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Retrieve periodicity indicator.
- *
- * return:
- *   mesh periodicity indicator
- *----------------------------------------------------------------------------*/
-
-int
-cs_f_preprocessor_data_check_perio(void)
-{
-  int retval = 0;
-
-  cs_mesh_t  *m = cs_glob_mesh;
-
-  /* Initialize parameter values */
-
-  if (m != nullptr) {
-    if (m->n_init_perio > 0)
-      retval = 1;
-  }
-  if (retval == 0)
-    if (cs_preprocessor_check_perio() > 0)
-      retval  = 1;
-
-  return retval;
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 

@@ -116,14 +116,8 @@ extern void cs_f_majgeo(const cs_lnum_t    *ncel,
                         const cs_lnum_t    *nfabor,
                         const cs_lnum_t     ifabor[],
                         const cs_real_t     xyzcen[],
-                        const cs_real_t     surfbo[],
-                        const cs_real_t     suffbo[],
                         const cs_real_t     cdgfbo[],
-                        const cs_real_t     volume[],
-                        const cs_real_t     cell_f_vol[],
-                        const cs_real_t     surfbn[],
-                        const cs_real_t     suffbn[],
-                        const cs_real_t     distb[]);
+                        const cs_real_t     surfbn[]);
 
 /*============================================================================
  * Private function definitions
@@ -536,14 +530,8 @@ cs_preprocess_mesh_update_fortran(void)
               &(m->n_b_faces),
               m->b_face_cells,
               (cs_real_t *)mq_g->cell_cen,
-              mq_g->b_face_normal,
-              mq->b_face_normal,
               (cs_real_t *)mq_g->b_face_cog,
-              mq_g->cell_vol,
-              mq->cell_vol,
-              mq_g->b_face_surf,
-              mq->b_face_surf,
-              mq_g->b_dist);
+              mq_g->b_face_surf);
 }
 
 /*----------------------------------------------------------------------------*/

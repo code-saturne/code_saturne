@@ -41,7 +41,6 @@ use optcal
 use cstphy
 use entsor
 use ppincl
-use mesh
 use field
 use cs_c_bindings
 
@@ -52,26 +51,6 @@ implicit none
 ! Local variables
 
 integer        ii, iscal
-
-!===============================================================================
-
-interface
-
-  function cs_f_join_perio_defined() result(have_perio)  &
-    bind(C, name='cs_f_join_perio_defined')
-    use, intrinsic :: iso_c_binding
-    implicit none
-    integer(c_int) :: have_perio
-  end function cs_f_join_perio_defined
-
-  function cs_f_preprocessor_data_check_perio() result(have_perio)  &
-    bind(C, name='cs_f_preprocessor_data_check_perio')
-    use, intrinsic :: iso_c_binding
-    implicit none
-    integer(c_int) :: have_perio
-  end function cs_f_preprocessor_data_check_perio
-
-end interface
 
 !===============================================================================
 ! 0. Global field ids
@@ -89,13 +68,6 @@ call time_step_init
 call time_step_options_init
 call physical_constants_init
 call fluid_properties_init
-
-!===============================================================================
-! Get mesh metadata.
-!===============================================================================
-
-iperio = cs_f_join_perio_defined() + cs_f_preprocessor_data_check_perio()
-if (iperio.gt.1) iperio = 1
 
 !===============================================================================
 ! Position of variables in numvar.f90

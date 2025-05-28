@@ -287,39 +287,6 @@ _perio_face_clean(cs_join_param_t      param,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-int
-cs_f_join_perio_defined(void);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Return 1 if periodic joining operations are defined, 1 otherwise
- *
- * returns:
- *   periodic joining operations indicator
- *----------------------------------------------------------------------------*/
-
-int
-cs_f_join_perio_defined(void)
-{
-  int retval = 0;
-
-  for (int i = 0; i < cs_glob_n_joinings; i++) {
-    cs_join_param_t param = (cs_glob_join_array[i])->param;
-    if (param.perio_type > FVM_PERIODICITY_NULL)
-      retval = 1;
-  }
-
-  return retval;
-}
-
-/*============================================================================
  * Public function definitions
  *===========================================================================*/
 

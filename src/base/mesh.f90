@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2024 EDF S.A.
+! Copyright (C) 1998-2025 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -60,51 +60,13 @@ module mesh
   !> coordinate of the cell centers
   double precision, dimension(:,:), pointer :: xyzcen
 
-  !> \anchor surfbo
-  !> surface vector of the boundary faces. Its norm is the surface of the face
-  !> and it is oriented outwards
-  double precision, dimension(:,:), pointer :: surfbo
-
-  !> \anchor suffbo
-  !> fluid surface vector of the boundary faces. Its norm is the surface of the face
-  !> and it is oriented outwards
-  double precision, dimension(:,:), pointer :: suffbo
-
   !> \anchor cdgfbo
   !> coordinates of the centers of the boundary faces
   double precision, dimension(:,:), pointer :: cdgfbo
 
-  !> \anchor volume
-  !> volume of each cell
-  double precision, dimension(:), pointer :: volume
-
-  !> \anchor cell_f_vol
-  !> fluid volume of each cell
-  double precision, dimension(:), pointer :: cell_f_vol
-
   !> \anchor surfbn
   !> norm of the surface of the boundary faces
   double precision, dimension(:), pointer :: surfbn
-
-  !> \anchor suffbn
-  !> norm of the fluid surface of the boundary faces
-  double precision, dimension(:), pointer :: suffbn
-
-  !> \anchor distb
-  !> For every boundary face, dot product between the vectors
-  !> \f$\vect{IF}\f$ and \f$\vect{n}\f$.
-  !> I is the center of the neighboring cell. F is the face center.
-  !> The vector \f$\vect{n}\f$ is the unit vector normal to the face and
-  !> oriented to the exterior of the domain
-  double precision, dimension(:), pointer :: distb
-
-  !> \addtogroup period
-  !> \{
-
-  !> presence of periodicity.
-  !> - 1: periodicity is activated
-  !> - 0: no periodicity (default value)
-  integer, save :: iperio = 0
 
   !=============================================================================
 
