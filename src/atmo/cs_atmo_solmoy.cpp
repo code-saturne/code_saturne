@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -36,7 +36,6 @@
 #include "mesh/cs_mesh.h"
 #include "atmo/cs_air_props.h"
 #include "base/cs_math.h"
-#include "alge/cs_divergence.h"
 #include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
@@ -49,7 +48,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "atmo/cs_atmo_solmoy.h"
- /*----------------------------------------------------------------------------*/
 
 /*============================================================================
  * Public function definitions
@@ -58,18 +56,13 @@
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize ground level parameters from land use
- *
- * \param[out] error_code  error code
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solmoy(int *error_code)
+cs_solmoy(void)
 {
   /* Local variables */
-  int iirugdy, iirugth, iialbed, iiemiss, iicsol, iiveget;
-  int iic1w, iic2w, iir1, iir2;
-  cs_real_t codinv;
   cs_real_t rugdij, rugtij, albeij, emisij;
   cs_real_t vegeij, c1wij, c2wij, csolij;
   cs_real_t r1ij, r2ij;
@@ -89,7 +82,8 @@ cs_solmoy(int *error_code)
 
   /* Pointers to field values */
   cs_field_t *boundary_roughness = cs_field_by_name("boundary_roughness");
-  cs_field_t *boundary_thermal_roughness = cs_field_by_name("boundary_thermal_roughness");
+  cs_field_t *boundary_thermal_roughness
+    = cs_field_by_name("boundary_thermal_roughness");
   cs_field_t *boundary_albedo = cs_field_by_name("boundary_albedo");
   cs_field_t *emissivity = cs_field_by_name("emissivity");
   cs_field_t *boundary_vegetation = cs_field_by_name("boundary_vegetation");
@@ -114,9 +108,8 @@ cs_solmoy(int *error_code)
   cs_real_t *bvar_temperature_deep = soil_temperature_deep->val;
   cs_real_t *bvar_soil_percentages = atmo_soil_percentages->val;
 
-
   /* Initializations */
-  codinv = -999.0;
+  const cs_real_t codinv = -999.0;
 
   for (cs_lnum_t soil_id = 0; soil_id < n_elts ; soil_id++) {
     face_id =elt_ids[soil_id];
@@ -164,7 +157,7 @@ cs_solmoy(int *error_code)
       r2ij += aopt->soil_cat_r2[n] * fac;
     }
 
-    face_id =elt_ids[soil_id];
+    face_id = elt_ids[soil_id];
     bvar_dyn_rough[face_id] = rugdij;
     bvar_therm_rough[face_id] = rugtij;
     bvar_albedo[face_id] = albeij;
@@ -181,34 +174,35 @@ cs_solmoy(int *error_code)
     bvar_temperature_deep[soil_id] = aopt->soil_temperature;
   }
 
-
   /* Error checking */
-  *error_code = 0;
-  for (cs_lnum_t soil_id = 0; soil_id < n_elts ; soil_id++) {
-    face_id =elt_ids[soil_id];
-    if (bvar_dyn_rough[face_id] == codinv ) (*error_code)++;
-    if (bvar_therm_rough[face_id] == codinv) (*error_code)++;
-    if (bvar_albedo[face_id] == codinv) (*error_code)++;
-    if (bvar_emissi[face_id] == codinv) (*error_code)++;
+  cs_gnum_t error_count = 0;
+  for (cs_lnum_t soil_id = 0; soil_id < n_elts; soil_id++) {
+    face_id = elt_ids[soil_id];
+    if (bvar_dyn_rough[face_id] <= codinv ) error_count++;
+    if (bvar_therm_rough[face_id] <= codinv) error_count++;
+    if (bvar_albedo[face_id] <= codinv) error_count++;
+    if (bvar_emissi[face_id] <= codinv) error_count++;
 
-    if (bvar_thermal_capacity[soil_id] == codinv) (*error_code)++;
-    if (bvar_vegeta[soil_id] == codinv) (*error_code)++;
-    if (bvar_water_capacity[soil_id] == codinv) (*error_code)++;
-    if (bvar_water_ratio[soil_id] == codinv) (*error_code)++;
-    if (bvar_r1[soil_id] == codinv) (*error_code)++;
-    if (bvar_r2[soil_id] == codinv) (*error_code)++;
+    if (bvar_thermal_capacity[soil_id] <= codinv) error_count++;
+    if (bvar_vegeta[soil_id] <= codinv) error_count++;
+    if (bvar_water_capacity[soil_id] <= codinv) error_count++;
+    if (bvar_water_ratio[soil_id] <= codinv) error_count++;
+    if (bvar_r1[soil_id] <= codinv) error_count++;
+    if (bvar_r2[soil_id] <= codinv) error_count++;
   }
 
-  cs_parall_sum(1, CS_INT_TYPE, error_code);
+  cs_parall_counter(&error_count, 1);
 
   /* Print error message if necessary */
-  if (*error_code != 0) {
-    bft_printf("%% erreur solmoy: erreur numero  1\n"
-               "initialisation incorrecte des coefficients de "
-               "l'interface sol atmosphere\n"
-               "sur %d valeurs il y en a %d non initialisees\n",
-               (as_dim) , *error_code);
-  } else {
+  if (error_count != 0) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: incorrect initialization of coefficients of the\n"
+                "ground-atmosphere interface\n"
+                "For %d quantities, %llu local values are not initialized."),
+              __func__, as_dim,
+              (unsigned long long)error_count);
+  }
+  else {
     /* Initialize control variables */
     for (cs_lnum_t n = 0; n < 10; n++) {
       soilmin[n] = 999999.0;
@@ -286,7 +280,6 @@ cs_solmoy(int *error_code)
     cs_parall_max(10, CS_DOUBLE, soilmax);
     cs_parall_sum(1, CS_DOUBLE, &surf_zone);
 
-
     for (cs_lnum_t n = 0; n < 10; n++) {
       soilmean[n] = soilmean[n] / surf_zone;
     }
@@ -301,11 +294,14 @@ cs_solmoy(int *error_code)
         bft_printf(" *%-12s*%8.4f*%8.4f*%8.4f*\n",
                    soilname[n], soilmin[n] * 1e6, soilmean[n] * 1e6,
                    soilmax[n] * 1e6);
-      } else {
-          bft_printf(" *%-12s*%8.4f*%8.4f*%8.4f*\n",
-                     soilname[n], soilmin[n], soilmean[n], soilmax[n]);
       }
-  }
+      else {
+        bft_printf(" *%-12s*%8.4f*%8.4f*%8.4f*\n",
+                   soilname[n], soilmin[n], soilmean[n], soilmax[n]);
+      }
+    }
     bft_printf(" ** ========================================= **\n");
   }
 }
+
+/*----------------------------------------------------------------------------*/

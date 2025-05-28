@@ -1,5 +1,5 @@
-#ifndef __CS_ATMO_SOL_H__
-#define __CS_ATMO_SOL_H__
+#ifndef CS_ATMO_SOL_H
+#define CS_ATMO_SOL_H
 
 /*============================================================================
  * Atmospheric soil module - Build constants and variables to describe ground model
@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -27,16 +27,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
-#include "mesh/cs_mesh.h"
-#include "base/cs_field.h"
-#include "atmo/cs_atmo.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -61,4 +56,4 @@ cs_atmsol(void);
 
 END_C_DECLS
 
-#endif /* __CS_ATMO_SOL_H__ */
+#endif /* CS_ATMO_SOL_H */

@@ -5608,11 +5608,12 @@ cs_atmo_read_meteo_profile(int mode)
       if (at_opt->met_1d_nlevels_d < 2 || at_opt->met_1d_nlevels_t < 2)
         cs_parameters_error
           (CS_ABORT_DELAYED,
-           _("WARNING: STOP WHILE READING INPUT DATA (cs_atmo_read_meteo_profile)\n"),
+           _("WHILE READING INPUT DATA (cs_atmo_read_meteo_profile)\n"),
            _("    =========\n"
              "               ATMOSPHERIC SPECIFIC PHYSICS\n"
              "    Error in the date of meteo profile file:\n"
-             " the number of temperature or velocity measurements must be larger 2\n"));
+             " the number of temperature or velocity measurements "
+             "must be larger than 2.\n"));
     }
     else {
       const int nbmetd = at_opt->met_1d_nlevels_d;
@@ -5722,7 +5723,6 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.soil_cat_w2);
   BFT_FREE(_atmo_option.soil_cat_thermal_inertia);
   BFT_FREE(_atmo_option.soil_cat_thermal_roughness);
-
 }
 
 /*----------------------------------------------------------------------------*/

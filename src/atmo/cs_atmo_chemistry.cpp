@@ -172,6 +172,7 @@ cs_f_atmo_chem_get_pointers(int                    **model,
                             bool                   **init_aero_with_lib,
                             int                    **n_layer,
                             int                    **n_size);
+
 void
 cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum);
 
@@ -1995,7 +1996,6 @@ cs_atmo_chem_exp_source_terms(int          iscal,
   }
 
   CS_FREE(cvara_espg);
-
 }
 
 /*----------------------------------------------------------------------------*/

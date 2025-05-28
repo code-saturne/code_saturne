@@ -1157,7 +1157,8 @@ cs_atmo_init_variables_1(void)
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY)
     phys_pp->irovar = 0;
   // for the dry or humid atmosphere case
-  else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY)
+  else if (  cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+           > CS_ATMO_CONSTANT_DENSITY)
     phys_pp->irovar = 1;
 
   /* Turbulent Schmidt and Prandtl number for atmospheric flows

@@ -1,11 +1,12 @@
 /*============================================================================
- * Atmospheric soil module - Soil - atmosphere parameters computed from a "Land use" file
+ * Atmospheric soil module
+ * Soil - atmosphere parameters computed from a "Land use" file
  *============================================================================*/
 
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,9 +47,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "atmo/cs_atmo_solcat.h"
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 
 /*============================================================================
  * Public function definitions
@@ -58,19 +56,18 @@
 /*!
  * \brief Soil - atmosphere parameters computed from a "Land use" file
  *
- * \param[in] iappel  first pass to set default values, second pass to perform some checks and log
+ * \param[in] call_stage  first pass to set default values,
+ *                        second pass to perform some checks and log
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_soil_cat(int iappel)
+cs_atmo_soil_cat(int call_stage)
 {
   /* Local variables */
-  int ierreu;
   int water, forest, diverse, mineral, diffu, mixed, dense, building;
-  int inityp;
-  double codinv;
-  char raison[51];
+  const int inityp = -9;
+  const double codinv = -999.0;
   char nomcat[8][10];
 
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
@@ -81,8 +78,6 @@ cs_atmo_soil_cat(int iappel)
   cs_f_atmo_get_soil_zone(&n_elts, &n_soil_cat, &elt_ids);
 
   /* Initialization */
-  inityp = -9;
-  codinv = -999.0;
 
   water = inityp;
   forest = inityp;
@@ -124,7 +119,8 @@ cs_atmo_soil_cat(int iappel)
 
   /* First pass, default values according to the choice of number of soils */
   /*----------------------------------------------------------------------*/
-  if (iappel == 1) {
+
+  if (call_stage == 1) {
     cs_atmo_soil_init_arrays(&n_soil_cat,
                              &at_opt->soil_cat_thermal_inertia,
                              &at_opt->soil_cat_roughness,
@@ -160,14 +156,38 @@ cs_atmo_soil_cat(int iappel)
     if (dense != inityp) at_opt->soil_cat_roughness[dense] = 1.000;
     if (building != inityp) at_opt->soil_cat_roughness[building] = 0.600;
 
-    if (water != inityp) at_opt->soil_cat_thermal_roughness[water] = at_opt->soil_cat_roughness[water];
-    if (forest != inityp) at_opt->soil_cat_thermal_roughness[forest] = at_opt->soil_cat_roughness[forest] * exp(-2.0);
-    if (diverse != inityp) at_opt->soil_cat_thermal_roughness[diverse] = at_opt->soil_cat_roughness[diverse] * exp(-2.0);
-    if (mineral != inityp) at_opt->soil_cat_thermal_roughness[mineral] = at_opt->soil_cat_roughness[mineral] * exp(-2.0);
-    if (diffu != inityp) at_opt->soil_cat_thermal_roughness[diffu] = at_opt->soil_cat_roughness[diffu] * exp(-2.0);
-    if (mixed != inityp) at_opt->soil_cat_thermal_roughness[mixed] = at_opt->soil_cat_roughness[mixed] * exp(-2.0);
-    if (dense != inityp) at_opt->soil_cat_thermal_roughness[dense] = at_opt->soil_cat_roughness[dense] * exp(-2.0);
-    if (building != inityp) at_opt->soil_cat_thermal_roughness[building] = at_opt->soil_cat_roughness[building] * exp(-2.0);
+    if (water != inityp) {
+      at_opt->soil_cat_thermal_roughness[water]
+        = at_opt->soil_cat_roughness[water];
+    }
+    if (forest != inityp) {
+      at_opt->soil_cat_thermal_roughness[forest]
+        = at_opt->soil_cat_roughness[forest] * exp(-2.0);
+    }
+    if (diverse != inityp) {
+      at_opt->soil_cat_thermal_roughness[diverse]
+        = at_opt->soil_cat_roughness[diverse] * exp(-2.0);
+    }
+    if (mineral != inityp) {
+      at_opt->soil_cat_thermal_roughness[mineral]
+        = at_opt->soil_cat_roughness[mineral] * exp(-2.0);
+    }
+    if (diffu != inityp) {
+      at_opt->soil_cat_thermal_roughness[diffu]
+        = at_opt->soil_cat_roughness[diffu] * exp(-2.0);
+    }
+    if (mixed != inityp) {
+      at_opt->soil_cat_thermal_roughness[mixed]
+        = at_opt->soil_cat_roughness[mixed] * exp(-2.0);
+    }
+    if (dense != inityp) {
+      at_opt->soil_cat_thermal_roughness[dense]
+        = at_opt->soil_cat_roughness[dense] * exp(-2.0);
+    }
+    if (building != inityp) {
+      at_opt->soil_cat_thermal_roughness[building]
+        = at_opt->soil_cat_roughness[building] * exp(-2.0);
+    }
 
     if (water != inityp) at_opt->soil_cat_albedo[water] = 0.08;
     if (forest != inityp) at_opt->soil_cat_albedo[forest] = 0.16;
@@ -202,26 +222,51 @@ cs_atmo_soil_cat(int iappel)
     if (mineral != inityp) at_opt->soil_cat_thermal_inertia[mineral] = 5.0e-06;
     if (dense != inityp) at_opt->soil_cat_thermal_inertia[dense] = 3.9e-06;
     if (diffu != inityp) {
-      at_opt->soil_cat_thermal_inertia[diffu] = at_opt->soil_cat_thermal_inertia[forest] * at_opt->soil_cat_vegeta[diffu] +
-                     at_opt->soil_cat_thermal_inertia[dense] * (1.0 - at_opt->soil_cat_vegeta[diffu]);
+      at_opt->soil_cat_thermal_inertia[diffu]
+        =      at_opt->soil_cat_thermal_inertia[forest]
+             * at_opt->soil_cat_vegeta[diffu]
+           +   at_opt->soil_cat_thermal_inertia[dense]
+             * (1.0 - at_opt->soil_cat_vegeta[diffu]);
     }
     if (mixed != inityp) {
-      at_opt->soil_cat_thermal_inertia[mixed] = at_opt->soil_cat_thermal_inertia[forest] * at_opt->soil_cat_vegeta[mixed] +
-                    at_opt->soil_cat_thermal_inertia[dense] * (1.0 - at_opt->soil_cat_vegeta[mixed]);
+      at_opt->soil_cat_thermal_inertia[mixed]
+        =     at_opt->soil_cat_thermal_inertia[forest]
+            * at_opt->soil_cat_vegeta[mixed]
+          +   at_opt->soil_cat_thermal_inertia[dense]
+            * (1.0 - at_opt->soil_cat_vegeta[mixed]);
     }
     if (building != inityp) {
-      at_opt->soil_cat_thermal_inertia[building] = at_opt->soil_cat_thermal_inertia[forest] * at_opt->soil_cat_vegeta[building] +
-                   3.9e-06 * (1.0 - at_opt->soil_cat_vegeta[building]);
+      at_opt->soil_cat_thermal_inertia[building]
+        =     at_opt->soil_cat_thermal_inertia[forest]
+            * at_opt->soil_cat_vegeta[building]
+          +   3.9e-06 * (1.0 - at_opt->soil_cat_vegeta[building]);
     }
 
     if (water != inityp) at_opt->soil_cat_w1[water] = 100.0;
-    if (forest != inityp) at_opt->soil_cat_w1[forest] = 18.0 * at_opt->soil_cat_vegeta[forest] + 2.0;
-    if (diverse != inityp) at_opt->soil_cat_w1[diverse] = 18.0 * at_opt->soil_cat_vegeta[diverse] + 2.0;
-    if (mineral != inityp) at_opt->soil_cat_w1[mineral] = 18.0 * at_opt->soil_cat_vegeta[mineral] + 2.0;
-    if (diffu != inityp) at_opt->soil_cat_w1[diffu] = 18.0 * at_opt->soil_cat_vegeta[diffu] + 2.0;
-    if (mixed != inityp) at_opt->soil_cat_w1[mixed] = 18.0 * at_opt->soil_cat_vegeta[mixed] + 2.0;
-    if (dense != inityp) at_opt->soil_cat_w1[dense] = 18.0 * at_opt->soil_cat_vegeta[dense] + 2.0;
-    if (building != inityp) at_opt->soil_cat_w1[building] = 18.0 * at_opt->soil_cat_vegeta[building] + 2.0;
+    if (forest != inityp) {
+      at_opt->soil_cat_w1[forest] = 18.0 * at_opt->soil_cat_vegeta[forest] + 2.0;
+    }
+    if (diverse != inityp) {
+      at_opt->soil_cat_w1[diverse]
+        = 18.0 * at_opt->soil_cat_vegeta[diverse] + 2.0;
+    }
+    if (mineral != inityp) {
+      at_opt->soil_cat_w1[mineral]
+        = 18.0 * at_opt->soil_cat_vegeta[mineral] + 2.0;
+    }
+    if (diffu != inityp) {
+      at_opt->soil_cat_w1[diffu] = 18.0 * at_opt->soil_cat_vegeta[diffu] + 2.0;
+    }
+    if (mixed != inityp) {
+      at_opt->soil_cat_w1[mixed] = 18.0 * at_opt->soil_cat_vegeta[mixed] + 2.0;
+    }
+    if (dense != inityp) {
+      at_opt->soil_cat_w1[dense] = 18.0 * at_opt->soil_cat_vegeta[dense] + 2.0;
+    }
+    if (building != inityp) {
+      at_opt->soil_cat_w1[building]
+        = 18.0 * at_opt->soil_cat_vegeta[building] + 2.0;
+    }
 
     if (water != inityp) at_opt->soil_cat_w2[water] = 1.00;
     if (forest != inityp) at_opt->soil_cat_w2[forest] = 0.20;
@@ -251,9 +296,10 @@ cs_atmo_soil_cat(int iappel)
     if (building != inityp) at_opt->soil_cat_r2[building] = 1.0;
   }
 
-  /* Second pass: log and checks */
-  /*----------------------------*/
-  if (iappel == 2) {
+  /* Second pass: log and checks
+     --------------------------- */
+
+  if (call_stage == 2) {
     /* Log */
     bft_printf(" Soil-atmosphere interface model\n");
     bft_printf(" Values of tabulated coefficients\n");
@@ -262,33 +308,43 @@ cs_atmo_soil_cat(int iappel)
                "Cs(e-6)  vegeta   c1w      c2w      r1       r2\n");
 
     for (cs_lnum_t n = 1; n <= n_soil_cat; n++) {
-      bft_printf("%s %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f\n",
-        nomcat[n], at_opt->soil_cat_roughness[n], at_opt->soil_cat_thermal_roughness[n],
-        at_opt->soil_cat_albedo[n], at_opt->soil_cat_emissi[n], 1.e+06 * at_opt->soil_cat_thermal_inertia[n],
-        at_opt->soil_cat_vegeta[n], at_opt->soil_cat_w1[n], at_opt->soil_cat_w2[n],
-        at_opt->soil_cat_r1[n], at_opt->soil_cat_r2[n]);
+      bft_printf
+        ("%s %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f\n",
+         nomcat[n], at_opt->soil_cat_roughness[n],
+         at_opt->soil_cat_thermal_roughness[n],
+        at_opt->soil_cat_albedo[n],
+         at_opt->soil_cat_emissi[n],
+         1.e+06 * at_opt->soil_cat_thermal_inertia[n],
+        at_opt->soil_cat_vegeta[n],
+         at_opt->soil_cat_w1[n], at_opt->soil_cat_w2[n],
+         at_opt->soil_cat_r1[n], at_opt->soil_cat_r2[n]);
     }
     bft_printf(" --------------------------------\n\n");
 
     /* Check */
-    ierreu = n_soil_cat;
-    strncpy(raison, " Wrong soil coefficients              ", 50);
+    int n_errors = n_soil_cat;
 
     for (cs_lnum_t n = 1; n <= n_soil_cat; n++) {
-      if (at_opt->soil_cat_roughness[n] != codinv && at_opt->soil_cat_thermal_roughness[n] != codinv &&
-          at_opt->soil_cat_albedo[n] != codinv && at_opt->soil_cat_emissi[n] != codinv &&
-          at_opt->soil_cat_w1[n] != codinv && at_opt->soil_cat_w2[n] != codinv &&
-          at_opt->soil_cat_thermal_inertia[n] != codinv && at_opt->soil_cat_r1[n] != codinv &&
-          at_opt->soil_cat_r2[n] != codinv) {
-        ierreu--;
+      if (   at_opt->soil_cat_roughness[n] > codinv
+          && at_opt->soil_cat_thermal_roughness[n] > codinv
+          && at_opt->soil_cat_albedo[n] > codinv
+          && at_opt->soil_cat_emissi[n] > codinv
+          && at_opt->soil_cat_w1[n] > codinv
+          && at_opt->soil_cat_w2[n] > codinv
+          && at_opt->soil_cat_thermal_inertia[n] > codinv
+          && at_opt->soil_cat_r1[n] > codinv
+          && at_opt->soil_cat_r2[n] > codinv) {
+        n_errors--;
       }
     }
 
     /* Error message if needed */
-    if (ierreu != 0) {
-      bft_printf("\n%% Error in solcat: number of soil with an error = %d\n", ierreu);
-      bft_printf(" %s\n", raison);
-      cs_exit(1);
+    if (n_errors != 0) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: number of soils with incorrect soil coefficients = %d."),
+                __func__, n_errors);
     }
   }
 }
+
+/*----------------------------------------------------------------------------*/

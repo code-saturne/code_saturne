@@ -1715,11 +1715,12 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
         cs_real_t x = (proj + mm*stride)[m_dim  ];
         cs_real_t y = (proj + mm*stride)[m_dim+1];
         cs_real_t z = (proj + mm*stride)[m_dim+2];
-        f_oia->val[ii*f_dim+ms->comp_ids[mc_id]] +=  (proj + mm*stride)[mc_id] * vect[ll]
-                                                   * _b_matrix(cell_cen[ii][0],
-                                                               cell_cen[ii][1],
-                                                               cell_cen[ii][2],
-                                                               x, y, z, ir_xy2, ir_z2);
+        f_oia->val[ii*f_dim+ms->comp_ids[mc_id]]
+          +=  (proj + mm*stride)[mc_id] * vect[ll]
+             * _b_matrix(cell_cen[ii][0],
+                         cell_cen[ii][1],
+                         cell_cen[ii][2],
+                         x, y, z, ir_xy2, ir_z2);
       }
     }
   }

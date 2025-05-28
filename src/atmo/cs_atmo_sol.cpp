@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -36,7 +36,6 @@
 #include "mesh/cs_mesh.h"
 #include "atmo/cs_air_props.h"
 #include "base/cs_math.h"
-#include "alge/cs_divergence.h"
 #include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
@@ -44,7 +43,6 @@
 #include "atmo/cs_atmo_soliva.h"
 #include "atmo/cs_atmo_solmoy.h"
 #include "base/cs_parall.h"
-
 
 /*----------------------------------------------------------------------------
 *  Header for the current file
@@ -63,7 +61,6 @@
  * \brief Build constants and variables to describe ground model
  */
 /*----------------------------------------------------------------------------*/
-
 
 void
 cs_atmsol(void)
@@ -86,11 +83,7 @@ cs_atmsol(void)
   if (n_elts > 0) {
     /* Second pass, print and check soil categories parameters */
     cs_atmo_soil_cat(2);
-    cs_solmoy(&error);
-    if (error != 0) {
-      bft_printf("Allocation error of atmodsol::solmoy\n");
-      cs_exit(1);
-    }
+    cs_solmoy();
 
     /* Initialization of soil variables */
     /* Only if soil is activated */
