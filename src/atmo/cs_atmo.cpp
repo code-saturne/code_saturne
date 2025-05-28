@@ -355,14 +355,9 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nvert,
                        int                    **kvert,
                        int                    **kmx,
-                       cs_real_t              **tsini,
-                       cs_real_t              **tprini,
-                       cs_real_t              **qvsini,
                        int                    **ihpm,
                        int                    **iqv0,
                        int                    **nfatr1,
-                       cs_real_t              **w1ini,
-                       cs_real_t              **w2ini,
                        cs_real_t              **sigc,
                        int                    **idrayi,
                        int                    **idrayst,
@@ -1981,14 +1976,9 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nvert,
                        int                    **kvert,
                        int                    **kmx,
-                       cs_real_t              **tsini,
-                       cs_real_t              **tprini,
-                       cs_real_t              **qvsini,
                        int                    **ihpm,
                        int                    **iqv0,
                        int                    **nfatr1,
-                       cs_real_t              **w1ini,
-                       cs_real_t              **w2ini,
                        cs_real_t              **sigc,
                        int                    **idrayi,
                        int                    **idrayst,
@@ -2024,14 +2014,9 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *nvert = &(_atmo_option.rad_1d_nvert);
   *kvert = &(_atmo_option.rad_1d_nlevels);
   *kmx = &(_atmo_option.rad_1d_nlevels_max);
-  *tsini = &(_atmo_option.soil_surf_temp);
-  *tprini = &(_atmo_option.soil_temperature);
-  *qvsini = &(_atmo_option.soil_humidity);
   *ihpm = &(_atmo_option.hydrostatic_pressure_model);
   *iqv0 = &(_atmo_option.qv_profile);
   *nfatr1 = &(_atmo_option.rad_1d_frequency);
-  *w1ini = &(_atmo_option.soil_w1_ini);
-  *w2ini = &(_atmo_option.soil_w2_ini);
   *sigc  = &(_atmo_option.sigc);
   *idrayi = &(_atmo_option.infrared_1D_profile);
   *idrayst = &(_atmo_option.solar_1D_profile);

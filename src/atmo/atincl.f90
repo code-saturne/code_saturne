@@ -428,8 +428,8 @@ integer(c_int), pointer, save :: rad_atmo_model
         subgrid_model, distribution_model,                              &
         imeteo, nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                 &
         meteo_zi, iatsoil,                                              &
-        nvertv, kvert, kmx, tsini, tprini, qvsini, ihpm, iqv0,          &
-        nfatr1, w1ini, w2ini, sigc, idrayi, idrayst, aod_o3_tot,        &
+        nvertv, kvert, kmx, ihpm, iqv0,                                 &
+        nfatr1, sigc, idrayi, idrayst, aod_o3_tot,                      &
         aod_h2o_tot)          &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
@@ -444,8 +444,8 @@ integer(c_int), pointer, save :: rad_atmo_model
       type(c_ptr), intent(out) :: x_l93, y_l93, idrayi, idrayst
       type(c_ptr), intent(out) :: imeteo
       type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, iatra1, nbmaxt
-      type(c_ptr), intent(out) :: meteo_zi, iqv0, w1ini, w2ini
-      type(c_ptr), intent(out) :: iatsoil, tsini, tprini, qvsini
+      type(c_ptr), intent(out) :: meteo_zi, iqv0
+      type(c_ptr), intent(out) :: iatsoil
       type(c_ptr), intent(out) :: nvertv, kvert, kmx, ihpm, nfatr1
       type(c_ptr), intent(out) :: aod_o3_tot, aod_h2o_tot
     end subroutine cs_f_atmo_get_pointers
@@ -652,14 +652,13 @@ contains
   subroutine atmo_init
 
     use, intrinsic :: iso_c_binding
-    use atsoil
     use cs_c_bindings
 
     implicit none
 
     ! Local variables
     type(c_ptr) :: c_ps
-    type(c_ptr) :: c_compute_z_ground, c_iatmst, c_nrg, c_nespg
+    type(c_ptr) :: c_compute_z_ground, c_iatmst
     type(c_ptr) :: c_sedimentation_model, c_deposition_model, c_nucleation_model
     type(c_ptr) :: c_subgrid_model
     type(c_ptr) :: c_distribution_model
@@ -668,8 +667,8 @@ contains
     type(c_ptr) :: c_xl93, c_yl93, c_sigc
     type(c_ptr) :: c_imeteo, c_iqv0, c_idrayi, c_idrayst
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
-    type(c_ptr) :: c_meteo_zi, c_tprini, c_qvsini, c_nfatr1
-    type(c_ptr) :: c_iatsoil, c_tsini, c_isepchemistry, c_w1ini, c_w2ini
+    type(c_ptr) :: c_meteo_zi, c_nfatr1
+    type(c_ptr) :: c_iatsoil
     type(c_ptr) :: c_nvert, c_kvert, c_kmx, c_theo_interp, c_ihpm
     type(c_ptr) :: c_aod_o3_tot, c_aod_h2o_tot
     type(c_ptr) :: c_cp_a, c_cp_v
@@ -685,9 +684,9 @@ contains
       c_distribution_model, c_imeteo,               &
       c_nbmetd, c_nbmett, c_nbmetm, c_iatra1,       &
       c_nbmaxt, c_meteo_zi, c_iatsoil,              &
-      c_nvert, c_kvert, c_kmx, c_tsini, c_tprini,   &
-      c_qvsini, c_ihpm, c_iqv0, c_nfatr1, c_w1ini,  &
-      c_w2ini, c_sigc, c_idrayi, c_idrayst,         &
+      c_nvert, c_kvert, c_kmx,                      &
+      c_ihpm, c_iqv0, c_nfatr1,                     &
+      c_sigc, c_idrayi, c_idrayst,                  &
       c_aod_o3_tot, c_aod_h2o_tot)
 
     call c_f_pointer(c_ps, ps)
@@ -725,13 +724,8 @@ contains
     call c_f_pointer(c_nvert, nvert)
     call c_f_pointer(c_kvert, kvert)
     call c_f_pointer(c_kmx, kmx)
-    call c_f_pointer(c_tsini, tsini)
-    call c_f_pointer(c_tprini, tprini)
-    call c_f_pointer(c_qvsini, qvsini)
     call c_f_pointer(c_ihpm, ihpm)
     call c_f_pointer(c_iqv0, iqv0)
-    call c_f_pointer(c_w1ini, w1ini)
-    call c_f_pointer(c_w2ini, w2ini)
     call c_f_pointer(c_sigc, sigc)
     call c_f_pointer(c_idrayi, idrayi)
     call c_f_pointer(c_idrayst, idrayst)
@@ -795,7 +789,6 @@ subroutine allocate_map_atmo () &
 
   use cs_c_bindings
   use atchem
-  use atsoil
 
   implicit none
 
@@ -945,7 +938,6 @@ subroutine finalize_meteo() &
   bind(C, name='cs_f_finalize_meteo')
 
 use cs_c_bindings
-use atsoil
 
 implicit none
 

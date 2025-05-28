@@ -59,7 +59,6 @@ base/parall.f90 \
 base/pointe.f90 \
 base/cs_c_bindings.f90 \
 atmo/atincl.f90 \
-atmo/atsoil.f90 \
 atmo/atchem.f90 \
 atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
@@ -76,7 +75,7 @@ base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
 base/optcal.$(OBJEXT): base/cs_c_bindings.$(OBJEXT)
 
 atmo/atincl.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
- base/mesh.$(OBJEXT) atmo/atsoil.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
+ base/mesh.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
  atmo/atchem.$(OBJEXT) atmo/sshaerosol.$(OBJEXT)
 
 atmo/atchem.$(OBJEXT): base/mesh.$(OBJEXT) \

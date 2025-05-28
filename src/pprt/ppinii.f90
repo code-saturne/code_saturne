@@ -42,7 +42,6 @@ use ppincl
 use atincl
 use atimbr
 use atchem
-use atsoil
 use field
 use sshaerosol
 

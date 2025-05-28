@@ -44,7 +44,6 @@ use ppincl
 use mesh
 use field
 use atincl
-use atsoil
 use cs_c_bindings
 use, intrinsic :: iso_c_binding
 
@@ -61,6 +60,7 @@ integer ifac, isol
 integer ico2,imer1
 integer ideb, icompt
 integer ktamp
+integer nfmodsol, nbrsol
 
 double precision heuray, albedo, emis, foir, fos
 double precision xvert, yvert
@@ -104,38 +104,30 @@ double precision, dimension(:,:), pointer :: aevert
 save ideb
 data ideb/0/
 
-  interface
+interface
 
-    subroutine cs_f_atmo_rad_1d_arrays_get_pointers( &
-         p_qwvert, &
-         p_qlvert, &
-         p_qvvert, &
-         p_ncvert, &
-         p_fnvert, &
-         p_aevert) &
-         bind(C, name='cs_f_atmo_rad_1d_arrays_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: p_qwvert
-      type(c_ptr), intent(out) :: p_qlvert
-      type(c_ptr), intent(out) :: p_qvvert
-      type(c_ptr), intent(out) :: p_ncvert
-      type(c_ptr), intent(out) :: p_fnvert
-      type(c_ptr), intent(out) :: p_aevert
-    end subroutine cs_f_atmo_rad_1d_arrays_get_pointers
+  subroutine cs_f_atmo_rad_1d_arrays_get_pointers(p_qwvert, p_qlvert, &
+                                                  p_qvvert, p_ncvert, &
+                                                  p_fnvert, p_aevert) &
+    bind(C, name='cs_f_atmo_rad_1d_arrays_get_pointers')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), intent(out) :: p_qwvert, p_qlvert
+    type(c_ptr), intent(out) :: p_qvvert, p_ncvert
+    type(c_ptr), intent(out) :: p_fnvert, p_aevert
+  end subroutine cs_f_atmo_rad_1d_arrays_get_pointers
 
-    subroutine cs_user_atmo_1d_rad_prf(preray, temray, &
-                                       romray, qvray,  &
-                                       qlray,  ncray, aeroso) &
-      bind(C, name='cs_user_atmo_1d_rad_prf')
-       use, intrinsic :: iso_c_binding
-       implicit none
-      real(kind=c_double), dimension(*), intent(inout) :: preray, temray
-      real(kind=c_double), dimension(*), intent(inout) :: romray, qvray
-      real(kind=c_double), dimension(*), intent(inout) :: qlray,  ncray, aeroso
-    end subroutine cs_user_atmo_1d_rad_prf
+  subroutine cs_user_atmo_1d_rad_prf(preray, temray, romray, qvray, &
+                                     qlray,  ncray, aeroso) &
+    bind(C, name='cs_user_atmo_1d_rad_prf')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), dimension(*), intent(inout) :: preray, temray
+    real(kind=c_double), dimension(*), intent(inout) :: romray, qvray
+    real(kind=c_double), dimension(*), intent(inout) :: qlray,  ncray, aeroso
+  end subroutine cs_user_atmo_1d_rad_prf
 
-  end interface
+end interface
 
 !===============================================================================
 ! 1.  INITIALISATIONS

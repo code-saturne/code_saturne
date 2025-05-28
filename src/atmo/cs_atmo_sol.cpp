@@ -66,7 +66,6 @@ void
 cs_atmsol(void)
 {
   /* Local variables */
-  int error;
   cs_lnum_t n_elts;
   int n_soil_cat;
   const cs_lnum_t *elt_ids;
