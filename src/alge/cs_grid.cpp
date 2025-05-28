@@ -2388,13 +2388,13 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
   if (o2n != nullptr) {
     cs_lnum_t nnz = row_index[n_rows];
 
-#   pragma omp parallel  num_threads(n_threads)
+#   pragma omp parallel for  num_threads(n_threads)
     for (cs_lnum_t i = 0; i < nnz; i++) {
       col_id[i] = o2n[col_id[i]];
     }
   }
 
-# pragma omp parallel  num_threads(n_threads)
+# pragma omp parallel for  num_threads(n_threads)
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
     cs_lnum_t *restrict row_col_id = col_id + row_index[row_id];
     cs_real_t *restrict row_val = x_val + row_index[row_id];
@@ -2434,7 +2434,7 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
     CS_MALLOC_HD(c_col_id, nnz, cs_lnum_t, alloc_mode);
     CS_MALLOC_HD(c_x_val, nnz, cs_real_t, alloc_mode);
 
-#   pragma omp parallel  num_threads(n_threads)
+#   pragma omp parallel for  num_threads(n_threads)
     for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
       const cs_lnum_t src_shift = row_index[row_id];
       const cs_lnum_t dst_shift = c_row_index[row_id];
