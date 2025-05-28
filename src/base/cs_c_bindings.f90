@@ -50,17 +50,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function activating default log.
-
-    function cs_log_default_is_active() result(is_active) &
-      bind(C, name='cs_log_default_is_active')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      logical(kind=c_bool) :: is_active
-    end function cs_log_default_is_active
-
-    !---------------------------------------------------------------------------
-
     ! Scalar clipping
 
     subroutine cs_f_scalar_clipping(f_id)  &
@@ -234,18 +223,6 @@ module cs_c_bindings
     end subroutine atmstd
 
     !---------------------------------------------------------------------------
-
-    ! Interface to C function computing etheta and eq variable
-    ! knowing the saturation.
-
-    subroutine atprke(tinstk, smbrk, smbre)  &
-      bind(C, name='cs_atprke')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(inout) :: tinstk, smbrk, smbre
-    end subroutine atprke
-
-    !---------------------------------------------------------------------------
     ! Interface to C function to compute the number of aerosols
 
     subroutine cs_atmo_aerosol_ssh_set_t_p_h(t, p, h) &
@@ -254,17 +231,6 @@ module cs_c_bindings
        implicit none
        real(kind=c_double), intent(inout) :: t, p, h
     end subroutine cs_atmo_aerosol_ssh_set_t_p_h
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function updating scalar array ghost values.
-
-    subroutine synsca(var)  &
-      bind(C, name='cs_mesh_sync_var_scal')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), dimension(*) :: var
-    end subroutine synsca
 
     !---------------------------------------------------------------------------
 
