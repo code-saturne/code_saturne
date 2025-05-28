@@ -126,7 +126,7 @@ typedef struct {
 #define cs_physical_constants_kb 1.380649e-23
 #define cs_physical_constants_celsius_to_kelvin 273.15
 #define cs_physical_constants_stephan 5.6703e-8
-#define cs_physical_constants_avogadro = 6.02214076e23;
+#define cs_physical_constants_avogadro 6.02214076e23
 
 #else
 
