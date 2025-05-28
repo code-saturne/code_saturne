@@ -346,7 +346,6 @@ struct _cs_multigrid_t {
   /* Coarse grid rank merging options */
 
   int      merge_stride;
-
   int      merge_bottom_n_max_ranks;
   float    merge_bottom_max_row_factor;
 
@@ -4595,6 +4594,8 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   mg->type = mg_type;
   mg->subtype = CS_MULTIGRID_MAIN;
 
+  mg->caller_n_ranks = cs_glob_n_ranks;
+
 #if defined(HAVE_MPI)
   mg->comm = cs_glob_mpi_comm;
   mg->caller_comm = cs_glob_mpi_comm;
@@ -4602,8 +4603,6 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
     mg->comm = MPI_COMM_NULL;
   }
 #endif
-
-  mg->caller_n_ranks = cs_glob_n_ranks;
 
   mg->merge_stride = 1;
   mg->merge_bottom_n_max_ranks = cs_glob_n_ranks;
