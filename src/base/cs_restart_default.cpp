@@ -2760,7 +2760,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
         // so as long as they are not moved from the bc_coeffs_t structure,
         // handle them here.
         c_id_start = 0;
-        c_id_end = 10;
+        c_id_end = (f->n_time_vals > 2) ? 10 : 9;
       }
       cs_parall_max(8, CS_INT32, coeff_p);
 
@@ -2868,6 +2868,8 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
       if (f->dim > 1 && coupled_key_id > -1)
         coupled = cs_field_get_key_int(f, coupled_key_id);
 
+      cs_real_t *val_f_pre = (f->n_time_vals > 2) ?
+                             f->bc_coeffs->val_f_pre : nullptr;
       int n_loc_vals = 1;
       int32_t coeff_p[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
       cs_real_t *p[] = {f->bc_coeffs->a,
@@ -2879,7 +2881,7 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
                         f->bc_coeffs->ac,
                         f->bc_coeffs->bc,
                         f->bc_coeffs->val_f,
-                        f->bc_coeffs->val_f_pre};
+                        val_f_pre};
 
       int c_id_start = 0, c_id_end = 8;
       if (f->dim > 1 && coupled) {
