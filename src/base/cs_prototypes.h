@@ -54,22 +54,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Find the nearest cell's center from a node
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (findpt, FINDPT)
-(
- const cs_lnum_t  *ncelet,   /* <-- number of extended (real + ghost) cells */
- const cs_lnum_t  *ncel,     /* <-- number of cells */
- const cs_real_t  *xyzcen,   /* <-- cell centers */
- const cs_real_t  *xx,       /* <-- node coordinate X */
- const cs_real_t  *yy,       /* <-- node coordinate Y */
- const cs_real_t  *zz,       /* <-- node coordinate Z */
-       cs_lnum_t  *node,     /* --> node we are looking for, zero if error */
-       int        *ndrang    /* --> rank of associated process */
-);
-
-/*----------------------------------------------------------------------------
  * Add field indexes associated with a new non-user solved variable,
  * with default options
  *

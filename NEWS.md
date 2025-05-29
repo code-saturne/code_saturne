@@ -12,6 +12,7 @@ Master (not on release branches yet)
 - Removed last remaining Fortran user-defined functions
   (cs_f_user_boundary_conditions, cs_f_user_extra_operations,
   cs_user_f_initialization, usppmo, usipsu, and usipes).
+  * Also removed Fortran-based `findpt` function.
 
 ### Numerics:
 

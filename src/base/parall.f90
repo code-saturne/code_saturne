@@ -52,49 +52,6 @@ module parall
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute the global maximum of a real number in case of parellism.
-
-    !> \param[in, out]   max  local max in, global max out
-
-    subroutine parmax(max)  &
-      bind(C, name='cs_f_parall_max_r')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), intent(inout) :: max
-    end subroutine parmax
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Compute the global minimum of a real number in case of parellism.
-
-    !> \param[in, out]   min  local min in, global min out
-
-    subroutine parmin(min)  &
-      bind(C, name='cs_f_parall_min_r')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), intent(inout) :: min
-    end subroutine parmin
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Compute the global sum of an integer in case of parellism.
-
-    !> Note that for counters, on very large meshes, if the sum exceeds
-    !> 2**31, the result will be false on most machines. To avoid this,
-    !> using the C API (with counters as cs_gnum_t) is preferred.
-
-    !> \param[in, out]   sum  local sum in, global sum out
-
-    subroutine parcpt(count)  &
-      bind(C, name='cs_f_parall_sum_i')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(inout) :: count
-    end subroutine parcpt
-
-    !---------------------------------------------------------------------------
-
     !> \brief Compute the global sum of a real number in case of parellism.
 
     !> \param[in, out]   sum  local sum in, global sum out
@@ -105,25 +62,6 @@ module parall
       implicit none
       real(c_double), intent(inout) :: sum
     end subroutine parsom
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Given an (id, rank, value) tuple, return the local id, rank,
-    !>        and value corresponding to the global minimum value.
-
-    !> \param[in, out]   elt_id   element id for which the value is the smallest
-    !>                            (local in, global out)
-    !> \param[in, out]   rank_id  rank id for which the value is the smallest
-    !>                            (local in, global out)
-    !> \param[in]        val      associated local minimum value
-
-    subroutine parfpt(elt_id, rank_id, val)  &
-      bind(C, name='cs_parall_min_id_rank_r')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(inout) :: elt_id, rank_id
-      real(c_double), value :: val
-    end subroutine parfpt
 
     !---------------------------------------------------------------------------
 

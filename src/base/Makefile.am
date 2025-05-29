@@ -389,7 +389,6 @@ cs_wall_distance.cpp \
 cs_wall_functions.cpp \
 cs_xdef_eval_at_zone.cpp \
 csinit.f90 \
-findpt.f90 \
 fldprp.f90 \
 fldvar.f90 \
 iniini.f90 \
