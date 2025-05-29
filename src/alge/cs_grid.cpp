@@ -94,8 +94,6 @@
  * Local Macro Definitions
  *============================================================================*/
 
-#define EPZERO  1.E-12
-
 #if !defined(HUGE_VAL)
 #define HUGE_VAL  1.E+12
 #endif
@@ -5975,7 +5973,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
                  + c_xa0ij[3*c_face +2] * dij[2];
       }
 
-      if (fabs(dsigjg) > EPZERO) {
+      if (fabs(dsigjg) > cs_math_epzero) {
 
         cs_real_t agij = dsxaij/dsigjg;
 
@@ -6401,7 +6399,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
                + c_xa0ij[3*c_face +1] * c_face_normal[c_face][1]
                + c_xa0ij[3*c_face +2] * c_face_normal[c_face][2];
 
-      if (fabs(dsigjg) > EPZERO) {
+      if (fabs(dsigjg) > cs_math_epzero) {
 
         cs_real_t agij = dsxaij/dsigjg;
 
