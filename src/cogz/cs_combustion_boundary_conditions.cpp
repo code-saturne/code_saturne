@@ -264,7 +264,8 @@ cs_combustion_boundary_conditions(int  bc_type[])
 
   for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
 
-    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
+    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET
+        || bdy->types[bdy_idx] & CS_BOUNDARY_CONVECTIVE_INLET))
       continue;
 
     const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
@@ -390,7 +391,8 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
 
   for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
 
-    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
+    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET
+        || bdy->types[bdy_idx] & CS_BOUNDARY_CONVECTIVE_INLET))
       continue;
 
     const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
