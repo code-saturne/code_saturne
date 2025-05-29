@@ -2525,7 +2525,8 @@ _setup_hierarchy(void             *context,
 
   }
 
-  if (mg->merge_bottom_n_max_ranks < cs_glob_n_ranks) {
+  if (   mg->merge_bottom_n_max_ranks < cs_glob_n_ranks
+      || cs_glob_n_ranks == 1) {
     cs_multigrid_setup_data_t *mgd = mg->setup_data;
     cs_grid_merge_bottom(mgd->grid_hierarchy[mgd->n_levels-1],
                          verbosity,

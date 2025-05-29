@@ -2304,8 +2304,6 @@ _build_coarse_matrix_msr(cs_grid_t *c,
                                       &c_x_val);
 }
 
-#if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------
  * Create a distributed matrix structure from a native matrix structure.
  *
@@ -2449,7 +2447,7 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
       }
     }
 
-    CS_FREE(c_row_index);
+    CS_FREE(row_index);
     CS_FREE(col_id);
     CS_FREE(x_val);
 
@@ -2491,10 +2489,7 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
   if (g->db_size > 1)
     return;
 
-  if (g->comm == MPI_COMM_NULL)
-    return;
-
-  if (g->n_ranks < 2)
+  if (g->halo == nullptr)
     return;
 
   cs_alloc_mode_t alloc_mode = cs_matrix_get_alloc_mode(g->matrix);
@@ -2502,10 +2497,15 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
   const cs_lnum_t n_rows = g->n_rows;
   cs_lnum_t base_shift = 0;
 
-  int base_rank = cs_glob_rank_id, n_ranks = cs_glob_n_ranks;
-  MPI_Comm_rank(g->comm, &base_rank);
-  MPI_Comm_size(g->comm, &n_ranks);
-  MPI_Exscan(&n_rows, &base_shift, 1, CS_MPI_LNUM, MPI_SUM, g->comm);
+  int base_rank = 0, n_ranks = cs_glob_n_ranks;
+
+#if defined(HAVE_MPI)
+  if (g->comm != MPI_COMM_NULL) {
+    MPI_Comm_rank(g->comm, &base_rank);
+    MPI_Comm_size(g->comm, &n_ranks);
+    MPI_Exscan(&n_rows, &base_shift, 1, CS_MPI_LNUM, MPI_SUM, g->comm);
+  }
+#endif
 
   /* Compute and exchange new row_ids */
 
@@ -2553,6 +2553,7 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
 
   /* Determine rank in merged group */
 
+#if defined(HAVE_MPI)
   _compute_merge_stride_and_ranks(g, g->n_ranks);
 
   if (verbosity > 2) {
@@ -2565,10 +2566,24 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
                  g->merge_sub_root, g->merge_sub_rank, g->merge_sub_size);
   }
 
+#else
+
+  if (verbosity > 2) {
+    bft_printf("\n"
+               "    merging level %2d grid periodic columns\n",
+               g->level);
+  }
+
+#endif
+
   /* Compute number of coarse cells in new grid;
      local cell numbers will be shifted by cell_shift in the merged grid */
 
   cs_lnum_t *rank_index = nullptr;
+
+  cs_lnum_t counts[2] = {g->n_rows, nnz};
+
+#if defined(HAVE_MPI)
 
   if (base_rank == 0) {
     CS_MALLOC(g->merge_cell_idx, g->merge_sub_size + 1, cs_lnum_t);
@@ -2576,10 +2591,10 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
     rank_index[0] = 0; rank_index[1] = 0;
   }
 
-  cs_lnum_t counts[2] = {g->n_rows, nnz};
-
-  MPI_Gather(counts, 2, CS_MPI_LNUM, rank_index+2, 2, CS_MPI_LNUM,
-             0, g->comm);
+  if (g->comm != MPI_COMM_NULL) {
+    MPI_Gather(counts, 2, CS_MPI_LNUM, rank_index+2, 2, CS_MPI_LNUM,
+               0, g->comm);
+  }
 
   if (base_rank == 0) {
     rank_index[2] = g->n_rows; rank_index[3] = nnz;
@@ -2593,8 +2608,20 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
 
   /* Now return computed info to grids that will be merged */
 
-  MPI_Scatter(rank_index, 2, CS_MPI_LNUM, counts, 2, CS_MPI_LNUM,
-              0, g->comm);
+  if (g->comm != MPI_COMM_NULL) {
+    MPI_Scatter(rank_index, 2, CS_MPI_LNUM, counts, 2, CS_MPI_LNUM,
+                0, g->comm);
+  }
+
+#else
+
+  {
+    CS_MALLOC(rank_index, (n_ranks+1)*2, cs_lnum_t);
+    rank_index[0] = 0; rank_index[1] = 0;
+    rank_index[2] = g->n_rows; rank_index[3] = nnz;
+  }
+
+#endif
 
   /* Now update row index based on local shifts */
 
@@ -2633,13 +2660,17 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
     n_send = g->n_rows;
   }
 
-  MPI_Gatherv(row_index+1, n_send, CS_MPI_LNUM,
-              row_index+1, recvcounts, displs, CS_MPI_LNUM,
-              0, g->comm);
+#if defined(HAVE_MPI)
+  if (g->comm != MPI_COMM_NULL) {
+    MPI_Gatherv(row_index+1, n_send, CS_MPI_LNUM,
+                row_index+1, recvcounts, displs, CS_MPI_LNUM,
+                0, g->comm);
 
-  MPI_Gatherv(d_val, n_send, CS_MPI_REAL,
-              d_val, recvcounts, displs, CS_MPI_REAL,
-              0, g->comm);
+    MPI_Gatherv(d_val, n_send, CS_MPI_REAL,
+                d_val, recvcounts, displs, CS_MPI_REAL,
+                0, g->comm);
+  }
+#endif
 
   if (base_rank == 0) {
     for (int i = 1; i < n_ranks; i++) {
@@ -2652,13 +2683,17 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
     n_send = nnz;
   }
 
-  MPI_Gatherv(col_id, n_send, CS_MPI_LNUM,
-              col_id, recvcounts, displs, CS_MPI_LNUM,
-              0, g->comm);
+#if defined(HAVE_MPI)
+  if (g->comm != MPI_COMM_NULL) {
+    MPI_Gatherv(col_id, n_send, CS_MPI_LNUM,
+                col_id, recvcounts, displs, CS_MPI_LNUM,
+                0, g->comm);
 
-  MPI_Gatherv(x_val, n_send, CS_MPI_REAL,
-              x_val, recvcounts, displs, CS_MPI_REAL,
-              0, g->comm);
+    MPI_Gatherv(x_val, n_send, CS_MPI_REAL,
+                x_val, recvcounts, displs, CS_MPI_REAL,
+                0, g->comm);
+  }
+#endif
 
   CS_FREE(recvcounts);
   CS_FREE(displs);
@@ -2684,8 +2719,12 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
 
   /* The matrix is now on a single rank */
 
+#if defined(HAVE_MPI)
+
   g->n_ranks = 1;
   g->comm = MPI_COMM_NULL;
+
+#endif
 
   if (verbosity > 3)
     bft_printf("      merged to %ld (from %ld) rows\n\n",
@@ -2701,6 +2740,8 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
     printf(", total = %ld\n", elapsed.count());
   }
 }
+
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Scatter coarse cell integer data in case of merged grids
@@ -8835,6 +8876,14 @@ cs_grid_merge_bottom(cs_grid_t      *g,
               "%s: not yet implemented for merge to multiple ranks.\n",
               __func__);
   }
+
+#else
+
+  /* Without MPI, merging can still be useful to replace periodic halo values
+     with regular values, simplifying matrix). */
+
+  if (g->halo != nullptr)
+    _merge_bottom_grids_to_single(g, verbosity);
 
 #endif
 }
