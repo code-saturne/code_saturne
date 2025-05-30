@@ -238,7 +238,7 @@ cs_base.$(OBJEXT): $(cs_base)
 	$(NVCC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) $(cs_base)
 else
 cs_base.$(OBJEXT): $(cs_base)
-	$(CC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CXXFLAGS) $(cs_base)
+	$(CXX) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS) $(CXXFLAGS) $(cs_base)
 endif
 
 libcscore_a_LIBADD = cs_base.$(OBJEXT)
