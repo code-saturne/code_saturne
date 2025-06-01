@@ -2418,7 +2418,7 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
         else
           row_val[j] += row_val[i];
       }
-      c_row_index[row_id] = j+1;
+      c_row_index[row_id + 1] = j+1;
       if (j+1 < n_row_elts)
         need_compact = true;  /* no issue here for possible thread race, as
                                  this can only take one value */
@@ -2484,7 +2484,7 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
   if (cs_glob_timer_kernels_flag > 0)
     tm_start = std::chrono::high_resolution_clock::now();
 
-  if (g->db_size > 1)
+  if (g->db_size > 1 || g->level == 0)
     return;
 
   if (g->halo == nullptr)
@@ -2635,7 +2635,7 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
 
   if (base_rank == 0) {
     g->n_rows = rank_index[n_ranks*2];
-    g->n_cols_ext = rank_index[n_ranks*2 + 1];
+    g->n_cols_ext = rank_index[n_ranks*2];
 
     assert(g->n_g_rows == (cs_gnum_t)(g->n_rows));
 
