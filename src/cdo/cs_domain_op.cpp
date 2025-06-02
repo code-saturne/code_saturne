@@ -166,7 +166,7 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
     min = _min, max = _max, sum = _sum;
 
 
-  cs_log_printf(CS_LOG_DEFAULT, "s- %20s  % -6.4e % -6.4e % -6.4e\n",
+  cs_log_printf(CS_LOG_DEFAULT, "s- %32s  % -6.4e % -6.4e % -6.4e\n",
                 basename, min, max, sum/cdoq->n_g_cells);
 }
 
@@ -454,7 +454,7 @@ cs_domain_post(cs_domain_t  *domain)
       cs_log_printf
         (CS_LOG_DEFAULT,
          " ------------------------------------------------------------\n");
-      cs_log_printf(CS_LOG_DEFAULT, "s- %20s %10s %10s %10s\n",
+      cs_log_printf(CS_LOG_DEFAULT, "s- %32s %10s %10s %10s\n",
                     "Adim. number", "min", "max", "mean");
 
       /* 1. Courant numbers */
