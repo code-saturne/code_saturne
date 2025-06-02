@@ -1327,21 +1327,6 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                          cs_real_t          *yplim);
 
 /*----------------------------------------------------------------------------*/
-/*!
- *  \brief Compute boundary contributions for all immersed boundaries.
- *
- * \param[in]       f_id     field id of the variable
- * \param[out]      st_exp   explicit source term
- * \param[out]      st_imp   implicit part of the source term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_immersed_boundary_wall_functions(int         f_id,
-                                    cs_real_t  *st_exp,
-                                    cs_real_t  *st_imp);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -1378,14 +1378,6 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
   bc_coeffs->val_f_d_lim = nullptr;
 
   bc_coeffs->val_f_pre = nullptr;
-  /*quantities to be utilised for IBM */
-  bc_coeffs->ib_bc_code = nullptr;
-  bc_coeffs->ib_g_wall_cor = nullptr;
-  bc_coeffs->ib_val_ext = nullptr;
-  bc_coeffs->ib_qimp = nullptr;
-  bc_coeffs->ib_hint = nullptr;
-  bc_coeffs->ib_hext = nullptr;
-  /**/
 
   bc_coeffs->hint = nullptr;
   bc_coeffs->_hext = nullptr;
@@ -1844,9 +1836,6 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       f->bc_coeffs->val_f_d_lim = nullptr;
 
       f->bc_coeffs->val_f_pre = nullptr;
-      //FIXME
-      f->bc_coeffs->wall_law = nullptr; /*to be used in cs_wall_functions.cpp
-                                          for rij model*/
 
       CS_MALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
       CS_MALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
@@ -1893,24 +1882,6 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         f->bc_coeffs->_hext = nullptr;
       }
 
-      if (cs_glob_porous_model == 3) {
-        const cs_lnum_t *n_elts_cell
-          = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_CELLS);
-        CS_MALLOC(f->bc_coeffs->ib_bc_code, n_elts_cell[0], int);
-        CS_MALLOC(f->bc_coeffs->ib_g_wall_cor, n_elts_cell[0], cs_real_t);
-        CS_MALLOC(f->bc_coeffs->ib_val_ext, a_mult*n_elts_cell[0], cs_real_t);
-        CS_MALLOC(f->bc_coeffs->ib_qimp, a_mult*n_elts_cell[0], cs_real_t);
-        CS_MALLOC(f->bc_coeffs->ib_hint, n_elts_cell[0], cs_real_t);
-        CS_MALLOC(f->bc_coeffs->ib_hext, a_mult*n_elts_cell[0], cs_real_t);
-      }
-      else {
-        f->bc_coeffs->ib_bc_code = nullptr;
-        f->bc_coeffs->ib_g_wall_cor = nullptr;
-        f->bc_coeffs->ib_val_ext = nullptr;
-        f->bc_coeffs->ib_qimp = nullptr;
-        f->bc_coeffs->ib_hint = nullptr;
-        f->bc_coeffs->ib_hext = nullptr;
-      }
     }
 
     else {
@@ -1958,25 +1929,6 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       else {
         CS_FREE(f->bc_coeffs->hint);
         CS_FREE(f->bc_coeffs->_hext);
-      }
-
-      if (cs_glob_porous_model == 3) {
-        const cs_lnum_t *n_elts_cell =
-          cs_mesh_location_get_n_elts(CS_MESH_LOCATION_CELLS);
-        CS_REALLOC(f->bc_coeffs->ib_bc_code, n_elts_cell[0], int);
-        CS_REALLOC(f->bc_coeffs->ib_g_wall_cor, n_elts_cell[0], cs_real_t);
-        CS_REALLOC(f->bc_coeffs->ib_val_ext, n_elts_cell[0]*a_mult, cs_real_t);
-        CS_REALLOC(f->bc_coeffs->ib_qimp, n_elts_cell[0]*a_mult, cs_real_t);
-        CS_REALLOC(f->bc_coeffs->ib_hint, n_elts_cell[0], cs_real_t);
-        CS_REALLOC(f->bc_coeffs->ib_hext, n_elts_cell[0]*a_mult, cs_real_t);
-      }
-      else {
-        CS_FREE(f->bc_coeffs->ib_bc_code);
-        CS_FREE(f->bc_coeffs->ib_g_wall_cor);
-        CS_FREE(f->bc_coeffs->ib_val_ext);
-        CS_FREE(f->bc_coeffs->ib_qimp);
-        CS_FREE(f->bc_coeffs->ib_hint);
-        CS_FREE(f->bc_coeffs->ib_hext);
       }
 
     }
@@ -2187,19 +2139,6 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
       }
     }
 
-    /* Wall correction term for gradients for immersed boundaries
-     * Initializing all the terms to zero */
-    if (f->bc_coeffs->ib_g_wall_cor != nullptr) {
-      const cs_lnum_t *n_elts_cell =
-        cs_mesh_location_get_n_elts(CS_MESH_LOCATION_CELLS);
-      cs_array_int_fill_zero(n_elts_cell[0], f->bc_coeffs->ib_bc_code);
-      cs_array_real_fill_zero(n_elts_cell[0], f->bc_coeffs->ib_g_wall_cor);
-      cs_array_real_fill_zero(n_elts_cell[0]*dim, f->bc_coeffs->ib_val_ext);
-      cs_array_real_fill_zero(n_elts_cell[0]*dim, f->bc_coeffs->ib_qimp);
-      cs_array_real_fill_zero(n_elts_cell[0], f->bc_coeffs->ib_hint);
-      cs_array_real_fill_zero(n_elts_cell[0]*dim, f->bc_coeffs->ib_hext);
-    }
-
   }
 
   else
@@ -2346,13 +2285,6 @@ cs_field_destroy_all(void)
       CS_FREE_HD(f->bc_coeffs->val_f_d);
       CS_FREE_HD(f->bc_coeffs->val_f_pre);
 
-      CS_FREE(f->bc_coeffs->ib_g_wall_cor);
-      CS_FREE(f->bc_coeffs->ib_val_ext);
-      CS_FREE(f->bc_coeffs->ib_qimp);
-      CS_FREE(f->bc_coeffs->ib_hint);
-      CS_FREE(f->bc_coeffs->ib_hext);
-      CS_FREE(f->bc_coeffs->wall_law);
-      CS_FREE(f->bc_coeffs->ib_bc_code);
       CS_FREE(f->bc_coeffs);
     }
   }
