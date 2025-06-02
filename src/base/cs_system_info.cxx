@@ -809,6 +809,9 @@ _omp_version_info(bool  log)
   case 202011:
     strncpy(omp_version, "5.1", 31);
     break;
+  case 202411:
+    strncpy(omp_version, "6.0", 31);
+    break;
   default:
     snprintf(omp_version, 31, "%d", _OPENMP);
   }
