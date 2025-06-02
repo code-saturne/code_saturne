@@ -1051,12 +1051,14 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         ThermodynamicsModel.__init__(self, case)
         self.available_modes = ["constant", "user_law", "eos"]
 
-    def defaultValues(self):
-        reference_id = None
-        for field_id in self.mainFieldsModel.getFieldIdList():
-            reference_id = field_id
-            if not(super().checkEOSRequirements(field_id)):
-                break
+    def defaultValues(self, fieldId = None):
+        reference_id = fieldId
+        if reference_id == None:
+            for field_id in self.mainFieldsModel.getFieldIdList():
+                reference_id = field_id
+                if not(super().checkEOSRequirements(field_id)):
+                    break
+
         default = super().defaultValues(reference_id)
         default["surface_tension"] = 0.075
         return default

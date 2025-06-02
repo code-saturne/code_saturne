@@ -97,6 +97,9 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         self.tableModelInteractions.dataChanged.connect(self.dataChanged)
         self.tableViewInteractions.clicked[QModelIndex].connect(self.slotSelectInteraction)
         self.comboBoxSurfaceTensionValue.currentTextChanged[str].connect(self.slotSurfaceTensionType)
+        validator = DoubleValidator(self.lineEditSurfaceTensionValue, min=0.0)
+        validator.setExclusiveMin(True)
+        self.lineEditSurfaceTensionValue.setValidator(validator)
         self.lineEditSurfaceTensionValue.textChanged[str].connect(self.slotSurfaceTensionValue)
         self.pushButtonSurfaceTension.clicked.connect(self.slotFormulaSt)
 
