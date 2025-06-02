@@ -3271,7 +3271,16 @@ cs_advection_get_peclet(const cs_adv_field_t *adv,
 
     cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
     cs_math_33_3_product((const cs_real_t(*)[3])ptymat, adv_c.unitv, ptydir);
-    peclet[c_id] = hc * adv_c.meas / _dp3(adv_c.unitv, ptydir);
+
+    double peclet_c = 0.;
+    if (adv_c.meas > 0.) {
+      if (_dp3(adv_c.unitv, ptydir) > 0)
+        peclet_c = hc * adv_c.meas / _dp3(adv_c.unitv, ptydir);
+      else
+        peclet_c = FLT_MAX;
+    }
+
+    peclet[c_id] = peclet_c;
 
   } /* Loop on cells */
 }
