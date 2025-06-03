@@ -1387,8 +1387,15 @@ cs_sles_petsc_setup(void               *context,
   if (c->setup_hook != nullptr) {
     cs_param_sles_t *slesp = (cs_param_sles_t *)c->hook_context;
 
-    if (slesp->precond == CS_PARAM_PRECOND_HPDDM && slesp->mat_is_sym) {
-      _cs_sles_hpddm_setup(context, name, a);
+    if (slesp->precond == CS_PARAM_PRECOND_HPDDM) {
+      cs_param_hpddm_t *hpddmp =
+        static_cast<cs_param_hpddm_t *>(slesp->context_param);
+
+      assert(hpddmp != nullptr);
+
+      if (hpddmp->use_neumann) {
+        _cs_sles_hpddm_setup(context, name, a);
+      }
     }
     c->setup_hook(c->hook_context, sd->ksp);
   }
