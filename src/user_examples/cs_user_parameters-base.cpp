@@ -775,6 +775,34 @@ cs_user_model(void)
     cs_glob_porosity_from_scan_opt->header_type[i] = local_type[i];
   }
 
+  /* If the header includes "classification", we need to store them.
+   * For it, this option has to be enabled. */
+
+  for (int i = 0; i < n_headers; i++) {
+    if (strcmp(local_headers[i], "Classification") == 0)
+      cs_glob_porosity_from_scan_opt->has_classification = true;
+  }
+
+  /* Example: reading different classification types if enabled
+   * -----------------------------------------------------------*/
+  float local_classification_values[] = {1., 2., 3., 4., 5., 6., 9., 17., 64., 66., 67.};
+  bool local_class_used[] = {true, true, false, false, false, true, true, true,
+  true, true, true};
+  int n_classifications
+    = sizeof(local_classification_values) / sizeof(local_classification_values[0]);
+
+  cs_glob_porosity_from_scan_opt->n_classifications = n_classifications;
+
+  CS_MALLOC(cs_glob_porosity_from_scan_opt->classification_values, n_classifications, float);
+  CS_MALLOC(cs_glob_porosity_from_scan_opt->class_used, n_classifications, bool);
+
+  for (int i = 0; i < n_classifications; i++) {
+    cs_glob_porosity_from_scan_opt->classification_values[i]
+      = local_classification_values[i];
+    cs_glob_porosity_from_scan_opt->class_used[i] = local_class_used[i];
+  }
+
+
   /* Example: setup options for radiative transfer
    * --------------------------------------------- */
 
