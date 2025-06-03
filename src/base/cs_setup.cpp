@@ -2341,6 +2341,7 @@ _additional_fields_stage_2(void)
   if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan) {
     cs_field_t *f;
 
+    /* general case without vegetation */
     f = _add_property_field("nb_scan_points",
                             "nb scan points",
                             1,
@@ -2365,6 +2366,29 @@ _additional_fields_stage_2(void)
                             3,
                             false);
     cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
+
+    /* for vegetation */
+    f = _add_property_field("nb_scan_points_no_ibm",
+                            "nb scan points_no_ibm",
+                            1,
+                            false);
+    cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
+
+    /* for classification */
+    if (cs_glob_porosity_from_scan_opt->has_classification) {
+      for (int i = 0; i < cs_glob_porosity_from_scan_opt->n_classifications; i++) {
+        char field_name[64];
+        snprintf(field_name, sizeof(field_name), "nb_scan_points_class_%d",
+            (int)cs_glob_porosity_from_scan_opt->classification_values[i]);
+
+        cs_field_t *f_class = _add_property_field(field_name,
+                                                  field_name,
+                                                  1,
+                                                  false);
+
+        cs_field_set_key_int(f_class, keyvis, CS_POST_ON_LOCATION);
+      }
+    }
   }
 
   /* Additional postprocessing fields

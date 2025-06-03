@@ -127,7 +127,11 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .use_staircase = false,
   .eigenvalue_criteria = 1e-3,
   .use_restart = false,
-  .cog_location = CS_COG_FROM_FLUID_FACES
+  .cog_location = CS_COG_FROM_FLUID_FACES,
+  .has_classification = false,
+  .classification_values = nullptr,
+  .class_used = nullptr,
+  .n_classifications = 0
 };
 
 /*============================================================================
@@ -335,10 +339,10 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   cs_real_t *restrict cell_f_vol = mq->cell_vol;
 
   int n_headers = _porosity_from_scan_opt.n_headers;
-  const char *default_headers[] = {"X", "Y", "Z", "Intensity",
+  const char *default_headers[] = {"X", "Y", "Z", "Classification",
                                    "Red", "Green", "Blue"};
 
-  int default_type[] = {1, 1, 1, 0, 0, 0, 0};
+  int default_type[] = {1, 1, 1, 1, 0, 0, 0};
   char **headers = _porosity_from_scan_opt.headers;
 
   /* type specifier:
@@ -364,18 +368,34 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   }
 
   bft_printf("Reading .pts file headers\n");
-  for (int i = 0; i < n_headers; i++) {
 
-    /* mapping type specifier based on the header name */
-    if (strcmp(headers[i], "X") == 0 ||
-        strcmp(headers[i], "Y") == 0 ||
-        strcmp(headers[i], "Z") == 0) {
-      type[i] = 1;
-    }
-    else {
-      type[i] = 0;
-    }
+  for (int i = 0; i < n_headers; i++) {
     bft_printf("header %d: %s, type: %d\n", i, headers[i], type[i]);
+  }
+
+  if (_porosity_from_scan_opt.has_classification) {
+    const float default_classification_values[] = {1.};
+    bool default_class_used[] = {true};
+    int default_n_classifications
+      = sizeof(default_classification_values) / sizeof(default_classification_values[0]);
+
+    float *classification_values = _porosity_from_scan_opt.classification_values;
+    int n_classifications = _porosity_from_scan_opt.n_classifications;
+    bool *class_used = _porosity_from_scan_opt.class_used;
+
+    /* If not specified */
+    if (classification_values == nullptr) {
+      n_classifications = default_n_classifications;
+      _porosity_from_scan_opt.n_classifications = n_classifications;
+
+      CS_MALLOC(classification_values, n_classifications, float);
+      CS_MALLOC(class_used, n_classifications, bool);
+      // Copy each string into modifiable memory
+      for (int i = 0; i < n_classifications; i++) {
+        classification_values[i] = default_classification_values[i];
+        class_used[i] = default_class_used[i];
+      }
+    }
   }
 
   /* Open file */
@@ -462,6 +482,9 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     /* Pointer to field */
     cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
 
+    /* Pointer to fields which are not used */
+    cs_field_t *f_nb_scan_no_ibm = cs_field_by_name_try("nb_scan_points_no_ibm");
+
     /* Location mesh where points will be localized */
     fvm_nodal_t *location_mesh =
       cs_mesh_connect_cells_to_nodal(m,
@@ -484,15 +507,18 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
       cs_real_3_t *point_coords;
       float *colors;
+      float *classification; /* new array to store classification */
       CS_MALLOC(point_coords, n_points, cs_real_3_t);
       CS_MALLOC(colors, 3*n_points, float);
+      CS_MALLOC(classification, n_points, float);
 
       cs_real_3_t min_vec = { HUGE_VAL,  HUGE_VAL,  HUGE_VAL};
       cs_real_3_t max_vec = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
 
       /* Read points */
       for (int i = 0; i < n_points; i++ ) {
-        int num = 0, green = 0, red = 0, blue = 0;
+        double classif = 0.;
+        int green = 0, red = 0, blue = 0;
         cs_real_4_t xyz;
         for (int j = 0; j < 3; j++)
           point_coords[i][j] = 0.;
@@ -500,7 +526,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         for (int h_id = 0; h_id < n_headers; h_id++) {
 
           double local_double = 0.;
-          int local_int = 0.;
+          int local_int = 0;
 
           if (type[h_id] == 0)
             fscanf(file, "%d", &local_int);
@@ -519,8 +545,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
           else if (strcmp(headers[h_id], "Z") == 0)
             xyz[2] = local_double;
 
-          else if (strcmp(headers[h_id], "Intensity") == 0)
-            num = local_int;
+          else if (strcmp(headers[h_id], "Classification") == 0)
+            classif = local_double;
 
           else if (strcmp(headers[h_id], "Red") == 0)
             red = local_int;
@@ -532,6 +558,9 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
             blue = local_int;
 
         } /* end loop on headers*/
+
+        /* Storing the classification value */
+        classification[i] = (float)classif;
 
         /* Translation and rotation */
         xyz[3] = 1.;
@@ -551,7 +580,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         colors[3*i + 0] = red/255.;
         colors[3*i + 1] = green/255.;
         colors[3*i + 2] = blue/255.;
-      }
+      } /* end loop on points */
 
       /* Check EOF was correctly reached */
       if (fgets(line, sizeof(line), file) != nullptr)
@@ -642,6 +671,24 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                                 0.0,
                                 (const void * *)var_ptr);
 
+        /* classification to post-processing*/
+        if (_porosity_from_scan_opt.has_classification) {
+          var_ptr[0] = classification;
+
+          fvm_writer_export_field(writer,
+                                  pts_mesh,
+                                  "classification",
+                                  FVM_WRITER_PER_NODE,
+                                  1,
+                                  CS_INTERLACE,
+                                  0,
+                                  0,
+                                  CS_FLOAT,
+                                  -1,
+                                  0.0,
+                                  (const void * *)var_ptr);
+        }
+
         /* Free and destroy */
         fvm_writer_finalize(writer);
         pts_mesh = fvm_nodal_destroy(pts_mesh);
@@ -713,17 +760,90 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                                      3,
                                      1);
 
-      for (cs_lnum_t i = 0; i < n_points_dist; i++) {
-        cs_lnum_t c_id = dist_loc[i];
-        f_nb_scan->val[c_id] += 1.;
-        for (cs_lnum_t idim = 0; idim < 3; idim++) {
-          cen_points[c_id*3+idim]
-            += (dist_coords[i*3 + idim] - mq_g->cell_cen[c_id][idim]);
+      float *dist_classification = nullptr;
+      if (_porosity_from_scan_opt.has_classification) {
+        CS_MALLOC(dist_classification, n_points_dist, float);
 
-          cell_color[c_id*3+idim] += dist_colors[i*3 + idim];
+        ple_locator_exchange_point_var(_locator,
+                                       dist_classification,
+                                       classification,
+                                       nullptr,
+                                       sizeof(float),
+                                       1,
+                                       1);
+      }
+
+      cs_real_t **temp_counts;
+      CS_MALLOC(temp_counts, _porosity_from_scan_opt.n_classifications, cs_real_t *);
+      for (int j = 0; j < _porosity_from_scan_opt.n_classifications; j++) {
+        CS_MALLOC(temp_counts[j], m->n_cells, cs_real_t);
+        for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+          temp_counts[j][c_id] = 0.0;
         }
       }
 
+      for (cs_lnum_t i = 0; i < n_points_dist; i++) {
+        cs_lnum_t c_id = dist_loc[i];
+        float point_class = 0.;
+
+        if (dist_classification != nullptr)
+          point_class = dist_classification[i];
+
+        /* Increment the appropriate classification counter */
+        bool class_found = false;
+        int matched_class_idx = -1;
+        for (int j = 0; j < _porosity_from_scan_opt.n_classifications; j++) {
+          if (fabs(point_class - (float)_porosity_from_scan_opt.classification_values[j]) < cs_math_epzero) {
+            temp_counts[j][c_id] += 1.0;
+            class_found = true;
+            matched_class_idx = j;
+            break;
+          }
+        }
+
+        if (class_found) {
+          if (_porosity_from_scan_opt.class_used[matched_class_idx]) {
+            f_nb_scan->val[c_id] += 1.;
+            for (cs_lnum_t idim = 0; idim < 3; idim++) {
+              cen_points[c_id*3+idim]
+                += (dist_coords[i*3 + idim] - mq_g->cell_cen[c_id][idim]);
+
+              cell_color[c_id*3+idim] += dist_colors[i*3 + idim];
+            }
+          }
+          else {
+            f_nb_scan_no_ibm->val[c_id] += 1.;
+          }
+        }
+        else {
+          f_nb_scan->val[c_id] += 1;
+          for (cs_lnum_t idim = 0; idim < 3; idim++) {
+            cen_points[c_id*3+idim]
+              += (dist_coords[i*3 + idim] - mq_g->cell_cen[c_id][idim]);
+
+            cell_color[c_id*3+idim] += dist_colors[i*3 + idim];
+          }
+        }
+      }
+
+      /* Copy temp_counts to classification fields */
+      for (int j = 0; j < _porosity_from_scan_opt.n_classifications; j++) {
+        char field_name[64];
+        snprintf(field_name, sizeof(field_name), "nb_scan_points_class_%d",
+            (int)_porosity_from_scan_opt.classification_values[j]);
+        cs_field_t *field = cs_field_by_name(field_name);
+        for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+          field->val[c_id] = temp_counts[j][c_id];
+        }
+      }
+
+      /* Free temporary array */
+      for (int j = 0; j < _porosity_from_scan_opt.n_classifications; j++) {
+        CS_FREE(temp_counts[j]);
+      }
+      CS_FREE(temp_counts);
+
+      /* Computation of mom_mat for the general case (case without vegetation) */
       _incremental_solid_plane_from_points(m,
                                            n_points_dist,
                                            dist_loc,
@@ -733,6 +853,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                                            mom_mat);
 
       CS_FREE(dist_colors);
+      CS_FREE(dist_classification);
 
       /* Solid face roughness from point cloud is computed as the RMS of points
        *  distance to the reconstructed plane */
@@ -764,6 +885,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       _locator = ple_locator_destroy(_locator);
       CS_FREE(point_coords);
       CS_FREE(colors);
+      CS_FREE(classification);
 
     } /* End loop on multiple scans */
 
@@ -782,6 +904,11 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   }
   CS_FREE(headers);
   CS_FREE(type);
+
+  if (_porosity_from_scan_opt.has_classification) {
+    CS_FREE(_porosity_from_scan_opt.classification_values);
+    CS_FREE(_porosity_from_scan_opt.class_used);
+  }
 
   const cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
 
