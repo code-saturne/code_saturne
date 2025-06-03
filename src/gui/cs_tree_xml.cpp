@@ -678,7 +678,7 @@ cs_tree_xml_read(cs_tree_node_t  *r,
   cs_xml_t *doc = NULL;
   CS_MALLOC(doc, 1, cs_xml_t);
 
-  cs_gnum_t f_size;
+  cs_gnum_t f_size = 0;
   if (cs_glob_rank_id < 1)
     f_size = cs_file_size(path);
   cs_parall_bcast(0, 1, CS_GNUM_TYPE, &f_size);
