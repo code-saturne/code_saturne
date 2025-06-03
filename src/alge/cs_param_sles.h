@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "alge/cs_param_amg.h"
+#include "alge/cs_param_hpddm.h"
 #include "alge/cs_param_mumps.h"
 #include "base/cs_param_types.h"
 
@@ -584,6 +585,42 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
                              int                             ir_steps,
                              cs_param_mumps_memory_usage_t   mem_usage,
                              bool                            advanced_optim);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and initialize a new context structure for the HPDDM
+ *        settings.
+ *
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hpddm_reset(cs_param_sles_t *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members related to an advanced settings of a cs_param_hpddm_t
+ *        structure. This structure is allocated and initialized if
+ *        needed. Please refer to the HPDDM user guide for more details about
+ *        the following advanced options.
+ *
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      use_neumann      use neumann matrix on each subdomains
+ * \param[in]      nb_eigenvector   number of eigenvector to compute
+ * \param[in]      harmonic_overlap number of harmonic overlap if do not
+ *                                  use_neumann
+ * \param[in]      relative_threshold thresold on eigenvalue to keep if do not
+ *                                  use_neumann
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hpddm_advanced(cs_param_sles_t *slesp,
+                             const bool       use_neumann,
+                             const int        nb_eigenvector,
+                             const int        harmonic_overlap,
+                             const double     relative_threshold);
 
 /*----------------------------------------------------------------------------*/
 /*!

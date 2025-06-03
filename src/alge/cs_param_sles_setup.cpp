@@ -922,15 +922,13 @@ _petsc_boomeramg_hook(const char             *prefix,
  *        HPDDM
  *
  * \param[in]      prefix  prefix name associated to the current SLES
- * \param[in]      slesp   pointer to a set of SLES parameters
+ * \param[in, out] slesp   pointer to a set of SLES parameters
  * \param[in, out] pc      pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_pchpddm_hook(const char            *prefix,
-                    const cs_param_sles_t *slesp,
-                    PC                     pc)
+_petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
 {
   assert(prefix != nullptr);
   assert(slesp != nullptr);
@@ -938,14 +936,19 @@ _petsc_pchpddm_hook(const char            *prefix,
 
   char prefix_pc[128];
 
+  cs_param_hpddm_t *hpddmp =
+    static_cast<cs_param_hpddm_t *>(slesp->context_param);
+
+  if (hpddmp == nullptr) /* Define a default set of parameters */
+    cs_param_sles_hpddm_reset(slesp);
+
   /* Set type */
 
   PCSetType(pc, PCHPDDM);
 
   /* Symmetric matrix ? */
 
-  if (slesp->mat_is_sym) {
-
+  if (hpddmp->use_neumann) {
     /* Define generic options */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
@@ -958,7 +961,10 @@ _petsc_pchpddm_hook(const char            *prefix,
 
     _petsc_cmd(true, prefix_pc, "pc_type", "asm");
     _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
-    _petsc_cmd(true, prefix_pc, "eps_nev", "30");
+    _petsc_cmd(true,
+               prefix_pc,
+               "eps_nev",
+               std::to_string(hpddmp->nb_eigenvector).c_str());
     _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true, prefix_pc, "sub_pc_type", "cholesky");
@@ -980,29 +986,28 @@ _petsc_pchpddm_hook(const char            *prefix,
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
     _petsc_cmd(true, prefix_pc, "p", "1");
   }
-  else {
-
-    /* There is three important parameters */
-    /* Left bounds: easy problem and low cost */
-    /* Right bounds: hard problem and high cost */
-    /* - 1 <= N <= 10 */
-    /* - 40 <= M =< 500 */
-    /* - 0.5 >= eps >= 1.e-6 */
-    const char N[10] = "2", M[10] = "80", eps[10] = "5e-2";
-
-    /* Define generic options */
+  else { /* Define generic options */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
     /* No Neumann matrix */
     _petsc_cmd(true, prefix_pc, "define_subdomains", "");
-    _petsc_cmd(true, prefix_pc, "harmonic_overlap", N);
+    _petsc_cmd(true,
+               prefix_pc,
+               "harmonic_overlap",
+               std::to_string(hpddmp->harmonic_overlap).c_str());
 
     /* Define option for first level */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_levels_1_");
 
     _petsc_cmd(true, prefix_pc, "svd_type", "lanczos");
-    _petsc_cmd(true, prefix_pc, "svd_nsv", M);
-    _petsc_cmd(true, prefix_pc, "svd_relative_threshold", eps);
+    _petsc_cmd(true,
+               prefix_pc,
+               "svd_nsv",
+               std::to_string(hpddmp->nb_eigenvector).c_str());
+    _petsc_cmd(true,
+               prefix_pc,
+               "svd_relative_threshold",
+               std::to_string(hpddmp->relative_threshold).c_str());
     _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
     _petsc_cmd(true, prefix_pc, "sub_pc_type", "lu");
     _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");

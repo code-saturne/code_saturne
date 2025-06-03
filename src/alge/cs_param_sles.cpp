@@ -1972,6 +1972,76 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and initialize a new context structure for the HPDDM
+ *        settings.
+ *
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hpddm_reset(cs_param_sles_t *slesp)
+{
+  if (slesp == nullptr)
+    return;
+
+  if (slesp->context_param != nullptr)
+    CS_FREE(slesp->context_param); /* Up to now the context structures have
+                                      no allocation inside */
+
+  /* Allocate and initialize a structure to store the HPDDM settings */
+
+  slesp->context_param = cs_param_hpddm_create();
+
+  cs_param_hpddm_t *hpddmp =
+    static_cast<cs_param_hpddm_t *>(slesp->context_param);
+
+  hpddmp->use_neumann = slesp->mat_is_sym;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members related to an advanced settings of a cs_param_hpddm_t
+ *        structure. This structure is allocated and initialized if
+ *        needed. Please refer to the HPDDM user guide for more details about
+ *        the following advanced options.
+ *
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      use_neumann      use neumann matrix on each subdomains
+ * \param[in]      nb_eigenvector   number of eigenvector to compute
+ * \param[in]      harmonic_overlap number of harmonic overlap if do not
+ *                                  use_neumann
+ * \param[in]      relative_threshold thresold on eigenvalue to keep if do not
+ *                                  use_neumann
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hpddm_advanced(cs_param_sles_t *slesp,
+                             const bool       use_neumann,
+                             const int        nb_eigenvector,
+                             const int        harmonic_overlap,
+                             const double     relative_threshold)
+{
+  if (slesp == nullptr)
+    return;
+
+  if (slesp->context_param == nullptr)
+    slesp->context_param = cs_param_hpddm_create();
+
+  /* One assumes that the existing context structure is related to HPDDM */
+
+  cs_param_hpddm_t *hpddmp =
+    static_cast<cs_param_hpddm_t *>(slesp->context_param);
+
+  hpddmp->use_neumann        = use_neumann;
+  hpddmp->nb_eigenvector     = nb_eigenvector;
+  hpddmp->harmonic_overlap   = harmonic_overlap;
+  hpddmp->relative_threshold = relative_threshold;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check the availability of Hypre solvers from the PETSc library
  *
  * \return return true or false

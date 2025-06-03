@@ -102,6 +102,7 @@ cs_matrix_util.h \
 cs_multigrid.h \
 cs_multigrid_smoother.h \
 cs_param_amg.h \
+cs_param_hpddm.h \
 cs_param_mumps.h \
 cs_param_saddle.h \
 cs_param_sles.h \
@@ -176,6 +177,7 @@ cs_matrix_util.cpp \
 cs_multigrid.cpp \
 cs_multigrid_smoother.cpp \
 cs_param_amg.cpp \
+cs_param_hpddm.cpp \
 cs_param_mumps.cpp \
 cs_param_saddle.cpp \
 cs_saddle_solver.cpp \
