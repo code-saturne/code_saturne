@@ -1242,8 +1242,16 @@ cs_compute_porosity_from_scan(void)
   cs_real_t *cofaf = f->bc_coeffs->af;
   cs_real_t *cofbf = f->bc_coeffs->bf;
 
+  /* Pointer to the field to fill up holes */
+  cs_field_t *f_holes = cs_field_by_name_try("porosity_holes");
+
+  cs_real_t *coefa_h = f_holes->bc_coeffs->a;
+  cs_real_t *coefb_h = f_holes->bc_coeffs->b;
+  cs_real_t *cofaf_h = f_holes->bc_coeffs->af;
+  cs_real_t *cofbf_h = f_holes->bc_coeffs->bf;
+
   cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-  eqp->verbosity = 2;
+  cs_equation_param_t *eqp_holes = cs_field_get_equation_param(f_holes);
   cs_lnum_t *source_c_ids = _porosity_from_scan_opt.source_c_ids;
   int nb_sources = _porosity_from_scan_opt.nb_sources;
 
@@ -1265,6 +1273,13 @@ cs_compute_porosity_from_scan(void)
   cs_real_t *restrict b_massflux
     = cs_field_by_id
         (cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
+
+  cs_real_t *restrict i_massflux_h
+    = cs_field_by_id
+        (cs_field_get_key_int(f_holes, cs_field_key_id("inner_mass_flux_id")))->val;
+  cs_real_t *restrict b_massflux_h
+    = cs_field_by_id
+        (cs_field_get_key_int(f_holes, cs_field_key_id("boundary_mass_flux_id")))->val;
 
   /* Local variables */
   cs_real_t *rovsdt, *pvar, *dpvar, *rhs;
@@ -1591,7 +1606,7 @@ cs_compute_porosity_from_scan(void)
 
     if (type_fill == CS_FILL_DIRECTION) {
       if (cs_math_3_dot_product(direction_vector, c_w_face_normal[c_id])
-          < -0.1*cs_math_3_norm(c_w_face_normal[c_id])) {
+          < - 0.1 * cs_math_3_norm(c_w_face_normal[c_id])) {
         for (cs_lnum_t i = 0; i < 3; i++)
           c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
       }
@@ -1606,6 +1621,129 @@ cs_compute_porosity_from_scan(void)
       f->val[c_id] = 0.;
       mq->c_disable_flag[c_id] = 1;
     }
+  }
+
+  if (type_fill == CS_FILL_DIRECTION) {
+    /* Compute the mass flux due to V = +e_z
+     *=====================================*/
+
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+      cs_real_t x0xf[3] = {- direction_vector[0],
+                           - direction_vector[1],
+                           - direction_vector[2]};
+      i_massflux_h[face_id] = cs_math_3_dot_product(x0xf,
+                                                    i_f_face_normal[face_id]);
+    }
+
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      cs_real_t x0xf[3] = {- direction_vector[0],
+                           - direction_vector[1],
+                           - direction_vector[2]};
+
+      b_massflux_h[face_id] = cs_math_3_dot_product(x0xf,
+                                                    b_f_face_normal[face_id]);
+    }
+
+    /* Boundary conditions
+     *====================*/
+
+    /* homogeneous Neumann except if ingoing flux */
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      /* Dirichlet BCs */
+      if (b_massflux_h[face_id] <= 0.) {
+
+        cs_lnum_t c_id = m->b_face_cells[face_id];
+
+        eqp_holes->ndircl = 1;
+        cs_real_t hint = 1. / mq->b_dist[face_id];
+        cs_real_t pimp = f->val[c_id];
+
+        cs_boundary_conditions_set_dirichlet_scalar(coefa_h[face_id],
+                                                    cofaf_h[face_id],
+                                                    coefb_h[face_id],
+                                                    cofbf_h[face_id],
+                                                    pimp,
+                                                    hint,
+                                                    cs_math_infinite_r);
+      }
+      else {
+
+        cs_real_t hint = 1. / mq->b_dist[face_id];
+        cs_real_t qimp = 0.;
+
+        cs_boundary_conditions_set_neumann_scalar(coefa_h[face_id],
+                                                  cofaf_h[face_id],
+                                                  coefb_h[face_id],
+                                                  cofbf_h[face_id],
+                                                  qimp,
+                                                  hint);
+
+      }
+    }
+    /* Matrix
+     *=======*/
+
+    for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++)
+      rovsdt[c_id] = 0.;
+
+    /* Even if there is no Dirichlet, the system is well-posed
+     * so no need of diagonal reinforcement */
+    eqp_holes->ndircl = 1;
+
+    /* Right hand side and initial guess
+     *==================================*/
+
+    for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
+      rhs[c_id] = 0.;
+      pvar[c_id] = 0.;
+    }
+
+    /* Norm
+     *======*/
+
+    cs_real_t norm = mq->tot_vol;
+
+    /* Solving
+     *=========*/
+
+    /* In case of a theta-scheme, set theta = 1;
+       no relaxation in steady case either */
+
+    cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
+                                       -1,  /* no over loops */
+                                       f_holes->id,
+                                       nullptr,
+                                       0,   /* iescap */
+                                       0,   /* imucpp */
+                                       norm,
+                                       eqp_holes,
+                                       f_holes->val_pre,
+                                       f_holes->val,
+                                       f_holes->bc_coeffs,
+                                       i_massflux_h,
+                                       b_massflux_h,
+                                       i_massflux_h, /* viscosity, not used */
+                                       b_massflux_h, /* viscosity, not used */
+                                       i_massflux_h, /* viscosity, not used */
+                                       b_massflux_h, /* viscosity, not used */
+                                       nullptr,
+                                       nullptr,
+                                       nullptr,
+                                       0, /* icvflb (upwind) */
+                                       nullptr,
+                                       rovsdt,
+                                       rhs,
+                                       pvar,
+                                       dpvar,
+                                       nullptr,
+                                       nullptr);
+
+    for (cs_lnum_t c_id = 0; c_id< m->n_cells; c_id++) {
+      f_holes->val[c_id] = cs::max(f_holes->val[c_id], pvar[c_id]);
+    }
+
+    /* Parallel synchronisation */
+    cs_halo_sync(m->halo, false, f_holes->val);
   }
 
   /* Free memory */

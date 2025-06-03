@@ -1584,6 +1584,29 @@ _additional_fields_stage_1(void)
                           CS_MESH_LOCATION_BOUNDARY_FACES,
                           1,
                           false);
+
+      // Porosity at holes
+      if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan) {
+        f = _add_variable_field("porosity_holes", NULL, 1);
+
+        // Pure convection equation (no time term)
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        eqp->iconv = 1;
+        eqp->blencv= 0.; // Pure upwind
+        eqp->istat = 0;
+        eqp->nswrsm = 1;
+        eqp->idiff  = 0;
+        eqp->idifft = 0;
+        eqp->relaxv = 1.; // No relaxation, even for steady algorithm.
+
+        // Activate the drift for all scalars with key "drift" > 0
+        int iscdri =   CS_DRIFT_SCALAR_ON
+                     | CS_DRIFT_SCALAR_ADD_DRIFT_FLUX
+                     | CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX;
+
+        int keydri = cs_field_key_id("drift_scalar_model");
+        cs_field_set_key_int(f, keydri, iscdri);
+      }
     }
 
   }
