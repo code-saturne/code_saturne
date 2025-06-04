@@ -47,6 +47,7 @@
 #include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo_profile_std.h"
 #include "atmo/cs_air_props.h"
+#include "base/cs_base_fortran.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
@@ -221,7 +222,8 @@ _gaussian(const cs_mesh_t             *m,
     else
       pp = cpro_met_p[c_id];
 
-     const cs_real_t xvart = cvar_vart[c_id]; // thermal scalar: liquid potential temperature
+    // thermal scalar: liquid potential temperature
+     const cs_real_t xvart = cvar_vart[c_id];
      const cs_real_t tliq = xvart*pow(pp/ps, rscp); // liquid temperature
      const cs_real_t qsl = cs_air_yw_sat(tliq-tkelvi, pp); // saturated vapor content
      const cs_real_t alpha = (clatev*qsl/(rvap*pow(tliq,2)))*pow(pp/ps, rscp);
@@ -274,7 +276,6 @@ _gaussian(const cs_mesh_t             *m,
 
   CS_FREE_HD(dqsd);
   CS_FREE_HD(dtlsd);
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -401,6 +402,7 @@ cs_atmo_add_variable_fields(void)
 
   /* Chemistry variables
      ------------------- */
+
   cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
 
   /* Atmospheric gaseous chemistry
@@ -473,25 +475,23 @@ cs_atmo_add_variable_fields(void)
 
   /* General field and physical properties
      ------------------------------------- */
-  cs_get_glob_fluid_properties()->icp = -1;
 
+  cs_get_glob_fluid_properties()->icp = -1;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add if needed the variables fields
+ * \brief  Add variable fields if needed.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_atmo_add_property_fields(void)
 {
-
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   bool rain = at_opt->rain;
 
   if (rain == true) {
-   {
     cs_field_t *f;
     int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
     bool has_previous = false;
@@ -509,9 +509,8 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Density humid air");
-    }
-
   }
+
   const int klbl   = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
@@ -931,9 +930,8 @@ cs_atmo_add_property_fields(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the thermo physical properties fields for the humid air and
- *        the liquid \n
- *        Remarques :
- *        This function  is called at the beginning of each time step
+ *        the liquid.
+ * \remark: This function  is called at the beginning of each time step.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1109,7 +1107,6 @@ cs_atmo_physical_properties_update(void)
     /* Homogeneous mixture density */
     crom[c_id] = 1.0 / ((1.0 - yr[c_id])/rho_h[c_id] + yr[c_id]/1000);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1191,7 +1188,6 @@ cs_atmo_init_variables_1(void)
       cs_f_init_chemistry();
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1209,8 +1205,10 @@ cs_atmo_init_variables_2(void)
 
   cs_f_init_meteo();
 
-  if (cs_glob_atmo_imbrication->imbrication_flag)
+  if (cs_glob_atmo_imbrication->imbrication_flag) {
+    cs_base_fortran_bft_printf_to_f();
     cs_f_activate_imbrication();
+  }
 
   cs_at_data_assim_build_ops();
 }

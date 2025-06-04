@@ -83,7 +83,6 @@ cs_atmo_init_variables_1(void);
 void
 cs_atmo_init_variables_2(void);
 
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

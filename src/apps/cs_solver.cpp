@@ -304,8 +304,6 @@ _run(void)
 
   if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
-    cs_base_fortran_bft_printf_to_f();
-
     const char default_restart_mesh[] = "restart_mesh_input";
     if (cs_file_isreg(default_restart_mesh))
       cs_restart_map_set_mesh_input(default_restart_mesh);
@@ -337,8 +335,6 @@ _run(void)
 
     cs_gui_linear_solvers();
     cs_user_linear_solvers();
-
-    cs_base_fortran_bft_printf_to_c();
 
     cs_timer_stats_set_start_time(cs_glob_time_step->nt_cur);
 
@@ -466,17 +462,12 @@ _run(void)
 
       /* Update Fortran mesh sizes and quantities */
 
-      cs_base_fortran_bft_printf_to_f();
       cs_preprocess_mesh_update_fortran();
 
       /* Choose between standard and user solver */
 
       if (cs_user_solver_set() == 0) {
         if (cs_param_cdo_has_cdo_only()) {
-          /* Only C language is called within CDO */
-
-          cs_base_fortran_bft_printf_to_c();
-
           /* CHT coupling */
           cs_syr_coupling_init_meshes();
 
@@ -485,10 +476,6 @@ _run(void)
            *----------------------------------------------*/
 
           cs_cdo_main(cs_glob_domain);
-
-          /* Return to the default behavior */
-
-          cs_base_fortran_bft_printf_to_f();
         }
         else {
 
@@ -560,10 +547,6 @@ _run(void)
 #if defined(HAVE_CUDA)
   cs_blas_cuda_finalize();
 #endif
-
-  /* Switch logging back to C (may be moved depending on Fortran dependencies) */
-
-  cs_base_fortran_bft_printf_to_c();
 
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
