@@ -171,13 +171,6 @@ module atchem
 
     !---------------------------------------------------------------------------
 
-    subroutine atlecm (imode) &
-      bind(C, name="cs_f_read_meteo_profile")
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int),value :: imode
-    end subroutine atlecm
-
     subroutine cs_atmo_read_chemistry_profile(mode) &
       bind(C, name="cs_atmo_read_chemistry_profile")
       use, intrinsic :: iso_c_binding
@@ -191,7 +184,7 @@ module atchem
 
 contains
 
-  !-------------------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
 
   !> \brief Return chemistry concentration file name
 

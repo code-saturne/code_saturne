@@ -321,11 +321,6 @@ cs_atmo_imbrication_t *cs_glob_atmo_imbrication = &_atmo_imbrication;
  *============================================================================*/
 
 void
-cs_f_atmo_get_meteo_file_name(int           name_max,
-                              const char  **name,
-                              int          *name_len);
-
-void
 cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **syear,
                        int                    **squant,
@@ -453,23 +448,6 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
                                    int       **id_eps,
                                    int       **id_theta);
 
-void
-cs_atmo_soil_init_arrays(int       *n_soil_cat,
-                         cs_real_t **csol,
-                         cs_real_t **rugdyn,
-                         cs_real_t **rugthe,
-                         cs_real_t **albedo,
-                         cs_real_t **emissi,
-                         cs_real_t **vegeta,
-                         cs_real_t **c1w,
-                         cs_real_t **c2w,
-                         cs_real_t **r1,
-                         cs_real_t **r2);
-
-void
-cs_f_read_meteo_profile(int imode);
-
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -547,12 +525,12 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     next_fext[cell_id][2] = f_ext[cell_id][2] + dfext[cell_id][2];
   }
 
-  /* --> Handle parallelism and periodicity */
+  /* Handle parallelism and periodicity */
   if (m->halo != nullptr)
     cs_halo_sync(m->halo, false, next_fext);
 
   /* Boundary conditions
-   *====================*/
+     =================== */
 
   eqp_p->ndircl = 0;
 
@@ -611,7 +589,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                     xam);
 
   /* Right hand side
-   *================*/
+     =============== */
 
   cs_ext_force_flux(m,
                     mq,
@@ -801,8 +779,10 @@ _convert_from_wgs84_to_l93(void)
   cs_real_t  xs = 700000; // projection's pole x-coordinate
   cs_real_t  ys = 12655612.049876;  // projection's pole y-coordinate
 
-  cs_real_t lat_rad= cs_glob_atmo_option->latitude*cs_math_pi/180; //latitude in rad
-  cs_real_t lat_iso= atanh(sin(lat_rad))-e*atanh(e*sin(lat_rad)); // isometric latitude
+  //latitude in rad
+  cs_real_t lat_rad = cs_glob_atmo_option->latitude*cs_math_pi / 180;
+  // isometric latitude
+  cs_real_t lat_iso = atanh(sin(lat_rad)) - e*atanh(e*sin(lat_rad));
 
   cs_glob_atmo_option->x_l93= ((c*exp(-n*(lat_iso)))
                                *sin(n*(cs_glob_atmo_option->longitude-3)
@@ -825,23 +805,17 @@ _convert_from_wgs84_to_l93(void)
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
-_mo_phim_n(cs_real_t              z,
-           cs_real_t              dlmo)
+_mo_phim_n([[maybe_unused]] cs_real_t  z,
+           [[maybe_unused]] cs_real_t  dlmo)
 {
-  CS_UNUSED(z);
-  CS_UNUSED(dlmo);
-
   return 1.0;
 }
 
 static cs_real_t
-_mo_phih_n(cs_real_t              z,
-           cs_real_t              dlmo,
-           cs_real_t              prt)
+_mo_phih_n([[maybe_unused]] cs_real_t  z,
+           [[maybe_unused]] cs_real_t  dlmo,
+           cs_real_t                   prt)
 {
-  CS_UNUSED(z);
-  CS_UNUSED(dlmo);
-
   return prt;
 }
 
@@ -859,23 +833,19 @@ _mo_phih_n(cs_real_t              z,
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
-_mo_psim_n(cs_real_t              z,
-           cs_real_t              z0,
-           cs_real_t              dlmo)
+_mo_psim_n(cs_real_t                   z,
+           cs_real_t                   z0,
+           [[maybe_unused]] cs_real_t  dlmo)
 {
-  CS_UNUSED(dlmo);
-
   return log(z/z0);
 }
 
 static cs_real_t
-_mo_psih_n(cs_real_t              z,
-           cs_real_t              z0,
-           cs_real_t              dlmo,
-           cs_real_t              prt)
+_mo_psih_n(cs_real_t                   z,
+           cs_real_t                   z0,
+           [[maybe_unused]] cs_real_t  dlmo,
+           cs_real_t                   prt)
 {
-  CS_UNUSED(dlmo);
-
   return prt*log(z/z0);
 }
 
@@ -884,17 +854,16 @@ _mo_psih_n(cs_real_t              z,
  * \brief Universal functions for stable
  *        (derivative function Phi_m and Phi_h)
  *
- * \param[in]  z             altitude
- * \param[in]  z0            altitude of the starting point integration
- * \param[in]  dlmo          inverse Monin Obukhov length
+ * \param[in]  z     altitude
+ * \param[in]  dlmo  inverse Monin Obukhov length
  *
  * \return coef
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
-_mo_phim_s(cs_real_t              z,
-           cs_real_t              dlmo)
+_mo_phim_s(cs_real_t  z,
+           cs_real_t  dlmo)
 {
   cs_real_t x = z * dlmo;
 
@@ -1583,8 +1552,8 @@ _log_meteo_profile(int                    itp,
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY)
     bft_printf("===================================================\n"
-               "WARNING : option  constant density                 \n"
-               "WARNING : thermal profile will be ignored          \n"
+               "Warning: constant density option\n"
+               "Warning: thermal profile will be ignored\n"
                "===================================================\n");
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
@@ -1914,35 +1883,6 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
 }
 
 /*----------------------------------------------------------------------------
- * Return the name of the meteo file
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   name_max <-- maximum name length
- *   name     --> pointer to associated length
- *   name_len --> length of associated length
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_meteo_file_name(int           name_max,
-                              const char  **name,
-                              int          *name_len)
-{
-  *name = _atmo_option.meteo_file_name;
-  *name_len = strlen(*name);
-
-  if (*name_len > name_max) {
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Error retrieving meteo file  (\"%s\"):\n"
-         "Fortran caller name length (%d) is too small for name \"%s\"\n"
-         "(of length %d)."),
-       _atmo_option.meteo_file_name, name_max, *name, *name_len);
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Access pointers for Fortran mapping.
  *----------------------------------------------------------------------------*/
 
@@ -2122,43 +2062,24 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
     n_times = cs::max(1, _atmo_option.met_1d_ntimes);
   }
 
-  if (_atmo_option.z_dyn_met == nullptr)
-    BFT_MALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
-  if (_atmo_option.z_temp_met == nullptr)
-    BFT_MALLOC(_atmo_option.z_temp_met, n_level_t, cs_real_t);
-  if (_atmo_option.xyp_met == nullptr)
-    BFT_MALLOC(_atmo_option.xyp_met, n_times*3, cs_real_t);
-  if (_atmo_option.u_met == nullptr)
-    BFT_MALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.v_met == nullptr)
-    BFT_MALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.w_met == nullptr)
-    BFT_MALLOC(_atmo_option.w_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.time_met == nullptr)
-    BFT_MALLOC(_atmo_option.time_met, n_times, cs_real_t);
-  if (_atmo_option.hyd_p_met == nullptr)
-    BFT_MALLOC(_atmo_option.hyd_p_met,
-               n_times * n_level_t, cs_real_t);
-  if (_atmo_option.pot_t_met == nullptr)
-    BFT_MALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.ek_met == nullptr)
-    BFT_MALLOC(_atmo_option.ek_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.ep_met == nullptr)
-    BFT_MALLOC(_atmo_option.ep_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.temp_met == nullptr)
-    BFT_MALLOC(_atmo_option.temp_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.rho_met == nullptr)
-    BFT_MALLOC(_atmo_option.rho_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.qw_met == nullptr)
-    BFT_MALLOC(_atmo_option.qw_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.ndrop_met == nullptr)
-    BFT_MALLOC(_atmo_option.ndrop_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.dpdt_met == nullptr)
-    BFT_MALLOC(_atmo_option.dpdt_met, n_level, cs_real_t);
-  if (_atmo_option.mom_met == nullptr)
-    BFT_MALLOC(_atmo_option.mom_met, n_level, cs_real_3_t);
-  if (_atmo_option.mom_cs == nullptr)
-    BFT_MALLOC(_atmo_option.mom_cs, n_level, cs_real_3_t);
+  CS_REALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
+  CS_REALLOC(_atmo_option.z_temp_met, n_level_t, cs_real_t);
+  CS_REALLOC(_atmo_option.xyp_met, n_times*3, cs_real_t);
+  CS_REALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.w_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.time_met, n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.hyd_p_met, n_times * n_level_t, cs_real_t);
+  CS_REALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.ek_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.ep_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.temp_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.rho_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.qw_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.ndrop_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.dpdt_met, n_level, cs_real_t);
+  CS_REALLOC(_atmo_option.mom_met, n_level, cs_real_3_t);
+  CS_REALLOC(_atmo_option.mom_cs, n_level, cs_real_3_t);
 
   *xyp_met   = _atmo_option.xyp_met;
   *u_met     = _atmo_option.u_met;
@@ -2188,103 +2109,103 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   }
 
   if (         _atmo_option.rad_1d_xy == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_xy , 3*n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_xy , 3*n_vert, cs_real_t);
   if (         _atmo_option.rad_1d_z == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_z , n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_z , n_level, cs_real_t);
   if (         _atmo_option.rad_1d_acinfe == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_acinfe , n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_acinfe , n_level, cs_real_t);
   if (         _atmo_option.rad_1d_dacinfe == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_dacinfe , n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_dacinfe , n_level, cs_real_t);
   if (         _atmo_option.rad_1d_aco2 == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_aco2, n_level*n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_aco2, n_level*n_level, cs_real_t);
   if (         _atmo_option.rad_1d_aco2s == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_aco2s, n_level*n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_aco2s, n_level*n_level, cs_real_t);
   if (         _atmo_option.rad_1d_daco2 == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_daco2, n_level*n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_daco2, n_level*n_level, cs_real_t);
   if (         _atmo_option.rad_1d_daco2s == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_daco2s, n_level*n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_daco2s, n_level*n_level, cs_real_t);
   if (         _atmo_option.rad_1d_acsup == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_acsup, n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_acsup, n_level, cs_real_t);
   if (         _atmo_option.rad_1d_acsups == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_acsups, n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_acsups, n_level, cs_real_t);
   if (         _atmo_option.rad_1d_dacsup == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_dacsup, n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_dacsup, n_level, cs_real_t);
   if (         _atmo_option.rad_1d_dacsups == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_dacsups, n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_dacsups, n_level, cs_real_t);
   if (         _atmo_option.rad_1d_tauzq == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_tauzq, n_level+1, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_tauzq, n_level+1, cs_real_t);
   if (         _atmo_option.rad_1d_tauz == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_tauz, n_level+1, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_tauz, n_level+1, cs_real_t);
   if (         _atmo_option.rad_1d_zq == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_zq, n_level+1, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_zq, n_level+1, cs_real_t);
   if (         _atmo_option.rad_1d_zray == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_zray, n_level, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_zray, n_level, cs_real_t);
   if (         _atmo_option.rad_1d_ir_div == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_ir_div, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_ir_div, n_level * n_vert, cs_real_t);
   if (         _atmo_option.rad_1d_sol_div == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_sol_div, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_sol_div, n_level * n_vert, cs_real_t);
   if (         _atmo_option.rad_1d_iru == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_iru, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_iru, n_level * n_vert, cs_real_t);
   if (         _atmo_option.rad_1d_ird == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_ird, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_ird, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_ird);
   }
   if (         _atmo_option.rad_1d_solu == nullptr)
-    BFT_MALLOC(_atmo_option.rad_1d_solu, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_solu, n_level * n_vert, cs_real_t);
   if (         _atmo_option.rad_1d_sold == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_sold, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_sold, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_sold);
   }
   if (         _atmo_option.rad_1d_qw == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_qw, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_qw, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_qw);
   }
   if (         _atmo_option.rad_1d_ql == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_ql, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_ql, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_ql);
   }
   if (         _atmo_option.rad_1d_qv == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_qv, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_qv, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_qv);
   }
   if (         _atmo_option.rad_1d_nc == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_nc, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_nc, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_nc);
   }
   if (         _atmo_option.rad_1d_fn == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_fn, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_fn, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_fn);
   }
   if (         _atmo_option.rad_1d_aerosols == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_aerosols, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_aerosols, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_aerosols);
   }
   if (         _atmo_option.rad_1d_albedo0 == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_albedo0, n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_albedo0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_albedo0);
   }
   if (         _atmo_option.rad_1d_emissi0== nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_emissi0, n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_emissi0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_emissi0);
   }
   if (         _atmo_option.rad_1d_temp0 == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_temp0, n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_temp0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_temp0);
   }
   if (         _atmo_option.rad_1d_theta0 == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_theta0, n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_theta0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_theta0);
   }
   if (         _atmo_option.rad_1d_qw0 == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_qw0, n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_qw0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_qw0);
   }
   if (         _atmo_option.rad_1d_p0  == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_p0, n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_p0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_p0);
   }
   if (         _atmo_option.rad_1d_rho0 == nullptr) {
-    BFT_MALLOC(_atmo_option.rad_1d_rho0, n_vert, cs_real_t);
+    CS_MALLOC(_atmo_option.rad_1d_rho0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_rho0);
   }
 
@@ -2387,7 +2308,8 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
   *cressman_theta = &(_atmo_imbrication.cressman_theta);
 
   *vertical_influence_radius = &(_atmo_imbrication.vertical_influence_radius);
-  *horizontal_influence_radius = &(_atmo_imbrication.horizontal_influence_radius);
+  *horizontal_influence_radius
+    = &(_atmo_imbrication.horizontal_influence_radius);
 
   *id_u     = &(_atmo_imbrication.id_u);
   *id_v     = &(_atmo_imbrication.id_v);
@@ -2410,35 +2332,19 @@ cs_atmo_soil_init_arrays(int        *n_soil_cat,
                          cs_real_t  **c2w,
                          cs_real_t  **r1,
                          cs_real_t  **r2)
- /* The dimension is n_soil_cat + 1 because the element at index 0 is kept unused. */
+ /* The dimension is n_soil_cat + 1 because the element at index 0
+    is kept unused. */
 {
-  if (_atmo_option.soil_cat_roughness == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_roughness, *n_soil_cat+1, cs_real_t);
-  if (_atmo_option.soil_cat_thermal_inertia == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_thermal_inertia, *n_soil_cat+1, cs_real_t);
-  if (_atmo_option.soil_cat_thermal_roughness == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_thermal_roughness, *n_soil_cat+1, cs_real_t);
-
-  if (_atmo_option.soil_cat_albedo == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_albedo, *n_soil_cat+1, cs_real_t);
-
-  if (_atmo_option.soil_cat_emissi == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_emissi, *n_soil_cat+1, cs_real_t);
-
-  if (_atmo_option.soil_cat_vegeta == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_vegeta, *n_soil_cat+1, cs_real_t);
-
-  if (_atmo_option.soil_cat_w1 == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_w1, *n_soil_cat+1, cs_real_t);
-
-  if (_atmo_option.soil_cat_w2 == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_w2, *n_soil_cat+1, cs_real_t);
-
-  if (_atmo_option.soil_cat_r1 == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_r1, *n_soil_cat+1, cs_real_t);
-
-  if (_atmo_option.soil_cat_r2 == nullptr)
-    BFT_MALLOC(_atmo_option.soil_cat_r2, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_roughness, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_thermal_inertia, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_thermal_roughness, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_albedo, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_emissi, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_vegeta, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_w1, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_w2, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_r1, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_r2, *n_soil_cat+1, cs_real_t);
 
   *rugdyn = _atmo_option.soil_cat_roughness;
   *csol   = _atmo_option.soil_cat_thermal_inertia;
@@ -2477,6 +2383,8 @@ cs_atmo_fields_init0(void)
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
 
+  const char input_param_desc[] = N_("Atmospheric module input data");
+
   /* Reading the meteo profile file (if meteo_profile==1) */
 
   if (at_opt->meteo_profile == 1) {
@@ -2493,13 +2401,10 @@ cs_atmo_fields_init0(void)
         xyp_met_max = at_opt->xyp_met[3 * i + 1];
     }
     if (xyp_met_max >= cs_math_infinite_r*0.5)
-      cs_parameters_error
-        (CS_ABORT_DELAYED,
-         _("WARNING:   STOP WHILE READING INPUT DATA\n"),
-         _("    =========\n"
-           "               ATMOSPHERIC  MODULE\n"
-           "    Wrong coordinates for the meteo profile.\n"
-           "    Check your data and parameters (GUI and user functions)\n"));
+      cs_parameters_error(CS_ABORT_DELAYED,
+                          _(input_param_desc),
+                          _("Wrong coordinates for the meteo profile.\n"
+                            "Check your data and parameters."));
 
   }
   else if (at_opt->meteo_profile == 2) {
@@ -2528,11 +2433,9 @@ cs_atmo_fields_init0(void)
         || xy_chem[0] >= cs_math_infinite_r*0.5)
       cs_parameters_error
         (CS_ABORT_DELAYED,
-         _("WARNING:   STOP WHILE READING INPUT DATA\n"),
-         _("    =========\n"
-           "               ATMOSPHERIC  CHEMISTRY\n"
-           "    Wrong coordinates for the concentration profile .\n"
-           "    Check your data and parameters (GUI and user functions)\n"));
+         _(input_param_desc),
+         _("Wrong coordinates for the concentration profile.\n"
+           "Check your data and parameters."));
 
     /* Volume initialization with profiles
        for species present in the chemical profiles file */
@@ -2597,17 +2500,17 @@ cs_atmo_fields_init0(void)
    * Check simulation times used by atmo
    * radiative transfer or chemistry models
    *-------------------------------------------------------------------------*/
+
   if (   (at_opt->radiative_model_1d == 1 || at_chem->model > 0)
       && (   at_opt->syear == -1 || at_opt->squant == -1
           || at_opt->shour == -1 || at_opt->smin  == -1 || at_opt->ssec <= -1.0)  )
-    bft_error(__FILE__, __LINE__, 0,
-              "    WARNING:   STOP WHILE READING INPUT DATA\n"
-              "    =========\n"
-              "               ATMOSPHERIC  MODULE RADITIVE MODEL OR CHEMISTRY\n"
-              "    The simulation time is wrong\n"
-              "    Check variables syear, squant, shour, smin, ssec\n"
-              "    By decreasing priority, these variables can be defined\n"
-              "    in cs_user_parameters or the meteo file or the chemistry file\n");
+    cs_parameters_error
+      (CS_ABORT_IMMEDIATE,
+       _(input_param_desc),
+       _("The simulation time is wrong\n"
+         "Check variables syear, squant, shour, smin, ssec\n"
+         "By decreasing priority, these variables can be defined\n"
+         "in cs_user_parameters or the meteo file or the chemistry file."));
 
   /* Only if the simulation is not a restart from another one */
   if (has_restart != 0)
@@ -3871,7 +3774,7 @@ cs_soil_model(void)
   }
   else {
     bft_error(__FILE__, __LINE__, 0,
-        _("cs_glob_atmo_option->soil_zone_id is missing \n"));
+              _("cs_glob_atmo_option->soil_zone_id is missing."));
   }
 }
 
@@ -3898,7 +3801,7 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
   if (g <= 0.)
     bft_error(__FILE__, __LINE__, 0,
-              _("Atmo meteo profiles: gravity must not be 0.\n"));
+              _("Atmo meteo profiles: gravity must not be 0."));
 
   /* Reference fluid properties set from meteo values */
   phys_pro->p0 = aopt->meteo_psea;
@@ -3940,7 +3843,7 @@ cs_atmo_init_meteo_profiles(void)
               __LINE__,
               0,
               _("Meteo preprocessor: meteo_ustar0 or meteo_uref"
-                " or velocity measurements.\n"));
+                " or velocity measurements."));
 
   if (aopt->meteo_ustar0 > 0. && aopt->meteo_uref > 0.) {
   /* Recompute LMO inverse */
@@ -4052,14 +3955,14 @@ cs_atmo_init_meteo_profiles(void)
               __LINE__,
               0,
               _("When computing idealised atmospheric profiles,\n"
-                "No heights are provided for velocities u1 and u2.\n"));
+                "No heights are provided for velocities u1 and u2."));
   if ((aopt->meteo_zu1 > 0. && aopt->meteo_t1 < 0.)
       || (aopt->meteo_zu2 > 0. && aopt->meteo_t2 < 0.))
     bft_error(__FILE__,
               __LINE__,
               0,
               _("When computing idealised atmospheric profiles,\n"
-                "No temperature measurements are provided.\n"));
+                "No temperature measurements are provided."));
   if ((aopt->meteo_zu1 > 0. && aopt->meteo_qw1 > 0.5*DBL_MAX && is_humid)
       || (aopt->meteo_zu2 > 0. && aopt->meteo_qw2 > 0.5*DBL_MAX && is_humid))
     bft_error(__FILE__,
@@ -4067,7 +3970,7 @@ cs_atmo_init_meteo_profiles(void)
               0,
               _("When computing idealised atmospheric profiles,\n"
                 "No humidity measurements are provided, though humid "
-                "atmosphere is selected.\n"));
+                "atmosphere is selected."));
   cs_real_t u1  = aopt->meteo_u1;
   cs_real_t u2  = aopt->meteo_u2;
   cs_real_t z1  = aopt->meteo_zu1;
@@ -4172,8 +4075,8 @@ cs_atmo_init_meteo_profiles(void)
     bft_error(__FILE__,
               __LINE__,
               0,
-              _("Meteo preprocessor: at least one information is required"
-                " for humidity field preprocessing (qw0 || qw1 || qw2).\n"));
+              _("Meteo preprocessor: at least one information is required\n"
+                "for humidity field preprocessing (qw0 || qw1 || qw2)."));
 
   bft_printf("\n Meteo preprocessing values for computation:\n"
              " dlmo=%17.9e\n z0=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n"
@@ -4255,7 +4158,6 @@ cs_atmo_compute_meteo_profiles(void)
 
   /* Variables used for clipping */
   cs_real_t ri_max = cs_math_big_r;
-  cs_real_t *dlmo_var = nullptr;
   cs_real_t z_lim = cs_math_big_r;
   cs_real_t u_met_min= cs_math_big_r;
   cs_real_t theta_met_min= cs_math_big_r;
@@ -4286,7 +4188,8 @@ cs_atmo_compute_meteo_profiles(void)
     z_ground = f_z_ground->val;
   }
 
-  BFT_MALLOC(dlmo_var, m->n_cells_with_ghosts, cs_real_t);
+  cs_real_t *dlmo_var = nullptr;
+  CS_MALLOC(dlmo_var, m->n_cells_with_ghosts, cs_real_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
     dlmo_var[cell_id] = 0.0;
@@ -4445,7 +4348,7 @@ cs_atmo_compute_meteo_profiles(void)
   }
 
   cs_atmo_hydrostatic_profiles_compute();
-  BFT_FREE(dlmo_var);
+  CS_FREE(dlmo_var);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4973,16 +4876,9 @@ cs_atmo_set_meteo_file_name(const char *file_name)
     return;
   }
 
-  if (_atmo_option.meteo_file_name == nullptr) {
-    BFT_MALLOC(_atmo_option.meteo_file_name,
-               strlen(file_name) + 1,
-               char);
-  }
-  else {
-    BFT_REALLOC(_atmo_option.meteo_file_name,
-                strlen(file_name) + 1,
-                char);
-  }
+  CS_REALLOC(_atmo_option.meteo_file_name,
+             strlen(file_name) + 1,
+             char);
 
   sprintf(_atmo_option.meteo_file_name, "%s", file_name);
 }
@@ -5293,11 +5189,9 @@ cs_atmo_read_meteo_profile(int mode)
     if (seconde < 0.0 || quant > 366)
       cs_parameters_error
         (CS_ABORT_DELAYED,
-         _("WARNING:   CHECKING INPUT DATA (cs_atmo_read_meteo_profile) \n"),
-         _("    =========\n"
-           "               ATMOSPHERIC SPECIFIC PHYSICS\n"
-           "    Error in the date of meteo profile file:\n"
-           "    Check the format (integers,real) for the date\n"));
+         _("Meteorological profile data"),
+         _("Error in the date of meteo profile file:\n"
+           "Check the format (integers, real) for the date."));
 
     /* if the date and time are not completed in cs_user_model
      * the date and time of the first meteo profile are taken as the
@@ -5461,16 +5355,15 @@ cs_atmo_read_meteo_profile(int mode)
             || at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t] < 0.0 )
           cs_parameters_error
             (CS_ABORT_IMMEDIATE,
-             _("Error in the meteo profile file:\n"),
-             _("the values for the specific humidity are not realistic"
-               " check the unity (kg/kg)"));
+             _("Meteo profile file"),
+             _("the values for the specific humidity are not realistic;"
+               " check the unit (kg/kg)."));
         if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
           if (at_opt->ndrop_met[ii + itp*at_opt->met_1d_nlevels_t] < 0.0)
             cs_parameters_error
-            (CS_ABORT_IMMEDIATE,
-             _("Error in the meteo profile file:\n"),
-             _("Number of droplets read  <  0"
-               "The computation will not be run"));
+              (CS_ABORT_IMMEDIATE,
+               _("Meteo profile file"),
+               _("Number of droplets read < 0."));
 
       } // end for
 
@@ -5558,12 +5451,9 @@ cs_atmo_read_meteo_profile(int mode)
       if (at_opt->met_1d_nlevels_d < 2 || at_opt->met_1d_nlevels_t < 2)
         cs_parameters_error
           (CS_ABORT_DELAYED,
-           _("WHILE READING INPUT DATA (cs_atmo_read_meteo_profile)\n"),
-           _("    =========\n"
-             "               ATMOSPHERIC SPECIFIC PHYSICS\n"
-             "    Error in the date of meteo profile file:\n"
-             " the number of temperature or velocity measurements "
-             "must be larger than 2.\n"));
+           _("Meteo profile file"),
+           _("The number of temperature or velocity measurements "
+             "must be larger than 2."));
     }
     else {
       const int nbmetd = at_opt->met_1d_nlevels_d;
@@ -5575,16 +5465,17 @@ cs_atmo_read_meteo_profile(int mode)
           if (line[i] == 'd' || line[i] == 'D')
             line[i] = 'e';
         }
-        sscanf(line, " %le %le  %le %le %le", &at_opt->z_dyn_met[ii],
-                                              &at_opt->u_met[ii + itp*nbmetd],
-                                              &at_opt->v_met[ii + itp*nbmetd],
-                                              &at_opt->ek_met[ii + itp*nbmetd],
-                                              &at_opt->ep_met[ii + itp*nbmetd]);
+        sscanf(line, " %le %le  %le %le %le",
+               &at_opt->z_dyn_met[ii],
+               &at_opt->u_met[ii + itp*nbmetd],
+               &at_opt->v_met[ii + itp*nbmetd],
+               &at_opt->ek_met[ii + itp*nbmetd],
+               &at_opt->ep_met[ii + itp*nbmetd]);
       }
     }
 
-    /* Printings
-       --------- */
+    /* Logging
+       ------- */
     if (mode == 1) {
       const int date[5] = {year, quant, hour, minute, (int)seconde};
       _log_meteo_profile(itp, date, at_opt);
@@ -5607,72 +5498,72 @@ cs_atmo_read_meteo_profile(int mode)
 void
 cs_atmo_finalize(void)
 {
-  BFT_FREE(_atmo_option.meteo_file_name);
-  BFT_FREE(_atmo_option.z_dyn_met);
-  BFT_FREE(_atmo_option.z_temp_met);
-  BFT_FREE(_atmo_option.xyp_met);
-  BFT_FREE(_atmo_option.u_met);
-  BFT_FREE(_atmo_option.v_met);
-  BFT_FREE(_atmo_option.w_met);
-  BFT_FREE(_atmo_option.time_met);
-  BFT_FREE(_atmo_option.hyd_p_met);
-  BFT_FREE(_atmo_option.pot_t_met);
-  BFT_FREE(_atmo_option.ek_met);
-  BFT_FREE(_atmo_option.ep_met);
-  BFT_FREE(_atmo_option.temp_met);
-  BFT_FREE(_atmo_option.rho_met);
-  BFT_FREE(_atmo_option.qw_met);
-  BFT_FREE(_atmo_option.ndrop_met);
-  BFT_FREE(_atmo_option.dpdt_met);
-  BFT_FREE(_atmo_option.mom_met);
-  BFT_FREE(_atmo_option.mom_cs);
+  CS_FREE(_atmo_option.meteo_file_name);
+  CS_FREE(_atmo_option.z_dyn_met);
+  CS_FREE(_atmo_option.z_temp_met);
+  CS_FREE(_atmo_option.xyp_met);
+  CS_FREE(_atmo_option.u_met);
+  CS_FREE(_atmo_option.v_met);
+  CS_FREE(_atmo_option.w_met);
+  CS_FREE(_atmo_option.time_met);
+  CS_FREE(_atmo_option.hyd_p_met);
+  CS_FREE(_atmo_option.pot_t_met);
+  CS_FREE(_atmo_option.ek_met);
+  CS_FREE(_atmo_option.ep_met);
+  CS_FREE(_atmo_option.temp_met);
+  CS_FREE(_atmo_option.rho_met);
+  CS_FREE(_atmo_option.qw_met);
+  CS_FREE(_atmo_option.ndrop_met);
+  CS_FREE(_atmo_option.dpdt_met);
+  CS_FREE(_atmo_option.mom_met);
+  CS_FREE(_atmo_option.mom_cs);
 
-  BFT_FREE(_atmo_option.rad_1d_xy);
-  BFT_FREE(_atmo_option.rad_1d_z);
-  BFT_FREE(_atmo_option.rad_1d_acinfe);
-  BFT_FREE(_atmo_option.rad_1d_dacinfe);
-  BFT_FREE(_atmo_option.rad_1d_aco2);
-  BFT_FREE(_atmo_option.rad_1d_aco2s);
-  BFT_FREE(_atmo_option.rad_1d_daco2);
-  BFT_FREE(_atmo_option.rad_1d_daco2s);
-  BFT_FREE(_atmo_option.rad_1d_acsup);
-  BFT_FREE(_atmo_option.rad_1d_acsups);
-  BFT_FREE(_atmo_option.rad_1d_dacsup);
-  BFT_FREE(_atmo_option.rad_1d_dacsups);
-  BFT_FREE(_atmo_option.rad_1d_tauzq);
-  BFT_FREE(_atmo_option.rad_1d_tauz);
-  BFT_FREE(_atmo_option.rad_1d_zq);
-  BFT_FREE(_atmo_option.rad_1d_zray);
-  BFT_FREE(_atmo_option.rad_1d_ir_div);
-  BFT_FREE(_atmo_option.rad_1d_sol_div);
-  BFT_FREE(_atmo_option.rad_1d_iru);
-  BFT_FREE(_atmo_option.rad_1d_ird);
-  BFT_FREE(_atmo_option.rad_1d_solu);
-  BFT_FREE(_atmo_option.rad_1d_sold);
-  BFT_FREE(_atmo_option.rad_1d_albedo0);
-  BFT_FREE(_atmo_option.rad_1d_emissi0);
-  BFT_FREE(_atmo_option.rad_1d_temp0);
-  BFT_FREE(_atmo_option.rad_1d_theta0);
-  BFT_FREE(_atmo_option.rad_1d_qw0);
-  BFT_FREE(_atmo_option.rad_1d_p0);
-  BFT_FREE(_atmo_option.rad_1d_rho0);
-  BFT_FREE(_atmo_option.rad_1d_aerosols);
-  BFT_FREE(_atmo_option.rad_1d_fn);
-  BFT_FREE(_atmo_option.rad_1d_nc);
-  BFT_FREE(_atmo_option.rad_1d_qv);
-  BFT_FREE(_atmo_option.rad_1d_ql);
-  BFT_FREE(_atmo_option.rad_1d_qw);
+  CS_FREE(_atmo_option.rad_1d_xy);
+  CS_FREE(_atmo_option.rad_1d_z);
+  CS_FREE(_atmo_option.rad_1d_acinfe);
+  CS_FREE(_atmo_option.rad_1d_dacinfe);
+  CS_FREE(_atmo_option.rad_1d_aco2);
+  CS_FREE(_atmo_option.rad_1d_aco2s);
+  CS_FREE(_atmo_option.rad_1d_daco2);
+  CS_FREE(_atmo_option.rad_1d_daco2s);
+  CS_FREE(_atmo_option.rad_1d_acsup);
+  CS_FREE(_atmo_option.rad_1d_acsups);
+  CS_FREE(_atmo_option.rad_1d_dacsup);
+  CS_FREE(_atmo_option.rad_1d_dacsups);
+  CS_FREE(_atmo_option.rad_1d_tauzq);
+  CS_FREE(_atmo_option.rad_1d_tauz);
+  CS_FREE(_atmo_option.rad_1d_zq);
+  CS_FREE(_atmo_option.rad_1d_zray);
+  CS_FREE(_atmo_option.rad_1d_ir_div);
+  CS_FREE(_atmo_option.rad_1d_sol_div);
+  CS_FREE(_atmo_option.rad_1d_iru);
+  CS_FREE(_atmo_option.rad_1d_ird);
+  CS_FREE(_atmo_option.rad_1d_solu);
+  CS_FREE(_atmo_option.rad_1d_sold);
+  CS_FREE(_atmo_option.rad_1d_albedo0);
+  CS_FREE(_atmo_option.rad_1d_emissi0);
+  CS_FREE(_atmo_option.rad_1d_temp0);
+  CS_FREE(_atmo_option.rad_1d_theta0);
+  CS_FREE(_atmo_option.rad_1d_qw0);
+  CS_FREE(_atmo_option.rad_1d_p0);
+  CS_FREE(_atmo_option.rad_1d_rho0);
+  CS_FREE(_atmo_option.rad_1d_aerosols);
+  CS_FREE(_atmo_option.rad_1d_fn);
+  CS_FREE(_atmo_option.rad_1d_nc);
+  CS_FREE(_atmo_option.rad_1d_qv);
+  CS_FREE(_atmo_option.rad_1d_ql);
+  CS_FREE(_atmo_option.rad_1d_qw);
 
-  BFT_FREE(_atmo_option.soil_cat_r1);
-  BFT_FREE(_atmo_option.soil_cat_r2);
-  BFT_FREE(_atmo_option.soil_cat_vegeta);
-  BFT_FREE(_atmo_option.soil_cat_albedo);
-  BFT_FREE(_atmo_option.soil_cat_emissi);
-  BFT_FREE(_atmo_option.soil_cat_roughness);
-  BFT_FREE(_atmo_option.soil_cat_w1);
-  BFT_FREE(_atmo_option.soil_cat_w2);
-  BFT_FREE(_atmo_option.soil_cat_thermal_inertia);
-  BFT_FREE(_atmo_option.soil_cat_thermal_roughness);
+  CS_FREE(_atmo_option.soil_cat_r1);
+  CS_FREE(_atmo_option.soil_cat_r2);
+  CS_FREE(_atmo_option.soil_cat_vegeta);
+  CS_FREE(_atmo_option.soil_cat_albedo);
+  CS_FREE(_atmo_option.soil_cat_emissi);
+  CS_FREE(_atmo_option.soil_cat_roughness);
+  CS_FREE(_atmo_option.soil_cat_w1);
+  CS_FREE(_atmo_option.soil_cat_w2);
+  CS_FREE(_atmo_option.soil_cat_thermal_inertia);
+  CS_FREE(_atmo_option.soil_cat_thermal_roughness);
 }
 
 /*----------------------------------------------------------------------------*/

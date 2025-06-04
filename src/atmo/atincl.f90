@@ -88,7 +88,7 @@ double precision, dimension(:,:), pointer :: ncmet
 !> (read in the input meteo file)
 double precision, dimension(:,:), pointer :: xyp_met
 
-! Arrays specific to values calculated from the meteo file (cf atlecm.f90):
+! Arrays specific to values calculated from the meteo file
 
 !> density profile
 double precision, dimension(:,:), pointer :: rmet
@@ -404,19 +404,6 @@ integer(c_int), pointer, save :: rad_atmo_model
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function returning a meteo file name
-
-    subroutine cs_f_atmo_get_meteo_file_name(f_name_max, f_name, f_name_len)  &
-      bind(C, name='cs_f_atmo_get_meteo_file_name')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value       :: f_name_max
-      type(c_ptr), intent(out)    :: f_name
-      integer(c_int), intent(out) :: f_name_len
-    end subroutine cs_f_atmo_get_meteo_file_name
-
-    !---------------------------------------------------------------------------
-
     !> \brief Return pointers to atmo includes
 
     subroutine cs_f_atmo_get_pointers(ps,                               &
@@ -606,44 +593,6 @@ contains
     call c_f_pointer(c_p, face_ids_p, [n_faces])
 
   end subroutine atmo_get_soil_zone
-
-  !=============================================================================
-
-  !> \brief Return meteo file name
-
-  !> \param[out]  name   meteo file name
-
-  subroutine atmo_get_meteo_file_name(name)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(out) :: name
-
-    ! Local variables
-
-    integer :: i
-    integer(c_int) :: name_max, c_name_len
-    type(c_ptr) :: c_name_p
-    character(kind=c_char, len=1), dimension(:), pointer :: c_name
-
-    name_max = len(name)
-
-    call cs_f_atmo_get_meteo_file_name(name_max, c_name_p, c_name_len)
-    call c_f_pointer(c_name_p, c_name, [c_name_len])
-
-    do i = 1, c_name_len
-      name(i:i) = c_name(i)
-    enddo
-    do i = c_name_len + 1, name_max
-      name(i:i) = ' '
-    enddo
-
-    return
-
-  end subroutine atmo_get_meteo_file_name
 
   !=============================================================================
 

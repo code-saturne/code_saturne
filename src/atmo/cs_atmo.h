@@ -852,6 +852,7 @@ cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
                         int               *n_soil_cat,
                         const cs_lnum_t  **elt_ids);
 
+/*----------------------------------------------------------------------------*/
 
 void
 cs_atmo_soil_init_arrays(int        *n_soil_cat,
@@ -865,6 +866,9 @@ cs_atmo_soil_init_arrays(int        *n_soil_cat,
                          cs_real_t  **c2w,
                          cs_real_t  **r1,
                          cs_real_t  **r2);
+
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
