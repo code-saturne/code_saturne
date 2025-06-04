@@ -5282,7 +5282,7 @@ cs_atmo_read_meteo_profile(int mode)
     for (int i = 0; line[i] != '\0'; i++) {
       if (line[i] == ',')
         line[i] = ' ';
-      if (line[i] == 'd')
+      if (line[i] == 'd' || line[i] == 'D')
         line[i] = 'e';
     }
 
@@ -5355,7 +5355,7 @@ cs_atmo_read_meteo_profile(int mode)
       for (int i = 0; line[i] != '\0'; i++) {
         if (line[i] == ',')
           line[i] = ' ';
-        if (line[i] == 'd')
+        if (line[i] == 'd' || line[i] == 'D')
           line[i] = 'e';
       }
       sscanf(line, "%lf %lf", &at_opt->xyp_met[3*itp],
@@ -5400,7 +5400,7 @@ cs_atmo_read_meteo_profile(int mode)
         for (int i = 0; line[i] != '\0'; i++) {
           if (line[i] == ',')
             line[i] = ' ';
-          if (line[i] == 'd')
+          if (line[i] == 'd' || line[i] == 'D')
             line[i] = 'e';
         }
         sscanf(line, " %lf %lf %lf", &zzmax, &temp, &qv);
@@ -5432,7 +5432,7 @@ cs_atmo_read_meteo_profile(int mode)
         for (int i = 0; line[i] != '\0'; i++) {
           if (line[i] == ',')
             line[i] = ' ';
-          if (line[i] == 'd')
+          if (line[i] == 'd' || line[i] == 'D')
             line[i] = 'e';
         }
 
@@ -5546,7 +5546,7 @@ cs_atmo_read_meteo_profile(int mode)
     for (int i = 0; line[i] != '\0'; i++) {
       if (line[i] == ',')
         line[i] = ' ';
-      if (line[i] == 'd')
+      if (line[i] == 'd' || line[i] == 'D')
         line[i] = 'e';
     }
 
@@ -5572,7 +5572,7 @@ cs_atmo_read_meteo_profile(int mode)
         for (int i = 0; line[i] != '\0'; i++) {
           if (line[i] == ',')
             line[i] = ' ';
-          if (line[i] == 'd')
+          if (line[i] == 'd' || line[i] == 'D')
             line[i] = 'e';
         }
         sscanf(line, " %le %le  %le %le %le", &at_opt->z_dyn_met[ii],
