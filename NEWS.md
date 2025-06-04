@@ -15,6 +15,9 @@ Release 9.0.0 (2025-06-27)
 
 ### Architectural changes:
 
+- Modifications related to SALOME_CFD: Fix GUI for coupling with OpenTURNS.
+  Also fix package, arg parser and environment in salome context.
+
 - FMI: some improvements to logging/tracing, and setting anf getting
   FMU states now mostly works.
 

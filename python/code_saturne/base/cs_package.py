@@ -57,6 +57,16 @@ class package:
 
         config_dict = r_config_dict
 
+        if install_prefix is None:
+            install_prefix = os.getenv('CS_ROOT_DIR')
+
+        if config_file is None and r_config_file_path is None:
+            if not r_config_file_path and install_prefix != None:
+                cslibdir = os.path.join(install_prefix, 'lib')
+                config_file = os.path.join(cslibdir, 'code_saturne_build.cfg')
+                if not os.path.isfile(config_file):
+                    config_file = None
+
         if config_file and config_file != r_config_file_path:
             config_parser = configparser.ConfigParser()
             config_parser.read(config_file)
@@ -98,9 +108,6 @@ class package:
 
         # Installation directories
         # ------------------------
-
-        if install_prefix is None:
-            install_prefix = os.getenv('CS_ROOT_DIR')
 
         python_version = "%d.%d" % (sys.version_info.major, sys.version_info.minor)
         pythondir_rel = os.path.join('lib', 'python' + python_version,
