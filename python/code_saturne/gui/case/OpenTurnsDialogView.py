@@ -475,11 +475,10 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
 
         script_cmd += toffset + "import sys\n"
 
-        salome_pydir = os.path.join(self.case['package'].dirs['pythondir'],
-                                    'salome')
+        salome_pydir = os.path.join(self.case['package'].dirs['pythondir'])
         script_cmd += toffset
         script_cmd += "sys.path.insert(-1, '%s')\n\n" % salome_pydir
-        script_cmd += toffset + "from CFDSTUDYOTURNS_StudyInterface import cfd_openturns_study"
+        script_cmd += toffset + "from cfdstudy.CFDSTUDYOTURNS_StudyInterface import cfd_openturns_study"
         script_cmd += "\n\n"
 
         script_cmd += toffset + cmd1 + 'study_path = "' + self.mdl.otstudy_path + '",\n'
