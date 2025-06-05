@@ -301,8 +301,8 @@ file is linked (in the Unix/Linux/POSIX) sense rather than copied: when
 as long as checkpoint directories are present on the sale file system,
 the files are shared rather than actually copied, to save space.
 
-Interactive modification of selected parameters {#sec_prg_control_file}
-===============================================
+Interactive modification of selected parameters (`control_file`) {#sec_prg_control_file}
+================================================================
 
 During a calculation, it is possible to interactively modify the time step or time value
 limit defined in the setup. To do so, a file named `control_file` must be placed in the
