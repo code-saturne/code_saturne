@@ -350,36 +350,36 @@ _order_by_direction(void)
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_rad_transfer_sol(int       gg_id,
-                     cs_real_t w_gg[],
-                     const cs_real_t *restrict tempk,
-                     const cs_real_t *restrict ckg,
-                     int                   bc_type[],
-                     cs_field_bc_coeffs_t *bc_coeffs_rad,
-                     cs_real_t *restrict flurds,
-                     cs_real_t *restrict flurdb,
-                     cs_real_t *restrict viscf,
-                     cs_real_t *restrict viscb,
-                     cs_real_t *restrict rhs,
-                     cs_real_t *restrict rovsdt,
-                     cs_real_3_t *restrict q,
-                     cs_real_t *restrict int_rad_domega,
-                     cs_real_t *restrict int_abso,
-                     cs_real_t *restrict int_emi,
-                     cs_real_t *restrict int_rad_ist)
+_cs_rad_transfer_sol(int                        gg_id,
+                     cs_real_t                  w_gg[],
+                     const cs_real_t *restrict  tempk,
+                     const cs_real_t *restrict  ckg,
+                     int                        bc_type[],
+                     cs_field_bc_coeffs_t      *bc_coeffs_rad,
+                     cs_real_t        *restrict flurds,
+                     cs_real_t        *restrict flurdb,
+                     cs_real_t        *restrict viscf,
+                     cs_real_t        *restrict viscb,
+                     cs_real_t        *restrict rhs,
+                     cs_real_t        *restrict rovsdt,
+                     cs_real_3_t      *restrict q,
+                     cs_real_t        *restrict int_rad_domega,
+                     cs_real_t        *restrict int_abso,
+                     cs_real_t        *restrict int_emi,
+                     cs_real_t        *restrict int_rad_ist)
 {
-  cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_lnum_t n_i_faces  = cs_glob_mesh->n_i_faces;
-  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  cs_lnum_t n_cells   = cs_glob_mesh->n_cells;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  cs_lnum_t n_b_faces = m->n_b_faces;
+  cs_lnum_t n_i_faces = m->n_i_faces;
+  cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  cs_lnum_t n_cells = m->n_cells;
 
-  const cs_nreal_3_t *b_face_u_normal
-    = cs_glob_mesh_quantities->b_face_u_normal;
-  const cs_nreal_3_t *i_face_normal
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->i_face_normal;
-  const cs_real_t   *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
-
-  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
+  const cs_nreal_3_t *i_face_u_normal = fvq->i_face_u_normal;
+  const cs_real_t  *i_face_surf = fvq->i_face_surf;
+  const cs_real_t  *b_face_surf = fvq->b_face_surf;
+  const cs_real_t *cell_vol = fvq->cell_vol;
 
   const cs_real_t c_stefan = cs_physical_constants_stephan;
   const cs_real_t onedpi  = 1.0 / cs_math_pi;
@@ -709,34 +709,36 @@ _cs_rad_transfer_sol(int       gg_id,
             const cs_real_t tan_alpha
               =    sqrt(domegat * (4.*pi - domegat))
                  / (2. * pi - domegat);
-            const cs_real_t *i_face_surf = cs_glob_mesh_quantities->i_face_surf;
+            const cs_real_t *i_face_surf = fvq->i_face_surf;
 
             for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
               viscf[face_id] = disp_coeff * tan_alpha * i_face_surf[face_id];
           }
-
           else {
             for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
               viscf[face_id] = 0.0;
           }
 
-          for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+          for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             viscb[face_id] = 0.0;
+          }
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
             radiance[cell_id] = 0.0;
             radiance_prev[cell_id] = 0.0;
           }
 
-          for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-            flurds[face_id] = cs_math_3_dot_product(vect_s,
-                                                    i_face_normal[face_id]);
+          for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+            flurds[face_id] =   cs_math_3_dot_product(vect_s,
+                                                      i_face_u_normal[face_id])
+                              * i_face_surf[face_id];
+          }
 
-
-          for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+          for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             flurdb[face_id] =    cs_math_3_dot_product(vect_s,
                                                        b_face_u_normal[face_id])
                                * b_face_surf[face_id];
+          }
 
           /* Resolution
              ---------- */

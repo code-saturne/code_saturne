@@ -144,8 +144,10 @@ _tsepls(int       phase_id,
   const cs_lnum_t   *b_face_cells = m->b_face_cells;
   const cs_lnum_2_t *i_face_cells = m->i_face_cells;
   const cs_real_t   *restrict weight = fvq->weight;
-  const cs_real_3_t *i_face_normal = (const cs_real_3_t *) fvq->i_face_normal;
-  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) fvq->b_face_normal;
+  const cs_real_t   *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t   *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   /* Initialization
    * ============== */
@@ -202,18 +204,15 @@ _tsepls(int       phase_id,
     });
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-      cs_real_t duidxk[3], njsj[3];
-
       cs_lnum_t c_id0 = i_face_cells[face_id][0];
       cs_lnum_t c_id1 = i_face_cells[face_id][1];
       cs_real_t pnd = weight[face_id];
 
-      duidxk[0] = pnd * gradv[c_id0][i][0] + (1. - pnd) * gradv[c_id1][i][0];
-      duidxk[1] = pnd * gradv[c_id0][i][1] + (1. - pnd) * gradv[c_id1][i][1];
-      duidxk[2] = pnd * gradv[c_id0][i][2] + (1. - pnd) * gradv[c_id1][i][2];
-      njsj[0]   = i_face_normal[face_id][0];
-      njsj[1]   = i_face_normal[face_id][1];
-      njsj[2]   = i_face_normal[face_id][2];
+      cs_real_t duidxk[3], njsj[3];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        duidxk[j] = pnd * gradv[c_id0][i][j] + (1. - pnd) * gradv[c_id1][i][j];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        njsj[j] = i_face_u_normal[face_id][j] * i_face_surf[face_id];
 
       for (cs_lnum_t j = 0; j < 3; j++){
         cs_real_t c_w7_0[3], c_w7_1[3];
@@ -229,16 +228,13 @@ _tsepls(int       phase_id,
     });
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-      cs_real_t duidxk[3], njsj[3];
-
       cs_lnum_t c_id0 = b_face_cells[face_id];
 
-      duidxk[0] = gradv[c_id0][i][0];
-      duidxk[1] = gradv[c_id0][i][1];
-      duidxk[2] = gradv[c_id0][i][2];
-      njsj[0]   = b_face_normal[face_id][0];
-      njsj[1]   = b_face_normal[face_id][1];
-      njsj[2]   = b_face_normal[face_id][2];
+      const cs_real_t *duidxk = gradv[c_id0][i];
+      cs_real_t njsj[3];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        njsj[j] = b_face_u_normal[face_id][j] * b_face_surf[face_id];
+
       for (cs_lnum_t j = 0; j < 3; j++){
         cs_real_t c_w7[3];
         for (cs_lnum_t k = 0; k < 3; k++) {
