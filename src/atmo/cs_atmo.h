@@ -156,6 +156,8 @@ typedef struct {
   cs_real_t longitude;
   /*! latitude of the domain origin */
   cs_real_t latitude;
+  /*! altitude of the domain origin */
+  cs_real_t altitude;
   /*! x coordinate of the domain origin in Lambert-93 */
   cs_real_t x_l93;
   /*! y coordinate of the domain origin in Lambert-93 */
