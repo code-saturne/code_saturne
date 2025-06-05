@@ -290,8 +290,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  CS_MALLOC(bc_coeffs_loc.a, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_coeffs_loc.b, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *coefa_p = bc_coeffs_loc.a;
   cs_real_t *coefb_p = bc_coeffs_loc.b;
@@ -418,6 +418,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   cs_real_t *cvara_omg= nullptr, *cvar_al = nullptr;
 
   const cs_real_t thetap = (st_prv_id >= 0) ? thetv : 1;
+  const int model_itytur = turb_model->itytur;
+  const int model_turb = turb_model->model;
 
   if (turb_model->itytur == 2 || turb_model->itytur == 5) {
     cvara_k = CS_F_(k)->val_pre;
@@ -441,11 +443,11 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 
     cs_real_t xe = 0., xk = 0., alpha_theta = 1.;
 
-    if (turb_model->itytur == 2 || turb_model->itytur == 5) {
+    if (model_itytur == 2 || model_itytur == 5) {
       xk = cvara_k[c_id];
       xe = cvara_ep[c_id];
     }
-    else if (turb_model->itytur == 3) {
+    else if (model_itytur == 3) {
       xe = cvara_ep[c_id];
       xk = 0.5 * (cvara_rij[c_id][0] + cvara_rij[c_id][1] + cvara_rij[c_id][2]);
       /* Implicit term -1/Rh * Eps/k * Variance
@@ -455,7 +457,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
        * with - R = 0.5
        *      - alpha_T = 1.0 for GGDH/DFM/AFM */
     }
-    else if (turb_model->model == CS_TURB_K_OMEGA) {
+    else if (model_turb == CS_TURB_K_OMEGA) {
       xk = cvara_k[c_id];
       xe = cmu*xk*cvara_omg[c_id];
     }
