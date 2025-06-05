@@ -824,9 +824,9 @@ implicit none
 
 ! Arguments
 integer(c_int), value :: ns, nr
-real(kind=c_double), dimension(*), intent(in) :: y, rk
+real(kind=c_double), dimension(*), intent(inout) :: y, rk
 real(kind=c_double), dimension(*), intent(inout) :: chem
-real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
 
 ! Local variables
 

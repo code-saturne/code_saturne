@@ -57,6 +57,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_scalar_clipping.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -121,8 +122,10 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .z_conc_profiles = nullptr,
   .t_conc_profiles = nullptr,
   .x_conc_profiles = nullptr,
-  .y_conc_profiles = nullptr
+  .y_conc_profiles = nullptr,
+  .dt_chemistry_max = 10.0
 };
+
 
 /*============================================================================
  * Static global variables
@@ -240,6 +243,15 @@ cs_f_fexchem_4(int       nespg,
                cs_real_t source[],
                cs_real_t conv_factor[],
                cs_real_t dchema[]);
+
+void
+cs_f_chem_roschem(cs_real_t dlconc[],
+                  cs_real_t zcsourc[],
+                  cs_real_t zcsourcf[],
+                  cs_real_t conv_factor[],
+                  cs_real_t dlstep,
+                  cs_real_t dlrki[],
+                  cs_real_t dlrkf[]);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -1241,7 +1253,7 @@ cs_atmo_read_chemistry_profile(int mode)
         bft_printf("%10.2lf ",  _atmo_chem.z_conc_profiles[ii]);
         for (int kk = 0; kk < _atmo_chem.n_species_profiles; kk++) {
           bft_printf("%10.5lf ",
-                     _atmo_chem.conc_profiles[ii+(itp)*nbchmz+(kk-1)*size]);
+                     _atmo_chem.conc_profiles[ii+(itp)*nbchmz+(kk)*size]);
 
         }
         bft_printf("\n");
@@ -1996,6 +2008,144 @@ cs_atmo_chem_exp_source_terms(int          iscal,
   }
 
   CS_FREE(cvara_espg);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Calls the rosenbrock resolution for atmospheric chemistry
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_compute_gaseous_chemistry(void)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  const cs_atmo_chemistry_t *atmo_chem = cs_glob_atmo_chemistry;
+  const int nrg = atmo_chem->n_reactions;
+  const int nespg = atmo_chem->n_species;
+  const cs_real_t dtchemmax = atmo_chem->dt_chemistry_max;
+
+  const cs_real_t navo = cs_physical_constants_avogadro;
+
+  const cs_real_t *dt = CS_F_(dt)->val;
+  const cs_real_t *cpro_rho = CS_F_(rho)->val;
+  const cs_real_t *reacnum = atmo_chem->reacnum;
+
+  cs_real_t conv_factor[nespg], source[nespg];
+  cs_real_t rk[nrg], dlconc[nespg], dchema[nespg];
+
+  cs_real_t **cvar_espg = nullptr;
+  cs_real_t **cvara_espg = nullptr;
+  CS_MALLOC(cvar_espg, nespg, cs_real_t *);
+  CS_MALLOC(cvara_espg, nespg, cs_real_t *);
+
+  /* Arrays of pointers containing the fields values for each species */
+  for (int ii = 0; ii < nespg; ii++) {
+    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[ii]);
+    cvar_espg[ii] = f->val;
+    cvara_espg[ii] = f->val_pre;
+  }
+
+  for (int c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t dtc = dt[c_id];
+    const cs_real_t rho = cpro_rho[c_id];
+
+    // Filling working array rk
+    for (int ii = 0; ii < nrg; ii++)
+      rk[ii] = reacnum[ii*n_cells+ c_id];
+
+    // Filling working arrays
+    for (int ii = 0; ii < nespg; ii++) {
+      const int idx = atmo_chem->chempoint[ii] - 1;
+      source[ii] = 0.0;
+      conv_factor[idx] = rho*navo*(1.0e-9)/atmo_chem->molar_mass[ii];
+    }
+
+    if (   atmo_chem->chemistry_sep_mode == 1
+        || cs_glob_time_step->nt_cur < cs_glob_time_step->nt_ini) {
+      /* splitted Rosenbrock solver
+         -------------------------- */
+
+      // Filling working array dlconc with values at current time step
+      for (int ii = 0; ii < nespg; ii++) {
+        const int idx = atmo_chem->chempoint[ii] - 1;
+        dlconc[idx] = cvar_espg[ii][c_id];
+      }
+
+    }
+    else {
+      /* semi-coupled Rosenbrock solver
+         ------------------------------  */
+
+      for (int ii = 0; ii < nespg; ii++) {
+        const int idx = atmo_chem->chempoint[ii] - 1;
+        dlconc[idx] = cvara_espg[ii][c_id];
+      }
+
+      // Computation of C(Xn)
+      if (atmo_chem->model == 1)
+        cs_f_fexchem_1(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+      else if (atmo_chem->model == 2)
+        cs_f_fexchem_2(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+      else if (atmo_chem->model == 3)
+        cs_f_fexchem_3(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+      else if (atmo_chem->model == 4)
+        cs_f_fexchem_4(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+
+      /* Explicit contribution from dynamics as a source term:
+       * (X*-Xn)/dt(dynamics) - C(Xn). See usatch.f90
+       * The first nespg user scalars are supposed to be chemical species */
+      for (int ii = 0; ii < nespg; ii++) {
+        const int idx = atmo_chem->chempoint[ii] - 1;
+        source[idx] = (cvar_espg[ii][c_id] - cvara_espg[ii][c_id])/dtc
+                    -  dchema[idx];
+      }
+    }
+
+    // Rosenbrock resoluion
+
+    // The maximum time step used for chemistry resolution is dtchemmax
+    if (dtc < dtchemmax) {
+      cs_f_chem_roschem(dlconc, source, source, conv_factor, dtc, rk, rk);
+    }
+    else {
+      const int ncycle = (int)(dtc/dtchemmax);
+      const int rest = (int)dtc%(int)dtchemmax;
+      const cs_real_t dtrest = (const cs_real_t)rest;
+      for (int ii = 0; ii < ncycle; ii++)
+        cs_f_chem_roschem(dlconc,
+                          source,
+                          source,
+                          conv_factor,
+                          dtchemmax, rk, rk);
+
+      cs_f_chem_roschem(dlconc,
+                        source,
+                        source,
+                        conv_factor,
+                        dtrest, rk, rk);
+    }
+
+    // Update of values at current time step
+    for (int ii = 0; ii < nespg; ii++) {
+      const int idx = atmo_chem->chempoint[ii] - 1;
+      cvar_espg[ii][c_id] = dlconc[idx];
+    }
+
+  } // end loop on cells
+
+  CS_FREE(cvar_espg);
+  CS_FREE(cvara_espg);
+
+  // Clipping
+  for (int ii = 0; ii < nespg; ii++) {
+    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[ii]);
+    cs_scalar_clipping(f);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

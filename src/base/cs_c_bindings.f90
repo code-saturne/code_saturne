@@ -239,9 +239,9 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: ns, nr
-      real(kind=c_double), dimension(*), intent(in) :: y, rk
+      real(kind=c_double), dimension(*), intent(inout) :: y, rk
       real(kind=c_double), dimension(*), intent(inout) :: chem
-      real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+      real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
     end subroutine fexchem_1
 
     subroutine fexchem_2(ns, nr, y, rk, zcsourc, convers_factor, chem) &
@@ -249,9 +249,9 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: ns, nr
-      real(kind=c_double), dimension(*), intent(in) :: y, rk
+      real(kind=c_double), dimension(*), intent(inout) :: y, rk
       real(kind=c_double), dimension(*), intent(inout) :: chem
-      real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+      real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
     end subroutine fexchem_2
 
     subroutine fexchem_3(ns, nr, y, rk, zcsourc, convers_factor, chem) &
@@ -259,9 +259,9 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: ns, nr
-      real(kind=c_double), dimension(*), intent(in) :: y, rk
+      real(kind=c_double), dimension(*), intent(inout) :: y, rk
       real(kind=c_double), dimension(*), intent(inout) :: chem
-      real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+      real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
     end subroutine fexchem_3
 
     subroutine fexchem_4(ns, nr, y, rk, zcsourc, convers_factor, chem) &
@@ -269,9 +269,9 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: ns, nr
-      real(kind=c_double), dimension(*), intent(in) :: y, rk
+      real(kind=c_double), dimension(*), intent(inout) :: y, rk
       real(kind=c_double), dimension(*), intent(inout) :: chem
-      real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+      real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
     end subroutine fexchem_4
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond

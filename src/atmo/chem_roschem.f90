@@ -39,8 +39,10 @@
 !> \param[in]     dlrkf         kinetic rates for second iteration
 !______________________________________________________________________________
 
-subroutine chem_roschem (dlconc,zcsourc,zcsourcf,conv_factor,                 &
-                         dlstep,dlrki,dlrkf)
+subroutine chem_roschem (dlconc,zcsourc,zcsourcf,conv_factor,  &
+                         dlstep,dlrki,dlrkf)                   &
+  bind(C, name='cs_f_chem_roschem')
+  use, intrinsic :: iso_c_binding
 
 !===============================================================================
 ! Module files
@@ -56,11 +58,10 @@ procedure() :: cs_solvlin
 
 ! Arguments
 
-double precision dlconc(nespg)
-double precision zcsourc(nespg),zcsourcf(nespg)
-double precision conv_factor(nespg)
-double precision dlstep
-double precision dlrki(nrg),dlrkf(nrg)
+real(kind=c_double), value :: dlstep
+real(kind=c_double), dimension(*), intent(inout) :: dlrki, dlrkf
+real(kind=c_double), dimension(*), intent(inout) :: dlconc, zcsourc
+real(kind=c_double), dimension(*), intent(inout) :: zcsourcf, conv_factor
 
 
 ! Local variables

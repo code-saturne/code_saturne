@@ -181,9 +181,9 @@ implicit none
 
 ! Arguments
 integer(c_int), value :: ns, nr
-real(kind=c_double), dimension(*), intent(in) :: y, rk
+real(kind=c_double), dimension(*), intent(inout) :: y, rk
 real(kind=c_double), dimension(*), intent(inout) :: chem
-real(kind=c_double), dimension(*), intent(in) :: zcsourc, convers_factor
+real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
 
 ! Local variables
 
@@ -344,12 +344,16 @@ end subroutine jacdchemdc_1
 
 subroutine rates_1(ns,nr,rk,y,w)
 
-implicit none
+
+  use, intrinsic :: iso_c_binding
+  implicit none
 
 ! Arguments
 
 integer nr,ns
-double precision rk(nr),y(ns)
+
+double precision y(ns)
+real(kind=c_double), dimension(*), intent(inout) :: rk
 
 ! Local variables
 

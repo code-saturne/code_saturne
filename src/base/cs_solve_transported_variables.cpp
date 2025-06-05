@@ -103,9 +103,6 @@ BEGIN_C_DECLS
 void
 cs_f_kinetics_rates_compute(void);
 
-void
-cs_f_compute_gaseous_chemistry(cs_real_t dt[]);
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -539,7 +536,7 @@ cs_solve_transported_variables(int iterns)
   if (   atmo_chem->model >= 1
       && atmo_chem->aerosol_model == CS_ATMO_AEROSOL_OFF
       && nespg > 0 && iterns == -1)
-    cs_f_compute_gaseous_chemistry(dt);
+    cs_atmo_compute_gaseous_chemistry();
 
   /* Atmospheric gas + aerosol chemistry */
   if (   atmo_chem->model >= 1

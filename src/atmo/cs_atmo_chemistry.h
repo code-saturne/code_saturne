@@ -137,8 +137,15 @@ typedef struct {
   cs_real_t *x_conc_profiles;
   /*! Y coordinates of concentration profiles */
   cs_real_t *y_conc_profiles;
+  /*! maximal time step for chemistry resolution */
+  cs_real_t dt_chemistry_max;
 
 } cs_atmo_chemistry_t;
+
+/*----------------------------------------------------------------------------
+ * Useful constants for chemistry
+ *----------------------------------------------------------------------------*/
+
 
 /*============================================================================
  * Static global variables
@@ -358,6 +365,16 @@ cs_atmo_set_chem_conc_file_name(const char *file_name);
 void
 cs_atmo_chem_exp_source_terms(int          iscal,
                               cs_real_t    st_exp[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Calls the rosenbrock resolution for atmospheric chemistry
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_compute_gaseous_chemistry(void);
 
 /*----------------------------------------------------------------------------*/
 
