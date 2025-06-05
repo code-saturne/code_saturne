@@ -2571,7 +2571,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   if (recompute_cocg) {
     cs_dispatch_context ctx;
-    ctx.set_use_gpu(false);
     _recompute_lsq_scalar_cocg(m,
                                fvq,
                                bc_coeffs,
