@@ -55,6 +55,7 @@
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "alge/cs_convection_diffusion.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_equation_iterative_solve.h"
 #include "alge/cs_face_viscosity.h"
 #include "base/cs_field_default.h"
@@ -62,6 +63,7 @@
 #include "base/cs_field_pointer.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_reducers.h"
 #include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
@@ -149,6 +151,8 @@ cs_wall_distance(int iterns)
   const cs_real_t *b_dist = mq->b_dist;
   const cs_real_t *cell_f_vol = mq->cell_vol;
 
+  cs_dispatch_context ctx;
+
   /* Initialization
      -------------- */
 
@@ -167,18 +171,6 @@ cs_wall_distance(int iterns)
                               f_w_dist_aux_pre->val:
                               f_w_dist->val_pre;
 
-  cs_real_t *smbrp, *rovsdt;
-  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(smbrp, n_cells_ext, cs_real_t, cs_alloc_mode);
-
-  cs_dispatch_context ctx;
-
-  /* RHS */
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    rovsdt[c_id] = 0.0;
-    smbrp[c_id] = cell_f_vol[c_id];
-  });
-
   /* Boundary conditions
      ------------------- */
 
@@ -187,21 +179,25 @@ cs_wall_distance(int iterns)
      Neumann hmg elsewhere
      We also test for the presence of a Dirichlet */
 
-  cs_lnum_t ndircp = 0;
-  cs_lnum_t have_diff = 1;
+  int *info;
+  CS_MALLOC_HD(info, 2, int, cs_alloc_mode);
+  info[0] = 0;
+  info[1] = 1;
 
   cs_field_bc_coeffs_t *bc_coeffs_wd = f_w_dist->bc_coeffs;
   cs_real_t *coefa_wd = bc_coeffs_wd->a;
   cs_real_t *coefb_wd = bc_coeffs_wd->b;
+  cs_real_t *cofaf_wd = bc_coeffs_wd->af;
+  cs_real_t *cofbf_wd = bc_coeffs_wd->bf;
 
   /* Fixed mesh: update only if BC's have changed (i.e. in restart) */
 
   if (mesh->time_dep == CS_MESH_FIXED) {
 
-    have_diff = 0;
+    /* Check if they are difference between coefa_pre and coefa for wall_dist */
+    info[1] = 0;
 
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_real_t a_prev = coefa_wd[f_id];
       cs_real_t b_prev = coefb_wd[f_id];
 
@@ -210,95 +206,95 @@ cs_wall_distance(int iterns)
         const cs_real_t hint = 1.0 / b_dist[f_id];
         const cs_real_t pimp = 0.0;
 
-        cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                    bc_coeffs_wd,
+        cs_boundary_conditions_set_dirichlet_scalar(coefa_wd[f_id],
+                                                    cofaf_wd[f_id],
+                                                    coefb_wd[f_id],
+                                                    cofbf_wd[f_id],
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
 
-
-        ndircp = ndircp + 1;
+        info[0] = 1;
       }
       else
-        cs_boundary_conditions_set_neumann_scalar_hmg(f_id,
-                                                      bc_coeffs_wd);
+        cs_boundary_conditions_set_neumann_scalar_hmg(coefa_wd[f_id],
+                                                      cofaf_wd[f_id],
+                                                      coefb_wd[f_id],
+                                                      cofbf_wd[f_id]);
 
       cs_real_t d =   cs::abs(a_prev - coefa_wd[f_id])
                     + cs::abs(b_prev - coefb_wd[f_id]);
 
-      if (d > 1e-12)
-        have_diff = 1;
-    }
+      if (d > cs_math_epzero)
+        info[1] = 1;
+    });
 
-    cs_parall_max(1, CS_INT_TYPE, &have_diff);
+    ctx.wait();
+
+    cs_parall_max(1, CS_INT_TYPE, &info[1]);
   }
 
   /* Time evolving mesh: always update */
 
   else {
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
         const cs_real_t hint = 1.0 / b_dist[f_id];
         const cs_real_t pimp = 0.0;
-        cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                    bc_coeffs_wd,
+        cs_boundary_conditions_set_dirichlet_scalar(coefa_wd[f_id],
+                                                    cofaf_wd[f_id],
+                                                    coefb_wd[f_id],
+                                                    cofbf_wd[f_id],
                                                     pimp,
                                                     hint,
                                                     cs_math_infinite_r);
-        ndircp = ndircp + 1;
+        info[0] = 1;
       }
       else
-        cs_boundary_conditions_set_neumann_scalar_hmg(f_id,
-                                                      bc_coeffs_wd);
-    }
+        cs_boundary_conditions_set_neumann_scalar_hmg(coefa_wd[f_id],
+                                                      cofaf_wd[f_id],
+                                                      coefb_wd[f_id],
+                                                      cofbf_wd[f_id]);
+    });
   }
 
-  /* Immersed boundaries */
-  const cs_real_t *c_w_face_surf = mq->c_w_face_surf;
-  const cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
-
-  if (c_w_face_surf != nullptr && c_w_dist_inv != nullptr) {
-    have_diff = 0;
-
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_real_t ibm_imp = c_w_dist_inv[c_id] * c_w_face_surf[c_id];
-      rovsdt[c_id] = ibm_imp;
-
-      if (ibm_imp > DBL_MIN)
-        ndircp++;
-    }
-  }
+  ctx.wait();
 
   /* Check that wall distance if initialized/read if no diff in BC's (for
      the strange case where BC's would be read but nut the wall distance) */
-  if (have_diff == 0) {
+  if (info[1] == 0) {
     double d = cs_dot_xx(n_cells, wall_dist);
     if (d <= 0)
-      have_diff = 1;
+      info[1] = 1;
   }
 
-  cs_lnum_t c[2] = {ndircp, have_diff};
+  cs_lnum_t c[2] = {info[0], info[1]};
   cs_parall_sum(2, CS_LNUM_TYPE, c);
-  ndircp = c[0];
-  have_diff = c[1];
+  int ndircp = c[0];
+  int have_diff = c[1];
 
   /* Without wall or if value already computed (i.e. same BC's), return */
 
   if (ndircp == 0 || have_diff == 0) {
 
     /* If no wall, initialization to a big value */
-    if (ndircp == 0)
-      cs_array_real_set_scalar(n_cells, cs_math_big_r, wall_dist);
+    if (ndircp == 0) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        wall_dist[c_id] = cs_math_big_r;
+      });
+    }
 
-    CS_FREE_HD(smbrp);
-    CS_FREE_HD(rovsdt);
-
+    ctx.wait();
+    CS_FREE_HD(info);
     return;
   }
 
   /* Prepare system to solve
      ----------------------- */
+
+  cs_real_t *smbrp, *rovsdt;
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(smbrp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Allocate temporary arrays for the species resolution */
   cs_real_t *dpvar, *i_visc, *b_visc, *i_mass_flux, *b_mass_flux;
@@ -314,12 +310,27 @@ cs_wall_distance(int iterns)
 
   /* Initialize variables to avoid compiler warnings */
 
-  cs_array_real_fill_zero(n_i_faces, i_mass_flux);
-  cs_array_real_fill_zero(n_b_faces, b_mass_flux);
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    i_mass_flux[f_id] = 0.;
+  });
+
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    b_mass_flux[f_id] = 0.;
+  });
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     w1[c_id] = 1.0; /* Diffusion at faces */
+    dpvar[c_id] = 0.;
+
+     /* RHS */
+    rovsdt[c_id] = 0.0;
+    smbrp[c_id] = cell_f_vol[c_id];
   });
+
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    dpvar[c_id] = 0.;
+  });
+
   ctx.wait();
 
   cs_face_viscosity(mesh,
@@ -350,8 +361,6 @@ cs_wall_distance(int iterns)
   eqp_loc.iwgrec = 0;   /* Warning, may be overwritten if a field */
   eqp_loc.blend_st = 0; /* Warning, may be overwritten if a field */
 
-  cs_array_real_fill_zero(n_cells_ext, dpvar);
-
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      iterns,
                                      f_w_dist->id,
@@ -377,21 +386,31 @@ cs_wall_distance(int iterns)
                                      nullptr); /* eswork */
 
   /* Count clippings */
-  cs_lnum_t mmprpl = 0;
-  cs_real_t dismin = cs_math_big_r;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  struct cs_data_1int_1float rd;
+  struct cs_reduce_sum1i_min1float reducer;
+
+  ctx.parallel_for_reduce
+    (n_cells, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_1int_1float &res) {
+
+    res.i[0] = 0;
+    res.r[0] = cs_math_infinite_r;
+
     if (wall_dist[c_id] < 0.0) {
-      mmprpl = mmprpl + 1;
-      dismin = cs_math_fmin(wall_dist[c_id], dismin);
+      res.i[0] = 1;
+      res.r[0] = wall_dist[c_id];
       wall_dist[c_id] = cs_math_epzero * pow(cell_f_vol[c_id], 1.0/3.0);
     }
-  }
+  });
 
-  if (cs_glob_rank_id > -1) {
-    cs_parall_sum(1, CS_LNUM_TYPE, &mmprpl);
-    cs_parall_min(1, CS_REAL_TYPE, &dismin);
-  }
+  ctx.wait();
+
+  cs_lnum_t mmprpl = rd.i[0];
+  cs_real_t dismin = rd.r[0];
+
+  cs_parall_sum(1, CS_LNUM_TYPE, &mmprpl);
+  cs_parall_min(1, CS_REAL_TYPE, &dismin);
 
   /* Recompute wall distance without reconstruction
      (that ensure that it is positive) */
@@ -416,20 +435,23 @@ cs_wall_distance(int iterns)
            "@  without reconstructions.\n"), mmprpl);
 
       /* Reset wall distance */
-      cs_array_real_fill_zero(n_cells_ext, wall_dist);
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        wall_dist[c_id] = 0.0;
+      });
 
       int n_iter = 0;
       do {
 
         mmprpl = 0;
-        cs_array_real_fill_zero(n_cells_ext, dpvar);
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          dpvar[c_id] = 0.0;
 
-        /* RHS */
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          /* RHS */
           rovsdt[c_id] = 0.0;
           smbrp[c_id] = cell_f_vol[c_id];
-        }
+        });
+
+        ctx.wait();
 
         cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                            iterns,
@@ -457,20 +479,28 @@ cs_wall_distance(int iterns)
 
         /* Count clippings */
 
-        cs_real_t _dismin = cs_math_big_r;
+        struct cs_data_1int_1float rd_1i_1r;
+        struct cs_reduce_sum1i_min1float reducer_1i_1r;
 
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for_reduce
+          (n_cells, rd_1i_1r, reducer_1i_1r,
+           [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_1int_1float &res) {
+
+          res.i[0] = 0;
+          res.r[0] = cs_math_infinite_r;
+
           if (wall_dist[c_id] < 0.0) {
-            mmprpl += 1;
-            _dismin = cs_math_fmin(wall_dist[c_id], _dismin);
+            res.i[0] = 1;
+            res.r[0] = wall_dist[c_id];
             wall_dist[c_id] = cs_math_epzero * pow(cell_f_vol[c_id], 1.0/3.0);
           }
-        }
+        });
 
-        if (cs_glob_rank_id > -1) {
-          cs_parall_sum(1, CS_LNUM_TYPE, &mmprpl);
-          cs_parall_min(1, CS_REAL_TYPE, &_dismin);
-        }
+        ctx.wait();
+
+        mmprpl = rd_1i_1r.r[0];
+        cs_parall_sum(1, CS_LNUM_TYPE, &mmprpl);
+        cs_parall_min(1, CS_REAL_TYPE, &rd_1i_1r.r[0]);
 
         n_iter++;
         if (n_iter > 10)
@@ -493,15 +523,15 @@ cs_wall_distance(int iterns)
     }
   }
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     dpvar[c_id] = cs::max(wall_dist[c_id], 0.0);
 
     /* Save working field for the next time step */
     if (f_w_dist_aux_pre != nullptr)
       wall_dist_pre[c_id] = wall_dist[c_id];
+  });
 
-  }
+  ctx.wait();
 
   if (f_w_dist_aux_pre != nullptr)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, wall_dist_pre);
@@ -520,50 +550,48 @@ cs_wall_distance(int iterns)
                            1, /* inc */
                            grad);
 
-  cs_lnum_t counter = 0;
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  struct cs_data_1int_2float rd_1i_2r;
+  struct cs_reduce_min1float_max1float_sum1int reducer_1i_2r;
+
+  ctx.parallel_for_reduce
+    (n_cells, rd_1i_2r, reducer_1i_2r,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_1int_2float &res) {
+
+    res.i[0] = 0;
+
     const cs_real_t norm_grad = cs_math_3_dot_product(grad[c_id], grad[c_id]);
 
     if (norm_grad + 2.0 * dpvar[c_id] >= 0.0)
       wall_dist[c_id] = sqrt(norm_grad + 2.0*dpvar[c_id]) - sqrt(norm_grad);
     else
-      counter += 1;
+      res.i[0] = 1;
 
-  }
+    res.r[0] = wall_dist[c_id];
+    res.r[1] = wall_dist[c_id];
+  });
 
-  if (cs_glob_rank_id > -1)
-    cs_parall_sum(1, CS_LNUM_TYPE, &counter);
+  ctx.wait();
 
-  if (counter > 0)
+  /* Print info
+     ---------- */
+
+  cs_halo_sync_var(halo, CS_HALO_EXTENDED, wall_dist);
+
+  cs_parall_sum(1, CS_LNUM_TYPE, &rd_1i_2r.i[0]);
+
+  if (rd_1i_2r.i[0] > 0)
     cs_log_printf
     (CS_LOG_DEFAULT,
      _("@\n"
        "@ @@ WARNING: Wall distance computation\n"
        "@    =========\n"
        "@  The associated variable does not converge in %10d cells.\n"),
-     counter);
+     rd_1i_2r.i[0]);
 
-  /* Free memory */
-  CS_FREE_HD(grad);
-
-  /* Compute bounds and print info
-     ----------------------------- */
-
-  if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr)
-    cs_halo_sync_var(halo, CS_HALO_EXTENDED, wall_dist);
-
-  cs_real_t _dismax = -cs_math_big_r;
-  cs_real_t _dismin =  cs_math_big_r;
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    _dismin = cs::min(wall_dist[c_id], _dismin);
-    _dismax = cs::max(wall_dist[c_id], _dismax);
-  }
-
-  if (cs_glob_rank_id > -1)  {
-    cs_parall_min(1, CS_REAL_TYPE, &_dismin);
-    cs_parall_max(1, CS_REAL_TYPE, &_dismax);
-  }
+  cs_real_t _dismin = rd_1i_2r.r[0];
+  cs_real_t _dismax = rd_1i_2r.r[1];
+  cs_parall_min(1, CS_REAL_TYPE, &_dismin);
+  cs_parall_max(1, CS_REAL_TYPE, &_dismax);
 
   cs_log_printf
     (CS_LOG_DEFAULT,
@@ -574,6 +602,7 @@ cs_wall_distance(int iterns)
      _dismin, _dismax);
 
   /* Free memory */
+  CS_FREE_HD(grad);
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
   CS_FREE_HD(dpvar);
@@ -582,6 +611,7 @@ cs_wall_distance(int iterns)
   CS_FREE_HD(b_mass_flux);
   CS_FREE_HD(rovsdt);
   CS_FREE_HD(w1);
+  CS_FREE_HD(info);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -653,13 +683,22 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   cs_field_t *f_wall_dist = cs_field_by_name("wall_distance");
   cs_real_t *w_dist = f_wall_dist->val;
+  cs_field_bc_coeffs_t *bc_coeffs_wd = f_wall_dist->bc_coeffs;
+  cs_real_t *coefa_wd = bc_coeffs_wd->a;
+  cs_real_t *coefb_wd = bc_coeffs_wd->b;
+  cs_real_t *cofaf_wd = bc_coeffs_wd->af;
+  cs_real_t *cofbf_wd = bc_coeffs_wd->bf;
 
   cs_field_t *f_yplus = cs_field_by_name("wall_yplus");
   cs_equation_param_t *eqp_yp = cs_field_get_equation_param(f_yplus);
+  eqp_yp->verbosity = 2;
   cs_real_t *yplus = f_yplus->val;
 
   cs_field_bc_coeffs_t *bc_coeffs_yp = f_yplus->bc_coeffs;
   cs_real_t *coefa_yp = bc_coeffs_yp->a;
+  cs_real_t *coefb_yp = bc_coeffs_yp->b;
+  cs_real_t *cofaf_yp = bc_coeffs_yp->af;
+  cs_real_t *cofbf_yp = bc_coeffs_yp->bf;
 
   int iflmas = cs_field_get_key_int(f_yplus,
                                     cs_field_key_id("inner_mass_flux_id"));
@@ -671,25 +710,29 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
   cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
+  cs_dispatch_context ctx;
+
   /* Number of wall faces */
   if (_initialized == false) {
-
     _initialized = true;
 
     n_wall = 0;
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    ctx.parallel_for_reduce_sum
+      (n_b_faces, n_wall, [=] CS_F_HOST_DEVICE
+       (cs_lnum_t f_id, CS_DISPATCH_REDUCER_TYPE(cs_lnum_t) &sum) {
       if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL)
-        n_wall += 1;
-    }
-
-    if (cs_glob_rank_id > -1)
-      cs_parall_sum(1, CS_LNUM_TYPE, &n_wall);
-
+        sum += 1;
+    });
+    ctx.wait();
+    cs_parall_sum(1, CS_LNUM_TYPE, &n_wall);
   }
 
   /* If no wall, no wall distance */
   if (n_wall == 0) {
-    cs_array_real_set_scalar(n_cells_ext, cs_math_big_r, yplus);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      yplus[c_id] = cs_math_big_r;
+    });
+    ctx.wait();
     return;
   }
 
@@ -701,7 +744,11 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
      because we have to compute y+ up to a large distance from the walls. */
 
   if (nt_cur == 1) {
-    cs_array_real_set_scalar(n_cells, cs_math_big_r, yplus);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      yplus[c_id] = cs_math_big_r;
+    });
+
+    ctx.wait();
 
     if (eqp_yp->verbosity >= 1) {
 
@@ -732,27 +779,31 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   /* Dirichlet u*./nu at walls, homogeneous Neumann elsewhere */
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
       const cs_lnum_t c_id = b_face_cells[f_id];
 
-      /* Dirichlet Boundary Condition */
+      /* Dirichlet boundary condition */
 
       const cs_real_t hint = 1.0 / b_dist[f_id];
       const cs_real_t pimp = b_uet[f_id] * crom[c_id] / viscl[c_id];
 
-      cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                  f_yplus->bc_coeffs,
+      cs_boundary_conditions_set_dirichlet_scalar(coefa_yp[f_id],
+                                                  cofaf_yp[f_id],
+                                                  coefb_yp[f_id],
+                                                  cofbf_yp[f_id],
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
 
-      /* Dirichlet Boundary Condition */
+      /* Dirichlet boundary condition */
 
       const cs_real_t pimp_wd = 0.0;
 
-      cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                  f_wall_dist->bc_coeffs,
+      cs_boundary_conditions_set_dirichlet_scalar(coefa_wd[f_id],
+                                                  cofaf_wd[f_id],
+                                                  coefb_wd[f_id],
+                                                  cofbf_wd[f_id],
                                                   pimp_wd,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -765,31 +816,41 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
       const cs_real_t hint = 1.0 / b_dist[f_id];
       const cs_real_t qimp = 0.0;
 
-      cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                f_yplus->bc_coeffs,
+      cs_boundary_conditions_set_neumann_scalar(coefa_yp[f_id],
+                                                cofaf_yp[f_id],
+                                                coefb_yp[f_id],
+                                                cofbf_yp[f_id],
                                                 qimp,
                                                 hint);
 
       /* Neumann Boundary Conditions */
 
-      cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                f_wall_dist->bc_coeffs,
+      cs_boundary_conditions_set_neumann_scalar(coefa_wd[f_id],
+                                                cofaf_wd[f_id],
+                                                coefb_wd[f_id],
+                                                cofbf_wd[f_id],
                                                 qimp,
                                                 hint);
 
     }
 
-  } /* End loop on boundary faces */
+  }); /* End loop on boundary faces */
 
   /* Compute the mass flux due to V = Grad(y)
      ---------------------------------------- */
 
   /* Take Dirichlet into account */
-  const int inc    = 1;
+  const int inc = 1;
   const int iphydp = 0;
 
-  /* Pseudo viscosity, to compute the convective flux "1 grad(y). Sij" */
-  cs_array_real_set_scalar(n_cells_ext, 1.0, viscap);
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    /* Pseudo viscosity, to compute the convective flux "1 grad(y). Sij" */
+    viscap[c_id] = 1.0;
+
+    rovsdp[c_id] = 0.;
+  });
+
+  ctx.wait();
 
   cs_face_viscosity(mesh,
                     mq,
@@ -827,22 +888,13 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                               viscap,
                               i_mass_flux, b_mass_flux);
 
-  /* Now take the opposite */
-# pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
-    i_mass_flux[f_id] = - i_mass_flux[f_id];
-
-# pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-    b_mass_flux[f_id] = - b_mass_flux[f_id];
-
   /* Diagonal part of the matrix
      --------------------------- */
 
-  cs_array_real_fill_zero(n_cells_ext, rovsdp);
-
   /* Reinforce diagonal */
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    /* Now take the opposite */
+    i_mass_flux[f_id] = - i_mass_flux[f_id];
 
     const cs_lnum_t c_id0 = i_face_cells[f_id][0];
     const cs_lnum_t c_id1 = i_face_cells[f_id][1];
@@ -850,24 +902,6 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
     rovsdp[c_id0] +=   i_mass_flux[f_id];
     rovsdp[c_id1] += - i_mass_flux[f_id];
   }
-
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    const cs_lnum_t c_id = b_face_cells[f_id];
-
-    rovsdp[c_id] += b_mass_flux[f_id];
-  }
-
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    rovsdp[c_id] = 1.e-6 * fabs(rovsdp[c_id]);
-
-  if (halo != nullptr)
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, rovsdp);
-
-  /* Time loop
-     --------- */
-
-  /* Initialization */
 
   /* Unknown
      In the case where the stationary state is not completely reached,
@@ -879,33 +913,71 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
      front, and therefore with yplus values close to zero anywhere.
      We will therefore use the maximum value of u*./nu. */
 
-     /* From the second time step, we also have the yplus of
-        the previous time step */
+  /* From the second time step, we also have the yplus of
+     the previous time step */
 
-  /* Compute the min and max */
+  struct cs_data_double_n<4> rd;
+  struct cs_reduce_min1r_max1r_sum2r reducer;
 
-  cs_real_t xusnmx = -cs_math_big_r;
-  cs_real_t xusnmn =  cs_math_big_r;
+  ctx.parallel_for_reduce
+    (n_b_faces, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t f_id, cs_data_double_n<4> &res) {
+    /* Now take the opposite */
+    b_mass_flux[f_id] = - b_mass_flux[f_id];
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    const cs_lnum_t c_id = b_face_cells[f_id];
+
+    rovsdp[c_id] += b_mass_flux[f_id];
+
+    res.r[0] =  cs_math_infinite_r;
+    res.r[1] = -cs_math_infinite_r;
+    res.r[2] = 0.;
+    res.r[3] = 0.;
+
     if (   bc_type[f_id] == CS_SMOOTHWALL
         || bc_type[f_id] == CS_ROUGHWALL) {
 
-      xusnmx = cs::max(xusnmx, coefa_yp[f_id]);
-      xusnmn = cs::min(xusnmn, coefa_yp[f_id]);
+      /* Compute the min and max */
+
+      res.r[0] = coefa_yp[f_id];
+      res.r[1] = coefa_yp[f_id];
+
+      /* L2 norm of (u* / nu) over wall boundary faces */
+
+      res.r[2] = cs_math_pow2(coefa_yp[f_id]) * b_face_surf[f_id];
+      res.r[3] = b_face_surf[f_id];
     }
-  }
+  });
 
-  if (cs_glob_rank_id > -1) {
-    cs_parall_max(1, CS_REAL_TYPE, &xusnmx);
-    cs_parall_min(1, CS_REAL_TYPE, &xusnmn);
-  }
+  ctx.wait();
 
-  if (nt_cur == 1)
-    cs_array_real_set_scalar(n_cells_ext, xusnmx, dvarp);
-  else {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  cs_parall_min(1, CS_DOUBLE, &rd.r[0]);
+  cs_parall_max(1, CS_DOUBLE, &rd.r[1]);
 
+  const cs_real_t xusnmn = rd.r[0];
+  const cs_real_t xusnmx = rd.r[1];
+
+  cs_real_t sum[2] = {rd.r[2], rd.r[3]};
+  cs_parall_sum(2, CS_DOUBLE, sum);
+  cs_real_t xnorm0 = sum[0];
+  cs_real_t wall_surf = sum[1];
+  xnorm0 = sqrt(xnorm0 / wall_surf) * mq->tot_vol;
+
+  /* Time loop
+     --------- */
+
+  /* Initialization */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    rovsdp[c_id] = 1.e-6 * cs::abs(rovsdp[c_id]);
+
+    /* Right hand side */
+    smbdp[c_id] = 0.;
+
+    if (nt_cur == 1) {
+      dvarp[c_id] = xusnmx;
+    }
+    else {
       cs_real_t usna = yplus[c_id] / cs::max(w_dist[c_id],
                                              cs_math_epzero);
       usna = cs::max(usna, xusnmn);
@@ -913,39 +985,12 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
       dvarp[c_id] = usna;
     }
-  }
+  });
 
-  /* L2 norm of (u* / nu) over wall boundary faces */
+  ctx.wait();
 
-  cs_real_t xnorm0 = 0.0;
-  cs_real_t wall_surf = 0.0;
-
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-
-    if (   bc_type[f_id] == CS_SMOOTHWALL
-        || bc_type[f_id] == CS_ROUGHWALL) {
-
-      wall_surf += b_face_surf[f_id];
-      xnorm0 += cs_math_pow2(coefa_yp[f_id]) * b_face_surf[f_id];
-    }
-  }
-
-  if (cs_glob_rank_id > -1) {
-    cs_real_t sum[2] = {xnorm0, wall_surf};
-    cs_parall_sum(2, CS_REAL_TYPE, sum);
-    xnorm0 = sum[0];
-    wall_surf = sum[1];
-  }
-
-  xnorm0 = sqrt(xnorm0 / wall_surf) * mq->tot_vol;
-
-  if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr)
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, dvarp);
-
-  /* Right hand side
-     --------------- */
-
-  cs_array_real_fill_zero(n_cells, smbdp);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, rovsdp);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, dvarp);
 
   /* Solving
      ------- */
@@ -997,10 +1042,15 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   /* Finalization and printing
      ------------------------- */
 
-  cs_real_t dismax = - cs_math_big_r;
-  cs_real_t dismin =   cs_math_big_r;
+  cs_real_t *visct = CS_F_(mu_t)->val;
+  const cs_real_t cdries = cs_turb_cdries;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  struct cs_double_n<2> rd_2r;
+  struct cs_reduce_min_max_nr<1> reducer_2r;
+
+  ctx.parallel_for_reduce
+    (n_cells, rd_2r, reducer_2r,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<2> &res) {
 
     /* Clipping: essential if you initialize with (u * /nu) of
        the previous time step */
@@ -1009,16 +1059,20 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
     dvarp[c_id] = cs::min(dvarp[c_id], xusnmx);
 
     yplus[c_id] = dvarp[c_id] * w_dist[c_id];
+    res.r[0] = yplus[c_id];
+    res.r[1] = yplus[c_id];
 
-    dismin = cs::min(yplus[c_id], dismin);
-    dismax = cs::max(yplus[c_id], dismax);
+    /* Van Driest amortization */
+    visct[c_id] *= cs_math_pow2(1.0 - exp(-yplus[c_id] / cdries));
+    if (visvdr[c_id] > -900.0)
+      visct[c_id] = visvdr[c_id];
+  });
 
-  }
-
-  if (cs_glob_rank_id > -1) {
-    cs_parall_min(1, CS_REAL_TYPE, &dismin);
-    cs_parall_max(1, CS_REAL_TYPE, &dismax);
-  }
+  ctx.wait();
+  cs_real_t dismin = rd_2r.r[0];
+  cs_real_t dismax = rd_2r.r[1];
+  cs_parall_min(1, CS_REAL_TYPE, &dismin);
+  cs_parall_max(1, CS_REAL_TYPE, &dismax);
 
   if (eqp_yp->verbosity >= 1) {
 
@@ -1029,22 +1083,6 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
        "    ---------------------------\n\n"
        "  Min distance+ = %14.5e, Max distance+ = %14.5e.\n"),
      dismin, dismax);
-  }
-
-  /* Van Driest amortization
-     ----------------------- */
-
-  cs_real_t *visct = CS_F_(mu_t)->val;
-
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    visct[c_id] *= cs_math_pow2(1.0 - exp(-yplus[c_id] / cs_turb_cdries));
-
-    /* For the wall cells we add the turbulent viscosity which was absorbed
-       in clptur and which has served to calculate the boundary conditions */
-
-    if (visvdr[c_id] > -900.0)
-      visct[c_id] = visvdr[c_id];
   }
 
   /* Free memory */

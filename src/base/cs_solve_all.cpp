@@ -475,7 +475,7 @@ _solve_most(int              n_var,
 
   if (   cs_glob_turb_model->type == CS_TURB_LES
       && cs_glob_turb_les_model->idries == 1)
-    CS_MALLOC(visvdr, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(visvdr, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   int icvrge = 0, inslst = 0, iterns = 1;
 

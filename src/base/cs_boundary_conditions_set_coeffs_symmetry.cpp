@@ -146,6 +146,10 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   cs_real_3_t  *cofar_tf = (cs_real_3_t  *)f_tf->bc_coeffs->ad;
   cs_real_33_t *cofbr_tf = (cs_real_33_t *)f_tf->bc_coeffs->bd;
 
+  cs_field_t *f_al = nullptr;
+  if (turb_flux_model == 11 || turb_flux_model == 21 || turb_flux_model == 31)
+    f_al = cs_field_by_composite_name(f_sc->name, "alpha");
+
   const int *icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
 
   /* Loop on boundary faces */
@@ -253,7 +257,10 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
       /* EB-GGDH/AFM/DFM alpha boundary conditions */
       if (turb_flux_model == 11 || turb_flux_model == 21 || turb_flux_model == 31) {
 
-        cs_field_t *f_al = cs_field_by_composite_name(f_sc->name, "alpha");
+        cs_real_t *coefa_al = f_al->bc_coeffs->a;
+        cs_real_t *coefb_al = f_al->bc_coeffs->b;
+        cs_real_t *cofaf_al = f_al->bc_coeffs->af;
+        cs_real_t *cofbf_al = f_al->bc_coeffs->bf;
 
         /* Dirichlet Boundary Condition
            ---------------------------- */
@@ -262,8 +269,10 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
         const cs_real_t hint = 1.0 / distbf;
 
-        cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                  f_al->bc_coeffs,
+        cs_boundary_conditions_set_neumann_scalar(coefa_al[f_id],
+                                                  cofaf_al[f_id],
+                                                  coefb_al[f_id],
+                                                  cofbf_al[f_id],
                                                   qimp,
                                                   hint);
 

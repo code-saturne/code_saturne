@@ -76,6 +76,11 @@ struct cs_int_n {
 
 // various types
 
+struct cs_data_1int_1float {
+  cs_lnum_t i[1];
+  float     r[1];
+};
+
 struct cs_data_1int_2float {
   cs_lnum_t i[1];
   float     r[2];
@@ -112,6 +117,42 @@ struct cs_data_double_int_n {
 /* Reduction
    --------- */
 
+struct cs_reduce_min1r_max1r_sum2r {
+  using T = cs_data_double_n<4>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.r[0] =  cs_math_infinite_r;
+    a.r[1] = -cs_math_infinite_r;
+    a.r[2] = 0.;
+    a.r[3] = 0.;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.r[0] = cs::min(a.r[0], b.r[0]);
+    a.r[1] = cs::max(a.r[1], b.r[1]);
+    a.r[2] += b.r[2];
+    a.r[3] += b.r[3];
+  }
+};
+
+struct cs_reduce_sum1i_min1float {
+  using T = cs_data_1int_1float;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.i[0] = 0;
+    a.r[0] = cs_math_infinite_r;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.i[0] += b.i[0];
+    a.r[0] = cs::min(a.r[0], b.r[0]);
+  }
+};
+
 // Max (1 real)
 
 struct cs_reduce_max1r {
@@ -134,9 +175,9 @@ struct cs_reduce_min3float_max3float {
 
   CS_F_HOST_DEVICE void
   identity(T &a) const {
-    a.r1[0] =  cs_math_infinite_r;
-    a.r1[1] =  cs_math_infinite_r;
-    a.r1[2] =  cs_math_infinite_r;
+    a.r1[0] = cs_math_infinite_r;
+    a.r1[1] = cs_math_infinite_r;
+    a.r1[2] = cs_math_infinite_r;
 
 
     a.r2[0] = -cs_math_infinite_r;
@@ -258,7 +299,7 @@ struct cs_reduce_min1float_max1float_sum1int {
   combine(volatile T &a, volatile const T &b) const {
       a.r[0] = cs::min(a.r[0], b.r[0]);
       a.r[1] = cs::max(a.r[1], b.r[1]);
-      a.i[0] += b.r[0];
+      a.i[0] += b.i[0];
   }
 };
 
@@ -279,8 +320,8 @@ struct cs_reduce_min1float_max1float_sum2int {
   combine(volatile T &a, volatile const T &b) const {
     a.r[0] = cs::min(a.r[0], b.r[0]);
     a.r[1] = cs::max(a.r[1], b.r[1]);
-    a.i[0] += b.r[0];
-    a.i[1] += b.r[1];
+    a.i[0] += b.i[0];
+    a.i[1] += b.i[1];
   }
 };
 

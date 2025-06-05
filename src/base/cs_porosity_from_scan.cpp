@@ -1104,13 +1104,16 @@ cs_compute_porosity_from_scan(void)
   const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = mq_g->b_face_cog;
 
-  cs_real_3_t *restrict i_f_face_normal =
-     (cs_real_3_t *)mq->i_face_normal;
-  cs_real_3_t *restrict b_f_face_normal =
-     (cs_real_3_t *)mq->b_face_normal;
+  cs_real_3_t *restrict i_f_face_normal = (cs_real_3_t *)mq->i_face_normal;
+  cs_real_3_t *restrict b_f_face_normal = (cs_real_3_t *)mq->b_face_normal;
 
   /* Pointer to porosity field */
   cs_field_t *f = cs_field_by_name_try("porosity");
+
+  cs_real_t *coefa = f->bc_coeffs->a;
+  cs_real_t *coefb = f->bc_coeffs->b;
+  cs_real_t *cofaf = f->bc_coeffs->af;
+  cs_real_t *cofbf = f->bc_coeffs->bf;
 
   cs_equation_param_t *eqp = cs_field_get_equation_param(f);
   eqp->verbosity = 2;
@@ -1182,8 +1185,10 @@ cs_compute_porosity_from_scan(void)
        cs_real_t hint = 1. / mq->b_dist[face_id];
        cs_real_t pimp = 1.;
 
-       cs_boundary_conditions_set_dirichlet_scalar(face_id,
-                                                   f->bc_coeffs,
+       cs_boundary_conditions_set_dirichlet_scalar(coefa[face_id],
+                                                   cofaf[face_id],
+                                                   coefb[face_id],
+                                                   cofbf[face_id],
                                                    pimp,
                                                    hint,
                                                    cs_math_infinite_r);
@@ -1193,8 +1198,10 @@ cs_compute_porosity_from_scan(void)
         cs_real_t hint = 1. / mq->b_dist[face_id];
         cs_real_t qimp = 0.;
 
-        cs_boundary_conditions_set_neumann_scalar(face_id,
-                                                  f->bc_coeffs,
+        cs_boundary_conditions_set_neumann_scalar(coefa[face_id],
+                                                  cofaf[face_id],
+                                                  coefb[face_id],
+                                                  cofbf[face_id],
                                                   qimp,
                                                   hint);
 
@@ -1320,8 +1327,10 @@ cs_compute_porosity_from_scan(void)
           cs_real_t hint = 1. / mq_g->b_dist[face_id];
           cs_real_t pimp = 0.;
 
-          cs_boundary_conditions_set_dirichlet_scalar(face_id,
-                                                      f->bc_coeffs,
+          cs_boundary_conditions_set_dirichlet_scalar(coefa[face_id],
+                                                      cofaf[face_id],
+                                                      coefb[face_id],
+                                                      cofbf[face_id],
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
@@ -1331,8 +1340,10 @@ cs_compute_porosity_from_scan(void)
           cs_real_t hint = 1. / mq_g->b_dist[face_id];
           cs_real_t qimp = 0.;
 
-          cs_boundary_conditions_set_neumann_scalar(face_id,
-                                                    f->bc_coeffs,
+          cs_boundary_conditions_set_neumann_scalar(coefa[face_id],
+                                                    cofaf[face_id],
+                                                    coefb[face_id],
+                                                    cofbf[face_id],
                                                     qimp,
                                                     hint);
 

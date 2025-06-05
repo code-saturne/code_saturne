@@ -268,8 +268,10 @@ _lageqp(cs_real_t   *velocityl,
 
       /* Neumann Boundary Conditions    */
 
-      cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                &bc_coeffs_phi_loc,
+      cs_boundary_conditions_set_neumann_scalar(coefap[f_id],
+                                                cofafp[f_id],
+                                                coefbp[f_id],
+                                                cofbfp[f_id],
                                                 0.0,
                                                 hint);
       coefap[f_id] = 0.0;
@@ -280,8 +282,10 @@ _lageqp(cs_real_t   *velocityl,
 
       /* Dirichlet Boundary Condition   */
 
-      cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                  &bc_coeffs_phi_loc,
+      cs_boundary_conditions_set_dirichlet_scalar(coefap[f_id],
+                                                  cofafp[f_id],
+                                                  coefbp[f_id],
+                                                  cofbfp[f_id],
                                                   phia[c_id],
                                                   hint,
                                                   -1);

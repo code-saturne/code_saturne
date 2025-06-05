@@ -147,64 +147,6 @@ cs_boundary_conditions_set_coeffs_init(void);
 /*!
  * \brief Set Neumann BC for a scalar for a given face.
  *
- * \param[in]   f_id          face id
- * \param[out]  bc_coeffs     boundary conditions structure
- * \param[in]   qimp          flux value to impose
- * \param[in]   hint          internal exchange coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_boundary_conditions_set_neumann_scalar(cs_lnum_t             f_id,
-                                          cs_field_bc_coeffs_t *bc_coeffs,
-                                          cs_real_t             qimp,
-                                          cs_real_t             hint)
-{
-  cs_real_t *a = bc_coeffs->a;
-  cs_real_t *b = bc_coeffs->b;
-  cs_real_t *af = bc_coeffs->af;
-  cs_real_t *bf = bc_coeffs->bf;
-
-  /* Gradient BCs */
-  a[f_id] = -qimp/cs::max(hint, 1.e-300);
-  b[f_id] = 1.;
-
-  /* Flux BCs */
-  af[f_id] = qimp;
-  bf[f_id] = 0.;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set homogeneous Neumann BC for a scalar for a given face.
- *
- * \param[in]   f_id          face id
- * \param[out]  bc_coeffs     boundary conditions structure
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_boundary_conditions_set_neumann_scalar_hmg(cs_lnum_t             f_id,
-                                              cs_field_bc_coeffs_t *bc_coeffs)
-{
-  cs_real_t *a = bc_coeffs->a;
-  cs_real_t *b = bc_coeffs->b;
-  cs_real_t *af = bc_coeffs->af;
-  cs_real_t *bf = bc_coeffs->bf;
-
-  /* Gradient BCs */
-  a[f_id] = 0.;
-  b[f_id] = 1.;
-
-  /* Flux BCs */
-  af[f_id] = 0.;
-  bf[f_id] = 0.;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set Neumann BC for a scalar for a given face.
- *
  * \param[in]   f_id        face id
  * \param[out]  bc_coeffs   BC structure
  * \param[in]   qimpv       flux value to impose
@@ -333,57 +275,6 @@ cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
     af[isou] = qimpts[isou];
     for (int jsou = 0; jsou < 6; jsou++)
       bf[isou][jsou] = 0.0;
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set Dirichlet BC for a scalar for a given face.
- *
- * \param[in]   f_id          face id
- * \param[out]  bc_coeffs     boundary conditions structure
- * \param[in]   pimp          Dirichlet value to impose
- * \param[in]   hint          internal exchange coefficient
- * \param[in]   hext          external exchange coefficient
- *                            (assumed infinite/ignored if < 0)
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_boundary_conditions_set_dirichlet_scalar(cs_lnum_t             f_id,
-                                            cs_field_bc_coeffs_t *bc_coeffs,
-                                            cs_real_t             pimp,
-                                            cs_real_t             hint,
-                                            cs_real_t             hext)
-{
-  cs_real_t *a = bc_coeffs->a;
-  cs_real_t *b = bc_coeffs->b;
-  cs_real_t *af = bc_coeffs->af;
-  cs_real_t *bf = bc_coeffs->bf;
-
-  //if (fabs(hext) > cs_math_infinite_r*0.5) {
-  if (hext < 0.) {
-
-    /* Gradient BCs */
-    a[f_id] = pimp;
-    b[f_id] = 0.;
-
-    /* Flux BCs */
-    af[f_id] = -hint*pimp;
-    bf[f_id] =  hint;
-
-  }
-  else {
-
-    /* Gradient BCs */
-    a[f_id] = hext*pimp/(hint + hext);
-    b[f_id] = hint     /(hint + hext);
-
-    /* Flux BCs */
-    cs_real_t heq = hint*hext/(hint + hext);
-    af[f_id] = -heq*pimp;
-    bf[f_id] =  heq;
-
   }
 }
 
@@ -936,39 +827,6 @@ cs_boundary_conditions_set_affine_function_scalar
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set Neumann BC for the convection operator, zero flux for diffusion.
- *
- * \param[in]     f_id          face id
- * \param[out]    bc_coeffs     boundary condition structure
- * \param[in]     dimp          flux value to impose
- * \param[in]     hint          internal exchange coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
-  (cs_lnum_t             f_id,
-   cs_field_bc_coeffs_t *bc_coeffs,
-   cs_real_t             dimp,
-   cs_real_t             hint)
-
-{
-  cs_real_t *af = bc_coeffs->af;
-  cs_real_t *bf = bc_coeffs->bf;
-
-  /* Gradient BCs */
-  cs_boundary_conditions_set_neumann_scalar(f_id,
-                                            bc_coeffs,
-                                            dimp,
-                                            hint);
-
-  /* Flux BCs */
-  af[f_id] = 0.;
-  bf[f_id] = 0.;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set Neumann BC for the convection operator, imposed flux for
  *         diffusion.
  *
@@ -1150,6 +1008,147 @@ END_C_DECLS
 /*============================================================================
  * Public C++ function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set Neumann BC for a scalar for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   qimp   flux value to impose
+ * \param[in]   hint   internal exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_neumann_scalar(cs_real_t  &a,
+                                          cs_real_t  &af,
+                                          cs_real_t  &b,
+                                          cs_real_t  &bf,
+                                          cs_real_t   qimp,
+                                          cs_real_t   hint)
+{
+  /* Gradient BCs */
+  a = -qimp/cs::max(hint, 1.e-300);
+  b = 1.;
+
+  /* Flux BCs */
+  af = qimp;
+  bf = 0.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set homogeneous Neumann BC for a scalar for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_neumann_scalar_hmg(cs_real_t  &a,
+                                              cs_real_t  &af,
+                                              cs_real_t  &b,
+                                              cs_real_t  &bf)
+{
+  /* Gradient BCs */
+  a = 0.;
+  b = 1.;
+
+  /* Flux BCs */
+  af = 0.;
+  bf = 0.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set Dirichlet BC for a scalar for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pimp   Dirichlet value to impose
+ * \param[in]   hint   internal exchange coefficient
+ * \param[in]   hext   external exchange coefficient
+ *                     (assumed infinite/ignored if < 0)
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  &a,
+                                            cs_real_t  &af,
+                                            cs_real_t  &b,
+                                            cs_real_t  &bf,
+                                            cs_real_t   pimp,
+                                            cs_real_t   hint,
+                                            cs_real_t   hext)
+{
+  if (hext < 0.) {
+
+    /* Gradient BCs */
+    a = pimp;
+    b = 0.;
+
+    /* Flux BCs */
+    af = -hint*pimp;
+    bf =  hint;
+
+  }
+  else {
+
+    /* Gradient BCs */
+    a = hext*pimp/(hint + hext);
+    b = hint     /(hint + hext);
+
+    /* Flux BCs */
+    cs_real_t heq = hint*hext/(hint + hext);
+    af = -heq*pimp;
+    bf =  heq;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set Neumann BC for the convection operator, zero flux for diffusion.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   dimp   flux value to impose
+ * \param[in]   hint   internal exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
+  (cs_real_t  &a,
+   cs_real_t  &af,
+   cs_real_t  &b,
+   cs_real_t  &bf,
+   cs_real_t   dimp,
+   cs_real_t   hint)
+
+{
+  /* Gradient BCs */
+  cs_boundary_conditions_set_neumann_scalar(a,
+                                            af,
+                                            b,
+                                            bf,
+                                            dimp,
+                                            hint);
+
+  /* Flux BCs */
+  af = 0.;
+  bf = 0.;
+}
 
 /*----------------------------------------------------------------------------*/
 /*

@@ -372,28 +372,31 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   var_t *i_pvar = nullptr;
   var_t *b_pvar = nullptr;
-  cs_field_t *i_vf = nullptr;
-  cs_field_t *b_vf = nullptr;
+  cs_field_t *f_i_vf = nullptr;
+  cs_field_t *f_b_vf = nullptr;
 
   /* Storing face values for kinetic energy balance and initialize them */
   if (CS_F_(vel) != nullptr && CS_F_(vel)->id == f_id) {
 
-    i_vf = cs_field_by_name_try("inner_face_velocity");
-    if (i_vf != nullptr) {
-      ctx.parallel_for(3*n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        i_vf->val[face_id] = 0.;
+    f_i_vf = cs_field_by_name_try("inner_face_velocity");
+    if (f_i_vf != nullptr) {
+      i_pvar = (var_t *)f_i_vf->val;
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          i_pvar[face_id][i] = 0.;
+        }
       });
-      i_pvar = (var_t *)i_vf->val;
     }
 
-    b_vf = cs_field_by_name_try("boundary_face_velocity");
-    if (b_vf != nullptr) {
-      ctx.parallel_for(3*n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        b_vf->val[face_id] = 0.;
+    f_b_vf = cs_field_by_name_try("boundary_face_velocity");
+    if (f_b_vf != nullptr) {
+      b_pvar = (var_t *)f_b_vf->val;
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          b_pvar[face_id][i] = 0.;
+        }
       });
-      b_pvar = (var_t *)b_vf->val;
     }
-
     ctx.wait();
   }
 
@@ -546,9 +549,9 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_6_t *)smbrp);
 
     /* Save (1-theta)* face_value at previous time step if needed */
-    if (i_vf != nullptr && b_vf != nullptr) {
-      cs_field_current_to_previous(i_vf);
-      cs_field_current_to_previous(b_vf);
+    if (f_i_vf != nullptr && f_b_vf != nullptr) {
+      cs_field_current_to_previous(f_i_vf);
+      cs_field_current_to_previous(f_b_vf);
     }
 
     eqp->theta = thetap;
@@ -1072,9 +1075,9 @@ _equation_iterative_solve_strided(int                   idtvar,
     /* Increment face value with theta * face_value at current time step
      * if needed
      * Reinit the previous value before */
-    if (i_vf != nullptr && b_vf != nullptr) {
-      cs_array_real_copy(3 * n_i_faces, i_vf->val_pre, i_vf->val);
-      cs_array_real_copy(3 * n_b_faces, b_vf->val_pre, b_vf->val);
+    if (f_i_vf != nullptr && f_b_vf != nullptr) {
+      cs_array_real_copy(3 * n_i_faces, f_i_vf->val_pre, f_i_vf->val);
+      cs_array_real_copy(3 * n_b_faces, f_b_vf->val_pre, f_b_vf->val);
     }
 
     /* The added convective scalar mass flux is:

@@ -235,6 +235,11 @@ cs_solve_transported_variables(int iterns)
       if (f_scal->type & CS_FIELD_USER)
         continue;
 
+      cs_real_t *coefa_sc = f_scal->bc_coeffs->a;
+      cs_real_t *coefb_sc = f_scal->bc_coeffs->b;
+      cs_real_t *cofaf_sc = f_scal->bc_coeffs->af;
+      cs_real_t *cofbf_sc = f_scal->bc_coeffs->bf;
+
       /* Compressible scheme without shock:
          ---> Special processing for density, temperature and energy
 
@@ -332,8 +337,10 @@ cs_solve_transported_variables(int iterns)
               cs_real_t pimp = cs_math_pow2(fmb);
               cs_real_t hext = cs_math_infinite_r;
 
-              cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                          f_scal->bc_coeffs,
+              cs_boundary_conditions_set_dirichlet_scalar(coefa_sc[f_id],
+                                                          cofaf_sc[f_id],
+                                                          coefb_sc[f_id],
+                                                          cofbf_sc[f_id],
                                                           pimp,
                                                           hint,
                                                           hext);
@@ -343,6 +350,7 @@ cs_solve_transported_variables(int iterns)
           if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 2) {
 
             if (f_scal == cs_field_by_name("progress_variable")) {
+
               for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
                 const cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -354,8 +362,10 @@ cs_solve_transported_variables(int iterns)
                 cs_real_t pimp = cmid;
                 cs_real_t hext = cs_math_infinite_r;
 
-                cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                            f_scal->bc_coeffs,
+                cs_boundary_conditions_set_dirichlet_scalar(coefa_sc[f_id],
+                                                            cofaf_sc[f_id],
+                                                            coefb_sc[f_id],
+                                                            cofbf_sc[f_id],
                                                             pimp,
                                                             hint,
                                                             hext);

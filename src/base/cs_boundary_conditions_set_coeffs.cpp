@@ -1345,6 +1345,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     {
       cs_field_t *p = CS_F_(p);
 
+      cs_real_t *coefa_p = p->bc_coeffs->a;
+      cs_real_t *coefb_p = p->bc_coeffs->b;
+      cs_real_t *cofaf_p = p->bc_coeffs->af;
+      cs_real_t *cofbf_p = p->bc_coeffs->bf;
+
       const int *icodcl_p = (const int *)p->bc_coeffs->icodcl;
       const cs_real_t *rcodcl1_p = (const cs_real_t *)p->bc_coeffs->rcodcl1;
       const cs_real_t *rcodcl2_p = (const cs_real_t *)p->bc_coeffs->rcodcl2;
@@ -1441,8 +1446,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t hext = rcodcl2_p[f_id];
           const cs_real_t pimp = rcodcl1_p[f_id];
 
-          cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                      p->bc_coeffs,
+          cs_boundary_conditions_set_dirichlet_scalar(coefa_p[f_id],
+                                                      cofaf_p[f_id],
+                                                      coefb_p[f_id],
+                                                      cofbf_p[f_id],
                                                       pimp,
                                                       hint,
                                                       hext);
@@ -1455,8 +1462,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           const cs_real_t dimp = rcodcl3_p[f_id];
 
-          cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                    p->bc_coeffs,
+          cs_boundary_conditions_set_neumann_scalar(coefa_p[f_id],
+                                                    cofaf_p[f_id],
+                                                    coefb_p[f_id],
+                                                    cofbf_p[f_id],
                                                     dimp,
                                                     hint);
         }
@@ -1526,7 +1535,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t dimp = rcodcl3_p[f_id];
 
           cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
-            (f_id, p->bc_coeffs, dimp, hint);
+            (coefa_p[f_id], cofaf_p[f_id],
+             coefb_p[f_id], cofbf_p[f_id],
+             dimp, hint);
         }
       }
     } /* pressure */
@@ -1538,6 +1549,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     if (cs_glob_vof_parameters->vof_model > 0) {
 
       cs_field_t *volf2 = CS_F_(void_f);
+
+      cs_real_t *coefa_vol = volf2->bc_coeffs->a;
+      cs_real_t *coefb_vol = volf2->bc_coeffs->b;
+      cs_real_t *cofaf_vol = volf2->bc_coeffs->af;
+      cs_real_t *cofbf_vol = volf2->bc_coeffs->bf;
 
       int *icodcl_vol = volf2->bc_coeffs->icodcl;
       cs_real_t *rcodcl1_vol = volf2->bc_coeffs->rcodcl1;
@@ -1557,8 +1573,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           const cs_real_t pimp = rcodcl1_vol[f_id];
           const cs_real_t hext = rcodcl2_vol[f_id];
 
-          cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                      volf2->bc_coeffs,
+          cs_boundary_conditions_set_dirichlet_scalar(coefa_vol[f_id],
+                                                      cofaf_vol[f_id],
+                                                      coefb_vol[f_id],
+                                                      cofbf_vol[f_id],
                                                       pimp,
                                                       hint,
                                                       hext);
@@ -1571,8 +1589,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           const cs_real_t dimp = rcodcl3_vol[f_id];
 
-          cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                    volf2->bc_coeffs,
+          cs_boundary_conditions_set_neumann_scalar(coefa_vol[f_id],
+                                                    cofaf_vol[f_id],
+                                                    coefb_vol[f_id],
+                                                    cofbf_vol[f_id],
                                                     dimp,
                                                     hint);
         }
@@ -1626,6 +1646,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             }
           }
 
+          cs_real_t *coefa_turb = turb->bc_coeffs->a;
+          cs_real_t *coefb_turb = turb->bc_coeffs->b;
+          cs_real_t *cofaf_turb = turb->bc_coeffs->af;
+          cs_real_t *cofbf_turb = turb->bc_coeffs->bf;
+
           int *icodcl_turb = turb->bc_coeffs->icodcl;
           cs_real_t *rcodcl1_turb = turb->bc_coeffs->rcodcl1;
           cs_real_t *rcodcl2_turb = turb->bc_coeffs->rcodcl2;
@@ -1651,8 +1676,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               const cs_real_t pimp = rcodcl1_turb[f_id];
               const cs_real_t hext = rcodcl2_turb[f_id];
 
-              cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                          turb->bc_coeffs,
+              cs_boundary_conditions_set_dirichlet_scalar(coefa_turb[f_id],
+                                                          cofaf_turb[f_id],
+                                                          coefb_turb[f_id],
+                                                          cofbf_turb[f_id],
                                                           pimp,
                                                           hint,
                                                           hext);
@@ -1666,8 +1693,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
               const cs_real_t dimp = rcodcl3_turb[f_id];
 
-              cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                        turb->bc_coeffs,
+              cs_boundary_conditions_set_neumann_scalar(coefa_turb[f_id],
+                                                        cofaf_turb[f_id],
+                                                        coefb_turb[f_id],
+                                                        cofbf_turb[f_id],
                                                         dimp,
                                                         hint);
             }
@@ -1894,6 +1923,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         if (CS_F_(eps)->type & CS_FIELD_VARIABLE) {
           cs_field_t *eps = CS_F_(eps);
 
+          cs_real_t *coefa_eps = eps->bc_coeffs->a;
+          cs_real_t *coefb_eps = eps->bc_coeffs->b;
+          cs_real_t *cofaf_eps = eps->bc_coeffs->af;
+          cs_real_t *cofbf_eps = eps->bc_coeffs->bf;
+
           int *icodcl_eps = eps->bc_coeffs->icodcl;
           cs_real_t *rcodcl1_eps = eps->bc_coeffs->rcodcl1;
           cs_real_t *rcodcl2_eps = eps->bc_coeffs->rcodcl2;
@@ -1978,8 +2012,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               const cs_real_t pimp = rcodcl1_eps[f_id];
               const cs_real_t hext = rcodcl2_eps[f_id];
 
-              cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                          eps->bc_coeffs,
+              cs_boundary_conditions_set_dirichlet_scalar(coefa_eps[f_id],
+                                                          cofaf_eps[f_id],
+                                                          coefb_eps[f_id],
+                                                          cofbf_eps[f_id],
                                                           pimp,
                                                           hint,
                                                           hext);
@@ -1992,8 +2028,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
               const cs_real_t dimp = rcodcl3_eps[f_id];
 
-              cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                        eps->bc_coeffs,
+              cs_boundary_conditions_set_neumann_scalar(coefa_eps[f_id],
+                                                        cofaf_eps[f_id],
+                                                        coefb_eps[f_id],
+                                                        cofbf_eps[f_id],
                                                         dimp,
                                                         hint);
             }
@@ -2031,6 +2069,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           cs_field_t *alpha = CS_F_(alp_bl);
 
+          cs_real_t *coefa_alp = alpha->bc_coeffs->a;
+          cs_real_t *coefb_alp = alpha->bc_coeffs->b;
+          cs_real_t *cofaf_alp = alpha->bc_coeffs->af;
+          cs_real_t *cofbf_alp = alpha->bc_coeffs->bf;
+
           int *icodcl_alp = alpha->bc_coeffs->icodcl;
           cs_real_t *rcodcl1_alp = alpha->bc_coeffs->rcodcl1;
           cs_real_t *rcodcl2_alp = alpha->bc_coeffs->rcodcl2;
@@ -2049,8 +2092,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               const cs_real_t pimp = rcodcl1_alp[f_id];
               const cs_real_t hext = rcodcl2_alp[f_id];
 
-              cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                          alpha->bc_coeffs,
+              cs_boundary_conditions_set_dirichlet_scalar(coefa_alp[f_id],
+                                                          cofaf_alp[f_id],
+                                                          coefb_alp[f_id],
+                                                          cofbf_alp[f_id],
                                                           pimp,
                                                           hint,
                                                           hext);
@@ -2064,8 +2109,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
               const cs_real_t dimp = rcodcl3_alp[f_id];
 
-              cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                        alpha->bc_coeffs,
+              cs_boundary_conditions_set_neumann_scalar(coefa_alp[f_id],
+                                                        cofaf_alp[f_id],
+                                                        coefb_alp[f_id],
+                                                        cofbf_alp[f_id],
                                                         dimp,
                                                         hint);
             }
@@ -2122,6 +2169,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             sigma = cs_field_get_key_double(v2f, ksigmas);
           }
 
+          cs_real_t *coefa_v2f = v2f->bc_coeffs->a;
+          cs_real_t *coefb_v2f = v2f->bc_coeffs->b;
+          cs_real_t *cofaf_v2f = v2f->bc_coeffs->af;
+          cs_real_t *cofbf_v2f = v2f->bc_coeffs->bf;
+
           int *icodcl_v2f = v2f->bc_coeffs->icodcl;
           cs_real_t *rcodcl1_v2f = v2f->bc_coeffs->rcodcl1;
           cs_real_t *rcodcl2_v2f = v2f->bc_coeffs->rcodcl2;
@@ -2148,8 +2200,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               const cs_real_t pimp = rcodcl1_v2f[f_id];
               const cs_real_t hext = rcodcl2_v2f[f_id];
 
-              cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                          v2f->bc_coeffs,
+              cs_boundary_conditions_set_dirichlet_scalar(coefa_v2f[f_id],
+                                                          cofaf_v2f[f_id],
+                                                          coefb_v2f[f_id],
+                                                          cofbf_v2f[f_id],
                                                           pimp,
                                                           hint,
                                                           hext);
@@ -2162,8 +2216,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
               const cs_real_t dimp = rcodcl3_v2f[f_id];
 
-              cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                        v2f->bc_coeffs,
+              cs_boundary_conditions_set_neumann_scalar(coefa_v2f[f_id],
+                                                        cofaf_v2f[f_id],
+                                                        coefb_v2f[f_id],
+                                                        cofbf_v2f[f_id],
                                                         dimp,
                                                         hint);
             }
@@ -2201,6 +2257,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           cs_field_t *f_bar = CS_F_(f_bar);
 
+          cs_real_t *coefa_fb = f_bar->bc_coeffs->a;
+          cs_real_t *coefb_fb = f_bar->bc_coeffs->b;
+          cs_real_t *cofaf_fb = f_bar->bc_coeffs->af;
+          cs_real_t *cofbf_fb = f_bar->bc_coeffs->bf;
+
           int *icodcl_fb = f_bar->bc_coeffs->icodcl;
           cs_real_t *rcodcl1_fb = f_bar->bc_coeffs->rcodcl1;
           cs_real_t *rcodcl2_fb = f_bar->bc_coeffs->rcodcl2;
@@ -2224,8 +2285,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               const cs_real_t pimp = rcodcl1_fb[f_id];
               const cs_real_t hext = rcodcl2_fb[f_id];
 
-              cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                          f_bar->bc_coeffs,
+              cs_boundary_conditions_set_dirichlet_scalar(coefa_fb[f_id],
+                                                          cofaf_fb[f_id],
+                                                          coefb_fb[f_id],
+                                                          cofbf_fb[f_id],
                                                           pimp,
                                                           hint,
                                                           hext);
@@ -2238,8 +2301,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
               const cs_real_t dimp = rcodcl3_fb[f_id];
 
-              cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                        f_bar->bc_coeffs,
+              cs_boundary_conditions_set_neumann_scalar(coefa_fb[f_id],
+                                                        cofaf_fb[f_id],
+                                                        coefb_fb[f_id],
+                                                        cofbf_fb[f_id],
                                                         dimp,
                                                         hint);
             }
@@ -2277,6 +2342,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           cs_field_t *alpha = CS_F_(alp_bl);
 
+          cs_real_t *coefa_alp = alpha->bc_coeffs->a;
+          cs_real_t *coefb_alp = alpha->bc_coeffs->b;
+          cs_real_t *cofaf_alp = alpha->bc_coeffs->af;
+          cs_real_t *cofbf_alp = alpha->bc_coeffs->bf;
+
           int *icodcl_alp = alpha->bc_coeffs->icodcl;
           cs_real_t *rcodcl1_alp = alpha->bc_coeffs->rcodcl1;
           cs_real_t *rcodcl2_alp = alpha->bc_coeffs->rcodcl2;
@@ -2299,8 +2369,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               const cs_real_t pimp = rcodcl1_alp[f_id];
               const cs_real_t hext = rcodcl2_alp[f_id];
 
-              cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                          alpha->bc_coeffs,
+              cs_boundary_conditions_set_dirichlet_scalar(coefa_alp[f_id],
+                                                          cofaf_alp[f_id],
+                                                          coefb_alp[f_id],
+                                                          cofbf_alp[f_id],
                                                           pimp,
                                                           hint,
                                                           hext);
@@ -2313,8 +2385,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
               const cs_real_t dimp = rcodcl3_alp[f_id];
 
-              cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                        alpha->bc_coeffs,
+              cs_boundary_conditions_set_neumann_scalar(coefa_alp[f_id],
+                                                        cofaf_alp[f_id],
+                                                        coefb_alp[f_id],
+                                                        cofbf_alp[f_id],
                                                         dimp,
                                                         hint);
             }
@@ -2353,6 +2427,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         cs_field_t *nusa = CS_F_(nusa);
 
+        cs_real_t *coefa_nusa = nusa->bc_coeffs->a;
+        cs_real_t *coefb_nusa = nusa->bc_coeffs->b;
+        cs_real_t *cofaf_nusa = nusa->bc_coeffs->af;
+        cs_real_t *cofbf_nusa = nusa->bc_coeffs->bf;
+
         int *icodcl_nusa = nusa->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_nusa = nusa->bc_coeffs->rcodcl1;
         cs_real_t *rcodcl2_nusa = nusa->bc_coeffs->rcodcl2;
@@ -2377,8 +2456,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_nusa[f_id];
             const cs_real_t hext = rcodcl2_nusa[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                        nusa->bc_coeffs,
+            cs_boundary_conditions_set_dirichlet_scalar(coefa_nusa[f_id],
+                                                        cofaf_nusa[f_id],
+                                                        coefb_nusa[f_id],
+                                                        cofbf_nusa[f_id],
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -2391,8 +2472,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_nusa[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                      nusa->bc_coeffs,
+            cs_boundary_conditions_set_neumann_scalar(coefa_nusa[f_id],
+                                                      cofaf_nusa[f_id],
+                                                      coefb_nusa[f_id],
+                                                      cofbf_nusa[f_id],
                                                       dimp,
                                                       hint);
           }
@@ -2648,8 +2731,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_sc[f_id];
             const cs_real_t hext = rcodcl2_sc[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                        f_scal->bc_coeffs,
+            cs_boundary_conditions_set_dirichlet_scalar(coefa_sc[f_id],
+                                                        cofaf_sc[f_id],
+                                                        coefb_sc[f_id],
+                                                        cofbf_sc[f_id],
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -2666,8 +2751,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_sc[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                      f_scal->bc_coeffs,
+            cs_boundary_conditions_set_neumann_scalar(coefa_sc[f_id],
+                                                      cofaf_sc[f_id],
+                                                      coefb_sc[f_id],
+                                                      cofbf_sc[f_id],
                                                       dimp,
                                                       hint);
 
@@ -3118,6 +3205,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           || turb_flux_model == 31) {
 
         cs_field_t *f_al = cs_field_by_composite_name_try(f_scal->name, "alpha");
+        cs_real_t *coefa_al = f_al->bc_coeffs->a;
+        cs_real_t *coefb_al = f_al->bc_coeffs->b;
+        cs_real_t *cofaf_al = f_al->bc_coeffs->af;
+        cs_real_t *cofbf_al = f_al->bc_coeffs->bf;
 
         int *icodcl_al = f_al->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_al = f_al->bc_coeffs->rcodcl1;
@@ -3137,8 +3228,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_t pimp = rcodcl1_al[f_id];
             const cs_real_t hext = rcodcl2_al[f_id];
 
-            cs_boundary_conditions_set_dirichlet_scalar(f_id,
-                                                        f_al->bc_coeffs,
+            cs_boundary_conditions_set_dirichlet_scalar(coefa_al[f_id],
+                                                        cofaf_al[f_id],
+                                                        coefb_al[f_id],
+                                                        cofbf_al[f_id],
                                                         pimp,
                                                         hint,
                                                         hext);
@@ -3152,8 +3245,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
             const cs_real_t dimp = rcodcl3_al[f_id];
 
-            cs_boundary_conditions_set_neumann_scalar(f_id,
-                                                      f_al->bc_coeffs,
+            cs_boundary_conditions_set_neumann_scalar(coefa_al[f_id],
+                                                      cofaf_al[f_id],
+                                                      coefb_al[f_id],
+                                                      cofbf_al[f_id],
                                                       dimp,
                                                       hint);
           }

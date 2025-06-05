@@ -501,6 +501,11 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   int f_id = f->id;
   int niterf;
 
+  cs_real_t *coefa = f->bc_coeffs->a;
+  cs_real_t *coefb = f->bc_coeffs->b;
+  cs_real_t *cofaf = f->bc_coeffs->af;
+  cs_real_t *cofbf = f->bc_coeffs->bf;
+
   /*==========================================================================
    * 0.  Initialization
    *==========================================================================*/
@@ -542,16 +547,20 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     cs_real_t qimp = 0.;
     if ((b_face_cog[face_id][2] - min_z) < 0.005) {//FIXME dimensionless value
       cs_real_t pimp = p_ground;
-      cs_boundary_conditions_set_dirichlet_scalar(face_id,
-                                                  f->bc_coeffs,
+      cs_boundary_conditions_set_dirichlet_scalar(coefa[face_id],
+                                                  cofaf[face_id],
+                                                  coefb[face_id],
+                                                  cofbf[face_id],
                                                   pimp,
                                                   hint,
                                                   cs_math_big_r);
       eqp_p->ndircl = 1;
     }
     else {
-      cs_boundary_conditions_set_neumann_scalar(face_id,
-                                                f->bc_coeffs,
+      cs_boundary_conditions_set_neumann_scalar(coefa[face_id],
+                                                cofaf[face_id],
+                                                coefb[face_id],
+                                                cofbf[face_id],
                                                 qimp,
                                                 hint);
     }
@@ -4445,6 +4454,11 @@ cs_atmo_z_ground_compute(void)
   /* Boundary conditions
    * =================== */
 
+  cs_real_t *coefa = f->bc_coeffs->a;
+  cs_real_t *coefb = f->bc_coeffs->b;
+  cs_real_t *cofaf = f->bc_coeffs->af;
+  cs_real_t *cofbf = f->bc_coeffs->bf;
+
   cs_real_t norm = 0.;
   cs_real_t ground_surf = 0.;
 
@@ -4459,8 +4473,10 @@ cs_atmo_z_ground_compute(void)
       cs_real_t hint = 1. / mq->b_dist[face_id];
       cs_real_t pimp = cs_math_3_dot_product(b_face_cog[face_id], normal);
 
-      cs_boundary_conditions_set_dirichlet_scalar(face_id,
-                                                  f->bc_coeffs,
+      cs_boundary_conditions_set_dirichlet_scalar(coefa[face_id],
+                                                  cofaf[face_id],
+                                                  coefb[face_id],
+                                                  cofbf[face_id],
                                                   pimp,
                                                   hint,
                                                   cs_math_infinite_r);
@@ -4473,8 +4489,10 @@ cs_atmo_z_ground_compute(void)
       cs_real_t hint = 1. / mq->b_dist[face_id];
       cs_real_t qimp = 0.;
 
-      cs_boundary_conditions_set_neumann_scalar(face_id,
-                                                f->bc_coeffs,
+      cs_boundary_conditions_set_neumann_scalar(coefa[face_id],
+                                                cofaf[face_id],
+                                                coefb[face_id],
+                                                cofbf[face_id],
                                                 qimp,
                                                 hint);
 
