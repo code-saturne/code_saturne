@@ -130,6 +130,7 @@ static cs_atmo_option_t  _atmo_option = {
   .ssec = -1.,
   .longitude = 1e12, // TODO use cs_math_big_r
   .latitude = 1e12,
+  .altitude = 0.,
   .x_l93= 1e12,
   .y_l93 = 1e12,
   {.met_1d_nlevels_d = 0},
