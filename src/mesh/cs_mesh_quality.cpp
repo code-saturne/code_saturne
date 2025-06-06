@@ -70,24 +70,10 @@ BEGIN_C_DECLS
 
 #define CS_MESH_QUALITY_N_SUBS  10
 
-#undef _CROSS_PRODUCT_3D
-#undef _DOT_PRODUCT_3D
-#undef _MODULE_3D
 #undef _COSINE_3D
 
-#define _CROSS_PRODUCT_3D(cross_v1_v2, v1, v2) ( \
- cross_v1_v2[0] = v1[1]*v2[2] - v1[2]*v2[1],   \
- cross_v1_v2[1] = v1[2]*v2[0] - v1[0]*v2[2],   \
- cross_v1_v2[2] = v1[0]*v2[1] - v1[1]*v2[0]  )
-
-#define _DOT_PRODUCT_3D(v1, v2) ( \
- v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2])
-
-#define _MODULE_3D(v) \
- sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
-
 #define _COSINE_3D(v1, v2) (\
- _DOT_PRODUCT_3D(v1, v2) / (_MODULE_3D(v1) * _MODULE_3D(v2)) )
+ cs_math_3_dot_product(v1, v2) / (cs_math_3_norm(v1) * cs_math_3_norm(v2)) )
 
 /*============================================================================
  * Private function definitions
@@ -405,20 +391,17 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
 
     }
 
-    coef0 = _DOT_PRODUCT_3D(v0, face_normal);
-    coef1 = _DOT_PRODUCT_3D(v1, face_normal)/coef0;
-    coef2 = _DOT_PRODUCT_3D(v2, face_normal)/coef0;
+    coef0 = cs_math_3_dot_product(v0, face_normal);
+    coef1 = cs_math_3_dot_product(v1, face_normal)/coef0;
+    coef2 = cs_math_3_dot_product(v2, face_normal)/coef0;
 
     weighting[face_id] = cs::max(coef1, coef2);
 
     /* Compute center offsetting coefficient */
     /*---------------------------------------*/
 
-    for (i = 0; i < dim; i++) {
-      v1[i] = mesh_quantities->dofij[face_id][i];
-      v2[i] = mesh_quantities->i_face_normal[face_id*3 + i];
-    }
-    double of_s = _MODULE_3D(v1) * _MODULE_3D(v2);
+    double of_s =   cs_math_3_norm(mesh_quantities->dofij[face_id])
+                  * mesh_quantities->i_face_surf[face_id];
 
     offsetting[cell1] = cs::min(offsetting[cell1],
         1. - pow(of_s / fabs(mesh_quantities->cell_vol[cell1]), 1./3.));
@@ -426,7 +409,6 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
         1. - pow(of_s / fabs(mesh_quantities->cell_vol[cell2]), 1./3.));
 
   } /* End of loop on faces */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1305,9 +1287,6 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
 /* Delete local macros */
 
-#undef _CROSS_PRODUCT_3D
-#undef _DOT_PRODUCT_3D
-#undef _MODULE_3D
 #undef _COSINE_3D
 
 /*----------------------------------------------------------------------------*/

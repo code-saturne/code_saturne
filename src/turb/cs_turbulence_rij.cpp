@@ -4239,10 +4239,10 @@ cs_turbulence_rij_compute_rusanov(void)
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
   const cs_lnum_2_t *i_face_cells = m->i_face_cells;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
@@ -4263,14 +4263,19 @@ cs_turbulence_rij_compute_rusanov(void)
     const cs_lnum_t c_id0 = i_face_cells[face_id][0];
     const cs_lnum_t c_id1 = i_face_cells[face_id][1];
 
+    cs_real_t face_normal[3]
+      = {i_face_u_normal[face_id][0] * i_face_surf[face_id],
+         i_face_u_normal[face_id][1] * i_face_surf[face_id],
+         i_face_u_normal[face_id][2] * i_face_surf[face_id]};
+
     /* Note: warning the normal has the surface in it, it is done on purpose */
-    cs_real_t r_nn_0 = cs_math_3_sym_33_3_dot_product(i_face_normal[face_id],
+    cs_real_t r_nn_0 = cs_math_3_sym_33_3_dot_product(face_normal,
                                                       cvar_rij[c_id0],
-                                                      i_face_normal[face_id]);
+                                                      face_normal);
     r_nn_0 *= cs_math_pow2(cvar_rho[c_id0]); // to have rho in it
-    cs_real_t r_nn_1 = cs_math_3_sym_33_3_dot_product(i_face_normal[face_id],
+    cs_real_t r_nn_1 = cs_math_3_sym_33_3_dot_product(face_normal,
                                                       cvar_rij[c_id1],
-                                                      i_face_normal[face_id]);
+                                                      face_normal);
     r_nn_1 *= cs_math_pow2(cvar_rho[c_id1]); // to have rho in it
 
     cs_real_t rnn = cs::max(cs::abs(r_nn_0), cs::abs(r_nn_1));
@@ -4282,10 +4287,15 @@ cs_turbulence_rij_compute_rusanov(void)
   ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
     const cs_lnum_t c_id0 = b_face_cells[face_id];
 
+    cs_real_t face_normal[3]
+      = {b_face_u_normal[face_id][0] * b_face_surf[face_id],
+         b_face_u_normal[face_id][1] * b_face_surf[face_id],
+         b_face_u_normal[face_id][2] * b_face_surf[face_id]};
+
     /* Note: warning the normal has the surface in it, it is done on purpose */
-    cs_real_t r_nn_0 = cs_math_3_sym_33_3_dot_product(b_face_normal[face_id],
+    cs_real_t r_nn_0 = cs_math_3_sym_33_3_dot_product(face_normal,
                                                       cvar_rij[c_id0],
-                                                      b_face_normal[face_id]);
+                                                      face_normal);
     r_nn_0 *= cs_math_pow2(cvar_rho[c_id0]); // to have rho in it
 
     /* The part of U.n is already in the material upwind scheme */
