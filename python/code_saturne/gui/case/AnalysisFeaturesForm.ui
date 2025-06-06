@@ -235,7 +235,7 @@
       <item row="13" column="0">
        <widget class="QRadioButton" name="radioButtonHTS">
         <property name="text">
-         <string>Solid Heat Transfer (Experimental)</string>
+         <string>Solid Heat Transfer</string>
         </property>
        </widget>
       </item>
