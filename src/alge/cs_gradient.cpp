@@ -1527,30 +1527,30 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
   /* Local variables */
 
   const int n_cells = m->n_cells;
-  const int n_cells_with_ghosts = m->n_cells_with_ghosts;
-  const int n_i_faces = m->n_i_faces;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
 
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict dofij = fvq->dofij;
 
   cs_real_33_t *restrict cocg = gq->cocg_it;
 
-  cs_lnum_t  cell_id, f_id, i, j;
-  cs_real_t  pfac, vecfac;
-  cs_real_t  dvol1, dvol2;
-
   if (cocg == nullptr) {
-    CS_MALLOC_HD(cocg, n_cells_with_ghosts, cs_real_33_t, cs_alloc_mode);
+    CS_MALLOC_HD(cocg, n_cells, cs_real_33_t, cs_alloc_mode);
     gq->cocg_it = cocg;
   }
 
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);
+  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+
   /* compute the dimensionless matrix COCG for each cell*/
 
-  for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     cocg[cell_id][0][0]= 1.0;
     cocg[cell_id][0][1]= 0.0;
     cocg[cell_id][0][2]= 0.0;
@@ -1560,13 +1560,15 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
     cocg[cell_id][2][0]= 0.0;
     cocg[cell_id][2][1]= 0.0;
     cocg[cell_id][2][2]= 1.0;
-  }
+  });
 
   /* Interior face treatment */
 
-  for (f_id = 0; f_id < n_i_faces; f_id++) {
+  h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
     cs_lnum_t cell_id1 = i_face_cells[f_id][0];
     cs_lnum_t cell_id2 = i_face_cells[f_id][1];
+
+    cs_real_t  dvol1, dvol2;
 
     if (cell_vol[cell_id1] > 0)
       dvol1 = 1. / cell_vol[cell_id1];
@@ -1577,23 +1579,31 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
     else
       dvol2 = 0.;
 
-    for (i = 0; i < 3; i++) {
+    cs_real_t pfac0 = -0.5 * i_face_surf[f_id];
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      cs_real_t pfac = pfac0 * dofij[f_id][i];
 
-      pfac = -0.5*dofij[f_id][i];
-
-      for (j = 0; j < 3; j++) {
-        vecfac = pfac*i_face_normal[f_id][j];
-        cocg[cell_id1][i][j] += vecfac * dvol1;
-        cocg[cell_id2][i][j] -= vecfac * dvol2;
+      cs_real_t fctb_ii[3], fctb_jj[3];
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        cs_real_t vecfac = pfac*i_face_u_normal[f_id][j];
+        fctb_ii[j] =  vecfac * dvol1;
+        fctb_jj[j] = -vecfac * dvol2;
       }
+
+      if (cell_id1 < n_cells)
+        cs_dispatch_sum<3>(cocg[cell_id1][i], fctb_ii, i_sum_type);
+      if (cell_id2 < n_cells)
+        cs_dispatch_sum<3>(cocg[cell_id2][i], fctb_jj, i_sum_type);
     }
-  }
+  });
 
   /* 3x3 Matrix inversion */
 
-# pragma omp parallel for
-  for (cell_id = 0; cell_id < n_cells; cell_id++)
+  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     cs_math_33_inv_cramer_in_place(cocg[cell_id]);
+  });
+
+  ctx.wait();
 
   return cocg;
 }
@@ -1647,12 +1657,6 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   const cs_real_t *coefbp = bc_coeffs->b;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -1665,10 +1669,10 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_vol = mq_g->cell_vol;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -1701,6 +1705,13 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
       c_weight_t = (const cs_real_6_t *)c_weight;
   }
 
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);
+  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
@@ -1715,7 +1726,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     i_poro_duq_0 = f_i_poro_duq_0->val;
     i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
-  } else {
+  }
+  else {
     i_poro_duq_0 = &_f_ext;
     i_poro_duq_1 = &_f_ext;
     b_poro_duq = &_f_ext;
@@ -1736,7 +1748,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     return;
   }
 
-  CS_MALLOC(rhs, n_cells_ext, cs_real_3_t);
+  CS_MALLOC(rhs, n_cells, cs_real_3_t);
 
   /* Vector OijFij is computed in CLDijP */
 
@@ -1750,150 +1762,143 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
     if (hyd_p_flag == 1) {
 
-    /* Compute right hand side */
+      /* Compute right hand side */
 
-#     pragma omp parallel for
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rhs[c_id][0] = -(grad[c_id][0] - f_ext[c_id][0]) * cell_vol[c_id];
         rhs[c_id][1] = -(grad[c_id][1] - f_ext[c_id][1]) * cell_vol[c_id];
         rhs[c_id][2] = -(grad[c_id][2] - f_ext[c_id][2]) * cell_vol[c_id];
-      }
+      });
 
       /* Contribution from interior faces */
 
-      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+      h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        cs_lnum_t c_id1 = i_face_cells[f_id][0];
+        cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-               f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-               f_id++) {
+        cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+        /* if cell weighting is active */
+        if (c_weight_s != nullptr) {
+          ktpond = weight[f_id] * c_weight_s[c_id1]
+                    / (       weight[f_id] * c_weight_s[c_id1]
+                       + (1.0-weight[f_id])* c_weight_s[c_id2]);
+        }
+        else if (c_weight_t != nullptr) {
+          cs_real_t sum[6];
+          cs_real_t inv_sum[6];
 
-            cs_lnum_t c_id1 = i_face_cells[f_id][0];
-            cs_lnum_t c_id2 = i_face_cells[f_id][1];
+          for (cs_lnum_t ii = 0; ii < 6; ii++)
+            sum[ii] =        weight[f_id] *c_weight_t[c_id1][ii]
+                      + (1.0-weight[f_id])*c_weight_t[c_id2][ii];
 
-            cs_real_t ktpond = weight[f_id]; /* no cell weighting */
-            /* if cell weighting is active */
-            if (c_weight_s != nullptr) {
-              ktpond = weight[f_id] * c_weight_s[c_id1]
-                        / (       weight[f_id] * c_weight_s[c_id1]
-                           + (1.0-weight[f_id])* c_weight_s[c_id2]);
-            }
-            else if (c_weight_t != nullptr) {
-              cs_real_t sum[6];
-              cs_real_t inv_sum[6];
+          cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-              for (cs_lnum_t ii = 0; ii < 6; ii++)
-                sum[ii] =        weight[f_id] *c_weight_t[c_id1][ii]
-                          + (1.0-weight[f_id])*c_weight_t[c_id2][ii];
+          ktpond =   weight[f_id] / 3.0
+                   * (  inv_sum[0]*c_weight_t[c_id1][0]
+                      + inv_sum[1]*c_weight_t[c_id1][1]
+                      + inv_sum[2]*c_weight_t[c_id1][2]
+                      + 2.0 * (  inv_sum[3]*c_weight_t[c_id1][3]
+                               + inv_sum[4]*c_weight_t[c_id1][4]
+                               + inv_sum[5]*c_weight_t[c_id1][5]));
+        }
 
-              cs_math_sym_33_inv_cramer(sum, inv_sum);
+        cs_real_2_t poro = {
+          i_poro_duq_0[is_porous*f_id],
+          i_poro_duq_1[is_porous*f_id]
+        };
 
-              ktpond =   weight[f_id] / 3.0
-                       * (  inv_sum[0]*c_weight_t[c_id1][0]
-                          + inv_sum[1]*c_weight_t[c_id1][1]
-                          + inv_sum[2]*c_weight_t[c_id1][2]
-                          + 2.0 * (  inv_sum[3]*c_weight_t[c_id1][3]
-                                   + inv_sum[4]*c_weight_t[c_id1][4]
-                                   + inv_sum[5]*c_weight_t[c_id1][5]));
-            }
+        /*
+          Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                    + (1-\alpha_\ij) \varia_\cellj\f$
+            but for the cell \f$ \celli \f$ we remove
+            \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+            and for the cell \f$ \cellj \f$ we remove
+            \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+            We also use the property
+            \f$ \sum_\face \centf \otimes \vect{S}_\face = \vol \tens{I} \f$
+            to remove the contributions
+            \f$ ( \centi - \centf ) \cdot \vect{f}_\celli \f$
+            \f$ ( \centj - \centf ) \cdot \vect{f}_\cellj \f$
+        */
 
-            cs_real_2_t poro = {
-              i_poro_duq_0[is_porous*f_id],
-              i_poro_duq_1[is_porous*f_id]
-            };
+        /* Reconstruction part */
+        cs_real_t dpfaci =   pvar[c_id1]
+                           + cs_math_3_distance_dot_product(cell_cen[c_id1],
+                                                            i_face_cog[f_id],
+                                                            f_ext[c_id1]);
 
-            /*
-               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
-                                        + (1-\alpha_\ij) \varia_\cellj\f$
-                but for the cell \f$ \celli \f$ we remove
-                \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                and for the cell \f$ \cellj \f$ we remove
-                \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
-                We also use the property
-                \f$ \sum_\face \centf \otimes \vect{S}_\face = \vol \tens{I} \f$
-                to remove the contributions
-                \f$ ( \centi - \centf ) \cdot \vect{f}_\celli \f$
-                \f$ ( \centj - \centf ) \cdot \vect{f}_\cellj \f$
-            */
+        cs_real_t dpfacj =   pvar[c_id2]
+                           + cs_math_3_distance_dot_product(cell_cen[c_id2],
+                                                            i_face_cog[f_id],
+                                                            f_ext[c_id2]);
 
-            /* Reconstruction part */
-            cs_real_t dpfaci = pvar[c_id1]
-                   + cs_math_3_distance_dot_product(cell_cen[c_id1],
-                                                    i_face_cog[f_id],
-                                                    f_ext[c_id1]);
+        cs_real_t pfaci =   ktpond*poro[0] + (1.0-ktpond)*poro[1]
+                          + 0.5*(  cs_math_3_distance_dot_product(f_ext[c_id1],
+                                                                  grad[c_id1],
+                                                                  dofij[f_id])
+                                 + cs_math_3_distance_dot_product(f_ext[c_id2],
+                                                                  grad[c_id2],
+                                                                  dofij[f_id]));
 
-            cs_real_t dpfacj = pvar[c_id2]
-                   + cs_math_3_distance_dot_product(cell_cen[c_id2],
-                                                    i_face_cog[f_id],
-                                                    f_ext[c_id2]);
+        cs_real_t pfacj = pfaci;
 
-            cs_real_t pfaci = ktpond*poro[0] + (1.0-ktpond)*poro[1]
-                 + 0.5*( cs_math_3_distance_dot_product(f_ext[c_id1],
-                                                        grad[c_id1],
-                                                        dofij[f_id])
-                       + cs_math_3_distance_dot_product(f_ext[c_id2],
-                                                        grad[c_id2],
-                                                        dofij[f_id]));
+        pfaci += (1.0-ktpond) * (dpfacj - dpfaci);
+        pfacj -=      ktpond  * (dpfacj - dpfaci);
 
-            cs_real_t pfacj = pfaci;
+        pfaci *= i_face_surf[f_id];
+        pfacj *= i_face_surf[f_id];
 
-            pfaci += (1.0-ktpond) * (dpfacj - dpfaci);
-            pfacj -= ktpond * (dpfacj - dpfaci);
+        cs_real_t fctb_ii[3], fctb_jj[3];
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          fctb_ii[j] =  pfaci * i_face_u_normal[f_id][j];
+          fctb_jj[j] = -pfacj * i_face_u_normal[f_id][j];
+        }
 
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              rhs[c_id1][j] += pfaci * i_f_face_normal[f_id][j];
-              rhs[c_id2][j] -= pfacj * i_f_face_normal[f_id][j];
-            }
+        if (c_id1 < n_cells)
+          cs_dispatch_sum<3>(rhs[c_id1], fctb_ii, i_sum_type);
+        if (c_id2 < n_cells)
+          cs_dispatch_sum<3>(rhs[c_id2], fctb_jj, i_sum_type);
 
-          } /* loop on faces */
-
-        } /* loop on threads */
-
-      } /* loop on thread groups */
+      }); /* loop on faces */
 
       /* Contribution from boundary faces */
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-        for (cs_lnum_t f_id = b_group_index[t_id*2];
-             f_id < b_group_index[t_id*2 + 1];
-             f_id++) {
+        cs_lnum_t c_id = b_face_cells[f_id];
 
-          cs_lnum_t c_id = b_face_cells[f_id];
+        cs_real_t poro = b_poro_duq[is_porous*f_id];
 
-          cs_real_t poro = b_poro_duq[is_porous*f_id];
+        /*
+          Remark: for the cell \f$ \celli \f$ we remove
+                  \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
 
-          /*
-            Remark: for the cell \f$ \celli \f$ we remove
-                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-          */
+        /* Reconstruction part */
+        cs_real_t pfac
+          =   coefap[f_id] * inc
+            + coefbp[f_id]
+               * (  cs_math_3_distance_dot_product(f_ext[c_id],
+                                                   grad[c_id],
+                                                   diipb[f_id])
+                  + poro);
 
-          /* Reconstruction part */
-          cs_real_t pfac
-            =   coefap[f_id] * inc
-              + coefbp[f_id]
-                 * (  cs_math_3_distance_dot_product(f_ext[c_id],
-                                                     grad[c_id],
-                                                     diipb[f_id])
-                    + poro);
+        cs_real_t dpfac =   pvar[c_id]
+                          + cs_math_3_distance_dot_product(cell_cen[c_id],
+                                                           b_face_cog[f_id],
+                                                           f_ext[c_id]);
 
-          cs_real_t dpfac = pvar[c_id]
-                  + cs_math_3_distance_dot_product(cell_cen[c_id],
-                                                   b_face_cog[f_id],
-                                                   f_ext[c_id]);
+        pfac += (coefbp[f_id] - 1.0) * dpfac;
+        pfac *= b_face_surf[f_id];
 
-          pfac += (coefbp[f_id] - 1.0) * dpfac;
+        cs_real_t fctb[3];
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          fctb[ll] = pfac * b_face_u_normal[f_id][ll];
 
-          rhs[c_id][0] += pfac * b_f_face_normal[f_id][0];
-          rhs[c_id][1] += pfac * b_f_face_normal[f_id][1];
-          rhs[c_id][2] += pfac * b_f_face_normal[f_id][2];
+        cs_dispatch_sum<3>(rhs[c_id], fctb, b_sum_type);
 
-        } /* loop on faces */
-
-      } /* loop on threads */
+      }); /* loop on faces */
 
     } /* End of test on hydrostatic pressure */
 
@@ -1904,124 +1909,118 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Compute right hand side */
 
-#     pragma omp parallel for
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rhs[c_id][0] = -grad[c_id][0] * cell_vol[c_id];
         rhs[c_id][1] = -grad[c_id][1] * cell_vol[c_id];
         rhs[c_id][2] = -grad[c_id][2] * cell_vol[c_id];
-      }
+      });
 
       /* Contribution from interior faces */
 
-      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+      h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        cs_lnum_t c_id1 = i_face_cells[f_id][0];
+        cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-               f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-               f_id++) {
+        /*
+           Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                    + (1-\alpha_\ij) \varia_\cellj\f$
+                   but for the cell \f$ \celli \f$ we remove
+                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                   and for the cell \f$ \cellj \f$ we remove
+                   \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
 
-            cs_lnum_t c_id1 = i_face_cells[f_id][0];
-            cs_lnum_t c_id2 = i_face_cells[f_id][1];
+        /* Reconstruction part */
+        cs_real_t pfaci
+          = 0.5 * (  dofij[f_id][0] * (grad[c_id1][0]+grad[c_id2][0])
+                   + dofij[f_id][1] * (grad[c_id1][1]+grad[c_id2][1])
+                   + dofij[f_id][2] * (grad[c_id1][2]+grad[c_id2][2]));
+        cs_real_t pfacj = pfaci;
 
-            /*
-               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
-                                        + (1-\alpha_\ij) \varia_\cellj\f$
-                       but for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                       and for the cell \f$ \cellj \f$ we remove
-                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
-            */
+        cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+        /* if cell weighting is active */
+        if (c_weight_s != nullptr) {
+          ktpond =   weight[f_id] * c_weight_s[c_id1]
+                   / (       weight[f_id] * c_weight_s[c_id1]
+                      + (1.0-weight[f_id])* c_weight_s[c_id2]);
+        }
+        else if (c_weight_t != nullptr) {
+          cs_real_t sum[6];
+          cs_real_t inv_sum[6];
 
-            /* Reconstruction part */
-            cs_real_t pfaci
-              = 0.5 * (  dofij[f_id][0] * (grad[c_id1][0]+grad[c_id2][0])
-                       + dofij[f_id][1] * (grad[c_id1][1]+grad[c_id2][1])
-                       + dofij[f_id][2] * (grad[c_id1][2]+grad[c_id2][2]));
-            cs_real_t pfacj = pfaci;
+          for (cs_lnum_t ii = 0; ii < 6; ii++)
+            sum[ii] =       weight[f_id] *c_weight_t[c_id1][ii]
+                      +(1.0-weight[f_id])*c_weight_t[c_id2][ii];
 
-            cs_real_t ktpond = weight[f_id]; /* no cell weighting */
-            /* if cell weighting is active */
-            if (c_weight_s != nullptr) {
-              ktpond =   weight[f_id] * c_weight_s[c_id1]
-                       / (       weight[f_id] * c_weight_s[c_id1]
-                          + (1.0-weight[f_id])* c_weight_s[c_id2]);
-            }
-            else if (c_weight_t != nullptr) {
-              cs_real_t sum[6];
-              cs_real_t inv_sum[6];
+          cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-              for (cs_lnum_t ii = 0; ii < 6; ii++)
-                sum[ii] = weight[f_id]*c_weight_t[c_id1][ii]
-                   +(1.0-weight[f_id])*c_weight_t[c_id2][ii];
+          ktpond =   weight[f_id] / 3.0
+                   * (  inv_sum[0]*c_weight_t[c_id1][0]
+                      + inv_sum[1]*c_weight_t[c_id1][1]
+                      + inv_sum[2]*c_weight_t[c_id1][2]
+                      + 2.0 * (  inv_sum[3]*c_weight_t[c_id1][3]
+                               + inv_sum[4]*c_weight_t[c_id1][4]
+                               + inv_sum[5]*c_weight_t[c_id1][5]));
+        }
 
-              cs_math_sym_33_inv_cramer(sum, inv_sum);
+        pfaci += (1.0-ktpond) * (pvar[c_id2] - pvar[c_id1]);
+        pfacj -=      ktpond  * (pvar[c_id2] - pvar[c_id1]);
 
-              ktpond =   weight[f_id] / 3.0
-                       * (  inv_sum[0]*c_weight_t[c_id1][0]
-                          + inv_sum[1]*c_weight_t[c_id1][1]
-                          + inv_sum[2]*c_weight_t[c_id1][2]
-                          + 2.0 * (  inv_sum[3]*c_weight_t[c_id1][3]
-                                   + inv_sum[4]*c_weight_t[c_id1][4]
-                                   + inv_sum[5]*c_weight_t[c_id1][5]));
-            }
+        pfaci *= i_face_surf[f_id];
+        pfacj *= i_face_surf[f_id];
 
-            pfaci += (1.0-ktpond) * (pvar[c_id2] - pvar[c_id1]);
-            pfacj -=      ktpond  * (pvar[c_id2] - pvar[c_id1]);
+        cs_real_t fctb_ii[3], fctb_jj[3];
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          fctb_ii[j] =  pfaci * i_face_u_normal[f_id][j];
+          fctb_jj[j] = -pfacj * i_face_u_normal[f_id][j];
+        }
 
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              rhs[c_id1][j] += pfaci * i_f_face_normal[f_id][j];
-              rhs[c_id2][j] -= pfacj * i_f_face_normal[f_id][j];
-            }
+        if (c_id1 < n_cells)
+          cs_dispatch_sum<3>(rhs[c_id1], fctb_ii, i_sum_type);
+        if (c_id2 < n_cells)
+          cs_dispatch_sum<3>(rhs[c_id2], fctb_jj, i_sum_type);
 
-          } /* loop on faces */
-
-        } /* loop on threads */
-
-      } /* loop on thread groups */
+      }); /* loop on faces */
 
       /* Contribution from boundary faces */
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-        for (cs_lnum_t f_id = b_group_index[t_id*2];
-             f_id < b_group_index[t_id*2 + 1];
-             f_id++) {
+        cs_lnum_t c_id = b_face_cells[f_id];
 
-          cs_lnum_t c_id = b_face_cells[f_id];
+        /*
+          Remark: for the cell \f$ \celli \f$ we remove
+          \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
 
-          /*
-            Remark: for the cell \f$ \celli \f$ we remove
-            \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-          */
+        /* Reconstruction part */
+        cs_real_t pfac
+          =      coefap[f_id] * inc
+               + coefbp[f_id]
+                 * (  diipb[f_id][0] * grad[c_id][0]
+                    + diipb[f_id][1] * grad[c_id][1]
+                    + diipb[f_id][2] * grad[c_id][2]);
 
-          /* Reconstruction part */
-          cs_real_t pfac
-            =      coefap[f_id] * inc
-                   + coefbp[f_id]
-                     * (  diipb[f_id][0] * grad[c_id][0]
-                        + diipb[f_id][1] * grad[c_id][1]
-                        + diipb[f_id][2] * grad[c_id][2]);
+        pfac += (coefbp[f_id] -1.0) * pvar[c_id];
+        pfac *= b_face_surf[f_id];
 
-          pfac += (coefbp[f_id] -1.0) * pvar[c_id];
+        cs_real_t fctb[3];
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          fctb[ll] = pfac * b_face_u_normal[f_id][ll];
 
-          rhs[c_id][0] += pfac * b_f_face_normal[f_id][0];
-          rhs[c_id][1] += pfac * b_f_face_normal[f_id][1];
-          rhs[c_id][2] += pfac * b_f_face_normal[f_id][2];
+        cs_dispatch_sum<3>(rhs[c_id], fctb, b_sum_type);
 
-        } /* loop on faces */
-
-      } /* loop on threads */
+      }); /* loop on faces */
 
     }
 
     /* Increment gradient */
     /*--------------------*/
 
-#   pragma omp parallel for
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    h_ctx.parallel_for_reduce_sum(n_cells, l2_residual, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t c_id,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       cs_real_t dvol;
       /* Is the cell disabled (for solid or porous)? Not the case if coupled */
       if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -2033,6 +2032,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
       rhs[c_id][1] *= dvol;
       rhs[c_id][2] *= dvol;
 
+      sum += cs_math_3_square_norm(rhs[c_id]);
+
       grad[c_id][0] +=   rhs[c_id][0] * cocg[c_id][0][0]
                        + rhs[c_id][1] * cocg[c_id][1][0]
                        + rhs[c_id][2] * cocg[c_id][2][0];
@@ -2042,15 +2043,17 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
       grad[c_id][2] +=   rhs[c_id][0] * cocg[c_id][0][2]
                        + rhs[c_id][1] * cocg[c_id][1][2]
                        + rhs[c_id][2] * cocg[c_id][2][2];
-    }
+    });
+
+    ctx.wait();
 
     /* Synchronize halos */
 
-    cs_halo_sync_r(m->halo, CS_HALO_STANDARD, false, grad);
+    cs_halo_sync_r(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), grad);
 
     /* Convergence test */
 
-    l2_residual = _l2_norm_1(3*n_cells, (cs_real_t *)rhs);
+    cs_parall_sum(1, CS_DOUBLE, &l2_residual);
 
     if (l2_residual < epsrgp*rnorm) {
       if (verbosity >= 2)
@@ -2166,7 +2169,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
                        cs_gradient_quantities_t      *gq)
 {
   const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict c2b_idx = ma->cell_b_faces_idx;
@@ -2195,7 +2197,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
     assert(cocgb == nullptr);
 
-    CS_MALLOC_HD(cocg, n_cells_ext, cs_cocg_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(cocg, n_cells, cs_cocg_6_t, cs_alloc_mode);
     CS_MALLOC_HD(cocgb, m->n_b_cells, cs_cocg_6_t, cs_alloc_mode);
 
     if (extended) {
@@ -2207,17 +2209,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
       gq->cocgb_s_lsq = cocgb;
     }
 
-  }
-
-  /* Initialize cocg in ghost cells */
-
-  cs_lnum_t n_halo_cells = n_cells_ext - n_cells;
-  if (n_halo_cells > 0) {
-    ctx.parallel_for(n_halo_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t idx) {
-      auto _cocg = cocg[n_cells + idx];
-      _cocg[0] = 0; _cocg[1] = 0; _cocg[2] = 0;
-      _cocg[3] = 0; _cocg[4] = 0; _cocg[5] = 0;
-    });
   }
 
   /* Add contributions from neighbor cells (standard and extended)
@@ -2511,11 +2502,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -2537,16 +2523,15 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
     halo_type = CS_HALO_STANDARD;
 
 #if defined(HAVE_CUDA)
+
   bool accel = (cs_get_device_id() > -1) ? true : false;
-#else
-  bool accel = false;
-#endif
 
-  _get_cell_cocg_lsq(m, halo_type, accel, fvq, &cocg, &cocgb);
+  cs_dispatch_context g_ctx;
+  bool on_device = g_ctx.use_gpu();
 
-#if defined(HAVE_CUDA)
+  _get_cell_cocg_lsq(m, halo_type, on_device, fvq, &cocg, &cocgb);
 
-  if (accel) {
+  if (on_device) {
     cs_gradient_scalar_lsq_cuda(m,
                                 fvq,
                                 halo_type,
@@ -2562,7 +2547,20 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
     return;
   }
 
+  ctx.set_use_gpu(false);
+  cs_host_context &ctx = static_cast<cs_host_context&>(g_ctx);
+
+#else
+
+  cs_dispatch_context ctx;
+  bool on_device = ctx.use_gpu();
+
+  _get_cell_cocg_lsq(m, halo_type, on_device, fvq, &cocg, &cocgb);
+
 #endif
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
@@ -2570,7 +2568,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   /* Compute cocg and save contribution at boundaries */
 
   if (recompute_cocg) {
-    cs_dispatch_context ctx;
     _recompute_lsq_scalar_cocg(m,
                                fvq,
                                bc_coeffs,
@@ -2586,79 +2583,73 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   cs_real_4_t  *restrict rhsv;
   CS_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     rhsv[c_id][0] = 0.0;
     rhsv[c_id][1] = 0.0;
     rhsv[c_id][2] = 0.0;
     rhsv[c_id][3] = pvar[c_id];
-  }
+  });
 
   /* Contribution from interior faces */
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+    cs_lnum_t ii = i_face_cells[f_id][0];
+    cs_lnum_t jj = i_face_cells[f_id][1];
 
-      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           f_id++) {
+    cs_real_t pond = weight[f_id];
 
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
+    cs_real_t pfac, dc[3], fctb[3];
 
-        cs_real_t pond = weight[f_id];
+    for (cs_lnum_t ll = 0; ll < 3; ll++)
+      dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
-        cs_real_t pfac, dc[3], fctb[4];
+    if (c_weight != nullptr) {
+      /* (P_j - P_i) / ||d||^2 */
+      pfac =   (rhsv[jj][3] - rhsv[ii][3])
+             / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        fctb[ll] = dc[ll] * pfac;
 
-        if (c_weight != nullptr) {
-          /* (P_j - P_i) / ||d||^2 */
-          pfac =   (rhsv[jj][3] - rhsv[ii][3])
-                 / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+      cs_real_t denom = 1. / (  pond       *c_weight[ii]
+                              + (1. - pond)*c_weight[jj]);
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        fctb[ll] = dc[ll] * pfac * denom;
 
-          cs_real_t denom = 1. / (  pond       *c_weight[ii]
-                                  + (1. - pond)*c_weight[jj]);
+      cs_real_t fctb_jj[3];
+      for (cs_lnum_t ll = 0; ll < 3; ll++) {
+        fctb_jj[ll]  = c_weight[ii] * fctb[ll];
+        fctb[ll]    *= c_weight[jj];  // as fctb_ii, with no additional storage
+      }
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] +=  c_weight[jj] * denom * fctb[ll];
+      if (ii < n_cells)
+        cs_dispatch_sum<3>(rhsv[ii], fctb, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<3>(rhsv[jj], fctb_jj, i_sum_type);
+    }
+    else {
+      /* (P_j - P_i) / ||d||^2 */
+      pfac =   (rhsv[jj][3] - rhsv[ii][3])
+             / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] +=  c_weight[ii] * denom * fctb[ll];
-        }
-        else {
-          /* (P_j - P_i) / ||d||^2 */
-          pfac =   (rhsv[jj][3] - rhsv[ii][3])
-                 / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        fctb[ll] = dc[ll] * pfac;
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
+      if (ii < n_cells)
+        cs_dispatch_sum<3>(rhsv[ii], fctb, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<3>(rhsv[jj], fctb, i_sum_type);
+    }
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += fctb[ll];
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] += fctb[ll];
-        }
-
-      } /* loop on faces */
-
-    } /* loop on threads */
-
-  } /* loop on thread groups */
+  }); /* loop on faces */
 
   /* Contribution from extended neighborhood */
 
   if (halo_type == CS_HALO_EXTENDED && cell_cells_idx != nullptr) {
 
-#   pragma omp parallel for
-    for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       for (cs_lnum_t cidx = cell_cells_idx[ii];
            cidx < cell_cells_idx[ii+1];
            cidx++) {
@@ -2680,44 +2671,40 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
           rhsv[ii][ll] += fctb[ll];
 
       }
-    }
+    });
 
   } /* End for extended neighborhood */
 
   /* Contribution from boundary faces */
 
-# pragma omp parallel for
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-    for (cs_lnum_t f_id = b_group_index[t_id*2];
-         f_id < b_group_index[t_id*2 + 1];
-         f_id++) {
+    cs_lnum_t ii = b_face_cells[f_id];
 
-      cs_lnum_t ii = b_face_cells[f_id];
+    cs_real_t unddij = 1. / b_dist[f_id];
+    cs_real_t umcbdd = (1. - coefbp[f_id]) * unddij;
 
-      cs_real_t unddij = 1. / b_dist[f_id];
-      cs_real_t umcbdd = (1. - coefbp[f_id]) * unddij;
+    cs_real_t dsij[3];
+    for (cs_lnum_t ll = 0; ll < 3; ll++)
+      dsij[ll] =   b_face_u_normal[f_id][ll]
+                 + umcbdd*diipb[f_id][ll];
 
-      cs_real_t dsij[3];
-      for (cs_lnum_t ll = 0; ll < 3; ll++)
-        dsij[ll] =   b_face_u_normal[f_id][ll]
-                   + umcbdd*diipb[f_id][ll];
+    cs_real_t pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)
+                     * rhsv[ii][3]) * unddij;
 
-      cs_real_t pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)
-                       * rhsv[ii][3]) * unddij;
+    cs_real_t fctb[3];
+    for (cs_lnum_t ll = 0; ll < 3; ll++) {
+      fctb[ll] = dsij[ll] * pfac;
+    }
 
-      for (cs_lnum_t ll = 0; ll < 3; ll++)
-        rhsv[ii][ll] += dsij[ll] * pfac;
+    cs_dispatch_sum<3>(rhsv[ii], fctb, b_sum_type);
 
-    } /* loop on faces */
-
-  } /* loop on threads */
+  }); /* loop on faces */
 
   /* Compute gradient */
   /*------------------*/
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     grad[c_id][0] =   cocg[c_id][0] *rhsv[c_id][0]
                     + cocg[c_id][3] *rhsv[c_id][1]
                     + cocg[c_id][5] *rhsv[c_id][2];
@@ -2727,11 +2714,13 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
     grad[c_id][2] =   cocg[c_id][5] *rhsv[c_id][0]
                     + cocg[c_id][4] *rhsv[c_id][1]
                     + cocg[c_id][2] *rhsv[c_id][2];
-  }
+  });
+
+  ctx.wait();
 
   /* Synchronize halos */
 
-  cs_halo_sync_r(m->halo, CS_HALO_STANDARD, false, grad);
+  cs_halo_sync_r(m->halo, CS_HALO_STANDARD, on_device, grad);
 
   CS_FREE(rhsv);
 }
@@ -3710,7 +3699,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   const cs_real_t *coefap = bc_coeffs->a;
   const cs_real_t *coefbp = bc_coeffs->b;
 
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -3723,10 +3712,10 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_vol = mq_g->cell_vol;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
@@ -3805,7 +3794,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   /* Initialize gradient */
   /*---------------------*/
 
-  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     for (cs_lnum_t j = 0; j < 3; j++)
       grad[cell_id][j] = 0.0;
   });
@@ -3905,15 +3894,19 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
               + dofij[f_id][1] * (r_grad[c_id1][1]+r_grad[c_id2][1])
               + dofij[f_id][2] * (r_grad[c_id1][2]+r_grad[c_id2][2])) * 0.5;
 
-      cs_real_t face_normal[3], rhsv1[3], rhsv2[3];
+      pfaci = (pfaci + rfac) * i_face_surf[f_id];
+      pfacj = (pfacj + rfac) * i_face_surf[f_id];
+
+      cs_real_t rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        face_normal[j] = i_f_face_normal[f_id][j];
-        rhsv1[j] =   (pfaci + rfac) * face_normal[j];
-        rhsv2[j] = - (pfacj + rfac) * face_normal[j];
+        rhsv1[j] =   pfaci * i_face_u_normal[f_id][j];
+        rhsv2[j] = - pfacj * i_face_u_normal[f_id][j];
       }
 
-      cs_dispatch_sum<3>(grad[c_id1], rhsv1, i_sum_type);
-      cs_dispatch_sum<3>(grad[c_id2], rhsv2, i_sum_type);
+      if (c_id1 < n_cells)
+        cs_dispatch_sum<3>(grad[c_id1], rhsv1, i_sum_type);
+      if (c_id2 < n_cells)
+        cs_dispatch_sum<3>(grad[c_id2], rhsv2, i_sum_type);
 
     }); /* loop on faces */
 
@@ -3953,9 +3946,11 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                   + diipb[f_id][1] * (r_grad[c_id][1] - f_ext[c_id][1])
                   + diipb[f_id][2] * (r_grad[c_id][2] - f_ext[c_id][2]));
 
+      pfac = (pfac + rfac) * b_face_surf[f_id];
+
       cs_real_t rhsv[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        rhsv[j] = (pfac + rfac) * b_f_face_normal[f_id][j];
+        rhsv[j] = pfac * b_face_u_normal[f_id][j];
       }
       cs_dispatch_sum<3>(grad[c_id], rhsv, b_sum_type);
 
@@ -4019,15 +4014,19 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                  +dofij[f_id][1]*(r_grad[c_id1][1]+r_grad[c_id2][1])
                  +dofij[f_id][2]*(r_grad[c_id1][2]+r_grad[c_id2][2]));
 
-      cs_real_t face_normal[3], rhsv1[3], rhsv2[3];
+      pfaci = (pfaci + rfac) * i_face_surf[f_id];
+      pfacj = (pfacj + rfac) * i_face_surf[f_id];
+
+      cs_real_t rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        face_normal[j] = i_f_face_normal[f_id][j];
-        rhsv1[j] =   (pfaci + rfac) * face_normal[j];
-        rhsv2[j] = - (pfacj + rfac) * face_normal[j];
+        rhsv1[j] =   pfaci * i_face_u_normal[f_id][j];
+        rhsv2[j] = - pfacj * i_face_u_normal[f_id][j];
       }
 
-      cs_dispatch_sum<3>(grad[c_id1], rhsv1, i_sum_type);
-      cs_dispatch_sum<3>(grad[c_id2], rhsv2, i_sum_type);
+      if (c_id1 < n_cells)
+        cs_dispatch_sum<3>(grad[c_id1], rhsv1, i_sum_type);
+      if (c_id2 < n_cells)
+        cs_dispatch_sum<3>(grad[c_id2], rhsv2, i_sum_type);
 
     }); /* loop on faces */
 
@@ -4057,9 +4056,11 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                   + diipb[f_id][1] * r_grad[c_id][1]
                   + diipb[f_id][2] * r_grad[c_id][2]);
 
+      pfac = (pfac + rfac) * b_face_surf[f_id];
+
       cs_real_t rhsv[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        rhsv[j] = (pfac + rfac) * b_f_face_normal[f_id][j];
+        rhsv[j] = pfac * b_face_u_normal[f_id][j];
       }
       cs_dispatch_sum<3>(grad[c_id], rhsv, b_sum_type);
 
@@ -4072,7 +4073,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   if (cs_glob_timer_kernels_flag > 0)
     t_b_faces = std::chrono::high_resolution_clock::now();
 
-  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_real_t dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -4508,14 +4509,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
   const cs_real_t *bc_coeff_b = (const cs_real_t *)bc_coeffs->b;
 
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -4528,10 +4522,10 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_vol = mq_g->cell_vol;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
@@ -4560,25 +4554,30 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
     i_poro_duq_0 = f_i_poro_duq_0->val;
     i_poro_duq_1 = cs_field_by_name_try("i_poro_duq_1")->val;
     b_poro_duq = cs_field_by_name_try("b_poro_duq")->val;
-  } else {
+  }
+  else {
     i_poro_duq_0 = &_f_ext;
     i_poro_duq_1 = &_f_ext;
     b_poro_duq = &_f_ext;
   }
 
+  cs_dispatch_context ctx;
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
   /* Initialize gradient
      ------------------- */
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t j = 0; j < 3; j++)
       grad[c_id][j] = 0.0;
-  }
+  });
 
   /* Pre-compute values at boundary using least squares */
 
   cs_real_t *b_f_var;
-  CS_MALLOC(b_f_var, m->n_b_faces, cs_real_t);
+  CS_MALLOC_HD(b_f_var, m->n_b_faces, cs_real_t, cs_alloc_mode);
 
   if (hyd_p_flag == 1)
     _lsq_scalar_b_face_val_phyd(m,
@@ -4604,7 +4603,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
      --------------------------- */
 
   cs_real_t *v_var;
-  CS_MALLOC(v_var, m->n_vertices, cs_real_t);
+  CS_MALLOC_HD(v_var, m->n_vertices, cs_real_t, cs_alloc_mode);
 
   cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
                        0, /* verbosity */
@@ -4618,7 +4617,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
      -------------------------------- */
 
   cs_real_t *i_f_var;
-  CS_MALLOC(i_f_var, m->n_i_faces, cs_real_t);
+  CS_MALLOC_HD(i_f_var, m->n_i_faces, cs_real_t, cs_alloc_mode);
 
   for (int f_t = 0; f_t < 2; f_t++) {
 
@@ -4637,15 +4636,14 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
       f_var = b_f_var;
     }
 
-#   pragma omp parallel for if (n_faces > CS_THR_MIN)
-    for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
+    ctx.parallel_for(n_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_lnum_t s_id = f2v_idx[f_id];
       cs_lnum_t e_id = f2v_idx[f_id+1];
       cs_real_t s = 0;
       for (cs_lnum_t i = s_id; i < e_id; i++)
         s += v_var[f2v_ids[i]];
       f_var[f_id] = s / (e_id-s_id);
-    }
+    });
 
   }
 
@@ -4660,111 +4658,100 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from interior faces */
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      cs_lnum_t ii = i_face_cells[f_id][0];
+      cs_lnum_t jj = i_face_cells[f_id][1];
 
-        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             f_id++) {
+      cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+      /* if cell weighting is active */
+      if (c_weight_s != nullptr) {
+        ktpond =   weight[f_id] * c_weight_s[ii]
+                 / (       weight[f_id] * c_weight_s[ii]
+                    + (1.0-weight[f_id])* c_weight_s[jj]);
+      }
+      else if (c_weight_t != nullptr) {
+        cs_real_t sum[6], inv_sum[6];
 
-          cs_lnum_t ii = i_face_cells[f_id][0];
-          cs_lnum_t jj = i_face_cells[f_id][1];
+        for (cs_lnum_t kk = 0; kk < 6; kk++)
+          sum[kk] =        weight[f_id]*c_weight_t[ii][kk]
+                    + (1.0-weight[f_id])*c_weight_t[jj][kk];
 
-          cs_real_t ktpond = weight[f_id]; /* no cell weighting */
-          /* if cell weighting is active */
-          if (c_weight_s != nullptr) {
-            ktpond =   weight[f_id] * c_weight_s[ii]
-                     / (       weight[f_id] * c_weight_s[ii]
-                        + (1.0-weight[f_id])* c_weight_s[jj]);
-          }
-          else if (c_weight_t != nullptr) {
-            cs_real_t sum[6], inv_sum[6];
+        cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-            for (cs_lnum_t kk = 0; kk < 6; kk++)
-              sum[kk] =        weight[f_id]*c_weight_t[ii][kk]
-                        + (1.0-weight[f_id])*c_weight_t[jj][kk];
+        ktpond =   weight[f_id] / 3.0
+                 * (  inv_sum[0]*c_weight_t[ii][0]
+                    + inv_sum[1]*c_weight_t[ii][1]
+                    + inv_sum[2]*c_weight_t[ii][2]
+                    + 2.0 * (  inv_sum[3]*c_weight_t[ii][3]
+                             + inv_sum[4]*c_weight_t[ii][4]
+                             + inv_sum[5]*c_weight_t[ii][5]));
+      }
 
-            cs_math_sym_33_inv_cramer(sum, inv_sum);
+      cs_real_2_t poro = {
+        i_poro_duq_0[is_porous*f_id],
+        i_poro_duq_1[is_porous*f_id]
+      };
 
-            ktpond =   weight[f_id] / 3.0
-                     * (  inv_sum[0]*c_weight_t[ii][0]
-                        + inv_sum[1]*c_weight_t[ii][1]
-                        + inv_sum[2]*c_weight_t[ii][2]
-                        + 2.0 * (  inv_sum[3]*c_weight_t[ii][3]
-                                 + inv_sum[4]*c_weight_t[ii][4]
-                                 + inv_sum[5]*c_weight_t[ii][5]));
-          }
+      cs_real_t pfaci
+        =  ktpond
+             * (  (i_face_cog[f_id][0] - cell_cen[ii][0])*f_ext[ii][0]
+                + (i_face_cog[f_id][1] - cell_cen[ii][1])*f_ext[ii][1]
+                + (i_face_cog[f_id][2] - cell_cen[ii][2])*f_ext[ii][2]
+                + poro[0])
+        +  (1.0 - ktpond)
+             * (  (i_face_cog[f_id][0] - cell_cen[jj][0])*f_ext[jj][0]
+                + (i_face_cog[f_id][1] - cell_cen[jj][1])*f_ext[jj][1]
+                + (i_face_cog[f_id][2] - cell_cen[jj][2])*f_ext[jj][2]
+                + poro[1]);
+      cs_real_t pfacj = pfaci;
 
-          cs_real_2_t poro = {
-            i_poro_duq_0[is_porous*f_id],
-            i_poro_duq_1[is_porous*f_id]
-          };
+      pfaci = (pfaci + i_f_var[f_id] - c_var[ii]) * i_face_surf[f_id];
+      pfacj = (pfacj + i_f_var[f_id] - c_var[jj]) * i_face_surf[f_id];
 
-          cs_real_t pfaci
-            =  ktpond
-                 * (  (i_face_cog[f_id][0] - cell_cen[ii][0])*f_ext[ii][0]
-                    + (i_face_cog[f_id][1] - cell_cen[ii][1])*f_ext[ii][1]
-                    + (i_face_cog[f_id][2] - cell_cen[ii][2])*f_ext[ii][2]
-                    + poro[0])
-            +  (1.0 - ktpond)
-                 * (  (i_face_cog[f_id][0] - cell_cen[jj][0])*f_ext[jj][0]
-                    + (i_face_cog[f_id][1] - cell_cen[jj][1])*f_ext[jj][1]
-                    + (i_face_cog[f_id][2] - cell_cen[jj][2])*f_ext[jj][2]
-                    + poro[1]);
-          cs_real_t pfacj = pfaci;
+      cs_real_t fctb_ii[3], fctb_jj[3];
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        fctb_ii[j] =  pfaci * i_face_u_normal[f_id][j];
+        fctb_jj[j] = -pfacj * i_face_u_normal[f_id][j];
+      }
 
-          pfaci += i_f_var[f_id] - c_var[ii];
-          pfacj += i_f_var[f_id] - c_var[jj];
+      if (ii < n_cells)
+        cs_dispatch_sum<3>(grad[ii], fctb_ii, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<3>(grad[jj], fctb_jj, i_sum_type);
 
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            grad[ii][j] += pfaci * i_f_face_normal[f_id][j];
-            grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
-          }
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
+    }); /* loop on faces */
 
     /* Contribution from boundary faces */
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      cs_lnum_t c_id = b_face_cells[f_id];
 
-        for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             f_id++) {
+      cs_real_t poro = b_poro_duq[is_porous*f_id];
 
-          cs_lnum_t c_id = b_face_cells[f_id];
+      /*
+        Remark: for the cell \f$ \celli \f$ we remove
+        \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+      */
 
-          cs_real_t poro = b_poro_duq[is_porous*f_id];
+      cs_real_t pfac = b_f_var[f_id] - c_var[c_id];
 
-          /*
-            Remark: for the cell \f$ \celli \f$ we remove
-                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-          */
+      pfac +=  bc_coeff_b[f_id]
+              * (  cs_math_3_distance_dot_product(cell_cen[c_id],
+                                                  b_face_cog[f_id],
+                                                  f_ext[c_id])
+                 + poro);
 
-          cs_real_t pfac = b_f_var[f_id] - c_var[c_id];
+      pfac *= b_face_surf[f_id];
 
-          pfac +=  bc_coeff_b[f_id]
-                  * (  cs_math_3_distance_dot_product(cell_cen[c_id],
-                                                      b_face_cog[f_id],
-                                                      f_ext[c_id])
-                     + poro);
+      cs_real_t fctb[3];
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        fctb[ll] = pfac * b_face_u_normal[f_id][ll];
 
-          for (cs_lnum_t j = 0; j < 3; j++)
-            grad[c_id][j] += pfac * b_f_face_normal[f_id][j];
+      cs_dispatch_sum<3>(grad[c_id], fctb, b_sum_type);
 
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
+    }); /* loop on faces */
 
   } /* End of test on hydrostatic pressure */
 
@@ -4775,68 +4762,54 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from interior faces */
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      cs_lnum_t ii = i_face_cells[f_id][0];
+      cs_lnum_t jj = i_face_cells[f_id][1];
 
-        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             f_id++) {
+      cs_real_t pfaci = (i_f_var[f_id] - c_var[ii]) * i_face_surf[f_id];
+      cs_real_t pfacj = (i_f_var[f_id] - c_var[jj]) * i_face_surf[f_id];
 
-          cs_lnum_t ii = i_face_cells[f_id][0];
-          cs_lnum_t jj = i_face_cells[f_id][1];
+      cs_real_t fctb_ii[3], fctb_jj[3];
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        fctb_ii[j] =  pfaci * i_face_u_normal[f_id][j];
+        fctb_jj[j] = -pfacj * i_face_u_normal[f_id][j];
+      }
 
-          cs_real_t pfaci = i_f_var[f_id] - c_var[ii];
-          cs_real_t pfacj = i_f_var[f_id] - c_var[jj];
+      if (ii < n_cells)
+        cs_dispatch_sum<3>(grad[ii], fctb_ii, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<3>(grad[jj], fctb_jj, i_sum_type);
 
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            grad[ii][j] += pfaci * i_f_face_normal[f_id][j];
-            grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
-          }
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
+    }); /* loop on faces */
 
     /* Contribution from boundary faces */
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      cs_lnum_t ii = b_face_cells[f_id];
 
-        for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             f_id++) {
+      /*
+        Remark: for the cell \f$ \celli \f$ we remove
+                \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+      */
 
-          cs_lnum_t ii = b_face_cells[f_id];
+      cs_real_t pfac = (b_f_var[f_id] - c_var[ii]) * b_face_surf[f_id];
 
-          /*
-            Remark: for the cell \f$ \celli \f$ we remove
-                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-          */
+      cs_real_t fctb[3];
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        fctb[ll] = pfac * b_face_u_normal[f_id][ll];
 
-          cs_real_t pfac = b_f_var[f_id] - c_var[ii];
+      cs_dispatch_sum<3>(grad[ii], fctb, b_sum_type);
 
-          for (cs_lnum_t j = 0; j < 3; j++)
-            grad[ii][j] += pfac * b_f_face_normal[f_id][j];
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
+    }); /* loop on faces */
 
   }
 
   CS_FREE(i_f_var);
   CS_FREE(b_f_var);
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
     cs_real_t dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -4846,11 +4819,13 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
     for (cs_lnum_t j = 0; j < 3; j++)
       grad[c_id][j] *= dvol;
-  }
+  });
+
+  ctx.wait();
 
   /* Synchronize halos */
 
-  cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, false, grad);
+  cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(), grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5440,17 +5415,16 @@ _reconstruct_strided_gradient
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_vol = mq_g->cell_vol;
 
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+
   const cs_real_3_t *restrict dofij = fvq->dofij;
   const cs_real_33_t *restrict corr_grad_lin = fvq->corr_grad_lin;
 
 #if defined(HAVE_CUDA)
-  bool accel = (cs_get_device_id() > -1) ? true : false;
-
-  if (accel) {
+  if (cs_get_device_id() > -1) {
     cs_gradient_strided_gg_r_cuda(m,
                                   madj,
                                   fvq,
@@ -5489,7 +5463,7 @@ _reconstruct_strided_gradient
 
   /* Initialization */
 
-  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] = 0.0;
@@ -5524,6 +5498,8 @@ _reconstruct_strided_gradient
                \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
     */
 
+    cs_real_t f_surf = i_face_surf[f_id];
+
     for (cs_lnum_t i = 0; i < stride; i++) {
 
       cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
@@ -5537,10 +5513,13 @@ _reconstruct_strided_gradient
                               + dofij[f_id][2]*(  r_grad[c_id1][i][2]
                                                 + r_grad[c_id2][i][2]));
 
+      pfaci = (pfaci + rfac) * f_surf;
+      pfacj = (pfacj + rfac) * f_surf;
+
       cs_real_t ctb1[3], ctb2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        ctb1[j] =   (pfaci + rfac) * i_f_face_normal[f_id][j];
-        ctb2[j] = - (pfacj + rfac) * i_f_face_normal[f_id][j];
+        ctb1[j] =   pfaci * i_face_u_normal[f_id][j];
+        ctb2[j] = - pfacj * i_face_u_normal[f_id][j];
       }
 
       if (c_id1 < n_cells)
@@ -5568,11 +5547,14 @@ _reconstruct_strided_gradient
               \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
     */
 
+    cs_real_t f_surf = b_face_surf[f_id];
+
     for (cs_lnum_t i = 0; i < stride; i++) {
 
+      cs_real_t pfac = (val_f[f_id][i] - pvar[c_id][i]) * f_surf;
       cs_real_t ctb[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        ctb[j] =  (val_f[f_id][i] - pvar[c_id][i]) * b_f_face_normal[f_id][j];
+        ctb[j] = pfac * b_face_u_normal[f_id][j];
       }
       cs_dispatch_sum<3>(grad[c_id][i], ctb, b_sum_type);
     }
@@ -5652,10 +5634,13 @@ _reconstruct_strided_gradient
 }
 
 /*----------------------------------------------------------------------------
- * Compute the gradient of a vector with an iterative technique in order to
- * handle non-orthoganalities (n_r_sweeps > 1).
+ * Compute the gradient of a vector or tensor with an iterative technique
+ * in order to handle non-orthoganalities (n_r_sweeps > 1).
  *
  * We do not take into account any volumic force here.
+ *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
@@ -5673,39 +5658,35 @@ _reconstruct_strided_gradient
  *   grad           <-> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-static void
-_iterative_vector_gradient(const cs_mesh_t               *m,
-                           const cs_mesh_quantities_t    *fvq,
-                           const char                    *var_name,
-                           cs_gradient_info_t            *gradient_info,
-                           cs_halo_type_t                 halo_type,
-                           int                            inc,
-                           int                            n_r_sweeps,
-                           int                            verbosity,
-                           cs_real_t                      epsrgp,
-                           const cs_field_bc_coeffs_t    *bc_coeffs_v,
-                           const cs_real_3_t   *restrict  pvar,
-                           const cs_real_t               *c_weight,
-                           cs_real_33_t         *restrict grad)
+template <cs_lnum_t stride>
+void
+_iterative_strided_gradient(const cs_mesh_t               *m,
+                            const cs_mesh_quantities_t    *fvq,
+                            const char                    *var_name,
+                            cs_gradient_info_t            *gradient_info,
+                            cs_halo_type_t                 halo_type,
+                            int                            inc,
+                            int                            n_r_sweeps,
+                            int                            verbosity,
+                            cs_real_t                      epsrgp,
+                            const cs_field_bc_coeffs_t    *bc_coeffs_v,
+                            const cs_real_t     (*restrict pvar)[stride],
+                            const cs_real_t               *c_weight,
+                            cs_real_t          (*restrict grad)[stride][3])
 {
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
-  const cs_real_3_t  *restrict coefav
-    = (const cs_real_3_t *)bc_coeffs_v->a;
-  const cs_real_33_t *restrict coefbv
-    = (const cs_real_33_t *)bc_coeffs_v->b;
+  using a_t = cs_real_t[stride];
+  using b_t = cs_real_t[stride][stride];
+
+  const a_t *restrict coefav = (const a_t *)bc_coeffs_v->a;
+  const b_t *restrict coefbv = (const b_t *)bc_coeffs_v->b;
 
   int isweep = 0;
 
   cs_real_33_t *rhs;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -5717,12 +5698,19 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_vol = mq_g->cell_vol;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dofij = fvq->dofij;
+
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);
+  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   cs_gradient_quantities_t  *gq = _gradient_quantities_get(0);
 
@@ -5730,14 +5718,14 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
   if (cocg == nullptr)
     cocg = _compute_cell_cocg_it(m, fvq, gq);
 
-  CS_MALLOC(rhs, n_cells_ext, cs_real_33_t);
+  CS_MALLOC(rhs, n_cells, cs_real_33_t);
 
   /* Gradient reconstruction to handle non-orthogonal meshes */
   /*---------------------------------------------------------*/
 
   /* L2 norm */
 
-  cs_real_t l2_norm = _l2_norm_1(9*n_cells, (cs_real_t *)grad);
+  cs_real_t l2_norm = _l2_norm_1(n_cells*stride*3, (cs_real_t *)grad);
   cs_real_t l2_residual = l2_norm;
 
   if (l2_norm > cs_math_epzero) {
@@ -5751,117 +5739,120 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
 
       /* Computation of the Right Hand Side*/
 
-#     pragma omp parallel for
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-        for (cs_lnum_t i = 0; i < 3; i++) {
+      h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
           for (cs_lnum_t j = 0; j < 3; j++)
             rhs[c_id][i][j] = -grad[c_id][i][j] * cell_vol[c_id];
         }
-      }
+      });
 
       /* Interior face treatment */
 
-      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+      h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        cs_lnum_t c_id1 = i_face_cells[f_id][0];
+        cs_lnum_t c_id2 = i_face_cells[f_id][1];
+        cs_real_t pond = weight[f_id];
 
-          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-               f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-               f_id++) {
+        cs_real_t ktpond = (c_weight == nullptr) ?
+          pond :                     // no cell weighting
+          pond  * c_weight[c_id1] // cell weighting active
+            / (      pond  * c_weight[c_id1]
+               + (1.0-pond) * c_weight[c_id2]);
 
-            cs_lnum_t c_id1 = i_face_cells[f_id][0];
-            cs_lnum_t c_id2 = i_face_cells[f_id][1];
-            cs_real_t pond = weight[f_id];
+        /*
+          Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                     + (1-\alpha_\ij) \varia_\cellj\f$
+                   but for the cell \f$ \celli \f$ we remove
+                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                   and for the cell \f$ \cellj \f$ we remove
+                   \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
 
-            cs_real_t ktpond = (c_weight == nullptr) ?
-              pond :                     // no cell weighting
-              pond  * c_weight[c_id1] // cell weighting active
-                / (      pond  * c_weight[c_id1]
-                  + (1.0-pond) * c_weight[c_id2]);
+        cs_real_t f_surf = i_face_surf[f_id];
+        const cs_nreal_t *f_u_normal = i_face_u_normal[f_id];
 
-            /*
-               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
-                                        + (1-\alpha_\ij) \varia_\cellj\f$
-                       but for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                       and for the cell \f$ \cellj \f$ we remove
-                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
-            */
+        for (cs_lnum_t i = 0; i < stride; i++) {
 
-            for (cs_lnum_t i = 0; i < 3; i++) {
+          /* Reconstruction part */
+          cs_real_t
+            pfaci = 0.5 * (    (grad[c_id1][i][0] + grad[c_id2][i][0])
+                             * dofij[f_id][0]
+                           +   (grad[c_id1][i][1] + grad[c_id2][i][1])
+                             * dofij[f_id][1]
+                           +   (grad[c_id1][i][2] + grad[c_id2][i][2])
+                             * dofij[f_id][2]);
+          cs_real_t pfacj = pfaci;
 
-              /* Reconstruction part */
-              cs_real_t
-                pfaci = 0.5 * (    (grad[c_id1][i][0] + grad[c_id2][i][0])
-                                 * dofij[f_id][0]
-                               +   (grad[c_id1][i][1] + grad[c_id2][i][1])
-                                 * dofij[f_id][1]
-                               +   (grad[c_id1][i][2] + grad[c_id2][i][2])
-                                 * dofij[f_id][2]);
-              cs_real_t pfacj = pfaci;
+          pfaci += (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
+          pfacj -=      ktpond  * (pvar[c_id2][i] - pvar[c_id1][i]);
 
-              pfaci += (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
-              pfacj -=      ktpond  * (pvar[c_id2][i] - pvar[c_id1][i]);
+          pfaci *= f_surf;
+          pfacj *= f_surf;
 
-              for (cs_lnum_t j = 0; j < 3; j++) {
-                rhs[c_id1][i][j] += pfaci * i_f_face_normal[f_id][j];
-                rhs[c_id2][i][j] -= pfacj * i_f_face_normal[f_id][j];
-              }
-            }
+          cs_real_t fctb_1[3], fctb_2[3];
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            fctb_1[j] =  pfaci * f_u_normal[j];
+            fctb_2[j] = -pfacj * f_u_normal[j];
+          }
 
-          } /* loop on faces */
+          if (c_id1 < n_cells)
+            cs_dispatch_sum<3>(rhs[c_id1][i], fctb_1, i_sum_type);
+          if (c_id2 < n_cells)
+            cs_dispatch_sum<3>(rhs[c_id2][i], fctb_2, i_sum_type);
 
-        } /* loop on threads */
+        } /* lopp on stride */
 
-      } /* loop on thread groups */
+      }); /* loop on faces */
 
       /* Boundary face treatment */
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-        for (cs_lnum_t f_id = b_group_index[t_id*2];
-             f_id < b_group_index[t_id*2 + 1];
-             f_id++) {
+        cs_lnum_t c_id = b_face_cells[f_id];
 
-          cs_lnum_t c_id = b_face_cells[f_id];
+        cs_real_t f_surf = b_face_surf[f_id];
+        const cs_nreal_t *f_u_normal = b_face_u_normal[f_id];
 
-          for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
 
-            /*
-              Remark: for the cell \f$ \celli \f$ we remove
-              \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-            */
+          /*
+            Remark: for the cell \f$ \celli \f$ we remove
+            \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
 
-            cs_real_t pfac = inc*coefav[f_id][i];
+          cs_real_t pfac = inc*coefav[f_id][i];
 
-            for (cs_lnum_t k = 0; k < 3; k++) {
-              /* Reconstruction part */
-              cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
-                                 + grad[c_id][k][1] * diipb[f_id][1]
-                                 + grad[c_id][k][2] * diipb[f_id][2];
+          for (cs_lnum_t k = 0; k < stride; k++) {
+            /* Reconstruction part */
+            cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
+                               + grad[c_id][k][1] * diipb[f_id][1]
+                               + grad[c_id][k][2] * diipb[f_id][2];
               pfac += coefbv[f_id][i][k] * vecfac;
 
               if (i == k)
                 pfac += (coefbv[f_id][i][k] - 1.0) * pvar[c_id][k];
               else
                 pfac += coefbv[f_id][i][k] * pvar[c_id][k];
-            }
+          }
+          pfac *= f_surf;
 
-            for (cs_lnum_t j = 0; j < 3; j++)
-              rhs[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
-
+          cs_real_t fctb[3];
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            fctb[j] = pfac * f_u_normal[j];
           }
 
-        } /* loop on faces */
+          cs_dispatch_sum<3>(rhs[c_id][i], fctb, b_sum_type);
 
-      } /* loop on threads */
+        } /* loop on stride */
+
+      }); /* loop on faces */
 
       /* Increment of the gradient */
 
-#     pragma omp parallel for
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      h_ctx.parallel_for_reduce_sum(n_cells, l2_residual, [=] CS_F_HOST_DEVICE
+                                    (cs_lnum_t c_id,
+                                     CS_DISPATCH_REDUCER_TYPE(double) &sum) {
         cs_real_t dvol;
         /* Is the cell disabled (for solid or porous)? Not the case if coupled */
         if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -5869,291 +5860,36 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
         else
           dvol = 0.;
 
-        for (cs_lnum_t i = 0; i < 3; i++) {
+        cs_real_t c_sum = 0;
+        for (cs_lnum_t i = 0; i < stride; i++) {
           for (cs_lnum_t j = 0; j < 3; j++)
             rhs[c_id][i][j] *= dvol;
-        }
 
-        for (cs_lnum_t i = 0; i < 3; i++) {
+          c_sum += cs_math_3_square_norm(rhs[c_id][i]);
+        }
+        sum += c_sum;
+
+        for (cs_lnum_t i = 0; i < stride; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
             for (cs_lnum_t k = 0; k < 3; k++)
               grad[c_id][i][j] += rhs[c_id][i][k] * cocg[c_id][k][j];
           }
         }
-      }
+      });
 
-      /* Periodicity and parallelism treatment */
+      ctx.wait();
 
-      _sync_strided_gradient_halo(m->halo, halo_type, false, grad);
-
-      /* Convergence test (L2 norm) */
-
-      l2_residual = _l2_norm_1(9*n_cells, (cs_real_t *)rhs);
-
-    } /* End of the iterative process */
-
-    /* Printing */
-
-    if (l2_residual < epsrgp*l2_norm) {
-      if (verbosity >= 2) {
-        bft_printf
-          (_(" %s: isweep = %d, normed residual: %e, norm: %e, var: %s\n"),
-           __func__, isweep, l2_residual/l2_norm, l2_norm, var_name);
-      }
-    }
-    else if (isweep >= n_r_sweeps) {
-      if (verbosity >= 0) {
-        bft_printf(_(" Warning:\n"
-                     " --------\n"
-                     "   %s; variable: %s; sweeps: %d\n"
-                     "   %*s  normed residual: %11.4e; norm: %11.4e\n"),
-                   __func__, var_name, isweep,
-                   (int)(strlen(__func__)), " ", l2_residual/l2_norm, l2_norm);
-      }
-    }
-
-  }
-
-  if (gradient_info != nullptr)
-    _gradient_info_update_iter(gradient_info, isweep);
-
-  CS_FREE(rhs);
-}
-
-/*----------------------------------------------------------------------------
- * Compute the gradient of a vector with an iterative technique in order to
- * handle non-orthoganalities (n_r_sweeps > 1).
- *
- * We do not take into account any volumic force here.
- *
- * parameters:
- *   m              <-- pointer to associated mesh structure
- *   fvq            <-> pointer to associated finite volume quantities
- *   var_name       <-- variable's name
- *   gradient_info  <-- pointer to performance logging structure, or nullptr
- *   halo_type      <-- halo type (extended or not)
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   n_r_sweeps     --> >1: with reconstruction
- *   verbosity      --> verbosity level
- *   epsrgp         --> precision for iterative gradient calculation
- *   bc_coeffs_ts   <-- B.C. structure for boundary face normals
- *   pvar           <-- variable
- *   grad          <-> gradient of pvar (du_i/dx_j : grad[][i][j])
- *----------------------------------------------------------------------------*/
-
-static void
-_iterative_tensor_gradient(const cs_mesh_t              *m,
-                           const cs_mesh_quantities_t   *fvq,
-                           const char                   *var_name,
-                           cs_gradient_info_t           *gradient_info,
-                           cs_halo_type_t                halo_type,
-                           int                           inc,
-                           int                           n_r_sweeps,
-                           int                           verbosity,
-                           cs_real_t                     epsrgp,
-                           const cs_field_bc_coeffs_t   *bc_coeffs_ts,
-                           const cs_real_6_t   *restrict pvar,
-                           cs_real_63_t        *restrict grad)
-{
-  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
-
-  const cs_real_6_t  *restrict coefat
-    = (const cs_real_6_t *)bc_coeffs_ts->a;
-  const cs_real_66_t *restrict coefbt
-    = (const cs_real_66_t *)bc_coeffs_ts->b;
-
-  int isweep = 0;
-
-  cs_real_63_t *rhs;
-
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
-  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
-
-  const int *restrict c_disable_flag = fvq->c_disable_flag;
-  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
-
-  const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
-    cell_vol = mq_g->cell_vol;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_rreal_3_t *restrict diipb = fvq->diipb;
-  const cs_real_3_t *restrict dofij = fvq->dofij;
-
-  cs_gradient_quantities_t  *gq = _gradient_quantities_get(0);
-
-  cs_real_33_t *restrict cocg = gq->cocg_it;
-  if (cocg == nullptr)
-    cocg = _compute_cell_cocg_it(m, fvq, gq);
-
-  CS_MALLOC(rhs, n_cells_ext, cs_real_63_t);
-
-  /* Gradient reconstruction to handle non-orthogonal meshes */
-  /*---------------------------------------------------------*/
-
-  /* L2 norm */
-
-  cs_real_t l2_norm = _l2_norm_1(18*n_cells, (cs_real_t *)grad);
-  cs_real_t l2_residual = l2_norm ;
-
-  if (l2_norm > cs_math_epzero) {
-
-    /* Iterative process */
-    /*-------------------*/
-
-    for (isweep = 1;
-         isweep < n_r_sweeps && l2_residual > epsrgp*l2_norm;
-         isweep++) {
-
-      /* Computation of the Right Hand Side*/
-
-#     pragma omp parallel for
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-        for (cs_lnum_t i = 0; i < 6; i++) {
-          for (cs_lnum_t j = 0; j < 3; j++)
-            rhs[c_id][i][j] = - cell_vol[c_id] * grad[c_id][i][j];
-        }
-      }
-
-      /* Interior face treatment */
-
-      for (int g_id = 0; g_id < n_i_groups; g_id++) {
-
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_i_threads; t_id++) {
-
-          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-               f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-               f_id++) {
-
-            cs_lnum_t c_id1 = i_face_cells[f_id][0];
-            cs_lnum_t c_id2 = i_face_cells[f_id][1];
-            cs_real_t pond = weight[f_id];
-
-            /*
-               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
-                                        + (1-\alpha_\ij) \varia_\cellj\f$
-                       but for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                       and for the cell \f$ \cellj \f$ we remove
-                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
-            */
-
-            for (cs_lnum_t i = 0; i < 6; i++) {
-
-              /* Reconstruction part */
-              cs_real_t
-                pfaci = 0.5 * (    (grad[c_id1][i][0] + grad[c_id2][i][0])
-                                 * dofij[f_id][0]
-                               +   (grad[c_id1][i][1] + grad[c_id2][i][1])
-                                 * dofij[f_id][1]
-                               +   (grad[c_id1][i][2] + grad[c_id2][i][2])
-                                 * dofij[f_id][2]);
-              cs_real_t pfacj = pfaci;
-
-              pfaci += (1.0-pond) * (pvar[c_id2][i] - pvar[c_id1][i]);
-              pfacj -=       pond * (pvar[c_id2][i] - pvar[c_id1][i]);
-              for (cs_lnum_t j = 0; j < 3; j++) {
-                rhs[c_id1][i][j] += pfaci * i_f_face_normal[f_id][j];
-                rhs[c_id2][i][j] -= pfacj * i_f_face_normal[f_id][j];
-              }
-            }
-
-          } /* loop on faces */
-
-        } /* loop on threads */
-
-      } /* loop on thread groups */
-
-      /* Boundary face treatment */
-
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-        for (cs_lnum_t f_id = b_group_index[t_id*2];
-             f_id < b_group_index[t_id*2 + 1];
-             f_id++) {
-
-          cs_lnum_t c_id = b_face_cells[f_id];
-
-          for (cs_lnum_t i = 0; i < 6; i++) {
-
-            /*
-              Remark: for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-            */
-
-            cs_real_t pfac = inc*coefat[f_id][i];
-
-            for (cs_lnum_t k = 0; k < 6; k++) {
-              /* Reconstruction part */
-              cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
-                                 + grad[c_id][k][1] * diipb[f_id][1]
-                                 + grad[c_id][k][2] * diipb[f_id][2];
-              pfac += coefbt[f_id][i][k] * vecfac;
-
-              if (i == k)
-                pfac += (coefbt[f_id][i][k] - 1.0) * pvar[c_id][k];
-              else
-                pfac += coefbt[f_id][i][k] * pvar[c_id][k];
-            }
-
-            for (cs_lnum_t j = 0; j < 3; j++)
-              rhs[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
-
-          }
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-      /* Increment of the gradient */
-
-#     pragma omp parallel for
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t dvol;
-        /* Is the cell disabled (for solid or porous)? Not the case if coupled */
-        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-          dvol = 1. / cell_vol[c_id];
-        else
-          dvol = 0.;
-
-        for (cs_lnum_t i = 0; i < 6; i++) {
-          for (cs_lnum_t j = 0; j < 3; j++)
-            rhs[c_id][i][j] *= dvol;
-        }
-
-        for (cs_lnum_t i = 0; i < 6; i++) {
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            for (cs_lnum_t k = 0; k < 3; k++)
-              grad[c_id][i][j] += rhs[c_id][i][k] * cocg[c_id][k][j];
-          }
-        }
-      }
-
-      /* Periodicity and parallelism treatment */
+      /* Synchronize halos */
 
       _sync_strided_gradient_halo(m->halo, halo_type, false, grad);
 
       /* Convergence test (L2 norm) */
 
-      ///FIXME
-      l2_residual = _l2_norm_1(18*n_cells, (cs_real_t *)rhs);
+      cs_parall_sum(1, CS_DOUBLE, &l2_residual);
 
     } /* End of the iterative process */
 
-    /* Printing */
+    /* Logging */
 
     if (l2_residual < epsrgp*l2_norm) {
       if (verbosity >= 2) {
@@ -6696,14 +6432,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
 
   using var_t = cs_real_t[stride];
 
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -6714,35 +6443,31 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_vol = mq_g->cell_vol;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+
+  cs_dispatch_context ctx;
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   /* Initialize gradient
      ------------------- */
 
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
-        grad[cell_id][i][j] = 0.0;
+        grad[c_id][i][j] = 0.0;
     }
-  }
-
-  /* Pre-compute gradient at boundary using least squares */
-
-  var_t *b_f_var;
-  CS_MALLOC(b_f_var, m->n_b_faces, var_t);
-  cs_array_copy<cs_real_t>(stride*m->n_b_faces,
-                           (const cs_real_t *)val_f,
-                           (cs_real_t *)b_f_var);
+  });
 
   /* Compute vertex-based values
      --------------------------- */
 
   var_t *v_var;
-  CS_MALLOC(v_var, m->n_vertices, var_t);
+  CS_MALLOC_HD(v_var, m->n_vertices, var_t, cs_alloc_mode);
 
   cs_cell_to_vertex<stride>(CS_CELL_TO_VERTEX_LR,
                             0, /* verbosity */
@@ -6755,8 +6480,9 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
   /* Interpolate to face-based values
      -------------------------------- */
 
-  var_t *i_f_var;
-  CS_MALLOC(i_f_var, m->n_i_faces, var_t);
+  var_t *i_f_var, *b_f_var;
+  CS_MALLOC_HD(i_f_var, m->n_i_faces, var_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_f_var, m->n_b_faces, var_t, cs_alloc_mode);
 
   for (int f_t = 0; f_t < 2; f_t++) {
 
@@ -6775,8 +6501,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
       f_var = b_f_var;
     }
 
-#   pragma omp parallel for if (n_faces > CS_THR_MIN)
-    for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
+    ctx.parallel_for(n_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_lnum_t s_id = f2v_idx[f_id];
       cs_lnum_t e_id = f2v_idx[f_id+1];
       cs_real_t s[stride];
@@ -6788,84 +6513,66 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
       }
       for (cs_lnum_t k = 0; k < stride; k++)
         f_var[f_id][k] = s[k] / (e_id-s_id);
-    }
+    });
 
   }
 
   /* Vertex values are not needed after this stage */
 
-  CS_FREE(v_var);
-
   /* Contribution from interior faces */
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+    cs_lnum_t ii = i_face_cells[f_id][0];
+    cs_lnum_t jj = i_face_cells[f_id][1];
 
-      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           f_id++) {
+    cs_real_t f_surf = i_face_surf[f_id];
 
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
+    for (cs_lnum_t k = 0; k < stride; k++) {
 
-        for (cs_lnum_t k = 0; k < stride; k++) {
+      cs_real_t pfaci = (i_f_var[f_id][k] - c_var[ii][k]) * f_surf;
+      cs_real_t pfacj = (i_f_var[f_id][k] - c_var[jj][k]) * f_surf;
 
-          cs_real_t pfaci = i_f_var[f_id][k] - c_var[ii][k];
-          cs_real_t pfacj = i_f_var[f_id][k] - c_var[jj][k];
+      cs_real_t fctb_ii[3], fctb_jj[3];
+      for (cs_lnum_t l = 0; l < 3; l++) {
+        fctb_ii[l] =  pfaci * i_face_u_normal[f_id][l];
+        fctb_jj[l] = -pfacj * i_face_u_normal[f_id][l];
+      }
 
-          for (cs_lnum_t l = 0; l < 3; l++) {
-            grad[ii][k][l] += pfaci * i_f_face_normal[f_id][l];
-            grad[jj][k][l] -= pfacj * i_f_face_normal[f_id][l];
-          }
-
-        }
-
-      } /* loop on faces */
-
-    } /* loop on threads */
-
-  } /* loop on thread groups */
-
-  /* Contribution from boundary faces */
-
-  for (int g_id = 0; g_id < n_b_groups; g_id++) {
-
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-      for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-           f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-           f_id++) {
-
-        cs_lnum_t ii = b_face_cells[f_id];
-
-        /*
-          Remark: for the cell \f$ \celli \f$ we remove
-          \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-        */
-
-        for (cs_lnum_t k = 0; k < stride; k++) {
-
-          cs_real_t pfac = b_f_var[f_id][k] - c_var[ii][k];
-
-          for (cs_lnum_t l = 0; l < 3; l++)
-            grad[ii][k][l] += pfac * b_f_face_normal[f_id][l];
-
-        }
-
-      } /* loop on faces */
+      if (ii < n_cells)
+        cs_dispatch_sum<3>(grad[ii][k], fctb_ii, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<3>(grad[jj][k], fctb_jj, i_sum_type);
 
     }
 
-  }
+  }); /* loop on interior faces */
 
-  CS_FREE(i_f_var);
-  CS_FREE(b_f_var);
+  /* Contribution from boundary faces */
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+
+    cs_lnum_t ii = b_face_cells[f_id];
+
+    /*
+      Remark: for the cell \f$ \celli \f$ we remove
+      \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+    */
+
+    for (cs_lnum_t k = 0; k < stride; k++) {
+
+      cs_real_t pfac = (val_f[f_id][k] - c_var[ii][k]) * b_face_surf[f_id];
+      cs_real_t fctb[3];
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        fctb[ll] = pfac * b_face_u_normal[f_id][ll];
+
+      cs_dispatch_sum<3>(grad[ii][k], fctb, b_sum_type);
+
+    }
+
+  }); /* loop on boundary faces */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
     cs_real_t dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -6877,11 +6584,18 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
       for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] *= dvol;
     }
-  }
+  });
+
+  ctx.wait();
+
+  CS_FREE(v_var);
+  CS_FREE(i_f_var);
+  CS_FREE(b_f_var);
 
   /* Synchronize halos */
 
-  _sync_strided_gradient_halo<stride>(m->halo, CS_HALO_EXTENDED, false, grad);
+  _sync_strided_gradient_halo<stride>(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(),
+                                      grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7281,19 +6995,19 @@ _gradient_vector(const char                     *var_name,
     /* If reconstructions are required */
 
     if (n_r_sweeps > 1)
-      _iterative_vector_gradient(mesh,
-                                 fvq,
-                                 var_name,
-                                 gradient_info,
-                                 halo_type,
-                                 inc,
-                                 n_r_sweeps,
-                                 verbosity,
-                                 epsilon,
-                                 bc_coeffs_v,
-                                 var,
-                                 c_weight,
-                                 grad);
+      _iterative_strided_gradient(mesh,
+                                  fvq,
+                                  var_name,
+                                  gradient_info,
+                                  halo_type,
+                                  inc,
+                                  n_r_sweeps,
+                                  verbosity,
+                                  epsilon,
+                                  bc_coeffs_v,
+                                  var,
+                                  c_weight,
+                                  grad);
 
     break;
 
@@ -7435,18 +7149,19 @@ _gradient_tensor(const char                 *var_name,
     /* If reconstructions are required */
 
     if (n_r_sweeps > 1)
-      _iterative_tensor_gradient(mesh,
-                                 fvq,
-                                 var_name,
-                                 gradient_info,
-                                 halo_type,
-                                 inc,
-                                 n_r_sweeps,
-                                 verbosity,
-                                 epsilon,
-                                 bc_coeffs_ts,
-                                 var,
-                                 grad);
+      _iterative_strided_gradient(mesh,
+                                  fvq,
+                                  var_name,
+                                  gradient_info,
+                                  halo_type,
+                                  inc,
+                                  n_r_sweeps,
+                                  verbosity,
+                                  epsilon,
+                                  bc_coeffs_ts,
+                                  var,
+                                  nullptr,
+                                  grad);
 
     break;
 
