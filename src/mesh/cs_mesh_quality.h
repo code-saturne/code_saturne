@@ -56,8 +56,8 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   mesh             --> pointer to a cs_mesh_t structure
- *   i_face_normal    --> internal face normal
- *   b_face_normal    --> border face normal
+ *   i_face_u_normal  <-- internal face unit normal
+ *   b_face_u_normal  <-- boundary face unit normal
  *   i_face_warping   <-- face warping angle for internal faces
  *   b_face_warping   <-- face warping angle for border faces
  *
@@ -65,26 +65,26 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quality_compute_warping(const cs_mesh_t    *mesh,
-                                const cs_real_t     i_face_normal[],
-                                const cs_real_t     b_face_normal[],
-                                cs_real_t           i_face_warping[],
-                                cs_real_t           b_face_warping[]);
+cs_mesh_quality_compute_warping(const cs_mesh_t      *mesh,
+                                const cs_nreal_3_t    i_face_u_normal[],
+                                const cs_nreal_3_t    b_face_u_normal[],
+                                cs_real_t             i_face_warping[],
+                                cs_real_t             b_face_warping[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Evaluate face warping angle for boundary faces..
  *
- * \param[in]   mesh            pointer to a cs_mesh_t structure
- * \param[in]   b_face_normal   boundary face normal
- * \param[out]  b_face_warping  face warping angle for boundary faces
+ * \param[in]   mesh              pointer to a cs_mesh_t structure
+ * \param[in]   b_face_u_normal   boundary face unit normal
+ * \param[out]  b_face_warping    face warping angle for boundary faces
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quality_compute_b_face_warping(const cs_mesh_t  *mesh,
-                                       const cs_real_t   b_face_normal[],
-                                       cs_real_t         b_face_warping[]);
+cs_mesh_quality_compute_b_face_warping(const cs_mesh_t     *mesh,
+                                       const cs_nreal_3_t   b_face_u_normal[],
+                                       cs_real_t            b_face_warping[]);
 
 /*----------------------------------------------------------------------------
  * Compute mesh quality indicators

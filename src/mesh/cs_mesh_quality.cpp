@@ -44,11 +44,13 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "alge/cs_blas.h"
-#include "base/cs_interface.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+
+#include "alge/cs_blas.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_post.h"
 
@@ -69,11 +71,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_MESH_QUALITY_N_SUBS  10
-
-#undef _COSINE_3D
-
-#define _COSINE_3D(v1, v2) (\
- cs_math_3_dot_product(v1, v2) / (cs_math_3_norm(v1) * cs_math_3_norm(v2)) )
 
 /*============================================================================
  * Private function definitions
@@ -124,9 +121,6 @@ _display_histograms(int        n_steps,
                     cs_real_t  var_max,
                     cs_gnum_t  count[])
 {
-  int  i, j;
-  double var_step;
-
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
@@ -140,7 +134,7 @@ _display_histograms(int        n_steps,
     MPI_Allreduce(count, g_count, n_steps, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
 
-    for (i = 0; i < n_steps; i++)
+    for (int i = 0; i < n_steps; i++)
       count[i] = g_count[i];
 
     if (n_steps > CS_MESH_QUALITY_N_SUBS)
@@ -155,12 +149,13 @@ _display_histograms(int        n_steps,
   bft_printf(_("    minimum value =         %10.5e\n"), (double)var_min);
   bft_printf(_("    maximum value =         %10.5e\n\n"), (double)var_max);
 
-  var_step = cs::abs(var_max - var_min) / n_steps;
+  double var_step = cs::abs(var_max - var_min) / n_steps;
 
   if (cs::abs(var_max - var_min) > 0.) {
 
     /* Number of elements in each subdivision */
 
+    int i, j;
     for (i = 0, j = 1; i < n_steps - 1; i++, j++)
       bft_printf("    %3d : [ %10.5e ; %10.5e [ = %10llu\n",
                  i+1, var_min + i*var_step, var_min + j*var_step,
@@ -173,7 +168,6 @@ _display_histograms(int        n_steps,
                (unsigned long long)(count[n_steps - 1]));
 
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -189,12 +183,6 @@ static void
 _histogram(cs_lnum_t        n_vals,
            const cs_real_t  var[])
 {
-  cs_lnum_t  i;
-  int        j, k;
-
-  cs_real_t  step;
-  cs_real_t  max, min, _max, _min;
-
   cs_gnum_t count[CS_MESH_QUALITY_N_SUBS];
   const int  n_steps = CS_MESH_QUALITY_N_SUBS;
 
@@ -202,40 +190,38 @@ _histogram(cs_lnum_t        n_vals,
 
   /* Compute global min and max */
 
-  _compute_local_minmax(n_vals, var, &_min, &_max);
+  cs_real_t  max, min;
+  _compute_local_minmax(n_vals, var, &min, &max);
 
   /* Default initialization */
-
-  min = _min;
-  max = _max;
 
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-    MPI_Allreduce(&_min, &min, 1, CS_MPI_REAL, MPI_MIN,
+    cs_real_t mm[2] = {min, -max}, mmg[2];
+    MPI_Allreduce(mm, mmg, 2, CS_MPI_REAL, MPI_MIN,
                   cs_glob_mpi_comm);
-
-    MPI_Allreduce(&_max, &max, 1, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_mpi_comm);
+    min = mmg[0]; max = -mmg[1];
   }
 
 #endif
 
   /* Define axis subdivisions */
 
-  for (j = 0; j < n_steps; j++)
+  for (int j = 0; j < n_steps; j++)
     count[j] = 0;
 
   if (cs::abs(max - min) > 0.) {
 
-    step = cs::abs(max - min) / n_steps;
+    cs_real_t step = cs::abs(max - min) / n_steps;
 
     /* Loop on values */
 
-    for (i = 0; i < n_vals; i++) {
+    for (int i = 0; i < n_vals; i++) {
 
       /* Associated subdivision */
 
+      int j, k;
       for (j = 0, k = 1; k < n_steps; j++, k++) {
         if (var[i] < min + k*step)
           break;
@@ -261,12 +247,6 @@ static void
 _int_face_histogram(const cs_mesh_t  *mesh,
                     const cs_real_t   var[])
 {
-  cs_lnum_t  i;
-  int        j, k;
-
-  cs_real_t  step;
-  cs_real_t  max, min, _max, _min;
-
   cs_gnum_t count[CS_MESH_QUALITY_N_SUBS];
   const int  n_steps = CS_MESH_QUALITY_N_SUBS;
 
@@ -274,48 +254,49 @@ _int_face_histogram(const cs_mesh_t  *mesh,
 
   /* Compute global min and max */
 
-  _compute_local_minmax(mesh->n_i_faces, var, &_min, &_max);
+  cs_real_t  max, min;
+  _compute_local_minmax(mesh->n_i_faces, var, &min, &max);
 
   /* Default initialization */
-
-  min = _min;
-  max = _max;
 
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-    MPI_Allreduce(&_min, &min, 1, CS_MPI_REAL, MPI_MIN,
+    cs_real_t mm[2] = {min, -max}, mmg[2];
+    MPI_Allreduce(mm, mmg, 2, CS_MPI_REAL, MPI_MIN,
                   cs_glob_mpi_comm);
-
-    MPI_Allreduce(&_max, &max, 1, CS_MPI_REAL, MPI_MAX,
-                  cs_glob_mpi_comm);
+    min = mmg[0]; max = -mmg[1];
   }
 
 #endif
 
   /* Define axis subdivisions */
 
-  for (j = 0; j < n_steps; j++)
+  for (int j = 0; j < n_steps; j++)
     count[j] = 0;
 
   if (cs::abs(max - min) > 0.) {
 
-    step = cs::abs(max - min) / n_steps;
+    cs_lnum_t n_i_faces = mesh->n_i_faces;
+    cs_real_t step = cs::abs(max - min) / n_steps;
+    const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
     /* Loop on faces */
 
-    for (i = 0; i < mesh->n_i_faces; i++) {
+    for (cs_lnum_t i = 0; i < n_i_faces; i++) {
 
-      if (mesh->i_face_cells[i][0] >= mesh->n_cells)
-        continue;
+      if (i_face_cells[i][0] < mesh->n_cells) {
 
-      /* Associated subdivision */
+        /* Associated subdivision */
 
-      for (j = 0, k = 1; k < n_steps; j++, k++) {
-        if (var[i] < min + k*step)
-          break;
+        int j, k;
+        for (j = 0, k = 1; k < n_steps; j++, k++) {
+          if (var[i] < min + k*step)
+            break;
+        }
+        count[j] += 1;
+
       }
-      count[j] += 1;
 
     }
 
@@ -325,90 +306,110 @@ _int_face_histogram(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Compute weighting coefficient and center offsetting coefficient
- * for internal faces.
+ * Compute weighting coefficient for internal faces.
  *
  * parameters:
  *   mesh             <-- pointer to mesh structure.
  *   mesh_quantities  <-- pointer to mesh quantities structures.
+ *   ctx              <-- Reference to dispatch context
  *   weighting        <-> array for weigthing coefficient.
- *   offsetting       <-> array for offsetting coefficient.
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_weighting_offsetting(const cs_mesh_t             *mesh,
-                              const cs_mesh_quantities_t  *mesh_quantities,
-                              cs_real_t                    weighting[],
-                              cs_real_t                    offsetting[])
+_compute_weighting(const cs_mesh_t             *mesh,
+                   const cs_mesh_quantities_t  *mesh_quantities,
+                   cs_dispatch_context         &ctx,
+                   cs_real_t                    weighting[])
 {
-  cs_lnum_t  i, face_id, cell1, cell2;
-  cs_real_t  cell_center1[3], cell_center2[3];
-  cs_real_t  face_center[3], face_normal[3];
-  cs_real_t  v0[3], v1[3], v2[3];
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
-  double  coef0 = 0, coef1 = 0, coef2 = 0;
-
-  const cs_lnum_t  dim = mesh->dim;
-
-  /* Compute weighting coefficient */
-  /*-------------------------------*/
+  const cs_real_3_t *cell_cen = mesh_quantities->cell_cen;
+  const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
+  const cs_nreal_3_t *i_face_u_normal = mesh_quantities->i_face_u_normal;
 
   /* Loop on internal faces */
 
-  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+  ctx.parallel_for(mesh->n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
     /* Get local number of the cells in contact with the face */
 
-    cell1 = mesh->i_face_cells[face_id][0];
-    cell2 = mesh->i_face_cells[face_id][1];
+    cs_lnum_t cell1 = i_face_cells[face_id][0];
+    cs_lnum_t cell2 = i_face_cells[face_id][1];
 
     /* Get information on mesh quantities */
 
-    for (i = 0; i < dim; i++) {
-
-      /* Center of gravity for each cell */
-
-      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
-      cell_center2[i] = mesh_quantities->cell_cen[cell2][i];
-
-      /* Face center coordinates */
-
-      face_center[i] = mesh_quantities->i_face_cog[face_id][i];
-
-      /* Surface vector (orthogonal to the face) */
-
-      face_normal[i] = mesh_quantities->i_face_normal[face_id*dim + i];
-
-    }
+    cs_real_t  v0[3], v1[3], v2[3];
 
     /* Compute weighting coefficient with two approaches. Keep the max value. */
 
-    for (i = 0; i < dim; i++) {
-
-      v0[i] = cell_center2[i] - cell_center1[i];
-      v1[i] = face_center[i] - cell_center1[i];
-      v2[i] = cell_center2[i] - face_center[i];
-
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      v0[i] = cell_cen[cell2][i] - cell_cen[cell1][i];
+      v1[i] = i_face_cog[face_id][i] - cell_cen[cell1][i];
+      v2[i] = cell_cen[cell2][i] - i_face_cog[face_id][i];
     }
 
-    coef0 = cs_math_3_dot_product(v0, face_normal);
-    coef1 = cs_math_3_dot_product(v1, face_normal)/coef0;
-    coef2 = cs_math_3_dot_product(v2, face_normal)/coef0;
+    cs_real_t coef0 = cs_math_3_dot_product(v0, i_face_u_normal[face_id]);
+    cs_real_t coef1 = cs_math_3_dot_product(v1, i_face_u_normal[face_id])/coef0;
+    cs_real_t coef2 = cs_math_3_dot_product(v2, i_face_u_normal[face_id])/coef0;
 
     weighting[face_id] = cs::max(coef1, coef2);
 
-    /* Compute center offsetting coefficient */
-    /*---------------------------------------*/
+  }); /* End of loop on faces */
+}
 
-    double of_s =   cs_math_3_norm(mesh_quantities->dofij[face_id])
-                  * mesh_quantities->i_face_surf[face_id];
+/*----------------------------------------------------------------------------
+ * Compute center offsetting coefficient for internal faces.
+ *
+ * parameters:
+ *   mesh             <-- pointer to mesh structure.
+ *   ma               <-- pointer to mesh adjacencies structure
+ *   mesh_quantities  <-- pointer to mesh quantities structures.
+ *   ctx              <-- Reference to dispatch context
+ *   offsetting       <-> array for offsetting coefficient
+ *----------------------------------------------------------------------------*/
 
-    offsetting[cell1] = cs::min(offsetting[cell1],
-        1. - pow(of_s / fabs(mesh_quantities->cell_vol[cell1]), 1./3.));
-    offsetting[cell2] = cs::min(offsetting[cell2],
-        1. - pow(of_s / fabs(mesh_quantities->cell_vol[cell2]), 1./3.));
+static void
+_compute_offsetting(const cs_mesh_t               *mesh,
+                    const cs_mesh_adjacencies_t   *ma,
+                    const cs_mesh_quantities_t    *mesh_quantities,
+                    cs_dispatch_context          &ctx,
+                    cs_real_t                     offsetting[])
+{
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *c2f = ma->cell_i_faces;
+  if (c2f == nullptr) {
+    cs_mesh_adjacencies_update_cell_i_faces();
+    c2f = ma->cell_i_faces;
+  }
 
-  } /* End of loop on faces */
+  const cs_real_t *cell_vol = mesh_quantities->cell_vol;
+  const cs_real_t *i_face_surf = mesh_quantities->i_face_surf;
+  const cs_real_3_t *dofij = mesh_quantities->dofij;
+
+  ctx.parallel_for(mesh->n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+
+    cs_lnum_t s_id = c2c_idx[ii];
+    cs_lnum_t e_id = c2c_idx[ii+1];
+
+    /* Loop on internal faces */
+
+    cs_real_t offset = 1.;
+    cs_real_t vol = cell_vol[ii];
+
+    if (vol > 1e-30) {
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        const cs_lnum_t face_id = c2f[i];
+
+        double of_s =   cs_math_3_norm(dofij[face_id])
+                      * i_face_surf[face_id];
+
+        offset = cs::min(offset, 1. - pow(of_s/vol, 1./3.));
+      }
+    }
+
+    offsetting[ii] = offset;
+
+  });
 }
 
 /*----------------------------------------------------------------------------
@@ -418,6 +419,7 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
  * parameters:
  *   mesh             <-- pointer to mesh structure.
  *   mesh_quantities  <-- pointer to mesh quantities structures.
+ *   ctx              <-- Reference to dispatch context
  *   i_face_ortho     <-> array for internal faces.
  *   b_face_ortho     <-> array for border faces.
  *----------------------------------------------------------------------------*/
@@ -425,49 +427,36 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
 static void
 _compute_orthogonality(const cs_mesh_t             *mesh,
                        const cs_mesh_quantities_t  *mesh_quantities,
+                       cs_dispatch_context         &ctx,
                        cs_real_t                    i_face_ortho[],
                        cs_real_t                    b_face_ortho[])
 {
-  cs_lnum_t  i, face_id, cell1, cell2;
-  double  cos_alpha;
-  cs_real_t  cell_center1[3], cell_center2[3];
-  cs_real_t  face_center[3];
-  cs_real_t  face_normal[3], vect[3];
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+
+  const cs_real_3_t *cell_cen = mesh_quantities->cell_cen;
+  const cs_real_3_t *b_face_cog = mesh_quantities->b_face_cog;
+  const cs_nreal_3_t *i_face_u_normal = mesh_quantities->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = mesh_quantities->b_face_u_normal;
 
   const double  rad_to_deg = 180. / acos(-1.);
-  const cs_lnum_t  dim = mesh->dim;
 
   /* Loop on internal faces */
-  /*------------------------*/
 
-  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+  ctx.parallel_for(mesh->n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
-    /* Get local number of the cells beside the face */
-
-    cell1 = mesh->i_face_cells[face_id][0];
-    cell2 = mesh->i_face_cells[face_id][1];
-
-    /* Get information on mesh quantities */
-
-    for (i = 0; i < dim; i++) {
-
-      /* Center of gravity for each cell */
-
-      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
-      cell_center2[i] = mesh_quantities->cell_cen[cell2][i];
-
-      /* Surface vector (orthogonal to the face) */
-
-      face_normal[i] = mesh_quantities->i_face_normal[face_id*dim + i];
-
-    }
+    cs_lnum_t cell1 = i_face_cells[face_id][0];
+    cs_lnum_t cell2 = i_face_cells[face_id][1];
 
     /* Compute angle which evaluates the non-orthogonality. */
 
-    for (i = 0; i < dim; i++)
-      vect[i] = cell_center2[i] - cell_center1[i];
+    cs_real_t dc[3];
+    for (cs_lnum_t i = 0; i < 3; i++)
+      dc[i] = cell_cen[cell2][i] - cell_cen[cell1][i];
 
-    cos_alpha = _COSINE_3D(vect, face_normal);
+    cs_real_t cos_alpha =   cs_math_3_dot_product(dc, i_face_u_normal[face_id])
+                          / cs_math_3_norm(dc);
+
     cos_alpha = cs::abs(cos_alpha);
     cos_alpha = cs::min(cos_alpha, 1);
 
@@ -476,41 +465,23 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
     else
       i_face_ortho[face_id] = 0.;
 
-  } /* End of loop on internal faces */
+  }); /* End of loop on internal faces */
 
-  /* Loop on border faces */
-  /*----------------------*/
+  /* Loop on boundary faces */
 
-  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+  ctx.parallel_for(mesh->n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
-    /* Get local number of the cell beside the face */
-
-    cell1 = mesh->b_face_cells[face_id];
-
-    /* Get information on mesh quantities */
-
-    for (i = 0; i < dim; i++) {
-
-      /* Center of gravity of the cell */
-
-      cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
-
-      /* Face center coordinates */
-
-      face_center[i] = mesh_quantities->b_face_cog[face_id][i];
-
-      /* Surface vector (orthogonal to the face) */
-
-      face_normal[i] = mesh_quantities->b_face_normal[face_id*dim + i];
-
-    }
+    cs_lnum_t cell1 = b_face_cells[face_id];
 
     /* Compute alpha: angle wich evaluate the difference with orthogonality. */
 
-    for (i = 0; i < dim; i++)
-      vect[i] = face_center[i] - cell_center1[i];
+    cs_real_t dc[3];
+    for (cs_lnum_t i = 0; i < 3; i++)
+      dc[i] = b_face_cog[face_id][i] - cell_cen[cell1][i];
 
-    cos_alpha = _COSINE_3D(vect, face_normal);
+    cs_real_t cos_alpha =   cs_math_3_dot_product(dc, b_face_u_normal[face_id])
+                          / cs_math_3_norm(dc);
+
     cos_alpha = cs::abs(cos_alpha);
     cos_alpha = cs::min(cos_alpha, 1);
 
@@ -519,8 +490,7 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
     else
       b_face_ortho[face_id] = 0.;
 
-  } /* End of loop on border faces */
-
+  }); /* End of loop on boundary faces */
 }
 
 /*----------------------------------------------------------------------------
@@ -530,162 +500,51 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
  *   idx_start       <-- first vertex index
  *   idx_end         <-- last vertex index
  *   face_vertex_id  <-- face -> vertices connectivity
- *   face_normal     <-- face normal
+ *   face_u_normal   <-- face unit normal
  *   vertex_coords   <-- vertices coordinates
  *   face_warping    --> face warping angle
  *----------------------------------------------------------------------------*/
 
-static void
-_get_face_warping(cs_lnum_t        idx_start,
-                  cs_lnum_t        idx_end,
-                  const cs_real_t  face_normal[],
-                  const cs_lnum_t  face_vertex_id[],
-                  const cs_real_t  vertex_coords[],
-                  double           face_warping[])
+CS_F_HOST_DEVICE static void
+_get_face_warping(cs_lnum_t          idx_start,
+                  cs_lnum_t          idx_end,
+                  const cs_nreal_t   face_u_normal[],
+                  const cs_lnum_t    face_vertex_id[],
+                  const cs_real_t    vertex_coords[],
+                  double            &face_warping)
 {
-  cs_lnum_t  i, idx, vertex_id1, vertex_id2;
-  double  edge_cos_alpha;
-  cs_real_t  vect[3];
-
   double  cos_alpha = 0.;
 
-  const int  dim = 3;
-  const double  rad_to_deg = 180. / acos(-1.);
+  const double  rad_to_deg = 180. / cs_math_pi;
+
+  cs_lnum_t n_vtx = idx_end - idx_start;
 
   /* Loop on edges */
 
-  for (idx = idx_start; idx < idx_end - 1; idx++) {
+  for (cs_lnum_t idx = 0; idx < n_vtx; idx++) {
 
-    vertex_id1 = face_vertex_id[idx];
-    vertex_id2 = face_vertex_id[idx + 1];
+    cs_lnum_t vertex_id1 = face_vertex_id[idx_start + idx];
+    cs_lnum_t vertex_id2 = face_vertex_id[idx_start + (idx+1)%n_vtx];
 
     /* Get vertex coordinates */
 
-    for (i = 0; i < dim; i++)
-      vect[i] =  vertex_coords[vertex_id2*dim + i]
-               - vertex_coords[vertex_id1*dim + i];
+    cs_real_t  vect[3];
+    for (cs_lnum_t i = 0; i < 3; i++)
+      vect[i] =  vertex_coords[vertex_id2*3 + i]
+               - vertex_coords[vertex_id1*3 + i];
 
-    edge_cos_alpha = _COSINE_3D(vect, face_normal);
+    cs_real_t edge_cos_alpha
+      =   cs_math_3_dot_product(vect, face_u_normal)
+        / cs_math_3_norm(vect);
+
     edge_cos_alpha = cs::abs(edge_cos_alpha);
     cos_alpha = cs::max(cos_alpha, edge_cos_alpha);
 
   }
 
-  /* Last edge */
-
-  vertex_id1 = face_vertex_id[idx_end - 1];
-  vertex_id2 = face_vertex_id[idx_start];
-
-  /* Get vertex coordinates */
-
-  for (i = 0; i < dim; i++)
-    vect[i] =  vertex_coords[vertex_id2*dim + i]
-             - vertex_coords[vertex_id1*dim + i];
-
-  edge_cos_alpha = _COSINE_3D(vect, face_normal);
-  edge_cos_alpha = cs::abs(edge_cos_alpha);
-  cos_alpha = cs::max(cos_alpha, edge_cos_alpha);
   cos_alpha = cs::min(cos_alpha, 1.);
 
-  *face_warping = 90. - acos(cos_alpha) * rad_to_deg;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the cell -> faces connectivity
- *
- * \param[in]  mesh        pointer to a cs_mesh_t structure
- * \param[in]  p_c2f_idx   pointer to the array of indexes
- * \param[in]  p_c2f_lst   pointer to the list of face ids
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_build_c2f(const cs_mesh_t   *mesh,
-           cs_lnum_t         *p_c2f_idx[],
-           cs_lnum_t         *p_c2f_ids[])
-{
-  int  idx_size = 0;
-  int  *cell_shift = nullptr;
-  cs_lnum_t  *c2f_idx = nullptr;
-  cs_lnum_t  *c2f_ids = nullptr;
-
-  const int  n_cells = mesh->n_cells;
-  const int  n_i_faces = mesh->n_i_faces;
-  const int  n_b_faces = mesh->n_b_faces;
-
-  CS_MALLOC(c2f_idx, n_cells + 1, cs_lnum_t);
-  CS_MALLOC(cell_shift, n_cells, int);
-
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    cell_shift[i] = c2f_idx[i] = 0;
-  c2f_idx[n_cells] = 0;
-
-  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-    c2f_idx[mesh->b_face_cells[i]+1] += 1;
-    idx_size += 1;
-  }
-
-  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
-
-    const int  c1_id = mesh->i_face_cells[i][0];
-    const int  c2_id = mesh->i_face_cells[i][1];
-
-    if (c1_id < n_cells) // cell owned by the local rank
-      c2f_idx[c1_id+1] += 1, idx_size += 1;
-    if (c2_id < n_cells) // cell owned by the local rank
-      c2f_idx[c2_id+1] += 1, idx_size += 1;
-
-  }
-
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    c2f_idx[i+1] += c2f_idx[i];
-
-  assert(c2f_idx[n_cells] == idx_size);
-
-  CS_MALLOC(c2f_ids, idx_size, cs_lnum_t);
-
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-
-    const cs_lnum_t  c1_id = mesh->i_face_cells[f_id][0];
-    const cs_lnum_t  c2_id = mesh->i_face_cells[f_id][1];
-
-    if (c1_id < n_cells) { /* Don't want ghost cells */
-
-      const cs_lnum_t  shift = c2f_idx[c1_id] + cell_shift[c1_id];
-      c2f_ids[shift] = f_id;
-      cell_shift[c1_id] += 1;
-
-    }
-
-    if (c2_id < n_cells) { /* Don't want ghost cells */
-
-      const cs_lnum_t  shift = c2f_idx[c2_id] + cell_shift[c2_id];
-      c2f_ids[shift] = f_id;
-      cell_shift[c2_id] += 1;
-
-    }
-
-  } /* End of loop on internal faces */
-
-  for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
-
-    const cs_lnum_t  c_id = mesh->b_face_cells[f_id];
-    const cs_lnum_t  shift = c2f_idx[c_id] + cell_shift[c_id];
-
-    c2f_ids[shift] = n_i_faces + f_id;
-    cell_shift[c_id] += 1;
-
-  } /* End of loop on border faces */
-
-  /* Free memory */
-  CS_FREE(cell_shift);
-
-  /* Return pointers */
-  *p_c2f_idx = c2f_idx;
-  *p_c2f_ids = c2f_ids;
+  face_warping = 90. - acos(cos_alpha) * rad_to_deg;
 }
 
 /*----------------------------------------------------------------------------
@@ -695,72 +554,100 @@ _build_c2f(const cs_mesh_t   *mesh,
  *
  * parameters:
  *   mesh             <-- pointer to mesh structure.
+ *   ma               <-- pointer to mesh adjacencies structure
  *   mesh_quantities  <-- pointer to mesh quantities structures.
+ *   ctx              <-- Reference to dispatch context
  *   warp_error       <-> array of values to compute
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_warp_error(const cs_mesh_t              *mesh,
+                    const cs_mesh_adjacencies_t  *ma,
                     const cs_mesh_quantities_t   *mesh_quantities,
+                    cs_dispatch_context          &ctx,
                     cs_real_t                     warp_error[])
 {
-  const cs_real_t  *vol = mesh_quantities->cell_vol;
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *c2f = ma->cell_i_faces;
+  if (c2f == nullptr) {
+    cs_mesh_adjacencies_update_cell_i_faces();
+    c2f = ma->cell_i_faces;
+  }
+  const short int *c2f_sgn = ma->cell_i_faces_sgn;
 
-  cs_lnum_t  *c2f_ids = nullptr;
-  cs_lnum_t  *c2f_idx = nullptr;
+  const cs_lnum_t *restrict c2b_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict c2b = ma->cell_b_faces;
 
-  /* Build cell -> face connectivity */
-  _build_c2f(mesh, &c2f_idx, &c2f_ids);
+  const cs_real_3_t *cell_cen = mesh_quantities->cell_cen;
+  const cs_real_t  *cell_vol = mesh_quantities->cell_vol;
+  const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
+  const cs_real_3_t *b_face_cog = mesh_quantities->b_face_cog;
+  const cs_real_t *i_face_surf = mesh_quantities->i_face_surf;
+  const cs_real_t *b_face_surf = mesh_quantities->b_face_surf;
+  const cs_nreal_3_t *i_face_u_normal = mesh_quantities->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = mesh_quantities->b_face_u_normal;
 
-  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+  ctx.parallel_for(mesh->n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    const cs_real_t  invvol_c = 1/vol[c_id];
-    const cs_real_t  *xc = mesh_quantities->cell_cen[c_id];
+    cs_real_t vol = cell_vol[c_id];
+    if (vol < 1e-30) {
+      warp_error[c_id] = 1e-30;
+      return;
+    }
 
-    cs_real_33_t   tens = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+    const cs_real_t  invvol_c = 1/vol;
+    const cs_real_t  *xc = cell_cen[c_id];
 
-    for (cs_lnum_t i = c2f_idx[c_id]; i < c2f_idx[c_id+1]; i++) {
+    cs_real_t tens[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-      cs_lnum_t  f_id = c2f_ids[i];
-      cs_real_t  *xf = nullptr, *surf = nullptr;
-      int  sgn = 1;
+    /* Loop on interior faces */
 
-      if (f_id < mesh->n_i_faces) {
+    cs_lnum_t s_id = c2c_idx[c_id];
+    cs_lnum_t e_id = c2c_idx[c_id+1];
 
-        const cs_lnum_t  c2_id = mesh->i_face_cells[f_id][1];
-        if (c_id == c2_id)
-          sgn = -1;
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
 
-        xf = mesh_quantities->i_face_cog[f_id];
-        surf = mesh_quantities->i_face_normal + 3*f_id;
+      cs_lnum_t  f_id = c2f[i];
+      int  sgn = c2f_sgn[i];
 
-      }
-      else {
-
-        f_id -= mesh->n_i_faces; // Border face
-        xf = mesh_quantities->b_face_cog[f_id];
-        surf = mesh_quantities->b_face_normal + 3*f_id;
-
-      }
+      const cs_real_t *xf = i_face_cog[f_id];
+      cs_real_t sgn_surf[3];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        sgn_surf[j] = sgn * i_face_u_normal[f_id][j]*i_face_surf[f_id];
 
       for (int ki = 0; ki < 3; ki++)
         for (int kj = 0; kj < 3; kj++)
-          tens[ki][kj] += sgn*(xf[ki] - xc[ki]) * surf[kj];
+          tens[ki][kj] += (xf[ki] - xc[ki]) * sgn_surf[kj];
 
-    } // Loop on face cells
+    } // Loop on interior faces
+
+    /* Loop on boundary faces */
+
+    s_id = c2b_idx[c_id];
+    e_id = c2b_idx[c_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_lnum_t  f_id = c2b[i];
+
+      const cs_real_t *xf = b_face_cog[f_id];
+      cs_real_t surf[3];
+      for (cs_lnum_t j = 0; j < 3; j++)
+        surf[j] = b_face_u_normal[f_id][j]*b_face_surf[f_id];
+
+      for (int ki = 0; ki < 3; ki++)
+        for (int kj = 0; kj < 3; kj++)
+          tens[ki][kj] += (xf[ki] - xc[ki]) * surf[kj];
+
+    } // Loop on boundary faces
 
     for (int ki = 0; ki < 3; ki++)
       for (int kj = 0; kj < 3; kj++)
         tens[ki][kj] *= invvol_c;
 
-    warp_error[c_id] =
-      fabs(cs_math_33_determinant((const cs_real_t (*)[3])tens) - 1.);
+    warp_error[c_id] = cs::abs(cs_math_33_determinant(tens) - 1.);
 
-  } // Loop on cells
-
-  /* Free memory */
-  CS_FREE(c2f_ids);
-  CS_FREE(c2f_idx);
+  }); // Loop on cells
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -774,8 +661,8 @@ _compute_warp_error(const cs_mesh_t              *mesh,
  *
  * parameters:
  *   mesh             <-- pointer to a cs_mesh_t structure
- *   i_face_normal    <-- internal face normal
- *   b_face_normal    <-- border face normal
+ *   i_face_u_normal  <-- internal face unit normal
+ *   b_face_u_normal  <-- boundary face unit normal
  *   i_face_warping   --> face warping angle for internal faces
  *   b_face_warping   --> face warping angle for border faces
  *
@@ -783,73 +670,74 @@ _compute_warp_error(const cs_mesh_t              *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quality_compute_warping(const cs_mesh_t    *mesh,
-                                const cs_real_t     i_face_normal[],
-                                const cs_real_t     b_face_normal[],
-                                cs_real_t           i_face_warping[],
-                                cs_real_t           b_face_warping[])
+cs_mesh_quality_compute_warping(const cs_mesh_t      *mesh,
+                                const cs_nreal_3_t    i_face_u_normal[],
+                                const cs_nreal_3_t    b_face_u_normal[],
+                                cs_real_t             i_face_warping[],
+                                cs_real_t             b_face_warping[])
 {
-  cs_lnum_t  i, face_id, idx_start, idx_end;
-  cs_real_t  this_face_normal[3];
-
-  const cs_lnum_t  dim = mesh->dim;
   const cs_lnum_t  *i_face_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t  *i_face_vtx = mesh->i_face_vtx_lst;
 
-  assert(dim == 3);
+  const cs_real_t *vtx_coord = mesh->vtx_coord;
+
+  assert(mesh->dim == 3);
+
+  cs_dispatch_context ctx;
 
   /* Compute warping for internal faces */
   /*------------------------------------*/
 
-  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-
-    /* Get normal to the face */
-
-    for (i = 0; i < dim; i++)
-      this_face_normal[i] = i_face_normal[face_id*dim + i];
+  ctx.parallel_for(mesh->n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
     /* Evaluate warping for each edge of face. Keep the max. */
 
-    idx_start = i_face_vtx_idx[face_id];
-    idx_end = i_face_vtx_idx[face_id + 1];
+    cs_lnum_t idx_start = i_face_vtx_idx[face_id];
+    cs_lnum_t idx_end = i_face_vtx_idx[face_id + 1];
 
     _get_face_warping(idx_start,
                       idx_end,
-                      this_face_normal,
-                      mesh->i_face_vtx_lst,
-                      mesh->vtx_coord,
-                      &(i_face_warping[face_id]));
+                      i_face_u_normal[face_id],
+                      i_face_vtx,
+                      vtx_coord,
+                      i_face_warping[face_id]);
 
-  } /* End of loop on internal faces */
+  }); /* End of loop on internal faces */
 
   /* Compute warping for border faces */
   /*----------------------------------*/
 
   cs_mesh_quality_compute_b_face_warping(mesh,
-                                         b_face_normal,
+                                         b_face_u_normal,
                                          b_face_warping);
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Evaluate face warping angle for boundary faces..
  *
- * \param[in]   mesh            pointer to a cs_mesh_t structure
- * \param[in]   b_face_normal   boundary face normal
- * \param[out]  b_face_warping  face warping angle for boundary faces
+ * \param[in]   mesh              pointer to a cs_mesh_t structure
+ * \param[in]   b_face_u_normal   boundary face unit normal
+ * \param[out]  b_face_warping    face warping angle for boundary faces
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quality_compute_b_face_warping(const cs_mesh_t  *mesh,
-                                       const cs_real_t   b_face_normal[],
-                                       cs_real_t         b_face_warping[])
+cs_mesh_quality_compute_b_face_warping(const cs_mesh_t     *mesh,
+                                       const cs_nreal_3_t   b_face_u_normal[],
+                                       cs_real_t            b_face_warping[])
 {
-  const cs_lnum_t  dim = mesh->dim;
   const cs_lnum_t  *b_face_vtx_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t  *b_face_vtx = mesh->b_face_vtx_lst;
+  const cs_real_t *vtx_coord = mesh->vtx_coord;
 
-  assert(dim == 3);
+  assert(mesh->dim == 3);
 
-  for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+  cs_dispatch_context ctx;
+
+  ctx.parallel_for(mesh->n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
     /* Evaluate warping for each edge */
 
@@ -858,12 +746,14 @@ cs_mesh_quality_compute_b_face_warping(const cs_mesh_t  *mesh,
 
     _get_face_warping(idx_start,
                       idx_end,
-                      b_face_normal + (3*face_id),
-                      mesh->b_face_vtx_lst,
-                      mesh->vtx_coord,
-                      &(b_face_warping[face_id]));
+                      b_face_u_normal[face_id],
+                      b_face_vtx,
+                      vtx_coord,
+                      b_face_warping[face_id]);
 
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -895,6 +785,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
 
   const cs_time_step_t *ts = cs_glob_time_step;
+
+  cs_dispatch_context ctx;
 
   /* Check input data */
 
@@ -931,19 +823,16 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
   if (compute_warping == true) {
 
-    double  *i_face_warping = nullptr, *b_face_warping = nullptr;
+    cs_real_t *i_face_warping = nullptr, *b_face_warping = nullptr;
 
-    CS_MALLOC(working_array, n_i_faces + n_b_faces, double);
-
-    for (i = 0; i < n_i_faces + n_b_faces; i++)
-      working_array[i] = 0.;
+    CS_MALLOC_HD(working_array, n_i_faces + n_b_faces, cs_real_t, cs_alloc_mode);
 
     i_face_warping = working_array;
     b_face_warping = working_array + n_i_faces;
 
     cs_mesh_quality_compute_warping(mesh,
-                                    mesh_quantities->i_face_normal,
-                                    mesh_quantities->b_face_normal,
+                                    mesh_quantities->i_face_u_normal,
+                                    mesh_quantities->b_face_u_normal,
                                     i_face_warping,
                                     b_face_warping);
 
@@ -1009,22 +898,25 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
   if (compute_weighting == true) {
 
-    double  *weighting = nullptr, *offsetting = nullptr;
-
     /* Only defined on internal faces */
 
-    CS_MALLOC(working_array, n_i_faces + n_cells_wghosts, double);
+    CS_MALLOC_HD(working_array, n_i_faces + n_cells_wghosts, cs_real_t, cs_alloc_mode);
 
-    weighting = working_array;
-    offsetting = working_array + n_i_faces;
+    cs_real_t *weighting = working_array;
+    cs_real_t *offsetting = working_array + n_i_faces;
 
-    for (i = 0; i < n_cells_wghosts; i++)
-      offsetting[i] = 1.;
+    _compute_weighting(mesh,
+                       mesh_quantities,
+                       ctx,
+                       weighting);
 
-    _compute_weighting_offsetting(mesh,
-                                  mesh_quantities,
-                                  weighting,
-                                  offsetting);
+    _compute_offsetting(mesh,
+                        cs_glob_mesh_adjacencies,
+                        mesh_quantities,
+                        ctx,
+                        offsetting);
+
+    ctx.wait();
 
     /* Display histograms */
 
@@ -1086,20 +978,21 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
   if (compute_orthogonality == true) {
 
-    double  *i_face_ortho = nullptr, *b_face_ortho = nullptr;
-
-    CS_MALLOC(working_array, n_i_faces + n_b_faces, double);
+    CS_MALLOC_HD(working_array, n_i_faces + n_b_faces, cs_real_t, cs_alloc_mode);
 
     for (i = 0; i < n_i_faces + n_b_faces; i++)
       working_array[i] = 0.;
 
-    i_face_ortho = working_array;
-    b_face_ortho = working_array + n_i_faces;
+    cs_real_t *i_face_ortho = working_array;
+    cs_real_t *b_face_ortho = working_array + n_i_faces;
 
     _compute_orthogonality(mesh,
                            mesh_quantities,
+                           ctx,
                            i_face_ortho,
                            b_face_ortho);
+
+    ctx.wait();
 
     /* Display histograms */
 
@@ -1199,7 +1092,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   if (compute_thickness == true && mesh->n_g_b_faces > 0) {
 
     cs_real_t *b_thickness;
-    CS_MALLOC(b_thickness, mesh->n_b_faces, cs_real_t);
+    CS_MALLOC_HD(b_thickness, mesh->n_b_faces, cs_real_t, cs_alloc_mode);
 
     cs_mesh_quantities_b_thickness_f(mesh, mesh_quantities, 0, b_thickness);
 
@@ -1240,9 +1133,15 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   if (compute_warp_error == true) {
 
     cs_real_t  *warp_error = nullptr;
-    CS_MALLOC(warp_error, mesh->n_cells ,cs_real_t);
+    CS_MALLOC_HD(warp_error, mesh->n_cells ,cs_real_t, cs_alloc_mode);
 
-    _compute_warp_error(mesh, mesh_quantities, warp_error);
+    _compute_warp_error(mesh,
+                        cs_glob_mesh_adjacencies,
+                        mesh_quantities,
+                        ctx,
+                        warp_error);
+
+    ctx.wait();
 
     /* Display histograms */
 
@@ -1282,12 +1181,6 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   } /* End of cell volume treatment */
 
 }
-
-/*----------------------------------------------------------------------------*/
-
-/* Delete local macros */
-
-#undef _COSINE_3D
 
 /*----------------------------------------------------------------------------*/
 
