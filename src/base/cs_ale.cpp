@@ -159,8 +159,8 @@ _free_surface(const cs_domain_t  *domain,
   const cs_mesh_t *m = domain->mesh;
   const cs_real_3_t *restrict vtx_coord = (const cs_real_3_t *)m->vtx_coord;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
   const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   /* Boundary mass flux */
@@ -256,7 +256,8 @@ _free_surface(const cs_domain_t  *domain,
     const cs_lnum_t face_id = z->elt_ids[elt_id];
 
     const cs_real_t mf_inv_rho_n_dot_s = b_mass_flux[face_id] /
-      (cs_math_3_dot_product(normal, b_face_normal[face_id])
+      (  cs_math_3_dot_product(normal, b_face_u_normal[face_id])
+       * b_face_surf[face_id]
        * CS_F_(rho_b)->val[face_id]);
 
     cs_real_3_t f_vel = {
@@ -495,10 +496,10 @@ _update_bcs(const cs_domain_t  *domain,
             int                 ale_bc_type[],
             cs_real_3_t         b_fluid_vel[])
 {
-  const cs_mesh_t  *m = domain->mesh;
+  const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
-  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
   const cs_real_3_t *restrict vtx_coord  = (const cs_real_3_t *)m->vtx_coord;
   const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
@@ -551,12 +552,12 @@ _update_bcs(const cs_domain_t  *domain,
 
           const cs_lnum_t face_id = z->elt_ids[elt_id];
 
-          cs_real_3_t normal;
-          cs_math_3_normalize(b_face_normal[face_id], normal);
+          cs_real_t normal[3]; // copy in case cs_real_t != cs_nreal_t
+          for (cs_lnum_t i = 0; i < 3; i++)
+            normal[i] = b_face_u_normal[face_id][i];
 
           const cs_lnum_t s = m->b_face_vtx_idx[face_id];
           const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
-
 
           /* Compute the portion of surface associated to v_id_1 */
           for (cs_lnum_t k = s; k < e; k++) {
@@ -586,7 +587,7 @@ _update_bcs(const cs_domain_t  *domain,
             /* Portion of the surface associated to the vertex
              * projected in the normal direction */
             cs_real_t portion_surf = 0.25 * (
-                cs_math_3_triple_product(v0v1, v1_cog, normal)
+                  cs_math_3_triple_product(v0v1, v1_cog, normal)
                 + cs_math_3_triple_product(v1v2, v1_cog, normal));
 
             _v_surf[v_id1] += portion_surf;
@@ -678,9 +679,11 @@ _update_bcs(const cs_domain_t  *domain,
 
           ale_bc_type[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
 
-          cs_real_3_t normal;
+          cs_real_t normal[3]; // copy in case cs_real_t != cs_nreal_t
+          for (cs_lnum_t i = 0; i < 3; i++)
+            normal[i] = b_face_u_normal[face_id][i];
+
           /* Normal direction is given by the gravity */
-          cs_math_3_normalize(b_face_normal[face_id], normal);
           const cs_real_t dsurf = 1. / mq->b_face_surf[face_id];
 
           b_fluid_vel[face_id][0] = 0.;
@@ -893,7 +896,8 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_real_t *b_dist = mq->b_dist;
-  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
   /* The mass flux is necessary to call cs_equation_iterative_solve_vector
@@ -951,14 +955,16 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
       if (idftnp & CS_ISOTROPIC_DIFFUSION) {
         for (int isou = 0; isou < 3; isou++)
           hintt[isou] = CS_F_(vism)->val[cell_id] / distbf;
-      } else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
+      }
+      else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
         for (int isou = 0; isou < 6; isou++)
           hintt[isou] = CS_F_(vism)->val[6*cell_id+isou] / distbf;
       }
 
-      cs_real_t prosrf = cs_math_3_dot_product(grav, b_face_normal[face_id]);
+      cs_real_t prosrf =   cs_math_3_dot_product(grav, b_face_u_normal[face_id])
+                         * b_face_surf[face_id];
 
-      cs_real_3_t pimpv;
+      cs_real_t pimpv[3];
       for (int i = 0; i < 3; i++)
         pimpv[i] = grav[i]*b_massflux[face_id]/(brom[face_id]*prosrf);
 
