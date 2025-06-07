@@ -1529,29 +1529,6 @@ _discard_free_vertices(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Remove selector and associated structures.
- *
- * mesh       <-> pointer to a mesh structure
- *----------------------------------------------------------------------------*/
-
-static void
-_free_selectors(cs_mesh_t  *mesh)
-{
-  if (mesh->select_cells != nullptr)
-    mesh->select_cells = fvm_selector_destroy(mesh->select_cells);
-  if (mesh->select_i_faces != nullptr)
-    mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
-  if (mesh->select_b_faces != nullptr)
-    mesh->select_b_faces = fvm_selector_destroy(mesh->select_b_faces);
-
-  /* Destroy group class set after selectors, who reference it */
-
-  if (mesh->class_defs != nullptr)
-    mesh->class_defs
-      = fvm_group_class_set_destroy(mesh->class_defs);
-}
-
-/*----------------------------------------------------------------------------
  * Prepare local processor count for mesh stats.
  *
  * parameters:
@@ -2280,8 +2257,7 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
   /* Destroy group class set after selectors, who reference it */
 
   if (mesh->class_defs != nullptr)
-    mesh->class_defs
-      = fvm_group_class_set_destroy(mesh->class_defs);
+    mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
 }
 
 /*----------------------------------------------------------------------------
@@ -2306,8 +2282,7 @@ cs_mesh_free_b_rebuildable(cs_mesh_t  *mesh)
     mesh->select_b_faces = fvm_selector_destroy(mesh->select_b_faces);
 
   if (mesh->class_defs != nullptr)
-    mesh->class_defs
-      = fvm_group_class_set_destroy(mesh->class_defs);
+    mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
 }
 
 /*----------------------------------------------------------------------------
@@ -3200,7 +3175,7 @@ cs_mesh_init_cell_selector(void)
                           cs_glob_mesh->class_defs,
                           cs_glob_mesh->cell_family,
                           1,
-                          (cs_real_t *)cs_glob_mesh_quantities->cell_cen,
+                          cs_glob_mesh_quantities->cell_cen,
                           nullptr);
 }
 
@@ -3224,8 +3199,8 @@ cs_mesh_init_b_selector(void)
                           cs_glob_mesh->class_defs,
                           cs_glob_mesh->b_face_family,
                           1,
-                          (cs_real_t *)cs_glob_mesh_quantities->b_face_cog,
-                          cs_glob_mesh_quantities->b_face_normal);
+                          cs_glob_mesh_quantities->b_face_cog,
+                          cs_glob_mesh_quantities->b_face_u_normal);
 }
 
 /*----------------------------------------------------------------------------
@@ -3248,8 +3223,8 @@ cs_mesh_init_i_selector(void)
                           cs_glob_mesh->class_defs,
                           cs_glob_mesh->i_face_family,
                           1,
-                          (cs_real_t *)cs_glob_mesh_quantities->i_face_cog,
-                          cs_glob_mesh_quantities->i_face_normal);
+                          cs_glob_mesh_quantities->i_face_cog,
+                          cs_glob_mesh_quantities->i_face_u_normal);
 }
 
 /*----------------------------------------------------------------------------

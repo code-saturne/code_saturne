@@ -156,11 +156,20 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   ple_locator_t *locator = ple_locator_create();
 #endif
 
-  cs_real_t *b_face_cog = nullptr, * b_face_normal = nullptr;
+  cs_real_3_t  *b_face_cog = nullptr;
+  cs_nreal_3_t *b_face_u_normal = nullptr;
+  CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t, cs_alloc_mode);
 
-  cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+  cs_mesh_quantities_compute_face_cog_un
+    (mesh->n_b_faces,
+     reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+     mesh->b_face_vtx_idx,
+     mesh->b_face_vtx_lst,
+     b_face_cog,
+     b_face_u_normal);
 
-  CS_FREE(b_face_normal);
+  CS_FREE(b_face_u_normal);
 
   ple_locator_set_mesh(locator,
                        free_faces,
@@ -171,7 +180,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
                        n_no_group,
                        no_group_list,
                        nullptr,
-                       b_face_cog,
+                       (const cs_real_t *)b_face_cog,
                        nullptr,
                        cs_coupling_mesh_extents,
                        cs_coupling_point_in_mesh_p);

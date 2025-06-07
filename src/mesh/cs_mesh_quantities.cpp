@@ -129,6 +129,8 @@ static int _n_computations = 0;
  * Private function definitions
  *============================================================================*/
 
+END_C_DECLS
+
 /*----------------------------------------------------------------------------
  * Project solid vertices to a plane
  *
@@ -344,15 +346,16 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
 }
 
 /*----------------------------------------------------------------------------
- * Compute quantities associated to faces (border or internal)
+ * Compute quantities associated to a set of faces
  *
  * parameters:
  *   n_faces         <--  number of faces
+ *   normalize       <--  normalize normals
  *   vtx_coord       <--  vertex coordinates
  *   face_vtx_idx    <--  "face -> vertices" connectivity index
  *   face_vtx        <--  "face -> vertices" connectivity
  *   face_cog        -->  coordinates of the center of gravity of the faces
- *   face_normal     -->  face surface normals
+ *   face_normal     -->  face surface or unit normals
  *
  *                          Pi+1
  *              *---------*                   B  : barycenter of the polygon
@@ -369,13 +372,15 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
  *            P0
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _compute_face_quantities(cs_lnum_t        n_faces,
+                         bool             unit_normals,
                          const cs_real_t  vtx_coord[][3],
                          const cs_lnum_t  face_vtx_idx[],
                          const cs_lnum_t  face_vtx[],
                          cs_real_t        face_cog[][3],
-                         cs_real_t        face_normal[][3])
+                         T                face_normal[][3])
 {
   /* Checking */
 
@@ -402,6 +407,8 @@ _compute_face_quantities(cs_lnum_t        n_faces,
       const cs_lnum_t v1 = face_vtx[s_id+1];
       const cs_lnum_t v2 = face_vtx[s_id+2];
       cs_real_t v01[3], v02[3], vn[3];
+      cs_real_t f_norm[3];
+
       for (cs_lnum_t i = 0; i < 3; i++)
         face_cog[f_id][i] = one_third * (  vtx_coord[v0][i]
                                          + vtx_coord[v1][i]
@@ -412,7 +419,13 @@ _compute_face_quantities(cs_lnum_t        n_faces,
         v02[i] = vtx_coord[v2][i] - vtx_coord[v0][i];
       cs_math_3_cross_product(v01, v02, vn);
       for (cs_lnum_t i = 0; i < 3; i++)
-        face_normal[f_id][i] = 0.5*vn[i];
+        f_norm[i] = 0.5*vn[i];
+
+      if (unit_normals)
+        cs_math_3_normalize(f_norm, f_norm);
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        face_normal[f_id][i] = f_norm[i];
     }
 
     else { /* For non-triangle faces, assume a division into triangles
@@ -544,6 +557,9 @@ _compute_face_quantities(cs_lnum_t        n_faces,
         }
 
       }
+
+      if (unit_normals)
+        cs_math_3_normalize(f_norm, f_norm);
 
       for (cs_lnum_t i = 0; i < 3; i++)
         face_normal[f_id][i] = f_norm[i];
@@ -1220,11 +1236,11 @@ _compute_cell_quantities(const cs_mesh_t      *mesh,
   CS_MALLOC(a_cell_cen, n_cells_ext, cs_real_3_t);
 
   cs_mesh_quantities_cell_faces_cog(mesh,
-                                    (const cs_real_t *)i_face_norm,
-                                    (const cs_real_t *)i_face_cog,
-                                    (const cs_real_t *)b_face_norm,
-                                    (const cs_real_t *)b_face_cog,
-                                    (cs_real_t *)a_cell_cen);
+                                    i_face_norm,
+                                    i_face_cog,
+                                    b_face_norm,
+                                    b_face_cog,
+                                    a_cell_cen);
 
   /* Initialization */
 
@@ -2827,13 +2843,7 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function definitions
@@ -3067,10 +3077,11 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
   /* Compute face centers of gravity, normals, and surfaces */
 
   _compute_face_quantities(n_i_faces,
+                           false,
                            (const cs_real_3_t *)m->vtx_coord,
                            m->i_face_vtx_idx,
                            m->i_face_vtx_lst,
-                           (cs_real_3_t *)mq->i_face_cog,
+                           mq->i_face_cog,
                            (cs_real_3_t *)mq->i_face_normal);
 
   _compute_face_surface(n_i_faces,
@@ -3078,10 +3089,11 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
                         mq->i_face_surf);
 
   _compute_face_quantities(n_b_faces,
+                           false,
                            (const cs_real_3_t *)m->vtx_coord,
                            m->b_face_vtx_idx,
                            m->b_face_vtx_lst,
-                           (cs_real_3_t *)mq->b_face_cog,
+                           mq->b_face_cog,
                            (cs_real_3_t *)mq->b_face_normal);
 
   _compute_face_surface(n_b_faces,
@@ -3132,11 +3144,11 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 
   case 0:
     cs_mesh_quantities_cell_faces_cog(m,
-                                      mq->i_face_normal,
-                                      (cs_real_t *)mq->i_face_cog,
-                                      mq->b_face_normal,
-                                      (cs_real_t *)mq->b_face_cog,
-                                      (cs_real_t *)mq->cell_cen);
+                                      (const cs_real_3_t *)mq->i_face_normal,
+                                      mq->i_face_cog,
+                                      (const cs_real_3_t *)mq->b_face_normal,
+                                      mq->b_face_cog,
+                                      mq->cell_cen);
 
     break;
   case 1:
@@ -3650,6 +3662,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         }
 
         _compute_face_quantities(1,
+                                 false,
                                  f_vtx_coord_l,
                                  f_vtx_idx,
                                  f_face_pos,
@@ -3943,6 +3956,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         }
 
         _compute_face_quantities(1,
+                                 false,
                                  f_vtx_coord_l,
                                  f_vtx_idx,
                                  f_face_pos,
@@ -4783,69 +4797,61 @@ cs_mesh_quantities_face_normal(const cs_mesh_t   *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Compute interior face centers and normals.
- *
- * The corresponding arrays are allocated by this function, and it is the
- * caller's responsibility to free them when they are no longer needed.
+ * Compute center of gravity and surface normal associated to a set of faces
  *
  * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   p_i_face_cog    <-> pointer to the interior face center array
- *   p_i_face_normal <-> pointer to the interior face normal array
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx        <--  "face -> vertices" connectivity
+ *   face_cog        -->  coordinates of the center of gravity of the faces
+ *   face_normal     -->  face surface normals
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_i_faces(const cs_mesh_t   *mesh,
-                           cs_real_t         *p_i_face_cog[],
-                           cs_real_t         *p_i_face_normal[])
+cs_mesh_quantities_compute_face_cog_sn(cs_lnum_t        n_faces,
+                                       const cs_real_t  vtx_coord[][3],
+                                       const cs_lnum_t  face_vtx_idx[],
+                                       const cs_lnum_t  face_vtx[],
+                                       cs_real_t        face_cog[][3],
+                                       cs_real_t        face_normal[][3])
 {
-  cs_real_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
-
-  CS_MALLOC(i_face_cog, mesh->n_i_faces * mesh->dim, cs_real_t);
-  CS_MALLOC(i_face_normal, mesh->n_i_faces * mesh->dim, cs_real_t);
-
-  _compute_face_quantities(mesh->n_i_faces,
-                          (const cs_real_3_t *)mesh->vtx_coord,
-                          mesh->i_face_vtx_idx,
-                          mesh->i_face_vtx_lst,
-                          (cs_real_3_t *)i_face_cog,
-                          (cs_real_3_t *)i_face_normal);
-
-  *p_i_face_cog = i_face_cog;
-  *p_i_face_normal = i_face_normal;
+  _compute_face_quantities(n_faces,
+                           false,
+                           vtx_coord,
+                           face_vtx_idx,
+                           face_vtx,
+                           face_cog,
+                           face_normal);
 }
 
 /*----------------------------------------------------------------------------
- * Compute border face centers and normals.
- *
- * The corresponding arrays are allocated by this function, and it is the
- * caller's responsibility to free them when they are no longer needed.
+ * Compute center of gravity and unit normal associated to a set of faces
  *
  * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   p_b_face_cog    <-> pointer to the border face center array
- *   p_b_face_normal <-> pointer to the border face normal array
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx        <--  "face -> vertices" connectivity
+ *   face_cog        -->  coordinates of the center of gravity of the faces
+ *   face_u_normal   -->  face unit normals
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
-                           cs_real_t         *p_b_face_cog[],
-                           cs_real_t         *p_b_face_normal[])
+cs_mesh_quantities_compute_face_cog_un(cs_lnum_t        n_faces,
+                                       const cs_real_t  vtx_coord[][3],
+                                       const cs_lnum_t  face_vtx_idx[],
+                                       const cs_lnum_t  face_vtx[],
+                                       cs_real_t        face_cog[][3],
+                                       cs_nreal_t       face_u_normal[][3])
 {
-  cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
-
-  CS_MALLOC(b_face_cog, mesh->n_b_faces * mesh->dim, cs_real_t);
-  CS_MALLOC(b_face_normal, mesh->n_b_faces * mesh->dim, cs_real_t);
-
-  _compute_face_quantities(mesh->n_b_faces,
-                           (const cs_real_3_t *)mesh->vtx_coord,
-                           mesh->b_face_vtx_idx,
-                           mesh->b_face_vtx_lst,
-                           (cs_real_3_t *)b_face_cog,
-                           (cs_real_3_t *)b_face_normal);
-
-  *p_b_face_cog = b_face_cog;
-  *p_b_face_normal = b_face_normal;
+  _compute_face_quantities(n_faces,
+                           true,
+                           vtx_coord,
+                           face_vtx_idx,
+                           face_vtx,
+                           face_cog,
+                           face_u_normal);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4871,12 +4877,12 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
-                                  const cs_real_t   i_face_norm[],
-                                  const cs_real_t   i_face_cog[],
-                                  const cs_real_t   b_face_norm[],
-                                  const cs_real_t   b_face_cog[],
-                                  cs_real_t         cell_cen[])
+cs_mesh_quantities_cell_faces_cog(const cs_mesh_t    *mesh,
+                                  const cs_real_3_t   i_face_norm[],
+                                  const cs_real_3_t   i_face_cog[],
+                                  const cs_real_3_t   b_face_norm[],
+                                  const cs_real_3_t   b_face_cog[],
+                                  cs_real_3_t         cell_cen[])
 {
   cs_real_t  *cell_area = nullptr;
 
@@ -4908,7 +4914,7 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
     cell_area[j] = 0.;
 
     for (cs_lnum_t i = 0; i < 3; i++)
-      cell_cen[3*j + i] = 0.;
+      cell_cen[j][i] = 0.;
 
   }
 
@@ -4925,19 +4931,19 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
 
     /* Computation of the area of the face */
 
-    cs_real_t area = cs_math_3_norm(i_face_norm + 3*f_id);
+    cs_real_t area = cs_math_3_norm(i_face_norm[f_id]);
 
     if (   !(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE)
         || area > 1.e-20) {
       if (c_id1 > -1) {
         cell_area[c_id1] += area;
         for (cs_lnum_t i = 0; i < 3; i++)
-          cell_cen[3*c_id1 + i] += i_face_cog[3*f_id + i]*area;
+          cell_cen[c_id1][i] += i_face_cog[f_id][i]*area;
       }
       if (c_id2 > -1) {
         cell_area[c_id2] += area;
         for (cs_lnum_t i = 0; i < 3; i++)
-          cell_cen[3*c_id2 + i] += i_face_cog[3*f_id + i]*area;
+          cell_cen[c_id2][i] += i_face_cog[f_id][i]*area;
       }
     }
 
@@ -4959,7 +4965,7 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
 
     if (c_id1 > -1) {
 
-      cs_real_t area = cs_math_3_norm(b_face_norm + 3*f_id);
+      cs_real_t area = cs_math_3_norm(b_face_norm[f_id]);
 
       if (!(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE) ||
           area > 1.e-20) {
@@ -4968,7 +4974,7 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
         /* Computation of the numerator */
 
         for (cs_lnum_t i = 0; i < 3; i++)
-          cell_cen[3*c_id1 + i] += b_face_cog[3*f_id + i]*area;
+          cell_cen[c_id1][i] += b_face_cog[f_id][i]*area;
       }
 
     }
@@ -4981,7 +4987,7 @@ cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     for (cs_lnum_t i = 0; i < 3; i++)
-      cell_cen[c_id*3 + i] /= cell_area[c_id];
+      cell_cen[c_id][i] /= cell_area[c_id];
 
   }
 
@@ -5012,18 +5018,38 @@ cs_mesh_quantities_cell_volume(const cs_mesh_t  *mesh)
   cs_real_3_t *cell_cen;
   CS_MALLOC(cell_cen, mesh->n_cells_with_ghosts, cs_real_3_t);
 
-  cs_real_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
-  cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
+  cs_real_3_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
+  cs_real_3_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
 
-  cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
-  cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+  CS_MALLOC_HD(i_face_cog, mesh->n_i_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_face_normal, mesh->n_i_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_normal, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+
+  _compute_face_quantities
+    (mesh->n_i_faces,
+     false, //  unit_normals,
+     reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+     mesh->i_face_vtx_idx,
+     mesh->i_face_vtx_lst,
+     i_face_cog,
+     i_face_normal);
+
+  _compute_face_quantities
+    (mesh->n_b_faces,
+     false, //  unit_normals,
+     reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+     mesh->b_face_vtx_idx,
+     mesh->b_face_vtx_lst,
+     b_face_cog,
+     b_face_normal);
 
   _compute_cell_quantities(mesh,
-                           (const cs_real_3_t *)i_face_normal,
-                           (const cs_real_3_t *)i_face_cog,
-                           (const cs_real_3_t *)b_face_normal,
-                           (const cs_real_3_t *)b_face_cog,
-                           (cs_real_3_t *)cell_cen,
+                           i_face_normal,
+                           i_face_cog,
+                           b_face_normal,
+                           b_face_cog,
+                           cell_cen,
                            cell_vol);
 
   CS_FREE(cell_cen);
@@ -5332,34 +5358,6 @@ cs_mesh_quantities_b_thickness_f(const cs_mesh_t             *m,
     CS_FREE(v_b_thickness);
 
   }
-}
-
-/*----------------------------------------------------------------------------
- * Compute quantities associated to a list of faces (border or internal)
- *
- * parameters:
- *   n_faces         <--  number of faces
- *   vtx_coord       <--  vertex coordinates
- *   face_vtx_idx    <--  "face -> vertices" connectivity index
- *   face_vtx        <--  "face -> vertices" connectivity
- *   face_cog        -->  coordinates of the center of gravity of the faces
- *   face_normal     -->  face surface normals
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_compute_face_quantities(cs_lnum_t        n_faces,
-                                           const cs_real_t  vtx_coord[][3],
-                                           const cs_lnum_t  face_vtx_idx[],
-                                           const cs_lnum_t  face_vtx[],
-                                           cs_real_t        face_cog[][3],
-                                           cs_real_t        face_normal[][3])
-{
-  _compute_face_quantities(n_faces,
-                           vtx_coord,
-                           face_vtx_idx,
-                           face_vtx,
-                           face_cog,
-                           face_normal);
 }
 
 /*----------------------------------------------------------------------------*/

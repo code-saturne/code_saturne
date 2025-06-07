@@ -125,12 +125,13 @@ struct _fvm_selector_t {
   int              **attribute_ids;            /* Id of attributes per class in
                                                   attribute */
 
-  const double      *coords;                   /* Element coordinates
-                                                  (i.e. centers), interlaced */
-  double            *_coords;                  /* private coords, or nullptr */
+  const cs_real_3_t   *coords;                 /* Element coordinates
+                                                  (i.e. centers) */
+  cs_real_3_t         *_coords;                /* private coords, or nullptr */
 
-  const double      *normals;                  /* Element normals, interlaced */
-  double            *_normals;                 /* private normals, or nullptr */
+  const cs_nreal_3_t  *u_normals;              /* Element unit normals */
+  cs_nreal_3_t        *_u_normals;             /* private unit normals,
+                                                  or nullptr */
 
   _operation_list_t *_operations;              /* Array which caches all
                                                   previously interpreted
@@ -752,11 +753,10 @@ _get_criteria_id(fvm_selector_t  *selector,
  *   group_class_id       <-- group class id associated with each element
  *                            (size: n_elements)
  *   group_class_id_base; <-- Starting group class id base (usually 0 or 1)
- *   coords               <-- coordinates (interlaced) associated with each
+ *   coords               <-- coordinates associated with each
  *                            element, whether vertex, face or cell center, ...
- *                            (size: n_elements * dim)
- *   normals              <-- normals (interlaced) associated with each element
- *                            if applicable (such as for face normals), or nullptr
+ *   u_normals            <-- unit normals associated with each element
+ *                            if applicable (such as for face normals), or NULL
  *
  * returns:
  *   pointer to new selector
@@ -768,8 +768,8 @@ fvm_selector_create(int                           dim,
                     const fvm_group_class_set_t  *group_class_set,
                     const int                     group_class_id[],
                     int                           group_class_id_base,
-                    const double                  coords[],
-                    const double                  normals[])
+                    const cs_real_3_t             coords[],
+                    const cs_nreal_3_t            u_normals[])
 {
   int i;
   cs_lnum_t j;
@@ -800,8 +800,8 @@ fvm_selector_create(int                           dim,
 
   selector->coords = coords;
   selector->_coords = nullptr;
-  selector->normals = normals;
-  selector->_normals = nullptr;
+  selector->u_normals = u_normals;
+  selector->_u_normals = nullptr;
 
   selector->_operations = nullptr;
 
@@ -871,10 +871,8 @@ fvm_selector_destroy(fvm_selector_t  *this_selector)
 
   _operation_list_free(this_selector->_operations);
 
-  if (this_selector->_coords != nullptr)
-    CS_FREE(this_selector->_coords);
-  if (this_selector->_normals != nullptr)
-    CS_FREE(this_selector->_normals);
+  CS_FREE(this_selector->_coords);
+  CS_FREE(this_selector->_u_normals);
 
   for (i = 0; i < this_selector->n_groups; i++)
     CS_FREE(this_selector->group_name[i]);
@@ -886,10 +884,8 @@ fvm_selector_destroy(fvm_selector_t  *this_selector)
   CS_FREE(this_selector->n_class_attributes);
 
   for (i = 0; i < this_selector->n_group_classes; i++) {
-    if (this_selector->group_ids[i] != nullptr)
-      CS_FREE(this_selector->group_ids[i]);
-    if (this_selector->attribute_ids[i] != nullptr)
-      CS_FREE(this_selector->attribute_ids[i]);
+    CS_FREE(this_selector->group_ids[i]);
+    CS_FREE(this_selector->attribute_ids[i]);
   }
 
   CS_FREE(this_selector->group_ids);
@@ -1001,7 +997,7 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
                   "has no associated coordinates."),
                 str);
     else if (   fvm_selector_postfix_normals_dep(pf) == true
-             && ts->normals == nullptr)
+             && ts->u_normals == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _("Selection criteria:\n"
                   "\"%s\"\n"
@@ -1030,8 +1026,8 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
                                       (ts->group_name),
                                     ts->group_ids[gc_id],
                                     ts->attribute_ids[gc_id],
-                                    ts->coords + (i*dim),
-                                    ts->normals + (i*dim)))
+                                    ts->coords[i],
+                                    ts->u_normals[i]))
         selected_elements[(*n_selected_elements)++] = i + elt_id_base;
 
     }
@@ -1273,7 +1269,7 @@ fvm_selector_dump(const fvm_selector_t  *this_selector)
              "  Private normals:                    %p\n"
              "  Operations list:                    %p\n",
              (const void *)ts->coords, (const void *)ts->_coords,
-             (const void *)ts->normals, (const void *)ts->_normals,
+             (const void *)ts->u_normals, (const void *)ts->_u_normals,
              (const void *)ts->_operations);
 
   if (ts->n_group_classes > 0) {

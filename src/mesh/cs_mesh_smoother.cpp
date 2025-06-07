@@ -72,14 +72,10 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
-#undef _DOT_PRODUCT_3D
 
 #define UNWARPING_MAX_LOOPS 50
 #define UNWARPING_MVT 0.1
 #define _PI_ atan(1.0)*4.0
-
-#define _DOT_PRODUCT_3D(v1, v2) ( \
- v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2])
 
 /*============================================================================
  * Private function definitions
@@ -236,11 +232,6 @@ _histogram(cs_lnum_t             n_vals,
            cs_real_t             n_min,
            cs_real_t             n_max)
 {
-  cs_lnum_t  i;
-  int        j, k;
-
-  cs_real_t  step;
-
   cs_gnum_t count[10];
   const int  n_steps = 10;
 
@@ -248,19 +239,20 @@ _histogram(cs_lnum_t             n_vals,
 
   /* Define axis subdivisions */
 
-  for (j = 0; j < n_steps; j++)
+  for (cs_lnum_t j = 0; j < n_steps; j++)
     count[j] = 0;
 
   if (cs::abs(max - min) > 0.) {
 
-    step = cs::abs(max - min) / n_steps;
+    cs_real_t step = cs::abs(max - min) / n_steps;
 
     /* Loop on values */
 
-    for (i = 0; i < n_vals; i++) {
+    for (cs_lnum_t i = 0; i < n_vals; i++) {
 
       /* Associated subdivision */
 
+      cs_lnum_t j, k;
       for (j = 0, k = 1; k < n_steps; j++, k++) {
         if (var[i] < min + k*step)
           break;
@@ -294,35 +286,30 @@ _int_face_histogram(const cs_mesh_t      *mesh,
                     cs_real_t             n_min,
                     cs_real_t             n_max)
 {
-  cs_lnum_t  i;
-  int        j, k;
-
-  cs_real_t  step;
-
   cs_gnum_t count[8];
   const int  n_steps = 8;
 
   assert(sizeof(double) == sizeof(cs_real_t));
 
-
   /* Define axis subdivisions */
 
-  for (j = 0; j < n_steps; j++)
+  for (cs_lnum_t j = 0; j < n_steps; j++)
     count[j] = 0;
 
   if (cs::abs(max - min) > 0.) {
 
-    step = cs::abs(max - min) / n_steps;
+    cs_real_t step = cs::abs(max - min) / n_steps;
 
     /* Loop on faces */
 
-    for (i = 0; i < mesh->n_i_faces; i++) {
+    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
 
       if (mesh->i_face_cells[i][0] >= mesh->n_cells)
         continue;
 
       /* Associated subdivision */
 
+      cs_lnum_t j, k;
       for (j = 0, k = 1; k < n_steps; j++, k++) {
         if (var[i] < min + k*step)
           break;
@@ -350,11 +337,11 @@ _move_vertices(cs_mesh_t  *mesh,
                cs_real_t  *vtx_mvt,
                const int   vtx_is_fixed[])
 {
-  int i, k;
-  for (i = 0; i < mesh->n_vertices; i++) {
+  cs_real_t  *vtx_coord = mesh->vtx_coord;
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
     if (vtx_is_fixed[i] == 0) {
-      for (k = 0; k < 3; k++)
-        mesh->vtx_coord[3*i + k] += vtx_mvt[3*i + k];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        vtx_coord[3*i + k] += vtx_mvt[3*i + k];
     }
   }
 }
@@ -599,33 +586,43 @@ _get_tolerance(cs_mesh_t   *mesh,
 
 static cs_real_t
 _unwarping_mvt(cs_mesh_t            *mesh,
-               cs_real_t            *i_face_norm,
-               cs_real_t            *b_face_norm,
-               cs_real_t            *i_face_cog,
-               cs_real_t            *b_face_cog,
+               cs_nreal_3_t         *i_face_u_norm,
+               cs_nreal_3_t         *b_face_u_norm,
+               cs_real_3_t          *i_face_cog,
+               cs_real_3_t          *b_face_cog,
                cs_real_t            *loc_vtx_mvt,
                cs_real_t            *i_face_warp,
                cs_real_t            *b_face_warp,
                cs_real_t            *vtx_tolerance,
                double                frac)
 {
-  cs_lnum_t face_id, i;
-  int coord_id;
-  cs_lnum_t start_id, end_id, vtx;
-  cs_real_t lambda;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_vertices = mesh->n_vertices;
+
+  const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
+  const cs_lnum_t *b_face_vtx_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t *b_face_vtx = mesh->b_face_vtx_lst;
+  const cs_lnum_t *i_face_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t *i_face_vtx = mesh->i_face_vtx_lst;
+  const cs_real_t *vtx_coord = mesh->vtx_coord;
+
   cs_real_t max_vtxtol = 0.;
   cs_real_t maxwarp = 0.;
 
-  for (face_id = 0; face_id < mesh->n_i_faces; face_id++)
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     if (maxwarp < i_face_warp[face_id])
       maxwarp = i_face_warp[face_id];
-  for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
+  }
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     if (maxwarp < b_face_warp[face_id])
       maxwarp = b_face_warp[face_id];
+  }
 
-  for (i = 0; i < mesh->n_vertices*3; i++)
+  for (cs_lnum_t i = 0; i < n_vertices*3; i++)
     loc_vtx_mvt[i] = 0.0;
-  for (i = 0; i < mesh->n_vertices; i++)
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
     if (vtx_tolerance[i] > max_vtxtol)
       max_vtxtol = vtx_tolerance[i];
 
@@ -644,42 +641,41 @@ _unwarping_mvt(cs_mesh_t            *mesh,
   }
 #endif
 
-  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-    start_id = mesh->b_face_vtx_idx[face_id];
-    end_id = mesh->b_face_vtx_idx[face_id + 1];
-    for (i = start_id; i < end_id; i++) {
-      vtx = mesh->b_face_vtx_lst[i];
-      lambda = 0.0;
-      for (coord_id = 0; coord_id < 3; coord_id++)
-        lambda +=  (mesh->vtx_coord[3*vtx + coord_id]
-                    - b_face_cog[3*face_id + coord_id])
-                    * b_face_norm[3*face_id + coord_id];
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    cs_lnum_t start_id = b_face_vtx_idx[face_id];
+    cs_lnum_t end_id = b_face_vtx_idx[face_id + 1];
+    for (cs_lnum_t i = start_id; i < end_id; i++) {
+      cs_lnum_t vtx = b_face_vtx[i];
+      cs_real_t lambda = 0.0;
+      for (cs_lnum_t coord_id = 0; coord_id < 3; coord_id++)
+        lambda +=  (vtx_coord[3*vtx + coord_id]
+                    - b_face_cog[face_id][coord_id])
+                    * b_face_u_norm[face_id][coord_id];
 
-      for (coord_id = 0; coord_id < 3; coord_id++) {
+      for (cs_lnum_t coord_id = 0; coord_id < 3; coord_id++) {
         loc_vtx_mvt[vtx*3 + coord_id] -=
-          lambda * b_face_norm[3*face_id + coord_id]
+          lambda * b_face_u_norm[face_id][coord_id]
                  * UNWARPING_MVT * (b_face_warp[face_id]/maxwarp)
                  * (vtx_tolerance[vtx]/(max_vtxtol*frac));
       }
     }
   }
 
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    if (i_face_cells[face_id][0] < n_cells) {
+      cs_lnum_t start_id = i_face_vtx_idx[face_id];
+      cs_lnum_t end_id = i_face_vtx_idx[face_id + 1];
+      for (cs_lnum_t i = start_id; i < end_id; i++) {
+        cs_lnum_t vtx = i_face_vtx[i];
+        cs_real_t lambda = 0.0;
+        for (cs_lnum_t coord_id = 0; coord_id < 3; coord_id++)
+          lambda += (vtx_coord[3*vtx + coord_id]
+                     - i_face_cog[face_id][coord_id])
+                     * i_face_u_norm[face_id][coord_id];
 
-  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-    if (mesh->i_face_cells[face_id][0] < mesh->n_cells) {
-      start_id = mesh->i_face_vtx_idx[face_id];
-      end_id = mesh->i_face_vtx_idx[face_id + 1];
-      for (i = start_id; i < end_id; i++) {
-        vtx = mesh->i_face_vtx_lst[i];
-        lambda = 0.0;
-        for (coord_id = 0; coord_id < 3; coord_id++)
-          lambda += (mesh->vtx_coord[3*vtx + coord_id]
-                     - i_face_cog[3*face_id + coord_id])
-                     * i_face_norm[3*face_id + coord_id];
-
-        for (coord_id = 0; coord_id < 3; coord_id++) {
+        for (cs_lnum_t coord_id = 0; coord_id < 3; coord_id++) {
           loc_vtx_mvt[vtx*3 + coord_id] -=
-            lambda * i_face_norm[3*face_id + coord_id]
+            lambda * i_face_u_norm[face_id][coord_id]
                    * UNWARPING_MVT * (i_face_warp[face_id]/maxwarp)
                    * (vtx_tolerance[vtx]/(max_vtxtol*frac));
         }
@@ -696,8 +692,8 @@ _unwarping_mvt(cs_mesh_t            *mesh,
                          loc_vtx_mvt);
   }
 
-  for (i = 0; i < mesh->n_vertices; i++)
-    for (coord_id = 0; coord_id < 3; coord_id++)
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    for (cs_lnum_t coord_id = 0; coord_id < 3; coord_id++)
       loc_vtx_mvt[3*i + coord_id] = cs::min(loc_vtx_mvt[3*i + coord_id],
                                             vtx_tolerance[i]);
 
@@ -708,30 +704,28 @@ _unwarping_mvt(cs_mesh_t            *mesh,
  * Compute normals for boundary vertices
  *
  * parameters:
- *   mesh         <--  pointer to a mesh structure
- *   b_face_norm  <--  normals associated with boundary faces
- *   b_vtx_norm   -->  normals associated with boundary vertices
+ *   mesh           <--  pointer to a mesh structure
+ *   b_face_u_norm  <--  unit normals associated with boundary faces
+ *   b_vtx_norm     -->  normals associated with boundary vertices
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_vtx_normals(cs_mesh_t           *mesh,
-                     cs_real_t           *b_face_norm,
-                     cs_real_t           *b_vtx_norm)
+_compute_vtx_normals(cs_mesh_t       *mesh,
+                     cs_nreal_3_t    *b_face_u_norm,
+                     cs_real_3_t     *b_vtx_norm)
 {
-  int coord_id;
-  cs_lnum_t i, j;
-  cs_real_t norm;
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
+    for (cs_lnum_t coord_id = 0; coord_id < 3; coord_id++)
+      b_vtx_norm[i][coord_id] = 0.;
+  }
 
-  for (i = 0; i < mesh->n_vertices*3; i++)
-    b_vtx_norm[i] = 0.;
-
-  for (i = 0; i < mesh->n_b_faces; i++) {
-    for (j = mesh->b_face_vtx_idx[i];
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
+    for (cs_lnum_t j = mesh->b_face_vtx_idx[i];
          j < mesh->b_face_vtx_idx[i+1];
          j++) {
-      for (coord_id = 0; coord_id < 3; coord_id++) {
-        b_vtx_norm[(mesh->b_face_vtx_lst[j])*3 + coord_id]
-          += b_face_norm[i*3 + coord_id];
+      for (cs_lnum_t coord_id = 0; coord_id < 3; coord_id++) {
+        b_vtx_norm[mesh->b_face_vtx_lst[j]][coord_id]
+          += b_face_u_norm[i][coord_id];
       }
     }
   }
@@ -747,16 +741,8 @@ _compute_vtx_normals(cs_mesh_t           *mesh,
                          b_vtx_norm);
 
   /* normalizing */
-  for (i = 0; i < mesh->n_vertices; i++) {
-    norm = sqrt(  b_vtx_norm[i*3    ]*b_vtx_norm[i*3    ]
-                + b_vtx_norm[i*3 + 1]*b_vtx_norm[i*3 + 1]
-                + b_vtx_norm[i*3 + 2]*b_vtx_norm[i*3 + 2]);
-
-    if (norm > DBL_MIN) {
-      b_vtx_norm[i*3    ] /= norm;
-      b_vtx_norm[i*3 + 1] /= norm;
-      b_vtx_norm[i*3 + 2] /= norm;
-    }
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
+    cs_math_3_normalize(b_vtx_norm[i], b_vtx_norm[i]);
   }
 }
 
@@ -795,48 +781,43 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
                                 cs_real_t    feature_angle,
                                 int          vtx_is_fixed[])
 {
-  cs_lnum_t face, j;
-
-  cs_real_t rnorm_b;
-  cs_real_t *face_norm, *vtx_norm;
-  cs_real_t *b_face_norm = nullptr;
-  cs_real_t *b_face_cog = nullptr;
-  cs_real_t *b_vtx_norm = nullptr;
+  cs_real_3_t *b_vtx_norm = nullptr;
   cs_real_t *_vtx_is_fixed = nullptr;
 
   CS_MALLOC(_vtx_is_fixed, mesh->n_vertices, cs_real_t);
-  CS_MALLOC(b_vtx_norm, 3*(mesh->n_vertices), cs_real_t);
+  CS_MALLOC(b_vtx_norm, mesh->n_vertices, cs_real_3_t);
 
-  cs_mesh_quantities_b_faces(mesh,
-                             &(b_face_cog),
-                             &(b_face_norm));
+  cs_real_3_t  *b_face_cog = nullptr;
+  cs_nreal_3_t *b_face_u_norm = nullptr;
+  CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_u_norm, mesh->n_b_faces, cs_nreal_3_t, cs_alloc_mode);
+
+  cs_mesh_quantities_compute_face_cog_un
+    (mesh->n_b_faces,
+     reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+     mesh->b_face_vtx_idx,
+     mesh->b_face_vtx_lst,
+     b_face_cog,
+     b_face_u_norm);
+
   CS_FREE(b_face_cog);
 
-  for (face = 0; face < mesh->n_b_faces; face++) {
-    rnorm_b = sqrt(  b_face_norm[3*face    ]*b_face_norm[3*face    ]
-                   + b_face_norm[3*face + 1]*b_face_norm[3*face + 1]
-                   + b_face_norm[3*face + 2]*b_face_norm[3*face + 2]);
+  _compute_vtx_normals(mesh, b_face_u_norm, b_vtx_norm);
 
-    b_face_norm[3*face    ] /= rnorm_b;
-    b_face_norm[3*face + 1] /= rnorm_b;
-    b_face_norm[3*face + 2] /= rnorm_b;
-  }
-
-  _compute_vtx_normals(mesh,
-                       b_face_norm,
-                       b_vtx_norm);
-
-  for (j = 0; j < mesh->n_vertices; j++)
+  for (cs_lnum_t j = 0; j < mesh->n_vertices; j++)
     _vtx_is_fixed[j] = 0;
 
-  for (face = 0; face < mesh->n_b_faces; face++) {
-    for (j = mesh->b_face_vtx_idx[face];
+  cs_real_t pi_o_180 = cs_math_pi / 180.;
+
+  for (cs_lnum_t face = 0; face < mesh->n_b_faces; face++) {
+    for (cs_lnum_t j = mesh->b_face_vtx_idx[face];
          j < mesh->b_face_vtx_idx[face +1];
          j++) {
-      face_norm = &b_face_norm[face*3];
-      vtx_norm = &b_vtx_norm[(mesh->b_face_vtx_lst[j])*3];
+      const cs_nreal_t *face_u_norm = b_face_u_norm[face];
+      const cs_real_t *vtx_norm = b_vtx_norm[mesh->b_face_vtx_lst[j]];
 
-      if (_DOT_PRODUCT_3D(face_norm, vtx_norm) < cos(feature_angle*_PI_/180.0)
+      if (  (  cs_math_3_dot_product(face_u_norm, vtx_norm)
+             < cos(feature_angle*pi_o_180))
           || feature_angle < DBL_MIN)
         _vtx_is_fixed[mesh->b_face_vtx_lst[j]] += 1;
     }
@@ -851,14 +832,14 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
                          _vtx_is_fixed);
   }
 
-  for (j = 0; j < mesh->n_vertices; j++) {
+  for (cs_lnum_t j = 0; j < mesh->n_vertices; j++) {
     if (_vtx_is_fixed[j] > 0.1)
       vtx_is_fixed[j] = 1;
     else
       vtx_is_fixed[j] = 0;
   }
 
-  CS_FREE(b_face_norm);
+  CS_FREE(b_face_u_norm);
   CS_FREE(b_vtx_norm);
 
   CS_FREE(_vtx_is_fixed);
@@ -883,9 +864,7 @@ void
 cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
                         const int   vtx_is_fixed[])
 {
-  int face;
   cs_real_t maxwarp, minhist_i, minhist_b, maxhist_i, maxhist_b;
-  cs_real_t rnorm_b, rnorm_i;
   bool conv = false;
   int iter = 0;
   int max_iter = UNWARPING_MAX_LOOPS;
@@ -894,10 +873,6 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
   cs_real_t maxwarp_p = 90;
   cs_real_t *vtx_tolerance = nullptr;
   cs_real_t *loc_vtx_mvt = nullptr;
-  cs_real_t *i_face_norm = nullptr;
-  cs_real_t *i_face_cog = nullptr;
-  cs_real_t *b_face_norm = nullptr;
-  cs_real_t *b_face_cog = nullptr;
   cs_real_t *b_face_warp = nullptr;
   cs_real_t *i_face_warp = nullptr;
 
@@ -913,49 +888,42 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
   CS_MALLOC(vtx_tolerance, mesh->n_vertices, cs_real_t);
   CS_MALLOC(loc_vtx_mvt, 3*(mesh->n_vertices), cs_real_t);
 
+  cs_real_3_t  *i_face_cog = nullptr, *b_face_cog = nullptr;
+  cs_nreal_3_t *i_face_u_norm = nullptr, *b_face_u_norm = nullptr;
+  CS_MALLOC_HD(i_face_cog, mesh->n_i_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_face_u_norm, mesh->n_i_faces, cs_nreal_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_u_norm, mesh->n_b_faces, cs_nreal_3_t, cs_alloc_mode);
+
   while (!conv) {
 
-    cs_mesh_quantities_i_faces(mesh,
-                               &(i_face_cog),
-                               &(i_face_norm));
+    cs_mesh_quantities_compute_face_cog_un
+      (mesh->n_i_faces,
+       reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+       mesh->i_face_vtx_idx,
+       mesh->i_face_vtx_lst,
+       i_face_cog,
+       i_face_u_norm);
 
-    cs_mesh_quantities_b_faces(mesh,
-                               &(b_face_cog),
-                               &(b_face_norm));
+    cs_mesh_quantities_compute_face_cog_un
+      (mesh->n_b_faces,
+       reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+       mesh->b_face_vtx_idx,
+       mesh->b_face_vtx_lst,
+       b_face_cog,
+       b_face_u_norm);
 
     cs_mesh_quality_compute_warping(mesh,
-                                    i_face_norm,
-                                    b_face_norm,
+                                    i_face_u_norm,
+                                    b_face_u_norm,
                                     i_face_warp,
                                     b_face_warp);
 
-    _get_tolerance(mesh,
-                   vtx_tolerance,
-                   frac);
-
-    for (face = 0; face < mesh->n_i_faces; face++) {
-      rnorm_i = sqrt (  i_face_norm[3*face]*i_face_norm[3*face]
-                      + i_face_norm[3*face + 1]*i_face_norm[3*face + 1]
-                      + i_face_norm[3*face + 2]*i_face_norm[3*face + 2]);
-
-      i_face_norm[3*face   ] /= rnorm_i;
-      i_face_norm[3*face +1] /= rnorm_i;
-      i_face_norm[3*face +2] /= rnorm_i;
-    }
-
-    for (face = 0; face < mesh->n_b_faces; face++) {
-      rnorm_b = sqrt(  b_face_norm[3*face]*b_face_norm[3*face]
-                     + b_face_norm[3*face + 1]*b_face_norm[3*face + 1]
-                     + b_face_norm[3*face + 2]*b_face_norm[3*face + 2]);
-
-      b_face_norm[3*face   ] /= rnorm_b;
-      b_face_norm[3*face +1] /= rnorm_b;
-      b_face_norm[3*face +2] /= rnorm_b;
-    }
+    _get_tolerance(mesh, vtx_tolerance, frac);
 
     maxwarp = _unwarping_mvt(mesh,
-                             i_face_norm,
-                             b_face_norm,
+                             i_face_u_norm,
+                             b_face_u_norm,
                              i_face_cog,
                              b_face_cog,
                              loc_vtx_mvt,
@@ -1018,12 +986,13 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
                      loc_vtx_mvt,
                      vtx_is_fixed);
 
-    CS_FREE(i_face_norm);
-    CS_FREE(b_face_norm);
-    CS_FREE(i_face_cog);
-    CS_FREE(b_face_cog);
     iter++;
   }
+
+  CS_FREE(i_face_u_norm);
+  CS_FREE(b_face_u_norm);
+  CS_FREE(i_face_cog);
+  CS_FREE(b_face_cog);
 
   /* Output quality histograms */
 
@@ -1067,12 +1036,6 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
 
   bft_printf(_("\n End unwarping algorithm\n\n"));
 }
-
-/*----------------------------------------------------------------------------*/
-
-/* Delete local macros */
-
-#undef _DOT_PRODUCT_3D
 
 /*----------------------------------------------------------------------------*/
 

@@ -2538,7 +2538,7 @@ _parse_tokenized(const _parser_t     *this_parser,
  *
  * parameters:
  *   pf        <-- pointer to postfix structure
- *   normal    <-- normal associated with evaluation
+ *   u_normal  <-- unit normal associated with evaluation
  *   i         <-> current position in expression being evaluated
  *
  * returns:
@@ -2547,7 +2547,7 @@ _parse_tokenized(const _parser_t     *this_parser,
 
 static inline bool
 _eval_normal(const fvm_selector_postfix_t  *pf,
-             const double                   normal[],
+             const cs_nreal_t               u_normal[],
              size_t                        *i)
 {
   double dotp;
@@ -2569,12 +2569,10 @@ _eval_normal(const fvm_selector_postfix_t  *pf,
   }
   *i -= _postfix_type_size;
 
-  dotp = normal[0]*val[0] + normal[1]*val[1] + normal[2]*val[2];
+  dotp = u_normal[0]*val[0] + u_normal[1]*val[1] + u_normal[2]*val[2];
 
   if (dotp > 0) {
-    double cos2 = dotp*dotp / (  normal[0]*normal[0]
-                               + normal[1]*normal[1]
-                               + normal[2]*normal[2]);
+    double cos2 = dotp*dotp;
     if (cos2 > val[3])
       retval = true;
   }
@@ -3092,7 +3090,7 @@ fvm_selector_postfix_get_missing(const fvm_selector_postfix_t  *pf,
  *   group_id     <-- array group ids associated with group class
  *   attribute_id <-- array of attribute ids associated with group class
  *   coords       <-- coordinates associated with evaluation, or nullptr
- *   normal       <-- normal associated with evaluation, or nullptr
+ *   u_normal     <-- unit normal associated with evaluation, or nullptr
  *
  * returns:
  *   true or false base on expression evaluation
@@ -3105,8 +3103,8 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
                           const char                    *group_name[],
                           const int                      group_id[],
                           const int                      attribute_id[],
-                          const double                   coords[],
-                          const double                   normal[])
+                          const cs_real_t                coords[],
+                          const cs_nreal_t               u_normal[])
 {
   bool  retval;
   bool  _eval_stack[BASE_STACK_SIZE];
@@ -3276,7 +3274,7 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
           eval_size++;
           break;
         case OC_NORMAL:
-          eval_stack[eval_size++] = _eval_normal(pf, normal, &i);
+          eval_stack[eval_size++] = _eval_normal(pf, u_normal, &i);
           break;
         case OC_PLANE:
           eval_stack[eval_size++] = _eval_plane(pf, coords, &i);

@@ -125,9 +125,18 @@ cs_selector_get_b_face_list(const char  *criteria,
 
     cs_mesh_init_group_classes(mesh);
 
-    cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
+    cs_real_3_t  *b_face_cog = nullptr;
+    cs_nreal_3_t *b_face_u_normal = nullptr;
+    CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t, cs_alloc_mode);
 
-    cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+    cs_mesh_quantities_compute_face_cog_un
+      (mesh->n_b_faces,
+       reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+       mesh->b_face_vtx_idx,
+       mesh->b_face_vtx_lst,
+       b_face_cog,
+       b_face_u_normal);
 
     fvm_selector_t *sel_b_faces = fvm_selector_create(mesh->dim,
                                                       mesh->n_b_faces,
@@ -135,7 +144,7 @@ cs_selector_get_b_face_list(const char  *criteria,
                                                       mesh->b_face_family,
                                                       1,
                                                       b_face_cog,
-                                                      b_face_normal);
+                                                      b_face_u_normal);
 
     c_id = fvm_selector_get_list(sel_b_faces,
                                  criteria,
@@ -144,7 +153,7 @@ cs_selector_get_b_face_list(const char  *criteria,
                                  b_face_list);
 
     CS_FREE(b_face_cog);
-    CS_FREE(b_face_normal);
+    CS_FREE(b_face_u_normal);
 
     if (del_class_defs)
       mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
@@ -202,9 +211,18 @@ cs_selector_get_i_face_list(const char  *criteria,
 
     cs_mesh_init_group_classes(mesh);
 
-    cs_real_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
+    cs_real_3_t  *i_face_cog = nullptr;
+    cs_nreal_3_t *i_face_u_normal = nullptr;
+    CS_MALLOC_HD(i_face_cog, mesh->n_i_faces, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(i_face_u_normal, mesh->n_i_faces, cs_nreal_3_t, cs_alloc_mode);
 
-    cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
+    cs_mesh_quantities_compute_face_cog_un
+      (mesh->n_i_faces,
+       reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+       mesh->i_face_vtx_idx,
+       mesh->i_face_vtx_lst,
+       i_face_cog,
+       i_face_u_normal);
 
     fvm_selector_t *sel_i_faces = fvm_selector_create(mesh->dim,
                                                       mesh->n_i_faces,
@@ -212,7 +230,7 @@ cs_selector_get_i_face_list(const char  *criteria,
                                                       mesh->i_face_family,
                                                       1,
                                                       i_face_cog,
-                                                      i_face_normal);
+                                                      i_face_u_normal);
 
     c_id = fvm_selector_get_list(sel_i_faces,
                                  criteria,
@@ -221,7 +239,7 @@ cs_selector_get_i_face_list(const char  *criteria,
                                  i_face_list);
 
     CS_FREE(i_face_cog);
-    CS_FREE(i_face_normal);
+    CS_FREE(i_face_u_normal);
 
     if (del_class_defs)
       mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
@@ -280,13 +298,31 @@ cs_selector_get_cell_list(const char  *criteria,
 
     cs_mesh_init_group_classes(mesh);
 
-    cs_real_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
-    cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
-    cs_real_t  *cell_cen = nullptr;
-    CS_MALLOC(cell_cen, mesh->n_cells_with_ghosts*3, cs_real_t);
+    cs_real_3_t  *i_face_cog = nullptr, *b_face_cog = nullptr;
+    cs_real_3_t  *i_face_normal = nullptr, *b_face_normal = nullptr;
+    cs_real_3_t  *cell_cen = nullptr;
+    CS_MALLOC_HD(cell_cen, mesh->n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
 
-    cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
-    cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+    CS_MALLOC_HD(i_face_cog, mesh->n_i_faces, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(i_face_normal, mesh->n_i_faces, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(b_face_normal, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+
+    cs_mesh_quantities_compute_face_cog_sn
+      (mesh->n_i_faces,
+       reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+       mesh->i_face_vtx_idx,
+       mesh->i_face_vtx_lst,
+       i_face_cog,
+       i_face_normal);
+
+    cs_mesh_quantities_compute_face_cog_sn
+      (mesh->n_b_faces,
+       reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+       mesh->b_face_vtx_idx,
+       mesh->b_face_vtx_lst,
+       b_face_cog,
+       b_face_normal);
 
     cs_mesh_quantities_cell_faces_cog(mesh,
                                       i_face_normal,

@@ -164,8 +164,8 @@ fvm_selector_postfix_get_missing(const fvm_selector_postfix_t  *pf,
  *   group_name   <-- array of group names (ordered)
  *   group_id     <-- array group ids associated with group class
  *   attribute_id <-- array of attribute ids associated with group class
- *   coords       <-- coordinates associated with evaluation, or NULL
- *   normal       <-- normal associated with evaluation, or NULL
+ *   coords       <-- coordinates associated with evaluation, or null
+ *   u_normal     <-- unit normal associated with evaluation, or null
  *
  * returns:
  *   true or false base on expression evaluation
@@ -178,8 +178,8 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
                           const char                    *group_name[],
                           const int                      group_id[],
                           const int                      attribute_id[],
-                          const double                   coords[],
-                          const double                   normal[]);
+                          const cs_real_t                coords[],
+                          const cs_nreal_t               u_normal[]);
 
 /*----------------------------------------------------------------------------
  * Dump the contents of a postfix structure in human readable form

@@ -567,19 +567,26 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
   for (cs_lnum_t i = 0; i < n_init_b_faces; i++)
     b_face_warping[i] = 0.;
 
-  cs_real_t  *b_face_normal = nullptr, *b_face_cog = nullptr;;
+  cs_real_3_t  *b_face_cog = nullptr;
+  cs_nreal_3_t *b_face_u_normal = nullptr;
+  CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t, cs_alloc_mode);
 
-  cs_mesh_quantities_b_faces(mesh,
-                             &b_face_cog,
-                             &b_face_normal);
+  cs_mesh_quantities_compute_face_cog_un
+    (mesh->n_b_faces,
+     reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+     mesh->b_face_vtx_idx,
+     mesh->b_face_vtx_lst,
+     b_face_cog,
+     b_face_u_normal);
 
   CS_FREE(b_face_cog);
 
   cs_mesh_quality_compute_b_face_warping(mesh,
-                                         b_face_normal,
+                                         b_face_u_normal,
                                          b_face_warping);
 
-  CS_FREE(b_face_normal);
+  CS_FREE(b_face_u_normal);
 
   _select_warped_faces(n_init_b_faces,
                        max_warp_angle,

@@ -162,14 +162,24 @@ static void
 _select_entities(cs_join_t   *this_join,
                  cs_mesh_t   *mesh)
 {
-  cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
   cs_join_param_t   param = this_join->param;
 
   const char   *selection_criteria = this_join->criteria;
 
   cs_mesh_init_group_classes(mesh);
 
-  cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+  cs_real_3_t  *b_face_cog = nullptr;
+  cs_nreal_3_t *b_face_u_normal = nullptr;
+  CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t, cs_alloc_mode);
+
+  cs_mesh_quantities_compute_face_cog_un
+    (mesh->n_b_faces,
+     reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+     mesh->b_face_vtx_idx,
+     mesh->b_face_vtx_lst,
+     b_face_cog,
+     b_face_u_normal);
 
   cs_glob_mesh->select_b_faces = fvm_selector_create(mesh->dim,
                                                      mesh->n_b_faces,
@@ -177,7 +187,7 @@ _select_entities(cs_join_t   *this_join,
                                                      mesh->b_face_family,
                                                      1,
                                                      b_face_cog,
-                                                     b_face_normal);
+                                                     b_face_u_normal);
 
   /* Get selected faces for this joining and define the related
      cs_join_face_select_t structure.
@@ -192,7 +202,7 @@ _select_entities(cs_join_t   *this_join,
   /* Free arrays and structures needed for selection */
 
   CS_FREE(b_face_cog);
-  CS_FREE(b_face_normal);
+  CS_FREE(b_face_u_normal);
 
   mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
 
@@ -2098,9 +2108,18 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
   cs_lnum_t *b_face_list;
   CS_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
 
-  cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
+  cs_real_3_t  *b_face_cog = nullptr;
+  cs_nreal_3_t *b_face_u_normal = nullptr;
+  CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t, cs_alloc_mode);
 
-  cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+  cs_mesh_quantities_compute_face_cog_un
+    (mesh->n_b_faces,
+     reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
+     mesh->b_face_vtx_idx,
+     mesh->b_face_vtx_lst,
+     b_face_cog,
+     b_face_u_normal);
 
   /* Build temporary selection structures */
 
@@ -2118,7 +2137,7 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
                                                        mesh->b_face_family,
                                                        1,
                                                        b_face_cog,
-                                                       b_face_normal);
+                                                       b_face_u_normal);
 
   /* Loop on each defined joining to deal with */
 
@@ -2154,7 +2173,7 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
   /* Free arrays and structures needed for selection */
 
   CS_FREE(b_face_cog);
-  CS_FREE(b_face_normal);
+  CS_FREE(b_face_u_normal);
 
   select_b_faces = fvm_selector_destroy(select_b_faces);
 

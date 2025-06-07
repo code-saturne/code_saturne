@@ -1950,7 +1950,7 @@ _adjust_face_centers(cs_lnum_t                     n_faces,
                      const cs_lnum_t               f2v_idx[],
                      const cs_lnum_t               f2v_lst[],
                      const cs_real_t               vtx_coord[],
-                     cs_real_t                     f_center[])
+                     cs_real_t                     f_center[][3])
 {
   /* Loop on faces */
 
@@ -1962,7 +1962,7 @@ _adjust_face_centers(cs_lnum_t                     n_faces,
       if (n_vtx == 4)
         _quad_face_center(f2v_lst + f2v_idx[f_id],
                           vtx_coord,
-                          f_center + f_id*3);
+                          f_center[f_id]);
     }
 
   }
@@ -2063,18 +2063,35 @@ _element_centers(const cs_mesh_t              *m,
 {
   cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
 
-  cs_real_t  *_cell_cen = nullptr, *_i_face_cen = nullptr, *_b_face_cen = nullptr;
-
-  CS_MALLOC(_cell_cen, n_cells_with_ghosts*3, cs_real_t);
+  cs_real_3_t  *_cell_cen = nullptr;
+  CS_MALLOC(_cell_cen, n_cells_with_ghosts, cs_real_3_t);
 
   /* Modify some cell centers and compute surfaces;
      Note that this could be delayed to cell center creation,
      avoiding computations for non-refined elements.*/
 
-  cs_real_t  *i_face_normal = nullptr, *b_face_normal = nullptr;
+  cs_real_3_t  *_i_face_cen = nullptr, *i_face_normal = nullptr;
+  cs_real_3_t  *_b_face_cen = nullptr, *b_face_normal = nullptr;
+  CS_MALLOC_HD(_i_face_cen, m->n_i_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_face_normal, m->n_i_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(_b_face_cen, m->n_b_faces, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_face_normal, m->n_b_faces, cs_real_3_t, cs_alloc_mode);
 
-  cs_mesh_quantities_i_faces(m, &_i_face_cen, &i_face_normal);
-  cs_mesh_quantities_b_faces(m, &_b_face_cen, &b_face_normal);
+  cs_mesh_quantities_compute_face_cog_sn
+    (m->n_i_faces,
+     reinterpret_cast<const cs_real_3_t *>(m->vtx_coord),
+     m->i_face_vtx_idx,
+     m->i_face_vtx_lst,
+     _i_face_cen,
+     i_face_normal);
+
+  cs_mesh_quantities_compute_face_cog_sn
+    (m->n_b_faces,
+     reinterpret_cast<const cs_real_3_t *>(m->vtx_coord),
+     m->b_face_vtx_idx,
+     m->b_face_vtx_lst,
+     _b_face_cen,
+     b_face_normal);
 
   _adjust_face_centers(m->n_i_faces,
                        f_r_flag + m->n_b_faces,

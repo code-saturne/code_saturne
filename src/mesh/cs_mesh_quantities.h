@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_QUANTITIES_H__
-#define __CS_MESH_QUANTITIES_H__
+#ifndef CS_MESH_QUANTITIES_H
+#define CS_MESH_QUANTITIES_H
 
 /*============================================================================
  * Management of mesh quantities
@@ -385,38 +385,44 @@ cs_mesh_quantities_face_normal(const cs_mesh_t   *mesh,
                                cs_real_t         *p_b_face_normal[]);
 
 /*----------------------------------------------------------------------------
- * Compute interior face centers and normals.
- *
- * The corresponding arrays are allocated by this function, and it is the
- * caller's responsibility to free them when they are no longer needed.
+ * Compute center of gravity and surface normal associated to a set of faces
  *
  * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   p_i_face_cog    <-> pointer to the interior face center array
- *   p_i_face_normal <-> pointer to the interior face normal array
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx        <--  "face -> vertices" connectivity
+ *   face_cog        -->  coordinates of the center of gravity of the faces
+ *   face_normal     -->  face surface normals
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_i_faces(const cs_mesh_t   *mesh,
-                           cs_real_t         *p_i_face_cog[],
-                           cs_real_t         *p_i_face_normal[]);
+cs_mesh_quantities_compute_face_cog_sn(cs_lnum_t        n_faces,
+                                       const cs_real_t  vtx_coord[][3],
+                                       const cs_lnum_t  face_vtx_idx[],
+                                       const cs_lnum_t  face_vtx[],
+                                       cs_real_t        face_cog[][3],
+                                       cs_real_t        face_normal[][3]);
 
 /*----------------------------------------------------------------------------
- * Compute border face centers and normals.
- *
- * The corresponding arrays are allocated by this function, and it is the
- * caller's responsibility to free them when they are no longer needed.
+ * Compute center of gravity and unit normal associated to a set of faces
  *
  * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   p_b_face_cog    <-> pointer to the border face center array
- *   p_b_face_normal <-> pointer to the border face normal array
+ *   n_faces         <--  number of faces
+ *   vtx_coord       <--  vertex coordinates
+ *   face_vtx_idx    <--  "face -> vertices" connectivity index
+ *   face_vtx        <--  "face -> vertices" connectivity
+ *   face_cog        -->  coordinates of the center of gravity of the faces
+ *   face_u_normal   -->  face unit normals
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
-                           cs_real_t         *p_b_face_cog[],
-                           cs_real_t         *p_b_face_normal[]);
+cs_mesh_quantities_compute_face_cog_un(cs_lnum_t        n_faces,
+                                       const cs_real_t  vtx_coord[][3],
+                                       const cs_lnum_t  face_vtx_idx[],
+                                       const cs_lnum_t  face_vtx[],
+                                       cs_real_t        face_cog[][3],
+                                       cs_nreal_t       face_u_normal[][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -441,12 +447,12 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_cell_faces_cog(const cs_mesh_t  *mesh,
-                                  const cs_real_t   i_face_norm[],
-                                  const cs_real_t   i_face_cog[],
-                                  const cs_real_t   b_face_norm[],
-                                  const cs_real_t   b_face_cog[],
-                                  cs_real_t         cell_cen[]);
+cs_mesh_quantities_cell_faces_cog(const cs_mesh_t    *mesh,
+                                  const cs_real_3_t   i_face_norm[],
+                                  const cs_real_3_t   i_face_cog[],
+                                  const cs_real_3_t   b_face_norm[],
+                                  const cs_real_3_t   b_face_cog[],
+                                  cs_real_3_t         cell_cen[]);
 
 /*----------------------------------------------------------------------------
  * Compute cell volumes.
@@ -542,26 +548,6 @@ cs_mesh_quantities_b_thickness_f(const cs_mesh_t             *m,
                                  int                          n_passes,
                                  cs_real_t                    b_thickness[]);
 
-/*----------------------------------------------------------------------------
- * Compute quantities associated to a list of faces (border or internal)
- *
- * parameters:
- *   n_faces         <--  number of faces
- *   vtx_coord       <--  vertex coordinates
- *   face_vtx_idx    <--  "face -> vertices" connectivity index
- *   face_vtx        <--  "face -> vertices" connectivity
- *   face_cog        -->  coordinates of the center of gravity of the faces
- *   face_normal     -->  face surface normals
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_compute_face_quantities(cs_lnum_t        n_faces,
-                                           const cs_real_t  vtx_coord[][3],
-                                           const cs_lnum_t  face_vtx_idx[],
-                                           const cs_lnum_t  face_vtx[],
-                                           cs_real_t        face_cog[][3],
-                                           cs_real_t        face_normal[][3]);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Log mesh quantities options to setup file.
@@ -587,4 +573,4 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_QUANTITIES_H__ */
+#endif /* CS_MESH_QUANTITIES_H */

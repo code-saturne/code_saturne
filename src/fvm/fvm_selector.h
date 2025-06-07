@@ -64,10 +64,9 @@ typedef struct _fvm_selector_t  fvm_selector_t;
  *   group_class_id       <-- group class id associated with each element
  *                            (size: n_elements)
  *   group_class_id_base; <-- Starting group class id base (usually 0 or 1)
- *   coords               <-- coordinates (interlaced) associated with each
+ *   coords               <-- coordinates associated with each
  *                            element, whether vertex, face or cell center, ...
- *                            (size: n_elements * dim)
- *   normals              <-- normals (interlaced) associated with each element
+ *   u_normals            <-- unit normals associated with each element
  *                            if applicable (such as for face normals), or NULL
  *
  * returns:
@@ -80,8 +79,8 @@ fvm_selector_create(int                           dim,
                     const fvm_group_class_set_t  *group_class_set,
                     const int                     group_class_id[],
                     int                           group_class_id_base,
-                    const double                  coords[],
-                    const double                  normals[]);
+                    const cs_real_3_t             coords[],
+                    const cs_nreal_3_t            u_normals[]);
 
 /*----------------------------------------------------------------------------
  * Destruction of a selector structure.
