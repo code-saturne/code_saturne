@@ -775,7 +775,7 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
   //cs_lnum_t *b_face_vtx_idx = m->b_face_vtx_idx;
   //cs_lnum_t *b_face_vtx_lst = m->b_face_vtx_lst;
   cs_real_t *b_dist = mq_f->b_dist;
-  cs_real_3_t *b_face_u_normal = mq_f->b_face_u_normal;
+  cs_nreal_3_t *b_face_u_normal = mq_f->b_face_u_normal;
   cs_real_3_t *b_face_normal = (cs_real_3_t *)mq_f->b_face_normal;
   cs_real_3_t *b_face_cog = (cs_real_3_t *)mq_f->b_face_cog;
   cs_rreal_3_t *diipb = mq_f->diipb;

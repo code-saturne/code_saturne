@@ -1606,7 +1606,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
-  const cs_real_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
 
