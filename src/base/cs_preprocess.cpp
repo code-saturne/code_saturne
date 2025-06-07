@@ -523,7 +523,6 @@ cs_preprocess_mesh_update_fortran(void)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   cs_f_majgeo(&(m->n_cells),
               &(m->n_cells_with_ghosts),

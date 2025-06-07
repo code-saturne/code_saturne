@@ -117,9 +117,12 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 {
   cs_lnum_t  i, face_id, cell1, cell2;
 
+  const cs_nreal_3_t *i_face_u_normal = mesh_quantities->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = mesh_quantities->b_face_u_normal;
+
   cs_real_t  cell_center1[3], cell_center2[3];
   cs_real_t  face_center[3];
-  cs_real_t  face_normal[3], vect[3];
+  cs_real_t  vect[3];
 
   double  cos_alpha, i_face_ortho, b_face_ortho;
 
@@ -139,9 +142,6 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
       cell_center1[i] = mesh_quantities->cell_cen[cell1][i];
       cell_center2[i] = mesh_quantities->cell_cen[cell2][i];
 
-      /* Surface vector (orthogonal to the face) */
-      face_normal[i] = mesh_quantities->i_face_normal[face_id*3 + i];
-
     }
 
     /* Evaluate the non-orthogonality. */
@@ -149,12 +149,10 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     for (i = 0; i < 3; i++)
       vect[i] = cell_center2[i] - cell_center1[i];
 
-    cs_real_t v1[3], v2[3];
-
+    cs_real_t v1[3];
     cs_math_3_normalize(vect, v1);
-    cs_math_3_normalize(face_normal, v2);
 
-    cos_alpha = cs_math_3_dot_product(v1, v2);
+    cos_alpha = cs_math_3_dot_product(v1, i_face_u_normal[face_id]);
 
     i_face_ortho = cos_alpha;
 
@@ -181,21 +179,16 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
       /* Face center coordinates */
       face_center[i] = mesh_quantities->b_face_cog[face_id][i];
 
-      /* Surface vector (orthogonal to the face) */
-      face_normal[i] = mesh_quantities->b_face_normal[face_id*3 + i];
-
     }
 
     /* Evaluate the non-orthogonality. */
     for (i = 0; i < 3; i++)
       vect[i] = face_center[i] - cell_center1[i];
 
-    cs_real_t v1[3], v2[3];
-
+    cs_real_t v1[3];
     cs_math_3_normalize(vect, v1);
-    cs_math_3_normalize(face_normal, v2);
 
-    cos_alpha = cs_math_3_dot_product(v1, v2);
+    cos_alpha = cs_math_3_dot_product(v1, b_face_u_normal[face_id]);
 
     b_face_ortho = cos_alpha;
 
@@ -634,8 +627,10 @@ _to_regularize(const cs_mesh_t             *mesh,
 
   const cs_real_3_t *cdgfac = mq->i_face_cog;
   const cs_real_3_t *cdgfbo = mq->b_face_cog;
-  const cs_real_3_t *i_face_normal = (const cs_real_3_t *) mq->i_face_normal;
-  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) mq->b_face_normal;
+  const cs_real_t *i_face_surf = mq->i_face_surf;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
+  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
   static cs_gnum_t nb_bad_cells = 0;
 
@@ -651,19 +646,27 @@ _to_regularize(const cs_mesh_t             *mesh,
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     cs_lnum_t cell_id1 = i_face_cells[face_id][0];
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
-    vol[cell_id1][0] += cdgfac[face_id][0] * i_face_normal[face_id][0];
-    vol[cell_id1][1] += cdgfac[face_id][1] * i_face_normal[face_id][1];
-    vol[cell_id1][2] += cdgfac[face_id][2] * i_face_normal[face_id][2];
-    vol[cell_id2][0] -= cdgfac[face_id][0] * i_face_normal[face_id][0];
-    vol[cell_id2][1] -= cdgfac[face_id][1] * i_face_normal[face_id][1];
-    vol[cell_id2][2] -= cdgfac[face_id][2] * i_face_normal[face_id][2];
+    cs_real_t s = i_face_surf[face_id];
+    cs_real_t face_normal[3] = {i_face_u_normal[face_id][0] * s,
+                                i_face_u_normal[face_id][1] * s,
+                                i_face_u_normal[face_id][2] * s};
+    vol[cell_id1][0] += cdgfac[face_id][0] * face_normal[0];
+    vol[cell_id1][1] += cdgfac[face_id][1] * face_normal[1];
+    vol[cell_id1][2] += cdgfac[face_id][2] * face_normal[2];
+    vol[cell_id2][0] -= cdgfac[face_id][0] * face_normal[0];
+    vol[cell_id2][1] -= cdgfac[face_id][1] * face_normal[1];
+    vol[cell_id2][2] -= cdgfac[face_id][2] * face_normal[2];
   }
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     cs_lnum_t cell_id = b_face_cells[face_id];
-    vol[cell_id][0] += cdgfbo[face_id][0] * b_face_normal[face_id][0];
-    vol[cell_id][1] += cdgfbo[face_id][1] * b_face_normal[face_id][1];
-    vol[cell_id][2] += cdgfbo[face_id][2] * b_face_normal[face_id][2];
+    cs_real_t s = b_face_surf[face_id];
+    cs_real_t face_normal[3] = {b_face_u_normal[face_id][0] * s,
+                                b_face_u_normal[face_id][1] * s,
+                                b_face_u_normal[face_id][2] * s};
+    vol[cell_id][0] += cdgfbo[face_id][0] * face_normal[0];
+    vol[cell_id][1] += cdgfbo[face_id][1] * face_normal[1];
+    vol[cell_id][2] += cdgfbo[face_id][2] * face_normal[2];
   }
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -704,8 +707,6 @@ _to_regularize(const cs_mesh_t             *mesh,
     bft_printf("No need of regularisation\n");
     cs_glob_mesh_quantities_flag -= CS_BAD_CELLS_REGULARISATION;
   }
-
-  return;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

@@ -402,12 +402,22 @@ _run(void)
 
   cs_post_init_meshes(check_mask);
 
+  if (opts.verif == true)
+    cs_mesh_coherency_check();
+
+  if (opts.preprocess == false) {
+    cs_mesh_adjacencies_update_mesh();
+
+#if defined(HAVE_ACCEL)
+    cs_preprocess_mesh_update_device();
+#endif
+  }
+
   /* Compute iterations or quality criteria depending on verification options */
 
   if (opts.verif == true) {
     bft_printf(_("\n Computing quality criteria\n"));
     cs_mesh_quality(cs_glob_mesh, cs_glob_mesh_quantities);
-    cs_mesh_coherency_check();
     cs_mesh_bad_cells_postprocess(cs_glob_mesh, cs_glob_mesh_quantities);
   }
   else if (opts.preprocess == true)
@@ -417,16 +427,6 @@ _run(void)
     bft_error(__FILE__, __LINE__, 0,
               _("Coupling with SYRTHES is not possible in mesh preprocessing\n"
                 "or verification mode."));
-
-  if (opts.preprocess == false) {
-
-    cs_mesh_adjacencies_update_mesh();
-
-#if defined(HAVE_ACCEL)
-    cs_preprocess_mesh_update_device();
-#endif
-
-  }
 
   if (opts.benchmark > 0) {
     int mpi_trace_mode = (opts.benchmark == 2) ? 1 : 0;

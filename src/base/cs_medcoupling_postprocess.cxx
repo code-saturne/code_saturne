@@ -290,10 +290,8 @@ static inline void _compute_slice
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_2_t *i_face_cells = cs_glob_mesh->i_face_cells;
 
-  const cs_real_3_t *face_normal =
-    (cs_real_3_t *)cs_glob_mesh_quantities->i_face_normal;
-  const cs_real_3_t *face_cog =
-    (cs_real_3_t *)cs_glob_mesh_quantities->i_face_cog;
+  const cs_nreal_3_t *face_u_normal = cs_glob_mesh_quantities->i_face_u_normal;
+  const cs_real_3_t *face_cog = cs_glob_mesh_quantities->i_face_cog;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id1 = i_face_cells[f_id][0];
@@ -306,7 +304,7 @@ static inline void _compute_slice
                                                               face_cog[f_id],
                                                               si->normal);
       cs_real_t nxn[3] = {0.};
-      cs_math_3_cross_product(si->normal, face_normal[f_id], nxn);
+      cs_math_3_cross_product(si->normal, face_u_normal[f_id], nxn);
       cs_real_t norm_nxn = cs_math_3_norm(nxn);
 
       if (cs::abs(d_face_plane) < 1.e-8 && norm_nxn < 1.e-8) {

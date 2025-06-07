@@ -1155,8 +1155,7 @@ _neighborhood_reduce_anomax(cs_mesh_t             *mesh,
   cs_lnum_t  i, face_id, cell_i, cell_j;
 
   cs_real_t  v_ij[3];
-  cs_real_t  face_normal[3];
-  cs_real_t  norm_ij, face_norm, cos_ij_fn;
+  cs_real_t  norm_ij, cos_ij_fn;
   cs_real_t  dprod;
 
   cs_lnum_t  *vtx_cells_idx = nullptr, *vtx_cells_lst = nullptr;
@@ -1217,21 +1216,20 @@ _neighborhood_reduce_anomax(cs_mesh_t             *mesh,
     cell_j = face_cells[face_id][1];
     dprod = 0;
 
+    const cs_nreal_t  *face_normal = mesh_quantities->i_face_u_normal[face_id];
+
     for (i = 0; i < 3; i++) {
       v_ij[i] = cell_cen[cell_j][i] - cell_cen[cell_i][i];
-      face_normal[i] = mesh_quantities->i_face_normal[3*face_id + i];
       dprod += v_ij[i]*face_normal[i];
     }
 
     norm_ij = cs_math_3_norm(v_ij);
-    face_norm = cs_math_3_norm(face_normal);
 
     assert(norm_ij > 0.);
-    assert(face_norm > 0.);
 
     /* Dot product : norm_ij . face_norm */
 
-    cos_ij_fn = dprod / (norm_ij * face_norm);
+    cos_ij_fn = dprod / norm_ij;
 
     /* Comparison to a predefined limit.
        This is non-orthogonal if we are below the limit and so we keep

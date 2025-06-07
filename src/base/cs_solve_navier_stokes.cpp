@@ -622,10 +622,10 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
-  const cs_real_3_t  *restrict b_face_normal
-    = (const cs_real_3_t  *) mq->b_face_normal;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *) mq->i_face_normal;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq->i_face_u_normal;
 
   const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
   const cs_real_3_t *restrict i_face_cog = mq->i_face_cog;
@@ -638,16 +638,18 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
     const cs_lnum_t c_id1 = i_face_cells[face_id][0];
     const cs_lnum_t c_id2 = i_face_cells[face_id][1];
     if ((irotce[c_id1] != 0) || (irotce[c_id2] != 0)) {
-      const cs_real_t rhofac = 0.5*(crom[c_id1] + crom[c_id2]);
       cs_real_t vr1[3], vr2[3];
       const cs_rotation_t *r_num1 = cs_glob_rotation + irotce[c_id1];
       const cs_rotation_t *r_num2 = cs_glob_rotation + irotce[c_id2];
       cs_rotation_velocity(r_num1, i_face_cog[face_id], vr1);
       cs_rotation_velocity(r_num2, i_face_cog[face_id], vr2);
+      // mfac = 0.5 * rho_fac * face_surf = 0.5 * (0.5*(rho1 + rho2)) * face_surf
+      const cs_real_t mfac
+        = 0.25 * (crom[c_id1] + crom[c_id2]) * i_face_surf[face_id];
 
-      imasfl[face_id] -= 0.5*rhofac*(  i_face_normal[face_id][0]*(vr1[0] + vr2[0])
-                                     + i_face_normal[face_id][1]*(vr1[1] + vr2[1])
-                                     + i_face_normal[face_id][2]*(vr1[2] + vr2[2]));
+      imasfl[face_id] -= mfac*(  i_face_u_normal[face_id][0]*(vr1[0] + vr2[0])
+                               + i_face_u_normal[face_id][1]*(vr1[1] + vr2[1])
+                               + i_face_u_normal[face_id][2]*(vr1[2] + vr2[2]));
     }
   }
 
@@ -656,13 +658,13 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
     cs_real_t vr[3];
     const cs_lnum_t c_id = b_face_cells[face_id];
     if (irotce[c_id] != 0) {
-      const cs_real_t rhofac = brom[face_id];
+      const cs_real_t mfac = brom[face_id] * b_face_surf[face_id];
       const cs_rotation_t *r_num = cs_glob_rotation + irotce[c_id];
       cs_rotation_velocity(r_num, b_face_cog[face_id], vr);
 
-      bmasfl[face_id] -= rhofac*(  b_face_normal[face_id][0]*vr[0]
-                                 + b_face_normal[face_id][1]*vr[1]
-                                 + b_face_normal[face_id][2]*vr[2]);
+      bmasfl[face_id] -= mfac*(  b_face_u_normal[face_id][0]*vr[0]
+                               + b_face_u_normal[face_id][1]*vr[1]
+                               + b_face_u_normal[face_id][2]*vr[2]);
     }
   }
 }
@@ -1016,8 +1018,10 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t *b_face_vtx_lst = m->b_face_vtx_lst;
 
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)(m->vtx_coord);
-  const cs_real_3_t *b_face_normal = (const cs_real_3_t *) mq->b_face_normal;
-  const cs_real_3_t *i_face_normal = (const cs_real_3_t *) mq->i_face_normal;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
+  const cs_real_t *i_face_surf = mq->i_face_surf;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
+  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
 
   const cs_real_3_t *mshvel = (const cs_real_3_t *)CS_F_(mesh_u)->val;
 
@@ -1079,6 +1083,7 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
       const cs_lnum_t s_id = b_face_vtx_idx[face_id];
       const cs_lnum_t e_id = b_face_vtx_idx[face_id+1];
       const cs_lnum_t icpt = e_id - s_id;
+      const cs_real_t rho_surf = brom[face_id] * b_face_surf[face_id];
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t inod = b_face_vtx_lst[ii];
         for (cs_lnum_t jj = 0; jj < 3; jj++)
@@ -1086,10 +1091,10 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
                           - (vtx_coord[inod][jj] - xyzno0[inod][jj]);
       }
       const cs_lnum_t c_id = b_face_cells[face_id];
-      bmasfl[face_id] -= brom[face_id] * (  disp_fac[0]*b_face_normal[face_id][0]
-                                          + disp_fac[1]*b_face_normal[face_id][1]
-                                          + disp_fac[2]*b_face_normal[face_id][2])
-                         / dt[c_id]/icpt;
+      bmasfl[face_id] -=   rho_surf * (  disp_fac[0]*b_face_u_normal[face_id][0]
+                                       + disp_fac[1]*b_face_u_normal[face_id][1]
+                                       + disp_fac[2]*b_face_u_normal[face_id][2])
+                         / (dt[c_id] * icpt);
     });
 
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
@@ -1108,12 +1113,13 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
        * recomputed from the nodes displacement */
       const cs_lnum_t c_id1 = i_face_cells[face_id][0];
       const cs_lnum_t c_id2 = i_face_cells[face_id][1];
-      const cs_real_t dtfac = 0.5*(dt[c_id1] + dt[c_id2]);
-      const cs_real_t rhofac = 0.5*(crom[c_id1] + crom[c_id2]);
-      imasfl[face_id] -= rhofac * (  disp_fac[0]*i_face_normal[face_id][0]
-                                   + disp_fac[1]*i_face_normal[face_id][1]
-                                   + disp_fac[2]*i_face_normal[face_id][2])
-                         / dtfac / icpt;
+      const cs_real_t dtfac = dt[c_id1] + dt[c_id2];         // 0.5 factored out
+      const cs_real_t rho_surf =   crom[c_id1] + crom[c_id2] // 0.5 factored out
+                                 * i_face_surf[face_id];
+      imasfl[face_id] -= rho_surf * (  disp_fac[0]*i_face_u_normal[face_id][0]
+                                     + disp_fac[1]*i_face_u_normal[face_id][1]
+                                     + disp_fac[2]*i_face_u_normal[face_id][2])
+                         / (dtfac * icpt);
     });
 
   }
