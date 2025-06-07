@@ -399,8 +399,7 @@ _boundary_condition_ale_type(const cs_mesh_t            *m,
   const cs_lnum_t  n_b_faces    = m->n_b_faces;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  const cs_real_t   *surfbn = mq->b_face_surf;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
   /* Initialization
    * -------------- */
@@ -718,20 +717,17 @@ _boundary_condition_ale_type(const cs_mesh_t            *m,
             rcodcl1_vel[n_b_faces * ii + face_id] = 0.;
         }
 
-        const cs_real_t srfbnf   = surfbn[face_id];
-        const cs_real_t rnxyz[3] = { surfbo[face_id][0] / srfbnf,
-                                     surfbo[face_id][1] / srfbnf,
-                                     surfbo[face_id][2] / srfbnf };
+        const cs_nreal_t *rnxyz = b_face_u_normal[face_id];
 
         const cs_real_t rcodcxyz[3] = { rcodcl1_vel[n_b_faces * 0 + face_id],
                                         rcodcl1_vel[n_b_faces * 1 + face_id],
                                         rcodcl1_vel[n_b_faces * 2 + face_id] };
         cs_real_t       rcodsn      = 0.;
-        for (int ii = 0; ii < 3; ii++)
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
           rcodsn += (rcodcl1_mesh_u[n_b_faces * ii + face_id] - rcodcxyz[ii]) *
                     rnxyz[ii];
 
-        for (int ii = 0; ii < 3; ii++)
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
           rcodcl1_vel[n_b_faces * ii + face_id] =
             rcodcxyz[ii] + rcodsn * rnxyz[ii];
       }
@@ -913,12 +909,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
   const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
-  const cs_real_3_t *b_face_normal  = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *cell_cen = fvq->cell_cen;
   const cs_real_3_t *b_face_cog = fvq->b_face_cog;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
-  const cs_real_t   *b_face_surf    = fvq->b_face_surf;
   const cs_real_t   *b_dist         = fvq->b_dist;
   int               *isympa         = fvq->b_sym_flag;
 
@@ -1716,8 +1710,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         /* geometric quantities */
         const cs_real_t distbf = b_dist[f_id];
         cs_real_t visci[3][3], dist[3];
-        const cs_real_t surf = b_face_surf[f_id];
-        const cs_real_t *n = b_face_normal[f_id];
+        const cs_nreal_t *n = b_face_u_normal[f_id];
 
         /* if a flux dt.grad p (w/m2) is set in cs_user_boundary_conditions */
         if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
@@ -1728,10 +1721,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         }
         else if (eqp_p->idften & CS_ORTHOTROPIC_DIFFUSION) {
 
-          hint = (dttens[c_id][0] * cs_math_pow2(n[0])
-                + dttens[c_id][1] * cs_math_pow2(n[1])
-                + dttens[c_id][2] * cs_math_pow2(n[2]))
-                / (cs_math_pow2(surf) * distbf);
+          hint = (  dttens[c_id][0] * cs_math_pow2(n[0])
+                  + dttens[c_id][1] * cs_math_pow2(n[1])
+                  + dttens[c_id][2] * cs_math_pow2(n[2]))
+                 / distbf;
 
           if (cs_glob_vof_parameters->vof_model > 0)
             hint = hint / crom[c_id];
@@ -1776,7 +1769,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
              with `cs_face_anisotropic_viscosity_scalar`. */
           fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distbf);
 
-          hint = viscis / surf / fikis;
+          hint = viscis / fikis;
           if (cs_glob_vof_parameters->vof_model > 0)
             hint = hint / crom[c_id];
         }
@@ -2095,8 +2088,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           /* geometric quantities */
           const cs_real_t distfi = b_dist[f_id];
-          const cs_real_t surf = b_face_surf[f_id];
-          const cs_real_t *n = b_face_normal[f_id];
+          const cs_nreal_t *n = b_face_u_normal[f_id];
           cs_real_t visci[3][3], dist[3];
 
           dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
@@ -2138,7 +2130,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                with `cs_face_anisotropic_viscosity_scalar`. */
             fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distfi);
 
-            hint = viscis / surf / fikis;
+            hint = viscis / fikis;
           }
 
           /* scalar diffusivity */
@@ -2266,7 +2258,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
             const cs_lnum_t c_id = b_face_cells[f_id];
-            const cs_real_t surf = b_face_surf[f_id];
 
             /* --- Physical Properties */
             const cs_real_t visclc = viscl[c_id];
@@ -2276,7 +2267,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             /* Geometric quantities */
             const cs_real_t distfi = b_dist[f_id];
             cs_real_t visci[3][3], dist[3];
-            const cs_real_t *n = b_face_normal[f_id];
+            const cs_nreal_t *n = b_face_u_normal[f_id];
 
             dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
             dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
@@ -2317,7 +2308,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                  with `cs_face_anisotropic_viscosity_scalar`. */
               fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distfi);
 
-              hint = viscis / surf / fikis;
+              hint = viscis / fikis;
             }
 
             /* Scalar diffusivity */
@@ -2918,7 +2909,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
           const cs_lnum_t c_id = b_face_cells[f_id];
-          const cs_real_t surf = b_face_surf[f_id];
 
           /* Physical Properties */
           const cs_real_t visctc = visct[c_id];
@@ -2928,7 +2918,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           /* Geometric quantities */
           const cs_real_t distbf = b_dist[f_id];
           cs_real_t visci[3][3], dist[3];
-          const cs_real_t *n = b_face_normal[f_id];
+          const cs_nreal_t *n = b_face_u_normal[f_id];
 
           dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
           dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
@@ -2992,7 +2982,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                with `cs_face_anisotropic_viscosity_scalar`. */
             fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distfi);
 
-            hint = viscis / surf / fikis;
+            hint = viscis / fikis;
 
           }
 

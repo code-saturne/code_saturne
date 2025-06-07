@@ -1070,7 +1070,8 @@ _compute_mass_flow_rate(const cs_zone_t  *zone)
   const cs_lnum_t *elt_ids = zone->elt_ids;
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_t *f_s = mq->b_face_surf;
+  const cs_nreal_3_t *f_n = mq->b_face_u_normal;
 
   cs_real_t *sf;
   CS_MALLOC(sf, n_elts, cs_real_t);
@@ -1081,7 +1082,7 @@ _compute_mass_flow_rate(const cs_zone_t  *zone)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t j = elt_ids[i];
       cs_real_t v[3] = {_rcodcl_v[0][j], _rcodcl_v[1][j], _rcodcl_v[1][j]};
-      sf[i] = - cs_math_3_dot_product(v, f_n[j]) * rho_b[j];
+      sf[i] = - cs_math_3_dot_product(v, f_n[j]) * rho_b[j] * f_s[j];
     }
 
     qm = cs_sum(n_elts, sf);
@@ -1095,7 +1096,7 @@ _compute_mass_flow_rate(const cs_zone_t  *zone)
       cs_lnum_t j = elt_ids[i];
       cs_lnum_t k = b_face_cells[j];
       cs_real_t v[3] = {_rcodcl_v[0][j], _rcodcl_v[1][j], _rcodcl_v[1][j]};
-      sf[i] = - cs_math_3_dot_product(v, f_n[j]) * rho[k];
+      sf[i] = - cs_math_3_dot_product(v, f_n[j]) * rho[k] * f_s[j];
     }
 
     cs_real_t q_m = cs_sum(n_elts, sf);
@@ -1148,7 +1149,8 @@ _scale_vel_mass_flow_rate(int               location_id,
   if (fabs(q_m) > 0) {
 
     const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-    const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
+    const cs_real_t *f_s = mq->b_face_surf;
+    const cs_nreal_3_t *f_n = mq->b_face_u_normal;
 
     cs_real_t *sf;
     CS_MALLOC(sf, n_elts, cs_real_t);
@@ -1159,6 +1161,7 @@ _scale_vel_mass_flow_rate(int               location_id,
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t j = (elt_ids != nullptr) ? elt_ids[i] : i;
         sf[i] = -   cs_math_3_dot_product(vals[i], f_n[j])
+                  * f_s[j]
                   * cs_cf_thermo_b_rho_from_pt(j, c->c_pr, c->c_tk);
       }
     }
@@ -1182,12 +1185,12 @@ _scale_vel_mass_flow_rate(int               location_id,
       if (elt_ids != nullptr) {
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           cs_lnum_t j = elt_ids[i];
-          sf[i] = - cs_math_3_dot_product(vals[i], f_n[j]) * rho_b[j];
+          sf[i] = - cs_math_3_dot_product(vals[i], f_n[j]) * rho_b[j] * f_s[j];
         }
       }
       else {
         for (cs_lnum_t i = 0; i < n_elts; i++) {
-          sf[i] = - cs_math_3_dot_product(vals[i], f_n[i]) * rho_b[i];
+          sf[i] = - cs_math_3_dot_product(vals[i], f_n[i]) * rho_b[i] * f_s[i];
         }
       }
 
@@ -1253,7 +1256,8 @@ _scale_vel_volume_flow_rate(int               location_id,
     r_step = 0;
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_t *f_s = mq->b_face_surf;
+  const cs_nreal_3_t *f_n = mq->b_face_u_normal;
 
   cs_real_t *sf;
   CS_MALLOC(sf, n_elts, cs_real_t);
@@ -1261,12 +1265,12 @@ _scale_vel_volume_flow_rate(int               location_id,
   if (elt_ids != nullptr) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t j = elt_ids[i];
-      sf[i] = - cs_math_3_dot_product(vals + i*r_step, f_n[j]);
+      sf[i] = - cs_math_3_dot_product(vals + i*r_step, f_n[j]) * f_s[j];
     }
   }
   else {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
-      sf[i] = - cs_math_3_dot_product(vals + i*r_step, f_n[i]);
+      sf[i] = - cs_math_3_dot_product(vals + i*r_step, f_n[i]) * f_s[i];
     }
   }
 
