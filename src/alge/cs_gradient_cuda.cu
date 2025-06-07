@@ -797,7 +797,8 @@ template <cs_lnum_t stride>
 __global__ static void
 _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
                             const cs_lnum_2_t           *i_face_cells,
-                            const cs_real_3_t  *restrict i_face_normal,
+                            const cs_real_t    *restrict i_face_surf,
+                            const cs_nreal_3_t *restrict i_face_u_normal,
                             const cs_real_3_t  *restrict dofij,
                             const cs_real_t   (*restrict pvar)[stride],
                             const cs_real_t             *weight,
@@ -834,14 +835,17 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
                           + dofij[f_id][2]*(  r_grad[c_id1][i][2]
                                             + r_grad[c_id2][i][2]));
 
+  pfaci = (pfaci + rfac) * i_face_surf[f_id];
+  pfacj = (pfacj + rfac) * i_face_surf[f_id];
+
 #if 1
 
   using cell_v = assembled_value<cs_real_t, 3>;
   cell_v grad_cf1, grad_cf2;
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    grad_cf1[j].get() =    (pfaci + rfac) * i_face_normal[f_id][j];
-    grad_cf2[j].get() = - ((pfacj + rfac) * i_face_normal[f_id][j]);
+    grad_cf1[j].get() =   pfaci * i_face_u_normal[f_id][j];
+    grad_cf2[j].get() = - pfacj * i_face_u_normal[f_id][j];
   }
   cell_v::ref(grad[c_id1][i]).conflict_free_add(-1u, grad_cf1);
   cell_v::ref(grad[c_id2][i]).conflict_free_add(-1u, grad_cf2);
@@ -849,8 +853,8 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
 #else
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    atomicAdd(&grad[c_id1][i][j],   (pfaci + rfac) * i_face_normal[f_id][j]);
-    atomicAdd(&grad[c_id2][i][j], - (pfacj + rfac) * i_face_normal[f_id][j]);
+    atomicAdd(&grad[c_id1][i][j],   pfaci * i_face_u_normal[f_id][j]);
+    atomicAdd(&grad[c_id2][i][j], - pfacj * i_face_u_normal[f_id][j]);
   }
 
 #endif
@@ -865,18 +869,19 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
 
 template <unsigned int blocksize, cs_lnum_t stride>
 __global__ static void
-_gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
-                               const cs_lnum_t    *restrict cell_cells_idx,
-                               const cs_lnum_t    *restrict cell_cells,
-                               const cs_lnum_t    *restrict cell_i_faces,
-                               const short int    *restrict cell_i_faces_sgn,
-                               const cs_real_3_t  *restrict i_face_normal,
-                               const cs_real_3_t  *restrict dofij,
-                               const cs_real_t   (*restrict pvar)[stride],
-                               const cs_real_t             *weight,
-                               const cs_real_t             *c_weight,
-                               const cs_real_t   (*restrict r_grad)[stride][3],
-                               cs_real_t         (*restrict grad)[stride][3])
+_gg_with_r_gradient_cell_cells(cs_lnum_t            n_cells,
+                               const cs_lnum_t     *restrict cell_cells_idx,
+                               const cs_lnum_t     *restrict cell_cells,
+                               const cs_lnum_t     *restrict cell_i_faces,
+                               const short int     *restrict cell_i_faces_sgn,
+                               const cs_real_t     *restrict i_face_surf,
+                               const cs_nreal_3_t  *restrict i_face_u_normal,
+                               const cs_real_3_t   *restrict dofij,
+                               const cs_real_t    (*restrict pvar)[stride],
+                               const cs_real_t              *weight,
+                               const cs_real_t              *c_weight,
+                               const cs_real_t    (*restrict r_grad)[stride][3],
+                               cs_real_t          (*restrict grad)[stride][3])
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -907,7 +912,8 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
     auto _pvar2 = pvar[c_id2];
     auto _r_grad2 = r_grad[c_id2];
     auto _dofij = dofij[f_id];
-    auto _i_face_normal =  i_face_normal[f_id];
+    auto _i_face_surf =  i_face_surf[f_id];
+    auto _i_face_u_normal =  i_face_u_normal[f_id];
 
     cs_real_t pond = (f_sgn > 0) ? weight[f_id] : 1. - weight[f_id];
     cs_real_t ktpond = (c_weight == nullptr) ?
@@ -927,8 +933,9 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
                               + _dofij[2]*(  _r_grad1[i][2]
                                            + _r_grad2[i][2]));
 
+      pfaci = f_sgn * (pfaci + rfac) * _i_face_surf;
       for (cs_lnum_t j = 0; j < 3; j++) {
-        _grad[i][j] += f_sgn * (pfaci + rfac) * _i_face_normal[j];
+        _grad[i][j] += pfaci * _i_face_u_normal[j];
       }
     }
   }
@@ -950,7 +957,8 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
 template <cs_lnum_t stride>
 __global__ static void
 _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
-                            const cs_real_3_t   *restrict b_face_normal,
+                            const cs_real_t     *restrict b_face_surf,
+                            const cs_nreal_3_t  *restrict b_face_u_normal,
                             const cs_lnum_t     *restrict b_face_cells,
                             const cs_real_t    (*restrict val_f)[stride],
                             const cs_real_t    (*restrict pvar)[stride],
@@ -967,7 +975,7 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
 
   cs_lnum_t c_id = b_face_cells[f_id];
 
-  cs_real_t pfac = val_f[f_id][i] - pvar[c_id][i];
+  cs_real_t pfac = (val_f[f_id][i] - pvar[c_id][i]) * b_face_surf[f_id];
 
   using cell_v = assembled_value<cs_real_t, 3>;
   cell_v grad_cf;
@@ -975,14 +983,14 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
 #if 1
 
   for (cs_lnum_t j = 0; j < 3; j++){
-    grad_cf[j].get() = pfac * b_face_normal[f_id][j];
+    grad_cf[j].get() = pfac * b_face_u_normal[f_id][j];
   }
   cell_v::ref(grad[c_id][i]).conflict_free_add(-1u, grad_cf);
 
 #else
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    atomicAdd(&grad[c_id][i][j], pfac * b_face_normal[f_id][j]);
+    atomicAdd(&grad[c_id][i][j], pfac * b_face_u_normal[f_id][j]);
   }
 
 #endif
@@ -999,7 +1007,8 @@ template <cs_lnum_t stride>
 __global__ static void
 _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
                             int                           inc,
-                            const cs_real_3_t   *restrict b_face_normal,
+                            const cs_real_t     *restrict b_face_surf,
+                            const cs_nreal_3_t  *restrict b_face_u_normal,
                             const cs_lnum_t     *restrict b_face_cells,
                             const cs_rreal_3_t  *restrict diipb,
                             const cs_real_t    (*restrict coefav)[stride],
@@ -1038,17 +1047,19 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
   using cell_v = assembled_value<cs_real_t, 3>;
   cell_v grad_cf;
 
+  pfac = (pfac + rfac) * b_face_surf[f_id];
+
 #if 1
 
   for (cs_lnum_t j = 0; j < 3; j++){
-    grad_cf[j].get() = (pfac + rfac) * b_face_normal[f_id][j];
+    grad_cf[j].get() = pfac * b_face_u_normal[f_id][j];
   }
   cell_v::ref(grad[c_id][i]).conflict_free_add(-1u, grad_cf);
 
 #else
 
   for (cs_lnum_t j = 0; j < 3; j++) {
-    atomicAdd(&grad[c_id][i][j], (pfac + rfac) * b_face_normal[f_id][j]);
+    atomicAdd(&grad[c_id][i][j], pfac * b_face_u_normal[f_id][j]);
   }
 
 #endif
@@ -1754,10 +1765,14 @@ cs_gradient_strided_gg_r_cuda
     = cs_get_device_ptr_const_pf(fvq->cell_vol);
   const cs_real_3_t *restrict cell_cen
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_cen);
-  const cs_real_3_t *restrict i_face_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->i_face_normal);
-  const cs_real_3_t *restrict b_face_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_normal);
+  const cs_real_t *restrict i_face_surf
+    = cs_get_device_ptr_const_pf((cs_real_t *)fvq->i_face_surf);
+  const cs_nreal_3_t *restrict i_face_u_normal
+    = cs_get_device_ptr_const_pf((cs_nreal_3_t *)fvq->i_face_u_normal);
+  const cs_real_t *restrict b_face_surf
+    = cs_get_device_ptr_const_pf((cs_real_t *)fvq->b_face_surf);
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = cs_get_device_ptr_const_pf((cs_nreal_3_t *)fvq->b_face_u_normal);
   const cs_real_3_t *restrict dofij
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->dofij);
   const cs_real_33_t *restrict corr_grad_lin
@@ -1789,7 +1804,8 @@ cs_gradient_strided_gg_r_cuda
     _gg_with_r_gradient_i_faces<<<gridsize, blocksize, 0, stream>>>
       (m->n_i_faces,
        i_face_cells,
-       i_face_normal,
+       i_face_surf,
+       i_face_u_normal,
        dofij,
        pvar_d,
        weight,
@@ -1806,7 +1822,8 @@ cs_gradient_strided_gg_r_cuda
        cell_cells,
        cell_i_faces,
        cell_i_faces_sgn,
-       i_face_normal,
+       i_face_surf,
+       i_face_u_normal,
        dofij,
        pvar_d,
        weight,
@@ -1822,7 +1839,8 @@ cs_gradient_strided_gg_r_cuda
     gridsize = cs_cuda_grid_size(n_b_faces * stride, blocksize);
     _gg_with_r_gradient_b_faces<<<gridsize, blocksize, 0, stream>>>
       (n_b_faces,
-       b_face_normal,
+       b_face_surf,
+       b_face_u_normal,
        b_face_cells,
        val_f_d,
        pvar_d,
@@ -2047,10 +2065,14 @@ cs_gradient_strided_gg_r_cuda
     = cs_get_device_ptr_const_pf(fvq->cell_vol);
   const cs_real_3_t *restrict cell_cen
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_cen);
-  const cs_real_3_t *restrict i_face_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->i_face_normal);
-  const cs_real_3_t *restrict b_face_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_normal);
+  const cs_real_t *restrict i_face_surf
+    = cs_get_device_ptr_const_pf((cs_real_t *)fvq->i_face_surf);
+  const cs_nreal_3_t *restrict i_face_u_normal
+    = cs_get_device_ptr_const_pf((cs_nreal_3_t *)fvq->i_face_u_normal);
+  const cs_real_t *restrict b_face_surf
+    = cs_get_device_ptr_const_pf((cs_real_t *)fvq->b_face_surf);
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = cs_get_device_ptr_const_pf((cs_nreal_3_t *)fvq->b_face_u_normal);
   const cs_rreal_3_t *restrict diipb
     = cs_get_device_ptr_const_pf(fvq->diipb);
   const cs_real_3_t *restrict dofij
@@ -2084,7 +2106,8 @@ cs_gradient_strided_gg_r_cuda
     _gg_with_r_gradient_i_faces<<<gridsize, blocksize, 0, stream>>>
       (m->n_i_faces,
        i_face_cells,
-       i_face_normal,
+       i_face_surf,
+       i_face_u_normal,
        dofij,
        pvar_d,
        weight,
@@ -2101,7 +2124,8 @@ cs_gradient_strided_gg_r_cuda
        cell_cells,
        cell_i_faces,
        cell_i_faces_sgn,
-       i_face_normal,
+       i_face_surf,
+       i_face_u_normal,
        dofij,
        pvar_d,
        weight,
@@ -2118,7 +2142,8 @@ cs_gradient_strided_gg_r_cuda
     _gg_with_r_gradient_b_faces<<<gridsize, blocksize, 0, stream>>>
       (n_b_faces,
        inc,
-       b_face_normal,
+       b_face_surf,
+       b_face_u_normal,
        b_face_cells,
        diipb,
        coefa_d,

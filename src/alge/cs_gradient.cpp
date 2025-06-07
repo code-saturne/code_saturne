@@ -2522,14 +2522,12 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   if (c_weight != nullptr)
     halo_type = CS_HALO_STANDARD;
 
-#if defined(HAVE_CUDA)
-
-  bool accel = (cs_get_device_id() > -1) ? true : false;
-
-  cs_dispatch_context g_ctx;
-  bool on_device = g_ctx.use_gpu();
+  cs_dispatch_context ctx;
+  bool on_device = ctx.use_gpu();
 
   _get_cell_cocg_lsq(m, halo_type, on_device, fvq, &cocg, &cocgb);
+
+#if defined(HAVE_CUDA)
 
   if (on_device) {
     cs_gradient_scalar_lsq_cuda(m,
@@ -2546,16 +2544,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     return;
   }
-
-  ctx.set_use_gpu(false);
-  cs_host_context &ctx = static_cast<cs_host_context&>(g_ctx);
-
-#else
-
-  cs_dispatch_context ctx;
-  bool on_device = ctx.use_gpu();
-
-  _get_cell_cocg_lsq(m, halo_type, on_device, fvq, &cocg, &cocgb);
 
 #endif
 
