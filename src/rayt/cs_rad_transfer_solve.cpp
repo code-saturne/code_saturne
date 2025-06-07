@@ -709,7 +709,6 @@ _cs_rad_transfer_sol(int                        gg_id,
             const cs_real_t tan_alpha
               =    sqrt(domegat * (4.*pi - domegat))
                  / (2. * pi - domegat);
-            const cs_real_t *i_face_surf = fvq->i_face_surf;
 
             for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
               viscf[face_id] = disp_coeff * tan_alpha * i_face_surf[face_id];

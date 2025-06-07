@@ -179,10 +179,9 @@ cs_lagr_resuspension(void)
   cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
   cs_lagr_extra_module_t *extra = extra_i;
 
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_nreal_3_t *restrict b_face_u_normal
-    = fvq->b_face_u_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   cs_lagr_event_set_t  *events = nullptr;
 
@@ -251,8 +250,8 @@ cs_lagr_resuspension(void)
         cs_glob_physical_constants->gravity[2]};
 
       cs_real_t fgrav
-        =   p_mass * reorient_face
-        * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
+        =   p_mass * reorient_face * i_face_surf[face_id]
+          * cs_math_3_dot_product(gravity, i_face_u_normal[face_id]);
 
       /* Forces due to pressure difference */
       cs_lnum_t c_id1 = mesh->i_face_cells[face_id][0];
@@ -339,8 +338,8 @@ cs_lagr_resuspension(void)
 
               for (cs_lnum_t id = 0; id < 3; id++) {
                 part_vel[id] *= norm_reent / norm_velocity * cos(angle_reent);
-                part_vel[id] -= norm_reent * sin(angle_reent)
-                  * b_face_u_normal[face_id][id];
+                part_vel[id] -=   norm_reent * sin(angle_reent)
+                                * b_face_u_normal[face_id][id];
               }
 
               /* Update of the number and weight of resuspended particles     */
@@ -394,8 +393,6 @@ cs_lagr_resuspension(void)
                 cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
                 cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
 
-                cs_real_t norm_face = cs_glob_mesh_quantities->b_face_surf[face_id];
-
                 cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
                 cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
@@ -405,8 +402,8 @@ cs_lagr_resuspension(void)
 
                 for (cs_lnum_t id = 0; id < 3; id++) {
                   part_vel[id] *= norm_reent / norm_velocity * cos(angle_reent);
-                  part_vel[id] -= norm_reent * sin(angle_reent) / norm_face
-                    * cs_glob_mesh_quantities->b_face_normal[face_id * 3 +id];
+                  part_vel[id] -= norm_reent * sin(angle_reent)
+                    * cs_glob_mesh_quantities->b_face_u_normal[face_id][id];
                 }
 
                 /* Update of the number and weight of resuspended particles */
@@ -535,8 +532,8 @@ cs_lagr_resuspension(void)
 
             for (cs_lnum_t id = 0; id < 3; id++) {
               part_vel[id] *= norm_reent / norm_velocity * cos(angle_reent);
-              part_vel[id] -= norm_reent * sin(angle_reent) / norm_face
-                * cs_glob_mesh_quantities->b_face_normal[face_id * 3 +id];
+              part_vel[id] -= norm_reent * sin(angle_reent)
+                * cs_glob_mesh_quantities->b_face_u_normal[face_id][id];
             }
 
             /* Update of the number and weight of resuspended particles     */

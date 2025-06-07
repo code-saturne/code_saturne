@@ -298,14 +298,13 @@ _compute_characteristic_length(const cs_real_t  point[3],
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
-_compute_tangential_velocity(const cs_real_t  velocity[3],
-                             const cs_real_t  normal_vector[3],
-                             const cs_real_t  coeff)
+_compute_tangential_velocity(const cs_real_t   velocity[3],
+                             const cs_nreal_t  u_normal_vector[3])
 {
   cs_real_t u_square = 0.0;
   cs_real_t u_normal = 0.0;
   for (int idir = 0; idir < 3; idir++) {
-    u_normal += velocity[idir] * normal_vector[idir] * coeff;
+    u_normal += velocity[idir] * u_normal_vector[idir];
     u_square += velocity[idir] * velocity[idir];
   }
   return sqrt(u_square - u_normal * u_normal);
@@ -368,9 +367,8 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
   case CS_WALL_COND_MODEL_SCHLICHTING:
     {
       cs_real_3_t *cdgfbo = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-      const cs_real_3_t *b_face_normal
-        = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
-      const cs_real_t *  surfbn = cs_glob_mesh_quantities->b_face_surf;
+      const cs_nreal_3_t *b_face_u_normal
+        = cs_glob_mesh_quantities->b_face_u_normal;
       const cs_real_3_t *velocity
         = (cs_real_3_t *)cs_field_by_name("velocity")->val;
       const cs_real_3_t *n_ref = (cs_real_3_t *)_wall_cond.zprojcond;
@@ -380,8 +378,7 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
       const cs_real_t lcar
         = _compute_characteristic_length(cdgfbo[ifac], x_ref[iz], n_ref_norm);
       const cs_real_t u_ref
-        = _compute_tangential_velocity(velocity[iel], b_face_normal[ifac],
-                                       1. / surfbn[ifac]);
+        = _compute_tangential_velocity(velocity[iel], b_face_u_normal[ifac]);
       // Reynolds number
       const cs_real_t re    = rho * u_ref * lcar / dyn_visc;
       cs_real_t       theta = 1.0;

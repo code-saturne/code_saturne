@@ -840,6 +840,9 @@ _boundary_impact_angle(const void                 *input,
 
   cs_lnum_t i, ev_id;
 
+  const cs_nreal_3_t *b_face_u_normal
+    = cs_glob_mesh_quantities->b_face_u_normal;
+
   for (i = 0, ev_id = id_range[0]; ev_id < id_range[1]; i++, ev_id++) {
 
     double imp_angle = 0;
@@ -855,18 +858,15 @@ _boundary_impact_angle(const void                 *input,
       face_id = - 1;
 
     if (face_id >= 0) {
-      const cs_real_t *face_normal
-        = cs_glob_mesh_quantities->b_face_normal + face_id*3;
-      const cs_real_t face_area
-        = cs_glob_mesh_quantities->b_face_surf[face_id];
+      const cs_nreal_t *face_u_normal = b_face_u_normal[face_id];
       const cs_real_t  *part_vel =
         cs_lagr_events_attr_get_const_ptr<cs_real_t>(events, ev_id,
                                                      CS_LAGR_VELOCITY);
       cs_real_t vel_norm = cs_math_3_norm(part_vel);
 
-      if (face_area * vel_norm > m_epsilon)
-        imp_angle = acos(cs_math_3_dot_product(part_vel, face_normal)
-                         / (face_area * vel_norm));
+      if (vel_norm > m_epsilon)
+        imp_angle = acos(cs_math_3_dot_product(part_vel, face_u_normal)
+                         / (vel_norm));
       else
         imp_angle = 0;
     }

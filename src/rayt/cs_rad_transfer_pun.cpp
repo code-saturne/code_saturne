@@ -149,9 +149,7 @@ cs_rad_transfer_pun(int                          iband,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  const cs_real_3_t *b_face_normal
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
-  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
+  const cs_nreal_3_t *b_face_u_normal = cs_glob_mesh_quantities->b_face_u_normal;
 
   const cs_real_t stephn = cs_physical_constants_stephan;
 
@@ -329,18 +327,16 @@ cs_rad_transfer_pun(int                          iband,
       if (cs_glob_rad_transfer_params->imoadf >= 1)
         f_qinspe->val[iband + ifac * f_qinspe->dim]
           =   stephn * theta4[cell_id]
-            + (  q[cell_id][0] * b_face_normal[ifac][0]
-               + q[cell_id][1] * b_face_normal[ifac][1]
-               + q[cell_id][2] * b_face_normal[ifac][2])
-            / (0.5 * b_face_surf[ifac]);
+            + 2.0 * (  q[cell_id][0] * b_face_u_normal[ifac][0]
+                     + q[cell_id][1] * b_face_u_normal[ifac][1]
+                     + q[cell_id][2] * b_face_u_normal[ifac][2]);
 
       else
         f_qinci->val[ifac]
           =   stephn * theta4[cell_id]
-            + (  q[cell_id][0] * b_face_normal[ifac][0]
-               + q[cell_id][1] * b_face_normal[ifac][1]
-               + q[cell_id][2] * b_face_normal[ifac][2])
-            / (0.5 * b_face_surf[ifac]);
+            + 2.0 * (  q[cell_id][0] * b_face_u_normal[ifac][0]
+                     + q[cell_id][1] * b_face_u_normal[ifac][1]
+                     + q[cell_id][2] * b_face_u_normal[ifac][2]);
     }
   }
 

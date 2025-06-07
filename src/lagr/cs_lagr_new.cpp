@@ -461,24 +461,26 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
       cs_lnum_t face_id, n_vertices;
       const cs_lnum_t *vertex_ids;
-      const cs_real_t *face_cog, *face_normal;
+      const cs_real_t *face_cog;
+      const cs_nreal_t *face_u_normal;
 
       /* Outward normal: always well oriented for external faces,
          depend on the connectivity for internal faces */
 
-      cs_real_t v_mult = 1;
+      cs_real_t sgn_face_surf = 1;
 
       if (i < n_cell_i_faces) { /* Interior face */
 
         face_id = ma->cell_i_faces[ma->cell_cells_idx[cell_id] + i];
 
+        sgn_face_surf = fvq->i_face_surf[face_id];
         if (cell_id == mesh->i_face_cells[face_id][1])
-          v_mult = -1;
+          sgn_face_surf *= -1;
         cs_lnum_t vtx_s = mesh->i_face_vtx_idx[face_id];
         n_vertices = mesh->i_face_vtx_idx[face_id+1] - vtx_s;
         vertex_ids = mesh->i_face_vtx_lst + vtx_s;
         face_cog = fvq->i_face_cog[face_id];
-        face_normal = fvq->i_face_normal + (3*face_id);
+        face_u_normal = fvq->i_face_u_normal[face_id];
 
       }
       else { /* Boundary faces */
@@ -493,11 +495,12 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
           face_id = ma->cell_hb_faces[ma->cell_hb_faces_idx[cell_id] + j];
         }
 
+        sgn_face_surf = fvq->b_face_surf[face_id];
         cs_lnum_t vtx_s = mesh->b_face_vtx_idx[face_id];
         n_vertices = mesh->b_face_vtx_idx[face_id+1] - vtx_s;
         vertex_ids = mesh->b_face_vtx_lst + vtx_s;
         face_cog = fvq->b_face_cog[face_id];
-        face_normal = fvq->b_face_normal + (3*face_id);
+        face_u_normal = fvq->b_face_u_normal[face_id];
 
       }
 
@@ -517,11 +520,10 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
       cs_real_t fh = 0;
       if (f_surf > 0) {
-        /* face normal should have length f_surf, so no need to divide here */
         for (cs_lnum_t j = 0; j < 3; j++)
-          fh += (face_cog[j] - cell_cen[j]) * face_normal[j];
+          fh += (face_cog[j] - cell_cen[j]) * face_u_normal[j];
       }
-      fh *= v_mult;
+      fh *= sgn_face_surf;
 
       t_vol += cs::abs(fh);
       acc_vol_r[i] = t_vol;

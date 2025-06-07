@@ -555,7 +555,7 @@ _contact_angle_correction
 
   /* Get values or local pointers */
   const cs_lnum_t *b_face_cells = m->b_face_cells;
-  cs_real_3_t *b_face_u_normal = mq->b_face_u_normal;
+  cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
   cs_real_t *restrict volume = mq->cell_vol;
 
   const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
@@ -1028,10 +1028,10 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
   const cs_real_3_t *restrict i_face_cog = mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)mq->i_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq->i_face_u_normal;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -1096,12 +1096,13 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
                              i_face_cog[f_id],
                              vr2);
 
-        cs_real_t vr[3] = {0.5 * (vr1[0] + vr2[0]),
-                           0.5 * (vr1[1] + vr2[1]),
-                           0.5 * (vr1[2] + vr2[2])};
+        cs_real_t vr[3] = {(vr1[0] + vr2[0]),
+                           (vr1[1] + vr2[1]),
+                           (vr1[2] + vr2[2])};
 
         i_massflux_abs[f_id]
-          += rhofac * cs_math_3_dot_product(i_f_face_normal[f_id],vr);
+          += rhofac * 0.5 * cs_math_3_dot_product(i_face_u_normal[f_id], vr)
+                          * i_face_surf[f_id];
       }
     });
 
@@ -1117,7 +1118,8 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
         cs_rotation_velocity(r + rot_ce_i, b_face_cog[f_id], vr);
 
         b_massflux_abs[f_id]
-          += bpro_rom[f_id] * cs_math_3_dot_product(b_f_face_normal[f_id], vr);
+          += bpro_rom[f_id] * cs_math_3_dot_product(b_face_u_normal[f_id], vr)
+                            * b_face_surf[f_id];
 
       }
     });

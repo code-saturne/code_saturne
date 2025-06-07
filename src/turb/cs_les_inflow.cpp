@@ -407,10 +407,10 @@ _rescale_flowrate(cs_lnum_t         n_points,
     cs_lnum_t cell_id = b_face_cells[face_id];
 
     const cs_real_t *fluct = fluctuations[point_id];
-    const cs_real_t *normal = b_face_u_normal[face_id];
+    const cs_nreal_t *u_normal = b_face_u_normal[face_id];
 
     cs_real_t dot_product
-      = b_face_surf[face_id] * cs_math_3_dot_product(fluct, normal);
+      = b_face_surf[face_id] * cs_math_3_dot_product(fluct, u_normal);
 
     res.r[0] = density[cell_id]*dot_product;
     res.r[1] = b_face_surf[face_id];

@@ -373,7 +373,7 @@ cs_user_lagr_volume_conditions(void);
  * \param[in, out]  particles       pointer to particle set
  * \param[in]       p_id            particle id
  * \param[in]       face_id         interior face id
- * \param[in]       face_norm       unit face (or face subdivision) normal
+ * \param[in]       face_u_norm     unit face (or face subdivision) normal
  * \param[in]       c_intersect     coordinates of intersection with the face
  * \param[in]       t_intersect     relative distance (in [0, 1]) of the
  *                                  intersection point with the face relative
@@ -386,7 +386,7 @@ void
 cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    *particles,
                                   cs_lnum_t                  p_id,
                                   cs_lnum_t                  face_id,
-                                  const cs_real_t            face_norm[3],
+                                  const cs_nreal_t           face_u_norm[3],
                                   const cs_real_t            c_intersect[3],
                                   cs_real_t                  t_intersect,
                                   cs_lagr_tracking_state_t  *tracking_state);

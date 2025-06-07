@@ -4391,18 +4391,16 @@ cs_atmo_z_ground_compute(void)
   const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
   const cs_lnum_t n_cells = m->n_cells;
 
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq_g->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq_g->b_face_u_normal;
   const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   const int *bc_type = cs_glob_bc_type;
 
   const cs_real_t *restrict i_face_surf = mq_g->i_face_surf;
   const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;
-  const cs_real_3_t *restrict i_face_normal_g
-    = (const cs_real_3_t *)mq_g->i_face_normal;
+  const cs_real_t *restrict i_face_surf_g = mq_g->i_face_surf;
+  const cs_real_t *restrict b_face_surf = mq_g->b_face_surf;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *c2c = ma->cell_cells;
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
@@ -4432,11 +4430,17 @@ cs_atmo_z_ground_compute(void)
   /* Compute the mass flux due to V = - g / ||g||
    * ============================================ */
 
-  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
-    i_massflux[face_id] = cs_math_3_dot_product(normal, i_face_normal[face_id]);
+  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+    i_massflux[face_id] =   cs_math_3_dot_product(normal,
+                                                  i_face_u_normal[face_id])
+                          * i_face_surf[face_id];
+  }
 
-  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++)
-    b_massflux[face_id] = cs_math_3_dot_product(normal, b_face_normal[face_id]);
+  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    b_massflux[face_id] =   cs_math_3_dot_product(normal,
+                                                  b_face_u_normal[face_id])
+                          * b_face_surf[face_id];
+  }
 
   /* Boundary conditions
    * =================== */
@@ -4525,8 +4529,10 @@ cs_atmo_z_ground_compute(void)
         eqp_p->ndircl = 1;
         cs_real_t pimp = cs_math_3_dot_product(i_face_cog[face_id], normal);
 
-        cs_real_t tsimp
-          = fmax(- sign * cs_math_3_dot_product(i_face_normal_g[face_id], normal), 0.);
+        cs_real_t dot_ng
+          = cs_math_3_dot_product(i_face_u_normal[face_id], normal);
+        cs_real_t tsimp =   cs::max(- sign * dot_ng, 0.)
+                          * i_face_surf_g[face_id];
 
         rhs[c_id] += tsimp * (pimp - f->val[c_id]); //explicit term
         rovsdt[c_id] += cs::max(tsimp, 0.); //implicit term

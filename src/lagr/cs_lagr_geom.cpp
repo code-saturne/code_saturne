@@ -106,39 +106,37 @@ cs_lagr_geom(void)
 {
   cs_mesh_t            *mesh = cs_glob_mesh;
 
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = cs_glob_mesh_quantities->b_face_u_normal;
   const cs_real_3_t *vtx_coord
     = (const cs_real_3_t *)(cs_glob_mesh->vtx_coord);
 
   CS_REALLOC(cs_glob_lagr_b_face_proj, mesh->n_b_faces, cs_real_33_t);
 
-/* ==============================================================================*/
-/* 1. The reference frame chang matrix is:
- *
- *  ( nx  ny  nz )
- *  ( t1x t1y t1z)
- *  ( t2x t2y t2z)
- *
- *  With n, t1, t2 three unit orthogonal vectors and n the outwrding normal to the
- *  boundary face.
- * */
-/* ==============================================================================*/
+  /*==========================================================================*/
+  /* 1. The reference frame change matrix is:
+   *
+   *  ( nx  ny  nz )
+   *  ( t1x t1y t1z)
+   *  ( t2x t2y t2z)
+   *
+   *  With n, t1, t2 three unit orthogonal vectors
+   *  and n the outward normal to the boundary face.
+   */
+  /*==========================================================================*/
 
   for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++) {
 
     /* normal vector coordinates */
-    cs_real_3_t normal;
-    cs_math_3_normalize(b_face_normal[face_id], normal);
+    const cs_nreal_t *normal = b_face_u_normal[face_id];
 
     /* Recover the first face nodes */
     cs_lnum_t v_id0  = mesh->b_face_vtx_lst[mesh->b_face_vtx_idx[face_id]];
     cs_lnum_t v_id1  = mesh->b_face_vtx_lst[mesh->b_face_vtx_idx[face_id] + 1];
 
-    cs_real_3_t v0v1 = {
-      vtx_coord[v_id1][0] - vtx_coord[v_id0][0],
-      vtx_coord[v_id1][1] - vtx_coord[v_id0][1],
-      vtx_coord[v_id1][2] - vtx_coord[v_id0][2]};
+    cs_real_3_t v0v1 = {vtx_coord[v_id1][0] - vtx_coord[v_id0][0],
+                        vtx_coord[v_id1][1] - vtx_coord[v_id0][1],
+                        vtx_coord[v_id1][2] - vtx_coord[v_id0][2]};
 
     /* tangential projection to the wall:
      * (Id -n (x) n) vect */

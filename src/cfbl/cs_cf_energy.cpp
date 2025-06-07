@@ -115,7 +115,6 @@ BEGIN_C_DECLS
 static void
 _cf_div(cs_real_t div[])
 {
-
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_halo_t *halo = mesh->halo;
@@ -126,10 +125,10 @@ _cf_div(cs_real_t div[])
 
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
-  const cs_real_3_t *i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *i_face_surf = fvq->i_face_surf;
+  const cs_real_t *b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   const int itytur = cs_glob_turb_model->itytur;
 
@@ -257,9 +256,10 @@ _cf_div(cs_real_t div[])
     const cs_lnum_t c_id1 = i_face_cells[f_id][1];
 
     const cs_real_t vecfac
-      =   0.5*i_f_face_normal[f_id][0]*(tempv[c_id0][0]+tempv[c_id1][0])
-        + 0.5*i_f_face_normal[f_id][1]*(tempv[c_id0][1]+tempv[c_id1][1])
-        + 0.5*i_f_face_normal[f_id][2]*(tempv[c_id0][2]+tempv[c_id1][2]);
+      =   0.5 * i_face_surf[f_id]
+          * (  i_face_u_normal[f_id][0]*(tempv[c_id0][0]+tempv[c_id1][0])
+             + i_face_u_normal[f_id][1]*(tempv[c_id0][1]+tempv[c_id1][1])
+             + i_face_u_normal[f_id][2]*(tempv[c_id0][2]+tempv[c_id1][2]));
 
     div[c_id0] = div[c_id0] + vecfac;
     div[c_id1] = div[c_id1] - vecfac;
@@ -270,9 +270,10 @@ _cf_div(cs_real_t div[])
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     const cs_lnum_t c_id = b_face_cells[f_id];
 
-    const cs_real_t vecfac =   b_f_face_normal[f_id][0] * tempv[c_id][0]
-                             + b_f_face_normal[f_id][1] * tempv[c_id][1]
-                             + b_f_face_normal[f_id][2] * tempv[c_id][1];
+    const cs_real_t vecfac
+      = b_face_surf[f_id] * (  b_face_u_normal[f_id][0] * tempv[c_id][0]
+                             + b_face_u_normal[f_id][1] * tempv[c_id][1]
+                             + b_face_u_normal[f_id][2] * tempv[c_id][1]);
 
     div[c_id] = div[c_id] + vecfac;
   }

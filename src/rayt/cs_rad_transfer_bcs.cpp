@@ -1186,8 +1186,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
   cs_real_t onedpi  = 1.0 / cs_math_pi;
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_real_3_t *b_face_normal
-    = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  cs_nreal_3_t *b_face_u_normal = cs_glob_mesh_quantities->b_face_u_normal;
 
   /* Initialization */
 
@@ -1286,8 +1285,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
          * or if coupled to a 1D module (Atmospheric module)
          * (warning: the treatment is different from than of P-1 model) */
         if (vect_s != nullptr) {
-          cs_real_t normal[3];
-          cs_math_3_normalize(b_face_normal[face_id], normal);
+          const cs_nreal_t *normal = b_face_u_normal[face_id];
           cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s, normal);
           if (cs::abs(vs_dot_n) < cs_math_epzero) /* entering */
             neumann = false;

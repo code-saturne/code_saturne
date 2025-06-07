@@ -2028,7 +2028,8 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
                          cs_real_t                   *dt)
 {
   cs_real_t *volume = mesh_quantities->cell_vol;
-  cs_real_t *surfac = mesh_quantities->i_face_normal;
+  const cs_real_t *surf = mesh_quantities->i_face_surf;
+  const cs_nreal_3_t *u_normal = mesh_quantities->i_face_u_normal;
   cs_lnum_t  n_cells   = mesh->n_cells;
   cs_lnum_t  nfac   = mesh->n_i_faces;
 
@@ -2067,18 +2068,19 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       if (mesh->halo != nullptr)
         cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD,
                                  (cs_real_t *)cpro_curre, 3);
+      cs_lnum_t idreca_idx = cs_glob_elec_option->idreca - 1;
       for (cs_lnum_t ifac = 0; ifac < nfac; ifac++) {
         if (cs_glob_elec_option->izreca[ifac] > 0) {
           bool ok = true;
           for (int idir = 0; idir < 3; idir++)
-            if (   fabs(surfac[3 * ifac + idir]) > 0.
-                && idir != (cs_glob_elec_option->idreca - 1))
+            if (   fabs(u_normal[ifac][idir]) > 0.
+                && idir != idreca_idx)
               ok = false;
           if (ok) {
             cs_lnum_t iel = mesh->i_face_cells[ifac][0];
             if (iel < mesh->n_cells)
-              elcou += cpro_curre[iel][cs_glob_elec_option->idreca - 1]
-                     * surfac[3 * ifac + cs_glob_elec_option->idreca - 1];
+              elcou +=   cpro_curre[iel][idreca_idx]
+                       * surf[ifac] * u_normal[ifac][idreca_idx];
           }
         }
       }
