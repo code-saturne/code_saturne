@@ -11820,10 +11820,10 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
@@ -12087,7 +12087,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          cs_real_t fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi = weighf[face_id][0] * i_face_surf[face_id];
 
           /* II" = IF + FI" */
 
@@ -12095,9 +12095,9 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
           for (int i = 0; i < 3; i++) {
             diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
-                               + visci[1][i]*i_face_normal[face_id][1]
-                               + visci[2][i]*i_face_normal[face_id][2] );
+                      - fikdvi*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                + visci[1][i]*i_face_u_normal[face_id][1]
+                                + visci[2][i]*i_face_u_normal[face_id][2]);
           }
 
           viscj[0][0] = viscce[jj][0];
@@ -12111,23 +12111,23 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          double fjkdvi = weighf[face_id][1];
+          double fjkdvi = weighf[face_id][1] * i_face_surf[face_id];
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
             djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
-                               + viscj[1][i]*i_face_normal[face_id][1]
-                               + viscj[2][i]*i_face_normal[face_id][2] );
+                      + fjkdvi*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                + viscj[1][i]*i_face_u_normal[face_id][1]
+                                + viscj[2][i]*i_face_u_normal[face_id][2]);
           }
 
           /* p in I" and J" */
-          double pipp = pi + bldfrp*( grad[ii][0]*diippf[0]
-                                    + grad[ii][1]*diippf[1]
-                                    + grad[ii][2]*diippf[2]);
-          double pjpp = pj + bldfrp*( grad[jj][0]*djjppf[0]
-                                    + grad[jj][1]*djjppf[1]
-                                    + grad[jj][2]*djjppf[2]);
+          double pipp = pi + bldfrp*(  grad[ii][0]*diippf[0]
+                                     + grad[ii][1]*diippf[1]
+                                     + grad[ii][2]*diippf[2]);
+          double pjpp = pj + bldfrp*(  grad[jj][0]*djjppf[0]
+                                     + grad[jj][1]*djjppf[1]
+                                     + grad[jj][2]*djjppf[2]);
 
           double flux = i_visc[face_id]*(pipp - pjpp);
 
@@ -12171,16 +12171,16 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
         visci[0][2] = viscce[ii][5];
 
         /* IF.Ki.S / ||Ki.S||^2 */
-        double fikdvi = weighb[face_id];
+        double fikdvi = weighb[face_id] * b_face_surf[face_id];
 
         double diippf[3];
 
         /* II" = IF + FI" */
         for (int i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
-                                + visci[1][i]*b_face_normal[face_id][1]
-                                + visci[2][i]*b_face_normal[face_id][2]);
+                      - fikdvi*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                + visci[1][i]*b_face_u_normal[face_id][1]
+                                + visci[2][i]*b_face_u_normal[face_id][2]);
         }
 
         double pipp = pi + bldfrp*(  grad[ii][0]*diippf[0]

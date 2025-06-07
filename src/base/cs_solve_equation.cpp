@@ -2370,8 +2370,8 @@ cs_solve_equation_vector(cs_field_t       *f,
       viscf[face_id] += 0.5 * ipro_rusanov[face_id];
     });
 
-    const cs_real_3_t *restrict b_face_normal
-      = (const cs_real_3_t *)fvq->b_face_normal;
+    const cs_nreal_3_t *restrict b_face_u_normal
+      = fvq->b_face_u_normal;
     cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
     // cs_real_3_t  *coefap = (cs_real_3_t *)f->bc_coeffs->a;
     // cs_real_33_t *coefbp = (cs_real_33_t *)f->bc_coeffs->b;
@@ -2379,8 +2379,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     cs_real_33_t *cofbfp = (cs_real_33_t *)f->bc_coeffs->bf;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      cs_real_t n[3];
-      cs_math_3_normalize(b_face_normal[face_id], n);
+      const cs_nreal_t *n = b_face_u_normal[face_id];
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
