@@ -115,10 +115,10 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
   const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
 
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)domain->mesh_quantities->b_face_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = domain->mesh_quantities->b_face_u_normal;
   const cs_real_t *restrict b_face_surf
-    = ( const cs_real_t *)domain->mesh_quantities->b_face_surf;
+    = domain->mesh_quantities->b_face_surf;
 
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
@@ -178,7 +178,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
       for (int ii = 0; ii< CS_F_(vel)->dim; ii++)
         CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*ii + face_id]
-          = -fmprsc*b_face_normal[face_id][ii]/b_face_surf[face_id];
+          = -fmprsc*b_face_u_normal[face_id][ii];
 
       if (mrkcel[c_id] == 1)
         CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*0 + face_id] = fmprsc/10;
@@ -269,7 +269,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
       for (int ii = 0; ii< CS_F_(vel)->dim; ii++)
         CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*ii + face_id]
-          = -fmul*vnrm*b_face_normal[face_id][ii]/b_face_surf[face_id];
+          = -fmul*vnrm*b_face_u_normal[face_id][ii];
 
       if (cs_glob_turb_model->itytur == 2) {
         CS_F_(k)->bc_coeffs->rcodcl1[face_id] = CS_F_(k)->val[c_id];

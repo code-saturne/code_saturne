@@ -111,8 +111,9 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   /*! [boundary_forces_ex2] */
   {
-    const cs_real_3_t *b_f_face_normal
-      = (cs_real_3_t *)domain->mesh_quantities->b_face_normal;
+    const cs_real_t *b_face_surf = domain->mesh_quantities->b_face_surf;
+    const cs_nreal_3_t *b_face_u_normal
+      = domain->mesh_quantities->b_face_u_normal;
 
     cs_real_3_t total_b_p_forces = {0., 0., 0.};
 
@@ -127,7 +128,9 @@ cs_user_extra_operations(cs_domain_t     *domain)
     for (cs_lnum_t e_id = 0; e_id < zn->n_elts; e_id++) {
       cs_lnum_t face_id = zn->elt_ids[e_id];
       for (cs_lnum_t i = 0; i < 3; i++)
-        total_b_p_forces[i] += p_b_val[e_id]*b_f_face_normal[face_id][i];
+        total_b_p_forces[i] +=   p_b_val[e_id]
+                               * b_face_u_normal[face_id][i]
+                               * b_face_surf[face_id];
     }
 
     CS_FREE(p_b_val);

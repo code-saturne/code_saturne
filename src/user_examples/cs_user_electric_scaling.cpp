@@ -83,8 +83,9 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
   cs_real_3_t *xyzcen =  mesh_quantities->cell_cen;
   cs_real_t *volume = mesh_quantities->cell_vol;
   cs_lnum_t  nfac   = mesh->n_i_faces;
-  const cs_real_3_t *surfac = (const cs_real_3_t *) mesh_quantities->b_face_normal;
-  const cs_real_3_t *cdgfac = (const cs_real_3_t *) mesh_quantities->i_face_cog;
+  const cs_real_t *surfac = mesh_quantities->b_face_surf;
+  const cs_nreal_3_t *u_normal = mesh_quantities->b_face_u_normal;
+  const cs_real_3_t *cdgfac = mesh_quantities->i_face_cog;
 
   cs_elec_option_t *elec_opt = cs_get_glob_elec_option();
   const int kivisl = cs_field_key_id("diffusivity_id");
@@ -217,10 +218,10 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 
     double elcou = 0.;
     for (int ifac = 0; ifac < nfac; ifac++) {
-      if (fabs(surfac[ifac][0]) < 1.e-8 && fabs(surfac[ifac][1]) < 1.e-8 &&
-          cdgfac[ifac][2] > 0.05e-2 &&     cdgfac[ifac][2] < 0.08e-2) {
+      if (fabs(u_normal[ifac][0]) < 1.e-2 && fabs(u_normal[ifac][1]) < 1.e-2 &&
+          cdgfac[ifac][2] > 0.05e-2 &&  cdgfac[ifac][2] < 0.08e-2) {
         int iel = mesh->i_face_cells[ifac][0];
-        elcou += CS_FI_(curre, 2)->val[iel] * surfac[ifac][2];
+        elcou += CS_FI_(curre, 2)->val[iel] * u_normal[ifac][2] * surfac[ifac];
       }
     }
 
@@ -289,7 +290,6 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
       CS_F_(joulp)->val[iel] *= coepot * coepot;
   }
   /*! [electric_scaling] */
-
 }
 
 /*----------------------------------------------------------------------------*/

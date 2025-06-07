@@ -109,8 +109,8 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)domain->mesh_quantities->b_face_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = domain->mesh_quantities->b_face_u_normal;
 
   const cs_zone_t  *zn = nullptr;
   const int n_fields = cs_field_n_fields();
@@ -263,7 +263,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
      /* Direction of the velocity: normal to inlet faces */
      for (cs_lnum_t ii = 0; ii < 3; ii++)
-       vel_rcodcl1[n_b_faces*ii +face_id]= -b_face_normal[face_id][ii];
+       vel_rcodcl1[n_b_faces*ii +face_id] = -b_face_u_normal[face_id][ii];
 
      /* Turbulence (no turbulence)*/
 

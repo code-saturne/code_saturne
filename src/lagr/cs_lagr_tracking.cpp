@@ -2469,7 +2469,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
     /* exit_face which originated the new computing */
     cs_real_t t_intersect = 1.;
     cs_real_t rel_disp_intersect = -1;
-    cs_real_3_t face_norm={0,0,0};
+    cs_real_3_t face_norm = {0, 0, 0};
 
     int n_in = 0;
     int n_out = 0;
