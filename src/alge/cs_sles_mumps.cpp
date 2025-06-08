@@ -244,7 +244,7 @@ _have_perio(const cs_halo_t     *halo)
 
   if (have_perio)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: No periodicity requested with MUMPS up to now.\n",
+              " %s: No periodicity requested with MUMPS up to now.",
               __func__);
 
   return have_perio;
@@ -333,7 +333,7 @@ _set_pc_usage(const cs_param_sles_t  *slesp)
     default:
       bft_error(__FILE__, __LINE__, 0,
                 "%s: MUMPS not defined as solver or as preconditioner\n"
-                "%s: for the system \"%s\".\n",
+                "%s: for the system \"%s\".",
                 __func__, __func__, slesp->name);
       break;
     }
@@ -371,7 +371,7 @@ _is_dmumps(const cs_sles_mumps_t  *c)
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Undefined MUMPS type for the system \"%s\".\n",
+              " %s: Undefined MUMPS type for the system \"%s\".",
               __func__, c->sles_param->name);
     break;
   }
@@ -3050,7 +3050,7 @@ cs_sles_mumps_setup(void               *context,
   if (cs_matrix_get_diag_block_size(a) > 1 ||
       cs_matrix_get_extra_diag_block_size(a) > 1)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid matrix structure for MUMPS. No block requested.\n",
+              " %s: Invalid matrix structure for MUMPS. No block requested.",
               __func__);
 
   /* Manage the MPI communicator */
@@ -3114,7 +3114,7 @@ cs_sles_mumps_setup(void               *context,
       dmumps->sym = 2;
     else
       bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid type of MUMPS settings for double-precision.\n",
+                "%s: Invalid type of MUMPS settings for double-precision.",
                 __func__);
 
 #if defined(HAVE_MPI)
@@ -3156,7 +3156,7 @@ cs_sles_mumps_setup(void               *context,
       smumps->sym = 2;
     else
       bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid type of MUMPS settings for single-precision.\n",
+                "%s: Invalid type of MUMPS settings for single-precision.",
                 __func__);
 
 
@@ -3198,7 +3198,7 @@ cs_sles_mumps_setup(void               *context,
                               static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid matrix format in parallel", __func__);
+                  " %s: Invalid matrix format in parallel.", __func__);
 
     }
     else { /* Sequential computation */
@@ -3213,7 +3213,7 @@ cs_sles_mumps_setup(void               *context,
                        static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid matrix format", __func__);
+                  " %s: Invalid matrix format.", __func__);
 
     }
     break;
@@ -3228,7 +3228,7 @@ cs_sles_mumps_setup(void               *context,
                                static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid matrix format in parallel", __func__);
+                  " %s: Invalid matrix format in parallel.", __func__);
 
     }
     else { /* Sequential computation */
@@ -3243,7 +3243,7 @@ cs_sles_mumps_setup(void               *context,
                            static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid matrix format", __func__);
+                  " %s: Invalid matrix format.", __func__);
 
     }
     break;
@@ -3257,7 +3257,7 @@ cs_sles_mumps_setup(void               *context,
                            static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid matrix format in parallel", __func__);
+                  " %s: Invalid matrix format in parallel.", __func__);
 
     }
     else { /* Sequential computation */
@@ -3272,7 +3272,7 @@ cs_sles_mumps_setup(void               *context,
                        static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid matrix format", __func__);
+                  " %s: Invalid matrix format.", __func__);
 
     }
     break;
@@ -3287,7 +3287,7 @@ cs_sles_mumps_setup(void               *context,
                                static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid matrix format in parallel", __func__);
+                  " %s: Invalid matrix format in parallel.", __func__);
 
     }
     else { /* Sequential computation */
@@ -3302,7 +3302,7 @@ cs_sles_mumps_setup(void               *context,
                            static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid matrix format", __func__);
+                  " %s: Invalid matrix format.", __func__);
 
     }
     break;
@@ -3478,7 +3478,7 @@ cs_sles_mumps_setup(void               *context,
                 "%s: Error detected during the analysis/factorization step.\n"
                 "%s: INFOG(1)=%d; INFOG(2)=%d\n"
                 " Please refer to the MUMPS documentation to get a more"
-                " detailed feedback.\n",
+                " detailed feedback.",
                 __func__, __func__, infog1, infog2);
     }
     else {

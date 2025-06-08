@@ -338,7 +338,7 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
           <std::chrono::microseconds>(t_stop - t_start);
         printf("%d: %s (fact lu, %d)", cs_glob_rank_id, __func__,
                diag_block_size);
-        printf(", total = %ld\n", elapsed.count());
+        printf(", total = %lld\n", (long long)elapsed.count());
       }
 
     }
