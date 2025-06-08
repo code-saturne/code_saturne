@@ -628,7 +628,7 @@ _write_auxiliary_checkpoint(void)
                              "num_zone_fb_slfm",
                              3,
                              1,
-                             CS_TYPE_cs_int_t,
+                             CS_TYPE_int,
                              cs_glob_bc_pm_info->izfppp);
 
     cs_log_printf(CS_LOG_DEFAULT,
