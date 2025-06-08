@@ -241,6 +241,10 @@ cs_combustion_physical_properties_update_d3p(void)
 
   CS_FREE(indpdf);
 
+  /* Update density at boundary */
+
+  cs_combustion_boundary_conditions_density();
+
   /* Compute mass fractions for global species on boundaries */
 
   cs_field_t *ym[3]
