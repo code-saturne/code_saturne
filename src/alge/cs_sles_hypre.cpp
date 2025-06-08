@@ -1004,8 +1004,8 @@ cs_sles_hypre_solve(void                *context,
   cs_sles_hypre_t            *c      = static_cast<cs_sles_hypre_t *>(context);
   cs_sles_hypre_setup_t  *sd = c->setup_data;
   cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
-  double res;
-  HYPRE_Int its, max_its;
+  double res = -1.;
+  HYPRE_Int its = 0, max_its;
   HYPRE_Int ierr = -1;
 
   if (sd == nullptr) {

@@ -209,6 +209,19 @@ cs_time_table_set_time_from_label(cs_time_table_t *table,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define the column id for time based on a label (if it exists)
+ *
+ * \param[in,out] table       Pointer to time table structure
+ * \param[in]     time_label  Label to identify index of column used as time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_table_set_time_from_label_try(cs_time_table_t *table,
+                                      const char      *time_label);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reset time table time value (force search from beginning of table).
  *
  * \param[in] table  Pointer to time table structure

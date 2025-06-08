@@ -1114,8 +1114,8 @@ cs_combustion_slfm_physical_properties(int   iterns)
 
 /*==============================================================================*/
 
-  cs_real_t **cpro_species;
-  cs_real_t **cpro_viscls;
+  cs_real_t **cpro_species = nullptr;
+  cs_real_t **cpro_viscls = nullptr;
 
   const int n_fields = cs_field_n_fields();
   const int keysca = cs_field_key_id("scalar_id");

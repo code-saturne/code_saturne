@@ -288,7 +288,9 @@ cs_soot_production(int        f_id,
         const cs_real_t temp  = cvar_temp[c_id]; // Temperature
         const cs_real_t zetas = cvar_ys[c_id];   // Soot Mass Fraction
 
-        cs_real_t yg[n_gas_g], ye[n_gas_e], xe[n_gas_e];
+        cs_real_t yg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+        cs_real_t ye[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+        cs_real_t xe[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
 
         yg[0] = cvar_ym1[c_id];
         yg[1] = cvar_ym2[c_id];

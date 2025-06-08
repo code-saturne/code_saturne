@@ -196,6 +196,58 @@ _porous_mesh_quantities_f_free(void)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Realloc boundary arrays for all defined fields.
+ *
+ * Location sized must thus be known.
+ *
+ * Fields that do not own their data should all have been mapped at this
+ * stage, and are checked.
+ *
+ * \param[in]   n_ib_cells   immersed boundary cell number
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_field_ibm_reallocate(cs_lnum_t  n_ib_cells)
+{
+  const int n_fields = cs_field_n_fields();
+
+  for (int i = 0; i < n_fields; i++) {
+    cs_field_t *f = cs_field_by_id(i);
+
+    if (f->is_owner) {
+      assert(f != nullptr);
+
+      if (f->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
+        continue;
+
+      if (f->is_owner) {
+
+        const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+
+        /* Initialization */
+
+        for (int ii = 0; ii < f->n_time_vals; ii++)
+          f->vals[ii] = _add_val(n_elts[2], n_ib_cells, f->dim, f->vals[ii]);
+
+        f->val = f->vals[0];
+        if (f->n_time_vals > 1)
+          f->val_pre = f->vals[1];
+      }
+
+    }
+    else {
+      if (f->val == nullptr)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Field \"%s\"\n"
+                    " requires mapped values which have not been set."),
+                  f->name);
+    }
+  }
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -663,58 +715,6 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Realloc boundary arrays for all defined fields.
- *
- * Location sized must thus be known.
- *
- * Fields that do not own their data should all have been mapped at this
- * stage, and are checked.
- *
- * \param[in]   n_ib_cells   immersed boundary cell number
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_ibm_reallocate(cs_lnum_t  n_ib_cells)
-{
-  const int n_fields = cs_field_n_fields();
-
-  for (int i = 0; i < n_fields; i++) {
-    cs_field_t *f = cs_field_by_id(i);
-
-    if (f->is_owner) {
-      assert(f != nullptr);
-
-      if (f->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
-        continue;
-
-      if (f->is_owner) {
-
-        const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-
-        /* Initialization */
-
-        for (int ii = 0; ii < f->n_time_vals; ii++)
-          f->vals[ii] = _add_val(n_elts[2], n_ib_cells, f->dim, f->vals[ii]);
-
-        f->val = f->vals[0];
-        if (f->n_time_vals > 1)
-          f->val_pre = f->vals[1];
-      }
-
-    }
-    else {
-      if (f->val == nullptr)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Field \"%s\"\n"
-                    " requires mapped values which have not been set."),
-                  f->name);
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Convert cell array to boundary array
  *
  * \param[in]   n_ib_cells     immersed cell number
@@ -762,7 +762,7 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
   CS_REALLOC_HD(mq_f->diipb, n_b_faces_tot, cs_rreal_3_t, cs_alloc_mode);
 
   cs_field_map_and_init_bcs();
-  cs_field_ibm_reallocate(n_ib_cells);
+  _field_ibm_reallocate(n_ib_cells);
 
   /* mq_f points to reallocated fields */
   mq_f->b_face_normal = cs_field_by_name("b_f_face_normal")->val;
