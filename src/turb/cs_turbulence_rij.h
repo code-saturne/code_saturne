@@ -115,6 +115,30 @@ void
 cs_turbulence_rij_mu_t(int  phase_id);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute anisotropic turbulent viscosity for RSM models
+ *
+ * \param[in]  mq        mesh quantities
+ * \param[in]  n_cells   number of cells
+ * \param[in]  phase_id  turbulent phase id (-1 for single phase flow)
+ * \param[in]  idfm      use DFM model ?
+ * \param[in]  iggafm    use AFM model ?
+ * \param[in]  iebdfm    use EBDFM model ?
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_anisotropic_mu_t
+(
+ const cs_mesh_quantities_t  *mq,
+ cs_lnum_t                    n_cells,
+ int                          phase_id,
+ bool                         idfm,
+ bool                         iggafm,
+ bool                         iebdfm
+);
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Compute Rusanov equivalent diffusivity of the model.
  */
 /*----------------------------------------------------------------------------*/

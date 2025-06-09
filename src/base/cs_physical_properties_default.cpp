@@ -50,6 +50,8 @@
 #include "base/cs_ale.h"
 #include "atmo/cs_atmo_variables.h"
 #include "base/cs_boundary_conditions.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_reducers.h"
 #include "cfbl/cs_cf_model.h"
 #include "cdo/cs_domain.h"
 #include "elec/cs_elec_model.h"
@@ -171,15 +173,18 @@ _cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
 
   const cs_real_t mcav = cs_get_glob_cavitation_parameters()->mcav;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  cs_dispatch_context ctx;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const cs_real_t drho = (rho1 - rho2);
     const cs_real_t p_void = pow(1.0 - cvar_voidf[c_id], mcav);
     const cs_real_t rho_max = cs::max(crom[c_id], cs_math_epzero);
 
     const cs_real_t frho = (rho2 + p_void*drho) / rho_max;
     visct[c_id] = frho*visct[c_id];
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -294,10 +299,11 @@ _compute_turbulence_mu(const cs_lnum_t  n_cells)
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_anisotropic_turbulent_viscosity(cs_lnum_t                   n_cells,
-                                         int                         n_scal,
-                                         const int                   scalar_idx[],
-                                         const cs_mesh_quantities_t  *mq)
+_compute_anisotropic_turbulent_viscosity
+(cs_lnum_t                   n_cells,
+ int                         n_scal,
+ const int                   scalar_idx[],
+ const cs_mesh_quantities_t  *mq)
 {
   bool idfm = false;
   bool iggafm = false;
@@ -329,96 +335,12 @@ _compute_anisotropic_turbulent_viscosity(cs_lnum_t                   n_cells,
                        ("anisotropic_turbulent_viscosity")->val;
 
   if (cs_glob_turb_model->itytur == 3) {
-
-    const cs_real_t *crom = CS_F_(rho)->val;
-    const cs_real_t *viscl = CS_F_(mu)->val;
-    const cs_real_t *cvar_ep = CS_F_(eps)->val;
-    const cs_real_6_t *cvar_rij = (const cs_real_6_t *)CS_F_(rij)->val;
-
-    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t trrij
-          = 0.5*(cvar_rij[c_id][0] + cvar_rij[c_id][1] + cvar_rij[c_id][2]);
-        const cs_real_t ttke  = trrij/cvar_ep[c_id];
-        const cs_real_t xttkmg
-          = cs_turb_xct*sqrt(viscl[c_id]/crom[c_id]/cvar_ep[c_id]);
-        const cs_real_t xttdrb = cs::max(ttke, xttkmg);
-        const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
-        const cs_real_t rottke  = cs_turb_csrij * crom[c_id] * xttdrb * c_act;
-
-        for (int ii = 0; ii < 6; ii++)
-          visten[c_id][ii] = rottke*cvar_rij[c_id][ii];
-      }
-
-      // Other damping for EBDFM model (see F. Dehoux thesis)
-      if (iebdfm) {
-        cs_real_6_t *vistes
-          = (cs_real_6_t *)cs_field_by_name
-                             ("anisotropic_turbulent_viscosity_scalar")->val;
-        if (cs_glob_turb_rans_model->irijco == 1)
-#         pragma omp parallel for if (n_cells > CS_THR_MIN)
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-            const cs_real_t trrij
-              = 0.5*(cvar_rij[c_id][0] + cvar_rij[c_id][1] + cvar_rij[c_id][2]);
-            const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
-            const cs_real_t rottke
-              = cs_turb_csrij * crom[c_id] * trrij / cvar_ep[c_id] * c_act;
-
-            for (int ii = 0; ii < 6; ii++)
-              vistes[c_id][ii] = rottke*cvar_rij[c_id][ii];
-          }
-        else
-#         pragma omp parallel for if (n_cells > CS_THR_MIN)
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-            const cs_real_t trrij
-              = 0.5*(cvar_rij[c_id][0] + cvar_rij[c_id][1] + cvar_rij[c_id][2]);
-            const cs_real_t ttke = trrij/cvar_ep[c_id];
-            // Durbin scale
-            const cs_real_t xttkmg
-              = cs_turb_xct*sqrt(viscl[c_id]/crom[c_id]/cvar_ep[c_id]);
-            const cs_real_t xttdrb = cs::max(ttke, xttkmg);
-            // FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
-            const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
-            const cs_real_t rottke = cs_turb_csrij * crom[c_id] * xttdrb * c_act;
-
-            for (int ii = 0; ii < 6; ii++)
-              vistes[c_id][ii] = rottke*cvar_rij[c_id][ii];
-          }
-      }
-      else if (iggafm) {
-        cs_real_6_t *vistes
-          = (cs_real_6_t *)cs_field_by_name
-                             ("anisotropic_turbulent_viscosity_scalar")->val;
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          const cs_real_t trrij
-            = 0.5*(cvar_rij[c_id][0] + cvar_rij[c_id][1] + cvar_rij[c_id][2]);
-          const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
-          const cs_real_t rottke
-            = cs_turb_csrij * crom[c_id] * trrij / cvar_ep[c_id] * c_act;
-
-          for (int ii = 0; ii < 6; ii++)
-            vistes[c_id][ii] = rottke*cvar_rij[c_id][ii];
-        }
-      }
-
-    }
-    // LRR or SSG
-    else {
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t trrij
-          = 0.5*(cvar_rij[c_id][0] + cvar_rij[c_id][1] + cvar_rij[c_id][2]);
-        const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
-        const cs_real_t rottke
-          = cs_turb_csrij * crom[c_id] * trrij / cvar_ep[c_id] * c_act;
-
-        for (int ii = 0; ii < 6; ii++)
-          visten[c_id][ii] = rottke*cvar_rij[c_id][ii];
-      }
-    }
-
+    cs_turbulence_rij_anisotropic_mu_t(mq,
+                                       n_cells,
+                                       -1,
+                                       idfm,
+                                       iggafm,
+                                       iebdfm);
   }
   else {
     cs_array_real_fill_zero(6*n_cells, (cs_real_t *)visten);
@@ -449,14 +371,12 @@ _clip_rho_mu_cp(bool                         first_pass,
                 const cs_real_t              brom[])
 {
   int iscacp = 0;
-  int n_fields = 3; // number of fields for log
-  const char *f_names[]
-    = {CS_F_(rho)->name, CS_F_(mu)->name, CS_F_(mu_t)->name, ""};
+  constexpr int n_fields = 5; // number of fields for log
+  const cs_field_t *fields[n_fields]
+    = {CS_F_(rho), CS_F_(mu), CS_F_(mu_t), CS_F_(cp), CS_F_(rho_b)};
 
   char tmp_s[64] = "";
   if (CS_F_(cp) != nullptr) {
-    f_names[3] = CS_F_(cp)->name;
-    n_fields = 4;
     const int kscacp  = cs_field_key_id("is_temperature");
     for (int f_id = 0; f_id < n_scal; f_id++) {
       const cs_field_t *f_scal = cs_field_by_id(scalar_idx[f_id]);
@@ -464,54 +384,80 @@ _clip_rho_mu_cp(bool                         first_pass,
     }
   }
 
+  const cs_lnum_t *c_disable_flag = nullptr;
+  if (mq->has_disable_flag)
+    c_disable_flag = mq->c_disable_flag;
+
+  cs_dispatch_context ctx;
+
   // Set turbulent viscosity to 0 in disabled cells
   cs_real_t *visct = CS_F_(mu_t)->val;
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const int c_act = cs_mesh_quantities_cell_is_active(mq, c_id);
-    visct[c_id] = visct[c_id] * c_act;
+  if (mq->has_disable_flag) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (c_disable_flag[c_id])
+        visct[c_id] = 0.;
+    });
   }
 
+  // No use for logging of turbulence viscosity without turbulence
+  if (cs_glob_turb_model->model == CS_TURB_NONE)
+    fields[2] = nullptr;
+
   /* Min max */
-  cs_real_t varmx[4], varmn[4];
+
+  struct cs_double_n<2> rd[n_fields];
+  struct cs_reduce_min_max_nr<1> reducer[n_fields];
+
+  cs_real_t varminmax[n_fields*2];
 
   for (int ii = 0; ii < n_fields; ii++) {
-    const cs_real_t *cpro_var = cs_field_by_name(f_names[ii])->val;
-    varmx[ii] = cpro_var[0];
-    varmn[ii] = cpro_var[0];
-    for (cs_lnum_t c_id = 1; c_id < n_cells; c_id++) {
-      varmx[ii] = cs::max(varmx[ii], cpro_var[c_id]);
-      varmn[ii] = cs::min(varmn[ii], cpro_var[c_id]);
+    if (fields[ii] == nullptr)
+      continue;
+    cs_lnum_t n_elts = cs_mesh_location_get_n_elts(fields[ii]->location_id)[0];
+    const cs_real_t *cpro_var = fields[ii]->val;
+    ctx.parallel_for_reduce
+      (n_elts, rd[ii], reducer[ii],
+       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<2> &res) {
+         res.r[0] = cpro_var[c_id];
+         res.r[1] = cpro_var[c_id];
+       });
+  }
+  ctx.wait();
+
+  for (int ii = 0; ii < n_fields; ii++) {
+    if (fields[ii] == nullptr)
+      continue;
+    if (fields[ii] == nullptr) {
+      varminmax[ii] = 0;
+      varminmax[ii+n_fields] = 0;
+    }
+    else {
+      varminmax[ii]          =  rd[ii].r[0];
+      varminmax[ii+n_fields] = -rd[ii].r[1];
     }
   }
 
-  // Min and max at boundary density
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    varmx[0] = cs::max(varmx[0], brom[face_id]);
-    varmn[0] = cs::min(varmn[0], brom[face_id]);
-  }
+  cs_parall_min(n_fields*2, CS_REAL_TYPE, varminmax);
 
-  cs_parall_max(n_fields, CS_REAL_TYPE, varmx);
-  cs_parall_min(n_fields, CS_REAL_TYPE, varmn);
-
-  // Writings
+  // Loggging
   if (first_pass) {
     bft_printf(" -----------------------------------------\n"
                " Property           Min. value  Max. value\n"
                " -----------------------------------------\n");
     for (int ii = 0; ii < n_fields; ii++) {
-      if (ii != 2 || cs_glob_turb_model->model != CS_TURB_NONE) {
-        int width = 16;
-        cs_log_strpad(tmp_s, f_names[ii], width, 64);
-        bft_printf(" %s   %10.04e  %10.04e\n", tmp_s, varmn[ii], varmx[ii]);
-      }
+      if (fields[ii] == nullptr)
+        continue;
+      int width = 16;
+      cs_log_strpad(tmp_s, fields[ii]->name, width, 64);
+      bft_printf(" %s   %10.04e  %10.04e\n", tmp_s,
+                 varminmax[ii], -varminmax[n_fields+ii]);
     }
     bft_printf(" -----------------------------------------\n");
   }
 
-  // verification of physics values
+  // verification of physical values
   for (int ii = 0; ii < n_fields; ii++) {
-    if (varmn[ii] >= 0.0)
+    if (varminmax[ii] >= 0.0)
       continue;
 
     /* we do not clip turbulent viscosity
@@ -525,17 +471,14 @@ _clip_rho_mu_cp(bool                         first_pass,
       continue;
 
     bft_error(__FILE__, __LINE__, 0,
-              _("Warning: abort in the physical quantities computation\n"
-                "========\n"
-                "The physical property %s has not been correctly defined.\n"
-                "The calculation will not be run.\n"
-                "The physical property identified is variable and the"
+              _("Abort in the physical quantities computation.\n\n"
+                "The physical property %s is variable and the"
                 "minimum reached is %10.12e\n"
                 "Verify that this property has been defined and"
                 "that the chosen law leads to correct values.\n\n"
-                "For turbulent viscosity you can modified"
+                "For turbulent viscosity you can modify"
                 " cs_user_physical_properties_turb_viscosity\n"),
-              f_names[ii], varmn[ii]);
+              fields[ii]->name, varminmax[ii]);
   }
 }
 
@@ -559,104 +502,149 @@ _check_log_scalar_diff(const bool        first_pass,
   if (n_scal < 1)
     return;
 
-  bool ok = false;
-  cs_real_t vismax[n_scal], vismin[n_scal];
+  bool wrote_header = false;
+  int error_count = 0;
+  constexpr int block_size = 32;
+  cs_real_t visminmax[block_size*2];
 
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
 
-
   char tmp_s[64] = "";
-  for (int s_id = 0; s_id < n_scal; s_id++) {
 
-    const cs_real_t *cpro_vis = nullptr;
-    const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
+  const int n_blocks = (n_scal % block_size) ?
+    n_scal/block_size+1 : n_scal/block_size;
 
-    const int ifcvsl = cs_field_get_key_int(f, kivisl);
-    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+  struct cs_double_n<2> rd[block_size];
+  struct cs_reduce_min_max_nr<1> reducer[block_size];
 
-    if (ifcvsl >= 0)
-      cpro_vis = cs_field_by_id(ifcvsl)->val;
+  cs_dispatch_context ctx;
 
-    vismax[s_id] = -cs_math_big_r;
-    vismin[s_id] =  cs_math_big_r;
+  /* Loop on blocks of fields to regroup possible MPI operations */
+  for (int b_id = 0; b_id < n_blocks; b_id++) {
 
-    if (cpro_vis != nullptr) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        vismax[s_id] = cs::max(vismax[s_id], cpro_vis[c_id]);
-        vismin[s_id] = cs::min(vismin[s_id], cpro_vis[c_id]);
+    // 1st Loop on fields
+    int s_idx = 0, reduce_idx = 0;
+    for (int s_id = b_id*block_size;
+         s_id < n_scal && s_idx < block_size;
+         s_id++, s_idx++) {
+      const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
+      const int ifcvsl = cs_field_get_key_int(f, kivisl);
+
+      if (ifcvsl >= 0) {
+        const cs_real_t *cpro_vis = cs_field_by_id(ifcvsl)->val;
+
+        ctx.parallel_for_reduce
+          (n_cells, rd[reduce_idx], reducer[reduce_idx],
+           [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<2> &res) {
+             res.r[0] = cpro_vis[c_id];
+             res.r[1] = cpro_vis[c_id];
+           });
+        reduce_idx++;
       }
-      cs_parall_max(1, CS_REAL_TYPE, &vismax[s_id]);
-      cs_parall_min(1, CS_REAL_TYPE, &vismin[s_id]);
-    }
-    else {
-      const cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
-      vismax[s_id] = visls_0;
-      vismin[s_id] = visls_0;
-    }
+    } // End 1st loop on fields
 
-    if (eqp->verbosity > 0 || first_pass || vismin[s_id] <= 0.0) {
-      if (!ok) {
-        ok = true;
-        bft_printf("\n --- Diffusivity:\n"
-            " -----------------------------------------------\n"
-            " Scalar           Index   Min. value  Max. value\n"
-            " -----------------------------------------------\n");
+    // Parallel reduction if needed
+    int reduce_count = reduce_idx;
+    if (reduce_count > 0) {
+      ctx.wait();
+
+      for (int i = 0; i < reduce_count; i++) {
+        visminmax[i] = rd[i].r[0];
+        visminmax[i + reduce_count] = -rd[i].r[1];
       }
-      int width = 16;
-      cs_log_strpad(tmp_s, cs_field_get_label(f), width, 64);
-      bft_printf(" %s     %d   %10.04e  %10.04e\n",
-          tmp_s, s_id, vismin[s_id], vismax[s_id]);
-    }
-  } // loop on scalar
 
-  if (ok)
+      cs_parall_min(reduce_count*2, CS_REAL_TYPE, visminmax);
+    }
+
+    // 2nd Loop on fields
+    s_idx = 0, reduce_idx = 0;
+    for (int s_id = b_id*block_size;
+         s_id < n_scal && s_idx < block_size;
+         s_id++, s_idx++) {
+      const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
+      const int ifcvsl = cs_field_get_key_int(f, kivisl);
+
+      const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+
+      cs_real_t vismax = -cs_math_big_r, vismin = cs_math_big_r;
+
+      if (ifcvsl >= 0) {
+        vismin = visminmax[reduce_idx];
+        vismax = visminmax[reduce_idx + reduce_count];
+        reduce_idx++;
+      }
+      else {
+        const cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
+        vismax = visls_0;
+        vismin = visls_0;
+      }
+
+      if (eqp->verbosity > 0 || first_pass || vismin <= 0.0) {
+        if (!wrote_header) {
+          wrote_header = true;
+          bft_printf("\n --- Diffusivity:\n"
+                     " -----------------------------------------------\n"
+                     " Scalar           Index   Min. value  Max. value\n"
+                     " -----------------------------------------------\n");
+        }
+        int width = 16;
+        cs_log_strpad(tmp_s, cs_field_get_label(f), width, 64);
+        bft_printf(" %s     %d   %10.04e  %10.04e\n",
+                   tmp_s, s_id, vismin, vismax);
+      }
+
+      if (vismin < 0)
+        error_count += 1;
+
+    } // 2nd loop on scalars
+
+    assert(reduce_idx == reduce_count);
+
+  } // Loop on blocks
+
+  if (wrote_header)
     bft_printf(" -----------------------------------------------\n");
 
   // Physical value checks
-  for (int s_id = 0; s_id < n_scal; s_id++) {
 
-    const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
-
-    if (vismin[s_id] < 0.0) {
-      bft_error(__FILE__, __LINE__, 0,
-          _("Warning: abort in the physical quantities computation\n"
-            "========\n"
-            "The diffusivity of the scalar %s has not been correctly defined.\n"
-            "The calculation will not be run.\n"
-            "The physical property identified is variable and the"
-            "minimum reached is %10.12e\n"
-            "Verify that this property has been defined and"
-            "that the chosen law leads to correct values.\n\n"),
-          f->name, vismin[s_id]);
-    }
-
+  if (error_count > 0) {
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Abort in the physical quantities computation.\n\n"
+           "The diffusivity of %d variables contain negative values "
+           " (see log above).\n"
+           "Verify that these properties have been defined and"
+           "that the chosen law leads to correct values."),
+         error_count);
   }
 
   const cs_field_t *th_f = cs_field_by_name_try("thermal_expansion");
-  if (th_f == nullptr)
-    return;
+  if (th_f != nullptr) {
 
-  const cs_real_t *cpro_beta = th_f->val;
+    const cs_real_t *cpro_beta = th_f->val;
 
-  cs_real_t varmn = cpro_beta[0];
-  for (cs_lnum_t c_id = 1; c_id < n_cells; c_id++)
-    varmn = cs::min(varmn, cpro_beta[c_id]);
-  cs_parall_min(1, CS_REAL_TYPE, &varmn);
+    ctx.parallel_for_reduce
+      (n_cells, rd[0], reducer[0],
+       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<2> &res) {
+         res.r[0] = cpro_beta[c_id];
+         res.r[1] = cpro_beta[c_id];
+       });
+    ctx.wait();
 
-  if (varmn < 0.0) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("Warning: abort in the physical quantities computation\n"
-                "========\n"
-                "The physical property %s, has not been correctly defined.\n"
-                "The calculation will not be run.\n"
-                "The physical property identified is variable and the"
-                "minimum reached is %10.12e\n"
-                "Verify that this property has been defined and"
-                "that the chosen law leads to correct values.\n\n"),
-              th_f->name, varmn);
+    cs_real_t varmn = rd[0].r[0];
+    cs_parall_min(1, CS_REAL_TYPE, &varmn);
+
+    if (varmn < 0.0) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("Abort in the physical quantities computation\n\n"
+                  "The physical property %s is variable and the"
+                  "minimum reached is %g, which is incorrect.\n"
+                  "Verify that this property has been defined and"
+                  "that the chosen law leads to correct values."),
+                th_f->name, varmn);
+    }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -667,7 +655,6 @@ _check_log_scalar_diff(const bool        first_pass,
  *  \param[in]  n_cells     number of cells
  */
 /*----------------------------------------------------------------------------*/
-
 
 static void
 _check_log_mesh_diff(bool       first_pass,
@@ -749,13 +736,11 @@ _check_log_mesh_diff(bool       first_pass,
     // Physical value checks
     if (varmn < 0.0)
       bft_error(__FILE__, __LINE__, 0,
-                _("Warning: abort in the physical quantities computation\n"
-                  "========\n"
+                _("Abort in the physical quantities computation\n\n"
                   "The mesh viscosity has not been correctly defined.\n"
                   "The calculation will not be run.\n"
                   "The minimum reached is %10.12e\n"
                   "Verify he definition of this property"), varmn);
-
   }
 }
 
@@ -779,14 +764,15 @@ _init_boundary_temperature(void)
   cs_field_t *fld = cs_field_by_name_try("temperature");
   cs_real_t *field_s_b = cs_field_by_name_try("boundary_temperature")->val;
 
+  cs_dispatch_context ctx;
+
   if (fld != nullptr) {
 
     const cs_real_t *field_s_v = fld->val;
-#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       if (field_s_b[face_id] <= -cs_math_big_r)
         field_s_b[face_id] = field_s_v[b_face_cells[face_id]];
-    }
+    });
 
   }
   else if (   cs_glob_thermal_model->thermal_variable
@@ -801,11 +787,11 @@ _init_boundary_temperature(void)
       CS_MALLOC(ttmp, n_cells_ext, cs_real_t);
       cs_ht_convert_h_to_t_cells(field_s_v, ttmp);
 
-#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         if (field_s_b[face_id] <= -cs_math_big_r)
           field_s_b[face_id] = ttmp[b_face_cells[face_id]];
-      }
+      });
+      ctx.wait();
 
       CS_FREE(ttmp);
 
@@ -815,16 +801,20 @@ _init_boundary_temperature(void)
 
   // Last resort
   if (fld != nullptr) {
-#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    const cs_real_t t0 = cs_glob_fluid_properties->t0;
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       if (field_s_b[face_id] <= -cs_math_big_r)
-        field_s_b[face_id] = cs_glob_fluid_properties->t0;
-    }
+        field_s_b[face_id] = t0;
+    });
   }
+
+  ctx.wait();
 
   // For wall condensation, initialize to user-prescribed value
   if (cs_glob_wall_condensation->icondb < 0)
     return;
+
+  // TODO move this to cs_wall_condensation.cpp
 
   const cs_real_t *ztpar = cs_glob_wall_condensation->ztpar;
 
@@ -838,8 +828,9 @@ _init_boundary_temperature(void)
   const cs_lnum_t *ifpt1d = cs_glob_1d_wall_thermal->ifpt1d;
   const cs_real_t *tppt1d = cs_glob_1d_wall_thermal->tppt1d;
 
-# pragma omp parallel for if (nfbpcd > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < nfbpcd; ii++) {
+  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+
+  h_ctx.parallel_for(nfbpcd, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     const cs_lnum_t iz = izzftcd[ii];
     const cs_lnum_t face_id = ifbpcd[ii];
     if (iztag1d[iz] == 0)
@@ -851,7 +842,7 @@ _init_boundary_temperature(void)
         if (ifpt1d[jj] == face_id)
           field_s_b[face_id] = tppt1d[jj];
     }
-  }
+  });
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1002,9 +993,13 @@ cs_physical_properties_update(int   iterns)
   if (mbrom == 0 && rho_b_f != nullptr) {
     assert(CS_F_(rho) != nullptr);
     const cs_real_t  *crom = CS_F_(rho)->val;
-#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      rho_b_f->val[face_id] = crom[b_face_cells[face_id]];
+    cs_real_t  *brom = rho_b_f->val;
+
+    cs_dispatch_context ctx;
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      brom[face_id] = crom[b_face_cells[face_id]];
+    });
+    ctx.wait();
   }
 
   // Only density may be updated in Navier-Stokes loop

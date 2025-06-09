@@ -233,21 +233,22 @@ _sign(cs_real_t  a,
 /*!
  * \brief Clipping of alpha in the framwork of the Rij-EBRSM model.
  *
- *  \param[in]  f_id          field id of alpha variable
- *  \param[in]  n_cells       number of cells
- *  \param[in]  alpha_min     minimum acceptable value for alpha
+ *  \param[in, out]  ctx         reference to dispatch context
+ *  \param[in]       f_id        field id of alpha variable
+ *  \param[in]       n_cells     number of cells
+ *  \param[in]       alpha_min   minimum acceptable value for alpha
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_clip_alpha(const int          f_id,
-            const cs_lnum_t    n_cells,
-            const cs_real_t    alpha_min[])
+_clip_alpha(cs_dispatch_context  &ctx,
+            int                   f_id,
+            cs_lnum_t             n_cells,
+            const cs_real_t       alpha_min[])
 {
   cs_real_t *cvar_al = cs_field_by_id(f_id)->val;
 
   int kclipp = cs_field_key_id("clipping_id");
-  cs_lnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
 
   /* Postprocess clippings ? */
   cs_real_t *cpro_a_clipped = nullptr;
@@ -257,37 +258,39 @@ _clip_alpha(const int          f_id,
     cs_array_real_fill_zero(n_cells, cpro_a_clipped);
   }
 
-  /* Store local min and max for logging */
-  cs_real_t vmin[1] = {cs_math_big_r};
-  cs_real_t vmax[1] = {-cs_math_big_r};
+  /* Min, max, and clipping (edit to avoid exactly zero values) */
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t var = cvar_al[c_id];
-    vmin[0] = cs::min(vmin[0], var);
-    vmax[0] = cs::max(vmax[0], var);
-  }
+  struct cs_data_2int_2float rd;
+  struct cs_reduce_min1float_max1float_sum2int reducer;
 
-  /* Clipping (edit to avoid exactly zero values) */
+  ctx.parallel_for_reduce
+    (n_cells, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_2int_2float &res) {
+       res.r[0] = cvar_al[c_id];
+       res.r[1] = cvar_al[c_id];
+       res.i[0] = 0;
+       res.i[1] = 0;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    if (cvar_al[c_id] < alpha_min[c_id]) {
-      if (clip_a_id > -1)
-        cpro_a_clipped[c_id] = alpha_min[c_id]-cvar_al[c_id];
-      nclp[0] += 1;
-      cvar_al[c_id] = alpha_min[c_id];
-    }
-    else if (cvar_al[c_id] >= 1) {
-      if (clip_a_id > -1)
-        cpro_a_clipped[c_id] = cvar_al[c_id]-1.0;
-      nclp[1] += 1;
-      cvar_al[c_id] = 1.0;
-    }
-  }
+       if (cvar_al[c_id] < alpha_min[c_id]) {
+         if (clip_a_id > -1)
+           cpro_a_clipped[c_id] = alpha_min[c_id]-cvar_al[c_id];
+         res.i[0] = 1;
+         cvar_al[c_id] = alpha_min[c_id];
+       }
+       else if (cvar_al[c_id] >= 1) {
+         if (clip_a_id > -1)
+           cpro_a_clipped[c_id] = cvar_al[c_id]-1.0;
+         res.i[1] = 1;
+         cvar_al[c_id] = 1.0;
+       }
+     });
 
-  cs_lnum_t iclpmn[1] = {nclp[0]}, iclpmx[1] = {nclp[1]};
+  ctx.wait();
+
+  cs_lnum_t iclpmn[1] = {rd.i[0]}, iclpmx[1] = {rd.i[1]};
+  cs_real_t vmin[1] = {rd.r[0]}, vmax[1] = {rd.r[1]};
   cs_log_iteration_clipping_field(f_id,
-                                  iclpmn[0],
-                                  iclpmx[0],
+                                  iclpmn[0], iclpmx[0],
                                   vmin, vmax,
                                   iclpmn, iclpmx);
 }
@@ -1260,7 +1263,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
    * ----------------------------------------- */
 
   cs_real_6_t *w2;
-  CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
   if ((icorio == 1) || (tm_model == 1)) {
 
@@ -1375,7 +1378,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   else {
 
     cs_real_t *w1;
-    CS_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     if (eqp->idifft == 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1644,7 +1647,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
    * -----------------------------------------*/
 
   cs_real_6_t *w2;
-  CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
   if (icorio == 1 || tm_model == CS_TURBOMACHINERY_FROZEN) {
     const cs_rotation_t *rotation = cs_glob_rotation;
@@ -1758,7 +1761,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   else {
 
     cs_real_t *w1;
-    CS_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     if (eqp->idifft == 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -3459,20 +3462,26 @@ cs_turbulence_rij(int phase_id)
     CS_FREE_HD(_rhs);
   }
   else {
-    const cs_real_t *cell_vol = fvq->cell_vol;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+    const cs_real_t ales = cs_turb_ales;
+    const cs_real_t bles = cs_turb_bles;
+    const cs_real_t xlesfl = cs_turb_xlesfl;
 
+    const cs_real_t *cell_vol = fvq->cell_vol;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Calculation of epsilon */
 
-      const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
-          cs_turb_bles);
+      const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id],
+                                           bles);
       cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
-      cvar_ep[c_id] = pow(tke, 1.5) / delta; //TODO: ajouter constante ?
-    }
+      cvar_ep[c_id] = pow(tke, 1.5) / delta; //TODO: add constant ?
+    });
+    ctx.wait();
 
     if (m->halo != nullptr)
       cs_field_synchronize(CS_F_(eps), CS_HALO_STANDARD);
 
+    // FIXME: using current to previous inside a time step
+    // is bad practice, as it drops info on the previous time step.
     cs_field_current_to_previous(CS_F_(eps));
   }
 
@@ -3764,9 +3773,9 @@ cs_turbulence_rij_solve_alpha(int        f_id,
     alpha_min[c_id] = fimp[c_id]/alpha_min[c_id];
   });
 
-  ctx.wait();
+  _clip_alpha(ctx, f_id, n_cells, alpha_min);
 
-  _clip_alpha(f_id, n_cells, alpha_min);
+  ctx.wait();
 
   CS_FREE_HD(alpha_min);
   CS_FREE_HD(fimp);
@@ -4223,6 +4232,168 @@ cs_turbulence_rij_mu_t(int  phase_id)
   /* Zero turbulent viscosity for solid cells */
 
   cs_solid_zone_set_zero_on_cells(1, visct);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute anisotropic turbulent viscosity for RSM models
+ *
+ * \param[in]  mq        mesh quantities
+ * \param[in]  n_cells   number of cells
+ * \param[in]  phase_id  turbulent phase id (-1 for single phase flow)
+ * \param[in]  idfm      use DFM model ?
+ * \param[in]  iggafm    use AFM model ?
+ * \param[in]  iebdfm    use EBDFM model ?
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_anisotropic_mu_t
+(
+ const cs_mesh_quantities_t  *mq,
+ cs_lnum_t                    n_cells,
+ int                          phase_id,
+ bool                         idfm,
+ bool                         iggafm,
+ bool                         iebdfm
+)
+{
+  if (!(   (cs_glob_turb_rans_model->idirsm == 1)
+        && ((idfm) || (cs_glob_turb_model->itytur == 3))))
+    return;
+
+  const cs_field_t *f_rij = CS_F_(rij);
+  const cs_field_t *f_eps = CS_F_(eps);
+  const cs_field_t *f_rho = CS_F_(rho);
+  const cs_field_t *f_mu = CS_F_(mu);
+
+  if (phase_id >= 0) {
+    f_rij = CS_FI_(rij, phase_id);
+    f_eps = CS_FI_(eps, phase_id);
+    f_rho = CS_FI_(rho, phase_id);
+    f_mu = CS_FI_(mu, phase_id);
+  }
+
+  cs_real_6_t *visten
+    = (cs_real_6_t *)cs_field_by_name
+                       ("anisotropic_turbulent_viscosity")->val;
+
+  cs_real_6_t *vistes = nullptr;
+  if (iebdfm || iggafm) {
+    vistes
+      = (cs_real_6_t *)cs_field_by_name
+                         ("anisotropic_turbulent_viscosity_scalar")->val;
+  }
+
+  const cs_real_t *crom = f_rho->val;
+  const cs_real_t *viscl = f_mu->val;
+  const cs_real_t *cvar_ep = f_eps->val;
+  const cs_real_6_t *cvar_rij = (const cs_real_6_t *)f_rij->val;
+
+  const cs_lnum_t *c_disable_flag = nullptr;
+  if (mq->has_disable_flag)
+    c_disable_flag = mq->c_disable_flag;
+
+  cs_dispatch_context ctx;
+
+  cs_real_t csrij = cs_turb_csrij;
+  cs_real_t xct = cs_turb_xct;
+
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (c_disable_flag != nullptr) {
+        if (c_disable_flag[c_id]) {
+          for (cs_lnum_t ii = 0; ii < 6; ii++)
+            visten[c_id][ii] = 0;
+          return; // return from lambda == continue loop
+        }
+      }
+      const cs_real_t trrij = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+      const cs_real_t ttke  = trrij/cvar_ep[c_id];
+      const cs_real_t xttkmg
+        = xct*sqrt(viscl[c_id]/crom[c_id]/cvar_ep[c_id]);
+      const cs_real_t xttdrb = cs::max(ttke, xttkmg);
+      const cs_real_t rottke = csrij * crom[c_id] * xttdrb;
+      for (cs_lnum_t ii = 0; ii < 6; ii++)
+        visten[c_id][ii] = rottke*cvar_rij[c_id][ii];
+    });
+
+    // Other damping for EBDFM model (see F. Dehoux thesis)
+    if (iebdfm) {
+      if (cs_glob_turb_rans_model->irijco == 1) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          if (c_disable_flag != nullptr) {
+            if (c_disable_flag[c_id]) {
+              for (cs_lnum_t ii = 0; ii < 6; ii++)
+                vistes[c_id][ii] = 0;
+              return; // return from lambda == continue loop
+            }
+          }
+          const cs_real_t trrij = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+          const cs_real_t rottke = csrij * crom[c_id] * trrij / cvar_ep[c_id];
+          for (cs_lnum_t ii = 0; ii < 6; ii++)
+            vistes[c_id][ii] = rottke*cvar_rij[c_id][ii];
+        });
+      }
+      else {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          if (c_disable_flag != nullptr) {
+            if (c_disable_flag[c_id]) {
+              for (cs_lnum_t ii = 0; ii < 6; ii++)
+                vistes[c_id][ii] = 0;
+              return; // return from lambda == continue loop
+            }
+          }
+          const cs_real_t trrij = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+          const cs_real_t ttke = trrij/cvar_ep[c_id];
+          // Durbin scale
+          const cs_real_t xttkmg
+            = xct*sqrt(viscl[c_id]/crom[c_id]/cvar_ep[c_id]);
+          const cs_real_t xttdrb = cs::max(ttke, xttkmg);
+          // FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
+          const cs_real_t rottke = csrij * crom[c_id] * xttdrb;
+          for (cs_lnum_t ii = 0; ii < 6; ii++)
+            vistes[c_id][ii] = rottke*cvar_rij[c_id][ii];
+        });
+      }
+    }
+    else if (iggafm) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        if (c_disable_flag != nullptr) {
+          if (c_disable_flag[c_id]) {
+            for (cs_lnum_t ii = 0; ii < 6; ii++)
+              vistes[c_id][ii] = 0;
+            return; // return from lambda == continue loop
+          }
+        }
+        const cs_real_t trrij = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+        const cs_real_t rottke = csrij * crom[c_id] * trrij / cvar_ep[c_id];
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          vistes[c_id][ii] = rottke*cvar_rij[c_id][ii];
+      });
+    }
+
+  }
+
+  // LRR or SSG
+  else {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (c_disable_flag != nullptr) {
+        if (c_disable_flag[c_id]) {
+          for (cs_lnum_t ii = 0; ii < 6; ii++)
+            visten[c_id][ii] = 0;
+          return; // return from lambda == continue loop
+        }
+      }
+      const cs_real_t trrij = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+      const cs_real_t rottke = csrij * crom[c_id] * trrij / cvar_ep[c_id];
+      for (cs_lnum_t ii = 0; ii < 6; ii++)
+        visten[c_id][ii] = rottke*cvar_rij[c_id][ii];
+    });
+  }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
