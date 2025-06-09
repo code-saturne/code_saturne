@@ -41,6 +41,7 @@
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_dispatch.h"
 #include "alge/cs_cell_to_vertex.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdo_connect.h"
@@ -1909,12 +1910,13 @@ cs_ale_restart_read(cs_restart_t  *r)
   cs_real_3_t *coordp = (cs_real_3_t *)cs_glob_mesh->vtx_coord;
   cs_real_3_t *coord0 = (cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
 
-  #pragma omp parallel for if (n_vtx > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < n_vtx; v_id++) {
+  cs_dispatch_context ctx;
+  ctx.parallel_for(n_vtx, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
     for (cs_lnum_t idim = 0; idim < 3; idim++) {
       coordp[v_id][idim] = coord0[v_id][idim] + disale[v_id][idim];
     }
-  }
+  });
+  ctx.wait();
 
   cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
 

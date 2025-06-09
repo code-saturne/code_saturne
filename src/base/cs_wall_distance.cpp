@@ -50,6 +50,7 @@
 
 #include "bft/bft_printf.h"
 #include "base/cs_array.h"
+#include "base/cs_dispatch.h"
 #include "alge/cs_blas.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
@@ -170,12 +171,13 @@ cs_wall_distance(int iterns)
   CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(smbrp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
+  cs_dispatch_context ctx;
+
   /* RHS */
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     rovsdt[c_id] = 0.0;
     smbrp[c_id] = cell_f_vol[c_id];
-  }
+  });
 
   /* Boundary conditions
      ------------------- */
@@ -315,10 +317,10 @@ cs_wall_distance(int iterns)
   cs_array_real_fill_zero(n_i_faces, i_mass_flux);
   cs_array_real_fill_zero(n_b_faces, b_mass_flux);
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     w1[c_id] = 1.0; /* Diffusion at faces */
-  }
+  });
+  ctx.wait();
 
   cs_face_viscosity(mesh,
                     mq,

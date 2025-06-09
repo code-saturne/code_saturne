@@ -958,18 +958,25 @@ cs_solve_all(int  itrale)
     if (eqp_p->verbosity > 1)
       bft_printf("Reinitialization of pressure at iteration %d\n\n",
                  cs_glob_time_step->nt_cur);
+
     const cs_real_t *xyzp0 = fp->xyzp0;
-    const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
+    const cs_real_t gxyz[3] // Need local copy for GPU lambda capture
+      = {cs_glob_physical_constants->gravity[0],
+         cs_glob_physical_constants->gravity[1],
+         cs_glob_physical_constants->gravity[2]};
     const cs_real_t pred0 = fp->pred0;
     const cs_real_t p0 = fp->p0, ro0 = fp->ro0;
     cs_real_t *cpro_prtot = cs_field_by_name("total_pressure")->val;
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    cs_dispatch_context ctx;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cvar_pr[c_id] = pred0;
       cpro_prtot[c_id] = p0 + ro0*cs_math_3_distance_dot_product(xyzp0,
                                                                  cell_cen[c_id],
                                                                  gxyz);
-    }
+    });
+    ctx.wait();
+
   }
 
   /* Halo synchronization (only variables require this) */
