@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -206,7 +206,7 @@ convection/diffusion computation (with reconstruction) performed by \fort{cs\_ba
 
 The loop in $k$ is then the following:
 \begin{itemize}
-\item Computation of the right-hand side (second member) of the equation, without the contribution of
+\item Computation of the right-hand side of the equation, without the contribution of
 the explicit convection-diffusion terms $\var{SMBINI}$; as for the whole right-hand side corresponding
 to $\mathcal{E}_{n}(a^{n+1,\,k-1})$, it is stored in the array $\var{SMBRP}$,
 initialised by $\var{SMBINI}$ and completed with the reconstructed

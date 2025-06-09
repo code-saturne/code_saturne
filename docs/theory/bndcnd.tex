@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -430,7 +430,7 @@ when a wall boundary value is prescribed and a wall function is set by the user.
 Simplified balance analysis proves that the fluid velocity profile or the Temperature profile are
 highly non-linear  for turbulent flows in the vicinity of walls.
 
-The aim of wall functions is to model the vicinity of the wall by substituting the Dirichlet condition on the fluid velocity and on the scalars such as the temperature ($\vect{u}_\fib = \vect{v}_{wall}$, $T_\fib = T_{wall}$ where $\vect{v}_{wall}$ is the velocity of the wall and $T_{wall}$ is the temperature of the wall) by a Robin-type boundary condition linking the wall shear stress to the velocity of the fluid, and the
+The aim of wall functions is to model the vicinity of the wall by substituting the Dirichlet condition on the fluid velocity and on the scalars such as the temperature ($\vect{u}_\fib = \vect{v}_{wall}$, $T_\fib = T_{wall}$ where $\vect{v}_{wall}$ is the velocity at the wall and $T_{wall}$ is the temperature of the wall) by a Robin-type boundary condition linking the wall shear stress to the velocity of the fluid, and the
 thermal wall flux to the temperature within the first cell.
 
 %-------------------------------------------------------------------------------
@@ -688,7 +688,7 @@ u_{\centf}^r = u_{\centip}^r -  \dfrac{3 u^\star}{2\kappa }
 The normal derivative at the wall is prescribed to zero.
 If the value obtained for $y^+$ at the wall is lower than $y^+_{lim}$,
 a no-slip condition is prescribed. Finally, one can also
-make explicit the velocity of the wall in the final expression:
+make explicit the wall velocity in the final expression:
 %
 The internal pair of boundary condition coefficients for the diffusive term for the velocity are
 \begin{equation}

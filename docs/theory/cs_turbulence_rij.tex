@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -29,11 +29,11 @@
 %-------------------------------------------------------------------------------
 \section*{Fonction}
 %-------------------------------------------------------------------------------
-Le but de ce sous-programme est de r\'esoudre le syst\`eme des \'equations des
-tensions de Reynolds et de la dissipation $\varepsilon$ de mani\`ere totalement d\'ecoupl\'ee dans le cadre de l'utilisation du mod\`ele $R_{ij}-\varepsilon$  LRR\footnote{la description du SSG est pr\'evue pour une version ult\'erieure de la documentation} (option $\var{ITURB}=30$ dans \fort{usini1}).\\
-Le tenseur sym\'etrique des tensions de Reynolds est not\'e $\tens{R}$. Les composantes de ce tenseur repr\'esentent le moment d'ordre deux de la vitesse : $R_{ij} = \overline{u_iu_j}$.
+Le but de ce sous-programme est de résoudre le système des équations des
+tensions de Reynolds et de la dissipation $\varepsilon$ de manière totalement découplée dans le cadre de l'utilisation du modèle $R_{ij}-\varepsilon$  LRR\footnote{la description du SSG est prévue pour une version ultérieure de la documentation} (option $\var{ITURB}=30$ dans \fort{usini1}).\\
+Le tenseur symétrique des tensions de Reynolds est noté $\tens{R}$. Les composantes de ce tenseur représentent le moment d'ordre deux de la vitesse~: $R_{ij} = \overline{u_iu_j}$.
 
-Pour chaque composante $R_{ij}$, on r\'esout :
+Pour chaque composante $R_{ij}$, on résout~:
 
 \begin{equation}
 \begin{array}{ll}
@@ -46,14 +46,14 @@ R_{ij}\,\dive{(\rho \vect{u})} \\
 \end{array}
 \end{equation}
 
-$\tens{\mathcal{P}}$ est le tenseur de production par cisaillement moyen :
+$\tens{\mathcal{P}}$ est le tenseur de production par cisaillement moyen~:
 
 \begin{equation}
 \displaystyle \mathcal{P}_{ij} = \displaystyle -\rho \left[ R_{ik} \frac{\partial u_j}{\partial x_k} + R_{jk} \frac{\partial u_i}{\partial x_k} \right]
 \end{equation}
 
 
-$\tens{\mathcal{G}}$ est le tenseur de production par gravit\'e :
+$\tens{\mathcal{G}}$ est le tenseur de production par gravité~:
 
 \begin{equation}
 \displaystyle
@@ -71,34 +71,34 @@ avec
 \end{array}\right.
 \end{equation}
 
-Dans ce qui pr\'ec\`ede, $k$ repr\'esente l'\'energie turbulente\footnote{Les
+Dans ce qui précède, $k$ représente l'énergie turbulente\footnote{Les
 sommations se font sur l'indice $l$ et on applique plus
-g\'en\'eralement la convention de sommation d'Einstein.}, $g_i$ la composante de
-la gravit\'e dans la direction $i$, $\sigma_{t}$ le nombre de Prandlt turbulent  et $C_{\mu}$, $C_3$ des constantes d\'efinies dans Tab.~\ref{Base_Turrij_table_Cstes}.
+généralement la convention de sommation d'Einstein.}, $g_i$ la composante de
+la gravité dans la direction $i$, $\sigma_{t}$ le nombre de Prandlt turbulent  et $C_{\mu}$, $C_3$ des constantes définies dans Tab.~\ref{Base_Turrij_table_Cstes}.
 
 
-$\tens{\Phi}$ est le terme de corr\'elations pression-d\'eformation. Il est mod\'elis\'e avec le terme de dissipation $\tens{\varepsilon}$ de la mani\`ere suivante :
+$\tens{\Phi}$ est le terme de corrélations pression-déformation. Il est modélisé avec le terme de dissipation $\tens{\varepsilon}$ de la manière suivante~:
 
 \begin{equation}
 \displaystyle
 \Phi_{ij} - [\varepsilon_{ij}- \frac{2}{3} \rho \ \delta_{ij} \varepsilon] = \phi_{ij,1} + \phi_{ij,2} + \phi_{ij,w}
 \end{equation}
 
-Il en r\'esulte :
+Il en résulte~:
 
 \begin{equation}
 \displaystyle
 \Phi_{ij} - \varepsilon_{ij} = \phi_{ij,1} + \phi_{ij,2} + \phi_{ij,w}  -\frac{2}{3} \rho \ \delta_{ij} \varepsilon
 \end{equation}
 
-Le terme $\phi_{ij,1}$ est un terme "lent" de retour \`a l'isotropie. Il est donn\'e par :
+Le terme $\phi_{ij,1}$ est un terme "lent" de retour à l'isotropie. Il est donné par~:
 
 \begin{equation}
 \displaystyle
 \phi_{ij,1} = -\rho\,C_1 \frac{\varepsilon}{k} (R_{ij} - \frac{2}{3} k \delta_{ij})
 \end{equation}
 
-Le terme $\phi_{ij,2}$ est un terme "rapide" d'isotropisation de la production. Il est donn\'e par :
+Le terme $\phi_{ij,2}$ est un terme "rapide" d'isotropisation de la production. Il est donné par~:
 \begin{equation}
 \displaystyle
 \phi_{ij,2} = -C_2 (\mathcal{P}_{ij} - \frac{2}{3} \mathcal{P} \delta_{ij})
@@ -108,8 +108,8 @@ avec,
 
 $$\displaystyle \mathcal{P} = \frac{1}{2} \mathcal{P}_{kk}$$
 
-Le terme $\phi_{ij,w}$ est appel\'e "terme d'echo de paroi". Il n'est pas
-utilis\'e par d\'efaut dans \CS, mais peut \^etre activ\'e avec $\var{IRIJEC} = 1$. Si $y$ repr\'esente la distance \`a la paroi :
+Le terme $\phi_{ij,w}$ est appelé "terme d'echo de paroi". Il n'est pas
+utilisé par défaut dans \CS, mais peut être activé avec $\var{IRIJEC} = 1$. Si $y$ représente la distance à la paroi~:
 
 \begin{equation}
 \begin{array} {ll}
@@ -126,9 +126,9 @@ utilis\'e par d\'efaut dans \CS, mais peut \^etre activ\'e avec $\var{IRIJEC} = 
 \end{equation}
 
 $f$ est une fonction d'amortissement construite pour valoir 1 en paroi et tendre
-vers 0 en s'\'eloignant des parois.\\
-La longueur $l$ repr\'esente
-$\displaystyle\frac{k^{\,\frac{3}{2}}}{\varepsilon}$, caract\'eristique de la turbulence. On prend :
+vers 0 en s'éloignant des parois.\\
+La longueur $l$ représente
+$\displaystyle\frac{k^{\,\frac{3}{2}}}{\varepsilon}$, caractéristique de la turbulence. On prend~:
 
 \begin{equation}
 f(\frac{l}{y}) = min(1, \ C^{\,0,75}_{\mu} \
@@ -136,7 +136,7 @@ f(\frac{l}{y}) = min(1, \ C^{\,0,75}_{\mu} \
 \end{equation}
 
 
-$\it{d}_{ij}$ est un terme de diffusion turbulente\footnote{Dans la litt\'erature, ce terme contient en g\'en\'eral la dissipation par viscosit\'e mol\'eculaire.} qui vaut :
+$\it{d}_{ij}$ est un terme de diffusion turbulente\footnote{Dans la littérature, ce terme contient en général la dissipation par viscosité moléculaire.} qui vaut~:
 
 \begin{equation}
 \it{d}_{ij} = C_{S} \frac{\partial}{\partial x_k} (\rho \frac{k}{\varepsilon} R_{km} \frac{\partial R_{ij}}{\partial x_m})
@@ -144,15 +144,15 @@ $\it{d}_{ij}$ est un terme de diffusion turbulente\footnote{Dans la litt\'eratur
 
 On notera par la suite $\displaystyle \tens{A} = C_S\,\rho\,\frac{k}{\varepsilon}\,\tens{R}$. Ainsi, $\displaystyle d_{ij} = \dive(\,\tens{A}\,\grad(R_{ij}))$ est une diffusion avec un coefficient tensoriel.
 
-Le terme de dissipation turbulente $\tens{\varepsilon}$ est trait\'e dans ce qui pr\'ec\`ede avec le terme $\tens{\Phi}$.
+Le terme de dissipation turbulente $\tens{\varepsilon}$ est traité dans ce qui précède avec le terme $\tens{\Phi}$.
 
-$\Gamma$ est le terme source de masse\footnote{Dans ce cas, l'\'equation de continuit\'e s'\'ecrit : $\displaystyle \frac{\partial \rho}{\partial t} + \dive{(\rho \vect{u})} = \Gamma$.}, $R^{\,in}_{ij}$ est la valeur de $R_{ij}$ associ\'ee \`a la masse inject\'ee ou retir\'ee.
+$\Gamma$ est le terme source de masse\footnote{Dans ce cas, l'équation de continuité s'écrit~: $\displaystyle \frac{\partial \rho}{\partial t} + \dive{(\rho \vect{u})} = \Gamma$.}, $R^{\,in}_{ij}$ est la valeur de $R_{ij}$ associée à la masse injectée ou retirée.
 
-($\alpha_{R_{ij}}\,R_{ij} + \beta_{R_{ij}}$) repr\'esente le terme source
-utilisateur (sous-programme \fort{cs\_user\_turbulence\_source\_terms}) \'eventuel avec une d\'ecomposition
+($\alpha_{R_{ij}}\,R_{ij} + \beta_{R_{ij}}$) représente le terme source
+utilisateur (sous-programme \fort{cs\_user\_turbulence\_source\_terms}) éventuel avec une décomposition
 permettant d'impliciter la partie $\alpha_{R_{ij}}\,R_{ij}$ si $\alpha_{R_{ij}} \geqslant 0$.
 
-De m\^eme, on r\'esout une \'equation de convection/diffusion/termes sources pour la dissipation $\varepsilon$. Cette \'equation est tr\`es semblable \`a celle du mod\`ele $k-\varepsilon$ (voir \fort{cs\_turbulence\_ke}), seuls les termes de viscosit\'e turbulente et de gravit\'e changent. On r\'esout :
+De même, on résout une équation de convection/diffusion/termes sources pour la dissipation $\varepsilon$. Cette équation est très semblable à celle du modèle $k-\varepsilon$ (voir \fort{cs\_turbulence\_ke}), seuls les termes de viscosité turbulente et de gravité changent. On résout~:
 
 \begin{equation}
 \begin{array} {ll}
@@ -172,23 +172,23 @@ De m\^eme, on r\'esout une \'equation de convection/diffusion/termes sources pou
 \end{equation}
 
 
-$\it{d}_{\,\varepsilon}$ est le terme de diffusion turbulente :
+$\it{d}_{\,\varepsilon}$ est le terme de diffusion turbulente~:
 \begin{equation}
 \displaystyle
 \it{d}_{\,\varepsilon} = C_{\varepsilon} \displaystyle \frac{\partial}{\partial x_k} \left( \rho \frac{k}{\varepsilon} R_{km} \frac{\partial \varepsilon}{\partial x_m} \right)
 \end{equation}
 On notera par la suite $\tens{A'} = \displaystyle \rho \,C_{\varepsilon} \frac{k}{\varepsilon} \tens{R}$.
-Le terme de diffusion turbulente est donc mod\'elis\'e par : $$\it{d}_{\,\varepsilon} =
+Le terme de diffusion turbulente est donc modélisé par~: $$\it{d}_{\,\varepsilon} =
 \dive(\tens{A'}\,\grad(\varepsilon))$$
-La viscosit\'e turbulente usuelle ($\nu_t$) en mod\`ele $k-\varepsilon$ est remplac\'ee par le tenseur visqueux~$\tens{A'}$.
+La viscosité turbulente usuelle ($\nu_t$) en modèle $k-\varepsilon$ est remplacée par le tenseur visqueux~$\tens{A'}$.
 
-$\mathcal{P}$ est le terme de production par cisaillement moyen :
+$\mathcal{P}$ est le terme de production par cisaillement moyen~:
 $\mathcal{P} =\displaystyle \frac{1}{2} \mathcal{P}_{kk}$. Ce terme est
-mod\'elis\'e avec la notion de viscosit\'e turbulente dans le cadre du mod\`ele
-$k-\varepsilon$. Dans le cas pr\'esent, il est calcul\'e \`a l'aide des tensions
-de Reynolds (\`a partir de $\mathcal{P}_{ij}$).
+modélisé avec la notion de viscosité turbulente dans le cadre du modèle
+$k-\varepsilon$. Dans le cas présent, il est calculé à l'aide des tensions
+de Reynolds (à partir de $\mathcal{P}_{ij}$).
 
-$\mathcal{G}_{\varepsilon}$ est le terme de production des effets de gravit\'e pour la variable $\varepsilon$.
+$\mathcal{G}_{\varepsilon}$ est le terme de production des effets de gravité pour la variable $\varepsilon$.
 \begin{equation}
 \mathcal{G}_{\varepsilon} = max(0,\frac{1}{2}G_{kk})
 \end{equation}
@@ -207,28 +207,28 @@ $0,3$ \\
 \end{tabular}
 \end{center}
 }
-\caption{D\'efinition des constantes utilis\'ees.}\label{Base_Turrij_table_Cstes}
+\caption{Définition des constantes utilisées.}\label{Base_Turrij_table_Cstes}
 \end{table}
 
 See the \doxygenfile{turrij_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-La r\'esolution se fait en d\'ecouplant totalement les tensions de Reynolds
-entre elles et la dissipation $\varepsilon$. On r\'esout ainsi une \'equation de
+La résolution se fait en découplant totalement les tensions de Reynolds
+entre elles et la dissipation $\varepsilon$. On résout ainsi une équation de
 convection/diffusion/termes sources pour chaque variable. Les variables sont
-r\'esolues dans l'ordre suivant : $R_{11}$, $R_{22}$, $R_{33}$, $R_{12}$,
-$R_{13}$, $R_{23}$ et $ \varepsilon$. L'ordre de la r\'esolution n'est pas
-important puisque l'on a opt\'e pour une r\'esolution totalement d\'ecoupl\'ee
-en n'implicitant que les termes pouvant \^etre lin\'earis\'es par rapport \`a la
-variable courante\footnote{En effet, aucune variable n'est actualis\'ee pour la r\'esolution de la suivante.}.
+résolues dans l'ordre suivant~: $R_{11}$, $R_{22}$, $R_{33}$, $R_{12}$,
+$R_{13}$, $R_{23}$ et $ \varepsilon$. L'ordre de la résolution n'est pas
+important puisque l'on a opté pour une résolution totalement découplée
+en n'implicitant que les termes pouvant être linéarisés par rapport à la
+variable courante\footnote{En effet, aucune variable n'est actualisée pour la résolution de la suivante.}.
 
-Les \'equations sont r\'esolues \`a l'instant $n+1$.
+Les équations sont résolues à l'instant $n+1$.
 \subsection*{\bf Variables tensions de Reynolds}
-Pour chaque composante $R_{ij}$, on \'ecrit :
+Pour chaque composante $R_{ij}$, on écrit~:
 \begin{equation}\label{Base_Turrij_Eq_Temp_Rij}
 \begin{array}{ll}
 \displaystyle
@@ -255,22 +255,22 @@ Pour chaque composante $R_{ij}$, on \'ecrit :
 + \alpha^n_{R_{ij}} R^{\,n+1}_{ij} + \beta^n_{R_{ij}}
 \end{array}
 \end{equation}
-$\mu^n$ est la viscosit\'e mol\'eculaire\footnote{La viscosit\'e peut
-d\'ependre \'eventuellement de la temp\'erature ou d'autres variables.}.\\
-L'indice $(\,n,n+1)$ est relatif \`a une semi implicitation des termes (voir ci-dessous). Quand seul l'indice $(n)$ est utilis\'e, il suffit de reprendre l'expression des termes et de consid\'erer que toutes les variables sont explicites.
+$\mu^n$ est la viscosité moléculaire\footnote{La viscosité peut
+dépendre éventuellement de la température ou d'autres variables.}.\\
+L'indice $(\,n,n+1)$ est relatif à une semi implicitation des termes (voir ci-dessous). Quand seul l'indice $(n)$ est utilisé, il suffit de reprendre l'expression des termes et de considérer que toutes les variables sont explicites.
 
-Dans le terme $\phi^{n,n+1}_{ij,1}$ donn\'e ci-dessous, la tension de Reynolds
- $R_{ij}$ est implicite (les tensions diagonales apparaissent aussi dans l'\'energie
-turbulente $k$). Ainsi :
+Dans le terme $\phi^{n,n+1}_{ij,1}$ donné ci-dessous, la tension de Reynolds
+ $R_{ij}$ est implicite (les tensions diagonales apparaissent aussi dans l'énergie
+turbulente $k$). Ainsi~:
 \begin{equation}
 \displaystyle
 \phi^{\,n,n+1}_{ij,1} = -\rho^n \,C_1\,\frac{\varepsilon^n}{k^n}\left[
 (1-\frac{\delta_{ij}}{3}) R^{\,n+1}_{ij}- \delta_{ij} \frac{2}{3} (k^n-\frac{1}{2} R^{\,n}_{ii}) \right]
 \end{equation}
 
-Le terme de diffusion turbulente $\tens{\it{d}}$ s'\'ecrit : $\it{d}_{ij} = \dive{\left[ \tens{A}\,\grad{R}_{ij} \right]}$.
+Le terme de diffusion turbulente $\tens{\it{d}}$ s'écrit~: $\it{d}_{ij} = \dive{\left[ \tens{A}\,\grad{R}_{ij} \right]}$.
 Le tenseur $\tens{A}$ est toujours explicite.
-En int\'egrant sur un volume de contr\^ole (cellule) $\Omega_l$, le terme $\tens{\it{d}}$ de diffusion turbulente de $R_{ij}$ s'\'ecrit :
+En intégrant sur un volume de contr\^ole (cellule) $\Omega_l$, le terme $\tens{\it{d}}$ de diffusion turbulente de $R_{ij}$ s'écrit~:
 
 \begin{equation}
 \displaystyle\int_{\Omega_l} \it{d}^{\,n,n+1}_{ij}\ d\Omega =
@@ -279,14 +279,14 @@ Vois(l)} \left[
 \tens{A}^n\,\grad{R}^{\,n+1}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm}
 \end{equation}
 
-$\vect{n}_{\,lm}$ est la normale unitaire \`a la face\footnote{La notion de
-face purement interne ou de bord n'est pas explicit\'ee ici, pour all\'eger l'expos\'e. Pour \^etre rigoureux et homog\`ene avec les notations
-adopt\'ees, il faudrait distinguer $ m\in {Vois(l)} $ et $ m\in {\gamma_b(l)}$.}
-$ \partial \Omega_{\,lm} = \Gamma_{\,lm}$ de la fronti\`ere
+$\vect{n}_{\,lm}$ est la normale unitaire à la face\footnote{La notion de
+face purement interne ou de bord n'est pas explicitée ici, pour alléger l'exposé. Pour être rigoureux et homogène avec les notations
+adoptées, il faudrait distinguer $ m\in {Vois(l)} $ et $ m\in {\gamma_b(l)}$.}
+$ \partial \Omega_{\,lm} = \Gamma_{\,lm}$ de la frontière
  $\partial \Omega_{\,l} = \underset{\text{\it m}}{\cup}\ \partial
-\Omega_{\,lm}$ de $\Omega_l$, face d\'esign\'ee par abus par $lm$ et $S_{\,lm}$ sa surface associ\'ee.
+\Omega_{\,lm}$ de $\Omega_l$, face désignée par abus par $lm$ et $S_{\,lm}$ sa surface associée.
 
-On d\'ecompose $\tens{A}^n$ en partie diagonale $\tens{D}^n$ et
+On décompose $\tens{A}^n$ en partie diagonale $\tens{D}^n$ et
 extra-diagonale $\tens{E}^n$ :\\
 $$\tens{A}^n =\tens{D}^n + \tens{E}^n$$
 Ainsi,
@@ -308,12 +308,12 @@ La partie extra-diagonale sera prise totalement explicite et interviendra donc
 dans l'expression regroupant les termes purement explicites $f_s^{\,exp}$ du
 second membre de \fort{cs\_equation\_iterative\_solve}.\\
 Pour la partie diagonale, on introduit la composante normale du gradient de la
-variable principale $R_{ij}$. Cette  contribution normale sera trait\'ee en
-implicite pour la variable et interviendra \`a la fois dans l'expression de la matrice simplifi\'ee du syst\`eme r\'esolu par \fort{cs\_equation\_iterative\_solve} et dans
-le second membre trait\'e par \fort{cs\_balance}. La
+variable principale $R_{ij}$. Cette  contribution normale sera traitée en
+implicite pour la variable et interviendra à la fois dans l'expression de la matrice simplifiée du système résolu par \fort{cs\_equation\_iterative\_solve} et dans
+le second membre traité par \fort{cs\_balance}. La
 contribution tangentielle sera, elle, purement explicite et donc prise en compte
 dans $f_s^{\,exp}$ intervenant dans le second membre de \fort{cs\_equation\_iterative\_solve}.\\
-On a :
+On a~:
 \begin{equation}
 \displaystyle
 \grad{R}_{ij}  = \grad{R}_{ij} - (\grad{R}_{ij}\,.\,\vect{n}_{\,lm})\,\vect{n}_{\,lm} + (\grad{R}_{ij}\,.\,\vect{n}_{\,lm})\,\vect{n}_{\,lm}
@@ -321,13 +321,13 @@ On a :
 
 Comme $$\left[ \tens{D}^n\,\left[ (\grad{R}_{ij}\,.\,\vect{n}_{\,lm})\,\vect{n}_{\,lm}
 \right] \right]\,.\,\vect{n}_{\,lm}  = \gamma^n_{\,lm} (\grad{R}_{ij}\,.\,\vect{n}_{\,lm})$$
- avec :
+ avec~:
 $$\gamma^n_{\,lm} = (D^n_{11})\,n^2_{\,1,\,lm} + (D^n_{22})\,n^2_{\,2,\,lm} +
 (D^n_{33})\,n^2_{\,3,\,lm}$$
  on peut traiter ce terme $\gamma^n_{\,lm}$ comme une diffusion avec un
-coefficient de diffusion ind\'ependant de la direction.\\
+coefficient de diffusion indépendant de la direction.\\
 
-Finalement, on \'ecrit :
+Finalement, on écrit~:
 \begin{equation}
 \begin{array} {lll}
 &\displaystyle\int_{\Omega_l} \it{d}_{ij}^{\,n,n+1}\ d\Omega =\\
@@ -341,14 +341,14 @@ Vois(l)} \left[\ \tens{E}^n\,\grad{R}^{\,n}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,
 Vois(l)} \gamma^n_{\,lm} \left( \grad{R}^{\,n+1}_{ij}\,.\,\vect{n}_{\,lm} \right)  S_{\,lm}
 \end{array}
 \end{equation}
-Les trois premiers termes sont totalement explicites et correspondent \`a la
-discr\'etisation de l'op\'erateur continu :
+Les trois premiers termes sont totalement explicites et correspondent à la
+discrétisation de l'opérateur continu~:
 $$\dive(\,\tens{E}^n\,\grad{R}^{\,n}_{ij}) + \dive(\,\tens{D}^n\,[\,\grad{R}^{\,n}_{ij} - ( \grad{R}^{\,n}_{ij}\,.\,\vect{n}
 )\,\vect{n}\,]\,)$$ en omettant la notion de face.\\
-Le dernier terme est implicite relativement \`a la variable $R_{ij}$ et correspond \`a l'op\'erateur continu :
+Le dernier terme est implicite relativement à la variable $R_{ij}$ et correspond à l'opérateur continu~:
  $$\dive(\,\tens{D}^n\,(\grad{R}^{\,n+1}_{ij}\,.\,\vect{n} )\,\vect{n})$$
 \subsection*{\bf Variable $\varepsilon$ }
-On r\'esout l'\'equation de $\varepsilon$ de fa\c con analogue \`a celle de
+On résout l'équation de $\varepsilon$ de façon analogue à celle de
 $R_{ij}$.
 \begin{equation}
 \begin{array}{ll}
@@ -373,14 +373,14 @@ d_{\,\varepsilon}^{\,n,n+1} \\
 \end{array}
 \end{equation}
 
-Le terme de diffusion turbulente $\it{d}^{\,n,n+1}_{\,\varepsilon}$ est trait\'e comme celui des
-variables $R_{ij}$ et s'\'ecrit : $$\it{d}_{\,\varepsilon}^{\,n,n+1} = \dive{\left[
+Le terme de diffusion turbulente $\it{d}^{\,n,n+1}_{\,\varepsilon}$ est traité comme celui des
+variables $R_{ij}$ et s'écrit~: $$\it{d}_{\,\varepsilon}^{\,n,n+1} = \dive{\left[
 \tens{A'}^{\,n}\,\grad {\varepsilon^{\,n+1}} \right]}$$
 Le tenseur $\tens{A'}$ est toujours explicite.
-On le d\'ecompose en une partie diagonale $\tens{D'}^{\,n}$ et une partie
-extra-diagonale $\tens{E'}^{\,n}$ :\\
+On le décompose en une partie diagonale $\tens{D'}^{\,n}$ et une partie
+extra-diagonale $\tens{E'}^{\,n}$~:\\
 $$\tens{A'}^{\,n} =\tens{D'}^{\,n} + \tens{E'}^{\,n}$$
-Ainsi :
+Ainsi~:
 \begin{equation}
 \begin{array} {lcl}
 &\displaystyle \int_{\Omega_l} \it{d}_{\,\varepsilon}^{\,n,n+1}\ d\Omega =
@@ -395,14 +395,14 @@ Ainsi :
 &+  \sum\limits_{m\in Vois(l)} \eta^n_{\,lm} \left( \grad{\varepsilon}^{n+1}\,.\,\vect{n}_{\,lm} \right) S_{\,lm}
 \end{array}
 \end{equation}
-avec :
+avec~:
 $$\eta^n_{\,lm} = (D'^{\,n}_{11})\,n^2_{\,1,\,lm} + (D'^{\,n}_{22})\,n^2_{\,2,\,lm} +
 (D'^{\,n}_{33})\,n^2_{\,3,\,lm}.$$
-On peut traiter ce terme $\eta^n_{\,lm}$ comme une diffusion avec un coefficient de diffusion ind\'ependant de la direction.\\
-Les trois premiers termes sont totalement explicites et correspondent \`a l'op\'erateur :
+On peut traiter ce terme $\eta^n_{\,lm}$ comme une diffusion avec un coefficient de diffusion indépendant de la direction.\\
+Les trois premiers termes sont totalement explicites et correspondent à l'opérateur~:
 $$\dive (\,\tens{E'}^{\,n}\,\varepsilon^{\,n}) +
 \dive (\,\tens{D'}^{\,n}\,[\grad{\varepsilon^{\,n}} - (\grad{\varepsilon^{\,n}}.\,\vect{n})\,\vect{n}]\,)$$ en omettant la notion de face.\\
-Le dernier terme est implicite relativement \`a la variable $\varepsilon$ et correspond \`a l'op\'erateur :
+Le dernier terme est implicite relativement à la variable $\varepsilon$ et correspond à l'opérateur~:
  $$\dive (\,\tens{D'}^{\,n}\,(\grad{\varepsilon^{\,n+1}}.\,\vect{n} )\,\vect{n})$$
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -410,17 +410,17 @@ Le dernier terme est implicite relativement \`a la variable $\varepsilon$ et cor
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-La num\'ero de la phase trait\'ee fait partie des arguments de \fort{cs\_turbulence\_rij}. On
-omettra volontairement de le pr\'eciser dans ce qui suit, on indiquera par $(\ )$ la
+La numéro de la phase traitée fait partie des arguments de \fort{cs\_turbulence\_rij}. On
+omettra volontairement de le préciser dans ce qui suit, on indiquera par $(\ )$ la
 notion de tableau s'y rattachant.
 
 \etape{Calcul des termes de production $\tens{\mathcal{P}}$}
 \begin{itemize}
-\item [$\star$] Initialisation \`a z\'ero du tableau \var{PRODUC} dimensionn\'e \`a $\var{NCEL}\times 6$.
+\item [$\star$] Initialisation à zéro du tableau \var{PRODUC} dimensionné à $\var{NCEL}\times 6$.
 \item [$\star$] On appelle trois fois \fort{grdcel} pour calculer les gradients des composantes de la vitesse $u$, $v$ et
 $w$ prises au temps $n$.
 
-Au final, on a :\\
+Au final, on a~:\\
 $\displaystyle
 \begin{array} {ll}
 \var{PRODUC(1,IEL)} = & \displaystyle - 2 \left[ R_{11}^{\,n} \frac{\partial u^{\,n}} {\partial x} +R_{12}^{\,n} \frac{\partial u^{\,n}} {\partial y}+R_{13}^{\,n} \frac{\partial u^{\,n}} {\partial z} \right] \text{        (production de $R_{11}^{\,n}$)}\\
@@ -436,61 +436,61 @@ $\displaystyle
 $
 \end{itemize}
 
-\etape{Calcul du gradient de la masse volumique $\rho^n$ prise au d\'ebut du pas
-de temps courant\footnote{{\it i.e.} calcul\'ee \`a partir des
-variables du pas de temps pr\'ec\'edent $n$ si n\'ecessaire.} $(n+1)$}
-Ce calcul n'a lieu que si les termes de gravit\'e doivent \^etre pris en compte
+\etape{Calcul du gradient de la masse volumique $\rho^n$ prise au début du pas
+de temps courant\footnote{{\it i.e.} calculée à partir des
+variables du pas de temps précédent $n$ si nécessaire.} $(n+1)$}
+Ce calcul n'a lieu que si les termes de gravité doivent être pris en compte
 ($\var{IGRARI()} =1$).
 \begin{itemize}
 \item [$\star$] Appel de \fort{grdcel}  pour calculer le gradient de $\rho^n$
 dans les trois directions de l'espace. Les conditions aux limites sur $\rho^n$
 sont des conditions de Dirichlet puisque la valeur de $\rho^n$ aux faces de bord
-$ik$ (variable \var{IFAC}) est connue et vaut $\rho_{\,b_{\,ik}}$. Pour \'ecrire les conditions aux limites
+$ik$ (variable \var{IFAC}) est connue et vaut $\rho_{\,b_{\,ik}}$. Pour écrire les conditions aux limites
 sous la forme habituelle, $$\rho_{\,b_{\,ik}} = \var{COEFA} + \var{COEFB}
 \,\rho^n_{\,I'}$$ on pose alors $\var{COEFA}=
 \var{PROPCE(IFAC,IPPROB(IROM))}$ et $\var{COEFB} = \var{VISCB} = 0$.\\
-$\var{PROPCE(1,IPPROB(IROM))}$ (resp.$\var{VISCB}$) est utilis\'e en lieu
-et place de l'habituel \var{COEFA} ($\var{COEFB}$), lors de l'appel \`a \fort{grdcel}.\\
-On a donc :\\
+$\var{PROPCE(1,IPPROB(IROM))}$ (resp.$\var{VISCB}$) est utilisé en lieu
+et place de l'habituel \var{COEFA} ($\var{COEFB}$), lors de l'appel à \fort{grdcel}.\\
+On a donc~:\\
 $\displaystyle \var{GRAROX}= \frac{\partial \rho^n}{\partial x}\ $,$\displaystyle \ \var{GRAROY}= \frac{\partial
 \rho^n}{\partial y}$ et $
 \displaystyle \ \var{GRAROZ}= \frac{\partial \rho^n}{\partial z}\ $.
 
 \end{itemize}
 
-Le gradient de $\rho^n$ servira \`a calculer les termes de production par effets de gravit\'e si ces derniers sont pris en compte.
+Le gradient de $\rho^n$ servira à calculer les termes de production par effets de gravité si ces derniers sont pris en compte.
 
-\etape{Boucle \var{ISOU} de $1$ \`a $6$ sur les tensions de Reynolds}
-Pour $\var{ISOU} = 1,2,3,4,5,6$, on r\'esout respectivement et dans
+\etape{Boucle \var{ISOU} de $1$ à $6$ sur les tensions de Reynolds}
+Pour $\var{ISOU} = 1,2,3,4,5,6$, on résout respectivement et dans
 l'ordre  les
-\'equations de $R_{11}$, $R_{22}$, $R_{33}$, $R_{12}$, $R_{13}$ et $R_{23}$ par
+équations de $R_{11}$, $R_{22}$, $R_{33}$, $R_{12}$, $R_{13}$ et $R_{23}$ par
 l'appel au sous-programme \fort{resrij}.\\
-La r\'esolution se fait par incr\'ement $\delta {R}_{ij}^{\,n+1,k+1}$ , en utilisant la m\^eme m\'ethode que
-celle d\'ecrite dans le sous-programme \fort{cs\_equation\_iterative\_solve}. On adopte ici les m\^emes notations.
-\var{SMBR} est le second membre du syst\`eme \`a inverser, syst\`eme portant sur
-les incr\'ements de la variable. \var{ROVSDT} repr\'esente la diagonale de la
+La résolution se fait par incrément $\delta {R}_{ij}^{\,n+1,k+1}$ , en utilisant la même méthode que
+celle décrite dans le sous-programme \fort{cs\_equation\_iterative\_solve}. On adopte ici les mêmes notations.
+\var{SMBR} est le second membre du système à inverser, système portant sur
+les incréments de la variable. \var{ROVSDT} représente la diagonale de la
 matrice, hors convection/diffusion.\\
-On va r\'esoudre l'\'equation (\ref{Base_Turrij_Eq_Temp_Rij}) sous forme incr\'ementale en
-utilisant \fort{cs\_equation\_iterative\_solve}, soit :
+On va résoudre l'équation (\ref{Base_Turrij_Eq_Temp_Rij}) sous forme incrémentale en
+utilisant \fort{cs\_equation\_iterative\_solve}, soit~:
 \begin{equation}\label{Base_Turrij_Eq_Temp_deltaRij}
 \begin{array}{ll}
 &\displaystyle \underbrace{\left(\frac {\rho^n_L}{\Delta t^n}
 + \rho^n_L \,C_1\,\frac{\varepsilon^n_L}{k^n_L}(1-\frac{\delta_{ij}}{3})
  - m^n_{\,lm} + \Gamma_L\,+ max(-\alpha^n_{R_{ij}},0)\right)\,|\Omega_l|}
 _{\text {$\var{ROVSDT}$ contribuant
-\`a la diagonale de la matrice simplifi\'ee de \fort{matrix}}}\,(\delta{R}_{ij}^{\,n+1,p+1})_{\,L}\\\\
+à la diagonale de la matrice simplifiée de \fort{matrix}}}\,(\delta{R}_{ij}^{\,n+1,p+1})_{\,L}\\\\
 &  \underbrace{+\sum\limits_{m\in Vois(l)}\displaystyle \left[
  m^n_{\,lm} \delta R_{ij,\,f_{\,lm}}^{\,n+1,p+1}
 - (\mu^n_{\,lm} + \gamma^n_{\,lm})\
 \frac{({\delta R}_{ij}^{\,n+1,p+1})_{M}-({\delta R}_{ij}^{\,n+1,p+1})_{L})}{\overline{L'M'}}\,
 S_{\,lm} \right]}_{\text { convection upwind pur et diffusion non reconstruite
-relatives \`a la matrice simplifi\'ee de \fort{matrix}\footnotemark}} \\
+relatives à la matrice simplifiée de \fort{matrix}\footnotemark}} \\
 % voir le texte de la footmark plus bas
 &= - \displaystyle\frac {\rho^n_L}{\Delta t^n}\,\left(\,(R^{\,n+1,p}_{ij})_L - (R^{\,n}_{ij})_L\,\right)\\
 &-\,\underbrace{\displaystyle\int_{\Omega_l} \left(
 \dive\,[\,(\rho\,\vect{u})^n\,R^{\,n+1,p}_{ij} - (\mu^n\,+ \gamma^n\,)\,
 \grad{R^{\,n+1,p}_{ij}}\,]\right)\,d\Omega}_{\text {convection et diffusion
-trait\'ees par \fort{cs\_balance}}}\\
+traitées par \fort{cs\_balance}}}\\
 &+\displaystyle \int_{\Omega_l} \left[\,\mathcal{P}^{\,n+1,p}_{ij} + \mathcal{G}^{\,n+1,p}_{ij}
 - \displaystyle\rho^n \,C_1\,\frac{\varepsilon^n}{k^n}\left[R^{\,n+1,p}_{ij}-
 \frac{2}{3}\,k^n\,\delta_{ij}\right] + \phi^{\,n+1,p}_{ij,2} +
@@ -509,86 +509,86 @@ Vois(l)}\displaystyle \left[\ \tens{E}^n\,\grad{R}^{\,n+1,p}_{ij} \right]_{\,lm}
 % si on ne fait pas comme ca, il n'apparait pas
 \footnotetext[\thefootnote]{Si $\var{IRIJNU} = 1$, on remplace  $\mu^n_{\,lm}$ par $(\mu +
 \mu_t)^n_{\,lm}$ dans l'expression de la diffusion non reconstruite
-associ\'ee \`a la matrice simplifi\'ee de \fort{matrix} ($\mu_t$ d\'esigne la
-viscosit\'e turbulente calcul\'ee comme en $k-\varepsilon$).}
+associée à la matrice simplifiée de \fort{matrix} ($\mu_t$ désigne la
+viscosité turbulente calculée comme en $k-\varepsilon$).}
 
-o\`u on rappelle :\\
-pour $n$ donn\'e entier positif, on d\'efinit la suite
+où on rappelle~:\\
+pour $n$ donné entier positif, on définit la suite
  $({R}_{ij}^{\,n+1,p})_{p \in \mathbb{N}}$
- par :
+ par~:
 \begin{equation}\notag
 \left\{\begin{array}{l}
 {R}_{ij}^{\,n+1,0} = {R}_{ij}^{\,n}\\
 {R}_{ij}^{\,n+1,p+1} = {R}_{ij}^{\,n+1,p} + \delta{R}_{ij}^{\,n+1,p+1} \\
 \end{array}\right.
 \end{equation}
-$(\delta{R}_{ij}^{\,n+1,p+1})_{\,L}$ d\'esigne la valeur sur l'\'el\'ement
-$\Omega_l$ du $\text{$(\,p+1\,)$-i\`eme}$ incr\'ement de ${R}_{ij}^{\,n+1}$,
-$ m^n_{\,lm}$ le flux de masse \`a l'instant $n$ \`a travers la face $lm$,
+$(\delta{R}_{ij}^{\,n+1,p+1})_{\,L}$ désigne la valeur sur l'élément
+$\Omega_l$ du $\text{$(\,p+1\,)$-ième}$ incrément de ${R}_{ij}^{\,n+1}$,
+$ m^n_{\,lm}$ le flux de masse à l'instant $n$ à travers la face $lm$,
 $\delta R_{ij,\,f_{\,lm}}^{\,n+1,p+1}$ vaut $({\delta
 R}_{ij}^{\,n+1,p+1})_{L}$  si $ m^n_{\,lm} \geqslant 0$, $({\delta
 R}_{ij}^{\,n+1,p+1})_{M}$ sinon,
 $\mathcal{P}^{\,n+1,p}_{ij}$, $\phi^{\,n+1,p}_{ij,2}$, $\phi^{\,n+1,p}_{ij,w}$ les valeurs
-des quantit\'es associ\'ees correspondant \`a l'incr\'ement
+des quantités associées correspondant à l'incrément
 $(\delta{R}_{ij}^{\,n+1,p})$.\\
 
 
 
-Tous ces termes sont calcul\'es comme suit :
+Tous ces termes sont calculés comme suit~:
 \begin{itemize}
-\item Terme de gauche de l'\'equation (\ref{Base_Turrij_Eq_Temp_deltaRij})\\
-Dans \fort{resrij} est calcul\'ee la variable \var{ROVSDT}. Les autres
-termes sont compl\'et\'es par \fort{cs\_equation\_iterative\_solve}, lors de la construction de la matrice simplifi\'ee , {\it via} un
-appel au sous-programme \fort{matrix}. La quantit\'e
- $(\mu^n_{\,lm} + \gamma^n_{\,lm})$ \`a la face $lm$ est calcul\'ee lors de l'appel \`a
-\fort{visort}.\\
-\item Second membre de l'\'equation (\ref{Base_Turrij_Eq_Temp_deltaRij})\\
-Le premier terme non d\'etaill\'e est calcul\'e par le sous-programme
-\fort{cs\_balance}, qui applique le sch\'ema convectif choisi par l'utilisateur, qui
+\item Terme de gauche de l'équation (\ref{Base_Turrij_Eq_Temp_deltaRij})\\
+Dans \fort{resrij} est calculée la variable \var{ROVSDT}. Les autres
+termes sont complétés par \fort{cs\_equation\_iterative\_solve}, lors de la construction de la matrice simplifiée , {\it via} un
+appel au sous-programme \fort{matrix}. La quantité
+ $(\mu^n_{\,lm} + \gamma^n_{\,lm})$ à la face $lm$ est calculée lors de l'appel à
+\fort{cs\_face\_orthotropic\_viscosity\_vector}.\\
+\item Second membre de l'équation (\ref{Base_Turrij_Eq_Temp_deltaRij})\\
+Le premier terme non détaillé est calculé par le sous-programme
+\fort{cs\_balance}, qui applique le schéma convectif choisi par l'utilisateur, qui
 reconstruit ou non selon le souhait de l'utilisateur les gradients intervenants
 dans la convection-diffusion.\\
-Les termes sans accolade sont, eux, compl\`etement explicites et ajout\'es au fur et
-\`a mesure dans \var{SMBR} pour former
+Les termes sans accolade sont, eux, complètement explicites et ajoutés au fur et
+à mesure dans \var{SMBR} pour former
 l'expression $f^{\,exp}_s$ de \fort{cs\_equation\_iterative\_solve}.
 \end{itemize}
-On d\'ecrit ci-dessous les \'etapes de \fort{resrij} :
+On décrit ci-dessous les étapes de \fort{resrij}~:
 \begin{itemize}
 
 \item DELTIJ = 1, pour $\var{ISOU} \leqslant 3$ et DELTIJ = 0  Si $\var{ISOU} >
-3$. Cette valeur repr\'esente le symbole de Kroeneker $\delta_{ij}$.
+3$. Cette valeur représente le symbole de Kroeneker $\delta_{ij}$.
 
-\item Initialisation \`a z\'ero de \var{SMBR} (tableau contenant le second
+\item Initialisation à zéro de \var{SMBR} (tableau contenant le second
 membre) et \var{ROVSDT} (tableau contenant la diagonale de la matrice sauf celle
-relative \`a la contribution de la
-diagonale des op\'erateurs de convection et de diffusion lin\'earis\'es
-\footnote{qui correspondent aux sch\'emas convectif upwind pur et diffusif sans
+relative à la contribution de la
+diagonale des opérateurs de convection et de diffusion linéarisés
+\footnote{qui correspondent aux schémas convectif upwind pur et diffusif sans
 reconstruction.}), tous deux de dimension $\var{NCEL}$.
 
 \item Lecture et prise en compte des termes sources utilisateur pour la variable $R_{ij}$
 
-Appel \`a \fort{cs\_user\_turbulence\_source\_terms} pour charger les termes sources utilisateurs. Ils sont
-stock\'es comme suit. Pour la cellule $\Omega_l$ de centre $L$, repr\'esent\'ee par $\var{IEL}$, on a :\\
+Appel à \fort{cs\_user\_turbulence\_source\_terms} pour charger les termes sources utilisateurs. Ils sont
+stockés comme suit. Pour la cellule $\Omega_l$ de centre $L$, représentée par $\var{IEL}$, on a~:\\
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\var{ROVSDT(IEL)}&= |\Omega_l| \ \alpha_{R_{ij}}\\
 &\var{SMBR(IEL)}&=|\Omega_l| \ \beta_{R_{ij}}\\
 \end{array}\right.
 \end{equation}
-On affecte alors les valeurs ad\'equates au second membre \var{SMBR} et \`a la
-diagonale \var{ROVSDT} comme suit :
+On affecte alors les valeurs adéquates au second membre \var{SMBR} et à la
+diagonale \var{ROVSDT} comme suit~:
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\var{SMBR(IEL)} &= \var{SMBR(IEL)} +\ |\Omega_l| \ \alpha_{R_{ij}} \ (R^n_{ij})_L \\
 &\var{ROVSDT(IEL)}&= \text{max }(-\ |\Omega_l| \ \alpha_{R_{ij}},0)\\
 \end{array}\right.
 \end{equation}
-La valeur de $ \var{ROVSDT}$ est ainsi calcul\'ee pour des raisons de stabilit\'e
-num\'erique. En effet, on ne rajoute sur la diagonale que les valeurs positives,
-ce qui correspond physiquement \`a impliciter les termes de rappel uniquement.
+La valeur de $ \var{ROVSDT}$ est ainsi calculée pour des raisons de stabilité
+numérique. En effet, on ne rajoute sur la diagonale que les valeurs positives,
+ce qui correspond physiquement à impliciter les termes de rappel uniquement.
 \item{Calcul du terme source de masse  si $\Gamma_L > 0$}
 
-Appel de \fort{catsma} et incr\'ementation si n\'ecessaire de \var{SMBR} et
-\var{ROVSDT} {\it via} :\\
+Appel de \fort{catsma} et incrémentation si nécessaire de \var{SMBR} et
+\var{ROVSDT} {\it via}~:\\
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 \displaystyle \var{SMBR(IEL)} = \var{SMBR(IEL)} + |\Omega_l| \ \Gamma_L \
@@ -599,11 +599,11 @@ Appel de \fort{catsma} et incr\'ementation si n\'ecessaire de \var{SMBR} et
 \item Calcul du terme d'accumulation de masse et du terme instationnaire
 
 On stocke $\displaystyle \var{W1}= \int_{\Omega_l}\dive\,(\rho\,\vect{u})\,d\Omega$
-calcul\'e par \fort{divmas} \`a l'aide des flux de masse aux faces internes
+calculé par \fort{divmas} à l'aide des flux de masse aux faces internes
 $ m^n_{\,lm}=\sum\limits_{m\in Vois(l)}{(\rho \vect{u})_{\,lm}^n} \text{.}\,
 \vect{S}_{\,lm} $ (tableau \var{FLUMAS}) et des flux de masse aux bords  $ m^n_{\,b_{lk}} = \sum\limits_{k\in{\gamma_b(l)}}{(\rho \vect{u})_{\,{b}_{lk}}^n} \text{.}\,
 \vect{S}_{\,{b}_{lk}} $ (tableau \var{FLUMAB}).
-On incr\'emente ensuite \var{SMBR} et \var{ROVSDT}.
+On incrémente ensuite \var{SMBR} et \var{ROVSDT}.
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\var{SMBR(IEL)} &= \var{SMBR(IEL)} + \var{ICONV}\  (R^n_{ij})_L\,(\displaystyle
@@ -614,9 +614,9 @@ On incr\'emente ensuite \var{SMBR} et \var{ROVSDT}.
 \end{array}\right.
 \end{equation}
 \item Calcul des termes sources de production, des termes $\displaystyle
-\phi_{\,ij,1}+\phi_{\,ij,2}$ et de la dissipation~$\displaystyle-\frac{2}{3} \varepsilon\,\delta_{\,ij}$ :
+\phi_{\,ij,1}+\phi_{\,ij,2}$ et de la dissipation~$\displaystyle-\frac{2}{3} \varepsilon\,\delta_{\,ij}$~:
 
-On effectue une boucle d'indice \var{IEL} sur les cellules $\Omega_l$ de centre $L$ :
+On effectue une boucle d'indice \var{IEL} sur les cellules $\Omega_l$ de centre $L$~:
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRPROD}= \frac{1}{2} (\mathcal{P}^n_{ii})_L = \frac{1}{2} \left[ \var{PRODUC(1,IEL)} +  \var{PRODUC(2,IEL)} +  \var{PRODUC(3,IEL)} \right] $
 \item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^n_{ii})_L $
@@ -630,33 +630,33 @@ $ + \left.\ (1-C_2) \ \var{PRODUC(ISOU,IEL)} -
 \rho^n_L \ |\Omega_l| \ (- \displaystyle \frac{1}{3} \ \,\delta_{\,ij} + 1) \ C_1
 \ \frac{2\ \varepsilon^n_L}{(R^n_{ii})_L}$
 \end{itemize}
-\item Appel de \fort{rijech} pour le calcul des termes d'\'echo de paroi
+\item Appel de \fort{rijech} pour le calcul des termes d'écho de paroi
  $\phi^n_{ij,w}$ si $\var{IRIJEC()}=1$ et ajout dans \var{SMBR}.\\
 $\var{SMBR} = \var{SMBR} + \phi^n_{ij,w}$\\
-Suivant son mode de calcul (\var{ICDPAR}), la distance \`a la paroi est directement accessible
+Suivant son mode de calcul (\var{ICDPAR}), la distance à la paroi est directement accessible
 par \var{RA(IDIPAR+IEL-1)} (\var{|ICDPAR|} = 1) ou bien
-est calcul\'ee \`a partir de $\var{IA(IIFAPA+IEL - 1)}$,
-qui donne pour l'\'el\'ement $\var{IEL}$ le num\'ero de la face de bord
-paroi la plus  proche (\var{|ICDPAR|} = 2). Ces tableaux ont \'et\'e renseign\'e une fois pour toutes au
-d\'ebut de calcul.
+est calculée à partir de $\var{IA(IIFAPA+IEL - 1)}$,
+qui donne pour l'élément $\var{IEL}$ le numéro de la face de bord
+paroi la plus  proche (\var{|ICDPAR|} = 2). Ces tableaux ont été renseigné une fois pour toutes au
+début de calcul.
 
-\item  Appel de \fort{rijthe} pour le calcul des termes de gravit\'e $\mathcal{G}^n_{ij}$ et ajout dans \var{SMBR}.
+\item  Appel de \fort{rijthe} pour le calcul des termes de gravité $\mathcal{G}^n_{ij}$ et ajout dans \var{SMBR}.
 
 Ce calcul n'a lieu que si $\var{IGRARI()} = 1$.
 $ \var{SMBR} = \var{SMBR} + \mathcal{G}^n_{ij}$
 \item Calcul de la partie explicite du terme de diffusion
- $\dive{\,\left[\tens{A}\,\grad{R}^{\,n}_{ij}\right]}$, plus pr\'ecis\'ement
+ $\dive{\,\left[\tens{A}\,\grad{R}^{\,n}_{ij}\right]}$, plus précisément
 des contributions du terme extradiagonal pris aux faces purement internes
 (remplissage du tableau \var{VISCF}), puis aux faces de bord (remplissage du
 tableau \var{VISCB}).
 \begin{itemize}
 \item [$\star$] Appel de \fort{grdcel} pour le calcul du gradient de
 $R^{\,n}_{ij}$ dans chaque direction. Ces gradients sont respectivement
-stock\'es dans les tableaux de travail \var{W1}, \var{W2} et \var{W3}.
+stockés dans les tableaux de travail \var{W1}, \var{W2} et \var{W3}.
 
 \item [$\star$] boucle d'indice \var{IEL} sur les cellules $\Omega_l$ de centre
 $L$ pour le
-calcul de $\tens{E}^n\,\grad{R}^{\,n}_{ij}$ aux cellules dans un premier temps :\\
+calcul de $\tens{E}^n\,\grad{R}^{\,n}_{ij}$ aux cellules dans un premier temps~:\\
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRRIJ}= \frac{1}{2} (R^{\,n}_{ii})_L $
 \item [$\Rightarrow$] $\displaystyle \var{CSTRIJ} = \rho^n_L\ C_S \ \displaystyle\frac{(R^n_{ii})_L}{2\,\varepsilon^n_L}$
@@ -672,31 +672,31 @@ calcul de $\tens{E}^n\,\grad{R}^{\,n}_{ij}$ aux cellules dans un premier temps :
 
 
 
-\item [$\star$] Appel de \fort{vectds}\footnote{Le r\'esultat est stock\'e dans
+\item [$\star$] Appel de \fort{vectds}\footnote{Le résultat est stocké dans
 \var{VISCF} et \var{VISCB}. Dans \fort{vectds}, les valeurs aux faces internes
-sont interpol\'ees lin\'eairement sans reconstruction et \var{VISCB} est mis \`a
-z\'ero.} pour assembler $\displaystyle\left[ \tens{E}^n\,\grad{R}^{\,n}_{ij}
+sont interpolées linéairement sans reconstruction et \var{VISCB} est mis à
+zéro.} pour assembler $\displaystyle\left[ \tens{E}^n\,\grad{R}^{\,n}_{ij}
 \right]\,.\,\vect{n}_{\,lm}S_{\,lm}$ aux faces $lm$.
-\item [$\star$] Appel de \fort{divmas} pour calculer la divergence du flux d\'efini par \var{VISCF} et \var{VISCB}.
-Le r\'esultat est stock\'e dans \var{W4}.\\
+\item [$\star$] Appel de \fort{divmas} pour calculer la divergence du flux défini par \var{VISCF} et \var{VISCB}.
+Le résultat est stocké dans \var{W4}.\\
 Ajout au second membre \var{SMBR}.\\
 \var{SMBR} = \var{SMBR} + \var{W4}
 \end{itemize}
 
-A l'issue de cette \'etape, seule la partie extradiagonale de la diffusion prise
-enti\`erement explicite~:
+A l'issue de cette étape, seule la partie extradiagonale de la diffusion prise
+entièrement explicite~:
  $$\sum\limits_{m\in
-Vois(l)}\left[\ \tens{E}^n\,\grad{R}^{\,n}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm}$$ a \'et\'e calcul\'ee.\\
+Vois(l)}\left[\ \tens{E}^n\,\grad{R}^{\,n}_{ij} \right]_{\,lm}\,.\,\vect{n}_{\,lm}S_{\,lm}$$ a été calculée.\\
 
 \item Calcul de la partie diagonale du terme de diffusion\footnote{Seule la
-composante normale  du  gradient de $R_{ij}$ aux faces sera implicite.} :\\
-Comme on l'a d\'eja vu, une partie de cette contribution sera trait\'ee en
-implicite (celle relative \`a la composante normale du gradient) et donc
-ajout\'ee au second membre par \fort{cs\_balance} ; l'autre
+composante normale  du  gradient de $R_{ij}$ aux faces sera implicite.}~:\\
+Comme on l'a déja vu, une partie de cette contribution sera traitée en
+implicite (celle relative à la composante normale du gradient) et donc
+ajoutée au second membre par \fort{cs\_balance} ; l'autre
 partie sera explicite et prise en compte dans $f_s^{\,exp}$.
 \begin{itemize}
 \item [$\star$] On effectue une boucle d'indice \var{IEL} sur les cellules
-$\Omega_l$ de centre $L$ :
+$\Omega_l$ de centre $L$~:
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^{\,n}_{ii})_L $
 \item [$\Rightarrow$] $\displaystyle \var{CSTRIJ} = \rho^n_L \ C_S \ \frac{(R^{\,n}_{ii})_L}{2\,\varepsilon^n_L}$
@@ -706,18 +706,18 @@ $\Omega_l$ de centre $L$ :
 \item [$\Rightarrow$] $\displaystyle \var{W6(IEL)} = \rho^n_L \ C_S \ \frac{(R^{\,n}_{ii})_L}{2\,\varepsilon^n_L} \ (R^n_{33})_L$
 \end{itemize}
 
-%\item Traitement du parall\'elisme et de la p\'eriodicit\'e.
+%\item Traitement du parallélisme et de la périodicité.
 
 \item [$\star$] On effectue une boucle d'indice \var{IFAC} sur les faces
-purement internes $lm$ pour remplir le tableau \var{VISCF} :
+purement internes $lm$ pour remplir le tableau \var{VISCF}~:
 \begin{itemize}
 \item [$\Rightarrow$] Identification des cellules $\Omega_l$ et $\Omega_m$ de
-centre respectif $L$ (variable \var{II}) et $M$ (variable \var{JJ}), se trouvant de chaque c\^ot\'e de la face
-$lm$\footnote{La normale \`a la face est orient\'ee de L vers M.}.
-\item [$\Rightarrow$] Calcul du carr\'e de la surface de la face. La valeur est
-stock\'ee dans le tableau \var{SURFN2}.
-\item [$\Rightarrow$] Interpolation du gradient de $R^{\,n}_{ij}$ \`a la face
-$lm$ (gradient facette $\left[\grad{R}^{\,n}_{ij}\right]_{\,lm}$) :
+centre respectif $L$ (variable \var{II}) et $M$ (variable \var{JJ}), se trouvant de chaque c\^oté de la face
+$lm$\footnote{La normale à la face est orientée de L vers M.}.
+\item [$\Rightarrow$] Calcul du carré de la surface de la face. La valeur est
+stockée dans le tableau \var{SURFN2}.
+\item [$\Rightarrow$] Interpolation du gradient de $R^{\,n}_{ij}$ à la face
+$lm$ (gradient facette $\left[\grad{R}^{\,n}_{ij}\right]_{\,lm}$)~:
 \begin{equation}\notag
 \left\{\begin{array}{ll}
 \var{GRDPX} &= \displaystyle \frac{1}{2} \left(\var{W1(II)} + \var{W1(JJ)}
@@ -728,7 +728,7 @@ $lm$ (gradient facette $\left[\grad{R}^{\,n}_{ij}\right]_{\,lm}$) :
 \var{GRDPZ} &= \displaystyle \frac{1}{2} \left(\var{W3(II)} + \var{W3(JJ)} \right)
 \end{array}\right.
 \end{equation}
-\item [$\Rightarrow$] Calcul du gradient de $R^{\,n}_{ij}$ normal \`a la face
+\item [$\Rightarrow$] Calcul du gradient de $R^{\,n}_{ij}$ normal à la face
 $lm$, $\left[\grad{R}^{\,n}_{ij}\right]_{\,lm}.\vect{n}_{\,lm}\,S_{\,lm}$.\\
 
 $\displaystyle \var{GRDSN} =  \var{GRDPX} \ \var{SURFAC(1,IFAC)} + \var{GRDPY} \ \var{SURFAC(2,IFAC)} +  \var{GRDPZ} \ \var{SURFAC(3,IFAC)}$
@@ -737,8 +737,8 @@ $\var{SURFAC}$ est le vecteur surface de la face \var{IFAC}.
 
 \item [$\Rightarrow$] calcul de
  $\left[\grad{R^{\,n}_{ij}} - (\grad
-R^{\,n}_{ij}\,.\,\vect{n}_{\,lm})\vect{n}_{\,lm}\right]$, les vecteurs \'etant
-calcul\'es \`a la face $lm$ :
+R^{\,n}_{ij}\,.\,\vect{n}_{\,lm})\vect{n}_{\,lm}\right]$, les vecteurs étant
+calculés à la face $lm$~:
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\displaystyle \var{GRDPX} &= \var{GRDPX} - \displaystyle\frac{\var{GRDSN}}{\var{SURFN2}} \ \var{SURFAC(1,IFAC)}\\
@@ -765,19 +765,19 @@ explicite
 \end{equation}
 \end{itemize}
 
-\item [$\star$] Mise \`a z\'ero du tableau \var{VISCB}.
+\item [$\star$] Mise à zéro du tableau \var{VISCB}.
 
 \item [$\star$] Appel de \fort{divmas} pour calculer la divergence de~:
- $$\tens{D}^{\,n}\,\left( \grad{R^{\,n}_{ij}} - (\grad R^{\,n}_{ij}\,.\,\vect{n}_{\,lm})\vect{n}_{\,lm}\right)$$ d\'efini aux faces dans \var{VISCF} et \var{VISCB}.
+ $$\tens{D}^{\,n}\,\left( \grad{R^{\,n}_{ij}} - (\grad R^{\,n}_{ij}\,.\,\vect{n}_{\,lm})\vect{n}_{\,lm}\right)$$ défini aux faces dans \var{VISCF} et \var{VISCB}.
 
-Le r\'esultat est stock\'e dans le tableau \var{W1}.\\
+Le résultat est stocké dans le tableau \var{W1}.\\
 Ajout au second membre \var{SMBR}.\\
 $\var{SMBR} = \var{SMBR} + \var{W1}$
 \end{itemize}
-\item Calcul de la viscosit\'e orthotrope $\gamma^n_{\,lm}$ \`a la face $lm$ de la variable principale
+\item Calcul de la viscosité orthotrope $\gamma^n_{\,lm}$ à la face $lm$ de la variable principale
 $R^{\,n}_{ij}$\\
-Ce calcul permet au sous-programme \fort{cs\_equation\_iterative\_solve} de compl\'eter le second membre
-\var{SMBR} par :
+Ce calcul permet au sous-programme \fort{cs\_equation\_iterative\_solve} de compléter le second membre
+\var{SMBR} par~:
 \begin{equation}
 \begin{array} {ll}
 & \sum\limits_{m\in Vois(l)}
@@ -788,12 +788,12 @@ S_{\,lm}\\
 & = \sum\limits_{m\in Vois(l)}(\,\mu^n_{\,lm}\, + \,\gamma^n_{\,lm}\,)\,\left(\grad{R}^{\,n}_{ij}\,.\,\vect{n}_{\,lm}\right)S_{\,lm}
 \end{array}
 \end{equation}
-sans pr\'eciser la nature de la face $lm$, {\it via} l'appel \`a \fort{cs\_balance}  et de disposer de la quantit\'e
+sans préciser la nature de la face $lm$, {\it via} l'appel à \fort{cs\_balance}  et de disposer de la quantité
 $(\mu^n_{\,lm}\, + \gamma^n_{\,lm})$ pour construire sa
-matrice simplifi\'ee.\\
+matrice simplifiée.\\
 \begin{itemize}
 \item [$\star$] On effectue une boucle d'indice \var{IEL} sur les cellules
-$\Omega_l$ :
+$\Omega_l$~:
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^{\,n}_{ii})_L $
 \item [$\Rightarrow$] $\displaystyle \var{RCSTE} = \rho^n_L \ C_S \ \frac{ (R^{\,n}_{ii})_L}{2\,\varepsilon^n_L} $
@@ -803,47 +803,47 @@ $\Omega_l$ :
 \item [$\Rightarrow$] $\displaystyle \var{W3(IEL)} = \mu^n + \rho^n_L \ C_S \ \frac{ (R^{\,n}_{ii})_L}{2\,\varepsilon^n_L}\ (R^n_{33})_L$
 \end{itemize}
 
-\item [$\star$] Appel de \fort{visort} pour calculer la viscosit\'e orthotrope
-\footnote{Comme dans le sous-programme \fort{viscfa}, on multiplie la viscosit\'e par
-$\displaystyle \frac{S_{\,lm}}{\overline{L'M'}}$, o\`u $S_{\,lm}$ et
-$\overline{L'M'}$ repr\'esentent respectivement la surface de la face $lm$ et la
-mesure alg\'ebrique du segment reliant les projections des centres des cellules
-voisines sur la normale \`a la face. On garde dans ce sous-programme  la possibilit\'e d'interpoler la viscosit\'e aux cellules lin\'eairement ou d'utiliser une moyenne harmonique. La viscosit\'e au bord est celle de la cellule de bord correspondante.}
+\item [$\star$] Appel de \fort{cs\_face\_orthotropic\_viscosity\_vector} pour calculer la viscosité orthotrope
+\footnote{Comme dans le sous-programme \fort{cs\_face\_viscosity}, on multiplie la viscosité par
+$\displaystyle \frac{S_{\,lm}}{\overline{L'M'}}$, où $S_{\,lm}$ et
+$\overline{L'M'}$ représentent respectivement la surface de la face $lm$ et la
+mesure algébrique du segment reliant les projections des centres des cellules
+voisines sur la normale à la face. On garde dans ce sous-programme  la possibilité d'interpoler la viscosité aux cellules linéairement ou d'utiliser une moyenne harmonique. La viscosité au bord est celle de la cellule de bord correspondante.}
 $ \gamma^n_{\,lm} = (\tens{D}^{\,n}\,\vect{n}_{\,lm}).\vect{n}_{\,lm}$ aux faces $lm$
 
-Le r\'esultat est stock\'e dans les tableaux \var{VISCF} et \var{VISCB}.
+Le résultat est stocké dans les tableaux \var{VISCF} et \var{VISCB}.
 \end{itemize}
 
-\item appel de \fort{cs\_equation\_iterative\_solve} pour la r\'esolution de l'\'equation de
+\item appel de \fort{cs\_equation\_iterative\_solve} pour la résolution de l'équation de
 convection/diffusion/termes sources de la variable $R_{ij}$. Le terme source est
-\var{SMBR}, la viscosit\'e \var{VISCF} aux faces purement internes (
+\var{SMBR}, la viscosité \var{VISCF} aux faces purement internes (
 resp. \var{VISCB} aux faces de bord) et \var{FLUMAS} le flux de masse interne
- ( resp. \var{FLUMAB} flux de masse au bord). Le r\'esultat est la variable $R_{ij}$ au temps
-$n+1$, donc $R^{\,n+1}_{ij}$. Elle est stock\'ee dans le tableau \var{RTP} des
-variables mises \`a jour.
+ ( resp. \var{FLUMAB} flux de masse au bord). Le résultat est la variable $R_{ij}$ au temps
+$n+1$, donc $R^{\,n+1}_{ij}$. Elle est stockée dans le tableau \var{RTP} des
+variables mises à jour.
 
 \end{itemize}
 
-\etape{Appel de \fort{reseps} pour la r\'esolution de la variable $\varepsilon$}
+\etape{Appel de \fort{reseps} pour la résolution de la variable $\varepsilon$}
 
-On d\'ecrit ci-dessous le sous-programme \fort{reseps}, les commentaires du sous-programme \fort{resrij} ne seront pas r\'ep\'et\'es puisque les deux sous-programmes ne diff\`erent que par leurs termes sources.
+On décrit ci-dessous le sous-programme \fort{reseps}, les commentaires du sous-programme \fort{resrij} ne seront pas répétés puisque les deux sous-programmes ne diffèrent que par leurs termes sources.
 
 \begin{itemize}
-\item Initialisation \`a z\'ero de \var{SMBR} et \var{ROVSDT}.
+\item Initialisation à zéro de \var{SMBR} et \var{ROVSDT}.
 
-\item{Lecture et prise en compte des termes sources utilisateur pour la variable $\varepsilon$ :}
+\item{Lecture et prise en compte des termes sources utilisateur pour la variable $\varepsilon$~:}
 
 Appel de \fort{cs\_user\_turbulence\_source\_terms} pour charger les termes sources utilisateurs. Ils sont
-stock\'es dans les tableaux suivants :\\
-pour la cellule $\Omega_l$ repr\'esent\'ee par $\var{IEL}$ de centre $L$, on a :
+stockés dans les tableaux suivants~:\\
+pour la cellule $\Omega_l$ représentée par $\var{IEL}$ de centre $L$, on a~:
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\var{ROVSDT(IEL)}&= |\Omega_l| \ \alpha_{\varepsilon}\\
 &\var{SMBR(IEL)}&=|\Omega_l| \ \beta_{\varepsilon}\\
 \end{array}\right.
 \end{equation}
-On affecte alors les valeurs ad\'equates au second membre \var{SMBR} et \`a la
-diagonale \var{ROVSDT} comme suit :
+On affecte alors les valeurs adéquates au second membre \var{SMBR} et à la
+diagonale \var{ROVSDT} comme suit~:
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\var{SMBR(IEL)} &= \var{SMBR(IEL)} +\ |\Omega_l| \ \alpha_{\,\varepsilon} \
@@ -852,7 +852,7 @@ diagonale \var{ROVSDT} comme suit :
 \end{array}\right.
 \end{equation}
 
-\item{Calcul du terme source de masse si $\Gamma_L > 0$ :
+\item{Calcul du terme source de masse si $\Gamma_L > 0$~:
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\displaystyle \var{SMBR(IEL)} = \var{SMBR(IEL)} + |\Omega_l| \ \Gamma_L \
@@ -862,8 +862,8 @@ diagonale \var{ROVSDT} comme suit :
 \end{equation}
 \item Calcul du terme d'accumulation de masse et du terme instationnaire \\
 On stocke $\displaystyle \var{W1}= \int_{\Omega_l}\dive\,(\rho\,\vect{u})\,d\Omega$
-calcul\'e par \fort{divmas} \`a l'aide des flux de masse internes et aux bords.\\
-On incr\'emente ensuite \var{SMBR} et \var{ROVSDT}.
+calculé par \fort{divmas} à l'aide des flux de masse internes et aux bords.\\
+On incrémente ensuite \var{SMBR} et \var{ROVSDT}.
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\var{SMBR(IEL)} &= \var{SMBR(IEL)} + \var{ICONV}\ \varepsilon^n_L\,(\displaystyle
@@ -878,7 +878,7 @@ On incr\'emente ensuite \var{SMBR} et \var{ROVSDT}.
  $\displaystyle \rho\,C_{\varepsilon_1}\,\frac{\varepsilon}{k}\,\mathcal{P}$
  et du terme de dissipation $-\,\displaystyle \rho\,C_{\varepsilon_2}\,\frac{\varepsilon}{k}\,\varepsilon$ \\
 pour cela, on effectue une boucle d'indice \var{IEL} sur les cellules $\Omega_l$
-de centre $L$ :
+de centre $L$~:
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRPROD}= \frac{1}{2} (\mathcal{P}^n_{ii})_L = \frac{1}{2} \left[ \var{PRODUC(1,IEL)} +  \var{PRODUC(2,IEL)} +  \var{PRODUC(3,IEL)} \right] $
 \item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^n_{ii})_L $
@@ -887,67 +887,67 @@ de centre $L$ :
 \item [$\Rightarrow$] $\displaystyle \var{ROVSDT(IEL)} = \var{ROVSDT(IEL)} + C_{\varepsilon_2} \ \rho^n_L \ |\Omega_l| \ \frac{2\,\varepsilon^n_L}{(R^n_{ii})_L}$
 \end{itemize}
 
-\item Appel de \fort{rijthe} pour le calcul des termes de gravit\'e $\mathcal{G}^n_{\varepsilon}$ et ajout dans \var{SMBR}.
+\item Appel de \fort{rijthe} pour le calcul des termes de gravité $\mathcal{G}^n_{\varepsilon}$ et ajout dans \var{SMBR}.
 
 $ \var{SMBR} = \var{SMBR} + \mathcal{G}^n_{\varepsilon}$\\
 Ce calcul n'a lieu que si $\var{IGRARI()} = 1$.
 
 \item Calcul de la diffusion de $\varepsilon$ \\
  Le terme $\dive \left[\mu\, \grad(\varepsilon) + \tens{A'}\,\grad(\varepsilon)
-\right]$ est calcul\'e exactement de la m\^eme mani\`ere que pour les tensions
-de Reynolds $R_{ij}$ en rempla\c cant $\tens{A}$ par $\tens{A'}$.
+\right]$ est calculé exactement de la même manière que pour les tensions
+de Reynolds $R_{ij}$ en remplaçant $\tens{A}$ par $\tens{A'}$.
 
-\item Appel de \fort{cs\_equation\_iterative\_solve} pour la r\'esolution de l'\'equation de
+\item Appel de \fort{cs\_equation\_iterative\_solve} pour la résolution de l'équation de
 convection/diffusion/termes sources de la variable principale $\varepsilon$. Le
-r\'esultat $\varepsilon^{\,n+1}$ est stock\'e dans le tableau \var{RTP} des
-variables mises \`a jour.
+résultat $\varepsilon^{\,n+1}$ est stocké dans le tableau \var{RTP} des
+variables mises à jour.
 }
 \end{itemize}
 
 \etape{clippings finaux}
-On passe enfin dans le sous-programme  \fort{clprij} pour faire un clipping \'eventuel
+On passe enfin dans le sous-programme  \fort{clprij} pour faire un clipping éventuel
 des variables $R^{\,n+1}_{ij}$ et $\varepsilon^{\,n+1}$. Le sous-programme
-\fort{clprij} est appel\'e\footnote{L'option
+\fort{clprij} est appelé\footnote{L'option
 $\var{ICLIP} = 1$ consiste en un clipping minimal des variables $R_{ii}$ et
 $\varepsilon$ en prenant la valeur absolue de ces variables puisqu'elles ne
-peuvent \^etre que positives.} avec $\var{ICLIP} = 2$ . Cette option
+peuvent être que positives.} avec $\var{ICLIP} = 2$ . Cette option
 \footnote{Quand la valeur des grandeurs $R_{ii}$ ou $\varepsilon$ est
-n\'egative, on la remplace par le minimum entre sa valeur absolue et (1,1)
-fois la valeur obtenue au pas de temps pr\'ec\'edent.} contient l'option $\var{ICLIP} = 1$  et permet de v\'erifier l'in\'egalit\'e de Cauchy-Schwarz sur les grandeurs extra-diagonales du tenseur $\tens{R}$ (pour $i \neq j$, $|R_{ij}|^2 \le R_{ii} R_{jj}$).
+négative, on la remplace par le minimum entre sa valeur absolue et (1,1)
+fois la valeur obtenue au pas de temps précédent.} contient l'option $\var{ICLIP} = 1$  et permet de vérifier l'inégalité de Cauchy-Schwarz sur les grandeurs extra-diagonales du tenseur $\tens{R}$ (pour $i \neq j$, $|R_{ij}|^2 \le R_{ii} R_{jj}$).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}
+\section*{Points à traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Sauf mention explicite, $\phi$ repr\'esentera une tension de Reynolds ou la dissipation turbulente ($\phi = R_{ij} \ \text{ou} \ \varepsilon$).
+Sauf mention explicite, $\phi$ représentera une tension de Reynolds ou la dissipation turbulente ($\phi = R_{ij} \ \text{ou} \ \varepsilon$).
 
 \begin{itemize}
-\item {La vitesse utilis\'ee pour le calcul de la production est explicite. Est-ce qu'une implicitation peut am\'eliorer la pr\'ecision temporelle de $\phi$ \footnote{Cette remarque peut \^etre g\'en\'eralis\'ee. En effet, peut-on envisager d'actualiser les variables d\'ej\`a r\'esolues (sans r\'eactualiser les variables turbulentes apr\`es leur r\'esolution)? Ceci obligerait \`a modifier les sous-programmes tels que \fort{cs\_boundary\_conditions} qui sont appel\'es au d\'ebut de la boucle en temps.} ?}
-\item {Dans quelle mesure le terme d'\'echo de paroi est-il valide ? En effet, ce terme est remis en question par certains auteurs.}
-\item {On peut envisager la r\'esolution d'un syst\`eme hyperbolique pour les
+\item {La vitesse utilisée pour le calcul de la production est explicite. Est-ce qu'une implicitation peut améliorer la précision temporelle de $\phi$ \footnote{Cette remarque peut être généralisée. En effet, peut-on envisager d'actualiser les variables déjà résolues (sans réactualiser les variables turbulentes après leur résolution)? Ceci obligerait à modifier les sous-programmes tels que \fort{cs\_boundary\_conditions} qui sont appelés au début de la boucle en temps.} ?}
+\item {Dans quelle mesure le terme d'écho de paroi est-il valide ? En effet, ce terme est remis en question par certains auteurs.}
+\item {On peut envisager la résolution d'un système hyperbolique pour les
 tensions de Reynolds afin d'introduire un couplage avec le champ de vitesse.}
-\item {Le flux au bord \var{VISCB} est annul\'e dans le sous-programme
+\item {Le flux au bord \var{VISCB} est annulé dans le sous-programme
 \fort{vectds}. Peut-on envisager de mettre au bord la valeur de la variable
-concern\'ee \`a la cellule de bord correspondant? De m\^eme, il faudrait se
-pencher sur les hypoth\`eses sous-jacentes \`a l'annulation des contributions
-aux bords de \var{VISCB} lors du calcul de : $$\left[ \tens{D}^n\,\left( \grad{R^{\,n}_{ij}} - (\grad R^{\,n}_{ij}\,.\,\vect{n}_{\,lm})\,\vect{n}_{\,lm}\right) \right]\,.\,\vect{n}_{\,lm}.$$}
-\item {Un probl\`eme de pond\'eration appara\^\i t plus g\'en\'eralement. Si on prend la partie explicite de $\tens{D}\,\grad(\phi)$, la pond\'eration aux faces internes utilise le coefficient $\displaystyle\frac{1}{2}$ avec pond\'eration s\'epar\'ee de $\tens{D}$ et $\grad(\phi)$, alors que pour $\tens{E}\,\grad(\phi)$, on calcule d'abord ce terme aux cellules pour ensuite l'interpoler lin\'eairement aux faces \footnote{Cette interpolation se fait dans \fort{vectds} avec des coefficients de pond\'eration aux faces.}. Ceci donne donc deux types d'interpolations pour des termes de m\^eme nature.}
-\item {On laisse la possibilit\'e dans \fort{visort} d'utiliser une moyenne
+concernée à la cellule de bord correspondant? De même, il faudrait se
+pencher sur les hypothèses sous-jacentes à l'annulation des contributions
+aux bords de \var{VISCB} lors du calcul de~: $$\left[ \tens{D}^n\,\left( \grad{R^{\,n}_{ij}} - (\grad R^{\,n}_{ij}\,.\,\vect{n}_{\,lm})\,\vect{n}_{\,lm}\right) \right]\,.\,\vect{n}_{\,lm}.$$}
+\item {Un problème de pondération appara\^\i t plus généralement. Si on prend la partie explicite de $\tens{D}\,\grad(\phi)$, la pondération aux faces internes utilise le coefficient $\displaystyle\frac{1}{2}$ avec pondération séparée de $\tens{D}$ et $\grad(\phi)$, alors que pour $\tens{E}\,\grad(\phi)$, on calcule d'abord ce terme aux cellules pour ensuite l'interpoler linéairement aux faces \footnote{Cette interpolation se fait dans \fort{vectds} avec des coefficients de pondération aux faces.}. Ceci donne donc deux types d'interpolations pour des termes de même nature.}
+\item {On laisse la possibilité dans \fort{cs\_face\_orthotropic\_viscosity\_vector} d'utiliser une moyenne
 harmonique aux faces. Est-ce que ceci est valable puisque les interpolations
-utilis\'ees lors du calcul de la partie explicite de $\tens{A}\,\grad{\phi}$
-sont des moyennes arithm\'etiques ?}
-\item {Les techniques adopt\'ees lors du clipping sont \`a revoir.}
-\item {On utilise dans le cadre du mod\`ele $\displaystyle R_{ij}-\varepsilon $ une semi-implicitation de termes comme $\displaystyle \phi_{ij,1}$ ou $\displaystyle -\rho\,C_{\varepsilon_2}\,\frac{\varepsilon}{k}\,\varepsilon$. On peut envisager le m\^eme type d'implicitation dans \fort{cs\_turbulence\_ke} m\^eme en pr\'esence du couplage $\displaystyle k-\varepsilon$.}
-\item L'adoption d'une r\'esolution d\'ecoupl\'ee fait perdre l'invariance par rotation.
+utilisées lors du calcul de la partie explicite de $\tens{A}\,\grad{\phi}$
+sont des moyennes arithmétiques ?}
+\item {Les techniques adoptées lors du clipping sont à revoir.}
+\item {On utilise dans le cadre du modèle $\displaystyle R_{ij}-\varepsilon $ une semi-implicitation de termes comme $\displaystyle \phi_{ij,1}$ ou $\displaystyle -\rho\,C_{\varepsilon_2}\,\frac{\varepsilon}{k}\,\varepsilon$. On peut envisager le même type d'implicitation dans \fort{cs\_turbulence\_ke} même en présence du couplage $\displaystyle k-\varepsilon$.}
+\item L'adoption d'une résolution découplée fait perdre l'invariance par rotation.
 \item La formulation et l'implantation des conditions aux limites de paroi
-devront \^etre v\'erifi\'ees. En effet, il semblerait que, dans certains cas, des ph\'enom\`enes
-``oscillatoires'' apparaissent, sans qu'il soit ais\'e d'en d\'eterminer la cause.
-\item L'implicitation partielle (du fait de la r\'esolution d\'ecoupl\'ee) des
-conditions aux limites conduit souvent \`a des calculs instables. Il
+devront être vérifiées. En effet, il semblerait que, dans certains cas, des phénomènes
+``oscillatoires'' apparaissent, sans qu'il soit aisé d'en déterminer la cause.
+\item L'implicitation partielle (du fait de la résolution découplée) des
+conditions aux limites conduit souvent à des calculs instables. Il
 conviendrait d'en conna\^\i tre la raison. L'implicitation partielle avait
-\'et\'e mise en \oe uvre afin de tenter d'utiliser un pas de temps plus grand
-dans le cas de jets axisym\'etriques en particulier.
+été mise en \oe uvre afin de tenter d'utiliser un pas de temps plus grand
+dans le cas de jets axisymétriques en particulier.
 
 \end{itemize}

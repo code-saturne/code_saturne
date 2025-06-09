@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -30,21 +30,21 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Pour les notations et l'algorithme dans son ensemble,
-on se reportera \`a \fort{cfbase}.
+on se reportera à \fort{cfbase}.
 
-Dans le premier pas fractionnaire (\fort{cfmsvl}), on a r\'esolu une
-\'equation sur la masse volumique, obtenu une pr\'ediction de la pression
+Dans le premier pas fractionnaire (\fort{cfmsvl}), on a résolu une
+équation sur la masse volumique, obtenu une prédiction de la pression
 et un flux convectif "acoustique".
-On consid\`ere ici un second pas fractionnaire au cours duquel seul varie
+On considère ici un second pas fractionnaire au cours duquel seul varie
 le vecteur flux de masse $\vect{Q}=\rho\vect{u}$
 (seule varie la vitesse au centre des cellules).
-On r\'esout l'\'equation de Navier-Stokes ind\'ependamment
+On résout l'équation de Navier-Stokes indépendamment
 pour chaque direction d'espace, et l'on utilise le flux de masse acoustique
-calcul\'e pr\'ec\'edemment comme flux convecteur (on pourrait aussi utiliser
-le vecteur quantit\'e de mouvement du pas de temps pr\'ec\'edent).
-De plus, on r\'esout en variable $\vect{u}$ et non $\vect{Q}$.
+calculé précédemment comme flux convecteur (on pourrait aussi utiliser
+le vecteur quantité de mouvement du pas de temps précédent).
+De plus, on résout en variable $\vect{u}$ et non $\vect{Q}$.
 
-Le syst\`eme \`a r\'esoudre entre $t^*$ et $t^{**}$ est (on exclut
+Le système à résoudre entre $t^*$ et $t^{**}$ est (on exclut
 la turbulence, dont le traitement n'a rien de particulier dans le
 module compressible)~:
 
@@ -62,27 +62,27 @@ e^{**}=e^{*}=e^n\\
 \end{array}\right.
 \end{equation}
 
-La r\'esolution de cette \'etape est similaire \`a l'\'etape
-de pr\'ediction des vitesses du sch\'ema de base de \CS.
+La résolution de cette étape est similaire à l'étape
+de prédiction des vitesses du schéma de base de \CS.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %---------------------------------
-\subsection*{Discr\'etisation en temps}
+\subsection*{Discrétisation en temps}
 %---------------------------------
 
 On implicite le terme de convection, éventuellement
 le gradient de pression (suivant la valeur de \var{IGRDPP}, en utilisant la
-pression pr\'edite lors de l'\'etape acoustique) et le terme en gradient
+pression prédite lors de l'étape acoustique) et le terme en gradient
 du tenseur des contraintes visqueuses.
 On explicite les autres termes du tenseur des contraintes visqueuses.
 On implicite les forces
 volumiques en utilisant $\rho^{n+1}$.
 
-On obtient alors l'\'equation discr\`ete suivante~:
+On obtient alors l'équation discrète suivante~:
 \begin{equation}\label{Cfbl_Cfqdmv_eq_vitesse_cfqdmv}
 \begin{array}{l}
 \displaystyle\frac{(\rho\vect{u})^{n+1}-(\rho\vect{u})^n}{\Delta t^n}
@@ -97,9 +97,9 @@ On obtient alors l'\'equation discr\`ete suivante~:
 avec $\widetilde{P}=P^n\text{ ou }P^{Pred}$ suivant la valeur de \var{IGRDPP}
 ($P^n$ par défaut).
 
-En pratique, dans \CS, on r\'esout cette \'equation en faisant appara\^itre \`a
-gauche l'\'ecart $\vect{u}^{n+1} - \vect{u}^n$. Pour cela, on \'ecrit la
-d\'eriv\'ee en temps discr\`ete sous la forme suivante~:
+En pratique, dans \CS, on résout cette équation en faisant apparaître à
+gauche l'écart $\vect{u}^{n+1} - \vect{u}^n$. Pour cela, on écrit la
+dérivée en temps discrète sous la forme suivante~:
 
 \begin{equation}
 \begin{array}{ll}
@@ -119,7 +119,7 @@ d\'eriv\'ee en temps discr\`ete sous la forme suivante~:
 \end{array}
 \end{equation}
 
-et l'on utilise alors l'\'equation de la masse discr\`ete pour \'ecrire~:
+et l'on utilise alors l'équation de la masse discrète pour écrire~:
 \begin{equation}
 \displaystyle
 \frac{(\rho \vect{u})^{n+1} - (\rho \vect{u})^n}{\Delta t^n}
@@ -131,16 +131,16 @@ et l'on utilise alors l'\'equation de la masse discr\`ete pour \'ecrire~:
 
 
 %---------------------------------
-\subsection*{Discr\'etisation en espace}
+\subsection*{Discrétisation en espace}
 %---------------------------------
 
 %.................................
 \subsubsection*{Introduction}
 %.................................
 
-On int\`egre l'\'equation (\ref{Cfbl_Cfqdmv_eq_vitesse_cfqdmv})
+On intègre l'équation (\ref{Cfbl_Cfqdmv_eq_vitesse_cfqdmv})
 sur la cellule $i$ de volume $\Omega_i$ et
-on obtient l'\'equation discr\'etis\'ee en espace~:
+on obtient l'équation discrétisée en espace~:
 
 \begin{equation}\label{Cfbl_Cfqdmv_eq_vitesse_discrete_cfqdmv}
 \begin{array}{l}
@@ -160,15 +160,15 @@ on obtient l'\'equation discr\'etis\'ee en espace~:
 \end{equation}
 
 %.................................
-\subsubsection*{Discr\'etisation de la partie ``convective''}
+\subsubsection*{Discrétisation de la partie ``convective''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~:
+La valeur à la face s'écrit~:
 \begin{equation}
 (\vect{u}^{n+1} \otimes \vect{Q}_{ac}^{n+1})_{ij}\cdot \vect{S}_{ij}
 = \vect{u}_{ij}^{n+1}(\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij}
 \end{equation}
-avec un d\'ecentrement sur la valeur de $\vect{u}^{n+1}$ aux faces~:
+avec un décentrement sur la valeur de $\vect{u}^{n+1}$ aux faces~:
 \begin{equation}
 \begin{array}{lllll}
 \vect{u}_{ij}^{n+1}
@@ -194,41 +194,41 @@ avec
 \end{equation}
 
 %.................................
-\subsubsection*{Discr\'etisation de la partie ``diffusive''}
+\subsubsection*{Discrétisation de la partie ``diffusive''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~:
+La valeur à la face s'écrit~:
 \begin{equation}
 \left(\mu^n\gradt{\vect{u}^{n+1}}\right)_{ij}\vect{S}_{ij}
 = \mu_{ij}^n
 \displaystyle \left( \frac{\partial \vect{u}}{\partial n} \right)^{n+1}_{ij}
 S_{ij}
 \end{equation}
-avec une interpolation lin\'eaire pour $\mu^n$ aux faces (en pratique avec
+avec une interpolation linéaire pour $\mu^n$ aux faces (en pratique avec
 $\alpha_{ij}=\frac{1}{2}$)~:
 \begin{equation}
 \mu_{ij}^n
 = \alpha_{ij}\mu_{i}^n+(1-\alpha_{ij})\mu_{j}^n
 \end{equation}
-et un sch\'ema centr\'e pour le gradient normal aux faces~:
+et un schéma centré pour le gradient normal aux faces~:
 \begin{equation}
 \displaystyle \left( \frac{\partial \vect{u}}{\partial n} \right)^{n+1}_{ij}
 = \displaystyle\frac{\vect{u}_{J'}^{n+1}-\vect{u}_{I'}^{n+1}}{\overline{I'J'}}
 \end{equation}
 
 %.................................
-\subsubsection*{Discr\'etisation du gradient de pression}
+\subsubsection*{Discrétisation du gradient de pression}
 %.................................
 
 On utilise \fort{grdcel} standard. Suivant la valeur de \var{IMRGRA},
 cela correspond à une reconstruction itérative ou par moindres carrés.
 
 %.................................
-\subsubsection*{Discr\'etisation du ``reste'' du tenseur des contraintes visqueuses}
+\subsubsection*{Discrétisation du ``reste'' du tenseur des contraintes visqueuses}
 %.................................
 
 On calcule des gradients aux cellules et on utilise une
-interpolation lin\'eaire aux
+interpolation linéaire aux
 faces (avec, en pratique, $\alpha_{ij}=\frac{1}{2}$)~:
 \begin{equation}
 \begin{array}{r}
@@ -248,8 +248,8 @@ faces (avec, en pratique, $\alpha_{ij}=\frac{1}{2}$)~:
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-On r\'esout les trois directions d'espace du syst\`eme
-(\ref{Cfbl_Cfqdmv_eq_vitesse_discrete_cfqdmv}) successivement et ind\'ependamment~:
+On résout les trois directions d'espace du système
+(\ref{Cfbl_Cfqdmv_eq_vitesse_discrete_cfqdmv}) successivement et indépendamment~:
 \begin{equation}\label{Cfbl_Cfqdmv_eq_vitesse_finale_cfqdmv}
 \left\{\begin{array}{l}
 \displaystyle\frac{\Omega_i}{\Delta t^n}
@@ -268,17 +268,17 @@ i = 1\ldots N \qquad \text{et} \qquad (\alpha) = x,\ y,\ z\\
 \end{array}\right.
 \end{equation}
 
-Chaque syst\`eme associ\'e \`a une direction est r\'esolu par une m\'ethode
-d'incr\'ement et r\'esidu en utilisant une m\'ethode de Jacobi.
+Chaque système associé à une direction est résolu par une méthode
+d'incrément et résidu en utilisant une méthode de Jacobi.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\section*{Points \`a traiter}
+%\section*{Points à traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % propose en patch 1.2.1
 
-%Compl\'eter le commentaire en ent\^ete de \fort{visecv} pour prendre en compte
-%la viscosit\'e en volume.
+%Compléter le commentaire en entête de \fort{visecv} pour prendre en compte
+%la viscosité en volume.

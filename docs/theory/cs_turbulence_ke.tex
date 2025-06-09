@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -28,8 +28,8 @@
 %-------------------------------------------------------------------------------
 \section*{Function}
 %-------------------------------------------------------------------------------
-The purpose of this function is to solve the system of \'equations of
-$k$ and $\varepsilon$ in a semi-coupl\'ed manner.\\
+The purpose of this function is to solve the system of equations of
+$k$ and $\varepsilon$ in a semi-coupled manner.\\
 The system of equations solved is the following:
 
 \begin{equation}
@@ -455,7 +455,7 @@ $\displaystyle \var{smbre}=\Omega \rho^{(n)}\frac{\varepsilon_e-\varepsilon^{(n)
 \etape{Coupling step}
 (only if $\var{ikecou}=1$)
 
-We renormalize \var{smbrk} and \var{smbre} which become the second members of the
+We renormalize \var{smbrk} and \var{smbre} which become the rhight hand side terms of the
 coupling system.\\
 $\displaystyle \var{smbrk}=\frac{1}{\Omega\rho^{(n)}}\var{smbrk}
 =\frac{k_e-k^{(n)}}{\Delta t}$\\

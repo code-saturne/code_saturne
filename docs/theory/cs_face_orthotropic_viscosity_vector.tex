@@ -1,0 +1,176 @@
+%-------------------------------------------------------------------------------
+
+% This file is part of code_saturne, a general-purpose CFD tool.
+%
+% Copyright (C) 1998-2025 EDF S.A.
+%
+% This program is free software; you can redistribute it and/or modify it under
+% the terms of the GNU General Public License as published by the Free Software
+% Foundation; either version 2 of the License, or (at your option) any later
+% version.
+%
+% This program is distributed in the hope that it will be useful, but WITHOUT
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+% details.
+%
+% You should have received a copy of the GNU General Public License along with
+% this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+% Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+%-------------------------------------------------------------------------------
+
+\programme{cs\_face\_orthotropic\_viscosity\_vector}
+%
+\hypertarget{cs\_face\_orthotropic\_viscosity\_vector}{}
+
+\vspace{1cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Fonction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This function computes the "orthotropic" diffusion coefficient at the faces. This type of coefficient is found for the diffusion of $R_{\,ij}$ and
+$\varepsilon$ in $R_{\,ij}-\varepsilon$ ( {\it cf.} \fort{cs\_turbulence\_rij}), as well as for the pressure correction in the algorithm with enhanced velocity-pressure coupling (\fort{cs\_pressure\_correction}).
+
+This coefficient involves the value of the face viscosity multiplied by the ratio of the face surface area to the algebraic distance $\overline{I'J'}$, a ratio resulting from the integration of the diffusion term.
+The value of the face viscosity is based either on an arithmetic mean or on a harmonic mean of the viscosity at the cell centers.
+
+See the \doxygenfile{cs\_face\_orthotropic\_viscosity\_vector_8f90.html}{programmers reference of the dedicated subroutine} for further details.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Discretisation} \label{Base_Visort_paragraphe2}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Figure \ref{Base_Visort_fig_geom} summarizes the various geometric definitions
+for internal faces and boundary faces. \begin{figure}[h]
+\parbox{8cm}{%
+\centerline{\includegraphics[height=4.5cm]{facette}}}
+\parbox{8cm}{%
+\centerline{\includegraphics[height=4.5cm]{facebord}}}
+\caption{\label{Base_Visort_fig_geom}Definition of the different geometric entities for the internal (left) and boundary (right) faces.}
+\end{figure}
+The integration of the ``orthotropic'' diffusion term on a cell is as follows:
+\begin{equation}
+\int_{\Omega_i}\dive \,(\tens{\mu}\ \grad f)\,d\Omega =\sum\limits_{j \in
+Vois(i)}( \tens{\mu}\ \grad f)_{\,ij}\,.\,\underline{S}_{\,ij} + \sum\limits_{k \in
+\gamma_b(i)}( \tens{\mu}\ \grad f)_{\,b_{ik}}\,.\,\underline{S}_{\,b_{ik}}
+\end{equation}
+with :
+\begin{equation}
+\tens{\mu}=\begin{bmatrix}\mu_x & 0 & 0 \\ 0 & \mu_y & 0 \\ 0 & 0 & \mu_z \end{bmatrix}
+\end{equation}
+And :
+\begin{equation}
+\begin{array}{ll}
+&\underline{S}_{\,ij} = S_{\,ij} \underline{n}_{\,ij} \\
+&\underline{S}_{\,b_{ik}} = S_{\,b_{ik}} \underline{n}_{\,b_{ik}}
+\end{array}
+\end{equation}
+The term $(\tens{\mu}\ \grad(f))_{\,ij}\underline{n}_{\,ij}$ is calculated using the following decomposition:
+\begin{equation}
+(\tens{\mu}\ \grad f)_{\,ij} = (\grad f \,.\,\underline{n}_{\,ij})\ \tens{\mu}\
+\underline{n}_{\,ij}+
+(\grad f .\underline{\tau}_{ij})\ \tens{\mu}\ \underline{\tau}_{\,ij}
+\end{equation}
+where $\underline{\tau}_{ij}$ represents a (unit) tangent vector to the face. A similar decomposition is used for boundary faces.
+In the matrix, only the term
+$(\grad f \,.\,\underline{n}_{\,ij})\ \tens{\mu}\ \underline{n}_{\,ij}$ is
+easily implicitly integrable. Therefore, the part projected onto $\underline{\tau}_{\,ij}$
+is:
+\begin{itemize}
+\item neglected in the case of calculating time scales related to the enhanced velocity-pressure coupling,
+\item treated explicitly in the diffusion terms of
+$R_{\,ij}-\varepsilon$ (\emph{cf.} \fort{cs\_turbulence\_rij}).\\
+\end{itemize}
+The implicit integration of the diffusion term is written:
+\begin{equation}
+\int_{\Omega_i}\dive\,(\tens{\mu}\ \grad f )\,d\Omega = \sum\limits_{j \in
+Vois(i)}(\tens{\mu}\ \underline{n}_{\,ij})\,.\,\underline{S}_{\,ij}\,
+\frac{f_{J'}-f_{I'}}{\overline{I'J'}} + \sum\limits_{k \in
+\gamma_b(i)}(\tens{\mu}\ \underline{n}_{\,b_{ik}})\,.\,\underline{S}_{\,b_{ik}}
+\,\frac{f_{\,b_{ik}}-f_{I'}}{\overline{I'F}}
+\end{equation}
+In this function, we calculate the term
+$\displaystyle \frac{(\tens{\mu}\
+\underline{n}_{\,ij})\,.\,\underline{S}_{\,ij}}{\overline{I'J'}}$ using the
+formula:
+\begin{equation}\notag
+(\tens{\mu}\ \underline{n}_{\,ij})\,.\,\underline{n}_{\,ij} =
+\mu_{\,ij}^{\,av}=\mu_{\,ij}^{\,x} ( n_{\,ij}^{\,x})^2 + \mu_{\,ij}^{\,y} (n_{\,ij}^{\,y})^2 + \mu_{\,ij}^{\,z}(n_{\,ij}^{\,z})^2
+\end{equation}
+either again:
+\begin{equation}\notag
+\mu_{\,ij}^{\,av}=\frac{\mu_{\,ij}^{\,x}
+(S_{\,ij}^{\,x})^2 + \mu_{\,ij}^{\,y} (S_{\,ij}^{\,y})^2 +
+\mu_{\,ij}^{\,z} (S_{\,ij}^{\,z})^2}{S_{\,ij}^2}
+\end{equation}
+At the boundary, we similarly compute:
+\begin{equation}\notag
+\displaystyle \frac{(\tens{\mu}\
+\underline{n}_{\,b_{ik}})\,.\,\underline{S}_{\,b_{ik}}}{\overline{I'F}}
+\end{equation}
+
+with:
+\begin{equation}\notag
+(\tens{\mu}\ \underline{n}_{\,b_{ik}})\,.\,\underline{n}_{\,b_{ik}} =
+\mu_{\,b_{ik}}^{\,moy} = \displaystyle \frac{\mu_{I}^{\,x}
+(S_{\,b_{ik}}^{\,x})^2 + \mu_{I}^{\,y} (S_{\,b_{ik}}^{\,y})^2 +
+\mu_{I}^{\,z} (S_{\,b_{ik}}^{\,z})^2}{S_{\,b_{ik}}^2}
+\end{equation}
+
+The viscosity value in a direction $l$ on the face, $\mu_{\,ij}^{\,l}$,
+is computed
+\begin{itemize}
+\item either by linear interpolation:
+\begin{equation}
+\mu_{\,ij}^{\,l}=\alpha_{\,ij}\mu_{i}^{\,l}+(1-\alpha_{\,ij})\mu_{j}^{\,l}
+\end{equation}
+with $\alpha_{\,ij}= 0.5$ because this choice seems stabilizing, even though
+this interpolation is of spatial convergence order 1.
+\item either by harmonic interpolation:
+\begin{equation}\notag
+\mu_{\,ij}^{\,l}=\displaystyle
+\frac{\mu_{i}^{\,l}\ \mu_{j}^{\,l}}{\alpha_{\,ij}\mu_{i}^{\,l}+(1-\alpha_{\,ij}) \mu_{j}^{\,l}}
+\end{equation}
+where:
+\begin{equation}\notag
+\displaystyle \alpha_{\,ij}=\frac{\overline{FJ'}}{\overline{I'J'}}
+\end{equation}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Implementation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The orthotropic viscosity at the cell center is entered as an argument {\it via}
+the variables $\var{W}_1$, $\var{W}_2$, and $\var{W}_3$. The mean value of the viscosity at each face
+is calculated in a arithmetic or harmonic manner. Next, we compute the equivalent viscosity corresponding to
+$\displaystyle (\tens{\mu}\ \underline{n}_{\,ij})\,.\,\frac{\underline{S}_{\,ij}}{\overline{I'J'}}$ for the internal faces and to $\displaystyle (\tens{\mu}\ \underline{n}_{\,b_{ik}})\,.\,
+\frac{\underline{S}_{\,b_{ik}}}{\overline{I'F}}$ for the boundary faces.\\
+
+This formula uses the face normal vectors and surfaces,
+and the algebraic distance \var{dist} for an internal face (or \var{distbr} for a boundary face).
+The value of the resulting diffusion term is placed in the vector \var{visc} (\var{viscb} at the boundary).
+The variable \var{imvisf} determines what type of averaging is used to calculate the viscosity in
+a direction at the face. If \var{imvisf}=0, then
+the averaging is arithmetic, otherwise the averaging is harmonic.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Points to treat}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The derivation of interpolations used in the \CS\ code in paragraph
+\ref{Base_Visort_paragraphe2} is summarized in the report by Davroux et al.\footnote{Davroux A., Archambeau F., and Hérard J.M., Numerical tests on some methods for solving a diffusion equation in finite volumes,
+HI-83/00/027/A.}. The authors of this report showed that, for an irregular one-dimensional mesh with non-constant viscosity, the measured convergence is of order 2 in space with harmonic interpolation and of order 1 in space with linear interpolation (for regular solutions). Therefore, it would be preferable to use harmonic interpolation to calculate the face viscosity value. Stability tests will be necessary beforehand.
+Similarly, we can consider extrapolating the viscosity on the boundary faces rather than
+using the viscosity value of the cell adjacent to that face.
+In the case of the arithmetic mean, the use of the value $0.5$ for the $\alpha_{\,ij}$ coefficients should be reconsidered.
+

@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -29,22 +29,22 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Le but de ce sous-programme est principalement de calculer le flux de masse aux
-faces. Il prend une variable vectorielle associ\'ee au centre des cellules
-(g\'en\'eralement la vitesse), la projette aux faces en la multipliant par la
+faces. Il prend une variable vectorielle associée au centre des cellules
+(généralement la vitesse), la projette aux faces en la multipliant par la
 masse volumique, et la multiplie scalairement par le vecteur surface.
-Plus g\'en\'eralement, \fort{cs\_mass\_flux} est aussi appel\'e comme premi\`ere \'etape
+Plus généralement, \fort{cs\_mass\_flux} est aussi appelé comme première étape
 du calcul d'une divergence (terme en $\dive(\rho\tens{R})$ en
 $R_{ij}-\varepsilon$, filtre Rhie \& Chow, ...).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-La figure \ref{Base_Inimas_fig_geom} rappelle les diverses d\'efinitions g\'eom\'etriques
+La figure \ref{Base_Inimas_fig_geom} rappelle les diverses définitions géométriques
 pour les faces internes et les faces de bord. On notera
-$\displaystyle \alpha=\frac{\overline{FJ^\prime}}{\overline{I^\prime J^\prime}}$ (d\'efini aux faces
+$\displaystyle \alpha=\frac{\overline{FJ^\prime}}{\overline{I^\prime J^\prime}}$ (défini aux faces
 internes uniquement).
 
 \begin{figure}[h]
@@ -52,14 +52,14 @@ internes uniquement).
 \centerline{\includegraphics[height=4cm]{facette}}}
 \parbox{8cm}{%
 \centerline{\includegraphics[height=4cm]{facebord}}}
-\caption{\label{Base_Inimas_fig_geom}D\'efinition des diff\'erentes entit\'es
-g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
+\caption{\label{Base_Inimas_fig_geom}Définition des différentes entités
+géométriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
 
 
 \subsection*{Faces internes}
-On ne conna\^\i t pas la masse volumique \`a la face, cette derni\`ere doit donc
-aussi \^etre interpol\'ee. On utilise la discr\'etisation suivante :
+On ne conna\^\i t pas la masse volumique à la face, cette dernière doit donc
+aussi être interpolée. On utilise la discrétisation suivante :
 
 \begin{equation}
 (\rho \vect{u})_F = \alpha(\rho_I \vect{u}_I)
@@ -67,41 +67,41 @@ aussi \^etre interpol\'ee. On utilise la discr\'etisation suivante :
 +\ggrad\!(\rho\vect{u})_O.\vect{OF}
 \end{equation}
 La partie en $\alpha(\rho_I \vect{u}_I)
-+(1-\alpha)(\rho_J \vect{u}_J)$ correspondant en fait \`a
-$(\rho\vect{u})_O$. Le gradient en $O$ est calcul\'e par interpolation :
++(1-\alpha)(\rho_J \vect{u}_J)$ correspondant en fait à
+$(\rho\vect{u})_O$. Le gradient en $O$ est calculé par interpolation :
 $\displaystyle\ggrad\!(\rho\vect{u})_O=
 \frac{1}{2}\left[\ggrad\!(\rho\vect{u})_I+\ggrad\!(\rho\vect{u})_J\right]$. La
-valeur $\displaystyle\frac{1}{2}$ s'est impos\'ee de mani\`ere heuristique au
+valeur $\displaystyle\frac{1}{2}$ s'est imposée de manière heuristique au
 fil des tests
-comme apportant plus de stabilit\'e \`a l'algorithme global qu'une interpolation
+comme apportant plus de stabilité à l'algorithme global qu'une interpolation
 faisant intervenir $\alpha$. L'erreur commise sur $\rho\vect{u}$ est en
 $O(h^2)$.
 
 
 \subsection*{Faces de bord}
-Le traitement des faces de bord est n\'ecessaire pour y calculer le flux de
-masse, bien s\^ur, mais aussi pour obtenir des conditions aux limites pour le
-calcul du $\ggrad\!(\rho \vect{u})$ utilis\'e pour les faces internes.
+Le traitement des faces de bord est nécessaire pour y calculer le flux de
+masse, bien sûr, mais aussi pour obtenir des conditions aux limites pour le
+calcul du $\ggrad\!(\rho \vect{u})$ utilisé pour les faces internes.
 
-Pour les faces de bord, on conna\^\i t la valeur de $\rho_F$, qui est stock\'ee
+Pour les faces de bord, on conna\^\i t la valeur de $\rho_F$, qui est stockée
 dans la variable \var{ROMB}. De plus, les conditions aux limites pour $\vect{u}$
-sont donn\'ees par des coefficients $A$ et $B$ tels que :
+sont données par des coefficients $A$ et $B$ tels que :
 \begin{equation}
 u_{k,F} = A_k + B_ku_{k,I^\prime} =
 A_k + B_k\left(u_{k,I} + \grad\!(u_k)_I.\vect{II^\prime}\right)
 \end{equation}
 ($k\in\{1,2,3\}$ est la composante de la vitesse, l'erreur est en $O(B_kh)$)
 
-On a donc \`a l'ordre 1 :
+On a donc à l'ordre 1 :
 \begin{equation}
 (\rho u_k)_F = \rho_F\left[A_k + B_k\left(u_{k,I} +
 \grad\!(u_k)_I.\vect{II^\prime}\right)\right]
 \end{equation}
 
 Mais pour utiliser cette formule, il faudrait calculer $\ggrad\!(\vect{u})$ (trois
-appels \`a \fort{GRDCEL}), alors qu'on a d\'ej\`a calcul\'e
-$\ggrad\!(\rho\vect{u})$ pour les faces internes. Le surco\^ut en temps serait alors
-important. On r\'e\'ecrit donc :
+appels à \fort{GRDCEL}), alors qu'on a déjà calculé
+$\ggrad\!(\rho\vect{u})$ pour les faces internes. Le surcoût en temps serait alors
+important. On réécrit donc :
 \begin{eqnarray}
 (\rho u_k)_F & = & \rho_F A_k + \rho_F B_ku_{k,I^\prime}\\
 & = & \rho_F A_k + B_k\frac{\rho_F}{\rho_{I^\prime}}(\rho u_k)_{I^\prime}
@@ -111,16 +111,16 @@ important. On r\'e\'ecrit donc :
 \label{Base_Inimas_eq_rhoufaceb}
 \end{eqnarray}
 
-Pour calculer les gradients de $\rho\vect{u}$, il faudrait donc en th\'eorie
-utiliser les coefficients de conditions aux limites \'equivalents :\\
+Pour calculer les gradients de $\rho\vect{u}$, il faudrait donc en théorie
+utiliser les coefficients de conditions aux limites équivalents :\\
 $\tilde{A}_k = \rho_F A_k$\\
 $\displaystyle \tilde{B}_k = B_k\frac{\rho_F}{\rho_{I^\prime}}$
 
-Ceci para\^\i t d\'elicat, \`a cause du terme en
-$\displaystyle \frac{\rho_F}{\rho_{I^\prime}}$, et en particulier \`a l'erreur
+Ceci paraît délicat, à cause du terme en
+$\displaystyle \frac{\rho_F}{\rho_{I^\prime}}$, et en particulier à l'erreur
 que l'on peut commettre sur $\rho_{I^\prime}$ si la reconstruction des gradients
 est imparfaite (sur des maillages fortement non orthogonaux par exemple).
-On r\'e\'ecrit donc l'\'equation
+On réécrit donc l'équation
 (\ref{Base_Inimas_eq_rhoufaceb}) sous la forme suivante :
 \begin{equation}
 (\rho u_k)_F=\rho_F A_k + B_k\frac{\rho_I\rho_F}{\rho_{I^\prime}}u_{k,I}
@@ -129,48 +129,48 @@ On r\'e\'ecrit donc l'\'equation
 
 
 Pour le calcul du flux de masse au bord, on va faire deux approximations. Pour
-le deuxi\`eme terme, on va supposer $\rho_{I^\prime}\approx\rho_I$ (ce qui
-conduit \`a une erreur en $O(B_kh)$ sur $\rho\vect{u}$ si
+le deuxième terme, on va supposer $\rho_{I^\prime}\approx\rho_I$ (ce qui
+conduit à une erreur en $O(B_kh)$ sur $\rho\vect{u}$ si
 $\rho_{I^\prime}\ne \rho_I$). Pour le
-troisi\`eme terme, on va supposer $\rho_{I^\prime}\approx\rho_F$. Cette
-derni\`ere approximation est plus forte, mais elle n'intervient que dans la
-reconstruction des non-orthogonalit\'es ; l'erreur finale reste donc faible
+troisième terme, on va supposer $\rho_{I^\prime}\approx\rho_F$. Cette
+dernière approximation est plus forte, mais elle n'intervient que dans la
+reconstruction des non-orthogonalités ; l'erreur finale reste donc faible
 (erreur en $O(B_kh^2)$ sur $\rho\vect{u}$ si
 $\rho_{I^\prime}\ne \rho_F$).
-Et au final, le flux de masse au bord est calcul\'e par :
+Et au final, le flux de masse au bord est calculé par :
 \begin{equation}
 \dot{m}_F = \sum\limits_{k=1}^{3}\left[\rho_F A_k + B_k\rho_Fu_{k,I}
 +B_k\grad\!(\rho u_k)_I.\vect{II^\prime}\right]S_k
 \end{equation}
 
-Pour le calcul des gradients, on repart de l'\'equation (\ref{Base_Inimas_eq_rhoufacea}), sur
-laquelle on fait l'hypoth\`ese que $\rho_{I^\prime}\approx\rho_F$. Encore une
-fois, cette hypoth\`ese peut \^etre assez forte, mais les gradients obtenus ne
-sont utilis\'es que pour des reconstructions de non-orthogonalit\'es ; l'erreur
-finale reste donc l\`a encore assez faible.
-Au final, les gradients sont calcul\'es \`a partir de la formule suivante :
+Pour le calcul des gradients, on repart de l'équation (\ref{Base_Inimas_eq_rhoufacea}), sur
+laquelle on fait l'hypothèse que $\rho_{I^\prime}\approx\rho_F$. Encore une
+fois, cette hypothèse peut être assez forte, mais les gradients obtenus ne
+sont utilisés que pour des reconstructions de non-orthogonalités ; l'erreur
+finale reste donc là encore assez faible.
+Au final, les gradients sont calculés à partir de la formule suivante :
 \begin{equation}
 (\rho u_k)_F = \rho_F A_k + B_k(\rho u_k)_{I^\prime}
 \end{equation}
-ce qui revient \`a utiliser les conditions aux limites suivantes pour
+ce qui revient à utiliser les conditions aux limites suivantes pour
 $\rho \vect{u}$:\\
 $\tilde{A}_k = \rho_F A_k$\\
 $\tilde{B}_k = B_k$
 
 \minititre{Remarque}
 
-Dans la plupart des cas, les approximations effectu\'ees n'engendrent aucune
+Dans la plupart des cas, les approximations effectuées n'engendrent aucune
 erreur. En effet :\\
-- dans le cas d'une entr\'ee on a g\'en\'eralement $B_k=0$, avec un flux de
+- dans le cas d'une entrée on a généralement $B_k=0$, avec un flux de
 masse imposé par la condition à la limite.\\
-- dans le cas d'une sortie, on a g\'en\'eralement flux nul sur les scalaires
+- dans le cas d'une sortie, on a généralement flux nul sur les scalaires
 donc sur $\rho$, soit \mbox{$\rho_F=\rho_{I^\prime}=\rho_I$}.\\
-- dans le cas d'une paroi, on a g\'en\'eralement $B_k=0$ et le flux de masse
+- dans le cas d'une paroi, on a généralement $B_k=0$ et le flux de masse
 est imposé nul.\\
-- dans le cas d'une sym\'etrie, on a g\'en\'eralement
+- dans le cas d'une symétrie, on a généralement
 $\rho_F=\rho_{I^\prime}=\rho_I$ et le flux de masse est imposé nul.\\
 Pour sentir un effet de ces approximations, il faudrait par exemple une paroi
-glissante ($B_k\ne0$) avec un gradient de temp\'erature ($\rho_F\ne\rho_I$).
+glissante ($B_k\ne0$) avec un gradient de température ($\rho_F\ne\rho_I$).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -178,21 +178,21 @@ glissante ($B_k\ne0$) avec un gradient de temp\'erature ($\rho_F\ne\rho_I$).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-La vitesse est pass\'ee par les arguments \var{UX}, \var{UY} et \var{UZ}. Les
+La vitesse est passée par les arguments \var{UX}, \var{UY} et \var{UZ}. Les
 conditions aux limites de la vitesse sont \var{COEFAX}, \var{COEFBX}, ... Le
-flux de masse r\'esultat est stock\'e dans les variables \var{FLUMAS} (faces
+flux de masse résultat est stocké dans les variables \var{FLUMAS} (faces
 internes) et \var{FLUMAB} (faces de bord). \var{QDMX}, \var{QDMY} et \var{QDMZ}
-sont des variables de travail qui serviront \`a stocker $\rho\vect{u}$, et
-\var{COEFQA} servira \`a stocker les $\tilde{A}$.
+sont des variables de travail qui serviront à stocker $\rho\vect{u}$, et
+\var{COEFQA} servira à stocker les $\tilde{A}$.
 
-\etape{Initialisation \'eventuelle du flux de masse}
-Si \var{INIT} vaut 1, le flux de masse est remis \`a z\'ero. Sinon, le
+\etape{Initialisation éventuelle du flux de masse}
+Si \var{INIT} vaut 1, le flux de masse est remis à zéro. Sinon, le
 sous-programme rajoute aux variables \var{FLUMAS} et \var{FLUMAB} existantes le
-flux de masse calcul\'e.
+flux de masse calculé.
 
 
 \etape{Remplissage des tableaux de travail}
-$\rho\vect{u}$ est stock\'e dans \var{QDM}, et $\tilde{A}$ dans \var{COEFQA}.
+$\rho\vect{u}$ est stocké dans \var{QDM}, et $\tilde{A}$ dans \var{COEFQA}.
 
 
 \etape{Cas sans reconstruction}
@@ -205,10 +205,10 @@ $\displaystyle \var{FLUMAB}=\sum\limits_{k=1}^{3}\left[
 
 
 \etape{Cas avec reconstruction}
-On r\'ep\`ete trois fois de suite les op\'erations suivantes, pour $k=1$, 2 et 3
+On répète trois fois de suite les opérations suivantes, pour $k=1$, 2 et 3
 :\\
 - Appel de \fort{GRDCEL} pour le calcul de $\grad\!(\rho u_k)$.\\
-- Mise \`a jour du flux de masse\\
+- Mise à jour du flux de masse\\
 $\displaystyle \var{FLUMAS}=\var{FLUMAS} + \left[
 \alpha(\rho_I u_{k,I})+(1-\alpha)(\rho_J u_{k,J})
 +\frac{1}{2}\left[\grad\!(\rho u_k)_I+\grad\!(\rho u_k)_J\right]
@@ -220,8 +220,8 @@ $\displaystyle \var{FLUMAB}=\var{FLUMAB}+\left[
 
 
 \etape{Annulation du flux de masse au bord}
-Quand le sous-programme a \'et\'e appel\'e avec la valeur \var{IFLMB0=1}
-(c'est-\`a-dire quand il est r\'eellement appel\'e pour calculer un flux de
+Quand le sous-programme a été appelé avec la valeur \var{IFLMB0=1}
+(c'est-à-dire quand il est réellement appelé pour calculer un flux de
 masse, et pas pour calculer le terme en $\dive(\rho\tens{R})$ par exemple), le flux
-de masse au bord \var{FLUMAB} est forc\'e \`a 0, pour les faces de paroi et de
-sym\'etrie (identifi\'ees par \var{ISYMPA=0}).
+de masse au bord \var{FLUMAB} est forcé à 0, pour les faces de paroi et de
+symétrie (identifiées par \var{ISYMPA=0}).

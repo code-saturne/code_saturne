@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -294,7 +294,7 @@ or on the other hand:
  + (\ \vect{JJ'} - \vect{II'}\ )\,\displaystyle \frac{1}{2}\ (\,{\grad P}_I + \,{\grad P}_J\,)\right]\, \displaystyle \frac{S_{\,ij}}{\overline{I'J'}}
 \end{array}
 \end{equation}
-This is used during reconstruction of the gradients in the second member of the final system of equations to solve, by calling the subroutines \fort{cs\_face\_diffusion\_potential} and \fort{cs\_diffusion\_potential}.\\
+This is used during reconstruction of the gradients in the right hand side of the final system of equations to solve, by calling the subroutines \fort{cs\_face\_diffusion\_potential} and \fort{cs\_diffusion\_potential}.\\
 The approximation ($\displaystyle \widetilde{T}^n_{\,ij}=(\tens{T}^n_{\,ij}\ \vect{n})\,.\,\vect{n}$) is not in fact used. This is because the directional gradient of the pressure increment is computed using the subroutine \fort{grdcel}, allowing us to take the liberty of using the tensor $\tens{T}$ to correct the term $[\ \tens{T}^{\,n}_{\,ij}\ (\grad{\delta p})_{\,f_{\,ij}}]\,.\,\vect{S}_{\,ij}$ .\\
 In practice, the latter is discretized, for an internal face $ij$, by\footnote{The factor $\displaystyle \frac{1}{2}$ appearing in the discretization (\ref{Base_Resopv_grad1}) is introduced for reasons of numerical stability. Although the use of weighting coefficients on the faces would in effect yield a more accurate numerical solution, it would probably also be less stable.}
 :
@@ -329,7 +329,7 @@ In accordance with equations (\ref{Base_Resopv_eqn5bis}) and (\ref{Base_Resopv_e
 \sum\limits_{j\in Neigh(i)}\ \widetilde{T}^n_{\,ij}\ (\grad{(\delta p)})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{(\delta p)})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}} = \sum\limits_{j\in Neigh(i)} \widetilde{m}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}\widetilde{m}_{\,b_{\,ik}} -\ \Gamma_I
 \label{Base_Resopv_Poisson}
 \end{equation}
-To take account of the non-orthogonal elements, we use an incremental method to solve the linear equation system, including the reconstructed terms in the second member. If $\delta(\delta p)$ denotes the increment of the increment (the increment of the variable $\delta p$ to compute) and $k$ the fixed-point iteration index, we solve exactly :
+To take account of the non-orthogonal elements, we use an incremental method to solve the linear equation system, including the reconstructed terms in the right hand side. If $\delta(\delta p)$ denotes the increment of the increment (the increment of the variable $\delta p$ to compute) and $k$ the fixed-point iteration index, we solve exactly :
 \begin{equation}
 \begin{array}{lcl}
 &\sum\limits_{j\in Neigh(i)}\ \widetilde{T}^n_{\,ij}\ \displaystyle \frac{(\delta(\delta p))_I^{\,k+1}-(\delta(\delta p))_J^{\,k+1}}{\overline{I'J'}}\ S_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}\widetilde{T}^n_{\,b_{\,ik}}\ \displaystyle\frac{(\delta(\delta p))_I^{\,k+1}-(\delta(\delta p))_{\,b_{ik}}^{\,k+1}}{\overline{I'F}}\ S_{\,b_{\,ik}} \\
@@ -363,8 +363,8 @@ $\vect{T}^n$ designates an array of dimension $3$ containing the local time step
 \item calculation of the diffusion coefficient at the cell faces for use in the Laplacian of pressure (the diffusion coefficient uses the calculation time step or that of the ''strengthened velocity-pressure coupling" algorithm). One of two cases will apply, depending on the algorithm selected by the user for the velocity-pressure coupling:
 
 \begin{enumerate}
-\item Call to \fort{viscfa} with a total viscosity equal to the time step $\Delta t_I^n$ for the "weak velocity-pressure coupling" algorithm (\var{ipucou} = 0),
-\item Call to \fort{visort} with a diagonal total viscosity for the "strengthened velocity-pressure coupling" algorithm (\var{ipucou} = 1). It is at this level that $\widetilde{T}^n_{\,ij}$ is calculated. The equivalent time steps calculated in the subroutine \fort{cs\_velocity\_prediction} beforehand are stored in the array \var{TPUCOU}.
+\item Call to \fort{cs\_face\_viscosity} with a total viscosity equal to the time step $\Delta t_I^n$ for the "weak velocity-pressure coupling" algorithm (\var{ipucou} = 0),
+\item Call to \fort{cs\_face\_orthotropic\_viscosity\_vector} with a diagonal total viscosity for the "strengthened velocity-pressure coupling" algorithm (\var{ipucou} = 1). It is at this level that $\widetilde{T}^n_{\,ij}$ is calculated. The equivalent time steps calculated in the subroutine \fort{cs\_velocity\_prediction} beforehand are stored in the array \var{TPUCOU}.
 \end{enumerate}
 
 \item Call to \fort{matrix} for construction of the pressure diffusion matrix (without the reconstruction terms which cannot be taken into account if we wish to preserve a sparse matrix structure) using the previously calculated viscosity and the array \var{COEFB} of pressure boundary conditions $p^n$ (we impose a homogeneous Neumann condition on $\delta p$ for a Neumann condition on $p$ and \textit{vice versa}.
@@ -374,7 +374,7 @@ $\vect{T}^n$ designates an array of dimension $3$ containing the local time step
 \etape{Calculation of the normalized residual \var{RNORMP}}
 Since version 1.1.0.s, this step is accomplished within the subroutine \fort{cs\_velocity\_prediction} and the normalized residual transmitted \textit{via} the variable RNORMP.
 
-At this level of \CS \, the array \var{TRAV} contains the second member obtained from \fort{cs\_velocity\_prediction} without the user source terms. The computational procedure for the calculation of \var{RNORMP} is enumerated below:
+At this level of \CS \, the array \var{TRAV} contains the right hand side obtained from \fort{cs\_velocity\_prediction} without the user source terms. The computational procedure for the calculation of \var{RNORMP} is enumerated below:
 
 \begin{enumerate}
 
@@ -408,11 +408,11 @@ $$m_{\,ij} = \left[\rho \widetilde{\vect{u}}+ \displaystyle \alpha_{\,Arak}\ \te
 
 \item Call to \fort{cs\_face\_diffusion\_potential} to increment the mass flux at the faces\footnote{$(\grad{p^n})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$ is the gradient normal to the face that is equal to  $\displaystyle \frac{ p^n_J - p^n_I}{\overline{IJ}} S_{\,ij}$ on an orthogonal mesh.} by $$- \alpha_{\,Arak}\  \widetilde{T}^{\,n}_{\,ij}\ (\grad{p}^n)_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}.$$
 
-\item Call to \fort{clmlga} to compute the inversion of the pressure matrix with the algebraic multigrid algorithm.
+\item Call to \fort{cs\_sles\_solve} to compute the inversion of the pressure matrix with the algebraic multigrid algorithm.
 
-\item initialisation of $\delta p$, $\delta(\delta p)$ and \var{SMBR} to 0. \var{SMBR} will serve to store the second member. In the code, $\delta p$ and $\delta(\delta p)$ are contained respectively in \var{RTP(*,IPRIPH)} and \var{DRTP}.
+\item initialisation of $\delta p$, $\delta(\delta p)$ and \var{SMBR} to 0. \var{SMBR} will serve to store the right hand side. In the code, $\delta p$ and $\delta(\delta p)$ are contained respectively in \var{RTP(*,IPRIPH)} and \var{DRTP}.
 \item Call to \fort{divmas} for calculation of the divergence of the mass flux resulting from the last call to \fort{cs\_face\_diffusion\_potential}. This divergence is stored in the working array \var{W7}.
-\item Addition of the contributions of the mass source terms\footnote{The array \var{W7} contains the second member without the gradient of $\delta p$. It therefore remains invariant at each sweep. On the other hand, \var{SMBR} contains the entire second member and consequently varies at each sweep.} to \var{W7}.
+\item Addition of the contributions of the mass source terms\footnote{The array \var{W7} contains the right hand side without the gradient of $\delta p$. It therefore remains invariant at each sweep. On the other hand, \var{SMBR} contains the entire right hand side and consequently varies at each sweep.} to \var{W7}.
 \begin{equation}
 \var{W7}(I) =  \var{W7}(I) - |\Omega_i|\ \var{SMACEL}(I)
 \label {SM2}
@@ -431,7 +431,7 @@ Assuming that the mesh is orthogonal, a single inversion would enable resolving 
 \item[$\star$] Updating of \var{SMBR} at the start of the loop\footnote{The sign "-" results from the construction of the matrix.}.
 $$ \var{SMBR}(I) = -\var{W7}(I) - \var{SMBR}(I) $$
 
-\item[$\star$] Calculation of the norm of \var{SMBR} in \fort{prodsc}. It is called \var{RESIDU} in the code. As we solve the system incrementally, the second member must cancel out convergence.
+\item[$\star$] Calculation of the norm of \var{SMBR} in \fort{prodsc}. It is called \var{RESIDU} in the code. As we solve the system incrementally, the right hand side must cancel out convergence.
 \item[$\star$] If $ \var{RESIDU} < 10 \times \varepsilon \times \var{RNORMP}$, convergence is attained\footnote{$\varepsilon$ is the pressure convergence tolerance which can be modified by the user in \fort{usini1}, {\it via} the array \var{EPSILO}.}.
 \begin{itemize}
 \item[$\Rightarrow$] Call to \fort{cs\_face\_diffusion\_potential} to reupdate the mass flux with the facet gradient $(\grad (\delta p)^k)_{\,f}$. We calculate at each face $\widetilde{T}^{\,n}_{\,ij}\ (\grad(\delta p)^k)_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$ et $\widetilde{T}^{\,n}_{\,b_{\,ik}}\ (\grad(\delta p)^k)_{\,f_{\,b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}$.
@@ -453,7 +453,7 @@ $$ \var{SMBR}(I) = -\var{W7}(I) - \var{SMBR}(I) $$
 \item[$\star$]  Otherwise,
 \begin{itemize}
 \item[$\Rightarrow$] Incrementation of the mass flux taking into account a coefficient of relaxation. $ (\delta p)^{k+1} = (\delta  p)^{k} + \var{RELAX} \times (\delta(\delta) p)^{k+1}$. The relaxation factor has a default setting of $1$; however this can be modified in \fort{usini1}.
-\item[$\Rightarrow$] Call to \fort{cs\_diffusion\_potential} for calculation of the $\tens{T}^n\ \grad{(\delta p)}$ part of the second member (to which the array \var{W7} will be added at the start of a (new) loop).
+\item[$\Rightarrow$] Call to \fort{cs\_diffusion\_potential} for calculation of the $\tens{T}^n\ \grad{(\delta p)}$ part of the right hand side (to which the array \var{W7} will be added at the start of a (new) loop).
 $$\var{SMBR}(I) = \sum\limits_{j\in Neigh(i)}\,\widetilde{T}^{\,n}_{\,ij}\ (\grad(\delta p)^k)_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}} \,\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{(\delta p)^k})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}$$
 \end{itemize}
 \end{itemize}
@@ -465,10 +465,6 @@ We update the pressure with the sum of the increments of $\delta p$.
 $$p^{n+1} = p^n + (\delta p)_{k_{conv}}$$
 where,
 $$(\delta p)_{k_{conv}} = \sum\limits_{k=1}^{k=k_{conv}}{(\delta(\delta p))^k} $$
-
-In practice, \var{RTP} contains $(\delta p)^k_{conv}$. We therefore increment $p^n$ by \var{RTP}:
-
-$$\var{RTP} = \var{RTPA} + \var{RTP} $$
 
 \clearpage
 
@@ -482,7 +478,7 @@ There are a number of outstanding issues that still need to be resolved:
 
 \item The use of the normal gradient as an approximation of the pressure increment gradient can pose problems in terms of consistency, as indicated notably in the remark below.
 
-\item The approximation $\ \widetilde{T}^n \approx (\tens{T}^n \ \vect{n})\,.\,\vect{n}\ $ is not made for the reconstruction of the gradients in the second member of the pressure equation. Nor is it made when calculating the cell-based gradient during application of the Rhie \& Chow filter.
+\item The approximation $\ \widetilde{T}^n \approx (\tens{T}^n \ \vect{n})\,.\,\vect{n}\ $ is not made for the reconstruction of the gradients in the right hand side of the pressure equation. Nor is it made when calculating the cell-based gradient during application of the Rhie \& Chow filter.
 
 \item Use of the weighting factor $\displaystyle \frac {1}{2}$ to improve numerical stability when computing calculations based on the values at the faces  (e.g. in \fort{cs\_face\_diffusion\_potential} or \fort{cs\_diffusion\_potential} during reconstruction of the pressure increment gradient at the face).
 

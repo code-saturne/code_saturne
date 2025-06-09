@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -30,13 +30,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Pour les notations et l'algorithme dans son ensemble,
-on se reportera \`a \fort{cfbase}.
+on se reportera à \fort{cfbase}.
 
-On consid\`ere un premier pas fractionnaire au cours duquel l'\'energie totale
+On considère un premier pas fractionnaire au cours duquel l'énergie totale
 est fixe. Seules varient la masse volumique et le flux de masse acoustique
-normal aux faces (d\'efini et calcul\'e aux faces).
+normal aux faces (défini et calculé aux faces).
 
-On a donc le syst\`eme suivant, entre $t^n$ et $t^*$~:
+On a donc le système suivant, entre $t^n$ et $t^*$~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}
 \left\{\begin{array}{l}
 
@@ -52,35 +52,35 @@ e^*=e^n\\
 \end{array}\right.
 \end{equation}
 
-Une partie des termes sources de l'\'equation de la
-quantit\'e de mouvement peut \^etre prise en compte dans cette \'etape
-(les termes les plus importants, en pr\^etant attention aux sous-\'equilibres).
+Une partie des termes sources de l'équation de la
+quantité de mouvement peut être prise en compte dans cette étape
+(les termes les plus importants, en prêtant attention aux sous-équilibres).
 
 Il faut noter que si $\vect{f}$ est effectivement nul, on aura bien un
-syst\`eme ``acoustique'', mais que si l'on place des termes suppl\'ementaires
-dans $\vect{f}$, la d\'enomination est abusive (on la conservera cependant).
+système ``acoustique'', mais que si l'on place des termes supplémentaires
+dans $\vect{f}$, la dénomination est abusive (on la conservera cependant).
 
-On obtient $\rho^* = \rho^{n+1}$ en r\'esolvant (\ref{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}),
+On obtient $\rho^* = \rho^{n+1}$ en résolvant (\ref{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}),
 et l'on actualise alors le flux de masse acoustique $\vect{Q}_{ac}^{n+1}$,
 qui servira pour la convection (en particulier pour la convection de
-l'enthalpie totale et de tous les scalaires transport\'es).
+l'enthalpie totale et de tous les scalaires transportés).
 
 Suivant la valeur de \var{IGRDPP}, on actualise éventuellement la pression, en
-utilisant la loi d'\'etat :
+utilisant la loi d'état :
 $$
 \displaystyle P^{Pred}=P(\rho^{n+1},\varepsilon^{n})
 $$
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %---------------------------------
-\subsection*{Discr\'etisation en temps}
+\subsection*{Discrétisation en temps}
 %---------------------------------
 
-Le syst\`eme (\ref{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}) discr\'etis\'e en temps donne :
+Le système (\ref{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}) discrétisé en temps donne :
 \begin{equation}\label{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl}
 \left\{\begin{array}{l}
 
@@ -101,7 +101,7 @@ e^*=e^n\\
 \begin{array}{llll}
 \text{avec\ }&\vect{f}^n &=& \vect{0} \\
 \text{ou\ }&\vect{f}^n &=& \vect{g} \\
-\text{ou m\^eme\ }&\vect{f}^n &=& \vect{f}_v
+\text{ou même\ }&\vect{f}^n &=& \vect{f}_v
  + \displaystyle\frac{1}{\rho^n}
 \left( - \divs(\vect{u} \otimes \vect{Q}) + \divv(\tens{\Sigma}^v)
  + \vect{j}\wedge\vect{B} \right)^n
@@ -111,44 +111,44 @@ e^*=e^n\\
 Dans la pratique nous avons décidé de prendre $\vect{f}^n=\vect{g}$~:
 \begin{itemize}
   \item le terme $\vect{j}\wedge\vect{B}$ n'a pas été testé,
-  \item le terme $\divv(\tens{\Sigma}^v)$ \'etait négligeable sur les tests
+  \item le terme $\divv(\tens{\Sigma}^v)$ était négligeable sur les tests
         réalisés,
   \item le terme $\divs(\vect{u} \otimes \vect{Q})$ a paru déstabiliser les
-        calculs (mais au moins une partie des tests a \'et\'e r\'ealis\'ee
+        calculs (mais au moins une partie des tests a été réalisée
         avec une erreur de programmation et il faudrait donc les reprendre).
 \end{itemize}
 \bigskip
 
-Le terme $\vect{Q}^n$ dans la 2\textsuperscript{\`eme} \'equation
-de (\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl}) est le vecteur ``quantit\'e de mouvement''
-qui provient de l'\'etape de r\'esolution de la quantit\'e de mouvement du pas
-de temps pr\'ec\'edent, $\vect{Q}^n = \rho^n \vect{u}^n$.
-On pourrait théoriquement utiliser un vecteur quantit\'e de mouvement issu
-de l'\'etape acoustique du pas de temps pr\'ec\'edent, mais il ne constitue
-qu'un ``pr\'edicteur'' plus ou moins satisfaisant (il n'a pas ``vu'' les termes
+Le terme $\vect{Q}^n$ dans la 2\textsuperscript{ème} équation
+de (\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl}) est le vecteur ``quantité de mouvement''
+qui provient de l'étape de résolution de la quantité de mouvement du pas
+de temps précédent, $\vect{Q}^n = \rho^n \vect{u}^n$.
+On pourrait théoriquement utiliser un vecteur quantité de mouvement issu
+de l'étape acoustique du pas de temps précédent, mais il ne constitue
+qu'un ``prédicteur'' plus ou moins satisfaisant (il n'a pas ``vu'' les termes
 sources qui ne sont pas dans  $\vect{f}^n$) et cette solution
 n'a pas été testée.
 
 \bigskip
-On \'ecrit alors la pression sous la forme~:
+On écrit alors la pression sous la forme~:
 \begin{equation}
 \gradv{P}=c^2\,\gradv{\rho}+\beta\,\gradv{s}
 \end{equation}
 
 avec $c^2 = \left.\displaystyle\frac{\partial P}{\partial \rho}\right|_s$
 et $\beta = \left.\displaystyle\frac{\partial P}{\partial s}\right|_\rho$
-tabul\'es ou analytiques \`a partir de la loi d'\'etat.
+tabulés ou analytiques à partir de la loi d'état.
 
-On discr\'etise l'expression pr\'ec\'edente en~:
+On discrétise l'expression précédente en~:
 \begin{equation}
 \gradv{P^*}=(c^2)^n\gradv(\rho^{n+1})+\beta^n\gradv(s^n)
 \end{equation}
 
-On obtient alors une \'equation
+On obtient alors une équation
 portant sur $\rho^{n+1}$ en substituant l'expression de $\vect{Q}_{ac}^{n+1}$
-issue de la 2\textsuperscript{\`eme} \'equation
+issue de la 2\textsuperscript{ème} équation
 de~(\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl})
-dans la 1\textsuperscript{\`ere} \'equation
+dans la 1\textsuperscript{ère} équation
 de~(\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl})~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_densite_cfmsvl}
 \displaystyle\frac{\rho^{n+1}-\rho^n}{\Delta t^n}
@@ -156,7 +156,7 @@ de~(\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl})~:
 -\divs\left(\Delta t^n (c^2)^n \gradv(\rho^{n+1})\right) = 0
 \end{equation}
 
-o\`u~:
+où~:
 \begin{equation}
 \begin{array}{lll}
 \vect{w}^n&=&  \vect{u}^n + \Delta t^n
@@ -164,7 +164,7 @@ o\`u~:
 \end{array}
 \end{equation}
 
-Formulation alternative (programm\'ee mais non test\'ee)
+Formulation alternative (programmée mais non testée)
 avec le terme de convection implicite~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_densite_bis_cfmsvl}
 \displaystyle\frac{\rho^{n+1}-\rho^n}{\Delta t^n}
@@ -174,7 +174,7 @@ avec le terme de convection implicite~:
 
 
 %---------------------------------
-\subsection*{Discr\'etisation en espace}
+\subsection*{Discrétisation en espace}
 %---------------------------------
 
 
@@ -182,15 +182,15 @@ avec le terme de convection implicite~:
 \subsubsection*{Introduction}
 %.................................
 
-On int\`egre l'\'equation pr\'ec\'edente ( (\ref{Cfbl_Cfmsvl_eq_densite_cfmsvl})
+On intègre l'équation précédente ( (\ref{Cfbl_Cfmsvl_eq_densite_cfmsvl})
 ou (\ref{Cfbl_Cfmsvl_eq_densite_bis_cfmsvl}) ) sur la cellule $i$ de volume $\Omega_i$.
-On transforme les int\'egrales de volume en int\'egrales surfaciques
-et l'on discr\'etise ces int\'egrales. Pour simplifier l'exposé, on se
+On transforme les intégrales de volume en intégrales surfaciques
+et l'on discrétise ces intégrales. Pour simplifier l'exposé, on se
 place sur une cellule $i$ dont aucune face n'est sur le bord du domaine.
 
-On obtient alors l'\'equation discr\`ete
+On obtient alors l'équation discrète
 suivante\footnote{L'exposant $^{n+\frac{1}{2}}$ signifie que le terme
-peut \^etre implicite ou explicite. En pratique on a choisi
+peut être implicite ou explicite. En pratique on a choisi
 $\rho^{n+\frac{1}{2}} = \rho^{n}$.}~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_densite_discrete_cfmsvl}
 \Omega_i \displaystyle\frac{\rho_i^{n+1}-\rho_i^n}{\Delta t^n}
@@ -201,21 +201,21 @@ $\rho^{n+\frac{1}{2}} = \rho^{n}$.}~:
 \end{equation}
 
 %.................................
-\subsubsection*{Discr\'etisation de la partie ``convective''}
+\subsubsection*{Discrétisation de la partie ``convective''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~:
+La valeur à la face s'écrit~:
 \begin{equation}
 (\rho^{n+\frac{1}{2}} \vect{w}^n)_{ij} \cdot \vect{S}_{ij}
 = \rho^{n+\frac{1}{2}}_{ij} \vect{w}^n_{ij} \cdot \vect{S}_{ij}
 \end{equation}
 avec, pour $\vect{w}^n_{ij}$,
-une simple interpolation lin\'eaire~:
+une simple interpolation linéaire~:
 \begin{equation}
 \vect{w}^n_{ij}
 = \alpha_{ij} \vect{w}^n_i + (1-\alpha_{ij}) \vect{w}^n_j
 \end{equation}
-et un d\'ecentrement sur la valeur de $\rho^{n+\frac{1}{2}}$ aux faces~:
+et un décentrement sur la valeur de $\rho^{n+\frac{1}{2}}$ aux faces~:
 \begin{equation}
 \begin{array}{lllll}
 \displaystyle\rho_{ij}^{n+\frac{1}{2}} &=& \rho_{I'}^{n+\frac{1}{2}}
@@ -238,33 +238,33 @@ avec
 \end{equation}
 
 %.................................
-\subsubsection*{Discr\'etisation de la partie ``diffusive''}
+\subsubsection*{Discrétisation de la partie ``diffusive''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~:
+La valeur à la face s'écrit~:
 \begin{equation}
 \left(\Delta t^n (c^2)^n \gradv(\rho^{n+1})\right)_{ij}\cdot \vect{S}_{ij}
 = \Delta t^n (c^2)^n_{ij}
 \displaystyle \left( \frac{\partial \rho}{\partial n} \right)^{n+1}_{ij}S_{ij}
 \end{equation}
-avec, pour assurer la continuit\'e du flux normal \`a l'interface,
+avec, pour assurer la continuité du flux normal à l'interface,
 une interpolation harmonique de $(c^2)^n$~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_harmonique_cfmsvl}
 \displaystyle(c^2)_{ij}^n
 = \frac{(c^2)_{i}^n (c^2)_{j}^n}
 {\alpha_{ij}(c^2)_{i}^n+(1-\alpha_{ij})(c^2)_{j}^n}
 \end{equation}
-et un sch\'ema centr\'e pour le gradient normal aux faces~:
+et un schéma centré pour le gradient normal aux faces~:
 \begin{equation}
 \displaystyle \left( \frac{\partial \rho}{\partial n} \right)^{n+1}_{ij}
 = \displaystyle\frac{\rho_{J'}^{n+1}-\rho_{I'}^{n+1}}{\overline{I'J'}}
 \end{equation}
 
 %.................................
-\subsubsection*{Syst\`eme final}
+\subsubsection*{Système final}
 %.................................
 
-On obtient maintenant le syst\`eme final, portant sur
+On obtient maintenant le système final, portant sur
 $(\rho_i^{n+1})_{i=1 \ldots N}$~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_densite_finale_cfmsvl}
 \displaystyle\frac{\Omega_i}{\Delta t^n} (\rho_i^{n+1}-\rho_i^n)
@@ -282,17 +282,17 @@ $(\rho_i^{n+1})_{i=1 \ldots N}$~:
 %.................................
 
 Le choix de la forme de la moyenne pour le cofacteur du flux
-normal n'est pas sans cons\'equence sur la vitesse de convergence, surtout
-lorsque l'on est en pr\'esence de fortes inhomog\'en\'eit\'es.
+normal n'est pas sans conséquence sur la vitesse de convergence, surtout
+lorsque l'on est en présence de fortes inhomogénéités.
 
 On utilise une interpolation harmonique pour $c^2$
-afin de conserver la continuit\'e du flux diffusif normal
+afin de conserver la continuité du flux diffusif normal
 $\Delta t (c^2) \displaystyle\frac{\partial \rho}{\partial n}$
-\`a l'interface $ij$. En effet, on suppose que le flux est d\'erivable \`a
-l'interface. Il doit donc y \^etre continu.\\
+à l'interface $ij$. En effet, on suppose que le flux est dérivable à
+l'interface. Il doit donc y être continu.\\
 %
-\'Ecrivons la continuit\'e du flux normal \`a l'interface,
-avec la discr\'etisation
+Écrivons la continuité du flux normal à l'interface,
+avec la discrétisation
 suivante\footnote{On ne reconstruit pas les valeurs de $\Delta\,t\,c^2$
 aux points $I'$ et
 $J'$.}~:
@@ -301,24 +301,24 @@ $J'$.}~:
 = \Delta t (c^2)_i  \displaystyle\frac{\rho_{ij} - \rho_{I'}   }{\overline{I'F}}
 =  \Delta t (c^2)_j  \displaystyle\frac{\rho_{J'}    - \rho_{ij}}{\overline{FJ'}}
 \end{equation}
-En \'egalant les flux \`a gauche et \`a droite de l'interface, on obtient
+En égalant les flux à gauche et à droite de l'interface, on obtient
 \begin{equation}
 \rho_{ij} = \displaystyle\frac{\overline{I'F}\,(c^2)_j\rho_{J'} + \overline{FJ'}\,(c^2)_i\rho_{I'}}
 {\overline{I'F}\,(c^2)_j + \overline{FJ'}\,(c^2)_i}
 \end{equation}
-On introduit cette formulation dans la d\'efinition du flux (par exemple, du
-flux \`a gauche)~:
+On introduit cette formulation dans la définition du flux (par exemple, du
+flux à gauche)~:
 \begin{equation}
 \left(\Delta t (c^2)\displaystyle\frac{\partial \rho}{\partial n}\right)_{ij}
 = \Delta t (c^2)_i  \displaystyle\frac{\rho_{ij} - \rho_{I'}   }{\overline{I'F}}
 \end{equation}
-et on utilise la d\'efinition de $(c^2)_{ij}$ en fonction de ce m\^eme flux
+et on utilise la définition de $(c^2)_{ij}$ en fonction de ce même flux
 \begin{equation}
 \left(\Delta t (c^2)\displaystyle\frac{\partial \rho}{\partial n}\right)_{ij}
- \stackrel{\text{d\'ef}}{=}
+ \stackrel{\text{déf}}{=}
  \Delta t (c^2)_{ij} \displaystyle\frac{\rho_{J'}    - \rho_{I'}   }{\overline{I'J'}}
 \end{equation}
-pour obtenir la valeur de $(c^2)_{ij}$ correspondant \`a l'\'equation (\ref{Cfbl_Cfmsvl_eq_harmonique_cfmsvl})~:
+pour obtenir la valeur de $(c^2)_{ij}$ correspondant à l'équation (\ref{Cfbl_Cfmsvl_eq_harmonique_cfmsvl})~:
 \begin{equation}
 (c^2)_{ij} = \displaystyle\frac{\overline{I'J'}\,(c^2)_i(c^2)_j}{\overline{FJ'}\,(c^2)_i + \overline{I'F}\,(c^2)_j}
 \end{equation}
@@ -328,31 +328,31 @@ pour obtenir la valeur de $(c^2)_{ij}$ correspondant \`a l'\'equation (\ref{Cfbl
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Le syst\`eme (\ref{Cfbl_Cfmsvl_eq_densite_finale_cfmsvl}) est r\'esolu par une m\'ethode
-d'incr\'ement et r\'esidu en utilisant
-une m\'ethode de Jacobi pour inverser le syst\`eme si le terme convectif
-est implicite et en utilisant une m\'ethode de gradient conjugu\'e
+Le système (\ref{Cfbl_Cfmsvl_eq_densite_finale_cfmsvl}) est résolu par une méthode
+d'incrément et résidu en utilisant
+une méthode de Jacobi pour inverser le système si le terme convectif
+est implicite et en utilisant une méthode de gradient conjugué
 si le terme convectif est explicite (qui est le cas par défaut).
 
 Attention, les valeurs du flux de masse $\rho\,\vect{w}\cdot\vect{S}$ et
-de la viscosit\'e $\Delta\,t\,c^2\frac{S}{d}$ aux faces de
-bord, qui sont calcul\'ees dans \fort{cfmsfl} et \fort{cfmsvs} respectivement,
-sont modifi\'ees imm\'ediatement apr\`es l'appel \`a ces sous-programmes.
+de la viscosité $\Delta\,t\,c^2\frac{S}{d}$ aux faces de
+bord, qui sont calculées dans \fort{cfmsfl} et \fort{cfmsvs} respectivement,
+sont modifiées immédiatement après l'appel à ces sous-programmes.
 En effet, il est indispensable que la contribution de bord de
 $\left(\rho\,\vect{w}-\Delta\,t\,(c^2)\,\gradv\,\rho\right)\cdot\vect{S}$
-repr\'esente exactement $\vect{Q}_{ac}\cdot\vect{S}$.
+représente exactement $\vect{Q}_{ac}\cdot\vect{S}$.
 Pour cela,
 \begin{itemize}
-\item imm\'ediatement apr\`es l'appel \`a
+\item immédiatement après l'appel à
 \fort{cfmsfl}, on remplace la contribution de bord de
 $\rho\,\vect{w}\cdot\vect{S}$
 par le flux de masse exact, $\vect{Q}_{ac}\cdot\vect{S}$,
-d\'etermin\'e \`a partir des conditions aux limites,
-\item puis, imm\'ediatement apr\`es l'appel \`a
-\fort{cfmsvs}, on annule la viscosit\'e au bord $\Delta\,t\,(c^2)$ pour
-\'eliminer la contribution de $-\Delta\,t\,(c^2)\,(\gradv\,\rho)\cdot\vect{S}$
-(l'annulation de la viscosit\'e n'est pas probl\'ematique pour la matrice,
-puisqu'elle porte sur des incr\'ements).
+déterminé à partir des conditions aux limites,
+\item puis, immédiatement après l'appel à
+\fort{cfmsvs}, on annule la viscosité au bord $\Delta\,t\,(c^2)$ pour
+éliminer la contribution de $-\Delta\,t\,(c^2)\,(\gradv\,\rho)\cdot\vect{S}$
+(l'annulation de la viscosité n'est pas problématique pour la matrice,
+puisqu'elle porte sur des incréments).
 \end{itemize}
 
 \bigskip
@@ -366,10 +366,10 @@ qui servira pour la convection des autres variables~:
 -\left(\Delta t^n (c^2)^n \gradv(\rho^{n+1})\right)_{ij}\cdot\vect{S}_{ij}
 +\left(\rho^{n+\frac{1}{2}} \vect{w}^n\right)_{ij}\cdot\vect{S}_{ij}\\
 \end{equation}
-Ce calcul de flux est r\'ealis\'e par \fort{cfbsc3}.
-Si l'on a choisi l'algorithme standard, \'equation~(\ref{Cfbl_Cfmsvl_eq_densite_cfmsvl}),
-on compl\`ete le flux dans \fort{cfmsvl} imm\'ediatement apr\`es l'appel
-\`a \fort{cfbsc3}.
+Ce calcul de flux est réalisé par \fort{cfbsc3}.
+Si l'on a choisi l'algorithme standard, équation~(\ref{Cfbl_Cfmsvl_eq_densite_cfmsvl}),
+on complète le flux dans \fort{cfmsvl} immédiatement après l'appel
+à \fort{cfbsc3}.
 En effet, dans ce cas,
 la convection est explicite ($\rho^{n+\frac{1}{2}}=\rho^{n}$,
 obtenu en imposant \var{ICONV(ISCA(IRHO))=0})
@@ -377,11 +377,11 @@ et le sous-programme \fort{cfbsc3},
 qui calcule le flux de masse aux faces,
 ne prend pas en compte la contribution du terme
 $\rho^{n+\frac{1}{2}}\,\vect{w}^n\cdot\vect{S}$. On ajoute donc cette
-contribution dans \fort{cfmsvl}, apr\`es l'appel \`a \fort{cfbsc3}.
-Au bord, en particulier, c'est bien le flux de masse calcul\'e \`a partir
+contribution dans \fort{cfmsvl}, après l'appel à \fort{cfbsc3}.
+Au bord, en particulier, c'est bien le flux de masse calculé à partir
 des conditions aux limites que l'on obtient.
 
-On actualise la pression \`a la fin de l'\'etape, en utilisant la loi d'\'etat~:
+On actualise la pression à la fin de l'étape, en utilisant la loi d'état~:
 \begin{equation}
 \displaystyle P_i^{pred}=P(\rho_i^{n+1},\varepsilon_i^{n})
 \end{equation}
@@ -389,27 +389,27 @@ On actualise la pression \`a la fin de l'\'etape, en utilisant la loi d'\'etat~:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}
+\section*{Points à traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Le calcul du flux de masse au  bord n'est pas enti\`erement satisfaisant
-si la convection est trait\'ee de mani\`ere implicite
-(algorithme non standard, non test\'e,
-associ\'e \`a l'\'equation~(\ref{Cfbl_Cfmsvl_eq_densite_bis_cfmsvl}),
+Le calcul du flux de masse au  bord n'est pas entièrement satisfaisant
+si la convection est traitée de manière implicite
+(algorithme non standard, non testé,
+associé à l'équation~(\ref{Cfbl_Cfmsvl_eq_densite_bis_cfmsvl}),
 correspondant au choix $\rho^{n+\frac{1}{2}}=\rho^{n+1}$ et
 obtenu en imposant \var{ICONV(ISCA(IRHO))=1}).
-En effet, apr\`es \fort{cfmsfl}, il faut d\'eterminer la vitesse de
+En effet, après \fort{cfmsfl}, il faut déterminer la vitesse de
 convection $\vect{w}^n$ pour qu'apparaisse
 $\rho^{n+1} \vect{w}^n\cdot\vect{n}$
-au cours de la r\'esolution par \fort{cs\_equation\_iterative\_solve}. De ce fait, on doit d\'eduire
-une valeur de $\vect{w}^n$ \`a partir de la valeur
+au cours de la résolution par \fort{cs\_equation\_iterative\_solve}. De ce fait, on doit déduire
+une valeur de $\vect{w}^n$ à partir de la valeur
 du flux de masse. Au bord, en particulier, il faut
 donc diviser le flux de masse
 issu des conditions aux limites par la valeur de bord de $\rho^{n+1}$.
-Or, lorsque des conditions de Neumann sont appliqu\'ees \`a la
+Or, lorsque des conditions de Neumann sont appliquées à la
 masse volumique,
-la valeur de $\rho^{n+1}$ au bord n'est pas connue avant la r\'esolution du
-syst\`eme. On utilise donc, au lieu de la valeur de bord inconnue de
+la valeur de $\rho^{n+1}$ au bord n'est pas connue avant la résolution du
+système. On utilise donc, au lieu de la valeur de bord inconnue de
 $\rho^{n+1}$ la valeur de bord prise au pas de temps
-pr\'ec\'edent $\rho^{n}$. Cette approximation est susceptible
+précédent $\rho^{n}$. Cette approximation est susceptible
 d'affecter la valeur du flux de masse au bord.

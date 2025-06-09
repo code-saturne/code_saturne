@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -32,11 +32,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Pour les notations et l'algorithme dans son ensemble,
-on se reportera \`a \fort{cfbase}.
+on se reportera à \fort{cfbase}.
 
-Apr\`es masse (acoustique) et quantit\'e de mouvement,
-on consid\`ere un dernier pas fractionnaire (de $t^{**}$ \`a $t^{***}$)
-au cours duquel seule varie l'\'energie totale $E = \rho e$.
+Après masse (acoustique) et quantité de mouvement,
+on considère un dernier pas fractionnaire (de $t^{**}$ à $t^{***}$)
+au cours duquel seule varie l'énergie totale $E = \rho e$.
 
 \begin{equation}\label{Cfbl_Cfener_eq_energie_cfener}
 \left\{\begin{array}{l}
@@ -52,20 +52,20 @@ au cours duquel seule varie l'\'energie totale $E = \rho e$.
 \end{array}\right.
 \end{equation}
 
-Pour conserver la positivit\'e de l'\'energie, il est indispensable ici,
+Pour conserver la positivité de l'énergie, il est indispensable ici,
 comme pour les scalaires, d'utiliser le flux de masse convectif acoustique
-$\vect{Q}_{ac}^{n+1}$ compatible avec l'\'equation de la masse.
-De plus, pour obtenir des propri\'et\'es de positivit\'e sur les scalaires,
-un sch\'ema upwind pour le terme convectif doit \^etre utilis\'e
-(mais les termes sources introduisent des contraintes suppl\'ementaires
-qui peuvent \^etre pr\'epond\'erantes et g\^enantes).
+$\vect{Q}_{ac}^{n+1}$ compatible avec l'équation de la masse.
+De plus, pour obtenir des propriétés de positivité sur les scalaires,
+un schéma upwind pour le terme convectif doit être utilisé
+(mais les termes sources introduisent des contraintes supplémentaires
+qui peuvent être prépondérantes et gênantes).
 
 \vspace{0.5cm}
 
-\`A la fin de cette \'etape, on actualise éventuellement
+à la fin de cette étape, on actualise éventuellement
 (mais par défaut non)
-une deuxi\`eme et derni\`ere fois la pression
-en utilisant la loi d'\'etat pour obtenir la pression finale~:
+une deuxième et dernière fois la pression
+en utilisant la loi d'état pour obtenir la pression finale~:
 \begin{equation}
 \displaystyle P^{n+1}=P(\rho^{n+1},\varepsilon^{n+1})
 \end{equation}
@@ -74,32 +74,32 @@ See the \doxygenfile{cfener_8f90.html}{programmers reference of the dedicated su
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %---------------------------------
-\subsection*{Discr\'etisation en temps}
+\subsection*{Discrétisation en temps}
 %---------------------------------
 
-La mod\'elisation des flux de chaleur choisie jusqu'\`a pr\'esent est de la
+La modélisation des flux de chaleur choisie jusqu'à présent est de la
 forme $-\divs(\,\vect{\Phi}_s) = \divs(\lambda \gradv{T})$.
 
-Pour faire appara\^itre un terme diffusif stabilisant dans la
-matrice de r\'esolution, on cherche \`a exprimer le flux diffusif de chaleur
+Pour faire apparaître un terme diffusif stabilisant dans la
+matrice de résolution, on cherche à exprimer le flux diffusif de chaleur
 ($-\divs(\,\vect{\Phi}_s)$)
-en fonction de la variable r\'esolue (l'\'energie totale).
+en fonction de la variable résolue (l'énergie totale).
 
 Avec $\varepsilon_{sup}(P,\rho)$
-d\'ependant de la loi d'\'etat, on exprime l'\'energie totale de la fa\c con suivante~:
+dépendant de la loi d'état, on exprime l'énergie totale de la façon suivante~:
 \begin{equation}
 e = \varepsilon + \frac{1}{2} u^2
 = (C_v T + \varepsilon_{sup}) + \frac{1}{2} u^2
 \end{equation}
 
 En supposant $C_v$ constant\footnote{Pour $C_v$ non constant, les
-d\'eveloppements restent \`a faire~: on pourra se
-reporter \`a  P. Mathon, F. Archambeau, J.-M. Hérard : "Implantation d'un
+développements restent à faire~: on pourra se
+reporter à  P. Mathon, F. Archambeau, J.-M. Hérard : "Implantation d'un
 algorithme compressible dans \CS", HI-83/03/016/A}, on a alors~:
 \begin{equation}\label{Cfbl_Cfener_eq_flux_thermique_cfener}
 -\divs(\,\vect{\Phi}_s)
@@ -107,31 +107,31 @@ algorithme compressible dans \CS", HI-83/03/016/A}, on a alors~:
 \text{avec } K=\lambda / C_v
 \end{equation}
 
-Lorsqu'un mod\`ele de turbulence est activ\'e, on conserve la m\^eme forme
-de mod\'elisation pour les flux thermiques et $K$ int\`egre alors
-la diffusivit\'e turbulente. On pourra se reporter \`a
-la documentation de \fort{cfxtcl} \`a ce sujet.
+Lorsqu'un modèle de turbulence est activé, on conserve la même forme
+de modélisation pour les flux thermiques et $K$ intègre alors
+la diffusivité turbulente. On pourra se reporter à
+la documentation de \fort{cfxtcl} à ce sujet.
 
 Avec la formulation~(\ref{Cfbl_Cfener_eq_flux_thermique_cfener}),
 on peut donc impliciter le terme en $\gradv{e}$.
 
 \bigskip
 De plus, puisque la vitesse a
-d\'ej\`a \'et\'e r\'esolue, on implicite \'egalement le terme en
+déjà été résolue, on implicite également le terme en
 $\gradv{\frac{1}{2} u^2}$. L'exposant $n+\frac{1}{2}$ de $\varepsilon_{sup}$
-indique que l'implicitation de ce terme est partielle (elle d\'epend de la forme
-de la loi d'\'etat).
+indique que l'implicitation de ce terme est partielle (elle dépend de la forme
+de la loi d'état).
 
 Par ailleurs, on implicite le terme de convection, le terme de puissance
 des forces volumiques, éventuellement le terme de puissance des forces de
-pression (suivant la valeur de \var{IGRDPP}, on utilise la pr\'ediction de
-pression obtenue apr\`es r\'esolution de l'\'equation portant sur la masse
+pression (suivant la valeur de \var{IGRDPP}, on utilise la prédiction de
+pression obtenue après résolution de l'équation portant sur la masse
 volumique ou bien la pression du pas de temps précédent)
 et le terme de puissance des forces visqueuses. On implicite le terme de puissance
 volumique en utilisant $\rho^{n+1}$.
 
 \bigskip
-On obtient alors l'\'equation discr\`ete portant sur $e$~:
+On obtient alors l'équation discrète portant sur $e$~:
 \begin{equation}\label{Cfbl_Cfener_eq_energie_totale_cfener}
 \begin{array}{l}
 \displaystyle\frac{(\rho e)^{n+1} - (\rho e)^n}{\Delta t^n}
@@ -147,9 +147,9 @@ On obtient alors l'\'equation discr\`ete portant sur $e$~:
 avec $\widetilde{P}=P^{Pred}\text{ ou }P^n$ suivant la valeur de \var{IGRDPP}
 ($P^n$ par défaut).
 
-En pratique, dans \CS, on r\'esout cette \'equation en faisant appara\^itre \`a
-gauche l'\'ecart $e^{n+1} - e^n$. Pour cela, on \'ecrit la d\'eriv\'ee
-en temps discr\`ete sous la forme suivante~:
+En pratique, dans \CS, on résout cette équation en faisant apparaître à
+gauche l'écart $e^{n+1} - e^n$. Pour cela, on écrit la dérivée
+en temps discrète sous la forme suivante~:
 
 \begin{equation}
 \begin{array}{ll}
@@ -169,7 +169,7 @@ e^{n+1}\frac{\rho^{n+1} - \rho^n}{\Delta t^n}
 \end{array}
 \end{equation}
 
-et l'on utilise l'\'equation de la masse discr\`ete pour \'ecrire~:
+et l'on utilise l'équation de la masse discrète pour écrire~:
 \begin{equation}
 \displaystyle
 \frac{(\rho e)^{n+1} - (\rho e)^n}{\Delta t^n}
@@ -181,7 +181,7 @@ e^{n+1}\dive\,\vect{Q}_{ac}^{n+1}
 
 
 %---------------------------------
-\subsection*{Discr\'etisation en espace}
+\subsection*{Discrétisation en espace}
 %---------------------------------
 
 
@@ -189,11 +189,11 @@ e^{n+1}\dive\,\vect{Q}_{ac}^{n+1}
 \subsubsection*{Introduction}
 %.................................
 
-On int\`egre l'\'equation (\ref{Cfbl_Cfener_eq_energie_totale_cfener})
-sur la cellule $i$ de volume $\Omega_i$ et l'on proc\`ede comme
-pour l'\'equation de la masse et de la quantit\'e de mouvement.
+On intègre l'équation (\ref{Cfbl_Cfener_eq_energie_totale_cfener})
+sur la cellule $i$ de volume $\Omega_i$ et l'on procède comme
+pour l'équation de la masse et de la quantité de mouvement.
 
-On obtient alors l'\'equation discr\`ete
+On obtient alors l'équation discrète
 suivante~:
 \begin{equation}\label{Cfbl_Cfener_eq_energie_totale_discrete_cfener}
 \begin{array}{l}
@@ -220,15 +220,15 @@ suivante~:
 
 
 %.................................
-\subsubsection*{Discr\'etisation de la partie ``convective''}
+\subsubsection*{Discrétisation de la partie ``convective''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~:
+La valeur à la face s'écrit~:
 \begin{equation}
 \left(e^{n+1} \vect{Q}_{ac}^{n+1}\right)_{ij} \cdot \vect{S}_{ij}
 = e_{ij}^{n+1}(\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij}
 \end{equation}
-avec un d\'ecentrement sur la valeur de $e^{n+1}$ aux faces~:
+avec un décentrement sur la valeur de $e^{n+1}$ aux faces~:
 \begin{equation}
 \begin{array}{lllll}
 e_{ij}^{n+1}
@@ -255,10 +255,10 @@ avec
 
 
 %.................................
-\subsubsection*{Discr\'etisation de la partie ``diffusive''}
+\subsubsection*{Discrétisation de la partie ``diffusive''}
 %.................................
 
-La valeur \`a la face s'\'ecrit~:
+La valeur à la face s'écrit~:
 \begin{equation}
 \begin{array}{c}
 \left(K^n\gradv(e^{n+1})\right)_{ij}\cdot\vect{S}_{ij}
@@ -272,13 +272,13 @@ La valeur \`a la face s'\'ecrit~:
 + \varepsilon_{sup}\right)}{\partial n} \right)^{n+\frac{1}{2}}_{ij}S_{ij}
 \end{array}
 \end{equation}
-avec une interpolation lin\'eaire pour
+avec une interpolation linéaire pour
 $K^n$ aux faces (et en pratique, $\alpha_{ij}=\frac{1}{2}$)~:
 \begin{equation}
 K_{ij}^n
 = \alpha_{ij}K_{i}^n+(1-\alpha_{ij})K_{j}^n
 \end{equation}
-et un sch\'ema centr\'e avec reconstruction pour le gradient normal aux faces~:
+et un schéma centré avec reconstruction pour le gradient normal aux faces~:
 \begin{equation}
 \displaystyle \left( \frac{\partial e}{\partial n} \right)^{n+1}_{ij}
 = \displaystyle\frac{e_{J'}^{n+1} - e_{I'}^{n+1}}{\overline{I'J'}}
@@ -293,11 +293,11 @@ et un sch\'ema centr\'e avec reconstruction pour le gradient normal aux faces~:
 
 
 %.................................
-\subsubsection*{Discr\'etisation de la puissance des forces de pression}
+\subsubsection*{Discrétisation de la puissance des forces de pression}
 %.................................
 
 Ce terme
-est issu du terme convectif, on le discr\'etise donc de la m\^eme fa\c con.
+est issu du terme convectif, on le discrétise donc de la même façon.
 
 \begin{equation}
 \left(\displaystyle\frac{\widetilde{P}}{\rho^{n+1}}\
@@ -306,7 +306,7 @@ est issu du terme convectif, on le discr\'etise donc de la m\^eme fa\c con.
 (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij}
 \end{equation}
 
-avec un d\'ecentrement sur la valeur de
+avec un décentrement sur la valeur de
 $\displaystyle\frac{P}{\rho}$ aux faces~:
 \begin{equation}
 \begin{array}{lll}
@@ -326,11 +326,11 @@ $\displaystyle\frac{P}{\rho}$ aux faces~:
 
 
 %.................................
-\subsubsection*{Discr\'etisation de la puissance des forces visqueuses}
+\subsubsection*{Discrétisation de la puissance des forces visqueuses}
 %.................................
 
 On calcule les termes dans les cellules puis on utilise une
-interpolation lin\'eaire (on utilise
+interpolation linéaire (on utilise
 $\alpha_{ij}=\frac{1}{2}$ dans la relation ci-dessous)~:
 \begin{equation}
 \left((\tens{\Sigma}^v)^{n+1} \vect{u}^{n+1} \right)_{ij}\cdot \vect{S}_{ij}
@@ -345,21 +345,21 @@ $\alpha_{ij}=\frac{1}{2}$ dans la relation ci-dessous)~:
 %.................................
 
 
-Les termes ``convectifs'' associ\'es \`a
+Les termes ``convectifs'' associés à
 $\displaystyle\dive\left(\left(e^{n+1}+\frac{\widetilde{P}}{\rho^{n+1}}\right)\,
-\vect{Q}_{ac}^{n+1}\right)$ sont calcul\'es avec un d\'ecentrement amont
-(consistant, d'ordre 1 en espace). Les valeurs utilis\'ees sont bien prises au
-centre de la cellule amont ($e_i$, $P_i$, $\rho_i$) et non pas au projet\'e $I'$
-du centre de la cellule sur la normale \`a la face passant par son centre de
-gravit\'e (sur un cas test en triangles, l'utilisation de $P_I'$ et de $\rho_I'$
-pour le terme de transport de pression a conduit \`a un r\'esultat
-insatisfaisant, mais des corrections ont \'et\'e apport\'ees aux sources depuis
-et il serait utile de v\'erifier que cette conclusion n'est pas remise en question).
+\vect{Q}_{ac}^{n+1}\right)$ sont calculés avec un décentrement amont
+(consistant, d'ordre 1 en espace). Les valeurs utilisées sont bien prises au
+centre de la cellule amont ($e_i$, $P_i$, $\rho_i$) et non pas au projeté $I'$
+du centre de la cellule sur la normale à la face passant par son centre de
+gravité (sur un cas test en triangles, l'utilisation de $P_I'$ et de $\rho_I'$
+pour le terme de transport de pression a conduit à un résultat
+insatisfaisant, mais des corrections ont été apportées aux sources depuis
+et il serait utile de vérifier que cette conclusion n'est pas remise en question).
 
-Les termes diffusifs associ\'es \`a
+Les termes diffusifs associés à
 $\displaystyle\dive\left(K\,\grad\left(e+\frac{1}{2} u^2 +
-\varepsilon_{sup}\right)\right)$ sont calcul\'es en utilisant des valeurs aux
-faces reconstruites pour s'assurer de la consistance du sch\'ema.
+\varepsilon_{sup}\right)\right)$ sont calculés en utilisant des valeurs aux
+faces reconstruites pour s'assurer de la consistance du schéma.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -368,12 +368,12 @@ faces reconstruites pour s'assurer de la consistance du sch\'ema.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-Apr\`es une \'etape de gestion de la m\'emoire (\fort{memcfe}), on calcule les
-diff\'erents termes sources (au centre des cellules)~:
+Après une étape de gestion de la mémoire (\fort{memcfe}), on calcule les
+différents termes sources (au centre des cellules)~:
 \begin{itemize}
 \item source volumique de chaleur (\fort{cs\_user\_source\_terms}),
-\item source associ\'ee aux sources de masse (\fort{catsma}),
-\item source associ\'ee \`a l'accumulation de masse $\dive\,\vect{Q}_{ac}$ (directement dans \fort{cfener}),
+\item source associée aux sources de masse (\fort{catsma}),
+\item source associée à l'accumulation de masse $\dive\,\vect{Q}_{ac}$ (directement dans \fort{cfener}),
 \item dissipation visqueuse (\fort{cfdivs}),
 \item transport de pression (directement dans \fort{cfener}),
 \item puissance de la pesanteur (directement dans \fort{cfener}),
@@ -383,35 +383,35 @@ diff\'erents termes sources (au centre des cellules)~:
 \end{itemize}
 
 \bigskip
-Le syst\`eme (\ref{Cfbl_Cfener_eq_energie_totale_discrete_cfener}) est r\'esolu par une m\'ethode
-d'incr\'ement et r\'esidu  en utilisant une m\'ethode de Jacobi (\fort{cfcdts}).
+Le système (\ref{Cfbl_Cfener_eq_energie_totale_discrete_cfener}) est résolu par une méthode
+d'incrément et résidu  en utilisant une méthode de Jacobi (\fort{cfcdts}).
 
 L'impression des bornes et
-la limitation \'eventuelle de l'\'energie sont ensuite effectu\'ees par
+la limitation éventuelle de l'énergie sont ensuite effectuées par
 \fort{clpsca} suivi de \fort{uscfth} (intervention utilisateur optionnelle).
 
 On actualise enfin la pression et on calcule la
-temp\'erature (\fort{uscfth}).
+température (\fort{uscfth}).
 
 Pour
-terminer, en parall\`ele ou en p\'eriodique, on \'echange les variables
-pression, \'energie et temp\'erature.
+terminer, en parallèle ou en périodique, on échange les variables
+pression, énergie et température.
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}
+\section*{Points à traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % propose en patch 1.2.1
 
 %Corriger \fort{cfener} dans lequel \var{W1} produit par \fort{uscfth} est
-%\'ecras\'e par \fort{grdcel}, causant probablement des d\'eg\^ats
-%dans les cas o\`u le gradient de l'\'energie cin\'etique dans la direction $x$
+%écrasé par \fort{grdcel}, causant probablement des dégâts
+%dans les cas où le gradient de l'énergie cinétique dans la direction $x$
 %est sensiblement non nul sur des faces de bord dont la normale a une
-%composante en $x$ et lorsque la conductivit\'e n'est pas n\'egligeable.
+%composante en $x$ et lorsque la conductivité n'est pas négligeable.
 
 
 \etape{Choix de $\widetilde{P}$}

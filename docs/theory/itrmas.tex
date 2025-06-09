@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -28,11 +28,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-La figure \ref{Base_Itrmas_fig_geom} rappelle les diverses d\'efinitions g\'eom\'etriques
+La figure \ref{Base_Itrmas_fig_geom} rappelle les diverses définitions géométriques
 pour les faces internes et les faces de bord.
 
 \begin{figure}[h]
@@ -40,20 +40,20 @@ pour les faces internes et les faces de bord.
 \centerline{\includegraphics[height=4cm]{facette}}}
 \parbox{8cm}{%
 \centerline{\includegraphics[height=4cm]{facebord}}}
-\caption{\label{Base_Itrmas_fig_geom}D\'efinition des diff\'erentes entit\'es
-g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
+\caption{\label{Base_Itrmas_fig_geom}Définition des différentes entités
+géométriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
 
 
-\subsection*{Calcul sans reconstruction des non orthogonalit\'es}
-Pour les faces internes, on \'ecrit simplement :
+\subsection*{Calcul sans reconstruction des non orthogonalités}
+Pour les faces internes, on écrit simplement :
 \begin{equation}
 \label{Base_Itrmas_eq_intssrec}
 -\Delta t_{\,ij}(\grad_f P)_{\,ij}\,.\,\vect{S}_{\,ij}=
 \frac{\Delta t_{\,ij}S_{\,ij}}{\overline{I^\prime J^\prime}}(P_I-P_J)
 \end{equation}
 
-Pour les faces de bord, on \'ecrit :
+Pour les faces de bord, on écrit :
 \begin{equation}
 \label{Base_Itrmas_eq_brdssrec}
 -\Delta t_{b_{ik}}(\grad_f P)_{\,b_{ik}}\,.\,\vect{S}_{\,b_{ik}}=
@@ -61,18 +61,18 @@ Pour les faces de bord, on \'ecrit :
 \left((1-B_{b,ik})P_I-\var{INC}\times A_{b,ik}\right)
 \end{equation}
 
-Les pas de temps aux faces $\Delta t_{\,ij}$ et $\Delta t_{\,b_{ik}}$ sont calcul\'es
-par interpolation par les sous-programmes \fort{viscfa} (cas isotrope,
-\var{IPUCOU=0}) ou \fort{visort} (cas anisotrope, \var{IPUCOU=1}).
+Les pas de temps aux faces $\Delta t_{\,ij}$ et $\Delta t_{\,b_{ik}}$ sont calculés
+par interpolation par les sous-programmes \fort{cs\_face\_viscosity} (cas isotrope,
+\var{IPUCOU=0}) ou \fort{cs\_face\_orthotropic\_viscosity\_vector} (cas anisotrope, \var{IPUCOU=1}).
 
-\subsection*{Calcul avec reconstruction des non orthogonalit\'es}
-Plusieurs discr\'etisations peuvent \^etre propos\'ees pour le traitement des
-non orthogonalit\'es. Celle retenue dans le code est issue des premiers tests
-r\'ealis\'es sur le prototype, et fait intervenir non seulement le pas de temps
-interpol\'e \`a la face, mais aussi les pas de temps dans chaque
+\subsection*{Calcul avec reconstruction des non orthogonalités}
+Plusieurs discrétisations peuvent être proposées pour le traitement des
+non orthogonalités. Celle retenue dans le code est issue des premiers tests
+réalisés sur le prototype, et fait intervenir non seulement le pas de temps
+interpolé à la face, mais aussi les pas de temps dans chaque
 cellule. Il
-serait sans doute bon de revenir sur cette \'ecriture et \'evaluer d'autres
-solutions. La forme utilis\'ee pour les faces internes est :
+serait sans doute bon de revenir sur cette écriture et évaluer d'autres
+solutions. La forme utilisée pour les faces internes est~:
 \begin{multline}
 \label{Base_Itrmas_eq_intavcrec}
 -\Delta t_{\,ij}(\grad_f P)_{\,ij}\,.\,\vect{S}_{\,ij}=
@@ -82,7 +82,7 @@ solutions. La forme utilis\'ee pour les faces internes est :
 \frac{S_{\,ij}}{\overline{I^\prime J^\prime}}
 \end{multline}
 
-Pour les faces de bord, on \'ecrit :
+Pour les faces de bord, on écrit :
 \begin{equation}
 \label{Base_Itrmas_eq_brdavcrec}
 -\Delta t_{\,b_{ik}}(\grad_f P)_{\,b_{ik}}\,.\,\vect{S}_{\,b_{ik}}=
@@ -95,40 +95,40 @@ Pour les faces de bord, on \'ecrit :
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Les principaux arguments pass\'es \`a \fort{cs\_face\_diffusion\_potential} et \fort{cs\_diffusion\_potential} sont la
-variable trait\'ee \var{PVAR} (la pression), ses conditions aux limites, le pas
-de temps projet\'e aux faces\footnote{%
-Plus pr\'ecis\'ement, le pas de temps projet\'e aux faces, multipli\'e par la
-surface et divis\'e par $\overline{I^\prime J^\prime}$ ou $\overline{I^\prime F}$, cf. \fort{viscfa}}
+Les principaux arguments passés à \fort{cs\_face\_diffusion\_potential} et \fort{cs\_diffusion\_potential} sont la
+variable traitée \var{PVAR} (la pression), ses conditions aux limites, le pas
+de temps projeté aux faces\footnote{%
+Plus précisément, le pas de temps projeté aux faces, multiplié par la
+surface et divisé par $\overline{I^\prime J^\prime}$ ou $\overline{I^\prime F}$, cf. \fort{cs\_face\_viscosity}}
 (\var{VISCF} et \var{VISCB}), le pas de temps au
-centre des cellules, \'eventuellement anisotrope (\var{VISELX}, \var{VISELY},
+centre des cellules, éventuellement anisotrope (\var{VISELX}, \var{VISELY},
 \var{VISELZ}). \fort{cs\_face\_diffusion\_potential} retourne les tableaux \var{FLUMAS} et \var{FLUMAB}
-(flux de masse aux faces) mis \`a jour. \fort{cs\_diffusion\_potential} retourne directement la
-divergence du flux de masse mis \`a jour, dans le tableau \var{DIVERG}.
+(flux de masse aux faces) mis à jour. \fort{cs\_diffusion\_potential} retourne directement la
+divergence du flux de masse mis à jour, dans le tableau \var{DIVERG}.
 
 \etape{Initialisation}
 Si \var{INIT} vaut 1, les variables \var{FLUMAS} et \var{FLUMAB} ou \var{DIVERG}
-sont mises \`a z\'ero.
+sont mises à zéro.
 
 \etape{Cas sans reconstruction}
-La prise en compte ou non des non orthogonalit\'es est d\'etermin\'ee par
-l'indicateur \var{NSWRGR} de la variable trait\'ee (nombre de sweeps de
-reconstruction des non orthogonalit\'es dans le calcul des gradients), pass\'e
-par la variable \var{NSWRGP}. Une valeur inf\'erieure ou \'egale \`a 1 enclenche
+La prise en compte ou non des non orthogonalités est déterminée par
+l'indicateur \var{NSWRGR} de la variable traitée (nombre de sweeps de
+reconstruction des non orthogonalités dans le calcul des gradients), passé
+par la variable \var{NSWRGP}. Une valeur inférieure ou égale à 1 enclenche
 le traitement sans reconstruction.\\
 Des boucles sur les faces internes et les faces de bord utilisent directement
 les formules (\ref{Base_Itrmas_eq_intssrec}) et (\ref{Base_Itrmas_eq_brdssrec}) pour remplir les
 tableaux \var{FLUMAS} et \var{FLUMAB} (\fort{cs\_face\_diffusion\_potential}) ou des variables de
-travail \var{FLUMAS} et \var{FLUMAB} qui servent \`a mettre \`a jour le tableau
+travail \var{FLUMAS} et \var{FLUMAB} qui servent à mettre à jour le tableau
 \var{DIVERG} (\fort{cs\_diffusion\_potential}).
 
-\`A noter que les tableaux \var{VISCF} et \var{VISCB} contiennent respectivement
+à noter que les tableaux \var{VISCF} et \var{VISCB} contiennent respectivement
 $\displaystyle\frac{\Delta t_{\,ij}S_{\,ij}}{\overline{I^\prime J^\prime}}$ et
 $\displaystyle\frac{\Delta t_{\,b_{ik}}S_{\,b_{ik}}}{\overline{I^\prime F}}$.
 
 \etape{Cas avec reconstruction}
-Apr\`es un appel \`a \fort{GRDCEL} pour calculer le gradient cellule de
+Après un appel à \fort{GRDCEL} pour calculer le gradient cellule de
 pression, on remplit les tableaux \var{FLUMAS} et \var{FLUMAB} ou \var{DIVERG}
-l\`a encore par une application directe des formules (\ref{Base_Itrmas_eq_intavcrec}) et
+là encore par une application directe des formules (\ref{Base_Itrmas_eq_intavcrec}) et
 (\ref{Base_Itrmas_eq_brdavcrec}).
 

@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -28,30 +28,30 @@
 %-------------------------------------------------------------------------------
 
 Le but de ce sous-programme est de calculer, au centre des cellules, le gradient
-d'une fonction scalaire, \'egalement connue au centre des cellules.
-Pour obtenir la valeur du gradient, une m\'ethode it\'erative de
+d'une fonction scalaire, également connue au centre des cellules.
+Pour obtenir la valeur du gradient, une méthode itérative de
 reconstruction pour les maillages non orthogonaux est mise en
-\oe uvre~: elle fait appel \`a un d\'eveloppement limit\'e d'ordre 1 en espace
-sur la variable, obtenu \`a partir de la
+\oe uvre~: elle fait appel à un développement limité d'ordre 1 en espace
+sur la variable, obtenu à partir de la
 valeur de la fonction et de son gradient au centre de la cellule. Cette
-m\'ethode,
-choisie comme option par d\'efaut, correspond \`a \var{imrgra}\,=\,0 et est utilis\'ee pour le calcul
+méthode,
+choisie comme option par défaut, correspond à \var{imrgra}\,=\,0 et est utilisée pour le calcul
 des gradients de toutes les grandeurs.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-La m\'ethode est d\'ecrite \'a la section~\ref{sec:spadis:iteratif_gradient}.
+La méthode est décrite \'a la section~\ref{sec:spadis:iteratif_gradient}.
 
 \minititre{Remarque}
 Pour les conditions aux limites en pression, un traitement particulier est mis
-en  \oe uvre, surtout utile dans les cas o\`u un gradient de pression (hydrostatique
-ou autre) n\'ecessite une attention sp\'ecifique aux bords, o\`u une condition
-\`a la limite de type Neumann homog\`ene est g\'en\'eralement inadapt\'ee. Soit
-$P_{F_{\,b_{\,ik}}}$ la  valeur de la pression \`a la face associ\'ee, que
+en  \oe uvre, surtout utile dans les cas où un gradient de pression (hydrostatique
+ou autre) nécessite une attention spécifique aux bords, où une condition
+à la limite de type Neumann homogène est généralement inadaptée. Soit
+$P_{F_{\,b_{\,ik}}}$ la  valeur de la pression à la face associée, que
 l'on veut calculer.
 
 On note que ~:
@@ -60,12 +60,12 @@ On note que ~:
 \,.\,\vect{G}_{\,c,i} = \overline{I'F}_{\,b_{\,ik}} \,.\left. \displaystyle\frac{\delta P}{\delta
 n}\right|_{F_{\,b_{\,ik}}}
 \end{equation}
-avec les conventions pr\'ec\'edentes.\\
+avec les conventions précédentes.\\
 \paragraph{\bf Sur maillage orthogonal }
 On se place dans le cas d'un maillage orthogonal , {\it i.e.} pour
-toute cellule $\Omega_I$, $I$ et son projet\'e $I'$ sont identiques.
+toute cellule $\Omega_I$, $I$ et son projeté $I'$ sont identiques.
 Soit $M_{\,b_{\,ik}}$ le milieu du segment $IF_{\,b_{\,ik}}$.\\
-On peut \'ecrire les \'egalit\'es suivantes~:
+On peut écrire les égalités suivantes~:
 \begin{equation}\notag
 \begin{array}{ll}
 P_{F_{\,b_{\,ik}}} & = P_{M_{\,b_{\,ik}}} + \overline{M_{\,b_{\,ik}}F_{\,b_{\,ik}}}\,.\left. \displaystyle\frac{\delta P}{\delta
@@ -84,18 +84,18 @@ On obtient donc~:
 P_{F_{\,b_{\,ik}}} - P_I = \overline{IF}_{\,b_{\,ik}}\,.\left. \displaystyle\frac{\delta P}{\delta
 n}\right|_{M_{\,b_{\,ik}}} + \mathcal{O}(h^3)
 \end{equation}
-Gr\^ace \`a la formule des accroissements finis :
+Grâce à la formule des accroissements finis :
 \begin{equation}\label{Base_Gradrc_eq_derivee_normale}
 \left. \displaystyle\frac{\delta P}{\delta n}\right|_{M_{\,b_{\,ik}}} =
 \displaystyle\frac{1}{2}\left[\left. \displaystyle\frac{\delta P}{\delta
 n}\right|_{I} +  \left. \displaystyle\frac{\delta P}{\delta
 n}\right|_{F_{\,b_{\,ik}}}\right] + \mathcal{O}(h^2)
 \end{equation}\\
-On s'int\'eresse aux cas suivants :\\\\
-\hspace*{0.5cm}{ $\bullet${\underline { condition \`a la limite de type Dirichlet}}}\\
+On s'intéresse aux cas suivants :\\\\
+\hspace*{0.5cm}{ $\bullet${\underline { condition à la limite de type Dirichlet}}}\\
 $P_{F_{\,b_{\,ik}}} = P_{IMPOSE}$, aucun traitement particulier\\\\
-\hspace*{0.5cm}{ $\bullet ${\underline { condition \`a la limite de type Neumann
-homog\`ene}}}\\
+\hspace*{0.5cm}{ $\bullet ${\underline { condition à la limite de type Neumann
+homogène}}}\\
 On veut imposer :
 \begin{equation}
 \left. \displaystyle\frac{\delta P}{\delta n}\right|_{F_{\,b_{\,ik}}} = 0 + \mathcal{O}(h)
@@ -111,7 +111,7 @@ et comme :
 P_{F_{\,b_{\,ik}}} = P_I + \overline{IF}_{\,b_{\,ik}}\,.\left. \displaystyle\frac{\delta P}{\delta
 n}\right|_I + \mathcal{O}(h^2)
 \end{equation}
-on en d\'eduit :
+on en déduit :
 \begin{equation}
 P_{F_{\,b_{\,ik}}} = P_I + \overline{IF}_{\,b_{\,ik}}\,.\left. \displaystyle\frac{\delta P}{\delta
 n}\right|_{F_{\,b_{\,ik}}} + \mathcal{O}(h^2)
@@ -122,16 +122,16 @@ P_{F_{\,b_{\,ik}}} = P_I +  \mathcal{O}(h^2)
 \end{equation}
 On obtient donc une approximation d'ordre 1.\\
 \paragraph{\bf Sur maillage non orthogonal}
-Dans ce cas, on peut seulement \'ecrire~:\\
+Dans ce cas, on peut seulement écrire~:\\
 \begin{equation}
 P_{F_{\,b_{\,ik}}}  = P_{I'} +
 \displaystyle\frac{1}{2}\,\vect{I'F}_{\,b_{\,ik}}\,.\,[\,(\grad P)_{I'} + (\grad
 P)_{F_{\,b_{\,ik}}}\,] + \mathcal{O}(h^3)
 \end{equation}
-\hspace*{0.5cm}{ $\bullet ${\underline { condition \`a la limite de type Dirichlet}}\\
+\hspace*{0.5cm}{ $\bullet ${\underline { condition à la limite de type Dirichlet}}\\
 $P_{F_{\,b_{\,ik}}} = P_{IMPOSE}$, toujours aucun traitement particulier\\\\
-\hspace*{0.5cm}{ $\bullet ${\underline { condition \`a la limite de type Neumann
-homog\`ene}}}\\
+\hspace*{0.5cm}{ $\bullet ${\underline { condition à la limite de type Neumann
+homogène}}}\\
 On veut :
 \begin{equation}
 \left. \displaystyle\frac{\delta P}{\delta n}\right|_{F_{\,b_{\,ik}}} = 0 + \mathcal{O}(h)
@@ -140,18 +140,18 @@ ce qui entra\^\i ne :
 \begin{equation}\label{Base_Gradrc_eq_ortho}
 \vect{I'F}_{\,b_{\,ik}} \,.\,(\grad P)_{F_{\,b_{\,ik}}} = \mathcal{O}(h^2)
 \end{equation}
-On peut \'ecrire :
+On peut écrire :
 \begin{equation}\notag
 (\grad P)_{I'} = (\grad P)_{F_{\,b_{\,ik}}} +  \mathcal{O}(h)
 \end{equation}
-d'o\`u~:
+d'où~:
 \begin{equation}
 P_{F_{\,b_{\,ik}}} = P_{I'}  + \mathcal{O}(h^2)
 \end{equation}
 On obtient donc une approximation d'ordre 1.\\
 
 \hspace*{0.5cm}{\bf $\bullet $ Conclusion }\\
-On peut r\'ecapituler toutes ces situations {\it via} la formule :
+On peut récapituler toutes ces situations {\it via} la formule :
 \begin{equation}\notag
 P_{F_{\,b_{\,ik}}}\,=\,P_{I'}
 \end{equation}

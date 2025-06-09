@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -20,10 +20,10 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{viscfa}
+\programme{cs\_face\_viscosity}
 %
 
-\hypertarget{viscfa}{}
+\hypertarget{cs\_face\_viscosity}{}
 
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -31,9 +31,9 @@
 \section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Dans ce sous-programme est calcul\'e le coefficient de diffusion isotrope aux
+Dans ce sous-programme est calculé le coefficient de diffusion isotrope aux
 faces. Ce coefficient fait intervenir la valeur de la viscosité aux faces
-multipliée par le rapport surface de la face sur la distance alg\'ebrique
+multipliée par le rapport surface de la face sur la distance algébrique
 $\overline{I'J'}$ ou $\overline{I'F}$({\it cf.} figure
 \ref{Base_Viscfa_fig_geom}), rapport résultant de l'intégration du terme de
 diffusion.  Par analogie du terme calculé, ce sous-programme est aussi appelé
@@ -44,12 +44,12 @@ arithmétique, soit par une moyenne harmonique de la viscosité au centre des
 cellules, suivant le choix de l'utilisateur. Par défaut, cette valeur est
 calculée par une moyenne arithmétique.
 
-See the \doxygenanchor{cs__face__viscosity_8c.html\#viscfa}{programmers reference of the dedicated subroutine}
+See the \doxygenanchor{cs__face__viscosity_8c.html\#cs\_face\_viscosity}{programmers reference of the dedicated subroutine}
 for further details.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation} \label{Base_Viscfa_paragraphe2}
+\section*{Discrétisation} \label{Base_Viscfa_paragraphe2}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 On rappelle dans la figure \ref{Base_Viscfa_fig_geom}, la définition des différents
@@ -60,11 +60,11 @@ points géométriques utilisés par la suite.
 \centerline{\includegraphics[height=4.5cm]{facette}}}
 \parbox{8cm}{%
 \centerline{\includegraphics[height=4.5cm]{facebord}}}
-\caption{\label{Base_Viscfa_fig_geom}D\'efinition des diff\'erentes entit\'es
-g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
+\caption{\label{Base_Viscfa_fig_geom}Définition des différentes entités
+géométriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
 
-L'intégration du terme de diffusion sur une cellule $\Omega_i$ est la suivante :
+L'intégration du terme de diffusion sur une cellule $\Omega_i$ est la suivante~:
 \begin{equation}
 \int_{\Omega_i}\dive (\mu\,\grad(f))\,d\Omega= \sum\limits_{j \in
 Vois(i)}\mu_{\,ij} \frac{f_{J'}-f_{I'}}{\overline{I'J'}}\,.\, S_{\,ij} + \sum\limits_{k \in
@@ -74,31 +74,31 @@ Dans ce sous-programme, on calcule les termes de diffusion
 $\displaystyle \mu_{\,ij}\frac{S_{\,ij}}{\overline{I'J'}}$ et $\displaystyle
 \mu_{\,b_{ik}}\,.\,\frac{S_{\,b_{ik}}}{\overline{I'F}}$.\\
 
-La valeur de la viscosité sur la face interne $ij$, $\mu_{\,ij}$, est calculée :\\
-\hspace*{1.cm} {\tiny$\bigstar$}  soit par moyenne arithmétique :
+La valeur de la viscosité sur la face interne $ij$, $\mu_{\,ij}$, est calculée~:\\
+\hspace*{1.cm} {\tiny$\bigstar$}  soit par moyenne arithmétique~:
 \begin{equation}
 \mu_{\,ij}=\alpha_{\,ij}\mu_{\,i}+(1-\alpha_{\,ij})\mu_{\,j}
 \end{equation}
 avec $\alpha_{\,ij} = 0.5$ car ce choix semble stabiliser, bien que cette
 interpolation soit d'ordre 1 en espace en convergence.\\
-\hspace*{1.cm} {\tiny$\bigstar$} soit par moyenne harmonique :
+\hspace*{1.cm} {\tiny$\bigstar$} soit par moyenne harmonique~:
 \begin{equation}\notag
 \mu_{\,ij}=\frac{\mu_{\,i}\ \mu_{\,j}}{\alpha_{\,ij}\mu_{\,i}+(1-\alpha_{\,ij})\mu_{\,j}}
 \end{equation}
 avec $\alpha_{\,ij}=\displaystyle \frac{\overline{FJ'}}{\overline{I'J'}}$.\\
 
 La valeur de la viscosité sur la face de bord $ik$, $\mu_{\,b_{ik}}$, est définie
-ainsi :\\
+ainsi~:\\
 \begin{equation}\notag
 \mu_{\,b_{ik}}=\mu_I.
 \end{equation}
 \minititre{Remarque}
-Lors de l'appel de \fort{viscfa} par le sous-programme \fort{resopv}, le terme
-\`a consid\'erer est :
+Lors de l'appel de \fort{cs\_face\_viscosity} par le sous-programme \fort{resopv}, le terme
+à considérer est~:
 \begin{equation}\notag
 \dive (\,\Delta t^n \ \grad(\delta p)\,)
 \end{equation}
-soit :
+soit~:
 \begin{equation}\notag
 \mu = \mu^n = \Delta t
 \end{equation}
@@ -110,7 +110,7 @@ soit :
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 La valeur de la viscosité au centre des cellules est entrée en argument {\it
   via} la variable \var{VISTOT}. On calcule sa valeur moyenne aux faces et on
-la multiplie par le rapport surface \var{SURFN} sur la distance alg\'ebrique
+la multiplie par le rapport surface \var{SURFN} sur la distance algébrique
 \var{DIST} pour une face interne (\var{SURFBN} et \var{DISTBR} respectivement
 pour une face de bord). La valeur du terme de diffusion résultant est mise dans
 le vecteur \var{VISCF} pour une face interne et \var{VISCB} pour une face de
@@ -120,7 +120,7 @@ Si \var{IMVISF}$=0$, la moyenne est arithmétique, sinon la moyenne est harmoniq
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}
+\section*{Points à traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'obtention des interpolations utilisées dans \CS et synthétisées dans
@@ -141,5 +141,5 @@ nécessaires au préalable.
 \\
 De même, on envisage d'extrapoler la viscosité sur les faces de bord plutôt que
 de prendre la valeur de la viscosité au centre de la cellule jouxtant cette face.\\
-Dans le cas de la moyenne arithm\'etique, l'utilisation de la valeur $0.5$ pour
-les coefficients $\alpha_{\,ij}$ serait \`a revoir.
+Dans le cas de la moyenne arithmétique, l'utilisation de la valeur $0.5$ pour
+les coefficients $\alpha_{\,ij}$ serait à revoir.

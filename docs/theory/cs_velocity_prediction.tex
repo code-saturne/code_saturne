@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -241,7 +241,7 @@ and:
 By analogy with the $\theta$-scheme equation for a scalar variable, $\,
 \vect {\widetilde{u}}^{n+\theta}$ is interpolated from the predicted velocity
 $\vect {\widetilde{u}}^{n+1}$ in the following manner\footnote{if
-$\theta=1/2$, or a time extrapolation is used, second-order is only obtained provided the time step $\Delta t$ is constant and spatially uniform.}~:
+$\theta=1/2$, or a time extrapolation is used, second-order is only obtained provided the time step $\Delta t$ is constant and spatially uniform.}:
 \begin{equation}
 \vect {\widetilde{u}}^{n+\theta}=\theta\, \vect
 {\widetilde{u}}^{n+1}+(1-\theta)\, \vect {u}^{n}\\
@@ -324,7 +324,7 @@ leads to inconsistency (loss of coherence) in the numerical treatment of the pro
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The conservation of momentum equation is solved in a decoupled manner. The integration of the different terms has therefore been carried out in order to treat separately the equations obtained for each component of the velocity.\\
-For each of these components, the second member $f_s^{exp}$ of the system  (\ref{Base_Predvv_eq_di2}), the implicit terms of the system (with the exception of the convection-diffusion terms) and the term representing the total viscosity at the  internal\footnote{value required for the integration of the diffusion term in \fort{cs\_equation\_iterative\_solve}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} and boundary faces is calculated in the subroutine \fort{cs\_velocity\_prediction}. These terms are then transmitted to the subroutine \fort{cs\_equation\_iterative\_solve} which constructs and then solves the resulting complete system of equations, with the convection-diffusion terms, for each component of the velocity.
+For each of these components, the right hand side $f_s^{exp}$ of the system  (\ref{Base_Predvv_eq_di2}), the implicit terms of the system (with the exception of the convection-diffusion terms) and the term representing the total viscosity at the  internal\footnote{value required for the integration of the diffusion term in \fort{cs\_equation\_iterative\_solve}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} and boundary faces is calculated in the subroutine \fort{cs\_velocity\_prediction}. These terms are then transmitted to the subroutine \fort{cs\_equation\_iterative\_solve} which constructs and then solves the resulting complete system of equations, with the convection-diffusion terms, for each component of the velocity.
 \\\\
 The normalized residual for convergence of the solution of the system for the pressure correction (\fort{resopv}) is calculated in
 \fort{cs\_velocity\_prediction}. It is defined as the norm of magnitude
@@ -336,7 +336,7 @@ $\int\limits_{\Omega_{iel}}[{\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta\,t\,\
 -\Gamma\,]\,d\Omega}$.
 \end{center}
 
-It represents the second member of the equation system that would be solved for the pressure if the pressure gradient were not taken into account in the velocity prediction step. Note that, if the second member of the pressure increment equation were to be used directly, a normalized residual tending to zero would be obtained for a stationary calculation that had been run to convergence. This result would be penalizing and of little use for the computations.
+It represents the right hand side of the equation system that would be solved for the pressure if the pressure gradient were not taken into account in the velocity prediction step. Note that, if the right hand side of the pressure increment equation were to be used directly, a normalized residual tending to zero would be obtained for a stationary calculation that had been run to convergence. This result would be penalizing and of little use for the computations.
 
 At the start of \fort{cs\_velocity\_prediction}, $\widetilde{\vect{u}}^{n+1}$ is not yet available and it is not possible therefore to calculate the total normalized residual. On the other hand, calculating the total residual at the end of \fort{cs\_velocity\_prediction} is undesirable as this would require monopolising a working array to store the pressure gradient for the duration of the subroutine \fort{cs\_velocity\_prediction}.
 The calculation of the normalized residual is therefore carried out in two stages.
@@ -368,7 +368,7 @@ This calculation is completed at the end of \fort{cs\_velocity\_prediction}.\\
 
 \etape{Partial calculation of the term $\vect{f}_s^{\,exp}$}
 
-To represent the second member corresponding to each component of the velocity, we use the arrays \var{TRAV}(\var{IEL},\var{DIR}), \var{TRAVA}(\var{IEL},\var{DIR}) and \var{PROPCE}, with \var{IEL} being the number of the cell and \var{DIR} the direction (x, y, z). Four cases need to be considered depending on whether or not the source terms are extrapolated at $n+\theta_S$ and whether or not a fixed-point iteration is implemented on the velocity-pressure system (\var{NTERUP}$>1$).
+To represent the right hand side corresponding to each component of the velocity, we use the arrays \var{TRAV}(\var{IEL},\var{DIR}), \var{TRAVA}(\var{IEL},\var{DIR}) and \var{PROPCE}, with \var{IEL} being the number of the cell and \var{DIR} the direction (x, y, z). Four cases need to be considered depending on whether or not the source terms are extrapolated at $n+\theta_S$ and whether or not a fixed-point iteration is implemented on the velocity-pressure system (\var{NTERUP}$>1$).
 \\
 $\bullet$ If the source terms are extrapolated and we iterate over \fort{cs\_solve\_navier\_stokes}\\
 \begin{itemize}
@@ -419,16 +419,16 @@ During this step, the array \var{TRAV} is used as a working array while the call
 
 \etape{Calculation of the viscosity term at the faces
 $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$}
-The calculation of the total viscosity term at the faces is performed by the subroutine \fort{viscfa} and the solutions stored in the arrays \var{VISCF} and \var{VISCB} for the internal and boundary faces respectively.\\
+The calculation of the total viscosity term at the faces is performed by the subroutine \fort{cs\_face\_viscosity} and the solutions stored in the arrays \var{VISCF} and \var{VISCB} for the internal and boundary faces respectively.\\
 During integration of the convection-diffusion terms in the subroutine \fort{cs\_equation\_iterative\_solve}, the non-reconstructed terms, integrated in the matrix $\tens{EM}$, are singled out from the full set of terms (unreconstructed +
 reconstruction gradients) associated to the operator $\mathcal{E}$ (nonlinear)\footnote{ Ensuring coherence with the definition of the operators $\mathcal{EM}$ and $\mathcal{E}$ employed in \fort{cs\_solve\_navier\_stokes} }.
 Likewise, we differentiate between the total viscosity at the faces used in $\mathcal{E}$, arrays \var{VISCF} and \var{VISCB}, and the total viscosity at the faces employed in $\tens{EM}$, arrays \var{VISCFI} and \var{VISCBI}.\\
 For turbulent viscosity models and in LES, these two arrays are identical and contain $\mu_t+\mu$.
-For second order models, they normally contain $\mu$ however, for the simple reason of numerical stability, we can choose to put $\mu_t+\mu$ in the matrix (\textit{i.e.} in $\tens{EM}$) while keeping $\mu$ in the second member (\textit{i.e.} in $\mathcal{E}$). Because the solution is obtained by increments, this manipulation doesn't change the result. This option is activated by the indicator $\var{IRIJNU}\ =\ 1$\\
+For second order models, they normally contain $\mu$ however, for the simple reason of numerical stability, we can choose to put $\mu_t+\mu$ in the matrix (\textit{i.e.} in $\tens{EM}$) while keeping $\mu$ in the right hand side (\textit{i.e.} in $\mathcal{E}$). Because the solution is obtained by increments, this manipulation doesn't change the result. This option is activated by the indicator $\var{IRIJNU}\ =\ 1$\\
 When there is no diffusion of the velocity (\ \var{IDIFF}(\var{IUIPH})\ $<$\ 1), the terms \var{VISCF} and \var{VISCB} are set to zero.
 \linebreak
 
-\etape{Calculation of the whole second member, of $f_s^{\,imp}$ and solving of the equation}
+\etape{Calculation of the whole right hand side, of $f_s^{\,imp}$ and solving of the equation}
 The evolution equations for the components of the momentum are solved in a coupled manner. Consequently, we use a single array, \var{ROVSDT}, to represent the diagonal of the matrix obtained for each of the velocity components.\\
 For each of these components:\\
 
@@ -449,10 +449,10 @@ the term corresponding to the explicit contribution of the mass accumulation ($\
 \item The implicit and explicit mass source terms, if any (~$\var{NCESMP}>0$~), are computed at the first iteration by the subroutine  \fort{catsma} over \fort{cs\_solve\_navier\_stokes}. $\Gamma\,\vect{u}_i$ is added to \var{TRAV}, \var{TRAVA} or \var{PROPCE} for potential extrapolation. $\Gamma\,\vect{u}^n$ is added to \var{TRAV} or \var{TRAVA} and
 $-\Gamma$ to \var{ROVSDT}.
 \\
-\item The second member is then assembled taking account of all of the
+\item The right hand side is then assembled taking account of all of the
 contributions stored in the arrays \var{PROPCE}, \var{TRAVA} and
 \var{TRAV}.\\
-{\tiny$\blacksquare$} If the source terms are extrapolated, then the second member reads:
+{\tiny$\blacksquare$} If the source terms are extrapolated, then the right hand side reads:
 $$\var{SMBR}=(1-\theta_S)\,\var{PROPCE}+\var{TRAVA}+\var{TRAV}$$
 {\tiny$\blacksquare$} If not, we directly obtain:
 $$\var{SMBR}=\var{TRAVA}+\var{TRAV}$$
@@ -493,8 +493,8 @@ To do so, we follow the same procedure used previously to compute the integral
 $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$. A call to
 \fort{cs\_mass\_flux} enables to obtain
 $\rho\,S\,\widetilde{\vect{u}}^{n+1}\cdot\widetilde{\vect{n}}$ at the faces calculated from the of
-$\widetilde{\vect{u}}^{n+1}$ known at the cells (array \var{RTP}). The boundary conditions
-employed in \fort{cs\_mass\_flux} are naturally those of the velocity. As beforehand, evaluation of the face values is only up to first-order in space on non-orthogonal meshes (no reconstruction~: \var{NSWRP=1}) in order to save computation time when passing through \fort{cs\_mass\_flux}. The subroutine \fort{divmas} is then used to compute the divergence $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ at the cells, which is then added directly to \var{XNORMP}.
+$\widetilde{\vect{u}}^{n+1}$ known at the cells. The boundary conditions
+employed in \fort{cs\_mass\_flux} are naturally those of the velocity. As beforehand, evaluation of the face values is only up to first-order in space on non-orthogonal meshes (no reconstructiond: \var{nswrp=1}) in order to save computation time when passing through \fort{cs\_mass\_flux}. The subroutine \fort{divmas} is then used to compute the divergence $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ at the cells, which is then added directly to \var{XNORMP}.
 
 Lastly, the normalized residual is determined and then stored in \var{RNORMP} by a call to \fort{prodsc}  (which computes the sum of the squares of the values at the faces contained in \var{XNORMP} and then takes the square root of the result).\\
 

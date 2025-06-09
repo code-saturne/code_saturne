@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -28,9 +28,9 @@
 %-------------------------------------------------------------------------------
 \section*{Fonction}
 %-------------------------------------------------------------------------------
-Dans cette fonction, on r\'{e}sout : \\
-{\tiny$\bigstar$} soit l'\'{e}quation de convection-diffusion d'un scalaire en
-pr\'{e}sence de termes sources :
+Dans cette fonction, on résout~: \\
+{\tiny$\bigstar$} soit l'équation de convection-diffusion d'un scalaire en
+présence de termes sources~:
 %\begin{equation}\label{Base_Covofi_EQ_cvd)
 \begin{equation}
 \frac {\partial  (\rho a)}{\partial t} +
@@ -38,15 +38,15 @@ pr\'{e}sence de termes sources :
 - \underbrace{\,\dive\,(K \grad a)}_{\text{diffusion}} = T_s^{\,imp} a
 +T_s^{\,exp} +\Gamma\,a_i
 \end{equation}
-Ici $a$ repr\'{e}sente la valeur instantan\'{e}e du scalaire en approche laminaire ou,
+Ici $a$ représente la valeur instantanée du scalaire en approche laminaire ou,
 en approche RANS, sa moyenne de Reynolds $\widetilde{a}$. Les deux approches
-\'{e}tant exclusives et les \'{e}quations obtenues similaires, on utilisera le plus
+étant exclusives et les équations obtenues similaires, on utilisera le plus
 souvent aussi la notation $a$ pour $\widetilde{a}$.\\
-{\tiny$\bigstar$} soit, dans le cas d'une mod\'{e}lisation RANS, la variance de la
-fluctuation d'un scalaire en pr\'{e}sence de termes sources\footnote{Davroux A. et
-Archambeau F. : Calcul de la variance des fluctuations
-d'un scalaire dans le solveur commun. Application \`{a} l'exp\'{e}rience du CEGB dite
-``Jet in Pool'', HE-41/99/043.} :
+{\tiny$\bigstar$} soit, dans le cas d'une modélisation RANS, la variance de la
+fluctuation d'un scalaire en présence de termes sources\footnote{Davroux A. et
+Archambeau F.~: Calcul de la variance des fluctuations
+d'un scalaire dans le solveur commun. Application à l'expérience du CEGB dite
+``Jet in Pool'', HE-41/99/043.}~:
 \begin{equation}
 \begin{array}{lcl}
 &\displaystyle
@@ -56,26 +56,26 @@ d'un scalaire dans le solveur commun. Application \`{a} l'exp\'{e}rience du CEGB
 +T_s^{\,exp} +\ \Gamma\,\widetilde{{a"}^2}_i \\
 &\displaystyle \underbrace {+ 2\,\frac{\mu_t}{\sigma_t}(\grad \widetilde{a})^2 -
 \frac{\rho\,\varepsilon}{R_f k}\ \widetilde{{a"}^2}}_{\text{termes de production et
-de dissipation dus \`{a} la turbulence moyenne}}
+de dissipation dus à la turbulence moyenne}}
 \end{array}
 \end{equation}
-$\widetilde{{a"}^2}$ repr\'esente ici la moyenne du carr\'e des fluctuations\footnote{$a$ et
-$\widetilde{{a"}^2}$, sous forme discr\`ete en espace, correspondent donc en
-fait \`a des vecteurs dimensionn\'es \`a \var{NCELET} de composantes $a_I$ et $\widetilde{{a"}^2}_{I}$
-respectivement, I d\'ecrivant l'ensemble des cellules.} de $a$. $K$, $\Gamma$,
-$T_s^{imp}$ et  $T_s^{exp}$ repr\'{e}sentent respectivement le coefficient de
+$\widetilde{{a"}^2}$ représente ici la moyenne du carré des fluctuations\footnote{$a$ et
+$\widetilde{{a"}^2}$, sous forme discrète en espace, correspondent donc en
+fait à des vecteurs dimensionnés à \var{NCELET} de composantes $a_I$ et $\widetilde{{a"}^2}_{I}$
+respectivement, I décrivant l'ensemble des cellules.} de $a$. $K$, $\Gamma$,
+$T_s^{imp}$ et  $T_s^{exp}$ représentent respectivement le coefficient de
 diffusion, la valeur du terme source de masse, les termes sources implicite et
 explicite du scalaire $a$ ou $\widetilde{{a"}^2}$. $\mu_t$ et $\sigma_t$
-sont respectivement la viscosit\'{e} turbulente et le nombre de Schmidt ou de
-Prandtl turbulent, $\varepsilon$ est la dissipation de l'\'{e}nergie turbulente $k$
-et $R_f$ d\'{e}finit le rapport constant entre les \'{e}chelles dissipatives de $k$ et
-de $\widetilde{{a"}^2}$ ($R_f$ est constant selon le mod\`{e}le assez simple adopt\'{e} ici).\\
-On \'{e}crit les deux \'{e}quations pr\'{e}c\'{e}dentes sous la forme commune suivante~:
+sont respectivement la viscosité turbulente et le nombre de Schmidt ou de
+Prandtl turbulent, $\varepsilon$ est la dissipation de l'énergie turbulente $k$
+et $R_f$ définit le rapport constant entre les échelles dissipatives de $k$ et
+de $\widetilde{{a"}^2}$ ($R_f$ est constant selon le modèle assez simple adopté ici).\\
+On écrit les deux équations précédentes sous la forme commune suivante~:
 \begin{equation}
 \frac {\partial  (\rho f)}{\partial t} + \dive\,((\rho\,\underline{u}) f)
 - \dive\,(K \grad f) = T_s^{\,imp} f + T_s^{\,exp} + \Gamma\,f_i + T_s^{\,pd}
 \end{equation}
-avec, pour $f=a$ ou $f=\widetilde{{a"}^2}$ :\\
+avec, pour $f=a$ ou $f=\widetilde{{a"}^2}$~:\\
 \begin{equation}
 \begin{array}{lll}
 &\displaystyle
@@ -88,13 +88,13 @@ T_s^{\,pd}=
 \end{array}
 \end{equation}
 
-Le terme $\displaystyle \frac {\partial  (\rho f)}{\partial t}$ est d\'{e}compos\'{e} de la sorte :
+Le terme $\displaystyle \frac {\partial  (\rho f)}{\partial t}$ est décomposé de la sorte~:
 \begin{equation}
 \frac {\partial  (\rho f)}{\partial t}=\rho \frac {\partial f}{\partial t} + f
 \frac {\partial \rho}{\partial t}
 \end{equation}
-En utilisant l'\'{e}quation de conservation de la masse (cf. \fort{cs\_velocity\_prediction}),
-l'\'{e}quation pr\'{e}c\'{e}dente s'\'{e}crit finalement :\\
+En utilisant l'équation de conservation de la masse (cf. \fort{cs\_velocity\_prediction}),
+l'équation précédente s'écrit finalement~:\\
 \begin{equation}\label{Base_Covofi_Eq_cv_scal}
 \rho\ \displaystyle \frac {\partial f}{\partial t} +
 \dive\,((\rho\,\underline{u})\,f) - \dive\,(K\ \grad f)
@@ -105,25 +105,25 @@ See the \doxygenfile{covofi_8f90.html}{programmers reference of the dedicated su
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Pour int\'{e}grer l'\'{e}quation (\ref{Base_Covofi_Eq_cv_scal}), une discr\'{e}tisation temporelle de
-type $\theta$-sch\'{e}ma est appliqu\'{e}e \`{a} la variable r\'{e}solue\footnote{Si
-$\theta=1/2$, ou qu'une extrapolation est utilis\'{e}e, le pas de temps $\Delta t$
-est suppos\'{e} uniforme en temps et en espace.}~:
+Pour intégrer l'équation (\ref{Base_Covofi_Eq_cv_scal}), une discrétisation temporelle de
+type $\theta$-schéma est appliquée à la variable résolue\footnote{Si
+$\theta=1/2$, ou qu'une extrapolation est utilisée, le pas de temps $\Delta t$
+est supposé uniforme en temps et en espace.}~:
 \begin{equation}
 f^{n+\theta} = \theta \,\, f^{n+1} + (1-\theta)\,\, f^{n}
 \end{equation}
 
-L'\'{e}quation (\ref{Base_Covofi_Eq_cv_scal}) est discr\'etis\'ee au temps $n+\theta$ en
+L'équation (\ref{Base_Covofi_Eq_cv_scal}) est discrétisée au temps $n+\theta$ en
 supposant les termes sources explicites pris au temps $n+\theta_{S}$, et ceux
 implicites en $n+\theta$.
-Par souci de clart\'{e}, on suppose, en l'absence d'indication, que les propri\'{e}tes
+Par souci de clarté, on suppose, en l'absence d'indication, que les propriétes
 physiques $\Phi$ ($K,\,\rho$,...) et le flux de masse $(\rho\,\underline{u})$
-sont pris respectivement aux instants $n+\theta_\Phi$ et $n+\theta_F$, o\`{u}
-$\theta_\Phi$ et $\theta_F$ d\'{e}pendent des sch\'{e}mas en temps sp\'{e}cifiquement
-utilis\'{e}s pour ces grandeurs\footnote{cf. \fort{introd}}.
+sont pris respectivement aux instants $n+\theta_\Phi$ et $n+\theta_F$, où
+$\theta_\Phi$ et $\theta_F$ dépendent des schémas en temps spécifiquement
+utilisés pour ces grandeurs\footnote{cf. \fort{introd}}.
 
 \begin{equation}
 \begin{array}{lcl}
@@ -136,7 +136,7 @@ T_s^{\,imp}\,f^{n+\theta} + T_s^{\,exp,\,n+\theta_{S}}\\
 T_s^{\,pd,\,n+\theta_S} + f^{n+\theta}\,\dive\,(\rho\underline{u})
 \end{array}
 \end{equation}
-o\`{u} :
+où~:
 \begin{equation}
  T_s^{\,pd,\,n+\theta_S} =
 \begin{cases}
@@ -145,8 +145,8 @@ o\`{u} :
 \varepsilon^{n}}{R_f\,k^{n}}(\widetilde{{a"}^2})^{n+\theta}& \text{pour $f=\widetilde{{a"}^2}$ }
 \end{cases}
 \end{equation}
-Le terme de production affect\'{e} d'un indice $n+\theta_{S}$ est un terme source
-explicite et il est donc trait\'{e} comme tel :
+Le terme de production affecté d'un indice $n+\theta_{S}$ est un terme source
+explicite et il est donc traité comme tel~:
 \begin{equation}
 \begin{array}{rll}
 \displaystyle
@@ -159,7 +159,7 @@ explicite et il est donc trait\'{e} comme tel :
 \end{equation}
 \\
 
-L'\'{e}quation (\ref{Base_Covofi_Eq_cv_scal}) s'\'ecrit :
+L'équation (\ref{Base_Covofi_Eq_cv_scal}) s'écrit~:
 \begin{equation}\label{Base_Covofi_Eq_scal_tempo}
 \begin{array}{c}
 \displaystyle
@@ -177,7 +177,7 @@ f^{n}+ T_s^{\,pd,\,exp}-\theta\,T_s^{\,pd,\,imp}\,f^{n}
 + (1-\theta)\,\, \dive\,(\,K\ \grad f^{n})
 \end{array}
 \end{equation}
-avec :
+avec~:
 \begin{equation}
 T_s^{\,pd,\,imp} =
 \begin{cases}
@@ -196,7 +196,7 @@ $f=\widetilde{{a"}^2}$}
 \end{cases}
 \end{equation}
 On rappelle que, pour un scalaire $f$, le sous-programme \fort{cs\_equation\_iterative\_solve}
-r\'{e}sout une \'{e}quation du type suivant
+résout une équation du type suivant
 \label{Base_Covofi_Eq_Codits}
 \begin{equation}
 \begin{array}{c}
@@ -207,12 +207,12 @@ r\'{e}sout une \'{e}quation du type suivant
 \,\, \dive\,(\,K\,\grad f^{n})}_{\text{convection diffusion explicite}}
 \end{array}
 \end{equation}
-$f_s^{exp}$ repr\'{e}sente les termes sources discr\'etis\'es de mani\`ere explicite
+$f_s^{exp}$ représente les termes sources discrétisés de manière explicite
 en temps (hormis contributions de la convection diffusion explicite provenant du
-$\theta$-sch\'ema) et $f_s^{imp}\,f^{n+1}$ repr\'esente les termes lin\'eaires
-en $f^{n+1}$ dans l'\'equation discr\'etis\'ee en temps.\\
-On r\'{e}\'{e}crit l'\'{e}quation (\ref{Base_Covofi_Eq_scal_tempo}) sous la forme (\ref{Base_Covofi_Eq_scal_final})
-qui est ensuite r\'{e}solue par \fort{cs\_equation\_iterative\_solve}.
+$\theta$-schéma) et $f_s^{imp}\,f^{n+1}$ représente les termes linéaires
+en $f^{n+1}$ dans l'équation discrétisée en temps.\\
+On réécrit l'équation (\ref{Base_Covofi_Eq_scal_tempo}) sous la forme (\ref{Base_Covofi_Eq_scal_final})
+qui est ensuite résolue par \fort{cs\_equation\_iterative\_solve}.
 \begin{equation}
 \label{Base_Covofi_Eq_scal_final}
 \begin{array}{c}
@@ -231,7 +231,7 @@ qui est ensuite r\'{e}solue par \fort{cs\_equation\_iterative\_solve}.
 \end{array}
 \end{equation}
 \\
-%Pour la discr\'{e}tisation spatiale de ce syst\`{e}me, on pourra se reporter au
+%Pour la discrétisation spatiale de ce système, on pourra se reporter au
 %sous-programme \fort{cs\_solve\_navier\_stokes}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -239,90 +239,90 @@ qui est ensuite r\'{e}solue par \fort{cs\_equation\_iterative\_solve}.
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-On distingue deux cas suivant le type de sch\'{e}ma en temps choisi pour les termes sources :
+On distingue deux cas suivant le type de schéma en temps choisi pour les termes sources~:
 \\
-$\bullet$ Si les termes sources ne sont pas extrapol\'{e}s, toutes les contributions
+$\bullet$ Si les termes sources ne sont pas extrapolés, toutes les contributions
 du second membre vont directement dans le vecteur
 \var{SMBRS}.\\
-$\bullet$ Sinon, un vecteur suppl\'{e}mentaire est n\'{e}cessaire afin de stocker les
-contributions du pas de temps pr\'{e}cedent (\var{PROPCE}). Dans ce cas :
+$\bullet$ Sinon, un vecteur supplémentaire est nécessaire afin de stocker les
+contributions du pas de temps précedent (\var{PROPCE}). Dans ce cas~:
 \begin{itemize}
-\item [-] le vecteur \var{PROPCE} sert \`{a} stocker les contributions explicites du
+\item [-] le vecteur \var{PROPCE} sert à stocker les contributions explicites du
 second membre au temps $n-1$ (pour l'extrapolation en $n+\theta_S$).
-\item [-] le vecteur \var{SMBRS} est compl\'{e}t\'{e} au fur et \`{a} mesure.
+\item [-] le vecteur \var{SMBRS} est complété au fur et à mesure.
 \\
 \end{itemize}
-L'algorithme de ce sous-programme est le suivant :
+L'algorithme de ce sous-programme est le suivant~:
 \begin{itemize}
-\item mise \`{a} z\'{e}ro des vecteurs repr\'{e}sentant le second membre (\var{SMBRS}) et
+\item mise à zéro des vecteurs représentant le second membre (\var{SMBRS}) et
 de la diagonale de la matrice (\var{ROVSDT}).
-\item calcul des termes sources du scalaire d\'{e}finis par l'utilisateur en
+\item calcul des termes sources du scalaire définis par l'utilisateur en
 appelant le sous-programme \fort{cs\_user\_source\_terms}.
 \\\\
-$\star$ Si les termes sources sont extrapol\'{e}s, \var{SMBRS} reçoit $-\theta_S$
-fois la contribution au temps $n-1$ des termes sources qui sont extrapol\'{e}s
-(stock\'{e}s dans \var{PROPCE}). La contribution des termes sources utilisateurs (au
-pas temps courant) est r\'{e}partie entre \var{PROPCE} (pour la partie $T_s^{exp}$
-qui est \`{a} stocker en vue de l'extrapolation) et \var{SMBRS} (pour la partie
-explicite provenant de l'utilisation du $\theta$ sch\'{e}ma pour $T_s^{imp}$). La
-contribution implicite est alors mise dans \var{ROVSDT} (apr\`{e}s multiplication
+$\star$ Si les termes sources sont extrapolés, \var{SMBRS} reçoit $-\theta_S$
+fois la contribution au temps $n-1$ des termes sources qui sont extrapolés
+(stockés dans \var{PROPCE}). La contribution des termes sources utilisateurs (au
+pas temps courant) est répartie entre \var{PROPCE} (pour la partie $T_s^{exp}$
+qui est à stocker en vue de l'extrapolation) et \var{SMBRS} (pour la partie
+explicite provenant de l'utilisation du $\theta$ schéma pour $T_s^{imp}$). La
+contribution implicite est alors mise dans \var{ROVSDT} (après multiplication
 par $\theta$) quel que soit son signe, afin de ne pas utiliser des
-discr\'{e}tisations temporelles diff\'{e}rentes entre deux pas de temps successifs, dans
-le cas par exemple o\`{u} $T_s^{imp}$ change de signe\footnote{cf. \fort{cs\_velocity\_prediction}}.
+discrétisations temporelles différentes entre deux pas de temps successifs, dans
+le cas par exemple où $T_s^{imp}$ change de signe\footnote{cf. \fort{cs\_velocity\_prediction}}.
 \\\\
 $\star$ Sinon la contibution de $T_s^{exp}$ est directement mise dans
-\var{SMBRS}. Celle de $T_s^{imp}$ est ajout\'{e}e \`{a} \var{ROVSDT} si elle est
-positive (de mani\`{e}re \`{a} conserver la dominance de la diagonale), ou explicit\'{e}e et
+\var{SMBRS}. Celle de $T_s^{imp}$ est ajoutée à \var{ROVSDT} si elle est
+positive (de manière à conserver la dominance de la diagonale), ou explicitée et
 mise dans le second membre sinon.
 \\
-\item prise en compte des physiques particuli\`{e}res : arc \'{e}lectrique, rayonnement,
-combustion gaz et charbon pulv\'{e}ris\'{e}. Seuls les vecteurs \var{ROVSDT} et
-\var{SMBRS} sont compl\'{e}t\'{e}s (sch\'{e}ma d'ordre 1 sans extrapolation).
+\item prise en compte des physiques particulières~: arc électrique, rayonnement,
+combustion gaz et charbon pulvérisé. Seuls les vecteurs \var{ROVSDT} et
+\var{SMBRS} sont complétés (schéma d'ordre 1 sans extrapolation).
 \item ajout des termes sources de masse en $\Gamma\,(f_i-f)$ par appel au sous-programme \fort{catsma}.
 \\\\
-$\star$ Si les termes sources sont extrapol\'{e}s, le terme explicite en
-$\Gamma\,f_i$ est stock\'{e} dans \var{PROPCE}. Le $\theta$-sch\'{e}ma est appliqu\'{e} au
-terme implicite, puis les contributions implicite et explicite r\'{e}parties entre
+$\star$ Si les termes sources sont extrapolés, le terme explicite en
+$\Gamma\,f_i$ est stocké dans \var{PROPCE}. Le $\theta$-schéma est appliqué au
+terme implicite, puis les contributions implicite et explicite réparties entre
 \var{ROVSDT} et \var{SMBRS}.
 \\\\
 $\star$ Sinon, la partie implicte en $-\Gamma\,f$ va dans \var{ROVSDT}, et tout le reste dans \var{SMBRS}.
 \\
 \item calcul du terme d'accumulation de masse en $\dive(\rho \underline{u})$ par
-appel \`a \fort{divmas} et ajout de sa contribution dans \var{SMBRS}, et dans
-\var{ROVSDT} apr\`{e}s multiplication par $\theta$\footnote{cette op\'{e}ration est
-faite quel que soit le sch\'{e}ma en temps de façon \`{a} rester coh\'{e}rent avec ce qui
+appel à \fort{divmas} et ajout de sa contribution dans \var{SMBRS}, et dans
+\var{ROVSDT} après multiplication par $\theta$\footnote{cette opération est
+faite quel que soit le schéma en temps de façon à rester cohérent avec ce qui
 est fait dans \fort{cs\_balance}}.
 
-\item ajout du terme instationnaire \`{a} \var{ROVSDT}.
+\item ajout du terme instationnaire à \var{ROVSDT}.
 
 \item calcul des termes de production ($2
 \displaystyle\frac{\mu_t}{\sigma_t}(\grad \widetilde{a})^2$) et de dissipation
 ($\displaystyle - \frac{\rho
-\varepsilon}{R_f k}\widetilde{{a"}^2}$) si on \'{e}tudie la variance des
-fluctuations d'un scalaire avec un mod\`{e}le de turbulence de type
-RANS. Ce calcul s'effectue en calculant pr\'{e}alablement
+\varepsilon}{R_f k}\widetilde{{a"}^2}$) si on étudie la variance des
+fluctuations d'un scalaire avec un modèle de turbulence de type
+RANS. Ce calcul s'effectue en calculant préalablement
 le gradient du scalaire $f$ par appel au sous-programme \fort{grdcel}.
 \\\\
-$\star$ Si les termes sources sont extrapol\'{e}s, la production est mise dans
-\var{PROPCE} puis l'\'{e}nergie cin\'{e}tique $k$ et la dissipation turbulentes
-$\varepsilon$ sont calcul\'{e}es (\var{XK} et \var{XE}) en
-fonction du mod\`{e}le de turbulence utilis\'{e}. \var{SMBRS} reçoit
+$\star$ Si les termes sources sont extrapolés, la production est mise dans
+\var{PROPCE} puis l'énergie cinétique $k$ et la dissipation turbulentes
+$\varepsilon$ sont calculées (\var{XK} et \var{XE}) en
+fonction du modèle de turbulence utilisé. \var{SMBRS} reçoit
 $\displaystyle - \frac{\rho \varepsilon}{R_f k}\widetilde{{a"}^2}$ au temps $n$
 et \var{ROVSDT} le coefficient d'implicitation
-$\displaystyle \frac{\rho \varepsilon}{R_f k}$ apr\`{e}s multiplication par
+$\displaystyle \frac{\rho \varepsilon}{R_f k}$ après multiplication par
 \var{THETAP} = $\theta$.
 \\\\
-$\star$ Sinon, la production va dans \var{SMBRS}, et la dissipation est r\'{e}partie
-de la m\^eme mani\`{e}re que pr\'{e}c\'{e}demment avec \var{THETAP} = 1.
+$\star$ Sinon, la production va dans \var{SMBRS}, et la dissipation est répartie
+de la même manière que précédemment avec \var{THETAP} = 1.
 \\
-\item une fois la contribution de tous les termes sources calcul\'{e}e, le second
-membre est assembl\'{e}, et le vecteur \var{PROPCE} ajout\'{e} apr\`{e}s multiplication par
-$1+\theta_S$ \`{a} \var{SMBRS}, dans le cas o\`{u} les termes sources sont extrapol\'{e}s.
+\item une fois la contribution de tous les termes sources calculée, le second
+membre est assemblé, et le vecteur \var{PROPCE} ajouté après multiplication par
+$1+\theta_S$ à \var{SMBRS}, dans le cas où les termes sources sont extrapolés.
 
 \item calcul du coefficient de diffusion $K$ au centre des cellules, et des
-valeurs aux faces par appel au sous-programme \fort{viscfa}.
+valeurs aux faces par appel au sous-programme \fort{cs\_face\_viscosity}.
 
-\item r\'{e}solution de l'\'{e}quation compl\`{e}te (avec les termes de convection
+\item résolution de l'équation complète (avec les termes de convection
 diffusion) par un appel au sous-programme \fort{cs\_equation\_iterative\_solve} avec
 $f_s^{exp}=\var{SMBRS}$ et $f_s^{imp}=\var{ROVSDT}$.
 
@@ -331,21 +331,21 @@ appelant le sous-programme \fort{clpsca}.
 
 \item impression du bilan explicite d'expression
 $||\mathcal{E}_{n}(f^n)\,- \displaystyle \frac {\rho^n}{\Delta t} (\,f^{\,n+1} -
-f^n\,)|| $ , o\`u $|| . ||$ d\'esigne la norme euclidienne.
+f^n\,)|| $ , où $|| . ||$ désigne la norme euclidienne.
 \\\\
 \end{itemize}
 
-On r\'{e}sume dans les tableaux \ref{Base_Covofi_tab_ext} et \ref{Base_Covofi_tab_exp} les diff\'{e}rentes
-contributions (hors convection-diffusion) affect\'{e}es \`{a} chacun des vecteurs
-\var{PROPCE}, \var{SMBRS} et \var{ROVSDT} suivant le sch\'{e}ma en temps choisi pour
-les termes sources. En l'absence d'indication, les propri\'{e}t\'{e}s physiques
-$\rho,\mu,\,...$ sont suppos\'{e}es prises en  au temps $n+\theta_\Phi$, et le flux
+On résume dans les tableaux \ref{Base_Covofi_tab_ext} et \ref{Base_Covofi_tab_exp} les différentes
+contributions (hors convection-diffusion) affectées à chacun des vecteurs
+\var{PROPCE}, \var{SMBRS} et \var{ROVSDT} suivant le schéma en temps choisi pour
+les termes sources. En l'absence d'indication, les propriétés physiques
+$\rho,\mu,\,...$ sont supposées prises en  au temps $n+\theta_\Phi$, et le flux
 de masse $(\,\rho \underline{u})$ pris au temps $n+\theta_F$, les valeurs de
-$\theta_F$ et de $\theta_\Phi$ d\'{e}pendant du type de sch\'{e}ma s\'{e}lectionn\'{e}
-sp\'{e}cifiquement pour ces grandeurs\footnote{cf. \fort{introd}}.
+$\theta_F$ et de $\theta_\Phi$ dépendant du type de schéma sélectionné
+spécifiquement pour ces grandeurs\footnote{cf. \fort{introd}}.
 \\
 
-\minititre{Avec extrapolation des termes sources :}
+\minititre{Avec extrapolation des termes sources~:}
 \begin{equation}\label{Base_Covofi_tab_ext}
 \begin{array}{|l|c|}
 \hline
@@ -367,7 +367,7 @@ T_s^{\,exp,\,n} + \Gamma^{n}\,f_i^{n} + 2\, \frac{\mu_t^{n}}{\sigma_t}(\grad f^{
 \end{array}
 \end{equation}
 
-\minititre{Sans extrapolation des termes sources :}
+\minititre{Sans extrapolation des termes sources~:}
 \begin{equation}\label{Base_Covofi_tab_exp}
 \begin{array} {|l|c|}
 \hline
@@ -385,154 +385,154 @@ T_s^{\,exp} + T_s^{\,imp}\,f^{n}+\dive(\,\rho
 \hline
 \end{array}
 \end{equation}
-%\underline{Remarque :}
+%\underline{Remarque~:}
 %\\
-%Le $\theta$ en facteur du terme de compressibilt\'{e} provient de la façon dont est compl\'{e}t\'{e} le second membre lors de l'appel au sous-programme \fort{bilcs2}.
+%Le $\theta$ en facteur du terme de compressibilté provient de la façon dont est complété le second membre lors de l'appel au sous-programme \fort{bilcs2}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`{a} traiter}\label{Base_Covofi_section4}
+\section*{Points à traiter}\label{Base_Covofi_section4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\etape{Int\'{e}gration du terme de convection-diffusion}
-Dans ce sous-programme, les points litigieux sont dus \`{a} l'int\'{e}gration du
+\etape{Intégration du terme de convection-diffusion}
+Dans ce sous-programme, les points litigieux sont dus à l'intégration du
 terme de convection-diffusion. On renvoie donc le lecteur au sous-programme
 \fort{cs\_balance} qui les explicite.
 %\pagebreak
 \clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Annexe 1 : Inversibilit\'e de la matrice $\tens{EM}_{\,n}$ }
+\section*{Annexe 1~: Inversibilité de la matrice $\tens{EM}_{\,n}$ }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Dans cette section, on va \'etudier plus particuli\`{e}rement l'inversibilit\'e de
-la matrice $\tens{EM}_{\,n}$, matrice du syst\`eme lin\'eaire
-\`a r\'esoudre associ\'ee \`a $\mathcal{EM}_{n}$ pour le cas d'un sch\'{e}ma en temps
+Dans cette section, on va étudier plus particulièrement l'inversibilité de
+la matrice $\tens{EM}_{\,n}$, matrice du système linéaire
+à résoudre associée à $\mathcal{EM}_{n}$ pour le cas d'un schéma en temps
 de type Euler implicite d'ordre un ($\theta=1$). Pour toutes les notations, on
-se reportera \`{a} la documentation sur la fonction \fort{cs\_solve\_equation\_scalar}.
-On va montrer que la d\'emarche adopt\'ee permet de
-s'assurer que la matrice des syst\`emes de convection-diffusion dans les cas
+se reportera à la documentation sur la fonction \fort{cs\_solve\_equation\_scalar}.
+On va montrer que la démarche adoptée permet de
+s'assurer que la matrice des systèmes de convection-diffusion dans les cas
 courants est toujours inversible.
 
 %%%%%%%%%%%%%%%%
 \subsection*{\bf Introduction }
 %%%%%%%%%%%%%%%%
 
-Pour montrer l'inversibilit\'e, on va utiliser le fait que la dominance
+Pour montrer l'inversibilité, on va utiliser le fait que la dominance
 stricte de la diagonale l'implique\footnote{Ce faisant, on choisit cependant une condition forte
-et la d\'emonstration n'est probablement pas optimale.}. On cherche donc \`a
-d\'eterminer sous quelles conditions les matrices de convection diffusion sont
-\`a diagonale strictement dominante.
+et la démonstration n'est probablement pas optimale.}. On cherche donc à
+déterminer sous quelles conditions les matrices de convection diffusion sont
+à diagonale strictement dominante.
 
 On va montrer qu'en incluant
 dans la matrice le terme en $\dive(\rho \,\vect{u})$
 issu de $\displaystyle \frac {{\partial}\,\rho}{{\partial}\,t}$, on peut
-\'etablir directement et exactement\footnote{Hormis
+établir directement et exactement\footnote{Hormis
 dans le cas de conditions aux limites mixtes, qu'il conviendrait d'examiner plus
-en d\'etail.} la propri\'et\'e. Par contre, si ce terme n'est pas pris en compte dans la matrice,
-il est n\'ecessaire de faire intervenir le pendant discret de la relation~:
+en détail.} la propriété. Par contre, si ce terme n'est pas pris en compte dans la matrice,
+il est nécessaire de faire intervenir le pendant discret de la relation~:
 \begin{equation}\label{Base_Covofi_Eq_Div_Int}
 \displaystyle \int_{\Omega_i} \dive (\rho\,\vect{u})\, d\Omega = 0
 \end{equation}
-Cette relation n'est cependant v\'erifi\'ee au niveau discret qu'\`a la pr\'ecision du
-solveur de pression pr\`es (et, en tous les cas, ne peut \^etre approch\'ee au
+Cette relation n'est cependant vérifiée au niveau discret qu'à la précision du
+solveur de pression près (et, en tous les cas, ne peut être approchée au
 mieux
-qu'\`a la pr\'ecision machine pr\`es). Il para\^\i t donc pr\'ef\'erable de s'en
+qu'à la précision machine près). Il para\^\i t donc préférable de s'en
 affranchir. \\
 
 
-Avant d'entrer dans les d\'etails de l'analyse, on rappelle quelques
-propri\'et\'es et d\'efinitions.
+Avant d'entrer dans les détails de l'analyse, on rappelle quelques
+propriétés et définitions.
 
-Soit $\tens{C}$ une matrice carr\'ee d'ordre N,
-d'\'el\'ement g\'en\'erique $C_{ij}$. On a par d\'efinition~:
+Soit $\tens{C}$ une matrice carrée d'ordre N,
+d'élément générique $C_{ij}$. On a par définition~:
 
-$\underline{\text{D\'efinition~:}}$
-La matrice $\tens{C}$ est \`{a} diagonale {\bf strictement dominante} {\it ssi}
+$\underline{\text{Définition~:}}$
+La matrice $\tens{C}$ est à diagonale {\bf strictement dominante} {\it ssi}
 \begin{equation}\label{Base_Covofi_Eq_Propriete_1}
 \forall i \in [1,N],\ \ \ |C_{ii}| > \sum\limits_{j=1,\,j\neq i}^{j=N}|C_{ij}|
 \end{equation}
 
-On convient de dire que  $\tens{C}$ est \`{a} diagonale {\bf simplement dominante} {\it
-ssi} l'in\'egalit\'e n'est pas stricte, soit~:
+On convient de dire que  $\tens{C}$ est à diagonale {\bf simplement dominante} {\it
+ssi} l'inégalité n'est pas stricte, soit~:
 \begin{equation}
 \forall i \in [1,N],\ \ \ |C_{ii}| \geqslant \sum\limits_{j=1,\,j\neq i}^{j=N}|C_{ij}|
 \end{equation}
 
-\underline{Remarque :} Si, sur chaque ligne, la somme des \'el\'ements d'une
-matrice est nulle, que les \'el\'ements extradiagonaux sont
-n\'egatifs et que les \'el\'ements diagonaux sont positifs, alors la matrice est
-\`a diagonale simplement dominante. Si la somme est strictement positive, la
+\underline{Remarque~:} Si, sur chaque ligne, la somme des éléments d'une
+matrice est nulle, que les éléments extradiagonaux sont
+négatifs et que les éléments diagonaux sont positifs, alors la matrice est
+à diagonale simplement dominante. Si la somme est strictement positive, la
 diagonale est strictement dominante.
 
 On a l'implication suivante~:
 
-$\underline{\text{Propri\'et\'e~:}}$
-Si la matrice $\tens{C}$ est \`{a} diagonale strictement dominante, elle est
+$\underline{\text{Propriété~:}}$
+Si la matrice $\tens{C}$ est à diagonale strictement dominante, elle est
 inversible. \\
 
-Cette propri\'et\'e\footnote{Lascaux, P. et Th\'{e}odor,
-R. : Analyse Num\'{e}rique Matricielle Appliqu\'{e}e \`{a} l'art de l'Ing\'{e}nieur, Tome 2,
-Ed. Masson.} se d\'emontre simplement si l'on admet le th\'eor\`eme de
+Cette propriété\footnote{Lascaux, P. et Théodor,
+R.~: Analyse Numérique Matricielle Appliquée à l'art de l'Ingénieur, Tome 2,
+Ed. Masson.} se démontre simplement si l'on admet le théorème de
 Gerschg\"orin ci-dessous~:
 
-$\underline{\text{Th\'eor\`eme~:}}$
-Soit $\tens{B}$ une matrice carr\'ee d'ordre N dans $\mathbb{C}\,\times\,\mathbb{C}$,
-d'\'el\'ement g\'en\'erique $B_{\,ij}$, les valeurs propres $\lambda_l$ de $B$ sont, dans
+$\underline{\text{Théorème~:}}$
+Soit $\tens{B}$ une matrice carrée d'ordre N dans $\mathbb{C}\,\times\,\mathbb{C}$,
+d'élément générique $B_{\,ij}$, les valeurs propres $\lambda_l$ de $B$ sont, dans
 le plan complexe, telles que
 $||\lambda_l - B_{ii}||_{\,\mathbb{C}} \leqslant \sum\limits_{j=1,\,j\neq
 i}^{j=N}{||B_{ij}||_{\,\mathbb{C}}}$
 
-Si $B$ est \`a \'el\'ements r\'eels, on \'ecrira $||\lambda_l - B_{ii}||_{\,\mathbb{C}}
+Si $B$ est à éléments réels, on écrira $||\lambda_l - B_{ii}||_{\,\mathbb{C}}
 \leqslant \sum\limits_{j=1,\,j\neq i}^{j=N}|B_{ij}|$
 
-$\underline{\text{D\'emontration de la propri\'et\'e pr\'ec\'edente~:}}$
+$\underline{\text{Démontration de la propriété précédente~:}}$
 
-Soit $C$ \`a diagonale strictement dominante \`a \'el\'ements r\'eels.
+Soit $C$ à diagonale strictement dominante à éléments réels.
 On montre qu'il est possible
-d'inverser le syst\`eme $CX=S$ d'inconnue $X$, quel que soit le second membre
-$S$. Pour cela, on d\'ecompose $C$ en partie
+d'inverser le système $CX=S$ d'inconnue $X$, quel que soit le second membre
+$S$. Pour cela, on décompose $C$ en partie
 diagonale ($D$) et extradiagonale ($-E$) soit~:
 $$C=D-E$$
-$C$ \'etant \`a diagonale strictement dominante, tous
-ses \'el\'ements diagonaux sont non nuls. $D$ est donc inversible (et
-les \'elements de l'inverse sont r\'eels). On
-consid\`ere alors la suite\footnote{On reconna\^\i t la m\'ethode de Jacobi}~:
+$C$ étant à diagonale strictement dominante, tous
+ses éléments diagonaux sont non nuls. $D$ est donc inversible (et
+les élements de l'inverse sont réels). On
+considère alors la suite\footnote{On reconna\^\i t la méthode de Jacobi}~:
 
 $$(X^n)_{n\in\mathbb{N}}, \text{\hspace*{1cm}avec\hspace*{1cm}} X^0=D^{-1}S
 \text{\hspace*{1cm}et\hspace*{1cm}} DX^n=S+EX^{n-1}$$
-On peut \'ecrire~:
+On peut écrire~:
 $$X^n = \sum\limits_{k=0}^{k=n} \left(D^{-1}E\right)^k D^{-1}S$$
 Cette somme converge si
-le rayon spectral de $B=D^{-1}E$ est strictement inf\'erieur \`a 1. Or, la
-matrice $C$ est \`a diagonale strictement dominante. On a donc pour tout $i\in\mathbb{N}$
-(\`a partir de la relation (\ref{Base_Covofi_Eq_Propriete_1}) et en
+le rayon spectral de $B=D^{-1}E$ est strictement inférieur à 1. Or, la
+matrice $C$ est à diagonale strictement dominante. On a donc pour tout $i\in\mathbb{N}$
+(à partir de la relation (\ref{Base_Covofi_Eq_Propriete_1}) et en
 divisant par $|C_{ii}|$)~:
 $$\forall i \in [1,N],\ \ \ \frac{|C_{ii}|}{|C_{ii}|} > \sum\limits_{j=1,\,j\neq
-i}^{j=N}\frac{|C_{ij}|}{|C_{ii}|}$$ ce qui s'\'ecrit encore~:
+i}^{j=N}\frac{|C_{ij}|}{|C_{ii}|}$$ ce qui s'écrit encore~:
 $$\forall i \in [1,N],\ \ \ \frac{|D_{ii}|}{|D_{ii}|} > \sum\limits_{j=1,\,j\neq
 i}^{j=N}\frac{|E_{ij}|}{|D_{ii}|}=\sum\limits_{j=1,\,j\neq
 i}^{j=N}|\left[D^{-1}E\right]_{ij}|$$ ou bien~:
 $$\forall i \in [1,N],\ \ \  1 > \sum\limits_{j=1,\,j\neq
-i}^{j=N}|B_{ij}|$$  d'o\`u, avec le th\'eor\`eme de Gerschg\"orin, une
+i}^{j=N}|B_{ij}|$$  d'où, avec le théorème de Gerschg\"orin, une
 relation sur les valeurs propres $\lambda_l$ de $B$~:
 $$\forall i \in [1,N],\ \ \  ||\lambda_l - B_{ii}||_{\,\mathbb{C}} \leqslant \sum\limits_{j=1,\,j\neq i}^{j=N}|B_{ij}| < 1 $$
 et comme $B_{ii}=0$~:
 $$ ||\lambda_l ||_{\,\mathbb{C}}  < 1 $$
-en particulier, la valeur propre dont la norme est la plus grande v\'erifie
-\'egalement cette
-\'equation. Ceci implique que le rayon spectral de $B$ est strictement
-inf\'erieur \`a 1. La suite $(X^n)_{n\in\mathbb{N}}$ converge donc (et la m\'ethode
-de Jacobi converge). Il existe donc une solution \`a l'\'equation  $CX=S$. Cette
+en particulier, la valeur propre dont la norme est la plus grande vérifie
+également cette
+équation. Ceci implique que le rayon spectral de $B$ est strictement
+inférieur à 1. La suite $(X^n)_{n\in\mathbb{N}}$ converge donc (et la méthode
+de Jacobi converge). Il existe donc une solution à l'équation  $CX=S$. Cette
 solution est unique\footnote{On peut le voir ``par l'absurde''.
 En effet, supposons qu'il existe deux solutions
-distinctes $X_1$ et $X_2$ \`a l'\'equation  $CX=S$. Alors $Y=X_2-X_1$ v\'erifie
+distinctes $X_1$ et $X_2$ à l'équation  $CX=S$. Alors $Y=X_2-X_1$ vérifie
 $CY=0$, soit $DY=-EY$, donc $D^{-1}EY=-Y$. Ceci signifie que $Y$
 (qui n'est pas nul, par
-hypoth\`ese) est vecteur propre de $D^{-1}E$ avec $\lambda=-1$ pour valeur
-propre associ\'ee. Or, le rayon spectral de $D^{-1}E$ est strictement
-inf\'erieur \`a 1 et $\lambda=-1$ ne peut donc pas \^etre une valeur propre de
-$D^{-1}E$.  En cons\'equence, il ne peut exister qu'une seule solution
-\`a l'\'equation  $CX=S$.} et la matrice $C$ est donc inversible.
+hypothèse) est vecteur propre de $D^{-1}E$ avec $\lambda=-1$ pour valeur
+propre associée. Or, le rayon spectral de $D^{-1}E$ est strictement
+inférieur à 1 et $\lambda=-1$ ne peut donc pas être une valeur propre de
+$D^{-1}E$.  En conséquence, il ne peut exister qu'une seule solution
+à l'équation  $CX=S$.} et la matrice $C$ est donc inversible.
 
 
 %%%%%%%%%%%%%%%%
@@ -544,70 +544,70 @@ $\displaystyle \frac{{\partial}\,\rho}{{\partial}\,t}$ dans  $\tens{EM}_{\,n}$}
 \subsubsection*{Introduction}
 %---------------
 Pour montrer que la matrice $\tens{EM}_{\,n}$ est inversible, on va
-montrer qu'elle est \`a diagonale strictement dominante. Pour cela, on
-va consid\'erer successivement les contributions~:\\
-\hspace*{1cm}- des termes diff\'erentiels
-d'ordre 0 lin\'eaires en $\delta f^{\,n+1,k+1}$,\\
+montrer qu'elle est à diagonale strictement dominante. Pour cela, on
+va considérer successivement les contributions~:\\
+\hspace*{1cm}- des termes différentiels
+d'ordre 0 linéaires en $\delta f^{\,n+1,k+1}$,\\
 \hspace*{1cm}- des termes issus de la prise en compte de
 $\displaystyle \frac {{\partial}\,\rho}{{\partial}\,t}$,\\
-\hspace*{1cm}- des termes diff\'erentiels d'ordre 1 (convection),\\
-\hspace*{1cm}- des termes diff\'erentiels d'ordre 2 (diffusion).
+\hspace*{1cm}- des termes différentiels d'ordre 1 (convection),\\
+\hspace*{1cm}- des termes différentiels d'ordre 2 (diffusion).
 
 Pour chacune de ces contributions, on va examiner la
-dominance de la diagonale de l'op\'erateur lin\'eaire associ\'e.
+dominance de la diagonale de l'opérateur linéaire associé.
 Si, pour chaque contribution, la dominance de la diagonale est acquise, on pourra
-alors conclure \`a la dominance de la diagonale pour la matrice (somme)
-compl\`ete\footnote{Ce raisonnement n'est pas optimal (la somme de valeurs
-absolues \'etant sup\'erieure \`a la valeur absolue de la somme), mais permet
-d'obtenir des conclusions dans le cas pr\'esent (condition
+alors conclure à la dominance de la diagonale pour la matrice (somme)
+complète\footnote{Ce raisonnement n'est pas optimal (la somme de valeurs
+absolues étant supérieure à la valeur absolue de la somme), mais permet
+d'obtenir des conclusions dans le cas présent (condition
 suffisante).}
-$\tens{EM}_{\,n}$ et donc \`a son inversibilit\'e.
+$\tens{EM}_{\,n}$ et donc à son inversibilité.
 
 
 %---------------
-\subsubsection*{Contributions des termes diff\'erentiels d'ordre 0 lin\'eaires en
+\subsubsection*{Contributions des termes différentiels d'ordre 0 linéaires en
 $\delta f^{\,n+1,k+1}$}
 %---------------
 \label{Base_Covofi_ContributionTermesdOrdre0}
-L'unique contribution est sur la diagonale~: il faut donc v\'erifier qu'elle
+L'unique contribution est sur la diagonale~: il faut donc vérifier qu'elle
 est strictement positive.
 
 Pour chaque ligne $I$,  ${f_s^{\,imp}}_I $
- (cf. (\ref{Base_Covofi_Eq_scal_final})) contient au minimum la quantit\'e strictement
-positive\footnote{Ceci permettra de conclure \`a la stricte dominance de la
-diagonale de la matrice somme compl\`ete $\tens{EM}_{\,n}$.}
+ (cf. (\ref{Base_Covofi_Eq_scal_final})) contient au minimum la quantité strictement
+positive\footnote{Ceci permettra de conclure à la stricte dominance de la
+diagonale de la matrice somme complète $\tens{EM}_{\,n}$.}
  $\displaystyle \frac {\rho_I^n\ |\Omega_i|}{\Delta t}$.
 Les autres expressions,
 ($-\,|\Omega_i|\,(T_s^{\,imp})_I\ $, $\ +|\Omega_i|\, \Gamma_I\ $, $\
 -\,|\Omega_i|\,{(T_s^{\,pd,imp})}_{\,I}$),
 lorsqu'elles existent, contribuent toutes positivement\footnote{Le terme de
-dissipation $\rho\frac{1}{R_f}\,\frac{\varepsilon}{k}$, sp\'ecifique \`a l'\'{e}tude de la
-variance des fluctuations, est positif par d\'{e}finition et ne remet donc pas en cause la
+dissipation $\rho\frac{1}{R_f}\,\frac{\varepsilon}{k}$, spécifique à l'étude de la
+variance des fluctuations, est positif par définition et ne remet donc pas en cause la
 conclusion.}.
 
-L'op\'erateur lin\'eaire associ\'e \`a ces contributions
-v\'erifie donc bien la {\bf dominance stricte} de la diagonale (propri\'et\'e
-1). Ce n'est cependant pas vrai si on extrapole les termes source, \`{a} cause de
-$T_s^{\,imp}$. Il en r\'{e}sulte une contrainte sur la valeur du pas de temps.
+L'opérateur linéaire associé à ces contributions
+vérifie donc bien la {\bf dominance stricte} de la diagonale (propriété
+1). Ce n'est cependant pas vrai si on extrapole les termes source, à cause de
+$T_s^{\,imp}$. Il en résulte une contrainte sur la valeur du pas de temps.
 
 %
 %---------------
 \subsubsection*{Contributions  des termes
-diff\'erentiels d'ordre 1 et des termes issus de la prise en compte de
+différentiels d'ordre 1 et des termes issus de la prise en compte de
 $\displaystyle \frac {{\partial}\,\rho}{{\partial}\,t}$}
 %---------------
 \label{Base_Covofi_Contributionsdrhodtconvection}
-Les termes consid\'er\'es sont au nombre de deux dans
+Les termes considérés sont au nombre de deux dans
 (\ref{Base_Covofi_Eq_scal_tempo})~:\\
 \hspace*{1cm}- la contribution issue de la prise en compte de $\displaystyle
 \frac
 {{\partial}\,\rho}{{\partial}\,t}$ se retrouve dans ${f_s^{\,imp}}_I $
-(\'equation \ref{Base_Covofi_Eq_scal_final}),\\
+(équation \ref{Base_Covofi_Eq_scal_final}),\\
 \hspace*{1cm}- la contribution du terme de convection
-lin\'earis\'e.
+linéarisé.
 
 
-Apr\`es int\'{e}gration spatiale, la somme de ces deux termes discrets s'\'ecrit~:\\
+Après intégration spatiale, la somme de ces deux termes discrets s'écrit~:\\
 %$C^{int}_{IJ}+C^{bord}_{b_{IK}}$, avec~:\\
 \begin{equation}
 \begin{array}{lll}\label{Base_Covofi_Eq_Avec_Faces_Int}
@@ -623,31 +623,31 @@ m_{\,{b}_{ik}}^n - |m_{\,{b}_{ik}}^n|)\,\delta f_{\,{b}_{ik}}^{\,n+1,k+1}\right]
 \end{array}
 \end{equation}
 
-Pour chaque ligne $I$, on va chercher les propri\'et\'es de dominance de la
-diagonale en traitant s\'epar\'ement les faces internes (\'equation
+Pour chaque ligne $I$, on va chercher les propriétés de dominance de la
+diagonale en traitant séparément les faces internes (équation
 (\ref{Base_Covofi_Eq_Avec_Faces_Int})) et les faces de bord
-(\'equation~(\ref{Base_Covofi_Eq_Avec_Faces_Bord})).
+(équation~(\ref{Base_Covofi_Eq_Avec_Faces_Bord})).
 
 \hspace*{0.5cm}$\bullet$ la contribution des {\bf faces internes} $ij$ (facteur de $\delta
-f_I^{\,n+1,k+1}$) \`{a} la diagonale est positive ; la contribution aux
-extradiagonales est n\'{e}gative (facteur de $\delta f_J^{\,n+1,k+1}$)
-et la somme de ces contributions est exactement nulle (\'equation~
+f_I^{\,n+1,k+1}$) à la diagonale est positive ; la contribution aux
+extradiagonales est négative (facteur de $\delta f_J^{\,n+1,k+1}$)
+et la somme de ces contributions est exactement nulle (équation~
 (\ref{Base_Covofi_Eq_Avec_Faces_Int})). Si l'on note $C_{IJ}$ les coefficients de la matrice
 issus de la contribution de ces termes, on a donc $|C_{II}| \geqslant
 \sum\limits_{J=1,\,J\neq I}^{J=N}|C_{IJ}|$ qui traduit la {\bf dominance ``simple''}
-(l'in\'egalit\'e n'est pas ``stricte'') de la diagonale et r\`egle la question
+(l'inégalité n'est pas ``stricte'') de la diagonale et règle la question
 des contributions des faces internes.
 
-\hspace*{0.5cm}$\bullet$ la contribution des {\bf faces de bord} doit \^etre
-r\'e\'ecrite en utilisant l'expression des conditions aux limites sur $f$
-pour pr\'eciser la valeur de $\delta f_{\,b_{ik}}$ (on omet
-l'exposant $(\,n+1,k+1)$ pour all\'eger les notations)~: \\
-$\hspace*{1.5cm}$ - pour une condition de Dirichlet : $\delta f_{\,b_{ik}}\,=\,0$,\\
-$\hspace*{1.5cm}$ - pour une condition de Neumann : $\delta f_{\,b_{ik}}\,=\,\delta f_I$, \\
-$\hspace*{1.5cm}$ - pour une condition mixte ($f_{\,b_{ik}}\,=\,\alpha\,+\,\beta f_i$) : $\delta
+\hspace*{0.5cm}$\bullet$ la contribution des {\bf faces de bord} doit être
+réécrite en utilisant l'expression des conditions aux limites sur $f$
+pour préciser la valeur de $\delta f_{\,b_{ik}}$ (on omet
+l'exposant $(\,n+1,k+1)$ pour alléger les notations)~: \\
+$\hspace*{1.5cm}$ - pour une condition de Dirichlet~: $\delta f_{\,b_{ik}}\,=\,0$,\\
+$\hspace*{1.5cm}$ - pour une condition de Neumann~: $\delta f_{\,b_{ik}}\,=\,\delta f_I$, \\
+$\hspace*{1.5cm}$ - pour une condition mixte ($f_{\,b_{ik}}\,=\,\alpha\,+\,\beta f_i$)~: $\delta
 f_{\,b_{ik}}\,=\,\beta\ \delta f_I$.\\
 
-\hspace*{1cm}Pour la contribution des faces de bord, il faut alors consid\'erer deux cas de
+\hspace*{1cm}Pour la contribution des faces de bord, il faut alors considérer deux cas de
 figure possibles.
 \begin{itemize}
 
@@ -655,76 +655,76 @@ figure possibles.
 ($\ m_{\,{b}_{ik}}^n = (\rho\
 \underline{u})^{n}_{\,b_{ik}}\,.\,\underline{S}_{\,b_{ik}} \geqslant 0$). Cette
 situation correspond par exemple aux sorties standards (fluide sortant du
-domaine), aux sym\'etries ou aux parois \'etanches (flux de masse nul). Les contributions aux
+domaine), aux symétries ou aux parois étanches (flux de masse nul). Les contributions aux
 faces de bord sont alors toutes nulles, quelles que soient les conditions aux limites
-portant sur la variable $f$. En cons\'equence, la diagonale issue de ces
+portant sur la variable $f$. En conséquence, la diagonale issue de ces
 contribution est {\bf simplement dominante}.
 \hspace*{0.5cm}
-\item {\bf Le flux de masse au bord est strictement n\'{e}gatif}. Cette situation
-correspond \`a une entr\'ee de fluide dans
-le domaine. Les contributions consid\'er\'ees s'\'ecrivent alors~:
+\item {\bf Le flux de masse au bord est strictement négatif}. Cette situation
+correspond à une entrée de fluide dans
+le domaine. Les contributions considérées s'écrivent alors~:
 \begin{equation}
 \displaystyle\sum\limits_{k\in {\gamma_b(i)}}\left[(\ -\,
 m_{\,{b}_{ik}}^n\ )\,\delta f_I^{\,n+1,k+1} + (\
 m_{\,{b}_{ik}}^n\ )\,\delta f_{\,{b}_{ik}}^{\,n+1,k+1}\right]
 \end{equation}
 Il convient alors de distinguer plusieurs situations, selon le type de condition
-\`a la limite portant sur $f$~: \\
-\hspace*{1.cm} {\tiny$\bigstar$} si la condition \`{a} la limite de $f$ est de type
-{\bf Dirichlet}, seule subsiste une contribution positive ou nulle \`{a} la diagonale, qui assure
+à la limite portant sur $f$~: \\
+\hspace*{1.cm} {\tiny$\bigstar$} si la condition à la limite de $f$ est de type
+{\bf Dirichlet}, seule subsiste une contribution positive ou nulle à la diagonale, qui assure
 donc la {\bf dominance simple}~:
 \begin{equation}
 \displaystyle\sum\limits_{k\in {\gamma_b(i)}}(\ -\,
 m_{\,{b}_{ik}}^n\ )\,\delta f_I^{\,n+1,k+1}
 \end{equation}
-\hspace*{1.cm} {\tiny$\bigstar$} si la condition \`{a} la limite de $f$ est de type
+\hspace*{1.cm} {\tiny$\bigstar$} si la condition à la limite de $f$ est de type
  {\bf Neumann}, la somme des contributions dues aux faces de bord
 est alors nulle, ce qui assure
 donc la {\bf dominance simple}.\\
-\hspace*{1.cm} {\tiny$\bigstar$} si la condition \`{a} la limite de $f$ est de type
+\hspace*{1.cm} {\tiny$\bigstar$} si la condition à la limite de $f$ est de type
 {\bf mixte}, la contribution des faces de bord est sur la diagonale et vaut~:
 \begin{equation}
 \displaystyle \frac{1}{2}\sum\limits_{k \in \gamma_b(i)}(1-\beta)
 (\ -\,m_{\,{b}_{ik}}^n\ )\,\delta f_I^{\,n+1,k+1}
 \end{equation}
-On ne peut pas se prononcer quand \`a la dominance de la diagonale, \`a
-cause de la pr\'esence de $(1-\beta)$ (la valeur de $\beta$ est fix\'ee par
-l'utilisateur) et la d\'emarche adopt\'ee ici
-{\bf ne permet donc pas de conclure}. Il faut n\'eanmoins noter que cette
+On ne peut pas se prononcer quand à la dominance de la diagonale, à
+cause de la présence de $(1-\beta)$ (la valeur de $\beta$ est fixée par
+l'utilisateur) et la démarche adoptée ici
+{\bf ne permet donc pas de conclure}. Il faut néanmoins noter que cette
 situation est rare dans les calculs standards. Elle demande un
-compl\'ement d'analyse et sera pour le moment exclue des
-consid\'{e}rations expos\'ees dans le pr\'esent document.\\
+complément d'analyse et sera pour le moment exclue des
+considérations exposées dans le présent document.\\
 \end{itemize}
 
-{\bf On peut conclure}, quand il n'y a pas de condition \`a la limite de type mixte,
-que la matrice associ\'ee aux contributions des termes
-diff\'erentiels d'ordre 1 (convectifs) et \`a la prise en compte des termes
-issus de $\displaystyle \frac{{\partial}\,\rho}{{\partial}\,t}$ et est \`a
+{\bf On peut conclure}, quand il n'y a pas de condition à la limite de type mixte,
+que la matrice associée aux contributions des termes
+différentiels d'ordre 1 (convectifs) et à la prise en compte des termes
+issus de $\displaystyle \frac{{\partial}\,\rho}{{\partial}\,t}$ et est à
 diagonale {\bf simplement dominante}.
 
 
 
 
 %---------------
-\subsubsection*{Contributions des termes diff\'erentiels d'ordre 2}
+\subsubsection*{Contributions des termes différentiels d'ordre 2}
 %---------------
 
-On va consid\'erer enfin les contributions des termes diff\'erentiels
+On va considérer enfin les contributions des termes différentiels
 d'ordre 2 (issus du terme \\
 $-\ \dive\,(K^n\ \grad \delta f^{\,n+1,k+1})$).
-Pour ces termes, la contribution  \`{a} la
+Pour ces termes, la contribution  à la
 diagonale est positive\footnote{\label{Base_Covofi_transmittivite}Ceci n'est en fait pas
 toujours
-vrai. En effet, pour chaque face $ij$, la transmittivit\'e
+vrai. En effet, pour chaque face $ij$, la transmittivité
 $\frac{K^n}{\overline{I'J'}}S_{ij}$
-fait intervenir la mesure alg\'ebrique du segment $I'J'$, o\`u $I'$ et $J'$
-sont les projet\'es orthogonaux sur la normale \`a la face du centre
+fait intervenir la mesure algébrique du segment $I'J'$, où $I'$ et $J'$
+sont les projetés orthogonaux sur la normale à la face du centre
 des cellules voisines. Cette
-grandeur est une valeur alg\'ebrique et peut th\'eoriquement devenir
-n\'egative sur certains maillages pathologiques, contenant par exemple des
-mailles non convexes. On pourra se reporter au dernier point \`a traiter du sous-programme
+grandeur est une valeur algébrique et peut théoriquement devenir
+négative sur certains maillages pathologiques, contenant par exemple des
+mailles non convexes. On pourra se reporter au dernier point à traiter du sous-programme
 \fort{matrix}.},
-n\'{e}gative aux extradiagonales$^{\text{\scriptsize \thefootnote}}$, compte tenu de~:
+négative aux extradiagonales$^{\text{\scriptsize \thefootnote}}$, compte tenu de~:
 \begin{equation}
 \begin{array}{ll}
 &\int_{\Omega_i}-\ \dive\,(K^n\ \grad \delta f^{\,n+1,k+1})\,d\Omega\\
@@ -738,20 +738,20 @@ S_{b_{ik}}
 
 
 
-Consid\'erons deux cas~:\\
+Considérons deux cas~:\\
 \hspace*{1cm}- la cellule courante $I$ n'a {\bf que des faces internes} au domaine de
 calcul (pas de faces de bord). La somme des contributions est nulle. On a donc
 {\bf dominance simple} de la diagonale. \\
 \hspace*{1cm}- la cellule courante $I$ a  {\bf des faces de bord}.  La somme des
 contributions diagonales et extradiagonales est positive quand on a une
-condition \`a la limite de type {\bf Dirichlet} ou de type {\bf Neumann} sur $f$. La
+condition à la limite de type {\bf Dirichlet} ou de type {\bf Neumann} sur $f$. La
 diagonale est alors {\bf strictement dominante}.
-Lorsqu'il y a des conditions \`{a} la limite de type mixte, il n'est plus possible
-de conclure (situation \'ecart\'ee pr\'ec\'edemment).\\
+Lorsqu'il y a des conditions à la limite de type mixte, il n'est plus possible
+de conclure (situation écartée précédemment).\\
 
-{\bf On peut conclure}, quand il n'y a pas de condition \`a la limite de type mixte,
-que la matrice associ\'ee aux contributions des termes diff\'erentiels d'ordre 2
- est au moins \`a diagonale {\bf simplement dominante}.
+{\bf On peut conclure}, quand il n'y a pas de condition à la limite de type mixte,
+que la matrice associée aux contributions des termes différentiels d'ordre 2
+ est au moins à diagonale {\bf simplement dominante}.
 
 
 
@@ -759,14 +759,14 @@ que la matrice associ\'ee aux contributions des termes diff\'erentiels d'ordre 2
 \subsubsection*{Conclusion}
 %---------------
 En travaillant sur
-des maillages non pathologiques (\`a transmittivit\'e positive, voir la note de
-bas de page num\'ero \ref{Base_Covofi_transmittivite}) et en n'imposant pas de condition \`a la limite
+des maillages non pathologiques (à transmittivité positive, voir la note de
+bas de page numéro \ref{Base_Covofi_transmittivite}) et en n'imposant pas de condition à la limite
 de type mixte sur les variables, on peut donc conclure que
-$\tens{EM}_{\,n}$ est la somme de matrices \`a diagonale simplement
-dominante et d'une matrice \`a diagonale strictement dominante (paragraphe
-\ref{Base_Covofi_ContributionTermesdOrdre0}). Elle est donc  \`a {\bf diagonale strictement
+$\tens{EM}_{\,n}$ est la somme de matrices à diagonale simplement
+dominante et d'une matrice à diagonale strictement dominante (paragraphe
+\ref{Base_Covofi_ContributionTermesdOrdre0}). Elle est donc  à {\bf diagonale strictement
 dominante}, et donc {\bf inversible} (de plus, la
-m\'ethode it\'erative de Jacobi converge).
+méthode itérative de Jacobi converge).
 
 
 \subsection*{Sans prise en compte des termes issus de
@@ -780,20 +780,20 @@ $\tens{EM}_{\,n}$}
 
 Pour identifier les cas dans lesquels la matrice $\tens{EM}_{\,n}$ est
 inversible,  on va rechercher les
-conditions qui assurent la dominance de la diagonale. Par rapport \`a l'analyse
-pr\'esent\'ee au paragraphe \ref{Base_Covofi_Avecdrhodt}, seules diff\`erent les
-consid\'erations relatives aux contributions des termes diff\'erentiels d'ordre
-1, puisqu'elles sont trait\'ees au paragraphe
+conditions qui assurent la dominance de la diagonale. Par rapport à l'analyse
+présentée au paragraphe \ref{Base_Covofi_Avecdrhodt}, seules diffèrent les
+considérations relatives aux contributions des termes différentiels d'ordre
+1, puisqu'elles sont traitées au paragraphe
 \ref{Base_Covofi_Contributionsdrhodtconvection} avec les termes issus de la prise en compte
 de $\displaystyle\frac {{\partial}\,\rho}{{\partial}\,t}$.
 
 %---------------
-\subsubsection*{Contributions des termes diff\'erentiels d'ordre 1}
+\subsubsection*{Contributions des termes différentiels d'ordre 1}
 %---------------
 
-La contribution du terme de convection est la seule \`a prendre en compte. Elle
-s'\'ecrit, d'apr\`{e}s les \'{e}quations (\ref{Base_Covofi_Eq_scal_final}) et la discr\'{e}tisation
-explicit\'{e}e pour le sous-programme \fort{covofi} :
+La contribution du terme de convection est la seule à prendre en compte. Elle
+s'écrit, d'après les équations (\ref{Base_Covofi_Eq_scal_final}) et la discrétisation
+explicitée pour le sous-programme \fort{covofi}~:
 \begin{equation}\label{Base_Covofi_Eq_Sans_Faces_Int}
 \displaystyle\frac{1}{2}\sum\limits_{j\in Vois(i)}\left[(\ +\,m_{\,ij}^n + |\
 m_{\,ij}^n|\ )\,\delta f_I^{\,n+1,k+1}+ (\ m_{\,ij}^n - |\ m_{\,ij}^n|)\,\delta f_J^{\,n+1,k+1}\right]
@@ -806,83 +806,83 @@ m_{\,{b}_{ik}}^n - |m_{\,{b}_{ik}}^n|)\,\delta f_{\,{b}_{ik}}^{\,n+1,k+1}\right]
 
 
 On constate que pour chaque ligne $I$,  la contribution des faces
-internes (facteur de $\delta f_I^{\,n+1,k+1}$) \`a la diagonale est positive et
-qu'elle est n\'egative aux extradiagonales (facteur de $\delta
-f_J^{\,n+1,k+1}$). {\bf Cependant}, contrairement au cas pr\'esent\'e au
+internes (facteur de $\delta f_I^{\,n+1,k+1}$) à la diagonale est positive et
+qu'elle est négative aux extradiagonales (facteur de $\delta
+f_J^{\,n+1,k+1}$). {\bf Cependant}, contrairement au cas présenté au
 paragraphe~\ref{Base_Covofi_Contributionsdrhodtconvection}, la
-somme de ces contributions n'est pas nulle dans le cas g\'en\'eral. Pour obtenir
-un r\'esultat quant \`a la dominance de la diagonale, il faut faire intervenir
-la version discr\`ete de la propri\'et\'e (\ref{Base_Covofi_Eq_Div_Int})
-rappel\'ee ci-dessous~: $$\displaystyle \int_{\Omega_i} \dive (\rho\,\vect{u})\,
+somme de ces contributions n'est pas nulle dans le cas général. Pour obtenir
+un résultat quant à la dominance de la diagonale, il faut faire intervenir
+la version discrète de la propriété (\ref{Base_Covofi_Eq_Div_Int})
+rappelée ci-dessous~: $$\displaystyle \int_{\Omega_i} \dive (\rho\,\vect{u})\,
 d\Omega = 0$$
-Soit, sous forme discr\`ete~:
+Soit, sous forme discrète~:
 \begin{equation}\label{Base_Covofi_Eq_Continuite_discrete}
 \sum\limits_{j\in Vois(i)}\,m_{\,ij}^n
 + \sum\limits_{k\in {\gamma_b(i)}}\,m_{\,{b}_{ik}}^n\ = 0
 \end{equation}
 
 Il n'est donc pas possible d'analyser
-s\'epar\'ement les contributions des faces internes et celles des faces
-de bord (contrairement \`a la situation rencontr\'ee au
-paragraphe~\ref{Base_Covofi_Contributionsdrhodtconvection}). On se place ci-apr\`es dans le
-cas g\'en\'eral d'une cellule qui a des faces internes {\em et} des faces de
-bord (si elle n'a que des faces internes, la d\'emonstration est la m\^eme, mais
-plus simple. On peut l'\'ecrire en consid\'erant formellement que la cellule
-``a z\'ero faces de bord'', c'est \`a dire que $\gamma_b(i)$ est l'ensemble vide). \\
+séparément les contributions des faces internes et celles des faces
+de bord (contrairement à la situation rencontrée au
+paragraphe~\ref{Base_Covofi_Contributionsdrhodtconvection}). On se place ci-après dans le
+cas général d'une cellule qui a des faces internes {\em et} des faces de
+bord (si elle n'a que des faces internes, la démonstration est la même, mais
+plus simple. On peut l'écrire en considérant formellement que la cellule
+``a zéro faces de bord'', c'est à dire que $\gamma_b(i)$ est l'ensemble vide). \\
 
-Il faut alors consid\'erer deux cas de figure, selon la valeur du flux de masse
-aux faces de bord (\'eventuelles) de la cellule~:
+Il faut alors considérer deux cas de figure, selon la valeur du flux de masse
+aux faces de bord (éventuelles) de la cellule~:
 \begin{itemize}
 
 \item {\bf Le flux de masse au bord est positif ou nul} ($\ m_{\,{b}_{ik}}^n = (\rho\
 \underline{u})^{n}_{\,b_{ik}}\,.\,\underline{S}_{\,b_{ik}} \geqslant 0$). Cette
-situation correspond \`a des cellules qui ont des faces de bord de sortie
+situation correspond à des cellules qui ont des faces de bord de sortie
 standard (fluide sortant du
-domaine), de sym\'etrie ou de paroi \'etanche (flux de masse nul). Les
-contributions s'\'ecrivent alors~:
+domaine), de symétrie ou de paroi étanche (flux de masse nul). Les
+contributions s'écrivent alors~:
 \begin{equation}
 \displaystyle\frac{1}{2}\sum\limits_{j\in Vois(i)}\left[(\ +\,m_{\,ij}^n + |\
 m_{\,ij}^n|\ )\,\delta f_I^{\,n+1,k+1}+ (\ m_{\,ij}^n - |\ m_{\,ij}^n|)\,\delta f_J^{\,n+1,k+1}\right]
 +\sum\limits_{k\in {\gamma_b(i)}}\ m_{\,{b}_{ik}}^n \,\delta f_I^{\,n+1,k+1}
 \end{equation}
-Dans ce cas, la somme des contributions \`a la diagonale est positive, les
-contributions aux extradiagonales sont n\'egatives et, avec la relation
-(\ref{Base_Covofi_Eq_Continuite_discrete}), on v\'erifie que la somme des contributions
+Dans ce cas, la somme des contributions à la diagonale est positive, les
+contributions aux extradiagonales sont négatives et, avec la relation
+(\ref{Base_Covofi_Eq_Continuite_discrete}), on vérifie que la somme des contributions
 diagonales et extradiagonales est nulle.  On a donc {\bf dominance simple} de la
 diagonale.
-\item {\bf Le flux de masse au bord est strictement n\'{e}gatif}. Cette situation
-correspond \`a des cellules qui ont des faces de bord d'entr\'ee standard
-(entr\'ee de fluide dans le domaine).
-Les contributions consid\'er\'ees s'\'ecrivent alors~:
+\item {\bf Le flux de masse au bord est strictement négatif}. Cette situation
+correspond à des cellules qui ont des faces de bord d'entrée standard
+(entrée de fluide dans le domaine).
+Les contributions considérées s'écrivent alors~:
 \begin{equation}
 \displaystyle\frac{1}{2}\sum\limits_{j\in Vois(i)}\left[(\ +\,m_{\,ij}^n + |\
 m_{\,ij}^n|\ )\,\delta f_I^{\,n+1,k+1}+ (\ m_{\,ij}^n - |\ m_{\,ij}^n|)\,\delta f_J^{\,n+1,k+1}\right]
 +\sum\limits_{k\in {\gamma_b(i)}}\ m_{\,{b}_{ik}}^n \,\delta f_{\,{b}_{ik}}^{\,n+1,k+1}
 \end{equation}
 Il convient alors de distinguer plusieurs situations, selon le type de condition
-\`a la limite portant sur $f$ (on omet
-l'exposant $(\,n+1,k+1)$ pour all\'eger les notations)~:\\
-$\hspace*{1.cm}$- pour une condition de Dirichlet : $\delta f_{\,b_{ik}}\,=\,0$, \\
-$\hspace*{1.cm}$- pour une condition de Neumann : $\delta f_{\,b_{ik}}\,=\,\delta f_I$, \\
+à la limite portant sur $f$ (on omet
+l'exposant $(\,n+1,k+1)$ pour alléger les notations)~:\\
+$\hspace*{1.cm}$- pour une condition de Dirichlet~: $\delta f_{\,b_{ik}}\,=\,0$, \\
+$\hspace*{1.cm}$- pour une condition de Neumann~: $\delta f_{\,b_{ik}}\,=\,\delta f_I$, \\
 $\hspace*{1.cm}$- pour une condition mixte
-($f_{\,b_{ik}}\,=\,\alpha\,+\,\beta f_I$) : $\delta f_{\,b_{ik}}\,=\,\beta\
+($f_{\,b_{ik}}\,=\,\alpha\,+\,\beta f_I$)~: $\delta f_{\,b_{ik}}\,=\,\beta\
 \delta f_I$.\\
 Selon le cas on se trouve dans une des situations suivantes~:\\
-\hspace*{1.cm} {\tiny$\bigstar$} si la condition \`{a} la limite de $f$ est de type
+\hspace*{1.cm} {\tiny$\bigstar$} si la condition à la limite de $f$ est de type
 {\bf Dirichlet}, la contribution des faces de bord est nulle dans la matrice. La
-contribution des faces internes \`a la diagonale est positive, la contribution
-aux extradiagonales n\'egative et la somme de ces contributions vaut
+contribution des faces internes à la diagonale est positive, la contribution
+aux extradiagonales négative et la somme de ces contributions vaut
 $\sum\limits_{j\in Vois(i)}\,m_{\,ij}^n$, soit avec la relation
 (\ref{Base_Covofi_Eq_Continuite_discrete})~:
 $$\sum\limits_{j\in Vois(i)}\,m_{\,ij}^n=-\sum\limits_{k\in {\gamma_b(i)}}\
 m_{\,{b}_{ik}}^n  $$ Elle est strictement positive et la diagonale est donc
 {\bf strictement dominante}.\\
-\hspace*{1.cm} {\tiny$\bigstar$} si la condition \`{a} la limite de $f$ est de type
-{\bf Neumann}, la contribution des faces de bord se r\'{e}duit au terme~:
+\hspace*{1.cm} {\tiny$\bigstar$} si la condition à la limite de $f$ est de type
+{\bf Neumann}, la contribution des faces de bord se réduit au terme~:
 $
 \sum\limits_{k\in {\gamma_b(i)}}\ m_{\,{b}_{ik}}^n \,\delta f_I^{\,n+1,k+1}
 $.
-La somme des contributions \`a la diagonale est alors~$SC_{i}$:
+La somme des contributions à la diagonale est alors~$SC_{i}$:
 $$SC_{i}=\frac{1}{2}\sum\limits_{j\in Vois(i)}(\ +\,m_{\,ij}^n + |\ m_{\,ij}^n|\ )
 +\sum\limits_{k\in {\gamma_b(i)}}\ m_{\,{b}_{ik}}^n $$
 En utilisant deux fois la relation (\ref{Base_Covofi_Eq_Continuite_discrete}), on obtient donc pour la
@@ -890,121 +890,121 @@ diagonale~:
 $$SC_{i}=\frac{1}{2}\left[\sum\limits_{j\in Vois(i)}|\ m_{\,ij}^n|
 +\sum\limits_{k\in {\gamma_b(i)}}\
 m_{\,{b}_{ik}}^n\right]=\frac{1}{2}\left[\sum\limits_{j\in Vois(i)}(\ |\ m_{\,ij}^n|-\ m_{\,ij}^n\ )\right]$$
-Cette grandeur est positive et \'egale \`a l'oppos\'e de la somme des termes
-extradiagonaux qui sont tous n\'egatifs. La diagonale est donc
+Cette grandeur est positive et égale à l'opposé de la somme des termes
+extradiagonaux qui sont tous négatifs. La diagonale est donc
 {\bf simplement dominante}.\\
-\hspace*{1.cm} {\tiny$\bigstar$} si la condition \`{a} la limite de $f$ est de type
+\hspace*{1.cm} {\tiny$\bigstar$} si la condition à la limite de $f$ est de type
 {\bf mixte}, la somme des contributions dues aux faces de bord est~:\\
 \begin{equation}
 \sum\limits_{k \in \gamma_b(i)}\beta \ m_{\,{b}_{ik}}^n \ \delta f_I^{\,n+1,k+1}
 \end{equation}
 On ne peut donc {\bf pas conclure} quant au signe de cette contribution, le facteur
-$\beta$ \'etant choisi librement par l'utilisateur. Cette situation a \'et\'e
-\'ecart\'ee dans le paragraphe \ref{Base_Covofi_Avecdrhodt}.\\
+$\beta$ étant choisi librement par l'utilisateur. Cette situation a été
+écartée dans le paragraphe \ref{Base_Covofi_Avecdrhodt}.\\
 
 \end{itemize}
 
-{\bf On peut donc conclure}, quand il n'y a pas de condition \`a la limite de type mixte,
-que la matrice associ\'ee aux contributions
+{\bf On peut donc conclure}, quand il n'y a pas de condition à la limite de type mixte,
+que la matrice associée aux contributions
  des termes
-diff\'erentiels d'ordre 1 (convectifs) est \`a diagonale {\bf simplement
-dominante}, \`a condition que la relation (\ref{Base_Covofi_Eq_Continuite_discrete}) soit
-v\'erifi\'ee exactement.
+différentiels d'ordre 1 (convectifs) est à diagonale {\bf simplement
+dominante}, à condition que la relation (\ref{Base_Covofi_Eq_Continuite_discrete}) soit
+vérifiée exactement.
 
 
 %---------------
 \subsubsection*{Conclusion}
 %---------------
 En travaillant sur
-des maillages non pathologiques (\`a transmittivit\'e positive, voir la note de
-bas de page num\'ero \ref{Base_Covofi_transmittivite}) et en n'imposant pas de condition \`a la limite
+des maillages non pathologiques (à transmittivité positive, voir la note de
+bas de page numéro \ref{Base_Covofi_transmittivite}) et en n'imposant pas de condition à la limite
 de type mixte sur les variables, on peut donc conclure que
 $\tens{EM}_{\,n}$
-est \`a {\bf diagonale strictement dominante}, donc {\bf inversible} (et la
-m\'ethode it\'erative de Jacobi converge) \`a condition que la relation
+est à {\bf diagonale strictement dominante}, donc {\bf inversible} (et la
+méthode itérative de Jacobi converge) à condition que la relation
 (\ref{Base_Covofi_Eq_Continuite_discrete}) soit
-v\'erifi\'ee exactement. Ce n'est g\'en\'eralement pas le cas (la pr\'ecision du
-solveur de pression et la pr\'ecision machine sont finies). M\^eme si
+vérifiée exactement. Ce n'est généralement pas le cas (la précision du
+solveur de pression et la précision machine sont finies). Même si
 la contribution diagonale en
-$\displaystyle \frac {\rho_I^n\ |\Omega_i|}{\Delta t}$ peut suffire \`a
-assurer la dominance, on a cependant souhait\'e, dans \CS, s'affranchir du
-probl\`eme potentiel en prenant en compte les termes issus de $\displaystyle \frac
+$\displaystyle \frac {\rho_I^n\ |\Omega_i|}{\Delta t}$ peut suffire à
+assurer la dominance, on a cependant souhaité, dans \CS, s'affranchir du
+problème potentiel en prenant en compte les termes issus de $\displaystyle \frac
 {{\partial}\,\rho}{{\partial}\,t}$ dans la matrice.
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Annexe 2 : Remarques \`a propos du respect du principe du maximum discret}
+\section*{Annexe 2~: Remarques à propos du respect du principe du maximum discret}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %---------------
 \subsection*{Introduction}
 %---------------
 %
-Les consid\'erations expos\'ees ici sont relatives au fait que, en continu,
-une variable qui n'est {\em que} convect\'ee par un champ de d\'ebit \`a
-divergence nulle doit rester dans les bornes minimales et maximales d\'efinies
+Les considérations exposées ici sont relatives au fait que, en continu,
+une variable qui n'est {\em que} convectée par un champ de débit à
+divergence nulle doit rester dans les bornes minimales et maximales définies
 par les conditions initiales et par les conditions aux limites en espace. Ainsi,
 les valeurs d'un scalaire passif initialement nul
-dont les conditions aux limites sont des conditions de Neumann homog\`ene
-et des conditions de Dirichlet de valeur 1 devront n\'ecessairement rester
+dont les conditions aux limites sont des conditions de Neumann homogène
+et des conditions de Dirichlet de valeur 1 devront nécessairement rester
 comprises dans l'intervalle $[0\,;\,1]$. C'est ce que l'on entend ici par
 ``principe du maximum''.
 
-Soient $\vect{u}$ un champ de vitesse fig\'e et connu et $t$ un r\'eel
-positif. On consid\`ere le
-probl\`eme mod\`ele $\mathcal{P}$ de convection des variables scalaires $\rho$ et $\rho\,f$, d\'efini par :
+Soient $\vect{u}$ un champ de vitesse figé et connu et $t$ un réel
+positif. On considère le
+problème modèle $\mathcal{P}$ de convection des variables scalaires $\rho$ et $\rho\,f$, défini par~:
 \begin{equation}
 \left\{\begin{array}{ll}
 &\displaystyle \frac {\partial \rho}{\partial t} + \,\dive\,(\rho\,\underline{u}) = 0\\
 &\displaystyle \frac {\partial  (\rho f)}{\partial t} + \,\dive\,((\rho\,\underline{u})\,f) = 0
 \end{array}\right.
 \end{equation}
-avec une condition initiale $f^0$ donn\'ee ainsi que des conditions aux
-limites associ\'ees sur $f$ de type Dirichlet ou Neumann.\\
-Dans \CS , la deuxi\`eme \'equation de $\mathcal{P}$ est r\'e\'ecrite en
-continu, en utilisant la premi\`ere, sous la forme :\\
+avec une condition initiale $f^0$ donnée ainsi que des conditions aux
+limites associées sur $f$ de type Dirichlet ou Neumann.\\
+Dans \CS , la deuxième équation de $\mathcal{P}$ est réécrite en
+continu, en utilisant la première, sous la forme~:\\
 \begin{equation}
 \displaystyle \rho\,\frac {\partial f}{\partial t} -
 f\,\dive\,(\rho\,\underline{u}) + \,\dive\,((\rho\,\underline{u})\,f) = 0
 \end{equation}
-et discr\'etis\'ee temporellement comme suit :
+et discrétisée temporellement comme suit~:
 \begin{equation}\label{Base_Covofi_Eq_Avec_Temp}
 \displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} -
 f^{n+1}\,\dive\,(\rho\,\underline{u})^n + \,\dive\,((\rho\,\underline{u})^n\,f^{n+1}) = 0
 \end{equation}
-Dans un premier temps, on va \'etudier la discr\'etisation spatiale associ\'ee
-\`a (\ref{Base_Covofi_Eq_Avec_Temp}), qui correspond donc \`a la prise en compte de la
+Dans un premier temps, on va étudier la discrétisation spatiale associée
+à (\ref{Base_Covofi_Eq_Avec_Temp}), qui correspond donc à la prise en compte de la
 contribution de $\displaystyle\frac{\partial \rho}{\partial t}$ dans
-l'\'equation en continu (et se traduit par la pr\'esence de
+l'équation en continu (et se traduit par la présence de
 $-\dive((\rho\,\underline{u})^{n})$ dans l'expression de ${f_s^{\,imp}}_I $),
-puis dans un deuxi\`eme temps, la discr\'etisation spatiale de l'expression ;\\
+puis dans un deuxième temps, la discrétisation spatiale de l'expression ;\\
 \begin{equation}\label{Base_Covofi_Eq_Sans_Temp}
 \displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} +
 \,\dive\,((\rho\,\underline{u})^n\,f^{n+1}) = 0
 \end{equation}
-qui correspond \`a un probl\`eme de convection pure classique.
+qui correspond à un problème de convection pure classique.
 
-On \'etudiera ensuite un exemple simplifi\'e (monodimensionnel \`a masse
+On étudiera ensuite un exemple simplifié (monodimensionnel à masse
 volumique constante).
 
 
-Les consid\'erations pr\'esentes m\'eriteraient d'\^etre approfondies.
+Les considérations présentes mériteraient d'être approfondies.
 
 
 %==============
-\subsection*{Cas g\'en\'eral}
+\subsection*{Cas général}
 %==============
 
 
 %-------------
-\subsubsection* {Discr\'etisation spatiale de $ \displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} -
+\subsubsection* {Discrétisation spatiale de $ \displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} -
 f^{n+1}\,\dive\,(\rho\,\underline{u})^n +
 \,\dive\,((\rho\,\underline{u})^n\,f^{n+1}) = 0$}
 %-------------
 
-En int\'egrant sur une cellule $\Omega_i$ \`a l'aide de la formulation volumes
-finis habituelle, on obtient :
+En intégrant sur une cellule $\Omega_i$ à l'aide de la formulation volumes
+finis habituelle, on obtient~:
 \begin{equation}
 \begin{array}{lll}
 &\displaystyle\int_{\Omega_i}[\displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} -
@@ -1023,13 +1023,13 @@ f^{\,n+1}_{f\,ij}+\sum\limits_{k\in {\gamma_b(i)}} (\rho\
 &-\rho_I^n\ \displaystyle\ \frac{|\Omega_i|}{\Delta t}\,f_I^n \\
 \end{array}
 \end{equation}
-o\`{u} $f^{\,n+1}_{f\,ij}$ et $f^{\,n+1}_{f\,{b_{\,ik}}}$ sont les valeurs de $f$
-aux faces internes et de bord issues du choix du sch\'{e}ma convectif.
+où $f^{\,n+1}_{f\,ij}$ et $f^{\,n+1}_{f\,{b_{\,ik}}}$ sont les valeurs de $f$
+aux faces internes et de bord issues du choix du schéma convectif.
 
-En reprenant les notations pr\'ec\'edentes, en imposant un sch\'ema d\'ecentr\'e
+En reprenant les notations précédentes, en imposant un schéma décentré
 amont au premier membre ({\it i.e.} en exprimant $\delta f_{\,ij}^{\,n+1,k+1}$ et
-$\delta f_{\,{b}_{ik}}^{\,n+1,k+1}$) et en raisonnant en incr\'ements
-(cf. sous-programme \fort{cs\_solve\_navier\_stokes}), on aboutit \`a :
+$\delta f_{\,{b}_{ik}}^{\,n+1,k+1}$) et en raisonnant en incréments
+(cf. sous-programme \fort{cs\_solve\_navier\_stokes}), on aboutit à~:
 \begin{equation}
 \begin{array}{lll}
 &\rho_I^n\,\displaystyle\ \frac{|\Omega_i|}{\Delta
@@ -1048,7 +1048,7 @@ f_{\,{b}_{ik}}^{\,n+1,k+1}\right]\\
 \underline{u})^{n}_{\,b_{ik}}\,.\,\underline{S}_{\,b_{ik}}\right)\,f_I^{\,n+1,k}
 \end{array}
 \end{equation}
-avec :
+avec~:
 \begin{equation}
 \left\{\begin{array}{ll}
 f_I^{\,n+1,0} = f_I^{\,n}\\
@@ -1056,16 +1056,16 @@ f_I^{\,n+1,0} = f_I^{\,n}\\
 \end{array}\right.
 \end{equation}
 et $(f^{\,n+1,k})_{k\in \mathbb{N}}$ suite convergeant vers  $f^{\,n+1}$, $n$
-entier donn\'e, solution de (\ref{Base_Covofi_Eq_Avec_Temp}) .\\
+entier donné, solution de (\ref{Base_Covofi_Eq_Avec_Temp}) .\\
 
  \newpage
 %-------------
-\subsubsection* {Discr\'etisation spatiale de
+\subsubsection* {Discrétisation spatiale de
  $ \displaystyle \rho^n \,\frac {\,f^{n+1} -\,f^n}{\Delta t} +\,\dive\,((\rho\,\underline{u})^n\,f^{n+1}) = 0$}
 %-------------
 
-En proc\'edant de fa\c con analogue et en adoptant les m\^emes hypoth\`eses, on
-obtient :
+En procédant de façon analogue et en adoptant les mêmes hypothèses, on
+obtient~:
 \begin{equation}
 \begin{array}{lll}
 &\rho^n\,\displaystyle\ \frac{|\Omega_i|}{\Delta
@@ -1085,10 +1085,10 @@ f^{\,n+1,k}_{f\,ij}+\sum\limits_{k\in {\gamma_b(i)}} (\rho\
 \underline{u})^{n}_{\,b_{ik}}\,.\,\underline{S}_{\,b_{ik}}\,f^{\,n+1,k}_{f\,{b_{ik}}}\right]
 \end{array}
 \end{equation}
-(o\`{u} $f^{\,n+1}_{f\,ij}$ et $f^{\,n+1}_{f\,{b_{\,ik}}}$ sont les valeurs de $f$
-aux faces internes et de bord issues du choix du sch\'{e}ma convectif)
+(où $f^{\,n+1}_{f\,ij}$ et $f^{\,n+1}_{f\,{b_{\,ik}}}$ sont les valeurs de $f$
+aux faces internes et de bord issues du choix du schéma convectif)
 
-avec :
+avec~:
 \begin{equation}
 \left\{\begin{array}{ll}
 f_I^{\,n+1,0} = f_I^{\,n}\\
@@ -1096,18 +1096,18 @@ f_I^{\,n+1,0} = f_I^{\,n}\\
 \end{array}\right.
 \end{equation}
 et $(f^{\,n+1,k})_{k\in \mathbb{N}}$ suite convergeant vers  $f^{\,n+1}$, $n$
-entier donn\'e, solution de (\ref{Base_Covofi_Eq_Sans_Temp}) .\\
+entier donné, solution de (\ref{Base_Covofi_Eq_Sans_Temp}) .\\
 
 %=============
 \subsection*{Exemple pour le principe du maximum}
 %=============
 
-On va maintenant se placer en monodimensionnel, sur un maillage r\'egulier
-form\'e de trois cellules de pas $h$ constant (figure \ref{Base_Covofi_domaine1d_fig}) et \'etudier le comportement
+On va maintenant se placer en monodimensionnel, sur un maillage régulier
+formé de trois cellules de pas $h$ constant (figure \ref{Base_Covofi_domaine1d_fig}) et étudier le comportement
 du premier membre pour les deux types d'expressions, entre le pas de temps
  $n\,\Delta t$ et le pas de temps $(n+1)\,\Delta t$, avec, comme condition
 initiale $f_1^0 = f_2^0 =f_3^0 = 0$ et comme conditions aux limites, une de type
-Dirichlet et l'autre de type Neumann homog\`ene :
+Dirichlet et l'autre de type Neumann homogène~:
 \begin{equation}
 \left\{\begin{array}{ll}
 &f_{\,b_1} = 1 \\
@@ -1116,7 +1116,7 @@ Dirichlet et l'autre de type Neumann homog\`ene :
 \end{equation}
 
 On supposera de plus que~:\\
-\hspace*{1cm}{\tiny$\bigstar$} le sch\'ema convectif utilis\'e est le sch\'ema upwind\\
+\hspace*{1cm}{\tiny$\bigstar$} le schéma convectif utilisé est le schéma upwind\\
 \hspace*{1cm}{\tiny$\bigstar$} la masse volumique est constante\\
 \hspace*{1cm}{\tiny$\bigstar$} $(\rho\ u)^n_{\,b_1}\,>\,0,\ (\rho\ u)^n_{\,12}\,>\,0\ ,\
 (\rho\ u)^n_{\,23}\,>\, 0\ ,\ (\rho\ u)^n_{\,b_2}\,>\,0$\ \ \
@@ -1124,13 +1124,13 @@ et\ \ \ \ \ $S_{\,b_1}\,<\,0$.
 
 \begin{figure}[htp]
 \centerline{\includegraphics[width=3.5cm,angle=-90]{domaine1d}}
-\caption{\label{Base_Covofi_domaine1d_fig}D\'efinition du domaine de calcul unidimensionnel
-consid\'er\'e.}
+\caption{\label{Base_Covofi_domaine1d_fig}Définition du domaine de calcul unidimensionnel
+considéré.}
 \end{figure}
 
 
-On s'int\'eresse \`a l'influence sur le respect du principe du maximum discret
-de la pr\'ecision avec laquelle est v\'erifi\'ee sous forme discr\`ete la
+On s'intéresse à l'influence sur le respect du principe du maximum discret
+de la précision avec laquelle est vérifiée sous forme discrète la
 relation~:
 $$\forall i \in [1,N],\ \ \ \displaystyle\int_{\Omega_i}\dive\,(\rho\,\underline{u})\ d\Omega = 0$$
 soit, ici~:
@@ -1145,7 +1145,7 @@ soit, ici~:
 $\displaystyle\frac{\partial \rho}{\partial t}$ dans la matrice}
 %-------------
 \label{Base_Covofi_PpmaxAvecDrhoDt}
-Le syst\`eme \`a r\'esoudre est alors, en omettant pour simplifier l'exposant $(\,n+1,k+1)$ :
+Le système à résoudre est alors, en omettant pour simplifier l'exposant $(\,n+1,k+1)$~:
 \begin{equation}
 \begin{array}{lllllllll}
 &\displaystyle \rho_1^{\,n}\ \displaystyle\ \frac{|\Omega_1|}{\Delta
@@ -1159,7 +1159,7 @@ t}\,\delta f_3 &+&(\rho\ u)^n_{\,23}\,.\,S_{\,23}\,\delta f_3 &-&(\rho\
 u)^n_{\,23}\,.\,S_{\,23}\,\delta f_2 &= &0\\
 \end{array}
 \end{equation}
-ce qui donne :
+ce qui donne~:
 \begin{equation}
 \left\{\begin{array}{lll}
 &\delta f_1 =& \,f_{\,b_1}\displaystyle\ \frac{-(\rho\ u)^n_{\,b_1}\,.\,S_{\,b_1}}{\rho_1^{\,n}\ \displaystyle\ \frac{|\Omega_1|}{\Delta
@@ -1171,7 +1171,7 @@ u)^n_{\,23}\,.\,S_{\,23}}{\rho_3^{\,n}\ \displaystyle\ \frac{|\Omega_3|}{\Delta
 t} + (\rho\ u)^n_{\,23}\,.\,S_{\,23}}\\
 \end{array}\right.
 \end{equation}
-d'o\`u :
+d'où~:
 \begin{equation}
 \left\{\begin{array}{lll}
 & \delta f_1 & <\ 1 \\
@@ -1179,10 +1179,10 @@ d'o\`u :
 & \delta f_3 & <\ 1 \\
 \end{array}\right.
 \end{equation}
-On obtient donc bien une solution qui v\'erifie le principe du maximum discret,
-m\^eme pour des grands pas de temps $\Delta t$, et ce, quelle que soit la
-pr\'ecision avec laquelle est v\'erifi\'ee, \`a l'\'etape de correction, la
-forme discr\`ete (\ref{Base_Covofi_ContinuiteDiscreteExemple}) de la conservation de la
+On obtient donc bien une solution qui vérifie le principe du maximum discret,
+même pour des grands pas de temps $\Delta t$, et ce, quelle que soit la
+précision avec laquelle est vérifiée, à l'étape de correction, la
+forme discrète (\ref{Base_Covofi_ContinuiteDiscreteExemple}) de la conservation de la
 masse $\displaystyle\int_{\Omega_i}\dive\,(\rho\,\underline{u})\ d\Omega = 0$
 dont on ne s'est pas servi ici.
 
@@ -1193,7 +1193,7 @@ $\displaystyle\frac{\partial \rho}{\partial t}$ dans la matrice}
 %-------------
 
 
-On obtient de m\^eme :
+On obtient de même~:
 \begin{equation}
 \begin{array}{lllllllll}
 &\displaystyle \rho_1^{\,n}\ \displaystyle\ \frac{|\Omega_1|}{\Delta t}\,\delta f_1&+& (\rho\ u)^n_{\,12}\,.\,S_{\,12}\,\delta f_1& &\ \ \ \ \  &= &-(\rho\ u)^n_{\,b_1}\,.\,S_{\,b_1}\,f_{\,b_1}\\
@@ -1206,7 +1206,7 @@ u)^n_{\,b_2}\,.\,S_{\,b_2}\,\delta f_3 &= &0\\
 \end{array}
 \end{equation}
 
-soit :
+soit~:
 
 \begin{equation}
 \left\{\begin{array}{lll}
@@ -1219,7 +1219,7 @@ u)^n_{\,23}\,.\,S_{\,23}}{\rho_3^{\,n}\ \displaystyle\ \frac{|\Omega_3|}{\Delta
 t} + (\rho\ u)^n_{\,b_2}\,.\,S_{\,b_2}}\\
 \end{array}\right.
 \end{equation}
-Ici, on constate que le respect du principe du maximum discret :\\
+Ici, on constate que le respect du principe du maximum discret~:\\
 \begin{equation}
 \left\{\begin{array}{lll}
 &\delta f_1 &\leqslant \ 1 \\
@@ -1227,7 +1227,7 @@ Ici, on constate que le respect du principe du maximum discret :\\
 &\delta f_3 &\leqslant \ 1 \\
 \end{array}\right.
 \end{equation}
-est \'equivalent \`a la condition :
+est équivalent à la condition~:
 \begin{equation}
 \left\{\begin{array}{lll}
 - &( \rho\ u)^n_{\,b_1}\,.\,S_{\,b_1}&\leqslant \displaystyle\ \rho_1^{\,n}
@@ -1238,11 +1238,11 @@ est \'equivalent \`a la condition :
 \frac{|\Omega_3|}{\Delta t} + (\rho\ u)^n_{\,b_2}\,.\,S_{\,b_2}\\
 \end{array}\right.
 \end{equation}
-Contrairement \`a la situation du paragraphe
-\ref{Base_Covofi_PpmaxAvecDrhoDt}, on ne peut obtenir ici un r\'esultat qu'en
-faisant intervenir l'\'egalit\'e (\ref{Base_Covofi_ContinuiteDiscreteExemple}), forme
-discr\`ete de la conservation de la masse. On obtient bien alors, \`a partir du
-syst\`eme pr\'ec\'edent~:
+Contrairement à la situation du paragraphe
+\ref{Base_Covofi_PpmaxAvecDrhoDt}, on ne peut obtenir ici un résultat qu'en
+faisant intervenir l'égalité (\ref{Base_Covofi_ContinuiteDiscreteExemple}), forme
+discrète de la conservation de la masse. On obtient bien alors, à partir du
+système précédent~:
 \begin{equation}
 \left\{\begin{array}{lll}
 &\delta f_1 &< \ 1 \\
@@ -1251,18 +1251,18 @@ syst\`eme pr\'ec\'edent~:
 \end{array}\right.
 \end{equation}
 
-Si l'on s'int\'eresse \`a la cellule $\Omega_1$ et que l'on
+Si l'on s'intéresse à la cellule $\Omega_1$ et que l'on
 suppose $(\rho\ u)^n_{\,12}\,.\,S_{\,12}=-\,(\rho\
-u)^n_{\,b_1}\,.\,S_{\,b_1}-\varepsilon (\rho\ u)^n_{\,12}\,.\,S_{\,12}$ (o\`u
-$\varepsilon$ est la pr\'ecision locale relative pour l'\'equation de
-conservation de la masse discr\`ete), on constate que l'on obtient $\delta\,f_1
-> f_{b_1} = 1 $ (valeur non admissible) d\`es lors que~:
+u)^n_{\,b_1}\,.\,S_{\,b_1}-\varepsilon (\rho\ u)^n_{\,12}\,.\,S_{\,12}$ (où
+$\varepsilon$ est la précision locale relative pour l'équation de
+conservation de la masse discrète), on constate que l'on obtient $\delta\,f_1
+> f_{b_1} = 1 $ (valeur non admissible) dès lors que~:
  $$\frac{1}{\varepsilon} < \frac{(\rho\
 u)^n_{\,12}\,.\,S_{\,12}\Delta t}{\rho_1|\Omega_1|}$$
-c'est-\`a-dire d\`es que
+c'est-à-dire dès que
 le nombre de CFL local $\displaystyle\frac{(\rho\
-u)^n_{\,12}\,.\,S_{\,12}\Delta t}{\rho_1|\Omega_1|}$ exc\`ede l'inverse de la
-pr\'ecision relative locale $\varepsilon$.
+u)^n_{\,12}\,.\,S_{\,12}\Delta t}{\rho_1|\Omega_1|}$ excède l'inverse de la
+précision relative locale $\varepsilon$.
 
 %=============
 \subsection*{Conclusion}
@@ -1270,5 +1270,5 @@ pr\'ecision relative locale $\varepsilon$.
 
 Prendre en compte la contribution de
 $\displaystyle\frac{\partial \rho}{\partial t}$ dans la matrice permet un meilleur respect du principe du maximum discret, lorsque la
-pr\'ecision de $\displaystyle\int_{\Omega_i}\dive\,(\rho\,\underline{u})\
-d\Omega = 0$ n'est pas exactement v\'erifi\'ee.
+précision de $\displaystyle\int_{\Omega_i}\dive\,(\rho\,\underline{u})\
+d\Omega = 0$ n'est pas exactement vérifiée.

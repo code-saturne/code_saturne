@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -113,8 +113,7 @@ progress variable are needed but also their covariance (five variables).
 \subsection{Two-phase combustion modelling}
 %===============================================
 
-Coal combustion is the main way to produce electricity in the world. Heavy fuel
-oil combustion have been hugely used to produce electrical energy.
+Coal combustion is the main way to produce electricity in the world.
 Biomass is a promising fuel to be used alone or in blend.
 
 Advanced combustion process may include exhaust gases recycling, pure oxygen or
@@ -129,20 +128,10 @@ heterogenous combustion (of char by oxygen in carbon monoxide), gasification (of
 char by carbon
 dioxide or by water steam in carbon monoxide), leaving ash particles.
 
-The description of fuel evaporation is done with respect to its heaviness :
-after a minimum temperature is reached, the gain of enthalpy is splitted between
-heating and evaporation. This way the evaporation takes place on a range of
-temperature (which can be large). The total evaporation is common for light
-(domestic) oil but impossible for heavy ones : at high temperature, during the
-last evaporation, a craking reaction appears : so a particle similar to the char
-is leaved. The heterogeneous oxydation of this char particle is very similar to
-coal char ones.
-
 Each of these phenomena are taken into account for some classes of particles : a
 solid class is caracterised by a coal (it is useful to burn mixture of coals
 with differents ranks or mixture of coal with biomass ...) and an initial
-diameter, for heavy fuel oil, liquid classes refer to initial diameter (neither
-possibility of blending after injection nor cofiring with oil and coal). \CS~
+diameter. \CS~
 computes the number, the mass and the enthalpy for each class of particles by
 unit of mass of mixture; allowing the determination of local diameter and
 temperature (for each class;

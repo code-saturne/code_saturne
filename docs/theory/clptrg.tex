@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -73,7 +73,7 @@ See the \doxygenfile{clptrg_8f90.html}{programmers reference of the dedicated su
 
 \etape{Notations\vspace{0,3cm}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The velocity of the wall is noted $\vect{v}_p$ and is assumed to be projected onto
+The velocity at the wall is noted $\vect{v}_p$ and is assumed to be projected onto
 the plane tangent to the wall (if it is not, then it will be projected by the code).
 
 The velocity of the fluid is noted by $\vect{u}$. An index, $I$, $I'$ or $F$, serves
@@ -183,7 +183,7 @@ Common Solver in the frame of the standard $k-\varepsilon$ model
 conditions is the one that contains the normal derivative of the velocity at the wall,
 this being\footnote{The transpose gradient term is dealt with in \fort{visecv}
 and will not be considered here.}: $(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$.
-It appears in the second member of the usual
+It appears in the right hand side of the usual
 momentum equation (see \fort{cs\_balance} and \fort{cs\_velocity\_prediction}).
 
 When the $k-\varepsilon$ model shows a tendency to overestimate the turbulent kinetic
@@ -354,7 +354,7 @@ A condition of zero normal velocity at the wall is imposed.
 Moreover, if the tangential velocity at $I'$ is zero
 (absolute value below an arbitrary numerical limit of
 $10^{-12}$), a no-slip condition is applied. We can then
-also make the velocity of the wall appear in the final expression:
+also make the wall velocity appear in the final expression:
 \begin{equation}
 \begin{array}{l}
 \text{\bf Gradient boundary conditions on the velocity} (k-\varepsilon)\\

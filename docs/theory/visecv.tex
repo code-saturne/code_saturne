@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -31,17 +31,17 @@
 \section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Dans ce sous-programme sont calcul\'es les termes de gradient transposé et de viscosité
+Dans ce sous-programme sont calculés les termes de gradient transposé et de viscosité
 secondaire (fluide newtonien). Ils seront traités en explicite
 pur. En effet, si on traitait ces termes en implicite, cela reviendrait
 à coupler les équations des différentes composantes de la vitesse, ce qui n'est
-pas compatible avec le sch\'ema de r\'esolution actuel ({\it cf. } sous-programme \fort{cs\_solve\_navier\_stokes}).
+pas compatible avec le schéma de résolution actuel ({\it cf. } sous-programme \fort{cs\_solve\_navier\_stokes}).
 
 See the \doxygenfile{visecv_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discrétisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'intégration des termes de gradient transposé
@@ -77,7 +77,7 @@ Le terme de viscosité $\mu_{\,tot}$ est calculé en fonction du modèle de turb
 \mu& \text{pour les modèles au second ordre ou en laminaire}.
 \end{cases}
 \end{equation}
-où $\mu$ et $\mu_t$ repr\'esentent respectivement la viscosit\'e dynamique moléculaire et la viscosité dynamique turbulente.
+où $\mu$ et $\mu_t$ représentent respectivement la viscosité dynamique moléculaire et la viscosité dynamique turbulente.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -100,8 +100,8 @@ sous-programme \fort{grdcel}.
 \item on initialise un tableau nommé $\var{W}_6$ à la valeur $1$ pour les cellules
 internes, et à la valeur $0$ pour les cellules de bord. Ce tableau sert par la suite à ne
 pas considérer la contribution du terme de gradient transposé sur les cellules
-de bord. En effet, on ne sait pas \'ecrire de conditions aux limites correctes
-pour le gradient transpos\'e. On pr\'ef\`ere donc tout simplement annuler son
+de bord. En effet, on ne sait pas écrire de conditions aux limites correctes
+pour le gradient transposé. On préyf\`ere donc tout simplement annuler son
 effet sur les cellules de bord (\emph{cf.} paragraphe \ref{Base_Visecv_paragraphe4}).
 \item pour chaque direction $l$ ($l=x,y,z$), $l$ correspondant à \var{IDIM}
 dans le code, on calcule pour chaque cellule $\Omega_i$ dont le centre
@@ -159,7 +159,7 @@ Le traitement est similaire pour le terme de viscosité de volume dans le module
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'intégration du terme de gradient transposé pose un problème de compatibilité.
 En effet, le gradient transposé provient de l'écriture de la divergence
-du tenseur des contraintes (\emph{cf.} \fort{cs\_velocity\_prediction}), soit :
+du tenseur des contraintes (\emph{cf.} \fort{cs\_velocity\_prediction}), soit~:
 \begin{equation}\notag
 \dive\,(\tens{\sigma}) = \dive\,(- p \tens{Id} + \tens{\tau })
 \end{equation}

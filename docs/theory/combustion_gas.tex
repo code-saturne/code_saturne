@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -419,10 +419,9 @@ each phases) is:
 Obviously, maximal value of variance induces Dirac's peak positionned at boundaries.
 
 Formulae in \eqref{eq:P1P2} can be used to determine the peak's magnitude if any
-extra condition is retained. In the context of pdf, the Beta function have the
-fame of fairly good representation of micro-mixing, so the third momentum of a
+extra condition is retained. In the context of pdf, the Beta function has a reputation of fairly good representation of micro-mixing, so the third momentum of a
 Beta distribution is easy to determine (thanks to recurrency), used as a
-constraint for a modified Curl model, it comes :
+constraint for a modified Curl model:
 \begin{eqnarray}
 &&\widetilde{f^3}     = \frac{\alpha +2}{\alpha+\beta+2} .\widetilde{f^2}  \label{Eqs_xx7}\\
 &&\widetilde{f{''}^3} =2 . \widetilde{f{''}^2}^2 . \frac{1-2.\tilde{f}}{\tilde{f}.(1-\tilde{f})+\widetilde{f{''}^2}}  \label{Eqs_xx8}\\

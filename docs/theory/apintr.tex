@@ -2,7 +2,7 @@
 
 % This file is part of code_saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2024 EDF S.A.
+% Copyright (C) 1998-2025 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -34,11 +34,12 @@ following: \fort{cs\_balance} \fort{cs\_boundary\_conditions\_set\_coeffs\_turb}
 
 The table~\ref{Base_Introd_simple_calling_tree} presents their sequence within a time
 step. This calling tree is only partial. In particular, it does not account
-for the number of calls to each subroutine. Also, for the sake of clarity,
-no reference has been made to the subroutines dedicated to the gradient
-calculation (\fort{gradmc}, \fort{gradrc}), which are called very often. For
+for the number of calls to each function. Also, for the sake of clarity,
+no reference has been made to the gradient reconstruction functions
+calculation (\fort{cs\_gradient\_...}), which are called very often. For
 the same reason, the calls to \fort{cs\_balance} (advection fluxes) and %
-\fort{matrix} (matrix calculation) which are made from within \fort{cs\_equation\_iterative\_solve}
+\fort{cs\_matrix\_compute\_coeffs} (matrix calculation) which are made from
+within \fort{cs\_equation\_iterative\_solve}
 (treatment of an advection equation with source terms) have not been
 reported.
 
@@ -47,11 +48,10 @@ below:\newline
 \newline
 \nl \newline
 \textbf{Calculation of gradients}\newline
-\hspace*{1cm}\fort{gradrc}\newline
-\textbf{Least squares method}\newline
-\hspace*{1cm}\fort{gradmc}\newline
+\hspace*{1cm}\fort{cs\_gradient}\newline
 \textbf{Convective schemes}\newline
 \hspace*{1cm}\fort{cs\_balance}\newline
+\hspace*{1cm}\fort{cs\_convection\_diffusion}\newline
 \textbf{Wall-laws} (for velocity and temperature)\newline
 \hspace*{1cm}\fort{cs\_boundary\_conditions\_set\_coeffs\_turb}\newline
 \hspace*{1cm}\fort{cs\_boundary\_conditions}\newline
