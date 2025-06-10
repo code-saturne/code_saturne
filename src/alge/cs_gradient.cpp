@@ -5664,6 +5664,7 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
 {
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
+  using grad_t = cs_real_t[stride][3];
   using a_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
 
@@ -5672,7 +5673,7 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
 
   int isweep = 0;
 
-  cs_real_33_t *rhs;
+  grad_t *rhs;
 
   const cs_lnum_t n_cells = m->n_cells;
 
@@ -5706,7 +5707,7 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
   if (cocg == nullptr)
     cocg = _compute_cell_cocg_it(m, fvq, gq);
 
-  CS_MALLOC(rhs, n_cells, cs_real_33_t);
+  CS_MALLOC(rhs, n_cells, grad_t);
 
   /* Gradient reconstruction to handle non-orthogonal meshes */
   /*---------------------------------------------------------*/
