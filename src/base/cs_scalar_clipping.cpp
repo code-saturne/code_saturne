@@ -79,46 +79,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-/*============================================================================
- * Fortran function prototypes for subroutines from field.f90.
- *============================================================================*/
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_scalar_clipping(int   id);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Clip a scalar variable field.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   id       <-- field id
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_scalar_clipping(int   id)
-{
-  cs_field_t *f = cs_field_by_id(id);
-
-  cs_scalar_clipping(f);
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
