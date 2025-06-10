@@ -425,13 +425,9 @@ _clip_rho_mu_cp(bool                         first_pass,
   ctx.wait();
 
   for (int ii = 0; ii < n_fields; ii++) {
-    if (fields[ii] == nullptr)
-      continue;
-    if (fields[ii] == nullptr) {
-      varminmax[ii] = 0;
-      varminmax[ii+n_fields] = 0;
-    }
-    else {
+    varminmax[ii] = 0;
+    varminmax[ii+n_fields] = 0;
+    if (fields[ii] != nullptr) {
       varminmax[ii]          =  rd[ii].r[0];
       varminmax[ii+n_fields] = -rd[ii].r[1];
     }
