@@ -952,11 +952,11 @@ cs_atmo_physical_properties_update(void)
   cs_real_t *cpro_met_rho = nullptr;
 
   if (cs_field_by_name_try("thermal_expansion") != nullptr)
-    cpro_beta = cs_field_by_name_try("thermal_expansion")->val;
+    cpro_beta = cs_field_by_name("thermal_expansion")->val;
 
   if (at_opt->meteo_profile > 1) {
-    cpro_met_p = cs_field_by_name_try("meteo_pressure")->val;
-    cpro_met_rho = cs_field_by_name_try("meteo_density")->val;
+    cpro_met_p = cs_field_by_name("meteo_pressure")->val;
+    cpro_met_rho = cs_field_by_name("meteo_density")->val;
   }
 
   /* This routine computes the density and the thermodynamic temperature.
