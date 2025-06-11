@@ -243,7 +243,7 @@ _assign_weight_func(const cs_param_advection_scheme_t    scheme)
  * \param[in]  scheme        scheme used for discretizing the advection term
  * \param[in]  peclet        Peclet number
  * \param[in]  upwind_ratio  upwind ratio 0 <= r <= 1
- * \param[in]  internal_face is an internal face
+ * \param[in]  bnd_face      is a boundary face
  *
  * \return  weight value
  */
@@ -254,21 +254,22 @@ _cdofb_weight_func(const cs_param_advection_scheme_t scheme,
                    const cs_real_t                   beta,
                    const cs_real_t                   upwind_ratio,
                    const cs_real_t                   coeff,
-                   const bool                        internal_face)
+                   const bool                        bnd_face)
 {
   const cs_real_t be_s2 = 0.5 * beta;
 
+  if (bnd_face) {
+    return std::abs(be_s2) - be_s2;
+  }
+
   switch (scheme) {
     case CS_PARAM_ADVECTION_SCHEME_UPWIND: {
-      if (internal_face) {
-        return std::abs(be_s2) + be_s2;
-      }
-      return be_s2;
+      return std::abs(be_s2) - be_s2;
       break;
     }
 
     case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE: {
-      return be_s2;
+      return -be_s2;
       break;
     }
 
@@ -276,9 +277,6 @@ _cdofb_weight_func(const cs_param_advection_scheme_t scheme,
       return 0.0;
 
     case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND: {
-      if (internal_face) {
-        return upwind_ratio * (std::abs(be_s2) + be_s2);
-      }
       return upwind_ratio * be_s2;
       break;
     }
@@ -292,10 +290,7 @@ _cdofb_weight_func(const cs_param_advection_scheme_t scheme,
         ratio = std::abs(1.0 / std::tanh(pe_s2) - 1.0 / pe_s2);
       }
 
-      if (internal_face) {
-        return ratio * (std::abs(be_s2) + be_s2);
-      }
-      return ratio * be_s2;
+      return ratio * (std::abs(be_s2) - be_s2);
       break;
     }
 
@@ -1316,21 +1311,21 @@ _build_cdofb_stab_upwind(const cs_param_advection_scheme_t scheme,
   for (short int f = 0; f < cm->n_fc; f++) {
     const cs_real_t f_meas = cm->face[f].meas;
     const cs_real_t beta_mean = cm->f_sgn[f] * fluxes[f] / f_meas;
-    const cs_real_t A_plus    = f_meas * _cdofb_weight_func(scheme,
-                                                         beta_mean,
-                                                         upwind_ratio,
-                                                         coeff[f],
-                                                         csys->bf_ids[f] < 0);
+    const cs_real_t A_minus   = f_meas * _cdofb_weight_func(scheme,
+                                                          beta_mean,
+                                                          upwind_ratio,
+                                                          coeff[f],
+                                                          csys->bf_ids[f] > -1);
 
     /* Access the row containing the current face */
 
     cs_real_t *f_row = adv->val + f * adv->n_rows;
 
-    f_row[c] -= A_plus;
-    f_row[f] += A_plus;
+    f_row[c] -= A_minus;
+    f_row[f] += A_minus;
 
-    c_row[c] += A_plus;
-    c_row[f] -= A_plus;
+    c_row[c] += A_minus;
+    c_row[f] -= A_minus;
 
   } /* Loop on cell faces */
 }
@@ -1790,14 +1785,16 @@ cs_cdofb_advection_upwnoc(int                        dim,
             csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
           /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
-          f_row[f] += beta_minus;
-
           /* Weak enforcement of the Dirichlet BCs.
              Update RHS for faces attached to a boundary face */
 
           for (int k = 0; k < dim; k++)
             csys->rhs[dim * f + k] +=
               beta_minus * csys->dir_values[dim * f + k];
+        }
+        else {
+          /* Outward flux: */
+          f_row[f] += beta_plus;
         }
       }
 
@@ -1881,14 +1878,16 @@ cs_cdofb_advection_upwcsv(int                   dim,
             csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
           /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
-          f_row[f] += beta_minus;
-
           /* Weak enforcement of the Dirichlet BCs.
              Update RHS for faces attached to a boundary face */
 
           for (int k = 0; k < dim; k++)
             csys->rhs[dim * f + k] +=
               beta_minus * csys->dir_values[dim * f + k];
+        }
+        else {
+          /* Outward flux: */
+          f_row[f] += beta_plus;
         }
       }
 
@@ -1972,14 +1971,16 @@ cs_cdofb_advection_upwnoc_v8(int                   dim,
             csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
           /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
-          f_row[f] += beta_minus;
-
           /* Weak enforcement of the Dirichlet BCs.
              Update RHS for faces attached to a boundary face */
 
           for (int k = 0; k < dim; k++)
             csys->rhs[dim * f + k] +=
               beta_minus * csys->dir_values[dim * f + k];
+        }
+        else {
+          /* Outward flux: */
+          f_row[f] += beta_plus;
         }
       }
 
@@ -2063,14 +2064,16 @@ cs_cdofb_advection_upwcsv_v8(int                   dim,
             csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
           /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
-          f_row[f] += beta_minus;
-
           /* Weak enforcement of the Dirichlet BCs.
              Update RHS for faces attached to a boundary face */
 
           for (int k = 0; k < dim; k++)
             csys->rhs[dim * f + k] +=
               beta_minus * csys->dir_values[dim * f + k];
+        }
+        else {
+          /* Outward flux: */
+          f_row[f] += beta_plus;
         }
       }
 
@@ -2148,17 +2151,16 @@ cs_cdofb_advection_cennoc_v8(int                   dim,
     c_row[c] -= half_beta_flx;
 
     /* Apply boundary conditions */
-
     if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
         csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
       const cs_real_t beta_minus = 0.5 * fabs(fluxes[f]) - half_beta_flx;
 
       /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
-      f_row[f] += beta_minus;
+      f_row[f] += beta_minus; /* Could be avoided:
 
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached to
-         a boundary face */
+      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
+           to a boundary face */
 
       for (int k = 0; k < dim; k++)
         csys->rhs[dim * f + k] += beta_minus * csys->dir_values[dim * f + k];
@@ -2222,7 +2224,6 @@ cs_cdofb_advection_cencsv_v8(int                   dim,
     c_row[c] -= half_beta_flx;
 
     /* Apply boundary conditions */
-
     if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
         csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
       const cs_real_t beta_minus = 0.5 * fabs(fluxes[f]) - half_beta_flx;
@@ -2231,8 +2232,8 @@ cs_cdofb_advection_cencsv_v8(int                   dim,
 
       f_row[f] += beta_minus;
 
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached to
-         a boundary face */
+      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
+         to a boundary face */
 
       for (int k = 0; k < dim; k++)
         csys->rhs[dim * f + k] += beta_minus * csys->dir_values[dim * f + k];
@@ -2359,41 +2360,40 @@ cs_cdofb_advection_cennoc(int                   dim,
   const short int  c = cm->n_fc; /* current cell's location in the matrix */
   const cs_real_t *fluxes = cb->adv_fluxes;
 
-  /* Access the row containing current cell */
-
-  cs_real_t *c_row = adv->val + c * adv->n_rows;
-
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
     /* There is at least one boundary face associated to this cell */
 
     for (short int f = 0; f < cm->n_fc; f++) {
+      /* Access the row containing the current face */
+      double *f_row = adv->val + f * adv->n_rows;
+
       const cs_real_t beta_flx = cm->f_sgn[f] * fluxes[f];
 
       /* Consistent part */
 
-      c_row[f] += beta_flx;
+      f_row[c] -= beta_flx;
 
       /* Apply boundary conditions */
+      if (csys->bf_ids[f] > -1) { /* This is a boundary face */
+        if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+            csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+          /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
-      if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-          csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
-        /* Access the row containing the current face */
+          /* Weak enforcement of the Dirichlet BCs. Update RHS for faces
+             attached to a boundary face */
 
-        double *f_row = adv->val + f * adv->n_rows;
+          if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
+            const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
 
-        const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
-
-        /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
-
-        f_row[f] += beta_minus;
-
-        /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-           to a boundary face */
-
-        if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-          for (int k = 0; k < dim; k++)
-            csys->rhs[dim * f + k] +=
-              beta_minus * csys->dir_values[dim * f + k];
+            for (int k = 0; k < dim; k++)
+              csys->rhs[dim * f + k] +=
+                beta_minus * csys->dir_values[dim * f + k];
+          }
+        }
+        else {
+          /* Outward flux: */
+          const cs_real_t beta_plus = 0.5 * (fabs(beta_flx) + beta_flx);
+          f_row[f] += beta_plus;
         }
       }
 
@@ -2403,11 +2403,14 @@ cs_cdofb_advection_cennoc(int                   dim,
     /* There is no boundary face associated to this cell */
 
     for (short int f = 0; f < cm->n_fc; f++) {
+      /* Access the row containing the current face */
+      double *f_row = adv->val + f * adv->n_rows;
+
       const cs_real_t beta_flx = cm->f_sgn[f] * fluxes[f];
 
       /* Consistent part */
 
-      c_row[f] += beta_flx;
+      f_row[c] -= beta_flx;
 
     } /* Loop on cell faces */
   }
