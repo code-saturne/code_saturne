@@ -123,6 +123,7 @@ cs_log_setup.h \
 cs_map.h \
 cs_mass_source_terms.h \
 cs_math.h \
+cs_mdspan.h \
 cs_measures_util.h \
 cs_mem.h \
 cs_mobile_structures.h \
