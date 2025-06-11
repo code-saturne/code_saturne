@@ -584,7 +584,8 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
   cs_gnum_t *partition_offsets;
   CS_MALLOC_HD(partition_offsets, cs_glob_n_ranks + 1, cs_gnum_t, amode);
 
-  /* Gather the number of rows on each rank, use exclusive scan to get the offsets */
+  /* Gather the number of rows on each rank,
+     use exclusive scan to get the offsets */
 
   int n_ranks = cs_glob_n_ranks;
 
@@ -1425,6 +1426,7 @@ cs_sles_amgx_solve(void                *context,
   int       its = -1;
   double    _residual = -1;
   const int n_rows = cs_matrix_get_n_rows(a);
+  const int n_cols = cs_matrix_get_n_columns(a);
   const int db_size = cs_matrix_get_diag_block_size(a);
 
   /* Try to set tolerance to normalized value. */
@@ -1464,17 +1466,19 @@ cs_sles_amgx_solve(void                *context,
     AMGX_vector_bind(b, c->setup_data->matrix);
   }
 
-  unsigned int n_bytes = n_rows*db_size*sizeof(cs_real_t);
-
   cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
   cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
-  if (amode_vx < CS_ALLOC_HOST_DEVICE_PINNED)
+  if (amode_vx < CS_ALLOC_HOST_DEVICE_PINNED) {
+    unsigned int n_bytes = n_cols*db_size*sizeof(cs_real_t);
     AMGX_pin_memory((void *)vx, n_bytes);
-  if (amode_rhs < CS_ALLOC_HOST_DEVICE_PINNED)
+  }
+  if (amode_rhs < CS_ALLOC_HOST_DEVICE_PINNED) {
+    unsigned int n_bytes = n_rows*db_size*sizeof(cs_real_t);
     AMGX_pin_memory((void *)rhs, n_bytes);
+  }
 
   if (vx_ini != vx) {
-    retval = AMGX_vector_set_zero(x, n_rows, db_size);
+    retval = AMGX_vector_set_zero(x, n_cols, db_size);
     if (retval != AMGX_RC_OK) {
       AMGX_get_error_string(retval, err_str, 4096);
       bft_error(__FILE__, __LINE__, 0, _(error_fmt),
@@ -1482,7 +1486,7 @@ cs_sles_amgx_solve(void                *context,
     }
   }
   else {
-    retval = AMGX_vector_upload(x, n_rows, db_size, vx);
+    retval = AMGX_vector_upload(x, n_cols, db_size, vx);
     if (retval != AMGX_RC_OK) {
       AMGX_get_error_string(retval, err_str, 4096);
       bft_error(__FILE__, __LINE__, 0, _(error_fmt),
