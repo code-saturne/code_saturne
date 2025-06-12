@@ -360,7 +360,7 @@ cs_time_stepping(void)
 
     cs_les_synthetic_eddy_restart_read();
 
-    cs_porous_model_read();
+    cs_porous_model_restart_read();
 
     /* TODO
        cs_restart_map_free may not be called yet, because
@@ -403,7 +403,7 @@ cs_time_stepping(void)
         cs_compute_porosity_from_scan();
       }
       /* Save pre-process for restart */
-      cs_porous_model_write();
+      cs_porous_model_restart_write();
       cs_porous_model_fluid_surfaces_preprocessing();
 
     }
