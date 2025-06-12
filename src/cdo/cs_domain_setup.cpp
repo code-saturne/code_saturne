@@ -479,7 +479,22 @@ cs_domain_setup_init_cdo_structures(cs_domain_t *domain)
   /* Manage checkpoint/restart settings
    * Use the same default values for t_interval and wt_interval as the FV */
 
+  int nt_interval = -1;
   double  t_interval = -1.0, wt_interval = -1.0;
+
+  cs_restart_checkpoint_get_intervals(&nt_interval, &t_interval, &wt_interval);
+  if (cs_glob_time_step->t_max > -1.) {
+    /* Computation stop depends on time, we set default interval based on that
+     * instead of number of iterations.
+     */
+    if (nt_interval == CS_RESTART_INTERVAL_DEFAULT) {
+      /* default behavior => nt_interval is set to default by the GUI! */
+      t_interval = (cs_glob_time_step->t_max - cs_glob_time_step->t_prev) * 0.25;
+      nt_interval = -1;
+    }
+  }
+  cs_restart_checkpoint_set_interval(nt_interval, t_interval, wt_interval);
+
   cs_restart_checkpoint_set_interval(domain->restart_nt,
                                      t_interval,
                                      wt_interval);
