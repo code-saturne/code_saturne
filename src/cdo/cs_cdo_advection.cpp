@@ -30,20 +30,19 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <algorithm>
+#include <assert.h>
+#include <cmath>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <float.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-#include "bft/bft_printf.h"
-
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_property.h"
@@ -81,7 +80,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_CDO_ADVECTION_DBG 2
+#define CS_CDO_ADVECTION_DBG 0
 
 /* Redefined the name of functions from cs_math to get shorter names */
 
@@ -284,7 +283,7 @@ _cdofb_stab_func(const cs_param_advection_scheme_t scheme,
       const cs_real_t pe_2  = 0.5 * coeff * beta;
       cs_real_t       ratio = 0.;
       if (std::abs(pe_2) > cs_math_zero_threshold) {
-        if (pe_2 > -50.) {
+        if (pe_2 > 50.) {
           ratio = -1.0;
         }
         else {
@@ -752,7 +751,7 @@ _update_vcb_system_with_bc(const cs_real_t              beta_nf,
   if (csys->has_dirichlet) {
 
     if (fm->n_vf > 10) {
-      BFT_MALLOC(dirf, 2*fm->n_vf, double);
+      CS_MALLOC(dirf, 2 * fm->n_vf, double);
       rhsf = dirf + fm->n_vf;
     }
     else {
@@ -791,7 +790,7 @@ _update_vcb_system_with_bc(const cs_real_t              beta_nf,
   }  /* Loop on face vertices */
 
   if (dirf != _dirf)
-    BFT_FREE(dirf);
+    CS_FREE(dirf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1298,6 +1297,7 @@ _build_cdofb_scheme_csv(const cs_param_advection_scheme_t scheme,
                         cs_cell_builder_t                *cb,
                         cs_sdm_t                         *adv)
 {
+  assert(csys != nullptr && cm != nullptr && cb != nullptr);
   const short int  c = cm->n_fc; /* current cell's location in the matrix */
   const cs_real_t *fluxes = cb->adv_fluxes;
 
@@ -1343,21 +1343,23 @@ _build_cdofb_scheme_csv(const cs_param_advection_scheme_t scheme,
     if (csys->bf_ids[f] > -1) { /* This is a boundary face */
       if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
           csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
-        /* Inward flux: */
+        /* Inward flux: beta_min */
         assert(beta_flx < 0.0);
 
         /* Weak enforcement of the Dirichlet BCs. Update RHS for faces
            attached to a boundary face */
 
         if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
+          const cs_real_t beta_min = std::min(0.0, beta_flx);
           for (int k = 0; k < dim; k++)
-            csys->rhs[dim * f + k] -= beta_flx * csys->dir_values[dim * f + k];
+            csys->rhs[dim * f + k] -= beta_min * csys->dir_values[dim * f + k];
         }
       }
       else {
-        /* Outward flux: */
+        /* Outward flux: beta_plus */
         assert(beta_flx >= 0.0);
-        f_row[f] += beta_flx;
+        const cs_real_t beta_plus = std::max(0.0, beta_flx);
+        f_row[f] += beta_plus;
       }
     }
 
@@ -1920,7 +1922,7 @@ cs_cdofb_advection_upwnoc_v8(int                   dim,
   const short int c     = cm->n_fc; /* current cell's location in the matrix */
   double         *c_row = adv->val + c * adv->n_rows;
 
-  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != NULL) {
+  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != nullptr) {
     /* There is at least one boundary face associated to this cell */
 
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -2013,7 +2015,7 @@ cs_cdofb_advection_upwcsv_v8(int                   dim,
   const short int c     = cm->n_fc; /* current cell's location in the matrix */
   double         *c_row = adv->val + c * adv->n_rows;
 
-  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != NULL) {
+  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != nullptr) {
     /* There is at least one boundary face associated to this cell */
 
     for (short int f = 0; f < cm->n_fc; f++) {
