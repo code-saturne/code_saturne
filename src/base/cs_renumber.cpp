@@ -1925,21 +1925,20 @@ static double
 _renum_face_multipass_g_unbalance(int               n_i_threads,
                                   const cs_lnum_t  *n_t_faces)
 {
-  int t_id;
-  double n_t_faces_mean, imbalance;
-
   cs_lnum_t n_t_faces_sum = 0;
   cs_lnum_t n_t_faces_max = 0;
 
-  for (t_id = 0; t_id < n_i_threads; t_id++) {
+  for (int t_id = 0; t_id < n_i_threads; t_id++) {
     n_t_faces_sum += n_t_faces[t_id];
     if (n_t_faces[t_id] > n_t_faces_max)
       n_t_faces_max = n_t_faces[t_id];
   }
 
-  n_t_faces_mean = (double)n_t_faces_sum / n_i_threads;
+  double n_t_faces_mean = (double)n_t_faces_sum / n_i_threads;
 
-  imbalance = (n_t_faces_max / n_t_faces_mean) - 1.0;
+  double imbalance = 1.0;
+  if (n_t_faces_mean > 0)
+    imbalance = (n_t_faces_max / n_t_faces_mean) - 1.0;
 
   return imbalance;
 }

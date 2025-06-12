@@ -316,13 +316,11 @@ _estimate_imbalance(const cs_numbering_t  *numbering)
 
     for (g_id = 0; g_id < n_groups; g_id++) {
 
-      int t_id;
-      double n_t_elts_mean, imbalance;
 
       cs_lnum_t n_t_elts_sum = 0;
       cs_lnum_t n_t_elts_max = 0;
 
-      for (t_id = 0; t_id < n_threads; t_id++) {
+      for (int t_id = 0; t_id < n_threads; t_id++) {
         cs_lnum_t n_t_elts =   group_index[(t_id*n_groups + g_id)*2 + 1]
                              - group_index[(t_id*n_groups + g_id)*2];
         n_t_elts = cs::max(n_t_elts, 0);
@@ -332,9 +330,11 @@ _estimate_imbalance(const cs_numbering_t  *numbering)
 
       n_elts += n_t_elts_sum;
 
-      n_t_elts_mean = (double)n_t_elts_sum / n_threads;
+      double n_t_elts_mean = (double)n_t_elts_sum / n_threads;
 
-      imbalance = (n_t_elts_max / n_t_elts_mean) - 1.0;
+      double imbalance = 1.0;
+      if (n_t_elts_mean > 0)
+        imbalance = (n_t_elts_max / n_t_elts_mean) - 1.0;
       t_imbalance_tot += imbalance*n_t_elts_sum;
 
     }
