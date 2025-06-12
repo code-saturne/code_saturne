@@ -1715,14 +1715,6 @@ class meg_to_c_interpreter:
                                 self.init_block('vol', zname, dname,
                                                 exp, req, sym, sca)
 
-            # ALE mesh viscosity
-            from code_saturne.model.MobileMeshModel import MobileMeshModel
-            ale_model = MobileMeshModel(self.case)
-            if ale_model.getMethod() != 'off':
-                exp, req, sca, sym = ale_model.getFormulaViscComponents()
-                self.init_block('vol', 'all_cells', 'mesh_viscosity',
-                                exp, req, sym, sca)
-
             # GroundWater Flows Law
             glm = None
 
@@ -1837,6 +1829,14 @@ class meg_to_c_interpreter:
 
         # Porosity for both solvers
         from code_saturne.model.PorosityModel import PorosityModel
+
+        # ALE mesh viscosity
+        from code_saturne.model.MobileMeshModel import MobileMeshModel
+        ale_model = MobileMeshModel(self.case)
+        if ale_model.getMethod() != 'off':
+            exp, req, sca, sym = ale_model.getFormulaViscComponents()
+            self.init_block('vol', 'all_cells', 'mesh_viscosity',
+                            exp, req, sym, sca)
 
         if not gwm:
             prm = PorosityModel(self.case)
@@ -2171,6 +2171,35 @@ class meg_to_c_interpreter:
                                         zone.getLabel(),
                                         self.case,
                                         'none')
+
+                    # ALE: imposed mesh velocity
+                    c = boundary.getALEChoice()
+
+                    if c == "fixed_velocity":
+                        sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
+                        for (name, val) in NotebookModel(self.case).getNotebookList():
+                            sym.append((name, 'value (notebook) = ' + str(val)))
+                        req = ['mesh_velocity[0]', 'mesh_velocity[1]', 'mesh_velocity[2]']
+                        exp = boundary.getALEFormula()
+
+                        name = 'mesh_velocity'
+                        self.init_block('bnd', zone._label, name,
+                                        exp, req, sym, known_fields=[],
+                                        condition=c)
+                    elif c == "fixed_displacement":
+                        sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
+                        for (name, val) in NotebookModel(self.case).getNotebookList():
+                            sym.append((name, 'value (notebook) = ' + str(val)))
+                        req = ['mesh_displacement[0]',
+                               'mesh_displacement[1]',
+                               'mesh_displacement[2]']
+                        exp = boundary.getALEFormula()
+
+                        name = 'mesh_velocity'
+                        self.init_block('bnd', zone._label, name,
+                                        exp, req, sym, known_fields=[],
+                                        condition=c)
+
                     c = boundary.getEnthalpyChoice('none')
                     if '_formula' in c:
                         sym  = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
@@ -2560,9 +2589,6 @@ class meg_to_c_interpreter:
 
     def generate_fsi_ic_code(self):
         # ALE enabled ?
-
-        if not self.module_name == 'code_saturne':
-            return
 
         from code_saturne.model.NotebookModel import NotebookModel
 

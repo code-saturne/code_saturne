@@ -544,7 +544,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         # Other features
 
-        self.checkBoxALE.hide()
         self.checkBoxFans.hide()
         self.checkBoxPther.hide()
 
@@ -559,7 +558,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelTurboMachinery.setItem(str_model = mdl)
 
         # ALE
-
         ale_status = self.ale.getMethod()
         if ale_status == 'on':
             self.checkBoxALE.setChecked(True)
@@ -814,7 +812,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                 self.modelNeptuneCFD.setItem(str_model=model_p)
                 return
 
-        self.checkBoxALE.hide()
         self.checkBoxFans.hide()
 
         if model == "particles_flow":

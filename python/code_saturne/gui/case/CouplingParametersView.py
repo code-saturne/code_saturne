@@ -64,10 +64,15 @@ class CouplingParametersView(QWidget, Ui_CouplingParametersForm):
                 int_index = self.list_of_tabs.index("internal")
                 self.couplingModelsTabWidget.removeTab(int_index)
                 self.list_of_tabs.pop(int_index)
-            if "fsi" in self.list_of_tabs:
-                fsi_index = self.list_of_tabs.index("fsi")
-                self.couplingModelsTabWidget.removeTab(fsi_index)
-                self.list_of_tabs.pop(fsi_index)
+            #if "fsi" in self.list_of_tabs:
+            #    fsi_index = self.list_of_tabs.index("fsi")
+            #    self.couplingModelsTabWidget.removeTab(fsi_index)
+            #    self.list_of_tabs.pop(fsi_index)
+            if "fsi" not in self.list_of_tabs:
+                fsi_index = 1
+                self.list_of_tabs.insert(fsi_index, "fsi")
+                self.couplingModelsTabWidget.insertTab(fsi_index, self.fluidStructureInteractionTab,
+                                                       "Fluid-structure interaction")
             if "nepcat" not in self.list_of_tabs:
                 nepcat_index = 1
                 self.list_of_tabs.insert(nepcat_index, "nepcat")

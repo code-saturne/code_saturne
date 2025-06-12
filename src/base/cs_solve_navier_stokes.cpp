@@ -985,150 +985,6 @@ _div_rij(const cs_mesh_t     *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief In the ALE framework, update mass flux by adding mesh velocity.
- *
- * \param[in]      m       pointer to associated mesh structure
- * \param[in]      mq      pointer to associated mesh quantities structure
- * \param[in]      dt      time step at cells
- * \param[in]      crom    density at cells
- * \param[in]      brom    density at boundary faces
- * \param[in, out] imasfl  interior face mass flux
- * \param[in, out] bmasfl  boundary face mass flux
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_mesh_velocity_mass_flux(const cs_mesh_t             *m,
-                         const cs_mesh_quantities_t  *mq,
-                         const cs_real_t              dt[],
-                         const cs_real_t              crom[],
-                         const cs_real_t              brom[],
-                         cs_real_t                    imasfl[],
-                         cs_real_t                    bmasfl[])
-{
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-
-  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
-
-  const cs_lnum_t *i_face_vtx_idx = m->i_face_vtx_idx;
-  const cs_lnum_t *i_face_vtx_lst = m->i_face_vtx_lst;
-  const cs_lnum_t *b_face_vtx_idx = m->b_face_vtx_idx;
-  const cs_lnum_t *b_face_vtx_lst = m->b_face_vtx_lst;
-
-  const cs_real_3_t *vtx_coord = (const cs_real_3_t *)(m->vtx_coord);
-  const cs_real_t *b_face_surf = mq->b_face_surf;
-  const cs_real_t *i_face_surf = mq->i_face_surf;
-  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
-  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
-
-  const cs_real_3_t *mshvel = (const cs_real_3_t *)CS_F_(mesh_u)->val;
-
-  const cs_real_3_t *xyzno0
-    = (const cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
-
-  const cs_real_3_t *disale
-    = (const cs_real_3_t *)cs_field_by_name("mesh_displacement")->val;
-
-  cs_dispatch_context ctx;
-
-  if (cs_glob_space_disc->iflxmw > 0) {
-
-    /* One temporary array needed for internal faces,
-     * in case some internal vertices are moved directly by the user */
-
-    cs_real_t *intflx = nullptr, *bouflx = nullptr;
-    CS_MALLOC_HD(intflx, n_i_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bouflx, n_b_faces, cs_real_t, cs_alloc_mode);
-
-    cs_field_bc_coeffs_t *bc_coeffs_ale = CS_F_(mesh_u)->bc_coeffs;
-
-    const cs_equation_param_t *eqp_mesh
-      = cs_field_get_equation_param_const(CS_F_(mesh_u));
-
-    cs_mass_flux(m,
-                 mq,
-                 CS_F_(mesh_u)->id,
-                 1,  /* itypfl */
-                 1,  /* iflmb0 */
-                 1,  /* init */
-                 1,  /* inc */
-                 eqp_mesh->imrgra,
-                 eqp_mesh->nswrgr,
-                 static_cast<cs_gradient_limit_t>(eqp_mesh->imligr),
-                 eqp_mesh->verbosity,
-                 eqp_mesh->epsrgr,
-                 eqp_mesh->climgr,
-                 crom, brom,
-                 mshvel,
-                 bc_coeffs_ale,
-                 intflx, bouflx);
-
-    cs_axpy(n_b_faces, -1, bouflx, bmasfl);
-    cs_axpy(n_i_faces, -1, intflx, imasfl);
-
-    CS_FREE_HD(intflx);
-    CS_FREE_HD(bouflx);
-  }
-
-  /* Here we need of the opposite of the mesh velocity. */
-
-  else { /* if (cs_glob_space_disc->iflxmw == 0) */
-
-    /* Compute the mass flux using the nodes displacement */
-
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      cs_real_t disp_fac[3] = {0, 0, 0};
-      const cs_lnum_t s_id = b_face_vtx_idx[face_id];
-      const cs_lnum_t e_id = b_face_vtx_idx[face_id+1];
-      const cs_lnum_t icpt = e_id - s_id;
-      const cs_real_t rho_surf = brom[face_id] * b_face_surf[face_id];
-      for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t inod = b_face_vtx_lst[ii];
-        for (cs_lnum_t jj = 0; jj < 3; jj++)
-          disp_fac[jj] +=   disale[inod][jj]
-                          - (vtx_coord[inod][jj] - xyzno0[inod][jj]);
-      }
-      const cs_lnum_t c_id = b_face_cells[face_id];
-      bmasfl[face_id] -=   rho_surf * (  disp_fac[0]*b_face_u_normal[face_id][0]
-                                       + disp_fac[1]*b_face_u_normal[face_id][1]
-                                       + disp_fac[2]*b_face_u_normal[face_id][2])
-                         / (dt[c_id] * icpt);
-    });
-
-    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      cs_real_t disp_fac[3] = {0, 0, 0};
-      const cs_lnum_t s_id = i_face_vtx_idx[face_id];
-      const cs_lnum_t e_id = i_face_vtx_idx[face_id+1];
-      const cs_lnum_t icpt = e_id - s_id;
-      for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t inod = i_face_vtx_lst[ii];
-        for (cs_lnum_t jj = 0; jj < 3; jj++)
-          disp_fac[jj] +=   disale[inod][jj]
-                          - (vtx_coord[inod][jj] - xyzno0[inod][jj]);
-      }
-
-      /* For inner vertices, the mass flux due to the mesh displacement is
-       * recomputed from the nodes displacement */
-      const cs_lnum_t c_id1 = i_face_cells[face_id][0];
-      const cs_lnum_t c_id2 = i_face_cells[face_id][1];
-      const cs_real_t dtfac = dt[c_id1] + dt[c_id2];         // 0.5 factored out
-      const cs_real_t rho_surf =   crom[c_id1] + crom[c_id2] // 0.5 factored out
-                                 * i_face_surf[face_id];
-      imasfl[face_id] -= rho_surf * (  disp_fac[0]*i_face_u_normal[face_id][0]
-                                     + disp_fac[1]*i_face_u_normal[face_id][1]
-                                     + disp_fac[2]*i_face_u_normal[face_id][2])
-                         / (dtfac * icpt);
-    });
-
-  }
-
-  ctx.wait();
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Take external forces partially equilibrated
  *        with the pressure gradient into account
  *
@@ -2380,10 +2236,9 @@ _velocity_prediction(const cs_mesh_t             *m,
    * to the part in cs_boundary_condition_set_coeffs, outside the loop) */
 
   if (b_stress != nullptr && iterns == 1) {
-    const cs_real_t xyzp0[3] = {xyzp0_h[0], xyzp0_h[1], xyzp0_h[2]};
-
     const cs_real_t *coefa_p = CS_F_(p)->bc_coeffs->a;
     const cs_real_t *coefb_p = CS_F_(p)->bc_coeffs->b;
+    const cs_real_t xyzp0[3] = {xyzp0_h[0], xyzp0_h[1], xyzp0_h[2]};
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       const cs_lnum_t c_id = b_face_cells[f_id];
@@ -3420,6 +3275,7 @@ _velocity_prediction(const cs_mesh_t             *m,
       });
     }
   }
+
   ctx.wait();
 }
 
@@ -4037,7 +3893,7 @@ cs_solve_navier_stokes(const int        iterns,
   cs_real_3_t *coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
   cs_real_3_t *cofafu = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->af;
 
-  if (vp_param->staggered == 0)
+  if (vp_param->staggered == 0) {
     _velocity_prediction(m,
                          mq,
                          1,
@@ -4063,6 +3919,7 @@ cs_solve_navier_stokes(const int        iterns,
                          viscbi,
                          secvif,
                          secvib);
+  }
   else {
     /* Account for external forces partially balanced by the pressure gradient
        (only for the first call; the second one is for error estimators) */
@@ -4124,10 +3981,10 @@ cs_solve_navier_stokes(const int        iterns,
     /* In the ALE framework, we add the mesh velocity */
 
     if (cs_glob_ale > CS_ALE_NONE)
-      _mesh_velocity_mass_flux(m, mq,
-                               dt,
-                               crom, brom,
-                               imasfl, bmasfl);
+      cs_mesh_velocity_mass_flux(m, mq,
+                                 dt,
+                                 crom, brom,
+                                 imasfl, bmasfl);
 
     /* Ajout de la vitesse du solide dans le flux convectif,
      * si le maillage est mobile (solide rigide)
@@ -4480,7 +4337,7 @@ cs_solve_navier_stokes(const int        iterns,
 
   if (cs_glob_ale > CS_ALE_NONE) {
     if (itrale > cs_glob_ale_n_ini_f)
-      cs_ale_solve_mesh_velocity(iterns);
+      cs_ale_solve_mesh_velocity(iterns, brom, imasfl, bmasfl);
   }
 
   /* Update of the fluid velocity field
@@ -4523,10 +4380,10 @@ cs_solve_navier_stokes(const int        iterns,
 
   /* In the ALE framework, we add the mesh velocity */
   if (cs_glob_ale > CS_ALE_NONE)
-    _mesh_velocity_mass_flux(m, mq,
-                             dt,
-                             crom, brom,
-                             imasfl, bmasfl);
+    cs_mesh_velocity_mass_flux(m, mq,
+                               dt,
+                               crom, brom,
+                               imasfl, bmasfl);
 
   /* FIXME for me we should do that before cs_velocity_prediction */
   /* Add solid's velocity in convective flux if the mesh is mobile (rigid solid).

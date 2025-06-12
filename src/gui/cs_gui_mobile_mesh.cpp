@@ -442,7 +442,7 @@ _get_internal_coupling_xyz_values(cs_tree_node_t  *tn_ic,
  * parameters:
  *   label    <-- boundary label
  *   xmstru   --> Mass matrix
- *   xcstr    --> Damping matrix
+ *   xcstru   --> Damping matrix
  *   xkstru   --> Stiffness matrix
  *   forstr   --> Fluid force matrix
  *   istruc   <-- internal coupling boundary index
@@ -480,6 +480,26 @@ _get_uistr2_data(const char   *label,
              forstr[istruc][0],
              forstr[istruc][1],
              forstr[istruc][2]);
+  bft_printf("--mass_matrix = (%g, %g, %g)\n"
+             "                (%g, %g, %g)\n"
+             "                (%g, %g, %g)\n",
+             xmstru[istruc][0][0], xmstru[istruc][0][1], xmstru[istruc][0][2],
+             xmstru[istruc][1][0], xmstru[istruc][1][1], xmstru[istruc][1][2],
+             xmstru[istruc][2][0], xmstru[istruc][2][1], xmstru[istruc][2][2]);
+
+  bft_printf("--damping_matrix = (%g, %g, %g)\n"
+             "                   (%g, %g, %g)\n"
+             "                   (%g, %g, %g)\n",
+             xcstru[istruc][0][0], xcstru[istruc][0][1], xcstru[istruc][0][2],
+             xcstru[istruc][1][0], xcstru[istruc][1][1], xcstru[istruc][1][2],
+             xcstru[istruc][2][0], xcstru[istruc][2][1], xcstru[istruc][2][2]);
+
+  bft_printf("--stiffness_matrix = (%g, %g, %g)\n"
+             "                     (%g, %g, %g)\n"
+             "                     (%g, %g, %g)\n",
+             xkstru[istruc][0][0], xkstru[istruc][0][1], xkstru[istruc][0][2],
+             xkstru[istruc][1][0], xkstru[istruc][1][1], xkstru[istruc][1][2],
+             xkstru[istruc][2][0], xkstru[istruc][2][1], xkstru[istruc][2][2]);
 #endif
 }
 
@@ -734,19 +754,19 @@ cs_gui_mobile_mesh_boundary_conditions(int          *const ialtyb,
     cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
     tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
 
-    if (nature ==  ale_boundary_nature_fixed_wall) {
+    if (nature == ale_boundary_nature_fixed_wall) {
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
         ialtyb[ifbr] = CS_BOUNDARY_ALE_FIXED;
       }
     }
-    else if (nature ==  ale_boundary_nature_sliding_wall) {
+    else if (nature == ale_boundary_nature_sliding_wall) {
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
         ialtyb[ifbr] = CS_BOUNDARY_ALE_SLIDING;
       }
     }
-    else if (nature ==  ale_boundary_nature_free_surface) {
+    else if (nature == ale_boundary_nature_free_surface) {
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
         ialtyb[ifbr] = CS_BOUNDARY_ALE_FREE_SURFACE;
@@ -901,6 +921,16 @@ cs_gui_mobile_mesh_init_structures(bool    is_restart,
   cs_gui_node_get_child_real(tn0, "displacement_prediction_beta", bexxst);
   cs_gui_node_get_child_real(tn0, "stress_prediction_alpha", cfopre);
   cs_gui_node_get_child_status_int(tn0, "monitor_point_synchronisation", ihistr);
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("displacement_prediction_alpha: %f\n"
+             "displacement_prediction_beta: %f\n"
+             "stress_prediction_alpha: %f\n",
+             aexxst[0],
+             bexxst[0],
+             cfopre[0]);
+#endif
 
   /* Do not overwrite restart data */
   if (!is_restart) {

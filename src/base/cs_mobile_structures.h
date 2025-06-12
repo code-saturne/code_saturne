@@ -35,10 +35,85 @@
 
 #include "base/cs_restart.h"
 #include "base/cs_time_control.h"
+#include "base/cs_time_plot.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+
+/*! Mobile_structures type */
+/*-------------------------*/
+
+typedef struct {
+
+  /* Base structure definitions and input */
+
+  int n_int_structs; /*!< number of internal structures */
+
+  bool has_ext_structs; /*!< has external structures ? */
+
+  cs_real_t      aexxst;     /*!< coefficient for the predicted displacement */
+  cs_real_t      bexxst;     /*!< coefficient for the predicted displacement */
+
+  cs_real_t      cfopre;     /*!< coefficient for the predicted force */
+
+  cs_real_t      alpnmk;     /*!< alpha coefficient for the Newmark hht method */
+  cs_real_t      betnmk;     /*!< beta coefficient for the Newmark hht method */
+  cs_real_t      gamnmk;     /*!< gamma coefficient for the Newmark hht method */
+
+  cs_real_33_t  *xmstru;     /*!< mass matrices (kg) */
+  cs_real_33_t  *xcstru;     /*!< damping matrix coefficients (kg/s) */
+  cs_real_33_t  *xkstru;     /*!< spring matrix constants (kg/s2 = N/m) */
+
+  /* Output (plotting) control */
+
+  int                plot;               /*!< monitoring format mask
+                                           0: no plot
+                                           1: plot to text (.dat) format
+                                           2: plot to .csv format *
+                                           3: plot to both formats */
+
+  cs_time_control_t  plot_time_control;  /*!< time control for plotting */
+  char              *plot_dir_name;      /*!< monitoring output directory */
+
+  /* Computed structure values */
+
+  cs_real_3_t   *xstr;       /*!< displacement vectors compared to structure
+                              *   positions in the initial mesh (m) */
+  cs_real_3_t  *xsta;        /*!< values of xstr at the previous time step */
+  cs_real_3_t  *xstp;        /*!< predicted values of xstr */
+  cs_real_3_t  *xstreq;      /*!< equilibrum positions of a structure (m) */
+
+  cs_real_3_t  *xpstr;       /*!< velocity vectors (m/s) */
+  cs_real_3_t  *xpsta;       /*!< xpstr at previous time step */
+
+  cs_real_3_t  *xppstr;      /*!< acceleration vectors (m/s2) */
+  cs_real_3_t  *xppsta;      /*!< acceleration vectors at previous
+                              *   time step (m/s2) */
+
+  cs_real_3_t  *forstr;      /*!< force vectors acting on the structure (N) */
+  cs_real_3_t  *forsta;      /*!< forstr at previous time step (N) */
+  cs_real_3_t  *forstp;      /*!< predicted force vectors (N) */
+
+  cs_real_t  *dtstr;         /*!< time step used to solve structure movements */
+  cs_real_t *dtsta; /*!< previous time step used to solve structure movements */
+
+  /* Association with mesh */
+
+  int        *idfstr;        /*!< structure number associated to each
+                              *   boundary face:
+                              *   - 0 if face is not coupled to a structure
+                              *   - if > 0, internal structure id + 1
+                              *   - if < 0, - code_aster instance id  - 1 */
+
+  /* Plotting */
+
+  int            n_plots;    /*!< number of plots for format */
+
+  cs_time_plot_t  **plot_files[2];  /*!< Associated plot files */
+
+} cs_mobile_structures_t;
 
 /*=============================================================================
  * Macro definitions
@@ -57,6 +132,8 @@ extern int cs_glob_mobile_structures_n_iter_max;
 
 /*! Relative precision of implicitation of the structure displacement */
 extern double cs_glob_mobile_structures_i_eps;
+
+extern cs_mobile_structures_t  *_mobile_structures;
 
 /*=============================================================================
  * Public function prototypes
@@ -166,18 +243,20 @@ cs_mobile_structures_set_newmark_coefficients(cs_real_t  alpha,
 /*!
  * \brief  Predict displacement of mobile structures with ALE.
  *
- * \param[in]   itrale   ALE iteration number
- * \param[in]   italim   implicit coupling iteration number
- * \param[in]   ineefl   indicate whether fluxes should be saved
- * \param[out]  impale   imposed displacement indicator
+ * \param[in]   bc_coeffs_vel   velocity boundary condition structure
+ * \param[in]   itrale          ALE iteration number
+ * \param[in]   italim          implicit coupling iteration number
+ * \param[in]   ineefl          indicate whether fluxes should be saved
+ * \param[out]  impale          imposed displacement indicator
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_prediction(int  itrale,
-                                int  italim,
-                                int  ineefl,
-                                int  impale[]);
+cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
+                                int                   itrale,
+                                int                   italim,
+                                int                   ineefl,
+                                int                   impale[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

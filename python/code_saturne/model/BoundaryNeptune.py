@@ -82,6 +82,7 @@ class Boundary(Model) :
 
         # Create nodes
         if nature == "inlet" :
+            self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', field_id = "none", label = label) #a voir
             for field in self.mainFieldsModel.getFieldIdList():
                 self._XMLBoundaryNodes.append(self._XMLBoundaryConditionsNode.xmlInitNode(nature, field_id = field, label = label))
 
@@ -92,7 +93,11 @@ class Boundary(Model) :
         elif nature == "wall" :
             self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', field_id = "none", label = label)
 
+        elif nature == "symmetry" :
+            self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('symmetry', field_id = "none", label = label)
+
         self._initBoundary()
+        self._initALEBoundary()
 
 
     def _initBoundary(self):
@@ -100,6 +105,99 @@ class Boundary(Model) :
         Initialize the boundary, add nodes in the boundary node (vitual method)
         """
         pass
+
+
+    def _initALEBoundary(self):
+        """
+        Initialize the possible choices.
+        """
+        self.__ALEChoices = ["fixed_boundary",
+                             "sliding_boundary",
+                             "internal_coupling",
+                             "external_coupling",
+                             "fixed_velocity",
+                             "fixed_displacement"]
+
+        # Check that defaultValues exist before erasing it!
+        try:
+            self._defaultValues['ale_choice'] = self.__ALEChoices[0]
+        except:
+            self._defaultValues = {}
+            self._defaultValues['ale_choice'] = self.__ALEChoices[0]
+
+        formula_velocity = 'ale_formula_' + "fixed_velocity"
+        formula_displacement = 'ale_formula_' + "fixed_displacement"
+        self._defaultValues[formula_velocity] = 'mesh_velocity[0] = 0;\nmesh_velocity[1] = 0;\nmesh_velocity[2] = 0;'
+        self._defaultValues[formula_displacement] = 'mesh_displacement[0] = 0;\nmesh_displacement[1] = 0;\nmesh_displacement[2] = 0;'
+
+
+    @Variables.noUndo
+    def getALEChoice(self):
+        """
+        Get the choice ALE
+        """
+        node = self.boundNode.xmlInitNode('ale', 'choice')
+        choice = node['choice']
+
+        # Create a defaut choice if it does not exist
+        if not node['choice']:
+            choice = self._defaultValues['ale_choice']
+            self.setALEChoice(choice)
+
+        return choice
+
+
+    @Variables.undoGlobal
+    def setALEChoice(self, value):
+        """
+        Set the ALE according to choice
+        """
+        Model().isInList(value, self.__ALEChoices)
+        node = self.boundNode.xmlInitNode('ale')
+
+        # if something has changed
+        if node['choice'] != value:
+            node['choice'] = value
+            if  value in ["fixed_velocity", "fixed_displacement"]:
+                self.setFormula(self._getDefaultFormula())
+            else:
+                node.xmlRemoveChild('formula')
+
+
+    @Variables.noUndo
+    def getALEFormula(self):
+        """
+        Get the formula from the xml
+        """
+        node = self.boundNode.xmlInitChildNode('ale')
+        value = node.xmlGetChildString('formula')
+
+        if not value:
+            value = self._getDefaultFormula()
+            if value:
+                self.setFormula(value)
+
+        return value
+
+
+    @Variables.undoLocal
+    def setFormula(self, value):
+        """
+        Set the formula into the xml
+        """
+        node = self.boundNode.xmlInitChildNode('ale')
+        node.xmlSetData('formula', value)
+
+
+    def _getDefaultFormula(self):
+        """
+        Return the default value for the formula
+        """
+        if  self.getALEChoice() in ["fixed_velocity", "fixed_displacement"]:
+            aleChoice = self.getALEChoice()
+            return self._defaultValues[ 'ale_formula_' + aleChoice ]
+        else:
+            return ''
 
 
     def getLabel(self):

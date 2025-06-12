@@ -62,12 +62,11 @@ BEGIN_C_DECLS
  * \brief Resolution of incompressible Navier Stokes, scalar transport
  *        equations... for a time step.
  *
- * \param[in]     itrale        ALE iteration number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solve_all(int   itrale);
+cs_solve_all(void);
 
 /*----------------------------------------------------------------------------*/
 

@@ -497,8 +497,8 @@ cs_boundary_conditions_check(int  bc_type[],
     if (grav2 <= cs_math_pow2(cs_math_epzero)) {
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (ale_bc_type[f_id] == CS_BOUNDARY_ALE_FREE_SURFACE)
-        iok_ale = 1;
+        if (ale_bc_type[f_id] == CS_BOUNDARY_ALE_FREE_SURFACE)
+          iok_ale = 1;
       }
 
       cs_parall_max(1, CS_INT_TYPE, &iok_ale);

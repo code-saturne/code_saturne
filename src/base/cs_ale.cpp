@@ -38,7 +38,9 @@
 
 #include "base/cs_array.h"
 #include "base/cs_base.h"
+#include "alge/cs_blas.h"
 #include "base/cs_boundary.h"
+#include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_dispatch.h"
@@ -46,6 +48,8 @@
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_main.h"
+#include "base/cs_dispatch.h"
+#include "alge/cs_divergence.h"
 #include "cdo/cs_domain.h"
 #include "cdo/cs_domain_setup.h"
 #include "cdo/cs_equation.h"
@@ -85,7 +89,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static cs_ale_data_t  _cs_glob_ale_data = {.impale = nullptr,
-                                           .bc_type = nullptr};
+                                           .bc_type = nullptr,
+                                           .ale_iteration = 0,
+                                           .i_mass_flux_ale = nullptr,
+                                           .b_mass_flux_ale = nullptr};
 
 cs_ale_type_t cs_glob_ale = CS_ALE_NONE;
 
@@ -139,6 +146,74 @@ static bool cs_ale_active = false;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute center of gravity and surface of a set of nb_points
+ *
+ * \param[in]      n_nodes    nodes number
+ * \param[in]      xn         nodes coordinates
+ * \param[inout]   cog        face center of gravity
+ * \param[inout]   normal     normal ported by his surface
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_cog_surf_from_nodes(int           n_nodes,
+                             cs_real_t     xn[][3],
+                             cs_real_t     cog[3],
+                             cs_real_t     normal[3])
+{
+  cs_real_t cog0[3];
+
+  for (int k = 0; k < 3; k++) {
+    /* Add first node as last node */
+    xn[n_nodes][k] = xn[0][k];
+
+    /* Init cog and normal */
+    cog[k] = 0.;
+    normal[k] = 0.;
+    cog0[k] = 0.;
+  }
+
+  /* First estimation of center */
+  for (int inod = 0; inod < n_nodes; inod++)
+    for (int k = 0; k < 3; k++)
+      cog0[k] += xn[inod][k];
+
+  for (int k = 0; k < 3; k++)
+    cog0[k] /= (double)(n_nodes);
+
+  cs_real_t surftot = 0.;
+
+  /* loop on edges */
+  for (int edge = 0; edge < n_nodes; edge++) {
+
+    cs_real_t x1[3], x2[3];
+
+    for (int k = 0; k < 3; k++) {
+      x1[k] = xn[edge][k] - cog0[k];
+      x2[k] = xn[edge+1][k] - cog0[k];
+    }
+
+    cs_real_t pvec[3];
+    pvec[0] = x1[1]*x2[2] - x1[2]*x2[1];
+    pvec[1] = x1[2]*x2[0] - x1[0]*x2[2];
+    pvec[2] = x1[0]*x2[1] - x1[1]*x2[0];
+
+    for (int k = 0; k < 3; k++)
+      normal[k] += 0.5 * pvec[k];
+
+    cs_real_t surfn = (pvec[0]*pvec[0] + pvec[1]*pvec[1] + pvec[2]*pvec[2]);
+    surftot += surfn;
+
+    for (int k = 0; k < 3; k++)
+      cog[k] += surfn * (x1[k] + x2[k]);
+  }
+
+  for (int k = 0; k < 3; k++)
+    cog[k] = cog[k]/(3. * cs_math_fmax(surftot,1.e-20)) + cog0[k];
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -876,10 +951,13 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
  * It also updates the mesh displacement
  * so that it can be used to update mass fluxes (due to mesh displacement).
  *
- * \param[in]       domain        domain quantities
- * \param[in]       iterns        Navier-Stokes iteration number
- * \param[in]       impale        Indicator for fixed node displacement
- * \param[in]       ale_bc_type   Type of boundary for ALE
+ * \param[in]       domain           domain quantities
+ * \param[in]       iterns           Navier-Stokes iteration number
+ * \param[in]       impale           Indicator for fixed node displacement
+ * \param[in]       ale_bc_type      Type of boundary for ALE
+ * \param[in]       b_rho            density at boundary
+ * \param[in]       i_mass_flux      interior faces mass flux
+ * \param[in]       b_mass_flux      boundary faces mass flux
  */
 /*----------------------------------------------------------------------------*/
 
@@ -887,7 +965,10 @@ static void
 _ale_solve_poisson_legacy(const cs_domain_t *domain,
                           const int          iterns,
                           const int         *impale,
-                          const int         *ale_bc_type)
+                          const int         *ale_bc_type,
+                          const cs_real_t    b_rho[],
+                          const cs_real_t    i_mass_flux[],
+                          const cs_real_t    b_mass_flux[])
 {
   const cs_mesh_t *m = domain->mesh;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -901,16 +982,21 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
-  /* The mass flux is necessary to call cs_equation_iterative_solve_vector
-     but not used (iconv = 0), except for the free surface, where it is used
-     as a boundary condition */
+  cs_lnum_t need_solve = 0;
+  for (cs_lnum_t v = 0; v < n_vertices; v++) {
+    if (impale[v] == 0) {
+      need_solve += 1;
+    }
+  }
 
-  const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const cs_real_t *i_massflux
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
-  const cs_real_t *b_massflux
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+  cs_parall_sum(1, CS_LNUM_TYPE, &need_solve);
+
+  if (need_solve == 0) {
+    bft_printf("Mesh velocity is not computed as the displacement "
+               "is imposed for each vertice (%d)\n", need_solve);
+    cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)CS_F_(mesh_u)->val);
+    return;
+  }
 
   /* 1. Initialization */
   cs_real_3_t rinfiv = { cs_math_infinite_r,
@@ -939,9 +1025,6 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   /* We compute the boundary condition on the mesh velocity at the free surface
    * from the new mass flux. */
 
-  /* Density at the boundary */
-  cs_real_t *brom = CS_F_(rho_b)->val;
-
   cs_field_bc_coeffs_t *bc_coeffs = CS_F_(mesh_u)->bc_coeffs;
 
   int idftnp = eqp->idften;
@@ -967,7 +1050,7 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 
       cs_real_t pimpv[3];
       for (int i = 0; i < 3; i++)
-        pimpv[i] = grav[i]*b_massflux[face_id]/(brom[face_id]*prosrf);
+        pimpv[i] = grav[i]*b_mass_flux[face_id]/(b_rho[face_id]*prosrf);
 
       cs_boundary_conditions_set_dirichlet_vector_aniso(face_id,
                                                         bc_coeffs,
@@ -1027,8 +1110,8 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
                                      (const cs_real_3_t *)mshvela,
                                      (const cs_real_3_t *)mshvela,
                                      bc_coeffs,
-                                     i_massflux,
-                                     b_massflux,
+                                     i_mass_flux,
+                                     b_mass_flux,
                                      i_visc,
                                      b_visc,
                                      i_visc,
@@ -1102,6 +1185,8 @@ _ale_free(void)
 {
   CS_FREE(cs_glob_ale_data->impale);
   CS_FREE(cs_glob_ale_data->bc_type);
+  CS_FREE(cs_glob_ale_data->b_mass_flux_ale);
+  CS_FREE(cs_glob_ale_data->i_mass_flux_ale);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1109,6 +1194,691 @@ _ale_free(void)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute of ALE volumic flux from displacement and deduced volume
+ *        at time step n+1.
+ *
+ * \param[in, out] domain  pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_compute_volume_from_displacement(cs_domain_t *domain) {
+  if (cs_glob_ale == CS_ALE_NONE)
+    return;
+
+  const cs_lnum_t *i_face_vtx_idx = domain->mesh->i_face_vtx_idx;
+  const cs_lnum_t *i_face_vtx_lst = domain->mesh->i_face_vtx_lst;
+  const cs_lnum_t *b_face_vtx_idx = domain->mesh->b_face_vtx_idx;
+  const cs_lnum_t *b_face_vtx_lst = domain->mesh->b_face_vtx_lst;
+
+  const cs_real_3_t *vtx_coord = (const cs_real_3_t *)(domain->mesh->vtx_coord);
+  const cs_real_3_t *disale
+    = (const cs_real_3_t *)cs_field_by_name("mesh_displacement")->val;
+  const cs_real_3_t *xyzno0
+    = (const cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
+
+  const cs_lnum_t n_i_faces = domain->mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
+
+  cs_real_t *i_mass_flux_ale = cs_glob_ale_data->i_mass_flux_ale;
+  cs_real_t *b_mass_flux_ale = cs_glob_ale_data->b_mass_flux_ale;
+
+  /* Computation of volumic flux
+     --------------------------- */
+
+  /* Computation of delta_volume due to nodes displacement
+     for each internal faces */
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    const cs_lnum_t s_id = i_face_vtx_idx[f_id];
+    const cs_lnum_t e_id = i_face_vtx_idx[f_id+1];
+    const cs_lnum_t n_face_vertices = e_id - s_id;
+
+    cs_real_t *_vc[10][3];
+    cs_real_3_t *vc = (cs_real_3_t *)_vc;
+    if (n_face_vertices > 10)
+      CS_MALLOC(vc, n_face_vertices, cs_real_3_t);
+
+    /* Init flux */
+    cs_real_t dvol = 0.;
+
+    /* Compute center of gravity and surface of the initial surface */
+    for (cs_lnum_t i_v = s_id; i_v < e_id; i_v++) {
+      cs_lnum_t j = i_v - s_id;
+      cs_lnum_t inod = i_face_vtx_lst[i_v];
+
+      for (cs_lnum_t k = 0; k < 3; k++)
+        vc[j][k] = vtx_coord[inod][k];
+    }
+
+    cs_real_t cogloc[3], surfloc[3];
+    _compute_cog_surf_from_nodes(n_face_vertices, vc, cogloc, surfloc);
+
+    /* Flux contribution */
+    dvol -= cs_math_3_dot_product(cogloc, surfloc);
+
+    /* Compute center of gravity and surface of the final surface
+       after displacement */
+    for (cs_lnum_t i_v = s_id; i_v < e_id; i_v++) {
+      cs_lnum_t j = i_v - s_id;
+      cs_lnum_t inod = i_face_vtx_lst[i_v];
+
+      for (cs_lnum_t k = 0; k < 3; k++)
+        vc[j][k] = xyzno0[inod][k] + disale[inod][k];
+    }
+    _compute_cog_surf_from_nodes(n_face_vertices, vc, cogloc, surfloc);
+
+    /* Flux contribution */
+    dvol += cs_math_3_dot_product(cogloc, surfloc);
+
+    /* Compute center of gravity and surface of the annex surfaces */
+    for (cs_lnum_t i_v = s_id; i_v < e_id; i_v++) {
+      cs_lnum_t inod1, inod2;
+
+      if (i_v < e_id-1) {
+        inod1 = i_face_vtx_lst[i_v];
+        inod2 = i_face_vtx_lst[i_v+1];
+      }
+      else {
+        inod1 = i_face_vtx_lst[i_v];
+        inod2 = i_face_vtx_lst[s_id];
+      }
+      int nb_node_lat = 4;
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        vc[0][k] = vtx_coord[inod1][k];
+        vc[1][k] = xyzno0[inod1][k] + disale[inod1][k];
+        vc[2][k] = xyzno0[inod2][k] + disale[inod2][k];
+        vc[3][k] = vtx_coord[inod2][k];
+      }
+
+      _compute_cog_surf_from_nodes(nb_node_lat, vc, cogloc, surfloc);
+
+      /* Flux contribution */
+      cs_real_t contrib_lat = cs_math_3_dot_product(cogloc, surfloc);
+      dvol -= contrib_lat;
+    }
+
+    /* Finalization of the variation of volume for the internal face */
+    dvol /= 3.;
+    i_mass_flux_ale[f_id] = dvol;
+
+    if (vc != (cs_real_3_t *)_vc)
+      CS_FREE(vc);
+  }
+
+  /* Computation of the delta_volume due to nodes displacement
+     for each boundary faces */
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+
+    const cs_lnum_t s_id = b_face_vtx_idx[f_id];
+    const cs_lnum_t e_id = b_face_vtx_idx[f_id+1];
+    const cs_lnum_t n_face_vertices = e_id - s_id;
+
+    cs_real_t *_vc[10][3];
+    cs_real_3_t *vc = (cs_real_3_t *)_vc;
+    if (n_face_vertices > 10)
+      CS_MALLOC(vc, n_face_vertices, cs_real_3_t);
+
+    /* init flux */
+    cs_real_t dvol = 0.;
+
+    /* Compute center of gravity and surface of the initial surface */
+    for (cs_lnum_t i_v = s_id; i_v < e_id; i_v++) {
+      cs_lnum_t j = i_v - s_id;
+      cs_lnum_t inod = b_face_vtx_lst[i_v];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        vc[j][k] = vtx_coord[inod][k];
+    }
+
+    cs_real_t cogloc[3], surfloc[3];
+    _compute_cog_surf_from_nodes(n_face_vertices, vc, cogloc, surfloc);
+
+    /* Flux contribution */
+    dvol -= cs_math_3_dot_product(cogloc, surfloc);
+
+    /* Compute center of gravity and surface of the final surface */
+    for (cs_lnum_t i_v = s_id; i_v < e_id; i_v++) {
+      cs_lnum_t j = i_v - s_id;
+      cs_lnum_t inod = b_face_vtx_lst[i_v];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        vc[j][k] = xyzno0[inod][k] + disale[inod][k];
+    }
+    _compute_cog_surf_from_nodes(n_face_vertices, vc, cogloc, surfloc);
+
+    /* Flux contribution */
+    dvol += cs_math_3_dot_product(cogloc, surfloc);
+
+    /* Compute center of gravity and surface of annex surfaces */
+    cs_lnum_t inod1, inod2;
+    for (cs_lnum_t i_v = s_id; i_v < e_id; i_v++) {
+      if (i_v < e_id-1) {
+        inod1 = b_face_vtx_lst[i_v];
+        inod2 = b_face_vtx_lst[i_v+1];
+      }
+      else {
+        inod1 = b_face_vtx_lst[i_v];
+        inod2 = b_face_vtx_lst[s_id];
+      }
+      int nb_node_lat = 4;
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        vc[0][k] = vtx_coord[inod1][k];
+        vc[1][k] = xyzno0[inod1][k] + disale[inod1][k];
+        vc[2][k] = xyzno0[inod2][k] + disale[inod2][k];
+        vc[3][k] = vtx_coord[inod2][k];
+      }
+
+      _compute_cog_surf_from_nodes(nb_node_lat, vc, cogloc, surfloc);
+
+      /* Flux contribution */
+      cs_real_t contrib_lat = cs_math_3_dot_product(cogloc, surfloc);
+      dvol -= contrib_lat;
+    }
+
+    /* Finalization of the volume variation for the boundary face */
+    dvol /= 3.;
+    b_mass_flux_ale[f_id] = dvol;
+
+    if (vc != (cs_real_3_t *)_vc)
+      CS_FREE(vc);
+  }
+
+  /* Compute new volume(n+1) from volumic flux (user2) */
+
+  const cs_lnum_t n_cells = domain->mesh->n_cells;
+  const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
+  const cs_lnum_2_t *i_face_cells =
+    (const cs_lnum_2_t *)domain->mesh->i_face_cells;
+
+  const cs_real_t *voln = domain->mesh_quantities->cell_vol;
+  cs_real_t *volnp1 = cs_field_by_name("cell_vol")->val;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    volnp1[c_id] = voln[c_id];
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    cs_lnum_t c_id1 = i_face_cells[f_id][0];
+    cs_lnum_t c_id2 = i_face_cells[f_id][1];
+    cs_real_t dvol = i_mass_flux_ale[f_id];
+    volnp1[c_id1] += dvol;
+    volnp1[c_id2] -= dvol;
+  }
+
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    cs_lnum_t c_id = b_face_cells[f_id];
+    cs_real_t dvol = b_mass_flux_ale[f_id];
+    volnp1[c_id] += dvol;
+  }
+
+  cs_halo_sync_var(domain->mesh->halo, CS_HALO_EXTENDED, volnp1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief In the ALE framework, update mass flux by adding mesh velocity.
+ *
+ * \param[in]      m       pointer to associated mesh structure
+ * \param[in]      mq      pointer to associated mesh quantities structure
+ * \param[in]      dt      time step at cells
+ * \param[in]      crom    density at cells
+ * \param[in]      brom    density at boundary faces
+ * \param[in, out] imasfl  interior face mass flux
+ * \param[in, out] bmasfl  boundary face mass flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_velocity_mass_flux(const cs_mesh_t             *m,
+                           const cs_mesh_quantities_t  *mq,
+                           const cs_real_t              dt[],
+                           const cs_real_t              crom[],
+                           const cs_real_t              brom[],
+                           cs_real_t                    imasfl[],
+                           cs_real_t                    bmasfl[])
+{
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *)m->b_face_cells;
+
+  const cs_lnum_t *i_face_vtx_idx = m->i_face_vtx_idx;
+  const cs_lnum_t *i_face_vtx_lst = m->i_face_vtx_lst;
+  const cs_lnum_t *b_face_vtx_idx = m->b_face_vtx_idx;
+  const cs_lnum_t *b_face_vtx_lst = m->b_face_vtx_lst;
+
+  const cs_real_3_t *vtx_coord = (const cs_real_3_t *)(m->vtx_coord);
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
+  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
+  const cs_real_t *i_face_surf = mq->i_face_surf;
+
+  const cs_real_3_t *mshvel = (const cs_real_3_t *)CS_F_(mesh_u)->val;
+
+  const cs_real_3_t *xyzno0
+    = (const cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
+
+  const cs_real_3_t *disale
+    = (const cs_real_3_t *)cs_field_by_name("mesh_displacement")->val;
+
+  cs_dispatch_context ctx;
+
+  if (cs_glob_space_disc->iflxmw > 0) {
+
+    /* One temporary array needed for internal faces,
+     * in case some internal vertices are moved directly by the user */
+
+    cs_real_t *intflx = nullptr, *bouflx = nullptr;
+    CS_MALLOC_HD(intflx, n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(bouflx, n_b_faces, cs_real_t, cs_alloc_mode);
+
+    cs_field_bc_coeffs_t *bc_coeffs_ale = CS_F_(mesh_u)->bc_coeffs;
+
+    const cs_equation_param_t *eqp_mesh
+      = cs_field_get_equation_param_const(CS_F_(mesh_u));
+
+    cs_mass_flux(m,
+                 mq,
+                 CS_F_(mesh_u)->id,
+                 1,  /* itypfl */
+                 1,  /* iflmb0 */
+                 1,  /* init */
+                 1,  /* inc */
+                 eqp_mesh->imrgra,
+                 eqp_mesh->nswrgr,
+                 static_cast<cs_gradient_limit_t>(eqp_mesh->imligr),
+                 eqp_mesh->verbosity,
+                 eqp_mesh->epsrgr,
+                 eqp_mesh->climgr,
+                 crom, brom,
+                 mshvel,
+                 bc_coeffs_ale,
+                 intflx, bouflx);
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      bmasfl[face_id] -= bouflx[face_id];
+    });
+
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      imasfl[face_id] -= intflx[face_id];
+    });
+
+    ctx.wait();
+
+    CS_FREE_HD(intflx);
+    CS_FREE_HD(bouflx);
+  }
+
+  /* Here we need of the opposite of the mesh velocity. */
+
+  else { /* if (cs_glob_space_disc->iflxmw == 0) */
+
+    /* Compute the mass flux using the nodes displacement */
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      cs_real_t disp_fac[3] = {0, 0, 0};
+      const cs_lnum_t s_id = b_face_vtx_idx[face_id];
+      const cs_lnum_t e_id = b_face_vtx_idx[face_id+1];
+      const cs_lnum_t icpt = e_id - s_id;
+      for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
+        const cs_lnum_t inod = b_face_vtx_lst[ii];
+
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
+          disp_fac[jj] +=   disale[inod][jj]
+                          - (vtx_coord[inod][jj] - xyzno0[inod][jj]);
+      }
+      const cs_lnum_t c_id = b_face_cells[face_id];
+
+      const cs_real_t *n_u = b_face_u_normal[face_id];
+      const cs_real_t dot
+        = b_face_surf[face_id] * cs_math_3_dot_product(disp_fac, n_u);
+
+      bmasfl[face_id] -= brom[face_id] * dot / dt[c_id] / icpt;
+    });
+
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      cs_real_t disp_fac[3] = {0, 0, 0};
+      const cs_lnum_t s_id = i_face_vtx_idx[face_id];
+      const cs_lnum_t e_id = i_face_vtx_idx[face_id+1];
+      const cs_lnum_t icpt = e_id - s_id;
+      for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
+        const cs_lnum_t inod = i_face_vtx_lst[ii];
+
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
+          disp_fac[jj] +=   disale[inod][jj]
+                          - (vtx_coord[inod][jj] - xyzno0[inod][jj]);
+      }
+
+      /* For inner vertices, the mass flux due to the mesh displacement is
+       * recomputed from the nodes displacement */
+      const cs_lnum_t c_id1 = i_face_cells[face_id][0];
+      const cs_lnum_t c_id2 = i_face_cells[face_id][1];
+      const cs_real_t dtfac = 0.5*(dt[c_id1] + dt[c_id2]);
+      const cs_real_t rhofac = 0.5*(crom[c_id1] + crom[c_id2]);
+
+      const cs_real_t *n_u = i_face_u_normal[face_id];
+      const cs_real_t dot
+        = i_face_surf[face_id] * cs_math_3_dot_product(disp_fac, n_u);
+
+      imasfl[face_id] -= rhofac * dot / dtfac / icpt;
+    });
+
+    ctx.wait();
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute boundary condition code for ALE
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_condition_ale_type(const cs_mesh_t            *m,
+                               const cs_mesh_quantities_t *mq,
+                               const bool                  init,
+                               const cs_real_t             dt[],
+                               const int                   bc_type[],
+                               cs_real_t                  *rcodcl1_vel)
+{
+  const cs_lnum_t  n_b_faces    = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
+
+  /* Initialization
+   * -------------- */
+
+  int *impale      = cs_glob_ale_data->impale;
+  int *ale_bc_type = cs_glob_ale_data->bc_type;
+
+  cs_real_3_t *disale =
+    (cs_real_3_t *)cs_field_by_name("mesh_displacement")->val;
+
+  int       *icodcl_mesh_u   = nullptr;
+  cs_real_t *_rcodcl1_mesh_u = nullptr;
+  cs_real_t *rcodcl1_mesh_u  = nullptr;
+
+  if (CS_F_(mesh_u)->bc_coeffs != nullptr) {
+    icodcl_mesh_u  = CS_F_(mesh_u)->bc_coeffs->icodcl;
+    rcodcl1_mesh_u = CS_F_(mesh_u)->bc_coeffs->rcodcl1;
+  }
+
+  if (cs_glob_ale == CS_ALE_CDO) {
+    const int size_uma = CS_F_(mesh_u)->dim * n_b_faces;
+    CS_MALLOC(_rcodcl1_mesh_u, size_uma, cs_real_t);
+    rcodcl1_mesh_u = _rcodcl1_mesh_u;
+
+    cs_real_3_t *b_fluid_vel = nullptr;
+    CS_MALLOC(b_fluid_vel, n_b_faces, cs_real_3_t);
+
+    cs_array_real_fill_zero(3 * n_b_faces, (cs_real_t *)b_fluid_vel);
+
+    cs_ale_update_bcs(ale_bc_type, b_fluid_vel);
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        rcodcl1_mesh_u[n_b_faces * ii + face_id] = b_fluid_vel[face_id][ii];
+    }
+
+    CS_FREE(b_fluid_vel);
+  }
+
+  assert(rcodcl1_mesh_u != nullptr);
+#pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
+      if (rcodcl1_mesh_u[n_b_faces * ii + face_id] > cs_math_infinite_r * 0.5)
+        rcodcl1_mesh_u[n_b_faces * ii + face_id] = 0.;
+    }
+  }
+
+  /* Check the consistency of BC types
+   * --------------------------------- */
+
+  /* When using CDO solver, no need for checks. */
+  if (!(cs_glob_ale == CS_ALE_CDO)) {
+
+    int ierror = 0;
+
+#pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (ale_bc_type[face_id] != 0 &&
+          ale_bc_type[face_id] != CS_BOUNDARY_ALE_FIXED &&
+          ale_bc_type[face_id] != CS_BOUNDARY_ALE_SLIDING &&
+          ale_bc_type[face_id] != CS_BOUNDARY_ALE_FREE_SURFACE &&
+          ale_bc_type[face_id] != CS_BOUNDARY_ALE_IMPOSED_VEL) {
+        if (ale_bc_type[face_id] > 0) {
+          ale_bc_type[face_id] = -ale_bc_type[face_id];
+        }
+        ierror++;
+      }
+    }
+
+    cs_parall_max(1, CS_INT_TYPE, &ierror);
+
+    if (ierror != 0) {
+      bft_printf("ALE METHOD\n"
+                 "At least one boundary face has an unknown boundary type.\n"
+                 "  The calculation will not be run."
+                 "Check boundary condition definitions.");
+      cs_boundary_conditions_error(ale_bc_type, nullptr);
+    }
+
+    /* Conversion into BC and values
+     *-------------------------------*/
+
+    cs_real_3_t *xyzno0 = (cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
+    const cs_real_3_t *xyzno = (const cs_real_3_t *)m->vtx_coord;
+
+    /* If all the nodes of a face have an imposed displacement, rcodcl is
+       computed or overwritten, ale bc type is therefore
+       CS_BOUNDARY_ALE_IMPOSED_VEL */
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      int iecrw = 0, icpt = 0;
+      cs_real_t ddep_xyz[3] = { 0., 0., 0. };
+
+      const cs_lnum_t s = m->b_face_vtx_idx[face_id];
+      const cs_lnum_t e = m->b_face_vtx_idx[face_id + 1];
+
+      for (cs_lnum_t ii = s; ii < e; ii++) {
+        const cs_lnum_t vtx_id = m->b_face_vtx_lst[ii];
+        if (impale[vtx_id] == 0) {
+          iecrw++;
+        }
+        icpt++;
+        for (cs_lnum_t jj = 0; jj < 3; jj++) {
+          ddep_xyz[jj] +=
+            disale[vtx_id][jj] + xyzno0[vtx_id][jj] - xyzno[vtx_id][jj];
+        }
+      }
+
+      if (iecrw == 0 && ale_bc_type[face_id] != CS_BOUNDARY_ALE_SLIDING) {
+        const cs_lnum_t c_id = b_face_cells[face_id];
+        cs_real_t coeff = 1. / (dt[c_id] * icpt);
+
+        ale_bc_type[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          rcodcl1_mesh_u[n_b_faces * ii + face_id] = ddep_xyz[ii] * coeff;
+      }
+    }
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      int icpt = 0;
+
+      /* Fixed faces: we impose that nodes are also fixed */
+      if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_FIXED) {
+        icpt = 0;
+        if (icodcl_mesh_u[face_id] == 0) {
+          icpt++;
+          icodcl_mesh_u[face_id] = 1;
+          for (cs_lnum_t ii = 0; ii < 3; ii++)
+            rcodcl1_mesh_u[n_b_faces * ii + face_id] = 0.;
+        }
+
+        if (icpt) {
+          const cs_lnum_t s = m->b_face_vtx_idx[face_id];
+          const cs_lnum_t e = m->b_face_vtx_idx[face_id + 1];
+          for (cs_lnum_t ii = s; ii < e; ii++) {
+            const cs_lnum_t vtx_id = m->b_face_vtx_lst[ii];
+            if (impale[vtx_id] == 0) {
+              impale[vtx_id] = 1;
+              for (cs_lnum_t jj = 0; jj < 3; jj++)
+                disale[vtx_id][jj] = 0;
+            }
+          }
+        }
+      }
+
+      /* Sliding face */
+      else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_SLIDING) {
+        if (icodcl_mesh_u[face_id] == 0)
+          icodcl_mesh_u[face_id] = 4;
+      }
+
+      /* Imposed mesh velocity face */
+      else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_IMPOSED_VEL) {
+        if (icodcl_mesh_u[face_id] == 0)
+          icodcl_mesh_u[face_id] = 1;
+      }
+
+      /* Free surface face: the mesh velocity is imposed by the mass flux */
+      else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_FREE_SURFACE) {
+        if (icodcl_mesh_u[face_id] == 0)
+          icodcl_mesh_u[face_id] = 1;
+      }
+    }
+
+    /* Check icodcl consistency
+     * ------------------------ */
+
+    int irkerr = -1;
+    int icoder[2] = {-1, -1};
+    int ierr = 0;
+
+    /* When called before time loop, some values are not yet available. */
+    if (init == true)
+      return;
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (   icodcl_mesh_u[face_id] < 1
+          || icodcl_mesh_u[face_id] > 4) {
+        if (ale_bc_type[face_id] > 0) {
+          ale_bc_type[face_id] = -ale_bc_type[face_id];
+        }
+        ierr++;
+        bft_printf("Error face %d with bc_type = %d, ale_bc_type %d "
+                   "and icodcl_mesh_u %d.\n",
+                   face_id,
+                   bc_type[face_id],
+                   ale_bc_type[face_id],
+                   icodcl_mesh_u[face_id]);
+      }
+      else {
+#if 0
+        bft_printf("Good result for face %d with bc_type = %d, ale_bc_type %d "
+                   "and icodcl_mesh_u %d.\n",
+                   face_id,
+                   bc_type[face_id],
+                   ale_bc_type[face_id],
+                   icodcl_mesh_u[face_id]);
+#endif
+      }
+
+      if (ale_bc_type[face_id] < 0) {
+        irkerr    = cs_glob_rank_id;
+        icoder[0] = -ale_bc_type[face_id];
+        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+          icoder[1] = icodcl_mesh_u[face_id];
+        }
+      }
+    }
+
+    cs_parall_max(1, CS_INT_TYPE, &ierr);
+    bool stop = false;
+
+    if (ierr > 0) {
+      stop = true;
+      bft_printf(_("ALE method:\n\n"
+                   "At least one boundary face has a boundary condition type\n"
+                   "which is not recognized for mesh velocity:\n\n"
+                   "  rank_id: %d,\n"
+                   "  ale_bc_type: %d\n"
+                   "  mesh_u->bc_coeffs->icodcl: %d,\n\n"
+                   "The only allowed values for icodcl are\n"
+                   "  1: Dirichlet\n"
+                   "  2: Convective outlet\n"
+                   "  3: Neumann\n"
+                   "  4: Slip\n\n"
+                   "Check boundary condition definitions.\n"),
+                 irkerr, icoder[0], icoder[1]);
+    }
+
+    if (stop) {
+      bft_printf(_("ALE method:\n\n"
+                   "Inconsistency in boundary condition types"
+                   " for mesh velocity:\n"
+                   "  (cf. message(s) above)\n"));
+
+      cs_boundary_conditions_error(ale_bc_type, nullptr);
+    }
+
+  } /* if (cs_glob_ale != CS_ALE_CDO) */
+
+  /* Fluid velocity BCs for walls and symmetries
+   * (due to mesh movement)
+   * ------------------------------------------- */
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    if (ale_bc_type[face_id] != CS_BOUNDARY_ALE_IMPOSED_VEL)
+      continue;
+
+    if (bc_type[face_id] == CS_SYMMETRY)
+      for (int ii = 0; ii < 3; ii++)
+        rcodcl1_vel[n_b_faces * ii + face_id] =
+          rcodcl1_mesh_u[n_b_faces * ii + face_id];
+
+    if (bc_type[face_id] == CS_SMOOTHWALL || bc_type[face_id] == CS_ROUGHWALL) {
+      /* If nothing is set by the user, then the wall is supposed
+       * to move with the sliding wall */
+      if (rcodcl1_vel[n_b_faces * 0 + face_id] > cs_math_infinite_r * 0.5 &&
+          rcodcl1_vel[n_b_faces * 1 + face_id] > cs_math_infinite_r * 0.5 &&
+          rcodcl1_vel[n_b_faces * 2 + face_id] > cs_math_infinite_r * 0.5) {
+        for (int ii = 0; ii < 3; ii++)
+          rcodcl1_vel[n_b_faces * ii + face_id] =
+            rcodcl1_mesh_u[n_b_faces * ii + face_id];
+      }
+      else {
+        /* Otherwise, if the user has set the fluid velocity
+         * Then the normal part is the one of the mesh velocity
+         * and the tangential part is the one of the user (completed with 0
+         * for non set values) */
+        for (int ii = 0; ii < 3; ii++) {
+          if (rcodcl1_vel[n_b_faces * ii + face_id] > cs_math_infinite_r * 0.5)
+            rcodcl1_vel[n_b_faces * ii + face_id] = 0.;
+        }
+
+        const cs_nreal_t *rnxyz = b_face_u_normal[face_id];
+
+        const cs_real_t rcodcxyz[3] = { rcodcl1_vel[n_b_faces * 0 + face_id],
+                                        rcodcl1_vel[n_b_faces * 1 + face_id],
+                                        rcodcl1_vel[n_b_faces * 2 + face_id] };
+        cs_real_t rcodsn = 0.;
+        for (int ii = 0; ii < 3; ii++)
+          rcodsn += (rcodcl1_mesh_u[n_b_faces * ii + face_id] - rcodcxyz[ii]) *
+                    rnxyz[ii];
+
+        for (int ii = 0; ii < 3; ii++)
+          rcodcl1_vel[n_b_faces * ii + face_id] =
+            rcodcxyz[ii] + rcodsn * rnxyz[ii];
+      }
+    }
+  }
+
+  CS_FREE(_rcodcl1_mesh_u);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1122,15 +1892,29 @@ cs_ale_allocate(void)
   if (cs_glob_ale <= CS_ALE_NONE)
     return;
 
-  CS_MALLOC(cs_glob_ale_data->impale, cs_glob_mesh->n_vertices, int);
-  CS_MALLOC(cs_glob_ale_data->bc_type, cs_glob_mesh->n_b_faces, int);
+  cs_mesh_t *m = cs_glob_mesh;
+  CS_MALLOC(cs_glob_ale_data->impale, m->n_vertices, int);
+  CS_MALLOC(cs_glob_ale_data->bc_type, m->n_b_faces, int);
 
-  cs_arrays_set_value<int, 1>(cs_glob_mesh->n_b_faces,
+  cs_arrays_set_value<int, 1>(m->n_b_faces,
                               0,
                               cs_glob_ale_data->bc_type);
-  cs_arrays_set_value<int, 1>(cs_glob_mesh->n_vertices,
+  cs_arrays_set_value<int, 1>(m->n_vertices,
                               0,
                               cs_glob_ale_data->impale);
+
+  CS_MALLOC_HD(cs_glob_ale_data->b_mass_flux_ale, m->n_b_faces,
+               cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(cs_glob_ale_data->i_mass_flux_ale, m->n_i_faces,
+               cs_real_t, cs_alloc_mode);
+
+  cs_arrays_set_value<cs_real_t, 1>(m->n_b_faces,
+                                    0.,
+                                    cs_glob_ale_data->b_mass_flux_ale);
+
+  cs_arrays_set_value<cs_real_t, 1>(m->n_i_faces,
+                                    0.,
+                                    cs_glob_ale_data->i_mass_flux_ale);
 
   cs_base_at_finalize(_ale_free);
 }
@@ -1398,7 +2182,13 @@ cs_ale_update_mesh(int  itrale)
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   cs_time_step_t *ts = cs_get_glob_time_step();
 
+  cs_field_t *f_cellvol = cs_field_by_name("cell_vol");
+  cs_real_t *cell_vol = f_cellvol->val;
+  cs_real_t *cell_vol_pre = f_cellvol->val_pre;
+
   /* Initialization */
+
+  mq->cell_vol = cell_vol;
 
   const cs_equation_param_t *eqp =
     cs_field_get_equation_param_const(CS_F_(mesh_u));
@@ -1449,6 +2239,8 @@ cs_ale_update_mesh(int  itrale)
     }
 
   } /* itrale == 0 */
+
+  mq->cell_vol = cell_vol_pre;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1482,13 +2274,17 @@ cs_ale_update_bcs(int         *ale_bc_type,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_solve_mesh_velocity(int  iterns)
+cs_ale_solve_mesh_velocity(const int        iterns,
+                           const cs_real_t  b_rho[],
+                           const cs_real_t  i_mass_flux[],
+                           const cs_real_t  b_mass_flux[])
 {
   const int  *impale = cs_glob_ale_data->impale;
   const int  *ale_bc_type = cs_glob_ale_data->bc_type;
 
   if (cs_glob_ale == CS_ALE_LEGACY)
-    _ale_solve_poisson_legacy(cs_glob_domain, iterns, impale, ale_bc_type);
+    _ale_solve_poisson_legacy(cs_glob_domain, iterns, impale, ale_bc_type,
+                              b_rho, i_mass_flux, b_mass_flux);
 
   else if (cs_glob_ale == CS_ALE_CDO)
     _ale_solve_poisson_cdo(cs_glob_domain, impale);
@@ -1607,6 +2403,58 @@ cs_ale_add_property_fields(void)
 
   cs_field_set_key_int(f_xyz0, log_key_id, 0);
   cs_field_set_key_int(f_xyz0, post_key_id, 0);
+
+  /* Add the cell volume as a owner field to have vol^n and vol^{n+1}
+     ----------------------------------------------------------------  */
+
+  int field_type = CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY;
+  cs_field_t *f_cellvol = cs_field_create("cell_vol",
+                                          field_type,
+                                          CS_MESH_LOCATION_CELLS,
+                                          1,       /* dim */
+                                          true);   /* has previous */
+
+   /* Add output related to this field */
+
+  cs_field_set_key_int(f_cellvol, log_key_id, 0);
+  cs_field_set_key_int(f_cellvol, post_key_id, 0);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize volume fields dedicated to the ALE model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_initialize_volume_fields(void)
+{
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_real_t *mq_cell_vol = mq->cell_vol;
+
+  cs_field_t *f_cellvol = cs_field_by_name("cell_vol");
+  cs_real_t *cell_vol = f_cellvol->val;
+  cs_real_t *cell_vol_pre = f_cellvol->val_pre;
+
+  /* Initialize f_cell_vol by the initial mq->cell_vol */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cell_vol[c_id] = mq_cell_vol[c_id];
+    cell_vol_pre[c_id] = mq_cell_vol[c_id];
+  }
+
+  cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, cell_vol);
+  cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, cell_vol_pre);
+
+  /* Cell volume points to the field f_cellvol->val_pre
+     (i.e to the most used vol^n) */
+
+  mq->cell_vol = cell_vol_pre;
+
+  /* Free _cell_vol which is not owner anymore */
+  CS_FREE(mq->_cell_vol);
 }
 
 /*----------------------------------------------------------------------------*/

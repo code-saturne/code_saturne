@@ -423,7 +423,6 @@ _compute_wall_distance(const int iterns)
 static void
 _solve_most(int              n_var,
             int              isvhb,
-            int              itrale,
             int              vel_verbosity,
             int             *italim,
             int             *itrfin,
@@ -498,7 +497,6 @@ _solve_most(int              n_var,
       cs_boundary_conditions_set_coeffs(n_var,
                                         iterns,
                                         isvhb,
-                                        itrale,
                                         *italim,
                                         *itrfin,
                                         *ineefl,
@@ -590,9 +588,22 @@ _solve_most(int              n_var,
       _must_return = true;
 
     if (cs_glob_ale != CS_ALE_NONE)
-      if (itrale == 0) {
+      if (cs_glob_ale_data->ale_iteration == 0) {
         _must_return = true;
-        cs_ale_solve_mesh_velocity(iterns);
+
+        /* The mass flux is necessary to call cs_equation_iterative_solve_vector
+           in cs_ale_solve_mesh_velocity, but not used (iconv = 0), except for the
+           free surface, where it is used as a boundary condition */
+
+        const int kimasf = cs_field_key_id("inner_mass_flux_id");
+        const int kbmasf  = cs_field_key_id("boundary_mass_flux_id");
+        cs_real_t *b_mass_flux
+          = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+        cs_real_t *i_mass_flux
+          = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+        cs_real_t *brom = CS_F_(rho_b)->val;
+
+        cs_ale_solve_mesh_velocity(iterns, brom, i_mass_flux, b_mass_flux);
       }
 
     if (_must_return) {
@@ -633,7 +644,7 @@ _solve_most(int              n_var,
 
       cs_solve_navier_stokes(iterns,
                              &icvrge,
-                             itrale,
+                             cs_glob_ale_data->ale_iteration,
                              isostd,
                              ckupdc,
                              trava);
@@ -854,12 +865,11 @@ _solve_turbulence(cs_lnum_t   n_cells,
  * \brief Resolution of incompressible Navier Stokes, scalar transport
  *        equations... for a time step.
  *
- * \param[in]     itrale        ALE iteration number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solve_all(int  itrale)
+cs_solve_all()
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -1020,8 +1030,9 @@ cs_solve_all(int  itrale)
       && cs_glob_time_step->nt_prev == cs_glob_time_step->nt_max)
     return;
 
-  // If itrale = 0, we are initializing ALE; do not touch the mass flux either.
-  if (itrale > 0)
+  /* If cs_glob_ale_data->ale_iteration = 0, we are initializing ALE;
+     do not touch the mass flux either. */
+  if (cs_glob_ale_data->ale_iteration > 0)
     cs_theta_scheme_update_var_stage1();
 
   /* Update location of code_saturne/code_saturne coupling interfaces
@@ -1047,7 +1058,7 @@ cs_solve_all(int  itrale)
 
   cs_physical_properties_update(-1);
 
-  if (itrale > 0)
+  if (cs_glob_ale_data->ale_iteration > 0)
     cs_theta_scheme_update_var_stage2();
 
   /* Compute head loss coeffs.
@@ -1079,7 +1090,7 @@ cs_solve_all(int  itrale)
   /* Current to previous for variables
      --------------------------------- */
 
-  _update_previous_values(itrale, n_fields, n_cells);
+  _update_previous_values(cs_glob_ale_data->ale_iteration, n_fields, n_cells);
 
   /* Compute time step if variable
      ----------------------------- */
@@ -1091,10 +1102,10 @@ cs_solve_all(int  itrale)
          "  ===========================================\n\n"));
   }
 
-  cs_local_time_step_compute(itrale);
+  cs_local_time_step_compute(cs_glob_ale_data->ale_iteration);
   const int n_init_f_ale  = cs_glob_ale_n_ini_f;
   const int nb_ext_structs = cs_ast_coupling_n_couplings();
-  if (nb_ext_structs > 0 && itrale > n_init_f_ale)
+  if (nb_ext_structs > 0 && cs_glob_ale_data->ale_iteration > n_init_f_ale)
     cs_ast_coupling_exchange_time_step(CS_F_(dt)->val);
 
   if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
@@ -1136,8 +1147,8 @@ cs_solve_all(int  itrale)
   int itrfin = 1;
   int ineefl = 0;
 
-  if (cs_glob_ale != CS_ALE_NONE && itrale > n_init_f_ale &&
-      cs_glob_mobile_structures_n_iter_max > 1) {
+  if (   cs_glob_ale != CS_ALE_NONE && cs_glob_ale_data->ale_iteration > n_init_f_ale
+      && cs_glob_mobile_structures_n_iter_max > 1) {
     /* Indicate if we need to return to the initial state at the end
        of an ALE iteration. */
     ineefl = 1;
@@ -1179,7 +1190,6 @@ cs_solve_all(int  itrale)
 
     _solve_most(n_var,
                 isvhb,
-                itrale,
                 eqp_vel->verbosity,
                 &italim,
                 &itrfin,
@@ -1204,7 +1214,8 @@ cs_solve_all(int  itrale)
 
       const int nb_int_structs = cs_mobile_structures_get_n_int_structures();
       if (nb_int_structs > 0 || nb_ext_structs > 0) {
-        cs_mobile_structures_displacement(itrale, italim, &itrfin);
+        cs_mobile_structures_displacement(cs_glob_ale_data->ale_iteration,
+                                          italim, &itrfin);
         if (itrfin != -1) {
           italim++;
           need_new_solve = true;

@@ -278,7 +278,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
     def __selectSymmetryBoundary(self, boundary):
         """
-        Shows widgets for wall.
+        Shows widgets for symmetry.
         """
         self.mobileMeshWidget.showWidget(boundary)
 

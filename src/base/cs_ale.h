@@ -65,8 +65,11 @@ typedef enum {
 
 typedef struct {
 
-  int          *impale;    /*!< 1st component of low-level BC */
-  int          *bc_type;   /*!< ALE BC type code */
+  int          *impale;           /*!< 1st component of low-level BC */
+  int          *bc_type;          /*!< ALE BC type code */
+  int           ale_iteration;    /*!< ALE iteration */
+  cs_real_t    *i_mass_flux_ale;  /*!< inner ALE mass flux */
+  cs_real_t    *b_mass_flux_ale;  /*!< boundary ALE mass flux */
 
 } cs_ale_data_t;
 
@@ -89,7 +92,68 @@ extern int cs_glob_ale_need_init;  /* Indicate whether an iteration to
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Compute of ALE volumic flux from displacement and deduced volume
+ *        at time n+1.
+ *
+ * \param[in, out] domain  pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_compute_volume_from_displacement(cs_domain_t *domain);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief In the ALE framework, update mass flux by adding mesh velocity.
+ *
+ * \param[in]      m       pointer to associated mesh structure
+ * \param[in]      mq      pointer to associated mesh quantities structure
+ * \param[in]      dt      time step at cells
+ * \param[in]      crom    density at cells
+ * \param[in]      brom    density at boundary faces
+ * \param[in, out] imasfl  interior face mass flux
+ * \param[in, out] bmasfl  boundary face mass flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_velocity_mass_flux(const cs_mesh_t             *m,
+                           const cs_mesh_quantities_t  *mq,
+                           const cs_real_t              dt[],
+                           const cs_real_t              crom[],
+                           const cs_real_t              brom[],
+                           cs_real_t                    imasfl[],
+                           cs_real_t                    bmasfl[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Compute boundary condition code for ALE
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_condition_ale_type(const cs_mesh_t            *m,
+                               const cs_mesh_quantities_t *mq,
+                               const bool                  init,
+                               const cs_real_t             dt[],
+                               const int                   bc_type[],
+                               cs_real_t                  *rcodcl1_vel);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Compute boundary condition code for ALE
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_condition_ale_type_nep(const cs_mesh_t            *m,
+                                   const cs_mesh_quantities_t *mq,
+                                   const bool                  init,
+                                   const cs_real_t             dt[],
+                                   const int                   bc_type[],
+                                   cs_real_t                  *rcodcl1_vel);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief  Allocation of ialtyb and impale for the ALE structure.
  */
 /*----------------------------------------------------------------------------*/
@@ -97,7 +161,7 @@ extern int cs_glob_ale_need_init;  /* Indicate whether an iteration to
 void cs_ale_allocate(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute cell and face centers of gravity, cell volumes
  *         and update bad cells.
  *
@@ -113,7 +177,7 @@ cs_ale_update_mesh_quantities(cs_real_t  *min_vol,
                               cs_real_t  *tot_vol);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Project the displacement on mesh vertices (solved on cell center).
  *
  * \param[in]       ale_bc_type   Type of boundary for ALE
@@ -137,7 +201,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
                             cs_real_3_t        *disp_proj);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Update mesh in the ALE framework.
  *
  * \param[in]       itrale        number of the current ALE iteration
@@ -148,7 +212,7 @@ void
 cs_ale_update_mesh(int  itrale);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update ALE BCs for required for the fluid
  *
  * \param[out]      ale_bc_type   type of ALE bcs
@@ -161,7 +225,7 @@ cs_ale_update_bcs(int         *ale_bc_type,
                   cs_real_3_t *b_fluid_vel);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Solve a Poisson equation on the mesh velocity in ALE framework.
  *
  * It also updates the mesh displacement
@@ -172,10 +236,13 @@ cs_ale_update_bcs(int         *ale_bc_type,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_solve_mesh_velocity(int  iterns);
+cs_ale_solve_mesh_velocity(const int        iterns,
+                           const cs_real_t  b_rho[],
+                           const cs_real_t  i_mass_flux[],
+                           const cs_real_t  b_mass_flux[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Activate the mesh velocity solving with CDO
  */
 /*----------------------------------------------------------------------------*/
@@ -184,7 +251,7 @@ void
 cs_ale_activate(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Test if mesh velocity solving with CDO is activated
  *
  * \return true ifmesh velocity solving with CDO is requested, false otherwise
@@ -195,7 +262,7 @@ bool
 cs_ale_is_activated(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add "property" fields dedicated to the ALE model.
  */
 /*----------------------------------------------------------------------------*/
@@ -204,7 +271,16 @@ void
 cs_ale_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Initialize fields volume dedicated to the ALE model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_initialize_volume_fields(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Setup the equations solving the mesh velocity when CDO is activated
  *
  * \param[in, out] domain  pointer to a cs_domain_t structure
@@ -215,7 +291,7 @@ void
 cs_ale_init_setup(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------
- *!
+ *
  * \brief Print the ALE options to setup.log.
  *
  *----------------------------------------------------------------------------*/
@@ -224,7 +300,7 @@ void
 cs_ale_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Setup the equations solving the mesh velocity
  *
  * \param[in]   domain       pointer to a cs_domain_t structure
@@ -235,7 +311,7 @@ void
 cs_ale_setup_boundaries(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Finalize the setup stage for the equation of the mesh velocity
  *
  * \param[in, out]  domain       pointer to a cs_domain_t structure
@@ -246,7 +322,7 @@ void
 cs_ale_finalize_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Free the main structure related to the ALE mesh velocity solving
  */
 /*----------------------------------------------------------------------------*/
@@ -255,7 +331,7 @@ void
 cs_ale_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Read ALE data from restart file.
  *
  * \param[in, out]  r  associated restart file pointer
@@ -266,7 +342,7 @@ void
 cs_ale_restart_read(cs_restart_t  *r);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Write ALE data from restart file.
  *
  * \param[in, out]  r  associated restart file pointer

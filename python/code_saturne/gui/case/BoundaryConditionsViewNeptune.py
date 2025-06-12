@@ -252,6 +252,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         elif self.__nature == 'outlet':
             self.__selectOutletBoundary(boundary)
             self.tableViewFields.show()
+        elif self.__nature == 'symmetry':
+            self.__selectSymmetryBoundary(boundary)
 
     @pyqtSlot("QModelIndex")
     def __slotSelectBoundary(self):
@@ -279,6 +281,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
                 self.tableViewFields.show()
             self.__selectWallBoundary(boundary)
 
+        elif self.__nature == 'symmetry':
+            boundary = Boundary(self.__nature, self.__label, self.case, self.__currentField)
+            self.__selectSymmetryBoundary(boundary)
+
         if LagrangianModel(self.case).getLagrangianModel() != 'off':
             self.particlesWidget.showWidget(self.zone)
 
@@ -286,6 +292,11 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         """
         Shows widgets for inlet.
         """
+
+        # ALE
+        self.MobileMeshWidget.setup(self.case) # add field in arg (multiphasique BC) ?
+        self.MobileMeshWidget.showWidget(boundary)
+
         self.PressureWidget.hideWidget()
 
         # Show this widgets only if we work with real phases
@@ -327,6 +338,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             self.WallWidget.setup(self.case, self.__currentField)
             self.WallWidget.showWidget(boundary)
 
+        # ALE
+        self.MobileMeshWidget.setup(self.case)
+        self.MobileMeshWidget.showWidget(boundary)
+
 
     def __selectOutletBoundary(self, boundary):
         """
@@ -362,6 +377,20 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
 
         self.WallWidget.hideWidget()
 
+        # ALE
+        self.MobileMeshWidget.setup(self.case)
+        self.MobileMeshWidget.showWidget(boundary)
+
+
+    def __selectSymmetryBoundary(self, boundary):
+        """
+        Shows widgets for symmetry.
+        """
+
+        # ALE
+        self.MobileMeshWidget.setup(self.case)
+        self.MobileMeshWidget.showWidget(boundary)
+
 
     def __hideAllWidgets(self):
         """
@@ -378,6 +407,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.ScalarWidget.hideWidget()
         self.WallWidget.hideWidget()
         self.particlesWidget.hideWidget()
+        self.MobileMeshWidget.hideWidget()
 
 
 #-------------------------------------------------------------------------------

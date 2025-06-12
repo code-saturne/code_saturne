@@ -2910,6 +2910,7 @@ cs_mesh_quantities_create(void)
   mesh_quantities->cell_cen = nullptr;
   mesh_quantities->cell_s_cen = nullptr;
   mesh_quantities->cell_vol = nullptr;
+  mesh_quantities->_cell_vol = nullptr;
   mesh_quantities->i_face_normal = nullptr;
   mesh_quantities->b_face_normal = nullptr;
   mesh_quantities->c_w_face_normal = nullptr;
@@ -2975,7 +2976,8 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 {
   CS_FREE_HD(mq->cell_cen);
   mq->cell_s_cen = nullptr;
-  CS_FREE(mq->cell_vol);
+  CS_FREE_HD(mq->_cell_vol);
+  mq->cell_vol = nullptr;
 
   CS_FREE(mq->i_face_normal);
   CS_FREE(mq->b_face_normal);
@@ -3040,8 +3042,10 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
   }
 
   if (mq->cell_vol == nullptr) {
-    CS_MALLOC_HD(mq->cell_vol, n_cells_with_ghosts, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->cell_vol);
+    CS_MALLOC_HD(mq->_cell_vol, n_cells_with_ghosts, cs_real_t, amode);
+    cs_mem_advise_set_read_mostly(mq->_cell_vol);
+    /* By default cell_vol point to owner _cell_vol */
+    mq->cell_vol = mq->_cell_vol;
   }
 
   if (mq->i_face_normal == nullptr) {

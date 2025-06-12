@@ -550,6 +550,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
         Show the widgets matching the model
         """
         self.__comboModel.setItem(str_model=modelData)
+
         if modelData in ["fixed_velocity", "fixed_displacement"]:
             self.pushButtonMobilBoundary.show()
         else:
@@ -574,6 +575,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
         Show the widget
         """
         if self.__model.getMethod() != "off":
+
             modelData = b.getALEChoice()
             self.__boundary = b
             if b.getNature() == "wall":

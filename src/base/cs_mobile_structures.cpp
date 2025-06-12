@@ -58,12 +58,16 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters_check.h"
+#include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_time_plot.h"
 #include "base/cs_time_step.h"
 #include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
+
+#include "base/cs_boundary_conditions.h"
+#include "base/cs_parameters.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -96,84 +100,13 @@ BEGIN_C_DECLS
 
 typedef cs_real_t  _cs_real_11_t[11];  /* Vector of 11 real values */
 
-/*! Mobile_structures type */
-/*-------------------------*/
-
-typedef struct {
-
-  /* Base structure definitions and input */
-
-  int n_int_structs; /*!< number of internal structures */
-
-  bool has_ext_structs; /*!< has external structures ? */
-
-  cs_real_t      aexxst;     /*!< coefficient for the predicted displacement */
-  cs_real_t      bexxst;     /*!< coefficient for the predicted displacement */
-
-  cs_real_t      cfopre;     /*!< coefficient for the predicted force */
-
-  cs_real_t      alpnmk;     /*!< alpha coefficient for the Newmark hht method */
-  cs_real_t      betnmk;     /*!< beta coefficient for the Newmark hht method */
-  cs_real_t      gamnmk;     /*!< gamma coefficient for the Newmark hht method */
-
-  cs_real_33_t  *xmstru;     /*!< mass matrices (kg)*/
-  cs_real_33_t  *xcstru;     /*!< damping matrix coefficients (kg/s) */
-  cs_real_33_t  *xkstru;     /*!< spring matrix constants (kg/s2 = N/m) */
-
-  /* Output (plotting) control */
-
-  int                plot;               /*!< monitoring format mask
-                                           0: no plot
-                                           1: plot to text (.dat) format
-                                           2: plot to .csv format *
-                                           3: plot to both formats */
-
-  cs_time_control_t  plot_time_control;  /*!< time control for plotting */
-  char              *plot_dir_name;      /*!< monitoring output directory */
-
-  /* Computed structure values */
-
-  cs_real_3_t   *xstr;       /*!< displacement vectors compared to structure
-                              *   positions in the initial mesh (m) */
-  cs_real_3_t  *xsta;        /*!< values of xstr at the previous time step */
-  cs_real_3_t  *xstp;        /*!< predicted values of xstr */
-  cs_real_3_t  *xstreq;      /*!< equilibrum positions of a structure (m) */
-
-  cs_real_3_t  *xpstr;       /*!< velocity vectors (m/s) */
-  cs_real_3_t  *xpsta;       /*!< xpstr at previous time step */
-
-  cs_real_3_t  *xppstr;      /*!< acceleration vectors (m/s2) */
-  cs_real_3_t  *xppsta;      /*!< acceleration vectors at previous
-                              *   time step (m/s2) */
-
-  cs_real_3_t  *forstr;      /*!< force vectors acting on the structure (N) */
-  cs_real_3_t  *forsta;      /*!< forstr at previous time step (N) */
-  cs_real_3_t  *forstp;      /*!< predicted force vectors (N) */
-
-  cs_real_t  *dtstr;         /*!< time step used to solve structure movements */
-  cs_real_t *dtsta; /*!< previous time step used to solve structure movements */
-
-  /* Association with mesh */
-
-  int        *idfstr;        /*!< structure number associated to each
-                              *   boundary face:
-                              *   - 0 if face is not coupled to a structure
-                              *   - if > 0, internal structure id + 1
-                              *   - if < 0, - code_aster instance id  - 1 */
-
-  /* Plotting */
-
-  int            n_plots;    /*!< number of plots for format */
-
-  cs_time_plot_t  **plot_files[2];  /*!< Associated plot files */
-
-} cs_mobile_structures_t;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-static cs_mobile_structures_t  *_mobile_structures = nullptr;
+//static cs_mobile_structures_t  *_mobile_structures = nullptr;
+//extern cs_mobile_structures_t  *_mobile_structures = nullptr;
+cs_mobile_structures_t  *_mobile_structures = nullptr;
 
 /* Arrays allowing return to initial state at end of ALE iteration.
  * - Mass flux: save at the first call of cs_theta_scheme_update_var_stage.
@@ -1191,18 +1124,20 @@ cs_mobile_structures_set_newmark_coefficients(cs_real_t  alpha,
 /*!
  * \brief  Predict displacement of mobile structures with ALE.
  *
- * \param[in]   itrale   ALE iteration number
- * \param[in]   italim   implicit coupling iteration number
- * \param[in]   ineefl   indicate whether fluxes should be saved
- * \param[out]  impale   imposed displacement indicator
+ * \param[in]   bc_coeffs_vel   velocity boundary condition structure
+ * \param[in]   itrale          ALE iteration number
+ * \param[in]   italim          implicit coupling iteration number
+ * \param[in]   ineefl          indicate whether fluxes should be saved
+ * \param[out]  impale          imposed displacement indicator
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_prediction(int  itrale,
-                                int  italim,
-                                int  ineefl,
-                                int  impale[])
+cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
+                                int                   itrale,
+                                int                   italim,
+                                int                   ineefl,
+                                int                   impale[])
 {
   cs_mobile_structures_t *ms = _mobile_structures;
 
@@ -1353,13 +1288,17 @@ cs_mobile_structures_prediction(int  itrale,
     }
 
     if (ineefl == 1) {
+
+      /*bft_error(__FILE__, __LINE__, 0,
+              _("not use this fonction for neptune"));*/
+
       /* Save BC coefficients.
 
          Using separate values for velocity and pressure could
          also make this more readable and safer. */
 
-      cs_real_3_t  *coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
-      cs_real_33_t *coefbu = (cs_real_33_t *)CS_F_(vel)->bc_coeffs->b;
+      cs_real_3_t  *coefau = (cs_real_3_t *)bc_coeffs_vel->a;
+      cs_real_33_t *coefbu = (cs_real_33_t *)bc_coeffs_vel->b;
 
       cs_real_t *coefap = CS_F_(p)->bc_coeffs->a;
       cs_real_t *coefbp = CS_F_(p)->bc_coeffs->b;
@@ -1415,7 +1354,6 @@ void
 cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
 {
   /* Number of internal and external couplings */
-
   cs_mobile_structures_t *ms = _mobile_structures;
 
   int n_int_structs = cs_mobile_structures_get_n_int_structures();
@@ -1435,6 +1373,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(mesh_u));
 
   const cs_time_step_t *ts = cs_glob_time_step;
+
+  const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
 
   /* Compute forces on the structures
      -------------------------------- */
@@ -1457,6 +1397,7 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     int str_num = idfstr[face_id];
     if (str_num > 0) {
       int i = str_num - 1;
+
       for (cs_lnum_t j = 0; j < 3; j++)
         ms->forstr[i][j] += b_stress[face_id][j] * b_face_surf[face_id];
     }
@@ -1476,18 +1417,23 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     const cs_real_t cfopre = ms->cfopre;
 
     for (int i = 0; i < n_int_structs; i++) {
+
+      /* Compute weight */
+      cs_real_t mg[3] = {0., 0., 0.};
+      for (int ii = 0; ii < 3; ii++) {
+        for (int jj = 0; jj < 3; jj++) {
+          mg[ii] += ms->xmstru[i][ii][jj] * gxyz[jj];
+        }
+      }
+
+      for (cs_lnum_t j = 0; j < 3; j++)
+        ms->forstr[i][j] += mg[j];
+
       for (int j = 0; j < 3; j++) {
         ms->forstp[i][j] =
           cfopre * ms->forstr[i][j] + (1.0 - cfopre) * ms->forsta[i][j];
       }
     }
-  }
-
-  /* Send effort applied to external structures */
-
-  if (n_ast_structs > 0) {
-    cs_ast_coupling_send_fluid_forces();
-    cs_ast_coupling_evaluate_cvg();
   }
 
   /* Structure characteristics defined by the user
@@ -1533,6 +1479,13 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     }
   }
 
+  /* Send effort applied to external structures */
+
+  if (n_ast_structs > 0) {
+    cs_ast_coupling_send_fluid_forces();
+    cs_ast_coupling_evaluate_cvg();
+  }
+
   /* If the fluid is initializing, we do not read structures */
   if (itrale <= cs_glob_ale_n_ini_f) {
     *itrfin = -1;
@@ -1549,6 +1502,22 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
              ms->xstr[i], ms->xpstr[i], ms->xppstr[i],
              ms->xsta[i], ms->xpsta[i], ms->xppsta[i],
              ms->forstp[i], ms->forsta[i], ms->dtstr[i]);
+
+    bft_printf("ALE_newmark temps disp %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->xstr[0][0], ms->xstr[0][1], ms->xstr[0][2]);
+
+    bft_printf("ALE_newmark temps vel %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->xpstr[0][0], ms->xpstr[0][1], ms->xpstr[0][2]);
+
+    bft_printf("ALE_newmark temps acc %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->xppstr[0][0], ms->xppstr[0][1], ms->xppstr[0][2]);
+
+    bft_printf("ALE_newmark temps force %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->forsta[0][0], ms->forsta[0][1], ms->forsta[0][2]);
   }
 
   /* Convergence test
@@ -1690,6 +1659,9 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
 
     cs_real_t *coefap = CS_F_(p)->bc_coeffs->a;
     cs_real_t *coefbp = CS_F_(p)->bc_coeffs->b;
+
+    /*bft_error(__FILE__, __LINE__, 0,
+              _("not use this fonction for neptune"));*/
 
     _cs_real_11_t *cofale = _bc_coeffs_save;
 

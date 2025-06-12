@@ -571,9 +571,9 @@ cs_time_stepping(void)
   if (cs_glob_ale_need_init == -999)
     cs_glob_ale_need_init = 1;
 
-  int itrale = 1;
+  cs_glob_ale_data->ale_iteration = 1;
   if (cs_glob_ale_need_init == 1) {
-    itrale = 0;
+    cs_glob_ale_data->ale_iteration = 0;
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n INSTANT %18.9f    ALE INITIALIZATION\n"
                     "============================================="
@@ -583,7 +583,7 @@ cs_time_stepping(void)
 
   /* In case of code coupling, sync status with other codes. */
 
-  if (itrale > 0) {
+  if (cs_glob_ale_data->ale_iteration > 0) {
     /* Synchronization in cs_time_step_compute if idtvar = CS_TIME_STEP_ADAPTIVE
        (i.e. keep coupled codes waiting until time step is computed
        only when needed).
@@ -646,7 +646,7 @@ cs_time_stepping(void)
         ts->nt_max = ts->nt_cur + 1;
     }
 
-    if (itrale > 0 && ts->nt_max > ts->nt_prev) {
+    if (cs_glob_ale_data->ale_iteration > 0 && ts->nt_max > ts->nt_prev) {
       cs_timer_stats_increment_time_step();
       if (idtvar != CS_TIME_STEP_ADAPTIVE)
         cs_time_step_increment(ts->dt_ref);
@@ -675,7 +675,7 @@ cs_time_stepping(void)
     cs_log_iteration_set_active();
 
     if (   idtvar != CS_TIME_STEP_ADAPTIVE && ts->nt_max > ts->nt_prev
-        && itrale > 0) {
+        && cs_glob_ale_data->ale_iteration > 0) {
       if (cs_log_default_is_active())
         cs_log_printf
           (CS_LOG_DEFAULT,
@@ -693,11 +693,11 @@ cs_time_stepping(void)
 
     cs_log_iteration_prepare();
 
-    cs_solve_all(itrale);
+    cs_solve_all();
 
     cs_1d_wall_thermal_log();
 
-    if (ts->nt_max > ts->nt_prev && itrale > 0) {
+    if (ts->nt_max > ts->nt_prev && cs_glob_ale_data->ale_iteration > 0) {
 
       /* Solve CDO module(s) or user-defined equations using CDO schemes
          --------------------------------------------------------------- */
@@ -737,14 +737,15 @@ cs_time_stepping(void)
        ----------------- */
 
     if (cs_glob_ale != CS_ALE_NONE && ts->nt_max > ts->nt_prev) {
-      if (itrale == 0 || itrale > cs_glob_ale_n_ini_f)
-        cs_ale_update_mesh(itrale);
+      if (   cs_glob_ale_data->ale_iteration == 0
+          || cs_glob_ale_data->ale_iteration > cs_glob_ale_n_ini_f)
+        cs_ale_update_mesh(cs_glob_ale_data->ale_iteration);
     }
 
     /* Optional processing by user
        --------------------------- */
 
-    if (itrale > 0) {
+    if (cs_glob_ale_data->ale_iteration > 0) {
 
       cs_timer_stats_start(post_stats_id);
 
@@ -786,7 +787,7 @@ cs_time_stepping(void)
 
     bool restart_checkpoint_required = cs_restart_checkpoint_required(ts);
 
-    if (ts->nt_cur < ts->nt_max && itrale == 0)
+    if (ts->nt_cur < ts->nt_max && cs_glob_ale_data->ale_iteration == 0)
       restart_checkpoint_required = false;
 
     if (restart_checkpoint_required) {
@@ -826,7 +827,7 @@ cs_time_stepping(void)
     cs_post_activate_by_time_step(ts);
 
     /* When geometry has not been output yet, deactivate all writers. */
-    if (itrale == 0)
+    if (cs_glob_ale_data->ale_iteration == 0)
       cs_post_activate_writer(0, false);
 
     /* Standard visualization output
@@ -857,7 +858,7 @@ cs_time_stepping(void)
 
     cs_real_t titer2 = cs_timer_wtime();
 
-    if (itrale <= 0) {
+    if (cs_glob_ale_data->ale_iteration <= 0) {
 
       cs_log_printf(CS_LOG_DEFAULT,
                     _("\n Time for ALE initialization:        %14.5f s.\n"),
@@ -869,7 +870,7 @@ cs_time_stepping(void)
     /* End of time loop
        ---------------- */
 
-    itrale = itrale + 1;
+    cs_glob_ale_data->ale_iteration = cs_glob_ale_data->ale_iteration + 1;
 
   } while (ts->nt_cur < ts->nt_max);
 

@@ -63,6 +63,9 @@
       <item row="10" column="0">
        <widget class="BoundaryConditionsWallView" name="WallWidget" native="true"/>
       </item>
+      <item row="11" column="0">
+       <widget class="BoundaryConditionsMobileMeshView" name="MobileMeshWidget" native="true"/>
+      </item>
       <item row="2" column="0">
        <widget class="QGroupBox" name="BackflowSeparator" native="true">
        <property name="title">
@@ -150,6 +153,12 @@
    <class>BoundaryConditionsWallView</class>
    <extends>QWidget</extends>
    <header>BoundaryConditionsWallView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsMobileMeshView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsMobileMeshView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
