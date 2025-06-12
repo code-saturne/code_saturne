@@ -136,7 +136,7 @@ libcspartition_a_SOURCES = cs_partition.cpp
 
 # Rules for CUDA (not known by Automake)
 
-if HAVE_CUDA_CPP
+if HAVE_CUDA
 .cpp.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif

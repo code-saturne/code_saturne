@@ -99,7 +99,7 @@ clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
 	-rm -rf .deps
 
-if HAVE_CUDA_CPP
+if HAVE_CUDA
 .cpp.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif
