@@ -240,7 +240,8 @@ _assign_weight_func(const cs_param_advection_scheme_t    scheme)
  *          for a given face
  *
  * \param[in]  scheme        scheme used for discretizing the advection term
- * \param[in]  peclet        Peclet number
+ * \param[in]  beta          flux across the face
+ * \param[in]  f_meas        measure the face
  * \param[in]  upwind_ratio  upwind ratio 0 <= r <= 1
  * \param[in]  internal_face is an internal face
  *
@@ -251,6 +252,7 @@ _assign_weight_func(const cs_param_advection_scheme_t    scheme)
 static cs_real_t
 _cdofb_stab_func(const cs_param_advection_scheme_t scheme,
                  const cs_real_t                   beta,
+                 const cs_real_t                   f_meas,
                  const cs_real_t                   upwind_ratio,
                  const cs_real_t                   coeff,
                  const cs_lnum_t                   bf)
@@ -280,10 +282,11 @@ _cdofb_stab_func(const cs_param_advection_scheme_t scheme,
 
     case CS_PARAM_ADVECTION_SCHEME_SG: /* Sharfetter-Gummel */
     {
-      const cs_real_t pe_2  = 0.5 * coeff * beta;
+      const cs_real_t beta_mean = beta / f_meas;
+      const cs_real_t pe_2      = 0.5 * coeff * beta_mean;
       cs_real_t       ratio = 0.;
       if (std::abs(pe_2) > cs_math_zero_threshold) {
-        if (pe_2 > 50.) {
+        if (pe_2 > 5.) {
           ratio = -1.0;
         }
         else {
@@ -291,7 +294,7 @@ _cdofb_stab_func(const cs_param_advection_scheme_t scheme,
         }
       }
 
-      return ratio / coeff;
+      return f_meas * ratio / coeff;
     } break;
 
     default:
@@ -1297,7 +1300,7 @@ _build_cdofb_scheme_csv(const cs_param_advection_scheme_t scheme,
                         cs_cell_builder_t                *cb,
                         cs_sdm_t                         *adv)
 {
-  assert(csys != nullptr && cm != nullptr && cb != nullptr);
+  assert(cm != nullptr && cb != nullptr);
   const short int  c = cm->n_fc; /* current cell's location in the matrix */
   const cs_real_t *fluxes = cb->adv_fluxes;
 
@@ -1311,59 +1314,92 @@ _build_cdofb_scheme_csv(const cs_param_advection_scheme_t scheme,
 
   cs_real_t *c_row = adv->val + c * adv->n_rows;
 
-  for (short int f = 0; f < cm->n_fc; f++) {
-    /* Access the row containing the current face */
-    cs_real_t *f_row = adv->val + f * adv->n_rows;
+  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != nullptr) {
+    /* There is at least one boundary face associated to this cell */
 
-    const cs_real_t f_meas    = cm->face[f].meas;
-    const cs_real_t beta_flx  = cm->f_sgn[f] * fluxes[f];
-    const cs_real_t beta_mean = beta_flx / f_meas;
+    for (short int f = 0; f < cm->n_fc; f++) {
+      /* Access the row containing the current face */
+      cs_real_t *f_row = adv->val + f * adv->n_rows;
 
-    /* Consistant part */
+      const cs_real_t f_meas   = cm->face[f].meas;
+      const cs_real_t beta_flx = cm->f_sgn[f] * fluxes[f];
 
-    f_row[c] -= beta_flx;
-    c_row[c] += beta_flx;
+      /* Consistant part */
 
-    /* Stabilization part */
+      f_row[c] -= beta_flx;
+      c_row[c] += beta_flx;
 
-    const cs_real_t A_stab = f_meas * _cdofb_stab_func(scheme,
-                                                       beta_mean,
-                                                       upwind_ratio,
-                                                       coeff[f],
-                                                       csys->bf_ids[f]);
+      /* Stabilization part */
 
-    c_row[f] -= A_stab;
-    c_row[c] += A_stab;
+      const cs_real_t A_stab = _cdofb_stab_func(scheme,
+                                                beta_flx,
+                                                f_meas,
+                                                upwind_ratio,
+                                                coeff[f],
+                                                csys->bf_ids[f]);
 
-    f_row[c] -= A_stab;
-    f_row[f] += A_stab;
+      c_row[f] -= A_stab;
+      c_row[c] += A_stab;
 
-    /* Apply boundary conditions - always Upwind  */
+      f_row[c] -= A_stab;
+      f_row[f] += A_stab;
 
-    if (csys->bf_ids[f] > -1) { /* This is a boundary face */
-      if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
-          csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
-        /* Inward flux: beta_min */
-        assert(beta_flx < 0.0);
+      /* Apply boundary conditions - always Upwind  */
 
-        /* Weak enforcement of the Dirichlet BCs. Update RHS for faces
-           attached to a boundary face */
+      if (csys->bf_ids[f] > -1) { /* This is a boundary face */
+        if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
+            csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
+          /* Inward flux: beta_min */
+          /* Weak enforcement of the Dirichlet BCs. Update RHS for faces
+             attached to a boundary face */
 
-        if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
-          const cs_real_t beta_min = std::min(0.0, beta_flx);
-          for (int k = 0; k < dim; k++)
-            csys->rhs[dim * f + k] -= beta_min * csys->dir_values[dim * f + k];
+          if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
+            const cs_real_t beta_min = std::min(0.0, beta_flx);
+            for (int k = 0; k < dim; k++)
+              csys->rhs[dim * f + k] -=
+                beta_min * csys->dir_values[dim * f + k];
+          }
+        }
+        else {
+          /* Outward flux: beta_plus */
+          assert(beta_flx >= 0.0);
+          const cs_real_t beta_plus = std::max(0.0, beta_flx);
+          f_row[f] += beta_plus;
         }
       }
-      else {
-        /* Outward flux: beta_plus */
-        assert(beta_flx >= 0.0);
-        const cs_real_t beta_plus = std::max(0.0, beta_flx);
-        f_row[f] += beta_plus;
-      }
-    }
+    } /* Loop on cell faces */
+  }
+  else {
+    /* There is no boundary face associated to this cell */
 
-  } /* Loop on cell faces */
+    for (short int f = 0; f < cm->n_fc; f++) {
+      /* Access the row containing the current face */
+      cs_real_t *f_row = adv->val + f * adv->n_rows;
+
+      const cs_real_t f_meas   = cm->face[f].meas;
+      const cs_real_t beta_flx = cm->f_sgn[f] * fluxes[f];
+
+      /* Consistant part */
+
+      f_row[c] -= beta_flx;
+      c_row[c] += beta_flx;
+
+      /* Stabilization part */
+
+      const cs_real_t A_stab = _cdofb_stab_func(scheme,
+                                                beta_flx,
+                                                f_meas,
+                                                upwind_ratio,
+                                                coeff[f],
+                                                csys->bf_ids[f]);
+
+      c_row[f] -= A_stab;
+      c_row[c] += A_stab;
+
+      f_row[c] -= A_stab;
+      f_row[f] += A_stab;
+    } /* Loop on cell faces */
+  }
 }
 
 /*----------------------------------------------------------------------------*/
