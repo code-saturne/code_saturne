@@ -1358,10 +1358,10 @@ cs_compute_porosity_from_scan(void)
 /*--------------------------------------------------------------------*/
 
 void
-cs_porous_model_write(void) {
+cs_porous_model_restart_write(void) {
 
   if (   cs_glob_porous_model != 3
-      && !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
+      || !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
     return;
 
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -1394,11 +1394,19 @@ cs_porous_model_write(void) {
  */
 /*--------------------------------------------------------------------*/
 void
-cs_porous_model_read(void) {
+cs_porous_model_restart_read(void) {
 
   if (   cs_glob_porous_model != 3
-      && !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
+      || !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
     return;
+
+  if (!cs_file_isreg("restart/ibm.csc")) {
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("\n"
+                    "Immersed boundary restart file not present.\n"));
+    return;
+  }
 
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   char error_name[128];
@@ -1456,9 +1464,10 @@ cs_porous_model_read(void) {
 
   if (errcount > 0) {
     cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_DEFAULT,_("\n Some immersed boundary arrays "
-                                   "could not be read "
-                                   "from a restart file. For example : %s\n\n"),
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("\n"
+                    "Some immersed boundary arrays could not be read "
+                    "from a restart file. For example: %s\n\n"),
                   error_name);
     /* The .pts cloud of points file must be read */
     cs_glob_porosity_from_scan_opt->use_restart = 0;
