@@ -3126,7 +3126,6 @@ _convection_diffusion_scalar_unsteady
 
   }
   else {
-
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       grad[cell_id][0] = 0.;
       grad[cell_id][1] = 0.;
@@ -8282,8 +8281,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
   int w_stride = 1;
 
-  cs_real_6_t *viscce;
-  cs_real_6_t *w2;
+  cs_real_6_t *viscce = nullptr;
+  cs_real_6_t *w2 = nullptr;
   cs_real_3_t *grad;
 
   cs_field_t *f = nullptr;
@@ -8303,11 +8302,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
   /* 1. Initialization */
 
-  viscce = nullptr;
-  w2 = nullptr;
-
   /* Allocate work arrays */
-  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   /* Choose gradient type */
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -8364,7 +8360,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
     /* With porosity */
   }
   else if (porosi != nullptr && porosf == nullptr) {
-    CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       for (int isou = 0; isou < 6; isou++) {
         w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
@@ -8376,7 +8372,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
     /* With tensorial porosity */
   }
   else if (porosi != nullptr && porosf != nullptr) {
-    CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       cs_math_sym_33_product(porosf[cell_id],
                              viscel[cell_id],
@@ -8387,9 +8383,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   }
 
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
-  if (halo != nullptr) {
-    cs_halo_sync_r(halo, halo_type, false, viscce);
-  }
+  cs_halo_sync_r(halo, halo_type, false, viscce);
 
   if (icoupl > 0) {
     assert(f_id != -1);
@@ -8447,19 +8441,16 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
   }
   else {
-    cs_array_real_fill_zero(3*n_cells_ext, (cs_real_t *)grad);
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      grad[cell_id][0] = 0.;
+      grad[cell_id][1] = 0.;
+      grad[cell_id][2] = 0.;
+    });
   }
 
   /* ======================================================================
      ---> Contribution from interior faces
      ======================================================================*/
-
-  if (n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
-      rhs[cell_id] = 0.;
-    }
-  }
 
   /* Steady */
   if (idtvar < 0) {
@@ -8554,8 +8545,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_real_t fluxi = i_visc[face_id]*(pippr - pjpp);
       cs_real_t fluxj = i_visc[face_id]*(pipp - pjppr);
 
-      cs_dispatch_sum(&rhs[ii], -fluxi, i_sum_type);
-      cs_dispatch_sum(&rhs[jj], fluxj, i_sum_type);
+      if (ii < n_cells)
+        cs_dispatch_sum(&rhs[ii], -fluxi, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum(&rhs[jj], fluxj, i_sum_type);
 
     });
 
@@ -8636,12 +8629,13 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
       cs_real_t flux = i_visc[face_id]*(pipp -pjpp);
 
-      cs_dispatch_sum(&rhs[ii], -thetap*flux, i_sum_type);
+      if (ii < n_cells)
+        cs_dispatch_sum(&rhs[ii], -thetap*flux, i_sum_type);
+      if (jj < n_cells)
       cs_dispatch_sum(&rhs[jj], thetap*flux, i_sum_type);
 
     });
   }
-  ctx.wait();
 
   /* ======================================================================
      ---> Contribution from boundary faces
@@ -8700,8 +8694,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_real_t pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pippr;
 
       cs_real_t flux = b_visc[face_id]*pfacd;
-      cs_dispatch_sum(&rhs[ii], -flux, b_sum_type);
 
+      cs_dispatch_sum(&rhs[ii], -flux, b_sum_type);
     });
 
     /* Unsteady */
@@ -8758,6 +8752,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_dispatch_sum(&rhs[ii], -thetap*flux, b_sum_type);
 
     });
+
     ctx.wait();
 
     /* The scalar is internal_coupled and an implicit contribution
