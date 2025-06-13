@@ -75,7 +75,7 @@ _non_convex_face_quantities(void)
 
   cs_real_t face_cog[3], face_normal[3];
 
-  cs_mesh_quantities_compute_face_quantities
+  cs_mesh_quantities_compute_face_cog_sn
     (1,
      vtx_coord,
      face_vtx_idx,
