@@ -178,7 +178,7 @@ example_DATA = $(examplefiles)
 clean-local:
 	-rm -rf .deps
 
-if HAVE_CUDA
+if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif

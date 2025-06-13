@@ -233,7 +233,7 @@ cs_base_CPPFLAGS = \
 $(AM_CPPFLAGS)
 
 cs_base = $(top_srcdir)/src/base/cs_base.cpp
-if HAVE_CUDA
+if HAVE_CUDA_CPP
 cs_base.$(OBJEXT): $(cs_base)
 	$(NVCC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) $(cs_base)
 else
@@ -534,7 +534,7 @@ endif
 
 # Rules for CUDA (not known by Automake)
 
-if HAVE_CUDA
+if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif

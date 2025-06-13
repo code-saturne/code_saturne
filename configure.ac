@@ -646,7 +646,7 @@ if test "x$auto_flags" = "xyes" ; then
     fi
   fi
 
-  if test "$cs_have_cuda" = "yes"; then
+  if test "$cs_enable_cuda_cpp" = "yes"; then
     if test "x$cs_have_openmp" = "xyes" ; then
       NVCCFLAGS_CPP="$nvccflags_default_cpp $nvccflags_default_cpp_omp $user_NVCCFLAGS_HC"
     else
@@ -1303,6 +1303,7 @@ echo " CUDA support: "$cs_have_cuda""
 if test x$cs_have_cuda = xyes ; then
   echo "   cuBLAS support: "$cs_have_cublas""
   echo "   cuSPARSE support: "$cs_have_cusparse""
+  echo "   use CUDA in .cpp files: "$cs_enable_cuda_cpp""
 fi
 echo " SYCL support: "$cs_have_sycl""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$with_blas_type""

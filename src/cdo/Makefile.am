@@ -233,7 +233,7 @@ cs_equation_system_sles.cpp
 libcscdo_a_LIBADD += \
 libcscdo_extension_a-cs_equation_system_sles.$(OBJEXT)
 
-if HAVE_CUDA
+if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
 endif

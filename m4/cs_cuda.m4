@@ -103,7 +103,21 @@ AM_CONDITIONAL([HAVE_CUDA], [test "$cs_have_cuda" = "yes"])
 
 # Now check for libraries such as cuBLAS and cuSPARSE if CUDA enabled.
 
+cs_enable_cuda_cpp=no
+
 if test "x$cs_have_cuda" != "xno" ; then
+
+  AC_ARG_ENABLE(cuda-cpp,
+    [AS_HELP_STRING([--enable-cuda-cpp], [Enable cuda offload for .cpp files])],
+    [
+      case "${enableval}" in
+        yes) cs_have_cuda_cpp=yes ;;
+        no)  cs_have_cuda_cpp=no ;;
+        *)   AC_MSG_ERROR([bad value ${enableval} for --enable-cuda-cpp]) ;;
+      esac
+    ],
+    [ cs_enable_cuda_cpp=yes ]
+  )
 
   AC_ARG_WITH(cublas,
               [AS_HELP_STRING([--with-cublas=PATH],
@@ -310,6 +324,6 @@ cusparseStatus_t status = cusparseCreate(&handle);]])
 
 fi
 
-AM_CONDITIONAL([HAVE_CUDA_CPP], [test "$cs_enable_cuda" = "yes"])
+AM_CONDITIONAL([HAVE_CUDA_CPP], [test "$cs_enable_cuda_cpp" = "yes"])
 
 ])dnl
