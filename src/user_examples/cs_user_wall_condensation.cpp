@@ -418,7 +418,7 @@ cs_user_wall_condensation(int  iappel)
       cs_lnum_t ifac   = wall_cond->ifbpcd[ieltcd];
       cs_lnum_t iel    = ifabor[ifac];
       cs_real_t tk     = cs_glob_fluid_properties->t0;
-      cs_lnum_t ntcabs = cs_get_glob_time_step()->nt_cur;
+      cs_lnum_t ntcabs = cs_glob_time_step->nt_cur;
       if (ntcabs >= 1)
         tk = cvar_h[iel] / cpro_cp[iel];
       cs_real_t hvap = (cp_vap * tk);
@@ -497,7 +497,7 @@ cs_user_wall_condensation(int  iappel)
 
         /* Compute the enthalpy value of vapor gas */
         cs_real_t tk = cvar_h[c_id]/cpro_cp[c_id];
-        if (cs_get_glob_time_step()->nt_cur < 2)
+        if (cs_glob_time_step->nt_cur < 2)
           tk = cs_glob_fluid_properties->t0;
         const cs_real_t hvap = s_h2o_g.cp*tk;
 
