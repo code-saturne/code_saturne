@@ -422,7 +422,7 @@ cs_solve_transported_variables(int iterns)
 
             /* Readjust electric variables j, j.E (and Pot, E) */
             if (   cs_glob_elec_option->ielcor == 1
-                && cs_get_glob_time_step()->nt_cur > 1)
+                && cs_glob_time_step->nt_cur > 1)
               cs_elec_scaling_function(m, fvq, dt);
 
           }

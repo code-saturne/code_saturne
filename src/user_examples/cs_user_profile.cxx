@@ -2045,7 +2045,7 @@ _output_profile_log(user_profile_t  *profile,
   ptrLog = fopen(filename,
                  "a+"); // File already created when this function is called
 
-  cs_time_step_t *ts = cs_get_glob_time_step();
+  const cs_time_step_t *ts = cs_glob_time_step;
 
   fprintf(ptrLog,
           "\n\n"
@@ -2119,8 +2119,8 @@ _output_profile_values_csv(user_profile_t  *profile,
                            const char      *dirname)
 {
   /* Profile shorter variables */
-  cs_lnum_t       n_layers = profile->n_layers;
-  cs_time_step_t *ts       = cs_get_glob_time_step();
+  cs_lnum_t             n_layers = profile->n_layers;
+  const cs_time_step_t *ts = cs_glob_time_step;
 
   cs_lnum_t   n_l_header = 7;
   const char *layer_header[]
@@ -2715,7 +2715,7 @@ void
 user_profile_output(user_profile_t  *profile,
                     int              interval)
 {
-  cs_time_step_t *ts = cs_get_glob_time_step();
+  const cs_time_step_t *ts = cs_glob_time_step;
 
   if (ts->nt_cur % interval != 0)
     return;
@@ -2806,7 +2806,7 @@ user_output_histogram_csv(user_histogram_t  *histogram,
                           const char        *dirname)
 {
   /*shorter cs variables*/
-  cs_time_step_t *ts = cs_get_glob_time_step();
+  const cs_time_step_t *ts = cs_glob_time_step;
 
   char filename[200];
 
@@ -2906,7 +2906,7 @@ user_profile_histogram_ot_output([[maybe_unused]] user_profile_t  *profile,
 #if HAVE_OT == 1
   /*Output the PDF historgam thks to OT lib features*/
   /*Assume histograms directory already created*/
-  cs_time_step_t *ts = cs_get_glob_time_step();
+  const cs_time_step_t *ts = cs_glob_time_step;
 
   cs_lnum_t n_layers = profile->n_layers;
 
