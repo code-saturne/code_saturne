@@ -4856,6 +4856,44 @@ cs_mesh_quantities_compute_face_cog_un(cs_lnum_t        n_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute boundary face centers and normals.
+ *
+ * \deprecated Use cs_mesh_quantities_compute_face_cog_sn or
+ * cs_mesh_quantities_compute_face_cog_un instead.
+ *
+ * The corresponding arrays are allocated by this function, and it is the
+ * caller's responsibility to free them when they are no longer needed.
+ *
+ * \param[in]   mesh             pointer to a cs_mesh_t structure
+ * \param[out]  p_b_face_cog     pointer to the border face center array
+ * \param[out]  p_b_face_normal  pointer to the border face normal array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
+                           cs_real_t         *p_b_face_cog[],
+                           cs_real_t         *p_b_face_normal[])
+{
+  cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
+
+  CS_MALLOC(b_face_cog, mesh->n_b_faces * mesh->dim, cs_real_t);
+  CS_MALLOC(b_face_normal, mesh->n_b_faces * mesh->dim, cs_real_t);
+
+  _compute_face_quantities(mesh->n_b_faces,
+                           false,
+                           (const cs_real_3_t *)mesh->vtx_coord,
+                           mesh->b_face_vtx_idx,
+                           mesh->b_face_vtx_lst,
+                           (cs_real_3_t *)b_face_cog,
+                           (cs_real_3_t *)b_face_normal);
+
+  *p_b_face_cog = b_face_cog;
+  *p_b_face_normal = b_face_normal;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute approximate cells centers as the mean of the given face
  *         centers weighted by the associated surfaces.
  *

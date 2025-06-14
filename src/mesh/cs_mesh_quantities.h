@@ -424,6 +424,26 @@ cs_mesh_quantities_compute_face_cog_un(cs_lnum_t        n_faces,
                                        cs_real_t        face_cog[][3],
                                        cs_nreal_t       face_u_normal[][3]);
 
+/*----------------------------------------------------------------------------
+ * Compute border face centers and normals.
+ *
+ * Deprecated: use cs_mesh_quantities_compute_face_cog_sn or
+ * cs_mesh_quantities_compute_face_cog_un instead.
+ *
+ * The corresponding arrays are allocated by this function, and it is the
+ * caller's responsibility to free them when they are no longer needed.
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   p_b_face_cog    <-> pointer to the border face center array
+ *   p_b_face_normal <-> pointer to the border face normal array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
+                           cs_real_t         *p_b_face_cog[],
+                           cs_real_t         *p_b_face_normal[]);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute approximate cells centers as the mean of the given face
