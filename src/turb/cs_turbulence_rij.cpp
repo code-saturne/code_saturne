@@ -4279,11 +4279,6 @@ cs_turbulence_rij_anisotropic_mu_t
                        ("anisotropic_turbulent_viscosity")->val;
 
   cs_real_6_t *vistes = nullptr;
-  if (iebdfm || iggafm) {
-    vistes
-      = (cs_real_6_t *)cs_field_by_name
-                         ("anisotropic_turbulent_viscosity_scalar")->val;
-  }
 
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
@@ -4300,6 +4295,12 @@ cs_turbulence_rij_anisotropic_mu_t
   cs_real_t xct = cs_turb_xct;
 
   if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
+
+    if (iebdfm || iggafm) {
+      vistes
+        = (cs_real_6_t *)cs_field_by_name
+                           ("anisotropic_turbulent_viscosity_scalar")->val;
+    }
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       if (c_disable_flag != nullptr) {
