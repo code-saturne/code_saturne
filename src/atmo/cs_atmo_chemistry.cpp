@@ -2114,7 +2114,7 @@ cs_atmo_compute_gaseous_chemistry(void)
     else {
       const int ncycle = (int)(dtc/dtchemmax);
       const int rest = (int)dtc%(int)dtchemmax;
-      const cs_real_t dtrest = (const cs_real_t)rest;
+      const cs_real_t dtrest = rest;
       for (int ii = 0; ii < ncycle; ii++)
         cs_f_chem_roschem(dlconc,
                           source,

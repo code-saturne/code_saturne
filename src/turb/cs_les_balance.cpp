@@ -3479,17 +3479,22 @@ cs_les_balance_compute_tui(void)
 
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
-  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param_const(CS_F_(vel));
 
   cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
-  cs_real_t *tdivturflux, *nut, *nutt, *nutdtdxidtdxi;
-  cs_real_3_t *nutdtdxi, *uidivturflux, *tdtauijdxj;
-  cs_real_3_t *nutui, *nutduidxjdtdxj, *dnutdxjtdujdxi, *nuttdtdxi;
-  cs_real_3_t *dnutdxjdujdxi, *dnutdxi, *tdnutdxi, *tdtdxi;
-  cs_real_33_t *nuttduidxj, *nutuidtdxj;
+  cs_real_t *tdivturflux = nullptr, *nut = nullptr, *nutt = nullptr;
+  cs_real_t *nutdtdxidtdxi = nullptr;
+  cs_real_3_t *nutdtdxi = nullptr;
+  cs_real_3_t *uidivturflux = nullptr, *tdtauijdxj = nullptr;
+  cs_real_3_t *nutui = nullptr, *nutduidxjdtdxj = nullptr;
+  cs_real_3_t *dnutdxjtdujdxi = nullptr, *nuttdtdxi = nullptr;
+  cs_real_3_t *dnutdxjdujdxi = nullptr, *dnutdxi = nullptr;
+  cs_real_3_t *tdnutdxi = nullptr, *tdtdxi = nullptr;
+  cs_real_33_t *nuttduidxj = nullptr, *nutuidtdxj = nullptr;
 
   cs_real_t    *p
     = (cs_real_t    *)_les_balance_get_tm_by_name("p_m")->val;

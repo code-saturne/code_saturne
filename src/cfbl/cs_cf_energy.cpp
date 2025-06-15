@@ -151,7 +151,7 @@ _cf_div(cs_real_t div[])
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
   cs_field_t *f_viscv = cs_field_by_name_try("volume_viscosity");
-  cs_real_t *cpro_kappa;
+  cs_real_t *cpro_kappa = nullptr;
 
   if (f_viscv != nullptr)
     cpro_kappa = f_viscv->val;
