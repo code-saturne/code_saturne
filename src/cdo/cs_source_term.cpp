@@ -1682,52 +1682,39 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
   for (short int v = 0; v < cm->n_vc; v++)
     vol_vc[v] = cm->vol_c * cm->wvc[v];
 
-  /* cell and vertex contribution */
+  /* 1. cell and vertex contributions */
 
   cs_real_3_t  *xgv = cb->vectors;
   for (short int v = 0; v < cm->n_vc; v++) {
-    xgv[v][0] = 0.25 * vol_vc[v] * (cm->xc[0] + cm->xv[0]);
-    xgv[v][1] = 0.25 * vol_vc[v] * (cm->xc[1] + cm->xv[1]);
-    xgv[v][2] = 0.25 * vol_vc[v] * (cm->xc[2] + cm->xv[2]);
+    xgv[v][0] = 0.25 * vol_vc[v] * (cm->xc[0] + cm->xv[3*v]);
+    xgv[v][1] = 0.25 * vol_vc[v] * (cm->xc[1] + cm->xv[3*v+1]);
+    xgv[v][2] = 0.25 * vol_vc[v] * (cm->xc[2] + cm->xv[3*v+2]);
   }
 
-  /* edge contribution */
+  /* 2. face and edge contribution */
 
-  for (short int e = 0; e < cm->n_ec; e++) {
-
-    cs_real_t  *xgv1 = xgv[cm->e2v_ids[2*e]];
-    cs_real_t  *xgv2 = xgv[cm->e2v_ids[2*e+1]];
-
-    const cs_real_t  *xe = cm->edge[e].center;
-    const double  e_coef = 0.125 * cm->pvol_e[e]; /* 0.25* (0.5*|pvol_ec|)  */
-    for (int k = 0; k < 3; k++) {
-      xgv1[k] += e_coef * xe[k];
-      xgv2[k] += e_coef * xe[k];
-    }
-
-  } /* Loop on cell edges */
-
-  /* face contribution */
-
-  cs_real_t  *wvf = cb->values + cm->n_vc;
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    cs_compute_wvf(f, cm, wvf);
-
     const double  *xf = cm->face[f].center;
-    const double  f_coef = 0.25 * cm->pvol_f[f];
+    const double  f_coef = 0.25 * cm->pvol_f[f] / cm->face[f].meas;
 
-    for (short int v = 0; v < cm->n_vc; v++) {
-      if (wvf[v] > 0) {
-        const double  vf_coef = f_coef * wvf[v];
-        xgv[v][0] += vf_coef * xf[0];
-        xgv[v][1] += vf_coef * xf[1];
-        xgv[v][2] += vf_coef * xf[2];
+    for (short int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++) {
+
+      const short int e = cm->f2e_ids[ie];
+      const double *xe = cm->edge[e].center;
+      const double ef_coef = 0.5 * cm->tef[ie] * f_coef;
+
+      double *xgv1 = xgv[cm->e2v_ids[2*e]];
+      double *xgv2 = xgv[cm->e2v_ids[2*e+1]];
+
+      for (int k = 0; k < 3; k++) {
+        xgv1[k] += ef_coef * (xe[k] + xf[k]);
+        xgv2[k] += ef_coef * (xe[k] + xf[k]);
       }
 
-    }
+    } // Loop on face edges
 
-  } /* Loop on faces */
+  } // Loop on cell faces
 
   for (short int v = 0; v < cm->n_vc; v++) {
     const double  invvol = 1/vol_vc[v];
