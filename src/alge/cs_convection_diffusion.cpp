@@ -6270,10 +6270,6 @@ _convection_diffusion_unsteady_strided
                        (const var_t *)bc_coeffs->val_f :
                        (const var_t *)bc_coeffs_solve->val_f;
 
-  const var_t *val_f_lim = (bc_coeffs_solve == nullptr) ?
-                           (const var_t *)bc_coeffs->val_f_lim :
-                           (const var_t *)bc_coeffs_solve->val_f_lim;
-
   const var_t *val_f_d_lim = (bc_coeffs_solve == nullptr) ?
                              (const var_t *)bc_coeffs->val_f_d_lim :
                              (const var_t *)bc_coeffs_solve->val_f_d_lim;
@@ -6962,7 +6958,7 @@ _convection_diffusion_unsteady_strided
       cs_real_t fluxi[stride], b_val_g[stride], b_val_d[stride];
       for (cs_lnum_t isou = 0; isou < stride; isou++) {
         fluxi[isou] = 0;
-        b_val_g[isou] = val_f_lim[face_id][isou];
+        b_val_g[isou] = val_f[face_id][isou];
         b_val_d[isou] = val_f_d_lim[face_id][isou];
       }
       cs_real_t _pi[stride];
@@ -7033,7 +7029,7 @@ _convection_diffusion_unsteady_strided
       cs_real_t fluxi[stride], b_val_g[stride], b_val_d[stride];
       for (cs_lnum_t isou = 0; isou < stride; isou++) {
         fluxi[isou] = 0;
-        b_val_g[isou] = val_f_lim[face_id][isou];
+        b_val_g[isou] = val_f[face_id][isou];
         b_val_d[isou] = val_f_d_lim[face_id][isou];
       }
 

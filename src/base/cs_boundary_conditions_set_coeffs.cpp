@@ -3891,8 +3891,6 @@ END_C_DECLS
  * \param[in]      pvar         variable values at cell centers
  * \param[in,out]  var_ip       boundary variable values at I' position
  * \param[in,out]  var_f        face values for the gradient computation
- * \param[in,out]  var_f_lim    face values for the gradient computation
- *                              (with limiter)
  * \param[in,out]  var_f_d      face values for the diffusion computation
  * \param[in,out]  var_f_d_lim  face values for the diffusion computation
  *                              (with limiter)
@@ -3910,7 +3908,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const cs_real_t             pvar[][stride],
    cs_real_t                   val_ip[][stride],
    cs_real_t                   val_f[][stride],
-   cs_real_t                   val_f_lim[][stride],
    cs_real_t                   val_f_d[][stride],
    cs_real_t                   val_f_d_lim[][stride])
 {
@@ -4073,11 +4070,9 @@ cs_boundary_conditions_update_bc_coeff_face_values
                      use of variable at I position) */
 
       for (cs_lnum_t i = 0; i < stride; i++) {
-        val_f_lim[face_id][i] = coefa[face_id][i];
         val_f_d_lim[face_id][i] = cofaf[face_id][i];
 
         for (cs_lnum_t j = 0; j < stride; j++) {
-          val_f_lim[face_id][i] += coefb[face_id][j][i]*pvar[c_id][j];
           val_f_d_lim[face_id][i] += cofbf[face_id][j][i]*pvar[c_id][j];
         }
       }
@@ -4109,11 +4104,9 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
         for (cs_lnum_t i = 0; i < stride; i++) {
           // limiter (variable at I' position)
-          val_f_lim[face_id][i] = coefa[face_id][i];
           val_f_d_lim[face_id][i] = cofaf[face_id][i];
 
           for (cs_lnum_t j = 0; j < stride; j++) {
-            val_f_lim[face_id][i] += coefb[face_id][j][i]*val_ip_lim[face_id][j];
             val_f_d_lim[face_id][i] += cofbf[face_id][j][i]*val_ip_lim[face_id][j];
           }
         }
@@ -4178,7 +4171,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
   }
 
   var_t *val_f = reinterpret_cast<var_t *>(f->bc_coeffs->val_f);
-  var_t *val_f_lim = reinterpret_cast<var_t *>(f->bc_coeffs->val_f_lim);
   var_t *val_f_d = reinterpret_cast<var_t *>(f->bc_coeffs->val_f_d);
   var_t *val_f_d_lim = reinterpret_cast<var_t *>(f->bc_coeffs->val_f_d_lim);
 
@@ -4189,7 +4181,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
      eqp,
      pvar,
      val_ip,
-     val_f, val_f_lim,
+     val_f,
      val_f_d, val_f_d_lim);
 
   CS_FREE_HD(val_ip);
@@ -4207,7 +4199,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const cs_real_t             pvar[][3],
    cs_real_t                   val_ip[][3],
    cs_real_t                   val_f[][3],
-   cs_real_t                   val_f_lim[][3],
    cs_real_t                   val_f_d[][3],
    cs_real_t                   val_f_d_lim[][3]);
 
@@ -4221,7 +4212,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const cs_real_t             pvar[][6],
    cs_real_t                   val_ip[][6],
    cs_real_t                   val_f[][6],
-   cs_real_t                   val_f_lim[][6],
    cs_real_t                   val_f_d[][6],
    cs_real_t                   val_f_d_lim[][6]);
 

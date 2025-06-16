@@ -1163,8 +1163,6 @@ cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
  * \param[in]      var          variable values at cell centers
  * \param[in,out]  var_ip       boundary variable values at I' position
  * \param[in,out]  var_f        face values for the gradient computation
- * \param[in,out]  var_f_lim    face values for the gradient computation
- *                              (with limiter)
  * \param[in,out]  var_f_d      face values for the diffusion computation
  * \param[in,out]  var_f_d_lim  face values for the diffusion computation
  *                              (with limiter)
@@ -1182,7 +1180,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const cs_real_t             pvar[][stride],
    cs_real_t                   val_ip[][stride],
    cs_real_t                   val_f[][stride],
-   cs_real_t                   val_f_lim[][stride],
    cs_real_t                   val_f_d[][stride],
    cs_real_t                   val_f_d_lim[][stride]);
 

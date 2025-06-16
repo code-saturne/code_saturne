@@ -122,7 +122,6 @@ _init_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c,
 {
   c.val_ip = nullptr;
   c.val_f = nullptr;
-  c.val_f_lim = nullptr;
   c.val_f_d = nullptr;
   c.val_f_d_lim = nullptr;
 
@@ -131,11 +130,9 @@ _init_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c,
   CS_MALLOC_HD(c.val_f_d, stride*n_b_faces, cs_real_t, amode);
 
   if (limiter == false) {
-    c.val_f_lim = c.val_f;
     c.val_f_d_lim = c.val_f_d;
   }
   else {
-    CS_MALLOC_HD(c.val_f_lim, stride*n_b_faces, cs_real_t, amode);
     CS_MALLOC_HD(c.val_f_d_lim, stride*n_b_faces, cs_real_t, amode);
   }
 }
@@ -151,12 +148,10 @@ _init_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c,
 static void
 _clear_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c)
 {
-  if (c.val_f_lim != c.val_f) {
-    CS_FREE_HD(c.val_f_lim);
+  if (c.val_f_d_lim != c.val_f_d) {
     CS_FREE_HD(c.val_f_d_lim);
   }
   else {
-    c.val_f_lim = nullptr;
     c.val_f_d_lim = nullptr;
   }
 
@@ -477,7 +472,6 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   var_t *val_ip = (var_t *)bc_coeffs_solve.val_ip;
   var_t *val_f = (var_t *)bc_coeffs_solve.val_f;
-  var_t *val_f_lim = (var_t *)bc_coeffs_solve.val_f_lim;
   var_t *val_f_d =  (var_t *)bc_coeffs_solve.val_f_d;
   var_t *val_f_d_lim =  (var_t *)bc_coeffs_solve.val_f_d_lim;
 
@@ -500,7 +494,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     cs_boundary_conditions_update_bc_coeff_face_values<stride>
       (ctx, f, bc_coeffs, inc, eqp, pvara,
-       val_ip, val_f, val_f_lim, val_f_d, val_f_d_lim);
+       val_ip, val_f, val_f_d, val_f_d_lim);
 
     if (stride == 3)
       cs_balance_vector(idtvar,
@@ -588,7 +582,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   cs_boundary_conditions_update_bc_coeff_face_values<stride>
     (ctx, f, bc_coeffs, inc, eqp, pvar,
-     val_ip, val_f, val_f_lim, val_f_d, val_f_d_lim);
+     val_ip, val_f, val_f_d, val_f_d_lim);
 
   /*  Incrementation and rebuild of right hand side */
 
@@ -884,7 +878,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       /* update with dpvar */
       cs_boundary_conditions_update_bc_coeff_face_values<stride>
         (ctx, nullptr, bc_coeffs, inc, eqp, dpvar,
-         val_ip, val_f, val_f_lim, val_f_d, val_f_d_lim);
+         val_ip, val_f, val_f_d, val_f_d_lim);
 
       if (stride == 3)
         cs_balance_vector(idtvar,
@@ -1089,7 +1083,7 @@ _equation_iterative_solve_strided(int                   idtvar,
     /* Update face value for gradient and convection-diffusion */
     cs_boundary_conditions_update_bc_coeff_face_values<stride>
       (ctx, f, bc_coeffs, inc, eqp, pvar,
-       val_ip, val_f, val_f_lim, val_f_d, val_f_d_lim);
+       val_ip, val_f, val_f_d, val_f_d_lim);
 
     if (stride == 3)
       cs_balance_vector(idtvar,
@@ -1219,9 +1213,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       cs_boundary_conditions_update_bc_coeff_face_values<stride>
         (ctx, f, bc_coeffs,
          1, // inc
-         eqp, pvar,
-         val_ip, val_f, val_f_lim,
-         val_f_d, val_f_d_lim);
+         eqp, pvar, val_ip, val_f, val_f_d, val_f_d_lim);
     }
     inc = 1;
 
@@ -1274,14 +1266,12 @@ _equation_iterative_solve_strided(int                   idtvar,
      (df_limiter_id > -1 || ircflb != 1));
 
   var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
-  var_t *val_f_lim_updated = (var_t *)bc_coeffs->val_f_lim;
   var_t *val_f_d_updated = (var_t *)bc_coeffs->val_f_d;
   var_t *val_f_d_lim_updated = (var_t *)bc_coeffs->val_f_d_lim;
 
   cs_boundary_conditions_update_bc_coeff_face_values<stride>
     (ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
-     val_f_updated, val_f_lim_updated,
-     val_f_d_updated, val_f_d_lim_updated);
+     val_f_updated, val_f_d_updated, val_f_d_lim_updated);
 
   /* Save diagonal in case we want to use it */
 
