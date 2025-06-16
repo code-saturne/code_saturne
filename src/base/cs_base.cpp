@@ -446,73 +446,76 @@ _set_atexit_crash_workaround(void)
 static void
 _cs_base_exit(int status)
 {
-  if (status == EXIT_SUCCESS)
-    cs_base_update_status(nullptr);
-
-  if (status != 0) {
-    /* When running under cs_debug_wrapper with a filter
-       on MPI ranks, we do not want ranks other than the ones
-       run under the debugger to abort the computation, as this also
-       kills the processes being debugged. So we use a special
-       environment variable to tell these processes to exit
-       silently, with ne reported error (so as to avoid the MPI
-       launcher to kill remaining ranks also). */
-
-    const char exit_on_error[] = "CS_EXIT_ON_ERROR";
-    if (getenv(exit_on_error) != nullptr) {
-      if (strcmp(exit_on_error, "ignore") == 0)
-        status = EXIT_SUCCESS;
-    }
-  }
-
-  /* Clean execution context */
-  cs_execution_context_glob_finalize();
-
-#if defined(HAVE_MPI)
+#pragma omp single
   {
-    int mpi_flag;
+    if (status == EXIT_SUCCESS)
+      cs_base_update_status(nullptr);
 
-    MPI_Initialized(&mpi_flag);
+    if (status != 0) {
+      /* When running under cs_debug_wrapper with a filter
+         on MPI ranks, we do not want ranks other than the ones
+         run under the debugger to abort the computation, as this also
+         kills the processes being debugged. So we use a special
+         environment variable to tell these processes to exit
+         silently, with ne reported error (so as to avoid the MPI
+         launcher to kill remaining ranks also). */
 
-#if (MPI_VERSION >= 2)
-    if (mpi_flag != 0) {
-      int finalized_flag;
-      MPI_Finalized(&finalized_flag);
-      if (finalized_flag != 0)
-        mpi_flag = 0;
-    }
-#endif
-
-    if (mpi_flag != 0) {
-
-      /* For safety, flush all streams before calling MPI_Abort
-       * (should be done by exit, but in case we call MPI_Abort
-       * due to a SIGTERM received from another rank's MPI_Abort,
-       * make sure we avoid ill-defined behavior) */
-
-      fflush(nullptr);
-
-      if (status != EXIT_SUCCESS)
-        MPI_Abort(cs_glob_mpi_comm, EXIT_FAILURE);
-
-      else { /*  if (status == EXIT_SUCCESS) */
-
-        MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Finalize();
-
+      const char exit_on_error[] = "CS_EXIT_ON_ERROR";
+      if (getenv(exit_on_error) != nullptr) {
+        if (strcmp(exit_on_error, "ignore") == 0)
+          status = EXIT_SUCCESS;
       }
     }
-  }
+
+    /* Clean execution context */
+    cs_execution_context_glob_finalize();
+
+#if defined(HAVE_MPI)
+    {
+      int mpi_flag;
+
+      MPI_Initialized(&mpi_flag);
+
+#if (MPI_VERSION >= 2)
+      if (mpi_flag != 0) {
+        int finalized_flag;
+        MPI_Finalized(&finalized_flag);
+        if (finalized_flag != 0)
+          mpi_flag = 0;
+      }
+#endif
+
+      if (mpi_flag != 0) {
+
+        /* For safety, flush all streams before calling MPI_Abort
+         * (should be done by exit, but in case we call MPI_Abort
+         * due to a SIGTERM received from another rank's MPI_Abort,
+         * make sure we avoid ill-defined behavior) */
+
+        fflush(nullptr);
+
+        if (status != EXIT_SUCCESS)
+          MPI_Abort(cs_glob_mpi_comm, EXIT_FAILURE);
+
+        else { /*  if (status == EXIT_SUCCESS) */
+
+          MPI_Barrier(MPI_COMM_WORLD);
+          MPI_Finalize();
+
+        }
+      }
+    }
 #endif /* HAVE_MPI */
 
 #if _CS_EXIT_DEPLIB_CRASH_WORKAROUND
 
-  if (status == EXIT_SUCCESS)
-    _set_atexit_crash_workaround();
+    if (status == EXIT_SUCCESS)
+      _set_atexit_crash_workaround();
 
 #endif
 
-  exit(status);
+    exit(status);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -533,18 +536,21 @@ _cs_base_error_handler(const char  *nom_fic,
 
   bft_printf_flush();
 
-  _cs_base_err_printf("\n");
+# pragma omp critical
+  {
+    _cs_base_err_printf("\n");
 
-  if (code_err_sys != 0)
-    _cs_base_err_printf(_("\nSystem error: %s\n"), strerror(code_err_sys));
+    if (code_err_sys != 0)
+      _cs_base_err_printf(_("\nSystem error: %s\n"), strerror(code_err_sys));
 
-  _cs_base_err_printf(_("\n%s:%d: Fatal error.\n\n"), nom_fic, num_ligne);
+    _cs_base_err_printf(_("\n%s:%d: Fatal error.\n\n"), nom_fic, num_ligne);
 
-  _cs_base_err_vprintf(format, arg_ptr);
+    _cs_base_err_vprintf(format, arg_ptr);
 
-  _cs_base_err_printf("\n\n");
+    _cs_base_err_printf("\n\n");
 
-  bft_backtrace_print(3);
+    bft_backtrace_print(3);
+  }
 
   _cs_base_exit(EXIT_FAILURE);
 }
@@ -692,69 +698,76 @@ static void
 _cs_base_sig_fatal(int  signum)
 {
   if (_cs_base_sigint_handler != nullptr && signum == SIGTERM) {
-    _cs_base_sigint_handler(signum);
-    _cs_base_sigint_handler = nullptr;
+    #pragma omp single
+    {
+      _cs_base_sigint_handler(signum);
+      _cs_base_sigint_handler = nullptr;
+    }
     return;
   }
 
-  if (_cs_base_atexit != nullptr) {
-    _cs_base_atexit();
-    _cs_base_atexit = nullptr;
-  }
+  #pragma omp single
+  {
+    if (_cs_base_atexit != nullptr) {
+      _cs_base_atexit();
+      _cs_base_atexit = nullptr;
+    }
 
-  bft_printf_flush();
+    bft_printf_flush();
 
-  switch (signum) {
+    switch (signum) {
 
 #if defined(SIGHUP)
-  case SIGHUP:
-    _cs_base_err_printf(_("SIGHUP signal (hang-up) intercepted.\n"
-                          "--> computation interrupted.\n"));
-    break;
+    case SIGHUP:
+      _cs_base_err_printf(_("SIGHUP signal (hang-up) intercepted.\n"
+                            "--> computation interrupted.\n"));
+      break;
 #endif
 
-  case SIGABRT:
-    _cs_base_err_printf(_("SIGABRT signal (abort) intercepted.\n"));
-    break;
+    case SIGABRT:
+      _cs_base_err_printf(_("SIGABRT signal (abort) intercepted.\n"));
+      break;
 
-  case SIGINT:
-    _cs_base_err_printf(_("SIGINT signal (Control+C or equivalent) received.\n"
-                          "--> computation interrupted by user.\n"));
-    break;
+    case SIGINT:
+      _cs_base_err_printf(_("SIGINT signal (Control+C or equivalent) received.\n"
+                            "--> computation interrupted by user.\n"));
+      break;
 
-  case SIGTERM:
-    _cs_base_err_printf(_("SIGTERM signal (termination) received.\n"
-                          "--> computation interrupted by environment.\n"));
-    break;
+    case SIGTERM:
+      _cs_base_err_printf(_("SIGTERM signal (termination) received.\n"
+                            "--> computation interrupted by environment.\n"));
+      break;
 
-  case SIGFPE:
-    _cs_base_err_printf(_("SIGFPE signal (floating point exception) "
-                          "intercepted!\n"));
-    break;
+    case SIGFPE:
+      _cs_base_err_printf(_("SIGFPE signal (floating point exception) "
+                            "intercepted!\n"));
+      break;
 
-  case SIGSEGV:
-    _cs_base_err_printf(_("SIGSEGV signal (forbidden memory area access) "
-                          "intercepted!\n"));
-    break;
+    case SIGSEGV:
+      _cs_base_err_printf(_("SIGSEGV signal (forbidden memory area access) "
+                            "intercepted!\n"));
+      break;
 
 #if defined(SIGBUS)
-  case SIGBUS:
-    _cs_base_err_printf(_("SIGBUS signal (bus error) intercepted.\n"
-                          "--> computation interrupted.\n"));
-    break;
+    case SIGBUS:
+      _cs_base_err_printf(_("SIGBUS signal (bus error) intercepted.\n"
+                            "--> computation interrupted.\n"));
+      break;
 #endif
 
 #if defined(SIGXCPU)
-  case SIGXCPU:
-    _cs_base_err_printf(_("SIGXCPU signal (CPU time limit reached) "
-                          "intercepted.\n"));
-    break;
+    case SIGXCPU:
+      _cs_base_err_printf(_("SIGXCPU signal (CPU time limit reached) "
+                            "intercepted.\n"));
+      break;
 #endif
 
-  default:
-    _cs_base_err_printf(_("Signal %d intercepted!\n"), signum);
+    default:
+      _cs_base_err_printf(_("Signal %d intercepted!\n"), signum);
+    }
   }
 
+# pragma omp critical
   bft_backtrace_print(3);
 
   _cs_base_exit(EXIT_FAILURE);
