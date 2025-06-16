@@ -5791,7 +5791,6 @@ _reconstruct_strided_gradient
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   bool warped_correction = (  cs_glob_mesh_quantities_flag
                             & CS_BAD_CELLS_WARPED_CORRECTION) ? true : false;

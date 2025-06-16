@@ -146,7 +146,6 @@ cs_soot_production(int        f_id,
 {
   const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
   const int isoot = cm->isoot;
-  const int n_gas_e = cm->n_gas_el_comp;
   const cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t epsi = 1.e-6;
 
