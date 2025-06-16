@@ -5957,7 +5957,7 @@ _reconstruct_strided_gradient
   if (cs_glob_timer_kernels_flag > 0)
     t_b_faces = std::chrono::high_resolution_clock::now();
 
-  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_real_t dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * c_id] == 0)
