@@ -38,7 +38,9 @@
 !> \param[in]     dlb           Vector B in AX=B
 !______________________________________________________________________________
 
-subroutine cs_solvlin (kindlu,dla,dlalu,dlx,dlb)
+subroutine cs_solvlin (ns, kindlu,dla,dlalu,dlx,dlb) &
+  bind(C, name='cs_solvlin')
+  use, intrinsic :: iso_c_binding
 
 !===============================================================================
 ! Module files
@@ -53,10 +55,10 @@ procedure() :: lu_solve_1, lu_solve_2, lu_solve_3
 
 ! Arguments
 
-integer kindlu
-double precision dla(nespg,nespg)
-double precision dlalu(nespg,nespg)
-double precision dlx(nespg), dlb(nespg)
+integer(c_int), value ::  ns, kindlu
+double precision dla(ns,ns)
+double precision dlalu(ns,ns)
+double precision dlx(ns), dlb(ns)
 
 ! Local variables
 

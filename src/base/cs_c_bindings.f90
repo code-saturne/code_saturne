@@ -263,6 +263,54 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
     end subroutine fexchem_4
 
+    subroutine jacdchemdc_1(ns,nr,y,convers_factor,  &
+                            convers_factor_jac,rk,jacc)  &
+      bind(C, name='cs_f_jacdchemdc_1')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: nr,ns
+      real(kind=c_double), dimension(ns), intent(inout) :: rk, y, convers_factor
+      real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
+    end subroutine jacdchemdc_1
+
+    subroutine jacdchemdc_2(ns,nr,y,convers_factor,  &
+                            convers_factor_jac,rk,jacc)  &
+      bind(C, name='cs_f_jacdchemdc_2')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: nr,ns
+      real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
+      real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
+    end subroutine jacdchemdc_2
+
+    subroutine jacdchemdc_3(ns,nr,y,convers_factor,  &
+                            convers_factor_jac,rk,jacc)  &
+      bind(C, name='cs_f_jacdchemdc_3')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: nr,ns
+      real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
+      real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
+    end subroutine jacdchemdc_3
+
+    subroutine ssh_jacdchemdc(ns,nr,y,convers_factor,       &
+                              convers_factor_jac,rk,jacc)   &
+      bind(C, name='cs_f_ssh_jacdchemdc')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: nr,ns
+      real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
+      real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
+    end subroutine ssh_jacdchemdc
+
+    subroutine cs_solvlin (nespg,kindlu, dla, dlalu, dlx, dlb) &
+      bind(C, name='cs_solvlin')
+      use, intrinsic :: iso_c_binding
+      integer(c_int), value :: nespg,kindlu
+      real(kind=c_double), dimension(*), intent(inout) :: dlx, dlb
+      real(kind=c_double), dimension(nespg, nespg), intent(inout) :: dla, dlalu
+    end subroutine cs_solvlin
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

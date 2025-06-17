@@ -243,15 +243,48 @@ cs_f_fexchem_4(int       nespg,
                cs_real_t source[],
                cs_real_t conv_factor[],
                cs_real_t dchema[]);
+void
+cs_f_jacdchemdc_1(int        nespg,
+                  int        nrg,
+                  cs_real_t  dlconc[],
+                  cs_real_t  conv_factor[],
+                  cs_real_t  conv_factor_jac[],
+                  cs_real_t  dlrki[],
+                  cs_real_t  dldrdc[]);
 
 void
-cs_f_chem_roschem(cs_real_t dlconc[],
-                  cs_real_t zcsourc[],
-                  cs_real_t zcsourcf[],
-                  cs_real_t conv_factor[],
-                  cs_real_t dlstep,
-                  cs_real_t dlrki[],
-                  cs_real_t dlrkf[]);
+cs_f_jacdchemdc_2(int        nespg,
+                  int        nrg,
+                  cs_real_t  dlconc[],
+                  cs_real_t  conv_factor[],
+                  cs_real_t  conv_factor_jac[],
+                  cs_real_t  dlrki[],
+                  cs_real_t  dldrdc[]);
+void
+cs_f_jacdchemdc_3(int        nespg,
+                  int        nrg,
+                  cs_real_t  dlconc[],
+                  cs_real_t  conv_factor[],
+                  cs_real_t  conv_factor_jac[],
+                  cs_real_t  dlrki[],
+                  cs_real_t  dldrdc[]);
+
+void
+cs_f_ssh_jacdchemdc(int        nespg,
+                    int        nrg,
+                    cs_real_t  dlconc[],
+                    cs_real_t  conv_factor[],
+                    cs_real_t  conv_factor_jac[],
+                    cs_real_t  dlrki[],
+                    cs_real_t  dldrdc[]);
+
+void
+cs_solvlin (int       ns,
+            int       kindlu,
+            cs_real_t dla[],
+            cs_real_t dlalu[],
+            cs_real_t dlx[],
+            cs_real_t dlb[]);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -591,6 +624,160 @@ _strtolower(char        *dest,
     src++;
     _dest++;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Rosenbrock solver for atmospheric chemistry
+ *
+ * \param[in,out] dlconc        concentrations vector
+ * \param[in]     zcsourc       source term for first iteration
+ * \param[in]     zcsourcf      source term for second iteration
+ * \param[in]     conv_factor   conversion factor
+ * \param[in]     dlstep        time step
+ * \param[in]     dlrki         kinetic rates for first iteration
+ * \param[in]     dlrkf         kinetic rates for second iteration
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rosenbrock_solver(cs_real_t dlconc[],
+                   cs_real_t zcsourc[],
+                   cs_real_t zcsourcf[],
+                   cs_real_t conv_factor[],
+                   cs_real_t dlstep,
+                   cs_real_t dlrki[],
+                   cs_real_t dlrkf[])
+{
+  const cs_atmo_chemistry_t *atmo_chem = cs_glob_atmo_chemistry;
+  const int n_reactions = atmo_chem->n_reactions;
+  const int n_species_g = atmo_chem->n_species;
+
+  const cs_real_t igamma = 1.0 + 1.0/sqrt(2.0);
+
+  /* Computes the chemistry
+     --------------------- */
+
+  cs_real_t dlr[n_species_g];
+
+  if (atmo_chem->model == 1)
+    cs_f_fexchem_1(n_species_g,
+                   n_reactions,
+                   dlconc, dlrki,
+                   zcsourc, conv_factor, dlr);
+  else if (atmo_chem->model == 2)
+    cs_f_fexchem_2(n_species_g,
+                   n_reactions,
+                   dlconc, dlrki,
+                   zcsourc, conv_factor, dlr);
+  else if (atmo_chem->model == 3)
+    cs_f_fexchem_3(n_species_g,
+                   n_reactions,
+                   dlconc, dlrki,
+                   zcsourc, conv_factor, dlr);
+  else if (atmo_chem->model == 4)
+    cs_f_fexchem_4(n_species_g,
+                   n_reactions,
+                   dlconc, dlrki,
+                   zcsourc, conv_factor, dlr);
+
+  /* Compute the jacobian
+     -------------------- */
+  cs_real_t dldrdc[n_species_g*n_species_g];
+
+  if (atmo_chem->model == 1)
+    cs_f_jacdchemdc_1(n_species_g,
+                      n_reactions,
+                      dlconc,
+                      conv_factor,
+                      _atmo_chem.conv_factor_jac,
+                      dlrki, dldrdc);
+  else if (atmo_chem->model == 2)
+    cs_f_jacdchemdc_2(n_species_g,
+                      n_reactions,
+                      dlconc,
+                      conv_factor,
+                      _atmo_chem.conv_factor_jac,
+                      dlrki, dldrdc);
+  else if (atmo_chem->model == 3)
+    cs_f_jacdchemdc_3(n_species_g,
+                      n_reactions,
+                      dlconc,
+                      conv_factor,
+                      _atmo_chem.conv_factor_jac,
+                      dlrki, dldrdc);
+  else if (atmo_chem->model == 4)
+    cs_f_ssh_jacdchemdc(n_species_g,
+                        n_reactions,
+                        dlconc,
+                        conv_factor,
+                        _atmo_chem.conv_factor_jac,
+                        dlrki, dldrdc);
+
+   /* Computes K1 system: DLmat * K1 = DLb1
+      -------------------------------------- */
+   cs_real_t dlb1[n_species_g], dlk1[n_species_g];
+   cs_real_t dlmat[n_species_g*n_species_g], dlmatlu[n_species_g*n_species_g];
+
+   for (int jj = 0; jj < n_species_g; jj++) {
+     dlb1[jj] = dlr[jj];
+     for (int ji = 0; ji < n_species_g; ji++)
+       dlmat[ji + jj*n_species_g] = -igamma*dlstep*dldrdc[ji + jj*n_species_g];
+     dlmat[jj + jj*n_species_g] = 1.0 + dlmat[jj + jj*n_species_g];
+   }
+
+   cs_solvlin (n_species_g,0, dlmat, dlmatlu, dlk1, dlb1);
+
+   /* Computes K2 system: DLmat * K2 = DLb2
+      -------------------------------------- */
+   cs_real_t dlconcbis[n_species_g];
+   for (int ji = 0; ji < n_species_g; ji++) {
+     dlconcbis[ji] = dlconc[ji] + dlstep * dlk1[ji];
+     if (dlconcbis[ji] < 0.0) {
+       dlconcbis[ji] = 0.0;
+       dlk1[ji] = (dlconcbis[ji] - dlconc[ji]) / dlstep;
+     }
+   }
+
+   if (atmo_chem->model == 1)
+     cs_f_fexchem_1(n_species_g,
+                    n_reactions,
+                    dlconcbis,
+                    dlrkf, zcsourcf,
+                    conv_factor, dlr);
+   else if (atmo_chem->model == 2)
+     cs_f_fexchem_2(n_species_g,
+                    n_reactions,
+                    dlconcbis,
+                    dlrkf, zcsourcf,
+                    conv_factor, dlr);
+   else if (atmo_chem->model == 3)
+     cs_f_fexchem_3(n_species_g,
+                    n_reactions,
+                    dlconcbis,
+                    dlrkf, zcsourcf,
+                    conv_factor, dlr);
+   else if (atmo_chem->model == 4)
+     cs_f_fexchem_4(n_species_g,
+                    n_reactions,
+                    dlconcbis,
+                    dlrkf, zcsourcf,
+                    conv_factor, dlr);
+
+   cs_real_t dlb2[n_species_g], dlk2[n_species_g];
+   for (int ji = 0; ji < n_species_g; ji++)
+     dlb2[ji] =  dlr[ji] - 2.0*dlk1[ji];
+
+   cs_solvlin (n_species_g,1, dlmat, dlmatlu, dlk2, dlb2);
+
+   /* Outputs - Compute DLconc - Advance the time
+      ------------------------------------------- */
+   for (int ji = 0; ji < n_species_g; ji++) {
+     dlconc[ji] += 1.5 * dlstep * dlk1[ji]
+                 + 0.5 * dlstep * dlk2[ji];
+     if (dlconc[ji] < 0.0)
+       dlconc[ji] = 0.0;
+   }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1941,8 +2128,8 @@ cs_atmo_chem_exp_source_terms(int          iscal,
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_atmo_chemistry_t *atmo_chem = cs_glob_atmo_chemistry;
-  const int nrg = atmo_chem->n_reactions;
-  const int nespg = atmo_chem->n_species;
+  const int n_reactions = atmo_chem->n_reactions;
+  const int n_species_g = atmo_chem->n_species;
 
   const cs_real_t navo = cs_physical_constants_avogadro;
 
@@ -1957,19 +2144,19 @@ cs_atmo_chem_exp_source_terms(int          iscal,
        _("Partially coupled chemistry combined with external"),
        _(" aerosol library not implemented yet\n"));
 
-  cs_real_t conv_factor[nespg], source[nespg];
-  cs_real_t rk[nrg], dlconc[nespg], dchema[nespg];
+  cs_real_t conv_factor[n_species_g], source[n_species_g];
+  cs_real_t rk[n_reactions], dlconc[n_species_g], dchema[n_species_g];
 
   const cs_real_t *cpro_rho = CS_F_(rho)->val;
   const cs_real_t *reacnum = atmo_chem->reacnum;
 
   cs_real_t **cvara_espg = nullptr;
-  CS_MALLOC(cvara_espg, nespg, cs_real_t *);
+  CS_MALLOC(cvara_espg, n_species_g, cs_real_t *);
 
   /* Arrays of pointers containing the fields values for each species */
-  for (int ii = 0; ii < nespg; ii++) {
-    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[ii]);
-    cvara_espg[ii] = f->val_pre;
+  for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[spe_id]);
+    cvara_espg[spe_id] = f->val_pre;
   }
 
   const int idx_chema
@@ -1980,29 +2167,41 @@ cs_atmo_chem_exp_source_terms(int          iscal,
     const cs_real_t rho = cpro_rho[c_id];
 
     // Filling working array rk
-    for (int ii = 0; ii < nrg; ii++)
+    for (int ii = 0; ii < n_reactions; ii++)
       rk[ii] = reacnum[ii*n_cells+ c_id];
 
     // Filling working arrays
-    for (int ii = 0; ii < nespg; ii++) {
-      const int idx = atmo_chem->chempoint[ii] - 1;
-      source[ii] = 0.0;
-      dlconc[idx] = cvara_espg[ii][c_id];
-      conv_factor[idx] = rho*navo*(1.0e-9)/atmo_chem->molar_mass[ii];
+    for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+      const int idx = atmo_chem->chempoint[spe_id] - 1;
+      source[spe_id] = 0.0;
+      dlconc[idx] = cvara_espg[spe_id][c_id];
+      conv_factor[idx] = rho*navo*(1.0e-9)/atmo_chem->molar_mass[spe_id];
     }
 
     // Computation of C(Xn)
     if (atmo_chem->model == 1)
-      cs_f_fexchem_1(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+      cs_f_fexchem_1(n_species_g,
+                     n_reactions,
+                     dlconc, rk, source,
+                     conv_factor, dchema);
     else if (atmo_chem->model == 2)
-      cs_f_fexchem_2(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+      cs_f_fexchem_2(n_species_g,
+                     n_reactions,
+                     dlconc, rk, source,
+                     conv_factor, dchema);
     else if (atmo_chem->model == 3)
-      cs_f_fexchem_3(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+      cs_f_fexchem_3(n_species_g,
+                     n_reactions,
+                     dlconc, rk, source,
+                     conv_factor, dchema);
     else if (atmo_chem->model == 4)
-      cs_f_fexchem_4(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+      cs_f_fexchem_4(n_species_g,
+                     n_reactions,
+                     dlconc, rk, source,
+                     conv_factor, dchema);
 
     /*Adding source term to st_exp
-     * The first nespg user scalars are supposed to be chemical species
+     * The first n_species_g user scalars are supposed to be chemical species
      * TODO: try to implicit the ST */
     st_exp[c_id] += rho*cell_vol[c_id]*dchema[idx_chema];
   }
@@ -2023,8 +2222,8 @@ cs_atmo_compute_gaseous_chemistry(void)
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   const cs_atmo_chemistry_t *atmo_chem = cs_glob_atmo_chemistry;
-  const int nrg = atmo_chem->n_reactions;
-  const int nespg = atmo_chem->n_species;
+  const int n_reactions = atmo_chem->n_reactions;
+  const int n_species_g = atmo_chem->n_species;
   const cs_real_t dtchemmax = atmo_chem->dt_chemistry_max;
 
   const cs_real_t navo = cs_physical_constants_avogadro;
@@ -2033,19 +2232,19 @@ cs_atmo_compute_gaseous_chemistry(void)
   const cs_real_t *cpro_rho = CS_F_(rho)->val;
   const cs_real_t *reacnum = atmo_chem->reacnum;
 
-  cs_real_t conv_factor[nespg], source[nespg];
-  cs_real_t rk[nrg], dlconc[nespg], dchema[nespg];
+  cs_real_t conv_factor[n_species_g], source[n_species_g];
+  cs_real_t rk[n_reactions], dlconc[n_species_g], dchema[n_species_g];
 
   cs_real_t **cvar_espg = nullptr;
   cs_real_t **cvara_espg = nullptr;
-  CS_MALLOC(cvar_espg, nespg, cs_real_t *);
-  CS_MALLOC(cvara_espg, nespg, cs_real_t *);
+  CS_MALLOC(cvar_espg, n_species_g, cs_real_t *);
+  CS_MALLOC(cvara_espg, n_species_g, cs_real_t *);
 
   /* Arrays of pointers containing the fields values for each species */
-  for (int ii = 0; ii < nespg; ii++) {
-    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[ii]);
-    cvar_espg[ii] = f->val;
-    cvara_espg[ii] = f->val_pre;
+  for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[spe_id]);
+    cvar_espg[spe_id] = f->val;
+    cvara_espg[spe_id] = f->val_pre;
   }
 
   for (int c_id = 0; c_id < n_cells; c_id++) {
@@ -2054,14 +2253,14 @@ cs_atmo_compute_gaseous_chemistry(void)
     const cs_real_t rho = cpro_rho[c_id];
 
     // Filling working array rk
-    for (int ii = 0; ii < nrg; ii++)
+    for (int ii = 0; ii < n_reactions; ii++)
       rk[ii] = reacnum[ii*n_cells+ c_id];
 
     // Filling working arrays
-    for (int ii = 0; ii < nespg; ii++) {
-      const int idx = atmo_chem->chempoint[ii] - 1;
-      source[ii] = 0.0;
-      conv_factor[idx] = rho*navo*(1.0e-9)/atmo_chem->molar_mass[ii];
+    for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+      const int idx = atmo_chem->chempoint[spe_id] - 1;
+      source[spe_id] = 0.0;
+      conv_factor[idx] = rho*navo*(1.0e-9)/atmo_chem->molar_mass[spe_id];
     }
 
     if (   atmo_chem->chemistry_sep_mode == 1
@@ -2070,9 +2269,9 @@ cs_atmo_compute_gaseous_chemistry(void)
          -------------------------- */
 
       // Filling working array dlconc with values at current time step
-      for (int ii = 0; ii < nespg; ii++) {
-        const int idx = atmo_chem->chempoint[ii] - 1;
-        dlconc[idx] = cvar_espg[ii][c_id];
+      for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+        const int idx = atmo_chem->chempoint[spe_id] - 1;
+        dlconc[idx] = cvar_espg[spe_id][c_id];
       }
 
     }
@@ -2080,27 +2279,39 @@ cs_atmo_compute_gaseous_chemistry(void)
       /* semi-coupled Rosenbrock solver
          ------------------------------  */
 
-      for (int ii = 0; ii < nespg; ii++) {
-        const int idx = atmo_chem->chempoint[ii] - 1;
-        dlconc[idx] = cvara_espg[ii][c_id];
+      for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+        const int idx = atmo_chem->chempoint[spe_id] - 1;
+        dlconc[idx] = cvara_espg[spe_id][c_id];
       }
 
       // Computation of C(Xn)
       if (atmo_chem->model == 1)
-        cs_f_fexchem_1(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+        cs_f_fexchem_1(n_species_g,
+                       n_reactions,
+                       dlconc, rk, source,
+                       conv_factor, dchema);
       else if (atmo_chem->model == 2)
-        cs_f_fexchem_2(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+        cs_f_fexchem_2(n_species_g,
+                       n_reactions,
+                       dlconc, rk, source,
+                       conv_factor, dchema);
       else if (atmo_chem->model == 3)
-        cs_f_fexchem_3(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+        cs_f_fexchem_3(n_species_g,
+                       n_reactions,
+                       dlconc, rk, source,
+                       conv_factor, dchema);
       else if (atmo_chem->model == 4)
-        cs_f_fexchem_4(nespg, nrg, dlconc, rk, source, conv_factor, dchema);
+        cs_f_fexchem_4(n_species_g,
+                       n_reactions,
+                       dlconc, rk, source,
+                       conv_factor, dchema);
 
       /* Explicit contribution from dynamics as a source term:
        * (X*-Xn)/dt(dynamics) - C(Xn). See usatch.f90
-       * The first nespg user scalars are supposed to be chemical species */
-      for (int ii = 0; ii < nespg; ii++) {
-        const int idx = atmo_chem->chempoint[ii] - 1;
-        source[idx] = (cvar_espg[ii][c_id] - cvara_espg[ii][c_id])/dtc
+       * The first n_species_g user scalars are supposed to be chemical species */
+      for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+        const int idx = atmo_chem->chempoint[spe_id] - 1;
+        source[idx] = (cvar_espg[spe_id][c_id] - cvara_espg[spe_id][c_id])/dtc
                     -  dchema[idx];
       }
     }
@@ -2109,30 +2320,30 @@ cs_atmo_compute_gaseous_chemistry(void)
 
     // The maximum time step used for chemistry resolution is dtchemmax
     if (dtc < dtchemmax) {
-      cs_f_chem_roschem(dlconc, source, source, conv_factor, dtc, rk, rk);
+      _rosenbrock_solver(dlconc, source, source, conv_factor, dtc, rk, rk);
     }
     else {
       const int ncycle = (int)(dtc/dtchemmax);
       const int rest = (int)dtc%(int)dtchemmax;
       const cs_real_t dtrest = rest;
       for (int ii = 0; ii < ncycle; ii++)
-        cs_f_chem_roschem(dlconc,
-                          source,
-                          source,
-                          conv_factor,
-                          dtchemmax, rk, rk);
+        _rosenbrock_solver(dlconc,
+                           source,
+                           source,
+                           conv_factor,
+                           dtchemmax, rk, rk);
 
-      cs_f_chem_roschem(dlconc,
-                        source,
-                        source,
-                        conv_factor,
-                        dtrest, rk, rk);
+      _rosenbrock_solver(dlconc,
+                         source,
+                         source,
+                         conv_factor,
+                         dtrest, rk, rk);
     }
 
     // Update of values at current time step
-    for (int ii = 0; ii < nespg; ii++) {
-      const int idx = atmo_chem->chempoint[ii] - 1;
-      cvar_espg[ii][c_id] = dlconc[idx];
+    for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+      const int idx = atmo_chem->chempoint[spe_id] - 1;
+      cvar_espg[spe_id][c_id] = dlconc[idx];
     }
 
   } // end loop on cells
@@ -2141,8 +2352,8 @@ cs_atmo_compute_gaseous_chemistry(void)
   CS_FREE(cvara_espg);
 
   // Clipping
-  for (int ii = 0; ii < nespg; ii++) {
-    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[ii]);
+  for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
+    cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[spe_id]);
     cs_scalar_clipping(f);
   }
 

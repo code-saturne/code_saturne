@@ -259,17 +259,18 @@ end subroutine fexchem_1
 !> \param[out]    jacc               Jacobian matrix
 !______________________________________________________________________________
 
-subroutine jacdchemdc_1(ns,nr,y,convers_factor,                     &
-                    convers_factor_jac,rk,jacc)
-
-implicit none
+subroutine jacdchemdc_1(ns,nr,y,convers_factor,  &
+                    convers_factor_jac,rk,jacc)  &
+  bind(C, name='cs_f_jacdchemdc_1')
+  use, intrinsic :: iso_c_binding
+  implicit none
 
 ! Arguments
 
-integer nr,ns
-double precision rk(nr),y(ns),jacc(ns,ns)
-double precision convers_factor(ns)
-double precision convers_factor_jac(ns,ns)
+integer(c_int), value :: nr,ns
+real(kind=c_double), dimension(ns,ns), intent(inout) :: jacc
+real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
+real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac
 
 ! Local variables
 
