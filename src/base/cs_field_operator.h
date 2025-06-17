@@ -1,5 +1,5 @@
-#ifndef __CS_FIELD_OPERATOR_H__
-#define __CS_FIELD_OPERATOR_H__
+#ifndef CS_FIELD_OPERATOR_H
+#define CS_FIELD_OPERATOR_H
 
 /*============================================================================
  * Field based algebraic operators.
@@ -285,4 +285,27 @@ cs_field_synchronize(cs_field_t      *f,
 
 END_C_DECLS
 
-#endif /* __CS_FIELD_OPERATOR_H__ */
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize current parallel and periodic field values.
+ *
+ * This function currently only upates fields based on CS_MESH_LOCATION_CELLS.
+ *
+ * \param[in, out]   f           pointer to field
+ * \param[in]        halo_type   halo type
+ * \param[in]        on_device   specify whether sync is done on device
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_synchronize(cs_field_t            *f,
+                     cs_halo_type_t         halo_type,
+                     bool                   on_device);
+
+#endif // __cplusplus
+
+/*----------------------------------------------------------------------------*/
+
+#endif /* CS_FIELD_OPERATOR_H */

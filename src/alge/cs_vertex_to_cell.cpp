@@ -281,14 +281,11 @@ _vertex_to_cell_f_lsq(void)
     }
   });
 
-  ctx.wait();
-
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_math_sym_44_factor_ldlt(w + c_id*10);
+  });
 
   ctx.wait();
-
 }
 
 END_C_DECLS
@@ -470,14 +467,14 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
 
       const cs_weight_t *ldlt = _weights_vtc[CS_VERTEX_TO_CELL_LR];
 
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t  *_ldlt = ldlt + c_id*10;
         for (cs_lnum_t k = 0; k < stride; k++) {
           const cs_real_t  *_rhs = rhs + c_id*4*stride + k*4;
-          c_var[c_id*stride + k] = cs_math_sym_44_partial_solve_ldlt(_ldlt, _rhs);
+          c_var[c_id*stride + k] = cs_math_sym_44_partial_solve_ldlt(_ldlt,
+                                                                     _rhs);
         }
-      }
+      });
 
       ctx.wait();
 
@@ -532,8 +529,6 @@ cs_vertex_to_cell(cs_vertex_to_cell_type_t   method,
                   const cs_real_t *restrict  v_var,
                   cs_real_t *restrict        c_var)
 {
-  CS_UNUSED(verbosity);
-
   _vertex_to_cell_strided<stride>(method,
                                   verbosity,
                                   v_weight,

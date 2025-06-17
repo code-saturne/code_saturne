@@ -5123,7 +5123,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
           cs_real_3_t pifri, pifrj, pjfri, pjfrj;
           cs_real_3_t _pi, _pj, _pia, _pja;
 
-          for (int i = 0; i < 3; i++) {
+          for (cs_lnum_t i = 0; i < 3; i++) {
             _pi[i]  = _pvar[ii][i];
             _pj[i]  = _pvar[jj][i];
             _pia[i] = pvara[ii][i];
@@ -5228,7 +5228,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
           cs_real_3_t pifri, pifrj, pjfri, pjfrj;
           cs_real_3_t _pi, _pj, _pia, _pja;
 
-          for (int i = 0; i < 3; i++) {
+          for (cs_lnum_t i = 0; i < 3; i++) {
             _pi[i]  = _pvar[ii][i];
             _pj[i]  = _pvar[jj][i];
             _pia[i] = pvara[ii][i];
@@ -5339,7 +5339,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
           bool upwind_switch = false;
           cs_real_3_t _pi, _pj, _pia, _pja;
 
-          for (int i = 0; i < 3; i++) {
+          for (cs_lnum_t i = 0; i < 3; i++) {
             _pi[i]  = _pvar[ii][i];
             _pj[i]  = _pvar[jj][i];
             _pia[i] = pvara[ii][i];
@@ -5564,7 +5564,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
         }
         cs_real_3_t _pi, _pia;
 
-        for (int i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
           _pi[i]  = _pvar[ii][i];
           _pia[i] = pvara[ii][i];
         }
@@ -5810,7 +5810,7 @@ _convection_diffusion_tensor_steady
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
-      for (int isou = 0; isou < 6; isou++)
+      for (cs_lnum_t isou = 0; isou < 6; isou++)
         rhs[cell_id][isou] = 0.;
     }
   }
@@ -5833,7 +5833,7 @@ _convection_diffusion_tensor_steady
           cs_lnum_t jj = i_face_cells[face_id][1];
 
           cs_real_t fluxi[6], fluxj[6] ;
-          for (int isou =  0; isou < 6; isou++) {
+          for (cs_lnum_t isou =  0; isou < 6; isou++) {
             fluxi[isou] = 0;
             fluxj[isou] = 0;
           }
@@ -5889,7 +5889,7 @@ _convection_diffusion_tensor_steady
                                     fluxi,
                                     fluxj);
 
-          for (int isou = 0; isou < 6; isou++) {
+          for (cs_lnum_t isou = 0; isou < 6; isou++) {
             rhs[ii][isou] -= fluxi[isou];
             rhs[jj][isou] += fluxj[isou];
           }
@@ -5921,7 +5921,7 @@ _convection_diffusion_tensor_steady
           cs_lnum_t jj = i_face_cells[face_id][1];
 
           double fluxi[6], fluxj[6] ;
-          for (int isou =  0; isou < 6; isou++) {
+          for (cs_lnum_t isou =  0; isou < 6; isou++) {
             fluxi[isou] = 0;
             fluxj[isou] = 0;
           }
@@ -5982,7 +5982,7 @@ _convection_diffusion_tensor_steady
                                     fluxi,
                                     fluxj);
 
-          for (int isou = 0; isou < 6; isou++) {
+          for (cs_lnum_t isou = 0; isou < 6; isou++) {
             rhs[ii][isou] -= fluxi[isou];
             rhs[jj][isou] += fluxj[isou];
           }
@@ -6015,7 +6015,7 @@ _convection_diffusion_tensor_steady
           cs_lnum_t jj = i_face_cells[face_id][1];
 
           double fluxi[6], fluxj[6] ;
-          for (int isou =  0; isou < 6; isou++) {
+          for (cs_lnum_t isou =  0; isou < 6; isou++) {
             fluxi[isou] = 0;
             fluxj[isou] = 0;
           }
@@ -6085,7 +6085,7 @@ _convection_diffusion_tensor_steady
                                     fluxi,
                                     fluxj);
 
-          for (int isou = 0; isou < 6; isou++) {
+          for (cs_lnum_t isou = 0; isou < 6; isou++) {
             rhs[ii][isou] -= fluxi[isou];
             rhs[jj][isou] += fluxj[isou];
           }
@@ -6120,7 +6120,7 @@ _convection_diffusion_tensor_steady
         cs_lnum_t ii = b_face_cells[face_id];
 
         double fluxi[6] ;
-        for (int isou =  0; isou < 6; isou++) {
+        for (cs_lnum_t isou =  0; isou < 6; isou++) {
           fluxi[isou] = 0;
         }
         cs_real_t pir[6], pipr[6], val_f[6], val_f_d[6];
@@ -6167,7 +6167,7 @@ _convection_diffusion_tensor_steady
                                   val_f_d,
                                   fluxi);
 
-        for (int isou = 0; isou < 6; isou++) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           rhs[ii][isou] -= fluxi[isou];
         }
       }
@@ -6421,7 +6421,7 @@ _convection_diffusion_unsteady_strided
       cs_lnum_t jj = i_face_cells[face_id][1];
 
       cs_real_t fluxi[stride], fluxj[stride];
-      for (int i = 0; i < stride; i++) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
         fluxi[i] = 0;
         fluxj[i] = 0;
       }
@@ -6431,7 +6431,7 @@ _convection_diffusion_unsteady_strided
       const var_t &pvar_i = _pvar[ii];
       const var_t &pvar_j = _pvar[jj];
 
-      for (int i = 0; i < stride; i++) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
         _pi[i]  = _pvar[ii][i];
         _pj[i]  = _pvar[jj][i];
       }
@@ -6544,7 +6544,7 @@ _convection_diffusion_unsteady_strided
         const var_t &pvar_i = _pvar[ii];
         const var_t &pvar_j = _pvar[jj];
 
-        for (int i = 0; i < stride; i++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
           _pi[i]  = _pvar[ii][i];
           _pj[i]  = _pvar[jj][i];
         }
@@ -6732,7 +6732,7 @@ _convection_diffusion_unsteady_strided
         const var_t &pvar_i = _pvar[ii];
         const var_t &pvar_j = _pvar[jj];
 
-        for (int i = 0; i < stride; i++) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
           _pi[i]  = _pvar[ii][i];
           _pj[i]  = _pvar[jj][i];
         }
@@ -6963,7 +6963,7 @@ _convection_diffusion_unsteady_strided
       }
       cs_real_t _pi[stride];
 
-      for (int i = 0; i < stride; i++) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
         _pi[i]  = _pvar[ii][i];
       }
 
@@ -7034,7 +7034,7 @@ _convection_diffusion_unsteady_strided
       }
 
       cs_real_t pip[stride], _pi[stride];
-      for (int i = 0; i < stride; i++) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
         _pi[i]  = _pvar[ii][i];
       }
 
@@ -7819,7 +7819,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       const cs_nreal_t *n = i_face_u_normal[face_id];
 
       /* I'J' */
-      for (int i = 0; i < 3; i++)
+      for (cs_lnum_t i = 0; i < 3; i++)
         ipjp[i] = n[i] * i_dist[face_id];
 
       cs_real_t _i_f_face_surf = i_f_face_surf[face_id];
@@ -8358,7 +8358,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   else if (porosi != nullptr && porosf == nullptr) {
     CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      for (int isou = 0; isou < 6; isou++) {
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
         w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
       }
     });
@@ -8488,7 +8488,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_real_t diippf[3], djjppf[3];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
                     - fikdvi*(  visci[0][i]*i_face_u_normal[face_id][0]
                               + visci[1][i]*i_face_u_normal[face_id][1]
@@ -8510,7 +8510,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_real_t fjkdvi = weighf[face_id][1];
 
       /* JJ" = JF + FJ" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
                     + fjkdvi*(  viscj[0][i]*i_face_u_normal[face_id][0]
                               + viscj[1][i]*i_face_u_normal[face_id][1]
@@ -8585,7 +8585,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_real_t diippf[3], djjppf[3];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
                     - fikdvi*(  visci[0][i]*i_face_u_normal[face_id][0]
                               + visci[1][i]*i_face_u_normal[face_id][1]
@@ -8607,7 +8607,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_real_t fjkdvi = weighf[face_id][1];
 
       /* JJ" = JF + FJ" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
                     + fjkdvi*( viscj[0][i]*i_face_u_normal[face_id][0]
                               + viscj[1][i]*i_face_u_normal[face_id][1]
@@ -8675,7 +8675,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_real_t diippf[3];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
                     - fikdvi*(  visci[0][i]*b_face_u_normal[face_id][0]
                               + visci[1][i]*b_face_u_normal[face_id][1]
@@ -8730,7 +8730,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
       cs_real_t diippf[3];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
                     - fikdvi*(  visci[0][i]*b_face_u_normal[face_id][0]
                               + visci[1][i]*b_face_u_normal[face_id][1]
@@ -8825,7 +8825,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
         cs_real_t fikdvi = weighb[face_id];
 
         /* II" = IF + FI" */
-        for (int i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
           diippf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]
                     - fikdvi*( visci[0][i]*b_face_u_normal[face_id][0]
                              + visci[1][i]*b_face_u_normal[face_id][1]
@@ -8849,7 +8849,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
         /* JJ" = JF + FJ"
          *   */
-        for (int i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
           djjppf[i] =    b_face_cog[face_id][i]
                       - cell_cen[ii][i]-cpl->ci_cj_vect[jj][i]
                       + fjkdvi*(  viscj[0][i]*b_face_u_normal[face_id][0]
@@ -9106,7 +9106,7 @@ cs_anisotropic_left_diffusion_vector
 
           /*-----------------
             X-Y-Z components, p = u, v, w */
-          for (int isou = 0; isou < 3; isou++) {
+          for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
             cs_real_t dpvf[3];
 
@@ -9135,7 +9135,7 @@ cs_anisotropic_left_diffusion_vector
 
           }
 
-          for (int isou = 0; isou < 3; isou++) {
+          for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
             cs_real_t fluxi =   i_visc[face_id][0][isou]*(pipr[0] - pjp[0])
                               + i_visc[face_id][1][isou]*(pipr[1] - pjp[1])
@@ -9174,7 +9174,7 @@ cs_anisotropic_left_diffusion_vector
 
       /*-----------------
         X-Y-Z components, p = u, v, w */
-      for (int isou = 0; isou < 3; isou++) {
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
         cs_real_t dpvf[3];
 
         for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
@@ -9191,7 +9191,7 @@ cs_anisotropic_left_diffusion_vector
       }
 
       cs_real_t fluxi[3], fluxj[3];
-      for (int isou = 0; isou < 3; isou++) {
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
         cs_real_t flux =   i_visc[face_id][0][isou]*(pip[0] - pjp[0])
                          + i_visc[face_id][1][isou]*(pip[1] - pjp[1])
                          + i_visc[face_id][2][isou]*(pip[2] - pjp[2]);
@@ -9233,7 +9233,7 @@ cs_anisotropic_left_diffusion_vector
         const cs_rreal_t *diipbv = diipb[face_id];
         cs_real_t pipr[3];
 
-        for (int k = 0; k < 3; k++) {
+        for (cs_lnum_t k = 0; k < 3; k++) {
           cs_real_t pir  =   _pvar[cell_id][k]/relaxp
                            - (1.-relaxp)/relaxp*pvara[cell_id][k];
 
@@ -9321,11 +9321,11 @@ cs_anisotropic_left_diffusion_vector
       const cs_nreal_t *n = i_face_u_normal[face_id];
 
       /* I'J' */
-      for (int i = 0; i < 3; i++)
+      for (cs_lnum_t i = 0; i < 3; i++)
         ipjp[i] = n[i] * i_dist[face_id];
 
       cs_real_t fluxi[3], fluxj[3];
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         cs_real_t flux = flux0*i_face_u_normal[face_id][i];
 
         /* We need to compute (K grad(u)^T) .I'J'
@@ -9333,8 +9333,8 @@ cs_anisotropic_left_diffusion_vector
            But: (I'J' . (grad(u) . K^T))_i = I'J'_k grad(u)_kj K_ij
         */
 
-        for (int j = 0; j < 3; j++) {
-          for (int k = 0; k < 3; k++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          for (cs_lnum_t k = 0; k < 3; k++) {
             flux +=   ipjp[k]
                     * (pnd*gradv[ii][k][j]+(1.-pnd)*gradv[jj][k][j])
                     * i_visc[face_id][i][j];
@@ -9750,7 +9750,8 @@ cs_anisotropic_right_diffusion_vector
       for (cs_lnum_t i = 0; i < 3; i++) {
         djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
                     + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
-                                + viscj[1][i]*i_face_u_normal[face_id][1]                                                         + viscj[2][i]*i_face_u_normal[face_id][2]);
+                                + viscj[1][i]*i_face_u_normal[face_id][1]
+                                + viscj[2][i]*i_face_u_normal[face_id][2]);
       }
 
       cs_real_t fluxi[3], fluxj[3];
@@ -10132,11 +10133,6 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -10159,18 +10155,13 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   char var_name[64];
 
-  cs_real_6_t *viscce;
-  cs_real_6_t *w2;
-  cs_real_63_t *grad;
+  cs_real_6_t *viscce = nullptr;
+  cs_real_6_t *w2 = nullptr;
 
-  cs_field_t *f;
-
-  /* 1. Initialization */
-
-  viscce = nullptr;
-  w2 = nullptr;
+  cs_field_t *f = nullptr;
 
   /* Allocate work arrays */
+  cs_real_63_t *grad;
   CS_MALLOC_HD(grad, n_cells_ext, cs_real_63_t, cs_alloc_mode);
 
   /* Choose gradient type */
@@ -10232,7 +10223,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   else if (porosi != nullptr && porosf == nullptr) {
     CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      for (int isou = 0; isou < 6; isou++) {
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
         w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
       }
     });
@@ -10279,7 +10270,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   }
   else {
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      for (int isou = 0; isou < 6; isou++) {
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
         for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
           grad[cell_id][isou][jsou] = 0.;
       }
@@ -10293,110 +10284,109 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+    i_sum_type = CS_DISPATCH_SUM_SIMPLE;
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+    h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-          cs_real_t visci[3][3], viscj[3][3];
-          cs_real_t diippf[3], djjppf[3], pipp[6], pjpp[6];
-          cs_real_t  pir[6], pjr[6], pippr[6], pjppr[6];
-          cs_real_t  pi[6], pj[6], pia[6], pja[6];
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
-          for (int isou = 0; isou < 6; isou++) {
-            pi[isou] = _pvar[ii][isou];
-            pj[isou] = _pvar[jj][isou];
-            pia[isou] = pvara[ii][isou];
-            pja[isou] = pvara[jj][isou];
-          }
+      cs_real_t visci[3][3], viscj[3][3];
+      cs_real_t diippf[3], djjppf[3], pipp[6], pjpp[6];
+      cs_real_t  pir[6], pjr[6], pippr[6], pjppr[6];
+      cs_real_t  pi[6], pj[6], pia[6], pja[6];
+      cs_real_t fluxi[6], fluxj[6];
 
-          cs_real_t bldfrp = (cs_real_t) ircflp;
-          /* Local limitation of the reconstruction */
-          if (df_limiter != nullptr && ircflp > 0)
-            bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
-                             0.);
-
-          /* Recompute II" and JJ"
-             ----------------------*/
-
-          visci[0][0] = viscce[ii][0];
-          visci[1][1] = viscce[ii][1];
-          visci[2][2] = viscce[ii][2];
-          visci[1][0] = viscce[ii][3];
-          visci[0][1] = viscce[ii][3];
-          visci[2][1] = viscce[ii][4];
-          visci[1][2] = viscce[ii][4];
-          visci[2][0] = viscce[ii][5];
-          visci[0][2] = viscce[ii][5];
-
-          /* IF.Ki.S / ||Ki.S||^2 */
-          cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
-
-          /* II" = IF + FI" */
-          for (int i = 0; i < 3; i++) {
-            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
-                                  + visci[1][i]*i_face_u_normal[face_id][1]
-                                  + visci[2][i]*i_face_u_normal[face_id][2]);
-          }
-
-          viscj[0][0] = viscce[jj][0];
-          viscj[1][1] = viscce[jj][1];
-          viscj[2][2] = viscce[jj][2];
-          viscj[1][0] = viscce[jj][3];
-          viscj[0][1] = viscce[jj][3];
-          viscj[2][1] = viscce[jj][4];
-          viscj[1][2] = viscce[jj][4];
-          viscj[2][0] = viscce[jj][5];
-          viscj[0][2] = viscce[jj][5];
-
-          /* FJ.Kj.S / ||Kj.S||^2 */
-          cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
-
-          /* JJ" = JF + FJ" */
-          for (int i = 0; i < 3; i++) {
-            djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
-                        + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
-                                    + viscj[1][i]*i_face_u_normal[face_id][1]
-                                    + viscj[2][i]*i_face_u_normal[face_id][2]);
-          }
-
-          for (int isou = 0; isou < 6; isou++) {
-            /* p in I" and J" */
-            pipp[isou] = pi[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
-                                            + grad[ii][isou][1]*diippf[1]
-                                            + grad[ii][isou][2]*diippf[2]);
-            pjpp[isou] = pj[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
-                                            + grad[jj][isou][1]*djjppf[1]
-                                            + grad[jj][isou][2]*djjppf[2]);
-
-            pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp * pia[isou];
-            pjr[isou] = pj[isou]/relaxp - (1.-relaxp)/relaxp * pja[isou];
-
-            /* pr in I" and J" */
-            pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
-                                              + grad[ii][isou][1]*diippf[1]
-                                              + grad[ii][isou][2]*diippf[2]);
-            pjppr[isou] = pjr[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
-                                              + grad[jj][isou][1]*djjppf[1]
-                                              + grad[jj][isou][2]*djjppf[2]);
-
-            cs_real_t fluxi = i_visc[face_id]*(pippr[isou] - pjpp[isou]);
-            cs_real_t fluxj = i_visc[face_id]*(pipp[isou] - pjppr[isou]);
-
-            if (ii < n_cells)
-              rhs[ii][isou] -= fluxi;
-            if (jj < n_cells)
-              rhs[jj][isou] += fluxj;
-          } // loop on isou
-        }
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
+        pi[isou] = _pvar[ii][isou];
+        pj[isou] = _pvar[jj][isou];
+        pia[isou] = pvara[ii][isou];
+        pja[isou] = pvara[jj][isou];
       }
-    }
+
+      cs_real_t bldfrp = (cs_real_t) ircflp;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflp > 0)
+        bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
+                         0.);
+
+      /* Recompute II" and JJ"
+         ----------------------*/
+
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
+
+      /* IF.Ki.S / ||Ki.S||^2 */
+      cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
+
+      /* II" = IF + FI" */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
+                    - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                + visci[1][i]*i_face_u_normal[face_id][1]
+                                + visci[2][i]*i_face_u_normal[face_id][2]);
+      }
+
+      viscj[0][0] = viscce[jj][0];
+      viscj[1][1] = viscce[jj][1];
+      viscj[2][2] = viscce[jj][2];
+      viscj[1][0] = viscce[jj][3];
+      viscj[0][1] = viscce[jj][3];
+      viscj[2][1] = viscce[jj][4];
+      viscj[1][2] = viscce[jj][4];
+      viscj[2][0] = viscce[jj][5];
+      viscj[0][2] = viscce[jj][5];
+
+      /* FJ.Kj.S / ||Kj.S||^2 */
+      cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
+
+      /* JJ" = JF + FJ" */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
+                    + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                + viscj[1][i]*i_face_u_normal[face_id][1]
+                                + viscj[2][i]*i_face_u_normal[face_id][2]);
+      }
+
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
+        /* p in I" and J" */
+        pipp[isou] = pi[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                        + grad[ii][isou][1]*diippf[1]
+                                        + grad[ii][isou][2]*diippf[2]);
+        pjpp[isou] = pj[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
+                                        + grad[jj][isou][1]*djjppf[1]
+                                        + grad[jj][isou][2]*djjppf[2]);
+
+        pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp * pia[isou];
+        pjr[isou] = pj[isou]/relaxp - (1.-relaxp)/relaxp * pja[isou];
+
+        /* pr in I" and J" */
+        pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                          + grad[ii][isou][1]*diippf[1]
+                                          + grad[ii][isou][2]*diippf[2]);
+        pjppr[isou] = pjr[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
+                                          + grad[jj][isou][1]*djjppf[1]
+                                          + grad[jj][isou][2]*djjppf[2]);
+
+        fluxi[isou] = - i_visc[face_id]*(pippr[isou] - pjpp[isou]);
+        fluxj[isou] =   i_visc[face_id]*(pipp[isou] - pjppr[isou]);
+
+      } // loop on isou
+
+      if (ii < n_cells)
+        cs_dispatch_sum<6>(rhs[ii], fluxi, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<6>(rhs[jj], fluxj, i_sum_type);
+
+    });
 
     /* Unsteady */
   }
@@ -10411,7 +10401,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
       cs_real_t diippf[3], djjppf[3], pipp[6], pjpp[6];
       cs_real_t pi[6], pj[6];
 
-      for (int isou = 0; isou < 6; isou++) {
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
         pi[isou] = _pvar[ii][isou];
         pj[isou] = _pvar[jj][isou];
       }
@@ -10439,7 +10429,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
       cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
                     - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
                                 + visci[1][i]*i_face_u_normal[face_id][1]
@@ -10460,7 +10450,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
       cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
 
       /* JJ" = JF + FJ" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
                     + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
                                 + viscj[1][i]*i_face_u_normal[face_id][1]
@@ -10469,7 +10459,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
       cs_real_t fluxi[6], fluxj[6];
 
-      for (int isou = 0; isou < 6; isou++) {
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
         /* p in I" and J" */
         pipp[isou] =  pi[isou]
                     + bldfrp * cs_math_3_dot_product(grad[ii][isou], diippf);
@@ -10497,71 +10487,75 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+    cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+    b_sum_type = CS_DISPATCH_SUM_SIMPLE;
 
-        cs_lnum_t ii = b_face_cells[face_id];
+    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-        cs_real_t pi[6], pia[6], pir[6], pippr[6];
-        cs_real_t visci[3][3];
-        cs_real_t diippf[3];
+      cs_lnum_t ii = b_face_cells[face_id];
 
-        for (int isou = 0; isou < 6; isou++) {
-          pi[isou] = _pvar[ii][isou];
-          pia[isou] = pvara[ii][isou];
-          pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
-        }
+      cs_real_t pi[6], pia[6], pir[6], pippr[6];
+      cs_real_t visci[3][3];
+      cs_real_t diippf[3];
 
-        cs_real_t bldfrp = (cs_real_t) ircflb;
-        /* Local limitation of the reconstruction */
-        if (df_limiter != nullptr && ircflb > 0)
-          bldfrp = cs::max(df_limiter[ii], 0.);
-
-        /* Recompute II"
-           --------------*/
-
-        visci[0][0] = viscce[ii][0];
-        visci[1][1] = viscce[ii][1];
-        visci[2][2] = viscce[ii][2];
-        visci[1][0] = viscce[ii][3];
-        visci[0][1] = viscce[ii][3];
-        visci[2][1] = viscce[ii][4];
-        visci[1][2] = viscce[ii][4];
-        visci[2][0] = viscce[ii][5];
-        visci[0][2] = viscce[ii][5];
-
-        /* IF.Ki.S / ||Ki.S||^2 */
-        cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
-
-        /* II" = IF + FI" */
-        for (int i = 0; i < 3; i++) {
-          diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
-                                  + visci[1][i]*b_face_u_normal[face_id][1]
-                                  + visci[2][i]*b_face_u_normal[face_id][2]);
-        }
-        for (int isou = 0; isou < 6; isou++) {
-          pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
-                                            + grad[ii][isou][1]*diippf[1]
-                                            + grad[ii][isou][2]*diippf[2]);
-        }
-        for (int isou = 0; isou < 6; isou++) {
-          cs_real_t pfacd = inc*cofaf[face_id][isou];
-          for (cs_lnum_t jsou = 0; jsou < 6; jsou++) {
-            pfacd += cofbf[face_id][isou][jsou]*pippr[jsou];
-          }
-
-          cs_real_t flux = b_visc[face_id]*pfacd;
-          rhs[ii][isou] -= flux;
-        }
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
+        pi[isou] = _pvar[ii][isou];
+        pia[isou] = pvara[ii][isou];
+        pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
       }
-    }
 
-    /* Unsteady */
+      cs_real_t bldfrp = (cs_real_t) ircflb;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflb > 0)
+        bldfrp = cs::max(df_limiter[ii], 0.);
+
+      /* Recompute II"
+         --------------*/
+
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
+
+      /* IF.Ki.S / ||Ki.S||^2 */
+      cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
+
+      /* II" = IF + FI" */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        diippf[i] =   b_face_cog[face_id][i] - cell_cen[ii][i]
+                    - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                + visci[1][i]*b_face_u_normal[face_id][1]
+                                + visci[2][i]*b_face_u_normal[face_id][2]);
+      }
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
+        pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                          + grad[ii][isou][1]*diippf[1]
+                                          + grad[ii][isou][2]*diippf[2]);
+      }
+
+      cs_real_t flux[6];
+
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
+        cs_real_t pfacd = inc*cofaf[face_id][isou];
+        for (cs_lnum_t jsou = 0; jsou < 6; jsou++) {
+          pfacd += cofbf[face_id][isou][jsou]*pippr[jsou];
+        }
+
+        flux[isou] = - b_visc[face_id]*pfacd;
+      }
+
+      cs_dispatch_sum<6>(rhs[ii], flux, b_sum_type);
+    });
+
   }
+
+  /* Unsteady */
+
   else {
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -10571,7 +10565,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
       cs_real_t visci[3][3];
       cs_real_t diippf[3], pi[6], pipp[6];
 
-      for (int isou = 0; isou < 6; isou++) {
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
         pi[isou] = _pvar[ii][isou];
       }
 
@@ -10597,20 +10591,20 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
       cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
                     - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
                                 + visci[1][i]*b_face_u_normal[face_id][1]
                                 + visci[2][i]*b_face_u_normal[face_id][2]);
       }
-      for (int isou = 0; isou < 6; isou++) {
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
         pipp[isou] =  pi[isou]
                     + bldfrp * cs_math_3_dot_product(grad[ii][isou], diippf);
       }
 
       cs_real_t fluxi[6];
 
-      for (int isou = 0; isou < 6; isou++) {
+      for (cs_lnum_t isou = 0; isou < 6; isou++) {
         cs_real_t pfacd = inc*cofaf[face_id][isou];
         for (cs_lnum_t jsou = 0; jsou < 6; jsou++) {
           pfacd += cofbf[face_id][isou][jsou]*pipp[jsou];
@@ -11043,23 +11037,29 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
   cs_real_t *gweight = nullptr;
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx, ctx_b;
+#if defined(HAVE_CUDA)
+  if (ctx_b.use_gpu())
+    ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
+  bool on_device = ctx.use_gpu();
+
   /*==========================================================================
     1. Initialization
     ==========================================================================*/
 
   if (init >= 1) {
-#   pragma omp parallel for if(n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       i_massflux[face_id] = 0.;
-    }
-#   pragma omp parallel for if(n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    });
+    ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       b_massflux[face_id] = 0.;
-    }
+    });
   }
   else if (init != 0) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("invalid value of init"));
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of init"));
   }
 
   /* Use iterative gradient */
@@ -11104,8 +11104,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
   /* Handle parallelism and periodicity */
 
-  if (halo != nullptr)
-    cs_halo_sync_var(halo, halo_type, pvar);
+  cs_halo_sync(halo, halo_type, on_device, pvar);
 
   /*==========================================================================
     2. Update mass flux without reconstruction technique
@@ -11115,23 +11114,24 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
     /* Contribution from interior faces */
 
-#   pragma omp parallel for if(n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
       i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
-    }
+    });
 
     /* Contribution from boundary faces */
 
-#   pragma omp parallel for if(n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
       double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
       b_massflux[face_id] += b_visc[face_id]*pfac;
-    }
+    });
+
+    ctx.wait();
+    ctx_b.wait();
 
   }
 
@@ -11151,41 +11151,38 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       /* With porosity */
     }
     else if (porosi != nullptr && porosf == nullptr) {
-      CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
         for (cs_lnum_t isou = 0; isou < 6; isou++) {
           w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
         }
-      }
+      });
       viscce = w2;
 
       /* With tensorial porosity */
     }
     else if (porosi != nullptr && porosf != nullptr) {
-      CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
         cs_math_sym_33_product(porosf[cell_id],
                                viscel[cell_id],
                                w2[cell_id]);
-      }
+      });
       viscce = w2;
     }
 
-    /* Periodicity and parallelism treatment of symmetric tensors */
+    ctx.wait();
 
-    if (halo != nullptr)
-      cs_halo_sync_r(halo, false, viscce);
+    /* Periodicity and parallelism treatment of symmetric tensors */
+    cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, viscce);
 
     /* Allocate a work array for the gradient calculation */
     cs_real_3_t *grad;
-    CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
     /* Compute gradient */
     if (iwgrp > 0) {
       gweight = (cs_real_t *)viscce;
-      if (halo != nullptr) {
-        cs_halo_sync_r(halo, halo_type, false, viscce);
-      }
     }
 
     else if (f_id > -1) {
@@ -11200,7 +11197,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
-            cs_field_synchronize(weight_f, halo_type);
+            cs_field_synchronize(weight_f, halo_type, on_device);
           }
         }
       }
@@ -11227,13 +11224,12 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-#   pragma omp parallel for if(n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      double pi = pvar[ii];
-      double pj = pvar[jj];
+      cs_real_t pi = pvar[ii];
+      cs_real_t pj = pvar[jj];
 
       /* Recompute II" and JJ"
          -------------------- */
@@ -11260,7 +11256,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
                     - fikdvi_s * (  visci[0][i]*i_face_u_normal[face_id][0]
                                   + visci[1][i]*i_face_u_normal[face_id][1]
@@ -11278,10 +11274,10 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       viscj[0][2] = viscce[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
-      double fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
+      cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
 
       /* JJ" = JF + FJ" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
                     + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
                                 + viscj[1][i]*i_face_u_normal[face_id][1]
@@ -11293,15 +11289,14 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       cs_real_t pjpp = pj + bldfrp * cs_math_3_dot_product(grad[jj], djjppf);
 
       i_massflux[face_id] += i_visc[face_id]*(pipp - pjpp);
-    }
+    });
 
     /* Contribution from boundary faces */
 
-#   pragma omp parallel for if(n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
 
-      double pi = pvar[ii];
+      cs_real_t pi = pvar[ii];
 
       cs_real_t bldfrp = (cs_real_t) ircflb;
       /* Local limitation of the reconstruction */
@@ -11328,19 +11323,22 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
       cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
 
       /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         diippf[i] =   b_face_cog[face_id][i] - cell_cen[ii][i]
                     - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
                                 + visci[1][i]*b_face_u_normal[face_id][1]
                                 + visci[2][i]*b_face_u_normal[face_id][2]);
       }
 
-      double pipp = pi + bldfrp * cs_math_3_dot_product(grad[ii], diippf);
+      cs_real_t pipp = pi + bldfrp * cs_math_3_dot_product(grad[ii], diippf);
 
-      double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
+      cs_real_t pfac = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
 
       b_massflux[face_id] += b_visc[face_id]*pfac;
-    }
+    });
+
+    ctx.wait();
+    ctx_b.wait();
 
     /* Free memory */
     CS_FREE(grad);
@@ -11439,6 +11437,7 @@ cs_diffusion_potential(const int                   f_id,
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+  bool on_device = ctx.use_gpu();
 
   /* Local variables */
 
@@ -11590,8 +11589,7 @@ cs_diffusion_potential(const int                   f_id,
 
     /* Handle parallelism and periodicity */
 
-    if (halo != nullptr)
-      cs_halo_sync(halo, halo_type, ctx.use_gpu(), visel);
+    cs_halo_sync(halo, halo_type, on_device, visel);
 
     /* Mass flow through interior faces */
 
@@ -11751,11 +11749,6 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -11781,21 +11774,20 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
   cs_real_t *gweight = nullptr;
 
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+  bool on_device = ctx.use_gpu();
+
   /*==========================================================================
     1. Initialization
     ==========================================================================*/
 
   if (init >= 1) {
-#   pragma omp parallel for
-    for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       diverg[ii] = 0.;
-    }
-  }
-  else if (init == 0 && n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t ii = n_cells+0; ii < n_cells_ext; ii++) {
-      diverg[ii] = 0.;
-    }
+    });
   }
   else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
@@ -11822,7 +11814,6 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-
     snprintf(var_name, 63, "%s", f->name);
   }
   else
@@ -11845,8 +11836,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
   /* Handle parallelism and periodicity */
 
-  if (halo != nullptr)
-    cs_halo_sync_var(halo, halo_type, pvar);
+  cs_halo_sync(m->halo, halo_type, on_device, pvar);
 
   /*==========================================================================
     2. Update mass flux without reconstruction technics
@@ -11856,40 +11846,31 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double flux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
-          diverg[ii] += flux;
-          diverg[jj] -= flux;
+      double flux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
 
-        }
-      }
-    }
+      if (ii < n_cells)
+        cs_dispatch_sum(&diverg[ii], flux, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum(&diverg[jj], -flux, i_sum_type);
+
+    });
 
     /* Mass flow though boundary faces */
 
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
-        double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
+      cs_lnum_t ii = b_face_cells[face_id];
+      double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
-        double flux = b_visc[face_id]*pfac;
-        diverg[ii] += flux;
+      double flux = b_visc[face_id]*pfac;
+      cs_dispatch_sum(&diverg[ii], flux, b_sum_type);
 
-      }
-    }
+    });
 
   }
 
@@ -11909,48 +11890,37 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
       /* With porosity */
     }
     else if (porosi != nullptr && porosf == nullptr) {
-      CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        for (int isou = 0; isou < 6; isou++) {
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
           w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
         }
-      }
+      });
       viscce = w2;
 
       /* With tensorial porosity */
     }
     else if (porosi != nullptr && porosf != nullptr) {
-      CS_MALLOC(w2, n_cells_ext, cs_real_6_t);
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
         cs_math_sym_33_product(porosf[cell_id],
                                viscel[cell_id],
                                w2[cell_id]);
-      }
+      });
       viscce = w2;
     }
 
-    /* ---> Periodicity and parallelism treatment of symmetric tensors */
+    ctx.wait();
 
-    if (halo != nullptr) {
-      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, (cs_real_t *)viscce, 6);
-
-      if (m->n_init_perio > 0)
-        cs_halo_perio_sync_var_sym_tens(halo,
-                                        CS_HALO_STANDARD,
-                                        (cs_real_t *)viscce);
-    }
+    /* Periodicity and parallelism treatment of symmetric tensors */
+    cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, viscce);
 
     /* Allocate a work array for the gradient calculation */
-    CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
     /* Compute gradient */
     if (iwgrp > 0) {
       gweight = (cs_real_t *)viscce;
-      if (halo != nullptr) {
-        cs_halo_sync_var_strided(halo, halo_type, gweight, 6);
-        if (cs_glob_mesh->n_init_perio > 0)
-          cs_halo_perio_sync_var_sym_tens(halo, halo_type, gweight);
-      }
     }
 
     else if (f_id > -1) {
@@ -11965,7 +11935,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
-            cs_field_synchronize(weight_f, halo_type);
+            cs_field_synchronize(weight_f, halo_type, on_device);
           }
         }
       }
@@ -11992,148 +11962,138 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
     /* Mass flow through interior faces */
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double pi = pvar[ii];
-          double pj = pvar[jj];
+      cs_real_t pi = pvar[ii];
+      cs_real_t pj = pvar[jj];
 
-          cs_real_t bldfrp = (cs_real_t) ircflp;
-          /* Local limitation of the reconstruction */
-          if (df_limiter != nullptr && ircflp > 0)
-            bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
-                             0.);
+      cs_real_t bldfrp = (cs_real_t) ircflp;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflp > 0)
+        bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
+                         0.);
 
-          /* Recompute II" and JJ"
-             ----------------------*/
+      /* Recompute II" and JJ"
+         ----------------------*/
 
-          cs_real_t visci[3][3], viscj[3][3];
+      cs_real_t visci[3][3], viscj[3][3];
 
-          visci[0][0] = viscce[ii][0];
-          visci[1][1] = viscce[ii][1];
-          visci[2][2] = viscce[ii][2];
-          visci[1][0] = viscce[ii][3];
-          visci[0][1] = viscce[ii][3];
-          visci[2][1] = viscce[ii][4];
-          visci[1][2] = viscce[ii][4];
-          visci[2][0] = viscce[ii][5];
-          visci[0][2] = viscce[ii][5];
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
 
-          /* IF.Ki.S / ||Ki.S||^2 */
-          cs_real_t fikdvi = weighf[face_id][0] * i_face_surf[face_id];
+      /* IF.Ki.S / ||Ki.S||^2 */
+      cs_real_t fikdvi = weighf[face_id][0] * i_face_surf[face_id];
 
-          /* II" = IF + FI" */
+      /* II" = IF + FI" */
 
-          double diippf[3], djjppf[3];
+      cs_real_t diippf[3], djjppf[3];
 
-          for (int i = 0; i < 3; i++) {
-            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*i_face_u_normal[face_id][0]
-                                + visci[1][i]*i_face_u_normal[face_id][1]
-                                + visci[2][i]*i_face_u_normal[face_id][2]);
-          }
-
-          viscj[0][0] = viscce[jj][0];
-          viscj[1][1] = viscce[jj][1];
-          viscj[2][2] = viscce[jj][2];
-          viscj[1][0] = viscce[jj][3];
-          viscj[0][1] = viscce[jj][3];
-          viscj[2][1] = viscce[jj][4];
-          viscj[1][2] = viscce[jj][4];
-          viscj[2][0] = viscce[jj][5];
-          viscj[0][2] = viscce[jj][5];
-
-          /* FJ.Kj.S / ||Kj.S||^2 */
-          double fjkdvi = weighf[face_id][1] * i_face_surf[face_id];
-
-          /* JJ" = JF + FJ" */
-          for (int i = 0; i < 3; i++) {
-            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi*(  viscj[0][i]*i_face_u_normal[face_id][0]
-                                + viscj[1][i]*i_face_u_normal[face_id][1]
-                                + viscj[2][i]*i_face_u_normal[face_id][2]);
-          }
-
-          /* p in I" and J" */
-          double pipp = pi + bldfrp*(  grad[ii][0]*diippf[0]
-                                     + grad[ii][1]*diippf[1]
-                                     + grad[ii][2]*diippf[2]);
-          double pjpp = pj + bldfrp*(  grad[jj][0]*djjppf[0]
-                                     + grad[jj][1]*djjppf[1]
-                                     + grad[jj][2]*djjppf[2]);
-
-          double flux = i_visc[face_id]*(pipp - pjpp);
-
-          diverg[ii] += flux;
-          diverg[jj] -= flux;
-
-        }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
+                    - fikdvi*(  visci[0][i]*i_face_u_normal[face_id][0]
+                              + visci[1][i]*i_face_u_normal[face_id][1]
+                              + visci[2][i]*i_face_u_normal[face_id][2]);
       }
-    }
+
+      viscj[0][0] = viscce[jj][0];
+      viscj[1][1] = viscce[jj][1];
+      viscj[2][2] = viscce[jj][2];
+      viscj[1][0] = viscce[jj][3];
+      viscj[0][1] = viscce[jj][3];
+      viscj[2][1] = viscce[jj][4];
+      viscj[1][2] = viscce[jj][4];
+      viscj[2][0] = viscce[jj][5];
+      viscj[0][2] = viscce[jj][5];
+
+      /* FJ.Kj.S / ||Kj.S||^2 */
+      cs_real_t fjkdvi = weighf[face_id][1] * i_face_surf[face_id];
+
+      /* JJ" = JF + FJ" */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
+                    + fjkdvi*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                              + viscj[1][i]*i_face_u_normal[face_id][1]
+                              + viscj[2][i]*i_face_u_normal[face_id][2]);
+      }
+
+      /* p in I" and J" */
+      cs_real_t pipp = pi + bldfrp*(  grad[ii][0]*diippf[0]
+                                    + grad[ii][1]*diippf[1]
+                                    + grad[ii][2]*diippf[2]);
+      cs_real_t pjpp = pj + bldfrp*(  grad[jj][0]*djjppf[0]
+                                    + grad[jj][1]*djjppf[1]
+                                    + grad[jj][2]*djjppf[2]);
+
+      cs_real_t flux = i_visc[face_id]*(pipp - pjpp);
+
+      if (ii < n_cells)
+        cs_dispatch_sum(&diverg[ii], flux, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum(&diverg[jj], -flux, i_sum_type);
+
+    });
 
     /* Mass flow though boundary faces */
 
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
+      cs_lnum_t ii = b_face_cells[face_id];
 
-        double pi = pvar[ii];
+      cs_real_t pi = pvar[ii];
 
-        cs_real_t bldfrp = (cs_real_t) ircflb;
-        /* Local limitation of the reconstruction */
-        if (df_limiter != nullptr && ircflb > 0)
-          bldfrp = cs::max(df_limiter[ii], 0.);
+      cs_real_t bldfrp = (cs_real_t)ircflb;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflb > 0)
+        bldfrp = cs::max(df_limiter[ii], 0.);
 
-        /* Recompute II"
-           --------------*/
+      /* Recompute II"
+         --------------*/
 
-        cs_real_t visci[3][3];
+      cs_real_t visci[3][3];
 
-        visci[0][0] = viscce[ii][0];
-        visci[1][1] = viscce[ii][1];
-        visci[2][2] = viscce[ii][2];
-        visci[1][0] = viscce[ii][3];
-        visci[0][1] = viscce[ii][3];
-        visci[2][1] = viscce[ii][4];
-        visci[1][2] = viscce[ii][4];
-        visci[2][0] = viscce[ii][5];
-        visci[0][2] = viscce[ii][5];
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
 
-        /* IF.Ki.S / ||Ki.S||^2 */
-        double fikdvi = weighb[face_id] * b_face_surf[face_id];
+      /* IF.Ki.S / ||Ki.S||^2 */
+      cs_real_t fikdvi = weighb[face_id] * b_face_surf[face_id];
 
-        double diippf[3];
+      cs_real_t diippf[3];
 
-        /* II" = IF + FI" */
-        for (int i = 0; i < 3; i++) {
-          diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi*(  visci[0][i]*b_face_u_normal[face_id][0]
-                                + visci[1][i]*b_face_u_normal[face_id][1]
-                                + visci[2][i]*b_face_u_normal[face_id][2]);
-        }
-
-        double pipp = pi + bldfrp*(  grad[ii][0]*diippf[0]
-                                   + grad[ii][1]*diippf[1]
-                                   + grad[ii][2]*diippf[2]);
-
-        double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
-
-        double flux = b_visc[face_id]*pfac;
-        diverg[ii] += flux;
-
+      /* II" = IF + FI" */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        diippf[i] =   b_face_cog[face_id][i] - cell_cen[ii][i]
+                    - fikdvi*(  visci[0][i]*b_face_u_normal[face_id][0]
+                              + visci[1][i]*b_face_u_normal[face_id][1]
+                              + visci[2][i]*b_face_u_normal[face_id][2]);
       }
-    }
+
+      cs_real_t pipp = pi + bldfrp*(  grad[ii][0]*diippf[0]
+                                    + grad[ii][1]*diippf[1]
+                                    + grad[ii][2]*diippf[2]);
+
+      cs_real_t pfac = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
+
+      cs_real_t flux = b_visc[face_id]*pfac;
+      cs_dispatch_sum(&diverg[ii], flux, b_sum_type);
+
+    });
 
     /* Free memory */
     CS_FREE(grad);

@@ -1399,13 +1399,37 @@ void
 cs_field_synchronize(cs_field_t      *f,
                      cs_halo_type_t   halo_type)
 {
+  bool on_device = cs_mem_is_device_ptr(f->val);
+
+  cs_field_synchronize(f, halo_type, on_device);
+}
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize current parallel and periodic field values.
+ *
+ * This function currently only upates fields based on CS_MESH_LOCATION_CELLS.
+ *
+ * \param[in, out]   f           pointer to field
+ * \param[in]        halo_type   halo type
+ * \param[in]        on_device   specify whether sync is done on device
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_synchronize(cs_field_t            *f,
+                     cs_halo_type_t         halo_type,
+                     bool                   on_device)
+{
   if (f->location_id == CS_MESH_LOCATION_CELLS) {
 
     const cs_halo_t *halo = cs_glob_mesh->halo;
 
     if (halo != nullptr) {
-
-      bool on_device = cs_mem_is_device_ptr(f->val);
 
       switch(f->dim) {
       case 1:
@@ -1438,5 +1462,3 @@ cs_field_synchronize(cs_field_t      *f,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
