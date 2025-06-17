@@ -76,8 +76,6 @@ BEGIN_C_DECLS
 
 double _cs_gui_mei_time = 0.;
 
-static bool _setup_read = false;
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -108,7 +106,6 @@ cs_gui_load_file(const char  *filename)
 
   cs_tree_xml_read(cs_glob_tree, filename);
 
-  _setup_read = true;
   return argerr;
 }
 

@@ -2297,7 +2297,6 @@ cs_boundary_conditions_ibm_create(cs_lnum_t n_ib_cells)
 
   /* Get default boundary type (converting "current" to "legacy" codes) */
 
-  const cs_boundary_t  *boundaries = cs_glob_boundaries;
   int default_type = CS_SMOOTHWALL;
 
   /* boundary conditions type by boundary face */
