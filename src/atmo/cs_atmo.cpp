@@ -4406,10 +4406,10 @@ cs_atmo_z_ground_compute(void)
 
   const int *bc_type = cs_glob_bc_type;
 
-  const cs_real_t *restrict i_face_surf = mq_g->i_face_surf;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
   const cs_real_3_t *restrict i_face_cog = mq_g->i_face_cog;
   const cs_real_t *restrict i_face_surf_g = mq_g->i_face_surf;
-  const cs_real_t *restrict b_face_surf = mq_g->b_face_surf;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *c2c = ma->cell_cells;
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
