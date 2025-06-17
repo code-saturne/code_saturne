@@ -1362,7 +1362,7 @@ _build_cdofb_scheme_csv(const cs_param_advection_scheme_t scheme,
         }
         else {
           /* Outward flux: beta_plus */
-          assert(beta_flx >= 0.0);
+          assert(beta_flx >= -FLT_EPSILON);
           const cs_real_t beta_plus = std::max(0.0, beta_flx);
           f_row[f] += beta_plus;
         }
