@@ -2182,13 +2182,7 @@ cs_ale_update_mesh(int  itrale)
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   cs_time_step_t *ts = cs_get_glob_time_step();
 
-  cs_field_t *f_cellvol = cs_field_by_name("cell_vol");
-  cs_real_t *cell_vol = f_cellvol->val;
-  cs_real_t *cell_vol_pre = f_cellvol->val_pre;
-
   /* Initialization */
-
-  mq->cell_vol = cell_vol;
 
   const cs_equation_param_t *eqp =
     cs_field_get_equation_param_const(CS_F_(mesh_u));
@@ -2240,7 +2234,6 @@ cs_ale_update_mesh(int  itrale)
 
   } /* itrale == 0 */
 
-  mq->cell_vol = cell_vol_pre;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2448,10 +2441,19 @@ cs_ale_initialize_volume_fields(void)
   cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, cell_vol);
   cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, cell_vol_pre);
 
-  /* Cell volume points to the field f_cellvol->val_pre
-     (i.e to the most used vol^n) */
+  /* In neptune, volnp1 is computed in cs_ale_compute_volume_from_displacement
+     and is stored in cs_field_by_name("cell_vol"). The most used Vol^n is
+     stored in cell_vol_pre.
+     In saturne, we always use cell_vol_pre wich is updated in cs_ale_mesh_update
+     and cs_field_by_name("cell_vol")->val is never used. As the f->type is not
+     CS_FIELD_VARIABLE, we have not the current_to previous val_pre = val.
+  */
 
   mq->cell_vol = cell_vol_pre;
+
+  if (cs_glob_ale == CS_ALE_CDO) {
+    cs_glob_domain->cdo_quantities->cell_vol = cell_vol_pre;
+  }
 
   /* Free _cell_vol which is not owner anymore */
   CS_FREE(mq->_cell_vol);
