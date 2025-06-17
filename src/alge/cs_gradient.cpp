@@ -7149,7 +7149,7 @@ _gradient_scalar(const char                    *var_name,
   /* Allocate work arrays */
 
   cs_real_t *tensor_f_weight = nullptr;
-  if (w_stride == 6) {
+  if (c_weight != nullptr && w_stride == 6) {
     CS_MALLOC_HD(tensor_f_weight, mesh->n_i_faces, cs_real_t, cs_alloc_mode);
     _compute_f_weight_tensor(mesh,
                              fvq,
