@@ -949,6 +949,7 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
   /* Symmetric matrix ? */
 
   if (hpddmp->use_neumann) {
+    assert(slesp->mat_is_sym);
     /* Define generic options */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
@@ -1009,17 +1010,35 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
                "svd_relative_threshold",
                std::to_string(hpddmp->relative_threshold).c_str());
     _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
-    _petsc_cmd(true, prefix_pc, "sub_pc_type", "lu");
+    if (slesp->mat_is_sym) {
+      _petsc_cmd(true, prefix_pc, "sub_pc_type", "cholesky");
+    }
+    else {
+      _petsc_cmd(true, prefix_pc, "sub_pc_type", "lu");
+    }
     _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
 
     /* Define option for coarse solver */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_coarse_");
 
     _petsc_cmd(true, prefix_pc, "correction", "deflated");
-    _petsc_cmd(true, prefix_pc, "pc_type", "lu");
+    if (slesp->mat_is_sym) {
+      _petsc_cmd(true, prefix_pc, "pc_type", "cholesky");
+    }
+    else {
+      _petsc_cmd(true, prefix_pc, "pc_type", "lu");
+    }
     _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
     _petsc_cmd(true, prefix_pc, "mat_type", "baij");
     _petsc_cmd(true, prefix_pc, "p", "1");
   }
