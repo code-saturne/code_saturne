@@ -1027,9 +1027,9 @@ END_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_counter(cs_execution_context  *ec,
-                  cs_gnum_t              cpt[],
-                  const int              n)
+cs_parall_counter(const cs_execution_context  *ec,
+                  cs_gnum_t                    cpt[],
+                  const int                    n)
 {
 #if defined(HAVE_MPI)
   if (ec->use_mpi())
@@ -1047,9 +1047,9 @@ cs_parall_counter(cs_execution_context  *ec,
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_counter_max(cs_execution_context  *ec,
-                      cs_lnum_t              cpt[],
-                      const int              n)
+cs_parall_counter_max(const cs_execution_context  *ec,
+                      cs_lnum_t                    cpt[],
+                      const int                    n)
 {
 #if defined(HAVE_MPI)
   if (ec->use_mpi())
@@ -1068,10 +1068,10 @@ cs_parall_counter_max(cs_execution_context  *ec,
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_sum(cs_execution_context  *ec,
-              int                    n,
-              cs_datatype_t          datatype,
-              void                  *val)
+cs_parall_sum(const cs_execution_context  *ec,
+              int                          n,
+              cs_datatype_t                datatype,
+              void                        *val)
 {
 #if defined(HAVE_MPI)
   if (ec->use_mpi())
@@ -1090,10 +1090,10 @@ cs_parall_sum(cs_execution_context  *ec,
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_max(cs_execution_context  *ec,
-              int                    n,
-              cs_datatype_t          datatype,
-              void                  *val)
+cs_parall_max(const cs_execution_context  *ec,
+              int                          n,
+              cs_datatype_t                datatype,
+              void                        *val)
 {
 #if defined(HAVE_MPI)
   if (ec->use_mpi())
@@ -1112,10 +1112,10 @@ cs_parall_max(cs_execution_context  *ec,
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_min(cs_execution_context  *ec,
-              int                    n,
-              cs_datatype_t          datatype,
-              void                  *val)
+cs_parall_min(const cs_execution_context  *ec,
+              int                          n,
+              cs_datatype_t                datatype,
+              void                        *val)
 {
 #if defined(HAVE_MPI)
   if (ec->use_mpi())
