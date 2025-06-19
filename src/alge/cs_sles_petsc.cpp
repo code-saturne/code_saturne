@@ -1806,21 +1806,24 @@ cs_sles_petsc_log(const void  *context,
   const char *m_type = (c->matype != nullptr) ? c->matype : undef;
   char norm_type_name[32];
 
-  switch(c->norm_type) {
-  case KSP_NORM_NONE:
-    strncpy(norm_type_name, "none", 31);
-    break;
-  case KSP_NORM_PRECONDITIONED:
-    strncpy(norm_type_name, "preconditioned", 31);
-    break;
-  case KSP_NORM_UNPRECONDITIONED:
-    strncpy(norm_type_name, "unpreconditioned", 31);
-    break;
-  case KSP_NORM_NATURAL:
-    strncpy(norm_type_name, "natural", 31);
-    break;
-  default:
-    snprintf(norm_type_name, 31, "%d", c->norm_type);
+  switch (c->norm_type) {
+    case KSP_NORM_DEFAULT:
+      strncpy(norm_type_name, "default", 31);
+      break;
+    case KSP_NORM_NONE:
+      strncpy(norm_type_name, "none", 31);
+      break;
+    case KSP_NORM_PRECONDITIONED:
+      strncpy(norm_type_name, "preconditioned", 31);
+      break;
+    case KSP_NORM_UNPRECONDITIONED:
+      strncpy(norm_type_name, "unpreconditioned", 31);
+      break;
+    case KSP_NORM_NATURAL:
+      strncpy(norm_type_name, "natural", 31);
+      break;
+    default:
+      snprintf(norm_type_name, 31, "%d", c->norm_type);
   }
   norm_type_name[31] = '\0';
 
