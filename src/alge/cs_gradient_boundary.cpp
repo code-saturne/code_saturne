@@ -768,7 +768,7 @@ cs_gradient_boundary_iprime_lsq_strided
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
-  const cs_real_3_t *restrict diipb = fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
