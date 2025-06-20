@@ -472,10 +472,11 @@ _find_or_add_system(const char          *name,
  *   x      <-- array of 3-vectors
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static double
 _l2_norm_1(cs_dispatch_context  &ctx,
            cs_lnum_t             n_elts,
-           cs_real_t            *restrict x)
+           T                    *restrict x)
 {
   double s = 0;
 
@@ -504,27 +505,27 @@ _l2_norm_1(cs_dispatch_context  &ctx,
  *   grad           --> gradient of a variable
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 _sync_strided_gradient_halo(const cs_halo_t         *halo,
                             cs_halo_type_t           halo_type,
                             [[maybe_unused]] bool    on_device,
-                            cs_real_t (*restrict grad)[stride][3])
+                            T             (*restrict grad)[stride][3])
 {
   if (halo == nullptr)
     return;
 
-  cs_datatype_t datatype = cs_datatype_from_type<cs_real_t>();
+  cs_datatype_t datatype = cs_datatype_from_type<T>();
 
 #if defined(HAVE_ACCEL)
   if (on_device)
     cs_halo_sync_pack_d(halo, halo_type, datatype, stride*3,
-                        reinterpret_cast<cs_real_t *>(grad),
+                        reinterpret_cast<T *>(grad),
                         nullptr, nullptr);
   else
 #endif
     cs_halo_sync_pack(halo, halo_type, datatype, stride*3,
-                      reinterpret_cast<cs_real_t *>(grad),
+                      reinterpret_cast<T *>(grad),
                       nullptr, nullptr);
 
   cs_halo_sync_start(halo, grad, nullptr);
@@ -546,13 +547,13 @@ _sync_strided_gradient_halo(const cs_halo_t         *halo,
   assert(datatype == CS_REAL_TYPE);  // TODO: use templated type below
 
   if (stride == 1)
-    cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)grad, 3);
+    cs_halo_perio_sync_var_vect(halo, halo_type, (T *)grad, 3);
   else if (stride == 3)
-    cs_halo_perio_sync_var_tens(halo, halo_type, (cs_real_t *)grad);
+    cs_halo_perio_sync_var_tens(halo, halo_type, (T *)grad);
   else if (stride == 6)
     cs_halo_perio_sync_var_sym_tens_grad(halo,
                                          halo_type,
-                                         (cs_real_t *)grad);
+                                         (T *)grad);
 
 #if defined(HAVE_ACCEL)
   if (on_device)
@@ -802,6 +803,7 @@ _get_clip_factor_try(const char  *var_name)
  *   grad           <-> gradient of pvar (du/dx_j : grad[][j])
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _scalar_gradient_clipping(const cs_mesh_t              *m,
                           const cs_mesh_quantities_t   *fvq,
@@ -813,7 +815,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
                           const char                   *var_name,
                           const cs_real_t              *restrict  pvar,
                           const cs_real_t               val_f[],
-                          cs_real_t                   (*restrict grad)[3])
+                          T                           (*restrict grad)[3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -1322,18 +1324,19 @@ _compute_f_weight_tensor(const cs_mesh_t                 *m,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _initialize_scalar_gradient(const cs_mesh_t                *m,
                             const cs_mesh_quantities_t     *fvq,
                             int                             hyd_p_flag,
                             cs_real_t                       inc,
-                            const cs_real_3_t               f_ext[],
+                            const T                         f_ext[][3],
                             const cs_real_t                *coefap,
                             const cs_real_t                *coefbp,
                             const cs_real_t                 pvar[],
                             const cs_real_t                *c_weight_s,
                             const cs_real_t                *t_f_weight,
-                            cs_real_3_t           *restrict grad)
+                            T                             (*restrict grad)[3])
 {
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
@@ -1453,7 +1456,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
       pfaci *= i_face_surf[f_id];
       pfacj *= i_face_surf[f_id];
 
-      cs_real_t fctb_ii[3], fctb_jj[3];
+      T fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         fctb_ii[j] =  pfaci * i_face_u_normal[f_id][j];
         fctb_jj[j] = -pfacj * i_face_u_normal[f_id][j];
@@ -1491,7 +1494,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
       pfac += (coefbp[f_id] - 1.0) * pvar[ii];
       pfac *= b_face_surf[f_id];
 
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         fctb[ll] = pfac * b_face_u_normal[f_id][ll];
 
@@ -1535,7 +1538,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
       const cs_nreal_t *f_u_normal = i_face_u_normal[f_id];
 
-      cs_real_t fctb_ii[3], fctb_jj[3];
+      T fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         fctb_ii[j] =  pfaci * f_u_normal[j];
         fctb_jj[j] = -pfacj * f_u_normal[j];
@@ -1564,7 +1567,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
       pfac *= b_face_surf[f_id];
 
       const cs_nreal_t *f_u_normal = b_face_u_normal[f_id];
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         fctb[j] = pfac * f_u_normal[j];
       }
@@ -1605,11 +1608,12 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _renormalize_scalar_gradient(const cs_mesh_t                *m,
                              const cs_mesh_quantities_t     *fvq,
                              int                             hyd_p_flag,
-                             cs_real_3_t           *restrict grad)
+                             T                             (*restrict grad)[3])
 {
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
@@ -1885,6 +1889,7 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
  *                       of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _iterative_scalar_gradient(const cs_mesh_t                *m,
                            const cs_mesh_quantities_t     *fvq,
@@ -1895,13 +1900,13 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                            int                             verbosity,
                            cs_real_t                       inc,
                            cs_real_t                       epsrgp,
-                           const cs_real_3_t               f_ext[],
+                           const T                         f_ext[][3],
                            const cs_real_t                *coefap,
                            const cs_real_t                *coefbp,
                            const cs_real_t                 pvar[],
                            const cs_real_t                *c_weight_s,
                            const cs_real_t                *t_f_weight,
-                           cs_real_3_t           *restrict grad)
+                           T                             (*restrict grad)[3])
 {
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
@@ -1982,7 +1987,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
   /* Compute normalization residual */
 
-  cs_real_t  rnorm = _l2_norm_1(ctx, 3*n_cells, (cs_real_t *)grad);
+  cs_real_t  rnorm = _l2_norm_1(ctx, 3*n_cells, (T *)grad);
 
   if (rnorm <= cs_math_epzero) {
     if (gradient_info != nullptr)
@@ -2059,6 +2064,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                            + cs_math_3_distance_dot_product(cell_cen[c_id2],
                                                             i_face_cog[f_id],
                                                             f_ext[c_id2]);
+
 
         cs_real_t pfaci =   ktpond*poro[0] + (1.0-ktpond)*poro[1]
                           + 0.5*(  cs_math_3_distance_dot_product(f_ext[c_id1],
@@ -2745,6 +2751,7 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _lsq_scalar_gradient(const cs_mesh_t                *m,
                      const cs_mesh_quantities_t     *fvq,
@@ -2752,7 +2759,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                      const cs_real_t                 pvar[],
                      const cs_real_t                 val_f[],
                      const cs_real_t       *restrict c_weight,
-                     cs_real_3_t           *restrict grad)
+                     T                    (*restrict grad)[3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -3001,7 +3008,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
  *   bounds         --> bounds of pvar in neighboring cells (min, max)
  *----------------------------------------------------------------------------*/
 
-template <bool compute_bounds>
+template <bool compute_bounds, typename T>
 static void
 _lsq_scalar_gradient_gather
 (
@@ -3011,7 +3018,7 @@ _lsq_scalar_gradient_gather
   const cs_real_t                 pvar[],
   const cs_real_t                 val_f[],
   const cs_real_t       *restrict c_weight,
-  cs_real_3_t           *restrict grad,
+  T                    (*restrict grad)[3],
   cs_real_2_t           *restrict bounds
 )
 {
@@ -3279,15 +3286,16 @@ _lsq_scalar_gradient_gather
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                            const cs_mesh_quantities_t     *fvq,
                            cs_halo_type_t                  halo_type,
-                           const cs_real_3_t               f_ext[],
+                           const T                         f_ext[][3],
                            const cs_real_t                 pvar[],
                            const cs_real_t                 val_f[],
                            const cs_real_t       *restrict c_weight_s,
-                           cs_real_3_t           *restrict grad)
+                           T                    (*restrict grad)[3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -3678,17 +3686,18 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _lsq_scalar_gradient_hyd_p_gather
 (
   const cs_mesh_t                *m,
   const cs_mesh_quantities_t     *fvq,
   cs_halo_type_t                  halo_type,
-  const cs_real_3_t               f_ext[],
+  const T                         f_ext[][3],
   const cs_real_t                 pvar[],
   const cs_real_t                 val_f[],
   const cs_real_t       *restrict c_weight_s,
-  cs_real_3_t           *restrict grad
+  T                    (*restrict grad)[3]
 )
 {
   CS_PROFILE_FUNC_RANGE();
@@ -4017,13 +4026,14 @@ _lsq_scalar_gradient_hyd_p_gather
  *                    of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
                          const cs_mesh_quantities_t    *fvq,
                          const cs_real_t                pvar[],
                          const cs_real_t                val_f[],
                          const cs_real_t              (*restrict c_weight)[6],
-                         cs_real_t                    (*restrict grad)[3])
+                         T                            (*restrict grad)[3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -4222,17 +4232,18 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                              const cs_mesh_quantities_t      *fvq,
                              int                              hyd_p_flag,
-                             const cs_real_t                  f_ext[][3],
+                             const T                          f_ext[][3],
                              const cs_real_t                 *c_weight_s,
                              const cs_real_t                 *t_f_weight,
                              const cs_real_t                  c_var[],
                              const cs_real_t                  val_f[],
-                             cs_real_3_t            *restrict r_grad,
-                             cs_real_3_t            *restrict grad)
+                             T                              (*restrict r_grad)[3],
+                             T                              (*restrict grad)[3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -4441,7 +4452,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
       pfaci = (pfaci + rfac) * i_face_surf[f_id];
       pfacj = (pfacj + rfac) * i_face_surf[f_id];
 
-      cs_real_t rhsv1[3], rhsv2[3];
+      T rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         rhsv1[j] =   pfaci * i_face_u_normal[f_id][j];
         rhsv2[j] = - pfacj * i_face_u_normal[f_id][j];
@@ -4472,7 +4483,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
       cs_real_t pfac = (val_f[f_id] - c_var[c_id]) * b_face_surf[f_id];
 
-      cs_real_t rhsv[3];
+      T rhsv[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         rhsv[j] = pfac * b_face_u_normal[f_id][j];
       }
@@ -4517,7 +4528,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
       cs_real_t pfacj =     -ktpond  * d_var;
 
       /* Reconstruction part */
-      cs_real_t rfac = 0.5 *
+      T rfac = 0.5 *
                 ( dofij[f_id][0]*(r_grad[c_id1][0]+r_grad[c_id2][0])
                  +dofij[f_id][1]*(r_grad[c_id1][1]+r_grad[c_id2][1])
                  +dofij[f_id][2]*(r_grad[c_id1][2]+r_grad[c_id2][2]));
@@ -4525,10 +4536,13 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
       pfaci = (pfaci + rfac) * i_face_surf[f_id];
       pfacj = (pfacj + rfac) * i_face_surf[f_id];
 
-      cs_real_t rhsv1[3], rhsv2[3];
+      const T _pfaci = static_cast<T>(pfaci);
+      const T _pfacj = static_cast<T>(pfacj);
+
+      T rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        rhsv1[j] =   pfaci * i_face_u_normal[f_id][j];
-        rhsv2[j] = - pfacj * i_face_u_normal[f_id][j];
+        rhsv1[j] =   _pfaci * i_face_u_normal[f_id][j];
+        rhsv2[j] = - _pfacj * i_face_u_normal[f_id][j];
       }
 
       if (c_id1 < n_cells)
@@ -4554,9 +4568,9 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                 \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
       */
 
-      cs_real_t pfac = (val_f[f_id] - c_var[c_id]) * b_face_surf[f_id];
+      T pfac = (val_f[f_id] - c_var[c_id]) * b_face_surf[f_id];
 
-      cs_real_t rhsv[3];
+      T rhsv[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         rhsv[j] = pfac * b_face_u_normal[f_id][j];
       }
@@ -4572,7 +4586,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     t_b_faces = std::chrono::high_resolution_clock::now();
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    cs_real_t dvol;
+    T dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * c_id] == 0)
       dvol = 1. / cell_vol[c_id];
@@ -4584,7 +4598,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     grad[c_id][2] *= dvol;
 
     if (warped_correction) {
-      cs_real_t gradpa[3];
+      T gradpa[3];
       for (cs_lnum_t i = 0; i < 3; i++) {
         gradpa[i] = grad[c_id][i];
         grad[c_id][i] = 0.;
@@ -4660,19 +4674,20 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _reconstruct_scalar_gradient_gather
 (
   const cs_mesh_t                 *m,
   const cs_mesh_quantities_t      *fvq,
   int                              hyd_p_flag,
-  const cs_real_t                  f_ext[][3],
+  const T                          f_ext[][3],
   const cs_real_t                 *c_weight_s,
   const cs_real_t                 *t_f_weight,
   const cs_real_t                  c_var[],
   const cs_real_t                  val_f[],
-  cs_real_3_t            *restrict r_grad,
-  cs_real_3_t            *restrict grad
+  T                               (*restrict r_grad)[3],
+  T                               (*restrict grad)[3]
 )
 {
   CS_PROFILE_FUNC_RANGE();
@@ -5069,16 +5084,17 @@ _reconstruct_scalar_gradient_gather
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                               const cs_mesh_quantities_t     *fvq,
                               int                             hyd_p_flag,
-                              const cs_real_3_t               f_ext[],
+                              const T                         f_ext[][3],
                               const cs_real_t                *c_weight_s,
                               const cs_real_t                *t_f_weight,
                               const cs_real_t                 c_var[],
                               const cs_real_t                 val_f[],
-                              cs_real_3_t           *restrict grad)
+                              T                             (*restrict grad)[3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -5234,13 +5250,13 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                 + poro[1]);
       cs_real_t pfacj = pfaci;
 
-      pfaci = (pfaci + i_f_var[f_id] - c_var[ii]) * i_face_surf[f_id];
-      pfacj = (pfacj + i_f_var[f_id] - c_var[jj]) * i_face_surf[f_id];
+      T _pfaci = (pfaci + i_f_var[f_id] - c_var[ii]) * i_face_surf[f_id];
+      T _pfacj = (pfacj + i_f_var[f_id] - c_var[jj]) * i_face_surf[f_id];
 
-      cs_real_t fctb_ii[3], fctb_jj[3];
+      T fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        fctb_ii[j] =  pfaci * i_face_u_normal[f_id][j];
-        fctb_jj[j] = -pfacj * i_face_u_normal[f_id][j];
+        fctb_ii[j] =   _pfaci * i_face_u_normal[f_id][j];
+        fctb_jj[j] = - _pfacj * i_face_u_normal[f_id][j];
       }
 
       if (ii < n_cells)
@@ -5261,9 +5277,9 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
         \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
       */
 
-      cs_real_t pfac = (b_f_var[f_id] - c_var[c_id]) * b_face_surf[f_id];
+      T pfac = (b_f_var[f_id] - c_var[c_id]) * b_face_surf[f_id];
 
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         fctb[ll] = pfac * b_face_u_normal[f_id][ll];
 
@@ -5288,7 +5304,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
       cs_real_t pfaci = (i_f_var[f_id] - c_var[ii]) * i_face_surf[f_id];
       cs_real_t pfacj = (i_f_var[f_id] - c_var[jj]) * i_face_surf[f_id];
 
-      cs_real_t fctb_ii[3], fctb_jj[3];
+      T fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         fctb_ii[j] =  pfaci * i_face_u_normal[f_id][j];
         fctb_jj[j] = -pfacj * i_face_u_normal[f_id][j];
@@ -5314,7 +5330,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
       cs_real_t pfac = (b_f_var[f_id] - c_var[ii]) * b_face_surf[f_id];
 
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         fctb[ll] = pfac * b_face_u_normal[f_id][ll];
 
@@ -5386,7 +5402,7 @@ _tensor_norm_2(const cs_real_t  t[6])
  *   grad           <-> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 _strided_gradient_clipping(cs_dispatch_context          &ctx,
                            const cs_mesh_t              *m,
@@ -5399,7 +5415,7 @@ _strided_gradient_clipping(cs_dispatch_context          &ctx,
                            const char                   *var_name,
                            const cs_real_t    (*restrict pvar)[stride],
                            const cs_real_t    (*restrict val_f)[stride],
-                           cs_real_t          (*restrict grad)[stride][3])
+                           T                  (*restrict grad)[stride][3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -5987,7 +6003,7 @@ _strided_bounds(cs_dispatch_context          &ctx,
  *   grad        --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 _initialize_strided_gradient
 (
@@ -6000,7 +6016,7 @@ _initialize_strided_gradient
   const cs_real_t               coefbv[][stride][stride],
   const cs_real_t               pvar[][stride],
   const cs_real_t              *c_weight,
-  cs_real_t          (*restrict grad)[stride][3]
+  T                  (*restrict grad)[stride][3]
 )
 {
   CS_PROFILE_FUNC_RANGE();
@@ -6071,7 +6087,7 @@ _initialize_strided_gradient
       cs_real_t pfaci = (1.0-ktpond) * (pvar[jj][i]-pvar[ii][i]) * f_surf;
       cs_real_t pfacj =     - ktpond * (pvar[jj][i]-pvar[ii][i]) * f_surf;
 
-      cs_real_t fctb_ii[3], fctb_jj[3];
+      T fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         fctb_ii[j] =  pfaci * f_u_normal[j];
         fctb_jj[j] = -pfacj * f_u_normal[j];
@@ -6105,7 +6121,7 @@ _initialize_strided_gradient
       }
       pfac *= f_surf;
 
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         fctb[j] = pfac * f_u_normal[j];
       }
@@ -6155,7 +6171,7 @@ _initialize_strided_gradient
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 _reconstruct_strided_gradient
 (
@@ -6167,8 +6183,8 @@ _reconstruct_strided_gradient
   const cs_real_t                     (*restrict pvar)[stride],
   const cs_real_t                     (*restrict val_f)[stride],
   const cs_real_t                      *restrict c_weight,
-  cs_real_t                           (*restrict r_grad)[stride][3],
-  cs_real_t                           (*restrict grad)[stride][3]
+  T                                   (*restrict r_grad)[stride][3],
+  T                                   (*restrict grad)[stride][3]
 )
 {
   CS_PROFILE_FUNC_RANGE();
@@ -6309,13 +6325,13 @@ _reconstruct_strided_gradient
                               + dofij[f_id][2]*(  r_grad[c_id1][i][2]
                                                 + r_grad[c_id2][i][2]));
 
-      pfaci = (pfaci + rfac) * f_surf;
-      pfacj = (pfacj + rfac) * f_surf;
+      T _pfaci = (pfaci + rfac) * f_surf;
+      T _pfacj = (pfacj + rfac) * f_surf;
 
-      cs_real_t ctb1[3], ctb2[3];
+      T ctb1[3], ctb2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        ctb1[j] =   pfaci * i_face_u_normal[f_id][j];
-        ctb2[j] = - pfacj * i_face_u_normal[f_id][j];
+        ctb1[j] =   _pfaci * i_face_u_normal[f_id][j];
+        ctb2[j] = - _pfacj * i_face_u_normal[f_id][j];
       }
 
       if (c_id1 < n_cells)
@@ -6346,9 +6362,8 @@ _reconstruct_strided_gradient
     cs_real_t f_surf = b_face_surf[f_id];
 
     for (cs_lnum_t i = 0; i < stride; i++) {
-
-      cs_real_t pfac = (val_f[f_id][i] - pvar[c_id][i]) * f_surf;
-      cs_real_t ctb[3];
+      T pfac = (val_f[f_id][i] - pvar[c_id][i]) * f_surf;
+      T ctb[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
         ctb[j] = pfac * b_face_u_normal[f_id][j];
       }
@@ -6456,7 +6471,7 @@ _reconstruct_strided_gradient
  *   grad           <-> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 void
 _iterative_strided_gradient
 (
@@ -6474,7 +6489,7 @@ _iterative_strided_gradient
   const cs_real_t    (*restrict coefbv)[stride][stride],
   const cs_real_t    (*restrict pvar)[stride],
   const cs_real_t              *c_weight,
-  cs_real_t          (*restrict grad)[stride][3])
+  T                  (*restrict grad)[stride][3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -6524,7 +6539,7 @@ _iterative_strided_gradient
 
   /* L2 norm */
 
-  cs_real_t l2_norm = _l2_norm_1(ctx, n_cells*stride*3, (cs_real_t *)grad);
+  cs_real_t l2_norm = _l2_norm_1(ctx, n_cells*stride*3, (T *)grad);
   cs_real_t l2_residual = l2_norm;
 
   if (l2_norm > cs_math_epzero) {
@@ -6732,14 +6747,14 @@ _iterative_strided_gradient
  *   grad      --> gradient
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 _compute_gradient_lsq(cs_dispatch_context    &ctx,
                       [[maybe_unused]] bool   on_device,
                       cs_lnum_t               n_cells,
                       const cs_cocg_6_t      *restrict cocg,
                       const cs_real_t       (*restrict rhs)[stride][3],
-                      cs_real_t             (*restrict grad)[stride][3])
+                      T                     (*restrict grad)[stride][3])
 {
 #if defined(HAVE_ACCEL)
   if (on_device) {
@@ -6801,7 +6816,7 @@ _compute_gradient_lsq(cs_dispatch_context    &ctx,
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 _lsq_strided_gradient(cs_dispatch_context         &ctx,
                       const cs_mesh_t             *m,
@@ -6811,7 +6826,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
                       const cs_real_t (*restrict pvar)[stride],
                       const cs_real_t (*restrict val_f)[stride],
                       const cs_real_t *restrict c_weight,
-                      cs_real_t (*restrict grad)[stride][3])
+                      T              (*restrict grad)[stride][3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -7105,22 +7120,22 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 _lsq_strided_gradient_gather(cs_dispatch_context         &ctx,
                              const cs_mesh_t             *m,
                              const cs_mesh_adjacencies_t *ma,
                              const cs_mesh_quantities_t  *fvq,
                              cs_halo_type_t               halo_type,
-                             const cs_real_t (*restrict pvar)[stride],
-                             const cs_real_t (*restrict val_f)[stride],
-                             const cs_real_t *restrict c_weight,
-                             cs_real_t (*restrict grad)[stride][3])
+                             const cs_real_t   (*restrict pvar)[stride],
+                             const cs_real_t   (*restrict val_f)[stride],
+                             const cs_real_t    *restrict c_weight,
+                             T                 (*restrict grad)[stride][3])
 {
   CS_PROFILE_FUNC_RANGE();
 
   using grad_t = cs_real_t[stride][3];
-  const cs_lnum_t n_cells     = m->n_cells;
+  const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_cells = m->n_b_cells;
 
@@ -7397,14 +7412,14 @@ _lsq_strided_gradient_gather(cs_dispatch_context         &ctx,
  *   grad           --> gradient of c_var (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
                                const cs_mesh_quantities_t    *fvq,
                                const cs_real_t (*restrict c_var)[stride],
                                const cs_real_t (*restrict val_f)[stride],
                                const cs_real_t                c_weight[],
-                               cs_real_t (*restrict grad)[stride][3])
+                               T                   (*restrict grad)[stride][3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -7513,10 +7528,10 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
 
     for (cs_lnum_t k = 0; k < stride; k++) {
 
-      cs_real_t pfaci = (i_f_var[f_id][k] - c_var[ii][k]) * f_surf;
-      cs_real_t pfacj = (i_f_var[f_id][k] - c_var[jj][k]) * f_surf;
+      T pfaci = (i_f_var[f_id][k] - c_var[ii][k]) * f_surf;
+      T pfacj = (i_f_var[f_id][k] - c_var[jj][k]) * f_surf;
 
-      cs_real_t fctb_ii[3], fctb_jj[3];
+      T fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t l = 0; l < 3; l++) {
         fctb_ii[l] =  pfaci * i_face_u_normal[f_id][l];
         fctb_jj[l] = -pfacj * i_face_u_normal[f_id][l];
@@ -7544,8 +7559,8 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
 
     for (cs_lnum_t k = 0; k < stride; k++) {
 
-      cs_real_t pfac = (val_f[f_id][k] - c_var[ii][k]) * b_face_surf[f_id];
-      cs_real_t fctb[3];
+      T pfac = (val_f[f_id][k] - c_var[ii][k]) * b_face_surf[f_id];
+      T fctb[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         fctb[ll] = pfac * b_face_u_normal[f_id][ll];
 
@@ -7556,7 +7571,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
   }); /* loop on boundary faces */
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
-    cs_real_t dvol;
+    T dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * c_id] == 0)
       dvol = 1. / cell_vol[c_id];
@@ -7615,6 +7630,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _gradient_scalar(cs_dispatch_context           &ctx,
                  const char                    *var_name,
@@ -7629,11 +7645,11 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                  cs_gradient_limit_t            clip_mode,
                  double                         epsilon,
                  double                         clip_coeff,
-                 const cs_real_3_t             *f_ext,
+                 const cs_real_t                f_ext[][3],
                  const cs_field_bc_coeffs_t    *bc_coeffs,
                  const cs_real_t                var[],
                  const cs_real_t                c_weight[],
-                 cs_real_t                    (*grad)[3],
+                 T                            (*grad)[3],
                  cs_real_t                    (*bounds)[2])
 {
   CS_PROFILE_FUNC_RANGE();
@@ -7676,6 +7692,24 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                              tensor_f_weight);
   }
 
+  using T3 = T[3];
+  const T3 *f_ext_loc = nullptr;
+  T3 *f_ext_cpy = nullptr;
+
+  if (f_ext != nullptr) {
+    if (sizeof(grad[0][0]) != sizeof(f_ext[0][0])) {
+      CS_MALLOC_HD(f_ext_cpy, n_cells_ext, T3, amode);
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        for (cs_lnum_t k = 0; k < 3; k++)
+          f_ext_cpy[c_id][k] = static_cast<T>(f_ext[c_id][k]);
+      });
+      f_ext_loc = f_ext_cpy;
+    }
+    else {
+      f_ext_loc = reinterpret_cast<const T3 *>(f_ext);
+    }
+  }
+
   /* Compute gradient */
 
   switch (gradient_type) {
@@ -7685,7 +7719,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                                 fvq,
                                 hyd_p_flag,
                                 inc,
-                                f_ext,
+                                f_ext_loc,
                                 bc_coeffs->a,
                                 bc_coeffs->b,
                                 var,
@@ -7702,7 +7736,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                                verbosity,
                                inc,
                                epsilon,
-                               f_ext,
+                               f_ext_loc,
                                bc_coeffs->a,
                                bc_coeffs->b,
                                var,
@@ -7716,7 +7750,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                                 fvq,
                                 hyd_p_flag,
                                 inc,
-                                f_ext,
+                                f_ext_loc,
                                 bc_coeffs->a,
                                 bc_coeffs->b,
                                 var,
@@ -7735,9 +7769,10 @@ _gradient_scalar(cs_dispatch_context           &ctx,
     [[fallthrough]];
   case CS_GRADIENT_GREEN_LSQ:
     {
-      cs_real_3_t  *restrict r_grad;
+      using rgrad_t = T[3];
+      rgrad_t  *restrict r_grad;
       if (gradient_type == CS_GRADIENT_GREEN_LSQ)
-        CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_3_t, amode);
+        CS_MALLOC_HD(r_grad, n_cells_ext, rgrad_t, amode);
       else
         r_grad = grad;
 
@@ -7760,7 +7795,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
             (mesh,
              fvq,
              halo_type,
-             f_ext,
+             f_ext_loc,
              var,
              val_f,
              c_weight,
@@ -7770,7 +7805,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
             (mesh,
              fvq,
              halo_type,
-             f_ext,
+             f_ext_loc,
              var,
              val_f,
              c_weight,
@@ -7813,7 +7848,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
           _reconstruct_scalar_gradient_gather(mesh,
                                               fvq,
                                               hyd_p_flag,
-                                              (const cs_real_3_t *)f_ext,
+                                              f_ext_loc,
                                               c_weight,
                                               tensor_f_weight,
                                               var,
@@ -7824,7 +7859,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
             _reconstruct_scalar_gradient(mesh,
                                          fvq,
                                          hyd_p_flag,
-                                         (const cs_real_3_t *)f_ext,
+                                         f_ext_loc,
                                          c_weight,
                                          tensor_f_weight,
                                          var,
@@ -7841,7 +7876,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
       _fv_vtx_based_scalar_gradient(mesh,
                                     fvq,
                                     hyd_p_flag,
-                                    (const cs_real_3_t *)f_ext,
+                                    f_ext_loc,
                                     c_weight,
                                     tensor_f_weight,
                                     var,
@@ -7876,6 +7911,8 @@ _gradient_scalar(cs_dispatch_context           &ctx,
   if (bounds != nullptr)
     cs_halo_sync(mesh->halo, halo_type, use_gpu, bounds);
 
+  CS_FREE(f_ext_cpy);
+
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
     cs_bad_cells_regularisation_vector(grad, 0);
 }
@@ -7905,6 +7942,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _gradient_vector(const char                     *var_name,
                  cs_gradient_info_t             *gradient_info,
@@ -7919,7 +7957,7 @@ _gradient_vector(const char                     *var_name,
                  const cs_field_bc_coeffs_t     *bc_coeffs,
                  const cs_real_3_t     *restrict var,
                  const cs_real_t       *restrict c_weight,
-                 cs_real_33_t          *restrict grad,
+                 T                    (*restrict grad)[3][3],
                  cs_real_t                      *bounds)
 {
   CS_PROFILE_FUNC_RANGE();
@@ -7990,14 +8028,15 @@ _gradient_vector(const char                     *var_name,
     [[fallthrough]];
   case CS_GRADIENT_GREEN_LSQ:
     {
-      cs_real_33_t *restrict r_grad;
+      using rgrad_t = T[3][3];
+      rgrad_t  *restrict r_grad;
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
         cs_alloc_mode_t amode = CS_ALLOC_HOST;
 #if defined(HAVE_CUDA) || defined(HAVE_HIP)
         if (cs_get_device_id() > -1)
           amode = CS_ALLOC_DEVICE;
 #endif
-        CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_33_t, amode);
+        CS_MALLOC_HD(r_grad, n_cells_ext, rgrad_t,  amode);
       }
       else
         r_grad = grad;
@@ -9618,6 +9657,7 @@ cs_gradient_tensor(const char                  *var_name,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_gradient_scalar_synced_input(const char                 *var_name,
                                 cs_gradient_type_t          gradient_type,
@@ -9634,7 +9674,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
                                 const cs_real_t             var[],
                                 const cs_real_t             c_weight[],
-                                cs_real_t                   grad[][3],
+                                T                           grad[][3],
                                 cs_real_t                 (*bounds)[2])
 {
   CS_PROFILE_FUNC_RANGE();
@@ -9720,6 +9760,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_gradient_vector_synced_input(const char                  *var_name,
                                 cs_gradient_type_t           gradient_type,
@@ -9733,7 +9774,7 @@ cs_gradient_vector_synced_input(const char                  *var_name,
                                 const cs_field_bc_coeffs_t  *bc_coeffs,
                                 const cs_real_t              var[][3],
                                 const cs_real_t              c_weight[],
-                                cs_real_t                    grad[][3][3],
+                                T                            grad[][3][3],
                                 cs_real_t                   *bounds)
 {
   CS_PROFILE_FUNC_RANGE();
@@ -9862,6 +9903,77 @@ cs_gradient_tensor_synced_input(const char                  *var_name,
   if (_gradient_stat_id > -1)
     cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
+
+// Force instanciation
+template void
+cs_gradient_scalar_synced_input(const char                    *var_name,
+                                cs_gradient_type_t             gradient_type,
+                                cs_halo_type_t                 halo_type,
+                                int                            inc,
+                                int                            n_r_sweeps,
+                                int                            hyd_p_flag,
+                                int                            w_stride,
+                                int                            verbosity,
+                                cs_gradient_limit_t            clip_mode,
+                                double                         epsilon,
+                                double                         clip_coeff,
+                                cs_real_t                      f_ext[][3],
+                                const cs_field_bc_coeffs_t    *bc_coeffs,
+                                const cs_real_t                var[],
+                                const cs_real_t               *c_weight,
+                                float                          grad[][3],
+                                cs_real_t                    (*bounds)[2]);
+
+template void
+cs_gradient_scalar_synced_input(const char                    *var_name,
+                                cs_gradient_type_t             gradient_type,
+                                cs_halo_type_t                 halo_type,
+                                int                            inc,
+                                int                            n_r_sweeps,
+                                int                            hyd_p_flag,
+                                int                            w_stride,
+                                int                            verbosity,
+                                cs_gradient_limit_t            clip_mode,
+                                double                         epsilon,
+                                double                         clip_coeff,
+                                cs_real_t                      f_ext[][3],
+                                const cs_field_bc_coeffs_t    *bc_coeffs,
+                                const cs_real_t                var[],
+                                const cs_real_t               *c_weight,
+                                double                         grad[][3],
+                                cs_real_t                    (*bounds)[2]);
+
+template void
+cs_gradient_vector_synced_input(const char                    *var_name,
+                                cs_gradient_type_t             gradient_type,
+                                cs_halo_type_t                 halo_type,
+                                int                            inc,
+                                int                            n_r_sweeps,
+                                int                            verbosity,
+                                cs_gradient_limit_t            clip_mode,
+                                double                         epsilon,
+                                double                         clip_coeff,
+                                const cs_field_bc_coeffs_t    *bc_coeffs,
+                                const cs_real_t                var[][3],
+                                const cs_real_t                c_weight[],
+                                float                          grad[][3][3],
+                                cs_real_t                     *bounds);
+
+template void
+cs_gradient_vector_synced_input(const char                    *var_name,
+                                cs_gradient_type_t             gradient_type,
+                                cs_halo_type_t                 halo_type,
+                                int                            inc,
+                                int                            n_r_sweeps,
+                                int                            verbosity,
+                                cs_gradient_limit_t            clip_mode,
+                                double                         epsilon,
+                                double                         clip_coeff,
+                                const cs_field_bc_coeffs_t    *bc_coeffs,
+                                const cs_real_t                var[][3],
+                                const cs_real_t                c_weight[],
+                                double                         grad[][3][3],
+                                cs_real_t                     *bounds);
 
 /*----------------------------------------------------------------------------*/
 /*!

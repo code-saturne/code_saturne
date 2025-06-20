@@ -254,101 +254,6 @@ cs_gradient_tensor(const char                  *var_name,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief  Compute cell gradient of scalar field or component of vector or
- *         tensor field.
- *
- * This variant of the \ref cs_gradient_scalar function assumes ghost cell
- * values for input arrays (var and optionally c_weight)
- * have already been synchronized.
- *
- * \param[in]   var_name        variable name
- * \param[in]   gradient_type   gradient type
- * \param[in]   halo_type       halo type
- * \param[in]   inc             if 0, solve on increment; 1 otherwise
- * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
- *                              (only used by CS_GRADIENT_GREEN_ITER)
- * \param[in]   hyd_p_flag      flag for hydrostatic pressure
- * \param[in]   w_stride        stride for weighting coefficient
- * \param[in]   verbosity       verbosity level
- * \param[in]   clip_mode       clipping mode
- * \param[in]   epsilon         precision for iterative gradient calculation
- * \param[in]   clip_coeff      clipping coefficient
- * \param[in]   f_ext           exterior force generating the
- *                              hydrostatic pressure
- * \param[in]   bc_coeffs       boundary condition structure
- * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or nullptr
- * \param[out]  grad            gradient
- * \param[out]  bounds          optional minima and maxima of values in
- *                              adjacent cells and faces, or null
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gradient_scalar_synced_input(const char                 *var_name,
-                                cs_gradient_type_t          gradient_type,
-                                cs_halo_type_t              halo_type,
-                                int                         inc,
-                                int                         n_r_sweeps,
-                                int                         hyd_p_flag,
-                                int                         w_stride,
-                                int                         verbosity,
-                                cs_gradient_limit_t         clip_mode,
-                                double                      epsilon,
-                                double                      clip_coeff,
-                                cs_real_t                   f_ext[][3],
-                                const cs_field_bc_coeffs_t *bc_coeffs,
-                                const cs_real_t             var[],
-                                const cs_real_t             c_weight[],
-                                cs_real_t                   grad[][3],
-                                cs_real_t                 (*bounds)[2]);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Compute cell gradient of vector field.
- *
- * This variant of the \ref cs_gradient_vector function assumes ghost cell
- * values for input arrays (var and optionally c_weight)
- * have already been synchronized.
- *
- * \param[in]   var_name        variable name
- * \param[in]   gradient_type   gradient type
- * \param[in]   halo_type       halo type
- * \param[in]   inc             if 0, solve on increment; 1 otherwise
- * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
- *                              (only used by CS_GRADIENT_GREEN_ITER)
- * \param[in]   verbosity       verbosity level
- * \param[in]   clip_mode       clipping mode
- * \param[in]   epsilon         precision for iterative gradient calculation
- * \param[in]   clip_coeff      clipping coefficient
- * \param[in]   bc_coeffs       boundary condition structure
- * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or nullptr
- * \param[out]  grad            gradient
- *                              (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
- * \param[out]  bounds          optional bounds (square distance)
- *                              of values in adjacent cells and faces, or null
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gradient_vector_synced_input(const char                  *var_name,
-                                cs_gradient_type_t           gradient_type,
-                                cs_halo_type_t               halo_type,
-                                int                          inc,
-                                int                          n_r_sweeps,
-                                int                          verbosity,
-                                cs_gradient_limit_t          clip_mode,
-                                double                       epsilon,
-                                double                       clip_coeff,
-                                const cs_field_bc_coeffs_t  *bc_coeffs,
-                                const cs_real_t              var[][3],
-                                const cs_real_t              c_weight[],
-                                cs_real_t                    grad[][3][3],
-                                cs_real_t                   *bounds);
-
-/*----------------------------------------------------------------------------*/
-/*
  * \brief  Compute cell gradient of tensor.
  *
  * This variant of the \ref cs_gradient_tensor function assumes ghost cell
@@ -533,5 +438,106 @@ cs_gradient_porosity_balance(int inc);
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Compute cell gradient of scalar field or component of vector or
+ *         tensor field.
+ *
+ * This variant of the \ref cs_gradient_scalar function assumes ghost cell
+ * values for input arrays (var and optionally c_weight)
+ * have already been synchronized.
+ *
+ * \param[in]   var_name        variable name
+ * \param[in]   gradient_type   gradient type
+ * \param[in]   halo_type       halo type
+ * \param[in]   inc             if 0, solve on increment; 1 otherwise
+ * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
+ *                              (only used by CS_GRADIENT_GREEN_ITER)
+ * \param[in]   hyd_p_flag      flag for hydrostatic pressure
+ * \param[in]   w_stride        stride for weighting coefficient
+ * \param[in]   verbosity       verbosity level
+ * \param[in]   clip_mode       clipping mode
+ * \param[in]   epsilon         precision for iterative gradient calculation
+ * \param[in]   clip_coeff      clipping coefficient
+ * \param[in]   f_ext           exterior force generating the
+ *                              hydrostatic pressure
+ * \param[in]   bc_coeffs       boundary condition structure
+ * \param[in]   var             gradient's base variable
+ * \param[in]   c_weight        cell variable weight, or nullptr
+ * \param[out]  grad            gradient
+ * \param[out]  bounds          optional minima and maxima of values in
+ *                              adjacent cells and faces, or null
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_gradient_scalar_synced_input(const char                    *var_name,
+                                cs_gradient_type_t             gradient_type,
+                                cs_halo_type_t                 halo_type,
+                                int                            inc,
+                                int                            n_r_sweeps,
+                                int                            hyd_p_flag,
+                                int                            w_stride,
+                                int                            verbosity,
+                                cs_gradient_limit_t            clip_mode,
+                                double                         epsilon,
+                                double                         clip_coeff,
+                                cs_real_t                      f_ext[][3],
+                                const cs_field_bc_coeffs_t    *bc_coeffs,
+                                const cs_real_t                var[],
+                                const cs_real_t               *c_weight,
+                                T                              grad[][3],
+                                cs_real_t                   (*bounds)[2]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Compute cell gradient of vector field.
+ *
+ * This variant of the \ref cs_gradient_vector function assumes ghost cell
+ * values for input arrays (var and optionally c_weight)
+ * have already been synchronized.
+ *
+ * \param[in]   var_name        variable name
+ * \param[in]   gradient_type   gradient type
+ * \param[in]   halo_type       halo type
+ * \param[in]   inc             if 0, solve on increment; 1 otherwise
+ * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
+ *                              (only used by CS_GRADIENT_GREEN_ITER)
+ * \param[in]   verbosity       verbosity level
+ * \param[in]   clip_mode       clipping mode
+ * \param[in]   epsilon         precision for iterative gradient calculation
+ * \param[in]   clip_coeff      clipping coefficient
+ * \param[in]   bc_coeffs       boundary condition structure
+ * \param[in]   var             gradient's base variable
+ * \param[in]   c_weight        cell variable weight, or nullptr
+ * \param[out]  grad            gradient
+ *                              (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+ * \param[out]  bounds          optional bounds (square distance)
+ *                              of values in adjacent cells and faces, or null
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_gradient_vector_synced_input(const char                  *var_name,
+                                cs_gradient_type_t           gradient_type,
+                                cs_halo_type_t               halo_type,
+                                int                          inc,
+                                int                          n_r_sweeps,
+                                int                          verbosity,
+                                cs_gradient_limit_t          clip_mode,
+                                double                       epsilon,
+                                double                       clip_coeff,
+                                const cs_field_bc_coeffs_t  *bc_coeffs,
+                                const cs_real_t              var[][3],
+                                const cs_real_t              c_weight[],
+                                T                            grad[][3][3],
+                                cs_real_t                   *bounds);
+
+#endif /* __cplusplus */
 
 #endif /* __CS_GRADIENT__ */

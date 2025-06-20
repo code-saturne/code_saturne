@@ -199,8 +199,9 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 void
-cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
+cs_bad_cells_regularisation_vector(T            (*var)[3],
                                    int           boundary_projection)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
@@ -229,8 +230,8 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   cs_real_t *xam;
 
 #if 1
-  double varmin[3] = {1.e20, 1.e20, 1.e20};
-  double varmax[3] = {-1.e20, -1.e20,-1.e20};
+  T varmin[3] = {1.e20, 1.e20, 1.e20};
+  T varmax[3] = {-1.e20, -1.e20,-1.e20};
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
@@ -376,6 +377,16 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   CS_FREE(dam);
   CS_FREE(rhs);
 }
+
+// Force instanciation
+
+template void
+cs_bad_cells_regularisation_vector(float       (*var)[3],
+                                   int           boundary_projection);
+
+template void
+cs_bad_cells_regularisation_vector(double       (*var)[3],
+                                   int           boundary_projection);
 
 /*----------------------------------------------------------------------------*/
 /*!

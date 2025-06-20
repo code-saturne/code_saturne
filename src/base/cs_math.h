@@ -126,6 +126,23 @@ END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the square of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the square of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline T
+cs_math_sq(T  x)
+{
+  return x*x;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute \f$ (\vect{x}_b - \vect{x}_a) \cdot \vect{x}_c \f$
  *
  * \tparam T input value type
@@ -174,6 +191,30 @@ cs_math_3_dot_product(const T  u[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the dot product of two vectors of 3 real values.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ *
+ * \param[in]   u   vector of 3 real values
+ * \param[in]   v   vector of 3 real values
+ *
+ * \return the resulting dot product u.v.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline T
+cs_math_3_dot_product(const T  u[3],
+                      const T  v[3])
+{
+  T uv = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+
+  return uv;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the euclidean norm of a vector of dimension 3
  *
  * \tparam T  input value type
@@ -185,10 +226,27 @@ cs_math_3_dot_product(const T  u[3],
 /*----------------------------------------------------------------------------*/
 
 template <typename T>
-CS_F_HOST_DEVICE inline cs_real_t
+CS_F_HOST_DEVICE inline T
 cs_math_3_norm(const T  v[3])
 {
   return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the trace of a 3x3 tensor.
+ *
+ * \param[in]   t   tensor of 3x3 real values
+ *
+ * \return trace (t[0][0] + t[1][1] + t[2][2])
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline T
+cs_math_33_trace(const T  t[3][3])
+{
+  return (t[0][0] + t[1][1] + t[2][2]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -265,7 +323,7 @@ cs_math_square_norm(const cs_real_t  t[stride])
 /*----------------------------------------------------------------------------*/
 
 template <typename T>
-CS_F_HOST_DEVICE inline cs_real_t
+CS_F_HOST_DEVICE inline T
 cs_math_3_square_norm(const T v[3])
 {
   cs_real_t v2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
@@ -288,7 +346,7 @@ cs_math_3_square_norm(const T v[3])
 /*----------------------------------------------------------------------------*/
 
 template <typename T, typename U>
-CS_F_HOST_DEVICE static inline void
+CS_F_HOST_DEVICE inline void
 cs_math_3_normalize(const T  vin[3],
                     U        vout[3])
 {
@@ -317,7 +375,7 @@ cs_math_3_normalize(const T  vin[3],
 /*----------------------------------------------------------------------------*/
 
 template <typename T, typename U, typename V>
-CS_F_HOST_DEVICE static inline void
+CS_F_HOST_DEVICE inline void
 cs_math_33_3_product(const T      m[3][3],
                      const U      v[3],
                      V  *restrict mv)
@@ -450,7 +508,7 @@ cs_math_3_orthogonal_projection(const T      n[3],
 /*----------------------------------------------------------------------------*/
 
 template <typename T, typename U, typename V>
-CS_F_HOST_DEVICE static inline void
+CS_F_HOST_DEVICE inline void
 cs_math_3_cross_product(const T       u[3],
                         const U       v[3],
                         V  *restrict  uv)
@@ -1262,22 +1320,6 @@ cs_math_sym_33_sym_33_product_trace(const cs_real_t  m1[6],
   return m1[0]*m2[0] + 2.*m1[3]*m2[3] + 2.*m1[5]*m2[5]
                      +    m1[1]*m2[1] + 2.*m1[4]*m2[4]
                                       +    m1[2]*m2[2];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the trace of a 3x3 tensor.
- *
- * \param[in]   t   tensor of 3x3 real values
- *
- * \return trace (t[0][0] + t[1][1] + t[2][2])
- */
-/*----------------------------------------------------------------------------*/
-
-CS_F_HOST_DEVICE static inline cs_real_t
-cs_math_33_trace(const cs_real_t  t[3][3])
-{
-  return (t[0][0] + t[1][1] + t[2][2]);
 }
 
 /*----------------------------------------------------------------------------*/

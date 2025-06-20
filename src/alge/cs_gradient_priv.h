@@ -79,17 +79,20 @@ typedef cs_real_t  cs_cocg_33_t[3][3];
  *   grad           --> gradient of a variable
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 inline static void
 cs_sync_scalar_gradient_halo_d(const cs_mesh_t         *m,
                                cs_halo_type_t           halo_type,
-                               cs_real_t (*restrict grad)[3])
+                               T             (*restrict grad)[3])
 {
-  if (m->halo != NULL) {
-    cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, 3, (cs_real_t *)grad);
+  if (m->halo != nullptr) {
+
+    cs_datatype_t datatype = cs_datatype_from_type<T>();
+    cs_halo_sync_d(m->halo, halo_type, datatype, 3, (T *)grad);
 
     if (m->have_rotation_perio) {
       cs_sync_d2h((void  *)grad);
-      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
+      cs_halo_perio_sync_var_vect(m->halo, halo_type, (T *)grad, 3);
       cs_sync_h2d((void  *)grad);
     }
   }
@@ -107,26 +110,28 @@ cs_sync_scalar_gradient_halo_d(const cs_mesh_t         *m,
  *   grad           --> gradient of a variable
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 static void
 cs_sync_strided_gradient_halo_d(const cs_mesh_t         *m,
                                 cs_halo_type_t           halo_type,
-                                cs_real_t (*restrict grad)[stride][3])
+                                T             (*restrict grad)[stride][3])
 {
-  if (m->halo != NULL) {
-    cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, stride*3,
-                   (cs_real_t *)grad);
+  if (m->halo != nullptr) {
+
+    cs_datatype_t datatype = cs_datatype_from_type<T>();
+
+    cs_halo_sync_d(m->halo, halo_type, datatype, stride*3, (T *)grad);
 
     if (m->have_rotation_perio) {
       cs_sync_d2h((void  *)grad);
       if (stride == 1)
-        cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
+        cs_halo_perio_sync_var_vect(m->halo, halo_type, (T *)grad, 3);
       else if (stride == 3)
-        cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
+        cs_halo_perio_sync_var_tens(m->halo, halo_type, (T *)grad);
       else if (stride == 6)
         cs_halo_perio_sync_var_sym_tens_grad(m->halo,
                                              halo_type,
-                                             (cs_real_t *)grad);
+                                             (T *)grad);
       cs_sync_h2d((void  *)grad);
     }
   }
@@ -162,6 +167,7 @@ cs_sync_strided_gradient_halo_d(const cs_mesh_t         *m,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_mesh_quantities_t   *fvq,
@@ -170,7 +176,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_real_t               pvar[],
                             const cs_real_t     *restrict c_weight,
                             cs_cocg_6_t         *restrict cocg,
-                            cs_real_3_t         *restrict grad);
+                            T                  (*restrict grad)[3]);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of a vector or tensor using least-squares
@@ -192,7 +198,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 void
 cs_gradient_strided_lsq_cuda
 (
@@ -204,7 +210,7 @@ cs_gradient_strided_lsq_cuda
  const cs_real_t                pvar[][stride],
  const cs_real_t               *c_weight,
  cs_cocg_6_t                   *cocg,
- cs_real_t                      grad[][stride][3]
+ T                              grad[][stride][3]
 );
 
 /*----------------------------------------------------------------------------
@@ -224,7 +230,7 @@ cs_gradient_strided_lsq_cuda
  *   grad              --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 void
 cs_gradient_strided_gg_r_cuda
 (
@@ -236,8 +242,8 @@ cs_gradient_strided_gg_r_cuda
  const cs_real_t               val_f[][stride],
  const cs_real_t               pvar[][stride],
  const cs_real_t              *c_weight,
- const cs_real_t               r_grad[][stride][3],
- cs_real_t                     grad[][stride][3]
+ const T                       r_grad[][stride][3],
+ T                             grad[][stride][3]
 );
 
 /*----------------------------------------------------------------------------

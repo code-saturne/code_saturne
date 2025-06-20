@@ -270,13 +270,14 @@ cs_nvd_scheme_scalar(const cs_nvd_type_t  limiter,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 CS_F_HOST_DEVICE inline static cs_real_t
 cs_nvd_vof_scheme_scalar(cs_nvd_type_t     limiter,
                          const cs_nreal_t  i_face_u_normal[3],
                          cs_real_t         nvf_p_c,
                          cs_real_t         nvf_r_f,
                          cs_real_t         nvf_r_c,
-                         const cs_real_t   gradv_c[3],
+                         const T           gradv_c[3],
                          const cs_real_t   c_courant)
 {
   assert(limiter >= CS_NVD_VOF_HRIC);
@@ -403,20 +404,21 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t     limiter,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 CS_F_HOST_DEVICE inline static void
 cs_slope_test(const cs_real_t   pi,
               const cs_real_t   pj,
               const cs_real_t   distf,
               const cs_nreal_t  i_face_u_normal[3],
-              const cs_real_t   gradi[3],
-              const cs_real_t   gradj[3],
-              const cs_real_t   grdpai[3],
-              const cs_real_t   grdpaj[3],
+              const T           gradi[3],
+              const T           gradj[3],
+              const T           grdpai[3],
+              const T           grdpaj[3],
               const cs_real_t   i_massflux,
-              cs_real_t        *testij,
-              cs_real_t        *tesqck)
+              T                *testij,
+              T                *tesqck)
 {
-  cs_real_t dcc, ddi, ddj;
+  T dcc, ddi, ddj;
 
   /* Slope test */
 
@@ -443,7 +445,9 @@ cs_slope_test(const cs_real_t   pi,
           + grdpaj[2]*i_face_u_normal[2];
   }
 
-  *tesqck = cs_math_sq(dcc) - cs_math_sq(ddi-ddj);
+  T diff = ddi-ddj;
+
+  *tesqck = cs_math_sq(dcc) - cs_math_sq(diff);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -467,52 +471,53 @@ cs_slope_test(const cs_real_t   pi,
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 CS_F_HOST_DEVICE inline static void
 cs_slope_test_strided(const cs_real_t    pi[stride],
                       const cs_real_t    pj[stride],
                       const cs_real_t    distf,
                       const cs_nreal_t   i_face_u_normal[3],
-                      const cs_real_t    gradi[stride][3],
-                      const cs_real_t    gradj[stride][3],
-                      const cs_real_t    gradsti[stride][3],
-                      const cs_real_t    gradstj[stride][3],
+                      const T            gradi[stride][3],
+                      const T            gradj[stride][3],
+                      const T            gradsti[stride][3],
+                      const T            gradstj[stride][3],
                       const cs_real_t    i_massflux,
-                      cs_real_t         *testij,
-                      cs_real_t         *tesqck)
+                      T                 *testij,
+                      T                 *tesqck)
 {
-  cs_real_t dcc[stride], ddi[stride], ddj[stride];
-
   *testij = 0.;
   *tesqck = 0.;
 
   /* Slope test */
 
   for (int i = 0; i < stride; i++) {
+
+    T dcc, ddi, ddj;
+
     *testij +=   gradsti[i][0]*gradstj[i][0]
                + gradsti[i][1]*gradstj[i][1]
                + gradsti[i][2]*gradstj[i][2];
 
     if (i_massflux > 0.) {
-      dcc[i] =   gradi[i][0]*i_face_u_normal[0]
-               + gradi[i][1]*i_face_u_normal[1]
-               + gradi[i][2]*i_face_u_normal[2];
-      ddi[i] =   gradsti[i][0]*i_face_u_normal[0]
-               + gradsti[i][1]*i_face_u_normal[1]
-               + gradsti[i][2]*i_face_u_normal[2];
-      ddj[i] = (pj[i]-pi[i])/distf;
+      dcc =   gradi[i][0]*i_face_u_normal[0]
+            + gradi[i][1]*i_face_u_normal[1]
+            + gradi[i][2]*i_face_u_normal[2];
+      ddi =   gradsti[i][0]*i_face_u_normal[0]
+            + gradsti[i][1]*i_face_u_normal[1]
+            + gradsti[i][2]*i_face_u_normal[2];
+      ddj = (pj[i]-pi[i])/distf;
     }
     else {
-      dcc[i] =   gradj[i][0]*i_face_u_normal[0]
-               + gradj[i][1]*i_face_u_normal[1]
-               + gradj[i][2]*i_face_u_normal[2];
-      ddi[i] = (pj[i]-pi[i])/distf;
-      ddj[i] =   gradstj[i][0]*i_face_u_normal[0]
-               + gradstj[i][1]*i_face_u_normal[1]
-               + gradstj[i][2]*i_face_u_normal[2];
+      dcc =   gradj[i][0]*i_face_u_normal[0]
+            + gradj[i][1]*i_face_u_normal[1]
+            + gradj[i][2]*i_face_u_normal[2];
+      ddi = (pj[i]-pi[i])/distf;
+      ddj =   gradstj[i][0]*i_face_u_normal[0]
+            + gradstj[i][1]*i_face_u_normal[1]
+            + gradstj[i][2]*i_face_u_normal[2];
     }
 
-    *tesqck += cs_math_sq(dcc[i]) - cs_math_sq(ddi[i]-ddj[i]);
+    *tesqck += cs_math_sq(dcc) - cs_math_sq(ddi-ddj);
   }
 }
 
@@ -534,22 +539,23 @@ cs_slope_test_strided(const cs_real_t    pi[stride],
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 CS_F_HOST_DEVICE inline static void
-cs_i_compute_quantities(const cs_real_t     bldfrp,
+cs_i_compute_quantities(const T             bldfrp,
                         const cs_rreal_3_t  diipf,
                         const cs_rreal_3_t  djjpf,
-                        const cs_real_3_t   gradi,
-                        const cs_real_3_t   gradj,
+                        const T             gradi[3],
+                        const T             gradj[3],
                         const cs_real_t     pi,
                         const cs_real_t     pj,
-                        cs_real_t          *recoi,
-                        cs_real_t          *recoj,
+                        T                  *recoi,
+                        T                  *recoj,
                         cs_real_t          *pip,
                         cs_real_t          *pjp)
 {
-  cs_real_t gradpf[3] = {0.5*(gradi[0] + gradj[0]),
-                         0.5*(gradi[1] + gradj[1]),
-                         0.5*(gradi[2] + gradj[2])};
+  T gradpf[3] = {(T)0.5*(gradi[0] + gradj[0]),
+                 (T)0.5*(gradi[1] + gradj[1]),
+                 (T)0.5*(gradi[2] + gradj[2])};
 
   /* reconstruction only if IRCFLP = 1 */
   *recoi = bldfrp*(cs_math_3_dot_product(gradpf, diipf));
@@ -579,29 +585,29 @@ cs_i_compute_quantities(const cs_real_t     bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 CS_F_HOST_DEVICE inline static void
-cs_i_compute_quantities_strided(const cs_real_t   bldfrp,
+cs_i_compute_quantities_strided(const T           bldfrp,
                                 const cs_rreal_t  diipf[3],
                                 const cs_rreal_t  djjpf[3],
-                                const cs_real_t   gradi[stride][3],
-                                const cs_real_t   gradj[stride][3],
+                                const T           gradi[stride][3],
+                                const T           gradj[stride][3],
                                 const cs_real_t   pi[stride],
                                 const cs_real_t   pj[stride],
-                                cs_real_t         recoi[stride],
-                                cs_real_t         recoj[stride],
+                                T                 recoi[stride],
+                                T                 recoj[stride],
                                 cs_real_t         pip[stride],
                                 cs_real_t         pjp[stride])
 {
-  cs_real_t dpvf[3];
+  T dpvf[3];
 
   /* x-y-z components, p = u, v, w */
 
   for (int isou = 0; isou < stride; isou++) {
 
     for (int jsou = 0; jsou < 3; jsou++)
-      dpvf[jsou] = 0.5*( gradi[isou][jsou]
-                       + gradj[isou][jsou]);
+      dpvf[jsou] = 0.5*(  gradi[isou][jsou]
+                        + gradj[isou][jsou]);
 
     /* reconstruction only if IRCFLP = 1 */
 
@@ -726,13 +732,13 @@ cs_i_relax_c_val(const double     relaxp,
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 CS_F_HOST_DEVICE inline static void
 cs_i_relax_c_val_strided(cs_real_t        relaxp,
                          const cs_real_t  pia[stride],
                          const cs_real_t  pja[stride],
-                         const cs_real_t  recoi[stride],
-                         const cs_real_t  recoj[stride],
+                         const T          recoi[stride],
+                         const T          recoj[stride],
                          const cs_real_t  pi[stride],
                          const cs_real_t  pj[stride],
                          cs_real_t        pir[stride],
@@ -806,10 +812,11 @@ cs_centered_f_val_strided(double           pnd,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 CS_F_HOST_DEVICE inline static void
 cs_solu_f_val(const cs_real_t   cell_cen[3],
               const cs_real_t   i_face_cog[3],
-              const cs_real_t   grad[3],
+              const T           grad[3],
               const cs_real_t   p,
               cs_real_t        *pf)
 {
@@ -837,11 +844,11 @@ cs_solu_f_val(const cs_real_t   cell_cen[3],
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 CS_F_HOST_DEVICE inline static void
 cs_solu_f_val_strided(const cs_real_t  cell_cen[3],
                       const cs_real_t  i_face_cog[3],
-                      const cs_real_t  grad[stride][3],
+                      const T          grad[stride][3],
                       const cs_real_t  p[stride],
                       cs_real_t        pf[stride])
 {
@@ -1702,6 +1709,7 @@ cs_central_downwind_cells(const cs_lnum_t    ii,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
                      const double         beta,
@@ -1709,7 +1717,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
                      const cs_real_3_t    cell_cen_d,
                      const cs_nreal_3_t   i_face_u_normal,
                      const cs_real_3_t    i_face_cog,
-                     const cs_real_3_t    gradv_c,
+                     const T              gradv_c,
                      const cs_real_t      p_c,
                      const cs_real_t      p_d,
                      const cs_real_t      local_max_c,
@@ -1974,11 +1982,12 @@ cs_i_cd_unsteady_slope_test_strided(bool             *upwind_switch,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 CS_F_HOST_DEVICE inline static void
 cs_b_compute_quantities(const cs_rreal_t   diipb[3],
-                        const cs_real_t    gradi[3],
-                        const cs_real_t    bldfrp,
-                        cs_real_t         *recoi)
+                        const T            gradi[3],
+                        const T            bldfrp,
+                        T                 *recoi)
 {
   *recoi = bldfrp * (  gradi[0]*diipb[0]
                      + gradi[1]*diipb[1]
@@ -1999,12 +2008,12 @@ cs_b_compute_quantities(const cs_rreal_t   diipb[3],
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 CS_F_HOST_DEVICE inline static void
 cs_b_compute_quantities_strided(const cs_rreal_t  diipb[3],
-                                const cs_real_t   gradi[stride][3],
-                                const cs_real_t   bldfrp,
-                                cs_real_t         recoi[stride])
+                                const T           gradi[stride][3],
+                                const T           bldfrp,
+                                T                 recoi[stride])
 {
   for (int isou = 0; isou < stride; isou++) {
     recoi[isou] = bldfrp * (  gradi[isou][0]*diipb[0]
@@ -2454,14 +2463,15 @@ cs_b_diff_flux_strided(int              idiffp,
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 CS_F_HOST_DEVICE inline static void
-cs_b_cd_unsteady(const cs_real_t    bldfrp,
+cs_b_cd_unsteady(const T            bldfrp,
                  const cs_rreal_t   diipb[3],
-                 const cs_real_t    gradi[3],
+                 const T            gradi[3],
                  const cs_real_t    pi,
                  cs_real_t         *pip)
 {
-  cs_real_t recoi;
+  T recoi;
 
   cs_b_compute_quantities(diipb,
                           gradi,
@@ -2487,22 +2497,22 @@ cs_b_cd_unsteady(const cs_real_t    bldfrp,
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 CS_F_HOST_DEVICE inline static void
-cs_b_cd_unsteady_strided(cs_real_t         bldfrp,
+cs_b_cd_unsteady_strided(T                 bldfrp,
                          const cs_rreal_t  diipb[3],
-                         const cs_real_t   gradi[stride][3],
+                         const T           gradi[stride][3],
                          const cs_real_t   pi[stride],
                          cs_real_t         pip[stride])
 {
-  cs_real_t recoi[stride];
+  T recoi[stride];
 
   cs_b_compute_quantities_strided<stride>(diipb,
                                           gradi,
                                           bldfrp,
                                           recoi);
 
-  for (int isou = 0; isou< stride; isou++)
+  for (int isou = 0; isou < stride; isou++)
     pip[isou] = pi[isou] + recoi[isou];
 }
 

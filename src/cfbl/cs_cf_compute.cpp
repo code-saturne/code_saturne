@@ -572,7 +572,7 @@ cs_compressible_pressure_ausm_mass_flux(cs_dispatch_context  &ctx,
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
-  const cs_real_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;

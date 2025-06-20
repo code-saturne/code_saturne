@@ -133,9 +133,10 @@ _apply_vector_transfo(cs_real_t    matrix[3][4],
  *   xyz          <-> array of coordinates
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _apply_vector_rotation(cs_real_t    matrix[3][4],
-                       cs_real_t   *xyz)
+                       T           *xyz)
 {
   cs_lnum_t  i;
 
@@ -160,9 +161,10 @@ _apply_vector_rotation(cs_real_t    matrix[3][4],
  *   tensor              <-> incoming 3x3 tensor
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _apply_tensor_rotation(cs_real_t   matrix[3][4],
-                       cs_real_t   *tensor)
+                       T          *tensor)
 {
   cs_lnum_t  i, j, k, l;
 
@@ -196,9 +198,10 @@ _apply_tensor_rotation(cs_real_t   matrix[3][4],
  *   tensor              <-> incoming (6) symmetric tensor
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
-                           cs_real_t   *tensor)
+                           T          *tensor)
 {
   cs_lnum_t  i, j, k, l;
 
@@ -255,9 +258,10 @@ _apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
  *                           (in fact 3x6 due to symmetry)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
-                           cs_real_t   *tensor)
+                           T          *tensor)
 {
   cs_lnum_t  i, j, k, p, q, r;
 
@@ -376,10 +380,11 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
  *   incvar    <-- specifies the increment for the elements of var
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
                             cs_halo_type_t    sync_mode,
-                            cs_real_t         var[],
+                            T                 var[],
                             int               incvar)
 {
   if (   halo == nullptr
@@ -438,6 +443,20 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
   } /* End of loop on transformations */
 }
 
+// Force instanciation
+
+template void
+cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
+                            cs_halo_type_t    sync_mode,
+                            double            var[],
+                            int               incvar);
+
+template void
+cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
+                            cs_halo_type_t    sync_mode,
+                            float             var[],
+                            int               incvar);
+
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (interleaved) between periodic cells.
  *
@@ -447,10 +466,11 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
  *   var       <-> tensor to update
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
                             cs_halo_type_t    sync_mode,
-                            cs_real_t         var[])
+                            T                 var[])
 {
   if (   halo == nullptr
       || sync_mode == CS_HALO_N_TYPES)
@@ -506,6 +526,18 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
 
   } /* End of loop on transformations for the local rank */
 }
+
+// Force instanciation
+
+template void
+cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
+                            cs_halo_type_t    sync_mode,
+                            double            var[]);
+
+template void
+cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
+                            cs_halo_type_t    sync_mode,
+                            float             var[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (symmetric interleaved) between
@@ -587,10 +619,11 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
  *   var       <-> symmetric tensor to update (6 values)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
                                      cs_halo_type_t    sync_mode,
-                                     cs_real_t         var[])
+                                     T                 var[])
 {
   if (   halo == nullptr
       || sync_mode == CS_HALO_N_TYPES)
@@ -624,7 +657,7 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
 
       for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
-        start_std =n_elts +  halo->perio_lst[shift + 4*rank_id];
+        start_std = n_elts +  halo->perio_lst[shift + 4*rank_id];
         end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
 
         for (i = start_std; i < end_std; i++)
@@ -646,5 +679,17 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
 
   } /* End of loop on transformations for the local rank */
 }
+
+// Force instanciation
+
+template void
+cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
+                                     cs_halo_type_t    sync_mode,
+                                     double            var[]);
+
+template void
+cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
+                                     cs_halo_type_t    sync_mode,
+                                     float             var[]);
 
 /*----------------------------------------------------------------------------*/

@@ -63,36 +63,6 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
                           cs_real_t        *coords);
 
 /*----------------------------------------------------------------------------
- * Synchronize values for a real vector (interleaved) between periodic cells.
- *
- * parameters:
- *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> type of halo treatment (standard or extended)
- *   var       <-> vector to update
- *   incvar    <-- specifies the increment for the elements of var
- *----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
-                            cs_halo_type_t    sync_mode,
-                            cs_real_t         var[],
-                            int               incvar);
-
-/*----------------------------------------------------------------------------
- * Synchronize values for a real tensor (interleaved) between periodic cells.
- *
- * parameters:
- *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
- *   var       <-> tensor to update
- *----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
-                            cs_halo_type_t    sync_mode,
-                            cs_real_t         var[]);
-
-/*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (symmetric interleaved) between
  * periodic cells.
  *
@@ -107,6 +77,44 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
                                 cs_halo_type_t    sync_mode,
                                 cs_real_t         var[]);
 
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real vector (interleaved) between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> type of halo treatment (standard or extended)
+ *   var       <-> vector to update
+ *   incvar    <-- specifies the increment for the elements of var
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
+                            cs_halo_type_t    sync_mode,
+                            T                 var[],
+                            int               incvar);
+
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real tensor (interleaved) between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> tensor to update
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
+                            cs_halo_type_t    sync_mode,
+                            T                 var[]);
+
 /*----------------------------------------------------------------------------
  * Synchronize values for a real gradient of a tensor (symmetric interleaved)
  * between periodic cells.
@@ -117,14 +125,12 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
  *   var       <-> symmetric tensor to update (6 values)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
                                      cs_halo_type_t    sync_mode,
-                                     cs_real_t         var[]);
+                                     T                 var[]);
 
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
+#endif /* cplusplus */
 
 #endif /* __CS_HALO_PERIO_H__ */
-

@@ -889,11 +889,12 @@ END_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_slope_test_gradient(int                         f_id,
                        cs_dispatch_context        &ctx,
-                       const cs_real_3_t          *grad,
-                       cs_real_3_t                *grdpa,
+                       const T                   (*grad)[3],
+                       T                         (*grdpa)[3],
                        const cs_real_t            *pvar,
                        const cs_real_t             val_f[],
                        const cs_real_t            *i_massflux);
@@ -917,12 +918,12 @@ cs_slope_test_gradient(int                         f_id,
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 void
 cs_slope_test_gradient_strided
   (cs_dispatch_context         &ctx,
-   const cs_real_t              grad[][stride][3],
-   cs_real_t                  (*restrict grdpa)[stride][3],
+   const T                      grad[][stride][3],
+   T                 (*restrict grdpa)[stride][3],
    const cs_real_t              pvar[][stride],
    const cs_real_t              val_f[][stride],
    const cs_real_t             *i_massflux);
@@ -943,6 +944,7 @@ cs_slope_test_gradient_strided
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_upwind_gradient(cs_dispatch_context          &ctx,
                    const int                     inc,
@@ -951,7 +953,7 @@ cs_upwind_gradient(cs_dispatch_context          &ctx,
                    const cs_real_t               i_massflux[],
                    const cs_real_t               b_massflux[],
                    const cs_real_t              *pvar,
-                   cs_real_3_t                  *grdpa);
+                   T                           (*grdpa)[3]);
 
 /*----------------------------------------------------------------------------
  * Compute the local cell Courant number as the maximum of all cell face based

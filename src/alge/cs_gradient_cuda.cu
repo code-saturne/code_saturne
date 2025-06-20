@@ -81,7 +81,7 @@
  * Local macros
  *============================================================================*/
 
-#define INSTANTIATE_LSQ(name, stride) template void name <stride>  \
+#define INSTANTIATE_LSQ(name, stride, type) template void name <stride, type>  \
   (const cs_mesh_t               *m,                               \
    const cs_mesh_adjacencies_t   *madj,                            \
    const cs_mesh_quantities_t    *fvq,                             \
@@ -90,9 +90,9 @@
    const cs_real_t                pvar[][stride],                  \
    const cs_real_t               *c_weight,                        \
    cs_cocg_6_t                   *restrict cocg,                   \
-   cs_real_t                      gradv[][stride][3])
+   type                           gradv[][stride][3])
 
-#define INSTANTIATE_GG_R(name, stride) template void name <stride> \
+#define INSTANTIATE_GG_R(name, stride, type) template void name <stride, type> \
   (const cs_mesh_t              *m,                                \
    const cs_mesh_adjacencies_t  *madj,                             \
    const cs_mesh_quantities_t   *fvq,                              \
@@ -101,8 +101,8 @@
    const cs_real_t               val_f[][stride],                  \
    const cs_real_t               pvar[][stride],                   \
    const cs_real_t              *c_weight,                         \
-   const cs_real_t               r_grad[][stride][3],              \
-   cs_real_t                     grad[][stride][3])
+   const type                    r_grad[][stride][3],              \
+   type                          grad[][stride][3])
 
 /*=============================================================================
  * Local definitions
@@ -116,10 +116,10 @@
  * Compute the gradient using the least-squares method.
  *----------------------------------------------------------------------------*/
 
-template <typename T>
+template <typename grad_t, typename T>
 __global__ static void
 _compute_gradient_lsq_s(cs_lnum_t     n_cells,
-                        cs_real_3_t  *grad,
+                        grad_t      (*grad)[3],
                         T            *cocg,
                         cs_real_3_t  *rhsv)
 {
@@ -386,8 +386,8 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
                                 const cs_lnum_t      *restrict b_cells,
                                 const cs_real_3_t    *restrict cell_cen,
                                 const cs_real_3_t    *restrict b_face_cog,
-                                const cs_real_3_t    *restrict b_face_u_normal,
-                                const cs_real_3_t    *restrict diipb,
+                                const cs_nreal_3_t   *restrict b_face_u_normal,
+                                const cs_rreal_3_t   *restrict diipb,
                                 const cs_real_t      *restrict b_dist,
                                 const cs_real_t     (*restrict val_f)[stride],
                                 const cs_real_t     (*restrict pvar)[stride],
@@ -462,10 +462,10 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
  * using on thread per value for coalescing
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 __global__ static void
 _compute_gradient_lsq_strided(cs_lnum_t          n_cells,
-                              cs_real_t        (*restrict grad)[stride][3],
+                              T       (*restrict grad)[stride][3],
                               cs_cocg_6_t       *restrict cocg,
                               const cs_real_t  (*restrict rhs)[stride][3])
 {
@@ -491,7 +491,7 @@ _compute_gradient_lsq_strided(cs_lnum_t          n_cells,
  * for strided cases, using fixed-point algorimth
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 __global__ static void
 _correct_gradient_b_strided(const cs_lnum_t               n_b_cells,
                             const int                     n_c_iter_max,
@@ -505,7 +505,7 @@ _correct_gradient_b_strided(const cs_lnum_t               n_b_cells,
                             const cs_rreal_3_t  *restrict diipb,
                             const cs_real_t    (*restrict coefbv)[stride][stride],
                             cs_cocg_6_t         *restrict cocg,
-                            cs_real_t          (*restrict grad)[stride][3])
+                            T                  (*restrict grad)[stride][3])
 {
   size_t t_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (t_id >= n_b_cells)
@@ -522,7 +522,7 @@ _correct_gradient_b_strided(const cs_lnum_t               n_b_cells,
 
   const cs_real_t eps_dvg = 1e-2;
 
-  cs_real_t grad_0[stride][3], grad_i[stride][3];
+  T grad_0[stride][3], grad_i[stride][3];
 
   for (cs_lnum_t i = 0; i < stride; i++) {
     for (cs_lnum_t j = 0; j < 3; j++) {
@@ -628,7 +628,7 @@ _correct_gradient_b_strided(const cs_lnum_t               n_b_cells,
  * Using a face-based scatter algrithm with conflict-reduction approach.
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 __global__ static void
 _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
                             const cs_lnum_2_t           *i_face_cells,
@@ -638,8 +638,8 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
                             const cs_real_t   (*restrict pvar)[stride],
                             const cs_real_t             *weight,
                             const cs_real_t             *c_weight,
-                            const cs_real_t   (*restrict r_grad)[stride][3],
-                            cs_real_t         (*restrict grad)[stride][3])
+                            const T           (*restrict r_grad)[stride][3],
+                            T                 (*restrict grad)[stride][3])
 {
   cs_lnum_t f_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -675,7 +675,7 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
 
 #if 1
 
-  using cell_v = assembled_value<cs_real_t, 3>;
+  using cell_v = assembled_value<T, 3>;
   cell_v grad_cf1, grad_cf2;
 
   for (cs_lnum_t j = 0; j < 3; j++) {
@@ -702,7 +702,7 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
  * Using a cell-based gather algrithm.
  *----------------------------------------------------------------------------*/
 
-template <unsigned int blocksize, cs_lnum_t stride>
+template <unsigned int blocksize, cs_lnum_t stride, typename T>
 __global__ static void
 _gg_with_r_gradient_cell_cells(cs_lnum_t            n_cells,
                                const cs_lnum_t     *restrict cell_cells_idx,
@@ -715,8 +715,8 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t            n_cells,
                                const cs_real_t    (*restrict pvar)[stride],
                                const cs_real_t              *weight,
                                const cs_real_t              *c_weight,
-                               const cs_real_t    (*restrict r_grad)[stride][3],
-                               cs_real_t          (*restrict grad)[stride][3])
+                               const T            (*restrict r_grad)[stride][3],
+                               T                  (*restrict grad)[stride][3])
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -727,7 +727,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t            n_cells,
   cs_lnum_t s_id = cell_cells_idx[c_id1];
   cs_lnum_t e_id = cell_cells_idx[c_id1 + 1];
 
-  cs_real_t _grad[stride][3];
+  T _grad[stride][3];
 
   for (cs_lnum_t i = 0; i < stride; i++){
     for (cs_lnum_t j = 0; j < 3; j++){
@@ -789,7 +789,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t            n_cells,
  * Using a face-based scatter algrithm with conflict-reduction approach.
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 __global__ static void
 _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
                             const cs_real_t     *restrict b_face_surf,
@@ -797,8 +797,8 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
                             const cs_lnum_t     *restrict b_face_cells,
                             const cs_real_t    (*restrict val_f)[stride],
                             const cs_real_t    (*restrict pvar)[stride],
-                            const cs_real_t    (*restrict r_grad)[stride][3],
-                            cs_real_t          (*restrict grad)[stride][3])
+                            const T            (*restrict r_grad)[stride][3],
+                            T                  (*restrict grad)[stride][3])
 {
   cs_lnum_t f_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -812,7 +812,7 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
 
   cs_real_t pfac = (val_f[f_id][i] - pvar[c_id][i]) * b_face_surf[f_id];
 
-  using cell_v = assembled_value<cs_real_t, 3>;
+  using cell_v = assembled_value<T, 3>;
   cell_v grad_cf;
 
 #if 1
@@ -835,14 +835,14 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
  * Rescale Green-Gauss gradient after contribution from faces.
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 __global__ static void
 _gg_gradient_rescale(cs_lnum_t                       n_cells,
                      bool                            warped_correction,
                      const int *restrict             c_disable_flag,
                      const cs_real_t *restrict       cell_vol,
                      const cs_real_33_t *restrict    corr_grad_lin,
-                     cs_real_t            (*restrict grad)[stride][3])
+                     T                    (*restrict grad)[stride][3])
 {
   cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -867,7 +867,7 @@ _gg_gradient_rescale(cs_lnum_t                       n_cells,
   }
 
   if (warped_correction) {
-    cs_real_t gradpa[3];
+    T gradpa[3];
     for (cs_lnum_t j = 0; j < 3; j++) {
       gradpa[j] = grad[c_id][i][j];
     }
@@ -910,6 +910,7 @@ _gg_gradient_rescale(cs_lnum_t                       n_cells,
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 void
 cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_mesh_quantities_t   *fvq,
@@ -918,7 +919,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_real_t              *pvar,
                             const cs_real_t     *restrict c_weight,
                             cs_cocg_6_t         *restrict cocg,
-                            cs_real_3_t         *restrict grad)
+                            T                  (*restrict grad)[3])
 {
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
 
@@ -1019,16 +1020,17 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   /* Compute gradient */
   /*------------------*/
 
+  using rgrad_t = T[3];
   void *_grad_d = nullptr;
-  cs_real_3_t *grad_d = nullptr;
+  rgrad_t *grad_d = nullptr;
 
   if (cs_check_device_ptr(grad) == CS_ALLOC_HOST) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * 3;
+    size_t size = n_cells_ext * sizeof(T) * 3;
     CS_CUDA_CHECK(cudaMalloc(&_grad_d, size));
-    grad_d = (cs_real_3_t *)_grad_d;
+    grad_d = (rgrad_t *)_grad_d;
   }
   else {
-    grad_d = (cs_real_3_t *)cs_get_device_ptr((void *)grad);
+    grad_d = (rgrad_t *)cs_get_device_ptr((void *)grad);
   }
 
   gridsize = cs_cuda_grid_size(n_cells*3, blocksize);
@@ -1042,7 +1044,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
   /* Sync to host */
   if (_grad_d != nullptr) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * 3;
+    size_t size = n_cells_ext * sizeof(T) * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else
@@ -1058,6 +1060,26 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
   CS_FREE(rhsv);
 }
+
+template void
+cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
+                            const cs_mesh_quantities_t   *fvq,
+                            cs_halo_type_t                halo_type,
+                            const cs_real_t               val_f[],
+                            const cs_real_t              *pvar,
+                            const cs_real_t     *restrict c_weight,
+                            cs_cocg_6_t         *restrict cocg,
+                            float              (*restrict grad)[3]);
+
+template void
+cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
+                            const cs_mesh_quantities_t   *fvq,
+                            cs_halo_type_t                halo_type,
+                            const cs_real_t               val_f[],
+                            const cs_real_t              *pvar,
+                            const cs_real_t     *restrict c_weight,
+                            cs_cocg_6_t         *restrict cocg,
+                            double             (*restrict grad)[3]);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of a vector or tensor using least-squares
@@ -1079,7 +1101,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 void
 cs_gradient_strided_lsq_cuda
 (
@@ -1091,10 +1113,10 @@ cs_gradient_strided_lsq_cuda
  const cs_real_t                pvar[][stride],
  const cs_real_t               *c_weight,
  cs_cocg_6_t                   *cocg,
- cs_real_t                      grad[][stride][3]
+ T                              grad[][stride][3]
 )
 {
-  using grad_t = cs_real_t[stride][3];
+  using grad_t = T[stride][3];
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -1126,7 +1148,7 @@ cs_gradient_strided_lsq_cuda
 
   grad_t *grad_d = nullptr, *_grad_d = nullptr;
   if (cs_check_device_ptr(grad) == CS_ALLOC_HOST) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
+    size_t size = n_cells_ext * sizeof(T) * stride * 3;
     CS_CUDA_CHECK(cudaMalloc(&_grad_d, size));
     grad_d = _grad_d;
   }
@@ -1181,20 +1203,22 @@ cs_gradient_strided_lsq_cuda
     = cs_get_device_ptr_const(fvq->b_dist);
   const cs_real_3_t *restrict b_face_cog
     = cs_get_device_ptr_const((cs_real_3_t *)fvq->b_face_cog);
-  const cs_real_3_t *restrict b_face_u_normal
-    = cs_get_device_ptr_const((cs_real_3_t *)fvq->b_face_u_normal);
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = cs_get_device_ptr_const((cs_nreal_3_t *)fvq->b_face_u_normal);
   const cs_rreal_3_t *restrict diipb
     = cs_get_device_ptr_const(fvq->diipb);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
 
-  decltype(grad) rhs_d;
-  CS_MALLOC_HD(rhs_d, n_cells, grad_t, CS_ALLOC_DEVICE);
+  //decltype(grad) rhs_d;
+  using rhs_d_t = cs_real_t[stride][3];
+  rhs_d_t *rhs_d;
+  CS_MALLOC_HD(rhs_d, n_cells, rhs_d_t, CS_ALLOC_DEVICE);
 
   // rhs set to 0 in first kernel called, no need for cudaMemset.
   // cudaMemset(rhs_d, 0, n_cells*sizeof(grad));
-  // cs_cuda_copy_h2d(grad_d, grad, sizeof(cs_real_t) * n_cells * stride * 3);
+  // cs_cuda_copy_h2d(grad_d, grad, sizeof(T) * n_cells * stride * 3);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_init, stream));
@@ -1278,7 +1302,7 @@ cs_gradient_strided_lsq_cuda
 
   /* Sync to host */
   if (_grad_d != nullptr) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
+    size_t size = n_cells_ext * sizeof(T) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else
@@ -1354,8 +1378,10 @@ cs_gradient_strided_lsq_cuda
     CS_CUDA_CHECK(cudaFree(_grad_d));
 }
 
-INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 3);
-INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 6);
+INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 3, float);
+INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 6, float);
+INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 3, double);
+INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 6, double);
 
 /*----------------------------------------------------------------------------
  * Green-Gauss reconstruction of the gradient of a vector or tensor using
@@ -1374,7 +1400,7 @@ INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 6);
  *   grad              --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
+template <cs_lnum_t stride, typename T>
 void
 cs_gradient_strided_gg_r_cuda
 (
@@ -1386,14 +1412,14 @@ cs_gradient_strided_gg_r_cuda
  const cs_real_t               val_f[][stride],
  const cs_real_t               pvar[][stride],
  const cs_real_t              *c_weight,
- const cs_real_t               r_grad[][stride][3],
- cs_real_t                     grad[][stride][3]
+ const T                       r_grad[][stride][3],
+ T                             grad[][stride][3]
 )
 {
   //const cs_e2n_sum_t e2n_sum_type = CS_E2N_SUM_SCATTER;
   const cs_e2n_sum_t e2n_sum_type = CS_E2N_SUM_GATHER;
 
-  using grad_t = cs_real_t[stride][3];
+  using grad_t = T[stride][3];
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -1424,7 +1450,7 @@ cs_gradient_strided_gg_r_cuda
 
   grad_t *grad_d = nullptr, *_grad_d = nullptr;
   if (cs_check_device_ptr(grad) == CS_ALLOC_HOST) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
+    size_t size = n_cells_ext * sizeof(T) * stride * 3;
     CS_CUDA_CHECK(cudaMalloc(&_grad_d, size));
     grad_d = _grad_d;
   }
@@ -1494,7 +1520,7 @@ cs_gradient_strided_gg_r_cuda
   /* Initialization */
 
   if (e2n_sum_type == CS_E2N_SUM_SCATTER) {
-    cudaMemsetAsync(grad_d, 0, n_cells_ext * sizeof(cs_real_t)*stride*3, stream);
+    cudaMemsetAsync(grad_d, 0, n_cells_ext * sizeof(T)*stride*3, stream);
   }
 
   if (cs_glob_timer_kernels_flag > 0)
@@ -1576,7 +1602,7 @@ cs_gradient_strided_gg_r_cuda
 
   /* Sync to host */
   if (_grad_d != nullptr) {
-    size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
+    size_t size = n_cells_ext * sizeof(T) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else
@@ -1645,9 +1671,12 @@ cs_gradient_strided_gg_r_cuda
     CS_CUDA_CHECK(cudaFree(_grad_d));
 }
 
-INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 1);
-INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 3);
-INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 6);
+INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 1, float);
+INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 3, float);
+INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 6, float);
+INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 1, double);
+INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 3, double);
+INSTANTIATE_GG_R(cs_gradient_strided_gg_r_cuda, 6, double);
 
 /*----------------------------------------------------------------------------*/
 

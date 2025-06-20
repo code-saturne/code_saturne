@@ -142,7 +142,7 @@ _balance_boundary_faces(const int           icvflf,
 {
   cs_real_t pip;
 
-  cs_b_cd_unsteady(ircflp,
+  cs_b_cd_unsteady((cs_real_t)ircflp,
                    diipb,
                    gradi,
                    pi,
@@ -353,7 +353,7 @@ _balance_internal_faces(int               iupwin,
       /* Compute required quantities for diffusive flux */
       cs_real_t recoi, recoj;
 
-      cs_i_compute_quantities(ircflp,
+      cs_i_compute_quantities((cs_real_t)ircflp,
                               diipf,
                               djjpf,
                               gradi,
@@ -1143,12 +1143,11 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       beta = cs::max(cs::min(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
     }
 
-    int bldfrp = ircflp;
+    cs_real_t bldfrp = (cs_real_t) ircflp;
     /* Local limitation of the reconstruction */
-    if (df_limiter != nullptr && ircflp > 0) {
-      cs_real_t _bldfrp = fmax(fmin(df_limiter[c_id1],
-                                    df_limiter[c_id2]), 0.);
-      bldfrp = (int)_bldfrp;
+    if (df_limiter != nullptr && bldfrp > 0.) {
+      bldfrp = cs::max(cs::min(df_limiter[c_id1],
+                               df_limiter[c_id2]), 0.);
     }
 
     cs_real_t hybrid_coef_ii, hybrid_coef_jj;
@@ -1600,7 +1599,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   /* Compute the balance at time step n */
 
   int iconvp = 1;
-  int ircflp = 0; /* No reconstruction */
+  cs_real_t bldfrp = 0; /* No reconstruction */
 
   /* Balance on boundary faces
      -------------------------
@@ -1623,7 +1622,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
 
     cs_real_3_t grad = {0, 0, 0};
 
-    cs_b_cd_unsteady(ircflp,
+    cs_b_cd_unsteady(bldfrp,
                      diipb[f_id_sel],
                      grad,
                      p_rho,
@@ -1663,7 +1662,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
                            + b_u[f_id_sel][1][1] * b_u[f_id_sel][1][1]
                            + b_u[f_id_sel][2][2] * b_u[f_id_sel][2][2]);
 
-    cs_b_cd_unsteady(ircflp,
+    cs_b_cd_unsteady(bldfrp,
                      diipb[f_id_sel],
                      grad,
                      u2,
@@ -1697,7 +1696,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t a_gx = gx;
     cs_real_t b_gx = 0.;
 
-    cs_b_cd_unsteady(ircflp,
+    cs_b_cd_unsteady(bldfrp,
                      diipb[f_id_sel],
                      grad,
                      gx,
@@ -1748,7 +1747,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t p_rho_id1 = pressure[c_id1] / rho[c_id1];
     cs_real_t p_rho_id2 = pressure[c_id2] / rho[c_id2];
 
-    cs_i_cd_unsteady_upwind(ircflp,
+    cs_i_cd_unsteady_upwind(bldfrp,
                             diipf[f_id_sel],
                             djjpf[f_id_sel],
                             grad,
@@ -1812,7 +1811,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t u2_id1 = 0.5 * cs_math_3_square_norm(velocity[c_id1]);
     cs_real_t u2_id2 = 0.5 * cs_math_3_square_norm(velocity[c_id2]);
 
-    cs_i_cd_unsteady_upwind(ircflp,
+    cs_i_cd_unsteady_upwind(bldfrp,
                             diipf[f_id_sel],
                             djjpf[f_id_sel],
                             grad,
@@ -1868,7 +1867,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t gx_id1 = - cs_math_3_dot_product(gravity, i_face_cog[f_id_sel]);
     cs_real_t gx_id2 = - cs_math_3_dot_product(gravity, i_face_cog[f_id_sel]);
 
-    cs_i_cd_unsteady_upwind(ircflp,
+    cs_i_cd_unsteady_upwind(bldfrp,
                             diipf[f_id_sel],
                             djjpf[f_id_sel],
                             grad,
@@ -2556,12 +2555,11 @@ cs_flux_through_surface(const char         *scalar_name,
       beta = cs::max(cs::min(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
     }
 
-    int bldfrp = ircflp;
+    cs_real_t bldfrp = (cs_real_t)ircflp;
     /* Local limitation of the reconstruction */
-    if (df_limiter != nullptr && ircflp > 0) {
-      cs_real_t _bldfrp = fmax(fmin(df_limiter[c_id1],
-                                    df_limiter[c_id2]), 0.);
-      bldfrp = (int)_bldfrp;
+    if (df_limiter != nullptr && bldfrp > 0.) {
+      bldfrp = cs::max(cs::min(df_limiter[c_id1],
+                               df_limiter[c_id2]), 0.);
     }
 
     cs_real_t hybrid_coef_ii, hybrid_coef_jj;

@@ -2916,7 +2916,7 @@ cs_halo_sync_r(const cs_halo_t       *halo,
 
   assert(datatype == CS_REAL_TYPE);  // TODO: use templated type below
 
-  cs_halo_perio_sync_var_vect(halo, sync_mode, (cs_real_t *)val, 3);
+  cs_halo_perio_sync_var_vect(halo, sync_mode, (T *)val, 3);
 
 #if defined(HAVE_ACCEL)
   if (on_device)
@@ -2931,6 +2931,12 @@ cs_halo_sync_r(const cs_halo_t  *halo,
                cs_halo_type_t    sync_mode,
                bool              on_device,
                cs_real_t         val[][3]);
+
+template void
+cs_halo_sync_r(const cs_halo_t  *halo,
+               cs_halo_type_t    sync_mode,
+               bool              on_device,
+               float             val[][3]);
 
 /*----------------------------------------------------------------------------*/
 /*

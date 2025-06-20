@@ -71,18 +71,6 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Regularisation on bad cells for vectors
- *
- * \param[in, out]  var  variable to regularize.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_bad_cells_regularisation_vector(cs_real_3_t *var,
-                                   int          boundary_projection);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Regularisation on bad cells for symmetric tensors.
  *
  * \param[in, out]  var  variable to regularize.
@@ -108,5 +96,22 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Regularisation on bad cells for vectors
+ *
+ * \param[in, out]  var  variable to regularize.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_bad_cells_regularisation_vector(T      (*var)[3],
+                                   int     boundary_projection);
+
+#endif /* cplusplus */
 
 #endif /* __CS_BAD_CELLS_REGULARISATION_H__ */
