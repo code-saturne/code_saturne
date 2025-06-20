@@ -1986,12 +1986,15 @@ _init_all_mpi_syr(int  *n_unmatched,
 
   int _sat_len = _is_cdo_thermal ? 12 : 24;
 
+  int current_app_id = ple_coupling_mpi_set_get_app_id(mpi_apps);
+
   for (int i = 0; i < n_apps; i++) {
 
     ple_coupling_mpi_set_info_t ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
 
-    if (strncmp(ai.app_type, "SYRTHES", 7) == 0 ||
-        strncmp(ai.app_type, _sat_partner, _sat_len) == 0 ) {
+    if (current_app_id != i && /* Cant be called to itself... */
+        ( strncmp(ai.app_type, "SYRTHES", 7) == 0 ||
+          strncmp(ai.app_type, _sat_partner, _sat_len) == 0 ) ) {
 
       int  match_queue_id = -1;
       int  coupling_id = -1;
