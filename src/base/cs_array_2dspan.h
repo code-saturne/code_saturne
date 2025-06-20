@@ -672,51 +672,6 @@ private:
   cs_alloc_mode_t _mode;       /*!< Data allocation mode */
 };
 
-namespace array {
-  template <class T, size_t N>
-  class span {
-    public:
-
-      CS_F_HOST_DEVICE
-      span() :
-        _dim({0}),
-        _size(0),
-        _is_owner(true),
-        _data(nullptr),
-        _mode(cs_alloc_mode)
-      CS_F_HOST_DEVICE
-      template<typename ...Args>
-      span(Args ...args):
-        _is_owner(true),
-        _full_array(nullptr),
-        _mode(cs_alloc_mode)
-      {
-        static_assert(sizeof...(Args) == N);
-        cs_lnum_t dims[] = {args ...};
-        for (int i = 0; i < N; i++)
-          _dim[i] = dims[i];
-
-        _size = _dim[0];
-        for (int i = 1; i < N; i++)
-          _size *= _dim[i];
-
-        _data = static_cast<T *>(cs_mem_malloc_hd(_mode,
-                                                  _size,
-                                                  sizeof(T),
-                                                  "_full_array",
-                                                  __FILE__,
-                                                  __LINE__));
-      }
-
-
-    private:
-      cs_lnum_t       _dim[N];
-      cs_lnum_t       _size;
-      bool            _is_owner;
-      T*              _data;
-      cs_alloc_mode_t _mode;
-  }
-}
 }
 
 /*----------------------------------------------------------------------------*/
