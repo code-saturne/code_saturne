@@ -1643,7 +1643,7 @@ _boundary_hts_temperature
                                         choice);
 
       cs_equation_add_bc_by_analytic(eqp,
-                                     CS_PARAM_BC_NEUMANN,
+                                     CS_PARAM_BC_ROBIN,
                                      z->name,
                                      _analytic_meg_exchange_coefficient_hts_profile,
                                      _input);
