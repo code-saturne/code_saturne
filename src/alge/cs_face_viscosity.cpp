@@ -738,7 +738,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   const cs_real_t *restrict weight = mq_g->weight;
   const cs_real_t *restrict i_dist = mq_g->i_dist;
   const cs_real_t *restrict b_dist = mq_g->b_dist;
-  const cs_real_t *restrict b_f_face_surf = mq_g->b_face_surf;
+  const cs_real_t *restrict b_face_surf = mq_g->b_face_surf;
   const cs_real_3_t *restrict cell_cen = mq_g->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = mq_g->i_face_u_normal;
   const cs_real_t *restrict i_face_surf = mq_g->i_face_surf;
@@ -838,7 +838,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
     cs_real_t face_u_normal[3];
     for (cs_lnum_t kk = 0; kk < 3; kk++)
-      face_u_normal[kk] = i_face_u_normal[f_id][kk];
+      face_u_normal[kk] = i_face_surf[f_id] * i_face_u_normal[f_id][kk];
 
     /* ||Ki.S||^2 */
     cs_real_t viscisv[3];
@@ -911,7 +911,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
     cs_real_t face_u_normal[3];
     for (cs_lnum_t kk = 0; kk < 3; kk++)
-      face_u_normal[kk] = b_face_u_normal[f_id][kk];
+      face_u_normal[kk] = b_face_surf[f_id] * b_face_u_normal[f_id][kk];
 
     /* ||Ki.S||^2 */
     cs_real_t viscisv[3];
@@ -948,7 +948,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[f_id] = b_f_face_surf[f_id];
+      b_visc[f_id] = b_face_surf[f_id];
     });
 
   /* With porosity */
@@ -960,7 +960,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
       cs_lnum_t ii = b_face_cells[f_id];
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[f_id] = b_f_face_surf[f_id]*porosi[ii];
+      b_visc[f_id] = b_face_surf[f_id]*porosi[ii];
 
     });
 
@@ -973,7 +973,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
       cs_lnum_t ii = b_face_cells[f_id];
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[f_id] = b_f_face_surf[f_id]*porosi[ii];
+      b_visc[f_id] = b_face_surf[f_id]*porosi[ii];
 
     });
 
