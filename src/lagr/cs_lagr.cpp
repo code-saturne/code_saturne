@@ -164,7 +164,7 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
      .ilapoi = 0,
      .iadded_mass = 0,
      .added_mass_const = 0,
-     .cell_wise_integ = 0,
+     .cell_wise_integ = 1,
      .max_track_propagation_loops = 100,
      .max_perio_or_rank_crossed = 100
   };

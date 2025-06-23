@@ -465,7 +465,7 @@ compute_anisotropic_prop(int            iprev,
  * \param[out]  grad_pr                pressure gradient
  * \param[out]  grad_vel               velocity gradient
  * \param[out]  grad_tempf             fluid temperature gradient
- * \param[out]  anisotropic_lagr_time  anisotropic Lagragian time scale (modcpl)
+ * \param[out]  anisotropic_lagr_time  anisotropic Lagrangian time scale (modcpl)
  * \param[out]  anisotropic_bx         anisotropic diffusion term (if modcpl)
  * \param[out]  grad_lagr_time_r_et    anisotropic Lagrangian time gradient in
  *                                     relative basis
