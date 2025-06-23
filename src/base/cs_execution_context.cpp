@@ -25,6 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -60,6 +61,40 @@ const cs_execution_context *
 cs_execution_context_glob_get(void)
 {
   return _glob_context;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Call MPI_Barrier over the MPI communicator, do nothing if no MPI.
+ */
+/*--------------------------------------------------------------------------*/
+
+int
+cs_execution_context::barrier
+(
+  const bool verbosity,
+  const char *file_name,
+  const int   line_number
+) const
+{
+  int retval = 0;
+  if (verbosity) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "%s[L%d] Entering MPI_Barrier.\n",
+                  file_name, line_number);
+    cs_log_printf_flush(CS_LOG_DEFAULT);
+  }
+#if defined(HAVE_MPI)
+  if (_comm != MPI_COMM_NULL)
+    retval = MPI_Barrier(this->_comm);
+#endif
+  if (verbosity) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "%s[L%d] Exited MPI_Barrier.\n",
+                  file_name, line_number);
+    cs_log_printf_flush(CS_LOG_DEFAULT);
+  }
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -172,7 +172,7 @@ public:
       MPI_Comm_free(&(this->_comm));
     this->_comm = MPI_COMM_NULL;
 #endif
-  }
+  };
 
   /*--------------------------------------------------------------------------*/
   /*!
@@ -181,15 +181,19 @@ public:
   /*--------------------------------------------------------------------------*/
 
   int
-  barrier()
-  {
-    int retval = 0;
-#if defined(HAVE_MPI)
-    if (_comm != MPI_COMM_NULL)
-      retval = MPI_Barrier(_comm);
+  barrier
+  (
+    const bool verbosity = false, /*!<[in] Activate verbosity mode */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
 #endif
-    return retval;
-  }
+  ) const;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #if defined(HAVE_MPI)
