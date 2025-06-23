@@ -250,7 +250,7 @@ cs_time_control_copy(const cs_time_control_t *src,
                      cs_time_control_t       *dst);
 
 /*----------------------------------------------------------------------------*/
-/* Copy data from the defualt cs_time_control_t instance to another one */
+/* Copy data from the default cs_time_control_t instance to another one */
 /*----------------------------------------------------------------------------*/
 
 void

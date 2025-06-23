@@ -772,6 +772,57 @@ cs_time_table_compute_n_time_values_by_label(const char *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Extract n_rows from cs_time_table_t structure
+ *
+ * \param[in]  name            Name of the time table to use
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_table_get_n_rows(const char *name)
+{
+  cs_time_table_t *table = cs_time_table_by_name(name);
+
+  return table->n_rows;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Extract n_cols from cs_time_table_t structure
+ *
+ * \param[in]  name            Name of the time table to use
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_table_get_n_cols(const char *name)
+{
+  cs_time_table_t *table = cs_time_table_by_name(name);
+
+  return table->n_cols;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to table data
+ *
+ * \param[in]  name            Name of the time table to use
+ * \param[out] retvals         Array of output values
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t **
+cs_time_table_get_data(const char        *name)
+{
+  cs_time_table_t *table = cs_time_table_by_name(name);
+
+  const cs_real_t **retvals = (const cs_real_t  **)table->columns;
+
+  return retvals;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Free all data structures related to datasets
  */
 /*----------------------------------------------------------------------------*/
