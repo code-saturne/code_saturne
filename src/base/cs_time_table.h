@@ -351,6 +351,41 @@ CS_TIME_TABLE(const char *name,
                                                    label,
                                                    false);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Extract n_rows from cs_time_table_t structure
+ *
+ * \param[in]  name            Name of the time table to use
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_table_get_n_rows(const char *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Extract n_cols from cs_time_table_t structure
+ *
+ * \param[in]  name            Name of the time table to use
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_time_table_get_n_cols(const char *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to table data
+ *
+ * \param[in]  name            Name of the time table to use
+ * \param[out] retvals         Array of output values
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t **
+cs_time_table_get_data(const char        *name);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free all data structures related to datasets
