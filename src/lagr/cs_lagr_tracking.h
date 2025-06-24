@@ -113,20 +113,20 @@ cs_lagr_tracking_finalize(void);
  *
  * Used for the deposition model.
  *
- * \param[in]   particle     particle attributes for current time step
- * \param[in]   p_am         pointer to attributes map for current time step
+ * \param[in]   p_set        pointer to particle set
+ * \param[in]   p_id         particle id
  * \param[in]   visc_length  viscous layer thickness
  * \param[out]  yplus        associated yplus value
  * \param[out]  face_id      associated neighbor wall face, or -1
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_lagr_test_wall_cell(const void                     *particle,
-                       const cs_lagr_attribute_map_t  *p_am,
-                       const cs_real_t                 visc_length[],
-                       cs_real_t                      *yplus,
-                       cs_lnum_t                      *face_id);
+ void
+ cs_lagr_test_wall_cell(const cs_lagr_particle_set_t   *p_set,
+                        cs_lnum_t                       p_id,
+                        const cs_real_t                 visc_length[],
+                        cs_real_t                      *yplus,
+                        cs_lnum_t                      *face_id);
 
 /*----------------------------------------------------------------------------*/
 

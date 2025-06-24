@@ -1091,7 +1091,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   if (icorio == 1)
     ccorio = 2; /* Relative velocity formulation */
   else if (tm_model == CS_TURBOMACHINERY_TRANSIENT)
-     ccorio = 1;
+    ccorio = 1;
 
   const cs_real_t d1s2 = 0.5;
   const cs_real_t d1s3 = 1./3;
@@ -1108,14 +1108,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 
-  cs_lnum_t solid_stride = 1;
-  int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
-  const int c_is_solid_ref[1] = {0};
-  const int *c_is_solid = c_is_solid_zone_flag;
-  if (c_is_solid == nullptr) {
-    c_is_solid = c_is_solid_ref;
-    solid_stride = 0;
-  }
+  const int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
 
   /* Production, Pressure-Strain correlation, dissipation
    * ---------------------------------------------------- */
@@ -1124,9 +1117,10 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    if (c_is_solid[solid_stride*c_id])
-      return;  /* return from lambda function == continue in loop */
-
+    if (c_is_solid != nullptr) {
+      if (c_is_solid[c_id])
+        return;  /* return from lambda function == continue in loop */
+    }
     cs_real_t impl_lin_cst = 0, impl_id_cst = 0;
 
     cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
@@ -1258,8 +1252,6 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   }); /* End of loop on cells */
 
   ctx.wait();
-
-  CS_FREE(c_is_solid_zone_flag);
 
   /* Coriolis terms in the Phi1 and production
    * ----------------------------------------- */

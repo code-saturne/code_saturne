@@ -112,7 +112,7 @@ BEGIN_C_DECLS
  *                                   0: use fields at current time step
  *                                   1: use fields at previous time step
  * \param[in]  phase_id            carrier phase id
- * \param[in]  ip                  particle index in set
+ * \param[in]  p_id                particle id in set
  * \param[in]  nor                 current step id (for 2nd order scheme)
  * \param[in]  dt_part             time step associated to the particle
  * \param[out] taup                dynamic characteristic time
@@ -130,7 +130,7 @@ BEGIN_C_DECLS
 void
 cs_lagr_car(int                iprev,
             int                phase_id,
-            cs_lnum_t          ip,
+            cs_lnum_t          p_id,
             int                nor,
             const cs_real_t    dt_part,
             cs_real_t         *taup,
@@ -147,11 +147,9 @@ cs_lagr_car(int                iprev,
   int cell_wise_integ = cs_glob_lagr_time_scheme->cell_wise_integ;
 
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-  unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
   /* FIXME we may still need to do computations here */
-  if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+  if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_FIXED))
     return;
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
@@ -187,21 +185,21 @@ cs_lagr_car(int                iprev,
   /* Compute Tp and Tc in case of thermal model
      -------------------------------------------*/
 
-  cs_real_t p_diam   = cs_lagr_particle_get_real(particle, p_am,
-                                                 CS_LAGR_DIAMETER);
-  cs_lnum_t cell_id  = cs_lagr_particle_get_lnum(particle, p_am,
-                                                 CS_LAGR_CELL_ID);
+  cs_real_t p_diam   = cs_lagr_particles_get_real(p_set, p_id,
+                                                  CS_LAGR_DIAMETER);
+  cs_lnum_t cell_id  = cs_lagr_particles_get_lnum(p_set, p_id,
+                                                  CS_LAGR_CELL_ID);
 
-  cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+  cs_real_t p_mass = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
   cs_real_t p_rom  = p_mass * d6spi / pow(p_diam, 3.0);
 
   cs_real_t rel_vel_norm = 0.;
   cs_real_t romf           = extra_i[phase_id].cromf->val[cell_id];
   cs_real_t xnul           = extra_i[phase_id].viscl->val[cell_id] / romf;
   cs_real_t *part_vel_seen =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip, CS_LAGR_VELOCITY_SEEN);
+    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY_SEEN);
   cs_real_t *part_vel      =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip, CS_LAGR_VELOCITY);
+    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY);
 
   for (int idim_ = 0; idim_ < 3; idim_++) {
     rel_vel_norm += (part_vel_seen[3*phase_id + idim_] - part_vel[idim_])
@@ -232,7 +230,7 @@ cs_lagr_car(int                iprev,
 
   /* Tp user computation */
 
-  cs_user_lagr_rt(phase_id, ip, rep, rel_vel_norm,
+  cs_user_lagr_rt(phase_id, p_id, rep, rel_vel_norm,
                   romf, p_rom, xnul, taup, dt_part);
 
   /* Tc computation  computed only at the first phase*/
@@ -264,13 +262,13 @@ cs_lagr_car(int                iprev,
     cs_real_t prt  = xnul / xrkl;
     cs_real_t fnus = 2.0 + 0.55 * pow (rep, 0.5) * pow (prt, (d1s3));
 
-    cs_real_t p_cp = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
+    cs_real_t p_cp = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CP);
 
     /* Thermal characteristic time Tc computation */
     tempct[0] = d2 * p_rom * p_cp / (fnus * 6.0 * romf * xcp * xrkl);
 
     /* User computation for Tc */
-    cs_user_lagr_rt_t(ip, rep, rel_vel_norm, romf, p_rom,
+    cs_user_lagr_rt_t(p_id, rep, rel_vel_norm, romf, p_rom,
                       xnul, xcp, xrkl, tempct, dt_part);
 
     /* Implicit source term for return thermal coupling */
@@ -291,8 +289,8 @@ cs_lagr_car(int                iprev,
         if (cs_glob_lagr_time_scheme->t_order== 2) {
           /* save vagaus */
           cs_real_t *_v_gaus =
-            cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                     CS_LAGR_V_GAUSS);
+            cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                      CS_LAGR_V_GAUSS);
           for (cs_lnum_t i = 0; i < n_phases + 2; i++) {
             for (cs_lnum_t id = 0; id < 3; id++)
                _v_gaus[3 * i + id] = vagaus[i][id];
@@ -302,8 +300,8 @@ cs_lagr_car(int                iprev,
       else {
         /* Get previously drawn _v_gaus */
         cs_real_t *_v_gaus =
-          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                   CS_LAGR_V_GAUSS);
+          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                    CS_LAGR_V_GAUSS);
         for (cs_lnum_t i = 0; i < n_phases + 2; i++) {
           for (cs_lnum_t id = 0; id < 3; id++)
             vagaus[i][id] = _v_gaus[3 * i + id];
@@ -386,7 +384,7 @@ cs_lagr_car(int                iprev,
     else {
 
       /* FIXME we may still need to do computations here */
-      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+      if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_FIXED))
         return;
 
       for (int id = 0; id < 3; id++) {
@@ -424,7 +422,7 @@ cs_lagr_car(int                iprev,
       if (cs_glob_lagr_time_scheme->t_order== 2) {
         /* Save br_gaus */
         cs_real_t *_br_gaus =
-          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
               CS_LAGR_BR_GAUSS);
         for (cs_lnum_t id = 0; id < 6; id++)
           _br_gaus[id] = br_gaus[id];
@@ -433,7 +431,7 @@ cs_lagr_car(int                iprev,
     else if(phase_id == 0) {
       /* Get previously drawn _br_gaus */
       cs_real_t *_br_gaus =
-        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
             CS_LAGR_V_GAUSS);
       for(int id = 0; id < 6; id++)
         br_gaus[id] = _br_gaus[id];
@@ -552,7 +550,7 @@ cs_lagr_car(int                iprev,
       const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
       cs_real_t temp_ref = phys_pro->t0;
       cs_real_t temp_s   =
-        cs_lagr_particles_get_real(p_set, ip, CS_LAGR_TEMPERATURE_SEEN);
+        cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_TEMPERATURE_SEEN);
 
       cs_real_t expansion_coef
         = cs_field_by_name("thermal_expansion")->val[cell_id];
@@ -581,7 +579,7 @@ cs_lagr_car(int                iprev,
          * equillibrium with the interpolated temperature at the position of the
          * particle and not in the center of the cell */
         cs_real_t *part_coord =
-          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip, CS_LAGR_COORDS);
+          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_COORDS);
         cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen[cell_id];
         for (int id = 0; id < 3; id++) {
           for (int i = 0; i < 3; i++)
@@ -622,7 +620,7 @@ cs_lagr_car(int                iprev,
  * \brief Compute external force impacting the particle
  *
  * \param[in]  dt_part             time step associated to the particle
- * \param[in]  ip                  particle index in set
+ * \param[in]  p_id                particle id in set
  * \param[in]  taup                dynamic characteristic time
  * \param[in]  tlag                fluid characteristic Lagrangian time scale
  * \param[in]  piil                term in integration of up sde
@@ -638,7 +636,7 @@ cs_lagr_car(int                iprev,
 
 void
 cs_lagr_get_force_p(const cs_real_t    dt_part,
-                    cs_lnum_t          ip,
+                    cs_lnum_t          p_id,
                     cs_real_t         *taup,
                     cs_real_3_t       *tlag,
                     cs_real_3_t       *piil,
@@ -654,12 +652,12 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
-  cs_lnum_t cell_id  = cs_lagr_particles_get_lnum(p_set, ip,
+  cs_lnum_t cell_id  = cs_lagr_particles_get_lnum(p_set, p_id,
                                                   CS_LAGR_CELL_ID);
   cs_real_t d6spi  = 6.0 / cs_math_pi;
-  cs_real_t p_diam   = cs_lagr_particles_get_real(p_set, ip,
+  cs_real_t p_diam   = cs_lagr_particles_get_real(p_set, p_id,
                                                   CS_LAGR_DIAMETER);
-  cs_real_t p_mass = cs_lagr_particles_get_real(p_set, ip, CS_LAGR_MASS);
+  cs_real_t p_mass = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
   cs_real_t p_rom  = p_mass * d6spi / pow(p_diam, 3.0);
   cs_real_t romf           = extra->cromf->val[cell_id];
 
@@ -667,7 +665,7 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
     force_p[id] = 0.;
 
   cs_user_lagr_ef(dt_part,
-                  ip,
+                  p_id,
                   taup,
                   tlag,
                   piil,
@@ -709,7 +707,7 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
       && cs_glob_rotation->omega > cs_math_epzero) {
 
     cs_real_t *part_vel
-      = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip,
+      = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
                                                   CS_LAGR_VELOCITY);
     cs_rotation_add_coriolis_v(cs_glob_rotation, -2., part_vel, force_p);
   }
