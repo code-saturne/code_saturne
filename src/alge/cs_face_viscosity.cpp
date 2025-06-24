@@ -836,13 +836,13 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     cs_lnum_t ii = i_face_cells[f_id][0];
     cs_lnum_t jj = i_face_cells[f_id][1];
 
-    cs_real_t face_u_normal[3];
+    cs_real_t face_normal[3];
     for (cs_lnum_t kk = 0; kk < 3; kk++)
-      face_u_normal[kk] = i_face_surf[f_id] * i_face_u_normal[f_id][kk];
+      face_normal[kk] = i_face_surf[f_id] * i_face_u_normal[f_id][kk];
 
     /* ||Ki.S||^2 */
     cs_real_t viscisv[3];
-    cs_math_sym_33_3_product(c_poro_visc[ii], face_u_normal, viscisv);
+    cs_math_sym_33_3_product(c_poro_visc[ii], face_normal, viscisv);
     cs_real_t viscis = cs_math_3_square_norm(viscisv);
 
     /* IF */
@@ -853,7 +853,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     /* IF.Ki.S */
     cs_real_t fiki[3];
     cs_math_sym_33_3_product(c_poro_visc[ii], fi, fiki);
-    cs_real_t fikis = cs_math_3_dot_product(fiki, face_u_normal);
+    cs_real_t fikis = cs_math_3_dot_product(fiki, face_normal);
 
     cs_real_t distfi = (1. - weight[f_id])*i_dist[f_id];
 
@@ -867,7 +867,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
     /* ||Kj.S||^2 */
     cs_real_t viscjsv[3];
-    cs_math_sym_33_3_product(c_poro_visc[jj], face_u_normal, viscjsv);
+    cs_math_sym_33_3_product(c_poro_visc[jj], face_normal, viscjsv);
     cs_real_t viscjs = cs_math_3_square_norm(viscjsv);
 
     /* FJ */
@@ -878,7 +878,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     /* FJ.Kj.S */
     cs_real_t fjkj[3];
     cs_math_sym_33_3_product(c_poro_visc[jj], fj, fjkj);
-    cs_real_t fjkjs = cs_math_3_dot_product(fjkj, face_u_normal);
+    cs_real_t fjkjs = cs_math_3_dot_product(fjkj, face_normal);
 
     cs_real_t distfj = weight[f_id]*i_dist[f_id];
 
@@ -909,13 +909,13 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
     cs_lnum_t ii = b_face_cells[f_id];
 
-    cs_real_t face_u_normal[3];
+    cs_real_t face_normal[3];
     for (cs_lnum_t kk = 0; kk < 3; kk++)
-      face_u_normal[kk] = b_face_surf[f_id] * b_face_u_normal[f_id][kk];
+      face_normal[kk] = b_face_surf[f_id] * b_face_u_normal[f_id][kk];
 
     /* ||Ki.S||^2 */
     cs_real_t viscisv[3];
-    cs_math_sym_33_3_product(c_poro_visc[ii], face_u_normal, viscisv);
+    cs_math_sym_33_3_product(c_poro_visc[ii], face_normal, viscisv);
     cs_real_t viscis = cs_math_3_square_norm(viscisv);
 
     /* IF */
@@ -926,7 +926,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     /* IF.Ki.S */
     cs_real_t fiki[3];
     cs_math_sym_33_3_product(c_poro_visc[ii], fi, fiki);
-    cs_real_t fikis = cs_math_3_dot_product(fiki, face_u_normal);
+    cs_real_t fikis = cs_math_3_dot_product(fiki, face_normal);
 
     cs_real_t distfi = b_dist[f_id];
 
