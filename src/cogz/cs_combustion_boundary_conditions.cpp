@@ -653,6 +653,9 @@ cs_combustion_boundary_conditions_density(void)
     auto ci = reinterpret_cast<cs_combustion_bc_inlet_t *>
                 (cs_boundary_conditions_get_model_inlet(z));
 
+    if (ci == nullptr)
+      return;
+
     if (ci->ientfu == 1 || ci->ientox == 1) {
 
       cs_real_t rho_b_in = 0;
@@ -751,6 +754,9 @@ cs_combustion_boundary_conditions_density_ebu_lw(void)
 
     auto ci = reinterpret_cast<cs_combustion_bc_inlet_t *>
                 (cs_boundary_conditions_get_model_inlet(z));
+
+    if (ci == nullptr)
+      return;
 
     if (ci->ientgb == 1 || ci->ientgf == 1) {
 
