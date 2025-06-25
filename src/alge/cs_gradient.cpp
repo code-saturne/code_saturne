@@ -2050,6 +2050,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
     cs_parall_sum(1, CS_DOUBLE, &l2_residual);
 
+    l2_residual = sqrt(l2_residual);
+
     if (l2_residual < epsrgp*rnorm) {
       if (verbosity >= 2)
         bft_printf(_(" %s; variable: %s; converged in %d sweeps\n"
@@ -6278,6 +6280,8 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
       /* Convergence test (L2 norm) */
 
       cs_parall_sum(1, CS_DOUBLE, &l2_residual);
+
+      l2_residual = sqrt(l2_residual);
 
     } /* End of the iterative process */
 
