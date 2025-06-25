@@ -2011,12 +2011,13 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * This should be valid with the theta scheme on source terms. */
   if (eqp->verbosity > 1) {
     double sclnor = 0.;
-    if (eqp->nswrsm > 1 && eqp->istat) {
+    short int istat = eqp->istat;
+    if (eqp->nswrsm > 1) {
       ctx.parallel_for_reduce_sum(n_cells, sclnor, [=] CS_F_HOST_DEVICE
                                   (cs_lnum_t c_id,
                                    CS_DISPATCH_REDUCER_TYPE(double) &sum) {
         cs_real_t rhs_c =   rhs[c_id]
-                          -  xcpp[c_id]*(pcrom[c_id]/dt[c_id])
+                          -  istat*xcpp[c_id]*(pcrom[c_id]/dt[c_id])
                             *cell_f_vol[c_id]*(cvar_var[c_id]-cvara_var[c_id]);
         sum += cs_math_pow2(rhs_c);
       });
