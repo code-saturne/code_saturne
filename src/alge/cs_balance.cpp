@@ -333,35 +333,13 @@ cs_balance_scalar(int                         idtvar,
   int iconvp = eqp->iconv;
   int idiffp = eqp->idiff;
   int idftnp = eqp->idften;
-  cs_equation_param_t eqp_loc;
+  cs_equation_param_t eqp_loc = *eqp;
 
   if (f_id < 0) {
-    eqp_loc = cs_parameters_equation_param_default();
-    eqp_loc.verbosity   = eqp->verbosity;
-    eqp_loc.iconv    = eqp->iconv;
-    eqp_loc.istat    = -1; /* unused in balance */
-    eqp_loc.idiff    = eqp->idiff;
-    eqp_loc.idifft   = -1; /* unused in balance */
-    eqp_loc.idften   = eqp->idften;
-    eqp_loc.iswdyn   = -1; /* unused in balance */
-    eqp_loc.ischcv   = eqp->ischcv;
-    eqp_loc.isstpc   = eqp->isstpc;
-    eqp_loc.nswrgr   = eqp->nswrgr;
-    eqp_loc.nswrsm   = -1; /* unused in balance */
-    eqp_loc.imrgra   = eqp->imrgra;
-    eqp_loc.imligr   = eqp->imligr;
-    eqp_loc.ircflu   = eqp->ircflu;
-    eqp_loc.iwgrec   = 0;  /* require field id */
-    eqp_loc.icoupl   = -1; /* require field id */
-    eqp_loc.theta   = eqp->theta;
-    eqp_loc.blencv   = eqp->blencv;
-    eqp_loc.blend_st = eqp->blend_st;
-    eqp_loc.epsilo   = -1.; /* unused in balance */
-    eqp_loc.epsrsm   = -1.; /* unused in balance */
-    eqp_loc.epsrgr   = eqp->epsrgr;
-    eqp_loc.climgr   = eqp->climgr;
-    eqp_loc.relaxv   = eqp->relaxv;
-  } else {
+    eqp_loc.iwgrec = 0;  /* requires field id */
+    eqp_loc.icoupl = -1; /* requires field id */
+  }
+  else {
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
     cs_field_get_key_struct(f, k_id, &eqp_loc);
@@ -579,35 +557,15 @@ cs_balance_vector(int                         idtvar,
   int iconvp = eqp->iconv;
   int idiffp = eqp->idiff;
   int idftnp = eqp->idften;
-  cs_equation_param_t eqp_loc;
+
+  assert(eqp != nullptr);
+  cs_equation_param_t eqp_loc = *eqp;
 
   if (f_id < 0) {
-    eqp_loc = cs_parameters_equation_param_default();
-    eqp_loc.verbosity   = eqp->verbosity;
-    eqp_loc.iconv    = eqp->iconv;
-    eqp_loc.istat    = -1; /* unused in balance */
-    eqp_loc.idiff    = eqp->idiff;
-    eqp_loc.idifft   = -1; /* unused in balance */
-    eqp_loc.idften   = eqp->idften;
-    eqp_loc.iswdyn   = -1; /* unused in balance */
-    eqp_loc.ischcv   = eqp->ischcv;
-    eqp_loc.isstpc   = eqp->isstpc;
-    eqp_loc.nswrgr   = eqp->nswrgr;
-    eqp_loc.nswrsm   = -1; /* unused in balance */
-    eqp_loc.imrgra   = eqp->imrgra;
-    eqp_loc.imligr   = eqp->imligr;
-    eqp_loc.ircflu   = eqp->ircflu;
-    eqp_loc.iwgrec   = 0;  /* require field id */
-    eqp_loc.icoupl   = -1; /* require field id */
-    eqp_loc.theta   = eqp->theta;
-    eqp_loc.blencv   = eqp->blencv;
-    eqp_loc.blend_st = eqp->blend_st;
-    eqp_loc.epsilo   = -1.; /* unused in balance */
-    eqp_loc.epsrsm   = -1.; /* unused in balance */
-    eqp_loc.epsrgr   = eqp->epsrgr;
-    eqp_loc.climgr   = eqp->climgr;
-    eqp_loc.relaxv = eqp->relaxv;
-  } else {
+    eqp_loc.iwgrec = 0;  /* requires field id */
+    eqp_loc.icoupl = -1; /* requires field id */
+  }
+  else {
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
     cs_field_get_key_struct(f, k_id, &eqp_loc);
@@ -640,7 +598,7 @@ cs_balance_vector(int                         idtvar,
   }
   /* Symmetric tensor diffusivity */
   else if (idftnp & CS_ANISOTROPIC_DIFFUSION) {
-    /* ! Nor diffusive part neither secondary viscosity or transpose of gradient */
+    /* Neither diffusive part nor secondary viscosity or transpose of gradient */
     eqp_loc.idiff = 0;
     /* Convective part */
     if (iconvp == 1) {
@@ -801,35 +759,15 @@ cs_balance_tensor(int                         idtvar,
   int iconvp = eqp->iconv;
   int idiffp = eqp->idiff;
   int idftnp = eqp->idften;
-  cs_equation_param_t eqp_loc;
+
+  assert(eqp != nullptr);
+  cs_equation_param_t eqp_loc = *eqp;
 
   if (f_id < 0) {
-    eqp_loc = cs_parameters_equation_param_default();
-    eqp_loc.verbosity   = eqp->verbosity;
-    eqp_loc.iconv    = eqp->iconv;
-    eqp_loc.istat    = -1; /* unused in balance */
-    eqp_loc.idiff    = eqp->idiff;
-    eqp_loc.idifft   = -1; /* unused in balance */
-    eqp_loc.idften   = eqp->idften;
-    eqp_loc.iswdyn   = -1; /* unused in balance */
-    eqp_loc.ischcv   = eqp->ischcv;
-    eqp_loc.isstpc   = eqp->isstpc;
-    eqp_loc.nswrgr   = eqp->nswrgr;
-    eqp_loc.nswrsm   = -1; /* unused in balance */
-    eqp_loc.imrgra   = eqp->imrgra;
-    eqp_loc.imligr   = eqp->imligr;
-    eqp_loc.ircflu   = eqp->ircflu;
-    eqp_loc.iwgrec   = 0;  /* require field id */
-    eqp_loc.icoupl   = -1; /* require field id */
-    eqp_loc.theta   = eqp->theta;
-    eqp_loc.blencv   = eqp->blencv;
-    eqp_loc.blend_st = eqp->blend_st;
-    eqp_loc.epsilo   = -1.; /* unused in balance */
-    eqp_loc.epsrsm   = -1.; /* unused in balance */
-    eqp_loc.epsrgr   = eqp->epsrgr;
-    eqp_loc.climgr   = eqp->climgr;
-    eqp_loc.relaxv = eqp->relaxv;
-  } else {
+    eqp_loc.iwgrec = 0;  /* requires field id */
+    eqp_loc.icoupl = -1; /* requires field id */
+  }
+  else {
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
     cs_field_get_key_struct(f, k_id, &eqp_loc);
