@@ -4,7 +4,7 @@
 
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -214,7 +214,8 @@ typedef struct {
 
 typedef struct {
 
-  double  *vals;
+  size_t   serialized_size;
+  char    *serialized_data;
 
 } cs_state_t;
 
@@ -456,11 +457,6 @@ public:
   /* Structure for grouped notebook value settings */
 
   cs_variables_t *_cs_variables = nullptr;
-
-  /* Serialization (state) data */
-
-  size_t _serialized_size = 0;
-  char  *_serialized_data = nullptr;
 
   //==========================================================================
   // Default contructor and destructor
@@ -1468,9 +1464,11 @@ public:
 
   /* Query serialized snapshot from the server */
 
-  void
-  _get_serialized_snapshot(int     sock)
+  fmi2Status
+  _get_serialized_snapshot(int          sock,
+                           cs_state_t  *csst)
   {
+    fmi2Status status = fmi2OK;
     string buffer = "snapshot_get_serialized";
 
     string s_log = string(__func__) + ": send query for " + buffer;
@@ -1483,15 +1481,15 @@ public:
     cs_variables_t *v = _cs_variables;
     size_t n_add = (v->n_input + v->n_output) * sizeof(double);
 
-    if (_serialized_data != nullptr) {
-      free(_serialized_data);
-      _serialized_data = nullptr;
+    if (csst->serialized_data != nullptr) {
+      free(csst->serialized_data);
+      csst->serialized_data = nullptr;
     }
 
 #if CS_DRY_RUN == 1
 
-    _serialized_size = n_add;
-    _serialized_data = malloc(n_add);
+    csst->serialized_size = n_add;
+    csst->serialized_data = malloc(n_add);
 
 #else
 
@@ -1505,20 +1503,21 @@ public:
 
     if (strncmp(buf_rcv, "serialized_snapshot", 19) != 0) {
       s_log =   string(__func__) + ": unexpected reply; " + string(buf_rcv);
-      _log(fmi2Error, CS_LOG_ERROR, s_log);
-      throw std::runtime_error(s_log);
+      status = fmi2Error;
+      _log(status, CS_LOG_ERROR, s_log);
+      return status;
     }
 
     /* Data size */
     _recv_sock(_cs_socket, (char *)restart_size, _control_queue,
                sizeof(size_t), 1);
 
-    _serialized_size = restart_size[0] + n_add;
-    _serialized_data = (char *)malloc(_serialized_size);
-    assert(_serialized_data != nullptr || _serialized_size == 0);
+    csst->serialized_size = restart_size[0] + n_add;
+    csst->serialized_data = (char *)malloc(csst->serialized_size);
+    assert(csst->serialized_data != nullptr || csst->serialized_size == 0);
 
     if (restart_size[0] > 0)
-      _recv_sock(_cs_socket, _serialized_data, _control_queue,
+      _recv_sock(_cs_socket, csst->serialized_data, _control_queue,
                  1, restart_size[0]);
 
     s_log = string(__func__) + ": received snapshot";
@@ -1528,15 +1527,19 @@ public:
     buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
     if (strcmp(buf_rcv, "0") != 0) {
       string s = string(__func__) + ": unexpected return code: " + string(buf_rcv);
-      _log(fmi2Warning, CS_LOG_WARNING, s);
+      status = fmi2Error;
+      _log(status, CS_LOG_WARNING, s);
+      return status;
     }
 
 #endif
 
-    char *p = _serialized_data + restart_size[0];
+    char *p = csst->serialized_data + restart_size[0];
     memcpy(p, v->input_vals, v->n_input*sizeof(double));
     p += v->n_input*sizeof(double);
     memcpy(p, v->output_vals, v->n_output*sizeof(double));
+
+    return status;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1832,6 +1835,42 @@ public:
 
 };
 
+/*----------------------------------------------------------------------------*/
+
+fmi2Status
+_get_state_pointer(const char     *caller_name,
+                   fmi2Component   component,
+                   fmi2FMUstate   *state)
+{
+  cs_fmu *c = static_cast<cs_fmu *>(component);
+
+  cs_state_t *csst = nullptr;
+
+  if (*state == nullptr) {
+    csst = (cs_state_t *)malloc(sizeof(cs_state_t));
+    csst->serialized_size = 0;
+    csst->serialized_data = nullptr;
+
+    fmi2FMUstate fs = (fmi2FMUstate)csst;
+    c->_states[fs] = fs;
+
+    *state = fs;
+  }
+  else {
+    if (c->_states.count(*state) > 0)
+      csst = (cs_state_t *)c->_states[*state];
+    else {
+      char s[128];
+      snprintf(s, 127, "%s: called for %p, not previously defined",
+               caller_name, (void *)(*state));
+      c->_log(fmi2Error, CS_LOG_ERROR, s);
+      return fmi2Error;
+    }
+  }
+
+  return fmi2OK;
+}
+
 /*============================================================================
  * code_saturne FMU method definitions
  *============================================================================*/
@@ -1873,14 +1912,11 @@ fmi2ExitInitializationMode(fmi2Component  component)
 /*----------------------------------------------------------------------------*/
 
 fmi2Status
-fmi2DoStep(fmi2Component  component,
-           fmi2Real       currentComunicationTime,
-           fmi2Real       stepSize,
-           fmi2Boolean    noSetFmuFmuStatePriorToCurrentPoint)
+fmi2DoStep(fmi2Component                  component,
+           [[maybe_unused]]  fmi2Real     currentComunicationTime,
+           fmi2Real                       stepSize,
+           [[maybe_unused]]  fmi2Boolean  noSetFmuFmuStatePriorToCurrentPoint)
 {
-  CS_UNUSED(currentComunicationTime);
-  CS_UNUSED(noSetFmuFmuStatePriorToCurrentPoint);
-
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
   fmi2Status  status = fmi2OK;
@@ -2170,37 +2206,30 @@ fmi2GetFMUstate(fmi2Component  component,
   /* Not a valid pointer to actual data here,
      just a distinct pointer per state... */
 
-  cs_variables_t *v = c->_cs_variables;
+  fmi2Status status = _get_state_pointer(__func__, component, state);
   cs_state_t *csst = nullptr;
 
-  if (*state == nullptr) {
-    csst = (cs_state_t *)malloc(sizeof(cs_state_t));
-    csst->vals = (double *)malloc(sizeof(double) * (v->n_input+v->n_output));
-    fmi2FMUstate fs = (fmi2FMUstate)csst;
-    c->_states[fs] = fs;
+  if (status == fmi2OK) {
+    csst = (cs_state_t *)(*state);
 
-    *state = fs;
-  }
-  else {
-    if (c->_states.count(*state) > 0)
-      csst = (cs_state_t *)c->_states[*state];
-    else {
-      snprintf(s, 127, "%s: called for %p, not previously defined",
-               __func__, (void *)*state);
-      c->_log(fmi2Error, CS_LOG_ERROR, s);
-      return fmi2Error;
-    }
+    status = c->_get_serialized_snapshot(c->_cs_socket, csst);
   }
 
-  {
+  if (status == fmi2OK) {
+    cs_variables_t *v = c->_cs_variables;
+    ptrdiff_t vals_shift =   csst->serialized_size
+                           - (v->n_input + v->n_output)*sizeof(double);
+    void *vals_p = csst->serialized_data + vals_shift;
+    double *vals = reinterpret_cast<double *>(vals_p);
+
     int j = 0;
     for (int i = 0; i < v->n_input; i++)
-      csst->vals[j++] = v->input_vals[i];
+      vals[j++] = v->input_vals[i];
     for (int i = 0; i < v->n_output; i++)
-      csst->vals[j++] = v->output_vals[i];
+      vals[j++] = v->output_vals[i];
   }
 
-  return fmi2Warning;
+  return status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2228,15 +2257,31 @@ fmi2SetFMUstate(fmi2Component  component,
     return fmi2Error;
   }
 
+  size_t restart_size =   csst->serialized_size
+                        - (v->n_input + v->n_output)*sizeof(double);
+  void *vals_p = csst->serialized_data + restart_size;
+  const double *vals = reinterpret_cast<const double *>(vals_p);
+
   {
     int j = 0;
     for (int i = 0; i < v->n_input; i++)
-      v->input_vals[i] = csst->vals[j++];
+      v->input_vals[i] = vals[j++];
     for (int i = 0; i < v->n_output; i++)
-      v->output_vals[i] = csst->vals[j++];
+      v->output_vals[i] = vals[j++];
   }
 
-  return fmi2Warning;
+  /* Now send rest of snapshot to server */
+
+  string buffer = "snapshot_load_serialized " + to_string(restart_size);
+
+  string s_log = string(__func__) + ": send command : " + buffer;
+  c->_log(fmi2OK, CS_LOG_TRACE, s_log);
+
+  c->_send_sock_str(c->_cs_socket, buffer.c_str());
+
+  c->_send_sock(c->_cs_socket, csst->serialized_data, 1, restart_size);
+
+  return fmi2OK;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2257,7 +2302,7 @@ fmi2FreeFMUstate(fmi2Component  component,
              __func__, (void *)*state);
     c->_log(fmi2OK, CS_LOG_TRACE, s);
     cs_state_t *csst = (cs_state_t *)c->_states[*state];
-    free(csst->vals);
+    free(csst->serialized_data);
     free(csst);
     c->_states.erase(*state);
     *state = nullptr;
@@ -2268,7 +2313,7 @@ fmi2FreeFMUstate(fmi2Component  component,
     c->_log(fmi2Error, CS_LOG_WARNING, s);
   }
 
-  return fmi2Warning;
+  return fmi2OK;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2280,12 +2325,12 @@ fmi2SerializedFMUstateSize(fmi2Component  component,
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
-  c->_get_serialized_snapshot(c->_cs_socket);
+  cs_state_t *csst = (cs_state_t *)state;
 
-  *stateSize = c->_serialized_size;
+  *stateSize = csst->serialized_size;
   char s[128];
   snprintf(s, 127, "%s: called for %p (%ld bytes)",
-           __func__, (void *)state, (long)c->_serialized_size);
+           __func__, (void *)state, (long)csst->serialized_size);
   c->_log(fmi2OK, CS_LOG_TRACE, s);
 
   return fmi2OK;
@@ -2300,24 +2345,21 @@ fmi2SerializeFMUstate(fmi2Component  component,
                       size_t         serializedStateSize)
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
+  cs_state_t *csst = (cs_state_t *)state;
 
   char s[128];
 
-  if (serializedStateSize != c->_serialized_size) {
+  if (serializedStateSize != csst->serialized_size) {
     snprintf(s, 127,
              "%s: called for %p\n"
              "with size %d (%d expected)",
              __func__, (void *)state,
-             (int)serializedStateSize, (int)c->_serialized_size);
+             (int)serializedStateSize, (int)csst->serialized_size);
     c->_log(fmi2Error, CS_LOG_TRACE, s);
     return fmi2Error;
   }
 
-  memcpy(serializedState, c->_serialized_data, c->_serialized_size);
-
-  c->_serialized_size = 0;
-  free(c->_serialized_data);
-  c->_serialized_data = nullptr;
+  memcpy(serializedState, csst->serialized_data, csst->serialized_size);
 
   snprintf(s, 127, "%s: called for %p", __func__, (void *)state);
   c->_log(fmi2Error, CS_LOG_TRACE, s);
@@ -2332,38 +2374,27 @@ fmi2DeSerializeFMUstate(fmi2Component   component,
                         size_t          size,
                         fmi2FMUstate*   state)
 {
-  CS_UNUSED(state);  // Assumed to be handled by caller only.
-
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
   char s[128];
   snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
   c->_log(fmi2OK, CS_LOG_ERROR, s);
 
-  /* Add input and output variables to end of snapshot */
+  fmi2Status status = _get_state_pointer(__func__, component, state);
 
-  cs_variables_t *v = c->_cs_variables;
+  if (status == fmi2OK){
+  cs_state_t *csst = (cs_state_t *)(*state);
 
-  char *p = (char *)serializedState;
-  p += size - v->n_output*sizeof(double);
-  memcpy(v->output_vals, p, v->n_output*sizeof(double));
-  p -= v->n_input*sizeof(double);
-  memcpy(v->input_vals, p, v->n_input*sizeof(double));
+  if (csst->serialized_data != nullptr)
+    free(csst->serialized_data);
 
-  size_t restart_size = size - (v->n_output + v->n_input)*sizeof(double);
+  csst->serialized_size = size;
+  csst->serialized_data = (char *)malloc(csst->serialized_size);
 
-  /* Now send rest of snapshot to server */
+  memcpy(csst->serialized_data, serializedState, size);
+  }
 
-  string buffer = "snapshot_load_serialized " + to_string(restart_size);
-
-  string s_log = string(__func__) + ": send command : " + buffer;
-  c->_log(fmi2OK, CS_LOG_TRACE, s_log);
-
-  c->_send_sock_str(c->_cs_socket, buffer.c_str());
-
-  c->_send_sock(c->_cs_socket, (char *)serializedState, 1, restart_size);
-
-  return fmi2OK;
+  return status;
 }
 
 fmi2Status
