@@ -50,6 +50,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#if defined(__linux__) || defined(__linux) || defined(linux)
+#include <sys/ioctl.h>
+#include <linux/sockios.h>
+#define CHECK_SOCK_STATE
+#endif
+
 #include <map>
 #include <functional>
 #include <iostream>
@@ -556,6 +562,28 @@ public:
   /* Send data on a socket */
 
   void
+  _check_sock_for_send(int  sock)
+  {
+#if CS_DRY_RUN == 1
+    return;
+#endif
+
+#if defined(CHECK_SOCK_STATE)
+    int pending;
+    if (ioctl(sock, SIOCINQ, &pending) != 0)
+      cout << "ioctl call failed." << endl;
+    else if (pending > 0) {
+      string s0 = "Values not read before send attempt: ";
+      cout << s0 << pending << endl;
+      _log(fmi2Fatal, CS_LOG_FATAL, s0);
+      throw std::runtime_error(s0);
+    }
+#endif
+  }
+
+  /* Send data on a socket */
+
+  void
   _send_sock(int       sock,
             char     *buffer,
             size_t    size,
@@ -596,6 +624,7 @@ public:
         end_id = n_bytes;
       size_t n_loc = end_id - start_id;
 
+      _check_sock_for_send(sock);
       ssize_t ret = send(sock, buffer+start_id, n_loc, 0);
 
       if (ret < 1) {
@@ -637,6 +666,7 @@ public:
       fflush(_tracefile);
     }
 
+    _check_sock_for_send(sock);
     ssize_t ret = send(sock, str, n, 0);
 
     if (ret < 1) {
