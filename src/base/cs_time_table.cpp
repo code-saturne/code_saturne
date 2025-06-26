@@ -816,9 +816,7 @@ cs_time_table_get_data(const char        *name)
 {
   cs_time_table_t *table = cs_time_table_by_name(name);
 
-  const cs_real_t **retvals = (const cs_real_t  **)table->columns;
-
-  return retvals;
+  return const_cast<const cs_real_t **>(table->columns);
 }
 
 /*----------------------------------------------------------------------------*/
