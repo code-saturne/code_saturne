@@ -1,0 +1,981 @@
+#ifndef __CS_ARRAY_SPAN_H__
+#define __CS_ARRAY_SPAN_H__
+
+/*============================================================================
+ * Templated 2D array object
+ *============================================================================*/
+
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2025 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "bft/bft_error.h"
+
+#include "base/cs_defs.h"
+
+#include "base/cs_array.h"
+#include "base/cs_mem.h"
+
+#if defined(__cplusplus)
+
+#include <array>
+
+/*=============================================================================
+ * BUILTIN TEST
+ *============================================================================*/
+
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+
+/*=============================================================================
+ * Public C++ class template
+ *============================================================================*/
+
+namespace cs {
+
+namespace array {
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \class Templated data array class.
+ */
+/*----------------------------------------------------------------------------*/
+
+template<class T>
+class data_array {
+
+public:
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default constructor method leading to "empty container".
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  data_array():
+    _size(0),
+    _owner(true),
+    _data(nullptr),
+    _mode(cs_alloc_mode)
+  {
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method using only size.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  data_array
+  (
+    cs_lnum_t     size,
+    cs_alloc_mode_t alloc_mode = cs_alloc_mode,
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  :
+    _size(size),
+    _owner(true),
+    _data(nullptr),
+    _mode(alloc_mode)
+  {
+    allocate_(file_name, line_number);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method for non owner version
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  data_array
+  (
+    cs_lnum_t  size,
+    T         *data,
+    cs_alloc_mode_t alloc_mode = cs_alloc_mode,
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  :
+    _size(size),
+    _owner(false),
+    _mode(alloc_mode),
+    _data(data)
+  {
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method using copy. May be a shallow copy.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  data_array
+  (
+    data_array& other,
+    bool        shallow_copy=false,
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    _size = other._size;
+    _mode = other._mode;
+
+    /* If shallow copy new instance is not owner. Otherwise same ownership
+     * as original instance since we copy it.
+     */
+    _owner = (shallow_copy) ? false : other._owner;
+
+    if (_owner) {
+      allocate_(file_name, line_number);
+      cs_array_copy<T>(_size, other._data, _data);
+    }
+    else {
+      _data = other._data;
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Move constructor.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  data_array
+  (
+    data_array&& other /*!<[in] Original reference to move */
+  )
+  : data_array()
+  {
+    swap(*this, other);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Destructor method.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  ~data_array()
+  {
+    clear();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Class swap operator used for assignment or move.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  friend void
+  swap
+  (
+    data_array& first,
+    data_array& second
+  )
+  {
+    using std::swap;
+
+    /* Swap the different members between the two references. */
+    swap(first._size, second._size);
+    swap(first._owner, second._owner);
+    swap(first._data, second._data);
+    swap(first._mode, second._mode);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Assignment operator.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  data_array& operator=(data_array other)
+  {
+    swap(*this, other);
+
+    return *this;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Clear data (empty container).
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  clear()
+  {
+    if (_owner) {
+      CS_FREE(_data);
+    }
+    else {
+      _data = nullptr;
+    }
+
+    _size = 0;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Change pointers/size of an existing container.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  point_to
+  (
+    data_array& other /*!<[in] Other instance to which we want to point
+                               to (shallow copy) */
+  )
+  {
+    clear();
+    *this = other.view();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set all values of the data array to a constant value.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void set_to_val
+  (
+    T val /*!<[in] Value to set to entire data array. */
+  )
+  {
+    cs_arrays_set_value<T,1>(_size, val, _data);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Initializer method for empty containers.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  empty()
+  {
+    _size = 0;
+    _owner = false;
+    _data = nullptr;
+    _mode = cs_alloc_mode;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void resize
+  (
+    cs_lnum_t       new_size,         /*!<[in] New size */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    assert(new_size >= 0);
+
+    /* If same dimensions, nothing to do ... */
+    if (new_size == _size)
+      return;
+
+    if (_owner) {
+      clear();
+      _size = new_size;
+      allocate_(file_name, line_number);
+    }
+
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void resize
+  (
+    cs_lnum_t       new_size,     /*!<[in] New size */
+    bool            copy_data,    /*!<[in] Copy data from old pointer to new
+                                           array. Default is false. */
+    cs_lnum_t       size_to_keep, /*!<[in] Size of data to keep */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    assert(new_size >= 0);
+    assert(size_to_keep <= new_size && size_to_keep <= _size);
+
+    /* If same dimensions, nothing to do ... */
+    if (new_size == _size)
+      return;
+
+    if (copy_data && !(size_to_keep <= new_size && size_to_keep <= _size))
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Data cannot be saved when new size is smaller than size to keep.\n",
+                __func__);
+
+    if (_owner) {
+      if (copy_data) {
+        /* If new size is larger, realloc is sufficient. */
+        _size = new_size;
+        reallocate_(file_name, line_number);
+      }
+      else {
+        resize(new_size, file_name, line_number);
+      }
+    }
+
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set memory allocation mode.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void set_alloc_mode
+  (
+    cs_alloc_mode_t mode /*!<[in] Memory allocation mode. */
+  )
+  {
+    if (_mode != mode) {
+      if (_size != 0)
+        clear();
+
+      _mode = mode;
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
+
+//  template<int N, typename... Args>
+//  span<T, N>
+//  span_view
+//  (
+//    Args... args
+//  )
+//  {
+//    static_assert(sizeof...(Args) == N);
+//
+//    cs_lnum_t _vals[] = {args ...};
+//    cs_lnum_t span_size = 1;
+//    for (int i = 0; i < N; i++)
+//      span_size *= _vals[i];
+//
+//    if (span_size != _size)
+//      bft_error(__FILE__, __LINE__, 0,
+ //               _("%s: Total span size is different from array size.\n"),
+//                __func__);
+//
+//  }
+
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Getter to data array
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T*
+  vals()
+  {
+    return _data;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Const getter to data array
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  const T*
+  vals() const
+  {
+    return _data;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded [] operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T& operator[]
+  (
+    int i
+  )
+  {
+    return _data[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded [] operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  const T& operator[]
+  (
+    int i
+  ) const
+  {
+    return _data[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded () operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T& operator()
+  (
+    int i
+  )
+  {
+    return _data[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded [] operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  const T& operator()
+  (
+    int i
+  ) const
+  {
+    return _data[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Getter function for total size.
+   *
+   * \returns value for total size of data array (cs_lnum_t)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_lnum_t size()
+  {
+    return _size;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Getter function for allocation mode.
+   *
+   * \returns memory allocation mode (cs_alloc_mode_t)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_alloc_mode_t mode()
+  {
+    return _mode;
+  }
+
+private:
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private allocator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  allocate_
+  (
+    const char *file_name,  /*!<[in] Caller file (for log) */
+    const int   line_number /*!<[in] Caller line (for log) */
+  )
+  {
+    const char *_ptr_name = "[data_array]._data";
+    _data = static_cast<T *>(cs_mem_malloc_hd(_mode,
+                                              _size,
+                                              sizeof(T),
+                                              _ptr_name,
+                                              file_name,
+                                              line_number));
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private re-allocator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  reallocate_
+  (
+    const char *file_name,  /*!<[in] Caller file (for log) */
+    const int   line_number /*!<[in] Caller line (for log) */
+  )
+  {
+    /* If not owner no-op */
+    if (_owner) {
+      const char *_ptr_name = "[data_array]._data";
+      _data = static_cast<T *>(cs_mem_realloc_hd(_data,
+                                                 _mode,
+                                                 _size,
+                                                 sizeof(T),
+                                                 _ptr_name,
+                                                 file_name,
+                                                 line_number));
+    }
+  };
+
+  /*--------------------------------------------------------------------------*/
+  /* Private members */
+  /*--------------------------------------------------------------------------*/
+
+  cs_lnum_t       _size;
+  bool            _owner;
+  T*              _data;
+  cs_alloc_mode_t _mode;
+
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \class Templated data array class.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <class T, int N>
+class span {
+public:
+
+  CS_F_HOST_DEVICE
+  span() :
+    _dim({0}),
+    _size(0),
+    _owner(true),
+    _data(nullptr),
+    _mode(cs_alloc_mode)
+  {}
+
+  CS_F_HOST_DEVICE
+  span
+  (
+    const cs_lnum_t(&dims)[N],
+#if (defined(__GNUC__) || defined(__clang__)) && \
+   __has_builtin(__builtin_LINE) && \
+   __has_builtin(__builtin_FILE)
+   const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+   const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+   const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+   const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  :
+    _owner(true),
+    _data(nullptr),
+    _mode(cs_alloc_mode)
+  {
+    set_size_(dims);
+    allocate_(file_name, line_number);
+  }
+
+  CS_F_HOST_DEVICE
+  span
+  (
+    const cs_lnum_t(&dims)[N],
+    cs_alloc_mode_t alloc_mode, /*!<[in] Memory allocation mode */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+   __has_builtin(__builtin_LINE) && \
+   __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  :
+    _owner(true),
+    _data(nullptr),
+    _mode(alloc_mode)
+  {
+    set_size_(dims);
+    allocate_(file_name, line_number);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method for non owner version
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  span
+  (
+    const cs_lnum_t(&dims)[N],
+    T*                      data,              /*!<[in] Pointer to data array */
+    cs_alloc_mode_t alloc_mode = cs_alloc_mode /*!<[in] Memory allocation mode,
+                                                        default is HOST. */
+  )
+  :
+    _owner(false),
+    _data(data),
+    _mode(alloc_mode)
+  {
+    set_size_(dims);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method for non owner from data_array
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  span
+  (
+    const cs_lnum_t(&dims)[N],
+    data_array<T>& array,
+#if (defined(__GNUC__) || defined(__clang__)) && \
+   __has_builtin(__builtin_LINE) && \
+   __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  :
+    _owner(false)
+  {
+    // Check that the span is correct
+    set_size_(dims);
+
+    if (_size != array.size())
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: The dimensions provided for the span lead to size %d "
+                  "which is different than size %d of the data array.\n"
+                  "Called from file \"%s\" L%d\n"),
+                __func__, _size, array.size(), file_name, line_number);
+
+    _mode = array.mode();
+    _data = array.vals();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Class swap operator used for assignment or move.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  friend void
+  swap
+  (
+    span& first,
+    span& second
+  )
+  {
+    using std::swap;
+
+    /* Swap the different members between the two references. */
+    swap(first._dims, second._dims);
+    swap(first._size, second._size);
+    swap(first._owner, second._owner);
+    swap(first._data, second._data);
+    swap(first._mode, second._mode);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Assignment operator.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  span& operator=(span other)
+  {
+    swap(*this, other);
+
+    return *this;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded () operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T& operator()
+  (
+    cs_lnum_t i
+  )
+  {
+    static_assert(N == 1);
+    return _data[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded [] operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  const T& operator()
+  (
+    cs_lnum_t i
+  ) const
+  {
+    static_assert(N == 1);
+    return _data[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded () operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T& operator()
+  (
+    cs_lnum_t i,
+    cs_lnum_t j
+  )
+  {
+    static_assert(N == 2);
+    return _data[i*_dim[1] + j];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded [] operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  const T& operator()
+  (
+    cs_lnum_t i,
+    cs_lnum_t j
+  ) const
+  {
+    static_assert(N == 2);
+    return _data[i*_dim[1] + j];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded () operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T& operator()
+  (
+    cs_lnum_t i,
+    cs_lnum_t j,
+    cs_lnum_t k
+  )
+  {
+    static_assert(N == 3);
+    return _data[i*_dim[1]*_dim[2] + j*_dim[2] + k];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded [] operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  const T& operator()
+  (
+    cs_lnum_t i,
+    cs_lnum_t j,
+    cs_lnum_t k
+  ) const
+  {
+    static_assert(N == 3);
+    return _data[i*_dim[2]*_dim[1] + j*_dim[2] + k];
+  }
+
+private:
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private set dimensions method
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  set_size_
+  (
+    const cs_lnum_t dims[]
+  )
+  {
+    _size = (N > 0) ? 1 : 0;
+    for (int i = 0; i < N; i++) {
+      _dim[i] = dims[i];
+      _size *= dims[i];
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private allocator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  allocate_
+  (
+    const char *file_name,  /*!<[in] Caller file (for log) */
+    const int   line_number /*!<[in] Caller line (for log) */
+  )
+  {
+    const char *ptr_name = "cs::array::span._data";
+    _data = static_cast<T *>(cs_mem_malloc_hd(_mode,
+                                              _size,
+                                              sizeof(T),
+                                              ptr_name,
+                                              file_name,
+                                              line_number));
+  }
+
+
+  /*--------------------------------------------------------------------------*/
+  /* Private members */
+  /*--------------------------------------------------------------------------*/
+
+  cs_lnum_t       _dim[N];
+  cs_lnum_t       _size;
+  bool            _owner;
+  T*              _data;
+  cs_alloc_mode_t _mode;
+};
+
+} /* namespace array */
+} /* namespace cs */
+
+/*----------------------------------------------------------------------------*/
+
+#endif // __cplusplus
+
+/*----------------------------------------------------------------------------*/
+
+#endif // __CS_ARRAY_SPAN_H__
