@@ -437,6 +437,7 @@ public:
   fmi2Char                 *_resource_location;
 
   FILE *_tracefile = nullptr;
+  size_t  _trace_max = 10;
 
   /* Active logging: 0: inactive, 1, log using FMI, -1: low-level trace,
      - 2: low level trace if FMI logging not active, changed to 1
@@ -597,12 +598,27 @@ public:
         fprintf(_tracefile, "]...\n");
       }
       else {
-        fprintf(_tracefile, "== send %d values of size %d:\n", (int)ni, (int)size);
-        for (size_t i = 0; i < ni; i++) {
+        fprintf(_tracefile, "== send %d values of size %d:\n",
+                (int)ni, (int)size);
+        size_t n0 = ni, n1 = ni;
+        if (_trace_max*2 < ni) {
+          n0 = _trace_max;
+          n1 = ni - _trace_max;
+        }
+        for (size_t i = 0; i < n0; i++) {
           fprintf(_tracefile, "    ");
           for (size_t j = 0; j < size; j++)
             fprintf(_tracefile, " %x", (unsigned)buffer[i*size + j]);
           fprintf(_tracefile, "\n");
+        }
+        if (n0 < ni) {
+          fprintf(_tracefile, " <%u values skipped...>", (unsigned)(n1-n0));
+          for (size_t i = n1; i < ni; i++) {
+            fprintf(_tracefile, "    ");
+            for (size_t j = 0; j < size; j++)
+              fprintf(_tracefile, " %x", (unsigned)buffer[i*size + j]);
+            fprintf(_tracefile, "\n");
+          }
         }
       }
       fflush(_tracefile);
@@ -636,7 +652,7 @@ public:
       _swap_endian(buffer, size, ni);
   }
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   /* Send a message on a socket */
 
@@ -749,11 +765,25 @@ public:
     }
 
     if (_tracefile != nullptr && size > 1) {
-      for (size_t i = 0; i < ni; i++) {
+      size_t n0 = ni, n1 = ni;
+      if (_trace_max*2 < ni) {
+        n0 = _trace_max;
+        n1 = ni - _trace_max;
+      }
+      for (size_t i = 0; i < n0; i++) {
         fprintf(_tracefile, "    ");
         for (size_t j = 0; j < size; j++)
           fprintf(_tracefile, " %x", (unsigned)buffer[i*size + j]);
         fprintf(_tracefile, "\n");
+      }
+      if (n0 < ni) {
+        fprintf(_tracefile, " <%u values skipped...>", (unsigned)(n1-n0));
+        for (size_t i = n1; i < ni; i++) {
+          fprintf(_tracefile, "    ");
+          for (size_t j = 0; j < size; j++)
+            fprintf(_tracefile, " %x", (unsigned)buffer[i*size + j]);
+          fprintf(_tracefile, "\n");
+        }
       }
     }
 
@@ -1630,6 +1660,12 @@ public:
         _tracefile = fopen(p, "w");
       else
         _tracefile = stdout;
+
+      const char *p = getenv("CS_FMU_COMM_TRACE_N_MAX");
+      if (p != nullptr) {
+        long l = atol(p);
+        _trace_max = l;
+      }
     }
 
     /* Initialize code_saturne calculation */
