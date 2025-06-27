@@ -3,6 +3,12 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Time moments: use reference time step instead of local time step.
+  * This changes the behavior only when using a local (pseudo-steady)
+    time step, where the average cannot be interpreted as a true time
+    average, but as an "ensemble" mean.
+  * Compatibility with older checkpoints is maintained.
+
 - Add a "FOR_RANGE" operator to the mathematical equations editor of the GUI.
   Users can now define "for" loops in the formulae in the GUI using the
   following syntax : "FOR_RANGE(var_name, var_start, var_stop)".

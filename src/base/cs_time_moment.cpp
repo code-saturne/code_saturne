@@ -235,7 +235,7 @@ static  cs_time_moment_restart_info_t *_restart_info = nullptr;
 
 static double _t_prev_iter = 0.;
 
-static const cs_real_t *_p_dt = nullptr; /* Mapped cell time step */
+static const cs_real_t *_p_dt = nullptr; /* Mapped reference time step */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -511,7 +511,7 @@ _restart_info_free(void)
  *   ts             <-- time step status
  *   ri             <-> resource info
  *   location_id    <-- associated mesh location id
- *   wa_location_id <-- associated weigh accumulator mesh location id
+ *   wa_location_id <-> associated weigh accumulator mesh location id
  *   dim            <-- dimension associated with moment
  *   type           <-- moment type
  *   nt_start       <-> starting time step
@@ -528,7 +528,7 @@ _check_restart(const char                     *name,
                const cs_time_step_t           *ts,
                cs_time_moment_restart_info_t  *ri,
                int                             location_id,
-               int                             wa_location_id,
+               int                            &wa_location_id,
                int                             dim,
                cs_time_moment_type_t           type,
                int                            *nt_start,
@@ -564,7 +564,8 @@ _check_restart(const char                     *name,
       bool matching_restart = true;
       prev_id = i;
       prev_wa_id = ri->wa_id[i];
-      if (   ri->wa_location_id[prev_wa_id] != wa_location_id
+      if (   (   ri->wa_location_id[prev_wa_id] != wa_location_id
+              && wa_location_id != 0)
           || ri->m_type[i] != (int)type
           || ri->location_id[i] != location_id
           || ri->dimension[i] != dim)
@@ -606,6 +607,8 @@ _check_restart(const char                     *name,
       if (matching_restart == false)
         prev_id = -1;
       else {
+        // wa_location_id > 0 only for compatibility with older checkpoints.
+        wa_location_id = ri->wa_location_id[prev_wa_id];
         *nt_start = ri->wa_nt_start[prev_wa_id];
         *t_start = ri->wa_t_start[prev_wa_id];
       }
@@ -1269,7 +1272,7 @@ _free_all_moments(void)
 
 static cs_real_t *
 _compute_current_weight(cs_time_moment_wa_t  *mwa,
-                        const cs_real_t      *restrict dt,
+                        cs_real_t             dt,
                         cs_real_t             w0[1])
 {
   cs_lnum_t  n_w_elts;
@@ -1285,103 +1288,25 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
   }
   else {
     n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
-    CS_MALLOC(w, n_w_elts, cs_real_t);
+    CS_MALLOC_HD(w, n_w_elts, cs_real_t, cs_alloc_mode);
   }
+
+  /* global time step multiplier */
+
+  double _dt = dt;;
+  if (mwa->nt_start == ts->nt_cur)
+    _dt = ts->t_cur - mwa->t_start;
 
   /* Base weight */
 
-  if (mwa->data_func != nullptr)
+  if (mwa->data_func != nullptr) {
     mwa->data_func(mwa->data_input, w);
-  else {
-    for (cs_lnum_t i = 0; i < n_w_elts; i++)
-      w[i] = 1;
-  }
-
-  /* Multiply by global time step */
-
-  if (! ts->is_local) {
-    double _dt;
-    if (mwa->nt_start == ts->nt_cur)
-      _dt = ts->t_cur - mwa->t_start;
-    else
-      _dt = dt[0];
     for (cs_lnum_t i = 0; i < n_w_elts; i++)
       w[i] *= _dt;
   }
-
-  /* Multiply by local time step */
-
   else {
-
-    const cs_mesh_location_type_t loc_type
-      = cs_mesh_location_get_type(mwa->location_id);
-    const cs_lnum_t *elt_list
-      = cs_mesh_location_get_elt_ids_try(mwa->location_id);
-    const cs_mesh_t *mesh = cs_glob_mesh;
-
-    assert(n_w_elts == cs_mesh_location_get_n_elts(mwa->location_id)[0]);
-    assert(mwa->location_id != CS_MESH_LOCATION_NONE);
-
-    switch(loc_type) {
-    case CS_MESH_LOCATION_CELLS:
-      {
-        if (elt_list == nullptr) {
-          for (cs_lnum_t c_id = 0; c_id < n_w_elts; c_id++)
-            w[c_id] *= dt[c_id];
-        }
-        else {
-          for (cs_lnum_t i = 0; i < n_w_elts; i++) {
-            cs_lnum_t c_id = elt_list[i];
-            w[i] *= dt[c_id];
-          }
-        }
-      }
-      break;
-    case CS_MESH_LOCATION_INTERIOR_FACES:
-      {
-        const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
-        if (elt_list == nullptr) {
-          for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
-            cs_lnum_t c_id_0 = i_face_cells[f_id][0];
-            cs_lnum_t c_id_1 = i_face_cells[f_id][1];
-            w[f_id] *= (dt[c_id_0] + dt[c_id_1]) * 0.5;
-          }
-        }
-        else {
-          for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
-            cs_lnum_t f_id = elt_list[i];
-            cs_lnum_t c_id_0 = i_face_cells[f_id][0];
-            cs_lnum_t c_id_1 = i_face_cells[f_id][1];
-            w[i] *= (dt[c_id_0] + dt[c_id_1]) * 0.5;
-          }
-        }
-      }
-      break;
-    case CS_MESH_LOCATION_BOUNDARY_FACES:
-      {
-        const cs_lnum_t *b_face_cells = (const cs_lnum_t *)mesh->b_face_cells;
-        if (elt_list == nullptr) {
-          for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
-            cs_lnum_t c_id = b_face_cells[f_id];
-            w[f_id] *= dt[c_id];
-          }
-        }
-        else {
-          for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
-            cs_lnum_t f_id = elt_list[i];
-            cs_lnum_t c_id = b_face_cells[f_id];
-            w[i] *= dt[c_id];
-          }
-        }
-      }
-      break;
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-              _("Weighting of time-value moments for mesh locations of type:\n"
-                "%s is not currently supported."),
-                cs_mesh_location_type_name[loc_type]);
-    }
-
+    for (cs_lnum_t i = 0; i < n_w_elts; i++)
+      w[i] = _dt;
   }
 
   return w;
@@ -1509,7 +1434,7 @@ _time_moment_define_by_func(const char                *name,
   int i;
   cs_field_t  *f;
 
-  int wa_location_id = location_id;
+  int wa_location_id = 0; // > 0 only if restarted from older checkpoint.
 
   cs_time_moment_t *mt = nullptr;
 
@@ -2282,10 +2207,10 @@ cs_time_moment_reset(int   moment_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Map time step values array for temporal moments.
+ * \brief Map time step values for temporal moments.
  *
- * If this function is not called, the field referenced by field pointer
- * CS_F_(dt) will be used instead.
+ * If this function is not called, the value from cs_glob_time_step->dt_ref
+ * will be used instead.
  *
  * \param[in]   dt   pointer to time step values array
  */
@@ -2306,20 +2231,18 @@ cs_time_moment_map_cell_dt(const cs_real_t  *dt)
 void
 cs_time_moment_update_all(void)
 {
-  int i;
-
   bool active_moments = false;
 
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  const cs_real_t *dt_val = (_p_dt != nullptr) ? _p_dt : CS_F_(dt)->val;
+  const cs_real_t dt_val = (_p_dt != nullptr) ? *_p_dt : ts->dt_ref;
 
   /* Prepare accumulators */
 
   double **wa_cur_data;
   double *wa_cur_data0;
 
-  for (i = 0; i < _n_moment_wa; i++) {
+  for (int i = 0; i < _n_moment_wa; i++) {
 
     cs_time_moment_wa_t *mwa = _moment_wa + i;
 
@@ -2327,7 +2250,7 @@ cs_time_moment_update_all(void)
     if (mwa->t_start < 0. && mwa->nt_start <= ts->nt_cur)
       mwa->t_start = _t_prev_iter;
     /* start time value in interval [t_prev-0.01*dt^(n-1), t_cur-0.01*dt^n[ */
-    else if (mwa->nt_start < 0 && mwa->t_start < ts->t_cur - 0.01*dt_val[0])
+    else if (mwa->nt_start < 0 && mwa->t_start < ts->t_cur - 0.01*dt_val)
       mwa->nt_start = ts->nt_cur;
 
     if (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur)
@@ -2340,12 +2263,15 @@ cs_time_moment_update_all(void)
   if (!active_moments)
     return;
 
+  cs_dispatch_context ctx;
+  bool on_device = ctx.use_gpu();
+
   CS_MALLOC(wa_cur_data, _n_moment_wa, cs_real_t *);
-  CS_MALLOC(wa_cur_data0, _n_moment_wa, cs_real_t);
+  CS_MALLOC_HD(wa_cur_data0, _n_moment_wa, cs_real_t, cs_alloc_mode);
 
   /* Compute current weight data */
 
-  for (i = 0; i < _n_moment_wa; i++) {
+  for (int i = 0; i < _n_moment_wa; i++) {
     cs_time_moment_wa_t *mwa = _moment_wa + i;
     if (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur) {
       _ensure_init_weight_accumulator(mwa);
@@ -2363,7 +2289,7 @@ cs_time_moment_update_all(void)
        m_type >= (int)CS_TIME_MOMENT_MEAN;
        m_type --) {
 
-    for (i = 0; i < _n_moments; i++) {
+    for (int i = 0; i < _n_moments; i++) {
 
       cs_time_moment_t *mt = _moment + i;
       cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
@@ -2394,22 +2320,22 @@ cs_time_moment_update_all(void)
           = cs_mesh_location_get_n_elts(mt->location_id)[0];
         const cs_lnum_t nd = n_elts * mt->dim;
 
-        CS_MALLOC(x, nd, cs_real_t);
+        CS_MALLOC_HD(x, nd, cs_real_t, cs_alloc_mode);
 
         assert(mt->data_func == nullptr || mt->eval_func == nullptr);
 
         if (mt->data_func != nullptr) {
-        mt->data_func(mt->data_input, x);
+          mt->data_func(mt->data_input, x);
         }
         else {
-        const int location_id = mt->location_id;
-        const cs_lnum_t* elt_ids = cs_mesh_location_get_elt_ids(mt->location_id);
-        cs_function_evaluate(mt->eval_func,
-                             ts,
-                             location_id,
-                             n_elts,
-                             elt_ids,
-                             x);
+          const int location_id = mt->location_id;
+          const cs_lnum_t* elt_ids = cs_mesh_location_get_elt_ids(mt->location_id);
+          cs_function_evaluate(mt->eval_func,
+                               ts,
+                               location_id,
+                               n_elts,
+                               elt_ids,
+                               x);
         }
 
         _ensure_init_moment(mt);
@@ -2435,7 +2361,7 @@ cs_time_moment_update_all(void)
 
           if (mt->dim == 6) { /* variance-covariance matrix */
             assert(mt->data_dim == 3);
-            for (cs_lnum_t je = 0; je < n_elts; je++) {
+            ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t je) {
               double delta[3], delta_n[3], r[3], m_n[3];
               const cs_lnum_t k = je*wa_stride;
               const double wa_sum_n = w[k] + wa_sum[k];
@@ -2465,19 +2391,20 @@ cs_time_moment_update_all(void)
                         / wa_sum_n;
               for (cs_lnum_t l = 0; l < 3; l++)
                 m[je*3 + l] += r[l];
-            }
+            });
           }
 
           else { /* simple variance */
-            for (cs_lnum_t j = 0; j < nd; j++) {
-              const cs_lnum_t k = (j*wa_stride) / mt->dim;
+            cs_lnum_t k_stride = wa_stride / mt->dim;
+            ctx.parallel_for(nd, [=] CS_F_HOST_DEVICE (cs_lnum_t j) {
+              const cs_lnum_t k = j*k_stride;
               double wa_sum_n = w[k] + wa_sum[k];
               double delta = x[j] - m[j];
               double r = delta * (w[k] / wa_sum_n);
               double m_n = m[j] + r;
               val[j] = (val[j]*wa_sum[k] + (w[k]*delta*(x[j]-m_n))) / wa_sum_n;
               m[j] += r;
-            }
+            });
           }
 
           mt_mean->nt_cur = ts->nt_cur;
@@ -2485,10 +2412,11 @@ cs_time_moment_update_all(void)
 
         else if (mt->type == CS_TIME_MOMENT_MEAN) {
 
-          for (cs_lnum_t j = 0; j < nd; j++) {
-            const cs_lnum_t k = (j*wa_stride) / mt->dim;
+          cs_lnum_t k_stride = wa_stride / mt->dim;
+          ctx.parallel_for(nd, [=] CS_F_HOST_DEVICE (cs_lnum_t j) {
+            const cs_lnum_t k = j*k_stride;
             val[j] += (x[j] - val[j]) * (w[k] / (w[k] + wa_sum[k]));
-          }
+          });
 
         }
 
@@ -2501,16 +2429,20 @@ cs_time_moment_update_all(void)
         if (mt->location_id == CS_MESH_LOCATION_CELLS) {
           const cs_halo_t *halo = cs_glob_mesh->halo;
           if (halo != nullptr) {
-            if (mt->dim == 1)
-              cs_halo_sync_var(halo, CS_HALO_EXTENDED, val);
-            else {
+            switch (mt->dim) {
+            case 1:
+              cs_halo_sync(halo, CS_HALO_EXTENDED, on_device, val);
+              break;
+            case 3:
+              cs_halo_sync_r(halo, CS_HALO_EXTENDED, on_device,
+                             reinterpret_cast<cs_real_3_t *>(val));
+              break;
+            case 6:
+              cs_halo_sync_r(halo, CS_HALO_EXTENDED, on_device,
+                             reinterpret_cast<cs_real_6_t *>(val));
+              break;
+            default:
               cs_halo_sync_var_strided(halo, CS_HALO_EXTENDED, val, mt->dim);
-              if (halo->n_transforms > 0) {
-                if (mt->dim == 3)
-                  cs_halo_perio_sync_var_vect(halo, CS_HALO_EXTENDED, val, 3);
-                else if (mt->dim == 6)
-                  cs_halo_perio_sync_var_sym_tens(halo, CS_HALO_EXTENDED, val);
-              }
             }
           }
         }
@@ -2523,7 +2455,7 @@ cs_time_moment_update_all(void)
 
   /* Update and free weight data */
 
-  for (i = 0; i < _n_moment_wa; i++) {
+  for (int i = 0; i < _n_moment_wa; i++) {
     if (wa_cur_data[i] != nullptr) {
       _update_weight_accumulator(_moment_wa + i, wa_cur_data[i]);
       if (wa_cur_data[i] != wa_cur_data0 + i)
