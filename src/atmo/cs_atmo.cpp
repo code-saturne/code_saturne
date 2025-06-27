@@ -4400,8 +4400,8 @@ cs_atmo_z_ground_compute(void)
   const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
   const cs_lnum_t n_cells = m->n_cells;
 
-  const cs_nreal_3_t *restrict i_face_u_normal = mq_g->i_face_u_normal;
-  const cs_nreal_3_t *restrict b_face_u_normal = mq_g->b_face_u_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
   const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   const int *bc_type = cs_glob_bc_type;
