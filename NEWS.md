@@ -29,14 +29,14 @@ Release 9.0.0 (2025-06-27)
 ### Numerics:
 
 - Compute boundary value reconstruction ahead of calls to lower-level operators
-  such as gradiants and balances.
+  such as gradients and balances.
   * This leads to removal of the `CS_GRADIENT_LSQ_BOUNDARY` environment variable,
-    wich allowed switching to an older algorithm for least-squares vector
+    which allowed switching to an older algorithm for least-squares vector
     and tensor gradients.
 
 - Advection scheme with CDO-Fb scheme: Replace the former centered scheme
   by a new one close to the CDO-Vb centered scheme. The former scheme is
-  renammed as centered_dde and is marked as deprecated. Also, former centered
+  renamed as centered_dde and is marked as deprecated. Also, former centered
   and upwind schemes are post-fixed by _v8 for comparison. Moreover, a mixed
   mixed centered/hybrid scheme is introduced with a fixed ratio or a variable
   ratio using Sharfetter-Gummel weigth function which is Peclet-robust.
@@ -78,13 +78,13 @@ Release 8.3.0 (2024-12-20)
 ### User changes:
 
 - The CDO based Heat Transfer solver is now usable through the GUI, allowing
-  an easier definition of CHT problems using only code_saturne functionnalities.
-  This functionnality is still experimental, some GUI options may be unavailable,
-  mainly for postprocessing, but will be extened in v9.0.
+  an easier definition of CHT problems using only code_saturne functionalities.
+  This functionality is still experimental, some GUI options may be unavailable,
+  mainly for postprocessing, but will be extended in v9.0.
 
 - Conjugate Heat Transfer can now be conducted with the CDO based Heat transfer
-  solver of code_saturne. This is handled in the same manner as a syrthes coupling
-  in the GUI for the user.
+  solver of code_saturne. This is handled in the same manner as a Syrthes
+  coupling in the GUI for the user.
 
 - Rename all cs_user_XXX.c functions to cs_user_XXX.cpp thus allowing calls
   to C++ functions within these functions.
@@ -122,7 +122,7 @@ Release 8.3.0 (2024-12-20)
   omitted when using this name.
 
 - Script, plot and report functions now use the graph of cases. These functions
-  can now process several studies (usefull when launched with launch_vnv).
+  can now process several studies (useful when launched with launch_vnv).
 
 - Compute, compare and post keywords are no longer read in smgr xml file. Smgr
   option --update-smgr remove them in the smgr xml file of the repository.
@@ -133,7 +133,7 @@ Release 8.3.0 (2024-12-20)
   This can be activated by exporting CS_DEVICE_MEM_POOL=1,
   and further parametrized by additional calls in cs_mem.
 
-- Allow memory allocaton statistics using `CS_MEM_LOG=performance.log`.
+- Allow memory allocation statistics using `CS_MEM_LOG=performance.log`.
 
 - Modify the python layer (CLI and GUI) installation process to now use
   setup.py instead of Makefile scripts.
@@ -165,7 +165,7 @@ Release 8.2.0 (2024-06-17)
   coupling of the Navier-Stokes equations.
 - V-cycle is now the default option when an AMG technique is set
   inside the CDO/HHO framework (previously it was a K-cycle)
-- Add MAC scheme for steady Stokes and Navier-Stokes problems on cartesian grids
+- Add MAC scheme for steady Stokes and Navier-Stokes problems on Cartesian grids
   (using CDO framework)
 
 ### User changes:
@@ -332,7 +332,7 @@ Release 8.1.0 (2023-12-13)
 
 - Preprocessor: workaround for CGNS incompatibility with files generated with
   CGNS 3.4.1 and with 3.4 version info (confused with 3.4.0, whose polygon and
-  polyhedra representations are inccompatible). That version should be avoided
+  polyhedra representations are incompatible). That version should be avoided
   but it seems that Star-CCM+ 2022 uses it.
 
 - Preprocessor: fix reading of polygons in MED files, broken in v7.3.
@@ -359,7 +359,7 @@ Release 8.0.0 (2023-06-30)
   * This uses medcoupling as an underlying building brick, and thus only
     available if the prerequisite is available.
 
-- Add the functionnality of "time tables".
+- Add the functionality of "time tables".
   * User can now define a time table, based on a data file, either using the
     GUI or an advanced user function.
   * The time table can then be used directly in mathematical formulae in the
@@ -380,7 +380,7 @@ Release 8.0.0 (2023-06-30)
 
 - The API for the definition by array has been modified to handle more
   complex cases. This induces a modification of some user settings,
-  for instance when defininig a property, a boundary condition or a
+  for instance when defining a property, a boundary condition or a
   source term by array. This mainly occurs when using CDO schemes.
 
 - The user can now specify a custom thermodynamic pressure.
@@ -396,7 +396,7 @@ Release 8.0.0 (2023-06-30)
 - Add and deploy several functions in cs_array.[c,h] to centralize
   simple operations on arrays (fill with zero, set a constant value on
   the whole array or partly, copy partly or fully an array into
-  another one and so on). These operations take into acount OpenMP if
+  another one and so on). These operations take into account OpenMP if
   available.
 
 Release 7.3.0 (2022-12-20)
@@ -405,7 +405,7 @@ Release 7.3.0 (2022-12-20)
 ### User changes:
 
 - Now allow handling vertex-based fields when restarting from a different
-  mesh. This can be sueful for ALE.
+  mesh. This can be useful for ALE.
 
 - Add `cs_function` API to refactor pre and user-defined location data
   evaluation. This defines function objects which can be evaluated
@@ -444,9 +444,9 @@ Release 7.3.0 (2022-12-20)
   molecular diffusivity.
 
 - Groundwater flows: Modify the default settings for a tracer equation
-  (unsteady/reaction terms to voronoi Hodge, advection scheme - hybrid
-  upwind/centered, linear solvers: jacobi preconditioner and tolerance
-  to 10^-8). This follows from a first feedack on the VnV cases of the
+  (unsteady/reaction terms to Voronoi Hodge, advection scheme - hybrid
+  upwind/centered, linear solvers: Jacobi preconditioner and tolerance
+  to 10^-8). This follows from a first feedback on the VnV cases of the
   default options.
 
 - Groundwater flows: Add a radioactive tracer. The default tracer has
@@ -647,7 +647,7 @@ User changes:
 
 - Gas mix now accepts user definitions, using the
   `cs_gas_mix_add_species_with_properties` function.
-  * The model currenty still assumes that of n associated species,
+  * The model currently still assumes that of n associated species,
     n-1 will be solved variables, and the last one will be
     of property field, deduced from the others so the sum of
     mass fractions is 1.
@@ -692,7 +692,7 @@ Numerics:
   * Add a MUMPS interface for native matrices (with or without symmetric
     storage).
   * Add a MUMPS interface to handle single-precision arithmetic. This
-  functionnality allows one to get a better efficiency without degrading
+  functionality allows one to get a better efficiency without degrading
   the accuracy when considering MUMPS as a preconditioner while reducing
   the memory consumption.
 
@@ -892,7 +892,7 @@ User changes:
   manner in all following sections.
   * some specific boundary conditions, such as those for the Lagrangian
     model, are now grouped with standard zone boundary conditions rather
-    than appeating in a separate "Additional BC models" section.
+    than appearing in a separate "Additional BC models" section.
 
 - Add `--dest` option to `code_saturne run` and `code_saturne submit`
   commands. This allows specifying a top directory separate from the
@@ -923,8 +923,8 @@ User changes:
   * Default check is on velocity > 1e4 for incompressible computations,
     1e5 for compressible computations.
 
-- Add possibility to generate a cartesian mesh on the fly
-  * The GUI now allows to define a cartesian mesh which will be
+- Add possibility to generate a Cartesian mesh on the fly
+  * The GUI now allows to define a Cartesian mesh which will be
     generated during runtime.
   * Needed parameters are minimal and maximal values for X,Y and Z
     coordinates, and number of cells per direction.
@@ -979,7 +979,7 @@ Bug fixes:
 
 - GUI: Fix backward compatibility update function for NCFD v6.1 and later.
 
-Numerics and physical modelling:
+Numerics and physical modeling:
 
 - CDO schemes: Add different strategies for the treatment of the advection term
   in Navier-Stokes equations (linearized implicit and explicit treatment). The
@@ -1044,7 +1044,7 @@ User changes:
   equation parameter based cs_equation_add_volume_mass_injection_*
   functions.
   * Previous definitions remain compatible but are deprecated.
-  * Using the legacy mathod, if at least one zone is defined using
+  * Using the legacy method, if at least one zone is defined using
     the `CS_VOLUME_ZONE_MASS_SOURCE_TERM` flag, these zones will be used
     and the first 2 calls to cs_user_mass_source_terms are not needed.
 
@@ -1059,7 +1059,7 @@ User changes:
   * The iscacp(iscal) array is replaced by the field key-word "is_temperature".
     This allows using it also from C code.
 
-- Various improvments to CGNS output:
+- Various improvements to CGNS output:
   * Added output of boundary condition sections (on by default)
   * Allow discarding steady data (to avoid isues with ParaView when both
     steady and unsteady data s present)
@@ -1101,7 +1101,7 @@ User changes:
   * send back a message if an iteration has been done subsequently
     to an "advance" message to allow a finer control.
 
-Numerics and physical modelling:
+Numerics and physical modeling:
 
 - Convection-diffusion multigrid: restore original aggregation criteria.
   * This criteria seemed to strangely limit the grid hierarchy depth
@@ -1245,7 +1245,7 @@ User changes:
   Buoyancy modification for atmospheric flows (Louis) are also available for
   dry and humid atmosphere for rough-smooth wall functions.
 
-Numerics and physical modelling:
+Numerics and physical modeling:
 
 - Remove former slope test option for vector variable (component by component,
   isstpc = -1).
@@ -1464,7 +1464,7 @@ User changes:
 Physical modeling:
 
 - Add an option to disable dynamics in solid cells for internal coupling or for
-  porous modelling.
+  porous modeling.
 
 - Add non-linear (quadratic) eddy viscosity model k-epsilon of Baglietto et al.
   * to enable it, set cs_glob_turb_model->iturb = 23
@@ -1519,7 +1519,7 @@ Default option changes:
 
 - Disable CS_FACE_RECONSTRUCTION_CLIP bad cells correction by default
   (clipping of face reconstruction distances |II'| and |JJ'|).
-  This reduces precision (consistancy loss) and can impair space convergence
+  This reduces precision (consistency loss) and can impair space convergence
   on several verification test cases run on tetrahedral meshes
   (INTERNAL_COUPLING, PERMEABILITY_GRADIENT, PLANE_COUETTE_FLOW).
 
@@ -1538,7 +1538,7 @@ Bug fixes:
   This fixes mass conservation for cases:
   * with gravity and hydrostatic pressure treatment
   * without gravity and without hydrostatic pressure treatment.
-  Note that the default behaviour (GUI) was to enable the hydro. pressure
+  Note that the default behavior (GUI) was to enable the hydro. pressure
   treatment at walls. Hence in all cases with this default setting and no
   gravity, this fix has no impact.
 
@@ -1668,7 +1668,7 @@ User changes:
 
 - Add postprocessing of temperature and flux at internal coupling interface.
 
-Physical modelling:
+Physical modeling:
 
 - Make particle tracking compatible with transient turbomachinery model.
 
@@ -1698,13 +1698,13 @@ Numerics:
     2nd order is activated, velocity is solved from time n-1/2 to n+1/2.
     A special care should be done for time averaged quantities.
 
-- Porous modelling: adapte the numerics to discontinous porosity.
+- Porous modeling: adapt the numerics to discontinous porosity.
   * The velocity is interpolated at faces using mass conservation and the
     momentum is corrected so that the steady state of Euler equations is
     retrieved.
     This can be activated using iporos = 3, the improved hydrostatic treatment
     will then be activated.
-    This was developped in the PhD of C. Colas.
+    This was developed in the PhD of C. Colas.
 
 - Improvements in mesh quantity computations.
   * Previous face center adjustment for volume removed. Adjustment
@@ -1734,7 +1734,7 @@ Numerics:
 - Add choice of inexact (flexible) preconditioned congugate gradient.
   * When using multiple threads and multigrid preconditioning with a
     Gauss-Seidel smoother, this choice is set by default over the
-    standard preconditioned congugate gradient.
+    standard preconditioned conjugate gradient.
 
 - Add vector-valued Laplacian for HHO schemes (case k=1). Based on
   Daniel Castenon's work.
@@ -1797,7 +1797,7 @@ Default option changes:
 
 Bug fixes:
 
-- Fix initialisation of some turbulence constants. Constant/Models concerned:
+- Fix initialization of some turbulence constants. Constant/Models concerned:
   * sigmae (for all RSM models)
   * csrij (EB-RSM model).
 
@@ -1813,7 +1813,7 @@ Bug fixes:
   scalar or tensorial volume porosity models (iporos=1, 2).
 
 - Fix in the Lagrangian particle tracking:
-  * some minor inconsistencies were introduced on wraped faces
+  * some minor inconsistencies were introduced on warped faces
   * local normal (of the crossed sub-triangle of the crossed face) is stored for
     particle rebound at the boundary
   * if the maximum number of sweeps is reached, the put the particle at the last
@@ -1822,7 +1822,7 @@ Bug fixes:
 Release 5.2.0 (2018-03-30)
 --------------------------
 
-Physical modelling:
+Physical modeling:
 
 - Atmospheric model: add new BCs for open-boundary flow such as atmospheric
   flows. It consists in changing the solved pressure. This change result
@@ -1907,7 +1907,7 @@ Bug fixes:
 Release 5.1.0 (2017-10-10)
 --------------------------
 
-Physical modelling:
+Physical modeling:
 
 - Turbulence: add DDES tubulence model
   * Activated using k-w SST model (iturb = 60) with keyword IDDES = 1
@@ -2064,7 +2064,7 @@ Numerics:
 
 - Add a convection-diffusion equation solver for additional vector variables.
 
-Physical modelling:
+Physical modeling:
 
 - Add a Volume Of Fluid algorithm:
   * partly merge cavitation algorithm with VOF algorithm.
@@ -2089,7 +2089,7 @@ Physical modelling:
 - Lagrangian module:
   * add deposition and resuspension models on internal faces.
     The user can the impose the motion of deposited particles. If integral
-    approach for porous modelling is set up (iporos=3), then the internal fluid
+    approach for porous modeling is set up (iporos=3), then the internal fluid
     section is reduced by particle deposition.
   * injection is now pseudo-continuous when injecting at every time step.
     To revert to the previous behavior, the CS_LAGR_RESIDENCE_TIME value
@@ -2108,7 +2108,7 @@ GUI changes:
 - Add a notebook to add global variables to be used in the GUI (such as variables
   in the physical laws).
 
-- Add fans modelling (represented as momentum source terms) in the GUI.
+- Add fans modeling (represented as momentum source terms) in the GUI.
 
 - Add "mapped inlet" boundary condition (for recycled inlets) in the GUI.
 
@@ -2355,7 +2355,7 @@ User changes:
 
 - Add boundary cell thickness computation to mesh quality criteria.
 
-Physical modelling:
+Physical modeling:
 
 - Add gas mix thermo. and fix mass source term with the compressible module
   (internship of A. Menasria):
@@ -2516,7 +2516,7 @@ User changes:
   This allows moving tests on the current turbulence model inside
   the user-callable functions, for more concise and safer programming.
 
-Physical modelling:
+Physical modeling:
 
 - Add 2-scales wall function (with V. Driest mixing length) and its consistant
   wall function on scalars (keyword iwallf in the doc.).
@@ -2604,7 +2604,7 @@ Changes:
 - Add a "slope_test_upwind_id" field keyword, allowing postprocessing output
   of the contribution of slope tests to convected variables.
 
-- Add a new dilatable (non conservative) algorithm for fire modelling.
+- Add a new dilatable (non conservative) algorithm for fire modeling.
   Activate it with idilat=4 (the formulation is in div(u) instead of
   div(rho u)). You can access to the previous dedicated algorithm by
   setting idilat to 5.
@@ -2634,7 +2634,7 @@ Changes:
   available for standard LSQ gradients and can be activated with
   the keyword iwgrec(ivar) = 1.
 
-- Add drift modelling for coal combustion, and clean up the module:
+- Add drift modeling for coal combustion, and clean up the module:
   * Now, the enthalpy of the continuous phase (gas phase, h1) is transported
     rather than deduced (to be precises, X1.h1 is transported)
   * The convective flux for the gas phase is deduced from the convective fluxes
@@ -3842,8 +3842,8 @@ Changes:
   compatible with every feature (use with caution...).
 
 - Add an experimental combustion model for coal and heavy fuel oil
-  with a unified gas-combustion modelling.
-  This new modelling replaces the previous fuel modelling (which is
+  with a unified gas-combustion modeling.
+  This new modeling replaces the previous fuel modeling (which is
   still available as a backup).
 
 - Add thin wall insertion.
@@ -4119,7 +4119,7 @@ Architectural changes:
   RPATHs that should be understood by at least GNU and SOLARIS linkers.
 
 - Split the base directory into 4 directories with 3 new ones dedicated
-  to the mesh handling, the turbulence modelling, and the Finite Volume
+  to the mesh handling, the turbulence modeling, and the Finite Volume
   schemes and resolution.
 
 - Major memory management update: a dynamic allocation when
@@ -4323,9 +4323,9 @@ Release 2.0.0-rc1 (2010-02-19)
   calculation.
 
 - Add new interpolation schemes to code/code coupling for
-  rotor/stator interaction modelling.
+  rotor/stator interaction modeling.
 
-- Improve robustness for wall boundary conditions for atmospheric modelling.
+- Improve robustness for wall boundary conditions for atmospheric modeling.
 
 - Use new discovery mechanism for coupling applications.
 
@@ -4399,8 +4399,8 @@ Release 2.0.0-beta1 (2009-07-29)
 - Add parall mesh joining feature in the Kernel (by default, the legacy
   joining feature from the Preprocessor is still used.
 
-- Add non-neutral atmosphere modelling (both dry and humid, though
-  humid atmosphere modelling is not yet fully functional).
+- Add non-neutral atmosphere modeling (both dry and humid, though
+  humid atmosphere modeling is not yet fully functional).
 
 - When detecting a divergence in the linear system solver stage, abort
   and write graphical data of the given matrix (rhs, diagonal, ...).
@@ -4471,7 +4471,7 @@ Release 1.4.0 (2008-11-28)
 Code_Saturne 1.4 is an intermediate development release, very similar to
 version 1.3.3 except for the items below:
 
-- Add atmospheric flow modelling for neutral atmosphere flows.
+- Add atmospheric flow modeling for neutral atmosphere flows.
 
 - Always set the head loss tensor to be a full symmetric tensor
   in order to ease the setup within the Graphical User Interface
