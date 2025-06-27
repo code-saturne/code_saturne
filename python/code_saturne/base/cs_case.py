@@ -1452,7 +1452,10 @@ class case:
                             'Export paths necessary for CATHARE coupling.\n')
                         config = configparser.ConfigParser()
                         config.read(self.package.get_configfiles())
-                        cathare_path = config.get('install', 'cathare')
+                        if d.cathare_version == 'v3':
+                            cathare_path = config.get('install', 'cathare3')
+                        else:
+                            cathare_path = config.get('install', 'cathare2')
                         for p in ['lib', 'ICoCo/lib']:
                             lp = os.path.join(cathare_path, p)
                             cs_exec_environment.write_prepend_path( \

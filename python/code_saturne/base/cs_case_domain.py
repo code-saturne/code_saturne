@@ -1970,6 +1970,7 @@ class cathare_domain(domain):
                  prefix = None,               # installation prefix
                  cathare_case_file = None,    # Cathare case .dat file
                  neptune_cfd_dom   = None,    # neptune_cfd domain
+                 cathare_version = "v3",      # Cathare v3 or v2
                  adaptation = None):          # HOMARD adaptation script
 
         domain.__init__(self,
@@ -1990,6 +1991,7 @@ class cathare_domain(domain):
 
         self.cathare_case_file = cathare_case_file
         self.neptune_cfd_dom   = neptune_cfd_dom
+        self.cathare_version = cathare_version
 
     # ---------------------------------------------------------------------------
 
@@ -2115,13 +2117,102 @@ class cathare_domain(domain):
 
     # ---------------------------------------------------------------------------
 
+    def compile_cathare3_lib(self):
+        """
+        Compile if needed the C3 lib.
+        """
+
+        msg = "Generating CATHARE3 .so file\n" \
+              "----------------------------\n\n"
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+
+        import subprocess
+
+        orig = os.getcwd()
+
+        os.chdir(self.exec_dir)
+
+        cathare_compilation_files = [self.cathare_case_file]
+
+        dir_files = os.listdir(self.data_dir)
+        for f in fnmatch.filter(dir_files, '*.cxx'):
+            cathare_compilation_files.append(f)
+        for f in fnmatch.filter(dir_files, '*.hxx'):
+            cathare_compilation_files.append(f)
+
+        for f in cathare_compilation_files:
+            src_file  = os.path.join(self.data_dir, f)
+            dest_file = os.path.join(self.exec_dir, f)
+            shutil.copy2(src_file, dest_file)
+
+        # Generate the .so creation command (hence reducing dependencies)
+        config = configparser.ConfigParser()
+        config.read(self.package.get_configfiles())
+
+        msg = '%s\n'%(config.get('install', 'cathare3'))
+        sys.stdout.write(msg)
+        msg = '%s\n'%(self.cathare_case_file)
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+
+        shell_cmd = 'set -x\n'
+        shell_cmd = 'export c3dev="%s"\n' % (config.get('install', 'cathare3'))
+        shell_cmd+= 'jdd_CATHARE="%s"\n' % (self.cathare_case_file)
+        shell_cmd+= 'export LD_LIBRARY_PATH=${c3dev}/src/ICoCo/lib:$LD_LIBRARY_PATH\n'
+        shell_cmd+= '${c3dev}/init_c3.sh\n'
+        shell_cmd+= 'echo ${c3dev}\n'
+        shell_cmd+= 'CMAKE_EXE=cmake\n'
+        shell_cmd+= 'extension=Release\n'
+        shell_cmd+= 'rm -rf build\n'
+        shell_cmd+= 'if [ -f *.cxx ] || [ -f *.hxx ]\n'
+        shell_cmd+= 'then\n'
+        shell_cmd+= 'mkdir -p build\n'
+        shell_cmd+= '(cd build && rm -f CMakeCache.txt && $CMAKE_EXE -DCMAKE_BUILD_TYPE=$extension .. && make -j) >&2 2>icoco.log\n'
+        shell_cmd+= 'status=$?\n'
+        shell_cmd+= 'else\n'
+        shell_cmd+= 'ln -s _version/src/ICoCo/lib/libcathare.opt.so .\n'
+        shell_cmd+= 'fi\n'
+
+        # Shell
+        user_shell = os.getenv('SHELL')
+        if not user_shell:
+            user_shell = '/bin/sh'
+
+        # log
+        log = open('cathare3_so_generation.log', 'w')
+
+        p = subprocess.Popen(shell_cmd,
+                             shell=True,
+                             executable=user_shell,
+                             stdout=log,
+                             stderr=log,
+                             universal_newlines=True)
+
+        log.close()
+
+        output, errors = p.communicate()
+
+        if p.returncode != 0:
+            self.error = 'compile cathare3 lib'
+            self.error_long = 'Compilation of cathare3 .so library based on '
+            self.error_long+= '%s file failed.' % (self.cathare_case_file)
+            self.error_long+= ' Check "cathare3_so_generation.log'
+
+        os.chdir(orig)
+
+    # ---------------------------------------------------------------------------
+
     def compile_and_link(self):
         """
         Compile and link user subroutines if needed.
         """
 
         # Generate the CATHARE lib first
-        self.compile_cathare2_lib()
+        if self.cathare_version == 'v3':
+            self.compile_cathare3_lib()
+        else:
+            self.compile_cathare2_lib()
 
         # Then compile NCFD source files if needed
         super(cathare_domain, self).compile_and_link()
@@ -2137,6 +2228,9 @@ class cathare_domain(domain):
         wd, exec_path, args = super(cathare_domain, self).solver_command(
             n_tot_procs, need_abs_path
         )
+
+        if self.cathare_version == 'v3':
+            args += ' --c3-wrapper'
 
         return wd, exec_path, args
 

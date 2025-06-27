@@ -223,7 +223,8 @@ def coupling(package,
                                  n_procs_min = 1,
                                  n_procs_max = 1,
                                  cathare_case_file = d.get('cathare_case_file'),
-                                 neptune_cfd_dom = d.get('neptune_cfd_domain'))
+                                 neptune_cfd_dom = d.get('neptune_cfd_domain'),
+                                 cathare_version = d.get('cathare_version', 'v3'))
 
             use_cathare = True
             cat_domains.append(dom)

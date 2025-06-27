@@ -40,9 +40,13 @@
 ### (e.g. <syrthes_home>/syrthes4.3/syrthes4.3/arch/<arch>).
 # syrthes =
 
-### Set the location to the Cathare installation directory
+### Set the location to the Cathare2 installation directory
 ### (e.g. <cathare_home>/mod5.1).
 # cathare =
+
+### Set the location to the Cathare3 installation directory
+### (e.g. <cathare_home>/mod5.1).
+# cathare3 =
 
 ### Set the location to the code_aster installation directory
 ### (e.g. <aster_home>/aster-17.x.yy/arch/<arch>).

@@ -478,7 +478,8 @@ class study:
             coupled_domains.append({'solver': 'CATHARE',
                                     'domain': base_c,
                                     'cathare_case_file':' jdd_case.dat',
-                                    'neptune_cfd_domain': 'NEPTUNE'})
+                                    'neptune_cfd_domain': 'NEPTUNE',
+                                    'cathare_version':' v3'})
 
         if self.py_case_name is not None:
 
