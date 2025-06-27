@@ -423,33 +423,6 @@ public:
   }
 
   /*--------------------------------------------------------------------------*/
-  /*--------------------------------------------------------------------------*/
-  /*--------------------------------------------------------------------------*/
-  /*--------------------------------------------------------------------------*/
-
-//  template<int N, typename... Args>
-//  span<T, N>
-//  span_view
-//  (
-//    Args... args
-//  )
-//  {
-//    static_assert(sizeof...(Args) == N);
-//
-//    cs_lnum_t _vals[] = {args ...};
-//    cs_lnum_t span_size = 1;
-//    for (int i = 0; i < N; i++)
-//      span_size *= _vals[i];
-//
-//    if (span_size != _size)
-//      bft_error(__FILE__, __LINE__, 0,
- //               _("%s: Total span size is different from array size.\n"),
-//                __func__);
-//
-//  }
-
-
-  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Getter to data array
    */
@@ -644,6 +617,12 @@ template <class T, int N>
 class span {
 public:
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default constructor method leading to "empty container".
+   */
+  /*--------------------------------------------------------------------------*/
+
   CS_F_HOST_DEVICE
   span() :
     _dim({0}),
@@ -652,6 +631,12 @@ public:
     _data(nullptr),
     _mode(cs_alloc_mode)
   {}
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method using only dimension.
+   */
+  /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
   span
@@ -675,6 +660,12 @@ public:
     set_size_(dims);
     allocate_(file_name, line_number);
   }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method with specified allocation method.
+   */
+  /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
   span
@@ -702,7 +693,7 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Constructor method for non owner version
+   * \brief Constructor method for non owner version based on raw pointer
    */
   /*--------------------------------------------------------------------------*/
 
@@ -724,7 +715,7 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Constructor method for non owner from data_array
+   * \brief Constructor method for non owner from data_array class
    */
   /*--------------------------------------------------------------------------*/
 
@@ -762,22 +753,82 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Class swap operator used for assignment or move.
+   * \brief Constructor method using copy. May be a shallow copy.
    */
   /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  span
+  (
+    span& other,              /*!<[in] Instance to copy */
+    bool  shallow_copy=false, /*!<[in] Do a shallow copy or not */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+   __has_builtin(__builtin_LINE) && \
+   __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    set_size_(other._dim);
+    _mode = other._mode;
+
+    /* If shallow copy new instance is not owner. Otherwise same ownership
+     * as original instance since we copy it.
+     */
+    _owner = (shallow_copy) ? false : other._owner;
+
+    if (_owner) {
+      allocate_(file_name, line_number);
+      cs_array_copy<T>(_size, other._data, _data);
+    }
+    else {
+      _data = other._data;
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Move constructor.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  span
+  (
+    span&& other /*!<[in] Original reference to move */
+  )
+  : span()
+  {
+    swap(*this, other);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Destructor method.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  ~span()
+  {
+    clear();
+  }
 
   CS_F_HOST_DEVICE
   friend void
   swap
   (
-    span& first,
-    span& second
+    span& first, /*!<[in,out] First class instance */
+    span& second /*!<[in,out] Second class instance */
   )
   {
     using std::swap;
-
     /* Swap the different members between the two references. */
-    swap(first._dims, second._dims);
+    swap(first._dim, second._dim);
     swap(first._size, second._size);
     swap(first._owner, second._owner);
     swap(first._data, second._data);
@@ -796,6 +847,94 @@ public:
     swap(*this, other);
 
     return *this;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Clear data (empty container).
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  clear()
+  {
+    if (_owner) {
+      CS_FREE(_data);
+    }
+    else {
+      _data = nullptr;
+    }
+    cs_lnum_t dummy_size[N] = {0};
+    set_size_(dummy_size);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Initializer method for empty containers.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  set_empty()
+  {
+    cs_lnum_t dummy_size[N] = {0};
+    set_size_(dummy_size);
+
+    _owner = false;
+    _data = nullptr;
+    _mode = cs_alloc_mode;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Change values so as to point
+   */
+  /*--------------------------------------------------------------------------*/
+
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set all values of the data array to a constant value.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void set_to_val
+  (
+    T val /*!<[in] Value to set to entire data array. */
+  )
+  {
+    cs_arrays_set_value<T,1>(_size, val, _data);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_lnum_t
+  size()
+  {
+    return _size;
+  }
+
+  CS_F_HOST_DEVICE
+  cs_alloc_mode_t
+  mode()
+  {
+    return _mode;
+  }
+
+  CS_F_HOST_DEVICE
+  cs_lnum_t
+  dim
+  (
+    int i
+  )
+  {
+    assert(i >= 0 && i < N);
+    return _dim[i];
   }
 
   /*--------------------------------------------------------------------------*/
