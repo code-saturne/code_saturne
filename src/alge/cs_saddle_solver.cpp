@@ -4095,12 +4095,12 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 {
   assert(solver != nullptr);
 
-  const cs_param_saddle_t  *saddlep = solver->param;
+  const cs_param_saddle_t *saddlep = solver->param;
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_GCR);
 
   const cs_param_saddle_context_block_krylov_t *ctxp =
     static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
-  const int  restart = ctxp->n_stored_directions;
+  const int restart = ctxp->n_stored_directions;
 
   /* Prepare the solution and rhs arrays given to the solver */
 
@@ -4108,49 +4108,49 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
     static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
   assert(ctx != nullptr);
 
-  cs_cdo_system_helper_t  *sh = solver->system_helper;
+  cs_cdo_system_helper_t *sh = solver->system_helper;
 
   /* Workspace */
 
-  const int  triangular_size = (restart*(restart+1))/2;
-  double  *gamma = nullptr;
+  const int triangular_size = (restart*(restart+1))/2;
+  double *gamma = nullptr;
   CS_MALLOC(gamma, triangular_size, double);
   memset(gamma, 0, triangular_size*sizeof(double));
 
-  double  *alpha = nullptr, *beta = nullptr;
+  double *alpha = nullptr, *beta = nullptr;
   CS_MALLOC(alpha, 2*restart, double);
   memset(alpha, 0, 2*restart*sizeof(double));
   beta = alpha + restart;
 
-  const cs_lnum_t  ssys_size = ctx->b11_max_size + ctx->b22_max_size;
-  cs_lnum_t  wsp_size = (2 + 2*restart)*ssys_size;
-  cs_real_t  *wsp = nullptr;
+  const cs_lnum_t ssys_size = ctx->b11_max_size + ctx->b22_max_size;
+  cs_lnum_t wsp_size = (2 + 2*restart)*ssys_size;
+  cs_real_t *wsp = nullptr;
   CS_MALLOC(wsp, wsp_size, cs_real_t);
   memset(wsp, 0, wsp_size*sizeof(cs_real_t));
 
-  cs_real_t  *zsave = wsp;
-  cs_real_t  *csave = wsp   +   restart*ssys_size;
-  cs_real_t  *c_tmp = wsp   + 2*restart*ssys_size; /* size = ssys_size */
-  cs_real_t  *r     = c_tmp +   ssys_size;
+  cs_real_t *zsave = wsp;
+  cs_real_t *csave = wsp   +   restart*ssys_size;
+  cs_real_t *c_tmp = wsp   + 2*restart*ssys_size; /* size = ssys_size */
+  cs_real_t *r     = c_tmp +   ssys_size;
 
   /* Set pointer for the block preconditioning */
 
-  cs_lnum_t  pc_wsp_size = 0;
-  cs_real_t  *pc_wsp = nullptr;
-  cs_saddle_solver_pc_apply_t  *pc_apply = _set_pc_by_block(solver,
-                                                            ctx,
-                                                            &pc_wsp_size,
-                                                            &pc_wsp);
+  cs_lnum_t pc_wsp_size = 0;
+  cs_real_t *pc_wsp = nullptr;
+  cs_saddle_solver_pc_apply_t *pc_apply = _set_pc_by_block(solver,
+                                                           ctx,
+                                                           &pc_wsp_size,
+                                                           &pc_wsp);
 
   /* ------------------ */
   /* --- ALGO BEGIN --- */
 
-  const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
-  const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
-  const cs_range_set_t  *rset = ctx->b11_range_set;
+  const cs_lnum_t n1_dofs = solver->n1_scatter_dofs;
+  const cs_lnum_t n2_dofs = solver->n2_scatter_dofs;
+  const cs_range_set_t *rset = ctx->b11_range_set;
 
-  cs_iter_algo_t  *algo = solver->algo;
-  cs_real_t  *rhs1 = sh->rhs_array[0];
+  cs_iter_algo_t *algo = solver->algo;
+  cs_real_t *rhs1 = sh->rhs_array[0];
 
   /* The RHS is not reduced by default */
 
@@ -4164,15 +4164,15 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
   _compute_residual(solver, x1, x2, r);
 
-  double  residual_norm = _norm(solver, r); /* ||r|| */
+  double residual_norm = _norm(solver, r); /* ||r|| */
 
   cs_iter_algo_update_residual(algo, residual_norm);
   cs_iter_algo_set_normalization(algo, residual_norm);
 
   /* --- MAIN LOOP --- */
 
-  int  _restart = restart;
-  cs_sles_convergence_state_t  cvg_status = CS_SLES_ITERATING;
+  int _restart = restart;
+  cs_sles_convergence_state_t cvg_status = CS_SLES_ITERATING;
 
   while (cvg_status == CS_SLES_ITERATING) {
 
@@ -4183,25 +4183,26 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
       /* Apply preconditioning: M.z = r */
 
-      cs_real_t  *zj = zsave + j*ssys_size;
-      int  inner_iter = pc_apply(solver, ctx, r, zj, pc_wsp);
+      cs_real_t *zj = zsave + j*ssys_size;
+      int inner_iter = pc_apply(solver, ctx, r, zj, pc_wsp);
 
       cs_iter_algo_update_inner_iters(algo, inner_iter);
 
       /* Compute the matrix-vector product M.z = cj
+       * ------------------------------------------
        * cj plays the role of the temporary buffer during the first part of the
        * algorithm. During the second part, one builds the final state for cj
        */
 
-      cs_real_t  *cj = csave + j*ssys_size;
+      cs_real_t *cj = csave + j*ssys_size;
       _matvec_product(solver, zj, cj);
 
       for (int i = 0; i < j; i++) {
 
         /* Compute and store gamma_ij (i < j)/ */
 
-        cs_real_t  *ci = csave + i*ssys_size;
-        const double  gamma_ij = _block_pcd_dot_product(solver, ci, cj);
+        cs_real_t *ci = csave + i*ssys_size;
+        const double gamma_ij = _block_pcd_dot_product(solver, ci, cj);
 
         gamma[_get_id(restart, i,j)] = gamma_ij;
 

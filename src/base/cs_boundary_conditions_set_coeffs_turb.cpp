@@ -1303,7 +1303,7 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
               * pow(yplus, cs_turb_bpow)*(pow(2, cs_turb_bpow - 1) - 2);
   }
 
-  /* Dependent on the turbulence Model*/
+  /* Dependent on the turbulence Model */
   else {
 
     /* uiptn respects the production of k
@@ -1325,7 +1325,7 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
          By the way, in this case: iuntur=0 */
 
       if (yplus > cs_math_epzero) { /* TODO use iuntur == 1 */
-        /*FIXME not valid for rough */
+        /* FIXME not valid for rough */
         cs_real_t rcprod = cs::min(xkappa,
                                      cs::max(1.0,sqrt(mut_lm_dmut))
                                    / (yplus+dplus));

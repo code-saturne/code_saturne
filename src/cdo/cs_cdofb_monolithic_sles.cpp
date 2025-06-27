@@ -1972,7 +1972,6 @@ cs_cdofb_monolithic_sles_simple(const cs_navsto_param_t  *nsp,
                                                      ctx->m21_val,
                                                      &(ctx->schur_diag),
                                                      &(ctx->schur_xtra));
-
     }
     break;
 

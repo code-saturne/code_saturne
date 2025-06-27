@@ -947,7 +947,7 @@ _define_face_interface(const cs_mesh_t *mesh)
     cs_lnum_t _n_faces = mesh->n_i_faces;
     CS_MALLOC(_face_gnum, _n_faces, cs_gnum_t);
 
-#pragma omp parallel for if (_n_faces > CS_THR_MIN)
+#   pragma omp parallel for if (_n_faces > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < _n_faces; i++)
       _face_gnum[i] = i + 1;
 

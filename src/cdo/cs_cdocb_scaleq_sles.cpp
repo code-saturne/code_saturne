@@ -145,11 +145,11 @@ _build_shared_structures_full_system(cs_cdo_system_block_t  *block)
 
   xb->interface_set = ifs;
   xb->range_set     = cs_range_set_create(xb->interface_set,
-                                      nullptr, /* halo */
-                                      size,
-                                      false, /* TODO: add balance option */
-                                      1,     /* tr_ignore */
-                                      0);    /* g_id_base */
+                                          nullptr, /* halo */
+                                          size,
+                                          false, /* TODO: add balance option */
+                                          1,     /* tr_ignore */
+                                          0);    /* g_id_base */
 
   /* 2. Build the matrix assembler structure */
 

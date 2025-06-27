@@ -1909,51 +1909,49 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   /* 2) Compute the contribution related to edge
      The portion of dual cell seen by each vertex is 1/2 |pec| */
 
-  cs_real_3_t  *x_e = cb->vectors;
-  cs_real_3_t  *xec = cb->vectors + cm->n_ec; /* size = n_ec (overwrite xvc) */
+  cs_real_3_t  *x_e = cb->vectors;            // size = n_ec (overwrite xvc)
+  cs_real_3_t  *x_ec = cb->vectors + cm->n_ec; // size = n_ec (overwrite xvc)
 
   for (short int e = 0; e < cm->n_ec; e++) {
     for (int k = 0; k < 3; k++) {
       x_e[e][k] = cm->edge[e].center[k];
-      xec[e][k] = 0.5*(cm->xc[k] + x_e[e][k]);
+      x_ec[e][k] = 0.5*(cm->xc[k] + x_e[e][k]);
     }
   }
 
   /* Evaluate the analytic function at xe and xec */
 
-  double  *eval_e = cb->values + cm->n_vc; /* size=n_ec (overwrite eval_v) */
-  double  *eval_ec = eval_e + cm->n_ec;    /* size=n_ec (overwrite eval_vc) */
+  double  *eval_e = cb->values + cm->n_vc; // size=n_ec (overwrite eval_v)
+  double  *eval_ec = eval_e + cm->n_ec;    // size=n_ec (overwrite eval_vc)
   ac->func(time_eval,
            2 * cm->n_ec,
            nullptr,
-           (const cs_real_t *)cb->vectors,
+           (const cs_real_t *)x_e, // x_e (n_ec) then xec (n_ec)
            true, /* compacted output ? */
            ac->input,
            eval_e);
 
-  /* xev (size = 2*n_ec) */
+  /* Evaluation at x_ve (size = 2*n_ec) */
 
-  cs_real_3_t  *xve = cb->vectors; /* size=2*n_ec (overwrite xe and xec) */
+  cs_real_3_t  *x_ve = cb->vectors; // size=2*n_ec (overwrite xe and xec)
   for (short int e = 0; e < cm->n_ec; e++) {
 
-    const cs_real_t  *xe = cm->edge[e].center;
-    const short int  v1 = cm->e2v_ids[2*e];
-    const double  *xv1 = cm->xv + 3*v1;
-    const short int  v2 = cm->e2v_ids[2*e+1];
-    const double  *xv2 = cm->xv + 3*v2;
+    const double *xe = cm->edge[e].center;
+    const double *xv1 = cm->xv + 3*(cm->e2v_ids[2*e]);
+    const double *xv2 = cm->xv + 3*(cm->e2v_ids[2*e+1]);
 
     for (int k = 0; k < 3; k++) {
-      xve[2*e  ][k] = 0.5*(xv1[k] + xe[k]);
-      xve[2*e+1][k] = 0.5*(xv2[k] + xe[k]);
+      x_ve[2*e  ][k] = 0.5*(xv1[k] + xe[k]);
+      x_ve[2*e+1][k] = 0.5*(xv2[k] + xe[k]);
     }
 
   } /* Loop on edges */
 
-  double  *eval_ve = eval_ec + cm->n_ec; /* size = 2*n_ec */
+  double  *eval_ve = eval_ec + cm->n_ec; // size = 2*n_ec
   ac->func(time_eval,
            2 * cm->n_ec,
            nullptr,
-           (const cs_real_t *)cb->vectors,
+           (const cs_real_t *)x_ve,
            true, /* compacted output ? */
            ac->input,
            eval_ve);
@@ -1964,7 +1962,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    const double  *xf = cm->face[f].center;
+    const double  *x_f = cm->face[f].center;
     const double  hf_coef = 0.5* cm->pvol_f[f]/cm->face[f].meas;
 
     /* Reset volume of the face related to a vertex */
@@ -1981,13 +1979,13 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       pvf_vol[v1] += half_pef_vol;
       pvf_vol[v2] += half_pef_vol;
 
-      cs_real_3_t  xef;
+      cs_real_3_t  x_ef;
       cs_real_t  eval_ef;
-      for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
+      for (int k = 0; k < 3; k++) x_ef[k] = 0.5*(cm->edge[e].center[k] + x_f[k]);
       ac->func(time_eval,
                1,
                nullptr,
-               xef,
+               x_ef,
                true, /* compacted output ? */
                ac->input,
                &eval_ef);
@@ -2004,10 +2002,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
 
     /* Contributions related to this face */
 
-    cs_real_3_t  *xvfc = cb->vectors;  /* size=2+n_vc (overwrite xev) */
+    cs_real_3_t  *x_vfc = cb->vectors;  // size=2+n_vc (overwrite x_ve)
     for (int k = 0; k < 3; k++) {
-      xvfc[0][k] = xf[k];                    /* xf */
-      xvfc[1][k] = 0.5*(xf[k] + cm->xc[k]);  /* xfc */
+      x_vfc[0][k] = x_f[k];
+      x_vfc[1][k] = 0.5*(x_f[k] + cm->xc[k]);  /* x_fc */
     }
 
     short int  n_vf = 0;
@@ -2015,7 +2013,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       if (pvf_vol[v] > 0) {
         cb->ids[n_vf] = v;
         for (int k = 0; k < 3; k++)
-          xvfc[2+n_vf][k] = 0.5*(xf[k] + cm->xv[3*v+k]);
+          x_vfc[2+n_vf][k] = 0.5*(x_f[k] + cm->xv[3*v+k]);
         n_vf++;
       }
     }
@@ -2024,7 +2022,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
     ac->func(time_eval,
              2 + n_vf,
              nullptr,
-             (const cs_real_t *)xvfc,
+             (const cs_real_t *)x_vfc,
              true, /* compacted output ? */
              ac->input,
              eval_vfc);
@@ -2076,8 +2074,8 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
   if (source == nullptr)
     return;
 
-  double  sum, weights[5], results[5];
-  cs_real_3_t  gauss_pts[5];
+  double sum, weights[5], results[5];
+  cs_real_3_t gauss_pts[5];
 
   assert(values != nullptr && cm != nullptr);
   assert(cb != nullptr);
@@ -2085,31 +2083,31 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_EV  | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FEQ));
 
-  cs_xdef_analytic_context_t  *ac =
+  cs_xdef_analytic_context_t *ac =
     (cs_xdef_analytic_context_t *)source->context;
 
   /* Temporary buffers */
 
-  double  *contrib = cb->values;
+  double *contrib = cb->values;
   memset(contrib, 0, cm->n_vc*sizeof(double));
 
   /* Main loop on faces */
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    const double  *xf = cm->face[f].center;
-    const double  hf_coef = 0.5* cm->pvol_f[f]/cm->face[f].meas;
+    const double *x_f = cm->face[f].center;
+    const double hf_coef = 0.5* cm->pvol_f[f]/cm->face[f].meas;
 
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  e = cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  half_pef_vol = hf_coef * cm->tef[i];
+      const short int e = cm->f2e_ids[i];
+      const short int v1 = cm->e2v_ids[2*e];
+      const short int v2 = cm->e2v_ids[2*e+1];
+      const double half_pef_vol = hf_coef * cm->tef[i];
 
       /* Compute Gauss points and its weights */
 
-      cs_quadrature_tet_5pts(cm->xv + 3*v1, cm->edge[e].center, xf, cm->xc,
+      cs_quadrature_tet_5pts(cm->xv + 3*v1, cm->edge[e].center, x_f, cm->xc,
                              half_pef_vol,
                              gauss_pts, weights);
 
@@ -2127,7 +2125,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
 
       /* Compute Gauss points and its weights */
 
-      cs_quadrature_tet_5pts(cm->xv + 3*v2, cm->edge[e].center, xf, cm->xc,
+      cs_quadrature_tet_5pts(cm->xv + 3*v2, cm->edge[e].center, x_f, cm->xc,
                              half_pef_vol,
                              gauss_pts, weights);
 

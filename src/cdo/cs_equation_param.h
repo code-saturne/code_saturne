@@ -829,7 +829,7 @@ typedef struct {
 
   bool                        time_control_owner; /* Is this instance owner
                                                      of the pointer. */
-  cs_time_control_t          *time_control; /* Time control for equations*/
+  cs_time_control_t          *time_control; /* Time control for equations */
 
 } cs_equation_param_t;
 
