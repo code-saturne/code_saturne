@@ -691,7 +691,6 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   cs_field_t *f_yplus = cs_field_by_name("wall_yplus");
   cs_equation_param_t *eqp_yp = cs_field_get_equation_param(f_yplus);
-  eqp_yp->verbosity = 2;
   cs_real_t *yplus = f_yplus->val;
 
   cs_field_bc_coeffs_t *bc_coeffs_yp = f_yplus->bc_coeffs;
