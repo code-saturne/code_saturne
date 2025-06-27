@@ -969,8 +969,9 @@ cs_solve_all()
       bft_printf("Reinitialization of pressure at iteration %d\n\n",
                  cs_glob_time_step->nt_cur);
 
-    const cs_real_t *xyzp0 = fp->xyzp0;
-    const cs_real_t gxyz[3] // Need local copy for GPU lambda capture
+    // Need local copies for GPU lambda capture
+    const cs_real_t xyzp0[3] = {fp->xyzp0[0], fp->xyzp0[1], fp->xyzp0[2]};
+    const cs_real_t gxyz[3]
       = {cs_glob_physical_constants->gravity[0],
          cs_glob_physical_constants->gravity[1],
          cs_glob_physical_constants->gravity[2]};
