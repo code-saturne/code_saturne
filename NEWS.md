@@ -1,4 +1,4 @@
-Release 8.0.5 (unreleased)
+Release 8.0.5 (2025-06-28)
 --------------------------
 
 ### Bug fixes:
