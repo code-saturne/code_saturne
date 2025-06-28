@@ -836,7 +836,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     cs_post_activate_writer(-1, 1);
     cs_post_write_meshes(cs_glob_time_step);
 
-    const cs_real_t *b_dist = NULL, *v_dist = NULL;
+    const float *b_dist = NULL, *v_dist = NULL;
 
     if (coupling_ent->elt_dim == syr_coupling->dim - 1)
       b_dist = cs_to_syr_dist;

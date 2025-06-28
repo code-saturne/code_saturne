@@ -286,7 +286,7 @@ cs_f_cpincl_get_pointers(int     **ico2,
   *ih2o   = &(cs_glob_combustion_model->ih2o);
   *ncharb = &(cs_glob_combustion_model->coal.n_coals);
   *nclacp = &(cs_glob_combustion_model->coal.nclacp);
-  *nclpch = &(cs_glob_combustion_model->coal.n_classes_per_coal);
+  *nclpch = (int *)(&(cs_glob_combustion_model->coal.n_classes_per_coal));
   *ichcor = cs_glob_combustion_model->coal.ichcor;
   *xashch = cs_glob_combustion_model->coal.xashch;
   *diam20 = cs_glob_combustion_model->coal.diam20;

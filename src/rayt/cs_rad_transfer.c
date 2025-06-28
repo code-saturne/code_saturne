@@ -282,8 +282,8 @@ void
 cs_rad_transfer_get_pointers(int  **p_iirayo,
                              int  **p_rad_atmo_model)
 {
-  *p_iirayo = &_rt_params.type;
-  *p_rad_atmo_model = &_rt_params.atmo_model;
+  *p_iirayo = (int *)(&_rt_params.type);
+  *p_rad_atmo_model = (int *)(&_rt_params.atmo_model);
 }
 
 /*============================================================================
