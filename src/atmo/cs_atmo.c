@@ -409,9 +409,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **hyd_p_met,
                               int         dim_hyd_p_met[2])
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-
   if (_atmo_option.z_temp_met == NULL)
     BFT_MALLOC(_atmo_option.z_temp_met, _atmo_option.nbmaxt, cs_real_t);
   if (_atmo_option.time_met == NULL)
@@ -493,18 +490,18 @@ _strtolower(char        *dest,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_hydrostatic_pressure_atmo_compute(cs_real_3_t  *f_ext,
-                                     cs_real_3_t  *dfext,
-                                     int          f_id,
-                                     cs_real_t    *i_massflux,
-                                     cs_real_t    *b_massflux,
-                                     cs_real_t    i_viscm[],
-                                     cs_real_t    b_viscm[],
-                                     cs_real_t    *dam,
-                                     cs_real_t    *xam,
-                                     cs_real_t    *dpvar,
-                                     cs_real_t    *rhs)
+static void
+_hydrostatic_pressure_atmo_compute(cs_real_3_t  *f_ext,
+                                   cs_real_3_t  *dfext,
+                                   int          f_id,
+                                   cs_real_t    *i_massflux,
+                                   cs_real_t    *b_massflux,
+                                   cs_real_t    i_viscm[],
+                                   cs_real_t    b_viscm[],
+                                   cs_real_t    *dam,
+                                   cs_real_t    *xam,
+                                   cs_real_t    *dpvar,
+                                   cs_real_t    *rhs)
 {
   /* Local variables */
   cs_domain_t *domain = cs_glob_domain;
@@ -566,10 +563,15 @@ cs_hydrostatic_pressure_atmo_compute(cs_real_3_t  *f_ext,
   /* Writing */
   if (eqp_p->iwarni >= 2) {
     bft_printf("L2 norm of F_ext=%f, dF_ext=%f, F_ext_next=%f\n",
-        sqrt(cs_gdot(3*m->n_cells, f_ext, f_ext)),
-        sqrt(cs_gdot(3*m->n_cells, dfext, dfext)),
-        sqrt(cs_gdot(3*m->n_cells, next_fext, next_fext))
-        );
+               sqrt(cs_gdot(3*m->n_cells,
+                            (const cs_real_t *)f_ext,
+                            (const cs_real_t *)f_ext)),
+               sqrt(cs_gdot(3*m->n_cells,
+                            (const cs_real_t *)dfext,
+                            (const cs_real_t *)dfext)),
+               sqrt(cs_gdot(3*m->n_cells,
+                            (const cs_real_t *)next_fext,
+                            (const cs_real_t *)next_fext)));
   }
   /* Boundary conditions
    *====================*/
@@ -1626,17 +1628,17 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
     /* Update previous values of pressure for the convergence test */
     cs_field_current_to_previous(f);
-    cs_hydrostatic_pressure_atmo_compute(f_ext,
-                                         dfext,
-                                         f->id,
-                                         i_massflux,
-                                         b_massflux,
-                                         i_viscm,
-                                         b_viscm,
-                                         dam,
-                                         xam,
-                                         dpvar,
-                                         rhs);
+    _hydrostatic_pressure_atmo_compute(f_ext,
+                                       dfext,
+                                       f->id,
+                                       i_massflux,
+                                       b_massflux,
+                                       i_viscm,
+                                       b_viscm,
+                                       dam,
+                                       xam,
+                                       dpvar,
+                                       rhs);
 
     /* L infinity residual computation and forcing update */
     inf_norm = 0.;

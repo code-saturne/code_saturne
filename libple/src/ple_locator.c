@@ -3759,6 +3759,9 @@ ple_locator_discard_exterior(ple_locator_t  *this_locator)
  * ple_locator_get_dist_coords(), and which are located in the elements
  * whose numbers are given by ple_locator_get_dist_locations().
  *
+ * The local_var[] is defined at the local points (whether located or not)
+ * provided when calling ple_locator_set_mesh() or ple_locator_extend_search().
+ *
  * The local_var[] is defined at the located points (those whose
  * numbers are returned by ple_locator_get_interior_list().
  *

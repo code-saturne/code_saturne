@@ -2045,7 +2045,10 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       double elcou = 0.;
       cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
       if (mesh->halo != NULL)
-        cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, cpro_curre, 3);
+        cs_halo_sync_var_strided(mesh->halo,
+                                 CS_HALO_STANDARD,
+                                 (cs_real_t *)cpro_curre,
+                                 3);
       for (cs_lnum_t ifac = 0; ifac < nfac; ifac++) {
         if (cs_glob_elec_option->izreca[ifac] > 0) {
           bool ok = true;

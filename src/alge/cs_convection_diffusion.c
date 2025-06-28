@@ -1726,10 +1726,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
   cs_real_t *df_limiter_local = NULL;
-  cs_lnum_t *faces_local = NULL;
+  const cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   cs_lnum_t n_distant;
-  cs_lnum_t *faces_distant = NULL;
+  const cs_lnum_t *faces_distant = NULL;
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
@@ -4298,10 +4298,10 @@ cs_convection_diffusion_vector(int                         idtvar,
   cs_real_3_t *pvar_local = NULL;
   cs_real_3_t *pvar_distant = NULL;
   cs_real_t *df_limiter_local = NULL;
-  cs_lnum_t *faces_local = NULL;
+  const cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   cs_lnum_t n_distant;
-  cs_lnum_t *faces_distant = NULL;
+  const cs_lnum_t *faces_distant = NULL;
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
@@ -6929,10 +6929,10 @@ cs_convection_diffusion_thermal(int                       idtvar,
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
   cs_real_t *df_limiter_local = NULL;
-  cs_lnum_t *faces_local = NULL;
+  const cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   cs_lnum_t n_distant;
-  cs_lnum_t *faces_distant = NULL;
+  const cs_lnum_t *faces_distant = NULL;
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
@@ -8247,7 +8247,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   cs_real_t *df_limiter_local = NULL;
   cs_real_6_t *viscce_local = NULL;
   cs_real_t *weighb_local = NULL;
-  cs_lnum_t *faces_local = NULL;
+  const cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
@@ -8981,10 +8981,10 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   const int *bc_type = cs_glob_bc_type;
 
   /* Internal coupling variables */
-  cs_lnum_t *faces_local = NULL;
+  const cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   cs_lnum_t n_distant;
-  cs_lnum_t *faces_distant = NULL;
+  const cs_lnum_t *faces_distant = NULL;
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
@@ -9530,10 +9530,10 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
   cs_real_t *df_limiter_local = NULL;
   cs_real_6_t *viscce_local = NULL;
   cs_real_t *weighb_local = NULL;
-  cs_lnum_t *faces_local = NULL;
+  const cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   cs_lnum_t n_distant;
-  cs_lnum_t *faces_distant = NULL;
+  const cs_lnum_t *faces_distant = NULL;
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
