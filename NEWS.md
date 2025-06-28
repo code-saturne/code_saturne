@@ -1,5 +1,7 @@
-Release 7.0.7 (not released yet)
----------------------------------
+Release 7.0.7 (2025-06-28)
+--------------------------
+
+This is the last release of the v7.0 series.
 
 Bug fixes:
 
