@@ -1,4 +1,4 @@
-release 8.2.2 (2025-06-28)
+Release 8.2.2 (2025-06-28)
 --------------------------
 
 This is the last release of the v8.2 series.
