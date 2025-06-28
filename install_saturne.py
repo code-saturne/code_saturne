@@ -488,7 +488,7 @@ class Setup:
         # code_saturne
 
         self.packages['code_saturne'] = \
-            Package(name="Code_Saturne",
+            Package(name="code_saturne",
                     description="code_saturne CFD tool",
                     package="code_saturne",
                     version=None,
