@@ -285,6 +285,12 @@ typedef unsigned long long uint64_t;
 #  endif
 #endif
 
+/* __has_builtin is missing in some cases (e.g. nvcc) */
+
+#ifndef __has_builtin
+  #define __has_builtin(x) 0
+#endif
+
 /*============================================================================
  * General types and macros used throughout code_saturne
  *============================================================================*/
