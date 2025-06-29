@@ -626,6 +626,7 @@ public:
   CS_F_HOST_DEVICE
   span() :
     _dim({0}),
+    _offset({0}),
     _size(0),
     _owner(true),
     _data(nullptr),
@@ -829,6 +830,7 @@ public:
     using std::swap;
     /* Swap the different members between the two references. */
     swap(first._dim, second._dim);
+    swpa(first._offset, second._offset);
     swap(first._size, second._size);
     swap(first._owner, second._owner);
     swap(first._data, second._data);
@@ -910,6 +912,230 @@ public:
   }
 
   /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void resize
+  (
+    const cs_lnum_t(&dims)[N],
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    /* If same dimensions, nothing to do ... */
+    bool same_dim = false;
+    for (int i = 0; i < N; i++)
+      if (dims[i] == _dim[i])
+        same_dim = true;
+
+    if (same_dim)
+      return;
+
+    if (_owner) {
+      clear();
+      set_size_(dims);
+      allocate_(file_name, line_number);
+    }
+
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array while keeping some of the old data.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void resize
+  (
+    cs_lnum_t d1,
+    bool      copy_data,    /*!<[in] Copy data from old pointer to new
+                                array. Default is false. */
+    cs_lnum_t       size_to_keep, /*!<[in] Size of data to keep */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    static_assert(N == 1);
+
+    assert(size_to_keep <= d1 && size_to_keep <= _dim[0]);
+
+    /* If same dimensions, nothing to do ... */
+    if (d1 == _dim[0])
+      return;
+
+    if (_owner) {
+      if (copy_data) {
+        set_size_({d1});
+        reallocate_(file_name, line_number);
+      }
+      else {
+        resize({d1}, file_name, line_number);
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array while keeping some of the old data.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void resize
+  (
+    cs_lnum_t d1,
+    cs_lnum_t d2,
+    bool      copy_data,    /*!<[in] Copy data from old pointer to new
+                                array. Default is false. */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    static_assert(N == 2);
+
+    /* If same dimensions, nothing to do ... */
+    if (d1 == _dim[0])
+      return;
+
+    if (_owner) {
+      if (copy_data) {
+        /* Temporary copy */
+        span<T,N> tmp(*this, false);
+
+        /* Update this instance sizes */
+        set_size_({d1, d2});
+        allocate_(file_name, line_number);
+
+        /* Copy what can be copied */
+        for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
+          for (cs_lnum_t j = 0; j < d2 && j < tmp.dim(1); j++) {
+            _data[i*_offset[0] + j*_offset[1]] = tmp(i,j);
+          }
+        }
+      }
+      else {
+        resize({d1,d2}, file_name, line_number);
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array while keeping some of the old data.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void resize
+  (
+    cs_lnum_t d1,
+    cs_lnum_t d2,
+    cs_lnum_t d3,
+    bool      copy_data,    /*!<[in] Copy data from old pointer to new
+                                array. Default is false. */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    static_assert(N == 3);
+
+    /* If same dimensions, nothing to do ... */
+    if (d1 == _dim[0] && d2 == _dim[1] && d3 == _dim[2])
+      return;
+
+    if (_owner) {
+      if (copy_data) {
+        /* Temporary copy */
+        span<T,N> tmp(*this, false);
+
+        /* Update this instance sizes */
+        set_size_({d1, d2, d3});
+        allocate_(file_name, line_number);
+
+        /* Copy what can be copied */
+        for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
+          for (cs_lnum_t j = 0; j < d2 && j < tmp.dim(1); j++) {
+            for (cs_lnum_t k = 0; k < d3 && k < tmp.dim(2); k++) {
+              this(i,j,k) = tmp(i,j,k);
+            }
+          }
+        }
+      }
+      else {
+        resize({d1,d2,d3}, file_name, line_number);
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get a view (non owner) of the array.
+   *
+   * \return temporary instance which is a view (non owner) of the data
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  span view()
+  {
+    /* Use the shallow copy constructor to return a temporary instance */
+    return span(*this, true);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set memory allocation mode.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void set_alloc_mode
+  (
+    cs_alloc_mode_t mode /*!<[in] Memory allocation mode. */
+  )
+  {
+    if (_mode != mode) {
+      /* Changing allocation mode requires freeing the memory ... */
+      if (_size != 0)
+        clear();
+
+      _mode = mode;
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
@@ -937,6 +1163,17 @@ public:
     return _dim[i];
   }
 
+  CS_F_HOST_DEVICE
+  cs_lnum_t
+  offset
+  (
+    int i
+  )
+  {
+    assert(i >= 0 && i < N);
+    return _offset(i);
+  }
+
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Overloaded () operator to access the ith value (val[i]).
@@ -989,7 +1226,7 @@ public:
   )
   {
     static_assert(N == 2);
-    return _data[i*_dim[1] + j];
+    return _data[i*_offset[0] + j*_offset[1]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1008,7 +1245,7 @@ public:
   ) const
   {
     static_assert(N == 2);
-    return _data[i*_dim[1] + j];
+    return _data[i*_offset[0] + j*_offset[1]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1028,7 +1265,7 @@ public:
   )
   {
     static_assert(N == 3);
-    return _data[i*_dim[1]*_dim[2] + j*_dim[2] + k];
+    return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1048,7 +1285,7 @@ public:
   ) const
   {
     static_assert(N == 3);
-    return _data[i*_dim[2]*_dim[1] + j*_dim[2] + k];
+    return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
   }
 
 private:
@@ -1071,6 +1308,16 @@ private:
       _dim[i] = dims[i];
       _size *= dims[i];
     }
+
+    /* Compute offset values for getters */
+
+    /* Version for Layout right */
+    for (int i = 0; i < N-1; i++) {
+      _offset[i] = 1;
+      for (int j = i + 1; j < N; j++)
+        _offset[i] *= dims[j];
+    }
+    _offset[N-1] = 1;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1094,14 +1341,41 @@ private:
                                               ptr_name,
                                               file_name,
                                               line_number));
-  }
+  };
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private re-allocator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  reallocate_
+  (
+    const char *file_name,  /*!<[in] Caller file (for log) */
+    const int   line_number /*!<[in] Caller line (for log) */
+  )
+  {
+    /* If not owner no-op */
+    if (_owner) {
+      const char *_ptr_name = "cs::array::span.data";
+      _data = static_cast<T *>(cs_mem_realloc_hd(_data,
+                                                 _mode,
+                                                 _size,
+                                                 sizeof(T),
+                                                 _ptr_name,
+                                                 file_name,
+                                                 line_number));
+    }
+  };
 
   /*--------------------------------------------------------------------------*/
   /* Private members */
   /*--------------------------------------------------------------------------*/
 
   cs_lnum_t       _dim[N];
+  cs_lnum_t       _offset[N];
   cs_lnum_t       _size;
   bool            _owner;
   T*              _data;
