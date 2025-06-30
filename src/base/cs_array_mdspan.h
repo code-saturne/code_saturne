@@ -94,8 +94,8 @@ public:
   CS_F_HOST_DEVICE
   data_array
   (
-    cs_lnum_t     size,
-    cs_alloc_mode_t alloc_mode = cs_alloc_mode,
+    cs_lnum_t     size, /*!<[in] size of array */
+    cs_alloc_mode_t alloc_mode = cs_alloc_mode, /*!<[in] Memory allocation mode */
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
  __has_builtin(__builtin_FILE)
@@ -124,9 +124,9 @@ public:
   CS_F_HOST_DEVICE
   data_array
   (
-    cs_lnum_t  size,
-    T         *data,
-    cs_alloc_mode_t alloc_mode = cs_alloc_mode,
+    cs_lnum_t  size,  /*!<[in] Size of array */
+    T         *data,  /*!<[in] Pointer to data array */
+    cs_alloc_mode_t alloc_mode = cs_alloc_mode, /*!<[in] Memory allocation mode */
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
  __has_builtin(__builtin_FILE)
@@ -154,8 +154,8 @@ public:
   CS_F_HOST_DEVICE
   data_array
   (
-    data_array& other,
-    bool        shallow_copy=false,
+    data_array& other, /*!<[in] Reference of data array to copy */
+    bool        shallow_copy=false, /* Make a shallow copy (non-owner) or not. */
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
   __has_builtin(__builtin_FILE)
@@ -222,8 +222,8 @@ public:
   friend void
   swap
   (
-    data_array& first,
-    data_array& second
+    data_array& first, /*!<[in] First instance to swap */
+    data_array& second /*!<[in] Second instance to swap */
   )
   {
     using std::swap;
@@ -459,7 +459,7 @@ public:
   CS_F_HOST_DEVICE
   T& operator[]
   (
-    int i
+    cs_lnum_t i /*!<[in] Index of value to get */
   )
   {
     return _data[i];
@@ -476,7 +476,7 @@ public:
   CS_F_HOST_DEVICE
   const T& operator[]
   (
-    int i
+    cs_lnum_t i /*!<[in] Index of value to get */
   ) const
   {
     return _data[i];
@@ -493,7 +493,7 @@ public:
   CS_F_HOST_DEVICE
   T& operator()
   (
-    int i
+    cs_lnum_t i /*!<[in] Index of value to get */
   )
   {
     return _data[i];
@@ -510,7 +510,7 @@ public:
   CS_F_HOST_DEVICE
   const T& operator()
   (
-    int i
+    cs_lnum_t i /*!<[in] Index of value to get */
   ) const
   {
     return _data[i];
@@ -642,7 +642,7 @@ public:
   CS_F_HOST_DEVICE
   span
   (
-    const cs_lnum_t(&dims)[N],
+    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
 #if (defined(__GNUC__) || defined(__clang__)) && \
    __has_builtin(__builtin_LINE) && \
    __has_builtin(__builtin_FILE)
@@ -671,7 +671,7 @@ public:
   CS_F_HOST_DEVICE
   span
   (
-    const cs_lnum_t(&dims)[N],
+    const cs_lnum_t(&dims)[N],  /*!<[in] Array of dimensions sizes */
     cs_alloc_mode_t alloc_mode, /*!<[in] Memory allocation mode */
 #if (defined(__GNUC__) || defined(__clang__)) && \
    __has_builtin(__builtin_LINE) && \
@@ -701,7 +701,7 @@ public:
   CS_F_HOST_DEVICE
   span
   (
-    const cs_lnum_t(&dims)[N],
+    const cs_lnum_t(&dims)[N],                 /*!<[in] Array of dimensions sizes */
     T*                      data,              /*!<[in] Pointer to data array */
     cs_alloc_mode_t alloc_mode = cs_alloc_mode /*!<[in] Memory allocation mode,
                                                         default is HOST. */
@@ -723,8 +723,8 @@ public:
   CS_F_HOST_DEVICE
   span
   (
-    const cs_lnum_t(&dims)[N],
-    data_array<T>& array,
+    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
+    data_array<T>& array,      /*!<[in] Reference of data_array class */
 #if (defined(__GNUC__) || defined(__clang__)) && \
    __has_builtin(__builtin_LINE) && \
    __has_builtin(__builtin_FILE)
@@ -819,6 +819,12 @@ public:
     clear();
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Swap method.
+   */
+  /*--------------------------------------------------------------------------*/
+
   CS_F_HOST_DEVICE
   friend void
   swap
@@ -891,13 +897,6 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Change values so as to point
-   */
-  /*--------------------------------------------------------------------------*/
-
-
-  /*--------------------------------------------------------------------------*/
-  /*!
    * \brief Set all values of the data array to a constant value.
    */
   /*--------------------------------------------------------------------------*/
@@ -920,7 +919,7 @@ public:
   CS_F_HOST_DEVICE
   void resize
   (
-    const cs_lnum_t(&dims)[N],
+    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
   __has_builtin(__builtin_FILE)
@@ -951,14 +950,14 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Resize data array while keeping some of the old data.
+   * \brief Resize span, with N=1, while keeping some of the old data.
    */
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
   void resize
   (
-    cs_lnum_t d1,
+    cs_lnum_t d1,           /*!<[in] First dimension size */
     bool      copy_data,    /*!<[in] Copy data from old pointer to new
                                 array. Default is false. */
     cs_lnum_t       size_to_keep, /*!<[in] Size of data to keep */
@@ -983,7 +982,8 @@ public:
 
     if (_owner) {
       if (copy_data) {
-        set_size_({d1});
+        cs_lnum_t dims[N] = {d1};
+        set_size_(dims);
         reallocate_(file_name, line_number);
       }
       else {
@@ -994,15 +994,15 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Resize data array while keeping some of the old data.
+   * \brief Resize span, with N=2, while keeping some of the old data.
    */
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
   void resize
   (
-    cs_lnum_t d1,
-    cs_lnum_t d2,
+    cs_lnum_t d1,           /*!<[in] First dimension size */
+    cs_lnum_t d2,           /*!<[in] Second dimension size */
     bool      copy_data,    /*!<[in] Copy data from old pointer to new
                                 array. Default is false. */
 #if (defined(__GNUC__) || defined(__clang__)) && \
@@ -1019,7 +1019,7 @@ public:
     static_assert(N == 2);
 
     /* If same dimensions, nothing to do ... */
-    if (d1 == _dim[0])
+    if (d1 == _dim[0] && d2 == _dim[1])
       return;
 
     if (_owner) {
@@ -1028,7 +1028,8 @@ public:
         span<T,N> tmp(*this, false);
 
         /* Update this instance sizes */
-        set_size_({d1, d2});
+        cs_lnum_t dims[N] = {d1, d2};
+        set_size_(dims);
         allocate_(file_name, line_number);
 
         /* Copy what can be copied */
@@ -1053,9 +1054,9 @@ public:
   CS_F_HOST_DEVICE
   void resize
   (
-    cs_lnum_t d1,
-    cs_lnum_t d2,
-    cs_lnum_t d3,
+    cs_lnum_t d1, /*!<[in] First dimension size */
+    cs_lnum_t d2, /*!<[in] Second dimension size */
+    cs_lnum_t d3, /*!<[in] Third dimension size */
     bool      copy_data,    /*!<[in] Copy data from old pointer to new
                                 array. Default is false. */
 #if (defined(__GNUC__) || defined(__clang__)) && \
@@ -1081,14 +1082,15 @@ public:
         span<T,N> tmp(*this, false);
 
         /* Update this instance sizes */
-        set_size_({d1, d2, d3});
+        cs_lnum_t dims[N] = {d1, d2, d3};
+        set_size_(dims);
         allocate_(file_name, line_number);
 
         /* Copy what can be copied */
         for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
           for (cs_lnum_t j = 0; j < d2 && j < tmp.dim(1); j++) {
             for (cs_lnum_t k = 0; k < d3 && k < tmp.dim(2); k++) {
-              this(i,j,k) = tmp(i,j,k);
+              (*this)(i,j,k) = tmp(i,j,k);
             }
           }
         }
@@ -1136,6 +1138,11 @@ public:
   }
 
   /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get total size of data array.
+   *
+   * \returns value of total size
+   */
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
@@ -1145,6 +1152,14 @@ public:
     return _size;
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get memory allocation mode.
+   *
+   * \returns value of total size
+   */
+  /*--------------------------------------------------------------------------*/
+
   CS_F_HOST_DEVICE
   cs_alloc_mode_t
   mode()
@@ -1152,22 +1167,38 @@ public:
     return _mode;
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get the size of the i-th dimension of the span.
+   *
+   * \returns value of size along the i-th dimension
+   */
+  /*--------------------------------------------------------------------------*/
+
   CS_F_HOST_DEVICE
   cs_lnum_t
   dim
   (
-    int i
+    int i /*!<[in] Index of size to get */
   )
   {
     assert(i >= 0 && i < N);
     return _dim[i];
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get the offset of the i-th dimension of the span.
+   *
+   * \returns value of offset along the i-th dimension.
+   */
+  /*--------------------------------------------------------------------------*/
+
   CS_F_HOST_DEVICE
   cs_lnum_t
   offset
   (
-    int i
+    int i /*!<[in] Index of offset to get */
   )
   {
     assert(i >= 0 && i < N);
