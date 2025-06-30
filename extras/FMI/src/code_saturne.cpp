@@ -277,17 +277,25 @@ _generate_key(void)
  * Write string for buffer characters, including non-printable ones
  *
  * parameters:
- *   f   <-- FILE
- *   rec <-- record to trace
- *   n   <-- number of elements
+ *   f          <-- FILE
+ *   rec        <-- record to trace
+ *   trace_max  <-- max number of elements to log, or 0 for unlimited
+ *   n          <-- number of elements
  *----------------------------------------------------------------------------*/
 
 static void
 _trace_buf(FILE        *f,
            const char   rec[],
+           size_t       trace_max,
            size_t       n)
 {
-  for (size_t j = 0; j < n; j++) {
+  size_t n0 = n, n1 = n;
+  if (trace_max*2 < n && trace_max > 0) {
+    n0 = trace_max;
+    n1 = n - trace_max;
+  }
+
+  for (size_t j = 0; j < n0; j++) {
     char c = rec[j];
     if (isprint(c))
       fprintf(f, "%c", c);
@@ -304,6 +312,31 @@ _trace_buf(FILE        *f,
         break;
       default:
         fprintf(f, "'\\%u'", (int)c);
+      }
+    }
+  }
+
+  if (n0 < n) {
+    fprintf(f, " <%u bytes skipped...>", (unsigned)(n1-n0));
+
+    for (size_t j = n1; j < n; j++) {
+      char c = rec[j];
+      if (isprint(c))
+        fprintf(f, "%c", c);
+      else {
+        switch(c) {
+        case '\r':
+          fprintf(f, "\\r");
+          break;
+        case '\n':
+          fprintf(f, "\\n");
+          break;
+        case '\t':
+          fprintf(f, "\\t");
+          break;
+        default:
+          fprintf(f, "'\\%u'", (int)c);
+        }
       }
     }
   }
@@ -432,12 +465,12 @@ public:
 
   sockaddr_in  _client_address;
 
-  fmi2ComponentEnvironment  _component_environment = nullptr;
+  fmi2ComponentEnvironment  _component_environment = this;
   fmi2Char                 *_instance_name;
   fmi2Char                 *_resource_location;
 
   FILE *_tracefile = nullptr;
-  size_t  _trace_max = 10;
+  size_t  _trace_max = 128;
 
   /* Active logging: 0: inactive, 1, log using FMI, -1: low-level trace,
      - 2: low level trace if FMI logging not active, changed to 1
@@ -565,8 +598,8 @@ public:
     if (ioctl(sock, SIOCINQ, &pending) != 0)
       cout << "ioctl call failed." << endl;
     else if (pending > 0) {
-      string s0 = "Values not read before send attempt: ";
-      cout << s0 << pending << endl;
+      string s0 = " Values not read before send attempt: ";
+      cout << pending << s0 << pending << endl;
       _log(fmi2Fatal, CS_LOG_FATAL, s0);
       throw std::runtime_error(s0);
     }
@@ -594,16 +627,17 @@ public:
     if (_tracefile != nullptr) {
       if (size == 1) {
         fprintf(_tracefile, "== send %d bytes: [", (int)n_bytes);
-        _trace_buf(_tracefile, buffer, n_bytes);
+        _trace_buf(_tracefile, buffer, _trace_max, n_bytes);
         fprintf(_tracefile, "]...\n");
       }
       else {
         fprintf(_tracefile, "== send %d values of size %d:\n",
                 (int)ni, (int)size);
+        size_t trace_max = _trace_max / size;
         size_t n0 = ni, n1 = ni;
-        if (_trace_max*2 < ni) {
-          n0 = _trace_max;
-          n1 = ni - _trace_max;
+        if (trace_max*2 < ni) {
+          n0 = trace_max;
+          n1 = ni - trace_max;
         }
         for (size_t i = 0; i < n0; i++) {
           fprintf(_tracefile, "    ");
@@ -668,7 +702,7 @@ public:
 
     if (_tracefile != nullptr) {
       fprintf(_tracefile, "== send %d bytes: [", (int)n);
-      _trace_buf(_tracefile, str, n);
+      _trace_buf(_tracefile, str, 0, n);
       fprintf(_tracefile, "]...\n");
       fflush(_tracefile);
     }
@@ -755,7 +789,7 @@ public:
       else if (_tracefile != nullptr) {
         fprintf(_tracefile, "   received %d bytes: [", (int)ret);
         if (size == 1)
-          _trace_buf(_tracefile, buffer, ret);
+          _trace_buf(_tracefile, buffer, _trace_max, ret);
         fprintf(_tracefile, "]\n");
         fflush(_tracefile);
       }
@@ -765,10 +799,11 @@ public:
     }
 
     if (_tracefile != nullptr && size > 1) {
+      size_t trace_max = _trace_max / size;
       size_t n0 = ni, n1 = ni;
-      if (_trace_max*2 < ni) {
-        n0 = _trace_max;
-        n1 = ni - _trace_max;
+      if (trace_max*2 < ni) {
+        n0 = trace_max;
+        n1 = ni - trace_max;
       }
       for (size_t i = 0; i < n0; i++) {
         fprintf(_tracefile, "    ");
@@ -867,7 +902,7 @@ public:
 
       if (_tracefile != nullptr) {
         fprintf(_tracefile, "   received %d bytes: [", (int)ret);
-        _trace_buf(_tracefile, queue->buf + start_id, ret);
+        _trace_buf(_tracefile, queue->buf + start_id, _trace_max, ret);
         fprintf(_tracefile, "]\n");
         fflush(_tracefile);
       }
@@ -1335,6 +1370,45 @@ public:
 
   /*--------------------------------------------------------------------------*/
 
+  int
+  _check_return_code(const char  *caller)
+  {
+    int retcode = 0;
+
+    /* receive 0 */
+    char *buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
+
+    string s = string(caller);
+    if (strcmp(buf_rcv, "0") != 0) {
+      s += ": unexpected return code: " + string(buf_rcv);
+      _log(fmi2Warning, CS_LOG_WARNING, s);
+      retcode = 1;
+    }
+
+    return retcode;
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  void
+  _set_max_time_step(const char  *caller,
+                     int          n)
+  {
+    char buf_send[128];
+    snprintf(buf_send, 127, "max_time_step %d", n);
+    buf_send[127] = '\0';
+    _send_sock_str(_cs_socket, buf_send);
+
+    /* receive 0 */
+    if (_check_return_code(caller) == 0) {
+      string s = string(caller);
+      s += ": set max time step to " + to_string(n) + " for FMI control.";
+      _log(fmi2OK, CS_LOG_TRACE, s);
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+
   void
   _advance(int   n)
   {
@@ -1367,12 +1441,10 @@ public:
 
     _send_sock_str(_cs_socket, buffer.c_str());
 
-    /* receive 0 */
-    char *buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
-    if (strcmp(buf_rcv, "0") != 0) {
-      s = string(__func__) + ": unexpected return code: " + string(buf_rcv);
-      _log(fmi2Warning, CS_LOG_WARNING, s);
-    }
+    _check_return_code(__func__);
+
+    if (n < 1)
+      return;
 
     /* Get output notebook values */
 
@@ -1392,10 +1464,9 @@ public:
                  sizeof(double), v->n_input);
     }
 
-    /* receive iteration OK */
-    if (n > 0) {
-
-      buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
+    /* receive return code OK */
+    {
+      char *buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
       if (strcmp(buf_rcv, "Iteration OK") != 0) {
         s =   string(__func__) + ": expected \"Iteration OK\", not: "
             + string(buf_rcv);
@@ -1726,23 +1797,8 @@ public:
     /* Increase the number of maximum time steps, as FMI is controlling
        the time stepping, not the code. */
 
-    {
-      _send_sock_str(_cs_socket, "max_time_step 9999999");
-
-      char *buf_rcv = _recv_sock_with_queue(_cs_socket,
-                                            _control_queue,
-                                            0);
-
-      string s = string(__func__);
-      if (strcmp(buf_rcv, "0") != 0) {
-        s += ": unexpected return code: " + string(buf_rcv);
-        _log(fmi2Warning, CS_LOG_WARNING, s);
-      }
-      else {
-        s += ": set max time step to 9999999 for FMI control.";
-        _log(fmi2OK, CS_LOG_TRACE, s);
-      }
-    }
+    cs_fmu *c = static_cast<cs_fmu *>(component);
+    c->_set_max_time_step(__func__, 9999999);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2038,9 +2094,8 @@ fmi2Status fmi2Terminate(fmi2Component  component)
 
     string resu = s_casename + "/RESU/" + s_run_id;
 
-    c->_send_sock_str(c->_cs_socket, "max_time_step 0");
+    c->_set_max_time_step(__func__, 0);
     c->_advance(0);
-
     c->_variables_finalize();
 
     _queue_finalize(&(c->_control_queue));
@@ -2338,6 +2393,8 @@ fmi2SetFMUstate(fmi2Component  component,
     c->_send_sock_str(c->_cs_socket, buffer.c_str());
 
     c->_send_sock(c->_cs_socket, csst->serialized_data, 1, restart_size);
+
+    c->_check_return_code(__func__);
   }
   catch (const std::runtime_error& e) {
     cout << "An exception occured: " << e.what() << "\n";
@@ -2591,10 +2648,17 @@ fmi2SetupExperiment(fmi2Component                   component,
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
   char s[256];
-  snprintf(s, 255,
-           "%s: called for %s:\n"
-           "  tolerance and start/stop times ignored\n",
-           __func__, c->_instance_name);
+  if (c->_instance_name != nullptr)
+    snprintf(s, 255,
+             "%s: called for %s:\n"
+             "  tolerance and start/stop times ignored\n",
+             __func__, c->_instance_name);
+  else
+    snprintf(s, 255,
+             "%s: called for %p:\n"
+             "  tolerance and start/stop times ignored\n",
+             __func__, c);
+
   c->_log(fmi2Warning, CS_LOG_WARNING, s);
 
   return fmi2Warning;
@@ -2615,8 +2679,8 @@ fmi2GetDirectionalDerivative
   [[maybe_unused]]  const fmi2ValueReference  unknownValueReferences[],
   [[maybe_unused]]  size_t                    numberOfUnknowns,
   [[maybe_unused]]  const fmi2ValueReference  knownValueReferences[],
-  [[maybe_unused]]  fmi2Integer               numberOfKnowns,
-  [[maybe_unused]]  fmi2Real                  knownDifferential[],
+  [[maybe_unused]]  size_t                    numberOfKnowns,
+  [[maybe_unused]]  const fmi2Real            knownDifferential[],
   [[maybe_unused]]  fmi2Real                  unknownDifferential[]
 )
 {
@@ -2629,7 +2693,7 @@ fmi2SetRealInputDerivatives
   [[maybe_unused]]  fmi2Component             component,
   [[maybe_unused]]  const fmi2ValueReference  valueReferences[],
   [[maybe_unused]]  size_t                    numberOfValueReferences,
-  [[maybe_unused]]  fmi2Integer               orders[],
+  [[maybe_unused]]  const fmi2Integer         orders[],
   [[maybe_unused]]  const fmi2Real            values[]
 )
 {
