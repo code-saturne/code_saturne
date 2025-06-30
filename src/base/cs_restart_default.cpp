@@ -3388,7 +3388,7 @@ cs_restart_initialize_fields_read_status(void)
 
   const int n_fields = cs_field_n_fields();
 
-  CS_MALLOC(_fields_read_status, n_fields, cs_restart_file_t);
+  CS_REALLOC(_fields_read_status, n_fields, cs_restart_file_t);
   for (int i = 0; i < n_fields; i++)
     _fields_read_status[i] = CS_RESTART_DISABLED;
 }

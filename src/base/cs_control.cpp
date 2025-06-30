@@ -1397,6 +1397,7 @@ _control_snapshot(const char             *cur_line,
         _comm_read_sock(control_comm, queue, buffer,
                         1, s_size);
         cs_restart_set_from_memory_serialized(s_size, buffer);
+        cs_time_stepping_read_checkpoint();
       }
     }
   }

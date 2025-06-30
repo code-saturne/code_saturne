@@ -71,6 +71,15 @@ cs_time_stepping(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Input a checkpoint.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_stepping_read_checkpoint(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Output a checkpoint.
  *
  * If needed, the mesh is also output in the checkpoint directory,

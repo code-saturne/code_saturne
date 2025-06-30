@@ -338,44 +338,8 @@ cs_time_stepping(void)
   int restart_stats_id = cs_timer_stats_id_by_name("checkpoint_restart_stage");
   int post_stats_id = cs_timer_stats_id_by_name("postprocessing_stage");
 
-  if (cs_restart_present() == 1) {
-
-    cs_restart_initialize_fields_read_status();
-
-    cs_timer_stats_start(restart_stats_id);
-
-    cs_restart_map_build();
-
-    /* In the case of points cloud, porosity is a variable
-       and readed here */
-    cs_restart_main_and_aux_read();
-
-    /* Radiative module restart */
-    if (cs_glob_rad_transfer_params->type > 0)
-      cs_rad_transfer_read();
-
-    /* Lagrangian module restart (particles) */
-    if (cs_glob_lagr_time_scheme->iilagr > 0)
-      cs_restart_lagrangian_checkpoint_read();
-
-    cs_les_synthetic_eddy_restart_read();
-
-    cs_porous_model_restart_read();
-
-    /* TODO
-       cs_restart_map_free may not be called yet, because
-       cs_lagr_solve_initialize and the first call of cs_lagr_solve_time_step
-       may also need restart data for particles and statistics respectively.
-       This should be solved by moving the corresponding stages at least to
-       cs_lagr_solve_initialize sor as to free mapping data before the time loop.
-    */
-
-    if (cs_glob_lagr_time_scheme->iilagr < 1)
-      cs_restart_map_free();
-
-    cs_timer_stats_stop(restart_stats_id);
-
-  }
+  if (cs_restart_present() == 1)
+    cs_time_stepping_read_checkpoint();
 
   /* Test presence of control_file to modify nt_max if required */
 
@@ -956,6 +920,51 @@ cs_time_stepping(void)
        "                      END OF CALCULATION\n"
        "                      ==================\n\n\n"
        "===============================================================\n\n\n"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Input a checkpoint.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_stepping_read_checkpoint(void)
+{
+  cs_restart_initialize_fields_read_status();
+
+  int restart_stats_id = cs_timer_stats_id_by_name("checkpoint_restart_stage");
+  cs_timer_stats_start(restart_stats_id);
+
+  cs_restart_map_build();
+
+  /* In the case of points cloud, porosity is a variable and read here */
+  cs_restart_main_and_aux_read();
+
+  /* Radiative module restart */
+  if (cs_glob_rad_transfer_params->type > 0)
+    cs_rad_transfer_read();
+
+  /* Lagrangian module restart (particles) */
+  if (cs_glob_lagr_time_scheme->iilagr > 0)
+    cs_restart_lagrangian_checkpoint_read();
+
+  cs_les_synthetic_eddy_restart_read();
+
+  cs_porous_model_restart_read();
+
+  /* TODO
+     cs_restart_map_free may not be called yet, because
+     cs_lagr_solve_initialize and the first call of cs_lagr_solve_time_step
+     may also need restart data for particles and statistics respectively.
+     This should be solved by moving the corresponding stages at least to
+     cs_lagr_solve_initialize so as to free mapping data before the time loop.
+  */
+
+  if (cs_glob_lagr_time_scheme->iilagr < 1)
+    cs_restart_map_free();
+
+  cs_timer_stats_stop(restart_stats_id);
 }
 
 /*----------------------------------------------------------------------------*/
