@@ -2238,7 +2238,7 @@ cs_restart_create(const char         *name,
 
   /* Create 'checkpoint' directory or read from 'restart' directory */
 
-  if (cs_glob_rank_id < 1) {
+  if (cs_glob_rank_id < 1 && _restart_serialized_memory == nullptr) {
     if (mode == CS_RESTART_MODE_WRITE) {
       if (cs_file_mkdir_default(_path) != 0)
         bft_error(__FILE__, __LINE__, 0,
@@ -2270,7 +2270,8 @@ cs_restart_create(const char         *name,
   /* Following the addition of an extension, we check for READ mode
    * if a file exists without the extension */
 
-  if (mode == CS_RESTART_MODE_READ) {
+  if (   mode == CS_RESTART_MODE_READ
+      && _restart_serialized_memory == nullptr) {
 
     if (cs_file_isreg(_name) == 0 && cs_file_endswith(name, _extension)) {
       CS_FREE(_name);
@@ -2284,7 +2285,9 @@ cs_restart_create(const char         *name,
       _name[ldir+lname-lext+1] = '\0';
     }
 
-  } else if (mode == CS_RESTART_MODE_WRITE) {
+  }
+  else if (   mode == CS_RESTART_MODE_WRITE
+           && _restart_serialized_memory == nullptr) {
 
     /* Check if file already exists, and if so rename and delete if needed */
     int writer_id = _add_restart_multiwriter(name, _name);

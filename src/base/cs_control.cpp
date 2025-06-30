@@ -128,6 +128,8 @@ typedef struct {
   FILE                   *trace;             /* If active, trace */
 
   int                     socket;            /* Socket number; */
+  size_t                  trace_max;         /* Max traced entries (first and last
+                                                bytes for each tracing calls */
 #endif
 
   bool                    connected;         /* Currently connected ? */
@@ -247,17 +249,25 @@ _queue_finalize(cs_control_queue_t  **queue)
  * Write string for buffer characters, including non-printable ones
  *
  * parameters:
- *   f   <-- FILE
- *   rec <-- record to trace
- *   n   <-- number of elements
+ *   f         <-- FILE
+ *   rec       <-- record to trace
+ *   trace_max <-- max number of elements to log, or 0 for unlimited
+ *   n         <-- number of elements
  *----------------------------------------------------------------------------*/
 
 static void
 _trace_buf(FILE        *f,
            const char   rec[],
+           size_t       trace_max,
            size_t       n)
 {
-  for (size_t j = 0; j < n; j++) {
+  size_t n0 = n, n1 = n;
+  if (trace_max*2 < n && trace_max > 0) {
+    n0 = trace_max;
+    n1 = n - trace_max;
+  }
+
+  for (size_t j = 0; j < n0; j++) {
     char c = rec[j];
     if (isprint(c))
       fprintf(f, "%c", c);
@@ -274,6 +284,31 @@ _trace_buf(FILE        *f,
         break;
       default:
         fprintf(f, "'\\%u'", (int)c);
+      }
+    }
+  }
+
+  if (n0 < n) {
+    fprintf(f, " <%u bytes skipped...>", (unsigned)(n1-n0));
+
+    for (size_t j = n1; j < n; j++) {
+      char c = rec[j];
+      if (isprint(c))
+        fprintf(f, "%c", c);
+      else {
+        switch(c) {
+        case '\r':
+          fprintf(f, "\\r");
+          break;
+        case '\n':
+          fprintf(f, "\\n");
+          break;
+        case '\t':
+          fprintf(f, "\\t");
+          break;
+        default:
+          fprintf(f, "'\\%u'", (int)c);
+        }
       }
     }
   }
@@ -382,7 +417,7 @@ _comm_read_sock_r0(const cs_control_comm_t  *comm,
                 comm->port_name);
     else if (comm->trace != nullptr) {
       fprintf(comm->trace, "   read %d bytes: [", (int)ret);
-      _trace_buf(comm->trace, _rec + start_id, ret);
+      _trace_buf(comm->trace, _rec + start_id, comm->trace_max, ret);
       fprintf(comm->trace, "]\n");
       fflush(comm->trace);
     }
@@ -469,7 +504,7 @@ _comm_read_sock(const cs_control_comm_t  *comm,
                   comm->port_name);
       else if (comm->trace != nullptr) {
         fprintf(comm->trace, "   read %d bytes: [", (int)ret);
-        _trace_buf(comm->trace, _rec + start_id, ret);
+        _trace_buf(comm->trace, _rec + start_id, comm->trace_max, ret);
         fprintf(comm->trace, "]\n");
         fflush(comm->trace);
       }
@@ -540,7 +575,7 @@ _comm_write_sock(cs_control_comm_t  *comm,
     if (size == 1) {
       fprintf(comm->trace, "-- write %d bytes: [",
               (int)count);
-      _trace_buf(comm->trace, _rec, n_bytes);
+      _trace_buf(comm->trace, _rec, comm->trace_max, n_bytes);
       fprintf(comm->trace, "]...\n");
     }
     else {
@@ -694,7 +729,7 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
 
     if (comm->trace != nullptr) {
       fprintf(comm->trace, "   read %d bytes: [", (int)ret);
-      _trace_buf(comm->trace, queue->buf + start_id, ret);
+      _trace_buf(comm->trace, queue->buf + start_id, comm->trace_max, ret);
       fprintf(comm->trace, "]\n");
       fflush(comm->trace);
     }
@@ -978,6 +1013,7 @@ _comm_initialize(const char             *port_name,
   comm->trace = nullptr;
 
   comm->socket = -1;
+  comm->trace_max = 128;
 #endif
 
   /* Info on interface creation */
@@ -1003,6 +1039,11 @@ _comm_initialize(const char             *port_name,
       p = getenv("CS_CONTROL_COMM_TRACE");
       if (p != nullptr)
         comm->trace = fopen(p, "w");
+      p = getenv("CS_CONTROL_COMM_TRACE_N_MAX");
+      if (p != nullptr) {
+        long l = atol(p);
+        comm->trace_max = l;
+      }
 
       _comm_sock_connect(comm);
       retval = _comm_sock_handshake(comm, CS_CONTROL_COMM_MAGIC_STRING, key);
