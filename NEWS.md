@@ -3,6 +3,14 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- FMI coupling: various fixes.
+  * Fixes in FMU checkpoint/restart.
+    - When reading a snapshot from memory, the received data was not used.
+    - Fixed crash in checks reading checkpoints in memory.
+    - Added CS_CONTROL_COMM_TRACE_N_MAX environment variable to limit
+      volume of controller communication logging.
+  * Fix coupling for parallel (MPI) runs.
+
 - CDO : Ensure that post-processing is done for final iteration when coupled.
   The final iteration post-processing could, potentially, not be done when
   the computation stop is imposed by either another instance (coupling) or
