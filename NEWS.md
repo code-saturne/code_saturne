@@ -90,6 +90,14 @@ Release 9.0.0 (2025-06-27)
   mixed centered/hybrid scheme is introduced with a fixed ratio or a variable
   ratio using Sharfetter-Gummel weigth function which is Peclet-robust.
 
+### Bug fixes:
+
+- Fix an incorrect quadrature rule for the computation of source terms
+  in CDO-Vb schemes defined by an analytic function on the dual
+  mesh. Case of a barycentric approximation. The barycentric
+  approximation relying on a subdivision into tetrahedra is not
+  impacted by this fix.
+
 Release 8.3.0 (2024-12-20)
 --------------------------
 
