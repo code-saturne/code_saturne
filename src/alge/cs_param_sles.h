@@ -616,11 +616,11 @@ cs_param_sles_hpddm_reset(cs_param_sles_t *slesp);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_hpddm_advanced(cs_param_sles_t *slesp,
-                             const bool       use_neumann,
-                             const int        nb_eigenvector,
-                             const int        harmonic_overlap,
-                             const double     relative_threshold);
+cs_param_sles_hpddm(cs_param_sles_t *slesp,
+                    const bool       use_neumann,
+                    const int        nb_eigenvector,
+                    const int        harmonic_overlap,
+                    const double     relative_threshold);
 
 /*----------------------------------------------------------------------------*/
 /*!
