@@ -95,9 +95,9 @@ cs_param_hpddm_create(void)
 
   /* Basic options */
 
-  hpddmp->harmonic_overlap   = 2;
+  hpddmp->harmonic_overlap   = 5;
   hpddmp->nb_eigenvector     = 80;
-  hpddmp->relative_threshold = 5e-2;
+  hpddmp->relative_threshold = 5e-6;
 
   /* Advanced options */
 
