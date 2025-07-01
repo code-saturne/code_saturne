@@ -93,11 +93,21 @@ cs_param_hpddm_create(void)
 
   hpddmp->use_neumann = false;
 
-  /* Advanced options */
+  /* Basic options */
 
   hpddmp->harmonic_overlap   = 2;
   hpddmp->nb_eigenvector     = 80;
   hpddmp->relative_threshold = 5e-2;
+
+  /* Advanced options */
+
+  hpddmp->adaptative = false;
+
+  hpddmp->min_harmonic_overlap = hpddmp->harmonic_overlap;
+  hpddmp->max_harmonic_overlap = hpddmp->harmonic_overlap;
+
+  hpddmp->min_nb_eigenvector = hpddmp->nb_eigenvector;
+  hpddmp->max_nb_eigenvector = hpddmp->nb_eigenvector;
 
   return hpddmp;
 }
@@ -123,6 +133,19 @@ cs_param_hpddm_copy(const cs_param_hpddm_t *hpddmp)
   cpy->harmonic_overlap   = hpddmp->harmonic_overlap;
   cpy->nb_eigenvector     = hpddmp->nb_eigenvector;
   cpy->relative_threshold = hpddmp->relative_threshold;
+
+  /* Advanced options */
+
+  cpy->adaptative = hpddmp->adaptative;
+
+  cpy->min_iter = hpddmp->min_iter;
+  cpy->max_iter = hpddmp->max_iter;
+
+  cpy->min_harmonic_overlap = hpddmp->min_harmonic_overlap;
+  cpy->max_harmonic_overlap = hpddmp->max_harmonic_overlap;
+
+  cpy->min_nb_eigenvector = hpddmp->min_nb_eigenvector;
+  cpy->max_nb_eigenvector = hpddmp->max_nb_eigenvector;
 
   return cpy;
 }

@@ -1393,6 +1393,8 @@ cs_sles_petsc_setup(void               *context,
 
       assert(hpddmp != nullptr);
 
+      hpddmp->nb_iter_prev = c->n_iterations_last;
+
       if (hpddmp->use_neumann) {
         _cs_sles_hpddm_setup(context, name, a);
       }

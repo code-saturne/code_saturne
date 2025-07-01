@@ -928,6 +928,34 @@ _petsc_boomeramg_hook(const char             *prefix,
 /*----------------------------------------------------------------------------*/
 
 static void
+_petsc_pchpddm_adapt(cs_param_hpddm_t *hpddmp)
+{
+  assert(hpddmp);
+  /* No adaptation */
+  if (!hpddmp->adaptative || hpddmp->nb_iter_prev <= 0) {
+    return;
+  }
+
+  // TODO
+  cs_log_printf(CS_LOG_DEFAULT, "%s: %d \n", __func__, hpddmp->nb_iter_prev);
+
+  // Reset
+  hpddmp->nb_iter_prev = -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Predefined settings for HPDMM as a preconditioner even if another
+ *        settings have been defined. One assumes that one really wants to use
+ *        HPDDM
+ *
+ * \param[in]      prefix  prefix name associated to the current SLES
+ * \param[in, out] slesp   pointer to a set of SLES parameters
+ * \param[in, out] pc      pointer to a PETSc preconditioner
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
 _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
 {
   assert(prefix != nullptr);
@@ -945,6 +973,9 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
   /* Set type */
 
   PCSetType(pc, PCHPDDM);
+
+  /* Try to adapt parameters */
+  _petsc_pchpddm_adapt(hpddmp);
 
   /* Symmetric matrix ? */
 

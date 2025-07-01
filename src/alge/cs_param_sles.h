@@ -600,10 +600,10 @@ cs_param_sles_hpddm_reset(cs_param_sles_t *slesp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the members related to an advanced settings of a cs_param_hpddm_t
+ * \brief Set the members related to an settings of a cs_param_hpddm_t
  *        structure. This structure is allocated and initialized if
  *        needed. Please refer to the HPDDM user guide for more details about
- *        the following advanced options.
+ *        the following options.
  *
  * \param[in, out] slesp            pointer to a cs_param_sles_t structure
  * \param[in]      use_neumann      use neumann matrix on each subdomains

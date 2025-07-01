@@ -2001,10 +2001,10 @@ cs_param_sles_hpddm_reset(cs_param_sles_t *slesp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the members related to an advanced settings of a cs_param_hpddm_t
+ * \brief Set the members related to an settings of a cs_param_hpddm_t
  *        structure. This structure is allocated and initialized if
  *        needed. Please refer to the HPDDM user guide for more details about
- *        the following advanced options.
+ *        the following options.
  *
  * \param[in, out] slesp            pointer to a cs_param_sles_t structure
  * \param[in]      use_neumann      use neumann matrix on each subdomains
@@ -2038,6 +2038,60 @@ cs_param_sles_hpddm(cs_param_sles_t *slesp,
   hpddmp->nb_eigenvector     = nb_eigenvector;
   hpddmp->harmonic_overlap   = harmonic_overlap;
   hpddmp->relative_threshold = relative_threshold;
+
+  /* Advanced options */
+  hpddmp->adaptative = false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members related to an advanced settings of a cs_param_hpddm_t
+ *        structure. This structure is allocated and initialized if
+ *        needed. Please refer to the HPDDM user guide for more details about
+ *        the following advanced options.
+ *
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      min_iter         min number of iterations
+ * \param[in]      max_iter         max number of iterations
+ * \param[in]      min_harmonic_overlap  min number of harmonic overlap
+ * \param[in]      max_harmonic_overlap  max number of harmonic overlap
+ * \param[in]      min_nb_eigenvector  min number of eigenvector to compute
+ * \param[in]      max_nb_eigenvector  max number of of eigenvector to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hpddm_advanced(cs_param_sles_t *slesp,
+                             const int        min_iter,
+                             const int        max_iter,
+                             const int        min_harmonic_overlap,
+                             const int        max_harmonic_overlap,
+                             const int        min_nb_eigenvector,
+                             const int        max_nb_eigenvector)
+{
+  if (slesp == nullptr)
+    return;
+
+  if (slesp->context_param == nullptr)
+    slesp->context_param = cs_param_hpddm_create();
+
+  /* One assumes that the existing context structure is related to HPDDM */
+
+  cs_param_hpddm_t *hpddmp =
+    static_cast<cs_param_hpddm_t *>(slesp->context_param);
+
+  /* Advanced options */
+  hpddmp->adaptative = true;
+
+  hpddmp->nb_iter_prev = -1;
+  hpddmp->min_iter     = min_iter;
+  hpddmp->max_iter     = max_iter;
+
+  hpddmp->min_harmonic_overlap = min_harmonic_overlap;
+  hpddmp->max_harmonic_overlap = max_harmonic_overlap;
+
+  hpddmp->min_nb_eigenvector = min_nb_eigenvector;
+  hpddmp->max_nb_eigenvector = max_nb_eigenvector;
 }
 
 /*----------------------------------------------------------------------------*/

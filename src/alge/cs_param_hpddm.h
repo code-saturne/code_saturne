@@ -73,6 +73,21 @@ typedef struct {
 
   double relative_threshold; /*! < Thresold on eigenvalue to keep */
 
+  /* Advanced options */
+  bool adaptative; /* Compute parameters using adaptative algorithm */
+
+  int min_harmonic_overlap,
+    max_harmonic_overlap; /*!< Min/Max number of harmonic overlap */
+
+  int min_nb_eigenvector,
+    max_nb_eigenvector; /*!< Min/Max number of eigenvector to compute
+                         *    (= svd_nsv or eps_nev) */
+
+  int min_iter, max_iter; /*!< Adaptation of setup if nb_iter <= min_iter
+                           *    or nb_iter >= max_iter */
+
+  int nb_iter_prev; /* Number of iterations of previous solve */
+
 } cs_param_hpddm_t;
 
 /*============================================================================
