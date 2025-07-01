@@ -1533,7 +1533,7 @@ cs_mesh_velocity_mass_flux(const cs_mesh_t             *m,
       }
       const cs_lnum_t c_id = b_face_cells[face_id];
 
-      const cs_real_t *n_u = b_face_u_normal[face_id];
+      const cs_nreal_t *n_u = b_face_u_normal[face_id];
       const cs_real_t dot
         = b_face_surf[face_id] * cs_math_3_dot_product(disp_fac, n_u);
 
@@ -1560,7 +1560,7 @@ cs_mesh_velocity_mass_flux(const cs_mesh_t             *m,
       const cs_real_t dtfac = 0.5*(dt[c_id1] + dt[c_id2]);
       const cs_real_t rhofac = 0.5*(crom[c_id1] + crom[c_id2]);
 
-      const cs_real_t *n_u = i_face_u_normal[face_id];
+      const cs_nreal_t *n_u = i_face_u_normal[face_id];
       const cs_real_t dot
         = i_face_surf[face_id] * cs_math_3_dot_product(disp_fac, n_u);
 
