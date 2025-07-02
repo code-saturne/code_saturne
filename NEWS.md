@@ -15,6 +15,9 @@ Release 9.0.0 (2025-06-27)
 
 ### Architectural changes:
 
+- FMI: some improvements to logging/tracing, and setting anf getting
+  FMU states now mostly works.
+
 - Add the class "cs_array_2dspan" which allows handling of 2D arrays.
   The class automatically allocates and frees the underlying data array.
 
