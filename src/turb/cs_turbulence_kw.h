@@ -43,6 +43,20 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Clip k and omega.
+ *
+ * \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
+ * \param[in]     n_cells       number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_kw_clip(int       phase_id,
+                      cs_lnum_t n_cells);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Solve the k-omega equations.
  *
  * Solve the \f$ k - \omega \f$ SST for incompressible flows

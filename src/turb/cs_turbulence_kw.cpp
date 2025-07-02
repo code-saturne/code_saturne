@@ -119,6 +119,146 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Clip k and omega.
+ *
+ * \param[in]     phase_id      turbulent phase id (-1 for single phase flow)
+ * \param[in]     n_cells       number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_kw_clip(int       phase_id,
+                      cs_lnum_t n_cells)
+{
+
+  cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_omg = CS_F_(omg);
+
+  if (phase_id >= 0) {
+    f_k = CS_FI_(k, phase_id);
+    f_omg = CS_FI_(omg, phase_id);
+  }
+
+  cs_real_t *cvar_k = (cs_real_t *)f_k->val;
+  cs_real_t *cvar_omg = (cs_real_t *)f_omg->val;
+
+  const cs_real_t epz2 = cs_math_pow2(cs_math_epzero);
+
+  cs_dispatch_context ctx;
+
+  /* Compute Min/Max before clipping, for logging */
+
+  struct cs_double_n<4> rd;
+  struct cs_reduce_min_max_nr<2> reducer;
+
+  ctx.parallel_for_reduce
+    (n_cells, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<4> &res) {
+    res.r[0] = cvar_k[c_id];
+    res.r[1] = cvar_omg[c_id];
+    res.r[2] = cvar_k[c_id];
+    res.r[3] = cvar_omg[c_id];
+  });
+
+  ctx.wait();
+
+  /* Simply clip k and omega by absolute value */
+
+  int kclipp = cs_field_key_id("clipping_id");
+
+  int clip_k_id = cs_field_get_key_int(f_k, kclipp);
+  cs_real_t *cpro_k_clipped = nullptr;
+  if (clip_k_id >= 0) {
+    cpro_k_clipped = cs_field_by_id(clip_k_id)->val;
+  }
+
+  int clip_w_id =  cs_field_get_key_int(f_omg, kclipp);
+  cs_real_t *cpro_w_clipped = nullptr;
+  if (clip_w_id >= 0) {
+    cpro_w_clipped = cs_field_by_id(clip_w_id)->val;
+  }
+
+  /* These two kernels are optional, and are activated only if the user
+   * is explicitly asking to postprocess the clipped cells.
+   * Hence, to reduce the size of the main kernel, called all the time,
+   * we keep these separated from the following "parallel_for_reducer"
+   * kernel.
+   */
+  if (clip_k_id >= 0) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cpro_k_clipped[c_id] = 0.;
+    });
+  }
+  if (clip_w_id >= 0) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cpro_w_clipped[c_id] = 0.;
+    });
+  }
+
+  struct cs_int_n<2> rd_sum;
+  rd_sum.i[0] = 0;
+  rd_sum.i[1] = 0;
+  struct cs_reduce_sum_ni<2> reducer_sum;
+
+  ctx.parallel_for_reduce
+    (n_cells, rd_sum, reducer_sum, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t c_id, cs_int_n<2> &res) {
+
+    res.i[0] = 0, res.i[1] = 0;
+
+    cs_real_t xk = cvar_k[c_id];
+    cs_real_t xw = cvar_omg[c_id];
+    if (fabs(xk) <= epz2) {
+      res.i[0] = 1;
+      if (clip_k_id >= 0)
+        cpro_k_clipped[c_id] = epz2 - xk;
+      cvar_k[c_id] = epz2;
+    } else if (xk <= 0.) {
+      res.i[0] = 1;
+      if (clip_k_id >= 0)
+        cpro_k_clipped[c_id] = - xk;
+      cvar_k[c_id] = -xk;
+    }
+    if (fabs(xw) <= epz2) {
+      res.i[1] = 1;
+      if (clip_w_id >= 0)
+        cpro_w_clipped[c_id] = epz2 - xw;
+      cvar_omg[c_id] = epz2;
+    } else if  (xw <= 0.) {
+      res.i[1] = 1;
+      if (clip_w_id >= 0)
+        cpro_w_clipped[c_id] = - xw;
+      cvar_omg[c_id] = -xw;
+    }
+  });
+
+  ctx.wait();
+
+  /* Save number of clippings for log */
+  cs_lnum_t iclpkmx[1] = {0};
+
+  /* log for k */
+  cs_log_iteration_clipping_field(f_k->id,
+                                  rd_sum.i[0],
+                                  0,
+                                  &rd.r[0],
+                                  &rd.r[2],
+                                  &rd_sum.i[0],
+                                  iclpkmx);
+
+  /* log for omega */
+  cs_log_iteration_clipping_field(f_omg->id,
+                                  rd_sum.i[1],
+                                  0,
+                                  &rd.r[1],
+                                  &rd.r[3],
+                                  &rd_sum.i[1],
+                                  iclpkmx);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Solve the k-omega equations.
  *
  * Solve the \f$ k - \omega \f$ SST for incompressible flows
@@ -1437,7 +1577,7 @@ cs_turbulence_kw(int phase_id)
 
     });
 
-    /* Substract convection/diffusion at time n from smbrk and  smbrw
+    /* Substract convection/diffusion at time n from smbrk and smbrw
        if they were computed */
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       smbrk[c_id] = smbrk[c_id] - w5[c_id];
@@ -1579,119 +1719,10 @@ cs_turbulence_kw(int phase_id)
                                      nullptr,
                                      nullptr);
 
-  /* Clip values
-     ============ */
+  /* Clipping k and omega
+     ==================== */
 
-  /* Compute Min/Max before clipping, for logging */
-
-  struct cs_double_n<4> rd;
-  struct cs_reduce_min_max_nr<2> reducer;
-
-  ctx.parallel_for_reduce
-    (n_cells, rd, reducer,
-     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<4> &res) {
-
-    res.r[0] = cvar_k[c_id];
-    res.r[1] = cvar_omg[c_id];
-    res.r[2] = cvar_k[c_id];
-    res.r[3] = cvar_omg[c_id];
-
-  });
-
-  ctx.wait();
-
-  /* Simply clip k and omega by absolute value */
-
-  int kclipp = cs_field_key_id("clipping_id");
-
-  int clip_k_id = cs_field_get_key_int(f_k, kclipp);
-  cs_real_t *cpro_k_clipped = nullptr;
-  if (clip_k_id >= 0) {
-    cpro_k_clipped = cs_field_by_id(clip_k_id)->val;
-  }
-
-  int clip_w_id =  cs_field_get_key_int(f_omg, kclipp);
-  cs_real_t *cpro_w_clipped = nullptr;
-  if (clip_w_id >= 0) {
-    cpro_w_clipped = cs_field_by_id(clip_w_id)->val;
-  }
-
-  /* These two kernels are optional, and are activated only if the user
-   * is explicitly asking to postprocess the clipped cells.
-   * Hence, to reduce the size of the main kernel, called all the time,
-   * we keep these separated from the following "parallel_for_reducer"
-   * kernel.
-   */
-  if (clip_k_id >= 0) {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cpro_k_clipped[c_id] = 0.;
-    });
-  }
-  if (clip_w_id >= 0) {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cpro_w_clipped[c_id] = 0.;
-    });
-  }
-
-  struct cs_int_n<2> rd_sum;
-  rd_sum.i[0] = 0;
-  rd_sum.i[1] = 0;
-  struct cs_reduce_sum_ni<2> reducer_sum;
-
-  ctx.parallel_for_reduce
-    (n_cells, rd_sum, reducer_sum, [=] CS_F_HOST_DEVICE
-     (cs_lnum_t c_id, cs_int_n<2> &res) {
-
-    res.i[0] = 0, res.i[1] = 0;
-
-    cs_real_t xk = cvar_k[c_id];
-    cs_real_t xw = cvar_omg[c_id];
-    if (fabs(xk) <= epz2) {
-      res.i[0] = 1;
-      if (clip_k_id >= 0)
-        cpro_k_clipped[c_id] = epz2 - xk;
-      cvar_k[c_id] = epz2;
-    } else if (xk <= 0.) {
-      res.i[0] = 1;
-      if (clip_k_id >= 0)
-        cpro_k_clipped[c_id] = - xk;
-      cvar_k[c_id] = -xk;
-    }
-    if (fabs(xw) <= epz2) {
-      res.i[1] = 1;
-      if (clip_w_id >= 0)
-        cpro_w_clipped[c_id] = epz2 - xw;
-      cvar_omg[c_id] = epz2;
-    } else if  (xw <= 0.) {
-      res.i[1] = 1;
-      if (clip_w_id >= 0)
-        cpro_w_clipped[c_id] = - xw;
-      cvar_omg[c_id] = -xw;
-    }
-  });
-
-  ctx.wait();
-
-  /* Save number of clippings for log */
-  cs_lnum_t iclpkmx[1] = {0};
-
-  /* log for k */
-  cs_log_iteration_clipping_field(f_k->id,
-                                  rd_sum.i[0],
-                                  0,
-                                  &rd.r[0],
-                                  &rd.r[2],
-                                  &rd_sum.i[0],
-                                  iclpkmx);
-
-  /* log for omega */
-  cs_log_iteration_clipping_field(f_omg->id,
-                                  rd_sum.i[1],
-                                  0,
-                                  &rd.r[1],
-                                  &rd.r[3],
-                                  &rd_sum.i[1],
-                                  iclpkmx);
+  cs_turbulence_kw_clip(phase_id, n_cells);
 
   /* Advanced reinitialization
      ========================= */
