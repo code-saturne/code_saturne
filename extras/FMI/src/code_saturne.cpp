@@ -4,7 +4,7 @@
 
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -49,6 +49,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#if defined(__linux__) || defined(__linux) || defined(linux)
+#include <sys/ioctl.h>
+#include <linux/sockios.h>
+#define CHECK_SOCK_STATE
+#endif
 
 #include <map>
 #include <functional>
@@ -138,15 +144,6 @@ using namespace std;
 
 #define CS_TIMING 0    // Log some timings.
 
-/*----------------------------------------------------------------------------
- * Macro used to silence "unused argument" warnings.
- *
- * This is useful when a function must match a given function pointer
- * type, but does not use all possible arguments.
- *----------------------------------------------------------------------------*/
-
-#define CS_UNUSED(x) (void)(x)
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -214,7 +211,8 @@ typedef struct {
 
 typedef struct {
 
-  double  *vals;
+  size_t   serialized_size;
+  char    *serialized_data;
 
 } cs_state_t;
 
@@ -279,17 +277,25 @@ _generate_key(void)
  * Write string for buffer characters, including non-printable ones
  *
  * parameters:
- *   f   <-- FILE
- *   rec <-- record to trace
- *   n   <-- number of elements
+ *   f          <-- FILE
+ *   rec        <-- record to trace
+ *   trace_max  <-- max number of elements to log, or 0 for unlimited
+ *   n          <-- number of elements
  *----------------------------------------------------------------------------*/
 
 static void
 _trace_buf(FILE        *f,
            const char   rec[],
+           size_t       trace_max,
            size_t       n)
 {
-  for (size_t j = 0; j < n; j++) {
+  size_t n0 = n, n1 = n;
+  if (trace_max*2 < n && trace_max > 0) {
+    n0 = trace_max;
+    n1 = n - trace_max;
+  }
+
+  for (size_t j = 0; j < n0; j++) {
     char c = rec[j];
     if (isprint(c))
       fprintf(f, "%c", c);
@@ -306,6 +312,31 @@ _trace_buf(FILE        *f,
         break;
       default:
         fprintf(f, "'\\%u'", (int)c);
+      }
+    }
+  }
+
+  if (n0 < n) {
+    fprintf(f, " <%u bytes skipped...>", (unsigned)(n1-n0));
+
+    for (size_t j = n1; j < n; j++) {
+      char c = rec[j];
+      if (isprint(c))
+        fprintf(f, "%c", c);
+      else {
+        switch(c) {
+        case '\r':
+          fprintf(f, "\\r");
+          break;
+        case '\n':
+          fprintf(f, "\\n");
+          break;
+        case '\t':
+          fprintf(f, "\\t");
+          break;
+        default:
+          fprintf(f, "'\\%u'", (int)c);
+        }
       }
     }
   }
@@ -434,11 +465,12 @@ public:
 
   sockaddr_in  _client_address;
 
-  fmi2ComponentEnvironment  _component_environment = nullptr;
+  fmi2ComponentEnvironment  _component_environment = this;
   fmi2Char                 *_instance_name;
   fmi2Char                 *_resource_location;
 
   FILE *_tracefile = nullptr;
+  size_t  _trace_max = 128;
 
   /* Active logging: 0: inactive, 1, log using FMI, -1: low-level trace,
      - 2: low level trace if FMI logging not active, changed to 1
@@ -456,11 +488,6 @@ public:
   /* Structure for grouped notebook value settings */
 
   cs_variables_t *_cs_variables = nullptr;
-
-  /* Serialization (state) data */
-
-  size_t _serialized_size = 0;
-  char  *_serialized_data = nullptr;
 
   //==========================================================================
   // Default contructor and destructor
@@ -560,6 +587,28 @@ public:
   /* Send data on a socket */
 
   void
+  _check_sock_for_send(int  sock)
+  {
+#if CS_DRY_RUN == 1
+    return;
+#endif
+
+#if defined(CHECK_SOCK_STATE)
+    int pending;
+    if (ioctl(sock, SIOCINQ, &pending) != 0)
+      cout << "ioctl call failed." << endl;
+    else if (pending > 0) {
+      string s0 = " Values not read before send attempt: ";
+      cout << pending << s0 << pending << endl;
+      _log(fmi2Fatal, CS_LOG_FATAL, s0);
+      throw std::runtime_error(s0);
+    }
+#endif
+  }
+
+  /* Send data on a socket */
+
+  void
   _send_sock(int       sock,
             char     *buffer,
             size_t    size,
@@ -578,16 +627,32 @@ public:
     if (_tracefile != nullptr) {
       if (size == 1) {
         fprintf(_tracefile, "== send %d bytes: [", (int)n_bytes);
-        _trace_buf(_tracefile, buffer, n_bytes);
+        _trace_buf(_tracefile, buffer, _trace_max, n_bytes);
         fprintf(_tracefile, "]...\n");
       }
       else {
-        fprintf(_tracefile, "== send %d values of size %d:\n", (int)ni, (int)size);
-        for (size_t i = 0; i < ni; i++) {
+        fprintf(_tracefile, "== send %d values of size %d:\n",
+                (int)ni, (int)size);
+        size_t trace_max = _trace_max / size;
+        size_t n0 = ni, n1 = ni;
+        if (trace_max*2 < ni) {
+          n0 = trace_max;
+          n1 = ni - trace_max;
+        }
+        for (size_t i = 0; i < n0; i++) {
           fprintf(_tracefile, "    ");
           for (size_t j = 0; j < size; j++)
             fprintf(_tracefile, " %x", (unsigned)buffer[i*size + j]);
           fprintf(_tracefile, "\n");
+        }
+        if (n0 < ni) {
+          fprintf(_tracefile, " <%u values skipped...>", (unsigned)(n1-n0));
+          for (size_t i = n1; i < ni; i++) {
+            fprintf(_tracefile, "    ");
+            for (size_t j = 0; j < size; j++)
+              fprintf(_tracefile, " %x", (unsigned)buffer[i*size + j]);
+            fprintf(_tracefile, "\n");
+          }
         }
       }
       fflush(_tracefile);
@@ -600,6 +665,7 @@ public:
         end_id = n_bytes;
       size_t n_loc = end_id - start_id;
 
+      _check_sock_for_send(sock);
       ssize_t ret = send(sock, buffer+start_id, n_loc, 0);
 
       if (ret < 1) {
@@ -620,7 +686,7 @@ public:
       _swap_endian(buffer, size, ni);
   }
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   /* Send a message on a socket */
 
@@ -636,11 +702,12 @@ public:
 
     if (_tracefile != nullptr) {
       fprintf(_tracefile, "== send %d bytes: [", (int)n);
-      _trace_buf(_tracefile, str, n);
+      _trace_buf(_tracefile, str, 0, n);
       fprintf(_tracefile, "]...\n");
       fflush(_tracefile);
     }
 
+    _check_sock_for_send(sock);
     ssize_t ret = send(sock, str, n, 0);
 
     if (ret < 1) {
@@ -722,7 +789,7 @@ public:
       else if (_tracefile != nullptr) {
         fprintf(_tracefile, "   received %d bytes: [", (int)ret);
         if (size == 1)
-          _trace_buf(_tracefile, buffer, ret);
+          _trace_buf(_tracefile, buffer, _trace_max, ret);
         fprintf(_tracefile, "]\n");
         fflush(_tracefile);
       }
@@ -732,11 +799,26 @@ public:
     }
 
     if (_tracefile != nullptr && size > 1) {
-      for (size_t i = 0; i < ni; i++) {
+      size_t trace_max = _trace_max / size;
+      size_t n0 = ni, n1 = ni;
+      if (trace_max*2 < ni) {
+        n0 = trace_max;
+        n1 = ni - trace_max;
+      }
+      for (size_t i = 0; i < n0; i++) {
         fprintf(_tracefile, "    ");
         for (size_t j = 0; j < size; j++)
           fprintf(_tracefile, " %x", (unsigned)buffer[i*size + j]);
         fprintf(_tracefile, "\n");
+      }
+      if (n0 < ni) {
+        fprintf(_tracefile, " <%u values skipped...>", (unsigned)(n1-n0));
+        for (size_t i = n1; i < ni; i++) {
+          fprintf(_tracefile, "    ");
+          for (size_t j = 0; j < size; j++)
+            fprintf(_tracefile, " %x", (unsigned)buffer[i*size + j]);
+          fprintf(_tracefile, "\n");
+        }
       }
     }
 
@@ -820,7 +902,7 @@ public:
 
       if (_tracefile != nullptr) {
         fprintf(_tracefile, "   received %d bytes: [", (int)ret);
-        _trace_buf(_tracefile, queue->buf + start_id, ret);
+        _trace_buf(_tracefile, queue->buf + start_id, _trace_max, ret);
         fprintf(_tracefile, "]\n");
         fflush(_tracefile);
       }
@@ -1288,6 +1370,45 @@ public:
 
   /*--------------------------------------------------------------------------*/
 
+  int
+  _check_return_code(const char  *caller)
+  {
+    int retcode = 0;
+
+    /* receive 0 */
+    char *buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
+
+    string s = string(caller);
+    if (strcmp(buf_rcv, "0") != 0) {
+      s += ": unexpected return code: " + string(buf_rcv);
+      _log(fmi2Warning, CS_LOG_WARNING, s);
+      retcode = 1;
+    }
+
+    return retcode;
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  void
+  _set_max_time_step(const char  *caller,
+                     int          n)
+  {
+    char buf_send[128];
+    snprintf(buf_send, 127, "max_time_step %d", n);
+    buf_send[127] = '\0';
+    _send_sock_str(_cs_socket, buf_send);
+
+    /* receive 0 */
+    if (_check_return_code(caller) == 0) {
+      string s = string(caller);
+      s += ": set max time step to " + to_string(n) + " for FMI control.";
+      _log(fmi2OK, CS_LOG_TRACE, s);
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+
   void
   _advance(int   n)
   {
@@ -1320,12 +1441,10 @@ public:
 
     _send_sock_str(_cs_socket, buffer.c_str());
 
-    /* receive 0 */
-    char *buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
-    if (strcmp(buf_rcv, "0") != 0) {
-      s = string(__func__) + ": unexpected return code: " + string(buf_rcv);
-      _log(fmi2Warning, CS_LOG_WARNING, s);
-    }
+    _check_return_code(__func__);
+
+    if (n < 1)
+      return;
 
     /* Get output notebook values */
 
@@ -1345,10 +1464,9 @@ public:
                  sizeof(double), v->n_input);
     }
 
-    /* receive iteration OK */
-    if (n > 0) {
-
-      buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
+    /* receive return code OK */
+    {
+      char *buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
       if (strcmp(buf_rcv, "Iteration OK") != 0) {
         s =   string(__func__) + ": expected \"Iteration OK\", not: "
             + string(buf_rcv);
@@ -1468,9 +1586,11 @@ public:
 
   /* Query serialized snapshot from the server */
 
-  void
-  _get_serialized_snapshot(int     sock)
+  fmi2Status
+  _get_serialized_snapshot(int          sock,
+                           cs_state_t  *csst)
   {
+    fmi2Status status = fmi2OK;
     string buffer = "snapshot_get_serialized";
 
     string s_log = string(__func__) + ": send query for " + buffer;
@@ -1483,15 +1603,15 @@ public:
     cs_variables_t *v = _cs_variables;
     size_t n_add = (v->n_input + v->n_output) * sizeof(double);
 
-    if (_serialized_data != nullptr) {
-      free(_serialized_data);
-      _serialized_data = nullptr;
+    if (csst->serialized_data != nullptr) {
+      free(csst->serialized_data);
+      csst->serialized_data = nullptr;
     }
 
 #if CS_DRY_RUN == 1
 
-    _serialized_size = n_add;
-    _serialized_data = malloc(n_add);
+    csst->serialized_size = n_add;
+    csst->serialized_data = malloc(n_add);
 
 #else
 
@@ -1505,20 +1625,21 @@ public:
 
     if (strncmp(buf_rcv, "serialized_snapshot", 19) != 0) {
       s_log =   string(__func__) + ": unexpected reply; " + string(buf_rcv);
-      _log(fmi2Error, CS_LOG_ERROR, s_log);
-      throw std::runtime_error(s_log);
+      status = fmi2Error;
+      _log(status, CS_LOG_ERROR, s_log);
+      return status;
     }
 
     /* Data size */
     _recv_sock(_cs_socket, (char *)restart_size, _control_queue,
                sizeof(size_t), 1);
 
-    _serialized_size = restart_size[0] + n_add;
-    _serialized_data = (char *)malloc(_serialized_size);
-    assert(_serialized_data != nullptr || _serialized_size == 0);
+    csst->serialized_size = restart_size[0] + n_add;
+    csst->serialized_data = (char *)malloc(csst->serialized_size);
+    assert(csst->serialized_data != nullptr || csst->serialized_size == 0);
 
     if (restart_size[0] > 0)
-      _recv_sock(_cs_socket, _serialized_data, _control_queue,
+      _recv_sock(_cs_socket, csst->serialized_data, _control_queue,
                  1, restart_size[0]);
 
     s_log = string(__func__) + ": received snapshot";
@@ -1528,15 +1649,19 @@ public:
     buf_rcv = _recv_sock_with_queue(_cs_socket, _control_queue, 0);
     if (strcmp(buf_rcv, "0") != 0) {
       string s = string(__func__) + ": unexpected return code: " + string(buf_rcv);
-      _log(fmi2Warning, CS_LOG_WARNING, s);
+      status = fmi2Error;
+      _log(status, CS_LOG_WARNING, s);
+      return status;
     }
 
 #endif
 
-    char *p = _serialized_data + restart_size[0];
+    char *p = csst->serialized_data + restart_size[0];
     memcpy(p, v->input_vals, v->n_input*sizeof(double));
     p += v->n_input*sizeof(double);
     memcpy(p, v->output_vals, v->n_output*sizeof(double));
+
+    return status;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1606,6 +1731,12 @@ public:
         _tracefile = fopen(p, "w");
       else
         _tracefile = stdout;
+
+      const char *p = getenv("CS_FMU_COMM_TRACE_N_MAX");
+      if (p != nullptr) {
+        long l = atol(p);
+        _trace_max = l;
+      }
     }
 
     /* Initialize code_saturne calculation */
@@ -1666,23 +1797,8 @@ public:
     /* Increase the number of maximum time steps, as FMI is controlling
        the time stepping, not the code. */
 
-    {
-      _send_sock_str(_cs_socket, "max_time_step 9999999");
-
-      char *buf_rcv = _recv_sock_with_queue(_cs_socket,
-                                            _control_queue,
-                                            0);
-
-      string s = string(__func__);
-      if (strcmp(buf_rcv, "0") != 0) {
-        s += ": unexpected return code: " + string(buf_rcv);
-        _log(fmi2Warning, CS_LOG_WARNING, s);
-      }
-      else {
-        s += ": set max time step to 9999999 for FMI control.";
-        _log(fmi2OK, CS_LOG_TRACE, s);
-      }
-    }
+    cs_fmu *c = static_cast<cs_fmu *>(component);
+    c->_set_max_time_step(__func__, 9999999);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1832,6 +1948,42 @@ public:
 
 };
 
+/*----------------------------------------------------------------------------*/
+
+fmi2Status
+_get_state_pointer(const char     *caller_name,
+                   fmi2Component   component,
+                   fmi2FMUstate   *state)
+{
+  cs_fmu *c = static_cast<cs_fmu *>(component);
+
+  cs_state_t *csst = nullptr;
+
+  if (*state == nullptr) {
+    csst = (cs_state_t *)malloc(sizeof(cs_state_t));
+    csst->serialized_size = 0;
+    csst->serialized_data = nullptr;
+
+    fmi2FMUstate fs = (fmi2FMUstate)csst;
+    c->_states[fs] = fs;
+
+    *state = fs;
+  }
+  else {
+    if (c->_states.count(*state) > 0)
+      csst = (cs_state_t *)c->_states[*state];
+    else {
+      char s[128];
+      snprintf(s, 127, "%s: called for %p, not previously defined",
+               caller_name, (void *)(*state));
+      c->_log(fmi2Error, CS_LOG_ERROR, s);
+      return fmi2Error;
+    }
+  }
+
+  return fmi2OK;
+}
+
 /*============================================================================
  * code_saturne FMU method definitions
  *============================================================================*/
@@ -1873,14 +2025,11 @@ fmi2ExitInitializationMode(fmi2Component  component)
 /*----------------------------------------------------------------------------*/
 
 fmi2Status
-fmi2DoStep(fmi2Component  component,
-           fmi2Real       currentComunicationTime,
-           fmi2Real       stepSize,
-           fmi2Boolean    noSetFmuFmuStatePriorToCurrentPoint)
+fmi2DoStep(fmi2Component                  component,
+           [[maybe_unused]]  fmi2Real     currentComunicationTime,
+           fmi2Real                       stepSize,
+           [[maybe_unused]]  fmi2Boolean  noSetFmuFmuStatePriorToCurrentPoint)
 {
-  CS_UNUSED(currentComunicationTime);
-  CS_UNUSED(noSetFmuFmuStatePriorToCurrentPoint);
-
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
   fmi2Status  status = fmi2OK;
@@ -1945,9 +2094,8 @@ fmi2Status fmi2Terminate(fmi2Component  component)
 
     string resu = s_casename + "/RESU/" + s_run_id;
 
-    c->_send_sock_str(c->_cs_socket, "max_time_step 0");
+    c->_set_max_time_step(__func__, 0);
     c->_advance(0);
-
     c->_variables_finalize();
 
     _queue_finalize(&(c->_control_queue));
@@ -2161,46 +2309,42 @@ fmi2GetFMUstate(fmi2Component  component,
                 fmi2FMUstate*  state)
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
+  fmi2Status  status = fmi2OK;
 
-  char s[128];
-  snprintf(s, 127, "%s: called for %p; only client state is partially saved",
-           __func__, (void *)*state);
-  c->_log(fmi2Warning, CS_LOG_WARNING, s);
+  try {
 
-  /* Not a valid pointer to actual data here,
-     just a distinct pointer per state... */
+    /* Not a valid pointer to actual data here,
+       just a distinct pointer per state... */
 
-  cs_variables_t *v = c->_cs_variables;
-  cs_state_t *csst = nullptr;
+    status = _get_state_pointer(__func__, component, state);
+    cs_state_t *csst = nullptr;
 
-  if (*state == nullptr) {
-    csst = (cs_state_t *)malloc(sizeof(cs_state_t));
-    csst->vals = (double *)malloc(sizeof(double) * (v->n_input+v->n_output));
-    fmi2FMUstate fs = (fmi2FMUstate)csst;
-    c->_states[fs] = fs;
+    if (status == fmi2OK) {
+      csst = (cs_state_t *)(*state);
 
-    *state = fs;
-  }
-  else {
-    if (c->_states.count(*state) > 0)
-      csst = (cs_state_t *)c->_states[*state];
-    else {
-      snprintf(s, 127, "%s: called for %p, not previously defined",
-               __func__, (void *)*state);
-      c->_log(fmi2Error, CS_LOG_ERROR, s);
-      return fmi2Error;
+      status = c->_get_serialized_snapshot(c->_cs_socket, csst);
+    }
+
+    if (status == fmi2OK) {
+      cs_variables_t *v = c->_cs_variables;
+      ptrdiff_t vals_shift =   csst->serialized_size
+                             - (v->n_input + v->n_output)*sizeof(double);
+      void *vals_p = csst->serialized_data + vals_shift;
+      double *vals = reinterpret_cast<double *>(vals_p);
+
+      int j = 0;
+      for (int i = 0; i < v->n_input; i++)
+        vals[j++] = v->input_vals[i];
+      for (int i = 0; i < v->n_output; i++)
+        vals[j++] = v->output_vals[i];
     }
   }
-
-  {
-    int j = 0;
-    for (int i = 0; i < v->n_input; i++)
-      csst->vals[j++] = v->input_vals[i];
-    for (int i = 0; i < v->n_output; i++)
-      csst->vals[j++] = v->output_vals[i];
+  catch (const std::runtime_error& e) {
+    cout << "An exception occured: " << e.what() << "\n";
+    status = fmi2Fatal;
   }
 
-  return fmi2Warning;
+  return status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2210,11 +2354,7 @@ fmi2SetFMUstate(fmi2Component  component,
                 fmi2FMUstate   state)
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
-
-  char s[128];
-  snprintf(s, 127, "%s: called for %p; only client state is partially set",
-           __func__, (void *)state);
-  c->_log(fmi2Warning, CS_LOG_WARNING, s);
+  fmi2Status  status = fmi2OK;
 
   cs_variables_t *v = c->_cs_variables;
   cs_state_t *csst = nullptr;
@@ -2222,21 +2362,46 @@ fmi2SetFMUstate(fmi2Component  component,
   if (c->_states.count(state) > 0)
     csst = (cs_state_t *)c->_states[state];
   else {
+    char s[128];
     snprintf(s, 127, "%s: called for %p, not previously defined",
              __func__, (void *)state);
     c->_log(fmi2Error, CS_LOG_ERROR, s);
     return fmi2Error;
   }
 
-  {
-    int j = 0;
-    for (int i = 0; i < v->n_input; i++)
-      v->input_vals[i] = csst->vals[j++];
-    for (int i = 0; i < v->n_output; i++)
-      v->output_vals[i] = csst->vals[j++];
+  try {
+    size_t restart_size =   csst->serialized_size
+                          - (v->n_input + v->n_output)*sizeof(double);
+    void *vals_p = csst->serialized_data + restart_size;
+    const double *vals = reinterpret_cast<const double *>(vals_p);
+
+    {
+      int j = 0;
+      for (int i = 0; i < v->n_input; i++)
+        v->input_vals[i] = vals[j++];
+      for (int i = 0; i < v->n_output; i++)
+        v->output_vals[i] = vals[j++];
+    }
+
+    /* Now send rest of snapshot to server */
+
+    string buffer = "snapshot_load_serialized " + to_string(restart_size);
+
+    string s_log = string(__func__) + ": send command : " + buffer;
+    c->_log(fmi2OK, CS_LOG_TRACE, s_log);
+
+    c->_send_sock_str(c->_cs_socket, buffer.c_str());
+
+    c->_send_sock(c->_cs_socket, csst->serialized_data, 1, restart_size);
+
+    c->_check_return_code(__func__);
+  }
+  catch (const std::runtime_error& e) {
+    cout << "An exception occured: " << e.what() << "\n";
+    status = fmi2Fatal;
   }
 
-  return fmi2Warning;
+  return status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2257,7 +2422,7 @@ fmi2FreeFMUstate(fmi2Component  component,
              __func__, (void *)*state);
     c->_log(fmi2OK, CS_LOG_TRACE, s);
     cs_state_t *csst = (cs_state_t *)c->_states[*state];
-    free(csst->vals);
+    free(csst->serialized_data);
     free(csst);
     c->_states.erase(*state);
     *state = nullptr;
@@ -2268,7 +2433,7 @@ fmi2FreeFMUstate(fmi2Component  component,
     c->_log(fmi2Error, CS_LOG_WARNING, s);
   }
 
-  return fmi2Warning;
+  return fmi2OK;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2280,12 +2445,12 @@ fmi2SerializedFMUstateSize(fmi2Component  component,
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
-  c->_get_serialized_snapshot(c->_cs_socket);
+  cs_state_t *csst = (cs_state_t *)state;
 
-  *stateSize = c->_serialized_size;
+  *stateSize = csst->serialized_size;
   char s[128];
   snprintf(s, 127, "%s: called for %p (%ld bytes)",
-           __func__, (void *)state, (long)c->_serialized_size);
+           __func__, (void *)state, (long)csst->serialized_size);
   c->_log(fmi2OK, CS_LOG_TRACE, s);
 
   return fmi2OK;
@@ -2300,28 +2465,27 @@ fmi2SerializeFMUstate(fmi2Component  component,
                       size_t         serializedStateSize)
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
+  fmi2Status  status = fmi2OK;
+
+  cs_state_t *csst = (cs_state_t *)state;
 
   char s[128];
 
-  if (serializedStateSize != c->_serialized_size) {
+  if (serializedStateSize != csst->serialized_size) {
     snprintf(s, 127,
              "%s: called for %p\n"
              "with size %d (%d expected)",
              __func__, (void *)state,
-             (int)serializedStateSize, (int)c->_serialized_size);
-    c->_log(fmi2Error, CS_LOG_TRACE, s);
-    return fmi2Error;
+             (int)serializedStateSize, (int)csst->serialized_size);
+    status = fmi2Error;
+  }
+  else {
+    memcpy(serializedState, csst->serialized_data, csst->serialized_size);
+    snprintf(s, 127, "%s: called for %p", __func__, (void *)state);
   }
 
-  memcpy(serializedState, c->_serialized_data, c->_serialized_size);
-
-  c->_serialized_size = 0;
-  free(c->_serialized_data);
-  c->_serialized_data = nullptr;
-
-  snprintf(s, 127, "%s: called for %p", __func__, (void *)state);
-  c->_log(fmi2Error, CS_LOG_TRACE, s);
-  return fmi2OK;
+  c->_log(status, CS_LOG_TRACE, s);
+  return status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2332,38 +2496,28 @@ fmi2DeSerializeFMUstate(fmi2Component   component,
                         size_t          size,
                         fmi2FMUstate*   state)
 {
-  CS_UNUSED(state);  // Assumed to be handled by caller only.
-
   cs_fmu *c = static_cast<cs_fmu *>(component);
+  fmi2Status  status = fmi2OK;
 
   char s[128];
   snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
-  c->_log(fmi2OK, CS_LOG_ERROR, s);
+  c->_log(status, CS_LOG_ERROR, s);
 
-  /* Add input and output variables to end of snapshot */
+  status = _get_state_pointer(__func__, component, state);
 
-  cs_variables_t *v = c->_cs_variables;
+  if (status == fmi2OK){
+    cs_state_t *csst = (cs_state_t *)(*state);
 
-  char *p = (char *)serializedState;
-  p += size - v->n_output*sizeof(double);
-  memcpy(v->output_vals, p, v->n_output*sizeof(double));
-  p -= v->n_input*sizeof(double);
-  memcpy(v->input_vals, p, v->n_input*sizeof(double));
+    if (csst->serialized_data != nullptr)
+      free(csst->serialized_data);
 
-  size_t restart_size = size - (v->n_output + v->n_input)*sizeof(double);
+    csst->serialized_size = size;
+    csst->serialized_data = (char *)malloc(csst->serialized_size);
 
-  /* Now send rest of snapshot to server */
+    memcpy(csst->serialized_data, serializedState, size);
+  }
 
-  string buffer = "snapshot_load_serialized " + to_string(restart_size);
-
-  string s_log = string(__func__) + ": send command : " + buffer;
-  c->_log(fmi2OK, CS_LOG_TRACE, s_log);
-
-  c->_send_sock_str(c->_cs_socket, buffer.c_str());
-
-  c->_send_sock(c->_cs_socket, (char *)serializedState, 1, restart_size);
-
-  return fmi2OK;
+  return status;
 }
 
 fmi2Status
@@ -2425,20 +2579,15 @@ fmi2SetDebugLogging(fmi2Component     component,
 }
 
 fmi2Component
-fmi2Instantiate(fmi2String   instanceName,
-                fmi2Type     fmuType,
-                fmi2String   fmuGUID,
-                fmi2String   fmuResourceLocation,
+fmi2Instantiate(fmi2String                    instanceName,
+                [[maybe_unused]] fmi2Type     fmuType,
+                [[maybe_unused]] fmi2String   fmuGUID,
+                fmi2String                    fmuResourceLocation,
                 const fmi2CallbackFunctions*  callbacks,
-                fmi2Boolean  visible,
-                fmi2Boolean  loggingOn)
+                [[maybe_unused]] fmi2Boolean  visible,
+                fmi2Boolean                   loggingOn)
 {
-  cs_fmu *c = new cs_fmu(instanceName,
-                         fmuResourceLocation);
-
-  CS_UNUSED(fmuType);
-  CS_UNUSED(fmuGUID);
-  CS_UNUSED(visible);
+  cs_fmu *c = new cs_fmu(instanceName, fmuResourceLocation);
 
   setFunctions(callbacks);
 
@@ -2489,21 +2638,30 @@ fmi2GetVersion()
 }
 
 fmi2Status
-fmi2SetupExperiment(fmi2Component  c,
-                    fmi2Boolean    toleranceDefined,
-                    fmi2Real       tolerance,
-                    fmi2Real       startTime,
-                    fmi2Boolean    stopTimeDefined,
-                    fmi2Real       stopTime)
+fmi2SetupExperiment(fmi2Component                   component,
+                    [[maybe_unused]]  fmi2Boolean   toleranceDefined,
+                    [[maybe_unused]]  fmi2Real      tolerance,
+                    [[maybe_unused]]  fmi2Real      startTime,
+                    [[maybe_unused]]  fmi2Boolean   stopTimeDefined,
+                    [[maybe_unused]]  fmi2Real      stopTime)
 {
-  CS_UNUSED(c);
-  CS_UNUSED(toleranceDefined);
-  CS_UNUSED(tolerance);
-  CS_UNUSED(startTime);
-  CS_UNUSED(stopTimeDefined);
-  CS_UNUSED(stopTime);
+  cs_fmu *c = static_cast<cs_fmu *>(component);
 
-  return fmi2OK;
+  char s[256];
+  if (c->_instance_name != nullptr)
+    snprintf(s, 255,
+             "%s: called for %s:\n"
+             "  tolerance and start/stop times ignored\n",
+             __func__, c->_instance_name);
+  else
+    snprintf(s, 255,
+             "%s: called for %p:\n"
+             "  tolerance and start/stop times ignored\n",
+             __func__, c);
+
+  c->_log(fmi2Warning, CS_LOG_WARNING, s);
+
+  return fmi2Warning;
 }
 
 void
@@ -2515,122 +2673,89 @@ fmi2FreeInstance(fmi2Component  component)
 }
 
 fmi2Status
-fmi2GetDirectionalDerivative(fmi2Component             component,
-                             const fmi2ValueReference  unknownValueReferences[],
-                             size_t                    numberOfUnknowns,
-                             const fmi2ValueReference  knownValueReferences[],
-                             fmi2Integer               numberOfKnowns,
-                             fmi2Real                  knownDifferential[],
-                             fmi2Real                  unknownDifferential[])
+fmi2GetDirectionalDerivative
+(
+  [[maybe_unused]]  fmi2Component             component,
+  [[maybe_unused]]  const fmi2ValueReference  unknownValueReferences[],
+  [[maybe_unused]]  size_t                    numberOfUnknowns,
+  [[maybe_unused]]  const fmi2ValueReference  knownValueReferences[],
+  [[maybe_unused]]  size_t                    numberOfKnowns,
+  [[maybe_unused]]  const fmi2Real            knownDifferential[],
+  [[maybe_unused]]  fmi2Real                  unknownDifferential[]
+)
 {
-  CS_UNUSED(component);
-  CS_UNUSED(unknownValueReferences);
-  CS_UNUSED(numberOfUnknowns);
-  CS_UNUSED(knownValueReferences);
-  CS_UNUSED(numberOfKnowns);
-  CS_UNUSED(knownDifferential);
-  CS_UNUSED(unknownDifferential);
-
   return fmi2Error;
 }
 
 fmi2Status
-fmi2SetRealInputDerivatives(fmi2Component             component,
-                            const fmi2ValueReference  valueReferences[],
-                            size_t                    numberOfValueReferences,
-                            fmi2Integer               orders[],
-                            const fmi2Real            values[])
+fmi2SetRealInputDerivatives
+(
+  [[maybe_unused]]  fmi2Component             component,
+  [[maybe_unused]]  const fmi2ValueReference  valueReferences[],
+  [[maybe_unused]]  size_t                    numberOfValueReferences,
+  [[maybe_unused]]  const fmi2Integer         orders[],
+  [[maybe_unused]]  const fmi2Real            values[]
+)
 {
-  CS_UNUSED(component);
-  CS_UNUSED(valueReferences);
-  CS_UNUSED(numberOfValueReferences);
-  CS_UNUSED(orders);
-  CS_UNUSED(values);
-
   return fmi2Error;
 }
 
 fmi2Status
-fmi2GetRealOutputDerivatives(fmi2Component             component,
-                             const fmi2ValueReference  valueReference[],
-                             size_t                    numberOfValues,
-                             const fmi2Integer         order[],
-                             fmi2Real                  values[])
+fmi2GetRealOutputDerivatives
+(
+  [[maybe_unused]]  fmi2Component             component,
+  [[maybe_unused]]  const fmi2ValueReference  valueReference[],
+  [[maybe_unused]]  size_t                    numberOfValues,
+  [[maybe_unused]]  const fmi2Integer         order[],
+  [[maybe_unused]]  fmi2Real                  values[]
+)
 {
-  CS_UNUSED(component);
-  CS_UNUSED(valueReference);
-  CS_UNUSED(numberOfValues);
-  CS_UNUSED(order);
-  CS_UNUSED(values);
-
   return fmi2Error;
 }
 
 fmi2Status
-fmi2CancelStep(fmi2Component  component)
+fmi2CancelStep([[maybe_unused]]  fmi2Component  component)
 {
-  CS_UNUSED(component);
-
   return fmi2Error;
 }
 
 fmi2Status
-fmi2GetStatus(fmi2Component         component,
-              const fmi2StatusKind  kind,
-              fmi2Status*           status)
+fmi2GetStatus([[maybe_unused]]  fmi2Component         component,
+              [[maybe_unused]]  const fmi2StatusKind  kind,
+              [[maybe_unused]]  fmi2Status*           status)
 {
-  CS_UNUSED(component);
-  CS_UNUSED(kind);
-  CS_UNUSED(status);
-
   return fmi2Error;
 }
 
 fmi2Status
-fmi2GetRealStatus(fmi2Component         component,
-                  const fmi2StatusKind  kind,
-                  fmi2Real*             value)
+fmi2GetRealStatus([[maybe_unused]]  fmi2Component         component,
+                  [[maybe_unused]]  const fmi2StatusKind  kind,
+                  [[maybe_unused]]  fmi2Real*             value)
 {
-  CS_UNUSED(component);
-  CS_UNUSED(kind);
-  CS_UNUSED(value);
-
   return fmi2Error;
 }
 
 fmi2Status
-fmi2GetIntegerStatus(fmi2Component         component,
-                     const fmi2StatusKind  kind,
-                     fmi2Integer*          value)
+fmi2GetIntegerStatus([[maybe_unused]]  fmi2Component         component,
+                     [[maybe_unused]]  const fmi2StatusKind  kind,
+                     [[maybe_unused]]  fmi2Integer*          value)
 {
-  CS_UNUSED(component);
-  CS_UNUSED(kind);
-  CS_UNUSED(value);
-
   return fmi2Error;
 }
 
 fmi2Status
-fmi2GetBooleanStatus(fmi2Component         component,
-                     const fmi2StatusKind  kind,
-                     fmi2Boolean*          value)
+fmi2GetBooleanStatus([[maybe_unused]]  fmi2Component         component,
+                     [[maybe_unused]]  const fmi2StatusKind  kind,
+                     [[maybe_unused]]  fmi2Boolean*          value)
 {
-  CS_UNUSED(component);
-  CS_UNUSED(kind);
-  CS_UNUSED(value);
-
   return fmi2Error;
 }
 
 fmi2Status
-fmi2GetStringStatus(fmi2Component         component,
-                    const fmi2StatusKind  kind,
-                    fmi2String*           value)
+fmi2GetStringStatus([[maybe_unused]]  fmi2Component         component,
+                    [[maybe_unused]]  const fmi2StatusKind  kind,
+                    [[maybe_unused]]  fmi2String*           value)
 {
-  CS_UNUSED(component);
-  CS_UNUSED(kind);
-  CS_UNUSED(value);
-
   return fmi2Error;
 }
 
