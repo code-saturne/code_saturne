@@ -624,6 +624,32 @@ cs_param_sles_hpddm(cs_param_sles_t *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the members related to an advanced settings of a cs_param_hpddm_t
+ *        structure. This structure is allocated and initialized if
+ *        needed. Please refer to the HPDDM user guide for more details about
+ *        the following advanced options.
+ *
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      min_iter         min number of iterations
+ * \param[in]      max_iter         max number of iterations
+ * \param[in]      min_harmonic_overlap  min number of harmonic overlap
+ * \param[in]      max_harmonic_overlap  max number of harmonic overlap
+ * \param[in]      min_nb_eigenvector  min number of eigenvector to compute
+ * \param[in]      max_nb_eigenvector  max number of of eigenvector to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hpddm_advanced(cs_param_sles_t *slesp,
+                             const int        min_iter,
+                             const int        max_iter,
+                             const int        min_harmonic_overlap,
+                             const int        max_harmonic_overlap,
+                             const int        min_nb_eigenvector,
+                             const int        max_nb_eigenvector);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check the availability of Hypre solvers from the PETSc library
  *
  * \return return true or false
