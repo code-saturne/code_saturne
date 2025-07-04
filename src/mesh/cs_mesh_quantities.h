@@ -357,7 +357,7 @@ cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
 
 void
 cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
-                                 const cs_real_3_t     *cen_points,
+                                 cs_real_3_t           *cen_points,
                                  cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------

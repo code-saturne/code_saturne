@@ -121,13 +121,14 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .sources = nullptr,
   .source_c_ids = nullptr,
   .threshold = 4,
-  .n_agglomeration = 1,
+  .n_agglomeration = 0,
   .porosity_threshold = 1e-12,
   .convection_porosity_threshold = 0.5,
   .use_staircase = false,
   .eigenvalue_criteria = 1e-3,
   .use_restart = false,
   .cog_location = CS_COG_FROM_FLUID_FACES,
+  .mom_mat = nullptr,
   .has_classification = false,
   .classification_values = nullptr,
   .class_used = nullptr,
@@ -250,7 +251,6 @@ _solid_plane_from_points(const cs_mesh_t   *m,
                          cs_real_t          c_w_face_normal[][3])
 {
   const cs_real_t threshold = _porosity_from_scan_opt.threshold;
-  const cs_real_t n_agglomeration = _porosity_from_scan_opt.n_agglomeration;
   cs_real_t tol_err = 1.0e-12;
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
@@ -438,9 +438,11 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     (cs_real_t *)cs_field_by_name("solid_roughness")->val;
 
   /* Covariance matrix for solid plane computation */
-  cs_real_33_t *mom_mat;
-  CS_MALLOC(mom_mat, m->n_cells, cs_real_33_t);
-  memset(mom_mat, 0., m->n_cells * sizeof(cs_real_33_t));
+  CS_MALLOC(cs_glob_porosity_from_scan_opt->mom_mat,
+            m->n_cells_with_ghosts,
+            cs_real_33_t);
+  cs_real_33_t *mom_mat = cs_glob_porosity_from_scan_opt->mom_mat;
+  memset(mom_mat, 0., m->n_cells_with_ghosts * sizeof(cs_real_33_t));
 
   /* Loop on file_names */
   char *tok;
@@ -935,7 +937,6 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   }
 
   /* Free memory */
-  CS_FREE(mom_mat);
   CS_FREE(file_names);
 
   /* Parallel synchronisation */
@@ -1605,8 +1606,7 @@ cs_compute_porosity_from_scan(void)
     }
 
     if (type_fill == CS_FILL_DIRECTION) {
-      if (cs_math_3_dot_product(direction_vector, c_w_face_normal[c_id])
-          < - 0.1 * cs_math_3_norm(c_w_face_normal[c_id])) {
+      if (cs_math_3_dot_product(direction_vector, c_w_face_normal[c_id]) < 0.) {
         for (cs_lnum_t i = 0; i < 3; i++)
           c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
       }

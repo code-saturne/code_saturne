@@ -830,6 +830,8 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
                     0.:
                     1. / c_w_dist_inv[c_id];
 
+    assert(b_dist[f_id] > 0.);
+
     // Vector II' for immersed boundaries
 
     // ---> IF
