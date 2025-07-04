@@ -2722,7 +2722,7 @@ cs_flux_through_surface(const char         *scalar_name,
      -------------------- */
 
   cs_real_3_t *grad;
-  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   cs_field_gradient_scalar(f,
                            true, /* use_previous_t */

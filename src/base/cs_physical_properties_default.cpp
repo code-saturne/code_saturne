@@ -780,7 +780,7 @@ _init_boundary_temperature(void)
       const cs_real_t *field_s_v = fld->val;
 
       cs_real_t *ttmp = nullptr;   /* n_cells should be sufficient ? */
-      CS_MALLOC(ttmp, n_cells_ext, cs_real_t);
+      CS_MALLOC_HD(ttmp, n_cells_ext, cs_real_t, cs_alloc_mode);
       cs_ht_convert_h_to_t_cells(field_s_v, ttmp);
 
       ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {

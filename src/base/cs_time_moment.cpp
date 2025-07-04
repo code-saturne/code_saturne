@@ -369,7 +369,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
   _assert_restart_success(retcode);
 
   if (n_val0 > 0) {
-    CS_MALLOC(ri->wa_val0, ri->n_wa, cs_real_t);
+    CS_MALLOC_HD(ri->wa_val0, ri->n_wa, cs_real_t, cs_alloc_mode);
     cs_restart_read_section(r,
                             "time_moments:wa:val_g",
                             CS_MESH_LOCATION_NONE,
@@ -1091,7 +1091,7 @@ _find_or_add_wa(cs_time_moment_data_t  *data_func,
       _n_moment_wa_max = 2;
     else
       _n_moment_wa_max *= 2;
-    CS_REALLOC(_moment_wa, _n_moment_wa_max, cs_time_moment_wa_t);
+    CS_REALLOC_HD(_moment_wa, _n_moment_wa_max, cs_time_moment_wa_t, cs_alloc_mode);
   }
 
   /* Now initialize members */
@@ -1324,7 +1324,7 @@ _ensure_init_weight_accumulator(cs_time_moment_wa_t  *mwa)
 {
   if (mwa->location_id != CS_MESH_LOCATION_NONE && mwa->val == nullptr) {
     cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
-    CS_MALLOC(mwa->val, n_w_elts, cs_real_t);
+    CS_MALLOC_HD(mwa->val, n_w_elts, cs_real_t, cs_alloc_mode);
     for (cs_lnum_t i = 0; i < n_w_elts; i++)
       mwa->val[i] = 0.;
   }
@@ -1383,7 +1383,7 @@ _ensure_init_moment(cs_time_moment_t  *mt)
   if (mt->f_id < 0 && mt->val == nullptr) {
     cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[2];
     cs_lnum_t n_d_elts = n_elts*(cs_lnum_t)(mt->dim);
-    CS_MALLOC(mt->val, n_d_elts, cs_real_t);
+    CS_MALLOC_HD(mt->val, n_d_elts, cs_real_t, cs_alloc_mode);
     for (cs_lnum_t i = 0; i < n_d_elts; i++)
       mt->val[i] = 0.;
   }
@@ -2422,6 +2422,8 @@ cs_time_moment_update_all(void)
 
         mt->nt_cur = ts->nt_cur;
 
+        ctx.wait();
+
         CS_FREE(x);
 
         /* Sync ghost cells so downstream use is safe */
@@ -3040,7 +3042,7 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
   CS_MALLOC(location_id, n_active_wa, int);
   CS_MALLOC(nt_start, n_active_wa, int);
   CS_MALLOC(t_start, n_active_wa, cs_real_t);
-  CS_MALLOC(val0, n_active_wa, cs_real_t);
+  CS_MALLOC_HD(val0, n_active_wa, cs_real_t, cs_alloc_mode);
 
   int n_val0 = 0;
   for (int i = 0; i < _n_moment_wa; i++) {
