@@ -497,25 +497,27 @@ _dot_products_xx_yy_xy_xz_yz(const cs_sles_it_t  *c,
  *----------------------------------------------------------------------------*/
 
 inline static void
-_fw_and_bw_lu33(const cs_real_t    mat[],
-                cs_real_t        *restrict x,
-                const cs_real_t  *restrict b,
-                const cs_real_t  *restrict c)
+_mat_c_m_b_33(const cs_real_t    mat[],
+              cs_real_t        *restrict x,
+              const cs_real_t  *restrict b,
+              const cs_real_t  *restrict c)
 {
+  /* c - b */
   cs_real_t  aux[3];
+  for (cs_lnum_t ii = 0; ii < 3; ii++) {
+    aux[ii] = (c[ii] - b[ii]);
+  }
 
-  aux[0] = (c[0] - b[0]);
-  aux[1] = (c[1] - b[1]) - aux[0]*mat[3];
-  aux[2] = (c[2] - b[2]) - aux[0]*mat[6] - aux[1]*mat[7];
-
-  x[2] = aux[2]/mat[8];
-  x[1] = (aux[1] - mat[5]*x[2])/mat[4];
-  x[0] = (aux[0] - mat[1]*x[1] - mat[2]*x[2])/mat[0];
+  for (cs_lnum_t ii = 0; ii < 3; ii++) {
+    x[ii] =   mat[3*ii + 0]*aux[0]
+            + mat[3*ii + 1]*aux[1]
+            + mat[3*ii + 2]*aux[2];
+  }
 }
 
 /*----------------------------------------------------------------------------
  * Block Jacobi utilities.
- * Compute forward and backward to solve an LU P*P system.
+ * Compute mat.(c-b) product.
  *
  * parameters:
  *   mat     <-- P*P*dim matrix
@@ -526,64 +528,25 @@ _fw_and_bw_lu33(const cs_real_t    mat[],
  *----------------------------------------------------------------------------*/
 
 inline static void
-_fw_and_bw_lu(const cs_real_t   mat[],
-              int               db_size,
-              cs_real_t        *restrict x,
-              const cs_real_t  *restrict b,
-              const cs_real_t  *restrict c)
+_mat_c_m_b(const cs_real_t   mat[],
+           cs_lnum_t         db_size,
+           cs_real_t        *restrict x,
+           const cs_real_t  *restrict b,
+           const cs_real_t  *restrict c)
 {
   assert(db_size <= DB_SIZE_MAX);
   cs_real_t aux[DB_SIZE_MAX];
 
-  /* forward */
-  for (int ii = 0; ii < db_size; ii++) {
+  /* c - b */
+  for (cs_lnum_t ii = 0; ii < db_size; ii++) {
     aux[ii] = (c[ii] - b[ii]);
-    for (int jj = 0; jj < ii; jj++) {
-      aux[ii] -= aux[jj]*mat[ii*db_size + jj];
+  }
+
+  for (cs_lnum_t ii = 0; ii < db_size; ii++) {
+    x[ii] = 0;
+    for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+      x[ii] += aux[jj]*mat[ii*db_size + jj];
     }
-  }
-
-  /* backward */
-  for (int ii = db_size - 1; ii >= 0; ii-=1) {
-    x[ii] = aux[ii];
-    for (int jj = db_size - 1; jj > ii; jj-=1) {
-      x[ii] -= x[jj]*mat[ii*db_size + jj];
-    }
-    x[ii] /= mat[ii*(db_size + 1)];
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Block Gauss-Seidel utilities.
- * Compute forward and backward to solve an LU P*P system.
- *
- * parameters:
- *   mat     <-- P*P*dim matrix
- *   db_size <-- matrix size
- *   x       --> solution
- *   b       <-> RHS in, work array
- *----------------------------------------------------------------------------*/
-
-inline static void
-_fw_and_bw_lu_gs(const cs_real_t   mat[],
-                 int               db_size,
-                 cs_real_t        *restrict x,
-                 const cs_real_t  *restrict b)
-{
-  assert(db_size <= DB_SIZE_MAX);
-
-  /* forward */
-  for (int ii = 0; ii < db_size; ii++) {
-    x[ii] = b[ii];
-    for (int jj = 0; jj < ii; jj++)
-      x[ii] -= x[jj]*mat[ii*db_size + jj];
-  }
-
-  /* backward */
-  for (int ii = db_size - 1; ii >= 0; ii--) {
-    for (int jj = db_size - 1; jj > ii; jj--)
-      x[ii] -= x[jj]*mat[ii*db_size + jj];
-    x[ii] /= mat[ii*(db_size + 1)];
   }
 }
 

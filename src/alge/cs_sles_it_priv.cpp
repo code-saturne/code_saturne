@@ -49,6 +49,7 @@
 
 #include "base/cs_base_accel.h"
 #include "base/cs_dispatch.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -312,13 +313,32 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
         const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
 
-        if (diag_block_size == 3) {
-          ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-            _fact_lu33(i, ad, ad_inv);
-          });
-        }
+        switch(diag_block_size) {
+        case 3:
+          {
+            const cs_real_33_t *b_ad
+              = reinterpret_cast<const cs_real_33_t *>(ad);
+            cs_real_33_t *b_ad_inv
+              = reinterpret_cast<cs_real_33_t *>(ad_inv);
+            ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+              cs_math_matrix_gauss_inverse(b_ad[i], b_ad_inv[i]);
+            });
+          }
+          break;
 
-        else {
+        case 6:
+          {
+            const cs_real_66_t *b_ad
+              = reinterpret_cast<const cs_real_66_t *>(ad);
+            cs_real_66_t *b_ad_inv
+              = reinterpret_cast<cs_real_66_t *>(ad_inv);
+            ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+              cs_math_matrix_gauss_inverse(b_ad[i], b_ad_inv[i]);
+            });
+          }
+          break;
+
+        default:
           ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
             _fact_lu(i, diag_block_size, ad, ad_inv);
           });

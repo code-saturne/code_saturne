@@ -455,16 +455,14 @@ _b_3_3_spmv_diag(cs_lnum_t        n_rows,
                  const cs_real_t  *__restrict__ x,
                  cs_real_t        *__restrict__ y)
 {
-  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
-  if (ii < n_rows) {
+  cs_lnum_t r_ii = blockIdx.x * blockDim.x + threadIdx.x;
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/3;
+    const cs_lnum_t kk = r_ii%3;
 
-#   pragma unroll
-    for (cs_lnum_t kk = 0; kk < 3; kk++) {
-      y[ii*3 + kk] =   d_val[ii * 9 + kk * 3]     * x[ii * 3]
-                     + d_val[ii * 9 + kk * 3 + 1] * x[ii * 3 + 1]
-                     + d_val[ii * 9 + kk * 3 + 2] * x[ii * 3 + 2];
-    }
-
+    y[r_ii] =   d_val[ii * 9 + kk * 3]     * x[ii * 3]
+              + d_val[ii * 9 + kk * 3 + 1] * x[ii * 3 + 1]
+              + d_val[ii * 9 + kk * 3 + 2] * x[ii * 3 + 2];
   }
 }
 
@@ -486,24 +484,18 @@ _b_spmv_diag(cs_lnum_t        n_rows,
              const cs_real_t  *__restrict__ x,
              cs_real_t        *__restrict__ y)
 {
-  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if (ii < n_rows) {
+  cs_lnum_t r_ii = blockIdx.x * blockDim.x + threadIdx.x;
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/n;
+    const cs_lnum_t kk = r_ii%n;
     const cs_lnum_t nn = n*n;
 
-    cs_real_t sii[n];
-
-    for (cs_lnum_t kk = 0; kk < n; kk++)
-      sii[kk] = 0.;
-
-    for (cs_lnum_t kk = 0; kk < n; kk++) {
-      for (cs_lnum_t ll = 0; ll < n; ll++) {
-        sii[kk] += d_val[ii*nn + kk*n + ll] * x[ii*n + ll];
-      }
+    cs_real_t sii = 0.;
+    for (cs_lnum_t ll = 0; ll < n; ll++) {
+      sii += d_val[ii*nn + kk*n + ll] * x[ii*n + ll];
     }
 
-    for (cs_lnum_t kk = 0; kk < n; kk++)
-      y[ii*n + kk] = sii[kk];
+    y[r_ii] = sii;
   }
 }
 
@@ -530,27 +522,23 @@ _b_3_3_mat_vect_p_l_msr(cs_lnum_t        n_rows,
                         const cs_real_t  *__restrict__ x,
                         cs_real_t        *__restrict__ y)
 {
-  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_lnum_t r_ii = blockIdx.x * blockDim.x + threadIdx.x;
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/3;
+    const cs_lnum_t kk = r_ii%3;
 
-  if (ii < n_rows) {
     const cs_lnum_t *__restrict__ _col_id = col_id + row_index[ii];
     const cs_real_t *__restrict__ m_row  = x_val + row_index[ii];
     cs_lnum_t n_cols = row_index[ii + 1] - row_index[ii];
-    cs_real_t sii[3];
-    for (cs_lnum_t kk = 0; kk < 3; kk++) {
-      sii[kk] =   d_val[ii * 9 + kk * 3]     * x[ii * 3]
-                + d_val[ii * 9 + kk * 3 + 1] * x[ii * 3 + 1]
-                + d_val[ii * 9 + kk * 3 + 2] * x[ii * 3 + 2];
-    }
+    cs_real_t sii =   d_val[ii * 9 + kk * 3]     * x[ii * 3]
+                    + d_val[ii * 9 + kk * 3 + 1] * x[ii * 3 + 1]
+                    + d_val[ii * 9 + kk * 3 + 2] * x[ii * 3 + 2];
 
     for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        sii[kk] += m_row[jj] * __ldg(x + (_col_id[jj]*3 + kk));
+      sii += m_row[jj] * __ldg(x + (_col_id[jj]*3 + kk));
     }
 
-    y[ii*3]     = sii[0];
-    y[ii*3 + 1] = sii[1];
-    y[ii*3 + 2] = sii[2];
+    y[r_ii] = sii;
   }
 }
 
@@ -577,24 +565,21 @@ _b_3_3_mat_vect_p_l_msr_exdiag(cs_lnum_t        n_rows,
                                const cs_real_t  *__restrict__ x,
                                cs_real_t        *__restrict__ y)
 {
-  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_lnum_t r_ii = blockIdx.x * blockDim.x + threadIdx.x;
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/3;
+    const cs_lnum_t kk = r_ii%3;
 
-  if (ii < n_rows) {
     const cs_lnum_t *__restrict__ _col_id = col_id + row_index[ii];
     const cs_real_t *__restrict__ m_row  = x_val + row_index[ii];
     cs_lnum_t n_cols = row_index[ii + 1] - row_index[ii];
-    cs_real_t sii[3];
-    for (cs_lnum_t kk = 0; kk < 3; kk++)
-      sii[kk] = 0.;
+    cs_real_t sii = 0.;
 
     for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        sii[kk] += m_row[jj] * __ldg(x + (_col_id[jj]*3 + kk));
+      sii += m_row[jj] * __ldg(x + (_col_id[jj]*3 + kk));
     }
 
-    y[ii * 3]     = sii[0];
-    y[ii * 3 + 1] = sii[1];
-    y[ii * 3 + 2] = sii[2];
+    y[r_ii] = sii;
   }
 }
 
@@ -622,32 +607,26 @@ _b_mat_vect_p_l_msr(cs_lnum_t        n_rows,
                     const cs_real_t  *__restrict__ x,
                     cs_real_t        *__restrict__ y)
 {
-  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if (ii < n_rows) {
+  cs_lnum_t r_ii = blockIdx.x * blockDim.x + threadIdx.x;
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/n;
+    const cs_lnum_t kk = r_ii%n;
     const cs_lnum_t nn = n*n;
 
     const cs_lnum_t *__restrict__ _col_id = col_id + row_index[ii];
     const cs_real_t *__restrict__ m_row  = x_val + row_index[ii];
     cs_lnum_t n_cols = row_index[ii + 1] - row_index[ii];
-    cs_real_t sii[n];
+    cs_real_t sii = 0;
 
-    for (cs_lnum_t kk = 0; kk < n; kk++)
-      sii[kk] = 0.;
-
-    for (cs_lnum_t kk = 0; kk < n; kk++) {
-      for (cs_lnum_t ll = 0; ll < n; ll++) {
-        sii[kk] += d_val[ii*nn + kk*n + ll] * x[ii*n + ll];
-      }
+    for (cs_lnum_t ll = 0; ll < n; ll++) {
+      sii += d_val[ii*nn + kk*n + ll] * x[ii*n + ll];
     }
 
     for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-      for (cs_lnum_t kk = 0; kk < n; kk++)
-        sii[kk] += m_row[jj] * __ldg(x + (_col_id[jj]*n + kk));
+      sii += m_row[jj] * __ldg(x + (_col_id[jj]*n + kk));
     }
 
-    for (cs_lnum_t kk = 0; kk < n; kk++)
-      y[ii*n + kk] = sii[kk];
+    y[r_ii] = sii;
   }
 }
 
@@ -675,23 +654,22 @@ _b_mat_vect_p_l_msr_exdiag(cs_lnum_t        n_rows,
                            const cs_real_t  *__restrict__ x,
                            cs_real_t        *__restrict__ y)
 {
-  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
+  cs_lnum_t r_ii = blockIdx.x * blockDim.x + threadIdx.x;
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/n;
+    const cs_lnum_t kk = r_ii%n;
+    const cs_lnum_t nn = n*n;
 
-  if (ii < n_rows) {
     const cs_lnum_t *__restrict__ _col_id = col_id + row_index[ii];
     const cs_real_t *__restrict__ m_row  = x_val + row_index[ii];
     cs_lnum_t n_cols = row_index[ii + 1] - row_index[ii];
-    cs_real_t sii[n];
-    for (cs_lnum_t kk = 0; kk < n; kk++)
-      sii[kk] = 0.;
+    cs_real_t sii = 0.;
 
     for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-      for (cs_lnum_t kk = 0; kk < n; kk++)
-        sii[kk] += m_row[jj] * __ldg(x + (_col_id[jj]*n + kk));
+      sii += m_row[jj] * __ldg(x + (_col_id[jj]*n + kk));
     }
 
-    for (cs_lnum_t kk = 0; kk < n; kk++)
-      y[ii*n + kk] = sii[kk];
+    y[r_ii] = sii;
   }
 }
 
@@ -1804,21 +1782,21 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
 
   /* Compute SpMV */
 
+  cs_lnum_t n_r_rows = ms->n_rows*matrix->db_size;
   unsigned int blocksize = 128;
-  unsigned int gridsize
-    = (unsigned int)ceil((double)ms->n_rows / blocksize);
+  unsigned int gridsize = cs_cuda_grid_size(n_r_rows, blocksize);
 
   if (!exclude_diag) {
 
     if (matrix->db_size == 3)
       _b_3_3_mat_vect_p_l_msr<<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+        (n_r_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else if (matrix->db_size == 6)
       _b_mat_vect_p_l_msr<6><<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+        (n_r_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else if (matrix->db_size == 9)
       _b_mat_vect_p_l_msr<9><<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+        (n_r_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else
       bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
                 __func__, (int)matrix->db_size);
@@ -1828,13 +1806,13 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
 
     if (matrix->db_size == 3)
       _b_3_3_mat_vect_p_l_msr_exdiag<<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+        (n_r_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else if (matrix->db_size == 6)
       _b_mat_vect_p_l_msr_exdiag<6><<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+        (n_r_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else if (matrix->db_size == 9)
       _b_mat_vect_p_l_msr_exdiag<9><<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+        (n_r_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else
       bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
                 __func__, (int)matrix->db_size);
@@ -1906,8 +1884,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
                              (const_cast<cs_real_t *>(mc->d_val));
 
     unsigned int blocksize = 128;
-    unsigned int gridsize
-      = (unsigned int)ceil((double)ms->n_rows / blocksize);
+    unsigned int gridsize = cs_cuda_grid_size(ms->n_rows*3, blocksize);
 
     if (matrix->db_size == 3)
       _b_3_3_spmv_diag<<<gridsize, blocksize, 0, _stream>>>
@@ -1964,10 +1941,10 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
  * \brief Matrix.vector product y = A.x with MSR matrix, block
  *        cuSPARSE version.
  *
- * Remmark: this functions is available with older cuSPARSE versions not
- *          providing the generic API, because they
- *          assume dense matrixes are always in column-major order, while
- *          row-major is needed with interleaved blocks.
+ * Remark: this functions is available with older cuSPARSE versions not
+ *         providing the generic API, because they
+ *         assume dense matrixes are always in column-major order, while
+ *         row-major is needed with interleaved blocks.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -2017,8 +1994,7 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
                              (const_cast<cs_real_t *>(mc->d_val));
 
     unsigned int blocksize = 128;
-    unsigned int gridsize
-      = (unsigned int)ceil((double)ms->n_rows / blocksize);
+    unsigned int gridsize = cs_cuda_grid_size(ms->n_rows*3, blocksize);
 
     if (matrix->db_size == 3)
       _b_3_3_spmv_diag<<<gridsize, blocksize, 0, _stream>>>

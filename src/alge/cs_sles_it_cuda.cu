@@ -280,305 +280,294 @@ _jacobi_compute_vx_and_residual_ini0(cs_lnum_t                       n_rows,
 }
 
 /*----------------------------------------------------------------------------
- * Block Jacobi utilities.
- * Compute forward and backward to solve an LU 3*3 system.
- *
- * parameters:
- *   mat   <-- 3*3*dim matrix
- *   x     <-> 1st part of RHS (c - b) in, solution out
- *   c     --> 2nd part of RHS (c - b)
- *----------------------------------------------------------------------------*/
-
-__device__ static void  __forceinline__
-_fw_and_bw_lu33_cuda(const cs_real_t  *__restrict__ mat,
-                     cs_real_t        *__restrict__ x,
-                     const cs_real_t  *__restrict__ c)
-{
-  cs_real_t  aux[3];
-
-  aux[0] = (c[0] - x[0]);
-  aux[1] = (c[1] - x[1]) - aux[0]*mat[3];
-  aux[2] = (c[2] - x[2]) - aux[0]*mat[6] - aux[1]*mat[7];
-
-  x[2] = aux[2]/mat[8];
-  x[1] = (aux[1] - mat[5]*x[2])/mat[4];
-  x[0] = (aux[0] - mat[1]*x[1] - mat[2]*x[2])/mat[0];
-}
-
-/*----------------------------------------------------------------------------
- * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi with
- * 3x3 block-diagonal matrix.
- *
- * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
- *  (grid_size, sum_block, _r_reduce);
- * Also, block_size must be a power of 2.
- *
- * parameters:
- *   n_b_rows  <-- number of block rows
- *   ad_inv    <-- inverse of diagonal
- *   ad        <-- diagonal
- *   rhs       <-- right hand side
- *   vx        <-> 1st part of RHS (c - b) in, solution at current iteration
- *   rk        <-> solution at previous iteraton
- *   sum_block --> contribution to residual
- *----------------------------------------------------------------------------*/
-
-template <size_t block_size>
-__global__ static void
-_block_3_jacobi_compute_vx_and_residual
-(
- cs_lnum_t                       n_b_rows,
- const cs_real_t   *__restrict__ ad_inv,
- const cs_real_t   *__restrict__ ad,
- const cs_real_t   *__restrict__ rhs,
- cs_real_t         *__restrict__ vx,
- cs_real_t         *__restrict__ rk,
- double            *__restrict__ sum_block
-)
-{
-  __shared__ cs_real_t sdata[block_size];
-
-  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
-  size_t tid = threadIdx.x;
-  sdata[tid] = 0.0;
-
-  if (ii < n_b_rows) {
-    _fw_and_bw_lu33_cuda(ad_inv + 9*ii, vx + 3*ii, rhs + 3*ii);
-
-    #pragma unroll
-    for (cs_lnum_t jj = 0; jj < 3; jj++) {
-      double r = 0.0;
-      #pragma unroll
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        r +=  ad[ii*9 + jj*3 + kk] * (vx[ii*3 + kk] - rk[ii*3 + kk]);
-
-      sdata[tid] += (r*r);
-    }
-
-    #pragma unroll
-    for (cs_lnum_t kk = 0; kk < 3; kk++)
-      rk[ii*3 + kk] = vx[ii*3 + kk];
-  }
-
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
-}
-
-/*----------------------------------------------------------------------------
- * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi with
+ * Compute Rk <- Rhs and residual for Jacobi with
  * 3x3 block-diagonal matrix when Vx is initially 0.
  *
+ * parameters:
+ *   n_rows   <-- number of block rows
+ *   rk       <-- right hand side
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_jacobi_rk_ini_0
+(
+ cs_lnum_t      n_rows,
+ cs_real_t     *rk
+)
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (ii < n_rows) {
+    rk[ii] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk for Jacobi with
+ * 3x3 block-diagonal matrix.
+ *
+ * parameters:
+ *   n_rows    <-- number of rows
+ *   ad_inv    <-- inverse of diagonal
+ *   rhs       <-- RHS
+ *   vxx       <-- previous A.vx value
+ *   vx        --> solution at current iteration
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_block_3_jacobi_compute_vx(cs_lnum_t                       n_rows,
+                           const cs_real_t   *__restrict__ ad_inv,
+                           const cs_real_t   *__restrict__ rhs,
+                           const cs_real_t   *__restrict__ vxx,
+                           cs_real_t         *__restrict__ vx)
+{
+  cs_lnum_t r_ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/3;
+    const cs_lnum_t jj = r_ii%3;
+
+    const cs_real_t *_ad_inv = ad_inv + 9*ii + 3*jj;
+    const cs_real_t *_rhs = rhs + 3*ii;
+    const cs_real_t *_vxx = vxx + 3*ii;
+    cs_real_t _vx = 0;
+
+    #pragma unroll
+    for (cs_lnum_t kk = 0; kk < 3; kk++) {
+      _vx += _ad_inv[kk] * (_rhs[kk] - _vxx[kk]);
+    }
+
+    vx[r_ii] = _vx;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk for Jacobi with 3x3 block-diagonal matrix
+ * With Vx = 0 initial solution.
+ *
+ * parameters:
+ *   n_rows    <-- number of rows
+ *   ad_inv    <-- inverse of diagonal
+ *   rhs       <-- RHS
+ *   rk        --> rk (set to 0)
+ *   vx        --> solution at current iteration
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_block_3_jacobi_compute_vx0(cs_lnum_t                       n_rows,
+                            const cs_real_t   *__restrict__ ad_inv,
+                            const cs_real_t   *__restrict__ rhs,
+                            cs_real_t         *__restrict__ rk,
+                            cs_real_t         *__restrict__ vx)
+{
+  cs_lnum_t r_ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/3;
+    const cs_lnum_t jj = r_ii%3;
+
+    const cs_real_t *_ad_inv = ad_inv + 9*ii + 3*jj;
+    const cs_real_t *_rhs = rhs + 3*ii;
+    cs_real_t _vx = 0;
+
+    #pragma unroll
+    for (cs_lnum_t kk = 0; kk < 3; kk++) {
+      _vx += _ad_inv[kk] * _rhs[kk];
+    }
+
+    rk[r_ii] = 0;
+    vx[r_ii] = _vx;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute residual for Jacobi with 3x3 block-diagonal matrix.
+ *
  * This call must be followed by
  * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  * Also, block_size must be a power of 2.
  *
  * parameters:
- *   n_b_rows  <-- number of block rows
+ *   n_rows    <-- number of rows
  *   ad_inv    <-- inverse of diagonal
  *   ad        <-- diagonal
  *   rhs       <-- right hand side
- *   vx        <-> 1st part of RHS (c - b) in, solution at current iteration
- *   rk        <-> solution at previous iteraton
+ *   rk        <-- solution at previous iteration
+ *   vx        <-- solution at current iteration
  *   sum_block --> contribution to residual
  *----------------------------------------------------------------------------*/
 
 template <size_t block_size>
 __global__ static void
-_block_3_jacobi_compute_vx_and_residual_ini0
-(
- cs_lnum_t                       n_b_rows,
- const cs_real_t   *__restrict__ ad_inv,
- const cs_real_t   *__restrict__ ad,
- const cs_real_t   *__restrict__ rhs,
- cs_real_t         *__restrict__ vx,
- cs_real_t         *__restrict__ rk,
- double            *__restrict__ sum_block
-)
+_block_3_jacobi_compute_residual(cs_lnum_t                       n_rows,
+                                 const cs_real_t   *__restrict__ ad,
+                                 const cs_real_t   *__restrict__ vx,
+                                 const cs_real_t   *__restrict__ rk,
+                                 double            *__restrict__ sum_block)
 {
   __shared__ cs_real_t sdata[block_size];
 
-  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+  cs_lnum_t r_ii = blockIdx.x*blockDim.x + threadIdx.x;
   size_t tid = threadIdx.x;
   sdata[tid] = 0.0;
 
-  if (ii < n_b_rows) {
-    #pragma unroll
-    for (cs_lnum_t kk = 0; kk < 3; kk++) {
-      vx[ii*3 + kk] = 0;
-    }
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/3;
+    const cs_lnum_t jj = r_ii%3;
 
-    _fw_and_bw_lu33_cuda(ad_inv + 9*ii, vx + 3*ii, rhs + 3*ii);
+    const cs_real_t *_ad = ad + 9*ii + 3*jj;
+    const cs_real_t *_vx = vx + ii*3;
+    const cs_real_t *_rk = rk + ii*3;
 
-    #pragma unroll
-    for (cs_lnum_t jj = 0; jj < 3; jj++) {
-      double r = 0.0;
-      #pragma unroll
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        r +=  ad[ii*9 + jj*3 + kk] * vx[ii*3 + kk];
-
-      sdata[tid] += (r*r);
-    }
-
+    double r = 0.0;
     #pragma unroll
     for (cs_lnum_t kk = 0; kk < 3; kk++)
-      rk[ii*3 + kk] = vx[ii*3 + kk];
+      r +=  _ad[kk] * (_vx[kk] - _rk[kk]);
+
+    sdata[tid] += (r*r);
   }
 
   cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
- * Block Jacobi utilities.
- * Compute forward and backward to solve an LU system.
+ * Compute Vx <- Vx - (A-diag).Rk for Jacobi with block-diagonal matrix.
  *
  * parameters:
- *   mat     <-- p*p*dim matrix
- *   db_size <-- block (p) size
- *   x       <-> 1st part of RHS (c - b) in, solution out
- *   c       --> 2nd part of RHS (c - b)
- *----------------------------------------------------------------------------*/
-
-__device__ static void  __forceinline__
-_fw_and_bw_lu_cuda(const cs_real_t  *__restrict__ mat,
-                   cs_lnum_t                      db_size,
-                   cs_real_t        *__restrict__ x,
-                   const cs_real_t  *__restrict__ c)
-{
-  assert(db_size <= 9);
-  cs_real_t aux[9];
-
-  /* forward */
-  for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-    aux[ii] = (c[ii] - x[ii]);
-    for (cs_lnum_t jj = 0; jj < ii; jj++) {
-      aux[ii] -= aux[jj]*mat[ii*db_size + jj];
-    }
-  }
-
-  /* backward */
-  for (cs_lnum_t ii = db_size - 1; ii >= 0; ii-=1) {
-    x[ii] = aux[ii];
-    for (cs_lnum_t jj = db_size - 1; jj > ii; jj-=1) {
-      x[ii] -= x[jj]*mat[ii*db_size + jj];
-    }
-    x[ii] /= mat[ii*(db_size + 1)];
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi with
- * 3x3 block-diagonal matrix.
- *
- * parameters:
- *   n_b_rows  <-- number of block rows
+ *   n_rows    <-- number of block rows
  *   ad_inv    <-- inverse of diagonal
- *   ad        <-- diagonal
  *   rhs       <-- right hand side
- *   vx        <-> 1st part of RHS (c - b) in, solution at current iteration
- *   rk        <-> solution at previous iteraton
- *   sum_block --> contribution to residual
+ *   vxx       <-- previous A.vx value
+ *   vx        --> solution at current iteration
  *----------------------------------------------------------------------------*/
 
-template <size_t block_size>
 __global__ static void
-_block_jacobi_compute_vx_and_residual(cs_lnum_t                       n_b_rows,
-                                      cs_lnum_t                       db_size,
-                                      const cs_real_t   *__restrict__ ad_inv,
-                                      const cs_real_t   *__restrict__ ad,
-                                      const cs_real_t   *__restrict__ rhs,
-                                      cs_real_t         *__restrict__ vx,
-                                      cs_real_t         *__restrict__ rk,
-                                      double            *__restrict__ sum_block)
+_block_jacobi_compute_vx(cs_lnum_t                       n_rows,
+                         cs_lnum_t                       db_size,
+                         const cs_real_t   *__restrict__ ad_inv,
+                         const cs_real_t   *__restrict__ rhs,
+                         const cs_real_t   *__restrict__ vxx,
+                         cs_real_t         *__restrict__ vx)
 {
-  __shared__ cs_real_t sdata[block_size];
-
-  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
-  size_t tid = threadIdx.x;
-  sdata[tid] = 0.0;
+  cs_lnum_t r_ii = blockIdx.x*blockDim.x + threadIdx.x;
 
   cs_lnum_t n = db_size;
   cs_lnum_t nn = db_size*db_size;
 
-  if (ii < n_b_rows) {
-    _fw_and_bw_lu_cuda(ad_inv + nn*ii, n, vx + n*ii, rhs + n*ii);
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/n;
+    const cs_lnum_t jj = r_ii%n;
 
-    #pragma unroll
-    for (cs_lnum_t jj = 0; jj < n; jj++) {
-      double r = 0.0;
-      #pragma unroll
-      for (cs_lnum_t kk = 0; kk < n; kk++)
-        r +=  ad[ii*nn + jj*n + kk] * (vx[ii*n + kk] - rk[ii*n + kk]);
+    const cs_real_t *_ad_inv = ad_inv + nn*ii + n*jj;
+    const cs_real_t *_rhs = rhs + n*ii;
+    const cs_real_t *_vxx = vxx + n*ii;
+    cs_real_t _vx = 0;
 
-      sdata[tid] += (r*r);
-    }
-
-    #pragma unroll
-    for (cs_lnum_t kk = 0; kk < n; kk++)
-      rk[ii*n + kk] = vx[ii*n + kk];
-  }
-
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
-}
-
-/*----------------------------------------------------------------------------
- * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi with
- * block-diagonal matrix when Vx is initially 0.
- *
- * parameters:
- *   n_b_rows  <-- number of block rows
- *   ad_inv    <-- inverse of diagonal
- *   ad        <-- diagonal
- *   rhs       <-- right hand side
- *   vx        <-> 1st part of RHS (c - b) in, solution at current iteration
- *   rk        <-> solution at previous iteraton
- *   sum_block --> contribution to residual
- *----------------------------------------------------------------------------*/
-
-template <size_t block_size>
-__global__ static void
-_block_jacobi_compute_vx_and_residual_ini0
-(
- cs_lnum_t                       n_b_rows,
- cs_lnum_t                       db_size,
- const cs_real_t   *__restrict__ ad_inv,
- const cs_real_t   *__restrict__ ad,
- const cs_real_t   *__restrict__ rhs,
- cs_real_t         *__restrict__ vx,
- cs_real_t         *__restrict__ rk,
- double            *__restrict__ sum_block
-)
-{
-  __shared__ cs_real_t sdata[block_size];
-
-  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
-  size_t tid = threadIdx.x;
-  sdata[tid] = 0.0;
-
-  cs_lnum_t n = db_size;
-  cs_lnum_t nn = db_size*db_size;
-
-  if (ii < n_b_rows) {
     #pragma unroll
     for (cs_lnum_t kk = 0; kk < n; kk++) {
-      vx[ii*n + kk] = 0;
+      _vx += _ad_inv[kk] * (_rhs[kk] - _vxx[kk]);
     }
 
-    _fw_and_bw_lu_cuda(ad_inv + nn*ii, n, vx + n*ii, rhs + n*ii);
+    vx[r_ii] = _vx;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk for Jacobi with block-diagonal matrix
+ * With Vx = 0 initial solution.
+ *
+ * parameters:
+ *   n_rows    <-- number of block rows
+ *   ad_inv    <-- inverse of diagonal
+ *   rhs       <-- right hand side
+ *   rk        --> rk (set to 0)
+ *   vx        --> solution at current iteration
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_block_jacobi_compute_vx0(cs_lnum_t                       n_rows,
+                          cs_lnum_t                       db_size,
+                          const cs_real_t   *__restrict__ ad_inv,
+                          const cs_real_t   *__restrict__ rhs,
+                          cs_real_t         *__restrict__ rk,
+                          cs_real_t         *__restrict__ vx)
+{
+  cs_lnum_t r_ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  cs_lnum_t n = db_size;
+  cs_lnum_t nn = db_size*db_size;
+
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/n;
+    const cs_lnum_t jj = r_ii%n;
+
+    const cs_real_t *_ad_inv = ad_inv + nn*ii + n*jj;
+    const cs_real_t *_rhs = rhs + n*ii;
+    cs_real_t _vx = 0;
 
     #pragma unroll
-    for (cs_lnum_t jj = 0; jj < n; jj++) {
-      double r = 0.0;
-      #pragma unroll
-      for (cs_lnum_t kk = 0; kk < n; kk++)
-        r +=  ad[ii*nn + jj*n + kk] * vx[ii*n + kk];
-
-      sdata[tid] += (r*r);
+    for (cs_lnum_t kk = 0; kk < n; kk++) {
+      _vx += _ad_inv[kk] * _rhs[kk];
     }
 
+    rk[r_ii] = 0;
+    vx[r_ii] = _vx;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi with
+ * nxn block-diagonal matrix.
+ *
+ * This call must be followed by
+ * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ *  (grid_size, sum_block, _r_reduce);
+ * Also, block_size must be a power of 2.
+ *
+ * parameters:
+ *   n_rows    <-- number of rows
+ *   db_size   <-- diagonal block size
+ *   ad_inv    <-- inverse of diagonal
+ *   ad        <-- diagonal
+ *   rhs       <-- right hand side
+ *   rk        <-- solution at previous iteration
+ *   vx        <-- solution at current iteration
+ *   sum_block --> contribution to residual
+ *----------------------------------------------------------------------------*/
+
+template <size_t block_size>
+__global__ static void
+_block_jacobi_compute_residual(cs_lnum_t                       n_rows,
+                               cs_lnum_t                       db_size,
+                               const cs_real_t   *__restrict__ ad,
+                               cs_real_t         *__restrict__ vx,
+                               cs_real_t         *__restrict__ rk,
+                               double            *__restrict__ sum_block)
+{
+  __shared__ cs_real_t sdata[block_size];
+
+  cs_lnum_t r_ii = blockIdx.x*blockDim.x + threadIdx.x;
+  size_t tid = threadIdx.x;
+  sdata[tid] = 0.0;
+
+  cs_lnum_t n = db_size;
+  cs_lnum_t nn = db_size*db_size;
+
+  if (r_ii < n_rows) {
+    const cs_lnum_t ii = r_ii/n;
+    const cs_lnum_t jj = r_ii%n;
+
+    const cs_real_t *_ad = ad + nn*ii + n*jj;
+    const cs_real_t *_vx = vx + ii*n;
+    const cs_real_t *_rk = rk + ii*n;
+
+    double r = 0.0;
     #pragma unroll
     for (cs_lnum_t kk = 0; kk < n; kk++)
-      rk[ii*n + kk] = vx[ii*n + kk];
+      r +=  _ad[kk] * (_vx[kk] - _rk[kk]);
+
+    sdata[tid] += (r*r);
   }
 
   cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
@@ -1548,8 +1537,10 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   assert(c->setup_data != NULL);
 
   cs_real_t *_aux_vectors = NULL;
+  cs_real_t *__restrict__ rk = nullptr, *__restrict__ vxx = nullptr;
+
   if (n_cols > 0) {
-    const size_t n_wa = 1;
+    const size_t n_wa = 2;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (   aux_vectors == NULL
@@ -1563,17 +1554,17 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     }
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
+
+    rk = _aux_vectors;
+    vxx = _aux_vectors + wa_size;
   }
 
-  cs_real_t *__restrict__ rk = _aux_vectors;
-
   const unsigned int blocksize = 256;
-  cs_lnum_t n_b_rows = n_rows / diag_block_size;
 
-  unsigned int gridsize = cs_cuda_grid_size(n_b_rows, blocksize);
+  unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
 
   double *sum_block, *res;
-  cs_blas_cuda_get_2_stage_reduce_buffers(n_b_rows, 1, gridsize, sum_block, res);
+  cs_blas_cuda_get_2_stage_reduce_buffers(n_rows, 1, gridsize, sum_block, res);
 
   if (local_stream)
     cs_matrix_spmv_cuda_set_stream(stream);
@@ -1587,14 +1578,24 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
-    if (diag_block_size == 3)
-      _block_3_jacobi_compute_vx_and_residual_ini0
+    if (diag_block_size == 3) {
+      _block_3_jacobi_compute_vx0<<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad_inv, rhs, rk, vx);
+      _block_3_jacobi_compute_residual
         <blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_b_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-    else
-      _block_jacobi_compute_vx_and_residual_ini0
+        (n_rows, ad, vx, rk, sum_block);
+      CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+    }
+    else {
+      _block_jacobi_compute_vx0<<<gridsize, blocksize, 0, stream>>>
+        (n_rows, diag_block_size, ad_inv, rhs, rk, vx);
+      _block_jacobi_compute_residual
         <blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
+        (n_rows, diag_block_size, ad, vx, rk, sum_block);
+    }
+
+    cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
+                    cudaMemcpyDeviceToDevice, stream);
 
     if (convergence->precision > 0. || c->plot != NULL) {
       cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
@@ -1614,9 +1615,12 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   }
 
-  else
+  else {
     cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
                     cudaMemcpyDeviceToDevice, stream);
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
 
 #if HAVE_GRAPH_CAPTURE > 0
 
@@ -1631,14 +1635,22 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
-    if (diag_block_size == 3)
-      _block_3_jacobi_compute_vx_and_residual
+    if (diag_block_size == 3) {
+      _block_3_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad_inv, rhs, vxx, vx);
+      _block_3_jacobi_compute_residual
         <blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_b_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-    else
-      _block_jacobi_compute_vx_and_residual
+        (n_rows, ad, vx, rk, sum_block);
+    }
+    else {
+      _block_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
+        (n_rows, diag_block_size, ad_inv, rhs, vxx, vx);
+      _block_jacobi_compute_residual
         <blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
+        (n_rows, diag_block_size, ad, vx, rk, sum_block);
+    }
+    cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
+                    cudaMemcpyDeviceToDevice, stream);
 
     if (convergence->precision > 0. || c->plot != NULL) {
       cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
@@ -1663,7 +1675,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     /* SpmV done outside of graph capture as halo synchronization
        currently synchonizes separate streams and may not be captured. */
 
-    cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, rk, vx);
+    cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, rk, vxx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
@@ -1674,14 +1686,25 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     else
 #endif // HAVE_GRAPH_CAPTURE > 0
     {
-      if (diag_block_size == 3)
-        _block_3_jacobi_compute_vx_and_residual
+      if (diag_block_size == 3) {
+        _block_3_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
+          (n_rows, ad_inv, rhs, vxx, vx);
+        CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+        _block_3_jacobi_compute_residual
           <blocksize><<<gridsize, blocksize, 0, stream>>>
-          (n_b_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-      else
-        _block_jacobi_compute_vx_and_residual
+          (n_rows, ad, vx, rk, sum_block);
+        CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+      }
+      else {
+        _block_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
+          (n_rows, diag_block_size, ad_inv, rhs, vxx, vx);
+        _block_jacobi_compute_residual
           <blocksize><<<gridsize, blocksize, 0, stream>>>
-          (n_b_rows, diag_block_size, ad_inv, ad, rhs, vx, rk, sum_block);
+          (n_rows, diag_block_size, ad, vx, rk, sum_block);
+      }
+      cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
+                      cudaMemcpyDeviceToDevice, stream);
+      CS_CUDA_CHECK(cudaStreamSynchronize(stream));
 
       if (convergence->precision > 0. || c->plot != NULL) {
         cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>

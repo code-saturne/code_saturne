@@ -42,6 +42,8 @@
 #include <float.h>
 #endif
 
+#include <iostream>
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -411,6 +413,63 @@ cs_math_3_cross_product(const T       u[3],
   uv[0] = u[1]*v[2] - u[2]*v[1];
   uv[1] = u[2]*v[0] - u[0]*v[2];
   uv[2] = u[0]*v[1] - u[1]*v[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Inverse square, dense matrix using Gauss-Jordan elimination.
+ *
+ * \param[in]   a  input matrix
+ * \param[out]  b  output matrix (may be identical to a)
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t n, typename T>
+CS_F_HOST_DEVICE inline void
+cs_math_matrix_gauss_inverse(const T  a[n][n],
+                             T        b[n][n])
+{
+  T *p_a[n];
+  T t[n][n*2];
+
+  for (size_t i = 0; i < n; i++) {
+    p_a[i] = t[i];
+    for (size_t j = 0; j < n; j++) {
+      p_a[i][j] = a[i][j];
+      p_a[i][j+n] = 0;
+    }
+    p_a[i][i+n] = 1;
+  }
+
+  for (size_t i = 0; i < n; i++) {
+
+    // Pivot matrix rows (swap pointers)
+    for (size_t j = i+1; j < n; j++) {
+      if (cs::abs(p_a[i][i]) < cs::abs(p_a[j][i])) {
+        T* tmp = p_a[j];
+        p_a[j] = p_a[i];
+        p_a[i] = tmp;
+      }
+    }
+    // Linear combination of each row with other rows
+    for (size_t j = 0; j < n; j++) {
+      if (j != i) {
+        T s = p_a[j][i] / p_a[i][i];
+        for (size_t k = j; k < 2*n; k++) {
+          p_a[j][k] -= p_a[i][k] * s;
+        }
+      }
+    }
+
+  }
+
+  // Scale and copy results
+  for (size_t i = 0; i < n; i++) {
+    T s = (T)1. / p_a[i][i];
+    for (size_t j = 0; j < n; j++) {
+      b[i][j] = p_a[i][n+j] * s;
+    }
+  }
 }
 
 namespace cs {
