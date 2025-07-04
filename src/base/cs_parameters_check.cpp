@@ -1179,8 +1179,8 @@ cs_parameters_check(void)
           if (scalar_exp_extrap > 0. || scalar_time_order > 0)
             cs_parameters_error
               (CS_ABORT_DELAYED,
-               _("Thermal and Lagragian module"),
-               _("Source terms from Lagragian module will not be computed\n"
+               _("Thermal and Lagrangian module"),
+               _("Source terms from Lagrangian module will not be computed\n"
                  "with second order in this version despite the user settings\n"
                  "defined below:\n"
                  "For field \"%s\" (thetss %f and isso2t %d)\n"),

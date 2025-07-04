@@ -2206,7 +2206,7 @@ _additional_fields_stage_2(void)
 
     /* Dimensionless wall distance "y+"
      * non-dimensional distance \f$y^+\f$ between a given volume and the
-     * closest wall, when it is necesary (LES with van Driest wall damping */
+     * closest wall, when it is necessary (LES with van Driest wall damping */
     if (   cs_glob_turb_model->itytur == 4
         && cs_glob_turb_les_model->idries == 1) {
       cs_field_t *f_yp = _add_variable_field("wall_yplus",
