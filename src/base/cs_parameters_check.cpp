@@ -1190,6 +1190,18 @@ cs_parameters_check(void)
     }
   }
 
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
+    if (   cs_glob_lagr_source_terms->ltsthe == 1
+        && (cs_glob_lagr_model->physical_model
+          == cs_glob_lagr_specific_physics->solve_temperature == 0))
+        cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("Lagrangian module"),
+         _("Thermal two-way coupling are activated but temperature of\n"
+           "particles are not solved.\n"
+           "Verify the parameters and the cs_user_lagr_model function.\n"));
+  }
+
   /*--------------------------------------------------------------------------
    * Check options for radiation module
    *--------------------------------------------------------------------------*/
