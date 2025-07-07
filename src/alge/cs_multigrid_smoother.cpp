@@ -1132,7 +1132,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = (cs_real_t *)aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk  = _aux_vectors;
     vxx = _aux_vectors + wa_size;
@@ -1168,15 +1168,15 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
   for (n_iter = iter_ini; n_iter < convergence->n_iterations_max; n_iter++) {
 
-    memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
-
     /* Compute vxx <- vx - (a-diag).rk */
 
-    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vxx);
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx, vxx);
 
     /* Compute vx <- diag^-1 . (vxx - rhs) */
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
+        rk[ii*3 + kk] = vx[ii*3 + kk];
       _mat_c_m_b_33(ad_inv + 9*ii,
                     vx + 3*ii,
                     vxx + 3*ii,
@@ -1250,7 +1250,7 @@ _block_jacobi(cs_sles_it_t              *c,
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = (cs_real_t *)aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk  = _aux_vectors;
     vxx = _aux_vectors + wa_size;
@@ -1267,15 +1267,18 @@ _block_jacobi(cs_sles_it_t              *c,
     /* Compute vx <- diag^-1 . (vxx - rhs) */
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
+      assert(db_size <= DB_SIZE_MAX);
+      cs_real_t _vxx[DB_SIZE_MAX];
+
       for (cs_lnum_t jj = 0; jj < db_size; jj++) {
         rk[db_size*ii + jj] = 0;
-        vxx[db_size*ii + jj] = 0;
+        _vxx[jj] = 0;
       }
 
       _mat_c_m_b(ad_inv + db_size_2*ii,
                  db_size,
                  vx + db_size*ii,
-                 vxx + db_size*ii,
+                 _vxx,
                  rhs + db_size*ii);
     }
 
@@ -1287,14 +1290,14 @@ _block_jacobi(cs_sles_it_t              *c,
 
   for (n_iter = iter_ini; n_iter < convergence->n_iterations_max; n_iter++) {
 
-    memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
-
     /* Compute Vx <- Vx - (A-diag).Rk */
 
-    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vxx);
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx, vxx);
 
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
+        rk[ii*db_size + kk] = vx[ii*db_size + kk];
       _mat_c_m_b(ad_inv + db_size_2*ii,
                  db_size,
                  vx + db_size*ii,
@@ -1668,8 +1671,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
         cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-        for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
-          vx0[kk] = rhs[ii*db_size + kk];
+        for (cs_lnum_t jj = 0; jj < diag_block_size; jj++)
+          vx0[jj] = rhs[ii*db_size + jj];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
           for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
@@ -1678,12 +1681,14 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
         for (cs_lnum_t jj = 0; jj < db_size; jj++) {
           _vx[jj] = 0;
-          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          for (cs_lnum_t kk = 0; kk < db_size; kk++) {
             _vx[jj] += _ad_inv[jj*db_size + kk] * vx0[kk];
+            assert(fabs(_ad_inv[jj*db_size + kk] * vx0[kk]) < 1e30);
+          }
         }
 
-        for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
-          vx[ii*db_size + kk] = _vx[kk];
+        for (cs_lnum_t jj = 0; jj < diag_block_size; jj++)
+          vx[ii*db_size + jj] = _vx[jj];
 
       }
 
@@ -1730,8 +1735,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
         cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-        for (cs_lnum_t kk = 0; kk < db_size; kk++)
-          vx0[kk] = rhs[ii*db_size + kk];
+        for (cs_lnum_t jj = 0; jj < db_size; jj++)
+          vx0[jj] = rhs[ii*db_size + jj];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
           for (cs_lnum_t kk = 0; kk < db_size; kk++)
@@ -1740,12 +1745,16 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
         for (cs_lnum_t jj = 0; jj < db_size; jj++) {
           _vx[jj] = 0;
-          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          for (cs_lnum_t kk = 0; kk < db_size; kk++) {
             _vx[jj] += _ad_inv[jj*db_size + kk] * vx0[kk];
+            assert(fabs(_ad_inv[jj*db_size + kk] * vx0[kk]) < 1e30);
+          }
         }
 
-        for (cs_lnum_t kk = 0; kk < db_size; kk++)
-          vx[ii*db_size + kk] = _vx[kk];
+        for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+          vx[ii*db_size + jj] = _vx[jj];
+          assert(fabs(vx[ii*db_size + jj]) < 1e30);
+        }
 
       }
 
@@ -1854,8 +1863,8 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t                *c,
 
       cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-        vx0[kk] = rhs[ii*db_size + kk];
+      for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+        vx0[jj] = rhs[ii*db_size + jj];
       }
 
       for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
@@ -1870,8 +1879,8 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t                *c,
           _vx[jj] += _ad_inv[jj*db_size + kk] * vx0[kk];
       }
 
-      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-        vx[ii*db_size + kk] = _vx[kk];
+      for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+        vx[ii*db_size + jj] = _vx[jj];
       }
 
     }
@@ -1979,8 +1988,8 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
 
       cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-        vx0[kk] = rhs[ii*db_size + kk];
+      for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+        vx0[jj] = rhs[ii*db_size + jj];
       }
 
       for (cs_lnum_t jj = n_cols-1; jj > -1; jj--) {
@@ -1995,8 +2004,8 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
           _vx[jj] += _ad_inv[jj*db_size + kk] * vx0[kk];
       }
 
-      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-        vx[ii*db_size + kk] = _vx[kk];
+      for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+        vx[ii*db_size + jj] = _vx[jj];
       }
 
     }
