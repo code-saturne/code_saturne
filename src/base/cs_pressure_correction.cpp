@@ -531,7 +531,6 @@ _pressure_correction_fv(int                   iterns,
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -541,18 +540,20 @@ _pressure_correction_fv(int                   iterns,
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
-  const cs_real_3_t *restrict cell_cen = mq_g->cell_cen;
-  const cs_real_3_t *restrict b_face_cog = mq_g->b_face_cog;
-  const cs_nreal_3_t *restrict b_face_u_normal = mq_g->b_face_u_normal;
-  const cs_real_t *restrict b_dist = mq_g->b_dist;
-  const cs_real_t *restrict b_face_surf = mq_g->b_face_surf;
-  const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
-  const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
-  const cs_real_t *restrict cell_f_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const cs_real_t *restrict b_dist = fvq->b_dist;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
   const int *bc_type = cs_glob_bc_type;
 
   const int meteo_profile = cs_glob_atmo_option->meteo_profile;
+
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+                                        fvq->c_disable_flag : nullptr;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
@@ -1140,7 +1141,7 @@ _pressure_correction_fv(int                   iterns,
                                 dc2);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        rovsdt[c_id] += cell_f_vol[c_id] * _coef * dc2[c_id] / dt[c_id];
+        rovsdt[c_id] += cell_vol[c_id] * _coef * dc2[c_id] / dt[c_id];
       });
 
       CS_FREE(xcpp);
@@ -1155,7 +1156,7 @@ _pressure_correction_fv(int                   iterns,
     cs_real_t rho2 = vof_parameters->rho2;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      rovsdt[c_id] -= cell_f_vol[c_id] * dgdpca[c_id] * (1./rho2 - 1./rho1);
+      rovsdt[c_id] -= cell_vol[c_id] * dgdpca[c_id] * (1./rho2 - 1./rho1);
     });
   }
 
@@ -1163,7 +1164,7 @@ _pressure_correction_fv(int                   iterns,
   if (idilat == 3) {
     const cs_real_t epsdp = vp_param->epsdp;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      rovsdt[c_id] += epsdp*cell_f_vol[c_id]/dt[c_id];
+      rovsdt[c_id] += epsdp*cell_vol[c_id]/dt[c_id];
     });
   }
 
@@ -1192,7 +1193,7 @@ _pressure_correction_fv(int                   iterns,
     int istat = eqp_p->istat;
     if (istat != 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        rovsdt[c_id] += istat*(cell_f_vol[c_id]/(dt[c_id]*c2[c_id]));
+        rovsdt[c_id] += istat*(cell_vol[c_id]/(dt[c_id]*c2[c_id]));
       });
     }
 
@@ -1478,7 +1479,7 @@ _pressure_correction_fv(int                   iterns,
         cs_real_t porosf = cs::min(c_porosity[c_id_0], c_porosity[c_id_1]);
         imasfl[f_id] =   taui[f_id] / dtm
                        * imasfla[f_id]+porosf*taui[f_id]*sti[f_id]
-                       * i_f_face_surf[f_id];
+                       * i_face_surf[f_id];
       });
 
     }
@@ -1491,7 +1492,7 @@ _pressure_correction_fv(int                   iterns,
         cs_real_t dtm = 0.5 * (dt[c_id_0] + dt[c_id_1]);
         imasfl[f_id] =   taui[f_id] / dtm
                        * imasfla[f_id]+taui[f_id]*sti[f_id]
-                       * i_f_face_surf[f_id];
+                       * i_face_surf[f_id];
       });
 
     } /* end of test on cs_glob_porous_model */
@@ -1506,7 +1507,7 @@ _pressure_correction_fv(int                   iterns,
         bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfl[f_id];
 
         cs_real_t dimp =   -(1. - dt[c_id]/taub[f_id])
-                         * bmasfl[f_id]/b_f_face_surf[f_id];
+                         * bmasfl[f_id]/b_face_surf[f_id];
         cs_real_t hint = taub[f_id] / b_dist[f_id];
 
         /* Neumann_scalar BC */
@@ -1812,7 +1813,7 @@ _pressure_correction_fv(int                   iterns,
   if (n_elts > 0) {
     ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t c_idx) {
       cs_lnum_t c_id = elt_ids[c_idx];
-      cpro_divu[c_id] -= cell_f_vol[c_id] * mst_val_p[c_idx];
+      cpro_divu[c_id] -= cell_vol[c_id] * mst_val_p[c_idx];
     });
   }
 
@@ -1872,7 +1873,7 @@ _pressure_correction_fv(int                   iterns,
 
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_real_t drom = crom_eos[c_id] - croma[c_id];
-          cpro_divu[c_id] +=  (1. + theta) *drom *cell_f_vol[c_id] /dt[c_id]
+          cpro_divu[c_id] +=  (1. + theta) *drom *cell_vol[c_id] /dt[c_id]
                              + theta *divu_prev[c_id];
         });
 
@@ -1883,7 +1884,7 @@ _pressure_correction_fv(int                   iterns,
       else {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_real_t drom = crom_eos[c_id] - croma[c_id];
-          cpro_divu[c_id] += drom *cell_f_vol[c_id] /dt[c_id];
+          cpro_divu[c_id] += drom *cell_vol[c_id] /dt[c_id];
         });
       }
     }
@@ -1892,7 +1893,7 @@ _pressure_correction_fv(int                   iterns,
         cs_real_t drom = crom_eos[c_id] - croma[c_id];
         cs_real_t drop =   (-1 + _coef ) * (cvar_pr[c_id] - cvara_pr[c_id])
                          * dc2[c_id];
-        cpro_divu[c_id] += (drom + drop) * cell_f_vol[c_id] / dt[c_id];
+        cpro_divu[c_id] += (drom + drop) * cell_vol[c_id] / dt[c_id];
       });
     }
 
@@ -1918,7 +1919,7 @@ _pressure_correction_fv(int                   iterns,
     cs_real_t rho2 = vof_parameters->rho2;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cpro_divu[c_id] -= cell_f_vol[c_id]*gamcav[c_id]*(1./rho2 - 1./rho1);
+      cpro_divu[c_id] -= cell_vol[c_id]*gamcav[c_id]*(1./rho2 - 1./rho1);
     });
   }
 
@@ -2454,19 +2455,19 @@ _pressure_correction_fv(int                   iterns,
   cs_field_t *f_err_est = cs_field_by_name_try("est_error_der_1");
   if (f_err_est != nullptr) {
     cs_real_t *c_estim_der = f_err_est->val;
-    const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      c_estim_der[c_id] = cs::abs(rhs[c_id]) / cell_vol[c_id];
+      cs_real_t dvol = cs_mq_cell_vol_inv(c_id, c_disable_flag, cell_vol);
+      c_estim_der[c_id] = cs::abs(rhs[c_id]) * dvol;
     });
   }
   f_err_est = cs_field_by_name_try("est_error_der_2");
   if (f_err_est != nullptr) {
     cs_real_t *c_estim_der = f_err_est->val;
-    const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      c_estim_der[c_id] = cs::abs(rhs[c_id]) / sqrt(cell_vol[c_id]);
+      cs_real_t dvol = cs_mq_cell_vol_inv(c_id, c_disable_flag, cell_vol);
+      c_estim_der[c_id] = cs::abs(rhs[c_id]) * sqrt(dvol);
     });
   }
 
@@ -2725,15 +2726,9 @@ _pressure_correction_fv(int                   iterns,
 
   /* Finalize optional post_processing algo field */
   if (f_divu != nullptr) {
-    int *c_disable_flag = fvq->c_disable_flag;
-    cs_lnum_t has_dc = fvq->has_disable_flag;
-     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-       cs_real_t dvol = 0;
-       const int ind = has_dc * c_id;
-       const int c_act = (1 - (has_dc * c_disable_flag[ind]));
-       if (c_act == 1)
-         dvol = 1.0/cell_f_vol[c_id];
-       cpro_divu[c_id] *= dvol;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cs_real_t dvol = cs_mq_cell_vol_inv(c_id, c_disable_flag, cell_vol);
+      cpro_divu[c_id] *= dvol;
     });
   }
 
