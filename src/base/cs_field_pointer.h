@@ -223,7 +223,9 @@ typedef enum {
   CS_ENUMF_(kindiff),        /*!< Particles kinetic diffusivity */
   CS_ENUMF_(coldiff),        /*!< Particles collisional diffusivity */
   CS_ENUMF_(elast),          /*!< Particles restitution coefficient */
-  CS_ENUMF_(c_alpha),        /*!< Weighting coefficient for GEMMA model */
+  CS_ENUMF_(flux_b),         /*!< Wall heat flux by phase */
+  CS_ENUMF_(tf_b),           /*!< Phase temperature at the wall */
+  CS_ENUMF_(exch_b),         /*!< Phase heat exchange coefficient */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
