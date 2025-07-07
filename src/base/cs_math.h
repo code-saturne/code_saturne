@@ -455,7 +455,7 @@ cs_math_matrix_gauss_inverse(const T  a[n][n],
     for (size_t j = 0; j < n; j++) {
       if (j != i) {
         T s = p_a[j][i] / p_a[i][i];
-        for (size_t k = j; k < 2*n; k++) {
+        for (size_t k = 0; k < 2*n; k++) {
           p_a[j][k] -= p_a[i][k] * s;
         }
       }
@@ -469,7 +469,7 @@ cs_math_matrix_gauss_inverse(const T  a[n][n],
     for (size_t j = 0; j < n; j++) {
       b[i][j] = p_a[i][n+j] * s;
     }
-  }
+ }
 }
 
 namespace cs {
