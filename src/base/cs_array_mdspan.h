@@ -58,6 +58,13 @@ namespace cs {
 
 namespace array {
 
+/*! Enum with layout options */
+enum class
+layout {
+  right,  /*!< Right layout */
+  left,   /*!< Left layout */
+  unknown /*!< Unknown layout */
+};
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -613,7 +620,7 @@ private:
  */
 /*----------------------------------------------------------------------------*/
 
-template <class T, int N>
+template <class T, int N, layout _Layout_ = layout::right>
 class span {
 public:
 
@@ -658,6 +665,8 @@ public:
     _data(nullptr),
     _mode(cs_alloc_mode)
   {
+    static_assert(_Layout_ == layout::right || _Layout_ == layout::left);
+
     set_size_(dims);
     allocate_(file_name, line_number);
   }
@@ -688,6 +697,7 @@ public:
     _data(nullptr),
     _mode(alloc_mode)
   {
+    static_assert(_Layout_ == layout::right || _Layout_ == layout::left);
     set_size_(dims);
     allocate_(file_name, line_number);
   }
@@ -711,6 +721,7 @@ public:
     _data(data),
     _mode(alloc_mode)
   {
+    static_assert(_Layout_ == layout::right || _Layout_ == layout::left);
     set_size_(dims);
   }
 
@@ -738,6 +749,7 @@ public:
   :
     _owner(false)
   {
+    static_assert(_Layout_ == layout::right || _Layout_ == layout::left);
     // Check that the span is correct
     set_size_(dims);
 
@@ -774,6 +786,7 @@ public:
 #endif
   )
   {
+    static_assert(_Layout_ == layout::right || _Layout_ == layout::left);
     set_size_(other._dim);
     _mode = other._mode;
 
@@ -1025,7 +1038,7 @@ public:
     if (_owner) {
       if (copy_data) {
         /* Temporary copy */
-        span<T,N> tmp(*this, false);
+        span<T,N,_Layout_> tmp(*this, false);
 
         /* Update this instance sizes */
         cs_lnum_t dims[N] = {d1, d2};
@@ -1033,9 +1046,19 @@ public:
         allocate_(file_name, line_number);
 
         /* Copy what can be copied */
-        for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
+        if (_Layout_ == layout::right) {
+          for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
+            for (cs_lnum_t j = 0; j < d2 && j < tmp.dim(1); j++) {
+              (*this)(i,j) = tmp(i,j);
+            }
+          }
+        }
+        else {
+          /* Layout left optimized copy */
           for (cs_lnum_t j = 0; j < d2 && j < tmp.dim(1); j++) {
-            _data[i*_offset[0] + j*_offset[1]] = tmp(i,j);
+            for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
+              (*this)(i,j) = tmp(i,j);
+            }
           }
         }
       }
@@ -1079,7 +1102,7 @@ public:
     if (_owner) {
       if (copy_data) {
         /* Temporary copy */
-        span<T,N> tmp(*this, false);
+        span<T,N, _Layout_> tmp(*this, false);
 
         /* Update this instance sizes */
         cs_lnum_t dims[N] = {d1, d2, d3};
@@ -1087,10 +1110,22 @@ public:
         allocate_(file_name, line_number);
 
         /* Copy what can be copied */
-        for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
-          for (cs_lnum_t j = 0; j < d2 && j < tmp.dim(1); j++) {
-            for (cs_lnum_t k = 0; k < d3 && k < tmp.dim(2); k++) {
-              (*this)(i,j,k) = tmp(i,j,k);
+        if (_Layout_ == layout::right) {
+          for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
+            for (cs_lnum_t j = 0; j < d2 && j < tmp.dim(1); j++) {
+              for (cs_lnum_t k = 0; k < d3 && k < tmp.dim(2); k++) {
+                (*this)(i,j,k) = tmp(i,j,k);
+              }
+            }
+          }
+        }
+        else {
+          /* Layout left optimized copy */
+          for (cs_lnum_t k = 0; k < d3 && k < tmp.dim(2); k++) {
+            for (cs_lnum_t j = 0; j < d2 && j < tmp.dim(1); j++) {
+              for (cs_lnum_t i = 0; i < d1 && i < tmp.dim(0); i++) {
+                (*this)(i,j,k) = tmp(i,j,k);
+              }
             }
           }
         }
@@ -1202,7 +1237,7 @@ public:
   )
   {
     assert(i >= 0 && i < N);
-    return _offset(i);
+    return _offset[i];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1342,13 +1377,24 @@ private:
 
     /* Compute offset values for getters */
 
-    /* Version for Layout right */
-    for (int i = 0; i < N-1; i++) {
-      _offset[i] = 1;
-      for (int j = i + 1; j < N; j++)
-        _offset[i] *= dims[j];
+    if (_Layout_ == layout::right) {
+      /* Version for Layout right */
+      for (int i = 0; i < N-1; i++) {
+        _offset[i] = 1;
+        for (int j = i + 1; j < N; j++)
+          _offset[i] *= dims[j];
+      }
+      _offset[N-1] = 1;
     }
-    _offset[N-1] = 1;
+    else if (_Layout_ == layout::left) {
+      for (int i = N-1; i >= 1; i--) {
+        _offset[i] = 1;
+        for (int j = i - 1; j >= 0; j--)
+          _offset[i] *= dims[j];
+      }
+      _offset[0] = 1;
+    }
+
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1413,8 +1459,30 @@ private:
   cs_alloc_mode_t _mode;
 };
 
+template<class T, int N>
+using span_r = span<T,N,layout::right>;
+
+template<class T, int N>
+using span_l = span<T,N,layout::left>;
+
 } /* namespace array */
 } /* namespace cs */
+
+/*--------------------------------------------------------------------------*/
+/* Usefull aliases without namespace */
+/*--------------------------------------------------------------------------*/
+
+template<class T>
+using cs_array_t = cs::array::data_array<T>;
+
+template<class T, int N, cs::array::layout L=cs::array::layout::right>
+using cs_span_t = cs::array::span<T,N,L>;
+
+template<class T, int N>
+using cs_span_right_t = cs::array::span<T, N, cs::array::layout::right>;
+
+template<class T, int N>
+using cs_span_left_t = cs::array::span<T, N, cs::array::layout::left>;
 
 /*----------------------------------------------------------------------------*/
 
