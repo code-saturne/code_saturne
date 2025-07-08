@@ -73,7 +73,6 @@ cs_intprf.h
 noinst_LIBRARIES = libcsatmo.a
 libcsatmo_a_SOURCES = \
 atr1vf.f90 \
-chem_solvelu.f90 \
 cs_air_props.cpp \
 cs_at_opt_interp.cpp \
 cs_at_data_assim.cpp \

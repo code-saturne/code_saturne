@@ -4407,13 +4407,15 @@ end subroutine dratedc_3
 !>                                   On exit, an LU factorization of m
 !______________________________________________________________________________
 
-subroutine lu_decompose_3 (ns,m)
+subroutine lu_decompose_3 (ns, m) &
+  bind(C, name='cs_f_lu_decompose_3')
+  use, intrinsic :: iso_c_binding
 
 implicit none
 
 ! Arguments
 
-integer ns
+integer(c_int), value :: ns
 double precision m(ns,ns)
 
 ! Local variables
@@ -6912,13 +6914,15 @@ end subroutine lu_decompose_3
 !
 !______________________________________________________________________________
 
-subroutine lu_solve_3 (ns, m, x)
+subroutine lu_solve_3 (ns, m, x)  &
+  bind(C, name='cs_f_lu_solve_3')
+  use, intrinsic :: iso_c_binding
 
 implicit none
 
 ! Arguments
 
-integer ns
+integer(c_int), value :: ns
 double precision m(ns,ns)
 double precision x(ns)
 

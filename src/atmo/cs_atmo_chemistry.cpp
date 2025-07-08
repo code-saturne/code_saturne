@@ -279,12 +279,40 @@ cs_f_ssh_jacdchemdc(int        nespg,
                     cs_real_t  dldrdc[]);
 
 void
-cs_solvlin (int       ns,
-            int       kindlu,
-            cs_real_t dla[],
-            cs_real_t dlalu[],
-            cs_real_t dlx[],
-            cs_real_t dlb[]);
+cs_f_ssh_lu_decompose(int n_species_g,
+                      cs_real_t dlalu[]);
+
+void
+cs_f_ssh_lu_solve(int       n_species_g,
+                  cs_real_t dlalu[],
+                  cs_real_t dlx[]);
+
+void
+cs_f_lu_decompose_1(int n_species_g,
+                    cs_real_t dlalu[]);
+
+void
+cs_f_lu_solve_1(int       n_species_g,
+                cs_real_t dlalu[],
+                cs_real_t dlx[]);
+
+void
+cs_f_lu_decompose_2(int n_species_g,
+                    cs_real_t dlalu[]);
+
+void
+cs_f_lu_solve_2(int       n_species_g,
+                cs_real_t dlalu[],
+                cs_real_t dlx[]);
+
+void
+cs_f_lu_decompose_3(int n_species_g,
+                    cs_real_t dlalu[]);
+
+void
+cs_f_lu_solve_3(int       n_species_g,
+                cs_real_t dlalu[],
+                cs_real_t dlx[]);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -626,6 +654,81 @@ _strtolower(char        *dest,
   }
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Solver of AX=B with LU decomposition of A for atmospheric chemical
+ *         systems
+ *
+ * \param[in]      kindlu        flag for LU decomposition
+ * \param[in]      dla           Matrix A in AX=B
+ * \param[in,out]  dlalu         Matrix A in AX=B after LU decomposition
+ * \param[in]      dlx           Vector of unknowns X in AX=B
+ * \param[in]      dlb           Vector B in AX=B
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_decompose_lu(const int  n_species_g,
+              const int  kindlu,
+              cs_real_t  dla[],
+              cs_real_t  dlalu[],
+              cs_real_t  dlx[],
+              cs_real_t  dlb[])
+{
+  const cs_atmo_chemistry_t *atmo_chem = cs_glob_atmo_chemistry;
+
+
+  /* Setup
+     ----- */
+
+  for (int ji = 0; ji < n_species_g; ji++)
+    dlx[ji] = dlb[ji];
+
+  /* Compute DLx
+     ----------- */
+
+  if (kindlu == 0) {
+    for (int jj = 0; jj < n_species_g; jj++)
+      for (int ji = 0; ji < n_species_g; ji++)
+        dlalu[ji + jj*n_species_g] = dla[ji + jj*n_species_g];
+
+   if (atmo_chem->model == 1) {
+     cs_f_lu_decompose_1(n_species_g, dlalu);
+     cs_f_lu_solve_1(n_species_g, dlalu, dlx);
+   }
+   else if (atmo_chem->model == 2) {
+     cs_f_lu_decompose_2(n_species_g, dlalu);
+     cs_f_lu_solve_2(n_species_g, dlalu, dlx);
+   }
+   else if (atmo_chem->model == 3) {
+     cs_f_lu_decompose_3(n_species_g, dlalu);
+     cs_f_lu_solve_3(n_species_g, dlalu, dlx);
+   }
+   else if (atmo_chem->model == 4) {
+     cs_f_ssh_lu_decompose(n_species_g, dlalu);
+     cs_f_ssh_lu_solve(n_species_g, dlalu, dlx);
+   }
+
+  }
+  else {
+    if (atmo_chem->model == 1) {
+      cs_f_lu_solve_1(n_species_g, dlalu, dlx);
+    }
+    else if (atmo_chem->model == 2) {
+      cs_f_lu_solve_2(n_species_g, dlalu, dlx);
+    }
+    else if (atmo_chem->model == 3) {
+      cs_f_lu_solve_3(n_species_g, dlalu, dlx);
+    }
+    else if (atmo_chem->model == 4) {
+      cs_f_ssh_lu_solve(n_species_g, dlalu, dlx);
+   }
+
+  }
+
+}
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief  Rosenbrock solver for atmospheric chemistry
@@ -726,7 +829,7 @@ _rosenbrock_solver(cs_real_t dlconc[],
      dlmat[jj + jj*n_species_g] = 1.0 + dlmat[jj + jj*n_species_g];
    }
 
-   cs_solvlin (n_species_g,0, dlmat, dlmatlu, dlk1, dlb1);
+   _decompose_lu(n_species_g, 0, dlmat, dlmatlu, dlk1, dlb1);
 
    /* Computes K2 system: DLmat * K2 = DLb2
       -------------------------------------- */
@@ -768,7 +871,7 @@ _rosenbrock_solver(cs_real_t dlconc[],
    for (int ji = 0; ji < n_species_g; ji++)
      dlb2[ji] =  dlr[ji] - 2.0*dlk1[ji];
 
-   cs_solvlin (n_species_g,1, dlmat, dlmatlu, dlk2, dlb2);
+   _decompose_lu(n_species_g, 1, dlmat, dlmatlu, dlk2, dlb2);
 
    /* Outputs - Compute DLconc - Advance the time
       ------------------------------------------- */

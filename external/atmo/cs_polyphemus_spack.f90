@@ -202,13 +202,16 @@ end subroutine ssh_jacdchemdc
 !>                                   On exit, an LU factorization of m
 !______________________________________________________________________________
 
-subroutine ssh_lu_decompose (ns,m)
+subroutine ssh_lu_decompose (ns,m)  &
+  bind(C, name='cs_f_ssh_lu_decompose')
+  use, intrinsic :: iso_c_binding
+
 
 implicit none
 
 ! Arguments
 
-integer ns
+integer(c_int), value :: ns
 double precision m(ns,ns)
 
 !--------
@@ -237,13 +240,15 @@ end subroutine ssh_lu_decompose
 !                                  on exit, the solution of the equation
 !______________________________________________________________________________
 
-subroutine ssh_lu_solve (ns, m, x)
+subroutine ssh_lu_solve (ns, m, x)  &
+  bind(C, name='cs_f_ssh_lu_solve')
+  use, intrinsic :: iso_c_binding
 
 implicit none
 
 ! Arguments
 
-integer ns
+integer(c_int), value :: ns
 double precision m(ns,ns)
 double precision x(ns)
 

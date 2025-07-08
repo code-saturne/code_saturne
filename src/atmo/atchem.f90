@@ -178,6 +178,74 @@ module atchem
       integer(c_int),value :: mode
     end subroutine cs_atmo_read_chemistry_profile
 
+    subroutine lu_decompose_1 (ns, m) &
+      bind(C, name='cs_f_lu_decompose_1')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns
+      double precision m(ns,ns)
+    end subroutine lu_decompose_1
+
+    subroutine lu_decompose_2 (ns, m) &
+      bind(C, name='cs_f_lu_decompose_2')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns
+      double precision m(ns,ns)
+    end subroutine lu_decompose_2
+
+    subroutine lu_decompose_3 (ns, m) &
+      bind(C, name='cs_f_lu_decompose_3')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns
+      double precision m(ns,ns)
+    end subroutine lu_decompose_3
+
+    subroutine ssh_lu_decompose (ns,m)  &
+      bind(C, name='cs_f_ssh_lu_decompose')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns
+      double precision m(ns,ns)
+    end subroutine ssh_lu_decompose
+
+    subroutine ssh_lu_solve (ns, m, x)  &
+      bind(C, name='cs_f_ssh_lu_solve')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns
+      double precision m(ns,ns)
+      double precision x(ns)
+    end subroutine ssh_lu_solve
+
+    subroutine lu_solve_1 (ns, m, x)  &
+      bind(C, name='cs_f_lu_solve_1')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns
+      double precision m(ns,ns)
+      double precision x(ns)
+    end subroutine lu_solve_1
+
+    subroutine lu_solve_2 (ns, m, x) &
+      bind(C, name='cs_f_lu_solve_2')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns
+      double precision m(ns,ns)
+      double precision x(ns)
+    end subroutine lu_solve_2
+
+    subroutine lu_solve_3(ns, m, x) &
+      bind(C, name='cs_f_lu_solve_3')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ns
+      double precision m(ns,ns)
+      double precision x(ns)
+    end subroutine lu_solve_3
+
   end interface
 
   !=============================================================================
