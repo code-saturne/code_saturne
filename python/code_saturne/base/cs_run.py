@@ -140,7 +140,11 @@ def arg_parser(argv):
     Process the passed command line arguments.
     """
 
-    prog = os.path.basename(sys.argv[0]) + " " + sys.argv[1]
+    try:
+        prog = os.path.basename(sys.argv[0]) + " " + sys.argv[1]
+    except Exception:
+        prog = "code_saturne"
+
     parser = argparse.ArgumentParser(description="Run a case or specified run stages.",
                                      prog=prog)
 

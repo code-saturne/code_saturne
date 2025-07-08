@@ -865,6 +865,10 @@ def source_shell_script(path):
 
     output = p.communicate()[0]
 
+    # clean environment to prevent conflict with that of salome
+    if "SALOME_ROOT_DIR" in os.environ.keys():
+        os.environ = {}
+
     for line in output.splitlines():
 
         (key, _, value) = line.partition("=")
