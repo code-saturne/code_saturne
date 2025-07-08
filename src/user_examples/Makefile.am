@@ -34,6 +34,7 @@ endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src -I$(top_builddir)/src \
+$(CPPFLAGS) \
 $(CPPFLAGS_PLE) \
 $(PETSC_CPPFLAGS) \
 $(HYPRE_CPPFLAGS) \

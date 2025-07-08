@@ -56,7 +56,7 @@ if HAVE_BACKEND
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src -I$(top_builddir)/src \
-$(CPPFLAGS_PLE) \
+$(CPPFLAGS) $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(CPPFLAGS_BLAS) \
 $(CPPFLAGS_MUMPS)
 

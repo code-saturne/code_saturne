@@ -420,7 +420,7 @@ cs_paramedmem_remapper.h
 
 libcs_medcoupling_a_CPPFLAGS = \
 -I$(top_srcdir)/src -I$(top_builddir)/src \
-$(CPPFLAGS_PLE) \
+$(CPPFLAGS) $(CPPFLAGS_PLE) \
 $(MEDCOUPLING_CPPFLAGS) \
 $(MED_CPPFLAGS) \
 $(HDF5_CPPFLAGS) \
