@@ -40,13 +40,13 @@
   structures:
 
   \code{.c}
-  cs_mobile_structures_add_n_structures(3);
+  cs_mobile_structures_add_n_int_structures(3);
   \endcode
 
   Coupling with code_aster can be declared in a similar manner, using:
 
   \code{.c}
-  cs_mobile_structures_add_external_structures();
+  cs_mobile_structures_add_ast_structures();
   \endcode
 
   \section cs_user_model_h_coupling_zone Selecting coupled faces.

@@ -880,10 +880,10 @@ cs_gui_mobile_mesh_structures_add(void)
   }
 
   if (n_i_struct > 0)
-    cs_mobile_structures_add_n_structures(n_i_struct);
+    cs_mobile_structures_add_n_int_structures(n_i_struct);
 
   if (n_e_struct > 0) {
-    cs_mobile_structures_add_external_structures();
+    cs_mobile_structures_add_ast_structures();
   }
 }
 

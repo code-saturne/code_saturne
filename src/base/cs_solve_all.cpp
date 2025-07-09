@@ -1109,8 +1109,8 @@ cs_solve_all()
 
   cs_local_time_step_compute(cs_glob_ale_data->ale_iteration);
   const int n_init_f_ale  = cs_glob_ale_n_ini_f;
-  const int nb_ext_structs = cs_ast_coupling_n_couplings();
-  if (nb_ext_structs > 0 && cs_glob_ale_data->ale_iteration > n_init_f_ale)
+  const int nb_ast_structs = cs_mobile_structures_get_n_ast_structures();
+  if (nb_ast_structs > 0 && cs_glob_ale_data->ale_iteration > n_init_f_ale)
     cs_ast_coupling_exchange_time_step(CS_F_(dt)->val);
 
   if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
@@ -1218,14 +1218,15 @@ cs_solve_all()
       /* Movement of structures in ALE and test implicit loop */
 
       const int nb_int_structs = cs_mobile_structures_get_n_int_structures();
-      if (nb_int_structs > 0 || nb_ext_structs > 0) {
+      const int nb_ext_structs = cs_mobile_structures_get_n_ext_structures();
+      if (nb_int_structs + nb_ext_structs + nb_ast_structs > 0) {
         cs_mobile_structures_displacement(cs_glob_ale_data->ale_iteration,
                                           italim, &itrfin);
         if (itrfin != -1) {
           italim++;
           need_new_solve = true;
         }
-        else if (nb_ext_structs > 0) {
+        else if (nb_ast_structs > 0) {
           cs_ast_coupling_save_values();
         }
       }

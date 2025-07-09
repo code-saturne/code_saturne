@@ -2875,7 +2875,7 @@ _init_user(void)
 
   /* Mobile structures
    * After call to cs_gui_mobile_mesh_structures_add possible
-   * call by user to cs_mobile_structures_add_n_structures */
+   * call by user to cs_mobile_structures_add_n_int_structures */
   if (cs_glob_ale != CS_ALE_NONE)
     cs_mobile_structures_setup();
 }

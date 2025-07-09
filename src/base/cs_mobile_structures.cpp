@@ -152,6 +152,7 @@ _mobile_structures_create(void)
   ms->n_int_structs = 0;
 
   ms->has_ext_structs = false;
+  ms->has_ast_structs = false;
 
   ms->aexxst = -cs_math_big_r;
   ms->bexxst = -cs_math_big_r;
@@ -724,9 +725,10 @@ cs_mobile_structures_initialize(void)
   cs_mobile_structures_t *ms = _mobile_structures;
 
   int n_int_structs = cs_mobile_structures_get_n_int_structures();
-  int n_ast_structs = cs_mobile_structures_get_n_ext_structures();
+  int n_ast_structs = cs_mobile_structures_get_n_ast_structures();
+  int n_ext_structs = cs_mobile_structures_get_n_ext_structures();
 
-  if (n_int_structs + n_ast_structs == 0)
+  if (n_int_structs + n_ast_structs + n_ext_structs == 0)
     return;
 
   const cs_mesh_t *m = cs_glob_mesh;
@@ -753,8 +755,8 @@ cs_mobile_structures_initialize(void)
      same code_aster domain, so this information not used for those
      structures. */
 
-  int m_vals[2] = {0, 0};
-  cs_lnum_t n_ast_faces = 0;
+  int       m_vals[3]   = { 0, 0, 0 };
+  cs_lnum_t n_ast_faces = 0, n_ext_faces = 0;
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
     int str_num = idfstr[i];
@@ -768,9 +770,9 @@ cs_mobile_structures_initialize(void)
     }
   }
 
-  cs_parall_max(2, CS_INT_TYPE, m_vals);
+  cs_parall_max(3, CS_INT_TYPE, m_vals);
 
-  /* Compare number os structures to restart */
+  /* Compare number of structures to restart */
 
   if (m_vals[0] > n_int_structs) {
     cs_parameters_error(
@@ -831,7 +833,7 @@ cs_mobile_structures_initialize(void)
      and indicate that no implicitation iterations for the structure
      displacement will be needed. */
 
-  if (n_int_structs + n_ast_structs == 0) {
+  if (n_int_structs + n_ast_structs + n_ext_structs == 0) {
     cs_glob_mobile_structures_n_iter_max = 1;
 
     CS_FREE(ms->idfstr);
@@ -870,11 +872,12 @@ cs_mobile_structures_log_setup(void)
   cs_mobile_structures_t *ms = _mobile_structures;
 
   int n_int_structs = cs_mobile_structures_get_n_int_structures();
-  int n_ast_structs = cs_mobile_structures_get_n_ext_structures();
+  int n_ast_structs = cs_mobile_structures_get_n_ast_structures();
+  int n_ext_structs = cs_mobile_structures_get_n_ext_structures();
 
   cs_log_t log = CS_LOG_SETUP;
 
-  if (n_int_structs + n_ast_structs == 0) {
+  if (n_int_structs + n_ast_structs + n_ext_structs == 0) {
     cs_log_printf(log,
                   _("\n"
                     "ALE: no coupled structures\n\n"));
@@ -983,6 +986,12 @@ cs_mobile_structures_log_setup(void)
                   n_ast_structs);
   }
 
+  if (n_ext_structs > 0) {
+    cs_log_printf(log,
+                  ("  Number of coupled external structures: %d\n\n"),
+                  n_ext_structs);
+  }
+
   cs_log_separator(log);
 }
 
@@ -1029,6 +1038,28 @@ cs_mobile_structures_get_n_ext_structures(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Query number of aster mobile structures defined.
+ *
+ * \return  number of aster mobile structures
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mobile_structures_get_n_ast_structures(void)
+{
+  int retval = 0;
+
+  if (_mobile_structures != nullptr) {
+    if (_mobile_structures->has_ast_structs) {
+      retval = 1;
+    }
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add internal mobile structures.
  *
  * This function may be called multiple time to change the number of
@@ -1039,7 +1070,7 @@ cs_mobile_structures_get_n_ext_structures(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_add_n_structures(int  n_structures)
+cs_mobile_structures_add_n_int_structures(int n_structures)
 {
   if (n_structures > 0) {
     cs_mobile_structures_t *ms = _mobile_structures;
@@ -1057,14 +1088,11 @@ cs_mobile_structures_add_n_structures(int  n_structures)
 /*!
  * \brief  Add external mobile structures.
  *
- * This function may be called multiple time to change the number of
- * mobile structures.
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_add_external_structures()
+cs_mobile_structures_add_ext_structures()
 {
   cs_mobile_structures_t *ms = _mobile_structures;
 
@@ -1074,6 +1102,26 @@ cs_mobile_structures_add_external_structures()
   }
 
   ms->has_ext_structs = true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add aster mobile structures.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mobile_structures_add_ast_structures()
+{
+  cs_mobile_structures_t *ms = _mobile_structures;
+
+  if (ms == nullptr) {
+    ms                 = _mobile_structures_create();
+    _mobile_structures = ms;
+  }
+
+  ms->has_ast_structs = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1142,9 +1190,10 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
   cs_mobile_structures_t *ms = _mobile_structures;
 
   int n_int_structs = cs_mobile_structures_get_n_int_structures();
-  int n_ast_structs = cs_mobile_structures_get_n_ext_structures();
+  int n_ast_structs = cs_mobile_structures_get_n_ast_structures();
+  int n_ext_structs = cs_mobile_structures_get_n_ext_structures();
 
-  if (n_int_structs + n_ast_structs == 0)
+  if (n_int_structs + n_ast_structs + n_ext_structs == 0)
     return;
 
   const cs_mesh_t *m = cs_glob_mesh;
@@ -1243,7 +1292,7 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
 
   /* External structures (code_aster) */
 
-  if (n_ast_structs > 0) {
+  if (n_ast_structs + n_ext_structs > 0) {
     const cs_lnum_t *b_face_vtx_idx = m->b_face_vtx_idx;
     const cs_lnum_t *b_face_vtx     = m->b_face_vtx_lst;
 
@@ -1271,7 +1320,9 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
       cs_field_t *f_displ = cs_field_by_name("mesh_displacement");
       disale              = (cs_real_3_t *)(f_displ->val);
 
-      cs_ast_coupling_compute_displacement(disale);
+      if (n_ast_structs > 0) {
+        cs_ast_coupling_compute_displacement(disale);
+      }
     }
   }
 
@@ -1357,9 +1408,10 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   cs_mobile_structures_t *ms = _mobile_structures;
 
   int n_int_structs = cs_mobile_structures_get_n_int_structures();
-  int n_ast_structs = cs_mobile_structures_get_n_ext_structures();
+  int n_ast_structs = cs_mobile_structures_get_n_ast_structures();
+  int n_ext_structs = cs_mobile_structures_get_n_ext_structures();
 
-  if (n_int_structs + n_ast_structs == 0)
+  if (n_int_structs + n_ast_structs + n_ext_structs == 0)
     return;
 
   /* Initialization */
@@ -1434,12 +1486,10 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
           cfopre * ms->forstr[i][j] + (1.0 - cfopre) * ms->forsta[i][j];
       }
     }
-  }
 
-  /* Structure characteristics defined by the user
-     --------------------------------------------- */
+    /* Structure characteristics defined by the user
+      --------------------------------------------- */
 
-  if (n_int_structs > 0) {
     cs_gui_mobile_mesh_internal_structures(ms->xmstru,
                                            ms->xcstru,
                                            ms->xkstru,
@@ -1523,11 +1573,12 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   /* Convergence test
      ---------------- */
 
-  int icvext = 0, icvint = 0, icved = 0;
+  int icvast = 1, icvint = 1, icvext = 1;
 
   cs_real_t delta = 0.;
 
   if (n_int_structs > 0) {
+    icvint = 0;
     for (int i = 0; i < n_int_structs; i++) {
       delta += cs_math_3_square_distance(ms->xstr[i], ms->xstp[i]);
     }
@@ -1541,17 +1592,11 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
 
   if (n_ast_structs > 0) {
     delta  = cs_ast_coupling_get_current_residual();
-    icvext = cs_ast_coupling_get_current_cvg();
+    icvast = cs_ast_coupling_get_current_cvg();
   }
 
-  if (n_int_structs > 0) {
-    if (n_ast_structs > 0)
-      icved = icvext*icvint;
-    else
-      icved = icvint;
-  }
-  else if (n_ast_structs > 0)
-    icved = icvext;
+  /* Sum up convergence test */
+  int icved = icvint * icvast * icvext;
 
   if (eqp->verbosity >= 2)
     bft_printf(_("            Implicit ALE: iter=%5d drift=%12.5e\n"),
@@ -1728,7 +1773,7 @@ cs_mobile_structures_restart_read(cs_restart_t  *r)
   int n_str[2] = {0, 0}, n_str_prev[2] = {0, 0};
 
   n_str[0] = cs_mobile_structures_get_n_int_structures();
-  n_str[1] = cs_mobile_structures_get_n_ext_structures();
+  n_str[1] = cs_mobile_structures_get_n_ast_structures();
 
   if (n_str[0] + n_str[1] == 0)
     return;
@@ -1852,7 +1897,7 @@ cs_mobile_structures_restart_write(cs_restart_t  *r)
   int n_str[2] = {0, 0};
 
   n_str[0] = cs_mobile_structures_get_n_int_structures();
-  n_str[1] = cs_mobile_structures_get_n_ext_structures();
+  n_str[1] = cs_mobile_structures_get_n_ast_structures();
 
   if (n_str[0] + n_str[1] == 0)
     return;
