@@ -1884,7 +1884,8 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
                              (const_cast<cs_real_t *>(mc->d_val));
 
     unsigned int blocksize = 128;
-    unsigned int gridsize = cs_cuda_grid_size(ms->n_rows*3, blocksize);
+    unsigned int gridsize = cs_cuda_grid_size(ms->n_rows*matrix->db_size,
+                                              blocksize);
 
     if (matrix->db_size == 3)
       _b_3_3_spmv_diag<<<gridsize, blocksize, 0, _stream>>>
@@ -1994,7 +1995,8 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
                              (const_cast<cs_real_t *>(mc->d_val));
 
     unsigned int blocksize = 128;
-    unsigned int gridsize = cs_cuda_grid_size(ms->n_rows*3, blocksize);
+    unsigned int gridsize = cs_cuda_grid_size(ms->n_rows*matrix->db_size,
+                                              blocksize);
 
     if (matrix->db_size == 3)
       _b_3_3_spmv_diag<<<gridsize, blocksize, 0, _stream>>>
