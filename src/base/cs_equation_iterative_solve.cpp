@@ -449,20 +449,20 @@ _equation_iterative_solve_strided(int                   idtvar,
   CS_PROFILE_MARK_LINE();
 
   cs_matrix_compute_coeffs<stride>(a,
-                           f,
-                           iconvp,
-                           idiffp,
-                           tensorial_diffusion,
-                           ndircp,
-                           eb_size,
-                           thetap,
-                           relaxp,
-                           bc_coeffs,
-                           fimp,
-                           i_massflux,
-                           b_massflux,
-                           i_viscm,
-                           b_viscm);
+                                   f,
+                                   iconvp,
+                                   idiffp,
+                                   tensorial_diffusion,
+                                   ndircp,
+                                   eb_size,
+                                   thetap,
+                                   relaxp,
+                                   bc_coeffs,
+                                   fimp,
+                                   i_massflux,
+                                   b_massflux,
+                                   i_viscm,
+                                   b_viscm);
 
   /*===========================================================================
    * Iterative process to handle non orthogonalities (starting from the
@@ -1338,12 +1338,11 @@ _equation_iterative_solve_strided(int                   idtvar,
   /* Save diagonal in case we want to use it */
 
   if (stride == 3) {
-    const m_t *dam = reinterpret_cast<const m_t *>(cs_matrix_get_diagonal(a));
+    const cs_real_t *dam = cs_matrix_get_diagonal(a);
+    cs_real_t *p_fimp = reinterpret_cast<cs_real_t *>(fimp);
 
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t i = 0; i < stride; i++)
-        for (cs_lnum_t j = 0; j < stride; j++)
-          fimp[c_id][i][j] = dam[c_id][i][j];
+    ctx.parallel_for(n_cells*stride*stride, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      p_fimp[i] = dam[i];
     });
 
     ctx.wait();
