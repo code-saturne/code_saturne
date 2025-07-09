@@ -132,9 +132,13 @@ Other advanced profiling tools may be provided by various vendors, for example:
 - [VTune](https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler-documentation.html) for Intel systems.
 - [NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems) for NVIDIA GPUs.
 
-### Using VTune with code_saturne
+### Preparing the execution
 
-If Intel's <span style="color: rgb(48,119,16)">VTune</span> is available, the following procedure may be used:
+Whatever the profiling tool used, the `code_saturne run` (or `code_saturne submit`) command's
+`--tool-args` or `--mpi-tool-args` command may be used to insert a profiling command in the
+code's launch sequence.
+
+The profiling can also be prepared in a step by step manner, described here.
 
 - First, initialize the execution directory, using one of the following methods:
   - From the GUI, in the advanced run/job submission options, check "initialize only", then submit the computation.
@@ -142,45 +146,60 @@ If Intel's <span style="color: rgb(48,119,16)">VTune</span> is available, the fo
   In either case, the code will prepare the execution directory,
   and preprocess the mesh if needed, but not remove the executable and temporary script.
 
-- Once the stage has finished, `cd` to the execution directory, and edit the <span style="color: rgb(48,119,16)">`run_solver`</span> script script:
-  - Add commands necessary to load the profiler's environment.
-    For example, on the EDF Cronos cluster, this requires adding
+- Once the stage has finished, `cd` to the execution directory, and edit the <span style="color: rgb(48,119,16)">`run_solver`</span> script script as described in the following sections, depending on the profiling too used.
+
+### Running the code
+
+Once the `run_solver script` has been adapted for profiling, it can be executed.
+
+  - If using a batch system (usually true on a cluster), you will need to submit the `run_solver` script rather than running it directly.
+    * If you are familiar with batch commands, pass the required commands to the submission command.
+    * Otherwise, you can copy the batch headers at the beginning of the `runcase` file to the same position (starting at line 2) in the `run_solver` file.
+      - With the SLURM resource manager, this means:
+        * Copy all lines of `runcase` starting with `#SLURM` to `run_solver`.
+        * Run
+  ```{.sh}
+  sbatch run_solver
+  ```
+    - With other systems, the syntax will be slightly different but the principle remains the same.
+
+### Using VTune with code_saturne
+
+If Intel's <span style="color: rgb(48,119,16)">VTune</span> is available, the following procedure may be used after
+the preparation step described above.
+
+Edit the <span style="color: rgb(48,119,16)">`run_solver`</span> script script:
+
+  - In or near the section where other modules are loaded, add commands necessary to load the profiler's environment.
+  For example, on the EDF Cronos cluster, this requires adding
 ```{.sh}
 module load intel-Basekit
 ```
-    in the section where other modules are added.
+
   - Search for the line actually launching the solver, near the end of the script;
     * Before that line, add:
-```{.sh}
+```
 # Select a different profiling directory at each run
 export DIR_PROF=profiling.$SLURM_NTASKS.$SLURM_JOB_ID
+```
 
-# Avoid using /tmp, which may be too small
+  - Avoid using /tmp, which may be too small. For example, add:
+````
 export TMPDIR=$SCRATCH
 ```
-    - Before the `cs_solver` command, insert the profiling commands.
-      For example, replace
+
+  - Before the `cs_solver` command, insert the profiling commands.
+    For example, replace
 ```{.sh}
 mpiexec <options> ./cs_solver --mpi "$@"
 ```
-      with:
+    with:
 ```{.sh}
 mpiexec <options> -q -collect hotspots -r $DIR_PROF -data-limit=4000 -- ./cs_solver --mpi "$@"
 ```
-      (`mpiexec` might be replaced by another command, such as `srun` depending on the system, but the logic remains the same).
+    (`mpiexec` might be replaced by another command, such as `srun` depending on the system, but the logic remains the same).
 
-- If using a batch system (usually true on a cluster), you will need to submit the `run_solver` script rather than running it directly.
-  * If you are familiar with batch commands, pass the required commands to the submission command.
-  * Otherwise, you can copy the batch headers at the beginning of the `runcase` file to the same position (starting at line 2) in the `run_solver` file.
-    - With the SLURM resource manager, this means:
-      * Copy all lines of `runcase` starting with `#SLURM` to `run_solver`.
-      * Run
-```{.sh}
-sbatch run_solver
-```
-    - With other systems, the syntax will be slightly different but the principle remains the same.
-
-- Once the code has finished running, simply run
+Once the `run_solver` code has finished running, simply run
 ```{.sh}
 vtune-gui <profiling_directory_name>
 ```
@@ -193,3 +212,54 @@ VTune allows many exploration views, for example:
 or
 
 \image html dg/vtune_screen_hotspots.png "VTune hotspots view" width=80%
+
+### Using NVIDIA Nsight tools
+
+If NVIDIA's's <span style="color: rgb(48,119,16)">Nsight Systems</span> is available, a similar procedure may be used following
+the common preparation step described above.
+
+Edit the <span style="color: rgb(48,119,16)">`run_solver`</span> script script:
+
+  - In or near the section where other modules are loaded, add commands necessary to load the profiler's environment, if needed.
+
+  - Search for the line actually launching the solver, near the end of the script;
+
+  - Before the `cs_solver` command, insert the profiling commands.
+    For example, replace
+    ```{.sh}
+    ./cs_solver
+    ```
+    with:
+    ```{.sh}
+    nsys profile [options] ./cs_solver"
+    ```  
+    or:
+    ```{.sh}
+    nsys launch ./cs_solver"
+    ```
+    (see the [Nsight Systems user documentation](https://docs.nvidia.com/nsight-systems/UserGuide/index.html) for more options)
+
+
+Once the code has finished running, simply run
+```{.sh}
+  nsys-ui
+```
+and load the profiling output file.
+
+**Profiling with an annotated build**
+
+When using Nsight Systems, it is often difficult to match CUDA kernels with the calling code. Backtraces are generated at sampling intervals, which is very useful, but using NVIDIA's [NVTX](https://docs.nvidia.com/tools-extension/index.html) tools extension, it is possible to add annotations to the profiling timiline, making analysis much easier.
+
+At code_saturne's `configure` stage, this requires adding:
+```{.sh}
+CPPFLAGS="CPPFLAGS=-DCS_PROFILING=CS_PROFILING_NVTX -I<include_path_to_nvtx3>
+```
+
+The path to a header directory including the `nvtx3` subdirectory may depend on the toolkit installation. These may include:
+
+- `$NVHPC_ROOT/cuda/<cuda_version>/targets/x86_64-linux/include` (using the NVHPC tookkit)
+- `/opt/cuda/targets/x86_64-linux/include` (using a distribution-based install, here on Arch Linux)
+
+When profiling such a build, annotations then appear in the NVTX view under the *nsys-ui* visualizer.
+
+\image html dg/nsys_ui_nvtx_annot.png "Nsight Systems with NVTX annotations" width=80%
