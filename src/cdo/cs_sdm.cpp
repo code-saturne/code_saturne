@@ -1487,19 +1487,19 @@ cs_sdm_lu_compute(const cs_sdm_t   *m,
     if (fabs(pivot) < cs_math_zero_threshold)
       bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
     const cs_real_t  invp = 1./pivot;
+    const cs_real_t *rk_fact = facto + k * n;
 
-    for (cs_lnum_t i = k+1; i < m->n_rows; i++) { /* Loop on rows */
+    for (cs_lnum_t i = k + 1; i < n; i++) { /* Loop on rows */
 
-      cs_real_t  *pr_fact = facto + (i-1)*n;
-      cs_real_t  *cr_fact = pr_fact + n;
+      cs_real_t *ri_fact = facto + i * n;
 
       /* L-part: lower part of the (i,i-1) entry */
-      cr_fact[k] *= invp;
-      const double  lval = cr_fact[k];
+      ri_fact[k] *= invp;
+      const cs_real_t lval = ri_fact[k];
 
       /* U-part */
-      for (cs_lnum_t j = k+1; j < n; j++) {
-        cr_fact[j] -= lval*pr_fact[j];
+      for (cs_lnum_t j = k + 1; j < n; j++) {
+        ri_fact[j] -= lval * rk_fact[j];
 
       } /* Loop on j (columns) */
 
@@ -1584,12 +1584,11 @@ cs_sdm_lu_solve(cs_lnum_t          n_rows,
   /* Backward pass: U.sol = y */
 
   for (cs_lnum_t i = n_rows-1; i >= 0; i--) { /* Loop on rows */
+    const cs_real_t *ri_fact = facto + i * n_rows;
     for (cs_lnum_t j = n_rows-1; j > i; j--) { /* Loop on columns */
-
-      sol[i] -= sol[j]*facto[i*n_rows + j];
-
+      sol[i] -= sol[j] * ri_fact[j];
     }
-    sol[i] /= facto[i*(n_rows + 1)];
+    sol[i] /= ri_fact[i];
   }
 }
 
