@@ -255,7 +255,9 @@ _clip_alpha(cs_dispatch_context  &ctx,
   int clip_a_id = cs_field_get_key_int(cs_field_by_id(f_id), kclipp);
   if (clip_a_id > -1) {
     cpro_a_clipped = cs_field_by_id(clip_a_id)->val;
-    cs_array_real_fill_zero(n_cells, cpro_a_clipped);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cpro_a_clipped[c_id] = 0.;
+    });
   }
 
   /* Min, max, and clipping (edit to avoid exactly zero values) */
@@ -1323,17 +1325,13 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   if (cs_glob_turb_rans_model->irijec == 1) { // todo
 
-    cs_array_real_fill_zero(6*n_cells, (cs_real_t*)w2);
-
-    _rij_echo(phase_id, produc, w2);
+    cs_real_6_t *p_rhs = rhs;
 
     /* If we extrapolate the source terms: c_st_prv */
     if (st_prv_id > -1)
-      cs_axpy(n_cells*6, 1., (cs_real_t *)w2, (cs_real_t *)c_st_prv);
+      p_rhs = c_st_prv;
 
-    /* Otherwise rhs */
-    else
-      cs_axpy(n_cells*6, 1., (cs_real_t *)w2, (cs_real_t *)rhs);
+    _rij_echo(phase_id, produc, p_rhs);
 
   }
 
@@ -1706,17 +1704,13 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   if (cs_glob_turb_rans_model->irijec == 1) { // todo
 
-    cs_array_real_fill_zero(6*n_cells, (cs_real_t*)w2);
-
-    _rij_echo(phase_id, produc, w2);
+    cs_real_6_t *p_rhs = rhs;
 
     /* If we extrapolate the source terms: c_st_prv */
     if (st_prv_id > -1)
-      cs_axpy(n_cells*6, 1., (cs_real_t *)w2, (cs_real_t *)c_st_prv);
+      p_rhs = c_st_prv;
 
-    /* Otherwise rhs */
-    else
-      cs_axpy(n_cells*6, 1., (cs_real_t *)w2, (cs_real_t *)rhs);
+    _rij_echo(phase_id, produc, p_rhs);
 
   }
 
@@ -3885,6 +3879,8 @@ cs_turbulence_rij_clip(int        phase_id,
   int is_rij_clipped = cs_field_get_key_int(f_rij, kisclp);
   int is_eps_clipped = cs_field_get_key_int(f_eps, kisclp);
 
+  cs_dispatch_context ctx;
+
   /* Post-process clippings ? */
 
   cs_real_t *cpro_eps_clipped = nullptr;
@@ -3892,16 +3888,17 @@ cs_turbulence_rij_clip(int        phase_id,
   int clip_e_id = cs_field_get_key_int(f_eps, kclipp);
   if (clip_e_id > -1) {
     cpro_eps_clipped = cs_field_by_id(clip_e_id)->val;
-    cs_array_real_fill_zero(n_cells, cpro_eps_clipped);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      cpro_eps_clipped[ii] = 0.;
+    });
   }
   int clip_r_id = cs_field_get_key_int(f_rij, kclipp);
   if (clip_r_id > -1) {
-    cpro_rij_clipped = (cs_real_6_t *)cs_field_by_id(clip_r_id)->val;
-    cs_array_real_fill_zero(n_cells*f_rij->dim,
-                            (cs_real_t *)cpro_rij_clipped);
+    cs_real_t *p_cpro_rij_clipped = cs_field_by_id(clip_r_id)->val;
+    ctx.parallel_for(n_cells*f_rij->dim, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      p_cpro_rij_clipped[ii] = 0.;
+    });
   }
-
-  cs_dispatch_context ctx;
 
   /* Compute and store Min Max values for the log. */
 

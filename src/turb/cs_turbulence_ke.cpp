@@ -154,8 +154,6 @@ _tsepls(int       phase_id,
   /* Initialization
    * ============== */
 
-  cs_array_real_fill_zero(n_cells, w1);
-
   cs_real_33_t *w7;
   CS_MALLOC_HD(w7, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
@@ -195,6 +193,10 @@ _tsepls(int       phase_id,
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    w1[c_id] = 0.;
+  });
 
   for (cs_lnum_t i = 0; i < 3; i++) {
 
@@ -2229,14 +2231,18 @@ cs_turbulence_ke_clip(int        phase_id,
     res.r[3] = cvar_ep[c_id];
   });
 
-  ctx.wait();
-
   if (cpro_k_clipped != nullptr) {
-    cs_array_real_fill_zero(n_cells, cpro_k_clipped);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cpro_k_clipped[c_id] = 0.;
+    });
   }
   if (cpro_e_clipped != nullptr) {
-    cs_array_real_fill_zero(n_cells, cpro_e_clipped);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cpro_e_clipped[c_id] = 0.;
+    });
   }
+
+  ctx.wait();
 
   /* Detect values ouside "physical" bounds,
    * only for warning or when ICLKEP = 1
