@@ -464,8 +464,59 @@
           </spacer>
          </item>
         </layout>
-       </widget>
-      </item>
+              </widget>
+            </item>
+            <item>
+              <widget class="QGroupBox" name="groupBoxExternalSoler">
+                <property name="title">
+                  <string>External solver</string>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout">
+                  <item>
+                    <spacer name="spacer">
+                      <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                        <size>
+                          <width>53</width>
+                          <height>20</height>
+                        </size>
+                      </property>
+                    </spacer>
+                  </item>
+                  <item>
+                    <widget class="QComboBox" name="comboMobilExternalSolver">
+                      <property name="minimumSize">
+                        <size>
+                          <width>100</width>
+                          <height>0</height>
+                        </size>
+                      </property>
+                      <property name="toolTip">
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                          font-size:9pt;&quot;&gt;Define the external solver to use.
+                          Two choices are available:&lt;br/&gt;- code_aster,&lt;br/&gt;-
+                          user&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                    </widget>
+                  </item>
+                  <item>
+                    <spacer>
+                      <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                        <size>
+                          <width>17</width>
+                          <height>17</height>
+                        </size>
+                      </property>
+                    </spacer>
+                  </item>
+                </layout>
+              </widget>
+            </item>
      </layout>
     </widget>
    </item>

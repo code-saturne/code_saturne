@@ -437,7 +437,6 @@ class BoundaryConditionsMobileMeshView(QWidget,
         Ui_BoundaryConditionsMobileMeshForm.__init__(self)
         self.setupUi(self)
 
-
     def setup(self, case):
         """
         Setup the widget
@@ -460,11 +459,16 @@ class BoundaryConditionsMobileMeshView(QWidget,
         self.comboMobilBoundary.activated[str].connect(self.__slotCombo)
         self.pushButtonMobilBoundary.clicked.connect(self.__slotFormula)
 
+        # Combo model FSISOLVER
+        self.__modelExtSOLVER = ComboModel(self.comboMobilExternalSolver, 2, 1)
+        self.__modelExtSOLVER.addItem(self.tr("code_aster"), "code_aster")
+        self.__modelExtSOLVER.addItem(self.tr("user"), "user")
+        self.comboMobilExternalSolver.activated[str].connect(self.__slotExtSolverType)
+
         # Coupling Manager
         self.__couplingManager = CouplingManager(self, case)
 
         self.case.undoStartGlobal()
-
 
     @pyqtSlot()
     def __slotFormula(self):
@@ -472,7 +476,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
         Run formula editor.
         """
         exp = self.__boundary.getALEFormula()
-        c = self.__boundary.getALEChoice();
+        c = self.__boundary.getALEChoice()
 
         if c == "fixed_velocity":
             if not exp:
@@ -520,6 +524,17 @@ class BoundaryConditionsMobileMeshView(QWidget,
             self.pushButtonMobilBoundary.setStyleSheet("background-color: green")
             self.pushButtonMobilBoundary.setToolTip(result)
 
+    @pyqtSlot(str)
+    def __slotExtSolverType(self, text):
+        """
+        Input External solver : code_aster or user.
+        """
+        solver = self.__modelExtSOLVER.dicoV2M[str(text)]
+
+        if solver == self.__boundary.getALEExtSolver():
+            return
+
+        self.__boundary.setALEExtSolver(solver)
 
     @pyqtSlot(str)
     def __slotCombo(self, text):
@@ -544,7 +559,6 @@ class BoundaryConditionsMobileMeshView(QWidget,
         else:
             self.pushButtonMobilBoundary.setStyleSheet("background-color: red")
 
-
     def update_view(self, modelData):
         """
         Show the widgets matching the model
@@ -559,6 +573,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
             self.groupBoxStructureVelPos.show()
             self.groupBoxStructureCharacteristics.show()
             self.groupBoxForceApplied.show()
+            self.groupBoxExternalSoler.hide()
             boundary = Boundary("coupling_mobile_boundary",
                                 self.__boundary.getLabel(), self.case)
 
@@ -569,6 +584,11 @@ class BoundaryConditionsMobileMeshView(QWidget,
             self.groupBoxStructureCharacteristics.hide()
             self.groupBoxForceApplied.hide()
 
+        if modelData == "external_coupling":
+            self.__modelExtSOLVER.setItem(str_model=self.__boundary.getALEExtSolver())
+            self.groupBoxExternalSoler.show()
+        else:
+            self.groupBoxExternalSoler.hide()
 
     def showWidget(self, b):
         """
@@ -588,7 +608,6 @@ class BoundaryConditionsMobileMeshView(QWidget,
             self.show()
         else:
             self.hideWidget()
-
 
     def hideWidget(self):
         """

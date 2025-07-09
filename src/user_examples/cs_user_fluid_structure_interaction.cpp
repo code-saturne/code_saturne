@@ -271,8 +271,9 @@ cs_user_fsi_structure_values(int                    n_structs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_fsi_structure_num(cs_domain_t  *domain,
-                          int           structure_num[])
+cs_user_fsi_structure_num(cs_domain_t               *domain,
+                          int                        structure_num[],
+                          cs_mobile_structure_type_t structure_typ[])
 {
   CS_UNUSED(domain);
 
@@ -287,12 +288,53 @@ cs_user_fsi_structure_num(cs_domain_t  *domain,
     for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
 
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
-      structure_num[face_id] = (st_id + 1);
-
+      structure_num[face_id]  = st_id;
+      structure_typ[face_id]  = CS_STRUCTURE_EXTERNAL_CODE_ASTER;
     }
-
   }
   /*! [fsi_i_str_num] */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute displacement fluid boundary for the external structures
+ *        (code_aster excluded).
+ *
+ * \param[in]  domain         pointer to a cs_domain_t structure
+ * \param[in, out]  disaple   pointer to mesh_displacement array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_fsi_external_displacement(const cs_domain_t *domain,
+                                  cs_real_3_t       *disaple)
+{
+  CS_UNUSED(domain);
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute convergence state of the external structures
+ *        (code_aster excluded).
+ *
+ * Compute converge status and residual of the external coupling
+ * Convergence status: 0 - external coupling has not converged
+ *                     1 - external coupling has converged
+ *
+ * \param[in]  domain         pointer to a cs_domain_t structure
+ * \param[in]  epsilon        convergence criterion
+ * \param[out] cvg_status     convergence status
+ * \param[out] residual       value of the residual
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_fsi_external_cvg(const cs_domain_t *domain,
+                         const cs_real_t    epsilon,
+                         int               *cvg_status,
+                         cs_real_t         *residual)
+{
+  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -41,6 +41,15 @@
 
 BEGIN_C_DECLS
 
+/* Bit values for mobile boundary
+   ----------------------------- */
+
+typedef enum {
+  CS_STRUCTURE_NONE                = 1 << 0, /* No structure*/
+  CS_STRUCTURE_INTERNAL_0D         = 1 << 1, /*!< mass-spring strucutre */
+  CS_STRUCTURE_EXTERNAL_CODE_ASTER = 1 << 2, /*!< aster structure */
+  CS_STRUCTURE_EXTERNAL_USER       = 1 << 3  /*!< external structure for user */
+} cs_mobile_structure_type_t;
 
 /*! Mobile_structures type */
 /*-------------------------*/
@@ -50,10 +59,8 @@ typedef struct {
   /* Base structure definitions and input */
 
   int n_int_structs; /*!< number of internal structures */
-
-  bool has_ext_structs; /*!< has external structures ? */
-
-  bool has_ast_structs; /*!< has aster structures ? */
+  int n_ext_structs; /*!< number of external structures */
+  int n_ast_structs; /*!< number of code_aster structures */
 
   cs_real_t      aexxst;     /*!< coefficient for the predicted displacement */
   cs_real_t      bexxst;     /*!< coefficient for the predicted displacement */
@@ -103,15 +110,14 @@ typedef struct {
 
   /* Association with mesh */
 
-  int        *idfstr;        /*!< structure number associated to each
-                              *   boundary face:
-                              *   - 0 if face is not coupled to a structure
-                              *   - if > 0, internal structure id + 1
-                              *   - if < 0, - code_aster instance id  - 1 */
+  int *idfstr;                         /*!< structure number associated to each
+                                        *   boundary face*/
+  cs_mobile_structure_type_t *idftype; /* structure type associated to each
+                                        *   boundary face */
 
   /* Plotting */
 
-  int            n_plots;    /*!< number of plots for format */
+  int n_plots; /*!< number of plots for format */
 
   cs_time_plot_t  **plot_files[2];  /*!< Associated plot files */
 
@@ -222,28 +228,35 @@ cs_mobile_structures_get_n_ast_structures(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_add_n_int_structures(int n_structures);
+cs_mobile_structures_add_n_int_structures(const int n_structures);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add external mobile structures.
  *
+ * This function may be called multiple time to change the number of
+ * mobile structures.
+ *
+ * \param[in]   n_structures  number of external mobile structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_add_ext_structures(void);
+cs_mobile_structures_add_n_ext_structures(const int n_structures);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add aster mobile structures.
  *
+ * This function may be called multiple time to change the number of
+ * mobile structures.
  *
+ * \param[in]   n_structures  number of code_aster mobile structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_add_ast_structures(void);
+cs_mobile_structures_add_n_ast_structures(const int n_structures);
 
 /*----------------------------------------------------------------------------*/
 /*!

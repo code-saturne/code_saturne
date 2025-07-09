@@ -32,14 +32,15 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-#include "cdo/cs_domain.h"
 #include "base/cs_field.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
-#include "mesh/cs_mesh_bad_cells.h"
+#include "base/cs_mobile_structures.h"
 #include "base/cs_probe.h"
 #include "base/cs_time_control.h"
 #include "base/cs_volume_zone.h"
+#include "cdo/cs_domain.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_bad_cells.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -355,12 +356,49 @@ cs_user_fsi_structure_values(int                    n_structs,
  *
  * \param[in, out]  domain         pointer to a cs_domain_t structure
  * \param[in, out]  structure_num  structure id associated to each face
+ * \param[in, out]  structure_typ  structure type associated to each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_fsi_structure_num(cs_domain_t  *domain,
-                          int           structure_num[]);
+cs_user_fsi_structure_num(cs_domain_t               *domain,
+                          int                        structure_num[],
+                          cs_mobile_structure_type_t structure_typ[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute convergence state of the external structures
+ *        (code_aster excluded).
+ *
+ * Compute converge status and residual of the external coupling
+ * Convergence status: 0 - external coupling has not converged
+ *                     1 - external coupling has converged
+ *
+ * \param[in, out]  domain         pointer to a cs_domain_t structure
+ * \param[out]      cvg_status     convergence status
+ * \param[out]      residual       value of the residual
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_fsi_external_cvg(const cs_domain_t *domain,
+                         const cs_real_t    epsilon,
+                         int               *cvg_status,
+                         cs_real_t         *residual);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute displacement fluid boundary for the external structures
+ *        (code_aster excluded).
+ *
+ * \param[in]  domain         pointer to a cs_domain_t structure
+ * \param[in, out]  disaple   pointer to mesh_displacement array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_fsi_external_displacement(const cs_domain_t *domain,
+                                  cs_real_3_t       *disaple);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -375,8 +413,7 @@ cs_user_fsi_structure_num(cs_domain_t  *domain,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_head_losses(const cs_zone_t  *zone,
-                    cs_real_t         cku[][6]);
+cs_user_head_losses(const cs_zone_t *zone, cs_real_t cku[][6]);
 
 /*----------------------------------------------------------------------------*/
 /*!
