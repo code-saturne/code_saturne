@@ -2939,6 +2939,8 @@ _convection_diffusion_scalar_unsteady
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
+  const bool on_device = ctx.use_gpu();
+
   /* Local variables */
 
   char var_name[64];
@@ -2994,7 +2996,7 @@ _convection_diffusion_scalar_unsteady
      or current values are provided */
 
   if (pvar != nullptr)
-    cs_sync_scalar_halo(m, halo_type, pvar);
+    cs_halo_sync(m->halo, halo_type, on_device, pvar);
   if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
@@ -4114,6 +4116,8 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
 
+  const bool on_device = ctx.use_gpu();
+
   /* Local variables */
 
   const int f_id = (f != nullptr) ? f->id : -1;
@@ -4161,7 +4165,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
      or current values are provided */
 
   if (pvar != nullptr)
-    cs_sync_scalar_halo(m, halo_type, pvar);
+    cs_halo_sync(m->halo, halo_type, on_device, pvar);
   if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
@@ -8270,6 +8274,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
+  const bool on_device = ctx.use_gpu();
+
   /* Local variables */
 
   cs_real_t *df_limiter = nullptr;
@@ -8314,7 +8320,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
      or current values are provided */
 
   if (pvar != nullptr)
-    cs_sync_scalar_halo(m, halo_type, pvar);
+    cs_halo_sync(m->halo, halo_type, on_device, pvar);
   if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
@@ -11046,7 +11052,8 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
   if (ctx_b.use_gpu())
     ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
-  bool on_device = ctx.use_gpu();
+
+  const bool on_device = ctx.use_gpu();
 
   /*==========================================================================
     1. Initialization
@@ -11442,7 +11449,8 @@ cs_diffusion_potential(const int                   f_id,
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
-  bool on_device = ctx.use_gpu();
+
+  const bool on_device = ctx.use_gpu();
 
   /* Local variables */
 
@@ -11783,7 +11791,8 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
-  bool on_device = ctx.use_gpu();
+
+  const bool on_device = ctx.use_gpu();
 
   /*==========================================================================
     1. Initialization
