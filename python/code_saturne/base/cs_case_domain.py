@@ -1177,12 +1177,6 @@ class domain(base_domain):
         if len(err_str) > 0:
             self.error = 'data preparation'
             sys.stderr.write(err_str)
-        else:
-            try:
-                link_path = os.path.join(self.exec_dir, "listing")
-                os.symlink("run_solver.log", link_path)
-            except Exception:
-                pass
 
         self.data_is_staged = True
 
@@ -1464,8 +1458,7 @@ class domain(base_domain):
 
         # Copy log files
 
-        log_files = fnmatch.filter(dir_files, 'listing*')
-        log_files.extend(fnmatch.filter(dir_files, '*.log'))
+        log_files = fnmatch.filter(dir_files, '*.log')
         log_files.extend(fnmatch.filter(dir_files, 'error*'))
 
         for f in log_files:
