@@ -336,7 +336,7 @@ $\int\limits_{\Omega_{iel}}[{\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta\,t\,\
 -\Gamma\,]\,d\Omega}$.
 \end{center}
 
-It represents the right hand side of the equation system that would be solved for the pressure if the pressure gradient were not taken into account in the velocity prediction step. Note that, if the right hand side of the pressure increment equation were to be used directly, a normalized residual tending to zero would be obtained for a stationary calculation that had been run to convergence. This result would be penalizing and of little use for the computations.
+It represents the right hand side of the equation system that would be solved for the pressure if the pressure gradient were not taken into account in the velocity prediction step. Note that, if the right hand side of the pressure increment equation were to be used directly, a normalized residual tending to zero would be obtained for a steady calculation that had been run to convergence. This result would be penalizing and of little use for the computations.
 
 At the start of \fort{cs\_velocity\_prediction}, $\widetilde{\vect{u}}^{n+1}$ is not yet available and it is not possible therefore to calculate the total normalized residual. On the other hand, calculating the total residual at the end of \fort{cs\_velocity\_prediction} is undesirable as this would require monopolising a working array to store the pressure gradient for the duration of the subroutine \fort{cs\_velocity\_prediction}.
 The calculation of the normalized residual is therefore carried out in two stages.
@@ -439,7 +439,7 @@ For each of these components:\\
 
 \item The mass accumulation term ($\dive(\rho \vect {u})$) is calculated by calling the subroutine \fort{divmas} with the mass flux as argument. During the first iteration of the subroutine \fort{cs\_solve\_navier\_stokes},
 the term corresponding to the explicit contribution of the mass accumulation ($\vect{u}^{n}\ \dive(\rho \vect{u})$) is added to \var{TRAVA} or to \var{TRAV}. The vector \var{ROVSDT} is initialized by $\theta\,\dive(\rho \vect{u})$ (to remain coherent with the approach implemented in the subroutine
-\fort{cs\_balance}) after which the contribution of the non-stationary term ($\displaystyle
+\fort{cs\_balance}) after which the contribution of the unsteady term ($\displaystyle
 \frac{\rho}{\Delta t}$) is added to the latter.\\
 
 \item The vector \var{ROVSDT} is next completed with the contribution of the user-defined implicit source terms (stored in \var{XIMPA}) and with that of the head loss term ($\rho\,\tens{K}_{\,d}$) should $\var{NCEPDP}>0$.\\

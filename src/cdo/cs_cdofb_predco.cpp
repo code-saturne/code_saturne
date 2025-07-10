@@ -1026,7 +1026,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       cs_cell_mesh_build(c_id, cell_mesh_flag, connect, quant, cm);
 
-      /* Starts from the stationary Stokes problem where
+      /* Starts from the steady Stokes problem where
        *
        *     |        |         |
        *     |   A    |    Bt   |  B is the divergence (Bt the gradient)

@@ -719,7 +719,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                                                             mom_eqb),
                          connect, quant, cm);
 
-      /* Starts from the stationary Stokes problem where
+      /* Starts from the steady Stokes problem where
        *
        *     |        |         |
        *     |   A    |    Bt   |  B is the divergence (Bt the gradient)

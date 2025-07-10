@@ -174,7 +174,7 @@ class LagrangianModel(Model):
 
 
     @Variables.undoGlobal
-    def setCarrierFlowStationary(self, status):
+    def setCarrierFlowSteady(self, status):
         """
         Update the status for steady flow markup from the XML document.
         """
@@ -188,7 +188,7 @@ class LagrangianModel(Model):
 
 
     @Variables.noUndo
-    def getCarrierFlowStationary(self):
+    def getCarrierFlowSteady(self):
         """
         Return status of steady (on) or unsteady (off) state
         of the continuous phase flow.
@@ -197,7 +197,7 @@ class LagrangianModel(Model):
         status = node_steady['status']
         if not status:
             status = self.defaultParticlesValues()['carrier_field_stationary']
-            self.setCarrierFlowStationary(status)
+            self.setCarrierFlowSteady(status)
         return status
 
 
@@ -642,25 +642,25 @@ class LagrangianTestCase(ModelTest):
             'Could not set values for restart status'
 
 
-    def checkCarrierFlowStationary(self):
-        """Check whether the stationary behavior of the carrier flow
+    def checkCarrierFlowSteady(self):
+        """Check whether the steady behavior of the carrier flow
         could be set and get."""
         mdl = LagrangianModel(self.case)
 
-        status = mdl.getCarrierFlowStationary()
+        status = mdl.getCarrierFlowSteady()
 
         assert status == mdl.defaultParticlesValues()['carrier_field_stationary'], \
-            'Could not get default values for stationary \
+            'Could not get default values for steady \
             behavior of the carrier flow status'
 
-        mdl.setCarrierFlowStationary('on')
+        mdl.setCarrierFlowSteady('on')
         doc = """<lagrangian model="off">
                      <carrier_field_stationary status="on"/>
                      <coupling_mode model="one_way"/>
                  </lagrangian>"""
 
         assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-            'Could not set default values for stationary \
+            'Could not set default values for steady \
             behavior of the carrier flow status'
 
 

@@ -957,7 +957,7 @@ cs_solve_all()
 
   /* We do this over an infinite period of time, because often the mass flux field
    *   initial is not zero divergence (CL included) and obtaining
-   *   of a flow with zero divergence consistent with the stationary constraint
+   *   of a flow with zero divergence consistent with the steady constraint
    *   may take a few steps.
    * Note that the pressure is taken up in the Stokes stage.
    * We do not do this in the case of taking into account the pressure

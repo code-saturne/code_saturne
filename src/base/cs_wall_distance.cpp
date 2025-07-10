@@ -903,7 +903,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   }
 
   /* Unknown
-     In the case where the stationary state is not completely reached,
+     In the case where the steady state is not completely reached,
      yplus must not be zero in the zone where the boundary conditions
      have not been convected. Instead, we want Y to be maximum.
      If you use zero or a negative value as initialization,

@@ -286,7 +286,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         else:
             self.checkBoxISUILA.setChecked(False)
 
-        status = self.model.getCarrierFlowStationary()
+        status = self.model.getCarrierFlowSteady()
         if status == "on":
             self.checkBoxISTTIO.setChecked(True)
         else:
@@ -391,9 +391,9 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         Input ISTTIO.
         """
         if self.checkBoxISTTIO.isChecked():
-            self.model.setCarrierFlowStationary("on")
+            self.model.setCarrierFlowSteady("on")
         else:
-            self.model.setCarrierFlowStationary("off")
+            self.model.setCarrierFlowSteady("off")
 
 
     @pyqtSlot()

@@ -732,7 +732,7 @@ _scb_steady_build(const cs_equation_param_t  *eqp,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, cdoq, cm);
 
-      /* For the stationary problem, the global system writes:
+      /* For the steady problem, the global system writes:
        *
        *     |        |         |
        *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
