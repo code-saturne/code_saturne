@@ -56,8 +56,6 @@
 
 namespace cs {
 
-namespace array {
-
 /*! Enum with layout options */
 enum class
 layout {
@@ -73,7 +71,7 @@ layout {
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-class data_array {
+class array {
 
 public:
 
@@ -84,7 +82,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  data_array():
+  array():
     _size(0),
     _owner(true),
     _data(nullptr),
@@ -99,7 +97,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  data_array
+  array
   (
     cs_lnum_t     size, /*!<[in] size of array */
     cs_alloc_mode_t alloc_mode = cs_alloc_mode, /*!<[in] Memory allocation mode */
@@ -129,7 +127,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  data_array
+  array
   (
     cs_lnum_t  size,  /*!<[in] Size of array */
     T         *data,  /*!<[in] Pointer to data array */
@@ -159,9 +157,9 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  data_array
+  array
   (
-    data_array& other, /*!<[in] Reference of data array to copy */
+    array&      other, /*!<[in] Reference of data array to copy */
     bool        shallow_copy=false, /* Make a shallow copy (non-owner) or not. */
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
@@ -198,11 +196,11 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  data_array
+  array
   (
-    data_array&& other /*!<[in] Original reference to move */
+    array&& other /*!<[in] Original reference to move */
   )
-  : data_array()
+  : array()
   {
     swap(*this, other);
   }
@@ -214,7 +212,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  ~data_array()
+  ~array()
   {
     clear();
   }
@@ -229,8 +227,8 @@ public:
   friend void
   swap
   (
-    data_array& first, /*!<[in] First instance to swap */
-    data_array& second /*!<[in] Second instance to swap */
+    array& first, /*!<[in] First instance to swap */
+    array& second /*!<[in] Second instance to swap */
   )
   {
     using std::swap;
@@ -249,7 +247,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  data_array& operator=(data_array other)
+  array& operator=(array other)
   {
     swap(*this, other);
 
@@ -286,8 +284,8 @@ public:
   void
   point_to
   (
-    data_array& other /*!<[in] Other instance to which we want to point
-                               to (shallow copy) */
+    array& other /*!<[in] Other instance to which we want to point
+                          to (shallow copy) */
   )
   {
     clear();
@@ -567,7 +565,7 @@ private:
     const int   line_number /*!<[in] Caller line (for log) */
   )
   {
-    const char *_ptr_name = "[data_array]._data";
+    const char *_ptr_name = "[array]._data";
     _data = static_cast<T *>(cs_mem_malloc_hd(_mode,
                                               _size,
                                               sizeof(T),
@@ -592,7 +590,7 @@ private:
   {
     /* If not owner no-op */
     if (_owner) {
-      const char *_ptr_name = "[data_array]._data";
+      const char *_ptr_name = "[array]._data";
       _data = static_cast<T *>(cs_mem_realloc_hd(_data,
                                                  _mode,
                                                  _size,
@@ -727,7 +725,7 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Constructor method for non owner from data_array class
+   * \brief Constructor method for non owner from array class
    */
   /*--------------------------------------------------------------------------*/
 
@@ -735,7 +733,7 @@ public:
   span
   (
     const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
-    data_array<T>& array,      /*!<[in] Reference of data_array class */
+    array<T>&      array,      /*!<[in] Reference of array class */
 #if (defined(__GNUC__) || defined(__clang__)) && \
    __has_builtin(__builtin_LINE) && \
    __has_builtin(__builtin_FILE)
@@ -1445,7 +1443,7 @@ private:
     const int   line_number /*!<[in] Caller line (for log) */
   )
   {
-    const char *ptr_name = "cs::array::span._data";
+    const char *ptr_name = "cs::span._data";
     _data = static_cast<T *>(cs_mem_malloc_hd(_mode,
                                               _size,
                                               sizeof(T),
@@ -1470,7 +1468,7 @@ private:
   {
     /* If not owner no-op */
     if (_owner) {
-      const char *_ptr_name = "cs::array::span.data";
+      const char *_ptr_name = "cs::span.data";
       _data = static_cast<T *>(cs_mem_realloc_hd(_data,
                                                  _mode,
                                                  _size,
@@ -1499,7 +1497,6 @@ using span_r = span<T,N,layout::right>;
 template<class T, int N>
 using span_l = span<T,N,layout::left>;
 
-} /* namespace array */
 } /* namespace cs */
 
 /*--------------------------------------------------------------------------*/
@@ -1507,16 +1504,16 @@ using span_l = span<T,N,layout::left>;
 /*--------------------------------------------------------------------------*/
 
 template<class T>
-using cs_array_t = cs::array::data_array<T>;
+using cs_array_t = cs::array<T>;
 
-template<class T, int N, cs::array::layout L=cs::array::layout::right>
-using cs_span_t = cs::array::span<T,N,L>;
-
-template<class T, int N>
-using cs_span_right_t = cs::array::span<T, N, cs::array::layout::right>;
+template<class T, int N, cs::layout L=cs::layout::right>
+using cs_span_t = cs::span<T,N,L>;
 
 template<class T, int N>
-using cs_span_left_t = cs::array::span<T, N, cs::array::layout::left>;
+using cs_span_right_t = cs::span<T, N, cs::layout::right>;
+
+template<class T, int N>
+using cs_span_left_t = cs::span<T, N, cs::layout::left>;
 
 /*----------------------------------------------------------------------------*/
 
