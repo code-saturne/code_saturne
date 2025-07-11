@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_mobile_structures.h"
 #include "cdo/cs_domain.h"
 
 /*----------------------------------------------------------------------------*/
@@ -171,10 +172,12 @@ cs_gui_mobile_mesh_internal_structures(cs_real_t  xmstru[][3][3],
  *
  * parameters:
  *   idfstr    <-- structure number associated to each boundary face.
+ *   idftyp    <-- structure type associated to each boundary face.
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mobile_mesh_bc_structures(int  *idfstr);
+cs_gui_mobile_mesh_bc_structures(int                        *idfstr,
+                                 cs_mobile_structure_type_t *idftyp);
 
 /*----------------------------------------------------------------------------*/
 

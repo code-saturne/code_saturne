@@ -97,7 +97,8 @@ enum ale_boundary_nature
   ale_boundary_nature_fixed_wall,
   ale_boundary_nature_sliding_wall,
   ale_boundary_nature_internal_coupling,
-  ale_boundary_nature_external_coupling,
+  ale_boundary_nature_external_aster_coupling,
+  ale_boundary_nature_external_user_coupling,
   ale_boundary_nature_fixed_velocity,
   ale_boundary_nature_fixed_displacement,
   ale_boundary_nature_free_surface
@@ -338,14 +339,21 @@ _get_ale_boundary_nature(cs_tree_node_t  *tn)
     cs_tree_node_t *tn_ale = cs_tree_get_node(tn, "ale/choice");
     const char *nat_ale = cs_tree_node_get_value_str(tn_ale);
 
+    cs_tree_node_t *tn_solver  = cs_tree_get_node(tn, "ale/solver");
+    const char     *nat_solver = cs_tree_node_get_value_str(tn_solver);
+
     if (cs_gui_strcmp(nat_ale, "fixed_boundary"))
       return ale_boundary_nature_fixed_wall;
-    if (cs_gui_strcmp(nat_ale, "sliding_boundary"))
+    else if (cs_gui_strcmp(nat_ale, "sliding_boundary"))
       return ale_boundary_nature_sliding_wall;
     else if (cs_gui_strcmp(nat_ale, "internal_coupling"))
       return ale_boundary_nature_internal_coupling;
-    else if (cs_gui_strcmp(nat_ale, "external_coupling"))
-      return ale_boundary_nature_external_coupling;
+    else if (cs_gui_strcmp(nat_ale, "external_coupling")) {
+      if (cs_gui_strcmp(nat_solver, "user")) {
+        return ale_boundary_nature_external_user_coupling;
+      }
+      return ale_boundary_nature_external_aster_coupling;
+    }
     else if (cs_gui_strcmp(nat_ale, "fixed_velocity"))
       return ale_boundary_nature_fixed_velocity;
     else if (cs_gui_strcmp(nat_ale, "fixed_displacement"))
@@ -855,7 +863,7 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
 void
 cs_gui_mobile_mesh_structures_add(void)
 {
-  int n_i_struct = 0, n_e_struct = 0;
+  int n_i_struct = 0, n_e_struct = 0, n_a_struct;
 
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
@@ -871,19 +879,26 @@ cs_gui_mobile_mesh_structures_add(void)
 
     enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_bndy);
 
-    if (nature == ale_boundary_nature_internal_coupling)
+    if (nature == ale_boundary_nature_internal_coupling) {
       n_i_struct++;
-
-    else if (nature == ale_boundary_nature_external_coupling)
+    }
+    else if (nature == ale_boundary_nature_external_aster_coupling) {
+      n_a_struct++;
+    }
+    else if (nature == ale_boundary_nature_external_user_coupling) {
       n_e_struct++;
-
+    }
   }
 
   if (n_i_struct > 0)
     cs_mobile_structures_add_n_int_structures(n_i_struct);
 
+  if (n_a_struct > 0) {
+    cs_mobile_structures_add_n_ast_structures(n_a_struct);
+  }
+
   if (n_e_struct > 0) {
-    cs_mobile_structures_add_ast_structures();
+    cs_mobile_structures_add_n_ext_structures(n_e_struct);
   }
 }
 
@@ -1040,13 +1055,14 @@ cs_gui_mobile_mesh_internal_structures(cs_real_t  xmstru[][3][3],
  *
  * parameters:
  *   idfstr    <-- structure number associated to each boundary face.
+ *   idftyp    <-- structure type associated to each boundary face.
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mobile_mesh_bc_structures(int  *idfstr)
+cs_gui_mobile_mesh_bc_structures(int                        *idfstr,
+                                 cs_mobile_structure_type_t *idftyp)
 {
-  int i_struct = 0;
-  int e_struct = 0;
+  int i_struct = 0, e_struct = 0, a_struct = 0;
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
@@ -1064,8 +1080,7 @@ cs_gui_mobile_mesh_bc_structures(int  *idfstr)
 
     enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_w);
 
-    if (  _get_ale_boundary_nature(tn_w)
-        == ale_boundary_nature_internal_coupling) {
+    if (nature == ale_boundary_nature_internal_coupling) {
       const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
       if (z == nullptr)  /* possible in case of old XML file with "dead" nodes */
         continue;
@@ -1074,14 +1089,31 @@ cs_gui_mobile_mesh_bc_structures(int  *idfstr)
       const cs_lnum_t *faces_list = z->elt_ids;
 
       /* Set idfstr to positive index starting at 1 */
-      i_struct++;
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
         idfstr[ifbr]   = i_struct;
+        idftyp[ifbr]   = CS_STRUCTURE_INTERNAL_0D;
       }
+      i_struct++;
     }
-    else if (nature == ale_boundary_nature_external_coupling) {
+    else if (nature == ale_boundary_nature_external_aster_coupling) {
+      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+      if (z == nullptr) /* possible in case of old XML file with "dead" nodes */
+        continue;
 
+      cs_lnum_t        n_faces    = z->n_elts;
+      const cs_lnum_t *faces_list = z->elt_ids;
+
+      /* Set idfstr with negative value starting from -1 */
+      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        idfstr[ifbr]   = a_struct;
+        idftyp[ifbr]   = CS_STRUCTURE_EXTERNAL_CODE_ASTER;
+      }
+      a_struct++;
+    }
+
+    else if (nature == ale_boundary_nature_external_user_coupling) {
       const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
       if (z == nullptr)  /* possible in case of old XML file with "dead" nodes */
         continue;
@@ -1089,19 +1121,14 @@ cs_gui_mobile_mesh_bc_structures(int  *idfstr)
       cs_lnum_t n_faces = z->n_elts;
       const cs_lnum_t *faces_list = z->elt_ids;
 
-      cs_tree_node_t *tn_ec = cs_tree_get_node(tn_w, "ale");
-      tn_ec = cs_tree_node_get_sibling_with_tag(tn_ec,
-                                                "choice",
-                                                "external_coupling");
-
       /* Set idfstr with negative value starting from -1 */
-      e_struct--;
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
         idfstr[ifbr]   = e_struct;
+        idftyp[ifbr]   = CS_STRUCTURE_EXTERNAL_USER;
       }
+      e_struct++;
     }
-
   }
 }
 

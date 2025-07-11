@@ -214,6 +214,40 @@ class Boundary(object) :
                 node.xmlRemoveChild('formula')
 
     @Variables.noUndo
+    def getALEExtSolver(self):
+        """
+        Get the ExtSolver
+        """
+        node = self.boundNode.xmlGetNode("ale")
+
+        solver = ""
+        # Create a defaut choice if it does not exist
+        if self.getALEChoice() == "external_coupling":
+            if not node["solver"]:
+                solver = "code_aster"
+                self.setALEExtSolver(solver)
+
+            solver = node["solver"]
+
+        return solver
+
+    @Variables.undoGlobal
+    def setALEExtSolver(self, value):
+        """
+        Set the ALE according to ExtSolver
+        """
+        Model().isInList(value, ("code_aster", "user"))
+        node = self.boundNode.xmlGetNode("ale")
+
+        # if something has changed
+        if self.getALEChoice() == "external_coupling":
+            if node["solver"] != value:
+                node["solver"] = value
+                node.xmlRemoveChild("formula")
+        else:
+            node.xmlRemoveChild("solver")
+
+    @Variables.noUndo
     def getALEFormula(self):
         """
         Get the formula from the xml

@@ -150,9 +150,8 @@ _mobile_structures_create(void)
   CS_MALLOC(ms, 1, cs_mobile_structures_t);
 
   ms->n_int_structs = 0;
-
-  ms->has_ext_structs = false;
-  ms->has_ast_structs = false;
+  ms->n_ext_structs = 0;
+  ms->n_ast_structs = 0;
 
   ms->aexxst = -cs_math_big_r;
   ms->bexxst = -cs_math_big_r;
@@ -208,6 +207,7 @@ _mobile_structures_create(void)
   /* Face association */
 
   ms->idfstr = nullptr;
+  ms->idftype = nullptr;
 
   return ms;
 }
@@ -271,6 +271,7 @@ _mobile_structures_destroy(cs_mobile_structures_t  **ms)
   /* Face association */
 
   CS_FREE(_ms->idfstr);
+  CS_FREE(_ms->idftype);
 
   CS_FREE(_ms);
   *ms = _ms;
@@ -737,17 +738,22 @@ cs_mobile_structures_initialize(void)
   /* Reserve idfstr array */
   assert(ms != nullptr);
   CS_REALLOC(ms->idfstr, n_b_faces, int);
+  CS_REALLOC(ms->idftype, n_b_faces, cs_mobile_structure_type_t);
 
   int *idfstr = ms->idfstr;
-  cs_array_int_fill_zero(n_b_faces, idfstr);
+  cs_mobile_structure_type_t *idftype = ms->idftype;
+  cs_arrays_set_value<int, 1>(n_b_faces, -1, idfstr);
+  cs_arrays_set_value<cs_mobile_structure_type_t, 1>(n_b_faces,
+                                                     CS_STRUCTURE_NONE,
+                                                     idftype);
 
   /* Definition of idfstr
      -------------------- */
 
   /* Associate internal (code_saturne) and external (code_aster) structures */
 
-  cs_gui_mobile_mesh_bc_structures(idfstr);
-  cs_user_fsi_structure_num(cs_glob_domain, idfstr);
+  cs_gui_mobile_mesh_bc_structures(idfstr, idftype);
+  cs_user_fsi_structure_num(cs_glob_domain, idfstr, idftype);
 
   /* Count number of internal and external structures
 
@@ -760,13 +766,28 @@ cs_mobile_structures_initialize(void)
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
     int str_num = idfstr[i];
-    if (str_num > m_vals[0])
-      m_vals[0] = str_num;
-    else if (str_num < 0) {
-      n_ast_faces += 1;
-      if (-str_num > m_vals[1]) {
-        m_vals[1] = -str_num;
-      }
+    switch (idftype[i]) {
+      case CS_STRUCTURE_INTERNAL_0D: {
+        if (str_num + 1 > m_vals[0])
+          m_vals[0] = str_num + 1;
+      } break;
+
+      case CS_STRUCTURE_EXTERNAL_CODE_ASTER: {
+        n_ast_faces += 1;
+        if (str_num > m_vals[1]) {
+          m_vals[1] = str_num;
+        }
+      } break;
+
+      case CS_STRUCTURE_EXTERNAL_USER: {
+        n_ext_faces += 1;
+        if (str_num > m_vals[2]) {
+          m_vals[2] = str_num;
+        }
+      } break;
+
+      default:
+        break;
     }
   }
 
@@ -785,7 +806,7 @@ cs_mobile_structures_initialize(void)
         "\n"
         "Check the coupled boundary structure associations."),
       n_int_structs,
-      m_vals[0]);
+      m_vals[0] + 1);
   }
 
   if (n_int_structs > 0) {
@@ -806,7 +827,7 @@ cs_mobile_structures_initialize(void)
     cs_lnum_t count = 0;
 
     for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-      if (idfstr[i] < 0) {
+      if (idftype[i] == CS_STRUCTURE_EXTERNAL_CODE_ASTER) {
         face_ids[count] = i;
         count++;
       }
@@ -837,7 +858,9 @@ cs_mobile_structures_initialize(void)
     cs_glob_mobile_structures_n_iter_max = 1;
 
     CS_FREE(ms->idfstr);
+    CS_FREE(ms->idftype);
     idfstr = nullptr;
+    idftype = nullptr;
   }
 
   if (n_int_structs > 0 && ms->plot > 0)
@@ -1028,9 +1051,7 @@ cs_mobile_structures_get_n_ext_structures(void)
   int retval = 0;
 
   if (_mobile_structures != nullptr) {
-    if (_mobile_structures->has_ext_structs) {
-      retval = 1;
-    }
+    retval = _mobile_structures->n_ext_structs;
   }
 
   return retval;
@@ -1050,9 +1071,7 @@ cs_mobile_structures_get_n_ast_structures(void)
   int retval = 0;
 
   if (_mobile_structures != nullptr) {
-    if (_mobile_structures->has_ast_structs) {
-      retval = 1;
-    }
+    retval = _mobile_structures->n_ast_structs;
   }
 
   return retval;
@@ -1088,11 +1107,15 @@ cs_mobile_structures_add_n_int_structures(int n_structures)
 /*!
  * \brief  Add external mobile structures.
  *
+ * This function may be called multiple time to change the number of
+ * mobile structures.
+ *
+ * \param[in]   n_structures  number of external mobile structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_add_ext_structures()
+cs_mobile_structures_add_n_ext_structures(const int n_structures)
 {
   cs_mobile_structures_t *ms = _mobile_structures;
 
@@ -1101,18 +1124,22 @@ cs_mobile_structures_add_ext_structures()
     _mobile_structures = ms;
   }
 
-  ms->has_ext_structs = true;
+  ms->n_ext_structs = n_structures;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add aster mobile structures.
  *
+ * This function may be called multiple time to change the number of
+ * mobile structures.
+ *
+ * \param[in]   n_structures  number of code_aster mobile structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mobile_structures_add_ast_structures()
+cs_mobile_structures_add_n_ast_structures(const int n_structures)
 {
   cs_mobile_structures_t *ms = _mobile_structures;
 
@@ -1121,7 +1148,7 @@ cs_mobile_structures_add_ast_structures()
     _mobile_structures = ms;
   }
 
-  ms->has_ast_structs = true;
+  ms->n_ast_structs = n_structures;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1269,15 +1296,13 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
     disale = (cs_real_3_t *)(f_displ->val);
 
     const int *idfstr = ms->idfstr;
+    const cs_mobile_structure_type_t *idftype = ms->idftype;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-
-      int str_num = idfstr[face_id];
-
       /* Internal structures */
 
-      if (str_num > 0) {
-        int str_id = str_num -1;
+      if (idftype[face_id] == CS_STRUCTURE_INTERNAL_0D) {
+        const int str_id = idfstr[face_id];
         cs_lnum_t s_id = b_face_vtx_idx[face_id];
         cs_lnum_t e_id = b_face_vtx_idx[face_id+1];
         for (cs_lnum_t j = s_id; j < e_id; j++) {
@@ -1296,12 +1321,11 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
     const cs_lnum_t *b_face_vtx_idx = m->b_face_vtx_idx;
     const cs_lnum_t *b_face_vtx     = m->b_face_vtx_lst;
 
-    const int *idfstr = ms->idfstr;
+    const cs_mobile_structure_type_t *idftype = ms->idftype;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      int str_num = idfstr[face_id];
-
-      if (str_num < 0) {
+      if (idftype[face_id] == CS_STRUCTURE_EXTERNAL_USER ||
+          idftype[face_id] == CS_STRUCTURE_EXTERNAL_CODE_ASTER) {
         cs_lnum_t s_id = b_face_vtx_idx[face_id];
         cs_lnum_t e_id = b_face_vtx_idx[face_id + 1];
         for (cs_lnum_t j = s_id; j < e_id; j++) {
@@ -1322,6 +1346,9 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
 
       if (n_ast_structs > 0) {
         cs_ast_coupling_compute_displacement(disale);
+      }
+      else if (n_ext_structs > 0) {
+        cs_user_fsi_external_displacement(cs_glob_domain, disale);
       }
     }
   }
@@ -1442,18 +1469,18 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   if (n_ast_structs > 0)
     forast = cs_ast_coupling_get_fluid_forces_pointer();
 
-  int *idfstr = ms->idfstr;
+  const int                        *idfstr  = ms->idfstr;
+  const cs_mobile_structure_type_t *idftype = ms->idftype;
 
   cs_lnum_t indast = 0;
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    int str_num = idfstr[face_id];
-    if (str_num > 0) {
-      int i = str_num - 1;
-
+    int str_type = idftype[face_id];
+    if (str_type == CS_STRUCTURE_INTERNAL_0D) {
+      int i = idfstr[face_id];
       for (cs_lnum_t j = 0; j < 3; j++)
         ms->forstr[i][j] += b_stress[face_id][j] * b_face_surf[face_id];
     }
-    else if (str_num < 0) {
+    else if (str_type == CS_STRUCTURE_EXTERNAL_CODE_ASTER) {
       /* code_aster needs a surfacic force in Pa = N.m-2*/
       for (cs_lnum_t j = 0; j < 3; j++)
         forast[indast][j] = b_stress[face_id][j];
@@ -1593,6 +1620,13 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   if (n_ast_structs > 0) {
     delta  = cs_ast_coupling_get_current_residual();
     icvast = cs_ast_coupling_get_current_cvg();
+  }
+
+  if (n_ext_structs > 0) {
+    cs_user_fsi_external_cvg(cs_glob_domain,
+                             cs_glob_mobile_structures_i_eps,
+                             &icvext,
+                             &delta);
   }
 
   /* Sum up convergence test */

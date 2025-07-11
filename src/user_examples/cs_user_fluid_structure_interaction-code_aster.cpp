@@ -74,12 +74,14 @@ BEGIN_C_DECLS
  *
  * \param[in, out]  domain         pointer to a cs_domain_t structure
  * \param[in, out]  structure_id   structure id associated to each face
+ * \param[in, out]  structure_typ  structure type associated to each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_fsi_structure_num(cs_domain_t  *domain,
-                          int           structure_num[])
+cs_user_fsi_structure_num(cs_domain_t               *domain,
+                          int                        structure_num[],
+                          cs_mobile_structure_type_t structure_typ[])
 {
   CS_UNUSED(domain);
 
@@ -94,8 +96,8 @@ cs_user_fsi_structure_num(cs_domain_t  *domain,
     for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
 
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
-      structure_num[face_id] = - (st_id + 1);
-
+      structure_num[face_id]  = st_id;
+      structure_typ[face_id]  = CS_STRUCTURE_EXTERNAL_CODE_ASTER;
     }
 
   }
