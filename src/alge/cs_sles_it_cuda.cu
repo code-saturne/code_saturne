@@ -1921,7 +1921,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     else
 #endif // HAVE_GRAPH_CAPTURE > 0
     {
-      if (fused_kernels)
+      if (fused_kernels) {
         if (diag_block_size == 3)
           _block_jacobi_compute_vx_and_residual
             <blocksize, 3, false><<<gridsize, blocksize, 0, stream>>>
