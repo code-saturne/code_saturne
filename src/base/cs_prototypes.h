@@ -392,12 +392,14 @@ cs_user_fsi_external_cvg(const cs_domain_t *domain,
  *        (code_aster excluded).
  *
  * \param[in]  domain         pointer to a cs_domain_t structure
+ * \param[in]  b_stress       pointer to boundary stress array
  * \param[in, out]  disaple   pointer to mesh_displacement array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_fsi_external_displacement(const cs_domain_t *domain,
+                                  const cs_real_3_t *b_stress,
                                   cs_real_3_t       *disaple);
 
 /*----------------------------------------------------------------------------*/

@@ -1348,7 +1348,9 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
         cs_ast_coupling_compute_displacement(disale);
       }
       else if (n_ext_structs > 0) {
-        cs_user_fsi_external_displacement(cs_glob_domain, disale);
+        const cs_field_t *f_b_stress = cs_field_by_name("boundary_stress");
+        cs_real_3_t      *b_stress   = (cs_real_3_t *)f_b_stress->val;
+        cs_user_fsi_external_displacement(cs_glob_domain, b_stress, disale);
       }
     }
   }

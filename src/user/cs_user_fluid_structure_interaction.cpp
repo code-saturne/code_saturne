@@ -187,6 +187,7 @@ cs_user_fsi_structure_num(cs_domain_t               *domain,
  *        (code_aster excluded).
  *
  * \param[in]  domain         pointer to a cs_domain_t structure
+ * \param[in]  b_stress       pointer to boundary stress array
  * \param[in, out]  disaple   pointer to mesh_displacement array
  */
 /*----------------------------------------------------------------------------*/
@@ -194,9 +195,11 @@ cs_user_fsi_structure_num(cs_domain_t               *domain,
 #pragma weak cs_user_fsi_external_displacement
 void
 cs_user_fsi_external_displacement(const cs_domain_t *domain,
+                                  const cs_real_3_t *b_stress,
                                   cs_real_3_t       *disaple)
 {
   CS_UNUSED(domain);
+  CS_UNUSED(b_stress);
   CS_UNUSED(disaple);
 };
 

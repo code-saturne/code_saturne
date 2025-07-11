@@ -20,6 +20,12 @@ Master (not on release branches yet)
   cs_user_f_initialization, usppmo, usipsu, and usipes).
   * Also removed Fortran-based `findpt` function.
 
+- Fluid structure interaction: allows the possibility to use external solver
+  by using user functions.
+  * cs_user_fsi_external_displacement: compute inside the displacement to impose.
+  * cs_user_fsi_external_cvg: compute convergence status of external solver.
+  * cs_user_fsi_structure_num has changed of API.
+
 ### Numerics:
 
 - Remove `idilat` 4 and 5 weakly compressible algorithm options.
