@@ -1,3 +1,10 @@
+Release 9.0.1 (yyyy-mm-dd)
+--------------------------
+
+### Numerics:
+
+- Fix LU factorization of "cs_sdm_t" matrix.
+
 Release 9.0.0 (2025-06-27)
 --------------------------
 
