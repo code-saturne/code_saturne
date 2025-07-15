@@ -1354,6 +1354,15 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_ircflu] */
 
+  /* Freeze temperature field using time_control */
+  {
+    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(t));
+
+    cs_time_control_t tc;
+    cs_time_control_init_by_time_step(&tc, -1, -1, -1, false, false);
+    cs_equation_time_control_add(eqp, &tc, false); /* Real copy and not shallow copy */
+  }
+
   /*
    * Turbulent flux model u'T' for the scalar T
    *   Algebraic Model
