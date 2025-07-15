@@ -4152,7 +4152,7 @@ cs_atmo_compute_meteo_profiles(void)
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
   cs_real_t ustar0 = aopt->meteo_ustar0;
-  cs_real_t angle = aopt->meteo_angle;
+  cs_real_t angle = (aopt->meteo_angle - aopt->domain_orientation);
 
   /* Friction temperature */
   cs_real_t tstar = aopt->meteo_tstar;
