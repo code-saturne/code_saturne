@@ -44,6 +44,8 @@
 #include "base/cs_base_cuda.h"
 #endif
 
+#include "base/cs_dispatch.h"
+
 /*----------------------------------------------------------------------------*/
 
 /*=============================================================================
@@ -890,6 +892,14 @@ END_C_DECLS
 
 namespace cs {
 
+/*! Enum with layout options */
+enum class
+layout {
+  right,
+  left,
+  unknown
+};
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \class Templated data array class.
@@ -1008,7 +1018,7 @@ public:
 
     if (_owner) {
       allocate_(file_name, line_number);
-      cs_array_copy<T>(_size, other._data, _data);
+      copy_data(other._data);
     }
     else {
       _data = other._data;
@@ -1102,24 +1112,6 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Change pointers/size of an existing container.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  void
-  point_to
-  (
-    array& other /*!<[in] Other instance to which we want to point
-                          to (shallow copy) */
-  )
-  {
-    clear();
-    *this = other.view();
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
    * \brief Set all values of the data array to a constant value.
    */
   /*--------------------------------------------------------------------------*/
@@ -1130,7 +1122,34 @@ public:
     T val /*!<[in] Value to set to entire data array. */
   )
   {
-    cs_arrays_set_value<T,1>(_size, val, _data);
+    cs_dispatch_context ctx;
+
+    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+        _data[e_id] = val;
+    });
+
+    ctx.wait();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set all values of the data array to a constant value while providing
+   *        a dispatch context. It is up to the call to synchronize the context
+   *        after this call.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void set_to_val
+  (
+    cs_dispatch_context &ctx, /*!< Reference to dispatch context */
+    T                    val  /*!<[in] Value to set to entire data array. */
+  )
+  {
+    /* No wait here since context is passed as argument */
+    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+        _data[e_id] = val;
+    });
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1375,6 +1394,98 @@ public:
     return _mode;
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Copy data from raw pointer, we suppose that data size is same
+   *        as that of the array.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  copy_data
+  (
+    T *data
+  )
+  {
+    cs_dispatch_context ctx;
+
+    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+        _data[e_id] = data[e_id];
+    });
+
+    ctx.wait();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Copy data from another array, we suppose that data size is same
+   *        as that of the array. An assert test the sizes in debug.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  copy_data
+  (
+    array& other
+  )
+  {
+    assert(other._size == _size);
+
+    cs_dispatch_context ctx;
+
+    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+        _data[e_id] = other._data[e_id];
+    });
+
+    ctx.wait();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Copy data from raw pointer, we suppose that data size is same
+   *        as that of the array. A dispatch_context is provided, hence
+   *        no implicit synchronization which should be done by the caller.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  copy_data
+  (
+    cs_dispatch_context &ctx,
+    T                   *data
+  )
+  {
+    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+        _data[e_id] = data[e_id];
+    });
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Copy data from raw pointer, we suppose that data size is same
+   *        as that of the array. A dispatch_context is provided, hence
+   *        no implicit synchronization which should be done by the caller.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  copy_data
+  (
+    cs_dispatch_context &ctx,
+    array               &other
+  )
+  {
+    assert(other.size() == _size);
+
+    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+        _data[e_id] = other._data[e_id];
+    });
+  }
+
 private:
 
   /*--------------------------------------------------------------------------*/
@@ -1436,6 +1547,142 @@ private:
   T*              _data;
   cs_alloc_mode_t _mode;
 
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \class Templated data array class.
+ */
+/*----------------------------------------------------------------------------*/
+
+template<class T, int N, layout L = layout::right>
+class mdarray {
+
+public:
+
+  CS_F_HOST_DEVICE
+  mdarray():
+    _dim({0}),
+    _offset({1}),
+    _arr()
+    {}
+
+  CS_F_HOST_DEVICE
+  mdarray
+  (
+    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  : mdarray()
+  {
+    static_assert(L == layout::right || L == layout::left);
+
+    set_dims_(dims);
+    cs_lnum_t s = (N > 0) ? 1 : 0;
+    for (int i = 0; i < N; i++)
+      s *= _dim[i];
+
+    _arr = array<T>(s, file_name, line_number);
+  }
+
+  CS_F_HOST_DEVICE
+  mdarray
+  (
+    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
+    cs_alloc_mode_t alloc_mode, /*!<[in] Memory allocation mode */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  : mdarray()
+  {
+    static_assert(L == layout::right || L == layout::left);
+
+    set_dims_(dims);
+    cs_lnum_t s = (N > 0) ? 1 : 0;
+    for (int i = 0; i < N; i++)
+      s *= _dim[i];
+
+    _arr = array<T>(s, alloc_mode, file_name, line_number);
+  }
+
+  CS_F_HOST_DEVICE
+  mdarray
+  (
+    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
+    T*                    data, /*!<[in] Pointer to data array */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  : mdarray()
+  {
+    static_assert(L == layout::right || L == layout::left);
+
+    set_dims_(dims);
+
+    _arr = array<T>(s, data);
+  }
+
+  CS_F_HOST_DEVICE
+  mdarray
+  (
+    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
+    array<T>&             arr, /*!<[in] Pointer to data array */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  : mdarray()
+  {
+    static_assert(L == layout::right || L == layout::left);
+
+    set_dims_(dims);
+
+    cs_lnum_t s = (N > 0) ? 1 : 0;
+    for (int i = 0; i < N; i++)
+      s *= _dim[i];
+
+    if (s != arr.size())
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: The dimensions provided for the mdarray lead to size %d "
+                  "which is different than size %d of the data array.\n"
+                  "Called from file \"%s\" L%d\n"),
+                __func__, s, array.size(), file_name, line_number);
+
+    _arr = array<T>(s, arr->data());
+  }
+
+private:
+  cs_lnum_t _dim[N];
+  cs_lnum_t _offset[N];
+  array<T>  _arr;
 };
 
 } /* namespace cs */

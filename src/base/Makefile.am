@@ -65,7 +65,6 @@ cs_all_to_all.h \
 cs_array.h \
 cs_array_reduce.h \
 cs_array_2dspan.h \
-cs_array_mdspan.h \
 cs_assert.h \
 cs_ast_coupling.h \
 cs_base.h \
@@ -124,6 +123,7 @@ cs_log_setup.h \
 cs_map.h \
 cs_mass_source_terms.h \
 cs_math.h \
+cs_mdspan.h \
 cs_measures_util.h \
 cs_mem.h \
 cs_mobile_structures.h \
