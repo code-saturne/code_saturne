@@ -30,6 +30,10 @@
  * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
+#if defined(HAVE_NCCL)
+#include <nccl.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -42,6 +46,10 @@
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_mem_cuda_priv.h"
+
+#if defined(HAVE_NCCL)
+#include "base/cs_fp_exception.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -83,6 +91,24 @@ int  cs_glob_cuda_n_mp = -1;
 
 static int            _cs_glob_cuda_n_streams = -1;
 static cudaStream_t  *_cs_glob_cuda_streams = nullptr;
+
+#if defined(HAVE_NCCL)
+
+ncclComm_t    cs_glob_nccl_comm = nullptr;
+
+/* NCCL Datatypes associated with code_saturne datatypes */
+
+ncclDataType_t  cs_datatype_to_nccl[] = {ncclChar,
+                                         ncclChar,
+                                         ncclFloat32,
+                                         ncclFloat64,
+                                         ncclFloat16,   /* No match (avoid) */
+                                         ncclInt32,     /* CS_INT32 */
+                                         ncclInt64,     /* CS_INT64 */
+                                         ncclUint32,    /* CS_UINT32 */
+                                         ncclUint64};   /* CS_UINT64 */
+
+#endif
 
 /* Reduce buffers associated with streams in pool */
 
@@ -132,6 +158,99 @@ finalize_streams_(void)
 
   _cs_glob_cuda_n_streams = 0;
 }
+
+#if defined(HAVE_NCCL) && defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize NCCL.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_finalize_nccl(void)
+{
+  if (cs_glob_nccl_comm != nullptr) {
+    ncclResult_t retcode = ncclCommFinalize(cs_glob_nccl_comm);
+    if (retcode == ncclSuccess) {
+      retcode = ncclCommDestroy(cs_glob_nccl_comm);
+      cs_glob_nccl_comm = nullptr;
+    }
+    if (retcode != ncclSuccess) {
+      const char * err_str = ncclGetErrorString(retcode);
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         _("\n"
+           "  Failed finilizing NCCL: %s;\n"),
+         err_str);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize NCCL.
+ *
+ * \param [in]   n_devices     number of devices on local node
+ * \param [in]   n_node_ranks  number of ranks per node
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_initialize_nccl(int  n_devices,
+                 int  n_node_ranks)
+{
+  if (cs_glob_n_ranks < 2)
+    return;
+
+  int may_use_nccl = (n_node_ranks <= n_devices) ? 1 : 0;
+
+  MPI_Allreduce(MPI_IN_PLACE, &may_use_nccl, 1, MPI_INT,
+                MPI_MIN, cs_glob_mpi_comm);
+
+  if (may_use_nccl) {
+    cs_fp_exception_disable_trap();
+
+    /* Get NCCL identifier */
+    ncclUniqueId uid;
+    if (cs_glob_rank_id == 0)
+      ncclGetUniqueId(&uid);
+    MPI_Bcast(&uid, sizeof(uid), MPI_BYTE, 0, cs_glob_mpi_comm);
+
+    /* Initialize NCCL communicator */
+
+    ncclResult_t retcode = ncclCommInitRank(&cs_glob_nccl_comm,
+                                            cs_glob_n_ranks,
+                                            uid,
+                                            cs_glob_rank_id);
+
+    if (cs_glob_nccl_comm == nullptr || retcode != ncclSuccess) {
+      const char * err_str = ncclGetErrorString(retcode);
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         _("\n"
+           "  Failed initializing NCCL communicator: %s;\n"
+           "    Fallback to MPI.\n"),
+         err_str);
+    }
+    else
+      cs_base_at_finalize(_finalize_nccl);
+
+    cs_fp_exception_restore_trap();
+  }
+
+  else {
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _("\n"
+         "  Not using NCCL (requires 1 device per MPI rank, "
+         "currently %d/%d).\n"),
+       n_devices, n_node_ranks);
+  }
+
+}
+
+#endif
 
 /*============================================================================
  * Semi-private function prototypes
@@ -556,6 +675,32 @@ cs_base_cuda_compiler_info(cs_log_t  log_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Log information on NCCL.
+ *
+ * \param[in]  log_id  id of log file in which to print information
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_base_cuda_nccl_info(cs_log_t  log_id)
+{
+#if defined(HAVE_NCCL)
+  int link_version;
+  ncclGetVersion(&link_version);
+  int compile_version = NCCL_VERSION(NCCL_MAJOR, NCCL_MINOR, NCCL_PATCH);
+  if (compile_version != link_version)
+    cs_log_printf(log_id,
+                  _("  NCCL version %d (compiled with version %d)\n"),
+                  link_version, compile_version);
+  else
+    cs_log_printf(log_id,
+                  "  NCCL version %d.%d.%d\n",
+                  NCCL_MAJOR, NCCL_MINOR, NCCL_PATCH);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set CUDA device based on MPI rank and number of devices.
  *
  * \param[in]  comm            associated MPI communicator
@@ -622,6 +767,11 @@ cs_base_cuda_select_default_device(void)
     cudaStreamCreate(&_cs_glob_stream_pf);
     cs_mem_cuda_set_prefetch_stream(_cs_glob_stream_pf);
   }
+
+  /* Initialize NCCL if available */
+#if defined(HAVE_NCCL) && defined(HAVE_MPI)
+  _initialize_nccl(n_devices, cs_glob_node_n_ranks);
+#endif
 
   /* Finally, determine whether we may use graphs for some kernel launches. */
 

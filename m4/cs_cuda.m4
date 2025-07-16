@@ -31,6 +31,7 @@ AC_DEFUN([CS_AC_TEST_CUDA], [
 cs_have_cuda=no
 cs_have_cublas=no
 cs_have_cusparse=no
+cs_have_nccl=no
 
 AC_ARG_ENABLE(cuda,
   [AS_HELP_STRING([--enable-cuda], [Enable cuda offload])],
@@ -191,6 +192,42 @@ if test "x$cs_have_cuda" != "xno" ; then
                  fi
                fi])
 
+  AC_ARG_WITH(nccl,
+              [AS_HELP_STRING([--with-nccl=PATH],
+                              [specify prefix directory for NVIDIA Collective Communications Library (NCCL)])],
+              [if test "x$withval" = "x"; then
+                 with_nccl=no
+               fi],
+              [with_nccl=no])
+
+  AC_ARG_WITH(nccl-include,
+              [AS_HELP_STRING([--with-nccl-include=PATH],
+                              [specify directory for NCCL include files])],
+              [if test "x$with_nccl" = "xcheck"; then
+                 with_nccl=yes
+               fi
+               NCCL_CPPFLAGS="-I$with_nccl_include"],
+              [if test "x$with_nccl" != "xno" -a "x$with_nccl" != "xyes" \
+                  -a "x$with_nccl" != "xcheck"; then
+                 if test "${NVCC/'bin/nvcc'/include}" != "$with_nccl/include" ; then
+                   NCCL_CPPFLAGS="-I$with_nccl/include"
+                 fi
+               fi])
+
+  AC_ARG_WITH(nccl-lib,
+              [AS_HELP_STRING([--with-nccl-lib=PATH],
+                              [specify directory for NCCL library])],
+              [if test "x$with_nccl" = "xcheck"; then
+                 with_nccl=yes
+               fi
+               NCCL_LDFLAGS="-L$with_nccl_lib"],
+              [if test "x$with_nccl" != "xno" -a "x$with_nccl" != "xyes" \
+	            -a "x$with_nccl" != "xcheck"; then
+                 if test "$cs_cuda_lib_path" != "$with_nccl/lib" ; then
+                   NCCL_LDFLAGS="-L$with_nccl/lib"
+                 fi
+               fi])
+
   # Check for cuBLAS
 
   if test "x$with_cublas" != "xno" ; then
@@ -315,6 +352,64 @@ cusparseStatus_t status = cusparseCreate(&handle);]])
   fi
 
   AC_SUBST(cs_have_cusparse)
+
+  # Check for NCCL
+
+  if test "x$with_nccl" != "xno" ; then
+
+    saved_CPPFLAGS="$CPPFLAGS"
+    saved_LDFLAGS="$LDFLAGS"
+    saved_LIBS="$LIBS"
+
+    saved_CUDA_CPPFLAGS="$CUDA_CPPFLAGS"
+    saved_CUDA_LDFLAGS="$CUDA_LDFLAGS"
+    saved_CUDA_LIBS="$CUDA_LIBS"
+
+    if test "x$NCCL_CPPFLAGS" != "x" ; then
+      CUDA_CPPFLAGS="${CUDA_CPPFLAGS} ${NCCL_CPPFLAGS}"
+    fi
+    if test "x$NCCL_LDFLAGS" != "x" ; then
+      CUDA_LDFLAGS="${CUDA_LDFLAGS} ${NCCL_LDFLAGS}"
+    fi
+    CUDA_LIBS="-lnccl ${CUDA_LIBS}"
+
+    CPPFLAGS="${CPPFLAGS} ${CUDA_CPPFLAGS}"
+    LDFLAGS="${LDFLAGS} ${CUDA_LDFLAGS}"
+    LIBS="${CUDA_LIBS} ${LIBS}"
+
+    AC_MSG_CHECKING([for NCCL support])
+
+    AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([[#include <nccl.h>]],
+[[ncclComm_t* comm;
+ncclUniqueId Id;
+ncclCommInitRank(comm, 1, Id, 0);]])
+                 ],
+                 [ cs_have_nccl=yes ],
+                 [ cs_have_nccl=no ])
+
+    if test "$cs_have_nccl" = "yes"; then
+      AC_DEFINE([HAVE_NCCL], 1, [NCCL support])
+    fi
+
+    AC_MSG_RESULT($cs_have_nccl)
+    if test "x$cs_have_nccl" = "xno" ; then
+      if test "x$with_nccl" != "xcheck" ; then
+        AC_MSG_FAILURE([NCCL support is requested, but test for NCCL failed!])
+      else
+        CUDA_CPPFLAGS="$saved_CUDA_CPPFLAGS"
+        CUDA_LDFLAGS="$saved_CUDA_LDFLAGS"
+        CUDA_LIBS="$saved_CUDA_LIBS"
+      fi
+    fi
+
+    CPPFLAGS="$saved_CPPFLAGS"
+    LDFLAGS="$saved_LDFLAGS"
+    LIBS="$saved_LIBS"
+
+  fi
+
+  AC_SUBST(cs_have_nccl)
 
   # Finally set flags which can be extended by libraries and paths.
 

@@ -42,12 +42,6 @@
 #include <cublas_v2.h>
 #endif
 
-#include <cooperative_groups.h>
-#if (CUDART_VERSION >= 11000)
-#include <cooperative_groups/reduce.h>
-#endif
-namespace cg = cooperative_groups;
-
 /* Use graph capture ? */
 
 #if (CUDART_VERSION > 9020)
@@ -58,7 +52,9 @@ namespace cg = cooperative_groups;
 
 #include <cfloat>
 
-// #include "mpi-ext.h"
+#if defined(HAVE_NCCL)
+#include <nccl.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -278,29 +274,6 @@ _jacobi_compute_vx_and_residual_ini0(cs_lnum_t                       n_rows,
     sdata[tid] = 0.0;
 
   cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
-}
-
-/*----------------------------------------------------------------------------
- * Compute Rk <- Rhs and residual for Jacobi with
- * 3x3 block-diagonal matrix when Vx is initially 0.
- *
- * parameters:
- *   n_rows   <-- number of block rows
- *   rk       <-- right hand side
- *----------------------------------------------------------------------------*/
-
-__global__ static void
-_jacobi_rk_ini_0
-(
- cs_lnum_t      n_rows,
- cs_real_t     *rk
-)
-{
-  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
-
-  if (ii < n_rows) {
-    rk[ii] = 0;
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1013,7 +986,7 @@ _prefetch_h2d(const void   *dst,
  *   c          <-- pointer to solver context info
  *   stream     <-- associated stream
  *   tuple_size <-- number of values in reduced tuple
- *   res        <-> local sum in, globally sum out (host)
+ *   res        <-> local sum in, globally sum out (unified or device)
  *
  * returns:
  *   convergence state
@@ -1025,10 +998,34 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
                     cs_lnum_t            tuple_size,
                     double               res[])
 {
-  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
-  CS_CUDA_CHECK(cudaGetLastError());
+  /* Use NCCL if available for an in-place GPU→GPU all-reduce (sum)
+     -------------------------------------------------------------- */
+
+#if defined(HAVE_NCCL)
+  if (c->nccl_comm != nullptr) {
+    ncclAllReduce((const void *)res,    // send buffer (device)
+                  (void *)res,          // recv buffer (same)
+                  tuple_size,           // number of elements
+                  ncclDouble,           // data type
+                  ncclSum,              // reduction operation
+                  c->nccl_comm,
+                  stream);
+
+    /* Wait until the collective has finished before returning */
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+    CS_CUDA_CHECK(cudaGetLastError());
+    return;
+  }
+#endif /* HAVE_NCCL */
 
 #if defined(HAVE_MPI)
+
+  /* Fallback: host-side reduction via MPI
+     (assumes 'res' is host-visible or CUDA-aware MPI is used).
+     ---------------------------------------------------------- */
+
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   if (c->comm != MPI_COMM_NULL)
     MPI_Allreduce(MPI_IN_PLACE, res, tuple_size, MPI_DOUBLE, MPI_SUM, c->comm);

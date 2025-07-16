@@ -44,6 +44,10 @@
 #include <mpi.h>
 #endif
 
+#if defined(HAVE_NCCL)
+#include <nccl.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -210,7 +214,9 @@ struct _cs_sles_it_t {
   int      caller_n_ranks;
 # endif
 
-  /* Solver setup */
+#if defined(HAVE_NCCL)
+  ncclComm_t nccl_comm;
+#endif
 
   const struct _cs_sles_it_t  *shared;     /* pointer to context sharing some
                                               setup and preconditioner data,

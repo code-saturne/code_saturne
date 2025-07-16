@@ -4354,6 +4354,12 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   }
 #endif
 
+#if defined(HAVE_NCCL)
+  c->nccl_comm = nullptr;
+  if (c->comm == cs_glob_mpi_comm)
+    c->nccl_comm = cs_glob_nccl_comm;
+#endif
+
   c->setup_data = nullptr;
   c->add_data = nullptr;
   c->shared = nullptr;
@@ -4449,6 +4455,10 @@ cs_sles_it_copy(const void  *context)
 
 #if defined(HAVE_MPI)
     d->comm = c->comm;
+#endif
+
+#if defined(HAVE_NCCL)
+    d->nccl_comm = c->nccl_comm;
 #endif
   }
 
@@ -5192,6 +5202,9 @@ cs_sles_it_transfer_parameters(const cs_sles_it_t  *src,
     dest->comm = src->comm;
 #endif
 
+#if defined(HAVE_NCCL)
+    dest->nccl_comm = src->nccl_comm;
+#endif
   }
 }
 
@@ -5276,6 +5289,11 @@ cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
     if (cs_glob_n_ranks < 2)
       c->comm = MPI_COMM_NULL;
   }
+
+#if defined(HAVE_NCCL)  // No reduced NCCL communicators built so far.
+  if (c->comm != cs_glob_mpi_comm)
+    c->nccl_comm = nullptr;
+#endif
 }
 
 #endif /* defined(HAVE_MPI) */

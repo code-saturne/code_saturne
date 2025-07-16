@@ -312,7 +312,7 @@ _sys_info_release(char      *issue_str,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Log information on available CUDA devices.
+ * \brief  Log information on available SYCL devices.
  *
  * \param[in]  log_id  id of log file in which to print information
  */
@@ -766,6 +766,11 @@ _mpi_version_info(bool  log)
                   _("\n  MPI version: none\n"));
 
 #endif /* (HAVE_MPI) */
+
+#if defined(HAVE_NCCL)
+  for (int log_id = 0; log_id < n_logs; log_id++)
+    cs_base_cuda_nccl_info(logs[log_id]);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

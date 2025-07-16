@@ -55,6 +55,7 @@ BEGIN_C_DECLS
  * the buffer must be of sufficient size.
  *
  * \param[in]   halo          pointer to halo structure
+ * \param[in]   stream        associated CUDA stream
  * \param[in]   sync_mode     synchronization mode (standard or extended)
  * \param[in]   stride        number of (interlaced) values by entity
  * \param[in]   var           pointer to value array (device)
@@ -64,6 +65,7 @@ BEGIN_C_DECLS
 
 void
 cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
+                              cudaStream_t       stream,
                               cs_halo_type_t     sync_mode,
                               cs_datatype_t      data_type,
                               cs_lnum_t          stride,

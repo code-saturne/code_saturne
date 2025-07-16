@@ -35,7 +35,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
+#if defined(HAVE_NCCL)
+#include <nccl.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -91,6 +93,15 @@ extern int  cs_glob_cuda_max_threads_per_block;
 extern int  cs_glob_cuda_max_block_size;
 extern int  cs_glob_cuda_max_blocks;
 extern int  cs_glob_cuda_n_mp;  /* Number of multiprocessors */
+
+#if defined(HAVE_NCCL)
+
+extern ncclComm_t    cs_glob_nccl_comm;
+
+/* NCCL Datatypes associated with code_saturne datatypes */
+extern ncclDataType_t  cs_datatype_to_nccl[];
+
+#endif
 
 /* Allow graphs for kernel launches ? May interfere with profiling (nsys),
    so can be deactivated. */
@@ -424,6 +435,17 @@ cs_base_cuda_version_info(cs_log_t  log_id);
 
 void
 cs_base_cuda_compiler_info(cs_log_t  log_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log information on NCCL.
+ *
+ * \param[in]  log_id  id of log file in which to print information
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_base_cuda_nccl_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
 /*

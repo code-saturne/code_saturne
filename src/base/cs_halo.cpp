@@ -34,6 +34,10 @@
 #include <string.h>
 #include <assert.h>
 
+#if defined(HAVE_NCCL)
+#include <nccl.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -135,6 +139,11 @@ struct _cs_halo_state_t {
 
 #endif
 
+#if defined(HAVE_CUDA)
+
+  cudaStream_t  stream;           /* Associated CUDA stream */
+
+#endif
 };
 
 /*============================================================================
@@ -476,6 +485,99 @@ _halo_sync_complete_one_sided(const cs_halo_t  *halo,
 
 #endif /* (MPI_VERSION >= 3) */
 #endif /* defined(HAVE_MPI) */
+
+#if defined(HAVE_NCCL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Launch update array of values with NCCL in case of parallelism.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * The cs_halo_sync_pack function should have been called before this function,
+ * using the same hs argument.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       val         pointer to variable value array
+ * \param[in, out]  hs          pointer to halo state
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sync_start_nccl(const cs_halo_t  *halo,
+                 void             *val,
+                 cs_halo_state_t  *hs)
+{
+  if (halo == nullptr)
+    return;
+
+  cs_lnum_t end_shift = (hs->sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+  cs_lnum_t stride = hs->stride;
+  size_t elt_size = cs_datatype_size[hs->data_type] * stride;
+  size_t n_loc_elts = halo->n_local_elts;
+
+  unsigned char *restrict _val = (unsigned char *)val;
+  unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
+
+  unsigned char *buffer = (unsigned char *)(hs->send_buffer_cur);
+  buffer = (unsigned char *)cs_get_device_ptr(buffer);
+
+  ncclDataType_t nccl_datatype = cs_datatype_to_nccl[hs->data_type];
+
+  const int local_rank = cs::max(cs_glob_rank_id, 0);
+
+  ncclGroupStart();
+
+  /* Receive data from distant ranks */
+
+  for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+    cs_lnum_t length = (  halo->index[2*rank_id + end_shift]
+                        - halo->index[2*rank_id]);
+
+    if (halo->c_domain_rank[rank_id] != local_rank) {
+
+      if (length > 0) {
+        size_t start = (size_t)(halo->index[2*rank_id]);
+        unsigned char *dest = _val_dest + start*elt_size;
+
+        ncclRecv(dest,
+                 length*stride,
+                 nccl_datatype,
+                 halo->c_domain_rank[rank_id],
+                 cs_glob_nccl_comm,
+                 hs->stream);
+      }
+
+    }
+    else
+      hs->local_rank_id = rank_id;
+  }
+
+  /* Send data to distant ranks */
+
+  for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+    cs_lnum_t start = halo->send_index[2*rank_id]*elt_size;
+    cs_lnum_t length = (  halo->send_index[2*rank_id + end_shift]
+                        - halo->send_index[2*rank_id]);
+
+    if (halo->c_domain_rank[rank_id] != local_rank && length > 0)
+      ncclSend(buffer + start,
+               length*stride,
+               nccl_datatype,
+               halo->c_domain_rank[rank_id],
+               cs_glob_nccl_comm,
+               hs->stream);
+
+  }
+
+  ncclGroupEnd();
+}
+
+#endif // defined(HAVE_NCCL)
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1267,6 +1369,12 @@ cs_halo_state_create(void)
     .win = MPI_WIN_NULL
 
 #endif
+
+#if defined(HAVE_CUDA)
+    ,
+    .stream = cs_cuda_get_stream(0)
+
+#endif
   };
 
   *hs = hs_ini;
@@ -1585,6 +1693,11 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
   _hs->data_type = data_type;
   _hs->stride = stride;
 
+
+#if defined(HAVE_CUDA)
+  _hs->stream = cs_cuda_get_stream(0);
+#endif
+
   return _send_buffer;
 }
 
@@ -1760,6 +1873,7 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
     send_buf : cs_get_device_ptr(_send_buf);
 
   cs_halo_cuda_pack_send_buffer(halo,
+                                _hs->stream,
                                 sync_mode,
                                 data_type,
                                 stride,
@@ -1852,6 +1966,15 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 #if defined(HAVE_ACCEL)
 
   if (_hs->var_location > CS_ALLOC_HOST) {
+
+#if defined(HAVE_NCCL)
+
+    if (cs_glob_nccl_comm != nullptr) {
+      _sync_start_nccl(halo, val, _hs);
+      return;
+    }
+
+#endif
 
     /* For CUDA-aware MPI, directly work with buffer on device */
 
@@ -2012,23 +2135,39 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
 
 #if defined(HAVE_ACCEL)
 
-  if (   cs_mpi_device_support == 0
-      && _hs->var_location > CS_ALLOC_HOST) {
+  if (_hs->var_location > CS_ALLOC_HOST) {
 
-    size_t n_loc_elts = halo->n_local_elts;
-    size_t n_elts = (   _hs->sync_mode
-                     == CS_HALO_EXTENDED) ? halo->n_elts[1] : halo->n_elts[0];
-    size_t elt_size = cs_datatype_size[_hs->data_type] * _hs->stride;
-    size_t n_bytes = n_elts*elt_size;
+    int device_support = cs_mpi_device_support;
 
-    if (n_elts > 0) {
-      unsigned char *restrict _val = (unsigned char *)val;
-      unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
+#if defined(HAVE_NCCL)
 
-      if (_hs->var_location == CS_ALLOC_HOST_DEVICE_SHARED)
-        cs_prefetch_h2d(_val_dest, n_bytes);
-      else
-        cs_copy_h2d(_val_dest, _hs->recv_buffer, n_bytes);
+    if (cs_glob_nccl_comm != nullptr) {
+      CS_CUDA_CHECK(cudaStreamSynchronize(_hs->stream));
+      CS_CUDA_CHECK(cudaGetLastError());
+
+      device_support = 1;
+    }
+
+#endif
+
+    if (device_support == 0) {
+
+      size_t n_loc_elts = halo->n_local_elts;
+      size_t n_elts = (   _hs->sync_mode
+                       == CS_HALO_EXTENDED) ? halo->n_elts[1] : halo->n_elts[0];
+      size_t elt_size = cs_datatype_size[_hs->data_type] * _hs->stride;
+      size_t n_bytes = n_elts*elt_size;
+
+      if (n_elts > 0) {
+        unsigned char *restrict _val = (unsigned char *)val;
+        unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
+
+        if (_hs->var_location == CS_ALLOC_HOST_DEVICE_SHARED)
+          cs_prefetch_h2d(_val_dest, n_bytes);
+        else
+          cs_copy_h2d(_val_dest, _hs->recv_buffer, n_bytes);
+      }
+
     }
 
   }

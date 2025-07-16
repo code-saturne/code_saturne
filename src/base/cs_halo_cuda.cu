@@ -179,6 +179,7 @@ BEGIN_C_DECLS
  * the buffer must be of sufficient size.
  *
  * \param[in]   halo          pointer to halo structure
+ * \param[in]   stream        associated CUDA stream
  * \param[in]   sync_mode     synchronization mode (standard or extended)
  * \param[in]   data_type     data type
  * \param[in]   stride        number of (interlaced) values by entity
@@ -189,6 +190,7 @@ BEGIN_C_DECLS
 
 void
 cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
+                              cudaStream_t       stream,
                               cs_halo_type_t     sync_mode,
                               cs_datatype_t      data_type,
                               cs_lnum_t          stride,
@@ -212,8 +214,6 @@ cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
     n_send = halo->n_send_elts[1];
     n_blocks = (n_send % block_size) ? n_send/block_size + 1 : n_send/block_size;
   }
-
-  cudaStream_t stream = cs_cuda_get_stream(0);
 
   if (data_type == CS_REAL_TYPE) {
 

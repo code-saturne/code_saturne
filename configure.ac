@@ -1304,6 +1304,7 @@ if test x$cs_have_cuda = xyes ; then
   echo "   cuBLAS support: "$cs_have_cublas""
   echo "   cuSPARSE support: "$cs_have_cusparse""
   echo "   use CUDA in .cpp files: "$cs_enable_cuda_cpp""
+  echo "   NCCL support: "$cs_have_nccl""
 fi
 echo " SYCL support: "$cs_have_sycl""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$with_blas_type""
