@@ -863,7 +863,7 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
 void
 cs_gui_mobile_mesh_structures_add(void)
 {
-  int n_i_struct = 0, n_e_struct = 0, n_a_struct;
+  int n_i_struct = 0, n_e_struct = 0, n_a_struct = 0;
 
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
