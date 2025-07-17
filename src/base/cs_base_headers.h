@@ -78,7 +78,6 @@
 #include "base/cs_map.h"
 #include "base/cs_mass_source_terms.h"
 #include "base/cs_math.h"
-#include "base/cs_mdspan.h"
 #include "base/cs_mem.h"
 #include "base/cs_measures_util.h"
 #include "base/cs_mobile_structures.h"
