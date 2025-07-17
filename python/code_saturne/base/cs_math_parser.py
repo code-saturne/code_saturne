@@ -720,6 +720,15 @@ class cs_math_parser:
         if func_type == "vol":
             req_fields = split_req_components(req)
 
+        # First pass to recognize known loop variables
+        _has_for_range = False
+        for_str_pattern = re.compile(r"FOR_RANGE\([A-Za-z],\s*[0-9]+,\s*[0-9]+\)", re.IGNORECASE)
+        for _p in for_str_pattern.findall(expression):
+            _m = _p.replace('FOR_RANGE(','').replace(')','').split(',')
+            known_symbols.append(str(_m[0]))
+            _s = 'for (int {m[0]} = {m[1]}; {m[0]} < {m[2]}; {m[0]}++)'.format(m=_m)
+            _has_for_range = True
+
         # Parse the Mathematical expression and generate the C block code
         exp_lines = expression.split("\n")
         segments = self.separate_segments(exp_lines)
@@ -835,8 +844,16 @@ class cs_math_parser:
 
         # Rebuild lines
         new_text = self.rebuild_text(tokens, comments)
-        for line in new_text[0].split('\n'):
-            usr_code.append(line + '\n')
+        if _has_for_range:
+            for line in new_text[0].split('\n'):
+                for _p in for_str_pattern.findall(line):
+                    _m = _p.replace('FOR_RANGE(','').replace(')','').split(',')
+                    _s = 'for (int {m[0]} = {m[1]}; {m[0]} < {m[2]}; {m[0]}++)'.format(m=_m)
+                    line = line.replace(_p, _s)
+                usr_code.append(line + '\n')
+        else:
+            for line in new_text[0].split('\n'):
+                usr_code.append(line + '\n')
         if len(new_text[1]) > 0:
             for c in new_text[1]:
                 usr_code.append('//' + c[0][1:] + '\n')
