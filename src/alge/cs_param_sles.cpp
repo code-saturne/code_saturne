@@ -474,6 +474,11 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
       cs_param_mumps_log(slesp->name,
                          static_cast<const cs_param_mumps_t *>
                          (slesp->context_param));
+    else if (slesp->precond == CS_PARAM_PRECOND_HPDDM) {
+      cs_param_hpddm_log(slesp->name,
+                         static_cast<const cs_param_hpddm_t *>(
+                           slesp->context_param));
+    }
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:       %s\n",
                   slesp->name,
@@ -576,6 +581,10 @@ cs_param_sles_copy_from(const cs_param_sles_t  *src,
                                          dst->amg_type))
     dst->context_param = cs_param_amg_boomer_copy(
       static_cast<const cs_param_amg_boomer_t *>(src->context_param));
+  else if (dst->precond == CS_PARAM_PRECOND_HPDDM) {
+    dst->context_param = cs_param_hpddm_copy(
+      static_cast<const cs_param_hpddm_t *>(src->context_param));
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -995,6 +1004,7 @@ cs_param_sles_set_precond(const char       *keyval,
                 " Please check your installation settings.\n",
                 __func__, sles_name, "CS_EQKEY_PRECOND");
 
+    cs_param_sles_hpddm_reset(slesp);
   }
   else
     ierr = EXIT_FAILURE;
@@ -2013,7 +2023,8 @@ cs_param_sles_hpddm_reset(cs_param_sles_t *slesp)
  *                                  use_neumann
  * \param[in]      relative_threshold thresold on eigenvalue to keep if do not
  *                                  use_neumann
- */
+ * \param[in]      p                number of mpi process used to solve coarse
+ * problem. If value < 1, we use automatic value.*/
 /*----------------------------------------------------------------------------*/
 
 void
@@ -2021,7 +2032,8 @@ cs_param_sles_hpddm(cs_param_sles_t *slesp,
                     const bool       use_neumann,
                     const int        nb_eigenvector,
                     const int        harmonic_overlap,
-                    const double     relative_threshold)
+                    const double     relative_threshold,
+                    const int        p)
 {
   if (slesp == nullptr)
     return;
@@ -2038,6 +2050,9 @@ cs_param_sles_hpddm(cs_param_sles_t *slesp,
   hpddmp->nb_eigenvector     = nb_eigenvector;
   hpddmp->harmonic_overlap   = harmonic_overlap;
   hpddmp->relative_threshold = relative_threshold;
+  if (p > 0) {
+    hpddmp->p = std::max(1, std::min(p, cs_glob_n_ranks / 2 - 1));
+  }
 
   /* Advanced options */
   hpddmp->adaptative = false;

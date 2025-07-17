@@ -612,6 +612,8 @@ cs_param_sles_hpddm_reset(cs_param_sles_t *slesp);
  *                                  use_neumann
  * \param[in]      relative_threshold thresold on eigenvalue to keep if do not
  *                                  use_neumann
+ * \param[in]      p                number of mpi process used to solve coarse
+ * problem. If value < 1, we use automatic value.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -620,7 +622,8 @@ cs_param_sles_hpddm(cs_param_sles_t *slesp,
                     const bool       use_neumann,
                     const int        nb_eigenvector,
                     const int        harmonic_overlap,
-                    const double     relative_threshold);
+                    const double     relative_threshold,
+                    const int        p = -1);
 
 /*----------------------------------------------------------------------------*/
 /*!

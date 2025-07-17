@@ -96,8 +96,11 @@ cs_param_hpddm_create(void)
   /* Basic options */
 
   hpddmp->harmonic_overlap   = 5;
-  hpddmp->nb_eigenvector     = 80;
+  hpddmp->nb_eigenvector     = 100;
   hpddmp->relative_threshold = 5e-6;
+  // Empirical choice advised by P. Jolivet
+  hpddmp->p =
+    std::max(1, std::min(cs_glob_n_ranks / 2 - 1, 1 + cs_glob_n_ranks / 8));
 
   /* Advanced options */
 
@@ -133,6 +136,7 @@ cs_param_hpddm_copy(const cs_param_hpddm_t *hpddmp)
   cpy->harmonic_overlap   = hpddmp->harmonic_overlap;
   cpy->nb_eigenvector     = hpddmp->nb_eigenvector;
   cpy->relative_threshold = hpddmp->relative_threshold;
+  cpy->p                  = hpddmp->p;
 
   /* Advanced options */
 
@@ -188,6 +192,11 @@ cs_param_hpddm_log(const char *name, const cs_param_hpddm_t *hpddmp)
                   "  * %s | SVD relative threshold:   %e\n",
                   name,
                   hpddmp->relative_threshold);
+
+  cs_log_printf(CS_LOG_SETUP,
+                "  * %s | Number of mpi to solve coarse problem:      %d\n",
+                name,
+                hpddmp->p);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -63,6 +63,7 @@ typedef struct {
   /* - 1 <= harmonic_overlap <= 10 */
   /* - 40 <= nb_eigenvector =< 500 */
   /* - 0.5 >= relative_threshold >= 1.e-6 */
+  /* - 1 <= p < nb_mpi/2 */
 
   bool use_neumann; /*!< Use neumann matrix on each subdomains */
 
@@ -70,6 +71,8 @@ typedef struct {
 
   int nb_eigenvector; /*!< Number of eigenvector to compute
                        *    (= svd_nsv or eps_nev) */
+
+  int p; /*!< Number of mpi used to solve the coarse problem */
 
   double relative_threshold; /*! < Thresold on eigenvalue to keep */
 
