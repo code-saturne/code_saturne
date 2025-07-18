@@ -2106,6 +2106,7 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
                                 false); /* stats not updated here */
           mg_sles->setup_func = cs_sles_it_setup;
           mg_sles->solve_func = cs_sles_it_solve;
+          mg_sles->destroy_func = cs_sles_it_destroy;
         }
 
         /* Share context between descent and ascent smoothers if both
