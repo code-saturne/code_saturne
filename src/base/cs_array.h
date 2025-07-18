@@ -961,6 +961,22 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Constructor method using copy. May be a shallow copy.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  mdspan
+  (
+    mdspan& other
+  )
+  {
+    set_size_(other._extent);
+    _data = other._data;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Move constructor.
    */
   /*--------------------------------------------------------------------------*/
@@ -1051,7 +1067,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  const T& operator()
+  T& operator()
   (
     cs_lnum_t i /*!<[in] Index of value to get */
   ) const
@@ -1076,9 +1092,9 @@ public:
   {
     static_assert(N == 2);
 
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data[i*_offset[0] + j];
-    else if constexpr (L == layout::left)
+    else if (L == layout::left)
       return _data[i + j*_offset[1]];
     else
       return _data[i*_offset[0] + j*_offset[1]];
@@ -1093,7 +1109,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  const T& operator()
+  T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j  /*!<[in] Index along second dimension */
@@ -1101,9 +1117,9 @@ public:
   {
     static_assert(N == 2);
 
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data[i*_offset[0] + j];
-    else if constexpr (L == layout::left)
+    else if (L == layout::left)
       return _data[i + j*_offset[1]];
     else
       return _data[i*_offset[0] + j*_offset[1]];
@@ -1127,9 +1143,9 @@ public:
   {
     static_assert(N == 3);
 
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data[i*_offset[0] + j*_offset[1] + k];
-    else if constexpr (L == layout::left)
+    else if (L == layout::left)
       return _data[i + j*_offset[1] + k*_offset[2]];
     else
       return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
@@ -1144,7 +1160,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  const T& operator()
+  T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j, /*!<[in] Index along second dimension */
@@ -1153,9 +1169,9 @@ public:
   {
     static_assert(N == 3);
 
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data[i*_offset[0] + j*_offset[1] + k];
-    else if constexpr (L == layout::left)
+    else if (L == layout::left)
       return _data[i + j*_offset[1] + k*_offset[2]];
     else
       return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
@@ -1323,10 +1339,10 @@ private:
   /* Private members */
   /*--------------------------------------------------------------------------*/
 
-  cs_lnum_t _extent[N];
-  cs_lnum_t _offset[N];
-  cs_lnum_t _size;
-  T*        _data;
+  cs_lnum_t  _extent[N];
+  cs_lnum_t  _offset[N];
+  cs_lnum_t  _size;
+  T*         _data;
 };
 
 
@@ -1380,8 +1396,8 @@ public:
 #endif
   )
   :
-    _extent({0}),
-    _offset({0}),
+    _extent{0},
+    _offset{0},
     _size(size),
     _owner(true),
     _data(nullptr),
@@ -1414,8 +1430,8 @@ public:
 #endif
   )
   :
-    _extent({0}),
-    _offset({0}),
+    _extent{0},
+    _offset{0},
     _owner(true),
     _data(nullptr),
     _mode(alloc_mode)
@@ -1540,7 +1556,7 @@ public:
   array
   (
     array&      other, /*!<[in] Reference of data array to copy */
-    bool        shallow_copy=false, /* Make a shallow copy (non-owner) or not. */
+    bool        deep_copy=false, /* Make a deep copy (owner) or not. */
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
   __has_builtin(__builtin_FILE)
@@ -1552,19 +1568,26 @@ public:
 #endif
   )
   {
+    /* /!\ The default mode is shallow copy, since we want for lambda captures
+     * to have a lightweight copy. Otherwise, with the deep copy as default,
+     * this may lead to segmentation faults and unnecessary allocations.
+     */
+
     set_size_(other._extent);
     _mode = other._mode;
 
     /* If shallow copy new instance is not owner. Otherwise same ownership
      * as original instance since we copy it.
      */
-    _owner = (shallow_copy) ? false : other._owner;
+    _owner = (deep_copy) ? other._owner : false;
 
     if (_owner) {
       allocate_(file_name, line_number);
       copy_data(other._data);
     }
     else {
+      CS_UNUSED(file_name);
+      CS_UNUSED(line_number);
       _data = other._data;
     }
   }
@@ -2087,7 +2110,7 @@ public:
     cs_lnum_t i /*!<[in] index of subarray */
   )
   {
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data + i*_offset[0];
     else
       return _data + i*_offset[N-1];
@@ -2106,7 +2129,7 @@ public:
     cs_lnum_t i /*!<[in] index of subarray */
   ) const
   {
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data + i*_offset[0];
     else
       return _data + i*_offset[N-1];
@@ -2164,7 +2187,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  const T& operator[]
+  T& operator[]
   (
     cs_lnum_t i /*!<[in] Index of value to get */
   ) const
@@ -2198,7 +2221,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  const T& operator()
+  T& operator()
   (
     cs_lnum_t i /*!<[in] Index of value to get */
   ) const
@@ -2223,9 +2246,9 @@ public:
   {
     static_assert(N == 2);
 
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data[i*_offset[0] + j];
-    else if constexpr (L == layout::left)
+    else if (L == layout::left)
       return _data[i + j*_offset[1]];
     else
       return _data[i*_offset[0] + j*_offset[1]];
@@ -2240,7 +2263,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  const T& operator()
+  T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j  /*!<[in] Index along second dimension */
@@ -2248,9 +2271,9 @@ public:
   {
     static_assert(N == 2);
 
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data[i*_offset[0] + j];
-    else if constexpr (L == layout::left)
+    else if (L == layout::left)
       return _data[i + j*_offset[1]];
     else
       return _data[i*_offset[0] + j*_offset[1]];
@@ -2274,9 +2297,9 @@ public:
   {
     static_assert(N == 3);
 
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data[i*_offset[0] + j*_offset[1] + k];
-    else if constexpr (L == layout::left)
+    else if (L == layout::left)
       return _data[i + j*_offset[1] + k*_offset[2]];
     else
       return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
@@ -2291,7 +2314,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  const T& operator()
+  T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j, /*!<[in] Index along second dimension */
@@ -2300,9 +2323,9 @@ public:
   {
     static_assert(N == 3);
 
-    if constexpr (L == layout::right)
+    if (L == layout::right)
       return _data[i*_offset[0] + j*_offset[1] + k];
-    else if constexpr (L == layout::left)
+    else if (L == layout::left)
       return _data[i + j*_offset[1] + k*_offset[2]];
     else
       return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
