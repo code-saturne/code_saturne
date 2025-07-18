@@ -106,7 +106,7 @@ _close_log_files(void)
  *----------------------------------------------------------------------------*/
 
 static void
-_open_log(const cs_log_t log)
+_open_log(cs_log_t log)
 {
   if (cs_glob_rank_id < 1 && _cs_log[log] == nullptr) {
     _cs_log[log] = fopen(_cs_log_name[log], "w");
@@ -142,9 +142,9 @@ _open_log(const cs_log_t log)
 static void
 _log_strpad(char        *dest,
             const char  *src,
-            const size_t width,
-            const size_t destsize,
-            const int    align)
+            size_t       width,
+            size_t       destsize,
+            int          align)
 {
   size_t i, j;
   size_t pad_l = 0, pad_r = 0, p_len = 0, c_len = 0;
@@ -228,7 +228,7 @@ _log_strpad(char        *dest,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_log_default_activate(const bool activate)
+cs_log_default_activate(bool  activate)
 {
   _cs_log_default_active = activate;
 }
@@ -336,8 +336,8 @@ cs_log_strlen(const char  *str)
 void
 cs_log_strpad(char        *dest,
               const char  *src,
-              const size_t width,
-              const size_t destsize)
+              size_t       width,
+              size_t       destsize)
 {
   _log_strpad(dest, src, width, destsize, 0);
 }
@@ -364,8 +364,8 @@ cs_log_strpad(char        *dest,
 void
 cs_log_strpadl(char        *dest,
                const char  *src,
-               const size_t width,
-               const size_t destsize)
+               size_t       width,
+               size_t       destsize)
 {
   _log_strpad(dest, src, width, destsize, 1);
 }
@@ -380,7 +380,8 @@ cs_log_strpadl(char        *dest,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_log_binary_pp_int32(const int32_t code, char buf[33])
+cs_log_binary_pp_int32(int32_t     code,
+                       char     buf[33])
 {
   int i;
   int32_t n = code;
@@ -420,7 +421,9 @@ cs_log_binary_pp_int32(const int32_t code, char buf[33])
 /*----------------------------------------------------------------------------*/
 
 int
-cs_log_vprintf(const cs_log_t log, const char *format, va_list arg_ptr)
+cs_log_vprintf(cs_log_t     log,
+               const char  *format,
+               va_list      arg_ptr)
 {
   int  retval;
 
@@ -466,7 +469,9 @@ cs_log_vprintf(const cs_log_t log, const char *format, va_list arg_ptr)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_log_printf(const cs_log_t log, const char *format, ...)
+cs_log_printf(cs_log_t     log,
+              const char  *format,
+              ...)
 {
   int  retval;
   va_list  arg_ptr;
@@ -517,7 +522,7 @@ cs_log_printf(const cs_log_t log, const char *format, ...)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_log_printf_flush(const cs_log_t log)
+cs_log_printf_flush(cs_log_t log)
 {
   int i;
   int retval = 0;
@@ -553,7 +558,7 @@ cs_log_printf_flush(const cs_log_t log)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_log_separator(const cs_log_t log)
+cs_log_separator(cs_log_t log)
 {
   int i;
   char separator[81];
@@ -579,10 +584,10 @@ cs_log_separator(const cs_log_t log)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_log_timer_array_header(const cs_log_t log,
-                          const int      indent,
-                          const char    *header_title,
-                          const bool     calls)
+cs_log_timer_array_header(cs_log_t     log,
+                          int          indent,
+                          const char  *header_title,
+                          bool         calls)
 {
   int title_width = 80 - 16 - indent;
   char tmp_s[4][64] =  {"", "", "", ""};
@@ -635,12 +640,12 @@ cs_log_timer_array_header(const cs_log_t log,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_log_timer_array(const cs_log_t           log,
-                   const int                indent,
-                   const int                n_lines,
-                   const char              *line_titles[],
-                   const unsigned           calls[],
-                   const cs_timer_counter_t time_count[])
+cs_log_timer_array(cs_log_t                   log,
+                   int                        indent,
+                   int                        n_lines,
+                   const char                *line_titles[],
+                   const unsigned             calls[],
+                   const cs_timer_counter_t   time_count[])
 {
   int i;
   int title_width = 80 - 16 - indent;

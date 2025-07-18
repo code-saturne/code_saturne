@@ -433,7 +433,8 @@ cs_xdef_get_scalar_value(const cs_xdef_t *def)
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_xdef_set_scalar_value(cs_xdef_t *def, const cs_real_t val)
+cs_xdef_set_scalar_value(cs_xdef_t *def,
+                         cs_real_t  val)
 {
   assert(def != NULL);
   assert(def->dim == 1);
@@ -511,12 +512,12 @@ cs_xdef_field_get(const cs_xdef_t *def)
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_xdef_volume_create(const cs_xdef_type_t type,
-                      const int            dim,
-                      const int            z_id,
-                      const cs_flag_t      state,
-                      const cs_flag_t      meta,
-                      void                *context);
+cs_xdef_volume_create(cs_xdef_type_t           type,
+                      int                      dim,
+                      int                      z_id,
+                      cs_flag_t                state,
+                      cs_flag_t                meta,
+                      void                    *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -535,12 +536,12 @@ cs_xdef_volume_create(const cs_xdef_type_t type,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_xdef_boundary_create(const cs_xdef_type_t type,
-                        const int            dim,
-                        const int            z_id,
-                        const cs_flag_t      state,
-                        const cs_flag_t      meta,
-                        void                *context);
+cs_xdef_boundary_create(cs_xdef_type_t    type,
+                        int               dim,
+                        int               z_id,
+                        cs_flag_t         state,
+                        cs_flag_t         meta,
+                        void             *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -558,9 +559,9 @@ cs_xdef_boundary_create(const cs_xdef_type_t type,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_xdef_timestep_create(const cs_xdef_type_t type,
-                        const cs_flag_t      state,
-                        const cs_flag_t      meta,
+cs_xdef_timestep_create(cs_xdef_type_t       type,
+                        cs_flag_t            state,
+                        cs_flag_t            meta,
                         void                *context);
 
 /*----------------------------------------------------------------------------*/
@@ -587,7 +588,7 @@ cs_xdef_free(cs_xdef_t     *d);
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_xdef_copy(cs_xdef_t *src);
+cs_xdef_copy(cs_xdef_t     *src);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -603,7 +604,8 @@ cs_xdef_copy(cs_xdef_t *src);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_set_input_context(cs_xdef_t *d, void *input);
+cs_xdef_set_input_context(cs_xdef_t       *d,
+                          void            *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -633,7 +635,8 @@ cs_xdef_set_free_input_function(cs_xdef_t               *d,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_set_quadrature(cs_xdef_t *d, const cs_quadrature_type_t qtype);
+cs_xdef_set_quadrature(cs_xdef_t              *d,
+                       cs_quadrature_type_t    qtype);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -700,7 +703,9 @@ cs_xdef_log_setup(const char          *prefix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_log(const cs_log_t log_type, const char *prefix, const cs_xdef_t *d);
+cs_xdef_log(cs_log_t             log_type,
+            const char          *prefix,
+            const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -713,7 +718,7 @@ cs_xdef_log(const cs_log_t log_type, const char *prefix, const cs_xdef_t *d);
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_xdef_type_get_name(const cs_xdef_type_t xdef_type);
+cs_xdef_type_get_name(cs_xdef_type_t  xdef_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -744,7 +749,8 @@ cs_xdef_array_set_values(cs_xdef_t     *d,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_array_set_zone_id(cs_xdef_t *d, const int z_id);
+cs_xdef_array_set_zone_id(cs_xdef_t     *d,
+                          int            z_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -786,9 +792,9 @@ cs_xdef_array_set_adjacency(cs_xdef_t             *d,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_array_set_sublist(cs_xdef_t      *d,
-                          const cs_lnum_t n_elts,
-                          const cs_lnum_t elt_ids[]);
+cs_xdef_array_set_sublist(cs_xdef_t         *d,
+                          cs_lnum_t          n_elts,
+                          const cs_lnum_t    elt_ids[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
