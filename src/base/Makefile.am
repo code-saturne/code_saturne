@@ -56,6 +56,7 @@ cs_version.h.in
 
 # Public header files (to be installed)
 
+#cs_mdspan.h \
 csbase_includedir=$(pkgincludedir)/base
 csbase_include_HEADERS = \
 cs_1d_wall_thermal.h \
