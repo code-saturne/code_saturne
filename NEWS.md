@@ -1,5 +1,10 @@
-Release 9.0.1 (yyyy-mm-dd)
+Release 9.0.1 (unreleased)
 --------------------------
+
+### Bug fixes:
+
+- Fix memory leak with some multigrid setup combinations
+  (including GUi-defined "multigrid as a solver" option).
 
 ### User changes:
 
