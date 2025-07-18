@@ -1075,7 +1075,13 @@ public:
   )
   {
     static_assert(N == 2);
-    return _data[i*_offset[0] + j*_offset[1]];
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1]];
+    else
+      return _data[i*_offset[0] + j*_offset[1]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1094,7 +1100,13 @@ public:
   ) const
   {
     static_assert(N == 2);
-    return _data[i*_offset[0] + j*_offset[1]];
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1]];
+    else
+      return _data[i*_offset[0] + j*_offset[1]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1114,7 +1126,13 @@ public:
   )
   {
     static_assert(N == 3);
-    return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j*_offset[1] + k];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1] + k*_offset[2]];
+    else
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1134,7 +1152,13 @@ public:
   ) const
   {
     static_assert(N == 3);
-    return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j*_offset[1] + k];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1] + k*_offset[2]];
+    else
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
   }
 
   // Getters
@@ -1968,6 +1992,69 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Resize data array and copy old data (2D)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void resize
+  (
+    const cs_lnum_t size1,       /*!<[in] Size along first dimension */
+    const cs_lnum_t size2,       /*!<[in] Size along second dimension */
+    bool      copy_data,         /*!<[in] Copy data from old pointer to new
+                                          array. Default is false. */
+    cs_lnum_t size_to_keep = -1, /*!<[in] Size to keep when copying data */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    static_assert(N == 2);
+    cs_lnum_t tmp_size[N] = {size1, size2};
+
+    resize(tmp_size, copy_data, size_to_keep, file_name, line_number);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize data array and copy old data (3D)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void resize
+  (
+    const cs_lnum_t size1,       /*!<[in] Size along first dimension */
+    const cs_lnum_t size2,       /*!<[in] Size along second dimension */
+    const cs_lnum_t size3,       /*!<[in] Size along third dimension */
+    bool            copy_data,   /*!<[in] Copy data from old pointer to new
+                                          array. Default is false. */
+    cs_lnum_t size_to_keep = -1, /*!<[in] Size to keep when copying data */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    static_assert(N == 3);
+    cs_lnum_t tmp_size[N] = {size1, size2, size3};
+
+    resize(tmp_size, copy_data, size_to_keep, file_name, line_number);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Set memory allocation mode.
    */
   /*--------------------------------------------------------------------------*/
@@ -2000,7 +2087,10 @@ public:
     cs_lnum_t i /*!<[in] index of subarray */
   )
   {
-    return _data + i*_offset[0];
+    if constexpr (L == layout::right)
+      return _data + i*_offset[0];
+    else
+      return _data + i*_offset[N-1];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2016,7 +2106,10 @@ public:
     cs_lnum_t i /*!<[in] index of subarray */
   ) const
   {
-    return _data + i*_offset[0];
+    if constexpr (L == layout::right)
+      return _data + i*_offset[0];
+    else
+      return _data + i*_offset[N-1];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2129,7 +2222,13 @@ public:
   )
   {
     static_assert(N == 2);
-    return _data[i*_offset[0] + j*_offset[1]];
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1]];
+    else
+      return _data[i*_offset[0] + j*_offset[1]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2148,7 +2247,13 @@ public:
   ) const
   {
     static_assert(N == 2);
-    return _data[i*_offset[0] + j*_offset[1]];
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1]];
+    else
+      return _data[i*_offset[0] + j*_offset[1]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2168,7 +2273,13 @@ public:
   )
   {
     static_assert(N == 3);
-    return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j*_offset[1] + k];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1] + k*_offset[2]];
+    else
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2188,7 +2299,13 @@ public:
   ) const
   {
     static_assert(N == 3);
-    return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j*_offset[1] + k];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1] + k*_offset[2]];
+    else
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
   }
 
   /*--------------------------------------------------------------------------*/
