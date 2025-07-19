@@ -99,23 +99,23 @@ BEGIN_C_DECLS
  * of the theory guide for more informations, as well as the
  * <a href="../../theory.pdf#condli"><b>condli</b></a> section.
  *
- * \param[in]     nvar          total number of variables
- * \param[in]     iterns        iteration number on Navier-Stokes equations
- * \param[in]     isvhb         id of field whose exchange coeffient should be
- *                               saved at the walls, or -1.
- * \param[in]     italim        for ALE
- * \param[in]     itrfin        Last velocity-pressure sub-iteration indicator
- * \param[in]     ineefl        for ALE
- * \param[in]     itrfup        Update after velocity-pressure sub-iterations
- * \param[in,out] isostd        indicator for standard outlet
+ * \param[in]       nvar        total number of variables
+ * \param[in]       iterns      iteration number on Navier-Stokes equations
+ * \param[in]       isvhb       id of field whose exchange coeffient should be
+ *                              saved at the walls, or -1.
+ * \param[in]       italim      for ALE
+ * \param[in]       itrfin      Last velocity-pressure sub-iteration indicator
+ * \param[in]       ineefl      for ALE
+ * \param[in]       itrfup      Update after velocity-pressure sub-iterations
+ * \param[in, out]  isostd      indicator for standard outlet
  *                              and reference face index
- * \param[in]     dt            time step (per cell)
- * \param[out]    visvdr        dynamic viscosity after V. Driest damping in
+ * \param[in]       dt          time step (per cell)
+ * \param[in, out]  visvdr      dynamic viscosity after V. Driest damping in
  *                              boundary cells
- * \param[out]    hbord         exchange coefficient at boundary
- * \param[out]    theipb        value of thermal scalar at \f$ \centip \f$
- *                              of boundary cells
- * \param[in]     nftcdt        Global indicator of condensation source terms
+ * \param[out]      hbord       exchange coefficient at boundary
+ * \param[out]      theipb      value of thermal scalar at \f$ \centip \f$
+ *                              f boundary cells
+ * \param[in]       nftcdt      Global indicator of condensation source terms
  *                              (ie. sum on the processors of nfbpcd) cells
  *                              associated to the face with condensation
  *                              phenomenon
@@ -123,18 +123,18 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_set_coeffs(int        nvar,
-                                  int        iterns,
-                                  int        isvhb,
-                                  int        italim,
-                                  int        itrfin,
-                                  int        ineefl,
-                                  int        itrfup,
-                                  int        isostd[],
-                                  cs_real_t  visvdr[],
-                                  cs_real_t  hbord[],
-                                  cs_real_t  theipb[],
-                                  int        nftcdt);
+cs_boundary_conditions_set_coeffs(int         nvar,
+                                  int         iterns,
+                                  int         isvhb,
+                                  int         italim,
+                                  int         itrfin,
+                                  int         ineefl,
+                                  int         itrfup,
+                                  int         isostd[],
+                                  cs_real_t  *visvdr,
+                                  cs_real_t   hbord[],
+                                  cs_real_t   theipb[],
+                                  int         nftcdt);
 
 /*----------------------------------------------------------------------------*/
 /*!
