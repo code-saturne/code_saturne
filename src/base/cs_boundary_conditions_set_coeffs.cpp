@@ -1021,26 +1021,11 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
           if (   cs_glob_space_disc->itbrrb == 1
               && eqp_scal->ircflu == 1 && eqp_scal->b_diff_flux_rc > 0) {
-            const cs_real_6_t *cvar_t = (const cs_real_6_t *)f_scal->val;
-
-            cs_real_63_t *gradt = nullptr;
-            CS_MALLOC(gradt, n_cells_ext, cs_real_63_t);
-
-            const int inc = 1;
-            const bool iprev = true;
-
-            cs_field_gradient_tensor(f_scal, iprev, inc, gradt);
-
-            for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-              cs_lnum_t c_id = b_face_cells[f_id];
-              for (int isou = 0; isou < 6; isou++) {
-                bvar_t[f_id][isou] =   cvar_t[c_id][isou]
-                                     + cs_math_3_dot_product(gradt[c_id][isou],
-                                                             diipb[f_id]);
-              }
-            }
-
-            CS_FREE(gradt);
+            cs_field_gradient_boundary_iprime_tensor(f_scal,
+                                                     true, /* use_previous_t */
+                                                     n_b_faces,
+                                                     nullptr,
+                                                     bvar_t);
           }
           else {
             const cs_real_6_t *cvara_t = (const cs_real_6_t *)f_scal->val_pre;
