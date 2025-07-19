@@ -999,27 +999,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         if (f_scal->dim == 3) {
 
           if (cs_glob_space_disc->itbrrb == 1 && eqp_scal->ircflu == 1) {
-            const cs_real_3_t *cvar_v = (const cs_real_3_t *)f_scal->val;
-
-            cs_real_33_t *gradv = nullptr;
-            CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
-
-            const int inc = 1;
-            const bool iprev = true;
-
-            cs_field_gradient_vector(f_scal, iprev, inc, gradv);
-
-            for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-              cs_lnum_t c_id = b_face_cells[f_id];
-              for (int isou = 0; isou < 3; isou++) {
-                bvar_v[f_id][isou] =   cvar_v[c_id][isou]
-                                     + cs_math_3_dot_product(gradv[c_id][isou],
-                                                             diipb[f_id]);
-              }
-            }
-
-            CS_FREE(gradv);
+            cs_field_gradient_boundary_iprime_vector(f_scal,
+                                                     true, /* use_previous_t */
+                                                     n_b_faces,
+                                                     nullptr,
+                                                     bvar_v);
           }
+
           else {
             const cs_real_3_t *cvara_v = (const cs_real_3_t *)f_scal->val_pre;
 
