@@ -136,6 +136,8 @@ cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
                         cs_real_t     d_x[],
                         cs_real_t     d_y[]);
 
+#if defined(HAVE_CUSPARSE)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with CSR matrix, scalar cuSPARSE version.
@@ -154,6 +156,8 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
                                  bool          sync,
                                  cs_real_t     d_x[],
                                  cs_real_t     d_y[]);
+
+#endif /* defined(HAVE_CUSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -174,6 +178,8 @@ cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
                         cs_real_t     d_x[],
                         cs_real_t     d_y[]);
 
+#if defined(HAVE_CUSPARSE)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, scalar cuSPARSE version.
@@ -192,6 +198,8 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
                                  bool          sync,
                                  cs_real_t     d_x[],
                                  cs_real_t     d_y[]);
+
+#endif /* defined(HAVE_CUSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -213,7 +221,7 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
                           cs_real_t     d_x[],
                           cs_real_t     d_y[]);
 
-#if defined(HAVE_CUSPARSE_GENERIC_API)
+#if defined(HAVE_CUSPARSE)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -240,7 +248,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
                                    cs_real_t     d_x[],
                                    cs_real_t     d_y[]);
 
-#endif /* defined(HAVE_CUSPARSE_GENERIC_API) */
+#endif /* defined(HAVE_CUSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 /*!

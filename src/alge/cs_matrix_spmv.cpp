@@ -3814,11 +3814,6 @@ const char s_cuda[] = "cuda";
 const char s_cusparse[] = "cusparse";
 const char *default_name = s_cusparse;
 
-#if !defined(HAVE_CUSPARSE_GENERIC_API)
- if (fill_type >= CS_MATRIX_BLOCK_D && fill_type < CS_MATRIX_BLOCK)
-   default_name = s_cuda;
-#endif
-
 #else
 
 const char *default_name = s_cuda;
@@ -4305,12 +4300,10 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_BLOCK_D:
       case CS_MATRIX_BLOCK_D_66:
       case CS_MATRIX_BLOCK_D_SYM:
-#if defined(HAVE_CUSPARSE_GENERIC_API)
         _spmv[0] = cs_matrix_spmv_cuda_msr_b_cusparse;
         _spmv[1] = cs_matrix_spmv_cuda_msr_b_cusparse;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
-#endif
         break;
       case CS_MATRIX_BLOCK:
         _spmv[0] = cs_matrix_spmv_cuda_msr_bb_cusparse;

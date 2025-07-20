@@ -312,27 +312,11 @@ cublasStatus_t status = cublasCreate(&handle);]])
 [[cusparseSpMatDescr_t matA;
 cusparseStatus_t status = cusparseDestroySpMat(matA);]])
                    ],
-                   [ AC_DEFINE([HAVE_CUSPARSE_GENERIC_API], 1,
-                               [cuSPARSE generic API support ])
-                     AC_MSG_RESULT([cuSPARSE generic API found])
+                   [ AC_DEFINE([HAVE_CUSPARSE], 1,
+                               [cuSPARSE support ])
+                     AC_MSG_RESULT([cuSPARSE found])
                      cs_have_cusparse=yes ],
-                   [cs_have_cusparse=fallback])
-
-    if test "x$cs_have_cusparse" = "xfallback" ; then
-
-      AC_LINK_IFELSE(
-[AC_LANG_PROGRAM([[#include <cusparse.h>]],
-[[cusparseHandle_t handle = NULL;
-cusparseStatus_t status = cusparseCreate(&handle);]])
-                   ],
-                   [ cs_have_cusparse=yes ],
-                   [ cs_have_cusparse=no ])
-
-    fi
-
-    if test "$cs_have_cusparse" = "yes"; then
-      AC_DEFINE([HAVE_CUSPARSE], 1, [cuSPARSE support])
-    fi
+                   [cs_have_cusparse=no])
 
     AC_MSG_RESULT($cs_have_cusparse)
     if test "x$cs_have_cusparse" = "xno" ; then

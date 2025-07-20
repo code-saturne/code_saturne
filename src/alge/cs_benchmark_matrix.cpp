@@ -566,11 +566,7 @@ _variant_build_list(int                             n_fill_types,
                    fill_types,
                    op_flag_ae,
                    "cusparse",
-#if defined(HAVE_CUSPARSE_GENERIC_API)
                    "cusparse",
-#else
-                   nullptr,
-#endif
                    "cusparse",
                    n_variants,
                    &n_variants_max,
