@@ -34,6 +34,11 @@ Master (not on release branches yet)
     fire modeling (gas combustion), so `idilat` 2 should be used now.
 
 ### Architectural changes:
+
+- Add cs::array, cs::span and cs::mdspan data classes to handle data storage,
+  in owner and non-owner modes, compatible with multi-dimensional getters and
+  with the dispatch mechanism.
+
 - Use templated C++ functions instead of CS_MIN, CS_MAX, and CS_ABS
   macros, for better safety and performance.
 
