@@ -1869,7 +1869,8 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void reshape
+  typename std::enable_if<N==1,void>::type
+  reshape
   (
     cs_lnum_t       new_size,     /*!<[in] New size */
     bool            copy_data,    /*!<[in] Copy data from old pointer to new
@@ -2062,7 +2063,8 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void reshape
+  typename std::enable_if<N==2,void>::type
+  reshape
   (
     const cs_lnum_t size1,       /*!<[in] Size along first dimension */
     const cs_lnum_t size2,       /*!<[in] Size along second dimension */
@@ -2095,7 +2097,8 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void reshape
+  typename std::enable_if<N==3,void>::type
+  reshape
   (
     const cs_lnum_t size1,       /*!<[in] Size along first dimension */
     const cs_lnum_t size2,       /*!<[in] Size along second dimension */
