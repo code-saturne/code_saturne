@@ -771,6 +771,12 @@ _convert_from_l93_to_wgs84(void)
     = asin(tanh((log(c/sqrt(  cs_math_pow2(cs_glob_atmo_option->x_l93-xs)
                             + cs_math_pow2(cs_glob_atmo_option->y_l93-ys)))/n)
                 +e*atanh(e*tanh(t3))))/cs_math_pi*180.;
+
+  cs_real_t lambda_0 = 3.; // longitude of the reference meridian in degrees
+
+  // domain_orientation is the angle between the geographic north and the positive y-axis
+  // in the direct (right-handed) frame of code_saturne.
+  cs_glob_atmo_option->domain_orientation = n * (cs_glob_atmo_option->longitude - lambda_0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -800,6 +806,12 @@ _convert_from_wgs84_to_l93(void)
   cs_glob_atmo_option->y_l93= (ys-(c*exp(-n*(lat_iso)))
                                *cos(n*(cs_glob_atmo_option->longitude-3)
                                     *cs_math_pi/180));
+
+  cs_real_t lambda_0 = 3.; // longitude of the reference meridian in degrees
+
+  // domain_orientation is the angle between the geographic north and the positive y-axis
+  // in the direct (right-handed) frame of code_saturne.
+  cs_glob_atmo_option->domain_orientation = n* (cs_glob_atmo_option->longitude - lambda_0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4049,18 +4061,21 @@ cs_atmo_init_meteo_profiles(void)
 
   /* Center of the domain */
   /* if neither latitude/longitude nor lambert coordinates are given */
-  if (((aopt->latitude > 0.5 * cs_math_big_r || aopt->longitude > 0.5 * cs_math_big_r)
-      && (aopt->x_l93 > 0.5 * cs_math_big_r || aopt->y_l93 > 0.5 * cs_math_big_r))) {
+  if ((  (   aopt->latitude > 0.5 * cs_math_big_r
+          || aopt->longitude > 0.5 * cs_math_big_r)
+      && (   aopt->x_l93 > 0.5 * cs_math_big_r
+          || aopt->y_l93 > 0.5 * cs_math_big_r))) {
     bft_printf("Neither latitude nor center in Lambert-93 was given \n");
-    bft_printf("It is set to Paris values \n");
-    aopt->latitude = 45.44;
-    aopt->longitude = 4.39;
+    bft_printf("It is set by default to 45°N 3°E\n");
+    aopt->latitude = 45.;
+    aopt->longitude = 3.;
     _convert_from_wgs84_to_l93();
   }
   /* else if latitude/longitude are given */
-  else if (aopt->x_l93 > 0.5 * cs_math_big_r || aopt->y_l93 > 0.5 * cs_math_big_r) {
+  else if (   aopt->x_l93 > 0.5 * cs_math_big_r
+           || aopt->y_l93 > 0.5 * cs_math_big_r) {
     bft_printf("Latitude and longitude were given, Lambert center's coordinates"
-               "are automatically computed\n");
+               " are automatically computed\n");
     _convert_from_wgs84_to_l93();
   }
   /* All other cases */
@@ -4091,7 +4106,10 @@ cs_atmo_init_meteo_profiles(void)
   bft_printf("\n Meteo preprocessing values for computation:\n"
              " dlmo=%17.9e\n z0=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n"
              " qwstar=%17.9e\n t0=%17.9e\n qw0=%17.9e\n ql0=%17.9e\n"
-             " zi=%17.9e\n",
+             " zi=%17.9e\n"
+             " longitude=%17.9e\n latitude=%17.9e\n"
+             " x_l93=%17.9e\n y_l93=%17.9e\n"
+             " domain_orientation=%17.9e\n",
              aopt->meteo_dlmo,
              aopt->meteo_z0,
              aopt->meteo_ustar0,
@@ -4100,7 +4118,12 @@ cs_atmo_init_meteo_profiles(void)
              aopt->meteo_t0,
              aopt->meteo_qw0,
              aopt->meteo_ql0,
-             aopt->meteo_zi);
+             aopt->meteo_zi,
+             aopt->longitude,
+             aopt->latitude,
+             aopt->x_l93,
+             aopt->y_l93,
+             aopt->domain_orientation);
 }
 
 /*----------------------------------------------------------------------------*/
