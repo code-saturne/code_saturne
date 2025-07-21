@@ -1794,7 +1794,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void resize
+  void reshape
   (
     cs_lnum_t    new_size,      /*!<[in] New size */
 #if (defined(__GNUC__) || defined(__clang__)) && \
@@ -1829,7 +1829,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void resize
+  void reshape
   (
     cs_lnum_t       new_size,     /*!<[in] New size */
     bool            copy_data,    /*!<[in] Copy data from old pointer to new
@@ -1866,7 +1866,7 @@ public:
         reallocate_(file_name, line_number);
       }
       else {
-        resize(new_size, file_name, line_number);
+        reshape(new_size, file_name, line_number);
       }
     }
   }
@@ -1878,7 +1878,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void resize
+  void reshape
   (
     const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
 #if (defined(__GNUC__) || defined(__clang__)) && \
@@ -1914,7 +1914,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void resize
+  void reshape
   (
     const cs_lnum_t(&dims)[N],   /*!<[in] Array of dimensions sizes */
     bool      copy_data,         /*!<[in] Copy data from old pointer to new
@@ -2008,7 +2008,7 @@ public:
         ctx.wait();
       }
       else {
-        resize(dims, file_name, line_number);
+        reshape(dims, file_name, line_number);
       }
     }
   }
@@ -2020,7 +2020,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void resize
+  void reshape
   (
     const cs_lnum_t size1,       /*!<[in] Size along first dimension */
     const cs_lnum_t size2,       /*!<[in] Size along second dimension */
@@ -2041,7 +2041,7 @@ public:
     static_assert(N == 2);
     cs_lnum_t tmp_size[N] = {size1, size2};
 
-    resize(tmp_size, copy_data, size_to_keep, file_name, line_number);
+    reshape(tmp_size, copy_data, size_to_keep, file_name, line_number);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2051,7 +2051,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  void resize
+  void reshape
   (
     const cs_lnum_t size1,       /*!<[in] Size along first dimension */
     const cs_lnum_t size2,       /*!<[in] Size along second dimension */
@@ -2073,7 +2073,7 @@ public:
     static_assert(N == 3);
     cs_lnum_t tmp_size[N] = {size1, size2, size3};
 
-    resize(tmp_size, copy_data, size_to_keep, file_name, line_number);
+    reshape(tmp_size, copy_data, size_to_keep, file_name, line_number);
   }
 
   /*--------------------------------------------------------------------------*/
