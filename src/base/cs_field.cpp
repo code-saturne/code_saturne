@@ -4480,3 +4480,104 @@ cs_field_get_label(const cs_field_t  *f)
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*=============================================================================
+ * C++ functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a field based on its id.
+ *        This function requires that a field of the given id is defined.
+ *
+ * \return  pointer to the field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field
+(
+  int  id /*!<[in] field id */
+)
+{
+  if (id > -1 && id < _n_fields)
+    return _fields[id];
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field with id %d is not defined."), id);
+    return nullptr;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a field based on its name.
+ *        This function requires that a field of the given name is defined.
+ *
+ * \return  pointer to the field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field
+(
+  const char  *name /*!<[in] field name */
+)
+{
+  int id = cs_map_name_to_id_try(_field_map, name);
+
+  if (id > -1)
+    return _fields[id];
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field \"%s\" is not defined."), name);
+    return nullptr;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a field based on its id.
+ *        If no field of the given name is defined, nullptr is returned.
+ *
+ * \return  pointer to the field structure, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field_try
+(
+  int  id /*!<[in] field id */
+)
+{
+  if (id > -1 && id < _n_fields)
+    return _fields[id];
+  else
+    return nullptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a field based on its name.
+ *        If no field of the given name is defined, nullptr is returned.
+ *
+ * \return  pointer to the field structure, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field_try
+(
+  const char  *name /*!<[in] field name */
+)
+{
+  int id = cs_map_name_to_id_try(_field_map, name);
+
+  if (id > -1)
+    return _fields[id];
+  else
+    return nullptr;
+}
+
+/*----------------------------------------------------------------------------*/
+
