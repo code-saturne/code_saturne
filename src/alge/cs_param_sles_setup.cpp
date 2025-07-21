@@ -1072,6 +1072,10 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
     _petsc_cmd(true, prefix_pc, "mat_type", "baij");
     _petsc_cmd(true, prefix_pc, "p", std::to_string(hpddmp->p).c_str());
+
+    if (slesp->verbosity > 1) {
+      _petsc_cmd(true, prefix_pc, "mat_view", "::ascii_info_detail");
+    }
   }
 }
 #endif // PETSC_HAVE_HPDDM
