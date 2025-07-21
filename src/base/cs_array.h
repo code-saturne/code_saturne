@@ -1050,6 +1050,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i /*!<[in] Index of value to get */
@@ -1067,6 +1068,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i /*!<[in] Index of value to get */
@@ -1084,13 +1086,15 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j  /*!<[in] Index along second dimension */
   )
   {
-    static_assert(N == 2);
+    static_assert(N == 2,
+                  "Operator (i,j) can only be called for cs::mdspan<T,2>");
 
     if (L == layout::right)
       return _data[i*_offset[0] + j];
@@ -1109,13 +1113,15 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j  /*!<[in] Index along second dimension */
   ) const
   {
-    static_assert(N == 2);
+    static_assert(N == 2,
+                  "Operator (i,j) can only be called for cs::mdspan<T,2>");
 
     if (L == layout::right)
       return _data[i*_offset[0] + j];
@@ -1134,6 +1140,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
@@ -1141,7 +1148,8 @@ public:
     cs_lnum_t k  /*!<[in] Index along third dimension */
   )
   {
-    static_assert(N == 3);
+    static_assert(N == 3,
+                  "Operator (i,j) can only be called for cs::mdspan<T,3>");
 
     if (L == layout::right)
       return _data[i*_offset[0] + j*_offset[1] + k];
@@ -1160,6 +1168,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
@@ -1167,7 +1176,8 @@ public:
     cs_lnum_t k  /*!<[in] Index along third dimension */
   ) const
   {
-    static_assert(N == 3);
+    static_assert(N == 3,
+                  "Operator (i,j) can only be called for cs::mdspan<T,3>");
 
     if (L == layout::right)
       return _data[i*_offset[0] + j*_offset[1] + k];
@@ -1188,6 +1198,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   cs_lnum_t
   size()
   {
@@ -1203,6 +1214,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   cs_lnum_t
   extent
   (
@@ -1242,7 +1254,7 @@ public:
     const cs_lnum_t idx /*!<[in] index of sub span */
   )
   {
-    static_assert(N > 0);
+    static_assert(N > 1, "Subspan method can only be called for dimension > 1");
     cs_lnum_t dims[N-1];
     for (int i = 0; i < N-1; i++)
       dims[i] = _extent[i+1];
@@ -1404,7 +1416,9 @@ public:
     _mode(alloc_mode)
   {
     /* Only usable for array */
-    static_assert(N == 1);
+    static_assert(N == 1,
+                  "Instantiation using only total size only possible for "
+                  " cs::array<T,1> or cs::array<T>");
     allocate_(file_name, line_number);
   }
 
@@ -1470,7 +1484,9 @@ public:
     _mode(alloc_mode)
   {
     /* Only usable for array */
-    static_assert(N == 2);
+    static_assert(N == 2,
+                  "Instantiation using (size1, size2) only possible for "
+                  " cs::array<T,2>");
     cs_lnum_t tmp_size[N] = {size1, size2};
     set_size_(tmp_size);
     allocate_(file_name, line_number);
@@ -1507,7 +1523,9 @@ public:
     _mode(alloc_mode)
   {
     /* Only usable for array */
-    static_assert(N == 3);
+    static_assert(N == 3,
+                  "Instantiation using (size1, size2, size3) only possible "
+                  " for cs::array<T,3>");
     cs_lnum_t tmp_size[N] = {size1, size2, size3};
     set_size_(tmp_size);
     allocate_(file_name, line_number);
@@ -1543,7 +1561,9 @@ public:
     _mode(alloc_mode),
     _data(data)
   {
-    static_assert(N == 1);
+    static_assert(N == 1,
+                  "Instantiation using only total size only possible for "
+                  "cs::array<T,1> or cs::array<T>");
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1680,6 +1700,24 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Get span view of array, same dimensions as array.
+   *
+   * \return mdspan view with same number of dimensions as array.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  mdspan<T,N,L>
+  view()
+  {
+    if (N == 1)
+      return mdspan<T,N,L>(_size, _data);
+    else
+      return mdspan<T,N,L>(_extent, _data);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Get span view of array (default), same dimensions as array.
    *
    * \return mdspan view with same number of dimensions as array.
@@ -1808,7 +1846,9 @@ public:
 #endif
   )
   {
-    static_assert(N == 1);
+    static_assert(N == 1,
+                  "Method reshape(size, ...) only possible for "
+                  " cs::array<T> or cs::array<T,1>");
     assert(new_size >= 0);
 
     /* If same dimensions, nothing to do ... */
@@ -1846,7 +1886,9 @@ public:
 #endif
   )
   {
-    static_assert(N==1);
+    static_assert(N==1,
+                  "Method reshape(size, ...) only possible for "
+                  " cs::array<T> or cs::array<T,1>");
     assert(new_size >= 0);
     assert(size_to_keep <= new_size && size_to_keep <= _size);
 
@@ -2038,7 +2080,9 @@ public:
 #endif
   )
   {
-    static_assert(N == 2);
+    static_assert(N == 2,
+                  "Method reshape(size1, size2, ...) only possible for "
+                  " cs::array<T> or cs::array<T,1>");
     cs_lnum_t tmp_size[N] = {size1, size2};
 
     reshape(tmp_size, copy_data, size_to_keep, file_name, line_number);
@@ -2070,7 +2114,9 @@ public:
 #endif
   )
   {
-    static_assert(N == 3);
+    static_assert(N == 3,
+                  "Method reshape(size1, size2, size3, ...) only possible for "
+                  " cs::array<T> or cs::array<T,1>");
     cs_lnum_t tmp_size[N] = {size1, size2, size3};
 
     reshape(tmp_size, copy_data, size_to_keep, file_name, line_number);
@@ -2170,6 +2216,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator[]
   (
     cs_lnum_t i /*!<[in] Index of value to get */
@@ -2187,6 +2234,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator[]
   (
     cs_lnum_t i /*!<[in] Index of value to get */
@@ -2204,6 +2252,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i /*!<[in] Index of value to get */
@@ -2221,6 +2270,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i /*!<[in] Index of value to get */
@@ -2238,13 +2288,15 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j  /*!<[in] Index along second dimension */
   )
   {
-    static_assert(N == 2);
+    static_assert(N == 2,
+                  "Operator (i,j) can only be called for cs::array<T,2>");
 
     if (L == layout::right)
       return _data[i*_offset[0] + j];
@@ -2263,13 +2315,15 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j  /*!<[in] Index along second dimension */
   ) const
   {
-    static_assert(N == 2);
+    static_assert(N == 2,
+                  "Operator (i,j) can only be called for cs::array<T,2>");
 
     if (L == layout::right)
       return _data[i*_offset[0] + j];
@@ -2288,6 +2342,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
@@ -2295,7 +2350,8 @@ public:
     cs_lnum_t k  /*!<[in] Index along third dimension */
   )
   {
-    static_assert(N == 3);
+    static_assert(N == 3,
+                  "Operator (i,j,k) can only be called for cs::array<T,3>");
 
     if (L == layout::right)
       return _data[i*_offset[0] + j*_offset[1] + k];
@@ -2314,6 +2370,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   T& operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
@@ -2321,7 +2378,8 @@ public:
     cs_lnum_t k  /*!<[in] Index along third dimension */
   ) const
   {
-    static_assert(N == 3);
+    static_assert(N == 3,
+                  "Operator (i,j,k) can only be called for cs::array<T,3>");
 
     if (L == layout::right)
       return _data[i*_offset[0] + j*_offset[1] + k];
@@ -2340,6 +2398,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   cs_lnum_t
   extent
   (
@@ -2358,6 +2417,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   cs_lnum_t
   offset
   (
@@ -2376,6 +2436,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   cs_lnum_t
   size()
   {
@@ -2391,6 +2452,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   bool
   owner()
   {
@@ -2406,6 +2468,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
+  inline
   cs_alloc_mode_t
   mode()
   {
