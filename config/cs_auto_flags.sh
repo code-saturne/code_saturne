@@ -49,7 +49,6 @@
 # fcflags_default        # Base FCFLAGS                       (default: "")
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
 # fcflags_default_opt    # Added to $FCFLAGS for optimization (default: "-O")
-# fcflags_default_hot    # Optimization for specific files    (default: "-O")
 # fcflags_default_prf    # Added to $FCFLAGS for profiling    (default: "-g")
 # fcflags_default_omp    # Added to $FCFLAGS for OpenMP       (default: "")
 # fclags_default_shared  # Added to $FCFLAGS for shared libs  (default: "-fPIC -DPIC")
@@ -937,7 +936,6 @@ if test "$?" = "0" ; then
   fcflags_default="-x f95-cpp-input -Wall -pedantic-errors -std=f2008"
   fcflags_default_dbg="-g -fcheck=bounds"
   fcflags_default_opt="-O"
-  fcflags_default_hot="-O2"
   fcflags_default_omp="-fopenmp"
 
   if test "xgfortran" = "x$cs_fc_vendor"; then
@@ -984,7 +982,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default="-cpp -fpic -warn -diag-disable 7712"
     fcflags_default_dbg="-g -O0 -traceback -check all -check nopointer -fpe0 -ftrapuv"
     fcflags_default_opt="-O2"
-    fcflags_default_hot="-O3"
     fcflags_default_omp="-qopenmp"
 
     case "$cs_cxx_vers_major" in
@@ -1025,7 +1022,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default="-cpp -fpic -warn -diag-disable 7712"
     fcflags_default_dbg="-g -O0 -traceback -check all -check nopointer -fpe0 -ftrapuv -check nouninit"
     fcflags_default_opt="-O2"
-    fcflags_default_hot="-O3"
     fcflags_default_omp="-fiopenmp"
 
   fi
@@ -1057,7 +1053,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
       fcflags_default="-Mpreprocess -noswitcherror"
       fcflags_default_dbg="-g -Mbounds"
       fcflags_default_opt="-O2"
-      fcflags_default_hot="-fast"
       fcflags_default_omp="-mp"
 
     fi
@@ -1145,16 +1140,11 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
 
       fcflags_default=""
       fcflags_default_opt="-O"
-      fcflags_default_hot="-O"
       fcflags_default_dbg="-g"
       ;;
 
   esac
 
-fi
-
-if test "x$fcflags_default_hot" = "x" ; then
-  fcflags_default_hot=$fcflags_default_opt
 fi
 
 if test -f $outfile ; then

@@ -109,7 +109,6 @@ user_CFLAGS=$CFLAGS
 user_CFLAGS_HOT=$CFLAGS_HOT
 user_CXXFLAGS=$CXXFLAGS
 user_FCFLAGS=$FCFLAGS
-user_FCFLAGS_HOT=$FCFLAGS_HOT
 user_NVCCFLAGS_HC=$NVCCFLAGS_HC
 user_SYCLFLAGS=$SYCLFLAGS
 user_LDFLAGS=$LDFLAGS
@@ -240,7 +239,6 @@ if test "x$auto_flags" = "xyes" ; then
     # Hot optimization flags
     CFLAGS_HOT="$cflags_default_hot $user_CFLAGS_HOT"
     CXXFLAGS_HOT="$cxxflags_default_hot"
-    FCFLAGS_HOT="$fcflags_default_hot $user_FCFLAGS_HOT"
     # Add optimization flags for linker
     LDFLAGS="$LDFLAGS $ldflags_default_opt"
     if test "x$profile" = xyes; then
@@ -263,7 +261,6 @@ if test "x$auto_flags" = "xyes" ; then
 
   AC_SUBST(FCFLAGS_DBG)
   AC_SUBST(FCFLAGS_OPT)
-  AC_SUBST(FCFLAGS_HOT)
 
   AC_SUBST(LDRPATH)
 
