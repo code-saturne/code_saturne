@@ -205,10 +205,17 @@ _initialize_nccl(int  n_devices,
 
   int may_use_nccl = (n_node_ranks <= n_devices) ? 1 : 0;
 
+  const char s[] = getenv("CS_DISABLE_NCCL");
+  if (s != nullptr) {
+    int i = atoi(s);
+    if (i < 1)
+      may_use_nccl = -1;
+  }
+
   MPI_Allreduce(MPI_IN_PLACE, &may_use_nccl, 1, MPI_INT,
                 MPI_MIN, cs_glob_mpi_comm);
 
-  if (may_use_nccl) {
+  if (may_use_nccl > 0) {
     cs_fp_exception_disable_trap();
 
     /* Get NCCL identifier */
@@ -240,12 +247,18 @@ _initialize_nccl(int  n_devices,
   }
 
   else {
-    cs_log_printf
-      (CS_LOG_DEFAULT,
-       _("\n"
-         "  Not using NCCL (requires 1 device per MPI rank, "
-         "currently %d/%d).\n"),
-       n_devices, n_node_ranks);
+    if (may_use_nccl <  0)
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         _("\n"
+           "  Not using NCCL (CS_DISABLE_NCCL=%s).\n"), s);
+    else
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         _("\n"
+           "  Not using NCCL (requires 1 device per MPI rank, "
+           "currently %d/%d).\n"),
+         n_devices, n_node_ranks);
   }
 
 }

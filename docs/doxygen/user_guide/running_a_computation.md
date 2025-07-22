@@ -402,11 +402,7 @@ Environment variables specific to the code_saturne environment {#sec_env_var_cs}
 Variable                | Role
 ------------------------|------------------------------------------------------------
 `CS_SCRATCHDIR`         | Allows defining the execution directory (see [temporary directory](@ref case_structure_scratchdir)), overriding the default path or settings from the global or user `code_saturne.cfg`.
-`CS_MEM_LOG`            | Allows defining a file name in which memory management based on the [BFT_MALLOC](@ref BFT_MALLOC), and [CS_MALLOC_HD](@ref CS_MALLOC_HD) function and macro series is logged (useful to check for some memory leaks). If this value is set to `performance.log`, only statistics (including leak counts) will be output in that standard file.
 `CS_MPIEXEC_OPTIONS`    | This variable allows defining extra arguments to be passed to the MPI execution command by the run scripts.  If this option is defined, it will have priority over the value defined in the preferences file (or by computed defaults), so if necessary, it is possible to define a setting specific to a given run using this mechanism.  This may be useful when tuning the installation to a given system, for example experimenting MPI mapping and "bind to core" type features.
-`CS_FP_TRAP`            | When the code is compiled in debug mode, this variable allows selecting which types of exceptions are trapped. For all exception types (the default), use `CS_FP_TRAP=DIVBYZERO,INVALID,OVERFLOW`. Otherwise, if the variable contains some (or none) of these terms, only the corresponding exception types will be trapped.
-`CS_RENUMBER`           | Deactivating mesh renumbering in the Solver is possible by setting `CS_RENUMBER=off`.
-`CS_SCOTCH_DGRAPH_SAVE` | Defines a base file name to which PT-Scotch graphs are saved before partitioning (to allow generating useful crash reports).
 `CATALYST_ROOT_DIR`     | Indicate where the ParaView Catalyst libraries are installed; the associated library path is added to `LD_LIBRARY_PATH` by the low-level Solver launch script, but does not otherwise interfere with the user's normal environment
 `CATALYST_LD_ADD_PATH`  | Indicate where additional libraries needed by ParaView Catalyst may be found; this path is added to `LD_LIBRARY_PATH` by the low-level Solver launch script, but does not otherwise interfere with the user's normal environment
 `CATALYST_PLUGIN_PATH`  | Indicate where additional libraries needed by ParaView Catalyst may be found; the low-level Solver launch script sets `PV_PLUGIN_PATH` to this value, which does not otherwise interfere with the user's normal environment
@@ -550,3 +546,22 @@ The various command-line options are detailed here:
 * `-h`, `--help`
 
   Displays a summary of the different command line options.
+
+Environment variables specific to the code_saturne solver {#sec_env_var_cs_solver}
+--------------------------------------------------------------
+
+Variable                | Role
+------------------------|------------------------------------------------------------
+`CS_DISABLE_NCCL`       | For builds with GPU support with the NVIDIA Collective Communications Library, disable use of NCCL, reverting to MPI.
+`CS_FP_TRAP`            | When the code is compiled in debug mode, this variable allows selecting which types of exceptions are trapped. For all exception types (the default), use `CS_FP_TRAP=DIVBYZERO,INVALID,OVERFLOW`. Otherwise, if the variable contains some (or none) of these terms, only the corresponding exception types will be trapped.
+`CS_LOG_TO_STDOUT`      | Direct messages usually in `run_solver.log` directly standard output.
+`CS_MEM_LOG`            | Allows defining a file name in which memory management based on the [CS_MALLOC](@ref CS_MALLOC), and [CS_MALLOC_HD](@ref CS_MALLOC_HD) function and macro series is logged (useful to check for some memory leaks). If this value is set to `performance.log`, only statistics (including leak counts) will be output in that standard file.
+`CS_RENUMBER`           | Deactivating mesh renumbering in the Solver is possible by setting `CS_RENUMBER=off`.
+`CS_SCOTCH_DGRAPH_SAVE` | Defines a base file name to which PT-Scotch graphs are saved before partitioning (to allow generating useful crash reports).
+
+### Environment variables for advanced tracing and profiling
+
+Variable                | Role
+------------------------|------------------------------------------------------------
+`CS_ALL_TO_ALL_TRACE`   | Define tracing level for all-to-many operations (integer value).
+`CS_TIME_KERNELS`       | Activate low-level timing of various computation kernels (0 or 1), with logging directly to standard output.
