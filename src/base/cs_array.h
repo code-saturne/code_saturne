@@ -2297,6 +2297,12 @@ private:
 template<class T>
 using cs_array = cs::array<T,1,cs::layout::right>;
 
+template<class T, cs::layout L = cs::layout::right>
+using cs_array_2d = cs::array<T,2,L>;
+
+template<class T, cs::layout L = cs::layout::right>
+using cs_array_3d = cs::array<T,3,L>;
+
 template<class T, int N, cs::layout L = cs::layout::right>
 using cs_mdarray = cs::array<T,N,L>;
 

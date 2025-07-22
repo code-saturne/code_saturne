@@ -673,16 +673,22 @@ private:
   T*         _data;
 };
 
-template<class T, layout L = layout::right>
-using span = mdspan<T, 1, L>;
-
-template<class T, int N>
-using mdspan_r = mdspan<T, N, layout::right>;
-
-template<class T, int N>
-using mdspan_l = mdspan<T, N, layout::left>;
-
 } /* namespace cs */
+
+template<class T, cs::layout L = cs::layout::right>
+using cs_span = cs::mdspan<T, 1, L>;
+
+template<class T, cs::layout L = cs::layout::right>
+using cs_span_2d = cs::mdspan<T, 2, L>;
+
+template<class T, cs::layout L = cs::layout::right>
+using cs_span_3d = cs::mdspan<T, 3, L>;
+
+template<class T, int N>
+using cs_mdspan_r = cs::mdspan<T, N, cs::layout::right>;
+
+template<class T, int N>
+using cs_mdspan_l = cs::mdspan<T, N, cs::layout::left>;
 
 #endif /* __cplusplus */
 
