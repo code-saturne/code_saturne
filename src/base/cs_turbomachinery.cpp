@@ -1066,8 +1066,7 @@ _update_mesh(bool     restart_mode,
 
           cs_glob_mesh_builder = cs_mesh_builder_create();
 
-          cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
-          cs_glob_mesh_quantities = cs_mesh_quantities_create();
+          cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
         }
       }
     } while (boundary_changed && n_retry >= 0);

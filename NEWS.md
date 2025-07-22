@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Turbomachinery: fix crash when retrying joining with perturbed angle.
+
 - Fix memory leak with some multigrid setup combinations
   (including GUi-defined "multigrid as a solver" option).
 
