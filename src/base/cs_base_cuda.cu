@@ -205,7 +205,7 @@ _initialize_nccl(int  n_devices,
 
   int may_use_nccl = (n_node_ranks <= n_devices) ? 1 : 0;
 
-  const char s[] = getenv("CS_DISABLE_NCCL");
+  const char *s = getenv("CS_DISABLE_NCCL");
   if (s != nullptr) {
     int i = atoi(s);
     if (i < 1)
