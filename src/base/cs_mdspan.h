@@ -82,8 +82,8 @@ public:
 
   CS_F_HOST_DEVICE
   mdspan():
-    _extent({0}),
-    _offset({0}),
+    _extent{0},
+    _offset{0},
     _size(0),
     _data(nullptr)
   {}

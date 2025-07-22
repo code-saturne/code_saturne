@@ -79,6 +79,7 @@
  *============================================================================*/
 
 #if defined(__cplusplus)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign values to all elements of multiple arrays. ref_val is input
@@ -916,8 +917,8 @@ public:
 
   CS_F_HOST_DEVICE
   array():
-    _extent({0}),
-    _offset({0}),
+    _extent{0},
+    _offset{0},
     _size(0),
     _owner(true),
     _data(nullptr),
@@ -1016,8 +1017,8 @@ public:
 #endif
   )
   :
-    _extent({0}),
-    _offset({0}),
+    _extent{0},
+    _offset{0},
     _owner(true),
     _data(nullptr),
     _mode(alloc_mode)
@@ -1055,8 +1056,8 @@ public:
 #endif
   )
   :
-    _extent({0}),
-    _offset({0}),
+    _extent{0},
+    _offset{0},
     _owner(true),
     _data(nullptr),
     _mode(alloc_mode)
@@ -1093,8 +1094,8 @@ public:
 #endif
   )
   :
-    _extent({0}),
-    _offset({0}),
+    _extent{0},
+    _offset{0},
     _size(size),
     _owner(false),
     _mode(alloc_mode),
@@ -1247,7 +1248,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  mdspan<T,N,L>
+  mdspan<T, N, L>
   view()
   {
     if (N == 1)
@@ -1265,7 +1266,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  mdspan<T,N,L>
+  mdspan<T, N, L>
   get_span()
   {
     if (N == 1)
@@ -1284,9 +1285,9 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
   template<int _N_, layout _L_ = L>
-  mdspan<T,_N_,_L_>
+  CS_F_HOST_DEVICE
+  mdspan<T, _N_, _L_>
   get_mdspan
   (
     const cs_lnum_t(&dims)[_N_] /*!<[in] Array of dimensions sizes */
