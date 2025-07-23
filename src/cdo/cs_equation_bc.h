@@ -455,6 +455,34 @@ cs_equation_bc_cw_robin(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the values of the Robin BCs for a face (cell-wise compute
+ *        relying on the cs_cell_mesh_t structure)
+ *
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      nu          laminar kinematic viscosity
+ * \param[in]      k           turbulent kinetic energy
+ * \param[in]      hfc         distance from cell center to the wall
+ * \param[in, out] rob_values  array storing Robin values to use
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
+                                   short int                  def_id,
+                                   short int                  f,
+                                   const cs_equation_param_t *eqp,
+                                   const cs_cell_mesh_t      *cm,
+                                   const double               nu,
+                                   const double               k,
+                                   const double               hfc,
+                                   double                    *rob_values);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the values of the circulation along primal edges lying on the
  *        domain boundary (the integral of the tangential component of
  *        vector-valued field). This is used for CDO edge-based schemes where

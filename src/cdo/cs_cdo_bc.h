@@ -203,6 +203,10 @@ cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
     sprintf(desc, "%s", "Dirichlet on the tangential component");
     break;
 
+  case CS_CDO_BC_WALL_PRESCRIBED:
+    sprintf(desc, "%s", "Prescribed wall with wall functions");
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid case. Please contact the support.\n", __func__);

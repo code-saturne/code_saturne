@@ -1920,6 +1920,94 @@ cs_cdofb_fixed_wall(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Take into account a wall BCs by a weak enforcement using Nitsche
+ *        technique.
+ *        This prototype matches the function pointer cs_cdo_apply_boundary_t
+ *
+ * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm    pointer to a cellwise mesh structure
+ * \param[in]      pty   pointer to a \ref cs_property_data_t structure
+ * \param[in, out] cb    pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out] csys  structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_prescribed_smooth_wall(short int                  fb,
+                                const cs_equation_param_t *eqp,
+                                const cs_cell_mesh_t      *cm,
+                                const cs_property_data_t  *pty,
+                                cs_cell_builder_t         *cb,
+                                cs_cell_sys_t             *csys)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(pty);
+
+  assert(cm != nullptr && csys != nullptr);
+
+  /* Initialize the matrix related this flux reconstruction operator */
+
+  /* wall BC expression: -K du/dn = h_t (I - (n x n))(u - u_w)
+   *                              + h_n (n x n)(u - u_w)
+   * h_n uses penalization approach to weakly impose dirichlet
+   * condition to normal components*/
+  /* ----------------------------------------------------- */
+
+  if (csys->bf_flag[fb] & CS_CDO_BC_WALL_PRESCRIBED) {
+
+    const cs_real_t  f_meas = cm->face[fb].meas;
+    const double  *u0 = &(csys->rob_values[9*fb]);
+    const double  h_t = csys->rob_values[9*fb + 3];
+    const double  h_n = eqp->strong_pena_bc_coeff;
+
+    const cs_quant_t  pfq = cm->face[fb];
+    const cs_real_t  *ni = pfq.unitv;
+    const cs_real_t  ni_ni[9] =
+    { ni[0]*ni[0], ni[0]*ni[1], ni[0]*ni[2],
+      ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
+      ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
+
+   /* Update the RHS and the local system */
+
+    csys->rhs[3*fb + 0] += ((h_t + (-h_t + h_n)*ni_ni[0])*u0[0]
+                                 + (-h_t + h_n)*ni_ni[1]*u0[1]
+                                 + (-h_t + h_n)*ni_ni[2]*u0[2])*f_meas;
+
+    csys->rhs[3*fb + 1] += ((h_t + (-h_t + h_n)*ni_ni[4])*u0[1]
+                                 + (-h_t + h_n)*ni_ni[3]*u0[0]
+                                 + (-h_t + h_n)*ni_ni[5]*u0[2])*f_meas;
+
+    csys->rhs[3*fb + 2] += ((h_t + (-h_t + h_n)*ni_ni[8])*u0[2]
+                                 + (-h_t + h_n)*ni_ni[6]*u0[0]
+                                 + (-h_t + h_n)*ni_ni[7]*u0[1])*f_meas;
+
+    /* Update the local system matrix */
+
+    cs_sdm_t  *bff = cs_sdm_get_block(csys->mat, fb, fb);
+    assert(bff->n_rows == bff->n_cols && bff->n_rows == 3);
+
+    bff->val[0] += (h_t + (-h_t + h_n)*ni_ni[0])*f_meas;
+    bff->val[1] += (-h_t + h_n)*ni_ni[1]*f_meas;
+    bff->val[2] += (-h_t + h_n)*ni_ni[2]*f_meas;
+
+    bff->val[3] += (-h_t + h_n)*ni_ni[3]*f_meas;
+    bff->val[4] += (h_t + (-h_t + h_n)*ni_ni[4])*f_meas;
+    bff->val[5] += (-h_t + h_n)*ni_ni[5]*f_meas;
+
+    bff->val[6] += (-h_t + h_n)*ni_ni[6]*f_meas;
+    bff->val[7] += (-h_t + h_n)*ni_ni[7]*f_meas;
+    bff->val[8] += (h_t + (-h_t + h_n)*ni_ni[8])*f_meas;
+  }  /* wall face */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cs_cell_sys_dump(">> Cell %d, scalar Fb: After smooth wall", csys);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Test if one has to do one more non-linear iteration.
  *         Test if performed on the relative norm on the increment between
  *         two iterations

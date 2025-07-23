@@ -267,6 +267,29 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Initialize the turbulent wall BC related coefficients
+ *
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      nu          laminar kinematic viscosity
+ * \param[in]      k           turbulent kinetic energy
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
+                             const cs_equation_param_t    *eqp,
+                             const cs_equation_builder_t  *eqb,
+                             const cs_real_t               nu,
+                             const cs_real_t               k,
+                             cs_cell_sys_t                *csys,
+                             cs_cell_builder_t            *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the boundary conditions known from the settings
  *         Define an indirection array for the enforcement of internal DoFs
  *         only if needed. This is stored inside eqb

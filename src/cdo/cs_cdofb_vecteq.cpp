@@ -416,6 +416,64 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Initialize the turbulent wall BC related coefficients
+ *
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      nu          laminar kinematic viscosity
+ * \param[in]      k           turbulent kinetic energy
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
+                             const cs_equation_param_t    *eqp,
+                             const cs_equation_builder_t  *eqb,
+                             const cs_real_t               nu,
+                             const cs_real_t               k,
+                             cs_cell_sys_t                *csys,
+                             cs_cell_builder_t            *cb)
+{
+  if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+
+    const int  d = eqp->dim;
+
+    /* Identify which face is a boundary face */
+
+    for (short int f = 0; f < cm->n_fc; f++) {
+
+      const cs_lnum_t  bf_id = csys->bf_ids[f];
+
+      if (bf_id > -1) { /* This a boundary face */
+
+        if (csys->bf_flag[f] == CS_CDO_BC_WALL_PRESCRIBED) {
+          csys->has_robin = true;
+
+          cs_equation_bc_cw_turb_smooth_wall(cb->t_bc_eval,
+                                             eqb->face_bc->def_ids[bf_id],
+                                             f,
+                                             eqp,
+                                             cm,
+                                             nu,
+                                             k,
+                                             cm->hfc[f],
+                                             csys->rob_values);
+        }
+      }
+    }
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cs_cell_mesh_dump(cm);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build the local matrices arising from the diffusion term in the
  *          vector-valued CDO-Fb schemes.
  *

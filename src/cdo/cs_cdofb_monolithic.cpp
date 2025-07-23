@@ -1154,6 +1154,8 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
+  cs_turbulence_param_t *tp = nsp->turbulence;
+
   /* Retrieve shared structures */
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -1164,6 +1166,14 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
   if (quant->n_b_faces > 0)
     assert(mom_eqb->dir_values != nullptr);
 #endif
+
+  const cs_real_t  mu_l = cs_property_by_name("laminar_viscosity")->ref_value;
+  const cs_real_t  rho = cs_property_by_name("mass_density")->ref_value;
+
+  const cs_real_t *kener = nullptr;
+
+  if (tp->model->itytur == 2 || tp->model->itytur == 6)
+    kener = cs_field_by_name("k")->val;
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -1238,6 +1248,11 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
                                        nullptr, /* no n-1 state is given */
                                        csys,
                                        cb);
+
+      if (tp->model->itytur == 2 || tp->model->itytur == 6)
+        cs_cdofb_vecteq_init_turb_bc(cm, mom_eqp, mom_eqb,
+                                     mu_l/rho,
+                                     kener[c_id], csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *
        * ================================= *
@@ -1824,8 +1839,28 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
   mom_eqb->bdy_flag |= CS_FLAG_COMP_PFC;
 
   sc->apply_symmetry = cs_cdofb_symmetry;
-  sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
-  sc->apply_fixed_wall = cs_cdofb_block_dirichlet_alge;
+
+  switch (nsp->turbulence->model->model) {
+
+  case CS_TURB_NONE:
+    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
+    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_alge;
+    break;
+
+  case CS_TURB_K_EPSILON:
+  case CS_TURB_K_EPSILON_LIN_PROD:
+  case CS_TURB_K_EPSILON_LS:
+  case CS_TURB_K_EPSILON_QUAD:
+  case CS_TURB_K_OMEGA:
+    sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall;
+    sc->apply_fixed_wall = cs_cdofb_prescribed_smooth_wall;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of wall boundary treatment.",
+              __func__);
+  }
 
   switch (mom_eqp->default_enforcement) {
 

@@ -2069,7 +2069,8 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
 {
   assert(rob_values != nullptr && cm != nullptr && eqp != nullptr);
   assert(def_id > -1);
-  assert(eqp->dim == 1);
+
+  int dim = eqp->dim;
 
   cs_xdef_t *def = eqp->bc_defs[def_id];
 
@@ -2079,19 +2080,19 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
   assert(def->meta & CS_CDO_BC_ROBIN); /* Robin BC */
 
   /* Evaluate the boundary condition at each boundary face */
-
   switch (def->type) {
 
   case CS_XDEF_BY_VALUE: {
     const cs_real_t *parameters = (cs_real_t *)def->context;
 
-    rob_values[3 * f]     = parameters[0];
-    rob_values[3 * f + 1] = parameters[1];
-    rob_values[3 * f + 2] = parameters[2];
+    for (short int k = 0; k < 3*dim; k++)
+      rob_values[3*dim*f + k] = parameters[k];
   } break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION: {
-    cs_real_3_t                 parameters = { 0, 0, 0 };
+    cs_real_t  buffer_params[16];
+    memset(buffer_params, 0, 16 * sizeof(cs_real_t));
+
     cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
 
     ac->func(t_eval,
@@ -2100,18 +2101,17 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
              cm->face[f].center,
              true, /* dense output ? */
              ac->input,
-             (cs_real_t *)parameters);
+             buffer_params);
 
-    rob_values[3 * f]     = parameters[0];
-    rob_values[3 * f + 1] = parameters[1];
-    rob_values[3 * f + 2] = parameters[2];
+    for (short int k = 0; k < 3*dim; k++)
+      rob_values[3*dim*f + k] = buffer_params[k];
   } break;
 
   case CS_XDEF_BY_ARRAY: {
     const cs_xdef_array_context_t *cx
       = static_cast<const cs_xdef_array_context_t *>(def->context);
 
-    assert(cx->stride == 3);
+    assert(cx->stride == 3*dim);
     assert(cs_flag_test(cx->value_location, cs_flag_primal_face) ||
            cs_flag_test(cx->value_location, cs_flag_boundary_face));
 
@@ -2120,19 +2120,17 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
     const cs_real_t *parameters;
 
     if (cx->full_length)
-      parameters = cx->values + 3 * bf_id;
+      parameters = cx->values + 3*dim*bf_id;
 
     else {
 
       assert(cx->full2subset != nullptr);
       cs_lnum_t id = cx->full2subset[bf_id];
       assert(id > -1);
-      parameters = cx->values + 3 * id;
+      parameters = cx->values + 3*dim*id;
     }
-
-    rob_values[3 * f]     = parameters[0];
-    rob_values[3 * f + 1] = parameters[1];
-    rob_values[3 * f + 2] = parameters[2];
+    for (short int k = 0; k < 3*dim; k++)
+      rob_values[3*dim*f + k] = parameters[k];
   } break;
 
   default:
@@ -2141,6 +2139,74 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
                 " Stop computing the Robin value.\n"));
 
   } /* switch def_type */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of the Robin BCs for a face (cell-wise compute
+ *        relying on the cs_cell_mesh_t structure)
+ *
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      nu          laminar kinematic viscosity
+ * \param[in]      k           turbulent kinetic energy
+ * \param[in]      hfc         distance from cell center to the wall
+ * \param[in, out] rob_values  array storing Robin values to use
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
+                                   short int                  def_id,
+                                   short int                  f,
+                                   const cs_equation_param_t *eqp,
+                                   const cs_cell_mesh_t      *cm,
+                                   const double               nu,
+                                   const double               k,
+                                   const double               hfc,
+                                   double                    *rob_values)
+{
+  assert(rob_values != nullptr && cm != nullptr && eqp != nullptr);
+  assert(def_id > -1);
+  assert(eqp->dim == 3);
+
+  cs_xdef_t *def = eqp->bc_defs[def_id];
+  cs_real_t  parameter[9] = {0.0};
+
+  cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
+
+  cs_real_t *_input = static_cast<cs_real_t *>(ac->input);
+
+  _input[0] = nu, _input[1] = k, _input[2] = hfc;
+
+  cs_real_t parameters[9] = {0.0};
+
+  /* Call analytical function to compute wall BC exchange coeffs */
+  ac->func(t_eval,
+           1,
+           nullptr,
+           cm->face[f].center,
+           true, /* dense output ? */
+           ac->input,
+           parameters);
+
+  /* u0_x, u0_y, u0_z */
+  rob_values[9 * f]     = parameters[0];
+  rob_values[9 * f + 1] = parameters[1];
+  rob_values[9 * f + 2] = parameters[2];
+
+  /* exchange coefficients */
+  rob_values[9 * f + 3] = parameters[3];
+  rob_values[9 * f + 4] = parameters[4];
+  rob_values[9 * f + 5] = parameters[5];
+
+  /* beta_x, beta_y, beta_z*/
+  rob_values[9 * f + 6] = parameters[6];
+  rob_values[9 * f + 7] = parameters[7];
+  rob_values[9 * f + 8] = parameters[8];
 }
 
 /*----------------------------------------------------------------------------*/

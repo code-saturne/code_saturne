@@ -481,8 +481,6 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
                      const cs_turbulence_t        *tbs);
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update for the current time step the new state for the turbulence
  *         model. directly update the turbulent viscosity from Legacy.
@@ -501,6 +499,37 @@ cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
                              const cs_cdo_quantities_t *quant,
                              const cs_time_step_t      *time_step,
                              const cs_turbulence_t     *tbs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function used to define the exchange coefficients for
+ *         tangential and normal components
+ *
+ *         This prototype follows the one defined for all analytic functions.
+ *         elt_ids is optional. If not NULL, it enables to access in coords
+ *         at the right location and the same thing to fill retval if compact
+ *         is set to false
+ *
+ * \param[in]      time     when ?
+ * \param[in]      n_elts   number of elements to consider
+ * \param[in]      elt_ids  list of elements ids (to access coords and fill)
+ * \param[in]      coords   where ?
+ * \param[in]      compact  true:no indirection, false:indirection for filling
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in, out] retval   result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_compute_wall_bc_coeffs(cs_real_t           time,
+                               cs_lnum_t           n_pts,
+                               const cs_lnum_t    *pt_ids,
+                               const cs_real_t    *xyz,
+                               bool                compact,
+                               void               *input,
+                               cs_real_t          *res);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

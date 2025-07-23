@@ -198,6 +198,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
         bc->n_hmg_neu_faces += z->n_elts;
       break;
     case CS_CDO_BC_ROBIN:
+    case CS_CDO_BC_WALL_PRESCRIBED:
       bc->n_robin_faces += z->n_elts;
       break;
 
@@ -315,6 +316,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
       }
       break;
     case CS_CDO_BC_ROBIN:
+    case CS_CDO_BC_WALL_PRESCRIBED:
       bc->robin_ids[shift[CS_BC_ROBIN]] = i;
       shift[CS_BC_ROBIN] += 1;
       break;
