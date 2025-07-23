@@ -911,7 +911,10 @@ cs_gui_physical_model_select(void)
     else if (cs_gui_strcmp(model_name, "hts_model")) {
       // Activate CDO Heat Transfer Solver
       cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
-      cs_thermal_system_activate(0, 0, 0);
+      cs_flag_t model = 0;
+      if (cs_gui_physical_properties_ht_lambda_is_anisotropic())
+        model = CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY;
+      cs_thermal_system_activate(model, 0, 0);
     }
   }
 

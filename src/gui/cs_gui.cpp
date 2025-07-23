@@ -459,7 +459,8 @@ _physical_property_th_diffusivity(cs_field_t          *c_prop,
   int user_law = 0;
   const char *prop_choice = _properties_choice(prop_name, NULL);
 
-  if (cs_gui_strcmp(prop_choice, "user_law"))
+  if (   cs_gui_strcmp(prop_choice, "user_law")
+      || cs_gui_strcmp(prop_choice, "user_law_anisotropic"))
     user_law = 1;
   else if (z->id > 1 && z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
     const char *law = _property_formula(prop_name, z->name);
@@ -1073,11 +1074,10 @@ static int
 _properties_choice_id(const char  *property_name,
                       int         *choice)
 {
-  const char *buff = NULL;
   int   iok = 0;
-
-  buff = _properties_choice(property_name, NULL);
   *choice = 0; /* default */
+
+  const char *buff = _properties_choice(property_name, nullptr);
   if (buff)
   {
     iok = 1;
@@ -1088,8 +1088,7 @@ _properties_choice_id(const char  *property_name,
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
   }
-  else
-    iok = 0;
+
   return iok;
 }
 
@@ -4265,7 +4264,13 @@ cs_gui_physical_properties(void)
     else {
       /* Set lambda0 which has not been read before... */
       cs_gui_properties_value("thermal_conductivity", &(phys_pp->lambda0));
-      cs_property_def_iso_by_value(lambda, NULL, phys_pp->lambda0);
+      if (lambda->type & CS_PROPERTY_ANISO) {
+        cs_real_t lambda0 = phys_pp->lambda0;
+        cs_real_t  ref[3][3] = {{lambda0, 0, 0}, {0, lambda0, 0}, {0, 0, lambda0}};
+        cs_property_def_aniso_by_value(lambda, nullptr, ref);
+      }
+      else
+        cs_property_def_iso_by_value(lambda, nullptr, phys_pp->lambda0);
     }
 
   } // CDO for Conjugate Heat Transfer (CHT)
@@ -6005,6 +6010,24 @@ cs_gui_physical_variable(void)
       }
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * For heat transfer model, check if lambda is anisotropic.
+ *
+ * return: 1 if anisotropic, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_physical_properties_ht_lambda_is_anisotropic(void)
+{
+  int choice = 0;
+
+  const char *buff = _properties_choice(CS_THERMAL_LAMBDA_NAME, nullptr);
+  if (cs_gui_strcmp(buff, "user_law_anisotropic"))
+    choice = 1;
+
+  return choice;
 }
 
 /*----------------------------------------------------------------------------*/

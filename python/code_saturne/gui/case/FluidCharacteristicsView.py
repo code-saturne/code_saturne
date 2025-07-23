@@ -226,6 +226,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         tsm = self.mdl.tsm
 
         self.m_hts = HTSModel(self.case)
+        n_al = 2
+        if self.m_hts.getHTSModel() != 'off':
+            n_al = 3
 
         # Particular Widget init. taking into account chosen fluid model
         mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp, mdl_hgn=\
@@ -237,7 +240,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelMu        = ComboModel(self.comboBoxMu,       2, 1)
         self.modelSigma     = ComboModel(self.comboBoxSigma,    1, 1)
         self.modelCp        = ComboModel(self.comboBoxCp,       2, 1)
-        self.modelAl        = ComboModel(self.comboBoxAl,       2, 1)
+        self.modelAl        = ComboModel(self.comboBoxAl,       n_al, 1)
         self.modelDiff      = ComboModel(self.comboBoxDiff,     2, 1)
         self.modelNameDiff  = ComboModel(self.comboBoxNameDiff, 1, 1)
         self.modelViscv0    = ComboModel(self.comboBoxViscv0,   3, 1)
@@ -286,6 +289,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if mdl_joule != 'off':
             self.modelAl.addItem(self.tr('predefined law'), 'predefined_law')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
+        if n_al == 3:
+            self.modelAl.addItem(self.tr('user law, anisotropic'), 'user_law_anisotropic')
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')

@@ -1025,7 +1025,8 @@ class FluidCharacteristicsModel(Variables, Model):
         self.isInList(tag, self.properties_info.get_property_list()+['dynamic_diffusion'])
         node = self.__nodeFromTag(tag)
         c = node['choice']
-        self.isInList(c, ('constant', 'thermal_law', 'user_law', 'predefined_law'))
+        self.isInList(c, ('constant', 'thermal_law', 'user_law',
+                          'user_law_anisotropic', 'predefined_law'))
         return c
 
 
@@ -1034,7 +1035,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """Put choice in xml file's node I{tag}"""
         self.isInList(tag, self.properties_info.get_property_list()+['dynamic_diffusion'])
         self.isInList(choice, ('constant', 'thermal_law',
-                               'user_law', 'predefined_law'))
+                               'user_law', 'user_law_anisotropic', 'predefined_law'))
 
         node = self.__nodeFromTag(tag)
         node['choice'] = choice

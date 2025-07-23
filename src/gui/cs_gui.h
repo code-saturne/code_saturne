@@ -489,6 +489,15 @@ cs_gui_thermal_source_terms_setup(void);
 void
 cs_gui_time_tables(void);
 
+/*----------------------------------------------------------------------------
+ * For heat transfer model, check if lambda is anisotropic.
+ *
+ * return: 1 if anisotropic, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_physical_properties_ht_lambda_is_anisotropic(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

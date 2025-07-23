@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Enable use of anisotropic conductivity with the CDO based Heat transfer
+  solver of code_saturne. The conductivity must still be defined through
+  the `cs_user_parameters` function, but the model can be activated
+  through the GUI.
+
 - Time moments: use reference time step instead of local time step.
   * This changes the behavior only when using a local (pseudo-steady)
     time step, where the average cannot be interpreted as a true time
