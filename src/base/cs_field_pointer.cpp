@@ -264,6 +264,9 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
     }
 
     _field_pointer[e].p[index] = f;
+
+    /* If index 0 is updated, ensure that ".f" is updated as well. */
+    if (index == 0) _field_pointer[e].f = f;
   }
 }
 
