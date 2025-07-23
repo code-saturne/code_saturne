@@ -132,6 +132,16 @@ cs_matrix_t  *
 cs_matrix_msr(void);
 
 /*----------------------------------------------------------------------------
+ * Return CSR matrix for a given fill type
+ *
+ * returns:
+ *   pointer to CSR matrix
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_t  *
+cs_matrix_csr(void);
+
+/*----------------------------------------------------------------------------
  * Return native matrix
  *
  * returns:

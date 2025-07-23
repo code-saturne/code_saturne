@@ -130,7 +130,7 @@ class config:
                         'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
                         'catalyst', 'melissa',          # co-processing libraries
                         'medcoupling',                  # MED coupling
-                        'mumps',                        # Sparse direct solver
+                        'mumps', 'cudss',               # Sparse direct solver
                         'amgx', 'hypre', 'petsc',       # Linear algebra
                         'metis', 'scotch',              # Partionning libraries
                         'mpi',                          # MPI
@@ -281,6 +281,7 @@ class config:
         self.libs['amgx']  = prerequisite('Amgx', 'amgx', config_dict)
         self.libs['hypre'] = prerequisite('HYPRE', 'hypre', config_dict)
         self.libs['mumps'] = prerequisite('MUMPS', 'mumps', config_dict)
+        self.libs['cudss'] = prerequisite('CUDSS', 'cudss', config_dict)
 
     def __get_search_paths_catalyst__(self):
         """

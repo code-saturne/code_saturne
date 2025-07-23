@@ -89,6 +89,10 @@ extern "C" void cs_sles_petsc_library_info(cs_log_t log_type);
 #include "alge/cs_sles_mumps.h"
 #endif
 
+#if defined(HAVE_CUDSS)
+#include "alge/cs_sles_cudss.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -151,6 +155,10 @@ _ext_library_version_info(bool  log)
   n_ext += 1;
 #endif
 
+#if defined(HAVE_CUDSS)
+  n_ext += 1;
+#endif
+
 #if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
   n_ext += 1;
 #endif
@@ -182,6 +190,10 @@ _ext_library_version_info(bool  log)
 
 #if defined(HAVE_MUMPS)
     cs_sles_mumps_library_info(logs[log_id]);
+#endif
+
+#if defined(HAVE_CUDSS)
+    cs_sles_cudss_library_info(logs[log_id]);
 #endif
 
 #if    defined(HAVE_METIS)  || defined(HAVE_PARMETIS) \

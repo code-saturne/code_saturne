@@ -83,6 +83,10 @@
 #include "alge/cs_sles_amgx.h"
 #endif
 
+#if defined(HAVE_CUDSS)
+#include "alge/cs_sles_cudss.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 #endif /* __CS_ALGE_HEADERS_H__ */

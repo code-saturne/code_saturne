@@ -260,3 +260,9 @@ have: @cs_have_mumps@
 cppflags: @MUMPS_CPPFLAGS@
 ldflags: @MUMPS_LDFLAGS@
 libs: @MUMPS_LIBS@
+
+[cudss]
+have: @cs_have_cudss@
+cppflags: @CUDSS_CPPFLAGS@
+ldflags: @CUDSS_LDFLAGS@
+libs: @CUDSS_LIBS@

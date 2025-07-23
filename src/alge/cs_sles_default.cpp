@@ -306,6 +306,7 @@ _sles_setup_matrix_native(int                  f_id,
   const cs_mesh_t *m = cs_glob_mesh;
 
   bool need_msr = false;
+  bool need_csr = false;
   bool need_external = false;
   char external_type[32] = "";
 
@@ -395,8 +396,17 @@ _sles_setup_matrix_native(int                  f_id,
   if (need_external == false && cs_get_device_id() > -1)
     need_msr = true;
 
+#if defined(HAVE_CUDSS)
+  if (strcmp(cs_sles_get_type(sc), "cs_sles_cudss_t") == 0) {
+    need_msr = false;
+    need_csr = true;
+  }
+#endif
+
   if (need_msr)
     a = cs_matrix_msr();
+  else if (need_csr)
+    a = cs_matrix_csr();
   else if (need_external) {
     a = cs_matrix_external(external_type,
                            symmetric,
@@ -732,6 +742,7 @@ cs_sles_default_get_matrix(int          f_id,
      used */
 
   bool need_msr = false;
+  bool need_csr = false;
   bool need_external = false;
   char external_type[32] = "";
 
@@ -798,6 +809,13 @@ cs_sles_default_get_matrix(int          f_id,
      if its performance can be improved, while NATIVE is deprecated. */
   need_msr = true;
 
+#if defined(HAVE_CUDSS)
+  if (strcmp(cs_sles_get_type(sc), "cs_sles_cudss_t") == 0) {
+    need_csr = true;
+    need_msr = false;
+  }
+#endif
+
   if (need_external)
     a = cs_matrix_external(external_type,
                            symmetric,
@@ -806,6 +824,8 @@ cs_sles_default_get_matrix(int          f_id,
 
   else if (need_msr)
     a = cs_matrix_msr();
+  else if (need_csr)
+    a = cs_matrix_csr();
 
   else
     a = cs_matrix_default(symmetric,

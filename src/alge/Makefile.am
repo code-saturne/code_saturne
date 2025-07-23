@@ -63,6 +63,10 @@ libcsalge_amgx_a_CPPFLAGS =\
 -I$(top_srcdir)/src -I$(top_builddir)/src \
 $(AMGX_CPPFLAGS) $(MPI_CPPFLAGS)
 
+libcsalge_cudss_a_CPPFLAGS =\
+-I$(top_srcdir)/src -I$(top_builddir)/src \
+$(CUDSS_CPPFLAGS) $(MPI_CPPFLAGS)
+
 libcsalge_hypre_a_CPPFLAGS =\
 -I$(top_srcdir)/src -I$(top_builddir)/src \
 $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
@@ -146,6 +150,10 @@ endif
 
 if HAVE_AMGX
 csalge_include_HEADERS += cs_sles_amgx.h
+endif
+
+if HAVE_CUDSS
+csalge_include_HEADERS += cs_sles_cudss.h
 endif
 
 # Library source files
@@ -269,7 +277,19 @@ libcsalge_a_LIBADD += libcsalge_amgx_a-cs_sles_amgx.$(OBJEXT)
 if HAVE_CUDA_CPP
 cs_sles_amgx = $(top_srcdir)/src/alge/cs_sles_amgx.cpp
 libcsalge_amgx_a-cs_sles_amgx.$(OBJEXT): $(cs_sles_amgx)
-	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(AMGX_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_amgx) -o libcsalge_amgx_a-cs_sles_amgx.$(OBJEXT)
+	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(AMGX_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_amgx) -o libcsalge_amgx_a-cs_sles_amgx.$(OBJEXT)
+endif
+endif
+
+if HAVE_CUDSS
+noinst_LIBRARIES += libcsalge_cudss.a
+libcsalge_cudss_a_SOURCES = cs_sles_cudss.cpp
+libcsalge_a_LIBADD += libcsalge_cudss_a-cs_sles_cudss.$(OBJEXT)
+
+if HAVE_CUDA_CPP
+cs_sles_cudss = $(top_srcdir)/src/alge/cs_sles_cudss.cpp
+libcsalge_cudss_a-cs_sles_cudss.$(OBJEXT): $(cs_sles_cudss)
+	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(CUDSS_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_cudss) -o libcsalge_cudss_a-cs_sles_cudss.$(OBJEXT)
 endif
 endif
 
