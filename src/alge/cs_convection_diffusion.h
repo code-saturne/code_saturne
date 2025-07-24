@@ -1022,6 +1022,35 @@ cs_slope_test_gradient(int                         f_id,
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Compute the upwind gradient used in the slope tests.
+ *
+ * template parameters:
+ *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
+ *
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
+ * \param[in]     ctx          Reference to dispatch context
+ * \param[in]     grad         standard gradient
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     val_f        face values for gradient
+ * \param[in]     i_massflux   mass flux at interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_slope_test_gradient_strided
+  (cs_dispatch_context         &ctx,
+   const cs_real_t              grad[][stride][3],
+   cs_real_t                  (*restrict grdpa)[stride][3],
+   const cs_real_t              pvar[][stride],
+   const cs_real_t              val_f[][stride],
+   const cs_real_t             *i_massflux);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Compute the upwind gradient used in the pure SOLU schemes
  *        (observed in the litterature).
  *

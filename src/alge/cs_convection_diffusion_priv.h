@@ -34,6 +34,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_math.h"
+#include "base/cs_field.h"
 #include "base/cs_parameters.h"  // for BC types
 
 #include "alge/cs_convection_diffusion.h"
@@ -3486,6 +3487,89 @@ cs_b_diff_flux_coupling_strided(int              idiffp,
   for (int k = 0; k < stride; k++)
     fluxi[k] += idiffp*b_visc*(pi[k] - pj[k]);
 }
+
+/*============================================================================
+ * Semi private functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*
+ * Add the explicit part of the convection/diffusion terms of a
+ * standard transport equation of a scalar field \f$ \varia \f$.
+ *
+ * Implemented and documented in cs_convection_diffusion_steady.cpp.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_steady_scalar
+(
+  const cs_field_t           *f,
+  const cs_equation_param_t  &eqp,
+  bool                        icvflb,
+  int                         inc,
+  cs_real_t         *restrict pvar,
+  const cs_real_t   *restrict pvara,
+  const int                   icvfli[],
+  const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_real_t             i_massflux[],
+  const cs_real_t             b_massflux[],
+  const cs_real_t             i_visc[],
+  const cs_real_t             b_visc[],
+  const cs_real_t             xcpp[],
+  cs_real_t         *restrict rhs
+);
+
+/*----------------------------------------------------------------------------
+ * \brief Add the explicit part of the convection/diffusion terms of a transport
+ *  equation of a vector or tensor field.
+ *
+ * Implemented and documented in cs_convection_diffusion_steady.cpp.
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_convection_diffusion_steady_strided
+(
+  cs_field_t                   *f,
+  const char                   *var_name,
+  const cs_equation_param_t    &eqp,
+  int                           icvflb,
+  int                           inc,
+  cs_real_t                   (*pvar)[stride],
+  const cs_real_t             (*pvara)[stride],
+  const int                     icvfli[],
+  const cs_field_bc_coeffs_t   *bc_coeffs,
+  const cs_bc_coeffs_solve_t   *bc_coeffs_solve,
+  const cs_real_t               i_massflux[],
+  const cs_real_t               b_massflux[],
+  const cs_real_t               i_visc[],
+  const cs_real_t               b_visc[],
+  cs_real_t          (*restrict grad)[stride][3],
+  cs_real_t          (*restrict rhs)[stride]
+);
+
+/*----------------------------------------------------------------------------
+ * Update face flux with convection contribution of a standard transport
+ * equation of a scalar field \f$ \varia \f$.
+ *
+ * Implemented and documented in cs_convection_diffusion_steady.cpp.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_face_convection_steady_scalar
+(
+  const cs_field_t           *f,
+  const cs_equation_param_t   eqp,
+  int                         icvflb,
+  int                         inc,
+  cs_real_t         *restrict pvar,
+  const cs_real_t   *restrict pvara,
+  const int                   icvfli[],
+  const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_real_t             i_massflux[],
+  const cs_real_t             b_massflux[],
+  cs_real_t                   i_conv_flux[][2],
+  cs_real_t                   b_conv_flux[]
+);
 
 /*----------------------------------------------------------------------------*/
 
