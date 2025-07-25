@@ -1234,7 +1234,9 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
   cs_xdef_t *d = nullptr;
 
   cs_real_t *_input = nullptr;
-  CS_MALLOC(_input, 3, cs_real_t);
+  if (nsp->turbulence->model->model != CS_TURB_NONE) {
+    CS_MALLOC(_input, 3, cs_real_t);
+  }
 
   for (int i = 0; i < bdy->n_boundaries; i++) {
     if (    bdy->types[i] & CS_BOUNDARY_WALL
@@ -1243,15 +1245,15 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
       /* Homogeneous Dirichlet on the velocity field. Nothing to enforce on the
          pressure field */
 
-      if (nsp->turbulence->model->model == CS_TURB_NONE)
+      if (nsp->turbulence->model->model == CS_TURB_NONE) {
         d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                    3,    /* dim */
+                                    3, /* dim */
                                     bdy->zone_ids[i],
                                     CS_FLAG_STATE_UNIFORM, /* state */
                                     CS_CDO_BC_HMG_DIRICHLET,
                                     (void *)zero);
+      }
       else {
-
         cs_xdef_analytic_context_t anai = {
           .z_id = bdy->zone_ids[i], .func = cs_turb_compute_wall_bc_coeffs,
           .input = _input, .free_input = _free_input_context
