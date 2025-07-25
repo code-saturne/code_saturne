@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_cdo_assembly.h"
@@ -251,7 +251,7 @@ _set_incr_vals(const cs_cdo_system_helper_t  *sh,
   cs_real_t *incr_vals = *p_incr_vals;
 
   if (incr_vals == nullptr)
-    BFT_MALLOC(incr_vals, n_cols, cs_real_t);
+    CS_MALLOC(incr_vals, n_cols, cs_real_t);
 
   cs_array_real_fill_zero(n_cols, incr_vals);
 
@@ -292,7 +292,7 @@ _set_dof_vals(int                            n_eqs,
   cs_real_t *dof_vals = *p_dof_vals;
 
   if (dof_vals == nullptr)
-    BFT_MALLOC(dof_vals, n_cols, cs_real_t);
+    CS_MALLOC(dof_vals, n_cols, cs_real_t);
 
   for (int i = 0; i < n_eqs; i++) {
 
@@ -777,7 +777,7 @@ _create_scalsys(int                               n_eqs,
 
   cs_cdovb_scalsys_t *scalsys = nullptr;
 
-  BFT_MALLOC(scalsys, 1, cs_cdovb_scalsys_t);
+  CS_MALLOC(scalsys, 1, cs_cdovb_scalsys_t);
 
   scalsys->n_dofs = n_vertices * n_eqs;
 
@@ -1019,7 +1019,7 @@ cs_cdovb_scalsys_free(int                     n_eqs,
 
       }
 
-      BFT_FREE(block_ij);
+      CS_FREE(block_ij);
 
     } /* Loop on equations (j) */
   } /* Loop on equations (i) */
@@ -1027,7 +1027,7 @@ cs_cdovb_scalsys_free(int                     n_eqs,
   /* Free the system context */
   /* ----------------------- */
 
-  BFT_FREE(scalsys);
+  CS_FREE(scalsys);
 
   return nullptr;
 }
@@ -1070,7 +1070,7 @@ cs_cdovb_scalsys_solve_implicit(bool                         cur2prev,
   /* Retrieve the field associated to each diagonal block */
 
   cs_field_t **fields = nullptr;
-  BFT_MALLOC(fields, n_equations, cs_field_t *);
+  CS_MALLOC(fields, n_equations, cs_field_t *);
 
   for (int i_eq = 0; i_eq < n_equations; i_eq++) {
 
@@ -1130,11 +1130,11 @@ cs_cdovb_scalsys_solve_implicit(bool                         cur2prev,
 
   _set_field_vals(n_equations, dof_vals, fields);
 
-  BFT_FREE(dof_vals);
+  CS_FREE(dof_vals);
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(fields);
+  CS_FREE(fields);
   cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
@@ -1176,7 +1176,7 @@ cs_cdovb_scalsys_solve_implicit_incr(bool                         cur2prev,
   /* Retrieve the field associated to each diagonal block */
 
   cs_field_t **fields = nullptr;
-  BFT_MALLOC(fields, n_equations, cs_field_t *);
+  CS_MALLOC(fields, n_equations, cs_field_t *);
 
   for (int i_eq = 0; i_eq < n_equations; i_eq++) {
 
@@ -1251,8 +1251,8 @@ cs_cdovb_scalsys_solve_implicit_incr(bool                         cur2prev,
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(incr_vals);
-  BFT_FREE(fields);
+  CS_FREE(incr_vals);
+  CS_FREE(fields);
   cs_cdo_system_helper_reset(sh); /* free rhs and matrix */
 }
 

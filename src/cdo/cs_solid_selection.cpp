@@ -37,7 +37,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_parall.h"
@@ -68,7 +68,7 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
-#define CS_SOLID_SELECTION_DBG       0
+#define CS_SOLID_SELECTION_DBG 0
 
 /*============================================================================
  * Type definitions
@@ -105,8 +105,7 @@ cs_solid_selection_t *
 cs_solid_selection_get(void)
 {
   if (_cs_solid == nullptr) {
-
-    BFT_MALLOC(_cs_solid, 1, cs_solid_selection_t);
+    CS_MALLOC(_cs_solid, 1, cs_solid_selection_t);
 
     _cs_solid->n_cells   = 0;
     _cs_solid->n_g_cells = 0;
@@ -139,14 +138,13 @@ cs_solid_selection_sync(const cs_cdo_connect_t *connect)
   cs::parall::sum(_cs_solid->n_g_cells);
 
   if (_cs_solid->n_g_cells > 0) {
-
     /* Tag cells and faces */
 
     if (_cs_solid->cell_is_solid == nullptr)
-      BFT_MALLOC(_cs_solid->cell_is_solid, connect->n_cells, bool);
+      CS_MALLOC(_cs_solid->cell_is_solid, connect->n_cells, bool);
 
     if (_cs_solid->face_is_solid == nullptr)
-      BFT_MALLOC(_cs_solid->face_is_solid, connect->n_faces[0], bool);
+      CS_MALLOC(_cs_solid->face_is_solid, connect->n_faces[0], bool);
 
     /* Set to false all cells and all faces */
 
@@ -155,15 +153,14 @@ cs_solid_selection_sync(const cs_cdo_connect_t *connect)
 
     /* Tag cells associated to a solid cell and its related faces */
 
-    const cs_adjacency_t  *c2f = connect->c2f;
+    const cs_adjacency_t *c2f = connect->c2f;
 
     for (cs_lnum_t i = 0; i < _cs_solid->n_cells; i++) {
-
-      const cs_lnum_t  c_id = _cs_solid->cell_ids[i];
+      const cs_lnum_t c_id = _cs_solid->cell_ids[i];
 
       _cs_solid->cell_is_solid[c_id] = true;
 
-      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id + 1]; j++)
         _cs_solid->face_is_solid[c2f->ids[j]] = true;
 
     } /* Loop on solid cells */
@@ -171,7 +168,6 @@ cs_solid_selection_sync(const cs_cdo_connect_t *connect)
     /* Synchronize face tags */
 
     if (connect->face_ifs != nullptr) {
-
       assert(sizeof(bool) == sizeof(char));
       cs_interface_set_max(connect->face_ifs,
                            connect->n_faces[0],
@@ -179,7 +175,6 @@ cs_solid_selection_sync(const cs_cdo_connect_t *connect)
                            false,   /* interlace (not useful here) */
                            CS_CHAR, /* boolean */
                            _cs_solid->face_is_solid);
-
     }
 
   } /* n_g_cells > 0 */
@@ -198,10 +193,10 @@ cs_solid_selection_free(void)
   if (_cs_solid == nullptr)
     return;
 
-  BFT_FREE(_cs_solid->cell_is_solid);
-  BFT_FREE(_cs_solid->face_is_solid);
-  BFT_FREE(_cs_solid->cell_ids);
-  BFT_FREE(_cs_solid);
+  CS_FREE(_cs_solid->cell_is_solid);
+  CS_FREE(_cs_solid->face_is_solid);
+  CS_FREE(_cs_solid->cell_ids);
+  CS_FREE(_cs_solid);
 }
 
 /*----------------------------------------------------------------------------*/

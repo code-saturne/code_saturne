@@ -39,20 +39,19 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "fvm/fvm_io_num.h"
 
 #include "base/cs_array.h"
-#include "cdo/cs_flag.h"
 #include "base/cs_log.h"
-#include "mesh/cs_mesh_adjacencies.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
-#include "cdo/cs_param_cdo.h"
 #include "base/cs_param_types.h"
 #include "base/cs_sort.h"
 #include "base/cs_volume_zone.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_param_cdo.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -183,8 +182,8 @@ _build_f2e_connect(const cs_mesh_t      *m,
 
   /* Build matrix */
 
-  BFT_MALLOC(f2e->ids, f2e->idx[n_faces], cs_lnum_t);
-  BFT_MALLOC(f2e->sgn, f2e->idx[n_faces], short int);
+  CS_MALLOC(f2e->ids, f2e->idx[n_faces], cs_lnum_t);
+  CS_MALLOC(f2e->sgn, f2e->idx[n_faces], short int);
 
   /* Interior faces */
 
@@ -468,7 +467,7 @@ _compute_max_ent(const cs_mesh_t  *m,
   const cs_lnum_t n_vertices = connect->n_vertices;
 
   short int *v_count = nullptr;
-  BFT_MALLOC(v_count, n_vertices, short int);
+  CS_MALLOC(v_count, n_vertices, short int);
 # pragma omp parallel for if (n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_vertices; i++)
     v_count[i] = 0;
@@ -595,7 +594,7 @@ _compute_max_ent(const cs_mesh_t  *m,
 
   } /* Loop on cells */
 
-  BFT_FREE(v_count);
+  CS_FREE(v_count);
 
   /* Store computed values */
 
@@ -708,7 +707,7 @@ _build_cell_flag(cs_cdo_connect_t *connect,
   const cs_lnum_t n_b_faces = connect->n_faces[CS_BND_FACES];
   const cs_lnum_t n_cells   = connect->n_cells;
 
-  BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
+  CS_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
   cs_array_flag_fill_zero(n_cells, connect->cell_flag);
 
   /* Loop on volume zones to find solid zones and then tag cells */
@@ -734,7 +733,7 @@ _build_cell_flag(cs_cdo_connect_t *connect,
     const cs_lnum_t n_vertices = connect->n_vertices;
 
     cs_flag_t *is_border_vtx = nullptr;
-    BFT_MALLOC(is_border_vtx, n_vertices, cs_flag_t);
+    CS_MALLOC(is_border_vtx, n_vertices, cs_flag_t);
     cs_array_flag_fill_zero(n_vertices, is_border_vtx);
 
     const cs_adjacency_t *bf2v = connect->bf2v;
@@ -763,7 +762,7 @@ _build_cell_flag(cs_cdo_connect_t *connect,
       }
     } /* Loop on cells */
 
-    BFT_FREE(is_border_vtx);
+    CS_FREE(is_border_vtx);
 
   } /* At least one equation with DoFs at vertices */
 
@@ -772,7 +771,7 @@ _build_cell_flag(cs_cdo_connect_t *connect,
     const cs_lnum_t n_edges = connect->n_edges;
 
     cs_flag_t *is_border_edge = nullptr;
-    BFT_MALLOC(is_border_edge, n_edges, cs_flag_t);
+    CS_MALLOC(is_border_edge, n_edges, cs_flag_t);
     cs_array_flag_fill_zero(n_edges, is_border_edge);
 
     const cs_adjacency_t *f2e = connect->f2e;
@@ -800,7 +799,7 @@ _build_cell_flag(cs_cdo_connect_t *connect,
       }
     } /* Loop on cells */
 
-    BFT_FREE(is_border_edge);
+    CS_FREE(is_border_edge);
 
   } /* edge interfaces */
 }
@@ -830,7 +829,7 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
   cs_gnum_t       n_g_edges = n_edges;
   cs_gnum_t      *edge_gnum = nullptr;
 
-  BFT_MALLOC(edge_gnum, n_edges, cs_gnum_t);
+  CS_MALLOC(edge_gnum, n_edges, cs_gnum_t);
 
   if (cs_glob_n_ranks > 1) {
 
@@ -839,7 +838,7 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
     /* Build global edge numbering and edges interface */
 
     cs_gnum_t *e2v_gnum = nullptr;
-    BFT_MALLOC(e2v_gnum, n_edges * 2, cs_gnum_t);
+    CS_MALLOC(e2v_gnum, n_edges * 2, cs_gnum_t);
 
 #pragma omp parallel for if (n_edges > CS_THR_MIN)
     for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
@@ -857,11 +856,11 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
     } /* Loop on edges */
 
     cs_lnum_t *order = nullptr;
-    BFT_MALLOC(order, n_edges, cs_lnum_t);
+    CS_MALLOC(order, n_edges, cs_lnum_t);
     cs_order_gnum_allocated_s(nullptr, e2v_gnum, 2, order, n_edges);
 
     cs_gnum_t *order_couples = nullptr;
-    BFT_MALLOC(order_couples, 2 * n_edges, cs_gnum_t);
+    CS_MALLOC(order_couples, 2 * n_edges, cs_gnum_t);
 #pragma omp parallel for if (n_edges > CS_THR_MIN)
     for (cs_lnum_t e = 0; e < n_edges; e++) {
       const cs_lnum_t o_id     = 2 * order[e];
@@ -872,9 +871,9 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
     fvm_io_num_t *edge_io_num
       = fvm_io_num_create_from_adj_s(nullptr, order_couples, n_edges, 2);
 
-    BFT_FREE(order);
-    BFT_FREE(order_couples);
-    BFT_FREE(e2v_gnum);
+    CS_FREE(order);
+    CS_FREE(order_couples);
+    CS_FREE(e2v_gnum);
 
     const cs_gnum_t *_g_num = fvm_io_num_get_global_num(edge_io_num);
     memcpy(edge_gnum, _g_num, n_edges * sizeof(cs_gnum_t));
@@ -918,7 +917,7 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
 
   /* Free memory */
 
-  BFT_FREE(edge_gnum);
+  CS_FREE(edge_gnum);
 
   /* Return pointers */
 
@@ -946,7 +945,7 @@ _define_face_interface(const cs_mesh_t *mesh)
 
   if (face_gnum == nullptr) {
     cs_lnum_t _n_faces = mesh->n_i_faces;
-    BFT_MALLOC(_face_gnum, _n_faces, cs_gnum_t);
+    CS_MALLOC(_face_gnum, _n_faces, cs_gnum_t);
 
 #pragma omp parallel for if (_n_faces > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < _n_faces; i++)
@@ -961,7 +960,7 @@ _define_face_interface(const cs_mesh_t *mesh)
   cs_gnum_t **perio_face_couples   = nullptr;
 
   if (n_perio > 0) {
-    BFT_MALLOC(perio_num, n_perio, int);
+    CS_MALLOC(perio_num, n_perio, int);
     for (int i = 0; i < n_perio; i++)
       perio_num[i] = i + 1;
   }
@@ -979,13 +978,13 @@ _define_face_interface(const cs_mesh_t *mesh)
 
   if (n_perio > 0) {
     for (int i = 0; i < n_perio; i++)
-      BFT_FREE(perio_face_couples[i]);
-    BFT_FREE(perio_face_couples);
-    BFT_FREE(n_perio_face_couples);
-    BFT_FREE(perio_num);
+      CS_FREE(perio_face_couples[i]);
+    CS_FREE(perio_face_couples);
+    CS_FREE(n_perio_face_couples);
+    CS_FREE(perio_num);
   }
 
-  BFT_FREE(_face_gnum);
+  CS_FREE(_face_gnum);
 
   return ifs;
 }
@@ -1036,7 +1035,7 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
 
   /* Build the connectivity structure */
 
-  BFT_MALLOC(connect, 1, cs_cdo_connect_t);
+  CS_MALLOC(connect, 1, cs_cdo_connect_t);
 
   /* Map the boundary face --> vertices connectivity */
 
@@ -1177,7 +1176,7 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
 
   /* Build the cell type for each cell */
 
-  BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
+  CS_MALLOC(connect->cell_type, n_cells, fvm_element_t);
 #pragma omp parallel if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     connect->cell_type[c_id] = _get_cell_type(c_id, connect);
@@ -1230,8 +1229,8 @@ cs_cdo_connect_free(const cs_mesh_t *mesh, cs_cdo_connect_t *connect)
   cs_adjacency_destroy(&(connect->f2f_ed));
   cs_adjacency_destroy(&(connect->e2e));
 
-  BFT_FREE(connect->cell_type);
-  BFT_FREE(connect->cell_flag);
+  CS_FREE(connect->cell_type);
+  CS_FREE(connect->cell_flag);
 
   /* Structures for parallelism */
 
@@ -1249,7 +1248,7 @@ cs_cdo_connect_free(const cs_mesh_t *mesh, cs_cdo_connect_t *connect)
   cs_interface_set_destroy(&(connect->edge_ifs));
   cs_interface_set_destroy(&(connect->face_ifs));
 
-  BFT_FREE(connect);
+  CS_FREE(connect);
 
   return nullptr;
 }
@@ -1388,7 +1387,7 @@ cs_cdo_connect_allocate_cw_buffer(const cs_cdo_connect_t *connect)
 
   cs_cdo_connect_cw_buffer_size = cs::max(n_vc * (n_vc + 1) / 2, max_ent);
 
-  BFT_MALLOC(cs_cdo_connect_cw_buffer, cs_glob_n_threads, double *);
+  CS_MALLOC(cs_cdo_connect_cw_buffer, cs_glob_n_threads, double *);
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -1396,8 +1395,9 @@ cs_cdo_connect_allocate_cw_buffer(const cs_cdo_connect_t *connect)
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
-    BFT_MALLOC(
-      cs_cdo_connect_cw_buffer[t_id], cs_cdo_connect_cw_buffer_size, double);
+    CS_MALLOC(cs_cdo_connect_cw_buffer[t_id],
+              cs_cdo_connect_cw_buffer_size,
+              double);
     memset(cs_cdo_connect_cw_buffer[t_id],
            0,
            cs_cdo_connect_cw_buffer_size * sizeof(double));
@@ -1405,8 +1405,7 @@ cs_cdo_connect_allocate_cw_buffer(const cs_cdo_connect_t *connect)
 #else
   assert(cs_glob_n_threads == 1);
 
-  BFT_MALLOC(
-    cs_cdo_connect_cw_buffer[0], cs_cdo_connect_cw_buffer_size, double);
+  CS_MALLOC(cs_cdo_connect_cw_buffer[0], cs_cdo_connect_cw_buffer_size, double);
   memset(cs_cdo_connect_cw_buffer[0],
          0,
          cs_cdo_connect_cw_buffer_size * sizeof(double));
@@ -1430,14 +1429,14 @@ cs_cdo_connect_free_cw_buffer(void)
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
-    BFT_FREE(cs_cdo_connect_cw_buffer[t_id]);
+    CS_FREE(cs_cdo_connect_cw_buffer[t_id]);
   }
 #else
   assert(cs_glob_n_threads == 1);
-  BFT_FREE(cs_cdo_connect_cw_buffer[0]);
+  CS_FREE(cs_cdo_connect_cw_buffer[0]);
 #endif /* openMP */
 
-  BFT_FREE(cs_cdo_connect_cw_buffer);
+  CS_FREE(cs_cdo_connect_cw_buffer);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1556,7 +1555,7 @@ cs_cdo_connect_discrete_curl(const cs_cdo_connect_t *connect,
 
   cs_real_t *curl_values = *p_curl_values;
   if (curl_values == nullptr)
-    BFT_MALLOC(curl_values, n_faces, cs_real_t);
+    CS_MALLOC(curl_values, n_faces, cs_real_t);
 
   const cs_adjacency_t *f2e = connect->f2e;
   assert(f2e != nullptr && f2e->sgn != nullptr); /* Sanity checks */
@@ -1597,11 +1596,11 @@ cs_cdo_connect_dump(const cs_cdo_connect_t *connect)
   char *fname = nullptr;
   if (cs_glob_n_ranks > 1) {
     lname += 6;
-    BFT_MALLOC(fname, lname, char);
+    CS_MALLOC(fname, lname, char);
     sprintf(fname, "DumpConnect.%05d.dat", cs_glob_rank_id);
   }
   else {
-    BFT_MALLOC(fname, lname, char);
+    CS_MALLOC(fname, lname, char);
     sprintf(fname, "DumpConnect.dat");
   }
   FILE *fdump = fopen(fname, "w");
@@ -1625,7 +1624,7 @@ cs_cdo_connect_dump(const cs_cdo_connect_t *connect)
   cs_adjacency_dump("Cell   --> Vertices", fdump, connect->c2v);
 
   fclose(fdump);
-  BFT_FREE(fname);
+  CS_FREE(fname);
 }
 
 /*----------------------------------------------------------------------------*/

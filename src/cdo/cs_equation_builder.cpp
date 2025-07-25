@@ -39,7 +39,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_log.h"
 #include "base/cs_parall.h"
@@ -133,7 +133,7 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
 {
   cs_equation_builder_t *eqb = nullptr;
 
-  BFT_MALLOC(eqb, 1, cs_equation_builder_t);
+  CS_MALLOC(eqb, 1, cs_equation_builder_t);
 
   eqb->init_step = true;
 
@@ -341,13 +341,13 @@ cs_equation_builder_free(cs_equation_builder_t  **p_builder)
   cs_equation_builder_reset(eqb);
 
   if (eqb->source_mask != nullptr)
-    BFT_FREE(eqb->source_mask);
+    CS_FREE(eqb->source_mask);
 
   cs_cdo_system_helper_free(&eqb->system_helper);
 
   /* Quantities related to the incremental resolution (may be nullptr) */
 
-  BFT_FREE(eqb->increment);
+  CS_FREE(eqb->increment);
 
   /* Free the structure handling the non-linear algorithm */
 
@@ -357,7 +357,7 @@ cs_equation_builder_free(cs_equation_builder_t  **p_builder)
 
   eqb->face_bc = cs_cdo_bc_free(eqb->face_bc);
 
-  BFT_FREE(eqb);
+  CS_FREE(eqb);
 
   *p_builder = nullptr;
 }
@@ -377,8 +377,8 @@ cs_equation_builder_reset(cs_equation_builder_t  *eqb)
     return;
 
   eqb->init_step = true;
-  BFT_FREE(eqb->enforced_values);
-  BFT_FREE(eqb->dir_values);
+  CS_FREE(eqb->enforced_values);
+  CS_FREE(eqb->dir_values);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -436,12 +436,11 @@ cs_equation_builder_log_performance(const cs_equation_param_t     *eqp,
     char *msg = nullptr;
     int len = 1 + strlen("<CDO/> Runtime") + strlen(eqp->name);
 
-    BFT_MALLOC(msg, len, char);
+    CS_MALLOC(msg, len, char);
     sprintf(msg, "<CDO/%s> Runtime", eqp->name);
     cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
                   msg, t[0], t[1], t[2]);
-    BFT_FREE(msg);
-
+    CS_FREE(msg);
   }
 }
 

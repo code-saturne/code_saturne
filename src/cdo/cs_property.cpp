@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_defs.h"
@@ -148,11 +148,9 @@ _add_new_def(cs_property_t *pty)
   int  new_id = pty->n_definitions;
 
   pty->n_definitions += 1;
-  BFT_REALLOC(pty->defs, pty->n_definitions, cs_xdef_t *);
-  BFT_REALLOC(pty->get_eval_at_cell, pty->n_definitions,
-              cs_xdef_eval_t *);
-  BFT_REALLOC(pty->get_eval_at_cell_cw, pty->n_definitions,
-              cs_xdef_cw_eval_t *);
+  CS_REALLOC(pty->defs, pty->n_definitions, cs_xdef_t *);
+  CS_REALLOC(pty->get_eval_at_cell, pty->n_definitions, cs_xdef_eval_t *);
+  CS_REALLOC(pty->get_eval_at_cell_cw, pty->n_definitions, cs_xdef_cw_eval_t *);
 
   return new_id;
 }
@@ -174,7 +172,7 @@ _add_new_b_def(cs_property_t *pty)
   int  new_id = pty->n_b_definitions;
 
   pty->n_b_definitions += 1;
-  BFT_REALLOC(pty->b_defs, pty->n_b_definitions, cs_xdef_t *);
+  CS_REALLOC(pty->b_defs, pty->n_b_definitions, cs_xdef_t *);
 
   return new_id;
 }
@@ -1004,20 +1002,20 @@ _build_def_idx_from_bdy_selection(const cs_property_t    *pty,
   /* Allocations and initializations */
 
   if (def_idx == nullptr)
-    BFT_MALLOC(def_idx, 2*pty->n_definitions + 1, cs_lnum_t);
+    CS_MALLOC(def_idx, 2 * pty->n_definitions + 1, cs_lnum_t);
 
   memset(def_idx, 0, sizeof(cs_lnum_t)*(2*pty->n_definitions + 1));
 
   cs_lnum_t  *count = def_idx + pty->n_definitions + 1;
 
   if (cell_ids == nullptr)
-    BFT_MALLOC(cell_ids, n_b_faces, cs_lnum_t);
+    CS_MALLOC(cell_ids, n_b_faces, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
     cell_ids[i] = -1;
 
   if (bf_ids == nullptr)
-    BFT_MALLOC(bf_ids, n_b_faces, cs_lnum_t);
+    CS_MALLOC(bf_ids, n_b_faces, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
     bf_ids[i] = -1;
@@ -1108,12 +1106,12 @@ _create_property(const char           *name,
                 "   CS_PROPERTY_ANISO.\n", __func__, name);
 
   cs_property_t *pty = nullptr;
-  BFT_MALLOC(pty, 1, cs_property_t);
+  CS_MALLOC(pty, 1, cs_property_t);
 
   /* Copy name */
 
   size_t  len = strlen(name);
-  BFT_MALLOC(pty->name, len + 1, char);
+  CS_MALLOC(pty->name, len + 1, char);
   strncpy(pty->name, name, len + 1);
 
   pty->id = id;
@@ -1211,14 +1209,14 @@ cs_property_add(const char            *name,
 
   if (pty_id == 0) {
     _n_max_properties = 3;
-    BFT_MALLOC(_properties, _n_max_properties, cs_property_t *);
+    CS_MALLOC(_properties, _n_max_properties, cs_property_t *);
   }
 
   _n_properties += 1;
 
   if (_n_properties > _n_max_properties) {
     _n_max_properties *= 2;
-    BFT_REALLOC(_properties, _n_max_properties, cs_property_t *);
+    CS_REALLOC(_properties, _n_max_properties, cs_property_t *);
   }
 
   _properties[pty_id] = _create_property(name, pty_id, type);
@@ -1307,7 +1305,7 @@ cs_property_add_as_product(const char             *name,
   cs_property_t  *pty_ab = cs_property_add(name, type);
 
   pty_ab->n_related_properties = 2;
-  BFT_MALLOC(pty_ab->related_properties, 2, const cs_property_t *);
+  CS_MALLOC(pty_ab->related_properties, 2, const cs_property_t *);
 
   pty_ab->related_properties[0] = pty_a;
   pty_ab->related_properties[1] = pty_b;
@@ -1478,32 +1476,30 @@ cs_property_destroy_all(void)
     if (pty == nullptr)
       bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-    BFT_FREE(pty->name);
-    BFT_FREE(pty->def_ids);
+    CS_FREE(pty->name);
+    CS_FREE(pty->def_ids);
 
     for (int j = 0; j < pty->n_definitions; j++)
       pty->defs[j] = cs_xdef_free(pty->defs[j]);
 
-    BFT_FREE(pty->defs);
-    BFT_FREE(pty->get_eval_at_cell);
-    BFT_FREE(pty->get_eval_at_cell_cw);
+    CS_FREE(pty->defs);
+    CS_FREE(pty->get_eval_at_cell);
+    CS_FREE(pty->get_eval_at_cell_cw);
 
     if (pty->n_related_properties > 0)
-      BFT_FREE(pty->related_properties);
+      CS_FREE(pty->related_properties);
 
     if (pty->n_b_definitions > 0) {
-
-      BFT_FREE(pty->b_defs);
+      CS_FREE(pty->b_defs);
       if (pty->n_b_definitions > 1)
-        BFT_FREE(pty->b_def_ids);
-
+        CS_FREE(pty->b_def_ids);
     }
 
-    BFT_FREE(pty);
+    CS_FREE(pty);
 
   } /* Loop on properties */
 
-  BFT_FREE(_properties);
+  CS_FREE(_properties);
   _n_properties = 0;
   _n_max_properties = 0;
 }
@@ -1545,7 +1541,7 @@ cs_property_finalize_setup(void)
 
       const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
 
-      BFT_MALLOC(pty->def_ids, n_cells, short int);
+      CS_MALLOC(pty->def_ids, n_cells, short int);
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < n_cells; j++)
@@ -1632,7 +1628,7 @@ cs_property_finalize_setup(void)
 
       const cs_lnum_t  n_b_faces = cs_cdo_quant->n_b_faces;
 
-      BFT_MALLOC(pty->b_def_ids, n_b_faces, short int);
+      CS_MALLOC(pty->b_def_ids, n_b_faces, short int);
 
 #     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < n_b_faces; j++)
@@ -3236,7 +3232,7 @@ cs_property_iso_get_cell_values(cs_real_t               t_eval,
 
     *pty_stride = 0;
     if (allocate)
-      BFT_MALLOC(values, 1, cs_real_t);
+      CS_MALLOC(values, 1, cs_real_t);
 
     /* Evaluation at c_id = 0. One assumes that there is at least one cell per
        MPI rank */
@@ -3250,7 +3246,7 @@ cs_property_iso_get_cell_values(cs_real_t               t_eval,
 
     *pty_stride = 1;
     if (allocate)
-      BFT_MALLOC(values, cs_cdo_quant->n_cells, cs_real_t);
+      CS_MALLOC(values, cs_cdo_quant->n_cells, cs_real_t);
 
     cs_property_eval_at_cells(t_eval, pty, values);
 
@@ -3301,7 +3297,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
       scaling_factor *= b->scaling_factor;
 
     cs_real_t *tmp_val = nullptr;
-    BFT_MALLOC(tmp_val, n_cells, cs_real_t);
+    CS_MALLOC(tmp_val, n_cells, cs_real_t);
     cs_array_real_fill_zero(n_cells, tmp_val);
 
     if (pty->type & CS_PROPERTY_ISO) {
@@ -3403,8 +3399,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
     } /* Either a or b is an isotropic property */
 
-    BFT_FREE(tmp_val);
-
+    CS_FREE(tmp_val);
   }
   else { /* Simple case: One has to evaluate the property */
 
@@ -3412,23 +3407,23 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
       cs_array_real_set_scalar(n_cells, pty->ref_value, array);
 
     else {
-
       for (int def_id = 0; def_id < pty->n_definitions; def_id++)
         cs_property_evaluate_def(pty,
                                  def_id,
                                  false, /* dense output */
                                  t_eval,
                                  array);
-
     }
 
   } /* Not defined as the product of two existing properties */
 
   /* Apply a scaling factor is requested */
 
-  if (fabs(scaling_factor - 1.0) > 10*FLT_MIN)
-    cs_array_real_scale(n_cells, cs_property_get_dim(pty),
-                        nullptr, scaling_factor,
+  if (fabs(scaling_factor - 1.0) > 10 * FLT_MIN)
+    cs_array_real_scale(n_cells,
+                        cs_property_get_dim(pty),
+                        nullptr,
+                        scaling_factor,
                         array);
 }
 
@@ -3444,30 +3439,29 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
-                                   const cs_property_t    *pty,
-                                   cs_real_t              *array)
+cs_property_eval_at_boundary_faces(cs_real_t            t_eval,
+                                   const cs_property_t *pty,
+                                   cs_real_t           *array)
 {
   if (pty == nullptr)
     return;
   assert(array != nullptr);
 
-  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_lnum_t  n_b_faces = quant->n_b_faces;
+  const cs_cdo_quantities_t *quant     = cs_cdo_quant;
+  const cs_lnum_t            n_b_faces = quant->n_b_faces;
 
-  double  scaling_factor =
+  double scaling_factor =
     (pty->type & CS_PROPERTY_SCALED) ? pty->scaling_factor : 1.0;
 
   if (pty->n_b_definitions == 0) {
-
     /* One uses the definition in the cell associated to each boundary face to
        get the result */
 
     if (pty->type & CS_PROPERTY_BY_PRODUCT) { /* P = A * B */
 
       assert(pty->related_properties != nullptr);
-      const cs_property_t  *a = pty->related_properties[0];
-      const cs_property_t  *b = pty->related_properties[1];
+      const cs_property_t *a = pty->related_properties[0];
+      const cs_property_t *b = pty->related_properties[1];
 
       if (a->type & CS_PROPERTY_SCALED)
         scaling_factor *= a->scaling_factor;
@@ -3482,181 +3476,181 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
       _build_def_idx_from_bdy_selection(a, &a_def_idx, &a_cell_ids, &a_bf_ids);
       _build_def_idx_from_bdy_selection(b, &b_def_idx, &b_cell_ids, &b_bf_ids);
 
-      int  dim_a = cs_property_get_dim(a);
-      int  dim_b = cs_property_get_dim(b);
-      int  dim_ab = cs::max(dim_a, dim_b);
+      int dim_a  = cs_property_get_dim(a);
+      int dim_b  = cs_property_get_dim(b);
+      int dim_ab = cs::max(dim_a, dim_b);
 
       cs_real_t *tmp_val = nullptr;
-      BFT_MALLOC(tmp_val, n_b_faces*dim_ab, cs_real_t);
-      cs_array_real_fill_zero(n_b_faces*dim_ab, tmp_val);
+      CS_MALLOC(tmp_val, n_b_faces * dim_ab, cs_real_t);
+      cs_array_real_fill_zero(n_b_faces * dim_ab, tmp_val);
 
       if (pty->type & CS_PROPERTY_ISO) { /* A and B are isotropic */
 
         /* 1. Evaluates the property A */
 
         if (a->n_definitions == 1)
-          _evaluate_property_at_boundary_from_cells(a, a_def_idx, a_cell_ids,
+          _evaluate_property_at_boundary_from_cells(a,
+                                                    a_def_idx,
+                                                    a_cell_ids,
                                                     t_eval,
                                                     array);
 
         else { /* Several definitions for the property A */
 
-          _evaluate_property_at_boundary_from_cells(a, a_def_idx, a_cell_ids,
+          _evaluate_property_at_boundary_from_cells(a,
+                                                    a_def_idx,
+                                                    a_cell_ids,
                                                     t_eval,
                                                     tmp_val);
 
           /* Apply the indirection to fill the array to return */
 
-          cs_array_real_copy_subset(n_b_faces, 1, a_bf_ids,
+          cs_array_real_copy_subset(n_b_faces,
+                                    1,
+                                    a_bf_ids,
                                     CS_ARRAY_SUBSET_IN,
                                     tmp_val,
                                     array);
-
         }
 
         /* 2. Evaluates the property B and operates the product */
 
-        _evaluate_property_at_boundary_from_cells(b, b_def_idx, b_cell_ids,
+        _evaluate_property_at_boundary_from_cells(b,
+                                                  b_def_idx,
+                                                  b_cell_ids,
                                                   t_eval,
                                                   tmp_val);
 
         if (b->n_definitions == 1) {
-
           for (cs_lnum_t i = 0; i < n_b_faces; i++)
             array[i] *= tmp_val[i];
-
         }
         else { /* Several definitions for the property B */
 
           for (cs_lnum_t i = 0; i < n_b_faces; i++)
             array[i] *= tmp_val[b_bf_ids[i]];
-
         }
-
       }
       else {
-
         if (a->type & CS_PROPERTY_ISO) {
-
           /* 1. Evaluates the property B (not isotropic) */
 
           if (b->n_definitions == 1)
-            _evaluate_property_at_boundary_from_cells(b, b_def_idx, b_cell_ids,
+            _evaluate_property_at_boundary_from_cells(b,
+                                                      b_def_idx,
+                                                      b_cell_ids,
                                                       t_eval,
                                                       array);
 
           else { /* Several definitions for the property B */
 
-            _evaluate_property_at_boundary_from_cells(b, b_def_idx, b_cell_ids,
+            _evaluate_property_at_boundary_from_cells(b,
+                                                      b_def_idx,
+                                                      b_cell_ids,
                                                       t_eval,
                                                       tmp_val);
 
             /* Apply the indirection to fill the array to return */
 
-            cs_array_real_copy_subset(n_b_faces, dim_b, b_bf_ids,
+            cs_array_real_copy_subset(n_b_faces,
+                                      dim_b,
+                                      b_bf_ids,
                                       CS_ARRAY_SUBSET_IN,
                                       tmp_val,
                                       array);
-
           }
 
           /* 2. Evaluates the property A (isotropic) and operates the product */
 
-          _evaluate_property_at_boundary_from_cells(a, a_def_idx, a_cell_ids,
+          _evaluate_property_at_boundary_from_cells(a,
+                                                    a_def_idx,
+                                                    a_cell_ids,
                                                     t_eval,
                                                     tmp_val);
 
           if (a->n_definitions == 1) {
-
             for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-
-              const cs_real_t coef = tmp_val[i]; /* value of the A property */
-              cs_real_t  *_array = array + i*dim_b;
+              const cs_real_t coef   = tmp_val[i]; /* value of the A property */
+              cs_real_t      *_array = array + i * dim_b;
               for (int k = 0; k < dim_b; k++)
                 _array[k] *= coef;
-
             }
-
           }
           else { /* Several definitions for the property A */
 
             for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-
-              const cs_real_t coef = tmp_val[a_bf_ids[i]];
-              cs_real_t  *_array = array + i*dim_b;
+              const cs_real_t coef   = tmp_val[a_bf_ids[i]];
+              cs_real_t      *_array = array + i * dim_b;
               for (int k = 0; k < dim_b; k++)
                 _array[k] *= coef;
-
             }
-
           }
-
         }
         else if (b->type & CS_PROPERTY_ISO) {
-
           /* 1. Evaluates the property A (not isotropic) */
 
           if (a->n_definitions == 1)
-            _evaluate_property_at_boundary_from_cells(a, a_def_idx, a_cell_ids,
+            _evaluate_property_at_boundary_from_cells(a,
+                                                      a_def_idx,
+                                                      a_cell_ids,
                                                       t_eval,
                                                       array);
 
           else { /* Several definitions for the property A */
 
-            _evaluate_property_at_boundary_from_cells(a, a_def_idx, a_cell_ids,
+            _evaluate_property_at_boundary_from_cells(a,
+                                                      a_def_idx,
+                                                      a_cell_ids,
                                                       t_eval,
                                                       tmp_val);
 
             /* Apply the indirection to fill the array to return */
 
-            cs_array_real_copy_subset(n_b_faces, dim_a, a_bf_ids,
+            cs_array_real_copy_subset(n_b_faces,
+                                      dim_a,
+                                      a_bf_ids,
                                       CS_ARRAY_SUBSET_IN,
                                       tmp_val,
                                       array);
-
           }
 
           /* 2. Evaluates the property B (isotropic) and operates the product */
 
-          _evaluate_property_at_boundary_from_cells(b, b_def_idx, b_cell_ids,
+          _evaluate_property_at_boundary_from_cells(b,
+                                                    b_def_idx,
+                                                    b_cell_ids,
                                                     t_eval,
                                                     tmp_val);
 
           if (b->n_definitions == 1) {
-
             for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-
-              const cs_real_t coef = tmp_val[i]; /* value of the B property */
-              cs_real_t  *_array = array + i*dim_a;
+              const cs_real_t coef   = tmp_val[i]; /* value of the B property */
+              cs_real_t      *_array = array + i * dim_a;
               for (int k = 0; k < dim_a; k++)
                 _array[k] *= coef;
-
             }
-
           }
           else { /* Several definitions for the property B */
 
             for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-
-              const cs_real_t coef = tmp_val[b_bf_ids[i]];
-              cs_real_t  *_array = array + i*dim_a;
+              const cs_real_t coef   = tmp_val[b_bf_ids[i]];
+              cs_real_t      *_array = array + i * dim_a;
               for (int k = 0; k < dim_a; k++)
                 _array[k] *= coef;
-
             }
-
           }
-
         }
         else
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     " %s: Property \"%s\". Case not handled yet.\n",
-                    __func__, pty->name);
+                    __func__,
+                    pty->name);
 
       } /* Either a or b is an isotropic property */
 
-      BFT_FREE(tmp_val);
-
+      CS_FREE(tmp_val);
     }
     else { /* Simple case: One has to evaluate the property */
 
@@ -3668,17 +3662,18 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
         cs_lnum_t *def_idx = nullptr, *cell_ids = nullptr, *bf_ids = nullptr;
 
         if (pty->n_definitions == 1)
-          _evaluate_property_at_boundary_from_cells(pty, def_idx, cell_ids,
+          _evaluate_property_at_boundary_from_cells(pty,
+                                                    def_idx,
+                                                    cell_ids,
                                                     t_eval,
                                                     array);
 
         else {
-
           _build_def_idx_from_bdy_selection(pty, &def_idx, &cell_ids, &bf_ids);
 
-          int  dim = cs_property_get_dim(pty);
+          int        dim     = cs_property_get_dim(pty);
           cs_real_t *tmp_val = nullptr;
-          BFT_MALLOC(tmp_val, n_b_faces*dim, cs_real_t);
+          CS_MALLOC(tmp_val, n_b_faces * dim, cs_real_t);
           cs_array_real_fill_zero(n_b_faces*dim, tmp_val);
 
           _evaluate_property_at_boundary_from_cells(pty, def_idx, cell_ids,
@@ -3687,17 +3682,17 @@ cs_property_eval_at_boundary_faces(cs_real_t               t_eval,
 
           /* Apply the indirection to fill the array to return */
 
-          cs_array_real_copy_subset(n_b_faces, dim, bf_ids,
+          cs_array_real_copy_subset(n_b_faces,
+                                    dim,
+                                    bf_ids,
                                     CS_ARRAY_SUBSET_IN,
                                     tmp_val,
                                     array);
-
         }
 
       } /* Not isotropic and constant at the same time */
 
     } /* Not defined as the product of two existing properties */
-
   }
   else { /* There is at least one boundary definition */
 

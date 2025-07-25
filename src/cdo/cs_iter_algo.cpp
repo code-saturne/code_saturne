@@ -38,8 +38,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -362,22 +362,22 @@ _allocate_anderson_arrays(cs_iter_algo_aac_t     *c)
 
   const int  n_max_dir = c->param.n_max_dir;
 
-  BFT_MALLOC(c->fold, c->n_elts, cs_real_t);
+  CS_MALLOC(c->fold, c->n_elts, cs_real_t);
   cs_array_real_fill_zero(c->n_elts, c->fold);
 
-  BFT_MALLOC(c->df, c->n_elts, cs_real_t);
+  CS_MALLOC(c->df, c->n_elts, cs_real_t);
   cs_array_real_fill_zero(c->n_elts, c->df);
 
-  BFT_MALLOC(c->gold, c->n_elts, cs_real_t);
+  CS_MALLOC(c->gold, c->n_elts, cs_real_t);
   cs_array_real_fill_zero(c->n_elts, c->gold);
 
-  BFT_MALLOC(c->dg, c->n_elts*n_max_dir, cs_real_t);
+  CS_MALLOC(c->dg, c->n_elts * n_max_dir, cs_real_t);
   cs_array_real_fill_zero(c->n_elts*n_max_dir, c->dg);
 
-  BFT_MALLOC(c->gamma, n_max_dir, cs_real_t);
+  CS_MALLOC(c->gamma, n_max_dir, cs_real_t);
   memset(c->gamma, 0, sizeof(cs_real_t)*n_max_dir);
 
-  BFT_MALLOC(c->Q, c->n_elts*n_max_dir, cs_real_t);
+  CS_MALLOC(c->Q, c->n_elts * n_max_dir, cs_real_t);
   cs_array_real_fill_zero(c->n_elts*n_max_dir, c->Q);
 
   c->R = cs_sdm_square_create(n_max_dir);
@@ -405,7 +405,7 @@ cs_iter_algo_create(cs_iter_algo_type_t    type)
 {
   cs_iter_algo_t *algo = nullptr;
 
-  BFT_MALLOC(algo, 1, cs_iter_algo_t);
+  CS_MALLOC(algo, 1, cs_iter_algo_t);
 
   algo->type = type;
   algo->verbosity = 0;
@@ -418,7 +418,7 @@ cs_iter_algo_create(cs_iter_algo_type_t    type)
 
     cs_iter_algo_default_t *c = nullptr;
 
-    BFT_MALLOC(c, 1, cs_iter_algo_default_t);
+    CS_MALLOC(c, 1, cs_iter_algo_default_t);
     _reset_default(c);
     c->normalization = 1.0;
 
@@ -429,7 +429,7 @@ cs_iter_algo_create(cs_iter_algo_type_t    type)
 
     cs_iter_algo_aac_t *c = nullptr;
 
-    BFT_MALLOC(c, 1, cs_iter_algo_aac_t);
+    CS_MALLOC(c, 1, cs_iter_algo_aac_t);
 
     /* Parameters (default settings) */
 
@@ -518,20 +518,17 @@ cs_iter_algo_free(cs_iter_algo_t   **p_algo)
     cs_iter_algo_default_t *c
       = static_cast<cs_iter_algo_default_t *>(algo->context);
 
-    BFT_FREE(c);
-
+    CS_FREE(c);
   }
   else if (algo->type & CS_ITER_ALGO_ANDERSON) {
-
     cs_iter_algo_aac_t *c = static_cast<cs_iter_algo_aac_t *>(algo->context);
 
     cs_iter_algo_release_anderson_arrays(c);
 
-    BFT_FREE(c);
-
+    CS_FREE(c);
   }
 
-  BFT_FREE(algo);
+  CS_FREE(algo);
   *p_algo = nullptr;
 }
 
@@ -579,12 +576,12 @@ cs_iter_algo_release_anderson_arrays(cs_iter_algo_aac_t      *c)
   if (c == nullptr)
     return;
 
-  BFT_FREE(c->fold);
-  BFT_FREE(c->df);
-  BFT_FREE(c->gold);
-  BFT_FREE(c->dg);
-  BFT_FREE(c->gamma);
-  BFT_FREE(c->Q);
+  CS_FREE(c->fold);
+  CS_FREE(c->df);
+  CS_FREE(c->gold);
+  CS_FREE(c->dg);
+  CS_FREE(c->gamma);
+  CS_FREE(c->Q);
 
   c->R = cs_sdm_free(c->R);
 }

@@ -38,7 +38,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -93,14 +93,14 @@ cs_equation_system_param_create(const char       *name,
 {
   cs_equation_system_param_t *sysp = nullptr;
 
-  BFT_MALLOC(sysp, 1, cs_equation_system_param_t);
+  CS_MALLOC(sysp, 1, cs_equation_system_param_t);
 
   sysp->verbosity = 1;
 
   /* Store name */
 
   size_t  len = strlen(name);
-  BFT_MALLOC(sysp->name, len + 1, char);
+  CS_MALLOC(sysp->name, len + 1, char);
   strncpy(sysp->name, name, len + 1); /* Last character is '\0' */
 
   /* Dimension of the variable for each block */
@@ -115,10 +115,10 @@ cs_equation_system_param_create(const char       *name,
 
   char *pty_name = nullptr;
   len += strlen("_relax_pty") + 1;
-  BFT_MALLOC(pty_name, len + 1, char);
+  CS_MALLOC(pty_name, len + 1, char);
   sprintf(pty_name, "%s_relax_pty", name);
   sysp->relax_pty = cs_property_add(pty_name, CS_PROPERTY_ISO);
-  BFT_FREE(pty_name);
+  CS_FREE(pty_name);
 
   /* Linear algebra settings by default */
 
@@ -184,11 +184,11 @@ cs_equation_system_param_free(cs_equation_system_param_t    *sysp)
   if (sysp == nullptr)
     return sysp;
 
-  BFT_FREE(sysp->name);
+  CS_FREE(sysp->name);
 
   cs_param_sles_free(&(sysp->sles_param));
 
-  BFT_FREE(sysp);
+  CS_FREE(sysp);
 
   return nullptr;
 }

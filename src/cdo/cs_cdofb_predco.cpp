@@ -46,7 +46,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "alge/cs_blas.h"
@@ -555,7 +555,7 @@ _update_variables(const cs_navsto_param_t           *nsp,
   cs_field_current_to_previous(sc->divergence);
 
   cs_real_t *diff_flux = nullptr;
-  BFT_MALLOC(diff_flux, n_faces, cs_real_t);
+  CS_MALLOC(diff_flux, n_faces, cs_real_t);
 
   cs_equation_compute_diffusive_flux(pre_eq,
                                      nullptr,
@@ -654,7 +654,7 @@ _update_variables(const cs_navsto_param_t           *nsp,
 
   } /* OpenMP block */
 
-  BFT_FREE(diff_flux);
+  CS_FREE(diff_flux);
 
   /* Parallel or periodic sum */
 
@@ -789,7 +789,7 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.\n", __func__);
 
-  BFT_MALLOC(sc, 1, cs_cdofb_predco_t);
+  CS_MALLOC(sc, 1, cs_cdofb_predco_t);
 
   /* Quantities shared with the cs_navsto_system_t structure */
 
@@ -810,7 +810,7 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   /* Values of the predicted velocity at faces */
 
-  BFT_MALLOC(sc->predicted_velocity_f, 3*quant->n_faces, cs_real_t);
+  CS_MALLOC(sc->predicted_velocity_f, 3 * quant->n_faces, cs_real_t);
   cs_array_real_fill_zero(3*quant->n_faces, sc->predicted_velocity_f);
 
   /* Boundary treatment */
@@ -899,11 +899,11 @@ cs_cdofb_predco_free_scheme_context(void   *scheme_context)
 
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
 
-  BFT_FREE(sc->predicted_velocity_f);
+  CS_FREE(sc->predicted_velocity_f);
 
   /* Other pointers are only shared (i.e. not owner) */
 
-  BFT_FREE(sc);
+  CS_FREE(sc);
 
   return nullptr;
 }

@@ -40,8 +40,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "alge/cs_saddle_solver_setup.h"
@@ -130,7 +130,7 @@ _find_or_add_ic(cs_equation_param_t *eqp,
 
     def_id = eqp->n_ic_defs;
     eqp->n_ic_defs += 1;
-    BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+    CS_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
     eqp->ic_defs[def_id] = nullptr;
 
   }
@@ -904,12 +904,12 @@ cs_equation_param_create(const char         *name,
 {
   cs_equation_param_t *eqp = nullptr;
 
-  BFT_MALLOC(eqp, 1, cs_equation_param_t);
+  CS_MALLOC(eqp, 1, cs_equation_param_t);
 
   /* Store the name of the equation */
 
   size_t  len = strlen(name);
-  BFT_MALLOC(eqp->name, len + 1, char);
+  CS_MALLOC(eqp->name, len + 1, char);
   strncpy(eqp->name, name, len + 1);
 
   /* Set additional members */
@@ -1161,7 +1161,7 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   dst->default_enforcement = ref->default_enforcement;
   dst->strong_pena_bc_coeff = ref->strong_pena_bc_coeff;
   dst->n_bc_defs = ref->n_bc_defs;
-  BFT_REALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
   for (int i = 0; i < ref->n_bc_defs; i++)
     dst->bc_defs[i] = cs_xdef_copy(ref->bc_defs[i]);
 
@@ -1176,7 +1176,7 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   /* Initial condition (zero value by default) */
 
   dst->n_ic_defs = ref->n_ic_defs;
-  BFT_REALLOC(dst->ic_defs, dst->n_ic_defs, cs_xdef_t *);
+  CS_REALLOC(dst->ic_defs, dst->n_ic_defs, cs_xdef_t *);
   for (int i = 0; i < ref->n_ic_defs; i++)
     dst->ic_defs[i] = cs_xdef_copy(ref->ic_defs[i]);
 
@@ -1211,7 +1211,7 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   /* Reaction term */
 
   dst->n_reaction_terms = ref->n_reaction_terms;
-  BFT_REALLOC(dst->reaction_properties, dst->n_reaction_terms, cs_property_t *);
+  CS_REALLOC(dst->reaction_properties, dst->n_reaction_terms, cs_property_t *);
   for (int i = 0; i < ref->n_reaction_terms; i++)
     dst->reaction_properties[i] = ref->reaction_properties[i];
 
@@ -1220,16 +1220,16 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   /* Source term */
 
   dst->n_source_terms = ref->n_source_terms;
-  BFT_MALLOC(dst->source_terms, dst->n_source_terms, cs_xdef_t *);
+  CS_MALLOC(dst->source_terms, dst->n_source_terms, cs_xdef_t *);
   for (int i = 0; i < dst->n_source_terms; i++)
     dst->source_terms[i] = cs_xdef_copy(ref->source_terms[i]);
 
   /* Mass injection term */
 
   dst->n_volume_mass_injections = ref->n_volume_mass_injections;
-  BFT_REALLOC(dst->volume_mass_injections,
-              dst->n_volume_mass_injections,
-              cs_xdef_t *);
+  CS_REALLOC(dst->volume_mass_injections,
+             dst->n_volume_mass_injections,
+             cs_xdef_t *);
   for (int i = 0; i < dst->n_volume_mass_injections; i++)
     dst->volume_mass_injections[i]
       = cs_xdef_copy(ref->volume_mass_injections[i]);
@@ -1239,8 +1239,9 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   if (ref->n_enforcements > 0) {
 
     dst->n_enforcements = ref->n_enforcements;
-    BFT_REALLOC(dst->enforcement_params, dst->n_enforcements,
-                cs_enforcement_param_t *);
+    CS_REALLOC(dst->enforcement_params,
+               dst->n_enforcements,
+               cs_enforcement_param_t *);
 
     for (int i = 0; i < ref->n_enforcements; i++)
       dst->enforcement_params[i] =
@@ -1250,7 +1251,7 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   else {
 
     if (dst->n_enforcements > 0)
-      BFT_FREE(dst->enforcement_params);
+      CS_FREE(dst->enforcement_params);
 
     dst->enforcement_params = nullptr;
     dst->n_enforcements = 0;
@@ -1327,7 +1328,7 @@ cs_equation_param_copy_bc(const cs_equation_param_t *ref,
   dst->default_enforcement = ref->default_enforcement;
   dst->strong_pena_bc_coeff = ref->strong_pena_bc_coeff;
   dst->n_bc_defs = ref->n_bc_defs;
-  BFT_REALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
   for (int i = 0; i < ref->n_bc_defs; i++)
     dst->bc_defs[i] = cs_xdef_copy(ref->bc_defs[i]);
 
@@ -1336,8 +1337,9 @@ cs_equation_param_copy_bc(const cs_equation_param_t *ref,
   if (ref->n_enforcements > 0) {
 
     dst->n_enforcements = ref->n_enforcements;
-    BFT_REALLOC(dst->enforcement_params, dst->n_enforcements,
-                cs_enforcement_param_t *);
+    CS_REALLOC(dst->enforcement_params,
+               dst->n_enforcements,
+               cs_enforcement_param_t *);
 
     for (int i = 0; i < ref->n_enforcements; i++)
       dst->enforcement_params[i] =
@@ -1347,7 +1349,7 @@ cs_equation_param_copy_bc(const cs_equation_param_t *ref,
   else {
 
     if (dst->n_enforcements > 0)
-      BFT_FREE(dst->enforcement_params);
+      CS_FREE(dst->enforcement_params);
 
     dst->enforcement_params = nullptr;
     dst->n_enforcements = 0;
@@ -1381,15 +1383,13 @@ cs_equation_param_clear(cs_equation_param_t *eqp)
 
     for (int i = 0; i < eqp->n_bc_defs; i++)
       eqp->bc_defs[i] = cs_xdef_free(eqp->bc_defs[i]);
-    BFT_FREE(eqp->bc_defs);
-
+    CS_FREE(eqp->bc_defs);
   }
 
   /* Information related to the definition of reaction terms */
 
   if (eqp->n_reaction_terms > 0) {
-
-    BFT_FREE(eqp->reaction_properties);
+    CS_FREE(eqp->reaction_properties);
 
     /* Remark: properties are freed when the global cs_domain_t structure is
        freed thanks to a call to cs_property_free() */
@@ -1401,19 +1401,16 @@ cs_equation_param_clear(cs_equation_param_t *eqp)
 
     for (int i = 0; i < eqp->n_source_terms; i++)
       eqp->source_terms[i] = cs_xdef_free(eqp->source_terms[i]);
-    BFT_FREE(eqp->source_terms);
-
+    CS_FREE(eqp->source_terms);
   }
 
   /* Information related to the definition of mass injection terms */
 
   if (eqp->n_volume_mass_injections > 0) {
-
     for (int i = 0; i < eqp->n_volume_mass_injections; i++)
-      eqp->volume_mass_injections[i]
-        = cs_xdef_free(eqp->volume_mass_injections[i]);
-    BFT_FREE(eqp->volume_mass_injections);
-
+      eqp->volume_mass_injections[i] =
+        cs_xdef_free(eqp->volume_mass_injections[i]);
+    CS_FREE(eqp->volume_mass_injections);
   }
 
   /* Information related to the enforcement of internal DoFs */
@@ -1422,18 +1419,15 @@ cs_equation_param_clear(cs_equation_param_t *eqp)
 
     for (int i = 0; i < eqp->n_enforcements; i++)
       cs_enforcement_param_free(&(eqp->enforcement_params[i]));
-    BFT_FREE(eqp->enforcement_params);
-
+    CS_FREE(eqp->enforcement_params);
   }
 
   /* Information related to the definition of initial conditions */
 
   if (eqp->n_ic_defs > 0) {
-
     for (int i = 0; i < eqp->n_ic_defs; i++)
       eqp->ic_defs[i] = cs_xdef_free(eqp->ic_defs[i]);
-    BFT_FREE(eqp->ic_defs);
-
+    CS_FREE(eqp->ic_defs);
   }
 
   /* Information related to the linear algebra settings */
@@ -1443,9 +1437,9 @@ cs_equation_param_clear(cs_equation_param_t *eqp)
 
   /* Information related to the time_control structure */
   if (eqp->time_control_owner)
-    BFT_FREE(eqp->time_control);
+    CS_FREE(eqp->time_control);
 
-  BFT_FREE(eqp->name);
+  CS_FREE(eqp->name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1466,7 +1460,7 @@ cs_equation_param_free(cs_equation_param_t *eqp)
 
   cs_equation_param_clear(eqp);
 
-  BFT_FREE(eqp);
+  CS_FREE(eqp);
 
   return nullptr;
 }
@@ -2353,7 +2347,7 @@ cs_equation_add_xdef_bc(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = xdef;
 }
 
@@ -2425,7 +2419,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t      *eqp,
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
 
   return d;
@@ -2540,7 +2534,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t      *eqp,
   int  new_id = eqp->n_bc_defs;
 
   eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
 
   return d;
@@ -2622,7 +2616,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t      *eqp,
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
 
   return d;
@@ -2718,7 +2712,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t      *eqp,
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
 
   return d;
@@ -2815,7 +2809,7 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t      *eqp,
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
 
   return d;
@@ -2916,7 +2910,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t      *eqp,
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   eqp->bc_defs[new_id] = d;
 
   return d;
@@ -3008,7 +3002,7 @@ cs_equation_remove_bc(cs_equation_param_t *eqp,
       eqp->bc_defs[i - 1] = eqp->bc_defs[i];
     }
     eqp->n_bc_defs -= 1;
-    BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+    CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
   }
 }
 
@@ -3059,7 +3053,7 @@ cs_equation_remove_ic(cs_equation_param_t *eqp,
       eqp->ic_defs[i - 1] = eqp->ic_defs[i];
     }
     eqp->n_ic_defs -= 1;
-    BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+    CS_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
   }
 }
 
@@ -3087,7 +3081,7 @@ cs_equation_add_sliding_condition(cs_equation_param_t *eqp,
   /* Add two definitions: one for the normal component and one for the
      tangential component */
 
-  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs + 1, cs_xdef_t *);
+  CS_REALLOC(eqp->bc_defs, eqp->n_bc_defs + 1, cs_xdef_t *);
 
   cs_xdef_t *d   = nullptr;
   cs_real_t  val = 0;
@@ -3291,7 +3285,7 @@ cs_equation_add_reaction(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_reaction_terms;
   eqp->n_reaction_terms += 1;
-  BFT_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms, cs_property_t *);
+  CS_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms, cs_property_t *);
   eqp->reaction_properties[new_id] = property;
 
   /* Flag the equation with "reaction" */
@@ -3345,7 +3339,7 @@ cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  CS_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
   eqp->source_terms[new_id] = d;
 
   return d;
@@ -3398,7 +3392,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  CS_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
   eqp->source_terms[new_id] = d;
 
   return d;
@@ -3457,7 +3451,7 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  CS_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
   eqp->source_terms[new_id] = d;
 
   return d;
@@ -3541,7 +3535,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  CS_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
   eqp->source_terms[new_id] = d;
 
   return d;
@@ -3587,9 +3581,9 @@ cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;
-  BFT_REALLOC(eqp->volume_mass_injections,
-              eqp->n_volume_mass_injections,
-              cs_xdef_t *);
+  CS_REALLOC(eqp->volume_mass_injections,
+             eqp->n_volume_mass_injections,
+             cs_xdef_t *);
   eqp->volume_mass_injections[new_id] = d;
 
   return d;
@@ -3636,9 +3630,9 @@ cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;
-  BFT_REALLOC(eqp->volume_mass_injections,
-              eqp->n_volume_mass_injections,
-              cs_xdef_t *);
+  CS_REALLOC(eqp->volume_mass_injections,
+             eqp->n_volume_mass_injections,
+             cs_xdef_t *);
   eqp->volume_mass_injections[new_id] = d;
 
   return d;
@@ -3688,9 +3682,9 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;
-  BFT_REALLOC(eqp->volume_mass_injections,
-              eqp->n_volume_mass_injections,
-              cs_xdef_t *);
+  CS_REALLOC(eqp->volume_mass_injections,
+             eqp->n_volume_mass_injections,
+             cs_xdef_t *);
   eqp->volume_mass_injections[new_id] = d;
 
   return d;
@@ -3747,9 +3741,9 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;
-  BFT_REALLOC(eqp->volume_mass_injections,
-              eqp->n_volume_mass_injections,
-              cs_xdef_t *);
+  CS_REALLOC(eqp->volume_mass_injections,
+             eqp->n_volume_mass_injections,
+             cs_xdef_t *);
   eqp->volume_mass_injections[new_id] = d;
 
   return d;
@@ -3825,9 +3819,9 @@ cs_equation_add_volume_mass_injection_by_array(cs_equation_param_t *eqp,
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;
-  BFT_REALLOC(eqp->volume_mass_injections,
-              eqp->n_volume_mass_injections,
-              cs_xdef_t *);
+  CS_REALLOC(eqp->volume_mass_injections,
+             eqp->n_volume_mass_injections,
+             cs_xdef_t *);
   eqp->volume_mass_injections[new_id] = d;
 
   return d;
@@ -3895,8 +3889,9 @@ cs_equation_add_vertex_dof_enforcement(cs_equation_param_t *eqp,
                                       vertex_ids,
                                       vtx_values);
 
-  BFT_REALLOC(
-    eqp->enforcement_params, eqp->n_enforcements, cs_enforcement_param_t *);
+  CS_REALLOC(eqp->enforcement_params,
+             eqp->n_enforcements,
+             cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -3969,8 +3964,9 @@ cs_equation_add_edge_dof_enforcement(cs_equation_param_t *eqp,
                                       edge_ids,
                                       edge_values);
 
-  BFT_REALLOC(
-    eqp->enforcement_params, eqp->n_enforcements, cs_enforcement_param_t *);
+  CS_REALLOC(eqp->enforcement_params,
+             eqp->n_enforcements,
+             cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -4042,8 +4038,9 @@ cs_equation_add_face_dof_enforcement(cs_equation_param_t *eqp,
                                       face_ids,
                                       face_values);
 
-  BFT_REALLOC(
-    eqp->enforcement_params, eqp->n_enforcements, cs_enforcement_param_t *);
+  CS_REALLOC(eqp->enforcement_params,
+             eqp->n_enforcements,
+             cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -4105,8 +4102,9 @@ cs_equation_add_cell_enforcement(cs_equation_param_t *eqp,
                                       cell_ids,
                                       cell_values);
 
-  BFT_REALLOC(
-    eqp->enforcement_params, eqp->n_enforcements, cs_enforcement_param_t *);
+  CS_REALLOC(eqp->enforcement_params,
+             eqp->n_enforcements,
+             cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -4204,7 +4202,7 @@ cs_equation_time_control_clear
 {
   if (eqp->time_control != nullptr) {
     if (eqp->time_control_owner)
-      BFT_FREE(eqp->time_control);
+      CS_FREE(eqp->time_control);
     else
       eqp->time_control = nullptr;
   }
@@ -4235,7 +4233,7 @@ cs_equation_time_control_add
   if (shallow_copy)
     eqp->time_control = time_control;
   else {
-    BFT_MALLOC(eqp->time_control, 1, cs_time_control_t);
+    CS_MALLOC(eqp->time_control, 1, cs_time_control_t);
     cs_time_control_copy(time_control, eqp->time_control);
   }
 }
@@ -4258,7 +4256,7 @@ cs_equation_time_control_add_default
 
   /* Hard copy from the default values */
   eqp->time_control_owner = true;
-  BFT_MALLOC(eqp->time_control, 1, cs_time_control_t);
+  CS_MALLOC(eqp->time_control, 1, cs_time_control_t);
   cs_time_control_copy_from_default(eqp->time_control);
 }
 

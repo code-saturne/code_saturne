@@ -39,7 +39,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_cdo_bc.h"
@@ -117,7 +117,7 @@ cs_enforcement_param_create(cs_enforcement_selection_t    sel_type,
 {
   cs_enforcement_param_t *efp = nullptr;
 
-  BFT_MALLOC(efp, 1, cs_enforcement_param_t);
+  CS_MALLOC(efp, 1, cs_enforcement_param_t);
 
   efp->selection_type = sel_type;
   efp->type = type;
@@ -128,19 +128,19 @@ cs_enforcement_param_create(cs_enforcement_selection_t    sel_type,
     bft_error(__FILE__, __LINE__, 0,
               "%s: No value for the enforcement\n", __func__);
 
-  BFT_MALLOC(efp->elt_ids, n_elts, cs_lnum_t);
+  CS_MALLOC(efp->elt_ids, n_elts, cs_lnum_t);
   memcpy(efp->elt_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
 
   switch (type) {
 
   case CS_ENFORCEMENT_BY_CONSTANT:
-    BFT_MALLOC(efp->values, efp->stride, cs_real_t);
+    CS_MALLOC(efp->values, efp->stride, cs_real_t);
     for (int k = 0; k < stride; k++)
       efp->values[k] = values[k];
     break;
 
   case CS_ENFORCEMENT_BY_DOF_VALUES:
-    BFT_MALLOC(efp->values, stride*n_elts, cs_real_t);
+    CS_MALLOC(efp->values, stride * n_elts, cs_real_t);
     cs_array_real_copy(stride*n_elts, values, efp->values);
     break;
 
@@ -190,7 +190,7 @@ cs_enforcement_param_reset(cs_enforcement_param_t       *efp,
     bft_error(__FILE__, __LINE__, 0,
               "%s: No value for the enforcement\n", __func__);
 
-  BFT_REALLOC(efp->elt_ids, n_elts, cs_lnum_t);
+  CS_REALLOC(efp->elt_ids, n_elts, cs_lnum_t);
   memcpy(efp->elt_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
 
   switch (type) {
@@ -202,7 +202,7 @@ cs_enforcement_param_reset(cs_enforcement_param_t       *efp,
     break;
 
   case CS_ENFORCEMENT_BY_DOF_VALUES:
-    BFT_REALLOC(efp->values, stride*n_elts, cs_real_t);
+    CS_REALLOC(efp->values, stride * n_elts, cs_real_t);
     cs_array_real_copy(stride*n_elts, values, efp->values);
     break;
 
@@ -261,10 +261,10 @@ cs_enforcement_param_free(cs_enforcement_param_t   **p_efp)
   if (efp == nullptr)
     return;
 
-  BFT_FREE(efp->elt_ids);
-  BFT_FREE(efp->values);
+  CS_FREE(efp->elt_ids);
+  CS_FREE(efp->values);
 
-  BFT_FREE(efp);
+  CS_FREE(efp);
   *p_efp = nullptr;
 }
 
@@ -379,7 +379,7 @@ cs_enforcement_define_at_vertices(const cs_cdo_connect_t     *connect,
   cs_real_t *values     = nullptr;
   int  stride = (efp_array[0])->stride;
 
-  BFT_MALLOC(values, stride*n_vertices, cs_real_t);
+  CS_MALLOC(values, stride * n_vertices, cs_real_t);
   for (cs_lnum_t i = 0; i < stride*n_vertices; i++)
     values[i] = FLT_MAX; /* By default, max value */
 
@@ -508,7 +508,7 @@ cs_enforcement_define_at_faces(const cs_cdo_connect_t     *connect,
   cs_real_t *values  = nullptr;
   int  stride = (efp_array[0])->stride;
 
-  BFT_MALLOC(values, stride*n_faces, cs_real_t);
+  CS_MALLOC(values, stride * n_faces, cs_real_t);
   for (cs_lnum_t i = 0; i < stride*n_faces; i++)
     values[i] = FLT_MAX; /* By default, max value */
 
@@ -637,7 +637,7 @@ cs_enforcement_define_at_edges(const cs_cdo_connect_t     *connect,
   cs_real_t *values  = nullptr;
   int  stride = (efp_array[0])->stride;
 
-  BFT_MALLOC(values, stride*n_edges, cs_real_t);
+  CS_MALLOC(values, stride * n_edges, cs_real_t);
   for (cs_lnum_t i = 0; i < stride*n_edges; i++)
     values[i] = FLT_MAX; /* By default, max value */
 

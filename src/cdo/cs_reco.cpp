@@ -37,7 +37,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_math.h"
@@ -321,7 +321,7 @@ cs_reco_dual_vol_weight_reduction(const cs_cdo_connect_t    *connect,
   } /* stride > 1 */
 
   if (build_dual_vol != nullptr)
-    BFT_FREE(build_dual_vol);
+    CS_FREE(build_dual_vol);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -831,9 +831,9 @@ cs_reco_scalar_v2c_v2f(const cs_cdo_connect_t    *connect,
   /* Allocate arrays if necessary */
 
   if (crec == nullptr)
-    BFT_MALLOC(crec, cdoq->n_cells, double);
+    CS_MALLOC(crec, cdoq->n_cells, double);
   if (frec == nullptr)
-    BFT_MALLOC(frec, cdoq->n_faces, double);
+    CS_MALLOC(frec, cdoq->n_faces, double);
 
   const cs_adjacency_t *c2v = connect->c2v;
   const cs_adjacency_t *f2e = connect->f2e;
@@ -885,7 +885,7 @@ cs_reco_scalar_c2f(const cs_cdo_connect_t     *connect,
   const double *pvol_fc = cdoq->pvol_fc;
 
   double *pvol_f;
-  BFT_MALLOC(pvol_f, cdoq->n_faces, double);
+  CS_MALLOC(pvol_f, cdoq->n_faces, double);
 
   memset(pvol_f, 0.0, cdoq->n_faces*sizeof(double));
   memset(p_reco_f, 0.0, cdoq->n_faces*sizeof(double));
@@ -904,7 +904,7 @@ cs_reco_scalar_c2f(const cs_cdo_connect_t     *connect,
   for (cs_lnum_t f_id = 0; f_id < cdoq->n_faces; f_id++)
     p_reco_f[f_id] /= pvol_f[f_id];
 
-  BFT_FREE(pvol_f);
+  CS_FREE(pvol_f);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1208,7 +1208,7 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t    *connect,
   /* Allocate reconstructed vector field at each cell barycenter */
 
   if (ccrec == nullptr)
-    BFT_MALLOC(ccrec, 3 * quant->n_cells, double);
+    CS_MALLOC(ccrec, 3 * quant->n_cells, double);
 
 #pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (int c_id = 0; c_id < quant->n_cells; c_id++)
@@ -1245,7 +1245,7 @@ cs_reco_cell_curl_by_edge_dofs(const cs_cdo_connect_t    *connect,
 
   cs_real_t *curl_vectors = *p_curl;
   if (curl_vectors == nullptr)
-    BFT_MALLOC(curl_vectors, 3 * quant->n_cells, cs_real_t);
+    CS_MALLOC(curl_vectors, 3 * quant->n_cells, cs_real_t);
 
   cs_real_t *face_curl = nullptr;
   cs_cdo_connect_discrete_curl(connect, circ, &face_curl);
@@ -1253,7 +1253,7 @@ cs_reco_cell_curl_by_edge_dofs(const cs_cdo_connect_t    *connect,
   cs_reco_cell_vectors_by_face_dofs(connect->c2f, quant, face_curl,
                                     curl_vectors);
 
-  BFT_FREE(face_curl);
+  CS_FREE(face_curl);
 
   /* Returns pointer */
 

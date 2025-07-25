@@ -40,7 +40,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_log.h"
 #include "base/cs_math.h"
@@ -377,31 +377,31 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
   case CS_SPACE_SCHEME_CDOVB:
     size = cs::max(4*n_ec + 3*n_vc, n_ec*(n_ec+1));
-    BFT_MALLOC(cb->values, size, double);
+    CS_MALLOC(cb->values, size, double);
     memset(cb->values, 0, size*sizeof(cs_real_t));
 
     size = 2*n_ec;
-    BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+    CS_MALLOC(cb->vectors, size, cs_real_3_t);
     memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
     size = 2*n_vc + 3*n_ec + n_fc;
-    BFT_MALLOC(cb->values, size, double);
+    CS_MALLOC(cb->values, size, double);
     memset(cb->values, 0, size*sizeof(cs_real_t));
 
     size = 2*n_ec + n_vc;
-    BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+    CS_MALLOC(cb->vectors, size, cs_real_3_t);
     memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
     size = n_fc*(n_fc+1);
-    BFT_MALLOC(cb->values, size, double);
+    CS_MALLOC(cb->values, size, double);
     memset(cb->values, 0, size*sizeof(cs_real_t));
 
     size = 2*n_fc;
-    BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+    CS_MALLOC(cb->vectors, size, cs_real_3_t);
     memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
     break;
 
@@ -410,11 +410,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       int  n_ent = cs::max(n_fc, n_ec);
 
       size = n_ent*(n_ent+1);
-      BFT_MALLOC(cb->values, size, double);
+      CS_MALLOC(cb->values, size, double);
       memset(cb->values, 0, size*sizeof(cs_real_t));
 
       size = 2*n_ent;
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      CS_MALLOC(cb->vectors, size, cs_real_3_t);
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
     }
     break;
@@ -1163,7 +1163,7 @@ cs_hodge_create(const cs_cdo_connect_t   *connect,
 {
   cs_hodge_t *hdg = nullptr;
 
-  BFT_MALLOC(hdg, 1, cs_hodge_t);
+  CS_MALLOC(hdg, 1, cs_hodge_t);
 
   hdg->param = hp;
 
@@ -1195,7 +1195,7 @@ cs_hodge_create(const cs_cdo_connect_t   *connect,
     break;
   }
 
-  BFT_MALLOC(hdg->pty_data, 1, cs_property_data_t);
+  CS_MALLOC(hdg->pty_data, 1, cs_property_data_t);
   cs_property_data_init(need_tensor, need_eigen, property, hdg->pty_data);
   if (hdg->pty_data->is_unity == false && connect->n_cells > 0)
     cs_hodge_evaluate_property(0, 0, 0, hdg);
@@ -1228,7 +1228,7 @@ cs_hodge_init_context(const cs_cdo_connect_t   *connect,
 {
   cs_hodge_t **hodge_array = nullptr;
 
-  BFT_MALLOC(hodge_array, cs_glob_n_threads, cs_hodge_t *);
+  CS_MALLOC(hodge_array, cs_glob_n_threads, cs_hodge_t *);
   for (int i = 0; i < cs_glob_n_threads; i++)
     hodge_array[i] = nullptr;
 
@@ -1270,9 +1270,9 @@ cs_hodge_free(cs_hodge_t    **p_hodge)
 
   hdg->matrix = cs_sdm_free(hdg->matrix);
 
-  BFT_FREE(hdg->pty_data);
+  CS_FREE(hdg->pty_data);
 
-  BFT_FREE(hdg);
+  CS_FREE(hdg);
   *p_hodge = nullptr;
 }
 
@@ -1302,7 +1302,7 @@ cs_hodge_free_context(cs_hodge_t    ***p_hodges)
   cs_hodge_free(&(hodge_array[0]));
 #endif /* openMP */
 
-  BFT_FREE(hodge_array);
+  CS_FREE(hodge_array);
   *p_hodges = nullptr;
 }
 
@@ -4186,7 +4186,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       msh_flag |= CS_FLAG_COMP_PVQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
-      BFT_MALLOC(_in, connect->n_max_vbyc, double);
+      CS_MALLOC(_in, connect->n_max_vbyc, double);
 
 #     pragma omp for
       for (cs_lnum_t i = 0; i < quant->n_vertices; i++) result[i] = 0;
@@ -4209,7 +4209,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
-      BFT_MALLOC(_in, connect->n_max_ebyc, double);
+      CS_MALLOC(_in, connect->n_max_ebyc, double);
 
 #     pragma omp for
       for (cs_lnum_t i = 0; i < quant->n_edges; i++) result[i] = 0;
@@ -4230,7 +4230,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
-      BFT_MALLOC(_in, connect->n_max_fbyc, double);
+      CS_MALLOC(_in, connect->n_max_fbyc, double);
 
 #     pragma omp for
       for (cs_lnum_t i = 0; i < quant->n_faces; i++) result[i] = 0;
@@ -4241,7 +4241,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
-      BFT_MALLOC(_in, connect->n_max_fbyc, double);
+      CS_MALLOC(_in, connect->n_max_fbyc, double);
 
 #     pragma omp for
       for (cs_lnum_t i = 0; i < quant->n_faces; i++) result[i] = 0;
@@ -4253,7 +4253,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       msh_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
          CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVCB, connect);
-      BFT_MALLOC(_in, connect->n_max_vbyc + 1, double);
+      CS_MALLOC(_in, connect->n_max_vbyc + 1, double);
 
 #     pragma omp for
       for (cs_lnum_t i = 0; i < quant->n_vertices + quant->n_cells; i++)
@@ -4343,7 +4343,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     } /* Main loop on cells */
 
-    BFT_FREE(_in);
+    CS_FREE(_in);
     cs_cell_builder_free(&cb);
     cs_hodge_free(&hodge);
 
@@ -4412,7 +4412,7 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
 
       msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
-      BFT_MALLOC(_fluxes, connect->n_max_fbyc, double);
+      CS_MALLOC(_fluxes, connect->n_max_fbyc, double);
 
       break;
 
@@ -4452,7 +4452,7 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
 
     } /* Main loop on cells */
 
-    BFT_FREE(_fluxes);
+    CS_FREE(_fluxes);
     cs_cell_builder_free(&cb);
     cs_hodge_free(&hodge);
 

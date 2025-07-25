@@ -36,7 +36,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_timer_stats.h"
 #include "cdo/cs_cdovb_scalsys.h"
@@ -177,7 +177,7 @@ _equation_system_create(int n_eqs, const char *sysname)
   if (n_eqs < 2)
     return nullptr;
 
-  BFT_MALLOC(eqsys, 1, cs_equation_system_t);
+  CS_MALLOC(eqsys, 1, cs_equation_system_t);
 
   eqsys->n_equations = n_eqs;
 
@@ -200,11 +200,11 @@ _equation_system_create(int n_eqs, const char *sysname)
 
   eqsys->system_helper = nullptr;
 
-  BFT_MALLOC(eqsys->equations, n_eqs, cs_equation_t *);
+  CS_MALLOC(eqsys->equations, n_eqs, cs_equation_t *);
   for (int i = 0; i < n_eqs; i++)
     eqsys->equations[i] = nullptr;
 
-  BFT_MALLOC(eqsys->block_factories, n_eqs * n_eqs, cs_equation_core_t *);
+  CS_MALLOC(eqsys->block_factories, n_eqs * n_eqs, cs_equation_core_t *);
   for (int i = 0; i < n_eqs * n_eqs; i++)
     eqsys->block_factories[i] = nullptr;
 
@@ -247,10 +247,10 @@ _equation_system_free(cs_equation_system_t **p_eqsys)
 
   cs_cdo_system_helper_free(&(eqsys->system_helper));
 
-  BFT_FREE(eqsys->block_factories);
-  BFT_FREE(eqsys->equations);
+  CS_FREE(eqsys->block_factories);
+  CS_FREE(eqsys->equations);
 
-  BFT_FREE(eqsys);
+  CS_FREE(eqsys);
   *p_eqsys = nullptr;
 }
 
@@ -341,7 +341,7 @@ cs_equation_system_add(const char *sysname, int n_eqs, int block_var_dim)
 
   int sys_id = _n_equation_systems;
   _n_equation_systems++;
-  BFT_REALLOC(_equation_systems, _n_equation_systems, cs_equation_system_t *);
+  CS_REALLOC(_equation_systems, _n_equation_systems, cs_equation_system_t *);
 
   _equation_systems[sys_id] = eqsys;
 
@@ -360,7 +360,7 @@ cs_equation_system_destroy_all(void)
   for (int i = 0; i < _n_equation_systems; i++)
     _equation_system_free(_equation_systems + i);
 
-  BFT_FREE(_equation_systems);
+  CS_FREE(_equation_systems);
   _equation_systems   = nullptr;
   _n_equation_systems = 0;
 }
@@ -845,7 +845,7 @@ cs_equation_system_assign_param(int                   row_id,
 
   cs_equation_core_t *block_ij = nullptr;
 
-  BFT_MALLOC(block_ij, 1, cs_equation_core_t);
+  CS_MALLOC(block_ij, 1, cs_equation_core_t);
 
   eqp->flag |= CS_EQUATION_INSIDE_SYSTEM;
 

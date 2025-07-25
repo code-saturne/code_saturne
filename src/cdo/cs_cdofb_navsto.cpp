@@ -42,7 +42,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "alge/cs_blas.h"
 #include "cdo/cs_cdo_bc.h"
@@ -227,9 +227,9 @@ cs_cdofb_navsto_create_builder(const cs_navsto_param_t  *nsp,
   if (connect == nullptr)
     return nsb;
 
-  BFT_MALLOC(nsb.div_op, 3*connect->n_max_fbyc, cs_real_t);
-  BFT_MALLOC(nsb.bf_type, connect->n_max_fbyc, cs_boundary_type_t);
-  BFT_MALLOC(nsb.pressure_bc_val, connect->n_max_fbyc, cs_real_t);
+  CS_MALLOC(nsb.div_op, 3 * connect->n_max_fbyc, cs_real_t);
+  CS_MALLOC(nsb.bf_type, connect->n_max_fbyc, cs_boundary_type_t);
+  CS_MALLOC(nsb.pressure_bc_val, connect->n_max_fbyc, cs_real_t);
 
   return nsb;
 }
@@ -246,9 +246,9 @@ void
 cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t   *nsb)
 {
   if (nsb != nullptr) {
-    BFT_FREE(nsb->div_op);
-    BFT_FREE(nsb->bf_type);
-    BFT_FREE(nsb->pressure_bc_val);
+    CS_FREE(nsb->div_op);
+    CS_FREE(nsb->bf_type);
+    CS_FREE(nsb->pressure_bc_val);
   }
 }
 
@@ -791,7 +791,7 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
   cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
   cs_lnum_t  *def2f_idx = nullptr;
 
-  BFT_MALLOC(def2f_idx, nsp->n_pressure_ic_defs + 1, cs_lnum_t);
+  CS_MALLOC(def2f_idx, nsp->n_pressure_ic_defs + 1, cs_lnum_t);
 
   cs_cdo_sync_vol_def_at_faces(nsp->n_pressure_ic_defs, nsp->pressure_ic_defs,
                                def2f_idx,
@@ -862,7 +862,7 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
 
   }  /* Loop on definitions */
 
-  BFT_FREE(def2f_idx);
+  CS_FREE(def2f_idx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1002,13 +1002,13 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
    */
 
   bool *belong_to_default = nullptr;
-  BFT_MALLOC(belong_to_default, quant->n_b_faces, bool);
+  CS_MALLOC(belong_to_default, quant->n_b_faces, bool);
 # pragma omp parallel for if  (quant->n_b_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < quant->n_b_faces; i++)
     belong_to_default[i] = true;
 
   cs_real_t *boundary_fluxes = nullptr;
-  BFT_MALLOC(boundary_fluxes, boundaries->n_boundaries + 1, cs_real_t);
+  CS_MALLOC(boundary_fluxes, boundaries->n_boundaries + 1, cs_real_t);
   memset(boundary_fluxes, 0, (boundaries->n_boundaries + 1)*sizeof(cs_real_t));
 
   for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
@@ -1068,8 +1068,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
   /* Free temporary buffers */
 
-  BFT_FREE(belong_to_default);
-  BFT_FREE(boundary_fluxes);
+  CS_FREE(belong_to_default);
+  CS_FREE(boundary_fluxes);
 
   /* Predefined post-processing */
   /* ========================== */
@@ -1174,7 +1174,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
     /* Compute a face pressure */
 
     cs_real_t *p_face = nullptr;
-    BFT_MALLOC(p_face, quant->n_faces, cs_real_t);
+    CS_MALLOC(p_face, quant->n_faces, cs_real_t);
 
     cs_cdofb_navsto_compute_face_pressure(mesh,
                                           connect,
@@ -1190,7 +1190,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                                      p_cell, p_face,
                                      pr_grd->val + 3*c_id);
 
-    BFT_FREE(p_face);
+    CS_FREE(p_face);
 
   } /* Pressure gradient */
 

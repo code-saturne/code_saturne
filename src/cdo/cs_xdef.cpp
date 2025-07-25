@@ -37,7 +37,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_field.h"
@@ -122,7 +122,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
 {
   cs_xdef_t *d = nullptr;
 
-  BFT_MALLOC(d, 1, cs_xdef_t);
+  CS_MALLOC(d, 1, cs_xdef_t);
 
   d->type = type;
   d->support = CS_XDEF_SUPPORT_VOLUME;
@@ -141,7 +141,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       cs_xdef_analytic_context_t  *a = (cs_xdef_analytic_context_t *)context;
       cs_xdef_analytic_context_t  *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_analytic_context_t);
+      CS_MALLOC(b, 1, cs_xdef_analytic_context_t);
       assert(a->z_id == z_id);
       b->z_id = a->z_id;
       b->func = a->func;
@@ -158,7 +158,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)context;
       cs_xdef_array_context_t  *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_array_context_t);
+      CS_MALLOC(b, 1, cs_xdef_array_context_t);
 
       /* Metadata */
 
@@ -197,7 +197,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       cs_xdef_dof_context_t  *a = (cs_xdef_dof_context_t *)context;
       cs_xdef_dof_context_t  *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_dof_context_t);
+      CS_MALLOC(b, 1, cs_xdef_dof_context_t);
       assert(a->z_id == z_id);
       b->z_id = a->z_id;
       b->func = a->func;
@@ -238,7 +238,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
     {
       double  *_context = (double *)context;
 
-      BFT_MALLOC(d->context, 1, double);
+      CS_MALLOC(d->context, 1, double);
 
       double *_context_cpy = (double *)d->context;
       _context_cpy[0] = _context[0];
@@ -250,7 +250,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       cs_xdef_time_func_context_t  *a = (cs_xdef_time_func_context_t *)context;
       cs_xdef_time_func_context_t  *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_time_func_context_t);
+      CS_MALLOC(b, 1, cs_xdef_time_func_context_t);
       b->z_id = a->z_id;
       b->func = a->func;
       b->input = a->input;
@@ -263,7 +263,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
   case CS_XDEF_BY_VALUE:
     {
       double  *_context = (double *)context;
-      BFT_MALLOC(d->context, dim, double);
+      CS_MALLOC(d->context, dim, double);
 
       double  *_context_cpy = (double *)d->context;
       for (int i = 0; i < dim; i++) _context_cpy[i] = _context[i];
@@ -310,7 +310,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 {
   cs_xdef_t *d = nullptr;
 
-  BFT_MALLOC(d, 1, cs_xdef_t);
+  CS_MALLOC(d, 1, cs_xdef_t);
 
   d->type = type;
   d->support = CS_XDEF_SUPPORT_BOUNDARY;
@@ -326,7 +326,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
     {
       double  *_context = (double *)context;
 
-      BFT_MALLOC(d->context, dim, double);
+      CS_MALLOC(d->context, dim, double);
 
       double  *_context_cpy = (double *)d->context;
       for (int i = 0; i < dim; i++) _context_cpy[i] = _context[i];
@@ -342,7 +342,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       cs_xdef_time_func_context_t  *a = (cs_xdef_time_func_context_t *)context;
       cs_xdef_time_func_context_t  *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_time_func_context_t);
+      CS_MALLOC(b, 1, cs_xdef_time_func_context_t);
       b->z_id = a->z_id;
       b->func = a->func;
       b->input = a->input;
@@ -357,7 +357,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       cs_xdef_analytic_context_t  *a = (cs_xdef_analytic_context_t *)context;
       cs_xdef_analytic_context_t  *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_analytic_context_t);
+      CS_MALLOC(b, 1, cs_xdef_analytic_context_t);
       assert(a->z_id == z_id);
       b->z_id = a->z_id;
       b->func = a->func;
@@ -373,7 +373,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)context;
       cs_xdef_array_context_t  *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_array_context_t);
+      CS_MALLOC(b, 1, cs_xdef_array_context_t);
 
       /* Metadata */
 
@@ -411,7 +411,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       cs_xdef_dof_context_t  *a = (cs_xdef_dof_context_t *)context;
       cs_xdef_dof_context_t  *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_dof_context_t);
+      CS_MALLOC(b, 1, cs_xdef_dof_context_t);
       b->func = a->func;
       b->dof_location = a->dof_location;
       b->input = a->input;
@@ -456,7 +456,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
     {
       double  *_context = (double *)context;
 
-      BFT_MALLOC(d->context, 1, double);
+      CS_MALLOC(d->context, 1, double);
 
       double  *_context_cpy = (double *)d->context;
       _context_cpy[0] = _context[0];
@@ -501,7 +501,7 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
 {
   cs_xdef_t *d = nullptr;
 
-  BFT_MALLOC(d, 1, cs_xdef_t);
+  CS_MALLOC(d, 1, cs_xdef_t);
 
   d->type = type;
   d->support = CS_XDEF_SUPPORT_TIME;
@@ -518,7 +518,7 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
       cs_xdef_time_func_context_t *a = (cs_xdef_time_func_context_t *)context;
       cs_xdef_time_func_context_t *b = nullptr;
 
-      BFT_MALLOC(b, 1, cs_xdef_time_func_context_t);
+      CS_MALLOC(b, 1, cs_xdef_time_func_context_t);
       b->z_id = a->z_id;
       b->func = a->func;
       b->input = a->input;
@@ -533,7 +533,7 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
     {
       double  *_context = (double *)context;
 
-      BFT_MALLOC(d->context, 1, double);
+      CS_MALLOC(d->context, 1, double);
 
       double  *_context_cpy = (double *)d->context;
       _context_cpy[0] = _context[0];
@@ -577,15 +577,15 @@ cs_xdef_free(cs_xdef_t     *d)
       cs_xdef_array_context_t  *c = (cs_xdef_array_context_t *)d->context;
 
       if (c->is_owner)
-        BFT_FREE(c->values);
+        CS_FREE(c->values);
 
       if (c->full2subset != nullptr)
-        BFT_FREE(c->full2subset);
+        CS_FREE(c->full2subset);
 
       /* If the members "adjacency" and "elt_ids" are set. One does not free
          them since these are shared */
 
-      BFT_FREE(d->context);
+      CS_FREE(d->context);
     }
     break;
 
@@ -596,7 +596,7 @@ cs_xdef_free(cs_xdef_t     *d)
       if (c->free_input != nullptr)
         c->input = c->free_input(c->input);
 
-      BFT_FREE(d->context);
+      CS_FREE(d->context);
     }
     break;
 
@@ -607,7 +607,7 @@ cs_xdef_free(cs_xdef_t     *d)
       if (c->free_input != nullptr)
         c->input = c->free_input(c->input);
 
-      BFT_FREE(d->context);
+      CS_FREE(d->context);
     }
     break;
 
@@ -619,20 +619,20 @@ cs_xdef_free(cs_xdef_t     *d)
       if (c->free_input != nullptr)
         c->input = c->free_input(c->input);
 
-      BFT_FREE(d->context);
+      CS_FREE(d->context);
     }
     break;
 
   case CS_XDEF_BY_VALUE:
   case CS_XDEF_BY_QOV:
-    BFT_FREE(d->context);
+    CS_FREE(d->context);
     break;
 
   default:
     break; /* Nothing special to do e.g. CS_XDEF_BY_FUNCTION */
   }
 
-  BFT_FREE(d);
+  CS_FREE(d);
 
   return nullptr;
 }
@@ -1096,7 +1096,7 @@ cs_xdef_array_set_values(cs_xdef_t     *d,
   /* An array is already assigned and one manages the lifecycle */
 
   if (a->is_owner && a->values != nullptr)
-    BFT_FREE(a->values);
+    CS_FREE(a->values);
 
   /* Set the new values */
 
@@ -1186,7 +1186,7 @@ cs_xdef_array_build_full2subset(const cs_xdef_t        *d)
      associated to this definition, then the default value is -1 */
 
   if (cx->full2subset == nullptr)
-    BFT_MALLOC(cx->full2subset, refz->n_elts, cs_lnum_t);
+    CS_MALLOC(cx->full2subset, refz->n_elts, cs_lnum_t);
 
   cs_array_lnum_set_value(refz->n_elts, -1, cx->full2subset);
 

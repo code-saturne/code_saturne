@@ -38,7 +38,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_boundary_zone.h"
 #include "cdo/cs_cdo_local.h"
@@ -241,7 +241,7 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t *connect,
   /* Common buffer for temporary usage */
 
   cs_cdo_toolbox_work_buffer_size = wb_size;
-  BFT_MALLOC(cs_cdo_toolbox_work_buffer, wb_size, double);
+  CS_MALLOC(cs_cdo_toolbox_work_buffer, wb_size, double);
 
   /* Allocate MAC builder */
   if (mac_flag > 0) {
@@ -272,7 +272,7 @@ cs_cdo_toolbox_finalize(void)
 
   /* Free common buffer */
 
-  BFT_FREE(cs_cdo_toolbox_work_buffer);
+  CS_FREE(cs_cdo_toolbox_work_buffer);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -322,7 +322,7 @@ cs_cdo_balance_create(cs_flag_t    location,
 {
   cs_cdo_balance_t *b = nullptr;
 
-  BFT_MALLOC(b, 1, cs_cdo_balance_t);
+  CS_MALLOC(b, 1, cs_cdo_balance_t);
 
   b->size = size;
   b->location = location;
@@ -330,7 +330,7 @@ cs_cdo_balance_create(cs_flag_t    location,
       cs_flag_test(location, cs_flag_primal_vtx) == false)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid location", __func__);
 
-  BFT_MALLOC(b->balance, 7*size, cs_real_t);
+  CS_MALLOC(b->balance, 7 * size, cs_real_t);
   b->unsteady_term  = b->balance +   size;
   b->reaction_term  = b->balance + 2*size;
   b->diffusion_term = b->balance + 3*size;
@@ -416,9 +416,9 @@ cs_cdo_balance_destroy(cs_cdo_balance_t   **p_balance)
   if (b == nullptr)
     return;
 
-  BFT_FREE(b->balance);
+  CS_FREE(b->balance);
 
-  BFT_FREE(b);
+  CS_FREE(b);
   *p_balance = nullptr;
 }
 
@@ -447,7 +447,7 @@ cs_cdo_sync_vol_def_at_vertices(int                      n_defs,
   const cs_adjacency_t  *c2v = connect->c2v;
 
   int *v2def_ids = nullptr;
-  BFT_MALLOC(v2def_ids, n_vertices, int);
+  CS_MALLOC(v2def_ids, n_vertices, int);
 # pragma omp parallel for if (n_vertices > CS_THR_MIN)
   for (cs_lnum_t v = 0; v < n_vertices; v++)
     v2def_ids[v] = -1;          /* default */
@@ -495,7 +495,7 @@ cs_cdo_sync_vol_def_at_vertices(int                      n_defs,
   /* 0. Initialization */
 
   cs_lnum_t *count = nullptr;
-  BFT_MALLOC(count, n_defs, cs_lnum_t);
+  CS_MALLOC(count, n_defs, cs_lnum_t);
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2v_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
@@ -520,8 +520,8 @@ cs_cdo_sync_vol_def_at_vertices(int                      n_defs,
     }
   }
 
-  BFT_FREE(v2def_ids);
-  BFT_FREE(count);
+  CS_FREE(v2def_ids);
+  CS_FREE(count);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -549,7 +549,7 @@ cs_cdo_sync_vol_def_at_edges(int                      n_defs,
   const cs_adjacency_t  *c2e = connect->c2e;
 
   int *e2def_ids = nullptr;
-  BFT_MALLOC(e2def_ids, n_edges, int);
+  CS_MALLOC(e2def_ids, n_edges, int);
 # pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t e = 0; e < n_edges; e++)
     e2def_ids[e] = -1; /* default: not associated to a definition */
@@ -597,7 +597,7 @@ cs_cdo_sync_vol_def_at_edges(int                      n_defs,
   /* 0. Initialization */
 
   cs_lnum_t *count = nullptr;
-  BFT_MALLOC(count, n_defs, cs_lnum_t);
+  CS_MALLOC(count, n_defs, cs_lnum_t);
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2e_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
@@ -622,8 +622,8 @@ cs_cdo_sync_vol_def_at_edges(int                      n_defs,
     }
   }
 
-  BFT_FREE(e2def_ids);
-  BFT_FREE(count);
+  CS_FREE(e2def_ids);
+  CS_FREE(count);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -651,7 +651,7 @@ cs_cdo_sync_vol_def_at_faces(int                        n_defs,
   const cs_adjacency_t  *c2f = connect->c2f;
 
   int *f2def_ids = nullptr;
-  BFT_MALLOC(f2def_ids, n_faces, int);
+  CS_MALLOC(f2def_ids, n_faces, int);
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t f = 0; f < n_faces; f++)
     f2def_ids[f] = -1;          /* default */
@@ -699,7 +699,7 @@ cs_cdo_sync_vol_def_at_faces(int                        n_defs,
   /* 0. Initialization */
 
   cs_lnum_t *count = nullptr;
-  BFT_MALLOC(count, n_defs, cs_lnum_t);
+  CS_MALLOC(count, n_defs, cs_lnum_t);
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2f_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
@@ -724,8 +724,8 @@ cs_cdo_sync_vol_def_at_faces(int                        n_defs,
     }
   }
 
-  BFT_FREE(f2def_ids);
-  BFT_FREE(count);
+  CS_FREE(f2def_ids);
+  CS_FREE(count);
 }
 
 /*----------------------------------------------------------------------------*/

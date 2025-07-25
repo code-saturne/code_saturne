@@ -46,7 +46,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 
@@ -172,7 +172,7 @@ cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
 {
   cs_navsto_ac_t *nsc = nullptr;
 
-  BFT_MALLOC(nsc, 1, cs_navsto_ac_t);
+  CS_MALLOC(nsc, 1, cs_navsto_ac_t);
 
   nsc->momentum = cs_equation_add("momentum",
                                   "velocity",
@@ -217,7 +217,7 @@ cs_navsto_ac_free_context(void     *context)
 {
   cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
 
-  BFT_FREE(nsc);
+  CS_FREE(nsc);
 
   return nullptr;
 }
@@ -345,7 +345,7 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
 {
   cs_navsto_monolithic_t *nsc = nullptr;
 
-  BFT_MALLOC(nsc, 1, cs_navsto_monolithic_t);
+  CS_MALLOC(nsc, 1, cs_navsto_monolithic_t);
 
   /* Add an equation for the momentum conservation */
 
@@ -451,7 +451,7 @@ cs_navsto_monolithic_free_context(void             *context)
 {
   cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
 
-  BFT_FREE(nsc);
+  CS_FREE(nsc);
 
   return nullptr;
 }
@@ -575,7 +575,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
 {
   cs_navsto_projection_t *nsc = nullptr;
 
-  BFT_MALLOC(nsc, 1, cs_navsto_projection_t);
+  CS_MALLOC(nsc, 1, cs_navsto_projection_t);
 
   nsc->prediction = cs_equation_add("velocity_prediction",
                                     "predicted_velocity",
@@ -643,10 +643,10 @@ cs_navsto_projection_free_context(void           *context)
 {
   cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
 
-  BFT_FREE(nsc->div_st);
-  BFT_FREE(nsc->bdy_pressure_incr);
+  CS_FREE(nsc->div_st);
+  CS_FREE(nsc->bdy_pressure_incr);
 
-  BFT_FREE(nsc);
+  CS_FREE(nsc);
 
   return nullptr;
 }
@@ -750,7 +750,7 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
   /* Source term in the correction step stems from the divergence of the
      predicted velocity */
 
-  BFT_MALLOC(nsc->div_st, quant->n_cells, cs_real_t);
+  CS_MALLOC(nsc->div_st, quant->n_cells, cs_real_t);
   cs_array_real_fill_zero(quant->n_cells, nsc->div_st);
 
   cs_equation_t  *corr_eq = nsc->correction;
@@ -765,7 +765,7 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
 
   /* Defined BC for the pressure increment in the correction step */
 
-  BFT_MALLOC(nsc->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
+  CS_MALLOC(nsc->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
   cs_array_real_fill_zero(quant->n_b_faces, nsc->bdy_pressure_incr);
 
   for (int id = 0; id < nsp->n_pressure_bc_defs; id++) {

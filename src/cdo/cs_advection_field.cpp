@@ -41,7 +41,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_boundary_zone.h"
@@ -481,15 +481,15 @@ cs_advection_field_add(const char                  *name,
 
   int new_id = _n_adv_fields;
   _n_adv_fields++;
-  BFT_REALLOC(_adv_fields, _n_adv_fields, cs_adv_field_t *);
+  CS_REALLOC(_adv_fields, _n_adv_fields, cs_adv_field_t *);
   _adv_fields[new_id] = nullptr;
 
-  BFT_MALLOC(adv, 1, cs_adv_field_t);
+  CS_MALLOC(adv, 1, cs_adv_field_t);
 
   /* Copy name */
 
   size_t len = strlen(name);
-  BFT_MALLOC(adv->name, len + 1, char);
+  CS_MALLOC(adv->name, len + 1, char);
   strncpy(adv->name, name, len + 1);
 
   adv->id        = new_id;
@@ -559,18 +559,18 @@ cs_advection_field_destroy_all(void)
       adv->bdy_flux_defs[id] = cs_xdef_free(adv->bdy_flux_defs[id]);
 
     if (adv->n_bdy_flux_defs > 0)
-      BFT_FREE(adv->bdy_flux_defs);
+      CS_FREE(adv->bdy_flux_defs);
     if (adv->bdy_def_ids != nullptr)
-      BFT_FREE(adv->bdy_def_ids);
+      CS_FREE(adv->bdy_def_ids);
 
-    BFT_FREE(adv->name);
-    BFT_FREE(adv);
+    CS_FREE(adv->name);
+    CS_FREE(adv);
 
     /* All other pointers are shared */
 
   } /* Loop on advection fields */
 
-  BFT_FREE(_adv_fields);
+  CS_FREE(_adv_fields);
   _n_adv_fields = 0;
 }
 
@@ -963,7 +963,7 @@ cs_advection_field_def_boundary_flux_by_value(cs_adv_field_t *adv,
 
   int def_id = adv->n_bdy_flux_defs;
   adv->n_bdy_flux_defs += 1;
-  BFT_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
+  CS_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
   adv->bdy_flux_defs[def_id] = d;
 }
 
@@ -1002,7 +1002,7 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t     *adv,
 
   int def_id = adv->n_bdy_flux_defs;
   adv->n_bdy_flux_defs += 1;
-  BFT_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
+  CS_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
   adv->bdy_flux_defs[def_id] = d;
 }
 
@@ -1087,7 +1087,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t *adv,
 
   int def_id = adv->n_bdy_flux_defs;
   adv->n_bdy_flux_defs += 1;
-  BFT_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
+  CS_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
   adv->bdy_flux_defs[def_id] = d;
 
   return d;
@@ -1133,7 +1133,7 @@ cs_advection_field_def_boundary_flux_by_field(cs_adv_field_t *adv,
   int def_id = adv->n_bdy_flux_defs;
   assert(def_id == 0);
   adv->n_bdy_flux_defs += 1;
-  BFT_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
+  CS_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
   adv->bdy_flux_defs[def_id] = d;
 }
 
@@ -1181,7 +1181,7 @@ cs_advection_field_create_fields(void)
         /* Define the name of the new field related the cell array */
 
         len = strlen(adv->name) + strlen("_cells") + 1;
-        BFT_MALLOC(field_name, len, char);
+        CS_MALLOC(field_name, len, char);
         sprintf(field_name, "%s_cells", adv->name);
 
         cs_field_t *fld = cs_field_create(field_name,
@@ -1195,7 +1195,7 @@ cs_advection_field_create_fields(void)
 
         adv->cell_field_id = cs_field_id_by_name(field_name);
 
-        BFT_FREE(field_name);
+        CS_FREE(field_name);
       }
 
     } /* Add a field at cells */
@@ -1206,7 +1206,7 @@ cs_advection_field_create_fields(void)
          requested. Add this field */
 
       len = strlen(adv->name) + strlen("_vertices") + 1;
-      BFT_MALLOC(field_name, len, char);
+      CS_MALLOC(field_name, len, char);
       sprintf(field_name, "%s_vertices", adv->name);
 
       cs_field_t *fld = cs_field_create(field_name,
@@ -1220,7 +1220,7 @@ cs_advection_field_create_fields(void)
 
       adv->vtx_field_id = cs_field_id_by_name(field_name);
 
-      BFT_FREE(field_name);
+      CS_FREE(field_name);
 
     } /* Add a field attached to vertices */
 
@@ -1231,7 +1231,7 @@ cs_advection_field_create_fields(void)
          conditions for instance */
 
       len = strlen(adv->name) + strlen("_boundary_flux") + 1;
-      BFT_MALLOC(field_name, len, char);
+      CS_MALLOC(field_name, len, char);
       sprintf(field_name, "%s_boundary_flux", adv->name);
 
       cs_field_t *fld = cs_field_create(field_name,
@@ -1245,7 +1245,7 @@ cs_advection_field_create_fields(void)
 
       adv->bdy_field_id = cs_field_id_by_name(field_name);
 
-      BFT_FREE(field_name);
+      CS_FREE(field_name);
 
     } /* Add a field attached to boundary faces */
 
@@ -1315,7 +1315,7 @@ cs_advection_field_finalize_setup(void)
 
       const cs_lnum_t n_b_faces = cs_cdo_quant->n_b_faces;
 
-      BFT_MALLOC(adv->bdy_def_ids, n_b_faces, short int);
+      CS_MALLOC(adv->bdy_def_ids, n_b_faces, short int);
 #pragma omp parallel for if (n_b_faces > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < n_b_faces; j++)
         adv->bdy_def_ids[j] = -1; /* Unset by default */
@@ -2022,7 +2022,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
                     __func__);
 
         cs_lnum_t *bface_ids = nullptr;
-        BFT_MALLOC(bface_ids, n_b_faces, cs_lnum_t);
+        CS_MALLOC(bface_ids, n_b_faces, cs_lnum_t);
         for (cs_lnum_t i = 0; i < n_b_faces; i++)
           bface_ids[i] = n_i_faces + i;
 
@@ -2032,7 +2032,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
                  cx->input,
                  flx_values);
 
-        BFT_FREE(bface_ids);
+        CS_FREE(bface_ids);
       } break;
 
       default:
@@ -3354,7 +3354,7 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t *adv,
   const cs_adjacency_t      *f2e     = connect->f2e;
   const cs_adjacency_t      *e2v     = connect->e2v;
 
-  BFT_MALLOC(divergence, cdoq->n_vertices, cs_real_t);
+  CS_MALLOC(divergence, cdoq->n_vertices, cs_real_t);
   cs_array_real_fill_zero(cdoq->n_vertices, divergence);
 
   { /* Volume part */

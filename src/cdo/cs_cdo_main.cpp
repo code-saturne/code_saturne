@@ -35,8 +35,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_defs.h"
 

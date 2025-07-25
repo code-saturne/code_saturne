@@ -36,8 +36,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_math.h"
@@ -472,7 +472,7 @@ cs_saddle_system_b11_inv_diag(cs_lnum_t                b11_max_size,
 
   cs_real_t *inv_diag_m11 = nullptr;
   assert(n11_rows <= b11_max_size);
-  BFT_MALLOC(inv_diag_m11, b11_max_size, cs_real_t);
+  CS_MALLOC(inv_diag_m11, b11_max_size, cs_real_t);
 
   switch (cs_cdo_system_get_matrix_class(sh, 0)) {
 
@@ -730,7 +730,7 @@ cs_saddle_system_matvec(const cs_cdo_system_helper_t  *sh,
     = static_cast<cs_cdo_system_ublock_t *>(blk12->block_pointer);
 
   cs_real_t *m12x2 = nullptr;
-  BFT_MALLOC(m12x2, n1_dofs, cs_real_t);
+  CS_MALLOC(m12x2, n1_dofs, cs_real_t);
   cs_array_real_fill_zero(n1_dofs, m12x2);
 
   switch (blk12->info.stride) {
@@ -761,7 +761,7 @@ cs_saddle_system_matvec(const cs_cdo_system_helper_t  *sh,
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
     r1[i1] += m12x2[i1];
 
-  BFT_FREE(m12x2);
+  CS_FREE(m12x2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -819,7 +819,7 @@ cs_saddle_system_residual(const cs_cdo_system_helper_t  *sh,
     = static_cast<cs_cdo_system_ublock_t *>(blk12->block_pointer);
 
   cs_real_t *m12x2 = nullptr;
-  BFT_MALLOC(m12x2, n1_dofs, cs_real_t);
+  CS_MALLOC(m12x2, n1_dofs, cs_real_t);
   cs_array_real_fill_zero(n1_dofs, m12x2);
 
   switch (blk12->info.stride) {
@@ -854,7 +854,7 @@ cs_saddle_system_residual(const cs_cdo_system_helper_t  *sh,
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
     res1[i1] = rhs1[i1] - res1[i1] - m12x2[i1];
 
-  BFT_FREE(m12x2);
+  CS_FREE(m12x2);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -44,8 +44,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -111,7 +111,7 @@ cs_macfb_builder_initialize(void)
   int nthr = cs_glob_n_threads;
 
   cs_macfb_builder_n_structures = nthr;
-  BFT_MALLOC(cs_mac_builders, nthr, cs_macfb_builder_t *);
+  CS_MALLOC(cs_mac_builders, nthr, cs_macfb_builder_t *);
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -174,7 +174,7 @@ cs_macfb_builder_finalize(void)
   cs_macfb_builder_free(&(cs_mac_builders[0]));
 #endif /* openMP */
 
-  BFT_FREE(cs_mac_builders);
+  CS_FREE(cs_mac_builders);
   cs_macfb_builder_n_structures = 0;
 }
 
@@ -191,7 +191,7 @@ cs_macfb_builder_create(void)
 {
   cs_macfb_builder_t *b = nullptr;
 
-  BFT_MALLOC(b, 1, cs_macfb_builder_t);
+  CS_MALLOC(b, 1, cs_macfb_builder_t);
 
   cs_macfb_builder_reset(b);
 
@@ -214,7 +214,7 @@ cs_macfb_builder_free(cs_macfb_builder_t **p_builder)
 
   cs_macfb_builder_t *b = *p_builder;
 
-  BFT_FREE(b);
+  CS_FREE(b);
 
   *p_builder = nullptr;
   p_builder  = nullptr;

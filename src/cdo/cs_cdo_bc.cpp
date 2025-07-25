@@ -38,7 +38,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_boundary_zone.h"
@@ -83,7 +83,7 @@ _cdo_bc_face_create(bool       is_steady,
 {
   cs_cdo_bc_face_t *bc = nullptr;
 
-  BFT_MALLOC(bc, 1, cs_cdo_bc_face_t);
+  CS_MALLOC(bc, 1, cs_cdo_bc_face_t);
 
   bc->is_steady = is_steady;
   bc->n_b_faces = n_b_faces;
@@ -91,13 +91,13 @@ _cdo_bc_face_create(bool       is_steady,
   /* Default initialization */
 
   bc->flag = nullptr;
-  BFT_MALLOC(bc->flag, n_b_faces, cs_flag_t);
+  CS_MALLOC(bc->flag, n_b_faces, cs_flag_t);
   cs_array_flag_fill_zero(n_b_faces, bc->flag);
 
   /* Default initialization */
 
   bc->def_ids = nullptr;
-  BFT_MALLOC(bc->def_ids, n_b_faces, short int);
+  CS_MALLOC(bc->def_ids, n_b_faces, short int);
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
     bc->def_ids[i] = CS_CDO_BC_DEFAULT_DEF;
 
@@ -272,13 +272,13 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
 
   /* Allocate list of border faces by type of boundary conditions */
 
-  BFT_MALLOC(bc->hmg_dir_ids, bc->n_hmg_dir_faces, cs_lnum_t);
-  BFT_MALLOC(bc->nhmg_dir_ids, bc->n_nhmg_dir_faces, cs_lnum_t);
-  BFT_MALLOC(bc->hmg_neu_ids, bc->n_hmg_neu_faces, cs_lnum_t);
-  BFT_MALLOC(bc->nhmg_neu_ids, bc->n_nhmg_neu_faces, cs_lnum_t);
-  BFT_MALLOC(bc->robin_ids, bc->n_robin_faces, cs_lnum_t);
-  BFT_MALLOC(bc->sliding_ids, bc->n_sliding_faces, cs_lnum_t);
-  BFT_MALLOC(bc->circulation_ids, bc->n_circulation_faces, cs_lnum_t);
+  CS_MALLOC(bc->hmg_dir_ids, bc->n_hmg_dir_faces, cs_lnum_t);
+  CS_MALLOC(bc->nhmg_dir_ids, bc->n_nhmg_dir_faces, cs_lnum_t);
+  CS_MALLOC(bc->hmg_neu_ids, bc->n_hmg_neu_faces, cs_lnum_t);
+  CS_MALLOC(bc->nhmg_neu_ids, bc->n_nhmg_neu_faces, cs_lnum_t);
+  CS_MALLOC(bc->robin_ids, bc->n_robin_faces, cs_lnum_t);
+  CS_MALLOC(bc->sliding_ids, bc->n_sliding_faces, cs_lnum_t);
+  CS_MALLOC(bc->circulation_ids, bc->n_circulation_faces, cs_lnum_t);
 
   /* Fill the allocated lists */
 
@@ -356,18 +356,18 @@ cs_cdo_bc_free(cs_cdo_bc_face_t   *face_bc)
   if (face_bc == nullptr)
     return face_bc;
 
-  BFT_FREE(face_bc->flag);
-  BFT_FREE(face_bc->def_ids);
+  CS_FREE(face_bc->flag);
+  CS_FREE(face_bc->def_ids);
 
-  BFT_FREE(face_bc->hmg_dir_ids);
-  BFT_FREE(face_bc->nhmg_dir_ids);
-  BFT_FREE(face_bc->hmg_neu_ids);
-  BFT_FREE(face_bc->nhmg_neu_ids);
-  BFT_FREE(face_bc->robin_ids);
-  BFT_FREE(face_bc->sliding_ids);
-  BFT_FREE(face_bc->circulation_ids);
+  CS_FREE(face_bc->hmg_dir_ids);
+  CS_FREE(face_bc->nhmg_dir_ids);
+  CS_FREE(face_bc->hmg_neu_ids);
+  CS_FREE(face_bc->nhmg_neu_ids);
+  CS_FREE(face_bc->robin_ids);
+  CS_FREE(face_bc->sliding_ids);
+  CS_FREE(face_bc->circulation_ids);
 
-  BFT_FREE(face_bc);
+  CS_FREE(face_bc);
 
   return nullptr;
 }

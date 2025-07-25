@@ -47,16 +47,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-#include "base/cs_array.h"
 #include "alge/cs_blas.h"
+#include "base/cs_array.h"
+#include "base/cs_mem.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdofb_monolithic_sles.h"
+#include "cdo/cs_cdofb_navsto.h"
 #include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_cdofb_scaleq.h"
 #include "cdo/cs_cdofb_vecteq.h"
-#include "cdo/cs_cdofb_navsto.h"
-#include "cdo/cs_cdofb_monolithic_sles.h"
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
 #endif
@@ -1703,7 +1703,7 @@ cs_cdofb_monolithic_init_sharing(const cs_equation_param_t  *mom_eqp,
       int  block_sizes[3] =
         {connect->n_max_fbyc, connect->n_max_fbyc, connect->n_max_fbyc};
 
-      BFT_MALLOC(cs_cdofb_monolithic_cw_mat, cs_glob_n_threads, cs_sdm_t *);
+      CS_MALLOC(cs_cdofb_monolithic_cw_mat, cs_glob_n_threads, cs_sdm_t *);
       for (int i = 0; i < cs_glob_n_threads; i++)
         cs_cdofb_monolithic_cw_mat[i] = nullptr;
 
@@ -1753,7 +1753,7 @@ cs_cdofb_monolithic_finalize_common(void)
     cs_cdofb_monolithic_cw_mat[0] = cs_sdm_free(cs_cdofb_monolithic_cw_mat[0]);
 #endif /* openMP */
 
-    BFT_FREE(cs_cdofb_monolithic_cw_mat);
+    CS_FREE(cs_cdofb_monolithic_cw_mat);
   }
 }
 
@@ -1791,7 +1791,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
 
   cs_cdofb_monolithic_t *sc = nullptr;
 
-  BFT_MALLOC(sc, 1, cs_cdofb_monolithic_t);
+  CS_MALLOC(sc, 1, cs_cdofb_monolithic_t);
 
   /* Cast the coupling context (CC) */
 
@@ -1934,7 +1934,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
-    BFT_MALLOC(sc->block21_op, 3*connect->c2f->idx[quant->n_cells], cs_real_t);
+    CS_MALLOC(sc->block21_op, 3 * connect->c2f->idx[quant->n_cells], cs_real_t);
     break;
 
   default:
@@ -2036,7 +2036,7 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
 
   /* Block (2,1) may be allocated */
 
-  BFT_FREE(sc->block21_op);
+  CS_FREE(sc->block21_op);
 
   /* Free the context structure for solving saddle-point system */
 
@@ -2048,7 +2048,7 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
 
   /* Other pointers are only shared (i.e. not owner) */
 
-  BFT_FREE(sc);
+  CS_FREE(sc);
 
   return nullptr;
 }
@@ -2646,7 +2646,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     /* mass_flux_array_k <-- mass_flux_array_kp1; update mass_flux_array_kp1 */
 
     if (mass_flux_array_k == nullptr)
-      BFT_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
+      CS_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
     cs_array_real_copy(n_faces, mass_flux_array_kp1, mass_flux_array_k);
 
     cs_cdofb_navsto_mass_flux(nsp, quant, u_f, mass_flux_array_kp1);
@@ -2691,7 +2691,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_equation_builder_reset(mom_eqb);
   if (mass_flux_array_k != nullptr)
-    BFT_FREE(mass_flux_array_k);
+    CS_FREE(mass_flux_array_k);
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);

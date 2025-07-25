@@ -38,7 +38,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "cdo/cs_basis_func.h"
 #include "cdo/cs_evaluate.h"
@@ -966,7 +966,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
     /* Initialize mask buffer */
 
     cs_mask_t *mask = nullptr;
-    BFT_MALLOC(mask, n_cells, cs_mask_t);
+    CS_MALLOC(mask, n_cells, cs_mask_t);
 #pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (int i = 0; i < n_cells; i++)
       mask[i] = 0;

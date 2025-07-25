@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_cdo_advection.h"
@@ -124,18 +124,18 @@ _cell_builder_create(const cs_cdo_connect_t *connect)
 
   /* Since it relies on the scalar case, n_fc should be enough */
 
-  BFT_MALLOC(cb->adv_fluxes, n_dofs, double);
+  CS_MALLOC(cb->adv_fluxes, n_dofs, double);
   memset(cb->adv_fluxes, 0, n_dofs * sizeof(double));
 
-  BFT_MALLOC(cb->ids, n_dofs, int);
+  CS_MALLOC(cb->ids, n_dofs, int);
   memset(cb->ids, 0, n_dofs * sizeof(int));
 
   int size = n_fc * n_dofs;
-  BFT_MALLOC(cb->values, size, double);
+  CS_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size * sizeof(cs_real_t));
 
   size = 2 * n_fc;
-  BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+  CS_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of
@@ -312,7 +312,7 @@ cs_macfb_vecteq_setup(cs_real_t                  t_eval,
 
   /* Initialize and compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(eqb->dir_values, 3 * quant->n_b_faces, cs_real_t);
+  CS_MALLOC(eqb->dir_values, 3 * quant->n_b_faces, cs_real_t);
   cs_array_real_fill_zero(3 * quant->n_b_faces, eqb->dir_values);
 
   cs_equation_bc_dirichlet_at_faces(
@@ -1009,8 +1009,8 @@ cs_macfb_vecteq_init_sharing(const cs_cdo_quantities_t *quant,
 
   /* Specific treatment for handling openMP */
 
-  BFT_MALLOC(cs_macfb_cell_sys, cs_glob_n_threads, cs_cell_sys_t *);
-  BFT_MALLOC(cs_macfb_cell_bld, cs_glob_n_threads, cs_cell_builder_t *);
+  CS_MALLOC(cs_macfb_cell_sys, cs_glob_n_threads, cs_cell_sys_t *);
+  CS_MALLOC(cs_macfb_cell_bld, cs_glob_n_threads, cs_cell_builder_t *);
 
   for (int i = 0; i < cs_glob_n_threads; i++) {
     cs_macfb_cell_sys[i] = nullptr;
@@ -1086,8 +1086,8 @@ cs_macfb_vecteq_finalize_sharing(void)
   cs_cell_builder_free(&(cs_macfb_cell_bld[0]));
 #endif /* openMP */
 
-  BFT_FREE(cs_macfb_cell_sys);
-  BFT_FREE(cs_macfb_cell_bld);
+  CS_FREE(cs_macfb_cell_sys);
+  CS_FREE(cs_macfb_cell_bld);
   cs_macfb_cell_bld = nullptr;
   cs_macfb_cell_sys = nullptr;
 }
@@ -1126,7 +1126,7 @@ cs_macfb_vecteq_init_context(cs_equation_param_t   *eqp,
 
   cs_macfb_vecteq_t *eqc = nullptr;
 
-  BFT_MALLOC(eqc, 1, cs_macfb_vecteq_t);
+  CS_MALLOC(eqc, 1, cs_macfb_vecteq_t);
 
   eqc->var_field_id   = var_id;
   eqc->bflux_field_id = bflux_id;
@@ -1145,9 +1145,9 @@ cs_macfb_vecteq_init_context(cs_equation_param_t   *eqp,
   eqb->bdy_flag
     = CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
 
-  BFT_MALLOC(eqc->face_values, n_faces, cs_real_t);
+  CS_MALLOC(eqc->face_values, n_faces, cs_real_t);
   cs_array_real_fill_zero(n_faces, eqc->face_values);
-  BFT_MALLOC(eqc->face_values_pre, n_faces, cs_real_t);
+  CS_MALLOC(eqc->face_values_pre, n_faces, cs_real_t);
   cs_array_real_fill_zero(n_faces, eqc->face_values_pre);
 
   bool need_eigen
@@ -1258,8 +1258,7 @@ cs_macfb_vecteq_init_context(cs_equation_param_t   *eqp,
 
   eqc->source_terms = nullptr;
   if (cs_equation_param_has_sourceterm(eqp)) {
-
-    BFT_MALLOC(eqc->source_terms, n_faces, cs_real_t);
+    CS_MALLOC(eqc->source_terms, n_faces, cs_real_t);
     cs_array_real_fill_zero(n_faces, eqc->source_terms);
 
   } /* There is at least one source term */
@@ -1361,14 +1360,14 @@ cs_macfb_vecteq_free_context(void *data)
 
   /* Free temporary buffers */
 
-  BFT_FREE(eqc->source_terms);
-  BFT_FREE(eqc->face_values);
-  BFT_FREE(eqc->face_values_pre);
+  CS_FREE(eqc->source_terms);
+  CS_FREE(eqc->face_values);
+  CS_FREE(eqc->face_values_pre);
 
   cs_hodge_free_context(&(eqc->diffusion_hodge));
   cs_hodge_free_context(&(eqc->mass_hodge));
 
-  BFT_FREE(eqc);
+  CS_FREE(eqc);
 
   return nullptr;
 }
@@ -1425,7 +1424,7 @@ cs_macfb_vecteq_init_values(cs_real_t                  t_eval,
     cs_lnum_t *def2f_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
     cs_lnum_t *def2f_idx = nullptr;
 
-    BFT_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
+    CS_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
     cs_cdo_sync_vol_def_at_faces(
       eqp->n_ic_defs, eqp->ic_defs, def2f_idx, def2f_ids);
@@ -1490,7 +1489,7 @@ cs_macfb_vecteq_init_values(cs_real_t                  t_eval,
 
     /* Free */
 
-    BFT_FREE(def2f_idx);
+    CS_FREE(def2f_idx);
 
   } /* Initial values to set */
 
@@ -1499,7 +1498,7 @@ cs_macfb_vecteq_init_values(cs_real_t                  t_eval,
 
   /* Allocate field for Dirichlet BC*/
   cs_real_t *f_diri_vals = nullptr;
-  BFT_MALLOC(f_diri_vals, 3 * quant->n_b_faces, cs_real_t);
+  CS_MALLOC(f_diri_vals, 3 * quant->n_b_faces, cs_real_t);
 
   cs_equation_bc_dirichlet_at_faces(
     mesh, quant, connect, eqp, eqb->face_bc, t_eval, f_diri_vals);
@@ -1510,7 +1509,7 @@ cs_macfb_vecteq_init_values(cs_real_t                  t_eval,
     f_vals[f_id]         = f_diri_vals[3 * bf_id + quant->face_axis[f_id]];
   }
 
-  BFT_FREE(f_diri_vals);
+  CS_FREE(f_diri_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1580,7 +1579,7 @@ cs_macfb_vecteq_extra_post(const cs_equation_param_t *eqp,
 
   char *postlabel = nullptr;
   int   len       = strlen(field->name) + 8 + 1;
-  BFT_MALLOC(postlabel, len, char);
+  CS_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.Border", field->name);
 
   cs_post_write_var(CS_POST_MESH_BOUNDARY,
@@ -1595,7 +1594,7 @@ cs_macfb_vecteq_extra_post(const cs_equation_param_t *eqp,
                     bface_values,         /* values at border faces */
                     cs_shared_time_step); /* time step management structure */
 
-  BFT_FREE(postlabel);
+  CS_FREE(postlabel);
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

@@ -41,7 +41,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_cdo_advection.h"
@@ -131,18 +131,18 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->adv_fluxes, n_fc, double);
+  CS_MALLOC(cb->adv_fluxes, n_fc, double);
   memset(cb->adv_fluxes, 0, n_fc*sizeof(double));
 
-  BFT_MALLOC(cb->ids, n_fc, int);
+  CS_MALLOC(cb->ids, n_fc, int);
   memset(cb->ids, 0, n_fc*sizeof(int));
 
   int  size = n_fc*(n_fc+1);
-  BFT_MALLOC(cb->values, size, double);
+  CS_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(double));
 
   size = 2*n_fc;
-  BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+  CS_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of operators */
@@ -176,7 +176,7 @@ _setup(cs_real_t                     t_eval,
 
   /* Compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(eqb->dir_values, quant->n_b_faces, cs_real_t);
+  CS_MALLOC(eqb->dir_values, quant->n_b_faces, cs_real_t);
   cs_array_real_fill_zero(quant->n_b_faces, eqb->dir_values);
 
   cs_equation_bc_dirichlet_at_faces(mesh, quant, connect,
@@ -719,8 +719,8 @@ cs_cdofb_scaleq_init_sharing(const cs_cdo_quantities_t *quant,
 
   /* Specific treatment for handling openMP */
 
-  BFT_MALLOC(cs_cdofb_cell_sys, cs_glob_n_threads, cs_cell_sys_t *);
-  BFT_MALLOC(cs_cdofb_cell_bld, cs_glob_n_threads, cs_cell_builder_t *);
+  CS_MALLOC(cs_cdofb_cell_sys, cs_glob_n_threads, cs_cell_sys_t *);
+  CS_MALLOC(cs_cdofb_cell_bld, cs_glob_n_threads, cs_cell_builder_t *);
 
   for (int i = 0; i < cs_glob_n_threads; i++) {
     cs_cdofb_cell_sys[i] = nullptr;
@@ -787,8 +787,8 @@ cs_cdofb_scaleq_finalize_sharing(void)
   cs_cell_builder_free(&(cs_cdofb_cell_bld[0]));
 #endif /* openMP */
 
-  BFT_FREE(cs_cdofb_cell_sys);
-  BFT_FREE(cs_cdofb_cell_bld);
+  CS_FREE(cs_cdofb_cell_sys);
+  CS_FREE(cs_cdofb_cell_bld);
   cs_cdofb_cell_bld = nullptr;
   cs_cdofb_cell_sys = nullptr;
 }
@@ -826,7 +826,7 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
   const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
   cs_cdofb_scaleq_t       *eqc     = nullptr;
 
-  BFT_MALLOC(eqc, 1, cs_cdofb_scaleq_t);
+  CS_MALLOC(eqc, 1, cs_cdofb_scaleq_t);
 
   eqc->var_field_id = var_id;
   eqc->bflux_field_id = bflux_id;
@@ -851,12 +851,12 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
 
   /* Values at each face (interior and border) i.e. take into account BCs */
 
-  BFT_MALLOC(eqc->face_values, n_faces, cs_real_t);
+  CS_MALLOC(eqc->face_values, n_faces, cs_real_t);
   cs_array_real_fill_zero(n_faces, eqc->face_values);
 
   eqc->face_values_pre = nullptr;
   if (cs_equation_param_has_time(eqp)) {
-    BFT_MALLOC(eqc->face_values_pre, n_faces, cs_real_t);
+    CS_MALLOC(eqc->face_values_pre, n_faces, cs_real_t);
     cs_array_real_fill_zero(n_faces, eqc->face_values_pre);
   }
 
@@ -865,8 +865,8 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
      No need to synchronize all these quantities since they are only cellwise
      quantities. */
 
-  BFT_MALLOC(eqc->rc_tilda, n_cells, cs_real_t);
-  BFT_MALLOC(eqc->acf_tilda, connect->c2f->idx[n_cells], cs_real_t);
+  CS_MALLOC(eqc->rc_tilda, n_cells, cs_real_t);
+  CS_MALLOC(eqc->acf_tilda, connect->c2f->idx[n_cells], cs_real_t);
 
   cs_array_real_fill_zero(n_cells, eqc->rc_tilda);
   cs_array_real_fill_zero(connect->c2f->idx[n_cells], eqc->acf_tilda);
@@ -1029,8 +1029,7 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
 
   eqc->source_terms = nullptr;
   if (cs_equation_param_has_sourceterm(eqp)) {
-
-    BFT_MALLOC(eqc->source_terms, n_cells, cs_real_t);
+    CS_MALLOC(eqc->source_terms, n_cells, cs_real_t);
     cs_array_real_fill_zero(n_cells, eqc->source_terms);
 
   } /* There is at least one source term */
@@ -1114,15 +1113,15 @@ cs_cdofb_scaleq_free_context(void   *data)
 
   /* Free temporary buffers */
 
-  BFT_FREE(eqc->source_terms);
-  BFT_FREE(eqc->face_values);
+  CS_FREE(eqc->source_terms);
+  CS_FREE(eqc->face_values);
   if (eqc->face_values_pre != nullptr)
-    BFT_FREE(eqc->face_values_pre);
+    CS_FREE(eqc->face_values_pre);
 
-  BFT_FREE(eqc->rc_tilda);
-  BFT_FREE(eqc->acf_tilda);
+  CS_FREE(eqc->rc_tilda);
+  CS_FREE(eqc->acf_tilda);
 
-  BFT_FREE(eqc);
+  CS_FREE(eqc);
 
   return nullptr;
 }
@@ -1175,7 +1174,7 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
     cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
     cs_lnum_t  *def2f_idx = nullptr;
 
-    BFT_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
+    CS_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
     cs_cdo_sync_vol_def_at_faces(eqp->n_ic_defs, eqp->ic_defs,
                                  def2f_idx,
@@ -1243,7 +1242,7 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
 
     } /* Loop on definitions */
 
-    BFT_FREE(def2f_idx);
+    CS_FREE(def2f_idx);
 
     if (fld->val_pre != nullptr)
       cs_array_real_copy(quant->n_cells, c_vals, fld->val_pre);
@@ -2461,9 +2460,9 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
     cs_real_t *p_cur = nullptr, *p_prev = nullptr, *p_theta = nullptr;
 
     if (connect->n_max_fbyc > 10) {
-      BFT_MALLOC(p_cur, connect->n_max_fbyc, cs_real_t);
-      BFT_MALLOC(p_prev, connect->n_max_fbyc, cs_real_t);
-      BFT_MALLOC(p_theta, connect->n_max_fbyc, cs_real_t);
+      CS_MALLOC(p_cur, connect->n_max_fbyc, cs_real_t);
+      CS_MALLOC(p_prev, connect->n_max_fbyc, cs_real_t);
+      CS_MALLOC(p_theta, connect->n_max_fbyc, cs_real_t);
     }
     else {
       p_cur = _p_cur;
@@ -2657,9 +2656,9 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
     } /* Main loop on cells */
 
     if (p_cur != _p_cur) {
-      BFT_FREE(p_cur);
-      BFT_FREE(p_prev);
-      BFT_FREE(p_theta);
+      CS_FREE(p_cur);
+      CS_FREE(p_prev);
+      CS_FREE(p_theta);
     }
 
   } /* OPENMP Block */
@@ -2887,7 +2886,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
     const cs_lnum_t  fidx_shift = f2c->idx[quant->n_i_faces];
 
     cs_real_t *pot = nullptr;
-    BFT_MALLOC(pot, connect->n_max_fbyc + 1, cs_real_t); /* +1 for cell */
+    CS_MALLOC(pot, connect->n_max_fbyc + 1, cs_real_t); /* +1 for cell */
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
@@ -2986,7 +2985,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
 
     } /* End of loop on boundary faces */
 
-    BFT_FREE(pot);
+    CS_FREE(pot);
 
     /* Set the diffusion property data back to the initial pointer */
 
@@ -3066,7 +3065,7 @@ cs_cdofb_scaleq_extra_post(const cs_equation_param_t  *eqp,
 
   char *postlabel = nullptr;
   int  len = strlen(field->name) + 8 + 1;
-  BFT_MALLOC(postlabel, len, char);
+  CS_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.Border", field->name);
 
   cs_post_write_var(CS_POST_MESH_BOUNDARY,
@@ -3081,7 +3080,7 @@ cs_cdofb_scaleq_extra_post(const cs_equation_param_t  *eqp,
                     bface_values,         /* values at border faces */
                     cs_shared_time_step); /* time step management structure */
 
-  BFT_FREE(postlabel);
+  CS_FREE(postlabel);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

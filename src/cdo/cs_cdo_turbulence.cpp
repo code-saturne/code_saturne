@@ -42,7 +42,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_post.h"
 #include "turb/cs_turbulence_model.h"
@@ -285,7 +285,7 @@ cs_turbulence_param_create(void)
 {
   cs_turbulence_param_t *tbp = nullptr;
 
-  BFT_MALLOC(tbp, 1, cs_turbulence_param_t);
+  CS_MALLOC(tbp, 1, cs_turbulence_param_t);
 
   /* The following structures are shared with the Legacy part */
 
@@ -319,7 +319,7 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
 {
   cs_turbulence_t *tbs = nullptr;
 
-  BFT_MALLOC(tbs, 1, cs_turbulence_t);
+  CS_MALLOC(tbs, 1, cs_turbulence_t);
 
   /* All the members of the following structures are shared with the Legacy
    * part. This structure is owned by cs_navsto_param_t
@@ -374,13 +374,13 @@ cs_turbulence_free(cs_turbulence_t   **p_turb_struct)
    * Properties, equations and fields are freed in an other part of the code
    */
 
-  BFT_FREE(tbs->mu_tot_array);
+  CS_FREE(tbs->mu_tot_array);
 
   if (tbs->free_context != nullptr)
     tbs->context = tbs->free_context(tbs->context);
 
   assert(tbs->context == nullptr);
-  BFT_FREE(tbs);
+  CS_FREE(tbs);
   *p_turb_struct = nullptr;
 }
 
@@ -535,7 +535,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
 
   /* Define the property related to the total viscosity */
 
-  BFT_MALLOC(tbs->mu_tot_array, quant->n_cells, cs_real_t);
+  CS_MALLOC(tbs->mu_tot_array, quant->n_cells, cs_real_t);
   memset(tbs->mu_tot_array, 0, quant->n_cells*sizeof(cs_real_t));
 
   cs_property_def_by_array(tbs->mu_tot,
@@ -696,7 +696,7 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
 
   cs_turb_context_k_eps_t *kec = nullptr;
 
-  BFT_MALLOC(kec, 1, cs_turb_context_k_eps_t);
+  CS_MALLOC(kec, 1, cs_turb_context_k_eps_t);
 
   /* Add new equations for the turbulent kinetic energy (tke) and the
      dissipation (epsilon) */
@@ -789,7 +789,7 @@ cs_turb_free_k_eps_context(void     *tbc)
   if (kec == nullptr)
     return kec;
 
-  BFT_FREE(kec);
+  CS_FREE(kec);
 
   return kec;
 }
@@ -864,8 +864,8 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
 
   /* Free memory */
 
-  BFT_FREE(rho);
-  BFT_FREE(mu_l);
+  CS_FREE(rho);
+  CS_FREE(mu_l);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -914,7 +914,7 @@ cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
   }
 
   /* Free memory */
-  BFT_FREE(mu_l);
+  CS_FREE(mu_l);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -953,10 +953,10 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
   cs_real_t *tke_source_term = nullptr, *eps_source_term = nullptr;
   cs_real_t *tke_reaction = nullptr, *eps_reaction = nullptr;
 
-  BFT_MALLOC(tke_source_term, mesh->n_cells, cs_real_t);
-  BFT_MALLOC(eps_source_term, mesh->n_cells, cs_real_t);
-  BFT_MALLOC(tke_reaction, mesh->n_cells, cs_real_t);
-  BFT_MALLOC(eps_reaction, mesh->n_cells, cs_real_t);
+  CS_MALLOC(tke_source_term, mesh->n_cells, cs_real_t);
+  CS_MALLOC(eps_source_term, mesh->n_cells, cs_real_t);
+  CS_MALLOC(tke_reaction, mesh->n_cells, cs_real_t);
+  CS_MALLOC(eps_reaction, mesh->n_cells, cs_real_t);
 
   /* Set the array values for each cs_xdef_t structures */
 
@@ -1000,10 +1000,10 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
 
   /* Free memory */
 
-  BFT_FREE(tke_source_term);
-  BFT_FREE(eps_source_term);
-  BFT_FREE(tke_reaction);
-  BFT_FREE(eps_reaction);
+  CS_FREE(tke_source_term);
+  CS_FREE(eps_source_term);
+  CS_FREE(tke_reaction);
+  CS_FREE(eps_reaction);
 }
 
 /*----------------------------------------------------------------------------*/

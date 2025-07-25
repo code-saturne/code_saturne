@@ -44,7 +44,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
@@ -169,7 +169,7 @@ _free_input_context(void  *input)
 
   cs_real_t  *_input = static_cast<cs_real_t *>(input);
 
-  BFT_FREE(_input);
+  CS_FREE(_input);
 
   return nullptr;
 }
@@ -203,7 +203,7 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
                        cs_navsto_param_post_flag_t   post_flag)
 {
   cs_navsto_param_t *nsp = nullptr;
-  BFT_MALLOC(nsp, 1, cs_navsto_param_t);
+  CS_MALLOC(nsp, 1, cs_navsto_param_t);
 
   /* Physical modelling */
   /* ------------------ */
@@ -371,12 +371,12 @@ cs_navsto_param_free(cs_navsto_param_t *param)
 
   /* Turbulence modelling */
 
-  BFT_FREE(param->turbulence);
+  CS_FREE(param->turbulence);
 
   /* Boussinesq term(s) */
 
   if (param->n_boussinesq_terms > 0)
-    BFT_FREE(param->boussinesq_param);
+    CS_FREE(param->boussinesq_param);
 
   /* Velocity initial conditions */
 
@@ -387,7 +387,7 @@ cs_navsto_param_free(cs_navsto_param_t *param)
       for (int i = 0; i < param->n_velocity_ic_defs; i++)
         param->velocity_ic_defs[i] = cs_xdef_free(param->velocity_ic_defs[i]);
 
-    BFT_FREE(param->velocity_ic_defs);
+    CS_FREE(param->velocity_ic_defs);
     param->velocity_ic_defs = nullptr;
   }
 
@@ -399,7 +399,7 @@ cs_navsto_param_free(cs_navsto_param_t *param)
       for (int i = 0; i < param->n_pressure_ic_defs; i++)
         param->pressure_ic_defs[i] = cs_xdef_free(param->pressure_ic_defs[i]);
 
-    BFT_FREE(param->pressure_ic_defs);
+    CS_FREE(param->pressure_ic_defs);
     param->pressure_ic_defs = nullptr;
 
   }
@@ -412,7 +412,7 @@ cs_navsto_param_free(cs_navsto_param_t *param)
       for (int i = 0; i < param->n_velocity_bc_defs; i++)
         param->velocity_bc_defs[i] = cs_xdef_free(param->velocity_bc_defs[i]);
 
-    BFT_FREE(param->velocity_bc_defs);
+    CS_FREE(param->velocity_bc_defs);
     param->velocity_bc_defs = nullptr;
 
   }
@@ -425,12 +425,12 @@ cs_navsto_param_free(cs_navsto_param_t *param)
       for (int i = 0; i < param->n_pressure_bc_defs; i++)
         param->pressure_bc_defs[i] = cs_xdef_free(param->pressure_bc_defs[i]);
 
-    BFT_FREE(param->pressure_bc_defs);
+    CS_FREE(param->pressure_bc_defs);
     param->pressure_bc_defs = nullptr;
 
   }
 
-  BFT_FREE(param);
+  CS_FREE(param);
 
   return nullptr;
 }
@@ -769,9 +769,9 @@ cs_navsto_param_add_boussinesq_term(cs_navsto_param_t *nsp,
   int b_id = nsp->n_boussinesq_terms;
 
   nsp->n_boussinesq_terms += 1;
-  BFT_REALLOC(nsp->boussinesq_param,
-              nsp->n_boussinesq_terms + 1,
-              cs_navsto_param_boussinesq_t);
+  CS_REALLOC(nsp->boussinesq_param,
+             nsp->n_boussinesq_terms + 1,
+             cs_navsto_param_boussinesq_t);
 
   cs_navsto_param_boussinesq_t *bp = nsp->boussinesq_param + b_id;
 
@@ -1036,7 +1036,7 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
 
   int new_id = nsp->n_velocity_ic_defs;
   nsp->n_velocity_ic_defs += 1;
-  BFT_REALLOC(nsp->velocity_ic_defs, nsp->n_velocity_ic_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->velocity_ic_defs, nsp->n_velocity_ic_defs, cs_xdef_t *);
   nsp->velocity_ic_defs[new_id] = d;
 
   return d;
@@ -1102,7 +1102,7 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t  *nsp,
 
   int  new_id = nsp->n_velocity_ic_defs;
   nsp->n_velocity_ic_defs += 1;
-  BFT_REALLOC(nsp->velocity_ic_defs, nsp->n_velocity_ic_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->velocity_ic_defs, nsp->n_velocity_ic_defs, cs_xdef_t *);
   nsp->velocity_ic_defs[new_id] = d;
 
   return d;
@@ -1151,7 +1151,7 @@ cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
 
   int  new_id = nsp->n_pressure_ic_defs;
   nsp->n_pressure_ic_defs += 1;
-  BFT_REALLOC(nsp->pressure_ic_defs, nsp->n_pressure_ic_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->pressure_ic_defs, nsp->n_pressure_ic_defs, cs_xdef_t *);
   nsp->pressure_ic_defs[new_id] = d;
 
   return d;
@@ -1203,7 +1203,7 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
 
   int  new_id = nsp->n_pressure_ic_defs;
   nsp->n_pressure_ic_defs += 1;
-  BFT_REALLOC(nsp->pressure_ic_defs, nsp->n_pressure_ic_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->pressure_ic_defs, nsp->n_pressure_ic_defs, cs_xdef_t *);
   nsp->pressure_ic_defs[new_id] = d;
 
   return d;
@@ -1234,7 +1234,7 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
   cs_xdef_t *d = nullptr;
 
   cs_real_t *_input = nullptr;
-  BFT_MALLOC(_input, 3, cs_real_t);
+  CS_MALLOC(_input, 3, cs_real_t);
 
   for (int i = 0; i < bdy->n_boundaries; i++) {
     if (    bdy->types[i] & CS_BOUNDARY_WALL
@@ -1268,7 +1268,7 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
       int  new_id = nsp->n_velocity_bc_defs;
 
       nsp->n_velocity_bc_defs += 1;
-      BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+      CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
       nsp->velocity_bc_defs[new_id] = d;
 
       cs_equation_add_xdef_bc(eqp, d);
@@ -1320,7 +1320,7 @@ cs_navsto_set_symmetries(cs_navsto_param_t *nsp)
       int  new_id = nsp->n_velocity_bc_defs;
 
       nsp->n_velocity_bc_defs += 1;
-      BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+      CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
       nsp->velocity_bc_defs[new_id] = d;
 
       /* Homogeneous Neumann on the pressure field --> default BC (Nothing to
@@ -1371,7 +1371,7 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
       int  new_id = nsp->n_velocity_bc_defs;
 
       nsp->n_velocity_bc_defs += 1;
-      BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+      CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
       nsp->velocity_bc_defs[new_id] = d;
 
       /* Homogeneous Neumann on the pressure field --> default BC.
@@ -1432,7 +1432,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
   int  pnew_id = nsp->n_pressure_bc_defs;
 
   nsp->n_pressure_bc_defs += 1;
-  BFT_REALLOC(nsp->pressure_bc_defs, nsp->n_pressure_bc_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->pressure_bc_defs, nsp->n_pressure_bc_defs, cs_xdef_t *);
   nsp->pressure_bc_defs[pnew_id] = dp;
 
   /* Add a new cs_xdef_t structure. For the momentum equation, this is a
@@ -1450,7 +1450,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
   int  unew_id = nsp->n_velocity_bc_defs;
 
   nsp->n_velocity_bc_defs += 1;
-  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[unew_id] = du;
 
   cs_equation_param_t *u_eqp = _get_momentum_param(nsp);
@@ -1511,7 +1511,7 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
   int  new_id = nsp->n_velocity_bc_defs;
 
   nsp->n_velocity_bc_defs += 1;
-  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
@@ -1573,7 +1573,7 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
   int  new_id = nsp->n_velocity_bc_defs;
 
   nsp->n_velocity_bc_defs += 1;
-  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
@@ -1639,7 +1639,7 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
 
   int  new_id = nsp->n_velocity_bc_defs;
   nsp->n_velocity_bc_defs += 1;
-  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
@@ -1725,7 +1725,7 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
   int  new_id = nsp->n_velocity_bc_defs;
 
   nsp->n_velocity_bc_defs += 1;
-  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
@@ -1795,7 +1795,7 @@ cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
 
   int  new_id = nsp->n_velocity_bc_defs;
   nsp->n_velocity_bc_defs += 1;
-  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
 
   cs_equation_param_t  *eqp = _get_momentum_param(nsp);

@@ -37,8 +37,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_cdofb_scaleq.h"
@@ -367,7 +367,7 @@ _solidification_create(void)
 {
   cs_solidification_t *solid = nullptr;
 
-  BFT_MALLOC(solid, 1, cs_solidification_t);
+  CS_MALLOC(solid, 1, cs_solidification_t);
 
   /* Default initialization */
 
@@ -653,7 +653,7 @@ _enforce_solid_cells(const cs_cdo_connect_t      *connect,
   cs_solid_selection_t  *solid_sel = cs_solid_selection_get();
 
   if (n_solid_cells > (cs_gnum_t)solid_sel->n_cells)
-    BFT_REALLOC(solid_sel->cell_ids, n_solid_cells, cs_lnum_t);
+    CS_REALLOC(solid_sel->cell_ids, n_solid_cells, cs_lnum_t);
 
   solid_sel->n_cells = n_solid_cells;
 
@@ -2740,7 +2740,7 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
   cs_real_t  *enthalpy = solid->enthalpy->val;
 
   cs_real_t *hk = nullptr; /* enthalpy h^{n+1,k} */
-  BFT_MALLOC(hk, quant->n_cells, cs_real_t);
+  CS_MALLOC(hk, quant->n_cells, cs_real_t);
   cs_array_real_copy(quant->n_cells, enthalpy, hk);
 
   /* Non-linear iterations (k) are performed to converge on the relation
@@ -2811,7 +2811,7 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
 
   } /* Until convergence */
 
-  BFT_FREE(hk);
+  CS_FREE(hk);
 
   /* Monitoring */
 
@@ -2927,7 +2927,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
 
   cs_real_t  *hkp1 = solid->enthalpy->val;
   cs_real_t  *hk   = nullptr; /* enthalpy  ^{n+1,k} */
-  BFT_MALLOC(hk, quant->n_cells, cs_real_t);
+  CS_MALLOC(hk, quant->n_cells, cs_real_t);
 
   /* Initialize the stopping criteria */
 
@@ -2987,7 +2987,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   while (_check_nl_cvg(v_model->nl_algo_type,
                        hk, hkp1, algo) == CS_SLES_ITERATING);
 
-  BFT_FREE(hk);
+  CS_FREE(hk);
 
   /* Monitoring */
 
@@ -3407,7 +3407,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
   case CS_SOLIDIFICATION_MODEL_STEFAN:
     {
     cs_solidification_stefan_t *s_model = nullptr;
-    BFT_MALLOC(s_model, 1, cs_solidification_stefan_t);
+    CS_MALLOC(s_model, 1, cs_solidification_stefan_t);
 
     /* Default initialization of this model */
 
@@ -3432,7 +3432,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
   case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
     {
       cs_solidification_voller_t *v_model = nullptr;
-      BFT_MALLOC(v_model, 1, cs_solidification_voller_t);
+      CS_MALLOC(v_model, 1, cs_solidification_voller_t);
 
       /* Default initialization of this model */
 
@@ -3493,7 +3493,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
   case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
     {
       cs_solidification_binary_alloy_t *b_model = nullptr;
-      BFT_MALLOC(b_model, 1, cs_solidification_binary_alloy_t);
+      CS_MALLOC(b_model, 1, cs_solidification_binary_alloy_t);
 
       /* Set a default value to the model parameters */
 
@@ -4028,11 +4028,11 @@ cs_solidification_set_binary_alloy_model(const char *name,
 
   char   *pty_name = nullptr;
   size_t  len = strlen(varname) + strlen("_diff_pty");
-  BFT_MALLOC(pty_name, len + 1, char);
+  CS_MALLOC(pty_name, len + 1, char);
   sprintf(pty_name, "%s_diff_pty", varname);
   pty_name[len] = '\0';
   alloy->diff_pty = cs_property_add(pty_name, CS_PROPERTY_ISO);
-  BFT_FREE(pty_name);
+  CS_FREE(pty_name);
 
   cs_equation_add_diffusion(eqp, alloy->diff_pty);
 
@@ -4241,7 +4241,7 @@ cs_solidification_destroy_all(void)
       cs_solidification_stefan_t  *s_model
         = (cs_solidification_stefan_t *)solid->model_context;
 
-      BFT_FREE(s_model);
+      CS_FREE(s_model);
 
     } /* Stefan modelling */
     break;
@@ -4253,9 +4253,9 @@ cs_solidification_destroy_all(void)
         = (cs_solidification_voller_t *)solid->model_context;
 
       if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_NL)
-        BFT_FREE(v_model->nl_algo);
+        CS_FREE(v_model->nl_algo);
 
-      BFT_FREE(v_model);
+      CS_FREE(v_model);
 
     } /* Voller and Prakash modelling */
     break;
@@ -4265,29 +4265,29 @@ cs_solidification_destroy_all(void)
       cs_solidification_binary_alloy_t  *alloy
         = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-      BFT_FREE(alloy->diff_pty_array);
-      BFT_FREE(alloy->c_l_cells);
-      BFT_FREE(alloy->eta_coef_array);
-      BFT_FREE(alloy->tk_bulk);
-      BFT_FREE(alloy->ck_bulk);
+      CS_FREE(alloy->diff_pty_array);
+      CS_FREE(alloy->c_l_cells);
+      CS_FREE(alloy->eta_coef_array);
+      CS_FREE(alloy->tk_bulk);
+      CS_FREE(alloy->ck_bulk);
 
       if (solid->options & CS_SOLIDIFICATION_USE_EXTRAPOLATION) {
-        BFT_FREE(alloy->tx_bulk);
-        BFT_FREE(alloy->cx_bulk);
+        CS_FREE(alloy->tx_bulk);
+        CS_FREE(alloy->cx_bulk);
       }
 
       if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
-        BFT_FREE(alloy->c_l_faces);
+        CS_FREE(alloy->c_l_faces);
 
       if (solid->post_flag & CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE)
-        BFT_FREE(alloy->t_liquidus);
+        CS_FREE(alloy->t_liquidus);
 
       if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
-        BFT_FREE(alloy->tbulk_minus_tliq);
-        BFT_FREE(alloy->cliq_minus_cbulk);
+        CS_FREE(alloy->tbulk_minus_tliq);
+        CS_FREE(alloy->cliq_minus_cbulk);
       }
 
-      BFT_FREE(alloy);
+      CS_FREE(alloy);
 
     } /* Binary alloy modelling */
     break;
@@ -4297,16 +4297,16 @@ cs_solidification_destroy_all(void)
 
   } /* Switch on solidification model */
 
-  BFT_FREE(solid->thermal_reaction_coef_array);
-  BFT_FREE(solid->thermal_source_term_array);
-  BFT_FREE(solid->forcing_mom_array);
+  CS_FREE(solid->thermal_reaction_coef_array);
+  CS_FREE(solid->thermal_source_term_array);
+  CS_FREE(solid->forcing_mom_array);
 
-  BFT_FREE(solid->cell_state);
+  CS_FREE(solid->cell_state);
 
   if (solid->plot_state != nullptr)
     cs_time_plot_finalize(&solid->plot_state);
 
-  BFT_FREE(solid);
+  CS_FREE(solid);
 
   return nullptr;
 }
@@ -4437,7 +4437,7 @@ cs_solidification_init_setup(void)
     }
 
     const char  **labels;
-    BFT_MALLOC(labels, n_output_values, const char *);
+    CS_MALLOC(labels, n_output_values, const char *);
     for (int i = 0; i < n_output_states; i++)
       labels[i] = _state_names[i];
 
@@ -4463,7 +4463,7 @@ cs_solidification_init_setup(void)
                                                   nullptr,
                                                   labels);
 
-    BFT_FREE(labels);
+    CS_FREE(labels);
 
   } /* rank 0 */
 }
@@ -4500,7 +4500,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
   /* Initially one assumes that all is liquid except for cells in a
    * predefined solid zone for all the computation */
 
-  BFT_MALLOC(solid->cell_state, n_cells, cs_solidification_state_t);
+  CS_MALLOC(solid->cell_state, n_cells, cs_solidification_state_t);
 
   cs_field_set_values(solid->g_l_field, 1.);
 
@@ -4525,7 +4525,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     /* Define the forcing term acting as a reaction term in the momentum
        equation. This term is related to the liquid fraction */
 
-    BFT_MALLOC(solid->forcing_mom_array, n_cells, cs_real_t);
+    CS_MALLOC(solid->forcing_mom_array, n_cells, cs_real_t);
     cs_array_real_fill_zero(n_cells, solid->forcing_mom_array);
 
     cs_property_def_by_array(solid->forcing_mom,
@@ -4550,8 +4550,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
      equation */
 
   if (solid->thermal_reaction_coef != nullptr) {
-
-    BFT_MALLOC(solid->thermal_reaction_coef_array, n_cells, cs_real_t);
+    CS_MALLOC(solid->thermal_reaction_coef_array, n_cells, cs_real_t);
     cs_array_real_fill_zero(n_cells, solid->thermal_reaction_coef_array);
 
     cs_property_def_by_array(solid->thermal_reaction_coef,
@@ -4561,7 +4560,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                              false, /* definition is owner ? */
                              true); /* full length */
 
-    BFT_MALLOC(solid->thermal_source_term_array, n_cells, cs_real_t);
+    CS_MALLOC(solid->thermal_source_term_array, n_cells, cs_real_t);
     cs_array_real_fill_zero(n_cells, solid->thermal_source_term_array);
 
     cs_equation_param_t *thm_eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
@@ -4577,8 +4576,8 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
   if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
     /*                ==================================== */
 
-    cs_solidification_binary_alloy_t  *alloy
-      = (cs_solidification_binary_alloy_t *)solid->model_context;
+    cs_solidification_binary_alloy_t *alloy =
+      (cs_solidification_binary_alloy_t *)solid->model_context;
 
     /* Get a shortcut to the c_bulk field */
 
@@ -4586,8 +4585,9 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
 
     /* Allocate an array to store the liquid concentration */
 
-    BFT_MALLOC(alloy->c_l_cells, n_cells, cs_real_t);
-    cs_array_real_set_scalar(n_cells, alloy->ref_concentration,
+    CS_MALLOC(alloy->c_l_cells, n_cells, cs_real_t);
+    cs_array_real_set_scalar(n_cells,
+                             alloy->ref_concentration,
                              alloy->c_l_cells);
 
     /* Add the c_l_cells array for the Boussinesq term (solutal effect) */
@@ -4595,32 +4595,30 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     cs_navsto_param_t *nsp = cs_navsto_system_get_param();
 
     assert(nsp->n_boussinesq_terms == 2);
-    cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + 1;
+    cs_navsto_param_boussinesq_t *bp = nsp->boussinesq_param + 1;
 
     cs_navsto_param_set_boussinesq_array(bp, alloy->c_l_cells);
 
     /* Allocate arrays storing the intermediate states during the
        sub-iterations to solve the non-linearity */
 
-    BFT_MALLOC(alloy->tk_bulk, n_cells, cs_real_t);
-    BFT_MALLOC(alloy->ck_bulk, n_cells, cs_real_t);
+    CS_MALLOC(alloy->tk_bulk, n_cells, cs_real_t);
+    CS_MALLOC(alloy->ck_bulk, n_cells, cs_real_t);
 
     if (solid->options & CS_SOLIDIFICATION_USE_EXTRAPOLATION) {
-      BFT_MALLOC(alloy->tx_bulk, n_cells, cs_real_t);
-      BFT_MALLOC(alloy->cx_bulk, n_cells, cs_real_t);
+      CS_MALLOC(alloy->tx_bulk, n_cells, cs_real_t);
+      CS_MALLOC(alloy->cx_bulk, n_cells, cs_real_t);
     }
 
     /* Allocate eta even if SOLUTE_WITH_SOURCE_TERM is activated */
 
-    const cs_real_t  eta_ref_value = 1.;
-    BFT_MALLOC(alloy->eta_coef_array, n_cells, cs_real_t);
+    const cs_real_t eta_ref_value = 1.;
+    CS_MALLOC(alloy->eta_coef_array, n_cells, cs_real_t);
     cs_array_real_set_scalar(n_cells, eta_ref_value, alloy->eta_coef_array);
 
     if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM) {
-
-      BFT_MALLOC(alloy->c_l_faces, quant->n_faces, cs_real_t);
+      CS_MALLOC(alloy->c_l_faces, quant->n_faces, cs_real_t);
       cs_array_real_fill_zero(quant->n_faces, alloy->c_l_faces);
-
     }
     else { /* Estimate the reference value for the solutal diffusion property
             * One assumes that g_l (the liquid fraction is equal to 1) */
@@ -4643,7 +4641,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
 
     cs_property_set_reference_value(alloy->diff_pty, pty_ref_value);
 
-    BFT_MALLOC(alloy->diff_pty_array, n_cells, cs_real_t);
+    CS_MALLOC(alloy->diff_pty_array, n_cells, cs_real_t);
     cs_array_real_set_scalar(n_cells, pty_ref_value, alloy->diff_pty_array);
 
     cs_property_def_by_array(alloy->diff_pty,
@@ -4654,17 +4652,16 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                              true); /* full length */
 
     if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
-
-      BFT_MALLOC(alloy->tbulk_minus_tliq, n_cells, cs_real_t);
+      CS_MALLOC(alloy->tbulk_minus_tliq, n_cells, cs_real_t);
       cs_array_real_fill_zero(n_cells, alloy->tbulk_minus_tliq);
 
-      BFT_MALLOC(alloy->cliq_minus_cbulk, n_cells, cs_real_t);
+      CS_MALLOC(alloy->cliq_minus_cbulk, n_cells, cs_real_t);
       cs_array_real_fill_zero(n_cells, alloy->cliq_minus_cbulk);
 
     }
 
     if (solid->post_flag & CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE)
-      BFT_MALLOC(alloy->t_liquidus, n_cells, cs_real_t);
+      CS_MALLOC(alloy->t_liquidus, n_cells, cs_real_t);
 
   } /* Binary alloy model */
 }
@@ -5194,7 +5191,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
   /* Compute the output values */
 
   cs_real_t *output_values = nullptr;
-  BFT_MALLOC(output_values, n_output_values, cs_real_t);
+  CS_MALLOC(output_values, n_output_values, cs_real_t);
   memset(output_values, 0, n_output_values*sizeof(cs_real_t));
 
   int n_output_states = (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) ?
@@ -5317,7 +5314,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
                             n_output_values,
                             output_values);
 
-  BFT_FREE(output_values);
+  CS_FREE(output_values);
 }
 
 /*----------------------------------------------------------------------------*/

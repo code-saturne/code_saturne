@@ -40,7 +40,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_math.h"
@@ -126,10 +126,10 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
   int  nthr = cs_glob_n_threads;
 
   cs_cdo_local_n_structures = nthr;
-  BFT_MALLOC(cs_cdo_local_cell_meshes, nthr, cs_cell_mesh_t *);
-  BFT_MALLOC(cs_cdo_local_face_meshes, nthr, cs_face_mesh_t *);
-  BFT_MALLOC(cs_cdo_local_face_meshes_light, nthr, cs_face_mesh_light_t *);
-  BFT_MALLOC(cs_cdo_local_kbuf, nthr, short int *);
+  CS_MALLOC(cs_cdo_local_cell_meshes, nthr, cs_cell_mesh_t *);
+  CS_MALLOC(cs_cdo_local_face_meshes, nthr, cs_face_mesh_t *);
+  CS_MALLOC(cs_cdo_local_face_meshes_light, nthr, cs_face_mesh_light_t *);
+  CS_MALLOC(cs_cdo_local_kbuf, nthr, short int *);
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -142,9 +142,9 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
     cs_cdo_local_face_meshes_light[t_id]
       = cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
-    BFT_MALLOC(cs_cdo_local_kbuf[t_id],
-               cs::max(connect->v_max_cell_range, connect->e_max_cell_range) + 1,
-               short int);
+    CS_MALLOC(cs_cdo_local_kbuf[t_id],
+              cs::max(connect->v_max_cell_range, connect->e_max_cell_range) + 1,
+              short int);
   }
 #else
 
@@ -155,9 +155,9 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
   cs_cdo_local_face_meshes_light[0]
     = cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
-  BFT_MALLOC(cs_cdo_local_kbuf[0],
-             cs::max(connect->v_max_cell_range, connect->e_max_cell_range)+1,
-             short int);
+  CS_MALLOC(cs_cdo_local_kbuf[0],
+            cs::max(connect->v_max_cell_range, connect->e_max_cell_range) + 1,
+            short int);
 
 #endif /* openMP */
 }
@@ -187,21 +187,20 @@ cs_cdo_local_finalize(void)
     cs_face_mesh_free(&(cs_cdo_local_face_meshes[t_id]));
     cs_face_mesh_light_free(&(cs_cdo_local_face_meshes_light[t_id]));
 
-    BFT_FREE(cs_cdo_local_kbuf[t_id]);
-
+    CS_FREE(cs_cdo_local_kbuf[t_id]);
   }
 #else
   assert(cs_glob_n_threads == 1);
   cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[0]));
   cs_face_mesh_free(&(cs_cdo_local_face_meshes[0]));
   cs_face_mesh_light_free(&(cs_cdo_local_face_meshes_light[0]));
-  BFT_FREE(cs_cdo_local_kbuf[0]);
+  CS_FREE(cs_cdo_local_kbuf[0]);
 #endif /* openMP */
 
-  BFT_FREE(cs_cdo_local_cell_meshes);
-  BFT_FREE(cs_cdo_local_face_meshes);
-  BFT_FREE(cs_cdo_local_face_meshes_light);
-  BFT_FREE(cs_cdo_local_kbuf);
+  CS_FREE(cs_cdo_local_cell_meshes);
+  CS_FREE(cs_cdo_local_face_meshes);
+  CS_FREE(cs_cdo_local_face_meshes_light);
+  CS_FREE(cs_cdo_local_kbuf);
   cs_cdo_local_n_structures = 0;
 }
 
@@ -220,28 +219,28 @@ cs_cdo_local_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int   n_max_dofbyc,
-                   int   n_max_fbyc,
-                   int   n_blocks,
-                   int  *block_sizes)
+cs_cell_sys_create(int  n_max_dofbyc,
+                   int  n_max_fbyc,
+                   int  n_blocks,
+                   int *block_sizes)
 {
-  const size_t  s = n_max_dofbyc * sizeof(double);
+  const size_t s = n_max_dofbyc * sizeof(double);
 
   cs_cell_sys_t *csys = nullptr;
 
-  BFT_MALLOC(csys, 1, cs_cell_sys_t);
+  CS_MALLOC(csys, 1, cs_cell_sys_t);
 
   /* Metadata about DoFs */
 
   csys->n_dofs = 0;
 
   csys->dof_flag = nullptr;
-  BFT_MALLOC(csys->dof_flag, n_max_dofbyc, cs_flag_t);
-  memset(csys->dof_flag, 0, sizeof(cs_flag_t)*n_max_dofbyc);
+  CS_MALLOC(csys->dof_flag, n_max_dofbyc, cs_flag_t);
+  memset(csys->dof_flag, 0, sizeof(cs_flag_t) * n_max_dofbyc);
 
   csys->dof_ids = nullptr;
-  BFT_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
-  memset(csys->dof_ids, 0, sizeof(cs_lnum_t)*n_max_dofbyc);
+  CS_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
+  memset(csys->dof_ids, 0, sizeof(cs_lnum_t) * n_max_dofbyc);
 
   /* Cell-wise view of the system and its DoF values */
 
@@ -253,41 +252,39 @@ cs_cell_sys_create(int   n_max_dofbyc,
     csys->mat = cs_sdm_square_create(n_max_dofbyc);
   }
   else if (n_blocks == 1) {
-
     assert(block_sizes != nullptr);
-    if (block_sizes[0] == 3) {  /* Interlaced vetor-valued system */
-      int  n_row_blocks = n_max_dofbyc/3;
+    if (block_sizes[0] == 3) { /* Interlaced vetor-valued system */
+      int n_row_blocks = n_max_dofbyc / 3;
       assert(n_max_dofbyc % 3 == 0);
       csys->mat = cs_sdm_block33_create(n_row_blocks, n_row_blocks);
     }
     else
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "%s: Invalid initialization of the cellwise block matrix\n",
                 __func__);
-
   }
   else { /* General case */
 
-    csys->mat = cs_sdm_block_create(n_blocks, n_blocks,
-                                    block_sizes,
-                                    block_sizes);
-
+    csys->mat =
+      cs_sdm_block_create(n_blocks, n_blocks, block_sizes, block_sizes);
   }
 
   csys->rhs = nullptr;
-  BFT_MALLOC(csys->rhs, n_max_dofbyc, double);
+  CS_MALLOC(csys->rhs, n_max_dofbyc, double);
   memset(csys->rhs, 0, s);
 
   csys->source = nullptr;
-  BFT_MALLOC(csys->source, n_max_dofbyc, double);
+  CS_MALLOC(csys->source, n_max_dofbyc, double);
   memset(csys->source, 0, s);
 
   csys->val_n = nullptr;
-  BFT_MALLOC(csys->val_n, n_max_dofbyc, double);
+  CS_MALLOC(csys->val_n, n_max_dofbyc, double);
   memset(csys->val_n, 0, s);
 
   csys->val_nm1 = nullptr;
-  BFT_MALLOC(csys->val_nm1, n_max_dofbyc, double);
+  CS_MALLOC(csys->val_nm1, n_max_dofbyc, double);
   memset(csys->val_nm1, 0, s);
 
   /* Internal enforcement */
@@ -295,7 +292,7 @@ cs_cell_sys_create(int   n_max_dofbyc,
   csys->has_internal_enforcement = false;
 
   csys->dof_is_forced = nullptr;
-  BFT_MALLOC(csys->dof_is_forced, n_max_dofbyc, bool);
+  CS_MALLOC(csys->dof_is_forced, n_max_dofbyc, bool);
 
   /* Boundary conditions */
   /* ------------------- */
@@ -303,38 +300,38 @@ cs_cell_sys_create(int   n_max_dofbyc,
   csys->n_bc_faces = 0;
 
   csys->bf_flag = nullptr;
-  BFT_MALLOC(csys->bf_flag, n_max_fbyc, cs_flag_t);
-  memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_max_fbyc);
+  CS_MALLOC(csys->bf_flag, n_max_fbyc, cs_flag_t);
+  memset(csys->bf_flag, 0, sizeof(cs_flag_t) * n_max_fbyc);
 
   csys->_f_ids = nullptr;
-  BFT_MALLOC(csys->_f_ids, n_max_fbyc, short int);
-  memset(csys->_f_ids, 0, sizeof(short int)*n_max_fbyc);
+  CS_MALLOC(csys->_f_ids, n_max_fbyc, short int);
+  memset(csys->_f_ids, 0, sizeof(short int) * n_max_fbyc);
 
   csys->bf_ids = nullptr;
-  BFT_MALLOC(csys->bf_ids, n_max_fbyc, cs_lnum_t);
-  memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_max_fbyc);
+  CS_MALLOC(csys->bf_ids, n_max_fbyc, cs_lnum_t);
+  memset(csys->bf_ids, 0, sizeof(cs_lnum_t) * n_max_fbyc);
 
   /* Dirichlet */
 
   csys->has_dirichlet = false;
   csys->dir_values    = nullptr; /* Warning: values on DoFs */
-  BFT_MALLOC(csys->dir_values, n_max_dofbyc, double);
+  CS_MALLOC(csys->dir_values, n_max_dofbyc, double);
   memset(csys->dir_values, 0, s);
 
   /* Neumann */
 
   csys->has_nhmg_neumann = false;
   csys->neu_values       = nullptr;
-  BFT_MALLOC(csys->neu_values, n_max_dofbyc, double);
+  CS_MALLOC(csys->neu_values, n_max_dofbyc, double);
   memset(csys->neu_values, 0, s);
 
   /* Robin */
 
-  int  n_rob_size = n_robin_parameters*cs::max(n_max_dofbyc, n_max_fbyc);
-  csys->has_robin = false;
+  int n_rob_size   = n_robin_parameters * cs::max(n_max_dofbyc, n_max_fbyc);
+  csys->has_robin  = false;
   csys->rob_values = nullptr;
-  BFT_MALLOC(csys->rob_values, n_rob_size, double);
-  memset(csys->rob_values, 0, n_rob_size*sizeof(cs_real_t));
+  CS_MALLOC(csys->rob_values, n_rob_size, double);
+  memset(csys->rob_values, 0, n_rob_size * sizeof(cs_real_t));
 
   /* Sliding (only for vector-valued system) */
 
@@ -354,13 +351,12 @@ cs_cell_sys_create(int   n_max_dofbyc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_sys_reset(int              n_fbyc,
-                  cs_cell_sys_t   *csys)
+cs_cell_sys_reset(int n_fbyc, cs_cell_sys_t *csys)
 {
   if (n_fbyc < 1 || csys->n_dofs < 1)
     return;
 
-  const size_t  s = csys->n_dofs * sizeof(double);
+  const size_t s = csys->n_dofs * sizeof(double);
 
   memset(csys->rhs, 0, s);
   memset(csys->source, 0, s);
@@ -369,20 +365,21 @@ cs_cell_sys_reset(int              n_fbyc,
   for (int i = 0; i < csys->n_dofs; i++)
     csys->dof_is_forced[i] = false; /* Not selected */
 
-  memset(csys->dof_flag, 0, sizeof(cs_flag_t)*csys->n_dofs);
+  memset(csys->dof_flag, 0, sizeof(cs_flag_t) * csys->n_dofs);
 
-  csys->n_bc_faces = 0;
+  csys->n_bc_faces    = 0;
   csys->has_dirichlet = csys->has_nhmg_neumann = false;
   csys->has_robin = csys->has_sliding = false;
 
-  memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
-  memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
-  memset(csys->bf_ids  , 0, sizeof(cs_lnum_t)*n_fbyc);
+  memset(csys->bf_flag, 0, sizeof(cs_flag_t) * n_fbyc);
+  memset(csys->_f_ids, 0, sizeof(short int) * n_fbyc);
+  memset(csys->bf_ids, 0, sizeof(cs_lnum_t) * n_fbyc);
 
   memset(csys->dir_values, 0, s);
   memset(csys->neu_values, 0, s);
-  memset(csys->rob_values, 0,
-         cs::max(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
+  memset(csys->rob_values,
+         0,
+         cs::max(n_fbyc, csys->n_dofs) * sizeof(double) * n_robin_parameters);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -394,33 +391,33 @@ cs_cell_sys_reset(int              n_fbyc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_sys_free(cs_cell_sys_t     **p_csys)
+cs_cell_sys_free(cs_cell_sys_t **p_csys)
 {
-  cs_cell_sys_t  *csys = *p_csys;
+  cs_cell_sys_t *csys = *p_csys;
 
   if (csys == nullptr)
     return;
 
-  BFT_FREE(csys->dof_ids);
-  BFT_FREE(csys->dof_flag);
+  CS_FREE(csys->dof_ids);
+  CS_FREE(csys->dof_flag);
 
   csys->mat = cs_sdm_free(csys->mat);
 
-  BFT_FREE(csys->rhs);
-  BFT_FREE(csys->source);
-  BFT_FREE(csys->val_n);
-  BFT_FREE(csys->val_nm1);
+  CS_FREE(csys->rhs);
+  CS_FREE(csys->source);
+  CS_FREE(csys->val_n);
+  CS_FREE(csys->val_nm1);
 
-  BFT_FREE(csys->_f_ids);
-  BFT_FREE(csys->bf_ids);
-  BFT_FREE(csys->bf_flag);
-  BFT_FREE(csys->dir_values);
-  BFT_FREE(csys->neu_values);
-  BFT_FREE(csys->rob_values);
+  CS_FREE(csys->_f_ids);
+  CS_FREE(csys->bf_ids);
+  CS_FREE(csys->bf_flag);
+  CS_FREE(csys->dir_values);
+  CS_FREE(csys->neu_values);
+  CS_FREE(csys->rob_values);
 
-  BFT_FREE(csys->dof_is_forced);
+  CS_FREE(csys->dof_is_forced);
 
-  BFT_FREE(csys);
+  CS_FREE(csys);
   *p_csys = nullptr;
 }
 
@@ -434,16 +431,14 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_sys_dump(const char             msg[],
-                 const cs_cell_sys_t   *csys)
+cs_cell_sys_dump(const char msg[], const cs_cell_sys_t *csys)
 {
-# pragma omp critical
+#pragma omp critical
   {
-    bft_printf( "[rank:%d] %s\n", cs_glob_rank_id, msg);
+    bft_printf("[rank:%d] %s\n", cs_glob_rank_id, msg);
 
     if (csys->has_dirichlet || csys->has_nhmg_neumann || csys->has_robin ||
         csys->has_sliding) {
-
       bft_printf(">> dirichlet:%s | nhmg_neumann:%s | robin:%s | sliding:%s\n",
                  cs_base_strtf(csys->has_dirichlet),
                  cs_base_strtf(csys->has_nhmg_neumann),
@@ -451,11 +446,16 @@ cs_cell_sys_dump(const char             msg[],
                  cs_base_strtf(csys->has_sliding));
       if (csys->n_bc_faces > 0) {
         bft_printf(">> Boundary faces\n"
-                   ">> %-8s | %-8s | %-6s\n", "_ID", "ID", "FLAG");
+                   ">> %-8s | %-8s | %-6s\n",
+                   "_ID",
+                   "ID",
+                   "FLAG");
         for (int i = 0; i < csys->n_bc_faces; i++) {
           short int f = csys->_f_ids[i];
           bft_printf(">> %8d | %8ld | %6d\n",
-                     f, (long)csys->bf_ids[f], csys->bf_flag[f]);
+                     f,
+                     (long)csys->bf_ids[f],
+                     csys->bf_flag[f]);
         }
       }
 
@@ -468,15 +468,25 @@ cs_cell_sys_dump(const char             msg[],
 
     bft_printf(">> %-8s | %-6s | %-10s | %-10s | %-10s | %-8s |"
                " %-10s |  %-10s\n",
-               "IDS", "FLAG", "RHS", "TS", "DIR_VALS", "ENFORCED", "VAL_N",
+               "IDS",
+               "FLAG",
+               "RHS",
+               "TS",
+               "DIR_VALS",
+               "ENFORCED",
+               "VAL_N",
                "VAL_N-1");
     for (int i = 0; i < csys->n_dofs; i++)
       bft_printf(">> %8ld | %6d | % -.3e | % -.3e | % -.3e |"
                  " %-8s | % -.3e | % -.3e\n",
-                 (long)csys->dof_ids[i], csys->dof_flag[i], csys->rhs[i],
-                 csys->source[i], csys->dir_values[i],
+                 (long)csys->dof_ids[i],
+                 csys->dof_flag[i],
+                 csys->rhs[i],
+                 csys->source[i],
+                 csys->dir_values[i],
                  cs_base_strtf(csys->dof_is_forced[i]),
-                 csys->val_n[i], csys->val_nm1[i]);
+                 csys->val_n[i],
+                 csys->val_nm1[i]);
   }
 }
 
@@ -495,19 +505,20 @@ cs_cell_builder_create(void)
 
   /* Common part to all discretization */
 
-  BFT_MALLOC(cb, 1, cs_cell_builder_t);
+  CS_MALLOC(cb, 1, cs_cell_builder_t);
 
   cb->t_pty_eval = 0.;
-  cb->t_bc_eval = 0.;
-  cb->t_st_eval = 0.;
+  cb->t_bc_eval  = 0.;
+  cb->t_st_eval  = 0.;
 
   cb->cell_flag = 0;
 
-  cb->gpty_val = 1;             /* grad-div property */
-  cb->tpty_val = 1;             /* time property */
-  cb->rpty_val = 1;             /* reaction property */
+  cb->gpty_val = 1; /* grad-div property */
+  cb->tpty_val = 1; /* time property */
+  cb->rpty_val = 1; /* reaction property */
 
-  for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++) cb->rpty_vals[r] = 1;
+  for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++)
+    cb->rpty_vals[r] = 1;
 
   cb->adv_fluxes = nullptr;
   cb->ids        = nullptr;
@@ -530,22 +541,22 @@ cs_cell_builder_create(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_builder_free(cs_cell_builder_t     **p_cb)
+cs_cell_builder_free(cs_cell_builder_t **p_cb)
 {
-  cs_cell_builder_t  *cb = *p_cb;
+  cs_cell_builder_t *cb = *p_cb;
 
   if (cb == nullptr)
     return;
 
-  BFT_FREE(cb->adv_fluxes);
-  BFT_FREE(cb->ids);
-  BFT_FREE(cb->values);
-  BFT_FREE(cb->vectors);
+  CS_FREE(cb->adv_fluxes);
+  CS_FREE(cb->ids);
+  CS_FREE(cb->values);
+  CS_FREE(cb->vectors);
 
   cb->loc = cs_sdm_free(cb->loc);
   cb->aux = cs_sdm_free(cb->aux);
 
-  BFT_FREE(cb);
+  CS_FREE(cb);
   *p_cb = nullptr;
 }
 
@@ -560,11 +571,11 @@ cs_cell_builder_free(cs_cell_builder_t     **p_cb)
 /*----------------------------------------------------------------------------*/
 
 cs_cell_mesh_t *
-cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
+cs_cell_mesh_create(const cs_cdo_connect_t *connect)
 {
   cs_cell_mesh_t *cm = nullptr;
 
-  BFT_MALLOC(cm, 1, cs_cell_mesh_t);
+  CS_MALLOC(cm, 1, cs_cell_mesh_t);
 
   /* Sizes used to allocate buffers */
 
@@ -579,48 +590,48 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
 
   /* Vertex information */
 
-  BFT_MALLOC(cm->v_ids, cm->n_max_vbyc, cs_lnum_t);
-  BFT_MALLOC(cm->wvc, cm->n_max_vbyc, double);
-  BFT_MALLOC(cm->xv, 3*cm->n_max_vbyc, double);
+  CS_MALLOC(cm->v_ids, cm->n_max_vbyc, cs_lnum_t);
+  CS_MALLOC(cm->wvc, cm->n_max_vbyc, double);
+  CS_MALLOC(cm->xv, 3 * cm->n_max_vbyc, double);
 
   /* Edge information */
 
-  BFT_MALLOC(cm->e_ids, cm->n_max_ebyc, cs_lnum_t);
-  BFT_MALLOC(cm->e2v_sgn, cm->n_max_ebyc, short int);
-  BFT_MALLOC(cm->edge, cm->n_max_ebyc, cs_quant_t);
-  BFT_MALLOC(cm->dface, cm->n_max_ebyc, cs_nvec3_t);
-  BFT_MALLOC(cm->pvol_e, cm->n_max_ebyc, double);
+  CS_MALLOC(cm->e_ids, cm->n_max_ebyc, cs_lnum_t);
+  CS_MALLOC(cm->e2v_sgn, cm->n_max_ebyc, short int);
+  CS_MALLOC(cm->edge, cm->n_max_ebyc, cs_quant_t);
+  CS_MALLOC(cm->dface, cm->n_max_ebyc, cs_nvec3_t);
+  CS_MALLOC(cm->pvol_e, cm->n_max_ebyc, double);
 
   /* Face information */
 
-  BFT_MALLOC(cm->f_ids, cm->n_max_fbyc, cs_lnum_t);
-  BFT_MALLOC(cm->f_sgn, cm->n_max_fbyc, short int);
-  BFT_MALLOC(cm->f_diam, cm->n_max_fbyc, double);
-  BFT_MALLOC(cm->face, cm->n_max_fbyc, cs_quant_t);
-  BFT_MALLOC(cm->dedge, cm->n_max_fbyc, cs_nvec3_t);
-  BFT_MALLOC(cm->hfc, cm->n_max_fbyc, double);
-  BFT_MALLOC(cm->pvol_f, cm->n_max_fbyc, double);
+  CS_MALLOC(cm->f_ids, cm->n_max_fbyc, cs_lnum_t);
+  CS_MALLOC(cm->f_sgn, cm->n_max_fbyc, short int);
+  CS_MALLOC(cm->f_diam, cm->n_max_fbyc, double);
+  CS_MALLOC(cm->face, cm->n_max_fbyc, cs_quant_t);
+  CS_MALLOC(cm->dedge, cm->n_max_fbyc, cs_nvec3_t);
+  CS_MALLOC(cm->hfc, cm->n_max_fbyc, double);
+  CS_MALLOC(cm->pvol_f, cm->n_max_fbyc, double);
 
   /* face --> vertices connectivity */
 
-  BFT_MALLOC(cm->f2v_idx, cm->n_max_fbyc + 1, short int);
-  BFT_MALLOC(cm->f2v_ids, 2*cm->n_max_ebyc, short int);
+  CS_MALLOC(cm->f2v_idx, cm->n_max_fbyc + 1, short int);
+  CS_MALLOC(cm->f2v_ids, 2 * cm->n_max_ebyc, short int);
 
   /* face --> edges connectivity */
 
-  BFT_MALLOC(cm->f2e_idx, cm->n_max_fbyc + 1, short int);
-  BFT_MALLOC(cm->f2e_ids, 2*cm->n_max_ebyc, short int);
-  BFT_MALLOC(cm->f2e_sgn, 2*cm->n_max_ebyc, short int);
-  BFT_MALLOC(cm->tef, 2*cm->n_max_ebyc, double);
-  BFT_MALLOC(cm->sefc, 2*cm->n_max_ebyc, cs_nvec3_t);
+  CS_MALLOC(cm->f2e_idx, cm->n_max_fbyc + 1, short int);
+  CS_MALLOC(cm->f2e_ids, 2 * cm->n_max_ebyc, short int);
+  CS_MALLOC(cm->f2e_sgn, 2 * cm->n_max_ebyc, short int);
+  CS_MALLOC(cm->tef, 2 * cm->n_max_ebyc, double);
+  CS_MALLOC(cm->sefc, 2 * cm->n_max_ebyc, cs_nvec3_t);
 
   /* edge --> vertices connectivity */
 
-  BFT_MALLOC(cm->e2v_ids, 2*cm->n_max_ebyc, short int);
+  CS_MALLOC(cm->e2v_ids, 2 * cm->n_max_ebyc, short int);
 
   /* edge --> face connectivity */
 
-  BFT_MALLOC(cm->e2f_ids, 2*cm->n_max_ebyc, short int);
+  CS_MALLOC(cm->e2f_ids, 2 * cm->n_max_ebyc, short int);
 
   cs_cell_mesh_reset(cm);
 
@@ -884,38 +895,38 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
   if (cm == nullptr)
     return;
 
-  BFT_FREE(cm->v_ids);
-  BFT_FREE(cm->wvc);
-  BFT_FREE(cm->xv);
+  CS_FREE(cm->v_ids);
+  CS_FREE(cm->wvc);
+  CS_FREE(cm->xv);
 
-  BFT_FREE(cm->e_ids);
-  BFT_FREE(cm->edge);
-  BFT_FREE(cm->dface);
-  BFT_FREE(cm->pvol_e);
+  CS_FREE(cm->e_ids);
+  CS_FREE(cm->edge);
+  CS_FREE(cm->dface);
+  CS_FREE(cm->pvol_e);
 
-  BFT_FREE(cm->f_ids);
-  BFT_FREE(cm->f_sgn);
-  BFT_FREE(cm->f_diam);
-  BFT_FREE(cm->hfc);
-  BFT_FREE(cm->pvol_f);
-  BFT_FREE(cm->face);
-  BFT_FREE(cm->dedge);
+  CS_FREE(cm->f_ids);
+  CS_FREE(cm->f_sgn);
+  CS_FREE(cm->f_diam);
+  CS_FREE(cm->hfc);
+  CS_FREE(cm->pvol_f);
+  CS_FREE(cm->face);
+  CS_FREE(cm->dedge);
 
-  BFT_FREE(cm->e2v_ids);
-  BFT_FREE(cm->e2v_sgn);
+  CS_FREE(cm->e2v_ids);
+  CS_FREE(cm->e2v_sgn);
 
-  BFT_FREE(cm->f2v_idx);
-  BFT_FREE(cm->f2v_ids);
+  CS_FREE(cm->f2v_idx);
+  CS_FREE(cm->f2v_ids);
 
-  BFT_FREE(cm->f2e_idx);
-  BFT_FREE(cm->f2e_ids);
-  BFT_FREE(cm->f2e_sgn);
-  BFT_FREE(cm->tef);
+  CS_FREE(cm->f2e_idx);
+  CS_FREE(cm->f2e_ids);
+  CS_FREE(cm->f2e_sgn);
+  CS_FREE(cm->tef);
 
-  BFT_FREE(cm->e2f_ids);
-  BFT_FREE(cm->sefc);
+  CS_FREE(cm->e2f_ids);
+  CS_FREE(cm->sefc);
 
-  BFT_FREE(cm);
+  CS_FREE(cm);
   *p_cm = nullptr;
 }
 
@@ -1463,7 +1474,7 @@ cs_face_mesh_create(short int n_max_vbyf)
 {
   cs_face_mesh_t *fm = nullptr;
 
-  BFT_MALLOC(fm, 1, cs_face_mesh_t);
+  CS_MALLOC(fm, 1, cs_face_mesh_t);
 
   fm->n_max_vbyf = n_max_vbyf;
 
@@ -1480,17 +1491,17 @@ cs_face_mesh_create(short int n_max_vbyf)
   /* Vertex-related quantities */
 
   fm->n_vf = 0;
-  BFT_MALLOC(fm->v_ids, fm->n_max_vbyf, cs_lnum_t);
-  BFT_MALLOC(fm->xv, 3*fm->n_max_vbyf, double);
-  BFT_MALLOC(fm->wvf, fm->n_max_vbyf, double);
+  CS_MALLOC(fm->v_ids, fm->n_max_vbyf, cs_lnum_t);
+  CS_MALLOC(fm->xv, 3 * fm->n_max_vbyf, double);
+  CS_MALLOC(fm->wvf, fm->n_max_vbyf, double);
 
   /* Edge-related quantities */
 
   fm->n_ef = 0;
-  BFT_MALLOC(fm->e_ids, fm->n_max_vbyf, cs_lnum_t);
-  BFT_MALLOC(fm->edge,  fm->n_max_vbyf, cs_quant_t);
-  BFT_MALLOC(fm->e2v_ids, 2*fm->n_max_vbyf, short int);
-  BFT_MALLOC(fm->tef, fm->n_max_vbyf, double);
+  CS_MALLOC(fm->e_ids, fm->n_max_vbyf, cs_lnum_t);
+  CS_MALLOC(fm->edge, fm->n_max_vbyf, cs_quant_t);
+  CS_MALLOC(fm->e2v_ids, 2 * fm->n_max_vbyf, short int);
+  CS_MALLOC(fm->tef, fm->n_max_vbyf, double);
 
   return fm;
 }
@@ -1530,16 +1541,16 @@ cs_face_mesh_free(cs_face_mesh_t     **p_fm)
   if (fm == nullptr)
     return;
 
-  BFT_FREE(fm->v_ids);
-  BFT_FREE(fm->xv);
-  BFT_FREE(fm->wvf);
+  CS_FREE(fm->v_ids);
+  CS_FREE(fm->xv);
+  CS_FREE(fm->wvf);
 
-  BFT_FREE(fm->e_ids);
-  BFT_FREE(fm->edge);
-  BFT_FREE(fm->e2v_ids);
-  BFT_FREE(fm->tef);
+  CS_FREE(fm->e_ids);
+  CS_FREE(fm->edge);
+  CS_FREE(fm->e2v_ids);
+  CS_FREE(fm->tef);
 
-  BFT_FREE(fm);
+  CS_FREE(fm);
   *p_fm = nullptr;
 }
 
@@ -1841,7 +1852,7 @@ cs_face_mesh_light_create(short int   n_max_vbyf,
 {
   cs_face_mesh_light_t *fm = nullptr;
 
-  BFT_MALLOC(fm, 1, cs_face_mesh_light_t);
+  CS_MALLOC(fm, 1, cs_face_mesh_light_t);
 
   fm->n_max_vbyf = n_max_vbyf;
   fm->c_id = -1;
@@ -1850,14 +1861,14 @@ cs_face_mesh_light_create(short int   n_max_vbyf,
   /* Vertex-related quantities */
 
   fm->n_vf = 0;
-  BFT_MALLOC(fm->v_ids, n_max_vbyc, short int);
-  BFT_MALLOC(fm->wvf, n_max_vbyc, double);
+  CS_MALLOC(fm->v_ids, n_max_vbyc, short int);
+  CS_MALLOC(fm->wvf, n_max_vbyc, double);
 
   /* Edge-related quantities */
 
   fm->n_ef = 0;
-  BFT_MALLOC(fm->e_ids, fm->n_max_vbyf, short int);
-  BFT_MALLOC(fm->tef, fm->n_max_vbyf, double);
+  CS_MALLOC(fm->e_ids, fm->n_max_vbyf, short int);
+  CS_MALLOC(fm->tef, fm->n_max_vbyf, double);
 
   return fm;
 }
@@ -1898,12 +1909,12 @@ cs_face_mesh_light_free(cs_face_mesh_light_t     **p_fm)
   if (fm == nullptr)
     return;
 
-  BFT_FREE(fm->v_ids);
-  BFT_FREE(fm->wvf);
-  BFT_FREE(fm->e_ids);
-  BFT_FREE(fm->tef);
+  CS_FREE(fm->v_ids);
+  CS_FREE(fm->wvf);
+  CS_FREE(fm->e_ids);
+  CS_FREE(fm->tef);
 
-  BFT_FREE(fm);
+  CS_FREE(fm);
   *p_fm = nullptr;
 }
 

@@ -37,8 +37,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_flag.h"
@@ -510,8 +510,8 @@ _build_interlaced_ma(int                      stride,
 
   int  buf_size = stride * stride * (max_size + 1);
 
-  BFT_MALLOC(grows, buf_size, cs_gnum_t);
-  BFT_MALLOC(gcols, buf_size, cs_gnum_t);
+  CS_MALLOC(grows, buf_size, cs_gnum_t);
+  CS_MALLOC(gcols, buf_size, cs_gnum_t);
 
   if (stride == 1)  { /* Simplified version */
 
@@ -590,8 +590,8 @@ _build_interlaced_ma(int                      stride,
 
   /* Free temporary buffers */
 
-  BFT_FREE(grows);
-  BFT_FREE(gcols);
+  CS_FREE(grows);
+  CS_FREE(gcols);
 
   return ma;
 }
@@ -671,7 +671,7 @@ _build_no_interlaced_ma(int                      stride,
 
     cs_gnum_t *g_r_ids = nullptr, *g_c_ids = nullptr;
 
-    BFT_MALLOC(g_r_ids, 2*stride, cs_gnum_t);
+    CS_MALLOC(g_r_ids, 2 * stride, cs_gnum_t);
     g_c_ids = g_r_ids + stride;
 
     /*
@@ -743,7 +743,7 @@ _build_no_interlaced_ma(int                      stride,
     if (shift > 0)
       cs_matrix_assembler_add_g_ids(ma, shift, grows, gcols);
 
-    BFT_FREE(g_r_ids);
+    CS_FREE(g_r_ids);
 
   } /* stride > 1 */
 
@@ -948,7 +948,7 @@ _free_block(cs_cdo_system_block_t   **p_block)
           cs_interface_set_destroy(&(db->interface_set));
         }
 
-        BFT_FREE(db);
+        CS_FREE(db);
 
       } /* Block is declared as owner of its structures */
     }
@@ -969,7 +969,7 @@ _free_block(cs_cdo_system_block_t   **p_block)
 
         }
 
-        BFT_FREE(sb);
+        CS_FREE(sb);
 
       } /* Block is declared as owner of its structures */
     }
@@ -981,13 +981,11 @@ _free_block(cs_cdo_system_block_t   **p_block)
       cs_cdo_system_ublock_t *ub = (cs_cdo_system_ublock_t *)b->block_pointer;
 
       if (ub->_values != nullptr) {
-
-        BFT_FREE(ub->_values);
+        CS_FREE(ub->_values);
         ub->values = nullptr;
       }
 
       if (!ub->shared_structures) {
-
         if (b->info.stride > 1) {
           cs_range_set_destroy(&(ub->range_set));
           cs_interface_set_destroy(&(ub->interface_set));
@@ -995,7 +993,7 @@ _free_block(cs_cdo_system_block_t   **p_block)
 
       } /* Block is declared as owner of its structures */
 
-      BFT_FREE(ub);
+      CS_FREE(ub);
     }
     break;
 
@@ -1010,25 +1008,26 @@ _free_block(cs_cdo_system_block_t   **p_block)
       cs_range_set_destroy(&(xb->range_set));
       cs_interface_set_destroy(&(xb->interface_set));
 
-      BFT_FREE(xb);
+      CS_FREE(xb);
     }
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Invalid type of block. Stop freeing the block structure.\n",
               __func__);
 
   } /* Switch on the type of block */
 
   if (b->owner) {
-
     /* Unset the pointer in the list of shared blocks */
 
     _cdo_block_structures[b->id] = nullptr;
   }
 
-  BFT_FREE(b);
+  CS_FREE(b);
   *p_block = nullptr;
 }
 
@@ -1083,13 +1082,13 @@ cs_cdo_system_helper_create(cs_cdo_system_type_t type,
   if (n_col_blocks < 1 || n_blocks < 1)
     return sh;
 
-  BFT_MALLOC(sh, 1, cs_cdo_system_helper_t);
+  CS_MALLOC(sh, 1, cs_cdo_system_helper_t);
 
   sh->type         = type;
   sh->n_col_blocks = n_col_blocks;
 
   sh->col_block_sizes = nullptr;
-  BFT_MALLOC(sh->col_block_sizes, n_col_blocks, cs_lnum_t);
+  CS_MALLOC(sh->col_block_sizes, n_col_blocks, cs_lnum_t);
 
   sh->full_rhs_size = 0;
   for (int i = 0; i < n_col_blocks; i++) {
@@ -1107,7 +1106,7 @@ cs_cdo_system_helper_create(cs_cdo_system_type_t type,
   sh->n_blocks = n_blocks;
   sh->blocks   = nullptr;
 
-  BFT_MALLOC(sh->blocks, n_blocks, cs_cdo_system_block_t *);
+  CS_MALLOC(sh->blocks, n_blocks, cs_cdo_system_block_t *);
   for (int i = 0; i < n_blocks; i++)
     sh->blocks[i] = nullptr;
 
@@ -1123,27 +1122,27 @@ cs_cdo_system_helper_create(cs_cdo_system_type_t type,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_system_helper_free(cs_cdo_system_helper_t   **p_helper)
+cs_cdo_system_helper_free(cs_cdo_system_helper_t **p_helper)
 {
   if (p_helper == nullptr)
     return;
 
-  cs_cdo_system_helper_t  *sh = *p_helper;
+  cs_cdo_system_helper_t *sh = *p_helper;
   if (sh == nullptr)
     return;
 
-  BFT_FREE(sh->col_block_sizes);
-  BFT_FREE(sh->max_col_block_sizes);
-  BFT_FREE(sh->rhs_array);      /* array of pointers */
-  BFT_FREE(sh->_rhs);
+  CS_FREE(sh->col_block_sizes);
+  CS_FREE(sh->max_col_block_sizes);
+  CS_FREE(sh->rhs_array); /* array of pointers */
+  CS_FREE(sh->_rhs);
   sh->rhs = nullptr; /* shared pointer */
 
   for (int i = 0; i < sh->n_blocks; i++)
     _free_block(&(sh->blocks[i]));
 
-  BFT_FREE(sh->blocks);
+  CS_FREE(sh->blocks);
 
-  BFT_FREE(sh);
+  CS_FREE(sh);
   *p_helper = nullptr;
 }
 
@@ -1184,7 +1183,7 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t       *sh,
               __func__, block_id, sh->n_blocks);
 
   cs_cdo_system_block_t *b = nullptr;
-  BFT_MALLOC(b, 1, cs_cdo_system_block_t);
+  CS_MALLOC(b, 1, cs_cdo_system_block_t);
 
   b->type = CS_CDO_SYSTEM_BLOCK_DEFAULT;
   b->info.matrix_class = matclass;
@@ -1210,7 +1209,7 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t       *sh,
   else { /* Allocate and initialize */
 
     cs_cdo_system_dblock_t *db = nullptr;
-    BFT_MALLOC(db, 1, cs_cdo_system_dblock_t);
+    CS_MALLOC(db, 1, cs_cdo_system_dblock_t);
 
     db->matrix              = nullptr;
     db->mav                 = nullptr;
@@ -1236,8 +1235,9 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t       *sh,
 
     b->id = _n_cdo_block_structures;
     _n_cdo_block_structures++;
-    BFT_REALLOC(_cdo_block_structures, _n_cdo_block_structures,
-                cs_cdo_system_block_t *);
+    CS_REALLOC(_cdo_block_structures,
+               _n_cdo_block_structures,
+               cs_cdo_system_block_t *);
 
     _cdo_block_structures[b->id] = b;
 
@@ -1283,7 +1283,7 @@ cs_cdo_system_add_nblock(cs_cdo_system_helper_t       *sh,
               __func__, block_id, sh->n_blocks);
 
   cs_cdo_system_block_t *b = nullptr;
-  BFT_MALLOC(b, 1, cs_cdo_system_block_t);
+  CS_MALLOC(b, 1, cs_cdo_system_block_t);
 
   b->type = CS_CDO_SYSTEM_BLOCK_NESTED;
   b->info.matrix_class = matclass;
@@ -1308,17 +1308,17 @@ cs_cdo_system_add_nblock(cs_cdo_system_helper_t       *sh,
   else { /* Allocate and initialize */
 
     cs_cdo_system_nblock_t *sb = nullptr;
-    BFT_MALLOC(sb, 1, cs_cdo_system_nblock_t);
+    CS_MALLOC(sb, 1, cs_cdo_system_nblock_t);
 
     sb->n_matrices = stride*stride;
 
     sb->matrices = nullptr;
-    BFT_MALLOC(sb->matrices, sb->n_matrices, cs_matrix_t *);
+    CS_MALLOC(sb->matrices, sb->n_matrices, cs_matrix_t *);
     for (int i = 0; i < sb->n_matrices; i++)
       sb->matrices[i] = nullptr;
 
     sb->mav_array = nullptr;
-    BFT_MALLOC(sb->mav_array, sb->n_matrices, cs_matrix_assembler_values_t *);
+    CS_MALLOC(sb->mav_array, sb->n_matrices, cs_matrix_assembler_values_t *);
     for (int i = 0; i < sb->n_matrices; i++)
       sb->mav_array[i] = nullptr;
 
@@ -1327,7 +1327,7 @@ cs_cdo_system_add_nblock(cs_cdo_system_helper_t       *sh,
        and matrix assembler */
 
     cs_cdo_system_block_t *b_tmp = nullptr;
-    BFT_MALLOC(b_tmp, 1, cs_cdo_system_block_t);
+    CS_MALLOC(b_tmp, 1, cs_cdo_system_block_t);
 
     b_tmp->type = CS_CDO_SYSTEM_BLOCK_DEFAULT;
     b->info.location = location;
@@ -1349,7 +1349,7 @@ cs_cdo_system_add_nblock(cs_cdo_system_helper_t       *sh,
       bft_error(__FILE__, __LINE__, 0,
                 "%s: No assembly function set.\n", __func__);
 
-    BFT_FREE(b_tmp);
+    CS_FREE(b_tmp);
 
     /* Shared and private structures */
 
@@ -1368,8 +1368,9 @@ cs_cdo_system_add_nblock(cs_cdo_system_helper_t       *sh,
 
     b->id = _n_cdo_block_structures;
     _n_cdo_block_structures++;
-    BFT_REALLOC(_cdo_block_structures, _n_cdo_block_structures,
-                cs_cdo_system_block_t *);
+    CS_REALLOC(_cdo_block_structures,
+               _n_cdo_block_structures,
+               cs_cdo_system_block_t *);
 
     _cdo_block_structures[b->id] = b;
 
@@ -1417,7 +1418,7 @@ cs_cdo_system_add_ublock(cs_cdo_system_helper_t   *sh,
               __func__, block_id, sh->n_blocks);
 
   cs_cdo_system_block_t *b = nullptr;
-  BFT_MALLOC(b, 1, cs_cdo_system_block_t);
+  CS_MALLOC(b, 1, cs_cdo_system_block_t);
 
   b->type = CS_CDO_SYSTEM_BLOCK_UNASS;
   b->info.matrix_class = CS_CDO_SYSTEM_MATRIX_NONE;
@@ -1442,7 +1443,7 @@ cs_cdo_system_add_ublock(cs_cdo_system_helper_t   *sh,
   else { /* Allocate and initialize */
 
     cs_cdo_system_ublock_t *ub = nullptr;
-    BFT_MALLOC(ub, 1, cs_cdo_system_ublock_t);
+    CS_MALLOC(ub, 1, cs_cdo_system_ublock_t);
 
     ub->adjacency = adjacency;
 
@@ -1460,8 +1461,9 @@ cs_cdo_system_add_ublock(cs_cdo_system_helper_t   *sh,
 
     b->id = _n_cdo_block_structures;
     _n_cdo_block_structures++;
-    BFT_REALLOC(_cdo_block_structures, _n_cdo_block_structures,
-                cs_cdo_system_block_t *);
+    CS_REALLOC(_cdo_block_structures,
+               _n_cdo_block_structures,
+               cs_cdo_system_block_t *);
 
     _cdo_block_structures[b->id] = b;
 
@@ -1501,7 +1503,7 @@ cs_cdo_system_add_xblock(cs_cdo_system_helper_t   *sh,
               __func__, block_id, sh->n_blocks);
 
   cs_cdo_system_block_t *b = nullptr;
-  BFT_MALLOC(b, 1, cs_cdo_system_block_t);
+  CS_MALLOC(b, 1, cs_cdo_system_block_t);
 
   b->type = CS_CDO_SYSTEM_BLOCK_EXTERN;
   b->info.matrix_class = CS_CDO_SYSTEM_MATRIX_CS;
@@ -1512,7 +1514,7 @@ cs_cdo_system_add_xblock(cs_cdo_system_helper_t   *sh,
   b->info.unrolled = false;     /* not used */
 
   cs_cdo_system_xblock_t *xb = nullptr;
-  BFT_MALLOC(xb, 1, cs_cdo_system_xblock_t);
+  CS_MALLOC(xb, 1, cs_cdo_system_xblock_t);
 
   xb->matrix = nullptr;
   xb->mav    = nullptr;
@@ -1534,8 +1536,9 @@ cs_cdo_system_add_xblock(cs_cdo_system_helper_t   *sh,
 
   b->id = _n_cdo_block_structures;
   _n_cdo_block_structures++;
-  BFT_REALLOC(_cdo_block_structures, _n_cdo_block_structures,
-              cs_cdo_system_block_t *);
+  CS_REALLOC(_cdo_block_structures,
+             _n_cdo_block_structures,
+             cs_cdo_system_block_t *);
 
   _cdo_block_structures[b->id] = b;
 
@@ -1815,15 +1818,14 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 
   cs_real_t *rhs = *p_rhs;
   if (rhs == nullptr) {
-
-    BFT_MALLOC(sh->_rhs, sh->full_rhs_size, cs_real_t);
+    CS_MALLOC(sh->_rhs, sh->full_rhs_size, cs_real_t);
     *p_rhs = sh->_rhs;
     sh->rhs = sh->_rhs;
 
     if (sh->n_col_blocks > 1) {
 
       if (sh->rhs_array == nullptr)
-        BFT_MALLOC(sh->rhs_array, sh->n_col_blocks, cs_real_t *);
+        CS_MALLOC(sh->rhs_array, sh->n_col_blocks, cs_real_t *);
 
       cs_lnum_t  shift = 0;
       for (int k = 0; k < sh->n_col_blocks; k++) {
@@ -2044,7 +2046,7 @@ cs_cdo_system_helper_reset(cs_cdo_system_helper_t    *sh)
   if (sh == nullptr)
     return;
 
-  BFT_FREE(sh->_rhs);
+  CS_FREE(sh->_rhs);
   sh->rhs = nullptr;
 
   /* Free matrix (or matrices) */
@@ -2173,7 +2175,7 @@ cs_cdo_system_destroy_all(void)
   for (int i = 0; i < _n_cdo_block_structures; i++)
     _free_block(&(_cdo_block_structures[i]));
 
-  BFT_FREE(_cdo_block_structures);
+  CS_FREE(_cdo_block_structures);
 
   _n_cdo_block_structures = 0;
   _cdo_block_structures   = nullptr;

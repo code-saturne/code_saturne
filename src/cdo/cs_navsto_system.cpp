@@ -42,7 +42,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_cdofb_ac.h"
@@ -228,7 +228,7 @@ _allocate_navsto_system(void)
 {
   cs_navsto_system_t *navsto = nullptr;
 
-  BFT_MALLOC(navsto, 1, cs_navsto_system_t);
+  CS_MALLOC(navsto, 1, cs_navsto_system_t);
 
   navsto->param = nullptr;
 
@@ -488,7 +488,7 @@ cs_navsto_system_destroy(void)
   if (navsto == nullptr)
     return;
 
-  BFT_FREE(navsto->bf_type);
+  CS_FREE(navsto->bf_type);
 
   /*
    * Properties, advection fields, equations and fields are all destroyed
@@ -497,8 +497,8 @@ cs_navsto_system_destroy(void)
    * cs_field_destroy_all()
    */
 
-  BFT_FREE(navsto->mass_flux_array);
-  BFT_FREE(navsto->mass_flux_array_pre);
+  CS_FREE(navsto->mass_flux_array);
+  CS_FREE(navsto->mass_flux_array_pre);
 
   /* Free the plot writer */
 
@@ -550,7 +550,7 @@ cs_navsto_system_destroy(void)
 
   navsto->param = cs_navsto_param_free(nsp);
 
-  BFT_FREE(navsto);
+  CS_FREE(navsto);
   cs_navsto_system = nullptr;
 }
 
@@ -892,7 +892,7 @@ cs_navsto_system_init_setup(void)
   if (cs_glob_rank_id < 1) {
 
     assert(n_plotter_outputs > 0);
-    BFT_MALLOC(labels, n_plotter_outputs, const char *);
+    CS_MALLOC(labels, n_plotter_outputs, const char *);
 
     int n_cols = 0;
 
@@ -918,7 +918,7 @@ cs_navsto_system_init_setup(void)
                                               nullptr,
                                               labels);
 
-    BFT_FREE(labels);
+    CS_FREE(labels);
 
   } /* monitoring */
 
@@ -1028,10 +1028,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO_P0:
   case CS_SPACE_SCHEME_MACFB: {
-    BFT_MALLOC(ns->mass_flux_array, quant->n_faces, cs_real_t);
+    CS_MALLOC(ns->mass_flux_array, quant->n_faces, cs_real_t);
     cs_array_real_fill_zero(quant->n_faces, ns->mass_flux_array);
 
-    BFT_MALLOC(ns->mass_flux_array_pre, quant->n_faces, cs_real_t);
+    CS_MALLOC(ns->mass_flux_array_pre, quant->n_faces, cs_real_t);
     cs_array_real_fill_zero(quant->n_faces, ns->mass_flux_array_pre);
 
     cs_flag_t loc_flag
@@ -1391,7 +1391,7 @@ cs_navsto_system_define_context(const cs_mesh_t *mesh)
 
   /* Allocate then define an array of boundary types for each boundary face */
 
-  BFT_MALLOC(ns->bf_type, mesh->n_b_faces, cs_boundary_type_t);
+  CS_MALLOC(ns->bf_type, mesh->n_b_faces, cs_boundary_type_t);
   cs_boundary_build_type_array(nsp->boundaries, mesh->n_b_faces, ns->bf_type);
 
   /* Allocate and initialize the scheme context structure */
@@ -1634,7 +1634,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t           *mesh,
 
     cs_real_t *th_var_iter_prev = nullptr;
 
-    BFT_MALLOC(th_var_iter_prev, quant->n_cells, cs_real_t);
+    CS_MALLOC(th_var_iter_prev, quant->n_cells, cs_real_t);
     cs_array_real_copy(quant->n_cells, th_var, th_var_iter_prev);
 
     cs_real_t inv_tref = cs_thermal_system_get_reference_temperature();
@@ -1697,7 +1697,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t           *mesh,
                   iter,
                   delta_th_tolerance);
 
-    BFT_FREE(th_var_iter_prev);
+    CS_FREE(th_var_iter_prev);
   }
   else {
 

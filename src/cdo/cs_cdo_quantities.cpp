@@ -41,7 +41,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
@@ -169,7 +169,7 @@ _create_cdo_quantities(void)
 
   /* Build cs_cdo_quantities_t structure */
 
-  BFT_MALLOC(cdoq, 1, cs_cdo_quantities_t);
+  CS_MALLOC(cdoq, 1, cs_cdo_quantities_t);
 
   cdoq->remove_boundary_faces = false;
 
@@ -502,7 +502,7 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
   const cs_lnum_t  n_cells = cdoq->n_cells;
   const cs_adjacency_t  *c2f = topo->c2f;
 
-  BFT_MALLOC(cdoq->dedge_vector, 3*c2f->idx[n_cells], cs_real_t);
+  CS_MALLOC(cdoq->dedge_vector, 3 * c2f->idx[n_cells], cs_real_t);
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -539,8 +539,7 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
 
   cdoq->face_axis = nullptr;
   if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_MAC_SCHEME) {
-
-    BFT_MALLOC(cdoq->face_axis, cdoq->n_faces, cs_flag_cartesian_axis_t);
+    CS_MALLOC(cdoq->face_axis, cdoq->n_faces, cs_flag_cartesian_axis_t);
 
     for (int f_id = 0; f_id < cdoq->n_faces; f_id++) {
       cs_nreal_3_t normal;
@@ -570,7 +569,9 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
         cdoq->face_axis[f_id] = CS_FLAG_Z_AXIS;
       }
       else {
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   " %s: Normal (%f, %f, %f) is not parallel to an axis.",
                   __func__,
                   normal[0],
@@ -596,59 +597,55 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
-                               cs_cdo_quantities_t     *quant)
+_compute_edge_based_quantities(const cs_cdo_connect_t *topo,
+                               cs_cdo_quantities_t    *quant)
 {
   assert(topo->e2v != nullptr);
   assert(topo->f2e != nullptr && topo->f2c != nullptr && topo->c2e != nullptr);
 
-  constexpr cs_real_t c_1ov3 = 1./3.;
+  constexpr cs_real_t c_1ov3 = 1. / 3.;
 
-  const cs_lnum_t  n_cells = quant->n_cells;
-  const cs_lnum_t  n_edges = quant->n_edges;
+  const cs_lnum_t n_cells = quant->n_cells;
+  const cs_lnum_t n_edges = quant->n_edges;
 
   cs_real_t *edge_center = nullptr;
 
   /* Build edge centers and edge vectors */
 
-  BFT_MALLOC(edge_center, 3*n_edges, cs_real_t);
-  BFT_MALLOC(quant->edge_vector, 3*n_edges, cs_real_t);
+  CS_MALLOC(edge_center, 3 * n_edges, cs_real_t);
+  CS_MALLOC(quant->edge_vector, 3 * n_edges, cs_real_t);
 
-# pragma omp parallel for if (n_edges > CS_THR_MIN)
+#pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
-
     /* Get the two vertex ids related to the current edge */
 
-    const cs_lnum_t  *v_ids = topo->e2v->ids + 2*e_id;
-    const cs_real_t  *xa = quant->vtx_coord + 3*v_ids[0];
-    const cs_real_t  *xb = quant->vtx_coord + 3*v_ids[1];
+    const cs_lnum_t *v_ids = topo->e2v->ids + 2 * e_id;
+    const cs_real_t *xa    = quant->vtx_coord + 3 * v_ids[0];
+    const cs_real_t *xb    = quant->vtx_coord + 3 * v_ids[1];
 
-    cs_real_t  *xe = edge_center + 3*e_id;
-    cs_real_t  *vect = quant->edge_vector + 3*e_id;
+    cs_real_t *xe   = edge_center + 3 * e_id;
+    cs_real_t *vect = quant->edge_vector + 3 * e_id;
     if (v_ids[1] > v_ids[0]) { /* vb > va */
 
       for (int k = 0; k < 3; k++) {
         vect[k] = xb[k] - xa[k];
-        xe[k] = 0.5* (xb[k] + xa[k]) ;
+        xe[k]   = 0.5 * (xb[k] + xa[k]);
       }
-
     }
     else {
-
       for (int k = 0; k < 3; k++) {
         vect[k] = xa[k] - xb[k];
-        xe[k] = 0.5* (xb[k] + xa[k]) ;
+        xe[k]   = 0.5 * (xb[k] + xa[k]);
       }
-
     }
 
   } /* End of loop on edges */
 
-  cs_flag_t  masks[3] = { CS_CDO_QUANTITIES_EB_SCHEME,
-                          CS_CDO_QUANTITIES_VB_SCHEME,
-                          CS_CDO_QUANTITIES_VCB_SCHEME };
+  cs_flag_t masks[3] = { CS_CDO_QUANTITIES_EB_SCHEME,
+                         CS_CDO_QUANTITIES_VB_SCHEME,
+                         CS_CDO_QUANTITIES_VCB_SCHEME };
   if (!cs_flag_at_least(cs_cdo_quantities_flag, 3, masks)) {
-    BFT_FREE(edge_center);
+    CS_FREE(edge_center);
     return;
   }
 
@@ -656,51 +653,49 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
    * a) Compute the two vector areas composing each dual face
    * b) Compute the volume associated to each edge in a cell */
 
-  BFT_MALLOC(quant->pvol_ec, topo->c2e->idx[n_cells], cs_real_t);
-  BFT_MALLOC(quant->dface_normal, 3*topo->c2e->idx[n_cells], cs_real_t);
+  CS_MALLOC(quant->pvol_ec, topo->c2e->idx[n_cells], cs_real_t);
+  CS_MALLOC(quant->dface_normal, 3 * topo->c2e->idx[n_cells], cs_real_t);
 
-# pragma omp parallel shared(quant, topo, edge_center)
+#pragma omp parallel shared(quant, topo, edge_center)
   { /* OMP Block */
 
-    const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
+    const cs_adjacency_t *c2f = topo->c2f, *f2e = topo->f2e;
 
-#     pragma omp for CS_CDO_OMP_SCHEDULE
+#pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-      const cs_lnum_t  *c2e_idx = topo->c2e->idx + c_id;
-      const cs_lnum_t  *c2e_ids = topo->c2e->ids + c2e_idx[0];
-      const short int  n_ec = c2e_idx[1] - c2e_idx[0];
+      const cs_lnum_t *c2e_idx = topo->c2e->idx + c_id;
+      const cs_lnum_t *c2e_ids = topo->c2e->ids + c2e_idx[0];
+      const short int  n_ec    = c2e_idx[1] - c2e_idx[0];
 
       /* Initialization of cell_dface by each thread */
 
-      cs_real_t  *cell_dface = quant->dface_normal + 3*c2e_idx[0];
-      memset(cell_dface, 0, 3*n_ec*sizeof(cs_real_t));
+      cs_real_t *cell_dface = quant->dface_normal + 3 * c2e_idx[0];
+      memset(cell_dface, 0, 3 * n_ec * sizeof(cs_real_t));
 
       /* Get the cell center */
 
-      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+      const cs_real_t *xc = quant->cell_centers + 3 * c_id;
 
-      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
-
-        const cs_lnum_t  f_id = c2f->ids[i];
+      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id + 1]; i++) {
+        const cs_lnum_t f_id = c2f->ids[i];
 
         /* Compute xf -> xc */
 
-        const cs_real_t  *xf = (f_id < quant->n_i_faces) ?
-          quant->i_face_center + 3* f_id :
-          quant->b_face_center + 3*(f_id - quant->n_i_faces);
-        const cs_real_3_t  xfxc = { xf[0] - xc[0],
-                                    xf[1] - xc[1],
-                                    xf[2] - xc[2] };
+        const cs_real_t *xf =
+          (f_id < quant->n_i_faces)
+            ? quant->i_face_center + 3 * f_id
+            : quant->b_face_center + 3 * (f_id - quant->n_i_faces);
+        const cs_real_3_t xfxc = { xf[0] - xc[0],
+                                   xf[1] - xc[1],
+                                   xf[2] - xc[2] };
 
-        for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
-
+        for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id + 1]; j++) {
           const cs_lnum_t  e_id = topo->f2e->ids[j];
-          const cs_real_t  *xe = edge_center + 3*e_id;
+          const cs_real_t *xe   = edge_center + 3 * e_id;
 
           /* Compute the vectorial area for the triangle : xc, xf, xe */
 
-          cs_real_3_t  tria_vect, xexc;
+          cs_real_3_t tria_vect, xexc;
           for (int k = 0; k < 3; k++)
             xexc[k] = xc[k] - xe[k];
           cs_math_3_cross_product(xfxc, xexc, tria_vect);
@@ -718,19 +713,21 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
           /* One should have (tria.unitv, edge.unitv) > 0 */
 
-          cs_nvec3_t  edge = cs_quant_set_edge_nvec(e_id, quant);
-          cs_nvec3_t  tria;
+          cs_nvec3_t edge = cs_quant_set_edge_nvec(e_id, quant);
+          cs_nvec3_t tria;
           cs_nvec3(tria_vect, &tria);
-          const double  orient = _dp3(tria.unitv, edge.unitv);
+          const double orient = _dp3(tria.unitv, edge.unitv);
           CS_CDO_OMP_ASSERT(fabs(orient) > 0);
 
           /* Store this portion of dual face area at the right place */
 
-          cs_real_t  *_dface = cell_dface + 3*e;
+          cs_real_t *_dface = cell_dface + 3 * e;
           if (orient < 0)
-            for (int k = 0; k < 3; k++) _dface[k] -= 0.5 * tria_vect[k];
+            for (int k = 0; k < 3; k++)
+              _dface[k] -= 0.5 * tria_vect[k];
           else
-            for (int k = 0; k < 3; k++) _dface[k] += 0.5 * tria_vect[k];
+            for (int k = 0; k < 3; k++)
+              _dface[k] += 0.5 * tria_vect[k];
 
         } /* Loop on face edges */
 
@@ -738,10 +735,10 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
       /* Compute pvol_ec */
 
-      cs_real_t  *_pvol = quant->pvol_ec + c2e_idx[0];
+      cs_real_t *_pvol = quant->pvol_ec + c2e_idx[0];
       for (short int e = 0; e < n_ec; e++) {
-        _pvol[e] = c_1ov3 * _dp3(cell_dface + 3*e,
-                                 quant->edge_vector + 3*c2e_ids[e]);
+        _pvol[e] = c_1ov3 * _dp3(cell_dface + 3 * e,
+                                 quant->edge_vector + 3 * c2e_ids[e]);
         CS_CDO_OMP_ASSERT(_pvol[e] > 0);
       }
 
@@ -749,7 +746,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
   } /* End of OpenMP block */
 
-  BFT_FREE(edge_center);
+  CS_FREE(edge_center);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -763,57 +760,54 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_dcell_quantities(const cs_cdo_connect_t  *topo,
-                          cs_cdo_quantities_t     *quant)
+_compute_dcell_quantities(const cs_cdo_connect_t *topo,
+                          cs_cdo_quantities_t    *quant)
 {
-  cs_flag_t  masks[2] = { CS_CDO_QUANTITIES_VB_SCHEME |
-                          CS_CDO_QUANTITIES_VCB_SCHEME };
+  cs_flag_t masks[2] = { CS_CDO_QUANTITIES_VB_SCHEME |
+                         CS_CDO_QUANTITIES_VCB_SCHEME };
 
   if (!cs_flag_at_least(cs_cdo_quantities_flag, 2, masks))
     return;
 
   assert(topo->f2e != nullptr && topo->f2c != nullptr && topo->c2v != nullptr);
 
-  const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
+  const cs_adjacency_t *c2f = topo->c2f, *f2e = topo->f2e;
 
   /* Allocate and initialize arrays */
 
-  BFT_MALLOC(quant->pvol_vc, topo->c2v->idx[quant->n_cells], double);
+  CS_MALLOC(quant->pvol_vc, topo->c2v->idx[quant->n_cells], double);
 
-# pragma omp parallel for shared(quant, topo, c2f, f2e) \
-  CS_CDO_OMP_SCHEDULE
+#pragma omp parallel for shared(quant, topo, c2f, f2e) CS_CDO_OMP_SCHEDULE
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
     /* Compute part of dual volume related to each primal cell */
 
-    const cs_lnum_t  *c2v_idx = topo->c2v->idx + c_id;
-    const cs_lnum_t  *c2v_ids = topo->c2v->ids + c2v_idx[0];
-    const short int  n_vc = c2v_idx[1] - c2v_idx[0];
-    const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+    const cs_lnum_t *c2v_idx = topo->c2v->idx + c_id;
+    const cs_lnum_t *c2v_ids = topo->c2v->ids + c2v_idx[0];
+    const short int  n_vc    = c2v_idx[1] - c2v_idx[0];
+    const cs_real_t *xc      = quant->cell_centers + 3 * c_id;
 
     /* Initialize */
 
-    double  *vol_vc = quant->pvol_vc + c2v_idx[0];
-    for (short int v = 0; v < n_vc; v++) vol_vc[v] = 0.0;
+    double *vol_vc = quant->pvol_vc + c2v_idx[0];
+    for (short int v = 0; v < n_vc; v++)
+      vol_vc[v] = 0.0;
 
-    for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id+1]; jf++) {
+    for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id + 1]; jf++) {
+      const cs_lnum_t f_id  = topo->c2f->ids[jf];
+      const cs_lnum_t bf_id = f_id - quant->n_i_faces;
 
-      const cs_lnum_t  f_id = topo->c2f->ids[jf];
-      const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
-
-      const cs_real_t  *xf;
+      const cs_real_t *xf;
       if (bf_id > -1)
-        xf = quant->b_face_center + 3*bf_id;
+        xf = quant->b_face_center + 3 * bf_id;
       else
-        xf = quant->i_face_center + 3*f_id;
+        xf = quant->i_face_center + 3 * f_id;
 
-      for (cs_lnum_t je = f2e->idx[f_id]; je < f2e->idx[f_id+1]; je++) {
-
-        const cs_lnum_t  e_id = f2e->ids[je];
-        const cs_lnum_t *v_ids = topo->e2v->ids + 2*e_id;
+      for (cs_lnum_t je = f2e->idx[f_id]; je < f2e->idx[f_id + 1]; je++) {
+        const cs_lnum_t  e_id  = f2e->ids[je];
+        const cs_lnum_t *v_ids = topo->e2v->ids + 2 * e_id;
         const cs_lnum_t  v1_id = v_ids[0], v2_id = v_ids[1];
-        const double pvol = 0.5 * cs_math_voltet(quant->vtx_coord + 3*v1_id,
-                                                 quant->vtx_coord + 3*v2_id,
+        const double pvol = 0.5 * cs_math_voltet(quant->vtx_coord + 3 * v1_id,
+                                                 quant->vtx_coord + 3 * v2_id,
                                                  xf,
                                                  xc);
 
@@ -821,8 +815,10 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 
         short int _v1 = n_vc, _v2 = n_vc;
         for (short int _v = 0; _v < n_vc; _v++) {
-          if (c2v_ids[_v] == v1_id) _v1 = _v;
-          if (c2v_ids[_v] == v2_id) _v2 = _v;
+          if (c2v_ids[_v] == v1_id)
+            _v1 = _v;
+          if (c2v_ids[_v] == v2_id)
+            _v2 = _v;
         }
         CS_CDO_OMP_ASSERT(_v1 < n_vc && _v2 < n_vc);
         vol_vc[_v1] += pvol;
@@ -850,7 +846,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_quant_info(cs_cdo_quantities_t     *quant)
+_compute_quant_info(cs_cdo_quantities_t *quant)
 {
   if (quant == nullptr)
     return;
@@ -858,48 +854,45 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)
   /* Cell info */
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    const double  meas = quant->cell_vol[c_id];
+    const double meas = quant->cell_vol[c_id];
 
     if (meas > quant->cell_info.meas_max) {
       quant->cell_info.meas_max = meas;
-      quant->cell_info.h_max = cbrt(meas);
+      quant->cell_info.h_max    = cbrt(meas);
     }
     if (meas < quant->cell_info.meas_min) {
       quant->cell_info.meas_min = meas;
-      quant->cell_info.h_min = cbrt(meas);
+      quant->cell_info.h_min    = cbrt(meas);
     }
 
   } /* Loop on cells */
 
   /* Face info */
 
-  for (cs_lnum_t  f_id = 0; f_id < quant->n_i_faces; f_id++) {
-
-    const cs_real_t  meas = quant->i_face_surf[f_id];
+  for (cs_lnum_t f_id = 0; f_id < quant->n_i_faces; f_id++) {
+    const cs_real_t meas = quant->i_face_surf[f_id];
 
     if (meas > quant->face_info.meas_max) {
       quant->face_info.meas_max = meas;
-      quant->face_info.h_max = sqrt(meas);
+      quant->face_info.h_max    = sqrt(meas);
     }
     if (meas < quant->face_info.meas_min) {
       quant->face_info.meas_min = meas;
-      quant->face_info.h_min = sqrt(meas);
+      quant->face_info.h_min    = sqrt(meas);
     }
 
   } /* Loop on interior faces */
 
-  for (cs_lnum_t  f_id = 0; f_id < quant->n_b_faces; f_id++) {
-
-    const cs_real_t  meas = quant->b_face_surf[f_id];
+  for (cs_lnum_t f_id = 0; f_id < quant->n_b_faces; f_id++) {
+    const cs_real_t meas = quant->b_face_surf[f_id];
 
     if (meas > quant->face_info.meas_max) {
       quant->face_info.meas_max = meas;
-      quant->face_info.h_max = sqrt(meas);
+      quant->face_info.h_max    = sqrt(meas);
     }
     if (meas < quant->face_info.meas_min) {
       quant->face_info.meas_min = meas;
-      quant->face_info.h_min = sqrt(meas);
+      quant->face_info.h_min    = sqrt(meas);
     }
 
   } /* Loop on border faces */
@@ -907,9 +900,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)
   /* Edge info */
 
   if (quant->edge_vector != nullptr) {
-
     for (cs_lnum_t e_id = 0; e_id < quant->n_edges; e_id++) {
-
       cs_nvec3_t edge = cs_quant_set_edge_nvec(e_id, quant);
 
       if (edge.meas > quant->edge_info.meas_max) {
@@ -967,7 +958,6 @@ _vtx_algorithm(const cs_cdo_connect_t *connect,
   /* Compute cell centers */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
     const cs_lnum_t vs = c2v->idx[c_id];
     const cs_lnum_t ve = c2v->idx[c_id + 1];
 
@@ -978,7 +968,6 @@ _vtx_algorithm(const cs_cdo_connect_t *connect,
 
     xc[0] = xc[1] = xc[2] = 0;
     for (cs_lnum_t jv = vs; jv < ve; jv++) {
-
       const cs_real_t *xv = quant->vtx_coord + 3 * c2v->ids[jv];
 
       xc[0] += xv[0];
@@ -1036,14 +1025,13 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
     cs_lnum_t B = fspec.XYZ[Y];
     cs_lnum_t C = fspec.XYZ[Z];
 
-    _cdo_fsubq_t fsubq
-      = _get_fsub_quantities(f_id, connect, quant->vtx_coord, fspec);
+    _cdo_fsubq_t fsubq =
+      _get_fsub_quantities(f_id, connect, quant->vtx_coord, fspec);
 
     /* Update cell quantities */
 
     const cs_adjacency_t *f2c = connect->f2c;
     for (cs_lnum_t i = f2c->idx[f_id]; i < f2c->idx[f_id + 1]; i++) {
-
       const cs_lnum_t c_id = f2c->ids[i];
       const short int sgn  = f2c->sgn[i];
 
@@ -1091,15 +1079,14 @@ _update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
   double vol_tot = 0;
 
 #ifdef __cplusplus
-  constexpr cs_real_t c_1ov3 = 1./3.;
+  constexpr cs_real_t c_1ov3 = 1. / 3.;
 #endif
 
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+    const int        n_cell_vertices = c2v->idx[c_id + 1] - c2v->idx[c_id];
+    const cs_real_t *ref_xc = (const cs_real_t *)fvq->cell_cen + 3 * c_id;
 
-    const int n_cell_vertices = c2v->idx[c_id+1] - c2v->idx[c_id];
-    const cs_real_t *ref_xc = (const cs_real_t *)fvq->cell_cen + 3*c_id;
-
-    cs_real_t *new_xc = cdoq->cell_centers + 3*c_id;
+    cs_real_t *new_xc = cdoq->cell_centers + 3 * c_id;
 
     if (n_cell_vertices == 4) { // Copy mesh quantities
 
@@ -1108,21 +1095,18 @@ _update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
 
       for (int k = 0; k < 3; k++)
         new_xc[k] = ref_xc[k];
-
     }
     else { // Perform an implicit subdivision into tetrahedra
 
       cs_real_t volc = 0;
       new_xc[0] = 0., new_xc[1] = 0., new_xc[2] = 0.;
 
-      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
-
-        const cs_lnum_t f_id = c2f->ids[i];
-        const int n_face_vertices = f2e->idx[f_id+1] - f2e->idx[f_id];
-        const cs_real_t *xf = cs_quant_get_face_center(f_id, cdoq);
+      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id + 1]; i++) {
+        const cs_lnum_t  f_id            = c2f->ids[i];
+        const int        n_face_vertices = f2e->idx[f_id + 1] - f2e->idx[f_id];
+        const cs_real_t *xf              = cs_quant_get_face_center(f_id, cdoq);
 
         if (n_face_vertices == 3) {
-
           // Volume of the tetrathedron: 1/3 * base * height
 
           const cs_real_t *nf = cs_quant_get_face_vector_area(f_id, cdoq);
@@ -1142,30 +1126,31 @@ _update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
           // Contribution to the cell barycenter
 
           cs_lnum_t v0, v1, v2;
-          cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, f2e->idx[f_id],
-                                         &v0, &v1, &v2);
-          const cs_real_t *xv0 = cdoq->vtx_coord + 3*v0;
-          const cs_real_t *xv1 = cdoq->vtx_coord + 3*v1;
-          const cs_real_t *xv2 = cdoq->vtx_coord + 3*v2;
+          cs_connect_get_next_3_vertices(f2e->ids,
+                                         e2v->ids,
+                                         f2e->idx[f_id],
+                                         &v0,
+                                         &v1,
+                                         &v2);
+          const cs_real_t *xv0 = cdoq->vtx_coord + 3 * v0;
+          const cs_real_t *xv1 = cdoq->vtx_coord + 3 * v1;
+          const cs_real_t *xv2 = cdoq->vtx_coord + 3 * v2;
 
           for (int k = 0; k < 3; k++)
-            new_xc[k] += 0.25*voltet * (ref_xc[k] + xv0[k] + xv1[k] + xv2[k]);
-
+            new_xc[k] += 0.25 * voltet * (ref_xc[k] + xv0[k] + xv1[k] + xv2[k]);
         }
         else {
-
-          for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
-
-            const cs_lnum_t e_id = f2e->ids[j];
-            const cs_real_t *xv0 = cdoq->vtx_coord + 3*e2v->ids[2*e_id];
-            const cs_real_t *xv1 = cdoq->vtx_coord + 3*e2v->ids[2*e_id+1];
+          for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id + 1]; j++) {
+            const cs_lnum_t  e_id = f2e->ids[j];
+            const cs_real_t *xv0  = cdoq->vtx_coord + 3 * e2v->ids[2 * e_id];
+            const cs_real_t *xv1 = cdoq->vtx_coord + 3 * e2v->ids[2 * e_id + 1];
 
             const double voltet = cs_math_voltet(xv0, xv1, xf, ref_xc);
 
             volc += voltet;
             for (int k = 0; k < 3; k++)
-              new_xc[k] += 0.25*voltet * (ref_xc[k] + xv0[k] + xv1[k] + xf[k]);
-
+              new_xc[k] +=
+                0.25 * voltet * (ref_xc[k] + xv0[k] + xv1[k] + xf[k]);
           }
 
         } // Not a triangle face
@@ -1175,11 +1160,11 @@ _update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
       vol_tot += volc;
       cdoq->cell_vol[c_id] = volc;
 
-      // The new cell barycenter is computed as a weighted sum of the barycenters
-      // of the tetrahedral subdivision
+      // The new cell barycenter is computed as a weighted sum of the
+      // barycenters of the tetrahedral subdivision
 
       assert(volc > 0);
-      const double inv_volc = 1./volc;
+      const double inv_volc = 1. / volc;
       for (int k = 0; k < 3; k++)
         new_xc[k] *= inv_volc;
 
@@ -1211,29 +1196,28 @@ _update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
 /*----------------------------------------------------------------------------*/
 
 static void
-_subdiv_face_from_ref(int                 n_face_vertices,
-                      const cs_lnum_t    *f2v_ids,
-                      const cs_real_t    *xyz,
-                      const cs_real_t     ref_xf[3],
-                      cs_real_t           new_xf[3],
-                      cs_real_t          *new_surf,
-                      cs_real_t           new_normal[3],
-                      cs_nreal_t          new_u_norm[3])
+_subdiv_face_from_ref(int              n_face_vertices,
+                      const cs_lnum_t *f2v_ids,
+                      const cs_real_t *xyz,
+                      const cs_real_t  ref_xf[3],
+                      cs_real_t        new_xf[3],
+                      cs_real_t       *new_surf,
+                      cs_real_t        new_normal[3],
+                      cs_nreal_t       new_u_norm[3])
 {
-  cs_nvec3_t  nfq;
+  cs_nvec3_t nfq;
 
-  *new_surf = 0;
+  *new_surf     = 0;
   new_normal[0] = new_normal[1] = new_normal[2] = 0;
   new_xf[0] = new_xf[1] = new_xf[2] = 0.;
 
 #ifdef __cplusplus
-  constexpr cs_real_t c_1ov3 = 1./3.;
+  constexpr cs_real_t c_1ov3 = 1. / 3.;
 #endif
 
   for (int t = 0; t < n_face_vertices; t++) {
-
-    const cs_real_t *xv0 = xyz + 3*f2v_ids[t];
-    const cs_real_t *xv1 = xyz + 3*f2v_ids[(t+1)%n_face_vertices];
+    const cs_real_t *xv0 = xyz + 3 * f2v_ids[t];
+    const cs_real_t *xv1 = xyz + 3 * f2v_ids[(t + 1) % n_face_vertices];
 
     cs_real_t u[3], v[3], cp[3];
     for (int k = 0; k < 3; k++) {
@@ -1243,10 +1227,10 @@ _subdiv_face_from_ref(int                 n_face_vertices,
 
     cs_math_3_cross_product(u, v, cp);
 
-    const double tef_surf = 0.5*_n3(cp);
+    const double tef_surf = 0.5 * _n3(cp);
 
     for (int k = 0; k < 3; k++)
-      new_normal[k] += 0.5*cp[k];
+      new_normal[k] += 0.5 * cp[k];
 
     *new_surf += tef_surf;
     for (int k = 0; k < 3; k++)
@@ -1255,13 +1239,12 @@ _subdiv_face_from_ref(int                 n_face_vertices,
 #else
       new_xf[k] += tef_surf * cs_math_1ov3 * (xv0[k] + xv1[k] + ref_xf[k]);
 #endif
-
   }
 
   cs_nvec3(new_normal, &nfq);
   assert(nfq.meas > 0);
 
-  const double inv_surff = 1./(*new_surf);
+  const double inv_surff = 1. / (*new_surf);
   for (int k = 0; k < 3; k++) {
     new_u_norm[k] = nfq.unitv[k];
     new_xf[k] *= inv_surff;
@@ -1306,50 +1289,49 @@ _update_subdiv_face_quantities(cs_lnum_t           n_faces,
   // A triangle face is always planar so that there is nothing else to do
 
   for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
-
-    const cs_lnum_t s_id = f2v_idx[f_id];
-    const cs_lnum_t e_id = f2v_idx[f_id + 1];
+    const cs_lnum_t s_id            = f2v_idx[f_id];
+    const cs_lnum_t e_id            = f2v_idx[f_id + 1];
     const cs_lnum_t n_face_vertices = e_id - s_id;
 
     if (n_face_vertices == 3) { // Copy mesh quantities
 
       for (int k = 0; k < 3; k++) {
-        f_u_norm[f_id][k] = ref_f_u_norm[f_id][k];
-        f_normal[3*f_id+k] = ref_f_normal[3*f_id+k];
-        f_center[3*f_id+k] = ref_f_center[f_id][k];
+        f_u_norm[f_id][k]      = ref_f_u_norm[f_id][k];
+        f_normal[3 * f_id + k] = ref_f_normal[3 * f_id + k];
+        f_center[3 * f_id + k] = ref_f_center[f_id][k];
       }
 
       f_surf[f_id] = ref_f_surf[f_id];
-
     }
     else { // Subdivision into triangles
 
-      cs_real_t *new_xf = f_center + 3*f_id;
-      cs_real_t ref_xf[3], delta_xf[3];
+      cs_real_t *new_xf = f_center + 3 * f_id;
+      cs_real_t  ref_xf[3], delta_xf[3];
 
-      int iter = 0;
-      double tol = FLT_MAX;
+      int    iter = 0;
+      double tol  = FLT_MAX;
 
-      const int n_max_iter = 10;
-      const double tol_eps = 1e-9;
-      const cs_lnum_t *_f2v = f2v_ids + s_id;
+      const int        n_max_iter = 10;
+      const double     tol_eps    = 1e-9;
+      const cs_lnum_t *_f2v       = f2v_ids + s_id;
 
       for (int k = 0; k < 3; k++)
         ref_xf[k] = ref_f_center[f_id][k];
 
       while (iter < n_max_iter && tol > tol_eps) {
-
-        _subdiv_face_from_ref(n_face_vertices, _f2v, xyz,
+        _subdiv_face_from_ref(n_face_vertices,
+                              _f2v,
+                              xyz,
                               ref_xf,
                               new_xf,
                               f_surf + f_id,
-                              f_normal + 3*f_id,
+                              f_normal + 3 * f_id,
                               f_u_norm[f_id]);
 
         for (int k = 0; k < 3; k++)
           delta_xf[k] = new_xf[k] - ref_xf[k];
 
-        tol = _n3(delta_xf)*sqrt(1./f_surf[f_id]);
+        tol = _n3(delta_xf) * sqrt(1. / f_surf[f_id]);
         iter++;
 
         for (int k = 0; k < 3; k++)
@@ -1358,24 +1340,24 @@ _update_subdiv_face_quantities(cs_lnum_t           n_faces,
       } // While loop
 
       if (tol > 1e-6 && iter == n_max_iter) {
-
         // Switch to the reference quantities since the algorithm does not
         // succeed to converge
 
         cs_log_printf(CS_LOG_WARNINGS,
                       "%s>> Face %d (%5.3e; %5.3e; %5.3e)"
-                      " --> Switch to the previous quantities\n", __func__, f_id,
+                      " --> Switch to the previous quantities\n",
+                      __func__,
+                      f_id,
                       ref_f_center[f_id][0],
                       ref_f_center[f_id][1],
                       ref_f_center[f_id][2]);
 
         f_surf[f_id] = ref_f_surf[f_id];
         for (int k = 0; k < 3; k++) {
-          f_u_norm[f_id][k] = ref_f_u_norm[f_id][k];
-          f_normal[3*f_id+k] = ref_f_normal[3*f_id+k];
-          f_center[3*f_id+k] = ref_f_center[f_id][k];
+          f_u_norm[f_id][k]      = ref_f_u_norm[f_id][k];
+          f_normal[3 * f_id + k] = ref_f_normal[3 * f_id + k];
+          f_center[3 * f_id + k] = ref_f_center[f_id][k];
         }
-
       }
 
     } // Not a triangle
@@ -1407,21 +1389,21 @@ _subdiv_algorithm(const cs_mesh_t            *mesh,
   // Update quantities related to boundary faces
 
   cs_nreal_3_t *b_face_u_normal = nullptr;
-  cs_real_t    *b_face_normal = nullptr;
-  cs_real_t    *b_face_surf = nullptr;
-  cs_real_t    *b_face_center = nullptr;
+  cs_real_t    *b_face_normal   = nullptr;
+  cs_real_t    *b_face_surf     = nullptr;
+  cs_real_t    *b_face_center   = nullptr;
 
   // Reset pointers related to boundary face quantities
 
-  BFT_MALLOC(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t);
-  BFT_MALLOC(b_face_normal, 3*mesh->n_b_faces, cs_real_t);
-  BFT_MALLOC(b_face_surf, mesh->n_b_faces, cs_real_t);
-  BFT_MALLOC(b_face_center, 3*mesh->n_b_faces, cs_real_t);
+  CS_MALLOC(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t);
+  CS_MALLOC(b_face_normal, 3 * mesh->n_b_faces, cs_real_t);
+  CS_MALLOC(b_face_surf, mesh->n_b_faces, cs_real_t);
+  CS_MALLOC(b_face_center, 3 * mesh->n_b_faces, cs_real_t);
 
   cdoq->b_face_u_normal = b_face_u_normal;
-  cdoq->b_face_normal = b_face_normal;
-  cdoq->b_face_surf = b_face_surf;
-  cdoq->b_face_center = b_face_center;
+  cdoq->b_face_normal   = b_face_normal;
+  cdoq->b_face_surf     = b_face_surf;
+  cdoq->b_face_center   = b_face_center;
 
   _update_subdiv_face_quantities(mesh->n_b_faces,
                                  mesh->b_face_vtx_idx,
@@ -1439,21 +1421,21 @@ _subdiv_algorithm(const cs_mesh_t            *mesh,
   // Update quantities related to interior faces
 
   cs_nreal_3_t *i_face_u_normal = nullptr;
-  cs_real_t    *i_face_normal = nullptr;
-  cs_real_t    *i_face_surf = nullptr;
-  cs_real_t    *i_face_center = nullptr;
+  cs_real_t    *i_face_normal   = nullptr;
+  cs_real_t    *i_face_surf     = nullptr;
+  cs_real_t    *i_face_center   = nullptr;
 
   // Reset pointers related to boundary face quantities
 
-  BFT_MALLOC(i_face_u_normal, mesh->n_i_faces, cs_nreal_3_t);
-  BFT_MALLOC(i_face_normal, 3*mesh->n_i_faces, cs_real_t);
-  BFT_MALLOC(i_face_surf, mesh->n_i_faces, cs_real_t);
-  BFT_MALLOC(i_face_center, 3*mesh->n_i_faces, cs_real_t);
+  CS_MALLOC(i_face_u_normal, mesh->n_i_faces, cs_nreal_3_t);
+  CS_MALLOC(i_face_normal, 3 * mesh->n_i_faces, cs_real_t);
+  CS_MALLOC(i_face_surf, mesh->n_i_faces, cs_real_t);
+  CS_MALLOC(i_face_center, 3 * mesh->n_i_faces, cs_real_t);
 
   cdoq->i_face_u_normal = i_face_u_normal;
-  cdoq->i_face_normal = i_face_normal;
-  cdoq->i_face_surf = i_face_surf;
-  cdoq->i_face_center = i_face_center;
+  cdoq->i_face_normal   = i_face_normal;
+  cdoq->i_face_surf     = i_face_surf;
+  cdoq->i_face_center   = i_face_center;
 
   _update_subdiv_face_quantities(mesh->n_i_faces,
                                  mesh->i_face_vtx_idx,
@@ -1558,7 +1540,6 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   /* Is there a removal of boundary faces to speed-up 2D computations */
 
   if (m->n_g_b_faces_all > m->n_g_b_faces) {
-
     cdoq->remove_boundary_faces = true;
 
     /* The computation of the cell barycenter with the Mirtich algorithm is
@@ -1566,7 +1547,6 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
 
     if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_BARYC_CENTER)
       cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_MEANV_CENTER;
-
   }
 
   /* 1) Initialize shared quantities */
@@ -1619,29 +1599,28 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   /* Compute the cell centers (and more in the case of subdivisions) */
 
   switch (cs_cdo_cell_center_algo) {
+    case CS_CDO_QUANTITIES_SATURNE_CENTER:
+      cdoq->cell_vol     = mq->cell_vol;
+      cdoq->cell_centers = (cs_real_t *)mq->cell_cen; /* shared */
+      break;
 
-  case CS_CDO_QUANTITIES_SATURNE_CENTER:
-    cdoq->cell_vol  = mq->cell_vol;
-    cdoq->cell_centers = (cs_real_t *)mq->cell_cen; /* shared */
-    break;
+    case CS_CDO_QUANTITIES_BARYC_CENTER:
+      cdoq->cell_vol = mq->cell_vol;
+      CS_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
+      _mirtich_algorithm(m, mq, topo, cdoq);
+      break;
 
-  case CS_CDO_QUANTITIES_BARYC_CENTER:
-    cdoq->cell_vol  = mq->cell_vol;
-    BFT_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
-    _mirtich_algorithm(m, mq, topo, cdoq);
-    break;
+    case CS_CDO_QUANTITIES_MEANV_CENTER:
+      cdoq->cell_vol = mq->cell_vol;
+      CS_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
+      _vtx_algorithm(topo, cdoq);
+      break;
 
-  case CS_CDO_QUANTITIES_MEANV_CENTER:
-    cdoq->cell_vol  = mq->cell_vol;
-    BFT_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
-    _vtx_algorithm(topo, cdoq);
-    break;
-
-  case CS_CDO_QUANTITIES_SUBDIV_CENTER:
-    BFT_MALLOC(cdoq->cell_vol, n_cells, cs_real_t);
-    BFT_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
-    _subdiv_algorithm(m, mq, topo, cdoq);
-    break;
+    case CS_CDO_QUANTITIES_SUBDIV_CENTER:
+      CS_MALLOC(cdoq->cell_vol, n_cells, cs_real_t);
+      CS_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
+      _subdiv_algorithm(m, mq, topo, cdoq);
+      break;
 
   } /* Cell center algorithm */
 
@@ -1701,42 +1680,41 @@ cs_cdo_quantities_free(cs_cdo_quantities_t *cdoq)
   /* Cell-related quantities */
 
   if (cs_cdo_cell_center_algo != CS_CDO_QUANTITIES_SATURNE_CENTER)
-    BFT_FREE(cdoq->cell_centers);
+    CS_FREE(cdoq->cell_centers);
 
   if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_SUBDIV_CENTER) {
+    CS_FREE(cdoq->b_face_u_normal);
+    CS_FREE(cdoq->b_face_normal);
+    CS_FREE(cdoq->b_face_surf);
+    CS_FREE(cdoq->b_face_center);
 
-    BFT_FREE(cdoq->b_face_u_normal);
-    BFT_FREE(cdoq->b_face_normal);
-    BFT_FREE(cdoq->b_face_surf);
-    BFT_FREE(cdoq->b_face_center);
+    CS_FREE(cdoq->i_face_u_normal);
+    CS_FREE(cdoq->i_face_normal);
+    CS_FREE(cdoq->i_face_surf);
+    CS_FREE(cdoq->i_face_center);
 
-    BFT_FREE(cdoq->i_face_u_normal);
-    BFT_FREE(cdoq->i_face_normal);
-    BFT_FREE(cdoq->i_face_surf);
-    BFT_FREE(cdoq->i_face_center);
-
-    BFT_FREE(cdoq->cell_vol);
+    CS_FREE(cdoq->cell_vol);
   }
 
   /* Face-related quantities */
 
-  BFT_FREE(cdoq->dedge_vector);
-  BFT_FREE(cdoq->pvol_fc);
-  BFT_FREE(cdoq->face_axis);
+  CS_FREE(cdoq->dedge_vector);
+  CS_FREE(cdoq->pvol_fc);
+  CS_FREE(cdoq->face_axis);
 
   /* Edge-related quantities */
 
-  BFT_FREE(cdoq->edge_vector);
-  BFT_FREE(cdoq->dface_normal);
-  BFT_FREE(cdoq->pvol_ec);
+  CS_FREE(cdoq->edge_vector);
+  CS_FREE(cdoq->dface_normal);
+  CS_FREE(cdoq->pvol_ec);
 
   /* Vertex-related quantities
    * vtx_coord is free when the structure cs_mesh_t is destroyed */
 
-  BFT_FREE(cdoq->pvol_vc);
-  BFT_FREE(cdoq->dual_vol);
+  CS_FREE(cdoq->pvol_vc);
+  CS_FREE(cdoq->dual_vol);
 
-  BFT_FREE(cdoq);
+  CS_FREE(cdoq);
 
   return nullptr;
 }
@@ -1817,11 +1795,11 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t *cdoq)
   char *fname = nullptr;
   if (cs_glob_n_ranks > 1) {
     lname += 6;
-    BFT_MALLOC(fname, lname, char);
+    CS_MALLOC(fname, lname, char);
     sprintf(fname, "DumpQuantities.%05d.dat", cs_glob_rank_id);
   }
   else {
-    BFT_MALLOC(fname, lname, char);
+    CS_MALLOC(fname, lname, char);
     sprintf(fname, "DumpQuantities.dat");
   }
   FILE *fdump = fopen(fname, "w");
@@ -1882,7 +1860,7 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t *cdoq)
   }
 
   fclose(fdump);
-  BFT_FREE(fname);
+  CS_FREE(fname);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1949,7 +1927,7 @@ cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t *cdoq,
   /* Initialize array */
 
   if (pvol_fc == nullptr)
-    BFT_MALLOC(pvol_fc, c2f->idx[n_cells], cs_real_t);
+    CS_MALLOC(pvol_fc, c2f->idx[n_cells], cs_real_t);
 
 #if defined(DEBUG) && !defined(NDEBUG)
   cs_array_real_fill_zero(c2f->idx[n_cells], pvol_fc);
@@ -2042,7 +2020,7 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
   /* Initialize array */
 
   if (pvol_ec == nullptr)
-    BFT_MALLOC(pvol_ec, c2e->idx[n_cells], cs_real_t);
+    CS_MALLOC(pvol_ec, c2e->idx[n_cells], cs_real_t);
 
   if (cdoq->pvol_ec != nullptr)
     cs_array_real_copy(c2e->idx[n_cells], cdoq->pvol_ec, pvol_ec);
@@ -2136,7 +2114,7 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
   /* Initialize array */
 
   if (dual_vol == nullptr)
-    BFT_MALLOC(dual_vol, n_vertices, cs_real_t);
+    CS_MALLOC(dual_vol, n_vertices, cs_real_t);
 
   cs_array_real_fill_zero(n_vertices, dual_vol);
 

@@ -36,8 +36,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "cdo/cs_hodge.h"
 #include "base/cs_post.h"
@@ -279,7 +279,7 @@ _maxwell_create(void)
 {
   cs_maxwell_t *mxl = nullptr;
 
-  BFT_MALLOC(mxl, 1, cs_maxwell_t);
+  CS_MALLOC(mxl, 1, cs_maxwell_t);
 
   /* Default initialization */
 
@@ -463,13 +463,13 @@ cs_maxwell_destroy_all(void)
      structure.
      Free only arrays which are owned by this structure */
 
-  BFT_FREE(mxl->e_field_array);
-  BFT_FREE(mxl->d_field_array);
-  BFT_FREE(mxl->h_field_array);
-  BFT_FREE(mxl->b_field_array);
-  BFT_FREE(mxl->j_field_array);
+  CS_FREE(mxl->e_field_array);
+  CS_FREE(mxl->d_field_array);
+  CS_FREE(mxl->h_field_array);
+  CS_FREE(mxl->b_field_array);
+  CS_FREE(mxl->j_field_array);
 
-  BFT_FREE(mxl);
+  CS_FREE(mxl);
 
   return nullptr;
 }
@@ -594,14 +594,14 @@ cs_maxwell_finalize_setup(const cs_cdo_connect_t       *connect,
 
     /* Electric field array along edges */
 
-    BFT_MALLOC(mxl->e_field_array, quant->n_edges, cs_real_t);
+    CS_MALLOC(mxl->e_field_array, quant->n_edges, cs_real_t);
     memset(mxl->e_field_array, 0, quant->n_edges*sizeof(cs_real_t));
 
     /* Electric induction (flux density) across dual faces */
 
     const cs_adjacency_t  *c2e = connect->c2e;
     const cs_lnum_t  array_size = c2e->idx[quant->n_cells];
-    BFT_MALLOC(mxl->d_field_array, array_size, cs_real_t);
+    CS_MALLOC(mxl->d_field_array, array_size, cs_real_t);
     memset(mxl->d_field_array, 0, array_size*sizeof(cs_real_t));
 
   }
@@ -617,12 +617,12 @@ cs_maxwell_finalize_setup(const cs_cdo_connect_t       *connect,
 
     const cs_adjacency_t  *c2f = connect->c2f;
     const cs_lnum_t  array_size = c2f->idx[quant->n_cells];
-    BFT_MALLOC(mxl->h_field_array, array_size, cs_real_t);
+    CS_MALLOC(mxl->h_field_array, array_size, cs_real_t);
     memset(mxl->h_field_array, 0, array_size*sizeof(cs_real_t));
 
     /* Magnetic induction (flux density) across primal faces */
 
-    BFT_MALLOC(mxl->b_field_array, quant->n_faces, cs_real_t);
+    CS_MALLOC(mxl->b_field_array, quant->n_faces, cs_real_t);
     memset(mxl->b_field_array, 0, quant->n_faces*sizeof(cs_real_t));
 
   }

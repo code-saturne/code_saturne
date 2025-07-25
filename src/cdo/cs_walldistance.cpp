@@ -45,7 +45,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
@@ -112,7 +112,7 @@ _compute_poisson_cdovcb(const cs_cdo_connect_t     *connect,
   CS_UNUSED(connect);
   cs_real_3_t *vtx_gradient = nullptr;
 
-  BFT_MALLOC(vtx_gradient, cdoq->n_vertices, cs_real_3_t);
+  CS_MALLOC(vtx_gradient, cdoq->n_vertices, cs_real_3_t);
 
   /* Perform the computation of the gradient at vertices using a cellwise
      algorithm */
@@ -181,7 +181,7 @@ _compute_poisson_cdovcb(const cs_cdo_connect_t     *connect,
                            dist,     /* values on vertices */
                            nullptr); /* time step management structure */
 
-  BFT_FREE(vtx_gradient);
+  CS_FREE(vtx_gradient);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -207,8 +207,8 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
   cs_real_t   *dualcell_vol = nullptr;
   cs_real_3_t *vtx_gradient = nullptr;
 
-  BFT_MALLOC(vtx_gradient, cdoq->n_vertices, cs_real_3_t);
-  BFT_MALLOC(dualcell_vol, cdoq->n_vertices, cs_real_t);
+  CS_MALLOC(vtx_gradient, cdoq->n_vertices, cs_real_3_t);
+  CS_MALLOC(dualcell_vol, cdoq->n_vertices, cs_real_t);
 
 # pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
@@ -321,8 +321,8 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
                            dist,     /* values on vertices */
                            nullptr); /* time step management structure */
 
-  BFT_FREE(dualcell_vol);
-  BFT_FREE(vtx_gradient);
+  CS_FREE(dualcell_vol);
+  CS_FREE(vtx_gradient);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -535,7 +535,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
   /* Initialize dist array */
 
   cs_real_t *dist = nullptr;
-  BFT_MALLOC(dist, n_elts[0], cs_real_t);
+  CS_MALLOC(dist, n_elts[0], cs_real_t);
 # pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_elts[0]; i++)
     dist[i] = 0;
@@ -569,7 +569,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
   for (cs_lnum_t i = 0; i < n_elts[0]; i++)
     field_p->val[i] = dist[i];
 
-  BFT_FREE(dist);
+  CS_FREE(dist);
 }
 
 /*----------------------------------------------------------------------------*/

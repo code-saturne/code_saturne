@@ -47,7 +47,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "alge/cs_blas.h"
@@ -1058,7 +1058,7 @@ cs_macfb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
 
   cs_macfb_monolithic_t *sc = nullptr;
 
-  BFT_MALLOC(sc, 1, cs_macfb_monolithic_t);
+  CS_MALLOC(sc, 1, cs_macfb_monolithic_t);
 
   /* Cast the coupling context (CC) */
 
@@ -1181,7 +1181,7 @@ cs_macfb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
   case CS_PARAM_SADDLE_SOLVER_MINRES:
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
-    BFT_MALLOC(sc->block21_op, connect->c2f->idx[quant->n_cells], cs_real_t);
+    CS_MALLOC(sc->block21_op, connect->c2f->idx[quant->n_cells], cs_real_t);
     break;
 
   default:
@@ -1283,7 +1283,7 @@ cs_macfb_monolithic_free_scheme_context(void *scheme_context)
 
   /* Block (2,1) may be allocated */
 
-  BFT_FREE(sc->block21_op);
+  CS_FREE(sc->block21_op);
 
   /* Free the context structure for solving saddle-point system */
 
@@ -1295,7 +1295,7 @@ cs_macfb_monolithic_free_scheme_context(void *scheme_context)
 
   /* Other pointers are only shared (i.e. not owner) */
 
-  BFT_FREE(sc);
+  CS_FREE(sc);
 
   return nullptr;
 }
@@ -1760,7 +1760,7 @@ cs_macfb_monolithic_nl(const cs_mesh_t         *mesh,
     /* mass_flux_array_k <-- mass_flux_array_kp1; update mass_flux_array_kp1 */
 
     if (mass_flux_array_k == nullptr)
-      BFT_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
+      CS_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
     cs_array_real_copy(n_faces, mass_flux_array_kp1, mass_flux_array_k);
 
     cs_macfb_navsto_mass_flux(nsp, quant, u_f, mass_flux_array_kp1);
@@ -1804,7 +1804,7 @@ cs_macfb_monolithic_nl(const cs_mesh_t         *mesh,
   cs_cdo_system_helper_reset(sh); /* free rhs and matrix */
   cs_equation_builder_reset(eqb);
   if (mass_flux_array_k != nullptr)
-    BFT_FREE(mass_flux_array_k);
+    CS_FREE(mass_flux_array_k);
 
   cs_timer_t t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);

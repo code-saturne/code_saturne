@@ -43,7 +43,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
@@ -113,16 +113,16 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t  *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->ids, n_max, int);
+  CS_MALLOC(cb->ids, n_max, int);
   memset(cb->ids, 0, n_max*sizeof(int));
 
   int  size = n_max*(n_max+1);
   size = cs::max(7*n_max, size);
-  BFT_MALLOC(cb->values, size, double);
+  CS_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(cs_real_t));
 
   size = 2*n_max;
-  BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+  CS_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of operators */
@@ -506,8 +506,8 @@ cs_cdoeb_vecteq_init_sharing(const cs_cdo_quantities_t    *quant,
 
   assert(cs_glob_n_threads > 0);  /* Sanity check */
 
-  BFT_MALLOC(cs_cdoeb_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
-  BFT_MALLOC(cs_cdoeb_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
+  CS_MALLOC(cs_cdoeb_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
+  CS_MALLOC(cs_cdoeb_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
 
   for (int i = 0; i < cs_glob_n_threads; i++) {
     cs_cdoeb_cell_system[i]  = nullptr;
@@ -580,8 +580,8 @@ cs_cdoeb_vecteq_finalize_sharing(void)
   cs_cell_builder_free(&(cs_cdoeb_cell_builder[0]));
 #endif /* openMP */
 
-  BFT_FREE(cs_cdoeb_cell_system);
-  BFT_FREE(cs_cdoeb_cell_builder);
+  CS_FREE(cs_cdoeb_cell_system);
+  CS_FREE(cs_cdoeb_cell_builder);
   cs_cdoeb_cell_builder = nullptr;
   cs_cdoeb_cell_system  = nullptr;
 }
@@ -623,7 +623,7 @@ cs_cdoeb_vecteq_init_context(cs_equation_param_t    *eqp,
 
   cs_cdoeb_vecteq_t *eqc = nullptr;
 
-  BFT_MALLOC(eqc, 1, cs_cdoeb_vecteq_t);
+  CS_MALLOC(eqc, 1, cs_cdoeb_vecteq_t);
 
   eqc->var_field_id = var_id;
   eqc->bflux_field_id = bflux_id;
@@ -642,13 +642,13 @@ cs_cdoeb_vecteq_init_context(cs_equation_param_t    *eqp,
 
   /* Values at each edge (interior and border) i.e. BCs are included */
 
-  BFT_MALLOC(eqc->edge_values, n_edges, cs_real_t);
+  CS_MALLOC(eqc->edge_values, n_edges, cs_real_t);
 # pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_edges; i++) eqc->edge_values[i] = 0;
 
   eqc->edge_values_pre = nullptr;
   if (cs_equation_param_has_time(eqp)) {
-    BFT_MALLOC(eqc->edge_values_pre, n_edges, cs_real_t);
+    CS_MALLOC(eqc->edge_values_pre, n_edges, cs_real_t);
 # pragma omp parallel for if (n_edges > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_edges; i++) eqc->edge_values_pre[i] = 0;
   }
@@ -677,7 +677,7 @@ cs_cdoeb_vecteq_init_context(cs_equation_param_t    *eqp,
   /* Essential boundary condition enforcement. The circulation along boundary
    * edges has the same behavior as enforcing a Dirichlet BC */
 
-  BFT_MALLOC(eqc->edge_bc_flag, n_edges, cs_flag_t);
+  CS_MALLOC(eqc->edge_bc_flag, n_edges, cs_flag_t);
   cs_equation_bc_set_edge_flag(connect, eqb->face_bc, eqc->edge_bc_flag);
 
   eqc->enforce_essential_bc = nullptr;
@@ -698,8 +698,7 @@ cs_cdoeb_vecteq_init_context(cs_equation_param_t    *eqp,
 
   eqc->source_terms = nullptr;
   if (cs_equation_param_has_sourceterm(eqp)) {
-
-    BFT_MALLOC(eqc->source_terms, n_edges, cs_real_t);
+    CS_MALLOC(eqc->source_terms, n_edges, cs_real_t);
     cs_array_real_fill_zero(n_edges, eqc->source_terms);
 
   } /* There is at least one source term */
@@ -806,16 +805,16 @@ cs_cdoeb_vecteq_free_context(void   *builder)
   if (eqc == nullptr)
     return eqc;
 
-  BFT_FREE(eqc->edge_bc_flag);
-  BFT_FREE(eqc->source_terms);
-  BFT_FREE(eqc->edge_values);
+  CS_FREE(eqc->edge_bc_flag);
+  CS_FREE(eqc->source_terms);
+  CS_FREE(eqc->edge_values);
   if (eqc->edge_values_pre != nullptr)
-    BFT_FREE(eqc->edge_values_pre);
+    CS_FREE(eqc->edge_values_pre);
 
   cs_hodge_free_context(&(eqc->curlcurl_hodge));
   cs_hodge_free_context(&(eqc->mass_hodge));
 
-  BFT_FREE(eqc);
+  CS_FREE(eqc);
 
   return nullptr;
 }
@@ -862,7 +861,7 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
 
     cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
     cs_lnum_t  *def2e_idx = nullptr;
-    BFT_MALLOC(def2e_idx, eqp->n_ic_defs + 1, cs_lnum_t);
+    CS_MALLOC(def2e_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
     cs_cdo_sync_vol_def_at_edges(eqp->n_ic_defs,
                                  eqp->ic_defs,
@@ -955,7 +954,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Build an array storing the values of the prescribed circulation at
      boundary */
 
-  BFT_MALLOC(eqb->dir_values, n_edges, cs_real_t);
+  CS_MALLOC(eqb->dir_values, n_edges, cs_real_t);
   cs_array_real_fill_zero(n_edges, eqb->dir_values);
 
   cs_equation_bc_circulation_at_edges(time_eval,

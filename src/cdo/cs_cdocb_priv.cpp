@@ -32,9 +32,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "alge/cs_param_saddle.h"
 #include "alge/cs_param_sles.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -114,12 +114,12 @@ cs_cdocb_init_default_param(cs_equation_param_t  *eqp)
   char *saddle_name = nullptr;
   int  len = strlen(eqp->name) + strlen("_saddle_point");
 
-  BFT_MALLOC(saddle_name, len + 1, char);
+  CS_MALLOC(saddle_name, len + 1, char);
   sprintf(saddle_name, "%s_saddle_point", eqp->name);
 
   cs_param_saddle_set_name(saddle_name, eqp->saddle_param);
 
-  BFT_FREE(saddle_name);
+  CS_FREE(saddle_name);
 
   /* Associate the cs_param_sles_t structure related to the (1,1)-block */
 

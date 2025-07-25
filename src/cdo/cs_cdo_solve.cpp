@@ -38,7 +38,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "alge/cs_blas.h"
@@ -124,7 +124,7 @@ _set_xsol(int                 stride,
   if (n_cols > n_scatter_elts) {
 
     assert(cs_glob_n_ranks > 1);
-    BFT_MALLOC(xsol, stride*n_cols, cs_real_t);
+    CS_MALLOC(xsol, stride * n_cols, cs_real_t);
     cs_array_real_copy(stride*n_scatter_elts, x, xsol);
 
   }
@@ -333,9 +333,8 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
 
   cs_real_t  *_x = x, *_b = b;
   if (n_cols_ext > n_rows) {
-
-    BFT_MALLOC(_b, n_cols_ext, cs_real_t);
-    BFT_MALLOC(_x, n_cols_ext, cs_real_t);
+    CS_MALLOC(_b, n_cols_ext, cs_real_t);
+    CS_MALLOC(_x, n_cols_ext, cs_real_t);
 
     cs_array_real_copy(n_dofs, x, _x);
     cs_array_real_copy(n_dofs, b, _b);
@@ -360,9 +359,9 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
                                                    nullptr); /* aux. buffers */
 
   if (n_cols_ext > n_rows) {
-    BFT_FREE(_b);
+    CS_FREE(_b);
     cs_array_real_copy(n_dofs, _x, x);
-    BFT_FREE(_x);
+    CS_FREE(_x);
   }
 
   /* Output information about the convergence of the resolution */
@@ -486,7 +485,7 @@ cs_cdo_solve_scalar_system(cs_lnum_t               n_scatter_dofs,
 #endif
 
   if (xsol != x)
-    BFT_FREE(xsol);
+    CS_FREE(xsol);
 
   if (slesp->field_id > -1) {
 
@@ -597,7 +596,7 @@ cs_cdo_solve_vector_system(cs_lnum_t               n_scatter_elts,
 #endif
 
   if (xsol != x)
-    BFT_FREE(xsol);
+    CS_FREE(xsol);
 
   cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
 

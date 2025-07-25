@@ -46,16 +46,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-#include "base/cs_array.h"
 #include "alge/cs_blas.h"
+#include "base/cs_array.h"
+#include "base/cs_mem.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_cdofb_navsto.h"
 #include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_cdofb_scaleq.h"
 #include "cdo/cs_cdofb_vecteq.h"
-#include "cdo/cs_cdofb_navsto.h"
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
 #endif
@@ -952,7 +952,7 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.\n",
               __func__);
 
-  BFT_MALLOC(sc, 1, cs_cdofb_ac_t);
+  CS_MALLOC(sc, 1, cs_cdofb_ac_t);
 
   /* Quantities shared with the cs_navsto_system_t structure */
 
@@ -1096,7 +1096,7 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context)
 
   /* Other pointers are only shared (i.e. not owner) */
 
-  BFT_FREE(sc);
+  CS_FREE(sc);
 
   return nullptr;
 }

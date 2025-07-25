@@ -49,7 +49,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_boundary_zone.h"
 #include "base/cs_coupling.h"
@@ -119,7 +119,7 @@ _set_to_unknown(void)
   char *name = nullptr;
   int len = strlen("Unknown");
 
-  BFT_MALLOC(name, len + 1, char);
+  CS_MALLOC(name, len + 1, char);
   sprintf(name, "%s", "Unknown");
 
   return name;
@@ -138,7 +138,7 @@ _create_cdo_context(void)
 {
   cs_domain_cdo_context_t *cc = nullptr;
 
-  BFT_MALLOC(cc, 1, cs_domain_cdo_context_t);
+  CS_MALLOC(cc, 1, cs_domain_cdo_context_t);
 
   /* Metadata related to each family of schemes. By default, not used */
 
@@ -193,7 +193,7 @@ cs_domain_create(void)
 
   /* Create the domain structure and proceed to a default initialization */
 
-  BFT_MALLOC(domain, 1, cs_domain_t);
+  CS_MALLOC(domain, 1, cs_domain_t);
 
   /* Working directory names */
 
@@ -276,9 +276,9 @@ cs_domain_free(cs_domain_t   **p_domain)
 
   /* Working directory names */
 
-  BFT_FREE(domain->run_id);
-  BFT_FREE(domain->case_name);
-  BFT_FREE(domain->study_name);
+  CS_FREE(domain->run_id);
+  CS_FREE(domain->case_name);
+  CS_FREE(domain->study_name);
 
   /* cs_mesh_t and cs_mesh_quantities_t structure are not freed since they
      are only shared */
@@ -289,14 +289,14 @@ cs_domain_free(cs_domain_t   **p_domain)
   domain->time_step = nullptr;
 
   if (domain->cdo_context != nullptr)
-    BFT_FREE(domain->cdo_context);
+    CS_FREE(domain->cdo_context);
 
   /* Free arrays related to the domain boundary */
 
   cs_boundary_free(&(domain->boundaries));
   cs_boundary_free(&(domain->ale_boundaries));
 
-  BFT_FREE(domain);
+  CS_FREE(domain);
   *p_domain = nullptr;
 }
 

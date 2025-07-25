@@ -38,7 +38,7 @@
 #include <mpi.h>
 #endif
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
@@ -143,7 +143,7 @@ _init_thermal_system(void)
 {
   cs_thermal_system_t *thm = nullptr;
 
-  BFT_MALLOC(thm, 1, cs_thermal_system_t);
+  CS_MALLOC(thm, 1, cs_thermal_system_t);
 
   /* Flags */
 
@@ -457,19 +457,19 @@ cs_thermal_system_destroy(void)
     return;
 
   if (thm->kappa_array != nullptr)
-    BFT_FREE(thm->kappa_array);
+    CS_FREE(thm->kappa_array);
 
   /* Equations, fields and properties related to the thermal system are
    * destroyed elsewhere in a specific stage. The lifecycle of these structures
    * are not managed by cs_thermal_system_t
    */
 
-  BFT_FREE(thm);
+  CS_FREE(thm);
   cs_thermal_system = nullptr;
 
   /* Deallocate array used for coupling if used */
   if (_cht_robin_vals != nullptr)
-    BFT_FREE(_cht_robin_vals);
+    CS_FREE(_cht_robin_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -700,14 +700,14 @@ cs_thermal_system_compute(bool                          cur2prev,
   if (cs_syr_coupling_n_couplings() > 0) {
 
     cs_lnum_t *cpl_ids = nullptr;
-    BFT_MALLOC(cpl_ids, mesh->n_b_faces, cs_lnum_t);
+    CS_MALLOC(cpl_ids, mesh->n_b_faces, cs_lnum_t);
 
     cs_real_t *t_bnd = nullptr;
     cs_real_t *hf_bnd = nullptr;
     cs_real_t *tf_bnd = nullptr;
-    BFT_MALLOC(t_bnd, mesh->n_b_faces, cs_real_t);
-    BFT_MALLOC(hf_bnd, mesh->n_b_faces, cs_real_t);
-    BFT_MALLOC(tf_bnd, mesh->n_b_faces, cs_real_t);
+    CS_MALLOC(t_bnd, mesh->n_b_faces, cs_real_t);
+    CS_MALLOC(hf_bnd, mesh->n_b_faces, cs_real_t);
+    CS_MALLOC(tf_bnd, mesh->n_b_faces, cs_real_t);
 
     for (int icpl = 0; icpl < cs_syr_coupling_n_couplings(); icpl++) {
       /* Get coupled elements for current coupling */
@@ -749,11 +749,10 @@ cs_thermal_system_compute(bool                          cur2prev,
 
     }
 
-    BFT_FREE(t_bnd);
-    BFT_FREE(tf_bnd);
-    BFT_FREE(hf_bnd);
-    BFT_FREE(cpl_ids);
-
+    CS_FREE(t_bnd);
+    CS_FREE(tf_bnd);
+    CS_FREE(hf_bnd);
+    CS_FREE(cpl_ids);
   }
 
   if (!(thm->model & CS_THERMAL_MODEL_STEADY))
@@ -960,8 +959,8 @@ cs_thermal_system_cht_boundary_conditions_setup(void)
 
     /* Initialize CHT array */
     if (_cht_robin_vals != nullptr)
-      BFT_FREE(_cht_robin_vals);
-    BFT_MALLOC(_cht_robin_vals, 3 * cs_glob_mesh->n_b_faces, cs_real_t);
+      CS_FREE(_cht_robin_vals);
+    CS_MALLOC(_cht_robin_vals, 3 * cs_glob_mesh->n_b_faces, cs_real_t);
     cs_array_real_set_scalar(3 * cs_glob_mesh->n_b_faces,
                              1.e20,
                              _cht_robin_vals);

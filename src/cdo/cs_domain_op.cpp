@@ -40,7 +40,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "cdo/cs_advection_field.h"
 #include "base/cs_array_reduce.h"
@@ -191,7 +191,7 @@ _post_courant_number(const cs_adv_field_t       *adv,
 
   int  len = strlen(adv->name) + 8 + 1;
   char *label = nullptr;
-  BFT_MALLOC(label, len, char);
+  CS_MALLOC(label, len, char);
   sprintf(label, "%s.Courant", adv->name);
 
   cs_real_t  *courant = cs_cdo_toolbox_get_tmpbuf();
@@ -216,7 +216,7 @@ _post_courant_number(const cs_adv_field_t       *adv,
                     nullptr,    /* values at internal,border faces */
                     time_step); /* time step management struct. */
 
-  BFT_FREE(label);
+  CS_FREE(label);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -245,7 +245,7 @@ _post_peclet_number(const cs_equation_t        *eq,
 
   int  len = strlen(eqp->name) + 8 + 1;
   char *label = nullptr;
-  BFT_MALLOC(label, len, char);
+  CS_MALLOC(label, len, char);
   sprintf(label, "%s.Peclet", eqp->name);
 
   cs_real_t  *peclet = cs_cdo_toolbox_get_tmpbuf();
@@ -269,7 +269,7 @@ _post_peclet_number(const cs_equation_t        *eq,
                     nullptr,    /* values at internal,border faces */
                     time_step); /* time step management struct. */
 
-  BFT_FREE(label);
+  CS_FREE(label);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -298,7 +298,7 @@ _post_fourier_number(const cs_property_t        *pty,
 
   int  len = strlen(pty->name) + 8 + 1;
   char *label = nullptr;
-  BFT_MALLOC(label, len, char);
+  CS_MALLOC(label, len, char);
   sprintf(label, "%s.Fourier", pty->name);
 
   /* Brief output for the log */
@@ -319,7 +319,7 @@ _post_fourier_number(const cs_property_t        *pty,
                     nullptr,    /* values at internal,border faces */
                     time_step); /* time step management struct. */
 
-  BFT_FREE(label);
+  CS_FREE(label);
 }
 
 /*----------------------------------------------------------------------------*/

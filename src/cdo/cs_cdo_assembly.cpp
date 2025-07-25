@@ -38,8 +38,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_defs.h"
 #include "base/cs_log.h"
@@ -1189,8 +1189,7 @@ _init_assembly_struct(int                   ddim,
   bool  create = false, reallocate = false;
 
   if (asb == nullptr) {
-
-    BFT_MALLOC(asb, 1, cs_cdo_assembly_t);
+    CS_MALLOC(asb, 1, cs_cdo_assembly_t);
     create = true;
 
     /* Diagonal and extra-diagonal max. number of entries */
@@ -1219,17 +1218,15 @@ _init_assembly_struct(int                   ddim,
   asb->l_col_shift = 0;
 
   if (create) {
-
     /* Allocate the row structure used in the assembly process */
 
-    BFT_MALLOC(asb->row, 1, cs_cdo_assembly_row_t);
+    CS_MALLOC(asb->row, 1, cs_cdo_assembly_row_t);
 
     cs_cdo_assembly_row_t *row = asb->row;
 
     if (asb->ddim < 2) {
-
-      BFT_MALLOC(row->col_g_id, asb->n_cw_dofs, cs_gnum_t);
-      BFT_MALLOC(row->col_idx, asb->n_cw_dofs, int);
+      CS_MALLOC(row->col_g_id, asb->n_cw_dofs, cs_gnum_t);
+      CS_MALLOC(row->col_idx, asb->n_cw_dofs, int);
       row->expval = nullptr;
     }
     else {
@@ -1238,9 +1235,9 @@ _init_assembly_struct(int                   ddim,
 
       int _size = asb->n_cw_dofs * asb->ddim;
 
-      BFT_MALLOC(row->col_g_id, _size, cs_gnum_t);
-      BFT_MALLOC(row->col_idx, _size, int);
-      BFT_MALLOC(row->expval, asb->ddim * _size, cs_real_t);
+      CS_MALLOC(row->col_g_id, _size, cs_gnum_t);
+      CS_MALLOC(row->col_idx, _size, int);
+      CS_MALLOC(row->expval, asb->ddim * _size, cs_real_t);
     }
   }
   else { /* Update only */
@@ -1253,9 +1250,8 @@ _init_assembly_struct(int                   ddim,
       /* Re-allocate the row structure given the new sizes */
 
       if (asb->ddim < 2) {
-
-        BFT_REALLOC(row->col_g_id, asb->n_cw_dofs, cs_gnum_t);
-        BFT_REALLOC(row->col_idx, asb->n_cw_dofs, int);
+        CS_REALLOC(row->col_g_id, asb->n_cw_dofs, cs_gnum_t);
+        CS_REALLOC(row->col_idx, asb->n_cw_dofs, int);
         assert(row->expval == nullptr);
       }
       else {
@@ -1264,9 +1260,9 @@ _init_assembly_struct(int                   ddim,
 
         int _size = asb->n_cw_dofs * asb->ddim;
 
-        BFT_REALLOC(row->col_g_id, _size, cs_gnum_t);
-        BFT_REALLOC(row->col_idx, _size, int);
-        BFT_REALLOC(row->expval, asb->ddim * _size, cs_real_t);
+        CS_REALLOC(row->col_g_id, _size, cs_gnum_t);
+        CS_REALLOC(row->col_idx, _size, int);
+        CS_REALLOC(row->expval, asb->ddim * _size, cs_real_t);
       }
 
     } /* reallocate = true */
@@ -1295,13 +1291,13 @@ _free_assembly_struct(cs_cdo_assembly_t **p_asb)
   cs_cdo_assembly_t *asb = *p_asb;
 
   if (asb->ddim > 1)
-    BFT_FREE(asb->row->expval);
+    CS_FREE(asb->row->expval);
 
-  BFT_FREE(asb->row->col_g_id);
-  BFT_FREE(asb->row->col_idx);
-  BFT_FREE(asb->row);
+  CS_FREE(asb->row->col_g_id);
+  CS_FREE(asb->row->col_idx);
+  CS_FREE(asb->row);
 
-  BFT_FREE(asb);
+  CS_FREE(asb);
   *p_asb = nullptr;
 }
 
@@ -1366,7 +1362,7 @@ cs_cdo_assembly_init(int ddim, int edim, int n_cw_dofs)
   if (cs_cdo_assembly == nullptr) {
 
     const int n_threads = cs_glob_n_threads;
-    BFT_MALLOC(cs_cdo_assembly, n_threads, cs_cdo_assembly_t *);
+    CS_MALLOC(cs_cdo_assembly, n_threads, cs_cdo_assembly_t *);
     for (int i = 0; i < n_threads; i++)
       cs_cdo_assembly[i] = nullptr;
   }
@@ -1399,7 +1395,7 @@ cs_cdo_assembly_finalize(void)
   for (int t_id = 0; t_id < cs_glob_n_threads; t_id++)
     _free_assembly_struct(&(cs_cdo_assembly[t_id]));
 
-  BFT_FREE(cs_cdo_assembly);
+  CS_FREE(cs_cdo_assembly);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1536,9 +1532,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
     cs_real_t *m_values     = nullptr;
     int  max_buf_size = 2*m->n_rows, bufsize = 0;
 
-    BFT_MALLOC(row_gids, max_buf_size, cs_gnum_t);
-    BFT_MALLOC(col_gids, max_buf_size, cs_gnum_t);
-    BFT_MALLOC(m_values, max_buf_size, cs_real_t);
+    CS_MALLOC(row_gids, max_buf_size, cs_gnum_t);
+    CS_MALLOC(col_gids, max_buf_size, cs_gnum_t);
+    CS_MALLOC(m_values, max_buf_size, cs_real_t);
 
     /* Diagonal entries */
 
@@ -1602,9 +1598,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
                                        row_gids, col_gids, m_values);
     }
 
-    BFT_FREE(row_gids);
-    BFT_FREE(col_gids);
-    BFT_FREE(m_values);
+    CS_FREE(row_gids);
+    CS_FREE(col_gids);
+    CS_FREE(m_values);
 
   } /* Test on the size of the local buffers */
 }

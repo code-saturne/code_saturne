@@ -37,8 +37,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_log.h"
 #include "alge/cs_matrix_util.h"
@@ -214,7 +214,7 @@ cs_dbg_fprintf_system(const char      *eqname,
   int   len      = strlen(eqname) + strlen("-sol-.log") + 4 + 1;
   char *filename = nullptr;
 
-  BFT_MALLOC(filename, len, char);
+  CS_MALLOC(filename, len, char);
 
   sprintf(filename, "%s-sol-%04d.log", eqname, id);
   if (sol != nullptr && level > 4)
@@ -224,7 +224,7 @@ cs_dbg_fprintf_system(const char      *eqname,
   if (rhs != nullptr && level > 5)
     cs_dbg_array_fprintf(nullptr, filename, 1e-16, size, rhs, 6);
 
-  BFT_FREE(filename);
+  CS_FREE(filename);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -502,7 +502,7 @@ cs_dbg_binary_dump_system(const char        *basename,
   int   len  = strlen(basename) + 4;
   char *name = nullptr;
 
-  BFT_MALLOC(name, len + 1, char);
+  CS_MALLOC(name, len + 1, char);
 
   sprintf(name, "%s_mat", basename);
   cs_matrix_dump(matrix, name);
@@ -519,7 +519,7 @@ cs_dbg_binary_dump_system(const char        *basename,
     cs_matrix_dump_vector(n_rows, diag_block_size, sol, name);
   }
 
-  BFT_FREE(name);
+  CS_FREE(name);
 }
 
 /*----------------------------------------------------------------------------*/

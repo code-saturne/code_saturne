@@ -35,7 +35,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_log.h"
 #include "cdo/cs_quadrature.h"
@@ -786,7 +786,7 @@ _k0_compute_facto(void       *pbf)
 
   /* Mass matrix is a 1x1 matrix ! */
   if (bf->facto_max_size < 1) {
-    BFT_REALLOC(bf->facto, 1, cs_real_t);
+    CS_REALLOC(bf->facto, 1, cs_real_t);
     bf->facto_max_size = 1;
   }
   bf->facto[0] = 1/bf->projector->val[0];
@@ -1028,7 +1028,7 @@ _ck1_compute_facto(void       *pbf)
   /* Mass matrix is a 4x4 matrix */
   if (bf->facto_max_size < 10) {
     bf->facto_max_size = 10;
-    BFT_REALLOC(bf->facto, 10, cs_real_t);
+    CS_REALLOC(bf->facto, 10, cs_real_t);
   }
   cs_sdm_44_ldlt_compute(bf->projector, bf->facto);
 }
@@ -1295,12 +1295,12 @@ _cka_compute_projector(void                    *pbf,
   cs_real_3_t  _gpts[CKA_SIZE];
 
   if (n_rows > CKA_SIZE)
-    BFT_MALLOC(phi_eval, n_rows, cs_real_t);
+    CS_MALLOC(phi_eval, n_rows, cs_real_t);
   else
     phi_eval = _phi_eval;
   if (n_gpts > CKA_SIZE) {
-    BFT_MALLOC(weights, n_gpts, cs_real_t);
-    BFT_MALLOC(gpts, n_gpts, cs_real_3_t);
+    CS_MALLOC(weights, n_gpts, cs_real_t);
+    CS_MALLOC(gpts, n_gpts, cs_real_3_t);
   }
   else {
     weights = _weights;
@@ -1386,10 +1386,10 @@ _cka_compute_projector(void                    *pbf,
 
   /* Free allocated buffers */
   if (n_rows > CKA_SIZE)
-    BFT_FREE(phi_eval);
+    CS_FREE(phi_eval);
   if (n_gpts > CKA_SIZE) {
-    BFT_FREE(weights);
-    BFT_FREE(gpts);
+    CS_FREE(weights);
+    CS_FREE(gpts);
   }
 
   /* Projection matrix is symmetric by construction */
@@ -1418,7 +1418,7 @@ _ka_compute_facto(void       *pbf)
   const int facto_size = ((bf->size + 1)*bf->size)/2;
   if (bf->facto_max_size < facto_size + bf->size) {
     bf->facto_max_size = facto_size + bf->size;
-    BFT_REALLOC(bf->facto, facto_size + bf->size, cs_real_t);
+    CS_REALLOC(bf->facto, facto_size + bf->size, cs_real_t);
   }
   cs_sdm_ldlt_compute(bf->projector, bf->facto, bf->facto + facto_size);
 }
@@ -1938,7 +1938,7 @@ _fk1_compute_facto(void       *pbf)
   /* Mass matrix is a 3x3 matrix. Factorization is stored with 6 values */
   if (bf->facto_max_size < 6) {
     bf->facto_max_size = 6;
-    BFT_REALLOC(bf->facto, 6, cs_real_t);
+    CS_REALLOC(bf->facto, 6, cs_real_t);
   }
   cs_sdm_33_ldlt_compute(bf->projector, bf->facto);
 }
@@ -2073,7 +2073,7 @@ _fk2_compute_facto(void       *pbf)
   /* Mass matrix is a 6x6 matrix */
   if (bf->facto_max_size < 21) {
     bf->facto_max_size = 21;
-    BFT_REALLOC(bf->facto, 21, cs_real_t);
+    CS_REALLOC(bf->facto, 21, cs_real_t);
   }
 
   cs_sdm_66_ldlt_compute(bf->projector, bf->facto);
@@ -2221,12 +2221,12 @@ _fka_compute_projector(void                    *pbf,
   cs_real_3_t  _gpts[FKA_SIZE];
 
   if (n_rows > FKA_SIZE)
-    BFT_MALLOC(phi_eval, n_rows, cs_real_t);
+    CS_MALLOC(phi_eval, n_rows, cs_real_t);
   else
     phi_eval = _phi_eval;
   if (n_gpts > FKA_SIZE) {
-    BFT_MALLOC(weights, n_gpts, cs_real_t);
-    BFT_MALLOC(gpts, n_gpts, cs_real_3_t);
+    CS_MALLOC(weights, n_gpts, cs_real_t);
+    CS_MALLOC(gpts, n_gpts, cs_real_3_t);
   }
   else {
     weights = _weights;
@@ -2285,10 +2285,10 @@ _fka_compute_projector(void                    *pbf,
 
   /* Free allocated buffers */
   if (n_rows > FKA_SIZE)
-    BFT_FREE(phi_eval);
+    CS_FREE(phi_eval);
   if (n_gpts > FKA_SIZE) {
-    BFT_FREE(weights);
-    BFT_FREE(gpts);
+    CS_FREE(weights);
+    CS_FREE(gpts);
   }
 
   /* Projection matrix is symmetric by construction */
@@ -2371,14 +2371,14 @@ cs_basis_func_create(cs_flag_t      flag,
   /* Structure to handle polynomial basis functions */
   cs_basis_func_t *pbf = nullptr;
 
-  BFT_MALLOC(pbf, 1, cs_basis_func_t);
+  CS_MALLOC(pbf, 1, cs_basis_func_t);
 
   pbf->flag = flag;
   pbf->poly_order = k;
   pbf->dim = dim;
   pbf->size = cs_math_binom(k + dim, dim);
   pbf->phi0 = 1;
-  BFT_MALLOC(pbf->axis, dim, cs_nvec3_t);
+  CS_MALLOC(pbf->axis, dim, cs_nvec3_t);
 
   pbf->n_deg_elts = 0;
   pbf->deg        = nullptr;
@@ -2387,7 +2387,7 @@ cs_basis_func_create(cs_flag_t      flag,
     /* Remove the 3 first trivial basis functions in 2D
        and the 4 first trivial basis functions in 3D */
     pbf->n_deg_elts = pbf->size -(dim + 1);
-    BFT_MALLOC(pbf->deg, pbf->n_deg_elts*dim, short int);
+    CS_MALLOC(pbf->deg, pbf->n_deg_elts * dim, short int);
 
     if (dim == 3) {
 
@@ -2568,7 +2568,7 @@ cs_basis_func_grad_create(const cs_basis_func_t   *ref)
   /* Structure to handle polynomial basis functions */
   cs_basis_func_t *gbf = nullptr;
 
-  BFT_MALLOC(gbf, 1, cs_basis_func_t);
+  CS_MALLOC(gbf, 1, cs_basis_func_t);
 
   gbf->flag = ref->flag | CS_BASIS_FUNC_GRADIENT;
   gbf->poly_order = ref->poly_order; /* Grad(P^(k+1)_d) is of order k */
@@ -2577,7 +2577,7 @@ cs_basis_func_grad_create(const cs_basis_func_t   *ref)
   gbf->phi0 = 1;  /* not useful */
 
   /* Copy axis and center */
-  BFT_MALLOC(gbf->axis, ref->dim, cs_nvec3_t);
+  CS_MALLOC(gbf->axis, ref->dim, cs_nvec3_t);
 
   /* Build a basis of polynomial functions of order k+1.
      Gradient is apply on-the-fly when the evaluation is performed */
@@ -2587,7 +2587,7 @@ cs_basis_func_grad_create(const cs_basis_func_t   *ref)
 
     /* Remove the 4 first trivial basis functions in 3D */
     gbf->n_deg_elts = gbf->size -(ref->dim + 1);
-    BFT_MALLOC(gbf->deg, gbf->n_deg_elts*ref->dim, short int);
+    CS_MALLOC(gbf->deg, gbf->n_deg_elts * ref->dim, short int);
 
     short int count = 0;
     for (short int ik = 2; ik < gbf->poly_order+2; ik++) {
@@ -2677,15 +2677,15 @@ cs_basis_func_free(cs_basis_func_t  *pbf)
   if (pbf == nullptr)
     return pbf;
 
-  BFT_FREE(pbf->axis);
-  BFT_FREE(pbf->deg);
+  CS_FREE(pbf->axis);
+  CS_FREE(pbf->deg);
 
   if (pbf->projector != nullptr)
     pbf->projector = cs_sdm_free(pbf->projector);
   pbf->facto_max_size = 0;
-  BFT_FREE(pbf->facto);
+  CS_FREE(pbf->facto);
 
-  BFT_FREE(pbf);
+  CS_FREE(pbf);
 
   return nullptr;
 }

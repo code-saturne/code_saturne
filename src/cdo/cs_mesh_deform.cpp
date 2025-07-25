@@ -45,8 +45,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
@@ -240,7 +240,7 @@ cs_mesh_deform_define_dirichlet_bc_zones(cs_lnum_t  n_boundary_zones,
 {
   if (n_boundary_zones != _n_b_zones) {
     _n_b_zones = n_boundary_zones;
-    BFT_REALLOC(_b_zone_ids, _n_b_zones, int);
+    CS_REALLOC(_b_zone_ids, _n_b_zones, int);
     memcpy(_b_zone_ids, boundary_zone_ids, sizeof(int)*_n_b_zones);
   }
 }
@@ -283,7 +283,7 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
     if (_fixed_vertices) {
 
       cs_real_t  *fixed_vtx_values;
-      BFT_MALLOC(fixed_vtx_values, _n_fixed_vertices, cs_real_t);
+      CS_MALLOC(fixed_vtx_values, _n_fixed_vertices, cs_real_t);
       if (_fixed_vtx_values != nullptr) {
 #       pragma omp parallel for if (_n_fixed_vertices > CS_THR_MIN)
         for (cs_lnum_t j = 0; j < _n_fixed_vertices; j++)
@@ -301,8 +301,7 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
                                              nullptr, /* reference value */
                                              fixed_vtx_values);
 
-      BFT_FREE(fixed_vtx_values);
-
+      CS_FREE(fixed_vtx_values);
     }
 
     cs_equation_add_diffusion(eqp, conductivity);
@@ -344,7 +343,7 @@ cs_mesh_deform_prescribe_displacement(cs_lnum_t          n_vertices,
 
   if (_vd_size != m->n_vertices) {
     _vd_size = m->n_vertices;
-    BFT_REALLOC(_vd, _vd_size, cs_real_3_t);
+    CS_REALLOC(_vd, _vd_size, cs_real_3_t);
 #   pragma omp parallel for if (_vd_size > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < _vd_size; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
@@ -396,12 +395,12 @@ cs_mesh_deform_force_displacements(cs_lnum_t          n_vertices,
                                    const cs_lnum_t    vertex_ids[],
                                    const cs_real_3_t  displacement[])
 {
-  BFT_REALLOC(_fixed_vtx_ids, n_vertices, cs_lnum_t);
+  CS_REALLOC(_fixed_vtx_ids, n_vertices, cs_lnum_t);
 
   if (displacement != nullptr)
-    BFT_REALLOC(_fixed_vtx_values, n_vertices, cs_real_3_t);
+    CS_REALLOC(_fixed_vtx_values, n_vertices, cs_real_3_t);
   else
-    BFT_FREE(_fixed_vtx_values);
+    CS_FREE(_fixed_vtx_values);
 
   _n_fixed_vertices = n_vertices;
 
@@ -493,14 +492,14 @@ cs_mesh_deform_get_displacement(void)
 void
 cs_mesh_deform_finalize(void)
 {
-  BFT_FREE(_b_zone_ids);
+  CS_FREE(_b_zone_ids);
   _n_b_zones = 0;
 
-  BFT_FREE(_vd);
+  CS_FREE(_vd);
   _vd_size = 0;
 
-  BFT_FREE(_fixed_vtx_ids);
-  BFT_FREE(_fixed_vtx_values);
+  CS_FREE(_fixed_vtx_ids);
+  CS_FREE(_fixed_vtx_values);
   _n_fixed_vertices = 0;
   _fixed_vertices = false;
 

@@ -42,7 +42,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "alge/cs_blas.h"
@@ -167,9 +167,9 @@ cs_macfb_navsto_create_builder(const cs_navsto_param_t *nsp,
   /* Number of faces (with full stencil) linked to a cell*/
   const int n_max_fbyc_x = 30;
 
-  BFT_MALLOC(nsb.div_op, connect->n_max_fbyc, cs_real_t);
-  BFT_MALLOC(nsb.bf_type, n_max_fbyc_x, cs_boundary_type_t);
-  BFT_MALLOC(nsb.pressure_bc_val, n_max_fbyc_x, cs_real_t);
+  CS_MALLOC(nsb.div_op, connect->n_max_fbyc, cs_real_t);
+  CS_MALLOC(nsb.bf_type, n_max_fbyc_x, cs_boundary_type_t);
+  CS_MALLOC(nsb.pressure_bc_val, n_max_fbyc_x, cs_real_t);
 
   return nsb;
 }
@@ -186,9 +186,9 @@ void
 cs_macfb_navsto_free_builder(cs_macfb_navsto_builder_t *nsb)
 {
   if (nsb != nullptr) {
-    BFT_FREE(nsb->div_op);
-    BFT_FREE(nsb->bf_type);
-    BFT_FREE(nsb->pressure_bc_val);
+    CS_FREE(nsb->div_op);
+    CS_FREE(nsb->bf_type);
+    CS_FREE(nsb->pressure_bc_val);
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_NAVSTO_DBG > 3
@@ -649,11 +649,11 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
    */
 
   bool *belong_to_default = nullptr;
-  BFT_MALLOC(belong_to_default, quant->n_b_faces, bool);
+  CS_MALLOC(belong_to_default, quant->n_b_faces, bool);
   cs_array_bool_fill_true(quant->n_b_faces, belong_to_default);
 
   cs_real_t *boundary_fluxes = nullptr;
-  BFT_MALLOC(boundary_fluxes, boundaries->n_boundaries + 1, cs_real_t);
+  CS_MALLOC(boundary_fluxes, boundaries->n_boundaries + 1, cs_real_t);
   cs_array_real_fill_zero(boundaries->n_boundaries + 1, boundary_fluxes);
 
   for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
@@ -717,8 +717,8 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
 
   /* Free temporary buffers */
 
-  BFT_FREE(belong_to_default);
-  BFT_FREE(boundary_fluxes);
+  CS_FREE(belong_to_default);
+  CS_FREE(boundary_fluxes);
 
   /* Predefined post-processing */
   /* ========================== */
@@ -820,7 +820,7 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
     /* Compute a face pressure */
 
     cs_real_t *p_face = nullptr;
-    BFT_MALLOC(p_face, quant->n_faces, cs_real_t);
+    CS_MALLOC(p_face, quant->n_faces, cs_real_t);
 
     cs_macfb_navsto_compute_face_pressure(
       mesh, connect, quant, ts, nsp, p_cell, p_face);
@@ -830,7 +830,7 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
       cs_reco_grad_cell_from_fb_dofs(
         c_id, connect, quant, p_cell, p_face, pr_grd->val + 3 * c_id);
 
-    BFT_FREE(p_face);
+    CS_FREE(p_face);
 
   } /* Pressure gradient */
 

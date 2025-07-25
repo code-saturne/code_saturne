@@ -38,7 +38,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
@@ -291,7 +291,7 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
   const cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
   cs_lnum_t *c_tags = nullptr;
-  BFT_MALLOC(c_tags, n_cells_with_ghosts, cs_lnum_t);
+  CS_MALLOC(c_tags, n_cells_with_ghosts, cs_lnum_t);
 
   if (n_elts < n_cells) { /* Only some cells are selected */
 
@@ -332,7 +332,7 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
 
   /* Not needed anymore */
 
-  BFT_FREE(c_tags);
+  CS_FREE(c_tags);
 
   /* Handle parallelism (always the scalar interface) */
 
@@ -372,7 +372,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
 
   cs_lnum_t *v_tags = nullptr;
 
-  BFT_MALLOC(v_tags, n_vertices, cs_lnum_t);
+  CS_MALLOC(v_tags, n_vertices, cs_lnum_t);
 
   /* Tag selected vertices and cells */
 
@@ -414,7 +414,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
 
   }
 
-  BFT_FREE(v_tags);
+  CS_FREE(v_tags);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -500,7 +500,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
 
   cs_lnum_t *v_tags = nullptr;
 
-  BFT_MALLOC(v_tags, n_vertices, cs_lnum_t);
+  CS_MALLOC(v_tags, n_vertices, cs_lnum_t);
 
   /* Tag selected vertices and cells */
 
@@ -552,7 +552,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
 
   }
 
-  BFT_FREE(v_tags);
+  CS_FREE(v_tags);
 }
 
 /*----------------------------------------------------------------------------*/

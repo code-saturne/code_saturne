@@ -41,7 +41,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_cdo_advection.h"
@@ -212,15 +212,15 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
   int  size = n_vc + 1;
-  BFT_MALLOC(cb->ids, size, int);
+  CS_MALLOC(cb->ids, size, int);
   memset(cb->ids, 0, size*sizeof(int));
 
   size = 2*n_vc + 3*n_ec + n_fc;
-  BFT_MALLOC(cb->values, size, double);
+  CS_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(cs_real_t));
 
   size = 2*n_ec + n_vc;
-  BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+  CS_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of
@@ -258,7 +258,7 @@ _setup_vcb(cs_real_t                     t_eval,
 
   /* Compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(eqb->dir_values, cdoq->n_vertices, cs_real_t);
+  CS_MALLOC(eqb->dir_values, cdoq->n_vertices, cs_real_t);
 
   cs_equation_bc_dirichlet_at_vertices(t_eval,
                                        mesh, cdoq, connect,
@@ -904,8 +904,8 @@ cs_cdovcb_scaleq_init_sharing(const cs_cdo_quantities_t    *cdoq,
 
   /* Specific treatment for handling openMP */
 
-  BFT_MALLOC(_vcbs_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
-  BFT_MALLOC(_vcbs_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
+  CS_MALLOC(_vcbs_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
+  CS_MALLOC(_vcbs_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
 
   for (int i = 0; i < cs_glob_n_threads; i++) {
     _vcbs_cell_system[i]  = nullptr;
@@ -972,8 +972,8 @@ cs_cdovcb_scaleq_finalize_sharing(void)
   cs_cell_builder_free(&(_vcbs_cell_builder[0]));
 #endif /* openMP */
 
-  BFT_FREE(_vcbs_cell_system);
-  BFT_FREE(_vcbs_cell_builder);
+  CS_FREE(_vcbs_cell_system);
+  CS_FREE(_vcbs_cell_builder);
   _vcbs_cell_builder = nullptr;
   _vcbs_cell_system  = nullptr;
 }
@@ -1010,7 +1010,7 @@ cs_cdovcb_scaleq_init_context(cs_equation_param_t    *eqp,
 
   cs_cdovcb_scaleq_t *eqc = nullptr;
 
-  BFT_MALLOC(eqc, 1, cs_cdovcb_scaleq_t);
+  CS_MALLOC(eqc, 1, cs_cdovcb_scaleq_t);
 
   eqc->var_field_id = var_id;
   eqc->bflux_field_id = bflux_id;
@@ -1024,9 +1024,9 @@ cs_cdovcb_scaleq_init_context(cs_equation_param_t    *eqp,
      No need to synchronize all these quantities since they are only cellwise
      quantities. */
 
-  BFT_MALLOC(eqc->cell_values, n_cells, cs_real_t);
-  BFT_MALLOC(eqc->rc_tilda, n_cells, cs_real_t);
-  BFT_MALLOC(eqc->acv_tilda, connect->c2v->idx[n_cells], cs_real_t);
+  CS_MALLOC(eqc->cell_values, n_cells, cs_real_t);
+  CS_MALLOC(eqc->rc_tilda, n_cells, cs_real_t);
+  CS_MALLOC(eqc->acv_tilda, connect->c2v->idx[n_cells], cs_real_t);
 
   eqc->cell_values_pre = nullptr; /* For a future usage */
 
@@ -1065,7 +1065,7 @@ cs_cdovcb_scaleq_init_context(cs_equation_param_t    *eqp,
 
   /* Dirichlet boundary condition enforcement */
 
-  BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
+  CS_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
   cs_equation_bc_set_vertex_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
   /* Boundary conditions (no other choice for Robin boundary conditions */
@@ -1256,8 +1256,7 @@ cs_cdovcb_scaleq_init_context(cs_equation_param_t    *eqp,
 
       if (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
           eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO) {
-
-        BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
+        CS_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
 #       pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
           eqc->source_terms[i] = 0;
@@ -1339,16 +1338,16 @@ cs_cdovcb_scaleq_free_context(void   *data)
   cs_hodge_free_context(&(eqc->diffusion_hodge));
   cs_hodge_free_context(&(eqc->mass_hodge));
 
-  BFT_FREE(eqc->cell_values);
-  BFT_FREE(eqc->rc_tilda);
-  BFT_FREE(eqc->acv_tilda);
+  CS_FREE(eqc->cell_values);
+  CS_FREE(eqc->rc_tilda);
+  CS_FREE(eqc->acv_tilda);
 
-  BFT_FREE(eqc->vtx_bc_flag);
-  BFT_FREE(eqc->source_terms);
+  CS_FREE(eqc->vtx_bc_flag);
+  CS_FREE(eqc->source_terms);
 
   /* Last free */
 
-  BFT_FREE(eqc);
+  CS_FREE(eqc);
 
   return nullptr;
 }
@@ -1398,7 +1397,7 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 
     cs_lnum_t  *def2v_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
     cs_lnum_t  *def2v_idx = nullptr;
-    BFT_MALLOC(def2v_idx, eqp->n_ic_defs + 1, cs_lnum_t);
+    CS_MALLOC(def2v_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
     cs_cdo_sync_vol_def_at_vertices(eqp->n_ic_defs, eqp->ic_defs,
                                     def2v_idx, def2v_ids);
@@ -1461,7 +1460,7 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 
     } /* Loop on definitions */
 
-    BFT_FREE(def2v_idx);
+    CS_FREE(def2v_idx);
 
   } /* Initial values to set */
 
@@ -3451,7 +3450,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
               " Result array has to be allocated prior to the call.");
 
   cs_real_t *dualcell_vol = nullptr;
-  BFT_MALLOC(dualcell_vol, cdoq->n_vertices, cs_real_t);
+  CS_MALLOC(dualcell_vol, cdoq->n_vertices, cs_real_t);
 
 # pragma omp parallel for if (3*cdoq->n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < 3*cdoq->n_vertices; i++)
@@ -3538,7 +3537,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
   } /* OMP Section */
 
-  BFT_FREE(dualcell_vol);
+  CS_FREE(dualcell_vol);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

@@ -45,7 +45,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "alge/cs_sles.h"
 #include "base/cs_array.h"
@@ -159,7 +159,7 @@ _init_context_do_nothing(cs_equation_param_t   *eqp,
 static inline void *
 _free_context_minimum(void *scheme_context)
 {
-  BFT_FREE(scheme_context);
+  CS_FREE(scheme_context);
   return nullptr;
 }
 
@@ -226,7 +226,7 @@ _prepare_fb_solving(void      *eq_to_cast,
   assert(f_values != nullptr);
 
   cs_real_t *x = nullptr;
-  BFT_MALLOC(x, cs::max(n_dofs, cs_matrix_get_n_columns(matrix)), cs_real_t);
+  CS_MALLOC(x, cs::max(n_dofs, cs_matrix_get_n_columns(matrix)), cs_real_t);
 
   /* x and the right-hand side are a "gathered" view of field->val and the
    * right-hand side respectively through the range set operation.
@@ -441,7 +441,7 @@ _add_field(int            n_previous,
     char *bdy_flux_name = nullptr;
     int   len = strlen(eq->varname) + strlen("_normal_boundary_flux") + 2;
 
-    BFT_MALLOC(bdy_flux_name, len, char);
+    CS_MALLOC(bdy_flux_name, len, char);
     sprintf(bdy_flux_name, "%s_normal_boundary_flux", eq->varname);
 
     /* If a scalar: the scalar diffusive flux across the boundary
@@ -460,7 +460,7 @@ _add_field(int            n_previous,
     cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
     cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"), post_flag);
 
-    BFT_FREE(bdy_flux_name);
+    CS_FREE(bdy_flux_name);
 
   } /* Create a boundary flux field */
 
@@ -1480,11 +1480,11 @@ cs_equation_add(const char         *eqname,
 
   cs_equation_t *eq = nullptr;
 
-  BFT_MALLOC(eq, 1, cs_equation_t);
+  CS_MALLOC(eq, 1, cs_equation_t);
 
   int eq_id = _n_equations;
   _n_equations++;
-  BFT_REALLOC(_equations, _n_equations, cs_equation_t *);
+  CS_REALLOC(_equations, _n_equations, cs_equation_t *);
   _equations[eq_id] = eq;
 
   switch (eqtype) {
@@ -1515,7 +1515,7 @@ cs_equation_add(const char         *eqname,
   /* Store varname */
 
   size_t len = strlen(varname);
-  BFT_MALLOC(eq->varname, len + 1, char);
+  CS_MALLOC(eq->varname, len + 1, char);
   strncpy(eq->varname, varname, len + 1); /* Last character is '\0' */
 
   eq->param = cs_equation_param_create(eqname, eqtype, dim, default_bc);
@@ -1700,12 +1700,12 @@ cs_equation_destroy_all(void)
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
-    BFT_FREE(eq->varname);
-    BFT_FREE(eq);
+    CS_FREE(eq->varname);
+    CS_FREE(eq);
 
   } /* Loop on equations */
 
-  BFT_FREE(_equations);
+  CS_FREE(_equations);
 
   _n_equations        = 0;
   _n_user_equations   = 0;
@@ -2860,7 +2860,7 @@ cs_equation_define_core_structure(const cs_equation_t  *eq,
     return;
 
   if (core == nullptr)
-    BFT_MALLOC(core, 1, cs_equation_core_t);
+    CS_MALLOC(core, 1, cs_equation_core_t);
 
   core->param          = eq->param;
   core->builder        = eq->builder;
@@ -3051,7 +3051,7 @@ cs_equation_solve_deprecated(cs_equation_t *eq)
 
   /* Free memory */
 
-  BFT_FREE(x);
+  CS_FREE(x);
   cs_sles_free(sles);
   cs_cdo_system_helper_reset(sh); /* free rhs and matrix */
 }
@@ -4096,7 +4096,7 @@ cs_equation_post_balance(const cs_mesh_t           *mesh,
 
     char *postlabel = nullptr;
     int   len       = strlen(eqp->name) + 13 + 1;
-    BFT_MALLOC(postlabel, len, char);
+    CS_MALLOC(postlabel, len, char);
 
     switch (eqp->space_scheme) {
 
@@ -4159,7 +4159,7 @@ cs_equation_post_balance(const cs_mesh_t           *mesh,
 
     /* Free buffers */
 
-    BFT_FREE(postlabel);
+    CS_FREE(postlabel);
     cs_cdo_balance_destroy(&b);
 
     if (eq->main_ts_id > -1)

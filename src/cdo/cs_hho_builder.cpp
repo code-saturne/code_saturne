@@ -38,8 +38,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_log.h"
 #include "base/cs_time_step.h"
@@ -755,7 +755,7 @@ cs_hho_builder_create(int     order,
 {
   cs_hho_builder_t *b = nullptr;
 
-  BFT_MALLOC(b, 1, cs_hho_builder_t);
+  CS_MALLOC(b, 1, cs_hho_builder_t);
 
   /* Retrieve options for building basis functions */
   cs_flag_t  face_basis_flag, cell_basis_flag;
@@ -763,7 +763,7 @@ cs_hho_builder_create(int     order,
 
   b->n_face_basis = 0;
   b->n_max_face_basis = n_fc;
-  BFT_MALLOC(b->face_basis, n_fc, cs_basis_func_t *);
+  CS_MALLOC(b->face_basis, n_fc, cs_basis_func_t *);
   for (int i = 0; i < n_fc; i++)
     b->face_basis[i] = cs_basis_func_create(face_basis_flag, order, 2);
 
@@ -777,7 +777,7 @@ cs_hho_builder_create(int     order,
   /* Reconstruction operator for the gradient of the potential.
      Store the transposed matrix for a more convenient manipulation */
   int *block_size = nullptr;
-  BFT_MALLOC(block_size, n_fc + 1, int);
+  CS_MALLOC(block_size, n_fc + 1, int);
   for (int f = 0; f < n_fc; f++) {
     block_size[f] = fbs;
   }
@@ -789,7 +789,7 @@ cs_hho_builder_create(int     order,
   b->bf_t = cs_sdm_block_create(1 + n_fc, 1, block_size, &fbs);
   b->jstab = cs_sdm_block_create(1 + n_fc, 1 + n_fc, block_size, block_size);
 
-  BFT_FREE(block_size);
+  CS_FREE(block_size);
 
   /* Additional matrix */
   if (order == 0)
@@ -832,7 +832,7 @@ cs_hho_builder_free(cs_hho_builder_t  **p_builder)
   b->cell_basis = cs_basis_func_free(b->cell_basis);
   for (int i = 0; i < b->n_max_face_basis; i++)
     b->face_basis[i] = cs_basis_func_free(b->face_basis[i]);
-  BFT_FREE(b->face_basis);
+  CS_FREE(b->face_basis);
 
   /* Free matrices */
   b->grad_reco_op = cs_sdm_free(b->grad_reco_op);
@@ -842,7 +842,7 @@ cs_hho_builder_free(cs_hho_builder_t  **p_builder)
 
   b->hdg = cs_sdm_free(b->hdg);
 
-  BFT_FREE(b);
+  CS_FREE(b);
 
   *p_builder = nullptr;
   p_builder  = nullptr;
@@ -1234,7 +1234,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
   cs_real_t *array = nullptr;
   cs_real_t  _array[10];
   if (cs > 10)
-    BFT_MALLOC(array, cs, cs_real_t);
+    CS_MALLOC(array, cs, cs_real_t);
   else
     array = _array;
 
@@ -1438,7 +1438,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
   /* Free temporary buffers and structures */
   cbf_kp1 = cs_basis_func_free(cbf_kp1);
   if (array != _array)
-    BFT_FREE(array);
+    CS_FREE(array);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -38,8 +38,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_boundary_zone.h"
@@ -252,7 +252,7 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
   const cs_adjacency_t  *f2e = connect->f2e;
 
   int *e2def_ids = nullptr;
-  BFT_MALLOC(e2def_ids, n_edges, int);
+  CS_MALLOC(e2def_ids, n_edges, int);
 # pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t e = 0; e < n_edges; e++)
     e2def_ids[e] = -1; /* default: not associated to a definition */
@@ -297,7 +297,7 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
   /* 0. Initialization */
 
   cs_lnum_t *count = nullptr;
-  BFT_MALLOC(count, n_defs, cs_lnum_t);
+  CS_MALLOC(count, n_defs, cs_lnum_t);
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2e_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
@@ -324,8 +324,8 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
 
   /* Free memory */
 
-  BFT_FREE(e2def_ids);
-  BFT_FREE(count);
+  CS_FREE(e2def_ids);
+  CS_FREE(count);
 }
 
 /*============================================================================
@@ -1143,12 +1143,12 @@ cs_equation_bc_dirichlet_at_vertices(cs_real_t                   t_eval,
   cs_array_real_fill_zero(eqp->dim*quant->n_vertices, bcvals);
 
   cs_real_t *_face_vtx_values = nullptr;
-  BFT_MALLOC(_face_vtx_values, eqp->dim*connect->n_max_vbyf, cs_real_t);
+  CS_MALLOC(_face_vtx_values, eqp->dim * connect->n_max_vbyf, cs_real_t);
 
   /* Number of faces with a Dir. related to a vertex */
 
   int *counter = nullptr;
-  BFT_MALLOC(counter, quant->n_vertices, int);
+  CS_MALLOC(counter, quant->n_vertices, int);
   cs_array_lnum_fill_zero(quant->n_vertices, counter);
 
   if (face_bc->is_steady == false) /* Update bcflag if needed */
@@ -1300,8 +1300,8 @@ cs_equation_bc_dirichlet_at_vertices(cs_real_t                   t_eval,
 
   /* Free temporary buffers */
 
-  BFT_FREE(_face_vtx_values);
-  BFT_FREE(counter);
+  CS_FREE(_face_vtx_values);
+  CS_FREE(counter);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
   cs_dbg_darray_to_listing("DIRICHLET_VALUES",
@@ -1397,7 +1397,7 @@ cs_equation_bc_dirichlet_at_faces(const cs_mesh_t            *mesh,
           else {
 
             cs_real_t *bc_val = nullptr;
-            BFT_MALLOC(bc_val, def->dim, cs_real_t);
+            CS_MALLOC(bc_val, def->dim, cs_real_t);
 
             tfc->func(t_eval, tfc->input, bc_val);
 
@@ -1405,8 +1405,7 @@ cs_equation_bc_dirichlet_at_faces(const cs_mesh_t            *mesh,
                                               bc_val,
                                               values);
 
-            BFT_FREE(bc_val);
-
+            CS_FREE(bc_val);
           }
         }
         break;
@@ -2241,7 +2240,7 @@ cs_equation_bc_circulation_at_edges(cs_real_t                    t_eval,
 
   cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
   cs_lnum_t  *def2e_idx = nullptr;
-  BFT_MALLOC(def2e_idx, eqp->n_bc_defs + 1, cs_lnum_t);
+  CS_MALLOC(def2e_idx, eqp->n_bc_defs + 1, cs_lnum_t);
 
   _sync_circulation_def_at_edges(connect,
                                  eqp->n_bc_defs,
@@ -2296,7 +2295,7 @@ cs_equation_bc_circulation_at_edges(cs_real_t                    t_eval,
 
   } /* Loop on definitions */
 
-  BFT_FREE(def2e_idx);
+  CS_FREE(def2e_idx);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
   cs_dbg_darray_to_listing("CIRCULATION_VALUES", quant->n_edges, values, 9);

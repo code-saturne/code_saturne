@@ -37,7 +37,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "alge/cs_blas.h"
 #include "base/cs_log.h"
@@ -87,7 +87,7 @@ _create_sdm(cs_flag_t   flag,
 {
   cs_sdm_t *mat = nullptr;
 
-  BFT_MALLOC(mat, 1, cs_sdm_t);
+  CS_MALLOC(mat, 1, cs_sdm_t);
 
   mat->flag = flag;
   mat->n_max_rows = n_max_rows;
@@ -95,14 +95,14 @@ _create_sdm(cs_flag_t   flag,
   mat->n_rows = n_max_rows;
   mat->n_cols = n_max_cols;
 
-  BFT_MALLOC(mat->val, mat->n_max_rows*mat->n_max_cols, cs_real_t);
+  CS_MALLOC(mat->val, mat->n_max_rows * mat->n_max_cols, cs_real_t);
   memset(mat->val, 0, sizeof(cs_real_t)*mat->n_max_rows*mat->n_max_cols);
 
   if (flag & CS_SDM_BY_BLOCK) {
 
     cs_sdm_block_t *bd = nullptr;
 
-    BFT_MALLOC(bd, 1, cs_sdm_block_t);
+    CS_MALLOC(bd, 1, cs_sdm_block_t);
     bd->blocks              = nullptr;
     bd->n_max_blocks_by_row = bd->n_max_blocks_by_col = 0;
     bd->n_row_blocks = bd->n_col_blocks = 0;
@@ -250,8 +250,9 @@ cs_sdm_block_create(int          n_max_blocks_by_row,
   m->block_desc->n_max_blocks_by_col = n_max_blocks_by_col;
   m->block_desc->n_row_blocks = n_max_blocks_by_row;
   m->block_desc->n_col_blocks = n_max_blocks_by_col;
-  BFT_MALLOC(m->block_desc->blocks,
-             n_max_blocks_by_row*n_max_blocks_by_col, cs_sdm_t);
+  CS_MALLOC(m->block_desc->blocks,
+            n_max_blocks_by_row * n_max_blocks_by_col,
+            cs_sdm_t);
 
   cs_real_t  *p_val = m->val;
   int  shift = 0;
@@ -306,8 +307,9 @@ cs_sdm_block33_create(int      n_max_blocks_by_row,
   m->block_desc->n_max_blocks_by_col = n_max_blocks_by_col;
   m->block_desc->n_row_blocks = n_max_blocks_by_row;
   m->block_desc->n_col_blocks = n_max_blocks_by_col;
-  BFT_MALLOC(m->block_desc->blocks,
-             n_max_blocks_by_row*n_max_blocks_by_col, cs_sdm_t);
+  CS_MALLOC(m->block_desc->blocks,
+            n_max_blocks_by_row * n_max_blocks_by_col,
+            cs_sdm_t);
 
   cs_real_t  *p_val = m->val;
   for (int i = 0; i < n_max_blocks_by_row*n_max_blocks_by_col; i++) {
@@ -335,14 +337,14 @@ cs_sdm_free(cs_sdm_t  *mat)
     return mat;
 
   if ((mat->flag & CS_SDM_SHARED_VAL) == 0)
-    BFT_FREE(mat->val);
+    CS_FREE(mat->val);
 
   if (mat->flag & CS_SDM_BY_BLOCK) {
-    BFT_FREE(mat->block_desc->blocks);
-    BFT_FREE(mat->block_desc);
+    CS_FREE(mat->block_desc->blocks);
+    CS_FREE(mat->block_desc);
   }
 
-  BFT_FREE(mat);
+  CS_FREE(mat);
 
   return nullptr;
 }
@@ -541,9 +543,9 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
   bd->n_row_blocks = bd_ref->n_row_blocks;
   bd->n_col_blocks = bd_ref->n_col_blocks;
 
-  BFT_MALLOC(bd->blocks,
-             bd_ref->n_max_blocks_by_row*bd_ref->n_max_blocks_by_col,
-             cs_sdm_t);
+  CS_MALLOC(bd->blocks,
+            bd_ref->n_max_blocks_by_row * bd_ref->n_max_blocks_by_col,
+            cs_sdm_t);
 
   cs_real_t  *p_val = m->val;
   int  shift = 0;

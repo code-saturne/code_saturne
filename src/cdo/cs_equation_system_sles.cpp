@@ -37,7 +37,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "alge/cs_param_sles.h"
 #include "base/cs_fp_exception.h"

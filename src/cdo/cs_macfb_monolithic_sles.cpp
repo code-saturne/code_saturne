@@ -46,7 +46,7 @@
  *  BFT headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -188,8 +188,8 @@ _build_shared_structures_full_system(cs_cdo_system_block_t *block,
 
   int        max_sten = (10 + 4 + 1) + 2 * 2;
   cs_gnum_t *grows = nullptr, *gcols = nullptr;
-  BFT_MALLOC(grows, max_sten, cs_gnum_t);
-  BFT_MALLOC(gcols, max_sten, cs_gnum_t);
+  CS_MALLOC(grows, max_sten, cs_gnum_t);
+  CS_MALLOC(gcols, max_sten, cs_gnum_t);
 
   /*
    *   | A_xx  | A_xy  | A_xz  | Bt_x  |
@@ -207,7 +207,7 @@ _build_shared_structures_full_system(cs_cdo_system_block_t *block,
   /* Compute for each row the shifting by direction */
 
   cs_lnum_t *faces_axis_ids = nullptr;
-  BFT_MALLOC(faces_axis_ids, n_faces, cs_lnum_t);
+  CS_MALLOC(faces_axis_ids, n_faces, cs_lnum_t);
   cs_array_lnum_fill_zero(n_faces, faces_axis_ids);
 
   cs_lnum_t n_faces_axis[3] = { 0, 0, 0 };
@@ -311,9 +311,9 @@ _build_shared_structures_full_system(cs_cdo_system_block_t *block,
 
   /* Free temporary buffers */
 
-  BFT_FREE(grows);
-  BFT_FREE(gcols);
-  BFT_FREE(faces_axis_ids);
+  CS_FREE(grows);
+  CS_FREE(gcols);
+  CS_FREE(faces_axis_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -335,7 +335,7 @@ _get_m22_scaled_diag_mass_matrix(const cs_navsto_param_t *nsp,
   const cs_lnum_t            n_cells = cdoq->n_cells;
 
   cs_real_t *m22_mass_diag = nullptr;
-  BFT_MALLOC(m22_mass_diag, n_cells, cs_real_t);
+  CS_MALLOC(m22_mass_diag, n_cells, cs_real_t);
 
   /* Compute scaling coefficients */
 
@@ -388,7 +388,7 @@ _get_scaled_diag_m22(const cs_navsto_param_t *nsp, const cs_property_t *pty)
   const cs_lnum_t            n_cells = cdoq->n_cells;
 
   cs_real_t *m22_mass_diag = nullptr;
-  BFT_MALLOC(m22_mass_diag, n_cells, cs_real_t);
+  CS_MALLOC(m22_mass_diag, n_cells, cs_real_t);
 
   /* Compute scaling coefficients */
 
@@ -444,8 +444,8 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t mat_class,
   cs_real_t *diag_smat = nullptr;
   cs_real_t *xtra_smat = nullptr;
 
-  BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xtra_smat, 2 * n_i_faces, cs_real_t);
+  CS_MALLOC(diag_smat, n_cells_ext, cs_real_t);
+  CS_MALLOC(xtra_smat, 2 * n_i_faces, cs_real_t);
 
   cs_array_real_fill_zero(n_cells_ext, diag_smat);
   cs_array_real_fill_zero(2 * n_i_faces, xtra_smat);
@@ -569,10 +569,10 @@ _gkb_init_context(cs_saddle_solver_t             *solver,
 
   /* Buffers of size n2_dofs */
 
-  BFT_MALLOC(ctx->q, n2_dofs, cs_real_t);
-  BFT_MALLOC(ctx->d, n2_dofs, cs_real_t);
-  BFT_MALLOC(ctx->m21v, n2_dofs, cs_real_t);
-  BFT_MALLOC(ctx->inv_m22, n2_dofs, cs_real_t);
+  CS_MALLOC(ctx->q, n2_dofs, cs_real_t);
+  CS_MALLOC(ctx->d, n2_dofs, cs_real_t);
+  CS_MALLOC(ctx->m21v, n2_dofs, cs_real_t);
+  CS_MALLOC(ctx->inv_m22, n2_dofs, cs_real_t);
 
   ctx->m22 = quant->cell_vol; /* shared pointer */
   for (cs_lnum_t i = 0; i < n2_dofs; i++)
@@ -580,20 +580,20 @@ _gkb_init_context(cs_saddle_solver_t             *solver,
 
   /* Buffers of size n1_dofs */
 
-  BFT_MALLOC(ctx->m12q, n1_dofs, cs_real_t);
-  BFT_MALLOC(ctx->x1_tilda, n1_dofs, cs_real_t);
+  CS_MALLOC(ctx->m12q, n1_dofs, cs_real_t);
+  CS_MALLOC(ctx->x1_tilda, n1_dofs, cs_real_t);
 
   cs_cdo_system_helper_t *sh = solver->system_helper;
 
   const cs_matrix_t *m11       = cs_cdo_system_get_matrix(sh, 0);
   const cs_lnum_t max_b11_size = cs::max(cs_matrix_get_n_columns(m11), n1_dofs);
 
-  BFT_MALLOC(ctx->w, max_b11_size, cs_real_t);
-  BFT_MALLOC(ctx->v, max_b11_size, cs_real_t);
+  CS_MALLOC(ctx->w, max_b11_size, cs_real_t);
+  CS_MALLOC(ctx->v, max_b11_size, cs_real_t);
 
   /* Rk: rhs_tilda stores quantities in space X1 and X2 alternatively */
 
-  BFT_MALLOC(ctx->rhs_tilda, cs::max(n1_dofs, n2_dofs), cs_real_t);
+  CS_MALLOC(ctx->rhs_tilda, cs::max(n1_dofs, n2_dofs), cs_real_t);
 
   /* Convergence members (energy norm estimation) */
 
@@ -617,7 +617,7 @@ _gkb_init_context(cs_saddle_solver_t             *solver,
   else
     ctx->zeta_size = cs::max(1, tt - 4);
 
-  BFT_MALLOC(ctx->zeta_array, ctx->zeta_size, cs_real_t);
+  CS_MALLOC(ctx->zeta_array, ctx->zeta_size, cs_real_t);
   for (int i = 0; i < ctx->zeta_size; i++)
     ctx->zeta_array[i] = 0.;
 
@@ -652,19 +652,19 @@ _alu_init_context(const cs_navsto_param_t        *nsp,
 
   /* Buffers of size n2_scatter_dofs */
 
-  BFT_MALLOC(ctx->inv_m22, solver->n2_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->inv_m22, solver->n2_scatter_dofs, cs_real_t);
 
 #pragma omp parallel for if (solver->n2_scatter_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < solver->n2_scatter_dofs; i2++)
     ctx->inv_m22[i2] = 1. / quant->cell_vol[i2];
 
-  BFT_MALLOC(ctx->res2, solver->n2_scatter_dofs, cs_real_t);
-  BFT_MALLOC(ctx->m21x1, solver->n2_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->res2, solver->n2_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->m21x1, solver->n2_scatter_dofs, cs_real_t);
 
   /* Buffers of size n1_scatter_dofs */
 
-  BFT_MALLOC(ctx->b1_tilda, solver->n1_scatter_dofs, cs_real_t);
-  BFT_MALLOC(ctx->rhs, solver->n1_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->b1_tilda, solver->n1_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->rhs, solver->n1_scatter_dofs, cs_real_t);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -696,14 +696,14 @@ _uzawa_cg_init_context(const cs_navsto_param_t             *nsp,
 
   /* Buffers of size n1_scatter_dofs */
 
-  BFT_MALLOC(ctx->b1_tilda, solver->n1_scatter_dofs, cs_real_t);
-  BFT_MALLOC(ctx->rhs, solver->n1_scatter_dofs, cs_real_t);
-  BFT_MALLOC(ctx->dzk, solver->n1_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->b1_tilda, solver->n1_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->rhs, solver->n1_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->dzk, solver->n1_scatter_dofs, cs_real_t);
 
   /* Buffers of size n2_scatter_dofs */
 
-  BFT_MALLOC(ctx->res2, solver->n2_scatter_dofs, cs_real_t);
-  BFT_MALLOC(ctx->m21x1, solver->n2_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->res2, solver->n2_scatter_dofs, cs_real_t);
+  CS_MALLOC(ctx->m21x1, solver->n2_scatter_dofs, cs_real_t);
 
   /* Since gk is used as a variable in a cell system, one has to take into
      account extra-space for synchronization */
@@ -711,7 +711,7 @@ _uzawa_cg_init_context(const cs_navsto_param_t             *nsp,
   cs_lnum_t size = solver->n2_scatter_dofs;
   if (cs_glob_n_ranks > 1)
     size = cs::max(size, connect->n_cells_with_ghosts);
-  BFT_MALLOC(ctx->gk, size, cs_real_t);
+  CS_MALLOC(ctx->gk, size, cs_real_t);
 
   ctx->inv_m22 = _get_scaled_diag_m22(nsp, ctx->pty_22);
 }
@@ -1195,7 +1195,7 @@ cs_macfb_monolithic_sles_block_krylov(const cs_navsto_param_t *nsp,
   cs_real_t *x1 = nullptr;
 
   if (cs_glob_n_ranks > 1) {
-    BFT_MALLOC(x1, ctx->b11_max_size, cs_real_t);
+    CS_MALLOC(x1, ctx->b11_max_size, cs_real_t);
     cs_array_real_copy(solver->n1_scatter_dofs, u_f, x1);
   }
   else
@@ -1250,7 +1250,7 @@ cs_macfb_monolithic_sles_block_krylov(const cs_navsto_param_t *nsp,
 
   if (cs_glob_n_ranks > 1) {
     cs_array_real_copy(solver->n1_scatter_dofs, x1, u_f);
-    BFT_FREE(x1);
+    CS_FREE(x1);
   }
 
   /* 3. Monitoring and output */
@@ -1457,7 +1457,7 @@ cs_macfb_monolithic_sles_uzawa_cg(const cs_navsto_param_t *nsp,
   cs_real_t *x1 = nullptr;
 
   if (cs_glob_n_ranks > 1) {
-    BFT_MALLOC(x1, ctx->b11_max_size, cs_real_t);
+    CS_MALLOC(x1, ctx->b11_max_size, cs_real_t);
     cs_array_real_copy(solver->n1_scatter_dofs, u_f, x1);
   }
   else
@@ -1491,7 +1491,7 @@ cs_macfb_monolithic_sles_uzawa_cg(const cs_navsto_param_t *nsp,
                                                    &(ctx->schur_diag),
                                                    &(ctx->schur_xtra));
 
-    BFT_FREE(m11_inv_lumped);
+    CS_FREE(m11_inv_lumped);
   } break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
@@ -1514,7 +1514,7 @@ cs_macfb_monolithic_sles_uzawa_cg(const cs_navsto_param_t *nsp,
                                                    &(ctx->schur_diag),
                                                    &(ctx->schur_xtra));
 
-    BFT_FREE(m11_inv_lumped);
+    CS_FREE(m11_inv_lumped);
   } break;
 
   default:
@@ -1533,7 +1533,7 @@ cs_macfb_monolithic_sles_uzawa_cg(const cs_navsto_param_t *nsp,
 
   if (cs_glob_n_ranks > 1) {
     cs_array_real_copy(solver->n1_scatter_dofs, x1, u_f);
-    BFT_FREE(x1);
+    CS_FREE(x1);
   }
 
   /* 3. Monitoring and output */

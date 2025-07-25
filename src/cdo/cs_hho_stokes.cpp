@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_boundary_zone.h"
 #include "cdo/cs_equation_priv.h"
@@ -168,22 +168,22 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
   case CS_SPACE_SCHEME_HHO_P0:  /* TODO */
     {
-      BFT_MALLOC(cb->ids, n_fc + 1, int);
-      memset(cb->ids, 0, (n_fc + 1)*sizeof(int));
+    CS_MALLOC(cb->ids, n_fc + 1, int);
+    memset(cb->ids, 0, (n_fc + 1) * sizeof(int));
 
-      /* For post-processing errors = 38 */
-      size = cs::max(38, n_fc*(n_fc+1));
-      BFT_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
+    /* For post-processing errors = 38 */
+    size = cs::max(38, n_fc * (n_fc + 1));
+    CS_MALLOC(cb->values, size, double);
+    memset(cb->values, 0, size * sizeof(cs_real_t));
 
-      size = cs::max(2*n_fc, 15);
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+    size = cs::max(2 * n_fc, 15);
+    CS_MALLOC(cb->vectors, size, cs_real_3_t);
+    memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
-      /* Local square dense matrices used during the construction of
-         operators */
-      cb->loc = cs_sdm_square_create(n_fc + 1);
-      cb->aux = cs_sdm_square_create(n_fc + 1);
+    /* Local square dense matrices used during the construction of
+       operators */
+    cb->loc = cs_sdm_square_create(n_fc + 1);
+    cb->aux = cs_sdm_square_create(n_fc + 1);
     }
     break;
 
@@ -191,7 +191,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     {
       /* Store the block size description */
       size = n_fc + 1;
-      BFT_MALLOC(cb->ids, size, int);
+      CS_MALLOC(cb->ids, size, int);
       memset(cb->ids, 0, size*sizeof(int));
 
       /* Store the face, cell and gradient basis function evaluations and
@@ -205,12 +205,12 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
          or the factorization of the cell_cell block of size 4 --> 10
       */
       size = cs::max(54, (3*n_fc + 4)*2);
-      BFT_MALLOC(cb->values, size, double);
+      CS_MALLOC(cb->values, size, double);
       memset(cb->values, 0, size*sizeof(cs_real_t));
 
       /* Store Gauss points and tensor.n_f products */
       size = cs::max(15, 5 + n_fc);
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      CS_MALLOC(cb->vectors, size, cs_real_3_t);
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local dense matrices used during the construction of operators */
@@ -226,7 +226,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     {
       /* Store the block size description */
       size = n_fc + 1;
-      BFT_MALLOC(cb->ids, size, int);
+      CS_MALLOC(cb->ids, size, int);
       memset(cb->ids, 0, size*sizeof(int));
 
       /* Store the face, cell and gradient basis function evaluations and
@@ -241,11 +241,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
                               --> 190 + 19 = 209
       */
       size = cs::max(209, 2*(6*n_fc + 20));
-      BFT_MALLOC(cb->values, size, double);
+      CS_MALLOC(cb->values, size, double);
       memset(cb->values, 0, size*sizeof(cs_real_t));
 
       size = 15 + n_fc;  /* Store Gauss points and tensor.n_f products */
-      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      CS_MALLOC(cb->vectors, size, cs_real_3_t);
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local dense matrices used during the construction of operators */
@@ -346,12 +346,12 @@ cs_hho_stokes_initialize(cs_flag_t                      scheme_flag,
     /* Structure used to build the final system by a cell-wise process */
   assert(cs_glob_n_threads > 0);  /* Sanity check */
 
-  BFT_MALLOC(cs_hho_cell_bld, cs_glob_n_threads, cs_cell_builder_t *);
-  BFT_MALLOC(cs_hho_cell_sys, cs_glob_n_threads, cs_cell_sys_t *);
+  CS_MALLOC(cs_hho_cell_bld, cs_glob_n_threads, cs_cell_builder_t *);
+  CS_MALLOC(cs_hho_cell_sys, cs_glob_n_threads, cs_cell_sys_t *);
 
   /* Allocate builder structure specific to HHO schemes. This is an additional
      structure with respect to a cs_cell_builder_t structure */
-  BFT_MALLOC(cs_hho_builders, cs_glob_n_threads, cs_hho_builder_t *);
+  CS_MALLOC(cs_hho_builders, cs_glob_n_threads, cs_hho_builder_t *);
 
   for (int i = 0; i < cs_glob_n_threads; i++) {
     cs_hho_cell_bld[i] = nullptr;
@@ -440,9 +440,9 @@ cs_hho_stokes_finalize(void)
   cs_hho_builder_free(&(cs_hho_builders[0]));
 #endif /* openMP */
 
-  BFT_FREE(cs_hho_cell_sys);
-  BFT_FREE(cs_hho_cell_bld);
-  BFT_FREE(cs_hho_builders);
+  CS_FREE(cs_hho_cell_sys);
+  CS_FREE(cs_hho_cell_bld);
+  CS_FREE(cs_hho_builders);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -472,7 +472,7 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
 
   cs_hho_stokes_t *eqc = nullptr;
 
-  BFT_MALLOC(eqc, 1, cs_hho_stokes_t);
+  CS_MALLOC(eqc, 1, cs_hho_stokes_t);
 
   /* Mesh flag to know what to build */
   eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
@@ -510,18 +510,17 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
 
   /* Values of each DoF related to the cells */
   const cs_lnum_t  n_cell_dofs = n_cells * eqc->n_cell_dofs;
-  BFT_MALLOC(eqc->cell_values, n_cell_dofs, cs_real_t);
+  CS_MALLOC(eqc->cell_values, n_cell_dofs, cs_real_t);
   memset(eqc->cell_values, 0, sizeof(cs_real_t)*n_cell_dofs);
 
   /* Values at each face (interior and border) i.e. take into account BCs */
-  BFT_MALLOC(eqc->face_values, eqc->n_dofs, cs_real_t);
+  CS_MALLOC(eqc->face_values, eqc->n_dofs, cs_real_t);
   memset(eqc->face_values, 0, sizeof(cs_real_t)*eqc->n_dofs);
 
   /* Source term */
   eqc->source_terms = nullptr;
   if (cs_equation_param_has_sourceterm(eqp)) {
-
-    BFT_MALLOC(eqc->source_terms, n_cell_dofs, cs_real_t);
+    CS_MALLOC(eqc->source_terms, n_cell_dofs, cs_real_t);
     memset(eqc->source_terms, 0, sizeof(cs_real_t)*n_cell_dofs);
 
   } /* There is at least one source term */
@@ -529,13 +528,13 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
   /* Members related to the static condensation.
      The transposed of acf_tilda is stored to speed-up the computation of
      the static condensation */
-  BFT_MALLOC(eqc->rc_tilda, n_cell_dofs, cs_real_t);
+  CS_MALLOC(eqc->rc_tilda, n_cell_dofs, cs_real_t);
   memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cell_dofs);
 
   cs_lnum_t  n_row_blocks = connect->c2f->idx[n_cells];
   int       *row_block_sizes = nullptr;
 
-  BFT_MALLOC(row_block_sizes, n_row_blocks, int);
+  CS_MALLOC(row_block_sizes, n_row_blocks, int);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_row_blocks; i++)
     row_block_sizes[i] = eqc->n_face_dofs;
@@ -547,11 +546,11 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
                     n_row_blocks, 1,
                     row_block_sizes, &col_block_size);
 
-  BFT_FREE(row_block_sizes);
+  CS_FREE(row_block_sizes);
 
   /* Handle boundary conditions */
   const cs_lnum_t  n_b_faces = connect->n_faces[CS_BND_FACES];
-  BFT_MALLOC(eqc->bf2def_ids, n_b_faces, short int);
+  CS_MALLOC(eqc->bf2def_ids, n_b_faces, short int);
 
 # pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
@@ -590,16 +589,16 @@ cs_hho_stokes_free_context(void   *data)
     return eqc;
 
   /* Free temporary buffers */
-  BFT_FREE(eqc->cell_values);
-  BFT_FREE(eqc->face_values);
-  BFT_FREE(eqc->rc_tilda);
-  BFT_FREE(eqc->source_terms);
-  BFT_FREE(eqc->bf2def_ids);
+  CS_FREE(eqc->cell_values);
+  CS_FREE(eqc->face_values);
+  CS_FREE(eqc->rc_tilda);
+  CS_FREE(eqc->source_terms);
+  CS_FREE(eqc->bf2def_ids);
 
   cs_sdm_free(eqc->acf_tilda);
 
   /* Last free */
-  BFT_FREE(eqc);
+  CS_FREE(eqc);
 
   return nullptr;
 }

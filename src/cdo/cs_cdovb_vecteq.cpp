@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "cdo/cs_cdo_advection.h"
@@ -146,16 +146,16 @@ _vvb_create_cell_builder(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t  *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->ids, n_vc, int);
+  CS_MALLOC(cb->ids, n_vc, int);
   memset(cb->ids, 0, n_vc*sizeof(int));
 
   int  size = n_ec*(n_ec+1);
   size = cs::max(4*n_ec + 3*n_vc, size);
-  BFT_MALLOC(cb->values, size, double);
+  CS_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(cs_real_t));
 
   size = 2*n_ec;
-  BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+  CS_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of
@@ -194,7 +194,7 @@ _vvb_setup(cs_real_t                      t_eval,
 
   /* Compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(eqb->dir_values, 3*quant->n_vertices, cs_real_t);
+  CS_MALLOC(eqb->dir_values, 3 * quant->n_vertices, cs_real_t);
 
   cs_equation_bc_dirichlet_at_vertices(t_eval,
                                        mesh, quant, connect,
@@ -730,8 +730,8 @@ cs_cdovb_vecteq_init_sharing(const cs_cdo_quantities_t *quant,
   /* Structure used to build the final system by a cell-wise process */
 
   assert(cs_glob_n_threads > 0);
-  BFT_MALLOC(_vvb_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
-  BFT_MALLOC(_vvb_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
+  CS_MALLOC(_vvb_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
+  CS_MALLOC(_vvb_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
 
   for (int i = 0; i < cs_glob_n_threads; i++) {
     _vvb_cell_system[i]  = nullptr;
@@ -811,8 +811,8 @@ cs_cdovb_vecteq_finalize_sharing(void)
   cs_cell_builder_free(&(_vvb_cell_builder[0]));
 #endif /* openMP */
 
-  BFT_FREE(_vvb_cell_system);
-  BFT_FREE(_vvb_cell_builder);
+  CS_FREE(_vvb_cell_system);
+  CS_FREE(_vvb_cell_builder);
   _vvb_cell_builder = nullptr;
   _vvb_cell_system  = nullptr;
 }
@@ -851,7 +851,7 @@ cs_cdovb_vecteq_init_context(cs_equation_param_t    *eqp,
 
   cs_cdovb_vecteq_t *eqc = nullptr;
 
-  BFT_MALLOC(eqc, 1, cs_cdovb_vecteq_t);
+  CS_MALLOC(eqc, 1, cs_cdovb_vecteq_t);
 
   eqc->var_field_id = var_id;
   eqc->bflux_field_id = bflux_id;
@@ -934,7 +934,7 @@ cs_cdovb_vecteq_init_context(cs_equation_param_t    *eqp,
 
   /* Boundary conditions */
 
-  BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
+  CS_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
   cs_equation_bc_set_vertex_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
   eqc->enforce_robin_bc = nullptr;
@@ -1091,8 +1091,7 @@ cs_cdovb_vecteq_init_context(cs_equation_param_t    *eqp,
     if (cs_equation_param_has_time(eqp)) {
       if (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
           eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO) {
-
-        BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
+        CS_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
         cs_array_real_fill_zero(eqc->n_dofs, eqc->source_terms);
 
       } /* Theta scheme */
@@ -1101,11 +1100,9 @@ cs_cdovb_vecteq_init_context(cs_equation_param_t    *eqp,
     /* Need a mass matrix */
 
     for (int st_id = 0; st_id < eqp->n_source_terms; st_id++) {
-
-      cs_xdef_t  *st = eqp->source_terms[st_id];
+      cs_xdef_t *st = eqp->source_terms[st_id];
       if (st->meta & CS_FLAG_PRIMAL)
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
-
     }
 
   } /* There is at least one source term */
@@ -1118,47 +1115,46 @@ cs_cdovb_vecteq_init_context(cs_equation_param_t    *eqp,
      assembly process) */
 
   cs_cdo_system_helper_t *sh             = nullptr;
-  cs_lnum_t  col_block_size = 3*n_vertices;
+  cs_lnum_t               col_block_size = 3 * n_vertices;
 
   sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_DEFAULT,
-                                   1,                /* n_col_blocks */
-                                   &col_block_size,  /* col_block_size */
-                                   1);               /* n_blocks */
+                                   1,               /* n_col_blocks */
+                                   &col_block_size, /* col_block_size */
+                                   1);              /* n_blocks */
 
   /* Choose the right class of matrix to avoid copy.
    * The way to perform the assembly may change if an external librairy is used
    * for solving the linear system */
 
-  cs_cdo_system_matrix_class_t  matclass;
-  bool is_unrolled = true;
+  cs_cdo_system_matrix_class_t matclass;
+  bool                         is_unrolled = true;
 
   switch (eqp->sles_param->solver_class) {
+    case CS_PARAM_SOLVER_CLASS_CS:
+      matclass = CS_CDO_SYSTEM_MATRIX_CS;
+      break;
 
-  case CS_PARAM_SOLVER_CLASS_CS:
-    matclass = CS_CDO_SYSTEM_MATRIX_CS;
-    break;
-
-  case CS_PARAM_SOLVER_CLASS_HYPRE:
+    case CS_PARAM_SOLVER_CLASS_HYPRE:
 #if defined(HAVE_HYPRE)
-    matclass = CS_CDO_SYSTEM_MATRIX_HYPRE;
+      matclass = CS_CDO_SYSTEM_MATRIX_HYPRE;
 #else
-    matclass = CS_CDO_SYSTEM_MATRIX_CS;
+      matclass = CS_CDO_SYSTEM_MATRIX_CS;
 #endif
-    break;
+      break;
 
-  default:
-    matclass = CS_CDO_SYSTEM_MATRIX_CS;
-    break;
-
+    default:
+      matclass = CS_CDO_SYSTEM_MATRIX_CS;
+      break;
   }
 
-  cs_cdo_system_add_dblock(sh, 0,         /* block_id */
+  cs_cdo_system_add_dblock(sh,
+                           0, /* block_id */
                            matclass,
                            cs_flag_primal_vtx,
                            n_vertices,
-                           3,             /* stride */
-                           true,          /* interlaced */
-                           is_unrolled);  /* unrolled */
+                           3,            /* stride */
+                           true,         /* interlaced */
+                           is_unrolled); /* unrolled */
 
   cs_cdo_system_build_block(sh, 0); /* block_id */
 
@@ -1182,23 +1178,23 @@ cs_cdovb_vecteq_init_context(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovb_vecteq_free_context(void   *builder)
+cs_cdovb_vecteq_free_context(void *builder)
 {
-  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)builder;
+  cs_cdovb_vecteq_t *eqc = (cs_cdovb_vecteq_t *)builder;
 
   if (eqc == nullptr)
     return eqc;
 
-  BFT_FREE(eqc->source_terms);
-  BFT_FREE(eqc->cell_values);
-  BFT_FREE(eqc->vtx_bc_flag);
+  CS_FREE(eqc->source_terms);
+  CS_FREE(eqc->cell_values);
+  CS_FREE(eqc->vtx_bc_flag);
 
   cs_hodge_free_context(&(eqc->diffusion_hodge));
   cs_hodge_free_context(&(eqc->mass_hodge));
 
   /* Last free */
 
-  BFT_FREE(eqc);
+  CS_FREE(eqc);
 
   return nullptr;
 }
@@ -1219,19 +1215,19 @@ cs_cdovb_vecteq_free_context(void   *builder)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
-                            const int                     field_id,
-                            const cs_mesh_t              *mesh,
-                            const cs_equation_param_t    *eqp,
-                            cs_equation_builder_t        *eqb,
-                            void                         *context)
+cs_cdovb_vecteq_init_values(cs_real_t                  t_eval,
+                            const int                  field_id,
+                            const cs_mesh_t           *mesh,
+                            const cs_equation_param_t *eqp,
+                            cs_equation_builder_t     *eqb,
+                            void                      *context)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t *quant   = cs_shared_quant;
+  const cs_cdo_connect_t    *connect = cs_shared_connect;
 
-  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
-  cs_field_t  *fld = cs_field_by_id(field_id);
-  cs_real_t  *v_vals = fld->val;
+  cs_cdovb_vecteq_t *eqc    = (cs_cdovb_vecteq_t *)context;
+  cs_field_t        *fld    = cs_field_by_id(field_id);
+  cs_real_t         *v_vals = fld->val;
 
   /* By default, 0 is set as initial condition for the computational domain.
 
@@ -1240,70 +1236,72 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
      for vertex-based schemes
   */
 
-  cs_array_real_fill_zero(3*quant->n_vertices, v_vals);
+  cs_array_real_fill_zero(3 * quant->n_vertices, v_vals);
 
   if (eqp->n_ic_defs > 0) {
+    cs_lnum_t *def2v_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
+    cs_lnum_t *def2v_idx = nullptr;
 
-    cs_lnum_t  *def2v_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
-    cs_lnum_t  *def2v_idx = nullptr;
+    CS_MALLOC(def2v_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
-    BFT_MALLOC(def2v_idx, eqp->n_ic_defs + 1, cs_lnum_t);
-
-    cs_cdo_sync_vol_def_at_vertices(eqp->n_ic_defs, eqp->ic_defs,
-                                    def2v_idx, def2v_ids);
+    cs_cdo_sync_vol_def_at_vertices(eqp->n_ic_defs,
+                                    eqp->ic_defs,
+                                    def2v_idx,
+                                    def2v_ids);
 
     /* Initialize values at mesh vertices */
 
-    cs_flag_t  dof_flag = CS_FLAG_VECTOR | cs_flag_primal_vtx;
+    cs_flag_t dof_flag = CS_FLAG_VECTOR | cs_flag_primal_vtx;
 
     for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
-
       /* Get and then set the definition of the initial condition */
 
-      const cs_xdef_t  *def = eqp->ic_defs[def_id];
-      const cs_lnum_t  n_v_selected = def2v_idx[def_id+1] - def2v_idx[def_id];
-      const cs_lnum_t  *selected_lst = def2v_ids + def2v_idx[def_id];
+      const cs_xdef_t *def          = eqp->ic_defs[def_id];
+      const cs_lnum_t  n_v_selected = def2v_idx[def_id + 1] - def2v_idx[def_id];
+      const cs_lnum_t *selected_lst = def2v_ids + def2v_idx[def_id];
 
-      switch(def->type) {
+      switch (def->type) {
+        case CS_XDEF_BY_VALUE:
+          cs_evaluate_potential_at_vertices_by_value(def,
+                                                     n_v_selected,
+                                                     selected_lst,
+                                                     v_vals);
+          break;
 
-      case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_at_vertices_by_value(def,
-                                                   n_v_selected,
-                                                   selected_lst,
-                                                   v_vals);
-        break;
+        case CS_XDEF_BY_QOV:
+          /* Synchronization is performed inside */
+          cs_evaluate_potential_by_qov(dof_flag, def, v_vals, nullptr);
+          break;
 
-      case CS_XDEF_BY_QOV:
-        /* Synchronization is performed inside */
-        cs_evaluate_potential_by_qov(dof_flag, def, v_vals, nullptr);
-        break;
+        case CS_XDEF_BY_ANALYTIC_FUNCTION:
+          assert(eqp->dof_reduction == CS_PARAM_REDUCTION_DERHAM);
+          cs_evaluate_potential_at_vertices_by_analytic(def,
+                                                        t_eval,
+                                                        n_v_selected,
+                                                        selected_lst,
+                                                        v_vals);
+          break;
 
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        assert(eqp->dof_reduction == CS_PARAM_REDUCTION_DERHAM);
-        cs_evaluate_potential_at_vertices_by_analytic(def,
-                                                      t_eval,
-                                                      n_v_selected,
-                                                      selected_lst,
-                                                      v_vals);
-        break;
+        case CS_XDEF_BY_DOF_FUNCTION:
+          cs_evaluate_potential_at_vertices_by_dof_func(def,
+                                                        n_v_selected,
+                                                        selected_lst,
+                                                        v_vals);
+          break;
 
-      case CS_XDEF_BY_DOF_FUNCTION:
-        cs_evaluate_potential_at_vertices_by_dof_func(def,
-                                                      n_v_selected,
-                                                      selected_lst,
-                                                      v_vals);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid way to initialize field values for eq. %s.\n",
-                  __func__, eqp->name);
+        default:
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
+                    " %s: Invalid way to initialize field values for eq. %s.\n",
+                    __func__,
+                    eqp->name);
 
       } /* Switch on possible type of definition */
 
     } /* Loop on definitions */
 
-    BFT_FREE(def2v_idx);
+    CS_FREE(def2v_idx);
 
   } /* Initial values to set */
 
@@ -1311,7 +1309,9 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
      Dirichlet BC */
 
   cs_equation_bc_dirichlet_at_vertices(t_eval,
-                                       mesh, quant, connect,
+                                       mesh,
+                                       quant,
+                                       connect,
                                        eqp,
                                        eqb->face_bc,
                                        eqc->vtx_bc_flag,
@@ -1334,23 +1334,23 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
-                                   const cs_mesh_t            *mesh,
-                                   const int                   field_id,
-                                   const cs_equation_param_t  *eqp,
-                                   cs_equation_builder_t      *eqb,
-                                   void                       *context)
+cs_cdovb_vecteq_solve_steady_state(bool                       cur2prev,
+                                   const cs_mesh_t           *mesh,
+                                   const int                  field_id,
+                                   const cs_equation_param_t *eqp,
+                                   cs_equation_builder_t     *eqb,
+                                   void                      *context)
 {
-  cs_timer_t  t0 = cs_timer_time();
+  cs_timer_t t0 = cs_timer_time();
 
-  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
-  cs_cdo_system_helper_t  *sh = eqb->system_helper;
-  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_cdovb_vecteq_t      *eqc = (cs_cdovb_vecteq_t *)context;
+  cs_cdo_system_helper_t *sh  = eqb->system_helper;
+  cs_field_t             *fld = cs_field_by_id(field_id);
 
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_time_step_t  *ts = cs_shared_time_step;
-  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
+  const cs_cdo_connect_t    *connect   = cs_shared_connect;
+  const cs_cdo_quantities_t *quant     = cs_shared_quant;
+  const cs_time_step_t      *ts        = cs_shared_time_step;
+  const cs_real_t            time_eval = ts->t_cur + ts->dt[0];
 
   /* Build an array storing the Dirichlet values at vertices
    * First argument is set to t_cur + dt_cur even if this is a steady
@@ -1362,7 +1362,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* Initialize the local system: rhs, matrix and assembler values */
 
-  double  rhs_norm = 0.;
+  double     rhs_norm = 0.;
   cs_real_t *rhs      = nullptr;
 
   cs_cdo_system_helper_init_system(sh, &rhs);
@@ -1371,32 +1371,31 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
 
-    const int  t_id = cs_get_thread_id();
+    const int t_id = cs_get_thread_id();
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
 
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = _vvb_cell_system[t_id];
-    cs_cell_builder_t  *cb = _vvb_cell_builder[t_id];
-    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-    cs_hodge_t         *diff_hodge = (eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : eqc->diffusion_hodge[t_id];
-    cs_hodge_t *mass_hodge
-      = (eqc->mass_hodge == nullptr) ? nullptr : eqc->mass_hodge[t_id];
+    cs_face_mesh_t    *fm   = cs_cdo_local_get_face_mesh(t_id);
+    cs_cell_mesh_t    *cm   = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t     *csys = _vvb_cell_system[t_id];
+    cs_cell_builder_t *cb   = _vvb_cell_builder[t_id];
+    cs_cdo_assembly_t *asb  = cs_cdo_assembly_get(t_id);
+    cs_hodge_t        *diff_hodge =
+      (eqc->diffusion_hodge == nullptr) ? nullptr : eqc->diffusion_hodge[t_id];
+    cs_hodge_t *mass_hodge =
+      (eqc->mass_hodge == nullptr) ? nullptr : eqc->mass_hodge[t_id];
 
     /* Set times at which one evaluates quantities if needed */
 
     cb->t_pty_eval = time_eval;
-    cb->t_bc_eval = time_eval;
-    cb->t_st_eval = time_eval;
+    cb->t_bc_eval  = time_eval;
+    cb->t_st_eval  = time_eval;
 
     /* Initialization of the values of properties */
 
@@ -1406,9 +1405,8 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
+#pragma omp for CS_CDO_OMP_SCHEDULE reduction(+ : rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
       /* Set the current cell flag */
 
       cb->cell_flag = connect->cell_flag[c_id];
@@ -1417,31 +1415,32 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect,
+                         quant,
+                         cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _vvb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val,
-                            csys, cb);
+      _vvb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val, csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed (mass_hodge->matrix) */
 
       _vvb_conv_diff_reac(eqp, eqb, eqc, cm, mass_hodge, diff_hodge, csys, cb);
 
-      const bool  has_sourceterm = cs_equation_param_has_sourceterm(eqp);
+      const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
 
       if (has_sourceterm) { /* SOURCE TERM
                              * =========== */
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system */
 
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (cs_xdef_t *const *)eqp->source_terms,
+                                        (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
@@ -1473,8 +1472,8 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
       /* Compute a norm of the RHS for the normalization of the residual
          of the linear system to solve */
 
-      rhs_norm += _vvb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
-                                            cm, csys);
+      rhs_norm +=
+        _vvb_cw_rhs_normalization(eqp->sles_param->resnorm_type, cm, csys);
 
       /* ASSEMBLY PROCESS
        * ================ */
@@ -1505,18 +1504,17 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* End of the system building */
 
-  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
 
-  cs_sles_t    *sles = cs_sles_find_or_add(eqp->sles_param->field_id, nullptr);
-  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
-  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
+  cs_sles_t   *sles   = cs_sles_find_or_add(eqp->sles_param->field_id, nullptr);
+  cs_matrix_t *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   if (sh->blocks[0]->info.unrolled) {
-
     cs_cdo_solve_scalar_system(eqc->n_dofs, /* 3*n_vertices */
                                eqp->sles_param,
                                matrix,
@@ -1526,12 +1524,10 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
                                sles,
                                fld->val,
                                rhs);
-
   }
   else {
-
-    cs_cdo_solve_vector_system(eqc->n_dofs/3, /* = n_vertices */
-                               true,          /* interlaced ? */
+    cs_cdo_solve_vector_system(eqc->n_dofs / 3, /* = n_vertices */
+                               true,            /* interlaced ? */
                                eqp->sles_param,
                                matrix,
                                range_set,
@@ -1540,14 +1536,13 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
                                sles,
                                fld->val,
                                rhs);
-
   }
 
-  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_t t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
   cs_sles_free(sles);
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
+  cs_cdo_system_helper_reset(sh); /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1565,26 +1560,26 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_update_field(const cs_real_t            *solu,
-                             const cs_real_t            *rhs,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *field_val)
+cs_cdovb_vecteq_update_field(const cs_real_t           *solu,
+                             const cs_real_t           *rhs,
+                             const cs_equation_param_t *eqp,
+                             cs_equation_builder_t     *eqb,
+                             void                      *data,
+                             cs_real_t                 *field_val)
 {
   CS_UNUSED(rhs);
   CS_UNUSED(eqp);
 
-  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t  *)data;
-  cs_timer_t  t0 = cs_timer_time();
+  cs_cdovb_vecteq_t *eqc = (cs_cdovb_vecteq_t *)data;
+  cs_timer_t         t0  = cs_timer_time();
 
   /* Set the computed solution in field array */
 
-# pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
+#pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
     field_val[i] = solu[i];
 
-  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 }
 
@@ -1603,15 +1598,14 @@ cs_cdovb_vecteq_update_field(const cs_real_t            *solu,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_vecteq_get_vertex_values(void      *context,
-                                  bool       previous)
+cs_cdovb_vecteq_get_vertex_values(void *context, bool previous)
 {
-  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
+  cs_cdovb_vecteq_t *eqc = (cs_cdovb_vecteq_t *)context;
 
   if (eqc == nullptr)
     return nullptr;
 
-  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+  cs_field_t *pot = cs_field_by_id(eqc->var_field_id);
 
   if (previous)
     return pot->val_pre;
@@ -1635,18 +1629,17 @@ cs_cdovb_vecteq_get_vertex_values(void      *context,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_vecteq_get_cell_values(void      *context,
-                                bool       previous)
+cs_cdovb_vecteq_get_cell_values(void *context, bool previous)
 {
-  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
+  cs_cdovb_vecteq_t *eqc = (cs_cdovb_vecteq_t *)context;
 
   if (eqc == nullptr)
     return nullptr;
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t *quant   = cs_shared_quant;
+  const cs_cdo_connect_t    *connect = cs_shared_connect;
 
-  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+  cs_field_t *pot = cs_field_by_id(eqc->var_field_id);
 
   cs_real_t *vtx_values = nullptr;
   if (previous)
@@ -1658,7 +1651,7 @@ cs_cdovb_vecteq_get_cell_values(void      *context,
   /* Reset buffer of values */
 
   if (eqc->cell_values == nullptr)
-    BFT_MALLOC(eqc->cell_values, 3*quant->n_cells, cs_real_t);
+    CS_MALLOC(eqc->cell_values, 3 * quant->n_cells, cs_real_t);
 
   cs_array_real_fill_zero(3*quant->n_cells, eqc->cell_values);
 

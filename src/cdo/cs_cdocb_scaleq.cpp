@@ -47,7 +47,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "alge/cs_blas.h"
@@ -255,18 +255,18 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->adv_fluxes, n_fc, double);
+  CS_MALLOC(cb->adv_fluxes, n_fc, double);
   memset(cb->adv_fluxes, 0, n_fc*sizeof(double));
 
-  BFT_MALLOC(cb->ids, n_fc, int);
+  CS_MALLOC(cb->ids, n_fc, int);
   memset(cb->ids, 0, n_fc*sizeof(int));
 
   int  size = (n_fc + 1)*(n_fc + 1);
-  BFT_MALLOC(cb->values, size, double);
+  CS_MALLOC(cb->values, size, double);
   memset(cb->values, 0, size*sizeof(double));
 
   size = 2*(n_fc + 1);
-  BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+  CS_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of operators */
@@ -928,8 +928,8 @@ cs_cdocb_scaleq_init_sharing(const cs_mesh_t           *mesh,
   /* Define local structures */
 
   assert(cs_glob_n_threads > 0);
-  BFT_MALLOC(_scb_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
-  BFT_MALLOC(_scb_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
+  CS_MALLOC(_scb_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
+  CS_MALLOC(_scb_cell_builder, cs_glob_n_threads, cs_cell_builder_t *);
 
   for (int i = 0; i < cs_glob_n_threads; i++) {
     _scb_cell_system[i]  = nullptr;
@@ -982,8 +982,8 @@ cs_cdocb_scaleq_finalize_sharing(void)
   cs_cell_builder_free(&(_scb_cell_builder[0]));
 #endif /* openMP */
 
-  BFT_FREE(_scb_cell_system);
-  BFT_FREE(_scb_cell_builder);
+  CS_FREE(_scb_cell_system);
+  CS_FREE(_scb_cell_builder);
   _scb_cell_system  = nullptr;
   _scb_cell_builder = nullptr;
 }
@@ -1019,7 +1019,7 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
   const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
 
   cs_cdocb_scaleq_t *eqc = nullptr;
-  BFT_MALLOC(eqc, 1, cs_cdocb_scaleq_t);
+  CS_MALLOC(eqc, 1, cs_cdocb_scaleq_t);
 
   eqc->var_field_id = var_id;
   eqc->bflux_field_id = bflux_id;
@@ -1037,12 +1037,12 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
   /* Values of the flux and face values at each face (interior and border)
    * i.e. take into account BCs */
 
-  BFT_MALLOC(eqc->flux, n_faces, cs_real_t);
+  CS_MALLOC(eqc->flux, n_faces, cs_real_t);
   cs_array_real_fill_zero(n_faces, eqc->flux);
 
   eqc->flux_pre = nullptr;
   if (cs_equation_param_has_time(eqp)) {
-    BFT_MALLOC(eqc->flux_pre, n_faces, cs_real_t);
+    CS_MALLOC(eqc->flux_pre, n_faces, cs_real_t);
     cs_array_real_fill_zero(n_faces, eqc->flux_pre);
   }
 
@@ -1132,7 +1132,7 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
   case CS_PARAM_SADDLE_SOLVER_MINRES:
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
-    BFT_MALLOC(eqc->block21_op, connect->c2f->idx[n_cells], cs_real_t);
+    CS_MALLOC(eqc->block21_op, connect->c2f->idx[n_cells], cs_real_t);
     break;
 
   default:
@@ -1184,7 +1184,7 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
 
   /* Builder for the cellwise divergence operator */
 
-  BFT_MALLOC(eqc->div_op_cw, cs_glob_n_threads, cs_real_t *);
+  CS_MALLOC(eqc->div_op_cw, cs_glob_n_threads, cs_real_t *);
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -1192,12 +1192,12 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
-    BFT_MALLOC(eqc->div_op_cw[t_id], connect->n_max_fbyc, cs_real_t);
+    CS_MALLOC(eqc->div_op_cw[t_id], connect->n_max_fbyc, cs_real_t);
   }
 #else
 
   assert(cs_glob_n_threads == 1);
-  BFT_MALLOC(eqc->div_op_cw[0], connect->n_max_fbyc, cs_real_t);
+  CS_MALLOC(eqc->div_op_cw[0], connect->n_max_fbyc, cs_real_t);
 
 #endif /* openMP */
 
@@ -1224,15 +1224,15 @@ cs_cdocb_scaleq_free_context(void  *scheme_context)
 
   /* These arrays may have not been allocated */
 
-  BFT_FREE(eqc->flux);
+  CS_FREE(eqc->flux);
   if (eqc->flux_pre != nullptr)
-    BFT_FREE(eqc->flux_pre);
+    CS_FREE(eqc->flux_pre);
 
   if (eqc->face_values != nullptr)
-    BFT_FREE(eqc->face_values);
+    CS_FREE(eqc->face_values);
 
   if (eqc->face_values_pre != nullptr)
-    BFT_FREE(eqc->face_values_pre);
+    CS_FREE(eqc->face_values_pre);
 
   cs_hodge_free_context(&(eqc->diff_hodge));
 
@@ -1240,20 +1240,20 @@ cs_cdocb_scaleq_free_context(void  *scheme_context)
 #pragma omp parallel
   {
     int t_id = omp_get_thread_num();
-    BFT_FREE(eqc->div_op_cw[t_id]);
+    CS_FREE(eqc->div_op_cw[t_id]);
   }
 #else
   assert(cs_glob_n_threads == 1);
-  BFT_FREE(eqc->div_op_cw[0]);
+  CS_FREE(eqc->div_op_cw[0]);
 #endif
 
-  BFT_FREE(eqc->div_op_cw);
+  CS_FREE(eqc->div_op_cw);
 
   /* Remark: The system helper is freed with the equation builder */
 
   /* Block (2,1) may be allocated */
 
-  BFT_FREE(eqc->block21_op);
+  CS_FREE(eqc->block21_op);
 
   /* Free the context structure for solving saddle-point system */
 
@@ -1261,7 +1261,7 @@ cs_cdocb_scaleq_free_context(void  *scheme_context)
 
   /* Other pointers are shared (i.e. not owner) */
 
-  BFT_FREE(eqc);
+  CS_FREE(eqc);
 
   return nullptr;
 }
@@ -1291,7 +1291,7 @@ cs_cdocb_scaleq_setup(cs_real_t                   t_eval,
 
   /* Compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(eqb->dir_values, cdoq->n_b_faces, cs_real_t);
+  CS_MALLOC(eqb->dir_values, cdoq->n_b_faces, cs_real_t);
   cs_array_real_fill_zero(cdoq->n_b_faces, eqb->dir_values);
 
   cs_equation_bc_dirichlet_at_faces(mesh,
@@ -1702,14 +1702,14 @@ cs_cdocb_scaleq_get_face_values(void        *context,
 
   if (previous) {
     if (eqc->face_values_pre == nullptr) {
-      BFT_MALLOC(eqc->face_values_pre, eqc->n_faces, cs_real_t);
+      CS_MALLOC(eqc->face_values_pre, eqc->n_faces, cs_real_t);
       cs_array_real_fill_zero(eqc->n_faces, eqc->face_values_pre);
     }
     return eqc->face_values_pre;
   }
   else {
     if (eqc->face_values == nullptr) {
-      BFT_MALLOC(eqc->face_values, eqc->n_faces, cs_real_t);
+      CS_MALLOC(eqc->face_values, eqc->n_faces, cs_real_t);
       cs_array_real_fill_zero(eqc->n_faces, eqc->face_values);
     }
     return eqc->face_values;
@@ -1930,7 +1930,7 @@ cs_cdocb_scaleq_extra_post(const cs_equation_param_t  *eqp,
 
   char *postlabel = nullptr;
   int  len = strlen(eqp->name) + 13 + 1;
-  BFT_MALLOC(postlabel, len, char);
+  CS_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.BoundaryFlux", eqp->name);
 
   cs_post_write_var(CS_POST_MESH_BOUNDARY,
@@ -1945,7 +1945,7 @@ cs_cdocb_scaleq_extra_post(const cs_equation_param_t  *eqp,
                     bface_fluxes,         /* flux at border faces */
                     cs_shared_time_step); /* time step management structure */
 
-  BFT_FREE(postlabel);
+  CS_FREE(postlabel);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

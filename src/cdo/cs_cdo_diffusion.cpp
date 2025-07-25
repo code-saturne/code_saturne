@@ -40,7 +40,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 #include "cdo/cs_hodge.h"
 #include "base/cs_log.h"
