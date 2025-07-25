@@ -394,7 +394,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
 
   /* Handle parallelism */
 
-  cs_parall_sum(1, CS_DOUBLE, &volume_marked);
+  cs::parall::sum(volume_marked);
 
   cs_real_t  val_to_set = quantity_val;
   if (volume_marked > 0)
@@ -459,7 +459,7 @@ _pcsp_by_qov(const cs_real_t    quantity_val,
 
   /* Handle parallelism */
 
-  cs_parall_sum(1, CS_DOUBLE, &volume_marked);
+  cs::parall::sum(volume_marked);
 
   cs_real_t  val_to_set = quantity_val;
   if (volume_marked > 0)
@@ -527,7 +527,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
 
   /* Handle parallelism */
 
-  cs_parall_sum(1, CS_DOUBLE, &volume_marked);
+  cs::parall::sum(volume_marked);
 
   cs_real_t  val_to_set = quantity_val;
   if (volume_marked > 0)
@@ -2778,7 +2778,7 @@ cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid array location. Stop evaluation.", __func__);
 
-  cs_parall_sum(1, CS_REAL_TYPE, &result);
+  cs::parall::sum(result);
 
   return result;
 }

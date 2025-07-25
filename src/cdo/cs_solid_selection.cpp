@@ -136,7 +136,7 @@ cs_solid_selection_sync(const cs_cdo_connect_t *connect)
   /* Parallel synchronization of the global number of solid cells */
 
   _cs_solid->n_g_cells = _cs_solid->n_cells;
-  cs_parall_sum(1, CS_GNUM_TYPE, &_cs_solid->n_g_cells);
+  cs::parall::sum(_cs_solid->n_g_cells);
 
   if (_cs_solid->n_g_cells > 0) {
 

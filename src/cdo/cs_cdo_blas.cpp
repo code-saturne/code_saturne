@@ -245,7 +245,7 @@ _c2x_scalar_sqnorm(const cs_lnum_t       size,
   /* Parallel treatment */
 
   if (do_redux)
-    cs_parall_sum(1, CS_DOUBLE, &l2norm);
+    cs::parall::sum(l2norm);
 
   return l2norm;
 }
@@ -328,7 +328,7 @@ _c2x_vector_sqnorm(const cs_lnum_t       size,
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
+  cs::parall::sum(l2norm);
 
   return (cs_real_t)l2norm;
 }
@@ -432,7 +432,7 @@ cs_cdo_blas_square_norm_pcsp(const cs_real_t *array)
   if (cs_glob_n_ranks > 1) {
 
     cs_real_t  sum = num;
-    cs_parall_sum(1, CS_REAL_TYPE, &sum);
+    cs::parall::sum(sum);
     num = sum;
 
   }
@@ -517,7 +517,7 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t *a,
   if (cs_glob_n_ranks > 1) {
 
     cs_real_t  sums = num;
-    cs_parall_sum(1, CS_REAL_TYPE, &sums);
+    cs::parall::sum(sums);
     num = sums;
 
   }
@@ -662,7 +662,7 @@ cs_cdo_blas_square_norm_vertex(const cs_real_t *array)
 {
   double  retval = cs_dot_xx(cs_cdo_quant->n_vertices, array);
 
-  cs_parall_sum(1, CS_DOUBLE, &retval);
+  cs::parall::sum(retval);
 
   return retval;
 }
@@ -752,7 +752,7 @@ cs_cdo_blas_dotprod_pvsp(const cs_real_t *a,
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &dp);
+  cs::parall::sum(dp);
 
   return (cs_real_t)dp;
 }
@@ -867,7 +867,7 @@ cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t *a,
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &num);
+  cs::parall::sum(num);
 
   return (cs_real_t)num;
 }
@@ -904,7 +904,7 @@ cs_cdo_blas_square_norm_2pvsp(const cs_real_t *array)
   res += _c2x_scalar_sqnorm(c2v->idx[cs_cdo_quant->n_cells], c2v, w_c2v,
                             array + cs_cdo_quant->n_vertices, false);
 
-  cs_parall_sum(1, CS_REAL_TYPE, &res);
+  cs::parall::sum(res);
 
   return res;
 }
@@ -998,7 +998,7 @@ cs_cdo_blas_dotprod_2pvsp(const cs_real_t *a,
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_DOUBLE, &dp);
+  cs::parall::sum(dp);
 
   return dp;
 }
@@ -1041,7 +1041,7 @@ cs_cdo_blas_square_norm_face(const cs_real_t *array)
 {
   cs_real_t  retval = cs_dot_xx(cs_cdo_quant->n_faces, array);
 
-  cs_parall_sum(1, CS_DOUBLE, &retval);
+  cs::parall::sum(retval);
 
   return retval;
 }
@@ -1187,7 +1187,7 @@ cs_cdo_blas_dotprod_pfsf(const cs_real_t *a,
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &dp);
+  cs::parall::sum(dp);
 
   return (cs_real_t)dp;
 }
@@ -1279,7 +1279,7 @@ cs_cdo_blas_square_norm_pfsf(const cs_real_t *array)
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
+  cs::parall::sum(l2norm);
 
   return (cs_real_t)l2norm;
 }
@@ -1373,7 +1373,7 @@ cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t *a,
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
+  cs::parall::sum(l2norm);
 
   return (cs_real_t)l2norm;
 }

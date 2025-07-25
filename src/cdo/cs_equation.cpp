@@ -3392,7 +3392,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t    *connect,
 
   /* Parallel synchronization */
 
-  cs_parall_sum(1, CS_REAL_TYPE, result);
+  cs::parall::sum(*result);
 }
 
 /*----------------------------------------------------------------------------*/

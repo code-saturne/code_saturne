@@ -5224,7 +5224,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
     /* Parallel reduction */
 
-    cs_parall_sum_scalars(integr, vol_tot);
+    cs::parall::sum(integr, vol_tot);
 
     output_values[n_output_values] = integr/vol_tot;
     n_output_values++;
@@ -5261,7 +5261,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
       /* Parallel reduction */
 
-      cs_parall_sum_scalars(si, vol_tot);
+      cs::parall::sum(si, vol_tot);
 
       output_values[n_output_values] = sqrt(si/vol_tot);
       n_output_values++;

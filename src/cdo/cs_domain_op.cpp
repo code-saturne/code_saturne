@@ -159,8 +159,7 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
     min = -minmax[0], max = minmax[1];
 
     sum = _sum;
-    cs_parall_sum(1, CS_REAL_TYPE, &sum);
-
+    cs::parall::sum(sum);
   }
   else
     min = _min, max = _max, sum = _sum;

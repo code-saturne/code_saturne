@@ -751,7 +751,7 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
 
     } /* Loop on cells */
 
-    cs_parall_sum(1, CS_DOUBLE, &div_norm2);
+    cs::parall::sum(div_norm2);
     col_vals[n_cols++] = sqrt(div_norm2);
 
   } /* Velocity divergence */
@@ -783,7 +783,7 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
 
     } /* Loop on cells */
 
-    cs_parall_sum(1, CS_DOUBLE, &mass_integral);
+    cs::parall::sum(mass_integral);
     col_vals[n_cols++] = mass_integral;
 
   } /* Mass density */
@@ -877,7 +877,7 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
       }
     }
 
-    cs_parall_sum(1, CS_DOUBLE, &k_integral); /* Sync. parallel computations */
+    cs::parall::sum(k_integral); /* Sync. parallel computations */
     col_vals[n_cols++] = k_integral;
 
   } /* Kinetic energy */

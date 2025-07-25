@@ -893,7 +893,7 @@ cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t    *nsp,
 
   cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
 
-  cs_parall_sum(1, CS_REAL_TYPE, &intgr);
+  cs::parall::sum(intgr);
 
   assert(quant->vol_tot > 0.);
   const cs_real_t  g_avg = intgr / quant->vol_tot;
@@ -938,7 +938,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 
   cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
 
-  cs_parall_sum(1, CS_REAL_TYPE, &intgr);
+  cs::parall::sum(intgr);
 
   assert(quant->vol_tot > 0.);
   const cs_real_t  g_avg = intgr / quant->vol_tot;
@@ -1104,7 +1104,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     } /* Loop on cells */
 
-    cs_parall_sum(1, CS_DOUBLE, &div_norm2);
+    cs::parall::sum(div_norm2);
     col_vals[n_cols++] = sqrt(div_norm2);
 
   } /* Velocity divergence */
@@ -1136,7 +1136,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     } /* Loop on cells */
 
-    cs_parall_sum(1, CS_DOUBLE, &mass_integral);
+    cs::parall::sum(mass_integral);
     col_vals[n_cols++] = mass_integral;
 
   } /* Mass density */
@@ -1241,7 +1241,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     }
 
-    cs_parall_sum(1, CS_DOUBLE, &k_integral); /* Sync. parallel computations */
+    cs::parall::sum(k_integral); /* Sync. parallel computations */
     col_vals[n_cols++] = k_integral;
 
   } /* Kinetic energy */
@@ -1353,14 +1353,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
     } /* velocity gradient has been computed previously */
 
     if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
-
-      cs_parall_sum(1, CS_DOUBLE, &e_integral);
+      cs::parall::sum(e_integral);
       col_vals[n_cols++] = e_integral;
     }
 
     if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
-
-      cs_parall_sum(1, CS_DOUBLE, &h_integral);
+      cs::parall::sum(h_integral);
       col_vals[n_cols++] = h_integral;
     }
 

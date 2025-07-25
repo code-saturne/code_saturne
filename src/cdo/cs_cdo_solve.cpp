@@ -176,7 +176,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
 
   case CS_PARAM_RESNORM_NORM2_RHS:
     *normalization = cs_dot_xx(rhs_size, rhs);
-    cs_parall_sum(1, CS_REAL_TYPE, normalization);
+    cs::parall::sum(*normalization);
     if (*normalization < 100*DBL_MIN)
       *normalization = 1.0;
     else
@@ -184,7 +184,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
     break;
 
   case CS_PARAM_RESNORM_FILTERED_RHS:
-    cs_parall_sum(1, CS_REAL_TYPE, normalization);
+    cs::parall::sum(*normalization);
     if (*normalization < 100*DBL_MIN)
       *normalization = 1.0;
     else
@@ -192,7 +192,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
     break;
 
   case CS_PARAM_RESNORM_WEIGHTED_RHS:
-    cs_parall_sum(1, CS_REAL_TYPE, normalization);
+    cs::parall::sum(*normalization);
     if (*normalization < 100*DBL_MIN)
       *normalization = 1.0;
     else
