@@ -840,7 +840,6 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   /* Take Dirichlet into account */
   const int inc = 1;
-  const int iphydp = 0;
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     /* Pseudo viscosity, to compute the convective flux "1 grad(y). Sij" */
@@ -858,31 +857,65 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                     i_visc,
                     b_visc);
 
-  /* If the equation on the wall distance has no
-     flux-reconstruction (ircflu=0) then no reconstruction
-     on the mass-flux (nswrgr) */
-
-  const int nswrgp = (eqp_yp->ircflu == 0) ? 0 : eqp_yp->nswrgr;
-
   /* Compute convective mass flux
      here -div(1 grad(y)) */
 
-  cs_face_diffusion_potential(f_wall_dist->id,
+  cs_equation_param_t eqp_loc_div = *eqp_yp;
+  eqp_loc_div.iwgrec = 0;
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f = bc_coeffs_solve.val_f;
+  cs_real_t *flux = bc_coeffs_solve.val_f_d;
+
+  if (eqp_loc_div.ircflu)
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       nullptr, // field
+       f_wall_dist->bc_coeffs,
+       inc,
+       &eqp_loc_div,
+       0, // iphydr,
+       nullptr, // f_ext
+       viscap,
+       nullptr, // vitenp
+       nullptr, // weighb
+       w_dist,
+       val_f,
+       flux);
+  else {
+    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+      (ctx,
+       nullptr, // field
+       f_wall_dist->bc_coeffs,
+       inc,
+       &eqp_loc_div,
+       0, // iphydr,
+       nullptr, // f_ext
+       viscap,
+       nullptr, // vitenp
+       nullptr, // weighb
+       w_dist,
+       val_f,
+       flux);
+  }
+
+  cs_face_diffusion_potential(f_wall_dist,
+                              &eqp_loc_div,
                               mesh,
                               mq,
                               1, /* Default initilization at 0 */
                               inc,
-                              eqp_yp->imrgra,
-                              nswrgp,
-                              eqp_yp->imligr,
-                              iphydp,
-                              0, /* iwgrp */
-                              eqp_yp->verbosity,
-                              eqp_yp->epsrgr,
-                              eqp_yp->climgr,
-                              nullptr,
+                              0, /* iphydp */
+                              nullptr, /* f_ext */
                               w_dist,
                               f_wall_dist->bc_coeffs,
+                              &bc_coeffs_solve,
                               i_visc, b_visc,
                               viscap,
                               i_mass_flux, b_mass_flux);

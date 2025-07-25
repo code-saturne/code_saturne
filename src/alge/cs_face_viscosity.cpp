@@ -465,7 +465,6 @@ cs_face_viscosity(const cs_mesh_t               *m,
       if (c_disable_flag[ii] + c_disable_flag[jj] == 2)
         i_visc[f_id] = 0;
     });
-
   }
 
   // guaranteed results for the CPU outside functions

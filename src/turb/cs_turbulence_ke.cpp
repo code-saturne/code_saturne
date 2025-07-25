@@ -51,6 +51,7 @@
 #include "alge/cs_balance.h"
 #include "alge/cs_blas.h"
 #include "alge/cs_convection_diffusion.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_dispatch.h"
 #include "cdo/cs_equation.h"
 #include "base/cs_equation_iterative_solve.h"
@@ -339,6 +340,26 @@ cs_turbulence_ke(int              phase_id,
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_phi = CS_F_(phi);
   cs_field_t *f_alpbl = CS_F_(alp_bl);
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve_k;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve_k,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f_k = bc_coeffs_solve_k.val_f;
+  cs_real_t *flux_k = bc_coeffs_solve_k.val_f_d;
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve_ep;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve_ep,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f_ep = bc_coeffs_solve_ep.val_f;
+  cs_real_t *flux_ep = bc_coeffs_solve_ep.val_f_d;
 
   const cs_real_t *dt = CS_F_(dt)->val;
 
@@ -970,22 +991,50 @@ cs_turbulence_ke(int              phase_id,
 
     });
 
-    cs_diffusion_potential(f_k->id,
+    /* Update cvara_k BC */
+    if (eqp_k->ircflu)
+      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+        (ctx,
+         f_k,
+         f_k->bc_coeffs,
+         1, //inc
+         eqp_k,
+         false, // hyd_p_flag
+         nullptr, // f_ext
+         w3,
+         nullptr, // vitenp
+         nullptr, // weighb
+         cvara_k,
+         val_f_k,
+         flux_k);
+    else {
+      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+        (ctx,
+         f_k,
+         f_k->bc_coeffs,
+         1, // inc
+         eqp_k,
+         false, // hyd_p_flag
+         nullptr, // f_ext
+         w3,
+         nullptr, // vitenp
+         nullptr, // weighb
+         cvara_k,
+         val_f_k,
+         flux_k);
+    }
+
+    cs_diffusion_potential(f_k,
+                           eqp_k,
                            m,
                            fvq,
                            1,     /* init */
                            1,     /* inc */
-                           eqp_k->imrgra,
-                           eqp_k->nswrgr,
-                           eqp_k->imligr,
                            0,     /* iphydp */
-                           eqp_k->iwgrec,
-                           eqp_k->verbosity,
-                           eqp_k->epsrgr,
-                           eqp_k->climgr,
                            nullptr,
                            cvara_k,
                            f_k->bc_coeffs,
+                           &bc_coeffs_solve_k,
                            viscf,
                            viscb,
                            w3,
@@ -1753,6 +1802,22 @@ cs_turbulence_ke(int              phase_id,
     cs_equation_param_t eqp_k_loc = *eqp_k;
     eqp_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
+    /* Update cvara_k BC */
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       f_k,
+       f_k->bc_coeffs,
+       1, //inc
+       &eqp_k_loc,
+       false, // hyd_p_flag
+       nullptr, // f_ext
+       nullptr, // visel
+       nullptr, // vitenp
+       nullptr, // weighb
+       cvara_k,
+       val_f_k,
+       flux_k);
+
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_k->id,
                       0,     /* imucpp */
@@ -1762,6 +1827,7 @@ cs_turbulence_ke(int              phase_id,
                       cvara_k,
                       cvara_k,
                       f_k->bc_coeffs,
+                      nullptr, // bc_coeffs_solve
                       imasfl,
                       bmasfl,
                       viscf,
@@ -1820,6 +1886,22 @@ cs_turbulence_ke(int              phase_id,
     cs_equation_param_t eqp_eps_loc = *eqp_eps;
     eqp_eps_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
+    /* Update cvara_ep BC */
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       f_eps, // field
+       f_eps->bc_coeffs,
+       1, //inc
+       &eqp_eps_loc,
+       false, // hyd_p_flag
+       nullptr, // f_ext
+       nullptr, // visel
+       nullptr, // vitenp
+       nullptr, // weighb
+       cvara_ep,
+       val_f_ep,
+       flux_ep);
+
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_eps->id,
                       0,    /* imucpp */
@@ -1829,6 +1911,7 @@ cs_turbulence_ke(int              phase_id,
                       cvara_ep,
                       cvara_ep,
                       f_eps->bc_coeffs,
+                      nullptr, // bc_coeffs_solve
                       imasfl,
                       bmasfl,
                       viscf,
@@ -2148,6 +2231,9 @@ cs_turbulence_ke(int              phase_id,
     CS_FREE_HD(grad_sqk);
     CS_FREE_HD(grad_s);
   }
+
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve_ep);
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve_k);
 }
 
 /*----------------------------------------------------------------------------*/

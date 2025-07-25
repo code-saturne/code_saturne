@@ -462,13 +462,21 @@ END_C_DECLS
  * \param[in]     halo_type        halo type
  * \param[in]     w_stride         stride for weighting coefficient
  * \param[in]     clip_coeff       clipping coefficient
+ * \param[in]     hyd_p_flag       flag for hydrostatic pressure
+ * \param[in]     f_ext            exterior force generating pressure
+ * \param[in]     viscel           symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
+                                   or nullptr
+ * \param[in]     weighb           boundary face weight for cells i in case
+ *                                 of tensor diffusion, or nullptr
  * \param[out]    bc_coeffs        boundary condition structure
+ * \param[in]     df_limiter       diffusion limiter array
  * \param[in]     var              gradient's base variable
  * \param[in]     c_weight         weighted gradient coefficient variable,
  *                                 or null
  */
 /*----------------------------------------------------------------------------*/
 
+template <bool compute_diffusion_coeffs>
 void
 cs_internal_coupling_update_bc_coeffs_s
 (
@@ -478,6 +486,11 @@ cs_internal_coupling_update_bc_coeffs_s
  cs_halo_type_t                 halo_type,
  int                            w_stride,
  double                         clip_coeff,
+ bool                           hyd_p_flag,
+ cs_real_t                      f_ext[][3],
+ cs_real_t                      viscel[][6],
+ const cs_real_t                weighb[],
+ cs_real_t                     *df_limiter,
  const cs_real_t               *var,
  const cs_real_t               *c_weight
 );

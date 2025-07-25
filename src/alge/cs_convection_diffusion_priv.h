@@ -3000,6 +3000,7 @@ cs_b_relax_c_val_strided(const double     relaxp,
  * \param[in]     b_massflux   mass flux at boundary face
  * \param[in]     xcpp         specific heat value if the scalar is the temperature,
  *                             1 otherwise
+ * \param[in]     val_f        value at boundary face for gradient
  * \param[in,out] flux         flux at boundary face
  */
 /*----------------------------------------------------------------------------*/
@@ -3014,12 +3015,11 @@ cs_b_imposed_conv_flux(int         iconvp,
                        cs_real_t   pi,
                        cs_real_t   pir,
                        cs_real_t   pipr,
-                       cs_real_t   coefap,
-                       cs_real_t   coefbp,
                        cs_real_t   coface,
                        cs_real_t   cofbce,
                        cs_real_t   b_massflux,
                        cs_real_t   xcpp,
+                       cs_real_t   val_f,
                        cs_real_t  *flux)
 {
   cs_real_t flui, fluj, pfac;
@@ -3037,12 +3037,11 @@ cs_b_imposed_conv_flux(int         iconvp,
       fluj = 0.5*(b_massflux -fabs(b_massflux));
     }
 
-    pfac  = inc*coefap + coefbp*pipr;
-    *flux += iconvp*xcpp*(thetap*(flui*pir + fluj*pfac) -imasac*( b_massflux*pi));
+    *flux += iconvp*xcpp*(thetap*(flui*pir + fluj*val_f) -imasac*( b_massflux*pi));
 
   /* Imposed convective flux */
 
-  } else {
+  } else { // TODO: store val_c = inc*coface + cofbce*pipr
 
     pfac = inc*coface + cofbce*pipr;
     *flux += iconvp*xcpp*(-imasac*(b_massflux*pi) + thetap*(pfac));
@@ -3128,6 +3127,51 @@ cs_b_imposed_conv_flux_strided(int              iconvp,
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective flux (substracting the mass accumulation from it) to
+ * flux at boundary face. The convective flux is a pure upwind flux.
+ *
+ * \param[in]     iconvp       convection flag
+ * \param[in]     thetap       weighting coefficient for the theta-scheme,
+ * \param[in]     imasac       take mass accumulation into account?
+ * \param[in]     bc_type      type of boundary face
+ * \param[in]     pi           value at cell i
+ * \param[in]     pir          relaxed value at cell i
+ * \param[in]     val_f        face value for gradient
+ * \param[in]     b_massflux   mass flux at boundary face
+ * \param[in]     xcpp         specific heat value if the scalar is the
+ *                             temperature, 1 otherwise
+ * \param[in,out] flux         flux at boundary face
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_b_upwind_flux(const int        iconvp,
+                 const cs_real_t  thetap,
+                 const int        imasac,
+                 const int        bc_type,
+                 const cs_real_t  pi,
+                 const cs_real_t  pir,
+                 const cs_real_t  val_f,
+                 const cs_real_t  b_massflux,
+                 const cs_real_t  xcpp,
+                 cs_real_t       *flux)
+{
+  cs_real_t flui, fluj;
+
+  /* Remove decentering for coupled faces */
+  if (bc_type == CS_COUPLED_FD) {
+    flui = 0.0;
+    fluj = b_massflux;
+  } else {
+    flui = 0.5*(b_massflux +fabs(b_massflux));
+    fluj = 0.5*(b_massflux -fabs(b_massflux));
+  }
+
+  *flux += iconvp*xcpp*(thetap*(flui*pir + fluj*val_f) -imasac*( b_massflux*pi));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3228,6 +3272,28 @@ cs_b_upwind_flux_strided(int              iconvp,
   for (int isou = 0; isou < stride; isou++)
     flux[isou] += iconvp*(  thetap*(flui*pir[isou] + fluj*pfac[isou])
                           - imasac*b_massflux*pi[isou]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add diffusive flux to flux at boundary face.
+ *
+ * \param[in]     idiffp   diffusion flag
+ * \param[in]     thetap   weighting coefficient for the theta-scheme,
+ * \param[in]     pfacd    boundary face value for diffusion
+ * \param[in]     b_visc   boundary face surface
+ * \param[in,out] flux     flux at boundary face
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_b_diff_flux(const int        idiffp,
+               const cs_real_t  thetap,
+               const cs_real_t  pfacd,
+               const cs_real_t  b_visc,
+               cs_real_t       *flux)
+{
+  *flux += idiffp*thetap*b_visc*pfacd;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3510,6 +3576,7 @@ cs_convection_diffusion_steady_scalar
   const cs_real_t   *restrict pvara,
   const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
   const cs_real_t             i_visc[],
@@ -3565,6 +3632,7 @@ cs_face_convection_steady_scalar
   const cs_real_t   *restrict pvara,
   const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
   cs_real_t                   i_conv_flux[][2],

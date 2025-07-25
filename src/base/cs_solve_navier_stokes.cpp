@@ -360,6 +360,16 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   cs_sles_t *sc = cs_sles_find_or_add(-1, name);
 
+  cs_bc_coeffs_solve_t bc_coeffs_solve_pot;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve_pot,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f_pot = bc_coeffs_solve_pot.val_f;
+  cs_real_t *flux_pot = bc_coeffs_solve_pot.val_f_d;
+
   while (isweep <= eqp->nswrsm && residual > tcrite) {
 
     /* Solving on the increment dpot */
@@ -400,22 +410,51 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
     if (isweep <= eqp->nswrsm) {
 
-      cs_diffusion_potential(-1,
+      /*  ---> Handle parallelism and periodicity */
+      cs_halo_sync(m->halo, ctx.use_gpu(), pot);
+
+      if (eqp->ircflu)
+        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+          (ctx,
+           nullptr, // field
+           &bc_coeffs_pot,
+           0, // inc
+           eqp,
+           false,   // hyd_p_flag
+           nullptr, // fext
+           dt,
+           nullptr, // vitenp
+           nullptr, // weighb
+           pot,
+           val_f_pot,
+           flux_pot);
+      else
+        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+          (ctx,
+           nullptr, // field
+           &bc_coeffs_pot,
+           0, // inc
+           eqp,
+           false,   // hyd_p_flag
+           nullptr, // f_ext
+           dt,
+           nullptr, // vitenp
+           nullptr, // weighb
+           pot,
+           val_f_pot,
+           flux_pot);
+
+      cs_diffusion_potential(nullptr, /* field */
+                             eqp,
                              m,
                              mq,
                              1,  /* init */
                              0,  /* inc */
-                             eqp->imrgra,
-                             eqp->nswrgr,
-                             eqp->imligr,
                              0,  /* iphydp */
-                             eqp->iwgrec,
-                             eqp->verbosity,
-                             eqp->epsrgr,
-                             eqp->climgr,
-                             nullptr,
+                             nullptr, /* f_ext */
                              pot,
                              &bc_coeffs_pot,
+                             &bc_coeffs_solve_pot,
                              i_visc, b_visc,
                              dt,
                              rhs);
@@ -459,22 +498,54 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /* Update the mass flux
      -------------------- */
 
-  cs_face_diffusion_potential(-1,
+  cs_equation_param_t eqp_loc = *eqp;
+  eqp_loc.iwgrec = 0;
+
+  /*  ---> Handle parallelism and periodicity */
+  cs_halo_sync(m->halo, ctx.use_gpu(), pota);
+
+  if (eqp_loc.ircflu)
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       nullptr, // field
+       &bc_coeffs_pot,
+       0, // inc
+       eqp,
+       false,   // hyd_p_flag
+       nullptr, // f_ext
+       dt,
+       nullptr, // vitenp
+       nullptr, // weighb
+       pota,
+       val_f_pot,
+       flux_pot);
+  else
+    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+      (ctx,
+       nullptr, // field
+       &bc_coeffs_pot,
+       0, // inc
+       eqp,
+       false,   // hyd_p_flag
+       nullptr, // f_ext
+       dt,
+       nullptr, // vitenp
+       nullptr, // weighb
+       pota,
+       val_f_pot,
+       flux_pot);
+
+  cs_face_diffusion_potential(nullptr,
+                              &eqp_loc,
                               m,
                               mq,
                               0,  /* init */
                               0,  /* inc */
-                              eqp->imrgra,
-                              eqp->nswrgr,
-                              eqp->imligr,
                               0,  /* iphydp */
-                              0,  /* iwgrp */
-                              eqp->verbosity,
-                              eqp->epsrgr,
-                              eqp->climgr,
-                              nullptr,
+                              nullptr, /* f_ext */
                               pota,
                               &bc_coeffs_pot,
+                              &bc_coeffs_solve_pot,
                               i_visc,
                               b_visc,
                               dt,
@@ -484,22 +555,36 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /* The last increment is not reconstructed to fullfill exactly
      the continuity equation (see theory guide) */
 
-  cs_face_diffusion_potential(-1,
+  cs_equation_param_t eqp_loc_last = *eqp;
+  eqp_loc_last.iwgrec = 0;
+  eqp_loc_last.ircflu = 0; // no reconstruction
+
+  cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+    (ctx,
+     nullptr, // field
+     &bc_coeffs_pot,
+     0, // inc
+     eqp,
+     false,   // hyd_p_flag
+     nullptr, // f_ext
+     dt,
+     nullptr, // vitenp
+     nullptr, // weighb
+     pota,
+     val_f_pot,
+     flux_pot);
+
+  cs_face_diffusion_potential(nullptr,
+                              &eqp_loc_last,
                               m,
                               mq,
                               0,  /* init */
                               0,  /* inc */
-                              eqp->imrgra,
-                              0,  /* nswrgp */
-                              eqp->imligr,
                               0,  /* iphydp */
-                              0,  /* iwgrp */
-                              eqp->verbosity,
-                              eqp->epsrgr,
-                              eqp->climgr,
-                              nullptr,
+                              nullptr, /* f_ext */
                               pota,
                               &bc_coeffs_pot,
+                              &bc_coeffs_solve_pot,
                               i_visc,
                               b_visc,
                               dt,
@@ -548,6 +633,8 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
+
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve_pot);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4368,7 +4455,8 @@ cs_solve_navier_stokes(const int        iterns,
   cs_bad_cells_regularisation_vector(vel, 1);
 
   /* Update velocity boundary face value */
-  cs_boundary_conditions_update_bc_coeff_face_values(ctx, CS_F_(vel), vel);
+  cs_boundary_conditions_update_bc_coeff_face_values_strided
+    (ctx, CS_F_(vel), vel);
 
   /* Mass flux initialization for VOF algorithm */
   if (vof_param->vof_model > 0) {

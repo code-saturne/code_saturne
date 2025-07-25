@@ -885,10 +885,14 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
                                       face_ids,
                                       halo_type,
                                       climgr,
+                                      false,   // hyd_p_flag
+                                      nullptr, // f_ext
+                                      nullptr,
                                       bc_coeffs,
                                       c_weight,
                                       var,
-                                      var_iprime);
+                                      var_iprime,
+                                      nullptr);
 
     ctx.wait();
 

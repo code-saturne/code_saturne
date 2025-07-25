@@ -157,6 +157,7 @@ cs_beta_limiter_building(int              f_id,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -180,6 +181,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                const cs_real_t            *pvara,
                                const int                   icvfli[],
                                const cs_field_bc_coeffs_t *bc_coeffs,
+                               const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
@@ -231,6 +233,7 @@ cs_face_convection_scalar(int                         idtvar,
                           const cs_real_t            *pvara,
                           const int                   icvfli[],
                           const cs_field_bc_coeffs_t *bc_coeffs,
+                          const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                           const cs_real_t             i_massflux[],
                           const cs_real_t             b_massflux[],
                           cs_real_2_t                 i_conv_flux[],
@@ -401,6 +404,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -421,6 +425,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
                                 cs_real_t                 * pvar,
                                 const cs_real_t           * pvara,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
+                                const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                                 const cs_real_t             i_massflux[],
                                 const cs_real_t             b_massflux[],
                                 const cs_real_t             i_visc[],
@@ -454,6 +459,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -472,15 +478,16 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 int                         f_id,
                                 const cs_equation_param_t   eqp,
                                 int                         inc,
-                                cs_real_t                 * pvar,
-                                const cs_real_t           * pvara,
+                                cs_real_t                  *pvar,
+                                const cs_real_t            *pvara,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
+                                const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
-                                cs_real_6_t               * viscel,
+                                cs_real_6_t                *viscel,
                                 const cs_real_2_t           weighf[],
                                 const cs_real_t             weighb[],
-                                cs_real_t                 * rhs);
+                                cs_real_t                  *rhs);
 
 /*-----------------------------------------------------------------------------*/
 /*
@@ -670,7 +677,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
      <b>cs_face_diffusion_potential/cs_diffusion_potential</b></a>
  * section of the theory guide for more information.
  *
- * \param[in]     f_id          field id (or -1)
+ * \param[in]     f             pointer to field or nullptr
+ * \param[in]     eqp           equation parameters
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
@@ -679,24 +687,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least squares gradient
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
  * \param[in]     iphydp        hydrostatic pressure indicator
- * \param[in]     iwgrp         indicator
- *                               - 1 weight gradient by vicosity*porosity
- *                               - weighting determined by field options
- * \param[in]     iwarnp        verbosity
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
@@ -711,22 +702,17 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_diffusion_potential(const int                   f_id,
+cs_face_diffusion_potential(const cs_field_t           *f,
+                            const cs_equation_param_t  *eqp,
                             const cs_mesh_t            *m,
                             cs_mesh_quantities_t       *fvq,
                             int                         init,
                             int                         inc,
-                            int                         imrgra,
-                            int                         nswrgp,
-                            int                         imligp,
                             int                         iphydp,
-                            int                         iwgrp,
-                            int                         iwarnp,
-                            double                      epsrgp,
-                            double                      climgp,
                             cs_real_3_t                *frcxt,
                             cs_real_t                  *pvar,
                             const cs_field_bc_coeffs_t *bc_coeffs,
+                            const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                             const cs_real_t             i_visc[],
                             const cs_real_t             b_visc[],
                             cs_real_t                  *visel,
@@ -745,7 +731,8 @@ cs_face_diffusion_potential(const int                   f_id,
  *              \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
  * \f]
  *
- * \param[in]     f_id          field id (or -1)
+ * \param[in]     f             pointer to field or nullptr
+ * \param[in]     eqp           equation parameters
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init           indicator
@@ -754,32 +741,9 @@ cs_face_diffusion_potential(const int                   f_id,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least squares gradient
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
- * \param[in]     ircflp        indicator
- *                               - 1 flux reconstruction,
- *                               - 0 otherwise
- * \param[in]     ircflb        indicator
- *                               - 1 boundary flux reconstruction,
- *                               - 0 otherwise
  * \param[in]     iphydp        indicator
  *                               - 1 hydrostatic pressure taken into account
  *                               - 0 otherwise
- * \param[in]     iwgrp         indicator
- *                               - 1 weight gradient by vicosity*porosity
- *                               - weighting determined by field options
- * \param[in]     iwarnp        verbosity
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
@@ -790,37 +754,27 @@ cs_face_diffusion_potential(const int                   f_id,
  * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
- * \param[in]     weighb        boundary face weight for cells i in case
- *                               of tensor diffusion
  * \param[in,out] i_massflux    mass flux at interior faces
  * \param[in,out] b_massflux    mass flux at boundary faces
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_anisotropic_diffusion_potential(const int                   f_id,
+cs_face_anisotropic_diffusion_potential(const cs_field_t           *f,
+                                        const cs_equation_param_t  *eqp,
                                         const cs_mesh_t            *m,
                                         cs_mesh_quantities_t       *fvq,
                                         int                         init,
                                         int                         inc,
-                                        int                         imrgra,
-                                        int                         nswrgp,
-                                        int                         imligp,
-                                        int                         ircflp,
-                                        int                         ircflb,
                                         int                         iphydp,
-                                        int                         iwgrp,
-                                        int                         iwarnp,
-                                        double                      epsrgp,
-                                        double                      climgp,
                                         cs_real_3_t                *frcxt,
                                         cs_real_t                  *pvar,
                                         const cs_field_bc_coeffs_t *bc_coeffs,
+                                        const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                                         const cs_real_t             i_visc[],
                                         const cs_real_t             b_visc[],
                                         cs_real_6_t                *viscel,
                                         const cs_real_2_t           weighf[],
-                                        const cs_real_t             weighb[],
                                         cs_real_t                  *i_massflux,
                                         cs_real_t                  *b_massflux);
 
@@ -834,8 +788,8 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
  *             - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
  * \f]
  *
- * \param[in]     f_id          field id (or -1)
- * \param[in]     m             pointer to mesh
+ * \param[in]     f             pointer to field or nullptr
+ * \param[in]     eqp           equation parameters
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
  *                               - 1 initialize the mass flux to 0
@@ -843,24 +797,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least squares gradient
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
  * \param[in]     iphydp        hydrostatic pressure indicator
- * \param[in]     iwarnp        verbosity
- * \param[in]     iwgrp         indicator
- *                               - 1 weight gradient by vicosity*porosity
- *                               - weighting determined by field options
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
@@ -874,22 +811,17 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_diffusion_potential(const int                   f_id,
+cs_diffusion_potential(const cs_field_t           *f,
+                       const cs_equation_param_t  *eqp,
                        const cs_mesh_t            *m,
                        cs_mesh_quantities_t       *fvq,
                        int                         init,
                        int                         inc,
-                       int                         imrgra,
-                       int                         nswrgp,
-                       int                         imligp,
                        int                         iphydp,
-                       int                         iwgrp,
-                       int                         iwarnp,
-                       double                      epsrgp,
-                       double                      climgp,
                        cs_real_3_t                *frcxt,
                        cs_real_t                  *pvar,
                        const cs_field_bc_coeffs_t *bc_coeffs,
+                       const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                        const cs_real_t             i_visc[],
                        const cs_real_t             b_visc[],
                        cs_real_t                   visel[],
@@ -909,8 +841,8 @@ cs_diffusion_potential(const int                   f_id,
  *    \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
  * \f]
  *
- * \param[in]     f_id          field id (or -1)
- * \param[in]     m             pointer to mesh
+ * \param[in]     f             pointer to field or nullptr
+ * \param[in]     eqp           equation parameters
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init           indicator
  *                               - 1 initialize the mass flux to 0
@@ -918,32 +850,9 @@ cs_diffusion_potential(const int                   f_id,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least squares gradient
- * \param[in]     nswrgp        number of reconstruction sweeps for the
- *                               gradients
- * \param[in]     imligp        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thank to neighbooring gradients
- *                               - = 1 thank to the mean gradient
- * \param[in]     ircflp        indicator
- *                               - 1 flux reconstruction,
- *                               - 0 otherwise
- * \param[in]     ircflb        indicator
- *                               - 1 boundary flux reconstruction,
- *                               - 0 otherwise
  * \param[in]     iphydp        indicator
  *                               - 1 hydrostatic pressure taken into account
  *                               - 0 otherwise
- * \param[in]     iwgrp         indicator
- *                               - 1 weight gradient by vicosity*porosity
- *                               - weighting determined by field options
- * \param[in]     iwarnp        verbosity
- * \param[in]     epsrgp        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgp        clipping coeffecient for the computation of
- *                               the gradient
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
@@ -954,37 +863,27 @@ cs_diffusion_potential(const int                   f_id,
  * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
- * \param[in]     weighb        boundary face weight for cells i in case
- *                               of tensor diffusion
  * \param[in,out] diverg        divergence of the mass flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_diffusion_potential(const int                   f_id,
+cs_anisotropic_diffusion_potential(const cs_field_t           *f,
+                                   const cs_equation_param_t  *eqp,
                                    const cs_mesh_t            *m,
                                    cs_mesh_quantities_t       *fvq,
                                    int                         init,
                                    int                         inc,
-                                   int                         imrgra,
-                                   int                         nswrgp,
-                                   int                         imligp,
-                                   int                         ircflp,
-                                   int                         ircflb,
                                    int                         iphydp,
-                                   int                         iwgrp,
-                                   int                         iwarnp,
-                                   double                      epsrgp,
-                                   double                      climgp,
-                                   cs_real_3_t                *frcxt,
-                                   cs_real_t                  *pvar,
+                                   cs_real_3_t       *restrict frcxt,
+                                   cs_real_t         *restrict pvar,
                                    const cs_field_bc_coeffs_t *bc_coeffs,
+                                   const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                                    const cs_real_t             i_visc[],
                                    const cs_real_t             b_visc[],
-                                   cs_real_6_t                *viscel,
+                                   cs_real_6_t       *restrict viscel,
                                    const cs_real_2_t           weighf[],
-                                   const cs_real_t             weighb[],
-                                   cs_real_t                  *diverg);
+                                   cs_real_t         *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
 
@@ -1001,11 +900,10 @@ END_C_DECLS
  *
  * \param[in]     f_id         field id
  * \param[in]     ctx          Reference to dispatch context
- * \param[in]     inc          Not an increment flag
  * \param[in]     grad         standard gradient
  * \param[out]    grdpa        upwind gradient
  * \param[in]     pvar         values
- * \param[in]     bc_coeffs    boundary condition structure for the variable
+ * \param[in]     val_f        face values for gradient
  * \param[in]     i_massflux   mass flux at interior faces
  */
 /*----------------------------------------------------------------------------*/
@@ -1013,11 +911,10 @@ END_C_DECLS
 void
 cs_slope_test_gradient(int                         f_id,
                        cs_dispatch_context        &ctx,
-                       int                         inc,
                        const cs_real_3_t          *grad,
                        cs_real_3_t                *grdpa,
                        const cs_real_t            *pvar,
-                       const cs_field_bc_coeffs_t *bc_coeffs,
+                       const cs_real_t             val_f[],
                        const cs_real_t            *i_massflux);
 
 /*----------------------------------------------------------------------------*/

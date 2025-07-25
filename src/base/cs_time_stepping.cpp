@@ -110,6 +110,8 @@
 #include "turb/cs_turbulence_htles.h"
 #include "turb/cs_turbulence_model.h"
 
+#include "base/cs_field_default.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/

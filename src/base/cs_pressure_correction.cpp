@@ -204,6 +204,16 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   cs_real_t *coefa_hp = bc_coeffs_hp->a;
   cs_real_t *coefb_hp = bc_coeffs_hp->b;
 
+  cs_bc_coeffs_solve_t bc_coeffs_solve_hp;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve_hp,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f_hp = bc_coeffs_solve_hp.val_f;
+  cs_real_t *flux_hp = bc_coeffs_solve_hp.val_f_d;
+
   /* Check for variation of the hydrostatic pressure at outlet
    *
    * We check if the source term has changed. We exit directly
@@ -362,22 +372,48 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
      *  rhs^{k+1} = - div(fext^n+1) - D(1, p_h^{k+1})
      *--------------------------------------------------- */
 
-    cs_diffusion_potential(-1,              /* f_id */
+    if (eqp_pr->ircflu)
+      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+        (ctx,
+         f,
+         bc_coeffs_hp,
+         1, // inc
+         eqp_pr,
+         true, // hyd_p_flag
+         next_fext,
+         viscce,
+         nullptr, // viscel for tensor
+         nullptr, // weighb for tensor
+         cvar_hydro_pres,
+         val_f_hp,
+         flux_hp);
+    else
+      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+        (ctx,
+         f,
+         bc_coeffs_hp,
+         1, // inc
+         eqp_pr,
+         true, // hyd_p_flag
+         next_fext,
+         viscce,
+         nullptr, // viscel for tensor
+         nullptr, // weighb for tensor
+         cvar_hydro_pres,
+         val_f_hp,
+         flux_hp);
+
+    cs_diffusion_potential(nullptr,         /* field */
+                           eqp_pr,
                            m,
                            mq,
                            1,               /* init */
                            1,               /* inc  */
-                           eqp_pr->imrgra,
-                           eqp_pr->nswrgr,
-                           eqp_pr->imligr,
                            1,               /* iphydp */
-                           eqp_pr->iwgrec,
-                           eqp_pr->verbosity,
-                           eqp_pr->epsrgr,
-                           eqp_pr->climgr,
                            next_fext,
                            cvar_hydro_pres,
                            bc_coeffs_hp,
+                           &bc_coeffs_solve_hp,
                            i_visc,
                            b_visc,
                            viscce,
@@ -455,6 +491,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   CS_FREE_HD(rovsdt);
   CS_FREE_HD(div_fext);
   CS_FREE_HD(next_fext);
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve_hp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -575,6 +612,16 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *coefaf_dp = bc_coeffs_dp->af;
   cs_real_t *coefbf_dp = bc_coeffs_dp->bf;
 
+  cs_bc_coeffs_solve_t bc_coeffs_solve_dp;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve_dp,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f_dp = bc_coeffs_solve_dp.val_f;
+  cs_real_t *flux_dp = bc_coeffs_solve_dp.val_f_d;
+
   cs_field_t *f_p = CS_F_(p);
   const cs_field_t *f_vel = CS_F_(vel);
 
@@ -592,6 +639,12 @@ _pressure_correction_fv(int                   iterns,
   const cs_vof_parameters_t *vof_parameters = cs_glob_vof_parameters;
   const cs_cavitation_parameters_t *cavitation_parameters
     = cs_get_glob_cavitation_parameters();
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+  cs_gradient_type_by_imrgra(eqp_p->d_gradient_r,
+                             &gradient_type,
+                             &halo_type);
 
   const int idilat = vp_model->idilat;
   const int idtvar = cs_glob_time_step_options->idtvar;
@@ -675,6 +728,16 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *coefb_p = bc_coeffs_p->b;
   cs_real_t *coefaf_p = bc_coeffs_p->af;
   cs_real_t *coefbf_p = bc_coeffs_p->bf;
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve_p;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve_p,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f_p = bc_coeffs_solve_p.val_f;
+  cs_real_t *flux_p = bc_coeffs_solve_p.val_f_d;
 
   /* Physical quantities */
 
@@ -1613,22 +1676,49 @@ _pressure_correction_fv(int                   iterns,
         ctx.wait();
       }
 
-      cs_face_diffusion_potential(-1,
+      /* Update pressure BC */
+      if (eqp_p->ircflu)
+        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+          (ctx,
+           nullptr, // field
+           bc_coeffs_p,
+           1, // inc
+           eqp_p,
+           vp_param->iphydr,
+           frcxt,
+           cpro_visc,
+           nullptr, // vitenp
+           nullptr, // weighb
+           cvar_pr,
+           val_f_p,
+           flux_p);
+      else
+        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+          (ctx,
+           nullptr, // field
+           bc_coeffs_p,
+           1, // inc
+           eqp_p,
+           vp_param->iphydr,
+           frcxt,
+           cpro_visc,
+           nullptr, // vitenp
+           nullptr, // weighb
+           cvar_pr,
+           val_f_p,
+           flux_p);
+
+      cs_face_diffusion_potential(nullptr,
+                                  eqp_p,
                                   m,
                                   fvq,
                                   0,  /* init */
                                   1,  /* inc */
-                                  eqp_p->imrgra,
-                                  eqp_p->nswrgr,
-                                  eqp_p->imligr,
                                   vp_param->iphydr,
-                                  eqp_p->iwgrec,
-                                  eqp_p->verbosity,
-                                  eqp_p->epsrgr,
-                                  eqp_p->climgr,
                                   frcxt,
                                   cvar_pr,
                                   bc_coeffs_p,
+                                  &bc_coeffs_solve_p,
                                   ipro_visc, bpro_visc, cpro_visc,
                                   imasfl, bmasfl);
 
@@ -1697,26 +1787,51 @@ _pressure_correction_fv(int                   iterns,
         ctx.wait();
       }
 
-      cs_face_anisotropic_diffusion_potential(-1,
+      /* Update pressure BC */
+      if (eqp_p->ircflu)
+        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+          (ctx,
+           nullptr, // field
+           bc_coeffs_p,
+           1, // inc
+           eqp_p,
+           vp_param->iphydr,
+           frcxt,
+           nullptr, // cpro_visc
+           cpro_vitenp,
+           weighbtp,
+           cvar_pr,
+           val_f_p,
+           flux_p);
+      else
+        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+          (ctx,
+           nullptr, // field
+           bc_coeffs_p,
+           1, // inc
+           eqp_p,
+           vp_param->iphydr,
+           frcxt,
+           nullptr, // cpro_visc
+           cpro_vitenp,
+           weighbtp,
+           cvar_pr,
+           val_f_p,
+           flux_p);
+
+      cs_face_anisotropic_diffusion_potential(nullptr, // field
+                                              eqp_p,
                                               m,
                                               fvq,
                                               0,  /* init */
                                               1,  /* inc */
-                                              eqp_p->imrgra,
-                                              eqp_p->nswrgr,
-                                              eqp_p->imligr,
-                                              eqp_p->ircflu,
-                                              eqp_p->b_diff_flux_rc,
                                               vp_param->iphydr,
-                                              eqp_p->iwgrec,
-                                              eqp_p->verbosity,
-                                              eqp_p->epsrgr,
-                                              eqp_p->climgr,
                                               frcxt,
                                               cvar_pr,
                                               bc_coeffs_p,
+                                              &bc_coeffs_solve_p,
                                               ipro_visc, bpro_visc, cpro_vitenp,
-                                              weighftp, weighbtp,
+                                              weighftp,
                                               imasfl, bmasfl);
 
       /* Project source term to remove hydrostatic part from pressure */
@@ -2030,50 +2145,72 @@ _pressure_correction_fv(int                   iterns,
         || vp_param->staggered == 1)
       inc = 1;    /* not by increment */
 
-    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
-      cs_diffusion_potential(-1,
+    /* Update phi BC */
+    if (eqp_p->ircflu)
+      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+        (ctx,
+         nullptr, // field
+         bc_coeffs_dp,
+         inc,
+         eqp_p,
+         vp_param->iphydr,
+         dfrcxt,
+         c_visc,
+         vitenp,
+         weighb,
+         phi,
+         val_f_dp,
+         flux_dp);
+    else
+      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+        (ctx,
+         nullptr, // field
+         bc_coeffs_dp,
+         inc,
+         eqp_p,
+         vp_param->iphydr,
+         dfrcxt,
+         c_visc,
+         vitenp,
+         weighb,
+         phi,
+         val_f_dp,
+         flux_dp);
+
+    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
+      cs_diffusion_potential(nullptr, /* field */
+                             eqp_p,
                              m,
                              fvq,
                              1,  /* init */
                              inc,
-                             eqp_p->imrgra,
-                             eqp_p->nswrgr,
-                             eqp_p->imligr,
                              vp_param->iphydr,
-                             eqp_p->iwgrec,
-                             eqp_p->verbosity,
-                             eqp_p->epsrgr,
-                             eqp_p->climgr,
                              dfrcxt,
                              phi,
                              bc_coeffs_dp,
+                             &bc_coeffs_solve_dp,
                              i_visc, b_visc,
                              c_visc,
                              rhs);
-
-    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-      cs_anisotropic_diffusion_potential(-1,
+    }
+    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
+      cs_anisotropic_diffusion_potential(nullptr, // field
+                                         eqp_p,
                                          m,
                                          fvq,
                                          1,  /* init */
                                          inc,
-                                         eqp_p->imrgra,
-                                         eqp_p->nswrgr,
-                                         eqp_p->imligr,
-                                         eqp_p->ircflu,
-                                         eqp_p->b_diff_flux_rc,
                                          vp_param->iphydr,
-                                         eqp_p->iwgrec,
-                                         eqp_p->verbosity,
-                                         eqp_p->epsrgr,
-                                         eqp_p->climgr,
                                          dfrcxt,
                                          phi,
                                          bc_coeffs_dp,
+                                         &bc_coeffs_solve_dp,
                                          i_visc, b_visc,
                                          vitenp,
-                                         weighf, weighb,
+                                         weighf,
                                          rhs);
+
+    }
   }
 
   if (eqp_p->iswdyn >= 1) {
@@ -2180,50 +2317,74 @@ _pressure_correction_fv(int                   iterns,
           || vp_param->iifren == 1)
         inc = 1;    /* not by increment */
 
-      if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
-        cs_diffusion_potential(-1,
+      /*  ---> Handle parallelism and periodicity */
+      cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), dphi);
+
+      /* Update dphi BC */
+      if (eqp_p->ircflu)
+        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+          (ctx,
+           nullptr, // field
+           bc_coeffs_dp,
+           inc,
+           eqp_p,
+           vp_param->iphydr,
+           dfrcxt,
+           c_visc,
+           vitenp,
+           weighb,
+           dphi,
+           val_f_dp,
+           flux_dp);
+      else
+        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+          (ctx,
+           nullptr, // field
+           bc_coeffs_dp,
+           inc,
+           eqp_p,
+           vp_param->iphydr,
+           dfrcxt,
+           c_visc,
+           vitenp,
+           weighb,
+           dphi,
+           val_f_dp,
+           flux_dp);
+
+      if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
+        cs_diffusion_potential(nullptr, /* field */
+                               eqp_p,
                                m,
                                fvq,
                                init,
                                inc,
-                               eqp_p->imrgra,
-                               eqp_p->nswrgr,
-                               eqp_p->imligr,
                                vp_param->iphydr,
-                               eqp_p->iwgrec,
-                               eqp_p->verbosity,
-                               eqp_p->epsrgr,
-                               eqp_p->climgr,
                                dfrcxt,
                                dphi,
                                bc_coeffs_dp,
+                               &bc_coeffs_solve_dp,
                                i_visc, b_visc,
                                c_visc,
                                adxk);
-
-      else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-        cs_anisotropic_diffusion_potential(-1,
+      }
+      else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
+        cs_anisotropic_diffusion_potential(nullptr, // field
+                                           eqp_p,
                                            m,
                                            fvq,
                                            init,
                                            inc,
-                                           eqp_p->imrgra,
-                                           eqp_p->nswrgr,
-                                           eqp_p->imligr,
-                                           eqp_p->ircflu,
-                                           eqp_p->b_diff_flux_rc,
                                            vp_param->iphydr,
-                                           eqp_p->iwgrec,
-                                           eqp_p->verbosity,
-                                           eqp_p->epsrgr,
-                                           eqp_p->climgr,
                                            dfrcxt,
                                            dphi,
                                            bc_coeffs_dp,
+                                           &bc_coeffs_solve_dp,
                                            i_visc, b_visc,
                                            vitenp,
-                                           weighf, weighb,
+                                           weighf,
                                            adxk);
+      }
 
       struct cs_double_n<2> rd;
       struct cs_reduce_sum_nr<2> reducer;
@@ -2353,50 +2514,71 @@ _pressure_correction_fv(int                   iterns,
           || vp_param->staggered == 1)
         inc = 1;    /* not by increment */
 
-      if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
-        cs_diffusion_potential(-1,
+      /* Update phi BC */
+      if (eqp_p->ircflu)
+        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+          (ctx,
+           nullptr, // field
+           bc_coeffs_dp,
+           inc,
+           eqp_p,
+           vp_param->iphydr,
+           dfrcxt,
+           c_visc,
+           vitenp,
+           weighb,
+           phi,
+           val_f_dp,
+           flux_dp);
+      else
+        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+          (ctx,
+           nullptr, // field
+           bc_coeffs_dp,
+           inc,
+           eqp_p,
+           vp_param->iphydr,
+           dfrcxt,
+           c_visc,
+           vitenp,
+           weighb,
+           phi,
+           val_f_dp,
+           flux_dp);
+
+      if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
+        cs_diffusion_potential(nullptr, /* field */
+                               eqp_p,
                                m,
                                fvq,
                                1,  /* init */
                                inc,
-                               eqp_p->imrgra,
-                               eqp_p->nswrgr,
-                               eqp_p->imligr,
                                vp_param->iphydr,
-                               eqp_p->iwgrec,
-                               eqp_p->verbosity,
-                               eqp_p->epsrgr,
-                               eqp_p->climgr,
                                dfrcxt,
                                phi,
                                bc_coeffs_dp,
+                               &bc_coeffs_solve_dp,
                                i_visc, b_visc,
                                c_visc,
                                rhs);
-
-      else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-        cs_anisotropic_diffusion_potential(-1,
+      }
+      else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
+        cs_anisotropic_diffusion_potential(nullptr, //field
+                                           eqp_p,
                                            m,
                                            fvq,
                                            init,
                                            inc,
-                                           eqp_p->imrgra,
-                                           eqp_p->nswrgr,
-                                           eqp_p->imligr,
-                                           eqp_p->ircflu,
-                                           eqp_p->b_diff_flux_rc,
                                            vp_param->iphydr,
-                                           eqp_p->iwgrec,
-                                           eqp_p->verbosity,
-                                           eqp_p->epsrgr,
-                                           eqp_p->climgr,
                                            dfrcxt,
                                            phi,
                                            bc_coeffs_dp,
+                                           &bc_coeffs_solve_dp,
                                            i_visc, b_visc,
                                            vitenp,
-                                           weighf, weighb,
+                                           weighf,
                                            rhs);
+      }
     }
 
     ctx.parallel_for_reduce_sum(n_cells, rd2, [=] CS_F_HOST_DEVICE
@@ -2498,98 +2680,134 @@ _pressure_correction_fv(int                   iterns,
         || vp_param->staggered == 1)
       inc = 1;
 
-    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
-      cs_face_diffusion_potential(-1,
+    /*  ---> Handle parallelism and periodicity */
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phia);
+
+    if (eqp_p->ircflu)
+      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+        (ctx,
+         nullptr, // field
+         bc_coeffs_dp,
+         inc,
+         eqp_p,
+         vp_param->iphydr,
+         dfrcxt,
+         c_visc,
+         vitenp,
+         weighb,
+         phia,
+         val_f_dp,
+         flux_dp);
+    else
+      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+        (ctx,
+         nullptr, // field
+         bc_coeffs_dp,
+         inc,
+         eqp_p,
+         vp_param->iphydr,
+         dfrcxt,
+         c_visc,
+         vitenp,
+         weighb,
+         phia,
+         val_f_dp,
+         flux_dp);
+
+    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
+      cs_face_diffusion_potential(nullptr,
+                                  eqp_p,
                                   m,
                                   fvq,
                                   0,  /* init */
                                   inc,
-                                  eqp_p->imrgra,
-                                  eqp_p->nswrgr,
-                                  eqp_p->imligr,
                                   vp_param->iphydr,
-                                  eqp_p->iwgrec,
-                                  eqp_p->verbosity,
-                                  eqp_p->epsrgr,
-                                  eqp_p->climgr,
                                   dfrcxt,
                                   phia,
                                   bc_coeffs_dp,
+                                  &bc_coeffs_solve_dp,
                                   i_visc, b_visc, c_visc,
                                   imasfl, bmasfl);
-
-    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-      cs_face_anisotropic_diffusion_potential(-1,
+    }
+    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
+      cs_face_anisotropic_diffusion_potential(nullptr, // field
+                                              eqp_p,
                                               m,
                                               fvq,
                                               0,  /* init */
                                               inc,
-                                              eqp_p->imrgra,
-                                              eqp_p->nswrgr,
-                                              eqp_p->imligr,
-                                              eqp_p->ircflu,
-                                              eqp_p->b_diff_flux_rc,
                                               vp_param->iphydr,
-                                              eqp_p->iwgrec,
-                                              eqp_p->verbosity,
-                                              eqp_p->epsrgr,
-                                              eqp_p->climgr,
                                               dfrcxt,
                                               phia,
                                               bc_coeffs_dp,
+                                              &bc_coeffs_solve_dp,
                                               i_visc, b_visc,
                                               vitenp,
-                                              weighf, weighb,
+                                              weighf,
                                               imasfl, bmasfl);
+    }
+
 
     /* The last increment is not reconstructed so as to fulfill exactly
        the continuity equation (see theory guide). The value of dfrcxt has
        no importance. */
 
-    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
-      cs_face_diffusion_potential(-1,
+    // As reconstruction is cut, gradient is not computed
+    const bool need_compute_bc_grad = false;
+    const bool need_compute_bc_flux = true;
+
+    cs_equation_param_t eqp_loc = *eqp_p;
+    eqp_loc.ircflu = 0; // no reconstruction
+    eqp_loc.b_diff_flux_rc = 0;
+
+    cs_boundary_conditions_update_bc_coeff_face_values
+      <need_compute_bc_grad, need_compute_bc_flux>
+      (ctx,
+       nullptr, // field
+       bc_coeffs_dp,
+       0, // inc
+       &eqp_loc,
+       vp_param->iphydr,
+       dfrcxt,
+       c_visc,
+       vitenp,
+       weighb,
+       dphi,
+       nullptr, // val_f_g
+       flux_dp);
+
+    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
+      cs_face_diffusion_potential(nullptr,
+                                  &eqp_loc,
                                   m,
                                   fvq,
                                   0,  /* init */
                                   0,  /* inc */
-                                  eqp_p->imrgra,
-                                  0,  /* nswrgr (no reconstruction) */
-                                  eqp_p->imligr,
                                   vp_param->iphydr,
-                                  eqp_p->iwgrec,
-                                  eqp_p->verbosity,
-                                  eqp_p->epsrgr,
-                                  eqp_p->climgr,
                                   dfrcxt,
                                   dphi,
                                   bc_coeffs_dp,
+                                  &bc_coeffs_solve_dp,
                                   i_visc, b_visc, c_visc,
                                   imasfl, bmasfl);
-
-    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-      cs_face_anisotropic_diffusion_potential(-1,
+    }
+    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
+      cs_face_anisotropic_diffusion_potential(nullptr, // field
+                                              &eqp_loc,
                                               m,
                                               fvq,
                                               0, /* init */
                                               0, /* inc */
-                                              eqp_p->imrgra,
-                                              0, /* nswrgr (no reconstruction) */
-                                              eqp_p->imligr,
-                                              0, /* ircflu */
-                                              0, /* ircflb */
                                               vp_param->iphydr,
-                                              eqp_p->iwgrec,
-                                              eqp_p->verbosity,
-                                              eqp_p->epsrgr,
-                                              eqp_p->climgr,
                                               dfrcxt,
                                               dphi,
                                               bc_coeffs_dp,
+                                              &bc_coeffs_solve_dp,
                                               i_visc, b_visc,
                                               vitenp,
-                                              weighf, weighb,
+                                              weighf,
                                               imasfl, bmasfl);
-
+    }
   }
 
   /* Update density
@@ -2735,6 +2953,17 @@ _pressure_correction_fv(int                   iterns,
     });
   }
 
+  /* Update boundary condition for pressure */
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     CS_F_(p),
+     eqp_p,
+     vp_param->iphydr,
+     frcxt,
+     nullptr, // viscel for tensor
+     nullptr, // weighb for tensor
+     cvar_pr);
+
   ctx.wait();
   ctx_c.wait();
 
@@ -2761,6 +2990,9 @@ _pressure_correction_fv(int                   iterns,
 
   CS_FREE_HD(cpro_rho_tc);
   CS_FREE_HD(bpro_rho_tc);
+
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve_dp);
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve_p);
 }
 
 /*----------------------------------------------------------------------------*/

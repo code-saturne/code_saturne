@@ -509,6 +509,8 @@ cs_cf_convective_mass_flux(int  iterns)
   cs_real_t *dt = CS_F_(dt)->val;
   int idtvar = cs_glob_time_step_options->idtvar;
 
+  cs_dispatch_context ctx;
+
   /* Initialization
      -------------- */
 
@@ -794,22 +796,20 @@ cs_cf_convective_mass_flux(int  iterns)
      viscelx,y,z  = dt
      This flux is stored as the mass flux of the energy */
 
-  cs_face_diffusion_potential(-1,
+  cs_equation_param_t eqp_p_pot_loc = *eqp_p;
+  eqp_p_pot_loc.iwgrec = 0;
+
+  cs_face_diffusion_potential(nullptr, /*field */
+                              &eqp_p_pot_loc,
                               mesh,
                               fvq,
                               1,  /* init */
                               1,  /* inc */
-                              eqp_p->imrgra,
-                              eqp_p->nswrgr,
-                              eqp_p->imligr,
-                              0, /* iphydp */
-                              0, /* iwgrec */
-                              eqp_p->verbosity,
-                              eqp_p->epsrgr,
-                              eqp_p->climgr,
+                              0,  /* iphydp */
                               nullptr, /* frcxt */
                               cvar_pr,
                               &bc_coeffs_loc,
+                              nullptr, // bc_coeffs_loc
                               i_visc, b_visc,
                               dt,
                               i_mass_flux_e, b_mass_flux_e);

@@ -1437,6 +1437,7 @@ cs_turbulence_kw(int phase_id)
                       cvara_k,
                       cvara_k,
                       f_k->bc_coeffs,
+                      nullptr, // bc_coeffs_solve
                       i_massflux,
                       b_massflux,
                       viscf,
@@ -1497,6 +1498,7 @@ cs_turbulence_kw(int phase_id)
                       cvara_omg ,
                       cvara_omg ,
                       f_omg->bc_coeffs,
+                      nullptr, // bc_coeffs_solve
                       i_massflux,
                       b_massflux,
                       viscf,

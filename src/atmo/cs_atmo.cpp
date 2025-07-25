@@ -501,10 +501,22 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   int f_id = f->id;
   int niterf;
 
+  cs_dispatch_context ctx;
+
   cs_real_t *coefa = f->bc_coeffs->a;
   cs_real_t *coefb = f->bc_coeffs->b;
   cs_real_t *cofaf = f->bc_coeffs->af;
   cs_real_t *cofbf = f->bc_coeffs->bf;
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve,
+                          m->n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f = bc_coeffs_solve.val_f;
+  cs_real_t *flux = bc_coeffs_solve.val_f_d;
 
   /*==========================================================================
    * 0.  Initialization
@@ -632,23 +644,51 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   if (sinfo != nullptr)
     sinfo->rhs_norm = residu;
 
+  /* Update pvar BC */
+  if (eqp_p->ircflu)
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       f,
+       f->bc_coeffs,
+       1, //inc
+       eqp_p,
+       false,   // hyd_p_flag
+       nullptr, // f_ext
+       c_visc,
+       nullptr, // vitenp
+       nullptr, // weighb
+       pvar,
+       val_f,
+       flux);
+  else {
+    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+      (ctx,
+       f,
+       f->bc_coeffs,
+       1, // inc
+       eqp_p,
+       false,   // hyd_p_flag
+       nullptr, // f_ext
+       c_visc,
+       nullptr, // vitenp
+       nullptr, // weighb
+       pvar,
+       val_f,
+       flux);
+  }
+
   /* Initial Right-Hand-Side */
-  cs_diffusion_potential(f_id,
+  cs_diffusion_potential(f,
+                         eqp_p,
                          m,
                          mq,
                          1, /* init */
                          1, /* inc */
-                         eqp_p->imrgra,
-                         eqp_p->nswrgr,
-                         eqp_p->imligr,
                          1, /* iphydp */
-                         eqp_p->iwgrec,
-                         eqp_p->verbosity,
-                         eqp_p->epsrgr,
-                         eqp_p->climgr,
                          next_fext,
                          pvar,
                          f->bc_coeffs,
+                         &bc_coeffs_solve,
                          i_viscm,
                          b_viscm,
                          c_visc,
@@ -689,22 +729,50 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
       pvar[cell_id] += dpvar[cell_id];
 
-    cs_diffusion_potential(f_id,
+    /* Update pvar BC */
+    if (eqp_p->ircflu)
+      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+        (ctx,
+         f,
+         f->bc_coeffs,
+         1, //inc
+         eqp_p,
+         false,   // hyd_p_flag
+         nullptr, // f_ext
+         c_visc,
+         nullptr, // vitenp
+         nullptr, // weighb
+         pvar,
+         val_f,
+         flux);
+    else {
+      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+        (ctx,
+         f,
+         f->bc_coeffs,
+         1, // inc
+         eqp_p,
+         false,   // hyd_p_flag
+         nullptr, // f_ext
+         c_visc,
+         nullptr, // vitenp
+         nullptr, // weighb
+         pvar,
+         val_f,
+         flux);
+    }
+
+    cs_diffusion_potential(f,
+                           eqp_p,
                            m,
                            mq,
                            1, /* init */
                            1, /* inc */
-                           eqp_p->imrgra,
-                           eqp_p->nswrgr,
-                           eqp_p->imligr,
                            1, /* iphydp */
-                           eqp_p->iwgrec,
-                           eqp_p->verbosity,
-                           eqp_p->epsrgr,
-                           eqp_p->climgr,
                            next_fext,
                            pvar,
                            f->bc_coeffs,
+                           &bc_coeffs_solve,
                            i_viscm,
                            b_viscm,
                            c_visc,
@@ -740,6 +808,8 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   CS_FREE_HD(next_fext);
   CS_FREE_HD(rovsdt);
   CS_FREE_HD(c_visc);
+
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 }
 
 /*----------------------------------------------------------------------------*/

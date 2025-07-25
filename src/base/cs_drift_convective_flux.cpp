@@ -497,22 +497,62 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
       /* The computed convective flux has the dimension of rho*velocity */
 
-      cs_face_diffusion_potential(-1,
+      cs_equation_param_t eqp_loc = *eqp_sc;
+      eqp_loc.iwgrec = 0;
+
+      cs_bc_coeffs_solve_t bc_coeffs_solve;
+      cs_init_bc_coeffs_solve(bc_coeffs_solve,
+                              n_b_faces,
+                              1, // stride
+                              cs_alloc_mode,
+                              false);
+
+      cs_real_t *val_f = bc_coeffs_solve.val_f;
+      cs_real_t *flux = bc_coeffs_solve.val_f_d;
+
+      if (eqp_loc.ircflu)
+        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+          (ctx,
+           nullptr, // field
+           &bc_coeffs_loc,
+           1, // inc
+           &eqp_loc,
+           false,   // hyd_p_flag
+           nullptr, // f_ext
+           w1,
+           nullptr, // vitenp
+           nullptr, // weighb
+           viscce,
+           val_f,
+           flux);
+      else {
+        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+          (ctx,
+           nullptr, // field
+           &bc_coeffs_loc,
+           1, // inc
+           &eqp_loc,
+           false,   // hyd_p_flag
+           nullptr, // f_ext
+           w1,
+           nullptr, // vitenp
+           nullptr, // weighb
+           viscce,
+           val_f,
+           flux);
+      }
+
+      cs_face_diffusion_potential(nullptr, // field
+                                  &eqp_loc,
                                   mesh,
                                   fvq,
                                   0, /* init */
                                   1, /* inc */
-                                  eqp_sc->imrgra,
-                                  eqp_sc->nswrgr,
-                                  eqp_sc->imligr,
                                   0, /* iphydr */
-                                  0, /* iwgrp */
-                                  eqp_sc->verbosity,
-                                  eqp_sc->epsrgr,
-                                  eqp_sc->climgr,
                                   nullptr, /* frcxt */
                                   viscce,
                                   &bc_coeffs_loc,
+                                  &bc_coeffs_solve,
                                   i_visc, b_visc,
                                   w1,
                                   flumas, flumab);

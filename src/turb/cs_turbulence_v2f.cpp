@@ -46,6 +46,7 @@
 #include "bft/bft_error.h"
 
 #include "base/cs_array.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "alge/cs_blas.h"
 #include "alge/cs_convection_diffusion.h"
 #include "cdo/cs_equation.h"
@@ -320,6 +321,18 @@ _solve_eq_fbr_al(const int         istprv,
 
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
+  cs_dispatch_context ctx;
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve_phi;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve_phi,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f_phi = bc_coeffs_solve_phi.val_f;
+  cs_real_t *flux_phi = bc_coeffs_solve_phi.val_f_d;
+
   cs_real_t  *w2, *visel, *w5, *viscf, *viscb;
 
   /* Allocate temporary arrays */
@@ -447,22 +460,50 @@ _solve_eq_fbr_al(const int         istprv,
   const cs_equation_param_t *eqp_phi
     = cs_field_get_equation_param_const(CS_F_(phi));
 
-  cs_diffusion_potential(f->id,
+  /* Update cvara_k BC */
+  if (eqp_phi->ircflu)
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       f,
+       f->bc_coeffs,
+       1, //inc
+       eqp_phi,
+       false, // hyd_p_flag
+       nullptr, // f_ext
+       visel,
+       nullptr, // vitenp
+       nullptr, // weighb
+       CS_F_(phi)->val_pre,
+       val_f_phi,
+       flux_phi);
+  else {
+    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+      (ctx,
+       f,
+       f->bc_coeffs,
+       1, // inc
+       eqp_phi,
+       false, // hyd_p_flag
+       nullptr, // f_ext
+       visel,
+       nullptr, // vitenp
+       nullptr, // weighb
+       CS_F_(phi)->val_pre,
+       val_f_phi,
+       flux_phi);
+  }
+
+  cs_diffusion_potential(f,
+                         eqp_phi,
                          m,
                          fvq,
-                         1,     /* init */
-                         1,     /* inc */
-                         eqp_phi->imrgra,
-                         eqp_phi->nswrgr,
-                         eqp_phi->imligr,
-                         0,     /* iphydp */
-                         eqp_phi->iwgrec,
-                         eqp_phi->verbosity,
-                         eqp_phi->epsrgr,
-                         eqp_phi->climgr,
-                         nullptr,
+                         1,       /* init */
+                         1,       /* inc */
+                         0,       /* iphydp */
+                         nullptr, /* f_ext */
                          CS_F_(phi)->val_pre,
                          CS_F_(phi)->bc_coeffs,
+                         &bc_coeffs_solve_phi,
                          viscf,
                          viscb,
                          visel,
@@ -629,6 +670,8 @@ _solve_eq_fbr_al(const int         istprv,
   CS_FREE_HD(w5);
   CS_FREE_HD(viscf);
   CS_FREE_HD(viscb);
+
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve_phi);
 }
 
 /*----------------------------------------------------------------------------*/

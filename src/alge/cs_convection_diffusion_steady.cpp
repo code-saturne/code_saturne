@@ -222,6 +222,7 @@ _sync_strided_gradient_halo(const cs_mesh_t         *m,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -244,6 +245,7 @@ cs_convection_diffusion_steady_scalar
   const cs_real_t   *restrict pvara,
   const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
   const cs_real_t             i_visc[],
@@ -256,6 +258,10 @@ cs_convection_diffusion_steady_scalar
   const cs_real_t *coefbp = bc_coeffs->b;
   const cs_real_t *cofafp = bc_coeffs->af;
   const cs_real_t *cofbfp = bc_coeffs->bf;
+
+  const cs_real_t *val_f_g = (bc_coeffs_solve == nullptr) ?
+                              bc_coeffs->val_f :
+                              bc_coeffs_solve->val_f;
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
@@ -453,8 +459,8 @@ cs_convection_diffusion_steady_scalar
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
+                                    val_f_g,
                                     gweight, /* Weighted gradient */
-                                    cpl,
                                     grad);
 
   }
@@ -478,11 +484,10 @@ cs_convection_diffusion_steady_scalar
 
       cs_slope_test_gradient(f_id,
                              ctx,
-                             inc,
                              (const cs_real_3_t *)grad,
                              gradst,
                              _pvar,
-                             bc_coeffs,
+                             val_f_g,
                              i_massflux);
 
     }
@@ -871,26 +876,25 @@ cs_convection_diffusion_steady_scalar
                      &pir,
                      &pipr);
 
+      /* Compute face value for gradient and diffusion for the
+         steady case (relaxation value in iprime) */
+      cs_real_t val_f_steady = inc * coefap[face_id] + coefbp[face_id] * pipr;
+      cs_real_t flux_steady = inc * cofafp[face_id] + cofbfp[face_id] * pipr;
+
       cs_b_upwind_flux(iconvp,
                        1.,
                        1,
-                       inc,
                        bc_type[face_id],
                        _pvar[ii],
                        pir,
-                       pipr,
-                       coefap[face_id],
-                       coefbp[face_id],
+                       val_f_steady,
                        b_massflux[face_id],
                        cpi,
                        &fluxi);
 
       cs_b_diff_flux(idiffp,
                      1., /* thetap */
-                     inc,
-                     pipr,
-                     cofafp[face_id],
-                     cofbfp[face_id],
+                     flux_steady,
                      b_visc[face_id],
                      &fluxi);
 
@@ -1026,31 +1030,32 @@ cs_convection_diffusion_steady_scalar
                      &pir,
                      &pipr);
 
-      cs_b_imposed_conv_flux(iconvp,
-                             1.,
-                             1,
-                             inc,
-                             bc_type[face_id],
-                             icvfli[face_id],
-                             _pvar[ii],
-                             pir,
-                             pipr,
-                             coefap[face_id],
-                             coefbp[face_id],
-                             coface[face_id],
-                             cofbce[face_id],
-                             b_massflux[face_id],
-                             1., /* xcpp */
-                             &fluxi);
+      /* Compute face value for gradient and diffusion for the
+         steady case (relaxation value in iprime) */
+        cs_real_t val_f_steady = inc * coefap[face_id] + coefbp[face_id] * pipr;
+        cs_real_t flux_steady = inc * cofafp[face_id] + cofbfp[face_id] * pipr;
 
-      cs_b_diff_flux(idiffp,
-                     1., /* thetap */
-                     inc,
-                     pipr,
-                     cofafp[face_id],
-                     cofbfp[face_id],
-                     b_visc[face_id],
-                     &fluxi);
+        cs_b_imposed_conv_flux(iconvp,
+                               1.,
+                               1,
+                               inc,
+                               bc_type[face_id],
+                               icvfli[face_id],
+                               _pvar[ii],
+                               pir,
+                               pipr,
+                               coface[face_id],
+                               cofbce[face_id],
+                               b_massflux[face_id],
+                               1., /* xcpp */
+                               val_f_steady,
+                               &fluxi);
+
+        cs_b_diff_flux(idiffp,
+                       1., /* thetap */
+                       flux_steady,
+                       b_visc[face_id],
+                       &fluxi);
 
       rhs[ii] -= fluxi;
 
@@ -1089,6 +1094,7 @@ cs_convection_diffusion_steady_scalar
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in,out] i_conv_flux   scalar convection flux at interior faces
@@ -1107,6 +1113,7 @@ cs_face_convection_steady_scalar
   const cs_real_t   *restrict pvara,
   const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
   cs_real_t                   i_conv_flux[][2],
@@ -1116,6 +1123,10 @@ cs_face_convection_steady_scalar
   cs_real_t *coefap = bc_coeffs->a;
   cs_real_t *coefbp = bc_coeffs->b;
 
+  const cs_real_t *val_f_g = (bc_coeffs_solve == nullptr) ?
+                              bc_coeffs->val_f :
+                              bc_coeffs_solve->val_f;
+
   const int iconvp = eqp.iconv;
   const int nswrgp = eqp.nswrgr;
   const int ircflp = eqp.ircflu;
@@ -1123,7 +1134,6 @@ cs_face_convection_steady_scalar
   const int ischcp = eqp.ischcv;
   const int isstpp = eqp.isstpc;
   const int iwarnp = eqp.verbosity;
-  const int icoupl = eqp.icoupl;
   const double blencp = eqp.blencv;
   const double blend_st = eqp.blend_st;
   const double relaxp = eqp.relaxv;
@@ -1176,10 +1186,6 @@ cs_face_convection_steady_scalar
   cs_real_t *gweight = nullptr;
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
-
-  /* Internal coupling variables */
-  int coupling_id;
-  cs_internal_coupling_t *cpl = nullptr;
 
   /* Allocate work arrays */
 
@@ -1250,13 +1256,6 @@ cs_face_convection_steady_scalar
 
   bool pure_upwind = (blencp > 0.) ? false : true;
 
-  if (icoupl > 0) {
-    assert(f_id != -1);
-    const int coupling_key_id = cs_field_key_id("coupling_entity");
-    coupling_id = cs_field_get_key_int(f, coupling_key_id);
-    cpl = cs_internal_coupling_by_id(coupling_id);
-  }
-
   /* Compute the balance with reconstruction */
 
   /* Compute the gradient of the variable */
@@ -1304,8 +1303,8 @@ cs_face_convection_steady_scalar
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
+                                    val_f_g,
                                     gweight, /* Weighted gradient */
-                                    cpl,
                                     grad);
 
   }
@@ -1330,11 +1329,10 @@ cs_face_convection_steady_scalar
 
       cs_slope_test_gradient(f_id,
                              ctx,
-                             inc,
                              (const cs_real_3_t *)grad,
                              gradst,
                              _pvar,
-                             bc_coeffs,
+                             val_f_g,
                              i_massflux);
 
     }
@@ -1701,6 +1699,10 @@ cs_face_convection_steady_scalar
                      &pir,
                      &pipr);
 
+      /* Compute face value for gradient and diffusion for the
+         steady case (relaxation value in iprime) */
+      cs_real_t val_f_steady = inc * coefap[face_id] + coefbp[face_id] * pipr;
+
       cs_b_imposed_conv_flux(iconvp,
                              1.,
                              1,
@@ -1710,12 +1712,11 @@ cs_face_convection_steady_scalar
                              _pvar[ii],
                              pir,
                              pipr,
-                             coefap[face_id],
-                             coefbp[face_id],
                              coface[face_id],
                              cofbce[face_id],
                              b_massflux[face_id],
                              1., /* xcpp */
+                             val_f_steady,
                              &(b_conv_flux[face_id]));
 
     });
@@ -1764,7 +1765,6 @@ cs_face_convection_steady_scalar
  * \param[in]      f             pointer to field, or nullptr
  * \param[in]      name          pointer to associated field or array name
  * \param[in]      eqp           equation parameters
- * \param[in]      cpl           structure associated with internal coupling
  * \param[in]      icvflb        global indicator of boundary convection flux
  *                                - 0 upwind scheme at all boundary faces
  *                                - 1 imposed flux at some boundary faces

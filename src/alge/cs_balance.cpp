@@ -170,6 +170,7 @@ cs_balance_initialize(void)
  * \param[in]     pvara         solved variable (previous time step)
  *                              may be nullptr if pvar != nullptr
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve  boundary conditions structure when solving
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -202,6 +203,7 @@ cs_balance_scalar(int                         idtvar,
                   cs_real_t                   pvar[],
                   const cs_real_t             pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs,
+                  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -220,7 +222,7 @@ cs_balance_scalar(int                         idtvar,
                     inc,
                     eqp,
                     pvar, pvara,
-                    bc_coeffs,
+                    bc_coeffs, bc_coeffs_solve,
                     i_massflux, b_massflux,
                     i_visc, b_visc,
                     viscel,
@@ -279,6 +281,7 @@ END_C_DECLS
  * \param[in]     pvara         solved variable (previous time step)
  *                              may be nullptr if pvar != nullptr
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve  boundary conditions structure when solving
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -313,6 +316,7 @@ cs_balance_scalar(int                         idtvar,
                   cs_real_t                   pvar[],
                   const cs_real_t             pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs,
+                  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -359,6 +363,7 @@ cs_balance_scalar(int                         idtvar,
                                      pvara,
                                      icvfli,
                                      bc_coeffs,
+                                     bc_coeffs_solve,
                                      i_massflux,
                                      b_massflux,
                                      i_visc,
@@ -377,6 +382,7 @@ cs_balance_scalar(int                         idtvar,
                                       pvar,
                                       pvara,
                                       bc_coeffs,
+                                      bc_coeffs_solve,
                                       i_massflux,
                                       b_massflux,
                                       i_visc,
@@ -400,6 +406,7 @@ cs_balance_scalar(int                         idtvar,
                                      pvara,
                                      icvfli,
                                      bc_coeffs,
+                                     bc_coeffs_solve,
                                      i_massflux,
                                      b_massflux,
                                      i_visc,
@@ -418,6 +425,7 @@ cs_balance_scalar(int                         idtvar,
                                       pvar,
                                       pvara,
                                       bc_coeffs,
+                                      bc_coeffs_solve,
                                       i_massflux,
                                       b_massflux,
                                       i_visc,
@@ -435,6 +443,7 @@ cs_balance_scalar(int                         idtvar,
                                       pvar,
                                       pvara,
                                       bc_coeffs,
+                                      bc_coeffs_solve,
                                       i_visc,
                                       b_visc,
                                       viscel,

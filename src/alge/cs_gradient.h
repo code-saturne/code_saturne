@@ -55,6 +55,20 @@ BEGIN_C_DECLS
 
 typedef enum {
 
+  CS_IPRIME_F_LSQ = 0,
+  CS_IF_LSQ = 1
+
+} cs_b_direction_gradient_lsq_t;
+
+#ifdef __cplusplus
+
+constexpr cs_b_direction_gradient_lsq_t b_direction_lsq = CS_IPRIME_F_LSQ;
+//constexpr cs_b_direction_gradient_lsq_t b_direction_lsq = CS_IF_LSQ;
+
+#endif /* cplusplus */
+
+typedef enum {
+
   CS_GRADIENT_GREEN_ITER,        /*!< Iterative */
   CS_GRADIENT_LSQ,               /*!< Least-squares */
   CS_GRADIENT_GREEN_LSQ,         /*!< Green-Gauss reconstruction with
@@ -265,8 +279,8 @@ cs_gradient_tensor(const char                  *var_name,
  *                              hydrostatic pressure
  * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
+ * \param[in]   val_f           boundary face value
  * \param[in]   c_weight        cell variable weight, or nullptr
- * \param[in]   cpl             associated internal coupling, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -286,8 +300,8 @@ cs_gradient_scalar_synced_input(const char                    *var_name,
                                 cs_real_t                      f_ext[][3],
                                 const cs_field_bc_coeffs_t    *bc_coeffs,
                                 const cs_real_t                var[],
+                                const cs_real_t                val_f[],
                                 const cs_real_t               *c_weight,
-                                const cs_internal_coupling_t  *cpl,
                                 cs_real_t                      grad[][3]);
 
 /*----------------------------------------------------------------------------*/

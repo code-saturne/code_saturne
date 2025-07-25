@@ -91,25 +91,34 @@
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
+ * \param[in]   hyd_p_flag      flag for hydrostatic pressure
+ * \param[in]   f_ext           exterior force generating pressure
+ * \param[in]   df_limiter      diffusion clipping (limiter) field
  * \param[in]   bc_coeffs       boundary condition structure, or null
  * \param[in]   c_weight        cell variable weight, or null
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
+ * \param[out]  var_iprime_lim  limited variable values at face iprime locations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
-                                  const cs_mesh_t               *m,
-                                  const cs_mesh_quantities_t    *fvq,
-                                  cs_lnum_t                      n_faces,
-                                  const cs_lnum_t               *face_ids,
-                                  cs_halo_type_t                 halo_type,
-                                  double                         clip_coeff,
-                                  const cs_field_bc_coeffs_t    *bc_coeffs,
-                                  const cs_real_t                c_weight[],
-                                  const cs_real_t                var[],
-                                  cs_real_t                     *var_iprime);
+cs_gradient_boundary_iprime_lsq_s
+  (cs_dispatch_context           &ctx,
+   const cs_mesh_t               *m,
+   const cs_mesh_quantities_t    *fvq,
+   cs_lnum_t                      n_faces,
+   const cs_lnum_t               *face_ids,
+   cs_halo_type_t                 halo_type,
+   double                         clip_coeff,
+   bool                           hyd_p_flag,
+   cs_real_t                      f_ext[][3],
+   cs_real_t                     *df_limiter,
+   const cs_field_bc_coeffs_t    *bc_coeffs,
+   const cs_real_t                c_weight[],
+   const cs_real_t                var[],
+   cs_real_t                     *var_iprime,
+   cs_real_t                      var_iprime_lim[]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -132,24 +141,39 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
  *                              values, or null for all
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
+ * \param[in]   hyd_p_flag      flag for hydrostatic pressure
+ * \param[in]   f_ext           exterior force generating pressure
+ * \param[in]   df_limiter      diffusion clipping (limiter) field
  * \param[in]   bc_coeffs       boundary condition structure
+ * \param[in]   viscel          symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
+                                or nullptr
+ * \param[in]   weighb          boundary face weight for cells i in case
+ *                              of tensor diffusion, or nullptr
  * \param[in]   c_weight        cell variable weight, or null
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
+ * \param[out]  var_iprime_lim  limited variable values at face iprime locations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_s_ani(cs_dispatch_context           &ctx,
-                                      const cs_mesh_t               *m,
-                                      const cs_mesh_quantities_t    *fvq,
-                                      cs_lnum_t                   n_faces,
-                                      const cs_lnum_t            *face_ids,
-                                      double                      clip_coeff,
-                                      const cs_field_bc_coeffs_t *bc_coeffs,
-                                      const cs_real_t             c_weight[][6],
-                                      const cs_real_t             var[],
-                                      cs_real_t                  *var_iprime);
+cs_gradient_boundary_iprime_lsq_s_ani
+  (cs_dispatch_context         &ctx,
+   const cs_mesh_t             *m,
+   const cs_mesh_quantities_t  *fvq,
+   cs_lnum_t                    n_faces,
+   const cs_lnum_t             *face_ids,
+   double                       clip_coeff,
+   bool                         hyd_p_flag,
+   cs_real_t                    f_ext[][3],
+   cs_real_t                   *df_limiter,
+   const cs_field_bc_coeffs_t  *bc_coeffs,
+   cs_real_t                    viscel[][6],
+   const cs_real_t              weighb[],
+   const cs_real_t              c_weight[][6],
+   const cs_real_t              var[],
+   cs_real_t                   *var_iprime,
+   cs_real_t                    var_iprime_lim[]);
 
 /*----------------------------------------------------------------------------*/
 /*

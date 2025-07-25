@@ -1737,12 +1737,20 @@ END_C_DECLS
  * \param[in]     halo_type        halo type
  * \param[in]     w_stride         stride for weighting coefficient
  * \param[in]     clip_coeff       clipping coefficient
+ * \param[in]     hyd_p_flag       flag for hydrostatic pressure
+ * \param[in]     f_ext            exterior force generating pressure
+ * \param[in]     viscel           symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
+                                   or nullptr
+ * \param[in]     weighb           boundary face weight for cells i in case
+ *                                 of tensor diffusion, or nullptr
+ * \param[in]     df_limiter       diffusion limiter array
  * \param[in]     var              gradient's base variable
  * \param[in]     c_weight         weighted gradient coefficient variable,
  *                                 or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
+template <bool compute_diffusion_coeffs>
 void
 cs_internal_coupling_update_bc_coeffs_s
 (
@@ -1752,6 +1760,11 @@ cs_internal_coupling_update_bc_coeffs_s
  cs_halo_type_t                 halo_type,
  int                            w_stride,
  double                         clip_coeff,
+ bool                           hyd_p_flag,
+ cs_real_t                      f_ext[][3],
+ cs_real_t                      viscel[][6],
+ const cs_real_t                weighb[],
+ cs_real_t                     *df_limiter,
  const cs_real_t               *var,
  const cs_real_t               *c_weight
 )
@@ -1769,9 +1782,15 @@ cs_internal_coupling_update_bc_coeffs_s
   const cs_lnum_t *faces_distant = cpl->faces_distant;
   const cs_lnum_t *faces_local = cpl->faces_local;
 
-  cs_real_t *var_ext = nullptr, *var_distant = nullptr;
+  cs_real_t *var_ext = nullptr, *var_ext_d = nullptr;
+  cs_real_t *var_distant = nullptr, *var_distant_d = nullptr;
   CS_MALLOC(var_ext, n_local, cs_real_t);
   CS_MALLOC(var_distant, n_distant, cs_real_t);
+
+  if (compute_diffusion_coeffs && df_limiter != nullptr) {
+    CS_MALLOC(var_ext_d, n_local, cs_real_t);
+    CS_MALLOC(var_distant_d, n_distant, cs_real_t);
+  }
 
   const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
   cs_real_t *bc_coeff_a = bc_coeffs->a;
@@ -1802,10 +1821,14 @@ cs_internal_coupling_update_bc_coeffs_s
                                           faces_distant,
                                           halo_type,
                                           clip_coeff,
+                                          hyd_p_flag,
+                                          f_ext,
+                                          df_limiter,
                                           bc_coeffs,
                                           c_weight,
                                           var,
-                                          var_distant);
+                                          var_distant,
+                                          var_distant_d);
       else {
         assert(w_stride == 6);
         cs_gradient_boundary_iprime_lsq_s_ani(ctx,
@@ -1814,10 +1837,16 @@ cs_internal_coupling_update_bc_coeffs_s
                                               n_distant,
                                               faces_distant,
                                               clip_coeff,
+                                              hyd_p_flag,
+                                              f_ext,
+                                              df_limiter,
                                               bc_coeffs,
+                                              viscel,
+                                              weighb,
                                               (const cs_real_6_t *)c_weight,
                                               var,
-                                              var_distant);
+                                              var_distant,
+                                              var_distant_d);
       }
     }
     else {
@@ -1825,6 +1854,8 @@ cs_internal_coupling_update_bc_coeffs_s
         cs_lnum_t face_id = faces_distant[ii];
         cs_lnum_t cell_id = b_face_cells[face_id];
         var_distant[ii] = var[cell_id];
+        if (var_ext_d != nullptr)
+          var_distant_d[ii] = var[cell_id];
       }
     }
 
@@ -1836,7 +1867,16 @@ cs_internal_coupling_update_bc_coeffs_s
                                       (cs_real_t *)var_distant,
                                       (cs_real_t *)var_ext);
 
+    if (var_ext_d != nullptr)
+      cs_internal_coupling_exchange_var(cpl,
+                                        1,
+                                        (cs_real_t *)var_distant_d,
+                                        (cs_real_t *)var_ext_d);
+
     /* For internal coupling, update BC coeffs */
+
+    cs_real_t *bc_coeff_af = bc_coeffs->af;
+    cs_real_t *bc_coeff_bf = bc_coeffs->bf;
 
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       cs_lnum_t face_id = faces_local[ii];
@@ -1848,9 +1888,25 @@ cs_internal_coupling_update_bc_coeffs_s
       cs_real_t m_a = hext / (hint + hext);
       cs_real_t m_b = hint / (hint + hext);
 
+      cs_real_t heq = hext * m_b;
+
       bc_coeff_a[face_id] =   m_a * var_ext[ii]
                             + m_b * var[cell_id];
-      bc_coeff_b[face_id] = 0;
+
+      bc_coeff_b[face_id] = 0.;
+
+      if (compute_diffusion_coeffs) {
+        if (var_ext_d != nullptr) {
+          // limited value var_ext_d at iprime position
+          bc_coeff_af[face_id] = - heq * var_ext_d[ii];
+          bc_coeff_bf[face_id] = heq;
+        }
+        else {
+          bc_coeff_af[face_id] = - heq * var_ext[ii];
+          bc_coeff_bf[face_id] = heq;
+        }
+      }
+
     }
   }
 
@@ -1871,6 +1927,8 @@ cs_internal_coupling_update_bc_coeffs_s
 
   CS_FREE(var_ext);
   CS_FREE(var_distant);
+  CS_FREE(var_ext_d);
+  CS_FREE(var_distant_d);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2052,6 +2110,40 @@ cs_internal_coupling_update_bc_coeffs_strided
 }
 
 // Force instanciation
+
+template void
+cs_internal_coupling_update_bc_coeffs_s<true>
+(cs_dispatch_context           &ctx,
+ const cs_field_bc_coeffs_t    *bc_coeffs,
+ const cs_internal_coupling_t  *cpl,
+ cs_halo_type_t                 halo_type,
+ int                            w_stride,
+ double                         clip_coeff,
+ bool                           hyd_p_flag,
+ cs_real_t                      f_ext[][3],
+ cs_real_t                      viscel[][6],
+ const cs_real_t                weighb[],
+ cs_real_t                     *df_limiter,
+ const cs_real_t               *var,
+ const cs_real_t               *c_weight
+);
+
+template void
+cs_internal_coupling_update_bc_coeffs_s<false>
+(cs_dispatch_context           &ctx,
+ const cs_field_bc_coeffs_t    *bc_coeffs,
+ const cs_internal_coupling_t  *cpl,
+ cs_halo_type_t                 halo_type,
+ int                            w_stride,
+ double                         clip_coeff,
+ bool                           hyd_p_flag,
+ cs_real_t                      f_ext[][3],
+ cs_real_t                      viscel[][6],
+ const cs_real_t                weighb[],
+ cs_real_t                     *df_limiter,
+ const cs_real_t               *var,
+ const cs_real_t               *c_weight
+);
 
 template void
 cs_internal_coupling_update_bc_coeffs_strided

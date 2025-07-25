@@ -48,6 +48,7 @@
 #include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "alge/cs_convection_diffusion.h"
 #include "alge/cs_convection_diffusion_priv.h"
 #include "base/cs_field.h"
@@ -120,6 +121,8 @@ BEGIN_C_DECLS
  *   b_F           -->  implicit boundary coefficient for diffusion operator
  *   ac_F          -->  explicit imposed convective flux value (0 otherwise).
  *   bc_F          -->  implicit part of imp. conv. flux value
+ *   val_f         -->  boundary face value for gradient (only for the unsteady case).
+ *   flux          -->  boundary flux (only for the unsteady case).
  *   b_mass_flux   -->  boundary mass flux
  *   xcppi         -->  specific heat value if the scalar is the temperature,
  *                      1 otherwise at cell i
@@ -145,6 +148,8 @@ _balance_boundary_faces(const int           icvflf,
                         const cs_real_t     bf_F,
                         const cs_real_t     ac_F,
                         const cs_real_t     bc_F,
+                        const cs_real_t     val_f,
+                        const cs_real_t     flux,
                         const cs_real_t     b_mass_flux,
                         const cs_real_t     xcppi,
                         cs_real_t          *term_balance)
@@ -163,6 +168,11 @@ _balance_boundary_faces(const int           icvflf,
                    &pir,
                    &pipr);
 
+    /* Compute face value for gradient and diffusion for the
+       steady case (relaxation value in iprime) */
+    cs_real_t val_f_steady = a_F + b_F * pipr;
+    cs_real_t flux_steady = af_F + bf_F * pipr;
+
     cs_b_imposed_conv_flux(iconvp,
                            1.,/* thetap */
                            0, /* Conservative formulation,
@@ -173,20 +183,16 @@ _balance_boundary_faces(const int           icvflf,
                            pi,
                            pir,
                            pipr,
-                           a_F,
-                           b_F,
                            ac_F,
                            bc_F,
                            b_mass_flux,
                            xcppi,
+                           val_f_steady,
                            term_balance);
 
     cs_b_diff_flux(idiffp,
                    1., /* thetap */
-                   1.,
-                   pipr,
-                   af_F,
-                   bf_F,
+                   flux_steady,
                    b_visc,
                    term_balance);
 
@@ -211,20 +217,16 @@ _balance_boundary_faces(const int           icvflf,
                            pi,
                            pi, /* no relaxation */
                            pip,
-                           a_F,
-                           b_F,
                            ac_F,
                            bc_F,
                            b_mass_flux,
                            xcppi,
+                           val_f,
                            term_balance);
 
     cs_b_diff_flux(idiffp,
                    1., /* thetap */
-                   1.,
-                   pip,
-                   af_F,
-                   bf_F,
+                   flux,
                    b_visc,
                    term_balance);
   }
@@ -1032,11 +1034,10 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     if (eqp->iconv > 0)
       cs_slope_test_gradient(field_id,
                              ctx,
-                             inc,
                              (const cs_real_3_t *)grad,
                              gradst,
                              f->val,
-                             f->bc_coeffs,
+                             f->bc_coeffs->val_f,
                              i_mass_flux);
 
   }
@@ -1329,6 +1330,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      We handle different types of boundary faces separately to better
      analyze the information, but this is not mandatory. */
 
+  cs_real_t *val_f_g = f->bc_coeffs->val_f;
+  cs_real_t *flux_d = f->bc_coeffs->val_f_d;
+
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
     cs_lnum_t f_id_sel = bb_face_sel_ids[f_id];
@@ -1364,6 +1368,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             bf_F[f_id_sel],
                             ac_F,
                             bc_F,
+                            val_f_g[f_id_sel],
+                            flux_d[f_id_sel],
                             b_mass_flux[f_id_sel],
                             cpro_cp[c_id],
                             &term_balance);
@@ -1874,16 +1880,17 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     bb_face_sel_ids[f_id] = -1;
   }
 
-
   /* Synchronization for parallelism */
   CS_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     cells_tag_ids[c_id] = 0;
   }
+
   for (cs_lnum_t c_id = 0; c_id < n_cells_sel; c_id++) {
     cs_lnum_t c_id_sel = cell_sel_ids[c_id];
     cells_tag_ids[c_id_sel] = 1;
   }
+
   if (halo != nullptr) {
     cs_halo_sync_num(halo, CS_HALO_STANDARD, cells_tag_ids);
   }
@@ -2729,6 +2736,29 @@ cs_flux_through_surface(const char         *scalar_name,
                            1, /* inc */
                            grad);
 
+  cs_real_t *val_f_g = f->bc_coeffs->val_f;
+  cs_real_t *flux_d = f->bc_coeffs->val_f_d;
+  cs_real_t *val_f_g_nr = nullptr;
+  cs_real_t *flux_d_nr = nullptr;
+
+  // for the fisrt iteration before the time loop
+  if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->val_f_d == nullptr) {
+    cs_equation_param_t eqp_loc = *eqp;
+    eqp_loc.b_diff_flux_rc = 0; // no reconstruction
+
+    CS_MALLOC_HD(val_f_g_nr, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(flux_d_nr, n_b_faces, cs_real_t, cs_alloc_mode);
+
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx, f, f->bc_coeffs, 1, &eqp_loc,
+       false, nullptr, // hyp_p_flag, f_ext
+       nullptr, nullptr, nullptr,
+       f->val, val_f_g_nr, flux_d_nr);
+
+    val_f_g = val_f_g_nr;
+    flux_d = flux_d_nr;
+  }
+
   /* Compute the gradient for convective scheme
      (the slope test, limiter, SOLU, etc) */
   cs_real_3_t *gradup = nullptr;
@@ -2744,11 +2774,10 @@ cs_flux_through_surface(const char         *scalar_name,
     if (eqp->iconv > 0)
       cs_slope_test_gradient(f->id,
                              ctx,
-                             1, /* inc */
                              (const cs_real_3_t *)grad,
                              gradst,
                              f->val,
-                             f->bc_coeffs,
+                             val_f_g,
                              i_mass_flux);
   }
 
@@ -2858,6 +2887,8 @@ cs_flux_through_surface(const char         *scalar_name,
                             bf_F[f_id_sel],
                             ac_F,
                             bc_F,
+                            val_f_g[f_id_sel],
+                            flux_d[f_id_sel],
                             b_mass_flux[f_id_sel],
                             cpro_cp[c_id],
                             &term_balance);
@@ -3144,6 +3175,9 @@ cs_flux_through_surface(const char         *scalar_name,
   CS_FREE_HD(c_visc);
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
+
+  CS_FREE(val_f_g_nr);
+  CS_FREE(flux_d_nr);
 }
 
 /*----------------------------------------------------------------------------*/

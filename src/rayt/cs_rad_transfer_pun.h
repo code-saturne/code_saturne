@@ -80,7 +80,7 @@ BEGIN_C_DECLS
 void
 cs_rad_transfer_pun(int                          iband,
                     int                          bc_type[],
-                    const cs_field_bc_coeffs_t  *bc_coeffs,
+                    cs_field_bc_coeffs_t        *bc_coeffs,
                     cs_real_t                    flurds[],
                     cs_real_t                    flurdb[],
                     cs_real_t                    viscf[],
