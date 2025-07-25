@@ -804,9 +804,10 @@ cs_time_stepping(void)
 
     /* CDO module (user-defined equations)
        ----------------------------------- */
-    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV)
+    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV) {
       /* FV and CDO activated */
       cs_domain_post(cs_glob_domain);
+    }
 
     /* Write to "run_solver.log" periodically
        -------------------------------------- */
