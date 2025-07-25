@@ -643,7 +643,7 @@ cs_time_stepping(void)
 
     if (   idtvar != CS_TIME_STEP_ADAPTIVE && ts->nt_max > ts->nt_prev
         && cs_glob_ale_data->ale_iteration > 0) {
-      if (cs_log_default_is_active())
+      if (cs_log_default_is_active() && cs_param_cdo_has_fv_main())
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("\n INSTANT %18.9f    TIME STEP NUMBER %15d\n"

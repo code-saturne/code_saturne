@@ -700,7 +700,7 @@ _solve_most(int              n_var,
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
 
-  if (eqp_vel->verbosity > 0) {
+  if (eqp_vel->verbosity > 0 && cs_param_cdo_has_fv_main()) {
     bft_printf
       (_(" ------------------------------------------------------------\n\n"
          "\n"
@@ -935,7 +935,7 @@ cs_solve_all()
 
   cs_real_t *cvar_pr = CS_F_(p)->val;
 
-  if (eqp_vel->verbosity > 0) {
+  if (eqp_vel->verbosity > 0 && cs_param_cdo_has_fv_main()) {
     bft_printf
       (_(" ------------------------------------------------------------\n\n"
          "  INITIALIZATIONS\n"
@@ -1051,7 +1051,7 @@ cs_solve_all()
      - They may change upon a compuitation restart
      --------------------------------------------- */
 
-  if (eqp_vel->verbosity > 0) {
+  if (eqp_vel->verbosity > 0 && cs_param_cdo_has_fv_main()) {
     bft_printf
       (_(" ------------------------------------------------------------\n\n"
          "  COMPUTATION OF PHYSICAL QUANTITIES\n"
@@ -1100,7 +1100,7 @@ cs_solve_all()
   /* Compute time step if variable
      ----------------------------- */
 
-  if (eqp_vel->verbosity > 0) {
+  if (eqp_vel->verbosity > 0 && cs_param_cdo_has_fv_main()) {
     bft_printf
       (_(" ------------------------------------------------------------\n\n"
          "  COMPUTATION OF CFL, FOURIER AND VARIABLE DT\n"
@@ -1137,7 +1137,7 @@ cs_solve_all()
   /* Setup boundary conditions
      ------------------------- */
 
-  if (eqp_vel->verbosity > 0) {
+  if (eqp_vel->verbosity > 0 && cs_param_cdo_has_fv_main()) {
     bft_printf
       (_(" ------------------------------------------------------------\n\n"
          "  SETTING UP THE BOUNDARY CONDITIONS\n"
