@@ -859,7 +859,7 @@ cs_thermal_model_cv(cs_real_t  *xcvv)
   }
   else { /* quid when ieos = CS_EOS_MOIST_AIR */
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      xcvv[c_id] = 0.;
+      xcvv[c_id] = 1.;
     });
   }
 

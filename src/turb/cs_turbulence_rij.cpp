@@ -3670,7 +3670,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    w1[c_id] = 0.;
+    w1[c_id] = 1.;
   });
   ctx.wait();
 
@@ -3841,7 +3841,7 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
   if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_real_t *cvar_al = CS_F_(alp_bl)->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cvar_al[c_id] = 0.;
+      cvar_al[c_id] = 1.;
     });
     ctx.wait();
   }
