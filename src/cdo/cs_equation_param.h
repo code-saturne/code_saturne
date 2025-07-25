@@ -2276,7 +2276,7 @@ cs_equation_add_reaction(cs_equation_param_t *eqp,
  * \param[in, out] eqp     pointer to a cs_equation_param_t structure
  * \param[in]      z_name  name of the associated zone (if null or
  *                         "" all cells are considered)
- * \param[in]      val     pointer to the value
+ * \param[in]      val     value to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2285,7 +2285,7 @@ cs_equation_add_reaction(cs_equation_param_t *eqp,
 cs_xdef_t *
 cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
                                    const char          *z_name,
-                                   cs_real_t           *val);
+                                   cs_real_t            val);
 
 /*----------------------------------------------------------------------------*/
 /*!

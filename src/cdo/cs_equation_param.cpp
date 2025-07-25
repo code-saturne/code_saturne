@@ -3309,7 +3309,7 @@ cs_equation_add_reaction(cs_equation_param_t *eqp,
  * \param[in, out] eqp     pointer to a cs_equation_param_t structure
  * \param[in]      z_name  name of the associated zone (if nullptr or "" all
  *                         cells are considered)
- * \param[in]      val     pointer to the value
+ * \param[in]      val     value to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -3318,7 +3318,7 @@ cs_equation_add_reaction(cs_equation_param_t *eqp,
 cs_xdef_t *
 cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
                                    const char          *z_name,
-                                   cs_real_t           *val)
+                                   cs_real_t            val)
 {
   if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
@@ -3336,12 +3336,12 @@ cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        eqp->dim,
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        (void *)val);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                       eqp->dim,
+                                       z_id,
+                                       state_flag,
+                                       meta_flag,
+                                       &val);
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;

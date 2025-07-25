@@ -794,7 +794,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     */
 
     cs_real_t  st_val = -0.1;
-    cs_equation_add_source_term_by_val(eqp, "cells", &st_val);
+    cs_equation_add_source_term_by_val(eqp, "cells", st_val);
   }
   /*! [param_cdo_add_simple_source_terms] */
 
