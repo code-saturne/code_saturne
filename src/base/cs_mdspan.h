@@ -493,12 +493,18 @@ public:
   void
   copy_data
   (
-    T *data
+    T               *data,       /*!<[in] Pointer to copy */
+    const cs_lnum_t  n_vals = -1 /*!<[in] Number of values to copy.
+                                          If -1, default, we use array size */
   )
   {
+    assert(n_vals <= _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
     cs_dispatch_context ctx;
 
-    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+    ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = data[e_id];
     });
 
@@ -516,14 +522,20 @@ public:
   void
   copy_data
   (
-    mdspan& other
+    mdspan&         other,      /*!<[in] Reference to another mdspan object */
+    const cs_lnum_t n_vals = -1 /*!<[in] Number of values to copy.
+                                         If -1, default, we use array size */
   )
   {
     assert(other._size == _size);
 
+    assert(n_vals <= _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
     cs_dispatch_context ctx;
 
-    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+    ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = other._data[e_id];
     });
 
@@ -542,11 +554,17 @@ public:
   void
   copy_data
   (
-    cs_dispatch_context &ctx,
-    T                   *data
+    cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
+    T                   *data,       /*!<[in] Pointer to copy */
+    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
+                                              If -1, default, we use array size */
   )
   {
-    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+    assert(n_vals <= _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = data[e_id];
     });
   }
@@ -562,13 +580,19 @@ public:
   void
   copy_data
   (
-    cs_dispatch_context &ctx,
-    mdspan              &other
+    cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
+    mdspan              &other,      /*!<[in] Reference to another mdspan object */
+    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
+                                              If -1, default, we use array size */
   )
   {
     assert(other.size() == _size);
 
-    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+    assert(n_vals <= _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = other._data[e_id];
     });
   }
