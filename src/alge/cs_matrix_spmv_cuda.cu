@@ -221,8 +221,22 @@ _mat_vect_p_l_native_exdiag(cs_lnum_t           n_edges,
     cs_lnum_t jj = edges[edge_id][1];
     cs_real_t x_ii = __ldg(x + ii);
     cs_real_t x_jj = __ldg(x + jj);
+#if 0
     atomicAdd(&y[ii], xa[edge_id*2]     * x_jj);
     atomicAdd(&y[jj], xa[edge_id*2 + 1] * x_ii);
+#else
+    cs_real_t aii_x = xa[edge_id*2]     * x_jj;
+    cs_real_t ajj_x = xa[edge_id*2+1]   * x_ii;
+
+    using sum_v = assembled_value<cs_real_t>;
+    sum_v vii, vjj;
+
+    vii.get() = aii_x;
+    vjj.get() = ajj_x;
+
+    sum_v::ref(y[ii]).conflict_free_add(-1u, vii);
+    sum_v::ref(y[jj]).conflict_free_add(-1u, vjj);
+#endif
   }
 }
 
@@ -254,8 +268,22 @@ _mat_vect_p_l_native_exdiag_sym(cs_lnum_t           n_edges,
     cs_lnum_t jj = edges[edge_id][1];
     cs_real_t x_ii = __ldg(x + ii);
     cs_real_t x_jj = __ldg(x + jj);
+#if 0
     atomicAdd(&y[ii], xa[edge_id] * x_jj);
     atomicAdd(&y[jj], xa[edge_id] * x_ii);
+#else
+    cs_real_t aii_x = xa[edge_id] * x_jj;
+    cs_real_t ajj_x = xa[edge_id] * x_ii;
+
+    using sum_v = assembled_value<cs_real_t>;
+    sum_v vii, vjj;
+
+    vii.get() = aii_x;
+    vjj.get() = ajj_x;
+
+    sum_v::ref(y[ii]).conflict_free_add(-1u, vii);
+    sum_v::ref(y[jj]).conflict_free_add(-1u, vjj);
+#endif
   }
 }
 

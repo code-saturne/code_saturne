@@ -6661,6 +6661,21 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                      m_variant);
       }
 
+#if defined(HAVE_CUDA)
+
+      if (cs_get_device_id() > -1) {
+        _variant_add(_("native, CUDA"),
+                     m->type,
+                     m->fill_type,
+                     m->numbering,
+                     "cuda",
+                     n_variants,
+                     &n_variants_max,
+                     m_variant);
+      }
+
+#endif /* defined(HAVE_CUDA) */
+
     }
 
   }
