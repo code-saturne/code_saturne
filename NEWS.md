@@ -47,6 +47,11 @@ Master (not on release branches yet)
 - Use templated C++ functions instead of CS_MIN, CS_MAX, and CS_ABS
   macros, for better safety and performance.
 
+### Bug fixes:
+
+- Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one
+  periodic face by cell.
+
 Release 9.0.0 (2025-06-27)
 --------------------------
 
