@@ -487,15 +487,20 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  const cs_real_t *cell_centers
-    = (quant != nullptr) ? quant->cell_centers : nullptr;
+  const cs_real_3_t *cell_centers =
+    (quant != nullptr) ? quant->cell_centers : nullptr;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
   assert(cx != nullptr);
 
   /* Evaluate the function for this time at cell centers */
 
-  cx->func(time_eval, n_elts, elt_ids, cell_centers, dense_output, cx->input,
+  cx->func(time_eval,
+           n_elts,
+           elt_ids,
+           (const cs_real_t *)cell_centers,
+           dense_output,
+           cx->input,
            eval);
 }
 

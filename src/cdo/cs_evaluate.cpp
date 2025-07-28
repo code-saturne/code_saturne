@@ -589,7 +589,7 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
     const cs_lnum_t   c_id = (elt_ids == nullptr) ? id : elt_ids[id];
-    const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+    const cs_real_t  *xc   = quant->cell_centers[c_id];
 
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
@@ -654,7 +654,7 @@ _dcvd_by_analytic(cs_real_t                        time_eval,
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
     const cs_lnum_t   c_id = (elt_ids == nullptr) ? id : elt_ids[id];
-    const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+    const cs_real_t  *xc   = quant->cell_centers[c_id];
 
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
@@ -732,8 +732,7 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
 
     }
     else {
-
-      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+      const cs_real_t *xc = quant->cell_centers[c_id];
 
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
@@ -825,8 +824,7 @@ _pcvd_by_analytic(cs_real_t                        time_eval,
 
     }
     else {
-
-      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+      const cs_real_t *xc = quant->cell_centers[c_id];
 
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
@@ -915,8 +913,7 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
 
     }
     else {
-
-      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+      const cs_real_t *xc = quant->cell_centers[c_id];
 
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
@@ -1016,8 +1013,7 @@ _pcva_by_analytic(cs_real_t                        time_eval,
 
     }
     else {
-
-      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+      const cs_real_t *xc = quant->cell_centers[c_id];
 
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
@@ -1967,14 +1963,16 @@ cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
     ac->func(time_eval,
              quant->n_cells,
              nullptr,
-             quant->cell_centers,
+             (const cs_real_t *)quant->cell_centers,
              false, /* dense output */
              ac->input,
              retval);
   else
     ac->func(time_eval,
-             z->n_elts, z->elt_ids, quant->cell_centers,
-             false,  /* dense output */
+             z->n_elts,
+             z->elt_ids,
+             (const cs_real_t *)quant->cell_centers,
+             false, /* dense output */
              ac->input,
              retval);
 

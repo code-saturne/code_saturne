@@ -506,8 +506,7 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-    const cs_real_t  *xc = cdoq->cell_centers + 3*c_id;
+    const cs_real_t *xc = cdoq->cell_centers[c_id];
 
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
@@ -674,7 +673,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t *topo,
 
       /* Get the cell center */
 
-      const cs_real_t *xc = quant->cell_centers + 3 * c_id;
+      const cs_real_t *xc = quant->cell_centers[c_id];
 
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id + 1]; i++) {
         const cs_lnum_t f_id = c2f->ids[i];
@@ -784,7 +783,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t *topo,
     const cs_lnum_t *c2v_idx = topo->c2v->idx + c_id;
     const cs_lnum_t *c2v_ids = topo->c2v->ids + c2v_idx[0];
     const short int  n_vc    = c2v_idx[1] - c2v_idx[0];
-    const cs_real_t *xc      = quant->cell_centers + 3 * c_id;
+    const cs_real_t *xc      = quant->cell_centers[c_id];
 
     /* Initialize */
 
@@ -964,7 +963,7 @@ _vtx_algorithm(const cs_cdo_connect_t *connect,
     assert(ve - vs > 0);
     assert(ve - vs < SHRT_MAX);
 
-    double *xc = quant->cell_centers + 3 * c_id;
+    cs_real_t *xc = quant->cell_centers[c_id];
 
     xc[0] = xc[1] = xc[2] = 0;
     for (cs_lnum_t jv = vs; jv < ve; jv++) {
@@ -1009,9 +1008,12 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
   assert(connect->f2c != nullptr);
   assert(connect->c2f != nullptr);
 
-#pragma omp parallel for if (3 * n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3 * n_cells; i++)
-    quant->cell_centers[i] = 0.0;
+#pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    quant->cell_centers[i][0] = 0.0;
+    quant->cell_centers[i][1] = 0.0;
+    quant->cell_centers[i][2] = 0.0;
+  }
 
   for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) { /* Loop on faces */
 
@@ -1035,9 +1037,9 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
       const cs_lnum_t c_id = f2c->ids[i];
       const short int sgn  = f2c->sgn[i];
 
-      quant->cell_centers[3 * c_id + A] += sgn * fspec.q.unitv[A] * fsubq.Fa2;
-      quant->cell_centers[3 * c_id + B] += sgn * fspec.q.unitv[B] * fsubq.Fb2;
-      quant->cell_centers[3 * c_id + C] += sgn * fspec.q.unitv[C] * fsubq.Fc2;
+      quant->cell_centers[c_id][A] += sgn * fspec.q.unitv[A] * fsubq.Fa2;
+      quant->cell_centers[c_id][B] += sgn * fspec.q.unitv[B] * fsubq.Fb2;
+      quant->cell_centers[c_id][C] += sgn * fspec.q.unitv[C] * fsubq.Fc2;
 
     } /* End of loop on cell faces */
 
@@ -1049,7 +1051,7 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     const double inv_2vol = 0.5 / quant->cell_vol[i];
     for (int k = 0; k < 3; k++)
-      quant->cell_centers[3 * i + k] *= inv_2vol;
+      quant->cell_centers[i][k] *= inv_2vol;
   }
 }
 
@@ -1086,7 +1088,7 @@ _update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
     const int        n_cell_vertices = c2v->idx[c_id + 1] - c2v->idx[c_id];
     const cs_real_t *ref_xc = (const cs_real_t *)fvq->cell_cen + 3 * c_id;
 
-    cs_real_t *new_xc = cdoq->cell_centers + 3 * c_id;
+    cs_real_t *new_xc = cdoq->cell_centers[c_id];
 
     if (n_cell_vertices == 4) { // Copy mesh quantities
 
@@ -1601,24 +1603,24 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   switch (cs_cdo_cell_center_algo) {
     case CS_CDO_QUANTITIES_SATURNE_CENTER:
       cdoq->cell_vol     = mq->cell_vol;
-      cdoq->cell_centers = (cs_real_t *)mq->cell_cen; /* shared */
+      cdoq->cell_centers = mq->cell_cen; /* shared */
       break;
 
     case CS_CDO_QUANTITIES_BARYC_CENTER:
       cdoq->cell_vol = mq->cell_vol;
-      CS_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
+      CS_MALLOC(cdoq->cell_centers, n_cells, cs_real_3_t);
       _mirtich_algorithm(m, mq, topo, cdoq);
       break;
 
     case CS_CDO_QUANTITIES_MEANV_CENTER:
       cdoq->cell_vol = mq->cell_vol;
-      CS_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
+      CS_MALLOC(cdoq->cell_centers, n_cells, cs_real_3_t);
       _vtx_algorithm(topo, cdoq);
       break;
 
     case CS_CDO_QUANTITIES_SUBDIV_CENTER:
       CS_MALLOC(cdoq->cell_vol, n_cells, cs_real_t);
-      CS_MALLOC(cdoq->cell_centers, 3 * n_cells, cs_real_t);
+      CS_MALLOC(cdoq->cell_centers, n_cells, cs_real_3_t);
       _subdiv_algorithm(m, mq, topo, cdoq);
       break;
 
@@ -1821,14 +1823,13 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t *cdoq)
   fprintf(fdump, "\n *** Cell Quantities ***\n");
   fprintf(fdump, "-msg- num.; volume ; center (3)\n");
   for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-    cs_lnum_t p = 3 * i;
     fprintf(fdump,
             " [%6ld] | %12.8e | % -12.8e | % -12.8e |% -12.8e\n",
             (long)i + 1,
             cdoq->cell_vol[i],
-            cdoq->cell_centers[p],
-            cdoq->cell_centers[p + 1],
-            cdoq->cell_centers[p + 2]);
+            cdoq->cell_centers[i][0],
+            cdoq->cell_centers[i][1],
+            cdoq->cell_centers[i][2]);
   }
 
   fprintf(fdump, "\n\n *** Interior Face Quantities ***\n");

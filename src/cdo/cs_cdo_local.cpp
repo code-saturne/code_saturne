@@ -961,7 +961,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   cm->c_id = c_id;
   cm->vol_c = quant->cell_vol[c_id];
   for (int k = 0; k < 3; k++)
-    cm->xc[k] = quant->cell_centers[3*c_id+k];
+    cm->xc[k] = quant->cell_centers[c_id][k];
 
   /* Store the number of cell faces (useful to allocated boundary quantities) */
 
@@ -1580,7 +1580,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
   assert(f_id > -1);
 
   fm->c_id = c_id;
-  const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+  const cs_real_t *xc = quant->cell_centers[c_id];
   for (int k = 0; k < 3; k++) fm->xc[k] = xc[k];
 
   /* Face-related quantities */

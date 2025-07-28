@@ -3002,7 +3002,7 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
     const short int  *c2f_sgn = connect->c2f->sgn + s;
 
     const cs_lnum_t  n_fc = e - s;
-    const cs_real_t  *cell_center = quant->cell_centers + 3*c_id;
+    const cs_real_t *cell_center = quant->cell_centers[c_id];
     cs_real_3_t  grddp_reco = {0.0, 0.0, 0.0};
 
     for (short int j = 0; j < n_fc; j++) {

@@ -763,8 +763,7 @@ cs_gwf_update_head(const cs_cdo_connect_t    *connect,
 
 #pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-          const cs_real_t gpot
-            = _dp3(cdoq->cell_centers + 3 * i, phys->gravity);
+          const cs_real_t gpot = _dp3(cdoq->cell_centers[i], phys->gravity);
           head_in_law[i] = hydraulic_head_cells[i] - gpot;
         }
 
@@ -777,7 +776,7 @@ cs_gwf_update_head(const cs_cdo_connect_t    *connect,
 
 #pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-        const cs_real_t gpot  = _dp3(cdoq->cell_centers + 3 * i, phys->gravity);
+        const cs_real_t gpot  = _dp3(cdoq->cell_centers[i], phys->gravity);
         pressure_head->val[i] = hydraulic_head->val[i] - gpot;
       }
       break;
