@@ -928,6 +928,50 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check faces' periodicity. A cell can't contains more that one
+ *        periodic face.
+ *
+ * \param[in]  mesh                   pointer to a cs_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_perio(const cs_mesh_t *mesh)
+{
+  cs_lnum_t *perio_num = nullptr;
+  CS_MALLOC(perio_num, mesh->n_i_faces, cs_lnum_t);
+
+  cs_lnum_t *cells_count_perio = nullptr;
+  CS_MALLOC(cells_count_perio, mesh->n_cells_with_ghosts, cs_lnum_t);
+  cs_array_lnum_set_value(mesh->n_cells_with_ghosts, 0, cells_count_perio);
+
+  cs_mesh_get_face_perio_num(mesh, perio_num);
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+    if (perio_num[f_id] != 0) {
+      cells_count_perio[mesh->i_face_cells[f_id][0]] += 1;
+      cells_count_perio[mesh->i_face_cells[f_id][1]] += 1;
+    }
+  }
+
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++) {
+    if (cells_count_perio[c_id] > 1) {
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s: cell %ld has more than a periodic face (count: %ld).\n",
+                __func__,
+                (long)c_id,
+                (long)cells_count_perio[c_id]);
+    }
+  }
+
+  CS_FREE(perio_num);
+  CS_FREE(cells_count_perio);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create and define a new cs_interface_set_t structure on faces
  *
  * \param[in]  mesh          pointer to a cs_mesh_t structure
@@ -965,6 +1009,9 @@ _define_face_interface(const cs_mesh_t *mesh)
     for (int i = 0; i < n_perio; i++)
       perio_num[i] = i + 1;
   }
+
+  /* Check periodicity */
+  _check_perio(mesh);
 
   cs_mesh_get_perio_faces(mesh, &n_perio_face_couples, &perio_face_couples);
 

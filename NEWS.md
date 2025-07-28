@@ -17,6 +17,11 @@ Release 9.0.1 (unreleased)
 
 - Fix LU factorization of "cs_sdm_t" matrix.
 
+### Bug fixes:
+
+- Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one
+  periodic face by cell.
+
 Release 9.0.0 (2025-06-27)
 --------------------------
 
