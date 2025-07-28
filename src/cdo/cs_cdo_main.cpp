@@ -580,10 +580,6 @@ _solve_domain(cs_domain_t  *domain)
   /* User-defined equations */
 
   _compute_unsteady_user_equations(domain, nt_cur);
-
-  /* Post-processing */
-  cs_domain_post(domain);
-  cs_post_time_step_end();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -719,6 +715,10 @@ void
 cs_cdo_solve_unsteady_state_domain(void)
 {
   _solve_domain(cs_glob_domain);
+
+  /* Extra operations and post-processing of the computed solutions */
+
+  cs_domain_post(cs_glob_domain);
 }
 
 /*----------------------------------------------------------------------------*/
