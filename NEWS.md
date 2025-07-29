@@ -8,6 +8,11 @@ Release 9.0.1 (unreleased)
 - Fix memory leak with some multigrid setup combinations
   (including GUi-defined "multigrid as a solver" option).
 
+- Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one
+  periodic face by cell.
+
+- Fix the time used to solve CDO equations after FV-NSE since there is a constant offset between them.
+
 ### User changes:
 
 - Add the "FOR_RANGE" operator to MEG formulae editor. This commit
@@ -16,6 +21,7 @@ Release 9.0.1 (unreleased)
 ### Numerics:
 
 - Fix LU factorization of "cs_sdm_t" matrix.
+
 
 Release 9.0.0 (2025-06-27)
 --------------------------

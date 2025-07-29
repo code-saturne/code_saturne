@@ -714,7 +714,34 @@ cs_cdo_solve_steady_state_domain(void)
 void
 cs_cdo_solve_unsteady_state_domain(void)
 {
+  /* This function is called from FV part which has a different logic for the
+   * the time step. */
+  cs_time_step_type_t ts_type = cs_glob_time_step_options->idtvar;
+
+  /* This check is just a precaution, as we can't be sure about the others. */
+  if (ts_type != CS_TIME_STEP_CONSTANT) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              " %s: The time step is not constant.\n",
+              __func__);
+  }
+
+  cs_time_step_t *ts = cs_glob_domain->time_step;
+  ts->nt_cur -= 1;
+  ts->t_cur -= ts->dt_ref;
+
+  /* Solve equations with CDO-logic for time*/
   _solve_domain(cs_glob_domain);
+
+  /* Reactualize the time step to be conform with FV-logic */
+  ts->nt_cur += 1;
+  ts->t_cur += ts->dt_ref;
+
+  /* From now - FV and CDO use the same time */
+  /* Extra operations and post-processing of the computed solutions */
+
+  cs_domain_post(cs_glob_domain);
 }
 
 /*----------------------------------------------------------------------------*/

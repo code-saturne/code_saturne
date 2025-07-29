@@ -460,7 +460,7 @@ cs_time_stepping(void)
 
   cs_initialize_fields_stage_1();
 
-  if (cs_glob_param_cdo_mode >= CS_PARAM_CDO_MODE_OFF) {  // CDO mode
+  if (cs_glob_param_cdo_mode > CS_PARAM_CDO_MODE_OFF) { // CDO mode
     assert(cs_glob_domain != nullptr);
     cs_domain_setup_init_state(cs_glob_domain);
   }
