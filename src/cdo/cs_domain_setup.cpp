@@ -813,6 +813,8 @@ cs_domain_setup_finalize_module(cs_domain_t *domain)
 void
 cs_domain_setup_init_state(cs_domain_t *domain)
 {
+  assert(domain != nullptr);
+
   /* Set the initial condition to all variable fields */
 
   cs_equation_init_field_values(domain->mesh, domain->time_step);

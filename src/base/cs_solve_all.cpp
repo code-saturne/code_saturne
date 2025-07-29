@@ -62,8 +62,8 @@
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_physical_properties_default.h"
-#include "base/cs_profiling.h"
 #include "base/cs_porous_model.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_solve_navier_stokes.h"
@@ -77,6 +77,7 @@
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_condensation_1d_thermal.h"
 #include "base/cs_wall_distance.h"
+#include "cdo/cs_cdo_main.h"
 #include "cdo/cs_navsto_system.h"
 #include "ctwr/cs_ctwr_source_terms.h"
 #include "lagr/cs_lagr.h"
@@ -931,6 +932,13 @@ cs_solve_all()
         }
       }
     }
+  }
+
+  /* Solve CDO NSE module
+    --------------------------------------------------------------- */
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV) {
+    /* FV and CDO activated */
+    cs_cdo_solve_unsteady_state_domain();
   }
 
   cs_real_t *cvar_pr = CS_F_(p)->val;

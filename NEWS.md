@@ -49,8 +49,8 @@ Master (not on release branches yet)
 
 ### Bug fixes:
 
-- Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one
-  periodic face by cell.
+- Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one periodic face by cell.
+- Fix the time used to solve CDO equations after FV-NSE since there is a constant offset between them.
 
 Release 9.0.0 (2025-06-27)
 --------------------------

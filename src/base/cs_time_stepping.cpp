@@ -49,9 +49,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
-#include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo_sol.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_1d_wall_thermal_check.h"
@@ -59,28 +59,16 @@
 #include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
-#include "cdo/cs_cdo_main.h"
-#include "cfbl/cs_cf_boundary_conditions.h"
 #include "base/cs_control.h"
 #include "base/cs_coupling.h"
-#include "cdo/cs_domain_op.h"
-#include "cdo/cs_domain_setup.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_gas_mix.h"
-#include "gui/cs_gui.h"
 #include "base/cs_ibm.h"
 #include "base/cs_initialize_fields.h"
-#include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_lec.h"
-#include "turb/cs_les_balance.h"
-#include "turb/cs_les_inflow.h"
 #include "base/cs_log_iteration.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_save.h"
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_physical_properties_default.h"
 #include "base/cs_porosity_from_scan.h"
 #include "base/cs_porous_model.h"
@@ -88,8 +76,6 @@
 #include "base/cs_post_default.h"
 #include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
-#include "rayt/cs_rad_transfer.h"
-#include "rayt/cs_rad_transfer_restart.h"
 #include "base/cs_resource.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
@@ -102,13 +88,27 @@
 #include "base/cs_time_step.h"
 #include "base/cs_timer_stats.h"
 #include "base/cs_turbomachinery.h"
-#include "turb/cs_turbulence_bc.h"
-#include "turb/cs_turbulence_htles.h"
-#include "turb/cs_turbulence_model.h"
 #include "base/cs_vof.h"
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_condensation_1d_thermal.h"
+#include "cdo/cs_cdo_main.h"
+#include "cdo/cs_domain_op.h"
+#include "cdo/cs_domain_setup.h"
+#include "cfbl/cs_cf_boundary_conditions.h"
+#include "gui/cs_gui.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_lec.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_save.h"
+#include "pprt/cs_physical_model.h"
+#include "rayt/cs_rad_transfer.h"
+#include "rayt/cs_rad_transfer_restart.h"
+#include "turb/cs_les_balance.h"
+#include "turb/cs_les_inflow.h"
+#include "turb/cs_turbulence_bc.h"
+#include "turb/cs_turbulence_htles.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -417,8 +417,7 @@ cs_time_stepping(void)
 
   cs_initialize_fields_stage_1();
 
-  if (cs_glob_param_cdo_mode >= CS_PARAM_CDO_MODE_OFF) {  // CDO mode
-    assert(cs_glob_domain != nullptr);
+  if (cs_param_cdo_has_cdo()) { // CDO mode
     cs_domain_setup_init_state(cs_glob_domain);
   }
 
@@ -522,9 +521,6 @@ cs_time_stepping(void)
        "                       MAIN CALCULATION\n"
        "                       ================\n\n\n"
        "===============================================================\n\n\n"));
-
-  ts->nt_cur = ts->nt_prev;
-  ts->t_cur = ts->t_prev;
 
   cs_log_separator(CS_LOG_DEFAULT);
 
@@ -669,7 +665,7 @@ cs_time_stepping(void)
       /* Solve CDO module(s) or user-defined equations using CDO schemes
          --------------------------------------------------------------- */
 
-      if (cs_param_cdo_has_cdo_and_fv()) {
+      if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV) {
         /* FV and CDO activated */
         cs_cdo_solve_unsteady_state_domain();
       }
