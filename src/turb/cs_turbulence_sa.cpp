@@ -331,7 +331,8 @@ _src_terms(const cs_real_t    dt[],
 
     st_imp[i] = (cs::max((  cs_turb_csaw1*fw*nusa*inv_dist_sq
                           - csab1r[i]*taussa),
-                         0.0));
+                         0.0))
+               * rho * cell_f_vol[i];
 
   }
 
