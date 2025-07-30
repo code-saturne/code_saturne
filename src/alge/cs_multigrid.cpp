@@ -375,8 +375,8 @@ static int _k_cycle_hpc_recurse_threshold = 256; /* under this size, coarsest
                                                     level solver does not
                                                     use k-cycle preconditioning */
 
-static unsigned int _grid_max_level_for_device = 1; /* grids over this level are
-                                                       solved on host only */
+static unsigned int _grid_max_level_for_device = 25; /* grids over this level are
+                                                        solved on host only */
 
 /* Force GPU settings (for CPU/GPU comparisons) */
 
