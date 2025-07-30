@@ -303,7 +303,9 @@ public:
   template <class F, class... Args>
   bool
   parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-#   pragma omp parallel for  num_threads(n_threads(n))
+    #ifdef _OPENMP
+    #pragma omp parallel for  num_threads(n_threads(n))
+    #endif
     for (cs_lnum_t i = 0; i < n; ++i) {
       f(i, args...);
     }
@@ -319,7 +321,9 @@ public:
     const int n_i_threads = m->i_face_numbering->n_threads;
     const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
+      #ifdef _OPENMP
       #pragma omp parallel for
+      #endif
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t f_id = i_group_index[(t_id * n_i_groups + g_id) * 2];
              f_id < i_group_index[(t_id * n_i_groups + g_id) * 2 + 1];
@@ -340,7 +344,9 @@ public:
     const int n_b_threads = m->b_face_numbering->n_threads;
     const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
+      #ifdef _OPENMP
       #pragma omp parallel for
+      #endif
       for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t f_id = b_group_index[(t_id * n_b_groups + g_id) * 2];
              f_id < b_group_index[(t_id * n_b_groups + g_id) * 2 + 1];
@@ -362,12 +368,16 @@ public:
     sum = 0;
 
 #if 0
-#   pragma omp parallel for reduction(+:sum) num_threads(n_threads(n))
+    #ifdef _OPENMP
+    #pragma omp parallel for reduction(+:sum) num_threads(n_threads(n))
+    #endif
     for (cs_lnum_t i = 0; i < n; ++i) {
       f(i, sum, args...);
     }
 #else
-#   pragma omp parallel num_threads(n_threads(n))
+    #ifdef _OPENMP
+    #pragma omp parallel num_threads(n_threads(n))
+    #endif
     {
       cs_lnum_t s_id, e_id;
       thread_range(n, 4, s_id, e_id);
@@ -418,7 +428,9 @@ public:
                       Args&&... args) {
     reducer.identity(result);
 
-#   pragma omp parallel num_threads(n_threads(n))
+    #ifdef _OPENMP
+    #pragma omp parallel num_threads(n_threads(n))
+    #endif
     {
       cs_lnum_t s_id, e_id;
       thread_range(n, 4, s_id, e_id);
