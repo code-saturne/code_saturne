@@ -265,6 +265,26 @@ cs_sles_cudss_log(const void  *context,
 void
 cs_sles_cudss_library_info(cs_log_t  log_type);
 
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set MPI communicator for cuDSS solver.
+ *
+ * The system is solved only on ranks with a non-null communicator or
+ * if the associated communicator has less than 2 ranks.
+ *
+ * \param[in, out]  context  pointer to solver info and context
+ * \param[in]       comm     MPI communicator for solving
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_cudss_set_mpi_comm(cs_sles_cudss_t  *context,
+                           MPI_Comm          comm);
+
+#endif /* defined(HAVE_MPI) */
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

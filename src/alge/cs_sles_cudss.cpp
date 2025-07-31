@@ -55,6 +55,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_log.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_halo.h"
@@ -121,6 +122,17 @@ struct _cs_sles_cudss_t {
   bool                 keep_data;        /* If true, keep data even
                                             when cs_sles_free is called,
                                             to amortize analysis */
+
+  /* Communicator used for reduction operations
+     (if left at NULL, main communicator will be used) */
+
+# if defined(HAVE_MPI)
+  MPI_Comm comm;
+# endif
+
+#if defined(HAVE_NCCL)
+  ncclComm_t nccl_comm;
+#endif
 
   /* Performance data */
 
@@ -189,6 +201,7 @@ _setup_matrix(cs_sles_cudss_t    *c,
   const int n_rows = cs_matrix_get_n_rows(a);
   const int n_cols = cs_matrix_get_n_columns(a);
   const int db_size = cs_matrix_get_diag_block_size(a);
+  cs_gnum_t n_g_rows = n_rows;
 
   const cs_lnum_t *a_row_index, *a_col_id;
   const cs_real_t *a_val = nullptr;
@@ -200,22 +213,67 @@ _setup_matrix(cs_sles_cudss_t    *c,
   cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE;
   cs_lnum_t nnz = a_row_index[n_rows];
 
+  cs_device_context ctx;
+
   // const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(a);
 
   if (sizeof(int32_t) != sizeof(cs_lnum_t)) {
     CS_REALLOC_HD(sd->_row_index, n_rows, int32_t, amode);
     int32_t  *_row_index = sd->_row_index;
-    for (cs_lnum_t i = 0; i < n_rows; i++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       _row_index[i] = a_row_index[i];
+    });
     row_index = _row_index;
   }
 
-  if (sizeof(int32_t) != sizeof(cs_lnum_t)) {
+  int n_ranks = 1;
+  cs_gnum_t global_shift = 0;
+
+#if defined(HAVE_MPI)
+  if (c->comm != MPI_COMM_NULL) {
+    MPI_Comm_size(c->comm, &n_ranks);
+    cs_gnum_t local_shift = n_rows;
+    MPI_Scan(&local_shift, &global_shift, 1, CS_MPI_GNUM, MPI_SUM,
+             c->comm);
+    global_shift -= n_rows;
+    MPI_Allreduce(MPI_IN_PLACE, &n_g_rows, 2, CS_MPI_GNUM, MPI_SUM, c->comm);
+  }
+#endif
+
+  if (sizeof(int32_t) != sizeof(cs_lnum_t) || n_ranks > 1) {
     CS_REALLOC_HD(sd->_col_id, nnz, int32_t, amode);
-    int32_t  *_col_id = sd->_col_id;
-    for (cs_lnum_t i = 0; i < nnz; i++)
-      _col_id[i] = a_col_id[i];
+    int32_t *_col_id = sd->_col_id;
+    int32_t *g_row_id = nullptr;
+
+#if defined(HAVE_MPI)
+    if (n_ranks > 1) {
+      const cs_halo_t *h = cs_matrix_get_halo(a);
+
+      CS_MALLOC_HD(g_row_id, n_cols, int32_t, amode);
+      ctx.parallel_for(n_cols, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        g_row_id[i] = i + global_shift;
+      });
+      ctx.wait();
+
+      cs_halo_sync_d(h, CS_HALO_STANDARD, CS_INT32, 1, g_row_id);
+    }
+#endif
+
+    if (g_row_id == nullptr) {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        _col_id[i] = a_col_id[i];
+      });
+    }
+    else {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        _col_id[i] = g_row_id[a_col_id[i]];
+      });
+    }
+    ctx.wait();
+
+    CS_FREE(g_row_id);
     col_id = _col_id;
+
   }
 
   /* Matrix */
@@ -228,8 +286,8 @@ _setup_matrix(cs_sles_cudss_t    *c,
 
   cudssStatus_t retval
     = cudssMatrixCreateCsr(&(sd->matrix),
-                           n_rows,
-                           n_cols,
+                           (int64_t)n_rows,
+                           (int64_t)n_cols,
                            nnz,
                            const_cast<void *>(row_index),
                            nullptr,
@@ -250,19 +308,13 @@ _setup_matrix(cs_sles_cudss_t    *c,
 
 #if defined(HAVE_MPI)
 
-  if (cs_glob_mpi_comm != MPI_COMM_NULL) {
-    cs_gnum_t local_shift = n_rows;
-    cs_gnum_t global_shift = 0;
-    MPI_Scan(&local_shift, &global_shift, 1, CS_MPI_GNUM, MPI_SUM,
-             cs_glob_mpi_comm);
-
+  if (n_ranks > 1) {
     int64_t first_row = global_shift - n_rows;
     int64_t last_row = global_shift - 1;
 
-    retval
-      = cudssMatrixSetDistributionRow1d(sd->matrix,
-                                        first_row,
-                                        last_row);
+    retval = cudssMatrixSetDistributionRow1d(sd->matrix,
+                                             first_row,
+                                             last_row);
 
     if (retval != CUDSS_STATUS_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
@@ -356,16 +408,20 @@ cs_sles_cudss_create(void)
                 __func__, _status_str[retval]);
 
     if (cs_glob_n_ranks > 1) {
-      // With file name set to null, cuDSS will use the file
-      // defined through the CUDSS_COMM_LIB environment variable */
-      const char* comm_lib_file_name = nullptr;
-      retval = cudssSetCommLayer(_handle, comm_lib_file_name);
-      if (retval != CUDSS_STATUS_SUCCESS)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("%s: error calling cudssSetCommLayer: %s\n\n"
-                    "The CUDSS_COMM_LIB environment variable should be set to\n"
-                    "the absolute path of the cuDSS communicator layer.\n"),
-                  __func__, _status_str[retval]);
+      // With file name set to null, cuDSS would also use the file
+      // defined through the CUDSS_COMM_LIB environment variable
+      // when cudssSetCommLayer is called.
+      const char *comm_lib_file_name = getenv("CUDSS_COMM_LIB");
+      if (comm_lib_file_name != nullptr) {
+        retval = cudssSetCommLayer(_handle, comm_lib_file_name);
+        if (retval != CUDSS_STATUS_SUCCESS)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("%s: error calling cudssSetCommLayer: %s\n\n"
+                      "The CUDSS_COMM_LIB environment variable should be set to\n"
+                      "the absolute path of the cuDSS communicator layer.\n"
+                      "Its current value is: %s"),
+                    __func__, _status_str[retval], comm_lib_file_name);
+      }
     }
 
     if (cs_glob_n_threads > 1) {
@@ -387,6 +443,10 @@ cs_sles_cudss_create(void)
   CS_MALLOC(c, 1, cs_sles_cudss_t);
 
   c->keep_data = true;
+
+#if defined(HAVE_MPI)
+  cs_sles_cudss_set_mpi_comm(c, cs_glob_mpi_comm);
+#endif
 
   c->n_analysis = 0;
   c->n_num_fact = 0;
@@ -626,6 +686,29 @@ cs_sles_cudss_setup(void               *context,
 
     _setup_matrix(c, a);
 
+    /* Setup communicator */
+
+#if defined(HAVE_MPI)
+    if (c->comm != MPI_COMM_NULL) {
+      const char *s = getenv("CUDSS_COMM_LIB");
+      if (s != nullptr) {
+        if (strstr(s, "openmpi") != nullptr)
+          retval = cudssDataSet(_handle, sd->data, CUDSS_DATA_COMM,
+                                &(c->comm), sizeof(MPI_Comm *));
+#if defined(HAVE_NCCL)
+        else if (strstr(s, "nccl") != nullptr)
+          retval = cudssDataSet(_handle, sd->data, CUDSS_DATA_COMM,
+                                &(c->nccl_comm), sizeof(ncclComm_t *));
+#endif
+        if (retval != CUDSS_STATUS_SUCCESS)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("%s: error setting CUDSS_DATA_COMM: %s\n\n"
+                      "The commication layer is based on the CUDSS_COMM_LIB\n"
+                      "(%s)."),
+                    __func__, _status_str[retval], s);
+      }
+    }
+#endif
   }
 
   /* Case where setup data is already present (simple update) */
@@ -982,6 +1065,45 @@ cs_sles_cudss_library_info(cs_log_t  log_type)
   cs_log_printf(log_type,
                 "    cuDSS v0.%d.%d-%d\n", major, minor, patch);
 }
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set MPI communicator for cuDSS solver.
+ *
+ * The system is solved only on ranks with a non-null communicator or
+ * if the associated communicator has less than 2 ranks.
+ *
+ * \param[in, out]  context  pointer to solver info and context
+ * \param[in]       comm     MPI communicator for solving
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_cudss_set_mpi_comm(cs_sles_cudss_t  *context,
+                           MPI_Comm          comm)
+{
+  cs_sles_cudss_t *c = static_cast<cs_sles_cudss_t *>(context);
+
+  c->comm = comm;
+
+  if (c->comm != MPI_COMM_NULL) {
+    int n_ranks;
+    MPI_Comm_size(c->comm, &n_ranks);
+    if (n_ranks < 2)
+      c->comm = MPI_COMM_NULL;
+  }
+
+#if defined(HAVE_NCCL)  // No reduced NCCL communicators built so far.
+  if (c->comm == cs_glob_mpi_comm)
+    c->nccl_comm = cs_glob_nccl_comm;
+  else
+    c->nccl_comm = nullptr;
+#endif
+}
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 
