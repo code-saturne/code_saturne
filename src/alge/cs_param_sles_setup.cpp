@@ -993,12 +993,16 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
 
     _petsc_cmd(true, prefix_pc, "pc_type", "asm");
     _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
+    _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true,
                prefix_pc,
                "eps_nev",
                std::to_string(hpddmp->nb_eigenvector).c_str());
+    _petsc_cmd(true,
+               prefix_pc,
+               "eps_threshold",
+               std::to_string(hpddmp->relative_threshold).c_str());
     _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
-    _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true, prefix_pc, "sub_pc_type", "cholesky");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_24", "1");
@@ -1010,7 +1014,7 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_coarse_");
 
     _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
-    _petsc_cmd(true, prefix_pc, "sub_pc_type", "cholesky");
+    _petsc_cmd(true, prefix_pc, "pc_type", "cholesky");
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_14", "400");
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
@@ -1031,6 +1035,10 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
     /* Define option for first level */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_levels_1_");
 
+    _petsc_cmd(true, prefix_pc, "pc_type", "asm");
+    _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
+    _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
+
     _petsc_cmd(true, prefix_pc, "svd_type", "lanczos");
     _petsc_cmd(true,
                prefix_pc,
@@ -1040,32 +1048,32 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
                prefix_pc,
                "svd_relative_threshold",
                std::to_string(hpddmp->relative_threshold).c_str());
-    _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
+
+    _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
     if (slesp->mat_is_sym) {
       _petsc_cmd(true, prefix_pc, "sub_pc_type", "cholesky");
     }
     else {
       _petsc_cmd(true, prefix_pc, "sub_pc_type", "lu");
     }
-    _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
-    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
-    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
-    _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
-    _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_24", "1");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_25", "0");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_3", "1.e-50");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_5", "0.");
 
     /* Define option for coarse solver */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_coarse_");
 
     _petsc_cmd(true, prefix_pc, "correction", "deflated");
+    _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
     if (slesp->mat_is_sym) {
       _petsc_cmd(true, prefix_pc, "pc_type", "cholesky");
     }
     else {
       _petsc_cmd(true, prefix_pc, "pc_type", "lu");
     }
-    _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
-    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_14", "400");
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
