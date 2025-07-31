@@ -1028,22 +1028,10 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   /* Preconditionning */
 
-  c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
+  c->setup_data->pc_apply(c->setup_data->pc_context, rk, dk);
 
   /* Descent direction */
   /*-------------------*/
-
-#if defined(HAVE_OPENMP)
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    dk[ii] = gk[ii];
-
-#else
-
-  memcpy(dk, gk, n_rows * sizeof(cs_real_t));
-
-#endif
 
   cs_matrix_vector_multiply(a, dk, zk); /* zk = A.dk */
 
@@ -4667,6 +4655,12 @@ cs_sles_it_setup(void               *context,
           c->solve = _conjugate_gradient_npc_sr;
       }
     }
+#if defined(HAVE_CUDA)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_cuda_pcg;
+    }
+#endif
     break;
 
   case CS_SLES_FCG:
@@ -4681,6 +4675,12 @@ cs_sles_it_setup(void               *context,
 
   case CS_SLES_IPCG:
     c->solve = _conjugate_gradient_ip;
+#if defined(HAVE_CUDA)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_cuda_fcg;
+    }
+#endif
     break;
 
   case CS_SLES_JACOBI:

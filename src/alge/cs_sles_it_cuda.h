@@ -164,6 +164,41 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
                     void                      *aux_vectors);
 
 /*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using preconditioned conjugate gradient.
+ *
+ * This variant, described in \cite Notay:2015, allows computing the
+ * required inner products with a single global communication.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- diagonal block size
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_sles_it_cuda_pcg(cs_sles_it_t              *c,
+                    const cs_matrix_t         *a,
+                    cs_lnum_t                  diag_block_size,
+                    cs_sles_it_convergence_t  *convergence,
+                    const cs_real_t           *rhs,
+                    cs_real_t                 *restrict vx_ini,
+                    cs_real_t                 *restrict vx,
+                    size_t                     aux_size,
+                    void                      *aux_vectors);
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using optimised preconditioned GCR (CUDA version).
  *
  * On entry, vx is considered initialized.
