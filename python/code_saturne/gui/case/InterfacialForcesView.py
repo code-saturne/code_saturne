@@ -254,6 +254,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         GTD_condition_1 = (TurbulenceModel(self.case).getTurbulenceModel("1") in
                            ["k-epsilon",
                             "k-epsilon_linear_production",
+                            "k-omega-SST",
                             "rij-epsilon_ssg",
                             "rij-epsilon_ebrsm"])
 

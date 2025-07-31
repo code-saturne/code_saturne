@@ -262,6 +262,37 @@ eps = ustar2^1.5/(kappa*dh*0.1);"""
 
             name = 'turbulence_ke_%s' % (self.__currentField)
 
+        elif turb_model in ('k-omega-SST'):
+            if exp in _empty_exps:
+                exp = self.__boundary.getDefaultTurbFormula(turb_model)
+            exa = """#exemple :
+uref2 = 10.;
+dh = 0.2;
+re = sqrt(uref2)*dh*rho0/mu0;
+
+if (re < 2000){
+#     in this case u*^2 is directly calculated to not have a problem with
+#     xlmbda=64/Re when Re->0
+
+  ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
+
+else if (re<4000){
+
+  xlmbda = 0.021377 + 5.3115e-6*re;
+  ustar2 = uref2*xlmbda/8.;}
+
+else {
+
+  xlmbda = 1/( 1.8*log(re)/log(10.)-1.64)^2;
+  ustar2 = uref2*xlmbda/8.;}
+
+cmu = 0.09;
+kappa = 0.42;
+k   = ustar2/sqrt(cmu);
+omg = ustar2^1.5/(kappa*dh*0.1)/k/cmu;
+"""
+            name = 'turbulence_kw_%s' % (self.__currentField)
+
         elif turb_model in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
             if exp in _empty_exps:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)

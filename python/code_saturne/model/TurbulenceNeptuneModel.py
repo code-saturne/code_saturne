@@ -39,10 +39,10 @@ class TurbulenceModelsDescription:
     continuousTurbulenceModels = ['none', 'mixing_length',
                                   'k-epsilon', 'k-epsilon_linear_production',
                                   'rij-epsilon_ssg', 'rij-epsilon_ebrsm',
-                                  'les_smagorinsky', 'les_wale']
+                                  'les_smagorinsky', 'les_wale', 'k-omega-SST']
 
     reverseCouplingModels = ['k-epsilon', 'k-epsilon_linear_production',
-                             'rij-epsilon_ssg', 'rij-epsilon_ebrsm']
+                             'rij-epsilon_ssg', 'rij-epsilon_ebrsm', 'k-omega-SST']
 
     dispersedTurbulenceModels = ['none', 'q2-q12-tchen', 'r2-q12', 'q2-q12', 'r2-r12-tchen']
 
@@ -59,6 +59,7 @@ class TurbulenceModelsDescription:
     turbulenceVariables['mixing_length'] = []
     turbulenceVariables['k-epsilon'] = ['k', 'epsilon']
     turbulenceVariables['k-epsilon_linear_production'] = ['k', 'epsilon']
+    turbulenceVariables['k-omega-SST'] = ['k', 'omega']
     turbulenceVariables['rij-epsilon_ssg'] = ['reynolds_stress', 'epsilon']
     turbulenceVariables['rij-epsilon_ebrsm'] = ['reynolds_stress', 'epsilon', 'alpha']
     turbulenceVariables['les_smagorinsky'] = []
@@ -71,6 +72,7 @@ class TurbulenceModelsDescription:
 
     turbulenceVariables['all'] = turbulenceVariables['k-epsilon'] \
                                + turbulenceVariables['k-epsilon_linear_production'] \
+                               + turbulenceVariables['k-omega-SST'] \
                                + turbulenceVariables['rij-epsilon_ssg'] \
                                + turbulenceVariables['rij-epsilon_ebrsm'] \
                                + turbulenceVariables['les_smagorinsky'] \
@@ -84,6 +86,7 @@ class TurbulenceModelsDescription:
     turbulenceProperties['mixing_length'] = ["turb_viscosity"]
     turbulenceProperties['k-epsilon'] = ["turb_viscosity"]
     turbulenceProperties['k-epsilon_linear_production'] = ["turb_viscosity"]
+    turbulenceProperties['k-omega-SST'] = ["turb_viscosity"]
     turbulenceProperties['rij-epsilon_ssg'] = ["turb_viscosity"]
     turbulenceProperties['rij-epsilon_ebrsm'] = ["turb_viscosity"]
     turbulenceProperties['les_smagorinsky'] = ["turb_viscosity"]
@@ -557,7 +560,7 @@ class TurbulenceModel(Variables, Model):
 
     def modelLevelIsAboveTwoEquations(self, fieldId):
         """
-        return 1 if turbulent model of field is k-eps or Rij
+        return 1 if turbulent model of field is k-eps, k-omg or Rij
         """
         if fieldId == "all":
             flag = 1
@@ -568,6 +571,7 @@ class TurbulenceModel(Variables, Model):
             self.mainFieldsModel.isFieldIdValid(fieldId)
             if (self.getTurbulenceModel(fieldId) == "k-epsilon" \
              or self.getTurbulenceModel(fieldId) == "k-epsilon_linear_production" \
+             or self.getTurbulenceModel(fieldId) == "k-omega-SST" \
              or self.getTurbulenceModel(fieldId) == "rij-epsilon_ssg" \
              or self.getTurbulenceModel(fieldId) == "rij-epsilon_ebrsm" \
              or self.getTurbulenceModel(fieldId) == "les_smagorinsky" \

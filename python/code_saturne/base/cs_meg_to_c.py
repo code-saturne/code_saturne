@@ -2111,6 +2111,8 @@ class meg_to_c_interpreter:
                                                                               turb_model)
                             if turb_model in('k-epsilon', 'k-epsilon_linear_production'):
                                 name = 'turbulence_ke_%s' % (fId)
+                            elif turb_model in ('k-omega-SST'):
+                                name = 'turbulence_kw_%s' % (fId)
                             elif turb_model in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
                                 name = 'turbulence_rije_%s' % (fId)
                             elif turb_model in ('tchen', 'q2-q12'):

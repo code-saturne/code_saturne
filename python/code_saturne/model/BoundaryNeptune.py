@@ -653,6 +653,10 @@ class InletBoundary(Boundary):
             req = [('k', "turbulent energy"),
                    ('eps', "turbulent dissipation")]
 
+        elif turbModel in ('k-omega-SST'):
+            req = [('k', "turbulent energy"),
+                   ('omg', "turbulent dissipation rate")]
+
         elif turbModel in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
             req = [('R11', "Reynolds stress R11"),
                    ('R22', "Reynolds stress R22"),
@@ -701,6 +705,10 @@ class InletBoundary(Boundary):
         if turb_model in ('k-epsilon', 'k-epsilon_linear_production'):
             formula = """k = 0.0001;
 eps = 0.001;"""
+
+        elif turb_model in ('k-omega-SST'):
+            formula = """k = 0.0001;
+omg = 1.;"""
 
         elif turb_model in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
             formula = """R11 = 5e-05;

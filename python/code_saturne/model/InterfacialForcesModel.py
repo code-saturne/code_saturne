@@ -180,6 +180,7 @@ class InterfacialForcesModel(Variables, Model):
             GTD_condition_1 = (self.turb_m.getTurbulenceModel("1") in
                                ["k-epsilon",
                                 "k-epsilon_linear_production",
+                                "k-omega-SST",
                                 "rij-epsilon_ssg'",
                                 "rij-epsilon_ebrsm"])
             GTD_condition_2 = (self.turb_m.getTurbulenceModel("2") == "none")
