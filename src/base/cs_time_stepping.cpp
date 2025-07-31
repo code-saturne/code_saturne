@@ -522,6 +522,9 @@ cs_time_stepping(void)
        "                       ================\n\n\n"
        "===============================================================\n\n\n"));
 
+  ts->nt_cur = ts->nt_prev;
+  ts->t_cur  = ts->t_prev;
+
   cs_log_separator(CS_LOG_DEFAULT);
 
   /* Number of ALE iterations (related to the current execution)
