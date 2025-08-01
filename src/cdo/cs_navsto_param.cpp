@@ -1398,9 +1398,9 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
-                                   const char           *z_name,
-                                   cs_real_t            *values)
+cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   cs_real_t          values)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1424,12 +1424,12 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
 
   /* Set the boundary condition for the pressure field */
 
-  cs_xdef_t  *dp = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                           1, /* dim */
-                                           z_id,
-                                           CS_FLAG_STATE_UNIFORM, /* state */
-                                           CS_CDO_BC_DIRICHLET,
-                                           (void *)values);
+  cs_xdef_t *dp = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                          1, /* dim */
+                                          z_id,
+                                          CS_FLAG_STATE_UNIFORM, /* state */
+                                          CS_CDO_BC_DIRICHLET,
+                                          &values);
 
   int  pnew_id = nsp->n_pressure_bc_defs;
 
@@ -1850,9 +1850,9 @@ cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_source_term_by_val(cs_navsto_param_t *nsp,
-                                 const char        *z_name,
-                                 cs_real_t          val)
+cs_navsto_add_source_term_by_value(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   cs_real_t          val)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);

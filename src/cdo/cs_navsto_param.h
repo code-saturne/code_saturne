@@ -948,9 +948,9 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp);
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
-                                   const char           *z_name,
-                                   cs_real_t            *values);
+cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   cs_real_t          values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1096,9 +1096,9 @@ cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_source_term_by_val(cs_navsto_param_t *nsp,
-                                 const char        *z_name,
-                                 cs_real_t          val);
+cs_navsto_add_source_term_by_value(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   cs_real_t          val);
 
 /*----------------------------------------------------------------------------*/
 /*!
