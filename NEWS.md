@@ -13,6 +13,8 @@ Release 9.0.1 (unreleased)
 
 - Fix the time used to solve CDO equations after FV-NSE since there is a constant offset between them.
 
+- Fix treatments of BC conditions with CDO-FB. If imposed pression is used on a face, it can missed other boundary faces of the same cells.
+
 ### User changes:
 
 - Add the "FOR_RANGE" operator to MEG formulae editor. This commit
