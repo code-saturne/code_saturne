@@ -169,7 +169,7 @@ _model_name(cs_combustion_gas_model_type_t  model_type)
 
 /*! Combustion model parameters structure */
 
-cs_combustion_gas_model_t  *cs_glob_combustion_gas_model = NULL;
+cs_combustion_gas_model_t  *cs_glob_combustion_gas_model = nullptr;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -186,7 +186,7 @@ cs_combustion_gas_model_t  *cs_glob_combustion_gas_model = NULL;
 static void
 _combustion_gas_finalize(void)
 {
-  if (cs_glob_combustion_gas_model != NULL) {
+  if (cs_glob_combustion_gas_model != nullptr) {
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
@@ -243,7 +243,7 @@ _add_property_1d(const char  *name,
   const int keylog = cs_field_key_id("log");
   const int keylbl = cs_field_key_id("label");
 
-  if (cs_field_by_name_try(name) != NULL)
+  if (cs_field_by_name_try(name) != nullptr)
     cs_parameters_error(CS_ABORT_IMMEDIATE,
                         _("initial data setup"),
                         _("Field %s has already been assigned.\n"),
@@ -296,7 +296,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   if (type == CS_COMBUSTION_GAS_NONE) {
     CS_FREE(cs_glob_combustion_gas_model);
-    return NULL;
+    return nullptr;
   }
 
   int macro_type = type / 100;
@@ -310,7 +310,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   else if (macro_type == 4)
     cs_glob_physical_model_flag[CS_COMBUSTION_LW] = sub_type;
 
-  if (cs_glob_combustion_gas_model != NULL) {
+  if (cs_glob_combustion_gas_model != nullptr) {
     cs_glob_combustion_gas_model->type = type;
     return cs_glob_combustion_gas_model;
   }
@@ -524,13 +524,13 @@ cs_combustion_gas_set_thermochemical_data_file(const char  *file_name)
 {
   cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
-  if (cm == NULL)
+  if (cm == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: gas combustion model not active."), __func__);
 
   CS_FREE(cm->data_file_name);
 
-  if (file_name != NULL) {
+  if (file_name != nullptr) {
     size_t l = strlen(file_name)+1;
     CS_REALLOC(cm->data_file_name, l, char);
     strncpy(cm->data_file_name, file_name, l);
@@ -550,13 +550,13 @@ cs_combustion_gas_set_radiation_data_file(const char  *file_name)
 {
   cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
-  if (cm == NULL)
+  if (cm == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: gas combustion model not active."), __func__);
 
   CS_FREE(cm->radiation_data_file_name);
 
-  if (file_name != NULL) {
+  if (file_name != nullptr) {
     size_t l = strlen(file_name)+1;
     CS_REALLOC(cm->radiation_data_file_name, l, char);
     strncpy(cm->radiation_data_file_name, file_name, l);
@@ -572,7 +572,7 @@ cs_combustion_gas_set_radiation_data_file(const char  *file_name)
 void
 cs_combustion_slfm_init_library(void)
 {
-  if (cs_glob_combustion_gas_model != NULL) {
+  if (cs_glob_combustion_gas_model != nullptr) {
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
@@ -609,7 +609,7 @@ cs_combustion_slfm_init_library(void)
 void
 cs_combustion_gas_setup(void)
 {
-  if (cs_glob_combustion_gas_model == NULL)
+  if (cs_glob_combustion_gas_model == nullptr)
     return;
 
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
@@ -812,7 +812,7 @@ cs_combustion_gas_setup(void)
 void
 cs_combustion_gas_log_setup(void)
 {
-  if (cs_glob_combustion_gas_model == NULL)
+  if (cs_glob_combustion_gas_model == nullptr)
     return;
 
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
@@ -832,7 +832,7 @@ cs_combustion_gas_log_setup(void)
 
   int janaf_msg_id = (cm->use_janaf) ? 1 : 0;
   const char _null_string[] = "<null>";
-  const char *data_file = (cm->data_file_name != NULL) ?
+  const char *data_file = (cm->data_file_name != nullptr) ?
     cm->data_file_name : _null_string;
 
   cs_log_printf(CS_LOG_SETUP,
@@ -926,7 +926,7 @@ cs_combustion_gas_log_setup(void)
 void
 cs_combustion_gas_add_variable_fields(void)
 {
-  if (cs_glob_combustion_gas_model == NULL)
+  if (cs_glob_combustion_gas_model == nullptr)
     return;
 
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
@@ -1164,7 +1164,7 @@ cs_combustion_gas_add_variable_fields(void)
 void
 cs_combustion_gas_add_property_fields(void)
 {
-  if (cs_glob_combustion_gas_model == NULL)
+  if (cs_glob_combustion_gas_model == nullptr)
     return;
 
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;

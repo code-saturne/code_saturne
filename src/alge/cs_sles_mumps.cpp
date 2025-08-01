@@ -458,7 +458,7 @@ _copy_ordering(MUMPS_INT        n,
                const MUMPS_INT *src,
                MUMPS_INT       *dest)
 {
-  assert(src != nullptr && dest != NULL);
+  assert(src != nullptr && dest != nullptr);
 
   if (cs_glob_n_threads > 1) {
 

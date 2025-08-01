@@ -215,7 +215,7 @@ static cs_field_t *
 _add_property_field
 (
   const char *f_name,       /*!< field name */
-  const char *f_label,      /*!< field label, or NULL */
+  const char *f_label,      /*!< field label, or nullptr */
   int         dim,          /*!< field dimension */
   bool        has_previous  /*!< do we maintain time step values */
 )
@@ -224,7 +224,7 @@ _add_property_field
   const int keylog = cs_field_key_id("log");
   const int keylbl = cs_field_key_id("label");
 
-  if (cs_field_by_name_try(f_name) != NULL)
+  if (cs_field_by_name_try(f_name) != nullptr)
     cs_parameters_error(CS_ABORT_IMMEDIATE,
                         _("initial data setup"),
                         _("Field %s has already been assigned.\n"),
@@ -241,7 +241,7 @@ _add_property_field
 
   cs_field_set_key_int(f, keyvis, 0);
   cs_field_set_key_int(f, keylog, 1);
-  if (f_label != NULL)
+  if (f_label != nullptr)
     cs_field_set_key_str(f, keylbl, f_label);
 
   return f;
@@ -257,7 +257,7 @@ static cs_field_t *
 _add_property_field_boundary
 (
   const char *f_name,       /*!< field name */
-  const char *f_label,      /*!< field label, or NULL */
+  const char *f_label,      /*!< field label, or nullptr */
   int         dim,          /*!< field dimension */
   bool        has_previous  /*!< do we maintain time step values */
 )
@@ -266,7 +266,7 @@ _add_property_field_boundary
   const int keylog = cs_field_key_id("log");
   const int keylbl = cs_field_key_id("label");
 
-  if (cs_field_by_name_try(f_name) != NULL)
+  if (cs_field_by_name_try(f_name) != nullptr)
     cs_parameters_error(CS_ABORT_IMMEDIATE,
                         _("initial data setup"),
                         _("Field %s has already been assigned.\n"),
@@ -280,7 +280,7 @@ _add_property_field_boundary
 
   cs_field_set_key_int(f, keyvis, 0);
   cs_field_set_key_int(f, keylog, 1);
-  if (f_label != NULL)
+  if (f_label != nullptr)
     cs_field_set_key_str(f, keylbl, f_label);
 
   return f;
@@ -1207,7 +1207,7 @@ _additional_fields_stage_1(void)
 
     if (f_scal == f_th) {
       cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
-      if (turb_flux_model > 0 && fluid_props->irovar == 1 && f_beta == NULL) {
+      if (turb_flux_model > 0 && fluid_props->irovar == 1 && f_beta == nullptr) {
          _add_property_field("thermal_expansion",
                              "Beta",
                              1,
@@ -1309,7 +1309,7 @@ _additional_fields_stage_1(void)
      if not already added */
   if (vp_m->idilat == 0) {
     cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
-    if (f_beta == NULL) {
+    if (f_beta == nullptr) {
       _add_property_field("thermal_expansion",
                           "Beta",
                           1,
@@ -1397,13 +1397,13 @@ _additional_fields_stage_1(void)
   if (cs_glob_porous_model >= 1) {
 
     const char porosity_name[] = "porosity";
-    cs_field_t *f = NULL;
+    cs_field_t *f = nullptr;
 
     if (   cs_glob_porosity_from_scan_opt->compute_porosity_from_scan
         || cs_glob_porosity_ibm_opt->porosity_mode > 0) {
 
       // TODO move it to _create_variable_fields() ?
-      f = _add_variable_field(porosity_name, NULL, 1);
+      f = _add_variable_field(porosity_name, nullptr, 1);
 
       // Pure convection equation (no time term)
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -1587,7 +1587,7 @@ _additional_fields_stage_1(void)
 
       // Porosity at holes
       if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan) {
-        f = _add_variable_field("porosity_holes", NULL, 1);
+        f = _add_variable_field("porosity_holes", nullptr, 1);
 
         // Pure convection equation (no time term)
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -1734,7 +1734,7 @@ _additional_fields_stage_2(void)
       continue;
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    if (eqp != NULL) {
+    if (eqp != nullptr) {
       int post_flag = cs_field_get_key_int(f, keyvis);
       int log_flag = cs_field_get_key_int(f, keylog);
       int turb_flux_model = cs_field_get_key_int(f, kturt);
@@ -1744,7 +1744,7 @@ _additional_fields_stage_2(void)
         char f_tf_name[128];
         snprintf(f_tf_name, 127, "%s_turbulent_flux", f->name);
         f_tf_name[127] = '\0';
-        cs_field_t *f_turb_flux = NULL;
+        cs_field_t *f_turb_flux = nullptr;
 
         if (turb_flux_model_type == 3) {
           f_turb_flux = _add_variable_field(f_tf_name,
@@ -1839,7 +1839,7 @@ _additional_fields_stage_2(void)
    * code block here for this special case. */
   cs_field_t *f_dttens = cs_field_by_name_try("dttens");
   if (   cs_glob_lagr_reentrained_model->iflow > 0
-      && f_dttens == NULL) {
+      && f_dttens == nullptr) {
     cs_field_t *f = cs_field_create("dttens",
                                     field_type,
                                     CS_MESH_LOCATION_CELLS,
@@ -2220,7 +2220,7 @@ _additional_fields_stage_2(void)
     int model = cs_turbomachinery_get_model();
     if (cs_glob_ale != CS_ALE_NONE || model > 0) {
       cs_field_t *f_wd_aux_pre = _add_property_field("wall_distance_aux_pre",
-                                                     NULL,
+                                                     nullptr,
                                                      1,
                                                      false);
       cs_field_set_key_int(f_wd_aux_pre, keyvis, 0);
@@ -2352,7 +2352,7 @@ _additional_fields_stage_2(void)
       cs_field_t *f_tf
         = cs_field_by_composite_name_try("temperature", "turbulent_flux");
 
-      if (f_tf != NULL)
+      if (f_tf != nullptr)
         _add_property_field("meteo_temperature_turbulent_flux",
                             "Meteo u'Theta'",
                             3,
@@ -2482,9 +2482,9 @@ _additional_fields_stage_2(void)
   }
 
   cs_field_t *f_temp_b = cs_field_by_name_try("boundary_temperature");
-  if (f_temp_b != NULL) {
+  if (f_temp_b != nullptr) {
     cs_field_t *f_temp = cs_field_by_name_try("temperature");
-    if (f_temp != NULL)
+    if (f_temp != nullptr)
       cs_field_set_key_str(f_temp_b, keylbl, cs_field_get_label(f_temp));
   }
 
@@ -2541,7 +2541,7 @@ _additional_fields_stage_2(void)
   }
 
   /* Specific heat */
-  if (CS_F_(cp) != NULL) {
+  if (CS_F_(cp) != nullptr) {
     t_ext = cs_field_get_key_int(CS_F_(cp), key_t_ext_id);
     if (t_ext == -1) {
       if (cs_glob_time_scheme->time_order == 1)
@@ -2739,7 +2739,7 @@ _init_user(void)
     cs_gui_hydrostatic_equ_param();
     const cs_field_t *f_id = cs_field_by_name_try("velocity");
 
-    if (f_id != NULL) {
+    if (f_id != nullptr) {
       if (pm_flag[CS_COMPRESSIBLE] != -1)
         cs_runaway_check_define_field_max(f_id->id, 1.e5);
       else
@@ -3648,7 +3648,7 @@ cs_setup(void)
   cs_lagr_map_specific_physics();
 
   int have_thermal_model = 0;
-  if (cs_thermal_model_field() != NULL)
+  if (cs_thermal_model_field() != nullptr)
     have_thermal_model = 1;
 
   int is_restart = cs_restart_present();
@@ -3684,7 +3684,7 @@ cs_setup(void)
   cs_user_time_moments();
 
   /* GUI based boundary condition definitions */
-  cs_gui_boundary_conditions_define(NULL);
+  cs_gui_boundary_conditions_define(cs_glob_domain->boundaries);
 
   /* Some final settings */
   cs_gui_output(cs_glob_domain);

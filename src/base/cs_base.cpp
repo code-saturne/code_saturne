@@ -128,7 +128,7 @@ typedef void (*_cs_base_sighandler_t) (int);
  *  Global variables
  *============================================================================*/
 
-static bft_error_handler_t  *cs_glob_base_err_handler_save = NULL;
+static bft_error_handler_t  *cs_glob_base_err_handler_save = nullptr;
 
 static bool  _cs_mem_initialized = false;
 

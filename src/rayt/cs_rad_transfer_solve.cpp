@@ -2455,7 +2455,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   cs_real_t *ckg = CS_FI_(rad_cak, 0)->val;
 
   /* Work arrays */
-  cs_real_t *int_abso = NULL, *int_emi, *int_rad_ist;
+  cs_real_t *int_abso = nullptr, *int_emi, *int_rad_ist;
   CS_MALLOC(int_emi, n_cells_ext, cs_real_t);
   CS_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
 
@@ -2540,7 +2540,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
       snprintf(f_name, 63, "spectral_absorption_coeff_%2d", gg_id + 1);
       cs_field_t *f_kgabs = cs_field_by_name_try(f_name);
 
-      if (f_kgabs != NULL)
+      if (f_kgabs != nullptr)
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           kgi[n_cells * gg_id + cell_id] = f_kgabs->val[cell_id];
     }
@@ -2562,9 +2562,9 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     snprintf(f_name, 63, "spectral_absorption_%02d", gg_id + 1);
     cs_field_t *f_abs = cs_field_by_name_try(f_name);
 
-    if (f_abs != NULL)
+    if (f_abs != nullptr)
       int_abso = f_abs->val;
-    else if (int_abso == NULL)
+    else if (int_abso == nullptr)
       CS_MALLOC(int_abso, n_cells_ext, cs_real_t);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -2579,7 +2579,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
     /* -> Gas phase: Explicit source term of the ETR */
     if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
-      if (f_emi != NULL) {
+      if (f_emi != nullptr) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] = f_emi->val[cell_id] * cell_vol[cell_id];
       }
@@ -2603,7 +2603,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
      * default ones, identical for each directions, may be overwritten
      * afterwards */
     cs_rad_transfer_bc_coeffs(bc_type,
-                              NULL, /*no specific direction */
+                              nullptr, /*no specific direction */
                               ckmix,
                               cs_field_by_name("emissivity")->val,
                               w_gg,
@@ -2643,7 +2643,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
       }
     }
     else if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
-      if (f_emi != NULL)
+      if (f_emi != nullptr)
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           emim[cell_id] += -4.0 * cs_math_pi * f_emi->val[cell_id];
     }
@@ -2663,7 +2663,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
       iqpato[ifac] += f_qinsp->val[gg_id + ifac * nwsgg];
 
-    if (f_abs == NULL && gg_id == nwsgg - 1)
+    if (f_abs == nullptr && gg_id == nwsgg - 1)
       CS_FREE(int_abso);
 
   } /* end loop on grey gas */
@@ -2784,17 +2784,17 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
   /* Internal coupling contribution */
   if (cs_internal_coupling_n_couplings() > 0) {
-    cs_internal_coupling_t *cpl = NULL;
+    cs_internal_coupling_t *cpl = nullptr;
 
     cs_field_t *tf = cs_thermal_model_field();
-    if (tf != NULL) {
+    if (tf != nullptr) {
       const int coupling_key_id = cs_field_key_id("coupling_entity");
       int       coupling_id     = cs_field_get_key_int(tf, coupling_key_id);
       if (coupling_id >= 0)
         cpl = cs_internal_coupling_by_id(coupling_id);
     }
 
-    if (cpl != NULL)
+    if (cpl != nullptr)
       _net_flux_internal_coupling_contribution(cpl, f_fnet->val);
   }
 

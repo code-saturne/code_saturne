@@ -457,7 +457,7 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
   ipass_rcfsk++;
   if (ipass_rcfsk == 1) { /* Read parameters files */
 
-    FILE       *radfile     = NULL;
+    FILE       *radfile     = nullptr;
     const char *pathdatadir = cs_base_get_pkgdatadir();
     char        filepath[256];
 

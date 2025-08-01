@@ -116,7 +116,7 @@ struct _cs_coal_bc_inlet_state_t {
 static void *
 _destroy_inlet(void  *ci_p)
 {
-  if (ci_p != NULL) {
+  if (ci_p != nullptr) {
 
     cs_coal_bc_inlet_t *ci = (cs_coal_bc_inlet_t *)ci_p;
 
@@ -125,7 +125,7 @@ _destroy_inlet(void  *ci_p)
 
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -159,7 +159,7 @@ _qm_from_oxidant(int               location_id,
 
   cs_coal_model_t *coal = cs_glob_coal_model;
 
-  if (ci->qm_air_func != NULL) {
+  if (ci->qm_air_func != nullptr) {
     cs_real_t qm_air[1] = {0};
     ci->qm_air_func(location_id,
                     n_elts,
@@ -192,7 +192,7 @@ _recompute_inlet_state(void)
 
   /* Loop on coal inlet boundaries */
 
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
 
@@ -269,7 +269,7 @@ cs_coal_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
 
   /* Add and initialize coal inlet if not present */
 
-  if (ci == NULL) {
+  if (ci == nullptr) {
     CS_MALLOC(ci, 1, cs_coal_bc_inlet_t);
 
     ci->zone = zone;
@@ -288,8 +288,8 @@ cs_coal_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
     ci->t_air = 0;
 
     ci->qm_air = nan("");  /* Set to usable value if used */
-    ci->qm_air_func = NULL;
-    ci->qm_air_input = NULL;
+    ci->qm_air_func = nullptr;
+    ci->qm_air_input = nullptr;
 
     /* Add state-tracking structure */
 
@@ -306,7 +306,7 @@ cs_coal_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
     /* Link with boundary mechanism;
        This will allow simplifying later loops */
 
-    assert(cs_glob_boundaries != NULL);
+    assert(cs_glob_boundaries != nullptr);
 
     cs_boundary_t *bdy = cs_glob_boundaries;
     if (cs_boundary_id_by_zone_id(bdy, zone->id) < 0)
@@ -396,16 +396,16 @@ cs_coal_boundary_conditions(int  bc_type[])
 
   const int n_coals = cm->n_coals;
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
   cs_real_t *b_x1 = cs_field_by_name("b_x_c")->val;
 
-  cs_real_t *rcodcl1_age = NULL;
-  cs_real_t **age_rcodcl1 = NULL;
+  cs_real_t *rcodcl1_age = nullptr;
+  cs_real_t **age_rcodcl1 = nullptr;
   {
     const cs_field_t *f_bulk_age = cs_field_by_name_try("age");
 
-    if (f_bulk_age != NULL) {
+    if (f_bulk_age != nullptr) {
       CS_MALLOC(age_rcodcl1, cm->nclacp, cs_real_t *);
 
       for (int icla = 0; icla < cm->nclacp; icla++) {
@@ -427,36 +427,36 @@ cs_coal_boundary_conditions(int  bc_type[])
   cs_real_t *rcodcl1_x_c_h = cs_field_by_name("x_c_h")->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.F4M (oxyd 2) */
-  cs_real_t *rcodcl1_f4m = NULL;
+  cs_real_t *rcodcl1_f4m = nullptr;
   f = cs_field_by_name_try("fr_oxyd2");
-  if (f != NULL)
+  if (f != nullptr)
     rcodcl1_f4m = f->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.F5M (oxyd 3) */
-  cs_real_t *rcodcl1_f5m = NULL;
+  cs_real_t *rcodcl1_f5m = nullptr;
   f = cs_field_by_name_try("fr_oxyd3");
-  if (f != NULL)
+  if (f != nullptr)
     rcodcl1_f5m = f->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.F6M (water) */
-  cs_real_t *rcodcl1_f6m = NULL;
+  cs_real_t *rcodcl1_f6m = nullptr;
   f = cs_field_by_name_try("fr_h2o");
-  if (f != NULL)
+  if (f != nullptr)
     rcodcl1_f6m = f->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.F7M_O2 */
   cs_real_t *rcodcl1_f7m = cs_field_by_name("fr_het_o2")->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.F8M.CO2 */
-  cs_real_t *rcodcl1_f8m = NULL;
+  cs_real_t *rcodcl1_f8m = nullptr;
   f = cs_field_by_name_try("fr_het_co2");
-  if (f != NULL)
+  if (f != nullptr)
     rcodcl1_f8m = f->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.F9M.H2O */
-  cs_real_t *rcodcl1_f9m = NULL;
+  cs_real_t *rcodcl1_f9m = nullptr;
   f = cs_field_by_name_try("fr_het_h2o");
-  if (f != NULL)
+  if (f != nullptr)
     rcodcl1_f9m = f->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.Variance */
@@ -464,15 +464,15 @@ cs_coal_boundary_conditions(int  bc_type[])
     = cs_field_by_name("f1f2_variance")->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.YCO2 */
-  cs_real_t *rcodcl1_iyco2 = NULL;
+  cs_real_t *rcodcl1_iyco2 = nullptr;
   if (cm->ieqco2 == 1)
     rcodcl1_iyco2 = cs_field_by_name("x_c_co2")->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for X1.HCN, X1.NO, T air */
-  cs_real_t *rcodcl1_iyhcn = NULL;
-  cs_real_t *rcodcl1_iyno = NULL;
-  cs_real_t *rcodcl1_iynh3 = NULL;
-  cs_real_t *rcodcl1_ihox = NULL;
+  cs_real_t *rcodcl1_iyhcn = nullptr;
+  cs_real_t *rcodcl1_iyno = nullptr;
+  cs_real_t *rcodcl1_iynh3 = nullptr;
+  cs_real_t *rcodcl1_ihox = nullptr;
   if (cm->ieqnox == 1) {
     rcodcl1_iyhcn = cs_field_by_name("x_c_hcn")->bc_coeffs->rcodcl1;
     rcodcl1_iyno = cs_field_by_name("x_c_no")->bc_coeffs->rcodcl1;
@@ -483,7 +483,7 @@ cs_coal_boundary_conditions(int  bc_type[])
   /* Loop on coal inlet boundaries
      ============================= */
 
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
 
@@ -678,7 +678,7 @@ cs_coal_boundary_conditions(int  bc_type[])
         /* Boundary conditions for Xwater of class icla */
 
         cs_real_t xwt = 0;
-        cs_real_t *rcodcl1_xwt =  NULL;
+        cs_real_t *rcodcl1_xwt =  nullptr;
         if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] == 1) {
           snprintf(f_name, 31, "x_p_wt_%02d", icla+1); f_name[31] = '\0';
           rcodcl1_xwt = cs_field_by_name(f_name)->bc_coeffs->rcodcl1;
@@ -693,10 +693,10 @@ cs_coal_boundary_conditions(int  bc_type[])
 
         /* Boundary conditions for particle age */
 
-        cs_real_t *rcodcl1_iage = NULL;
-        cs_real_t *rcodcl1_v_p_x = NULL;
-        cs_real_t *rcodcl1_v_p_y = NULL;
-        cs_real_t *rcodcl1_v_p_z = NULL;
+        cs_real_t *rcodcl1_iage = nullptr;
+        cs_real_t *rcodcl1_v_p_x = nullptr;
+        cs_real_t *rcodcl1_v_p_y = nullptr;
+        cs_real_t *rcodcl1_v_p_z = nullptr;
 
         if (cm->idrift >= 1) {
           rcodcl1_iage = age_rcodcl1[icla];
@@ -721,13 +721,13 @@ cs_coal_boundary_conditions(int  bc_type[])
             rcodcl1_xch[elt_id] = xch_in;
             rcodcl1_xck[elt_id] = 0;
             rcodcl1_inp[elt_id] = inp_in;
-            if (rcodcl1_xwt !=  NULL)
+            if (rcodcl1_xwt !=  nullptr)
               rcodcl1_xwt[elt_id] = xwt;
             rcodcl1_ih2[elt_id] = ih2_in;
-            if (rcodcl1_iage != NULL)
+            if (rcodcl1_iage != nullptr)
               rcodcl1_iage[elt_id] = 0;
 
-            if (rcodcl1_v_p_x != NULL) {
+            if (rcodcl1_v_p_x != nullptr) {
               rcodcl1_v_p_x[elt_id] = rcodcl1_u[elt_id];
               rcodcl1_v_p_y[elt_id] = rcodcl1_v[elt_id];
               rcodcl1_v_p_z[elt_id] = rcodcl1_w[elt_id];
@@ -803,7 +803,7 @@ cs_coal_boundary_conditions(int  bc_type[])
       if (   bc_type[elt_id] == CS_INLET
           || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
 
-        if (rcodcl1_age != NULL)        /* age */
+        if (rcodcl1_age != nullptr)        /* age */
           rcodcl1_age[elt_id] = 0.;
 
         rcodcl1_h[elt_id] = h_in;
@@ -812,16 +812,16 @@ cs_coal_boundary_conditions(int  bc_type[])
         /* Store the Boundary value of X1 */
         b_x1[elt_id] = 1. - x20t;
 
-        if (rcodcl1_f4m != NULL)
+        if (rcodcl1_f4m != nullptr)
           rcodcl1_f4m[elt_id] = f4m_in;
-        if (rcodcl1_f5m != NULL)
+        if (rcodcl1_f5m != nullptr)
           rcodcl1_f5m[elt_id] = f5m_in;
-        if (rcodcl1_f6m != NULL)
+        if (rcodcl1_f6m != nullptr)
           rcodcl1_f6m[elt_id] = 0.;     /* water */
         rcodcl1_f7m[elt_id] = 0.;
-        if (rcodcl1_f8m != NULL)
+        if (rcodcl1_f8m != nullptr)
           rcodcl1_f8m[elt_id] = 0.;     /* CO2 */
-        if (rcodcl1_f9m != NULL)
+        if (rcodcl1_f9m != nullptr)
           rcodcl1_f9m[elt_id] = 0.;     /* H2O */
 
         rcodcl1_fvp2m[elt_id] = 0.;
@@ -852,12 +852,12 @@ cs_coal_boundary_conditions(int  bc_type[])
 
       for (int iclapc = 0; iclapc < cm->n_classes_per_coal[icha]; iclapc++) {
 
-        int *icodcl_v_p_x = NULL;
-        int *icodcl_v_p_y = NULL;
-        int *icodcl_v_p_z = NULL;
-        cs_real_t *rcodcl1_v_p_x = NULL;
-        cs_real_t *rcodcl1_v_p_y = NULL;
-        cs_real_t *rcodcl1_v_p_z = NULL;
+        int *icodcl_v_p_x = nullptr;
+        int *icodcl_v_p_y = nullptr;
+        int *icodcl_v_p_z = nullptr;
+        cs_real_t *rcodcl1_v_p_x = nullptr;
+        cs_real_t *rcodcl1_v_p_y = nullptr;
+        cs_real_t *rcodcl1_v_p_z = nullptr;
 
         char f_name[32];
 
@@ -945,7 +945,7 @@ cs_coal_boundary_conditions_density(void)
   else if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev+1)
     _recompute_inlet_state();
 
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
 

@@ -101,8 +101,8 @@ cs_gui_load_file(const char  *filename)
 {
   int argerr = 0;
 
-  if (cs_glob_tree == NULL)
-    cs_glob_tree = cs_tree_node_create(NULL);
+  if (cs_glob_tree == nullptr)
+    cs_glob_tree = cs_tree_node_create(nullptr);
 
   cs_tree_xml_read(cs_glob_tree, filename);
 
@@ -123,12 +123,12 @@ cs_gui_check_version(void)
 
   cs_tree_node_t *tn = cs_glob_tree;
   tn = cs_tree_get_node(tn, "Code_Saturne_GUI");
-  if (tn == NULL)
+  if (tn == nullptr)
     tn = cs_tree_get_node(cs_glob_tree, "NEPTUNE_CFD_GUI");
 
   const char *version = cs_tree_node_get_tag(tn, "version");
 
-  double version_number = (version != NULL) ? atof(version) : 0.0;
+  double version_number = (version != nullptr) ? atof(version) : 0.0;
 
   double minus = modf(version_number, &major);
   double min_sat = modf(version_sat, &maj_sat);
@@ -199,7 +199,7 @@ int
 cs_gui_strcmp(const char  *s1,
               const char  *s2)
 {
-  if (s1 == NULL || s2 == NULL) return 0;
+  if (s1 == nullptr || s2 == nullptr) return 0;
   if (strlen(s1) != strlen(s2)) return 0;
   if (!strncmp(s1, s2, strlen(s1))) return 1;
   return 0;
@@ -250,7 +250,7 @@ void
 cs_gui_node_get_int(cs_tree_node_t  *node,
                     int             *value)
 {
-  if (node != NULL) {
+  if (node != nullptr) {
 
     const int *v_i = cs_tree_node_get_values_int(node);
 
@@ -259,7 +259,7 @@ cs_gui_node_get_int(cs_tree_node_t  *node,
                 _("Expected 1 value for node %s, not %d"),
                 node->name, node->size);
 
-    if (v_i != NULL)
+    if (v_i != nullptr)
       *value = v_i[0];
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -283,7 +283,7 @@ void
 cs_gui_node_get_real(cs_tree_node_t  *node,
                      cs_real_t       *value)
 {
-  if (node != NULL) {
+  if (node != nullptr) {
 
     const cs_real_t *v_r = cs_tree_node_get_values_real(node);
 
@@ -292,7 +292,7 @@ cs_gui_node_get_real(cs_tree_node_t  *node,
                 _("Expected 1 value for node %s, not %d"),
                 node->name, node->size);
 
-    if (v_r != NULL)
+    if (v_r != nullptr)
       *value = v_r[0];
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -322,7 +322,7 @@ cs_gui_node_get_status_int(cs_tree_node_t  *node,
     *status = 1;
   else if (cs_gui_strcmp(value, "off") || cs_gui_strcmp(value, ""))
     *status = 0;
-  else if (value != NULL)
+  else if (value != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Invalid status value: %s"), value);
 }
@@ -349,7 +349,7 @@ cs_gui_node_get_status_bool(cs_tree_node_t  *node,
     *status = true;
   else if (cs_gui_strcmp(value, "off") || cs_gui_strcmp(value, ""))
     *status = false;
-  else if (value != NULL)
+  else if (value != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Invalid status value: %s"), value);
 }
@@ -374,7 +374,7 @@ cs_gui_node_get_tag(cs_tree_node_t  *node,
 {
   const char *name = cs_tree_node_get_tag(node, tag_name);
 
-  if (name == NULL) {
+  if (name == nullptr) {
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Incorrect setup tree definition for the following node:\n"));
     cs_tree_dump(CS_LOG_DEFAULT, 2, node);
@@ -405,7 +405,7 @@ cs_gui_node_get_child_int(cs_tree_node_t  *node,
 {
   cs_tree_node_t *tn_c = cs_tree_node_get_child(node, child_name);
 
-  if (tn_c != NULL) {
+  if (tn_c != nullptr) {
     const int *v_i = cs_tree_node_get_values_int(tn_c);
 
     if (tn_c->size != 1)
@@ -414,7 +414,7 @@ cs_gui_node_get_child_int(cs_tree_node_t  *node,
                 tn_c->name, tn_c->size);
 
 
-    if (v_i != NULL)
+    if (v_i != nullptr)
       *value = v_i[0];
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -442,7 +442,7 @@ cs_gui_node_get_child_real(cs_tree_node_t  *node,
 {
   cs_tree_node_t *tn_c = cs_tree_node_get_child(node, child_name);
 
-  if (tn_c != NULL) {
+  if (tn_c != nullptr) {
     const cs_real_t *v_r = cs_tree_node_get_values_real(tn_c);
 
     if (tn_c->size != 1)
@@ -451,7 +451,7 @@ cs_gui_node_get_child_real(cs_tree_node_t  *node,
                 tn_c->name, tn_c->size);
 
 
-    if (v_r != NULL)
+    if (v_r != nullptr)
       *value = v_r[0];
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -482,7 +482,7 @@ cs_gui_node_get_child_status_int(cs_tree_node_t  *node,
 
   const char  *value = cs_tree_node_get_tag(tn_c, "status");
 
-  if (value != NULL) {
+  if (value != nullptr) {
     if (! strcmp(value, "on"))
       *status = 1;
     else if (! strcmp(value, "off"))
@@ -516,7 +516,7 @@ cs_gui_node_get_child_status_bool(cs_tree_node_t  *node,
 
   const char  *value = cs_tree_node_get_tag(tn_c, "status");
 
-  if (value != NULL) {
+  if (value != nullptr) {
     if (! strcmp(value, "on"))
       *status = true;
     else if (! strcmp(value, "off"))

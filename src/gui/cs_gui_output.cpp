@@ -119,7 +119,7 @@ static char _rij_c_names[6][4] = {"r11", "r22", "r33", "r12", "r23", "r13"};
  *   name    <--  associated name tag (sub-node)
  *
  * return:
- *   pointer to node found, or NULL
+ *   pointer to node found, or nullptr
  *----------------------------------------------------------------------------*/
 
 static cs_tree_node_t *
@@ -129,16 +129,16 @@ _get_node(const char  *node_type,
   cs_tree_node_t *root = cs_glob_tree;
 
   for (cs_tree_node_t *tn = cs_tree_find_node_simple(root, node_type);
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_find_node_next_simple(root, tn, node_type)) {
     const char *tag = cs_tree_node_get_tag(tn, "name");
-    if (tag != NULL) {
+    if (tag != nullptr) {
       if (strcmp(tag, name) == 0)
         return tn;
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*-----------------------------------------------------------------------------
@@ -163,7 +163,7 @@ _field_post(const char  *field_type,
 
   cs_tree_node_t *tn = _get_node(field_type, f->name);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     return;
 
   /* Listing output */
@@ -216,7 +216,7 @@ _field_post(const char  *field_type,
   /* Take into account labels */
 
   const char *label = cs_tree_node_get_tag(tn, "label");
-  if (label != NULL)
+  if (label != nullptr)
     cs_field_set_key_str(f, k_lbl, label);
 }
 
@@ -234,7 +234,7 @@ _property_post(const char          *field_type,
 {
   cs_tree_node_t *tn = _get_node(field_type, label);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     return;
 
   cs_function_t *f = cs_function_by_name_try(ppty->name);
@@ -286,9 +286,9 @@ _function_post(const int id)
   const char path_s[] = "user_functions/calculator/function";
   cs_tree_node_t *tn_s = cs_tree_get_node(cs_glob_tree, path_s);
 
-  cs_tree_node_t *_tn = NULL;
+  cs_tree_node_t *_tn = nullptr;
   for (cs_tree_node_t *tn = tn_s;
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
     const char *name = cs_gui_node_get_tag(tn, "name");
     if (strcmp(name, f->name) == 0) {
@@ -297,7 +297,7 @@ _function_post(const int id)
     }
   }
 
-  if (_tn == NULL)
+  if (_tn == nullptr)
     return;
 
   /* By default, if function exists in GUI, use parameters defined in it */
@@ -338,7 +338,7 @@ _surfacic_variable_post(const char  *name,
 
   cs_tree_node_t *tn = _get_node("property", name);
 
-  if (tn != NULL) {
+  if (tn != nullptr) {
 
     /* If base node present but not recording status, default to true */
     active = true;
@@ -370,7 +370,7 @@ _get_profile_child_str(cs_tree_node_t  *tn,
 {
   const char *name = cs_tree_node_get_child_value_str(tn, child_name);
 
-  if (name == NULL) {
+  if (name == nullptr) {
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Incorrect setup tree definition for the following node:\n"));
     cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
@@ -399,7 +399,7 @@ _get_profile_child_int(cs_tree_node_t  *tn,
 {
   const int *v = cs_tree_node_get_child_values_int(tn, child_name);
 
-  if (v == NULL) {
+  if (v == nullptr) {
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("Incorrect setup tree definition for the following node:\n"));
     cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
@@ -429,7 +429,7 @@ _get_profile_format(cs_tree_node_t  *tn)
     = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "format"),
                            "name");
 
-  if (format_s != NULL) {
+  if (format_s != nullptr) {
     if (cs_gui_strcmp(format_s, "CSV"))
       format = 1;
     else if (cs_gui_strcmp(format_s, "DAT"))
@@ -456,7 +456,7 @@ _get_profile_v_component(cs_tree_node_t  *tn)
 
   const char *c_name = cs_tree_node_get_tag(tn, "component");
 
-  if (c_name != NULL) {
+  if (c_name != nullptr) {
     int n = sscanf(c_name, "%d", &comp_id);
     if (n != 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -483,11 +483,11 @@ _get_profile_v_component(cs_tree_node_t  *tn)
  *
  * parameters:
  *   tn            <-- tree node associated with profile variable
- *   category      <-- category for which this function is used, or NULL
+ *   category      <-- category for which this function is used, or nullptr
  *   category_name <-- name of object in category
  *
  * return:
- *   pointer to field if match, NULL otherwise
+ *   pointer to field if match, nullptr otherwise
  *----------------------------------------------------------------------------*/
 
 static const cs_field_t *
@@ -495,14 +495,14 @@ _tree_node_get_field(cs_tree_node_t  *tn,
                      const char      *category,
                      const char      *category_name)
 {
-  const cs_field_t *f = NULL;
+  const cs_field_t *f = nullptr;
 
   const char *name = cs_gui_node_get_tag(tn, "name");
   const char *id_name = cs_tree_node_get_tag(tn, "field_id");
 
   /* Handle phase id (field_id tag in xml) for NEPTUNE_CFD */
 
-  if (id_name != NULL) {
+  if (id_name != nullptr) {
     if (strcmp(id_name, "none") != 0) {
       char buffer[128];
       snprintf(buffer, 127, "%s_%s", name, id_name);
@@ -516,7 +516,7 @@ _tree_node_get_field(cs_tree_node_t  *tn,
     }
   }
 
-  if (f == NULL) {
+  if (f == nullptr) {
 
     /* Fix time step output */
     if (strcmp(name, "local_time_step") == 0)
@@ -527,7 +527,7 @@ _tree_node_get_field(cs_tree_node_t  *tn,
       f = cs_field_by_name_try(name);
 
     /* Handle segregated Reynolds tensor solver */
-    if (f == NULL) {
+    if (f == nullptr) {
       if (strcmp(name, "rij") == 0) {
         int idim = _get_profile_v_component(tn);
         f = cs_field_by_name_try(_rij_c_names[idim]);
@@ -536,8 +536,8 @@ _tree_node_get_field(cs_tree_node_t  *tn,
 
   }
 
-  if (f == NULL) {
-    if (category != NULL && category_name != NULL)
+  if (f == nullptr) {
+    if (category != nullptr && category_name != nullptr)
       bft_printf(_("  For %s \"%s\", field with name \"%s\" not found\n"),
                  category, category_name,  name);
     else
@@ -563,15 +563,15 @@ _define_profiles(void)
 
   int n_writers = 0;
 
-  int        *w_i_vals = NULL;
-  cs_real_t  *w_r_vals = NULL;
+  int        *w_i_vals = nullptr;
+  cs_real_t  *w_r_vals = nullptr;
 
   int writer_id_start = cs_post_get_free_writer_id();
 
   const char *format_name[] = {"dat", "csv"};
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn), profile_id++) {
 
     const char *name = cs_gui_node_get_tag(tn, "label");
@@ -588,13 +588,13 @@ _define_profiles(void)
     if (cs_gui_strcmp(output_type, "time_value")) {
       const cs_real_t *v
         = cs_tree_node_get_child_values_real(tn, "output_frequency");
-      if (v != NULL)
+      if (v != nullptr)
         time_output = v[0];
     }
     else if (cs_gui_strcmp(output_type, "frequency")) {
       const int *v
         = cs_tree_node_get_child_values_int(tn, "output_frequency");
-      if (v != NULL)
+      if (v != nullptr)
         output_frequency = v[0];
       else
         output_frequency = 1;
@@ -656,7 +656,7 @@ _define_profiles(void)
 
     int n_coords = 0;
     const int *v_np = _get_profile_child_int(tn, "points");
-    if (v_np != NULL)
+    if (v_np != nullptr)
       n_coords = v_np[0];
 
     cs_real_3_t *coords;
@@ -676,11 +676,11 @@ _define_profiles(void)
       = cs_probe_set_create_from_array(name,
                                        n_coords,
                                        coords,
-                                       NULL);
+                                       nullptr);
 
     CS_FREE(coords);
 
-    cs_probe_set_assign_curvilinear_abscissa(pset, NULL);
+    cs_probe_set_assign_curvilinear_abscissa(pset, nullptr);
 
     int writer_ids[1] = {writer_id};
     cs_probe_set_associate_writers(pset, 1, writer_ids);
@@ -713,12 +713,12 @@ _define_profiles(void)
     /* Associate fields */
 
     for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
-         tn_vp != NULL;
+         tn_vp != nullptr;
          tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
 
       const cs_field_t *f = _tree_node_get_field(tn_vp, "profile", name);
 
-      if (f == NULL)
+      if (f == nullptr)
         continue;
 
       int comp_id = _get_profile_v_component(tn_vp);
@@ -747,13 +747,13 @@ _selection_func_boundary_cells(void        *input,
 {
   const char *criteria = (const char *)input;
 
-  if (criteria == NULL)
+  if (criteria == nullptr)
     criteria = "all[]";
 
   /* Pointer is not allocated when given to this function.
    * It will be deallocated afterwards by the calling function. */
 
-  cs_lnum_t *_cell_list = NULL;
+  cs_lnum_t *_cell_list = nullptr;
   CS_MALLOC(_cell_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_cells_list(criteria, n_elts, _cell_list);
@@ -795,14 +795,14 @@ _boundary_stress(void)
 void
 cs_gui_output(cs_domain_t *domain)
 {
-  const int *v_i = NULL;
+  const int *v_i = nullptr;
 
   const char path_o[] = "analysis_control/output";
   cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
 
   v_i = cs_tree_node_get_child_values_int(tn_o,
                                           "listing_printing_frequency");
-  if (v_i != NULL) {
+  if (v_i != nullptr) {
     if (v_i[0] != 0) {
       cs_log_iteration_set_interval(v_i[0]);
       domain->output_nt = v_i[0];
@@ -816,7 +816,7 @@ cs_gui_output(cs_domain_t *domain)
   const int n_fields = cs_field_n_fields();
 
   /* temporary field -> moment ids */
-  int *moment_id = NULL;
+  int *moment_id = nullptr;
   const int n_moments = cs_time_moment_n_moments();
   if (n_moments > 0) {
     CS_MALLOC(moment_id, n_fields, int);
@@ -824,7 +824,7 @@ cs_gui_output(cs_domain_t *domain)
       moment_id[f_id] = -1;
     for (int m_id = 0; m_id < n_moments; m_id++) {
       const cs_field_t *f = cs_time_moment_get_field(m_id);
-      if (f != NULL)
+      if (f != nullptr)
         moment_id[f->id] = m_id;
     }
   }
@@ -836,7 +836,7 @@ cs_gui_output(cs_domain_t *domain)
       _field_post("variable", f->id);
     else if (   (f->type & CS_FIELD_PROPERTY)
              || (f->type & CS_FIELD_POSTPROCESS)) {
-      if (moment_id != NULL) {
+      if (moment_id != nullptr) {
         if (moment_id[f_id] > -1) {
           _field_post("time_average", f->id);
           continue;
@@ -898,7 +898,7 @@ cs_gui_output_boundary(void)
      yplus and stresses computation. */
 
   cs_field_t  *f_vel = cs_field_by_name_try("velocity");
-  if (f_vel != NULL) {
+  if (f_vel != nullptr) {
     if (f_vel->type & CS_FIELD_CDO) {
       ignore_stresses = true;
       ignore_yplus = true;
@@ -929,7 +929,7 @@ cs_gui_output_boundary(void)
   if (ignore_yplus == false) {
     if (_surfacic_variable_post("yplus", true)) {
       cs_field_t *bf = cs_field_by_name_try("yplus");
-      if (bf == NULL) {
+      if (bf == nullptr) {
         bf = cs_field_create("yplus",
                              CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                              CS_MESH_LOCATION_BOUNDARY_FACES,
@@ -954,7 +954,7 @@ cs_gui_output_boundary(void)
     if (cs_glob_thermal_model->thermal_variable != CS_THERMAL_MODEL_NONE) {
       int post_vis = _surfacic_variable_post("tplus", true) ? 1 : 0;
       cs_field_t *bf = cs_field_by_name_try("tplus");
-      if (bf != NULL)
+      if (bf != nullptr)
         cs_field_set_key_int(bf, k_vis, post_vis);
       else if (post_vis) {
         bf = cs_field_create("tplus",
@@ -989,14 +989,14 @@ cs_gui_output_boundary(void)
 
     if (   cs_glob_thermal_model->thermal_variable
         != CS_THERMAL_MODEL_TEMPERATURE) {
-      if (   cs_tree_find_node_simple(cs_glob_tree, "property") == NULL
+      if (   cs_tree_find_node_simple(cs_glob_tree, "property") == nullptr
           || cs_gui_thermal_model_code() <= 0)
         post_b_temp = false;
     }
 
     if (post_b_temp) {
       cs_field_t *bf = cs_parameters_add_boundary_temperature();
-      if (bf != NULL)
+      if (bf != nullptr)
         cs_field_set_key_int(bf, k_vis, 1);
     }
 
@@ -1010,21 +1010,21 @@ cs_gui_output_boundary(void)
 void
 cs_gui_postprocess_meshes(void)
 {
-  const int *v_i = NULL;
-  const cs_real_t *v_r = NULL;
+  const int *v_i = nullptr;
+  const cs_real_t *v_r = nullptr;
 
   const char path_o[] = "analysis_control/output";
   cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
 
   for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "mesh");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
 
     v_i = cs_tree_node_get_child_values_int(tn, "id");
     const char *label = cs_tree_node_get_tag(tn, "label");
     const char *type = cs_tree_node_get_tag(tn, "type");
 
-    if (v_i == NULL || label == NULL || type == NULL) {
+    if (v_i == nullptr || label == nullptr || type == nullptr) {
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(_("Incorrect setup tree definition for the following node:\n"));
       cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
@@ -1036,7 +1036,7 @@ cs_gui_postprocess_meshes(void)
     int id = v_i[0];
 
     const char *location = cs_tree_node_get_child_value_str(tn, "location");
-    if (location == NULL)
+    if (location == nullptr)
       location = "all[]";
 
     bool add_groups = true;
@@ -1046,14 +1046,14 @@ cs_gui_postprocess_meshes(void)
                                 &auto_vars);
 
     int n_writers = cs_tree_get_node_count(tn, "writer");
-    int *writer_ids = NULL;
+    int *writer_ids = nullptr;
     CS_MALLOC(writer_ids, n_writers, int);
     n_writers = 0;
     for (cs_tree_node_t *tn_w = cs_tree_get_node(tn, "writer");
-         tn_w != NULL;
+         tn_w != nullptr;
          tn_w = cs_tree_node_get_next_of_name(tn_w)) {
       v_i = cs_tree_node_get_child_values_int(tn_w, "id");
-      if (v_i != NULL) {
+      if (v_i != nullptr) {
         writer_ids[n_writers] = v_i[0];
         n_writers++;
       }
@@ -1064,17 +1064,17 @@ cs_gui_postprocess_meshes(void)
                                  n_writers, writer_ids);
     }
     else if(cs_gui_strcmp(type, "interior_faces")) {
-      cs_post_define_surface_mesh(id, label, location, NULL,
+      cs_post_define_surface_mesh(id, label, location, nullptr,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
     }
     else if(cs_gui_strcmp(type, "boundary_faces")) {
-      cs_post_define_surface_mesh(id, label, NULL, location,
+      cs_post_define_surface_mesh(id, label, nullptr, location,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
     }
     else if(cs_gui_strcmp(type, "boundary_cells")) {
-      /* Ensure location string remains available, or pass NULL */
+      /* Ensure location string remains available, or pass nullptr */
       const char *_location = cs_tree_node_get_child_value_str(tn, "location");
       cs_post_define_volume_mesh_by_func(id, label,
                                          _selection_func_boundary_cells,
@@ -1100,7 +1100,7 @@ cs_gui_postprocess_meshes(void)
     else if (   cs_gui_strcmp(type, "BoundaryZone_cells")
              || cs_gui_strcmp(type, "boundary_zone_cells")) {
       const cs_zone_t *z = cs_boundary_zone_by_name(location);
-      const char *criteria = NULL;
+      const char *criteria = nullptr;
       /* FIXME: filter will not apply if zone is defined by a function */
       if (z->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
         criteria = cs_mesh_location_get_selection_string(z->location_id);
@@ -1112,7 +1112,7 @@ cs_gui_postprocess_meshes(void)
                                          n_writers, writer_ids);
     }
     else if(cs_gui_strcmp(type, "interior_face_centers")) {
-      cs_post_define_surface_mesh(id, label, location, NULL,
+      cs_post_define_surface_mesh(id, label, location, nullptr,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
       cs_post_mesh_set_element_centers_only(id, true);
@@ -1121,7 +1121,7 @@ cs_gui_postprocess_meshes(void)
             || cs_gui_strcmp(type, "trajectories")) {
       bool trajectory = cs_gui_strcmp(type, "trajectories") ? true : false;
       v_r = cs_tree_node_get_child_values_real(tn, "density");
-      double density = (v_r != NULL) ? v_r[0] : 1;
+      double density = (v_r != nullptr) ? v_r[0] : 1;
       cs_post_define_particles_mesh(id, label, location,
                                     density, trajectory, auto_vars,
                                     n_writers, writer_ids);
@@ -1148,13 +1148,13 @@ cs_gui_postprocess_meshes(void)
 
     int i = 0;
     for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "probe");
-         tn != NULL;
+         tn != nullptr;
          tn = cs_tree_node_get_next_of_name(tn), i++) {
 
       /* Probe coordinates */
       for (int j = 0; j < 3; j++) {
         v_r = cs_tree_node_get_child_values_real(tn, coord_node_name[j]);
-        p_coords[i][j] = (v_r != NULL) ? v_r[0] : 0;
+        p_coords[i][j] = (v_r != nullptr) ? v_r[0] : 0;
       }
 
       /* Probe name */
@@ -1215,13 +1215,13 @@ cs_gui_postprocess_writers(void)
   cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
 
   for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "writer");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
 
     const int *v_i = cs_tree_node_get_child_values_int(tn, "id");
     const char *label = cs_tree_node_get_tag(tn, "label");
 
-    if (v_i == NULL || label == NULL) {
+    if (v_i == nullptr || label == nullptr) {
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(_("Incorrect setup tree definition for the following node:\n"));
       cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
@@ -1250,15 +1250,15 @@ cs_gui_postprocess_writers(void)
       time_step = -1;
     else if (cs_gui_strcmp(frequency_choice, "time_step")) {
       v_i = cs_tree_node_get_child_values_int(tn, "frequency");
-      if (v_i != NULL) time_step = v_i[0];
+      if (v_i != nullptr) time_step = v_i[0];
     }
     else if (cs_gui_strcmp(frequency_choice, "time_value")) {
       const cs_real_t *v_r = cs_tree_node_get_child_values_real(tn, "frequency");
-      if (v_r != NULL)
+      if (v_r != nullptr)
         time_value = v_r[0];
       else {
         v_r = cs_tree_node_get_child_values_real(tn, "frequency_time");
-        if (v_r != NULL)
+        if (v_r != nullptr)
           time_value = v_r[0];
       }
     }
@@ -1303,11 +1303,11 @@ cs_gui_postprocess_writers(void)
 
   const int *v_i
     = cs_tree_node_get_child_values_int(tn_o, "probe_recording_frequency");
-  int frequency_n = (v_i != NULL) ? v_i[0] : 1;
+  int frequency_n = (v_i != nullptr) ? v_i[0] : 1;
 
   const cs_real_t *v_r
     = cs_tree_node_get_child_values_real(tn_o, "probe_recording_frequency_time");
-  cs_real_t frequency_t = (v_r != NULL) ? v_r[0] : -1.;
+  cs_real_t frequency_t = (v_r != nullptr) ? v_r[0] : -1.;
 
   /* Time plot (probe) format string */
   const char *fmt_opts

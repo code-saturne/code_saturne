@@ -912,7 +912,7 @@ cs_coal_ht_convert_h_to_t_particles(void)
     const cs_real_t *cvar_xchcl = cs_field_by_id(cm->ixch[icla])->val;
     const cs_real_t *cvar_xckcl = cs_field_by_id(cm->ixck[icla])->val;
     const cs_real_t *cvar_xnpcl = cs_field_by_id(cm->inp[icla])->val;
-    const cs_real_t *cvar_xwtcl = NULL;
+    const cs_real_t *cvar_xwtcl = nullptr;
     if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
       cvar_xwtcl = cs_field_by_id(cm->ixwt[icla])->val;
     const cs_real_t *cvar_h2cl = cs_field_by_id(cm->ih2[icla])->val;
@@ -925,7 +925,7 @@ cs_coal_ht_convert_h_to_t_particles(void)
       const cs_real_t xck  = cvar_xckcl[cell_id];
       const cs_real_t xnp  = cvar_xnpcl[cell_id];
       const cs_real_t xash = xmash_icla*xnp;
-      const cs_real_t xwat = (cvar_xwtcl != NULL) ? cvar_xwtcl[cell_id] : 0.;
+      const cs_real_t xwat = (cvar_xwtcl != nullptr) ? cvar_xwtcl[cell_id] : 0.;
 
       const cs_real_t x2 = xch + xck + xash + xwat;
       const cs_real_t xtes = xmp0_icla * xnp;

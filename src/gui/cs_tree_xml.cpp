@@ -88,7 +88,7 @@ typedef struct {
   const char   *buffer_name;    /*!< pointer to name of buffer */
 
   char         *buf;            /*!< pointer to working buffer
-                                  (length size+1, NULL-terminated) */
+                                  (length size+1, nullptr-terminated) */
 
   size_t        size;           /*!< buffer size */
   size_t        byte;           /*!< current byte in buffer */
@@ -117,7 +117,7 @@ typedef struct {
  * \param[in, out]  doc      XML parser structure
  * \param[in]       is_attr  if true, key-value attribute
  * \param[in]       name     node name
- * \param[in]       value    associated value if leaf, or NULL
+ * \param[in]       value    associated value if leaf, or nullptr
  *
  * \return pointer to extracted string
  */
@@ -130,13 +130,13 @@ _handle_element(cs_xml_t    *doc,
                 const char  *value)
 {
   if (is_attr) {
-    assert(doc->node != NULL);
+    assert(doc->node != nullptr);
     cs_tree_node_set_tag(doc->node, name, value);
   }
   else {
-    if (doc->node == NULL) {
+    if (doc->node == nullptr) {
       if (doc->first) {
-        if (doc->parent->parent != NULL)
+        if (doc->parent->parent != nullptr)
           doc->parent = doc->parent->parent;
         doc->first = false;
       }
@@ -144,7 +144,7 @@ _handle_element(cs_xml_t    *doc,
                                         name,
                                         value);
     }
-    else if (doc->parent == NULL) {
+    else if (doc->parent == nullptr) {
       /* We choose here to place the top (descriptor) and associated
          tags in a child node, to avoid renaming the root node;
          its sub-nodes will be raised one level so as to be merged in
@@ -153,9 +153,9 @@ _handle_element(cs_xml_t    *doc,
       doc->node = cs_tree_add_child_str(doc->node, name, value);
     }
     else {
-      if (name != NULL)
+      if (name != nullptr)
         cs_tree_node_set_name(doc->node, name);
-      if (value != NULL)
+      if (value != nullptr)
         cs_tree_node_set_value_str(doc->node, value);
     }
   }
@@ -171,11 +171,11 @@ _handle_element(cs_xml_t    *doc,
     i--;
   }
 
-  if (name != NULL)
+  if (name != nullptr)
     printf("%s:", name);
   else
     printf("  ");
-  if (value != NULL) {
+  if (value != nullptr) {
     if (doc->have_attrs)
       printf("  %s", value);
     else
@@ -267,7 +267,7 @@ _check_and_skip_comment(cs_xml_t  *doc)
  *
  * \param[in, out]  doc      XML parser structure
  *
- * \return pointer to next attribute key, or NULL
+ * \return pointer to next attribute key, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -281,7 +281,7 @@ _read_attr_key(cs_xml_t  *doc)
   size_t i = doc->byte;
 
   if (doc->s_char == '>')
-    return NULL;
+    return nullptr;
 
   assert(! isspace(doc->buf[i]));
 
@@ -350,7 +350,7 @@ _read_string(cs_xml_t  *doc)
                   _("In XML data (%s, line %d)\n"
                     "malformed string: %s"),
                   doc->buffer_name, (int)doc->line, doc->buf + doc->byte);
-        return NULL;
+        return nullptr;
       }
       else {
         if (doc->buf[i] == '\n')
@@ -379,7 +379,7 @@ _read_string(cs_xml_t  *doc)
                   _("In XML data (%s, line %d)\n"
                     "malformed string: %s"),
                   doc->buffer_name, (int)doc->line, doc->buf + doc->byte);
-        return NULL;
+        return nullptr;
       }
       else {
         if (doc->buf[i] == '\n')
@@ -445,7 +445,7 @@ static const char *
 _read_tag(cs_xml_t  *doc,
           bool      *closed)
 {
-  const char *tag = NULL;
+  const char *tag = nullptr;
   *closed = false;
 
   /* Search for next start tag */
@@ -480,7 +480,7 @@ _read_tag(cs_xml_t  *doc,
       if (tag[0] == '/')
         *closed = true;
       if (*closed == false)
-        _handle_element(doc, false, tag, NULL);
+        _handle_element(doc, false, tag, nullptr);
       i++;
       break;
     }
@@ -503,11 +503,11 @@ _read_tag(cs_xml_t  *doc,
       doc->byte = i+2;
     }
     else {
-      const char *key = NULL, *val = NULL;
+      const char *key = nullptr, *val = nullptr;
       key = _read_attr_key(doc);
-      if (key != NULL) {
+      if (key != nullptr) {
         val = _read_string(doc);
-        if (val != NULL) {
+        if (val != nullptr) {
           doc->have_attrs = true;
           _handle_element(doc, true, key, val);
         }
@@ -540,14 +540,14 @@ _read_element(cs_xml_t  *doc)
   bool tag_closed;
 
   const char *tag = _read_tag(doc, &tag_closed);
-  const char *tag_c = NULL;
+  const char *tag_c = nullptr;
 
   if (tag_closed)
     return tag;
 
   /* Search for next start tag or value */
 
-  while (tag_c == NULL && doc->byte < doc->size) {
+  while (tag_c == nullptr && doc->byte < doc->size) {
     _next(doc);
     if (doc->s_char == '<') {
       if (doc->buf[doc->byte] == '/')
@@ -555,7 +555,7 @@ _read_element(cs_xml_t  *doc)
       else {
         doc->depth++;
         doc->parent = doc->node;
-        doc->node = NULL;
+        doc->node = nullptr;
         (void)_read_element(doc);
         doc->node = doc->parent;
         doc->parent = doc->node->parent;
@@ -564,16 +564,16 @@ _read_element(cs_xml_t  *doc)
     }
     else {
       const char *val = _read_string(doc);
-      if (val != NULL) {
+      if (val != nullptr) {
         tag_c = _read_tag(doc, &tag_closed);
-        _handle_element(doc, false, NULL, val);
+        _handle_element(doc, false, nullptr, val);
       }
     }
   }
 
   /* Check closing tag match */
 
-  if (tag_c != NULL) {
+  if (tag_c != nullptr) {
     if (tag_c[0] == '/') {
       if (strcmp(tag_c + 1, tag) != 0)
         bft_error(__FILE__, __LINE__, 0,
@@ -624,8 +624,8 @@ _read_header(cs_xml_t  *doc)
         }
         doc->s_char = '\0';
         const char *attr_key = _read_attr_key(doc);
-        const char *attr_val = NULL;
-        if (attr_key != NULL) {
+        const char *attr_val = nullptr;
+        if (attr_key != nullptr) {
           attr_val = _read_string(doc);
           if (strcmp(attr_key, "version") == 0) {
             if (strcmp(attr_val, "1.0") != 0)
@@ -675,7 +675,7 @@ cs_tree_xml_read(cs_tree_node_t  *r,
 {
   /* Read buffer */
 
-  cs_xml_t *doc = NULL;
+  cs_xml_t *doc = nullptr;
   CS_MALLOC(doc, 1, cs_xml_t);
 
   cs_gnum_t f_size = 0;
@@ -697,7 +697,7 @@ cs_tree_xml_read(cs_tree_node_t  *r,
   doc->have_attrs = false;
   doc->first = true;
   doc->node = r;
-  doc->parent = NULL;
+  doc->parent = nullptr;
 
   cs_file_t *f = cs_file_open_serial(path, CS_FILE_MODE_READ);
   cs_file_read_global(f, doc->buf, 1, f_size);
@@ -713,10 +713,10 @@ cs_tree_xml_read(cs_tree_node_t  *r,
 
     /* Now parse tree */
 
-    const char *s = NULL;
+    const char *s = nullptr;
     do {
       s = _read_element(doc);
-    } while (s != NULL);
+    } while (s != nullptr);
   }
 
   CS_FREE(doc->buf);

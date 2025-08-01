@@ -179,10 +179,10 @@ typedef struct {
 
 /* Pointer on the main boundaries structure */
 
-static cs_gui_boundary_t *boundaries = NULL;
+static cs_gui_boundary_t *boundaries = nullptr;
 
 static int     _n_b_contexts = 0;
-static void  **_b_contexts = NULL;
+static void  **_b_contexts = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -205,7 +205,7 @@ _add_boundary_const_context(const  cs_zone_t   *zone,
 {
   CS_REALLOC(_b_contexts, _n_b_contexts+1, void *);
 
-  cs_gui_boundary_const_context_t  *c = NULL;
+  cs_gui_boundary_const_context_t  *c = nullptr;
   CS_MALLOC(c, 1, cs_gui_boundary_const_context_t);
 
   c->zone = zone;
@@ -331,9 +331,9 @@ _check_and_add_mapped_inlet(const char       *label,
     for (int i = 0; i < 3; i++) {
       cs_tree_node_t *node = cs_tree_get_node(tn, tname[i]);
 
-      const  cs_real_t *v = NULL;
+      const  cs_real_t *v = nullptr;
       v = cs_tree_node_get_values_real(node);
-      if (v != NULL )
+      if (v != nullptr )
         coord_shift[i] = v[0];
     }
 
@@ -382,7 +382,7 @@ _meg_flow_rate(int               location_id,
   const char *q_meg_formula_type[] = {"flow1_formula",
                                       "flow2_formula"};
 
-  const char *formula_type = NULL;
+  const char *formula_type = nullptr;
   if (c->vel_rescale == CS_BC_VEL_RESCALE_MASS_FLOW_RATE)
     formula_type = q_meg_formula_type[0];
   else if (c->vel_rescale == CS_BC_VEL_RESCALE_VOLUME_FLOW_RATE)
@@ -455,7 +455,7 @@ _vel_profile(int               location_id,
   case 0:
     {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
         for (cs_lnum_t k = 0; k < 3; k++)
           vals[i*3 + k] = -f_n[elt_id][k] * v;
       }
@@ -517,7 +517,7 @@ _vel_profile_by_meg_norm(int               location_id,
 
   /* Local velocity norm */
 
-  cs_real_t *v_loc = NULL;
+  cs_real_t *v_loc = nullptr;
   CS_MALLOC(v_loc, n_elts, cs_real_t);
   cs_meg_boundary_function(c->zone->name,
                            n_elts,
@@ -531,7 +531,7 @@ _vel_profile_by_meg_norm(int               location_id,
   case 0:
     {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
         for (cs_lnum_t k = 0; k < 3; k++)
           vals[i*3 + k] = -f_n[elt_id][k] * v_loc[i];
       }
@@ -549,7 +549,7 @@ _vel_profile_by_meg_norm(int               location_id,
     break;
   case 2:
     {
-      cs_real_t *v_dir = NULL;
+      cs_real_t *v_dir = nullptr;
       CS_MALLOC(v_dir, 3*n_elts, cs_real_t);
       cs_meg_boundary_function(c->zone->name,
                                n_elts,
@@ -611,7 +611,7 @@ _vel_profile_by_meg_dir(int               location_id,
 
   cs_real_t  *vals = (cs_real_t *)vals_p;
 
-  cs_real_t *v_dir = NULL;
+  cs_real_t *v_dir = nullptr;
   CS_MALLOC(v_dir, 3 * n_elts, cs_real_t);
   cs_meg_boundary_function(c->zone->name,
                            n_elts,
@@ -653,7 +653,7 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
 {
   cs_equation_param_t *eqp = cs_gui_get_equation_param("velocity");
 
-  if (cs_equation_find_bc(eqp, z->name) != NULL)   /* Ignore if already set */
+  if (cs_equation_find_bc(eqp, z->name) != nullptr)   /* Ignore if already set */
     return;                                        /* (priority) */
 
   /* Find or add associated context */
@@ -693,18 +693,18 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
     cs_gui_node_get_child_real(tn_vp, choice_v, &v);
   }
   else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != nullptr)
       norm_type = 10;
   }
   else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
-    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != nullptr)
       norm_type = 11;
   }
   else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
-    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != nullptr)
       norm_type = 12;
   }
-  else if (choice_v != NULL)
+  else if (choice_v != nullptr)
     bft_error
       (__FILE__, __LINE__, 0,
        _("%s: unexpected \"choice\" type \"%s\" for zone \"%s\"."),
@@ -758,10 +758,10 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
     cs_gui_node_get_child_real(tn_vp, "direction_z", dir_v+2);
   }
   else if (cs_gui_strcmp(choice_d, "formula")) {
-    if (cs_tree_node_get_child_value_str(tn_vp, "direction_formula") != NULL)
+    if (cs_tree_node_get_child_value_str(tn_vp, "direction_formula") != nullptr)
       dir_type = 2;
   }
-  else if (choice_d != NULL)
+  else if (choice_d != nullptr)
     bft_error
       (__FILE__, __LINE__, 0,
        _("%s: unexpected \"direction\" type \"%s\" for zone \"%s\"."),
@@ -907,7 +907,7 @@ _dof_const_t2h(cs_lnum_t         n_elts,
     CS_MALLOC(t_b, m->n_b_faces, cs_real_t);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+      cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
       t_b[elt_id] = t_val;
     }
 
@@ -953,7 +953,7 @@ _dof_meg_t2h(cs_lnum_t         n_elts,
 
   const cs_real_3_t *face_cen = cs_glob_mesh_quantities->b_face_cog;
 
-  cs_real_t *t_loc = NULL;
+  cs_real_t *t_loc = nullptr;
   CS_MALLOC(t_loc, n_elts, cs_real_t);
   cs_meg_boundary_function(c->zone->name,
                            n_elts,
@@ -974,7 +974,7 @@ _dof_meg_t2h(cs_lnum_t         n_elts,
     CS_MALLOC(t_b, m->n_b_faces, cs_real_t);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+      cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
       t_b[elt_id] = t_loc[i];
     }
 
@@ -1023,7 +1023,7 @@ _dof_const_elec_rescaled(cs_lnum_t         n_elts,
 
   cs_real_t pot_val = c->val * cs_glob_elec_option->coejou;
 
-  if (dense_output || elt_ids == NULL) {
+  if (dense_output || elt_ids == nullptr) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       retval[i] = pot_val;
     }
@@ -1072,7 +1072,7 @@ _dof_meg_elec_rescaled(cs_lnum_t         n_elts,
 
   const cs_real_3_t *face_cen = cs_glob_mesh_quantities->b_face_cog;
 
-  cs_real_t *v_loc = NULL;
+  cs_real_t *v_loc = nullptr;
   CS_MALLOC(v_loc, n_elts, cs_real_t);
   cs_meg_boundary_function(c->zone->name,
                            n_elts,
@@ -1082,7 +1082,7 @@ _dof_meg_elec_rescaled(cs_lnum_t         n_elts,
                            c->condition,
                            v_loc);
 
-  if (dense_output || elt_ids == NULL) {
+  if (dense_output || elt_ids == nullptr) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       retval[i] = v_loc[i] * joule_coef;
     }
@@ -1129,7 +1129,7 @@ _dof_dirichlet_implicit_elec_pot(cs_lnum_t         n_elts,
   cs_real_t value = cs_glob_elec_option->pot_diff;
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
-    cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+    cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
     cs_lnum_t j = dense_output ? i : elt_id;
 
     retval[j] = value;
@@ -1171,7 +1171,7 @@ _dof_neumann_implicit(cs_lnum_t         n_elts,
   const cs_real_t *val_pre = f->val_pre;
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
-    cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+    cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
     cs_lnum_t j = dense_output ? i : elt_id;
     cs_lnum_t c_id = b_face_cells[elt_id];
 
@@ -1195,7 +1195,7 @@ _sliding_wall(cs_tree_node_t   *tn_vp,
   const char f_name[] = "velocity";
   cs_equation_param_t *eqp = cs_gui_get_equation_param(f_name);
 
-  if (cs_equation_find_bc(eqp, z_name) != NULL)  /* Ignore if already set */
+  if (cs_equation_find_bc(eqp, z_name) != nullptr)  /* Ignore if already set */
     return;
 
   cs_field_t  *f = cs_field_by_name(f_name);
@@ -1203,14 +1203,14 @@ _sliding_wall(cs_tree_node_t   *tn_vp,
   cs_real_t value[3] = {0, 0, 0};
 
   for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_vp, "dirichlet");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
     const char *name = cs_gui_node_get_tag(tn, "name");
     int c_id = -1;
     cs_gui_node_get_child_int(tn, "component", &c_id);
     if (strcmp("velocity", name) == 0 && c_id > -1 && c_id < f->dim) {
       const  cs_real_t *v = cs_tree_node_get_values_real(tn);
-      if (v != NULL)
+      if (v != nullptr)
         value[c_id] = v[0];
     }
   }
@@ -1235,7 +1235,7 @@ _inlet_turbulence(cs_tree_node_t  *tn_bc,
 {
   cs_tree_node_t  *tn_t = cs_tree_node_get_child(tn_bc, "turbulence");
   const char *choice = cs_tree_node_get_tag(tn_t, "choice");
-  if (choice == NULL)
+  if (choice == nullptr)
     return;
 
   cs_bc_turbulence_compute_t bc_compute = CS_BC_TURB_NONE;
@@ -1261,7 +1261,7 @@ _inlet_turbulence(cs_tree_node_t  *tn_bc,
   if (cs_gui_strcmp(choice, "turbulent_intensity")) {
     const cs_real_t *v
       = cs_tree_node_get_child_values_real(tn_t, "turbulent_intensity");
-    if (v != NULL)
+    if (v != nullptr)
       c->turb_intensity = v[0] * 0.01;
   }
 
@@ -1321,7 +1321,7 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
                 "for exchange coefficient boundary coefficients."),
                 __func__, c->name);
 
-  cs_real_t *v_loc = NULL;
+  cs_real_t *v_loc = nullptr;
   if (dim == 1)
     CS_MALLOC(v_loc, 2 * n_elts, cs_real_t);
   else
@@ -1363,7 +1363,7 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
 
     if (dim == 1) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
         retval[elt_id*3]   = -v_loc[n_elts + i];
         retval[elt_id*3+1] = v_loc[i];
         retval[elt_id*3+2] = 0;
@@ -1371,7 +1371,7 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
     }
     else {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
         retval[elt_id*stride] = -v_loc[dim*n_elts + i];
         for (cs_lnum_t k = 0; k < dim; k++) {
           retval[elt_id*stride + k + 1] = v_loc[k*n_elts + i];
@@ -1420,7 +1420,7 @@ _analytic_meg_exchange_coefficient_hts_profile
   }
   else {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+      cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
       retval[elt_id * 3]     = v_loc[n_elts + i]; // h_exch
       retval[elt_id * 3 + 1] = v_loc[i]; // T_ext
       retval[elt_id * 3 + 2] = 0.; // Phi_ext set to 0
@@ -1454,7 +1454,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
   bool special_case = true;
   int rescale = cs_glob_elec_option->ielcor == 1;
 
-  if (cs_equation_find_bc(eqp, z->name) != NULL)  /* Ignore if already set */
+  if (cs_equation_find_bc(eqp, z->name) != nullptr)  /* Ignore if already set */
     return special_case;
 
   cs_param_bc_type_t bc_wall_prescribed
@@ -1470,7 +1470,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
 
       cs_real_t value[1] = {0};
       const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
-      if (v != NULL) {
+      if (v != nullptr) {
         value[0] = *v;
       }
 
@@ -1493,7 +1493,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
     if (rescale) {
       const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
 
-      if (s != NULL) {
+      if (s != nullptr) {
         cs_gui_boundary_meg_context_t  *c
           = cs_gui_boundary_add_meg_context(z, f->name, choice, f->dim);
 
@@ -1569,7 +1569,7 @@ _boundary_hts_temperature
 
   const char *choice = cs_tree_node_get_tag(tn_s, "choice");
 
-  if (choice == NULL)
+  if (choice == nullptr)
     return;
 
   cs_equation_param_t *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
@@ -1614,7 +1614,7 @@ _boundary_hts_temperature
   else if (! strcmp(choice, "neumann_formula")) {
 
     const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
-    if (s != NULL) {
+    if (s != nullptr) {
       cs_meg_xdef_input_t *_input
         = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
                                         z->id,
@@ -1633,7 +1633,7 @@ _boundary_hts_temperature
   else if (! strcmp(choice, "exchange_coefficient_formula")) {
 
     const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
-    if (s != NULL) {
+    if (s != nullptr) {
       cs_meg_xdef_input_t *_input
         = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
                                         z->id,
@@ -1650,11 +1650,11 @@ _boundary_hts_temperature
     }
   }
   else if (! strcmp(choice, "exchange_coefficient")) {
-    cs_tree_node_t *tn = NULL;
+    cs_tree_node_t *tn = nullptr;
     cs_real_t value[3] = {0.};
 
     for (tn = cs_tree_node_get_child(tn_s, "dirichlet");
-         tn != NULL;
+         tn != nullptr;
          tn = cs_tree_node_get_next_of_name(tn)) {
       int c_id = 0;
       cs_gui_node_get_child_int(tn, "component", &c_id);
@@ -1665,9 +1665,9 @@ _boundary_hts_temperature
       }
     }
     tn = cs_tree_node_get_child(tn_s, choice);
-    if (tn != NULL) {
+    if (tn != nullptr) {
       const cs_real_t *v = cs_tree_node_get_values_real(tn);
-      if (v != NULL)
+      if (v != nullptr)
         value[0] = v[0];
     }
 
@@ -1706,7 +1706,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
      conditions already, so if the value here is the default, it should
      probably be ignored to ensure the appropriate priority */
 
-  if (cs_equation_find_bc(eqp, z->name) != NULL)
+  if (cs_equation_find_bc(eqp, z->name) != nullptr)
     return;
 
   /* BC definition type ? */
@@ -1714,7 +1714,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
   const char *choice = cs_tree_node_get_tag(tn_s, "choice");
   const char *cnv = cs_tree_node_get_tag(tn_s, "convert");
 
-  if (cnv != NULL) {
+  if (cnv != nullptr) {
     if (f != CS_F_(h) || strcmp(cnv, "temperature") != 0)
       bft_error
         (__FILE__, __LINE__, 0,
@@ -1722,7 +1722,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
          __func__, f->name, cnv);
   }
 
-  if (choice == NULL)
+  if (choice == nullptr)
     return;
 
   /* Handle special cases for specific physical models: */
@@ -1754,20 +1754,20 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
     if (dim == 1) {
       const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
-      if (v != NULL) {
+      if (v != nullptr) {
         value[0] = *v;
       }
     }
 
     else { /* dim > 1, not produced by the GUI yet */
       for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_s, choice);
-           tn != NULL;
+           tn != nullptr;
            tn = cs_tree_node_get_next_of_name(tn)) {
         int c_id = -1;
         cs_gui_node_get_child_int(tn, "component", &c_id);
         if (c_id > -1 && c_id < f->dim) {
           const  cs_real_t *v = cs_tree_node_get_values_real(tn);
-          if (v != NULL)
+          if (v != nullptr)
             value[c_id] = v[0];
         }
       }
@@ -1806,7 +1806,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
     const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
 
-    if (s != NULL) {
+    if (s != nullptr) {
       cs_gui_boundary_meg_context_t  *c
         = cs_gui_boundary_add_meg_context(z, f->name, choice, dim);
 
@@ -1834,7 +1834,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
   else if (! strcmp(choice, "neumann_formula")) {
 
     const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
-    if (s != NULL) {
+    if (s != nullptr) {
       cs_gui_boundary_meg_context_t  *c
         = cs_gui_boundary_add_meg_context(z, f->name, choice, dim);
 
@@ -1851,7 +1851,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
   else if (! strcmp(choice, "exchange_coefficient_formula")) {
 
     const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
-    if (s != NULL) {
+    if (s != nullptr) {
       cs_gui_boundary_meg_context_t  *c
         = cs_gui_boundary_add_meg_context(z, f->name, choice, dim);
 
@@ -1872,28 +1872,28 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
                   "for exchange coefficient boundary coefficients."),
                 __func__, f->name);
 
-    cs_tree_node_t *tn = NULL;
+    cs_tree_node_t *tn = nullptr;
     cs_real_t value[1 + 3 + 9];
 
     for (int i = 0; i < 1+3+9; i++)
       value[i] = 0.;
 
     for (tn = cs_tree_node_get_child(tn_s, "dirichlet");
-         tn != NULL;
+         tn != nullptr;
          tn = cs_tree_node_get_next_of_name(tn)) {
       int c_id = (dim == 1) ? 0 : -1;
       cs_gui_node_get_child_int(tn, "component", &c_id);
       if (c_id > -1 && c_id < f->dim) {
         const  cs_real_t *v = cs_tree_node_get_values_real(tn);
-        if (v != NULL)
+        if (v != nullptr)
           value[1 + c_id] = v[0];
       }
     }
 
     tn = cs_tree_node_get_child(tn_s, choice);
-    if (tn != NULL) {
+    if (tn != nullptr) {
       const  cs_real_t *v = cs_tree_node_get_values_real(tn);
-      if (v != NULL)
+      if (v != nullptr)
         value[0] = - v[0];
     }
 
@@ -1944,11 +1944,11 @@ _inlet_coal(cs_tree_node_t   *tn_vp,
   /* Count coal definitions */
 
   for (cs_tree_node_t *tn0 = cs_tree_node_get_child(tn_vp, "coal");
-       tn0 != NULL;
+       tn0 != nullptr;
        tn0 = cs_tree_node_get_next_of_name(tn0), _n_coals++) {
 
     const char *name = cs_tree_node_get_tag(tn0, "name");
-    if (name == NULL)
+    if (name == nullptr)
       continue;
 
     int icoal = -1;
@@ -1960,12 +1960,12 @@ _inlet_coal(cs_tree_node_t   *tn_vp,
 
     /* mass flow rate of coal */
     const cs_real_t *v = cs_tree_node_get_child_values_real(tn0, "flow1");
-    if (v != NULL)
+    if (v != nullptr)
       ci->qimpcp[icoal] = v[0];
 
     /* temperature of coal */
     v = cs_tree_node_get_child_values_real(tn0, "temperature");
-    if (v != NULL) {
+    if (v != nullptr) {
       ci->timpcp[icoal] = v[0];
     }
 
@@ -1979,7 +1979,7 @@ _inlet_coal(cs_tree_node_t   *tn_vp,
       cs_tree_node_t *tn1
         = cs_tree_get_node_with_tag(tn0, "ratio", "name", classname);
       v = cs_tree_node_get_values_real(tn1);
-      if (v != NULL)
+      if (v != nullptr)
         ci->distch[icoal][iclass] = v[0];
 
     }
@@ -2158,13 +2158,13 @@ _outlet_compressible(cs_tree_node_t  *tn_bc,
     tn = cs_tree_node_get_child(tn_bc, "dirichlet");
     tn = cs_tree_node_get_sibling_with_tag(tn, "name", name);
 
-    if (tn != NULL) {
+    if (tn != nullptr) {
       cs_real_t value = 0;
       const  cs_real_t *v = cs_tree_node_get_values_real(tn);
-      if (v != NULL)
+      if (v != nullptr)
         value = v[0];
 
-      if (cs_equation_find_bc(eqp, z_name) == NULL)  /* Ignore if already set */
+      if (cs_equation_find_bc(eqp, z_name) == nullptr)  /* Ignore if already set */
         cs_equation_add_bc_by_value(eqp,
                                     CS_BC_DIRICHLET,
                                     z_name,
@@ -2192,10 +2192,10 @@ _boundary_darcy(cs_tree_node_t   *tn_bc,
   tn = cs_tree_node_get_sibling_with_tag(tn, "name", "hydraulic_head");
 
   cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(head));
-  if (eqp == NULL)
+  if (eqp == nullptr)
     eqp = cs_gui_get_equation_param("pressure_head"); /* CDO version */
 
-  if (cs_equation_find_bc(eqp, z->name) != NULL)  /* Ignore if already set */
+  if (cs_equation_find_bc(eqp, z->name) != nullptr)  /* Ignore if already set */
     return;
 
   if (cs_gui_strcmp(choice, "dirichlet")) {
@@ -2216,12 +2216,12 @@ _boundary_darcy(cs_tree_node_t   *tn_bc,
                                 value);
   }
   else if (cs_gui_strcmp(choice, "dirichlet_formula")) {
-    if (tn == NULL) { /* compatibility with inconsistant tag */
+    if (tn == nullptr) { /* compatibility with inconsistant tag */
       tn = cs_tree_node_get_child(tn_bc, choice);
       tn = cs_tree_node_get_sibling_with_tag(tn, "name", "hydraulicHead");
     }
     const char *formula = cs_tree_node_get_child_value_str(tn, "formula");
-    if (formula != NULL) {
+    if (formula != nullptr) {
       cs_gui_boundary_meg_context_t  *c
         = cs_gui_boundary_add_meg_context(z, "hydraulic_head", choice, 1);
       cs_equation_add_bc_by_dof_func(eqp,
@@ -2259,7 +2259,7 @@ _boundary_imposed_pressure(cs_tree_node_t  *tn_bc,
 
   cs_equation_param_t *eqp = cs_gui_get_equation_param(name);
 
-  if (cs_equation_find_bc(eqp, z_name) == NULL)  /* Ignore if already set */
+  if (cs_equation_find_bc(eqp, z_name) == nullptr)  /* Ignore if already set */
     cs_equation_add_bc_by_value(eqp,
                                 CS_BC_DIRICHLET,
                                 z_name,
@@ -2281,7 +2281,7 @@ static const cs_lnum_t *
 _get_boundary_faces(const char   *label,
                     cs_lnum_t    *n_faces)
 {
-  const cs_lnum_t *face_ids = NULL;
+  const cs_lnum_t *face_ids = nullptr;
 
   const cs_zone_t *z = cs_boundary_zone_by_name(label);
 
@@ -2298,7 +2298,7 @@ _get_boundary_faces(const char   *label,
 static void
 _init_boundaries(void)
 {
-  assert(boundaries == NULL);
+  assert(boundaries == nullptr);
   int n_fields = cs_field_n_fields();
 
   int n_zones = cs_tree_get_node_count(cs_glob_tree,
@@ -2328,10 +2328,10 @@ _init_boundaries(void)
   CS_MALLOC(boundaries->nature,    n_zones,    const char *);
   CS_MALLOC(boundaries->bc_num,    n_zones,    int);
 
-  boundaries->itype = NULL;
-  boundaries->prein = NULL;
-  boundaries->rhoin = NULL;
-  boundaries->tempin = NULL;
+  boundaries->itype = nullptr;
+  boundaries->prein = nullptr;
+  boundaries->rhoin = nullptr;
+  boundaries->tempin = nullptr;
 
   CS_MALLOC(boundaries->type_code, n_fields,   int *);
 
@@ -2339,7 +2339,7 @@ _init_boundaries(void)
 
   CS_MALLOC(boundaries->head_loss_e, n_zones,  bool);
 
-  boundaries->meteo = NULL;
+  boundaries->meteo = nullptr;
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
     CS_MALLOC(boundaries->itype,   n_zones, int);
@@ -2351,7 +2351,7 @@ _init_boundaries(void)
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
     CS_MALLOC(boundaries->meteo, n_zones, cs_meteo_t);
   else
-    boundaries->meteo = NULL;
+    boundaries->meteo = nullptr;
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
@@ -2401,7 +2401,7 @@ _init_boundaries(void)
   /* Complete boundary zone definitions */
 
   for (cs_tree_node_t *tn = cs_tree_get_node(tn_b0, "boundary");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn), izone++) {
 
     /* nature, label and description of the ith boundary zone;
@@ -2415,7 +2415,7 @@ _init_boundaries(void)
     int bc_num = izone+1;
 
     const int *vi = cs_tree_node_get_child_values_int(tn, "name");
-    if (vi != NULL)
+    if (vi != nullptr)
       bc_num = vi[0];
 
     /* label of the ith initialization zone */
@@ -2439,21 +2439,21 @@ _init_boundaries(void)
 
   /* Now loop on boundary condition definitions proper */
 
-  cs_tree_node_t *tn_b1 = (tn_b0 != NULL) ? tn_b0->children : tn_b0;
+  cs_tree_node_t *tn_b1 = (tn_b0 != nullptr) ? tn_b0->children : tn_b0;
 
-  for (cs_tree_node_t *tn = tn_b1; tn != NULL; tn = tn->next) {
+  for (cs_tree_node_t *tn = tn_b1; tn != nullptr; tn = tn->next) {
 
     if (cs_gui_strcmp(tn->name, "boundary")) /* handled in previous loop */
       continue;
 
-    const cs_zone_t *z = NULL;
+    const cs_zone_t *z = nullptr;
 
     const char *nature = tn->name;
     const char *label = cs_tree_node_get_tag(tn, "label");
-    if (label != NULL)
+    if (label != nullptr)
       z = cs_boundary_zone_by_name_try(label);
 
-    if (z == NULL)  /* may occur when "dead" leaves or present in tree */
+    if (z == nullptr)  /* may occur when "dead" leaves or present in tree */
       continue;
 
     izone = z->id - 1;
@@ -2486,7 +2486,7 @@ _init_boundaries(void)
       }
 
       /* Inlet: velocity */
-      if (CS_F_(vel) != NULL) {
+      if (CS_F_(vel) != nullptr) {
         if (cs_glob_physical_model_flag[CS_GROUNDWATER] < 0) {
           if (read_inlet_data == false)
             _set_vel_profile(tn_vp, z);
@@ -2518,7 +2518,7 @@ _init_boundaries(void)
       cs_tree_node_t *tn_vp
         = cs_tree_node_get_child(tn, "velocity_pressure");
 
-      if (tn_vp != NULL) {
+      if (tn_vp != nullptr) {
         /* Wall: ROUGH */
         if (   wall_fnt->iwallf != CS_WALL_F_DISABLED
             && wall_fnt->iwallf != CS_WALL_F_1SCALE_POWER
@@ -2551,7 +2551,7 @@ _init_boundaries(void)
     else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
       cs_tree_node_t *tn_hlf = cs_tree_get_node(tn, "headLoss/formula");
       const char *hl_formula = cs_tree_node_get_value_str(tn_hlf);
-      if (hl_formula != NULL)
+      if (hl_formula != nullptr)
         boundaries->head_loss_e[izone] = true;
       else {
         bft_printf("Warning : free inlet outlet boundary conditions\n"
@@ -2575,8 +2575,8 @@ _init_boundaries(void)
       if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
         _boundary_hts_temperature(tn, z);
       }
-      else if (f_tm != NULL) {
-        if (boundaries->meteo == NULL)
+      else if (f_tm != nullptr) {
+        if (boundaries->meteo == nullptr)
           _boundary_scalar(tn, z, f_tm);
         else if (boundaries->meteo[izone].read_data == 0)
           _boundary_scalar(tn, z, f_tm);
@@ -2588,27 +2588,27 @@ _init_boundaries(void)
 
       /* Meteo scalars only if required */
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0)
-        scalar_sections[0] = NULL;
+        scalar_sections[0] = nullptr;
       else {
         if (boundaries->meteo[izone].read_data != 0)
-          scalar_sections[0] = NULL;
+          scalar_sections[0] = nullptr;
       }
 
       /* Electric arc scalars only if required */
       if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] < 0)
-        scalar_sections[1] = NULL;
+        scalar_sections[1] = nullptr;
 
       /* Loop on possible specific model scalar sections */
       for (int s_id = 0; s_id < 2; s_id++) {
-        if (scalar_sections[s_id] == NULL)
+        if (scalar_sections[s_id] == nullptr)
           continue;
         for (cs_tree_node_t *tn_sv
                = cs_tree_get_node(cs_glob_tree, scalar_sections[s_id]);
-             tn_sv != NULL;
+             tn_sv != nullptr;
              tn_sv = cs_tree_node_get_next_of_name(tn_sv)) {
           const char *_name = cs_gui_node_get_tag(tn_sv, "name");
           cs_field_t *f = cs_field_by_name_try(_name);
-          if (f != NULL)
+          if (f != nullptr)
             _boundary_scalar(tn, z, f);
         }
       }
@@ -2642,7 +2642,7 @@ static void
 _init_zones(const cs_lnum_t   n_b_faces,
             int              *izfppp)
 {
-  assert(boundaries != NULL);
+  assert(boundaries != nullptr);
 
   int n_zones = cs_tree_get_node_count(cs_glob_tree,
                                        "boundary_conditions/boundary");
@@ -2741,7 +2741,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
         if (  boundaries->itype[izone] == CS_ESICF
             ||boundaries->itype[izone] == CS_EPHCF) {
           const cs_field_t  *fp = cs_field_by_name("pressure");
-          if (fp->bc_coeffs != NULL) {
+          if (fp->bc_coeffs != nullptr) {
             cs_real_t *rcodcl1 = fp->bc_coeffs->rcodcl1;
 
             for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
@@ -2754,7 +2754,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
         if (boundaries->itype[izone] == CS_ESICF) {
           cs_field_t *b_rho = cs_field_by_name_try("boundary_density");
           const cs_field_t  *ft = cs_field_by_name("temperature");
-          if (ft->bc_coeffs != NULL) {
+          if (ft->bc_coeffs != nullptr) {
             cs_real_t *rcodcl1 = ft->bc_coeffs->rcodcl1;
 
             for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
@@ -2800,7 +2800,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       /* turbulent inlet, with formula */
 
       cs_turb_model_type_t turb_model = CS_TURB_NONE;
-      if (cs_glob_turb_model != NULL)
+      if (cs_glob_turb_model != nullptr)
         turb_model = (cs_turb_model_type_t)(cs_glob_turb_model->model);
 
       if (turb_model != CS_TURB_NONE) {
@@ -2808,10 +2808,10 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
         cs_tree_node_t *tn_t = cs_tree_node_get_child(tn_bc, "turbulence");
         const char *formula = cs_tree_node_get_child_value_str(tn_t, "formula");
 
-        if (formula != NULL) {
+        if (formula != nullptr) {
 
           const char *model = cs_gui_get_thermophysical_model("turbulence");
-          if (model == NULL)
+          if (model == nullptr)
             continue;
 
           /* Check we have not selected another computation type even if
@@ -2819,7 +2819,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 
           cs_boundary_conditions_open_t *c
             = cs_boundary_conditions_open_find(bz);
-          if (c != NULL) {
+          if (c != nullptr) {
             if (c->turb_compute != CS_BC_TURB_NONE)
               continue;
           }
@@ -2848,7 +2848,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
                       _("Invalid turbulence model: %s.\n"), model);
 
 
-          cs_real_t *bnd_vals = NULL;
+          cs_real_t *bnd_vals = nullptr;
           CS_MALLOC(bnd_vals, n_bnd_vals * bz->n_elts, cs_real_t);
 
           if (   cs_gui_strcmp(model, "k-epsilon")
@@ -2865,7 +2865,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
 
-            if (c_k->bc_coeffs != NULL && c_eps->bc_coeffs != NULL) {
+            if (c_k->bc_coeffs != nullptr && c_eps->bc_coeffs != nullptr) {
               cs_real_t *rcodcl1_k = c_k->bc_coeffs->rcodcl1;
               cs_real_t *rcodcl1_eps = c_eps->bc_coeffs->rcodcl1;
 
@@ -2891,7 +2891,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
             cs_field_t *c_rij = cs_field_by_name("rij");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
 
-            if (c_rij->bc_coeffs != NULL && c_eps->bc_coeffs != NULL) {
+            if (c_rij->bc_coeffs != nullptr && c_eps->bc_coeffs != nullptr) {
               cs_real_t *rcodcl1_rij = c_rij->bc_coeffs->rcodcl1;
               cs_real_t *rcodcl1_eps = c_eps->bc_coeffs->rcodcl1;
 
@@ -2922,9 +2922,9 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
             cs_field_t *c_eps = cs_field_by_name("epsilon");
             cs_field_t *c_a   = cs_field_by_name("alpha");
 
-            if (   c_rij->bc_coeffs != NULL
-                && c_eps->bc_coeffs != NULL
-                && c_a->bc_coeffs != NULL) {
+            if (   c_rij->bc_coeffs != nullptr
+                && c_eps->bc_coeffs != nullptr
+                && c_a->bc_coeffs != nullptr) {
               cs_real_t *rcodcl1_rij = c_rij->bc_coeffs->rcodcl1;
               cs_real_t *rcodcl1_eps = c_eps->bc_coeffs->rcodcl1;
               cs_real_t *rcodcl1_a = c_a->bc_coeffs->rcodcl1;
@@ -2958,8 +2958,8 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
             cs_field_t *c_phi = cs_field_by_name("phi");
             cs_field_t *c_a   = cs_field_by_name("alpha");
 
-            if (     c_k->bc_coeffs != NULL && c_eps->bc_coeffs != NULL
-                && c_phi->bc_coeffs != NULL && c_a->bc_coeffs != NULL) {
+            if (     c_k->bc_coeffs != nullptr && c_eps->bc_coeffs != nullptr
+                && c_phi->bc_coeffs != nullptr && c_a->bc_coeffs != nullptr) {
               cs_real_t *rcodcl1_k   = c_k->bc_coeffs->rcodcl1;
               cs_real_t *rcodcl1_eps = c_eps->bc_coeffs->rcodcl1;
               cs_real_t *rcodcl1_phi = c_phi->bc_coeffs->rcodcl1;
@@ -2987,7 +2987,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
             cs_field_t *c_k = cs_field_by_name("k");
             cs_field_t *c_o = cs_field_by_name("omega");
 
-            if (c_k->bc_coeffs != NULL && c_o->bc_coeffs != NULL) {
+            if (c_k->bc_coeffs != nullptr && c_o->bc_coeffs != nullptr) {
               cs_real_t *rcodcl1_k = c_k->bc_coeffs->rcodcl1;
               cs_real_t *rcodcl1_o = c_o->bc_coeffs->rcodcl1;
 
@@ -3010,7 +3010,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 
             cs_field_t *c_nu = cs_field_by_name("nu_tilda");
 
-            if (c_nu->bc_coeffs != NULL) {
+            if (c_nu->bc_coeffs != nullptr) {
               cs_real_t *rcodcl1_nu = c_nu->bc_coeffs->rcodcl1;
 
               for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
@@ -3068,12 +3068,12 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
         /* Roughness value (z0) */
         for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
           cs_lnum_t face_id = bz->elt_ids[elt_id];
-          assert(f_roughness != NULL);
+          assert(f_roughness != nullptr);
           f_roughness->val[face_id] = boundaries->rough[izone];
 
           /* Thermal Roughness value.
            * In this case thermal roughness is equal to the roughness. */
-          if (f_roughness_t != NULL)
+          if (f_roughness_t != nullptr)
             f_roughness_t->val[face_id] = boundaries->rough[izone];
         }
       }
@@ -3129,7 +3129,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       }
 
       if (boundaries->head_loss_e[izone]) {
-        cs_real_t *bnd_vals = NULL;
+        cs_real_t *bnd_vals = nullptr;
         CS_MALLOC(bnd_vals, bz->n_elts, cs_real_t);
         cs_meg_boundary_function(bz->name,
                                  bz->n_elts,
@@ -3140,7 +3140,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
                                  bnd_vals);
 
         const cs_field_t  *fp = cs_field_by_name("pressure");
-        if (fp->bc_coeffs != NULL) {
+        if (fp->bc_coeffs != nullptr) {
           cs_real_t *rcodcl2_p   = fp->bc_coeffs->rcodcl2;
 
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
@@ -3169,8 +3169,8 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 
       /* set velocity to 0 */
       const cs_field_t  *fp2 = cs_field_by_name_try("velocity");
-      if (fp2 != NULL) {
-        if (fp2->bc_coeffs != NULL) {
+      if (fp2 != nullptr) {
+        if (fp2->bc_coeffs != nullptr) {
           int *icodcl = fp2->bc_coeffs->icodcl;
           cs_real_t *rcodcl1 = fp2->bc_coeffs->rcodcl1;
 
@@ -3281,14 +3281,14 @@ cs_gui_boundary_conditions_verify(void)
  * \brief Define boundary conditions based on setup file.
  *
  * \param[in, out]  bdy   boundaries structure to update
- *                        (if NULL, default to cs_glob_domain->boundaries)
+ *                        (if nullptr, default to cs_glob_domain->boundaries)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
 {
-  if (bdy == NULL)
+  if (bdy == nullptr)
     bdy = cs_glob_domain->boundaries;
 
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree,
@@ -3302,7 +3302,7 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
   /* Build boundary zone definitions */
 
   for (cs_tree_node_t *tn = cs_tree_get_node(tn_b0, "boundary");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn), izone++) {
 
     /* nature, label and description of the ith boundary zone;
@@ -3315,7 +3315,7 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
     int bc_num = izone+1;
 
     const int *vi = cs_tree_node_get_child_values_int(tn, "name");
-    if (vi != NULL)
+    if (vi != nullptr)
       bc_num = vi[0];
 
     /* label of the ith initialization zone */
@@ -3335,16 +3335,16 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
 
     /* Now loop on boundary condition definitions proper */
 
-    cs_tree_node_t *tn_bc = NULL;
+    cs_tree_node_t *tn_bc = nullptr;
 
-    cs_tree_node_t *tn_b1 = (tn_b0 != NULL) ? tn_b0->children : tn_b0;
-    for (tn_bc = tn_b1; tn_bc != NULL; tn_bc = tn_bc->next) {
+    cs_tree_node_t *tn_b1 = (tn_b0 != nullptr) ? tn_b0->children : tn_b0;
+    for (tn_bc = tn_b1; tn_bc != nullptr; tn_bc = tn_bc->next) {
 
       if (cs_gui_strcmp(tn_bc->name, "boundary")) /* handled in parent loop */
         continue;
 
       const char *c_label = cs_tree_node_get_tag(tn_bc, "label");
-      if (c_label != NULL) {
+      if (c_label != nullptr) {
         /* Search for label matching boundary */
         if (strcmp(c_label, label) == 0)
           break;
@@ -3352,12 +3352,12 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
 
     }
 
-    if (tn_bc == NULL)
+    if (tn_bc == nullptr)
       continue;
 
     z = cs_boundary_zone_by_name_try(label);
 
-    if (z == NULL)  /* may occur when "dead" leaves or present in tree */
+    if (z == nullptr)  /* may occur when "dead" leaves or present in tree */
       continue;
 
     const char *nature = tn_bc->name;
@@ -3410,7 +3410,7 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
       cs_tree_node_t *tn_vp
         = cs_tree_node_get_child(tn_bc, "velocity_pressure");
 
-      if (tn_vp != NULL) {
+      if (tn_vp != nullptr) {
         const char *choice = cs_gui_node_get_tag(tn_vp, "choice");
         if (cs_gui_strcmp(choice, "on")) {
           bc_type |= CS_BOUNDARY_SLIDING_WALL;
@@ -3476,7 +3476,7 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
   /* Definition of the boundaries structure
      and some equation parameters */
 
-  if (boundaries == NULL)
+  if (boundaries == nullptr)
     _init_boundaries();
 }
 
@@ -3491,12 +3491,12 @@ cs_gui_boundary_conditions_free_memory(void)
 {
   /* clean memory for global private structure boundaries */
 
-  if (boundaries != NULL) {
+  if (boundaries != nullptr) {
 
     for (int f_id = 0; f_id < boundaries->n_fields; f_id++) {
       const cs_field_t  *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
-        if (boundaries->type_code != NULL)
+        if (boundaries->type_code != nullptr)
           CS_FREE(boundaries->type_code[f->id]);
       }
     }
@@ -3550,7 +3550,7 @@ cs_gui_boundary_add_meg_context(const  cs_zone_t   *zone,
 {
   CS_REALLOC(_b_contexts, _n_b_contexts+1, void *);
 
-  cs_gui_boundary_meg_context_t  *c = NULL;
+  cs_gui_boundary_meg_context_t  *c = nullptr;
   CS_MALLOC(c, 1, cs_gui_boundary_meg_context_t);
 
   c->zone = zone;
@@ -3579,7 +3579,7 @@ cs_gui_boundary_add_meg_context(const  cs_zone_t   *zone,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -3598,7 +3598,7 @@ cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
 
   const cs_lnum_t dim = c->dim;
 
-  cs_real_t *v_loc = NULL;
+  cs_real_t *v_loc = nullptr;
   CS_MALLOC(v_loc, dim * n_elts, cs_real_t);
 
   cs_meg_boundary_function(c->zone->name,
@@ -3628,13 +3628,13 @@ cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
 
     if (dim == 1) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
         retval[elt_id] = v_loc[i];
       }
     }
     else {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        cs_lnum_t elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
         for (cs_lnum_t k = 0; k < dim; k++)
           retval[elt_id*dim + k] = v_loc[k*n_elts + i];
       }

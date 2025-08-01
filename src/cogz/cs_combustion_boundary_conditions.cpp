@@ -110,7 +110,7 @@ BEGIN_C_DECLS
 static void *
 _destroy_inlet(void  *ci_p)
 {
-  if (ci_p != NULL) {
+  if (ci_p != nullptr) {
 
     cs_combustion_bc_inlet_t *ci = (cs_combustion_bc_inlet_t *)ci_p;
 
@@ -118,7 +118,7 @@ _destroy_inlet(void  *ci_p)
 
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -258,7 +258,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
   /* Loop on inlet boundaries
      ======================== */
 
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
 
@@ -385,7 +385,7 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
   /* Loop on inlet boundaries
      ======================== */
 
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
 
@@ -510,7 +510,7 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
   /* Loop on inlet boundaries
      ======================== */
 
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
 
@@ -634,7 +634,7 @@ cs_combustion_boundary_conditions_density(void)
 
   /* Recompute density at inlets */
 
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
 
@@ -736,7 +736,7 @@ cs_combustion_boundary_conditions_density_ebu_lw(void)
 
   /* Recompute density at inlets */
 
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
 
@@ -806,7 +806,7 @@ void
 cs_combustion_boundary_conditions_mean_inlet_ebu_lw(cs_real_t  *fmm,
                                                     cs_real_t  *tkm)
 {
-  assert(cs_glob_boundaries != NULL);
+  assert(cs_glob_boundaries != nullptr);
 
   cs_real_t zsum[3] = {0, 0, 0};
 

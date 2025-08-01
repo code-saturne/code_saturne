@@ -1504,7 +1504,7 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
   cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_sc);
 
   const int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
-  const cs_real_t *viscls = NULL;
+  const cs_real_t *viscls = nullptr;
   if (ifcvsl >= 0)
     viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -1519,7 +1519,7 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
   cs_field_t *f_recvr = cs_field_by_name_try("reconstructed_fp2m");
   cs_field_t *f_fp2m = CS_F_(fp2m);
 
-  cs_real_t *turb_diff = NULL;
+  cs_real_t *turb_diff = nullptr;
   if (cs_glob_turb_model->model == 41) {
     /* Retrieve turbulent diffusivity value for the mixture fraction */
     const int t_dif_id = cs_field_get_key_int(f_fm, key_turb_diff);

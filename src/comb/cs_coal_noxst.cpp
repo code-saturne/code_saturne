@@ -318,7 +318,7 @@ cs_coal_noxst(const  int        indpdf[],
     const cs_real_t *cvar_xnpcl = cs_field_by_id(cm->inp[class_id])->val;
     const cs_real_t *cpro_temp2 = cs_field_by_id(cm->itemp2[class_id])->val;
 
-    const cs_real_t *cvar_xwtcl = NULL;
+    const cs_real_t *cvar_xwtcl = nullptr;
     if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
       cvar_xwtcl = cs_field_by_id(cm->ixwt[class_id])->val;
 
@@ -328,7 +328,7 @@ cs_coal_noxst(const  int        indpdf[],
         tfuel[c_idx] += (  cvar_xchcl[c_id] + cvar_xckcl[c_id]
                          + (cvar_xnpcl[c_id] * xmash)) * cpro_temp2[c_id];
 
-        if (cvar_xwtcl != NULL)
+        if (cvar_xwtcl != nullptr)
           tfuel[c_idx] += cvar_xwtcl[c_id] * cpro_temp2[c_id];
       }
     }

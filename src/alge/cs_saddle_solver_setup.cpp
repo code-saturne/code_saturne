@@ -487,7 +487,7 @@ _petsc_fgmres_hook(void *context,
 
     case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
       PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SCHUR);
-      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
+      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, nullptr);
       PCFieldSplitSetSchurFactType(saddle_pc, PC_FIELDSPLIT_SCHUR_FACT_DIAG);
       break;
 
@@ -504,7 +504,7 @@ _petsc_fgmres_hook(void *context,
 
     case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
       PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SCHUR);
-      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
+      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, nullptr);
       PCFieldSplitSetSchurFactType(saddle_pc, PC_FIELDSPLIT_SCHUR_FACT_LOWER);
       break;
 
@@ -521,7 +521,7 @@ _petsc_fgmres_hook(void *context,
 
     case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
       PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SCHUR);
-      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
+      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, nullptr);
       PCFieldSplitSetSchurFactType(saddle_pc, PC_FIELDSPLIT_SCHUR_FACT_FULL);
       break;
 
@@ -538,7 +538,7 @@ _petsc_fgmres_hook(void *context,
 
     case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
       PCFieldSplitSetType(saddle_pc, PC_COMPOSITE_SCHUR);
-      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
+      PCFieldSplitSetSchurPre(saddle_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, nullptr);
       PCFieldSplitSetSchurFactType(saddle_pc, PC_FIELDSPLIT_SCHUR_FACT_UPPER);
       break;
 

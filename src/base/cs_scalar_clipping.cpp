@@ -110,7 +110,7 @@ cs_scalar_clipping(cs_field_t  *f)
 
   /* Post-process clippings ? */
   int clip_f_id = cs_field_get_key_int(f, kclipp);
-  cs_real_t *cpro_f_clipped = NULL;
+  cs_real_t *cpro_f_clipped = nullptr;
   if (clip_f_id > -1) {
     cpro_f_clipped = cs_field_by_id(clip_f_id)->val;
     cs_array_real_fill_zero(n_cells, cpro_f_clipped);
@@ -164,14 +164,14 @@ cs_scalar_clipping(cs_field_t  *f)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       if (cvar_scal[c_id] > scmaxp) {
         iclmax[0] += 1;
-        if (cpro_f_clipped != NULL)
+        if (cpro_f_clipped != nullptr)
           cpro_f_clipped[c_id] = cvar_scal[c_id] - scmaxp;
 
         cvar_scal[c_id] = scmaxp;
       }
       if (cvar_scal[c_id] < scminp) {
          iclmin[0] += 1;
-         if (cpro_f_clipped != NULL)
+         if (cpro_f_clipped != nullptr)
            cpro_f_clipped[c_id] = cvar_scal[c_id] - scminp;
          cvar_scal[c_id] = scminp;
       }

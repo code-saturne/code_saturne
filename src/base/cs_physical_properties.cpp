@@ -441,7 +441,7 @@ cs_thermal_table_finalize(void)
 cs_phys_prop_thermo_plane_type_t
 cs_thermal_table_get_thermo_plane(void)
 {
-  if (cs_glob_thermal_table != NULL) {
+  if (cs_glob_thermal_table != nullptr) {
     return cs_glob_thermal_table->thermo_plane;
   }
   else {

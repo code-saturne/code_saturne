@@ -259,7 +259,7 @@ cs_combustion_ht_convert_h_to_t_faces(const cs_real_t  h[],
 
     /* Specific values at inlets */
 
-    assert(cs_glob_boundaries != NULL);
+    assert(cs_glob_boundaries != nullptr);
     const cs_boundary_t *bdy = cs_glob_boundaries;
 
     for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
@@ -351,7 +351,7 @@ cs_combustion_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
 
     /* Specific values at inlets */
 
-    assert(cs_glob_boundaries != NULL);
+    assert(cs_glob_boundaries != nullptr);
     const cs_boundary_t *bdy = cs_glob_boundaries;
 
     for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {

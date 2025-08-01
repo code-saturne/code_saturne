@@ -339,11 +339,11 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
     cs_mesh_quantities_free_all(mq);
 
     if (need_save) {
-      cs_mesh_save(m, cs_glob_mesh_builder, NULL, "mesh_output.csm");
+      cs_mesh_save(m, cs_glob_mesh_builder, nullptr, "mesh_output.csm");
       need_save = false;
     }
     else
-      cs_mesh_to_builder(m, cs_glob_mesh_builder, true, NULL);
+      cs_mesh_to_builder(m, cs_glob_mesh_builder, true, nullptr);
 
     cs_partition(m, cs_glob_mesh_builder, CS_PARTITION_MAIN);
     cs_mesh_from_builder(m, cs_glob_mesh_builder);
@@ -352,7 +352,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   }
 
   else if (need_save)
-    cs_mesh_save(m, NULL, NULL, "mesh_output.csm");
+    cs_mesh_save(m, nullptr, nullptr, "mesh_output.csm");
 
   m->n_b_faces_all = m->n_b_faces;
   m->n_g_b_faces_all = m->n_g_b_faces;
@@ -568,17 +568,17 @@ cs_preprocess_mesh_update_device()
     CS_REALLOC_HD(m->b_face_cells, n_b_faces, cs_lnum_t, alloc_mode);
     cs_mem_advise_set_read_mostly(m->b_face_cells);
 
-    if (m->b_cells != NULL) {
+    if (m->b_cells != nullptr) {
       CS_REALLOC_HD(m->b_cells, n_b_cells, cs_lnum_t, alloc_mode);
       cs_mem_advise_set_read_mostly(m->b_cells);
     }
 
-    if (m->i_face_vtx_idx != NULL) {
+    if (m->i_face_vtx_idx != nullptr) {
       CS_REALLOC_HD(m->i_face_vtx_idx, n_i_faces + 1, cs_lnum_t, alloc_mode);
       cs_mem_advise_set_read_mostly(m->i_face_vtx_idx);
     }
 
-    if (m->i_face_vtx_lst != NULL) {
+    if (m->i_face_vtx_lst != nullptr) {
       CS_REALLOC_HD(m->i_face_vtx_lst,
                     m->i_face_vtx_connect_size,
                     cs_lnum_t,
@@ -586,12 +586,12 @@ cs_preprocess_mesh_update_device()
       cs_mem_advise_set_read_mostly(m->i_face_vtx_lst);
     }
 
-    if (m->b_face_vtx_idx != NULL) {
+    if (m->b_face_vtx_idx != nullptr) {
       CS_REALLOC_HD(m->b_face_vtx_idx, n_b_faces + 1, cs_lnum_t, alloc_mode);
       cs_mem_advise_set_read_mostly(m->b_face_vtx_idx);
     }
 
-    if (m->b_face_vtx_lst != NULL) {
+    if (m->b_face_vtx_lst != nullptr) {
       CS_REALLOC_HD(m->b_face_vtx_lst,
                     m->b_face_vtx_connect_size,
                     cs_lnum_t,
@@ -600,7 +600,7 @@ cs_preprocess_mesh_update_device()
     }
   }
 
-  if (m->cell_cells_idx != NULL) {
+  if (m->cell_cells_idx != nullptr) {
     CS_REALLOC_HD(m->cell_cells_idx, n_cells+1, cs_lnum_t, alloc_mode);
     cs_mem_advise_set_read_mostly(m->cell_cells_idx);
     CS_REALLOC_HD(m->cell_cells_lst, m->cell_cells_idx[n_cells], cs_lnum_t,

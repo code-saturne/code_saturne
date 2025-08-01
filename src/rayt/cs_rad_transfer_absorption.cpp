@@ -429,7 +429,7 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
                                  cs_real_t        agas[],
                                  cs_real_t        agasb[])
 {
-  cs_real_t *w1 = NULL, *w2 = NULL, *w3 = NULL;
+  cs_real_t *w1 = nullptr, *w2 = nullptr, *w3 = nullptr;
 
   const cs_mesh_t *m           = cs_glob_mesh;
   const int        n_cells     = m->n_cells;
@@ -449,7 +449,7 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
   const cs_real_t xsoot  = cm->xsoot;
   const cs_real_t rosoot = cm->rosoot;
 
-  cs_real_t *cvar_fsm = NULL;
+  cs_real_t *cvar_fsm = nullptr;
   if (cm->isoot >= 1)
     cvar_fsm = CS_F_(fsm)->val;
 

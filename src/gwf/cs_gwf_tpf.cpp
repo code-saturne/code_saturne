@@ -2166,7 +2166,7 @@ _finalize_setup_plpc_incr(const cs_cdo_connect_t    *connect,
   BFT_MALLOC(tpf->srct_w_array, c2v_size, cs_real_t);
   cs_array_real_fill_zero(c2v_size, tpf->srct_w_array);
   d = cs_equation_add_source_term_by_array(w_eqp,
-                                           NULL,    /* all cells */
+                                           nullptr,    /* all cells */
                                            cs_flag_dual_cell_byc,
                                            tpf->srct_w_array,
                                            false,   /* xdef not owner */
@@ -2176,7 +2176,7 @@ _finalize_setup_plpc_incr(const cs_cdo_connect_t    *connect,
   BFT_MALLOC(tpf->srct_h_array, c2v_size, cs_real_t);
   cs_array_real_fill_zero(c2v_size, tpf->srct_h_array);
   d = cs_equation_add_source_term_by_array(h_eqp,
-                                           NULL,    /* all cells */
+                                           nullptr,    /* all cells */
                                            cs_flag_dual_cell_byc,
                                            tpf->srct_h_array,
                                            false,   /* xdef not owner */

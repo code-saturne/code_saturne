@@ -253,7 +253,7 @@ void
 _cs_timer_wall_gettimeofday(cs_timer_t  *timer)
 {
   struct timeval  tv_time;
-  (void)gettimeofday(&tv_time, NULL);
+  (void)gettimeofday(&tv_time, nullptr);
   timer->sec = tv_time.tv_sec;
   timer->nsec = tv_time.tv_usec*1000;
 }
@@ -353,7 +353,7 @@ _cs_timer_cpu_stdc_clock(cs_timer_t  *timer)
 static void
 _cs_timer_initialize(void)
 {
-  if (getenv("CS_TIME_KERNELS") != NULL)
+  if (getenv("CS_TIME_KERNELS") != nullptr)
     cs_glob_timer_kernels_flag = atoi(getenv("CS_TIME_KERNELS"));
 
   _cs_timer_start.sec = 0;
@@ -397,7 +397,7 @@ _cs_timer_initialize(void)
 
   if (_cs_timer_wall_method == CS_TIMER_DISABLE) {
     static struct timeval  tv_time;
-    if (gettimeofday(&tv_time, NULL) == 0) {
+    if (gettimeofday(&tv_time, nullptr) == 0) {
       _cs_timer_start.sec = tv_time.tv_sec;
       _cs_timer_start.nsec = tv_time.tv_usec*1000;
       _cs_timer_wall_method = CS_TIMER_GETTIMEOFDAY;

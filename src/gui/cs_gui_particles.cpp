@@ -107,7 +107,7 @@ _get_particles_model(cs_tree_node_t  *tn)
 
   const char *attr = cs_tree_node_get_tag(tn, "model");
 
-  if (attr != NULL) {
+  if (attr != nullptr) {
     if (cs_gui_strcmp(attr, "off"))
       retval = 0;
     else if (cs_gui_strcmp(attr, "thermal"))
@@ -125,7 +125,7 @@ _get_particles_model(cs_tree_node_t  *tn)
  * parameters:
  *   tn_o    <-- tree node associated to lagrangian output
  *   attr_id <-- associated attribute id
- *   name    <-- name of attribute in XML, or NULL for automatic name
+ *   name    <-- name of attribute in XML, or nullptr for automatic name
  *----------------------------------------------------------------------------*/
 
 static void
@@ -135,7 +135,7 @@ _attr_post_status(cs_tree_node_t       *tn_o,
 {
   bool status = false;
 
-  if (name != NULL)
+  if (name != nullptr)
     cs_gui_node_get_status_bool(cs_tree_node_get_child(tn_o, name),
                                 &status);
   else {
@@ -158,13 +158,13 @@ _attr_post_status(cs_tree_node_t       *tn_o,
 static void
 _get_stats_post(cs_tree_node_t  *tn_s)
 {
-  cs_tree_node_t *tn = NULL;
+  cs_tree_node_t *tn = nullptr;
 
   for (tn = cs_tree_node_get_child(tn_s, "property");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
     const char *_name = cs_tree_node_get_tag(tn, "name");
-    if (_name != NULL) {
+    if (_name != nullptr) {
       int stat_type = cs_lagr_stat_type_by_name(_name);
       if (stat_type > -1) {
         int status = 1; /* default if active */
@@ -196,7 +196,7 @@ cs_gui_particles_model(void)
   const char *model = cs_tree_node_get_tag(tn_lagr, "model");
 
   cs_glob_lagr_time_scheme->iilagr = CS_LAGR_OFF;
-  if (model != NULL) {
+  if (model != nullptr) {
     if (! strcmp(model, "one_way"))
       cs_glob_lagr_time_scheme->iilagr = CS_LAGR_ONEWAY_COUPLING;
     else if (! strcmp(model, "two_way"))
@@ -263,15 +263,15 @@ cs_gui_particles_model(void)
       for (int attr_id = 0; attr_id < 4; attr_id++) {
         for (cs_tree_node_t *tn = cs_tree_node_get_child
                                     (tn_cf, attr_name[attr_id]);
-             tn != NULL;
+             tn != nullptr;
              tn = cs_tree_node_get_next_of_name(tn)) {
 
           const int *v_i = cs_tree_node_get_child_values_int(tn, "coal");
-          if (v_i == NULL) continue;
+          if (v_i == nullptr) continue;
           int icoal = v_i[0] - 1;
 
           const cs_real_t *v_r = cs_tree_node_get_values_real(tn);
-          if (v_r != NULL) attr_val[attr_id][icoal] = v_r[0];
+          if (v_r != nullptr) attr_val[attr_id][icoal] = v_r[0];
 
         }
       }
@@ -304,7 +304,7 @@ cs_gui_particles_model(void)
 
   choice = cs_tree_node_get_tag(cs_tree_node_get_child(tn_lagr, "scheme_order"),
                                 "choice");
-  if (choice != NULL)
+  if (choice != nullptr)
     cs_glob_lagr_time_scheme->t_order = atoi(choice);
 
   cs_gui_node_get_status_int
@@ -322,7 +322,7 @@ cs_gui_particles_model(void)
   /* Output */
 
   cs_tree_node_t *tn_o = cs_tree_node_get_child(tn_lagr, "output");
-  if (tn_o != NULL) {
+  if (tn_o != nullptr) {
     _attr_post_status(tn_o, CS_LAGR_VELOCITY, "velocity_particles");
     _attr_post_status(tn_o, CS_LAGR_VELOCITY_SEEN, "velocity_fluid_seen");
     _attr_post_status(tn_o, CS_LAGR_RESIDENCE_TIME, "resident_time");
@@ -350,7 +350,7 @@ cs_gui_particles_model(void)
   bool boundary_stats = false;
 
   cs_tree_node_t *tn_s = cs_tree_node_get_child(tn_lagr, "statistics");
-  if (tn_s != NULL) {
+  if (tn_s != nullptr) {
 
     cs_gui_node_get_child_int(tn_s, "statistics_groups_of_particles",
                               &cs_glob_lagr_model->n_stat_classes);
@@ -523,7 +523,7 @@ cs_gui_particles_bcs(void)
   int zone_id = 1; /* 1 to n */
 
   for (cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn0, "boundary");
-       tn_bc != NULL;
+       tn_bc != nullptr;
        tn_bc = cs_tree_node_get_next_of_name(tn_bc), zone_id++) {
 
     const char *label = cs_tree_node_get_tag(tn_bc, "label");
@@ -532,10 +532,10 @@ cs_gui_particles_bcs(void)
     /* Find associated BC description with particle sub-node if present */
     /* Loop on all sub-nodes, of which some describe matching one BC info */
 
-    cs_tree_node_t *tn_p = NULL;
+    cs_tree_node_t *tn_p = nullptr;
 
     for (cs_tree_node_t *tn1 = cs_tree_node_get_child(tn0, nature);
-         tn1 != NULL && tn_p == NULL;
+         tn1 != nullptr && tn_p == nullptr;
          tn1 = cs_tree_node_get_next_of_name(tn1)) {
 
       if (! cs_gui_strcmp(label, cs_tree_node_get_tag(tn1, "label")))
@@ -544,13 +544,13 @@ cs_gui_particles_bcs(void)
       tn_p = cs_tree_node_get_child(tn1, "particles");
     }
 
-    if (tn_p == NULL)
+    if (tn_p == nullptr)
       continue;
 
     /* Now we have a particles node for the given BC */
 
     const char *interaction = cs_tree_node_get_tag(tn_p, "choice");
-    if (interaction == NULL)
+    if (interaction == nullptr)
       continue;
 
     if (! strcmp(interaction, "inlet"))
@@ -595,7 +595,7 @@ cs_gui_particles_bcs(void)
 
       int set_id = 0;
       for (cs_tree_node_t *tn_i = cs_tree_node_get_child(tn_p, "class");
-           tn_i != NULL;
+           tn_i != nullptr;
            tn_i = cs_tree_node_get_next_of_name(tn_i), set_id++) {
 
         cs_lagr_injection_set_t *zis
@@ -603,19 +603,19 @@ cs_gui_particles_bcs(void)
 
         cs_lagr_injection_set_default(zis);
 
-        const char *choice = NULL;
+        const char *choice = nullptr;
         const int *v_i;
         const cs_real_t *v_r;
         cs_tree_node_t *tn_c; /* child nodes */
 
         v_i = cs_tree_node_get_child_values_int(tn_i, "number");
-        if (v_i != NULL) zis->n_inject = v_i[0];
+        if (v_i != nullptr) zis->n_inject = v_i[0];
 
         v_i = cs_tree_node_get_child_values_int(tn_i, "frequency");
-        if (v_i != NULL) zis->injection_frequency = v_i[0];
+        if (v_i != nullptr) zis->injection_frequency = v_i[0];
 
         v_i = cs_tree_node_get_child_values_int(tn_i, "statistical_groups");
-        if (v_i != NULL) zis->cluster = v_i[0];
+        if (v_i != nullptr) zis->cluster = v_i[0];
 
 #if _XML_DEBUG_
         bft_printf("---number = %llu \n", (unsigned long long)(zis->n_inject));
@@ -626,25 +626,25 @@ cs_gui_particles_bcs(void)
         /* velocity */
 
         tn_c = cs_tree_node_get_child(tn_i, "velocity");
-        if (tn_c != NULL) {
+        if (tn_c != nullptr) {
 
           choice = cs_tree_node_get_tag(tn_c, "choice");
 
-          if (choice == NULL || cs_gui_strcmp(choice, "fluid"))
+          if (choice == nullptr || cs_gui_strcmp(choice, "fluid"))
             zis->velocity_profile = CS_LAGR_IN_IMPOSED_FLUID_VALUE;
 
           else if (cs_gui_strcmp(choice, "norm")) {
             zis->velocity_profile = CS_LAGR_IN_IMPOSED_NORM;
 
             v_r = cs_tree_node_get_child_values_real(tn_c, "norm");
-            if (v_r != NULL) zis->velocity_magnitude = v_r[0];
+            if (v_r != nullptr) zis->velocity_magnitude = v_r[0];
           }
           else if (cs_gui_strcmp(choice, "components")) {
             const char *cname[] = {"velocity_x", "velocity_y", "velocity_z"};
             zis->velocity_profile = CS_LAGR_IN_IMPOSED_COMPONENTS;
             for (int i = 0; i < 3; i++) {
               v_r = cs_tree_node_get_child_values_real(tn_c, cname[i]);
-              if (v_r != NULL) zis->velocity[i] = v_r[0];
+              if (v_r != nullptr) zis->velocity[i] = v_r[0];
             }
           }
 
@@ -667,18 +667,18 @@ cs_gui_particles_bcs(void)
         /* statistical_weight, mass_flow_rate*/
 
         tn_c = cs_tree_node_get_child(tn_i, "statistical_weight");
-        if (tn_c != NULL) {
+        if (tn_c != nullptr) {
 
           choice = cs_tree_node_get_tag(tn_c, "choice");
 
           if (cs_gui_strcmp(choice, "rate")) {
             v_r = cs_tree_node_get_child_values_real(tn_i, "mass_flow_rate");
             zis->stat_weight = 0;
-            if (v_r != NULL) zis->flow_rate = v_r[0];
+            if (v_r != nullptr) zis->flow_rate = v_r[0];
           }
-          else if (cs_gui_strcmp(choice, "prescribed") || choice == NULL) {
+          else if (cs_gui_strcmp(choice, "prescribed") || choice == nullptr) {
             v_r = cs_tree_node_get_values_real(tn_c);
-            if (v_r != NULL) zis->stat_weight = v_r[0];
+            if (v_r != nullptr) zis->stat_weight = v_r[0];
             zis->flow_rate = 0;
           }
 
@@ -694,11 +694,11 @@ cs_gui_particles_bcs(void)
         /* diameter */
 
         v_r = cs_tree_node_get_child_values_real(tn_i, "diameter");
-        if (v_r != NULL) zis->diameter = v_r[0];
+        if (v_r != nullptr) zis->diameter = v_r[0];
 
         v_r = cs_tree_node_get_child_values_real
                 (tn_i, "diameter_standard_deviation");
-        if (v_r != NULL) zis->diameter_variance = v_r[0];
+        if (v_r != nullptr) zis->diameter_variance = v_r[0];
 
 #if _XML_DEBUG_
         bft_printf("----diameter = %f \n", zis->diameter);
@@ -708,7 +708,7 @@ cs_gui_particles_bcs(void)
         /* density */
         if (iphyla != CS_LAGR_PHYS_COAL) {
           v_r = cs_tree_node_get_child_values_real(tn_i, "density");
-          if (v_r != NULL) zis->density = v_r[0];
+          if (v_r != nullptr) zis->density = v_r[0];
 
 #if _XML_DEBUG_
           bft_printf("---density = %f \n", zis->density);
@@ -717,7 +717,7 @@ cs_gui_particles_bcs(void)
 
         /* Fouling index*/
         v_r = cs_tree_node_get_child_values_real(tn_i, "fouling_index");
-        if (v_r != NULL) zis->fouling_index = v_r[0];
+        if (v_r != nullptr) zis->fouling_index = v_r[0];
 
 #if _XML_DEBUG_
           bft_printf("---fouling_index = %f \n", zis->fouling_index);
@@ -728,16 +728,16 @@ cs_gui_particles_bcs(void)
           /* temperature, specific_heat, emissivity */
 
           tn_c = cs_tree_node_get_child(tn_i, "temperature");
-          if (tn_c != NULL) {
+          if (tn_c != nullptr) {
 
             choice = cs_tree_node_get_tag(tn_c, "choice");
 
             if (cs_gui_strcmp(choice, "prescribed")) {
               zis->temperature_profile = 1;
               v_r = cs_tree_node_get_values_real(tn_c);
-              if (v_r != NULL) zis->temperature = v_r[0];
+              if (v_r != nullptr) zis->temperature = v_r[0];
             }
-            else if (cs_gui_strcmp(choice, "fluid") || choice == NULL) {
+            else if (cs_gui_strcmp(choice, "fluid") || choice == nullptr) {
               zis->temperature_profile = 0;
               zis->temperature = 0;
             }
@@ -745,10 +745,10 @@ cs_gui_particles_bcs(void)
           }
 
           v_r = cs_tree_node_get_child_values_real(tn_i, "specific_heat");
-          if (v_r != NULL) zis->cp = v_r[0];
+          if (v_r != nullptr) zis->cp = v_r[0];
 
           v_r = cs_tree_node_get_child_values_real(tn_i, "emissivity");
-          if (v_r != NULL) zis->emissivity = v_r[0];
+          if (v_r != nullptr) zis->emissivity = v_r[0];
 
 #if _XML_DEBUG_
           bft_printf("---temperature choice = %s "
@@ -767,11 +767,11 @@ cs_gui_particles_bcs(void)
 
           /* Read the coal number */
           v_i = cs_tree_node_get_child_values_int(tn_i, "coal_number");
-          if (v_i != NULL) zis->coal_number = v_i[0];
+          if (v_i != nullptr) zis->coal_number = v_i[0];
 
           /* Data are read in pulverized fuel combustion module profile */
           v_r = cs_tree_node_get_child_values_real(tn_i, "coal_temperature");
-          if (v_r != NULL) zis->temperature = v_r[0];
+          if (v_r != nullptr) zis->temperature = v_r[0];
 
 #if _XML_DEBUG_
           bft_printf("---coal number = %i \n", zis->coal_number);

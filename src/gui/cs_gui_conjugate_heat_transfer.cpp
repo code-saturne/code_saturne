@@ -88,32 +88,32 @@ BEGIN_C_DECLS
 static void
 _cs_gui_syrthes_coupling_legacy(void)
 {
-  const int *v_i = NULL;
-  const cs_real_t *v_r = NULL;
+  const int *v_i = nullptr;
+  const cs_real_t *v_r = nullptr;
 
   const char path_c[] = "conjugate_heat_transfer/external_coupling";
   cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
 
   for (cs_tree_node_t *tn = cs_tree_get_node(tn_c, "syrthes");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char *syrthes_name
       = cs_tree_node_get_child_value_str(tn, "syrthes_name");
 
     v_r = cs_tree_node_get_child_values_real(tn, "tolerance");
-    double tolerance = (v_r != NULL) ? v_r[0] : 0.1;
+    double tolerance = (v_r != nullptr) ? v_r[0] : 0.1;
 
     v_i = cs_tree_node_get_child_values_int(tn, "verbosity");
-    int verbosity = (v_i != NULL) ? v_i[0] : 0;
+    int verbosity = (v_i != nullptr) ? v_i[0] : 0;
 
     v_i = cs_tree_node_get_child_values_int(tn, "visualization");
-    int visualization = (v_i != NULL) ? v_i[0] : 1;
+    int visualization = (v_i != nullptr) ? v_i[0] : 1;
 
     char projection_axis = ' ';
     const char *_projection_axis
       = cs_tree_node_get_child_value_str(tn, "projection_axis");
-    if (_projection_axis != NULL) {
+    if (_projection_axis != nullptr) {
       char c = _projection_axis[0];
       if (   c == 'x' || c == 'X'
           || c == 'y' || c == 'Y'
@@ -123,7 +123,7 @@ _cs_gui_syrthes_coupling_legacy(void)
 
     bool allow_nonmatching = false;
     v_i = cs_tree_node_get_child_values_int(tn, "allow_nonmatching");
-    if (v_i != NULL) {
+    if (v_i != nullptr) {
       if (v_i[0] > 0) allow_nonmatching = true;
     }
 
@@ -160,20 +160,20 @@ _cs_gui_syrthes_coupling_bc(void)
 
   const cs_real_t *v_r
     = cs_tree_node_get_child_values_real(tn_c, "tolerance");
-  double tolerance = (v_r != NULL) ? v_r[0] : 0.1;
+  double tolerance = (v_r != nullptr) ? v_r[0] : 0.1;
 
   const int *v_e
     = cs_tree_node_get_child_values_int(tn_c, "verbosity");
-  int verbosity = (v_e != NULL) ? v_e[0] : 0;
+  int verbosity = (v_e != nullptr) ? v_e[0] : 0;
 
   const int *v_i
     = cs_tree_node_get_child_values_int(tn_c, "visualization");
-  int visualization = (v_i != NULL) ? v_i[0] : 1;
+  int visualization = (v_i != nullptr) ? v_i[0] : 1;
 
   char projection_axis = ' ';
   const char *_projection_axis
     = cs_tree_node_get_child_value_str(tn_c, "projection_axis");
-  if (_projection_axis != NULL) {
+  if (_projection_axis != nullptr) {
     char c = _projection_axis[0];
     if (   c == 'x' || c == 'X'
         || c == 'y' || c == 'Y'
@@ -184,7 +184,7 @@ _cs_gui_syrthes_coupling_bc(void)
   bool allow_nonmatching = false;
   const int *v_n =
     cs_tree_node_get_child_values_int(tn_c, "allow_nonmatching");
-  if (v_n != NULL) {
+  if (v_n != nullptr) {
     if (v_n[0] > 0) allow_nonmatching = true;
   }
 
@@ -192,14 +192,14 @@ _cs_gui_syrthes_coupling_bc(void)
   cs_tree_node_t *tn_syr_inst = cs_tree_find_node(tn_c, "syrthes_instances");
 
   for (cs_tree_node_t *tn_cpl = cs_tree_find_node(tn_syr_inst, "instance");
-      tn_cpl != NULL;
+      tn_cpl != nullptr;
       tn_cpl = cs_tree_node_get_next_of_name(tn_cpl)) {
 
     const char *syrthes_name = cs_tree_node_get_tag(tn_cpl, "name");
 
     cs_syr_coupling_define(syrthes_name,
-                           NULL, /* No bnd criteria */
-                           NULL, /* No vol criteria */
+                           nullptr, /* No bnd criteria */
+                           nullptr, /* No vol criteria */
                            projection_axis,
                            allow_nonmatching,
                            tolerance,
@@ -208,10 +208,10 @@ _cs_gui_syrthes_coupling_bc(void)
 
     /* Loop on coupled boundray zones */
     for (cs_tree_node_t *tn_bnd = cs_tree_find_node(tn_cpl, "coupled_boundary");
-         tn_bnd != NULL;
+         tn_bnd != nullptr;
          tn_bnd = cs_tree_node_get_next_of_name(tn_bnd)) {
       const char *zone_name = cs_tree_node_get_tag(tn_bnd, "label");
-      assert(zone_name != NULL);
+      assert(zone_name != nullptr);
 
       const cs_zone_t *z = cs_boundary_zone_by_name(zone_name);
       cs_syr_coupling_add_zone(syrthes_name, z);
@@ -247,7 +247,7 @@ cs_gui_syrthes_coupling(void)
   cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
 
   /* Prioritize BC declaration of SYRTHES */
-  if (tn_c != NULL) {
+  if (tn_c != nullptr) {
     _cs_gui_syrthes_coupling_bc();
   }
   else {

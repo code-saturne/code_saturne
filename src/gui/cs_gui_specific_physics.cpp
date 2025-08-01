@@ -136,7 +136,7 @@ _get_kinetic_model(cs_tree_node_t  *tn_sf,
 {
   const char *s = cs_tree_node_get_child_value_str(tn_sf, "kinetic_model");
 
-  if (s != NULL) {
+  if (s != nullptr) {
     if (!strcmp(s, "unused"))
       *model = 0;
     else if (!strcmp(s, "co2_ym_transport"))
@@ -166,7 +166,7 @@ _get_diameter_type(cs_tree_node_t  *tn)
 
   const char *type_s = cs_tree_node_get_child_value_str(tn, "diameter_type");
 
-  if (type_s == NULL) {
+  if (type_s == nullptr) {
     ichoice = 1;
   }
   else {
@@ -199,7 +199,7 @@ _get_solid_fuel_child_real(cs_tree_node_t  *tn,
 {
   const cs_real_t *v_r = cs_tree_node_get_child_values_real(tn, type);
 
-  if (v_r == NULL) {
+  if (v_r == nullptr) {
     const char *id = cs_tree_node_get_tag(tn, "fuel_id");
     bft_error(__FILE__, __LINE__, 0,
               _("Missing %s/%s node or value for fuel %s"),
@@ -228,17 +228,17 @@ _get_pci_type_and_value(cs_tree_node_t  *tn_coal,
   const char path0[] = "Heating_model";
   cs_tree_node_t *tn = cs_tree_node_get_child(tn_coal, path0);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     bft_error(__FILE__, __LINE__, 0, _("Missing %s child for node %s."),
               path0, tn_coal->name);
 
   const char *choice = cs_tree_node_get_tag(tn, "choice");
 
-  if (choice != NULL) {
+  if (choice != nullptr) {
 
     if (cs_gui_strcmp(choice, "LHV")) {
       const char *type_s = cs_tree_node_get_child_value_str(tn, "type");
-      if (type_s == NULL)
+      if (type_s == nullptr)
         ichoice = 1;
       else {
         if (cs_gui_strcmp(type_s, "dry_basis"))
@@ -255,7 +255,7 @@ _get_pci_type_and_value(cs_tree_node_t  *tn_coal,
     }
     else if (cs_gui_strcmp(choice, "HHV")) {
       const char *type_s = cs_tree_node_get_child_value_str(tn, "type");
-      if (type_s == NULL)
+      if (type_s == nullptr)
         ichoice = 4;
       else {
         if (cs_gui_strcmp(type_s, "dry_basis"))
@@ -305,13 +305,13 @@ _get_y1y2_coefficient_values(cs_tree_node_t  *tn_dv,
   const char path0[] = "stoichiometric_coefficient";
   cs_tree_node_t *tn = cs_tree_get_node(tn_dv, path0);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     bft_error(__FILE__, __LINE__, 0, _("Missing %s descendant for node %s."),
               path0, tn_dv->name);
 
   const char *type_s = cs_tree_node_get_tag(tn, "type");
 
-  if (type_s != NULL) {
+  if (type_s != nullptr) {
     if (cs_gui_strcmp(type_s, "automatic_CHONS"))
       ichoice = 0;
     else if (cs_gui_strcmp(type_s, "user_define"))
@@ -352,15 +352,15 @@ _get_cc_specie_value(cs_tree_node_t  *tn_cc,
 {
   cs_real_t retval = 0;
 
-  cs_tree_node_t *tn = NULL;
+  cs_tree_node_t *tn = nullptr;
   for (tn = cs_tree_node_get_child(tn_cc, "specie");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
     if (cs_gui_strcmp(cs_tree_node_get_tag(tn, "nature"), species))
       break;
   }
 
-  if (tn == NULL)
+  if (tn == nullptr)
     bft_error(__FILE__, __LINE__, 0, _("Missing %s specie child for node %s."),
               species, tn_cc->name);
 
@@ -387,15 +387,15 @@ _get_cc_reaction_order(cs_tree_node_t  *tn_cc,
 {
   int ichoice = 0;
 
-  cs_tree_node_t *tn = NULL;
+  cs_tree_node_t *tn = nullptr;
   for (tn = cs_tree_node_get_child(tn_cc, "specie");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
     if (cs_gui_strcmp(cs_tree_node_get_tag(tn, "nature"), species))
       break;
   }
 
-  if (tn == NULL)
+  if (tn == nullptr)
     bft_error(__FILE__, __LINE__, 0, _("Missing %s specie child for node %s."),
               species, tn_cc->name);
 
@@ -403,7 +403,7 @@ _get_cc_reaction_order(cs_tree_node_t  *tn_cc,
                          (cs_tree_node_get_child(tn, "order_of_reaction"),
                           "choice");
 
-  if (choice != NULL) {
+  if (choice != nullptr) {
     if (cs_gui_strcmp(choice, "0.5"))
       ichoice = 0;
     else if (cs_gui_strcmp(choice, "1"))
@@ -438,12 +438,12 @@ _get_oxidants_composition(cs_tree_node_t  *tn_oxi,
 
   ioxy = 0;
   for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_oxi, "oxidant");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn), ioxy++) {
 
     int _ioxy = ioxy;
     const int *v_i = cs_tree_node_get_child_values_int(tn, "ox_id");
-    if (v_i != NULL)
+    if (v_i != nullptr)
       _ioxy = v_i[0] - 1;
     if (_ioxy < 0 || _ioxy > 2)
       bft_error(__FILE__, __LINE__, 0,
@@ -471,7 +471,7 @@ _get_oxidant_type(cs_tree_node_t  *tn_oxi)
 
   const char *o_type = cs_tree_node_get_child_value_str(tn_oxi, "oxidant_type");
 
-  if (o_type != NULL) {
+  if (o_type != nullptr) {
     if (! strcmp(o_type, "volumic_percent"))
       ichoice = 0;
     else if (! strcmp(o_type, "molar"))
@@ -501,7 +501,7 @@ _get_absorption_coefficient(void)
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_ac);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     bft_error(__FILE__, __LINE__, 0, _("Missing tree node %s."),
               path_ac);
 
@@ -544,7 +544,7 @@ _gui_atmo_get_set_meteo_profile(void)
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_af);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     return;
 
   int is_meteo_file = 0;
@@ -560,7 +560,7 @@ _gui_atmo_get_set_meteo_profile(void)
     const char *cstr = cs_tree_node_get_child_value_str(tn, "meteo_data");
 
     /* Copy string */
-    if (cstr != NULL)
+    if (cstr != nullptr)
       cs_atmo_set_meteo_file_name(cstr);
 
   }
@@ -600,43 +600,43 @@ _gui_atmo_get_set_meteo_profile(void)
     const char *str_smin = cs_tree_node_get_child_value_str(tn, "start_min");
     const char *str_ssec = cs_tree_node_get_child_value_str(tn, "start_sec");
 
-    if (str_latitude != NULL)
+    if (str_latitude != nullptr)
       cs_glob_atmo_option->latitude = atof(str_latitude);
-    if (str_longitude != NULL)
+    if (str_longitude != nullptr)
       cs_glob_atmo_option->longitude = atof(str_longitude);
-    if (str_domain_orient != NULL)
+    if (str_domain_orient != nullptr)
       cs_glob_atmo_option->domain_orientation = atof(str_domain_orient);
-    if (str_wind_dir != NULL)
+    if (str_wind_dir != nullptr)
       cs_glob_atmo_option->meteo_angle = atof(str_wind_dir);
 
-    if (str_meteo_z0 != NULL)
+    if (str_meteo_z0 != nullptr)
       cs_glob_atmo_option->meteo_z0  = atof(str_meteo_z0);
-    if (str_meteo_uref != NULL)
+    if (str_meteo_uref != nullptr)
       cs_glob_atmo_option->meteo_uref  = atof(str_meteo_uref);
-    if (str_meteo_ustar != NULL)
+    if (str_meteo_ustar != nullptr)
       cs_glob_atmo_option->meteo_ustar0  = atof(str_meteo_ustar);
-    if (str_meteo_dlmo != NULL)
+    if (str_meteo_dlmo != nullptr)
       cs_glob_atmo_option->meteo_dlmo  = atof(str_meteo_dlmo);
-    if (str_meteo_zref != NULL)
+    if (str_meteo_zref != nullptr)
       cs_glob_atmo_option->meteo_zref  = atof(str_meteo_zref);
-    if (str_meteo_psea != NULL)
+    if (str_meteo_psea != nullptr)
       cs_glob_atmo_option->meteo_psea  = atof(str_meteo_psea);
-    if (str_meteo_t0 != NULL)
+    if (str_meteo_t0 != nullptr)
       cs_glob_atmo_option->meteo_t0  = atof(str_meteo_t0);
-    if (str_meteo_qw0 != NULL)
+    if (str_meteo_qw0 != nullptr)
       cs_glob_atmo_option->meteo_qw0  = atof(str_meteo_qw0);
-    if (str_meteo_qwstar != NULL)
+    if (str_meteo_qwstar != nullptr)
       cs_glob_atmo_option->meteo_qwstar  = atof(str_meteo_qwstar);
 
-    if(str_syear != NULL)
+    if(str_syear != nullptr)
       cs_glob_atmo_option->syear = atoi(str_syear);
-    if(str_sday != NULL)
+    if(str_sday != nullptr)
       cs_glob_atmo_option->squant = atoi(str_sday);
-    if(str_shour != NULL)
+    if(str_shour != nullptr)
       cs_glob_atmo_option->shour = atoi(str_shour);
-    if(str_smin != NULL)
+    if(str_smin != nullptr)
       cs_glob_atmo_option->smin = atoi(str_smin);
-    if(str_ssec != NULL)
+    if(str_ssec != nullptr)
       cs_glob_atmo_option->ssec = atof(str_ssec);
     /*TODO how to split which way profile definition we are using ? */
 
@@ -658,7 +658,7 @@ _get_active_thermophysical_model(char  **model_name,
 {
   int isactiv = 0;
 
-  if (*model_name != NULL && *model_value != NULL) {
+  if (*model_name != nullptr && *model_value != nullptr) {
     isactiv = 1;
     return isactiv;
   }
@@ -667,7 +667,7 @@ _get_active_thermophysical_model(char  **model_name,
     CS_FREE(*model_value);
   }
 
-  const char *model = NULL, *name = NULL;
+  const char *model = nullptr, *name = nullptr;
 
   const char *name_m[] = {"solid_fuels",
                           "joule_effect",
@@ -685,28 +685,28 @@ _get_active_thermophysical_model(char  **model_name,
 
   /* Loop on model nodes to compare to the listed ones */
 
-  if (tn0 != NULL) {
+  if (tn0 != nullptr) {
     for (cs_tree_node_t *tn = tn0->children;
-         tn != NULL && name == NULL;
+         tn != nullptr && name == nullptr;
          tn = tn->next) {
-      for (int j = 0; j < n_names_m && name == NULL; j++) {
+      for (int j = 0; j < n_names_m && name == nullptr; j++) {
         if (! strcmp(tn->name, name_m[j])) {
           model = cs_tree_node_get_tag(tn, "model");
-          if (model != NULL && !cs_gui_strcmp(model, "off"))
+          if (model != nullptr && !cs_gui_strcmp(model, "off"))
             name = name_m[j];
         }
       }
-      for (int j = 0; j < n_names_o && name == NULL; j++) {
+      for (int j = 0; j < n_names_o && name == nullptr; j++) {
         if (! strcmp(tn->name, name_o[j])) {
           model = cs_tree_node_get_tag(tn, "option");
-          if (model != NULL && !cs_gui_strcmp(model, "off"))
+          if (model != nullptr && !cs_gui_strcmp(model, "off"))
             name = name_o[j];
         }
       }
     }
   }
 
-  if (name != NULL) {
+  if (name != nullptr) {
     CS_MALLOC(*model_name, strlen(name)+1, char);
     strcpy(*model_name, name);
 
@@ -737,7 +737,7 @@ cs_gui_physical_model_select(void)
   /* Look for the active specific physics and give the value of the associated
      model attribute */
 
-  char *model_name = NULL, *model_value = NULL;
+  char *model_name = nullptr, *model_value = nullptr;
 
   isactiv = _get_active_thermophysical_model(&model_name, &model_value);
 
@@ -761,7 +761,7 @@ cs_gui_physical_model_select(void)
          which has another other role */
       const char *model = cs_tree_node_get_tag(tn, "option");
 
-      if (model != NULL && !cs_gui_strcmp(model, "off")) {
+      if (model != nullptr && !cs_gui_strcmp(model, "off")) {
 
         if (cs_gui_strcmp(model_value, "adiabatic"))
           cs_combustion_gas_set_model(CS_COMBUSTION_3PT_ADIABATIC);
@@ -805,7 +805,7 @@ cs_gui_physical_model_select(void)
         const char *model_soot = cs_tree_node_get_child_value_str(tn_soot,
                                                                   "model");
 
-        if (model_soot != NULL && !cs_gui_strcmp(model_soot, "off")) {
+        if (model_soot != nullptr && !cs_gui_strcmp(model_soot, "off")) {
           if (cs_gui_strcmp(model_soot, "constant_soot_yield")) {
             cm->isoot = 0;
             cs_gui_node_get_child_real(tn_soot, "soot_density",
@@ -826,7 +826,7 @@ cs_gui_physical_model_select(void)
         /* Read name of thermochemistry data file */
 
         const char *f_name = cs_tree_node_get_child_value_str(tn, "data_file");
-        if (f_name != NULL)
+        if (f_name != nullptr)
           cs_combustion_gas_set_thermochemical_data_file(f_name);
 
       }
@@ -940,7 +940,7 @@ void
 cs_gui_coal_model(void)
 {
   cs_coal_model_t *cm = cs_glob_coal_model;
-  assert(cm != NULL);
+  assert(cm != nullptr);
 
   /* Read gas mix absorption coefficient */
   if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE)
@@ -951,7 +951,7 @@ cs_gui_coal_model(void)
   const char path_sf[] = "thermophysical_models/solid_fuels";
   cs_tree_node_t *tn_sf = cs_tree_get_node(cs_glob_tree, path_sf);
 
-  if (tn_sf == NULL)
+  if (tn_sf == nullptr)
     bft_error(__FILE__, __LINE__, 0, _("Missing tree node %s."),
               path_sf);
 
@@ -981,7 +981,7 @@ cs_gui_coal_model(void)
   int icha = 0;
 
   for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_sf, "solid_fuel");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn), icha++) {
 
     int itypdp = _get_diameter_type(tn);
@@ -1010,7 +1010,7 @@ cs_gui_coal_model(void)
 
       int icla = 0;
       for (cs_tree_node_t *tn_d = cs_tree_get_node(tn, "class/diameter");
-           tn_d != NULL;
+           tn_d != nullptr;
            tn_d = cs_tree_node_get_next_of_name(tn_d), icla++)
         cs_gui_node_get_real(tn_d, &(cm->diam20[icla + iclag]));
 
@@ -1032,7 +1032,7 @@ cs_gui_coal_model(void)
 
       int ii = 0;
       for (cs_tree_node_t *tn_r = cs_tree_get_node(tn, "refusal");
-           tn_r != NULL;
+           tn_r != nullptr;
            tn_r = cs_tree_node_get_next_of_name(tn_r), ii++) {
 
         cs_real_t _dprefus = -1;
@@ -1046,7 +1046,7 @@ cs_gui_coal_model(void)
 
       ii = 0;
       for (cs_tree_node_t *tn_m = cs_tree_get_node(tn, "class/mass_percent");
-           tn_m != NULL;
+           tn_m != nullptr;
            tn_m = cs_tree_node_get_next_of_name(tn_m), ii++)
         cs_gui_node_get_real(tn_m, &(pourc[ii]));
 
@@ -1170,7 +1170,7 @@ cs_gui_coal_model(void)
     const char path_dv[] = "devolatilisation_parameters";
     cs_tree_node_t *tn_dv = cs_tree_get_node(tn, path_dv);
 
-    if (tn_dv == NULL)
+    if (tn_dv == nullptr)
       bft_error(__FILE__, __LINE__, 0, _("Missing %s child for node %s."),
                 path_dv, tn->name);
 
@@ -1200,7 +1200,7 @@ cs_gui_coal_model(void)
     const char path_cc[] = "char_combustion";
     cs_tree_node_t *tn_cc = cs_tree_get_node(tn, path_cc);
 
-    if (tn_cc == NULL)
+    if (tn_cc == nullptr)
       bft_error(__FILE__, __LINE__, 0, _("Missing %s child for node %s."),
                 path_cc, tn->name);
 
@@ -1239,7 +1239,7 @@ cs_gui_coal_model(void)
       const char path_nox[] = "nox_formation";
       cs_tree_node_t *tn_nox = cs_tree_get_node(tn, path_nox);
 
-      if (tn_nox == NULL)
+      if (tn_nox == nullptr)
         bft_error(__FILE__, __LINE__, 0, _("Missing %s child for node %s."),
                   path_nox, tn->name);
 
@@ -1329,7 +1329,7 @@ cs_gui_coal_model(void)
       = cs_tree_get_node(cs_glob_tree,
                          "numerical_parameters/density_relaxation");
 
-    cs_gui_node_get_real(tn, &(cm->srrom)); // inactive line if tn == NULL
+    cs_gui_node_get_real(tn, &(cm->srrom)); // inactive line if tn == nullptr
   }
 }
 
@@ -1341,7 +1341,7 @@ void
 cs_gui_combustion_gas_model(void)
 {
   cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-  assert(cm != NULL);
+  assert(cm != nullptr);
 
   int model_type = cm->type / 100;
 
@@ -1352,7 +1352,7 @@ cs_gui_combustion_gas_model(void)
       = cs_tree_get_node(cs_glob_tree,
                          "numerical_parameters/density_relaxation");
 
-    cs_gui_node_get_real(tn, &(cm->srrom)); // inactive line if tn == NULL
+    cs_gui_node_get_real(tn, &(cm->srrom)); // inactive line if tn == nullptr
 
 #if _XML_DEBUG_
     bft_printf("==> %s\n", __func__);
@@ -1369,7 +1369,7 @@ void
 cs_gui_combustion_gas_model_temperatures(void)
 {
   cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
-  assert(cm != NULL);
+  assert(cm != nullptr);
 
   double toxy = cm->tinoxy, tfuel = cm->tinfue;
 
@@ -1405,7 +1405,7 @@ cs_gui_elec_model(void)
   /* Model parameters */
 
   tn0 = cs_tree_get_node(cs_glob_tree, "thermophysical_models/joule_effect");
-  if (tn0 == NULL)
+  if (tn0 == nullptr)
     return;
 
   cs_gui_node_get_child_status_int(tn0, "variable_scaling",
@@ -1479,7 +1479,7 @@ cs_gui_elec_model_rec(void)
   /* build list of interior faces */
 
   cs_lnum_t   n_selected_faces = 0;
-  cs_lnum_t  *selected_faces = NULL;
+  cs_lnum_t  *selected_faces = nullptr;
 
   char crit[128] = "";
 
@@ -1515,12 +1515,12 @@ cs_gui_elec_model_rec(void)
 const char *
 cs_gui_get_thermophysical_model(const char  *model_thermo)
 {
-  const char *retval = NULL;
+  const char *retval = nullptr;
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "thermophysical_models");
   tn = cs_tree_node_get_child(tn, model_thermo);
 
-  if (tn != NULL) {
+  if (tn != nullptr) {
     if (! strcmp(model_thermo, "gas_combustion"))
       retval = cs_tree_node_get_tag(tn, "option");
     else
@@ -1581,13 +1581,13 @@ cs_gui_gwf_model(int  *permeability,
   const int key_decay = cs_field_key_id("fo_decay_rate");
 
   for (cs_tree_node_t *tn = cs_tree_get_node(tn0, "scalar");
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char *name = cs_gui_node_get_tag(tn, "name");
 
     cs_field_t *f = cs_field_by_name_try(name);
-    if (f == NULL) continue;
+    if (f == nullptr) continue;
 
     if (    (f->type & CS_FIELD_VARIABLE)
          && (f->type & CS_FIELD_USER)) {

@@ -110,7 +110,7 @@ typedef struct {
  * Private global variables for boundary conditions
  *----------------------------------------------------------------------------*/
 
-static cs_radiative_transfer_boundary_t  *_boundary = NULL;
+static cs_radiative_transfer_boundary_t  *_boundary = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -143,7 +143,7 @@ _radiative_transfer_char_post(cs_tree_node_t  *tn_rt,
   cs_gui_node_get_child_status_int(tn, "listing_printing", f_log);
   cs_gui_node_get_child_status_int(tn, "postprocessing_recording", f_post_vis);
 
-  if (tn != NULL && *f_post_vis == -1) /* align with defaults in GUI */
+  if (tn != nullptr && *f_post_vis == -1) /* align with defaults in GUI */
     *f_post_vis = 1;
 
   return label;
@@ -164,9 +164,9 @@ _radiative_transfer_type(cs_tree_node_t  *tn_rt,
                          int             *keyword)
 {
   cs_tree_node_t *tn = cs_tree_get_node(tn_rt, param);
-  const char *type = (tn != NULL) ? cs_gui_node_get_tag(tn, "type") : NULL;
+  const char *type = (tn != nullptr) ? cs_gui_node_get_tag(tn, "type") : nullptr;
 
-  if (type != NULL) {
+  if (type != nullptr) {
     if (cs_gui_strcmp(type, "constant"))
       *keyword = 0;
     else if (cs_gui_strcmp(type, "variable"))
@@ -234,7 +234,7 @@ _radiative_boundary_type(cs_tree_node_t  *tn_bc)
 void
 cs_gui_radiative_transfers_finalize(void)
 {
-  if (_boundary != NULL) {
+  if (_boundary != nullptr) {
     int zones = _boundary->n_zones;
     for (int i = 0; i < zones; i++) {
       CS_FREE(_boundary->label[i]);
@@ -414,7 +414,7 @@ cs_gui_radiative_transfer_postprocess(void)
     for (int i = 0; i < n_rad_b_f; i++) {
 
       cs_field_t *f = b_rad_f[i];
-      if (f == NULL)
+      if (f == nullptr)
         continue;
 
       int f_post_vis =  0;
@@ -463,7 +463,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
   /* First call only: memory allocation */
 
-  if (_boundary == NULL) {
+  if (_boundary == nullptr) {
 
     int n_zones = cs_tree_get_node_count(cs_glob_tree,
                                          "boundary_conditions/boundary");
@@ -486,7 +486,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
     int z_id = 0;
 
     for (cs_tree_node_t *tn = tn_b0;
-         tn != NULL;
+         tn != nullptr;
          tn = cs_tree_node_get_next_of_name(tn), z_id++) {
 
       /* nature, label and description (color or group)
@@ -535,12 +535,12 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
     }  /* for izones */
 
-  }  /* if (_boundary == NULL)*/
+  }  /* if (_boundary == nullptr)*/
 
   int z_id = 0;
 
   for (cs_tree_node_t *tn = tn_b0;
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn), z_id++) {
 
     const char *label = cs_tree_node_get_tag(tn, "label");

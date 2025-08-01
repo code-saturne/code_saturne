@@ -144,7 +144,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-cs_turbomachinery_t  *_turbomachinery = NULL;
+cs_turbomachinery_t  *_turbomachinery = nullptr;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -197,7 +197,7 @@ _post_error_faces_select(void         *input,
   cs_lnum_t face_id;
 
   cs_lnum_t _n_faces = 0;
-  cs_lnum_t *_face_ids = NULL;
+  cs_lnum_t *_face_ids = nullptr;
 
   const cs_lnum_t  *count = reinterpret_cast<cs_lnum_t *>(input);
 
@@ -242,7 +242,7 @@ _turbomachinery_coupling_tag(void            *context,
 
   /* Tag elements (boundary faces) */
 
-  if (mesh != NULL) {
+  if (mesh != nullptr) {
 
     cs_lnum_t n_elts = fvm_nodal_get_n_entities(mesh, 3);
 
@@ -269,7 +269,7 @@ _turbomachinery_coupling_tag(void            *context,
 
   /* Tag vertices */
 
-  if (point_list != NULL) {
+  if (point_list != nullptr) {
     for (cs_lnum_t i = 0; i < n_points; i++) {
       cs_lnum_t f_id = point_list[i] - point_list_base;
       cs_lnum_t c_id = m->b_face_cells[f_id];
@@ -291,12 +291,12 @@ _turbomachinery_coupling_tag(void            *context,
 static cs_turbomachinery_t *
 _turbomachinery_create(void)
 {
-  cs_turbomachinery_t  *tbm = NULL;
+  cs_turbomachinery_t  *tbm = nullptr;
 
   CS_MALLOC(tbm, 1, cs_turbomachinery_t);
 
   tbm->n_rotors = 0;
-  tbm->rotor_cells_c = NULL;
+  tbm->rotor_cells_c = nullptr;
 
   CS_MALLOC(tbm->rotation, 1, cs_rotation_t); /* Null rotation at id 0 */
   cs_rotation_t *r = tbm->rotation;
@@ -315,9 +315,9 @@ _turbomachinery_create(void)
 
   tbm->reference_mesh = cs_mesh_create();
   tbm->n_b_faces_ref = -1;
-  tbm->coftur = NULL;
-  tbm->hfltur = NULL;
-  tbm->cell_rotor_num = NULL;
+  tbm->coftur = nullptr;
+  tbm->hfltur = nullptr;
+  tbm->cell_rotor_num = nullptr;
   tbm->model = CS_TURBOMACHINERY_NONE;
   tbm->n_couplings = 0;
 
@@ -540,28 +540,28 @@ _copy_mesh(const cs_mesh_t  *mesh,
 
   /* Global numbering */
 
-  if (mesh->global_cell_num != NULL) {
+  if (mesh->global_cell_num != nullptr) {
     CS_MALLOC(mesh_copy->global_cell_num, mesh->n_cells, cs_gnum_t);
     memcpy(mesh_copy->global_cell_num,
            mesh->global_cell_num,
            mesh->n_cells*sizeof(cs_gnum_t));
   }
 
-  if (mesh->global_i_face_num != NULL) {
+  if (mesh->global_i_face_num != nullptr) {
     CS_MALLOC(mesh_copy->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
     memcpy(mesh_copy->global_i_face_num,
            mesh->global_i_face_num,
            mesh->n_i_faces*sizeof(cs_gnum_t));
   }
 
-  if (mesh->global_b_face_num != NULL) {
+  if (mesh->global_b_face_num != nullptr) {
     CS_MALLOC(mesh_copy->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
     memcpy(mesh_copy->global_b_face_num,
            mesh->global_b_face_num,
            mesh->n_b_faces*sizeof(cs_gnum_t));
   }
 
-  if (mesh->global_vtx_num != NULL) {
+  if (mesh->global_vtx_num != nullptr) {
     CS_MALLOC(mesh_copy->global_vtx_num, mesh->n_vertices, cs_gnum_t);
     memcpy(mesh_copy->global_vtx_num,
            mesh->global_vtx_num,
@@ -630,12 +630,12 @@ _copy_mesh(const cs_mesh_t  *mesh,
            mesh->n_b_faces*sizeof(int));
   }
 
-  if (mesh->i_face_r_gen != NULL) {
+  if (mesh->i_face_r_gen != nullptr) {
     CS_MALLOC(mesh_copy->i_face_r_gen, mesh->n_i_faces, char);
     memcpy(mesh_copy->i_face_r_gen, mesh->i_face_r_gen,
            mesh->n_i_faces);
   }
-  if (mesh->vtx_r_gen != NULL) {
+  if (mesh->vtx_r_gen != nullptr) {
     CS_MALLOC(mesh_copy->vtx_r_gen, mesh->n_vertices, char);
     memcpy(mesh_copy->vtx_r_gen, mesh->vtx_r_gen, mesh->n_vertices);
   }
@@ -698,7 +698,7 @@ _update_geometry(cs_mesh_t  *mesh,
 
   cs_lnum_t  f_id, v_id;
 
-  cs_lnum_t  *vtx_rotor_num = NULL;
+  cs_lnum_t  *vtx_rotor_num = nullptr;
 
   const int  *cell_flag = tbm->cell_rotor_num;
 
@@ -811,11 +811,11 @@ static void
 _select_rotor_cells(cs_turbomachinery_t  *tbm)
 {
   cs_lnum_t _n_cells = 0;
-  cs_lnum_t *_cell_list = NULL;
+  cs_lnum_t *_cell_list = nullptr;
 
   cs_mesh_t *m = cs_glob_mesh;
 
-  assert(tbm->rotor_cells_c != NULL);
+  assert(tbm->rotor_cells_c != nullptr);
 
   CS_REALLOC(tbm->cell_rotor_num, m->n_cells_with_ghosts, int);
 
@@ -844,7 +844,7 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
 
   CS_FREE(_cell_list);
 
-  if (m->halo != NULL)
+  if (m->halo != nullptr)
     cs_halo_sync_untyped(m->halo,
                          CS_HALO_EXTENDED,
                          sizeof(int),
@@ -941,11 +941,11 @@ _update_mesh(bool     restart_mode,
   /* Cell and boundary face numberings can be moved from old mesh
      to new one, as the corresponding parts of the mesh should not change */
 
-  cs_numbering_t *cell_numbering = NULL;
+  cs_numbering_t *cell_numbering = nullptr;
 
   if (restart_mode == false) {
     cell_numbering = cs_glob_mesh->cell_numbering;
-    cs_glob_mesh->cell_numbering = NULL;
+    cs_glob_mesh->cell_numbering = nullptr;
   }
 
   /* Destroy previous global mesh and related entities */
@@ -1036,9 +1036,9 @@ _update_mesh(bool     restart_mode,
           cs_post_init_error_writer();
           cs_post_define_surface_mesh_by_func(mesh_id,
                                               _("Added boundary faces"),
-                                              NULL,
+                                              nullptr,
                                               _post_error_faces_select,
-                                              NULL,
+                                              nullptr,
                                               b_face_count,
                                               false, /* time varying */
                                               true,  /* add groups if present */
@@ -1046,7 +1046,7 @@ _update_mesh(bool     restart_mode,
                                               1,
                                               writer_ids);
           cs_post_activate_writer(writer_id, true);
-          cs_post_write_meshes(NULL);
+          cs_post_write_meshes(nullptr);
           bft_error(__FILE__, __LINE__, 0,
                     _(join_err_fmt),
                     (unsigned long long)n_g_b_faces_ref,
@@ -1077,9 +1077,9 @@ _update_mesh(bool     restart_mode,
                                  cs_glob_mesh_builder);
 
     if (cs_file_isreg("restart/mesh.csm"))
-      cs_preprocessor_data_add_file("restart/mesh.csm", 0, NULL, NULL);
+      cs_preprocessor_data_add_file("restart/mesh.csm", 0, nullptr, nullptr);
     else
-      cs_preprocessor_data_add_file("restart/mesh", 0, NULL, NULL);
+      cs_preprocessor_data_add_file("restart/mesh", 0, nullptr, nullptr);
 
     cs_preprocessor_data_read_headers(cs_glob_mesh,
                                       cs_glob_mesh_builder,
@@ -1170,7 +1170,7 @@ _update_mesh(bool     restart_mode,
 
   /* Update rotor cells flag array in case of parallelism and/or periodicity */
 
-  if (cs_glob_mesh->halo != NULL) {
+  if (cs_glob_mesh->halo != nullptr) {
 
     const cs_mesh_t *m = cs_glob_mesh;
     CS_REALLOC(tbm->cell_rotor_num,
@@ -1205,7 +1205,7 @@ _update_mesh(bool     restart_mode,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -1234,7 +1234,7 @@ _relative_pressure_f(int               location_id,
   const cs_real_t *cvar_pr = cs_field_by_name("pressure")->val;
   const cs_real_t *cpro_rho = cs_field_by_name("density")->val;
 
-  if (elt_ids != NULL) {
+  if (elt_ids != nullptr) {
     for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
       cs_lnum_t i = elt_ids[idx];
       int r_num = tbm->cell_rotor_num[i];
@@ -1270,7 +1270,7 @@ _relative_pressure_f(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -1299,7 +1299,7 @@ _relative_velocity_f(int               location_id,
   const cs_real_3_t *cvar_vel
     = (const cs_real_3_t *)cs_field_by_name("velocity")->val;
 
-  if (elt_ids != NULL) {
+  if (elt_ids != nullptr) {
     for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
       cs_lnum_t i = elt_ids[idx];
       int r_num = tbm->cell_rotor_num[i];
@@ -1345,7 +1345,7 @@ _relative_velocity_f(int               location_id,
 void
 cs_f_map_turbomachinery_model(int  *iturbo)
 {
-  if (_turbomachinery != NULL)
+  if (_turbomachinery != nullptr)
     *iturbo = _turbomachinery->model;
   else
     *iturbo = CS_TURBOMACHINERY_NONE;
@@ -1371,12 +1371,12 @@ void
 cs_turbomachinery_set_model(cs_turbomachinery_model_t  model)
 {
   if (   model == CS_TURBOMACHINERY_NONE
-      && _turbomachinery != NULL) {
+      && _turbomachinery != nullptr) {
     cs_turbomachinery_finalize();
     return;
   }
 
-  else if (_turbomachinery == NULL)
+  else if (_turbomachinery == nullptr)
     _turbomachinery = _turbomachinery_create();
 
   _turbomachinery->model = model;
@@ -1391,7 +1391,7 @@ cs_turbomachinery_set_model(cs_turbomachinery_model_t  model)
 cs_turbomachinery_model_t
 cs_turbomachinery_get_model(void)
 {
-  if (_turbomachinery == NULL)
+  if (_turbomachinery == nullptr)
    return CS_TURBOMACHINERY_NONE;
   else
     return _turbomachinery->model;
@@ -1412,7 +1412,7 @@ cs_turbomachinery_get_n_couplings(void)
 {
   int retval = 0;
 
-  if (_turbomachinery != NULL)
+  if (_turbomachinery != nullptr)
     retval = _turbomachinery->n_couplings;
 
   return retval;
@@ -1436,7 +1436,7 @@ cs_turbomachinery_add_rotor(const char    *cell_criteria,
                             const double   rotation_invariant[3])
 {
   cs_turbomachinery_t *tbm = _turbomachinery;
-  if (tbm == NULL)
+  if (tbm == nullptr)
     return;
 
   const double *v = rotation_axis;
@@ -1490,7 +1490,7 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
                      fraction,
                      plane,
                      FVM_PERIODICITY_NULL,
-                     NULL,
+                     nullptr,
                      verbosity,
                      visualization,
                      false);
@@ -1500,7 +1500,7 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
 
   /* Set mesh modification type */
 
-  if (_turbomachinery != NULL) {
+  if (_turbomachinery != nullptr) {
     if (_turbomachinery->model == CS_TURBOMACHINERY_TRANSIENT) {
       cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_CONNECT;
       _turbomachinery->reference_mesh->time_dep = CS_MESH_TRANSIENT_CONNECT;
@@ -1530,8 +1530,8 @@ cs_turbomachinery_coupling_add(const char  *sel_criteria,
   cs_sat_coupling_add_internal(_turbomachinery_coupling_tag,
                                _turbomachinery,
                                sel_criteria,
-                               NULL,
-                               NULL,
+                               nullptr,
+                               nullptr,
                                "all[]",
                                tolerance,
                                0, /* reverse */
@@ -1539,7 +1539,7 @@ cs_turbomachinery_coupling_add(const char  *sel_criteria,
 
   _turbomachinery->n_couplings += 1;
 
-  if (_turbomachinery != NULL) {
+  if (_turbomachinery != nullptr) {
     if (   _turbomachinery->model == CS_TURBOMACHINERY_TRANSIENT
         && cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_COORDS)
       cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_COORDS;
@@ -1599,7 +1599,7 @@ cs_turbomachinery_define(void)
   cs_gui_turbomachinery();
   cs_user_turbomachinery();
 
-  if (_turbomachinery == NULL)
+  if (_turbomachinery == nullptr)
     return;
 
   cs_turbomachinery_t *tbm = _turbomachinery;
@@ -1626,7 +1626,7 @@ cs_turbomachinery_define(void)
 void
 cs_turbomachinery_initialize(void)
 {
-  if (_turbomachinery == NULL)
+  if (_turbomachinery == nullptr)
     return;
 
   cs_turbomachinery_t *tbm = _turbomachinery;
@@ -1642,7 +1642,7 @@ cs_turbomachinery_initialize(void)
      first remove the boundary face numbering, as it will need to be
      rebuilt after the first joining */
 
-  if (cs_glob_mesh->b_face_numbering != NULL && cs_glob_n_joinings > 0)
+  if (cs_glob_mesh->b_face_numbering != nullptr && cs_glob_n_joinings > 0)
     cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
 
   _copy_mesh(cs_glob_mesh, tbm->reference_mesh);
@@ -1675,7 +1675,7 @@ cs_turbomachinery_initialize(void)
 
   if (tbm->model == CS_TURBOMACHINERY_FROZEN) {
     cs_mesh_destroy(tbm->reference_mesh);
-    tbm->reference_mesh = NULL;
+    tbm->reference_mesh = nullptr;
   }
 
   /* Set global rotations pointer */
@@ -1692,7 +1692,7 @@ cs_turbomachinery_initialize(void)
 void
 cs_turbomachinery_finalize(void)
 {
-  if (_turbomachinery != NULL) {
+  if (_turbomachinery != nullptr) {
 
     cs_turbomachinery_t *tbm = _turbomachinery;
 
@@ -1704,14 +1704,14 @@ cs_turbomachinery_finalize(void)
 
     CS_FREE(tbm->cell_rotor_num);
 
-    if (tbm->reference_mesh != NULL)
+    if (tbm->reference_mesh != nullptr)
       cs_mesh_destroy(tbm->reference_mesh);
 
     CS_FREE(tbm->coftur);
     CS_FREE(tbm->hfltur);
 
     /* Unset global rotations pointer for safety */
-    cs_glob_rotation = NULL;
+    cs_glob_rotation = nullptr;
   }
 
   CS_FREE(_turbomachinery);
@@ -1769,7 +1769,7 @@ cs_turbomachinery_resize_cell_fields(void)
 
         CS_REALLOC(f->vals[kk], _n_cells*f->dim, cs_real_t);
 
-        if (halo != NULL) {
+        if (halo != nullptr) {
 
           cs_halo_sync_untyped(halo,
                                CS_HALO_EXTENDED,
@@ -1787,11 +1787,11 @@ cs_turbomachinery_resize_cell_fields(void)
       if (f->n_time_vals > 1)
         f->val_pre = f->vals[1];
 
-      if (f->grad != NULL) {
+      if (f->grad != nullptr) {
 
         CS_REALLOC(f->grad, _n_cells*f->dim*3, cs_real_t);
 
-        if (halo != NULL) {
+        if (halo != nullptr) {
           cs_halo_sync_var_strided(halo,
                                    CS_HALO_EXTENDED,
                                    f->grad,
@@ -1853,7 +1853,7 @@ cs_turbomachinery_n_rotors(void)
 {
   int retval = 1;
 
-  if (_turbomachinery != NULL)
+  if (_turbomachinery != nullptr)
     retval = _turbomachinery->n_rotors;
 
   return retval;
@@ -2038,7 +2038,7 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
   /* Specific handling of Reynolds stresses */
 
   cs_field_t  *frij = cs_field_by_name("rij");
-  if (frij != NULL) {
+  if (frij != nullptr) {
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(frij->location_id);
     cs_lnum_t _n_elts = n_elts[2];
     cs_real_6_t *cvar_r = (cs_real_6_t *)(frij->val);
@@ -2095,7 +2095,7 @@ cs_turbomachinery_restart_read(cs_restart_t  *r)
 {
   cs_turbomachinery_t *tbm = _turbomachinery;
 
-  if (tbm == NULL)
+  if (tbm == nullptr)
     return;
 
   cs_real_t *t_angle;
@@ -2141,7 +2141,7 @@ cs_turbomachinery_restart_write(cs_restart_t  *r)
 {
   const cs_turbomachinery_t *tbm = _turbomachinery;
 
-  if (tbm == NULL)
+  if (tbm == nullptr)
     return;
 
   if (tbm->model == CS_TURBOMACHINERY_NONE)
@@ -2176,7 +2176,7 @@ cs_turbomachinery_restart_write(cs_restart_t  *r)
 void
 cs_turbomachinery_define_functions(void)
 {
-  if (_turbomachinery == NULL)
+  if (_turbomachinery == nullptr)
     return;
 
   /* Relative pressure */
@@ -2189,7 +2189,7 @@ cs_turbomachinery_define_functions(void)
                                    true,
                                    CS_REAL_TYPE,
                                    _relative_pressure_f,
-                                   NULL);
+                                   nullptr);
 
     const char label[] = "Rel Pressure";
     CS_MALLOC(f->label, strlen(label) + 1, char);
@@ -2209,7 +2209,7 @@ cs_turbomachinery_define_functions(void)
                                    true,
                                    CS_REAL_TYPE,
                                    _relative_velocity_f,
-                                   NULL);
+                                   nullptr);
 
     const char label[] = "Rel Velocity";
     CS_MALLOC(f->label, strlen(label) + 1, char);

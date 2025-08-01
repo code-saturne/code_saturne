@@ -97,13 +97,13 @@ _get_periodicity_translation(cs_tree_node_t  *node,
 {
   cs_tree_node_t  *tn = cs_tree_node_get_child(node, "translation");
 
-  if (tn != NULL) {
+  if (tn != nullptr) {
 
     const char *names[] = {"translation_x", "translation_y", "translation_z"};
 
     for (int i = 0; i < 3; i++) {
       const cs_real_t *v = cs_tree_node_get_child_values_real(tn, names[i]);
-      if (v != NULL)
+      if (v != nullptr)
         trans[i] = v[0];
     }
 
@@ -134,14 +134,14 @@ _get_periodicity_rotation(cs_tree_node_t  *node,
 {
   cs_tree_node_t  *tn = cs_tree_node_get_child(node, "rotation");
 
-  if (tn != NULL) {
+  if (tn != nullptr) {
 
     const cs_real_t *v;
 
     /* Angle */
 
     v = cs_tree_node_get_child_values_real(tn, "angle");
-    if (v != NULL)
+    if (v != nullptr)
       *angle =  v[0];
     else
       *angle = 0.0;
@@ -152,7 +152,7 @@ _get_periodicity_rotation(cs_tree_node_t  *node,
 
     for (int i = 0; i < 3; i++) {
       v = cs_tree_node_get_child_values_real(tn, a_names[i]);
-      if (v != NULL)
+      if (v != nullptr)
         axis[i] = v[0];
       else
         axis[i] = 0;
@@ -164,7 +164,7 @@ _get_periodicity_rotation(cs_tree_node_t  *node,
 
     for (int i = 0; i < 3; i++) {
       v = cs_tree_node_get_child_values_real(tn, i_names[i]);
-      if (v != NULL)
+      if (v != nullptr)
         invariant[i] = v[0];
       else
         invariant[i] = 0;
@@ -199,7 +199,7 @@ _get_periodicity_mixed(cs_tree_node_t  *node,
 {
   cs_tree_node_t  *tn = cs_tree_node_get_child(node, "mixed");
 
-  if (tn != NULL) {
+  if (tn != nullptr) {
 
     char c_name[] = "matrix_11";
 
@@ -213,7 +213,7 @@ _get_periodicity_mixed(cs_tree_node_t  *node,
         c_name[coeff_id + 1] = id_str[j];
 
         const cs_real_t *v = cs_tree_node_get_child_values_real(tn, c_name);
-        if (v != NULL)
+        if (v != nullptr)
           matrix[i][j] = v[0];
         else {
           if (i != j)
@@ -250,9 +250,9 @@ _get_cartesian_parameters(int        idim,
   cs_tree_node_t *tn0
     = cs_tree_get_node(cs_glob_tree,"solution_domain/mesh_cartesian");
 
-  if (tn0 != NULL) {
+  if (tn0 != nullptr) {
 
-    cs_tree_node_t *tn = NULL;
+    cs_tree_node_t *tn = nullptr;
     if (idim == 0)
       tn = cs_tree_node_get_child(tn0, "x_direction");
     else if (idim == 1)
@@ -298,8 +298,8 @@ cs_gui_mesh_restart_mode(void)
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
 
-  if (tn != NULL) {
-    if (tn->value != NULL) {
+  if (tn != nullptr) {
+    if (tn->value != nullptr) {
       cs_preprocessor_data_set_restart_mode(CS_PREPROCESSOR_DATA_RESTART_NONE);
       return;
     }
@@ -307,7 +307,7 @@ cs_gui_mesh_restart_mode(void)
 
   tn = cs_tree_get_node(cs_glob_tree, path1);
   const bool *v = cs_tree_node_get_values_bool(tn);
-  if (v != NULL) {
+  if (v != nullptr) {
     if (v[0] == true) {
       cs_preprocessor_data_set_restart_mode
         (CS_PREPROCESSOR_DATA_RESTART_AND_MODIFY);
@@ -331,7 +331,7 @@ cs_gui_mesh_warping(void)
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     return;
 
   int cut_warped_faces = false;
@@ -341,7 +341,7 @@ cs_gui_mesh_warping(void)
 
     const cs_real_t *v_r = cs_tree_node_get_child_values_real(tn,
                                                               "warp_angle_max");
-    double max_warp_angle = (v_r != NULL) ? v_r[0] : -1;
+    double max_warp_angle = (v_r != nullptr) ? v_r[0] : -1;
 
     /* Apply warp angle options now */
 
@@ -365,33 +365,33 @@ cs_gui_mesh_warping(void)
 void
 cs_gui_mesh_define_joinings(void)
 {
-  const int *v_i = NULL;
-  const cs_real_t *v_r = NULL;
+  const int *v_i = nullptr;
+  const cs_real_t *v_r = nullptr;
 
   /* Loop on joining definitions */
 
   const char path_j[] = "solution_domain/joining/face_joining";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_j);
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char _default_criteria[] = "all[]";
 
     const char *selector = cs_tree_node_get_child_value_str(tn, "selector");
-    if (selector == NULL) selector = _default_criteria;
+    if (selector == nullptr) selector = _default_criteria;
 
     v_r = cs_tree_node_get_child_values_real(tn, "fraction");
-    double fraction = (v_r != NULL) ? v_r[0] : 0.1;
+    double fraction = (v_r != nullptr) ? v_r[0] : 0.1;
 
     v_r = cs_tree_node_get_child_values_real(tn, "plane");
-    double plane = (v_r != NULL) ? v_r[0] : 25.0;
+    double plane = (v_r != nullptr) ? v_r[0] : 25.0;
 
     v_i = cs_tree_node_get_child_values_int(tn, "verbosity");
-    int verbosity = (v_i != NULL) ? v_i[0] : 1;
+    int verbosity = (v_i != nullptr) ? v_i[0] : 1;
 
     v_i = cs_tree_node_get_child_values_int(tn, "visualization");
-    int visualization = (v_i != NULL) ? v_i[0] : 1;
+    int visualization = (v_i != nullptr) ? v_i[0] : 1;
 
     cs_join_add(selector,
                 fraction,
@@ -417,8 +417,8 @@ cs_gui_mesh_define_joinings(void)
 void
 cs_gui_mesh_define_periodicities(void)
 {
-  const int *v_i = NULL;
-  const cs_real_t *v_r = NULL;
+  const int *v_i = nullptr;
+  const cs_real_t *v_r = nullptr;
 
   /* Loop on periodicity definitions */
 
@@ -427,7 +427,7 @@ cs_gui_mesh_define_periodicities(void)
   const char path_p[] = "solution_domain//periodicity/face_periodicity";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_p);
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn), perio_id++) {
 
     double angle, trans[3], axis[3], invariant[3], matrix[3][4];
@@ -436,7 +436,7 @@ cs_gui_mesh_define_periodicities(void)
 
     const char *mode = cs_tree_node_get_tag(tn, "mode");
 
-    if (mode == NULL)
+    if (mode == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _("\"%s\" node %d is missing a \"%s\" tag/child."),
                 tn->name, perio_id, "mode");
@@ -444,19 +444,19 @@ cs_gui_mesh_define_periodicities(void)
     const char _default_criteria[] = "all[]";
 
     const char *selector = cs_tree_node_get_child_value_str(tn, "selector");
-    if (selector == NULL) selector = _default_criteria;
+    if (selector == nullptr) selector = _default_criteria;
 
     v_r = cs_tree_node_get_child_values_real(tn, "fraction");
-    double fraction = (v_r != NULL) ? v_r[0] : 0.1;
+    double fraction = (v_r != nullptr) ? v_r[0] : 0.1;
 
     v_r = cs_tree_node_get_child_values_real(tn, "plane");
-    double plane = (v_r != NULL) ? v_r[0] : 25.0;
+    double plane = (v_r != nullptr) ? v_r[0] : 25.0;
 
     v_i = cs_tree_node_get_child_values_int(tn, "verbosity");
-    int verbosity = (v_i != NULL) ? v_i[0] : 1;
+    int verbosity = (v_i != nullptr) ? v_i[0] : 1;
 
     v_i = cs_tree_node_get_child_values_int(tn, "visualization");
-    int visualization = (v_i != NULL) ? v_i[0] : 1;
+    int visualization = (v_i != nullptr) ? v_i[0] : 1;
 
     if (!strcmp(mode, "translation")) {
       _get_periodicity_translation(tn, trans);
@@ -519,7 +519,7 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     return;
 
   int mesh_smoothing = false;
@@ -529,7 +529,7 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
 
     const cs_real_t *v_r = cs_tree_node_get_child_values_real(tn,
                                                               "smooth_angle");
-    double angle = (v_r != NULL) ? v_r[0] : 25;
+    double angle = (v_r != nullptr) ? v_r[0] : 25;
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
@@ -538,7 +538,7 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
              mesh_smoothing, angle);
 #endif
 
-    int *vtx_is_fixed = NULL;
+    int *vtx_is_fixed = nullptr;
 
     CS_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
 
@@ -569,13 +569,13 @@ cs_gui_mesh_boundary(cs_mesh_t  *mesh)
   const char path0[] = "/solution_domain/thin_walls/thin_wall";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char _default_criteria[] = "all[]";
 
     const char *selector = cs_tree_node_get_child_value_str(tn, "selector");
-    if (selector == NULL) selector = _default_criteria;
+    if (selector == nullptr) selector = _default_criteria;
 
 #if _XML_DEBUG_
     bft_printf("==> %s\n", __func__);
@@ -583,7 +583,7 @@ cs_gui_mesh_boundary(cs_mesh_t  *mesh)
 #endif
 
     cs_lnum_t   n_selected_faces = 0;
-    cs_lnum_t  *selected_faces = NULL;
+    cs_lnum_t  *selected_faces = nullptr;
     CS_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
 
     cs_selector_get_i_face_list(selector,
@@ -606,31 +606,31 @@ cs_gui_mesh_boundary(cs_mesh_t  *mesh)
 void
 cs_gui_mesh_extrude(cs_mesh_t  *mesh)
 {
-  const int *v_i = NULL;
-  const cs_real_t *v_r = NULL;
+  const int *v_i = nullptr;
+  const cs_real_t *v_r = nullptr;
 
   const char path0[] = "solution_domain/extrusion/extrude_mesh";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
-       tn != NULL;
+       tn != nullptr;
        tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char _default_criteria[] = "all[]";
 
     const char *selector = cs_tree_node_get_child_value_str(tn, "selector");
-    if (selector == NULL) selector = _default_criteria;
+    if (selector == nullptr) selector = _default_criteria;
 
     v_i = cs_tree_node_get_child_values_int(tn, "layers_number");
-    int n_layers = (v_i != NULL) ? v_i[0] : 2;
+    int n_layers = (v_i != nullptr) ? v_i[0] : 2;
 
     v_r = cs_tree_node_get_child_values_real(tn, "thickness");
-    double thickness = (v_r != NULL) ? v_r[0] : 1;
+    double thickness = (v_r != nullptr) ? v_r[0] : 1;
 
     v_r = cs_tree_node_get_child_values_real(tn, "reason");
-    double reason = (v_r != NULL) ? v_r[0] : 1.5;
+    double reason = (v_r != nullptr) ? v_r[0] : 1.5;
 
     cs_lnum_t   n_selected_faces = 0;
-    cs_lnum_t  *selected_faces = NULL;
+    cs_lnum_t  *selected_faces = nullptr;
     CS_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(selector,
@@ -668,11 +668,11 @@ cs_gui_mesh_save_if_modified(cs_mesh_t  *mesh)
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
 
-  if (tn == NULL)
+  if (tn == nullptr)
     return;
 
   const char *s = cs_tree_node_get_value_str(tn);
-  if (s != NULL) {
+  if (s != nullptr) {
 
     if (!strcmp(s, "no"))
       mesh->save_if_modified = 0;
@@ -698,7 +698,7 @@ cs_gui_mesh_cartesian_define(void)
     = cs_tree_get_node(cs_glob_tree,"solution_domain/mesh_origin");
 
   const char *choice = cs_tree_node_get_child_value_str(tn, "choice");
-  if (choice != NULL) {
+  if (choice != nullptr) {
     if (strcmp(choice, "mesh_cartesian") == 0)
       build_cartesian = 1;
   }
@@ -708,7 +708,7 @@ cs_gui_mesh_cartesian_define(void)
 
   /* Now build Cartesian mesh if required */
 
-  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(NULL);
+  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(nullptr);
   for (int idim = 0; idim < 3; idim++) {
     int       iparams[2] = {0, 0};
     cs_real_t rparams[3] = {0., 0., 0.};

@@ -96,7 +96,7 @@ BEGIN_C_DECLS
 
 /*! Coal combustion model parameters structure */
 
-cs_coal_model_t  *cs_glob_coal_model = NULL;
+cs_coal_model_t  *cs_glob_coal_model = nullptr;
 
 /*!>  molar volume under normal pressure and temperature conditions
    (1 atmosphere, 0 degres C) in m-3 */
@@ -240,7 +240,7 @@ _add_coal_property(const char  *base_name,
     strncpy(label, base_label, 64); label[63] = '\0';
   }
 
-  if (cs_field_by_name_try(name) != NULL)
+  if (cs_field_by_name_try(name) != nullptr)
     cs_parameters_error(CS_ABORT_IMMEDIATE,
                         _("initial data setup"),
                         _("Field %s has already been assigned.\n"),
@@ -280,7 +280,7 @@ _add_coal_property(const char  *base_name,
 cs_coal_model_type_t
 cs_coal_model_get_type(void)
 {
-  if (cs_glob_coal_model == NULL)
+  if (cs_glob_coal_model == nullptr)
    return CS_COMBUSTION_COAL_NONE;
   else
     return cs_glob_coal_model->type;
@@ -303,16 +303,16 @@ cs_coal_model_set_model(cs_coal_model_type_t  type)
 
   if (type == CS_COMBUSTION_COAL_NONE) {
     CS_FREE(cs_glob_coal_model);
-    return NULL;
+    return nullptr;
   }
-  else if (cs_glob_coal_model != NULL) {
+  else if (cs_glob_coal_model != nullptr) {
     cs_glob_coal_model->type = type;
     return cs_glob_coal_model;
   }
 
   /* Create and initialize model structure */
 
-  cs_coal_model_t *cm = NULL;
+  cs_coal_model_t *cm = nullptr;
 
   CS_MALLOC(cm, 1, cs_coal_model_t);
   memset(cm, 0, sizeof(cs_coal_model_t));
