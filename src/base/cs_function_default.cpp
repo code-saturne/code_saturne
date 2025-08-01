@@ -1412,12 +1412,14 @@ cs_function_boundary_thermal_flux(int               location_id,
     if (elt_ids != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t e_id = elt_ids[i];
-        b_face_flux[i] /= b_face_surf[e_id];
+        b_face_flux[i] = (b_face_surf[e_id] > 0.) ?
+                          b_face_flux[i] / b_face_surf[e_id] : 0.;
       }
     }
     else {
       for (cs_lnum_t f_id = 0; f_id < n_elts; f_id++) {
-        b_face_flux[f_id] /= b_face_surf[f_id];
+        b_face_flux[f_id] = (b_face_surf[f_id] > 0.) ?
+                             b_face_flux[f_id] / b_face_surf[f_id] : 0.;
       }
     }
 
