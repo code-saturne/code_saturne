@@ -51,6 +51,7 @@ Master (not on release branches yet)
 
 - Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one periodic face by cell.
 - Fix the time used to solve CDO equations after FV-NSE since there is a constant offset between them.
+- Fix treatments of BC conditions with CDO-FB. If imposed pression is used on a face, it can missed other boundary faces of the same cells.
 
 Release 9.0.0 (2025-06-27)
 --------------------------
