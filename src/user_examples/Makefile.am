@@ -126,6 +126,7 @@ cs_user_mesh-periodicity.cpp \
 cs_user_mesh-quality.cpp \
 cs_user_paramedmem_coupling-base.cpp \
 cs_user_parameters-base.cpp \
+cs_user_parameters-c_compat.c \
 cs_user_parameters-cdo-condif.cpp \
 cs_user_parameters-cdo-gwf.cpp \
 cs_user_parameters-cdo-gwf_user_soil.cpp \
