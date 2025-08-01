@@ -100,7 +100,7 @@ cs_param_hpddm_create(void)
   hpddmp->relative_threshold = 5e-6;
   // Empirical choice advised by P. Jolivet
   hpddmp->p =
-    std::max(1, std::min(cs_glob_n_ranks / 2 - 1, 1 + cs_glob_n_ranks / 8));
+    cs::max(1, cs::min(cs_glob_n_ranks / 2 - 1, 1 + cs_glob_n_ranks / 8));
 
   /* Advanced options */
 

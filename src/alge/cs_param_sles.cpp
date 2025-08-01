@@ -2051,7 +2051,7 @@ cs_param_sles_hpddm(cs_param_sles_t *slesp,
   hpddmp->harmonic_overlap   = harmonic_overlap;
   hpddmp->relative_threshold = relative_threshold;
   if (p > 0) {
-    hpddmp->p = std::max(1, std::min(p, cs_glob_n_ranks / 2 - 1));
+    hpddmp->p = cs::max(1, cs::min(p, cs_glob_n_ranks / 2 - 1));
   }
 
   /* Advanced options */
