@@ -97,7 +97,9 @@
 #include "base/cs_preprocess.h"
 #include "base/cs_preprocessor_data.h"
 #include "base/cs_probe.h"
+#ifdef __cplusplus
 #include "base/cs_profiling.h"
+#endif
 #include "base/cs_prototypes.h"
 #include "base/cs_random.h"
 #include "base/cs_reducers.h"
