@@ -401,9 +401,7 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
         /* Close the definition of the pressure gradient for this face */
 
         for (int k = 0; k < 3; k++)
-          csys->rhs[3*f+k] += div_op[3*f+k] * nsb->pressure_bc_val[i];
-        break;
-
+          csys->rhs[3 * f + k] += div_op[3 * f + k] * nsb->pressure_bc_val[i];
       }
       else if (bf_type[i] & CS_BOUNDARY_WALL) {
 
