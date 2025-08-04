@@ -3466,7 +3466,7 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
       bc_type = bc_type | CS_BOUNDARY_IMPOSED_P;
     }
 
-    else if (!cs_gui_strcmp(nature, "symmetry")) {
+    else if (cs_gui_strcmp(nature, "symmetry")) {
       bc_type = bc_type | CS_BOUNDARY_SYMMETRY;
     }
 

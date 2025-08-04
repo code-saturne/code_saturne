@@ -50,9 +50,14 @@ Master (not on release branches yet)
 ### Bug fixes:
 
 - Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one periodic face by cell.
+
 - Fix the time used to solve CDO equations after FV-NSE since there is a constant offset between them.
+
 - Fix treatments of BC conditions with CDO-FB. If imposed pression is used on a face, it can missed other boundary faces of the same cells.
+
 - Reintroduce `CS_BC_HMG_NEUMANN` since it is really different to `CS_BC_SYMMETRY` for CDO.
+
+- Fix symmetry boundary conditions defined inside GUI. Not read before.
 
 Release 9.0.0 (2025-06-27)
 --------------------------
