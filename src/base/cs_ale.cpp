@@ -1499,12 +1499,12 @@ cs_ale_activate(void)
 
   cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_WITH_FV);
 
-  cs_equation_t  *eq =
+  cs_equation_t *eq =
     cs_equation_add("mesh_velocity", /* equation name */
                     "mesh_velocity", /* associated variable field name */
                     CS_EQUATION_TYPE_PREDEFINED,
-                    3,                        /* dimension of the unknown */
-                    CS_BC_SYMMETRY); /* default boundary */
+                    3,                  /* dimension of the unknown */
+                    CS_BC_HMG_NEUMANN); /* default boundary */
 
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 

@@ -375,12 +375,12 @@ cs_maxwell_activate(cs_flag_t     model,
   mxl->options = options;
 
   if (model & CS_MAXWELL_MODEL_ELECTROSTATIC) {
+    cs_equation_t *e_static = cs_equation_add(CS_MAXWELL_ESTATIC_EQNAME,
+                                              "electric_potential",
+                                              CS_EQUATION_TYPE_MAXWELL,
+                                              1,
+                                              CS_BC_HMG_NEUMANN);
 
-    cs_equation_t  *e_static = cs_equation_add(CS_MAXWELL_ESTATIC_EQNAME,
-                                               "electric_potential",
-                                               CS_EQUATION_TYPE_MAXWELL,
-                                               1,
-                                               CS_BC_SYMMETRY);
     cs_equation_param_t  *eqp = cs_equation_get_param(e_static);
 
     mxl->e_permeability = cs_property_add("electric_permeability",

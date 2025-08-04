@@ -2498,7 +2498,7 @@ cs_boundary_conditions_compute([[maybe_unused]] int  bc_type[])
                               eval_buf);
         break;
 
-      case CS_BC_SYMMETRY:
+      case CS_BC_HMG_NEUMANN:
         _compute_hmg_neumann_bc(mesh,
                                 def,
                                 f->bc_coeffs->icodcl,

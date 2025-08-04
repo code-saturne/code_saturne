@@ -607,7 +607,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
                                     "phi",
                                     CS_EQUATION_TYPE_NAVSTO,
                                     1,
-                                    CS_BC_SYMMETRY);
+                                    CS_BC_HMG_NEUMANN);
 
   /* Set the default solver settings */
   {

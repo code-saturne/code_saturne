@@ -459,7 +459,7 @@ typedef enum {
  * Dirichlet boundary conditions. The value of the variable is set to the user
  * requirements.
  *
- * \var CS_BC_SYMMETRY
+ * \var CS_BC_HMG_NEUMANN
  * Homogeneous Neumann conditions. The value of the flux of variable is set
  * to zero.
  *
@@ -491,20 +491,20 @@ typedef enum {
  */
 
 typedef enum {
-
-  CS_BC_HMG_DIRICHLET = 0,
-  CS_BC_DIRICHLET = 1,
-  CS_BC_RADIATIVE_OUTLET = 2,
-  CS_BC_NEUMANN = 3,
-  CS_BC_SYMMETRY = 4,
-  CS_BC_WALL_MODELLED = 5,
-  CS_BC_ROUGH_WALL_MODELLED = 6,
-  CS_BC_NEUMANN_FULL = 7,
-  CS_BC_ROBIN = 9,
-  CS_BC_CIRCULATION = 11,
-  CS_BC_IMPOSED_TOT_FLUX = 13,
-  CS_BC_GENERALIZED_SYM = 14,
-  CS_BC_IMPOSED_EXCHANGE_COEF = 15,
+  CS_BC_HMG_DIRICHLET         = 0,
+  CS_BC_DIRICHLET             = 1,
+  CS_BC_RADIATIVE_OUTLET      = 2,
+  CS_BC_HMG_NEUMANN           = 3,
+  CS_BC_NEUMANN               = 4,
+  CS_BC_NEUMANN_FULL          = 5,
+  CS_BC_SYMMETRY              = 6,
+  CS_BC_WALL_MODELLED         = 7,
+  CS_BC_ROUGH_WALL_MODELLED   = 8,
+  CS_BC_ROBIN                 = 9,
+  CS_BC_CIRCULATION           = 10,
+  CS_BC_IMPOSED_TOT_FLUX      = 11,
+  CS_BC_GENERALIZED_SYM       = 12,
+  CS_BC_IMPOSED_EXCHANGE_COEF = 13,
 
   CS_PARAM_N_BC_TYPES
 
@@ -514,7 +514,7 @@ typedef enum {
 
 #define  CS_PARAM_BC_HMG_DIRICHLET   CS_BC_HMG_DIRICHLET
 #define  CS_PARAM_BC_DIRICHLET       CS_BC_DIRICHLET
-#define  CS_PARAM_BC_HMG_NEUMANN     CS_BC_SYMMETRY
+#define  CS_PARAM_BC_HMG_NEUMANN     CS_BC_HMG_NEUMANN
 #define  CS_PARAM_BC_NEUMANN         CS_BC_NEUMANN
 #define  CS_PARAM_BC_NEUMANN_FULL    CS_BC_NEUMANN_FULL
 #define  CS_PARAM_BC_ROBIN           CS_BC_ROBIN

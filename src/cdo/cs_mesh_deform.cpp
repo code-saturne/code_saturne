@@ -200,13 +200,12 @@ cs_mesh_deform_activate(void)
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
 
   for (int i = 0; i < 3; i++) {
-
-    cs_equation_t  *eq =
+    cs_equation_t *eq =
       cs_equation_add(eq_name[i], /* equation name */
                       eq_name[i], /* associated variable field name */
                       CS_EQUATION_TYPE_PREDEFINED,
-                      1,                        /* dimension of the unknown */
-                      CS_BC_SYMMETRY); /* default boundary */
+                      1,                  /* dimension of the unknown */
+                      CS_BC_HMG_NEUMANN); /* default boundary */
 
     cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 

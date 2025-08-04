@@ -390,16 +390,18 @@ cs_param_get_bc_name(cs_param_bc_type_t    type)
     return "Dirichlet";
   case CS_BC_RADIATIVE_OUTLET:
     return "Radiative outlet";
+  case CS_BC_HMG_NEUMANN:
+    return "Homogeneous Neumann";
   case CS_BC_NEUMANN:
     return "Neumann";
+  case CS_BC_NEUMANN_FULL:
+    return "Neumann (full)";
   case CS_BC_SYMMETRY:
     return "Symmetry";
   case CS_BC_WALL_MODELLED:
     return "Wall modelled";
   case CS_BC_ROUGH_WALL_MODELLED:
     return "Rough wall modelled";
-  case CS_BC_NEUMANN_FULL:
-    return "Neumann (full)";
   case CS_BC_ROBIN:
     return "Robin";
   case CS_BC_CIRCULATION:
@@ -413,7 +415,6 @@ cs_param_get_bc_name(cs_param_bc_type_t    type)
 
   default:
     return "Undefined. Check your settings.";
-
   }
 }
 

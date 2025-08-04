@@ -3535,12 +3535,12 @@ cs_pressure_correction_cdo_activate(void)
   /* Add a new equation related to the pressure correction with a variable
    * field named "pressure_increment" */
 
-  cs_equation_t  *eq =
+  cs_equation_t *eq =
     cs_equation_add("pressure_increment", /* equation name */
                     "pressure_increment", /* associated variable field name */
                     CS_EQUATION_TYPE_PREDEFINED,
-                    1,                        /* dimension of the unknown */
-                    CS_BC_SYMMETRY); /* default boundary */
+                    1,                  /* dimension of the unknown */
+                    CS_BC_HMG_NEUMANN); /* default boundary */
 
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 

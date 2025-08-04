@@ -213,7 +213,7 @@ cs_gwf_uspf_create(void)
                                  "hydraulic_head", /* variable name */
                                  CS_EQUATION_TYPE_GROUNDWATER,
                                  1,
-                                 CS_BC_SYMMETRY);
+                                 CS_BC_HMG_NEUMANN);
 
   /* Define the Darcy flux structure.
 

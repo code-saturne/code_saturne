@@ -522,7 +522,7 @@ cs_equation_bc_set_cw_vb(const cs_cell_mesh_t         *cm,
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */
         /* case CS_CDO_BC_DIRICHLET: */
-        /* case CS_CDO_BC_SYMMETRY: */
+        /* case CS_CDO_BC_HMG_NEUMANN: */
         break;
 
       } /* End of switch */
@@ -597,7 +597,7 @@ cs_equation_bc_set_cw_eb(const cs_cell_mesh_t         *cm,
 
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */
-        /* case CS_CDO_BC_SYMMETRY: */
+        /* case CS_CDO_BC_HMG_NEUMANN: */
         break;
 
       } /* End of switch */
@@ -2272,7 +2272,7 @@ cs_equation_bc_update_for_increment(cs_cell_sys_t *csys)
     for (int i = 0; i < csys->n_dofs; i++) {
       if (csys->dof_flag[i] & CS_CDO_BC_NEUMANN) {
         csys->dof_flag[i] -= CS_CDO_BC_NEUMANN;
-        csys->dof_flag[i] |= CS_CDO_BC_SYMMETRY;
+        csys->dof_flag[i] |= CS_CDO_BC_HMG_NEUMANN;
       }
     }
 

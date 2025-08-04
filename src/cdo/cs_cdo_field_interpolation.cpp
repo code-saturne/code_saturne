@@ -117,12 +117,12 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
 
     /* Add a new equation to build a cell --> vertices interpolation */
 
-    _field_interpolation_scalar_c2v_eq
-      = cs_equation_add("scalar_c2v_field_interpolation",
-                        "scalar_c2v_field_interpolation",
-                        CS_EQUATION_TYPE_PREDEFINED,
-                        1,
-                        CS_BC_SYMMETRY);
+    _field_interpolation_scalar_c2v_eq =
+      cs_equation_add("scalar_c2v_field_interpolation",
+                      "scalar_c2v_field_interpolation",
+                      CS_EQUATION_TYPE_PREDEFINED,
+                      1,
+                      CS_BC_HMG_NEUMANN);
 
     cs_equation_param_t  *eqp
       = cs_equation_get_param(_field_interpolation_scalar_c2v_eq);
@@ -143,12 +143,12 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
 
     /* Add a new equation to build a cell --> faces interpolation */
 
-    _field_interpolation_scalar_c2f_eq
-      = cs_equation_add("scalar_c2f_field_interpolation",
-                        "scalar_c2f_field_interpolation",
-                        CS_EQUATION_TYPE_PREDEFINED,
-                        1,
-                        CS_BC_SYMMETRY);
+    _field_interpolation_scalar_c2f_eq =
+      cs_equation_add("scalar_c2f_field_interpolation",
+                      "scalar_c2f_field_interpolation",
+                      CS_EQUATION_TYPE_PREDEFINED,
+                      1,
+                      CS_BC_HMG_NEUMANN);
 
     cs_equation_param_t  *eqp
       = cs_equation_get_param(_field_interpolation_scalar_c2f_eq);
