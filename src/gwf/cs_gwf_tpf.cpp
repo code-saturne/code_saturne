@@ -1908,7 +1908,7 @@ _set_coupled_system(cs_gwf_tpf_t *tpf)
   tpf->b01_w_eqp = cs_equation_param_create("block01_w_eq",
                                             CS_EQUATION_TYPE_GROUNDWATER,
                                             1,
-                                            CS_BC_SYMMETRY);
+                                            CS_BC_HMG_NEUMANN);
 
   _set_default_eqp_settings(tpf->b01_w_eqp);
 
@@ -1917,7 +1917,7 @@ _set_coupled_system(cs_gwf_tpf_t *tpf)
   tpf->b10_h_eqp = cs_equation_param_create("block10_h_eq",
                                             CS_EQUATION_TYPE_GROUNDWATER,
                                             1,
-                                            CS_BC_SYMMETRY);
+                                            CS_BC_HMG_NEUMANN);
 
   _set_default_eqp_settings(tpf->b10_h_eqp);
 
@@ -1972,17 +1972,17 @@ _init_plpc_coupled_solver(cs_gwf_tpf_t       *tpf,
    * This is a coupled system. Coupling terms are collected inside b01 and b10
    */
 
-  tpf->w_eq = cs_equation_add("w_conservation",   /* equation name */
-                              "liquid_pressure",  /* variable name */
+  tpf->w_eq = cs_equation_add("w_conservation",  /* equation name */
+                              "liquid_pressure", /* variable name */
                               CS_EQUATION_TYPE_GROUNDWATER,
                               1,
-                              CS_BC_SYMMETRY);
+                              CS_BC_HMG_NEUMANN);
 
   tpf->h_eq = cs_equation_add("h_conservation",       /* equation name */
                               "capillarity_pressure", /* variable name */
                               CS_EQUATION_TYPE_GROUNDWATER,
                               1,
-                              CS_BC_SYMMETRY);
+                              CS_BC_HMG_NEUMANN);
 
   cs_equation_param_t  *b00_w_eqp = cs_equation_get_param(tpf->w_eq);
   cs_equation_param_t  *b11_h_eqp = cs_equation_get_param(tpf->h_eq);
@@ -2247,13 +2247,13 @@ _init_plpc_coupled_incr_solver(cs_gwf_tpf_t       *tpf,
                               "liquid_pressure", /* variable name */
                               CS_EQUATION_TYPE_GROUNDWATER,
                               1,
-                              CS_BC_SYMMETRY);
+                              CS_BC_HMG_NEUMANN);
 
   tpf->h_eq = cs_equation_add("h_conservation",       /* equation name */
                               "capillarity_pressure", /* variable name */
                               CS_EQUATION_TYPE_GROUNDWATER,
                               1,
-                              CS_BC_SYMMETRY);
+                              CS_BC_HMG_NEUMANN);
 
   cs_equation_param_t *b00_w_eqp = cs_equation_get_param(tpf->w_eq);
   cs_equation_param_t *b11_h_eqp = cs_equation_get_param(tpf->h_eq);

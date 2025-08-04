@@ -296,7 +296,7 @@ cs_user_model(void)
     cs_equation_add_user("my_equation", /* name of the equation */
                          "my_variable", /* name of the associated variable */
                          1,             /* dimension of the variable */
-                         CS_BC_SYMMETRY); /* default BC */
+                         CS_BC_HMG_NEUMANN); /* default BC */
 
     /* Add a new user equation.
      *   The default boundary condition has to be chosen among:
@@ -407,7 +407,7 @@ cs_user_model(void)
     cs_equation_add_user_tracer("MyTracerEq",  /* Eq. name */
                                 "MyTracerVar", /* Variable name */
                                 1,             /* Variable dim. */
-                                CS_BC_SYMMETRY,
+                                CS_BC_HMG_NEUMANN,
                                 time_pty,
                                 adv_field,
                                 diff_pty);
@@ -710,9 +710,9 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
      -> eq is the structure related to the equation to set
      -> type of boundary condition:
-        CS_BC_HMG_DIRICHLET, CS_BC_DIRICHLET, CS_BC_SYMMETRY,
+        CS_BC_HMG_DIRICHLET, CS_BC_DIRICHLET, CS_BC_HMG_NEUMANN,
         CS_BC_NEUMANN, CS_BC_NEUMANN_FULL, CS_BC_ROBIN,
-        CS_BC_CIRCULATION, CS_BC_WALL_MODELLED:
+        CS_BC_CIRCULATION, CS_BC_WALL_MODELLED, CS_BC_SYMMETRY:
 
      >> cs_equation_add_bc_by_value(eqp,
                                     bc_type,

@@ -214,7 +214,7 @@ cs_gwf_sspf_create(void)
                                  "hydraulic_head", /* variable name */
                                  CS_EQUATION_TYPE_GROUNDWATER,
                                  1,
-                                 CS_BC_SYMMETRY);
+                                 CS_BC_HMG_NEUMANN);
 
   /* Add a property related to the moisture content (It should be a constant
      in each soil). This is closely related to the soil porosity. */

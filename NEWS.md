@@ -15,6 +15,8 @@ Release 9.0.1 (unreleased)
 
 - Fix treatments of BC conditions with CDO-FB. If imposed pression is used on a face, it can missed other boundary faces of the same cells.
 
+- Reintroduce `CS_BC_HMG_NEUMANN` since it is really different to `CS_BC_SYMMETRY` for CDO.
+
 ### User changes:
 
 - Add the "FOR_RANGE" operator to MEG formulae editor. This commit
@@ -23,7 +25,6 @@ Release 9.0.1 (unreleased)
 ### Numerics:
 
 - Fix LU factorization of "cs_sdm_t" matrix.
-
 
 Release 9.0.0 (2025-06-27)
 --------------------------

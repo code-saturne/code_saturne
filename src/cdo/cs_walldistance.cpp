@@ -426,12 +426,12 @@ cs_walldistance_activate(void)
 {
   assert(cs_wd_poisson_eq == nullptr);
 
-  cs_equation_t  *eq =
+  cs_equation_t *eq =
     cs_equation_add("WallDistance",              /* equation name */
                     "WallDistance",              /* variable name */
                     CS_EQUATION_TYPE_PREDEFINED, /* type of the equation */
                     1,                           /* dimension of the variable */
-                    CS_BC_SYMMETRY);    /* default BC */
+                    CS_BC_HMG_NEUMANN);          /* default BC */
 
   /* Set now the default numerical parameters for this equation */
 
