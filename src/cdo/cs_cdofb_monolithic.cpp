@@ -409,7 +409,8 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
         /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
 
-        for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
+        for (int k = 0; k < 3; k++)
+          div_op[3 * f + k] = 0;
 
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
@@ -1822,8 +1823,34 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
   mom_eqb->bdy_flag |= CS_FLAG_COMP_PFC;
 
   sc->apply_symmetry = cs_cdofb_symmetry;
-  sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
-  sc->apply_fixed_wall = cs_cdofb_block_dirichlet_alge;
+  switch (mom_eqp->default_enforcement) {
+    case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+      sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
+      sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_alge;
+      break;
+
+    case CS_PARAM_BC_ENFORCE_PENALIZED:
+      sc->apply_sliding_wall = cs_cdofb_block_dirichlet_pena;
+      sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_pena;
+      break;
+
+    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+      sc->apply_sliding_wall = cs_cdofb_block_dirichlet_weak;
+      sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_weak;
+      break;
+
+    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+      sc->apply_sliding_wall = cs_cdofb_block_dirichlet_wsym;
+      sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_wsym;
+      break;
+
+    default:
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s: Invalid type of algorithm to enforce Wall BC.",
+                __func__);
+  }
 
   switch (mom_eqp->default_enforcement) {
 
