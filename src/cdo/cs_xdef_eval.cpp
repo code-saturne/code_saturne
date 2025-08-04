@@ -540,8 +540,8 @@ cs_xdef_eval_at_i_faces_by_analytic(cs_lnum_t                    n_elts,
   if (n_elts == 0)
     return;
 
-  const cs_real_t *if_centers
-    = (quant != nullptr) ? quant->i_face_center : nullptr;
+  const cs_real_t *if_centers =
+    (quant != nullptr) ? (const cs_real_t *)quant->i_face_center : nullptr;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
   assert(cx != nullptr && eval != nullptr);
@@ -588,8 +588,8 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   if (n_elts == 0)
     return;
 
-  const cs_real_t *bf_centers
-    = (quant != nullptr) ? quant->b_face_center : nullptr;
+  const cs_real_t *bf_centers =
+    (quant != nullptr) ? (const cs_real_t *)quant->b_face_center : nullptr;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
   assert(cx != nullptr && eval != nullptr);

@@ -1836,14 +1836,14 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
     ac->func(time_eval,
              quant->n_i_faces,
              nullptr,
-             quant->i_face_center,
+             (const cs_real_t *)quant->i_face_center,
              true, /* Output is dense ? */
              ac->input,
              retval);
     ac->func(time_eval,
              quant->n_b_faces,
              nullptr,
-             quant->b_face_center,
+             (const cs_real_t *)quant->b_face_center,
              true, /* Output is dense ? */
              ac->input,
              retval + def->dim * quant->n_i_faces);
@@ -1865,7 +1865,9 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
     /* Interior faces */
 
     ac->func(time_eval,
-             n_i_faces, selected_lst, quant->i_face_center,
+             n_i_faces,
+             selected_lst,
+             (const cs_real_t *)quant->i_face_center,
              false, /* Output is dense ? */
              ac->input,
              retval);
@@ -1875,11 +1877,12 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
     cs_lnum_t n_b_faces = n_f_selected - n_i_faces;
     assert(n_b_faces > -1);
     ac->func(time_eval,
-             n_b_faces, selected_lst + n_i_faces, quant->b_face_center,
+             n_b_faces,
+             selected_lst + n_i_faces,
+             (const cs_real_t *)quant->b_face_center,
              false, /* Output is dense ? */
              ac->input,
              retval);
-
   }
 }
 

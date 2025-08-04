@@ -637,7 +637,7 @@ cs_gwf_darcy_flux_update_on_boundary_wo_eq(const cs_cdo_connect_t    *connect,
 
     cs_lnum_t *bf2v_idx = bf2v->idx + bf_id;
     _compute_v_weighted_boundary_fluxes(cdoq->vtx_coord,
-                                        cdoq->b_face_center + 3 * bf_id,
+                                        cdoq->b_face_center[bf_id],
                                         cdoq->b_face_u_normal[bf_id],
                                         bf2v_idx,
                                         bf2v->ids,

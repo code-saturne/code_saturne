@@ -158,7 +158,7 @@ _fill_uniform_boundary_flux(const cs_cdo_quantities_t *const cdoq,
                             cs_real_t                       *fluxes)
 {
   const cs_real_t  face_coef = 0.5 * face_flux / cdoq->b_face_surf[bf_id];
-  const cs_real_t *xf        = cdoq->b_face_center + 3 * bf_id;
+  const cs_real_t *xf        = cdoq->b_face_center[bf_id];
   const cs_lnum_t  f_id      = cdoq->n_i_faces + bf_id;
 
   for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id + 1]; i++) {
@@ -2116,7 +2116,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
           ac->func(time_eval,
                    z->n_elts,
                    z->elt_ids,
-                   cdoq->b_face_center,
+                   (const cs_real_t *)cdoq->b_face_center,
                    false, /* compacted output ? */
                    ac->input,
                    flx_values);
@@ -3481,9 +3481,9 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t *adv,
         const cs_lnum_t  eshift = 2*e_id;
         const cs_lnum_t  v0 = e2v->ids[eshift];
         const cs_lnum_t  v1 = e2v->ids[eshift+1];
-        const double  tef = cs_math_surftri(cdoq->vtx_coord + 3*v0,
-                                            cdoq->vtx_coord + 3*v1,
-                                            cdoq->b_face_center + 3*bf_id);
+        const double     tef    = cs_math_surftri(cdoq->vtx_coord + 3 * v0,
+                                           cdoq->vtx_coord + 3 * v1,
+                                           cdoq->b_face_center[bf_id]);
 
         const double  weighted_flux = 0.5 * tef * invsurf * face_flx;
 

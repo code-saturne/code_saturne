@@ -188,13 +188,13 @@ typedef struct { /* Specific mesh quantities */
   cs_nreal_3_t     *i_face_u_normal;  // Can be shared with cs_mesh_quantities_t
   cs_real_t        *i_face_normal;    // Can be shared with cs_mesh_quantities_t
   cs_real_t        *i_face_surf;      // Can be shared with cs_mesh_quantities_t
-  cs_real_t        *i_face_center;    // Can be shared with cs_mesh_quantities_t
+  cs_real_3_t      *i_face_center;    // Can be shared with cs_mesh_quantities_t
   const cs_real_t  *i_dist;           // Always shared with cs_mesh_quantities_t
 
   cs_nreal_3_t     *b_face_u_normal;  // Can be shared with cs_mesh_quantities_t
   cs_real_t        *b_face_normal;    // Can be shared with cs_mesh_quantities_t
   cs_real_t        *b_face_surf;      // Can be shared with cs_mesh_quantities_t
-  cs_real_t        *b_face_center;    // Can be shared with cs_mesh_quantities_t
+  cs_real_3_t      *b_face_center;    // Can be shared with cs_mesh_quantities_t
   const cs_real_t  *b_dist;           // Always shared with cs_mesh_quantities_t
 
   cs_flag_cartesian_axis_t *face_axis; /* Enum for normal direction of faces
@@ -617,13 +617,12 @@ cs_quant_get_face_vector_area(cs_lnum_t                    f_id,
 /*----------------------------------------------------------------------------*/
 
 inline static const cs_real_t *
-cs_quant_get_face_center(cs_lnum_t                    f_id,
-                         const cs_cdo_quantities_t   *cdoq)
+cs_quant_get_face_center(cs_lnum_t f_id, const cs_cdo_quantities_t *cdoq)
 {
   if (f_id < cdoq->n_i_faces)   /* Interior face */
-    return cdoq->i_face_center + 3*f_id;
+    return cdoq->i_face_center[f_id];
   else                          /* Border face */
-    return cdoq->b_face_center + 3*(f_id - cdoq->n_i_faces);
+    return cdoq->b_face_center[f_id - cdoq->n_i_faces];
 }
 
 /*----------------------------------------------------------------------------*/

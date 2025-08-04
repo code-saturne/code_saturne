@@ -3009,9 +3009,7 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
 
       cs_lnum_t  f_id = c2f_ids[j];
 
-      const cs_real_t *face_center  = (f_id < quant->n_i_faces) ?
-        quant->i_face_center + 3*f_id :
-        quant->b_face_center + 3*(f_id - quant->n_i_faces);
+      const cs_real_t *face_center = cs_quant_get_face_center(f_id, quant);
 
       for (short int k = 0; k < 3; k++)
         grddp_reco[k] +=

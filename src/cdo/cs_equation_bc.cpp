@@ -396,8 +396,10 @@ cs_equation_bc_init_boundary_flux(cs_real_t                     t_eval,
             (cs_xdef_analytic_context_t *)def->context;
 
           ac->func(t_eval,
-                   z->n_elts, z->elt_ids, cdoq->b_face_center,
-                   false,       /* dense output ? */
+                   z->n_elts,
+                   z->elt_ids,
+                   (const cs_real_t *)cdoq->b_face_center,
+                   false, /* dense output ? */
                    ac->input,
                    values);
         }
