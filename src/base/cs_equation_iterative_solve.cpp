@@ -311,7 +311,6 @@ _equation_iterative_solve_strided(int                   idtvar,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   using var_t = cs_real_t[stride];
-  using m_t = cs_real_t[stride][stride];
 
   int inc, niterf;
   int lvar, imasac;

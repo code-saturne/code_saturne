@@ -554,7 +554,6 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
 
   const cs_lnum_t n_cells     = mesh->n_cells;
-  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_vertices  = mesh->n_vertices;
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
@@ -562,7 +561,6 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *cell_cen = fvq->cell_cen;
   const cs_real_3_t *b_face_cog = fvq->b_face_cog;
-  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t   *b_dist         = fvq->b_dist;
   int               *isympa         = fvq->b_sym_flag;
 
