@@ -17,6 +17,8 @@ Release 9.0.1 (unreleased)
 
 - Reintroduce `CS_BC_HMG_NEUMANN` since it is really different to `CS_BC_SYMMETRY` for CDO.
 
+- Fix symmetry boundary conditions defined inside GUI. Not read before for CDO and for listing for FV.
+
 ### User changes:
 
 - Add the "FOR_RANGE" operator to MEG formulae editor. This commit
@@ -25,6 +27,7 @@ Release 9.0.1 (unreleased)
 ### Numerics:
 
 - Fix LU factorization of "cs_sdm_t" matrix.
+
 
 Release 9.0.0 (2025-06-27)
 --------------------------
